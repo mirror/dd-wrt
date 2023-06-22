@@ -1816,6 +1816,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "router_name", "WDSL-Modem XXX" },
 #elif  HAVE_TMK
 	{ "router_name", "KMT-WAS" },
+#elif  HAVE_NDTRADE
+	{ "router_name", "ND-TRADE" },
 #elif  HAVE_ANTAIRA
 #ifdef HAVE_HABANERO
 	{ "wlan0_ssid", "Antaira-2" },
