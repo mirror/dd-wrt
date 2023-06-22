@@ -1838,7 +1838,7 @@ void radio_on_off_ath9k(int idx, int on)
 	char debugstring[64];
 	int fp;
 	char secmode[16];
-	char tpt[8];
+	char tpt[16];
 	char prefix[32];
 	sprintf(prefix, "wlan%d", idx);
 	int needrestart = 1;

@@ -827,7 +827,7 @@ extern char *find_in_list(const char *haystack, const char *needle);
 extern int startswith(char *source, char *cmp);
 extern int count_occurences(char *source, int cmp);
 extern int pos_nthoccurence(char *source, int cmp, int which);
-extern char *substring(int start, int stop, const char *src, char *dst);
+extern char *substring(int start, int stop, const char *src, char *dst,size_t len);
 extern void strtrim_right(char *p, int c);
 extern unsigned int daysformonth(unsigned int month, unsigned int year);
 const char *getifaddr(char *buf, char *ifname, int family, int linklocal);

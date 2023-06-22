@@ -1010,7 +1010,7 @@ static int do_wireless_adv(unsigned char method, struct mime_handler *handler, c
 	char index[32];
 	int strl = strlen(ifname);
 	if (strl > 2)
-		substring(strl - 1, strl, ifname, index);
+		substring(strl - 1, strl, ifname, index,sizeof(index));
 	else
 		return -1;
 	if (!strlen(index) || strlen(ifname) < 2)
