@@ -265,11 +265,15 @@ endif
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-16*
 ifneq ($(CONFIG_FRR),y)
 ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBMBIM),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-8*
 endif
 endif
+endif
+ifneq ($(CONFIG_LIBMBIM),y)
 ifneq ($(CONFIG_MC),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libglib-2*
+endif
 endif
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-32*
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-posix*
