@@ -83,7 +83,7 @@ static int show_temp(webs_t wp, char *fmt)
 
 #ifdef HAVE_X86
 
-int getCoreTemp(char *p, int *ridx, int acpi)
+int getCoreTemp(char *p, size_t len, int *ridx, int acpi)
 {
 	int idx = 0;
 	char path[64];
@@ -99,7 +99,7 @@ int getCoreTemp(char *p, int *ridx, int acpi)
 		fscanf(fp, "%s", name);
 		fclose(fp);
 		if (acpi && !strncmp(name, "acpitz", 6)) {
-			sprintf(p, "/sys/class/hwmon/hwmon%d", idx);
+			snprintf(p, len,"/sys/class/hwmon/hwmon%d", idx);
 			*ridx = 0;
 			return 1;
 		}
@@ -111,7 +111,7 @@ int getCoreTemp(char *p, int *ridx, int acpi)
 			fscanf(fp, "%s", name);
 			if (!strncmp(name, "Core", 4)) {
 				fclose(fp);
-				sprintf(p, "/sys/class/hwmon/hwmon%d", idx);
+				snprintf(p,len, "/sys/class/hwmon/hwmon%d", idx);
 				*ridx = tidx;
 				return 1;
 			}
@@ -277,12 +277,12 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		int idx = 0;
 		int hascore = 0;
 		char tempp[64];
-		if (getCoreTemp(path, &idx, 0)) {
+		if (getCoreTemp(path, sizeof(path), &idx, 0)) {
 			char maxp[64];
 			sprintf(tempp, "%s/temp%d_input", path, idx);
 			hascore = 1;
 			TEMP_MUL = 1000;
-		} else if (getCoreTemp(path, &idx, 1)) {
+		} else if (getCoreTemp(path, sizeof(path), &idx, 1)) {
 			char maxp[64];
 			sprintf(tempp, "%s/temp%d_input", path, idx);
 			hascore = 1;
