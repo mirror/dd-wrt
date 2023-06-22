@@ -39,7 +39,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	struct fsentry *fs, *current;
 	struct dlna_share *cs, *csnext;
-	char buffer[64], number[4], perms[16];
+	char buffer[64], number[16], perms[16];
 	int found, rows = 0;
 
 	fs = getfsentries();
@@ -77,7 +77,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			number[0] = '\0';
 		} else {
 			sprintf(buffer, "id=\"dlna_shares_row_%d\"", rows);
-			sprintf(number, "_%d", rows);
+			sprintf(number,"_%d", rows);
 		}
 
 		websWrite(wp, "<tr %s>\n", buffer);

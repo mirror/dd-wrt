@@ -179,12 +179,12 @@ int getrate(int rate, int bw, int ac)
 	return result;
 }
 
-static char *speedstr(int speed, char *buf)
+static char *speedstr(int speed, char *buf, size_t len)
 {
 	if (speed % 10)
-		sprintf(buf, "%d.%d", speed / 10, speed % 10);
+		snprintf(buf, len, "%d.%d", speed / 10, speed % 10);
 	else
-		sprintf(buf, "%d", speed / 10);
+		snprintf(buf, len, "%d", speed / 10);
 	return buf;
 }
 
@@ -257,6 +257,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 	open_site_survey();
 
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
+		char rates[64];
 
 		if (site_survey_lists[i].BSSID[0] == 0 || (site_survey_lists[i].channel & 0xff) == 0)
 			break;
@@ -279,7 +280,6 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			pos++;
 		}
 		// end fix for " in SSID
-		char strbuf[64];
 
 		if (site_survey_lists[i].channel & 0x1000) {
 			int cbw = site_survey_lists[i].channel & 0x300;
@@ -312,18 +312,17 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			default:
 				speed = speed * 10;
 			}
-			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				if (site_survey_lists[i].extcap & CAP_VHT)
-					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf));
+					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf,sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf));
+					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf,sizeof(speedbuf)));
 			} else {
 				if (site_survey_lists[i].extcap & CAP_VHT)
-					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf));
+					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf,sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf));
+					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf,sizeof(speedbuf)));
 			}
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
@@ -347,12 +346,11 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			default:
 				speed = rc * 10;
 			}
-			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
 			} else {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf), rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
 			}
 
 		} else {
@@ -375,12 +373,11 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			default:
 				speed = getrate(rc, 20, 0);
 			}
-			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
 			} else {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf), rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
 			}
 		}
 

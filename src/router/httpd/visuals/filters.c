@@ -60,7 +60,7 @@
  * 192.168.1.250-192.168.1.260) 
  */
 
-static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
+static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *tgt, size_t len)
 {
 	char *start, *end, *wordlist, *next;
 	char filter_ip[] = "filter_ip_grpXXX";
@@ -76,7 +76,6 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 			if (temp == 6) {
 				end = word;
 				start = strsep(&end, "-");
-				static char sip1[4], sip2[4], sip3[4], sip4[4];
 				int isip1, isip2, isip3, isip4;
 				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2, &isip3, &isip4) != 4) {
 					sscanf(start, "%d", &isip4);
@@ -88,11 +87,22 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 						isip3 = 0;
 					}
 				}
-				sprintf(sip1, "%d", isip1);
-				sprintf(sip2, "%d", isip2);
-				sprintf(sip3, "%d", isip3);
-				sprintf(sip4, "%d", isip4);
-				static char eip1[4], eip2[4], eip3[4], eip4[4];
+				if (!strcmp(type, "ip_range0_0")) {
+					snprintf(tgt, len, "%d", isip1);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range0_1")){
+					snprintf(tgt, len, "%d", isip2);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range0_2")){
+					snprintf(tgt, len, "%d", isip3);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range0_3")){
+					snprintf(tgt, len, "%d", isip4);
+					return tgt;
+				}
 				int ieip1, ieip2, ieip3, ieip4;
 				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3, &ieip4) != 4) {
 					sscanf(start, "%d", &ieip4);
@@ -104,33 +114,27 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 						ieip3 = 0;
 					}
 				}
-				sprintf(eip1, "%d", ieip1);
-				sprintf(eip2, "%d", ieip2);
-				sprintf(eip3, "%d", ieip3);
-				sprintf(eip4, "%d", ieip4);
-				if (!strcmp(type, "ip_range0_0"))
-					return sip1;
-				if (!strcmp(type, "ip_range0_1"))
-					return sip2;
-				if (!strcmp(type, "ip_range0_2"))
-					return sip3;
-				if (!strcmp(type, "ip_range0_3"))
-					return sip4;
 
-				if (!strcmp(type, "ip_range0_4"))
-					return eip1;
-				if (!strcmp(type, "ip_range0_5"))
-					return eip2;
-				if (!strcmp(type, "ip_range0_6"))
-					return eip3;
-				if (!strcmp(type, "ip_range0_7"))
-					return eip4;
+				if (!strcmp(type, "ip_range0_4")){
+					snprintf(tgt, len, "%d", ieip1);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range0_5")){
+					snprintf(tgt, len, "%d", ieip2);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range0_6")){
+					snprintf(tgt, len, "%d", ieip3);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range0_7")){
+					snprintf(tgt, len, "%d", ieip4);
+					return tgt;
+				}
 
 			} else if (temp == 7) {
 				end = word;
 				start = strsep(&end, "-");
-
-				static char sip1[4], sip2[4], sip3[4], sip4[4];
 				int isip1, isip2, isip3, isip4;
 				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2, &isip3, &isip4) != 4) {
 					sscanf(start, "%d", &isip4);
@@ -142,11 +146,25 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 						isip3 = 0;
 					}
 				}
-				sprintf(sip1, "%d", isip1);
-				sprintf(sip2, "%d", isip2);
-				sprintf(sip3, "%d", isip3);
-				sprintf(sip4, "%d", isip4);
-				static char eip1[4], eip2[4], eip3[4], eip4[4];
+
+				if (!strcmp(type, "ip_range1_0")) {
+					snprintf(tgt, len, "%d", isip1);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range1_1")){
+					snprintf(tgt, len, "%d", isip2);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range1_2")){
+					snprintf(tgt, len, "%d", isip3);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range1_3")){
+					snprintf(tgt, len, "%d", isip4);
+					return tgt;
+				}
+
+
 				int ieip1, ieip2, ieip3, ieip4;
 				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3, &ieip4) != 4) {
 					sscanf(start, "%d", &ieip4);
@@ -158,28 +176,24 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 						ieip3 = 0;
 					}
 				}
-				sprintf(eip1, "%d", ieip1);
-				sprintf(eip2, "%d", ieip2);
-				sprintf(eip3, "%d", ieip3);
-				sprintf(eip4, "%d", ieip4);
-				if (!strcmp(type, "ip_range1_0"))
-					return sip1;
-				if (!strcmp(type, "ip_range1_1"))
-					return sip2;
-				if (!strcmp(type, "ip_range1_2"))
-					return sip3;
-				if (!strcmp(type, "ip_range1_3"))
-					return sip4;
 
-				if (!strcmp(type, "ip_range1_4"))
-					return eip1;
-				if (!strcmp(type, "ip_range1_5"))
-					return eip2;
-				if (!strcmp(type, "ip_range1_6"))
-					return eip3;
-				if (!strcmp(type, "ip_range1_7"))
-					return eip4;
 
+				if (!strcmp(type, "ip_range1_4")){
+					snprintf(tgt, len, "%d", ieip1);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range1_5")){
+					snprintf(tgt, len, "%d", ieip2);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range1_6")){
+					snprintf(tgt, len, "%d", ieip3);
+					return tgt;
+				}
+				if (!strcmp(type, "ip_range1_7")){
+					snprintf(tgt, len, "%d", ieip4);
+					return tgt;
+				}
 			}
 			return word;
 		}
@@ -187,7 +201,7 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 	return "0";
 }
 
-static char *filter_port_get(char *list, char *type, int which)
+static char *filter_port_get(char *list, char *type, int which, char *buf, size_t len)
 {
 	char *wordlist, *next;
 	char word[256];
@@ -210,10 +224,14 @@ static char *filter_port_get(char *list, char *type, int which)
 						return " ";
 				}
 			}
-			if (!strcmp(type, "start"))
-				return start;
-			if (!strcmp(type, "end"))
-				return end;
+			if (!strcmp(type, "start")) {
+				strncpy(buf,len, start);
+				return buf;
+			}
+			if (!strcmp(type, "end")){
+				strncpy(buf,len, end);
+				return buf;
+			}		
 		}
 	}
 	if (!strcmp(type, "start") || !strcmp(type, "end"))
@@ -227,11 +245,12 @@ EJ_VISIBLE void ej_filter_dport_get(webs_t wp, int argc, char_t ** argv)
 	int which;
 	char *type;
 	char name[] = "filter_dport_grpXXX";
+	char buf[64];
 	sprintf(name, "filter_dport_grp%d", wp->p->filter_id);
 
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s", filter_port_get(name, type, which));
+	websWrite(wp, "%s", filter_port_get(name, type, which, buf, sizeof(buf)));
 
 	return;
 
@@ -241,10 +260,10 @@ EJ_VISIBLE void ej_filter_port_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char *type;
-
+	char buf[64];
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s", filter_port_get(type, "filter_port", which));
+	websWrite(wp, "%s", filter_port_get(type, "filter_port", which, buf, sizeof(buf)));
 
 	return;
 
@@ -280,10 +299,11 @@ EJ_VISIBLE void ej_filter_ip_get(webs_t wp, int argc, char_t ** argv)
 	int which;
 	char *type;
 	char word[256];
+	char buf[64];
 
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s", filter_ip_get(wp, type, which, word));
+	websWrite(wp, "%s", filter_ip_get(wp, type, which, word, buf, sizeof(buf)));
 
 	return;
 }

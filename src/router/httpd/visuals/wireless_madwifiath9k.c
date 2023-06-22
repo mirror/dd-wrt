@@ -59,9 +59,9 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, 
 	int divider = 1;
 	char nb[32];
 	int bias, qual, div = 1, mul = 1;
-	sprintf(nb, "%s_bias", ifname);
+	snprintf(nb, sizeof(nb), "%s_bias", ifname);
 	bias = nvram_default_geti(nb, 0);
-	sprintf(nb, "%s_channelbw", ifname);
+	snprintf(nb, sizeof(nb), "%s_channelbw", ifname);
 	int channelbw = atoi(nvram_default_get(nb, "0"));
 	if (is_ath5k(ifname)) {
 		if (channelbw == 40)
@@ -79,7 +79,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, 
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
 		char tmp[64];
-		sprintf(tmp, "%s.sta", ifname);
+		snprintf(tmp, sizeof(tmp), "%s.sta", ifname);
 		if (strcmp(wc->ifname, ifname) && strncmp(wc->ifname, tmp, strlen(tmp)))
 			continue;
 		ether_etoa(wc->etheraddr, mac);
@@ -138,22 +138,22 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, 
 			"20", "40", "80", "160", "80+80", "2.5", "5", "10"
 		};
 		if (ht < 8 && ht >= 0)
-			sprintf(info, "%s%s", info, bwinfo[ht]);
+			snprintf(info, sizeof(info), "%s%s", info, bwinfo[ht]);
 		if (sgi)
-			sprintf(info, "%s%s", info, "SGI");
+			snprintf(info, sizeof(info), "%s%s", info, "SGI");
 		if (wc->islzo)
-			sprintf(info, "%s %s", info, "LZ");
+			snprintf(info, sizeof(info), "%s %s", info, "LZ");
 		if (wc->ht40intol)
-			sprintf(info, "%s[ht40i]", info);
+			snprintf(info, sizeof(info), "%s[ht40i]", info);
 		if (wc->ps)
-			sprintf(info, "%s[PS]", info);
+			snprintf(info, sizeof(info), "%s[PS]", info);
 		char str[64] = {
 			0
 		};
 		char *radioname = wc->radioname;
 		if (!*(radioname))
 			radioname = "";
-		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div,
+		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str,sizeof(str)), wc->txrate / 10 * mul / div,
 			  wc->rxrate / 10 * mul / div, info, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual, wc->chaininfo_avg[0], wc->chaininfo_avg[1], wc->chaininfo_avg[2], wc->chaininfo_avg[3],
 			  nvram_nget("%s_label", wc->ifname), wc->ifname);
 		*cnt = (*cnt) + 1;

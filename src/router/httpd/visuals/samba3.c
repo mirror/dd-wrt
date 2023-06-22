@@ -42,7 +42,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	struct fsentry *fs, *current;
 	struct samba3_share *cs, *csnext;
-	char buffer[64], number[4], perms[16];
+	char buffer[64], number[16], perms[16];
 	int found, rows = 0;
 
 	fs = getfsentries();
@@ -177,7 +177,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	struct samba3_share *cs, *csnext;
 	struct samba3_shareuser *csu, *csunext;
 	struct samba3_user *samba3users, *cu, *cunext;
-	char buffer[64], number[4];
+	char buffer[64], number[16];
 	int rows = 0, usershares = 0;
 
 	samba3users = getsamba3users();
