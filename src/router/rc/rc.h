@@ -149,7 +149,7 @@ extern int write_boot(const char *path, const char *mtd);
 extern void do_mssid(char *wlname);
 extern int init_mtu(char *wan_proto);
 extern int force_to_dial(void);
-extern char *range(char *start, char *end, char *buf);
+extern char *range(char *start, char *end, char *buf,size_t buflen);
 
 // static void start_heartbeat (int status);
 extern void stop_heartbeat(void);
