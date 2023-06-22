@@ -821,7 +821,7 @@ unsigned int write_gpio(char *device, unsigned int val)
 }
 
 // note - broadcast addr returned in ipaddr
-void get_broadcast(char *ipaddr, char *netmask)
+void get_broadcast(char *ipaddr, size_t len, char *netmask)
 {
 	int ip2[4], mask2[4];
 	unsigned char ip[4], mask[4];

@@ -1125,7 +1125,7 @@ int isbridge(char *name);
 int isbridged(char *name);
 int has_multicast_to_unicast(char *name);
 int isvlan(char *name);
-void get_broadcast(char *ipaddr, char *netmask);
+void get_broadcast(char *ipaddr, size_t len, char *netmask);
 int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);

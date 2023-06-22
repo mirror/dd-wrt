@@ -459,9 +459,9 @@ static int bound_tv(void)
 	char *cidr = safe_getenv("cidrroute");
 #endif
 	if (ip && net && ifname) {
-		static char bcast[32];
+		char bcast[32];
 		strcpy(bcast, ip);
-		get_broadcast(bcast, net);
+		get_broadcast(bcast, sizeof(bcast), net);
 		nvram_set("tvnicaddr", ip);
 		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast, "multicast");
 	}
