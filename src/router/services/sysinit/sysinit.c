@@ -3591,7 +3591,8 @@ void start_nvram(void)
 	char *qos_mac = nvram_safe_get("svqos_macs");
 
 	if (*qos_mac) {
-		char *newqos = calloc(strlen(qos_mac) + 254, 1);
+		size_t len = strlen(qos_mac) + 254;
+		char *newqos = calloc(len, 1);
 
 		char level[32], level2[32], data[32], type[32], level3[32], prio[32];
 
@@ -3608,9 +3609,9 @@ void start_nvram(void)
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
 				if (*newqos)
-					sprintf(newqos, "%s %s %s %s %s %s %s |", newqos, data, level, level2, type, level3, prio);
+					snprintf(newqos, len, "%s %s %s %s %s %s %s |", newqos, data, level, level2, type, level3, prio);
 				else
-					sprintf(newqos, "%s %s %s %s %s %s |", data, level, level2, type, level3, prio);
+					snprintf(newqos, len, "%s %s %s %s %s %s |", data, level, level2, type, level3, prio);
 
 			}
 		}
@@ -3622,7 +3623,8 @@ void start_nvram(void)
 	char *qos_ip = nvram_safe_get("svqos_ips");
 
 	if (*qos_ip) {
-		char *newip = calloc(strlen(qos_ip) + 254, 1);
+		size_t len = strlen(qos_ip) + 254;
+		char *newip = calloc(len, 1);
 
 		char data[32], level[32], level2[32], level3[32], prio[32];
 
@@ -3638,9 +3640,9 @@ void start_nvram(void)
 				strcpy(prio, "0");
 
 			if (*newip)
-				sprintf(newip, "%s %s %s %s %s %s |", newip, data, level, level2, level3, prio);
+				snprintf(newip,len, "%s %s %s %s %s %s |", newip, data, level, level2, level3, prio);
 			else
-				sprintf(newip, "%s %s %s %s %s |", data, level, level2, level3, prio);
+				snprintf(newip,len, "%s %s %s %s %s |", data, level, level2, level3, prio);
 		}
 		while ((qos_ip = strpbrk(++qos_ip, "|")) && qos_ip++);
 		nvram_set("svqos_ips", newip);
@@ -3668,19 +3670,21 @@ void start_nvram(void)
 			char *value = strchr(s, '=');
 			value[0] = 0;
 			value++;
-			char *newname = malloc((strlen(name) * 2) + 1);
+			size_t slen = (strlen(name) * 2) + 1;
+			char *newname = malloc(slen);
 			strcpy(newname, name);
 			int found = 0;
 			if (!strncmp(s, "ath", 3) && isdigit(s[3])) {
-				sprintf(newname, "wlan%s", &name[3]);
+				snprintf(newname, slen,"wlan%s", &name[3]);
 				found = 1;
 			}
 			if (!strncmp(s, "bat_ath", 3) && isdigit(s[7])) {
-				sprintf(newname, "bat_wlan%s", &name[7]);
+				snprintf(newname, slen, "bat_wlan%s", &name[7]);
 				found = 1;
 			}
 			char *next;
-			char *newvalue = malloc((strlen(value) * 2) + 1);
+			slen = (strlen(value) * 2) + 1;
+			char *newvalue = malloc(slen);
 			char *entry = malloc(strlen(value) + 1);
 			*newvalue = 0;
 			int first = 1;
@@ -3688,9 +3692,9 @@ void start_nvram(void)
 				if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
 					found = 1;
 					if (first)
-						sprintf(newvalue, "wlan%s", &entry[3]);
+						snprintf(newvalue, slen, "wlan%s", &entry[3]);
 					else
-						sprintf(newvalue, "%s wlan%s", newvalue, &entry[3]);
+						snprintf(newvalue, slen, "%s wlan%s", newvalue, &entry[3]);
 
 				} else {
 					strspcattach(newvalue, entry);
@@ -3712,7 +3716,8 @@ void start_nvram(void)
 		char word[256];
 		char *next, *wordlist;
 		wordlist = nvram_safe_get("bridgesif");
-		char *newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		size_t slen = strlen(wordlist) * 2 + 1;
+		char *newwordlist = malloc(slen);
 		*newwordlist = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(tag, word, 0);
@@ -3733,14 +3738,15 @@ void start_nvram(void)
 			if (!strncmp(port, "ath", 3))
 				sprintf(newname, "wlan%s", &port[3]);
 			if (*newwordlist)
-				sprintf(newwordlist, "%s %s>%s>%s>%s>%s>%s", newwordlist, tag, newname, prio, hairpin, stp, pathcost);
+				snprintf(newwordlist, slen, "%s %s>%s>%s>%s>%s>%s", newwordlist, tag, newname, prio, hairpin, stp, pathcost);
 			else
-				sprintf(newwordlist, "%s>%s>%s>%s>%s>%s", tag, newname, prio, hairpin, stp, pathcost);
+				snprintf(newwordlist, slen, "%s>%s>%s>%s>%s>%s", tag, newname, prio, hairpin, stp, pathcost);
 		}
 		nvram_set("bridgesif", newwordlist);
 		free(newwordlist);
 		wordlist = nvram_safe_get("vlan_tags");
-		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		slen = strlen(wordlist) * 2 + 1;
+		newwordlist = malloc(slen);
 		*newwordlist = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(ifname, word, 0);
@@ -3751,14 +3757,15 @@ void start_nvram(void)
 			if (!strncmp(ifname, "ath", 3))
 				sprintf(newname, "wlan%s", &ifname[3]);
 			if (*newwordlist)
-				sprintf(newwordlist, "%s %s>%s>%s", newwordlist, newname, tag, prio);
+				snprintf(newwordlist,slen, "%s %s>%s>%s", newwordlist, newname, tag, prio);
 			else
-				sprintf(newwordlist, "%s>%s>%s", newname, tag, prio);
+				snprintf(newwordlist,slen, "%s>%s>%s", newname, tag, prio);
 		}
 		nvram_set("vlan_tags", newwordlist);
 		free(newwordlist);
 		wordlist = nvram_safe_get("static_route");
-		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		slen = strlen(wordlist) * 2 + 1;
+		newwordlist = malloc(slen);
 		*newwordlist = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(ipaddr, word, 0);
@@ -3771,15 +3778,16 @@ void start_nvram(void)
 			if (!strncmp(ifname, "ath", 3))
 				sprintf(newname, "wlan%s", &ifname[3]);
 			if (*newwordlist)
-				sprintf(newwordlist, "%s %s:%s:%s:%s:%s:", newwordlist, ipaddr, netmask, gateway, metric, newname);
+				snprintf(newwordlist,slen, "%s %s:%s:%s:%s:%s:", newwordlist, ipaddr, netmask, gateway, metric, newname);
 			else
-				sprintf(newwordlist, "%s:%s:%s:%s:%s:", ipaddr, netmask, gateway, metric, newname);
+				snprintf(newwordlist,slen, "%s:%s:%s:%s:%s:", ipaddr, netmask, gateway, metric, newname);
 		}
 		nvram_set("static_route", newwordlist);
 		free(newwordlist);
 
 		wordlist = nvram_safe_get("mdhcpd");
-		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		slen = strlen(wordlist) * 2 + 1;
+		newwordlist = malloc(slen);
 		*newwordlist = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(ifname, word, 0);
@@ -3792,15 +3800,16 @@ void start_nvram(void)
 			if (!strncmp(ifname, "ath", 3))
 				sprintf(newname, "wlan%s", &ifname[3]);
 			if (*newwordlist)
-				sprintf(newwordlist, "%s %s>%s>%s>%s>%s", newwordlist, newname, status, start, count, leasetime);
+				snprintf(newwordlist,slen, "%s %s>%s>%s>%s>%s", newwordlist, newname, status, start, count, leasetime);
 			else
-				sprintf(newwordlist, "%s>%s>%s>%s>%s", newname, status, start, count, leasetime);
+				snprintf(newwordlist,slen, "%s>%s>%s>%s>%s", newname, status, start, count, leasetime);
 		}
 		nvram_set("mdhcpd", newwordlist);
 		free(newwordlist);
 
 		wordlist = nvram_safe_get("olsrd_interfaces");
-		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		slen = strlen(wordlist) * 2 + 1;
+		newwordlist = malloc(slen);
 		*newwordlist = 0;
 
 		foreach(word, wordlist, next) {
@@ -3820,10 +3829,10 @@ void start_nvram(void)
 				sprintf(newname, "wlan%s", &interface[3]);
 
 			if (*newwordlist)
-				sprintf(newwordlist, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newwordlist, newname, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval,
+				snprintf(newwordlist,slen, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newwordlist, newname, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval,
 					hnavaliditytime, linkqualitymult);
 			else
-				sprintf(newwordlist, "%s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newname, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime,
+				snprintf(newwordlist,slen, "%s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newname, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime,
 					linkqualitymult);
 		}
 

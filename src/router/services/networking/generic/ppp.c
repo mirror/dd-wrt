@@ -167,7 +167,7 @@ int ipup_main(int argc, char **argv)
 	if (getenvs(value, sizeof(value), "DNS1"))
 		sprintf(buf, "%s", value);
 	if (getenvs(value, sizeof(value), "DNS2"))
-		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "", value);
+		snprintf(buf + strlen(buf), buf - strlen(buf), "%s%s", strlen(buf) ? " " : "", value);
 	nvram_set("wan_get_dns", buf);
 	char *v;
 	if ((v = getenv("AC_NAME")))

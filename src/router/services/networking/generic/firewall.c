@@ -805,7 +805,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 			save2file_A_prerouting("-p tcp -d %s --dport %s -j DNAT --to-destination %s:%d", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
-			wordlist = range(from, get_complete_ip(from, to), tmp);
+			wordlist = range(from, get_complete_ip(from, to), tmp,sizeof(tmp));
 
 			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%d", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
@@ -822,7 +822,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
-			wordlist = range(from, get_complete_ip(from, to), tmp);
+			wordlist = range(from, get_complete_ip(from, to), tmp,sizeof(tmp));
 
 			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
@@ -841,7 +841,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
-			wordlist = range(from, get_complete_ip(from, to), tmp);
+			wordlist = range(from, get_complete_ip(from, to), tmp,sizeof(tmp));
 
 			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:23", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
@@ -1315,7 +1315,7 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, 
 			/*
 			 * The return value of range() is global string array 
 			 */
-			wordlist2 = range(from, to, tmp);
+			wordlist2 = range(from, to, tmp,sizeof(tmp));
 		} else if (sscanf(var1, "%d", &a1) == 1) {
 			if (a1 == 0)	/* unset */
 				continue;
