@@ -2598,7 +2598,7 @@ void del_tunnel(webs_t wp)
 	remove(oldfile);
 	//egc delete interface of last tunnel, interfaces will be recreated on start
 	char oetint[6] = { 0 };
-	sprintf(oetint, "oet%d", tunnels);
+	snprintf(oetint,sizeof(oetint), "oet%d", tunnels);
 	eval("ip", "link", "del", oetint);
 #endif
 
