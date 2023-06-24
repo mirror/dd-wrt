@@ -555,8 +555,8 @@ int get_nfmark_main(int argc, char **argv)
 		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n" "	services: FORWARD\n" "		  HOTSPOT\n" "		  QOS\n\n" "	eg: get_nfmark QOS 10\n");
 		return 1;
 	}
-
-	fprintf(stdout, "%s\n", get_NFServiceMark(argv[1], atol(argv[2])));
+	char buffer[32];
+	fprintf(stdout, "%s\n", get_NFServiceMark(buffer,sizeof(buffer),argv[1], atol(argv[2])));
 	return 0;
 }
 
