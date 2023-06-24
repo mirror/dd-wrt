@@ -65,14 +65,13 @@ static struct NF_MASKS service_masks[] = {
 	{ "QOS", 13, 10 },
 };
 
-char *get_NFServiceMark(char *service, uint32 mark)
+char *get_NFServiceMark(char *buffer, size_t len, char *service, uint32 mark)
 {
-	static char buffer[32];
-	bzero(&buffer, sizeof(buffer));
+	*buffer = 0;
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 // no mask support possible in kernel 2.4
-	sprintf(buffer, "0x%x", mark);
+	snprintf(buffer, len, "0x%x", mark);
 	return buffer;
 #else
 	int x, offset, bitpos;
@@ -91,7 +90,7 @@ char *get_NFServiceMark(char *service, uint32 mark)
 			for (; bitpos >= offset; bitpos--)
 				nfmask |= (1 << bitpos);
 
-			sprintf(buffer, "0x%x/0x%x", nfmark, nfmask);
+			snprintf(buffer, len, "0x%x/0x%x", nfmark, nfmask);
 			return buffer;
 		}
 	}
@@ -99,9 +98,9 @@ char *get_NFServiceMark(char *service, uint32 mark)
 #endif
 }
 
-char *qos_nfmark(uint32 x)
+char *qos_nfmark(char *buffer, size_t len, uint32 x)
 {
-	return get_NFServiceMark("QOS", x);
+	return get_NFServiceMark(buffer, len, "QOS", x);
 }
 
 static char *get_wshaper_dev(char *buf)
