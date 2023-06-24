@@ -1704,7 +1704,7 @@ static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, 
 	char nfreq[32];
 	char nfreq2[32];
 	char fwd[32];
-	char ht[5];
+	char ht[16];
 	char sb[32];
 	char bw[32];
 	int freq;
