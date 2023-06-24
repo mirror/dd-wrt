@@ -1094,9 +1094,9 @@ void lcdmessaged(char *dual, char *message);
 extern char *getBridgeMTU(const char *, char *word);
 extern char *getMTU(char *);
 extern int getBridgeSTP(char *br, char *word);
-extern char *get_NFServiceMark(char *service, uint32 mark);
+extern char *get_NFServiceMark(char *buffer, size_t len, char *service, uint32 mark);
 
-char *qos_nfmark(uint32 x);
+char *qos_nfmark(char *buffer, size_t len, uint32 x);
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 extern char *get_tcfmark(char *tcfmark, uint32 mark, int seg);
