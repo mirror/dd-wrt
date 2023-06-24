@@ -331,7 +331,7 @@ int pos_nthoccurence(char *source, int cmp, int which)
 	return -1;
 }
 
-char *substring(int start, int stop, const char *src, char *dst,size_t len)
+char *substring(int start, int stop, const char *src, char *dst, size_t len)
 {
 	sprintf(dst, len, "%.*s", stop - start, src + start);
 
@@ -1728,30 +1728,28 @@ void rep(char *in, char from, char to)
 int get_risk_by_name(char *name)
 {
 	l7filters *filters = filters_list;
-	while (filters->name)
-	{
-	    if (!strcmp(filters->name, name))
-		return filters->level;
-	filters++;
+	while (filters->name) {
+		if (!strcmp(filters->name, name))
+			return filters->level;
+		filters++;
 	}
-    return 0;
+	return 0;
 }
 
 char *get_dep_by_name(char *name)
 {
 	l7filters *filters = filters_list;
-	while (filters->name)
-	{
-	    if (!strcmp(filters->name, name))
-		return filters->matchdep;
-	filters++;
+	while (filters->name) {
+		if (!strcmp(filters->name, name))
+			return filters->matchdep;
+		filters++;
 	}
-    return 0;
+	return 0;
 }
 
 l7filters *get_raw_filters(void)
 {
-    return filters_list;
+	return filters_list;
 }
 
 char *get_filter_services(void)
@@ -2051,7 +2049,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 
 	struct pattern *v;
 
-	strcpy(new_name, "");
+	*new_name = 0;
 
 	switch (type) {
 	case SET:
@@ -2059,9 +2057,11 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 			match = 0;
 			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
 				if (*(old_name + i) == v->ch) {
-					if (strlen(new_name) + strlen(v->string) + 1 > size) {	// avoid overflow
+					size_t slen = strlen(new_name);
+
+					if (slen + strlen(v->string) + 1 > size) {	// avoid overflow
 						cprintf("%s(): overflow\n", __FUNCTION__);
-						new_name[strlen(new_name)] = '\0';
+						new_name[size - 1] = '\0';
 						return 1;
 					}
 					sprintf(new_name + strlen(new_name), "%s", v->string);
@@ -2070,13 +2070,14 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 				}
 			}
 			if (!match) {
-				if (strlen(new_name) + 1 > size) {
+				size_t slen = strlen(new_name);
+				if (slen > size) {
 					cprintf("%s(): overflow\n", __FUNCTION__);	// avoid 
 					// overflow
-					new_name[strlen(new_name)] = '\0';
+					new_name[size - 1] = '\0';
 					return 1;
 				}
-				sprintf(new_name + strlen(new_name), "%c", *(old_name + i));
+				*(new_name + slen) = *(old_name + i);
 			}
 		}
 
