@@ -236,6 +236,7 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int base, char *client)
 {
 	int idx = level / 10;
+	char buffer[32];
 
 	if (idx == 10)
 		idx = 0;
