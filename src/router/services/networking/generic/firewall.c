@@ -2886,7 +2886,8 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 	if (strcmp(wanface, "wwan0") && nvram_matchi("wshaper_enable", 0)) {
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
-			save2file_A_prerouting("! -i %s -d %s -j MARK --set-mark %s", wanface, wanaddr, get_NFServiceMark("FORWARD", 1));
+			char buffer[32];
+			save2file_A_prerouting("! -i %s -d %s -j MARK --set-mark %s", wanface, wanaddr, get_NFServiceMark(buffer,sizeof(buffer),"FORWARD", 1));
 			save2file_A_prerouting("-j CONNMARK --save-mark");
 		}
 	}
