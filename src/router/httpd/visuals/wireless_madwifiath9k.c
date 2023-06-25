@@ -153,7 +153,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, 
 		char *radioname = wc->radioname;
 		if (!*(radioname))
 			radioname = "";
-		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str,sizeof(str)), wc->txrate / 10 * mul / div,
+		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str, sizeof(str)), wc->txrate / 10 * mul / div,
 			  wc->rxrate / 10 * mul / div, info, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual, wc->chaininfo_avg[0], wc->chaininfo_avg[1], wc->chaininfo_avg[2], wc->chaininfo_avg[3],
 			  nvram_nget("%s_label", wc->ifname), wc->ifname);
 		*cnt = (*cnt) + 1;

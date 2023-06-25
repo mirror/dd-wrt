@@ -339,7 +339,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int *c
 				char *radev = getRADev(ifname);
 
 				websWrite(wp,
-					  "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','0','%s','%s'", mac, radev, UPTIME(table.Entry[i].ConnectedTime, str,sizeof(str)), tx, rx, info,
+					  "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','0','%s','%s'", mac, radev, UPTIME(table.Entry[i].ConnectedTime, str, sizeof(str)), tx, rx, info,
 					  table.Entry[i].AvgRssi0, -95, (table.Entry[i].AvgRssi0 - (-95)), qual, table.Entry[i].AvgRssi0, table.Entry[i].AvgRssi1, table.Entry[i].AvgRssi2, nvram_nget("%s_label", radev),
 					  radev);
 			}
