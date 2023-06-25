@@ -340,7 +340,7 @@ void start_anchorfreednat(void)
 	    && !nvram_matchi("af_dnathost", 0)) {
 		char host[128];
 
-		getIPFromName(nvram_safe_get("af_dnathost"), host);
+		getIPFromName(nvram_safe_get("af_dnathost"), host, sizeof(host));
 		if (!strcmp(host, "0.0.0.0")) {
 			fprintf(stderr, "cannot resolve %s\n", nvram_safe_get("af_dnathost"));
 			return;
@@ -390,7 +390,7 @@ void stop_anchorfree(void)
 		dd_loginfo("anchorfree", "stopping redirection\n");
 		char host[128];
 
-		getIPFromName(nvram_safe_get("af_dnathost"), host);
+		getIPFromName(nvram_safe_get("af_dnathost"), host, sizeof(host));
 		sprintf(dest, "%s:%s", host, nvram_safe_get("af_dnatport"));
 		// sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 		// getmask (nvram_safe_get ("lan_netmask")));

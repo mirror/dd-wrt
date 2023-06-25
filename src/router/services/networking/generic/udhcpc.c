@@ -334,7 +334,7 @@ static int bound(void)
 		else
 			nvram_unset("wan_gateway_buf");
 
-		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
+		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip, sizeof(pptpip));
 		if (strcmp(pptpip, "0.0.0.0"))
 			nvram_set("pptp_server_ip", pptpip);
 
@@ -373,7 +373,7 @@ static int bound(void)
 		else
 			nvram_unset("wan_gateway_buf");
 
-		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip);
+		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip,sizeof(l2tpip));
 		if (strcmp(l2tpip, "0.0.0.0"))
 			nvram_set("l2tp_server_ip", l2tpip);
 
