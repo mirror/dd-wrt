@@ -28,10 +28,10 @@
 
 #define CLOSEST_SERVERS_NUM 10
 #define DL_FILE_NUM 5
-#define DL_FILE_TIMES 4
+#define DL_FILE_TIMES 40
 #define MAX_FILE_LEN 20
 #define UL_FILE_NUM 5
-#define UL_FILE_TIMES 4
+#define UL_FILE_TIMES 40
 const char *search = NULL;
 
 /* Debug Print */
@@ -677,19 +677,23 @@ static int test_download_speed(server_config_t * best_server)
 				queue_count--;
 			}
 		}
+		if (get_uptime(&time_dl_end)) {
+			fprintf(stderr, "Error on getting /proc/uptime\n");
+			return -1;
+		}
+		duration = time_dl_end - time_dl_start;
+		if (duration > 10.0) {	// limit upload  
+			for (j = 0; j < dl_thread_num; j++) {
+				pthread_join(q[dl_thread_num - 1 - j], NULL);
+			}
+			break;
+		}
 	}
-
-	if (get_uptime(&time_dl_end)) {
-		fprintf(stderr, "Error on getting /proc/uptime\n");
-		return -1;
-	}
-
-	duration = time_dl_end - time_dl_start;
 
 	for (i = 0; i < DL_FILE_NUM * DL_FILE_TIMES; i++) {
 		free(download_url[i].url);
 	}
-	printf("speedtest_cli: Download = %.2f Mbit/s (%.2f Kbyte/s)\n", ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
+	printf("speedtest_cli: Duration = %.2f Download = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
 
 	if (!(fp_result = fopen("/tmp/speedtest_download_result", "w"))) {
 		perror("fopen /tmp/speedtest_download_result");
@@ -779,16 +783,22 @@ static int test_upload_speed(server_config_t * best_server)
 			}
 		}
 
+		if (get_uptime(&time_ul_end)) {
+			fprintf(stderr, "Error on getting /proc/uptime\n");
+			return -1;
+		}
+		duration = time_ul_end - time_ul_start;
+		if (duration > 10.0) {	// limit upload  
+			for (j = 0; j < dl_thread_num; j++) {
+				pthread_join(q[ul_thread_num - 1 - j], NULL);
+			}
+			break;
+		}
+
 	}
 	free(mem);
-
-	if (get_uptime(&time_ul_end)) {
-		fprintf(stderr, "Error on getting /proc/uptime\n");
-		return -1;
-	}
-
 	duration = time_ul_end - time_ul_start;
-	printf("speedtest_cli: Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
+	printf("speedtest_cli: Duration %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
 
 	if (!(fp_result = fopen("/tmp/speedtest_upload_result", "w"))) {
 		perror("fopen /tmp/speedtest_upload_result");
