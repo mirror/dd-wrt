@@ -93,31 +93,31 @@ static char *getfsname(char *drive)
 		char tmp[64];
 		sprintf(tmp, "/dev/%s", root);
 		if (!strncmp(drive, tmp, 8))
-			return NULL;
+			goto err;
 	}
 
 	if (strlen(root) == 7) {	// mmcblkX
 		char tmp[64];
 		sprintf(tmp, "/dev/%s", root);
 		if (!strncmp(drive, tmp, 12))
-			return NULL;
+			goto err;
 	}
 #endif
 	if (stat(drive, &sb) < 0) {
-		return NULL;
+			goto err;
 	}
 	filekind = analyze_stat(&sb, drive);
 	if (filekind < 0)
-		return NULL;
+			goto err;
 
 	fd = open(drive, O_RDONLY);
 	if (fd < 0) {
-		return NULL;
+			goto err;
 	}
 	/* (try to) guard against TTY character devices */
 	if (filekind == 2) {
 		if (isatty(fd)) {
-			return NULL;
+			goto err;
 		}
 	}
 
@@ -240,13 +240,17 @@ static char *getfsname(char *drive)
 	if (detect_blank(&section, -1)) {
 		retvalue = "Empty";
 	}
-
+	
       ret:;
+        free(root);
 	set_discmessage_on();
 
 	/* finish it up */
 	close_source(s);
 	return retvalue;
+      err:;
+        free(root);
+        return NULL;
 }
 
 static int ismember(char *name)
@@ -492,7 +496,9 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		int midx = 0;
 #ifdef HAVE_X86
 		char check[64];
-		sprintf(check, "/dev/%s", getdisc());
+		char *d = getdisc();
+		sprintf(check, "/dev/%s", d);
+		free(d);
 #endif
 		foreach(var, raid, next) {
 			websWrite(wp, "<tr>\n" "<td>\n");
