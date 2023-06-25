@@ -119,7 +119,7 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=AllShare1.0\n");
 	fclose(fp);
-	log_eval("minidlna", "-f", getdefaultconfig("dlna", path, "minidlna.conf"));
+	log_eval("minidlna", "-f", getdefaultconfig("dlna", path, sizeof(path), "minidlna.conf"));
 
 	return;
 }

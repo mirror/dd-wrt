@@ -90,7 +90,7 @@ void run_l2tp(int status)
 		}
 		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		char pptpip[64];
-		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip);
+		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip, sizeof(pptpip));
 		route_del(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)

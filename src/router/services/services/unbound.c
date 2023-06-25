@@ -167,7 +167,7 @@ void start_unbound(void)
 		if (reload_process("unbound")) {
 			eval("cp", "-R", "/etc/unbound", "/tmp/etc");
 			eval("mount", "--bind", "/tmp/etc/unbound", "/etc/unbound");
-			log_eval("unbound", "-c", getdefaultconfig("unbound", path, "unbound.conf"));
+			log_eval("unbound", "-c", getdefaultconfig("unbound", path, sizeof(path), "unbound.conf"));
 		}
 	} else {
 		stop_unbound();
