@@ -333,7 +333,7 @@ int pos_nthoccurence(char *source, int cmp, int which)
 
 char *substring(int start, int stop, const char *src, char *dst, size_t len)
 {
-	sprintf(dst, len, "%.*s", stop - start, src + start);
+	snprintf(dst, len, "%.*s", stop - start, src + start);
 
 	return dst;
 }
