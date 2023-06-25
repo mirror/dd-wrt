@@ -501,9 +501,9 @@ static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
 }
 #endif
 
-static const char *math(char *buf, long long val, const char *ext)
+static const char *math(char *buf, size_t len, long long val, const char *ext)
 {
-	sprintf(buf, "%lld%s", val, ext);
+	snprintf(buf, len, "%lld%s", val, ext);
 	return buf;
 }
 
@@ -608,9 +608,9 @@ static void add_htb_class(const char *dev, int parent, int class, int rate, int 
 	sprintf(parentid, "1:%d", parent);
 	sprintf(classid, "1:%d", class);
 	if (p != -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, sizeof(buf), rate, "kbit"), "ceil", math(buf2, sizeof(buf2), limit, "kbit"), "prio", prio, "quantum", qmtu);
 	else
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, sizeof(buf), rate, "kbit"), "ceil", math(buf2, sizeof(buf2), limit, "kbit"), "quantum", qmtu);
 }
 
 static void add_hfsc_class(const char *dev, int parent, int class, long long rate, long long limit)
@@ -622,9 +622,9 @@ static void add_hfsc_class(const char *dev, int parent, int class, long long rat
 	sprintf(classid, "1:%d", class);
 	sprintf(parentid, "1:%d", parent);
 	if (limit == -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, rate, "bit"));
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, sizeof(buf), rate, "bit"));
 	else
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, rate, "bit"), "ul", "m2", math(buf2, limit, "bit"));
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, sizeof(buf), rate, "bit"), "ul", "m2", math(buf2, sizeof(buf2), limit, "bit"));
 }
 
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)

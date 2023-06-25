@@ -869,7 +869,7 @@ void notifywanChange(void)
 
 void set_ip_forward(char c)
 {
-	char ch[8];
+	char ch[16];
 	sprintf(ch, "%c", c);
 	writeprocsysnet("ipv4/ip_forward", ch);
 }
