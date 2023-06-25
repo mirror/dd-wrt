@@ -32,6 +32,8 @@
 #define MAX_FILE_LEN 20
 #define UL_FILE_NUM 5
 #define UL_FILE_TIMES 10
+#define DOWNLOADSIZE 5000000
+#define UPLOADSIZE 2000000
 const char *search = NULL;
 
 /* Debug Print */
@@ -645,7 +647,7 @@ static int test_download_speed(server_config_t * best_server)
 
 	for (i = 0; i < DL_FILE_NUM; i++) {
 		for (j = 0; j < DL_FILE_TIMES; j++) {
-			asprintf(&download_url[k].url, "%sdownload?size=5000000", best_server->url);
+			asprintf(&download_url[k].url, "%sdownload?size=%d", best_server->url, DOWNLOADSIZE);
 			k++;
 		}
 	}
@@ -752,16 +754,16 @@ static int test_upload_speed(server_config_t * best_server)
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
 	char *mem;
-	char *databuf = mem = malloc(5000000 + strlen(head) + strlen(tail));
+	char *databuf = mem = malloc(UPLOADSIZE + strlen(head) + strlen(tail));
 	databuf += sprintf(databuf, "%s", head);
-	data_len = (int)round(5000000 / strlen(data));
+	data_len = (int)round(UPLOADSIZE / strlen(data));
 	for (j = 0; j < (data_len - 1); j++) {
 		databuf += sprintf(databuf, "%s", data);
 	}
 	sprintf(databuf, "%s", tail);
 	for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
 		asprintf(&upload_arg[i].url, "%supload", best_server->url);
-		upload_arg[i].size = (int)round(5000000 / strlen(data)) * strlen(data);
+		upload_arg[i].size = (int)round(UPLOADSIZE / strlen(data)) * strlen(data);
 		upload_arg[i].ul_file = mem;
 	}
 	if (get_uptime(&time_ul_start)) {
