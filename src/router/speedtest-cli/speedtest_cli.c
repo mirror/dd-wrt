@@ -834,7 +834,7 @@ static int test_upload_speed(server_config_t * best_server)
 		return -1;
 	}
 	duration = time_ul_end - time_ul_start;
-	printf("speedtest_cli: Duration %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
+	printf("speedtest_cli: Duration = %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
 
 	if (!(fp_result = fopen("/tmp/speedtest_upload_result", "w"))) {
 		perror("fopen /tmp/speedtest_upload_result");
@@ -937,18 +937,14 @@ int main(int argc, char **argv)
 		usage();
 		return 0;
 	} else {
-		if (argc == 6 || argc == 7 || argc == 8) {
-			if (!strcmp(argv[i], "-d")) {
+		if (!strcmp(argv[i], "-d")) {
 				i++;
 				debug_msg = DEBUG_INFO;
-			} else {
-				usage();
-				return 0;
-			}
 		} else {
 			debug_msg = DEBUG_NONE;
+		
 		}
-
+		
 		if (!strcmp(argv[i], "1")) {
 			dl_enable = 1;
 		} else if (!strcmp(argv[i], "0")) {
