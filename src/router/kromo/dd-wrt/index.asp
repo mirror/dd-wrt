@@ -393,7 +393,7 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 									</select>&nbsp;
-									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvg("wan_mtu"); %>" />
+									<input class="num" maxlength="5" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvg("wan_mtu"); %>" />
 								</div>
 								<% ifdef("WET", "-->"); %>
 								<% ifndef("CTF", "<!--"); %>
