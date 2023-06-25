@@ -1281,7 +1281,7 @@ char *getdisc(void)		// works only for squashfs
 {
 	int i, a, n;
 	int nocache = 0;
-	static char ret[8];
+	char *ret;
 #ifndef HAVE_EROUTER
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
@@ -1311,7 +1311,8 @@ char *getdisc(void)		// works only for squashfs
 		if (detect < 0)
 			continue;
 		if (detect) {
-			sprintf(ret, "sd%c", i);
+			
+			asprintf(&ret, "sd%c", i);
 			if (!nocache) {
 				nvram_set("root_disc", ret);
 				nvram_async_commit();
@@ -1326,7 +1327,7 @@ char *getdisc(void)		// works only for squashfs
 		if (detect < 0)
 			continue;
 		if (detect) {
-			sprintf(ret, "hd%c", i);
+			asprintf(&ret, "hd%c", i);
 			if (!nocache) {
 				nvram_set("root_disc", ret);
 				nvram_async_commit();
@@ -1342,7 +1343,7 @@ char *getdisc(void)		// works only for squashfs
 			if (detect < 0)
 				continue;
 			if (detect) {
-				sprintf(ret, "mmcblk%c", i);
+				asprintf(&ret, "mmcblk%c", i);
 				if (!nocache) {
 					nvram_set("root_disc", ret);
 					nvram_async_commit();
@@ -1360,7 +1361,7 @@ char *getdisc(void)		// works only for squashfs
 				if (detect < 0)
 					continue;
 				if (detect) {
-					sprintf(ret, "nvme%cn%c", i, n);
+					asprintf(&ret, "nvme%cn%c", i, n);
 					if (!nocache) {
 						nvram_set("root_disc", ret);
 						nvram_async_commit();
