@@ -100,6 +100,7 @@ int mk_nodog_conf(void)
 
 void start_splashd(void)
 {
+	char path[128];
 	FILE *fp;
 	if (!nvram_matchi("ND_enable", 1))
 		return;
