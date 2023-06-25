@@ -2193,6 +2193,7 @@ service.transmission_dir="Config Directory";
 service.transmission_download="Download Directory";
 service.transmission_style="Web UI Style";
 service.transmission_rpc="Web UI Port";
+service.transmission_script="Run script after download complete";
 service.transmission_whitelist="Whitelist IPs";
 
 service.plex_legend="Plex Media Server";

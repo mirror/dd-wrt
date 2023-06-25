@@ -1947,6 +1947,7 @@ service.transmission_dir="Transmission Konfigurationsverzeichnis";
 service.transmission_download="Transmission Download Verzeichnis";
 service.transmission_style="Webinterface Stil";
 service.transmission_rpc="Webinterface Port";
+service.transmission_script="Starte Script wenn Download beendet";
 service.transmission_whitelist="Erlaubte IPs";
 
 service.plex_legend="Medien Server";
