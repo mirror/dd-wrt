@@ -1947,6 +1947,8 @@ service.transmission_dir="Transmission Konfigurationsverzeichnis";
 service.transmission_download="Transmission Download Verzeichnis";
 service.transmission_style="Webinterface Stil";
 service.transmission_rpc="Webinterface Port";
+service.transmission_down="Maximale Download Geschwindigkeit";
+service.transmission_up="Maximale Upload Geschwindigkeit";
 service.transmission_script="Starte Script wenn Download beendet";
 service.transmission_whitelist="Erlaubte IPs";
 
