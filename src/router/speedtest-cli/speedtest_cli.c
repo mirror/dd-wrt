@@ -28,10 +28,10 @@
 
 #define CLOSEST_SERVERS_NUM 10
 #define DL_FILE_NUM 5
-#define DL_FILE_TIMES 40
+#define DL_FILE_TIMES 10
 #define MAX_FILE_LEN 20
 #define UL_FILE_NUM 5
-#define UL_FILE_TIMES 40
+#define UL_FILE_TIMES 10
 const char *search = NULL;
 
 /* Debug Print */
@@ -655,41 +655,49 @@ static int test_download_speed(server_config_t * best_server)
 		return -1;
 	}
 
-	for (i = 0; i < (DL_FILE_NUM * DL_FILE_TIMES); i++) {
-		if (queue_count < dl_thread_num) {
-			for (j = 0; j < (dl_thread_num - 1); j++) {
-				q[dl_thread_num - j - 1] = q[dl_thread_num - j - 2];
+	while (1) {
+		for (i = 0; i < (DL_FILE_NUM * DL_FILE_TIMES); i++) {
+			if (queue_count < dl_thread_num) {
+				for (j = 0; j < (dl_thread_num - 1); j++) {
+					q[dl_thread_num - j - 1] = q[dl_thread_num - j - 2];
+				}
+				sprintf(download_url[i].file_count, "%d", i);
+				ret = pthread_create(q, NULL, download_thread, (void *)&download_url[i]);
+				queue_count++;
 			}
-			sprintf(download_url[i].file_count, "%d", i);
-			ret = pthread_create(q, NULL, download_thread, (void *)&download_url[i]);
-			queue_count++;
-		}
-		if (queue_count == dl_thread_num) {
-			if (i == (DL_FILE_NUM * DL_FILE_TIMES - 1)) {
-				/* all task have been put in queue, consume all threads in queue */
+			if (queue_count == dl_thread_num) {
+				if (i == (DL_FILE_NUM * DL_FILE_TIMES - 1)) {
+					/* all task have been put in queue, consume all threads in queue */
+					for (j = 0; j < dl_thread_num; j++) {
+						pthread_join(q[dl_thread_num - 1 - j], NULL);
+						queue_count--;
+					}
+
+				} else {
+					/* consume a thread in queue to provide space for next task */
+					pthread_join(q[dl_thread_num - 1], NULL);
+					queue_count--;
+				}
+			}
+			if (get_uptime(&time_dl_end)) {
+				fprintf(stderr, "Error on getting /proc/uptime\n");
+				return -1;
+			}
+			duration = time_dl_end - time_dl_start;
+			if (duration > 10.0) {	// limit upload  
 				for (j = 0; j < dl_thread_num; j++) {
 					pthread_join(q[dl_thread_num - 1 - j], NULL);
 				}
-
-			} else {
-				/* consume a thread in queue to provide space for next task */
-				pthread_join(q[dl_thread_num - 1], NULL);
-				queue_count--;
+				goto done;
 			}
-		}
-		if (get_uptime(&time_dl_end)) {
-			fprintf(stderr, "Error on getting /proc/uptime\n");
-			return -1;
-		}
-		duration = time_dl_end - time_dl_start;
-		if (duration > 10.0) {	// limit upload  
-			for (j = 0; j < dl_thread_num; j++) {
-				pthread_join(q[dl_thread_num - 1 - j], NULL);
-			}
-			break;
 		}
 	}
-
+      done:;
+	if (get_uptime(&time_dl_end)) {
+		fprintf(stderr, "Error on getting /proc/uptime\n");
+		return -1;
+	}
+	duration = time_dl_end - time_dl_start;
 	for (i = 0; i < DL_FILE_NUM * DL_FILE_TIMES; i++) {
 		free(download_url[i].url);
 	}
@@ -760,43 +768,50 @@ static int test_upload_speed(server_config_t * best_server)
 		fprintf(stderr, "Error on getting /proc/uptime\n");
 		return -1;
 	}
-
-	for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
-		if (queue_count < ul_thread_num) {
-			for (j = 0; j < (ul_thread_num - 1); j++) {
-				q[ul_thread_num - j - 1] = q[ul_thread_num - j - 2];
+	while (1) {
+		for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
+			if (queue_count < ul_thread_num) {
+				for (j = 0; j < (ul_thread_num - 1); j++) {
+					q[ul_thread_num - j - 1] = q[ul_thread_num - j - 2];
+				}
+				pthread_create(q, NULL, upload_thread, (void *)&upload_arg[i]);
+				queue_count++;
 			}
-			pthread_create(q, NULL, upload_thread, (void *)&upload_arg[i]);
-			queue_count++;
-		}
-		if (queue_count == ul_thread_num) {
-			if (i == ((UL_FILE_NUM * UL_FILE_TIMES) - 1)) {
-				/* all task have been put in queue, consume all threads in queue */
-				for (j = 0; j < ul_thread_num; j++) {
+			if (queue_count == ul_thread_num) {
+				if (i == ((UL_FILE_NUM * UL_FILE_TIMES) - 1)) {
+					/* all task have been put in queue, consume all threads in queue */
+					for (j = 0; j < ul_thread_num; j++) {
+						pthread_join(q[ul_thread_num - 1 - j], NULL);
+						queue_count--;
+					}
+
+				} else {
+					/* consume a thread in queue to provide space for next task */
+					pthread_join(q[ul_thread_num - 1], NULL);
+					queue_count--;
+				}
+			}
+
+			if (get_uptime(&time_ul_end)) {
+				fprintf(stderr, "Error on getting /proc/uptime\n");
+				return -1;
+			}
+			duration = time_ul_end - time_ul_start;
+			if (duration > 10.0) {	// limit upload  
+				for (j = 0; j < dl_thread_num; j++) {
 					pthread_join(q[ul_thread_num - 1 - j], NULL);
 				}
-
-			} else {
-				/* consume a thread in queue to provide space for next task */
-				pthread_join(q[ul_thread_num - 1], NULL);
-				queue_count--;
+				goto done;
 			}
-		}
 
-		if (get_uptime(&time_ul_end)) {
-			fprintf(stderr, "Error on getting /proc/uptime\n");
-			return -1;
 		}
-		duration = time_ul_end - time_ul_start;
-		if (duration > 10.0) {	// limit upload  
-			for (j = 0; j < dl_thread_num; j++) {
-				pthread_join(q[ul_thread_num - 1 - j], NULL);
-			}
-			break;
-		}
-
 	}
+      done:;
 	free(mem);
+	if (get_uptime(&time_ul_end)) {
+		fprintf(stderr, "Error on getting /proc/uptime\n");
+		return -1;
+	}
 	duration = time_ul_end - time_ul_start;
 	printf("speedtest_cli: Duration %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
 
