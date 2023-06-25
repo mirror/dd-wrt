@@ -1080,25 +1080,25 @@ struct mtu_lists mtu_list[] = {
 	{
 	 "pppoe_dual", "576", "1492" },
 	{
-	 "pppoa", "576", "10000" },
+	 "pppoa", "576", "16320" },
 	{
 	 "pptp", "576", "1460" },
 	{
 	 "l2tp", "576", "1460" },
 	{
-	 "dhcp", "576", "10000" },
+	 "dhcp", "576", "16320" },
 	{
-	 "dhcp_auth", "576", "10000" },
+	 "dhcp_auth", "576", "16320" },
 	{
 	 "iphone", "576", "1500" },
 	{
-	 "static", "576", "10000" },
+	 "static", "576", "16320" },
 	{
 	 "heartbeat", "576", "1500" },
 	{
 	 "3g", "576", "1500" },
 	{
-	 "default", "576", "10000" },	// The value must be at last
+	 "default", "576", "16320" },	// The value must be at last
 };
 
 struct mtu_lists *get_mtu(char *proto)
