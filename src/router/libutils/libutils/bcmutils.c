@@ -384,7 +384,7 @@ int weekday(int month, int day, int year)
 
 }
 
-const char *getdefaultconfig(char *service, char *path, char *configname)
+const char *getdefaultconfig(char *service, char *path, size_t len, char *configname)
 {
 	sprintf(path, "/jffs/etc/%s", configname);
 	FILE *fp = fopen(path, "r");	//test if custom config is available
@@ -1599,29 +1599,29 @@ int doMultiCast(void)
 	return ifcount;
 }
 
-static int sockaddr_to_dotted(struct sockaddr *saddr, char *buf)
+static int sockaddr_to_dotted(struct sockaddr *saddr, char *buf, size_t len)
 {
 	buf[0] = '\0';
 	if (saddr->sa_family == AF_INET) {
-		inet_ntop(AF_INET, &((struct sockaddr_in *)saddr)->sin_addr, buf, 128);
+		inet_ntop(AF_INET, &((struct sockaddr_in *)saddr)->sin_addr, buf, len);
 		return 0;
 	}
 	if (saddr->sa_family == AF_INET6) {
-		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)saddr)->sin6_addr, buf, 128);
+		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)saddr)->sin6_addr, buf, len);
 		return 0;
 	}
 	return -1;
 }
 
-static int sockaddr_to_dotted_n(char *sin_addr, char *buf)
+static int sockaddr_to_dotted_n(char *sin_addr, char *buf, size_t len)
 {
-	inet_ntop(AF_INET, sin_addr, buf, 128);
+	inet_ntop(AF_INET, sin_addr, buf, len);
 	return 0;
 }
 
 #define DIE_ON_ERROR AI_CANONNAME
 
-void getIPFromName(char *name, char *ip)
+void getIPFromName(char *name, char *ip, size_t len)
 {
 	int count = 5;
 	while (count--) {
@@ -1630,7 +1630,7 @@ void getIPFromName(char *name, char *ip)
 		struct addrinfo hint;
 		struct hostent *hp = gethostbyname(name);
 		if (hp != NULL) {
-			sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
+			sockaddr_to_dotted_n(hp->h_addr_list[0], ip, len);
 			if (strcmp(ip, "0.0.0.0"))
 				break;
 		}
@@ -1644,14 +1644,14 @@ void getIPFromName(char *name, char *ip)
 			rc = getaddrinfo(name, NULL, &hint, &result);
 
 		if (result) {
-			sockaddr_to_dotted(result->ai_addr, ip);
+			sockaddr_to_dotted(result->ai_addr, ip, len);
 			freeaddrinfo(result);
 		} else {
 			struct hostent *hp = gethostbyname(name);
 			if (hp != NULL) {
-				sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
+				sockaddr_to_dotted_n(hp->h_addr_list[0], ip, len);
 			} else
-				sprintf(ip, "0.0.0.0");
+				snprintf(ip, len, "0.0.0.0");
 		}
 		if (strcmp(ip, "0.0.0.0"))
 			break;
@@ -2064,7 +2064,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 						new_name[size - 1] = '\0';
 						return 1;
 					}
-					sprintf(new_name + strlen(new_name), "%s", v->string);
+					strcat(new_name, v->string);
 					match = 1;
 					break;
 				}
