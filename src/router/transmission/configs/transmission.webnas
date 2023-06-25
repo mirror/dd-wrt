@@ -19,6 +19,10 @@
 			<input size="25" maxlength="40" class="text" name="transmission_whitelist" value="<% nvg("transmission_whitelist"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.transmission_script"); %></div>
+			<input size="40" maxlength="256" class="text" name="transmission_script" value="<% nvg("transmission_script"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.transmission_rpc"); %></div>
 			<input size="6" maxlength="5" class="num" name="transmission_rpc" value="<% nvg("transmission_rpc"); %>" />
 		</div>
