@@ -238,6 +238,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 	cprintf("done\n");
 	ret = 0;
 err:
+	free(drv);
 	if (buf)
 		debug_free(buf);
 
@@ -323,6 +324,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 			return -1;
 		int size = nvram_size();
 		sprintf(drive, "/dev/%s", drv);
+		free(drv);
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftell(in);

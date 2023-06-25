@@ -1755,7 +1755,9 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		eval("event", "5", "1", "15");
 #endif
 		char drive[64];
-		sprintf(drive, "/dev/%s", getdisc());
+		char *d = getdisc();
+		sprintf(drive, "/dev/%s", d);
+		free(d);
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
