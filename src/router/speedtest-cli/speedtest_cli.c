@@ -1,4 +1,4 @@
-/*
+/*OB
  * Speedtest-cli
  *
  * Copyright (C) 2015, Broadcom Corporation
@@ -30,7 +30,8 @@
 #define DL_FILE_NUM 5
 #define DL_FILE_TIMES 4
 #define MAX_FILE_LEN 20
-#define UL_SIZE_NUM 4
+#define UL_FILE_NUM 5
+#define UL_FILE_TIMES 4
 const char *search = NULL;
 
 /* Debug Print */
@@ -730,27 +731,25 @@ static int test_upload_speed(server_config_t * best_server)
 	const char *data = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	const char *head = "content1=";
 	const char *tail = "0123456789ABCDEFGHIJKLMNOPQ";
-	const int ul_times = 25;
-	double size[UL_SIZE_NUM] = { 250000, 500000, 1000000, 2000000 };
 	double duration;
 	double time_ul_end;
 	int i, j, data_len, queue_count = 0;
-	ul_thread_arg_t upload_arg[UL_SIZE_NUM * ul_times];
+	ul_thread_arg_t upload_arg[UL_FILE_NUM * UL_FILE_TIMES];
 	pthread_t q[ul_thread_num];
 	FILE *fp_result;
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
 	char *mem;
-	char *databuf = mem = malloc(2000000 + strlen(head) + strlen(tail));
+	char *databuf = mem = malloc(5000000 + strlen(head) + strlen(tail));
 	databuf += sprintf(databuf, "%s", head);
-	data_len = (int)round(size[i] / strlen(data));
+	data_len = (int)round(5000000 / strlen(data));
 	for (j = 0; j < (data_len - 1); j++) {
 		databuf += sprintf(databuf, "%s", data);
 	}
 	sprintf(databuf, "%s", tail);
-	for (i = 0; i < (UL_SIZE_NUM * ul_times); i++) {
+	for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
 		asprintf(&upload_arg[i].url, "%supload", best_server->url);
-		upload_arg[i].size = ((int)round(size[i / ul_times] / strlen(data))) * strlen(data);
+		upload_arg[i].size = (int)round(5000000 / strlen(data)) * strlen(data);
 		upload_arg[i].ul_file = mem;
 	}
 	if (get_uptime(&time_ul_start)) {
@@ -758,7 +757,7 @@ static int test_upload_speed(server_config_t * best_server)
 		return -1;
 	}
 
-	for (i = 0; i < (UL_SIZE_NUM * ul_times); i++) {
+	for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
 		if (queue_count < ul_thread_num) {
 			for (j = 0; j < (ul_thread_num - 1); j++) {
 				q[ul_thread_num - j - 1] = q[ul_thread_num - j - 2];
@@ -767,7 +766,7 @@ static int test_upload_speed(server_config_t * best_server)
 			queue_count++;
 		}
 		if (queue_count == ul_thread_num) {
-			if (i == ((UL_SIZE_NUM * ul_times) - 1)) {
+			if (i == ((UL_FILE_NUM * UL_FILE_TIMES) - 1)) {
 				/* all task have been put in queue, consume all threads in queue */
 				for (j = 0; j < ul_thread_num; j++) {
 					pthread_join(q[ul_thread_num - 1 - j], NULL);
