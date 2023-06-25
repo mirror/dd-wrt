@@ -253,7 +253,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int len = blen;
 #if defined(HAVE_SWCONFIG) && !defined(HAVE_ALPINE)
 	if (has_igmpsnooping())
-		len+=3;
+		len += 3;
 #endif
 #if !defined(HAVE_ALPINE)
 	len += 6;
@@ -297,9 +297,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			break;
 		default:
 			if (!i)
-				snprintf(deflist,(blen * 5) + 1, "%d", i);
+				snprintf(deflist, (blen * 5) + 1, "%d", i);
 			else
-				snprintf(deflist,(blen * 5) + 1, "%s %d", deflist, i);
+				snprintf(deflist, (blen * 5) + 1, "%s %d", deflist, i);
 			websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" name=\"portvlan%dlist\" value=\"%d\" />", i, vlanlist[i]);
 			break;
 		}

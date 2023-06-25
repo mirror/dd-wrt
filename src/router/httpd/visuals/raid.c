@@ -104,15 +104,15 @@ static char *getfsname(char *drive)
 	}
 #endif
 	if (stat(drive, &sb) < 0) {
-			goto err;
+		goto err;
 	}
 	filekind = analyze_stat(&sb, drive);
 	if (filekind < 0)
-			goto err;
+		goto err;
 
 	fd = open(drive, O_RDONLY);
 	if (fd < 0) {
-			goto err;
+		goto err;
 	}
 	/* (try to) guard against TTY character devices */
 	if (filekind == 2) {
@@ -240,17 +240,17 @@ static char *getfsname(char *drive)
 	if (detect_blank(&section, -1)) {
 		retvalue = "Empty";
 	}
-	
+
       ret:;
-        free(root);
+	free(root);
 	set_discmessage_on();
 
 	/* finish it up */
 	close_source(s);
 	return retvalue;
       err:;
-        free(root);
-        return NULL;
+	free(root);
+	return NULL;
 }
 
 static int ismember(char *name)

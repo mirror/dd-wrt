@@ -69,6 +69,7 @@ EJ_VISIBLE void ej_speed_name(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", name);
 	fclose(in);
 }
+
 EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_country", "rb");
@@ -82,6 +83,7 @@ EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", name);
 	fclose(in);
 }
+
 EJ_VISIBLE void ej_speed_sponsor(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/speedtest_sponsor", "rb");

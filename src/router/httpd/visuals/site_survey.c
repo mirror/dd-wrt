@@ -315,14 +315,14 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				if (site_survey_lists[i].extcap & CAP_VHT)
-					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf,sizeof(speedbuf)));
+					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf,sizeof(speedbuf)));
+					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			} else {
 				if (site_survey_lists[i].extcap & CAP_VHT)
-					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf,sizeof(speedbuf)));
+					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf,sizeof(speedbuf)));
+					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			}
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
@@ -348,9 +348,9 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
 			} else {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
 			}
 
 		} else {
@@ -375,9 +375,9 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
 			} else {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf,sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
 			}
 		}
 

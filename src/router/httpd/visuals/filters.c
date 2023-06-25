@@ -91,15 +91,15 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *t
 					snprintf(tgt, len, "%d", isip1);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range0_1")){
+				if (!strcmp(type, "ip_range0_1")) {
 					snprintf(tgt, len, "%d", isip2);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range0_2")){
+				if (!strcmp(type, "ip_range0_2")) {
 					snprintf(tgt, len, "%d", isip3);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range0_3")){
+				if (!strcmp(type, "ip_range0_3")) {
 					snprintf(tgt, len, "%d", isip4);
 					return tgt;
 				}
@@ -115,19 +115,19 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *t
 					}
 				}
 
-				if (!strcmp(type, "ip_range0_4")){
+				if (!strcmp(type, "ip_range0_4")) {
 					snprintf(tgt, len, "%d", ieip1);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range0_5")){
+				if (!strcmp(type, "ip_range0_5")) {
 					snprintf(tgt, len, "%d", ieip2);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range0_6")){
+				if (!strcmp(type, "ip_range0_6")) {
 					snprintf(tgt, len, "%d", ieip3);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range0_7")){
+				if (!strcmp(type, "ip_range0_7")) {
 					snprintf(tgt, len, "%d", ieip4);
 					return tgt;
 				}
@@ -151,19 +151,18 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *t
 					snprintf(tgt, len, "%d", isip1);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range1_1")){
+				if (!strcmp(type, "ip_range1_1")) {
 					snprintf(tgt, len, "%d", isip2);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range1_2")){
+				if (!strcmp(type, "ip_range1_2")) {
 					snprintf(tgt, len, "%d", isip3);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range1_3")){
+				if (!strcmp(type, "ip_range1_3")) {
 					snprintf(tgt, len, "%d", isip4);
 					return tgt;
 				}
-
 
 				int ieip1, ieip2, ieip3, ieip4;
 				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3, &ieip4) != 4) {
@@ -177,20 +176,19 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *t
 					}
 				}
 
-
-				if (!strcmp(type, "ip_range1_4")){
+				if (!strcmp(type, "ip_range1_4")) {
 					snprintf(tgt, len, "%d", ieip1);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range1_5")){
+				if (!strcmp(type, "ip_range1_5")) {
 					snprintf(tgt, len, "%d", ieip2);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range1_6")){
+				if (!strcmp(type, "ip_range1_6")) {
 					snprintf(tgt, len, "%d", ieip3);
 					return tgt;
 				}
-				if (!strcmp(type, "ip_range1_7")){
+				if (!strcmp(type, "ip_range1_7")) {
 					snprintf(tgt, len, "%d", ieip4);
 					return tgt;
 				}
@@ -225,13 +223,13 @@ static char *filter_port_get(char *list, char *type, int which, char *buf, size_
 				}
 			}
 			if (!strcmp(type, "start")) {
-				strncpy(buf,len, start);
+				strncpy(buf, len, start);
 				return buf;
 			}
-			if (!strcmp(type, "end")){
-				strncpy(buf,len, end);
+			if (!strcmp(type, "end")) {
+				strncpy(buf, len, end);
 				return buf;
-			}		
+			}
 		}
 	}
 	if (!strcmp(type, "start") || !strcmp(type, "end"))

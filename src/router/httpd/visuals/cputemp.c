@@ -99,7 +99,7 @@ int getCoreTemp(char *p, size_t len, int *ridx, int acpi)
 		fscanf(fp, "%s", name);
 		fclose(fp);
 		if (acpi && !strncmp(name, "acpitz", 6)) {
-			snprintf(p, len,"/sys/class/hwmon/hwmon%d", idx);
+			snprintf(p, len, "/sys/class/hwmon/hwmon%d", idx);
 			*ridx = 0;
 			return 1;
 		}
@@ -111,7 +111,7 @@ int getCoreTemp(char *p, size_t len, int *ridx, int acpi)
 			fscanf(fp, "%s", name);
 			if (!strncmp(name, "Core", 4)) {
 				fclose(fp);
-				snprintf(p,len, "/sys/class/hwmon/hwmon%d", idx);
+				snprintf(p, len, "/sys/class/hwmon/hwmon%d", idx);
 				*ridx = tidx;
 				return 1;
 			}
@@ -365,11 +365,11 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (!disable_wifitemp) {
 		int c = getdevicecount();
 		for (i = 0; i < c; i++) {
-			#if !defined(HAVE_MT76)
+#if !defined(HAVE_MT76)
 			if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 				continue;
 			}
-			#endif
+#endif
 			char path[64];
 			int scan = 0;
 			for (scan = 0; scan < 20; scan++) {

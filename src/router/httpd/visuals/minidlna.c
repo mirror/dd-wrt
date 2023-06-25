@@ -77,7 +77,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			number[0] = '\0';
 		} else {
 			sprintf(buffer, "id=\"dlna_shares_row_%d\"", rows);
-			sprintf(number,"_%d", rows);
+			sprintf(number, "_%d", rows);
 		}
 
 		websWrite(wp, "<tr %s>\n", buffer);
