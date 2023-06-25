@@ -1394,7 +1394,7 @@ int softkill(char *name);
 int getmask(char *netmask);
 int doMultiCast(void);
 int getMTD(char *name);
-void getIPFromName(char *name, char *ip);
+void getIPFromName(char *name, char *ip,size_t len);
 int jffs_mounted(void);
 
 #define DEFAULT_USER "$1$gHo0JRUz$DhmErZyHtCmTxxKPPb13o."
@@ -1438,7 +1438,7 @@ int nvram_backup(char *filename);
 
 int nvram_restore(char *filename, int force);
 
-const char *getdefaultconfig(char *service, char *path, char *configname);
+const char *getdefaultconfig(char *service, char *path, size_t len, char *configname);
 
 void nvram_clear(void);
 int nvram_critical(char *name);
