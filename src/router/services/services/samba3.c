@@ -293,7 +293,7 @@ void start_samba3(void)
 	char c1[64];
 	char c2[64];
 	if (reload_process("ksmbd.mountd")) {
-		log_eval("ksmbd.mountd", "-c", getdefaultconfig(NULL, c1, "smb.conf"), "-u", getdefaultconfig(NULL, c2, sizeof(c2), "smb.db"));
+		log_eval("ksmbd.mountd", "-c", getdefaultconfig(NULL, c1, sizeof(c1), "smb.conf"), "-u", getdefaultconfig(NULL, c2, sizeof(c2), "smb.db"));
 	}
 #endif
 	return;
