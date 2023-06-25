@@ -1,6 +1,7 @@
  "lan_ipaddr" "LAN IP Address" "LANIPADDR"  "lan" "FALSE" "0"
  "fullswitch" "use fifth wan port" "NULL" "TRUE" "0"
  "lan_stp" "LAN STP Broadcasts" "CHOICE" "2" "0" "1" "FALSE" "0"
+ "arp_longdelay" "Keep active clients for 24 hours" "CHOICE" "2" "0" "1" "FALSE" "0"
  "no_bootfails" "Boot Failure Management" "CHOICE" "2" "0" "1" "FALSE" "0"
  "boot_fail_open" "Boot Failure Management" "CHOICE" "2" "0" "1" "FALSE" "0"
  "boot_fail_keepip" "Boot Failure Management" "CHOICE" "2" "0" "1" "FALSE" "0"
