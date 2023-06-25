@@ -330,7 +330,7 @@ void start_wds_check(void)
 				char *wdsnm = nvram_nget("wl%d_wds%d_netmask", c, s);
 
 				snprintf(wdsbc, 31, "%s", wdsip);
-				get_broadcast(wdsbc, wdsnm);
+				get_broadcast(wdsbc, sizeof(wdsbc), wdsnm);
 				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
 			}
 			/* 

@@ -76,6 +76,7 @@ void start_bootconfig(void)
 		sprintf(dev, "/dev/%sp1", disc);
 	else
 		sprintf(dev, "/dev/%s1", disc);
+	free(disc);
 	eval("mount", "-t", "ext2", dev, "/boot");
 	FILE *in = fopen("/boot/boot/grub/menu.lst", "rb");
 	if (!in)

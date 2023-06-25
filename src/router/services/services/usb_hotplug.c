@@ -474,12 +474,13 @@ static int usb_add_ufd(char *devpath)
 				continue;
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-			char check[32];
-			strcpy(check, getdisc());
+			char *check = getdisc());
 			if (!strncmp(entry->d_name, check, 5)) {
 				fprintf(stderr, "skip %s, since its the system drive\n", check);
+				free(check);
 				continue;
 			}
+			free(check);
 #endif
 			if (devpath) {
 				char devname[64];

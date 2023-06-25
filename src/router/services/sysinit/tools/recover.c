@@ -6,7 +6,9 @@ void start_backup(void)
 #elif HAVE_RB600
 	sprintf(drive, "/dev/sda");
 #else
-	sprintf(drive, "/dev/%s", getdisc());
+	char *d = getdisc();
+	sprintf(drive, "/dev/%s", d);
+	free(d);
 #endif
 	//backup nvram
 	fprintf(stderr, "backup nvram\n");

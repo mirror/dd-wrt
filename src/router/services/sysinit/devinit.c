@@ -191,6 +191,7 @@ void start_devinit(void)
 		sprintf(s_dev, "/dev/%sp3", s_disc);
 	else
 		sprintf(s_dev, "/dev/%s3", s_disc);
+	free(s_disc);
 	insmod("jbd2");
 	insmod("mbcache");
 	insmod("crc16");
@@ -304,6 +305,7 @@ void start_devinit(void)
 		unlink("/etc/nvram/offsets.db");
 	}
 	sprintf(dev, "/dev/%s", disk);
+	free(disk);
 	eval("hdparm", "-W", "0", dev);
 	eval("sdparm", "-s", "WCE", "-S", dev);
 	eval("sdparm", "-c", "WCE", "-S", dev);
