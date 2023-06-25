@@ -148,7 +148,7 @@
  "http_wanport"  "Router WAN Port"  "RANGE"  "0"  "65535"  "TRUE" "0"  
  "remote_upgrade"  "Remote Upgrade"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "mtu_enable"  "MTU enable"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
- "wan_mtu"  "WAN MTU"  "RANGE"  "576" "1500"  "FALSE" "0"  
+ "wan_mtu"  "WAN MTU"  "RANGE"  "576" "16320"  "FALSE" "0"  
  "forward_port"  "TCP/UDP Port Forward"  "FORWARDPROTO"  "FALSE" "0"  
  "port_trigger"  "TCP/UDP Port Trigger"  "PORTTRIGGER"  "FALSE" "0"  
  "static_route"  "Static Route"  "STATICROUTE"  "FALSE" "0"  
