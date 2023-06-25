@@ -29,7 +29,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <services.h>
-#define NODOG_CONF      "/tmp/etc/nodogsplash/nodogsplash.conf"
+#define NODOG_CONF      "nodogsplash.conf"
+#define NODOG_CONF_PATH "/tmp/" NODOG_CONF
 extern void addHost(char *host, char *ip, int withdomain);
 
 int mk_nodog_conf(void)
@@ -37,12 +38,8 @@ int mk_nodog_conf(void)
 	FILE *fp;
 	int i;
 
-	/*
-	 * BPsmythe: Write out a nocat.conf file 
-	 */
-	eval("mkdir", "-p", "/tmp/etc/nodogsplash/");
-	if (!(fp = fopen(NODOG_CONF, "w"))) {
-		perror(NODOG_CONF);
+	if (!(fp = fopen(NODOG_CONF_PATH, "w"))) {
+		perror(NODOG_CONF_PATH);
 		return errno;
 	}
 
@@ -109,7 +106,7 @@ void start_splashd(void)
 
 	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
-	eval("nodogsplash", "-c", NODOG_CONF);
+	eval("nodogsplash", "-c", getdefaultconfig("nodogsplash", path, sizeof(path), NODOG_CONF));
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
 	return;
 }
