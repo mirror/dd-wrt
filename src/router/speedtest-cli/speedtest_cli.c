@@ -26,7 +26,6 @@
 #define CONF_SERVER	"http://www.speedtest.net/speedtest-config.php"
 #define STATIC_SERVER	"https://www.speedtest.net/api/js/servers"
 
-#define CLOSEST_SERVERS_NUM 10
 #define DL_FILE_NUM 5
 #define DL_FILE_TIMES 10
 #define MAX_FILE_LEN 20
@@ -34,7 +33,9 @@
 #define UL_FILE_TIMES 10
 #define DOWNLOADSIZE 5000000
 #define UPLOADSIZE 2000000
-const char *search = NULL;
+static const char *search = NULL;
+static int maxsearch = 10;
+#define CLOSEST_SERVERS_NUM maxsearch
 
 /* Debug Print */
 #define DEBUG_NONE	0x000000
@@ -402,9 +403,9 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	int i;
 	char url[128];
 	if (search)
-		sprintf(url, "%s?search=%s", STATIC_SERVER, search);
+		sprintf(url, "%s?search=%s&limit=%d", STATIC_SERVER, search, maxsearch);
 	else
-		sprintf(url, "%s", STATIC_SERVER);
+		sprintf(url, "%s?limit=%d", STATIC_SERVER, maxsearch);
 	SPEEDTEST_INFO("%s\n", url);
 
 	download(url, "/tmp/speedtest-servers.php", 0, 0);
@@ -550,6 +551,8 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 	double latency[3], lat;
 
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
+		if (!servers[i].url)
+			break;
 		len = strlen(servers[i].url);
 		url = malloc(len - strlen("upload.php") + strlen("latency.txt") + 1);
 		strncpy(url, servers[i].url, len - strlen("upload.php"));
@@ -583,6 +586,8 @@ static int get_lowest_latency_server(server_config_t * servers, server_config_t 
 	}
 
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
+		if (!servers[i].url)
+			break;
 		if (i == 0) {
 			best = i;
 			lat = servers[i].latency;
@@ -633,15 +638,20 @@ static void *download_thread(void *ptr)
 	return NULL;
 }
 
+typedef struct THREAD {
+	pthread_t q;
+	int joined;
+} THREAD_T;
+
 static int test_download_speed(server_config_t * best_server)
 {
 	int i, j, k = 0, ret, url_len, queue_count = 0;
 	dl_thread_arg_t download_url[DL_FILE_NUM * DL_FILE_TIMES];
-	pthread_t q[dl_thread_num];
+	THREAD_T q[dl_thread_num];
 	double duration;
 	double time_dl_end;
 	FILE *fp_result;
-
+	memset(q, 0, sizeof(q));
 	SPEEDTEST_INFO("%s\n", best_server->url);
 	best_server->url[strlen(best_server->url) - strlen("speedtest/upload.php")] = '\0';
 
@@ -664,20 +674,24 @@ static int test_download_speed(server_config_t * best_server)
 					q[dl_thread_num - j - 1] = q[dl_thread_num - j - 2];
 				}
 				sprintf(download_url[i].file_count, "%d", i);
-				ret = pthread_create(q, NULL, download_thread, (void *)&download_url[i]);
+				q[0].joined = 0;
+				ret = pthread_create(&q[0].q, NULL, download_thread, (void *)&download_url[i]);
 				queue_count++;
 			}
 			if (queue_count == dl_thread_num) {
 				if (i == (DL_FILE_NUM * DL_FILE_TIMES - 1)) {
 					/* all task have been put in queue, consume all threads in queue */
 					for (j = 0; j < dl_thread_num; j++) {
-						pthread_join(q[dl_thread_num - 1 - j], NULL);
+						q[dl_thread_num - 1 - j].joined = 1;
+						pthread_join(q[dl_thread_num - 1 - j].q, NULL);
 						queue_count--;
 					}
 
 				} else {
 					/* consume a thread in queue to provide space for next task */
-					pthread_join(q[dl_thread_num - 1], NULL);
+
+					q[dl_thread_num - 1].joined = 1;
+					pthread_join(q[dl_thread_num - 1].q, NULL);
 					queue_count--;
 				}
 			}
@@ -688,7 +702,8 @@ static int test_download_speed(server_config_t * best_server)
 			duration = time_dl_end - time_dl_start;
 			if (duration > 10.0) {	// limit upload  
 				for (j = 0; j < dl_thread_num; j++) {
-					pthread_join(q[dl_thread_num - 1 - j], NULL);
+					if (!q[dl_thread_num - 1].joined)
+						pthread_join(q[dl_thread_num - 1 - j].q, NULL);
 				}
 				goto done;
 			}
@@ -749,7 +764,7 @@ static int test_upload_speed(server_config_t * best_server)
 	double time_ul_end;
 	int i, j, data_len, queue_count = 0;
 	ul_thread_arg_t upload_arg[UL_FILE_NUM * UL_FILE_TIMES];
-	pthread_t q[ul_thread_num];
+	THREAD_T q[ul_thread_num];
 	FILE *fp_result;
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
@@ -776,20 +791,23 @@ static int test_upload_speed(server_config_t * best_server)
 				for (j = 0; j < (ul_thread_num - 1); j++) {
 					q[ul_thread_num - j - 1] = q[ul_thread_num - j - 2];
 				}
-				pthread_create(q, NULL, upload_thread, (void *)&upload_arg[i]);
+				q[0].joined = 0;
+				pthread_create(&q[0].q, NULL, upload_thread, (void *)&upload_arg[i]);
 				queue_count++;
 			}
 			if (queue_count == ul_thread_num) {
 				if (i == ((UL_FILE_NUM * UL_FILE_TIMES) - 1)) {
 					/* all task have been put in queue, consume all threads in queue */
 					for (j = 0; j < ul_thread_num; j++) {
-						pthread_join(q[ul_thread_num - 1 - j], NULL);
+						q[ul_thread_num - 1 - j].joined = 1;
+						pthread_join(q[ul_thread_num - 1 - j].q, NULL);
 						queue_count--;
 					}
 
 				} else {
 					/* consume a thread in queue to provide space for next task */
-					pthread_join(q[ul_thread_num - 1], NULL);
+					q[ul_thread_num - 1].joined = 1;
+					pthread_join(q[ul_thread_num - 1].q, NULL);
 					queue_count--;
 				}
 			}
@@ -801,7 +819,8 @@ static int test_upload_speed(server_config_t * best_server)
 			duration = time_ul_end - time_ul_start;
 			if (duration > 10.0) {	// limit upload  
 				for (j = 0; j < dl_thread_num; j++) {
-					pthread_join(q[ul_thread_num - 1 - j], NULL);
+					if (!q[ul_thread_num - 1 - j].joined)
+						pthread_join(q[ul_thread_num - 1 - j].q, NULL);
 				}
 				goto done;
 			}
@@ -836,8 +855,9 @@ static int speedtest(int dl_enable, int ul_enable)
 {
 	int i;
 	client_config_t client;
-	server_config_t servers[CLOSEST_SERVERS_NUM];
+	server_config_t *servers;
 	server_config_t best_server;
+	servers = calloc(maxsearch, sizeof(*servers));
 
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
 		init_server(&servers[i]);
@@ -890,7 +910,7 @@ static int speedtest(int dl_enable, int ul_enable)
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
 		server_free(&servers[i]);
 	}
-
+	free(servers);
 	return 0;
 }
 
@@ -904,7 +924,7 @@ static void usage(void)
 	printf("\noptions\n");
 	printf("\t-d\n");
 	printf("\t\tturn on debug message\n");
-	printf("\t\tex. speedtest_cli -d 1 3 1 2 [search]\n");
+	printf("\t\tex. speedtest_cli -d 1 3 1 2 [search] [max results]\n");
 }
 
 int main(int argc, char **argv)
@@ -913,11 +933,11 @@ int main(int argc, char **argv)
 	int dl_enable, ul_enable;
 	curl_global_init(CURL_GLOBAL_ALL);
 
-	if (argc != 5 && argc != 6 && argc != 7) {
+	if (argc != 5 && argc != 6 && argc != 7 && argc != 8) {
 		usage();
 		return 0;
 	} else {
-		if (argc == 6 || argc == 7) {
+		if (argc == 6 || argc == 7 || argc == 8) {
 			if (!strcmp(argv[i], "-d")) {
 				i++;
 				debug_msg = DEBUG_INFO;
@@ -968,6 +988,9 @@ int main(int argc, char **argv)
 		i++;
 		if (i < argc)
 			search = argv[i];
+		i++;
+		if (i < argc)
+			maxsearch = atoi(argv[i]);
 
 	}
 
