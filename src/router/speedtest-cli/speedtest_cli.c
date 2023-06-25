@@ -40,6 +40,7 @@ static int maxsearch = 10;
 /* Debug Print */
 #define DEBUG_NONE	0x000000
 #define DEBUG_INFO	0x000001
+static int debug_msg = DEBUG_NONE;
 
 #define SPEEDTEST_INFO(fmt, arg...) \
 		do { if (debug_msg & DEBUG_INFO) \
@@ -83,6 +84,8 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
 	curl_easy_cleanup(hnd);
 	if (out)
 		fclose(out);
+//	SPEEDTEST_INFO("downloaded %ld bytes from %s\n", cnt, url);
+
 	return cnt;
 }
 
@@ -102,6 +105,7 @@ int upload(char *url, char *filedata, int size, int connecttimeout, int maxtimeo
 	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
 	curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+//	SPEEDTEST_INFO("upload %ld bytes to %s\n", len, url);
 
 	if (maxtimeout)
 		curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, (long)(maxtimeout * 1000));
@@ -120,7 +124,6 @@ static int dl_thread_num = 1;
 static int ul_thread_num = 1;
 static double time_dl_start;
 static double time_ul_start;
-static int debug_msg = DEBUG_NONE;
 
 typedef struct client_config {
 	char *ip;
@@ -778,7 +781,7 @@ static int test_upload_speed(server_config_t * best_server)
 	sprintf(databuf, "%s", tail);
 	for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
 		asprintf(&upload_arg[i].url, "%supload", best_server->url);
-		upload_arg[i].size = (int)round(UPLOADSIZE / strlen(data)) * strlen(data);
+		upload_arg[i].size = (int)round(UPLOADSIZE / strlen(databuf)) * strlen(databuf);
 		upload_arg[i].ul_file = mem;
 	}
 	if (get_uptime(&time_ul_start)) {
@@ -834,7 +837,7 @@ static int test_upload_speed(server_config_t * best_server)
 		return -1;
 	}
 	duration = time_ul_end - time_ul_start;
-	printf("speedtest_cli: Duration = %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
+	printf("speedtest_cli: Duration %.2f Upload = %.2f Mbit/s (%.2f Kbyte/s)\n", duration, ((finished / 1024 / 1024 / duration) * 8), (finished / 1024 / duration));
 
 	if (!(fp_result = fopen("/tmp/speedtest_upload_result", "w"))) {
 		perror("fopen /tmp/speedtest_upload_result");
