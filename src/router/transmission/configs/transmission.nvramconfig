@@ -3,6 +3,8 @@
  "transmission_download"  "Transmission Download Dir"  "NULL"  "FALSE" "0"
  "transmission_style"  "WEBUI Style"  "NULL"  "FALSE" "0"
  "transmission_rpc"  "WEB UI Port"  "NULL"  "FALSE" "0"
+ "transmission_down"  "Max global download speed"  "NULL"  "FALSE" "0"
+ "transmission_up"  "Max global upload speed"  "NULL"  "FALSE" "0"
  "transmission_script"  "Run after finish"  "NULL"  "FALSE" "0"
  "transmission_whitelist"  "Whitelist"  "NULL"  "FALSE" "0"
  "transmission_username"  "Username"  "NULL"  "FALSE" "0"
