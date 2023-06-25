@@ -27,6 +27,15 @@
 			<input size="6" maxlength="5" class="num" name="transmission_rpc" value="<% nvg("transmission_rpc"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.transmission_down"); %></div>
+			<input size="8" maxlength="8" class="num" name="transmission_down" value="<% nvg("transmission_down"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.transmission_up"); %></div>
+			
+			<input size="8" maxlength="8" class="num" name="transmission_up" value="<% nvg("transmission_up"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.transmission_style"); %></div>
 			<select name="transmission_style">
 				<option value="default" <% nvram_selected("transmission_style","default"); %>>Default</option>
