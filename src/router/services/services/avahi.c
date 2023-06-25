@@ -156,12 +156,12 @@ void start_mdns(void)
 	if (pidof("dbus-daemon") > 0) {
 		dd_loginfo("dbus-daemon", "dbus-daemon already running\n");
 	} else {
-		snprintf(conffile, sizeof(conffile), "--config-file=%s", getdefaultconfig("mdns", path, "avahi-dbus.conf"));
+		snprintf(conffile, sizeof(conffile), "--config-file=%s", getdefaultconfig("mdns", path, sizeof(path), "avahi-dbus.conf"));
 		log_eval("dbus-launch", conffile);
 	}
 #endif
 	if (reload_process("avahi-daemon")) {
-		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns", path, "mdns.conf"));
+		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns", path, sizeof(path), "mdns.conf"));
 		log_eval("avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
 	}
 	return;
