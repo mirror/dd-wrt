@@ -3,7 +3,7 @@ curl-static-clean:
 	$(MAKE) -C curl/build_static clean
 
 
-curl-static: openssl
+curl-static: bearssl
 	$(MAKE) -C curl/build_static
 
 curl-static-install:
