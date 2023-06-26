@@ -91,7 +91,7 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
 
 int upload(char *url, char *filedata, int size, int connecttimeout, int maxtimeout)
 {
-	size_t cnt;
+	size_t cnt = 0;
 	CURL *hnd;
 	hnd = curl_easy_init();
 	curl_off_t len = size;
