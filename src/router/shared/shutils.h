@@ -173,6 +173,8 @@ extern int strhas(char *list, char *key);
 char *strcat_r(const char *s1, const char *s2, char *buf);
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 
+#define strcat_r(s1, s2, buf) sizeof(buf) == sizeof(void *) ? strcat_r(s1, s2, buf) : strlcat_r(s1, s2, buf, sizeof(buf))
+
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
 extern int dd_snprintf(char *str, int len, const char *fmt, ...);
