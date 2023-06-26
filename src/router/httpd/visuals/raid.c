@@ -251,7 +251,9 @@ static char *getfsname(char *drive)
 	close_source(s);
 	return retvalue;
       err:;
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 	free(root);
+#endif
 	return NULL;
 }
 
