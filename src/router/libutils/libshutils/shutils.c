@@ -810,7 +810,7 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 }
 
 #endif
-
+#undef strcat_r
 char *strcat_r(const char *s1, const char *s2, char *buf)
 {
 	strcpy(buf, s1);
