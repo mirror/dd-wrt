@@ -818,6 +818,13 @@ char *strcat_r(const char *s1, const char *s2, char *buf)
 	return buf;
 }
 
+char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len)
+{
+	strlcpy(buf, s1, len);
+	strlcat(buf, s2, len);
+	return buf;
+}
+
 int strhas(char *list, char *value)
 {
 	char *next, word[32];
