@@ -89,7 +89,7 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
 	return cnt;
 }
 
-int upload(char *url, char *filedata, int size, int connecttimeout, int maxtimeout)
+size_t upload(char *url, char *filedata, int size, int connecttimeout, int maxtimeout)
 {
 	size_t cnt = 0;
 	CURL *hnd;
@@ -633,7 +633,6 @@ static void *download_thread(void *ptr)
 
 	in = (dl_thread_arg_t *) ptr;
 	size_t cnt = download(in->url, NULL, 0, 0);
-
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)cnt;
 	pthread_mutex_unlock(&finished_mutex);
@@ -705,7 +704,7 @@ static int test_download_speed(server_config_t * best_server)
 			duration = time_dl_end - time_dl_start;
 			if (duration > 10.0) {	// limit upload  
 				for (j = 0; j < dl_thread_num; j++) {
-					if (!q[dl_thread_num - 1].joined)
+					if (!q[dl_thread_num - 1 - j].joined)
 						pthread_join(q[dl_thread_num - 1 - j].q, NULL);
 				}
 				goto done;
@@ -749,7 +748,7 @@ static void *upload_thread(void *ptr)
 		return NULL;
 
 	in = (ul_thread_arg_t *) ptr;
-	upload(in->url, in->ul_file, in->size, 0, 0);
+	size_t size =  upload(in->url, in->ul_file, in->size, 0, 0);
 
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)in->size;
