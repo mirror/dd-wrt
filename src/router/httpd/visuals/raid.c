@@ -242,7 +242,9 @@ static char *getfsname(char *drive)
 	}
 
       ret:;
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 	free(root);
+#endif
 	set_discmessage_on();
 
 	/* finish it up */
