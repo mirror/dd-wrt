@@ -171,6 +171,7 @@ extern int strhas(char *list, char *key);
  * @return      buf
  */
 char *strcat_r(const char *s1, const char *s2, char *buf);
+char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
