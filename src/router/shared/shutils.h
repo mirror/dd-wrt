@@ -178,8 +178,9 @@ extern int dd_snprintf(char *str, int len, const char *fmt, ...);
 extern void *dd_malloc(size_t len);
 
 #define malloc(len) dd_malloc(len)
-
-#define sprintf(output,format,args...) sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ## args) : dd_snprintf(output, sizeof(output), format, ## args)
+#define dd_strlcpy(dst,src,len) ({strlcpy(dst,src,len); dst;})
+#define strcpy(dst,src) sizeof(dst) == sizeof(void *) ? strcpy(dst,src) : dd_strlcpy(dst,src,sizeof(dst))
+#define sprintf(output,format,args...) (sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ## args) : dd_snprintf(output, sizeof(output), format, ## args))
 #define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
 #define system(cmd) dd_system(cmd)
 #endif
