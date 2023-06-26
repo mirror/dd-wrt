@@ -22,15 +22,12 @@ void nvram_store_collection(const char *name, char *buf)
 	int c = 0;
 	int i, offset;
 	offset = 0;
-	cprintf("chaincount = %d\n", chaincount);
 	for (i = 0; i < chaincount; i++) {
 		n = malloc(strlen(name) + 16);
 		sprintf(n, "%s%d", name, c++);
-		cprintf("get chain name %s\n", n);
 		chain = malloc(1025);
 		memcpy(chain, &buf[offset], 1024);
 		chain[1024] = 0;
-		cprintf("story chain %s\n", chain);
 		nvram_set(n, chain);
 		offset += 1024;
 		free(n);
@@ -40,12 +37,10 @@ void nvram_store_collection(const char *name, char *buf)
 	if (rest) {
 		n = malloc(strlen(name) + 16);
 		sprintf(n, "%s%d", name, c);
-		cprintf("chainname = %s, malloc = %d\n", n, rest + 16);
 		chain = malloc(rest + 1);
 		memcpy(chain, &buf[offset], rest);
 		chain[rest] = 0;
 		nvram_set(n, chain);
-		cprintf("free mem\n");
 		free(n);
 		free(chain);
 	}
@@ -61,7 +56,7 @@ char *nvram_get_collection(const char *name)
 	int c = 0;
 	char n[65];
 
-	sprintf(n, "%s%d", name, c++);
+	snprintf(n, sizeof(n), "%s%d", name, c++);
 	cprintf("name = %s\n", n);
 	while (nvram_get(n) != NULL) {
 		char *chain = nvram_get(n);
@@ -74,7 +69,7 @@ char *nvram_get_collection(const char *name)
 		offset += strlen(chain);
 		chains[offset] = 0;
 		cprintf("copy %s\n", chains);
-		sprintf(n, "%s%d", name, c++);
+		snprintf(n, sizeof(n), "%s%d", name, c++);
 	}
 	return chains;
 }
@@ -122,14 +117,14 @@ int nvram_invmatchi(const char *name, const int invmatch)
 char *nvram_prefix_get(const char *name, const char *prefix)
 {
 	char p[64];
-	sprintf(p, "%s_%s", prefix, name);
+	snprintf(p, sizeof(p), "%s_%s", prefix, name);
 	return nvram_safe_get(p);
 }
 
 int nvram_prefix_match(const char *name, const char *prefix, const char *match)
 {
 	char p[64];
-	sprintf(p, "%s_%s", prefix, name);
+	snprintf(p, sizeof(p), "%s_%s", prefix, name);
 	return nvram_match(p, match);
 }
 
@@ -261,8 +256,8 @@ int nvram_default_matchi(const char *var, const int match, const int def)
 {
 	char m[32];
 	char d[32];
-	sprintf(m, "%d", match);
-	sprintf(d, "%d", def);
+	snprintf(m, sizeof(m), "%d", match);
+	snprintf(d, sizeof(d), "%d", def);
 	return nvram_default_match(var, m, d);
 }
 

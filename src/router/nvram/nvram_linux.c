@@ -174,9 +174,9 @@ static int _nvram_set(const char *name, const char *value)
 	}
 
 	if (value)
-		sprintf(buf, "%s=%s", name, value);
+		snprintf(buf, count, "%s=%s", name, value);
 	else
-		strcpy(buf, name);
+		strlcpy(buf, name, count);
 
 	count = 0;
 	while (buf[cnt] != 0) {
@@ -254,47 +254,6 @@ int _nvram_commit(void)
 	return ret;
 }
 
-#if 0
-int file2nvram(char *filename, char *varname)
-{
-	FILE *fp;
-
-	int c, count;
-	int i = 0, j = 0;
-	char mem[10000], buf[30000];
-
-	if (!(fp = fopen(filename, "rb")))
-		return 0;
-
-	count = fread(mem, 1, sizeof(mem), fp);
-	fclose(fp);
-	for (j = 0; j < count; j++) {
-		if (i > sizeof(buf) - 3)
-			break;
-		c = mem[j];
-		if (c >= 32 && c <= 126 && c != '~') {
-			buf[i++] = (unsigned char)c;
-		} else if (c == 13) {
-			buf[i++] = (unsigned char)c;
-		} else if (c == 0) {
-			buf[i++] = '~';
-		} else if (c == 10) {
-			buf[i++] = (unsigned char)c;
-		} else {
-			buf[i++] = '\\';
-			sprintf(buf + i, "%02X", c);
-			i += 2;
-		}
-	}
-	if (i == 0)
-		return 0;
-	buf[i] = 0;
-	//fprintf(stderr,"================ > file2nvram %s = [%s] \n",varname,buf); 
-	nvram_set(varname, buf);
-	return 0;
-
-}
-#endif
 int nvram2file(char *varname, char *filename)
 {
 	FILE *fp;
