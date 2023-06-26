@@ -124,7 +124,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "idx.mtu"));
 		char mtu[32];
 		sprintf(mtu, "%s_mtu", var);
-		websWrite(wp, "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s\" value=\"%s\" />\n", mtu, nvram_default_get(mtu, "1500"));
+		websWrite(wp, "<input class=\"num\" maxlength=\"5\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s\" value=\"%s\" />\n", mtu, nvram_default_get(mtu, "1500"));
 		websWrite(wp, "</div>\n");
 
 		char mcast[32];
