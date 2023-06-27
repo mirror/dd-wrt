@@ -26,7 +26,6 @@
 #define DEBUG_HTTPD 1
 #define DEBUG_SERVICE 2
 
-
 extern void dd_debug(int target, const char *fmt, ...);
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
@@ -74,7 +73,6 @@ extern int eval_va_silence_space(const char *cmd, ...);
 #define log_eval(cmd, args...) log_eval_va(cmd, ## args, NULL)
 #define eval_space(cmd, args...) eval_va_space(cmd, ## args, NULL)
 #define eval_silence(cmd, args...) eval_va_silence(cmd, ## args, NULL)
-
 
 int check_pid(int pid, char *name);
 int check_pidfromfile(char *pidfile, char *name);
@@ -132,12 +130,12 @@ struct nvram_param {
 	char *value;
 };
 
-extern struct nvram_param * load_defaults(void);
+extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
 extern char *strattach(char *src, char *attach, char *delimiter);
 extern char *strspcattach(char *src, char *attach);
-    
+
 extern int dd_system(const char *command);
 extern int sysprintf(const char *fmt, ...);
 extern int f_exists(const char *path);	// note: anything but a directory
@@ -174,6 +172,7 @@ char *strcat_r(const char *s1, const char *s2, char *buf);
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 
 #define strcat_r(s1, s2, buf) (sizeof(buf) == sizeof(void *) ? strcat_r(s1, s2, buf) : strlcat_r(s1, s2, buf, sizeof(buf)))
+#define strcat(buf, s1) (sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : ({strlcat(buf, sizeof(buf), s1);buf;}))
 
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
