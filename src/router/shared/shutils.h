@@ -173,7 +173,7 @@ extern int strhas(char *list, char *key);
 char *strcat_r(const char *s1, const char *s2, char *buf);
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 
-#define strcat_r(s1, s2, buf) sizeof(buf) == sizeof(void *) ? strcat_r(s1, s2, buf) : strlcat_r(s1, s2, buf, sizeof(buf))
+#define strcat_r(s1, s2, buf) (sizeof(buf) == sizeof(void *) ? strcat_r(s1, s2, buf) : strlcat_r(s1, s2, buf, sizeof(buf)))
 
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
@@ -182,8 +182,8 @@ extern void *dd_malloc(size_t len);
 
 #define malloc(len) dd_malloc(len)
 #define dd_strlcpy(dst,src,len) ({strlcpy(dst,src,len); dst;})
-#define strcpy(dst,src) sizeof(dst) == sizeof(void *) ? strcpy(dst,src) : dd_strlcpy(dst,src,sizeof(dst))
-#define sprintf(output,format,args...) sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ## args) : dd_snprintf(output, sizeof(output), format, ## args)
+#define strcpy(dst,src) (sizeof(dst) == sizeof(void *) ? strcpy(dst,src) : dd_strlcpy(dst,src,sizeof(dst)))
+#define sprintf(output,format,args...) (sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ## args) : dd_snprintf(output, sizeof(output), format, ## args))
 #define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
 #define system(cmd) dd_system(cmd)
 #endif
