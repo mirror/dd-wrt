@@ -840,7 +840,7 @@ void get_broadcast(char *ipaddr, size_t len, char *netmask)
 		ip[i] = (ip[i] & mask[i]) | (0xff & ~mask[i]);
 	}
 
-	sprintf(ipaddr, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+	snprintf(ipaddr, len, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 #ifdef WDS_DEBUG
 	fprintf(fp, "get_broadcast return %s\n", value);
 #endif
