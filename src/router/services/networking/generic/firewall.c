@@ -1207,7 +1207,7 @@ static int schedule_by_tod(FILE * cfd, int seq)
 			if (rotate == 1 && st == 0)
 				snprintf(wday_end + strlen(wday_end),sizeof(wday_end) - strlen(wday_end) , ",%d", end);
 			else if (rotate == 1 && end == 6)
-				snprintf(wday_st + strlen(wday_st),sizeof(wday_st) - strlen(wday_end), ",%d", st);
+				snprintf(wday_st + strlen(wday_st),sizeof(wday_st) - strlen(wday_st), ",%d", st);
 			else {
 				snprintf(wday_st + strlen(wday_st),sizeof(wday_st) - strlen(wday_st), ",%d", st);
 				snprintf(wday_end + strlen(wday_end),sizeof(wday_end) - strlen(wday_end), ",%d", end);
