@@ -1090,6 +1090,12 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 	free(dest);
 	return n;
 }
+#undef strcat
+
+char *dd_strncat(char *dst, size_t len, const char *src)
+{
+    return ((len-1) - strlen(dst)) > 0 ? strncat(buf, s1, ((len-1) - strlen(buf))) : dst;
+}
 
 u_int64_t freediskSpace(char *path)
 {
