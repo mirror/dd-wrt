@@ -821,8 +821,7 @@ char *strcat_r(const char *s1, const char *s2, char *buf)
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len)
 {
 	strlcpy(buf, s1, len);
-	strlcat(buf, s2, len);
-	return buf;
+	return strncat(buf, s2, (len - 1) - strlen(buf));
 }
 
 int strhas(char *list, char *value)
@@ -1318,7 +1317,7 @@ char *getdisc(void)		// works only for squashfs
 		if (detect < 0)
 			continue;
 		if (detect) {
-			
+
 			asprintf(&ret, "sd%c", i);
 			if (!nocache) {
 				nvram_set("root_disc", ret);
