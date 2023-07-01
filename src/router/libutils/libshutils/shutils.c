@@ -1081,7 +1081,7 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 
 char *dd_strncat(char *dst, size_t len, const char *src)
 {
-    return ((len-1) - strlen(dst)) > 0 ? strncat(buf, s1, ((len-1) - strlen(buf))) : dst;
+    return ((len-1) - strlen(dst)) > 0 ? strncat(dst, src, ((len-1) - strlen(dst))) : dst;
 }
 
 #undef strcat_r
