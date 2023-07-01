@@ -810,19 +810,6 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 }
 
 #endif
-#undef strcat_r
-char *strcat_r(const char *s1, const char *s2, char *buf)
-{
-	strcpy(buf, s1);
-	strcat(buf, s2);
-	return buf;
-}
-
-char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len)
-{
-	strlcpy(buf, s1, len);
-	return strncat(buf, s2, (len - 1) - strlen(buf));
-}
 
 int strhas(char *list, char *value)
 {
@@ -1095,6 +1082,20 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 char *dd_strncat(char *dst, size_t len, const char *src)
 {
     return ((len-1) - strlen(dst)) > 0 ? strncat(buf, s1, ((len-1) - strlen(buf))) : dst;
+}
+
+#undef strcat_r
+char *strcat_r(const char *s1, const char *s2, char *buf)
+{
+	strcpy(buf, s1);
+	strcat(buf, s2);
+	return buf;
+}
+
+char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len)
+{
+	strncpy(buf, s1, len - 1);
+	return dd_strncat(buf, len, s2);
 }
 
 u_int64_t freediskSpace(char *path)
