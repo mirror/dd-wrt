@@ -401,6 +401,7 @@ include $(srctree)/scripts/subarch.include
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 ARCH		?= $(SUBARCH)
+CROSS_COMPILE	?= ccache $(CONFIG_CROSS_COMPILE:"%"=%)
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -828,11 +829,14 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
-KBUILD_CFLAGS += -O2
+KBUILD_CFLAGS   += -O2 $(EXTRA_OPTIMIZATION)
 KBUILD_RUSTFLAGS += -Copt-level=2
 else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS += -Os
+KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
+KBUILD_CFLAGS	+= -fno-reorder-blocks -fno-tree-ch -fno-caller-saves $(EXTRA_OPTIMIZATION)
 KBUILD_RUSTFLAGS += -Copt-level=s
+else ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
+KBUILD_CFLAGS   += -fno-reorder-blocks -fno-tree-ch -fno-caller-saves-O3 $(EXTRA_OPTIMIZATION)
 endif
 
 # Always set `debug-assertions` and `overflow-checks` because their default
@@ -1018,6 +1022,9 @@ endif
 # arch Makefile may override CC so keep this after arch Makefile is included
 NOSTDINC_FLAGS += -nostdinc
 
+# improve gcc optimization
+CFLAGS += $(call cc-option,-funit-at-a-time,)
+
 # warn about C99 declaration after statement
 KBUILD_CFLAGS += -Wdeclaration-after-statement
 
@@ -1072,7 +1079,7 @@ KBUILD_CFLAGS   += -fconserve-stack
 endif
 
 # Prohibit date/time macros, which would make the build non-deterministic
-KBUILD_CFLAGS   += -Werror=date-time
+#KBUILD_CFLAGS   += -Werror=date-time
 
 # enforce correct pointer usage
 KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
