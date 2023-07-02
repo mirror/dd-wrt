@@ -366,21 +366,13 @@ monitor_insert_directory(int fd, char *name, const char * path)
 }
 
 int
-monitor_remove_directory(int fd, const char * path)
+monitor_remove_tree(const char * path)
 {
 	char * sql;
 	char **result;
 	int64_t detailID = 0;
 	int rows, i, ret = 1;
 
-	/* Invalidate the scanner cache so we don't insert files into non-existent containers */
-	valid_cache = 0;
-#ifdef HAVE_WATCH
-	if( fd > 0 )
-	{
-		monitor_remove_watch(fd, path);
-	}
-#endif
 	sql = sqlite3_mprintf("SELECT ID from DETAILS where (PATH > '%q/' and PATH <= '%q/%c')"
 	                      " or PATH = '%q'", path, path, 0xFF, path);
 	if( (sql_get_table(db, sql, &result, &rows, NULL) == SQLITE_OK) )
@@ -402,4 +394,18 @@ monitor_remove_directory(int fd, const char * path)
 	sql_exec(db, "DELETE from ALBUM_ART where (PATH > '%q/' and PATH <= '%q/%c')", path, path, 0xFF);
 
 	return ret;
+}
+
+int
+monitor_remove_directory(int fd, const char * path)
+{
+	/* Invalidate the scanner cache so we don't insert files into non-existent containers */
+	valid_cache = 0;
+#ifdef HAVE_WATCH
+	if( fd > 0 )
+	{
+		monitor_remove_watch(fd, path);
+	}
+#endif
+    return monitor_remove_tree(path);
 }

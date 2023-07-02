@@ -366,7 +366,16 @@ inotify_thread(void *arg)
 					if ( event->mask & IN_ISDIR )
 						monitor_remove_directory(pollfds[0].fd, path_buf);
 					else
+					{
 						monitor_remove_file(path_buf);
+						/*
+						 * When a symlink to a directory is deleted
+						 * we cannot tell it from a regular file deletion
+						 * to prevent its children from becoming orphans
+						 * we delete the whole tree when it exists
+						 */
+						monitor_remove_tree(path_buf);
+					}
 				}
 				free(esc_name);
 			}

@@ -813,7 +813,7 @@ get_child_count(const char *object, struct magic_container_s *magic)
 	else if (magic && magic->objectid && *(magic->objectid))
 		ret = sql_get_int_field(db, "SELECT count(*) from OBJECTS where PARENT_ID = '%s';", *(magic->objectid));
 	else
-		ret = sql_get_int_field(db, "SELECT count(*) from OBJECTS where PARENT_ID = '%s';", object);
+		ret = sql_get_int_field(db, "SELECT count(*) from OBJECTS where PARENT_ID = '%q';", object);
 
 	return (ret > 0) ? ret : 0;
 }
@@ -836,6 +836,9 @@ object_exists(const char *object)
 static int
 callback(void *args, int argc, char **argv, char **azColName)
 {
+	(void)args;
+	(void)argc;
+	(void)azColName;
 	struct Response *passed_args = (struct Response *)args;
 	char *id = argv[0], *parent = argv[1], *refID = argv[2], *detailID = argv[3], *class = argv[4], *size = argv[5], *title = argv[6],
 	     *duration = argv[7], *bitrate = argv[8], *sampleFrequency = argv[9], *artist = argv[10], *album = argv[11],
@@ -1307,6 +1310,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 static void
 BrowseContentDirectory(struct upnphttp * h, const char * action)
 {
+	(void)action;
 	static const char resp0[] =
 			"<u:BrowseResponse "
 			"xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">"
@@ -1829,6 +1833,7 @@ parse_search_criteria(const char *str, char *sep)
 static void
 SearchContentDirectory(struct upnphttp * h, const char * action)
 {
+	(void)action;
 	static const char resp0[] =
 			"<u:SearchResponse "
 			"xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">"
@@ -2075,6 +2080,7 @@ static void _kodi_decode(char *str)
 		case '/':
 			if (!str[1])
 				*str = '\0';
+			/* fall through */
 		default:
 			str++;
 			break;
@@ -2094,6 +2100,7 @@ static int duration_sec(const char *str)
 
 static void UpdateObject(struct upnphttp * h, const char * action)
 {
+	(void)action;
 	static const char resp[] =
 	    "<u:UpdateObjectResponse"
 	    " xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">"
@@ -2178,6 +2185,7 @@ static void UpdateObject(struct upnphttp * h, const char * action)
 static void
 SamsungGetFeatureList(struct upnphttp * h, const char * action)
 {
+	(void)action;
 	static const char resp[] =
 		"<u:X_GetFeatureListResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">"
 		"<FeatureList>"
@@ -2239,6 +2247,7 @@ static int sql_check(char *value_sql){//SQL injection prohibited
 static void
 SamsungSetBookmark(struct upnphttp * h, const char * action)
 {
+	(void)action;
 	static const char resp[] =
 	    "<u:X_SetBookmarkResponse"
 	    " xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">"

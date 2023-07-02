@@ -1,3 +1,9 @@
+1.3.3 - Released 1-Jun-2023
+--------------------------------
+- Fixed HTTP chunk length parsing.
+- Improved Dutch and Swedish translations.
+- Fixed directory symlink deletion handling.
+
 1.3.2 - Released 30-Aug-2022
 --------------------------------
 - Improved DNS rebinding attack protection.
