@@ -6,15 +6,28 @@
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
-	model = "ALFA Network AP120C-AC";
-	compatible = "alfa-network,ap120c-ac";
+	model = "Luma Home WRTQ-329ACN";
+	compatible = "luma,wrtq-329acn";
 
-	aliases {
-		led-boot = &status;
-		led-failsafe = &status;
-		led-running = &status;
-		led-upgrade = &status;
-		ethernet1 = &swport5;
+	i2c-gpio {
+		compatible = "i2c-gpio";
+		sda-gpios = <&tlmm 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&tlmm 0 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* No driver exists */
+		led_ring@48 {
+			compatible = "ti,msp430";
+			reg = <0x48>;
+		};
+
+		eeprom@50 {
+			compatible = "atmel,24c16";
+			reg = <0x50>;
+			pagesize = <16>;
+			read-only;
+		};
 	};
 
 	keys {
@@ -27,48 +40,9 @@
 		};
 	};
 
-	leds {
-		compatible = "gpio-leds";
-
-		status: status {
-			label = "blue:status";
-			gpios = <&tlmm 5 GPIO_ACTIVE_LOW>;
-			default-state = "keep";
-		};
-
-		wan {
-			label = "amber:wan";
-			gpios = <&ethphy4 1 GPIO_ACTIVE_HIGH>;
-		};
-
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-
-		wlan5g {
-			label = "red:wlan5g";
-			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1tpt";
-		};
-	};
-
 	soc {
 		rng@22000 {
 			status = "okay";
-		};
-
-		mdio@90000 {
-			status = "okay";
-
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-		};
-
-		counter@4a1000 {
-			compatible = "qcom,qca-gcnt";
-			reg = <0x4a1000 0x4>;
 		};
 
 		tcsr@1949000 {
@@ -101,11 +75,6 @@
 
 		usb3@8af8800 {
 			status = "okay";
-
-			dwc3@8a00000 {
-				phys = <&usb3_hs_phy>;
-				phy-names = "usb2-phy";
-			};
 		};
 
 		crypto@8e3a000 {
@@ -122,25 +91,14 @@
 	status = "okay";
 };
 
-&blsp1_i2c3 {
-	status = "okay";
-
-	pinctrl-0 = <&i2c0_pins>;
-	pinctrl-names = "default";
-
-	tpm@29 {
-		compatible = "atmel,at97sc3204t";
-		reg = <0x29>;
-	};
-};
 
 &blsp1_spi1 {
 	status = "okay";
 
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
+		   <&tlmm 59 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
-		   <&tlmm  4 GPIO_ACTIVE_HIGH>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -153,53 +111,61 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "SBL1";
-				reg = <0x00000000 0x00040000>;
+				label = "0:SBL1";
+				reg = <0x000000 0x040000>;
 				read-only;
 			};
 
 			partition@40000 {
-				label = "MIBIB";
-				reg = <0x00040000 0x00020000>;
+				label = "0:MIBIB";
+				reg = <0x040000 0x020000>;
 				read-only;
 			};
 
 			partition@60000 {
-				label = "QSEE";
-				reg = <0x00060000 0x00060000>;
+				label = "0:QSEE";
+				reg = <0x060000 0x060000>;
 				read-only;
 			};
 
 			partition@c0000 {
-				label = "CDT";
-				reg = <0x000c0000 0x00010000>;
+				label = "0:CDT";
+				reg = <0x0c0000 0x010000>;
 				read-only;
 			};
 
 			partition@d0000 {
-				label = "DDRPARAMS";
-				reg = <0x000d0000 0x00010000>;
+				label = "0:DDRPARAMS";
+				reg = <0x0d0000 0x010000>;
 				read-only;
 			};
 
 			partition@e0000 {
-				label = "APPSBLENV";
-				reg = <0x000e0000 0x00010000>;
+				label = "0:APPSBLENV";
+				reg = <0x0e0000 0x010000>;
 			};
 
 			partition@f0000 {
-				label = "APPSBL";
-				reg = <0x000f0000 0x00080000>;
+				label = "0:APPSBL";
+				reg = <0x0f0000 0x080000>;
 				read-only;
 			};
 
 			partition@170000 {
-				label = "ART";
-				reg = <0x00170000 0x00010000>;
+				label = "0:ART";
+				reg = <0x170000 0x010000>;
 				read-only;
 				compatible = "nvmem-cells";
 				#address-cells = <1>;
 				#size-cells = <1>;
+
+				macaddr_art_0: macaddr@0{
+					reg = <0x0000 0x0006>;
+				};
+
+				macaddr_art_6: macaddr@6{
+					reg = <0x0006 0x0006>;
+				};
 
 				precal_art_1000: precal@1000 {
 					reg = <0x1000 0x2f20>;
@@ -209,22 +175,12 @@
 					reg = <0x5000 0x2f20>;
 				};
 			};
-
-			partition@180000 {
-				label = "priv_data1";
-				reg = <0x00180000 0x00010000>;
-				read-only;
-			};
-
-			partition@190000 {
-				label = "priv_data2";
-				reg = <0x00190000 0x00010000>;
-				read-only;
-			};
 		};
 	};
 
-	nand@1 {
+	flash@1 {
+		status = "okay";
+
 		compatible = "spi-nand";
 		reg = <1>;
 		spi-max-frequency = <24000000>;
@@ -235,13 +191,8 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "rootfs1";
-				reg = <0x00000000 0x04000000>;
-			};
-
-			partition@4000000 {
-				label = "rootfs2";
-				reg = <0x04000000 0x04000000>;
+				label = "ubi";
+				reg = <0x0000000 0x8000000>;
 			};
 		};
 	};
@@ -258,56 +209,67 @@
 	status = "okay";
 };
 
-&ethphy4 {
-	gpio-controller;
-	#gpio-cells = <2>;
+&gmac {
+	status = "okay";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_6>;
+};
+
+&swport5 {
+	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_0>;
 };
 
 &tlmm {
-	i2c0_pins: i2c0_pinmux {
-		mux_i2c {
-			function = "blsp_i2c0";
-			pins = "gpio58", "gpio59";
-			drive-strength = <16>;
-			bias-disable;
-		};
-	};
-
-	mdio_pins: mdio_pinmux {
-		mux_mdio {
-			pins = "gpio53";
-			function = "mdio";
-			bias-pull-up;
-		};
-
-		mux_mdc {
-			pins = "gpio52";
-			function = "mdc";
-			bias-pull-up;
-		};
-	};
-
 	serial0_pins: serial0_pinmux {
-		mux_uart {
-			pins = "gpio60", "gpio61";
+		mux {
 			function = "blsp_uart0";
+			pins = "gpio60", "gpio61";
 			bias-disable;
 		};
 	};
 
 	spi0_pins: spi0_pinmux {
-		mux_spi {
+		mux {
 			function = "blsp_spi0";
 			pins = "gpio55", "gpio56", "gpio57";
-			drive-strength = <12>;
 			bias-disable;
+			drive-strength = <12>;
 		};
 
 		mux_cs {
 			function = "gpio";
-			pins = "gpio54", "gpio4";
-			drive-strength = <2>;
+			pins = "gpio54", "gpio59";
 			bias-disable;
+			drive-strength = <2>;
 			output-high;
 		};
 	};
@@ -321,21 +283,7 @@
 	status = "okay";
 };
 
-&gmac {
-	status = "okay";
-};
-
-&switch {
-	status = "okay";
-};
-
-&swport4 {
-	status = "okay";
-
-	label = "lan";
-};
-
-&swport5 {
+&usb3_ss_phy {
 	status = "okay";
 };
 
@@ -343,11 +291,12 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_1000>;
+	qcom,ath10k-calibration-variant = "Luma-WRTQ-329ACN";
 };
 
 &wifi1 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "ALFA-Network-AP120C-AC";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
+	qcom,ath10k-calibration-variant = "Luma-WRTQ-329ACN";
 };
