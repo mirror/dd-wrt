@@ -35,6 +35,11 @@ ifeq ($(CONFIG_ARCH_ACORN),y)
 OBJS		+= ll_char_wr.o font.o
 endif
 
+ifeq ($(CONFIG_ARCH_BCM_5301X),y)
+OBJS		+= head-bcm_5301x-mpcore.o
+OBJS		+= cache-v7-min.o
+endif
+
 ifeq ($(CONFIG_ARCH_SA1100),y)
 OBJS		+= head-sa1100.o
 endif

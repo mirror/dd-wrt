@@ -717,6 +717,10 @@ int ubi_io_read_ec_hdr(struct ubi_device *ubi, int pnum,
 	}
 
 	magic = be32_to_cpu(ec_hdr->magic);
+	if (magic == 0xdeadc0de)
+		erase_all_next = true;
+	if (erase_all_next)
+		return read_err ? UBI_IO_FF_BITFLIPS : UBI_IO_FF;
 	if (magic != UBI_EC_HDR_MAGIC) {
 		if (mtd_is_eccerr(read_err))
 			return UBI_IO_BAD_HDR_EBADMSG;

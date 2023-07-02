@@ -77,6 +77,8 @@ static int xhci_priv_resume_quirk(struct usb_hcd *hcd)
 static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
 {
 	struct xhci_plat_priv *priv = xhci_to_priv(xhci);
+	struct platform_device*pdev = to_platform_device(dev);
+	struct device_node *node = pdev->dev.of_node;
 
 	/*
 	 * As of now platform drivers don't provide MSI support so we ensure
@@ -84,6 +86,9 @@ static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
 	 * dev struct in order to setup MSI
 	 */
 	xhci->quirks |= XHCI_PLAT | priv->quirks;
+
+	if (node && of_machine_is_compatible("brcm,bcm4708"))
+		xhci->quirks |= XHCI_FAKE_DOORBELL;
 }
 
 /* called during probe() after chip reset completes */

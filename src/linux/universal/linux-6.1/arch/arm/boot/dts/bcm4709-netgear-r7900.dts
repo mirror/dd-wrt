@@ -1,0 +1,42 @@
+/*
+ * Broadcom BCM470X / BCM5301X ARM platform code.
+ * DTS for Netgear R7900
+ *
+ * Copyright (C) 2016 Rafał Miłecki <zajec5@gmail.com>
+ *
+ * Licensed under the GNU/GPL. See COPYING for details.
+ */
+
+/dts-v1/;
+
+#include "bcm4709.dtsi"
+#include "bcm5301x-nand-cs0-bch8.dtsi"
+
+/ {
+	compatible = "netgear,r7900", "brcm,bcm4709", "brcm,bcm4708";
+	model = "Netgear R7900";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	memory {
+		reg = <0x00000000 0x08000000
+		       0x88000000 0x08000000>;
+	};
+
+	axi@18000000 {
+		usb3@23000 {
+			reg = <0x00023000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};

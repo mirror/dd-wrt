@@ -820,6 +820,7 @@ extern struct mutex ubi_devices_mutex;
 extern struct blocking_notifier_head ubi_notifiers;
 
 /* attach.c */
+extern bool erase_all_next;
 struct ubi_ainf_peb *ubi_alloc_aeb(struct ubi_attach_info *ai, int pnum,
 				   int ec);
 void ubi_free_aeb(struct ubi_attach_info *ai, struct ubi_ainf_peb *aeb);

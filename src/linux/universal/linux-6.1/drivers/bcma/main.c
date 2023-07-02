@@ -330,14 +330,6 @@ static int bcma_register_devices(struct bcma_bus *bus)
 	}
 #endif
 
-#ifdef CONFIG_BCMA_SFLASH
-	if (bus->drv_cc.sflash.present) {
-		err = platform_device_register(&bcma_sflash_dev);
-		if (err)
-			bcma_err(bus, "Error registering serial flash\n");
-	}
-#endif
-
 #ifdef CONFIG_BCMA_NFLASH
 	if (bus->drv_cc.nflash.present) {
 		err = platform_device_register(&bcma_nflash_dev);
@@ -414,6 +406,14 @@ int bcma_bus_register(struct bcma_bus *bus)
 		if (bcma_is_core_needed_early(core->id.id))
 			bcma_register_core(bus, core);
 	}
+
+#ifdef CONFIG_BCMA_SFLASH
+	if (bus->drv_cc.sflash.present) {
+		err = platform_device_register(&bcma_sflash_dev);
+		if (err)
+			bcma_err(bus, "Error registering serial flash\n");
+	}
+#endif
 
 	/* Try to get SPROM */
 	err = bcma_sprom_get(bus);
