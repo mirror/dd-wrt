@@ -10,9 +10,15 @@
 #include <linux/slab.h>
 
 #include "do_mounts.h"
-#include "../fs/squashfs/squashfs_fs.h"
+#include <linux/squashfs_fs.h>
 
 #include <linux/decompress/generic.h>
+
+#ifdef CONFIG_X86
+#define BASE_ROOT ROOT_DEV[0]
+#else
+#define BASE_ROOT ROOT_DEV
+#endif
 
 static struct file *in_file, *out_file;
 static loff_t in_pos, out_pos;
@@ -278,7 +284,7 @@ out:
 
 int __init rd_load_disk(int n)
 {
-	create_dev("/dev/root", ROOT_DEV);
+	create_dev("/dev/root", BASE_ROOT);
 	create_dev("/dev/ram", MKDEV(RAMDISK_MAJOR, n));
 	return rd_load_image("/dev/root");
 }

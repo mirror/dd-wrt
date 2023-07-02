@@ -28,11 +28,21 @@
 #include "do_mounts.h"
 
 int root_mountflags = MS_RDONLY | MS_SILENT;
+
+#ifdef CONFIG_X86
+int root_devices=14;
+char * __initdata root_device_name2[14]={"/dev/hda2","/dev/hdb2","/dev/hdc2","/dev/hdd2", "/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2", "/dev/mmcblk0p2"};
+#define root_device_name root_device_name2[0]
+dev_t ROOT_DEV[13];
+#define BASE_ROOT ROOT_DEV[0]
+#else
 static char * __initdata root_device_name;
-static char __initdata saved_root_name[64];
+dev_t ROOT_DEV;
+#define BASE_ROOT ROOT_DEV
+#endif
+char __initdata saved_root_name[64];
 static int root_wait;
 
-dev_t ROOT_DEV;
 
 static int __init load_ramdisk(char *str)
 {
@@ -294,9 +304,13 @@ dev_t name_to_dev_t(const char *name)
 }
 EXPORT_SYMBOL_GPL(name_to_dev_t);
 
-static int __init root_dev_setup(char *line)
+int __init root_dev_setup(char *line)
 {
+#ifdef CONFIG_ARCH_MVEBU
+	strcpy(saved_root_name, "/dev/ubiblock0_0");
+#else
 	strscpy(saved_root_name, line, sizeof(saved_root_name));
+#endif
 	return 1;
 }
 
@@ -322,7 +336,12 @@ static int __init root_data_setup(char *str)
 static char * __initdata root_fs_names;
 static int __init fs_names_setup(char *str)
 {
-	root_fs_names = str;
+
+#ifdef CONFIG_ARCH_MVEBU	
+root_fs_names = "squashfs";
+#else
+root_fs_names = str;
+#endif
 	return 1;
 }
 
@@ -378,12 +397,12 @@ static int __init do_mount_root(const char *name, const char *fs,
 
 	init_chdir("/root");
 	s = current->fs->pwd.dentry->d_sb;
-	ROOT_DEV = s->s_dev;
+	BASE_ROOT = s->s_dev;
 	printk(KERN_INFO
 	       "VFS: Mounted root (%s filesystem)%s on device %u:%u.\n",
 	       s->s_type->name,
 	       sb_rdonly(s) ? " readonly" : "",
-	       MAJOR(ROOT_DEV), MINOR(ROOT_DEV));
+	       MAJOR(BASE_ROOT), MINOR(BASE_ROOT));
 
 out:
 	if (p)
@@ -391,7 +410,7 @@ out:
 	return ret;
 }
 
-void __init mount_block_root(char *name, int flags)
+int __init mount_block_root(char *name, int flags)
 {
 	struct page *page = alloc_page(GFP_KERNEL);
 	char *fs_names = page_address(page);
@@ -400,7 +419,7 @@ void __init mount_block_root(char *name, int flags)
 	int num_fs, i;
 
 	scnprintf(b, BDEVNAME_SIZE, "unknown-block(%u,%u)",
-		  MAJOR(ROOT_DEV), MINOR(ROOT_DEV));
+		  MAJOR(BASE_ROOT), MINOR(BASE_ROOT));
 	if (root_fs_names)
 		num_fs = split_fs_names(fs_names, PAGE_SIZE, root_fs_names);
 	else
@@ -419,6 +438,7 @@ retry:
 			case -EINVAL:
 				continue;
 		}
+#ifndef CONFIG_X86
 	        /*
 		 * Allow the user to distinguish between failed sys_open
 		 * and bad superblock on root device.
@@ -430,12 +450,14 @@ retry:
 
 		printk_all_partitions();
 		panic("VFS: Unable to mount root fs on %s", b);
+#endif
 	}
 	if (!(flags & SB_RDONLY)) {
 		flags |= SB_RDONLY;
 		goto retry;
 	}
 
+#ifndef CONFIG_X86
 	printk("List of all partitions:\n");
 	printk_all_partitions();
 	printk("No filesystem could mount root, tried: ");
@@ -443,8 +465,12 @@ retry:
 		printk(" %s", p);
 	printk("\n");
 	panic("VFS: Unable to mount root fs on %s", b);
+#else
+	return -1;
+#endif
 out:
 	put_page(page);
+	return 0;
 }
 
 #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
@@ -589,14 +615,14 @@ static int __init mount_nodev_root(void)
 void __init mount_root(void)
 {
 #ifdef CONFIG_ROOT_NFS
-	if (ROOT_DEV == Root_NFS) {
+	if (BASE_ROOT == Root_NFS) {
 		if (!mount_nfs_root())
 			printk(KERN_ERR "VFS: Unable to mount root fs via NFS.\n");
 		return;
 	}
 #endif
 #ifdef CONFIG_CIFS_ROOT
-	if (ROOT_DEV == Root_CIFS) {
+	if (BASE_ROOT == Root_CIFS) {
 		if (!mount_cifs_root())
 			printk(KERN_ERR "VFS: Unable to mount root fs via SMB.\n");
 		return;
@@ -606,18 +632,29 @@ void __init mount_root(void)
 	if (!mount_ubi_rootfs())
 		return;
 #endif
-	if (ROOT_DEV == 0 && root_device_name && root_fs_names) {
+	if (BASE_ROOT == 0 && root_device_name && root_fs_names) {
 		if (mount_nodev_root() == 0)
 			return;
 	}
 #ifdef CONFIG_BLOCK
 	{
+#ifdef CONFIG_X86
+ 	int i;
+ 	for (i = 0; i < root_devices; i++) {
+ 		create_dev("/dev/root", ROOT_DEV[i]);
+ 		int ret = mount_block_root("/dev/root", root_mountflags);
+ 		if (ret == 0)
+ 			return;
+ 	}
+ 	panic("unable to mount root\n");
+#else
 		int err = create_dev("/dev/root", ROOT_DEV);
 
 		if (err < 0)
 			pr_emerg("Failed to create /dev/root: %d\n", err);
 		mount_block_root("/dev/root", root_mountflags);
 	}
+#endif
 #endif
 }
 
@@ -644,6 +681,7 @@ void __init prepare_namespace(void)
 	md_run_setup();
 
 	if (saved_root_name[0]) {
+#ifndef CONFIG_X86
 		root_device_name = saved_root_name;
 		if (!strncmp(root_device_name, "mtd", 3) ||
 		    !strncmp(root_device_name, "ubi", 3)) {
@@ -653,17 +691,34 @@ void __init prepare_namespace(void)
 		ROOT_DEV = name_to_dev_t(root_device_name);
 		if (strncmp(root_device_name, "/dev/", 5) == 0)
 			root_device_name += 5;
+#else
+ 		int i;
+ 		for (i=0;i<root_devices;i++)
+ 		{
+ 		ROOT_DEV[i] = name_to_dev_t(root_device_name2[i]);
+ 		if (strncmp(root_device_name2[i], "/dev/", 5) == 0)
+ 			root_device_name2[i] += 5;
+  		}
+#endif
 	}
 
 	if (initrd_load())
 		goto out;
 
 	/* wait for any asynchronous scanning to complete */
-	if ((ROOT_DEV == 0) && root_wait) {
+#ifndef CONFIG_X86
+ 	if ((ROOT_DEV == 0) && root_wait) {
+#else
+	if (root_wait) {
+#endif
 		printk(KERN_INFO "Waiting for root device %s...\n",
 			saved_root_name);
+#ifndef CONFIG_X86
 		while (driver_probe_done() != 0 ||
 			(ROOT_DEV = name_to_dev_t(saved_root_name)) == 0)
+#else
+		while (driver_probe_done() != 0)
+#endif
 			msleep(5);
 		async_synchronize_full();
 	}
