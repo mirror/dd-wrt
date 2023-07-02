@@ -156,7 +156,6 @@ typedef struct server_config {
 
 typedef struct dl_thread_arg {
 	char *url;
-	char file_count[3];
 } dl_thread_arg_t;
 
 typedef struct ul_thread_arg {
@@ -254,7 +253,7 @@ static char *get_str_json(char *search, char **p)
 {
 	char *buf = *p;
 	char s[32];
-	sprintf(s, "\"%s\"", search);
+	snprintf(s, sizeof(s), "\"%s\"", search);
 	char *look = strstr(buf, s);
 	if (!look) {
 		return NULL;
@@ -406,9 +405,9 @@ static int get_nearest_servers(client_config_t * client, server_config_t * serve
 	int i;
 	char url[128];
 	if (search)
-		sprintf(url, "%s?search=%s&limit=%d", STATIC_SERVER, search, maxsearch);
+		snprintf(url, sizeof(url), "%s?search=%s&limit=%d", STATIC_SERVER, search, maxsearch);
 	else
-		sprintf(url, "%s?limit=%d", STATIC_SERVER, maxsearch);
+		snprintf(url, sizeof(url), "%s?limit=%d", STATIC_SERVER, maxsearch);
 	SPEEDTEST_INFO("%s\n", url);
 
 	download(url, "/tmp/speedtest-servers.php", 0, 0);
@@ -675,7 +674,6 @@ static int test_download_speed(server_config_t * best_server)
 				for (j = 0; j < (dl_thread_num - 1); j++) {
 					q[dl_thread_num - j - 1] = q[dl_thread_num - j - 2];
 				}
-				sprintf(download_url[i].file_count, "%d", i);
 				q[0].joined = 0;
 				ret = pthread_create(&q[0].q, NULL, download_thread, (void *)&download_url[i]);
 				queue_count++;
@@ -771,13 +769,14 @@ static int test_upload_speed(server_config_t * best_server)
 
 	SPEEDTEST_INFO("%s\n", best_server->url);
 	char *mem;
-	char *databuf = mem = malloc(UPLOADSIZE + strlen(head) + strlen(tail));
-	databuf += sprintf(databuf, "%s", head);
+	size_t datalen = UPLOADSIZE + strlen(head) + strlen(tail);
+	char *databuf = mem = malloc(datalen);
+	databuf += snprintf(databuf, datalen, "%s", head);
 	data_len = (int)round(UPLOADSIZE / strlen(data));
 	for (j = 0; j < (data_len - 1); j++) {
-		databuf += sprintf(databuf, "%s", data);
+		databuf += snprintf(databuf, datalen - ((size_t)databuf - (size_t)mem), "%s", data);
 	}
-	sprintf(databuf, "%s", tail);
+	snprintf(databuf, datalen - ((size_t)databuf - (size_t)mem), "%s", tail);
 	for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
 		asprintf(&upload_arg[i].url, "%supload", best_server->url);
 		upload_arg[i].size = (int)round(UPLOADSIZE / strlen(databuf)) * strlen(databuf);
