@@ -76,7 +76,7 @@ static int w1_gpio_probe(struct platform_device *pdev)
 	enum gpiod_flags gflags = GPIOD_OUT_LOW_OPEN_DRAIN;
 	int err;
 
-	if (of_have_populated_dt()) {
+	if (of_have_populated_dt() && !dev_get_platdata(&pdev->dev)) {
 		pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
 		if (!pdata)
 			return -ENOMEM;

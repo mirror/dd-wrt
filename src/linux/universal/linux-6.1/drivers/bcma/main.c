@@ -236,13 +236,17 @@ EXPORT_SYMBOL(bcma_core_irq);
 
 void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core)
 {
-	device_initialize(&core->dev);
+	struct device *dev = &core->dev;
+
+	device_initialize(dev);
 	core->dev.release = bcma_release_core_dev;
 	core->dev.bus = &bcma_bus_type;
-	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
+	dev_set_name(dev, "bcma%d:%d", bus->num, core->core_index);
 	core->dev.parent = bus->dev;
-	if (bus->dev)
+	if (bus->dev) {
 		bcma_of_fill_device(bus->dev, core);
+		dma_coerce_mask_and_coherent(dev, bus->dev->coherent_dma_mask);
+	}
 
 	switch (bus->hosttype) {
 	case BCMA_HOSTTYPE_PCI:
@@ -663,6 +667,14 @@ fs_initcall(bcma_init_bus_register);
 static int __init bcma_modinit(void)
 {
 	int err;
+
+#ifdef CONFIG_BCMA_FALLBACK_SPROM
+	err = bcma_fbs_register();
+	if (err) {
+		pr_err("Fallback SPROM initialization failed\n");
+		err = 0;
+	}
+#endif /* CONFIG_BCMA_FALLBACK_SPROM */
 
 	err = bcma_init_bus_register();
 	if (err)

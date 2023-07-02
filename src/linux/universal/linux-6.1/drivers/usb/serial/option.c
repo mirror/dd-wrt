@@ -244,6 +244,8 @@ static void option_instat_callback(struct urb *urb);
 #define UBLOX_PRODUCT_R410M			0x90b2
 /* These Yuga products use Qualcomm's vendor ID */
 #define YUGA_PRODUCT_CLM920_NC5			0x9625
+/* These MeigLink products use Qualcomm's vendor ID */
+#define MEIGLINK_PRODUCT_SLM750			0xf601
 
 #define QUECTEL_VENDOR_ID			0x2c7c
 /* These Quectel products use Quectel's vendor ID */
@@ -1173,6 +1175,11 @@ static const struct usb_device_id option_ids[] = {
 	  .driver_info = ZLP },
 	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_BG96),
 	  .driver_info = RSVD(4) },
+	/* Meiglink products using Qualcomm vendor ID */
+	// Works OK. In case of some issues check macros that are used by Quectel Products
+	{ USB_DEVICE_AND_INTERFACE_INFO(QUALCOMM_VENDOR_ID, MEIGLINK_PRODUCT_SLM750, 0xff, 0xff, 0xff),
+	  .driver_info = NUMEP2 },
+	{ USB_DEVICE_AND_INTERFACE_INFO(QUALCOMM_VENDOR_ID, MEIGLINK_PRODUCT_SLM750, 0xff, 0, 0) },
 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EP06, 0xff, 0xff, 0xff),
 	  .driver_info = RSVD(1) | RSVD(2) | RSVD(3) | RSVD(4) | NUMEP2 },
 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EP06, 0xff, 0, 0) },

@@ -404,6 +404,9 @@ static const struct sfp_quirk sfp_quirks[] = {
 	SFP_QUIRK("HUAWEI", "MA5671A", sfp_quirk_2500basex,
 		  sfp_fixup_ignore_tx_fault),
 
+	// OEM SFP-GE-T is 1000Base-T module
+	SFP_QUIRK_F("OEM", "SFP-GE-T", sfp_fixup_ignore_tx_fault),
+
 	// Lantech 8330-262D-E can operate at 2500base-X, but incorrectly report
 	// 2500MBd NRZ in their EEPROM
 	SFP_QUIRK_M("Lantech", "8330-262D-E", sfp_quirk_2500basex),
@@ -2339,7 +2342,8 @@ static void sfp_sm_main(struct sfp *sfp, unsigned int event)
 			 * or t_start_up, so assume there is a fault.
 			 */
 			sfp_sm_fault(sfp, SFP_S_INIT_TX_FAULT,
-				     sfp->sm_fault_retries == N_FAULT_INIT);
+				     !sfp->tx_fault_ignore &&
+				     (sfp->sm_fault_retries == N_FAULT_INIT));
 		} else if (event == SFP_E_TIMEOUT || event == SFP_E_TX_CLEAR) {
 	init_done:
 			/* Create mdiobus and start trying for PHY */
@@ -2568,10 +2572,12 @@ static void sfp_check_state(struct sfp *sfp)
 	mutex_lock(&sfp->st_mutex);
 	state = sfp_get_state(sfp);
 	changed = state ^ sfp->state;
-	if (sfp->tx_fault_ignore)
+	if (sfp->tx_fault_ignore) {
 		changed &= SFP_F_PRESENT | SFP_F_LOS;
-	else
+		state &= ~SFP_F_TX_FAULT;
+	} else {
 		changed &= SFP_F_PRESENT | SFP_F_LOS | SFP_F_TX_FAULT;
+	}
 
 	for (i = 0; i < GPIO_MAX; i++)
 		if (changed & BIT(i))

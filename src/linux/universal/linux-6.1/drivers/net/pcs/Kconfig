@@ -32,4 +32,11 @@ config PCS_ALTERA_TSE
 	  This module provides helper functions for the Altera Triple Speed
 	  Ethernet SGMII PCS, that can be found on the Intel Socfpga family.
 
+config PCS_MTK_LYNXI
+	tristate
+	select REGMAP
+	help
+	  This module provides helpers to phylink for managing the LynxI PCS
+	  which is part of MediaTek's SoC and Ethernet switch ICs.
+
 endmenu

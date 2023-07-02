@@ -3590,6 +3590,11 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	if (dev_nit_active(dev))
 		dev_queue_xmit_nit(skb, dev);
 
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+	if (dev->eth_mangle_tx && !(skb = dev->eth_mangle_tx(dev, skb)))
+		return NETDEV_TX_OK;
+#endif
+
 	len = skb->len;
 	trace_net_dev_start_xmit(skb, dev);
 	rc = netdev_start_xmit(skb, dev, txq, more);
@@ -4608,7 +4613,7 @@ static int napi_schedule_rps(struct softnet_data *sd)
 	struct softnet_data *mysd = this_cpu_ptr(&softnet_data);
 
 #ifdef CONFIG_RPS
-	if (sd != mysd) {
+	if (sd != mysd && !test_bit(NAPI_STATE_THREADED, &sd->backlog.state)) {
 		sd->rps_ipi_next = mysd->rps_ipi_list;
 		mysd->rps_ipi_list = sd;
 
@@ -5789,6 +5794,8 @@ static DEFINE_PER_CPU(struct work_struct, flush_works);
 /* Network device is going away, flush any packets still pending */
 static void flush_backlog(struct work_struct *work)
 {
+	unsigned int process_queue_empty;
+	bool threaded, flush_processq;
 	struct sk_buff *skb, *tmp;
 	struct softnet_data *sd;
 
@@ -5803,7 +5810,16 @@ static void flush_backlog(struct work_struct *work)
 			input_queue_head_incr(sd);
 		}
 	}
+
+	threaded = test_bit(NAPI_STATE_THREADED, &sd->backlog.state);
+	flush_processq = threaded &&
+			 !skb_queue_empty_lockless(&sd->process_queue);
+	if (flush_processq)
+		process_queue_empty = sd->process_queue_empty;
 	rps_unlock_irq_enable(sd);
+
+	if (threaded)
+		goto out;
 
 	skb_queue_walk_safe(&sd->process_queue, skb, tmp) {
 		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
@@ -5812,7 +5828,16 @@ static void flush_backlog(struct work_struct *work)
 			input_queue_head_incr(sd);
 		}
 	}
+
+out:
 	local_bh_enable();
+
+	while (flush_processq) {
+		msleep(1);
+		rps_lock_irq_disable(sd);
+		flush_processq = process_queue_empty == sd->process_queue_empty;
+		rps_unlock_irq_enable(sd);
+	}
 }
 
 static bool flush_required(int cpu)
@@ -5944,6 +5969,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
 		}
 
 		rps_lock_irq_disable(sd);
+		sd->process_queue_empty++;
 		if (skb_queue_empty(&sd->input_pkt_queue)) {
 			/*
 			 * Inline a custom version of __napi_complete().
@@ -5953,7 +5979,8 @@ static int process_backlog(struct napi_struct *napi, int quota)
 			 * We can use a plain write instead of clear_bit(),
 			 * and we dont need an smp_mb() memory barrier.
 			 */
-			napi->state = 0;
+			napi->state &= ~(NAPIF_STATE_SCHED |
+					 NAPIF_STATE_SCHED_THREADED);
 			again = false;
 		} else {
 			skb_queue_splice_tail_init(&sd->input_pkt_queue,
@@ -6368,6 +6395,55 @@ int dev_set_threaded(struct net_device *dev, bool threaded)
 	return err;
 }
 EXPORT_SYMBOL(dev_set_threaded);
+
+int backlog_set_threaded(bool threaded)
+{
+	static bool backlog_threaded;
+	int err = 0;
+	int i;
+
+	if (backlog_threaded == threaded)
+		return 0;
+
+	for_each_possible_cpu(i) {
+		struct softnet_data *sd = &per_cpu(softnet_data, i);
+		struct napi_struct *n = &sd->backlog;
+
+		if (n->thread)
+			continue;
+		n->thread = kthread_run(napi_threaded_poll, n, "napi/backlog-%d", i);
+		if (IS_ERR(n->thread)) {
+			err = PTR_ERR(n->thread);
+			pr_err("kthread_run failed with err %d\n", err);
+			n->thread = NULL;
+			threaded = false;
+			break;
+		}
+
+	}
+
+	backlog_threaded = threaded;
+
+	/* Make sure kthread is created before THREADED bit
+	 * is set.
+	 */
+	smp_mb__before_atomic();
+
+	for_each_possible_cpu(i) {
+		struct softnet_data *sd = &per_cpu(softnet_data, i);
+		struct napi_struct *n = &sd->backlog;
+		unsigned long flags;
+
+		rps_lock_irqsave(sd, &flags);
+		if (threaded)
+			n->state |= NAPIF_STATE_THREADED;
+		else
+			n->state &= ~NAPIF_STATE_THREADED;
+		rps_unlock_irq_restore(sd, &flags);
+	}
+
+	return err;
+}
 
 void netif_napi_add_weight(struct net_device *dev, struct napi_struct *napi,
 			   int (*poll)(struct napi_struct *, int), int weight)
@@ -7608,6 +7684,48 @@ static void __netdev_adjacent_dev_unlink_neighbour(struct net_device *dev,
 					   &upper_dev->adj_list.lower);
 }
 
+static void __netdev_addr_mask(unsigned char *mask, const unsigned char *addr,
+			       struct net_device *dev)
+{
+	int i;
+
+	for (i = 0; i < dev->addr_len; i++)
+		mask[i] |= addr[i] ^ dev->dev_addr[i];
+}
+
+static void __netdev_upper_mask(unsigned char *mask, struct net_device *dev,
+				struct net_device *lower)
+{
+	struct net_device *cur;
+	struct list_head *iter;
+
+	netdev_for_each_upper_dev_rcu(dev, cur, iter) {
+		__netdev_addr_mask(mask, cur->dev_addr, lower);
+		__netdev_upper_mask(mask, cur, lower);
+	}
+}
+
+static void __netdev_update_addr_mask(struct net_device *dev)
+{
+	unsigned char mask[MAX_ADDR_LEN];
+	struct net_device *cur;
+	struct list_head *iter;
+
+	memset(mask, 0, sizeof(mask));
+	__netdev_upper_mask(mask, dev, dev);
+	memcpy(dev->local_addr_mask, mask, dev->addr_len);
+
+	netdev_for_each_lower_dev(dev, cur, iter)
+		__netdev_update_addr_mask(cur);
+}
+
+static void netdev_update_addr_mask(struct net_device *dev)
+{
+	rcu_read_lock();
+	__netdev_update_addr_mask(dev);
+	rcu_read_unlock();
+}
+
 static int __netdev_upper_dev_link(struct net_device *dev,
 				   struct net_device *upper_dev, bool master,
 				   void *upper_priv, void *upper_info,
@@ -7659,6 +7777,7 @@ static int __netdev_upper_dev_link(struct net_device *dev,
 	if (ret)
 		return ret;
 
+	netdev_update_addr_mask(dev);
 	ret = call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
 					    &changeupper_info.info);
 	ret = notifier_to_errno(ret);
@@ -7755,6 +7874,7 @@ static void __netdev_upper_dev_unlink(struct net_device *dev,
 
 	__netdev_adjacent_dev_unlink_neighbour(dev, upper_dev);
 
+	netdev_update_addr_mask(dev);
 	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
 				      &changeupper_info.info);
 
@@ -8807,6 +8927,7 @@ int dev_set_mac_address(struct net_device *dev, struct sockaddr *sa,
 	if (err)
 		return err;
 	dev->addr_assign_type = NET_ADDR_SET;
+	netdev_update_addr_mask(dev);
 	call_netdevice_notifiers(NETDEV_CHANGEADDR, dev);
 	add_device_randomness(dev->dev_addr, dev->addr_len);
 	return 0;
@@ -11096,6 +11217,9 @@ static int dev_cpu_dead(unsigned int oldcpu)
 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
 	local_irq_enable();
 
+	if (test_bit(NAPI_STATE_THREADED, &oldsd->backlog.state))
+		return 0;
+
 #ifdef CONFIG_RPS
 	remsd = oldsd->rps_ipi_list;
 	oldsd->rps_ipi_list = NULL;
@@ -11399,6 +11523,7 @@ static int __init net_dev_init(void)
 		INIT_CSD(&sd->defer_csd, trigger_rx_softirq, sd);
 		spin_lock_init(&sd->defer_lock);
 
+		INIT_LIST_HEAD(&sd->backlog.poll_list);
 		init_gro_hash(&sd->backlog);
 		sd->backlog.poll = process_backlog;
 		sd->backlog.weight = weight_p;

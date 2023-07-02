@@ -778,6 +778,7 @@ struct ubi_attach_info {
 	int mean_ec;
 	uint64_t ec_sum;
 	int ec_count;
+	bool eof_found;
 	struct kmem_cache *aeb_slab_cache;
 	struct ubi_ec_hdr *ech;
 	struct ubi_vid_io_buf *vidb;

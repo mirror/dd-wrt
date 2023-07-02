@@ -57,13 +57,70 @@ static int of_get_mac_addr(struct device_node *np, const char *name, u8 *addr)
 	return -ENODEV;
 }
 
+static void *nvmem_cell_get_mac_address(struct nvmem_cell *cell)
+{
+	size_t len;
+	void *mac;
+
+	mac = nvmem_cell_read(cell, &len);
+	if (IS_ERR(mac))
+		return mac;
+	if (len != ETH_ALEN) {
+		kfree(mac);
+		return ERR_PTR(-EINVAL);
+	}
+	return mac;
+}
+
+static void *nvmem_cell_get_mac_address_ascii(struct nvmem_cell *cell)
+{
+	size_t len;
+	int ret;
+	void *mac_ascii;
+	u8 *mac;
+
+	mac_ascii = nvmem_cell_read(cell, &len);
+	if (IS_ERR(mac_ascii))
+		return mac_ascii;
+	if (len != ETH_ALEN*2+5) {
+		kfree(mac_ascii);
+		return ERR_PTR(-EINVAL);
+	}
+	mac = kmalloc(ETH_ALEN, GFP_KERNEL);
+	if (!mac) {
+		kfree(mac_ascii);
+		return ERR_PTR(-ENOMEM);
+	}
+	ret = sscanf(mac_ascii, "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
+				&mac[0], &mac[1], &mac[2],
+				&mac[3], &mac[4], &mac[5]);
+	kfree(mac_ascii);
+	if (ret == ETH_ALEN)
+		return mac;
+	kfree(mac);
+	return ERR_PTR(-EINVAL);
+}
+
+static struct nvmem_cell_mac_address_property {
+	char *name;
+	void *(*read)(struct nvmem_cell *);
+} nvmem_cell_mac_address_properties[] = {
+	{
+		.name = "mac-address",
+		.read = nvmem_cell_get_mac_address,
+	}, {
+		.name = "mac-address-ascii",
+		.read = nvmem_cell_get_mac_address_ascii,
+	},
+};
+
 static int of_get_mac_addr_nvmem(struct device_node *np, u8 *addr)
 {
 	struct platform_device *pdev = of_find_device_by_node(np);
+	struct nvmem_cell_mac_address_property *property;
 	struct nvmem_cell *cell;
 	const void *mac;
-	size_t len;
-	int ret;
+	int ret, i;
 
 	/* Try lookup by device first, there might be a nvmem_cell_lookup
 	 * associated with a given device.
@@ -74,17 +131,26 @@ static int of_get_mac_addr_nvmem(struct device_node *np, u8 *addr)
 		return ret;
 	}
 
-	cell = of_nvmem_cell_get(np, "mac-address");
+	for (i = 0; i < ARRAY_SIZE(nvmem_cell_mac_address_properties); i++) {
+		property = &nvmem_cell_mac_address_properties[i];
+		cell = of_nvmem_cell_get(np, property->name);
+		/* For -EPROBE_DEFER don't try other properties.
+		 * We'll get back to this one.
+		 */
+		if (!IS_ERR(cell) || PTR_ERR(cell) == -EPROBE_DEFER)
+			break;
+	}
+
 	if (IS_ERR(cell))
 		return PTR_ERR(cell);
 
-	mac = nvmem_cell_read(cell, &len);
+	mac = property->read(cell);
 	nvmem_cell_put(cell);
 
 	if (IS_ERR(mac))
 		return PTR_ERR(mac);
 
-	if (len != ETH_ALEN || !is_valid_ether_addr(mac)) {
+	if (!is_valid_ether_addr(mac)) {
 		kfree(mac);
 		return -EINVAL;
 	}
@@ -93,6 +159,27 @@ static int of_get_mac_addr_nvmem(struct device_node *np, u8 *addr)
 	kfree(mac);
 
 	return 0;
+}
+
+static int of_add_mac_address(struct device_node *np, u8* addr)
+{
+	struct property *prop;
+
+	prop = kzalloc(sizeof(*prop), GFP_KERNEL);
+	if (!prop)
+		return -ENOMEM;
+
+	prop->name = "mac-address";
+	prop->length = ETH_ALEN;
+	prop->value = kmemdup(addr, ETH_ALEN, GFP_KERNEL);
+	if (!prop->value || of_update_property(np, prop))
+		goto free;
+
+	return 0;
+free:
+	kfree(prop->value);
+	kfree(prop);
+	return -ENOMEM;
 }
 
 /**
@@ -119,28 +206,70 @@ static int of_get_mac_addr_nvmem(struct device_node *np, u8 *addr)
  * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
  * but is all zeros.
  *
+ * DT can tell the system to increment the mac-address after is extracted by
+ * using:
+ * - mac-address-increment-byte to decide what byte to increase
+ *   (if not defined is increased the last byte)
+ * - mac-address-increment to decide how much to increase. The value WILL
+ *   overflow to other bytes if the increment is over 255 or the total
+ *   increment will exceed 255 of the current byte.
+ *   (example 00:01:02:03:04:ff + 1 == 00:01:02:03:05:00)
+ *   (example 00:01:02:03:04:fe + 5 == 00:01:02:03:05:03)
+ *
  * Return: 0 on success and errno in case of error.
 */
 int of_get_mac_address(struct device_node *np, u8 *addr)
 {
+	u32 inc_idx, mac_inc, mac_val;
 	int ret;
+
+	/* Check first if the increment byte is present and valid.
+	 * If not set assume to increment the last byte if found.
+	 */
+	if (of_property_read_u32(np, "mac-address-increment-byte", &inc_idx))
+		inc_idx = 5;
+	if (inc_idx < 3 || inc_idx > 5)
+		return -EINVAL;
 
 	if (!np)
 		return -ENODEV;
 
 	ret = of_get_mac_addr(np, "mac-address", addr);
 	if (!ret)
-		return 0;
+		goto found;
 
 	ret = of_get_mac_addr(np, "local-mac-address", addr);
 	if (!ret)
-		return 0;
+		goto found;
 
 	ret = of_get_mac_addr(np, "address", addr);
 	if (!ret)
-		return 0;
+		goto found;
 
-	return of_get_mac_addr_nvmem(np, addr);
+	ret = of_get_mac_addr_nvmem(np, addr);
+	if (ret)
+		return ret;
+
+found:
+	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc)) {
+		/* Convert to a contiguous value */
+		mac_val = (addr[3] << 16) + (addr[4] << 8) + addr[5];
+		mac_val += mac_inc << 8 * (5-inc_idx);
+
+		/* Apply the incremented value handling overflow case */
+		addr[3] = (mac_val >> 16) & 0xff;
+		addr[4] = (mac_val >> 8) & 0xff;
+		addr[5] = (mac_val >> 0) & 0xff;
+
+		/* Remove mac-address-increment and mac-address-increment-byte
+		 * DT property to make sure MAC address would not get incremented
+		 * more if this function is stared again. */
+		of_remove_property(np, of_find_property(np, "mac-address-increment", NULL));
+		of_remove_property(np, of_find_property(np, "mac-address-increment-byte", NULL));
+	}
+
+	of_add_mac_address(np, addr);
+	return ret;
 }
 EXPORT_SYMBOL(of_get_mac_address);
 

@@ -19,6 +19,7 @@ config PACKET
 config PACKET_DIAG
 	tristate "Packet: sockets monitoring interface"
 	depends on PACKET
+	select SOCK_DIAG
 	default n
 	help
 	  Support for PF_PACKET sockets monitoring interface used by the ss tool.

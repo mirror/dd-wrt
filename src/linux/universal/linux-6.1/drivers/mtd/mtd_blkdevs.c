@@ -386,19 +386,8 @@ int add_mtd_blktrans_dev(struct mtd_blktrans_dev *new)
 	if (new->readonly)
 		set_disk_ro(gd, 1);
 
-	ret = device_add_disk(&new->mtd->dev, gd, NULL);
-	if (ret)
-		goto out_cleanup_disk;
-
-	if (new->disk_attributes) {
-		ret = sysfs_create_group(&disk_to_dev(gd)->kobj,
-					new->disk_attributes);
-		WARN_ON(ret);
-	}
 	return 0;
 
-out_cleanup_disk:
-	put_disk(new->disk);
 out_free_tag_set:
 	blk_mq_free_tag_set(new->tag_set);
 out_kfree_tag_set:
@@ -406,6 +395,35 @@ out_kfree_tag_set:
 out_list_del:
 	list_del(&new->list);
 	return ret;
+}
+
+void register_mtd_blktrans_devs(void)
+{
+	struct mtd_blktrans_ops *tr;
+	struct mtd_blktrans_dev *dev, *next;
+	int ret;
+
+	list_for_each_entry(tr, &blktrans_majors, list) {
+		list_for_each_entry_safe(dev, next, &tr->devs, list) {
+			if (disk_live(dev->disk))
+				continue;
+
+			ret = device_add_disk(&dev->mtd->dev, dev->disk, NULL);
+			if (ret)
+				goto out_cleanup_disk;
+
+			if (dev->disk_attributes) {
+				ret = sysfs_create_group(&disk_to_dev(dev->disk)->kobj,
+							dev->disk_attributes);
+				WARN_ON(ret);
+			}
+		}
+	}
+
+	return;
+
+out_cleanup_disk:
+	put_disk(dev->disk);
 }
 
 int del_mtd_blktrans_dev(struct mtd_blktrans_dev *old)

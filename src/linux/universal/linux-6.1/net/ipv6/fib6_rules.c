@@ -221,6 +221,10 @@ static int __fib6_rule_action(struct fib_rule *rule, struct flowi *flp,
 		err = -EACCES;
 		rt = net->ipv6.ip6_prohibit_entry;
 		goto discard_pkt;
+	case FR_ACT_POLICY_FAILED:
+		err = -EACCES;
+		rt = net->ipv6.ip6_policy_failed_entry;
+		goto discard_pkt;
 	}
 
 	tb_id = fib_rule_get_table(rule, arg);

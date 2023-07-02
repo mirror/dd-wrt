@@ -313,6 +313,7 @@ char *dynamic_dname(char *buffer, int buflen, const char *fmt, ...)
 	buffer += buflen - sz;
 	return memcpy(buffer, temp, sz);
 }
+EXPORT_SYMBOL_GPL(dynamic_dname);
 
 char *simple_dname(struct dentry *dentry, char *buffer, int buflen)
 {

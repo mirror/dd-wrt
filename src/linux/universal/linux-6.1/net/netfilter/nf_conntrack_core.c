@@ -2705,7 +2705,7 @@ int nf_conntrack_init_start(void)
 
 	if (!nf_conntrack_htable_size) {
 		nf_conntrack_htable_size
-			= (((nr_pages << PAGE_SHIFT) / 16384)
+			= (((nr_pages << PAGE_SHIFT) / 2048)
 			   / sizeof(struct hlist_head));
 		if (BITS_PER_LONG >= 64 &&
 		    nr_pages > (4 * (1024 * 1024 * 1024 / PAGE_SIZE)))

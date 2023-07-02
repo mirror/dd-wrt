@@ -25,10 +25,16 @@ if SSB
 config SSB_SPROM
 	bool
 
+config SSB_FALLBACK_SPROM
+	bool
+	depends on SSB_PCIHOST
+	default y
+
 # Support for Block-I/O. SELECT this from the driver that needs it.
 config SSB_BLOCKIO
 	bool
 	depends on SSB
+	default y
 
 config SSB_PCIHOST_POSSIBLE
 	bool
@@ -49,7 +55,7 @@ config SSB_PCIHOST
 config SSB_B43_PCI_BRIDGE
 	bool
 	depends on SSB_PCIHOST
-	default n
+	default y
 
 config SSB_PCMCIAHOST_POSSIBLE
 	bool

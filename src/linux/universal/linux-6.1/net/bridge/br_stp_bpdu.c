@@ -80,7 +80,8 @@ void br_send_config_bpdu(struct net_bridge_port *p, struct br_config_bpdu *bpdu)
 {
 	unsigned char buf[35];
 
-	if (p->br->stp_enabled != BR_KERNEL_STP)
+	if (p->br->stp_enabled != BR_KERNEL_STP ||
+	    (p->flags & BR_BPDU_FILTER))
 		return;
 
 	buf[0] = 0;
@@ -127,7 +128,8 @@ void br_send_tcn_bpdu(struct net_bridge_port *p)
 {
 	unsigned char buf[4];
 
-	if (p->br->stp_enabled != BR_KERNEL_STP)
+	if (p->br->stp_enabled != BR_KERNEL_STP ||
+	    (p->flags & BR_BPDU_FILTER))
 		return;
 
 	buf[0] = 0;
@@ -170,6 +172,9 @@ void br_stp_rcv(const struct stp_proto *proto, struct sk_buff *skb,
 		goto out;
 
 	if (!(br->dev->flags & IFF_UP))
+		goto out;
+
+	if (p->flags & BR_BPDU_FILTER)
 		goto out;
 
 	if (p->state == BR_STATE_DISABLED)

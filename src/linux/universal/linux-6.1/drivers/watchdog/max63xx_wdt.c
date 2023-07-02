@@ -27,6 +27,7 @@
 #include <linux/io.h>
 #include <linux/slab.h>
 #include <linux/property.h>
+#include <linux/gpio/consumer.h>
 
 #define DEFAULT_HEARTBEAT 60
 #define MAX_HEARTBEAT     60
@@ -52,6 +53,9 @@ struct max63xx_wdt {
 	/* memory mapping */
 	void __iomem *base;
 	spinlock_t lock;
+
+	/* GPIOs */
+	struct gpio_desc *gpio_wdi;
 
 	/* WDI and WSET bits write access routines */
 	void (*ping)(struct max63xx_wdt *wdt);
@@ -158,6 +162,17 @@ static const struct watchdog_info max63xx_wdt_info = {
 	.identity = "max63xx Watchdog",
 };
 
+static void max63xx_gpio_ping(struct max63xx_wdt *wdt)
+{
+	spin_lock(&wdt->lock);
+
+	gpiod_set_value(wdt->gpio_wdi, 1);
+	udelay(1);
+	gpiod_set_value(wdt->gpio_wdi, 0);
+
+	spin_unlock(&wdt->lock);
+}
+
 static void max63xx_mmap_ping(struct max63xx_wdt *wdt)
 {
 	u8 val;
@@ -225,9 +240,18 @@ static int max63xx_wdt_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	wdt->gpio_wdi = devm_gpiod_get(dev, NULL, GPIOD_FLAGS_BIT_DIR_OUT);
+	if (IS_ERR(wdt->gpio_wdi) && PTR_ERR(wdt->gpio_wdi) != -ENOENT)
+		return dev_err_probe(dev, PTR_ERR(wdt->gpio_wdi),
+				     "unable to request gpio: %ld\n",
+				     PTR_ERR(wdt->gpio_wdi));
+
 	err = max63xx_mmap_init(pdev, wdt);
 	if (err)
 		return err;
+
+	if (!IS_ERR(wdt->gpio_wdi))
+		wdt->ping = max63xx_gpio_ping;
 
 	platform_set_drvdata(pdev, &wdt->wdd);
 	watchdog_set_drvdata(&wdt->wdd, wdt);

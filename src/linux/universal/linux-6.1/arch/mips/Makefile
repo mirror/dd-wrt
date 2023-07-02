@@ -94,11 +94,21 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlinuz
 # machines may also.  Since BFD is incredibly buggy with respect to
 # crossformat linking we rely on the elf2ecoff tool for format conversion.
 #
-cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
+cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
 cflags-y			+= -msoft-float
 LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
+ifdef CONFIG_64BIT
 KBUILD_AFLAGS_MODULE		+= -mlong-calls
 KBUILD_CFLAGS_MODULE		+= -mlong-calls
+else
+  ifdef CONFIG_DYNAMIC_FTRACE
+    KBUILD_AFLAGS_MODULE	+= -mlong-calls
+    KBUILD_CFLAGS_MODULE	+= -mlong-calls
+  else
+    KBUILD_AFLAGS_MODULE	+= -mno-long-calls
+    KBUILD_CFLAGS_MODULE	+= -mno-long-calls
+  endif
+endif
 
 ifeq ($(CONFIG_RELOCATABLE),y)
 LDFLAGS_vmlinux			+= --emit-relocs
@@ -162,7 +172,7 @@ cflags-$(CONFIG_CPU_R4300)	+= -march=r4300 -Wa,--trap
 cflags-$(CONFIG_CPU_R4X00)	+= -march=r4600 -Wa,--trap
 cflags-$(CONFIG_CPU_TX49XX)	+= -march=r4600 -Wa,--trap
 cflags-$(CONFIG_CPU_MIPS32_R1)	+= -march=mips32 -Wa,--trap
-cflags-$(CONFIG_CPU_MIPS32_R2)	+= -march=mips32r2 -Wa,--trap
+cflags-$(CONFIG_CPU_MIPS32_R2)	+= -march=mips32r2 -mtune=34kc -Wa,--trap
 cflags-$(CONFIG_CPU_MIPS32_R5)	+= -march=mips32r5 -Wa,--trap -modd-spreg
 cflags-$(CONFIG_CPU_MIPS32_R6)	+= -march=mips32r6 -Wa,--trap -modd-spreg
 cflags-$(CONFIG_CPU_MIPS64_R1)	+= -march=mips64 -Wa,--trap

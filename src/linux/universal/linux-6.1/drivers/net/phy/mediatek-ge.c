@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
+#include <linux/of.h>
 #include <linux/bitfield.h>
 #include <linux/module.h>
 #include <linux/phy.h>
@@ -53,6 +54,36 @@ static int mt7530_phy_config_init(struct phy_device *phydev)
 	return 0;
 }
 
+static int mt7530_led_config_of(struct phy_device *phydev)
+{
+	struct device_node *np = phydev->mdio.dev.of_node;
+	const __be32 *paddr;
+	int len;
+	int i;
+
+	paddr = of_get_property(np, "mediatek,led-config", &len);
+	if (!paddr)
+		return 0;
+
+	if (len < (2 * sizeof(*paddr)))
+		return -EINVAL;
+
+	len /= sizeof(*paddr);
+
+	phydev_warn(phydev, "Configure LED registers (num=%d)\n", len);
+	for (i = 0; i < len - 1; i += 2) {
+		u32 reg;
+		u32 val;
+
+		reg = be32_to_cpup(paddr + i);
+		val = be32_to_cpup(paddr + i + 1);
+
+		phy_write_mmd(phydev, MDIO_MMD_VEND2, reg, val);
+	}
+
+	return 0;
+}
+
 static int mt7531_phy_config_init(struct phy_device *phydev)
 {
 	mtk_gephy_config_init(phydev);
@@ -64,6 +95,9 @@ static int mt7531_phy_config_init(struct phy_device *phydev)
 	/* Set TX Pair delay selection */
 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x13, 0x404);
 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x14, 0x404);
+
+	/* LED Config*/
+	mt7530_led_config_of(phydev);
 
 	return 0;
 }

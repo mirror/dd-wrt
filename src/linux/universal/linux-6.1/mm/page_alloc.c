@@ -7911,7 +7911,7 @@ static void __init alloc_node_mem_map(struct pglist_data *pgdat)
 	if (pgdat == NODE_DATA(0)) {
 		mem_map = NODE_DATA(0)->node_mem_map;
 		if (page_to_pfn(mem_map) != pgdat->node_start_pfn)
-			mem_map -= offset;
+			mem_map -= offset + (pgdat->node_start_pfn - ARCH_PFN_OFFSET);
 	}
 #endif
 }
@@ -7957,6 +7957,7 @@ static void __init free_area_init_node(int nid)
 	pgdat_set_deferred_range(pgdat);
 
 	free_area_init_core(pgdat);
+	lru_gen_init_pgdat(pgdat);
 }
 
 static void __init free_area_init_memoryless_node(int nid)

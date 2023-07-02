@@ -91,6 +91,7 @@ endif
 ifeq ($(CONFIG_USE_OF),y)
 OBJS	+= $(libfdt_objs) fdt_check_mem_start.o
 endif
+KBUILD_CFLAGS_KERNEL := $(patsubst -f%-sections,,$(KBUILD_CFLAGS_KERNEL))
 
 OBJS	+= lib1funcs.o ashldi3.o bswapsdi2.o
 

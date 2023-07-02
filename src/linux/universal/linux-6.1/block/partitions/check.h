@@ -57,6 +57,7 @@ int amiga_partition(struct parsed_partitions *state);
 int atari_partition(struct parsed_partitions *state);
 int cmdline_partition(struct parsed_partitions *state);
 int efi_partition(struct parsed_partitions *state);
+int fit_partition(struct parsed_partitions *state);
 int ibm_partition(struct parsed_partitions *);
 int karma_partition(struct parsed_partitions *state);
 int ldm_partition(struct parsed_partitions *state);
@@ -67,3 +68,5 @@ int sgi_partition(struct parsed_partitions *state);
 int sun_partition(struct parsed_partitions *state);
 int sysv68_partition(struct parsed_partitions *state);
 int ultrix_partition(struct parsed_partitions *state);
+
+int parse_fit_partitions(struct parsed_partitions *state, u64 start_sector, u64 nr_sectors, int *slot, int add_remain);

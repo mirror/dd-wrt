@@ -136,6 +136,7 @@ struct packet_sock {
 	int			(*xmit)(struct sk_buff *skb);
 	struct packet_type	prot_hook ____cacheline_aligned_in_smp;
 	atomic_t		tp_drops ____cacheline_aligned_in_smp;
+	unsigned int		pkt_type;
 };
 
 static inline struct packet_sock *pkt_sk(struct sock *sk)

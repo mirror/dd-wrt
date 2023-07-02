@@ -495,6 +495,8 @@ static inline bool uboot_arg_invalid(unsigned long addr)
 /* We always pass 0 as magic from U-boot */
 #define UBOOT_MAGIC_VALUE	0
 
+extern struct boot_param_header __image_dtb;
+
 void __init handle_uboot_args(void)
 {
 	bool use_embedded_dtb = true;
@@ -533,7 +535,7 @@ void __init handle_uboot_args(void)
 ignore_uboot_args:
 
 	if (use_embedded_dtb) {
-		machine_desc = setup_machine_fdt(__dtb_start);
+		machine_desc = setup_machine_fdt(&__image_dtb);
 		if (!machine_desc)
 			panic("Embedded DT invalid\n");
 	}

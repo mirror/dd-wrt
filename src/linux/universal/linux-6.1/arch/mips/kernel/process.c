@@ -394,6 +394,8 @@ static inline int is_sp_move_ins(union mips_instruction *ip, int *frame_size)
 
 	if (ip->i_format.opcode == addiu_op ||
 	    ip->i_format.opcode == daddiu_op) {
+		if (ip->i_format.simmediate > 0)
+			return 0;
 		*frame_size = -ip->i_format.simmediate;
 		return 1;
 	}

@@ -988,6 +988,7 @@ size_t modinfo_attrs_count = ARRAY_SIZE(modinfo_attrs);
 
 static const char vermagic[] = VERMAGIC_STRING;
 
+#if defined(CONFIG_MODVERSIONS) || !defined(CONFIG_MODULE_STRIPPED)
 int try_to_force_load(struct module *mod, const char *reason)
 {
 #ifdef CONFIG_MODULE_FORCE_LOAD
@@ -999,6 +1000,7 @@ int try_to_force_load(struct module *mod, const char *reason)
 	return -ENOEXEC;
 #endif
 }
+#endif
 
 static char *get_modinfo(const struct load_info *info, const char *tag);
 static char *get_next_modinfo(const struct load_info *info, const char *tag,
@@ -1950,8 +1952,10 @@ static int setup_load_info(struct load_info *info, int flags)
 
 static int check_modinfo(struct module *mod, struct load_info *info, int flags)
 {
-	const char *modmagic = get_modinfo(info, "vermagic");
 	int err;
+
+#ifndef CONFIG_MODULE_STRIPPED
+	const char *modmagic = get_modinfo(info, "vermagic");
 
 	if (flags & MODULE_INIT_IGNORE_VERMAGIC)
 		modmagic = NULL;
@@ -1973,6 +1977,7 @@ static int check_modinfo(struct module *mod, struct load_info *info, int flags)
 				mod->name);
 		add_taint_module(mod, TAINT_OOT_MODULE, LOCKDEP_STILL_OK);
 	}
+#endif
 
 	check_modinfo_retpoline(mod, info);
 

@@ -170,6 +170,7 @@ static int bcm2835_rng_probe(struct platform_device *pdev)
 	priv->rng.init = bcm2835_rng_init;
 	priv->rng.read = bcm2835_rng_read;
 	priv->rng.cleanup = bcm2835_rng_cleanup;
+	priv->rng.quality = 1000;
 
 	if (dev_of_node(dev)) {
 		rng_id = of_match_node(bcm2835_rng_of_match, dev->of_node);

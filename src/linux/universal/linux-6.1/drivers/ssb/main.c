@@ -1287,6 +1287,14 @@ static int __init ssb_modinit(void)
 {
 	int err;
 
+#ifdef CONFIG_SSB_FALLBACK_SPROM
+	err = ssb_fbs_register();
+	if (err) {
+		pr_err("Fallback SPROM initialization failed\n");
+		err = 0;
+	}
+#endif /* CONFIG_SSB_FALLBACK_SPROM */
+
 	/* See the comment at the ssb_is_early_boot definition */
 	ssb_is_early_boot = 0;
 	err = bus_register(&ssb_bustype);

@@ -614,8 +614,8 @@ static int jffs2_rmdir (struct inode *dir_i, struct dentry *dentry)
 	return ret;
 }
 
-static int jffs2_mknod (struct user_namespace *mnt_userns, struct inode *dir_i,
-		        struct dentry *dentry, umode_t mode, dev_t rdev)
+static int __jffs2_mknod (struct user_namespace *mnt_userns, struct inode *dir_i,
+			  struct dentry *dentry, umode_t mode, dev_t rdev, bool whiteout)
 {
 	struct jffs2_inode_info *f, *dir_f;
 	struct jffs2_sb_info *c;
@@ -754,12 +754,29 @@ static int jffs2_mknod (struct user_namespace *mnt_userns, struct inode *dir_i,
 	mutex_unlock(&dir_f->sem);
 	jffs2_complete_reservation(c);
 
-	d_instantiate_new(dentry, inode);
+	if (!whiteout)
+		d_instantiate_new(dentry, inode);
+	else
+		unlock_new_inode(inode);
+
 	return 0;
 
  fail:
 	iget_failed(inode);
 	return ret;
+}
+
+static int jffs2_mknod (struct user_namespace *mnt_userns, struct inode *dir_i,
+			  struct dentry *dentry, umode_t mode, dev_t rdev)
+{
+	return __jffs2_mknod(mnt_userns, dir_i, dentry, mode, rdev, false);
+}
+
+static int jffs2_whiteout (struct user_namespace *mnt_userns, struct inode *old_dir,
+			    struct dentry *old_dentry)
+{
+	return __jffs2_mknod(mnt_userns, old_dir, old_dentry, S_IFCHR | WHITEOUT_MODE,
+			     WHITEOUT_DEV, true);
 }
 
 static int jffs2_rename (struct user_namespace *mnt_userns,
@@ -770,18 +787,31 @@ static int jffs2_rename (struct user_namespace *mnt_userns,
 	int ret;
 	struct jffs2_sb_info *c = JFFS2_SB_INFO(old_dir_i->i_sb);
 	struct jffs2_inode_info *victim_f = NULL;
+	struct inode *fst_inode = d_inode(old_dentry);
+	struct inode *snd_inode = d_inode(new_dentry);
 	uint8_t type;
 	uint32_t now;
 
-	if (flags & ~RENAME_NOREPLACE)
+	if (flags & ~(RENAME_NOREPLACE|RENAME_WHITEOUT|RENAME_EXCHANGE))
 		return -EINVAL;
+
+	if ((flags & RENAME_EXCHANGE) && (old_dir_i != new_dir_i)) {
+		if (S_ISDIR(fst_inode->i_mode) && !S_ISDIR(snd_inode->i_mode)) {
+			inc_nlink(new_dir_i);
+			drop_nlink(old_dir_i);
+		}
+		else if (!S_ISDIR(fst_inode->i_mode) && S_ISDIR(snd_inode->i_mode)) {
+			drop_nlink(new_dir_i);
+			inc_nlink(old_dir_i);
+		}
+	}
 
 	/* The VFS will check for us and prevent trying to rename a
 	 * file over a directory and vice versa, but if it's a directory,
 	 * the VFS can't check whether the victim is empty. The filesystem
 	 * needs to do that for itself.
 	 */
-	if (d_really_is_positive(new_dentry)) {
+	if (d_really_is_positive(new_dentry) && !(flags & RENAME_EXCHANGE)) {
 		victim_f = JFFS2_INODE_INFO(d_inode(new_dentry));
 		if (d_is_dir(new_dentry)) {
 			struct jffs2_full_dirent *fd;
@@ -816,7 +846,7 @@ static int jffs2_rename (struct user_namespace *mnt_userns,
 	if (ret)
 		return ret;
 
-	if (victim_f) {
+	if (victim_f && !(flags & RENAME_EXCHANGE)) {
 		/* There was a victim. Kill it off nicely */
 		if (d_is_dir(new_dentry))
 			clear_nlink(d_inode(new_dentry));
@@ -839,9 +869,20 @@ static int jffs2_rename (struct user_namespace *mnt_userns,
 	if (d_is_dir(old_dentry) && !victim_f)
 		inc_nlink(new_dir_i);
 
-	/* Unlink the original */
-	ret = jffs2_do_unlink(c, JFFS2_INODE_INFO(old_dir_i),
-			      old_dentry->d_name.name, old_dentry->d_name.len, NULL, now);
+	if (flags & RENAME_WHITEOUT)
+		/* Replace with whiteout */
+		ret = jffs2_whiteout(mnt_userns, old_dir_i, old_dentry);
+	else if (flags & RENAME_EXCHANGE)
+		/* Replace the original */
+		ret = jffs2_do_link(c, JFFS2_INODE_INFO(old_dir_i),
+				    d_inode(new_dentry)->i_ino, type,
+				    old_dentry->d_name.name, old_dentry->d_name.len,
+				    now);
+	else
+		/* Unlink the original */
+		ret = jffs2_do_unlink(c, JFFS2_INODE_INFO(old_dir_i),
+				      old_dentry->d_name.name,
+				      old_dentry->d_name.len, NULL, now);
 
 	/* We don't touch inode->i_nlink */
 
@@ -868,7 +909,7 @@ static int jffs2_rename (struct user_namespace *mnt_userns,
 		return ret;
 	}
 
-	if (d_is_dir(old_dentry))
+	if (d_is_dir(old_dentry) && !(flags & RENAME_EXCHANGE))
 		drop_nlink(old_dir_i);
 
 	new_dir_i->i_mtime = new_dir_i->i_ctime = old_dir_i->i_mtime = old_dir_i->i_ctime = ITIME(now);

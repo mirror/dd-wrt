@@ -564,6 +564,15 @@ static void parse_minix(struct parsed_partitions *state,
 #endif /* CONFIG_MINIX_SUBPARTITION */
 }
 
+static void parse_fit_mbr(struct parsed_partitions *state,
+			  sector_t offset, sector_t size, int origin)
+{
+#ifdef CONFIG_FIT_PARTITION
+	u32 extra_slot = 64;
+	(void) parse_fit_partitions(state, offset, size, &extra_slot, 1);
+#endif /* CONFIG_FIT_PARTITION */
+}
+
 static struct {
 	unsigned char id;
 	void (*parse)(struct parsed_partitions *, sector_t, sector_t, int);
@@ -575,6 +584,7 @@ static struct {
 	{UNIXWARE_PARTITION, parse_unixware},
 	{SOLARIS_X86_PARTITION, parse_solaris_x86},
 	{NEW_SOLARIS_X86_PARTITION, parse_solaris_x86},
+	{FIT_PARTITION, parse_fit_mbr},
 	{0, NULL},
 };
 

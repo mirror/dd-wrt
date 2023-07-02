@@ -2,6 +2,7 @@
 config HFS_FS
 	tristate "Apple Macintosh file system support"
 	depends on BLOCK
+	select CDROM
 	select NLS
 	help
 	  If you say Y here, you will be able to mount Macintosh-formatted

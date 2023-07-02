@@ -12,6 +12,25 @@ menuconfig MTD
 
 if MTD
 
+menu "OpenWrt specific MTD options"
+
+config MTD_ROOTFS_ROOT_DEV
+	bool "Automatically set 'rootfs' partition to be root filesystem"
+	default y
+
+config MTD_SPLIT_FIRMWARE
+	bool "Automatically split firmware partition for kernel+rootfs"
+	default y
+
+config MTD_SPLIT_FIRMWARE_NAME
+	string "Firmware partition name"
+	depends on MTD_SPLIT_FIRMWARE
+	default "firmware"
+
+source "drivers/mtd/mtdsplit/Kconfig"
+
+endmenu
+
 config MTD_TESTS
 	tristate "MTD tests support (DANGEROUS)"
 	depends on m
@@ -221,5 +240,7 @@ source "drivers/mtd/spi-nor/Kconfig"
 source "drivers/mtd/ubi/Kconfig"
 
 source "drivers/mtd/hyperbus/Kconfig"
+
+source "drivers/mtd/composite/Kconfig"
 
 endif # MTD

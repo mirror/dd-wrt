@@ -23,6 +23,12 @@
 #define PHY_ID_AQCS109	0x03a1b5c2
 #define PHY_ID_AQR405	0x03a1b4b0
 #define PHY_ID_AQR113C	0x31c31c12
+#define PHY_ID_AQR813	0x31c31cb2
+#define PHY_ID_AQR112	0x03a1b662
+#define PHY_ID_AQR412	0x03a1b712
+#define PHY_ID_AQR113	0x31c31c40
+#define PHY_ID_AQR112C	0x03a1b790
+#define PHY_ID_AQR112R	0x31c31d12
 
 #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
 #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_MASK	GENMASK(7, 3)
@@ -149,6 +155,29 @@
  */
 #define AQR107_OP_IN_PROG_SLEEP		1000
 #define AQR107_OP_IN_PROG_TIMEOUT	100000
+
+/* registers in MDIO_MMD_VEND1 region */
+#define AQUANTIA_VND1_GLOBAL_SC			0x000
+#define  AQUANTIA_VND1_GLOBAL_SC_LP		BIT(0xb)
+
+/* global start rate, the protocol associated with this speed is used by default
+ * on SI.
+ */
+#define AQUANTIA_VND1_GSTART_RATE		0x31a
+#define  AQUANTIA_VND1_GSTART_RATE_OFF		0
+#define  AQUANTIA_VND1_GSTART_RATE_100M		1
+#define  AQUANTIA_VND1_GSTART_RATE_1G		2
+#define  AQUANTIA_VND1_GSTART_RATE_10G		3
+#define  AQUANTIA_VND1_GSTART_RATE_2_5G		4
+#define  AQUANTIA_VND1_GSTART_RATE_5G		5
+
+/* SYSCFG registers for 100M, 1G, 2.5G, 5G, 10G */
+#define AQUANTIA_VND1_GSYSCFG_BASE		0x31b
+#define AQUANTIA_VND1_GSYSCFG_100M		0
+#define AQUANTIA_VND1_GSYSCFG_1G		1
+#define AQUANTIA_VND1_GSYSCFG_2_5G		2
+#define AQUANTIA_VND1_GSYSCFG_5G		3
+#define AQUANTIA_VND1_GSYSCFG_10G		4
 
 struct aqr107_hw_stat {
 	const char *name;
@@ -279,6 +308,57 @@ static int aqr_config_aneg(struct phy_device *phydev)
 		changed = true;
 
 	return genphy_c45_check_and_restart_aneg(phydev, changed);
+}
+
+static struct {
+	u16 syscfg;
+	int cnt;
+	u16 start_rate;
+} aquantia_syscfg[PHY_INTERFACE_MODE_MAX] = {
+	[PHY_INTERFACE_MODE_SGMII] =      {0x04b, AQUANTIA_VND1_GSYSCFG_1G,
+					   AQUANTIA_VND1_GSTART_RATE_1G},
+	[PHY_INTERFACE_MODE_2500BASEX] = {0x144, AQUANTIA_VND1_GSYSCFG_2_5G,
+					   AQUANTIA_VND1_GSTART_RATE_2_5G},
+	[PHY_INTERFACE_MODE_XGMII] =      {0x100, AQUANTIA_VND1_GSYSCFG_10G,
+					   AQUANTIA_VND1_GSTART_RATE_10G},
+	[PHY_INTERFACE_MODE_USXGMII] =    {0x080, AQUANTIA_VND1_GSYSCFG_10G,
+					   AQUANTIA_VND1_GSTART_RATE_10G},
+};
+
+/* Sets up protocol on system side before calling aqr_config_aneg */
+static int aqr_config_aneg_set_prot(struct phy_device *phydev)
+{
+	int if_type = phydev->interface;
+	int i;
+
+	if (!aquantia_syscfg[if_type].cnt)
+		return 0;
+
+	/* set PHY in low power mode so we can configure protocols */
+	phy_write_mmd(phydev, MDIO_MMD_VEND1, AQUANTIA_VND1_GLOBAL_SC,
+		      AQUANTIA_VND1_GLOBAL_SC_LP);
+	mdelay(10);
+
+	/* set the default rate to enable the SI link */
+	phy_write_mmd(phydev, MDIO_MMD_VEND1, AQUANTIA_VND1_GSTART_RATE,
+		      aquantia_syscfg[if_type].start_rate);
+
+	for (i = 0; i <= aquantia_syscfg[if_type].cnt; i++) {
+		u16 reg = phy_read_mmd(phydev, MDIO_MMD_VEND1,
+				       AQUANTIA_VND1_GSYSCFG_BASE + i);
+		if (!reg)
+			continue;
+
+		phy_write_mmd(phydev, MDIO_MMD_VEND1,
+			      AQUANTIA_VND1_GSYSCFG_BASE + i,
+			      aquantia_syscfg[if_type].syscfg);
+	}
+
+	/* wake PHY back up */
+	phy_write_mmd(phydev, MDIO_MMD_VEND1, AQUANTIA_VND1_GLOBAL_SC, 0);
+	mdelay(10);
+
+	return aqr_config_aneg(phydev);
 }
 
 static int aqr_config_intr(struct phy_device *phydev)
@@ -413,6 +493,49 @@ static int aqr107_read_rate(struct phy_device *phydev)
 		phydev->rate_matching = RATE_MATCH_NONE;
 
 	return 0;
+}
+
+static int aqr113c_read_status(struct phy_device *phydev)
+{
+	int val, ret;
+
+	ret = aqr_read_status(phydev);
+	if (ret)
+		return ret;
+
+	if (!phydev->link || phydev->autoneg == AUTONEG_DISABLE)
+		return 0;
+
+	// On AQR113C, the speed returned by aqr_read_status is wrong
+	aqr107_read_rate(phydev);
+
+	val = phy_read_mmd(phydev, MDIO_MMD_PHYXS, MDIO_PHYXS_VEND_IF_STATUS);
+	if (val < 0)
+		return val;
+
+	switch (FIELD_GET(MDIO_PHYXS_VEND_IF_STATUS_TYPE_MASK, val)) {
+	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_KR:
+		phydev->interface = PHY_INTERFACE_MODE_10GKR;
+		break;
+	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_XFI:
+		phydev->interface = PHY_INTERFACE_MODE_10GBASER;
+		break;
+	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_USXGMII:
+		phydev->interface = PHY_INTERFACE_MODE_USXGMII;
+		break;
+	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_SGMII:
+		phydev->interface = PHY_INTERFACE_MODE_SGMII;
+		break;
+	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII:
+		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
+		break;
+	default:
+		phydev->interface = PHY_INTERFACE_MODE_NA;
+		break;
+	}
+
+	/* Read downshifted rate from vendor register */
+	return aqr107_read_rate(phydev);
 }
 
 static int aqr107_read_status(struct phy_device *phydev)
@@ -554,7 +677,7 @@ static void aqr107_chip_info(struct phy_device *phydev)
 	build_id = FIELD_GET(VEND1_GLOBAL_RSVD_STAT1_FW_BUILD_ID, val);
 	prov_id = FIELD_GET(VEND1_GLOBAL_RSVD_STAT1_PROV_ID, val);
 
-	phydev_dbg(phydev, "FW %u.%u, Build %u, Provisioning %u\n",
+	phydev_info(phydev, "FW %u.%u, Build %u, Provisioning %u\n",
 		   fw_major, fw_minor, build_id, prov_id);
 }
 
@@ -809,7 +932,7 @@ static struct phy_driver aqr_driver[] = {
 	.config_aneg    = aqr_config_aneg,
 	.config_intr    = aqr_config_intr,
 	.handle_interrupt       = aqr_handle_interrupt,
-	.read_status    = aqr107_read_status,
+	.read_status    = aqr113c_read_status,
 	.get_tunable    = aqr107_get_tunable,
 	.set_tunable    = aqr107_set_tunable,
 	.suspend        = aqr107_suspend,
@@ -818,6 +941,80 @@ static struct phy_driver aqr_driver[] = {
 	.get_strings    = aqr107_get_strings,
 	.get_stats      = aqr107_get_stats,
 	.link_change_notify = aqr107_link_change_notify,
+},
+{
+	PHY_ID_MATCH_MODEL(PHY_ID_AQR813),
+	.name		= "Aquantia AQR813",
+	.probe		= aqr107_probe,
+	.config_init	= aqr107_config_init,
+	.config_aneg    = aqr_config_aneg,
+	.config_intr	= aqr_config_intr,
+	.handle_interrupt = aqr_handle_interrupt,
+	.read_status	= aqr113c_read_status,
+	.get_tunable    = aqr107_get_tunable,
+	.set_tunable    = aqr107_set_tunable,
+	.suspend	= aqr107_suspend,
+	.resume		= aqr107_resume,
+	.get_sset_count	= aqr107_get_sset_count,
+	.get_strings	= aqr107_get_strings,
+	.get_stats	= aqr107_get_stats,
+	.link_change_notify = aqr107_link_change_notify,
+},
+{
+	PHY_ID_MATCH_MODEL(PHY_ID_AQR112),
+	.name		= "Aquantia AQR112",
+	.probe		= aqr107_probe,
+	.config_aneg	= aqr_config_aneg_set_prot,
+	.config_intr	= aqr_config_intr,
+	.handle_interrupt = aqr_handle_interrupt,
+	.read_status	= aqr107_read_status,
+	.get_sset_count	= aqr107_get_sset_count,
+	.get_strings	= aqr107_get_strings,
+	.get_stats	= aqr107_get_stats,
+},
+{
+	PHY_ID_MATCH_MODEL(PHY_ID_AQR412),
+	.name		= "Aquantia AQR412",
+	.probe		= aqr107_probe,
+	.config_aneg	= aqr_config_aneg_set_prot,
+	.config_intr	= aqr_config_intr,
+	.handle_interrupt = aqr_handle_interrupt,
+	.read_status	= aqr107_read_status,
+	.get_sset_count	= aqr107_get_sset_count,
+	.get_strings	= aqr107_get_strings,
+	.get_stats	= aqr107_get_stats,
+},
+{
+	PHY_ID_MATCH_MODEL(PHY_ID_AQR113),
+	.name		= "Aquantia AQR113",
+	.config_aneg	= aqr_config_aneg,
+	.config_intr	= aqr_config_intr,
+	.handle_interrupt = aqr_handle_interrupt,
+	.read_status	= aqr107_read_status,
+},
+{
+	PHY_ID_MATCH_MODEL(PHY_ID_AQR112C),
+	.name		= "Aquantia AQR112C",
+	.probe		= aqr107_probe,
+	.config_aneg	= aqr_config_aneg_set_prot,
+	.config_intr	= aqr_config_intr,
+	.handle_interrupt = aqr_handle_interrupt,
+	.read_status	= aqr107_read_status,
+	.get_sset_count	= aqr107_get_sset_count,
+	.get_strings	= aqr107_get_strings,
+	.get_stats	= aqr107_get_stats,
+},
+{
+	PHY_ID_MATCH_MODEL(PHY_ID_AQR112R),
+	.name		= "Aquantia AQR112R",
+	.probe		= aqr107_probe,
+	.config_aneg	= aqr_config_aneg_set_prot,
+	.config_intr	= aqr_config_intr,
+	.handle_interrupt = aqr_handle_interrupt,
+	.read_status	= aqr107_read_status,
+	.get_sset_count	= aqr107_get_sset_count,
+	.get_strings	= aqr107_get_strings,
+	.get_stats	= aqr107_get_stats,
 },
 };
 
@@ -832,6 +1029,12 @@ static struct mdio_device_id __maybe_unused aqr_tbl[] = {
 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQCS109) },
 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR813) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112C) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112R) },
 	{ }
 };
 

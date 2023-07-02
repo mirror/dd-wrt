@@ -290,4 +290,11 @@ config MODULES_TREE_LOOKUP
 	def_bool y
 	depends on PERF_EVENTS || TRACING || CFI_CLANG
 
+config MODULE_STRIPPED
+	bool "Reduce module size"
+	depends on MODULES
+	help
+	  Remove module parameter descriptions, author info, version, aliases,
+	  device tables, etc.
+
 endif # MODULES

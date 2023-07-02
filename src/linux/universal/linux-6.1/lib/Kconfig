@@ -354,6 +354,12 @@ config ZSTD_DECOMPRESS
 
 source "lib/xz/Kconfig"
 
+config LZMA_COMPRESS
+    tristate
+
+config LZMA_DECOMPRESS
+    tristate
+
 #
 # These all provide a common interface (hence the apparent duplication with
 # ZLIB_INFLATE; DECOMPRESS_GZIP is just a wrapper.)
@@ -451,16 +457,16 @@ config BCH_CONST_T
 # Textsearch support is select'ed if needed
 #
 config TEXTSEARCH
-	bool
+	bool "Textsearch support"
 
 config TEXTSEARCH_KMP
-	tristate
+	tristate "Textsearch KMP"
 
 config TEXTSEARCH_BM
-	tristate
+	tristate "Textsearch BM"
 
 config TEXTSEARCH_FSM
-	tristate
+	tristate "Textsearch FSM"
 
 config BTREE
 	bool
@@ -631,7 +637,7 @@ config LIBFDT
 	bool
 
 config OID_REGISTRY
-	tristate
+	tristate "OID"
 	help
 	  Enable fast lookup object identifier registry.
 

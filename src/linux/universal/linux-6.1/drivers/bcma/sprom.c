@@ -51,21 +51,26 @@ static int bcma_fill_sprom_with_fallback(struct bcma_bus *bus,
 {
 	int err;
 
-	if (!get_fallback_sprom) {
-		err = -ENOENT;
-		goto fail;
-	}
+	if (get_fallback_sprom)
+		err = get_fallback_sprom(bus, out);
 
-	err = get_fallback_sprom(bus, out);
-	if (err)
-		goto fail;
+#ifdef CONFIG_BCMA_FALLBACK_SPROM
+	if (!get_fallback_sprom || err)
+		err = bcma_get_fallback_sprom(bus, out);
+#else
+	if (!get_fallback_sprom)
+		err = -ENOENT;
+#endif /* CONFIG_BCMA_FALLBACK_SPROM */
+
+	if (err) {
+		bcma_warn(bus, "Using fallback SPROM failed (err %d)\n", err);
+		return err;
+	}
 
 	bcma_debug(bus, "Using SPROM revision %d provided by platform.\n",
 		   bus->sprom.revision);
+
 	return 0;
-fail:
-	bcma_warn(bus, "Using fallback SPROM failed (err %d)\n", err);
-	return err;
 }
 
 /**************************************************

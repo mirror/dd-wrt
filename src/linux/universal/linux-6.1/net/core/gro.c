@@ -491,6 +491,9 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 	int same_flow;
 	int grow;
 
+	if (skb->gro_skip)
+		goto normal;
+
 	if (netif_elide_gro(skb->dev))
 		goto normal;
 

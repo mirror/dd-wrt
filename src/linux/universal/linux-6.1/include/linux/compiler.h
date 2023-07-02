@@ -203,6 +203,8 @@ void ftrace_likely_update(struct ftrace_likely_data *f, int val,
 	__v;								\
 })
 
+#include <asm/rwonce.h>
+
 #endif /* __KERNEL__ */
 
 /*
@@ -242,7 +244,5 @@ static inline void *offset_to_ptr(const int *off)
  * arch/x86/kernel/smpboot.c::start_secondary() for an example.
  */
 #define prevent_tail_call_optimization()	mb()
-
-#include <asm/rwonce.h>
 
 #endif /* __LINUX_COMPILER_H */

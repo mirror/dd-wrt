@@ -50,9 +50,12 @@ ip_packet_match(const struct iphdr *ip,
 {
 	unsigned long ret;
 
-	if (NF_INVF(ipinfo, IPT_INV_SRCIP,
+	if (ipinfo->flags & IPT_F_NO_DEF_MATCH)
+		return true;
+
+	if (NF_INVF(ipinfo, IPT_INV_SRCIP, ipinfo->smsk.s_addr &&
 		    (ip->saddr & ipinfo->smsk.s_addr) != ipinfo->src.s_addr) ||
-	    NF_INVF(ipinfo, IPT_INV_DSTIP,
+	    NF_INVF(ipinfo, IPT_INV_DSTIP, ipinfo->dmsk.s_addr &&
 		    (ip->daddr & ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr))
 		return false;
 
@@ -78,6 +81,29 @@ ip_packet_match(const struct iphdr *ip,
 		return false;
 
 	return true;
+}
+
+static void
+ip_checkdefault(struct ipt_ip *ip)
+{
+	static const char iface_mask[IFNAMSIZ] = {};
+
+	if (ip->invflags || ip->flags & IPT_F_FRAG)
+		return;
+
+	if (memcmp(ip->iniface_mask, iface_mask, IFNAMSIZ) != 0)
+		return;
+
+	if (memcmp(ip->outiface_mask, iface_mask, IFNAMSIZ) != 0)
+		return;
+
+	if (ip->smsk.s_addr || ip->dmsk.s_addr)
+		return;
+
+	if (ip->proto)
+		return;
+
+	ip->flags |= IPT_F_NO_DEF_MATCH;
 }
 
 static bool
@@ -220,6 +246,33 @@ struct ipt_entry *ipt_next_entry(const struct ipt_entry *entry)
 	return (void *)entry + entry->next_offset;
 }
 
+static bool
+ipt_handle_default_rule(struct ipt_entry *e, unsigned int *verdict)
+{
+	struct xt_entry_target *t;
+	struct xt_standard_target *st;
+
+	if (e->target_offset != sizeof(struct ipt_entry))
+		return false;
+
+	if (!(e->ip.flags & IPT_F_NO_DEF_MATCH))
+		return false;
+
+	t = ipt_get_target(e);
+	if (t->u.kernel.target->target)
+		return false;
+
+	st = (struct xt_standard_target *) t;
+	if (st->verdict == XT_RETURN)
+		return false;
+
+	if (st->verdict >= 0)
+		return false;
+
+	*verdict = (unsigned)(-st->verdict) - 1;
+	return true;
+}
+
 /* Returns one of the generic firewall policies, like NF_ACCEPT. */
 unsigned int
 ipt_do_table(void *priv,
@@ -241,27 +294,28 @@ ipt_do_table(void *priv,
 	unsigned int addend;
 
 	/* Initialization */
+	WARN_ON(!(table->valid_hooks & (1 << hook)));
+	local_bh_disable();
+	private = READ_ONCE(table->private); /* Address dependency. */
+	cpu        = smp_processor_id();
+	table_base = private->entries;
+
+	e = get_entry(table_base, private->hook_entry[hook]);
+	if (ipt_handle_default_rule(e, &verdict)) {
+		struct xt_counters *counter;
+
+		counter = xt_get_this_cpu_counter(&e->counters);
+		ADD_COUNTER(*counter, skb->len, 1);
+		local_bh_enable();
+		return verdict;
+	}
+
 	stackidx = 0;
 	ip = ip_hdr(skb);
 	indev = state->in ? state->in->name : nulldevname;
 	outdev = state->out ? state->out->name : nulldevname;
-	/* We handle fragments by dealing with the first fragment as
-	 * if it was a normal packet.  All other fragments are treated
-	 * normally, except that they will NEVER match rules that ask
-	 * things we don't know, ie. tcp syn flag or ports).  If the
-	 * rule is also a fragment-specific rule, non-fragments won't
-	 * match it. */
-	acpar.fragoff = ntohs(ip->frag_off) & IP_OFFSET;
-	acpar.thoff   = ip_hdrlen(skb);
-	acpar.hotdrop = false;
-	acpar.state   = state;
 
-	WARN_ON(!(table->valid_hooks & (1 << hook)));
-	local_bh_disable();
 	addend = xt_write_recseq_begin();
-	private = READ_ONCE(table->private); /* Address dependency. */
-	cpu        = smp_processor_id();
-	table_base = private->entries;
 	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
 
 	/* Switch to alternate jumpstack if we're being invoked via TEE.
@@ -274,7 +328,16 @@ ipt_do_table(void *priv,
 	if (static_key_false(&xt_tee_enabled))
 		jumpstack += private->stacksize * __this_cpu_read(nf_skb_duplicated);
 
-	e = get_entry(table_base, private->hook_entry[hook]);
+	/* We handle fragments by dealing with the first fragment as
+	 * if it was a normal packet.  All other fragments are treated
+	 * normally, except that they will NEVER match rules that ask
+	 * things we don't know, ie. tcp syn flag or ports).  If the
+	 * rule is also a fragment-specific rule, non-fragments won't
+	 * match it. */
+	acpar.fragoff = ntohs(ip->frag_off) & IP_OFFSET;
+	acpar.thoff   = ip_hdrlen(skb);
+	acpar.hotdrop = false;
+	acpar.state   = state;
 
 	do {
 		const struct xt_entry_target *t;
@@ -524,6 +587,8 @@ find_check_entry(struct ipt_entry *e, struct net *net, const char *name,
 	unsigned int j;
 	struct xt_mtchk_param mtpar;
 	struct xt_entry_match *ematch;
+
+	ip_checkdefault(&e->ip);
 
 	if (!xt_percpu_counter_alloc(alloc_state, &e->counters))
 		return -ENOMEM;
@@ -819,6 +884,7 @@ copy_entries_to_user(unsigned int total_size,
 	const struct xt_table_info *private = table->private;
 	int ret = 0;
 	const void *loc_cpu_entry;
+	u8 flags;
 
 	counters = alloc_counters(table);
 	if (IS_ERR(counters))
@@ -842,6 +908,14 @@ copy_entries_to_user(unsigned int total_size,
 				 + offsetof(struct ipt_entry, counters),
 				 &counters[num],
 				 sizeof(counters[num])) != 0) {
+			ret = -EFAULT;
+			goto free_counters;
+		}
+
+		flags = e->ip.flags & IPT_F_MASK;
+		if (copy_to_user(userptr + off
+				 + offsetof(struct ipt_entry, ip.flags),
+				 &flags, sizeof(flags)) != 0) {
 			ret = -EFAULT;
 			goto free_counters;
 		}
@@ -1223,12 +1297,15 @@ compat_copy_entry_to_user(struct ipt_entry *e, void __user **dstptr,
 	compat_uint_t origsize;
 	const struct xt_entry_match *ematch;
 	int ret = 0;
+	u8 flags = e->ip.flags & IPT_F_MASK;
 
 	origsize = *size;
 	ce = *dstptr;
 	if (copy_to_user(ce, e, sizeof(struct ipt_entry)) != 0 ||
 	    copy_to_user(&ce->counters, &counters[i],
-	    sizeof(counters[i])) != 0)
+	    sizeof(counters[i])) != 0 ||
+	    copy_to_user(&ce->ip.flags, &flags,
+	    sizeof(flags)) != 0)
 		return -EFAULT;
 
 	*dstptr += sizeof(struct compat_ipt_entry);

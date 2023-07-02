@@ -823,8 +823,9 @@ static int devm_tegra_devfreq_init_hw(struct device *dev,
 
 static int tegra_devfreq_config_clks_nop(struct device *dev,
 					 struct opp_table *opp_table,
-					 struct dev_pm_opp *opp, void *data,
-					 bool scaling_down)
+					 struct dev_pm_opp *old_opp,
+					 struct dev_pm_opp *opp,
+					 void *data, bool scaling_down)
 {
 	/* We want to skip clk configuration via dev_pm_opp_set_opp() */
 	return 0;

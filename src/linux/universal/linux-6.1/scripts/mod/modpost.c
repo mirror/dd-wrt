@@ -1817,7 +1817,9 @@ static void read_symbols(const char *modname)
 		symname = remove_dot(info.strtab + sym->st_name);
 
 		handle_symbol(mod, &info, sym, symname);
+#ifndef CONFIG_MODULE_STRIPPED
 		handle_moddevtable(mod, &info, sym, symname);
+#endif
 	}
 
 	for (sym = info.symtab_start; sym < info.symtab_stop; sym++) {
@@ -1980,8 +1982,10 @@ static void add_header(struct buffer *b, struct module *mod)
 	buf_printf(b, "BUILD_SALT;\n");
 	buf_printf(b, "BUILD_LTO_INFO;\n");
 	buf_printf(b, "\n");
+#ifndef CONFIG_MODULE_STRIPPED
 	buf_printf(b, "MODULE_INFO(vermagic, VERMAGIC_STRING);\n");
 	buf_printf(b, "MODULE_INFO(name, KBUILD_MODNAME);\n");
+#endif
 	buf_printf(b, "\n");
 	buf_printf(b, "__visible struct module __this_module\n");
 	buf_printf(b, "__section(\".gnu.linkonce.this_module\") = {\n");
@@ -1995,8 +1999,10 @@ static void add_header(struct buffer *b, struct module *mod)
 	buf_printf(b, "\t.arch = MODULE_ARCH_INIT,\n");
 	buf_printf(b, "};\n");
 
+#ifndef CONFIG_MODULE_STRIPPED
 	if (!external_module)
 		buf_printf(b, "\nMODULE_INFO(intree, \"Y\");\n");
+#endif
 
 	buf_printf(b,
 		   "\n"
@@ -2004,8 +2010,10 @@ static void add_header(struct buffer *b, struct module *mod)
 		   "MODULE_INFO(retpoline, \"Y\");\n"
 		   "#endif\n");
 
+#ifndef CONFIG_MODULE_STRIPPED
 	if (strstarts(mod->name, "drivers/staging"))
 		buf_printf(b, "\nMODULE_INFO(staging, \"Y\");\n");
+#endif
 
 	if (strstarts(mod->name, "tools/testing"))
 		buf_printf(b, "\nMODULE_INFO(test, \"Y\");\n");
@@ -2101,11 +2109,13 @@ static void add_depends(struct buffer *b, struct module *mod)
 
 static void add_srcversion(struct buffer *b, struct module *mod)
 {
+#ifndef CONFIG_MODULE_STRIPPED
 	if (mod->srcversion[0]) {
 		buf_printf(b, "\n");
 		buf_printf(b, "MODULE_INFO(srcversion, \"%s\");\n",
 			   mod->srcversion);
 	}
+#endif
 }
 
 static void write_buf(struct buffer *b, const char *fname)
@@ -2191,7 +2201,9 @@ static void write_mod_c_file(struct module *mod)
 	add_exported_symbols(&buf, mod);
 	add_versions(&buf, mod);
 	add_depends(&buf, mod);
+#ifndef CONFIG_MODULE_STRIPPED
 	add_moddevtable(&buf, mod);
+#endif
 	add_srcversion(&buf, mod);
 
 	ret = snprintf(fname, sizeof(fname), "%s.mod.c", mod->name);

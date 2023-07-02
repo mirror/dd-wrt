@@ -180,7 +180,7 @@ struct reg_sequence {
 	__ret ?: __tmp; \
 })
 
-#ifdef CONFIG_REGMAP
+#if IS_REACHABLE(CONFIG_REGMAP)
 
 enum regmap_endian {
 	/* Unspecified -> 0 -> Backwards compatible default */

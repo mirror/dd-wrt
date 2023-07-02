@@ -180,6 +180,7 @@ static int ipmr_rule_action(struct fib_rule *rule, struct flowi *flp,
 	case FR_ACT_UNREACHABLE:
 		return -ENETUNREACH;
 	case FR_ACT_PROHIBIT:
+	case FR_ACT_POLICY_FAILED:
 		return -EACCES;
 	case FR_ACT_BLACKHOLE:
 	default:

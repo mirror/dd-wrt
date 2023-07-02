@@ -10,6 +10,10 @@
 #include <linux/ctype.h>
 #include <linux/vmalloc.h>
 #include <linux/raid/detect.h>
+#ifdef CONFIG_FIT_PARTITION
+#include <linux/root_dev.h>
+#endif
+
 #include "check.h"
 
 static int (*check_part[])(struct parsed_partitions *) = {
@@ -45,6 +49,9 @@ static int (*check_part[])(struct parsed_partitions *) = {
 #endif
 #ifdef CONFIG_EFI_PARTITION
 	efi_partition,		/* this must come before msdos */
+#endif
+#ifdef CONFIG_FIT_PARTITION
+	fit_partition,
 #endif
 #ifdef CONFIG_SGI_PARTITION
 	sgi_partition,
@@ -398,6 +405,11 @@ static struct block_device *add_partition(struct gendisk *disk, int partno,
 			goto out_del;
 	}
 
+#ifdef CONFIG_FIT_PARTITION
+	if (flags & ADDPART_FLAG_READONLY)
+		bdev->bd_read_only = true;
+#endif
+
 	/* everything is up and running, commence */
 	err = xa_insert(&disk->part_tbl, partno, bdev, GFP_KERNEL);
 	if (err)
@@ -584,6 +596,11 @@ static bool blk_add_partition(struct gendisk *disk,
 	if (IS_BUILTIN(CONFIG_BLK_DEV_MD) &&
 	    (state->parts[p].flags & ADDPART_FLAG_RAID))
 		md_autodetect_dev(part->bd_dev);
+
+#ifdef CONFIG_FIT_PARTITION
+	if ((state->parts[p].flags & ADDPART_FLAG_ROOTDEV) && ROOT_DEV == 0)
+		ROOT_DEV = part->bd_dev;
+#endif
 
 	return true;
 }

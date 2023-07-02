@@ -126,6 +126,8 @@ struct icmp6hdr {
 #define ICMPV6_POLICY_FAIL		5
 #define ICMPV6_REJECT_ROUTE		6
 
+#define ICMPV6_FAILED_POLICY		ICMPV6_POLICY_FAIL
+
 /*
  *	Codes for Time Exceeded
  */
