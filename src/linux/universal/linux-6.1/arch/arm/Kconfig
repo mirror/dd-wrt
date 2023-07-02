@@ -284,6 +284,7 @@ config PHYS_OFFSET
 	default 0x30000000 if ARCH_S3C24XX
 	default 0xa0000000 if ARCH_IOP32X || ARCH_PXA
 	default 0xc0000000 if ARCH_EP93XX || ARCH_SA1100
+	default 0x42000000 if ARCH_IPQ806X
 	default 0
 	help
 	  Please provide the physical address corresponding to the
@@ -1586,7 +1587,26 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND
 	  The command-line arguments provided by the boot loader will be
 	  appended to the the device tree bootargs property.
 
+config ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+	bool "Append rootblock parsing bootloader's kernel arguments"
+	help
+	  The command-line arguments provided by the boot loader will be
+	  appended to a new device tree property: bootloader-args.
+	  If there is a property "append-rootblock" in DT under /chosen
+	  and a root= option in bootloaders command line it will be parsed
+	  and added to DT bootargs with the form: <append-rootblock>XX.
+	  Only command line ATAG will be processed, the rest of the ATAGs
+	  sent by bootloader will be ignored.
+
 endchoice
+
+config CMDLINE_OVERRIDE
+	bool "Use alternative cmdline from device tree"
+	help
+	  Some bootloaders may have uneditable bootargs. While CMDLINE_FORCE can
+	  be used, this is not a good option for kernels that are shared across
+	  devices. This setting enables using "chosen/cmdline-override" as the
+	  cmdline if it exists in the device tree.
 
 config CMDLINE
 	string "Default kernel command string"
@@ -1703,7 +1723,7 @@ config CRASH_DUMP
 
 config AUTO_ZRELADDR
 	bool "Auto calculation of the decompressed kernel image address" if !ARCH_MULTIPLATFORM
-	default !(ARCH_FOOTBRIDGE || ARCH_RPC || ARCH_SA1100)
+	default !(ARCH_FOOTBRIDGE || ARCH_RPC || ARCH_SA1100 || ARCH_IPQ806X)
 	help
 	  ZRELADDR is the physical address where the decompressed kernel
 	  image will be placed. If AUTO_ZRELADDR is selected, the address

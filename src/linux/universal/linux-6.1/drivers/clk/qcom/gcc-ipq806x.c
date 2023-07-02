@@ -3386,14 +3386,6 @@ static int gcc_ipq806x_probe(struct platform_device *pdev)
 	struct regmap *regmap;
 	int ret;
 
-	ret = qcom_cc_register_board_clk(dev, "cxo_board", "cxo", 25000000);
-	if (ret)
-		return ret;
-
-	ret = qcom_cc_register_board_clk(dev, "pxo_board", "pxo", 25000000);
-	if (ret)
-		return ret;
-
 	if (of_machine_is_compatible("qcom,ipq8065")) {
 		ubi32_core1_src_clk.freq_tbl = clk_tbl_nss_ipq8065;
 		ubi32_core2_src_clk.freq_tbl = clk_tbl_nss_ipq8065;

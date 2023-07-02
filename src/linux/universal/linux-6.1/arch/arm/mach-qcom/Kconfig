@@ -46,4 +46,17 @@ config ARCH_MDM9615
 	bool "Enable support for MDM9615"
 	select CLKSRC_QCOM
 
+config ARCH_IPQ806X
+	bool "Enable support for IPQ806x"
+	help
+	  Enable support for the Qualcomm IPQ806x.
+
+	  IPQ806x require special PHYS_OFFSET and can't use AUTO_ZRELADDR.
+	  The first ~20MB of RAM is reserved for the hardware network accelerators,
+	  and the bootloader removes this section from the layout passed from the
+	  ATAGS (when used by some bootloader doesn't even do that).
+
+	  To support every system and handle legacy systems, hardcode PHYS_OFFSET and
+	  disable AUTO_ZRELADDR.
+
 endif

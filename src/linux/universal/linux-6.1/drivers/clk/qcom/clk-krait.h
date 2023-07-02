@@ -25,17 +25,20 @@ struct krait_mux_clk {
 
 extern const struct clk_ops krait_mux_clk_ops;
 
-struct krait_div2_clk {
+struct krait_div_clk {
 	u32		offset;
-	u8		width;
+	u32		mask;
+	u8		divisor;
 	u32		shift;
 	bool		lpl;
 
 	struct clk_hw	hw;
 };
 
-#define to_krait_div2_clk(_hw) container_of(_hw, struct krait_div2_clk, hw)
+#define to_krait_div_clk(_hw) container_of(_hw, struct krait_div_clk, hw)
+#define krait_div_to_val(_div)		((_div) / 2) - 1
+#define krait_val_to_div(_val)		((_val) + 1) * 2
 
-extern const struct clk_ops krait_div2_clk_ops;
+extern const struct clk_ops krait_div_clk_ops;
 
 #endif
