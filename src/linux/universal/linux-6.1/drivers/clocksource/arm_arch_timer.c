@@ -14,6 +14,7 @@
 #include <linux/smp.h>
 #include <linux/cpu.h>
 #include <linux/cpu_pm.h>
+#include <linux/clk.h>
 #include <linux/clockchips.h>
 #include <linux/clocksource.h>
 #include <linux/clocksource_ids.h>
@@ -1020,6 +1021,16 @@ static void __init arch_timer_of_configure_rate(u32 rate, struct device_node *np
 
 	if (of_property_read_u32(np, "clock-frequency", &arch_timer_rate))
 		arch_timer_rate = rate;
+
+	/* Get clk rate through clk driver if present */
+	if (!arch_timer_rate) {
+		struct clk *clk = of_clk_get(np, 0);
+
+		if (!IS_ERR(clk)) {
+			if (!clk_prepare_enable(clk))
+				arch_timer_rate = clk_get_rate(clk);
+		}
+	}
 
 	/* Check the timer frequency. */
 	if (validate_timer_rate())

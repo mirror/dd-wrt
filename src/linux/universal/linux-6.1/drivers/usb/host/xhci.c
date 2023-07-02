@@ -161,6 +161,49 @@ int xhci_start(struct xhci_hcd *xhci)
 	return ret;
 }
 
+/**
+ * xhci_fake_doorbell - Perform a fake doorbell on a specified slot
+ *
+ * Some controllers require a fake doorbell to start correctly. Without that
+ * they simply don't detect any devices.
+ */
+static int xhci_fake_doorbell(struct xhci_hcd *xhci, int slot_id)
+{
+	u32 temp;
+
+	/* Alloc a virt device for that slot */
+	if (!xhci_alloc_virt_device(xhci, slot_id, NULL, GFP_NOIO)) {
+		xhci_warn(xhci, "Could not allocate xHCI USB device data structures\n");
+		return -ENOMEM;
+	}
+
+	/* Ring fake doorbell for slot_id ep 0 */
+	xhci_ring_ep_doorbell(xhci, slot_id, 0, 0);
+	usleep_range(1000, 1500);
+
+	/* Read the status to check if HSE is set or not */
+	temp = readl(&xhci->op_regs->status);
+
+	/* Clear HSE if set */
+	if (temp & STS_FATAL) {
+		xhci_dbg(xhci, "HSE problem detected, status: 0x%08x\n", temp);
+		temp &= ~0x1fff;
+		temp |= STS_FATAL;
+		writel(temp, &xhci->op_regs->status);
+		usleep_range(1000, 1500);
+		readl(&xhci->op_regs->status);
+	}
+
+	/* Free virt device */
+	xhci_free_virt_device(xhci, slot_id);
+
+	/* We're done if controller is already running */
+	if (readl(&xhci->op_regs->command) & CMD_RUN)
+		return 0;
+
+	return xhci_start(xhci);
+}
+
 /*
  * Reset a halted HC.
  *
@@ -639,6 +682,14 @@ static int xhci_run_finished(struct xhci_hcd *xhci)
 		xhci_halt(xhci);
 		spin_unlock_irqrestore(&xhci->lock, flags);
 		return -ENODEV;
+	}
+
+	if (xhci->quirks & XHCI_FAKE_DOORBELL) {
+		int err = xhci_fake_doorbell(xhci, 1);
+		if (err) {
+			xhci_halt(xhci);
+			return err;
+		}
 	}
 
 	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;

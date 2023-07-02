@@ -92,6 +92,10 @@ static int parser_trx_parse(struct mtd_info *mtd,
 	if (err != 0 && err != -EINVAL)
 		pr_err("failed to parse \"brcm,trx-magic\" DT attribute, using default: %d\n", err);
 
+	/* Don't parse any failsafe / backup partitions */
+	if (strcmp(mtd->name, "firmware"))
+		return -EINVAL;
+
 	parts = kcalloc(TRX_PARSER_MAX_PARTS, sizeof(struct mtd_partition),
 			GFP_KERNEL);
 	if (!parts)

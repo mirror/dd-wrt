@@ -82,6 +82,9 @@ static int self_check_ai(struct ubi_device *ubi, struct ubi_attach_info *ai);
 #define AV_ADD		BIT(1)
 #define AV_FIND_OR_ADD	(AV_FIND | AV_ADD)
 
+/* Set on finding block with 0xdeadc0de, indicates erasing all blocks behind */
+bool erase_all_next;
+
 /**
  * find_or_add_av - internal function to find a volume, add a volume or do
  *		    both (find and add if missing).
@@ -1579,6 +1582,8 @@ int ubi_attach(struct ubi_device *ubi, int force_scan)
 	ai = alloc_ai();
 	if (!ai)
 		return -ENOMEM;
+
+	erase_all_next = false;
 
 #ifdef CONFIG_MTD_UBI_FASTMAP
 	/* On small flash devices we disable fastmap in any case. */
