@@ -183,7 +183,7 @@ static int __init apu_led_init(void)
 
 	if (!(dmi_match(DMI_SYS_VENDOR, "PC Engines") &&
 	      (dmi_match(DMI_PRODUCT_NAME, "APU") || dmi_match(DMI_PRODUCT_NAME, "apu1")))) {
-		pr_err("No PC Engines APUv1 board detected. For APUv2,3 support, enable CONFIG_PCENGINES_APU2\n");
+		pr_err("No PC Engines APUv1 board detected. For APUv2,3,4,5,6 support, enable CONFIG_PCENGINES_APU2\n");
 		return -ENODEV;
 	}
 
