@@ -118,6 +118,10 @@
 #include <linux/of.h>
 #endif
 
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+#include <linux/of.h>
+#endif
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -150,6 +154,7 @@ void (*__initdata late_time_init)(void);
 char __initdata boot_command_line[COMMAND_LINE_SIZE];
 /* Untouched saved command line (eg. for /proc) */
 char *saved_command_line;
+EXPORT_SYMBOL(saved_command_line);
 /* Command line for parameter parsing */
 static char *static_command_line;
 /* Untouched extra command line */
@@ -611,6 +616,29 @@ __setup("rdinit=", rdinit_setup);
 static const unsigned int setup_max_cpus = NR_CPUS;
 static inline void setup_nr_cpu_ids(void) { }
 static inline void smp_prepare_cpus(unsigned int maxcpus) { }
+#endif
+
+#ifdef CONFIG_MANGLE_BOOTARGS
+static void __init mangle_bootargs(char *command_line)
+{
+	char *rootdev;
+	char *rootfs;
+
+	rootdev = strstr(command_line, "root=/dev/mtdblock");
+
+	if (rootdev)
+		strncpy(rootdev, "mangled_rootblock=", 18);
+
+	rootfs = strstr(command_line, "rootfstype");
+
+	if (rootfs)
+		strncpy(rootfs, "mangled_fs", 10);
+
+}
+#else
+static void __init mangle_bootargs(char *command_line)
+{
+}
 #endif
 
 #ifdef CONFIG_MANGLE_BOOTARGS
@@ -1582,11 +1610,9 @@ static int __ref kernel_init(void *unused)
 	do_sysctl_args();
 
 	if (ramdisk_execute_command) {
-		ret = run_init_process(ramdisk_execute_command);
-		if (!ret)
+		if (!run_init_process(execute_command))
 			return 0;
-		pr_err("Failed to execute %s (error %d)\n",
-		       ramdisk_execute_command, ret);
+		pr_err("Failed to execute %s\n", ramdisk_execute_command);
 	}
 
 	/*
@@ -1595,7 +1621,7 @@ static int __ref kernel_init(void *unused)
 	 * The Bourne shell can be used instead of init if we are
 	 * trying to recover a really broken machine.
 	 */
-	if (execute_command) {
+/*	if (execute_command) {
 		ret = run_init_process(execute_command);
 		if (!ret)
 			return 0;
@@ -1617,6 +1643,9 @@ static int __ref kernel_init(void *unused)
 	    !try_to_run_init_process("/bin/init") ||
 	    !try_to_run_init_process("/bin/sh"))
 		return 0;
+*/
+	if (!run_init_process("/sbin/init"))
+ 		return 0;
 
 	panic("No working init found.  Try passing init= option to kernel. "
 	      "See Linux Documentation/admin-guide/init.rst for guidance.");
@@ -1628,7 +1657,7 @@ void __init console_on_rootfs(void)
 	struct file *file = filp_open("/dev/console", O_RDWR, 0);
 
 	if (IS_ERR(file)) {
-		pr_err("Warning: unable to open an initial console.\n");
+		printk(KERN_WARNING "Please be patient, while System loads ...\n");
 		return;
 	}
 	init_dup(file);
