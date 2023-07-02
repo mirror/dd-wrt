@@ -448,7 +448,7 @@ next_header:
 		if (h->req_buflen <= h->req_contentoff)
 			return;
 		while( (line < (h->req_buf + h->req_buflen)) &&
-		       (h->req_chunklen = strtol(line, &endptr, 16) > 0) &&
+		       ((h->req_chunklen = strtol(line, &endptr, 16)) > 0) &&
 		       (endptr != line) )
 		{
 			endptr = strstr(endptr, "\r\n");
