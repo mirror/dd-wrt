@@ -1488,7 +1488,7 @@ int kill_pid_info(int sig, struct kernel_siginfo *info, struct pid *pid)
 	}
 }
 
-static int kill_proc_info(int sig, struct kernel_siginfo *info, pid_t pid)
+int kill_proc_info(int sig, struct kernel_siginfo *info, pid_t pid)
 {
 	int error;
 	rcu_read_lock();
@@ -1496,6 +1496,8 @@ static int kill_proc_info(int sig, struct kernel_siginfo *info, pid_t pid)
 	rcu_read_unlock();
 	return error;
 }
+
+EXPORT_SYMBOL(kill_proc_info);
 
 static inline bool kill_as_cred_perm(const struct cred *cred,
 				     struct task_struct *target)
