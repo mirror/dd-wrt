@@ -209,11 +209,60 @@ clk_rcg2_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	return __clk_rcg2_recalc_rate(hw, parent_rate, cfg);
 }
 
+static void
+clk_rcg2_select_conf(struct clk_hw *hw, struct freq_tbl *f_tbl,
+		     const struct freq_tbl *f, unsigned long req_rate)
+{
+	unsigned long best_rate = 0, parent_rate, rate;
+	const struct freq_conf *conf, *best_conf;
+	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
+	struct clk_hw *p;
+	int index, i;
+
+	/* Search in each provided config the one that is near the wanted rate */
+	for (i = 0, conf = f->confs; i < f->confs_num; i++, conf++) {
+		index = qcom_find_src_index(hw, rcg->parent_map, conf->src);
+		if (index < 0)
+			continue;
+
+		p = clk_hw_get_parent_by_index(hw, index);
+		if (!p)
+			continue;
+
+		parent_rate =  clk_hw_get_rate(p);
+		rate = calc_rate(parent_rate, conf->n, conf->m, conf->n, conf->pre_div);
+
+		if (rate == req_rate) {
+			best_conf = conf;
+			break;
+		}
+
+		if (abs(req_rate - rate) < abs(best_rate - rate)) {
+			best_rate = rate;
+			best_conf = conf;
+		}
+	}
+
+	/*
+	 * Very unlikely.
+	 * Force the first conf if we can't find a correct config.
+	 */
+	if (unlikely(i == f->confs_num))
+		best_conf = f->confs;
+
+	/* Apply the config */
+	f_tbl->src = best_conf->src;
+	f_tbl->pre_div = best_conf->pre_div;
+	f_tbl->m = best_conf->m;
+	f_tbl->n = best_conf->n;
+}
+
 static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
 				    struct clk_rate_request *req,
 				    enum freq_policy policy)
 {
 	unsigned long clk_flags, rate = req->rate;
+	struct freq_tbl f_tbl;
 	struct clk_hw *p;
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	int index;
@@ -232,7 +281,15 @@ static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
 	if (!f)
 		return -EINVAL;
 
-	index = qcom_find_src_index(hw, rcg->parent_map, f->src);
+	f_tbl = *f;
+	/*
+	 * A single freq may be reached by multiple configuration.
+	 * Try to find the bast one if we have this kind of freq_table.
+	 */
+	if (f->confs)
+		clk_rcg2_select_conf(hw, &f_tbl, f, rate);
+
+	index = qcom_find_src_index(hw, rcg->parent_map, f_tbl.src);
 	if (index < 0)
 		return index;
 
@@ -242,18 +299,18 @@ static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
 		return -EINVAL;
 
 	if (clk_flags & CLK_SET_RATE_PARENT) {
-		rate = f->freq;
-		if (f->pre_div) {
+		rate = f_tbl.freq;
+		if (f_tbl.pre_div) {
 			if (!rate)
 				rate = req->rate;
 			rate /= 2;
-			rate *= f->pre_div + 1;
+			rate *= f_tbl.pre_div + 1;
 		}
 
-		if (f->n) {
+		if (f_tbl.n) {
 			u64 tmp = rate;
-			tmp = tmp * f->n;
-			do_div(tmp, f->m);
+			tmp = tmp * f_tbl.n;
+			do_div(tmp, f_tbl.m);
 			rate = tmp;
 		}
 	} else {
@@ -261,7 +318,7 @@ static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
 	}
 	req->best_parent_hw = p;
 	req->best_parent_rate = rate;
-	req->rate = f->freq;
+	req->rate = f_tbl.freq;
 
 	return 0;
 }
@@ -357,6 +414,7 @@ static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
 {
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	const struct freq_tbl *f;
+	struct freq_tbl f_tbl;
 
 	switch (policy) {
 	case FLOOR:
@@ -372,7 +430,15 @@ static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
 	if (!f)
 		return -EINVAL;
 
-	return clk_rcg2_configure(rcg, f);
+	f_tbl = *f;
+	/*
+	 * A single freq may be reached by multiple configuration.
+	 * Try to find the best one if we have this kind of freq_table.
+	 */
+	if (f->confs)
+		clk_rcg2_select_conf(hw, &f_tbl, f, rate);
+
+	return clk_rcg2_configure(rcg, &f_tbl);
 }
 
 static int clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
