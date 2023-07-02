@@ -145,6 +145,10 @@ const struct fib_prop fib_props[RTN_MAX + 1] = {
 		.error	= -EINVAL,
 		.scope	= RT_SCOPE_NOWHERE,
 	},
+	[RTN_POLICY_FAILED] = {
+		.error	= -EACCES,
+		.scope	= RT_SCOPE_UNIVERSE,
+	},
 };
 
 static void rt_fibinfo_free(struct rtable __rcu **rtp)

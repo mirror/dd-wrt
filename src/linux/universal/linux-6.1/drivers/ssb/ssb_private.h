@@ -143,6 +143,10 @@ extern int ssb_bus_scan(struct ssb_bus *bus,
 extern void ssb_iounmap(struct ssb_bus *ssb);
 
 
+/* fallback-sprom.c */
+int __init ssb_fbs_register(void);
+int ssb_get_fallback_sprom(struct ssb_bus *dev, struct ssb_sprom *out);
+
 /* sprom.c */
 extern
 ssize_t ssb_attr_sprom_show(struct ssb_bus *bus, char *buf,

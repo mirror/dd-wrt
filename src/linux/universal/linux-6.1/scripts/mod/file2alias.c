@@ -38,6 +38,9 @@ typedef struct {
 	__u8 b[16];
 } guid_t;
 
+#ifdef __APPLE__
+#define uuid_t compat_uuid_t
+#endif
 /* backwards compatibility, don't use in new code */
 typedef struct {
 	__u8 b[16];

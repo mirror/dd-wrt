@@ -1711,4 +1711,19 @@ config GPIO_SIM
 
 endmenu
 
+comment "Other GPIO expanders"
+
+config GPIO_CASCADE
+	tristate "General GPIO cascade"
+	select MULTIPLEXER
+	help
+	  Say yes here to enable support for generic GPIO cascade.
+
+	  This allows building one-to-many cascades of GPIO lines using
+	  different types of multiplexers readily available. At the
+	  moment only input lines are supported.
+
+	  To build the driver as a module choose 'm' and the resulting module
+	  will be called 'gpio-cascade'.
+
 endif

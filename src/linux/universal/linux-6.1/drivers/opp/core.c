@@ -816,7 +816,8 @@ static int _set_opp_voltage(struct device *dev, struct regulator *reg,
 
 static int
 _opp_config_clk_single(struct device *dev, struct opp_table *opp_table,
-		       struct dev_pm_opp *opp, void *data, bool scaling_down)
+		       struct dev_pm_opp *old_opp, struct dev_pm_opp *opp,
+		       void *data, bool scaling_down)
 {
 	unsigned long *target = data;
 	unsigned long freq;
@@ -848,8 +849,8 @@ _opp_config_clk_single(struct device *dev, struct opp_table *opp_table,
  * the order in which they are present in the array while scaling up.
  */
 int dev_pm_opp_config_clks_simple(struct device *dev,
-		struct opp_table *opp_table, struct dev_pm_opp *opp, void *data,
-		bool scaling_down)
+		struct opp_table *opp_table, struct dev_pm_opp *old_opp,
+		struct dev_pm_opp *opp, void *data, bool scaling_down)
 {
 	int ret, i;
 
@@ -1121,7 +1122,7 @@ static int _set_opp(struct device *dev, struct opp_table *opp_table,
 	}
 
 	if (opp_table->config_clks) {
-		ret = opp_table->config_clks(dev, opp_table, opp, clk_data, scaling_down);
+		ret = opp_table->config_clks(dev, opp_table, old_opp, opp, clk_data, scaling_down);
 		if (ret)
 			return ret;
 	}
@@ -1196,7 +1197,7 @@ int dev_pm_opp_set_rate(struct device *dev, unsigned long target_freq)
 		 * equivalent to a clk_set_rate()
 		 */
 		if (!_get_opp_count(opp_table)) {
-			ret = opp_table->config_clks(dev, opp_table, NULL,
+			ret = opp_table->config_clks(dev, opp_table, NULL, NULL,
 						     &target_freq, false);
 			goto put_opp_table;
 		}

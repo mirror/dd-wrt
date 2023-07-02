@@ -609,6 +609,29 @@ static inline void setup_nr_cpu_ids(void) { }
 static inline void smp_prepare_cpus(unsigned int maxcpus) { }
 #endif
 
+#ifdef CONFIG_MANGLE_BOOTARGS
+static void __init mangle_bootargs(char *command_line)
+{
+	char *rootdev;
+	char *rootfs;
+
+	rootdev = strstr(command_line, "root=/dev/mtdblock");
+
+	if (rootdev)
+		strncpy(rootdev, "mangled_rootblock=", 18);
+
+	rootfs = strstr(command_line, "rootfstype");
+
+	if (rootfs)
+		strncpy(rootfs, "mangled_fs", 10);
+
+}
+#else
+static void __init mangle_bootargs(char *command_line)
+{
+}
+#endif
+
 /*
  * We need to store the untouched command line for future reference.
  * We also need to store the touched command line since the parameter
@@ -957,6 +980,7 @@ asmlinkage __visible void __init __no_sanitize_address start_kernel(void)
 	pr_notice("%s", linux_banner);
 	early_security_init();
 	setup_arch(&command_line);
+	mangle_bootargs(command_line);
 	setup_boot_config();
 	setup_command_line(command_line);
 	setup_nr_cpu_ids();

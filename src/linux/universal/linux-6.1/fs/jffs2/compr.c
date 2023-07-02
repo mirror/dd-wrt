@@ -378,6 +378,9 @@ int __init jffs2_compressors_init(void)
 #ifdef CONFIG_JFFS2_LZO
 	jffs2_lzo_init();
 #endif
+#ifdef CONFIG_JFFS2_LZMA
+	jffs2_lzma_init();
+#endif
 /* Setting default compression mode */
 #ifdef CONFIG_JFFS2_CMODE_NONE
 	jffs2_compression_mode = JFFS2_COMPR_MODE_NONE;
@@ -401,6 +404,9 @@ int __init jffs2_compressors_init(void)
 int jffs2_compressors_exit(void)
 {
 /* Unregistering compressors */
+#ifdef CONFIG_JFFS2_LZMA
+	jffs2_lzma_exit();
+#endif
 #ifdef CONFIG_JFFS2_LZO
 	jffs2_lzo_exit();
 #endif

@@ -211,8 +211,12 @@ static int cryptomgr_schedule_test(struct crypto_alg *alg)
 	type = alg->cra_flags;
 
 	/* Do not test internal algorithms. */
+#ifdef CONFIG_CRYPTO_MANAGER_DISABLE_TESTS
+	type |= CRYPTO_ALG_TESTED;
+#else
 	if (type & CRYPTO_ALG_INTERNAL)
 		type |= CRYPTO_ALG_TESTED;
+#endif
 
 	param->type = type;
 

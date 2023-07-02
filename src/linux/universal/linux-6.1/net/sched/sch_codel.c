@@ -95,11 +95,17 @@ static struct sk_buff *codel_qdisc_dequeue(struct Qdisc *sch)
 			    &q->stats, qdisc_pkt_len, codel_get_enqueue_time,
 			    drop_func, dequeue_func);
 
-	/* We cant call qdisc_tree_reduce_backlog() if our qlen is 0,
-	 * or HTB crashes. Defer it for next round.
+	/* If our qlen is 0 qdisc_tree_reduce_backlog() will deactivate
+	 * parent class, dequeue in parent qdisc will do the same if we
+	 * return skb. Temporary increment qlen if we have skb.
 	 */
-	if (q->stats.drop_count && sch->q.qlen) {
-		qdisc_tree_reduce_backlog(sch, q->stats.drop_count, q->stats.drop_len);
+	if (q->stats.drop_count) {
+		if (skb)
+			sch->q.qlen++;
+		qdisc_tree_reduce_backlog(sch, q->stats.drop_count,
+					  q->stats.drop_len);
+		if (skb)
+			sch->q.qlen--;
 		q->stats.drop_count = 0;
 		q->stats.drop_len = 0;
 	}

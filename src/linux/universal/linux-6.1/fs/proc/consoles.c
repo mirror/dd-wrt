@@ -92,6 +92,9 @@ static const struct seq_operations consoles_op = {
 
 static int __init proc_consoles_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
+
 	proc_create_seq("consoles", 0, NULL, &consoles_op);
 	return 0;
 }

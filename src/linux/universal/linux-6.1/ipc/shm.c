@@ -154,6 +154,8 @@ pure_initcall(ipc_ns_init);
 
 void __init shm_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return;
 	ipc_init_proc_interface("sysvipc/shm",
 #if BITS_PER_LONG <= 32
 				"       key      shmid perms       size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime        rss       swap\n",

@@ -31,6 +31,7 @@ enum msdos_sys_ind {
 	LINUX_LVM_PARTITION = 0x8e,
 	LINUX_RAID_PARTITION = 0xfd,	/* autodetect RAID partition */
 
+	FIT_PARTITION = 0x2e,		/* U-Boot uImage.FIT */
 	SOLARIS_X86_PARTITION =	0x82,	/* also Linux swap partitions */
 	NEW_SOLARIS_X86_PARTITION = 0xbf,
 

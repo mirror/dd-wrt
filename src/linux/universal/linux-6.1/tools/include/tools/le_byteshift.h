@@ -2,6 +2,10 @@
 #ifndef _TOOLS_LE_BYTESHIFT_H
 #define _TOOLS_LE_BYTESHIFT_H
 
+#ifndef __linux__
+#include "linux_types.h"
+#endif
+
 #include <stdint.h>
 
 static inline uint16_t __get_unaligned_le16(const uint8_t *p)

@@ -277,7 +277,6 @@ struct advk_pcie {
 	u8 wins_count;
 	struct irq_domain *rp_irq_domain;
 	struct irq_domain *irq_domain;
-	struct irq_chip irq_chip;
 	raw_spinlock_t irq_lock;
 	struct irq_domain *msi_domain;
 	struct irq_domain *msi_inner_domain;
@@ -1426,14 +1425,19 @@ static void advk_pcie_irq_unmask(struct irq_data *d)
 	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
 }
 
+static struct irq_chip advk_irq_chip = {
+	.name		= "advk-INT",
+	.irq_mask	= advk_pcie_irq_mask,
+	.irq_unmask	= advk_pcie_irq_unmask,
+};
+
 static int advk_pcie_irq_map(struct irq_domain *h,
 			     unsigned int virq, irq_hw_number_t hwirq)
 {
 	struct advk_pcie *pcie = h->host_data;
 
 	irq_set_status_flags(virq, IRQ_LEVEL);
-	irq_set_chip_and_handler(virq, &pcie->irq_chip,
-				 handle_level_irq);
+	irq_set_chip_and_handler(virq, &advk_irq_chip, handle_level_irq);
 	irq_set_chip_data(virq, pcie);
 
 	return 0;
@@ -1492,7 +1496,6 @@ static int advk_pcie_init_irq_domain(struct advk_pcie *pcie)
 	struct device *dev = &pcie->pdev->dev;
 	struct device_node *node = dev->of_node;
 	struct device_node *pcie_intc_node;
-	struct irq_chip *irq_chip;
 	int ret = 0;
 
 	raw_spin_lock_init(&pcie->irq_lock);
@@ -1503,28 +1506,14 @@ static int advk_pcie_init_irq_domain(struct advk_pcie *pcie)
 		return -ENODEV;
 	}
 
-	irq_chip = &pcie->irq_chip;
-
-	irq_chip->name = devm_kasprintf(dev, GFP_KERNEL, "%s-irq",
-					dev_name(dev));
-	if (!irq_chip->name) {
-		ret = -ENOMEM;
-		goto out_put_node;
-	}
-
-	irq_chip->irq_mask = advk_pcie_irq_mask;
-	irq_chip->irq_unmask = advk_pcie_irq_unmask;
-
 	pcie->irq_domain =
 		irq_domain_add_linear(pcie_intc_node, PCI_NUM_INTX,
 				      &advk_pcie_irq_domain_ops, pcie);
 	if (!pcie->irq_domain) {
 		dev_err(dev, "Failed to get a INTx IRQ domain\n");
 		ret = -ENOMEM;
-		goto out_put_node;
 	}
 
-out_put_node:
 	of_node_put(pcie_intc_node);
 	return ret;
 }

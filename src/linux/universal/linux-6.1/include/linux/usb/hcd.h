@@ -483,7 +483,14 @@ extern int usb_hcd_pci_probe(struct pci_dev *dev,
 extern void usb_hcd_pci_remove(struct pci_dev *dev);
 extern void usb_hcd_pci_shutdown(struct pci_dev *dev);
 
+#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
 extern int usb_hcd_amd_remote_wakeup_quirk(struct pci_dev *dev);
+#else
+static inline int usb_hcd_amd_remote_wakeup_quirk(struct pci_dev *dev)
+{
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_PM
 extern const struct dev_pm_ops usb_hcd_pci_pm_ops;

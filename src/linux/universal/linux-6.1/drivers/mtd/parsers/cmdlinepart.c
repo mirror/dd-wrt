@@ -43,6 +43,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/module.h>
 #include <linux/err.h>
+#include <linux/of.h>
 
 /* debug macro */
 #if 0
@@ -323,6 +324,68 @@ static int mtdpart_setup_real(char *s)
 	return 0;
 }
 
+static int search_fixed_partition(struct mtd_info *master,
+				  struct mtd_partition *target_part,
+				  struct mtd_partition *fixed_part)
+{
+	struct device_node *mtd_node;
+	struct device_node *ofpart_node;
+	struct device_node *pp;
+	struct mtd_partition part;
+	const char *partname;
+
+	mtd_node = mtd_get_of_node(master);
+	if (!mtd_node)
+		return -EINVAL;
+
+	ofpart_node = of_get_child_by_name(mtd_node, "partitions");
+
+	for_each_child_of_node(ofpart_node,  pp) {
+		const __be32 *reg;
+		int len;
+		int a_cells, s_cells;
+
+		reg = of_get_property(pp, "reg", &len);
+		if (!reg) {
+			pr_debug("%s: ofpart partition %pOF (%pOF) missing reg property.\n",
+				 master->name, pp,
+				 mtd_node);
+			continue;
+		}
+
+		a_cells = of_n_addr_cells(pp);
+		s_cells = of_n_size_cells(pp);
+		if (len / 4 != a_cells + s_cells) {
+			pr_debug("%s: ofpart partition %pOF (%pOF) error parsing reg property.\n",
+				 master->name, pp,
+				 mtd_node);
+			continue;
+		}
+
+		part.offset = of_read_number(reg, a_cells);
+		part.size = of_read_number(reg + a_cells, s_cells);
+		part.of_node = pp;
+
+		partname = of_get_property(pp, "label", &len);
+		if (!partname)
+			partname = of_get_property(pp, "name", &len);
+		part.name = partname;
+
+		if (!strncmp(target_part->name, part.name, len)) {
+			if (part.offset != target_part->offset)
+				return -EINVAL;
+
+			if (part.size != target_part->size)
+				return -EINVAL;
+
+			memcpy(fixed_part, &part, sizeof(struct mtd_partition));
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
 /*
  * Main function to be called from the MTD mapping driver/device to
  * obtain the partitioning information. At this point the command line
@@ -338,6 +401,7 @@ static int parse_cmdline_partitions(struct mtd_info *master,
 	int i, err;
 	struct cmdline_mtd_partition *part;
 	const char *mtd_id = master->name;
+	struct mtd_partition fixed_part;
 
 	/* parse command line */
 	if (!cmdline_parsed) {
@@ -381,6 +445,13 @@ static int parse_cmdline_partitions(struct mtd_info *master,
 			memmove(&part->parts[i], &part->parts[i + 1],
 				sizeof(*part->parts) * (part->num_parts - i));
 			i--;
+		}
+
+		err = search_fixed_partition(master, &part->parts[i], &fixed_part);
+		if (!err) {
+			part->parts[i].of_node = fixed_part.of_node;
+			pr_info("Found partition defined in DT for %s. Assigning OF node to support nvmem.",
+				part->parts[i].name);
 		}
 	}
 

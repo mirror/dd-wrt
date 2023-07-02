@@ -16,6 +16,11 @@ if BCMA
 # Support for Block-I/O. SELECT this from the driver that needs it.
 config BCMA_BLOCKIO
 	bool
+	default y
+
+config BCMA_FALLBACK_SPROM
+	bool
+	default y
 
 config BCMA_HOST_PCI_POSSIBLE
 	bool

@@ -38,6 +38,10 @@ int bcma_bus_resume(struct bcma_bus *bus);
 void bcma_detect_chip(struct bcma_bus *bus);
 int bcma_bus_scan(struct bcma_bus *bus);
 
+/* fallback-sprom.c */
+int __init bcma_fbs_register(void);
+int bcma_get_fallback_sprom(struct bcma_bus *dev, struct ssb_sprom *out);
+
 /* sprom.c */
 int bcma_sprom_get(struct bcma_bus *bus);
 

@@ -245,6 +245,8 @@ struct mtd_info {
 	 * information below if they desire
 	 */
 	uint32_t erasesize;
+	/* "Minor" (smallest) erase size supported by the whole device */
+	uint32_t erasesize_minor;
 	/* Minimal writable flash unit size. In case of NOR flash it is 1 (even
 	 * though individual bits can be cleared), in case of NAND flash it is
 	 * one NAND page (or half, or one-fourths of it), in case of ECC-ed NOR
@@ -615,6 +617,24 @@ static inline void mtd_align_erase_req(struct mtd_info *mtd,
 		req->len += mtd->erasesize - mod;
 }
 
+static inline uint64_t mtd_roundup_to_eb(uint64_t sz, struct mtd_info *mtd)
+{
+	if (mtd_mod_by_eb(sz, mtd) == 0)
+		return sz;
+
+	/* Round up to next erase block */
+	return (mtd_div_by_eb(sz, mtd) + 1) * mtd->erasesize;
+}
+
+static inline uint64_t mtd_rounddown_to_eb(uint64_t sz, struct mtd_info *mtd)
+{
+	if (mtd_mod_by_eb(sz, mtd) == 0)
+		return sz;
+
+	/* Round down to the start of the current erase block */
+	return (mtd_div_by_eb(sz, mtd)) * mtd->erasesize;
+}
+
 static inline uint32_t mtd_div_by_ws(uint64_t sz, struct mtd_info *mtd)
 {
 	if (mtd->writesize_shift)
@@ -688,6 +708,13 @@ extern struct mtd_info *of_get_mtd_device_by_node(struct device_node *np);
 extern struct mtd_info *get_mtd_device_nm(const char *name);
 extern void put_mtd_device(struct mtd_info *mtd);
 
+static inline uint64_t mtdpart_get_offset(const struct mtd_info *mtd)
+{
+	if (!mtd_is_partition(mtd))
+		return 0;
+
+	return mtd->part.offset;
+}
 
 struct mtd_notifier {
 	void (*add)(struct mtd_info *mtd);

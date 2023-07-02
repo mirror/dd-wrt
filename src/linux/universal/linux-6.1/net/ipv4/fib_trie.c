@@ -2778,6 +2778,7 @@ static const char *const rtn_type_names[__RTN_MAX] = {
 	[RTN_THROW] = "THROW",
 	[RTN_NAT] = "NAT",
 	[RTN_XRESOLVE] = "XRESOLVE",
+	[RTN_POLICY_FAILED] = "POLICY_FAILED",
 };
 
 static inline const char *rtn_type(char *buf, size_t len, unsigned int t)
@@ -3030,11 +3031,13 @@ static const struct seq_operations fib_route_seq_ops = {
 
 int __net_init fib_proc_init(struct net *net)
 {
-	if (!proc_create_net("fib_trie", 0444, net->proc_net, &fib_trie_seq_ops,
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED) &&
+			!proc_create_net("fib_trie", 0444, net->proc_net, &fib_trie_seq_ops,
 			sizeof(struct fib_trie_iter)))
 		goto out1;
 
-	if (!proc_create_net_single("fib_triestat", 0444, net->proc_net,
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED) &&
+			!proc_create_net_single("fib_triestat", 0444, net->proc_net,
 			fib_triestat_seq_show, NULL))
 		goto out2;
 
@@ -3045,17 +3048,21 @@ int __net_init fib_proc_init(struct net *net)
 	return 0;
 
 out3:
-	remove_proc_entry("fib_triestat", net->proc_net);
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED))
+		remove_proc_entry("fib_triestat", net->proc_net);
 out2:
-	remove_proc_entry("fib_trie", net->proc_net);
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED))
+		remove_proc_entry("fib_trie", net->proc_net);
 out1:
 	return -ENOMEM;
 }
 
 void __net_exit fib_proc_exit(struct net *net)
 {
-	remove_proc_entry("fib_trie", net->proc_net);
-	remove_proc_entry("fib_triestat", net->proc_net);
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED)) {
+		remove_proc_entry("fib_trie", net->proc_net);
+		remove_proc_entry("fib_triestat", net->proc_net);
+	}
 	remove_proc_entry("route", net->proc_net);
 }
 

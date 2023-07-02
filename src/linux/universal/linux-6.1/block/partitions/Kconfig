@@ -103,6 +103,13 @@ config ATARI_PARTITION
 	  Say Y here if you would like to use hard disks under Linux which
 	  were partitioned under the Atari OS.
 
+config FIT_PARTITION
+	bool "Flattened-Image-Tree (FIT) partition support" if PARTITION_ADVANCED
+	default n
+	help
+	  Say Y here if your system needs to mount the filesystem part of
+	  a Flattened-Image-Tree (FIT) image commonly used with Das U-Boot.
+
 config IBM_PARTITION
 	bool "IBM disk label and partition support"
 	depends on PARTITION_ADVANCED && S390

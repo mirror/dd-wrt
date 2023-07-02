@@ -308,7 +308,7 @@ static bool batadv_is_cfg80211_netdev(struct net_device *net_device)
 	if (!net_device)
 		return false;
 
-#if IS_ENABLED(CONFIG_CFG80211)
+#if IS_ENABLED(CONFIG_CFG80211_HEADERS)
 	/* cfg80211 drivers have to set ieee80211_ptr */
 	if (net_device->ieee80211_ptr)
 		return true;

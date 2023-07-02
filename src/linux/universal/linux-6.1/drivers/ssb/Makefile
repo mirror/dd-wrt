@@ -2,6 +2,7 @@
 # core
 ssb-y					+= main.o scan.o
 ssb-$(CONFIG_SSB_EMBEDDED)		+= embedded.o
+ssb-$(CONFIG_SSB_FALLBACK_SPROM)	+= fallback-sprom.o
 ssb-$(CONFIG_SSB_SPROM)			+= sprom.o
 
 # host support

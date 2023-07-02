@@ -18,6 +18,7 @@ menuconfig PHYLIB
 	depends on NETDEVICES
 	select MDIO_DEVICE
 	select MDIO_DEVRES
+	depends on LEDS_CLASS || LEDS_CLASS=n
 	help
 	  Ethernet controllers are usually attached to PHY
 	  devices.  This option provides infrastructure for
@@ -60,6 +61,80 @@ config SFP
 	depends on I2C && PHYLINK
 	depends on HWMON || HWMON=n
 	select MDIO_I2C
+
+comment "Switch configuration API + drivers"
+
+config SWCONFIG
+	tristate "Switch configuration API"
+	help
+	  Switch configuration API using netlink. This allows
+	  you to configure the VLAN features of certain switches.
+
+config SWCONFIG_LEDS
+	bool "Switch LED trigger support"
+	depends on (SWCONFIG && LEDS_TRIGGERS)
+
+config ADM6996_PHY
+	tristate "Driver for ADM6996 switches"
+	select SWCONFIG
+	help
+	  Currently supports the ADM6996FC and ADM6996M switches.
+	  Support for FC is very limited.
+
+config AR8216_PHY
+	tristate "Driver for Atheros AR8216/8327 switches"
+	select SWCONFIG
+	select ETHERNET_PACKET_MANGLE
+
+config AR8216_PHY_LEDS
+	bool "Atheros AR8216 switch LED support"
+	depends on (AR8216_PHY && LEDS_CLASS)
+
+source "drivers/net/phy/b53/Kconfig"
+
+config IP17XX_PHY
+	tristate "Driver for IC+ IP17xx switches"
+	select SWCONFIG
+
+config PSB6970_PHY
+	tristate "Lantiq XWAY Tantos (PSB6970) Ethernet switch"
+	select SWCONFIG
+
+config RTL8306_PHY
+	tristate "Driver for Realtek RTL8306S switches"
+	select SWCONFIG
+
+config RTL8366_SMI
+	tristate "Driver for the RTL8366 SMI interface"
+	depends on GPIOLIB
+	help
+	  This module implements the SMI interface protocol which is used
+	  by some RTL8366 ethernet switch devices via the generic GPIO API.
+
+if RTL8366_SMI
+
+config RTL8366_SMI_DEBUG_FS
+	bool "RTL8366 SMI interface debugfs support"
+        depends on DEBUG_FS
+        default n
+
+config RTL8366S_PHY
+	tristate "Driver for the Realtek RTL8366S switch"
+	select SWCONFIG
+
+config RTL8366RB_PHY
+	tristate "Driver for the Realtek RTL8366RB switch"
+	select SWCONFIG
+
+config RTL8367_PHY
+	tristate "Driver for the Realtek RTL8367R/M switches"
+	select SWCONFIG
+
+config RTL8367B_PHY
+	tristate "Driver fot the Realtek RTL8367R-VB switch"
+	select SWCONFIG
+
+endif # RTL8366_SMI
 
 comment "MII PHY device drivers"
 
@@ -260,7 +335,7 @@ config MOTORCOMM_PHY
 	tristate "Motorcomm PHYs"
 	help
 	  Enables support for Motorcomm network PHYs.
-	  Currently supports the YT8511 gigabit PHY.
+	  Currently supports YT85xx Gigabit Ethernet PHYs.
 
 config NATIONAL_PHY
 	tristate "National Semiconductor PHYs"

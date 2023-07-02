@@ -14,6 +14,7 @@
 #include <linux/compiler.h>
 #include <linux/spinlock.h>
 #include <linux/ethtool.h>
+#include <linux/leds.h>
 #include <linux/linkmode.h>
 #include <linux/netlink.h>
 #include <linux/mdio.h>
@@ -593,6 +594,7 @@ struct macsec_ops;
  * @phy_num_led_triggers: Number of triggers in @phy_led_triggers
  * @led_link_trigger: LED trigger for link up/down
  * @last_triggered: last LED trigger for link speed
+ * @leds: list of PHY LED structures
  * @master_slave_set: User requested master/slave configuration
  * @master_slave_get: Current master/slave advertisement
  * @master_slave_state: Current master/slave configuration
@@ -685,6 +687,7 @@ struct phy_device {
 
 	struct phy_led_trigger *led_link_trigger;
 #endif
+	struct list_head leds;
 
 	/*
 	 * Interrupt number for this PHY
@@ -757,6 +760,23 @@ struct phy_tdr_config {
 	s8 pair;
 };
 #define PHY_PAIR_ALL -1
+
+/**
+ * struct phy_led: An LED driven by the PHY
+ *
+ * @list: List of LEDs
+ * @phydev: PHY this LED is attached to
+ * @led_cdev: Standard LED class structure
+ * @index: Number of the LED
+ */
+struct phy_led {
+	struct list_head list;
+	struct phy_device *phydev;
+	struct led_classdev led_cdev;
+	u8 index;
+};
+
+#define to_phy_led(d) container_of(d, struct phy_led, led_cdev)
 
 /**
  * struct phy_driver - Driver structure for a particular PHY type
@@ -857,6 +877,12 @@ struct phy_driver {
 
 	/** @handle_interrupt: Override default interrupt handling */
 	irqreturn_t (*handle_interrupt)(struct phy_device *phydev);
+
+	/*
+	 * Called before an ethernet device is detached
+	 * from the PHY.
+	 */
+	void (*detach)(struct phy_device *phydev);
 
 	/** @remove: Clears up any memory if needed */
 	void (*remove)(struct phy_device *phydev);
@@ -972,6 +998,27 @@ struct phy_driver {
 	int (*get_sqi)(struct phy_device *dev);
 	/** @get_sqi_max: Get the maximum signal quality indication */
 	int (*get_sqi_max)(struct phy_device *dev);
+
+	/**
+	 * @led_brightness_set: Set a PHY LED brightness. Index
+	 * indicates which of the PHYs led should be set. Value
+	 * follows the standard LED class meaning, e.g. LED_OFF,
+	 * LED_HALF, LED_FULL.
+	 */
+	int (*led_brightness_set)(struct phy_device *dev,
+				  u8 index, enum led_brightness value);
+
+	/**
+	 * @led_blink_set: Set a PHY LED brightness.  Index indicates
+	 * which of the PHYs led should be configured to blink. Delays
+	 * are in milliseconds and if both are zero then a sensible
+	 * default should be chosen.  The call should adjust the
+	 * timings in that case and if it can't match the values
+	 * specified exactly.
+	 */
+	int (*led_blink_set)(struct phy_device *dev, u8 index,
+			     unsigned long *delay_on,
+			     unsigned long *delay_off);
 };
 #define to_phy_driver(d) container_of(to_mdio_common_driver(d),		\
 				      struct phy_driver, mdiodrv)

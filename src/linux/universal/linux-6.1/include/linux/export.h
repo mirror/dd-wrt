@@ -72,6 +72,12 @@ struct kernel_symbol {
 
 #else
 
+#ifdef MODULE
+#define __EXPORT_SUFFIX(sym)
+#else
+#define __EXPORT_SUFFIX(sym) "+" #sym
+#endif
+
 /*
  * For every exported symbol, do the following:
  *
@@ -87,7 +93,7 @@ struct kernel_symbol {
 	extern typeof(sym) sym;							\
 	extern const char __kstrtab_##sym[];					\
 	extern const char __kstrtabns_##sym[];					\
-	asm("	.section \"__ksymtab_strings\",\"aMS\",%progbits,1	\n"	\
+	asm("	.section \"__ksymtab_strings" __EXPORT_SUFFIX(sym) "\",\"aMS\",%progbits,1	\n"	\
 	    "__kstrtab_" #sym ":					\n"	\
 	    "	.asciz 	\"" #sym "\"					\n"	\
 	    "__kstrtabns_" #sym ":					\n"	\

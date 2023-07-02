@@ -9,6 +9,7 @@
 #include <linux/device.h>
 #include <linux/slab.h>
 #include <linux/export.h>
+#include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/err.h>
 #include <linux/property.h>
@@ -3513,3 +3514,5 @@ static int __init regmap_initcall(void)
 	return 0;
 }
 postcore_initcall(regmap_initcall);
+
+MODULE_LICENSE("GPL");
