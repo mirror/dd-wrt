@@ -97,53 +97,58 @@ const struct clk_ops krait_mux_clk_ops = {
 EXPORT_SYMBOL_GPL(krait_mux_clk_ops);
 
 /* The divider can divide by 2, 4, 6 and 8. But we only really need div-2. */
-static long krait_div2_round_rate(struct clk_hw *hw, unsigned long rate,
+static long krait_div_round_rate(struct clk_hw *hw, unsigned long rate,
 				  unsigned long *parent_rate)
 {
-	*parent_rate = clk_hw_round_rate(clk_hw_get_parent(hw), rate * 2);
-	return DIV_ROUND_UP(*parent_rate, 2);
+	struct krait_div_clk *d = to_krait_div_clk(hw);
+
+	*parent_rate = clk_hw_round_rate(clk_hw_get_parent(hw),
+					 rate * d->divisor);
+
+	return DIV_ROUND_UP(*parent_rate, d->divisor);
 }
 
-static int krait_div2_set_rate(struct clk_hw *hw, unsigned long rate,
+static int krait_div_set_rate(struct clk_hw *hw, unsigned long rate,
 			       unsigned long parent_rate)
 {
-	struct krait_div2_clk *d = to_krait_div2_clk(hw);
+	struct krait_div_clk *d = to_krait_div_clk(hw);
+	u8 div_val = krait_div_to_val(d->divisor);
 	unsigned long flags;
-	u32 val;
-	u32 mask = BIT(d->width) - 1;
-
-	if (d->lpl)
-		mask = mask << (d->shift + LPL_SHIFT) | mask << d->shift;
-	else
-		mask <<= d->shift;
+	u32 regval;
 
 	spin_lock_irqsave(&krait_clock_reg_lock, flags);
-	val = krait_get_l2_indirect_reg(d->offset);
-	val &= ~mask;
-	krait_set_l2_indirect_reg(d->offset, val);
+	regval = krait_get_l2_indirect_reg(d->offset);
+
+	regval &= ~(d->mask << d->shift);
+	regval |= (div_val & d->mask) << d->shift;
+
+	if (d->lpl) {
+		regval &= ~(d->mask << (d->shift + LPL_SHIFT));
+		regval |= (div_val & d->mask) << (d->shift + LPL_SHIFT);
+	}
+
+	krait_set_l2_indirect_reg(d->offset, regval);
 	spin_unlock_irqrestore(&krait_clock_reg_lock, flags);
 
 	return 0;
 }
 
 static unsigned long
-krait_div2_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+krait_div_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 {
-	struct krait_div2_clk *d = to_krait_div2_clk(hw);
-	u32 mask = BIT(d->width) - 1;
+	struct krait_div_clk *d = to_krait_div_clk(hw);
 	u32 div;
 
 	div = krait_get_l2_indirect_reg(d->offset);
 	div >>= d->shift;
-	div &= mask;
-	div = (div + 1) * 2;
+	div &= d->mask;
 
-	return DIV_ROUND_UP(parent_rate, div);
+	return DIV_ROUND_UP(parent_rate, krait_val_to_div(div));
 }
 
-const struct clk_ops krait_div2_clk_ops = {
-	.round_rate = krait_div2_round_rate,
-	.set_rate = krait_div2_set_rate,
-	.recalc_rate = krait_div2_recalc_rate,
+const struct clk_ops krait_div_clk_ops = {
+	.round_rate = krait_div_round_rate,
+	.set_rate = krait_div_set_rate,
+	.recalc_rate = krait_div_recalc_rate,
 };
-EXPORT_SYMBOL_GPL(krait_div2_clk_ops);
+EXPORT_SYMBOL_GPL(krait_div_clk_ops);

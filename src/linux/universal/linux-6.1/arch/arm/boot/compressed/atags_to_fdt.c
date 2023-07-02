@@ -5,6 +5,8 @@
 
 #if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND)
 #define do_extend_cmdline 1
+#elif defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+#define do_extend_cmdline 1
 #else
 #define do_extend_cmdline 0
 #endif
@@ -20,6 +22,7 @@ static int node_offset(void *fdt, const char *node_path)
 	return offset;
 }
 
+#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
 static int setprop(void *fdt, const char *node_path, const char *property,
 		   void *val_array, int size)
 {
@@ -28,6 +31,7 @@ static int setprop(void *fdt, const char *node_path, const char *property,
 		return offset;
 	return fdt_setprop(fdt, offset, property, val_array, size);
 }
+#endif
 
 static int setprop_string(void *fdt, const char *node_path,
 			  const char *property, const char *string)
@@ -38,6 +42,7 @@ static int setprop_string(void *fdt, const char *node_path,
 	return fdt_setprop_string(fdt, offset, property, string);
 }
 
+#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
 static int setprop_cell(void *fdt, const char *node_path,
 			const char *property, uint32_t val)
 {
@@ -46,6 +51,7 @@ static int setprop_cell(void *fdt, const char *node_path,
 		return offset;
 	return fdt_setprop_cell(fdt, offset, property, val);
 }
+#endif
 
 static const void *getprop(const void *fdt, const char *node_path,
 			   const char *property, int *len)
@@ -58,6 +64,7 @@ static const void *getprop(const void *fdt, const char *node_path,
 	return fdt_getprop(fdt, offset, property, len);
 }
 
+#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
 static uint32_t get_cell_size(const void *fdt)
 {
 	int len;
@@ -68,6 +75,81 @@ static uint32_t get_cell_size(const void *fdt)
 		cell_size = fdt32_to_cpu(*size_len);
 	return cell_size;
 }
+#endif
+
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+/**
+ * taken from arch/x86/boot/string.c
+ * local_strstr - Find the first substring in a %NUL terminated string
+ * @s1: The string to be searched
+ * @s2: The string to search for
+ */
+static char *local_strstr(const char *s1, const char *s2)
+{
+	size_t l1, l2;
+
+	l2 = strlen(s2);
+	if (!l2)
+		return (char *)s1;
+	l1 = strlen(s1);
+	while (l1 >= l2) {
+		l1--;
+		if (!memcmp(s1, s2, l2))
+			return (char *)s1;
+		s1++;
+	}
+	return NULL;
+}
+
+static char *append_rootblock(char *dest, const char *str, int len, void *fdt)
+{
+	char *ptr, *end, *tmp;
+	const char *root="root=";
+	const char *find_rootblock;
+	int i, l;
+	const char *rootblock;
+
+	find_rootblock = getprop(fdt, "/chosen", "find-rootblock", &l);
+	if (!find_rootblock)
+		find_rootblock = root;
+
+	//ARM doesn't have __HAVE_ARCH_STRSTR, so it was copied from x86
+	ptr = local_strstr(str, find_rootblock);
+
+	if(!ptr)
+		return dest;
+
+	end = strchr(ptr, ' ');
+	end = end ? (end - 1) : (strchr(ptr, 0) - 1);
+
+	// Some boards ubi.mtd=XX,ZZZZ, so let's check for '," too.
+	tmp = strchr(ptr, ',');
+
+	if(tmp)
+		end = end < tmp ? end : tmp - 1;
+
+	//find partition number (assumes format root=/dev/mtdXX | /dev/mtdblockXX | yy:XX | ubi.mtd=XX,ZZZZ )
+	for( i = 0; end >= ptr && *end >= '0' && *end <= '9'; end--, i++);
+	ptr = end + 1;
+
+	/* if append-rootblock property is set use it to append to command line */
+	rootblock = getprop(fdt, "/chosen", "append-rootblock", &l);
+	if(rootblock != NULL) {
+		if(*dest != ' ') {
+			*dest = ' ';
+			dest++;
+			len++;
+		}
+		if (len + l + i <= COMMAND_LINE_SIZE) {
+			memcpy(dest, rootblock, l);
+			dest += l - 1;
+			memcpy(dest, ptr, i);
+			dest += i;
+		}
+	}
+	return dest;
+}
+#endif
 
 static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
 {
@@ -88,18 +170,28 @@ static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
 
 	/* and append the ATAG_CMDLINE */
 	if (fdt_cmdline) {
+
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+		//save original bootloader args
+		//and append ubi.mtd with root partition number to current cmdline
+		setprop_string(fdt, "/chosen", "bootloader-args", fdt_cmdline);
+		ptr = append_rootblock(ptr, fdt_cmdline, len, fdt);
+
+#else
 		len = strlen(fdt_cmdline);
 		if (ptr - cmdline + len + 2 < COMMAND_LINE_SIZE) {
 			*ptr++ = ' ';
 			memcpy(ptr, fdt_cmdline, len);
 			ptr += len;
 		}
+#endif
 	}
 	*ptr = '\0';
 
 	setprop_string(fdt, "/chosen", "bootargs", cmdline);
 }
 
+#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
 static void hex_str(char *out, uint32_t value)
 {
 	uint32_t digit;
@@ -117,6 +209,7 @@ static void hex_str(char *out, uint32_t value)
 	}
 	*out = '\0';
 }
+#endif
 
 /*
  * Convert and fold provided ATAGs into the provided FDT.
@@ -131,9 +224,11 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
 	struct tag *atag = atag_list;
 	/* In the case of 64 bits memory size, need to reserve 2 cells for
 	 * address and size for each bank */
+#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
 	__be32 mem_reg_property[2 * 2 * NR_BANKS];
-	int memcount = 0;
-	int ret, memsize;
+	int memsize, memcount = 0;
+#endif
+	int ret;
 
 	/* make sure we've got an aligned pointer */
 	if ((u32)atag_list & 0x3)
@@ -168,7 +263,9 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
 			else
 				setprop_string(fdt, "/chosen", "bootargs",
 					       atag->u.cmdline.cmdline);
-		} else if (atag->hdr.tag == ATAG_MEM) {
+		}
+#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+		else if (atag->hdr.tag == ATAG_MEM) {
 			if (memcount >= sizeof(mem_reg_property)/4)
 				continue;
 			if (!atag->u.mem.size)
@@ -212,6 +309,10 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
 		setprop(fdt, "/memory", "reg", mem_reg_property,
 			4 * memcount * memsize);
 	}
+#else
+
+	}
+#endif
 
 	return fdt_pack(fdt);
 }

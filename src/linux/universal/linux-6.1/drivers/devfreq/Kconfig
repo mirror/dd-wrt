@@ -151,6 +151,28 @@ config ARM_SUN8I_A33_MBUS_DEVFREQ
 	  This adds the DEVFREQ driver for the MBUS controller in some
 	  Allwinner sun8i (A33 through H3) and sun50i (A64 and H5) SoCs.
 
+config ARM_KRAIT_CACHE_DEVFREQ
+	tristate "Scaling support for Krait CPU Cache Devfreq"
+	depends on ARCH_QCOM || COMPILE_TEST
+	select DEVFREQ_GOV_PASSIVE
+	help
+	  This adds the DEVFREQ driver for the Krait CPU L2 Cache shared by all cores.
+
+	  The driver register with the cpufreq notifier and find the right frequency
+	  based on the max frequency across all core and the range set in the device
+	  dts. If provided this scale also the regulator attached to the l2 cache.
+
+config ARM_IPQ806X_FAB_DEVFREQ
+	tristate "Scaling support for ipq806x Soc Fabric"
+	depends on ARCH_QCOM || COMPILE_TEST
+	select DEVFREQ_GOV_PASSIVE
+	help
+	  This adds the DEVFREQ driver for the ipq806x Soc Fabric.
+
+	  The driver register with the cpufreq notifier and find the right frequency
+	  based on the max frequency across all core and the range set in the device
+	  dts.
+
 source "drivers/devfreq/event/Kconfig"
 
 endif # PM_DEVFREQ

@@ -2,6 +2,18 @@
 
 #include "qcom-ipq8062.dtsi"
 
+&cpu0 {
+	cpu-supply = <&smb208_s2a>;
+};
+
+&cpu1 {
+	cpu-supply = <&smb208_s2b>;
+};
+
+&L2 {
+	l2-supply = <&smb208_s1a>;
+};
+
 &rpm {
 	smb208_regulators: regulators {
 		compatible = "qcom,rpm-smb208-regulators";

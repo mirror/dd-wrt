@@ -1,12 +1,11 @@
 #include "qcom-ipq8064-v1.0.dtsi"
 
 / {
-	model = "Qualcomm Technologies, Inc. IPQ8064/AP-148";
-	compatible = "qcom,ipq8064-ap148", "qcom,ipq8064";
+	model = "Qualcomm IPQ8064/DB149";
+	compatible = "qcom,ipq8064-db149", "qcom,ipq8064";
 
-	memory@0 {
-		reg = <0x42000000 0x1e000000>;
-		device_type = "memory";
+	aliases {
+		serial0 = &gsbi2_serial;
 	};
 
 	reserved-memory {
@@ -18,19 +17,61 @@
 			no-map;
 		};
 	};
+};
 
-	aliases {
-		mdio-gpio0 = &mdio0;
+&qcom_pinmux {
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio2", "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
 	};
 };
 
-&adm_dma {
+&gsbi2 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
 	status = "okay";
+
+	gsbi2_serial: serial@12490000 {
+		status = "okay";
+	};
+};
+
+&gsbi4 {
+	status = "disabled";
+};
+
+&gsbi4_serial {
+	status = "disabled";
 };
 
 &flash {
-	partitions {
-		compatible = "qcom,smem-part";
+	m25p,fast-read;
+
+	partition@0 {
+		label = "lowlevel_init";
+		reg = <0x0 0x1b0000>;
+	};
+
+	partition@1 {
+		label = "u-boot";
+		reg = <0x1b0000 0x80000>;
+	};
+
+	partition@2 {
+		label = "u-boot-env";
+		reg = <0x230000 0x40000>;
+	};
+
+	partition@3 {
+		label = "caldata";
+		reg = <0x270000 0x40000>;
+	};
+
+	partition@4 {
+		label = "firmware";
+		reg = <0x2b0000 0x1d50000>;
 	};
 };
 
@@ -64,24 +105,10 @@
 
 &pcie1 {
 	status = "okay";
-	max-link-speed = <1>;
 };
 
-&nand {
+&pcie2 {
 	status = "okay";
-
-	nand@0 {
-		reg = <0>;
-		compatible = "qcom,nandcs";
-
-		nand-ecc-strength = <4>;
-		nand-bus-width = <8>;
-		nand-ecc-step-size = <512>;
-
-		partitions {
-			compatible = "qcom,smem-part";
-		};
-	};
 };
 
 &mdio0 {
@@ -100,21 +127,36 @@
 			0x000e0 0xc74164de  /* SGMII_CTRL */
 			0x0007c 0x4e        /* PORT0_STATUS */
 			0x00094 0x4e        /* PORT6_STATUS */
-			>;
+		>;
 	};
 
 	phy4: ethernet-phy@4 {
 		reg = <4>;
 	};
+
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+	};
+
+	phy7: ethernet-phy@7 {
+		reg = <7>;
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	phy-mode = "rgmii";
+	qcom,id = <0>;
+	phy-handle = <&phy4>;
+
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
 };
 
 &gmac1 {
 	status = "okay";
-	phy-mode = "rgmii";
+	phy-mode = "sgmii";
 	qcom,id = <1>;
-
-	pinctrl-0 = <&rgmii2_pins>;
-	pinctrl-names = "default";
 
 	fixed-link {
 		speed = <1000>;
@@ -126,9 +168,12 @@
 	status = "okay";
 	phy-mode = "sgmii";
 	qcom,id = <2>;
+	phy-handle = <&phy6>;
+};
 
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
+&gmac3 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <3>;
+	phy-handle = <&phy7>;
 };

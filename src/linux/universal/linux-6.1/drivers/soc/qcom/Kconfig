@@ -213,6 +213,13 @@ config QCOM_STATS
 	  various SoC level low power modes statistics and export to debugfs
 	  interface.
 
+config QCOM_TCSR
+	tristate "QCOM Top Control and Status Registers"
+	depends on ARCH_QCOM
+	help
+	  Say y here to enable TCSR support.  The TCSR provides control
+	  functions for various peripherals.
+
 config QCOM_WCNSS_CTRL
 	tristate "Qualcomm WCNSS control driver"
 	depends on ARCH_QCOM || COMPILE_TEST
