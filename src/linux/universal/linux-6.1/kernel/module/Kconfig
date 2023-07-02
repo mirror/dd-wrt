@@ -169,6 +169,13 @@ config MODULE_SIG_HASH
 	default "sha384" if MODULE_SIG_SHA384
 	default "sha512" if MODULE_SIG_SHA512
 
+config MODULE_STRIPPED
+	bool "Reduce module size"
+	depends on MODULES
+	help
+	  Remove module parameter descriptions, author info, version, aliases,
+	  device tables, etc.
+
 choice
 	prompt "Module compression mode"
 	help
