@@ -8782,10 +8782,10 @@ int dev_validate_mtu(struct net_device *dev, int new_mtu,
 		return -EINVAL;
 	}
 
-	if (dev->max_mtu > 0 && new_mtu > dev->max_mtu) {
-		NL_SET_ERR_MSG(extack, "mtu greater than device maximum");
-		return -EINVAL;
-	}
+//	if (dev->max_mtu > 0 && new_mtu > dev->max_mtu) {
+//		NL_SET_ERR_MSG(extack, "mtu greater than device maximum");
+//		return -EINVAL;
+//	}
 	return 0;
 }
 
