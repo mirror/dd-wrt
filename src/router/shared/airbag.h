@@ -41,6 +41,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO)
 
 /** Optional user callback, to print additional state at time of crash (build #, uptime, etc).
  */
@@ -75,6 +76,13 @@ extern "C" {
 	void airbag_deinit();
 
 	void airbag_setpostinfo(const char *string);
+#else
+#undef airbag_setpostinfo
+#define airbag_setpostinfo(string) do { } while(0)
+#define airbag_init(string) do { } while(0)
+#define airbag_init_delegate(string) do { } while(0)
+#define airbag_init_deinit(string) do { } while(0)
+#endif
 
 #ifdef __cplusplus
 }

@@ -358,8 +358,12 @@ int check_blocklist(const char *service, char *ip);
 void add_blocklist_sock(const char *service, int socket);
 int check_blocklist_sock(const char *service, int socket);
 char *get_ipfromsock(int socket, char *ip);
+#if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO)
 void airbag_setpostinfo(const char *string);
-
+#else
+#undef airbag_setpostinfo
+#define airbag_setpostinfo(string) do { } while(0)
+#endif
 /*
 #define debug_free(ptr) { \
 	airbag_setpostinfo(__func__); \
