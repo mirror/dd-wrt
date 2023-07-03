@@ -646,7 +646,7 @@ static void sctp_addr_wq_timeout_handler(struct timer_list *t)
 				goto free_next;
 
 			in6 = (struct in6_addr *)&addrw->a.v6.sin6_addr;
-			if (ipv6_chk_addr(net, in6, NULL, 0) == 0 &&
+			if ((!ipv6_chk_addr || ipv6_chk_addr(net, in6, NULL, 0) == 0) &&
 			    addrw->state == SCTP_ADDR_NEW) {
 				unsigned long timeo_val;
 
