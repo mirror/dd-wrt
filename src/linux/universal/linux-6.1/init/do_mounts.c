@@ -637,7 +637,6 @@ void __init mount_root(void)
 			return;
 	}
 #ifdef CONFIG_BLOCK
-	{
 #ifdef CONFIG_X86
  	int i;
  	for (i = 0; i < root_devices; i++) {
@@ -648,6 +647,7 @@ void __init mount_root(void)
  	}
  	panic("unable to mount root\n");
 #else
+	{
 		int err = create_dev("/dev/root", ROOT_DEV);
 
 		if (err < 0)
@@ -707,7 +707,7 @@ void __init prepare_namespace(void)
 
 	/* wait for any asynchronous scanning to complete */
 #ifndef CONFIG_X86
- 	if ((ROOT_DEV == 0) && root_wait) {
+	if ((ROOT_DEV == 0) && root_wait) {
 #else
 	if (root_wait) {
 #endif

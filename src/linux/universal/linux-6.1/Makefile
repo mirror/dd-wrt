@@ -836,7 +836,7 @@ KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
 KBUILD_CFLAGS	+= -fno-reorder-blocks -fno-tree-ch -fno-caller-saves $(EXTRA_OPTIMIZATION)
 KBUILD_RUSTFLAGS += -Copt-level=s
 else ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
-KBUILD_CFLAGS   += -fno-reorder-blocks -fno-tree-ch -fno-caller-saves-O3 $(EXTRA_OPTIMIZATION)
+KBUILD_CFLAGS   += -fno-reorder-blocks -fno-tree-ch -fno-caller-saves -O3 $(EXTRA_OPTIMIZATION)
 endif
 
 # Always set `debug-assertions` and `overflow-checks` because their default

@@ -641,29 +641,6 @@ static void __init mangle_bootargs(char *command_line)
 }
 #endif
 
-#ifdef CONFIG_MANGLE_BOOTARGS
-static void __init mangle_bootargs(char *command_line)
-{
-	char *rootdev;
-	char *rootfs;
-
-	rootdev = strstr(command_line, "root=/dev/mtdblock");
-
-	if (rootdev)
-		strncpy(rootdev, "mangled_rootblock=", 18);
-
-	rootfs = strstr(command_line, "rootfstype");
-
-	if (rootfs)
-		strncpy(rootfs, "mangled_fs", 10);
-
-}
-#else
-static void __init mangle_bootargs(char *command_line)
-{
-}
-#endif
-
 /*
  * We need to store the untouched command line for future reference.
  * We also need to store the touched command line since the parameter
