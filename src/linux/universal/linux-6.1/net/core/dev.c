@@ -143,6 +143,9 @@
 #include <linux/netfilter_netdev.h>
 #include <linux/crash_dump.h>
 #include <linux/sctp.h>
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#include <linux/imq.h>
+#endif
 #include <net/udp_tunnel.h>
 #include <linux/net_namespace.h>
 #include <linux/indirect_call_wrapper.h>
@@ -3587,6 +3590,13 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	unsigned int len;
 	int rc;
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	if ((!list_empty(&ptype_all) || !list_empty(&dev->ptype_all)) &&
+		!(skb->imq_flags & IMQ_F_ENQUEUE))
+#else
+	if (!list_empty(&ptype_all) || !list_empty(&dev->ptype_all))
+#endif
+
 	if (dev_nit_active(dev))
 		dev_queue_xmit_nit(skb, dev);
 
@@ -3630,6 +3640,8 @@ out:
 	*ret = rc;
 	return skb;
 }
+
+EXPORT_SYMBOL_GPL(dev_hard_start_xmit);
 
 static struct sk_buff *validate_xmit_vlan(struct sk_buff *skb,
 					  netdev_features_t features)

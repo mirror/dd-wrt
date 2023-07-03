@@ -302,6 +302,13 @@ trace:
 	return skb;
 }
 
+struct sk_buff *qdisc_dequeue_skb(struct Qdisc *q, bool *validate)
+{
+	int packets;
+	return dequeue_skb(q, validate, &packets);
+}
+EXPORT_SYMBOL(qdisc_dequeue_skb);
+
 /*
  * Transmit possibly several skbs, and handle the return status as
  * required. Owning qdisc running bit guarantees that only one CPU
