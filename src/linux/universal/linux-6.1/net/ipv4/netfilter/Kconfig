@@ -130,6 +130,16 @@ config IP_NF_IPTABLES
 
 if IP_NF_IPTABLES
 
+config IP_NF_MATCH_WEBSTR
+        tristate "Webstr match support (EXPERIMENTAL)"
+
+
+config IP_NF_MATCH_IPP2P
+	tristate "IPP2P"
+	depends on IP_NF_IPTABLES
+	help
+	  Module for matching traffic of various Peer-to-Peer applications
+
 # The matches.
 config IP_NF_MATCH_AH
 	tristate '"ah" match support'
@@ -179,6 +189,12 @@ config IP_NF_FILTER
 	  local output.  See the man page for iptables(8).
 
 	  To compile it as a module, choose M here.  If unsure, say N.
+
+config IP_NF_AUTOFW
+        tristate "Automatic port forwarding (autofw) target support"
+
+config IP_NF_TARGET_TRIGGER
+	tristate "port triggering match support"
 
 config IP_NF_TARGET_REJECT
 	tristate "REJECT target support"
@@ -247,6 +263,11 @@ config IP_NF_TARGET_REDIRECT
 	CONFIG_NETFILTER_XT_TARGET_REDIRECT.
 
 endif # IP_NF_NAT
+
+config NF_NAT_RTSP
+	tristate
+ 	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT_IPV4
+ 	default NF_NAT_IPV4 && NF_CONNTRACK_RTSP
 
 # mangle + specific targets
 config IP_NF_MANGLE

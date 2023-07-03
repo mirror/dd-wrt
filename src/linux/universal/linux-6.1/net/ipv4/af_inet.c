@@ -1488,8 +1488,8 @@ struct sk_buff *inet_gro_receive(struct list_head *head, struct sk_buff *skb)
 	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
 		goto out;
 
-	id = ntohl(*(__be32 *)&iph->id);
-	flush = (u16)((ntohl(*(__be32 *)iph) ^ skb_gro_len(skb)) | (id & ~IP_DF));
+	id = ntohl(net_hdr_word(&iph->id));
+	flush = (u16)((ntohl(net_hdr_word(iph)) ^ skb_gro_len(skb)) | (id & ~IP_DF));
 	id >>= 16;
 
 	list_for_each_entry(p, head, list) {

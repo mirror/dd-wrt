@@ -308,8 +308,8 @@ nf_ct_get_tuple(const struct sk_buff *skb,
 
 	switch (l3num) {
 	case NFPROTO_IPV4:
-		tuple->src.u3.ip = ap[0];
-		tuple->dst.u3.ip = ap[1];
+		tuple->src.u3.ip = net_hdr_word(ap++);
+		tuple->dst.u3.ip = net_hdr_word(ap);
 		break;
 	case NFPROTO_IPV6:
 		memcpy(tuple->src.u3.ip6, ap, sizeof(tuple->src.u3.ip6));
