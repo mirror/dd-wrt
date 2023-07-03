@@ -1402,24 +1402,6 @@ void airbag_setpostinfo(const char *string)
 	pthread_mutex_unlock(&postinfo_mutex);
 
 }
-#else
-void airbag_setpostinfo(char *string)
-{
-
-}
-
-int airbag_init(void)
-{
-}
-
-int airbag_init_delegate(sighandler_t handler)
-{
-}
-
-void airbag_deinit()
-{
-}
-
 #endif
 
 #ifdef TEST
