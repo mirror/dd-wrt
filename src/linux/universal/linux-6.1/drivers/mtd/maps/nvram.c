@@ -1,3 +1,4 @@
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -88,7 +89,7 @@ static uint8 crc8_table[256] = {
 	0xF4, 0x03, 0x4D, 0xBA, 0xD1, 0x26, 0x68, 0x9F
 };
 
-uint8 crc8(uint8 * pdata,	/* pointer to array of data to process */
+uint8 nvram_crc8(uint8 * pdata,	/* pointer to array of data to process */
 	   uint nbytes,		/* number of input data bytes to process */
 	   uint8 crc		/* either CRC8_INIT_VALUE or previous return value */
     )
@@ -303,10 +304,10 @@ int _nvram_commit(struct nvram_header *header)
 	tmp.crc_ver_init = htol32(header->crc_ver_init);
 	tmp.config_refresh = htol32(header->config_refresh);
 	tmp.config_ncdl = htol32(header->config_ncdl);
-	crc = crc8((char *)&tmp + 12, sizeof(struct nvram_header) - 12, CRC8_INIT_VALUE);
+	crc = nvram_crc8((char *)&tmp + 12, sizeof(struct nvram_header) - 12, CRC8_INIT_VALUE);
 
 	/* Continue CRC8 over data bytes */
-	crc = crc8((char *)&header[1], header->len - sizeof(struct nvram_header), crc);
+	crc = nvram_crc8((char *)&header[1], header->len - sizeof(struct nvram_header), crc);
 
 	/* Set new CRC8 */
 	header->crc_ver_init |= crc;
