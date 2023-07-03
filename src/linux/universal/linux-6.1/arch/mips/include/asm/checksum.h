@@ -100,26 +100,30 @@ static inline __sum16 ip_fast_csum(const void *iph, unsigned int ihl)
 	const unsigned int *stop = word + ihl;
 	unsigned int csum;
 	int carry;
+	unsigned int w;
 
-	csum = word[0];
-	csum += word[1];
-	carry = (csum < word[1]);
+	csum = net_hdr_word(word++);
+
+	w = net_hdr_word(word++);
+	csum += w;
+	carry = (csum < w);
 	csum += carry;
 
-	csum += word[2];
-	carry = (csum < word[2]);
+	w = net_hdr_word(word++);
+	csum += w;
+	carry = (csum < w);
 	csum += carry;
 
-	csum += word[3];
-	carry = (csum < word[3]);
+	w = net_hdr_word(word++);
+	csum += w;
+	carry = (csum < w);
 	csum += carry;
 
-	word += 4;
 	do {
-		csum += *word;
-		carry = (csum < *word);
+		w = net_hdr_word(word++);
+		csum += w;
+		carry = (csum < w);
 		csum += carry;
-		word++;
 	} while (word != stop);
 
 	return csum_fold(csum);
@@ -177,73 +181,6 @@ static inline __wsum csum_tcpudp_nofold(__be32 saddr, __be32 daddr,
 static inline __sum16 ip_compute_csum(const void *buff, int len)
 {
 	return csum_fold(csum_partial(buff, len, 0));
-}
-
-#define _HAVE_ARCH_IPV6_CSUM
-static __inline__ __sum16 csum_ipv6_magic(const struct in6_addr *saddr,
-					  const struct in6_addr *daddr,
-					  __u32 len, __u8 proto,
-					  __wsum sum)
-{
-	__wsum tmp;
-
-	__asm__(
-	"	.set	push		# csum_ipv6_magic\n"
-	"	.set	noreorder	\n"
-	"	.set	noat		\n"
-	"	addu	%0, %5		# proto (long in network byte order)\n"
-	"	sltu	$1, %0, %5	\n"
-	"	addu	%0, $1		\n"
-
-	"	addu	%0, %6		# csum\n"
-	"	sltu	$1, %0, %6	\n"
-	"	lw	%1, 0(%2)	# four words source address\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 4(%2)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 8(%2)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 12(%2)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 0(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 4(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 8(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	lw	%1, 12(%3)	\n"
-	"	addu	%0, $1		\n"
-	"	addu	%0, %1		\n"
-	"	sltu	$1, %0, %1	\n"
-
-	"	addu	%0, $1		# Add final carry\n"
-	"	.set	pop"
-	: "=&r" (sum), "=&r" (tmp)
-	: "r" (saddr), "r" (daddr),
-	  "0" (htonl(len)), "r" (htonl(proto)), "r" (sum));
-
-	return csum_fold(sum);
 }
 
 #include <asm-generic/checksum.h>
