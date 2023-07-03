@@ -138,9 +138,9 @@ static inline int IP6_ECN_set_ce(struct sk_buff *skb, struct ipv6hdr *iph)
 	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
 		return 0;
 
-	from = *(__be32 *)iph;
+	from = net_hdr_word(iph);
 	to = from | htonl(INET_ECN_CE << 20);
-	*(__be32 *)iph = to;
+	net_hdr_word(iph) = to;
 	if (skb->ip_summed == CHECKSUM_COMPLETE)
 		skb->csum = csum_add(csum_sub(skb->csum, (__force __wsum)from),
 				     (__force __wsum)to);

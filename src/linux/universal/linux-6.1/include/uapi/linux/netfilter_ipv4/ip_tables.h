@@ -33,7 +33,7 @@
 #define ipt_entry_match xt_entry_match
 #define ipt_entry_target xt_entry_target
 #define ipt_standard_target xt_standard_target
-#define ipt_error_target xt_error_target
+//#define ipt_error_target xt_error_target
 #define ipt_counters xt_counters
 #define IPT_CONTINUE XT_CONTINUE
 #define IPT_RETURN XT_RETURN

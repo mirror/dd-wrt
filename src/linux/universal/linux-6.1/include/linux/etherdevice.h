@@ -555,7 +555,7 @@ static inline bool is_etherdev_addr(const struct net_device *dev,
  * @b: Pointer to Ethernet header
  *
  * Compare two Ethernet headers, returns 0 if equal.
- * This assumes that the network header (i.e., IP header) is 4-byte
+ * This assumes that the network header (i.e., IP header) is 2-byte
  * aligned OR the platform can handle unaligned access.  This is the
  * case for all packets coming into netif_receive_skb or similar
  * entry points.
@@ -578,11 +578,12 @@ static inline unsigned long compare_ether_header(const void *a, const void *b)
 	fold |= *(unsigned long *)(a + 6) ^ *(unsigned long *)(b + 6);
 	return fold;
 #else
-	u32 *a32 = (u32 *)((u8 *)a + 2);
-	u32 *b32 = (u32 *)((u8 *)b + 2);
+	const u16 *a16 = a;
+	const u16 *b16 = b;
 
-	return (*(u16 *)a ^ *(u16 *)b) | (a32[0] ^ b32[0]) |
-	       (a32[1] ^ b32[1]) | (a32[2] ^ b32[2]);
+	return (a16[0] ^ b16[0]) | (a16[1] ^ b16[1]) | (a16[2] ^ b16[2]) |
+	       (a16[3] ^ b16[3]) | (a16[4] ^ b16[4]) | (a16[5] ^ b16[5]) |
+	       (a16[6] ^ b16[6]);
 #endif
 }
 
