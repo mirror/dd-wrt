@@ -1472,7 +1472,7 @@ config LD_ORPHAN_WARN
 
 config OPTIMIZE_INLINING
 	bool "Allow gcc to uninline functions marked 'inline'"
-	---help---
+	help
 	  This option determines if the kernel forces gcc to inline the functions
 	  developers have marked 'inline'. Doing so takes away freedom from gcc to
 	  do what it thinks is best, which is desirable for the gcc 3.x series of
