@@ -181,6 +181,8 @@ static inline struct net *nf_ct_net(const struct nf_conn *ct)
 void nf_conntrack_alter_reply(struct nf_conn *ct,
 			      const struct nf_conntrack_tuple *newreply);
 
+void nf_conntrack_flush(void);
+
 /* Is this tuple taken? (ignoring any belonging to the given
    conntrack). */
 int nf_conntrack_tuple_taken(const struct nf_conntrack_tuple *tuple,

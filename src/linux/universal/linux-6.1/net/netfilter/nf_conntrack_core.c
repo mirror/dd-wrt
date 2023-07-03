@@ -603,6 +603,12 @@ void nf_ct_destroy(struct nf_conntrack *nfct)
 	 * too.
 	 */
 	nf_ct_remove_expectations(ct);
+	#if defined(CONFIG_NETFILTER_XT_MATCH_LAYER7) || defined(CONFIG_NETFILTER_XT_MATCH_LAYER7_MODULE)
+	if(ct->layer7.app_proto)
+		kfree(ct->layer7.app_proto);
+	if(ct->layer7.app_data)
+	kfree(ct->layer7.app_data);
+	#endif
 
 	if (ct->master)
 		nf_ct_put(ct->master);
@@ -2520,6 +2526,14 @@ static int kill_all(struct nf_conn *i, void *data)
 {
 	return 1;
 }
+
+void nf_conntrack_flush(void)
+{
+	struct nf_ct_iter_data iter_data = {};
+	iter_data.net = &init_net;
+	nf_ct_iterate_cleanup_net(kill_all, &iter_data);
+}
+EXPORT_SYMBOL_GPL(nf_conntrack_flush);
 
 void nf_conntrack_cleanup_start(void)
 {
