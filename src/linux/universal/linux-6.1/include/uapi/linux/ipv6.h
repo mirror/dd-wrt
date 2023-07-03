@@ -135,7 +135,7 @@ struct ipv6hdr {
 		struct	in6_addr	saddr;
 		struct	in6_addr	daddr;
 	);
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 
 /* index values for the variables in ipv6_devconf */

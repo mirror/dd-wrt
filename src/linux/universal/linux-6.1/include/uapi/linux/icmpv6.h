@@ -78,7 +78,7 @@ struct icmp6hdr {
 #define icmp6_addrconf_other	icmp6_dataun.u_nd_ra.other
 #define icmp6_rt_lifetime	icmp6_dataun.u_nd_ra.rt_lifetime
 #define icmp6_router_pref	icmp6_dataun.u_nd_ra.router_pref
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 
 #define ICMPV6_ROUTER_PREF_LOW		0x3

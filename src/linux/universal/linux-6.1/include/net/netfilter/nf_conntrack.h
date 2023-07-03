@@ -69,6 +69,12 @@ struct nf_conntrack_net {
 #include <linux/types.h>
 #include <linux/skbuff.h>
 
+#ifdef CONFIG_NETFILTER_DEBUG
+#define NF_CT_ASSERT(x)		WARN_ON(!(x))
+#else
+#define NF_CT_ASSERT(x)
+#endif
+
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
 
@@ -120,6 +126,23 @@ struct nf_conn {
 
 	/* Extensions */
 	struct nf_ct_ext *ext;
+
+#if defined(CONFIG_NETFILTER_XT_MATCH_LAYER7) || \
+    defined(CONFIG_NETFILTER_XT_MATCH_LAYER7_MODULE)
+	struct {
+		/*
+		 * e.g. "http". NULL before decision. "unknown" after decision
+		 * if no match.
+		 */
+		char *app_proto;
+		/*
+		 * application layer data so far. NULL after match decision.
+		 */
+		char *app_data;
+		unsigned int app_data_len;
+	} layer7;
+#endif
+
 
 	/* Storage reserved for other modules, must be the last member */
 	union nf_conntrack_proto proto;
