@@ -391,7 +391,10 @@ int br_set_port_priority(const char *bridge, const char *port, int priority)
 
 int br_set_filterbpdu(const char *bridge, const char *port, int on)
 {
-	return port_set(bridge, port, "block_bpdu", on, BRCTL_SET_FILTERBPDU);
+	int ret = port_set(bridge, port, "block_bpdu", on, BRCTL_SET_FILTERBPDU);
+	if (ret) 
+	    port_set(bridge, port, "bpdu_filter", on, BRCTL_SET_FILTERBPDU);
+	return ret;
 }
 
 // brcm begin
