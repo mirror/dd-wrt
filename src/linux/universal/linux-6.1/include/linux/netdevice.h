@@ -2205,6 +2205,10 @@ struct net_device {
 	unsigned int		num_rx_queues;
 	unsigned int		real_num_rx_queues;
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	unsigned long		last_rx;
+#endif
+
 	struct bpf_prog __rcu	*xdp_prog;
 	unsigned long		gro_flush_timeout;
 	int			napi_defer_hard_irqs;
@@ -4431,6 +4435,19 @@ static inline void netif_tx_unlock_bh(struct net_device *dev)
 		__netif_tx_release(txq);		\
 	}						\
 }
+
+#define HARD_TX_LOCK_BH(dev, txq) {           \
+    if ((dev->features & NETIF_F_LLTX) == 0) {  \
+        __netif_tx_lock_bh(txq);      \
+    }                       \
+}
+
+#define HARD_TX_UNLOCK_BH(dev, txq) {          \
+    if ((dev->features & NETIF_F_LLTX) == 0) {  \
+        __netif_tx_unlock_bh(txq);         \
+    }                       \
+}
+
 
 static inline void netif_tx_disable(struct net_device *dev)
 {
