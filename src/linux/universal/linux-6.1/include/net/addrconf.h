@@ -82,7 +82,7 @@ int addrconf_add_ifaddr(struct net *net, void __user *arg);
 int addrconf_del_ifaddr(struct net *net, void __user *arg);
 int addrconf_set_dstaddr(struct net *net, void __user *arg);
 
-int ipv6_chk_addr(struct net *net, const struct in6_addr *addr,
+int __weak ipv6_chk_addr(struct net *net, const struct in6_addr *addr,
 		  const struct net_device *dev, int strict);
 int ipv6_chk_addr_and_flags(struct net *net, const struct in6_addr *addr,
 			    const struct net_device *dev, bool skip_dev_check,
@@ -108,7 +108,7 @@ struct inet6_ifaddr *ipv6_get_ifaddr(struct net *net,
 				     const struct in6_addr *addr,
 				     struct net_device *dev, int strict);
 
-int ipv6_dev_get_saddr(struct net *net, const struct net_device *dev,
+int __weak ipv6_dev_get_saddr(struct net *net, const struct net_device *dev,
 		       const struct in6_addr *daddr, unsigned int srcprefs,
 		       struct in6_addr *saddr);
 int ipv6_get_lladdr(struct net_device *dev, struct in6_addr *addr,
@@ -226,9 +226,9 @@ void ipv6_sock_mc_close(struct sock *sk);
 bool inet6_mc_check(struct sock *sk, const struct in6_addr *mc_addr,
 		    const struct in6_addr *src_addr);
 
-int ipv6_dev_mc_inc(struct net_device *dev, const struct in6_addr *addr);
+int __weak ipv6_dev_mc_inc(struct net_device *dev, const struct in6_addr *addr);
 int __ipv6_dev_mc_dec(struct inet6_dev *idev, const struct in6_addr *addr);
-int ipv6_dev_mc_dec(struct net_device *dev, const struct in6_addr *addr);
+int __weak ipv6_dev_mc_dec(struct net_device *dev, const struct in6_addr *addr);
 void ipv6_mc_up(struct inet6_dev *idev);
 void ipv6_mc_down(struct inet6_dev *idev);
 void ipv6_mc_unmap(struct inet6_dev *idev);

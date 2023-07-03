@@ -458,7 +458,7 @@ static int rds_ib_laddr_check(struct net *net, const struct in6_addr *addr,
 				ret = -EADDRNOTAVAIL;
 				goto out;
 			}
-			if (!ipv6_chk_addr(&init_net, addr, dev, 1)) {
+			if (!ipv6_chk_addr || !ipv6_chk_addr(&init_net, addr, dev, 1)) {
 				dev_put(dev);
 				ret = -EADDRNOTAVAIL;
 				goto out;

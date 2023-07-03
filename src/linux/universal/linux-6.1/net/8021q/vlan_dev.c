@@ -31,6 +31,10 @@
 #include "vlanproc.h"
 #include <linux/if_vlan.h>
 #include <linux/netpoll.h>
+#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
+#include <linux/netfilter.h>
+#include <net/netfilter/nf_flow_table.h>
+#endif
 
 /*
  *	Create the VLAN header for an arbitrary protocol layer
@@ -597,7 +601,11 @@ static int vlan_dev_init(struct net_device *dev)
 
 	dev->needed_headroom = real_dev->needed_headroom;
 	if (vlan_hw_offload_capable(real_dev->features, vlan->vlan_proto)) {
-		dev->header_ops      = &vlan_passthru_header_ops;
+#ifdef CONFIG_MVSWITCH_PHY
+		dev->header_ops      = real_dev->header_ops;
+#else
+ 		dev->header_ops      = &vlan_passthru_header_ops;
+#endif
 		dev->hard_header_len = real_dev->hard_header_len;
 	} else {
 		dev->header_ops      = &vlan_header_ops;
@@ -802,6 +810,28 @@ static int vlan_dev_fill_forward_path(struct net_device_path_ctx *ctx,
 
 	return 0;
 }
+
+#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
+static int vlan_dev_flow_offload_check(struct flow_offload_hw_path *path)
+{
+	struct net_device *dev = path->dev;
+	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
+
+	if (path->flags & FLOW_OFFLOAD_PATH_VLAN)
+		return -EEXIST;
+
+	path->flags |= FLOW_OFFLOAD_PATH_VLAN;
+	path->vlan_proto = vlan->vlan_proto;
+	path->vlan_id = vlan->vlan_id;
+	path->dev = vlan->real_dev;
+
+	if (vlan->real_dev->netdev_ops->ndo_flow_offload_check)
+		return vlan->real_dev->netdev_ops->ndo_flow_offload_check(path);
+
+	return 0;
+}
+#endif /* CONFIG_NF_FLOW_TABLE */
+
 
 static const struct ethtool_ops vlan_ethtool_ops = {
 	.get_link_ksettings	= vlan_ethtool_get_link_ksettings,
