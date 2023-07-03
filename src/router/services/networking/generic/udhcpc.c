@@ -40,6 +40,7 @@
 #include <cy_conf.h>
 #include <utils.h>
 #include <services.h>
+#include <airbag.h>
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
@@ -436,17 +437,26 @@ int dhcpc_main(int argc, char **argv)
 
 	if (!argv[1])
 		return EINVAL;
-	else if (strstr(argv[1], "deconfig"))
+	else if (strstr(argv[1], "deconfig")) {
+		airbag_setpostinfo("dhcpc deconfig");
 		return deconfig();
-	else if (strstr(argv[1], "bound"))
+	}
+	else if (strstr(argv[1], "bound")){
+		airbag_setpostinfo("dhcpc bound");
 		return bound();
-	else if (strstr(argv[1], "renew"))
+	}
+	else if (strstr(argv[1], "renew")){
+		airbag_setpostinfo("dhcpc renew");
 		return renew();
-	else if (strstr(argv[1], "update"))
+	}
+	else if (strstr(argv[1], "update")){
+		airbag_setpostinfo("dhcpc update");
 		return update_value();
-	else if (strstr(argv[1], "mbim"))
+	}
+	else if (strstr(argv[1], "mbim")){
+		airbag_setpostinfo("dhcpc renew");
 		return mbim();
-	else
+	} else
 		return EINVAL;
 }
 
