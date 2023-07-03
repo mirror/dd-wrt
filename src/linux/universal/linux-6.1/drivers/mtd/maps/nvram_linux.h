@@ -19,7 +19,7 @@ typedef unsigned char uint8;
 extern void *MALLOC(size_t size);
 extern void MFREE(void *addr);
 
-extern uint8 crc8(uint8 * pdata, uint nbytes, uint8 crc);
+extern uint8 nvram_crc8(uint8 * pdata, uint nbytes, uint8 crc);
 #define CRC8_INIT_VALUE  0xff	/* Initial CRC8 checksum value */
 #define CRC8_GOOD_VALUE  0x9f	/* Good final CRC8 checksum value */
 
@@ -143,6 +143,7 @@ extern int nvram_getall(char *buf, int count);
 
 #define NVRAM_MAGIC			0x48534C46	/* 'NVFL' */
 #define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
+#define NVRAM_ASYNC_MAGIC			0x4153594E	/* 'ASYN' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	sizeof(struct nvram_header)
 #if defined(CONFIG_WZR_HP_G300NH) || defined(CONFIG_ARCH_ALPINE) || defined(CONFIG_X86) || defined(CONFIG_MACH_CAMBRIA)  || defined(CONFIG_SOC_IMX6) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_TL_WDR4900_V1) || defined(CONFIG_ARCH_THUNDER) || defined(CONFIG_ARCH_MVEBU)
