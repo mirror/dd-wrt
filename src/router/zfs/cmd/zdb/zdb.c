@@ -794,7 +794,7 @@ usage(void)
 	    "\t\t[-o <var>=<value>]... [-t <txg>] [-U <cache>] [-x <dumpdir>]\n"
 	    "\t\t[-K <key>] <poolname>/<objset id> [<backupflags>]\n"
 	    "\t%s [-v] <bookmark>\n"
-	    "\t%s -C [-A] [-U <cache>]\n"
+	    "\t%s -C [-A] [-U <cache>] [<poolname>]\n"
 	    "\t%s -l [-Aqu] <device>\n"
 	    "\t%s -m [-AFLPX] [-e [-V] [-p <path> ...]] [-t <txg>] "
 	    "[-U <cache>]\n\t\t<poolname> [<vdev> [<metaslab> ...]]\n"
@@ -8546,9 +8546,9 @@ zdb_read_block(char *thing, spa_t *spa)
 		 */
 		zio_nowait(zio_vdev_child_io(zio, bp, vd, offset, pabd,
 		    psize, ZIO_TYPE_READ, ZIO_PRIORITY_SYNC_READ,
-		    ZIO_FLAG_DONT_CACHE | ZIO_FLAG_DONT_PROPAGATE |
-		    ZIO_FLAG_DONT_RETRY | ZIO_FLAG_CANFAIL | ZIO_FLAG_RAW |
-		    ZIO_FLAG_OPTIONAL, NULL, NULL));
+		    ZIO_FLAG_DONT_PROPAGATE | ZIO_FLAG_DONT_RETRY |
+		    ZIO_FLAG_CANFAIL | ZIO_FLAG_RAW | ZIO_FLAG_OPTIONAL,
+		    NULL, NULL));
 	}
 
 	error = zio_wait(zio);
@@ -8642,7 +8642,6 @@ zdb_read_block(char *thing, spa_t *spa)
 				zio_nowait(zio_vdev_child_io(czio, bp, vd,
 				    offset, pabd, psize, ZIO_TYPE_READ,
 				    ZIO_PRIORITY_SYNC_READ,
-				    ZIO_FLAG_DONT_CACHE |
 				    ZIO_FLAG_DONT_PROPAGATE |
 				    ZIO_FLAG_DONT_RETRY |
 				    ZIO_FLAG_CANFAIL | ZIO_FLAG_RAW |
