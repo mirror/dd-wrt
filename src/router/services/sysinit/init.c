@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <airbag.h>
 
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
@@ -43,9 +44,9 @@ extern int nvram2file(char *varname, char *filename);
 //#define stop_service(a) eval("service",a, "stop");
 //#define restart_service(a) eval("service",a, "restart");
 
-#define start_service(a) start_##a()
-#define stop_service(a) stop_##a()
-#define restart_service(a) stop_##a(); start_##a()
+#define start_service(a) airbag_setpostinfo("start_" #a); start_##a()
+#define stop_service(a) airbag_setpostinfo("stop_" #a); stop_##a()
+#define restart_service(a) airbag_setpostinfo("stop_" #a); stop_##a(); airbag_setpostinfo("start_" #a); start_##a()
 
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
