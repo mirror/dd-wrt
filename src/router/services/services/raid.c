@@ -165,7 +165,7 @@ void start_raid(void)
 		dd_loginfo("raid", "ZFS modules successfully loaded (%d threads)\n", cpucount);
 	}
 	if (btrfs) {
-		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_compress zstd_common zstd_decompress raid6_pq xor-neon xor btrfs");
+		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_common zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
 		dd_loginfo("raid", "BTRFS modules successfully loaded\n");
 	}
 	if (ntfs) {
