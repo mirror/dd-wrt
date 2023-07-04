@@ -3306,8 +3306,10 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-I", "INPUT", "-j", log_accept);
 		eval("ip6tables", "-I", "FORWARD", "-j", log_accept);
 	} else {
-		eval("ip6tables", "-A", "INPUT", "-j", log_reject, "--reject-with", "icmp6-adm-prohibited");
-		eval("ip6tables", "-A", "FORWARD", "-j", log_reject, "--reject-with", "icmp6-adm-prohibited");
+		eval("ip6tables", "-A", "INPUT", "-j", log_reject);
+		eval("ip6tables", "-A", "FORWARD", "-j", log_reject);
+//		eval("ip6tables", "-A", "INPUT", "-j", log_reject, "--reject-with", "icmp6-adm-prohibited");
+//		eval("ip6tables", "-A", "FORWARD", "-j", log_reject, "--reject-with", "icmp6-adm-prohibited");
 	}
 
 	/*
