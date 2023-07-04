@@ -26,6 +26,7 @@ define kernelfeatures
 		echo "CONFIG_IP_SET_HASH_NETNET=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_HASH_NETPORT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_IPMAC=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_LIST_NET=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_LIST_SET=y" >> $(LINUXDIR)/.config; \
 	else \
@@ -250,6 +251,7 @@ define kernelfeatures
 		echo "# CONFIG_IP6_NF_MATCH_LENGTH is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_MATCH_OPTS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_MATCH_HL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_SRH is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_MATCH_IPV6HEADER=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_MATCH_MH is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_MATCH_RPFILTER=m" >> $(LINUXDIR)/.config; \
@@ -414,6 +416,7 @@ define kernelfeatures
 	echo "CONFIG_IP_VS_FTP=m" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_NFCT=y" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_PE_SIP=m" >> $(LINUXDIR)/.config; \
+	echo "CONFIG_IP_VS_TWOS=m" >> $(LINUXDIR)/.config; \
 	fi
 	echo "# CONFIG_ASN1 is not set" >> $(LINUXDIR)/.config; \
 	if [ "$(CONFIG_SMBD)" = "y" ]; then \
@@ -445,16 +448,20 @@ define kernelfeatures
 		echo "# CONFIG_NFS_SWAP is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFS_V4_1=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFS_V4_2=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V4_2_READ_PLUS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_V4_2_INTER_SSC=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN=\"kernel.org\"" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFS_V4_1_MIGRATION=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFS_FSCACHE=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFS_USE_LEGACY_DNS=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_SUNRPC_DISABLE_INSECURE_ENCTYPES is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_SUNRPC_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_NFSD is not set/CONFIG_NFSD=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V3=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_PNFS=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFSD_V3_ACL is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFSD_FAULT_INJECTION is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFS_DISABLE_UDP_SUPPORT is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V4=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_BLOCKLAYOUT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_RPCSEC_GSS_KRB5=m" >> $(LINUXDIR)/.config; \
@@ -617,6 +624,7 @@ define kernelfeatures
 		echo "CONFIG_MD_CLUSTER=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_BCACHE=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BCACHE_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BCACHE_ASYNC_REGISTRATION is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BCACHE_CLOSURES_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_BLK_DEV_DM_BUILTIN=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_BLK_DEV_DM=m" >> $(LINUXDIR)/.config; \
@@ -641,12 +649,20 @@ define kernelfeatures
 		echo "CONFIG_DM_MULTIPATH=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_MULTIPATH_QL=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_MULTIPATH_ST=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_MULTIPATH_HST=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_MULTIPATH_IOA=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_DELAY=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_UEVENT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_FLAKEY=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_VERITY=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_DM_VERITY_FEC is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_UNSTRIPED is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_EBS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_CLONE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_DUST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_VERITY_VERIFY_ROOTHASH_SIG is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_SWITCH=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_WRITECACHE=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_LOG_WRITES=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_INTEGRITY=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_ZONED=m" >> $(LINUXDIR)/.config; \
