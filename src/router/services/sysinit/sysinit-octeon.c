@@ -69,6 +69,7 @@ void start_sysinit(void)
 	insmod("lzo_compress");
 	insmod("lzo_decompress");
 	insmod("xxhash");
+	insmod("zstd_common");
 	insmod("zstd_compress");
 	insmod("zstd_decompress");
 	insmod("raid6_pq");

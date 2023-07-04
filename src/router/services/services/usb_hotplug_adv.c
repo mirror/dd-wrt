@@ -281,7 +281,7 @@ static bool usb_load_modules(char *fs)
 		insmod("crc16 crc32c_generic crc32_generic mbcache ext2 jbd jbd2 ext3 ext4");
 	}
 	if (!strcmp(fs, "btrfs")) {
-		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
+		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_common zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
 	}
 	if (!strcmp(fs, "hfs")) {
 		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");

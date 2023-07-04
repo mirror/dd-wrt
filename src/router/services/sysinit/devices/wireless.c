@@ -116,6 +116,7 @@ int detectchange(char *mod)
 static void load_mac80211(void)
 {
 	insmod("xxhash");
+	insmod("zstd_common");
 	insmod("zstd_compress");
 	insmod("zstd_decompress");
 	insmod("lzo_compress");
