@@ -56,12 +56,14 @@ obj-$(CONFIG_PPPOE) += pppoe
 #obj-$(CONFIG_UDHCPD) += udhcpd
 obj-$(CONFIG_UDHCPC) += udhcpd
 obj-$(CONFIG_UPNP) += upnp
+ifneq ($(KERNELVERSION),6.1)
 ifneq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_ATH5K_AHB),y)
 obj-$(CONFIG_MADWIFI) += madwifi relayd
 endif
 else
 obj-$(CONFIG_MADWIFI) += madwifi
+endif
 endif
 obj-$(CONFIG_ETC) += etc
 #obj-$(CONFIG_VLAN) += vlan
@@ -149,7 +151,9 @@ ifeq ($(CONFIG_LEGACY_KERNEL),y)
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 else
 ifeq ($(CONFIG_NTFS3),y)
+ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_NTFS3G) += ntfs3 ntfs-3g
+endif
 else
 obj-$(CONFIG_NTFS3G) += antfs ntfs-3g
 endif
@@ -356,7 +360,9 @@ obj-$(CONFIG_EXFAT) += exfat-utils
 obj-$(CONFIG_DOSFSTOOLS) += dosfstools
 obj-$(CONFIG_FLASHROM) += flashrom
 obj-$(CONFIG_SMARTMONTOOLS) += smartmontools
+ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_RTL8125) += rtl8125
+endif
 #obj-$(CONFIG_OPROFILE) += oprofile
 ifeq ($(CONFIG_BCMMODERN),y)
 obj-$(CONFIG_WPS) += brcmwps
@@ -379,13 +385,20 @@ obj-$(CONFIG_RAID) += libudev mdadm raidmanager
 obj-$(CONFIG_I2C_GPIO_CUSTOM) += i2c-gpio-custom
 obj-$(CONFIG_NEWPORT) += cpt8x
 obj-$(CONFIG_RSYNC) += libucontext openssl zstd rsync
+ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_CAKE) += cake
 obj-$(CONFIG_CAKE) += fq_codel_fast
+endif
 obj-$(CONFIG_SISPMCTL) += comgt sispmctl
+ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_APFS) += apfs apfsprogs
+endif
 obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre libucontext openssl zlib nginx
-obj-$(CONFIG_X86) += yukon bootconfig lmsensors
+ifneq ($(KERNELVERSION),6.1)
+obj-$(CONFIG_X86) += yukon
+endif
+obj-$(CONFIG_X86) += bootconfig lmsensors
 obj-$(CONFIG_MRP) += mrp
 obj-$(CONFIG_CFM) += cfm
 obj-$(CONFIG_HTOP) += ncurses libnl htop
