@@ -300,7 +300,8 @@ void shutdown_system(void)
 		unmount_fs();	// try it a second time, but consider that kill already could have reached init process
 		nvram_seti("end_time", time(NULL));
 		nvram_commit();
-		while (pidof("async_commit") > 0)	// wait for any process of this type to finish
+		deadcount = 0;
+		while (pidof("async_commit") > 0 && (deadcount++) < 10)	// wait for any process of this type to finish
 		{
 			dd_loginfo("init", "wait for nvram write to finish\n");
 			sleep(1);
