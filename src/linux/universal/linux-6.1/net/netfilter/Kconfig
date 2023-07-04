@@ -130,17 +130,6 @@ config NF_CONNTRACK_SECMARK
 
 	  If unsure, say 'N'.
 
-config NF_CONNTRACK_CUSTOM
-	int "Number of custom extend"
-	range 0 8
-	depends on NETFILTER_ADVANCED
-	default "4"
-	help
-	  This parameter specifies how many custom extensions can be registered.
-
-	  The default value is 4.
-
-
 config NF_CONNTRACK_ZONES
 	bool  'Connection tracking zones'
 	depends on NETFILTER_ADVANCED
