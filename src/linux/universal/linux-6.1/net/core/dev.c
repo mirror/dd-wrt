@@ -3590,6 +3590,7 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	unsigned int len;
 	int rc;
 
+	if (!skb->fast_forwarded) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	if ((!list_empty(&ptype_all) || !list_empty(&dev->ptype_all)) &&
 		!(skb->imq_flags & IMQ_F_ENQUEUE))
@@ -3599,6 +3600,7 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 
 	if (dev_nit_active(dev))
 		dev_queue_xmit_nit(skb, dev);
+	}
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	if (dev->eth_mangle_tx && !(skb = dev->eth_mangle_tx(dev, skb)))
@@ -5297,6 +5299,8 @@ static inline int nf_ingress(struct sk_buff *skb, struct packet_type **pt_prev,
 	}
 	return 0;
 }
+int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
+EXPORT_SYMBOL_GPL(fast_nat_recv);
 
 static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 				    struct packet_type **ppt_prev)
@@ -5308,6 +5312,7 @@ static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 	bool deliver_exact = false;
 	int ret = NET_RX_DROP;
 	__be16 type;
+	int (*fast_recv)(struct sk_buff *skb);
 
 	net_timestamp_check(!READ_ONCE(netdev_tstamp_prequeue), skb);
 
@@ -5319,6 +5324,14 @@ static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 	if (!skb_transport_header_was_set(skb))
 		skb_reset_transport_header(skb);
 	skb_reset_mac_len(skb);
+
+	fast_recv = rcu_dereference(fast_nat_recv);
+	if (fast_recv) {
+		if (fast_recv(skb)) {
+			rcu_read_unlock();
+			return NET_RX_SUCCESS;
+		}
+	}
 
 	pt_prev = NULL;
 
@@ -5603,6 +5616,7 @@ static void __netif_receive_skb_list_core(struct list_head *head, bool pfmemallo
 	/* dispatch final sublist */
 	__netif_receive_skb_list_ptype(&sublist, pt_curr, od_curr);
 }
+
 
 static int __netif_receive_skb(struct sk_buff *skb)
 {

@@ -62,7 +62,7 @@ void nf_ct_unlink_expect_report(struct nf_conntrack_expect *exp,
 	hlist_del_rcu(&exp->lnode);
 	master_help->expecting[exp->class]--;
 
-	nf_ct_expect_event_report(IPEXP_DESTROY, exp, portid, report);
+//	nf_ct_expect_event_report(IPEXP_DESTROY, exp, portid, report);
 	nf_ct_expect_put(exp);
 
 	NF_CT_STAT_INC(net, expect_delete);
@@ -499,7 +499,7 @@ int nf_ct_expect_related_report(struct nf_conntrack_expect *expect,
 	nf_ct_expect_insert(expect);
 
 	spin_unlock_bh(&nf_conntrack_expect_lock);
-	nf_ct_expect_event_report(IPEXP_NEW, expect, portid, report);
+//	nf_ct_expect_event_report(IPEXP_NEW, expect, portid, report);
 	return 0;
 out:
 	spin_unlock_bh(&nf_conntrack_expect_lock);

@@ -28,6 +28,7 @@
 #include <linux/netlink.h>
 #include <linux/spinlock.h>
 #include <linux/interrupt.h>
+#include <linux/notifier.h>
 #include <linux/slab.h>
 #include <linux/siphash.h>
 
@@ -722,13 +723,14 @@ static size_t ctnetlink_nlmsg_size(const struct nf_conn *ct)
 	       ;
 }
 
-static int
-ctnetlink_conntrack_event(unsigned int events, const struct nf_ct_event *item)
+static int ctnetlink_conntrack_event(struct notifier_block *this,
+				     unsigned long events, void *ptr)
 {
 	const struct nf_conntrack_zone *zone;
 	struct net *net;
 	struct nlmsghdr *nlh;
 	struct nlattr *nest_parms;
+	struct nf_ct_event *item = ptr;
 	struct nf_conn *ct = item->ct;
 	struct sk_buff *skb;
 	unsigned int type;
@@ -3754,9 +3756,8 @@ static int ctnetlink_stat_exp_cpu(struct sk_buff *skb,
 }
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
-static struct nf_ct_event_notifier ctnl_notifier = {
-	.ct_event = ctnetlink_conntrack_event,
-	.exp_event = ctnetlink_expect_event,
+static struct notifier_block ctnl_notifier = {
+	.notifier_call = ctnetlink_conntrack_event,
 };
 #endif
 
