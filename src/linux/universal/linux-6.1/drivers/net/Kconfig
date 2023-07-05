@@ -27,7 +27,7 @@ menuconfig NETDEVICES
 if NETDEVICES
 
 config MII
-	tristate
+	tristate "MII subsystem"
 
 config NET_CORE
 	default y
