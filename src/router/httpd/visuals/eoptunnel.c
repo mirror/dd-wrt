@@ -371,6 +371,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						websWrite(wp, "<fieldset>\n");
 						show_caption_legend(wp, "service.vpn_wdog");
 						show_oet_textfield(wp, 0, "share.srvipname", 20, 48, "8.8.8.8", tun, NULL, "oet%d_failip", tun);
+						show_oet_textfield(wp, 0, "alive.timeout", 5, 5, "30", tun, "onblur=\"valid_range(this,10,300,alive.timeout)\"", "oet%d_failtime", tun);
 						websWrite(wp, "</fieldset>\n");
 					}
 					websWrite(wp, "</div>\n");

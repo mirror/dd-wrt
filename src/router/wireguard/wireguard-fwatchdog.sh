@@ -2,15 +2,15 @@
 i=$1
 [[ -z "$i" ]] && i=1
 SLEEP=$2
-[[ -z "$SLEEP" ]] && SLEEP=60
+[[ -z "$SLEEP" ]] && SLEEP=30
 PINGIP=$3
 [[ -z "$PINGIP" ]] && PINGIP="8.8.8.8"
 RESET=$4
 [[ -z "$RESET" ]] && RESET=0
 FAILGRP=$(nvram get oet${i}_failgrp)
 REBOOT=$(nvram get wg_onfail_reboot)
-logger -p user.info "WireGuard watchdog $0 on tunnel oet${i} running"
 sleep 120
+logger -p user.info "WireGuard watchdog $0 on tunnel oet${i} running"
 ping -qc1 -W6 -n $PINGIP -I oet${i} &> /dev/null && nvram set wg_boot_delay=0
 while sleep $SLEEP; do
 	[[ "$(nvram get oet${i}_en)" == "0" ]] && continue
