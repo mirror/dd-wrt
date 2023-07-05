@@ -663,6 +663,7 @@ NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndp
 
   NDPI_LOG_DBG2(ndpi_struct, "User Agent Type line found %.*s\n",
 		ua_ptr_len, ua_ptr);
+    return 0;
 }
 
 /* ************************************************************* */
