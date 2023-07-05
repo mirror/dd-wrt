@@ -214,6 +214,7 @@ source "net/netfilter/Kconfig"
 source "net/ipv4/netfilter/Kconfig"
 source "net/ipv6/netfilter/Kconfig"
 source "net/bridge/netfilter/Kconfig"
+source "net/shortcut-fe/Kconfig"
 
 endif
 
