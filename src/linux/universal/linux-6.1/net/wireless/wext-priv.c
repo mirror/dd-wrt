@@ -54,19 +54,19 @@ static const char iw_priv_type_size[] = {
 	0,				/* Not defined */
 };
 
-static int get_priv_size(__u16 args)
+static int get_priv_size(__u32 args)
 {
 	int	num = args & IW_PRIV_SIZE_MASK;
-	int	type = (args & IW_PRIV_TYPE_MASK) >> 12;
+	int	type = (args & IW_PRIV_TYPE_MASK) >> 16;
 
 	return num * iw_priv_type_size[type];
 }
 
-static int adjust_priv_size(__u16 args, struct iw_point *iwp)
+static int adjust_priv_size(__u32 args, struct iw_point *iwp)
 {
 	int	num = iwp->length;
 	int	max = args & IW_PRIV_SIZE_MASK;
-	int	type = (args & IW_PRIV_TYPE_MASK) >> 12;
+	int	type = (args & IW_PRIV_TYPE_MASK) >> 16;
 
 	/* Make sure the driver doesn't goof up */
 	if (max < num)
