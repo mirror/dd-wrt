@@ -145,7 +145,7 @@ static char *pcidrivers[] = {
 	"sis900",
 	"skge",
 	"sk98lin",
-//      "sky2",
+    	"sky2",
 	"smc91c92_cs",
 	"smsc911x",
 	"smsc9420",
