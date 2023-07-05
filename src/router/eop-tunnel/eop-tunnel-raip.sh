@@ -288,9 +288,11 @@ for i in $(seq 1 $tunnels); do
 					ps | grep "[w]ireguard-fwatchdog\.sh $i" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
 				fi
 				# send tunnelnumber, sleeptime (sec), ping address, reset (1=Yes)
+				PINGTIME=$($nv get oet${i}_failtime)
+				[[ -z "$PINGTIME" ]] && PINGTIME="30"
 				PINGIP=$($nv get oet${i}_failip)
 				[[ -z "$PINGIP" ]] && PINGIP="8.8.8.8"
-				sh /usr/bin/wireguard-fwatchdog.sh $i 29 $PINGIP $fset &
+				sh /usr/bin/wireguard-fwatchdog.sh $i $PINGTIME $PINGIP $fset &
 			fi
 			#restart dnsmasq when the last tunnel has been setup to reread resolv.dnsmasq, due to a bug this does not happen on change of resolv.dnsmasq
 			# for now disabled waiting for DNSMasq to be repaired 2.86 works but 287test4 is buggy and does not want to replace a DNS resolver which is already in memory
