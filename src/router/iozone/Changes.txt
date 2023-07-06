@@ -2683,5 +2683,61 @@ Revision 3.493
 Move memorey allocaiton of main buffer to after the getopt, else 
 the -S can cause issues later.
 =============================================================================
+Revision 3.494
+Add support for sparse files.
+=============================================================================
+Revision 3.495
+Bug fix and comment out debug printf noise in libasync.c
+=============================================================================
+Revision 3.496
+Turn off debug printf noise in libasync.c
+=============================================================================
+Revision 3.497
+Disable verify_buffer for async I/O as the buffer can change locations
+if the I/Os complete in a different order. Thus causing verify_buffer to get 
+confused.
+=============================================================================
+Revision 3.498
+Add more spaces between fields.
+=============================================================================
+Revision 3.499
+Fix cases where stride goes beyond EOF, and also missing SC_AIO_MAX
+=============================================================================
+Revision 3.500
+More cleanup when out of bounds read.
+=============================================================================
+Revision 3.501
+More cleanup when out of bounds read.
+=============================================================================
+Revision 3.502
+More cleanup when out of bounds read in strided reads.
+=============================================================================
+Revision 3.503
+Some design issues with async I/O that are now fixed.
+1. Don't permit infinite outstanding aio_ Ops, as the memory consumption
+   could cause issues.
+2. The strided behavior happesns in read_stride_perf, but when it tries
+   to use async, it hands the stride and depth to the async I/O library.
+   Now the libasync.c library is duplicating the strided read-aheads that
+   were also happening in iozone.c in read_stride_perf.  
+3. Changes were to have the code in Iozone.c do it's normal thing, and 
+   issue one aio read or write, and wait for it to complete.  If the 
+   library does more, that's fine, but duplicating this was not cool.
+4. There is still an assumption in libasync that if the depth is non zero
+   that the offsets for the extra ops are going to be forward sequential.
+   This may not be the intended direction, but for now it will be 
+   better than none.
+
+=============================================================================
+Revision 3.504
+Avoid terminating when some implementations return goofy values 
+from aio_return() and/or aio_error().
+=============================================================================
+Revision 3.505
+Fix async no copy 
+=============================================================================
+Revision 3.506
+Fix async without no copy.
+=============================================================================
 
 
