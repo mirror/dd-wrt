@@ -106,6 +106,7 @@ for i in $(seq 1 $tunnels); do
 		if [[ $($nv get oet${i}_proto) -eq 2 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
 			{
 			mkdir -p /tmp/wireguard
+			modprobe wireguard
 			insmod ipv6
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
