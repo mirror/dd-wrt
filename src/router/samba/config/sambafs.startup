@@ -36,10 +36,16 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=3.11,iocharset=utf8
     fi
     if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",vers=3.11,iocharset=utf8
+    fi
+    if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlmssp,vers=3.02,iocharset=utf8	    
     fi
     if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=3.02,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",vers=3.02,iocharset=utf8	    
     fi
     if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlmssp,vers=3.0,iocharset=utf8	    
@@ -48,16 +54,28 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=3.0,iocharset=utf8	    
     fi
     if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",vers=3.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlmssp,vers=2.1,iocharset=utf8	    
     fi
     if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=2.1,iocharset=utf8	    
     fi
     if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",vers=2.1,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=2.0,iocharset=utf8	    
     fi
     if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",vers=2.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=1.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",vers=1.0,iocharset=utf8	    
     fi
     stopservice dlna
     startservice dlna
