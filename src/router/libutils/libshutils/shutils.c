@@ -1310,7 +1310,7 @@ char *getdisc(void)		// works only for squashfs
 			else
 				sprintf(tmp, "/dev/%s2", cache);
 			if (rootdetect(tmp) > 0) {
-				return cache;
+				return strdup(cache);
 			}
 		}
 #ifndef HAVE_EROUTER
