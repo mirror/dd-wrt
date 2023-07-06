@@ -58,9 +58,8 @@
 /* 									*/
 /************************************************************************/
 
-
 /* The version number */
-#define THISVERSION "        Version $Revision: 3.493 $"
+#define THISVERSION "        Version $Revision: 3.506 $"
 
 #if defined(Windows)
 #define NO_THREADS
@@ -144,7 +143,7 @@ char *help[] = {
 "                  [-+u] [-+m cluster_filename] [-+d] [-+x multiplier] [-+p # ]",
 "                  [-+r] [-+t] [-+X] [-+Z] [-+w percent dedupable] [-+y percent_interior_dedup]",
 "                  [-+C percent_dedup_within] [-+a zero_pct]  [-+Q dedup granule size]",
-"                  [-+M dedup+compress flag ]",
+"                  [-+M dedup+compress flag ] [-+e Enable sparse files",
 " ",
 "           -a  Auto mode",
 "           -A  Auto2 mode",
@@ -256,7 +255,8 @@ char *help[] = {
 "           -+P Service     Service  of the PIT server.",
 "           -+z Enable latency histogram logging.",
 "           -+M Enable Dedup+compress option. (Experimental).",
-"           -+R enable iozone to take filenames from a file.",
+"           -+R Enable iozone to take filenames from a file.",
+"           -+e Enable sparse instead of within and across dedup regions",
 "" };
 
 char *head1[] = {
@@ -570,6 +570,7 @@ struct client_command {
 	int c_dedup_granule_size;
 	int c_dedup;
 	int c_dedup_flag;
+	int c_sparse_mode;
 	int c_dedup_iflag;
 	int c_dedup_bflag;
 	int c_dedup_interior;
@@ -679,6 +680,7 @@ struct client_neutral_command {
 	char c_dedup_granule_size[8];
 	char c_dedup[4];
 	char c_dedup_flag[4];
+	char c_sparse_mode[4];
 	char c_dedup_iflag[4];
 	char c_dedup_bflag[4];
 	char c_dedup_interior[4];
@@ -909,18 +911,18 @@ struct master_neutral_command {
 #ifdef HAVE_PREAD
 #include <sys/times.h>
 #if defined(HAVE_PREAD) && defined(HAVE_PREADV)
-#define CONTROL_STRING2 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s%8s%9s%8s%10s%10s%10s%9s%9s\n"
-#define CONTROL_STRING3 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s\n"
-#define CONTROL_STRING4 "%16s%8s%9s%9s%8s%10s\n"
+#define CONTROL_STRING2 "%16s%8s%8s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING3 "%16s%8s%8s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING4 "%16s%8s%8s%11s%10s%10s\n"
 #else
-#define CONTROL_STRING2 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s%8s%9s%8s%10s\n"
-#define CONTROL_STRING3 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s\n"
-#define CONTROL_STRING4 "%16s%8s%9s%9s%8s%10s\n"
+#define CONTROL_STRING2 "%16s%8s%8s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING3 "%16s%8s%8s%11s%10s%10s%10s %9s%10s %10s %10s\n"
+#define CONTROL_STRING4 "%16s%8s%8s%11s%10s%10s\n"
 #endif
 #else
-#define CONTROL_STRING2 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s\n"
-#define CONTROL_STRING3 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s\n"
-#define CONTROL_STRING4 "%16s%8s%9s%9s%8s%10s\n"
+#define CONTROL_STRING2 "%16s%8s%8s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING3 "%16s%8s%8s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING4 "%16s%8s%8s%11s%10s%10s\n"
 #endif
 #endif
 
@@ -928,18 +930,18 @@ struct master_neutral_command {
 #ifdef HAVE_PREAD
 #include <sys/times.h>
 #if defined(HAVE_PREAD) && defined(HAVE_PREADV)
-#define CONTROL_STRING2 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s%8s%9s%8s%10s%10s%10s%9s%9s\n"
-#define CONTROL_STRING3 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s\n"
-#define CONTROL_STRING4 "%16s%8s%9s%9s%8s%10s\n"
+#define CONTROL_STRING2 "%16s%8s%9s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING3 "%16s%8s%9s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING4 "%16s%8s%9s%11s%10s%10s\n"
 #else
-#define CONTROL_STRING2 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s%8s%9s%8s%10s\n"
-#define CONTROL_STRING3 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s\n"
-#define CONTROL_STRING4 "%16s%8s%9s%9s%8s%10s\n"
+#define CONTROL_STRING2 "%16s%8s%9s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING3 "%16s%8s%9s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING4 "%16s%8s%9s%11s%10s%10s\n"
 #endif
 #else
-#define CONTROL_STRING2 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%8s%9s\n"
-#define CONTROL_STRING3 "%16s%8s%9s%9s%8s%10s%8s %9s%9s %9s %9s%9s%9s%9s%9s\n"
-#define CONTROL_STRING4 "%16s%8s%9s%9s%8s%10s\n"
+#define CONTROL_STRING2 "%16s%8s%9s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING3 "%16s%8s%9s%11s%10s%10s%10s %9s%10s %10s %10s%10s%10s%10s%10s\n"
+#define CONTROL_STRING4 "%16s%8s%9s%11s%10s%10s\n"
 #endif
 #endif
 
@@ -1560,7 +1562,7 @@ int hist_summary;
 int op_rate;
 int op_rate_flag;
 char aflag, Eflag, hflag, Rflag, rflag, sflag,del_flag,mix_test;
-char diag_v,sent_stop,dedup,dedup_interior,dedup_compress, dedup_flag, dedup_iflag,dedup_bflag;
+char diag_v,sent_stop,dedup,dedup_interior,dedup_compress, dedup_flag, sparse_mode, dedup_iflag,dedup_bflag;
 int zero_pct = -1;
 int N_special = 0;
 int W_special = 0;
@@ -1810,6 +1812,7 @@ long long stride = STRIDE;
 long long delay,purge,fetchon;
 off64_t  numrecs64 = (off64_t)NUMRECS;
 long long reclen = RECLEN;
+long long zsize;
 long long delay_start,depth;
 VOLATILE char *stop_flag;		/* Used to stop all children */
 float compute_time;
@@ -2781,6 +2784,10 @@ char **argv;
     					sprintf(splash[splash_line++],"\tPerformance measurements are invalid in this mode.\n");
 					diag_v=1;
 					sverify=0;
+					break;
+				case 'e':  /* Sparse mode */
+					sprintf(splash[splash_line++],"\t>>> I/O Sparse mode enabled. <<<\n");
+					sparse_mode = 1;
 					break;
 				case 'x':  /* Argument is the multiplier for rec size and file size */
 					subarg=argv[optind++];
@@ -7413,7 +7420,7 @@ char sverify;
 	mpattern=patt;
 	pattern_buf=patt;
 	where=(unsigned long long *)buffer;
-	if(sverify == 2)
+	if((sverify == 2) || async_flag)
 	{
 	  for(i=0;i<(length);i+=page_size)
 	  {
@@ -7699,6 +7706,7 @@ long long *data2;
 #endif
 {
 	double burst_sleep_time_till_now[2] = {0, 0};
+	long long cur_off;
 
 	double starttime1;
 	double writetime[2];
@@ -7985,10 +7993,12 @@ long long *data2;
 			perror("fsync");
 			signal_handler();
 		}
+/*
 #ifdef ASYNC_IO
 		if(async_flag)
 			async_init(&gc,fd,direct_flag);
 #endif
+*/
 		pbuff=mainbuffer;
 		if(fetchon)
 			fetchit(pbuff,reclen);
@@ -8088,23 +8098,51 @@ long long *data2;
 			{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+				if(async_flag)
+					async_init(&gc,fd,direct_flag);
+#endif
 			     if(no_copy_flag)
 			       async_write_no_copy(gc, (long long)fd, nbuff, reclen, (i*reclen), depth,free_addr);
 			     else
 			       async_write(gc, (long long)fd, pbuff, reclen, (i*reclen), depth);
+#ifdef ASYNC_IO
+			    end_async(gc);
+			    gc=0;
+#endif
 			  }
 			  else
 			  {
 #if defined(Windows)
        			    if(unbuffered)
         		    {
-				WriteFile(hand, pbuff, reclen,(LPDWORD)&wval,
+			        if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag)
+			        {
+			   	    zsize = (dedup * reclen )/100;	
+				    I_LSEEK(hand,(zsize),SEEK_CUR);
+				    WriteFile(hand, pbuff+zsize, reclen - zsize,(LPDWORD)&wval,
+				    wval = zsize + wval;
+			        }
+				else
+				{
+				    WriteFile(hand, pbuff, reclen,(LPDWORD)&wval,
 					0);
+				}
 			    }
 			    else
 			    {
 #endif
-			    wval=write(fd, pbuff, (size_t ) reclen);
+			    if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+			    {
+				zsize = (dedup * reclen )/100;	
+				I_LSEEK(fd,zsize,SEEK_CUR);
+				wval = write(fd,pbuff+zsize,reclen - zsize);
+				wval = zsize + wval;
+			    }
+			    else
+			    {
+			        wval=write(fd, pbuff, (size_t ) reclen);
+			    }
 			    if(wval != reclen)
 			    {
 #ifdef NO_PRINT_LLD
@@ -8174,6 +8212,7 @@ long long *data2;
 		}
 #endif
 
+/*
 #ifdef ASYNC_IO
 		if(async_flag)
 		{
@@ -8181,6 +8220,7 @@ long long *data2;
 			gc=0;
 		}
 #endif
+*/
 		if(include_flush)
 		{
 			if(mmapflag){
@@ -8305,12 +8345,12 @@ long long *data2;
 		store_times(walltime[1], cputime[1]);
 	store_value((off64_t)writerate[1]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%9ld",writerate[0]);
-	if(!silent) printf("%9ld",writerate[1]);
+	if(!silent) printf("%10ld",writerate[0]);
+	if(!silent) printf("%10ld",writerate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%9lld",writerate[0]);
-	if(!silent) printf("%9lld",writerate[1]);
+	if(!silent) printf("%10lld",writerate[0]);
+	if(!silent) printf("%10lld",writerate[1]);
 	if(!silent) fflush(stdout);
 #endif
 }
@@ -8534,12 +8574,12 @@ long long *data2;
 	store_value((off64_t)writerate[1]);
 	data1[0]=writerate[0];
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%9ld",writerate[0]);
-	if(!silent) printf("%9ld",writerate[1]);
+	if(!silent) printf("%10ld",writerate[0]);
+	if(!silent) printf("%10ld",writerate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%9lld",writerate[0]);
-	if(!silent) printf("%9lld",writerate[1]);
+	if(!silent) printf("%10lld",writerate[0]);
+	if(!silent) printf("%10lld",writerate[1]);
 	if(!silent) fflush(stdout);
 #endif
 }
@@ -8734,12 +8774,12 @@ long long *data1,*data2;
 		store_times(walltime[1], cputime[1]);
 	store_value((off64_t)readrate[1]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%9ld",readrate[0]);
-	if(!silent) printf("%9ld",readrate[1]);
+	if(!silent) printf("%10ld",readrate[0]);
+	if(!silent) printf("%10ld",readrate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%9lld",readrate[0]);
-	if(!silent) printf("%9lld",readrate[1]);
+	if(!silent) printf("%10lld",readrate[0]);
+	if(!silent) printf("%10lld",readrate[1]);
 	if(!silent) fflush(stdout);
 #endif
 }
@@ -8882,10 +8922,12 @@ long long *data1,*data2;
 #if defined(Windows)
 		}
 #endif
+/*
 #ifdef ASYNC_IO
 		if(async_flag)
 			async_init(&gc,fd,direct_flag);
 #endif
+*/
 
 #ifdef VXFS
 		if(direct_flag)
@@ -9032,6 +9074,10 @@ long long *data1,*data2;
 			{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+			    if(async_flag)
+			      async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen), reclen,
 			    	1LL,(numrecs64*reclen),depth);
@@ -9044,12 +9090,31 @@ long long *data1,*data2;
 #if defined(Windows)
        			    if(unbuffered)
         		    {
-				ReadFile(hand, nbuff, reclen,(LPDWORD)&wval,
-					0);
+ 				if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                                {
+                                    zsize = (dedup * reclen )/100;
+				    ReadFile(hand, nbuff, reclen-zsize,(LPDWORD)&wval,
+                                    I_LSEEK(fd,zsize,SEEK_CUR);
+                                    wval = zsize + wval;
+                                }
+				else
+				{
+				    ReadFile(hand, nbuff, reclen,(LPDWORD)&wval, 0);
+				}
 			    }
 			    else
 #endif
-			      wval=read((int)fd, (void*)nbuff, (size_t) reclen);
+			      if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                              {
+                                  zsize = (dedup * reclen )/100;
+			          wval=read((int)fd, (void*)nbuff, (size_t) reclen-zsize);
+                                  I_LSEEK(fd,zsize,SEEK_CUR);
+                                  wval = zsize + wval;
+                              }
+			      else
+			      {
+			          wval=read((int)fd, (void*)nbuff, (size_t) reclen);
+			      }
 			    if(wval != reclen)
 			    {
 #ifdef _64BIT_ARCH_
@@ -9088,8 +9153,13 @@ long long *data1,*data2;
 				}
 			  }
 			}
-			if(async_flag && no_copy_flag)
-				async_release(gc);
+			if(async_flag)
+			{
+				if(no_copy_flag)
+				  async_release(gc);
+				end_async(gc);
+				gc=0;
+			}
 			buffer1=0;
 			if(hist_summary)
 			{
@@ -9139,6 +9209,7 @@ long long *data1,*data2;
 				time_so_far()-starttime2);
 		}
 #endif
+/*
 #ifdef ASYNC_IO
 		if(async_flag)
 		{
@@ -9146,6 +9217,7 @@ long long *data1,*data2;
 			gc=0;
 		}
 #endif
+*/
 		if(include_flush)
 		{
 			if(mmapflag)
@@ -9247,12 +9319,12 @@ long long *data1,*data2;
 		store_times(walltime[1], cputime[1]);
 	store_value((off64_t)readrate[1]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%9ld",readrate[0]);
-	if(!silent) printf("%9ld",readrate[1]);
+	if(!silent) printf("%10ld",readrate[0]);
+	if(!silent) printf("%10ld",readrate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%9lld",readrate[0]);
-	if(!silent) printf("%9lld",readrate[1]);
+	if(!silent) printf("%10lld",readrate[0]);
+	if(!silent) printf("%10lld",readrate[1]);
 	if(!silent) fflush(stdout);
 #endif
 }
@@ -9401,10 +9473,12 @@ long long *data1, *data2;
 			perror("open");
 			exit(66);
 	     }
+/*
 #ifdef ASYNC_IO
 		if(async_flag)
 			async_init(&gc,fd,direct_flag);
 #endif
+*/
 
 #ifdef VXFS
 		if(direct_flag)
@@ -9519,6 +9593,10 @@ long long *data1, *data2;
 			{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+			    if(async_flag)
+			      async_init(&gc,fd,direct_flag);
+#endif
 			     if(no_copy_flag)
 			        async_read_no_copy(gc, (long long)fd, &buffer1, offset64,reclen,
 			    	  0LL,(numrecs64*reclen),depth);
@@ -9556,8 +9634,13 @@ long long *data1, *data2;
 				}
 			  }
 			}
-			if(async_flag && no_copy_flag)
-				async_release(gc);
+			if(async_flag)
+			{
+				if(no_copy_flag)
+				   async_release(gc);
+				end_async(gc);
+				gc=0;
+			}
 			if(rlocking)
 			{
 				lock_offset=I_LSEEK(fd,0,SEEK_CUR);
@@ -9643,11 +9726,22 @@ long long *data1, *data2;
 				{
 			  		if(async_flag)
 					{
+#ifdef ASYNC_IO
+			    		   if(async_flag)
+			      		       async_init(&gc,fd,direct_flag);
+#endif
 			     		   if(no_copy_flag)
 			       		      async_write_no_copy(gc, (long long)fd, nbuff, reclen, offset64, 
 					   	depth,free_addr);
 					   else
 			      			async_write(gc, (long long)fd, nbuff, reclen, offset64, depth);
+#ifdef ASYNC_IO
+	     			           if(async_flag)
+	     			           {
+				        	end_async(gc);
+	        		        	gc=0;
+             			           }	
+#endif
 			  		}
 			  		else
 			  		{
@@ -9677,6 +9771,7 @@ long long *data1, *data2;
 				}
 			}
 	     } 	/* end of modifications	*kcollins:2-5-96 */
+/*
 #ifdef ASYNC_IO
 	     if(async_flag)
 	     {
@@ -9684,6 +9779,7 @@ long long *data1, *data2;
 	        gc=0;
              }	
 #endif
+*/
 	     if(include_flush)
 	     {
 		if(mmapflag)
@@ -9786,12 +9882,12 @@ long long *data1, *data2;
 		store_times(walltime[1], cputime[1]);
 	store_value((off64_t)randreadrate[1]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%9ld",(long)randreadrate[0]);
-	if(!silent) printf("%9ld",(long)randreadrate[1]);
+	if(!silent) printf("%10ld",(long)randreadrate[0]);
+	if(!silent) printf("%10ld",(long)randreadrate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%9lld",(long long)randreadrate[0]);
-	if(!silent) printf("%9lld",(long long)randreadrate[1]);
+	if(!silent) printf("%10lld",(long long)randreadrate[0]);
+	if(!silent) printf("%10lld",(long long)randreadrate[1]);
 	if(!silent) fflush(stdout);
 #endif
 	if(recnum)
@@ -9874,10 +9970,12 @@ long long *data1,*data2;
 	 		perror("open");
 	 		exit(75);
 	 	}
+/*
 #ifdef ASYNC_IO
 		if(async_flag)
 			async_init(&gc,fd,direct_flag);
 #endif
+*/
 
 #ifdef VXFS
 		if(direct_flag)
@@ -9962,6 +10060,10 @@ long long *data1,*data2;
 			else
 			if(async_flag)
 			{
+#ifdef ASYNC_IO
+			    if(async_flag)
+				async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			       async_read_no_copy(gc, (long long)fd, &buffer1, ((((numrecs64-1)-i)*reclen)),
 			          reclen, -1LL,(numrecs64*reclen),depth);
@@ -9995,8 +10097,13 @@ long long *data1,*data2;
 				}
 			   }
 			}
-			if(async_flag && no_copy_flag)
-				async_release(gc);
+			if(async_flag)
+			{
+				if(no_copy_flag)
+				   async_release(gc);
+				end_async(gc);
+				gc=0;
+			}
 			if(rlocking)
 			{
 				mylockr((int) fd, (int) 0, (int)1,
@@ -10007,6 +10114,7 @@ long long *data1,*data2;
 			  I_LSEEK( fd, (off64_t)-2*reclen, SEEK_CUR );
 			}
 		}
+/*
 #ifdef ASYNC_IO
 		if(async_flag)
 		{
@@ -10014,6 +10122,7 @@ long long *data1,*data2;
 			gc=0;
 		}
 #endif
+*/
 		if(include_flush)	
 		{
 			if(mmapflag)
@@ -10087,9 +10196,9 @@ long long *data1,*data2;
 		store_times(walltime[0], cputime[0]);
 	store_value((off64_t)revreadrate[0]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%9ld",(long)revreadrate[0]);
+	if(!silent) printf("%10ld",(long)revreadrate[0]);
 #else
-	if(!silent) printf("%9lld",(long long)revreadrate[0]);
+	if(!silent) printf("%10lld",(long long)revreadrate[0]);
 #endif
 	if(!silent) fflush(stdout);
 }
@@ -10203,10 +10312,12 @@ long long *data1,*data2;
 	{
 		maddr=(char *)initfile(fd,filebytes64,1,PROT_READ|PROT_WRITE);
 	}
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 	wval=fsync(fd);
 	if(wval==-1){
 		perror("fsync");
@@ -10282,10 +10393,21 @@ long long *data1,*data2;
 		{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+			     if(async_flag)
+				async_init(&gc,fd,direct_flag);
+#endif
 			     if(no_copy_flag)
 			       async_write_no_copy(gc, (long long)fd, nbuff, reclen, (i*reclen), depth,free_addr);
 			     else
 			       async_write(gc, (long long)fd, nbuff, reclen, (i*reclen), depth);
+#ifdef ASYNC_IO
+			     if(async_flag)
+			     {
+		    		end_async(gc);
+		    		gc=0;
+			     }
+#endif
 			  }
 			  else
 			  {
@@ -10315,8 +10437,18 @@ long long *data1,*data2;
 		{
 		  I_LSEEK(fd, (off64_t)0,SEEK_SET);
 		}
+/*
+#ifdef ASYNC_IO
+		if(async_flag)
+		{
+		    end_async(gc);
+		    gc=0;
+		}
+#endif
+*/
 	}
 
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -10324,6 +10456,7 @@ long long *data1,*data2;
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -10410,9 +10543,9 @@ long long *data1,*data2;
 		store_times(walltime, cputime);
 	store_value((off64_t)writeinrate);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf(" %9ld",(long)writeinrate);
+	if(!silent) printf(" %10ld",(long)writeinrate);
 #else
-	if(!silent) printf(" %9lld",(long long)writeinrate);
+	if(!silent) printf(" %10lld",(long long)writeinrate);
 #endif
 	if(!silent) fflush(stdout);
 	if(restf)
@@ -10488,10 +10621,12 @@ long long *data1, *data2;
 		    perror("open");
                     exit(86);
         }
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 
 #ifdef VXFS
 	if(direct_flag)
@@ -10556,6 +10691,9 @@ long long *data1, *data2;
 		{
 			savepos64=current_position/reclen;
 		}
+/*
+printf("Read_Stride\n");
+*/
 		if(mmapflag)
 		{
 			wmaddr = &maddr[current_position];
@@ -10563,6 +10701,8 @@ long long *data1, *data2;
 		}
 		else
 		{
+			if(async_flag)
+				async_init(&gc,fd,direct_flag);
 			if(async_flag)
 			{
 			    if(no_copy_flag)
@@ -10594,7 +10734,8 @@ long long *data1, *data2;
 			  lock_offset, reclen);
 		}
 		current_position+=reclen;
-		if(verify){
+		if(verify)
+		{
 			if(async_flag && no_copy_flag)
 			{
 			   if(verify_buffer(buffer1,reclen, (off64_t)savepos64 ,reclen,(long long)pattern,sverify)){
@@ -10608,8 +10749,13 @@ long long *data1, *data2;
 			   }
 			}
 		}
-		if(async_flag && no_copy_flag)
-			async_release(gc);
+		if(async_flag)
+		{
+			if(no_copy_flag)
+			   async_release(gc);
+			end_async(gc);
+			gc=0;
+		}
 			
 		/* This is a bit tricky.  The goal is to read with a stride through
 		   the file. The problem is that you need to touch all of the file
@@ -10667,6 +10813,7 @@ long long *data1, *data2;
 		   walltime = cputime;
 	}
 
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -10674,6 +10821,7 @@ long long *data1, *data2;
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -10733,9 +10881,9 @@ long long *data1, *data2;
 		store_times(walltime, cputime);
 	store_value((off64_t)strideinrate);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf(" %9ld",(long)strideinrate);
+	if(!silent) printf(" %10ld",(long)strideinrate);
 #else
-	if(!silent) printf(" %9lld",(long long)strideinrate);
+	if(!silent) printf(" %10lld",(long long)strideinrate);
 #endif
 	if(!silent) fflush(stdout);
 	if(restf)
@@ -10904,7 +11052,17 @@ long long *data1,*data2;
 				fill_buffer(nbuff,reclen,(long long)pattern,sverify,i);
 			if(purge)
 				purgeit(nbuff,reclen);
-			if(I_PWRITE(fd, nbuff, reclen, traj_offset) != reclen)
+			if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                        {
+                                zsize = (dedup * reclen )/100;
+			        wval = I_PWRITE(fd, nbuff, reclen-zsize, traj_offset);
+                                wval = zsize + wval;
+                        }
+			else
+			{
+				wval = I_PWRITE(fd, nbuff, reclen, traj_offset);
+			}
+		        if(wval != reclen)
 			{
 #ifdef NO_PRINT_LLD
 			    	printf("\nError pwriting block %ld, fd= %d\n", (long)i,
@@ -11014,12 +11172,12 @@ long long *data1,*data2;
 		store_times(walltime[1], cputime[1]);
 	store_value((off64_t)pwriterate[1]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%8ld",(long)pwriterate[0]);
-	if(!silent) printf("%9ld",(long)pwriterate[1]);
+	if(!silent) printf("%10ld",(long)pwriterate[0]);
+	if(!silent) printf("%10ld",(long)pwriterate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%9lld",(long long)pwriterate[0]);
-	if(!silent) printf("%9lld",(long long)pwriterate[1]);
+	if(!silent) printf("%10lld",(long long)pwriterate[0]);
+	if(!silent) printf("%10lld",(long long)pwriterate[1]);
 	if(!silent) fflush(stdout);
 #endif
 }
@@ -11045,6 +11203,7 @@ long long *data1, *data2;
 	long long numrecs64,i;
 	long long j;
 	long long Index = 0;
+	int wval;
 	unsigned long long preadrate[2];
 	off64_t filebytes64;
 	off64_t lock_offset=0;
@@ -11169,8 +11328,18 @@ long long *data1, *data2;
 
 			if(purge)
 				purgeit(nbuff,reclen);
-			if(I_PREAD(((int)fd), ((void*)nbuff), ((size_t) reclen),traj_offset ) 
-					!= reclen)
+			if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                        {
+                                zsize = (dedup * reclen )/100;
+			        wval = I_PREAD(((int)fd), ((void*)nbuff), ((size_t) reclen-zsize),traj_offset ); 
+                                wval = zsize + wval;
+                        }
+			else
+			{
+			        wval = I_PREAD(((int)fd), ((void*)nbuff), ((size_t) reclen),traj_offset ); 
+			}
+			    	
+			if(wval != reclen)
 			{
 #ifdef NO_PRINT_LLD
 				printf("\nError reading block %ld %lx\n", (long)i,(unsigned long)nbuff);
@@ -11263,12 +11432,12 @@ long long *data1, *data2;
 		store_times(walltime[1], cputime[1]);
 	store_value((off64_t)preadrate[1]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%8ld",(long)preadrate[0]);
-	if(!silent) printf("%9ld",(long)preadrate[1]);
+	if(!silent) printf("%10ld",(long)preadrate[0]);
+	if(!silent) printf("%10ld",(long)preadrate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%8lld",(long long)preadrate[0]);
-	if(!silent) printf("%9lld",(long long)preadrate[1]);
+	if(!silent) printf("%10lld",(long long)preadrate[0]);
+	if(!silent) printf("%10lld",(long long)preadrate[1]);
 	if(!silent) fflush(stdout);
 #endif
 }
@@ -11534,11 +11703,11 @@ long long *data1,*data2;
 		store_times(walltime[1], cputime[1]);
 	store_value((off64_t)pwritevrate[1]);
 #ifdef NO_PRINT_LLD
-	if(!silent) printf("%9ld",(long)pwritevrate[0]);
+	if(!silent) printf("%10ld",(long)pwritevrate[0]);
 	if(!silent) printf("%10ld",(long)pwritevrate[1]);
 	if(!silent) fflush(stdout);
 #else
-	if(!silent) printf("%9lld",(long long)pwritevrate[0]);
+	if(!silent) printf("%10lld",(long long)pwritevrate[0]);
 	if(!silent) printf("%10lld",(long long)pwritevrate[1]);
 	if(!silent) fflush(stdout);
 #endif
@@ -11843,12 +12012,12 @@ long long *data1,*data2;
 	store_value((off64_t)preadvrate[1]);
 #ifdef NO_PRINT_LLD
 	if(!silent) printf("%10ld",(long)preadvrate[0]);
-	if(!silent) printf("%9ld",(long)preadvrate[1]);
+	if(!silent) printf("%10ld",(long)preadvrate[1]);
 	if(!silent) printf("\n");
 	if(!silent) fflush(stdout);
 #else
 	if(!silent) printf("%10lld",(long long)preadvrate[0]);
-	if(!silent) printf("%9lld",(long long)preadvrate[1]);
+	if(!silent) printf("%10lld",(long long)preadvrate[1]);
 	if(!silent) printf("\n");
 	if(!silent) fflush(stdout);
 #endif
@@ -12231,7 +12400,7 @@ void dump_excel()
 		dump_report(10); 
 	}
 
-	if ((!include_tflag) || (include_mask & (long long)FWRITER_MASK)) {
+	if ((!include_tflag && !h_flag && !k_flag) || (include_mask & (long long)FWRITER_MASK)) {
 		if(bif_flag)
 			do_label(bif_fd,"Fwrite Report",bif_row++,bif_column);
 		if(!silent) printf("\n%cFwrite report%c\n",'"','"');
@@ -12242,7 +12411,7 @@ void dump_excel()
 		dump_report(12); 
 	}
 
-	if ((!include_tflag) || (include_mask & (long long)FREADER_MASK)) {
+	if ((!include_tflag && !h_flag && !k_flag) || (include_mask & (long long)FREADER_MASK)) {
 		if(bif_flag)
 			do_label(bif_fd,"Fread Report",bif_row++,bif_column);
 		if(!silent) printf("\n%cFread report%c\n",'"','"');
@@ -12256,7 +12425,7 @@ void dump_excel()
 #ifdef HAVE_PREAD
 	if(Eflag)
 	{
-		if ((!include_tflag) || (include_mask & (long long)PWRITER_MASK)) {
+		if ((!include_tflag && !h_flag && !k_flag) || (include_mask & (long long)PWRITER_MASK)) {
 			if(bif_flag)
 				do_label(bif_fd,"Pwrite Report",bif_row++,bif_column);
 			if(!silent) printf("\n%cPwrite report%c\n",'"','"');
@@ -12267,7 +12436,7 @@ void dump_excel()
 		 	dump_report(16); 
 		}
 
-		if ((!include_tflag) || (include_mask & (long long)PREADER_MASK)) {
+		if ((!include_tflag && !h_flag && !k_flag) || (include_mask & (long long)PREADER_MASK)) {
 			if(bif_flag)
 				do_label(bif_fd,"Pread Report",bif_row++,bif_column);
 		 	if(!silent) printf("\n%cPread report%c\n",'"','"');
@@ -12279,7 +12448,7 @@ void dump_excel()
 		}
 
 #ifdef HAVE_PREADV
-		if ((!include_tflag) || (include_mask & (long long)PWRITEV_MASK)) {
+		if ((!include_tflag && !h_flag && !k_flag) || (include_mask & (long long)PWRITEV_MASK)) {
 			if(bif_flag)
 				do_label(bif_fd,"Pwritev Report",bif_row++,bif_column);
  			if(!silent) printf("\n%cPwritev report%c\n",'"','"');
@@ -12290,7 +12459,7 @@ void dump_excel()
  			dump_report(20); 
 		}
 
-		if ((!include_tflag) || (include_mask & (long long)PREADV_MASK)) {
+		if ((!include_tflag && !h_flag && !k_flag) || (include_mask & (long long)PREADV_MASK)) {
 			if(bif_flag)
 				do_label(bif_fd,"Preadv Report",bif_row++,bif_column);
  			if(!silent) printf("\n%cPreadv report%c\n",'"','"');
@@ -13058,10 +13227,12 @@ thread_write_test( x)
                        }
                }
 #endif
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 	if(mmapflag)
 	{
 		maddr=(char *)initfile(fd,(filebytes64),1,PROT_READ|PROT_WRITE);
@@ -13256,14 +13427,18 @@ again:
 		{
 		   if(async_flag)
 		   {
-			     if(no_copy_flag)
-			     {
+#ifdef ASYNC_IO
+			if(async_flag)
+			    async_init(&gc,fd,direct_flag);
+#endif
+	    	        if(no_copy_flag)
+			{
 				free_addr=nbuff=(char *)malloc((size_t)reclen+page_size);
 				nbuff=(char *)(((long)nbuff+(long)page_size) & (long)~(page_size-1));
 				if(verify || dedup_flag || dedup_iflag)
 					fill_buffer(nbuff,reclen,(long long)pattern,sverify,i);
 			        async_write_no_copy(gc, (long long)fd, nbuff, reclen, (i*reclen), depth,free_addr);
-			     }
+			}
 			     else
 				async_write(gc, (long long)fd, nbuff, reclen, (i*reclen), depth);
 		   }
@@ -13272,12 +13447,32 @@ again:
 #if defined(Windows)
 		      if(unbuffered)
 		      {
-			WriteFile(hand,nbuff,reclen, (LPDWORD)&wval,0);
+			   if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                           {
+                                zsize = (dedup * reclen )/100;
+                                I_LSEEK(fd,zsize,SEEK_CUR);
+			        WriteFile(hand,nbuff+zsize,reclen-zsize, (LPDWORD)&wval,0);
+                                wval = zsize + wval;
+                            }
+			    else
+			    {
+			        WriteFile(hand,nbuff,reclen, (LPDWORD)&wval,0);
+			    }
 		      }
 		      else
 		      {
 #endif
-		      wval=write(fd, nbuff, (size_t) reclen);
+		            if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                            {
+                                zsize = (dedup * reclen )/100;
+                                I_LSEEK(fd,zsize,SEEK_CUR);
+                                wval = write(fd,nbuff+zsize,reclen - zsize);
+                                wval = zsize + wval;
+                            }
+			    else
+			    {
+		      		wval=write(fd, nbuff, (size_t) reclen);
+			    }
 
 #ifndef NO_THREADS
 		      count_burst(&burst_acc_time_sec, xx);
@@ -13386,6 +13581,13 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 			mylockr((int) fd, (int) 0, (int)0,
 			  lock_offset, reclen);
 		}
+#ifdef ASYNC_IO
+	 	if(async_flag)
+		{
+			end_async(gc);
+			gc=0;
+		}
+#endif
 	}
 	
 
@@ -13393,6 +13595,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		if(mylockf((int) fd, (int) 0, (int)0))
 			printf("Write unlock failed. %d\n",errno);
 	
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -13400,6 +13603,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(!xflag)
 	{
 		*stop_flag=1;
@@ -13753,10 +13957,12 @@ thread_pwrite_test( x)
                 }
         }
 #endif
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 	if(mmapflag)
 	{
 		maddr=(char *)initfile(fd,(filebytes64),1,PROT_READ|PROT_WRITE);
@@ -13921,6 +14127,10 @@ again:
 		{
 		   if(async_flag)
 		   {
+#ifdef ASYNC_IO
+			if(async_flag)
+			async_init(&gc,fd,direct_flag);
+#endif
 			     if(no_copy_flag)
 			     {
 				free_addr=nbuff=(char *)malloc((size_t)reclen+page_size);
@@ -13934,7 +14144,17 @@ again:
 		   }
 		   else
 		   {
-		      wval=I_PWRITE(fd, nbuff, reclen, traj_offset);
+		      if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                      {
+                            zsize = (dedup * reclen )/100;
+                            I_LSEEK(fd,zsize,SEEK_CUR);
+		            wval=I_PWRITE(fd, nbuff+zsize, reclen-zsize, traj_offset);
+                            wval = zsize + wval;
+                      }
+		      else
+		      {
+		            wval=I_PWRITE(fd, nbuff, reclen, traj_offset);
+		      }
 		      if(wval != reclen)
 		      {
 			if(*stop_flag && !stopped){
@@ -14035,6 +14255,13 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 			written_so_far-=reclen/1024;
 			w_traj_bytes_completed-=reclen;
 		}
+#ifdef ASYNC_IO
+		if(async_flag)
+		{
+			end_async(gc);
+			gc=0;
+		}
+#endif
 	}
 	
 
@@ -14042,6 +14269,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		if(mylockf((int) fd, (int) 0, (int)0))
 			printf("Write unlock failed. %d\n",errno);
 	
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -14049,6 +14277,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(!xflag)
 	{
 		*stop_flag=1;
@@ -14396,10 +14625,12 @@ thread_rwrite_test(x)
                 }
         }
 #endif
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 	if(mmapflag)
 	{
 		maddr=(char *)initfile(fd,(numrecs64*reclen),1,PROT_READ|PROT_WRITE);
@@ -14548,6 +14779,10 @@ fprintf(newstdout,"Chid: %lld Rewriting offset %lld for length of %lld\n",(long 
 		{
 		   	if(async_flag)
 		   	{
+#ifdef ASYNC_IO
+				if(async_flag)
+				    async_init(&gc,fd,direct_flag);
+#endif
 			     if(no_copy_flag)
 			     {
 				free_addr=nbuff=(char *)malloc((size_t)reclen+page_size);
@@ -14564,12 +14799,35 @@ fprintf(newstdout,"Chid: %lld Rewriting offset %lld for length of %lld\n",(long 
 #if defined(Windows)
 			   if(unbuffered)
 			   {
-				WriteFile(hand,nbuff,reclen,(LPDWORD)&wval,0);
+			       if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                               {
+                                   zsize = (dedup * reclen )/100;
+                                   I_LSEEK(hand,zsize,SEEK_CUR);
+				   WriteFile(hand,nbuff+zsize,reclen-zsize,(LPDWORD)&wval,0);
+                                   wval = zsize + wval;
+                               }
+			       else
+			       {
+				   WriteFile(hand,nbuff,reclen,(LPDWORD)&wval,0);
+			       }
 			   }
 			   else
+			   {
 #endif
-			   wval=write(fd, nbuff, (size_t) reclen);
-
+			      if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                              {
+                                zsize = (dedup * reclen )/100;
+                                I_LSEEK(fd,zsize,SEEK_CUR);
+                                wval = write(fd,nbuff+zsize,reclen - zsize);
+                                wval = zsize + wval;
+                              }
+			      else
+			      {
+			         wval=write(fd, nbuff, (size_t) reclen);
+			      }
+#if defined(Windows)
+			   }
+#endif
 #ifndef NO_THREADS
 			   count_burst(&burst_acc_time_sec, xx);
 #endif
@@ -14641,10 +14899,18 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 			mylockr((int) fd, (int) 0, (int)0,
 			  lock_offset, reclen);
 		}
+#ifdef ASYNC_IO
+		if(async_flag)
+		{
+			end_async(gc);
+			gc=0;
+		}
+#endif
 	}
 	if(file_lock)
 		if(mylockf((int) fd, (int) 0, (int)0))
 			printf("Write unlock failed. %d\n",errno);
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -14652,6 +14918,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -14942,10 +15209,12 @@ thread_read_test(x)
 #if defined(Windows)
 	}
 #endif
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 #ifdef VXFS
 	if(direct_flag)
 	{
@@ -15119,6 +15388,10 @@ thread_read_test(x)
 		{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+				if(async_flag)
+				   async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen), reclen,
 			    	1LL,(numrecs64*reclen),depth);
@@ -15131,11 +15404,35 @@ thread_read_test(x)
 #if defined(Windows)
 			      if(unbuffered)
 			      {
-				ReadFile(hand,nbuff,reclen,(LPDWORD)&wval,0);
+				  if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                                  {
+                                       zsize = (dedup * reclen )/100;
+                                       I_LSEEK(fd,zsize,SEEK_CUR);
+				       ReadFile(hand,nbuff+zsize,reclen-zsize,(LPDWORD)&wval,0);
+                                       wval = zsize + wval;
+                                  }
+			          else
+				  {
+				       ReadFile(hand,nbuff,reclen,(LPDWORD)&wval,0);
+				  }
 			      }
 			      else
+			      {
 #endif
-			      wval=read((int)fd, (void*)nbuff, (size_t) reclen);
+			         if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                                 {
+                                      zsize = (dedup * reclen )/100;
+                                      I_LSEEK(fd,zsize,SEEK_CUR);
+			              wval=read((int)fd, (void*)nbuff+zsize, (size_t) reclen-zsize);
+                                      wval = zsize + wval;
+                                 }
+			         else
+			         {
+			             wval=read((int)fd, (void*)nbuff, (size_t) reclen);
+			         }
+#if defined(Windows)
+			      }
+#endif
 			      if(wval != reclen)
 			      {
 				if(*stop_flag)
@@ -15188,8 +15485,13 @@ thread_read_test(x)
 			   }
 		   }
 		}
-		if(async_flag && no_copy_flag)
-			async_release(gc);
+		if(async_flag)
+		{
+			if(no_copy_flag)
+			   async_release(gc);
+			end_async(gc);
+			gc=0;
+		}
 		read_so_far+=reclen/1024;
 		r_traj_bytes_completed+=reclen;
 		r_traj_ops_completed++;
@@ -15231,10 +15533,18 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 			mylockr((int) fd, (int) 0, (int)1,
 			  lock_offset, reclen);
 		}
+#ifdef ASYNC_IO
+		if(async_flag)
+		{
+			end_async(gc);
+			gc=0;
+		}
+#endif
 	}
 	if(file_lock)
 		if(mylockf((int) fd, (int) 0, (int)1))
 			printf("Read unlock failed. %d\n",errno);
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -15242,6 +15552,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -15378,7 +15689,7 @@ thread_pread_test(x)
 	double walltime, cputime;
 	long long r_traj_bytes_completed;
 	long long r_traj_ops_completed;
-	int fd;
+	int fd,wval;
 	FILE *r_traj_fd,*thread_rqfd;
 	FILE *thread_Lwqfd;
 	long long flags = 0;
@@ -15503,10 +15814,12 @@ thread_pread_test(x)
 		perror(dummyfile[xx]);
 		exit(130);
 	}
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 #ifdef VXFS
 	if(direct_flag)
 	{
@@ -15662,6 +15975,10 @@ thread_pread_test(x)
 		{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+				if(async_flag)
+				   async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen), reclen,
 			    	1LL,(numrecs64*reclen),depth);
@@ -15671,8 +15988,18 @@ thread_pread_test(x)
 			  }
 			  else
 			  {
-				if(I_PREAD((int)fd, (void*)nbuff, (size_t) reclen,(traj_offset) ) != reclen)
-			      {
+			    if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                            {
+                                zsize = (dedup * reclen )/100;
+			        wval = I_PREAD((int)fd, (void*)nbuff+zsize, (size_t)(reclen-zsize),(traj_offset));
+                                wval = zsize + wval;
+                            }
+			    else
+			    {
+			      wval = I_PREAD((int)fd, (void*)nbuff, (size_t) reclen,(traj_offset));
+			    }
+			    if(wval != reclen)
+			    {
 				if(*stop_flag)
 				{
 					if(debug1)
@@ -15694,7 +16021,7 @@ thread_pread_test(x)
 				}
 				child_stat->flag = CHILD_STATE_HOLD;
 		    		exit(132);
-			      }
+			    }
 			  }
 		}
 		if(verify){
@@ -15723,8 +16050,13 @@ thread_pread_test(x)
 			   }
 		   }
 		}
-		if(async_flag && no_copy_flag)
-			async_release(gc);
+		if(async_flag)
+		{
+			if(no_copy_flag)
+			   async_release(gc);
+			end_async(gc);
+			gc=0;
+		}
 		read_so_far+=reclen/1024;
 		r_traj_bytes_completed+=reclen;
 		r_traj_ops_completed++;
@@ -15770,6 +16102,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 	if(file_lock)
 		if(mylockf((int) fd, (int) 0, (int)1))
 			printf("Read unlock failed. %d\n",errno);
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -15777,6 +16110,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -16075,10 +16409,12 @@ thread_rread_test(x)
 #if defined(Windows)
 	}
 #endif
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 #ifdef VXFS
 	if(direct_flag)
 	{
@@ -16232,6 +16568,10 @@ thread_rread_test(x)
 		{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+			      if(async_flag)
+			         async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen),reclen,
 			    	1LL,(filebytes64),depth);
@@ -16244,11 +16584,35 @@ thread_rread_test(x)
 #if defined(Windows)
 			      if(unbuffered)
 			      {
-				ReadFile(hand,nbuff,reclen,(LPDWORD)&wval,0);
+				 if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                                 {
+                                     zsize = (dedup * reclen )/100;
+                                     I_LSEEK(fd,zsize,SEEK_CUR);
+				     ReadFile(hand,nbuff+zsize,reclen-zsize,(LPDWORD)&wval,0);
+                                     wval = zsize + wval;
+                                 }
+			         else
+			         {
+				     ReadFile(hand,nbuff,reclen,(LPDWORD)&wval,0);
+				 }
 			      }
 			      else
+			      {
 #endif
-			      wval=read((int)fd, (void*)nbuff, (size_t) reclen);
+			        if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                                {
+                                  zsize = (dedup * reclen )/100;
+                                  I_LSEEK(fd,zsize,SEEK_CUR);
+                                  wval=read((int)fd, (void*)(nbuff+zsize), (size_t) reclen-zsize);
+                                  wval = zsize + wval;
+                                }
+			        else
+			        {
+                                  wval=read((int)fd, (void*)nbuff, (size_t) reclen);
+			        }
+#if defined(Windows)
+			      }
+#endif
 			      if(wval != reclen)
 			      {
 				if(*stop_flag)
@@ -16301,8 +16665,13 @@ thread_rread_test(x)
 			}
 		   }
 		}
-		if(async_flag && no_copy_flag)
-			async_release(gc);
+		if(async_flag)
+		{
+			if(no_copy_flag)
+			   async_release(gc);
+			end_async(gc);
+			gc=0;
+		}
 		re_read_so_far+=reclen/1024;
 		r_traj_bytes_completed+=reclen;
 		r_traj_ops_completed++;
@@ -16349,6 +16718,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		if(mylockf((int) fd, (int) 0, (int)1))
 			printf("Read unlock failed. %d\n",errno);
 	/*fsync(fd);*/
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -16356,6 +16726,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -16484,7 +16855,7 @@ thread_reverse_read_test(x)
 	long long xx,xx2;
 	char *nbuff;
 	struct child_stats *child_stat;
-	int fd;
+	int fd,wval;
 	long long flags = 0;
 	double walltime, cputime;
 	double thread_qtime_stop,thread_qtime_start;
@@ -16637,10 +17008,12 @@ thread_reverse_read_test(x)
 		perror(dummyfile[xx]);
 		exit(140);
 	}
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 #ifdef VXFS
 	if(direct_flag)
 	{
@@ -16791,6 +17164,10 @@ thread_reverse_read_test(x)
 		{
 			  if(async_flag)
 			  {
+#ifdef ASYNC_IO
+			    if(async_flag)
+			      async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			      async_read_no_copy(gc, (long long)fd, &buffer1, (current_position),
 			      	reclen, -1LL,(numrecs64*reclen),depth);
@@ -16800,8 +17177,19 @@ thread_reverse_read_test(x)
 			  }
 			  else
 			  {
-			      if(read((int)fd, (void*)nbuff, (size_t) reclen) != reclen)
-			      {
+		             if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                             {
+                                zsize = (dedup * reclen )/100;
+                                I_LSEEK(fd,zsize,SEEK_CUR);
+                                wval = read(fd,nbuff+zsize,reclen - zsize);
+                                wval = zsize + wval;
+                             }
+			     else
+			     {
+			        wval = read((int)fd, (void*)nbuff, (size_t) reclen);
+			     }
+			     if(wval != reclen)
+			     {
 				if(*stop_flag)
 				{
 					if(debug1)
@@ -16821,7 +17209,7 @@ thread_reverse_read_test(x)
 				}
 				child_stat->flag = CHILD_STATE_HOLD;
 				exit(144);
-			      }
+			     }
 			  }
 		}
 		if(verify){
@@ -16856,8 +17244,13 @@ thread_reverse_read_test(x)
 			  lock_offset, reclen);
 		}
 		current_position+=reclen;
-		if(async_flag && no_copy_flag)
-			async_release(gc);
+		if(async_flag)
+		{
+			if(no_copy_flag)
+			   async_release(gc);
+			end_async(gc);
+			gc=0;
+		}
 		t_offset = (off64_t)reclen*2;
 		if (!(h_flag || k_flag || mmapflag))
 		{
@@ -16900,6 +17293,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 	if(file_lock)
 		if(mylockf((int) fd,(int)0, (int)1))
 			printf("Read unlock failed %d\n",errno);
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -16907,6 +17301,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -17019,7 +17414,7 @@ thread_stride_read_test(x)
 	char *nbuff=0;
 	struct child_stats *child_stat;
 	double walltime, cputime;
-	int fd;
+	int fd,wval;
 	long long flags = 0;
 	double thread_qtime_stop,thread_qtime_start;
 	double hist_time;
@@ -17172,10 +17567,12 @@ thread_stride_read_test(x)
 		perror(dummyfile[xx]);
 		exit(147);
 	}
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 #ifdef VXFS
 	if(direct_flag)
 	{
@@ -17301,6 +17698,10 @@ thread_stride_read_test(x)
 		{
 			if(async_flag)
 			{
+#ifdef ASYNC_IO
+			    if(async_flag)
+			        async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			      async_read_no_copy(gc, (long long)fd, &buffer1, (current_position),
 			      	reclen, stride,(numrecs64*reclen),depth);
@@ -17310,8 +17711,19 @@ thread_stride_read_test(x)
 			}
 			else
 			{
-			  if(read((int)fd, (void*)nbuff, (size_t) reclen) != reclen)
-			  {
+		            if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                            {
+                                zsize = (dedup * reclen )/100;
+                                I_LSEEK(fd,zsize,SEEK_CUR);
+			        wval = read((int)fd, (void*)(nbuff+zsize), (size_t) reclen-zsize);
+                                wval = zsize + wval;
+                            }
+			    else
+			    {
+			        wval = read((int)fd, (void*)nbuff, (size_t) reclen);
+			    }
+			    if(wval != reclen)
+			    {
 				if(*stop_flag)
 				{
 					if(debug1)
@@ -17331,7 +17743,7 @@ thread_stride_read_test(x)
 				}
 				child_stat->flag = CHILD_STATE_HOLD;
 		    		exit(149);
-			  }
+			    }
 			}
 		}
 		if(rlocking)
@@ -17366,8 +17778,13 @@ thread_stride_read_test(x)
 			}
 		   }
 		}
-		if(async_flag && no_copy_flag)
-			async_release(gc);
+		if(async_flag)
+		{
+			if(no_copy_flag)
+			   async_release(gc);
+			end_async(gc);
+			gc=0;
+		}
 		if(current_position + (stride * reclen) >= (numrecs64 * reclen)-reclen) 
 		{
 			current_position=0;
@@ -17445,6 +17862,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 	if(file_lock)
 		if(mylockf((int) fd,(int)0,(int)1))
 			printf("Read unlock failed %d\n",errno);
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -17452,6 +17870,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -17634,7 +18053,7 @@ void *x;
 	long long xx,xx2;
 	struct child_stats *child_stat;
 	double walltime, cputime;
-	int fd;
+	int fd,wval;
 	long long flags = 0;
 	double thread_qtime_stop,thread_qtime_start;
 	double hist_time;
@@ -17831,10 +18250,12 @@ void *x;
 		perror(dummyfile[xx]);
 		exit(156);
 	}
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 
 #ifdef VXFS
 	if(direct_flag)
@@ -18024,6 +18445,10 @@ void *x;
 		{
 			if(async_flag)
 			{
+#ifdef ASYNC_IO
+			    if(async_flag)
+				async_init(&gc,fd,direct_flag);
+#endif
 			    if(no_copy_flag)
 			      async_read_no_copy(gc, (long long)fd, &buffer1, (current_offset),
 			      	 reclen, 0LL,(numrecs64*reclen),depth);
@@ -18033,31 +18458,42 @@ void *x;
 			}
 			else
 			{
-	  		  if(read((int)fd, (void*)nbuff, (size_t)reclen) != reclen)
-	  		  {
-				if(*stop_flag)
-				{
+			    if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                            {
+                                zsize = (dedup * reclen )/100;
+                                I_LSEEK(fd,zsize,SEEK_CUR);
+	  		        wval = read((int)fd, (void*)(nbuff+zsize), (size_t)reclen-zsize);
+                                wval = zsize + wval;
+                            }
+			    else
+	  		    {
+			        wval = read((int)fd, (void*)nbuff, (size_t)reclen);
+			    }
+			    if(wval != reclen)
+	  		    {
+				  if(*stop_flag)
+				  {
 					if(debug1)
 						printf("\n(%ld) Stopped by another 2\n", (long)xx);
 					break;
-				}
+				  }
 #ifdef NO_PRINT_LLD
-				printf("\nError reading block at %ld\n",
+				  printf("\nError reading block at %ld\n",
 					 (long)offset); 
 #else
-				printf("\nError reading block at %lld\n",
+				  printf("\nError reading block at %lld\n",
 					 (long long)offset); 
 #endif
-				perror("ranread");
-				if (!no_unlink)
-				{
-				   if(check_filename(dummyfile[xx]))
+				  perror("ranread");
+				  if (!no_unlink)
+				  {
+				     if(check_filename(dummyfile[xx]))
 					unlink(dummyfile[xx]);
-				}
-				child_stat->flag = CHILD_STATE_HOLD;
-				exit(160);
-	 		  }
-			}
+				  }
+				  child_stat->flag = CHILD_STATE_HOLD;
+				  exit(160);
+	 		         }
+		        }
 		}
 		if(rlocking)
 		{
@@ -18092,8 +18528,13 @@ void *x;
 			}
 		   }
 		}
-		if(async_flag && no_copy_flag)
-			async_release(gc);
+		if(async_flag)
+		{
+			if(no_copy_flag)
+			   async_release(gc);
+			end_async(gc);
+			gc=0;
+		}
 		ranread_so_far+=reclen/1024;
 		if(*stop_flag)
 		{
@@ -18130,6 +18571,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 	if(file_lock)
 		if(mylockf((int) fd,(int)0,(int)1))
 			printf("Read unlock failed %d\n",errno);
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -18137,6 +18579,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(include_flush)
 	{
 		if(mmapflag)
@@ -18514,10 +18957,12 @@ thread_ranwrite_test( x)
                 }
         }
 #endif
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 		async_init(&gc,fd,direct_flag);
 #endif
+*/
 	if(mmapflag)
 	{
 		maddr=(char *)initfile(fd,(filebytes64),1,PROT_READ|PROT_WRITE);
@@ -18693,6 +19138,10 @@ again:
 		{
 		   if(async_flag)
 		   {
+#ifdef ASYNC_IO
+			if(async_flag)
+			    async_init(&gc,fd,direct_flag);
+#endif
 			     if(no_copy_flag)
 			     {
 				free_addr=nbuff=(char *)malloc((size_t)reclen+page_size);
@@ -18706,8 +19155,17 @@ again:
 		   }
 		   else
 		   {
-		      wval = write(fd, nbuff, (size_t) reclen);
-
+                      if((dedup_flag && sparse_mode ) && !(dedup_iflag || dedup_bflag))
+                      {
+                           zsize = (dedup * reclen )/100;
+                           I_LSEEK(fd,zsize,SEEK_CUR);
+                           wval = write(fd,nbuff+zsize,reclen - zsize);
+                           wval = zsize + wval;
+                      }
+		      else
+		      {
+		           wval = write(fd, nbuff, (size_t) reclen);
+		      }
 #ifndef NO_THREADS
 		      count_burst(&burst_acc_time_sec, xx);
 #endif
@@ -18812,6 +19270,13 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 			written_so_far-=reclen/1024;
 			w_traj_bytes_completed-=reclen;
 		}
+#ifdef ASYNC_IO
+		if(async_flag)
+		{
+			end_async(gc);
+			gc=0;
+		}
+#endif
 	}
 	
 
@@ -18819,6 +19284,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		if(mylockf((int) fd, (int) 0, (int)0))
 			printf("Write unlock failed. %d\n",errno);
 	
+/*
 #ifdef ASYNC_IO
 	if(async_flag)
 	{
@@ -18826,6 +19292,7 @@ printf("Desired rate %g  Actual rate %g Nap %g microseconds\n",desired_op_rate_t
 		gc=0;
 	}
 #endif
+*/
 	if(!xflag)
 	{
 		*stop_flag=1;
@@ -21217,6 +21684,7 @@ int send_size;
 	sprintf(outbuf.c_dedup_granule_size,"%d",send_buffer->c_dedup_granule_size);
 	sprintf(outbuf.c_dedup,"%d",send_buffer->c_dedup);
 	sprintf(outbuf.c_dedup_flag,"%d",send_buffer->c_dedup_flag);
+	sprintf(outbuf.c_sparse_mode,"%d",send_buffer->c_sparse_mode);
 	sprintf(outbuf.c_dedup_iflag,"%d",send_buffer->c_dedup_iflag);
 	sprintf(outbuf.c_dedup_bflag,"%d",send_buffer->c_dedup_bflag);
 	sprintf(outbuf.c_dedup_interior,"%d",send_buffer->c_dedup_interior);
@@ -22082,6 +22550,7 @@ long long numrecs64, reclen;
 	cc.c_N_special = N_special;
 	cc.c_dedup_granule_size = dedup_granule_size;
 	cc.c_dedup_flag = dedup_flag;
+	cc.c_sparse_mode = sparse_mode;
 	cc.c_dedup_iflag = dedup_iflag;
 	cc.c_dedup_bflag = dedup_bflag;
 	cc.c_dedup = dedup;
@@ -22346,6 +22815,7 @@ become_client()
 	sscanf(cnc->c_N_special,"%d",&cc.c_N_special);
 	sscanf(cnc->c_dedup_granule_size,"%d",&cc.c_dedup_granule_size);
 	sscanf(cnc->c_dedup_flag,"%d",&cc.c_dedup_flag);
+	sscanf(cnc->c_sparse_mode,"%d",&cc.c_sparse_mode);
 	sscanf(cnc->c_dedup_iflag,"%d",&cc.c_dedup_iflag);
 	sscanf(cnc->c_dedup_bflag,"%d",&cc.c_dedup_bflag);
 	sscanf(cnc->c_dedup,"%d",&cc.c_dedup);
@@ -22437,6 +22907,7 @@ become_client()
 	N_special = cc.c_N_special;
 	dedup_granule_size = cc.c_dedup_granule_size;
 	dedup = cc.c_dedup;
+	sparse_mode = cc.c_sparse_mode;
 	dedup_flag = cc.c_dedup_flag;
 	dedup_iflag = cc.c_dedup_iflag;
 	dedup_bflag = cc.c_dedup_bflag;
@@ -24572,6 +25043,7 @@ old_compressible_rand(void)
 void
 compressible_rand_16_int(int *L_ptr)
 {
+	int pattern = 0;
         /* zero_pct:[0,100] */
 	int k;
         int toss = ((lrand48()>>3)%100)+1;
@@ -24591,10 +25063,15 @@ compressible_rand_16_int(int *L_ptr)
  		 * will see the savings and engage. Without having a bunch of 
  		 * adjacent zeros the compression will dis-engage.
 		 */
+		/*
+ 		 * Pick a new pattern so that we exercise more dictionary 
+ 		 * entries.
+ 		 */
+		pattern = (int)rand();
 		for(k=0;k<16;k++)
 		{
 		    positives++;
-		    L_ptr[k]=0;
+		    L_ptr[k]=pattern;
 		}
                 return;
         }
@@ -26332,6 +26809,7 @@ gen_new_buf(char *ibuf, char *obuf, long seed, int size, int percent,
         op = (int *)obuf;       /* pointer to output buf */
         if(all == 0)            /* Special case for verify only */
                 isize = sizeof(int);
+	memset(op,0,size);
         /* interior_size = dedup_within + dedup_across */
         for(w=0;w<interior_size;w+=sizeof(int))
         {
@@ -26353,7 +26831,8 @@ gen_new_buf(char *ibuf, char *obuf, long seed, int size, int percent,
                 ip++;
         }
         /* isize = dedup across only */
-        for(x=interior_size;x<isize;x+=sizeof(long))    /* tight loop for transformation */
+        x=interior_size;
+        for(x=interior_size;x<isize;x+=sizeof(int))    /* tight loop for transformation */
         {
                 *op=*ip ^ iseed; /* do the xor op */
                 op++;
@@ -26367,7 +26846,7 @@ gen_new_buf(char *ibuf, char *obuf, long seed, int size, int percent,
                 srand(1+seed+((chid+chid_skew+1)*(int)numrecs64)*dedup_mseed);
                 value=rand();
 	/* printf("Non-dedup value %x seed %x\n",value,seed);*/
-                for( ; x<size;x+=sizeof(long))
+                for( ; x<size;x+=sizeof(int))
                         *op++=(*ip++)^value; /* randomize the remainder */
         }
         return(0);

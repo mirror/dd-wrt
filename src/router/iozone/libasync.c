@@ -161,7 +161,7 @@ extern int one;
  * cache, pointed to by async_init(gc) will be of
  * this structure type.
  */
-static const char version[] = "Libasync Version $Revision: 3.34 $";
+static const char version[] = "Libasync Version $Revision: 3.52 $";
 struct cache_ent {
 #if defined(_LARGEFILE64_SOURCE) && defined(__CrayX1__)
 	aiocb64_t myaiocb;		/* For use in large file mode */
@@ -184,6 +184,7 @@ struct cache_ent {
 						/* accidents */
 	size_t oldsize;				/* Used for firewall to prevent in flight */
 						/* accidents */
+	off64_t  offset;				
 };
 
 /*
@@ -282,6 +283,8 @@ int flag;
 	max_depth=500;
 #else
 	max_depth=sysconf(_SC_AIO_MAX);
+	if(max_depth < 0)
+		max_depth = 500;
 #endif
 }
 
@@ -289,20 +292,20 @@ int flag;
 /* Tear down routine to shutdown the library   */
 /***********************************************/
 #ifdef HAVE_ANSIC_C
-void end_async(struct cache *gc)
+void end_async(struct cache *mygc)
 #else
 void
-end_async(gc)
-struct cache *gc;
+end_async(mygc)
+struct cache *mygc;
 #endif
 {
-	del_cache(gc);
-	if(gc && (gc->w_head !=NULL))
-	   async_write_finish(gc);
+	del_cache(mygc);
+	if(mygc && (mygc->w_head !=NULL))
+	   async_write_finish(mygc);
 
-	if(gc != NULL)
-	   free((void *)gc);
-	gc = NULL;
+	if(mygc != NULL)
+	   free((void *)mygc);
+	mygc = NULL;
 }
 
 /***********************************************/
@@ -412,6 +415,7 @@ long long depth;
 		{
 			mbcopy((char *)ce->myaiocb.aio_buf,(char *)ubuffer,(size_t)retval);
 		}
+#if defined(DEBUG)
 		if(retval < ce->myaiocb.aio_nbytes)
 		{
 			printf("aio_return error1: ret %zd %d\n",retval,errno);
@@ -423,6 +427,7 @@ long long depth;
 				ce->myaiocb.aio_lio_opcode
 				);
 		}
+#endif
 		ce->direct=0;
 		takeoff_cache(gc,ce);
 	}else
@@ -439,8 +444,10 @@ again:
 		{
 			if(errno==EAGAIN)
 				goto again;
+#if defined(DEBUG)
 			else
 				printf("error returned from aio_read(). Ret %zd errno %d\n",ret,errno);
+#endif
 		}
 	}
 	if(stride==0)	 /* User does not want read-ahead */
@@ -482,6 +489,7 @@ out:
 		if(ret)
 			printf("aio_error 2: ret %zd %d\n",ret,errno);
 		retval=aio_return(&first_ce->myaiocb);
+#if defined(DEBUG)
 		if(retval < first_ce->myaiocb.aio_nbytes)
 		{
 			printf("aio_return error2: ret %zd %d\n",retval,errno);
@@ -493,6 +501,7 @@ out:
 				first_ce->myaiocb.aio_lio_opcode
 				);
 		}
+#endif
 		if(retval > 0)
 		{
 			mbcopy((char *)first_ce->myaiocb.aio_buf,(char *)ubuffer,(size_t)retval);
@@ -535,7 +544,12 @@ off64_t offset;
 	ce->myaiocb.aio_fildes=(int)fd;
 	ce->myaiocb.aio_offset=(off64_t)offset;
 	ce->real_address = malloc((size_t)(size+page_size));
-printf("\nAllocate buffer2 %p Size %lld \n",ce->real_address,size+page_size);
+	if(ce->real_address == NULL)
+	{
+		printf("Malloc failure in alloc_cache\n");
+		exit(1);
+	}
+/*printf("\nAllocate buffer2 %p Size %lld \n",ce->real_address,size+page_size);*/
 	temp = (intptr_t)ce->real_address;
 	temp = (temp+(page_size-1)) & ~(page_size-1);
 	ce->myaiocb.aio_buf=(volatile void *)temp;
@@ -558,6 +572,7 @@ printf("\nAllocate buffer2 %p Size %lld \n",ce->real_address,size+page_size);
 	if(!gc->head)
 		gc->head=ce;
 	gc->count++;
+/*	printf("Added to global cache\n");*/
 	return(ce);
 }
 
@@ -686,10 +701,18 @@ struct cache *gc;
 		ce=gc->head;
 		if(ce==0)
 			return;
+/*printf("Cancel I/O Offset: %lld\n",ce->myaiocb.aio_offset);*/
 		while((ret = aio_cancel(0,&ce->myaiocb))==AIO_NOTCANCELED)
 			; 
+		while((ret=aio_error(&ce->myaiocb))== EINPROGRESS)
+		{
+			async_suspend(ce);
+		}
 
 		ret = aio_return(&ce->myaiocb);
+		if(ret < 0)
+			printf("Aio return in del_cache failed. %ld %d\n",ret,errno);
+/*printf("Cancel: %ld\n",ret);*/
 		ce->direct=0;
 		takeoff_cache(gc,ce);	  /* remove from cache */
 	}
@@ -730,6 +753,13 @@ long long depth;
 
 	a_offset=offset;
 	a_size = size;
+	if((a_offset + size) >= max)
+	{
+		stride = 0LL;
+		offset = a_offset = r_offset = 0LL;
+	}
+	if(stride < 0)
+		stride = 0;
 	/*
 	 * Check to see if it can be completed from the cache
 	 */
@@ -738,21 +768,40 @@ long long depth;
 		while((ret=aio_error(&ce->myaiocb))== EINPROGRESS)
 		{
 			async_suspend(ce);
+			ret = 0;
 		}
 		if(ret)
+		{
 			printf("aio_error 3: ret %zd %d\n",ret,errno);
 			printf("It changed in flight\n");
-			
+		}	
+#if defined(DEBUG)
+		printf("aio_error debug: fd %d offset %lld buffer %p size %zd Opcode %d\n",
+				ce->myaiocb.aio_fildes,
+				(long long)ce->myaiocb.aio_offset,
+				ce->myaiocb.aio_buf,
+				ce->myaiocb.aio_nbytes,
+				ce->myaiocb.aio_lio_opcode
+				);
+#endif
 		retval=aio_return(&ce->myaiocb);
-		if(retval > 0)
+		if(retval >= 0)
 		{
 			*ubuffer= (char *)ce->myaiocb.aio_buf;
-		}else
-			*ubuffer= NULL;
+		}
+		if(ce->myaiocb.aio_buf == NULL)
+		{
+			printf("Stuffing a null in users buffer.\n");
+			exit(1);
+		}
+		else
+			*ubuffer= (char *)ce->myaiocb.aio_buf;
+#if defined(DEBUG)
+/* Sometimes this returns a zero, on a perfectly good offset and size !!! Needs work !!!*/
 		if(retval < ce->myaiocb.aio_nbytes)
 		{
 			printf("aio_return error4: ret %zd %d\n",retval,errno);
-			printf("aio_return error4: fd %d offset %lld buffer %p size %zd Opcode %d\n",
+			printf("aio_return error4: fd %d offset %lld buffer %p Nbytes %zd Opcode %d\n",
 				ce->myaiocb.aio_fildes,
 				(long long)ce->myaiocb.aio_offset,
 				ce->myaiocb.aio_buf,
@@ -760,6 +809,7 @@ long long depth;
 				ce->myaiocb.aio_lio_opcode
 				);
 		}
+#endif
 		ce->direct=1;
 		takeoff_cache(gc,ce); /* do not delete buffer*/
 		putoninuse(gc,ce);
@@ -770,46 +820,83 @@ long long depth;
 		 */
 		del_cache(gc);
 		del_read++;
+/*	printf("\nIssue first read Offset %lld\n",offset);*/
 		first_ce=alloc_cache(gc,fd,offset,size,(long long)LIO_READ); /* allocate buffer */
-		/*printf("allocated buffer/read %x offset %d\n",first_ce->myaiocb.aio_buf,offset);*/
-again:
+again2:
 		first_ce->oldbuf=first_ce->myaiocb.aio_buf;
 		first_ce->oldfd=first_ce->myaiocb.aio_fildes;
 		first_ce->oldsize=first_ce->myaiocb.aio_nbytes;
+		first_ce->offset =first_ce->myaiocb.aio_offset;
 		ret=aio_read(&first_ce->myaiocb);
 		if(ret!=0)
 		{
 			if(errno==EAGAIN)
-				goto again;
+				goto again2;
+#if defined(DEBUG)
 			else
 				printf("error returned from aio_read(). Ret %zd errno %d\n",ret,errno);
+#endif
 		}
 	}
 	if(stride==0)	 /* User does not want read-ahead */
 		goto out;
 	if(a_offset<0)	/* Before beginning of file */
+	{
+		a_offset = r_offset = 0LL;
 		goto out;
-	if(a_offset+size>max)	/* After end of file */
+	}
+	if(a_offset+size >= max)	/* After end of file */
+	{
+		offset = a_offset = r_offset = 0LL;
+		stride = 0;
+		first_ce->myaiocb.aio_offset=(off64_t)offset;
 		goto out;
+		/*goto again2;*/
+	}
 	if(depth >=(max_depth-1))
 		depth=max_depth-1;
 	if(depth==0)
+	{
+		offset = a_offset = r_offset = 0LL;
 		goto out;
+	}
+/*printf("\n Depth %lld ",depth);*/
 	if(gc->count > 1)
 		start=depth-1;
+here:
 	for(i=start;i<depth;i++)	/* Issue read-aheads for the depth specified */
 	{
-		r_offset=a_offset+((i+1)*(stride*a_size));
-		if(r_offset<0)
+		/* stride = 0;	 Hack to make stride read work */
+		r_offset = a_offset+((i+1)*(stride*a_size));
+		if(r_offset < 0)
+		{
+			a_offset = r_offset = 0LL;
 			continue;
-		if(r_offset+size > max)
-			continue;
+		}
+		if((r_offset+a_size) >= max)
+		{
+			offset = a_offset = r_offset = 0LL;
+			depth--;
+/*	printf("Reduce depth %lld\n",depth);*/
+			if(depth < 1)	/* reduce depth first to see if it can stay below eof */
+				depth = 1;
+			if((depth == 1) && (stride > 0))
+				stride--;  /* Reduce stride, as depth has been depleted */
+			if(stride < 0)
+				stride = 0;
+			goto here;
+		}
 		if((ce=incache(gc,fd,r_offset,a_size)))
+		{
 			continue;
+		}
+/*	printf("\nIra offset %lld CD %lld",r_offset,i);*/
 		ce=alloc_cache(gc,fd,r_offset,a_size,(long long)LIO_READ);
 		ce->oldbuf=ce->myaiocb.aio_buf;
 		ce->oldfd=ce->myaiocb.aio_fildes;
+		ce->offset=ce->myaiocb.aio_offset;
 		ce->oldsize=ce->myaiocb.aio_nbytes;
+
 		ret=aio_read(&ce->myaiocb);
 		if(ret!=0)
 		{
@@ -823,14 +910,30 @@ out:
 		while((ret=aio_error(&first_ce->myaiocb))== EINPROGRESS)
 		{
 			async_suspend(first_ce);
+			ret = 0;
 		}
+/*printf("Wait for first read to complete\n");*/
+#if defined(DEBUG)
 		if(ret)
 			printf("aio_error 4: ret %zd %d\n",ret,errno);
 		if(first_ce->oldbuf != first_ce->myaiocb.aio_buf ||
 			first_ce->oldfd != first_ce->myaiocb.aio_fildes ||
 			first_ce->oldsize != first_ce->myaiocb.aio_nbytes) 
-			printf("It changed in flight2\n");
+			   printf("It changed in flight2\n");
+#endif
 		retval=aio_return(&first_ce->myaiocb);
+/*
+		if(retval > 0)
+			printf("First read complete\n");
+*/
+#if defined(DEBUG)
+		if(retval == 0)
+		{
+			printf("Aio_return came back with a zero \n");
+		}
+#endif
+
+#if defined(DEBUG)
 		if(retval < first_ce->myaiocb.aio_nbytes)
 		{
 			printf("aio_return error5: ret %zd %d\n",retval,errno);
@@ -842,15 +945,24 @@ out:
 				first_ce->myaiocb.aio_lio_opcode
 				);
 		}
-		if(retval > 0)
+#endif
+		if(retval >= 0)
 		{
 			*ubuffer= (char *)first_ce->myaiocb.aio_buf;
-		}else
-			*ubuffer= NULL;
+		}
+		if(first_ce->myaiocb.aio_buf == NULL)
+		{
+			printf("Stuffing2 error\n");
+			exit(1);
+		}
+		else
+			*ubuffer= (char *)first_ce->myaiocb.aio_buf;
+
 		first_ce->direct=1;	 /* do not delete the buffer */
 		takeoff_cache(gc,first_ce);
 		putoninuse(gc,first_ce);
 	}
+/*printf(" RT ");*/
 	return((int)retval);	
 }
 
@@ -963,12 +1075,14 @@ again:
 		if(errno==EAGAIN)
 		{
 			async_wait_for_write(gc);
+printf("Again 1\n");
 			goto again;
 		}
 		if(errno==0)
 		{
 			/* Compensate for bug in async library */
 			async_wait_for_write(gc);
+printf("Again 2\n");
 			goto again;
 		}
 		else
@@ -1029,6 +1143,11 @@ char *buffer,*free_addr;
 	if(!direct)
 	{
 		ce->real_address = malloc((size_t)(size+page_size));
+		if(ce->real_address == (void *)NULL)
+		{
+			printf("Malloc failure in alloc_write_buffer\n");
+			exit(1);
+		}
 		temp = (intptr_t)ce->real_address;
 		temp = (temp+(page_size-1)) & ~(page_size-1);
 		ce->myaiocb.aio_buf=(volatile void *)temp;
@@ -1130,6 +1249,8 @@ struct cache *gc;
 	{
 		async_suspend(ce);
 	}
+
+#if defined(DEBUG)
 	if(ret)
 	{
 		printf("aio_error 5: ret %zd %d\n",ret,errno);
@@ -1139,12 +1260,14 @@ struct cache *gc;
 			ce->myaiocb.aio_nbytes);
 		exit(181);
 	}
-
+#endif
 	retval=aio_return(&ce->myaiocb);
+#if defined(DEBUG)
 	if(retval < 0)
 	{
-		printf("aio_return error: %d\n",errno);
+		printf("aio_return return error: %d\n",errno);
 	}
+#endif
 
 	if(!ce->direct)
 	{
@@ -1194,23 +1317,26 @@ char *free_addr;
 		ce->myaiocb.aio_nbytes);
 	*/
 
-again:
+again2:
 	ret=aio_write(&ce->myaiocb);
 	if(ret==-1)
 	{
 		if(errno==EAGAIN)
 		{
 			async_wait_for_write(gc);
-			goto again;
+			printf("Again2 1\n");
+			goto again2;
 		}
 		if(errno==0)
 		{
 			/* Compensate for bug in async library */
 			async_wait_for_write(gc);
-			goto again;
+			printf("Again2 2\n");
+			goto again2;
 		}
 		else
 		{
+#if defined(DEBUG)
 			printf("Error in aio_write: ret %zd errno %d\n",ret,errno);
 			printf("aio_write_no_copy: fd %d buffer %p offset %lld size %zd\n",
 				ce->myaiocb.aio_fildes,
@@ -1218,12 +1344,14 @@ again:
 				(long long)ce->myaiocb.aio_offset,
 				ce->myaiocb.aio_nbytes);
 			exit(182);
+#endif
 		}
 	} 
 	else	
 	{
 		return((ssize_t)size);
 	}
+	return((ssize_t)size);
 }
 
 void mbcopy(source, dest, len)
