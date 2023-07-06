@@ -18,6 +18,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod nls_base
     insmod nls_cp850
     insmod fscache
+    insmod dns_resolver
     insmod cifs_md4
     insmod cifs_arc
     insmod cifs
