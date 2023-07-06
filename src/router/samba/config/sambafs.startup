@@ -20,7 +20,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod fscache
     insmod dns_resolver
     insmod cifs_md4
-    insmod cifs_arc
+    insmod cifs_arc4
     insmod cifs
     insmod md4
     insmod md5
