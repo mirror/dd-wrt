@@ -8,6 +8,8 @@ mkdir /tmp/mnt
 echo /mnt/smbshare
 umount /mnt/smbshare
 rmmod cifs
+rmmod cifs_arc
+rmmod cifs_md4
 rmmod fscache
 if [ "$(nvram get samba_mount)" = "1" ]; then     
     echo 4096 > /proc/sys/vm/min_free_kbytes
@@ -16,6 +18,8 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod nls_base
     insmod nls_cp850
     insmod fscache
+    insmod cifs_md4
+    insmod cifs_arc
     insmod cifs
     insmod md4
     insmod md5
