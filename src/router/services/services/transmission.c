@@ -95,7 +95,7 @@ static struct config_val config[] = {
 	{ "rpc-host-whitelist-enabled", "true", 0, 0 },
 	{ "rpc-password", "{572778e48a0d0f5104d970ed9fc69f6f98f03fd6ozr1fmao", 0, 0 },
 	{ "rpc-port", "9091", 0, 0 },
-	{ "rpc-socket-mode", "0750", 0, 0 },	
+	{ "rpc-socket-mode", "0750", 0, 0 },
 	{ "rpc-url", "/transmission/", 0, 0 },
 	{ "rpc-username", "transmission", 0, 0 },
 	{ "rpc-whitelist", "127.0.0.1", 0, 0 },
@@ -270,17 +270,19 @@ void start_transmission(void)
 		set_config_alloc("rpc-port", strdup(nvram_safe_get("transmission_rpc")), 1, 0);
 		set_config_alloc("rpc-username", strdup(nvram_safe_get("transmission_username")), 1, 1);
 		set_config_alloc("rpc-password", strdup(nvram_safe_get("transmission_password")), 1, 1);
-		if (!nvram_match("transmission_script","")) {
-		    set_config("script-torrent-done-enabled","true",0);
-		    set_config_alloc("script-torrent-done-filename", strdup(nvram_safe_get("transmission_script")), 1, 1);
+		if (!nvram_match("transmission_script", "")) {
+			set_config("script-torrent-done-enabled", "true", 0);
+			set_config_alloc("script-torrent-done-filename", strdup(nvram_safe_get("transmission_script")), 1, 1);
 		}
-		if (!nvram_match("transmission_down","")) {
-		    set_config("speed-limit-down-enabled","true",0);
-		    set_config_alloc("speed-limit-down", strdup(nvram_safe_get("transmission_down")), 1, 0);
+		char *up = nvram_safe_get("transmission_down");
+		if (*down && *down != '\r' && *down != '\n') {
+			set_config("speed-limit-down-enabled", "true", 0);
+			set_config_alloc("speed-limit-down", strdup(down), 1, 0);
 		}
-		if (!nvram_match("transmission_up","")) {
-		    set_config("speed-limit-up-enabled","true",0);
-		    set_config_alloc("speed-limit-up", strdup(nvram_safe_get("transmission_up")), 1, 0);
+		char *up = nvram_safe_get("transmission_up");
+		if (*up && *up != '\r' && *up != '\n') {
+			set_config("speed-limit-up-enabled", "true", 0);
+			set_config_alloc("speed-limit-up", strdup(up), 1, 0);
 		}
 		set_config("rpc-authentication-required", "true", 0);
 		writeconfig(fp);
