@@ -642,6 +642,7 @@ enum {
 	IFLA_VXLAN_GPE,
 	IFLA_VXLAN_TTL_INHERIT,
 	IFLA_VXLAN_DF,
+	IFLA_VXLAN_VNIFILTER, /* only applicable with COLLECT_METADATA mode */
 	__IFLA_VXLAN_MAX
 };
 #define IFLA_VXLAN_MAX	(__IFLA_VXLAN_MAX - 1)
@@ -662,7 +663,7 @@ enum ifla_vxlan_df {
 
 #define VXLAN_ATTRSET(attrs, type) (((attrs) & (1L << (type))) != 0)
 
-static void check_duparg(__u64 *attrs, int type, const char *key,
+static void check_duparg(uint64_t *attrs, int type, const char *key,
 			 const char *argv)
 {
 	if (!VXLAN_ATTRSET(*attrs, type)) {
@@ -734,7 +735,7 @@ static int get_be16(const char *arg, const char *msg)
 
 static void print_explain(void)
 {
-	bb_error_msg_and_die(
+	bb_simple_error_msg_and_die(
 		"Usage: ... vxlan id VNI\n"
 		"		[ { group | remote } IP_ADDRESS ]\n"
 		"		[ local ADDR ]\n"
@@ -757,6 +758,7 @@ static void print_explain(void)
 		"		[ [no]udp6zerocsumrx ]\n"
 		"		[ [no]remcsumtx ] [ [no]remcsumrx ]\n"
 		"		[ [no]external ] [ gbp ] [ gpe ]\n"
+		"		[ [no]vnifilter ]\n"
 		"\n"
 		"Where:	VNI	:= 0-16777215\n"
 		"	ADDR	:= { IP_ADDRESS | any }\n"
@@ -777,6 +779,7 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 	int arg;
 	uint32_t vni = 0;
 	uint8_t learning = 1;
+	uint8_t vnifilter = 0;
 	uint16_t dstport = 0;
 	uint8_t metadata = 0;
 	uint64_t attrs = 0;
@@ -826,9 +829,9 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		"external\0"
 		"noexternal\0"
 		"gbp\0"
-		"nogbp\0"
 		"gpe\0"
-		"nogpe\0"
+		"vnifilter\0"
+		"novnifilter\0"
 		"help\0"
 	;
 
@@ -874,9 +877,9 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		ARG_external,
 		ARG_noexternal,
 		ARG_gbp,
-		ARG_nogbp,
 		ARG_gpe,
-		ARG_nogpe,
+		ARG_vnifilter,
+		ARG_novnifilter,
 		ARG_help,
 	};
 
@@ -900,7 +903,7 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				invarg("invalid id", *argv);
 		} else if (arg == ARG_group) {
 			if (is_addrtype_inet_not_multi(&daddr)) {
-				bb_error_msg_and_die("vxlan: both group and remote cannot be specified");
+				bb_simple_error_msg_and_die("vxlan: both group and remote cannot be specified");
 			}
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_GROUP, "group", *argv);
@@ -909,7 +912,7 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 				invarg("invalid group address", *argv);
 		} else if (arg == ARG_remote) {
 			if (is_addrtype_inet_multi(&daddr)) {
-				bb_error_msg_and_die("vxlan: both group and remote cannot be specified");
+				bb_simple_error_msg_and_die("vxlan: both group and remote cannot be specified");
 			}
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_GROUP, "remote", *argv);
@@ -1107,6 +1110,15 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			metadata = 0;
 			addattr8(n, size, IFLA_VXLAN_COLLECT_METADATA,
 				 metadata);
+		} else if (arg == ARG_vnifilter) {
+			check_duparg(&attrs, IFLA_VXLAN_VNIFILTER,
+				     *argv, *argv);
+			addattr8(n, 1024, IFLA_VXLAN_VNIFILTER, 1);
+			vnifilter = 1;
+		} else if (arg == ARG_novnifilter) {
+			check_duparg(&attrs, IFLA_VXLAN_VNIFILTER,
+				     *argv, *argv);
+			addattr8(n, 1024, IFLA_VXLAN_VNIFILTER, 0);
 		} else if (arg == ARG_gbp) {
 			check_duparg(&attrs, IFLA_VXLAN_GBP, *argv, *argv);
 			addattr_l(n, size, IFLA_VXLAN_GBP, NULL, 0);
@@ -1121,17 +1133,21 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		argv++;
 	}
 
-	if (metadata && VXLAN_ATTRSET(attrs, IFLA_VXLAN_ID)) {
-		bb_error_msg_and_die("vxlan: both 'external' and vni cannot be specified");
+	if (!metadata && vnifilter) {
+		bb_simple_error_msg_and_die("vxlan: vnifilter is valid only when 'external' is set");
 	}
 
-	if (!metadata && !VXLAN_ATTRSET(attrs, IFLA_VXLAN_ID) && !set_op) {
-		bb_error_msg_and_die("vxlan: missing virtual network identifier");
+	if (metadata && VXLAN_ATTRSET(attrs, IFLA_VXLAN_ID)) {
+		bb_simple_error_msg_and_die("vxlan: both 'external' and vni cannot be specified");
+	}
+
+	if (!metadata && !vnifilter && !VXLAN_ATTRSET(attrs, IFLA_VXLAN_ID) && !set_op) {
+		bb_simple_error_msg_and_die("vxlan: missing virtual network identifier");
 	}
 
 	if (is_addrtype_inet_multi(&daddr) &&
 	    !VXLAN_ATTRSET(attrs, IFLA_VXLAN_LINK)) {
-		bb_error_msg_and_die("vxlan: 'group' requires 'dev' to be specified");
+		bb_simple_error_msg_and_die("vxlan: 'group' requires 'dev' to be specified");
 	}
 
 	if (!VXLAN_ATTRSET(attrs, IFLA_VXLAN_PORT) &&
