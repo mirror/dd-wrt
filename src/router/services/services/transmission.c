@@ -274,7 +274,7 @@ void start_transmission(void)
 			set_config("script-torrent-done-enabled", "true", 0);
 			set_config_alloc("script-torrent-done-filename", strdup(nvram_safe_get("transmission_script")), 1, 1);
 		}
-		char *up = nvram_safe_get("transmission_down");
+		char *down = nvram_safe_get("transmission_down");
 		if (*down && *down != '\r' && *down != '\n') {
 			set_config("speed-limit-down-enabled", "true", 0);
 			set_config_alloc("speed-limit-down", strdup(down), 1, 0);
