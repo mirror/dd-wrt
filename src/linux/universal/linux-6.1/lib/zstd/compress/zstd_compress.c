@@ -166,7 +166,6 @@ size_t ZSTD_freeCCtx(ZSTD_CCtx* cctx)
     return 0;
 }
 
-
 static size_t ZSTD_sizeof_mtctx(const ZSTD_CCtx* cctx)
 {
     (void)cctx;
