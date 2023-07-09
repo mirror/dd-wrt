@@ -31,7 +31,8 @@ enum nf_ct_ext_id {
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 	NF_CT_EXT_ACT_CT,
 #endif
-	NF_CT_EXT_NUM,
+	NF_CT_EXT_CUSTOM,
+	NF_CT_EXT_NUM=NF_CT_EXT_CUSTOM+CONFIG_NF_CONNTRACK_CUSTOM,
 };
 
 /* Extensions: optional stuff which isn't permanently in struct. */
@@ -39,7 +40,7 @@ struct nf_ct_ext {
 	u8 offset[NF_CT_EXT_NUM];
 	u8 len;
 	unsigned int gen_id;
-	char data[] __aligned(8);
+	char data[];
 };
 
 static inline bool __nf_ct_ext_exist(const struct nf_ct_ext *ext, u8 id)
@@ -67,8 +68,26 @@ static inline void *nf_ct_ext_find(const struct nf_conn *ct, u8 id)
 	return (void *)ct->ext + ct->ext->offset[id];
 }
 
+/* Destroy all relationships */
+void nf_ct_ext_destroy(struct nf_conn *ct);
+
 /* Add this type, returns pointer to data or NULL. */
 void *nf_ct_ext_add(struct nf_conn *ct, enum nf_ct_ext_id id, gfp_t gfp);
+
+struct nf_ct_ext_type {
+	/* Destroys relationships (can be NULL). */
+	void (*destroy)(struct nf_conn *ct);
+
+	enum nf_ct_ext_id id;
+
+	/* Length and min alignment. */
+	u8 len;
+	u8 align;
+};
+
+int nf_ct_extend_register(const struct nf_ct_ext_type *type);
+void nf_ct_extend_unregister(const struct nf_ct_ext_type *type);
+int nf_ct_extend_custom_register(struct nf_ct_ext_type *type,unsigned long int cid);
 
 /* ext genid.  if ext->id != ext_genid, extensions cannot be used
  * anymore unless conntrack has CONFIRMED bit set.
