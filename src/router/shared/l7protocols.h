@@ -51,6 +51,7 @@ l7filters filters_list[] = {
 	{ "amqp", NDPI_ONLY, 0, NULL },
 	{ "anonymous subscriber", NDPI_RISK, 45, "icloud_private_relay" },
 	{ "anydesk", NDPI_ONLY, 0, NULL },
+	{ "apache_thrift", NDPI_ONLY, 0, NULL },
 	{ "apple", NDPI_ONLY, 0, NULL },
 	{ "appleicloud", NDPI_ONLY, 0, NULL },
 	{ "appleitunes", NDPI_ONLY, 0, NULL },
