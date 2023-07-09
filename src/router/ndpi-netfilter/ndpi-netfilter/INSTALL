@@ -352,6 +352,9 @@ tls_buf_size: The maximum buffer size in kB for the TLS protocol. default 8, ran
   Delete match:
   "echo '-protoname:host' >/proc/net/xt_ndpi/host_proto"
 
+  Delete all hosts for the selected protocol:
+  "echo '-protoname:*' >/proc/net/xt_ndpi/host_proto"
+
   Delete all hosts matchs:
   "echo 'reset' >/proc/net/xt_ndpi/host_proto"
 

@@ -1,7 +1,7 @@
 /*
  * reader_util.c
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-23 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -1149,16 +1149,17 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
   flow->num_dissector_calls = flow->ndpi_flow->num_dissector_calls;
 
   ndpi_snprintf(flow->host_server_name, sizeof(flow->host_server_name), "%s",
-	   flow->ndpi_flow->host_server_name);
+		flow->ndpi_flow->host_server_name);
 
   ndpi_snprintf(flow->flow_extra_info, sizeof(flow->flow_extra_info), "%s",
-	   flow->ndpi_flow->flow_extra_info);
+		flow->ndpi_flow->flow_extra_info);
 
   flow->risk = flow->ndpi_flow->risk;
 
   if(is_ndpi_proto(flow, NDPI_PROTOCOL_DHCP)) {
     if(flow->ndpi_flow->protos.dhcp.fingerprint[0] != '\0')
       flow->dhcp_fingerprint = ndpi_strdup(flow->ndpi_flow->protos.dhcp.fingerprint);
+
     if(flow->ndpi_flow->protos.dhcp.class_ident[0] != '\0')
       flow->dhcp_class_ident = ndpi_strdup(flow->ndpi_flow->protos.dhcp.class_ident);
   } else if(is_ndpi_proto(flow, NDPI_PROTOCOL_BITTORRENT) &&
@@ -1168,6 +1169,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 
     if(flow->ndpi_flow->protos.bittorrent.hash[0] != '\0') {
       flow->bittorent_hash = ndpi_malloc(sizeof(flow->ndpi_flow->protos.bittorrent.hash) * 2 + 1);
+      
       if(flow->bittorent_hash) {
         for(i=0, j = 0; i < sizeof(flow->ndpi_flow->protos.bittorrent.hash); i++) {
           sprintf(&flow->bittorent_hash[j], "%02x",
@@ -1175,6 +1177,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 
           j += 2;
         }
+	
         flow->bittorent_hash[j] = '\0';
       }
     }
@@ -1292,11 +1295,6 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     ndpi_snprintf(flow->kerberos.username,
                   sizeof(flow->kerberos.username),
                   "%s", flow->ndpi_flow->protos.kerberos.username);
-  }
-  /* RTP */
-  else if(is_ndpi_proto(flow, NDPI_PROTOCOL_RTP)) {
-    flow->info_type = INFO_RTP;
-    flow->rtp.stream_type = flow->ndpi_flow->protos.rtp.stream_type;
   /* COLLECTD */
   } else if(is_ndpi_proto(flow, NDPI_PROTOCOL_COLLECTD)) {
     flow->info_type = INFO_GENERIC;
@@ -1391,6 +1389,8 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     }
   }
 
+  flow->multimedia_flow_type = flow->ndpi_flow->flow_multimedia_type;
+  
   /* HTTP metadata are "global" not in `flow->ndpi_flow->protos` union; for example, we can have
      HTTP/BitTorrent and in that case we want to export also HTTP attributes */
   if(is_ndpi_proto(flow, NDPI_PROTOCOL_HTTP)
@@ -1410,25 +1410,24 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
                 sizeof(flow->http.user_agent),
                 "%s", (flow->ndpi_flow->http.user_agent ? flow->ndpi_flow->http.user_agent : ""));
 
-  if (workflow->ndpi_serialization_format != ndpi_serialization_format_unknown)
-  {
+  if (workflow->ndpi_serialization_format != ndpi_serialization_format_unknown) {
     if (ndpi_flow2json(workflow->ndpi_struct, flow->ndpi_flow,
                        flow->ip_version, flow->protocol,
+		       flow->vlan_id,
                        flow->src_ip, flow->dst_ip,
                        &flow->src_ip6, &flow->dst_ip6,
                        flow->src_port, flow->dst_port,
                        flow->detected_protocol,
-                       &flow->ndpi_flow_serializer) != 0)
-    {
+                       &flow->ndpi_flow_serializer) != 0) {
       LOG(NDPI_LOG_ERROR, "flow2json failed\n");
       exit(-1);
     }
+    
     ndpi_serialize_string_uint32(&flow->ndpi_flow_serializer, "detection_completed", flow->detection_completed);
     ndpi_serialize_string_uint32(&flow->ndpi_flow_serializer, "check_extra_packets", flow->check_extra_packets);
   }
 
-  if(flow->detection_completed && (!flow->check_extra_packets)) {
-   
+  if(flow->detection_completed && (!flow->check_extra_packets)) {   
     flow->flow_payload = flow->ndpi_flow->flow_payload, flow->flow_payload_len = flow->ndpi_flow->flow_payload_len;
     flow->ndpi_flow->flow_payload = NULL; /* We'll free the memory */
 
@@ -1731,15 +1730,16 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
     input_info.seen_flow_beginning = NDPI_FLOW_BEGINNING_UNKNOWN;
 #if 1
     if(nDPI_LogLevel > 1 && iph) {
+	static int pkt_seq=0;
   	char ip1[48],ip2[48];
        	inet_ntop(AF_INET, &flow->src_ip, ip1, sizeof(ip1));
 	inet_ntop(AF_INET, &flow->dst_ip, ip2, sizeof(ip2));
 	if(iph->saddr == flow->src_ip) {
-	LOG(NDPI_LOG_DEBUG,"DPI Packets -> %s %s:%u => %s:%u len %u\n",
+	LOG(NDPI_LOG_DEBUG,"%5d DPI Packets -> %s %s:%u => %s:%u len %u\n",pkt_seq++,
 		proto == IPPROTO_TCP ? "TCP":(proto == IPPROTO_UDP ? "UDP":"OTH"),
 		ip1,ntohs(flow->src_port),ip2,ntohs(flow->dst_port),ipsize);
 	} else {
-	LOG(NDPI_LOG_DEBUG,"DPI Packets <- %s %s:%u => %s:%u len %u\n",
+	LOG(NDPI_LOG_DEBUG,"%5d DPI Packets <- %s %s:%u => %s:%u len %u\n",pkt_seq++,
 		proto == IPPROTO_TCP ? "TCP":(proto == IPPROTO_UDP ? "UDP":"OTH"),
 		ip2,ntohs(flow->dst_port),ip1,ntohs(flow->src_port),ipsize);
 	}

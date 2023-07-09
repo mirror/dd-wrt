@@ -234,7 +234,6 @@
     <ClCompile Include="..\src\lib\protocols\guildwars.c" />
     <ClCompile Include="..\src\lib\protocols\h323.c" />
     <ClCompile Include="..\src\lib\protocols\halflife2_and_mods.c" />
-    <ClCompile Include="..\src\lib\protocols\hangout.c" />
     <ClCompile Include="..\src\lib\protocols\hots.c" />
     <ClCompile Include="..\src\lib\protocols\http.c" />
     <ClCompile Include="..\src\lib\protocols\iax.c" />
@@ -303,6 +302,7 @@
     <ClCompile Include="..\src\lib\protocols\telnet.c" />
     <ClCompile Include="..\src\lib\protocols\teredo.c" />
     <ClCompile Include="..\src\lib\protocols\tftp.c" />
+    <ClCompile Include="..\src\lib\protocols\thrift.c" />
     <ClCompile Include="..\src\lib\protocols\tplink_shp.c" />
     <ClCompile Include="..\src\lib\protocols\tuya_lp.c" />
     <ClCompile Include="..\src\lib\protocols\tvuplayer.c" />

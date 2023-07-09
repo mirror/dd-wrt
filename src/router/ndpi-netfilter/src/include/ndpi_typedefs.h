@@ -38,10 +38,20 @@
 #include "ndpi_patricia_typedefs.h"
 
 #ifndef __KERNEL__
-#ifdef HAVE_MAXMINDDB
-#include <maxminddb.h>
+#ifndef NDPI_CFFI_PREPROCESSING
+#ifndef u_char
+typedef unsigned char u_char;
+#endif
+
+#ifndef u_short
+typedef unsigned short u_short;
+#endif
+
+#ifndef u_int
+typedef unsigned int u_int;
 #endif
 #endif
+#endif /* __KERNEL__ */
 
 /* NDPI_LOG_LEVEL */
 typedef enum {
@@ -52,10 +62,17 @@ typedef enum {
 } ndpi_log_level_t;
 
 typedef enum {
-	      ndpi_l4_proto_unknown = 0,
-	      ndpi_l4_proto_tcp_only,
-	      ndpi_l4_proto_udp_only,
-	      ndpi_l4_proto_tcp_and_udp,
+  ndpi_multimedia_unknown_flow = 0,
+  ndpi_multimedia_audio_flow,
+  ndpi_multimedia_video_flow,
+  ndpi_multimedia_screen_sharing_flow,
+} ndpi_multimedia_flow_type;
+
+typedef enum {
+  ndpi_l4_proto_unknown = 0,
+  ndpi_l4_proto_tcp_only,
+  ndpi_l4_proto_udp_only,
+  ndpi_l4_proto_tcp_and_udp,
 } ndpi_l4_proto_info;
 
 typedef enum {
@@ -722,6 +739,12 @@ typedef enum {
   NDPI_PTREE_MAX	/* Last one! */
 } ptree_type;
 
+enum {
+  NO_RTP_RTCP = 0,
+  IS_RTP = 1,
+  IS_RTCP = 2,
+};
+
 typedef enum {
   NDPI_AUTOMA_HOST = 0,
   NDPI_AUTOMA_DOMAIN,
@@ -776,6 +799,12 @@ struct ndpi_lru_cache {
 
 /* Ookla */
 #define NDPI_AGGRESSIVENESS_OOKLA_TLS			0x01 /* Enable detection over TLS (using ookla cache) */
+
+
+/* Monitoring flags */
+
+/* Stun */
+#define NDPI_MONITORING_STUN_SUBCLASSIFIED		0x01 /* Monitor STUN flows even if we have a valid sub-protocol */
 
 /* ************************************************** */
 
@@ -852,9 +881,6 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_WORLDOFWARCRAFT */
   u_int32_t wow_stage:2;
 
-  /* NDPI_PROTOCOL_RTP */
-  u_int32_t rtp_special_packets_seen:1;
-
   /* NDPI_PROTOCOL_MAIL_POP */
   u_int32_t mail_pop_stage:2;
 
@@ -892,6 +918,9 @@ struct ndpi_flow_udp_struct {
 
   /* NDPI_PROTOCOL_XBOX */
   u_int32_t xbox_stage:1;
+
+  /* NDPI_PROTOCOL_RTP */
+  u_int32_t rtp_stage:2;
 
   /* NDPI_PROTOCOL_QUIC */
   u_int32_t quic_0rtt_found:1;
@@ -1402,6 +1431,10 @@ struct ndpi_detection_module_struct {
   int opportunistic_tls_imap_enabled;
   int opportunistic_tls_pop_enabled;
   int opportunistic_tls_ftp_enabled;
+  int opportunistic_tls_stun_enabled;
+
+  u_int32_t monitoring_stun_pkts_to_process;
+  u_int32_t monitoring_stun_flags;
 
   u_int32_t aggressiveness_ookla;
 
@@ -1462,14 +1495,6 @@ struct tls_heuristics {
 struct ndpi_risk_information {
   ndpi_risk_enum id;
   char *info;  
-};
-
-enum ndpi_rtp_stream_type {
-  rtp_unknown = 0,
-  rtp_audio,
-  rtp_video,  
-  rtp_audio_video,
-  rtp_screen_share
 };
 
 struct ndpi_flow_struct {
@@ -1556,6 +1581,8 @@ struct ndpi_flow_struct {
     char *nat_ip; /* Via HTTP X-Forwarded-For */
   } http;
 
+  ndpi_multimedia_flow_type flow_multimedia_type;
+
   /*
      Put outside of the union to avoid issues in case the protocol
      is remapped to something other than Kerberos due to a faulty
@@ -1567,8 +1594,7 @@ struct ndpi_flow_struct {
   } kerberos_buf;
 
   struct {
-    u_int8_t num_pkts, num_binding_requests;
-    u_int16_t num_processed_pkts;
+    u_int8_t num_pkts, num_binding_requests, num_processed_pkts, maybe_dtls;
   } stun;
 
   struct {
@@ -1585,10 +1611,6 @@ struct ndpi_flow_struct {
       char ptr_domain_name[64 /* large enough but smaller than { } tls */];
     } dns;
 
-    struct {
-      enum ndpi_rtp_stream_type stream_type;
-    } rtp;
-    
     struct {
       u_int8_t request_code;
       u_int8_t version;
@@ -1697,6 +1719,11 @@ struct ndpi_flow_struct {
       u_int16_t external_port;
       ndpi_ip_addr_t external_address;
     } natpmp;
+
+    struct {
+      u_int8_t message_type;
+      char method[64];
+    } thrift;
   } protos;
 
   /*** ALL protocol specific 64 bit variables here ***/
@@ -1783,8 +1810,8 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 210,
                "Size of the struct member protocols increased to more than 210 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 944,
-               "Size of the flow struct increased to more than 944 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 952,
+               "Size of the flow struct increased to more than 952 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
