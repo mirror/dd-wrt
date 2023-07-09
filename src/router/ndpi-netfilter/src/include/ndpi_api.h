@@ -1070,9 +1070,9 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC u_int32_t ndpi_get_protocol_aggressiveness(struct ndpi_detection_module_struct *ndpi_struct,
                                              u_int16_t proto);
 
-  int ndpi_set_monitoring_state(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_set_monitoring_state(struct ndpi_detection_module_struct *ndpi_struct,
                                 u_int16_t proto, u_int32_t num_pkts, u_int32_t flags);
-  int ndpi_get_monitoring_state(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_get_monitoring_state(struct ndpi_detection_module_struct *ndpi_struct,
                                 u_int16_t proto, u_int32_t *num_pkts, u_int32_t *flags);
 
 
@@ -1524,7 +1524,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    * @param format The double format
    * @return 0 on success, a negative number otherwise
    */
-  NDPI_STATIC ndpi_serialize_binary_double(ndpi_serializer *_serializer, const char *key, u_int16_t klen, double value, const char *format /* e.f. "%.2f" */);
+  NDPI_STATIC int ndpi_serialize_binary_double(ndpi_serializer *_serializer, const char *key, u_int16_t klen, double value, const char *format /* e.f. "%.2f" */);
 
   /**
    * Serialize an unterminated string key and a boolean value (JSON/CSV only, not supported by TLV)
