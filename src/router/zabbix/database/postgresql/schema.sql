@@ -1473,6 +1473,7 @@ CREATE TABLE problem (
 CREATE INDEX problem_1 ON problem (source,object,objectid);
 CREATE INDEX problem_2 ON problem (r_clock);
 CREATE INDEX problem_3 ON problem (r_eventid);
+CREATE INDEX problem_4 ON problem (cause_eventid);
 CREATE TABLE problem_tag (
 	problemtagid             bigint                                    NOT NULL,
 	eventid                  bigint                                    NOT NULL,
@@ -2250,7 +2251,7 @@ CREATE TABLE dbversion (
 	optional                 integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dbversionid)
 );
-INSERT INTO dbversion VALUES ('1','6040000','6040000');
+INSERT INTO dbversion VALUES ('1','6040000','6040001');
 create or replace function changelog_hosts_insert() returns trigger as $$
 begin
 insert into changelog (object,objectid,operation,clock)

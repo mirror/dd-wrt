@@ -10780,6 +10780,7 @@ int	DCconfig_get_poller_items(unsigned char poller_type, int config_timeout, DC_
 	return num;
 }
 
+#ifdef HAVE_OPENIPMI
 /******************************************************************************
  *                                                                            *
  * Purpose: Get array of items for IPMI poller                                *
@@ -10873,6 +10874,7 @@ int	DCconfig_get_ipmi_poller_items(int now, int items_num, int config_timeout, D
 
 	return num;
 }
+#endif /* HAVE_OPENIPMI */
 
 /******************************************************************************
  *                                                                            *
@@ -11059,6 +11061,7 @@ void	DCpoller_requeue_items(const zbx_uint64_t *itemids, const int *lastclocks,
 	UNLOCK_CACHE;
 }
 
+#ifdef HAVE_OPENIPMI
 /******************************************************************************
  *                                                                            *
  * Purpose: requeue unreachable items                                         *
@@ -11107,6 +11110,7 @@ void	zbx_dc_requeue_unreachable_items(zbx_uint64_t *itemids, size_t itemids_num)
 
 	UNLOCK_CACHE;
 }
+#endif /* HAVE_OPENIPMI */
 
 /******************************************************************************
  *                                                                            *

@@ -1,4 +1,4 @@
-# git.zabbix.com/ap/plugin-support v1.2.2-0.20230328073000-225959e60734
+# git.zabbix.com/ap/plugin-support v1.2.2-0.20230609112455-21cd6ad91514
 ## explicit; go 1.17
 git.zabbix.com/ap/plugin-support/conf
 git.zabbix.com/ap/plugin-support/log
@@ -80,7 +80,7 @@ github.com/chromedp/sysutil
 ## explicit
 github.com/dustin/gomemcached
 github.com/dustin/gomemcached/server
-# github.com/eclipse/paho.mqtt.golang v1.4.1
+# github.com/eclipse/paho.mqtt.golang v1.4.2
 ## explicit; go 1.14
 github.com/eclipse/paho.mqtt.golang
 github.com/eclipse/paho.mqtt.golang/packets

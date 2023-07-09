@@ -1375,7 +1375,7 @@ function zbx_str2links($text) {
 				if ($pos != $start) {
 					$result[] = mb_substr($line, $start, $pos - $start);
 				}
-				$result[] = new CLink(CHtml::encode($match), $match);
+				$result[] = new CLink($match, $match);
 				$start = $pos + mb_strlen($match);
 			}
 		}
@@ -1591,8 +1591,8 @@ function formatFloat(float $number, array $options = []): string {
 * @return float
 */
 function truncateFloat(float $number): float {
-	if ($number == INF) {
-		return INF;
+	if (is_infinite($number)) {
+		return $number;
 	}
 
 	return (float) sprintf('%.'.(ZBX_FLOAT_DIG - 1).'E', $number);

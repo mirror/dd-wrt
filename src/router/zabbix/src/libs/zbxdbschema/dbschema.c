@@ -2593,24 +2593,24 @@ ZBX_TABLE	tables[] = {
 };
 
 const zbx_db_table_changelog_t	changelog_tables[] = {
-	{"hosts", 1},
-	{"httptestitem", 13},
-	{"item_tag", 4},
-	{"httpstep", 14},
+	{"httptest", 11},
+	{"drules", 9},
+	{"triggers", 5},
 	{"dchecks", 10},
 	{"functions", 7},
-	{"drules", 9},
-	{"connector", 17},
+	{"httpstep", 14},
+	{"connector_tag", 18},
+	{"hosts", 1},
+	{"items", 3},
+	{"httpstep_field", 15},
+	{"httpstepitem", 16},
+	{"httptestitem", 13},
 	{"httptest_field", 12},
 	{"host_tag", 2},
-	{"items", 3},
-	{"httptest", 11},
-	{"triggers", 5},
-	{"trigger_tag", 6},
-	{"httpstep_field", 15},
-	{"connector_tag", 18},
-	{"httpstepitem", 16},
 	{"item_preproc", 8},
+	{"item_tag", 4},
+	{"connector", 17},
+	{"trigger_tag", 6},
 	{0}
 };
 #if defined(HAVE_SQLITE3)
@@ -4087,6 +4087,7 @@ PRIMARY KEY (eventid)\n\
 CREATE INDEX problem_1 ON problem (source,object,objectid);\n\
 CREATE INDEX problem_2 ON problem (r_clock);\n\
 CREATE INDEX problem_3 ON problem (r_eventid);\n\
+CREATE INDEX problem_4 ON problem (cause_eventid);\n\
 CREATE TABLE problem_tag (\n\
 problemtagid bigint  NOT NULL,\n\
 eventid bigint  NOT NULL REFERENCES problem (eventid) ON DELETE CASCADE,\n\
@@ -4863,7 +4864,7 @@ mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dbversionid)\n\
 );\n\
-INSERT INTO dbversion VALUES ('1','6040000','6040000');\n\
+INSERT INTO dbversion VALUES ('1','6040000','6040001');\n\
 create trigger hosts_insert after insert on hosts\n\
 for each row\n\
 begin\n\
