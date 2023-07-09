@@ -11966,6 +11966,7 @@ static int i40e_vsi_alloc_q_vector(struct i40e_vsi *vsi, int v_idx)
 
 	if (vsi->netdev)
 		netif_napi_add(vsi->netdev, &q_vector->napi, i40e_napi_poll);
+		vsi->netdev->threaded = 1;
 
 	/* tie q_vector and vsi together */
 	vsi->q_vectors[v_idx] = q_vector;

@@ -2734,6 +2734,7 @@ static int ixgbevf_alloc_q_vector(struct ixgbevf_adapter *adapter, int v_idx,
 
 	/* initialize NAPI */
 	netif_napi_add(adapter->netdev, &q_vector->napi, ixgbevf_poll);
+	adapter->netdev->threaded = 1;
 
 	/* tie q_vector and adapter together */
 	adapter->q_vector[v_idx] = q_vector;

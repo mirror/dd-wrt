@@ -685,6 +685,7 @@ static int emac_probe(struct platform_device *pdev)
 	emac_mac_rx_tx_ring_init_all(pdev, adpt);
 
 	netif_napi_add(netdev, &adpt->rx_q.napi, emac_napi_rtx);
+	netdev->threaded = 1;
 
 	ret = register_netdev(netdev);
 	if (ret) {

@@ -1279,6 +1279,7 @@ static int ipqess_axi_probe(struct platform_device *pdev)
 		netif_napi_add(netdev,
 			       &ess->rx_ring[i].napi_rx,
 			       ipqess_rx_napi, 64);
+		netdev->threaded = 1;
 
 		qid = ess->tx_ring[i].idx;
 		err = devm_request_irq(&ess->netdev->dev, ess->tx_irq[qid],
