@@ -1,7 +1,6 @@
-Index: include/linux/netfilter.h
-===================================================================
---- include/linux/netfilter.h	(revision 53229)
-+++ include/linux/netfilter.h	(working copy)
+diff -urpN linux-6.1.38.old/include/linux/netfilter.h linux-6.1.38/include/linux/netfilter.h
+--- linux-6.1.38.old/include/linux/netfilter.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/linux/netfilter.h	2023-07-09 12:28:38.364484887 +0600
 @@ -374,7 +374,6 @@ struct nf_nat_hook {
  	unsigned int (*manip_pkt)(struct sk_buff *skb, struct nf_conn *ct,
  				  enum nf_nat_manip_type mtype,
@@ -10,11 +9,21 @@ Index: include/linux/netfilter.h
  };
  
  extern const struct nf_nat_hook __rcu *nf_nat_hook;
-Index: include/net/netfilter/nf_conntrack_ecache.h
-===================================================================
---- include/net/netfilter/nf_conntrack_ecache.h	(revision 53229)
-+++ include/net/netfilter/nf_conntrack_ecache.h	(working copy)
-@@ -135,6 +135,9 @@ void nf_conntrack_ecache_pernet_fini(struct net *n
+diff -urpN linux-6.1.38.old/include/net/netfilter/nf_conntrack_acct.h linux-6.1.38/include/net/netfilter/nf_conntrack_acct.h
+--- linux-6.1.38.old/include/net/netfilter/nf_conntrack_acct.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/net/netfilter/nf_conntrack_acct.h	2023-07-09 12:28:38.364484887 +0600
+@@ -78,6 +78,7 @@ static inline void nf_ct_acct_update(str
+ 
+ void nf_conntrack_acct_pernet_init(struct net *net);
+ 
++int nf_conntrack_acct_init(void);
+ void nf_conntrack_acct_fini(void);
+ 
+ #endif /* _NF_CONNTRACK_ACCT_H */
+diff -urpN linux-6.1.38.old/include/net/netfilter/nf_conntrack_ecache.h linux-6.1.38/include/net/netfilter/nf_conntrack_ecache.h
+--- linux-6.1.38.old/include/net/netfilter/nf_conntrack_ecache.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/net/netfilter/nf_conntrack_ecache.h	2023-07-09 12:28:38.364484887 +0600
+@@ -145,6 +145,9 @@ void nf_conntrack_ecache_pernet_fini(str
  
  struct nf_conntrack_net_ecache *nf_conn_pernet_ecache(const struct net *net);
  
@@ -24,7 +33,7 @@ Index: include/net/netfilter/nf_conntrack_ecache.h
  static inline bool nf_conntrack_ecache_dwork_pending(const struct net *net)
  {
  	return net->ct.ecache_dwork_pending;
-@@ -160,6 +163,16 @@ static inline void nf_conntrack_ecache_pernet_init
+@@ -170,6 +173,16 @@ static inline void nf_conntrack_ecache_p
  static inline void nf_conntrack_ecache_pernet_fini(struct net *net)
  {
  }
@@ -41,22 +50,9 @@ Index: include/net/netfilter/nf_conntrack_ecache.h
  static inline bool nf_conntrack_ecache_dwork_pending(const struct net *net) { return false; }
  #endif /* CONFIG_NF_CONNTRACK_EVENTS */
  #endif /*_NF_CONNTRACK_ECACHE_H*/
-Index: include/net/netfilter/nf_conntrack_acct.h
-===================================================================
---- include/net/netfilter/nf_conntrack_acct.h	(revision 53229)
-+++ include/net/netfilter/nf_conntrack_acct.h	(working copy)
-@@ -78,6 +78,7 @@ static inline void nf_ct_acct_update(struct nf_con
- 
- void nf_conntrack_acct_pernet_init(struct net *net);
- 
-+int nf_conntrack_acct_init(void);
- void nf_conntrack_acct_fini(void);
- 
- #endif /* _NF_CONNTRACK_ACCT_H */
-Index: include/net/netfilter/nf_conntrack_extend.h
-===================================================================
---- include/net/netfilter/nf_conntrack_extend.h	(revision 53229)
-+++ include/net/netfilter/nf_conntrack_extend.h	(working copy)
+diff -urpN linux-6.1.38.old/include/net/netfilter/nf_conntrack_extend.h linux-6.1.38/include/net/netfilter/nf_conntrack_extend.h
+--- linux-6.1.38.old/include/net/netfilter/nf_conntrack_extend.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/net/netfilter/nf_conntrack_extend.h	2023-07-09 12:28:38.364484887 +0600
 @@ -31,7 +31,8 @@ enum nf_ct_ext_id {
  #if IS_ENABLED(CONFIG_NET_ACT_CT)
  	NF_CT_EXT_ACT_CT,
@@ -76,7 +72,7 @@ Index: include/net/netfilter/nf_conntrack_extend.h
  };
  
  static inline bool __nf_ct_ext_exist(const struct nf_ct_ext *ext, u8 id)
-@@ -67,9 +68,27 @@ static inline void *nf_ct_ext_find(const struct nf
+@@ -67,9 +68,27 @@ static inline void *nf_ct_ext_find(const
  	return (void *)ct->ext + ct->ext->offset[id];
  }
  
@@ -104,11 +100,10 @@ Index: include/net/netfilter/nf_conntrack_extend.h
  /* ext genid.  if ext->id != ext_genid, extensions cannot be used
   * anymore unless conntrack has CONFIRMED bit set.
   */
-Index: include/net/netfilter/nf_conntrack_labels.h
-===================================================================
---- include/net/netfilter/nf_conntrack_labels.h	(revision 53229)
-+++ include/net/netfilter/nf_conntrack_labels.h	(working copy)
-@@ -53,9 +53,12 @@ int nf_connlabels_replace(struct nf_conn *ct,
+diff -urpN linux-6.1.38.old/include/net/netfilter/nf_conntrack_labels.h linux-6.1.38/include/net/netfilter/nf_conntrack_labels.h
+--- linux-6.1.38.old/include/net/netfilter/nf_conntrack_labels.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/net/netfilter/nf_conntrack_labels.h	2023-07-09 12:28:38.364484887 +0600
+@@ -53,9 +53,12 @@ int nf_connlabels_replace(struct nf_conn
  
  #ifdef CONFIG_NF_CONNTRACK_LABELS
  int nf_conntrack_labels_init(void);
@@ -121,11 +116,10 @@ Index: include/net/netfilter/nf_conntrack_labels.h
  static inline int nf_connlabels_get(struct net *net, unsigned int bit) { return 0; }
  static inline void nf_connlabels_put(struct net *net) {}
  #endif
-Index: include/net/netfilter/nf_conntrack_seqadj.h
-===================================================================
---- include/net/netfilter/nf_conntrack_seqadj.h	(revision 53229)
-+++ include/net/netfilter/nf_conntrack_seqadj.h	(working copy)
-@@ -42,4 +42,7 @@ int nf_ct_seq_adjust(struct sk_buff *skb, struct n
+diff -urpN linux-6.1.38.old/include/net/netfilter/nf_conntrack_seqadj.h linux-6.1.38/include/net/netfilter/nf_conntrack_seqadj.h
+--- linux-6.1.38.old/include/net/netfilter/nf_conntrack_seqadj.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/net/netfilter/nf_conntrack_seqadj.h	2023-07-09 12:28:38.364484887 +0600
+@@ -42,4 +42,7 @@ int nf_ct_seq_adjust(struct sk_buff *skb
  		     enum ip_conntrack_info ctinfo, unsigned int protoff);
  s32 nf_ct_seq_offset(const struct nf_conn *ct, enum ip_conntrack_dir, u32 seq);
  
@@ -133,11 +127,10 @@ Index: include/net/netfilter/nf_conntrack_seqadj.h
 +void nf_conntrack_seqadj_fini(void);
 +
  #endif /* _NF_CONNTRACK_SEQADJ_H */
-Index: include/net/netfilter/nf_conntrack_timeout.h
-===================================================================
---- include/net/netfilter/nf_conntrack_timeout.h	(revision 53229)
-+++ include/net/netfilter/nf_conntrack_timeout.h	(working copy)
-@@ -81,11 +81,23 @@ static inline unsigned int *nf_ct_timeout_lookup(c
+diff -urpN linux-6.1.38.old/include/net/netfilter/nf_conntrack_timeout.h linux-6.1.38/include/net/netfilter/nf_conntrack_timeout.h
+--- linux-6.1.38.old/include/net/netfilter/nf_conntrack_timeout.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/net/netfilter/nf_conntrack_timeout.h	2023-07-09 12:28:38.364484887 +0600
+@@ -81,11 +81,23 @@ static inline unsigned int *nf_ct_timeou
  }
  
  #ifdef CONFIG_NF_CONNTRACK_TIMEOUT
@@ -161,11 +154,10 @@ Index: include/net/netfilter/nf_conntrack_timeout.h
  static inline int nf_ct_set_timeout(struct net *net, struct nf_conn *ct,
  				    u8 l3num, u8 l4num,
  				    const char *timeout_name)
-Index: include/net/netfilter/nf_conntrack_timestamp.h
-===================================================================
---- include/net/netfilter/nf_conntrack_timestamp.h	(revision 53229)
-+++ include/net/netfilter/nf_conntrack_timestamp.h	(working copy)
-@@ -40,8 +40,21 @@ struct nf_conn_tstamp *nf_ct_tstamp_ext_add(struct
+diff -urpN linux-6.1.38.old/include/net/netfilter/nf_conntrack_timestamp.h linux-6.1.38/include/net/netfilter/nf_conntrack_timestamp.h
+--- linux-6.1.38.old/include/net/netfilter/nf_conntrack_timestamp.h	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/include/net/netfilter/nf_conntrack_timestamp.h	2023-07-09 12:28:38.364484887 +0600
+@@ -40,8 +40,21 @@ struct nf_conn_tstamp *nf_ct_tstamp_ext_
  
  #ifdef CONFIG_NF_CONNTRACK_TIMESTAMP
  void nf_conntrack_tstamp_pernet_init(struct net *net);
@@ -187,10 +179,59 @@ Index: include/net/netfilter/nf_conntrack_timestamp.h
  #endif /* CONFIG_NF_CONNTRACK_TIMESTAMP */
  
  #endif /* _NF_CONNTRACK_TSTAMP_H */
-Index: net/netfilter/nf_conntrack_core.c
-===================================================================
---- net/netfilter/nf_conntrack_core.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_core.c	(working copy)
+diff -urpN linux-6.1.38.old/net/netfilter/Kconfig linux-6.1.38/net/netfilter/Kconfig
+--- linux-6.1.38.old/net/netfilter/Kconfig	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/Kconfig	2023-07-09 12:28:38.364484887 +0600
+@@ -130,6 +130,16 @@ config NF_CONNTRACK_SECMARK
+ 
+ 	  If unsure, say 'N'.
+ 
++config NF_CONNTRACK_CUSTOM
++	int "Number of custom extend"
++	range 0 8
++	depends on NETFILTER_ADVANCED
++	default "4"
++	help
++	  This parameter specifies how many custom extensions can be registered.
++
++	  The default value is 4.
++
+ config NF_CONNTRACK_ZONES
+ 	bool  'Connection tracking zones'
+ 	depends on NETFILTER_ADVANCED
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_acct.c linux-6.1.38/net/netfilter/nf_conntrack_acct.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_acct.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_acct.c	2023-07-09 12:28:38.364484887 +0600
+@@ -22,7 +22,26 @@ static bool nf_ct_acct __read_mostly;
+ module_param_named(acct, nf_ct_acct, bool, 0644);
+ MODULE_PARM_DESC(acct, "Enable connection tracking flow accounting.");
+ 
++static const struct nf_ct_ext_type acct_extend = {
++	.len	= sizeof(struct nf_conn_acct),
++	.align	= __alignof__(struct nf_conn_acct),
++	.id	= NF_CT_EXT_ACCT,
++};
++
+ void nf_conntrack_acct_pernet_init(struct net *net)
+ {
+ 	net->ct.sysctl_acct = nf_ct_acct;
+ }
++
++int nf_conntrack_acct_init(void)
++{
++	int ret = nf_ct_extend_register(&acct_extend);
++	if (ret < 0)
++		pr_err("Unable to register extension\n");
++	return ret;
++}
++
++void nf_conntrack_acct_fini(void)
++{
++	nf_ct_extend_unregister(&acct_extend);
++}
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_core.c linux-6.1.38/net/netfilter/nf_conntrack_core.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_core.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_core.c	2023-07-09 12:28:38.364484887 +0600
 @@ -38,6 +38,7 @@
  #include <net/netfilter/nf_conntrack_l4proto.h>
  #include <net/netfilter/nf_conntrack_expect.h>
@@ -216,7 +257,7 @@ Index: net/netfilter/nf_conntrack_core.c
  
  	if (ARCH_KMALLOC_MINALIGN <= NFCT_INFOMASK)
  		kfree((char *)tmpl - tmpl->proto.tmpl_padto);
-@@ -1695,17 +1697,7 @@ void nf_conntrack_free(struct nf_conn *ct)
+@@ -1689,17 +1691,7 @@ void nf_conntrack_free(struct nf_conn *c
  	 */
  	WARN_ON(refcount_read(&ct->ct_general.use) != 0);
  
@@ -235,7 +276,7 @@ Index: net/netfilter/nf_conntrack_core.c
  	kmem_cache_free(nf_conntrack_cachep, ct);
  	cnet = nf_ct_pernet(net);
  
-@@ -2548,7 +2540,13 @@ void nf_conntrack_cleanup_end(void)
+@@ -2534,7 +2526,13 @@ void nf_conntrack_cleanup_end(void)
  	kvfree(nf_conntrack_hash);
  
  	nf_conntrack_proto_fini();
@@ -249,7 +290,7 @@ Index: net/netfilter/nf_conntrack_core.c
  	nf_conntrack_expect_fini();
  
  	kmem_cache_destroy(nf_conntrack_cachep);
-@@ -2704,6 +2702,39 @@ int nf_conntrack_set_hashsize(const char *val, con
+@@ -2690,6 +2688,39 @@ int nf_conntrack_set_hashsize(const char
  	return nf_conntrack_hash_resize(hashsize);
  }
  
@@ -289,7 +330,7 @@ Index: net/netfilter/nf_conntrack_core.c
  int nf_conntrack_init_start(void)
  {
  	unsigned long nr_pages = totalram_pages();
-@@ -2711,6 +2742,9 @@ int nf_conntrack_init_start(void)
+@@ -2697,6 +2728,9 @@ int nf_conntrack_init_start(void)
  	int ret = -ENOMEM;
  	int i;
  
@@ -299,7 +340,7 @@ Index: net/netfilter/nf_conntrack_core.c
  	seqcount_spinlock_init(&nf_conntrack_generation,
  			       &nf_conntrack_locks_all_lock);
  
-@@ -2755,10 +2789,34 @@ int nf_conntrack_init_start(void)
+@@ -2741,10 +2775,34 @@ int nf_conntrack_init_start(void)
  	if (ret < 0)
  		goto err_expect;
  
@@ -334,7 +375,7 @@ Index: net/netfilter/nf_conntrack_core.c
  	ret = nf_conntrack_proto_init();
  	if (ret < 0)
  		goto err_proto;
-@@ -2776,8 +2834,20 @@ err_kfunc:
+@@ -2762,8 +2820,20 @@ err_kfunc:
  	cancel_delayed_work_sync(&conntrack_gc_work.dwork);
  	nf_conntrack_proto_fini();
  err_proto:
@@ -355,11 +396,10 @@ Index: net/netfilter/nf_conntrack_core.c
  	nf_conntrack_expect_fini();
  err_expect:
  	kmem_cache_destroy(nf_conntrack_cachep);
-Index: net/netfilter/nf_conntrack_ecache.c
-===================================================================
---- net/netfilter/nf_conntrack_ecache.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_ecache.c	(working copy)
-@@ -302,6 +302,12 @@ EXPORT_SYMBOL_GPL(nf_ct_ecache_ext_add);
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_ecache.c linux-6.1.38/net/netfilter/nf_conntrack_ecache.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_ecache.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_ecache.c	2023-07-09 12:28:38.364484887 +0600
+@@ -337,6 +337,12 @@ EXPORT_SYMBOL_GPL(nf_ct_ecache_ext_add);
  #define NF_CT_EVENTS_DEFAULT 2
  static int nf_ct_events __read_mostly = NF_CT_EVENTS_DEFAULT;
  
@@ -372,7 +412,7 @@ Index: net/netfilter/nf_conntrack_ecache.c
  void nf_conntrack_ecache_pernet_init(struct net *net)
  {
  	struct nf_conntrack_net *cnet = nf_ct_pernet(net);
-@@ -311,8 +317,6 @@ void nf_conntrack_ecache_pernet_init(struct net *n
+@@ -346,8 +352,6 @@ void nf_conntrack_ecache_pernet_init(str
  	INIT_DELAYED_WORK(&cnet->ecache.dwork, ecache_work);
  	INIT_HLIST_NULLS_HEAD(&cnet->ecache.dying_list, DYING_NULLS_VAL);
  	spin_lock_init(&cnet->ecache.dying_lock);
@@ -381,7 +421,7 @@ Index: net/netfilter/nf_conntrack_ecache.c
  }
  
  void nf_conntrack_ecache_pernet_fini(struct net *net)
-@@ -321,3 +325,19 @@ void nf_conntrack_ecache_pernet_fini(struct net *n
+@@ -356,3 +360,19 @@ void nf_conntrack_ecache_pernet_fini(str
  
  	cancel_delayed_work_sync(&cnet->ecache.dwork);
  }
@@ -401,62 +441,9 @@ Index: net/netfilter/nf_conntrack_ecache.c
 +{
 +	nf_ct_extend_unregister(&event_extend);
 +}
-Index: net/netfilter/Kconfig
-===================================================================
---- net/netfilter/Kconfig	(revision 53229)
-+++ net/netfilter/Kconfig	(working copy)
-@@ -130,6 +130,16 @@ config NF_CONNTRACK_SECMARK
- 
- 	  If unsure, say 'N'.
- 
-+config NF_CONNTRACK_CUSTOM
-+	int "Number of custom extend"
-+	range 0 8
-+	depends on NETFILTER_ADVANCED
-+	default "4"
-+	help
-+	  This parameter specifies how many custom extensions can be registered.
-+
-+	  The default value is 4.
-+
- config NF_CONNTRACK_ZONES
- 	bool  'Connection tracking zones'
- 	depends on NETFILTER_ADVANCED
-Index: net/netfilter/nf_conntrack_acct.c
-===================================================================
---- net/netfilter/nf_conntrack_acct.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_acct.c	(working copy)
-@@ -22,7 +22,26 @@ static bool nf_ct_acct __read_mostly;
- module_param_named(acct, nf_ct_acct, bool, 0644);
- MODULE_PARM_DESC(acct, "Enable connection tracking flow accounting.");
- 
-+static const struct nf_ct_ext_type acct_extend = {
-+	.len	= sizeof(struct nf_conn_acct),
-+	.align	= __alignof__(struct nf_conn_acct),
-+	.id	= NF_CT_EXT_ACCT,
-+};
-+
- void nf_conntrack_acct_pernet_init(struct net *net)
- {
- 	net->ct.sysctl_acct = nf_ct_acct;
- }
-+
-+int nf_conntrack_acct_init(void)
-+{
-+	int ret = nf_ct_extend_register(&acct_extend);
-+	if (ret < 0)
-+		pr_err("Unable to register extension\n");
-+	return ret;
-+}
-+
-+void nf_conntrack_acct_fini(void)
-+{
-+	nf_ct_extend_unregister(&acct_extend);
-+}
-Index: net/netfilter/nf_conntrack_extend.c
-===================================================================
---- net/netfilter/nf_conntrack_extend.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_extend.c	(working copy)
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_extend.c linux-6.1.38/net/netfilter/nf_conntrack_extend.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_extend.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_extend.c	2023-07-09 12:28:38.364484887 +0600
 @@ -13,92 +13,42 @@
  #include <linux/skbuff.h>
  #include <net/netfilter/nf_conntrack_extend.h>
@@ -507,13 +494,10 @@ Index: net/netfilter/nf_conntrack_extend.c
 -};
 -
 -static __always_inline unsigned int total_extension_size(void)
-+void nf_ct_ext_destroy(struct nf_conn *ct)
- {
+-{
 -	/* remember to add new extensions below */
 -	BUILD_BUG_ON(NF_CT_EXT_NUM > 10);
-+	unsigned int i;
-+	struct nf_ct_ext_type *t;
- 
+-
 -	return sizeof(struct nf_ct_ext) +
 -	       sizeof(struct nf_conn_help)
 -#if IS_ENABLED(CONFIG_NF_NAT)
@@ -540,6 +524,11 @@ Index: net/netfilter/nf_conntrack_extend.c
 -		+ sizeof(struct nf_conn_act_ct_ext)
 -#endif
 -	;
++void nf_ct_ext_destroy(struct nf_conn *ct)
++{
++	unsigned int i;
++	struct nf_ct_ext_type *t;
++
 +	for (i = 0; i < NF_CT_EXT_NUM; i++) {
 +		rcu_read_lock();
 +		t = rcu_dereference(nf_ct_ext_types[i]);
@@ -570,7 +559,7 @@ Index: net/netfilter/nf_conntrack_extend.c
  
  	if (ct->ext) {
  		const struct nf_ct_ext *old = ct->ext;
-@@ -110,9 +60,17 @@ void *nf_ct_ext_add(struct nf_conn *ct, enum nf_ct
+@@ -110,8 +60,16 @@ void *nf_ct_ext_add(struct nf_conn *ct,
  		oldlen = sizeof(*new);
  	}
  
@@ -582,15 +571,14 @@ Index: net/netfilter/nf_conntrack_extend.c
 +		rcu_read_unlock();
 +		return NULL;
 +	}
- 
++
 +	newoff = ALIGN(oldlen, t->align);
 +	newlen = newoff + t->len;
 +	rcu_read_unlock();
-+
+ 
  	alloc = max(newlen, NF_CT_EXT_PREALLOC);
  	new = krealloc(ct->ext, alloc, gfp);
- 	if (!new)
-@@ -132,6 +90,77 @@ void *nf_ct_ext_add(struct nf_conn *ct, enum nf_ct
+@@ -132,6 +90,77 @@ void *nf_ct_ext_add(struct nf_conn *ct,
  }
  EXPORT_SYMBOL(nf_ct_ext_add);
  
@@ -668,11 +656,10 @@ Index: net/netfilter/nf_conntrack_extend.c
  /* Use nf_ct_ext_find wrapper. This is only useful for unconfirmed entries. */
  void *__nf_ct_ext_find(const struct nf_ct_ext *ext, u8 id)
  {
-Index: net/netfilter/nf_conntrack_helper.c
-===================================================================
---- net/netfilter/nf_conntrack_helper.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_helper.c	(working copy)
-@@ -424,6 +424,12 @@ void nf_conntrack_helper_unregister(struct nf_conn
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_helper.c linux-6.1.38/net/netfilter/nf_conntrack_helper.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_helper.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_helper.c	2023-07-09 12:28:38.364484887 +0600
+@@ -424,6 +424,12 @@ void nf_conntrack_helper_unregister(stru
  }
  EXPORT_SYMBOL_GPL(nf_conntrack_helper_unregister);
  
@@ -685,7 +672,7 @@ Index: net/netfilter/nf_conntrack_helper.c
  void nf_ct_helper_init(struct nf_conntrack_helper *helper,
  		       u16 l3num, u16 protonum, const char *name,
  		       u16 default_port, u16 spec_port, u32 id,
-@@ -500,6 +506,7 @@ EXPORT_SYMBOL_GPL(nf_nat_helper_unregister);
+@@ -500,17 +506,28 @@ EXPORT_SYMBOL_GPL(nf_nat_helper_unregist
  
  int nf_conntrack_helper_init(void)
  {
@@ -693,7 +680,6 @@ Index: net/netfilter/nf_conntrack_helper.c
  	nf_ct_helper_hsize = 1; /* gets rounded up to use one page */
  	nf_ct_helper_hash =
  		nf_ct_alloc_hashtable(&nf_ct_helper_hsize, 0);
-@@ -506,11 +513,21 @@ int nf_conntrack_helper_init(void)
  	if (!nf_ct_helper_hash)
  		return -ENOMEM;
  
@@ -715,11 +701,10 @@ Index: net/netfilter/nf_conntrack_helper.c
 +	nf_ct_extend_unregister(&helper_extend);
  	kvfree(nf_ct_helper_hash);
  }
-Index: net/netfilter/nf_conntrack_labels.c
-===================================================================
---- net/netfilter/nf_conntrack_labels.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_labels.c	(working copy)
-@@ -67,8 +67,6 @@ int nf_connlabels_get(struct net *net, unsigned in
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_labels.c linux-6.1.38/net/netfilter/nf_conntrack_labels.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_labels.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_labels.c	2023-07-09 12:28:38.364484887 +0600
+@@ -67,8 +67,6 @@ int nf_connlabels_get(struct net *net, u
  	net->ct.labels_used++;
  	spin_unlock(&nf_connlabels_lock);
  
@@ -750,11 +735,10 @@ Index: net/netfilter/nf_conntrack_labels.c
 +{
 +	nf_ct_extend_unregister(&labels_extend);
 +}
-Index: net/netfilter/nf_conntrack_seqadj.c
-===================================================================
---- net/netfilter/nf_conntrack_seqadj.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_seqadj.c	(working copy)
-@@ -232,3 +232,19 @@ s32 nf_ct_seq_offset(const struct nf_conn *ct,
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_seqadj.c linux-6.1.38/net/netfilter/nf_conntrack_seqadj.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_seqadj.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_seqadj.c	2023-07-09 12:28:38.364484887 +0600
+@@ -232,3 +232,19 @@ s32 nf_ct_seq_offset(const struct nf_con
  		 this_way->offset_after : this_way->offset_before;
  }
  EXPORT_SYMBOL_GPL(nf_ct_seq_offset);
@@ -774,11 +758,10 @@ Index: net/netfilter/nf_conntrack_seqadj.c
 +{
 +	nf_ct_extend_unregister(&nf_ct_seqadj_extend);
 +}
-Index: net/netfilter/nf_conntrack_timeout.c
-===================================================================
---- net/netfilter/nf_conntrack_timeout.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_timeout.c	(working copy)
-@@ -144,3 +144,22 @@ void nf_ct_destroy_timeout(struct nf_conn *ct)
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_timeout.c linux-6.1.38/net/netfilter/nf_conntrack_timeout.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_timeout.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_timeout.c	2023-07-09 12:28:38.364484887 +0600
+@@ -144,3 +144,22 @@ void nf_ct_destroy_timeout(struct nf_con
  	rcu_read_unlock();
  }
  EXPORT_SYMBOL_GPL(nf_ct_destroy_timeout);
@@ -801,10 +784,9 @@ Index: net/netfilter/nf_conntrack_timeout.c
 +{
 +	nf_ct_extend_unregister(&timeout_extend);
 +}
-Index: net/netfilter/nf_conntrack_timestamp.c
-===================================================================
---- net/netfilter/nf_conntrack_timestamp.c	(revision 53229)
-+++ net/netfilter/nf_conntrack_timestamp.c	(working copy)
+diff -urpN linux-6.1.38.old/net/netfilter/nf_conntrack_timestamp.c linux-6.1.38/net/netfilter/nf_conntrack_timestamp.c
+--- linux-6.1.38.old/net/netfilter/nf_conntrack_timestamp.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_conntrack_timestamp.c	2023-07-09 12:28:38.364484887 +0600
 @@ -19,7 +19,27 @@ static bool nf_ct_tstamp __read_mostly;
  module_param_named(tstamp, nf_ct_tstamp, bool, 0644);
  MODULE_PARM_DESC(tstamp, "Enable connection tracking flow timestamping.");
@@ -833,11 +815,10 @@ Index: net/netfilter/nf_conntrack_timestamp.c
 +{
 +	nf_ct_extend_unregister(&tstamp_extend);
 +}
-Index: net/netfilter/nf_nat_core.c
-===================================================================
---- net/netfilter/nf_nat_core.c	(revision 53229)
-+++ net/netfilter/nf_nat_core.c	(working copy)
-@@ -801,7 +801,7 @@ static int nf_nat_proto_remove(struct nf_conn *i,
+diff -urpN linux-6.1.38.old/net/netfilter/nf_nat_core.c linux-6.1.38/net/netfilter/nf_nat_core.c
+--- linux-6.1.38.old/net/netfilter/nf_nat_core.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_nat_core.c	2023-07-09 12:28:38.364484887 +0600
+@@ -801,7 +801,7 @@ static int nf_nat_proto_remove(struct nf
  	return i->status & IPS_NAT_MASK ? 1 : 0;
  }
  
@@ -846,7 +827,7 @@ Index: net/netfilter/nf_nat_core.c
  {
  	unsigned int h;
  
-@@ -823,7 +823,7 @@ static int nf_nat_proto_clean(struct nf_conn *ct,
+@@ -823,7 +823,7 @@ static int nf_nat_proto_clean(struct nf_
  	 * will delete entry from already-freed table.
  	 */
  	if (test_and_clear_bit(IPS_SRC_NAT_DONE_BIT, &ct->status))
@@ -855,7 +836,7 @@ Index: net/netfilter/nf_nat_core.c
  
  	/* don't delete conntrack.  Although that would make things a lot
  	 * simpler, we'd end up flushing all conntracks on nat rmmod.
-@@ -831,6 +831,20 @@ static int nf_nat_proto_clean(struct nf_conn *ct,
+@@ -831,6 +831,20 @@ static int nf_nat_proto_clean(struct nf_
  	return 0;
  }
  
@@ -876,7 +857,7 @@ Index: net/netfilter/nf_nat_core.c
  #if IS_ENABLED(CONFIG_NF_CT_NETLINK)
  
  #include <linux/netfilter/nfnetlink.h>
-@@ -1122,7 +1136,6 @@ static const struct nf_nat_hook nat_hook = {
+@@ -1122,7 +1136,6 @@ static const struct nf_nat_hook nat_hook
  	.decode_session		= __nf_nat_decode_session,
  #endif
  	.manip_pkt		= nf_nat_manip_pkt,
@@ -912,11 +893,10 @@ Index: net/netfilter/nf_nat_core.c
  	nf_ct_helper_expectfn_unregister(&follow_master_nat);
  	RCU_INIT_POINTER(nf_nat_hook, NULL);
  
-Index: net/netfilter/nf_synproxy_core.c
-===================================================================
---- net/netfilter/nf_synproxy_core.c	(revision 53229)
-+++ net/netfilter/nf_synproxy_core.c	(working copy)
-@@ -236,6 +236,12 @@ synproxy_tstamp_adjust(struct sk_buff *skb, unsign
+diff -urpN linux-6.1.38.old/net/netfilter/nf_synproxy_core.c linux-6.1.38/net/netfilter/nf_synproxy_core.c
+--- linux-6.1.38.old/net/netfilter/nf_synproxy_core.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/netfilter/nf_synproxy_core.c	2023-07-09 12:28:38.364484887 +0600
+@@ -236,6 +236,12 @@ synproxy_tstamp_adjust(struct sk_buff *s
  	return 1;
  }
  
@@ -929,7 +909,7 @@ Index: net/netfilter/nf_synproxy_core.c
  #ifdef CONFIG_PROC_FS
  static void *synproxy_cpu_seq_start(struct seq_file *seq, loff_t *pos)
  {
-@@ -381,12 +387,28 @@ static struct pernet_operations synproxy_net_ops =
+@@ -381,12 +387,28 @@ static struct pernet_operations synproxy
  
  static int __init synproxy_core_init(void)
  {
@@ -959,11 +939,10 @@ Index: net/netfilter/nf_synproxy_core.c
  }
  
  module_init(synproxy_core_init);
-Index: net/sched/act_ct.c
-===================================================================
---- net/sched/act_ct.c	(revision 53229)
-+++ net/sched/act_ct.c	(working copy)
-@@ -57,6 +57,12 @@ static const struct rhashtable_params zones_params
+diff -urpN linux-6.1.38.old/net/sched/act_ct.c linux-6.1.38/net/sched/act_ct.c
+--- linux-6.1.38.old/net/sched/act_ct.c	2023-07-05 23:27:38.000000000 +0600
++++ linux-6.1.38/net/sched/act_ct.c	2023-07-09 12:28:38.364484887 +0600
+@@ -57,6 +57,12 @@ static const struct rhashtable_params zo
  	.automatic_shrinking = true,
  };
  
