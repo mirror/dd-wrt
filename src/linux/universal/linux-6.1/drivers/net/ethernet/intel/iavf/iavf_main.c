@@ -1815,6 +1815,7 @@ static int iavf_alloc_q_vectors(struct iavf_adapter *adapter)
 	if (!adapter->q_vectors)
 		return -ENOMEM;
 
+	adapter->netdev->threaded = 1;
 	for (q_idx = 0; q_idx < num_q_vectors; q_idx++) {
 		q_vector = &adapter->q_vectors[q_idx];
 		q_vector->adapter = adapter;
@@ -1824,7 +1825,6 @@ static int iavf_alloc_q_vectors(struct iavf_adapter *adapter)
 		cpumask_copy(&q_vector->affinity_mask, cpu_possible_mask);
 		netif_napi_add(adapter->netdev, &q_vector->napi,
 			       iavf_napi_poll);
-		adapter->netdev->threaded = 1;
 	}
 
 	return 0;
