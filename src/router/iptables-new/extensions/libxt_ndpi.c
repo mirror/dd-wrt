@@ -405,6 +405,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"nvidia",
 	"bitcoin",
 	"protonvpn",
+	"apache_thrift",
 	NULL,
 };
 
