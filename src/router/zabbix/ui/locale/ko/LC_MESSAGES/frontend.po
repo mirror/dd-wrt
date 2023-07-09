@@ -3274,6 +3274,11 @@ msgstr "트리거 \"%3$s\"의 종속성으로 인해 템플릿 \"%1$s\"을(를) 
 msgid "Cannot link template \"%1$s\" to host \"%2$s\" due to expression of trigger \"%3$s\"."
 msgstr "트리거 \"%3$s\"의 표현으로 인해 템플릿 \"%1$s\"을(를) 호스트 \"%2$s\"에 연결할 수 없습니다."
 
+#: include/classes/api/services/CHostBase.php:806
+#, c-format
+msgid "Cannot link template \"%1$s\" to host \"%2$s\", because it would be linked twice through template \"%3$s\"."
+msgstr ""
+
 #: include/classes/api/services/CHostBase.php:644
 #, c-format
 msgid "Cannot link template \"%1$s\" to host \"%2$s\", because its parent template \"%3$s\" would be linked twice."
@@ -3294,6 +3299,11 @@ msgstr "트리거 \"%3$s\"의 종속성으로 인해 템플릿 \"%1$s\"을(를) 
 #, c-format
 msgid "Cannot link template \"%1$s\" to host prototype \"%2$s\" due to expression of trigger \"%3$s\"."
 msgstr "트리거 \"%3$s\"의 표현으로 인해 템플릿 \"%1$s\"을(를) 호스트 프로토타입 \"%2$s\"에 연결할 수 없습니다."
+
+#: include/classes/api/services/CHostBase.php:803
+#, c-format
+msgid "Cannot link template \"%1$s\" to host prototype \"%2$s\", because it would be linked twice through template \"%3$s\"."
+msgstr ""
 
 #: include/classes/api/services/CHostBase.php:641
 #, c-format
@@ -3325,6 +3335,41 @@ msgstr "\"%3$s\" 트리거의 표현으로 인해 \"%1$s\" 템플릿을 \"%2$s\"
 #, c-format
 msgid "Cannot link template \"%1$s\" to template \"%2$s\", because a circular linkage (%3$s) would occur."
 msgstr "순환 연결(%3$s)이 발생하기 때문에 \"%1$s\" 템플릿을 \"%2$s\" 템플릿에 연결할 수 없습니다."
+
+#: include/classes/api/services/CHostBase.php:976
+#, c-format
+msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked to host \"%3$s\" twice."
+msgstr ""
+
+#: include/classes/api/services/CHostBase.php:973
+#, c-format
+msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked to host prototype \"%3$s\" twice."
+msgstr ""
+
+#: include/classes/api/services/CHostBase.php:970
+#, c-format
+msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked to template \"%3$s\" twice."
+msgstr ""
+
+#: include/classes/api/services/CHostBase.php:800
+#, c-format
+msgid "Cannot link template \"%1$s\" to template \"%2$s\", because it would be linked twice through template \"%3$s\"."
+msgstr ""
+
+#: include/classes/api/services/CHostBase.php:1003
+#, c-format
+msgid "Cannot link template \"%1$s\" to template \"%2$s\", because its parent template \"%3$s\" would be linked to host \"%4$s\" twice."
+msgstr ""
+
+#: include/classes/api/services/CHostBase.php:1000
+#, c-format
+msgid "Cannot link template \"%1$s\" to template \"%2$s\", because its parent template \"%3$s\" would be linked to host prototype \"%4$s\" twice."
+msgstr ""
+
+#: include/classes/api/services/CHostBase.php:997
+#, c-format
+msgid "Cannot link template \"%1$s\" to template \"%2$s\", because its parent template \"%3$s\" would be linked to template \"%4$s\" twice."
+msgstr ""
 
 #: include/classes/api/services/CHostBase.php:638
 #, c-format
@@ -4263,6 +4308,15 @@ msgstr "시각 유형"
 #: include/views/monitoring.sysmap.edit.php:423 jsLoader.php:355
 msgid "Clone"
 msgstr "복제"
+
+#: app/views/configuration.host.edit.php:64
+#: app/views/js/popup.host.edit.js.php:45 host_prototypes.php:177
+msgid "Cloned host parameter values have been modified."
+msgstr ""
+
+#: templates.php:196
+msgid "Cloned template parameter values have been modified."
+msgstr ""
 
 #: app/views/popup.import.compare.php:162 app/views/popup.token.view.php:86
 #: include/func.inc.php:1723 include/views/js/monitoring.sysmaps.js.php:339
@@ -19401,6 +19455,10 @@ msgstr "그래프는 더 이상 검색되지 않으며 %1$s에서 삭제됩니�
 msgid "The graph is not discovered anymore and will be deleted the next time discovery rule is processed."
 msgstr "그래프는 더 이상 검색되지 않으며 다음에 검색 규칙이 처리될 때 삭제됩니다."
 
+#: app/controllers/CControllerHostEdit.php:284 host_prototypes.php:171
+msgid "The host being cloned belongs to a host group you don't have write permissions to. Non-writable group has been removed from the new host."
+msgstr ""
+
 #: include/html.inc.php:637
 #, c-format
 msgid "The host group is not discovered anymore and will be deleted in %1$s (on %2$s at %3$s)."
@@ -19461,6 +19519,10 @@ msgstr "수신된 JSON은 유효한 JSON-RPC 요청이 아닙니다."
 #: include/classes/core/CJsonRpc.php:182
 msgid "The requested remote-procedure does not exist / is not available"
 msgstr "수신된 리모트 프로시져는 존재하지 않거나 이용할 수 없습니다."
+
+#: templates.php:182
+msgid "The template being cloned belongs to a template group you don't have write permissions to. Non-writable group has been removed from the new template."
+msgstr ""
 
 #: app/views/popup.token.view.php:64
 msgid "The token has expired. Please update the expiry date to use the token."
@@ -23257,6 +23319,10 @@ msgstr "atan() - 라디안으로 표현되는 각도 값의 아크탄젠트"
 #: app/controllers/CControllerPopupTriggerExpr.php:367
 msgid "atan2() - The arctangent of the ordinate (exprue) and abscissa coordinates specified as an angle, expressed in radians"
 msgstr "atan2() - 라디안으로 표시되는 각도로 지정된 세로좌표(exprue) 및 가로좌표의 아크탄젠트"
+
+#: app/controllers/CControllerPopupTriggerExpr.php:367
+msgid "atan2() - The arctangent of the ordinate (value) and abscissa coordinates specified as an angle, expressed in radians"
+msgstr ""
 
 #: include/events.inc.php:63
 msgid "autoregistered host"
