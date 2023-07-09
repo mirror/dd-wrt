@@ -4522,6 +4522,7 @@ static int igc_alloc_q_vector(struct igc_adapter *adapter,
 
 	/* initialize NAPI */
 	netif_napi_add(adapter->netdev, &q_vector->napi, igc_poll);
+	adapter->netdev->threaded = 1;
 
 	/* tie q_vector and adapter together */
 	adapter->q_vector[v_idx] = q_vector;

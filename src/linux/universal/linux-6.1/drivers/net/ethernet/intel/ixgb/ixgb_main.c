@@ -415,6 +415,7 @@ ixgb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	ixgb_set_ethtool_ops(netdev);
 	netdev->watchdog_timeo = 5 * HZ;
 	netif_napi_add(netdev, &adapter->napi, ixgb_clean);
+	netdev->threaded = 1;
 
 	strncpy(netdev->name, pci_name(pdev), sizeof(netdev->name) - 1);
 
