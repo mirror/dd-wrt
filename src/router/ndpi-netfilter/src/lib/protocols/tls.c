@@ -1272,7 +1272,7 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
-int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len) {
+NDPI_STATIC int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len) {
   if(buf_len <= 13)
     return 0;
 
@@ -1494,7 +1494,7 @@ void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_st
 
 /* **************************************** */
 
-void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 		   struct ndpi_flow_struct *flow)
 {
 #ifdef DEBUG_TLS

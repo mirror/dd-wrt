@@ -39,7 +39,7 @@ int is_valid_rtp_payload_type(uint8_t type)
   return 1;
 }
 
-u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type)
+NDPI_STATIC u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type)
 {
   switch(payloadType) {
   case 0: /* G.711 u-Law */
@@ -174,7 +174,7 @@ static u_int8_t isZoom(struct ndpi_flow_struct *flow,
   return(0);
 }
 
-int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
 		   struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
