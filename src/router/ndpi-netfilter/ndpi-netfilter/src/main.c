@@ -180,7 +180,7 @@ static inline const struct net_device *xt_out(const struct xt_action_param *par)
 // for testing only!
 // #define USE_CONNLABELS
 
-#if !defined(USE_CONNLABELS) && defined(CONFIG_NF_CONNTRACK_CUSTOM) && CONFIG_NF_CONNTRACK_CUSTOM > 0
+#if !defined(USE_CONNLABELS) && !defined(CONFIG_LIVEPATCH) && defined(CONFIG_NF_CONNTRACK_CUSTOM) && CONFIG_NF_CONNTRACK_CUSTOM > 0
 #define NF_CT_CUSTOM
 #else
 #undef NF_CT_CUSTOM
@@ -3308,7 +3308,7 @@ static int __init ndpi_mt_init(void)
 		return -EOPNOTSUPP;
 	}
 #endif
-#ifdef NF_CT_CUSTOM
+#if defined(NF_CT_CUSTOM) && !defined(USE_LIVEPATCH)
 	ret = nf_ct_extend_custom_register(&ndpi_extend,0x4e445049); /* "NDPI" in hex */
 	if(ret < 0) {
 		pr_err("xt_ndpi: can't nf_ct_extend_register.\n");
