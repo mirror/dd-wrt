@@ -444,6 +444,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_RISK) {
+		load_kernel_risk();
 		if(str2risk(optarg,&info->risk))
 			return false;
 
@@ -690,7 +691,7 @@ ndpi_mt_help(void)
 {
         int d;
 
-	printf( "ndpi match options:\n"
+	printf( "nDPI version %s\nndpi match options:\n"
 		"  --error                Match error detecting process\n"
 		"  --untracked            Match if detection is not started for this connection\n"
 		"  --host str             Match server host name\n"
@@ -711,7 +712,8 @@ ndpi_mt_help(void)
 		"  --tlsv  protocols      Match tls version (user defined protocols)\n"
 		"Special protocol names:\n"
 		"  --all              Match any known protocol\n"
-		"  --unknown          Match unknown protocol packets\n");
+		"  --unknown          Match unknown protocol packets\n",
+	    NDPI_GIT_RELEASE);
 	d = ndpi_print_prot_list(0,
 			"Enabled protocols:\n");
 	if(!d) return;
@@ -768,6 +770,7 @@ enum {
 static void NDPI_help(void)
 {
         printf(
+"nDPI version %s\n"
 "NDPI target options:\n"
 "  --value value/mask                  Set value = (value & ~mask) | value\n"
 "  --ndpi-id                           Set value = (value & ~proto_mask) | proto_mark by any proto\n"
@@ -776,8 +779,10 @@ static void NDPI_help(void)
 "  --set-mark                          Set nfmark = value\n"
 "  --set-clsf                          Set priority = value\n"
 "  --flow-info                         Save flow info\n"
-"  --accept                            -j ACCEPT\n"
+"  --accept                            -j ACCEPT\n",
+NDPI_GIT_RELEASE
 );
+load_kernel_proto(); // for version checking
 }
 
 static const struct xt_option_entry NDPI_opts[] = {

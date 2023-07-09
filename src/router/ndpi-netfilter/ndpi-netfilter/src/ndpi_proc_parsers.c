@@ -88,12 +88,24 @@ int parse_ndpi_hostdef(struct ndpi_net *n,char *cmd) {
 		goto bad_cmd;
 	}
 
+	if(_DBG_TRACE_SPROC_H)
+		pr_err("%s: %c%.100s\n",__func__,op_del ? '-':'+',host_match);
+
 	for(nh = NULL; host_match && *host_match; host_match = nh) {
 		size_t sml;
 		nh = strchr(host_match,',');
 		if(nh) *nh++ = '\0';
 
 		sml = strlen(host_match);
+
+		if(op_del && *host_match == '*' && sml == 1) {
+			if(n->hosts_tmp->p[protocol_id]) {
+				kfree(n->hosts_tmp->p[protocol_id]);
+				n->hosts_tmp->p[protocol_id] = NULL;
+				n->host_upd++;
+			}
+			continue;
+		}
 		if(str_collect_look(n->hosts_tmp->p[protocol_id],host_match,sml) >= 0) {
 			if(op_del) 
 				str_collect_del(n->hosts_tmp->p[protocol_id],host_match,sml);
