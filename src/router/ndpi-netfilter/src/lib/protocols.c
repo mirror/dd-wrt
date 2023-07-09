@@ -99,7 +99,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/halflife2_and_mods.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/hangout.c"
+#include "protocols/thrift.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/hpvirtgrp.c"
 #undef NDPI_CURRENT_PROTO
