@@ -149,7 +149,7 @@ int _nvram_read(char *buf)
 
 	srcf = filp_open("/usr/local/nvram/nvram.bin", O_RDONLY, 0);
 	if (IS_ERR(srcf)) {
-		printk(KERN_EMERG "Can't init nvram (filesystem error)\n");
+		printk(KERN_INFO "Can't init nvram (filesystem error)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -170,7 +170,7 @@ int _nvram_read(char *buf)
 	}
 	filp_close(srcf, NULL);
 	if (!offs || header->magic != NVRAM_MAGIC) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %llu\n",offs);
+		printk(KERN_INFO "Broken NVRAM found, recovering it (header error) len = %llu\n",offs);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -281,7 +281,6 @@ int nvram_commit(void)
 	u_int32_t offset;
 	static int waiting=0;
 	struct file *srcf;
-	printk(KERN_EMERG "commit\n");
 
 	if (in_interrupt()) {
 		printk("nvram_commit: not committing in interrupt\n");
@@ -312,13 +311,13 @@ int nvram_commit(void)
 	ret = _nvram_commit(header);
 	spin_unlock_irqrestore(&nvram_lock, flags);
 	if (ret) {
-		printk(KERN_EMERG "error on nvram_commit\n");
+		printk(KERN_INFO "error on nvram_commit\n");
 		goto done;
 	}
 
 	srcf = filp_open("/usr/local/nvram/nvram.bin", O_CREAT | O_RDWR | O_LARGEFILE, 0600);
 	if (IS_ERR(srcf)) {
-		printk(KERN_EMERG "Open error\n");
+		printk(KERN_INFO "Open error\n");
 		ret = -EIO;
 		goto done;
 	}
@@ -331,7 +330,7 @@ int nvram_commit(void)
 		offs += len;
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_EMERG "nvram_commit: %llu bytes written\n", offs);
+	printk(KERN_INFO "nvram_commit: %llu bytes written\n", offs);
 	filp_close(srcf, NULL);
 done:
 	mutex_unlock(&nvram_sem);
