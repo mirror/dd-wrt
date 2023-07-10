@@ -5344,7 +5344,7 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		return -ENOMEM;
 
 	pci_set_drvdata(pdev, tp);
-
+	netdev_info(dev, "mac_version %X\n", tp->mac_version);
 	rc = r8169_mdio_register(tp);
 	if (rc)
 		return rc;
