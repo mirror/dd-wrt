@@ -1382,6 +1382,7 @@ management.l1tf="L1TF entschärfen";
 management.nospec_store_bypass_disable="Speculative Store Bypass entschärfen";
 management.tsx_async_abort="TSX Async Abort entschärfen";
 management.nopti="Seitentabelle isolieren";
+management.pstate="Erzwinge AMD P-State Frequenz-Treiber";
 
 //help container
 
