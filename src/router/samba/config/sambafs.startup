@@ -7,7 +7,7 @@ SAMBA_SCRIPT="$(nvram get samba_script)"
 mkdir /tmp/mnt
 echo /mnt/smbshare
 umount /mnt/smbshare
-rmmod cifs
+#rmmod cifs
 rmmod cifs_arc
 rmmod cifs_md4
 rmmod fscache
@@ -19,6 +19,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod nls_cp850
     insmod fscache
     insmod dns_resolver
+    insmod oid_registry
     insmod cifs_md4
     insmod cifs_arc4
     insmod cifs
@@ -28,6 +29,10 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod hmac
     insmod sha256_generic
     insmod cmac
+    insmod sha512_generic   
+    insmod gcm
+    insmod ccm
+
     mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlmssp,vers=3.11,iocharset=utf8
     if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlmssp,vers=3.11,iocharset=utf8
@@ -77,6 +82,59 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     if [ $? != "0" ]; then
 	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",vers=1.0,iocharset=utf8	    
     fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlmssp,vers=3.11,iocharset=utf8
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlmssp,vers=3.11,iocharset=utf8
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlm,vers=3.11,iocharset=utf8
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,vers=3.11,iocharset=utf8
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlmssp,vers=3.02,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlm,vers=3.02,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,vers=3.02,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlmssp,vers=3.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlm,vers=3.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,vers=3.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlmssp,vers=2.1,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlm,vers=2.1,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,vers=2.1,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlm,vers=2.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,vers=2.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,sec=ntlm,vers=1.0,iocharset=utf8	    
+    fi
+    if [ $? != "0" ]; then
+	mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",posix,vers=1.0,iocharset=utf8	    
+    fi
+
+
     stopservice dlna
     startservice dlna
     stopservice ftpsrv
