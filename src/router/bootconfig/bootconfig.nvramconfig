@@ -9,4 +9,5 @@
 "boot_nospectre_v1" "spectre v1 mitigation" "CHOICE" "2" "0" "1"  "FALSE" "0"
 "boot_nospectre_v2" "spectre v2 mitigation" "CHOICE" "2" "0" "1"  "FALSE" "0"
 "boot_l1tf" "l1tf mitigation" "CHOICE" "2" "0" "1"  "FALSE" "0"
+"boot_pstate" "enforce amd pstate" "CHOICE" "2" "0" "1"  "FALSE" "0"
 "boot_nospec_store_bypass_disable" "l1tf mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"
