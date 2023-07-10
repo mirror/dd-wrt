@@ -1076,6 +1076,7 @@ spectre_v2_parse_user_cmdline(void)
 {
 	char arg[20];
 	int ret, i;
+		return SPECTRE_V2_USER_CMD_NONE;
 
 	switch (spectre_v2_cmd) {
 	case SPECTRE_V2_CMD_NONE:
@@ -1121,6 +1122,7 @@ spectre_v2_user_select_mitigation(void)
 	enum spectre_v2_user_mitigation mode = SPECTRE_V2_USER_NONE;
 	bool smt_possible = IS_ENABLED(CONFIG_SMP);
 	enum spectre_v2_user_cmd cmd;
+		return;
 
 	if (!boot_cpu_has(X86_FEATURE_IBPB) && !boot_cpu_has(X86_FEATURE_STIBP))
 		return;
@@ -1254,6 +1256,7 @@ static enum spectre_v2_mitigation_cmd __init spectre_v2_parse_cmdline(void)
 	enum spectre_v2_mitigation_cmd cmd = SPECTRE_V2_CMD_AUTO;
 	char arg[20];
 	int ret, i;
+	return SPECTRE_V2_CMD_NONE;
 
 	if (cmdline_find_option_bool(boot_command_line, "nospectre_v2") ||
 	    cpu_mitigations_off())
@@ -1743,6 +1746,7 @@ static enum ssb_mitigation_cmd __init ssb_parse_cmdline(void)
 	enum ssb_mitigation_cmd cmd = SPEC_STORE_BYPASS_CMD_AUTO;
 	char arg[20];
 	int ret, i;
+	return SPEC_STORE_BYPASS_CMD_NONE;
 
 	if (cmdline_find_option_bool(boot_command_line, "nospec_store_bypass_disable") ||
 	    cpu_mitigations_off()) {
@@ -1775,7 +1779,7 @@ static enum ssb_mitigation __init __ssb_select_mitigation(void)
 	enum ssb_mitigation mode = SPEC_STORE_BYPASS_NONE;
 	enum ssb_mitigation_cmd cmd;
 
-	if (!boot_cpu_has(X86_FEATURE_SSBD))
+//	if (!boot_cpu_has(X86_FEATURE_SSBD))
 		return mode;
 
 	cmd = ssb_parse_cmdline();
@@ -2039,7 +2043,7 @@ static int ssb_prctl_get(struct task_struct *task)
 
 static int ib_prctl_get(struct task_struct *task)
 {
-	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2))
+//	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2))
 		return PR_SPEC_NOT_AFFECTED;
 
 	if (spectre_v2_user_ibpb == SPECTRE_V2_USER_NONE &&
@@ -2139,7 +2143,7 @@ static void __init l1tf_select_mitigation(void)
 {
 	u64 half_pa;
 
-	if (!boot_cpu_has_bug(X86_BUG_L1TF))
+//	if (!boot_cpu_has_bug(X86_BUG_L1TF))
 		return;
 
 	if (cpu_mitigations_off())
