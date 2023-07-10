@@ -70,6 +70,8 @@ void start_bootconfig(void)
 		strcat(args, " l1tf=off");
 	if (nvram_match("boot_nopti", "1"))
 		strcat(args, " pti=off");
+	if (nvram_match("boot_pstate", "1"))
+		strcat(args, " initcall_blacklist=acpi_cpufreq_init amd_pstate.shared_mem=1 amd_pstate=passive");
 	if (nvram_match("boot_nospec_store_bypass_disable", "1"))
 		strcat(args, " spec_store_bypass_disable=off");
 	if (strlen(disc) == 7)	//mmcblk0 / nvme0n1
