@@ -685,13 +685,13 @@ static int emac_probe(struct platform_device *pdev)
 	emac_mac_rx_tx_ring_init_all(pdev, adpt);
 
 	netif_napi_add(netdev, &adpt->rx_q.napi, emac_napi_rtx);
-	netdev->threaded = 1;
 
 	ret = register_netdev(netdev);
 	if (ret) {
 		dev_err(&pdev->dev, "could not register net device\n");
 		goto err_undo_napi;
 	}
+	dev_set_threaded(netdev, true);
 
 	reg =  readl_relaxed(adpt->base + EMAC_DMA_MAS_CTRL);
 	devid = (reg & DEV_ID_NUM_BMSK)  >> DEV_ID_NUM_SHFT;

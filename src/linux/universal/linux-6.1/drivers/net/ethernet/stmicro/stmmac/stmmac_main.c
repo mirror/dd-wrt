@@ -6919,7 +6919,6 @@ static void stmmac_napi_add(struct net_device *dev)
 	u32 queue, maxq;
 
 	maxq = max(priv->plat->rx_queues_to_use, priv->plat->tx_queues_to_use);
-	dev->threaded = 1;
 
 	for (queue = 0; queue < maxq; queue++) {
 		struct stmmac_channel *ch = &priv->channel[queue];
@@ -7337,6 +7336,8 @@ int stmmac_dvr_probe(struct device *device,
 			__func__, ret);
 		goto error_netdev_register;
 	}
+
+	dev_set_threaded(ndev, true);
 
 #ifdef CONFIG_DEBUG_FS
 	stmmac_init_fs(ndev);

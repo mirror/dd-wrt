@@ -2733,7 +2733,6 @@ static int ixgbevf_alloc_q_vector(struct ixgbevf_adapter *adapter, int v_idx,
 		return -ENOMEM;
 
 	/* initialize NAPI */
-	adapter->netdev->threaded = 1;
 	netif_napi_add(adapter->netdev, &q_vector->napi, ixgbevf_poll);
 
 	/* tie q_vector and adapter together */
@@ -4669,6 +4668,7 @@ static int ixgbevf_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	err = register_netdev(netdev);
 	if (err)
 		goto err_register;
+	dev_set_threaded(netdev, true);
 
 	pci_set_drvdata(pdev, netdev);
 	netif_carrier_off(netdev);

@@ -874,7 +874,6 @@ static int ixgbe_alloc_q_vector(struct ixgbe_adapter *adapter,
 
 #endif
 	/* initialize NAPI */
-	adapter->netdev->threaded = 1;
 	netif_napi_add(adapter->netdev, &q_vector->napi, ixgbe_poll);
 
 	/* tie q_vector and adapter together */
