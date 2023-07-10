@@ -1113,7 +1113,6 @@ static int igbvf_alloc_queues(struct igbvf_adapter *adapter)
 		return -ENOMEM;
 	}
 
-	netdev->threaded = 1;
 	netif_napi_add(netdev, &adapter->rx_ring->napi, igbvf_poll);
 
 	return 0;
@@ -2842,6 +2841,7 @@ static int igbvf_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	err = register_netdev(netdev);
 	if (err)
 		goto err_hw_init;
+	dev_set_threaded(netdev, true);
 
 	/* tell the stack to leave us alone until igbvf_open() is called */
 	netif_carrier_off(netdev);

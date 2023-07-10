@@ -1012,7 +1012,6 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	netdev->netdev_ops = &e1000_netdev_ops;
 	e1000_set_ethtool_ops(netdev);
 	netdev->watchdog_timeo = 5 * HZ;
-	netdev->threaded = 1;
 	netif_napi_add(netdev, &adapter->napi, e1000_clean);
 
 	strncpy(netdev->name, pci_name(pdev), sizeof(netdev->name) - 1);
@@ -1202,6 +1201,7 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	err = register_netdev(netdev);
 	if (err)
 		goto err_register;
+	dev_set_threaded(netdev, true);
 
 	e1000_vlan_filter_on_off(adapter, false);
 

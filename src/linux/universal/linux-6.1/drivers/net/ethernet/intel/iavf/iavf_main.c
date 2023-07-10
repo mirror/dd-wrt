@@ -1815,7 +1815,6 @@ static int iavf_alloc_q_vectors(struct iavf_adapter *adapter)
 	if (!adapter->q_vectors)
 		return -ENOMEM;
 
-	adapter->netdev->threaded = 1;
 	for (q_idx = 0; q_idx < num_q_vectors; q_idx++) {
 		q_vector = &adapter->q_vectors[q_idx];
 		q_vector->adapter = adapter;
@@ -2628,6 +2627,7 @@ static void iavf_init_config_adapter(struct iavf_adapter *adapter)
 	}
 
 	adapter->netdev_registered = true;
+	dev_set_threaded(netdev, true);
 
 	netif_tx_stop_all_queues(netdev);
 	if (CLIENT_ALLOWED(adapter)) {

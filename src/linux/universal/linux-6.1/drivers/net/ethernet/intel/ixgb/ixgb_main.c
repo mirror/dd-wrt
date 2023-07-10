@@ -414,7 +414,6 @@ ixgb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	netdev->netdev_ops = &ixgb_netdev_ops;
 	ixgb_set_ethtool_ops(netdev);
 	netdev->watchdog_timeo = 5 * HZ;
-	netdev->threaded = 1;
 	netif_napi_add(netdev, &adapter->napi, ixgb_clean);
 
 	strncpy(netdev->name, pci_name(pdev), sizeof(netdev->name) - 1);
@@ -473,6 +472,7 @@ ixgb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	err = register_netdev(netdev);
 	if (err)
 		goto err_register;
+	dev_set_threaded(netdev, true);
 
 	/* carrier off reporting is important to ethtool even BEFORE open */
 	netif_carrier_off(netdev);
