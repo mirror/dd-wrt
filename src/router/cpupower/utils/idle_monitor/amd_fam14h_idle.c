@@ -14,7 +14,7 @@
 #include <time.h>
 #include <string.h>
 
-#include <pci/pci.h>
+#include <pci.h>
 
 #include "idle_monitor/cpupower-monitor.h"
 #include "helpers/helpers.h"

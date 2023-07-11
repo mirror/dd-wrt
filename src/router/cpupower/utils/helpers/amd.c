@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <pci/pci.h>
+#include <pci.h>
 
 #include "helpers/helpers.h"
 #include "cpufreq.h"
