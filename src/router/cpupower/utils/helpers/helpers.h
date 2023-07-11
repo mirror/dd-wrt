@@ -106,7 +106,7 @@ extern struct cpupower_cpu_info cpupower_cpu_info;
 /* X86 ONLY ****************************************/
 #if defined(__i386__) || defined(__x86_64__)
 
-#include <pci/pci.h>
+#include <pci.h>
 
 /* Read/Write msr ****************************/
 extern int read_msr(int cpu, unsigned int idx, unsigned long long *val);
