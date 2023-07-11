@@ -105,7 +105,9 @@ static char risk_name[]="risks";
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(5,19,0)
 #ifndef USE_LIVEPATCH
+#if defined(CONFIG_X86) && defined(CONFIG_64BIT)
 #define USE_LIVEPATCH
+#endif
 #endif
 #endif
 
