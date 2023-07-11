@@ -805,7 +805,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 			save2file_A_prerouting("-p tcp -d %s --dport %s -j DNAT --to-destination %s:%d", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
-			wordlist = range(from, get_complete_ip(from, to), tmp,sizeof(tmp));
+			wordlist = range(from, get_complete_ip(from, to), tmp, sizeof(tmp));
 
 			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%d", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
@@ -822,7 +822,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
-			wordlist = range(from, get_complete_ip(from, to), tmp,sizeof(tmp));
+			wordlist = range(from, get_complete_ip(from, to), tmp, sizeof(tmp));
 
 			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
@@ -841,7 +841,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
-			wordlist = range(from, get_complete_ip(from, to), tmp,sizeof(tmp));
+			wordlist = range(from, get_complete_ip(from, to), tmp, sizeof(tmp));
 
 			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:23", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
@@ -1205,12 +1205,12 @@ static int schedule_by_tod(FILE * cfd, int seq)
 				st = end = atoi(token);
 
 			if (rotate == 1 && st == 0)
-				snprintf(wday_end + strlen(wday_end),sizeof(wday_end) - strlen(wday_end) , ",%d", end);
+				snprintf(wday_end + strlen(wday_end), sizeof(wday_end) - strlen(wday_end), ",%d", end);
 			else if (rotate == 1 && end == 6)
-				snprintf(wday_st + strlen(wday_st),sizeof(wday_st) - strlen(wday_st), ",%d", st);
+				snprintf(wday_st + strlen(wday_st), sizeof(wday_st) - strlen(wday_st), ",%d", st);
 			else {
-				snprintf(wday_st + strlen(wday_st),sizeof(wday_st) - strlen(wday_st), ",%d", st);
-				snprintf(wday_end + strlen(wday_end),sizeof(wday_end) - strlen(wday_end), ",%d", end);
+				snprintf(wday_st + strlen(wday_st), sizeof(wday_st) - strlen(wday_st), ",%d", st);
+				snprintf(wday_end + strlen(wday_end), sizeof(wday_end) - strlen(wday_end), ",%d", end);
 			}
 
 			token = strtok(NULL, sep);
@@ -1315,7 +1315,7 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, 
 			/*
 			 * The return value of range() is global string array 
 			 */
-			wordlist2 = range(from, to, tmp,sizeof(tmp));
+			wordlist2 = range(from, to, tmp, sizeof(tmp));
 		} else if (sscanf(var1, "%d", &a1) == 1) {
 			if (a1 == 0)	/* unset */
 				continue;
@@ -2887,7 +2887,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
 			char buffer[32];
-			save2file_A_prerouting("! -i %s -d %s -j MARK --set-mark %s", wanface, wanaddr, get_NFServiceMark(buffer,sizeof(buffer),"FORWARD", 1));
+			save2file_A_prerouting("! -i %s -d %s -j MARK --set-mark %s", wanface, wanaddr, get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
 			save2file_A_prerouting("-j CONNMARK --save-mark");
 		}
 	}
@@ -3306,12 +3306,13 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-I", "INPUT", "-j", log_accept);
 		eval("ip6tables", "-I", "FORWARD", "-j", log_accept);
 	} else {
-		sysprintf("ip6tables -A INPUT -j %s", log_reject);
-		sysprintf("ip6tables -A FORWARD -j %s", log_reject);
-//		eval("ip6tables", "-A", "INPUT", "-j", log_reject);
-//		eval("ip6tables", "-A", "FORWARD", "-j", log_reject);
-//		eval("ip6tables", "-A", "INPUT", "-j", "--reject-with", "icmp6-adm-prohibited");
-//		eval("ip6tables", "-A", "FORWARD", "-j", "--reject-with", "icmp6-adm-prohibited");
+		if (log_level > 0) {
+			eval("ip6tables", "-A", "INPUT", "-j", log_reject);
+			eval("ip6tables", "-A", "FORWARD", "-j", log_reject);
+		} else {
+			eval("ip6tables", "-A", "INPUT", "-j", "--reject-with", "icmp6-adm-prohibited");
+			eval("ip6tables", "-A", "FORWARD", "-j", "--reject-with", "icmp6-adm-prohibited");
+		}
 	}
 
 	/*
