@@ -367,7 +367,7 @@ int check_vlan_support(void)
 	if (nvram_exists("sw_wancpuport"))
 		return 1;
 #ifdef HAVE_ALPINE
-	    return 1;
+	return 1;
 #endif
 #endif
 
@@ -425,7 +425,12 @@ int get_ppp_pid(char *file)
 
 	if (file_to_buf(file, buf, sizeof(buf))) {
 		char tmp[80], tmp1[80];
-
+		char *idx = strchr(buf, '\n');
+		if (idx)
+			*idx = 0;
+		idx = strchr(buf, '\r');
+		if (idx)
+			*idx = 0;
 		snprintf(tmp, sizeof(tmp), "/var/run/%s.pid", buf);
 		file_to_buf(tmp, tmp1, sizeof(tmp1));
 		pid = atoi(tmp1);
@@ -936,6 +941,7 @@ int getIfList(char *buffer, const char *ifprefix)
 {
 	return getIfListB(buffer, ifprefix, 0, 0, 0);
 }
+
 int getIfListNoPorts(char *buffer, const char *ifprefix)
 {
 	return getIfListB(buffer, ifprefix, 0, 0, 1);
@@ -1941,7 +1947,7 @@ char *safe_get_wan_face(char *localwanface)
 		if (nvram_matchi("wifi_bonding", 1))
 			strlcpy(localwanface, "bond0", IFNAMSIZ);
 		else
-			strlcpy(localwanface, nvram_safe_get("sta_ifname"),IFNAMSIZ);
+			strlcpy(localwanface, nvram_safe_get("sta_ifname"), IFNAMSIZ);
 	}
 #endif
 #ifdef HAVE_IPETH
