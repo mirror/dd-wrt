@@ -267,7 +267,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 	if (!hash)
 		return 0;	// bus not present. ignore
 	wordlist = nvram_safe_get(list);
-	if (!nvram_match(enabled, hash) || !strlen(wordlist)) {	// hash does not match, bus has been changed. so redetect drivers
+	if (!nvram_match(enabled, hash) || !*wordlist) {	// hash does not match, bus has been changed. so redetect drivers
 		rcc = detect_driver(driverset, list, delay, insmod);
 		nvram_set(enabled, hash);	// store new hash
 		nvram_commit();
