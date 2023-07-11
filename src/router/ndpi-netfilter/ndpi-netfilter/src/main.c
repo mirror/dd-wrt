@@ -103,11 +103,9 @@ static char proto_name[]="proto";
 static char debug_name[]="debug";
 static char risk_name[]="risks";
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(5,19,0)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(5,19,0) && defined(CONFIG_LIVEPATCH)
 #ifndef USE_LIVEPATCH
-#if defined(CONFIG_X86) && defined(CONFIG_64BIT)
 #define USE_LIVEPATCH
-#endif
 #endif
 #endif
 
