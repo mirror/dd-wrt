@@ -266,12 +266,12 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 	}
 	if (!hash)
 		return 0;	// bus not present. ignore
-	if (!nvram_match(enabled, hash) || !strlen(nvram_safe_get("pcidrivers"))) {	// hash does not match, bus has been changed. so redetect drivers
+	wordlist = nvram_safe_get(list);
+	if (!nvram_match(enabled, hash) || !strlen(wordlist)) {	// hash does not match, bus has been changed. so redetect drivers
 		rcc = detect_driver(driverset, list, delay, insmod);
 		nvram_set(enabled, hash);	// store new hash
 		nvram_commit();
 	} else {
-		wordlist = nvram_safe_get(list);
 		if (!*wordlist)
 			return 0;
 		foreach(word, wordlist, next) {
