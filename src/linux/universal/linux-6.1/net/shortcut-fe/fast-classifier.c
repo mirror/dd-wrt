@@ -174,6 +174,7 @@ static struct genl_family fast_classifier_gnl_family = {
 	.n_ops = ARRAY_SIZE(fast_classifier_gnl_ops),
 	.mcgrps = fast_classifier_genl_mcgrp,
 	.n_mcgrps = ARRAY_SIZE(fast_classifier_genl_mcgrp),
+	.resv_start_op = FAST_CLASSIFIER_C_DONE + 1,
 };
 
 static atomic_t offload_msgs = ATOMIC_INIT(0);
