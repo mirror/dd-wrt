@@ -614,6 +614,9 @@ static int __init mount_nodev_root(void)
 
 void __init mount_root(void)
 {
+#ifdef CONFIG_BLOCK
+	int ret;
+#endif
 #ifdef CONFIG_ROOT_NFS
 	if (BASE_ROOT == Root_NFS) {
 		if (!mount_nfs_root())
@@ -641,14 +644,14 @@ void __init mount_root(void)
  	int i;
  	for (i = 0; i < root_devices; i++) {
  		create_dev("/dev/root", ROOT_DEV[i]);
- 		int ret = mount_block_root("/dev/root", root_mountflags);
+ 		ret = mount_block_root("/dev/root", root_mountflags);
  		if (ret == 0)
  			return;
  	}
  	panic("unable to mount root\n");
 #else
 	{
-		int err = create_dev("/dev/root", ROOT_DEV);
+		err = create_dev("/dev/root", ROOT_DEV);
 
 		if (err < 0)
 			pr_emerg("Failed to create /dev/root: %d\n", err);
