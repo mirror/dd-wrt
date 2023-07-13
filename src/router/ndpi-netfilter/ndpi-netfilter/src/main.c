@@ -3427,8 +3427,7 @@ static int __init ndpi_mt_init(void)
 		NDPI_NUM_BITS,
 		NDPI_LAST_IMPLEMENTED_PROTOCOL);
 	pr_info("xt_ndpi: flow acctounting %s\n",ndpi_enable_flow ? "ON":"OFF");
-#ifdef USE_HOOK
-#elif defined(USE_LIVEPATCH)
+#if defined(USE_LIVEPATCH)
 	rcu_assign_pointer(nf_conntrack_destroy_cb,nf_ndpi_free_flow);
 	return klp_enable_patch(&ndpi_patch);
 #else
@@ -3448,6 +3447,9 @@ unreg_pernet:
 unreg_ext:
 #if !defined(USE_LIVEPATCH) && !defined(USE_HOOK)
 	nf_ct_extend_unregister(&ndpi_extend);
+#endif
+#if defined(USE_HOOK)
+	unregister_ndpi_hook();
 #endif
        	return ret;
 }
