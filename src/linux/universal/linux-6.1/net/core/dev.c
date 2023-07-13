@@ -5325,15 +5325,9 @@ static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 		skb_reset_transport_header(skb);
 	skb_reset_mac_len(skb);
 
-	fast_recv = rcu_dereference(fast_nat_recv);
-	if (fast_recv) {
-		if (fast_recv(skb)) {
-			rcu_read_unlock();
-			return NET_RX_SUCCESS;
-		}
-	}
 
 	pt_prev = NULL;
+	fast_recv = rcu_dereference(fast_nat_recv);
 
 another_round:
 	skb->skb_iif = skb->dev->ifindex;
@@ -5357,6 +5351,13 @@ another_round:
 		skb = skb_vlan_untag(skb);
 		if (unlikely(!skb))
 			goto out;
+	}
+
+	if (fast_recv) {
+		if (fast_recv(skb)) {
+			ret = NET_RX_SUCCESS;
+			goto out;
+		}
 	}
 
 	if (skb_skip_tc_classify(skb))
