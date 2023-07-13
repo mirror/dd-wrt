@@ -135,9 +135,6 @@ void nf_conntrack_ecache_pernet_fini(struct net *net);
 
 struct nf_conntrack_net_ecache *nf_conn_pernet_ecache(const struct net *net);
 
-int nf_conntrack_ecache_init(void);
-void nf_conntrack_ecache_fini(void);
-
 static inline bool nf_conntrack_ecache_dwork_pending(const struct net *net)
 {
 	return net->ct.ecache_dwork_pending;
@@ -163,16 +160,6 @@ static inline void nf_conntrack_ecache_pernet_init(struct net *net)
 static inline void nf_conntrack_ecache_pernet_fini(struct net *net)
 {
 }
-
-static inline int nf_conntrack_ecache_init(void)
-{
-	return 0;
-}
-
-static inline void nf_conntrack_ecache_fini(void)
-{
-}
-
 static inline bool nf_conntrack_ecache_dwork_pending(const struct net *net) { return false; }
 #endif /* CONFIG_NF_CONNTRACK_EVENTS */
 #endif /*_NF_CONNTRACK_ECACHE_H*/

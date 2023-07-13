@@ -22,6 +22,13 @@
    standalone connection tracking module, and the compatibility layer's use
    of connection tracking. */
 
+#ifdef CONFIG_NDPI_HOOK
+
+void register_ndpi_hook(void (*hook)(struct nf_conntrack *));
+void unregister_ndpi_hook(void);
+
+#endif
+
 unsigned int nf_conntrack_in(struct sk_buff *skb,
 			     const struct nf_hook_state *state);
 
