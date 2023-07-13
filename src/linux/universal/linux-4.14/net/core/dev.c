@@ -4439,6 +4439,7 @@ static int __netif_receive_skb_core(struct sk_buff *skb, bool pfmemalloc)
 	skb_reset_mac_len(skb);
 
 	pt_prev = NULL;
+	fast_recv = rcu_dereference(fast_nat_recv);
 
 another_round:
 	skb->skb_iif = skb->dev->ifindex;
@@ -4452,7 +4453,6 @@ another_round:
 			goto out;
 	}
 
-	fast_recv = rcu_dereference(fast_nat_recv);
 	if (fast_recv && fast_recv(skb)) {
 		ret = NET_RX_SUCCESS;
 		goto out;
