@@ -1,8 +1,8 @@
 iptables-new-configure:
 	cd iptables-new && ./autogen.sh
 	cd iptables-new && ./configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-shared --enable-static --disable-nftables \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -fcommon" \
-		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon" \
+		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
@@ -10,7 +10,11 @@ iptables-new-clean:
 	-$(MAKE) -C iptables-new clean
 
 iptables-new:
-	$(MAKE) -C iptables-new
+ifneq ($(CONFIG_NOMESSAGE),y)
+	$(MAKE) -C iptables-new CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
+else
+	$(MAKE) -C iptables-new CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon"
+endif
 
 
 
