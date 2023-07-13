@@ -585,7 +585,7 @@ static void destroy_gre_conntrack(struct nf_conn *ct)
 
 static void (*ndpi_hook)(struct nf_conntrack *) = NULL;
 
-void register_ndpi_hook(void (*hook)(struct nf_conntrack *))
+void register_ndpi_hook(void (*hook)(struct nf_conn *))
 {
 	ndpi_hook = hook;
 }
