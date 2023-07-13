@@ -5976,7 +5976,7 @@ CONFIG_STACKTRACE=y
 # CONFIG_RCU_SCALE_TEST is not set
 # CONFIG_RCU_TORTURE_TEST is not set
 # CONFIG_RCU_REF_SCALE_TEST is not set
-CONFIG_RCU_TRACE=y
+# CONFIG_RCU_TRACE is not set
 # CONFIG_RCU_EQS_DEBUG is not set
 # end of RCU Debugging
 
