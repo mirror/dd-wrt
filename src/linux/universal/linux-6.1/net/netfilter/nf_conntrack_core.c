@@ -583,7 +583,7 @@ static void destroy_gre_conntrack(struct nf_conn *ct)
 }
 #ifdef CONFIG_NDPI_HOOK
 
-static void (*ndpi_hook)(struct nf_conntrack *) = NULL;
+static void (*ndpi_hook)(struct nf_conn *) = NULL;
 
 void register_ndpi_hook(void (*hook)(struct nf_conn *))
 {
@@ -613,7 +613,7 @@ void nf_ct_destroy(struct nf_conntrack *nfct)
 
 #ifdef CONFIG_NDPI_HOOK
 	if (ndpi_hook)
-	    ndpi_hook(nfct);
+	    ndpi_hook(ct);
 #endif
 
 	if (unlikely(nf_ct_protonum(ct) == IPPROTO_GRE))
