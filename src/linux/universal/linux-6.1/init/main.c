@@ -1480,6 +1480,7 @@ static int run_init_process(const char *init_filename)
 	return kernel_execve(init_filename, argv_init, envp_init);
 }
 
+#if 0
 static int try_to_run_init_process(const char *init_filename)
 {
 	int ret;
@@ -1493,6 +1494,7 @@ static int try_to_run_init_process(const char *init_filename)
 
 	return ret;
 }
+#endif
 
 static noinline void __init kernel_init_freeable(void);
 
