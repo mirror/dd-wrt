@@ -198,7 +198,7 @@ int wiphy_sysfs_init(void)
 
 void wiphy_sysfs_exit(void)
 {
-#if LINUX_VERSION_IS_GEQ(3,11,0)
+#if LINUX_VERSION_IS_LESS(3,11,0)
 	init_ieee80211_attrs();
 #endif
 	class_unregister(&ieee80211_class);
