@@ -61,4 +61,8 @@ extern void backport_dependency_symbol(void);
 	void cleanup_module(void) __attribute__((cold,alias("__exit_compat")));
 #endif
 
+#if LINUX_VERSION_IS_GEQ(5,10,0)
+#define MODULE_SUPPORTED_DEVICE(a)
+#endif
+
 #endif /* __BACKPORT_LINUX_MODULE_H */

@@ -2299,7 +2299,11 @@ void cfg80211_send_layer2_update(struct net_device *dev, const u8 *addr)
 	skb->dev = dev;
 	skb->protocol = eth_type_trans(skb, dev);
 	memset(skb->cb, 0, sizeof(skb->cb));
+#if LINUX_VERSION_IS_LESS(5,10,0)
 	netif_rx_ni(skb);
+#else
+	netif_rx(skb);
+#endif
 }
 EXPORT_SYMBOL(cfg80211_send_layer2_update);
 

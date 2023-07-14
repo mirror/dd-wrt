@@ -380,9 +380,9 @@ int tdma_check_break_tx(struct ieee80211_if_tdma *tdma, struct sk_buff_head *txl
 }
 
 
-void tdma_poll_timer(unsigned long data)
+void tdma_poll_timer(struct timer_list *t)
 {
-	struct ieee80211_if_tdma *tdma = (struct ieee80211_if_tdma *)data;
+	struct ieee80211_if_tdma *tdma= from_timer(tdma, t, poll_timer);
 	struct ieee80211_sub_if_data *sdata = container_of(tdma, struct ieee80211_sub_if_data, u.tdma);
 
 	if (TDMA_JOINED(tdma) && (TDMA_STATE(tdma) != TDMA_STATUS_UNKNOW) && tdma_is_tx_slot(tdma)) {

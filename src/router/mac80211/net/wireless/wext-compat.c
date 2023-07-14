@@ -30,7 +30,7 @@ int cfg80211_wext_giwname(struct net_device *dev,
 	strcpy(name, "IEEE 802.11");
 	return 0;
 }
-EXPORT_WEXT_HANDLER(cfg80211_wext_giwname);
+EXPORT_SYMBOL_GPL(cfg80211_wext_giwname);
 
 int cfg80211_wext_siwmode(struct net_device *dev, struct iw_request_info *info,
 			  u32 *mode, char *extra)

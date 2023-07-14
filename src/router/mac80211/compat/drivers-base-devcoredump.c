@@ -362,7 +362,9 @@ EXPORT_SYMBOL_GPL(dev_coredumpsg);
 
 int __init devcoredump_init(void)
 {
+#if LINUX_VERSION_IS_LESS(3,13,0)
 	init_devcd_class_attrs();
+#endif
 	return class_register(&devcd_class);
 }
 

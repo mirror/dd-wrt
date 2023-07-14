@@ -149,6 +149,7 @@ struct device_attribute dev_attr_ ## _name = __ATTR_RW(_name)
 	struct class_attribute class_attr_##_name = __ATTR_RO(_name)
 #endif
 
+#if LINUX_VERSION_IS_LESS(3,13,0)
 #define ATTRIBUTE_GROUPS_BACKPORT(_name) \
 static struct BP_ATTR_GRP_STRUCT _name##_dev_attrs[ARRAY_SIZE(_name##_attrs)];\
 static void init_##_name##_attrs(void)				\
@@ -160,14 +161,13 @@ static void init_##_name##_attrs(void)				\
 				      struct BP_ATTR_GRP_STRUCT,	\
 				      attr);				\
 }
-
+#endif
 #ifndef __ATTRIBUTE_GROUPS
 #define __ATTRIBUTE_GROUPS(_name)				\
 static const struct attribute_group *_name##_groups[] = {	\
 	&_name##_group,						\
 	NULL,							\
 }
-#endif /* __ATTRIBUTE_GROUPS */
 
 #undef ATTRIBUTE_GROUPS
 #define ATTRIBUTE_GROUPS(_name)					\
@@ -176,6 +176,7 @@ static const struct attribute_group _name##_group = {		\
 };								\
 static inline void init_##_name##_attrs(void) {}		\
 __ATTRIBUTE_GROUPS(_name)
+#endif /* __ATTRIBUTE_GROUPS */
 
 #if LINUX_VERSION_IS_LESS(3,13,0)
 #define devm_kmalloc(dev, size, flags) devm_kzalloc(dev, size, flags)

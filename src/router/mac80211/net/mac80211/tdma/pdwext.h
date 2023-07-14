@@ -88,7 +88,7 @@ static unsigned long tdma_get_frame_duration_prognose(struct ieee80211_if_tdma *
 
 static void tdma_sched_tx(struct ieee80211_sub_if_data *, struct sk_buff *, enum nl80211_band);
 static int tdma_check_break_tx(struct ieee80211_if_tdma *, struct sk_buff_head *, u8, unsigned long, unsigned long);
-static void tdma_poll_timer(unsigned long);
+static void tdma_poll_timer(struct timer_list *t);
 static void tdma_remove_ack_frame(struct ieee80211_sub_if_data *, u16);
 
 static void tdma_amsdu_to_8023s(struct ieee80211_sub_if_data *, struct sk_buff *, struct sk_buff_head *, const unsigned int, __be16, u16);

@@ -1,11 +1,12 @@
 /* LzFind.c -- Match finder for LZ algorithms
 2017-06-10 : Igor Pavlov : Public domain */
 
-#include <stddef.h>
+#include <linux/stddef.h>
 #include <linux/string.h>
 
-#include <linux/lzma/LzFind.h>
-#include <linux/lzma/LzHash.h>
+#include "lzma/Types.h"
+#include "lzma/LzFind.h"
+#include "lzma/LzHash.h"
 
 #define kEmptyHashValue 0
 #define kMaxValForNormalize ((UInt32)0xFFFFFFFF)

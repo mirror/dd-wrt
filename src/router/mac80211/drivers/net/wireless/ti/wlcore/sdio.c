@@ -146,8 +146,11 @@ static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 	 * To guarantee that the SDIO card is power cycled, as required to make
 	 * the FW programming to succeed, let's do a brute force HW reset.
 	 */
+#if LINUX_VERSION_IS_LESS(5,19,0)
+	mmc_hw_reset(card);
+#else
 	mmc_hw_reset(card->host);
-
+#endif
 	sdio_enable_func(func);
 	sdio_release_host(func);
 

@@ -29,7 +29,9 @@
  * https://mail-index.netbsd.org/tech-misc/2007/02/05/0000.html -
  * credit to Christian Biere.
  */
+#if LINUX_VERSION_IS_LESS(5,10,0)
 #define is_signed_type(type)       (((type)(-1)) < (type)1)
+#endif
 #define __type_half_max(type) ((type)1 << (8*sizeof(type) - 1 - is_signed_type(type)))
 #define type_max(T) ((T)((__type_half_max(T) - 1) + __type_half_max(T)))
 #define type_min(T) ((T)((T)-type_max(T)-(T)1))

@@ -17,7 +17,7 @@
  * These are used only by drivers that aren't yet fully
  * converted to cfg80211.
  */
-static int cfg80211_wext_giwname(struct net_device *dev,
+int cfg80211_wext_giwname(struct net_device *dev,
 			  struct iw_request_info *info,
 			  char *name, char *extra);
 static int cfg80211_wext_siwmode(struct net_device *dev, struct iw_request_info *info,

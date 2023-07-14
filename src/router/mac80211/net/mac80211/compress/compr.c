@@ -3,7 +3,7 @@
 #include <linux/module.h>
 #include <linux/random.h>
 #include <linux/export.h>
-#include <linux/lzma.h>
+#include "lzma/lzma.h"
 #include <linux/lz4.h>
 
 #include "compress.h"
@@ -18,7 +18,21 @@
 #define ZSTD 1
 size_t ZSTD_freeCCtx(ZSTD_CCtx * cctx);
 size_t ZSTD_freeDCtx(ZSTD_DCtx * dctx);
+#if LINUX_VERSION_IS_GEQ(5,10,0)
+#define ZSTD_CStreamWorkspaceBound zstd_cstream_workspace_bound
+#define ZSTD_DStreamWorkspaceBound zstd_dstream_workspace_bound
+//#define ZSTD_getParams zstd_get_params
+#define ZSTD_compressionParameters zstd_compression_parameters
+#define ZSTD_parameters zstd_parameters
+#define ZSTD_initCCtx zstd_init_cctx
+#define ZSTD_CCtx zstd_cctx
+#define ZSTD_initDCtx zstd_init_dctx
+#define ZSTD_DCtx zstd_dctx
+#define ZSTD_compressCCtx zstd_compress_cctx
+#define ZSTD_decompressDCtx zstd_decompress_dctx
 #endif
+#endif
+
 
 #ifdef ZSTD
 
@@ -28,7 +42,11 @@ static int zstd_init(struct zstd_workspace *wksp)
 	if (wksp == NULL)
 		goto failed;
 
+#if LINUX_VERSION_IS_GEQ(5,10,0)
+	wksp->mem_size = max_t(size_t, ZSTD_CStreamWorkspaceBound(&params.cParams), ZSTD_DStreamWorkspaceBound(4096));
+#else
 	wksp->mem_size = max_t(size_t, ZSTD_CStreamWorkspaceBound(params.cParams), ZSTD_DStreamWorkspaceBound(4096));
+#endif
 
 	wksp->param = params;
 	wksp->mem = kvmalloc(wksp->mem_size, in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
@@ -62,8 +80,11 @@ static size_t zstd_compress(struct ieee80211_sub_if_data *sdata, const char *sou
 	if (cctx == NULL)
 		return (0);
 
+#if LINUX_VERSION_IS_GEQ(5,10,0)
+	result = ZSTD_compressCCtx(cctx, dest, osize, source, isize, &sdata->zstd.param);
+#else
 	result = ZSTD_compressCCtx(cctx, dest, osize, source, isize, sdata->zstd.param);
-
+#endif
 	ZSTD_freeCCtx(cctx);
 	return (result);
 }
@@ -224,9 +245,9 @@ bool mac80211_tx_compress(struct ieee80211_sub_if_data * sdata, struct sk_buff *
 		}
 //          printk("COMPRESS: Initial len - %lu. Result len - %lu. Ratio %u percents\n", inlen, outlen, outlen * 100 / inlen);
 		if ((outlen > 0) && ((outlen + sizeof(u16) + sizeof(__u8)) < inlen)) {
-			put_unaligned_le16((u16)outlen, (void *)in);
+			put_unaligned_le16((u16)outlen, (__le16 *)in);
 			in += sizeof(__le16);
-			put_unaligned((u8)sdata->dev->ieee80211_ptr->use_compr, (void *)in);	// 1 = lzo, 2 = lzma ....
+			put_unaligned((u8)sdata->dev->ieee80211_ptr->use_compr, (__u8 *)in);	// 1 = lzo, 2 = lzma ....
 			in += sizeof(__u8);
 			memcpy(in, sdata->tx_outbuf, outlen);
 			inlen = hdrlen + sizeof(__le16) + sizeof(__u8) + outlen;

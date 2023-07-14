@@ -9,6 +9,7 @@
 #if LINUX_VERSION_IS_LESS(3,17,0)
 #include_next <linux/hrtimer.h>
 #endif
+#if LINUX_VERSION_IS_LESS(5,3,0)
 #if LINUX_VERSION_IS_GEQ(3,2,0)
 extern ktime_t ktime_get_coarse_boottime(void);
 
@@ -16,6 +17,7 @@ static inline u64 ktime_get_coarse_boottime_ns(void)
 {
 	return ktime_to_ns(ktime_get_coarse_boottime());
 }
+#endif
 #endif
 
 #if LINUX_VERSION_IS_LESS(3,17,0)

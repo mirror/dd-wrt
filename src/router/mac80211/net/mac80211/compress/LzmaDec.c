@@ -3,7 +3,7 @@
 
 #if !IS_ENABLED(CONFIG_LZMA_DECOMPRESS)
 #include <linux/types.h>
-#include <linux/lzma/LzmaDec.h>
+#include "lzma/LzmaDec.h"
 
 #include <linux/string.h>
 
