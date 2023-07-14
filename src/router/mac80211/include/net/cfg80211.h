@@ -5088,10 +5088,10 @@ struct wiphy_iftype_akm_suites {
 struct wiphy {
 	struct mutex mtx;
 
-	/* assign these fields before you register the wiphy */
-
-#define WIPHY_COMPAT_PAD_SIZE	2048
+#define WIPHY_COMPAT_PAD_SIZE	2304
 	u8 padding[WIPHY_COMPAT_PAD_SIZE];
+
+	/* assign these fields before you register the wiphy */
 
 	u8 perm_addr[ETH_ALEN];
 	u8 addr_mask[ETH_ALEN];
@@ -5233,6 +5233,7 @@ struct wiphy {
 
 	u8 mbssid_max_interfaces;
 	u8 ema_max_profile_periodicity;
+	u16 max_num_akm_suites;
 
 	char priv[] __aligned(NETDEV_ALIGN);
 };
@@ -5610,7 +5611,7 @@ struct wireless_dev {
 	unsigned long unprot_beacon_reported;
 };
 
-static inline u8 *wdev_address(struct wireless_dev *wdev)
+static inline const u8 *wdev_address(struct wireless_dev *wdev)
 {
 	if (wdev->netdev)
 		return wdev->netdev->dev_addr;
@@ -8000,7 +8001,9 @@ int cfg80211_register_netdevice(struct net_device *dev);
  */
 static inline void cfg80211_unregister_netdevice(struct net_device *dev)
 {
+#if IS_ENABLED(CPTCFG_CFG80211)
 	cfg80211_unregister_wdev(dev->ieee80211_ptr);
+#endif
 }
 
 /**

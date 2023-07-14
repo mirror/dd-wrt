@@ -332,6 +332,13 @@ static inline void netif_tx_napi_add(struct net_device *dev,
 	netif_napi_add(dev, napi, poll, weight);
 }
 #endif /* < 4.5 */
+#if LINUX_VERSION_IS_GEQ(5,10,0)
+static inline void netif_tx_napi_add(struct net_device *dev, struct napi_struct *napi, int (*poll)(struct napi_struct *, int), int weight)
+{
+	netif_napi_add_tx(dev, napi, poll);
+}
+
+#endif
 
 #ifndef NETIF_F_CSUM_MASK
 #define NETIF_F_CSUM_MASK NETIF_F_ALL_CSUM
@@ -391,6 +398,7 @@ static inline bool netif_is_bridge_port(const struct net_device *dev)
 
 #endif
 
+#if LINUX_VERSION_IS_LESS(5,10,0)
 #define dev_sw_netstats_rx_add LINUX_BACKPORT(dev_sw_netstats_rx_add)
 static inline void dev_sw_netstats_rx_add(struct net_device *dev, unsigned int len)
 {
@@ -401,7 +409,9 @@ static inline void dev_sw_netstats_rx_add(struct net_device *dev, unsigned int l
 	tstats->rx_packets++;
 	u64_stats_update_end(&tstats->syncp);
 }
+#endif
 
+#if LINUX_VERSION_IS_LESS(5,10,0)
 #define dev_sw_netstats_tx_add LINUX_BACKPORT(dev_sw_netstats_tx_add)
 static inline void dev_sw_netstats_tx_add(struct net_device *dev,
 					  unsigned int packets,
@@ -414,7 +424,7 @@ static inline void dev_sw_netstats_tx_add(struct net_device *dev,
 	tstats->tx_packets += packets;
 	u64_stats_update_end(&tstats->syncp);
 }
-
+#endif
 
 #if LINUX_VERSION_IS_LESS(5,10,0)
 #define dev_fetch_sw_netstats LINUX_BACKPORT(dev_fetch_sw_netstats)

@@ -1130,7 +1130,7 @@ static void brcmf_p2p_afx_handler(struct work_struct *work)
 	if (afx_hdl->is_listen && afx_hdl->my_listen_chan)
 		/* 100ms ~ 300ms */
 		err = brcmf_p2p_discover_listen(p2p, afx_hdl->my_listen_chan,
-						100 * (1 + prandom_u32() % 3));
+						100 * (1 + prandom_u32_max(3)));
 	else
 		err = brcmf_p2p_act_frm_search(p2p, afx_hdl->peer_listen_chan);
 
@@ -2129,7 +2129,7 @@ static int brcmf_p2p_disable_p2p_if(struct brcmf_cfg80211_vif *vif)
 	struct brcmf_cfg80211_info *cfg = wdev_to_cfg(&vif->wdev);
 	struct net_device *pri_ndev = cfg_to_ndev(cfg);
 	struct brcmf_if *ifp = netdev_priv(pri_ndev);
-	u8 *addr = vif->wdev.netdev->dev_addr;
+	const u8 *addr = vif->wdev.netdev->dev_addr;
 
 	return brcmf_fil_iovar_data_set(ifp, "p2p_ifdis", addr, ETH_ALEN);
 }
@@ -2139,7 +2139,7 @@ static int brcmf_p2p_release_p2p_if(struct brcmf_cfg80211_vif *vif)
 	struct brcmf_cfg80211_info *cfg = wdev_to_cfg(&vif->wdev);
 	struct net_device *pri_ndev = cfg_to_ndev(cfg);
 	struct brcmf_if *ifp = netdev_priv(pri_ndev);
-	u8 *addr = vif->wdev.netdev->dev_addr;
+	const u8 *addr = vif->wdev.netdev->dev_addr;
 
 	return brcmf_fil_iovar_data_set(ifp, "p2p_ifdel", addr, ETH_ALEN);
 }

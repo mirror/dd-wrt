@@ -1098,8 +1098,13 @@ static int _iwl_pcie_rx_init(struct iwl_trans *trans)
 			if (trans_pcie->msix_enabled)
 				poll = iwl_pcie_napi_poll_msix;
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0))
 			netif_napi_add(&trans_pcie->napi_dev, &rxq->napi,
 				       poll, NAPI_POLL_WEIGHT);
+#else
+			netif_napi_add(&trans_pcie->napi_dev, &rxq->napi,
+				       poll);
+#endif
 			napi_enable(&rxq->napi);
 		}
 

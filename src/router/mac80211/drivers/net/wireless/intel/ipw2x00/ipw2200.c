@@ -2264,7 +2264,7 @@ static int ipw_send_cmd_simple(struct ipw_priv *priv, u8 command)
 }
 
 static int ipw_send_cmd_pdu(struct ipw_priv *priv, u8 command, u8 len,
-			    void *data)
+			    const void *data)
 {
 	struct host_cmd cmd = {
 		.cmd = command,
@@ -2303,7 +2303,7 @@ static int ipw_send_ssid(struct ipw_priv *priv, u8 * ssid, int len)
 				ssid);
 }
 
-static int ipw_send_adapter_address(struct ipw_priv *priv, u8 * mac)
+static int ipw_send_adapter_address(struct ipw_priv *priv, const u8 * mac)
 {
 	if (!priv || !mac) {
 		IPW_ERROR("Invalid args\n");
@@ -11185,7 +11185,7 @@ static int ipw_up(struct ipw_priv *priv)
 		ipw_init_ordinals(priv);
 		if (!(priv->config & CFG_CUSTOM_MAC))
 			eeprom_parse_mac(priv, priv->mac_addr);
-		memcpy(priv->net_dev->dev_addr, priv->mac_addr, ETH_ALEN);
+		eth_hw_addr_set(priv->net_dev, priv->mac_addr);
 
 		ipw_set_geo(priv);
 

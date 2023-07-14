@@ -1545,26 +1545,37 @@ int __init cfg80211_init(void)
 	int err;
 
 	err = register_pernet_device(&cfg80211_pernet_ops);
-	if (err)
+	if (err) {
+		printk(KERN_EMERG "error %s:%d\n", __func__, __LINE__);
 		goto out_fail_pernet;
+	}
 
 	err = wiphy_sysfs_init();
 	if (err)
+{
+		printk(KERN_EMERG "error %s:%d\n", __func__, __LINE__);
 		goto out_fail_sysfs;
-
+	}
 	err = register_netdevice_notifier(&cfg80211_netdev_notifier);
 	if (err)
+{
+		printk(KERN_EMERG "error %s:%d\n", __func__, __LINE__);
 		goto out_fail_notifier;
-
+}
 	err = nl80211_init();
 	if (err)
+{
+		printk(KERN_EMERG "error %s:%d\n", __func__, __LINE__);
 		goto out_fail_nl80211;
-
+}
 	ieee80211_debugfs_dir = debugfs_create_dir("ieee80211", NULL);
 
 	err = regulatory_init();
 	if (err)
+{
+		printk(KERN_EMERG "error %s:%d\n", __func__, __LINE__);
 		goto out_fail_reg;
+}
 
 	cfg80211_wq = alloc_ordered_workqueue("cfg80211", WQ_MEM_RECLAIM);
 	if (!cfg80211_wq) {

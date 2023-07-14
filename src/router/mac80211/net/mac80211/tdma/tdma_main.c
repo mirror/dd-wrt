@@ -1191,7 +1191,8 @@ void ieee80211_tdma_setup_sdata(struct ieee80211_sub_if_data *sdata)
 	INIT_WORK(&tdma->reset_work, tdma_reset_work);
 	INIT_WORK(&tdma->join_work, tdma_join_work);
 	INIT_WORK(&tdma->create_work, tdma_create_work);
-	setup_timer(&tdma->poll_timer, tdma_poll_timer, (unsigned long)tdma);
+	timer_setup(&tdma->poll_timer, tdma_poll_timer, 0);
+	add_timer(&tdma->poll_timer);
 	skb_queue_head_init(&tdma->tx_skb_list);
 	sdata->local->hw.extra_tx_headroom += tdma_hdr_len();
 	tdma->tdma_hdrlen = ieee80211_hdrlen;

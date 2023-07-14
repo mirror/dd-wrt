@@ -12,14 +12,14 @@
 #include <stdio.h>
 #endif
 
-#include <linux/lzma/LzmaEnc.h>
+#include "lzma/LzmaEnc.h"
 
 /* disable MT */
 #define _7ZIP_ST
 
-#include <linux/lzma/LzFind.h>
+#include "lzma/LzFind.h"
 #ifndef _7ZIP_ST
-#include <linux/lzma/LzFindMt.h>
+#include "lzma/LzFindMt.h"
 #endif
 
 #define UNUSED_VAR(x) (void)x;

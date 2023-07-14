@@ -463,6 +463,9 @@ mt76_dma_tx_queue_skb_raw(struct mt76_dev *dev, struct mt76_queue *q,
 	struct mt76_queue_buf buf = {};
 	dma_addr_t addr;
 
+	if (test_bit(MT76_MCU_RESET, &dev->phy.state))
+		goto error;
+
 	if (q->queued + 1 >= q->ndesc - 1)
 		goto error;
 
@@ -503,6 +506,9 @@ mt76_dma_tx_queue_skb(struct mt76_dev *dev, struct mt76_queue *q,
 	struct sk_buff *iter;
 	dma_addr_t addr;
 	u8 *txwi;
+
+	if (test_bit(MT76_RESET, &dev->phy.state))
+		goto free_skb;
 
 	t = mt76_get_txwi(dev);
 	if (!t)
@@ -575,7 +581,9 @@ free:
 free_skb:
 	status.skb = tx_info.skb;
 	hw = mt76_tx_status_get_hw(dev, tx_info.skb);
+	spin_lock_bh(&dev->rx_lock);
 	ieee80211_tx_status_ext(hw, &status);
+	spin_unlock_bh(&dev->rx_lock);
 
 	return ret;
 }
@@ -915,13 +923,21 @@ mt76_dma_init(struct mt76_dev *dev,
 	snprintf(dev->napi_dev.name, sizeof(dev->napi_dev.name), "%s",
 		 wiphy_name(dev->hw->wiphy));
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(5,10,0))
+	dev->napi_dev.threaded = 1;
+#endif
 	mt76_for_each_q_rx(dev, i) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))  && (LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0))
 		netif_threaded_napi_add(&dev->napi_dev, &dev->napi[i], poll,
 			       64);
 #else
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0))
 		netif_napi_add(&dev->napi_dev, &dev->napi[i], poll,
 			       64);
+#else
+		netif_napi_add(&dev->napi_dev, &dev->napi[i], poll);
+
+#endif
 #endif
 		mt76_dma_rx_fill(dev, &dev->q_rx[i]);
 		napi_enable(&dev->napi[i]);
