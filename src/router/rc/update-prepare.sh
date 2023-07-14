@@ -90,6 +90,8 @@ mount -t sysfs sys ${R}sys
 mount -o remount,ro /usr/local
 umount /usr/local
 cp -av /dev ${R}/
+service samba3 stop
+service nfs stop
 service snmp stop
 service transmission stop
 service plex stop
