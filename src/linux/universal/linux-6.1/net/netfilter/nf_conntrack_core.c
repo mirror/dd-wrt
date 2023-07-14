@@ -587,13 +587,13 @@ static void (*ndpi_hook)(struct nf_conn *) __rcu __read_mostly = NULL;
 
 void register_ndpi_hook(void (*hook)(struct nf_conn *))
 {
-	RCU_INIT_POINTER(ndpi_hook, hook);
+	rcu_assign_pointer(ndpi_hook, hook);
 }
 EXPORT_SYMBOL(register_ndpi_hook);
 
 void unregister_ndpi_hook(void)
 {
-	RCU_INIT_POINTER(ndpi_hook, NULL);
+	rcu_assign_pointer(ndpi_hook, NULL);
 }
 
 EXPORT_SYMBOL(unregister_ndpi_hook);
