@@ -602,7 +602,9 @@ EXPORT_SYMBOL(unregister_ndpi_hook);
 void nf_ct_destroy(struct nf_conntrack *nfct)
 {
 	struct nf_conn *ct = (struct nf_conn *)nfct;
+#ifdef CONFIG_NDPI_HOOK
 	void (*hook)(struct nf_conn *);
+#endif
 
 	pr_debug("%s(%p)\n", __func__, ct);
 	WARN_ON(refcount_read(&nfct->use) != 0);
@@ -611,11 +613,11 @@ void nf_ct_destroy(struct nf_conntrack *nfct)
 		nf_ct_tmpl_free(ct);
 		return;
 	}
-	hook = rcu_dereference(ndpi_hook);
 
 #ifdef CONFIG_NDPI_HOOK
+	hook = rcu_dereference(ndpi_hook);
 	if (hook)
-	    hook(ct);
+		hook(ct);
 #endif
 
 	if (unlikely(nf_ct_protonum(ct) == IPPROTO_GRE))
