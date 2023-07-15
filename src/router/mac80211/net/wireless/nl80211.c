@@ -3486,6 +3486,7 @@ static int nl80211_set_wiphy(struct sk_buff *skb, struct genl_info *info)
 		if ((!rdev->wiphy.available_antennas_tx &&
 		     !rdev->wiphy.available_antennas_rx) ||
 		    !rdev->ops->set_antenna) {
+			printk(KERN_INFO "set_antenna missing!!!\n");
 			result = -EOPNOTSUPP;
 			goto out;
 		}

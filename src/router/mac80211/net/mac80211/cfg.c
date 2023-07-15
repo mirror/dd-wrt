@@ -3763,8 +3763,10 @@ static int ieee80211_set_antenna(struct wiphy *wiphy, u32 tx_ant, u32 rx_ant)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 
-	if (local->started)
-		return -EOPNOTSUPP;
+	if (local->started) {
+		printk(KERN_INFO "local is started\n");
+		//return -EOPNOTSUPP;
+	}
 
 	return drv_set_antenna(local, tx_ant, rx_ant);
 }

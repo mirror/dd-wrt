@@ -149,7 +149,7 @@ struct device_attribute dev_attr_ ## _name = __ATTR_RW(_name)
 	struct class_attribute class_attr_##_name = __ATTR_RO(_name)
 #endif
 
-#if LINUX_VERSION_IS_LESS(3,13,0)
+#if LINUX_VERSION_IS_LESS(4,10,0)
 #define ATTRIBUTE_GROUPS_BACKPORT(_name) \
 static struct BP_ATTR_GRP_STRUCT _name##_dev_attrs[ARRAY_SIZE(_name##_attrs)];\
 static void init_##_name##_attrs(void)				\

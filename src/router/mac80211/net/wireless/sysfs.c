@@ -193,13 +193,13 @@ static struct class ieee80211_class = {
 
 int wiphy_sysfs_init(void)
 {
+#if LINUX_VERSION_IS_LESS(3,11,0)
+	init_ieee80211_attrs();
+#endif
 	return class_register(&ieee80211_class);
 }
 
 void wiphy_sysfs_exit(void)
 {
-#if LINUX_VERSION_IS_LESS(3,11,0)
-	init_ieee80211_attrs();
-#endif
 	class_unregister(&ieee80211_class);
 }
