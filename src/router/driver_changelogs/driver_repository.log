@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7324 | brainslayer | 2023-07-15 10:46:58 +0600 (Sat, 15 Jul 2023) | 1 line
+
+fix bad typo which made ath9k unable to work on 3.10
+------------------------------------------------------------------------
 r7323 | brainslayer | 2023-07-15 03:55:28 +0600 (Sat, 15 Jul 2023) | 1 line
 
 fix backport-include/linux/device.h
