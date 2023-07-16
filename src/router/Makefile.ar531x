@@ -734,6 +734,8 @@ endif
 ifeq ($(CONFIG_FONERA2200),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.fonera bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.fonera
+	dd if=$(ARCH)-uclibc/vmlinux.fonera of=$(ARCH)-uclibc/vmlinux.fonera.tmp bs=131072 conv=sync
+	cp $(ARCH)-uclibc/vmlinux.fonera.tmp $(ARCH)-uclibc/vmlinux.fonera
 endif
 ifeq ($(CONFIG_DLM101),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.dlm101 bs=65536 conv=sync
