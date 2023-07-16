@@ -247,6 +247,7 @@ exit_printhelp(const struct xtables_rule_match *matches)
 void
 ip6tables_exit_error(enum xtables_exittype status, const char *msg, ...)
 {
+#ifdef NEED_PRINTF
 	va_list args;
 
 	va_start(args, msg);
@@ -261,6 +262,7 @@ ip6tables_exit_error(enum xtables_exittype status, const char *msg, ...)
 			"Perhaps ip6tables or your kernel needs to be upgraded.\n");
 	/* On error paths, make sure that we don't leak memory */
 	xtables_free_opts(1);
+#endif
 	exit(status);
 }
 

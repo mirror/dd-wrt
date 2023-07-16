@@ -246,6 +246,7 @@ exit_printhelp(const struct xtables_rule_match *matches)
 void
 iptables_exit_error(enum xtables_exittype status, const char *msg, ...)
 {
+#ifdef NEED_PRINTF
 	va_list args;
 
 	va_start(args, msg);
@@ -259,6 +260,7 @@ iptables_exit_error(enum xtables_exittype status, const char *msg, ...)
 		fprintf(stderr,
 			"Perhaps iptables or your kernel needs to be upgraded.\n");
 	/* On error paths, make sure that we don't leak memory */
+#endif
 	xtables_free_opts(1);
 	exit(status);
 }
