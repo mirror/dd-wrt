@@ -30,10 +30,25 @@
 int root_mountflags = MS_RDONLY | MS_SILENT;
 
 #ifdef CONFIG_X86
-int root_devices=14;
-char * __initdata root_device_name2[14]={"/dev/hda2","/dev/hdb2","/dev/hdc2","/dev/hdd2", "/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2", "/dev/mmcblk0p2"};
+char * __initdata root_device_name2[]={
+	"/dev/hda2",
+	"/dev/hdb2",
+	"/dev/hdc2",
+	"/dev/hdd2",
+	"/dev/sda2",
+	"/dev/sdb2",
+	"/dev/sdc2",
+	"/dev/sdd2",
+	"/dev/sde2",
+	"/dev/sdf2",
+	"/dev/sdg2",
+	"/dev/sdh2",
+	"/dev/sdi2",
+	"/dev/sr0", 
+	"/dev/mmcblk0p2"};
+static const int root_devices=ARRAY_SIZE(root_device_name2);
 #define root_device_name root_device_name2[0]
-dev_t ROOT_DEV[13];
+dev_t ROOT_DEV[ARRAY_SIZE(root_device_name2)];
 #define BASE_ROOT ROOT_DEV[0]
 #else
 static char * __initdata root_device_name;
