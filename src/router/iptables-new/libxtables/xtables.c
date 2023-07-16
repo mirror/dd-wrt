@@ -82,6 +82,7 @@ struct xtables_globals *xt_params = NULL;
 
 void basic_exit_err(enum xtables_exittype status, const char *msg, ...)
 {
+#ifdef NEED_PRINTF
 	va_list args;
 
 	va_start(args, msg);
@@ -89,6 +90,7 @@ void basic_exit_err(enum xtables_exittype status, const char *msg, ...)
 	vfprintf(stderr, msg, args);
 	va_end(args);
 	fprintf(stderr, "\n");
+#endif
 	exit(status);
 }
 
