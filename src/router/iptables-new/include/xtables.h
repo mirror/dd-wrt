@@ -500,14 +500,14 @@ extern struct xtables_globals *xt_params;
 #ifdef NEED_PRINTF
 #define xtables_error (xt_params->exit_err)
 #else
-#define fprintf(out, args...) \
+/*#define fprintf(out, args...) \
     do { \
     int ret; \
     if (out == stdout || out == stderr) ret = 0; \
     else \
 	ret = fprintf(out, ## args); \
     ret; \
-    } while (0)
+    } while (0)*/
 #define xtables_error(type, fmt, ...) exit(-1)
 #endif
 extern void xtables_param_act(unsigned int, const char *, ...);
