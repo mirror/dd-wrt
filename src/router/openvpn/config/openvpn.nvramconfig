@@ -1,6 +1,7 @@
  "openvpn_enable"   "OpenVPN Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_fw"   "OpenVPN Firewall"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_net"  "OpenVPN Network"  "NULL" "FALSE" "0"
+ "openvpn_v6netmask"  "OpenVPN IPv6 network/mask"  "NULL" "FALSE" "0"
  "openvpn_mask"  "OpenVPN TAP Netmask"  "NULL"   "FALSE" "0"
  "openvpn_tunmask"  "OpenVPN TUN Netmask"  "NULL"   "FALSE" "0"
  "openvpn_gateway"  "OpenVPN Gateway"  "NULL"   "FALSE" "0"

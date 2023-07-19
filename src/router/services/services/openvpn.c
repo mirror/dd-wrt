@@ -360,10 +360,22 @@ void create_openvpnserverrules(FILE * fp)
 		if (nvram_matchi("openvpn_allowcnwan", 1)) {
 			fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp, "iptables -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+#ifdef HAVE_IPV6
+			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
+				fprintf(fp, "ip6tables -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+				fprintf(fp, "ip6tables -t nat -A POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE\n");
+			}
+#endif
 		}
 		if (nvram_matchi("openvpn_allowcnlan", 1)) {
 			fprintf(fp, "iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp, "iptables -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+#ifdef HAVE_IPV6
+			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
+				fprintf(fp, "ip6tables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
+				fprintf(fp, "ip6tables -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE\n");
+			}
+#endif
 		}
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpnsrv_fw.sh\n");
@@ -487,7 +499,15 @@ void start_openvpnserver(void)
 		if (nvram_matchi("openvpn_cl2cl", 1))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_matchi("openvpn_redirgate", 1)) {
-			fprintf(fp, "push \"redirect-gateway def1\"\n");
+#ifdef HAVE_IPV6
+			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
+				fprintf(fp, "push \"redirect-gateway ipv6 def1\"\n");
+			} else {
+#endif
+				fprintf(fp, "push \"redirect-gateway def1\"\n");
+#ifdef HAVE_IPV6
+			}
+#endif
 		} else if (nvram_matchi("openvpn_redirgate", 2)) {
 			char lanaddr[32] = { 0 };
 			char *mypoint;
@@ -519,7 +539,9 @@ void start_openvpnserver(void)
 			fprintf(fp, "server %s %s\n", nvram_safe_get("openvpn_net"), nvram_safe_get("openvpn_tunmask"));
 			fprintf(fp, "dev tun2\n");
 #ifdef HAVE_IPV6
-			//fprintf(fp, "tun-ipv6\n");    //enable ipv6 support.
+		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
+			fprintf(fp, "server-ipv6 %s\n", nvram_safe_get("openvpn_v6netmask")); 
+		}
 #endif
 		} else if (nvram_match("openvpn_tuntap", "tap") && nvram_matchi("openvpn_proxy", 0)) {
 			fprintf(fp, "server-bridge %s %s %s %s\n", nvram_safe_get("openvpn_gateway"), nvram_safe_get("openvpn_mask"), nvram_safe_get("openvpn_startip"), nvram_safe_get("openvpn_endip"));
@@ -655,10 +677,23 @@ void start_openvpnserver(void)
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
-	if (nvram_matchi("openvpn_allowcnwan", 1))
+	if (nvram_matchi("openvpn_allowcnwan", 1)) {
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
-	if (nvram_matchi("openvpn_allowcnlan", 1))
+#ifdef HAVE_IPV6
+			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
+				fprintf(fp, "ip6tables -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+			}
+#endif
+	}
+	if (nvram_matchi("openvpn_allowcnlan", 1)) {
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+#ifdef HAVE_IPV6
+			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
+				fprintf(fp, "ip6tables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
+			}
+#endif
+	}
+
 	/* egc: delete interface as listen interface to DNSMasq */
 	if (nvram_match("openvpn_tuntap", "tun")) {
 		fprintf(fp, "nvram unset dnsmasq_addifvpn\n");

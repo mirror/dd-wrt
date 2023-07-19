@@ -3185,9 +3185,12 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_wdog_sleept", "30" },
 	{ "openvpn_enable", "0" },
 	{ "openvpn_mit", "1" },
-	{ "openvpn_net", "0.0.0.0" },
+	{ "openvpn_net", "10.8.0.0" },
+#ifdef HAVE_IPV6
+	{ "openvpn_v6netmask", "fddb:c50f:f9bc:4ba5::/64" },
+#endif
 	{ "openvpn_mask", "0.0.0.0" },
-	{ "openvpn_tunmask", "0.0.0.0" },
+	{ "openvpn_tunmask", "255.255.255.0" },
 	{ "openvpn_gateway", "0.0.0.0" },
 	{ "openvpn_startip", "0.0.0.0" },
 	{ "openvpn_endip", "0.0.0.0" },

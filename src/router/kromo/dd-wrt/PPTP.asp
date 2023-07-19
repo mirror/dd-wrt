@@ -184,6 +184,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.antaira_agent_enable, 'idantairavpn', <% nvem("antaira_agent_enable", "1", "1", "0"); %> == 1);
 <% ifndef("ANTAIRA_AGENT", "*/"); %>
 	show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvem("openvpn_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_enable, 'idvpn_ipv6', <% nvem("ipv6_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_tuntap, 'idrouter', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_tuntap, 'idrouter2', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvem("openvpn_tuntap", "tap", "1", "0"); %> == 1);
