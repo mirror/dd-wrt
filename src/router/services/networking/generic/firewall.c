@@ -2365,18 +2365,17 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 
 	if (nvram_matchi("openvpn_enable", 1)) {
 		//char proto[16];
-		if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4")) {
+		if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4") || nvram_match("openvpn_proto", "udp6")) {
+		//if (nvhas("openvpn_proto", "udp")) {
 			save2file_A_input("-i %s -p udp --dport %s -j %s", wanface, nvram_safe_get("openvpn_port"), log_accept);
 		}
-		if (nvram_match("openvpn_proto", "tcp-server") || nvram_match("openvpn_proto", "tcp4-server")) {
+		if (nvram_match("openvpn_proto", "tcp-server") || nvram_match("openvpn_proto", "tcp4-server") || nvram_match("openvpn_proto", "tcp6-server")) {
+		//if (nvhas("openvpn_proto", "tcp")) {
 			save2file_A_input("-i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("openvpn_port"), log_accept);
 		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
-//                      if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
 			save2file_A_input("-i %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
 			save2file_A_forward("-i %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
-			//save2file_A_forward("-o %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
-//                      }
 		}
 	}
 #endif
@@ -3356,6 +3355,23 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-A", "limaccept", "-j", "ACCEPT");
 #endif
 	}
+
+#ifdef HAVE_OPENVPN
+	if (nvram_matchi("openvpn_enable", 1)) {
+		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
+			if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp6")) {
+				eval("ip6tables", "-I", "INPUT", "-p", "udp", "--dport", nvram_safe_get("openvpn_port"), "-i", wanface, "-j", log_accept);
+			}
+			if (nvram_match("openvpn_proto", "tcp-server") || nvram_match("openvpn_proto", "tcp6-server")) {
+				eval("ip6tables", "-I", "INPUT", "-p", "tcp", "--dport", nvram_safe_get("openvpn_port"), "-i", wanface, "-j", log_accept);
+			}
+			if (nvram_match("openvpn_tuntap", "tun")) {
+				eval("ip6tables", "-I", "INPUT", "-i", "tun2", "-j", log_accept);
+				eval("ip6tables", "-I", "FORWARD", "-i", "tun2", "-j", log_accept);
+			}
+		}
+	}
+#endif
 }
 #endif
 void start_loadfwmodules(void)

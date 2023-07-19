@@ -36,12 +36,15 @@
 			</div>
 			<div id="idrouter">
 				<div class="setting">
-					<div class="label"><% tran("service.vpnd_net"); %></div>
-					<input size="15" maxlength="15" name="openvpn_net" value="<% nvg("openvpn_net"); %>" />
-				</div>
-				<div class="setting">
-					<div class="label"><% tran("service.vpnd_mask"); %></div>
+					<div class="label"><% tran("service.vpnd_netm"); %></div>
+					<input size="15" maxlength="15" name="openvpn_net" value="<% nvg("openvpn_net"); %>" />&nbsp;&nbsp;
 					<input size="15" maxlength="15" name="openvpn_tunmask" value="<% nvg("openvpn_tunmask"); %>" />
+				</div>
+				<div id="idvpn_ipv6">
+					<div class="setting">
+						<div class="label"><% tran("service.vpnd_netmv6"); %></div>
+						<input size="48" maxlength="48" name="openvpn_v6netmask" value="<% nvg("openvpn_v6netmask"); %>" />
+					</div>
 				</div>
 			</div>
 			<div id="idbridge">
