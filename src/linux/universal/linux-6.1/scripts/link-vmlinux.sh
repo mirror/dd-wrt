@@ -160,6 +160,10 @@ kallsyms()
 		kallsymopt="${kallsymopt} --uncompressed"
 	fi
 
+	if is_enabled CONFIG_LTO_CLANG; then
+		kallsymopt="${kallsymopt} --lto-clang"
+	fi
+
 	info KSYMS ${2}
 	scripts/kallsyms ${kallsymopt} ${1} > ${2}
 }
