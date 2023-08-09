@@ -241,7 +241,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</div>\n");
 
 				//public key show
-				show_oet_textfield(wp, 0, "eoip.wireguard_localkey", 32, 48, "", tun, "readonly=\"readonly\"", "oet%d_public", tun);
+				show_oet_textfield(wp, 0, "eoip.wireguard_localkey", 48, 48, "", tun, "readonly=\"readonly\"", "oet%d_public", tun);
 
 				//egc: DNS 
 				show_oet_textfield(wp, 0, "eoip.wireguard_oet_dns", 32, 48, "", tun, NULL, "oet%d_dns", tun);
