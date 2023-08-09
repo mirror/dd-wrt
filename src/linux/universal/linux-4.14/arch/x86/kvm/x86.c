@@ -201,6 +201,8 @@ struct kvm_stats_debugfs_item debugfs_entries[] = {
 
 u64 __read_mostly host_xcr0;
 
+extern bool gds_ucode_mitigated(void);
+
 static int emulator_fix_hypercall(struct x86_emulate_ctxt *ctxt);
 
 static inline void kvm_async_pf_hash_reset(struct kvm_vcpu *vcpu)
@@ -1130,6 +1132,9 @@ u64 kvm_get_arch_capabilities(void)
 
 	/* Guests don't need to know "Fill buffer clear control" exists */
 	data &= ~ARCH_CAP_FB_CLEAR_CTRL;
+
+	if (!boot_cpu_has_bug(X86_BUG_GDS) || gds_ucode_mitigated())
+		data |= ARCH_CAP_GDS_NO;
 
 	return data;
 }
