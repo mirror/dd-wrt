@@ -64,6 +64,8 @@ static inline void __init sme_early_init(void) { }
 static inline void __init sme_encrypt_kernel(struct boot_params *bp) { }
 static inline void __init sme_enable(struct boot_params *bp) { }
 
+static inline void mem_encrypt_init(void) { }
+
 #endif	/* CONFIG_AMD_MEM_ENCRYPT */
 
 /*
