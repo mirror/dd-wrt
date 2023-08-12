@@ -285,7 +285,7 @@ uint32_t ubifs_unpack_bits(uint8_t **addr, int *pos, int nrbits)
 	const int k = 32 - nrbits;
 	uint8_t *p = *addr;
 	int b = *pos;
-	uint32_t uninitialized_var(val);
+	uint32_t val;
 	const int bytes = (nrbits + b + 7) >> 3;
 
 	ubifs_assert(nrbits > 0);
