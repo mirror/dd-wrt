@@ -72,8 +72,8 @@ extern ssize_t __modver_version_show(struct module_attribute *,
 extern struct module_attribute module_uevent;
 
 /* These are either module local, or the kernel's dummy ones. */
-extern int init_module(void);
-extern void cleanup_module(void);
+__visible_on_lto int init_module(void);
+__visible_on_lto void cleanup_module(void);
 
 #ifndef MODULE
 /**
@@ -129,7 +129,7 @@ extern void cleanup_module(void);
 #define module_init(initfn)					\
 	static inline initcall_t __maybe_unused __inittest(void)		\
 	{ return initfn; }					\
-	int init_module(void) __copy(initfn)			\
+	__visible_on_lto int init_module(void) __copy(initfn)			\
 		__attribute__((alias(#initfn)));		\
 	___ADDRESSABLE(init_module, __initdata);
 
@@ -137,7 +137,7 @@ extern void cleanup_module(void);
 #define module_exit(exitfn)					\
 	static inline exitcall_t __maybe_unused __exittest(void)		\
 	{ return exitfn; }					\
-	void cleanup_module(void) __copy(exitfn)		\
+	__visible_on_lto void cleanup_module(void) __copy(exitfn)		\
 		__attribute__((alias(#exitfn)));		\
 	___ADDRESSABLE(cleanup_module, __exitdata);
 

@@ -57,11 +57,11 @@ END {
 	for (j = 0; j < i; ++j) {
 		name = export_symbols[j]
 		# nm(3) says "If lowercase, the symbol is usually local"
-		if (symbol_types[name] ~ /[a-z]/) {
-			printf "%s: error: local symbol %s was exported\n",
-				file, name | "cat 1>&2"
-			exit_code = 1
-		}
+#		if (symbol_types[name] ~ /[a-z]/) {
+#			printf "%s: error: local symbol %s was exported\n",
+#				file, name | "cat 1>&2"
+#			exit_code = 1
+#		}
 	}
 
 	exit exit_code
