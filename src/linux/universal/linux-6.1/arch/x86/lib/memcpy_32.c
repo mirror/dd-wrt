@@ -6,19 +6,19 @@
 #undef memset
 #undef memmove
 
-__visible void *memcpy(void *to, const void *from, size_t n)
+__used __visible void *memcpy(void *to, const void *from, size_t n)
 {
 	return __memcpy(to, from, n);
 }
 EXPORT_SYMBOL(memcpy);
 
-__visible void *memset(void *s, int c, size_t count)
+__used __visible void *memset(void *s, int c, size_t count)
 {
 	return __memset(s, c, count);
 }
 EXPORT_SYMBOL(memset);
 
-__visible void *memmove(void *dest, const void *src, size_t n)
+__used __visible void *memmove(void *dest, const void *src, size_t n)
 {
 	int d0,d1,d2,d3,d4,d5;
 	char *ret = dest;

@@ -37,7 +37,7 @@ struct btf_id_set8 {
 #define ____BTF_ID(symbol, word)			\
 asm(							\
 ".pushsection " BTF_IDS_SECTION ",\"a\";       \n"	\
-".local " #symbol " ;                          \n"	\
+"." __global_on_lto " " #symbol " ;            \n"	\
 ".type  " #symbol ", STT_OBJECT;               \n"	\
 ".size  " #symbol ", 4;                        \n"	\
 #symbol ":                                     \n"	\
@@ -83,16 +83,16 @@ word							\
 #define __BTF_ID_LIST(name, scope)			\
 asm(							\
 ".pushsection " BTF_IDS_SECTION ",\"a\";       \n"	\
-"." #scope " " #name ";                        \n"	\
+"." scope " " #name ";                         \n"	\
 #name ":;                                      \n"	\
 ".popsection;                                  \n");
 
 #define BTF_ID_LIST(name)				\
-__BTF_ID_LIST(name, local)				\
+__BTF_ID_LIST(name, __global_on_lto)			\
 extern u32 name[];
 
 #define BTF_ID_LIST_GLOBAL(name, n)			\
-__BTF_ID_LIST(name, globl)
+__BTF_ID_LIST(name, "globl")
 
 /* The BTF_ID_LIST_SINGLE macro defines a BTF_ID_LIST with
  * a single entry.
@@ -142,18 +142,18 @@ asm(							\
 #define __BTF_SET_START(name, scope)			\
 asm(							\
 ".pushsection " BTF_IDS_SECTION ",\"a\";       \n"	\
-"." #scope " __BTF_ID__set__" #name ";         \n"	\
+"." scope " __BTF_ID__set__" #name ";          \n"	\
 "__BTF_ID__set__" #name ":;                    \n"	\
 ".zero 4                                       \n"	\
 ".popsection;                                  \n");
 
 #define BTF_SET_START(name)				\
-__BTF_ID_LIST(name, local)				\
-__BTF_SET_START(name, local)
+__BTF_ID_LIST(name, __global_on_lto)			\
+__BTF_SET_START(name, __global_on_lto)
 
 #define BTF_SET_START_GLOBAL(name)			\
-__BTF_ID_LIST(name, globl)				\
-__BTF_SET_START(name, globl)
+__BTF_ID_LIST(name, "globl")				\
+__BTF_SET_START(name, "globl")
 
 #define BTF_SET_END(name)				\
 asm(							\
@@ -186,14 +186,14 @@ extern struct btf_id_set name;
 #define __BTF_SET8_START(name, scope)			\
 asm(							\
 ".pushsection " BTF_IDS_SECTION ",\"a\";       \n"	\
-"." #scope " __BTF_ID__set8__" #name ";        \n"	\
+"." scope " __BTF_ID__set8__" #name ";         \n"	\
 "__BTF_ID__set8__" #name ":;                   \n"	\
 ".zero 8                                       \n"	\
 ".popsection;                                  \n");
 
 #define BTF_SET8_START(name)				\
-__BTF_ID_LIST(name, local)				\
-__BTF_SET8_START(name, local)
+__BTF_ID_LIST(name, __global_on_lto)			\
+__BTF_SET8_START(name, __global_on_lto)
 
 #define BTF_SET8_END(name)				\
 asm(							\

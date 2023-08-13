@@ -45,7 +45,7 @@ def getsizes(file, format):
                 if name == "linux_banner": continue
                 if name == "vermagic": continue
                 # statics and some other optimizations adds random .NUMBER
-                name = re_NUMBER.sub('', name)
+                name = re_NUMBER.sub('', name).replace(".lto_priv", "")
                 sym[name] = sym.get(name, 0) + int(size, 16)
     return sym
 

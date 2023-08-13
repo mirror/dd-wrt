@@ -153,8 +153,8 @@ is-single-obj-m = $(and $(part-of-module),$(filter $@, $(obj-m)),y)
 
 # When a module consists of a single object, there is no reason to keep LLVM IR.
 # Make $(LD) covert LLVM IR to ELF here.
-ifdef CONFIG_LTO_CLANG
-cmd_ld_single_m = $(if $(is-single-obj-m), ; $(LD) $(ld_flags) -r -o $(tmp-target) $@; mv $(tmp-target) $@)
+ifdef CONFIG_LTO
+cmd_ld_single_m = $(if $(is-single-obj-m), ; $(LDFINAL) $(ld_flags) -r -o $(tmp-target) $@; mv $(tmp-target) $@)
 endif
 
 quiet_cmd_cc_o_c = CC $(quiet_modtag)  $@
@@ -173,7 +173,7 @@ ifdef CONFIG_MODVERSIONS
 #   be compiled and linked to the kernel and/or modules.
 
 gen_symversions =								\
-	if $(NM) $@ 2>/dev/null | grep -q __ksymtab; then			\
+	if $(NM) $@ 2>/dev/null | grep -q __kstrtab; then			\
 		$(call cmd_gensymtypes_$(1),$(KBUILD_SYMTYPES),$(@:.o=.symtypes)) \
 			>> $(dot-target).cmd;					\
 	fi
@@ -247,7 +247,7 @@ endef
 
 # Built-in and composite module parts
 $(obj)/%.o: $(src)/%.c $(recordmcount_source) FORCE
-	$(call if_changed_rule,cc_o_c)
+	+$(call if_changed_rule,cc_o_c)
 	$(call cmd,force_checksrc)
 
 # To make this rule robust against "Argument list too long" error,
@@ -265,7 +265,8 @@ $(obj)/%.usyms: $(obj)/%.o FORCE
 	$(call if_changed,undefined_syms)
 
 quiet_cmd_cc_lst_c = MKLST   $@
-      cmd_cc_lst_c = $(CC) $(c_flags) -g -c -o $*.o $< && \
+      cmd_cc_lst_c = $(if $(CONFIG_LTO),$(warning Listing in LTO mode does not match final binary)) \
+		     $(CC) $(c_flags) -g -c -o $*.o $< && \
 		     $(CONFIG_SHELL) $(srctree)/scripts/makelst $*.o \
 				     System.map $(OBJDUMP) > $@
 
@@ -446,8 +447,8 @@ $(obj)/modules.order: $(obj-m) FORCE
 $(obj)/lib.a: $(lib-y) FORCE
 	$(call if_changed,ar)
 
-quiet_cmd_ld_multi_m = LD [M]  $@
-      cmd_ld_multi_m = $(LD) $(ld_flags) -r -o $@ @$(patsubst %.o,%.mod,$@) $(cmd_objtool)
+quiet_cmd_ld_multi_m = LDFINAL [M] $@
+      cmd_ld_multi_m = $(LDFINAL) $(ld_flags) -r -o $@ @$(patsubst %.o,%.mod,$@) $(cmd_objtool)
 
 define rule_ld_multi_m
 	$(call cmd_and_savecmd,ld_multi_m)
@@ -457,7 +458,7 @@ endef
 $(multi-obj-m): objtool-enabled := $(delay-objtool)
 $(multi-obj-m): part-of-module := y
 $(multi-obj-m): %.o: %.mod FORCE
-	$(call if_changed_rule,ld_multi_m)
+	+$(call if_changed_rule,ld_multi_m)
 $(call multi_depend, $(multi-obj-m), .o, -objs -y -m)
 
 # Add intermediate targets:

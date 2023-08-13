@@ -91,11 +91,13 @@ struct kernel_symbol {
  */
 #define ___EXPORT_SYMBOL(sym, sec, ns)						\
 	extern typeof(sym) sym;							\
-	extern const char __kstrtab_##sym[];					\
-	extern const char __kstrtabns_##sym[];					\
+	extern const char __visible __kstrtab_##sym[];				\
+	extern const char __visible __kstrtabns_##sym[];			\
 	asm("	.section \"__ksymtab_strings" __EXPORT_SUFFIX(sym) "\",\"aMS\",%progbits,1	\n"	\
+	    "	.globl __kstrtab_" #sym "				\n"	\
 	    "__kstrtab_" #sym ":					\n"	\
 	    "	.asciz 	\"" #sym "\"					\n"	\
+	    "	.globl __kstrtabns_" #sym "				\n"	\
 	    "__kstrtabns_" #sym ":					\n"	\
 	    "	.asciz 	\"" ns "\"					\n"	\
 	    "	.previous						\n");	\

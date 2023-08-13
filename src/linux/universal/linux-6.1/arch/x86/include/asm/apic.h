@@ -362,12 +362,12 @@ extern struct apic *apic;
  * to enforce the order with in them.
  */
 #define apic_driver(sym)					\
-	static const struct apic *__apicdrivers_##sym __used		\
+	static const struct apic *__apicdrivers_##sym __used __noreorder \
 	__aligned(sizeof(struct apic *))			\
 	__section(".apicdrivers") = { &sym }
 
 #define apic_drivers(sym1, sym2)					\
-	static struct apic *__apicdrivers_##sym1##sym2[2] __used	\
+	static struct apic *__apicdrivers_##sym1##sym2[2] __used __noreorder \
 	__aligned(sizeof(struct apic *))				\
 	__section(".apicdrivers") = { &sym1, &sym2 }
 

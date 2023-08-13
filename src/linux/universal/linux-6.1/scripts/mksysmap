@@ -34,6 +34,7 @@
 #   U - undefined global symbols
 #   N - debugging symbols
 #   w - local weak symbols
+#   W - weak symbols if they contain .c.
 
 # readprofile starts reading symbols when _stext is found, and
 # continue until it finds a symbol which is not either of 'T', 't',
@@ -57,4 +58,5 @@ $NM -n $1 | grep -v		\
 	-e ' __kstrtab_'	\
 	-e ' __kstrtabns_'	\
 	-e ' L0$'		\
+	-e ' W .*\.c\.'		\
 > $2

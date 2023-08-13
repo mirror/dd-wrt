@@ -152,7 +152,7 @@ static __always_inline bool memory_is_poisoned(unsigned long addr, size_t size)
 		case 16:
 			return memory_is_poisoned_16(addr);
 		default:
-			BUILD_BUG();
+			break;
 		}
 	}
 

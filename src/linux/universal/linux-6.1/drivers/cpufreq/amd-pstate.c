@@ -62,7 +62,7 @@
 static struct cpufreq_driver amd_pstate_driver;
 static int cppc_load __initdata;
 
-static inline int pstate_enable(bool enable)
+__visible_on_lto int do_amd_pstate_enable(bool enable)
 {
 	return wrmsrl_safe(MSR_AMD_CPPC_ENABLE, enable);
 }
@@ -80,14 +80,14 @@ static int cppc_enable(bool enable)
 	return ret;
 }
 
-DEFINE_STATIC_CALL(amd_pstate_enable, pstate_enable);
+DEFINE_STATIC_CALL(amd_pstate_enable, do_amd_pstate_enable);
 
 static inline int amd_pstate_enable(bool enable)
 {
 	return static_call(amd_pstate_enable)(enable);
 }
 
-static int pstate_init_perf(struct amd_cpudata *cpudata)
+__visible_on_lto int do_amd_pstate_init_perf(struct amd_cpudata *cpudata)
 {
 	u64 cap1;
 	u32 highest_perf;
@@ -138,15 +138,16 @@ static int cppc_init_perf(struct amd_cpudata *cpudata)
 	return 0;
 }
 
-DEFINE_STATIC_CALL(amd_pstate_init_perf, pstate_init_perf);
+DEFINE_STATIC_CALL(amd_pstate_init_perf, do_amd_pstate_init_perf);
 
 static inline int amd_pstate_init_perf(struct amd_cpudata *cpudata)
 {
 	return static_call(amd_pstate_init_perf)(cpudata);
 }
 
-static void pstate_update_perf(struct amd_cpudata *cpudata, u32 min_perf,
-			       u32 des_perf, u32 max_perf, bool fast_switch)
+__visible_on_lto void do_amd_pstate_update_perf(struct amd_cpudata *cpudata,
+			       u32 min_perf, u32 des_perf, u32 max_perf,
+			       bool fast_switch)
 {
 	if (fast_switch)
 		wrmsrl(MSR_AMD_CPPC_REQ, READ_ONCE(cpudata->cppc_req_cached));
@@ -168,7 +169,7 @@ static void cppc_update_perf(struct amd_cpudata *cpudata,
 	cppc_set_perf(cpudata->cpu, &perf_ctrls);
 }
 
-DEFINE_STATIC_CALL(amd_pstate_update_perf, pstate_update_perf);
+DEFINE_STATIC_CALL(amd_pstate_update_perf, do_amd_pstate_update_perf);
 
 static inline void amd_pstate_update_perf(struct amd_cpudata *cpudata,
 					  u32 min_perf, u32 des_perf,

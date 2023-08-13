@@ -3,6 +3,8 @@
 # Building vDSO images for x86.
 #
 
+KBUILD_CFLAGS +=		$(DISABLE_LTO_GCC)
+
 # Absolute relocation type $(ARCH_REL_TYPE_ABS) needs to be defined before
 # the inclusion of generic Makefile.
 ARCH_REL_TYPE_ABS := R_X86_64_JUMP_SLOT|R_X86_64_GLOB_DAT|R_X86_64_RELATIVE|
