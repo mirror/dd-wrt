@@ -446,6 +446,7 @@ void ksmbd_init_smb_server(struct ksmbd_work *work)
 		init_smb1_server(conn);
 	else
 		init_smb3_11_server(conn);
+
 }
 
 int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
