@@ -44,9 +44,9 @@ objtool-args = $(vmlinux-objtool-args-y) --link
 # Link of vmlinux.o used for section mismatch analysis
 # ---------------------------------------------------------------------------
 
-quiet_cmd_ld_vmlinux.o = LD      $@
+quiet_cmd_ld_vmlinux.o = LDFINAL $@
       cmd_ld_vmlinux.o = \
-	$(LD) ${KBUILD_LDFLAGS} -r -o $@ \
+	$(LDFINAL) ${KBUILD_LDFLAGS} -r -o $@ \
 	$(addprefix -T , $(initcalls-lds)) \
 	--whole-archive vmlinux.a --no-whole-archive \
 	--start-group $(KBUILD_VMLINUX_LIBS) --end-group \
@@ -58,7 +58,7 @@ define rule_ld_vmlinux.o
 endef
 
 vmlinux.o: $(initcalls-lds) vmlinux.a $(KBUILD_VMLINUX_LIBS) FORCE
-	$(call if_changed_rule,ld_vmlinux.o)
+	+$(call if_changed_rule,ld_vmlinux.o)
 
 targets += vmlinux.o
 

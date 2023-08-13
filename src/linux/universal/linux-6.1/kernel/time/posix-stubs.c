@@ -31,12 +31,20 @@ asmlinkage long sys_ni_posix_timers(void)
 }
 
 #ifndef SYS_NI
-#define SYS_NI(name)  SYSCALL_ALIAS(sys_##name, sys_ni_posix_timers)
+#define SYS_NI(name)  SYSCALL_ALIAS_PROTO(sys_##name, sys_ni_posix_timers)
 #endif
 
 #ifndef COMPAT_SYS_NI
-#define COMPAT_SYS_NI(name)  SYSCALL_ALIAS(compat_sys_##name, sys_ni_posix_timers)
+#define COMPAT_SYS_NI(name) \
+	SYSCALL_ALIAS_PROTO(compat_sys_##name, sys_ni_posix_timers)
 #endif
+
+/*
+ * This cannot go to SYS_NI() or SYSCALL_ALIAS_PROTO() due to gcc bug fixed in
+ * gcc >= 13 (cf. PR 97498). I wonder how is __SYSCALL_DEFINEx() able to work?
+ */
+__diag_push();
+__diag_ignore(GCC, 8, "-Wattribute-alias", "Alias to nonimplemented syscall");
 
 SYS_NI(timer_create);
 SYS_NI(timer_gettime);
@@ -50,6 +58,8 @@ SYS_NI(clock_adjtime32);
 #ifdef __ARCH_WANT_SYS_ALARM
 SYS_NI(alarm);
 #endif
+
+__diag_pop();
 
 /*
  * We preserve minimal support for CLOCK_REALTIME and CLOCK_MONOTONIC
@@ -158,6 +168,9 @@ SYSCALL_DEFINE4(clock_nanosleep, const clockid_t, which_clock, int, flags,
 				 which_clock);
 }
 
+__diag_push();
+__diag_ignore(GCC, 8, "-Wattribute-alias", "Alias to nonimplemented syscall");
+
 #ifdef CONFIG_COMPAT
 COMPAT_SYS_NI(timer_create);
 #endif
@@ -170,6 +183,8 @@ COMPAT_SYS_NI(setitimer);
 #ifdef CONFIG_COMPAT_32BIT_TIME
 SYS_NI(timer_settime32);
 SYS_NI(timer_gettime32);
+
+__diag_pop();
 
 SYSCALL_DEFINE2(clock_settime32, const clockid_t, which_clock,
 		struct old_timespec32 __user *, tp)

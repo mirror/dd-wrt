@@ -692,6 +692,21 @@ config HAS_LTO_CLANG
 	  The compiler and Kconfig options support building with Clang's
 	  LTO.
 
+config ARCH_SUPPORTS_LTO_GCC
+	bool
+
+# Some ar versions leak file descriptors when using the LTO
+# plugin and cause strange errors when ulimit -n is too low.
+# Pick an arbitrary threshold, which should be enough for most
+# kernel configs. This was a regression that is only
+# in some transient binutils version, so either older or
+# new enough is ok.
+# This might not be the exact range with this bug.
+config BAD_AR
+	depends on LD_VERSION = 23000
+	depends on $(shell,ulimit -n) < 4000
+	def_bool y
+
 choice
 	prompt "Link Time Optimization (LTO)"
 	default LTO_NONE
@@ -739,7 +754,44 @@ config LTO_CLANG_THIN
 	    https://clang.llvm.org/docs/ThinLTO.html
 
 	  If unsure, say Y.
+
+config LTO_GCC
+	bool "gcc LTO"
+	depends on ARCH_SUPPORTS_LTO_GCC && CC_IS_GCC
+	depends on GCC_VERSION >= 100300
+	depends on LD_VERSION >= 22700
+	depends on !BAD_AR
+	select LTO
+	help
+	  Enable whole program (link time) optimizations (LTO) for the whole
+	  kernel and each module. This usually increases compile time,
+	  especially for incremential builds, but tends to generate better code
+	  as well as some global checks.
+
+	  It allows the compiler to inline functions between different files
+	  and do other global optimization, like propagating constants between
+	  functions, determine side effects of functions, avoid unnecessary
+	  register saving around functions, or optimize unused function
+	  arguments. It also allows the compiler to drop unused functions.
+
+	  With this option the compiler will also do some global checking over
+	  different source files.
+
+	  This requires a gcc 10.3 or later compiler and binutils >= 2.27.
+
+	  On larger non modular configurations this may need more than 4GB of
+	  RAM for the link phase, as well as a 64bit host compiler.
+
+	  For more information see Documentation/kbuild/lto-build.rst
 endchoice
+
+config LTO_CP_CLONE
+	bool "Allow aggressive cloning for function specialization"
+	depends on LTO_GCC
+	help
+	  Allow the compiler to clone and specialize functions for specific
+	  arguments when it determines these arguments are commonly
+	  called.  Experimential. Will increase text size.
 
 config ARCH_SUPPORTS_CFI_CLANG
 	bool

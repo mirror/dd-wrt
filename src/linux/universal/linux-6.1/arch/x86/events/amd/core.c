@@ -643,7 +643,7 @@ static inline void amd_pmu_ack_global_status(u64 status)
 	wrmsrl(MSR_AMD64_PERF_CNTR_GLOBAL_STATUS_CLR, status);
 }
 
-static bool amd_pmu_test_overflow_topbit(int idx)
+__visible_on_lto bool amd_pmu_test_overflow_topbit(int idx)
 {
 	u64 counter;
 

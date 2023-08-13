@@ -64,7 +64,7 @@ struct snp_cpuid_table {
 static u16 ghcb_version __ro_after_init;
 
 /* Copy of the SNP firmware's CPUID page. */
-static struct snp_cpuid_table cpuid_table_copy __ro_after_init;
+__visible_on_lto struct snp_cpuid_table cpuid_table_copy __ro_after_init;
 
 /*
  * These will be initialized based on CPUID table so that non-present

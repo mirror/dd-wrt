@@ -1641,7 +1641,7 @@ u64 __weak bpf_probe_read_kernel(void *dst, u32 size, const void *unsafe_ptr)
  *
  * Return: whatever value is in %BPF_R0 at program exit
  */
-static u64 ___bpf_prog_run(u64 *regs, const struct bpf_insn *insn)
+static u64 __noreorder ___bpf_prog_run(u64 *regs, const struct bpf_insn *insn)
 {
 #define BPF_INSN_2_LBL(x, y)    [BPF_##x | BPF_##y] = &&x##_##y
 #define BPF_INSN_3_LBL(x, y, z) [BPF_##x | BPF_##y | BPF_##z] = &&x##_##y##_##z

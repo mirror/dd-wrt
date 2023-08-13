@@ -106,13 +106,13 @@ static __always_inline bool should_resched(int preempt_offset)
 #ifdef CONFIG_PREEMPTION
 
 extern asmlinkage void preempt_schedule(void);
-extern asmlinkage void preempt_schedule_thunk(void);
+extern __visible asmlinkage void preempt_schedule_thunk(void);
 
 #define preempt_schedule_dynamic_enabled	preempt_schedule_thunk
 #define preempt_schedule_dynamic_disabled	NULL
 
 extern asmlinkage void preempt_schedule_notrace(void);
-extern asmlinkage void preempt_schedule_notrace_thunk(void);
+extern __visible asmlinkage void preempt_schedule_notrace_thunk(void);
 
 #define preempt_schedule_notrace_dynamic_enabled	preempt_schedule_notrace_thunk
 #define preempt_schedule_notrace_dynamic_disabled	NULL

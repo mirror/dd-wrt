@@ -604,7 +604,7 @@ restart:
 /**
  * irq_enter_rcu - Enter an interrupt context with RCU watching
  */
-void irq_enter_rcu(void)
+__visible void irq_enter_rcu(void)
 {
 	__irq_enter_raw();
 
@@ -657,7 +657,7 @@ static inline void __irq_exit_rcu(void)
  *
  * Also processes softirqs if needed and possible.
  */
-void irq_exit_rcu(void)
+__visible void irq_exit_rcu(void)
 {
 	__irq_exit_rcu();
 	 /* must be last! */

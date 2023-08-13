@@ -10,6 +10,7 @@
 # Sanitizer runtimes are unavailable and cannot be linked here.
 KASAN_SANITIZE			:= n
 KCSAN_SANITIZE			:= n
+KBUILD_CFLAGS			+= $(DISABLE_LTO_GCC)
 
 subdir- := rm
 
