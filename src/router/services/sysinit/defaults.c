@@ -1148,6 +1148,7 @@ struct nvram_param srouter_defaults[] = {
 #elif defined(HAVE_TMK)
 	{ "wl0_ssid", "KMT" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "KMT" },	/* Service set ID (network name) */
+	{ "wlan0_intmit", "1" }, /* enable noise immunity */
 #elif defined(HAVE_BKM)
 	{ "wl0_ssid", "BKM-HSDL" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "BKM-HSDL" },	/* Service set ID (network name) */
