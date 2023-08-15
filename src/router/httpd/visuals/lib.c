@@ -96,11 +96,7 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_REGISTER
 	if (wp->isregistered && !wp->isregistered_real) {
-#ifdef HAVE_TMK
-		websWrite(wp, "register.asp");
-#else
 		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
-#endif
 	} else
 #endif
 	{
