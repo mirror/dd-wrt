@@ -646,14 +646,19 @@ ifeq ($(CONFIG_TMK),y)
 	#mkdir $(INSTALLDIR)/www/style/maksat
 	#cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
 	mkdir -p $(INSTALLDIR)/etc/config
-	cp -f kmt/defaults/config/* $(INSTALLDIR)/etc/config
+	cp -f kmt/defaults/config/*.startup $(INSTALLDIR)/etc/config
+	cp -f kmt/defaults/config/kmtdefaults.bin $(INSTALLDIR)/etc/config
 	chmod 777 $(INSTALLDIR)/etc/config/nsmd.startup
 	mkdir -p $(INSTALLDIR)/sbin
 	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
 ifeq ($(CONFIG_VENTANA),y)
 	rm $(INSTALLDIR)/etc/config/kmtdefaults.bin		
 	rm $(INSTALLDIR)/etc/config/kmtdefaults.startup		
-	rm $(INSTALLDIR)/etc/config/z_kmt_gpios.startup		
+	rm $(INSTALLDIR)/etc/config/z_kmt_gpios.startup
+ifeq ($(CONFIG_NEWPORT),y)
+	cp -f kmt/defaults/config/newportdefaults.sh $(INSTALLDIR)/etc/config/kmtnewportdefaults.startup
+	cp -f kmt/defaults/config/newportdefaults.bin $(INSTALLDIR)/etc/config/kmtnewportdefaults.bin
+endif
 endif
 endif
 ifeq ($(CONFIG_BKM),y)
