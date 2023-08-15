@@ -651,7 +651,9 @@ ifeq ($(CONFIG_TMK),y)
 	mkdir -p $(INSTALLDIR)/sbin
 	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
 ifeq ($(CONFIG_VENTANA),y)
+	rm $(INSTALLDIR)/etc/config/kmtdefaults.bin		
 	rm $(INSTALLDIR)/etc/config/kmtdefaults.startup		
+	rm $(INSTALLDIR)/etc/config/z_kmt_gpios.startup		
 endif
 endif
 ifeq ($(CONFIG_BKM),y)
