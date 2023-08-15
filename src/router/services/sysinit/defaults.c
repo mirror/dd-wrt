@@ -1817,6 +1817,10 @@ struct nvram_param srouter_defaults[] = {
 	{ "router_name", "WDSL-Modem XXX" },
 #elif  HAVE_TMK
 	{ "router_name", "KMT-WAS" },
+	{ "wlan0_ssid", "KMT" },
+	{ "wlan0_intmit", "1" }, /* enable noise immunity */
+	{ "wlan1_ssid", "KMT" },
+	{ "wlan1_intmit", "1" }, /* enable noise immunity */
 #elif  HAVE_NDTRADE
 	{ "router_name", "ND-TRADE" },
 #elif  HAVE_ANTAIRA
