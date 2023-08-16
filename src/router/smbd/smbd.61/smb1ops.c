@@ -80,10 +80,11 @@ static struct smb_version_cmds smb1_server_cmds[256] = {
  *			command dispatcher
  * @conn:	connection instance
  */
-void init_smb1_server(struct ksmbd_conn *conn)
+int init_smb1_server(struct ksmbd_conn *conn)
 {
 	conn->vals = &smb1_server_values;
 	conn->ops = &smb1_server_ops;
 	conn->cmds = smb1_server_cmds;
 	conn->max_cmds = ARRAY_SIZE(smb1_server_cmds);
+	return 0;
 }
