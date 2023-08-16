@@ -1582,7 +1582,7 @@ struct smb_com_setattr_rsp {
 } __packed;
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
-extern void init_smb1_server(struct ksmbd_conn *conn);
+extern int init_smb1_server(struct ksmbd_conn *conn);
 #endif
 
 /* function prototypes */
