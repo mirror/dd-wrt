@@ -1,4 +1,10 @@
 powertop-configure:
+	cd powertop && rm -f config.cache
+	cd powertop && libtoolize
+	cd powertop && aclocal
+	cd powertop && autoconf
+	cd powertop && autoheader
+	cd powertop && autoreconf -vfi
 	cd powertop && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux \
 	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
 	NCURSES_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
