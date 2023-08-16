@@ -117,7 +117,7 @@ void show_tab(unsigned int tab)
 
 	wattrset(tab_bar, A_REVERSE);
 	mvwprintw(tab_bar, 0,0, "%120s", "");
-	mvwprintw(tab_bar, 0,0, "PowerTOP %s", PACKAGE_SHORT_VERSION);
+	mvwprintw(tab_bar, 0,0, "PowerTOP %s", PACKAGE_VERSION);
 
 	bottom_line = newwin(1, 0, LINES-1, 0);
 	wattrset(bottom_line, A_REVERSE);
@@ -125,7 +125,7 @@ void show_tab(unsigned int tab)
 
 	c = bottom_lines[tab_names[tab]].c_str();
 	if (c && strlen(c) > 0)
-		mvwprintw(bottom_line, 0,0, c);
+		mvwprintw(bottom_line, 0,0, "%s", c);
 	else
 		mvwprintw(bottom_line, 0, 0,
 			"<ESC> %s | <TAB> / <Shift + TAB> %s | ", _("Exit"),
@@ -244,7 +244,7 @@ void cursor_down(void)
 	w = tab_windows[tab_names[current_tab]];
 	if (w) {
 		if (w->ypad_pos < 1000) {
-			if (tab_names[current_tab] == "Tunables" || "WakeUp") {
+			if (tab_names[current_tab] == "Tunables" || tab_names[current_tab] == "WakeUp") {
 		                if ((w->cursor_pos + 7) >= LINES) { 
 					prefresh(w->win, ++w->ypad_pos, w->xpad_pos, 
 						1, 0, LINES - 3, COLS - 1);
