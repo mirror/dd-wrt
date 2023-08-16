@@ -5,15 +5,13 @@ SUBDIRS = \
 	traceevent \
 	src \
 	po \
-	doc
+	doc \
+	scripts/bash-completion
 
 EXTRA_DIST = \
 	config.rpath \
 	m4/ChangeLog  \
 	README \
 	TODO \
-	Android.mk \
 	COPYING \
-	version-long \
-	version-short \
 	autogen.sh

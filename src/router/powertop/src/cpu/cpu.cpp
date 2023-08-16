@@ -247,7 +247,7 @@ static void handle_i965_gpu(void)
 void enumerate_cpus(void)
 {
 	ifstream file;
-	char line[1024];
+	char line[4096];
 
 	int number = -1;
 	char vendor[128];
@@ -304,7 +304,7 @@ void enumerate_cpus(void)
 		 */
 		if (strncasecmp(line, "bogomips\t", 9) == 0
 		    || strncasecmp(line, "CPU revision\t", 13) == 0
-		    || strncmp(line, "revision", 7) == 0) {
+		    || strncmp(line, "revision", 8) == 0) {
 			if (number == -1) {
 				/* Not all /proc/cpuinfo include "processor\t". */
 				number = 0;
@@ -551,6 +551,12 @@ void report_display_cpu_cstates(void)
 				if (!_core->can_collapse()) {
 					buffer[0] = 0;
 					buffer2[0] = 0;
+					
+					/*
+						* Patch for compatibility with Ryzen processors
+						* See https://github.com/fenrus75/powertop/issues/64
+					*/
+					if(idx2 >= core_tbl_size.cols * core_tbl_size.rows) break;
 
 					if (line == LEVEL_HEADER) {
 						/* Here we need to check for which core type we
@@ -576,6 +582,8 @@ void report_display_cpu_cstates(void)
 							}
 						}
 					} else {
+
+						
 						tmp_str=string(_core->fill_cstate_name(line, buffer));
 						core_data[idx2]=(tmp_str=="" ? "&nbsp;" : tmp_str);
 						idx2+=1;

@@ -1,9 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
-AC_INIT([powertop], m4_esyscmd_s([cat version-long]),
-	[powertop@lists.01.org], [], [https://01.org/powertop])
+AC_PREREQ([2.69])
+AC_INIT([powertop], [2.15], [powertop@lists.01.org], [], [https://github.com/fenrus75/powertop])
 AM_INIT_AUTOMAKE([
 	-Wall
 	1.12.2
@@ -17,6 +16,7 @@ AC_CONFIG_FILES([
 	traceevent/Makefile
 	po/Makefile.in
 	doc/Makefile
+	scripts/bash-completion/Makefile
 ])
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_MACRO_DIR([m4])
@@ -29,6 +29,9 @@ AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION([0.18.2])
 
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+AX_REQUIRE_DEFINED([AX_ADD_FORTIFY_SOURCE])
+AX_REQUIRE_DEFINED([AX_CXX_COMPILE_STDCXX])
+AX_REQUIRE_DEFINED([AX_PTHREAD])
 # Checks for programs.
 AC_PROG_CPP
 AC_PROG_CXX
@@ -36,8 +39,9 @@ AC_PROG_LIBTOOL
 AC_PROG_CC
 AC_PROG_INSTALL
 AM_PROG_CC_C_O
-GCC_FORTIFY_SOURCE_CC
-AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
+AX_ADD_FORTIFY_SOURCE
+AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
+PKG_PROG_PKG_CONFIG
 
 # Checks for libraries.
 AX_PTHREAD([
@@ -82,8 +86,10 @@ AC_TYPE_UINT64_T
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
+AC_FUNC_STRERROR_R
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([ \
+	clock_gettime \
 	fdatasync \
 	getpagesize \
 	gettimeofday \
@@ -100,6 +106,7 @@ AC_CHECK_FUNCS([ \
 	sqrt \
 	strcasecmp \
 	strchr \
+	strrchr \
 	strdup \
 	strerror \
 	strncasecmp \
@@ -151,7 +158,12 @@ AC_SEARCH_LIBS([inet_aton], [resolv], [], [
 	AC_MSG_ERROR([libresolv is required but was not found])
 ], [])
 
-AC_DEFINE([PACKAGE_SHORT_VERSION], m4_esyscmd_s([cat version-short]),
-	[Short package version])
+
+AS_IF([`${PKG_CONFIG} --exists bash-completion`], [
+	bashcompletiondir=`${PKG_CONFIG} --variable=completionsdir --define-variable=prefix=${prefix} bash-completion`
+], [
+	bashcompletiondir=${datadir}/bash-completion/completions
+])
+AC_SUBST([bashcompletiondir], [$bashcompletiondir])
 
 AC_OUTPUT

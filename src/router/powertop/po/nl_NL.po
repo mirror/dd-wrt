@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PowerTOP\n"
 "Report-Msgid-Bugs-To: \"powertop@lists.01.org\"\n"
-"POT-Creation-Date: 2019-01-04 16:21-0800\n"
+"POT-Creation-Date: 2022-09-29 04:45-0700\n"
 "PO-Revision-Date: 2013-11-05 08:40+0000\n"
 "Last-Translator: Margie Foster <margie@linux.intel.com>\n"
 "Language-Team: Dutch (Netherlands) (http://www.transifex.com/projects/p/"
@@ -97,7 +97,7 @@ msgstr ""
 msgid " Core(OS)"
 msgstr ""
 
-#: src/cpu/cpu_core.cpp:91 src/cpu/intel_cpus.cpp:324
+#: src/cpu/cpu_core.cpp:91 src/cpu/intel_cpus.cpp:367
 #, c-format
 msgid "  Core"
 msgstr ""
@@ -128,39 +128,39 @@ msgstr ""
 msgid "Processor Idle State Report"
 msgstr ""
 
-#: src/cpu/cpu.cpp:535 src/cpu/cpu.cpp:753
+#: src/cpu/cpu.cpp:535 src/cpu/cpu.cpp:761
 msgid "Package"
 msgstr ""
 
-#: src/cpu/cpu.cpp:566 src/cpu/cpu.cpp:775
+#: src/cpu/cpu.cpp:572 src/cpu/cpu.cpp:783
 #, c-format
 msgid "Core %d"
 msgstr ""
 
-#: src/cpu/cpu.cpp:573
+#: src/cpu/cpu.cpp:579
 #, c-format
 msgid "GPU %d"
 msgstr ""
 
-#: src/cpu/cpu.cpp:594
+#: src/cpu/cpu.cpp:602
 msgid "CPU"
 msgstr ""
 
-#: src/cpu/cpu.cpp:676
+#: src/cpu/cpu.cpp:684
 msgid "Processor Frequency Report"
 msgstr ""
 
-#: src/cpu/cpu.cpp:796
+#: src/cpu/cpu.cpp:804
 #, c-format
 msgid "CPU %d"
 msgstr ""
 
-#: src/cpu/cpu.cpp:997
+#: src/cpu/cpu.cpp:1005
 #, c-format
 msgid "cpu_idle event returned no state?\n"
 msgstr ""
 
-#: src/cpu/cpu.cpp:1012
+#: src/cpu/cpu.cpp:1020
 #, c-format
 msgid "power or cpu_frequency event returned no state?\n"
 msgstr ""
@@ -174,7 +174,7 @@ msgstr "C0 polling"
 msgid " CPU(OS) %i"
 msgstr ""
 
-#: src/cpu/cpu_linux.cpp:341 src/cpu/intel_cpus.cpp:651
+#: src/cpu/cpu_linux.cpp:341 src/cpu/intel_cpus.cpp:733
 #, c-format
 msgid " CPU %i"
 msgstr ""
@@ -189,21 +189,21 @@ msgstr ""
 msgid " Pkg(OS)"
 msgstr ""
 
-#: src/cpu/cpu_package.cpp:104 src/cpu/intel_cpus.cpp:412
+#: src/cpu/cpu_package.cpp:104 src/cpu/intel_cpus.cpp:498
 #, c-format
 msgid "  Package"
 msgstr ""
 
-#: src/cpu/intel_cpus.cpp:129
+#: src/cpu/intel_cpus.cpp:152
 #, c-format
 msgid "read_msr cpu%d 0x%llx : "
 msgstr ""
 
-#: src/cpu/intel_cpus.cpp:574
+#: src/cpu/intel_cpus.cpp:656
 msgid "C0 active"
 msgstr "C0 active"
 
-#: src/cpu/intel_cpus.cpp:632
+#: src/cpu/intel_cpus.cpp:714
 #, c-format
 msgid "Average"
 msgstr ""
@@ -262,16 +262,16 @@ msgstr ""
 msgid "Audio codec %s: %s"
 msgstr ""
 
-#: src/devices/devfreq.cpp:261
+#: src/devices/devfreq.cpp:260
 #, fuzzy
 msgid "Device Freq stats"
 msgstr "Apparaat stats"
 
-#: src/devices/devfreq.cpp:279
+#: src/devices/devfreq.cpp:278
 msgid " Devfreq is not enabled"
 msgstr ""
 
-#: src/devices/devfreq.cpp:284
+#: src/devices/devfreq.cpp:283
 msgid " No devfreq devices available"
 msgstr ""
 
@@ -282,7 +282,7 @@ msgstr ""
 
 #: src/devices/device.cpp:174 src/process/do_process.cpp:833
 #, c-format
-msgid "The power consumed was %sJ\n"
+msgid "The energy consumed was %sJ\n"
 msgstr ""
 
 #: src/devices/device.cpp:180
@@ -303,7 +303,7 @@ msgid "The battery reports a discharge rate of: "
 msgstr ""
 
 #: src/devices/device.cpp:261
-msgid "The power consumed was : "
+msgid "The energy consumed was : "
 msgstr ""
 
 #: src/devices/device.cpp:268
@@ -447,161 +447,161 @@ msgid ""
 "CONFIG_X86_MSR).\n"
 msgstr ""
 
-#: src/main.cpp:103
+#: src/main.cpp:104
 #, fuzzy, c-format
 msgid "PowerTOP version "
 msgstr "PowerTOP"
 
-#: src/main.cpp:109
+#: src/main.cpp:110
 msgid "Set refresh time out"
 msgstr "Stel verversingstijd in"
 
-#: src/main.cpp:122
+#: src/main.cpp:123
 msgid "Usage: powertop [OPTIONS]"
 msgstr ""
 
-#: src/main.cpp:123
+#: src/main.cpp:124
 msgid "sets all tunable options to their GOOD setting"
 msgstr ""
 
-#: src/main.cpp:124
+#: src/main.cpp:125
 msgid "runs powertop in calibration mode"
 msgstr ""
 
-#: src/main.cpp:125 src/main.cpp:128
+#: src/main.cpp:126 src/main.cpp:129
 msgid "[=filename]"
 msgstr ""
 
-#: src/main.cpp:125
+#: src/main.cpp:126
 msgid "generate a csv report"
 msgstr ""
 
-#: src/main.cpp:126
+#: src/main.cpp:127
 msgid "run in \"debug\" mode"
 msgstr ""
 
-#: src/main.cpp:127
+#: src/main.cpp:128
 msgid "[=devnode]"
 msgstr ""
 
-#: src/main.cpp:127
+#: src/main.cpp:128
 msgid "uses an Extech Power Analyzer for measurements"
 msgstr ""
 
-#: src/main.cpp:128
+#: src/main.cpp:129
 msgid "generate a html report"
 msgstr ""
 
-#: src/main.cpp:129
+#: src/main.cpp:130
 msgid "[=iterations] number of times to run each test"
 msgstr ""
 
-#: src/main.cpp:130
+#: src/main.cpp:131
 msgid "suppress stderr output"
 msgstr ""
 
-#: src/main.cpp:131 src/main.cpp:132
+#: src/main.cpp:132 src/main.cpp:133
 msgid "[=seconds]"
 msgstr ""
 
-#: src/main.cpp:131
+#: src/main.cpp:132
 msgid "interval for power consumption measurement"
 msgstr ""
 
-#: src/main.cpp:132
+#: src/main.cpp:133
 msgid "generate a report for 'x' seconds"
 msgstr ""
 
-#: src/main.cpp:133
+#: src/main.cpp:134
 msgid "[=workload]"
 msgstr ""
 
-#: src/main.cpp:133
+#: src/main.cpp:134
 msgid "file to execute for workload"
 msgstr ""
 
-#: src/main.cpp:134
+#: src/main.cpp:135
 msgid "print version information"
 msgstr ""
 
-#: src/main.cpp:135
+#: src/main.cpp:136
 msgid "print this help menu"
 msgstr ""
 
-#: src/main.cpp:137
+#: src/main.cpp:138
 msgid "For more help please refer to the 'man 8 powertop'"
 msgstr ""
 
-#: src/main.cpp:232
+#: src/main.cpp:233
 #, c-format
 msgid "Unknown issue running workload!\n"
 msgstr ""
 
-#: src/main.cpp:289
+#: src/main.cpp:290
 msgid "PowerTOP is out of memory. PowerTOP is Aborting"
 msgstr ""
 
-#: src/main.cpp:297
+#: src/main.cpp:298
 #, c-format
 msgid "Preparing to take measurements\n"
 msgstr "Voorbereiding om metingen te nemen\n"
 
-#: src/main.cpp:302
+#: src/main.cpp:303
 #, c-format
 msgid "Taking %d measurement(s) for a duration of %d second(s) each.\n"
 msgstr ""
 
-#: src/main.cpp:304
+#: src/main.cpp:305
 #, c-format
 msgid "Measuring workload %s.\n"
 msgstr ""
 
-#: src/main.cpp:329
+#: src/main.cpp:330
 #, c-format
 msgid "PowerTOP "
 msgstr "PowerTOP"
 
-#: src/main.cpp:330 src/main.cpp:380
+#: src/main.cpp:331 src/main.cpp:381
 #, c-format
 msgid "exiting...\n"
 msgstr "afsluiten...\n"
 
-#: src/main.cpp:364
+#: src/main.cpp:365
 #, c-format
-msgid "modprobe cpufreq_stats failed"
+msgid "modprobe cpufreq_stats failed\n"
 msgstr ""
 
-#: src/main.cpp:367
+#: src/main.cpp:368
 #, c-format
-msgid "modprobe msr failed"
+msgid "modprobe msr failed\n"
 msgstr ""
 
-#: src/main.cpp:379 src/main.cpp:383
+#: src/main.cpp:380 src/main.cpp:384
 #, c-format
 msgid "Failed to mount debugfs!\n"
 msgstr "Kan debugfs niet aankoppelen!\n"
 
-#: src/main.cpp:384
+#: src/main.cpp:385
 #, c-format
 msgid "Should still be able to auto tune...\n"
 msgstr ""
 
-#: src/main.cpp:466
+#: src/main.cpp:467
 #, c-format
 msgid "Invalid CSV filename\n"
 msgstr ""
 
-#: src/main.cpp:482
+#: src/main.cpp:483
 #, c-format
 msgid "Invalid HTML filename\n"
 msgstr ""
 
-#: src/main.cpp:491
+#: src/main.cpp:492
 #, c-format
 msgid "Quiet mode failed!\n"
 msgstr ""
 
-#: src/main.cpp:559
+#: src/main.cpp:560
 msgid "Leaving PowerTOP"
 msgstr ""
 
@@ -689,7 +689,7 @@ msgstr ""
 #: src/process/do_process.cpp:850 src/process/do_process.cpp:852
 #: src/process/do_process.cpp:932 src/process/do_process.cpp:1080
 #: src/tuning/tuning.cpp:242 src/tuning/tuning.cpp:270
-#: src/tuning/tuning.cpp:288 src/wakeup/waketab.cpp:155
+#: src/tuning/tuning.cpp:295 src/wakeup/waketab.cpp:155
 msgid "Description"
 msgstr ""
 
@@ -794,7 +794,7 @@ msgstr ""
 
 #: src/report/report.cpp:211
 #, c-format
-msgid "PowerTOP outputing using base filename %s\n"
+msgid "PowerTOP outputting using base filename %s\n"
 msgstr ""
 
 #: src/tuning/bluetooth.cpp:46 src/tuning/ethernet.cpp:50
@@ -848,6 +848,16 @@ msgstr ""
 msgid "Runtime PM for PCI Device %s"
 msgstr ""
 
+#: src/tuning/runtime.cpp:80
+#, c-format
+msgid "Runtime PM for port %s of PCI device: %s"
+msgstr ""
+
+#: src/tuning/runtime.cpp:83
+#, c-format
+msgid "Runtime PM for disk %s"
+msgstr ""
+
 #: src/tuning/tuning.cpp:62
 msgid "Enable Audio codec power management"
 msgstr "Audio codec energiebeheer inschakelen"
@@ -884,7 +894,7 @@ msgstr ""
 msgid "Untunable Software Issues"
 msgstr ""
 
-#: src/tuning/tuning.cpp:300
+#: src/tuning/tuning.cpp:307
 msgid "Optimal Tuned Software Settings"
 msgstr ""
 
@@ -933,12 +943,12 @@ msgstr ""
 
 #: src/wakeup/wakeup.cpp:48 src/wakeup/wakeup_ethernet.cpp:47
 #: src/wakeup/wakeup_usb.cpp:47
-msgid "Enable"
+msgid "Enabled"
 msgstr ""
 
 #: src/wakeup/wakeup.cpp:49 src/wakeup/wakeup_ethernet.cpp:47
 #: src/wakeup/wakeup_usb.cpp:47
-msgid "Disable"
+msgid "Disabled"
 msgstr ""
 
 #: src/wakeup/wakeup_usb.cpp:51
