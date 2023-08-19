@@ -1,0 +1,423 @@
+/*
+ * Copyright 2018 Gateworks Corporation
+ *
+ * This file is dual-licensed: you can use it either under the terms
+ * of the GPL or the X11 license, at your option. Note that this dual
+ * licensing only applies to this file, and not this project as a
+ * whole.
+ *
+ *  a) This library is free software; you can redistribute it and/or
+ *     modify it under the terms of the GNU General Public License as
+ *     published by the Free Software Foundation; either version 2 of the
+ *     License, or (at your option) any later version.
+ *
+ *     This library is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public
+ *     License along with this library; if not, write to the Free
+ *     Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ *     MA 02110-1301 USA
+ *
+ * Or, alternatively,
+ *
+ *  b) Permission is hereby granted, free of charge, to any person
+ *     obtaining a copy of this software and associated documentation
+ *     files (the "Software"), to deal in the Software without
+ *     restriction, including without limitation the rights to use,
+ *     copy, modify, merge, publish, distribute, sublicense, and/or
+ *     sell copies of the Software, and to permit persons to whom the
+ *     Software is furnished to do so, subject to the following
+ *     conditions:
+ *
+ *     The above copyright notice and this permission notice shall be
+ *     included in all copies or substantial portions of the Software.
+ *
+ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *     OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/include/ "cn81xx-linux.dtsi"
+
+/ {
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	clocks {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		clk20m: clk@0 {
+			compatible = "fixed-clock";
+			reg = <0>;
+			#clock-cells = <0>;
+			clock-frequency = <20000000>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		user_pb1x {
+			label = "user_pb1x";
+			linux,code = <256>; /* BTN_0 */
+			interrupt-parent = <&gsc>;
+			interrupts = <0>;
+		};
+
+		key_erased {
+			label = "key-erased";
+			linux,code = <257>; /* BTN_1 */
+			interrupt-parent = <&gsc>;
+			interrupts = <1>;
+		};
+
+		eeprom_wp {
+			label = "eeprom_wp";
+			linux,code = <258>; /* BTN_2 */
+			interrupt-parent = <&gsc>;
+			interrupts = <2>;
+		};
+
+		tamper {
+			label = "tamper";
+			linux,code = <260>; /* BTN_4 */
+			interrupt-parent = <&gsc>;
+			interrupts = <5>;
+		};
+
+		switch_hold {
+			label = "switch_hold";
+			linux,code = <261>; /* BTN_5 */
+			interrupt-parent = <&gsc>;
+			interrupts = <7>;
+		};
+
+		user_pb {
+			label = "user_pb";
+			gpios = <&gsc_gpio 2 1>;
+			linux,code = <259>; /* BTN_3 */
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* Bi-Color LED */
+		led0: user1 {
+			label = "user1"; /* GREEN */
+			gpios = <&gpio_6_0 31 0>;
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+
+		led1: user2 {
+			label = "user2"; /* RED */
+			gpios = <&gpio_6_0 14 0>;
+			default-state = "off";
+		};
+	};
+
+	pps {
+		compatible = "pps-gpio";
+		gpios = <&gpio_6_0 30 0>;
+	};
+};
+
+&mrml_bridge {
+	/* CN8xxx MDIO */
+	mdio-nexus@1,3 {
+		/* MDIO0 */
+		mdio0@87e005003800 {
+			rgmii00: rgmii00 {
+				reg = <0>; /* phy address */
+				compatible = "ti,dp83867", "ethernet-phy-ieee802.3-c22";
+				phy-mode = "rgmii-id";
+				ti,rx-internal-delay = <0x7>; /* 2ns */
+				ti,tx-internal-delay = <0x7>; /* 20ps */
+				ti,fifo-depth = <3>; /* 0=3 1=4 2=6 3=8 */
+			};
+		};
+		/* MDIO1 */
+		mdio1@87e005003880 {
+			qsgmii00: qsgmii00 {
+				qlm-mode = "0x000,qsgmii";
+				reg = <0x0>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
+			};
+			qsgmii01: qsgmii01 {
+				qlm-mode = "0x001,qsgmii";
+				reg = <0x1>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
+			};
+			qsgmii02: qsgmii02 {
+				qlm-mode = "0x002,qsgmii";
+				reg = <0x2>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
+			};
+			qsgmii03: qsgmii03 {
+				qlm-mode = "0x003,qsgmii";
+				reg = <0x3>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
+			};
+		};
+	};
+
+	rgx0 {
+		rgmii00 {
+			reg = <0>;
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&rgmii00>;
+		};
+	};
+
+	/* DLM1 => QSGMII (vsc8574) */
+	bgx0 {
+		qsgmii00 {
+			reg = <0>;
+			qlm-mode = "0x000,qsgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&qsgmii00>;
+		};
+		qsgmii01 {
+			reg = <1>;
+			qlm-mode = "0x001,qsgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&qsgmii01>;
+		};
+		qsgmii02 {
+			reg = <2>;
+			qlm-mode = "0x002,qsgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&qsgmii02>;
+		};
+		qsgmii03 {
+			reg = <3>;
+			qlm-mode = "0x003,qsgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&qsgmii03>;
+		};
+	};
+};
+
+&mmc_1_4 {
+	/* CMD0 placeholder */
+	mmc-slot@0 {
+		compatible = "mmc-slot";
+		reg = <0>;
+		vmmc-supply = <&mmc_supply_3v3>;
+		max-frequency = <35000000>;
+		/* 1.8v is not supported */
+		no-1-8-v;
+		/* No write-protect switch is present */
+		disable-wp;
+		/* no card detection available; polling must be used. */
+		broken-cd;
+		/* speed up device probing */
+		no-sdio;
+	};
+
+	/* CMD1 placeholder */
+	mmc-slot@1 {
+		compatible = "mmc-slot";
+		reg = <1>;
+		vmmc-supply = <&mmc_supply_3v3>;
+		max-frequency = <35000000>;
+		/* 1.8v is not supported */
+		no-1-8-v;
+		/* No write-protect switch is present */
+		disable-wp;
+		/* no card detection available; polling must be used. */
+		broken-cd;
+		/* speed up device probing */
+		no-sdio;
+	};
+};
+
+/* TWSI0 */
+&i2c_9_0 {
+	gsc: gsc@20 {
+		compatible = "gw,gsc-v3";
+		reg = <0x20>;
+		interrupt-parent = <&gpio_6_0>;
+		interrupts = <4 1>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		gsc_hwmon {
+			compatible = "gw,gsc-hwmon";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			gw,fan-base = <0x0a>;
+
+			hwmon@6 {
+				type = "gw,hwmon-temperature";
+				reg = <0x06>;
+				label = "temp";
+			};
+
+			hwmon@8 {
+				type = "gw,hwmon-voltage";
+				reg = <0x08>;
+				label = "vdd_bat";
+			};
+
+			hwmon@16 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x16>;
+				label = "fan_tach";
+			};
+
+			hwmon@82 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x82>;
+				label = "vdd_vin";
+				gw,voltage-divider = <22100 1000>;
+				gw,voltage-offset = <800>;
+			};
+
+			hwmon@84 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x84>;
+				label = "vdd_5p0";
+				gw,voltage-divider = <22100 10000>;
+			};
+
+			hwmon@86 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x86>;
+				label = "vdd_3p3";
+				gw,voltage-divider = <10000 10000>;
+			};
+
+			hwmon@88 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x88>;
+				label = "vdd_2p5";
+				gw,voltage-divider = <10000 10000>;
+			};
+
+			hwmon@8c {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x8c>;
+				label = "vdd_core";
+			};
+
+			hwmon@8e {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x8e>;
+				label = "vdd_0p9";
+			};
+
+			hwmon@90 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x90>;
+				label = "vdd_1p0";
+			};
+
+			hwmon@92 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x92>;
+				label = "vdd_1p2";
+			};
+
+			hwmon@98 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x98>;
+				label = "vdd_1p5";
+			};
+
+			hwmon@9a {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x9a>;
+				label = "vdd_1p8";
+			};
+
+			hwmon@9c {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x9c>;
+				label = "vdd_an1";
+			};
+
+			hwmon@9e {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x9e>;
+				label = "vdd_an2";
+			};
+
+			hwmon@a2 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0xa2>;
+				label = "vdd_gsc";
+				gw,voltage-divider = <10000 10000>;
+			};
+		};
+	};
+
+	/* regulator */
+	regulator_core: max20730-i2c@56 {
+		compatible = "max,max20730";
+		reg = <0x56>;
+	};
+
+	eeprom1: eeprom@50 {
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+
+	eeprom2: eeprom@51 {
+		compatible = "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <16>;
+	};
+
+	eeprom3: eeprom@52 {
+		compatible = "atmel,24c02";
+		reg = <0x52>;
+		pagesize = <16>;
+	};
+
+	eeprom4: eeprom@53 {
+		compatible = "atmel,24c02";
+		reg = <0x53>;
+		pagesize = <16>;
+	};
+
+	gsc_gpio: pca9555@23 {
+		compatible = "nxp,pca9555";
+		reg = <0x23>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-parent = <&gsc>;
+		interrupts = <4>;
+	};
+
+	rtc: ds1672@68 {
+		compatible = "dallas,ds1672";
+		reg = <0x68>;
+	};
+};
+
+&spi_7_0 {
+	can0: can@1 {
+		compatible = "microchip,mcp2515";
+		reg = <1>;
+		clocks = <&clk20m>;
+		interrupt-parent = <&gpio_6_0>;
+		interrupts = <5 0x2>;
+		spi-max-frequency = <10000000>;
+	};
+};
