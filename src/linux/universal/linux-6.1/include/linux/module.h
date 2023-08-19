@@ -72,9 +72,13 @@ extern ssize_t __modver_version_show(struct module_attribute *,
 extern struct module_attribute module_uevent;
 
 /* These are either module local, or the kernel's dummy ones. */
-__visible_on_lto int init_module(void);
-__visible_on_lto void cleanup_module(void);
-
+#ifdef CONFIG_LTO_GCC
+__visible int init_module(void);
+__visible void cleanup_module(void);
+#else
+int init_module(void);
+void cleanup_module(void);
+#endif
 #ifndef MODULE
 /**
  * module_init() - driver initialization entry point
@@ -124,7 +128,7 @@ __visible_on_lto void cleanup_module(void);
 #define late_initcall_sync(fn)		module_init(fn)
 
 #define console_initcall(fn)		module_init(fn)
-
+#ifdef CONFIG_LTO_GCC
 /* Each module must use one module_init(). */
 #define module_init(initfn)					\
 	static inline initcall_t __maybe_unused __inittest(void)		\
@@ -141,6 +145,25 @@ __visible_on_lto void cleanup_module(void);
 		__attribute__((alias(#exitfn)));		\
 	___ADDRESSABLE(cleanup_module, __exitdata);
 
+#else
+/* Each module must use one module_init(). */
+#define module_init(initfn)					\
+	static inline initcall_t __maybe_unused __inittest(void)		\
+	{ return initfn; }					\
+	int init_module(void) __copy(initfn)			\
+		__attribute__((alias(#initfn)));		\
+	___ADDRESSABLE(init_module, __initdata);
+
+/* This is only required if you want to be unloadable. */
+#define module_exit(exitfn)					\
+	static inline exitcall_t __maybe_unused __exittest(void)		\
+	{ return exitfn; }					\
+	void cleanup_module(void) __copy(exitfn)		\
+		__attribute__((alias(#exitfn)));		\
+	___ADDRESSABLE(cleanup_module, __exitdata);
+
+
+#endif
 #endif
 
 /* This means "can be init if no module support, otherwise module load

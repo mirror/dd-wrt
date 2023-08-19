@@ -170,8 +170,6 @@ SECTIONS
 			HYPERVISOR_TEXT
 			IDMAP_TEXT
 			*(.gnu.warning)
-		. = ALIGN(16);
-		*(.got)			/* Global offset table		*/
 	}
 
 	/*
@@ -187,6 +185,8 @@ SECTIONS
 
 	/* everything from this point to __init_begin will be marked RO NX */
 	RO_DATA(PAGE_SIZE)
+
+	.data.rel.ro : ALIGN(8) { *(.got) *(.data.rel.ro*) }
 
 	HYPERVISOR_DATA_SECTIONS
 
@@ -276,6 +276,8 @@ SECTIONS
 	_sdata = .;
 	RW_DATA(L1_CACHE_BYTES, PAGE_SIZE, THREAD_ALIGN)
 
+	.data.rel : ALIGN(8) { *(.data.rel*) }
+
 	/*
 	 * Data written with the MMU off but read with the MMU on requires
 	 * cache lines to be invalidated, discarding up to a Cache Writeback
@@ -324,8 +326,6 @@ SECTIONS
 	}
 	ASSERT(SIZEOF(.plt) == 0, "Unexpected run-time procedure linkages detected!")
 
-	.data.rel.ro : { *(.data.rel.ro) }
-	ASSERT(SIZEOF(.data.rel.ro) == 0, "Unexpected RELRO detected!")
 }
 
 #include "image-vars.h"

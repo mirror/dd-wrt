@@ -387,9 +387,12 @@
 /*
  * https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#Common-Function-Attributes
  */
-
+#ifdef CONFIG_LTO_GCC
 #if __has_attribute(__no_reorder__)
 #define __noreorder			__attribute__((no_reorder))
+#else
+#define __noreorder
+#endif
 #else
 #define __noreorder
 #endif

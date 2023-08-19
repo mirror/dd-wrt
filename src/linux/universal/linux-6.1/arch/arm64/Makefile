@@ -18,6 +18,10 @@ ifeq ($(CONFIG_RELOCATABLE), y)
 # with the relocation offsets always being zero.
 LDFLAGS_vmlinux		+= -shared -Bsymbolic -z notext \
 			$(call ld-option, --no-apply-dynamic-relocs)
+
+# Generate position independent code without relying on a Global Offset Table
+KBUILD_CFLAGS_KERNEL   += -fpie -include $(srctree)/include/linux/hidden.h
+
 endif
 
 ifeq ($(CONFIG_ARM64_ERRATUM_843419),y)
