@@ -50,13 +50,13 @@ void set_ndpi_free(void (*__ndpi_free)(void *ptr)) {
 /* ****************************************** */
 
 u_int32_t ndpi_get_tot_allocated_memory() {
-  return(__sync_fetch_and_add(&ndpi_tot_allocated_memory, 0));
+  return(atomic_fetch_add(&ndpi_tot_allocated_memory, 0));
 }
 
 /* ****************************************** */
 
 void *ndpi_malloc(size_t size) {
-  __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+  atomic_fetch_add(&ndpi_tot_allocated_memory, size);
   return(_ndpi_malloc ? _ndpi_malloc(size) : malloc(size));
 }
 
@@ -68,7 +68,7 @@ void *ndpi_calloc(unsigned long count, size_t size) {
 
   if(p) {
     memset(p, 0, len);
-    __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+    atomic_fetch_add(&ndpi_tot_allocated_memory, size);
   }
 
   return(p);

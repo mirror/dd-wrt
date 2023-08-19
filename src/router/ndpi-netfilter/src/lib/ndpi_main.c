@@ -282,7 +282,7 @@ static volatile long int ndpi_tot_allocated_memory;
 /* ****************************************** */
 
 u_int32_t ndpi_get_tot_allocated_memory() {
-  return(__sync_fetch_and_add(&ndpi_tot_allocated_memory, 0));
+  return(atomic_fetch_add(&ndpi_tot_allocated_memory, 0));
 }
 
 /* ****************************************** */
@@ -295,7 +295,7 @@ void *ndpi_malloc(size_t size) {
 		NULL;
 #endif
   if(ret)
-    __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+    atomic_fetch_add(&ndpi_tot_allocated_memory, size);
   return(ret);
 }
 
@@ -313,7 +313,7 @@ void *ndpi_calloc(unsigned long count, size_t size) {
 
   if(p) {
     memset(p, 0, len);
-    __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+    atomic_fetch_add(&ndpi_tot_allocated_memory, size);
   }
 
   return(p);
