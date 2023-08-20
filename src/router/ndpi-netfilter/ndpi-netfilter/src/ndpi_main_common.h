@@ -3,9 +3,27 @@
 #include <linux/atomic.h>
 #include <asm/atomic.h>
 
+#define LINUX_VERSION_IS_LESS(x1,x2,x3)	(LINUX_VERSION_CODE < KERNEL_VERSION(x1,x2,x3))
+
+#if LINUX_VERSION_IS_LESS(4,8,0)
+static inline int
+atomic_fetch_add(int i, atomic_t *v)
+{
+	return atomic_add_return(i, v) - i;
+}
+
+static inline int
+atomic_fetch_sub(int i, atomic_t *v)
+{
+	return atomic_sub_return(i, v) + i;
+}
+#endif
+
+/*
 #ifndef  !defined(arch_atomic_fetch_add) && !defined(atomic_fetch_add)
 #define atomic_fetch_add __sync_fetch_and_add
 #endif
+*/
 
 struct ndpi_net;
 
