@@ -3,7 +3,7 @@
 #include <linux/atomic.h>
 #include <asm/atomic.h>
 
-#ifndef arch_atomic_fetch_add
+#ifndef  !defined(arch_atomic_fetch_add) && !defined(atomic_fetch_add)
 #define atomic_fetch_add __sync_fetch_and_add
 #endif
 
