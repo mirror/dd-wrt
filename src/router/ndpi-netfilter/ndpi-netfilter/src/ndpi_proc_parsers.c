@@ -5,6 +5,7 @@
 #include <linux/kref.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
+#include <linux/atomic.h>
 
 #include "ndpi_config.h"
 #undef HAVE_HYPERSCAN
