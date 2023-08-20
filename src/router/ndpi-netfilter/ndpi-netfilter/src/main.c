@@ -47,6 +47,7 @@
 #include <linux/vmalloc.h>
 #endif
 #include <asm/percpu.h>
+#include <asm/atomic.h>
 
 #ifndef CONFIG_NF_CONNTRACK_CUSTOM
 #define CONFIG_NF_CONNTRACK_CUSTOM 0
