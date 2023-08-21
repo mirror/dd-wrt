@@ -25,14 +25,14 @@
 uint32_t address_to_bits(uint32_t addr)
 {
 	unsigned int lzb = 0;
-	while (((1 << (31 - lzb)) & ~addr) != 0)
+	while (((1u << (31 - lzb)) & ~addr) != 0)
 		lzb++;
 	return 32 - lzb;
 }
 
-int bitcount(unsigned long a)
+unsigned int bitcount(unsigned long a)
 {
-	int i = 0;
+	unsigned int i = 0;
 	for (; a != 0; a >>= 1)
 		if (a & 1)
 			i++;
@@ -101,6 +101,21 @@ char* strtok_r(char *str, const char *delim, char **nextp)
 
 	*nextp = str;
 	return ret;
+}
+
+/* strndup is a POSIX function not present in MinGW */
+char *strndup(const char *src, size_t maxlen)
+{
+	char *retbuf;
+	size_t len;
+	for (len = 0; len < maxlen; len++)
+		if (src[len] == '\0')
+			break;
+	if ((retbuf = malloc(1 + len)) != NULL) {
+		memcpy(retbuf, src, len);
+		retbuf[len] = '\0';
+	}
+	return retbuf;
 }
 #endif
 

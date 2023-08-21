@@ -26,6 +26,7 @@
 #include "flash.h"
 #include "programmer.h"
 #include "coreboot_tables.h"
+#include "hwaccess_physmap.h"
 
 static char *cb_vendor = NULL, *cb_model = NULL;
 
@@ -34,7 +35,7 @@ static char *cb_vendor = NULL, *cb_model = NULL;
  *	-1	if IDs in the image do not match the IDs embedded in the current firmware,
  *	 0	if the IDs could not be found in the image or if they match correctly.
  */
-int cb_check_image(const uint8_t *image, int size)
+int cb_check_image(const uint8_t *image, unsigned int size)
 {
 	const unsigned int *walk;
 	unsigned int mb_part_offset, mb_vendor_offset;
@@ -138,10 +139,10 @@ static unsigned long compute_checksum(void *addr, unsigned long length)
 		((((char *)rec) + rec->size) <= (((char *)head) + sizeof(*head) + head->table_bytes)); \
 		rec = (struct lb_record *)(((char *)rec) + rec->size))
 
-static int count_lb_records(struct lb_header *head)
+static unsigned int count_lb_records(struct lb_header *head)
 {
 	struct lb_record *rec;
-	int count;
+	unsigned int count;
 
 	count = 0;
 	for_each_lbrec(head, rec) {
@@ -149,6 +150,42 @@ static int count_lb_records(struct lb_header *head)
 	}
 
 	return count;
+}
+
+static int lb_header_valid(struct lb_header *head, unsigned long addr)
+{
+	if (memcmp(head->signature, "LBIO", 4) != 0)
+		return 0;
+	msg_pdbg("Found candidate at: %08lx-%08lx\n",
+		     addr, addr + sizeof(*head) + head->table_bytes);
+	if (head->header_bytes != sizeof(*head)) {
+		msg_perr("Header bytes of %"PRId32" are incorrect.\n",
+			head->header_bytes);
+		return 0;
+	}
+	if (compute_checksum((uint8_t *) head, sizeof(*head)) != 0) {
+		msg_perr("Bad header checksum.\n");
+		return 0;
+	}
+
+	return 1;
+}
+
+static int lb_table_valid(struct lb_header *head, struct lb_record *recs)
+{
+	if (compute_checksum(recs, head->table_bytes)
+	    != head->table_checksum) {
+		msg_perr("Bad table checksum: %04"PRIx32".\n",
+			head->table_checksum);
+		return 0;
+	}
+	if (count_lb_records(head) != head->table_entries) {
+		msg_perr("Bad record count: %"PRId32".\n",
+			head->table_entries);
+		return 0;
+	}
+
+	return 1;
 }
 
 static struct lb_header *find_lb_table(void *base, unsigned long start,
@@ -162,35 +199,71 @@ static struct lb_header *find_lb_table(void *base, unsigned long start,
 		    (struct lb_header *)(((char *)base) + addr);
 		struct lb_record *recs =
 		    (struct lb_record *)(((char *)base) + addr + sizeof(*head));
-		if (memcmp(head->signature, "LBIO", 4) != 0)
+		if (!lb_header_valid(head, addr))
 			continue;
-		msg_pdbg("Found candidate at: %08lx-%08lx\n",
-			     addr, addr + head->table_bytes);
-		if (head->header_bytes != sizeof(*head)) {
-			msg_perr("Header bytes of %d are incorrect.\n",
-				head->header_bytes);
+		if (!lb_table_valid(head, recs))
 			continue;
-		}
-		if (count_lb_records(head) != head->table_entries) {
-			msg_perr("Bad record count: %d.\n",
-				head->table_entries);
-			continue;
-		}
-		if (compute_checksum((uint8_t *) head, sizeof(*head)) != 0) {
-			msg_perr("Bad header checksum.\n");
-			continue;
-		}
-		if (compute_checksum(recs, head->table_bytes)
-		    != head->table_checksum) {
-			msg_perr("Bad table checksum: %04x.\n",
-				head->table_checksum);
-			continue;
-		}
 		msg_pdbg("Found coreboot table at 0x%08lx.\n", addr);
 		return head;
 
-	};
+	}
 
+	return NULL;
+}
+
+static struct lb_header *find_lb_table_remap(unsigned long start_addr,
+					     uint8_t **table_area)
+{
+	size_t offset;
+	unsigned long end;
+	size_t mapping_size;
+	void *base;
+
+	mapping_size = getpagesize();
+	offset = start_addr % getpagesize();
+	start_addr -= offset;
+
+	base = physmap_ro("high tables", start_addr, mapping_size);
+	if (ERROR_PTR == base) {
+		msg_perr("Failed getting access to coreboot high tables.\n");
+		return NULL;
+	}
+
+	for (end = getpagesize(); offset < end; offset += 16) {
+		struct lb_record *recs;
+		struct lb_header *head;
+
+		/* No more headers to check. */
+		if (end - offset < sizeof(*head))
+			return NULL;
+
+		head = (struct lb_header *)(((char *)base) + offset);
+
+		if (!lb_header_valid(head, offset))
+			continue;
+
+		if (mapping_size - offset < head->table_bytes + sizeof(*head)) {
+			size_t prev_mapping_size = mapping_size;
+			mapping_size = head->table_bytes + sizeof(*head);
+			mapping_size += offset;
+			mapping_size += getpagesize() - (mapping_size % getpagesize());
+			physunmap(base, prev_mapping_size);
+			base = physmap_ro("high tables", start_addr, mapping_size);
+			if (ERROR_PTR == base)
+				msg_perr("Failed getting access to coreboot high tables.\n");
+			else
+				head = (struct lb_header *)(((char *)base) + offset);
+		}
+
+		recs = (struct lb_record *)(((char *)base) + offset + sizeof(*head));
+		if (!lb_table_valid(head, recs))
+			continue;
+		msg_pdbg("Found coreboot table at 0x%08zx.\n", offset);
+		*table_area = base;
+		return head;
+	}
+
+	physunmap(base, mapping_size);
 	return NULL;
 }
 
@@ -222,13 +295,10 @@ static struct lb_record *next_record(struct lb_record *rec)
 static void search_lb_records(struct lb_record *rec, struct lb_record *last, unsigned long addr)
 {
 	struct lb_record *next;
-	int count;
-	count = 0;
 
 	for (next = next_record(rec); (rec < last) && (next <= last);
 	     rec = next, addr += rec->size) {
 		next = next_record(rec);
-		count++;
 		if (rec->tag == LB_TAG_MAINBOARD) {
 			find_mainboard(rec, addr);
 			break;
@@ -267,15 +337,8 @@ int cb_parse_table(const char **vendor, const char **model)
 			(((char *)lb_table) + lb_table->header_bytes);
 		if (forward->tag == LB_TAG_FORWARD) {
 			start = forward->forward;
-			start &= ~(getpagesize() - 1);
 			physunmap_unaligned(table_area, BYTES_TO_MAP);
-			// FIXME: table_area is never unmapped below, nor is it unmapped above in the no-forward case
-			table_area = physmap_ro_unaligned("high tables", start, BYTES_TO_MAP);
-			if (ERROR_PTR == table_area) {
-				msg_perr("Failed getting access to coreboot high tables.\n");
-				return -1;
-			}
-			lb_table = find_lb_table(table_area, 0x00000, 0x1000);
+			lb_table = find_lb_table_remap(start, &table_area);
 		}
 	}
 
@@ -289,7 +352,7 @@ int cb_parse_table(const char **vendor, const char **model)
 		(unsigned long)lb_table - (unsigned long)table_area + start);
 	rec = (struct lb_record *)(((char *)lb_table) + lb_table->header_bytes);
 	last = (struct lb_record *)(((char *)rec) + lb_table->table_bytes);
-	msg_pdbg("coreboot header(%d) checksum: %04x table(%d) checksum: %04x entries: %d\n",
+	msg_pdbg("coreboot header(%"PRId32") checksum: %04"PRIx32" table(%"PRId32") checksum: %04"PRIx32" entries: %"PRId32"\n",
 	     lb_table->header_bytes, lb_table->header_checksum,
 	     lb_table->table_bytes, lb_table->table_checksum,
 	     lb_table->table_entries);

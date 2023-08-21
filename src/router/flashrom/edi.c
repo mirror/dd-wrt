@@ -16,6 +16,7 @@
 
 #include <string.h>
 #include "flash.h"
+#include "chipdrivers.h"
 #include "ene.h"
 #include "edi.h"
 
@@ -303,7 +304,7 @@ int edi_chip_block_erase(struct flashctx *flash, unsigned int page, unsigned int
 		return -1;
 
 	while (edi_spi_busy(flash) == 1 && timeout) {
-		programmer_delay(10);
+		programmer_delay(flash, 10);
 		timeout--;
 	}
 
@@ -378,7 +379,7 @@ int edi_chip_write(struct flashctx *flash, const uint8_t *buf, unsigned int star
 			return -1;
 
 		while (edi_spi_busy(flash) == 1 && timeout) {
-			programmer_delay(10);
+			programmer_delay(flash, 10);
 			timeout--;
 		}
 
@@ -434,7 +435,7 @@ int edi_chip_read(struct flashctx *flash, uint8_t *buf, unsigned int start, unsi
 
 			/* Just in case. */
 			while (edi_spi_busy(flash) == 1 && timeout) {
-				programmer_delay(10);
+				programmer_delay(flash, 10);
 				timeout--;
 			}
 
@@ -457,7 +458,7 @@ int edi_chip_read(struct flashctx *flash, uint8_t *buf, unsigned int start, unsi
 	return 0;
 }
 
-int edi_shutdown(void *data)
+static int edi_shutdown(void *data)
 {
 	struct flashctx *flash;
 	int rc;

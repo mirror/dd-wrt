@@ -18,12 +18,15 @@
 #include <stdlib.h>
 #include "flash.h"
 #include "programmer.h"
-#include "hwaccess.h"
+#include "hwaccess_physmap.h"
+#include "platform/pci.h"
 
-uint8_t *nicintel_bar;
-uint8_t *nicintel_control_bar;
+struct nicintel_data {
+	uint8_t *nicintel_bar;
+	uint8_t *nicintel_control_bar;
+};
 
-const struct dev_entry nics_intel[] = {
+static const struct dev_entry nics_intel[] = {
 	{PCI_VENDOR_ID_INTEL, 0x1209, NT, "Intel", "8255xER/82551IT Fast Ethernet Controller"},
 	{PCI_VENDOR_ID_INTEL, 0x1229, OK, "Intel", "82557/8/9/0/1 Ethernet Pro 100"},
 
@@ -41,33 +44,42 @@ const struct dev_entry nics_intel[] = {
 #define CSR_FCR 0x0c
 
 static void nicintel_chip_writeb(const struct flashctx *flash, uint8_t val,
-				 chipaddr addr);
+				 chipaddr addr)
+{
+	const struct nicintel_data *data = flash->mst->par.data;
+
+	pci_mmio_writeb(val, data->nicintel_bar + (addr & NICINTEL_MEMMAP_MASK));
+}
+
 static uint8_t nicintel_chip_readb(const struct flashctx *flash,
-				   const chipaddr addr);
+				   const chipaddr addr)
+{
+	const struct nicintel_data *data = flash->mst->par.data;
+
+	return pci_mmio_readb(data->nicintel_bar + (addr & NICINTEL_MEMMAP_MASK));
+}
+
+static int nicintel_shutdown(void *par_data)
+{
+	free(par_data);
+	return 0;
+}
+
 static const struct par_master par_master_nicintel = {
-		.chip_readb		= nicintel_chip_readb,
-		.chip_readw		= fallback_chip_readw,
-		.chip_readl		= fallback_chip_readl,
-		.chip_readn		= fallback_chip_readn,
-		.chip_writeb		= nicintel_chip_writeb,
-		.chip_writew		= fallback_chip_writew,
-		.chip_writel		= fallback_chip_writel,
-		.chip_writen		= fallback_chip_writen,
+	.chip_readb	= nicintel_chip_readb,
+	.chip_writeb	= nicintel_chip_writeb,
+	.shutdown	= nicintel_shutdown,
 };
 
-int nicintel_init(void)
+static int nicintel_init(const struct programmer_cfg *cfg)
 {
 	struct pci_dev *dev = NULL;
 	uintptr_t addr;
-
-	/* Needed only for PCI accesses on some platforms.
-	 * FIXME: Refactor that into get_mem_perms/rget_io_perms/get_pci_perms?
-	 */
-	if (rget_io_perms())
-		return 1;
+	uint8_t *bar;
+	uint8_t *control_bar;
 
 	/* FIXME: BAR2 is not available if the device uses the CardBus function. */
-	dev = pcidev_init(nics_intel, PCI_BASE_ADDRESS_2);
+	dev = pcidev_init(cfg, nics_intel, PCI_BASE_ADDRESS_2);
 	if (!dev)
 		return 1;
 
@@ -75,16 +87,16 @@ int nicintel_init(void)
 	if (!addr)
 		return 1;
 
-	nicintel_bar = rphysmap("Intel NIC flash", addr, NICINTEL_MEMMAP_SIZE);
-	if (nicintel_bar == ERROR_PTR)
+	bar = rphysmap("Intel NIC flash", addr, NICINTEL_MEMMAP_SIZE);
+	if (bar == ERROR_PTR)
 		return 1;
 
 	addr = pcidev_readbar(dev, PCI_BASE_ADDRESS_0);
 	if (!addr)
 		return 1;
 
-	nicintel_control_bar = rphysmap("Intel NIC control/status reg", addr, NICINTEL_CONTROL_MEMMAP_SIZE);
-	if (nicintel_control_bar == ERROR_PTR)
+	control_bar = rphysmap("Intel NIC control/status reg", addr, NICINTEL_CONTROL_MEMMAP_SIZE);
+	if (control_bar == ERROR_PTR)
 		return 1;
 
 	/* FIXME: This register is pretty undocumented in all publicly available
@@ -96,22 +108,23 @@ int nicintel_init(void)
 	 * what we should do with it. Write 0x0001 because we have nothing
 	 * better to do with our time.
 	 */
-	pci_rmmio_writew(0x0001, nicintel_control_bar + CSR_FCR);
+	pci_rmmio_writew(0x0001, control_bar + CSR_FCR);
+
+	struct nicintel_data *data = calloc(1, sizeof(*data));
+	if (!data) {
+		msg_perr("Unable to allocate space for PAR master data\n");
+		return 1;
+	}
+	data->nicintel_bar = bar;
+	data->nicintel_control_bar = control_bar;
 
 	max_rom_decode.parallel = NICINTEL_MEMMAP_SIZE;
-	register_par_master(&par_master_nicintel, BUS_PARALLEL);
-
-	return 0;
+	return register_par_master(&par_master_nicintel, BUS_PARALLEL, data);
 }
 
-static void nicintel_chip_writeb(const struct flashctx *flash, uint8_t val,
-				 chipaddr addr)
-{
-	pci_mmio_writeb(val, nicintel_bar + (addr & NICINTEL_MEMMAP_MASK));
-}
-
-static uint8_t nicintel_chip_readb(const struct flashctx *flash,
-				   const chipaddr addr)
-{
-	return pci_mmio_readb(nicintel_bar + (addr & NICINTEL_MEMMAP_MASK));
-}
+const struct programmer_entry programmer_nicintel = {
+	.name			= "nicintel",
+	.type			= PCI,
+	.devs.dev		= nics_intel,
+	.init			= nicintel_init,
+};

@@ -14,8 +14,7 @@
  * GNU General Public License for more details.
  */
 
-#if CONFIG_FT2232_SPI == 1
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <strings.h>
 #include <string.h>
@@ -27,7 +26,7 @@
 #include <ftdi.h>
 
 /* This is not defined in libftdi.h <0.20 (c7e4c09e68cfa6f5e112334aa1b3bb23401c8dc7 to be exact).
- * Some tests indicate that his is the only change that it is needed to support the FT232H in flashrom. */
+ * Some tests indicate that this is the only change that it is needed to support the FT232H in flashrom. */
 #if !defined(HAVE_FT232H)
 #define TYPE_232H	6
 #endif
@@ -38,8 +37,10 @@
 #define FTDI_FT2232H_PID	0x6010
 #define FTDI_FT4232H_PID	0x6011
 #define FTDI_FT232H_PID		0x6014
+#define FTDI_FT4233H_PID	0x6041
 #define TIAO_TUMPA_PID		0x8a98
 #define TIAO_TUMPA_LITE_PID	0x8a99
+#define KT_LINK_PID		0xbbe2
 #define AMONTEC_JTAGKEY_PID	0xCFF8
 
 #define GOEPEL_VID		0x096C
@@ -59,12 +60,14 @@
 #define GOOGLE_SERVO_V2_PID0	0x5002
 #define GOOGLE_SERVO_V2_PID1	0x5003
 
-const struct dev_entry devs_ft2232spi[] = {
+static const struct dev_entry devs_ft2232spi[] = {
 	{FTDI_VID, FTDI_FT2232H_PID, OK, "FTDI", "FT2232H"},
 	{FTDI_VID, FTDI_FT4232H_PID, OK, "FTDI", "FT4232H"},
 	{FTDI_VID, FTDI_FT232H_PID, OK, "FTDI", "FT232H"},
+	{FTDI_VID, FTDI_FT4233H_PID, OK, "FTDI", "FT4233H"},
 	{FTDI_VID, TIAO_TUMPA_PID, OK, "TIAO", "USB Multi-Protocol Adapter"},
 	{FTDI_VID, TIAO_TUMPA_LITE_PID, OK, "TIAO", "USB Multi-Protocol Adapter Lite"},
+	{FTDI_VID, KT_LINK_PID, OK, "Kristech", "KT-LINK"},
 	{FTDI_VID, AMONTEC_JTAGKEY_PID, OK, "Amontec", "JTAGkey"},
 	{GOEPEL_VID, GOEPEL_PICOTAP_PID, OK, "GOEPEL", "PicoTAP"},
 	{GOOGLE_VID, GOOGLE_SERVO_PID, OK, "Google", "Servo"},
@@ -79,31 +82,53 @@ const struct dev_entry devs_ft2232spi[] = {
 	{0},
 };
 
+#define FTDI_HW_BUFFER_SIZE 4096 /* in bytes */
+
 #define DEFAULT_DIVISOR 2
 
 #define BITMODE_BITBANG_NORMAL	1
 #define BITMODE_BITBANG_SPI	2
 
-/* The variables cs_bits and pindir store the values for the "set data bits low byte" MPSSE command that
- * sets the initial state and the direction of the I/O pins. The pin offsets are as follows:
- * SCK is bit 0.
- * DO  is bit 1.
- * DI  is bit 2.
- * CS  is bit 3.
+/*
+ * The variables `cs_bits` and `pindir` store the values for the
+ * "set data bits low byte" MPSSE command that sets the initial
+ * state and the direction of the I/O pins. `cs_bits` pins default
+ * to high and will be toggled during SPI transactions. All other
+ * output pins will be kept low all the time. For some programmers,
+ * some reserved GPIOL* pins are used as outputs. Free GPIOL* pins
+ * are configured as inputs, while it's possible to use them either
+ * as generic gpios or as additional CS# signal(s) through the
+ * parameter(s) `gpiolX`. On exit, all pins will be reconfigured
+ * as inputs.
  *
- * The default values (set below) are used for most devices:
- *  value: 0x08  CS=high, DI=low, DO=low, SK=low
+ * The pin offsets are as follows:
+ * TCK/SK is bit 0.
+ * TDI/DO is bit 1.
+ * TDO/DI is bit 2.
+ * TMS/CS is bit 3.
+ * GPIOL0 is bit 4.
+ * GPIOL1 is bit 5.
+ * GPIOL2 is bit 6.
+ * GPIOL3 is bit 7.
+ *
+ * The default values (set below in ft2232_spi_init) are used for
+ * most devices:
+ *  value: 0x08  CS=high,   DI=low,   DO=low,    SK=low
  *    dir: 0x0b  CS=output, DI=input, DO=output, SK=output
  */
-static uint8_t cs_bits = 0x08;
-static uint8_t pindir = 0x0b;
-static struct ftdi_context ftdic_context;
+struct ft2232_data {
+	uint8_t cs_bits;
+	uint8_t aux_bits;
+	uint8_t pindir;
+	struct ftdi_context ftdic_context;
+};
 
 static const char *get_ft2232_devicename(int ft2232_vid, int ft2232_type)
 {
 	int i;
 	for (i = 0; devs_ft2232spi[i].vendor_name != NULL; i++) {
-		if ((devs_ft2232spi[i].device_id == ft2232_type) && (devs_ft2232spi[i].vendor_id == ft2232_vid))
+		if ((devs_ft2232spi[i].device_id == ft2232_type)
+			&& (devs_ft2232spi[i].vendor_id == ft2232_vid))
 				return devs_ft2232spi[i].device_name;
 	}
 	return "unknown device";
@@ -113,7 +138,8 @@ static const char *get_ft2232_vendorname(int ft2232_vid, int ft2232_type)
 {
 	int i;
 	for (i = 0; devs_ft2232spi[i].vendor_name != NULL; i++) {
-		if ((devs_ft2232spi[i].device_id == ft2232_type) && (devs_ft2232spi[i].vendor_id == ft2232_vid))
+		if ((devs_ft2232spi[i].device_id == ft2232_type)
+			&& (devs_ft2232spi[i].vendor_id == ft2232_vid))
 				return devs_ft2232spi[i].vendor_name;
 	}
 	return "unknown vendor";
@@ -125,7 +151,8 @@ static int send_buf(struct ftdi_context *ftdic, const unsigned char *buf,
 	int r;
 	r = ftdi_write_data(ftdic, (unsigned char *) buf, size);
 	if (r < 0) {
-		msg_perr("ftdi_write_data: %d, %s\n", r, ftdi_get_error_string(ftdic));
+		msg_perr("ftdi_write_data: %d, %s\n", r,
+				ftdi_get_error_string(ftdic));
 		return 1;
 	}
 	return 0;
@@ -139,7 +166,8 @@ static int get_buf(struct ftdi_context *ftdic, const unsigned char *buf,
 	while (size > 0) {
 		r = ftdi_read_data(ftdic, (unsigned char *) buf, size);
 		if (r < 0) {
-			msg_perr("ftdi_read_data: %d, %s\n", r, ftdi_get_error_string(ftdic));
+			msg_perr("ftdi_read_data: %d, %s\n", r,
+					ftdi_get_error_string(ftdic));
 			return 1;
 		}
 		buf += r;
@@ -148,28 +176,135 @@ static int get_buf(struct ftdi_context *ftdic, const unsigned char *buf,
 	return 0;
 }
 
-static int ft2232_spi_send_command(struct flashctx *flash,
-				   unsigned int writecnt, unsigned int readcnt,
-				   const unsigned char *writearr,
-				   unsigned char *readarr);
+static int ft2232_shutdown(void *data)
+{
+	struct ft2232_data *spi_data = (struct ft2232_data *) data;
+	struct ftdi_context *ftdic = &spi_data->ftdic_context;
+	unsigned char buf[3];
+	int ret = 0;
+
+	msg_pdbg("Releasing I/Os\n");
+	buf[0] = SET_BITS_LOW;
+	buf[1] = 0; /* Output byte ignored */
+	buf[2] = 0; /* Pin direction: all inputs */
+	if (send_buf(ftdic, buf, 3)) {
+		msg_perr("Unable to set pins back to inputs.\n");
+		ret = 1;
+	}
+
+	const int close_ret = ftdi_usb_close(ftdic);
+	if (close_ret < 0) {
+		msg_perr("Unable to close FTDI device: %d (%s)\n", close_ret,
+		         ftdi_get_error_string(ftdic));
+		ret = 1;
+	}
+
+	free(spi_data);
+	return ret;
+}
+
+static bool ft2232_spi_command_fits(const struct spi_command *cmd, size_t buffer_size)
+{
+	const size_t cmd_len = 3; /* same length for any ft2232 command */
+	return
+		/* commands for CS# assertion and de-assertion: */
+		cmd_len + cmd_len
+		/* commands for either a write, a read or both: */
+		+ (cmd->writecnt && cmd->readcnt ? cmd_len + cmd_len : cmd_len)
+		/* payload (only writecnt; readcnt concerns another buffer): */
+		+ cmd->writecnt
+		<= buffer_size;
+}
+
+/* Returns 0 upon success, a negative number upon errors. */
+static int ft2232_spi_send_multicommand(const struct flashctx *flash, struct spi_command *cmds)
+{
+	struct ft2232_data *spi_data = flash->mst->spi.data;
+	struct ftdi_context *ftdic = &spi_data->ftdic_context;
+	static unsigned char buf[FTDI_HW_BUFFER_SIZE];
+	size_t i = 0;
+	int ret = 0;
+
+	/*
+	 * Minimize FTDI-calls by packing as many commands as possible together.
+	 */
+	for (; cmds->writecnt || cmds->readcnt; cmds++) {
+
+		if (cmds->writecnt > 65536 || cmds->readcnt > 65536)
+			return SPI_INVALID_LENGTH;
+
+		if (!ft2232_spi_command_fits(cmds, FTDI_HW_BUFFER_SIZE - i)) {
+			msg_perr("Command does not fit\n");
+			return SPI_GENERIC_ERROR;
+		}
+
+		msg_pspew("Assert CS#\n");
+		buf[i++] = SET_BITS_LOW;
+		/* assert CS# pins, keep aux_bits, all other output pins stay low */
+		buf[i++] = spi_data->aux_bits;
+		buf[i++] = spi_data->pindir;
+
+		/* WREN, OP(PROGRAM, ERASE), ADDR, DATA */
+		if (cmds->writecnt) {
+			buf[i++] = MPSSE_DO_WRITE | MPSSE_WRITE_NEG;
+			buf[i++] = (cmds->writecnt - 1) & 0xff;
+			buf[i++] = ((cmds->writecnt - 1) >> 8) & 0xff;
+			memcpy(buf + i, cmds->writearr, cmds->writecnt);
+			i += cmds->writecnt;
+		}
+
+		/* An optional read command */
+		if (cmds->readcnt) {
+			buf[i++] = MPSSE_DO_READ;
+			buf[i++] = (cmds->readcnt - 1) & 0xff;
+			buf[i++] = ((cmds->readcnt - 1) >> 8) & 0xff;
+		}
+
+		/* Add final de-assert CS# */
+		msg_pspew("De-assert CS#\n");
+		buf[i++] = SET_BITS_LOW;
+		buf[i++] = spi_data->cs_bits | spi_data->aux_bits;
+		buf[i++] = spi_data->pindir;
+
+		/* continue if there is no read-cmd and further cmds exist */
+		if (!cmds->readcnt &&
+				((cmds + 1)->writecnt || (cmds + 1)->readcnt) &&
+				ft2232_spi_command_fits((cmds + 1), FTDI_HW_BUFFER_SIZE - i)) {
+			continue;
+		}
+
+		ret = send_buf(ftdic, buf, i);
+		i = 0;
+		if (ret) {
+			msg_perr("send_buf failed: %i\n", ret);
+			break;
+		}
+
+		if (cmds->readcnt) {
+			ret = get_buf(ftdic, cmds->readarr, cmds->readcnt);
+			if (ret) {
+				msg_perr("get_buf failed: %i\n", ret);
+				break;
+			}
+		}
+	}
+	return ret ? -1 : 0;
+}
 
 static const struct spi_master spi_master_ft2232 = {
-	.type		= SPI_CONTROLLER_FT2232,
 	.features	= SPI_MASTER_4BA,
 	.max_data_read	= 64 * 1024,
 	.max_data_write	= 256,
-	.command	= ft2232_spi_send_command,
-	.multicommand	= default_spi_send_multicommand,
+	.multicommand	= ft2232_spi_send_multicommand,
 	.read		= default_spi_read,
 	.write_256	= default_spi_write_256,
-	.write_aai	= default_spi_write_aai,
+	.shutdown	= ft2232_shutdown,
 };
 
 /* Returns 0 upon success, a negative number upon errors. */
-int ft2232_spi_init(void)
+static int ft2232_spi_init(const struct programmer_cfg *cfg)
 {
 	int ret = 0;
-	struct ftdi_context *ftdic = &ftdic_context;
 	unsigned char buf[512];
 	int ft2232_vid = FTDI_VID;
 	int ft2232_type = FTDI_FT4232H_PID;
@@ -177,24 +312,33 @@ int ft2232_spi_init(void)
 	enum ftdi_interface ft2232_interface = INTERFACE_A;
 	/*
 	 * The 'H' chips can run with an internal clock of either 12 MHz or 60 MHz,
-	 * but the non-H chips can only run at 12 MHz. We enable the divide-by-5
-	 * prescaler on the former to run on the same speed.
+	 * but the non-H chips can only run at 12 MHz. We disable the divide-by-5
+	 * prescaler on 'H' chips so they run at 60MHz.
 	 */
-	uint8_t clock_5x = 1;
+	bool clock_5x = true;
 	/* In addition to the prescaler mentioned above there is also another
 	 * configurable one on all versions of the chips. Its divisor div can be
 	 * set by a 16 bit value x according to the following formula:
 	 * div = (1 + x) * 2 <-> x = div / 2 - 1
 	 * Hence the expressible divisors are all even numbers between 2 and
 	 * 2^17 (=131072) resulting in SCK frequencies of 6 MHz down to about
-	 * 92 Hz for 12 MHz inputs.
+	 * 92 Hz for 12 MHz inputs and 30 MHz down to about 458 Hz for 60 MHz
+	 * inputs.
 	 */
 	uint32_t divisor = DEFAULT_DIVISOR;
 	int f;
-	char *arg;
+	char *arg, *arg2;
 	double mpsse_clk;
 
-	arg = extract_programmer_param("type");
+	uint8_t cs_bits = 0x08;
+	uint8_t aux_bits = 0x00;
+	uint8_t pindir = 0x0b;
+	uint8_t aux_bits_high = 0x00;
+	uint8_t pindir_high = 0x00;
+	struct ftdi_context ftdic;
+	struct ft2232_data *spi_data;
+
+	arg = extract_programmer_param_str(cfg, "type");
 	if (arg) {
 		if (!strcasecmp(arg, "2232H")) {
 			ft2232_type = FTDI_FT2232H_PID;
@@ -205,6 +349,9 @@ int ft2232_spi_init(void)
 		} else if (!strcasecmp(arg, "232H")) {
 			ft2232_type = FTDI_FT232H_PID;
 			channel_count = 1;
+		} else if (!strcasecmp(arg, "4233H")) {
+			ft2232_type = FTDI_FT4233H_PID;
+			channel_count = 4;
 		} else if (!strcasecmp(arg, "jtagkey")) {
 			ft2232_type = AMONTEC_JTAGKEY_PID;
 			channel_count = 2;
@@ -270,6 +417,23 @@ int ft2232_spi_init(void)
 		} else if (!strcasecmp(arg, "google-servo-v2-legacy")) {
 			ft2232_vid = GOOGLE_VID;
 			ft2232_type = GOOGLE_SERVO_V2_PID0;
+		} else if (!strcasecmp(arg, "flyswatter")) {
+			ft2232_type = FTDI_FT2232H_PID;
+			channel_count = 2;
+			/* Flyswatter and Flyswatter-2 require GPIO bits 0x80
+			 * and 0x40 to be driven low to enable output buffers */
+			pindir = 0xcb;
+		} else if (!strcasecmp(arg, "kt-link")) {
+			ft2232_type = KT_LINK_PID;
+			/* port B is used as uart */
+			channel_count = 1;
+			/* Set GPIOL1 output high - route TMS and TDO through multiplexers */
+			aux_bits = 0x20;
+			pindir = 0x2b;
+			/* Set GPIOH4 output low - enable TMS output buffer */
+			/* Set GPIOH5 output low - enable TDI output buffer */
+			/* Set GPIOH6 output low - enable TCK output buffer */
+			pindir_high = 0x70;
 		} else {
 			msg_perr("Error: Invalid device type specified.\n");
 			free(arg);
@@ -278,7 +442,10 @@ int ft2232_spi_init(void)
 	}
 	free(arg);
 
-	arg = extract_programmer_param("port");
+	/* Remember reserved pins before pindir gets modified. */
+	const uint8_t rsv_bits = pindir & 0xf0;
+
+	arg = extract_programmer_param_str(cfg, "port");
 	if (arg) {
 		switch (toupper((unsigned char)*arg)) {
 		case 'A':
@@ -311,7 +478,7 @@ int ft2232_spi_init(void)
 	}
 	free(arg);
 
-	arg = extract_programmer_param("divisor");
+	arg = extract_programmer_param_str(cfg, "divisor");
 	if (arg && strlen(arg)) {
 		unsigned int temp = 0;
 		char *endptr;
@@ -321,14 +488,18 @@ int ft2232_spi_init(void)
 				 "Valid are even values between 2 and 131072.\n", arg);
 			free(arg);
 			return -2;
-		} else {
-			divisor = (uint32_t)temp;
 		}
+		divisor = (uint32_t)temp;
 	}
 	free(arg);
 
-	arg = extract_programmer_param("csgpiol");
+	bool csgpiol_set = false;
+	arg = extract_programmer_param_str(cfg, "csgpiol");
 	if (arg) {
+		csgpiol_set = true;
+		msg_pwarn("Deprecation warning: `csgpiol` is deprecated and will be removed "
+			 "in the future.\nUse `gpiolX=C` instead.\n");
+
 		char *endptr;
 		unsigned int temp = strtoul(arg, &endptr, 10);
 		if (*endptr || endptr == arg || temp > 3) {
@@ -336,13 +507,81 @@ int ft2232_spi_init(void)
 				 "Valid values are between 0 and 3.\n", arg);
 			free(arg);
 			return -2;
-		} else {
-			unsigned int pin = temp + 4;
-			cs_bits |= 1 << pin;
-			pindir |= 1 << pin;
 		}
+
+		unsigned int pin = temp + 4;
+		if (rsv_bits & 1 << pin) {
+			msg_perr("Error: Invalid GPIOL specified: \"%s\".\n"
+				 "The pin is reserved on this programmer.\n",
+				 arg);
+			free(arg);
+			return -2;
+		}
+
+		cs_bits |= 1 << pin;
+		pindir  |= 1 << pin;
 	}
 	free(arg);
+
+	/* gpiolX */
+	for (int pin = 0; pin < 4; pin++) {
+		char gpiol_param[7];
+		snprintf(gpiol_param, sizeof(gpiol_param), "gpiol%d", pin);
+		arg = extract_programmer_param_str(cfg, gpiol_param);
+
+		if (!arg)
+			continue;
+
+		if (csgpiol_set) {
+			msg_perr("Error: `csgpiol` and `gpiolX` are mutually exclusive.\n"
+				 "Since `csgpiol` is deprecated and will be removed in the "
+				 "future, use of `gpiolX=C` is recommended.\n");
+			free(arg);
+			return -2;
+		}
+
+		uint8_t bit = 1 << (pin + 4);
+		if (rsv_bits & bit) {
+			msg_perr("Error: Invalid GPIOL specified: \"gpiol%d=%s\".\n"
+				 "Pin GPIOL%i is reserved on this programmer.\n",
+				 pin, arg, pin);
+			free(arg);
+			return -2;
+		}
+
+		if (strlen(arg) != 1)
+			goto format_error;
+
+		switch (toupper(arg[0])) {
+			case 'H':
+				aux_bits |= bit;
+				pindir   |= bit;
+				break;
+			case 'L':
+				pindir   |= bit;
+				break;
+			case 'C':
+				cs_bits  |= bit;
+				pindir   |= bit;
+				break;
+			default:
+				goto format_error;
+		}
+
+		free(arg);
+		continue;
+
+format_error:
+		msg_perr("Error: Invalid GPIOL specified: \"gpiol%d=%s\".\n"
+			 "Valid values are H, L and C.\n"
+			 "    H - Set GPIOL output high\n"
+			 "    L - Set GPIOL output low\n"
+			 "    C - Use GPIOL as additional CS# output\n",
+			 pin, arg);
+
+		free(arg);
+		return -2;
+	}
 
 	msg_pdbg("Using device type %s %s ",
 		 get_ft2232_vendorname(ft2232_vid, ft2232_type),
@@ -352,49 +591,50 @@ int ft2232_spi_init(void)
 		 (ft2232_interface == INTERFACE_B) ? "B" :
 		 (ft2232_interface == INTERFACE_C) ? "C" : "D");
 
-	if (ftdi_init(ftdic) < 0) {
+	if (ftdi_init(&ftdic) < 0) {
 		msg_perr("ftdi_init failed.\n");
 		return -3;
 	}
 
-	if (ftdi_set_interface(ftdic, ft2232_interface) < 0) {
-		msg_perr("Unable to select channel (%s).\n", ftdi_get_error_string(ftdic));
+	if (ftdi_set_interface(&ftdic, ft2232_interface) < 0) {
+		msg_perr("Unable to select channel (%s).\n", ftdi_get_error_string(&ftdic));
 	}
 
-	arg = extract_programmer_param("serial");
-	f = ftdi_usb_open_desc(ftdic, ft2232_vid, ft2232_type, NULL, arg);
+	arg = extract_programmer_param_str(cfg, "serial");
+	arg2 = extract_programmer_param_str(cfg, "description");
+
+	f = ftdi_usb_open_desc(&ftdic, ft2232_vid, ft2232_type, arg2, arg);
+
 	free(arg);
+	free(arg2);
 
 	if (f < 0 && f != -5) {
-		msg_perr("Unable to open FTDI device: %d (%s).\n", f, ftdi_get_error_string(ftdic));
+		msg_perr("Unable to open FTDI device: %d (%s)\n", f,
+				ftdi_get_error_string(&ftdic));
 		return -4;
 	}
 
-	if (ftdic->type != TYPE_2232H && ftdic->type != TYPE_4232H && ftdic->type != TYPE_232H) {
-		msg_pdbg("FTDI chip type %d is not high-speed.\n", ftdic->type);
-		clock_5x = 0;
+	if (ftdic.type != TYPE_2232H && ftdic.type != TYPE_4232H && ftdic.type != TYPE_232H) {
+		msg_pdbg("FTDI chip type %d is not high-speed.\n", ftdic.type);
+		clock_5x = false;
 	}
 
-	if (ftdi_usb_reset(ftdic) < 0) {
-		msg_perr("Unable to reset FTDI device (%s).\n", ftdi_get_error_string(ftdic));
+	if (ftdi_usb_reset(&ftdic) < 0) {
+		msg_perr("Unable to reset FTDI device (%s).\n", ftdi_get_error_string(&ftdic));
 	}
 
-	if (ftdi_set_latency_timer(ftdic, 2) < 0) {
-		msg_perr("Unable to set latency timer (%s).\n", ftdi_get_error_string(ftdic));
+	if (ftdi_set_latency_timer(&ftdic, 2) < 0) {
+		msg_perr("Unable to set latency timer (%s).\n", ftdi_get_error_string(&ftdic));
 	}
 
-	if (ftdi_write_data_set_chunksize(ftdic, 256)) {
-		msg_perr("Unable to set chunk size (%s).\n", ftdi_get_error_string(ftdic));
-	}
-
-	if (ftdi_set_bitmode(ftdic, 0x00, BITMODE_BITBANG_SPI) < 0) {
-		msg_perr("Unable to set bitmode to SPI (%s).\n", ftdi_get_error_string(ftdic));
+	if (ftdi_set_bitmode(&ftdic, 0x00, BITMODE_BITBANG_SPI) < 0) {
+		msg_perr("Unable to set bitmode to SPI (%s).\n", ftdi_get_error_string(&ftdic));
 	}
 
 	if (clock_5x) {
 		msg_pdbg("Disable divide-by-5 front stage\n");
-		buf[0] = 0x8a; /* Disable divide-by-5. DIS_DIV_5 in newer libftdi */
-		if (send_buf(ftdic, buf, 1)) {
+		buf[0] = DIS_DIV_5;
+		if (send_buf(&ftdic, buf, 1)) {
 			ret = -5;
 			goto ftdi_err;
 		}
@@ -407,7 +647,7 @@ int ft2232_spi_init(void)
 	buf[0] = TCK_DIVISOR;
 	buf[1] = (divisor / 2 - 1) & 0xff;
 	buf[2] = ((divisor / 2 - 1) >> 8) & 0xff;
-	if (send_buf(ftdic, buf, 3)) {
+	if (send_buf(&ftdic, buf, 3)) {
 		ret = -6;
 		goto ftdi_err;
 	}
@@ -418,117 +658,54 @@ int ft2232_spi_init(void)
 	/* Disconnect TDI/DO to TDO/DI for loopback. */
 	msg_pdbg("No loopback of TDI/DO TDO/DI\n");
 	buf[0] = LOOPBACK_END;
-	if (send_buf(ftdic, buf, 1)) {
+	if (send_buf(&ftdic, buf, 1)) {
 		ret = -7;
 		goto ftdi_err;
 	}
 
 	msg_pdbg("Set data bits\n");
 	buf[0] = SET_BITS_LOW;
-	buf[1] = cs_bits;
+	buf[1] = cs_bits | aux_bits;
 	buf[2] = pindir;
-	if (send_buf(ftdic, buf, 3)) {
+	if (send_buf(&ftdic, buf, 3)) {
 		ret = -8;
 		goto ftdi_err;
 	}
 
-	register_spi_master(&spi_master_ft2232);
+	if (pindir_high) {
+		msg_pdbg("Set data bits HighByte\n");
+		buf[0] = SET_BITS_HIGH;
+		buf[1] = aux_bits_high;
+		buf[2] = pindir_high;
+		if (send_buf(&ftdic, buf, 3)) {
+			ret = -8;
+			goto ftdi_err;
+		}
+	}
 
-	return 0;
+	spi_data = calloc(1, sizeof(*spi_data));
+	if (!spi_data) {
+		msg_perr("Unable to allocate space for SPI master data\n");
+		return SPI_GENERIC_ERROR;
+	}
+	spi_data->cs_bits = cs_bits;
+	spi_data->aux_bits = aux_bits;
+	spi_data->pindir = pindir;
+	spi_data->ftdic_context = ftdic;
+
+	return register_spi_master(&spi_master_ft2232, spi_data);
 
 ftdi_err:
-	if ((f = ftdi_usb_close(ftdic)) < 0) {
-		msg_perr("Unable to close FTDI device: %d (%s)\n", f, ftdi_get_error_string(ftdic));
+	if ((f = ftdi_usb_close(&ftdic)) < 0) {
+		msg_perr("Unable to close FTDI device: %d (%s)\n", f,
+		         ftdi_get_error_string(&ftdic));
 	}
 	return ret;
 }
 
-/* Returns 0 upon success, a negative number upon errors. */
-static int ft2232_spi_send_command(struct flashctx *flash,
-				   unsigned int writecnt, unsigned int readcnt,
-				   const unsigned char *writearr,
-				   unsigned char *readarr)
-{
-	struct ftdi_context *ftdic = &ftdic_context;
-	static unsigned char *buf = NULL;
-	/* failed is special. We use bitwise ops, but it is essentially bool. */
-	int i = 0, ret = 0, failed = 0;
-	int bufsize;
-	static int oldbufsize = 0;
-
-	if (writecnt > 65536 || readcnt > 65536)
-		return SPI_INVALID_LENGTH;
-
-	/* buf is not used for the response from the chip. */
-	bufsize = max(writecnt + 9, 260 + 9);
-	/* Never shrink. realloc() calls are expensive. */
-	if (bufsize > oldbufsize) {
-		buf = realloc(buf, bufsize);
-		if (!buf) {
-			msg_perr("Out of memory!\n");
-			/* TODO: What to do with buf? */
-			return SPI_GENERIC_ERROR;
-		}
-		oldbufsize = bufsize;
-	}
-
-	/*
-	 * Minimize USB transfers by packing as many commands as possible
-	 * together. If we're not expecting to read, we can assert CS#, write,
-	 * and deassert CS# all in one shot. If reading, we do three separate
-	 * operations.
-	 */
-	msg_pspew("Assert CS#\n");
-	buf[i++] = SET_BITS_LOW;
-	buf[i++] = 0 & ~cs_bits; /* assertive */
-	buf[i++] = pindir;
-
-	if (writecnt) {
-		buf[i++] = MPSSE_DO_WRITE | MPSSE_WRITE_NEG;
-		buf[i++] = (writecnt - 1) & 0xff;
-		buf[i++] = ((writecnt - 1) >> 8) & 0xff;
-		memcpy(buf + i, writearr, writecnt);
-		i += writecnt;
-	}
-
-	/*
-	 * Optionally terminate this batch of commands with a
-	 * read command, then do the fetch of the results.
-	 */
-	if (readcnt) {
-		buf[i++] = MPSSE_DO_READ;
-		buf[i++] = (readcnt - 1) & 0xff;
-		buf[i++] = ((readcnt - 1) >> 8) & 0xff;
-		ret = send_buf(ftdic, buf, i);
-		failed = ret;
-		/* We can't abort here, we still have to deassert CS#. */
-		if (ret)
-			msg_perr("send_buf failed before read: %i\n", ret);
-		i = 0;
-		if (ret == 0) {
-			/*
-			 * FIXME: This is unreliable. There's no guarantee that
-			 * we read the response directly after sending the read
-			 * command. We may be scheduled out etc.
-			 */
-			ret = get_buf(ftdic, readarr, readcnt);
-			failed |= ret;
-			/* We can't abort here either. */
-			if (ret)
-				msg_perr("get_buf failed: %i\n", ret);
-		}
-	}
-
-	msg_pspew("De-assert CS#\n");
-	buf[i++] = SET_BITS_LOW;
-	buf[i++] = cs_bits;
-	buf[i++] = pindir;
-	ret = send_buf(ftdic, buf, i);
-	failed |= ret;
-	if (ret)
-		msg_perr("send_buf failed at end: %i\n", ret);
-
-	return failed ? -1 : 0;
-}
-
-#endif
+const struct programmer_entry programmer_ft2232_spi = {
+	.name			= "ft2232_spi",
+	.type			= USB,
+	.devs.dev		= devs_ft2232spi,
+	.init			= ft2232_spi_init,
+};

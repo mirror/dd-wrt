@@ -27,6 +27,26 @@
 #include "programmer.h"
 #include "spi.h"
 
+enum id_type {
+	RDID,
+	RDID4,
+	REMS,
+	RES2,
+	RES3,
+	NUM_ID_TYPES,
+};
+
+static struct {
+	bool is_cached;
+	unsigned char bytes[4];		/* enough to hold largest ID type */
+} id_cache[NUM_ID_TYPES];
+
+void clear_spi_id_cache(void)
+{
+	memset(id_cache, 0, sizeof(id_cache));
+	return;
+}
+
 static int spi_rdid(struct flashctx *flash, unsigned char *readarr, int bytes)
 {
 	static const unsigned char cmd[JEDEC_RDID_OUTSIZE] = { JEDEC_RDID };
@@ -93,17 +113,9 @@ int spi_write_disable(struct flashctx *flash)
 	return spi_send_command(flash, sizeof(cmd), 0, cmd, NULL);
 }
 
-static int probe_spi_rdid_generic(struct flashctx *flash, int bytes)
+static void rdid_get_ids(unsigned char *readarr, int bytes,
+		uint32_t *id1, uint32_t *id2)
 {
-	const struct flashchip *chip = flash->chip;
-	unsigned char readarr[4];
-	uint32_t id1;
-	uint32_t id2;
-
-	if (spi_rdid(flash, readarr, bytes)) {
-		return 0;
-	}
-
 	if (!oddparity(readarr[0]))
 		msg_cdbg("RDID byte 0 parity violation. ");
 
@@ -113,19 +125,23 @@ static int probe_spi_rdid_generic(struct flashctx *flash, int bytes)
 	if (readarr[0] == 0x7f) {
 		if (!oddparity(readarr[1]))
 			msg_cdbg("RDID byte 1 parity violation. ");
-		id1 = (readarr[0] << 8) | readarr[1];
-		id2 = readarr[2];
+		*id1 = (readarr[0] << 8) | readarr[1];
+		*id2 = readarr[2];
 		if (bytes > 3) {
-			id2 <<= 8;
-			id2 |= readarr[3];
+			*id2 <<= 8;
+			*id2 |= readarr[3];
 		}
 	} else {
-		id1 = readarr[0];
-		id2 = (readarr[1] << 8) | readarr[2];
+		*id1 = readarr[0];
+		*id2 = (readarr[1] << 8) | readarr[2];
 	}
+}
 
-	msg_cdbg("%s: id1 0x%02x, id2 0x%02x\n", __func__, id1, id2);
+static int compare_id(const struct flashctx *flash, uint32_t id1, uint32_t id2)
+{
+	const struct flashchip *chip = flash->chip;
 
+	msg_cdbg("%s: id1 0x%02"PRIx32", id2 0x%02"PRIx32"\n", __func__, id1, id2);
 	if (id1 == chip->manufacture_id && id2 == chip->model_id)
 		return 1;
 
@@ -138,6 +154,24 @@ static int probe_spi_rdid_generic(struct flashctx *flash, int bytes)
 		return 1;
 
 	return 0;
+}
+
+static int probe_spi_rdid_generic(struct flashctx *flash, int bytes)
+{
+	uint32_t id1, id2;
+	enum id_type idty = bytes == 3 ? RDID : RDID4;
+
+	if (!id_cache[idty].is_cached) {
+		const int ret = spi_rdid(flash, id_cache[idty].bytes, bytes);
+		if (ret == SPI_INVALID_LENGTH)
+			msg_cinfo("%d byte RDID not supported on this SPI controller\n", bytes);
+		if (ret)
+			return 0;
+		id_cache[idty].is_cached = true;
+	}
+
+	rdid_get_ids(id_cache[idty].bytes, bytes, &id1, &id2);
+	return compare_id(flash, id1, id2);
 }
 
 int probe_spi_rdid(struct flashctx *flash)
@@ -147,53 +181,22 @@ int probe_spi_rdid(struct flashctx *flash)
 
 int probe_spi_rdid4(struct flashctx *flash)
 {
-	/* Some SPI controllers do not support commands with writecnt=1 and
-	 * readcnt=4.
-	 */
-	switch (flash->mst->spi.type) {
-#if CONFIG_INTERNAL == 1
-#if defined(__i386__) || defined(__x86_64__)
-	case SPI_CONTROLLER_IT87XX:
-	case SPI_CONTROLLER_WBSIO:
-		msg_cinfo("4 byte RDID not supported on this SPI controller\n");
-		return 0;
-		break;
-#endif
-#endif
-	default:
-		return probe_spi_rdid_generic(flash, 4);
-	}
-
-	return 0;
+	return probe_spi_rdid_generic(flash, 4);
 }
 
 int probe_spi_rems(struct flashctx *flash)
 {
-	const struct flashchip *chip = flash->chip;
-	unsigned char readarr[JEDEC_REMS_INSIZE];
 	uint32_t id1, id2;
 
-	if (spi_rems(flash, readarr)) {
-		return 0;
+	if (!id_cache[REMS].is_cached) {
+		if (spi_rems(flash, id_cache[REMS].bytes))
+			return 0;
+		id_cache[REMS].is_cached = true;
 	}
 
-	id1 = readarr[0];
-	id2 = readarr[1];
-
-	msg_cdbg("%s: id1 0x%x, id2 0x%x\n", __func__, id1, id2);
-
-	if (id1 == chip->manufacture_id && id2 == chip->model_id)
-		return 1;
-
-	/* Test if this is a pure vendor match. */
-	if (id1 == chip->manufacture_id && GENERIC_DEVICE_ID == chip->model_id)
-		return 1;
-
-	/* Test if there is any vendor ID. */
-	if (GENERIC_MANUF_ID == chip->manufacture_id && id1 != 0xff && id1 != 0x00)
-		return 1;
-
-	return 0;
+	id1 = id_cache[REMS].bytes[0];
+	id2 = id_cache[REMS].bytes[1];
+	return compare_id(flash, id1, id2);
 }
 
 int probe_spi_res1(struct flashctx *flash)
@@ -229,7 +232,7 @@ int probe_spi_res1(struct flashctx *flash)
 
 	id2 = readarr[0];
 
-	msg_cdbg("%s: id 0x%x\n", __func__, id2);
+	msg_cdbg("%s: id 0x%"PRIx32"\n", __func__, id2);
 
 	if (id2 != flash->chip->model_id)
 		return 0;
@@ -239,17 +242,17 @@ int probe_spi_res1(struct flashctx *flash)
 
 int probe_spi_res2(struct flashctx *flash)
 {
-	unsigned char readarr[2];
 	uint32_t id1, id2;
 
-	if (spi_res(flash, readarr, 2)) {
-		return 0;
+	if (!id_cache[RES2].is_cached) {
+		if (spi_res(flash, id_cache[RES2].bytes, 2))
+			return 0;
+		id_cache[RES2].is_cached = true;
 	}
 
-	id1 = readarr[0];
-	id2 = readarr[1];
-
-	msg_cdbg("%s: id1 0x%x, id2 0x%x\n", __func__, id1, id2);
+	id1 = id_cache[RES2].bytes[0];
+	id2 = id_cache[RES2].bytes[1];
+	msg_cdbg("%s: id1 0x%"PRIx32", id2 0x%"PRIx32"\n", __func__, id1, id2);
 
 	if (id1 != flash->chip->manufacture_id || id2 != flash->chip->model_id)
 		return 0;
@@ -259,17 +262,17 @@ int probe_spi_res2(struct flashctx *flash)
 
 int probe_spi_res3(struct flashctx *flash)
 {
-	unsigned char readarr[3];
 	uint32_t id1, id2;
 
-	if (spi_res(flash, readarr, 3)) {
-		return 0;
+	if (!id_cache[RES3].is_cached) {
+		if (spi_res(flash, id_cache[RES3].bytes, 3))
+			return 0;
+		id_cache[RES3].is_cached = true;
 	}
 
-	id1 = (readarr[0] << 8) | readarr[1];
-	id2 = readarr[2];
-
-	msg_cdbg("%s: id1 0x%x, id2 0x%x\n", __func__, id1, id2);
+	id1 = (id_cache[RES3].bytes[0] << 8) | id_cache[RES3].bytes[1];
+	id2 = id_cache[RES3].bytes[3];
+	msg_cdbg("%s: id1 0x%"PRIx32", id2 0x%"PRIx32"\n", __func__, id1, id2);
 
 	if (id1 != flash->chip->manufacture_id || id2 != flash->chip->model_id)
 		return 0;
@@ -291,7 +294,7 @@ int probe_spi_at25f(struct flashctx *flash)
 	id1 = readarr[0];
 	id2 = readarr[1];
 
-	msg_cdbg("%s: id1 0x%02x, id2 0x%02x\n", __func__, id1, id2);
+	msg_cdbg("%s: id1 0x%02"PRIx32", id2 0x%02"PRIx32"\n", __func__, id1, id2);
 
 	if (id1 == flash->chip->manufacture_id && id2 == flash->chip->model_id)
 		return 1;
@@ -301,12 +304,17 @@ int probe_spi_at25f(struct flashctx *flash)
 
 static int spi_poll_wip(struct flashctx *const flash, const unsigned int poll_delay)
 {
-	/* FIXME: We can't tell if spi_read_status_register() failed. */
 	/* FIXME: We don't time out. */
-	while (spi_read_status_register(flash) & SPI_SR_WIP)
-		programmer_delay(poll_delay);
-	/* FIXME: Check the status register for errors. */
-	return 0;
+	while (true) {
+		uint8_t status;
+		int ret = spi_read_register(flash, STATUS1, &status);
+		if (ret)
+			return ret;
+		if (!(status & SPI_SR_WIP))
+			return 0;
+
+		programmer_delay(flash, poll_delay);
+	}
 }
 
 /**
@@ -322,7 +330,7 @@ static int spi_simple_write_cmd(struct flashctx *const flash, const uint8_t op, 
 	struct spi_command cmds[] = {
 	{
 		.readarr = 0,
-		.writecnt = 1,
+		.writecnt = JEDEC_WREN_OUTSIZE,
 		.writearr = (const unsigned char[]){ JEDEC_WREN },
 	}, {
 		.readarr = 0,
@@ -343,7 +351,16 @@ static int spi_simple_write_cmd(struct flashctx *const flash, const uint8_t op, 
 
 static int spi_write_extended_address_register(struct flashctx *const flash, const uint8_t regdata)
 {
-	const uint8_t op = flash->chip->wrea_override ? : JEDEC_WRITE_EXT_ADDR_REG;
+	uint8_t op;
+	if (flash->chip->feature_bits & FEATURE_4BA_EAR_C5C8) {
+		op = JEDEC_WRITE_EXT_ADDR_REG;
+	} else if (flash->chip->feature_bits & FEATURE_4BA_EAR_1716) {
+		op = ALT_WRITE_EXT_ADDR_REG_17;
+	} else {
+		msg_cerr("Flash misses feature flag for extended-address register.\n");
+		return -1;
+	}
+
 	struct spi_command cmds[] = {
 	{
 		.readarr = 0,
@@ -363,7 +380,7 @@ static int spi_write_extended_address_register(struct flashctx *const flash, con
 	return result;
 }
 
-static int spi_set_extended_address(struct flashctx *const flash, const uint8_t addr_high)
+int spi_set_extended_address(struct flashctx *const flash, const uint8_t addr_high)
 {
 	if (flash->address_high_byte != addr_high &&
 	    spi_write_extended_address_register(flash, addr_high))
@@ -386,7 +403,7 @@ static int spi_prepare_address(struct flashctx *const flash, uint8_t cmd_buf[],
 		cmd_buf[4] = (addr >>  0) & 0xff;
 		return 4;
 	} else {
-		if (flash->chip->feature_bits & FEATURE_4BA_EXT_ADDR) {
+		if (flash->chip->feature_bits & FEATURE_4BA_EAR_ANY) {
 			if (spi_set_extended_address(flash, addr >> 24))
 				return -1;
 		} else if (addr >> 24) {
@@ -442,6 +459,8 @@ static int spi_write_cmd(struct flashctx *const flash, const uint8_t op,
 		msg_cerr("%s called for too long a write\n", __func__);
 		return 1;
 	}
+	if (!out_bytes && out_len > 0)
+		return 1;
 
 	memcpy(cmd + 1 + addr_len, out_bytes, out_len);
 	cmds[1].writecnt = 1 + addr_len + out_len;
@@ -455,29 +474,29 @@ static int spi_write_cmd(struct flashctx *const flash, const uint8_t op,
 	return result ? result : status;
 }
 
-int spi_chip_erase_60(struct flashctx *flash)
+static int spi_chip_erase_60(struct flashctx *flash)
 {
 	/* This usually takes 1-85s, so wait in 1s steps. */
-	return spi_simple_write_cmd(flash, 0x60, 1000 * 1000);
+	return spi_simple_write_cmd(flash, JEDEC_CE_60, 1000 * 1000);
 }
 
-int spi_chip_erase_62(struct flashctx *flash)
+static int spi_chip_erase_62(struct flashctx *flash)
 {
 	/* This usually takes 2-5s, so wait in 100ms steps. */
-	return spi_simple_write_cmd(flash, 0x62, 100 * 1000);
+	return spi_simple_write_cmd(flash, JEDEC_CE_62, 100 * 1000);
 }
 
-int spi_chip_erase_c7(struct flashctx *flash)
+static int spi_chip_erase_c7(struct flashctx *flash)
 {
 	/* This usually takes 1-85s, so wait in 1s steps. */
-	return spi_simple_write_cmd(flash, 0xc7, 1000 * 1000);
+	return spi_simple_write_cmd(flash, JEDEC_CE_C7, 1000 * 1000);
 }
 
 int spi_block_erase_52(struct flashctx *flash, unsigned int addr,
 		       unsigned int blocklen)
 {
 	/* This usually takes 100-4000ms, so wait in 100ms steps. */
-	return spi_write_cmd(flash, 0x52, false, addr, NULL, 0, 100 * 1000);
+	return spi_write_cmd(flash, JEDEC_BE_52, false, addr, NULL, 0, 100 * 1000);
 }
 
 /* Block size is usually
@@ -486,7 +505,7 @@ int spi_block_erase_52(struct flashctx *flash, unsigned int addr,
 int spi_block_erase_c4(struct flashctx *flash, unsigned int addr, unsigned int blocklen)
 {
 	/* This usually takes 240-480s, so wait in 500ms steps. */
-	return spi_write_cmd(flash, 0xc4, false, addr, NULL, 0, 500 * 1000);
+	return spi_write_cmd(flash, JEDEC_BE_C4, false, addr, NULL, 0, 500 * 1000);
 }
 
 /* Block size is usually
@@ -498,7 +517,7 @@ int spi_block_erase_d8(struct flashctx *flash, unsigned int addr,
 		       unsigned int blocklen)
 {
 	/* This usually takes 100-4000ms, so wait in 100ms steps. */
-	return spi_write_cmd(flash, 0xd8, false, addr, NULL, 0, 100 * 1000);
+	return spi_write_cmd(flash, JEDEC_BE_D8, false, addr, NULL, 0, 100 * 1000);
 }
 
 /* Block size is usually
@@ -508,7 +527,7 @@ int spi_block_erase_d7(struct flashctx *flash, unsigned int addr,
 		       unsigned int blocklen)
 {
 	/* This usually takes 100-4000ms, so wait in 100ms steps. */
-	return spi_write_cmd(flash, 0xd7, false, addr, NULL, 0, 100 * 1000);
+	return spi_write_cmd(flash, JEDEC_BE_D7, false, addr, NULL, 0, 100 * 1000);
 }
 
 /* Page erase (usually 256B blocks) */
@@ -524,19 +543,19 @@ int spi_block_erase_20(struct flashctx *flash, unsigned int addr,
 		       unsigned int blocklen)
 {
 	/* This usually takes 15-800ms, so wait in 10ms steps. */
-	return spi_write_cmd(flash, 0x20, false, addr, NULL, 0, 10 * 1000);
+	return spi_write_cmd(flash, JEDEC_SE, false, addr, NULL, 0, 10 * 1000);
 }
 
 int spi_block_erase_50(struct flashctx *flash, unsigned int addr, unsigned int blocklen)
 {
 	/* This usually takes 10ms, so wait in 1ms steps. */
-	return spi_write_cmd(flash, 0x50, false, addr, NULL, 0, 1 * 1000);
+	return spi_write_cmd(flash, JEDEC_BE_50, false, addr, NULL, 0, 1 * 1000);
 }
 
 int spi_block_erase_81(struct flashctx *flash, unsigned int addr, unsigned int blocklen)
 {
 	/* This usually takes 8ms, so wait in 1ms steps. */
-	return spi_write_cmd(flash, 0x81, false, addr, NULL, 0, 1 * 1000);
+	return spi_write_cmd(flash, JEDEC_BE_81, false, addr, NULL, 0, 1 * 1000);
 }
 
 int spi_block_erase_60(struct flashctx *flash, unsigned int addr,
@@ -579,6 +598,13 @@ int spi_block_erase_21(struct flashctx *flash, unsigned int addr, unsigned int b
 }
 
 /* Erase 32 KB of flash with 4-bytes address from ANY mode (3-bytes or 4-bytes) */
+int spi_block_erase_53(struct flashctx *flash, unsigned int addr, unsigned int blocklen)
+{
+	/* This usually takes 100-4000ms, so wait in 100ms steps. */
+	return spi_write_cmd(flash, 0x53, true, addr, NULL, 0, 100 * 1000);
+}
+
+/* Erase 32 KB of flash with 4-bytes address from ANY mode (3-bytes or 4-bytes) */
 int spi_block_erase_5c(struct flashctx *flash, unsigned int addr, unsigned int blocklen)
 {
 	/* This usually takes 100-4000ms, so wait in 100ms steps. */
@@ -592,46 +618,37 @@ int spi_block_erase_dc(struct flashctx *flash, unsigned int addr, unsigned int b
 	return spi_write_cmd(flash, 0xdc, true, addr, NULL, 0, 100 * 1000);
 }
 
-erasefunc_t *spi_get_erasefn_from_opcode(uint8_t opcode)
+static const struct {
+	enum block_erase_func func;
+	uint8_t opcode;
+} spi25_function_opcode_list[] = {
+	{SPI_BLOCK_ERASE_20, 0x20},
+	{SPI_BLOCK_ERASE_21, 0x21},
+	{SPI_BLOCK_ERASE_50, 0x50},
+	{SPI_BLOCK_ERASE_52, 0x52},
+	{SPI_BLOCK_ERASE_53, 0x53},
+	{SPI_BLOCK_ERASE_5C, 0x5c},
+	{SPI_BLOCK_ERASE_60, 0x60},
+	{SPI_BLOCK_ERASE_62, 0x62},
+	{SPI_BLOCK_ERASE_81, 0x81},
+	{SPI_BLOCK_ERASE_C4, 0xc4},
+	{SPI_BLOCK_ERASE_C7, 0xc7},
+	{SPI_BLOCK_ERASE_D7, 0xd7},
+	{SPI_BLOCK_ERASE_D8, 0xd8},
+	{SPI_BLOCK_ERASE_DB, 0xdb},
+	{SPI_BLOCK_ERASE_DC, 0xdc},
+};
+
+enum block_erase_func spi25_get_erasefn_from_opcode(uint8_t opcode)
 {
-	switch(opcode){
-	case 0xff:
-	case 0x00:
-		/* Not specified, assuming "not supported". */
-		return NULL;
-	case 0x20:
-		return &spi_block_erase_20;
-	case 0x21:
-		return &spi_block_erase_21;
-	case 0x50:
-		return &spi_block_erase_50;
-	case 0x52:
-		return &spi_block_erase_52;
-	case 0x5c:
-		return &spi_block_erase_5c;
-	case 0x60:
-		return &spi_block_erase_60;
-	case 0x62:
-		return &spi_block_erase_62;
-	case 0x81:
-		return &spi_block_erase_81;
-	case 0xc4:
-		return &spi_block_erase_c4;
-	case 0xc7:
-		return &spi_block_erase_c7;
-	case 0xd7:
-		return &spi_block_erase_d7;
-	case 0xd8:
-		return &spi_block_erase_d8;
-	case 0xdb:
-		return &spi_block_erase_db;
-	case 0xdc:
-		return &spi_block_erase_dc;
-	default:
-		msg_cinfo("%s: unknown erase opcode (0x%02x). Please report "
-			  "this at flashrom@flashrom.org\n", __func__, opcode);
-		return NULL;
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(spi25_function_opcode_list); i++) {
+		if (spi25_function_opcode_list[i].opcode == opcode)
+			return spi25_function_opcode_list[i].func;
 	}
+	msg_cinfo("%s: unknown erase opcode (0x%02x). Please report "
+			  "this at flashrom@flashrom.org\n", __func__, opcode);
+	return NO_BLOCK_ERASE_FUNC;
 }
 
 static int spi_nbyte_program(struct flashctx *flash, unsigned int addr, const uint8_t *bytes, unsigned int len)
@@ -644,7 +661,7 @@ static int spi_nbyte_program(struct flashctx *flash, unsigned int addr, const ui
 int spi_nbyte_read(struct flashctx *flash, unsigned int address, uint8_t *bytes,
 		   unsigned int len)
 {
-	const bool native_4ba =	flash->chip->feature_bits & FEATURE_4BA_READ && spi_master_4ba(flash);
+	const bool native_4ba = flash->chip->feature_bits & FEATURE_4BA_READ && spi_master_4ba(flash);
 	uint8_t cmd[1 + JEDEC_MAX_ADDR_LEN] = { native_4ba ? JEDEC_READ_4BA : JEDEC_READ, };
 
 	const int addr_len = spi_prepare_address(flash, cmd, native_4ba, address);
@@ -657,43 +674,23 @@ int spi_nbyte_read(struct flashctx *flash, unsigned int address, uint8_t *bytes,
 
 /*
  * Read a part of the flash chip.
- * FIXME: Use the chunk code from Michael Karcher instead.
- * Each naturally aligned area is read separately in chunks with a maximum size of chunksize.
+ * Data is read in chunks with a maximum size of chunksize.
  */
 int spi_read_chunked(struct flashctx *flash, uint8_t *buf, unsigned int start,
 		     unsigned int len, unsigned int chunksize)
 {
-	int rc = 0;
-	unsigned int i, j, starthere, lenhere, toread;
-	/* Limit for multi-die 4-byte-addressing chips. */
-	unsigned int area_size = min(flash->chip->total_size * 1024, 16 * 1024 * 1024);
-
-	/* Warning: This loop has a very unusual condition and body.
-	 * The loop needs to go through each area with at least one affected
-	 * byte. The lowest area number is (start / area_size) since that
-	 * division rounds down. The highest area number we want is the area
-	 * where the last byte of the range lives. That last byte has the
-	 * address (start + len - 1), thus the highest area number is
-	 * (start + len - 1) / area_size. Since we want to include that last
-	 * area as well, the loop condition uses <=.
-	 */
-	for (i = start / area_size; i <= (start + len - 1) / area_size; i++) {
-		/* Byte position of the first byte in the range in this area. */
-		/* starthere is an offset to the base address of the chip. */
-		starthere = max(start, i * area_size);
-		/* Length of bytes in the range in this area. */
-		lenhere = min(start + len, (i + 1) * area_size) - starthere;
-		for (j = 0; j < lenhere; j += chunksize) {
-			toread = min(chunksize, lenhere - j);
-			rc = spi_nbyte_read(flash, starthere + j, buf + starthere - start + j, toread);
-			if (rc)
-				break;
-		}
-		if (rc)
-			break;
+	int ret;
+	size_t to_read;
+	size_t start_address = start;
+	size_t end_address = len - start;
+	for (; len; len -= to_read, buf += to_read, start += to_read) {
+		to_read = min(chunksize, len);
+		ret = spi_nbyte_read(flash, start, buf, to_read);
+		if (ret)
+			return ret;
+		update_progress(flash, FLASHROM_PROGRESS_READ, start - start_address + to_read, end_address);
 	}
-
-	return rc;
+	return 0;
 }
 
 /*
@@ -711,6 +708,8 @@ int spi_write_chunked(struct flashctx *flash, const uint8_t *buf, unsigned int s
 	 * we're OK for now.
 	 */
 	unsigned int page_size = flash->chip->page_size;
+	size_t start_address = start;
+	size_t end_address = len - start;
 
 	/* Warning: This loop has a very unusual condition and body.
 	 * The loop needs to go through each page with at least one affected
@@ -735,6 +734,7 @@ int spi_write_chunked(struct flashctx *flash, const uint8_t *buf, unsigned int s
 			if (rc)
 				return rc;
 		}
+		update_progress(flash, FLASHROM_PROGRESS_WRITE, start - start_address + lenhere, end_address);
 	}
 
 	return 0;
@@ -754,6 +754,7 @@ int spi_chip_write_1(struct flashctx *flash, const uint8_t *buf, unsigned int st
 	for (i = start; i < start + len; i++) {
 		if (spi_nbyte_program(flash, i, buf + i - start, 1))
 			return 1;
+		update_progress(flash, FLASHROM_PROGRESS_WRITE, i - start, len - start);
 	}
 	return 0;
 }
@@ -765,20 +766,6 @@ int default_spi_write_aai(struct flashctx *flash, const uint8_t *buf, unsigned i
 	unsigned char cmd[JEDEC_AAI_WORD_PROGRAM_CONT_OUTSIZE] = {
 		JEDEC_AAI_WORD_PROGRAM,
 	};
-
-	switch (flash->mst->spi.type) {
-#if CONFIG_INTERNAL == 1
-#if defined(__i386__) || defined(__x86_64__)
-	case SPI_CONTROLLER_IT87XX:
-	case SPI_CONTROLLER_WBSIO:
-		msg_perr("%s: impossible with this SPI controller,"
-				" degrading to byte program\n", __func__);
-		return spi_chip_write_1(flash, buf, start, len);
-#endif
-#endif
-	default:
-		break;
-	}
 
 	/* The even start address and even length requirements can be either
 	 * honored outside this function, or we can call spi_byte_program
@@ -834,7 +821,6 @@ int default_spi_write_aai(struct flashctx *flash, const uint8_t *buf, unsigned i
 	if (pos < start + len) {
 		if (spi_chip_write_1(flash, buf + pos - start, pos, pos % 2))
 			return SPI_GENERIC_ERROR;
-		pos += pos % 2;
 	}
 
 	return 0;

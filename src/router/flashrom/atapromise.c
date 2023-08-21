@@ -14,13 +14,13 @@
  * GNU General Public License for more details.
  */
 
-#if defined(__i386__) || defined(__x86_64__)
-
 #include <string.h>
 #include <stdlib.h>
 #include "flash.h"
 #include "programmer.h"
-#include "hwaccess.h"
+#include "hwaccess_x86_io.h"
+#include "hwaccess_physmap.h"
+#include "platform/pci.h"
 
 #define MAX_ROM_DECODE (32 * 1024)
 #define ADDR_MASK (MAX_ROM_DECODE - 1)
@@ -40,40 +40,21 @@
  * tested Ultra100 uses a 128 kB MX29F001T chip), the chip size is hackishly adjusted in atapromise_limit_chip.
  */
 
-static uint32_t io_base_addr = 0;
-static uint32_t rom_base_addr = 0;
+struct atapromise_data {
+	uint32_t io_base_addr;
+	uint32_t rom_base_addr;
+	uint8_t *bar;
+	size_t rom_size;
+};
 
-static uint8_t *atapromise_bar = NULL;
-static size_t rom_size = 0;
-
-const struct dev_entry ata_promise[] = {
+static const struct dev_entry ata_promise[] = {
 	{0x105a, 0x4d38, NT, "Promise", "PDC20262 (FastTrak66/Ultra66)"},
 	{0x105a, 0x0d30, NT, "Promise", "PDC20265 (FastTrak100 Lite/Ultra100)"},
 	{0x105a, 0x4d30, OK, "Promise", "PDC20267 (FastTrak100/Ultra100)"},
 	{0},
 };
 
-static void atapromise_chip_writeb(const struct flashctx *flash, uint8_t val, chipaddr addr);
-static uint8_t atapromise_chip_readb(const struct flashctx *flash, const chipaddr addr);
-
-static const struct par_master par_master_atapromise = {
-		.chip_readb		= atapromise_chip_readb,
-		.chip_readw		= fallback_chip_readw,
-		.chip_readl		= fallback_chip_readl,
-		.chip_readn		= fallback_chip_readn,
-		.chip_writeb		= atapromise_chip_writeb,
-		.chip_writew		= fallback_chip_writew,
-		.chip_writel		= fallback_chip_writel,
-		.chip_writen		= fallback_chip_writen,
-};
-
-void *atapromise_map(const char *descr, uintptr_t phys_addr, size_t len)
-{
-	/* In case fallback_map ever returns something other than NULL. */
-	return NULL;
-}
-
-static void atapromise_limit_chip(struct flashchip *chip)
+static void atapromise_limit_chip(struct flashchip *chip, size_t rom_size)
 {
 	unsigned int i, size;
 	unsigned int usable_erasers = 0;
@@ -90,7 +71,7 @@ static void atapromise_limit_chip(struct flashchip *chip)
 	for (i = 0; i < NUM_ERASEFUNCTIONS; ++i) {
 		if (chip->block_erasers[i].eraseblocks[0].size != size) {
 			chip->block_erasers[i].eraseblocks[0].count = 0;
-			chip->block_erasers[i].block_erase = NULL;
+			chip->block_erasers[i].block_erase = NO_BLOCK_ERASE_FUNC;
 		} else {
 			chip->block_erasers[i].eraseblocks[0].size = rom_size;
 			usable_erasers++;
@@ -106,14 +87,48 @@ static void atapromise_limit_chip(struct flashchip *chip)
 	}
 }
 
-int atapromise_init(void)
+static void atapromise_chip_writeb(const struct flashctx *flash, uint8_t val, chipaddr addr)
+{
+	const struct atapromise_data *data = flash->mst->par.data;
+	uint32_t value;
+
+	atapromise_limit_chip(flash->chip, data->rom_size);
+	value = (data->rom_base_addr + (addr & ADDR_MASK)) << 8 | val;
+	OUTL(value, data->io_base_addr + 0x14);
+}
+
+static uint8_t atapromise_chip_readb(const struct flashctx *flash, const chipaddr addr)
+{
+	const struct atapromise_data *data = flash->mst->par.data;
+
+	atapromise_limit_chip(flash->chip, data->rom_size);
+	return pci_mmio_readb(data->bar + (addr & ADDR_MASK));
+}
+
+static int atapromise_shutdown(void *par_data)
+{
+	free(par_data);
+	return 0;
+}
+
+static const struct par_master par_master_atapromise = {
+	.chip_readb	= atapromise_chip_readb,
+	.chip_writeb	= atapromise_chip_writeb,
+	.shutdown	= atapromise_shutdown,
+};
+
+static int atapromise_init(const struct programmer_cfg *cfg)
 {
 	struct pci_dev *dev = NULL;
+	uint32_t io_base_addr;
+	uint32_t rom_base_addr;
+	uint8_t *bar;
+	size_t rom_size;
 
 	if (rget_io_perms())
 		return 1;
 
-	dev = pcidev_init(ata_promise, PCI_BASE_ADDRESS_4);
+	dev = pcidev_init(cfg, ata_promise, PCI_BASE_ADDRESS_4);
 	if (!dev)
 		return 1;
 
@@ -134,37 +149,33 @@ int atapromise_init(void)
 	}
 
 	rom_size = dev->rom_size > MAX_ROM_DECODE ? MAX_ROM_DECODE : dev->rom_size;
-	atapromise_bar = (uint8_t*)rphysmap("Promise", rom_base_addr, rom_size);
-	if (atapromise_bar == ERROR_PTR) {
+	bar = (uint8_t*)rphysmap("Promise", rom_base_addr, rom_size);
+	if (bar == ERROR_PTR) {
 		return 1;
 	}
-
-	max_rom_decode.parallel = rom_size;
-	register_par_master(&par_master_atapromise, BUS_PARALLEL);
 
 	msg_pwarn("Do not use this device as a generic programmer. It will leave anything outside\n"
 		  "the first %zu kB of the flash chip in an undefined state. It works fine for the\n"
 		  "purpose of updating the firmware of this device (padding may necessary).\n",
 		  rom_size / 1024);
 
-	return 0;
+	struct atapromise_data *data = calloc(1, sizeof(*data));
+	if (!data) {
+		msg_perr("Unable to allocate space for PAR master data\n");
+		return 1;
+	}
+	data->io_base_addr = io_base_addr;
+	data->rom_base_addr = rom_base_addr;
+	data->bar = bar;
+	data->rom_size = rom_size;
+
+	max_rom_decode.parallel = rom_size;
+	return register_par_master(&par_master_atapromise, BUS_PARALLEL, data);
 }
 
-static void atapromise_chip_writeb(const struct flashctx *flash, uint8_t val, chipaddr addr)
-{
-	uint32_t data;
-
-	atapromise_limit_chip(flash->chip);
-	data = (rom_base_addr + (addr & ADDR_MASK)) << 8 | val;
-	OUTL(data, io_base_addr + 0x14);
-}
-
-static uint8_t atapromise_chip_readb(const struct flashctx *flash, const chipaddr addr)
-{
-	atapromise_limit_chip(flash->chip);
-	return pci_mmio_readb(atapromise_bar + (addr & ADDR_MASK));
-}
-
-#else
-#error PCI port I/O access is not supported on this architecture yet.
-#endif
+const struct programmer_entry programmer_atapromise = {
+	.name			= "atapromise",
+	.type			= PCI,
+	.devs.dev		= ata_promise,
+	.init			= atapromise_init,
+};

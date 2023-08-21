@@ -4,6 +4,8 @@
 # This Makefile works standalone, but it is usually called from the main
 # Makefile in the flashrom directory.
 
+include ../../Makefile.include
+
 PROGRAM=ich_descriptors_tool
 EXTRAINCDIRS = ../../ .
 DEPPATH = .dep
@@ -16,29 +18,31 @@ WARNERROR ?= yes
 
 SRC = $(wildcard *.c)
 
-CC ?= gcc
-
 # If the user has specified custom CFLAGS, all CFLAGS settings below will be
 # completely ignored by gnumake.
 CFLAGS ?= -Os -Wall -Wshadow
+override CFLAGS += -I$(SHAREDSRCDIR)/include
 
+# Auto determine HOST_OS and TARGET_OS if they are not set as argument
 HOST_OS ?= $(shell uname)
+TARGET_OS := $(call c_macro_test, ../../Makefile.d/os_test.h)
+
 ifeq ($(findstring MINGW, $(HOST_OS)), MINGW)
 # Explicitly set CC = gcc on MinGW, otherwise: "cc: command not found".
 CC = gcc
-EXEC_SUFFIX := .exe
-# Some functions provided by Microsoft do not work as described in C99 specifications. This macro fixes that
-# for MinGW. See http://sourceforge.net/p/mingw-w64/wiki2/printf%20and%20scanf%20family/ */
-FLASHROM_CFLAGS += -D__USE_MINGW_ANSI_STDIO=1
 endif
-
-override TARGET_OS := $(shell $(CC) $(CPPFLAGS) -E $(SHAREDSRCDIR)/os.h | grep -v '^\#' | grep '"' | \
-			cut -f 2 -d'"')
 
 ifeq ($(TARGET_OS), DOS)
 EXEC_SUFFIX := .exe
 # DJGPP has odd uint*_t definitions which cause lots of format string warnings.
 CFLAGS += -Wno-format
+endif
+
+ifeq ($(TARGET_OS), MinGW)
+EXEC_SUFFIX := .exe
+# Some functions provided by Microsoft do not work as described in C99 specifications. This macro fixes that
+# for MinGW. See http://sourceforge.net/p/mingw-w64/wiki2/printf%20and%20scanf%20family/
+CFLAGS += -D__USE_MINGW_ANSI_STDIO=1
 endif
 
 ifeq ($(WARNERROR), yes)
@@ -68,6 +72,7 @@ $(SHAREDOBJ): $(OBJATH)/%.o : $(SHAREDSRCDIR)/%.c
 $(PROGRAM)$(EXEC_SUFFIX): $(OBJ) $(SHAREDOBJ)
 	$(CC) $(LDFLAGS) -o $(PROGRAM)$(EXEC_SUFFIX) $(OBJ) $(SHAREDOBJ)
 
+# We don't use EXEC_SUFFIX here because we want to clean everything.
 clean:
 	rm -f $(PROGRAM) $(PROGRAM).exe
 	rm -rf $(DEPPATH) $(OBJATH)

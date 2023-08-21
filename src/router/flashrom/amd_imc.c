@@ -15,12 +15,11 @@
  * GNU General Public License for more details.
  */
 
-#if defined(__i386__) || defined(__x86_64__)
-
 #include "flash.h"
 #include "programmer.h"
-#include "hwaccess.h"
+#include "hwaccess_x86_io.h"
 #include "spi.h"
+#include "platform/pci.h"
 
 /* same as serverengines */
 static void enter_conf_mode_ec(uint16_t port)
@@ -61,7 +60,7 @@ static int mbox_wait_ack(uint16_t mbox_port)
 			msg_pwarn("IMC MBOX: Timeout!\n");
 			return 1;
 		}
-		programmer_delay(1000);
+		default_delay(1000);
 	}
 	return 0;
 }
@@ -123,7 +122,7 @@ static int imc_resume(void *data)
 	int ret = imc_send_cmd(dev, 0xb5);
 
 	if (ret != 0)
-		msg_pinfo("Resuming IMC failed)\n");
+		msg_pinfo("Resuming IMC failed.\n");
 	else
 		msg_pdbg2("IMC resumed.\n");
 	return ret;
@@ -151,5 +150,3 @@ int amd_imc_shutdown(struct pci_dev *dev)
 
 	return ret;
 }
-
-#endif

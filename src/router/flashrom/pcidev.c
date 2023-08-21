@@ -19,7 +19,7 @@
 #include <string.h>
 #include "flash.h"
 #include "programmer.h"
-#include "hwaccess.h"
+#include "platform/pci.h"
 
 struct pci_access *pacc;
 
@@ -148,6 +148,75 @@ uintptr_t pcidev_readbar(struct pci_dev *dev, int bar)
 	return (uintptr_t)addr;
 }
 
+struct pci_dev *pcidev_scandev(struct pci_filter *filter, struct pci_dev *start)
+{
+	struct pci_dev *temp;
+	for (temp = start ? start->next : pacc->devices; temp; temp = temp->next) {
+		if (pci_filter_match(filter, temp)) {
+			pci_fill_info(temp, PCI_FILL_IDENT);
+			return temp;
+		}
+	}
+	return NULL;
+}
+
+struct pci_dev *pcidev_card_find(uint16_t vendor, uint16_t device,
+				 uint16_t card_vendor, uint16_t card_device)
+{
+	struct pci_dev *temp = NULL;
+	struct pci_filter filter;
+
+	pci_filter_init(NULL, &filter);
+	filter.vendor = vendor;
+	filter.device = device;
+
+	while ((temp = pcidev_scandev(&filter, temp))) {
+		if ((card_vendor == pci_read_word(temp, PCI_SUBSYSTEM_VENDOR_ID))
+		    && (card_device == pci_read_word(temp, PCI_SUBSYSTEM_ID)))
+			return temp;
+	}
+
+	return NULL;
+}
+
+struct pci_dev *pcidev_find(uint16_t vendor, uint16_t device)
+{
+	struct pci_filter filter;
+
+	pci_filter_init(NULL, &filter);
+	filter.vendor = vendor;
+	filter.device = device;
+
+	return pcidev_scandev(&filter, NULL);
+}
+
+struct pci_dev *pcidev_getdevfn(struct pci_dev *dev, const int func)
+{
+	struct pci_dev *const new = pci_get_dev(pacc, dev->domain, dev->bus, dev->dev, func);
+	if (new)
+		pci_fill_info(new, PCI_FILL_IDENT);
+	return new;
+}
+
+struct pci_dev *pcidev_find_vendorclass(uint16_t vendor, uint16_t devclass)
+{
+	struct pci_dev *temp = NULL;
+	struct pci_filter filter;
+	uint16_t tmp2;
+
+	pci_filter_init(NULL, &filter);
+	filter.vendor = vendor;
+
+	while ((temp = pcidev_scandev(&filter, temp))) {
+		/* Read PCI class */
+		tmp2 = pci_read_word(temp, PCI_CLASS_DEVICE);
+		if (tmp2 == devclass)
+			return temp;
+	}
+
+	return NULL;
+}
+
 static int pcidev_shutdown(void *data)
 {
 	if (pacc == NULL) {
@@ -180,7 +249,7 @@ int pci_init_common(void)
  * also matches the specified bus:device.function.
  * For convenience, this function also registers its own undo handlers.
  */
-struct pci_dev *pcidev_init(const struct dev_entry *devs, int bar)
+struct pci_dev *pcidev_init(const struct programmer_cfg *cfg, const struct dev_entry *devs, int bar)
 {
 	struct pci_dev *dev;
 	struct pci_dev *found_dev = NULL;
@@ -189,14 +258,13 @@ struct pci_dev *pcidev_init(const struct dev_entry *devs, int bar)
 	char *msg = NULL;
 	int found = 0;
 	int i;
-	uintptr_t addr = 0;
 
 	if (pci_init_common() != 0)
 		return NULL;
 	pci_filter_init(pacc, &filter);
 
 	/* Filter by bb:dd.f (if supplied by the user). */
-	pcidev_bdf = extract_programmer_param("pci");
+	pcidev_bdf = extract_programmer_param_str(cfg, "pci");
 	if (pcidev_bdf != NULL) {
 		if ((msg = pci_filter_parse_slot(&filter, pcidev_bdf))) {
 			msg_perr("Error: %s\n", msg);
@@ -207,6 +275,7 @@ struct pci_dev *pcidev_init(const struct dev_entry *devs, int bar)
 
 	for (dev = pacc->devices; dev; dev = dev->next) {
 		if (pci_filter_match(&filter, dev)) {
+			pci_fill_info(dev, PCI_FILL_IDENT);
 			/* Check against list of supported devices. */
 			for (i = 0; devs[i].device_name != NULL; i++)
 				if ((dev->vendor_id == devs[i].vendor_id) &&
@@ -229,7 +298,7 @@ struct pci_dev *pcidev_init(const struct dev_entry *devs, int bar)
 			/* FIXME: We should count all matching devices, not
 			 * just those with a valid BAR.
 			 */
-			if ((addr = pcidev_readbar(dev, bar)) != 0) {
+			if (pcidev_readbar(dev, bar) != 0) {
 				found_dev = dev;
 				found++;
 			}
@@ -266,7 +335,7 @@ struct undo_pci_write_data {
 	};
 };
 
-int undo_pci_write(void *p)
+static int undo_pci_write(void *p)
 {
 	struct undo_pci_write_data *data = p;
 	if (pacc == NULL || data->dev == NULL) {
@@ -296,7 +365,7 @@ int undo_pci_write(void *p)
 #define register_undo_pci_write(a, b, c)				\
 {									\
 	struct undo_pci_write_data *undo_pci_write_data;		\
-	undo_pci_write_data = malloc(sizeof(struct undo_pci_write_data)); \
+	undo_pci_write_data = malloc(sizeof(*undo_pci_write_data));	\
 	if (!undo_pci_write_data) {					\
 		msg_gerr("Out of memory!\n");				\
 		exit(1);						\

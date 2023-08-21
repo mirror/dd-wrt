@@ -26,20 +26,7 @@
 #include "programmer.h"
 #include "spi.h"
 
-int spi_send_command(struct flashctx *flash, unsigned int writecnt,
-		     unsigned int readcnt, const unsigned char *writearr,
-		     unsigned char *readarr)
-{
-	return flash->mst->spi.command(flash, writecnt, readcnt, writearr,
-				       readarr);
-}
-
-int spi_send_multicommand(struct flashctx *flash, struct spi_command *cmds)
-{
-	return flash->mst->spi.multicommand(flash, cmds);
-}
-
-int default_spi_send_command(struct flashctx *flash, unsigned int writecnt,
+static int default_spi_send_command(const struct flashctx *flash, unsigned int writecnt,
 			     unsigned int readcnt,
 			     const unsigned char *writearr,
 			     unsigned char *readarr)
@@ -60,7 +47,7 @@ int default_spi_send_command(struct flashctx *flash, unsigned int writecnt,
 	return spi_send_multicommand(flash, cmd);
 }
 
-int default_spi_send_multicommand(struct flashctx *flash,
+static int default_spi_send_multicommand(const struct flashctx *flash,
 				  struct spi_command *cmds)
 {
 	int result = 0;
@@ -69,6 +56,22 @@ int default_spi_send_multicommand(struct flashctx *flash,
 					  cmds->writearr, cmds->readarr);
 	}
 	return result;
+}
+
+int spi_send_command(const struct flashctx *flash, unsigned int writecnt,
+		     unsigned int readcnt, const unsigned char *writearr,
+		     unsigned char *readarr)
+{
+	if (flash->mst->spi.command)
+		return flash->mst->spi.command(flash, writecnt, readcnt, writearr, readarr);
+	return default_spi_send_command(flash, writecnt, readcnt, writearr, readarr);
+}
+
+int spi_send_multicommand(const struct flashctx *flash, struct spi_command *cmds)
+{
+	if (flash->mst->spi.multicommand)
+		return flash->mst->spi.multicommand(flash, cmds);
+	return default_spi_send_multicommand(flash, cmds);
 }
 
 int default_spi_read(struct flashctx *flash, uint8_t *buf, unsigned int start,
@@ -99,7 +102,22 @@ int default_spi_write_256(struct flashctx *flash, const uint8_t *buf, unsigned i
 int spi_chip_read(struct flashctx *flash, uint8_t *buf, unsigned int start,
 		  unsigned int len)
 {
-	return flash->mst->spi.read(flash, buf, start, len);
+	int ret;
+	size_t to_read;
+	size_t start_address = start;
+	size_t end_address = len - start;
+	for (; len; len -= to_read, buf += to_read, start += to_read) {
+		/* Do not cross 16MiB boundaries in a single transfer.
+		   This helps with
+		   o multi-die 4-byte-addressing chips,
+		   o dediprog that has a protocol limit of 32MiB-512B. */
+		to_read = min(ALIGN_DOWN(start + 16*MiB, 16*MiB) - start, len);
+		ret = flash->mst->spi.read(flash, buf, start, to_read);
+		if (ret)
+			return ret;
+		update_progress(flash, FLASHROM_PROGRESS_READ, start - start_address + to_read, end_address);
+	}
+	return 0;
 }
 
 /*
@@ -116,17 +134,30 @@ int spi_chip_write_256(struct flashctx *flash, const uint8_t *buf, unsigned int 
 
 int spi_aai_write(struct flashctx *flash, const uint8_t *buf, unsigned int start, unsigned int len)
 {
-	return flash->mst->spi.write_aai(flash, buf, start, len);
+	if (flash->mst->spi.write_aai)
+		return flash->mst->spi.write_aai(flash, buf, start, len);
+	return default_spi_write_aai(flash, buf, start, len);
 }
 
-int register_spi_master(const struct spi_master *mst)
+bool spi_probe_opcode(const struct flashctx *flash, uint8_t opcode)
 {
-	struct registered_master rmst;
+	if (!flash->mst->spi.probe_opcode)
+		return true; /* no probe_opcode implies default of supported. */
+	return flash->mst->spi.probe_opcode(flash, opcode);
+}
 
-	if (!mst->write_aai || !mst->write_256 || !mst->read || !mst->command ||
-	    !mst->multicommand ||
-	    ((mst->command == default_spi_send_command) &&
-	     (mst->multicommand == default_spi_send_multicommand))) {
+int register_spi_master(const struct spi_master *mst, void *data)
+{
+	struct registered_master rmst = {0};
+
+	if (mst->shutdown) {
+		if (register_shutdown(mst->shutdown, data)) {
+			mst->shutdown(data); /* cleanup */
+			return 1;
+		}
+	}
+
+	if (!mst->write_256 || !mst->read || (!mst->command && !mst->multicommand)) {
 		msg_perr("%s called with incomplete master definition. "
 			 "Please report a bug at flashrom@flashrom.org\n",
 			 __func__);
@@ -136,5 +167,69 @@ int register_spi_master(const struct spi_master *mst)
 
 	rmst.buses_supported = BUS_SPI;
 	rmst.spi = *mst;
+	if (data)
+		rmst.spi.data = data;
 	return register_master(&rmst);
 }
+
+/*
+ * The following array has erasefn and opcode list pair. The opcode list pair is
+ * 0 termintated and must have size one more than the maximum number of opcodes
+ * used by any erasefn. Also the opcodes must be in increasing order.
+ */
+static const struct {
+	enum block_erase_func func;
+	uint8_t opcode[3];
+} function_opcode_list[] = {
+	{SPI_BLOCK_ERASE_20, {0x20}},
+	{SPI_BLOCK_ERASE_21, {0x21}},
+	{SPI_BLOCK_ERASE_50, {0x50}},
+	{SPI_BLOCK_ERASE_52, {0x52}},
+	{SPI_BLOCK_ERASE_53, {0x53}},
+	{SPI_BLOCK_ERASE_5C, {0x5c}},
+	{SPI_BLOCK_ERASE_60, {0x60}},
+	{SPI_BLOCK_ERASE_62, {0x62}},
+	{SPI_BLOCK_ERASE_81, {0x81}},
+	{SPI_BLOCK_ERASE_C4, {0xc4}},
+	{SPI_BLOCK_ERASE_C7, {0xc7}},
+	{SPI_BLOCK_ERASE_D7, {0xd7}},
+	{SPI_BLOCK_ERASE_D8, {0xd8}},
+	{SPI_BLOCK_ERASE_DB, {0xdb}},
+	{SPI_BLOCK_ERASE_DC, {0xdc}},
+	//AT45CS1282
+	{SPI_ERASE_AT45CS_SECTOR, {0x50, 0x7c, 0}},
+	//AT45DB**
+	{SPI_ERASE_AT45DB_PAGE, {0x81}},
+	{SPI_ERASE_AT45DB_BLOCK, {0x50}},
+	{SPI_ERASE_AT45DB_SECTOR, {0x7c}},
+	{SPI_ERASE_AT45DB_CHIP, {0xc7}},
+	//SF25F**
+	{S25FL_BLOCK_ERASE, {0xdc}},
+	{S25FS_BLOCK_ERASE_D8, {0xd8}},
+};
+
+/*
+ * @brief Get erase function pointer from passed opcode list.
+ *
+ * Get the pointer to the erase function which uses passed opcodes and is used
+ * by the passed flashcip. The passed opcode_list must have opcodes in
+ * increasing order.
+ *
+ * @param chip Pointer to the flashchip structure.
+ * @param opcode_list Pointer to the array of opcodes.
+ * @param opcode_count Number of opcodes in 'opcode_list'
+ *
+ * @result Pointer to erase function matching 'chip' and 'opcode_list' or NULL on failure
+ */
+const uint8_t *spi_get_opcode_from_erasefn(enum block_erase_func func)
+{
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(function_opcode_list); i++) {
+		if (function_opcode_list[i].func == func)
+			return function_opcode_list[i].opcode;
+	}
+	msg_cinfo("%s: unknown erase function (0x%d). Please report "
+			"this at flashrom@flashrom.org\n", __func__, func);
+	return NULL;
+}
+
