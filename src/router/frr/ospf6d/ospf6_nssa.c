@@ -1,9 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * OSPFv3 Not So Stubby Area implementation.
  *
  * Copyright (C) 2021 Kaushik Nath
  * Copyright (C) 2021 Soman K.S
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #include <zebra.h>
@@ -13,7 +26,7 @@
 #include "vty.h"
 #include "linklist.h"
 #include "command.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "plist.h"
 #include "filter.h"
 
@@ -976,9 +989,9 @@ int ospf6_redistribute_check(struct ospf6 *ospf6, struct ospf6_route *route,
 }
 
 /* This function performs ABR related processing */
-static void ospf6_abr_task_timer(struct event *thread)
+static void ospf6_abr_task_timer(struct thread *thread)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = THREAD_ARG(thread);
 
 	if (IS_OSPF6_DEBUG_ABR)
 		zlog_debug("Running ABR task on timer");
@@ -992,7 +1005,7 @@ static void ospf6_abr_task_timer(struct event *thread)
 
 void ospf6_schedule_abr_task(struct ospf6 *ospf6)
 {
-	if (event_is_scheduled(ospf6->t_abr_task)) {
+	if (thread_is_scheduled(ospf6->t_abr_task)) {
 		if (IS_OSPF6_DEBUG_ABR)
 			zlog_debug("ABR task already scheduled");
 		return;
@@ -1001,8 +1014,8 @@ void ospf6_schedule_abr_task(struct ospf6 *ospf6)
 	if (IS_OSPF6_DEBUG_ABR)
 		zlog_debug("Scheduling ABR task");
 
-	event_add_timer(master, ospf6_abr_task_timer, ospf6,
-			OSPF6_ABR_TASK_DELAY, &ospf6->t_abr_task);
+	thread_add_timer(master, ospf6_abr_task_timer, ospf6,
+			 OSPF6_ABR_TASK_DELAY, &ospf6->t_abr_task);
 }
 
 /* Flush the NSSA LSAs from the area */
@@ -1089,9 +1102,9 @@ static void ospf6_ase_lsa_refresh(struct ospf6 *o)
 					route->path.origin.id, o->router_id,
 					o->lsdb);
 		if (old) {
-			EVENT_OFF(old->refresh);
-			event_add_event(master, ospf6_lsa_refresh, old, 0,
-					&old->refresh);
+			THREAD_OFF(old->refresh);
+			thread_add_event(master, ospf6_lsa_refresh, old, 0,
+					 &old->refresh);
 		} else {
 			ospf6_as_external_lsa_originate(route, o);
 		}
@@ -1164,9 +1177,9 @@ void ospf6_area_nssa_update(struct ospf6_area *area)
 						   lsa)) {
 				if (IS_OSPF6_DEBUG_NSSA)
 					ospf6_lsa_header_print(lsa);
-				EVENT_OFF(lsa->refresh);
-				event_add_event(master, ospf6_lsa_refresh, lsa,
-						0, &lsa->refresh);
+				THREAD_OFF(lsa->refresh);
+				thread_add_event(master, ospf6_lsa_refresh, lsa,
+						 0, &lsa->refresh);
 			}
 		}
 	}
@@ -1436,7 +1449,7 @@ DEFPY (no_area_nssa_range,
 		SET_FLAG(range->flag, OSPF6_ROUTE_REMOVE);
 
 		/* Redo summaries if required */
-		event_execute(master, ospf6_abr_task_timer, ospf6, 0);
+		thread_execute(master, ospf6_abr_task_timer, ospf6, 0);
 	}
 
 	ospf6_route_remove(range, oa->nssa_range_table);

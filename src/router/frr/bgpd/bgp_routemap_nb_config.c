@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2020        Vmware
  *                           Sarita Patra
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -353,60 +366,6 @@ lib_route_map_entry_match_condition_rmap_match_condition_rpki_modify(
 
 int
 lib_route_map_entry_match_condition_rmap_match_condition_rpki_destroy(
-	struct nb_cb_destroy_args *args)
-{
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-		break;
-	case NB_EV_APPLY:
-		return lib_route_map_entry_match_destroy(args);
-	}
-
-	return NB_OK;
-}
-
-/*
- * XPath:
- * /frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-bgp-route-map:source-protocol
- */
-int lib_route_map_entry_match_condition_rmap_match_condition_source_protocol_modify(
-	struct nb_cb_modify_args *args)
-{
-	struct routemap_hook_context *rhc;
-	enum rmap_compile_rets ret;
-	const char *proto;
-
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-		break;
-	case NB_EV_APPLY:
-		/* Add configuration. */
-		rhc = nb_running_get_entry(args->dnode, NULL, true);
-		proto = yang_dnode_get_string(args->dnode, NULL);
-
-		/* Set destroy information. */
-		rhc->rhc_mhook = bgp_route_match_delete;
-		rhc->rhc_rule = "source-protocol";
-		rhc->rhc_event = RMAP_EVENT_MATCH_DELETED;
-
-		ret = bgp_route_match_add(rhc->rhc_rmi, "source-protocol",
-					  proto, RMAP_EVENT_MATCH_ADDED,
-					  args->errmsg, args->errmsg_len);
-
-		if (ret != RMAP_COMPILE_SUCCESS) {
-			rhc->rhc_mhook = NULL;
-			return NB_ERR_INCONSISTENCY;
-		}
-	}
-
-	return NB_OK;
-}
-
-int lib_route_map_entry_match_condition_rmap_match_condition_source_protocol_destroy(
 	struct nb_cb_destroy_args *args)
 {
 	switch (args->event) {
@@ -1453,58 +1412,6 @@ lib_route_map_entry_set_action_rmap_set_action_extcommunity_rt_modify(
 
 int
 lib_route_map_entry_set_action_rmap_set_action_extcommunity_rt_destroy(
-	struct nb_cb_destroy_args *args)
-{
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-		break;
-	case NB_EV_APPLY:
-		return lib_route_map_entry_match_destroy(args);
-	}
-
-	return NB_OK;
-}
-
-/*
- * XPath:
- * /frr-route-map:lib/route-map/entry/set-action/rmap-set-action/frr-bgp-route-map:extcommunity-nt
- */
-int lib_route_map_entry_set_action_rmap_set_action_extcommunity_nt_modify(
-	struct nb_cb_modify_args *args)
-{
-	struct routemap_hook_context *rhc;
-	const char *str;
-	int rv;
-
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-		break;
-	case NB_EV_APPLY:
-		/* Add configuration. */
-		rhc = nb_running_get_entry(args->dnode, NULL, true);
-		str = yang_dnode_get_string(args->dnode, NULL);
-
-		/* Set destroy information. */
-		rhc->rhc_shook = generic_set_delete;
-		rhc->rhc_rule = "extcommunity nt";
-		rhc->rhc_event = RMAP_EVENT_SET_DELETED;
-
-		rv = generic_set_add(rhc->rhc_rmi, "extcommunity nt", str,
-				     args->errmsg, args->errmsg_len);
-		if (rv != CMD_SUCCESS) {
-			rhc->rhc_shook = NULL;
-			return NB_ERR_INCONSISTENCY;
-		}
-	}
-
-	return NB_OK;
-}
-
-int lib_route_map_entry_set_action_rmap_set_action_extcommunity_nt_destroy(
 	struct nb_cb_destroy_args *args)
 {
 	switch (args->event) {
@@ -2734,18 +2641,8 @@ int
 lib_route_map_entry_set_action_rmap_set_action_aggregator_aggregator_asn_modify(
 	struct nb_cb_modify_args *args)
 {
-	const char *asn;
-	enum match_type match;
-
 	switch (args->event) {
 	case NB_EV_VALIDATE:
-		asn = yang_dnode_get_string(args->dnode, NULL);
-		if (!asn)
-			return NB_ERR_VALIDATION;
-		match = asn_str2asn_match(asn);
-		if (match == exact_match)
-			return NB_OK;
-		return NB_ERR_VALIDATION;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 	case NB_EV_APPLY:

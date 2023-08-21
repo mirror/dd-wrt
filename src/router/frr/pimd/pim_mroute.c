@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2008  Everton da Silva Marques
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -46,7 +59,7 @@ int pim_mroute_set(struct pim_instance *pim, int enable)
 	/*
 	 * We need to create the VRF table for the pim mroute_socket
 	 */
-	if (enable && pim->vrf->vrf_id != VRF_DEFAULT) {
+	if (pim->vrf->vrf_id != VRF_DEFAULT) {
 		frr_with_privs (&pimd_privs) {
 
 			data = pim->vrf->data.l.table_id;
@@ -147,6 +160,7 @@ int pim_mroute_msg_nocache(int fd, struct interface *ifp, const kernmsg *msg)
 {
 	struct pim_interface *pim_ifp = ifp->info;
 	struct pim_upstream *up;
+	struct pim_rpf *rpg;
 	pim_sgaddr sg;
 	bool desync = false;
 
@@ -154,41 +168,31 @@ int pim_mroute_msg_nocache(int fd, struct interface *ifp, const kernmsg *msg)
 	sg.src = msg->msg_im_src;
 	sg.grp = msg->msg_im_dst;
 
-
-	if (!pim_ifp || !pim_ifp->pim_enable) {
+	if (!pim_ifp) {
 		if (PIM_DEBUG_MROUTE)
 			zlog_debug(
-				"%s: %s on interface, dropping packet to %pSG",
-				ifp->name,
-				!pim_ifp ? "Multicast not enabled"
-					 : "PIM not enabled",
-				&sg);
+				"%s: PIM not enabled on interface, dropping packet to %pSG",
+				ifp->name, &sg);
 		return 0;
 	}
 
-	if (!pim_is_grp_ssm(pim_ifp->pim, sg.grp)) {
-		/* for ASM, check that we have enough information (i.e. path
-		 * to RP) to make a decision on what to do with this packet.
-		 *
-		 * for SSM, this is meaningless, everything is join-driven,
-		 * and for NOCACHE we need to install an empty OIL MFC entry
-		 * so the kernel doesn't keep nagging us.
-		 */
-		struct pim_rpf *rpg;
-
-		rpg = RP(pim_ifp->pim, msg->msg_im_dst);
-		if (!rpg) {
-			if (PIM_DEBUG_MROUTE)
-				zlog_debug("%s: no RPF for packet to %pSG",
-					   ifp->name, &sg);
-			return 0;
-		}
-		if (pim_rpf_addr_is_inaddr_any(rpg)) {
-			if (PIM_DEBUG_MROUTE)
-				zlog_debug("%s: null RPF for packet to %pSG",
-					   ifp->name, &sg);
-			return 0;
-		}
+	rpg = RP(pim_ifp->pim, msg->msg_im_dst);
+	/*
+	 * If the incoming interface is unknown OR
+	 * the Interface type is SSM we don't need to
+	 * do anything here
+	 */
+	if (!rpg) {
+		if (PIM_DEBUG_MROUTE)
+			zlog_debug("%s: no RPF for packet to %pSG", ifp->name,
+				   &sg);
+		return 0;
+	}
+	if (pim_rpf_addr_is_inaddr_any(rpg)) {
+		if (PIM_DEBUG_MROUTE)
+			zlog_debug("%s: null RPF for packet to %pSG", ifp->name,
+				   &sg);
+		return 0;
 	}
 
 	/*
@@ -767,7 +771,7 @@ int pim_mroute_msg(struct pim_instance *pim, const char *buf, size_t buf_size,
 	return 0;
 }
 
-static void mroute_read(struct event *t)
+static void mroute_read(struct thread *t)
 {
 	struct pim_instance *pim;
 	static long long count;
@@ -775,7 +779,7 @@ static void mroute_read(struct event *t)
 	int cont = 1;
 	int rd;
 	ifindex_t ifindex;
-	pim = EVENT_ARG(t);
+	pim = THREAD_ARG(t);
 
 	while (cont) {
 		rd = pim_socket_recvfromto(pim->mroute_socket, (uint8_t *)buf,
@@ -809,13 +813,13 @@ done:
 
 static void mroute_read_on(struct pim_instance *pim)
 {
-	event_add_read(router->master, mroute_read, pim, pim->mroute_socket,
-		       &pim->thread);
+	thread_add_read(router->master, mroute_read, pim, pim->mroute_socket,
+			&pim->thread);
 }
 
 static void mroute_read_off(struct pim_instance *pim)
 {
-	EVENT_OFF(pim->thread);
+	THREAD_OFF(pim->thread);
 }
 
 int pim_mroute_socket_enable(struct pim_instance *pim)

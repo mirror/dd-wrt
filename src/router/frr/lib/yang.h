@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2018  NetDEF, Inc.
  *                     Renato Westphal
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _FRR_YANG_H_
@@ -50,7 +63,7 @@ struct yang_module {
 #endif
 #ifdef HAVE_SYSREPO
 	sr_subscription_ctx_t *sr_subscription;
-	struct event *sr_thread;
+	struct thread *sr_thread;
 #endif
 };
 RB_HEAD(yang_modules, yang_module);
@@ -209,27 +222,6 @@ extern int yang_snodes_iterate(const struct lys_module *module,
 extern void yang_snode_get_path(const struct lysc_node *snode,
 				enum yang_path_type type, char *xpath,
 				size_t xpath_len);
-
-
-/*
- * Find libyang schema node for the given xpath. Uses `lys_find_xpath`,
- * returning only the first of a set of nodes -- normally there should only
- * be one.
- *
- * ly_ctx
- *    libyang context to operate on.
- *
- * xpath
- *    XPath expression (absolute or relative) to find the schema node for.
- *
- * options
- *    Libyang findxpathoptions value (see lys_find_xpath).
- *
- * Returns:
- *    The libyang schema node if found, or NULL if not found.
- */
-extern struct lysc_node *yang_find_snode(struct ly_ctx *ly_ctx,
-					 const char *xpath, uint32_t options);
 
 /*
  * Find first parent schema node which is a presence-container or a list

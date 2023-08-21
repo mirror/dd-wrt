@@ -1,8 +1,19 @@
-// SPDX-License-Identifier: ISC
 /*	$OpenBSD$ */
 
 /*
  * Copyright (c) 2003, 2004 Henning Brauer <henning@openbsd.org>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <zebra.h>
@@ -15,11 +26,11 @@
 
 #define	CONTROL_BACKLOG	5
 
-static void control_accept(struct event *);
+static void control_accept(struct thread *);
 static struct ctl_conn	*control_connbyfd(int);
 static struct ctl_conn	*control_connbypid(pid_t);
 static void		 control_close(int);
-static void control_dispatch_imsg(struct event *);
+static void control_dispatch_imsg(struct thread *);
 
 struct ctl_conns	 ctl_conns;
 
@@ -90,7 +101,7 @@ control_cleanup(char *path)
 }
 
 /* ARGSUSED */
-static void control_accept(struct event *thread)
+static void control_accept(struct thread *thread)
 {
 	int			 connfd;
 	socklen_t		 len;
@@ -98,8 +109,8 @@ static void control_accept(struct event *thread)
 	struct ctl_conn		*c;
 
 	len = sizeof(s_un);
-	if ((connfd = accept(EVENT_FD(thread), (struct sockaddr *)&s_un,
-			     &len)) == -1) {
+	if ((connfd = accept(THREAD_FD(thread), (struct sockaddr *)&s_un,
+	    &len)) == -1) {
 		/*
 		 * Pause accept if we are out of file descriptors, or
 		 * libevent will haunt us here too.
@@ -122,8 +133,8 @@ static void control_accept(struct event *thread)
 	imsg_init(&c->iev.ibuf, connfd);
 	c->iev.handler_read = control_dispatch_imsg;
 	c->iev.ev_read = NULL;
-	event_add_read(master, c->iev.handler_read, &c->iev, c->iev.ibuf.fd,
-		       &c->iev.ev_read);
+	thread_add_read(master, c->iev.handler_read, &c->iev, c->iev.ibuf.fd,
+			&c->iev.ev_read);
 	c->iev.handler_write = ldp_write_handler;
 	c->iev.ev_write = NULL;
 
@@ -169,17 +180,17 @@ control_close(int fd)
 	msgbuf_clear(&c->iev.ibuf.w);
 	TAILQ_REMOVE(&ctl_conns, c, entry);
 
-	EVENT_OFF(c->iev.ev_read);
-	EVENT_OFF(c->iev.ev_write);
+	THREAD_OFF(c->iev.ev_read);
+	THREAD_OFF(c->iev.ev_write);
 	close(c->iev.ibuf.fd);
 	accept_unpause();
 	free(c);
 }
 
 /* ARGSUSED */
-static void control_dispatch_imsg(struct event *thread)
+static void control_dispatch_imsg(struct thread *thread)
 {
-	int fd = EVENT_FD(thread);
+	int		 fd = THREAD_FD(thread);
 	struct ctl_conn	*c;
 	struct imsg	 imsg;
 	ssize_t		 n;

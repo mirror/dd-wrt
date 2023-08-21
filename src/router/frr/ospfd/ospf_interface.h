@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * OSPF Interface functions.
  * Copyright (C) 1999 Toshiaki Takada
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation; either version 2, or (at your
+ * option) any later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _ZEBRA_OSPF_INTERFACE_H
@@ -72,9 +87,6 @@ struct ospf_if_params {
 	DECLARE_IF_PARAM(uint32_t, v_wait);  /* Router Dead Interval */
 	bool is_v_wait_set;                  /* Check for Dead Interval set */
 
-	/* GR Hello Delay Interval */
-	DECLARE_IF_PARAM(uint16_t, v_gr_hello_delay);
-
 	/* MTU mismatch check (see RFC2328, chap 10.6) */
 	DECLARE_IF_PARAM(uint8_t, mtu_ignore);
 
@@ -109,9 +121,6 @@ struct ospf_if_params {
 
 	/* point-to-point DMVPN configuration */
 	uint8_t ptp_dmvpn;
-
-	/* point-to-multipoint delayed reflooding configuration */
-	bool p2mp_delay_reflood;
 };
 
 enum { MEMBER_ALLROUTERS = 0,
@@ -127,9 +136,6 @@ struct ospf_if_info {
 		membership_counts[MEMBER_MAX]; /* multicast group refcnts */
 
 	uint32_t curr_mtu;
-
-	/* Per-interface write socket, configured via 'ospf' object */
-	int oii_fd;
 };
 
 struct ospf_interface;
@@ -180,9 +186,6 @@ struct ospf_interface {
 	/* point-to-point DMVPN configuration */
 	uint8_t ptp_dmvpn;
 
-	/* point-to-multipoint delayed reflooding */
-	bool p2mp_delay_reflood;
-
 	/* State of Interface State Machine. */
 	uint8_t state;
 
@@ -223,14 +226,6 @@ struct ospf_interface {
 	/* List of configured NBMA neighbor. */
 	struct list *nbr_nbma;
 
-	/* Graceful-Restart data. */
-	struct {
-		struct {
-			uint16_t elapsed_seconds;
-			struct event *t_grace_send;
-		} hello_delay;
-	} gr;
-
 	/* self-originated LSAs. */
 	struct ospf_lsa *network_lsa_self; /* network-LSA. */
 	struct list *opaque_lsa_self;      /* Type-9 Opaque-LSAs */
@@ -248,12 +243,12 @@ struct ospf_interface {
 	uint32_t v_ls_ack; /* Delayed Link State Acknowledgment */
 
 	/* Threads. */
-	struct event *t_hello;		 /* timer */
-	struct event *t_wait;		 /* timer */
-	struct event *t_ls_ack;		 /* timer */
-	struct event *t_ls_ack_direct;	 /* event */
-	struct event *t_ls_upd_event;	 /* event */
-	struct event *t_opaque_lsa_self; /* Type-9 Opaque-LSAs */
+	struct thread *t_hello;		  /* timer */
+	struct thread *t_wait;		  /* timer */
+	struct thread *t_ls_ack;	  /* timer */
+	struct thread *t_ls_ack_direct;   /* event */
+	struct thread *t_ls_upd_event;    /* event */
+	struct thread *t_opaque_lsa_self; /* Type-9 Opaque-LSAs */
 
 	int on_write_q;
 

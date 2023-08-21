@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * BGP Peer Attribute Unit Tests
  * Copyright (C) 2018  Pascal Mathis
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
@@ -106,7 +119,7 @@
 
 /* Required variables to link in libbgp */
 struct zebra_privs_t bgpd_privs = {0};
-struct event_loop *master;
+struct thread_master *master;
 
 enum test_state {
 	TEST_SUCCESS,
@@ -264,18 +277,6 @@ static struct test_peer_attr test_peer_attrs[] = {
 	{
 		.cmd = "capability extended-nexthop",
 		.u.flag = PEER_FLAG_CAPABILITY_ENHE,
-		.type = PEER_AT_GLOBAL_FLAG,
-		.o.invert_peer = true,
-		.o.use_iface_peer = true,
-	},
-	{
-		.cmd = "capability software-version",
-		.u.flag = PEER_FLAG_CAPABILITY_SOFT_VERSION,
-		.type = PEER_AT_GLOBAL_FLAG,
-	},
-	{
-		.cmd = "capability software-version",
-		.u.flag = PEER_FLAG_CAPABILITY_SOFT_VERSION,
 		.type = PEER_AT_GLOBAL_FLAG,
 		.o.invert_peer = true,
 		.o.use_iface_peer = true,
@@ -1363,7 +1364,7 @@ static void bgp_startup(void)
 	zprivs_preinit(&bgpd_privs);
 	zprivs_init(&bgpd_privs);
 
-	master = event_master_create(NULL);
+	master = thread_master_create(NULL);
 	nb_init(master, NULL, 0, false);
 	bgp_master_init(master, BGP_SOCKET_SNDBUF_SIZE, list_new());
 	bgp_option_set(BGP_OPT_NO_LISTEN);
@@ -1412,7 +1413,7 @@ static void bgp_shutdown(void)
 	nb_terminate();
 	yang_terminate();
 	zprivs_terminate(&bgpd_privs);
-	event_master_free(master);
+	thread_master_free(master);
 	master = NULL;
 }
 

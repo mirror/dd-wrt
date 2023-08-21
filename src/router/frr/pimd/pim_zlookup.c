@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2008  Everton da Silva Marques
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -11,7 +24,7 @@
 #include "zclient.h"
 #include "stream.h"
 #include "network.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "prefix.h"
 #include "vty.h"
 #include "lib_errors.h"
@@ -27,17 +40,17 @@
 #include "pim_addr.h"
 
 static struct zclient *zlookup = NULL;
-struct event *zlookup_read;
+struct thread *zlookup_read;
 
 static void zclient_lookup_sched(struct zclient *zlookup, int delay);
-static void zclient_lookup_read_pipe(struct event *thread);
+static void zclient_lookup_read_pipe(struct thread *thread);
 
 /* Connect to zebra for nexthop lookup. */
-static void zclient_lookup_connect(struct event *t)
+static void zclient_lookup_connect(struct thread *t)
 {
 	struct zclient *zlookup;
 
-	zlookup = EVENT_ARG(t);
+	zlookup = THREAD_ARG(t);
 
 	if (zlookup->sock >= 0) {
 		return;
@@ -65,15 +78,15 @@ static void zclient_lookup_connect(struct event *t)
 		return;
 	}
 
-	event_add_timer(router->master, zclient_lookup_read_pipe, zlookup, 60,
-			&zlookup_read);
+	thread_add_timer(router->master, zclient_lookup_read_pipe, zlookup, 60,
+			 &zlookup_read);
 }
 
 /* Schedule connection with delay. */
 static void zclient_lookup_sched(struct zclient *zlookup, int delay)
 {
-	event_add_timer(router->master, zclient_lookup_connect, zlookup, delay,
-			&zlookup->t_connect);
+	thread_add_timer(router->master, zclient_lookup_connect, zlookup, delay,
+			 &zlookup->t_connect);
 
 	zlog_notice("%s: zclient lookup connection scheduled for %d seconds",
 		    __func__, delay);
@@ -82,8 +95,8 @@ static void zclient_lookup_sched(struct zclient *zlookup, int delay)
 /* Schedule connection for now. */
 static void zclient_lookup_sched_now(struct zclient *zlookup)
 {
-	event_add_event(router->master, zclient_lookup_connect, zlookup, 0,
-			&zlookup->t_connect);
+	thread_add_event(router->master, zclient_lookup_connect, zlookup, 0,
+			 &zlookup->t_connect);
 
 	zlog_notice("%s: zclient lookup immediate connection scheduled",
 		    __func__);
@@ -114,7 +127,7 @@ static void zclient_lookup_failed(struct zclient *zlookup)
 
 void zclient_lookup_free(void)
 {
-	EVENT_OFF(zlookup_read);
+	THREAD_OFF(zlookup_read);
 	zclient_stop(zlookup);
 	zclient_free(zlookup);
 	zlookup = NULL;
@@ -250,7 +263,6 @@ static int zclient_read_nexthop(struct pim_instance *pim,
 				&nh_ip4, nh_ifi, &addr);
 #endif
 			break;
-		case NEXTHOP_TYPE_IPV6:
 		case NEXTHOP_TYPE_IPV6_IFINDEX:
 			stream_get(&nh_ip6, s, sizeof(nh_ip6));
 			nh_ifi = stream_getl(s);
@@ -295,7 +307,7 @@ static int zclient_read_nexthop(struct pim_instance *pim,
 			++num_ifindex;
 #endif
 			break;
-		case NEXTHOP_TYPE_BLACKHOLE:
+		default:
 			/* do nothing */
 			zlog_warn(
 				"%s: found non-ifindex nexthop type=%d for address %pPAs(%s)",
@@ -364,9 +376,9 @@ static int zclient_lookup_nexthop_once(struct pim_instance *pim,
 	return zclient_read_nexthop(pim, zlookup, nexthop_tab, tab_size, addr);
 }
 
-void zclient_lookup_read_pipe(struct event *thread)
+void zclient_lookup_read_pipe(struct thread *thread)
 {
-	struct zclient *zlookup = EVENT_ARG(thread);
+	struct zclient *zlookup = THREAD_ARG(thread);
 	struct pim_instance *pim = pim_get_pim_instance(VRF_DEFAULT);
 	struct pim_zlookup_nexthop nexthop_tab[10];
 	pim_addr l = PIMADDR_ANY;
@@ -378,8 +390,8 @@ void zclient_lookup_read_pipe(struct event *thread)
 	}
 
 	zclient_lookup_nexthop_once(pim, nexthop_tab, 10, l);
-	event_add_timer(router->master, zclient_lookup_read_pipe, zlookup, 60,
-			&zlookup_read);
+	thread_add_timer(router->master, zclient_lookup_read_pipe, zlookup, 60,
+			 &zlookup_read);
 }
 
 int zclient_lookup_nexthop(struct pim_instance *pim,

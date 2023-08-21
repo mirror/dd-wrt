@@ -1,6 +1,10 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* NHRP interface
  * Copyright (c) 2014-2015 Timo Teräs
+ *
+ * This file is free software: you may copy, redistribute and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -11,7 +15,7 @@
 #include "zebra.h"
 #include "linklist.h"
 #include "memory.h"
-#include "frrevent.h"
+#include "thread.h"
 
 #include "nhrpd.h"
 #include "os.h"
@@ -180,17 +184,16 @@ void nhrp_interface_update_nbma(struct interface *ifp,
 	struct nhrp_interface *nifp = ifp->info, *nbmanifp = NULL;
 	struct interface *nbmaifp = NULL;
 	union sockunion nbma;
-	struct in_addr saddr = {0};
 
 	sockunion_family(&nbma) = AF_UNSPEC;
 
 	if (nifp->source)
 		nbmaifp = if_lookup_by_name(nifp->source, nifp->link_vrf_id);
 
-	if (ifp->ll_type != ZEBRA_LLT_IPGRE)
-		debugf(NHRP_DEBUG_IF, "%s: Ignoring non GRE interface type %u",
-		       __func__, ifp->ll_type);
-	else {
+	switch (ifp->ll_type) {
+	case ZEBRA_LLT_IPGRE: {
+		struct in_addr saddr = {0};
+
 		if (!gre_info) {
 			nhrp_send_zebra_gre_request(ifp);
 			return;
@@ -211,6 +214,9 @@ void nhrp_interface_update_nbma(struct interface *ifp,
 			nbmaifp =
 				if_lookup_by_index(nifp->link_idx,
 						   nifp->link_vrf_id);
+	} break;
+	default:
+		break;
 	}
 
 	if (nbmaifp)

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: ISC
 /*	$OpenBSD$ */
 
 /*
@@ -6,6 +5,18 @@
  * Copyright (c) 2009 Michele Marchetto <michele@openbsd.org>
  * Copyright (c) 2004 Esben Norby <norby@openbsd.org>
  * Copyright (c) 2003, 2004 Henning Brauer <henning@openbsd.org>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #ifndef _LDPD_H_
@@ -14,7 +25,7 @@
 #include "queue.h"
 #include "openbsd-tree.h"
 #include "imsg.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "qobj.h"
 #include "prefix.h"
 #include "filter.h"
@@ -51,17 +62,17 @@
 
 struct evbuf {
 	struct msgbuf		 wbuf;
-	struct event *ev;
-	void (*handler)(struct event *);
+	struct thread		*ev;
+	void (*handler)(struct thread *);
 	void			*arg;
 };
 
 struct imsgev {
 	struct imsgbuf		 ibuf;
-	void (*handler_write)(struct event *);
-	struct event *ev_write;
-	void (*handler_read)(struct event *);
-	struct event *ev_read;
+	void (*handler_write)(struct thread *);
+	struct thread		*ev_write;
+	void (*handler_read)(struct thread *);
+	struct thread		*ev_read;
 };
 
 enum imsg_type {
@@ -329,14 +340,14 @@ struct iface_af {
 	int			 state;
 	struct ia_adj_head	 adj_tree;
 	time_t			 uptime;
-	struct event *hello_timer;
+	struct thread		*hello_timer;
 	uint16_t		 hello_holdtime;
 	uint16_t		 hello_interval;
 };
 
 struct iface_ldp_sync {
 	int			 state;
-	struct event *wait_for_sync_timer;
+	struct thread           *wait_for_sync_timer;
 };
 
 struct iface {
@@ -359,7 +370,7 @@ DECLARE_QOBJ_TYPE(iface);
 /* source of targeted hellos */
 struct tnbr {
 	RB_ENTRY(tnbr)		 entry;
-	struct event *hello_timer;
+	struct thread		*hello_timer;
 	struct adj		*adj;
 	int			 af;
 	union ldpd_addr		 addr;
@@ -582,8 +593,8 @@ DECLARE_QOBJ_TYPE(ldpd_conf);
 #define	F_LDPD_ALLOW_BROKEN_LSP 0x0010
 
 struct ldpd_af_global {
-	struct event *disc_ev;
-	struct event *edisc_ev;
+	struct thread		*disc_ev;
+	struct thread		*edisc_ev;
 	int			 ldp_disc_socket;
 	int			 ldp_edisc_socket;
 	int			 ldp_session_socket;
@@ -781,7 +792,7 @@ void		 sa2addr(struct sockaddr *, int *, union ldpd_addr *,
 socklen_t	 sockaddr_len(struct sockaddr *);
 
 /* ldpd.c */
-void ldp_write_handler(struct event *thread);
+void ldp_write_handler(struct thread *thread);
 void			 main_imsg_compose_ldpe(int, pid_t, void *, uint16_t);
 void			 main_imsg_compose_lde(int, pid_t, void *, uint16_t);
 int			 main_imsg_compose_both(enum imsg_type, void *,
@@ -791,7 +802,7 @@ int			 imsg_compose_event(struct imsgev *, uint16_t, uint32_t,
 			    pid_t, int, void *, uint16_t);
 void			 evbuf_enqueue(struct evbuf *, struct ibuf *);
 void			 evbuf_event_add(struct evbuf *);
-void evbuf_init(struct evbuf *, int, void (*)(struct event *), void *);
+void evbuf_init(struct evbuf *, int, void (*)(struct thread *), void *);
 void			 evbuf_clear(struct evbuf *);
 int			 ldp_acl_request(struct imsgev *, char *, int,
 			    union ldpd_addr *, uint8_t);
@@ -883,11 +894,11 @@ const char	*pw_type_name(uint16_t);
 const char	*pw_error_code(uint8_t);
 
 /* quagga */
-extern struct event_loop *master;
+extern struct thread_master	*master;
 extern char			 ctl_sock_path[MAXPATHLEN];
 
 /* ldp_zebra.c */
-void ldp_zebra_init(struct event_loop *m);
+void		 ldp_zebra_init(struct thread_master *);
 void		 ldp_zebra_destroy(void);
 int		 ldp_sync_zebra_send_state_update(struct ldp_igp_sync_if_state *);
 int		 ldp_zebra_send_rlfa_labels(struct zapi_rlfa_response *
@@ -904,7 +915,7 @@ void ldp_zebra_regdereg_zebra_info(bool want_register);
 	(__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_INTFACELOCAL))
 #endif
 
-DECLARE_HOOK(ldp_register_mib, (struct event_loop * tm), (tm));
+DECLARE_HOOK(ldp_register_mib, (struct thread_master * tm), (tm));
 
 extern void ldp_agentx_enabled(void);
 

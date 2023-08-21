@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: NONE
 # 2020 by David Lamparter, placed in the public domain.
 
 import sys

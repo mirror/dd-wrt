@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Zebra configuration command interface routine
  * Copyright (C) 1997, 98 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation; either version 2, or (at your
+ * option) any later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _ZEBRA_COMMAND_H
@@ -75,7 +90,6 @@ struct host {
 };
 
 /* List of CLI nodes. Please remember to update the name array in command.c. */
-/* clang-format off */
 enum node_type {
 	AUTH_NODE,		 /* Authentication mode of vty interface. */
 	VIEW_NODE,		 /* View node. Default mode of vty interface. */
@@ -92,7 +106,6 @@ enum node_type {
 	EXTLOG_NODE,		 /* RFC5424 & co. extended syslog */
 	KEYCHAIN_NODE,		 /* Key-chain node. */
 	KEYCHAIN_KEY_NODE,       /* Key-chain key node. */
-	AFFMAP_NODE,		 /* Affinity map node. */
 	IP_NODE,		 /* Static ip route node. */
 	VRF_NODE,		 /* VRF mode node. */
 	INTERFACE_NODE,		 /* Interface mode node. */
@@ -129,7 +142,6 @@ enum node_type {
 	LDP_L2VPN_NODE,		 /* LDP L2VPN node */
 	LDP_PSEUDOWIRE_NODE,     /* LDP Pseudowire node */
 	ISIS_NODE,		 /* ISIS protocol mode */
-	ISIS_FLEX_ALGO_NODE,    /* ISIS Flex Algo mode */
 	ACCESS_NODE,		 /* Access list node. */
 	PREFIX_NODE,		 /* Prefix list node. */
 	ACCESS_IPV6_NODE,	/* Access list node. */
@@ -174,7 +186,6 @@ enum node_type {
 	BMP_NODE,		/* BMP config under router bgp */
 	NODE_TYPE_MAX, /* maximum */
 };
-/* clang-format on */
 
 extern vector cmdvec;
 extern const struct message tokennames[];
@@ -392,8 +403,7 @@ struct cmd_node {
 #define DEBUG_STR "Debugging functions\n"
 #define UNDEBUG_STR "Disable debugging functions (see also 'debug')\n"
 #define ROUTER_STR "Enable a routing process\n"
-#define AS_STR                                                                 \
-	"AS number in plain  <1-4294967295> or dotted <0-65535>.<0-65535> format\n"
+#define AS_STR "AS number\n"
 #define MAC_STR "MAC address\n"
 #define MBGP_STR "MBGP information\n"
 #define MATCH_STR "Match values from routing table\n"
@@ -430,11 +440,6 @@ struct cmd_node {
 #define SHARP_STR "Sharp Routing Protocol\n"
 #define OSPF_GR_STR                                                            \
 	"OSPF non-stop forwarding (NSF) also known as OSPF Graceful Restart\n"
-#define MGMTD_STR "Management Daemon (MGMTD) information\n"
-#define MGMTD_BE_ADAPTER_STR "MGMTD Backend Adapter information\n"
-#define MGMTD_FE_ADAPTER_STR "MGMTD Frontend Adapter information\n"
-#define MGMTD_TXN_STR "MGMTD Transaction information\n"
-#define MGMTD_DS_STR "MGMTD Datastore information\n"
 
 #define CMD_VNI_RANGE "(1-16777215)"
 #define CONF_BACKUP_EXT ".sav"
@@ -598,7 +603,6 @@ extern const char *cmd_domainname_get(void);
 extern const char *cmd_system_get(void);
 extern const char *cmd_release_get(void);
 extern const char *cmd_version_get(void);
-extern const char *cmd_software_version_get(void);
 extern bool cmd_allow_reserved_ranges_get(void);
 
 /* NOT safe for general use; call this only if DEV_BUILD! */

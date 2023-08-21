@@ -1,9 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * BGP Multipath Unit Test
  * Copyright (C) 2010 Google Inc.
  *
  * This file is part of Quagga
+ *
+ * Quagga is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * Quagga is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -61,7 +74,7 @@ struct testcase_t__ {
 };
 
 /* need these to link in libbgp */
-struct event_loop *master = NULL;
+struct thread_master *master = NULL;
 extern struct zclient *zclient;
 struct zebra_privs_t bgpd_privs = {
 	.user = NULL,
@@ -378,7 +391,7 @@ int all_tests_count = array_size(all_tests);
 static int global_test_init(void)
 {
 	qobj_init();
-	master = event_master_create(NULL);
+	master = thread_master_create(NULL);
 	zclient = zclient_new(master, &zclient_options_default, NULL, 0);
 	bgp_master_init(master, BGP_SOCKET_SNDBUF_SIZE, list_new());
 	vrf_init(NULL, NULL, NULL, NULL);
@@ -393,7 +406,7 @@ static int global_test_cleanup(void)
 {
 	if (zclient != NULL)
 		zclient_free(zclient);
-	event_master_free(master);
+	thread_master_free(master);
 	return 0;
 }
 

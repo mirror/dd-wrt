@@ -1,19 +1,34 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2003 Yasuhiro Ohara
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef OSPF6D_H
 #define OSPF6D_H
 
 #include "libospf.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "memory.h"
 
 DECLARE_MGROUP(OSPF6D);
 
 /* global variables */
-extern struct event_loop *master;
+extern struct thread_master *master;
 
 /* Historical for KAME.  */
 #ifndef IPV6_JOIN_GROUP
@@ -109,6 +124,6 @@ extern struct zebra_privs_t ospf6d_privs;
 extern struct route_node *route_prev(struct route_node *node);
 
 extern void ospf6_debug(void);
-extern void ospf6_init(struct event_loop *master);
+extern void ospf6_init(struct thread_master *master);
 
 #endif /* OSPF6D_H */

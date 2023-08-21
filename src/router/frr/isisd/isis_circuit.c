@@ -1,10 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * IS-IS Rout(e)ing protocol - isis_circuit.h
  *
  * Copyright (C) 2001,2002   Sampo Saaristo
  *                           Tampere University of Technology
  *                           Institute of Communications Engineering
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public Licenseas published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 #ifdef GNU_LINUX
@@ -19,7 +32,7 @@
 #include "if.h"
 #include "linklist.h"
 #include "command.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "vty.h"
 #include "hash.h"
 #include "prefix.h"
@@ -107,7 +120,7 @@ struct isis_circuit *isis_circuit_new(struct interface *ifp, const char *tag)
 		"/frr-interface:lib/interface/frr-isisd:isis/circuit-type");
 	circuit->flags = 0;
 
-	circuit->pad_hellos = yang_get_default_enum(
+	circuit->pad_hellos = yang_get_default_bool(
 		"/frr-interface:lib/interface/frr-isisd:isis/hello/padding");
 	circuit->hello_interval[0] = yang_get_default_uint32(
 		"/frr-interface:lib/interface/frr-isisd:isis/hello/interval/level-1");
@@ -145,7 +158,7 @@ struct isis_circuit *isis_circuit_new(struct interface *ifp, const char *tag)
 #else
 	circuit->is_type_config = IS_LEVEL_1_AND_2;
 	circuit->flags = 0;
-	circuit->pad_hellos = ISIS_HELLO_PADDING_ALWAYS;
+	circuit->pad_hellos = 1;
 	for (i = 0; i < 2; i++) {
 		circuit->hello_interval[i] = DEFAULT_HELLO_INTERVAL;
 		circuit->hello_multiplier[i] = DEFAULT_HELLO_MULTIPLIER;
@@ -286,7 +299,8 @@ void isis_circuit_add_addr(struct isis_circuit *circuit,
 	if (connected->address->family == AF_INET) {
 		uint32_t addr = connected->address->u.prefix4.s_addr;
 		addr = ntohl(addr);
-		if (IPV4_NET0(addr) || IPV4_NET127(addr) || IN_CLASSD(addr))
+		if (IPV4_NET0(addr) || IPV4_NET127(addr) || IN_CLASSD(addr)
+		    || IPV4_LINKLOCAL(addr))
 			return;
 
 		for (ALL_LIST_ELEMENTS_RO(circuit->ip_addrs, node, ipv4))
@@ -626,12 +640,12 @@ void isis_circuit_stream(struct isis_circuit *circuit, struct stream **stream)
 void isis_circuit_prepare(struct isis_circuit *circuit)
 {
 #if ISIS_METHOD != ISIS_METHOD_DLPI
-	event_add_read(master, isis_receive, circuit, circuit->fd,
-		       &circuit->t_read);
+	thread_add_read(master, isis_receive, circuit, circuit->fd,
+			&circuit->t_read);
 #else
-	event_add_timer_msec(master, isis_receive, circuit,
-			     listcount(circuit->area->circuit_list) * 100,
-			     &circuit->t_read);
+	thread_add_timer_msec(master, isis_receive, circuit,
+			      listcount(circuit->area->circuit_list) * 100,
+			      &circuit->t_read);
 #endif
 }
 
@@ -695,9 +709,10 @@ int isis_circuit_up(struct isis_circuit *circuit)
 		}
 #ifdef EXTREME_DEGUG
 		if (IS_DEBUG_EVENTS)
-			zlog_debug("%s: if_id %d, isomtu %d snpa %pSY",
-				   __func__, circuit->interface->ifindex,
-				   ISO_MTU(circuit), circuit->u.bc.snpa);
+			zlog_debug("%s: if_id %d, isomtu %d snpa %s", __func__,
+				   circuit->interface->ifindex,
+				   ISO_MTU(circuit),
+				   snpa_print(circuit->u.bc.snpa));
 #endif /* EXTREME_DEBUG */
 
 		circuit->u.bc.adjdb[0] = list_new();
@@ -720,10 +735,10 @@ int isis_circuit_up(struct isis_circuit *circuit)
 			send_hello_sched(circuit, level, TRIGGERED_IIH_DELAY);
 			circuit->u.bc.lan_neighs[level - 1] = list_new();
 
-			event_add_timer(master, isis_run_dr,
-					&circuit->level_arg[level - 1],
-					2 * circuit->hello_interval[level - 1],
-					&circuit->u.bc.t_run_dr[level - 1]);
+			thread_add_timer(master, isis_run_dr,
+					 &circuit->level_arg[level - 1],
+					 2 * circuit->hello_interval[level - 1],
+					 &circuit->u.bc.t_run_dr[level - 1]);
 		}
 
 		/* 8.4.1 b) FIXME: solicit ES - 8.4.6 */
@@ -738,13 +753,13 @@ int isis_circuit_up(struct isis_circuit *circuit)
 
 	/* initializing PSNP timers */
 	if (circuit->is_type & IS_LEVEL_1)
-		event_add_timer(
+		thread_add_timer(
 			master, send_l1_psnp, circuit,
 			isis_jitter(circuit->psnp_interval[0], PSNP_JITTER),
 			&circuit->t_send_psnp[0]);
 
 	if (circuit->is_type & IS_LEVEL_2)
-		event_add_timer(
+		thread_add_timer(
 			master, send_l2_psnp, circuit,
 			isis_jitter(circuit->psnp_interval[1], PSNP_JITTER),
 			&circuit->t_send_psnp[1]);
@@ -861,12 +876,12 @@ void isis_circuit_down(struct isis_circuit *circuit)
 		memset(circuit->u.bc.l2_desig_is, 0, ISIS_SYS_ID_LEN + 1);
 		memset(circuit->u.bc.snpa, 0, ETH_ALEN);
 
-		EVENT_OFF(circuit->u.bc.t_send_lan_hello[0]);
-		EVENT_OFF(circuit->u.bc.t_send_lan_hello[1]);
-		EVENT_OFF(circuit->u.bc.t_run_dr[0]);
-		EVENT_OFF(circuit->u.bc.t_run_dr[1]);
-		EVENT_OFF(circuit->u.bc.t_refresh_pseudo_lsp[0]);
-		EVENT_OFF(circuit->u.bc.t_refresh_pseudo_lsp[1]);
+		THREAD_OFF(circuit->u.bc.t_send_lan_hello[0]);
+		THREAD_OFF(circuit->u.bc.t_send_lan_hello[1]);
+		THREAD_OFF(circuit->u.bc.t_run_dr[0]);
+		THREAD_OFF(circuit->u.bc.t_run_dr[1]);
+		THREAD_OFF(circuit->u.bc.t_refresh_pseudo_lsp[0]);
+		THREAD_OFF(circuit->u.bc.t_refresh_pseudo_lsp[1]);
 		circuit->lsp_regenerate_pending[0] = 0;
 		circuit->lsp_regenerate_pending[1] = 0;
 
@@ -876,7 +891,7 @@ void isis_circuit_down(struct isis_circuit *circuit)
 	} else if (circuit->circ_type == CIRCUIT_T_P2P) {
 		isis_delete_adj(circuit->u.p2p.neighbor);
 		circuit->u.p2p.neighbor = NULL;
-		EVENT_OFF(circuit->u.p2p.t_send_p2p_hello);
+		THREAD_OFF(circuit->u.p2p.t_send_p2p_hello);
 	}
 
 	/*
@@ -889,11 +904,11 @@ void isis_circuit_down(struct isis_circuit *circuit)
 	circuit->snmp_adj_idx_gen = 0;
 
 	/* Cancel all active threads */
-	EVENT_OFF(circuit->t_send_csnp[0]);
-	EVENT_OFF(circuit->t_send_csnp[1]);
-	EVENT_OFF(circuit->t_send_psnp[0]);
-	EVENT_OFF(circuit->t_send_psnp[1]);
-	EVENT_OFF(circuit->t_read);
+	THREAD_OFF(circuit->t_send_csnp[0]);
+	THREAD_OFF(circuit->t_send_csnp[1]);
+	THREAD_OFF(circuit->t_send_psnp[0]);
+	THREAD_OFF(circuit->t_send_psnp[1]);
+	THREAD_OFF(circuit->t_read);
 
 	if (circuit->tx_queue) {
 		isis_tx_queue_free(circuit->tx_queue);
@@ -927,7 +942,7 @@ void isis_circuit_down(struct isis_circuit *circuit)
 		circuit->snd_stream = NULL;
 	}
 
-	event_cancel_event(master, circuit);
+	thread_cancel_event(master, circuit);
 
 	return;
 }
@@ -994,8 +1009,8 @@ void isis_circuit_print_json(struct isis_circuit *circuit,
 		json_object_string_add(iface_json, "level",
 				       circuit_t2string(circuit->is_type));
 		if (circuit->circ_type == CIRCUIT_T_BROADCAST)
-			json_object_string_addf(iface_json, "snpa", "%pSY",
-						circuit->u.bc.snpa);
+			json_object_string_add(iface_json, "snpa",
+					       snpa_print(circuit->u.bc.snpa));
 
 
 		levels_json = json_object_new_array();
@@ -1027,8 +1042,7 @@ void isis_circuit_print_json(struct isis_circuit *circuit,
 					circuit->hello_multiplier[0]);
 				json_object_string_add(
 					hold_json, "pad",
-					isis_hello_padding2string(
-						circuit->pad_hellos));
+					(circuit->pad_hellos ? "yes" : "no"));
 				json_object_int_add(level_json, "cnsp-interval",
 						    circuit->csnp_interval[0]);
 				json_object_int_add(level_json, "psnp-interval",
@@ -1121,7 +1135,8 @@ void isis_circuit_print_vty(struct isis_circuit *circuit, struct vty *vty,
 			circuit_type2string(circuit->circ_type));
 		vty_out(vty, ", Level: %s", circuit_t2string(circuit->is_type));
 		if (circuit->circ_type == CIRCUIT_T_BROADCAST)
-			vty_out(vty, ", SNPA: %-10pSY", circuit->u.bc.snpa);
+			vty_out(vty, ", SNPA: %-10s",
+				snpa_print(circuit->u.bc.snpa));
 		vty_out(vty, "\n");
 		if (circuit->is_type & IS_LEVEL_1) {
 			vty_out(vty, "    Level-1 Information:\n");
@@ -1135,11 +1150,11 @@ void isis_circuit_print_vty(struct isis_circuit *circuit, struct vty *vty,
 				vty_out(vty, ", Active neighbors: %u\n",
 					circuit->upadjcount[0]);
 				vty_out(vty,
-					"      Hello interval: %u, Holddown count: %u, Padding: %s\n",
+					"      Hello interval: %u, Holddown count: %u %s\n",
 					circuit->hello_interval[0],
 					circuit->hello_multiplier[0],
-					isis_hello_padding2string(
-						circuit->pad_hellos));
+					(circuit->pad_hellos ? "(pad)"
+							     : "(no-pad)"));
 				vty_out(vty,
 					"      CNSP interval: %u, PSNP interval: %u\n",
 					circuit->csnp_interval[0],
@@ -1167,11 +1182,11 @@ void isis_circuit_print_vty(struct isis_circuit *circuit, struct vty *vty,
 				vty_out(vty, ", Active neighbors: %u\n",
 					circuit->upadjcount[1]);
 				vty_out(vty,
-					"      Hello interval: %u, Holddown count: %u, Padding: %s\n",
+					"      Hello interval: %u, Holddown count: %u %s\n",
 					circuit->hello_interval[1],
 					circuit->hello_multiplier[1],
-					isis_hello_padding2string(
-						circuit->pad_hellos));
+					(circuit->pad_hellos ? "(pad)"
+							     : "(no-pad)"));
 				vty_out(vty,
 					"      CNSP interval: %u, PSNP interval: %u\n",
 					circuit->csnp_interval[1],
@@ -1317,20 +1332,11 @@ static int isis_interface_config_write(struct vty *vty)
 				}
 			}
 
-			/* ISIS - Hello padding - Defaults to always so only
-			 * display if not always */
-			switch (circuit->pad_hellos) {
-			case ISIS_HELLO_PADDING_DISABLED:
+			/* ISIS - Hello padding - Defaults to true so only
+			 * display if false */
+			if (circuit->pad_hellos == 0) {
 				vty_out(vty, " no " PROTO_NAME " hello padding\n");
 				write++;
-				break;
-			case ISIS_HELLO_PADDING_DURING_ADJACENCY_FORMATION:
-				vty_out(vty, PROTO_NAME
-					" hello padding during-adjacency-formation\n");
-				write++;
-				break;
-			case ISIS_HELLO_PADDING_ALWAYS:
-				break;
 			}
 
 			if (circuit->disable_threeway_adj) {
@@ -1505,10 +1511,6 @@ ferr_r isis_circuit_metric_set(struct isis_circuit *circuit, int level,
 	    && metric > MAX_NARROW_LINK_METRIC)
 		return ferr_cfg_invalid("metric %d too large for narrow metric",
 					metric);
-
-	/* Don't modify metric if advertise high metrics is configured */
-	if (circuit->area && circuit->area->advertise_high_metrics)
-		return ferr_ok();
 
 	/* inform ldp-sync of metric change
          *   if ldp-sync is running need to save metric

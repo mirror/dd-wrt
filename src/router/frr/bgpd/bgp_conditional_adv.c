@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * BGP Conditional advertisement
  * Copyright (C) 2020  Samsung R&D Institute India - Bangalore.
  *			Madhurilatha Kuruganti
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -150,7 +163,7 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 /* Handler of conditional advertisement timer event.
  * Each route in the condition-map is evaluated.
  */
-static void bgp_conditional_adv_timer(struct event *t)
+static void bgp_conditional_adv_timer(struct thread *t)
 {
 	afi_t afi;
 	safi_t safi;
@@ -165,11 +178,11 @@ static void bgp_conditional_adv_timer(struct event *t)
 	route_map_result_t ret;
 	bool advmap_table_changed = false;
 
-	bgp = EVENT_ARG(t);
+	bgp = THREAD_ARG(t);
 	assert(bgp);
 
-	event_add_timer(bm->master, bgp_conditional_adv_timer, bgp,
-			bgp->condition_check_period, &bgp->t_condition_check);
+	thread_add_timer(bm->master, bgp_conditional_adv_timer, bgp,
+			 bgp->condition_check_period, &bgp->t_condition_check);
 
 	/* loop through each peer and check if we have peers with
 	 * advmap_table_change attribute set, to make sure we send
@@ -328,9 +341,9 @@ void bgp_conditional_adv_enable(struct peer *peer, afi_t afi, safi_t safi)
 	}
 
 	/* Register for conditional routes polling timer */
-	if (!event_is_scheduled(bgp->t_condition_check))
-		event_add_timer(bm->master, bgp_conditional_adv_timer, bgp, 0,
-				&bgp->t_condition_check);
+	if (!thread_is_scheduled(bgp->t_condition_check))
+		thread_add_timer(bm->master, bgp_conditional_adv_timer, bgp, 0,
+				 &bgp->t_condition_check);
 }
 
 void bgp_conditional_adv_disable(struct peer *peer, afi_t afi, safi_t safi)
@@ -351,7 +364,7 @@ void bgp_conditional_adv_disable(struct peer *peer, afi_t afi, safi_t safi)
 	}
 
 	/* Last filter removed. So cancel conditional routes polling thread. */
-	EVENT_OFF(bgp->t_condition_check);
+	THREAD_OFF(bgp->t_condition_check);
 }
 
 static void peer_advertise_map_filter_update(struct peer *peer, afi_t afi,

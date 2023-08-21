@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Prefix structure.
  * Copyright (C) 1998 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _ZEBRA_PREFIX_H
@@ -495,8 +510,11 @@ extern int macstr2prefix_evpn(const char *str, struct prefix_evpn *p);
 /* NOTE: This routine expects the address argument in network byte order. */
 static inline bool ipv4_martian(const struct in_addr *addr)
 {
-	if (!ipv4_unicast_valid(addr))
+	in_addr_t ip = ntohl(addr->s_addr);
+
+	if (IPV4_NET0(ip) || IPV4_NET127(ip) || !ipv4_unicast_valid(addr)) {
 		return true;
+	}
 	return false;
 }
 
@@ -594,14 +612,6 @@ static inline bool ipv6_mcast_ssm(const struct in6_addr *addr)
 	return (bits & 0xfff0ffff) == 0xff300000;
 }
 
-static inline bool ipv6_mcast_reserved(const struct in6_addr *addr)
-{
-	uint32_t bits = ntohl(addr->s6_addr32[0]);
-
-	/* ffx2::/16 */
-	return (bits & 0xff0fffff) == 0xff020000;
-}
-
 static inline uint8_t ipv4_mcast_scope(const struct in_addr *addr)
 {
 	uint32_t bits = ntohl(addr->s_addr);
@@ -646,10 +656,7 @@ static inline bool ipv4_mcast_ssm(const struct in_addr *addr)
 #pragma FRR printfrr_ext "%pFX"  (struct prefix_eth *)
 #pragma FRR printfrr_ext "%pFX"  (struct prefix_evpn *)
 #pragma FRR printfrr_ext "%pFX"  (struct prefix_fs *)
-#pragma FRR printfrr_ext "%pRDP"  (struct prefix_rd *)
-/* RD with AS4B with dot and dot+ format */
-#pragma FRR printfrr_ext "%pRDD"  (struct prefix_rd *)
-#pragma FRR printfrr_ext "%pRDE"  (struct prefix_rd *)
+#pragma FRR printfrr_ext "%pRD"  (struct prefix_rd *)
 
 #pragma FRR printfrr_ext "%pPSG4" (struct prefix_sg *)
 #endif

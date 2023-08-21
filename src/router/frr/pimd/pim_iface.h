@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2008  Everton da Silva Marques
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef PIM_IFACE_H
@@ -104,10 +117,10 @@ struct pim_interface {
 	struct gm_if *mld;
 
 	int pim_sock_fd;		/* PIM socket file descriptor */
-	struct event *t_pim_sock_read;	/* thread for reading PIM socket */
+	struct thread *t_pim_sock_read; /* thread for reading PIM socket */
 	int64_t pim_sock_creation;      /* timestamp of PIM socket creation */
 
-	struct event *t_pim_hello_timer;
+	struct thread *t_pim_hello_timer;
 	int pim_hello_period;
 	int pim_default_holdtime;
 	int pim_triggered_hello_delay;
@@ -217,10 +230,10 @@ int pim_if_t_override_msec(struct interface *ifp);
 
 pim_addr pim_find_primary_addr(struct interface *ifp);
 
-ferr_r pim_if_gm_join_add(struct interface *ifp, pim_addr group_addr,
-			  pim_addr source_addr);
-int pim_if_gm_join_del(struct interface *ifp, pim_addr group_addr,
-		       pim_addr source_addr);
+ferr_r pim_if_igmp_join_add(struct interface *ifp, struct in_addr group_addr,
+			    struct in_addr source_addr);
+int pim_if_igmp_join_del(struct interface *ifp, struct in_addr group_addr,
+			 struct in_addr source_addr);
 
 void pim_if_update_could_assert(struct interface *ifp);
 

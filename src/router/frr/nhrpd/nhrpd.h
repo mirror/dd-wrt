@@ -1,6 +1,10 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* NHRP daemon internal structures and function prototypes
  * Copyright (c) 2014-2015 Timo Teräs
+ *
+ * This file is free software: you may copy, redistribute and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
  */
 
 #ifndef NHRPD_H
@@ -19,7 +23,7 @@ DECLARE_MGROUP(NHRPD);
 #define NHRP_VTY_PORT		2610
 #define NHRP_DEFAULT_CONFIG	"nhrpd.conf"
 
-extern struct event_loop *master;
+extern struct thread_master *master;
 
 enum { NHRP_OK = 0,
        NHRP_ERR_FAIL,
@@ -166,9 +170,9 @@ struct nhrp_peer {
 	struct notifier_list notifier_list;
 	struct interface *ifp;
 	struct nhrp_vc *vc;
-	struct event *t_fallback;
+	struct thread *t_fallback;
 	struct notifier_block vc_notifier, ifp_notifier;
-	struct event *t_timer;
+	struct thread *t_timer;
 };
 
 struct nhrp_packet_parser {
@@ -232,8 +236,8 @@ struct nhrp_cache {
 	struct notifier_block newpeer_notifier;
 	struct notifier_list notifier_list;
 	struct nhrp_reqid eventid;
-	struct event *t_timeout;
-	struct event *t_auth;
+	struct thread *t_timeout;
+	struct thread *t_auth;
 
 	struct {
 		enum nhrp_cache_type type;
@@ -251,7 +255,7 @@ struct nhrp_shortcut {
 	union sockunion addr;
 
 	struct nhrp_reqid reqid;
-	struct event *t_timer;
+	struct thread *t_timer;
 
 	enum nhrp_cache_type type;
 	unsigned int holding_time;
@@ -275,7 +279,7 @@ struct nhrp_nhs {
 	union sockunion proto_addr;
 	const char *nbma_fqdn; /* IP-address or FQDN */
 
-	struct event *t_resolve;
+	struct thread *t_resolve;
 	struct resolver_query dns_resolve;
 	struct nhrp_reglist_head reglist_head;
 };
@@ -293,7 +297,7 @@ DECLARE_DLIST(nhrp_mcastlist, struct nhrp_multicast, mcastlist_entry);
 
 struct nhrp_registration {
 	struct nhrp_reglist_item reglist_entry;
-	struct event *t_register;
+	struct thread *t_register;
 	struct nhrp_nhs *nhs;
 	struct nhrp_reqid reqid;
 	unsigned int timeout;

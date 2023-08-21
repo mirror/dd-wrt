@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# SPDX-License-Identifier: ISC
 
 #
 # topotest.py
@@ -8,14 +7,28 @@
 # Copyright (c) 2016 by
 # Network Device Education Foundation, Inc. ("NetDEF")
 #
+# Permission to use, copy, modify, and/or distribute this software
+# for any purpose with or without fee is hereby granted, provided
+# that the above copyright notice and this permission notice appear
+# in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND NETDEF DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL NETDEF BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+# WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+# ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+# OF THIS SOFTWARE.
+#
 
-import configparser
 import difflib
 import errno
 import functools
 import glob
 import json
 import os
+import pdb
 import platform
 import re
 import resource
@@ -24,22 +37,26 @@ import subprocess
 import sys
 import tempfile
 import time
-import logging
-from collections.abc import Mapping
 from copy import deepcopy
 
 import lib.topolog as topolog
-from lib.micronet_compat import Node
 from lib.topolog import logger
-from munet.base import Timeout
+
+if sys.version_info[0] > 2:
+    import configparser
+    from collections.abc import Mapping
+else:
+    import ConfigParser as configparser
+    from collections import Mapping
 
 from lib import micronet
+from lib.micronet_compat import Node
 
-g_pytest_config = None
+g_extra_config = {}
 
 
 def get_logs_path(rundir):
-    logspath = topolog.get_test_logdir(module=True)
+    logspath = topolog.get_test_logdir()
     return os.path.join(rundir, logspath)
 
 
@@ -348,7 +365,7 @@ def run_and_expect(func, what, count=20, wait=3):
             count, wait
         )
 
-    logger.debug(
+    logger.info(
         "'{}' polling started (interval {} secs, maximum {} tries)".format(
             func_name, wait, count
         )
@@ -362,7 +379,7 @@ def run_and_expect(func, what, count=20, wait=3):
             continue
 
         end_time = time.time()
-        logger.debug(
+        logger.info(
             "'{}' succeeded after {:.2f} seconds".format(
                 func_name, end_time - start_time
             )
@@ -405,7 +422,7 @@ def run_and_expect_type(func, etype, count=20, wait=3, avalue=None):
             count, wait
         )
 
-    logger.debug(
+    logger.info(
         "'{}' polling started (interval {} secs, maximum wait {} secs)".format(
             func_name, wait, int(wait * count)
         )
@@ -428,7 +445,7 @@ def run_and_expect_type(func, etype, count=20, wait=3, avalue=None):
             continue
 
         end_time = time.time()
-        logger.debug(
+        logger.info(
             "'{}' succeeded after {:.2f} seconds".format(
                 func_name, end_time - start_time
             )
@@ -468,6 +485,32 @@ def int2dpid(dpid):
             "please either specify a dpid or use a "
             "canonical switch name such as s23."
         )
+
+
+def pid_exists(pid):
+    "Check whether pid exists in the current process table."
+
+    if pid <= 0:
+        return False
+    try:
+        os.waitpid(pid, os.WNOHANG)
+    except:
+        pass
+    try:
+        os.kill(pid, 0)
+    except OSError as err:
+        if err.errno == errno.ESRCH:
+            # ESRCH == No such process
+            return False
+        elif err.errno == errno.EPERM:
+            # EPERM clearly means there's a process to deny access to
+            return True
+        else:
+            # According to "man 2 kill" possible error values are
+            # (EINVAL, EPERM, ESRCH)
+            raise
+    else:
+        return True
 
 
 def get_textdiff(text1, text2, title1="", title2="", **opts):
@@ -547,31 +590,6 @@ def iproute2_is_vrf_capable():
             iproute2_err = subp.communicate()[1].splitlines()[0].split()[0]
 
             if iproute2_err != "Error:":
-                return True
-        except Exception:
-            pass
-    return False
-
-
-def iproute2_is_fdb_get_capable():
-    """
-    Checks if the iproute2 version installed on the system is capable of
-    handling `bridge fdb get` commands to query neigh table resolution.
-
-    Returns True if capability can be detected, returns False otherwise.
-    """
-
-    if is_linux():
-        try:
-            subp = subprocess.Popen(
-                ["bridge", "fdb", "get", "help"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-            )
-            iproute2_out = subp.communicate()[1].splitlines()[0].split()[0]
-
-            if "Usage" in str(iproute2_out):
                 return True
         except Exception:
             pass
@@ -989,7 +1007,7 @@ def checkAddressSanitizerError(output, router, component, logdir=""):
         )
         if addressSanitizerLog:
             # Find Calling Test. Could be multiple steps back
-            testframe = list(sys._current_frames().values())[0]
+            testframe = sys._current_frames().values()[0]
             level = 0
             while level < 10:
                 test = os.path.splitext(
@@ -1056,7 +1074,7 @@ def checkAddressSanitizerError(output, router, component, logdir=""):
 
     # No Address Sanitizer Error in Output. Now check for AddressSanitizer daemon file
     if logdir:
-        filepattern = logdir + "/" + router + ".asan." + component + ".*"
+        filepattern = logdir + "/" + router + "/" + component + ".asan.*"
         logger.debug(
             "Log check for %s on %s, pattern %s\n" % (component, router, filepattern)
         )
@@ -1100,8 +1118,8 @@ def _sysctl_atleast(commander, variable, min_value):
             valstr = " ".join([str(x) for x in min_value])
         else:
             valstr = str(min_value)
-        logger.debug("Increasing sysctl %s from %s to %s", variable, cur_val, valstr)
-        commander.cmd_raises('sysctl -w {}="{}"'.format(variable, valstr))
+        logger.info("Increasing sysctl %s from %s to %s", variable, cur_val, valstr)
+        commander.cmd_raises('sysctl -w {}="{}"\n'.format(variable, valstr))
 
 
 def _sysctl_assure(commander, variable, value):
@@ -1131,16 +1149,14 @@ def _sysctl_assure(commander, variable, value):
             valstr = " ".join([str(x) for x in value])
         else:
             valstr = str(value)
-        logger.debug("Changing sysctl %s from %s to %s", variable, cur_val, valstr)
+        logger.info("Changing sysctl %s from %s to %s", variable, cur_val, valstr)
         commander.cmd_raises('sysctl -w {}="{}"\n'.format(variable, valstr))
 
 
 def sysctl_atleast(commander, variable, min_value, raises=False):
     try:
         if commander is None:
-            logger = logging.getLogger("topotest")
-            commander = micronet.Commander("sysctl", logger=logger)
-
+            commander = micronet.Commander("topotest")
         return _sysctl_atleast(commander, variable, min_value)
     except subprocess.CalledProcessError as error:
         logger.warning(
@@ -1156,8 +1172,7 @@ def sysctl_atleast(commander, variable, min_value, raises=False):
 def sysctl_assure(commander, variable, value, raises=False):
     try:
         if commander is None:
-            logger = logging.getLogger("topotest")
-            commander = micronet.Commander("sysctl", logger=logger)
+            commander = micronet.Commander("topotest")
         return _sysctl_assure(commander, variable, value)
     except subprocess.CalledProcessError as error:
         logger.warning(
@@ -1177,7 +1192,7 @@ def rlimit_atleast(rname, min_value, raises=False):
         soft, hard = cval
         if soft < min_value:
             nval = (min_value, hard if min_value < hard else min_value)
-            logger.debug("Increasing rlimit %s from %s to %s", rname, cval, nval)
+            logger.info("Increasing rlimit %s from %s to %s", rname, cval, nval)
             resource.setrlimit(rname, nval)
     except subprocess.CalledProcessError as error:
         logger.warning(
@@ -1188,9 +1203,10 @@ def rlimit_atleast(rname, min_value, raises=False):
 
 
 def fix_netns_limits(ns):
+
     # Maximum read and write socket buffer sizes
-    sysctl_atleast(ns, "net.ipv4.tcp_rmem", [10 * 1024, 87380, 16 * 2**20])
-    sysctl_atleast(ns, "net.ipv4.tcp_wmem", [10 * 1024, 87380, 16 * 2**20])
+    sysctl_atleast(ns, "net.ipv4.tcp_rmem", [10 * 1024, 87380, 16 * 2 ** 20])
+    sysctl_atleast(ns, "net.ipv4.tcp_wmem", [10 * 1024, 87380, 16 * 2 ** 20])
 
     sysctl_assure(ns, "net.ipv4.conf.all.rp_filter", 0)
     sysctl_assure(ns, "net.ipv4.conf.default.rp_filter", 0)
@@ -1249,8 +1265,8 @@ def fix_host_limits():
     sysctl_atleast(None, "net.core.netdev_max_backlog", 4 * 1024)
 
     # Maximum read and write socket buffer sizes
-    sysctl_atleast(None, "net.core.rmem_max", 16 * 2**20)
-    sysctl_atleast(None, "net.core.wmem_max", 16 * 2**20)
+    sysctl_atleast(None, "net.core.rmem_max", 16 * 2 ** 20)
+    sysctl_atleast(None, "net.core.wmem_max", 16 * 2 ** 20)
 
     # Garbage Collection Settings for ARP and Neighbors
     sysctl_atleast(None, "net.ipv4.neigh.default.gc_thresh2", 4 * 1024)
@@ -1275,8 +1291,7 @@ def fix_host_limits():
 def setup_node_tmpdir(logdir, name):
     # Cleanup old log, valgrind, and core files.
     subprocess.check_call(
-        "rm -rf {0}/{1}.valgrind.* {0}/{1}.asan.* {0}/{1}/".format(logdir, name),
-        shell=True,
+        "rm -rf {0}/{1}.valgrind.* {1}.*.asan {0}/{1}/".format(logdir, name), shell=True
     )
 
     # Setup the per node directory.
@@ -1291,7 +1306,8 @@ def setup_node_tmpdir(logdir, name):
 class Router(Node):
     "A Node with IPv4/IPv6 forwarding enabled"
 
-    def __init__(self, name, *posargs, **params):
+    def __init__(self, name, **params):
+
         # Backward compatibility:
         #   Load configuration defaults like topogen.
         self.config_defaults = configparser.ConfigParser(
@@ -1307,13 +1323,11 @@ class Router(Node):
             os.path.join(os.path.dirname(os.path.realpath(__file__)), "../pytest.ini")
         )
 
-        self.perf_daemons = {}
-
         # If this topology is using old API and doesn't have logdir
         # specified, then attempt to generate an unique logdir.
         self.logdir = params.get("logdir")
         if self.logdir is None:
-            self.logdir = get_logs_path(g_pytest_config.getoption("--rundir"))
+            self.logdir = get_logs_path(g_extra_config["rundir"])
 
         if not params.get("logger"):
             # If logger is present topogen has already set this up
@@ -1321,7 +1335,7 @@ class Router(Node):
             l = topolog.get_logger(name, log_level="debug", target=logfile)
             params["logger"] = l
 
-        super(Router, self).__init__(name, *posargs, **params)
+        super(Router, self).__init__(name, **params)
 
         self.daemondir = None
         self.hasmpls = False
@@ -1347,7 +1361,6 @@ class Router(Node):
             "pbrd": 0,
             "pathd": 0,
             "snmpd": 0,
-            "mgmtd": 0,
         }
         self.daemons_options = {"zebra": ""}
         self.reportCores = True
@@ -1375,14 +1388,10 @@ class Router(Node):
         if not os.path.isfile(zebra_path):
             raise Exception("FRR zebra binary doesn't exist at {}".format(zebra_path))
 
-        mgmtd_path = os.path.join(self.daemondir, "mgmtd")
-        if not os.path.isfile(mgmtd_path):
-            raise Exception("FRR MGMTD binary doesn't exist at {}".format(mgmtd_path))
-
     # pylint: disable=W0221
     # Some params are only meaningful for the parent class.
-    def config_host(self, **params):
-        super(Router, self).config_host(**params)
+    def config(self, **params):
+        super(Router, self).config(**params)
 
         # User did not specify the daemons directory, try to autodetect it.
         self.daemondir = params.get("daemondir")
@@ -1396,10 +1405,6 @@ class Router(Node):
             zpath = os.path.join(self.daemondir, "zebra")
             if not os.path.isfile(zpath):
                 raise Exception("No zebra binary found in {}".format(zpath))
-
-            cpath = os.path.join(self.daemondir, "mgmtd")
-            if not os.path.isfile(zpath):
-                raise Exception("No MGMTD binary found in {}".format(cpath))
             # Allow user to specify routertype when the path was specified.
             if params.get("routertype") is not None:
                 self.routertype = params.get("routertype")
@@ -1452,11 +1457,11 @@ class Router(Node):
 
         logger.info("%s: stopping %s", self.name, ", ".join([x[0] for x in running]))
         for name, pid in running:
-            logger.debug("{}: sending SIGTERM to {}".format(self.name, name))
+            logger.info("{}: sending SIGTERM to {}".format(self.name, name))
             try:
                 os.kill(pid, signal.SIGTERM)
             except OSError as err:
-                logger.debug(
+                logger.info(
                     "%s: could not kill %s (%s): %s", self.name, name, pid, str(err)
                 )
 
@@ -1473,22 +1478,21 @@ class Router(Node):
                 if not running:
                     break
 
-        if running:
-            logger.warning(
-                "%s: sending SIGBUS to: %s",
-                self.name,
-                ", ".join([x[0] for x in running]),
-            )
-            for name, pid in running:
-                pidfile = "/var/run/{}/{}.pid".format(self.routertype, name)
-                logger.info("%s: killing %s", self.name, name)
-                self.cmd("kill -SIGBUS %d" % pid)
-                self.cmd("rm -- " + pidfile)
+        if not running:
+            return ""
 
-            sleep(
-                0.5,
-                "%s: waiting for daemons to exit/core after initial SIGBUS" % self.name,
-            )
+        logger.warning(
+            "%s: sending SIGBUS to: %s", self.name, ", ".join([x[0] for x in running])
+        )
+        for name, pid in running:
+            pidfile = "/var/run/{}/{}.pid".format(self.routertype, name)
+            logger.info("%s: killing %s", self.name, name)
+            self.cmd("kill -SIGBUS %d" % pid)
+            self.cmd("rm -- " + pidfile)
+
+        sleep(
+            0.5, "%s: waiting for daemons to exit/core after initial SIGBUS" % self.name
+        )
 
         errors = self.checkRouterCores(reportOnce=True)
         if self.checkRouterVersion("<", minErrorVersion):
@@ -1501,13 +1505,10 @@ class Router(Node):
     def removeIPs(self):
         for interface in self.intfNames():
             try:
-                self.intf_ip_cmd(interface, "ip -4 address flush " + interface)
-                self.intf_ip_cmd(
-                    interface, "ip -6 address flush " + interface + " scope global"
-                )
+                self.intf_ip_cmd(interface, "ip address flush " + interface)
             except Exception as ex:
                 logger.error("%s can't remove IPs %s", self, str(ex))
-                # breakpoint()
+                # pdb.set_trace()
                 # assert False, "can't remove IPs %s" % str(ex)
 
     def checkCapability(self, daemon, param):
@@ -1531,11 +1532,6 @@ class Router(Node):
         """
 
         # Unfortunately this API allowsfor source to not exist for any and all routers.
-        source_was_none = source is None
-        if source_was_none:
-            source = f"{daemon}.conf"
-
-        # "" to avoid loading a default config which is present in router dir
         if source:
             head, tail = os.path.split(source)
             if not head and not self.path_exists(tail):
@@ -1543,7 +1539,7 @@ class Router(Node):
                 router_relative = os.path.join(script_dir, self.name, tail)
                 if self.path_exists(router_relative):
                     source = router_relative
-                    self.logger.debug(
+                    self.logger.info(
                         "using router relative configuration: {}".format(source)
                     )
 
@@ -1556,40 +1552,14 @@ class Router(Node):
             if param is not None:
                 self.daemons_options[daemon] = param
             conf_file = "/etc/{}/{}.conf".format(self.routertype, daemon)
-            if source and not os.path.exists(source):
-                logger.warning(
-                    "missing config '%s' for '%s' creating empty file '%s'",
-                    self.name,
-                    source,
-                    conf_file,
-                )
+            if source is None or not os.path.exists(source):
                 if daemon == "frr" or not self.unified_config:
                     self.cmd_raises("rm -f " + conf_file)
                     self.cmd_raises("touch " + conf_file)
-                    self.cmd_raises(
-                        "chown {0}:{0} {1}".format(self.routertype, conf_file)
-                    )
-                    self.cmd_raises("chmod 664 {}".format(conf_file))
-            elif source:
-                # copy zebra.conf to mgmtd folder, which can be used during startup
-                if daemon == "zebra" and not self.unified_config:
-                    conf_file_mgmt = "/etc/{}/{}.conf".format(self.routertype, "mgmtd")
-                    logger.debug(
-                        "copying '%s' as '%s' on '%s'",
-                        source,
-                        conf_file_mgmt,
-                        self.name,
-                    )
-                    self.cmd_raises("cp {} {}".format(source, conf_file_mgmt))
-                    self.cmd_raises(
-                        "chown {0}:{0} {1}".format(self.routertype, conf_file_mgmt)
-                    )
-                    self.cmd_raises("chmod 664 {}".format(conf_file_mgmt))
-
-                logger.debug(
-                    "copying '%s' as '%s' on '%s'", source, conf_file, self.name
-                )
+            else:
                 self.cmd_raises("cp {} {}".format(source, conf_file))
+
+            if not self.unified_config or daemon == "frr":
                 self.cmd_raises("chown {0}:{0} {1}".format(self.routertype, conf_file))
                 self.cmd_raises("chmod 664 {}".format(conf_file))
 
@@ -1598,26 +1568,20 @@ class Router(Node):
                 self.cmd('echo "agentXSocket /etc/frr/agentx" >> /etc/snmp/frr.conf')
                 self.cmd('echo "mibs +ALL" > /etc/snmp/snmp.conf')
 
-            if (daemon == "zebra") and (self.daemons["mgmtd"] == 0):
-                # Add mgmtd with zebra - if it exists
-                mgmtd_path = os.path.join(self.daemondir, "mgmtd")
-                if os.path.isfile(mgmtd_path):
-                    self.daemons["mgmtd"] = 1
-                    self.daemons_options["mgmtd"] = ""
-                    # Auto-Started mgmtd has no config, so it will read from zebra config
-
             if (daemon == "zebra") and (self.daemons["staticd"] == 0):
                 # Add staticd with zebra - if it exists
-                staticd_path = os.path.join(self.daemondir, "staticd")
+                try:
+                    staticd_path = os.path.join(self.daemondir, "staticd")
+                except:
+                    pdb.set_trace()
+
                 if os.path.isfile(staticd_path):
                     self.daemons["staticd"] = 1
                     self.daemons_options["staticd"] = ""
                     # Auto-Started staticd has no config, so it will read from zebra config
-
         else:
-            logger.warning("No daemon {} known".format(daemon))
-
-        return source if os.path.exists(source) else ""
+            logger.info("No daemon {} known".format(daemon))
+        # print "Daemons after:", self.daemons
 
     def runInWindow(self, cmd, title=None):
         return self.run_in_window(cmd, title)
@@ -1684,7 +1648,8 @@ class Router(Node):
         # used
         self.cmd("echo 100000 > /proc/sys/net/mpls/platform_labels")
 
-        if g_pytest_config.name_in_option_list(self.name, "--shell"):
+        shell_routers = g_extra_config["shell"]
+        if "all" in shell_routers or self.name in shell_routers:
             self.run_in_window(os.getenv("SHELL", "bash"), title="sh-%s" % self.name)
 
         if self.daemons["eigrpd"] == 1:
@@ -1701,7 +1666,8 @@ class Router(Node):
 
         status = self.startRouterDaemons(tgen=tgen)
 
-        if g_pytest_config.name_in_option_list(self.name, "--vtysh"):
+        vtysh_routers = g_extra_config["vtysh"]
+        if "all" in vtysh_routers or self.name in vtysh_routers:
             self.run_in_window("vtysh", title="vt-%s" % self.name)
 
         if self.unified_config:
@@ -1716,22 +1682,18 @@ class Router(Node):
         return self.getLog("out", daemon)
 
     def getLog(self, log, daemon):
-        filename = "{}/{}/{}.{}".format(self.logdir, self.name, daemon, log)
-        log = ""
-        with open(filename) as file:
-            log = file.read()
-        return log
+        return self.cmd("cat {}/{}/{}.{}".format(self.logdir, self.name, daemon, log))
 
     def startRouterDaemons(self, daemons=None, tgen=None):
         "Starts FRR daemons for this router."
 
-        asan_abort = bool(g_pytest_config.option.asan_abort)
-        gdb_breakpoints = g_pytest_config.get_option_list("--gdb-breakpoints")
-        gdb_daemons = g_pytest_config.get_option_list("--gdb-daemons")
-        gdb_routers = g_pytest_config.get_option_list("--gdb-routers")
-        valgrind_extra = bool(g_pytest_config.option.valgrind_extra)
-        valgrind_memleaks = bool(g_pytest_config.option.valgrind_memleaks)
-        strace_daemons = g_pytest_config.get_option_list("--strace-daemons")
+        asan_abort = g_extra_config["asan_abort"]
+        gdb_breakpoints = g_extra_config["gdb_breakpoints"]
+        gdb_daemons = g_extra_config["gdb_daemons"]
+        gdb_routers = g_extra_config["gdb_routers"]
+        valgrind_extra = g_extra_config["valgrind_extra"]
+        valgrind_memleaks = g_extra_config["valgrind_memleaks"]
+        strace_daemons = g_extra_config["strace_daemons"]
 
         # Get global bundle data
         if not self.path_exists("/etc/frr/support_bundle_commands.conf"):
@@ -1755,31 +1717,11 @@ class Router(Node):
         self.reportCores = True
 
         # XXX: glue code forward ported from removed function.
-        if self.version is None:
+        if self.version == None:
             self.version = self.cmd(
                 os.path.join(self.daemondir, "bgpd") + " -v"
             ).split()[2]
             logger.info("{}: running version: {}".format(self.name, self.version))
-
-        perfds = {}
-        perf_options = g_pytest_config.get_option("--perf-options", "-g")
-        for perf in g_pytest_config.get_option("--perf", []):
-            if "," in perf:
-                daemon, routers = perf.split(",", 1)
-                perfds[daemon] = routers.split(",")
-            else:
-                daemon = perf
-                perfds[daemon] = ["all"]
-
-        logd_options = {}
-        for logd in g_pytest_config.get_option("--logd", []):
-            if "," in logd:
-                daemon, routers = logd.split(",", 1)
-                logd_options[daemon] = routers.split(",")
-            else:
-                daemon = logd
-                logd_options[daemon] = ["all"]
-
         # If `daemons` was specified then some upper API called us with
         # specific daemons, otherwise just use our own configuration.
         daemons_list = []
@@ -1791,36 +1733,22 @@ class Router(Node):
                 if self.daemons[daemon] == 1:
                     daemons_list.append(daemon)
 
-        tail_log_files = []
-        check_daemon_files = []
-
         def start_daemon(daemon, extra_opts=None):
             daemon_opts = self.daemons_options.get(daemon, "")
-
-            # get pid and vty filenames and remove the files
-            m = re.match(r"(.* |^)-n (\d+)( ?.*|$)", daemon_opts)
-            dfname = daemon if not m else "{}-{}".format(daemon, m.group(2))
-            runbase = "/var/run/{}/{}".format(self.routertype, dfname)
-            # If this is a new system bring-up remove the pid/vty files, otherwise
-            # do not since apparently presence of the pidfile impacts BGP GR
-            self.cmd_status("rm -f {0}.pid {0}.vty".format(runbase))
-
             rediropt = " > {0}.out 2> {0}.err".format(daemon)
             if daemon == "snmpd":
                 binary = "/usr/sbin/snmpd"
                 cmdenv = ""
                 cmdopt = "{} -C -c /etc/frr/snmpd.conf -p ".format(
                     daemon_opts
-                ) + "{}.pid -x /etc/frr/agentx".format(runbase)
-                # check_daemon_files.append(runbase + ".pid")
+                ) + "/var/run/{}/snmpd.pid -x /etc/frr/agentx".format(self.routertype)
             else:
                 binary = os.path.join(self.daemondir, daemon)
-                check_daemon_files.extend([runbase + ".pid", runbase + ".vty"])
 
                 cmdenv = "ASAN_OPTIONS="
                 if asan_abort:
-                    cmdenv += "abort_on_error=1:"
-                cmdenv += "log_path={0}/{1}.asan.{2} ".format(
+                    cmdenv = "abort_on_error=1:"
+                cmdenv += "log_path={0}/{1}.{2}.asan ".format(
                     self.logdir, self.name, daemon
                 )
 
@@ -1843,15 +1771,9 @@ class Router(Node):
                         daemon, self.logdir, self.name
                     )
 
-                cmdopt = "{} --command-log-always ".format(daemon_opts)
-                cmdopt += "--log file:{}.log --log-level debug".format(daemon)
-
-                if daemon in logd_options:
-                    logdopt = logd_options[daemon]
-                    if "all" in logdopt or self.name in logdopt:
-                        tail_log_files.append(
-                            "{}/{}/{}.log".format(self.logdir, self.name, daemon)
-                        )
+                cmdopt = "{} --command-log-always --log file:{}.log --log-level debug".format(
+                    daemon_opts, daemon
+                )
             if extra_opts:
                 cmdopt += " " + extra_opts
 
@@ -1878,27 +1800,6 @@ class Router(Node):
                 logger.info(
                     "%s: %s %s launched in gdb window", self, self.routertype, daemon
                 )
-            elif daemon in perfds and (
-                self.name in perfds[daemon] or "all" in perfds[daemon]
-            ):
-                cmdopt += rediropt
-                cmd = " ".join(
-                    ["perf record {} --".format(perf_options), binary, cmdopt]
-                )
-                p = self.popen(cmd)
-                self.perf_daemons[daemon] = p
-                if p.poll() and p.returncode:
-                    self.logger.error(
-                        '%s: Failed to launch "%s" (%s) with perf using: %s',
-                        self,
-                        daemon,
-                        p.returncode,
-                        cmd,
-                    )
-                else:
-                    logger.debug(
-                        "%s: %s %s started with perf", self, self.routertype, daemon
-                    )
             else:
                 if daemon != "snmpd":
                     cmdopt += " -d "
@@ -1921,15 +1822,9 @@ class Router(Node):
                         else "",
                     )
                 else:
-                    logger.debug("%s: %s %s started", self, self.routertype, daemon)
+                    logger.info("%s: %s %s started", self, self.routertype, daemon)
 
-        # Start mgmtd first
-        if "mgmtd" in daemons_list:
-            start_daemon("mgmtd")
-            while "mgmtd" in daemons_list:
-                daemons_list.remove("mgmtd")
-
-        # Start Zebra after mgmtd
+        # Start Zebra first
         if "zebra" in daemons_list:
             start_daemon("zebra", "-s 90000000")
             while "zebra" in daemons_list:
@@ -1950,6 +1845,15 @@ class Router(Node):
             while "snmpd" in daemons_list:
                 daemons_list.remove("snmpd")
 
+        if daemons is None:
+            # Fix Link-Local Addresses on initial startup
+            # Somehow (on Mininet only), Zebra removes the IPv6 Link-Local addresses on start. Fix this
+            _, output, _ = self.cmd_status(
+                "for i in `ls /sys/class/net/` ; do mac=`cat /sys/class/net/$i/address`; echo $i: $mac; [ -z \"$mac\" ] && continue; IFS=':'; set $mac; unset IFS; ip address add dev $i scope link fe80::$(printf %02x $((0x$1 ^ 2)))$2:${3}ff:fe$4:$5$6/64; done",
+                stderr=subprocess.STDOUT,
+            )
+            logger.debug("Set MACs:\n%s", output)
+
         # Now start all the other daemons
         for daemon in daemons_list:
             if self.daemons[daemon] == 0:
@@ -1957,49 +1861,15 @@ class Router(Node):
             start_daemon(daemon)
 
         # Check if daemons are running.
-        wait_time = 30 if (gdb_routers or gdb_daemons) else 10
-        timeout = Timeout(wait_time)
-        for remaining in timeout:
-            if not check_daemon_files:
-                break
-            check = check_daemon_files[0]
-            if self.path_exists(check):
-                check_daemon_files.pop(0)
-                continue
-            self.logger.debug("Waiting {}s for {} to appear".format(remaining, check))
-            time.sleep(0.5)
-
-        if check_daemon_files:
-            assert False, "Timeout({}) waiting for {} to appear on {}".format(
-                wait_time, check_daemon_files[0], self.name
-            )
+        rundaemons = self.cmd("ls -1 /var/run/%s/*.pid" % self.routertype)
+        if re.search(r"No such file or directory", rundaemons):
+            return "Daemons are not running"
 
         # Update the permissions on the log files
         self.cmd("chown frr:frr -R {}/{}".format(self.logdir, self.name))
         self.cmd("chmod ug+rwX,o+r -R {}/{}".format(self.logdir, self.name))
 
-        if "frr" in logd_options:
-            logdopt = logd_options["frr"]
-            if "all" in logdopt or self.name in logdopt:
-                tail_log_files.append("{}/{}/frr.log".format(self.logdir, self.name))
-
-        for tailf in tail_log_files:
-            self.run_in_window("tail -n10000 -F " + tailf, title=tailf, background=True)
-
         return ""
-
-    def pid_exists(self, pid):
-        if pid <= 0:
-            return False
-        try:
-            # If we are not using PID namespaces then we will be a parent of the pid,
-            # otherwise the init process of the PID namespace will have reaped the proc.
-            os.waitpid(pid, os.WNOHANG)
-        except Exception:
-            pass
-
-        rc, o, e = self.cmd_status("kill -0 " + str(pid), warn=False)
-        return rc == 0 or "No such process" not in e
 
     def killRouterDaemons(
         self, daemons, wait=True, assertOnError=True, minErrorVersion="5.1"
@@ -2020,15 +1890,15 @@ class Router(Node):
                     if re.search(r"%s" % daemon, d):
                         daemonpidfile = d.rstrip()
                         daemonpid = self.cmd("cat %s" % daemonpidfile).rstrip()
-                        if daemonpid.isdigit() and self.pid_exists(int(daemonpid)):
-                            logger.debug(
+                        if daemonpid.isdigit() and pid_exists(int(daemonpid)):
+                            logger.info(
                                 "{}: killing {}".format(
                                     self.name,
                                     os.path.basename(daemonpidfile.rsplit(".", 1)[0]),
                                 )
                             )
-                            self.cmd_status("kill -KILL {}".format(daemonpid))
-                            if self.pid_exists(int(daemonpid)):
+                            os.kill(int(daemonpid), signal.SIGKILL)
+                            if pid_exists(int(daemonpid)):
                                 numRunning += 1
                         while wait and numRunning > 0:
                             sleep(
@@ -2042,7 +1912,7 @@ class Router(Node):
                             for d in dmns[:-1]:
                                 if re.search(r"%s" % daemon, d):
                                     daemonpid = self.cmd("cat %s" % d.rstrip()).rstrip()
-                                    if daemonpid.isdigit() and self.pid_exists(
+                                    if daemonpid.isdigit() and pid_exists(
                                         int(daemonpid)
                                     ):
                                         logger.info(
@@ -2053,10 +1923,8 @@ class Router(Node):
                                                 ),
                                             )
                                         )
-                                        self.cmd_status(
-                                            "kill -KILL {}".format(daemonpid)
-                                        )
-                                    if daemonpid.isdigit() and not self.pid_exists(
+                                        os.kill(int(daemonpid), signal.SIGKILL)
+                                    if daemonpid.isdigit() and not pid_exists(
                                         int(daemonpid)
                                     ):
                                         numRunning -= 1
@@ -2287,7 +2155,7 @@ class Router(Node):
                 log = self.getStdErr(daemon)
                 if "memstats" in log:
                     # Found memory leak
-                    logger.warning(
+                    logger.info(
                         "\nRouter {} {} StdErr Log:\n{}".format(self.name, daemon, log)
                     )
                     if not leakfound:

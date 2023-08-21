@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * IS-IS Rout(e)ing protocol - isis_adjacency.c
  *                             handling of IS-IS adjacencies
@@ -6,6 +5,20 @@
  * Copyright (C) 2001,2002   Sampo Saaristo
  *                           Tampere University of Technology
  *                           Institute of Communications Engineering
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public Licenseas published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -15,7 +28,7 @@
 #include "hash.h"
 #include "vty.h"
 #include "linklist.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "if.h"
 #include "stream.h"
 #include "bfd.h"
@@ -148,7 +161,7 @@ void isis_delete_adj(void *arg)
 	/* Remove self from snmp list without walking the list*/
 	list_delete_node(adj->circuit->snmp_adj_list, adj->snmp_list_node);
 
-	EVENT_OFF(adj->t_expire);
+	THREAD_OFF(adj->t_expire);
 	if (adj->adj_state != ISIS_ADJ_DOWN)
 		adj->adj_state = ISIS_ADJ_DOWN;
 
@@ -283,8 +296,6 @@ void isis_adj_process_threeway(struct isis_adjacency *adj,
 }
 const char *isis_adj_name(const struct isis_adjacency *adj)
 {
-	static char buf[ISO_SYSID_STRLEN];
-
 	if (!adj)
 		return "NONE";
 
@@ -293,9 +304,8 @@ const char *isis_adj_name(const struct isis_adjacency *adj)
 	dyn = dynhn_find_by_id(adj->circuit->isis, adj->sysid);
 	if (dyn)
 		return dyn->hostname;
-
-	snprintfrr(buf, sizeof(buf), "%pSY", adj->sysid);
-	return buf;
+	else
+		return sysid_print(adj->sysid);
 }
 void isis_log_adj_change(struct isis_adjacency *adj,
 			 enum isis_adj_state old_state,
@@ -399,13 +409,13 @@ void isis_adj_state_change(struct isis_adjacency **padj,
 				adj->flaps++;
 
 				if (level == IS_LEVEL_1) {
-					event_add_timer(
-						master, send_l1_csnp, circuit,
-						0, &circuit->t_send_csnp[0]);
+					thread_add_timer(master, send_l1_csnp,
+							 circuit, 0,
+							 &circuit->t_send_csnp[0]);
 				} else {
-					event_add_timer(
-						master, send_l2_csnp, circuit,
-						0, &circuit->t_send_csnp[1]);
+					thread_add_timer(master, send_l2_csnp,
+							 circuit, 0,
+							 &circuit->t_send_csnp[1]);
 				}
 			} else if (old_state == ISIS_ADJ_UP) {
 				circuit->upadjcount[level - 1]--;
@@ -442,8 +452,9 @@ void isis_adj_print(struct isis_adjacency *adj)
 	if (dyn)
 		zlog_debug("%s", dyn->hostname);
 
-	zlog_debug("SystemId %20pSY SNPA %pSY, level %d; Holding Time %d",
-		   adj->sysid, adj->snpa, adj->level, adj->hold_time);
+	zlog_debug("SystemId %20s SNPA %s, level %d; Holding Time %d",
+		   sysid_print(adj->sysid), snpa_print(adj->snpa), adj->level,
+		   adj->hold_time);
 	if (adj->ipv4_address_count) {
 		zlog_debug("IPv4 Address(es):");
 		for (unsigned int i = 0; i < adj->ipv4_address_count; i++)
@@ -473,21 +484,19 @@ const char *isis_adj_yang_state(enum isis_adj_state state)
 		return "up";
 	case ISIS_ADJ_INITIALIZING:
 		return "init";
-	case ISIS_ADJ_UNKNOWN:
+	default:
 		return "failed";
 	}
-
-	assert(!"Reached end of function where we are not expecting to");
 }
 
-void isis_adj_expire(struct event *thread)
+void isis_adj_expire(struct thread *thread)
 {
 	struct isis_adjacency *adj;
 
 	/*
 	 * Get the adjacency
 	 */
-	adj = EVENT_ARG(thread);
+	adj = THREAD_ARG(thread);
 	assert(adj);
 	adj->t_expire = NULL;
 
@@ -532,7 +541,7 @@ void isis_adj_print_json(struct isis_adjacency *adj, struct json_object *json,
 					time2string(adj->last_upd +
 						    adj->hold_time - now));
 		}
-		json_object_string_addf(json, "snpa", "%pSY", adj->snpa);
+		json_object_string_add(json, "snpa", snpa_print(adj->snpa));
 	}
 
 	if (detail == ISIS_UI_LEVEL_DETAIL) {
@@ -583,7 +592,8 @@ void isis_adj_print_json(struct isis_adjacency *adj, struct json_object *json,
 					isis_mtid2str(adj->mt_set[i]));
 			}
 		}
-		json_object_string_addf(iface_json, "snpa", "%pSY", adj->snpa);
+		json_object_string_add(iface_json, "snpa",
+				       snpa_print(adj->snpa));
 		if (adj->circuit &&
 		    (adj->circuit->circ_type == CIRCUIT_T_BROADCAST)) {
 			dyn = dynhn_find_by_id(adj->circuit->isis, adj->lanid);
@@ -594,8 +604,11 @@ void isis_adj_print_json(struct isis_adjacency *adj, struct json_object *json,
 				json_object_string_add(iface_json, "lan-id",
 						       buf);
 			} else {
-				json_object_string_addf(iface_json, "lan-id",
-							"%pSY", adj->lanid);
+				snprintfrr(buf, sizeof(buf), "%s-%02x",
+					   sysid_print(adj->lanid),
+					   adj->lanid[ISIS_SYS_ID_LEN]);
+				json_object_string_add(iface_json, "lan-id",
+						       buf);
 			}
 
 			json_object_int_add(iface_json, "lan-prio",
@@ -624,9 +637,12 @@ void isis_adj_print_json(struct isis_adjacency *adj, struct json_object *json,
 					       area_addr_json);
 			for (unsigned int i = 0; i < adj->area_address_count;
 			     i++) {
-				json_object_string_addf(
-					area_addr_json, "isonet", "%pIS",
-					&adj->area_addresses[i]);
+				json_object_string_add(
+					area_addr_json, "isonet",
+					isonet_print(adj->area_addresses[i]
+							     .area_addr,
+						     adj->area_addresses[i]
+							     .addr_len));
 			}
 		}
 		if (adj->ipv4_address_count) {
@@ -731,7 +747,7 @@ void isis_adj_print_vty(struct isis_adjacency *adj, struct vty *vty,
 						+ adj->hold_time - now);
 		} else
 			vty_out(vty, "-        ");
-		vty_out(vty, "%-10pSY", adj->snpa);
+		vty_out(vty, "%-10s", snpa_print(adj->snpa));
 		vty_out(vty, "\n");
 	}
 
@@ -775,7 +791,7 @@ void isis_adj_print_vty(struct isis_adjacency *adj, struct vty *vty,
 				vty_out(vty, "      %s\n",
 					isis_mtid2str(adj->mt_set[i]));
 		}
-		vty_out(vty, "    SNPA: %pSY", adj->snpa);
+		vty_out(vty, "    SNPA: %s", snpa_print(adj->snpa));
 		if (adj->circuit
 		    && (adj->circuit->circ_type == CIRCUIT_T_BROADCAST)) {
 			dyn = dynhn_find_by_id(adj->circuit->isis, adj->lanid);
@@ -783,7 +799,9 @@ void isis_adj_print_vty(struct isis_adjacency *adj, struct vty *vty,
 				vty_out(vty, ", LAN id: %s.%02x", dyn->hostname,
 					adj->lanid[ISIS_SYS_ID_LEN]);
 			else
-				vty_out(vty, ", LAN id: %pPN", adj->lanid);
+				vty_out(vty, ", LAN id: %s.%02x",
+					sysid_print(adj->lanid),
+					adj->lanid[ISIS_SYS_ID_LEN]);
 
 			vty_out(vty, "\n");
 			vty_out(vty, "    LAN Priority: %u",
@@ -804,8 +822,11 @@ void isis_adj_print_vty(struct isis_adjacency *adj, struct vty *vty,
 			vty_out(vty, "    Area Address(es):\n");
 			for (unsigned int i = 0; i < adj->area_address_count;
 			     i++) {
-				vty_out(vty, "      %pIS\n",
-					&adj->area_addresses[i]);
+				vty_out(vty, "      %s\n",
+					isonet_print(adj->area_addresses[i]
+							     .area_addr,
+						     adj->area_addresses[i]
+							     .addr_len));
 			}
 		}
 		if (adj->ipv4_address_count) {
@@ -933,9 +954,8 @@ int isis_adj_usage2levels(enum isis_adj_usage usage)
 		return IS_LEVEL_2;
 	case ISIS_ADJ_LEVEL1AND2:
 		return IS_LEVEL_1 | IS_LEVEL_2;
-	case ISIS_ADJ_NONE:
-		return 0;
+	default:
+		break;
 	}
-
-	assert(!"Reached end of function where we are not expecting to");
+	return 0;
 }

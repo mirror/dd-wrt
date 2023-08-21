@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * STATICd - vty code
  * Copyright (C) 2018 Cumulus Networks, Inc.
  *               Donald Sharp
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
@@ -13,7 +26,6 @@
 #include "nexthop.h"
 #include "table.h"
 #include "srcdest_table.h"
-#include "mgmt_be_client.h"
 #include "mpls.h"
 #include "northbound.h"
 #include "libfrr.h"
@@ -123,9 +135,7 @@ static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
 		if (args->source)
 			assert(!!str2prefix(args->source, &src));
 		break;
-	case AFI_L2VPN:
-	case AFI_UNSPEC:
-	case AFI_MAX:
+	default:
 		break;
 	}
 
@@ -286,10 +296,10 @@ static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
 				nb_cli_enqueue_change(vty, ab_xpath,
 						      NB_OP_MODIFY, "false");
 		}
-		if (type == STATIC_IPV4_GATEWAY ||
-		    type == STATIC_IPV6_GATEWAY ||
-		    type == STATIC_IPV4_GATEWAY_IFNAME ||
-		    type == STATIC_IPV6_GATEWAY_IFNAME) {
+		if (type == STATIC_IPV4_GATEWAY
+		    || type == STATIC_IPV6_GATEWAY
+		    || type == STATIC_IPV4_GATEWAY_IFNAME
+		    || type == STATIC_IPV6_GATEWAY_IFNAME) {
 			strlcpy(ab_xpath, xpath_nexthop, sizeof(ab_xpath));
 			strlcat(ab_xpath, FRR_STATIC_ROUTE_NH_COLOR_XPATH,
 				sizeof(ab_xpath));
@@ -369,51 +379,25 @@ static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
 
 		ret = nb_cli_apply_changes(vty, "%s", xpath_prefix);
 	} else {
-		if (args->source) {
-			if (args->distance)
-				snprintf(ab_xpath, sizeof(ab_xpath),
-					 FRR_DEL_S_ROUTE_SRC_NH_KEY_XPATH,
-					 "frr-staticd:staticd", "staticd",
-					 args->vrf, buf_prefix,
-					 yang_afi_safi_value2identity(
-						 args->afi, args->safi),
-					 buf_src_prefix, table_id, distance,
-					 buf_nh_type, args->nexthop_vrf,
-					 buf_gate_str, args->interface_name);
-			else
-				snprintf(
-					ab_xpath, sizeof(ab_xpath),
-					FRR_DEL_S_ROUTE_SRC_NH_KEY_NO_DISTANCE_XPATH,
-					"frr-staticd:staticd", "staticd",
-					args->vrf, buf_prefix,
-					yang_afi_safi_value2identity(
-						args->afi, args->safi),
-					buf_src_prefix, table_id, buf_nh_type,
-					args->nexthop_vrf, buf_gate_str,
-					args->interface_name);
-		} else {
-			if (args->distance)
-				snprintf(ab_xpath, sizeof(ab_xpath),
-					 FRR_DEL_S_ROUTE_NH_KEY_XPATH,
-					 "frr-staticd:staticd", "staticd",
-					 args->vrf, buf_prefix,
-					 yang_afi_safi_value2identity(
-						 args->afi, args->safi),
-					 table_id, distance, buf_nh_type,
-					 args->nexthop_vrf, buf_gate_str,
-					 args->interface_name);
-			else
-				snprintf(
-					ab_xpath, sizeof(ab_xpath),
-					FRR_DEL_S_ROUTE_NH_KEY_NO_DISTANCE_XPATH,
-					"frr-staticd:staticd", "staticd",
-					args->vrf, buf_prefix,
-					yang_afi_safi_value2identity(
-						args->afi, args->safi),
-					table_id, buf_nh_type,
-					args->nexthop_vrf, buf_gate_str,
-					args->interface_name);
-		}
+		if (args->source)
+			snprintf(ab_xpath, sizeof(ab_xpath),
+				 FRR_DEL_S_ROUTE_SRC_NH_KEY_NO_DISTANCE_XPATH,
+				 "frr-staticd:staticd", "staticd", args->vrf,
+				 buf_prefix,
+				 yang_afi_safi_value2identity(args->afi,
+							      args->safi),
+				 buf_src_prefix, table_id, buf_nh_type,
+				 args->nexthop_vrf, buf_gate_str,
+				 args->interface_name);
+		else
+			snprintf(ab_xpath, sizeof(ab_xpath),
+				 FRR_DEL_S_ROUTE_NH_KEY_NO_DISTANCE_XPATH,
+				 "frr-staticd:staticd", "staticd", args->vrf,
+				 buf_prefix,
+				 yang_afi_safi_value2identity(args->afi,
+							      args->safi),
+				 table_id, buf_nh_type, args->nexthop_vrf,
+				 buf_gate_str, args->interface_name);
 
 		dnode = yang_dnode_get(vty->candidate_config->dnode, ab_xpath);
 		if (!dnode) {
@@ -1479,18 +1463,15 @@ DEFPY_YANG(debug_staticd, debug_staticd_cmd,
 	   "Debug route\n"
 	   "Debug bfd\n")
 {
-#ifndef INCLUDE_MGMTD_CMDDEFS_ONLY
 	/* If no specific category, change all */
 	if (strmatch(argv[argc - 1]->text, "static"))
 		static_debug_set(vty->node, !no, true, true, true);
 	else
 		static_debug_set(vty->node, !no, !!events, !!route, !!bfd);
-#endif /* ifndef INCLUDE_MGMTD_CMDDEFS_ONLY */
 
 	return CMD_SUCCESS;
 }
 
-#ifndef INCLUDE_MGMTD_CMDDEFS_ONLY
 DEFPY(staticd_show_bfd_routes, staticd_show_bfd_routes_cmd,
       "show bfd static route [json]$isjson",
       SHOW_STR
@@ -1526,15 +1507,9 @@ static struct cmd_node debug_node = {
 	.config_write = static_config_write_debug,
 };
 
-#endif /* ifndef INCLUDE_MGMTD_CMDDEFS_ONLY */
-
 void static_vty_init(void)
 {
-#ifndef INCLUDE_MGMTD_CMDDEFS_ONLY
 	install_node(&debug_node);
-	install_element(ENABLE_NODE, &show_debugging_static_cmd);
-	install_element(ENABLE_NODE, &staticd_show_bfd_routes_cmd);
-#endif /* ifndef INCLUDE_MGMTD_CMDDEFS_ONLY */
 
 	install_element(CONFIG_NODE, &ip_mroute_dist_cmd);
 
@@ -1552,8 +1527,9 @@ void static_vty_init(void)
 	install_element(CONFIG_NODE, &ipv6_route_cmd);
 	install_element(VRF_NODE, &ipv6_route_vrf_cmd);
 
+	install_element(ENABLE_NODE, &show_debugging_static_cmd);
 	install_element(ENABLE_NODE, &debug_staticd_cmd);
 	install_element(CONFIG_NODE, &debug_staticd_cmd);
 
-	mgmt_be_client_lib_vty_init();
+	install_element(ENABLE_NODE, &staticd_show_bfd_routes_cmd);
 }

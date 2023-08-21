@@ -294,12 +294,6 @@ Basic Config Commands
       log files to quickly balloon in size.  Remember to disable backtraces
       when they're no longer needed.
 
-.. clicmd:: debug routemap [detail]
-
-   This command turns on debugging of routemaps.  When detail is specified
-   more data is provided to the operator about the reasoning about what
-   is going on in the routemap code.
-
 .. clicmd:: service password-encryption
 
    Encrypt password.
@@ -348,10 +342,6 @@ Basic Config Commands
 
    Allow using IPv4 reserved (Class E) IP ranges for daemons. E.g.: setting
    IPv4 addresses for interfaces or allowing reserved ranges in BGP next-hops.
-
-   If you need multiple FRR instances (or FRR + any other daemon) running in a
-   single router and peering via 127.0.0.0/8, it's also possible to use this
-   knob if turned on.
 
    Default: off.
 

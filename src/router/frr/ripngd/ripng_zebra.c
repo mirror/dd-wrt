@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * RIPngd and zebra interface.
  * Copyright (C) 1998, 1999 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -30,7 +45,7 @@ static void ripng_zebra_ipv6_send(struct ripng *ripng, struct agg_node *rp,
 	struct zapi_nexthop *api_nh;
 	struct listnode *listnode = NULL;
 	struct ripng_info *rinfo = NULL;
-	uint32_t count = 0;
+	int count = 0;
 	const struct prefix *p = agg_node_get_prefix(rp);
 
 	memset(&api, 0, sizeof(api));
@@ -41,7 +56,7 @@ static void ripng_zebra_ipv6_send(struct ripng *ripng, struct agg_node *rp,
 
 	SET_FLAG(api.message, ZAPI_MESSAGE_NEXTHOP);
 	for (ALL_LIST_ELEMENTS_RO(list, listnode, rinfo)) {
-		if (count >= zebra_ecmp_count)
+		if (count >= MULTIPATH_NUM)
 			break;
 		api_nh = &api.nexthops[count];
 		api_nh->vrf_id = ripng->vrf->vrf_id;
@@ -227,13 +242,8 @@ static zclient_handler *const ripng_handlers[] = {
 	[ZEBRA_REDISTRIBUTE_ROUTE_DEL] = ripng_zebra_read_route,
 };
 
-static void ripng_zebra_capabilities(struct zclient_capabilities *cap)
-{
-	zebra_ecmp_count = MIN(cap->ecmp, zebra_ecmp_count);
-}
-
 /* Initialize zebra structure and it's commands. */
-void zebra_init(struct event_loop *master)
+void zebra_init(struct thread_master *master)
 {
 	/* Allocate zebra structure. */
 	zclient = zclient_new(master, &zclient_options_default, ripng_handlers,
@@ -241,7 +251,6 @@ void zebra_init(struct event_loop *master)
 	zclient_init(zclient, ZEBRA_ROUTE_RIPNG, 0, &ripngd_privs);
 
 	zclient->zebra_connected = ripng_zebra_connected;
-	zclient->zebra_capabilities = ripng_zebra_capabilities;
 }
 
 void ripng_zebra_stop(void)

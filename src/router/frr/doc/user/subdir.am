@@ -3,7 +3,6 @@
 #
 
 user_RSTFILES = \
-	doc/user/affinitymap.rst \
 	doc/user/babeld.rst \
 	doc/user/ldpd.rst \
 	doc/user/basic.rst \
@@ -54,7 +53,6 @@ user_RSTFILES = \
 	doc/user/flowspec.rst \
 	doc/user/watchfrr.rst \
 	doc/user/wecmp_linkbw.rst \
-	doc/user/mgmtd.rst \
 	# end
 
 EXTRA_DIST += \

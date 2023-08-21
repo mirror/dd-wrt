@@ -1,9 +1,24 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* OSPFv2 SNMP support
  * Copyright (C) 2005 6WIND <alain.ritoux@6wind.com>
  * Copyright (C) 2000 IP Infusion Inc.
  *
  * Written by Kunihiro Ishiguro <kunihiro@zebra.org>
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -1112,7 +1127,7 @@ static struct ospf_area_range *ospfAreaRangeLookup(struct variable *v,
 		oid2in_addr(offset, IN_ADDR_SIZE, range_net);
 		p.prefix = *range_net;
 
-		return ospf_area_range_lookup(area, area->ranges, &p);
+		return ospf_area_range_lookup(area, &p);
 	} else {
 		/* Set OID offset for Area ID. */
 		offset = name + v->namelen;
@@ -2525,7 +2540,7 @@ static int ospf_snmp_ism_change(struct ospf_interface *oi, int state,
 }
 
 /* Register OSPF2-MIB. */
-static int ospf_snmp_init(struct event_loop *tm)
+static int ospf_snmp_init(struct thread_master *tm)
 {
 	ospf_snmp_iflist = list_new();
 	ospf_snmp_vl_table = route_table_init();

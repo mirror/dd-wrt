@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * This is an implementation of Segment Routing
  * as per RFC 8665 - OSPF Extensions for Segment Routing
@@ -10,6 +9,20 @@
  * Author: Anselme Sawadogo <anselmesawadogo@gmail.com>
  *
  * Copyright (C) 2016 - 2020 Orange Labs http://www.orange.com
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifdef HAVE_CONFIG_H
@@ -37,7 +50,7 @@
 #include "sockunion.h" /* for inet_aton() */
 #include "stream.h"
 #include "table.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "vty.h"
 #include "zclient.h"
 #include "sbuf.h"
@@ -457,11 +470,11 @@ int ospf_sr_local_block_release_label(mpls_label_t label)
  *
  * @return		1 on success
  */
-static void sr_start_label_manager(struct event *start)
+static void sr_start_label_manager(struct thread *start)
 {
 	struct ospf *ospf;
 
-	ospf = EVENT_ARG(start);
+	ospf = THREAD_ARG(start);
 
 	/* re-attempt to start SR & Label Manager connection */
 	ospf_sr_start(ospf);
@@ -496,8 +509,8 @@ static int ospf_sr_start(struct ospf *ospf)
 	if (!ospf_zebra_label_manager_ready())
 		if (ospf_zebra_label_manager_connect() < 0) {
 			/* Re-attempt to connect to Label Manager in 1 sec. */
-			event_add_timer(master, sr_start_label_manager, ospf, 1,
-					&OspfSR.t_start_lm);
+			thread_add_timer(master, sr_start_label_manager, ospf,
+					 1, &OspfSR.t_start_lm);
 			osr_debug("  |- Failed to start the Label Manager");
 			return -1;
 		}
@@ -565,7 +578,7 @@ static void ospf_sr_stop(void)
 	osr_debug("SR (%s): Stop Segment Routing", __func__);
 
 	/* Disable any re-attempt to connect to Label Manager */
-	EVENT_OFF(OspfSR.t_start_lm);
+	THREAD_OFF(OspfSR.t_start_lm);
 
 	/* Release SRGB if active */
 	sr_global_block_delete();
@@ -639,7 +652,10 @@ void ospf_sr_term(void)
 	/* Stop Segment Routing */
 	ospf_sr_stop();
 
-	hash_clean_and_free(&OspfSR.neighbors, (void *)sr_node_del);
+	/* Clear SR Node Table */
+	if (OspfSR.neighbors)
+		hash_free(OspfSR.neighbors);
+
 }
 
 /*

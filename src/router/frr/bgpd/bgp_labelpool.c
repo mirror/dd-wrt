@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * BGP Label Pool - Manage label chunk allocations from zebra asynchronously
  *
  * Copyright (C) 2018 LabN Consulting, L.L.C.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -23,9 +36,6 @@
 #include "bgpd/bgp_debug.h"
 #include "bgpd/bgp_errors.h"
 #include "bgpd/bgp_route.h"
-#include "bgpd/bgp_zebra.h"
-#include "bgpd/bgp_vty.h"
-#include "bgpd/bgp_rd.h"
 
 #define BGP_LABELPOOL_ENABLE_TESTS 0
 
@@ -180,7 +190,7 @@ static void lp_chunk_free(void *goner)
 	XFREE(MTYPE_BGP_LABEL_CHUNK, goner);
 }
 
-void bgp_lp_init(struct event_loop *master, struct labelpool *pool)
+void bgp_lp_init(struct thread_master *master, struct labelpool *pool)
 {
 	if (BGP_DEBUG(labelpool, LABELPOOL))
 		zlog_debug("%s: entry", __func__);
@@ -833,16 +843,6 @@ DEFUN(show_bgp_labelpool_ledger, show_bgp_labelpool_ledger_cmd,
 					lcb->label);
 
 			break;
-		case LP_TYPE_NEXTHOP:
-			if (uj) {
-				json_object_string_add(json_elem, "prefix",
-						       "nexthop");
-				json_object_int_add(json_elem, "label",
-						    lcb->label);
-			} else
-				vty_out(vty, "%-18s         %u\n", "nexthop",
-					lcb->label);
-			break;
 		}
 	}
 	if (uj)
@@ -932,15 +932,6 @@ DEFUN(show_bgp_labelpool_inuse, show_bgp_labelpool_inuse_cmd,
 				vty_out(vty, "%-18s         %u\n", "VRF",
 					label);
 			break;
-		case LP_TYPE_NEXTHOP:
-			if (uj) {
-				json_object_string_add(json_elem, "prefix",
-						       "nexthop");
-				json_object_int_add(json_elem, "label", label);
-			} else
-				vty_out(vty, "%-18s         %u\n", "nexthop",
-					label);
-			break;
 		}
 	}
 	if (uj)
@@ -1013,13 +1004,6 @@ DEFUN(show_bgp_labelpool_requests, show_bgp_labelpool_requests_cmd,
 			else
 				vty_out(vty, "VRF\n");
 			break;
-		case LP_TYPE_NEXTHOP:
-			if (uj)
-				json_object_string_add(json_elem, "prefix",
-						       "nexthop");
-			else
-				vty_out(vty, "Nexthop\n");
-			break;
 		}
 	}
 	if (uj)
@@ -1082,99 +1066,6 @@ DEFUN(show_bgp_labelpool_chunks, show_bgp_labelpool_chunks_cmd,
 	return CMD_SUCCESS;
 }
 
-static void show_bgp_nexthop_label_afi(struct vty *vty, afi_t afi,
-				       struct bgp *bgp, bool detail)
-{
-	struct bgp_label_per_nexthop_cache_head *tree;
-	struct bgp_label_per_nexthop_cache *iter;
-	safi_t safi;
-	void *src;
-	char buf[PREFIX2STR_BUFFER];
-	char labelstr[MPLS_LABEL_STRLEN];
-	struct bgp_dest *dest;
-	struct bgp_path_info *path;
-	struct bgp *bgp_path;
-	struct bgp_table *table;
-	time_t tbuf;
-
-	vty_out(vty, "Current BGP label nexthop cache for %s, VRF %s\n",
-		afi2str(afi), bgp->name_pretty);
-
-	tree = &bgp->mpls_labels_per_nexthop[afi];
-	frr_each (bgp_label_per_nexthop_cache, tree, iter) {
-		if (afi2family(afi) == AF_INET)
-			src = (void *)&iter->nexthop.u.prefix4;
-		else
-			src = (void *)&iter->nexthop.u.prefix6;
-
-		vty_out(vty, " %s, label %s #paths %u\n",
-			inet_ntop(afi2family(afi), src, buf, sizeof(buf)),
-			mpls_label2str(1, &iter->label, labelstr,
-				       sizeof(labelstr), 0, true),
-			iter->path_count);
-		if (iter->nh)
-			vty_out(vty, "  if %s\n",
-				ifindex2ifname(iter->nh->ifindex,
-					       iter->nh->vrf_id));
-		tbuf = time(NULL) - (monotime(NULL) - iter->last_update);
-		vty_out(vty, "  Last update: %s", ctime(&tbuf));
-		if (!detail)
-			continue;
-		vty_out(vty, "  Paths:\n");
-		LIST_FOREACH (path, &(iter->paths), label_nh_thread) {
-			dest = path->net;
-			table = bgp_dest_table(dest);
-			assert(dest && table);
-			afi = family2afi(bgp_dest_get_prefix(dest)->family);
-			safi = table->safi;
-			bgp_path = table->bgp;
-
-			if (dest->pdest) {
-				vty_out(vty, "    %d/%d %pBD RD ", afi, safi,
-					dest);
-
-				vty_out(vty, BGP_RD_AS_FORMAT(bgp->asnotation),
-					(struct prefix_rd *)bgp_dest_get_prefix(
-						dest->pdest));
-				vty_out(vty, " %s flags 0x%x\n",
-					bgp_path->name_pretty, path->flags);
-			} else
-				vty_out(vty, "    %d/%d %pBD %s flags 0x%x\n",
-					afi, safi, dest, bgp_path->name_pretty,
-					path->flags);
-		}
-	}
-}
-
-DEFPY(show_bgp_nexthop_label, show_bgp_nexthop_label_cmd,
-      "show bgp [<view|vrf> VIEWVRFNAME] label-nexthop [detail]",
-      SHOW_STR BGP_STR BGP_INSTANCE_HELP_STR
-      "BGP label per-nexthop table\n"
-      "Show detailed information\n")
-{
-	int idx = 0;
-	char *vrf = NULL;
-	struct bgp *bgp;
-	bool detail = false;
-	int afi;
-
-	if (argv_find(argv, argc, "vrf", &idx)) {
-		vrf = argv[++idx]->arg;
-		bgp = bgp_lookup_by_name(vrf);
-	} else
-		bgp = bgp_get_default();
-
-	if (!bgp)
-		return CMD_SUCCESS;
-
-	if (argv_find(argv, argc, "detail", &idx))
-		detail = true;
-
-	for (afi = AFI_IP; afi <= AFI_IP6; afi++)
-		show_bgp_nexthop_label_afi(vty, afi, bgp, detail);
-	return CMD_SUCCESS;
-}
-
 #if BGP_LABELPOOL_ENABLE_TESTS
 /*------------------------------------------------------------------------
  *			Testing code start
@@ -1213,7 +1104,7 @@ struct lp_test {
 	struct timeval starttime;
 	struct skiplist *timestamps_alloc;
 	struct skiplist *timestamps_dealloc;
-	struct event *event_thread;
+	struct thread *event_thread;
 	unsigned int counter[LPT_STAT_MAX];
 };
 
@@ -1272,7 +1163,7 @@ static int test_cb(mpls_label_t label, void *labelid, bool allocated)
 	return 0;
 }
 
-static void labelpool_test_event_handler(struct event *thread)
+static void labelpool_test_event_handler(struct thread *thread)
 {
 	struct lp_test *tcb;
 
@@ -1324,7 +1215,7 @@ static void lptest_stop(void)
 	}
 
 	if (tcb->event_thread)
-		event_cancel(&tcb->event_thread);
+		thread_cancel(&tcb->event_thread);
 
 	lpt_inprogress = false;
 }
@@ -1613,7 +1504,7 @@ static void lptest_delete(void *val)
 	}
 
 	if (tcb->event_thread)
-		event_cancel(&tcb->event_thread);
+		thread_cancel(&tcb->event_thread);
 
 	memset(tcb, 0, sizeof(*tcb));
 
@@ -1653,67 +1544,4 @@ void bgp_lp_vty_init(void)
 	install_element(ENABLE_NODE, &release_labelpool_perf_test_cmd);
 	install_element(ENABLE_NODE, &clear_labelpool_perf_test_cmd);
 #endif /* BGP_LABELPOOL_ENABLE_TESTS */
-}
-
-DEFINE_MTYPE_STATIC(BGPD, LABEL_PER_NEXTHOP_CACHE,
-		    "BGP Label Per Nexthop entry");
-
-/* The nexthops values are compared to
- * find in the tree the appropriate cache entry
- */
-int bgp_label_per_nexthop_cache_cmp(const struct bgp_label_per_nexthop_cache *a,
-				    const struct bgp_label_per_nexthop_cache *b)
-{
-	return prefix_cmp(&a->nexthop, &b->nexthop);
-}
-
-struct bgp_label_per_nexthop_cache *
-bgp_label_per_nexthop_new(struct bgp_label_per_nexthop_cache_head *tree,
-			  struct prefix *nexthop)
-{
-	struct bgp_label_per_nexthop_cache *blnc;
-
-	blnc = XCALLOC(MTYPE_LABEL_PER_NEXTHOP_CACHE,
-		       sizeof(struct bgp_label_per_nexthop_cache));
-	blnc->tree = tree;
-	blnc->label = MPLS_INVALID_LABEL;
-	prefix_copy(&blnc->nexthop, nexthop);
-	LIST_INIT(&(blnc->paths));
-	bgp_label_per_nexthop_cache_add(tree, blnc);
-
-	return blnc;
-}
-
-struct bgp_label_per_nexthop_cache *
-bgp_label_per_nexthop_find(struct bgp_label_per_nexthop_cache_head *tree,
-			   struct prefix *nexthop)
-{
-	struct bgp_label_per_nexthop_cache blnc = {};
-
-	if (!tree)
-		return NULL;
-
-	memcpy(&blnc.nexthop, nexthop, sizeof(struct prefix));
-	return bgp_label_per_nexthop_cache_find(tree, &blnc);
-}
-
-void bgp_label_per_nexthop_free(struct bgp_label_per_nexthop_cache *blnc)
-{
-	if (blnc->label != MPLS_INVALID_LABEL) {
-		bgp_zebra_send_nexthop_label(ZEBRA_MPLS_LABELS_DELETE,
-					     blnc->label, blnc->nh->ifindex,
-					     blnc->nh->vrf_id, ZEBRA_LSP_BGP,
-					     &blnc->nexthop);
-		bgp_lp_release(LP_TYPE_NEXTHOP, blnc, blnc->label);
-	}
-	bgp_label_per_nexthop_cache_del(blnc->tree, blnc);
-	if (blnc->nh)
-		nexthop_free(blnc->nh);
-	blnc->nh = NULL;
-	XFREE(MTYPE_LABEL_PER_NEXTHOP_CACHE, blnc);
-}
-
-void bgp_label_per_nexthop_init(void)
-{
-	install_element(VIEW_NODE, &show_bgp_nexthop_label_cmd);
 }

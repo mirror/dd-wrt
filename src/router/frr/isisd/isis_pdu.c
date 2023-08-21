@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * IS-IS Rout(e)ing protocol - isis_pdu.c
  *                             PDU processing
@@ -6,12 +5,26 @@
  * Copyright (C) 2001,2002   Sampo Saaristo
  *                           Tampere University of Technology
  *                           Institute of Communications Engineering
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public Licenseas published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
 #include "memory.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "linklist.h"
 #include "log.h"
 #include "stream.h"
@@ -192,9 +205,9 @@ static int process_p2p_hello(struct iih_info *iih)
 				      adj);
 
 	/* lets take care of the expiry */
-	EVENT_OFF(adj->t_expire);
-	event_add_timer(master, isis_adj_expire, adj, (long)adj->hold_time,
-			&adj->t_expire);
+	THREAD_OFF(adj->t_expire);
+	thread_add_timer(master, isis_adj_expire, adj, (long)adj->hold_time,
+			 &adj->t_expire);
 
 	/* While fabricds initial sync is in progress, ignore hellos from other
 	 * interfaces than the one we are performing the initial sync on. */
@@ -466,8 +479,8 @@ static int process_lan_hello(struct iih_info *iih)
 				       : iih->circuit->u.bc.l2_desig_is;
 
 		if (memcmp(dis, iih->dis, ISIS_SYS_ID_LEN + 1)) {
-			event_add_event(master, isis_event_dis_status_change,
-					iih->circuit, 0, NULL);
+			thread_add_event(master, isis_event_dis_status_change,
+					 iih->circuit, 0, NULL);
 			memcpy(dis, iih->dis, ISIS_SYS_ID_LEN + 1);
 		}
 	}
@@ -484,9 +497,9 @@ static int process_lan_hello(struct iih_info *iih)
 				      adj);
 
 	/* lets take care of the expiry */
-	EVENT_OFF(adj->t_expire);
-	event_add_timer(master, isis_adj_expire, adj, (long)adj->hold_time,
-			&adj->t_expire);
+	THREAD_OFF(adj->t_expire);
+	thread_add_timer(master, isis_adj_expire, adj, (long)adj->hold_time,
+			 &adj->t_expire);
 
 	/*
 	 * If the snpa for this circuit is found from LAN Neighbours TLV
@@ -514,9 +527,9 @@ static int process_lan_hello(struct iih_info *iih)
 
 	if (IS_DEBUG_ADJ_PACKETS) {
 		zlog_debug(
-			"ISIS-Adj (%s): Rcvd L%d LAN IIH from %pSY on %s, cirType %s, cirID %u, length %zd",
-			iih->circuit->area->area_tag, iih->level, iih->ssnpa,
-			iih->circuit->interface->name,
+			"ISIS-Adj (%s): Rcvd L%d LAN IIH from %s on %s, cirType %s, cirID %u, length %zd",
+			iih->circuit->area->area_tag, iih->level,
+			snpa_print(iih->ssnpa), iih->circuit->interface->name,
 			circuit_t2string(iih->circuit->is_type),
 			iih->circuit->circuit_id,
 			stream_get_endp(iih->circuit->rcv_stream));
@@ -862,32 +875,31 @@ static int process_lsp(uint8_t pdu_type, struct isis_circuit *circuit,
 
 #ifndef FABRICD
 	/* send northbound notification */
-	char buf[ISO_SYSID_STRLEN];
-
-	snprintfrr(buf, ISO_SYSID_STRLEN, "%pSY", hdr.lsp_id);
 	isis_notif_lsp_received(circuit, hdr.lsp_id, hdr.seqno, time(NULL),
-				buf);
+				sysid_print(hdr.lsp_id));
 #endif /* ifndef FABRICD */
 
 	if (pdu_len_validate(hdr.pdu_len, circuit)) {
-		zlog_debug("ISIS-Upd (%s): LSP %pLS invalid LSP length %hu",
-			   circuit->area->area_tag, hdr.lsp_id, hdr.pdu_len);
+		zlog_debug("ISIS-Upd (%s): LSP %s invalid LSP length %hu",
+			   circuit->area->area_tag, rawlspid_print(hdr.lsp_id),
+			   hdr.pdu_len);
 		return ISIS_WARNING;
 	}
 
 	if (IS_DEBUG_UPDATE_PACKETS) {
-		zlog_debug(
-			"ISIS-Upd (%s): Rcvd L%d LSP %pLS, seq 0x%08x, cksum 0x%04hx, lifetime %hus, len %hu, on %s",
-			circuit->area->area_tag, level, hdr.lsp_id, hdr.seqno,
-			hdr.checksum, hdr.rem_lifetime, hdr.pdu_len,
-			circuit->interface->name);
+		zlog_debug("ISIS-Upd (%s): Rcvd L%d LSP %s, seq 0x%08x, cksum 0x%04hx, lifetime %hus, len %hu, on %s",
+			   circuit->area->area_tag, level,
+			   rawlspid_print(hdr.lsp_id), hdr.seqno, hdr.checksum,
+			   hdr.rem_lifetime, hdr.pdu_len,
+			   circuit->interface->name);
 	}
 
 	/* lsp is_type check */
 	if ((hdr.lsp_bits & IS_LEVEL_1) != IS_LEVEL_1) {
-		zlog_debug("ISIS-Upd (%s): LSP %pLS invalid LSP is type 0x%x",
-			   circuit->area->area_tag, hdr.lsp_id,
-			   hdr.lsp_bits & IS_LEVEL_1_AND_2);
+		zlog_debug(
+			"ISIS-Upd (%s): LSP %s invalid LSP is type 0x%x",
+			circuit->area->area_tag, rawlspid_print(hdr.lsp_id),
+			hdr.lsp_bits & IS_LEVEL_1_AND_2);
 		/* continue as per RFC1122 Be liberal in what you accept, and
 		 * conservative in what you send */
 	}
@@ -897,25 +909,27 @@ static int process_lsp(uint8_t pdu_type, struct isis_circuit *circuit,
 	if (iso_csum_verify(STREAM_DATA(circuit->rcv_stream) + 12,
 			    hdr.pdu_len - 12, hdr.checksum, 12)) {
 		zlog_debug(
-			"ISIS-Upd (%s): LSP %pLS invalid LSP checksum 0x%04hx",
-			circuit->area->area_tag, hdr.lsp_id, hdr.checksum);
+			"ISIS-Upd (%s): LSP %s invalid LSP checksum 0x%04hx",
+			circuit->area->area_tag, rawlspid_print(hdr.lsp_id),
+			hdr.checksum);
 		return ISIS_WARNING;
 	}
 
 	/* 7.3.15.1 a) 1 - external domain circuit will discard lsps */
 	if (circuit->ext_domain) {
 		zlog_debug(
-			"ISIS-Upd (%s): LSP %pLS received at level %d over circuit with externalDomain = true",
-			circuit->area->area_tag, hdr.lsp_id, level);
+			"ISIS-Upd (%s): LSP %s received at level %d over circuit with externalDomain = true",
+			circuit->area->area_tag, rawlspid_print(hdr.lsp_id),
+			level);
 		return ISIS_WARNING;
 	}
 
 	/* 7.3.15.1 a) 2,3 - manualL2OnlyMode not implemented */
 	if (!(circuit->is_type & level)) {
 		zlog_debug(
-			"ISIS-Upd (%s): LSP %pLS received at level %d over circuit of type %s",
-			circuit->area->area_tag, hdr.lsp_id, level,
-			circuit_t2string(circuit->is_type));
+			"ISIS-Upd (%s): LSP %s received at level %d over circuit of type %s",
+			circuit->area->area_tag, rawlspid_print(hdr.lsp_id),
+			level, circuit_t2string(circuit->is_type));
 		return ISIS_WARNING;
 	}
 
@@ -1015,11 +1029,11 @@ static int process_lsp(uint8_t pdu_type, struct isis_circuit *circuit,
 	if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
 		if (!isis_adj_lookup_snpa(ssnpa,
 					  circuit->u.bc.adjdb[level - 1])) {
-			zlog_debug(
-				"(%s): DS ======= LSP %pLS, seq 0x%08x, cksum 0x%04hx, lifetime %hus on %s",
-				circuit->area->area_tag, hdr.lsp_id, hdr.seqno,
-				hdr.checksum, hdr.rem_lifetime,
-				circuit->interface->name);
+			zlog_debug("(%s): DS ======= LSP %s, seq 0x%08x, cksum 0x%04hx, lifetime %hus on %s",
+				   circuit->area->area_tag,
+				   rawlspid_print(hdr.lsp_id), hdr.seqno,
+				   hdr.checksum, hdr.rem_lifetime,
+				   circuit->interface->name);
 			goto out; /* Silently discard */
 		}
 	}
@@ -1056,9 +1070,9 @@ dontcheckadj:
 	if (lsp && (lsp->hdr.seqno == hdr.seqno)
 	    && (lsp->hdr.checksum != hdr.checksum)
 	    && hdr.rem_lifetime) {
-		zlog_warn(
-			"ISIS-Upd (%s): LSP %pLS seq 0x%08x with confused checksum received.",
-			circuit->area->area_tag, hdr.lsp_id, hdr.seqno);
+		zlog_warn("ISIS-Upd (%s): LSP %s seq 0x%08x with confused checksum received.",
+			  circuit->area->area_tag, rawlspid_print(hdr.lsp_id),
+			  hdr.seqno);
 		hdr.rem_lifetime = 0;
 		lsp_confusion = true;
 	} else
@@ -1152,9 +1166,10 @@ dontcheckadj:
 				}
 				if (IS_DEBUG_UPDATE_PACKETS)
 					zlog_debug(
-						"ISIS-Upd (%s): (1) re-originating LSP %pLS new seq 0x%08x",
+						"ISIS-Upd (%s): (1) re-originating LSP %s new seq 0x%08x",
 						circuit->area->area_tag,
-						hdr.lsp_id, lsp->hdr.seqno);
+						rawlspid_print(hdr.lsp_id),
+						lsp->hdr.seqno);
 			} else {
 				/* our own LSP with 0 remaining life time */
 #ifndef FABRICD
@@ -1192,8 +1207,9 @@ dontcheckadj:
 #endif /* ifndef FABRICD */
 			if (IS_DEBUG_UPDATE_PACKETS) {
 				zlog_debug(
-					"ISIS-Upd (%s): (2) re-originating LSP %pLS new seq 0x%08x",
-					circuit->area->area_tag, hdr.lsp_id,
+					"ISIS-Upd (%s): (2) re-originating LSP %s new seq 0x%08x",
+					circuit->area->area_tag,
+					rawlspid_print(hdr.lsp_id),
 					lsp->hdr.seqno);
 			}
 			lsp_flood(lsp, NULL);
@@ -1358,9 +1374,9 @@ static int process_snp(uint8_t pdu_type, struct isis_circuit *circuit,
 	if (!is_csnp && (circuit->circ_type == CIRCUIT_T_BROADCAST)
 	    && !circuit->u.bc.is_dr[level - 1]) {
 		zlog_debug(
-			"ISIS-Snp (%s): Rcvd L%d %cSNP from %pSY on %s, skipping: we are not the DIS",
-			circuit->area->area_tag, level, typechar, ssnpa,
-			circuit->interface->name);
+			"ISIS-Snp (%s): Rcvd L%d %cSNP from %s on %s, skipping: we are not the DIS",
+			circuit->area->area_tag, level, typechar,
+			snpa_print(ssnpa), circuit->interface->name);
 
 		return ISIS_OK;
 	}
@@ -1449,16 +1465,16 @@ static int process_snp(uint8_t pdu_type, struct isis_circuit *circuit,
 
 	/* debug isis snp-packets */
 	if (IS_DEBUG_SNP_PACKETS) {
-		zlog_debug("ISIS-Snp (%s): Rcvd L%d %cSNP from %pSY on %s",
-			   circuit->area->area_tag, level, typechar, ssnpa,
-			   circuit->interface->name);
+		zlog_debug("ISIS-Snp (%s): Rcvd L%d %cSNP from %s on %s",
+			   circuit->area->area_tag, level, typechar,
+			   snpa_print(ssnpa), circuit->interface->name);
 		for (struct isis_lsp_entry *entry = entry_head; entry;
 		     entry = entry->next) {
 			zlog_debug(
-				"ISIS-Snp (%s):         %cSNP entry %pLS, seq 0x%08x, cksum 0x%04hx, lifetime %hus",
-				circuit->area->area_tag, typechar, entry->id,
-				entry->seqno, entry->checksum,
-				entry->rem_lifetime);
+				"ISIS-Snp (%s):         %cSNP entry %s, seq 0x%08x, cksum 0x%04hx, lifetime %hus",
+				circuit->area->area_tag, typechar,
+				rawlspid_print(entry->id), entry->seqno,
+				entry->checksum, entry->rem_lifetime);
 		}
 	}
 
@@ -1651,14 +1667,12 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 	if (idrp == ISO9542_ESIS) {
 		flog_err(EC_LIB_DEVELOPMENT,
 			 "No support for ES-IS packet IDRP=%hhx", idrp);
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_ERROR;
 	}
 
 	if (idrp != ISO10589_ISIS) {
 		flog_err(EC_ISIS_PACKET, "Not an IS-IS packet IDRP=%hhx",
 			 idrp);
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_ERROR;
 	}
 
@@ -1669,7 +1683,6 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		isis_notif_version_skew(circuit, version1, raw_pdu,
 					sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_WARNING;
 	}
 
@@ -1693,14 +1706,12 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		isis_notif_id_len_mismatch(circuit, id_len, raw_pdu,
 					   sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_ERROR;
 	}
 
 	uint8_t expected_length;
 	if (pdu_size(pdu_type, &expected_length)) {
 		zlog_warn("Unsupported ISIS PDU %hhu", pdu_type);
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_WARNING;
 	}
 
@@ -1708,7 +1719,6 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		flog_err(EC_ISIS_PACKET,
 			 "Expected fixed header length = %hhu but got %hhu",
 			 expected_length, length);
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_ERROR;
 	}
 
@@ -1716,7 +1726,6 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		flog_err(
 			EC_ISIS_PACKET,
 			"PDU is too short to contain fixed header of given PDU type.");
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_ERROR;
 	}
 
@@ -1727,14 +1736,12 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		isis_notif_version_skew(circuit, version2, raw_pdu,
 					sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_WARNING;
 	}
 
 	if (circuit->is_passive) {
 		zlog_warn("Received ISIS PDU on passive circuit %s",
 			  circuit->interface->name);
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_WARNING;
 	}
 
@@ -1753,7 +1760,6 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		isis_notif_max_area_addr_mismatch(circuit, max_area_addrs,
 						  raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_ERROR;
 	}
 
@@ -1761,22 +1767,17 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 	case L1_LAN_HELLO:
 	case L2_LAN_HELLO:
 	case P2P_HELLO:
-		if (fabricd && pdu_type != P2P_HELLO) {
-			pdu_counter_count_drop(circuit->area, pdu_type);
+		if (fabricd && pdu_type != P2P_HELLO)
 			return ISIS_ERROR;
-		}
-
 		retval = process_hello(pdu_type, circuit, ssnpa);
 		break;
 	case L1_LINK_STATE:
 	case L2_LINK_STATE:
 	case FS_LINK_STATE:
-		if (fabricd && pdu_type != L2_LINK_STATE &&
-		    pdu_type != FS_LINK_STATE) {
-			pdu_counter_count_drop(circuit->area, pdu_type);
+		if (fabricd
+		    && pdu_type != L2_LINK_STATE
+		    && pdu_type != FS_LINK_STATE)
 			return ISIS_ERROR;
-		}
-
 		retval = process_lsp(pdu_type, circuit, ssnpa, max_area_addrs);
 		break;
 	case L1_COMPLETE_SEQ_NUM:
@@ -1786,17 +1787,13 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		retval = process_snp(pdu_type, circuit, ssnpa);
 		break;
 	default:
-		pdu_counter_count_drop(circuit->area, pdu_type);
 		return ISIS_ERROR;
 	}
-
-	if (retval != ISIS_OK)
-		pdu_counter_count_drop(circuit->area, pdu_type);
 
 	return retval;
 }
 
-void isis_receive(struct event *thread)
+void isis_receive(struct thread *thread)
 {
 	struct isis_circuit *circuit;
 	uint8_t ssnpa[ETH_ALEN];
@@ -1804,7 +1801,7 @@ void isis_receive(struct event *thread)
 	/*
 	 * Get the circuit
 	 */
-	circuit = EVENT_ARG(thread);
+	circuit = THREAD_ARG(thread);
 	assert(circuit);
 
 	circuit->t_read = NULL;
@@ -1980,14 +1977,8 @@ int send_hello(struct isis_circuit *circuit, int level)
 		isis_tlvs_add_global_ipv6_addresses(tlvs,
 						    circuit->ipv6_non_link);
 
-	bool should_pad_hello =
-		circuit->pad_hellos == ISIS_HELLO_PADDING_ALWAYS ||
-		(circuit->pad_hellos ==
-			 ISIS_HELLO_PADDING_DURING_ADJACENCY_FORMATION &&
-		 circuit->upadjcount[0] + circuit->upadjcount[1] == 0);
-
 	if (isis_pack_tlvs(tlvs, circuit->snd_stream, len_pointer,
-			   should_pad_hello, false)) {
+			   circuit->pad_hellos, false)) {
 		isis_free_tlvs(tlvs);
 		return ISIS_WARNING; /* XXX: Maybe Log TLV structure? */
 	}
@@ -2025,9 +2016,9 @@ int send_hello(struct isis_circuit *circuit, int level)
 	return retval;
 }
 
-static void send_hello_cb(struct event *thread)
+static void send_hello_cb(struct thread *thread)
 {
-	struct isis_circuit_arg *arg = EVENT_ARG(thread);
+	struct isis_circuit_arg *arg = THREAD_ARG(thread);
 	assert(arg);
 
 	struct isis_circuit *circuit = arg->circuit;
@@ -2066,18 +2057,20 @@ static void send_hello_cb(struct event *thread)
 }
 
 static void _send_hello_sched(struct isis_circuit *circuit,
-			      struct event **threadp, int level, long delay)
+			      struct thread **threadp,
+			      int level, long delay)
 {
 	if (*threadp) {
-		if (event_timer_remain_msec(*threadp) < (unsigned long)delay)
+		if (thread_timer_remain_msec(*threadp) < (unsigned long)delay)
 			return;
 
-		EVENT_OFF(*threadp);
+		THREAD_OFF(*threadp);
 	}
 
-	event_add_timer_msec(master, send_hello_cb,
-			     &circuit->level_arg[level - 1],
-			     isis_jitter(delay, IIH_JITTER), threadp);
+	thread_add_timer_msec(master, send_hello_cb,
+			      &circuit->level_arg[level - 1],
+			      isis_jitter(delay, IIH_JITTER),
+			      threadp);
 }
 
 void send_hello_sched(struct isis_circuit *circuit, int level, long delay)
@@ -2254,11 +2247,11 @@ int send_csnp(struct isis_circuit *circuit, int level)
 	return ISIS_OK;
 }
 
-void send_l1_csnp(struct event *thread)
+void send_l1_csnp(struct thread *thread)
 {
 	struct isis_circuit *circuit;
 
-	circuit = EVENT_ARG(thread);
+	circuit = THREAD_ARG(thread);
 	assert(circuit);
 
 	circuit->t_send_csnp[0] = NULL;
@@ -2269,16 +2262,16 @@ void send_l1_csnp(struct event *thread)
 		send_csnp(circuit, 1);
 	}
 	/* set next timer thread */
-	event_add_timer(master, send_l1_csnp, circuit,
-			isis_jitter(circuit->csnp_interval[0], CSNP_JITTER),
-			&circuit->t_send_csnp[0]);
+	thread_add_timer(master, send_l1_csnp, circuit,
+			 isis_jitter(circuit->csnp_interval[0], CSNP_JITTER),
+			 &circuit->t_send_csnp[0]);
 }
 
-void send_l2_csnp(struct event *thread)
+void send_l2_csnp(struct thread *thread)
 {
 	struct isis_circuit *circuit;
 
-	circuit = EVENT_ARG(thread);
+	circuit = THREAD_ARG(thread);
 	assert(circuit);
 
 	circuit->t_send_csnp[1] = NULL;
@@ -2289,9 +2282,9 @@ void send_l2_csnp(struct event *thread)
 		send_csnp(circuit, 2);
 	}
 	/* set next timer thread */
-	event_add_timer(master, send_l2_csnp, circuit,
-			isis_jitter(circuit->csnp_interval[1], CSNP_JITTER),
-			&circuit->t_send_csnp[1]);
+	thread_add_timer(master, send_l2_csnp, circuit,
+			 isis_jitter(circuit->csnp_interval[1], CSNP_JITTER),
+			 &circuit->t_send_csnp[1]);
 }
 
 /*
@@ -2408,32 +2401,32 @@ static int send_psnp(int level, struct isis_circuit *circuit)
 	return ISIS_OK;
 }
 
-void send_l1_psnp(struct event *thread)
+void send_l1_psnp(struct thread *thread)
 {
 
 	struct isis_circuit *circuit;
 
-	circuit = EVENT_ARG(thread);
+	circuit = THREAD_ARG(thread);
 	assert(circuit);
 
 	circuit->t_send_psnp[0] = NULL;
 
 	send_psnp(1, circuit);
 	/* set next timer thread */
-	event_add_timer(master, send_l1_psnp, circuit,
-			isis_jitter(circuit->psnp_interval[0], PSNP_JITTER),
-			&circuit->t_send_psnp[0]);
+	thread_add_timer(master, send_l1_psnp, circuit,
+			 isis_jitter(circuit->psnp_interval[0], PSNP_JITTER),
+			 &circuit->t_send_psnp[0]);
 }
 
 /*
  *  7.3.15.4 action on expiration of partial SNP interval
  *  level 2
  */
-void send_l2_psnp(struct event *thread)
+void send_l2_psnp(struct thread *thread)
 {
 	struct isis_circuit *circuit;
 
-	circuit = EVENT_ARG(thread);
+	circuit = THREAD_ARG(thread);
 	assert(circuit);
 
 	circuit->t_send_psnp[1] = NULL;
@@ -2441,9 +2434,9 @@ void send_l2_psnp(struct event *thread)
 	send_psnp(2, circuit);
 
 	/* set next timer thread */
-	event_add_timer(master, send_l2_psnp, circuit,
-			isis_jitter(circuit->psnp_interval[1], PSNP_JITTER),
-			&circuit->t_send_psnp[1]);
+	thread_add_timer(master, send_l2_psnp, circuit,
+			 isis_jitter(circuit->psnp_interval[1], PSNP_JITTER),
+			 &circuit->t_send_psnp[1]);
 }
 
 /*
@@ -2476,11 +2469,11 @@ void send_lsp(struct isis_circuit *circuit, struct isis_lsp *lsp,
 	if (stream_get_endp(lsp->pdu) > stream_get_size(circuit->snd_stream)) {
 		flog_err(
 			EC_ISIS_PACKET,
-			"ISIS-Upd (%s): Can't send L%d LSP %pLS, seq 0x%08x, cksum 0x%04hx, lifetime %hus on %s. LSP Size is %zu while interface stream size is %zu.",
-			circuit->area->area_tag, lsp->level, lsp->hdr.lsp_id,
-			lsp->hdr.seqno, lsp->hdr.checksum,
-			lsp->hdr.rem_lifetime, circuit->interface->name,
-			stream_get_endp(lsp->pdu),
+			"ISIS-Upd (%s): Can't send L%d LSP %s, seq 0x%08x, cksum 0x%04hx, lifetime %hus on %s. LSP Size is %zu while interface stream size is %zu.",
+			circuit->area->area_tag, lsp->level,
+			rawlspid_print(lsp->hdr.lsp_id), lsp->hdr.seqno,
+			lsp->hdr.checksum, lsp->hdr.rem_lifetime,
+			circuit->interface->name, stream_get_endp(lsp->pdu),
 			stream_get_size(circuit->snd_stream));
 #ifndef FABRICD
 		/* send a northbound notification */
@@ -2504,14 +2497,14 @@ void send_lsp(struct isis_circuit *circuit, struct isis_lsp *lsp,
 	}
 
 	if (IS_DEBUG_UPDATE_PACKETS) {
-		zlog_debug(
-			"ISIS-Upd (%s): Sending %sL%d LSP %pLS, seq 0x%08x, cksum 0x%04hx, lifetime %hus on %s",
-			circuit->area->area_tag,
-			(tx_type == TX_LSP_CIRCUIT_SCOPED) ? "Circuit scoped "
-							   : "",
-			lsp->level, lsp->hdr.lsp_id, lsp->hdr.seqno,
-			lsp->hdr.checksum, lsp->hdr.rem_lifetime,
-			circuit->interface->name);
+		zlog_debug("ISIS-Upd (%s): Sending %sL%d LSP %s, seq 0x%08x, cksum 0x%04hx, lifetime %hus on %s",
+			   circuit->area->area_tag,
+			   (tx_type == TX_LSP_CIRCUIT_SCOPED)
+				? "Circuit scoped " : "",
+			   lsp->level,
+			   rawlspid_print(lsp->hdr.lsp_id), lsp->hdr.seqno,
+			   lsp->hdr.checksum, lsp->hdr.rem_lifetime,
+			   circuit->interface->name);
 		if (IS_DEBUG_PACKET_DUMP)
 			zlog_dump_data(STREAM_DATA(circuit->snd_stream),
 				       stream_get_endp(circuit->snd_stream));
@@ -2548,38 +2541,4 @@ out:
 		 */
 		isis_tx_queue_del(circuit->tx_queue, lsp);
 	}
-}
-
-void isis_log_pdu_drops(struct isis_area *area, const char *pdu_type)
-{
-	uint64_t total_drops = 0;
-
-	for (int i = 0; i < PDU_COUNTER_SIZE; i++) {
-		if (!area->pdu_drop_counters[i])
-			continue;
-		total_drops += area->pdu_drop_counters[i];
-	}
-
-	zlog_info("PDU drop detected of type: %s. %" PRIu64
-		  " Total Drops; %" PRIu64 " L1 IIH drops;  %" PRIu64
-		  " L2 IIH drops; %" PRIu64 " P2P IIH drops; %" PRIu64
-		  " L1 LSP drops; %" PRIu64 " L2 LSP drops; %" PRIu64
-		  " FS LSP drops; %" PRIu64 " L1 CSNP drops; %" PRIu64
-		  " L2 CSNP drops; %" PRIu64 " L1 PSNP drops; %" PRIu64
-		  " L2 PSNP drops.",
-		  pdu_type, total_drops,
-		  pdu_counter_get_count(area->pdu_drop_counters, L1_LAN_HELLO),
-		  pdu_counter_get_count(area->pdu_drop_counters, L2_LAN_HELLO),
-		  pdu_counter_get_count(area->pdu_drop_counters, P2P_HELLO),
-		  pdu_counter_get_count(area->pdu_drop_counters, L1_LINK_STATE),
-		  pdu_counter_get_count(area->pdu_drop_counters, L2_LINK_STATE),
-		  pdu_counter_get_count(area->pdu_drop_counters, FS_LINK_STATE),
-		  pdu_counter_get_count(area->pdu_drop_counters,
-					L1_COMPLETE_SEQ_NUM),
-		  pdu_counter_get_count(area->pdu_drop_counters,
-					L2_COMPLETE_SEQ_NUM),
-		  pdu_counter_get_count(area->pdu_drop_counters,
-					L1_PARTIAL_SEQ_NUM),
-		  pdu_counter_get_count(area->pdu_drop_counters,
-					L2_PARTIAL_SEQ_NUM));
 }

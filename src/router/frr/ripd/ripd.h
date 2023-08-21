@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* RIP related values and structures.
  * Copyright (C) 1997, 1998, 1999 Kunihiro Ishiguro <kunihiro@zebra.org>
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _ZEBRA_RIP_H
@@ -10,7 +25,6 @@
 #include "nexthop.h"
 #include "distribute.h"
 #include "memory.h"
-#include "bfd.h"
 
 /* RIP version number. */
 #define RIPv1                            1
@@ -118,15 +132,15 @@ struct rip {
 	struct list *peer_list;
 
 	/* RIP threads. */
-	struct event *t_read;
+	struct thread *t_read;
 
 	/* Update and garbage timer. */
-	struct event *t_update;
+	struct thread *t_update;
 
 	/* Triggered update hack. */
 	int trigger;
-	struct event *t_triggered_update;
-	struct event *t_triggered_interval;
+	struct thread *t_triggered_update;
+	struct thread *t_triggered_interval;
 
 	/* RIP timer values. */
 	uint32_t update_time;
@@ -141,7 +155,7 @@ struct rip {
 	struct route_table *distance_table;
 
 	/* RIP ECMP flag */
-	uint8_t ecmp;
+	bool ecmp;
 
 	/* Are we in passive-interface default mode? */
 	bool passive_default;
@@ -183,9 +197,6 @@ struct rip {
 		/* RIP queries. */
 		long queries;
 	} counters;
-
-	/* Default BFD profile to use with BFD sessions. */
-	char *default_bfd_profile;
 };
 RB_HEAD(rip_instance_head, rip);
 RB_PROTOTYPE(rip_instance_head, rip, entry, rip_instance_compare)
@@ -243,8 +254,8 @@ struct rip_info {
 	uint8_t flags;
 
 	/* Garbage collect timer. */
-	struct event *t_timeout;
-	struct event *t_garbage_collect;
+	struct thread *t_timeout;
+	struct thread *t_garbage_collect;
 
 	/* Route-map futures - this variables can be changed. */
 	struct in_addr nexthop_out;
@@ -268,9 +279,6 @@ typedef enum {
 struct rip_interface {
 	/* Parent routing instance. */
 	struct rip *rip;
-
-	/* Interface data from zebra. */
-	struct interface *ifp;
 
 	/* RIP is enabled on this interface. */
 	int enable_network;
@@ -316,7 +324,7 @@ struct rip_interface {
 	struct route_map *routemap[RIP_FILTER_MAX];
 
 	/* Wake up thread. */
-	struct event *t_wakeup;
+	struct thread *t_wakeup;
 
 	/* Interface statistics. */
 	int recv_badpackets;
@@ -325,21 +333,12 @@ struct rip_interface {
 
 	/* Passive interface. */
 	int passive;
-
-	/* BFD information. */
-	struct {
-		bool enabled;
-		char *profile;
-	} bfd;
 };
 
 /* RIP peer information. */
 struct rip_peer {
 	/* Parent routing instance. */
 	struct rip *rip;
-
-	/* Back-pointer to RIP interface. */
-	struct rip_interface *ri;
 
 	/* Peer address. */
 	struct in_addr addr;
@@ -358,10 +357,7 @@ struct rip_peer {
 	int recv_badroutes;
 
 	/* Timeout thread. */
-	struct event *t_timeout;
-
-	/* BFD information */
-	struct bfd_session_params *bfd_session;
+	struct thread *t_timeout;
 };
 
 struct rip_distance {
@@ -406,7 +402,7 @@ enum rip_event {
 };
 
 /* Macro for timer turn on. */
-#define RIP_TIMER_ON(T, F, V) event_add_timer(master, (F), rinfo, (V), &(T))
+#define RIP_TIMER_ON(T,F,V) thread_add_timer (master, (F), rinfo, (V), &(T))
 
 #define RIP_OFFSET_LIST_IN  0
 #define RIP_OFFSET_LIST_OUT 1
@@ -437,7 +433,7 @@ extern void rip_if_init(void);
 extern void rip_route_map_init(void);
 extern void rip_zebra_vrf_register(struct vrf *vrf);
 extern void rip_zebra_vrf_deregister(struct vrf *vrf);
-extern void rip_zclient_init(struct event_loop *e);
+extern void rip_zclient_init(struct thread_master *);
 extern void rip_zclient_stop(void);
 extern int if_check_address(struct rip *rip, struct in_addr addr);
 extern struct rip *rip_lookup_by_vrf_id(vrf_id_t vrf_id);
@@ -480,20 +476,16 @@ extern void rip_if_rmap_update_interface(struct interface *ifp);
 extern int rip_show_network_config(struct vty *vty, struct rip *rip);
 extern void rip_show_redistribute_config(struct vty *vty, struct rip *rip);
 
-extern void rip_peer_free(struct rip_peer *peer);
-extern void rip_peer_update(struct rip *rip, struct rip_interface *ri,
-			    struct sockaddr_in *from, uint8_t version);
-extern void rip_peer_bad_route(struct rip *rip, struct rip_interface *ri,
-			       struct sockaddr_in *from);
-extern void rip_peer_bad_packet(struct rip *rip, struct rip_interface *ri,
-				struct sockaddr_in *from);
+extern void rip_peer_update(struct rip *rip, struct sockaddr_in *from,
+			    uint8_t version);
+extern void rip_peer_bad_route(struct rip *rip, struct sockaddr_in *from);
+extern void rip_peer_bad_packet(struct rip *rip, struct sockaddr_in *from);
 extern void rip_peer_display(struct vty *vty, struct rip *rip);
 extern struct rip_peer *rip_peer_lookup(struct rip *rip, struct in_addr *addr);
 extern struct rip_peer *rip_peer_lookup_next(struct rip *rip,
 					     struct in_addr *addr);
 extern int rip_peer_list_cmp(struct rip_peer *p1, struct rip_peer *p2);
 extern void rip_peer_list_del(void *arg);
-void rip_peer_delete_routes(const struct rip_peer *peer);
 
 extern void rip_info_free(struct rip_info *);
 extern struct rip *rip_info_get_instance(const struct rip_info *rinfo);
@@ -532,13 +524,9 @@ extern struct zebra_privs_t ripd_privs;
 extern struct rip_instance_head rip_instances;
 
 /* Master thread structure. */
-extern struct event_loop *master;
+extern struct thread_master *master;
 
 DECLARE_HOOK(rip_ifaddr_add, (struct connected * ifc), (ifc));
 DECLARE_HOOK(rip_ifaddr_del, (struct connected * ifc), (ifc));
-
-extern void rip_ecmp_change(struct rip *rip);
-
-extern uint32_t zebra_ecmp_count;
 
 #endif /* _ZEBRA_RIP_H */

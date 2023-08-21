@@ -27,7 +27,6 @@ Basics
    grpc
    filter
    routemap
-   affinitymap
    ipv6
    kernel
    snmp
@@ -67,7 +66,6 @@ Protocols
    vrrp
    bmp
    watchfrr
-   mgmtd
 
 ########
 Appendix

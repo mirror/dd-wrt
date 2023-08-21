@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Interface related function for RIPng.
  * Copyright (C) 1998 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -17,7 +32,7 @@
 #include "zclient.h"
 #include "command.h"
 #include "agg_table.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "privs.h"
 #include "vrf.h"
 #include "lib_errors.h"
@@ -155,7 +170,7 @@ static int ripng_if_down(struct interface *ifp)
 
 	ri = ifp->info;
 
-	EVENT_OFF(ri->t_wakeup);
+	THREAD_OFF(ri->t_wakeup);
 
 	ripng = ri->ripng;
 
@@ -301,7 +316,7 @@ void ripng_interface_clean(struct ripng *ripng)
 		ri->enable_interface = 0;
 		ri->running = 0;
 
-		EVENT_OFF(ri->t_wakeup);
+		THREAD_OFF(ri->t_wakeup);
 	}
 }
 
@@ -586,13 +601,13 @@ int ripng_enable_if_delete(struct ripng *ripng, const char *ifname)
 }
 
 /* Wake up interface. */
-static void ripng_interface_wakeup(struct event *t)
+static void ripng_interface_wakeup(struct thread *t)
 {
 	struct interface *ifp;
 	struct ripng_interface *ri;
 
 	/* Get interface. */
-	ifp = EVENT_ARG(t);
+	ifp = THREAD_ARG(t);
 
 	ri = ifp->info;
 
@@ -698,8 +713,8 @@ void ripng_enable_apply(struct interface *ifp)
 		zlog_info("RIPng INTERFACE ON %s", ifp->name);
 
 		/* Add interface wake up thread. */
-		event_add_timer(master, ripng_interface_wakeup, ifp, 1,
-				&ri->t_wakeup);
+		thread_add_timer(master, ripng_interface_wakeup, ifp, 1,
+				 &ri->t_wakeup);
 
 		ripng_connect_set(ifp, 1);
 	} else {

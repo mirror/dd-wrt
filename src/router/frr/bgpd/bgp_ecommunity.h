@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* BGP Extended Communities Attribute.
  * Copyright (C) 2000 Kunihiro Ishiguro <kunihiro@zebra.org>
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _QUAGGA_BGP_ECOMMUNITY_H
@@ -101,10 +116,6 @@ enum ecommunity_origin_validation_states {
 /* Extended Community readable string length */
 #define ECOMMUNITY_STRLEN 64
 
-/* Node Target Extended Communities */
-#define ECOMMUNITY_NODE_TARGET 0x09
-#define ECOMMUNITY_NODE_TARGET_RESERVED 0
-
 /* Extended Communities attribute.  */
 struct ecommunity {
 	/* Reference counter.  */
@@ -159,12 +170,9 @@ struct ecommunity_val_ipv6 {
  * Encode BGP Route Target AS:nn.
  */
 static inline void encode_route_target_as(as_t as, uint32_t val,
-					  struct ecommunity_val *eval,
-					  bool trans)
+					  struct ecommunity_val *eval)
 {
 	eval->val[0] = ECOMMUNITY_ENCODE_AS;
-	if (!trans)
-		eval->val[0] |= ECOMMUNITY_FLAG_NON_TRANSITIVE;
 	eval->val[1] = ECOMMUNITY_ROUTE_TARGET;
 	eval->val[2] = (as >> 8) & 0xff;
 	eval->val[3] = as & 0xff;
@@ -177,15 +185,12 @@ static inline void encode_route_target_as(as_t as, uint32_t val,
 /*
  * Encode BGP Route Target IP:nn.
  */
-static inline void encode_route_target_ip(struct in_addr *ip, uint16_t val,
-					  struct ecommunity_val *eval,
-					  bool trans)
+static inline void encode_route_target_ip(struct in_addr ip, uint16_t val,
+					  struct ecommunity_val *eval)
 {
 	eval->val[0] = ECOMMUNITY_ENCODE_IP;
-	if (!trans)
-		eval->val[0] |= ECOMMUNITY_FLAG_NON_TRANSITIVE;
 	eval->val[1] = ECOMMUNITY_ROUTE_TARGET;
-	memcpy(&eval->val[2], ip, sizeof(struct in_addr));
+	memcpy(&eval->val[2], &ip, sizeof(struct in_addr));
 	eval->val[6] = (val >> 8) & 0xff;
 	eval->val[7] = val & 0xff;
 }
@@ -194,12 +199,9 @@ static inline void encode_route_target_ip(struct in_addr *ip, uint16_t val,
  * Encode BGP Route Target AS4:nn.
  */
 static inline void encode_route_target_as4(as_t as, uint16_t val,
-					   struct ecommunity_val *eval,
-					   bool trans)
+					   struct ecommunity_val *eval)
 {
 	eval->val[0] = ECOMMUNITY_ENCODE_AS4;
-	if (!trans)
-		eval->val[0] |= ECOMMUNITY_FLAG_NON_TRANSITIVE;
 	eval->val[1] = ECOMMUNITY_ROUTE_TARGET;
 	eval->val[2] = (as >> 24) & 0xff;
 	eval->val[3] = (as >> 16) & 0xff;
@@ -268,26 +270,6 @@ static inline void encode_origin_validation_state(enum rpki_states state,
 	eval->val[0] = ECOMMUNITY_ENCODE_OPAQUE_NON_TRANS;
 	eval->val[1] = ECOMMUNITY_ORIGIN_VALIDATION_STATE;
 	eval->val[7] = ovs_state;
-}
-
-static inline void encode_node_target(struct in_addr *node_id,
-				      struct ecommunity_val *eval, bool trans)
-{
-	/*
-	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	 *  | 0x01 or 0x41 | Sub-Type(0x09) |    Target BGP Identifier      |
-	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	 *  | Target BGP Identifier (cont.) |           Reserved            |
-	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	 */
-	memset(eval, 0, sizeof(*eval));
-	eval->val[0] = ECOMMUNITY_ENCODE_IP;
-	if (!trans)
-		eval->val[0] |= ECOMMUNITY_ENCODE_IP_NON_TRANS;
-	eval->val[1] = ECOMMUNITY_NODE_TARGET;
-	memcpy(&eval->val[2], node_id, sizeof(*node_id));
-	eval->val[6] = ECOMMUNITY_NODE_TARGET_RESERVED;
-	eval->val[7] = ECOMMUNITY_NODE_TARGET_RESERVED;
 }
 
 extern void ecommunity_init(void);
@@ -371,9 +353,4 @@ static inline void ecommunity_strip_rts(struct ecommunity *ecom)
 extern struct ecommunity *
 ecommunity_add_origin_validation_state(enum rpki_states rpki_state,
 				       struct ecommunity *ecom);
-extern struct ecommunity *ecommunity_add_node_target(struct in_addr *node_id,
-						     struct ecommunity *old,
-						     bool non_trans);
-extern bool ecommunity_node_target_match(struct ecommunity *ecomm,
-					 struct in_addr *local_id);
 #endif /* _QUAGGA_BGP_ECOMMUNITY_H */

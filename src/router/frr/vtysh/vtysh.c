@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* Virtual terminal interface shell.
  * Copyright (C) 2000 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -48,6 +63,19 @@ char *vtysh_pager_name = NULL;
 
 /* VTY should add timestamp */
 bool vtysh_add_timestamp;
+
+/* VTY shell client structure */
+struct vtysh_client {
+	int fd;
+	const char *name;
+	int flag;
+	char path[MAXPATHLEN];
+	struct vtysh_client *next;
+
+	struct thread *log_reader;
+	int log_fd;
+	uint32_t lost_msgs;
+};
 
 static bool stderr_tty;
 static bool stderr_stdout_same;
@@ -106,12 +134,7 @@ static void vtysh_pager_envdef(bool fallback)
 
 /* --- */
 
-/*
- * When updating this array, remember to change the array size here and in
- * vtysh.h
- */
 struct vtysh_client vtysh_client[] = {
-	{.name = "mgmtd", .flag = VTYSH_MGMTD},
 	{.name = "zebra", .flag = VTYSH_ZEBRA},
 	{.name = "ripd", .flag = VTYSH_RIPD},
 	{.name = "ripngd", .flag = VTYSH_RIPNGD},
@@ -880,13 +903,6 @@ int vtysh_config_from_file(struct vty *vty, FILE *fp)
 		if (strmatch(vty_buf_trimmed, "end"))
 			continue;
 
-		if (strmatch(vty_buf_trimmed, "exit") &&
-		    vty->node == CONFIG_NODE) {
-			fprintf(stderr, "line %d: Warning[%d]...: %s\n", lineno,
-				vty->node, "early exit from config file");
-			break;
-		}
-
 		ret = command_config_read_one_line(vty, &cmd, lineno, 1);
 
 		switch (ret) {
@@ -1181,13 +1197,6 @@ static struct cmd_node isis_node = {
 	.node = ISIS_NODE,
 	.parent_node = CONFIG_NODE,
 	.prompt = "%s(config-router)# ",
-};
-
-static struct cmd_node isis_flex_algo_node = {
-	.name = "isis-flex-algo",
-	.node = ISIS_FLEX_ALGO_NODE,
-	.parent_node = ISIS_NODE,
-	.prompt = "%s(config-router-flex-algo)# ",
 };
 #endif /* HAVE_ISISD */
 
@@ -1679,14 +1688,10 @@ DEFUNSH(VTYSH_ZEBRA, srv6_locator, srv6_locator_cmd,
 
 #ifdef HAVE_BGPD
 DEFUNSH(VTYSH_BGPD, router_bgp, router_bgp_cmd,
-	"router bgp [ASNUM [<view|vrf> VIEWVRFNAME] [as-notation <dot|dot+|plain>]]",
+	"router bgp [(1-4294967295) [<view|vrf> VIEWVRFNAME]]",
 	ROUTER_STR BGP_STR AS_STR
 	"BGP view\nBGP VRF\n"
-	"View/VRF name\n"
-	"Force the AS notation output\n"
-	"use 'AA.BB' format for AS 4 byte values\n"
-	"use 'AA.BB' format for all AS values\n"
-	"use plain format for all AS values\n")
+	"View/VRF name\n")
 {
 	vty->node = BGP_NODE;
 	return CMD_SUCCESS;
@@ -2109,14 +2114,6 @@ DEFUNSH(VTYSH_ISISD, router_isis, router_isis_cmd,
 	vty->node = ISIS_NODE;
 	return CMD_SUCCESS;
 }
-
-DEFUNSH(VTYSH_ISISD, isis_flex_algo, isis_flex_algo_cmd, "flex-algo (128-255)",
-	"Flexible Algorithm\n"
-	"Flexible Algorithm Number\n")
-{
-	vty->node = ISIS_FLEX_ALGO_NODE;
-	return CMD_SUCCESS;
-}
 #endif /* HAVE_ISISD */
 
 #ifdef HAVE_FABRICD
@@ -2219,29 +2216,6 @@ DEFUNSH(VTYSH_PATHD, pcep_cli_pcep_pce_config, pcep_cli_pcep_pce_config_cmd,
 
 #endif /* HAVE_PATHD */
 
-/* max value is EXT_ADMIN_GROUP_MAX_POSITIONS - 1 */
-DEFUNSH(VTYSH_AFFMAP, affinity_map, vtysh_affinity_map_cmd,
-	"affinity-map NAME bit-position (0-1023)",
-	"Affinity map configuration\n"
-	"Affinity attribute name\n"
-	"Bit position for affinity attribute value\n"
-	"Bit position\n")
-{
-	return CMD_SUCCESS;
-}
-
-/* max value is EXT_ADMIN_GROUP_MAX_POSITIONS - 1 */
-DEFUNSH(VTYSH_AFFMAP, no_affinity_map, vtysh_no_affinity_map_cmd,
-	"no affinity-map NAME$name [bit-position (0-1023)$position]",
-	NO_STR
-	"Affinity map configuration\n"
-	"Affinity attribute name\n"
-	"Bit position for affinity attribute value\n"
-	"Bit position\n")
-{
-	return CMD_SUCCESS;
-}
-
 DEFUNSH(VTYSH_RMAP, vtysh_route_map, vtysh_route_map_cmd,
 	"route-map RMAP_NAME <deny|permit> (1-65535)",
 	"Create route-map or enter route-map command mode\n"
@@ -2333,9 +2307,8 @@ DEFUNSH(VTYSH_REALLYALL, vtysh_disable, vtysh_disable_cmd, "disable",
 }
 
 DEFUNSH(VTYSH_REALLYALL, vtysh_config_terminal, vtysh_config_terminal_cmd,
-	"configure [terminal [file-lock]]",
+	"configure [terminal]",
 	"Configuration from vty interface\n"
-	"Configuration with locked datastores\n"
 	"Configuration terminal\n")
 {
 	vty->node = CONFIG_NODE;
@@ -2356,14 +2329,8 @@ static int vtysh_exit(struct vty *vty)
 	if (vty->node == CONFIG_NODE) {
 		/* resync in case one of the daemons is somewhere else */
 		vtysh_execute("end");
-		/* NOTE: a rather expensive thing to do, can we avoid it? */
-
-		if (vty->vtysh_file_locked)
-			vtysh_execute("configure terminal file-lock");
-		else
-			vtysh_execute("configure terminal");
+		vtysh_execute("configure");
 	}
-
 	return CMD_SUCCESS;
 }
 
@@ -2604,18 +2571,6 @@ DEFUNSH(VTYSH_ISISD, vtysh_exit_isisd, vtysh_exit_isisd_cmd, "exit",
 
 DEFUNSH(VTYSH_ISISD, vtysh_quit_isisd, vtysh_quit_isisd_cmd, "quit",
 	"Exit current mode and down to previous mode\n")
-{
-	return vtysh_exit_isisd(self, vty, argc, argv);
-}
-
-DEFUNSH(VTYSH_ISISD, vtysh_exit_isis_flex_algo, vtysh_exit_isis_flex_algo_cmd,
-	"exit", "Exit current mode and down to previous mode\n")
-{
-	return vtysh_exit(vty);
-}
-
-DEFUNSH(VTYSH_ISISD, vtysh_quit_isis_flex_algo, vtysh_quit_isis_flex_algo_cmd,
-	"quit", "Exit current mode and down to previous mode\n")
 {
 	return vtysh_exit_isisd(self, vty, argc, argv);
 }
@@ -3578,7 +3533,7 @@ DEFUN (vtysh_copy_to_running,
 	int ret;
 	const char *fname = argv[1]->arg;
 
-	ret = vtysh_apply_config(fname, true, false);
+	ret = vtysh_read_config(fname, true);
 
 	/* Return to enable mode - the 'read_config' api leaves us up a level */
 	vtysh_execute_no_pager("enable");
@@ -3761,9 +3716,9 @@ static void vtysh_log_print(struct vtysh_client *vclient,
 		text + textpos);
 }
 
-static void vtysh_log_read(struct event *thread)
+static void vtysh_log_read(struct thread *thread)
 {
-	struct vtysh_client *vclient = EVENT_ARG(thread);
+	struct vtysh_client *vclient = THREAD_ARG(thread);
 	struct {
 		struct zlog_live_hdr hdr;
 		char text[4096];
@@ -3771,8 +3726,8 @@ static void vtysh_log_read(struct event *thread)
 	const char *text;
 	ssize_t ret;
 
-	event_add_read(master, vtysh_log_read, vclient, vclient->log_fd,
-		       &vclient->log_reader);
+	thread_add_read(master, vtysh_log_read, vclient, vclient->log_fd,
+			&vclient->log_reader);
 
 	ret = recv(vclient->log_fd, &buf, sizeof(buf), 0);
 
@@ -3802,7 +3757,7 @@ static void vtysh_log_read(struct event *thread)
 				"log monitor connection closed unexpectedly");
 		buf.hdr.textlen = strlen(buf.text);
 
-		EVENT_OFF(vclient->log_reader);
+		THREAD_OFF(vclient->log_reader);
 		close(vclient->log_fd);
 		vclient->log_fd = -1;
 
@@ -3868,9 +3823,9 @@ DEFPY (vtysh_terminal_monitor,
 			if (fd != -1) {
 				set_nonblocking(fd);
 				vclient->log_fd = fd;
-				event_add_read(master, vtysh_log_read, vclient,
-					       vclient->log_fd,
-					       &vclient->log_reader);
+				thread_add_read(master, vtysh_log_read, vclient,
+						vclient->log_fd,
+						&vclient->log_reader);
 			}
 			if (ret != CMD_SUCCESS) {
 				vty_out(vty, "%% failed to enable logs on %s\n",
@@ -3924,7 +3879,7 @@ DEFPY (no_vtysh_terminal_monitor,
 			 * a close notification...
 			 */
 			if (vclient->log_fd != -1) {
-				EVENT_OFF(vclient->log_reader);
+				THREAD_OFF(vclient->log_reader);
 
 				close(vclient->log_fd);
 				vclient->log_fd = -1;
@@ -4744,12 +4699,6 @@ void vtysh_init_vty(void)
 	install_element(ISIS_NODE, &vtysh_exit_isisd_cmd);
 	install_element(ISIS_NODE, &vtysh_quit_isisd_cmd);
 	install_element(ISIS_NODE, &vtysh_end_all_cmd);
-
-	install_node(&isis_flex_algo_node);
-	install_element(ISIS_NODE, &isis_flex_algo_cmd);
-	install_element(ISIS_FLEX_ALGO_NODE, &vtysh_exit_isis_flex_algo_cmd);
-	install_element(ISIS_FLEX_ALGO_NODE, &vtysh_quit_isis_flex_algo_cmd);
-	install_element(ISIS_FLEX_ALGO_NODE, &vtysh_end_all_cmd);
 #endif /* HAVE_ISISD */
 
 	/* fabricd */
@@ -4901,9 +4850,6 @@ void vtysh_init_vty(void)
 	install_element(VRF_NODE, &vtysh_end_all_cmd);
 	install_element(VRF_NODE, &vtysh_exit_vrf_cmd);
 	install_element(VRF_NODE, &vtysh_quit_vrf_cmd);
-
-	install_element(CONFIG_NODE, &vtysh_affinity_map_cmd);
-	install_element(CONFIG_NODE, &vtysh_no_affinity_map_cmd);
 
 	install_node(&rmap_node);
 	install_element(CONFIG_NODE, &vtysh_route_map_cmd);

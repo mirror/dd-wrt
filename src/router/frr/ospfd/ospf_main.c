@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * OSPFd main routine.
  *   Copyright (C) 1998, 99 Kunihiro Ishiguro, Toshiaki Takada
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -9,7 +24,7 @@
 #include <lib/version.h>
 #include "bfd.h"
 #include "getopt.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "prefix.h"
 #include "linklist.h"
 #include "if.h"
@@ -70,7 +85,7 @@ const struct option longopts[] = {
 /* OSPFd program name */
 
 /* Master of threads. */
-struct event_loop *master;
+struct thread_master *master;
 
 #if 1 //def SUPPORT_OSPF_API
 extern int ospf_apiserver_enable;

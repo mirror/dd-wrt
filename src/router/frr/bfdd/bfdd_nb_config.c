@@ -1,9 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * BFD daemon northbound implementation.
  *
  * Copyright (C) 2019 Network Device Education Foundation, Inc. ("NetDEF")
  *                    Rafael Zalamena
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301 USA.
  */
 
 #include <zebra.h>
@@ -418,6 +432,20 @@ int bfdd_bfd_profile_minimum_ttl_modify(struct nb_cb_modify_args *args)
 
 	bp = nb_running_get_entry(args->dnode, NULL, true);
 	bp->minimum_ttl = yang_dnode_get_uint8(args->dnode, NULL);
+	bfd_profile_update(bp);
+
+	return NB_OK;
+}
+
+int bfdd_bfd_profile_minimum_ttl_destroy(struct nb_cb_destroy_args *args)
+{
+	struct bfd_profile *bp;
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	bp = nb_running_get_entry(args->dnode, NULL, true);
+	bp->minimum_ttl = BFD_DEF_MHOP_TTL;
 	bfd_profile_update(bp);
 
 	return NB_OK;
@@ -841,6 +869,30 @@ int bfdd_bfd_sessions_multi_hop_minimum_ttl_modify(
 
 	bs = nb_running_get_entry(args->dnode, NULL, true);
 	bs->peer_profile.minimum_ttl = yang_dnode_get_uint8(args->dnode, NULL);
+	bfd_session_apply(bs);
+
+	return NB_OK;
+}
+
+int bfdd_bfd_sessions_multi_hop_minimum_ttl_destroy(
+	struct nb_cb_destroy_args *args)
+{
+	struct bfd_session *bs;
+
+	switch (args->event) {
+	case NB_EV_VALIDATE:
+	case NB_EV_PREPARE:
+		return NB_OK;
+
+	case NB_EV_APPLY:
+		break;
+
+	case NB_EV_ABORT:
+		return NB_OK;
+	}
+
+	bs = nb_running_get_entry(args->dnode, NULL, true);
+	bs->peer_profile.minimum_ttl = BFD_DEF_MHOP_TTL;
 	bfd_session_apply(bs);
 
 	return NB_OK;

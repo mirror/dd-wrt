@@ -19,12 +19,10 @@ EXTRA_DIST += yang/embedmodel.py
 # global symbols :(.  Just put it in the daemon.  Dynamic libraries.so work
 # without problems, as seen in libfrr.
 
-dist_yangmodels_DATA += yang/frr-affinity-map.yang
 dist_yangmodels_DATA += yang/frr-filter.yang
 dist_yangmodels_DATA += yang/frr-module-translator.yang
 dist_yangmodels_DATA += yang/frr-nexthop.yang
 dist_yangmodels_DATA += yang/frr-test-module.yang
-dist_yangmodels_DATA += yang/frr-if-rmap.yang
 dist_yangmodels_DATA += yang/frr-interface.yang
 dist_yangmodels_DATA += yang/frr-route-map.yang
 dist_yangmodels_DATA += yang/frr-zebra-route-map.yang

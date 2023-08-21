@@ -1,14 +1,29 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* BGP packet management routine.
  * Contains utility functions for constructing and consuming BGP messages.
  * Copyright (C) 2017 Cumulus Networks
  * Copyright (C) 1999 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 #include <sys/time.h>
 
-#include "frrevent.h"
+#include "thread.h"
 #include "stream.h"
 #include "network.h"
 #include "prefix.h"
@@ -442,9 +457,9 @@ static void bgp_write_proceed_actions(struct peer *peer)
  * update group a peer belongs to, encode this information into packets, and
  * enqueue the packets onto the peer's output buffer.
  */
-void bgp_generate_updgrp_packets(struct event *thread)
+void bgp_generate_updgrp_packets(struct thread *thread)
 {
-	struct peer *peer = EVENT_ARG(thread);
+	struct peer *peer = THREAD_ARG(thread);
 
 	struct stream *s;
 	struct peer_af *paf;
@@ -956,9 +971,8 @@ static void bgp_notify_send_internal(struct peer *peer, uint8_t code,
 	if (use_curr && peer->curr) {
 		size_t packetsize = stream_get_endp(peer->curr);
 		assert(packetsize <= peer->max_packet_size);
-		if (peer->last_reset_cause)
-			stream_free(peer->last_reset_cause);
-		peer->last_reset_cause = stream_dup(peer->curr);
+		memcpy(peer->last_reset_cause, peer->curr->data, packetsize);
+		peer->last_reset_cause_size = packetsize;
 	}
 
 	/* For debug */
@@ -1671,13 +1685,6 @@ static int bgp_open_receive(struct peer *peer, bgp_size_t size)
 			peer->v_keepalive = peer->bgp->default_keepalive;
 	}
 
-	/* If another side disabled sending Software Version capability,
-	 * we MUST drop the previous from showing in the outputs to avoid
-	 * stale information and due to security reasons.
-	 */
-	if (peer->soft_version)
-		XFREE(MTYPE_BGP_SOFT_VERSION, peer->soft_version);
-
 	/* Open option part parse. */
 	if (optlen != 0) {
 		if (bgp_open_option_parse(peer, optlen, &mp_capability) < 0)
@@ -1793,11 +1800,11 @@ static int bgp_keepalive_receive(struct peer *peer, bgp_size_t size)
 	return Receive_KEEPALIVE_message;
 }
 
-static void bgp_refresh_stalepath_timer_expire(struct event *thread)
+static void bgp_refresh_stalepath_timer_expire(struct thread *thread)
 {
 	struct peer_af *paf;
 
-	paf = EVENT_ARG(thread);
+	paf = THREAD_ARG(thread);
 
 	afi_t afi = paf->afi;
 	safi_t safi = paf->safi;
@@ -2107,11 +2114,11 @@ static int bgp_update_receive(struct peer *peer, bgp_size_t size)
 							"EOR RCV",
 							gr_info->eor_received);
 					if (gr_info->t_select_deferral) {
-						void *info = EVENT_ARG(
+						void *info = THREAD_ARG(
 							gr_info->t_select_deferral);
 						XFREE(MTYPE_TMP, info);
 					}
-					EVENT_OFF(gr_info->t_select_deferral);
+					THREAD_OFF(gr_info->t_select_deferral);
 					gr_info->eor_required = 0;
 					gr_info->eor_received = 0;
 					/* Best path selection */
@@ -2596,10 +2603,10 @@ static int bgp_route_refresh_receive(struct peer *peer, bgp_size_t size)
 		}
 
 		if (peer_established(peer))
-			event_add_timer(bm->master,
-					bgp_refresh_stalepath_timer_expire, paf,
-					peer->bgp->stalepath_time,
-					&peer->t_refresh_stalepath);
+			thread_add_timer(bm->master,
+					 bgp_refresh_stalepath_timer_expire,
+					 paf, peer->bgp->stalepath_time,
+					 &peer->t_refresh_stalepath);
 
 		if (bgp_debug_neighbor_events(peer))
 			zlog_debug(
@@ -2614,7 +2621,7 @@ static int bgp_route_refresh_receive(struct peer *peer, bgp_size_t size)
 			return BGP_PACKET_NOOP;
 		}
 
-		EVENT_OFF(peer->t_refresh_stalepath);
+		THREAD_OFF(peer->t_refresh_stalepath);
 
 		SET_FLAG(peer->af_sflags[afi][safi], PEER_STATUS_EORR_RECEIVED);
 		UNSET_FLAG(peer->af_sflags[afi][safi],
@@ -2864,11 +2871,11 @@ int bgp_capability_receive(struct peer *peer, bgp_size_t size)
  * would not, making event flow difficult to understand. Please think twice
  * before hacking this.
  *
- * Thread type: EVENT_EVENT
+ * Thread type: THREAD_EVENT
  * @param thread
  * @return 0
  */
-void bgp_process_packet(struct event *thread)
+void bgp_process_packet(struct thread *thread)
 {
 	/* Yes first of all get peer pointer. */
 	struct peer *peer;	// peer
@@ -2876,7 +2883,7 @@ void bgp_process_packet(struct event *thread)
 	int fsm_update_result;    // return code of bgp_event_update()
 	int mprc;		  // message processing return code
 
-	peer = EVENT_ARG(thread);
+	peer = THREAD_ARG(thread);
 	rpkt_quanta_old = atomic_load_explicit(&peer->bgp->rpkt_quanta,
 					       memory_order_relaxed);
 	fsm_update_result = 0;
@@ -3022,9 +3029,9 @@ void bgp_process_packet(struct event *thread)
 		frr_with_mutex (&peer->io_mtx) {
 			// more work to do, come back later
 			if (peer->ibuf->count > 0)
-				event_add_event(bm->master, bgp_process_packet,
-						peer, 0,
-						&peer->t_process_packet);
+				thread_add_event(
+					bm->master, bgp_process_packet, peer, 0,
+					&peer->t_process_packet);
 		}
 	}
 }
@@ -3045,13 +3052,13 @@ void bgp_send_delayed_eor(struct bgp *bgp)
  * having the io pthread try to enqueue fsm events or mess with the peer
  * struct.
  */
-void bgp_packet_process_error(struct event *thread)
+void bgp_packet_process_error(struct thread *thread)
 {
 	struct peer *peer;
 	int code;
 
-	peer = EVENT_ARG(thread);
-	code = EVENT_VAL(thread);
+	peer = THREAD_ARG(thread);
+	code = THREAD_VAL(thread);
 
 	if (bgp_debug_neighbor_events(peer))
 		zlog_debug("%s [Event] BGP error %d on fd %d",

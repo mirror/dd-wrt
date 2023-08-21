@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * SEGV / backtrace handling test.
  *
@@ -8,6 +7,20 @@
  * Copyright (C) 2013 by Internet Systems Consortium, Inc. ("ISC")
  *
  * This file is part of Quagga
+ *
+ * Quagga is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * Quagga is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -17,7 +30,7 @@
 
 struct frr_signal_t sigs[] = {};
 
-struct event_loop *master;
+struct thread_master *master;
 
 void func1(int *arg);
 void func3(void);
@@ -49,19 +62,19 @@ void func3(void)
 	func2(6, buf);
 }
 
-static void threadfunc(struct event *thread)
+static void threadfunc(struct thread *thread)
 {
 	func3();
 }
 
 int main(void)
 {
-	master = event_master_create(NULL);
+	master = thread_master_create(NULL);
 	signal_init(master, array_size(sigs), sigs);
 
 	zlog_aux_init("NONE: ", LOG_DEBUG);
 
-	event_execute(master, threadfunc, 0, 0);
+	thread_execute(master, threadfunc, 0, 0);
 
 	exit(0);
 }

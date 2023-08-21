@@ -1,8 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Nexthop structure definition.
  * Copyright (C) 1997, 98, 99, 2001 Kunihiro Ishiguro
  * Copyright (C) 2013 Cumulus Networks, Inc.
+ *
+ * This file is part of Quagga.
+ *
+ * Quagga is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * Quagga is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _LIB_NEXTHOP_H
@@ -233,9 +248,6 @@ extern struct nexthop *nexthop_dup(const struct nexthop *nexthop,
 /* Duplicates a nexthop and returns the newly allocated nexthop */
 extern struct nexthop *nexthop_dup_no_recurse(const struct nexthop *nexthop,
 					      struct nexthop *rparent);
-
-/* Check nexthop of IFINDEX type */
-extern bool nexthop_is_ifindex_type(const struct nexthop *nh);
 
 /*
  * Parse one or more backup index values, as comma-separated numbers,

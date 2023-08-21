@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Prefix related functions.
  * Copyright (C) 1997, 98, 99 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -150,11 +165,11 @@ const char *afi2str(afi_t afi)
 	case AFI_L2VPN:
 		return "l2vpn";
 	case AFI_MAX:
-	case AFI_UNSPEC:
 		return "bad-value";
+	default:
+		break;
 	}
-
-	assert(!"Reached end of function we should never reach");
+	return NULL;
 }
 
 const char *safi2str(safi_t safi)
@@ -174,12 +189,9 @@ const char *safi2str(safi_t safi)
 		return "labeled-unicast";
 	case SAFI_FLOWSPEC:
 		return "flowspec";
-	case SAFI_UNSPEC:
-	case SAFI_MAX:
+	default:
 		return "unknown";
 	}
-
-	assert(!"Reached end of function we should never reach");
 }
 
 /* If n includes p prefix then return 1 else return 0. */
@@ -1399,7 +1411,7 @@ bool ipv4_unicast_valid(const struct in_addr *addr)
 	if (IPV4_CLASS_D(ip))
 		return false;
 
-	if (IPV4_NET0(ip) || IPV4_NET127(ip) || IPV4_CLASS_E(ip)) {
+	if (IPV4_CLASS_E(ip)) {
 		if (cmd_allow_reserved_ranges_get())
 			return true;
 		else
@@ -1448,11 +1460,9 @@ int evpn_prefix2prefix(const struct prefix *evpn, struct prefix *to)
 	switch (addr->route_type) {
 	case BGP_EVPN_MAC_IP_ROUTE:
 		if (IS_IPADDR_V4(&addr->macip_addr.ip))
-			ipaddr2prefix(&addr->macip_addr.ip, IPV4_MAX_BITLEN,
-				      to);
+			ipaddr2prefix(&addr->macip_addr.ip, 32, to);
 		else if (IS_IPADDR_V6(&addr->macip_addr.ip))
-			ipaddr2prefix(&addr->macip_addr.ip, IPV6_MAX_BITLEN,
-				      to);
+			ipaddr2prefix(&addr->macip_addr.ip, 128, to);
 		else
 			return -1; /* mac only? */
 
@@ -1514,7 +1524,7 @@ static ssize_t printfrr_ia(struct fbuf *buf, struct printfrr_eargs *ea,
 				return bputch(buf, '*');
 			break;
 
-		case IPADDR_NONE:
+		default:
 			break;
 		}
 	}

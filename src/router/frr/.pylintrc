@@ -2,8 +2,5 @@
 init-hook="import sys; sys.path.insert(0, '..')"
 signature-mutators=common_config.retry,retry
 
-[FORMAT]
-max-line-length = 88
-
 [MESSAGES CONTROL]
 disable=I,C,R,W

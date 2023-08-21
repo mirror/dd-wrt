@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* BGP-4 Finite State Machine
  * From RFC1771 [A Border Gateway Protocol 4 (BGP-4)]
  * Copyright (C) 1998 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _QUAGGA_BGP_FSM_H
@@ -11,34 +26,33 @@
 #define BGP_TIMER_ON(T, F, V)                                                  \
 	do {                                                                   \
 		if ((peer->status != Deleted))                                 \
-			event_add_timer(bm->master, (F), peer, (V), &(T));     \
+			thread_add_timer(bm->master, (F), peer, (V), &(T));    \
 	} while (0)
 
 #define BGP_EVENT_ADD(P, E)                                                    \
 	do {                                                                   \
 		if ((P)->status != Deleted)                                    \
-			event_add_event(bm->master, bgp_event, (P), (E),       \
-					NULL);                                 \
+			thread_add_event(bm->master, bgp_event, (P), (E),      \
+					 NULL);                                \
 	} while (0)
 
 #define BGP_EVENT_FLUSH(P)                                                     \
 	do {                                                                   \
 		assert(peer);                                                  \
-		event_cancel_event_ready(bm->master, (P));                     \
+		thread_cancel_event_ready(bm->master, (P));                    \
 	} while (0)
 
-#define BGP_UPDATE_GROUP_TIMER_ON(T, F)                                        \
-	do {                                                                   \
-		if (BGP_SUPPRESS_FIB_ENABLED(peer->bgp) &&                     \
-		    PEER_ROUTE_ADV_DELAY(peer))                                \
-			event_add_timer_msec(                                  \
-				bm->master, (F), peer,                         \
-				(BGP_DEFAULT_UPDATE_ADVERTISEMENT_TIME *       \
-				 1000),                                        \
-				(T));                                          \
-		else                                                           \
-			event_add_timer_msec(bm->master, (F), peer, 0, (T));   \
-	} while (0)
+#define BGP_UPDATE_GROUP_TIMER_ON(T, F)					       \
+	do {								       \
+		if (BGP_SUPPRESS_FIB_ENABLED(peer->bgp) &&		       \
+		    PEER_ROUTE_ADV_DELAY(peer))				       \
+			thread_add_timer_msec(bm->master, (F), peer,	       \
+				(BGP_DEFAULT_UPDATE_ADVERTISEMENT_TIME * 1000),\
+				(T));					       \
+		else							       \
+			thread_add_timer_msec(bm->master, (F), peer,	       \
+					      0, (T));			       \
+	} while (0)							       \
 
 #define BGP_MSEC_JITTER 10
 
@@ -106,11 +120,11 @@
  * Update FSM for peer based on whether we have valid nexthops or not.
  */
 extern void bgp_fsm_nht_update(struct peer *peer, bool has_valid_nexthops);
-extern void bgp_event(struct event *event);
+extern void bgp_event(struct thread *);
 extern int bgp_event_update(struct peer *, enum bgp_fsm_events event);
 extern int bgp_stop(struct peer *peer);
 extern void bgp_timer_set(struct peer *);
-extern void bgp_routeadv_timer(struct event *event);
+extern void bgp_routeadv_timer(struct thread *);
 extern void bgp_fsm_change_status(struct peer *peer,
 				  enum bgp_fsm_status status);
 extern const char *const peer_down_str[];

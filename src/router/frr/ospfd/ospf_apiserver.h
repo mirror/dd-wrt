@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Server side of OSPF API.
  * Copyright (C) 2001, 2002 Ralph Keller
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation; either version 2, or (at your
+ * option) any later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _OSPF_APISERVER_H
@@ -48,12 +63,12 @@ struct ospf_apiserver {
 	struct msg_fifo *out_async_fifo;
 
 	/* Read and write threads */
-	struct event *t_sync_read;
+	struct thread *t_sync_read;
 #ifdef USE_ASYNC_READ
-	struct event *t_async_read;
+	struct thread *t_async_read;
 #endif /* USE_ASYNC_READ */
-	struct event *t_sync_write;
-	struct event *t_async_write;
+	struct thread *t_sync_write;
+	struct thread *t_async_write;
 };
 
 enum ospf_apiserver_event {
@@ -79,10 +94,10 @@ extern void ospf_apiserver_free(struct ospf_apiserver *apiserv);
 extern void ospf_apiserver_event(enum ospf_apiserver_event event, int fd,
 				 struct ospf_apiserver *apiserv);
 extern int ospf_apiserver_serv_sock_family(unsigned short port, int family);
-extern void ospf_apiserver_accept(struct event *thread);
-extern void ospf_apiserver_read(struct event *thread);
-extern void ospf_apiserver_sync_write(struct event *thread);
-extern void ospf_apiserver_async_write(struct event *thread);
+extern void ospf_apiserver_accept(struct thread *thread);
+extern void ospf_apiserver_read(struct thread *thread);
+extern void ospf_apiserver_sync_write(struct thread *thread);
+extern void ospf_apiserver_async_write(struct thread *thread);
 extern int ospf_apiserver_send_reply(struct ospf_apiserver *apiserv,
 				     uint32_t seqnr, uint8_t rc);
 

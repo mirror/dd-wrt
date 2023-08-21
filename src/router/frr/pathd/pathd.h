@@ -1,6 +1,19 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2020  NetDEF, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _FRR_PATHD_H_
@@ -311,7 +324,7 @@ struct srte_candidate {
 	uint32_t affinity_filters[MAX_AFFINITY_FILTER_TYPE];
 
 	/* Hooks delaying timer */
-	struct event *hook_timer;
+	struct thread *hook_timer;
 };
 
 RB_HEAD(srte_candidate_head, srte_candidate);
@@ -371,7 +384,7 @@ extern struct srte_policy_head srte_policies;
 extern struct zebra_privs_t pathd_privs;
 
 /* master thread, defined in path_main.c */
-extern struct event_loop *master;
+extern struct thread_master *master;
 
 /* pathd.c */
 struct srte_segment_list *srte_segment_list_add(const char *name);

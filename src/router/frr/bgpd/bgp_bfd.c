@@ -1,8 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /**
  * bgp_bfd.c: BGP BFD handling routines
  *
  * @copyright Copyright (C) 2015 Cumulus Networks, Inc.
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -11,7 +26,7 @@
 #include "linklist.h"
 #include "memory.h"
 #include "prefix.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "buffer.h"
 #include "stream.h"
 #include "vrf.h"
@@ -55,7 +70,7 @@ static void bfd_session_status_update(struct bfd_session_params *bsp,
 		}
 		peer->last_reset = PEER_DOWN_BFD_DOWN;
 
-		/* rfc9384 */
+		/* draft-ietf-idr-bfd-subcode */
 		if (BGP_IS_VALID_STATE_FOR_NOTIF(peer->status))
 			bgp_notify_send(peer, BGP_NOTIFY_CEASE,
 					BGP_NOTIFY_CEASE_BFD_DOWN);
@@ -609,7 +624,7 @@ DEFUN(no_neighbor_bfd_profile, no_neighbor_bfd_profile_cmd,
 }
 #endif /* HAVE_BFDD */
 
-void bgp_bfd_init(struct event_loop *tm)
+void bgp_bfd_init(struct thread_master *tm)
 {
 	/* Initialize BFD client functions */
 	bfd_protocol_integration_init(zclient, tm);

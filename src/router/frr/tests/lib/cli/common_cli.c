@@ -1,14 +1,27 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * generic CLI test helper functions
  *
  * Copyright (C) 2015 by David Lamparter,
  *                   for Open Source Routing / NetDEF, Inc.
+ *
+ * Quagga is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * Quagga is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
-#include "frrevent.h"
+#include "thread.h"
 #include "vty.h"
 #include "command.h"
 #include "memory.h"
@@ -17,7 +30,7 @@
 
 #include "common_cli.h"
 
-struct event_loop *master;
+struct thread_master *master;
 
 int dump_args(struct vty *vty, const char *descr, int argc,
 	      struct cmd_token *argv[])
@@ -39,7 +52,7 @@ static void vty_do_exit(int isexit)
 	vty_terminate();
 	nb_terminate();
 	yang_terminate();
-	event_master_free(master);
+	thread_master_free(master);
 
 	log_memstats(stderr, "testcli");
 	if (!isexit)
@@ -52,14 +65,14 @@ int test_log_prio = ZLOG_DISABLED;
 /* main routine. */
 int main(int argc, char **argv)
 {
-	struct event thread;
+	struct thread thread;
 	size_t yangcount;
 
 	/* Set umask before anything for security */
 	umask(0027);
 
 	/* master init. */
-	master = event_master_create(NULL);
+	master = thread_master_create(NULL);
 
 	zlog_aux_init("NONE: ", test_log_prio);
 
@@ -81,8 +94,8 @@ int main(int argc, char **argv)
 	vty_stdio(vty_do_exit);
 
 	/* Fetch next active thread. */
-	while (event_fetch(master, &thread))
-		event_call(&thread);
+	while (thread_fetch(master, &thread))
+		thread_call(&thread);
 
 	/* Not reached. */
 	exit(0);

@@ -1,13 +1,26 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2008  Everton da Silva Marques
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
 #include "log.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "memory.h"
 #include "if.h"
 #include "network.h"
@@ -31,7 +44,7 @@
 #include "pim_bsm.h"
 #include <lib/lib_errors.h>
 
-static void on_pim_hello_send(struct event *t);
+static void on_pim_hello_send(struct thread *t);
 
 static const char *pim_pim_msgtype2str(enum pim_msg_type type)
 {
@@ -70,7 +83,7 @@ static void sock_close(struct interface *ifp)
 				pim_ifp->pim_sock_fd, ifp->name);
 		}
 	}
-	EVENT_OFF(pim_ifp->t_pim_sock_read);
+	THREAD_OFF(pim_ifp->t_pim_sock_read);
 
 	if (PIM_DEBUG_PIM_TRACE) {
 		if (pim_ifp->t_pim_hello_timer) {
@@ -79,7 +92,7 @@ static void sock_close(struct interface *ifp)
 				ifp->name);
 		}
 	}
-	EVENT_OFF(pim_ifp->t_pim_hello_timer);
+	THREAD_OFF(pim_ifp->t_pim_hello_timer);
 
 	if (PIM_DEBUG_PIM_TRACE) {
 		zlog_debug("Deleting PIM socket fd=%d on interface %s",
@@ -334,7 +347,7 @@ int pim_pim_packet(struct interface *ifp, uint8_t *buf, size_t len,
 
 static void pim_sock_read_on(struct interface *ifp);
 
-static void pim_sock_read(struct event *t)
+static void pim_sock_read(struct thread *t)
 {
 	struct interface *ifp, *orig_ifp;
 	struct pim_interface *pim_ifp;
@@ -350,8 +363,8 @@ static void pim_sock_read(struct event *t)
 	static long long count = 0;
 	int cont = 1;
 
-	orig_ifp = ifp = EVENT_ARG(t);
-	fd = EVENT_FD(t);
+	orig_ifp = ifp = THREAD_ARG(t);
+	fd = THREAD_FD(t);
 
 	pim_ifp = ifp->info;
 
@@ -431,8 +444,8 @@ static void pim_sock_read_on(struct interface *ifp)
 		zlog_debug("Scheduling READ event on PIM socket fd=%d",
 			   pim_ifp->pim_sock_fd);
 	}
-	event_add_read(router->master, pim_sock_read, ifp, pim_ifp->pim_sock_fd,
-		       &pim_ifp->t_pim_sock_read);
+	thread_add_read(router->master, pim_sock_read, ifp,
+			pim_ifp->pim_sock_fd, &pim_ifp->t_pim_sock_read);
 }
 
 static int pim_sock_open(struct interface *ifp)
@@ -821,20 +834,21 @@ static void hello_resched(struct interface *ifp)
 		zlog_debug("Rescheduling %d sec hello on interface %s",
 			   pim_ifp->pim_hello_period, ifp->name);
 	}
-	EVENT_OFF(pim_ifp->t_pim_hello_timer);
-	event_add_timer(router->master, on_pim_hello_send, ifp,
-			pim_ifp->pim_hello_period, &pim_ifp->t_pim_hello_timer);
+	THREAD_OFF(pim_ifp->t_pim_hello_timer);
+	thread_add_timer(router->master, on_pim_hello_send, ifp,
+			 pim_ifp->pim_hello_period,
+			 &pim_ifp->t_pim_hello_timer);
 }
 
 /*
   Periodic hello timer
  */
-static void on_pim_hello_send(struct event *t)
+static void on_pim_hello_send(struct thread *t)
 {
 	struct pim_interface *pim_ifp;
 	struct interface *ifp;
 
-	ifp = EVENT_ARG(t);
+	ifp = THREAD_ARG(t);
 	pim_ifp = ifp->info;
 
 	/*
@@ -923,7 +937,7 @@ void pim_hello_restart_triggered(struct interface *ifp)
 			return;
 		}
 
-		EVENT_OFF(pim_ifp->t_pim_hello_timer);
+		THREAD_OFF(pim_ifp->t_pim_hello_timer);
 	}
 
 	random_msec = triggered_hello_delay_msec;
@@ -934,8 +948,8 @@ void pim_hello_restart_triggered(struct interface *ifp)
 			   random_msec, ifp->name);
 	}
 
-	event_add_timer_msec(router->master, on_pim_hello_send, ifp,
-			     random_msec, &pim_ifp->t_pim_hello_timer);
+	thread_add_timer_msec(router->master, on_pim_hello_send, ifp,
+			      random_msec, &pim_ifp->t_pim_hello_timer);
 }
 
 int pim_sock_add(struct interface *ifp)

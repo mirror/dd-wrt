@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Test program to verify that scheduled timers are executed in the
  * correct order.
@@ -7,6 +6,20 @@
  * Copyright (C) 2013 by Internet Systems Consortium, Inc. ("ISC")
  *
  * This file is part of Quagga
+ *
+ * Quagga is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * Quagga is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -16,14 +29,14 @@
 
 #include "memory.h"
 #include "prng.h"
-#include "frrevent.h"
+#include "thread.h"
 
 #define SCHEDULE_TIMERS 800
 #define REMOVE_TIMERS   200
 
 #define TIMESTR_LEN strlen("4294967296.999999")
 
-struct event_loop *master;
+struct thread_master *master;
 
 static size_t log_buf_len;
 static size_t log_buf_pos;
@@ -35,7 +48,7 @@ static char *expected_buf;
 
 static struct prng *prng;
 
-static struct event **timers;
+static struct thread **timers;
 
 static int timers_pending;
 
@@ -54,7 +67,7 @@ static void terminate_test(void)
 		exit_code = 0;
 	}
 
-	event_master_free(master);
+	thread_master_free(master);
 	XFREE(MTYPE_TMP, log_buf);
 	XFREE(MTYPE_TMP, expected_buf);
 	prng_free(prng);
@@ -63,7 +76,7 @@ static void terminate_test(void)
 	exit(exit_code);
 }
 
-static void timer_func(struct event *thread)
+static void timer_func(struct thread *thread)
 {
 	int rv;
 
@@ -94,10 +107,10 @@ static int cmp_timeval(const void *a, const void *b)
 int main(int argc, char **argv)
 {
 	int i, j;
-	struct event t;
+	struct thread t;
 	struct timeval **alarms;
 
-	master = event_master_create(NULL);
+	master = thread_master_create(NULL);
 
 	log_buf_len = SCHEDULE_TIMERS * (TIMESTR_LEN + 1) + 1;
 	log_buf_pos = 0;
@@ -119,8 +132,8 @@ int main(int argc, char **argv)
 		/* Schedule timers to expire in 0..5 seconds */
 		interval_msec = prng_rand(prng) % 5000;
 		arg = XMALLOC(MTYPE_TMP, TIMESTR_LEN + 1);
-		event_add_timer_msec(master, timer_func, arg, interval_msec,
-				     &timers[i]);
+		thread_add_timer_msec(master, timer_func, arg, interval_msec,
+				      &timers[i]);
 		ret = snprintf(arg, TIMESTR_LEN + 1, "%lld.%06lld",
 			       (long long)timers[i]->u.sands.tv_sec,
 			       (long long)timers[i]->u.sands.tv_usec);
@@ -137,7 +150,7 @@ int main(int argc, char **argv)
 			continue;
 
 		XFREE(MTYPE_TMP, timers[index]->arg);
-		event_cancel(&timers[index]);
+		thread_cancel(&timers[index]);
 		timers_pending--;
 	}
 
@@ -166,8 +179,8 @@ int main(int argc, char **argv)
 	}
 	XFREE(MTYPE_TMP, alarms);
 
-	while (event_fetch(master, &t))
-		event_call(&t);
+	while (thread_fetch(master, &t))
+		thread_call(&t);
 
 	return 0;
 }

@@ -1,12 +1,27 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Zebra connect code.
  * Copyright (C) Cumulus Networks, Inc.
  *               Donald Sharp
+ *
+ * This file is part of FRR.
+ *
+ * FRR is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * FRR is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
-#include "frrevent.h"
+#include "thread.h"
 #include "command.h"
 #include "network.h"
 #include "prefix.h"
@@ -26,7 +41,7 @@
 struct zclient *zclient = NULL;
 
 /* For registering threads. */
-extern struct event_loop *master;
+extern struct thread_master *master;
 
 /* Privs info */
 extern struct zebra_privs_t sharp_privs;
@@ -256,11 +271,6 @@ static bool route_add(const struct prefix *p, vrf_id_t vrf_id, uint8_t instance,
 		api.nhgid = nhgid;
 	} else {
 		for (ALL_NEXTHOPS_PTR(nhg, nh)) {
-			/* Check if we set a VNI label */
-			if (nh->nh_label &&
-			    (nh->nh_label_type == ZEBRA_LSP_EVPN))
-				SET_FLAG(api.flags, ZEBRA_FLAG_EVPN_ROUTE);
-
 			api_nh = &api.nexthops[i];
 
 			zapi_nexthop_from_nexthop(api_nh, nh);
@@ -790,7 +800,7 @@ static int sharp_opaque_handler(ZAPI_CALLBACK_ARGS)
 		   zclient->session_id, info.type);
 
 	if (info.type == LINK_STATE_UPDATE) {
-		lse = ls_stream2ted(sg.ted, s, true);
+		lse = ls_stream2ted(sg.ted, s, false);
 		if (lse) {
 			zlog_debug(" |- Got %s %s from Link State Database",
 				   status2txt[lse->status],

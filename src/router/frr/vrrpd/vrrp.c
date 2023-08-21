@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * VRRP global definitions and state machine.
  * Copyright (C) 2018-2019 Cumulus Networks, Inc.
  * Quentin Young
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
@@ -673,8 +686,8 @@ struct vrrp_vrouter *vrrp_lookup(const struct interface *ifp, uint8_t vrid)
 
 /* Forward decls */
 static void vrrp_change_state(struct vrrp_router *r, int to);
-static void vrrp_adver_timer_expire(struct event *thread);
-static void vrrp_master_down_timer_expire(struct event *thread);
+static void vrrp_adver_timer_expire(struct thread *thread);
+static void vrrp_master_down_timer_expire(struct thread *thread);
 
 /*
  * Finds the first connected address of the appropriate family on a VRRP
@@ -900,11 +913,11 @@ static int vrrp_recv_advertisement(struct vrrp_router *r, struct ipaddr *src,
 
 		if (pkt->hdr.priority == 0) {
 			vrrp_send_advertisement(r);
-			EVENT_OFF(r->t_adver_timer);
-			event_add_timer_msec(master, vrrp_adver_timer_expire, r,
-					     r->vr->advertisement_interval *
-						     CS2MS,
-					     &r->t_adver_timer);
+			THREAD_OFF(r->t_adver_timer);
+			thread_add_timer_msec(
+				master, vrrp_adver_timer_expire, r,
+				r->vr->advertisement_interval * CS2MS,
+				&r->t_adver_timer);
 		} else if (pkt->hdr.priority > r->priority
 			   || ((pkt->hdr.priority == r->priority)
 			       && addrcmp > 0)) {
@@ -913,17 +926,17 @@ static int vrrp_recv_advertisement(struct vrrp_router *r, struct ipaddr *src,
 				"Received advertisement from %s w/ priority %hhu; switching to Backup",
 				r->vr->vrid, family2str(r->family), sipstr,
 				pkt->hdr.priority);
-			EVENT_OFF(r->t_adver_timer);
+			THREAD_OFF(r->t_adver_timer);
 			if (r->vr->version == 3) {
 				r->master_adver_interval =
 					htons(pkt->hdr.v3.adver_int);
 			}
 			vrrp_recalculate_timers(r);
-			EVENT_OFF(r->t_master_down_timer);
-			event_add_timer_msec(master,
-					     vrrp_master_down_timer_expire, r,
-					     r->master_down_interval * CS2MS,
-					     &r->t_master_down_timer);
+			THREAD_OFF(r->t_master_down_timer);
+			thread_add_timer_msec(master,
+					      vrrp_master_down_timer_expire, r,
+					      r->master_down_interval * CS2MS,
+					      &r->t_master_down_timer);
 			vrrp_change_state(r, VRRP_STATE_BACKUP);
 		} else {
 			/* Discard advertisement */
@@ -936,8 +949,8 @@ static int vrrp_recv_advertisement(struct vrrp_router *r, struct ipaddr *src,
 		break;
 	case VRRP_STATE_BACKUP:
 		if (pkt->hdr.priority == 0) {
-			EVENT_OFF(r->t_master_down_timer);
-			event_add_timer_msec(
+			THREAD_OFF(r->t_master_down_timer);
+			thread_add_timer_msec(
 				master, vrrp_master_down_timer_expire, r,
 				r->skew_time * CS2MS, &r->t_master_down_timer);
 		} else if (!r->vr->preempt_mode
@@ -947,11 +960,11 @@ static int vrrp_recv_advertisement(struct vrrp_router *r, struct ipaddr *src,
 					ntohs(pkt->hdr.v3.adver_int);
 			}
 			vrrp_recalculate_timers(r);
-			EVENT_OFF(r->t_master_down_timer);
-			event_add_timer_msec(master,
-					     vrrp_master_down_timer_expire, r,
-					     r->master_down_interval * CS2MS,
-					     &r->t_master_down_timer);
+			THREAD_OFF(r->t_master_down_timer);
+			thread_add_timer_msec(master,
+					      vrrp_master_down_timer_expire, r,
+					      r->master_down_interval * CS2MS,
+					      &r->t_master_down_timer);
 		} else if (r->vr->preempt_mode
 			   && pkt->hdr.priority < r->priority) {
 			/* Discard advertisement */
@@ -976,9 +989,9 @@ static int vrrp_recv_advertisement(struct vrrp_router *r, struct ipaddr *src,
 /*
  * Read and process next IPvX datagram.
  */
-static void vrrp_read(struct event *thread)
+static void vrrp_read(struct thread *thread)
 {
-	struct vrrp_router *r = EVENT_ARG(thread);
+	struct vrrp_router *r = THREAD_ARG(thread);
 
 	struct vrrp_pkt *pkt;
 	ssize_t pktsize;
@@ -1039,7 +1052,7 @@ done:
 	memset(r->ibuf, 0x00, sizeof(r->ibuf));
 
 	if (resched)
-		event_add_read(master, vrrp_read, r, r->sock_rx, &r->t_read);
+		thread_add_read(master, vrrp_read, r, r->sock_rx, &r->t_read);
 }
 
 /*
@@ -1405,7 +1418,7 @@ static void vrrp_change_state_backup(struct vrrp_router *r)
 		vrrp_zebra_radv_set(r, false);
 
 	/* Disable Adver_Timer */
-	EVENT_OFF(r->t_adver_timer);
+	THREAD_OFF(r->t_adver_timer);
 
 	r->advert_pending = false;
 	r->garp_pending = false;
@@ -1473,9 +1486,9 @@ static void vrrp_change_state(struct vrrp_router *r, int to)
 /*
  * Called when Adver_Timer expires.
  */
-static void vrrp_adver_timer_expire(struct event *thread)
+static void vrrp_adver_timer_expire(struct thread *thread)
 {
-	struct vrrp_router *r = EVENT_ARG(thread);
+	struct vrrp_router *r = THREAD_ARG(thread);
 
 	DEBUGD(&vrrp_dbg_proto,
 	       VRRP_LOGPFX VRRP_LOGPFX_VRID VRRP_LOGPFX_FAM
@@ -1487,9 +1500,9 @@ static void vrrp_adver_timer_expire(struct event *thread)
 		vrrp_send_advertisement(r);
 
 		/* Reset the Adver_Timer to Advertisement_Interval */
-		event_add_timer_msec(master, vrrp_adver_timer_expire, r,
-				     r->vr->advertisement_interval * CS2MS,
-				     &r->t_adver_timer);
+		thread_add_timer_msec(master, vrrp_adver_timer_expire, r,
+				      r->vr->advertisement_interval * CS2MS,
+				      &r->t_adver_timer);
 	} else {
 		zlog_err(VRRP_LOGPFX VRRP_LOGPFX_VRID VRRP_LOGPFX_FAM
 			 "Adver_Timer expired in state '%s'; this is a bug",
@@ -1501,17 +1514,17 @@ static void vrrp_adver_timer_expire(struct event *thread)
 /*
  * Called when Master_Down_Timer expires.
  */
-static void vrrp_master_down_timer_expire(struct event *thread)
+static void vrrp_master_down_timer_expire(struct thread *thread)
 {
-	struct vrrp_router *r = EVENT_ARG(thread);
+	struct vrrp_router *r = THREAD_ARG(thread);
 
 	zlog_info(VRRP_LOGPFX VRRP_LOGPFX_VRID VRRP_LOGPFX_FAM
 		  "Master_Down_Timer expired",
 		  r->vr->vrid, family2str(r->family));
 
-	event_add_timer_msec(master, vrrp_adver_timer_expire, r,
-			     r->vr->advertisement_interval * CS2MS,
-			     &r->t_adver_timer);
+	thread_add_timer_msec(master, vrrp_adver_timer_expire, r,
+			      r->vr->advertisement_interval * CS2MS,
+			      &r->t_adver_timer);
 	vrrp_change_state(r, VRRP_STATE_MASTER);
 }
 
@@ -1561,7 +1574,7 @@ static int vrrp_startup(struct vrrp_router *r)
 	}
 
 	/* Schedule listener */
-	event_add_read(master, vrrp_read, r, r->sock_rx, &r->t_read);
+	thread_add_read(master, vrrp_read, r, r->sock_rx, &r->t_read);
 
 	/* Configure effective priority */
 	assert(listhead(r->addrs));
@@ -1583,16 +1596,16 @@ static int vrrp_startup(struct vrrp_router *r)
 	}
 
 	if (r->priority == VRRP_PRIO_MASTER) {
-		event_add_timer_msec(master, vrrp_adver_timer_expire, r,
-				     r->vr->advertisement_interval * CS2MS,
-				     &r->t_adver_timer);
+		thread_add_timer_msec(master, vrrp_adver_timer_expire, r,
+				      r->vr->advertisement_interval * CS2MS,
+				      &r->t_adver_timer);
 		vrrp_change_state(r, VRRP_STATE_MASTER);
 	} else {
 		r->master_adver_interval = r->vr->advertisement_interval;
 		vrrp_recalculate_timers(r);
-		event_add_timer_msec(master, vrrp_master_down_timer_expire, r,
-				     r->master_down_interval * CS2MS,
-				     &r->t_master_down_timer);
+		thread_add_timer_msec(master, vrrp_master_down_timer_expire, r,
+				      r->master_down_interval * CS2MS,
+				      &r->t_master_down_timer);
 		vrrp_change_state(r, VRRP_STATE_BACKUP);
 	}
 
@@ -1632,10 +1645,10 @@ static int vrrp_shutdown(struct vrrp_router *r)
 	}
 
 	/* Cancel all timers */
-	EVENT_OFF(r->t_adver_timer);
-	EVENT_OFF(r->t_master_down_timer);
-	EVENT_OFF(r->t_read);
-	EVENT_OFF(r->t_write);
+	THREAD_OFF(r->t_adver_timer);
+	THREAD_OFF(r->t_master_down_timer);
+	THREAD_OFF(r->t_read);
+	THREAD_OFF(r->t_write);
 
 	/* Protodown macvlan */
 	if (r->mvl_ifp)
@@ -2411,5 +2424,6 @@ void vrrp_fini(void)
 
 	list_delete(&vrs);
 
-	hash_clean_and_free(&vrrp_vrouters_hash, NULL);
+	hash_clean(vrrp_vrouters_hash, NULL);
+	hash_free(vrrp_vrouters_hash);
 }

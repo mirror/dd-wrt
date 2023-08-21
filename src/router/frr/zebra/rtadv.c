@@ -1,15 +1,30 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* Router advertisement
  * Copyright (C) 2016 Cumulus Networks
  * Copyright (C) 2005 6WIND <jean-mickael.guerin@6wind.com>
  * Copyright (C) 1999 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
 #include "memory.h"
 #include "sockopt.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "if.h"
 #include "stream.h"
 #include "log.h"
@@ -475,9 +490,9 @@ no_more_opts:
 		zif->ra_sent++;
 }
 
-static void rtadv_timer(struct event *thread)
+static void rtadv_timer(struct thread *thread)
 {
-	struct zebra_vrf *zvrf = EVENT_ARG(thread);
+	struct zebra_vrf *zvrf = THREAD_ARG(thread);
 	struct vrf *vrf;
 	struct interface *ifp;
 	struct zebra_if *zif;
@@ -817,7 +832,7 @@ static void rtadv_process_packet(uint8_t *buf, unsigned int len,
 	return;
 }
 
-static void rtadv_read(struct event *thread)
+static void rtadv_read(struct thread *thread)
 {
 	int sock;
 	int len;
@@ -825,9 +840,9 @@ static void rtadv_read(struct event *thread)
 	struct sockaddr_in6 from;
 	ifindex_t ifindex = 0;
 	int hoplimit = -1;
-	struct zebra_vrf *zvrf = EVENT_ARG(thread);
+	struct zebra_vrf *zvrf = THREAD_ARG(thread);
 
-	sock = EVENT_FD(thread);
+	sock = THREAD_FD(thread);
 	zvrf->rtadv.ra_read = NULL;
 
 	/* Register myself. */
@@ -2800,26 +2815,26 @@ static void rtadv_event(struct zebra_vrf *zvrf, enum rtadv_event event, int val)
 
 	switch (event) {
 	case RTADV_START:
-		event_add_read(zrouter.master, rtadv_read, zvrf, rtadv->sock,
-			       &rtadv->ra_read);
-		event_add_event(zrouter.master, rtadv_timer, zvrf, 0,
-				&rtadv->ra_timer);
+		thread_add_read(zrouter.master, rtadv_read, zvrf, rtadv->sock,
+				&rtadv->ra_read);
+		thread_add_event(zrouter.master, rtadv_timer, zvrf, 0,
+				 &rtadv->ra_timer);
 		break;
 	case RTADV_STOP:
-		EVENT_OFF(rtadv->ra_timer);
-		EVENT_OFF(rtadv->ra_read);
+		THREAD_OFF(rtadv->ra_timer);
+		THREAD_OFF(rtadv->ra_read);
 		break;
 	case RTADV_TIMER:
-		event_add_timer(zrouter.master, rtadv_timer, zvrf, val,
-				&rtadv->ra_timer);
+		thread_add_timer(zrouter.master, rtadv_timer, zvrf, val,
+				 &rtadv->ra_timer);
 		break;
 	case RTADV_TIMER_MSEC:
-		event_add_timer_msec(zrouter.master, rtadv_timer, zvrf, val,
-				     &rtadv->ra_timer);
+		thread_add_timer_msec(zrouter.master, rtadv_timer, zvrf, val,
+				      &rtadv->ra_timer);
 		break;
 	case RTADV_READ:
-		event_add_read(zrouter.master, rtadv_read, zvrf, rtadv->sock,
-			       &rtadv->ra_read);
+		thread_add_read(zrouter.master, rtadv_read, zvrf, rtadv->sock,
+				&rtadv->ra_read);
 		break;
 	default:
 		break;

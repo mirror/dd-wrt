@@ -1,6 +1,10 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* NHRP daemon main functions
  * Copyright (c) 2014-2015 Timo Teräs
+ *
+ * This file is free software: you may copy, redistribute and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -12,7 +16,7 @@
 #include "zebra.h"
 #include "privs.h"
 #include "getopt.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "sigevent.h"
 #include "lib/version.h"
 #include "log.h"
@@ -28,7 +32,7 @@ DEFINE_MGROUP(NHRPD, "NHRP");
 
 unsigned int debug_flags = 0;
 
-struct event_loop *master;
+struct thread_master *master;
 struct timeval current_time;
 
 /* nhrpd options. */

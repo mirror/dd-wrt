@@ -1,9 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * BFD data plane implementation (distributed BFD).
  *
  * Copyright (C) 2020 Network Device Education Foundation, Inc. ("NetDEF")
  *                    Rafael Zalamena
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -26,7 +39,7 @@
 #include "lib/network.h"
 #include "lib/printfrr.h"
 #include "lib/stream.h"
-#include "lib/frrevent.h"
+#include "lib/thread.h"
 
 #include "bfd.h"
 #include "bfddp_packet.h"
@@ -63,11 +76,11 @@ struct bfd_dplane_ctx {
 	/** Output buffer data. */
 	struct stream *outbuf;
 	/** Input event data. */
-	struct event *inbufev;
+	struct thread *inbufev;
 	/** Output event data. */
-	struct event *outbufev;
+	struct thread *outbufev;
 	/** Connection event. */
-	struct event *connectev;
+	struct thread *connectev;
 
 	/** Amount of bytes read. */
 	uint64_t in_bytes;
@@ -94,7 +107,7 @@ struct bfd_dplane_ctx {
  */
 typedef void (*bfd_dplane_expect_cb)(struct bfddp_message *msg, void *arg);
 
-static void bfd_dplane_client_connect(struct event *t);
+static void bfd_dplane_client_connect(struct thread *t);
 static bool bfd_dplane_client_connecting(struct bfd_dplane_ctx *bdc);
 static void bfd_dplane_ctx_free(struct bfd_dplane_ctx *bdc);
 static int _bfd_dplane_add_session(struct bfd_dplane_ctx *bdc,
@@ -307,14 +320,14 @@ static ssize_t bfd_dplane_flush(struct bfd_dplane_ctx *bdc)
 	stream_pulldown(bdc->outbuf);
 
 	/* Disable write ready events. */
-	EVENT_OFF(bdc->outbufev);
+	THREAD_OFF(bdc->outbufev);
 
 	return total;
 }
 
-static void bfd_dplane_write(struct event *t)
+static void bfd_dplane_write(struct thread *t)
 {
-	struct bfd_dplane_ctx *bdc = EVENT_ARG(t);
+	struct bfd_dplane_ctx *bdc = THREAD_ARG(t);
 
 	/* Handle connection stage. */
 	if (bdc->connecting && bfd_dplane_client_connecting(bdc))
@@ -429,8 +442,8 @@ static int bfd_dplane_enqueue(struct bfd_dplane_ctx *bdc, const void *buf,
 
 	/* Schedule if it is not yet. */
 	if (bdc->outbufev == NULL)
-		event_add_write(master, bfd_dplane_write, bdc, bdc->sock,
-				&bdc->outbufev);
+		thread_add_write(master, bfd_dplane_write, bdc, bdc->sock,
+				 &bdc->outbufev);
 
 	return 0;
 }
@@ -599,9 +612,9 @@ skip_read:
 	return 0;
 }
 
-static void bfd_dplane_read(struct event *t)
+static void bfd_dplane_read(struct thread *t)
 {
-	struct bfd_dplane_ctx *bdc = EVENT_ARG(t);
+	struct bfd_dplane_ctx *bdc = THREAD_ARG(t);
 	int rv;
 
 	rv = bfd_dplane_expect(bdc, 0, bfd_dplane_handle_message, NULL);
@@ -609,7 +622,7 @@ static void bfd_dplane_read(struct event *t)
 		return;
 
 	stream_pulldown(bdc->inbuf);
-	event_add_read(master, bfd_dplane_read, bdc, bdc->sock, &bdc->inbufev);
+	thread_add_read(master, bfd_dplane_read, bdc, bdc->sock, &bdc->inbufev);
 }
 
 static void _bfd_session_register_dplane(struct hash_bucket *hb, void *arg)
@@ -641,7 +654,7 @@ static struct bfd_dplane_ctx *bfd_dplane_ctx_new(int sock)
 	if (sock == -1)
 		return bdc;
 
-	event_add_read(master, bfd_dplane_read, bdc, sock, &bdc->inbufev);
+	thread_add_read(master, bfd_dplane_read, bdc, sock, &bdc->inbufev);
 
 	/* Register all unattached sessions. */
 	bfd_key_iterate(_bfd_session_register_dplane, bdc);
@@ -672,7 +685,7 @@ static void bfd_dplane_ctx_free(struct bfd_dplane_ctx *bdc)
 	/* Client mode has special treatment. */
 	if (bdc->client) {
 		/* Disable connection event if any. */
-		EVENT_OFF(bdc->connectev);
+		THREAD_OFF(bdc->connectev);
 
 		/* Normal treatment on shutdown. */
 		if (bglobal.bg_shutdown)
@@ -680,10 +693,10 @@ static void bfd_dplane_ctx_free(struct bfd_dplane_ctx *bdc)
 
 		/* Attempt reconnection. */
 		socket_close(&bdc->sock);
-		EVENT_OFF(bdc->inbufev);
-		EVENT_OFF(bdc->outbufev);
-		event_add_timer(master, bfd_dplane_client_connect, bdc, 3,
-				&bdc->connectev);
+		THREAD_OFF(bdc->inbufev);
+		THREAD_OFF(bdc->outbufev);
+		thread_add_timer(master, bfd_dplane_client_connect, bdc, 3,
+				 &bdc->connectev);
 		return;
 	}
 
@@ -699,8 +712,8 @@ free_resources:
 	socket_close(&bdc->sock);
 	stream_free(bdc->inbuf);
 	stream_free(bdc->outbuf);
-	EVENT_OFF(bdc->inbufev);
-	EVENT_OFF(bdc->outbufev);
+	THREAD_OFF(bdc->inbufev);
+	THREAD_OFF(bdc->outbufev);
 	XFREE(MTYPE_BFDD_DPLANE_CTX, bdc);
 }
 
@@ -819,9 +832,9 @@ static uint16_t bfd_dplane_request_counters(const struct bfd_session *bs)
 /*
  * Data plane listening socket.
  */
-static void bfd_dplane_accept(struct event *t)
+static void bfd_dplane_accept(struct thread *t)
 {
-	struct bfd_global *bg = EVENT_ARG(t);
+	struct bfd_global *bg = THREAD_ARG(t);
 	struct bfd_dplane_ctx *bdc;
 	int sock;
 
@@ -840,8 +853,8 @@ static void bfd_dplane_accept(struct event *t)
 		zlog_debug("%s: new data plane client connected", __func__);
 
 reschedule_and_return:
-	event_add_read(master, bfd_dplane_accept, bg, bg->bg_dplane_sock,
-		       &bglobal.bg_dplane_sockev);
+	thread_add_read(master, bfd_dplane_accept, bg, bg->bg_dplane_sock,
+			&bglobal.bg_dplane_sockev);
 }
 
 /*
@@ -856,7 +869,7 @@ static void _bfd_dplane_client_bootstrap(struct bfd_dplane_ctx *bdc)
 	stream_reset(bdc->outbuf);
 
 	/* Ask for read notifications. */
-	event_add_read(master, bfd_dplane_read, bdc, bdc->sock, &bdc->inbufev);
+	thread_add_read(master, bfd_dplane_read, bdc, bdc->sock, &bdc->inbufev);
 
 	/* Remove all sessions then register again to send them all. */
 	bfd_key_iterate(_bfd_session_unregister_dplane, bdc);
@@ -899,9 +912,9 @@ static bool bfd_dplane_client_connecting(struct bfd_dplane_ctx *bdc)
 	}
 }
 
-static void bfd_dplane_client_connect(struct event *t)
+static void bfd_dplane_client_connect(struct thread *t)
 {
-	struct bfd_dplane_ctx *bdc = EVENT_ARG(t);
+	struct bfd_dplane_ctx *bdc = THREAD_ARG(t);
 	int rv, sock;
 	socklen_t rvlen = sizeof(rv);
 
@@ -938,8 +951,8 @@ static void bfd_dplane_client_connect(struct event *t)
 
 		/* If we are not connected yet, ask for write notifications. */
 		bdc->connecting = true;
-		event_add_write(master, bfd_dplane_write, bdc, bdc->sock,
-				&bdc->outbufev);
+		thread_add_write(master, bfd_dplane_write, bdc, bdc->sock,
+				 &bdc->outbufev);
 	} else {
 		if (bglobal.debug_dplane)
 			zlog_debug("%s: server connection: %d", __func__, sock);
@@ -949,11 +962,11 @@ static void bfd_dplane_client_connect(struct event *t)
 	}
 
 reschedule_connect:
-	EVENT_OFF(bdc->inbufev);
-	EVENT_OFF(bdc->outbufev);
+	THREAD_OFF(bdc->inbufev);
+	THREAD_OFF(bdc->outbufev);
 	socket_close(&sock);
-	event_add_timer(master, bfd_dplane_client_connect, bdc, 3,
-			&bdc->connectev);
+	thread_add_timer(master, bfd_dplane_client_connect, bdc, 3,
+			 &bdc->connectev);
 }
 
 static void bfd_dplane_client_init(const struct sockaddr *sa, socklen_t salen)
@@ -974,8 +987,8 @@ static void bfd_dplane_client_init(const struct sockaddr *sa, socklen_t salen)
 
 	bdc->client = true;
 
-	event_add_timer(master, bfd_dplane_client_connect, bdc, 0,
-			&bdc->connectev);
+	thread_add_timer(master, bfd_dplane_client_connect, bdc, 0,
+			 &bdc->connectev);
 
 	/* Insert into data plane lists. */
 	TAILQ_INSERT_TAIL(&bglobal.bg_dplaneq, bdc, entry);
@@ -997,7 +1010,7 @@ static int bfd_dplane_finish_late(void)
 		bfd_dplane_ctx_free(bdc);
 
 	/* Cancel accept thread and close socket. */
-	EVENT_OFF(bglobal.bg_dplane_sockev);
+	THREAD_OFF(bglobal.bg_dplane_sockev);
 	close(bglobal.bg_dplane_sock);
 
 	return 0;
@@ -1067,8 +1080,8 @@ void bfd_dplane_init(const struct sockaddr *sa, socklen_t salen, bool client)
 	}
 
 	bglobal.bg_dplane_sock = sock;
-	event_add_read(master, bfd_dplane_accept, &bglobal, sock,
-		       &bglobal.bg_dplane_sockev);
+	thread_add_read(master, bfd_dplane_accept, &bglobal, sock,
+			&bglobal.bg_dplane_sockev);
 }
 
 int bfd_dplane_add_session(struct bfd_session *bs)

@@ -15,8 +15,7 @@ Add packages:
       automake libtool make readline-devel texinfo net-snmp-devel pkgconfig \
       groff pkgconfig json-c-devel pam-devel bison flex python2-pytest \
       c-ares-devel python2-devel libcap-devel \
-      elfutils-libelf-devel libunwind-devel \
-      protobuf-c-devel
+      elfutils-libelf-devel libunwind-devel
 
 .. include:: building-libunwind-note.rst
 

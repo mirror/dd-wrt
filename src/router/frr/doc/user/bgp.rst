@@ -254,9 +254,8 @@ ASN and Router ID
 -----------------
 
 First of all you must configure BGP router with the :clicmd:`router bgp ASN`
-command. The AS number is an identifier for the autonomous system. The AS
-identifier can either be a number or two numbers separated by a period. The
-BGP protocol uses the AS identifier for detecting whether the BGP connection is
+command. The AS number is an identifier for the autonomous system. The BGP
+protocol uses the AS number for detecting whether the BGP connection is
 internal or external.
 
 .. clicmd:: router bgp ASN
@@ -455,7 +454,7 @@ Administrative Distance Metrics
 .. _bgp-requires-policy:
 
 Require policy on EBGP
-----------------------
+-------------------------------
 
 .. clicmd:: bgp ebgp-requires-policy
 
@@ -1712,11 +1711,6 @@ Configuring Peers
    If you do not want specific attributes, you can drop them using this command, and
    let the BGP proceed by ignoring those attributes.
 
-.. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> path-attribute treat-as-withdraw (1-255)...
-
-   Received BGP UPDATES that contain specified path attributes are treat-as-withdraw. If
-   there is an existing prefix in the BGP routing table, it will be removed.
-
 .. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> graceful-shutdown
 
    Mark all routes from this neighbor as less preferred by setting ``graceful-shutdown``
@@ -1843,20 +1837,10 @@ Configuring Peers
 Displaying Information about Peers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. clicmd:: show bgp <afi> <safi> neighbors WORD bestpath-routes [detail] [json] [wide]
+.. clicmd:: show bgp <afi> <safi> neighbors WORD bestpath-routes [json] [wide]
 
    For the given neighbor, WORD, that is specified list the routes selected
    by BGP as having the best path.
-
-   If ``detail`` option is specified, the detailed version of all routes
-   will be displayed. The same format as ``show [ip] bgp [afi] [safi] PREFIX``
-   will be used, but for the whole table of received, advertised or filtered
-   prefixes.
-
-   If ``json`` option is specified, output is displayed in JSON format.
-
-   If ``wide`` option is specified, then the prefix table's width is increased
-   to fully display the prefix and the nexthop.
 
 .. _bgp-peer-filtering:
 
@@ -2021,23 +2005,9 @@ Capability Negotiation
 
 .. clicmd:: neighbor PEER override-capability
 
+
    Override the result of Capability Negotiation with local configuration.
    Ignore remote peer's capability value.
-
-.. clicmd:: neighbor PEER capability software-version
-
-   Send the software version in the BGP OPEN message to the neighbor. This is
-   very useful in environments with a large amount of peers with different
-   versions of FRR or any other vendor.
-
-   Disabled by default.
-
-.. clicmd:: neighbor PEER aigp
-
-   Send and receive AIGP attribute for this neighbor. This is valid only for
-   eBGP neighbors.
-
-   Disabled by default. iBGP neighbors have this option enabled implicitly.
 
 .. _bgp-as-path-access-lists:
 
@@ -2120,6 +2090,9 @@ is 4 octet long. The following format is used to define the community value.
    format is useful to define AS oriented policy value. For example,
    ``7675:80`` can be used when AS 7675 wants to pass local policy value 80 to
    neighboring peer.
+
+``internet``
+   ``internet`` represents well-known communities value 0.
 
 ``graceful-shutdown``
    ``graceful-shutdown`` represents well-known communities value
@@ -2297,7 +2270,7 @@ Numbered Community Lists
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 When number is used for BGP community list name, the number has
-special meanings. Community list number in the range from 1 to 99 is
+special meanings. Community list number in the range from 1 and 99 is
 standard community list. Community list number in the range from 100
 to 500 is expanded community list. These community lists are called
 as numbered community lists. On the other hand normal community lists
@@ -2491,6 +2464,17 @@ community-list.
     match community FILTER
 
 
+The communities value keyword ``internet`` has special meanings in standard
+community lists. In the below example ``internet`` matches all BGP routes even
+if the route does not have communities attribute at all. So community list
+``INTERNET`` is the same as ``FILTER`` in the previous example.
+
+.. code-block:: frr
+
+   bgp community-list standard INTERNET deny 1:1
+   bgp community-list standard INTERNET permit internet
+
+
 The following configuration is an example of communities value deletion.  With
 this configuration the community values ``100:1`` and ``100:2`` are removed
 from BGP updates. For communities value deletion, only ``permit``
@@ -2560,6 +2544,9 @@ Extended Community Lists
    there is no matched entry, deny will be returned. When `extcommunity` is
    empty it matches to any routes.
 
+   A special handling for ``internet`` community is applied. It matches
+   any community.
+
 .. clicmd:: bgp extcommunity-list expanded NAME permit|deny LINE
 
    This command defines a new expanded extcommunity-list. `line` is a string
@@ -2591,19 +2578,11 @@ BGP Extended Communities in Route Map
 
 .. clicmd:: set extcommunity rt EXTCOMMUNITY
 
-   This command sets Route Target value.
-
-.. clicmd:: set extcommunity nt EXTCOMMUNITY
-
-   This command sets Node Target value.
-
-   If the receiving BGP router supports Node Target Extended Communities,
-   it will install the route with the community that contains it's own
-   local BGP Identifier. Otherwise, it's not installed.
+   This command set Route Target value.
 
 .. clicmd:: set extcommunity soo EXTCOMMUNITY
 
-   This command sets Site of Origin value.
+   This command set Site of Origin value.
 
 .. clicmd:: set extcommunity bandwidth <(1-25600) | cumulative | num-multipaths> [non-transitive]
 
@@ -2782,17 +2761,6 @@ happened automatically if local-role is set.
    value of his role (by setting local-role on his side). Otherwise, a Role
    Mismatch Notification will be sent.
 
-Labeled unicast
----------------
-
-*bgpd* supports labeled information, as per :rfc:`3107`.
-
-.. clicmd:: bgp labeled-unicast <explicit-null|ipv4-explicit-null|ipv6-explicit-null>
-
-By default, locally advertised prefixes use the `implicit-null` label to
-encode in the outgoing NLRI. The following command uses the `explicit-null`
-label value for all the BGP instances.
-
 .. _bgp-l3vpn-vrfs:
 
 L3VPN VRFs
@@ -2896,13 +2864,6 @@ address-family:
    The RTLIST is a space-separated list of route-targets, which are BGP
    extended community values as described in
    :ref:`bgp-extended-communities-attribute`.
-
-.. clicmd:: label vpn export allocation-mode per-vrf|per-nexthop
-
-   Select how labels are allocated in the given VRF. By default, the `per-vrf`
-   mode is selected, and one label is used for all prefixes from the VRF. The
-   `per-nexthop` will use a unique label for all prefixes that are reachable
-   via the same nexthop.
 
 .. clicmd:: label vpn export (0..1048575)|auto
 
@@ -3882,12 +3843,6 @@ structure is extended with :clicmd:`show bgp [afi] [safi]`.
       Total number of neighbors 1
       exit1#
 
-If PfxRcd and/or PfxSnt is shown as ``(Policy)``, that means that the EBGP
-default policy is turned on, but you don't have any filters applied for
-incoming/outgoing directions.
-
-.. seealso:: :ref:`bgp-requires-policy`
-
 .. clicmd:: show bgp [afi] [safi] [all] [wide|json]
 
 .. clicmd:: show bgp vrfs [<VRFNAME$vrf_name>] [json]
@@ -3921,10 +3876,6 @@ incoming/outgoing directions.
 .. clicmd:: show bgp l2vpn evpn route [type <macip|2|multicast|3|es|4|prefix|5>]
 
    EVPN prefixes can also be filtered by EVPN route type.
-
-.. clicmd:: show bgp l2vpn evpn route [detail] [type <ead|1|macip|2|multicast|3|es|4|prefix|5>] self-originate [json]
-
-   Display self-originated EVPN prefixes which can also be filtered by EVPN route type.
 
 .. clicmd:: show bgp vni <all|VNI> [vtep VTEP] [type <ead|1|macip|2|multicast|3>] [<detail|json>]
 
@@ -3965,7 +3916,7 @@ incoming/outgoing directions.
    The ``terse`` option can be used in combination with the remote-as, neighbor,
    failed and established filters, and with the ``wide`` option as well.
 
-.. clicmd:: show bgp [afi] [safi] [neighbor [PEER] [routes|advertised-routes|received-routes] [<A.B.C.D/M|X:X::X:X/M> | detail] [json]
+.. clicmd:: show bgp [afi] [safi] [neighbor [PEER] [routes|advertised-routes|received-routes] [detail] [json]
 
    This command shows information on a specific BGP peer of the relevant
    afi and safi selected.
@@ -3979,9 +3930,6 @@ incoming/outgoing directions.
 
    The ``received-routes`` keyword displays all routes belonging to this
    address-family (prior to inbound policy) that were received by this peer.
-
-   If a specific prefix is specified, the detailed version of that prefix will
-   be displayed.
 
    If ``detail`` option is specified, the detailed version of all routes
    will be displayed. The same format as ``show [ip] bgp [afi] [safi] PREFIX``
@@ -4082,16 +4030,7 @@ incoming/outgoing directions.
 
    If the ``json`` option is specified, output is displayed in JSON format.
 
-.. clicmd:: show [ip] bgp [afi] [safi] [all] self-originate [wide|json]
-
-   Display self-originated routes.
-
-   If ``wide`` option is specified, then the prefix table's width is increased
-   to fully display the prefix and the nexthop.
-
-   If the ``json`` option is specified, output is displayed in JSON format.
-
-.. clicmd:: show [ip] bgp [afi] [safi] [all] neighbors A.B.C.D [advertised-routes|received-routes|filtered-routes] [<A.B.C.D/M|X:X::X:X/M> | detail] [json|wide]
+.. clicmd:: show [ip] bgp [afi] [safi] [all] neighbors A.B.C.D [advertised-routes|received-routes|filtered-routes] [detail] [json|wide]
 
    Display the routes advertised to a BGP neighbor or received routes
    from neighbor or filtered routes received from neighbor based on the
@@ -4107,9 +4046,6 @@ incoming/outgoing directions.
    routes displayed for all AFIs and SAFIs.
    if afi is specified, with ``all`` option, routes will be displayed for
    each SAFI in the selcted AFI
-
-   If a specific prefix is specified, the detailed version of that prefix will
-   be displayed.
 
    If ``detail`` option is specified, the detailed version of all routes
    will be displayed. The same format as ``show [ip] bgp [afi] [safi] PREFIX``
@@ -4128,122 +4064,6 @@ incoming/outgoing directions.
 
    If ``afi`` is specified, with ``all`` option, routes will be displayed for
    each SAFI in the selected AFI.
-
-.. clicmd:: show [ip] bgp [<view|vrf> VIEWVRFNAME] [afi] [safi] detail [json]
-
-   Display the detailed version of all routes from the specified bgp vrf table
-   for a given afi + safi.
-
-   If no vrf is specified, then it is assumed as a default vrf and routes
-   are displayed from default vrf table.
-
-   If ``all`` option is specified as vrf name, then all bgp vrf tables routes
-   from a given afi+safi are displayed in the detailed output of routes.
-
-   If ``json`` option is specified, detailed output is displayed in JSON format.
-
-   Following are sample output for few examples of how to use this command.
-
-.. code-block:: frr
-
-   torm-23# sh bgp ipv4 unicast detail (OR) sh bgp vrf default ipv4 unicast detail
-
-   !--- Output suppressed.
-
-   BGP routing table entry for 172.16.16.1/32
-   Paths: (1 available, best #1, table default)
-     Not advertised to any peer
-     Local, (Received from a RR-client)
-       172.16.16.1 (metric 20) from torm-22(172.16.16.1) (192.168.0.10)
-         Origin IGP, metric 0, localpref 100, valid, internal
-         Last update: Fri May  8 12:54:05 2023
-   BGP routing table entry for 172.16.16.2/32
-   Paths: (1 available, best #1, table default)
-     Not advertised to any peer
-     Local
-       0.0.0.0 from 0.0.0.0 (172.16.16.2)
-         Origin incomplete, metric 0, weight 32768, valid, sourced, bestpath-from-AS Local, best (First path received)
-         Last update: Wed May  8 12:54:41 2023
-
-   Displayed  2 routes and 2 total paths
-
-.. code-block:: frr
-
-   torm-23# sh bgp vrf all detail
-
-   Instance default:
-
-   !--- Output suppressed.
-
-   BGP routing table entry for 172.16.16.1/32
-   Paths: (1 available, best #1, table default)
-     Not advertised to any peer
-     Local, (Received from a RR-client)
-       172.16.16.1 (metric 20) from torm-22(172.16.16.1) (192.168.0.10)
-         Origin IGP, metric 0, localpref 100, valid, internal
-         Last update: Fri May  8 12:44:05 2023
-   BGP routing table entry for 172.16.16.2/32
-   Paths: (1 available, best #1, table default)
-     Not advertised to any peer
-     Local
-       0.0.0.0 from 0.0.0.0 (172.16.16.2)
-         Origin incomplete, metric 0, weight 32768, valid, sourced, bestpath-from-AS Local, best (First path received)
-         Last update: Wed May  8 12:45:01 2023
-
-   Displayed  2 routes and 2 total paths
-
-   Instance vrf3:
-
-   !--- Output suppressed.
-
-   BGP routing table entry for 192.168.0.2/32
-   Paths: (1 available, best #1, vrf vrf3)
-     Not advertised to any peer
-     Imported from 172.16.16.1:12:[2]:[0]:[48]:[00:02:00:00:00:58]:[32]:[192.168.0.2], VNI 1008/4003
-     Local
-       172.16.16.1 from torm-22(172.16.16.1) (172.16.16.1) announce-nh-self
-         Origin IGP, localpref 100, valid, internal, bestpath-from-AS Local, best (First path received)
-         Extended Community: RT:65000:1008 ET:8 Rmac:00:02:00:00:00:58
-         Last update: Fri May  8 02:41:55 2023
-   BGP routing table entry for 192.168.1.2/32
-   Paths: (1 available, best #1, vrf vrf3)
-     Not advertised to any peer
-     Imported from 172.16.16.1:13:[2]:[0]:[48]:[00:02:00:00:00:58]:[32]:[192.168.1.2], VNI 1009/4003
-     Local
-       172.16.16.1 from torm-22(172.16.16.1) (172.16.16.1) announce-nh-self
-         Origin IGP, localpref 100, valid, internal, bestpath-from-AS Local, best (First path received)
-         Extended Community: RT:65000:1009 ET:8 Rmac:00:02:00:00:00:58
-         Last update: Fri May  8 02:41:55 2023
-
-   Displayed  2 routes and 2 total paths
-
-
-.. code-block:: frr
-
-   torm-23# sh bgp vrf vrf3 ipv4 unicast detail
-
-   !--- Output suppressed.
-
-   BGP routing table entry for 192.168.0.2/32
-   Paths: (1 available, best #1, vrf vrf3)
-     Not advertised to any peer
-     Imported from 172.16.16.1:12:[2]:[0]:[48]:[00:02:00:00:00:58]:[32]:[192.168.0.2], VNI 1008/4003
-     Local
-       172.16.16.1 from torm-22(172.16.16.1) (172.16.16.1) announce-nh-self
-         Origin IGP, localpref 100, valid, internal, bestpath-from-AS Local, best (First path received)
-         Extended Community: RT:65000:1008 ET:8 Rmac:00:02:00:00:00:58
-         Last update: Fri May  8 02:23:35 2023
-   BGP routing table entry for 192.168.1.2/32
-   Paths: (1 available, best #1, vrf vrf3)
-     Not advertised to any peer
-     Imported from 172.16.16.1:13:[2]:[0]:[48]:[00:02:00:00:00:58]:[32]:[192.168.1.2], VNI 1009/4003
-     Local
-       172.16.16.1 from torm-22(172.16.16.1) (172.16.16.1) announce-nh-self
-         Origin IGP, localpref 100, valid, internal, bestpath-from-AS Local, best (First path received)
-         Extended Community: RT:65000:1009 ET:8 Rmac:00:02:00:00:00:58
-         Last update: Fri May  8 02:23:55 2023
-
-   Displayed  2 routes and 2 total paths
 
 .. _bgp-display-routes-by-community:
 
@@ -4453,26 +4273,6 @@ Segment-Routing IPv6
      vpn_policy[AFI_IP].tovpn_sid: none
      vpn_policy[AFI_IP6].tovpn_sid: 2001:db8:1:1::200
 
-AS-notation support
--------------------
-
-By default, the ASN value output follows how the BGP ASN instance is
-expressed in the configuration. Three as-notation outputs are available:
-
-- plain output: both AS4B and AS2B use a single number.
-  ` router bgp 65536`.
-
-- dot output: AS4B values are using two numbers separated by a period.
-  `router bgp 1.1` means that the AS number is 65536.
-
-- dot+ output: AS2B and AS4B values are using two numbers separated by a
-  period. `router bgp 0.5` means that the AS number is 5.
-
-The below option permits forcing the as-notation output:
-
-.. clicmd:: router bgp ASN as-notation dot|dot+|plain
-
-   The chosen as-notation format will override the BGP ASN output.
 
 .. _bgp-route-reflector:
 

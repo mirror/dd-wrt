@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* Redistribution Handler
  * Copyright (C) 1998 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -103,15 +118,13 @@ static void zebra_redistribute(struct zserv *client, int type,
 		RNODE_FOREACH_RE (rn, newre) {
 			if (IS_ZEBRA_DEBUG_RIB)
 				zlog_debug(
-					"%s: client %s %pRN(%u:%u) checking: selected=%d, type=%s, instance=%u, distance=%d, metric=%d zebra_check_addr=%d",
+					"%s: client %s %pRN(%u:%u) checking: selected=%d, type=%d, distance=%d, metric=%d zebra_check_addr=%d",
 					__func__,
 					zebra_route_string(client->proto), rn,
 					vrf_id, newre->instance,
 					!!CHECK_FLAG(newre->flags,
 						     ZEBRA_FLAG_SELECTED),
-					zebra_route_string(newre->type),
-					newre->instance,
-					newre->distance,
+					newre->type, newre->distance,
 					newre->metric,
 					zebra_check_addr(&rn->p));
 
@@ -145,7 +158,7 @@ static bool zebra_redistribute_check(const struct route_node *rn,
 		return false;
 
 	afi = family2afi(rn->p.family);
-	zvrf = zebra_vrf_lookup_by_id(re->vrf_id);
+	zvrf = vrf_info_lookup(re->vrf_id);
 	if (re->vrf_id == VRF_DEFAULT && zvrf->table_id != re->table)
 		return false;
 
@@ -548,10 +561,6 @@ void zebra_interface_address_add_update(struct interface *ifp,
 						client, ifp, ifc);
 		}
 	}
-	/* interface associated NHGs may have been deleted,
-	 * re-sync zebra -> dplane NHGs
-	 */
-	zebra_interface_nhg_reinstall(ifp);
 }
 
 /* Interface address deletion. */

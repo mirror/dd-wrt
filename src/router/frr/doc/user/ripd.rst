@@ -40,8 +40,7 @@ sequence for running RIP is like below:
 Please note that *zebra* must be invoked before *ripd*.
 
 To stop *ripd*. Please use::
-
-   kill `cat /var/run/frr/ripd.pid`
+   kill `cat /var/run/ripd.pid`
 
 Certain signals have special meanings to *ripd*.
 
@@ -88,11 +87,14 @@ multipath routing.
 RIP Configuration
 =================
 
-.. clicmd:: router rip [vrf NAME]
+.. clicmd:: router rip
 
    The `router rip` command is necessary to enable RIP. To disable RIP, use the
    `no router rip` command. RIP must be enabled before carrying out any of the
    RIP commands.
+
+
+   Disable RIP.
 
 .. clicmd:: network NETWORK
 
@@ -149,20 +151,12 @@ RIP Configuration
 
    The default is to be passive on all interfaces.
 
-.. clicmd:: ip split-horizon [poisoned-reverse]
+.. clicmd:: ip split-horizon
 
 
    Control split-horizon on the interface. Default is `ip split-horizon`. If
    you don't perform split-horizon on the interface, please specify `no ip
    split-horizon`.
-
-   If `poisoned-reverse` is also set, the router sends the poisoned routes
-   with highest metric back to the sending router.
-
-.. clicmd:: allow-ecmp [1-MULTIPATH_NUM]
-
-   Control how many ECMP paths RIP can inject for the same prefix. If specified
-   without a number, a maximum is taken (compiled with ``--enable-multipath``).
 
 .. _rip-version-control:
 
@@ -182,8 +176,8 @@ discussion on the security implications of RIPv1 see :ref:`rip-authentication`.
 
 .. clicmd:: version VERSION
 
-   Set RIP version to accept for reads and send. VERSION can be either
-   ``1`` or ``2``.
+   Set RIP version to accept for reads and send. ``VERSION`` can be either 1 or
+   1.
 
    Disabling RIPv1 by specifying version 2 is STRONGLY encouraged,
    :ref:`rip-authentication`. This may become the default in a future release.
@@ -480,7 +474,7 @@ Show RIP Information
 
 To display RIP routes.
 
-.. clicmd:: show ip rip [vrf NAME]
+.. clicmd:: show ip rip
 
    Show RIP routes.
 
@@ -489,7 +483,7 @@ through RIP, this command will display the time the packet was sent and
 the tag information. This command will also display this information
 for routes redistributed into RIP.
 
-.. clicmd:: show ip rip [vrf NAME] status
+.. clicmd:: show ip rip status
 
    The command displays current RIP status. It includes RIP timer,
    filtering, version, RIP enabled interface and RIP peer information.

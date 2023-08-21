@@ -1,10 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * IS-IS Rout(e)ing protocol - isis_events.h
  *
  * Copyright (C) 2001,2002   Sampo Saaristo
  *                           Tampere University of Technology
  *                           Institute of Communications Engineering
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public Licenseas published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
@@ -13,7 +26,7 @@
 #include "if.h"
 #include "linklist.h"
 #include "command.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "hash.h"
 #include "prefix.h"
 #include "stream.h"
@@ -63,23 +76,23 @@ static void circuit_commence_level(struct isis_circuit *circuit, int level)
 
 	if (!circuit->is_passive) {
 		if (level == 1) {
-			event_add_timer(master, send_l1_psnp, circuit,
-					isis_jitter(circuit->psnp_interval[0],
-						    PSNP_JITTER),
-					&circuit->t_send_psnp[0]);
+			thread_add_timer(master, send_l1_psnp, circuit,
+					 isis_jitter(circuit->psnp_interval[0],
+						     PSNP_JITTER),
+					 &circuit->t_send_psnp[0]);
 		} else {
-			event_add_timer(master, send_l2_psnp, circuit,
-					isis_jitter(circuit->psnp_interval[1],
-						    PSNP_JITTER),
-					&circuit->t_send_psnp[1]);
+			thread_add_timer(master, send_l2_psnp, circuit,
+					 isis_jitter(circuit->psnp_interval[1],
+						     PSNP_JITTER),
+					 &circuit->t_send_psnp[1]);
 		}
 	}
 
 	if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
-		event_add_timer(master, isis_run_dr,
-				&circuit->level_arg[level - 1],
-				2 * circuit->hello_interval[level - 1],
-				&circuit->u.bc.t_run_dr[level - 1]);
+		thread_add_timer(master, isis_run_dr,
+				 &circuit->level_arg[level - 1],
+				 2 * circuit->hello_interval[level - 1],
+				 &circuit->u.bc.t_run_dr[level - 1]);
 
 		send_hello_sched(circuit, level, TRIGGERED_IIH_DELAY);
 		circuit->u.bc.lan_neighs[level - 1] = list_new();
@@ -96,13 +109,13 @@ static void circuit_resign_level(struct isis_circuit *circuit, int level)
 			circuit->area->area_tag, circuit->circuit_id,
 			circuit->interface->name, level);
 
-	EVENT_OFF(circuit->t_send_csnp[idx]);
-	EVENT_OFF(circuit->t_send_psnp[idx]);
+	THREAD_OFF(circuit->t_send_csnp[idx]);
+	THREAD_OFF(circuit->t_send_psnp[idx]);
 
 	if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
-		EVENT_OFF(circuit->u.bc.t_send_lan_hello[idx]);
-		EVENT_OFF(circuit->u.bc.t_run_dr[idx]);
-		EVENT_OFF(circuit->u.bc.t_refresh_pseudo_lsp[idx]);
+		THREAD_OFF(circuit->u.bc.t_send_lan_hello[idx]);
+		THREAD_OFF(circuit->u.bc.t_run_dr[idx]);
+		THREAD_OFF(circuit->u.bc.t_refresh_pseudo_lsp[idx]);
 		circuit->lsp_regenerate_pending[idx] = 0;
 		circuit->u.bc.run_dr_elect[idx] = 0;
 		circuit->u.bc.is_dr[idx] = 0;
@@ -196,11 +209,11 @@ void isis_circuit_is_type_set(struct isis_circuit *circuit, int newtype)
 
 /* events supporting code */
 
-void isis_event_dis_status_change(struct event *thread)
+void isis_event_dis_status_change(struct thread *thread)
 {
 	struct isis_circuit *circuit;
 
-	circuit = EVENT_ARG(thread);
+	circuit = THREAD_ARG(thread);
 
 	/* invalid arguments */
 	if (!circuit || !circuit->area)
@@ -217,8 +230,8 @@ void isis_event_auth_failure(char *area_tag, const char *error_string,
 			     uint8_t *sysid)
 {
 	if (IS_DEBUG_EVENTS)
-		zlog_debug("ISIS-Evt (%s) Authentication failure %s from %pSY",
-			   area_tag, error_string, sysid);
+		zlog_debug("ISIS-Evt (%s) Authentication failure %s from %s",
+			   area_tag, error_string, sysid_print(sysid));
 
 	return;
 }

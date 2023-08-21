@@ -1,9 +1,20 @@
-// SPDX-License-Identifier: ISC
 /*	$OpenBSD$ */
 
 /*
  * Copyright (c) 2014, 2015 Renato Westphal <renato@openbsd.org>
  * Copyright (c) 2009 Michele Marchetto <michele@openbsd.org>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <zebra.h>
@@ -47,11 +58,12 @@ send_labelmessage(struct nbr *nbr, uint16_t type, struct mapping_head *mh)
 	while ((me = TAILQ_FIRST(mh)) != NULL) {
 		/* generate pdu */
 		if (first) {
-			if ((buf = ibuf_open(nbr->max_pdu_len + LDP_HDR_DEAD_LEN)) == NULL)
+			if ((buf = ibuf_open(nbr->max_pdu_len +
+			    LDP_HDR_DEAD_LEN)) == NULL)
 				fatal(__func__);
 
 			/* real size will be set up later */
-			SET_FLAG(err, gen_ldp_hdr(buf, 0));
+			err |= gen_ldp_hdr(buf, 0);
 
 			size = LDP_HDR_SIZE;
 			first = 0;
@@ -62,9 +74,9 @@ send_labelmessage(struct nbr *nbr, uint16_t type, struct mapping_head *mh)
 		msg_size += len_fec_tlv(&me->map);
 		if (me->map.label != NO_LABEL)
 			msg_size += LABEL_TLV_SIZE;
-		if (CHECK_FLAG(me->map.flags, F_MAP_REQ_ID))
+		if (me->map.flags & F_MAP_REQ_ID)
 			msg_size += REQID_TLV_SIZE;
-		if (CHECK_FLAG(me->map.flags, F_MAP_STATUS))
+		if (me->map.flags & F_MAP_STATUS)
 			msg_size += STATUS_SIZE;
 
 		/* maximum pdu length exceeded, we need a new ldp pdu */
@@ -77,17 +89,17 @@ send_labelmessage(struct nbr *nbr, uint16_t type, struct mapping_head *mh)
 		size += msg_size;
 
 		/* append message and tlvs */
-		SET_FLAG(err, gen_msg_hdr(buf, type, msg_size));
-		SET_FLAG(err, gen_fec_tlv(buf, &me->map));
+		err |= gen_msg_hdr(buf, type, msg_size);
+		err |= gen_fec_tlv(buf, &me->map);
 		if (me->map.label != NO_LABEL)
-			SET_FLAG(err, gen_label_tlv(buf, me->map.label));
-		if (CHECK_FLAG(me->map.flags, F_MAP_REQ_ID))
-			SET_FLAG(err, gen_reqid_tlv(buf, me->map.requestid));
-	    	if (CHECK_FLAG(me->map.flags, F_MAP_PW_STATUS))
-				SET_FLAG(err, gen_pw_status_tlv(buf, me->map.pw_status));
-		if (CHECK_FLAG(me->map.flags, F_MAP_STATUS))
-			SET_FLAG(err, gen_status_tlv(buf, me->map.st.status_code,
-			    me->map.st.msg_id, me->map.st.msg_type));
+			err |= gen_label_tlv(buf, me->map.label);
+		if (me->map.flags & F_MAP_REQ_ID)
+			err |= gen_reqid_tlv(buf, me->map.requestid);
+	    	if (me->map.flags & F_MAP_PW_STATUS)
+			err |= gen_pw_status_tlv(buf, me->map.pw_status);
+		if (me->map.flags & F_MAP_STATUS)
+			err |= gen_status_tlv(buf, me->map.st.status_code,
+			    me->map.st.msg_id, me->map.st.msg_type);
 		if (err) {
 			ibuf_free(buf);
 			mapping_list_clr(mh);
@@ -171,13 +183,15 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 		memset(&map, 0, sizeof(map));
 		map.msg_id = msg.id;
 
-		if ((tlen = tlv_decode_fec_elm(nbr, &msg, buf, feclen, &map)) == -1)
+		if ((tlen = tlv_decode_fec_elm(nbr, &msg, buf, feclen,
+		    &map)) == -1)
 			goto err;
 		if (map.type == MAP_TYPE_PWID &&
-		    !CHECK_FLAG(map.flags, F_MAP_PW_ID) &&
+		    !(map.flags & F_MAP_PW_ID) &&
 		    type != MSG_TYPE_LABELWITHDRAW &&
 		    type != MSG_TYPE_LABELRELEASE) {
-			send_notification(nbr->tcp, S_MISS_MSG, msg.id, msg.type);
+			send_notification(nbr->tcp, S_MISS_MSG, msg.id,
+			    msg.type);
 			goto err;
 		}
 
@@ -190,7 +204,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			case MSG_TYPE_LABELMAPPING:
 			case MSG_TYPE_LABELREQUEST:
 			case MSG_TYPE_LABELABORTREQ:
-				session_shutdown(nbr, S_UNKNOWN_FEC, msg.id, msg.type);
+				session_shutdown(nbr, S_UNKNOWN_FEC, msg.id,
+				    msg.type);
 				goto err;
 			default:
 				break;
@@ -207,7 +222,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			switch (type) {
 			case MSG_TYPE_LABELMAPPING:
 			case MSG_TYPE_LABELABORTREQ:
-				session_shutdown(nbr, S_UNKNOWN_FEC, msg.id, msg.type);
+				session_shutdown(nbr, S_UNKNOWN_FEC, msg.id,
+				    msg.type);
 				goto err;
 			default:
 				break;
@@ -218,7 +234,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 		 * LDP supports the use of multiple FEC Elements per
 		 * FEC for the Label Mapping message only.
 		 */
-		if (type != MSG_TYPE_LABELMAPPING && tlen != feclen) {
+		if (type != MSG_TYPE_LABELMAPPING &&
+		    tlen != feclen) {
 			session_shutdown(nbr, S_BAD_TLV_VAL, msg.id, msg.type);
 			goto err;
 		}
@@ -256,10 +273,10 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 		 * For Label Mapping messages the Label TLV is mandatory and
 		 * should appear right after the FEC TLV.
 		 */
-		if (current_tlv == 1 &&
-		    type == MSG_TYPE_LABELMAPPING &&
-		    !CHECK_FLAG(tlv_type, TLV_TYPE_GENERICLABEL)) {
-			send_notification(nbr->tcp, S_MISS_MSG, msg.id, msg.type);
+		if (current_tlv == 1 && type == MSG_TYPE_LABELMAPPING &&
+		    !(tlv_type & TLV_TYPE_GENERICLABEL)) {
+			send_notification(nbr->tcp, S_MISS_MSG, msg.id,
+			    msg.type);
 			goto err;
 		}
 
@@ -269,11 +286,12 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			case MSG_TYPE_LABELMAPPING:
 			case MSG_TYPE_LABELREQUEST:
 				if (tlv_len != REQID_TLV_LEN) {
-					session_shutdown(nbr, S_BAD_TLV_LEN, msg.id, msg.type);
+					session_shutdown(nbr, S_BAD_TLV_LEN,
+					    msg.id, msg.type);
 					goto err;
 				}
 
-				SET_FLAG(flags, F_MAP_REQ_ID);
+				flags |= F_MAP_REQ_ID;
 				memcpy(&reqbuf, buf, sizeof(reqbuf));
 				reqid = ntohl(reqbuf);
 				break;
@@ -292,7 +310,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			case MSG_TYPE_LABELWITHDRAW:
 			case MSG_TYPE_LABELRELEASE:
 				if (tlv_len != LABEL_TLV_LEN) {
-					session_shutdown(nbr, S_BAD_TLV_LEN, msg.id, msg.type);
+					session_shutdown(nbr, S_BAD_TLV_LEN,
+					    msg.id, msg.type);
 					goto err;
 				}
 
@@ -304,7 +323,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 				     label != MPLS_LABEL_IPV4_EXPLICIT_NULL &&
 				     label != MPLS_LABEL_IPV6_EXPLICIT_NULL &&
 				     label != MPLS_LABEL_IMPLICIT_NULL)) {
-					session_shutdown(nbr, S_BAD_TLV_VAL, msg.id, msg.type);
+					session_shutdown(nbr, S_BAD_TLV_VAL,
+					    msg.id, msg.type);
 					goto err;
 				}
 				break;
@@ -320,7 +340,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			case MSG_TYPE_LABELWITHDRAW:
 			case MSG_TYPE_LABELRELEASE:
 				/* unsupported */
-				session_shutdown(nbr, S_BAD_TLV_VAL, msg.id, msg.type);
+				session_shutdown(nbr, S_BAD_TLV_VAL, msg.id,
+				    msg.type);
 				goto err;
 				break;
 			default:
@@ -330,7 +351,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			break;
 		case TLV_TYPE_STATUS:
 			if (tlv_len != STATUS_TLV_LEN) {
-				session_shutdown(nbr, S_BAD_TLV_LEN, msg.id, msg.type);
+				session_shutdown(nbr, S_BAD_TLV_LEN, msg.id,
+				    msg.type);
 				goto err;
 			}
 			/* ignore */
@@ -339,11 +361,12 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			switch (type) {
 			case MSG_TYPE_LABELMAPPING:
 				if (tlv_len != PW_STATUS_TLV_LEN) {
-					session_shutdown(nbr, S_BAD_TLV_LEN, msg.id, msg.type);
+					session_shutdown(nbr, S_BAD_TLV_LEN,
+					    msg.id, msg.type);
 					goto err;
 				}
 
-				SET_FLAG(flags, F_MAP_PW_STATUS);
+				flags |= F_MAP_PW_STATUS;
 				memcpy(&statusbuf, buf, sizeof(statusbuf));
 				pw_status = ntohl(statusbuf);
 				break;
@@ -353,7 +376,7 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			}
 			break;
 		default:
-			if (!CHECK_FLAG(ntohs(tlv.type), UNKNOWN_FLAG))
+			if (!(ntohs(tlv.type) & UNKNOWN_FLAG))
 				send_notification_rtlvs(nbr, S_UNKNOWN_TLV,
 				    msg.id, msg.type, tlv_type, tlv_len, buf);
 			/* ignore unknown tlv */
@@ -368,13 +391,14 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 	while ((me = TAILQ_FIRST(&mh)) != NULL) {
 		int imsg_type = IMSG_NONE;
 
-		SET_FLAG(me->map.flags, flags);
+		me->map.flags |= flags;
 		switch (me->map.type) {
 		case MAP_TYPE_PREFIX:
 			switch (me->map.fec.prefix.af) {
 			case AF_INET:
 				if (label == MPLS_LABEL_IPV6_EXPLICIT_NULL) {
-					session_shutdown(nbr, S_BAD_TLV_VAL, msg.id, msg.type);
+					session_shutdown(nbr, S_BAD_TLV_VAL,
+					    msg.id, msg.type);
 					goto err;
 				}
 				if (!nbr->v4_enabled)
@@ -382,7 +406,8 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 				break;
 			case AF_INET6:
 				if (label == MPLS_LABEL_IPV4_EXPLICIT_NULL) {
-					session_shutdown(nbr, S_BAD_TLV_VAL, msg.id, msg.type);
+					session_shutdown(nbr, S_BAD_TLV_VAL,
+					    msg.id, msg.type);
 					goto err;
 				}
 				if (!nbr->v6_enabled)
@@ -394,17 +419,18 @@ recv_labelmessage(struct nbr *nbr, char *buf, uint16_t len, uint16_t type)
 			break;
 		case MAP_TYPE_PWID:
 			if (label <= MPLS_LABEL_RESERVED_MAX) {
-				session_shutdown(nbr, S_BAD_TLV_VAL, msg.id, msg.type);
+				session_shutdown(nbr, S_BAD_TLV_VAL, msg.id,
+				    msg.type);
 				goto err;
 			}
-			if (CHECK_FLAG(me->map.flags, F_MAP_PW_STATUS))
+			if (me->map.flags & F_MAP_PW_STATUS)
 				me->map.pw_status = pw_status;
 			break;
 		default:
 			break;
 		}
 		me->map.label = label;
-		if (CHECK_FLAG(me->map.flags, F_MAP_REQ_ID))
+		if (me->map.flags & F_MAP_REQ_ID)
 			me->map.requestid = reqid;
 
 		log_msg_mapping(0, type, nbr, &me->map);
@@ -498,11 +524,11 @@ len_fec_tlv(struct map *map)
 		break;
 	case MAP_TYPE_PWID:
 		len += FEC_PWID_ELM_MIN_LEN;
-		if (CHECK_FLAG(map->flags, F_MAP_PW_ID))
+		if (map->flags & F_MAP_PW_ID)
 			len += PW_STATUS_TLV_LEN;
-		if (CHECK_FLAG(map->flags, F_MAP_PW_IFMTU))
+		if (map->flags & F_MAP_PW_IFMTU)
 			len += FEC_SUBTLV_IFMTU_SIZE;
-    		if (CHECK_FLAG(map->flags, F_MAP_PW_STATUS))
+    		if (map->flags & F_MAP_PW_STATUS)
 			len += PW_STATUS_TLV_SIZE;
 		break;
 	case MAP_TYPE_TYPED_WCARD:
@@ -537,15 +563,15 @@ gen_fec_tlv(struct ibuf *buf, struct map *map)
 	switch (map->type) {
 	case MAP_TYPE_WILDCARD:
 		ft.length = htons(sizeof(uint8_t));
-		SET_FLAG(err, ibuf_add(buf, &ft, sizeof(ft)));
-		SET_FLAG(err, ibuf_add(buf, &map->type, sizeof(map->type)));
+		err |= ibuf_add(buf, &ft, sizeof(ft));
+		err |= ibuf_add(buf, &map->type, sizeof(map->type));
 		break;
 	case MAP_TYPE_PREFIX:
 		len = PREFIX_SIZE(map->fec.prefix.prefixlen);
 		ft.length = htons(sizeof(map->type) + sizeof(family) +
 		    sizeof(map->fec.prefix.prefixlen) + len);
-		SET_FLAG(err, ibuf_add(buf, &ft, sizeof(ft)));
-		SET_FLAG(err, ibuf_add(buf, &map->type, sizeof(map->type)));
+		err |= ibuf_add(buf, &ft, sizeof(ft));
+		err |= ibuf_add(buf, &map->type, sizeof(map->type));
 		switch (map->fec.prefix.af) {
 		case AF_INET:
 			family = htons(AF_IPV4);
@@ -557,45 +583,45 @@ gen_fec_tlv(struct ibuf *buf, struct map *map)
 			fatalx("gen_fec_tlv: unknown af");
 			break;
 		}
-		SET_FLAG(err, ibuf_add(buf, &family, sizeof(family)));
-		SET_FLAG(err, ibuf_add(buf, &map->fec.prefix.prefixlen,
-		    sizeof(map->fec.prefix.prefixlen)));
+		err |= ibuf_add(buf, &family, sizeof(family));
+		err |= ibuf_add(buf, &map->fec.prefix.prefixlen,
+		    sizeof(map->fec.prefix.prefixlen));
 		if (len)
-			SET_FLAG(err, ibuf_add(buf, &map->fec.prefix.prefix, len));
+			err |= ibuf_add(buf, &map->fec.prefix.prefix, len);
 		break;
 	case MAP_TYPE_PWID:
-		if (CHECK_FLAG(map->flags, F_MAP_PW_ID))
+		if (map->flags & F_MAP_PW_ID)
 			pw_len += FEC_PWID_SIZE;
-		if (CHECK_FLAG(map->flags, F_MAP_PW_IFMTU))
+		if (map->flags & F_MAP_PW_IFMTU)
 			pw_len += FEC_SUBTLV_IFMTU_SIZE;
 
 		len = FEC_PWID_ELM_MIN_LEN + pw_len;
 
 		ft.length = htons(len);
-		SET_FLAG(err, ibuf_add(buf, &ft, sizeof(ft)));
+		err |= ibuf_add(buf, &ft, sizeof(ft));
 
-		SET_FLAG(err, ibuf_add(buf, &map->type, sizeof(uint8_t)));
+		err |= ibuf_add(buf, &map->type, sizeof(uint8_t));
 		pw_type = map->fec.pwid.type;
-		if (CHECK_FLAG(map->flags, F_MAP_PW_CWORD))
-			SET_FLAG(pw_type, CONTROL_WORD_FLAG);
+		if (map->flags & F_MAP_PW_CWORD)
+			pw_type |= CONTROL_WORD_FLAG;
 		pw_type = htons(pw_type);
-		SET_FLAG(err, ibuf_add(buf, &pw_type, sizeof(uint16_t)));
-		SET_FLAG(err, ibuf_add(buf, &pw_len, sizeof(uint8_t)));
+		err |= ibuf_add(buf, &pw_type, sizeof(uint16_t));
+		err |= ibuf_add(buf, &pw_len, sizeof(uint8_t));
 		group_id = htonl(map->fec.pwid.group_id);
-		SET_FLAG(err, ibuf_add(buf, &group_id, sizeof(uint32_t)));
-		if (CHECK_FLAG(map->flags, F_MAP_PW_ID)) {
+		err |= ibuf_add(buf, &group_id, sizeof(uint32_t));
+		if (map->flags & F_MAP_PW_ID) {
 			pwid = htonl(map->fec.pwid.pwid);
-			SET_FLAG(err, ibuf_add(buf, &pwid, sizeof(uint32_t)));
+			err |= ibuf_add(buf, &pwid, sizeof(uint32_t));
 		}
-		if (CHECK_FLAG(map->flags, F_MAP_PW_IFMTU)) {
+		if (map->flags & F_MAP_PW_IFMTU) {
 			struct subtlv 	stlv;
 
 			stlv.type = SUBTLV_IFMTU;
 			stlv.length = FEC_SUBTLV_IFMTU_SIZE;
-			SET_FLAG(err, ibuf_add(buf, &stlv, sizeof(uint16_t)));
+			err |= ibuf_add(buf, &stlv, sizeof(uint16_t));
 
 			ifmtu = htons(map->fec.pwid.ifmtu);
-			SET_FLAG(err, ibuf_add(buf, &ifmtu, sizeof(uint16_t)));
+			err |= ibuf_add(buf, &ifmtu, sizeof(uint16_t));
 		}
 		break;
 	case MAP_TYPE_TYPED_WCARD:
@@ -609,14 +635,14 @@ gen_fec_tlv(struct ibuf *buf, struct map *map)
 			fatalx("gen_fec_tlv: unexpected fec type");
 		}
 		ft.length = htons(len);
-		SET_FLAG(err, ibuf_add(buf, &ft, sizeof(ft)));
-		SET_FLAG(err, ibuf_add(buf, &map->type, sizeof(uint8_t)));
-		SET_FLAG(err, ibuf_add(buf, &map->fec.twcard.type, sizeof(uint8_t)));
+		err |= ibuf_add(buf, &ft, sizeof(ft));
+		err |= ibuf_add(buf, &map->type, sizeof(uint8_t));
+		err |= ibuf_add(buf, &map->fec.twcard.type, sizeof(uint8_t));
 
 		switch (map->fec.twcard.type) {
 		case MAP_TYPE_PREFIX:
 			twcard_len = sizeof(uint16_t);
-			SET_FLAG(err, ibuf_add(buf, &twcard_len, sizeof(uint8_t)));
+			err |= ibuf_add(buf, &twcard_len, sizeof(uint8_t));
 
 			switch (map->fec.twcard.u.prefix_af) {
 			case AF_INET:
@@ -630,13 +656,13 @@ gen_fec_tlv(struct ibuf *buf, struct map *map)
 				break;
 			}
 
-			SET_FLAG(err, ibuf_add(buf, &family, sizeof(uint16_t)));
+			err |= ibuf_add(buf, &family, sizeof(uint16_t));
 			break;
 		case MAP_TYPE_PWID:
 			twcard_len = sizeof(uint16_t);
-			SET_FLAG(err, ibuf_add(buf, &twcard_len, sizeof(uint8_t)));
+			err |= ibuf_add(buf, &twcard_len, sizeof(uint8_t));
 			pw_type = htons(map->fec.twcard.u.pw_type);
-			SET_FLAG(err, ibuf_add(buf, &pw_type, sizeof(uint16_t)));
+			err |= ibuf_add(buf, &pw_type, sizeof(uint16_t));
 			break;
 		default:
 			fatalx("gen_fec_tlv: unexpected fec type");
@@ -664,18 +690,21 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 		if (len == FEC_ELM_WCARD_LEN)
 			return (off);
 		else {
-			session_shutdown(nbr, S_BAD_TLV_VAL, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_VAL, msg->id,
+			    msg->type);
 			return (-1);
 		}
 		break;
 	case MAP_TYPE_PREFIX:
 		if (len < FEC_ELM_PREFIX_MIN_LEN) {
-			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
 		/* Address Family */
-		memcpy(&map->fec.prefix.af, buf + off, sizeof(map->fec.prefix.af));
+		memcpy(&map->fec.prefix.af, buf + off,
+		    sizeof(map->fec.prefix.af));
 		off += sizeof(map->fec.prefix.af);
 		map->fec.prefix.af = ntohs(map->fec.prefix.af);
 		switch (map->fec.prefix.af) {
@@ -686,7 +715,8 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 			map->fec.prefix.af = AF_INET6;
 			break;
 		default:
-			send_notification(nbr->tcp, S_UNSUP_ADDR, msg->id, msg->type);
+			send_notification(nbr->tcp, S_UNSUP_ADDR, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
@@ -697,16 +727,19 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 		     && map->fec.prefix.prefixlen > IPV4_MAX_BITLEN)
 		    || (map->fec.prefix.af == AF_IPV6
 			&& map->fec.prefix.prefixlen > IPV6_MAX_BITLEN)) {
-			session_shutdown(nbr, S_BAD_TLV_VAL, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_VAL, msg->id,
+			    msg->type);
 			return (-1);
 		}
 		if (len < off + PREFIX_SIZE(map->fec.prefix.prefixlen)) {
-			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
 		/* Prefix */
-		memset(&map->fec.prefix.prefix, 0, sizeof(map->fec.prefix.prefix));
+		memset(&map->fec.prefix.prefix, 0,
+		    sizeof(map->fec.prefix.prefix));
 		memcpy(&map->fec.prefix.prefix, buf + off,
 		    PREFIX_SIZE(map->fec.prefix.prefixlen));
 
@@ -717,16 +750,17 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 		return (off + PREFIX_SIZE(map->fec.prefix.prefixlen));
 	case MAP_TYPE_PWID:
 		if (len < FEC_PWID_ELM_MIN_LEN) {
-			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
 		/* PW type */
 		memcpy(&map->fec.pwid.type, buf + off, sizeof(uint16_t));
 		map->fec.pwid.type = ntohs(map->fec.pwid.type);
-		if (CHECK_FLAG(map->fec.pwid.type, CONTROL_WORD_FLAG)) {
-			SET_FLAG(map->flags, F_MAP_PW_CWORD);
-			UNSET_FLAG(map->fec.pwid.type, CONTROL_WORD_FLAG);
+		if (map->fec.pwid.type & CONTROL_WORD_FLAG) {
+			map->flags |= F_MAP_PW_CWORD;
+			map->fec.pwid.type &= ~CONTROL_WORD_FLAG;
 		}
 		off += sizeof(uint16_t);
 
@@ -735,7 +769,8 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 		off += sizeof(uint8_t);
 
 		if (len != FEC_PWID_ELM_MIN_LEN + pw_len) {
-			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
@@ -749,13 +784,14 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 			return (off);
 
 		if (pw_len < sizeof(uint32_t)) {
-			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
 		memcpy(&map->fec.pwid.pwid, buf + off, sizeof(uint32_t));
 		map->fec.pwid.pwid = ntohl(map->fec.pwid.pwid);
-		SET_FLAG(map->flags, F_MAP_PW_ID);
+		map->flags |= F_MAP_PW_ID;
 		off += sizeof(uint32_t);
 		pw_len -= sizeof(uint32_t);
 
@@ -764,26 +800,29 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 			struct subtlv 	stlv;
 
 			if (pw_len < sizeof(stlv)) {
-				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+				    msg->type);
 				return (-1);
 			}
 
 			memcpy(&stlv, buf + off, sizeof(stlv));
 			if (stlv.length > pw_len) {
-				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+				    msg->type);
 				return (-1);
 			}
 
 			switch (stlv.type) {
 			case SUBTLV_IFMTU:
 				if (stlv.length != FEC_SUBTLV_IFMTU_SIZE) {
-					session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+					session_shutdown(nbr, S_BAD_TLV_LEN,
+					    msg->id, msg->type);
 					return (-1);
 				}
 				memcpy(&map->fec.pwid.ifmtu, buf + off +
 				    SUBTLV_HDR_SIZE, sizeof(uint16_t));
 				map->fec.pwid.ifmtu = ntohs(map->fec.pwid.ifmtu);
-				SET_FLAG(map->flags, F_MAP_PW_IFMTU);
+				map->flags |= F_MAP_PW_IFMTU;
 				break;
 			default:
 				/* ignore */
@@ -796,7 +835,8 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 		return (off);
 	case MAP_TYPE_TYPED_WCARD:
 		if (len < FEC_ELM_TWCARD_MIN_LEN) {
-			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
@@ -805,19 +845,23 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 		memcpy(&twcard_len, buf + off, sizeof(uint8_t));
 		off += sizeof(uint8_t);
 		if (len != FEC_ELM_TWCARD_MIN_LEN + twcard_len) {
-			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+			session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+			    msg->type);
 			return (-1);
 		}
 
 		switch (map->fec.twcard.type) {
 		case MAP_TYPE_PREFIX:
 			if (twcard_len != sizeof(uint16_t)) {
-				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+				    msg->type);
 				return (-1);
 			}
 
-			memcpy(&map->fec.twcard.u.prefix_af, buf + off, sizeof(uint16_t));
-			map->fec.twcard.u.prefix_af = ntohs(map->fec.twcard.u.prefix_af);
+			memcpy(&map->fec.twcard.u.prefix_af, buf + off,
+			    sizeof(uint16_t));
+			map->fec.twcard.u.prefix_af =
+			    ntohs(map->fec.twcard.u.prefix_af);
 			off += sizeof(uint16_t);
 
 			switch (map->fec.twcard.u.prefix_af) {
@@ -828,24 +872,29 @@ tlv_decode_fec_elm(struct nbr *nbr, struct ldp_msg *msg, char *buf,
 				map->fec.twcard.u.prefix_af = AF_INET6;
 				break;
 			default:
-				session_shutdown(nbr, S_BAD_TLV_VAL, msg->id, msg->type);
+				session_shutdown(nbr, S_BAD_TLV_VAL, msg->id,
+				    msg->type);
 				return (-1);
 			}
 			break;
 		case MAP_TYPE_PWID:
 			if (twcard_len != sizeof(uint16_t)) {
-				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id, msg->type);
+				session_shutdown(nbr, S_BAD_TLV_LEN, msg->id,
+				    msg->type);
 				return (-1);
 			}
 
-			memcpy(&map->fec.twcard.u.pw_type, buf + off, sizeof(uint16_t));
-			map->fec.twcard.u.pw_type = ntohs(map->fec.twcard.u.pw_type);
+			memcpy(&map->fec.twcard.u.pw_type, buf + off,
+			    sizeof(uint16_t));
+			map->fec.twcard.u.pw_type =
+			    ntohs(map->fec.twcard.u.pw_type);
 			/* ignore the reserved bit as per RFC 6667 */
 			map->fec.twcard.u.pw_type &= ~PW_TWCARD_RESERVED_BIT;
 			off += sizeof(uint16_t);
 			break;
 		default:
-			send_notification(nbr->tcp, S_UNKNOWN_FEC, msg->id, msg->type);
+			send_notification(nbr->tcp, S_UNKNOWN_FEC, msg->id,
+			    msg->type);
 			return (-1);
 		}
 

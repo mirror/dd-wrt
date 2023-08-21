@@ -2,13 +2,13 @@
   "neighbors":{
     "192.168.0.2":[
       {
-        "nbrPriority":5,
+        "priority":5,
         "converged":"Full"
       }
     ],
     "192.168.0.3":[
       {
-        "nbrPriority":5,
+        "priority":5,
         "converged":"Full"
       }
     ]
