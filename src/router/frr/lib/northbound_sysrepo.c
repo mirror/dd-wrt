@@ -1,20 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2018  NetDEF, Inc.
  *                     Renato Westphal
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -36,12 +23,12 @@ DEFINE_MTYPE_STATIC(LIB, SYSREPO, "Sysrepo module");
 
 static struct debug nb_dbg_client_sysrepo = {0, "Northbound client: Sysrepo"};
 
-static struct thread_master *master;
+static struct event_loop *master;
 static sr_session_ctx_t *session;
 static sr_conn_ctx_t *connection;
 static struct nb_transaction *transaction;
 
-static void frr_sr_read_cb(struct thread *thread);
+static void frr_sr_read_cb(struct event *thread);
 static int frr_sr_finish(void);
 
 /* Convert FRR YANG data value to sysrepo YANG data value. */
@@ -281,8 +268,9 @@ static int frr_sr_config_change_cb_prepare(sr_session_ctx_t *session,
 	 * Validate the configuration changes and allocate all resources
 	 * required to apply them.
 	 */
-	ret = nb_candidate_commit_prepare(&context, candidate, NULL,
-					  &transaction, errmsg, sizeof(errmsg));
+	ret = nb_candidate_commit_prepare(context, candidate, NULL,
+					  &transaction, false, false, errmsg,
+					  sizeof(errmsg));
 	if (ret != NB_OK && ret != NB_ERR_NO_CHANGES)
 		flog_warn(
 			EC_LIB_LIBSYSREPO,
@@ -369,7 +357,7 @@ static int frr_sr_state_data_iter_cb(const struct lysc_node *snode,
 	ly_errno = 0;
 	ly_errno = lyd_new_path(NULL, ly_native_ctx, data->xpath, data->value,
 				0, &dnode);
-	if (!dnode && ly_errno) {
+	if (ly_errno) {
 		flog_warn(EC_LIB_LIBYANG, "%s: lyd_new_path() failed",
 			  __func__);
 		yang_data_free(data);
@@ -526,10 +514,10 @@ static int frr_sr_notification_send(const char *xpath, struct list *arguments)
 	return NB_OK;
 }
 
-static void frr_sr_read_cb(struct thread *thread)
+static void frr_sr_read_cb(struct event *thread)
 {
-	struct yang_module *module = THREAD_ARG(thread);
-	int fd = THREAD_FD(thread);
+	struct yang_module *module = EVENT_ARG(thread);
+	int fd = EVENT_FD(thread);
 	int ret;
 
 	ret = sr_subscription_process_events(module->sr_subscription, session,
@@ -540,7 +528,7 @@ static void frr_sr_read_cb(struct thread *thread)
 		return;
 	}
 
-	thread_add_read(master, frr_sr_read_cb, module, fd, &module->sr_thread);
+	event_add_read(master, frr_sr_read_cb, module, fd, &module->sr_thread);
 }
 
 static void frr_sr_subscribe_config(struct yang_module *module)
@@ -700,8 +688,8 @@ static int frr_sr_init(void)
 				 sr_strerror(ret));
 			goto cleanup;
 		}
-		thread_add_read(master, frr_sr_read_cb, module,
-				event_pipe, &module->sr_thread);
+		event_add_read(master, frr_sr_read_cb, module, event_pipe,
+			       &module->sr_thread);
 	}
 
 	hook_register(nb_notification_send, frr_sr_notification_send);
@@ -722,7 +710,7 @@ static int frr_sr_finish(void)
 		if (!module->sr_subscription)
 			continue;
 		sr_unsubscribe(module->sr_subscription);
-		THREAD_OFF(module->sr_thread);
+		EVENT_OFF(module->sr_thread);
 	}
 
 	if (session)
@@ -733,7 +721,7 @@ static int frr_sr_finish(void)
 	return 0;
 }
 
-static int frr_sr_module_config_loaded(struct thread_master *tm)
+static int frr_sr_module_config_loaded(struct event_loop *tm)
 {
 	master = tm;
 
@@ -748,7 +736,7 @@ static int frr_sr_module_config_loaded(struct thread_master *tm)
 	return 0;
 }
 
-static int frr_sr_module_late_init(struct thread_master *tm)
+static int frr_sr_module_late_init(struct event_loop *tm)
 {
 	frr_sr_cli_init();
 

@@ -1,19 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* EVPN header for multihoming procedures
  *
  * Copyright (C) 2019 Cumulus Networks
  * Anuradha Karuppiah
- *
- * This file is part of FRRouting.
- *
- * FRRouting is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * FRRouting is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
  *
  */
 
@@ -310,7 +299,7 @@ struct bgp_evpn_mh_info {
 	/* List of ESs with pending/periodic processing */
 	struct list *pend_es_list;
 	/* periodic timer for running background consistency checks */
-	struct thread *t_cons_check;
+	struct event *t_cons_check;
 
 	/* config knobs for optimizing or interop */
 	/* Generate EAD-EVI routes even if the ES is oper-down. This can be
