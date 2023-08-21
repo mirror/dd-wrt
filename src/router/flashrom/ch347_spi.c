@@ -276,11 +276,11 @@ static int ch347_spi_init(const struct programmer_cfg *cfg)
 	}
 
 	/* Enable information, warning, and error messages (only). */
-#if LIBUSB_API_VERSION < 0x01000106
+//#if LIBUSB_API_VERSION < 0x01000106
 	libusb_set_debug(NULL, 3);
-#else
-	libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
-#endif
+//#else
+//	libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+//#endif
 
 	uint16_t vid = devs_ch347_spi[0].vendor_id;
 	uint16_t pid = devs_ch347_spi[0].device_id;

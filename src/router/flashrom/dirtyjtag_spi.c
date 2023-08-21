@@ -216,11 +216,11 @@ static int dirtyjtag_spi_init(const struct programmer_cfg *cfg)
 		goto cleanup_djtag_struct;
 	}
 
-#if LIBUSB_API_VERSION < 0x01000106
+//#if LIBUSB_API_VERSION < 0x01000106
 	libusb_set_debug(djtag_data->libusb_ctx, 3);
-#else
-	libusb_set_option(djtag_data->libusb_ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
-#endif
+//#else
+//	libusb_set_option(djtag_data->libusb_ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+//#endif
 
 	uint16_t vid = devs_dirtyjtag_spi[0].vendor_id;
 	uint16_t pid = devs_dirtyjtag_spi[0].device_id;
