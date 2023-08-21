@@ -1,28 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * OSPF Sending and Receiving OSPF Packets.
  * Copyright (C) 1999, 2000 Toshiaki Takada
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
 #include "monotime.h"
-#include "thread.h"
+#include "frrevent.h"
 #include "memory.h"
 #include "linklist.h"
 #include "prefix.h"
@@ -43,6 +28,7 @@
 #include "ospfd/ospf_network.h"
 #include "ospfd/ospf_interface.h"
 #include "ospfd/ospf_ism.h"
+#include "ospfd/ospf_abr.h"
 #include "ospfd/ospf_asbr.h"
 #include "ospfd/ospf_lsa.h"
 #include "ospfd/ospf_lsdb.h"
@@ -453,11 +439,11 @@ static int ospf_make_md5_digest(struct ospf_interface *oi,
 }
 
 
-static void ospf_ls_req_timer(struct thread *thread)
+static void ospf_ls_req_timer(struct event *thread)
 {
 	struct ospf_neighbor *nbr;
 
-	nbr = THREAD_ARG(thread);
+	nbr = EVENT_ARG(thread);
 	nbr->t_ls_req = NULL;
 
 	/* Send Link State Request. */
@@ -470,17 +456,17 @@ static void ospf_ls_req_timer(struct thread *thread)
 
 void ospf_ls_req_event(struct ospf_neighbor *nbr)
 {
-	THREAD_OFF(nbr->t_ls_req);
-	thread_add_event(master, ospf_ls_req_timer, nbr, 0, &nbr->t_ls_req);
+	EVENT_OFF(nbr->t_ls_req);
+	event_add_event(master, ospf_ls_req_timer, nbr, 0, &nbr->t_ls_req);
 }
 
 /* Cyclic timer function.  Fist registered in ospf_nbr_new () in
    ospf_neighbor.c  */
-void ospf_ls_upd_timer(struct thread *thread)
+void ospf_ls_upd_timer(struct event *thread)
 {
 	struct ospf_neighbor *nbr;
 
-	nbr = THREAD_ARG(thread);
+	nbr = EVENT_ARG(thread);
 	nbr->t_ls_upd = NULL;
 
 	/* Send Link State Update. */
@@ -534,11 +520,11 @@ void ospf_ls_upd_timer(struct thread *thread)
 	OSPF_NSM_TIMER_ON(nbr->t_ls_upd, ospf_ls_upd_timer, nbr->v_ls_upd);
 }
 
-void ospf_ls_ack_timer(struct thread *thread)
+void ospf_ls_ack_timer(struct event *thread)
 {
 	struct ospf_interface *oi;
 
-	oi = THREAD_ARG(thread);
+	oi = EVENT_ARG(thread);
 	oi->t_ls_ack = NULL;
 
 	/* Send Link State Acknowledgment. */
@@ -622,9 +608,9 @@ static void ospf_write_frags(int fd, struct ospf_packet *op, struct ip *iph,
 }
 #endif /* WANT_OSPF_WRITE_FRAGMENT */
 
-static void ospf_write(struct thread *thread)
+static void ospf_write(struct event *thread)
 {
-	struct ospf *ospf = THREAD_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(thread);
 	struct ospf_interface *oi;
 	struct ospf_packet *op;
 	struct sockaddr_in sa_dst;
@@ -632,7 +618,7 @@ static void ospf_write(struct thread *thread)
 	struct msghdr msg;
 	struct iovec iov[2];
 	uint8_t type;
-	int ret;
+	int ret, fd;
 	int flags = 0;
 	struct listnode *node;
 #ifdef WANT_OSPF_WRITE_FRAGMENT
@@ -647,11 +633,12 @@ static void ospf_write(struct thread *thread)
 	struct cmsghdr *cm = (struct cmsghdr *)cmsgbuf;
 	struct in_pktinfo *pi;
 #endif
+	fd = ospf->fd;
 
-	if (ospf->fd < 0 || ospf->oi_running == 0) {
+	if (fd < 0 || ospf->oi_running == 0) {
 		if (IS_DEBUG_OSPF_EVENT)
 			zlog_debug("%s failed to send, fd %d, instance %u",
-				   __func__, ospf->fd, ospf->oi_running);
+				   __func__, fd, ospf->oi_running);
 		return;
 	}
 
@@ -671,6 +658,15 @@ static void ospf_write(struct thread *thread)
 		/* convenience - max OSPF data per packet */
 		maxdatasize = oi->ifp->mtu - sizeof(struct ip);
 #endif /* WANT_OSPF_WRITE_FRAGMENT */
+
+		/* Reset socket fd to use. */
+		fd = ospf->fd;
+
+		/* Check for per-interface socket */
+		if (ospf->intf_socket_enabled &&
+		    (IF_OSPF_IF_INFO(oi->ifp))->oii_fd > 0)
+			fd = (IF_OSPF_IF_INFO(oi->ifp))->oii_fd;
+
 		/* Get one packet from queue. */
 		op = ospf_fifo_head(oi->obuf);
 		assert(op);
@@ -678,8 +674,7 @@ static void ospf_write(struct thread *thread)
 
 		if (op->dst.s_addr == htonl(OSPF_ALLSPFROUTERS)
 		    || op->dst.s_addr == htonl(OSPF_ALLDROUTERS))
-			ospf_if_ipmulticast(ospf, oi->address,
-					    oi->ifp->ifindex);
+			ospf_if_ipmulticast(fd, oi->address, oi->ifp->ifindex);
 
 		/* Rewrite the md5 signature & update the seq */
 		ospf_make_md5_digest(oi, op);
@@ -774,13 +769,13 @@ static void ospf_write(struct thread *thread)
 
 #ifdef WANT_OSPF_WRITE_FRAGMENT
 		if (op->length > maxdatasize)
-			ospf_write_frags(ospf->fd, op, &iph, &msg, maxdatasize,
+			ospf_write_frags(fd, op, &iph, &msg, maxdatasize,
 					 oi->ifp->mtu, flags, type);
 #endif /* WANT_OSPF_WRITE_FRAGMENT */
 
 		/* send final fragment (could be first) */
 		sockopt_iphdrincl_swab_htosys(&iph);
-		ret = sendmsg(ospf->fd, &msg, flags);
+		ret = sendmsg(fd, &msg, flags);
 		sockopt_iphdrincl_swab_systoh(&iph);
 		if (IS_DEBUG_OSPF_EVENT)
 			zlog_debug(
@@ -861,8 +856,8 @@ static void ospf_write(struct thread *thread)
 
 	/* If packets still remain in queue, call write thread. */
 	if (!list_isempty(ospf->oi_write_q))
-		thread_add_write(master, ospf_write, ospf, ospf->fd,
-				 &ospf->t_write);
+		event_add_write(master, ospf_write, ospf, ospf->fd,
+				&ospf->t_write);
 }
 
 /* OSPF Hello message read -- RFC2328 Section 10.5. */
@@ -2120,6 +2115,14 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 			if (ospf_flood(oi->ospf, nbr, current, lsa)
 			    < 0) /* Trap NSSA later. */
 				DISCARD_LSA(lsa, 5);
+
+			/* GR: check for network topology change. */
+			if (ospf->gr_info.restart_in_progress &&
+			    ((lsa->data->type == OSPF_ROUTER_LSA ||
+			      lsa->data->type == OSPF_NETWORK_LSA)))
+				ospf_gr_check_lsdb_consistency(oi->ospf,
+							       oi->area);
+
 			continue;
 		}
 
@@ -2232,9 +2235,6 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 
 	assert(listcount(lsas) == 0);
 	list_delete(&lsas);
-
-	if (ospf->gr_info.restart_in_progress)
-		ospf_gr_check_lsdb_consistency(oi->ospf, oi->area);
 }
 
 /* OSPF Link State Acknowledgment message read -- RFC2328 Section 13.7. */
@@ -3212,17 +3212,17 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 }
 
 /* Starting point of packet process function. */
-void ospf_read(struct thread *thread)
+void ospf_read(struct event *thread)
 {
 	struct ospf *ospf;
 	int32_t count = 0;
 	enum ospf_read_return_enum ret;
 
 	/* first of all get interface pointer. */
-	ospf = THREAD_ARG(thread);
+	ospf = EVENT_ARG(thread);
 
 	/* prepare for next packet. */
-	thread_add_read(master, ospf_read, ospf, ospf->fd, &ospf->t_read);
+	event_add_read(master, ospf_read, ospf, ospf->fd, &ospf->t_read);
 
 	while (count < ospf->write_oi_count) {
 		count++;
@@ -3341,6 +3341,14 @@ static int ospf_make_hello(struct ospf_interface *oi, struct stream *s)
 	else
 		stream_putw(s, 0); /* hello-interval of 0 for fast-hellos */
 
+	/* Check if flood-reduction is enabled,
+	 * if yes set the DC bit in the options.
+	 */
+	if (OSPF_FR_CONFIG(oi->ospf, oi->area))
+		SET_FLAG(OPTIONS(oi), OSPF_OPTION_DC);
+	else if (CHECK_FLAG(OPTIONS(oi), OSPF_OPTION_DC))
+		UNSET_FLAG(OPTIONS(oi), OSPF_OPTION_DC);
+
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("%s: options: %x, int: %s", __func__, OPTIONS(oi),
 			   IF_NAME(oi));
@@ -3429,6 +3437,8 @@ static int ospf_make_db_desc(struct ospf_interface *oi,
 	options = OPTIONS(oi);
 	if (CHECK_FLAG(oi->ospf->config, OSPF_OPAQUE_CAPABLE))
 		SET_FLAG(options, OSPF_OPTION_O);
+	if (OSPF_FR_CONFIG(oi->ospf, oi->area))
+		SET_FLAG(options, OSPF_OPTION_DC);
 	stream_putc(s, options);
 
 	/* DD flags */
@@ -3737,11 +3747,11 @@ static void ospf_poll_send(struct ospf_nbr_nbma *nbr_nbma)
 	ospf_hello_send_sub(oi, nbr_nbma->addr.s_addr);
 }
 
-void ospf_poll_timer(struct thread *thread)
+void ospf_poll_timer(struct event *thread)
 {
 	struct ospf_nbr_nbma *nbr_nbma;
 
-	nbr_nbma = THREAD_ARG(thread);
+	nbr_nbma = EVENT_ARG(thread);
 	nbr_nbma->t_poll = NULL;
 
 	if (IS_DEBUG_OSPF(nsm, NSM_TIMERS))
@@ -3756,11 +3766,11 @@ void ospf_poll_timer(struct thread *thread)
 }
 
 
-void ospf_hello_reply_timer(struct thread *thread)
+void ospf_hello_reply_timer(struct event *thread)
 {
 	struct ospf_neighbor *nbr;
 
-	nbr = THREAD_ARG(thread);
+	nbr = EVENT_ARG(thread);
 	nbr->t_hello_reply = NULL;
 
 	if (IS_DEBUG_OSPF(nsm, NSM_TIMERS))
@@ -4030,9 +4040,8 @@ static struct ospf_packet *ospf_ls_upd_packet_new(struct list *update,
 	return ospf_packet_new(size - sizeof(struct ip));
 }
 
-static void ospf_ls_upd_queue_send(struct ospf_interface *oi,
-				   struct list *update, struct in_addr addr,
-				   int send_lsupd_now)
+void ospf_ls_upd_queue_send(struct ospf_interface *oi, struct list *update,
+			    struct in_addr addr, int send_lsupd_now)
 {
 	struct ospf_packet *op;
 	uint16_t length = OSPF_HEADER_SIZE;
@@ -4071,7 +4080,7 @@ static void ospf_ls_upd_queue_send(struct ospf_interface *oi,
 	ospf_packet_add(oi, op);
 	/* Call ospf_write() right away to send ospf packets to neighbors */
 	if (send_lsupd_now) {
-		struct thread os_packet_thd;
+		struct event os_packet_thd;
 
 		os_packet_thd.arg = (void *)oi->ospf;
 		if (oi->on_write_q == 0) {
@@ -4095,16 +4104,16 @@ static void ospf_ls_upd_queue_send(struct ospf_interface *oi,
 		 * is actually turned off.
 		 */
 		if (list_isempty(oi->ospf->oi_write_q))
-			THREAD_OFF(oi->ospf->t_write);
+			EVENT_OFF(oi->ospf->t_write);
 	} else {
 		/* Hook thread to write packet. */
 		OSPF_ISM_WRITE_ON(oi->ospf);
 	}
 }
 
-static void ospf_ls_upd_send_queue_event(struct thread *thread)
+static void ospf_ls_upd_send_queue_event(struct event *thread)
 {
-	struct ospf_interface *oi = THREAD_ARG(thread);
+	struct ospf_interface *oi = EVENT_ARG(thread);
 	struct route_node *rn;
 	struct route_node *rnext;
 	struct list *update;
@@ -4139,8 +4148,8 @@ static void ospf_ls_upd_send_queue_event(struct thread *thread)
 				"%s: update lists not cleared, %d nodes to try again, raising new event",
 				__func__, again);
 		oi->t_ls_upd_event = NULL;
-		thread_add_event(master, ospf_ls_upd_send_queue_event, oi, 0,
-				 &oi->t_ls_upd_event);
+		event_add_event(master, ospf_ls_upd_send_queue_event, oi, 0,
+				&oi->t_ls_upd_event);
 	}
 
 	if (IS_DEBUG_OSPF_EVENT)
@@ -4211,8 +4220,8 @@ void ospf_ls_upd_send(struct ospf_neighbor *nbr, struct list *update, int flag,
 					       rn->p.u.prefix4, 1);
 		}
 	} else
-		thread_add_event(master, ospf_ls_upd_send_queue_event, oi, 0,
-				 &oi->t_ls_upd_event);
+		event_add_event(master, ospf_ls_upd_send_queue_event, oi, 0,
+				&oi->t_ls_upd_event);
 }
 
 static void ospf_ls_ack_send_list(struct ospf_interface *oi, struct list *ack,
@@ -4249,9 +4258,9 @@ static void ospf_ls_ack_send_list(struct ospf_interface *oi, struct list *ack,
 	OSPF_ISM_WRITE_ON(oi->ospf);
 }
 
-static void ospf_ls_ack_send_event(struct thread *thread)
+static void ospf_ls_ack_send_event(struct event *thread)
 {
-	struct ospf_interface *oi = THREAD_ARG(thread);
+	struct ospf_interface *oi = EVENT_ARG(thread);
 
 	oi->t_ls_ack_direct = NULL;
 
@@ -4275,8 +4284,8 @@ void ospf_ls_ack_send(struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
 
 	listnode_add(oi->ls_ack_direct.ls_ack, ospf_lsa_lock(lsa));
 
-	thread_add_event(master, ospf_ls_ack_send_event, oi, 0,
-			 &oi->t_ls_ack_direct);
+	event_add_event(master, ospf_ls_ack_send_event, oi, 0,
+			&oi->t_ls_ack_direct);
 }
 
 /* Send Link State Acknowledgment delayed. */

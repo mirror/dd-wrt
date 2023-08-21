@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: ISC
 
 #
 # test_all_protocol_startup.py
@@ -6,20 +7,6 @@
 #
 # Copyright (c) 2017 by
 # Network Device Education Foundation, Inc. ("NetDEF")
-#
-# Permission to use, copy, modify, and/or distribute this software
-# for any purpose with or without fee is hereby granted, provided
-# that the above copyright notice and this permission notice appear
-# in all copies.
-#
-# THE SOFTWARE IS PROVIDED "AS IS" AND NETDEF DISCLAIMS ALL WARRANTIES
-# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL NETDEF BE LIABLE FOR
-# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
-# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-# WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
-# ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
-# OF THIS SOFTWARE.
 #
 
 """
@@ -95,6 +82,7 @@ def setup_module(module):
     #
     # Main router
     for i in range(1, 2):
+        net["r%s" % i].loadConf("mgmtd", "%s/r%s/zebra.conf" % (thisDir, i))
         net["r%s" % i].loadConf("zebra", "%s/r%s/zebra.conf" % (thisDir, i))
         net["r%s" % i].loadConf("ripd", "%s/r%s/ripd.conf" % (thisDir, i))
         net["r%s" % i].loadConf("ripngd", "%s/r%s/ripngd.conf" % (thisDir, i))
@@ -210,6 +198,12 @@ def test_error_messages_daemons():
     if fatal_error != "":
         pytest.skip(fatal_error)
 
+    if os.environ.get("TOPOTESTS_CHECK_STDERR") is None:
+        print(
+            "SKIPPED final check on StdErr output: Disabled (TOPOTESTS_CHECK_STDERR undefined)\n"
+        )
+        pytest.skip("Skipping test for Stderr output")
+
     print("\n\n** Check for error messages in daemons")
     print("******************************************\n")
 
@@ -299,6 +293,17 @@ def test_converge_protocols():
         pytest.skip(fatal_error)
 
     thisDir = os.path.dirname(os.path.realpath(__file__))
+
+    # We need loopback to have a link local so it always is the
+    # "selected" router for fe80::/64 when we static compare below.
+    print("Adding link-local to loopback for stable results")
+    cmd = (
+        "mac=`cat /sys/class/net/lo/address`; echo lo: $mac;"
+        " [ -z \"$mac\" ] && continue; IFS=':'; set $mac; unset IFS;"
+        " ip address add dev lo scope link"
+        " fe80::$(printf %02x $((0x$1 ^ 2)))$2:${3}ff:fe$4:$5$6/64"
+    )
+    net["r1"].cmd_raises(cmd)
 
     print("\n\n** Waiting for protocols convergence")
     print("******************************************\n")

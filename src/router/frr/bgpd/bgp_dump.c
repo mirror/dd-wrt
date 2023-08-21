@@ -1,21 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* BGP-4 dump routine
  * Copyright (C) 1999 Kunihiro Ishiguro
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -25,7 +10,7 @@
 #include "sockunion.h"
 #include "command.h"
 #include "prefix.h"
-#include "thread.h"
+#include "frrevent.h"
 #include "linklist.h"
 #include "queue.h"
 #include "memory.h"
@@ -84,11 +69,11 @@ struct bgp_dump {
 
 	char *interval_str;
 
-	struct thread *t_interval;
+	struct event *t_interval;
 };
 
 static int bgp_dump_unset(struct bgp_dump *bgp_dump);
-static void bgp_dump_interval_func(struct thread *);
+static void bgp_dump_interval_func(struct event *);
 
 /* BGP packet dump output buffer. */
 struct stream *bgp_dump_obuf;
@@ -169,13 +154,13 @@ static int bgp_dump_interval_add(struct bgp_dump *bgp_dump, int interval)
 			interval = interval
 				   - secs_into_day % interval; /* always > 0 */
 		}
-		thread_add_timer(bm->master, bgp_dump_interval_func, bgp_dump,
-				 interval, &bgp_dump->t_interval);
+		event_add_timer(bm->master, bgp_dump_interval_func, bgp_dump,
+				interval, &bgp_dump->t_interval);
 	} else {
 		/* One-off dump: execute immediately, don't affect any scheduled
 		 * dumps */
-		thread_add_event(bm->master, bgp_dump_interval_func, bgp_dump,
-				 0, &bgp_dump->t_interval);
+		event_add_event(bm->master, bgp_dump_interval_func, bgp_dump, 0,
+				&bgp_dump->t_interval);
 	}
 
 	return 0;
@@ -443,10 +428,10 @@ static unsigned int bgp_dump_routes_func(int afi, int first_run,
 	return seq;
 }
 
-static void bgp_dump_interval_func(struct thread *t)
+static void bgp_dump_interval_func(struct event *t)
 {
 	struct bgp_dump *bgp_dump;
-	bgp_dump = THREAD_ARG(t);
+	bgp_dump = EVENT_ARG(t);
 
 	/* Reschedule dump even if file couldn't be opened this time... */
 	if (bgp_dump_open_file(bgp_dump) != NULL) {
@@ -706,7 +691,7 @@ static int bgp_dump_unset(struct bgp_dump *bgp_dump)
 	}
 
 	/* Removing interval event. */
-	THREAD_OFF(bgp_dump->t_interval);
+	EVENT_OFF(bgp_dump->t_interval);
 
 	bgp_dump->interval = 0;
 

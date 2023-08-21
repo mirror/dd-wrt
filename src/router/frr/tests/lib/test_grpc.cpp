@@ -1,21 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * May 16 2021, Christian Hopps <chopps@labn.net>
  *
  * Copyright (c) 2021, LabN Consulting, L.L.C
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <time.h>
@@ -27,7 +14,7 @@
 #include "libfrr.h"
 #include "routing_nb.h"
 #include "northbound_cli.h"
-#include "thread.h"
+#include "frrevent.h"
 #include "vrf.h"
 #include "vty.h"
 
@@ -47,13 +34,13 @@
 #include <grpcpp/security/credentials.h>
 #include "grpc/frr-northbound.grpc.pb.h"
 
-DEFINE_HOOK(frr_late_init, (struct thread_master * tm), (tm));
+DEFINE_HOOK(frr_late_init, (struct event_loop * tm), (tm));
 DEFINE_KOOH(frr_fini, (), ());
 
 struct vty *vty;
 
 bool mpls_enabled;
-struct thread_master *master;
+struct event_loop *master;
 struct zebra_privs_t static_privs = {0};
 struct frrmod_runtime *grpc_module;
 char binpath[2 * MAXPATHLEN + 1];
@@ -79,7 +66,7 @@ static const struct frr_yang_module_info *const staticd_yang_modules[] = {
 	&frr_staticd_info,   &frr_vrf_info,
 };
 
-static void grpc_thread_stop(struct thread *thread);
+static void grpc_thread_stop(struct event *thread);
 
 static void _err_print(const void *cookie, const char *errstr)
 {
@@ -110,7 +97,7 @@ static void static_startup(void)
 
 	static_debug_init();
 
-	master = thread_master_create(NULL);
+	master = event_master_create(NULL);
 	nb_init(master, staticd_yang_modules, array_size(staticd_yang_modules),
 		false);
 
@@ -127,7 +114,7 @@ static void static_startup(void)
 	// Add a route
 	vty = vty_new();
 	vty->type = vty::VTY_TERM;
-	vty_config_enter(vty, true, false);
+	vty_config_enter(vty, true, false, false);
 
 	auto ret = cmd_execute(vty, "ip route 11.0.0.0/8 Null0", NULL, 0);
 	assert(!ret);
@@ -152,7 +139,7 @@ static void static_shutdown(void)
 	cmd_terminate();
 	nb_terminate();
 	yang_terminate();
-	thread_master_free(master);
+	event_master_free(master);
 	master = NULL;
 }
 
@@ -492,14 +479,14 @@ void *grpc_client_test_start(void *arg)
 
 	// Signal FRR event loop to stop
 	test_debug("client: pthread: adding event to stop us");
-	thread_add_event(master, grpc_thread_stop, NULL, 0, NULL);
+	event_add_event(master, grpc_thread_stop, NULL, 0, NULL);
 
 	test_debug("client: pthread: DONE (returning)");
 
 	return NULL;
 }
 
-static void grpc_thread_start(struct thread *thread)
+static void grpc_thread_start(struct event *thread)
 {
 	struct frr_pthread_attr client = {
 		.start = grpc_client_test_start,
@@ -511,7 +498,7 @@ static void grpc_thread_start(struct thread *thread)
 	frr_pthread_wait_running(pth);
 }
 
-static void grpc_thread_stop(struct thread *thread)
+static void grpc_thread_stop(struct event *thread)
 {
 	std::cout << __func__ << ": frr_pthread_stop_all" << std::endl;
 	frr_pthread_stop_all();
@@ -555,12 +542,12 @@ int main(int argc, char **argv)
 
 	static_startup();
 
-	thread_add_event(master, grpc_thread_start, NULL, 0, NULL);
+	event_add_event(master, grpc_thread_start, NULL, 0, NULL);
 
 	/* Event Loop */
-	struct thread thread;
-	while (thread_fetch(master, &thread))
-		thread_call(&thread);
+	struct event thread;
+	while (event_fetch(master, &thread))
+		event_call(&thread);
 	return 0;
 }
 

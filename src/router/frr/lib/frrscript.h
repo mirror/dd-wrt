@@ -1,20 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* Scripting foo
  * Copyright (C) 2020  NVIDIA Corporation
  * Quentin Young
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #ifndef __FRRSCRIPT_H__
 #define __FRRSCRIPT_H__
@@ -211,7 +198,6 @@ struct interface * : lua_pushinterface,                         \
 struct in_addr * : lua_pushinaddr,                              \
 struct in6_addr * : lua_pushin6addr,                            \
 union sockunion * : lua_pushsockunion,                          \
-time_t * : lua_pushtimet,                                       \
 char * : lua_pushstring_wrapper,                                \
 struct attr * : lua_pushattr,                                   \
 struct peer * : lua_pushpeer,                                   \
@@ -232,7 +218,6 @@ struct interface * : lua_decode_interface,                      \
 struct in_addr * : lua_decode_inaddr,                           \
 struct in6_addr * : lua_decode_in6addr,                         \
 union sockunion * : lua_decode_sockunion,                       \
-time_t * : lua_decode_timet,                                    \
 char * : lua_decode_stringp,                                    \
 struct attr * : lua_decode_attr,                                \
 struct peer * : lua_decode_noop,                                \
