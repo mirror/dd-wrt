@@ -25,7 +25,7 @@
 #if __has_include(<pciutils/pci.h>)
 #include <pciutils/pci.h>
 #else
-#include <pci/pci.h>
+#include <pci.h>
 #endif
 
 #endif /* __PLATFORM_PCI_H__ */

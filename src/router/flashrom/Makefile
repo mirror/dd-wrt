@@ -28,12 +28,11 @@ PROGRAM = flashrom
 STRIP   ?= strip
 STRIP_ARGS = -s
 INSTALL = install
-PREFIX  ?= /usr/local
+PREFIX  = $(INSTALLDIR)/usr
 MANDIR  ?= $(PREFIX)/share/man
 BASHCOMPDIR ?= $(PREFIX)/share/bash-completion/completions
-CFLAGS  ?= -Os -Wall -Wextra -Wno-unused-parameter -Wshadow -Wmissing-prototypes -Wwrite-strings
+CFLAGS  = -Os -Wall -Wextra -Wno-unused-parameter -Wshadow -Wmissing-prototypes -Wwrite-strings -DNEED_PRINTF $(LTO) -I$(TOP)/pciutils/lib -I$(TOP)/usb_modeswitch/libusb/libusb
 EXPORTDIR ?= .
-RANLIB  ?= ranlib
 PKG_CONFIG ?= pkg-config
 BUILD_DETAILS_FILE ?= build_details.txt
 SPHINXBUILD ?= sphinx-build
@@ -57,7 +56,7 @@ CONFIG_DEFAULT_PROGRAMMER_ARGS ?=
 # The user can provide CPP, C and LDFLAGS and the Makefile will extend these
 override CPPFLAGS := $(CPPFLAGS)
 override CFLAGS   := $(CFLAGS)
-override LDFLAGS  := $(LDFLAGS)
+override LDFLAGS  := $(LDFLAGS) -L$(TOP)/pciutils/lib -L$(TOP)/libudev/src/libudev/.libs -L$(TOP)/usb_modeswitch/libusb/libusb/.libs
 
 # If your compiler spits out excessive warnings, run make WARNERROR=no
 # You shouldn't have to change this flag.
@@ -167,9 +166,9 @@ DEPENDS_ON_LIBUSB1 := \
 	CONFIG_STLINKV3_SPI \
 	CONFIG_DIRTYJTAG_SPI \
 
-DEPENDS_ON_LIBFTDI1 := \
-	CONFIG_FT2232_SPI \
-	CONFIG_USBBLASTER_SPI \
+#DEPENDS_ON_LIBFTDI1 := \
+#	CONFIG_FT2232_SPI \
+#	CONFIG_USBBLASTER_SPI \
 
 DEPENDS_ON_LIBJAYLINK := \
 	CONFIG_JLINK_SPI \
@@ -207,9 +206,9 @@ endif
 CC_WORKING := $(call c_compile_test, Makefile.d/cc_test.c)
 
 # Configs for dependencies. Can be overwritten by commandline
-CONFIG_LIBFTDI1_VERSION    := $(call dependency_version, libftdi1)
-CONFIG_LIBFTDI1_CFLAGS     := $(call dependency_cflags, libftdi1)
-CONFIG_LIBFTDI1_LDFLAGS    := $(call dependency_ldflags, libftdi1)
+#CONFIG_LIBFTDI1_VERSION    := $(call dependency_version, libftdi1)
+#CONFIG_LIBFTDI1_CFLAGS     := $(call dependency_cflags, libftdi1)
+#CONFIG_LIBFTDI1_LDFLAGS    := $(call dependency_ldflags, libftdi1)
 
 CONFIG_NI845X_LIBRARY_PATH := 'C:\Program Files (x86)\National Instruments\NI-845x\MS Visual C'
 CONFIG_LIB_NI845X_CFLAGS   := -I$(CONFIG_NI845X_LIBRARY_PATH)
@@ -236,13 +235,13 @@ override ARCH       := $(call c_macro_test, Makefile.d/arch_test.h)
 override ENDIAN     := $(call c_macro_test, Makefile.d/endian_test.h)
 
 
-HAS_LIBFTDI1        := $(call find_dependency, libftdi1)
+#HAS_LIBFTDI1        := $(call find_dependency, libftdi1)
 HAS_LIB_NI845X      := no
 HAS_LIBJAYLINK      := $(call find_dependency, libjaylink)
 HAS_LIBUSB1         := $(call find_dependency, libusb-1.0)
 HAS_LIBPCI          := $(call find_dependency, libpci)
 
-HAS_FT232H          := $(call c_compile_test, Makefile.d/ft232h_test.c, $(CONFIG_LIBFTDI1_CFLAGS))
+#HAS_FT232H          := $(call c_compile_test, Makefile.d/ft232h_test.c, $(CONFIG_LIBFTDI1_CFLAGS))
 HAS_UTSNAME         := $(call c_compile_test, Makefile.d/utsname_test.c)
 HAS_CLOCK_GETTIME   := $(call c_compile_test, Makefile.d/clock_gettime_test.c)
 HAS_EXTERN_LIBRT    := $(call c_link_test, Makefile.d/clock_gettime_test.c, , -lrt)
@@ -250,7 +249,6 @@ HAS_LINUX_MTD       := $(call c_compile_test, Makefile.d/linux_mtd_test.c)
 HAS_LINUX_SPI       := $(call c_compile_test, Makefile.d/linux_spi_test.c)
 HAS_LINUX_I2C       := $(call c_compile_test, Makefile.d/linux_i2c_test.c)
 HAS_SERIAL          := $(strip $(if $(filter $(TARGET_OS), DOS libpayload), no, yes))
-HAS_SPHINXBUILD     := $(shell command -v $(SPHINXBUILD) &>/dev/null && echo yes || echo no)
 EXEC_SUFFIX         := $(strip $(if $(filter $(TARGET_OS), DOS MinGW), .exe))
 
 override CFLAGS += -Iinclude
@@ -441,10 +439,10 @@ CONFIG_ATAVIA ?= yes
 CONFIG_ATAPROMISE ?= no
 
 # Always enable FT2232 SPI dongles for now.
-CONFIG_FT2232_SPI ?= yes
+CONFIG_FT2232_SPI ?= no
 
 # Always enable Altera USB-Blaster dongles for now.
-CONFIG_USBBLASTER_SPI ?= yes
+CONFIG_USBBLASTER_SPI ?= no
 
 # MSTAR DDC support needs more tests/reviews/cleanups.
 CONFIG_MSTARDDC_SPI ?= no
@@ -1018,16 +1016,9 @@ $(PROGRAM)$(EXEC_SUFFIX): $(CLI_OBJS) libflashrom.a
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 libflashrom.a: $(OBJS)
-	$(AR) rcs $@ $^
-	$(RANLIB) $@
+	$(AR) rcs $(LTOPLUGIN) $@ $^
+	$(RANLIB) $(LTOPLUGIN) $@
 
-man8/$(PROGRAM).8: doc/*
-	@if [ "$(HAS_SPHINXBUILD)" = "yes" ]; then			\
-		$(SPHINXBUILD) -Drelease=$(VERSION) -b man doc .;	\
-	else								\
-		echo "$(SPHINXBUILD) not found. Can't build man-page";	\
-		exit 1;							\
-	fi
 
 $(PROGRAM).bash: util/$(PROGRAM).bash-completion.tmpl
 	@# Add to the bash completion file a list of enabled programmers.
@@ -1044,15 +1035,9 @@ clean:
 		man8 .doctrees $(PROGRAM).bash $(BUILD_DETAILS_FILE)
 	@+$(MAKE) -C util/ich_descriptors_tool/ clean
 
-install: $(PROGRAM)$(EXEC_SUFFIX) $(call has_dependency, $(HAS_SPHINXBUILD), man8/$(PROGRAM).8) $(PROGRAM).bash
+install: $(PROGRAM)$(EXEC_SUFFIX)
 	mkdir -p $(DESTDIR)$(PREFIX)/sbin
 	$(INSTALL) -m 0755 $(PROGRAM)$(EXEC_SUFFIX) $(DESTDIR)$(PREFIX)/sbin
-	mkdir -p $(DESTDIR)$(BASHCOMPDIR)
-	$(INSTALL) -m 0644 $(PROGRAM).bash $(DESTDIR)$(BASHCOMPDIR)
-ifeq ($(HAS_SPHINXBUILD), yes)
-	mkdir -p $(DESTDIR)$(MANDIR)/man8
-	$(INSTALL) -m 0644 man8/$(PROGRAM).8 $(DESTDIR)$(MANDIR)/man8
-endif
 
 libinstall: libflashrom.a include/libflashrom.h
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
