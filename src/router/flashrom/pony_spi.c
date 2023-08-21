@@ -36,6 +36,7 @@
  * DCE  >-------> DSR
  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
@@ -49,54 +50,62 @@ enum pony_type {
 	TYPE_AJAWE
 };
 
-/* Pins for master->slave direction */
-static int pony_negate_cs = 1;
-static int pony_negate_sck = 0;
-static int pony_negate_mosi = 0;
-/* Pins for slave->master direction */
-static int pony_negate_miso = 0;
+struct pony_spi_data {
+	/* Pins for master->slave direction */
+	bool negate_cs;
+	bool negate_sck;
+	bool negate_mosi;
+	/* Pins for slave->master direction */
+	bool negate_miso;
+};
 
-static void pony_bitbang_set_cs(int val)
+static void pony_bitbang_set_cs(int val, void *spi_data)
 {
-	if (pony_negate_cs)
+	struct pony_spi_data *data = spi_data;
+
+	if (data->negate_cs)
 		val ^=  1;
 
 	sp_set_pin(PIN_TXD, val);
 }
 
-static void pony_bitbang_set_sck(int val)
+static void pony_bitbang_set_sck(int val, void *spi_data)
 {
-	if (pony_negate_sck)
+	struct pony_spi_data *data = spi_data;
+
+	if (data->negate_sck)
 		val ^=  1;
 
 	sp_set_pin(PIN_RTS, val);
 }
 
-static void pony_bitbang_set_mosi(int val)
+static void pony_bitbang_set_mosi(int val, void *spi_data)
 {
-	if (pony_negate_mosi)
+	struct pony_spi_data *data = spi_data;
+
+	if (data->negate_mosi)
 		val ^=  1;
 
 	sp_set_pin(PIN_DTR, val);
 }
 
-static int pony_bitbang_get_miso(void)
+static int pony_bitbang_get_miso(void *spi_data)
 {
+	struct pony_spi_data *data = spi_data;
 	int tmp = sp_get_pin(PIN_CTS);
 
-	if (pony_negate_miso)
+	if (data->negate_miso)
 		tmp ^= 1;
 
 	return tmp;
 }
 
 static const struct bitbang_spi_master bitbang_spi_master_pony = {
-	.type = BITBANG_SPI_MASTER_PONY,
-	.set_cs = pony_bitbang_set_cs,
-	.set_sck = pony_bitbang_set_sck,
-	.set_mosi = pony_bitbang_set_mosi,
-	.get_miso = pony_bitbang_get_miso,
-	.half_period = 0,
+	.set_cs		= pony_bitbang_set_cs,
+	.set_sck	= pony_bitbang_set_sck,
+	.set_mosi	= pony_bitbang_set_mosi,
+	.get_miso	= pony_bitbang_get_miso,
+	.half_period	= 0,
 };
 
 static int pony_spi_shutdown(void *data)
@@ -108,83 +117,109 @@ static int pony_spi_shutdown(void *data)
 	else
 		msg_pdbg("Pony SPI shutdown completed.\n");
 
+	free(data);
 	return ret;
 }
 
-int pony_spi_init(void)
+static int get_params(const struct programmer_cfg *cfg, enum pony_type *type, bool *have_device)
 {
-	int i, data_out;
 	char *arg = NULL;
-	enum pony_type type = TYPE_SI_PROG;
-	char *name;
-	int have_device = 0;
-	int have_prog = 0;
+	int ret = 0;
+
+	/* defaults */
+	*type = TYPE_SI_PROG;
+	*have_device = false;
 
 	/* The parameter is in format "dev=/dev/device,type=serbang" */
-	arg = extract_programmer_param("dev");
+	arg = extract_programmer_param_str(cfg, "dev");
 	if (arg && strlen(arg)) {
 		sp_fd = sp_openserport(arg, 9600);
-		if (sp_fd == SER_INV_FD) {
-			free(arg);
-			return 1;
-		}
-		if (register_shutdown(pony_spi_shutdown, NULL) != 0) {
-			free(arg);
-			serialport_shutdown(NULL);
-			return 1;
-		}
-		have_device++;
+		if (sp_fd == SER_INV_FD)
+			ret = 1;
+		else
+			*have_device = true;
 	}
 	free(arg);
 
+	arg = extract_programmer_param_str(cfg, "type");
+	if (arg && !strcasecmp(arg, "serbang")) {
+		*type = TYPE_SERBANG;
+	} else if (arg && !strcasecmp(arg, "si_prog")) {
+		*type = TYPE_SI_PROG;
+	} else if (arg && !strcasecmp( arg, "ajawe")) {
+		*type = TYPE_AJAWE;
+	} else if (arg && !strlen(arg)) {
+		msg_perr("Error: Missing argument for programmer type.\n");
+		ret = 1;
+	} else if (arg) {
+		msg_perr("Error: Invalid programmer type specified.\n");
+		ret = 1;
+	}
+	free(arg);
+
+	return ret;
+}
+
+static int pony_spi_init(const struct programmer_cfg *cfg)
+{
+	int i, data_out;
+	enum pony_type type;
+	const char *name;
+	bool have_device;
+	bool have_prog = false;
+
+	if (get_params(cfg, &type, &have_device)) {
+		serialport_shutdown(NULL);
+		return 1;
+	}
 	if (!have_device) {
 		msg_perr("Error: No valid device specified.\n"
 			 "Use flashrom -p pony_spi:dev=/dev/device[,type=name]\n");
+		serialport_shutdown(NULL);
 		return 1;
 	}
 
-	arg = extract_programmer_param("type");
-	if (arg && !strcasecmp(arg, "serbang")) {
-		type = TYPE_SERBANG;
-	} else if (arg && !strcasecmp(arg, "si_prog")) {
-		type = TYPE_SI_PROG;
-	} else if (arg && !strcasecmp( arg, "ajawe")) {
-		type = TYPE_AJAWE;
-	} else if (arg && !strlen(arg)) {
-		msg_perr("Error: Missing argument for programmer type.\n");
-		free(arg);
-		return 1;
-	} else if (arg){
-		msg_perr("Error: Invalid programmer type specified.\n");
-		free(arg);
+	struct pony_spi_data *data = calloc(1, sizeof(*data));
+	if (!data) {
+		msg_perr("Unable to allocate space for SPI master data\n");
+		serialport_shutdown(NULL);
 		return 1;
 	}
-	free(arg);
+	data->negate_cs = true;
+	data->negate_sck = false;
+	data->negate_mosi = false;
+	data->negate_miso = false;
+
+	if (register_shutdown(pony_spi_shutdown, data) != 0) {
+		free(data);
+		serialport_shutdown(NULL);
+		return 1;
+	}
 
 	/*
 	 * Configure the serial port pins, depending on the used programmer.
 	 */
 	switch (type) {
 	case TYPE_AJAWE:
-		pony_negate_cs = 1;
-		pony_negate_sck = 1;
-		pony_negate_mosi = 1;
-		pony_negate_miso = 1;
+		data->negate_cs = true;
+		data->negate_sck = true;
+		data->negate_mosi = true;
+		data->negate_miso = true;
 		name = "AJAWe";
 		break;
 	case TYPE_SERBANG:
-		pony_negate_cs = 0;
-		pony_negate_sck = 0;
-		pony_negate_mosi = 0;
-		pony_negate_miso = 1;
+		data->negate_cs = false;
+		data->negate_sck = false;
+		data->negate_mosi = false;
+		data->negate_miso = true;
 		name = "serbang";
 		break;
 	default:
 	case TYPE_SI_PROG:
-		pony_negate_cs = 1;
-		pony_negate_sck = 0;
-		pony_negate_mosi = 0;
-		pony_negate_miso = 0;
+		data->negate_cs = true;
+		data->negate_sck = false;
+		data->negate_mosi = false;
+		data->negate_miso = false;
 		name = "SI-Prog";
 		break;
 	}
@@ -193,27 +228,27 @@ int pony_spi_init(void)
 	/*
 	 * Detect if there is a compatible hardware programmer connected.
 	 */
-	pony_bitbang_set_cs(1);
-	pony_bitbang_set_sck(1);
-	pony_bitbang_set_mosi(1);
+	pony_bitbang_set_cs(1, data);
+	pony_bitbang_set_sck(1, data);
+	pony_bitbang_set_mosi(1, data);
 
 	switch (type) {
 	case TYPE_AJAWE:
-		have_prog = 1;
+		have_prog = true;
 		break;
 	case TYPE_SI_PROG:
 	case TYPE_SERBANG:
 	default:
-		have_prog = 1;
+		have_prog = true;
 		/* We toggle RTS/SCK a few times and see if DSR changes too. */
 		for (i = 1; i <= 10; i++) {
 			data_out = i & 1;
 			sp_set_pin(PIN_RTS, data_out);
-			programmer_delay(1000);
+			default_delay(1000);
 
 			/* If DSR does not change, we are not connected to what we think */
 			if (data_out != sp_get_pin(PIN_DSR)) {
-				have_prog = 0;
+				have_prog = false;
 				break;
 			}
 		}
@@ -225,8 +260,16 @@ int pony_spi_init(void)
 		return 1;
 	}
 
-	if (register_spi_bitbang_master(&bitbang_spi_master_pony)) {
+	if (register_spi_bitbang_master(&bitbang_spi_master_pony, data))
 		return 1;
-	}
+
 	return 0;
 }
+
+const struct programmer_entry programmer_pony_spi = {
+	.name			= "pony_spi",
+	.type			= OTHER,
+				/* FIXME */
+	.devs.note		= "Programmers compatible with SI-Prog, serbang or AJAWe\n",
+	.init			= pony_spi_init,
+};

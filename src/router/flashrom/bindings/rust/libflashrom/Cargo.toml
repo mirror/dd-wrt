@@ -1,0 +1,24 @@
+[package]
+name = "libflashrom"
+version = "0.1.0"
+description = "Bindings to the libflashrom library."
+readme = "../README"
+homepage = "https://www.flashrom.org/"
+repository = "https://review.coreboot.org/plugins/gitiles/flashrom/"
+license = "GPL-2.0-only"
+categories = ["api-bindings", "hardware-support"]
+edition = "2021"
+
+[dependencies]
+libflashrom-sys = { path = "../libflashrom-sys" }
+libc = "0.2.124"
+regex = "1.5.5"
+once_cell = "1.7.2"
+
+[dev-dependencies]
+rusty-fork = "0.3.0"
+gag = "1"
+
+[build-dependencies]
+pkg-config = "0.3.19"
+cc = "1.0.72"

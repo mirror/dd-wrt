@@ -22,6 +22,7 @@
  *  - Order number: 290658-004
  */
 
+#include <stdbool.h>
 #include "flash.h"
 #include "chipdrivers.h"
 
@@ -44,11 +45,11 @@ int probe_82802ab(struct flashctx *flash)
 
 	/* Reset to get a clean state */
 	chip_writeb(flash, 0xFF, bios);
-	programmer_delay(10);
+	programmer_delay(flash, 10);
 
 	/* Enter ID mode */
 	chip_writeb(flash, 0x90, bios);
-	programmer_delay(10);
+	programmer_delay(flash, 10);
 
 	id1 = chip_readb(flash, bios + (0x00 << shifted));
 	id2 = chip_readb(flash, bios + (0x01 << shifted));
@@ -56,7 +57,7 @@ int probe_82802ab(struct flashctx *flash)
 	/* Leave ID mode */
 	chip_writeb(flash, 0xFF, bios);
 
-	programmer_delay(10);
+	programmer_delay(flash, 10);
 
 	msg_cdbg("%s: id1 0x%02x, id2 0x%02x", __func__, id1, id2);
 
@@ -89,9 +90,9 @@ uint8_t wait_82802ab(struct flashctx *flash)
 	chipaddr bios = flash->virtual_memory;
 
 	chip_writeb(flash, 0x70, bios);
-	if ((chip_readb(flash, bios) & 0x80) == 0) {	// it's busy
-		while ((chip_readb(flash, bios) & 0x80) == 0) ;
-	}
+
+	while ((chip_readb(flash, bios) & 0x80) == 0)	// it's busy
+		;
 
 	status = chip_readb(flash, bios);
 
@@ -113,7 +114,7 @@ int erase_block_82802ab(struct flashctx *flash, unsigned int page,
 	// now start it
 	chip_writeb(flash, 0x20, bios + page);
 	chip_writeb(flash, 0xd0, bios + page);
-	programmer_delay(10);
+	programmer_delay(flash, 10);
 
 	// now let's see what the register is
 	status = wait_82802ab(flash);
@@ -126,7 +127,7 @@ int erase_block_82802ab(struct flashctx *flash, unsigned int page,
 /* chunksize is 1 */
 int write_82802ab(struct flashctx *flash, const uint8_t *src, unsigned int start, unsigned int len)
 {
-	int i;
+	unsigned int i;
 	chipaddr dst = flash->virtual_memory + start;
 
 	for (i = 0; i < len; i++) {
@@ -134,17 +135,19 @@ int write_82802ab(struct flashctx *flash, const uint8_t *src, unsigned int start
 		chip_writeb(flash, 0x40, dst);
 		chip_writeb(flash, *src++, dst++);
 		wait_82802ab(flash);
+		update_progress(flash, FLASHROM_PROGRESS_WRITE, i + 1, len);
 	}
 
 	/* FIXME: Ignore errors for now. */
 	return 0;
 }
 
-int unlock_28f004s5(struct flashctx *flash)
+static int unlock_28f004s5(struct flashctx *flash)
 {
 	chipaddr bios = flash->virtual_memory;
-	uint8_t mcfg, bcfg, need_unlock = 0, can_unlock = 0;
-	int i;
+	uint8_t mcfg, bcfg;
+	bool need_unlock = false, can_unlock = false;
+	unsigned int i;
 
 	/* Clear status register */
 	chip_writeb(flash, 0x50, bios);
@@ -159,7 +162,7 @@ int unlock_28f004s5(struct flashctx *flash)
 		msg_cdbg("locked!\n");
 	} else {
 		msg_cdbg("unlocked!\n");
-		can_unlock = 1;
+		can_unlock = true;
 	}
 
 	/* Read block lock-bits */
@@ -167,7 +170,7 @@ int unlock_28f004s5(struct flashctx *flash)
 		bcfg = chip_readb(flash, bios + i + 2); // read block lock config
 		msg_cdbg("block lock at %06x is %slocked!\n", i, bcfg ? "" : "un");
 		if (bcfg) {
-			need_unlock = 1;
+			need_unlock = true;
 		}
 	}
 
@@ -192,12 +195,12 @@ int unlock_28f004s5(struct flashctx *flash)
 	return 0;
 }
 
-int unlock_lh28f008bjt(struct flashctx *flash)
+static int unlock_lh28f008bjt(struct flashctx *flash)
 {
 	chipaddr bios = flash->virtual_memory;
 	uint8_t mcfg, bcfg;
-	uint8_t need_unlock = 0, can_unlock = 0;
-	int i;
+	bool need_unlock = false, can_unlock = false;
+	unsigned int i;
 
 	/* Wait if chip is busy */
 	wait_82802ab(flash);
@@ -212,7 +215,7 @@ int unlock_lh28f008bjt(struct flashctx *flash)
 		msg_cdbg("locked!\n");
 	} else {
 		msg_cdbg("unlocked!\n");
-		can_unlock = 1;
+		can_unlock = true;
 	}
 
 	/* Read block lock-bits, 8 * 8 KB + 15 * 64 KB */
@@ -222,7 +225,7 @@ int unlock_lh28f008bjt(struct flashctx *flash)
 		msg_cdbg("block lock at %06x is %slocked!\n", i,
 			 bcfg ? "" : "un");
 		if (bcfg)
-			need_unlock = 1;
+			need_unlock = true;
 	}
 
 	/* Reset chip */
@@ -245,4 +248,13 @@ int unlock_lh28f008bjt(struct flashctx *flash)
 	}
 
 	return 0;
+}
+
+blockprotect_func_t *lookup_82802ab_blockprotect_func_ptr(const struct flashchip *const chip)
+{
+	switch (chip->unlock) {
+		case UNLOCK_28F004S5: return unlock_28f004s5;
+		case UNLOCK_LH28F008BJT: return unlock_lh28f008bjt;
+		default: return NULL; /* fallthough */
+	};
 }

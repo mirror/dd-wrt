@@ -1,0 +1,24 @@
+FROM manibase
+
+ARG PROTO=https
+RUN \
+	adduser -D mani mani && \
+	sed -i "s/https/${PROTO}/" /etc/apk/repositories && \
+	apk update && \
+	apk add ca-certificates build-base linux-headers git ccache \
+		pciutils-dev libusb-compat-dev libusb-dev
+
+# fix weird permissions in armhf-v3.11
+RUN [ -d /usr/share/git-core/templates ] && \
+	chmod -R a+r /usr/share/git-core/templates
+
+ENV GIT_SSL_NO_VERIFY=1
+USER mani
+RUN \
+	cd && \
+	mkdir .ccache && chown mani:mani .ccache && \
+	git clone https://review.coreboot.org/flashrom.git
+
+ENV DEVSHELL /bin/sh
+COPY mani-wrapper.sh /home/mani/
+ENTRYPOINT ["/bin/sh", "/home/mani/mani-wrapper.sh"]

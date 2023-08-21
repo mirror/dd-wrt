@@ -35,7 +35,7 @@ static int spi_sfdp_read_sfdp_chunk(struct flashctx *flash, uint32_t address, ui
 		 */
 		0
 	};
-	msg_cspew("%s: addr=0x%x, len=%d, data:\n", __func__, address, len);
+	msg_cspew("%s: addr=0x%"PRIx32", len=%d, data:\n", __func__, address, len);
 	newbuf = malloc(len + 1);
 	if (!newbuf)
 		return SPI_PROGRAMMER_ERROR;
@@ -81,9 +81,9 @@ static int sfdp_add_uniform_eraser(struct flashchip *chip, uint8_t opcode, uint3
 {
 	int i;
 	uint32_t total_size = chip->total_size * 1024;
-	erasefunc_t *erasefn = spi_get_erasefn_from_opcode(opcode);
+	enum block_erase_func erasefn = spi25_get_erasefn_from_opcode(opcode);
 
-	if (erasefn == NULL || total_size == 0 || block_size == 0 ||
+	if (erasefn == NO_BLOCK_ERASE_FUNC || total_size == 0 || block_size == 0 ||
 	    total_size % block_size != 0) {
 		msg_cdbg("%s: invalid input, please report to "
 			 "flashrom@flashrom.org\n", __func__);
@@ -96,12 +96,12 @@ static int sfdp_add_uniform_eraser(struct flashchip *chip, uint8_t opcode, uint3
 		if (eraser->eraseblocks[0].size == block_size &&
 		    eraser->block_erase == erasefn) {
 			msg_cdbg2("  Tried to add a duplicate block eraser: "
-				  "%d x %d B with opcode 0x%02x.\n",
+				  "%"PRId32" x %"PRId32" B with opcode 0x%02x.\n",
 				  total_size/block_size, block_size, opcode);
 			return 1;
 		}
 		if (eraser->eraseblocks[0].size != 0 ||
-		    eraser->block_erase != NULL) {
+		    eraser->block_erase != NO_BLOCK_ERASE_FUNC) {
 			msg_cspew("  Block Eraser %d is already occupied.\n",
 				  i);
 			continue;
@@ -110,7 +110,7 @@ static int sfdp_add_uniform_eraser(struct flashchip *chip, uint8_t opcode, uint3
 		eraser->block_erase = erasefn;
 		eraser->eraseblocks[0].size = block_size;
 		eraser->eraseblocks[0].count = total_size/block_size;
-		msg_cdbg2("  Block eraser %d: %d x %d B with opcode "
+		msg_cdbg2("  Block eraser %d: %"PRId32" x %"PRId32" B with opcode "
 			  "0x%02x\n", i, total_size/block_size, block_size,
 			  opcode);
 		return 0;
@@ -131,10 +131,6 @@ static int sfdp_fill_flash(struct flashchip *chip, uint8_t *buf, uint16_t len)
 	int j;
 
 	msg_cdbg("Parsing JEDEC flash parameter table... ");
-	if (len != 9 * 4 && len != 4 * 4) {
-		msg_cdbg("%s: len out of spec\n", __func__);
-		return 1;
-	}
 	msg_cdbg2("\n");
 
 	/* 1. double word */
@@ -183,11 +179,11 @@ static int sfdp_fill_flash(struct flashchip *chip, uint8_t *buf, uint16_t len)
 	if (tmp32 & (1 << 2)) {
 		msg_cdbg2("at least 64 B.\n");
 		chip->page_size = 64;
-		chip->write = spi_chip_write_256;
+		chip->write = SPI_CHIP_WRITE256;
 	} else {
 		msg_cdbg2("1 B only.\n");
 		chip->page_size = 256;
-		chip->write = spi_chip_write_1;
+		chip->write = SPI_CHIP_WRITE1;
 	}
 
 	if ((tmp32 & 0x3) == 0x1) {
@@ -278,7 +274,7 @@ int probe_spi_sfdp(struct flashctx *flash)
 	tmp32 |= ((unsigned int)buf[3]) << 24;
 
 	if (tmp32 != 0x50444653) {
-		msg_cdbg2("Signature = 0x%08x (should be 0x50444653)\n", tmp32);
+		msg_cdbg2("Signature = 0x%08"PRIx32" (should be 0x50444653)\n", tmp32);
 		msg_cdbg("No SFDP signature found.\n");
 		return 0;
 	}
@@ -300,7 +296,7 @@ int probe_spi_sfdp(struct flashctx *flash)
 
 	/* Fetch all parameter headers, even if we don't use them all (yet). */
 	hbuf = malloc((nph + 1) * 8);
-	hdrs = malloc((nph + 1) * sizeof(struct sfdp_tbl_hdr));
+	hdrs = malloc((nph + 1) * sizeof(*hdrs));
 	if (hbuf == NULL || hdrs == NULL ) {
 		msg_gerr("Out of memory!\n");
 		goto cleanup_hdrs;
@@ -324,7 +320,7 @@ int probe_spi_sfdp(struct flashctx *flash)
 			  hdrs[i].v_major, hdrs[i].v_minor);
 		len = hdrs[i].len * 4;
 		tmp32 = hdrs[i].ptp;
-		msg_cdbg2("  Length %d B, Parameter Table Pointer 0x%06x\n",
+		msg_cdbg2("  Length %d B, Parameter Table Pointer 0x%06"PRIx32"\n",
 			  len, tmp32);
 
 		if (tmp32 + len >= (1 << 24)) {
@@ -349,7 +345,7 @@ int probe_spi_sfdp(struct flashctx *flash)
 		msg_cspew("  Parameter table contents:\n");
 		for (tmp32 = 0; tmp32 < len; tmp32++) {
 			if ((tmp32 % 8) == 0) {
-				msg_cspew("    0x%04x: ", tmp32);
+				msg_cspew("    0x%04"PRIx32": ", tmp32);
 			}
 			msg_cspew(" %02x", tbuf[tmp32]);
 			if ((tmp32 % 8) == 7) {
@@ -373,7 +369,7 @@ int probe_spi_sfdp(struct flashctx *flash)
 				msg_cdbg("The chip contains an unknown "
 					  "version of the JEDEC flash "
 					  "parameters table, skipping it.\n");
-			} else if (len != 9 * 4 && len != 4 * 4) {
+			} else if (len != 4 * 4 && len < 9 * 4) {
 				msg_cdbg("Length of the mandatory JEDEC SFDP "
 					 "parameter table is wrong (%d B), "
 					 "skipping it.\n", len);

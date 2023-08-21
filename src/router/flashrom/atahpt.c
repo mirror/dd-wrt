@@ -14,24 +14,28 @@
  * GNU General Public License for more details.
  */
 
-#if defined(__i386__) || defined(__x86_64__)
-
 #include <stdlib.h>
 #include <string.h>
 #include "flash.h"
 #include "programmer.h"
-#include "hwaccess.h"
+#include "hwaccess_x86_io.h"
+#include "platform/pci.h"
 
 #define BIOS_ROM_ADDR		0x90
 #define BIOS_ROM_DATA		0x94
 
 #define REG_FLASH_ACCESS	0x58
+#define BIT_FLASH_ACCESS	BIT(24)
 
 #define PCI_VENDOR_ID_HPT	0x1103
 
-static uint32_t io_base_addr = 0;
+struct atahpt_data {
+	struct pci_dev *dev;
+	uint32_t io_base_addr;
+	uint32_t flash_access;
+};
 
-const struct dev_entry ata_hpt[] = {
+static const struct dev_entry ata_hpt[] = {
 	{0x1103, 0x0004, NT, "Highpoint", "HPT366/368/370/370A/372/372N"},
 	{0x1103, 0x0005, NT, "Highpoint", "HPT372A/372N"},
 	{0x1103, 0x0006, NT, "Highpoint", "HPT302/302N"},
@@ -40,29 +44,49 @@ const struct dev_entry ata_hpt[] = {
 };
 
 static void atahpt_chip_writeb(const struct flashctx *flash, uint8_t val,
-			       chipaddr addr);
+			       chipaddr addr)
+{
+	struct atahpt_data *data = flash->mst->par.data;
+
+	OUTL((uint32_t)addr, data->io_base_addr + BIOS_ROM_ADDR);
+	OUTB(val, data->io_base_addr + BIOS_ROM_DATA);
+}
+
 static uint8_t atahpt_chip_readb(const struct flashctx *flash,
-				 const chipaddr addr);
+				 const chipaddr addr)
+{
+	struct atahpt_data *data = flash->mst->par.data;
+
+	OUTL((uint32_t)addr, data->io_base_addr + BIOS_ROM_ADDR);
+	return INB(data->io_base_addr + BIOS_ROM_DATA);
+}
+
+static int atahpt_shutdown(void *par_data)
+{
+	struct atahpt_data *data = par_data;
+
+	/* Restore original flash access state. */
+	pci_write_long(data->dev, REG_FLASH_ACCESS, data->flash_access);
+
+	free(par_data);
+	return 0;
+}
+
 static const struct par_master par_master_atahpt = {
-		.chip_readb		= atahpt_chip_readb,
-		.chip_readw		= fallback_chip_readw,
-		.chip_readl		= fallback_chip_readl,
-		.chip_readn		= fallback_chip_readn,
-		.chip_writeb		= atahpt_chip_writeb,
-		.chip_writew		= fallback_chip_writew,
-		.chip_writel		= fallback_chip_writel,
-		.chip_writen		= fallback_chip_writen,
+	.chip_readb	= atahpt_chip_readb,
+	.chip_writeb	= atahpt_chip_writeb,
+	.shutdown	= atahpt_shutdown,
 };
 
-int atahpt_init(void)
+static int atahpt_init(const struct programmer_cfg *cfg)
 {
 	struct pci_dev *dev = NULL;
-	uint32_t reg32;
+	uint32_t io_base_addr;
 
 	if (rget_io_perms())
 		return 1;
 
-	dev = pcidev_init(ata_hpt, PCI_BASE_ADDRESS_4);
+	dev = pcidev_init(cfg, ata_hpt, PCI_BASE_ADDRESS_4);
 	if (!dev)
 		return 1;
 
@@ -70,30 +94,24 @@ int atahpt_init(void)
 	if (!io_base_addr)
 		return 1;
 
+	struct atahpt_data *data = calloc(1, sizeof(*data));
+	if (!data) {
+		msg_perr("Unable to allocate space for PAR master data\n");
+		return 1;
+	}
+	data->dev = dev;
+	data->io_base_addr = io_base_addr;
+
 	/* Enable flash access. */
-	reg32 = pci_read_long(dev, REG_FLASH_ACCESS);
-	reg32 |= (1 << 24);
-	rpci_write_long(dev, REG_FLASH_ACCESS, reg32);
+	data->flash_access = pci_read_long(dev, REG_FLASH_ACCESS);
+	pci_write_long(dev, REG_FLASH_ACCESS, data->flash_access | BIT_FLASH_ACCESS);
 
-	register_par_master(&par_master_atahpt, BUS_PARALLEL);
-
-	return 0;
+	return register_par_master(&par_master_atahpt, BUS_PARALLEL, data);
 }
 
-static void atahpt_chip_writeb(const struct flashctx *flash, uint8_t val,
-			       chipaddr addr)
-{
-	OUTL((uint32_t)addr, io_base_addr + BIOS_ROM_ADDR);
-	OUTB(val, io_base_addr + BIOS_ROM_DATA);
-}
-
-static uint8_t atahpt_chip_readb(const struct flashctx *flash,
-				 const chipaddr addr)
-{
-	OUTL((uint32_t)addr, io_base_addr + BIOS_ROM_ADDR);
-	return INB(io_base_addr + BIOS_ROM_DATA);
-}
-
-#else
-#error PCI port I/O access is not supported on this architecture yet.
-#endif
+const struct programmer_entry programmer_atahpt = {
+	.name			= "atahpt",
+	.type			= PCI,
+	.devs.dev		= ata_hpt,
+	.init			= atahpt_init,
+};

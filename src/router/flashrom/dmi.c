@@ -27,11 +27,12 @@
 #include <strings.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "platform.h"
 #include "flash.h"
+#include "hwaccess_physmap.h"
 #include "programmer.h"
 
 /* Enable SMBIOS decoding. Currently legacy DMI decoding is enough. */
@@ -40,7 +41,12 @@
 /* Strings longer than 4096 in DMI are just insane. */
 #define DMI_MAX_ANSWER_LEN 4096
 
-int has_dmi_support = 0;
+static bool g_has_dmi_support = false;
+
+bool dmi_is_supported(void)
+{
+	return g_has_dmi_support;
+}
 
 static struct {
 	const char *const keyword;
@@ -69,7 +75,7 @@ static struct {
 static const struct {
 	uint8_t type;
 	uint8_t is_laptop;
-	char *name;
+	const char *name;
 } dmi_chassis_types[] = {
 	{0x01, 2, "Other"},
 	{0x02, 2, "Unknown"},
@@ -145,11 +151,11 @@ static char *dmi_string(const char *buf, uint8_t string_id, const char *limit)
 	return newbuf;
 }
 
-static void dmi_chassis_type(uint8_t code)
+static int dmi_chassis_type(uint8_t code)
 {
-	int i;
+	unsigned int i;
 	code &= 0x7f; /* bits 6:0 are chassis type, 7th bit is the lock bit */
-	is_laptop = 2;
+	int is_laptop = 2;
 	for (i = 0; i < ARRAY_SIZE(dmi_chassis_types); i++) {
 		if (code == dmi_chassis_types[i].type) {
 			msg_pdbg("DMI string chassis-type: \"%s\"\n", dmi_chassis_types[i].name);
@@ -157,14 +163,15 @@ static void dmi_chassis_type(uint8_t code)
 			break;
 		}
 	}
+	return is_laptop;
 }
 
-static void dmi_table(uint32_t base, uint16_t len, uint16_t num)
+static void dmi_table(uint32_t base, uint16_t len, uint16_t num, int *is_laptop)
 {
-	int i = 0, j = 0;
+	unsigned int i = 0, j = 0;
 
 	uint8_t *dmi_table_mem = physmap_ro("DMI Table", base, len);
-	if (dmi_table_mem == NULL) {
+	if (dmi_table_mem == ERROR_PTR) {
 		msg_perr("Unable to access DMI Table\n");
 		return;
 	}
@@ -182,7 +189,7 @@ static void dmi_table(uint32_t base, uint16_t len, uint16_t num)
 		 *   is invalid, but we cannot reliably locate the next entry.
 		 * - If the length value indicates that this structure spreads
 		 *   across the table border, something is fishy too.
-		 * Better stop at this point, and let the user know his/her
+		 * Better stop at this point, and let the user know their
 		 * table is broken.
 		 */
 		if (data[1] < 4 || data + data[1] >= limit) {
@@ -192,7 +199,7 @@ static void dmi_table(uint32_t base, uint16_t len, uint16_t num)
 
 		if(data[0] == 3) {
 			if (data + 5 < limit)
-				dmi_chassis_type(data[5]);
+				*is_laptop = dmi_chassis_type(data[5]);
 			else /* the table is broken, but laptop detection is optional, hence continue. */
 				msg_pwarn("DMI table is broken (chassis_type out of bounds)!\n");
 		} else
@@ -226,7 +233,7 @@ out:
 }
 
 #if SM_SUPPORT
-static int smbios_decode(uint8_t *buf)
+static int smbios_decode(uint8_t *buf, int *is_laptop)
 {
 	/* TODO: other checks mentioned in the conformance guidelines? */
 	if (!dmi_checksum(buf, buf[0x05]) ||
@@ -234,23 +241,23 @@ static int smbios_decode(uint8_t *buf)
 	    !dmi_checksum(buf + 0x10, 0x0F))
 			return 0;
 
-	dmi_table(mmio_readl(buf + 0x18), mmio_readw(buf + 0x16), mmio_readw(buf + 0x1C));
+	dmi_table(mmio_readl(buf + 0x18), mmio_readw(buf + 0x16), mmio_readw(buf + 0x1C), is_laptop);
 
 	return 1;
 }
 #endif
 
-static int legacy_decode(uint8_t *buf)
+static int legacy_decode(uint8_t *buf, int *is_laptop)
 {
 	if (!dmi_checksum(buf, 0x0F))
 		return 1;
 
-	dmi_table(mmio_readl(buf + 0x08), mmio_readw(buf + 0x06), mmio_readw(buf + 0x0C));
+	dmi_table(mmio_readl(buf + 0x08), mmio_readw(buf + 0x06), mmio_readw(buf + 0x0C), is_laptop);
 
 	return 0;
 }
 
-int dmi_fill(void)
+static int dmi_fill(int *is_laptop)
 {
 	size_t fp;
 	uint8_t *dmi_mem;
@@ -268,12 +275,12 @@ int dmi_fill(void)
 	for (fp = 0; fp <= 0xFFF0; fp += 16) {
 #if SM_SUPPORT
 		if (memcmp(dmi_mem + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-			if (smbios_decode(dmi_mem + fp)) // FIXME: length check
+			if (smbios_decode(dmi_mem + fp), is_laptop) // FIXME: length check
 				goto out;
 		} else
 #endif
 		if (memcmp(dmi_mem + fp, "_DMI_", 5) == 0)
-			if (legacy_decode(dmi_mem + fp) == 0) {
+			if (legacy_decode(dmi_mem + fp, is_laptop) == 0) {
 				ret = 0;
 				goto out;
 			}
@@ -320,9 +327,8 @@ static char *get_dmi_string(const char *string_name)
 				msg_perr("DMI pipe read error\n");
 				pclose(dmidecode_pipe);
 				return NULL;
-			} else {
-				answerbuf[0] = 0;	/* Hit EOF */
 			}
+			answerbuf[0] = 0;	/* Hit EOF */
 		}
 	} while (answerbuf[0] == '#');
 
@@ -345,9 +351,9 @@ static char *get_dmi_string(const char *string_name)
 	return result;
 }
 
-int dmi_fill(void)
+static int dmi_fill(int *is_laptop)
 {
-	int i;
+	unsigned int i;
 	char *chassis_type;
 
 	msg_pdbg("Using External DMI decoder.\n");
@@ -362,10 +368,10 @@ int dmi_fill(void)
 		return 0; /* chassis-type handling is optional anyway */
 
 	msg_pdbg("DMI string chassis-type: \"%s\"\n", chassis_type);
-	is_laptop = 2;
+	*is_laptop = 2;
 	for (i = 0; i < ARRAY_SIZE(dmi_chassis_types); i++) {
 		if (strcasecmp(chassis_type, dmi_chassis_types[i].name) == 0) {
-			is_laptop = dmi_chassis_types[i].is_laptop;
+			*is_laptop = dmi_chassis_types[i].is_laptop;
 			break;
 		}
 	}
@@ -377,15 +383,16 @@ int dmi_fill(void)
 
 static int dmi_shutdown(void *data)
 {
-	int i;
+	unsigned int i;
 	for (i = 0; i < ARRAY_SIZE(dmi_strings); i++) {
 		free(dmi_strings[i].value);
 		dmi_strings[i].value = NULL;
 	}
+	g_has_dmi_support = false;
 	return 0;
 }
 
-void dmi_init(void)
+void dmi_init(int *is_laptop)
 {
 	/* Register shutdown function before we allocate anything. */
 	if (register_shutdown(dmi_shutdown, NULL)) {
@@ -393,11 +400,11 @@ void dmi_init(void)
 		return;
 	}
 
-	/* dmi_fill fills the dmi_strings array, and if possible sets the global is_laptop variable. */
-	if (dmi_fill() != 0)
+	/* dmi_fill fills the dmi_strings array, and if possible set the is_laptop parameter. */
+	if (dmi_fill(is_laptop) != 0)
 		return;
 
-	switch (is_laptop) {
+	switch (*is_laptop) {
 	case 1:
 		msg_pdbg("Laptop detected via DMI.\n");
 		break;
@@ -406,8 +413,8 @@ void dmi_init(void)
 		break;
 	}
 
-	has_dmi_support = 1;
-	int i;
+	g_has_dmi_support = true;
+	unsigned int i;
 	for (i = 0; i < ARRAY_SIZE(dmi_strings); i++) {
 		msg_pdbg("DMI string %s: \"%s\"\n", dmi_strings[i].keyword,
 			 (dmi_strings[i].value == NULL) ? "" : dmi_strings[i].value);
@@ -427,7 +434,7 @@ void dmi_init(void)
  */
 static int dmi_compare(const char *value, const char *pattern)
 {
-	int anchored = 0;
+	bool anchored = false;
 	int patternlen;
 
 	msg_pspew("matching %s against %s\n", value, pattern);
@@ -436,7 +443,7 @@ static int dmi_compare(const char *value, const char *pattern)
 		return 1;
 
 	if (pattern[0] == '^') {
-		anchored = 1;
+		anchored = true;
 		pattern++;
 	}
 
@@ -453,7 +460,7 @@ static int dmi_compare(const char *value, const char *pattern)
 
 		/* start character to make ends match */
 		value += valuelen - patternlen;
-		anchored = 1;
+		anchored = true;
 	}
 
 	if (anchored)
@@ -464,9 +471,9 @@ static int dmi_compare(const char *value, const char *pattern)
 
 int dmi_match(const char *pattern)
 {
-	int i;
+	unsigned int i;
 
-	if (!has_dmi_support)
+	if (!dmi_is_supported())
 		return 0;
 
 	for (i = 0; i < ARRAY_SIZE(dmi_strings); i++) {

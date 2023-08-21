@@ -14,11 +14,13 @@
  * GNU General Public License for more details.
  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "flash.h"
 #include "programmer.h"
-#include "hwaccess.h"
+#include "hwaccess_physmap.h"
+#include "platform/pci.h"
 
 #define PCI_VENDOR_ID_NVIDIA	0x10de
 
@@ -28,9 +30,16 @@
 #define GFXNVIDIA_MEMMAP_MASK		((1 << 17) - 1)
 #define GFXNVIDIA_MEMMAP_SIZE		(16 * 1024 * 1024)
 
-uint8_t *nvidia_bar;
+#define REG_FLASH_ACCESS	0x50
+#define BIT_FLASH_ACCESS	BIT(0)
 
-const struct dev_entry gfx_nvidia[] = {
+struct gfxnvidia_data {
+	struct pci_dev *dev;
+	uint8_t *bar;
+	uint32_t flash_access;
+};
+
+static const struct dev_entry gfx_nvidia[] = {
 	{0x10de, 0x0010, NT, "NVIDIA", "Mutara V08 [NV2]" },
 	{0x10de, 0x0018, NT, "NVIDIA", "RIVA 128" },
 	{0x10de, 0x0020, NT, "NVIDIA", "RIVA TNT" },
@@ -59,29 +68,45 @@ const struct dev_entry gfx_nvidia[] = {
 };
 
 static void gfxnvidia_chip_writeb(const struct flashctx *flash, uint8_t val,
-				  chipaddr addr);
+				  chipaddr addr)
+{
+	const struct gfxnvidia_data *data = flash->mst->par.data;
+
+	pci_mmio_writeb(val, data->bar + (addr & GFXNVIDIA_MEMMAP_MASK));
+}
+
 static uint8_t gfxnvidia_chip_readb(const struct flashctx *flash,
-				    const chipaddr addr);
+				    const chipaddr addr)
+{
+	const struct gfxnvidia_data *data = flash->mst->par.data;
+
+	return pci_mmio_readb(data->bar + (addr & GFXNVIDIA_MEMMAP_MASK));
+}
+
+static int gfxnvidia_shutdown(void *par_data)
+{
+	struct gfxnvidia_data *data = par_data;
+
+	/* Restore original flash interface access state. */
+	pci_write_long(data->dev, REG_FLASH_ACCESS, data->flash_access);
+
+	free(par_data);
+	return 0;
+}
+
 static const struct par_master par_master_gfxnvidia = {
-		.chip_readb		= gfxnvidia_chip_readb,
-		.chip_readw		= fallback_chip_readw,
-		.chip_readl		= fallback_chip_readl,
-		.chip_readn		= fallback_chip_readn,
-		.chip_writeb		= gfxnvidia_chip_writeb,
-		.chip_writew		= fallback_chip_writew,
-		.chip_writel		= fallback_chip_writel,
-		.chip_writen		= fallback_chip_writen,
+	.chip_readb	= gfxnvidia_chip_readb,
+	.chip_writeb	= gfxnvidia_chip_writeb,
+	.shutdown	= gfxnvidia_shutdown,
 };
 
-int gfxnvidia_init(void)
+static int gfxnvidia_init(const struct programmer_cfg *cfg)
 {
 	struct pci_dev *dev = NULL;
 	uint32_t reg32;
+	uint8_t *bar;
 
-	if (rget_io_perms())
-		return 1;
-
-	dev = pcidev_init(gfx_nvidia, PCI_BASE_ADDRESS_0);
+	dev = pcidev_init(cfg, gfx_nvidia, PCI_BASE_ADDRESS_0);
 	if (!dev)
 		return 1;
 
@@ -90,32 +115,33 @@ int gfxnvidia_init(void)
 		return 1;
 
 	io_base_addr += 0x300000;
-	msg_pinfo("Detected NVIDIA I/O base address: 0x%x.\n", io_base_addr);
+	msg_pinfo("Detected NVIDIA I/O base address: 0x%"PRIx32".\n", io_base_addr);
 
-	nvidia_bar = rphysmap("NVIDIA", io_base_addr, GFXNVIDIA_MEMMAP_SIZE);
-	if (nvidia_bar == ERROR_PTR)
+	bar = rphysmap("NVIDIA", io_base_addr, GFXNVIDIA_MEMMAP_SIZE);
+	if (bar == ERROR_PTR)
 		return 1;
 
+	struct gfxnvidia_data *data = calloc(1, sizeof(*data));
+	if (!data) {
+		msg_perr("Unable to allocate space for PAR master data\n");
+		return 1;
+	}
+	data->dev = dev;
+	data->bar = bar;
+
 	/* Allow access to flash interface (will disable screen). */
-	reg32 = pci_read_long(dev, 0x50);
-	reg32 &= ~(1 << 0);
-	rpci_write_long(dev, 0x50, reg32);
+	data->flash_access = pci_read_long(dev, REG_FLASH_ACCESS);
+	reg32 = data->flash_access & ~BIT_FLASH_ACCESS;
+	pci_write_long(dev, REG_FLASH_ACCESS, reg32);
 
 	/* Write/erase doesn't work. */
-	programmer_may_write = 0;
-	register_par_master(&par_master_gfxnvidia, BUS_PARALLEL);
-
-	return 0;
+	programmer_may_write = false;
+	return register_par_master(&par_master_gfxnvidia, BUS_PARALLEL, data);
 }
 
-static void gfxnvidia_chip_writeb(const struct flashctx *flash, uint8_t val,
-				  chipaddr addr)
-{
-	pci_mmio_writeb(val, nvidia_bar + (addr & GFXNVIDIA_MEMMAP_MASK));
-}
-
-static uint8_t gfxnvidia_chip_readb(const struct flashctx *flash,
-				    const chipaddr addr)
-{
-	return pci_mmio_readb(nvidia_bar + (addr & GFXNVIDIA_MEMMAP_MASK));
-}
+const struct programmer_entry programmer_gfxnvidia = {
+	.name			= "gfxnvidia",
+	.type			= PCI,
+	.devs.dev		= gfx_nvidia,
+	.init			= gfxnvidia_init,
+};
