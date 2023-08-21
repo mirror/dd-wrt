@@ -1,6 +1,15 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2020 Volta Networks, Inc
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
@@ -41,7 +50,7 @@ enum igp_import {
 	IMPORT_OSPFv3
 };
 struct ted_state {
-	struct event_loop *main;
+	struct thread_master *main;
 	/* Status of TED: enable or disable */
 	bool enabled;
 	/* From which igp is going to receive data */
@@ -49,9 +58,9 @@ struct ted_state {
 	/* The TED itself as in link_state.h */
 	struct ls_ted *ted;
 	/* Timer for ted sync */
-	struct event *t_link_state_sync;
+	struct thread *t_link_state_sync;
 	/* Timer for refresh sid in segment list */
-	struct event *t_segment_list_refresh;
+	struct thread *t_segment_list_refresh;
 	/* delay interval in seconds */
 	uint32_t link_state_delay_interval;
 	/* delay interval refresh in seconds */
@@ -84,7 +93,7 @@ struct ted_state {
 
 /* TED management functions */
 bool path_ted_is_initialized(void);
-void path_ted_init(struct event_loop *master);
+void path_ted_init(struct thread_master *master);
 uint32_t path_ted_teardown(void);
 void path_ted_timer_sync_cancel(void);
 void path_ted_timer_refresh_cancel(void);

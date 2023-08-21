@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# SPDX-License-Identifier: NONE
 #
 # 2019 by David Lamparter, placed in public domain
 #

@@ -1,10 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Zebra API message creation & consumption.
  * Portions:
  *   Copyright (C) 1997-1999  Kunihiro Ishiguro
  *   Copyright (C) 2015-2018  Cumulus Networks, Inc.
  *   et al.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -128,7 +141,7 @@ static int zserv_encode_nexthop(struct stream *s, struct nexthop *nexthop)
 	case NEXTHOP_TYPE_IFINDEX:
 		stream_putl(s, nexthop->ifindex);
 		break;
-	case NEXTHOP_TYPE_BLACKHOLE:
+	default:
 		/* do nothing */
 		break;
 	}
@@ -561,9 +574,7 @@ int zsend_redistribute_route(int cmd, struct zserv *client,
 		else
 			client->redist_v6_del_cnt++;
 		break;
-	case AFI_L2VPN:
-	case AFI_MAX:
-	case AFI_UNSPEC:
+	default:
 		break;
 	}
 
@@ -801,17 +812,11 @@ int zsend_route_notify_owner(const struct route_node *rn,
 int zsend_route_notify_owner_ctx(const struct zebra_dplane_ctx *ctx,
 				 enum zapi_route_notify_owner note)
 {
-	int result;
-	struct route_node *rn = rib_find_rn_from_ctx(ctx);
-
-	result = route_notify_internal(
-		rn, dplane_ctx_get_type(ctx), dplane_ctx_get_instance(ctx),
-		dplane_ctx_get_vrf(ctx), dplane_ctx_get_table(ctx), note,
-		dplane_ctx_get_afi(ctx), dplane_ctx_get_safi(ctx));
-
-	route_unlock_node(rn);
-
-	return result;
+	return (route_notify_internal(
+		rib_find_rn_from_ctx(ctx), dplane_ctx_get_type(ctx),
+		dplane_ctx_get_instance(ctx), dplane_ctx_get_vrf(ctx),
+		dplane_ctx_get_table(ctx), note, dplane_ctx_get_afi(ctx),
+		dplane_ctx_get_safi(ctx)));
 }
 
 static void zread_route_notify_request(ZAPI_HANDLER_ARGS)
@@ -1336,7 +1341,7 @@ static void zread_fec_register(ZAPI_HANDLER_ARGS)
 	uint32_t label_index = MPLS_INVALID_LABEL_INDEX;
 
 	s = msg;
-	zvrf = zebra_vrf_lookup_by_id(VRF_DEFAULT);
+	zvrf = vrf_info_lookup(VRF_DEFAULT);
 	if (!zvrf)
 		return;
 
@@ -1399,7 +1404,7 @@ static void zread_fec_unregister(ZAPI_HANDLER_ARGS)
 	uint16_t flags;
 
 	s = msg;
-	zvrf = zebra_vrf_lookup_by_id(VRF_DEFAULT);
+	zvrf = vrf_info_lookup(VRF_DEFAULT);
 	if (!zvrf)
 		return;
 
@@ -1770,19 +1775,13 @@ static bool zapi_read_nexthops(struct zserv *client, struct prefix *p,
 			nexthop->srte_color = api_nh->srte_color;
 		}
 
-		/* Labels for MPLS BGP-LU or Segment Routing or EVPN */
+		/* MPLS labels for BGP-LU or Segment Routing */
 		if (CHECK_FLAG(api_nh->flags, ZAPI_NEXTHOP_FLAG_LABEL)
 		    && api_nh->type != NEXTHOP_TYPE_IFINDEX
 		    && api_nh->type != NEXTHOP_TYPE_BLACKHOLE
 		    && api_nh->label_num > 0) {
 
-			/* If label type was passed, use it */
-			if (api_nh->label_type)
-				label_type = api_nh->label_type;
-			else
-				label_type =
-					lsp_type_from_re_type(client->proto);
-
+			label_type = lsp_type_from_re_type(client->proto);
 			nexthop_add_labels(nexthop, label_type,
 					   api_nh->label_num,
 					   &api_nh->labels[0]);
@@ -1820,7 +1819,7 @@ static bool zapi_read_nexthops(struct zserv *client, struct prefix *p,
 				mpls_label2str(nexthop->nh_label->num_labels,
 					       nexthop->nh_label->label,
 					       labelbuf, sizeof(labelbuf),
-					       nexthop->nh_label_type, false);
+					       false);
 			}
 
 			zlog_debug("%s: nh=%s, vrf_id=%d %s",
@@ -2240,18 +2239,17 @@ static void zread_nexthop_lookup_mrib(ZAPI_HANDLER_ARGS)
 {
 	struct ipaddr addr;
 	struct route_entry *re = NULL;
-	union g_addr gaddr;
 
 	STREAM_GET_IPADDR(msg, &addr);
 
 	switch (addr.ipa_type) {
 	case IPADDR_V4:
-		gaddr.ipv4 = addr.ipaddr_v4;
-		re = rib_match_multicast(AFI_IP, zvrf_id(zvrf), &gaddr, NULL);
+		re = rib_match_ipv4_multicast(zvrf_id(zvrf), addr.ipaddr_v4,
+					      NULL);
 		break;
 	case IPADDR_V6:
-		gaddr.ipv6 = addr.ipaddr_v6;
-		re = rib_match_multicast(AFI_IP6, zvrf_id(zvrf), &gaddr, NULL);
+		re = rib_match_ipv6_multicast(zvrf_id(zvrf), addr.ipaddr_v6,
+					      NULL);
 		break;
 	case IPADDR_NONE:
 		/* ??? */
@@ -2343,7 +2341,7 @@ void zsend_capabilities_all_clients(void)
 	struct zebra_vrf *zvrf;
 	struct zserv *client;
 
-	zvrf = zebra_vrf_lookup_by_id(VRF_DEFAULT);
+	zvrf = vrf_info_lookup(VRF_DEFAULT);
 	for (ALL_LIST_ELEMENTS(zrouter.client_list, node, nnode, client)) {
 		/* Do not send unsolicited messages to synchronous clients. */
 		if (client->synchronous)
@@ -3424,10 +3422,7 @@ static inline void zread_tc_filter(ZAPI_HANDLER_ARGS)
 			STREAM_GETL(s, filter.filter.u.flower.classid);
 			break;
 		}
-		case TC_FILTER_BPF:
-		case TC_FILTER_FLOW:
-		case TC_FILTER_U32:
-		case TC_FILTER_UNSPEC:
+		default:
 			break;
 		}
 

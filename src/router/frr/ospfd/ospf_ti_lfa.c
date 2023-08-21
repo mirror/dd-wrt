@@ -1,8 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * OSPF TI-LFA
  * Copyright (C) 2020  NetDEF, Inc.
  *                     Sascha Kattelmann
+ *
+ * This file is part of FRR.
+ *
+ * FRR is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * FRR is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -710,7 +725,7 @@ static void ospf_ti_lfa_generate_q_spaces(struct ospf_area *area,
 	if (q_space->label_stack) {
 		mpls_label2str(q_space->label_stack->num_labels,
 			       q_space->label_stack->label, label_buf,
-			       MPLS_LABEL_STRLEN, 0, true);
+			       MPLS_LABEL_STRLEN, true);
 		zlog_info(
 			"%s: Generated label stack %s for root %pI4 and destination %pI4 for %s",
 			__func__, label_buf, &p_space->root->id,
@@ -1035,7 +1050,7 @@ void ospf_ti_lfa_insert_backup_paths(struct ospf_area *area,
 					path->srni.backup_label_stack
 						->num_labels,
 					path->srni.backup_label_stack->label,
-					label_buf, MPLS_LABEL_STRLEN, 0, true);
+					label_buf, MPLS_LABEL_STRLEN, true);
 				if (IS_DEBUG_OSPF_TI_LFA)
 					zlog_debug(
 						"%s: inserted backup path %s for prefix %pFX, router id %pI4 and nexthop %pI4.",
@@ -1078,7 +1093,6 @@ void ospf_ti_lfa_free_p_spaces(struct ospf_area *area)
 
 		q_spaces_fini(p_space->q_spaces);
 		XFREE(MTYPE_OSPF_Q_SPACE, p_space->q_spaces);
-		XFREE(MTYPE_OSPF_P_SPACE, p_space);
 	}
 
 	p_spaces_fini(area->p_spaces);

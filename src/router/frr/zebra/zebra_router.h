@@ -1,7 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* Zebra Router header.
  * Copyright (C) 2018 Cumulus Networks, Inc.
  *                    Donald Sharp
+ *
+ * This file is part of FRR.
+ *
+ * FRR is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * FRR is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FRR; see the file COPYING.  If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  */
 #ifndef __ZEBRA_ROUTER_H__
 #define __ZEBRA_ROUTER_H__
@@ -110,7 +126,7 @@ struct zebra_mlag_info {
 	struct frr_pthread *zebra_pth_mlag;
 
 	/* MLAG Thread context 'master' */
-	struct event_loop *th_master;
+	struct thread_master *th_master;
 
 	/*
 	 * Event for Initial MLAG Connection setup & Data Read
@@ -118,16 +134,16 @@ struct zebra_mlag_info {
 	 * so no issues.
 	 *
 	 */
-	struct event *t_read;
+	struct thread *t_read;
 	/* Event for MLAG write */
-	struct event *t_write;
+	struct thread *t_write;
 };
 
 struct zebra_router {
 	atomic_bool in_shutdown;
 
 	/* Thread master */
-	struct event_loop *master;
+	struct thread_master *master;
 
 	/* Lists of clients who have connected to us */
 	struct list *client_list;
@@ -194,7 +210,7 @@ struct zebra_router {
 	 * Time for when we sweep the rib from old routes
 	 */
 	time_t startup_time;
-	struct event *sweeper;
+	struct thread *sweeper;
 
 	/*
 	 * The hash of nexthop groups associated with this router

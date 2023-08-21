@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * CLI backend interface.
  *
@@ -7,6 +6,22 @@
  * Copyright (C) 1997, 98, 99 Kunihiro Ishiguro
  * Copyright (C) 2013 by Open Source Routing.
  * Copyright (C) 2013 by Internet Systems Consortium, Inc. ("ISC")
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -17,7 +32,7 @@
 #include "memory.h"
 #include "log.h"
 #include "log_vty.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "vector.h"
 #include "linklist.h"
 #include "vty.h"
@@ -31,8 +46,6 @@
 #include "jhash.h"
 #include "hook.h"
 #include "lib_errors.h"
-#include "mgmt_be_client.h"
-#include "mgmt_fe_client.h"
 #include "northbound_cli.h"
 #include "network.h"
 #include "routemap.h"
@@ -58,7 +71,6 @@ const struct message tokennames[] = {
 	item(IPV6_PREFIX_TKN),
 	item(MAC_TKN),
 	item(MAC_PREFIX_TKN),
-	item(ASNUM_TKN),
 	item(FORK_TKN),
 	item(JOIN_TKN),
 	item(START_TKN),
@@ -113,11 +125,6 @@ const char *cmd_version_get(void)
 bool cmd_allow_reserved_ranges_get(void)
 {
 	return host.allow_reserved_ranges;
-}
-
-const char *cmd_software_version_get(void)
-{
-	return FRR_FULL_NAME "/" FRR_VERSION;
 }
 
 static int root_on_exit(struct vty *vty);
@@ -735,13 +742,9 @@ char *cmd_variable_comp2str(vector comps, unsigned short cols)
 		char *item = vector_slot(comps, j);
 		itemlen = strlen(item);
 
-		size_t next_sz = cs + itemlen + AUTOCOMP_INDENT + 3;
+		if (cs + itemlen + AUTOCOMP_INDENT + 3 >= bsz)
+			buf = XREALLOC(MTYPE_TMP, buf, (bsz *= 2));
 
-		if (next_sz > bsz) {
-			/* Make sure the buf size is large enough */
-			bsz = next_sz;
-			buf = XREALLOC(MTYPE_TMP, buf, bsz);
-		}
 		if (lc + itemlen + 1 >= cols) {
 			cs += snprintf(&buf[cs], bsz - cs, "\n%*s",
 				       AUTOCOMP_INDENT, "");
@@ -946,8 +949,7 @@ static int cmd_execute_command_real(vector vline, enum cmd_filter_type filter,
 			return CMD_ERR_INCOMPLETE;
 		case MATCHER_AMBIGUOUS:
 			return CMD_ERR_AMBIGUOUS;
-		case MATCHER_NO_MATCH:
-		case MATCHER_OK:
+		default:
 			return CMD_ERR_NO_MATCH;
 		}
 	}
@@ -1287,7 +1289,6 @@ int command_config_read_one_line(struct vty *vty,
 
 		memcpy(ve->error_buf, vty->buf, VTY_BUFSIZ);
 		ve->line_num = line_num;
-		ve->cmd_ret = ret;
 		if (!vty->error)
 			vty->error = list_new();
 
@@ -1308,14 +1309,6 @@ int config_from_file(struct vty *vty, FILE *fp, unsigned int *line_num)
 	while (fgets(vty->buf, VTY_BUFSIZ, fp)) {
 		++(*line_num);
 
-		if (vty_log_commands) {
-			int len = strlen(vty->buf);
-
-			/* now log the command */
-			zlog_notice("config-from-file# %.*s", len ? len - 1 : 0,
-				    vty->buf);
-		}
-
 		ret = command_config_read_one_line(vty, NULL, *line_num, 0);
 
 		if (ret != CMD_SUCCESS && ret != CMD_WARNING
@@ -1333,12 +1326,11 @@ int config_from_file(struct vty *vty, FILE *fp, unsigned int *line_num)
 /* Configuration from terminal */
 DEFUN (config_terminal,
        config_terminal_cmd,
-       "configure [terminal [file-lock]]",
+       "configure [terminal]",
        "Configuration from vty interface\n"
-       "Configuration with locked datastores\n"
        "Configuration terminal\n")
 {
-	return vty_config_enter(vty, false, false, argc == 3);
+	return vty_config_enter(vty, false, false);
 }
 
 /* Enable command */
@@ -2454,8 +2446,6 @@ const char *host_config_get(void)
 void cmd_show_lib_debugs(struct vty *vty)
 {
 	route_map_show_debug(vty);
-	mgmt_debug_be_client_show_debug(vty);
-	mgmt_debug_fe_client_show_debug(vty);
 }
 
 void install_default(enum node_type node)
@@ -2560,7 +2550,7 @@ void cmd_init(int terminal)
 
 		install_default(CONFIG_NODE);
 
-		event_cmd_init();
+		thread_cmd_init();
 		workqueue_cmd_init();
 		hash_cmd_init();
 	}
@@ -2614,7 +2604,9 @@ void cmd_terminate(void)
 				// well
 				graph_delete_graph(cmd_node->cmdgraph);
 				vector_free(cmd_node->cmd_vector);
-				hash_clean_and_free(&cmd_node->cmd_hash, NULL);
+				hash_clean(cmd_node->cmd_hash, NULL);
+				hash_free(cmd_node->cmd_hash);
+				cmd_node->cmd_hash = NULL;
 			}
 
 		vector_free(cmdvec);

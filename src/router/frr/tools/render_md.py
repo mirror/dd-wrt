@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# SPDX-License-Identifier: NONE
 # written 2016 by David Lamparter, placed in Public Domain.
 import sys, markdown
 

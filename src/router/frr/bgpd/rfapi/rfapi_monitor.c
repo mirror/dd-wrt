@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *
  * Copyright 2009-2016, LabN Consulting, L.L.C.
  *
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -231,13 +244,7 @@ void rfapiMonitorExtraFlush(safi_t safi, struct agg_node *rn)
 		}
 		break;
 
-	case SAFI_UNSPEC:
-	case SAFI_UNICAST:
-	case SAFI_MULTICAST:
-	case SAFI_EVPN:
-	case SAFI_LABELED_UNICAST:
-	case SAFI_FLOWSPEC:
-	case SAFI_MAX:
+	default:
 		assert(0);
 	}
 	XFREE(MTYPE_RFAPI_IT_EXTRA, hie);
@@ -299,13 +306,7 @@ void rfapiMonitorExtraPrune(safi_t safi, struct agg_node *rn)
 		}
 		break;
 
-	case SAFI_UNSPEC:
-	case SAFI_UNICAST:
-	case SAFI_MULTICAST:
-	case SAFI_EVPN:
-	case SAFI_LABELED_UNICAST:
-	case SAFI_FLOWSPEC:
-	case SAFI_MAX:
+	default:
 		assert(0);
 	}
 	XFREE(MTYPE_RFAPI_IT_EXTRA, hie);
@@ -619,7 +620,7 @@ void rfapiMonitorDel(struct bgp *bgp, struct rfapi_descriptor *rfd,
 		rfapiMonitorDetachImport(m);
 	}
 
-	EVENT_OFF(m->timer);
+	THREAD_OFF(m->timer);
 
 	/*
 	 * remove from rfd list
@@ -656,7 +657,7 @@ int rfapiMonitorDelHd(struct rfapi_descriptor *rfd)
 					rfapiMonitorDetachImport(m);
 				}
 
-				EVENT_OFF(m->timer);
+				THREAD_OFF(m->timer);
 
 				XFREE(MTYPE_RFAPI_MONITOR, m);
 				rn->info = NULL;
@@ -690,7 +691,7 @@ int rfapiMonitorDelHd(struct rfapi_descriptor *rfd)
 #endif
 			}
 
-			EVENT_OFF(mon_eth->timer);
+			THREAD_OFF(mon_eth->timer);
 
 			/*
 			 * remove from rfd list
@@ -730,9 +731,9 @@ void rfapiMonitorResponseRemovalOn(struct bgp *bgp)
 	bgp->rfapi_cfg->flags &= ~BGP_VNC_CONFIG_RESPONSE_REMOVAL_DISABLE;
 }
 
-static void rfapiMonitorTimerExpire(struct event *t)
+static void rfapiMonitorTimerExpire(struct thread *t)
 {
-	struct rfapi_monitor_vpn *m = EVENT_ARG(t);
+	struct rfapi_monitor_vpn *m = THREAD_ARG(t);
 
 	/* forget reference to thread, it's gone */
 	m->timer = NULL;
@@ -743,7 +744,7 @@ static void rfapiMonitorTimerExpire(struct event *t)
 
 static void rfapiMonitorTimerRestart(struct rfapi_monitor_vpn *m)
 {
-	unsigned long remain = event_timer_remain_second(m->timer);
+	unsigned long remain = thread_timer_remain_second(m->timer);
 
 	/* unexpected case, but avoid wraparound problems below */
 	if (remain > m->rfd->response_lifetime)
@@ -753,7 +754,7 @@ static void rfapiMonitorTimerRestart(struct rfapi_monitor_vpn *m)
 	if (m->rfd->response_lifetime - remain < 2)
 		return;
 
-	EVENT_OFF(m->timer);
+	THREAD_OFF(m->timer);
 
 	{
 		char buf[BUFSIZ];
@@ -764,8 +765,8 @@ static void rfapiMonitorTimerRestart(struct rfapi_monitor_vpn *m)
 			m->rfd->response_lifetime);
 	}
 
-	event_add_timer(bm->master, rfapiMonitorTimerExpire, m,
-			m->rfd->response_lifetime, &m->timer);
+	thread_add_timer(bm->master, rfapiMonitorTimerExpire, m,
+			 m->rfd->response_lifetime, &m->timer);
 }
 
 /*
@@ -1036,9 +1037,9 @@ void rfapiMonitorMovedUp(struct rfapi_import_table *import_table,
 	}
 }
 
-static void rfapiMonitorEthTimerExpire(struct event *t)
+static void rfapiMonitorEthTimerExpire(struct thread *t)
 {
-	struct rfapi_monitor_eth *m = EVENT_ARG(t);
+	struct rfapi_monitor_eth *m = THREAD_ARG(t);
 
 	/* forget reference to thread, it's gone */
 	m->timer = NULL;
@@ -1051,7 +1052,7 @@ static void rfapiMonitorEthTimerExpire(struct event *t)
 
 static void rfapiMonitorEthTimerRestart(struct rfapi_monitor_eth *m)
 {
-	unsigned long remain = event_timer_remain_second(m->timer);
+	unsigned long remain = thread_timer_remain_second(m->timer);
 
 	/* unexpected case, but avoid wraparound problems below */
 	if (remain > m->rfd->response_lifetime)
@@ -1061,7 +1062,7 @@ static void rfapiMonitorEthTimerRestart(struct rfapi_monitor_eth *m)
 	if (m->rfd->response_lifetime - remain < 2)
 		return;
 
-	EVENT_OFF(m->timer);
+	THREAD_OFF(m->timer);
 
 	{
 		char buf[BUFSIZ];
@@ -1072,8 +1073,8 @@ static void rfapiMonitorEthTimerRestart(struct rfapi_monitor_eth *m)
 			m->rfd->response_lifetime);
 	}
 
-	event_add_timer(bm->master, rfapiMonitorEthTimerExpire, m,
-			m->rfd->response_lifetime, &m->timer);
+	thread_add_timer(bm->master, rfapiMonitorEthTimerExpire, m,
+			 m->rfd->response_lifetime, &m->timer);
 }
 
 static int mon_eth_cmp(const void *a, const void *b)
@@ -1399,7 +1400,7 @@ void rfapiMonitorEthDel(struct bgp *bgp, struct rfapi_descriptor *rfd,
 		rfapiMonitorEthDetachImport(bgp, val);
 	}
 
-	EVENT_OFF(val->timer);
+	THREAD_OFF(val->timer);
 
 	/*
 	 * remove from rfd list

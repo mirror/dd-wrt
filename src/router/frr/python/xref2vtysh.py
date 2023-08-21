@@ -1,7 +1,20 @@
-# SPDX-License-Identifier: GPL-2.0-or-later
 # FRR xref vtysh command extraction
 #
 # Copyright (C) 2022  David Lamparter for NetDEF, Inc.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; see the file COPYING; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 """
 Generate vtysh_cmd.c from frr .xref file(s).
@@ -37,8 +50,6 @@ daemon_flags = {
     "lib/filter_cli.c": "VTYSH_ACL",
     "lib/if.c": "VTYSH_INTERFACE",
     "lib/keychain.c": "VTYSH_RIPD|VTYSH_EIGRPD|VTYSH_OSPF6D",
-    "lib/mgmt_be_client.c": "VTYSH_STATICD",
-    "lib/mgmt_fe_client.c": "VTYSH_MGMTD",
     "lib/lib_vty.c": "VTYSH_ALL",
     "lib/log_vty.c": "VTYSH_ALL",
     "lib/nexthop_group.c": "VTYSH_NH_GROUP",
@@ -46,7 +57,7 @@ daemon_flags = {
     "lib/routemap.c": "VTYSH_RMAP",
     "lib/routemap_cli.c": "VTYSH_RMAP",
     "lib/spf_backoff.c": "VTYSH_ISISD",
-    "lib/event.c": "VTYSH_ALL",
+    "lib/thread.c": "VTYSH_ALL",
     "lib/vrf.c": "VTYSH_VRF",
     "lib/vty.c": "VTYSH_ALL",
 }
@@ -327,17 +338,7 @@ class CommandEntry:
     def load(cls, xref):
         nodes = NodeDict()
 
-        mgmtname = "mgmtd/libmgmt_be_nb.la"
         for cmd_name, origins in xref.get("cli", {}).items():
-            # If mgmtd has a yang version of a CLI command, make it the only daemon
-            # to handle it.  For now, daemons can still be compiling their cmds into the
-            # binaries to allow for running standalone with CLI config files. When they
-            # do this they will also be present in the xref file, but we want to ignore
-            # those in vtysh.
-            if "yang" in origins.get(mgmtname, {}).get("attrs", []):
-                CommandEntry.process(nodes, cmd_name, mgmtname, origins[mgmtname])
-                continue
-
             for origin, spec in origins.items():
                 CommandEntry.process(nodes, cmd_name, origin, spec)
         return nodes

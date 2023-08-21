@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *
  * Copyright 2009-2016, LabN Consulting, L.L.C.
  *
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -173,6 +186,7 @@ static void vnc_redistribute_add(struct prefix *p, uint32_t metric,
 			vncHD1VR.peer = peer_new(bgp);
 			vncHD1VR.peer->status =
 				Established; /* keep bgp core happy */
+			bgp_sync_delete(vncHD1VR.peer); /* don't need these */
 
 			/*
 			 * since this peer is not on the I/O thread, this lock
@@ -188,9 +202,12 @@ static void vnc_redistribute_add(struct prefix *p, uint32_t metric,
 
 				if (vncHD1VR.peer->ibuf_work)
 					ringbuf_del(vncHD1VR.peer->ibuf_work);
+				if (vncHD1VR.peer->obuf_work)
+					stream_free(vncHD1VR.peer->obuf_work);
 
 				vncHD1VR.peer->ibuf = NULL;
 				vncHD1VR.peer->obuf = NULL;
+				vncHD1VR.peer->obuf_work = NULL;
 				vncHD1VR.peer->ibuf_work = NULL;
 			}
 
@@ -886,7 +903,7 @@ static zclient_handler *const vnc_handlers[] = {
  * Modeled after bgp_zebra.c'bgp_zebra_init()
  * Charriere asks, "Is it possible to carry two?"
  */
-void vnc_zebra_init(struct event_loop *master)
+void vnc_zebra_init(struct thread_master *master)
 {
 	/* Set default values. */
 	zclient_vnc = zclient_new(master, &zclient_options_default,

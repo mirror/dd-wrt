@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for IPv6 FRR
  * Copyright (C) 2022  Vmware, Inc.
  *		       Mobashshera Rasool <mrasool@vmware.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -2747,7 +2760,7 @@ void pim_show_interfaces_single(struct pim_instance *pim, struct vty *vty,
 		}
 	}
 
-	if (!found_ifname && !json)
+	if (!found_ifname)
 		vty_out(vty, "%% No such interface\n");
 }
 
@@ -3200,7 +3213,7 @@ void pim_show_neighbors_single(struct pim_instance *pim, struct vty *vty,
 		}
 	}
 
-	if (!found_neighbor && !json)
+	if (!found_neighbor)
 		vty_out(vty, "%% No such interface or neighbor\n");
 }
 

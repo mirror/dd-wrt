@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: BSD-2-Clause
 module frr-ripngd {
   yang-version 1.1;
   namespace "http://frrouting.org/yang/ripngd";
@@ -9,9 +8,6 @@ module frr-ripngd {
   }
   import ietf-yang-types {
     prefix yang;
-  }
-  import frr-if-rmap {
-    prefix frr-if-rmap;
   }
   import frr-interface {
     prefix frr-interface;
@@ -86,8 +82,8 @@ module frr-ripngd {
           "VRF name.";
       }
       leaf allow-ecmp {
-        type uint8;
-        default 0;
+        type boolean;
+        default "false";
         description
           "Allow equal-cost multi-path.";
       }
@@ -199,9 +195,6 @@ module frr-ripngd {
              is 0.";
         }
       }
-
-      uses frr-if-rmap:if-route-maps-group;
-
       leaf-list static-route {
         type inet:ipv6-prefix;
         description

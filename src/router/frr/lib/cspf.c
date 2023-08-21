@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Constraints Shortest Path First algorithms - cspf.c
  *
@@ -7,6 +6,20 @@
  * Copyright (C) 2022 Orange http://www.orange.com
  *
  * This file is part of Free Range Routing (FRR).
+ *
+ * FRR is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * FRR is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -88,7 +101,7 @@ static struct c_path *cpath_copy(struct c_path *dest, const struct c_path *src)
  *
  * @param path	Constrained Path structure to be deleted
  */
-void cpath_del(struct c_path *path)
+static void cpath_del(struct c_path *path)
 {
 	if (!path)
 		return;

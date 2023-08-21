@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2018  NetDEF, Inc.
  *                     Renato Westphal
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -235,8 +248,8 @@ struct yang_translator *yang_translator_load(const char *path)
 		xpath_custom =
 			yang_dnode_get_string(set->dnodes[i], "./custom");
 
-		snode_custom =
-			yang_find_snode(translator->ly_ctx, xpath_custom, 0);
+		snode_custom = lys_find_path(translator->ly_ctx, NULL,
+					     xpath_custom, 0);
 		if (!snode_custom) {
 			flog_warn(EC_LIB_YANG_TRANSLATOR_LOAD,
 				  "%s: unknown data path: %s", __func__,
@@ -247,7 +260,8 @@ struct yang_translator *yang_translator_load(const char *path)
 
 		xpath_native =
 			yang_dnode_get_string(set->dnodes[i], "./native");
-		snode_native = yang_find_snode(ly_native_ctx, xpath_native, 0);
+		snode_native =
+			lys_find_path(ly_native_ctx, NULL, xpath_native, 0);
 		if (!snode_native) {
 			flog_warn(EC_LIB_YANG_TRANSLATOR_LOAD,
 				  "%s: unknown data path: %s", __func__,
@@ -314,7 +328,7 @@ yang_translate_xpath(const struct yang_translator *translator, int dir,
 	else
 		ly_ctx = ly_native_ctx;
 
-	snode = yang_find_snode(ly_ctx, xpath, 0);
+	snode = lys_find_path(ly_ctx, NULL, xpath, 0);
 	if (!snode) {
 		flog_warn(EC_LIB_YANG_TRANSLATION_ERROR,
 			  "%s: unknown data path: %s", __func__, xpath);

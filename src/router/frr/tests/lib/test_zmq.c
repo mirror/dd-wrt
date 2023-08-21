@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * ZeroMQ event test
  * Copyright (C) 2017  David Lamparter, for NetDEF, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -12,7 +25,7 @@
 DEFINE_MTYPE_STATIC(LIB, TESTBUF, "zmq test buffer");
 DEFINE_MTYPE_STATIC(LIB, ZMQMSG, "zmq message");
 
-static struct event_loop *master;
+static struct thread_master *master;
 
 static void msg_buf_free(void *data, void *hint)
 {
@@ -212,8 +225,8 @@ static void serverpartfn(void *arg, void *zmqsock, zmq_msg_t *msg,
 	printf("server recv: %s\n", buf);
 	fflush(stdout);
 
-	frrzmq_event_add_write_msg(master, serverwritefn, NULL, msg_id, zmqsock,
-				   &cb);
+	frrzmq_thread_add_write_msg(master, serverwritefn, NULL, msg_id,
+				    zmqsock, &cb);
 }
 
 static void serverfn(void *arg, void *zmqsock)
@@ -242,8 +255,8 @@ static void serverfn(void *arg, void *zmqsock)
 	frrzmq_thread_cancel(&cb, &cb->read);
 	frrzmq_thread_cancel(&cb, &cb->write);
 
-	frrzmq_event_add_read_part(master, serverpartfn, NULL, NULL, zmqsock,
-				   &cb);
+	frrzmq_thread_add_read_part(master, serverpartfn, NULL, NULL, zmqsock,
+				    &cb);
 }
 
 static void sigchld(void)
@@ -264,9 +277,9 @@ static void run_server(int syncfd)
 {
 	void *zmqsock;
 	char dummy = 0;
-	struct event t;
+	struct thread t;
 
-	master = event_master_create(NULL);
+	master = thread_master_create(NULL);
 	signal_init(master, array_size(sigs), sigs);
 	frrzmq_init();
 
@@ -276,15 +289,15 @@ static void run_server(int syncfd)
 		exit(1);
 	}
 
-	frrzmq_event_add_read_msg(master, serverfn, NULL, NULL, zmqsock, &cb);
+	frrzmq_thread_add_read_msg(master, serverfn, NULL, NULL, zmqsock, &cb);
 
 	write(syncfd, &dummy, sizeof(dummy));
-	while (event_fetch(master, &t))
-		event_call(&t);
+	while (thread_fetch(master, &t))
+		thread_call(&t);
 
 	zmq_close(zmqsock);
 	frrzmq_finish();
-	event_master_free(master);
+	thread_master_free(master);
 	log_memstats_stderr("test");
 }
 

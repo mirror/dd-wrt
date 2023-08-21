@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2018  NetDEF, Inc.
  *                     Renato Westphal
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -89,7 +102,7 @@ static const char *yang_get_default_value(const char *xpath)
 	const struct lysc_node *snode;
 	const char *value;
 
-	snode = yang_find_snode(ly_native_ctx, xpath, 0);
+	snode = lys_find_path(ly_native_ctx, NULL, xpath, 0);
 	if (snode == NULL) {
 		flog_err(EC_LIB_YANG_UNKNOWN_DATA_PATH,
 			 "%s: unknown data path: %s", __func__, xpath);
@@ -206,7 +219,7 @@ int yang_str2enum(const char *xpath, const char *value)
 	const struct lysc_type_enum *type;
 	const struct lysc_type_bitenum_item *enums;
 
-	snode = yang_find_snode(ly_native_ctx, xpath, 0);
+	snode = lys_find_path(ly_native_ctx, NULL, xpath, 0);
 	if (snode == NULL) {
 		flog_err(EC_LIB_YANG_UNKNOWN_DATA_PATH,
 			 "%s: unknown data path: %s", __func__, xpath);
@@ -241,7 +254,7 @@ struct yang_data *yang_data_new_enum(const char *xpath, int value)
 	const struct lysc_type_enum *type;
 	const struct lysc_type_bitenum_item *enums;
 
-	snode = yang_find_snode(ly_native_ctx, xpath, 0);
+	snode = lys_find_path(ly_native_ctx, NULL, xpath, 0);
 	if (snode == NULL) {
 		flog_err(EC_LIB_YANG_UNKNOWN_DATA_PATH,
 			 "%s: unknown data path: %s", __func__, xpath);

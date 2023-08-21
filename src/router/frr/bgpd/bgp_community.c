@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* Community attribute related functions.
  * Copyright (C) 1998, 2001 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -168,6 +183,7 @@ struct community *community_uniq_sort(struct community *com)
 
    For Well-known communities value, below keyword is used.
 
+   0x0             "internet"
    0xFFFF0000      "graceful-shutdown"
    0xFFFF0001      "accept-own"
    0xFFFF0002      "route-filter-translated-v4"
@@ -228,12 +244,8 @@ static void set_community_string(struct community *com, bool make_json,
 		comval = ntohl(comval);
 
 		switch (comval) {
-#if CONFDATE > 20230801
-CPP_NOTICE("Deprecate COMMUNITY_INTERNET BGP community")
-#endif
 		case COMMUNITY_INTERNET:
 			len += strlen(" internet");
-			zlog_warn("`internet` community is deprecated");
 			break;
 		case COMMUNITY_GSHUT:
 			len += strlen(" graceful-shutdown");
@@ -298,9 +310,6 @@ CPP_NOTICE("Deprecate COMMUNITY_INTERNET BGP community")
 			strlcat(str, " ", len);
 
 		switch (comval) {
-#if CONFDATE > 20230801
-CPP_NOTICE("Deprecate COMMUNITY_INTERNET BGP community")
-#endif
 		case COMMUNITY_INTERNET:
 			strlcat(str, "internet", len);
 			if (make_json) {
@@ -309,7 +318,6 @@ CPP_NOTICE("Deprecate COMMUNITY_INTERNET BGP community")
 				json_object_array_add(json_community_list,
 						      json_string);
 			}
-			zlog_warn("`internet` community is deprecated");
 			break;
 		case COMMUNITY_GSHUT:
 			strlcat(str, "graceful-shutdown", len);
@@ -680,14 +688,10 @@ community_gettoken(const char *buf, enum community_token *token, uint32_t *val)
 
 	/* Well known community string check. */
 	if (isalpha((unsigned char)*p)) {
-#if CONFDATE > 20230801
-CPP_NOTICE("Deprecate COMMUNITY_INTERNET BGP community")
-#endif
 		if (strncmp(p, "internet", strlen("internet")) == 0) {
 			*val = COMMUNITY_INTERNET;
 			*token = community_token_no_export;
 			p += strlen("internet");
-			zlog_warn("`internet` community is deprecated");
 			return p;
 		}
 		if (strncmp(p, "graceful-shutdown", strlen("graceful-shutdown"))
@@ -919,7 +923,9 @@ static void community_hash_free(void *data)
 
 void community_finish(void)
 {
-	hash_clean_and_free(&comhash, community_hash_free);
+	hash_clean(comhash, community_hash_free);
+	hash_free(comhash);
+	comhash = NULL;
 }
 
 static struct community *bgp_aggr_community_lookup(

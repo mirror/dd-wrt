@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Packet interface
  * Copyright (C) 1999 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -620,7 +635,7 @@ uint32_t stream_get_ipv4(struct stream *s)
 
 bool stream_get_ipaddr(struct stream *s, struct ipaddr *ip)
 {
-	uint16_t ipa_len = 0;
+	uint16_t ipa_len;
 
 	STREAM_VERIFY_SANE(s);
 
@@ -639,7 +654,7 @@ bool stream_get_ipaddr(struct stream *s, struct ipaddr *ip)
 	case IPADDR_V6:
 		ipa_len = IPV6_MAX_BYTELEN;
 		break;
-	case IPADDR_NONE:
+	default:
 		flog_err(EC_LIB_DEVELOPMENT,
 			 "%s: unknown ip address-family: %u", __func__,
 			 ip->ipa_type);
@@ -932,7 +947,7 @@ bool stream_put_ipaddr(struct stream *s, struct ipaddr *ip)
 	case IPADDR_V6:
 		stream_write(s, (uint8_t *)&ip->ipaddr_v6, 16);
 		break;
-	case IPADDR_NONE:
+	default:
 		flog_err(EC_LIB_DEVELOPMENT,
 			 "%s: unknown ip address-family: %u", __func__,
 			 ip->ipa_type);

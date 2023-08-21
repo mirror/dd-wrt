@@ -1,12 +1,27 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * OSPF AS external route calculation.
  * Copyright (C) 1999, 2000 Alex Zinin, Toshiaki Takada
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
-#include "frrevent.h"
+#include "thread.h"
 #include "memory.h"
 #include "hash.h"
 #include "linklist.h"
@@ -159,9 +174,7 @@ ospf_ase_calculate_new_route(struct ospf_lsa *lsa,
 
 	if (!IS_EXTERNAL_METRIC(al->e[0].tos)) {
 		if (IS_DEBUG_OSPF(lsa, LSA))
-			zlog_debug(
-				"Route[External]: type-1 created, asbr cost:%d  metric:%d.",
-				asbr_route->cost, metric);
+			zlog_debug("Route[External]: type-1 created.");
 		new->path_type = OSPF_PATH_TYPE1_EXTERNAL;
 		new->cost = asbr_route->cost + metric; /* X + Y */
 	} else {
@@ -551,7 +564,7 @@ static int ospf_ase_compare_tables(struct ospf *ospf,
 	return 0;
 }
 
-static void ospf_ase_calculate_timer(struct event *t)
+static void ospf_ase_calculate_timer(struct thread *t)
 {
 	struct ospf *ospf;
 	struct ospf_lsa *lsa;
@@ -560,7 +573,7 @@ static void ospf_ase_calculate_timer(struct event *t)
 	struct ospf_area *area;
 	struct timeval start_time, stop_time;
 
-	ospf = EVENT_ARG(t);
+	ospf = THREAD_ARG(t);
 	ospf->t_ase_calc = NULL;
 
 	if (ospf->ase_calc) {
@@ -615,7 +628,6 @@ static void ospf_ase_calculate_timer(struct event *t)
 	 */
 	if (ospf->gr_info.finishing_restart) {
 		ospf_zebra_gr_disable(ospf);
-		ospf_zebra_gr_enable(ospf, ospf->gr_info.grace_period);
 		ospf->gr_info.finishing_restart = false;
 	}
 }
@@ -633,8 +645,8 @@ void ospf_ase_calculate_timer_add(struct ospf *ospf)
 	if (ospf == NULL)
 		return;
 
-	event_add_timer(master, ospf_ase_calculate_timer, ospf,
-			OSPF_ASE_CALC_INTERVAL, &ospf->t_ase_calc);
+	thread_add_timer(master, ospf_ase_calculate_timer, ospf,
+			 OSPF_ASE_CALC_INTERVAL, &ospf->t_ase_calc);
 }
 
 void ospf_ase_register_external_lsa(struct ospf_lsa *lsa, struct ospf *top)

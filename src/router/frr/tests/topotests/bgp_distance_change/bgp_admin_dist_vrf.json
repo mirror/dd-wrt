@@ -22,7 +22,12 @@
    "routers": {
       "r1": {
          "links": {
-
+            "lo": {
+               "ipv4": "auto",
+               "ipv6": "auto",
+               "type": "loopback",
+               "vrf": "RED"
+            },
             "r2": {
                "ipv4": "auto",
                "ipv6": "auto",
@@ -124,7 +129,12 @@
       },
       "r2": {
          "links": {
-
+            "lo": {
+               "ipv4": "auto",
+               "ipv6": "auto",
+               "type": "loopback",
+               "vrf": "RED"
+            },
             "r1": {
                "ipv4": "auto",
                "ipv6": "auto",
@@ -183,7 +193,12 @@
       },
       "r3": {
          "links": {
-
+            "lo": {
+               "ipv4": "auto",
+               "ipv6": "auto",
+               "type": "loopback",
+               "vrf": "RED"
+            },
             "r1": {
                "ipv4": "auto",
                "ipv6": "auto",
@@ -272,7 +287,12 @@
       },
       "r4": {
          "links": {
-
+            "lo": {
+               "ipv4": "auto",
+               "ipv6": "auto",
+               "type": "loopback",
+               "vrf": "RED"
+            },
             "r3": {
                "ipv4": "auto",
                "ipv6": "auto",
@@ -316,7 +336,12 @@
       },
       "r5": {
          "links": {
-
+            "lo": {
+               "ipv4": "auto",
+               "ipv6": "auto",
+               "type": "loopback",
+               "vrf": "RED"
+            },
             "r3": {
                "ipv4": "auto",
                "ipv6": "auto",

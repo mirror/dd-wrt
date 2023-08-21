@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * EIGRP Interface Functions.
  * Copyright (C) 2013-2016
@@ -12,11 +11,27 @@
  *   Tomas Hvorkovy
  *   Martin Kontsek
  *   Lukas Koribsky
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
-#include "frrevent.h"
+#include "thread.h"
 #include "linklist.h"
 #include "prefix.h"
 #include "if.h"
@@ -251,7 +266,7 @@ int eigrp_if_up(struct eigrp_interface *ei)
 	/* Set multicast memberships appropriately for new state. */
 	eigrp_if_set_multicast(ei);
 
-	event_add_event(master, eigrp_hello_timer, ei, (1), &ei->t_hello);
+	thread_add_event(master, eigrp_hello_timer, ei, (1), &ei->t_hello);
 
 	/*Prepare metrics*/
 	metric.bandwidth = eigrp_bandwidth_to_scaled(ei->params.bandwidth);
@@ -333,7 +348,7 @@ int eigrp_if_down(struct eigrp_interface *ei)
 		return 0;
 
 	/* Shutdown packet reception and sending */
-	EVENT_OFF(ei->t_hello);
+	THREAD_OFF(ei->t_hello);
 
 	eigrp_if_stream_unset(ei);
 
@@ -360,7 +375,7 @@ void eigrp_if_stream_unset(struct eigrp_interface *ei)
 	if (ei->on_write_q) {
 		listnode_delete(eigrp->oi_write_q, ei);
 		if (list_isempty(eigrp->oi_write_q))
-			event_cancel(&(eigrp->t_write));
+			thread_cancel(&(eigrp->t_write));
 		ei->on_write_q = 0;
 	}
 }
@@ -422,7 +437,7 @@ void eigrp_if_free(struct eigrp_interface *ei, int source)
 	struct eigrp *eigrp = ei->eigrp;
 
 	if (source == INTERFACE_DOWN_BY_VTY) {
-		event_cancel(&ei->t_hello);
+		thread_cancel(&ei->t_hello);
 		eigrp_hello_send(ei, EIGRP_HELLO_GRACEFUL_SHUTDOWN, NULL);
 	}
 

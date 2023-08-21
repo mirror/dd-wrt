@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* RIPng peer support
  * Copyright (C) 2000 Kunihiro Ishiguro <kunihiro@zebra.org>
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /* RIPng support added by Vincent Jardin <vincent.jardin@6wind.com>
@@ -13,7 +28,7 @@
 #include "prefix.h"
 #include "command.h"
 #include "linklist.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "memory.h"
 
 #include "ripngd/ripngd.h"
@@ -28,7 +43,7 @@ static struct ripng_peer *ripng_peer_new(void)
 
 static void ripng_peer_free(struct ripng_peer *peer)
 {
-	EVENT_OFF(peer->t_timeout);
+	THREAD_OFF(peer->t_timeout);
 	XFREE(MTYPE_RIPNG_PEER, peer);
 }
 
@@ -60,11 +75,11 @@ struct ripng_peer *ripng_peer_lookup_next(struct ripng *ripng,
 /* RIPng peer is timeout.
  * Garbage collector.
  **/
-static void ripng_peer_timeout(struct event *t)
+static void ripng_peer_timeout(struct thread *t)
 {
 	struct ripng_peer *peer;
 
-	peer = EVENT_ARG(t);
+	peer = THREAD_ARG(t);
 	listnode_delete(peer->ripng->peer_list, peer);
 	ripng_peer_free(peer);
 }
@@ -78,7 +93,7 @@ static struct ripng_peer *ripng_peer_get(struct ripng *ripng,
 	peer = ripng_peer_lookup(ripng, addr);
 
 	if (peer) {
-		EVENT_OFF(peer->t_timeout);
+		THREAD_OFF(peer->t_timeout);
 	} else {
 		peer = ripng_peer_new();
 		peer->ripng = ripng;
@@ -87,8 +102,8 @@ static struct ripng_peer *ripng_peer_get(struct ripng *ripng,
 	}
 
 	/* Update timeout thread. */
-	event_add_timer(master, ripng_peer_timeout, peer,
-			RIPNG_PEER_TIMER_DEFAULT, &peer->t_timeout);
+	thread_add_timer(master, ripng_peer_timeout, peer,
+			 RIPNG_PEER_TIMER_DEFAULT, &peer->t_timeout);
 
 	/* Last update time set. */
 	time(&peer->uptime);

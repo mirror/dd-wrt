@@ -1,8 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /**
  * bfd.c: BFD handling routines
  *
  * @copyright Copyright (C) 2015 Cumulus Networks, Inc.
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -10,7 +25,7 @@
 #include "command.h"
 #include "memory.h"
 #include "prefix.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "stream.h"
 #include "vrf.h"
 #include "zclient.h"
@@ -75,7 +90,7 @@ struct bfd_session_params {
 	 * Next event.
 	 *
 	 * This variable controls what action to execute when the command batch
-	 * finishes. Normally we'd use `event_add_event` value, however since
+	 * finishes. Normally we'd use `thread_add_event` value, however since
 	 * that function is going to be called multiple times and the value
 	 * might be different we'll use this variable to keep track of it.
 	 */
@@ -87,7 +102,7 @@ struct bfd_session_params {
 	 * configuration load or northbound batch), so we'll use this to
 	 * install/uninstall the BFD session parameters only once.
 	 */
-	struct event *installev;
+	struct thread *installev;
 
 	/** BFD session installation state. */
 	bool installed;
@@ -111,7 +126,7 @@ struct bfd_sessions_global {
 	struct bfd_source_list source_list;
 
 	/** Pointer to FRR's event manager. */
-	struct event_loop *tm;
+	struct thread_master *tm;
 	/** Pointer to zebra client data structure. */
 	struct zclient *zc;
 
@@ -485,9 +500,9 @@ static bool _bfd_sess_valid(const struct bfd_session_params *bsp)
 	return true;
 }
 
-static void _bfd_sess_send(struct event *t)
+static void _bfd_sess_send(struct thread *t)
 {
-	struct bfd_session_params *bsp = EVENT_ARG(t);
+	struct bfd_session_params *bsp = THREAD_ARG(t);
 	int rv;
 
 	/* Validate configuration before trying to send bogus data. */
@@ -533,7 +548,7 @@ static void _bfd_sess_send(struct event *t)
 static void _bfd_sess_remove(struct bfd_session_params *bsp)
 {
 	/* Cancel any pending installation request. */
-	EVENT_OFF(bsp->installev);
+	THREAD_OFF(bsp->installev);
 
 	/* Not installed, nothing to do. */
 	if (!bsp->installed)
@@ -541,7 +556,7 @@ static void _bfd_sess_remove(struct bfd_session_params *bsp)
 
 	/* Send request to remove any session. */
 	bsp->lastev = BSE_UNINSTALL;
-	event_execute(bsglobal.tm, _bfd_sess_send, bsp, 0);
+	thread_execute(bsglobal.tm, _bfd_sess_send, bsp, 0);
 }
 
 void bfd_sess_free(struct bfd_session_params **bsp)
@@ -733,13 +748,13 @@ void bfd_sess_set_auto_source(struct bfd_session_params *bsp, bool enable)
 void bfd_sess_install(struct bfd_session_params *bsp)
 {
 	bsp->lastev = BSE_INSTALL;
-	event_add_event(bsglobal.tm, _bfd_sess_send, bsp, 0, &bsp->installev);
+	thread_add_event(bsglobal.tm, _bfd_sess_send, bsp, 0, &bsp->installev);
 }
 
 void bfd_sess_uninstall(struct bfd_session_params *bsp)
 {
 	bsp->lastev = BSE_UNINSTALL;
-	event_add_event(bsglobal.tm, _bfd_sess_send, bsp, 0, &bsp->installev);
+	thread_add_event(bsglobal.tm, _bfd_sess_send, bsp, 0, &bsp->installev);
 }
 
 enum bfd_session_state bfd_sess_status(const struct bfd_session_params *bsp)
@@ -890,11 +905,11 @@ int zclient_bfd_session_replay(ZAPI_CALLBACK_ARGS)
 		bsp->installed = false;
 
 		/* Cancel any pending installation request. */
-		EVENT_OFF(bsp->installev);
+		THREAD_OFF(bsp->installev);
 
 		/* Ask for installation. */
 		bsp->lastev = BSE_INSTALL;
-		event_execute(bsglobal.tm, _bfd_sess_send, bsp, 0);
+		thread_execute(bsglobal.tm, _bfd_sess_send, bsp, 0);
 	}
 
 	return 0;
@@ -1039,7 +1054,7 @@ static int bfd_protocol_integration_finish(void)
 	return 0;
 }
 
-void bfd_protocol_integration_init(struct zclient *zc, struct event_loop *tm)
+void bfd_protocol_integration_init(struct zclient *zc, struct thread_master *tm)
 {
 	/* Initialize data structure. */
 	TAILQ_INIT(&bsglobal.bsplist);

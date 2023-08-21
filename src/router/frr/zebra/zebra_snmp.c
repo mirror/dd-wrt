@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* FIB SNMP.
  * Copyright (C) 1999 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -536,7 +551,7 @@ static uint8_t *ipCidrTable(struct variable *v, oid objid[], size_t *objid_len,
 	return NULL;
 }
 
-static int zebra_snmp_init(struct event_loop *tm)
+static int zebra_snmp_init(struct thread_master *tm)
 {
 	smux_init(tm);
 	REGISTER_MIB("mibII/ipforward", zebra_variables, variable, ipfw_oid);

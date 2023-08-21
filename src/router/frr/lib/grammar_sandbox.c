@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Testing shim and API examples for the new CLI backend.
  *
@@ -6,6 +5,22 @@
  * be used to test and interact with the new engine.
  * --
  * Copyright (C) 2016 Cumulus Networks, Inc.
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifdef HAVE_CONFIG_H
@@ -19,7 +34,7 @@
 
 #define GRAMMAR_STR "CLI grammar sandbox\n"
 
-DEFINE_MTYPE_STATIC(LIB, CMD_DESCRIPTIONS, "Command desc");
+DEFINE_MTYPE_STATIC(LIB, CMD_TOKENS, "Command desc");
 
 /** headers **/
 void grammar_sandbox_init(void);
@@ -53,7 +68,7 @@ DEFUN (grammar_test,
 
 	// create cmd_element for parser
 	struct cmd_element *cmd =
-		XCALLOC(MTYPE_CMD_DESCRIPTIONS, sizeof(struct cmd_element));
+		XCALLOC(MTYPE_CMD_TOKENS, sizeof(struct cmd_element));
 	cmd->string = command;
 	cmd->doc =
 		"0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n";
@@ -180,7 +195,7 @@ DEFUN (grammar_test_match,
 		case MATCHER_AMBIGUOUS:
 			vty_out(vty, "%% Ambiguous command\n");
 			break;
-		case MATCHER_OK:
+		default:
 			vty_out(vty, "%% Unknown error\n");
 			break;
 		}
@@ -207,11 +222,11 @@ DEFUN (grammar_test_doc,
 
 	// create cmd_element with docstring
 	struct cmd_element *cmd =
-		XCALLOC(MTYPE_CMD_DESCRIPTIONS, sizeof(struct cmd_element));
+		XCALLOC(MTYPE_CMD_TOKENS, sizeof(struct cmd_element));
 	cmd->string = XSTRDUP(
-		MTYPE_CMD_DESCRIPTIONS,
+		MTYPE_CMD_TOKENS,
 		"test docstring <example|selector follow> (1-255) end VARIABLE [OPTION|set lol] . VARARG");
-	cmd->doc = XSTRDUP(MTYPE_CMD_DESCRIPTIONS,
+	cmd->doc = XSTRDUP(MTYPE_CMD_TOKENS,
 			   "Test stuff\n"
 			   "docstring thing\n"
 			   "first example\n"

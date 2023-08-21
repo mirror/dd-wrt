@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2018 NetDEF, Inc.
  *                    Renato Westphal
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _FRR_RIPNG_NB_H_
@@ -38,18 +51,6 @@ int ripngd_instance_redistribute_route_map_destroy(
 	struct nb_cb_destroy_args *args);
 int ripngd_instance_redistribute_metric_modify(struct nb_cb_modify_args *args);
 int ripngd_instance_redistribute_metric_destroy(
-	struct nb_cb_destroy_args *args);
-int ripngd_instance_if_route_maps_if_route_map_create(
-	struct nb_cb_create_args *args);
-int ripngd_instance_if_route_maps_if_route_map_destroy(
-	struct nb_cb_destroy_args *args);
-int ripngd_instance_if_route_maps_if_route_map_in_route_map_modify(
-	struct nb_cb_modify_args *args);
-int ripngd_instance_if_route_maps_if_route_map_in_route_map_destroy(
-	struct nb_cb_destroy_args *args);
-int ripngd_instance_if_route_maps_if_route_map_out_route_map_modify(
-	struct nb_cb_modify_args *args);
-int ripngd_instance_if_route_maps_if_route_map_out_route_map_destroy(
 	struct nb_cb_destroy_args *args);
 int ripngd_instance_static_route_create(struct nb_cb_create_args *args);
 int ripngd_instance_static_route_destroy(struct nb_cb_destroy_args *args);

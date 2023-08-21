@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 1998 Kunihiro Ishiguro
  * Copyright (C) 2018 NetDEF, Inc.
  *                    Renato Westphal
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -85,32 +98,14 @@ void cli_show_router_ripng(struct vty *vty, const struct lyd_node *dnode,
 /*
  * XPath: /frr-ripngd:ripngd/instance/allow-ecmp
  */
-DEFUN_YANG (ripng_allow_ecmp,
-            ripng_allow_ecmp_cmd,
-            "allow-ecmp [" CMD_RANGE_STR(1, MULTIPATH_NUM) "]",
-            "Allow Equal Cost MultiPath\n"
-            "Number of paths\n")
+DEFPY_YANG (ripng_allow_ecmp,
+       ripng_allow_ecmp_cmd,
+       "[no] allow-ecmp",
+       NO_STR
+       "Allow Equal Cost MultiPath\n")
 {
-	int idx_number = 0;
-	char mpaths[3] = {};
-	uint32_t paths = MULTIPATH_NUM;
-
-    if (argv_find(argv, argc, CMD_RANGE_STR(1, MULTIPATH_NUM), &idx_number))
-		paths = strtol(argv[idx_number]->arg, NULL, 10);
-	snprintf(mpaths, sizeof(mpaths), "%u", paths);
-
-	nb_cli_enqueue_change(vty, "./allow-ecmp", NB_OP_MODIFY, mpaths);
-
-	return nb_cli_apply_changes(vty, NULL);
-}
-
-DEFUN_YANG (no_ripng_allow_ecmp,
-            no_ripng_allow_ecmp_cmd,
-            "no allow-ecmp [" CMD_RANGE_STR(1, MULTIPATH_NUM) "]", NO_STR
-            "Allow Equal Cost MultiPath\n"
-            "Number of paths\n")
-{
-	nb_cli_enqueue_change(vty, "./allow-ecmp", NB_OP_MODIFY, 0);
+	nb_cli_enqueue_change(vty, "./allow-ecmp", NB_OP_MODIFY,
+			      no ? "false" : "true");
 
 	return nb_cli_apply_changes(vty, NULL);
 }
@@ -118,14 +113,10 @@ DEFUN_YANG (no_ripng_allow_ecmp,
 void cli_show_ripng_allow_ecmp(struct vty *vty, const struct lyd_node *dnode,
 			       bool show_defaults)
 {
-	uint8_t paths;
+	if (!yang_dnode_get_bool(dnode, NULL))
+		vty_out(vty, " no");
 
-	paths = yang_dnode_get_uint8(dnode, NULL);
-
-	if (!paths)
-		vty_out(vty, " no allow-ecmp\n");
-	else
-		vty_out(vty, " allow-ecmp %d\n", paths);
+	vty_out(vty, " allow-ecmp\n");
 }
 
 /*
@@ -569,7 +560,6 @@ void ripng_cli_init(void)
 	install_element(RIPNG_NODE, &ripng_no_ipv6_distribute_list_cmd);
 
 	install_element(RIPNG_NODE, &ripng_allow_ecmp_cmd);
-	install_element(RIPNG_NODE, &no_ripng_allow_ecmp_cmd);
 	install_element(RIPNG_NODE, &ripng_default_information_originate_cmd);
 	install_element(RIPNG_NODE, &ripng_default_metric_cmd);
 	install_element(RIPNG_NODE, &no_ripng_default_metric_cmd);

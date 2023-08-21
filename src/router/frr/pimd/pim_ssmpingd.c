@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2008  Everton da Silva Marques
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -196,7 +209,7 @@ static void ssmpingd_delete(struct ssmpingd_sock *ss)
 {
 	assert(ss);
 
-	EVENT_OFF(ss->t_sock_read);
+	THREAD_OFF(ss->t_sock_read);
 
 	if (close(ss->sock_fd)) {
 		zlog_warn(
@@ -286,11 +299,11 @@ static int ssmpingd_read_msg(struct ssmpingd_sock *ss)
 	return 0;
 }
 
-static void ssmpingd_sock_read(struct event *t)
+static void ssmpingd_sock_read(struct thread *t)
 {
 	struct ssmpingd_sock *ss;
 
-	ss = EVENT_ARG(t);
+	ss = THREAD_ARG(t);
 
 	ssmpingd_read_msg(ss);
 
@@ -300,8 +313,8 @@ static void ssmpingd_sock_read(struct event *t)
 
 static void ssmpingd_read_on(struct ssmpingd_sock *ss)
 {
-	event_add_read(router->master, ssmpingd_sock_read, ss, ss->sock_fd,
-		       &ss->t_sock_read);
+	thread_add_read(router->master, ssmpingd_sock_read, ss, ss->sock_fd,
+			&ss->t_sock_read);
 }
 
 static struct ssmpingd_sock *ssmpingd_new(struct pim_instance *pim,

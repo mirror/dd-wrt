@@ -1,10 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Zebra API server.
  * Portions:
  *   Copyright (C) 1997-1999  Kunihiro Ishiguro
  *   Copyright (C) 2015-2018  Cumulus Networks, Inc.
  *   et al.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _ZEBRA_ZSERV_H
@@ -19,7 +32,7 @@
 #include "lib/vrf.h"          /* for vrf_bitmap_t */
 #include "lib/zclient.h"      /* for redist_proto */
 #include "lib/stream.h"       /* for stream, stream_fifo */
-#include "frrevent.h"            /* for thread, thread_master */
+#include "lib/thread.h"       /* for thread, thread_master */
 #include "lib/linklist.h"     /* for list */
 #include "lib/workqueue.h"    /* for work_queue */
 #include "lib/hook.h"         /* for DECLARE_HOOK, DECLARE_KOOH */
@@ -51,6 +64,9 @@ struct client_gr_info {
 	/* VRF for which GR enabled */
 	vrf_id_t vrf_id;
 
+	/* AFI */
+	afi_t current_afi;
+
 	/* Stale time and GR cap */
 	uint32_t stale_removal_time;
 	enum zserv_client_capabilities capabilities;
@@ -61,12 +77,13 @@ struct client_gr_info {
 	bool stale_client;
 
 	/* Route sync and enable flags for AFI/SAFI */
-	bool af_enabled[AFI_MAX];
-	bool route_sync[AFI_MAX];
+	bool af_enabled[AFI_MAX][SAFI_MAX];
+	bool route_sync[AFI_MAX][SAFI_MAX];
 
 	/* Book keeping */
+	struct prefix *current_prefix;
 	void *stale_client_ptr;
-	struct event *t_stale_removal;
+	struct thread *t_stale_removal;
 
 	TAILQ_ENTRY(client_gr_info) gr_info;
 };
@@ -101,14 +118,14 @@ struct zserv {
 	struct buffer *wb;
 
 	/* Threads for read/write. */
-	struct event *t_read;
-	struct event *t_write;
+	struct thread *t_read;
+	struct thread *t_write;
 
 	/* Event for message processing, for the main pthread */
-	struct event *t_process;
+	struct thread *t_process;
 
 	/* Event for the main pthread */
-	struct event *t_cleanup;
+	struct thread *t_cleanup;
 
 	/* This client's redistribute flag. */
 	struct redist_proto mi_redist[AFI_MAX][ZEBRA_ROUTE_MAX];
@@ -374,7 +391,7 @@ void zserv_log_message(const char *errmsg, struct stream *msg,
 		       struct zmsghdr *hdr);
 
 /* TODO */
-__attribute__((__noreturn__)) void zebra_finalize(struct event *event);
+__attribute__((__noreturn__)) void zebra_finalize(struct thread *event);
 
 /*
  * Graceful restart functions.

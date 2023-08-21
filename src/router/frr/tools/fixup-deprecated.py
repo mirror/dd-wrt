@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# SPDX-License-Identifier: NONE
 #
 # Script used to replace deprecated quagga/frr mactors/types/etc.
 #

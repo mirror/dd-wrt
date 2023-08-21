@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2020  NetDEF, Inc.
  *                     Renato Westphal
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -12,7 +25,7 @@
 
 #include "test_common.h"
 
-struct event_loop *master;
+struct thread_master *master;
 struct zebra_privs_t isisd_privs;
 
 int isis_sock_init(struct isis_circuit *circuit)
@@ -98,7 +111,7 @@ static void lsp_add_ip_reach(struct isis_lsp *lsp,
 {
 	struct prefix prefix;
 	struct sr_prefix_cfg pcfg = {};
-	struct sr_prefix_cfg *pcfg_p[SR_ALGORITHM_COUNT] = {NULL};
+	struct sr_prefix_cfg *pcfg_p = NULL;
 
 	if (str2prefix(prefix_str, &prefix) != 1) {
 		zlog_debug("%s: invalid network: %s", __func__, prefix_str);
@@ -106,7 +119,7 @@ static void lsp_add_ip_reach(struct isis_lsp *lsp,
 	}
 
 	if (CHECK_FLAG(tnode->flags, F_ISIS_TEST_NODE_SR)) {
-		pcfg_p[SR_ALGORITHM_SPF] = &pcfg;
+		pcfg_p = &pcfg;
 
 		pcfg.sid = *next_sid_index;
 		*next_sid_index = *next_sid_index + 1;
@@ -163,32 +176,31 @@ static void lsp_add_reach(struct isis_lsp *lsp,
 static void lsp_add_router_capability(struct isis_lsp *lsp,
 				      const struct isis_test_node *tnode)
 {
-	struct isis_router_cap *cap;
+	struct isis_router_cap cap = {};
 
 	if (!tnode->router_id)
 		return;
 
-	cap = isis_tlvs_init_router_capability(lsp->tlvs);
-
-	if (inet_pton(AF_INET, tnode->router_id, &cap->router_id) != 1) {
+	if (inet_pton(AF_INET, tnode->router_id, &cap.router_id) != 1) {
 		zlog_debug("%s: invalid router-id: %s", __func__,
 			   tnode->router_id);
 		return;
 	}
 
 	if (CHECK_FLAG(tnode->flags, F_ISIS_TEST_NODE_SR)) {
-		cap->srgb.flags =
+		cap.srgb.flags =
 			ISIS_SUBTLV_SRGB_FLAG_I | ISIS_SUBTLV_SRGB_FLAG_V;
-		cap->srgb.lower_bound = tnode->srgb.lower_bound
-						? tnode->srgb.lower_bound
-						: SRGB_DFTL_LOWER_BOUND;
-		cap->srgb.range_size = tnode->srgb.range_size
-					       ? tnode->srgb.range_size
-					       : SRGB_DFTL_RANGE_SIZE;
-		cap->algo[0] = SR_ALGORITHM_SPF;
-		cap->algo[1] = SR_ALGORITHM_UNSET;
+		cap.srgb.lower_bound = tnode->srgb.lower_bound
+					       ? tnode->srgb.lower_bound
+					       : SRGB_DFTL_LOWER_BOUND;
+		cap.srgb.range_size = tnode->srgb.range_size
+					      ? tnode->srgb.range_size
+					      : SRGB_DFTL_RANGE_SIZE;
+		cap.algo[0] = SR_ALGORITHM_SPF;
+		cap.algo[1] = SR_ALGORITHM_UNSET;
 	}
 
+	isis_tlvs_set_router_capability(lsp->tlvs, &cap);
 }
 
 static void lsp_add_mt_router_info(struct isis_lsp *lsp,

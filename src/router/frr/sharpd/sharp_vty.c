@@ -1,8 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * SHARP - vty code
  * Copyright (C) Cumulus Networks, Inc.
  *               Donald Sharp
+ *
+ * This file is part of FRR.
+ *
+ * FRR is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * FRR is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
@@ -985,7 +1000,6 @@ DEFUN (show_sharp_ted,
 	struct ls_edge *edge;
 	struct ls_subnet *subnet;
 	uint64_t key;
-	struct ls_edge_key ekey;
 	bool verbose = false;
 	bool uj = use_json(argc, argv);
 	json_object *json = NULL;
@@ -1036,9 +1050,8 @@ DEFUN (show_sharp_ted,
 				return CMD_WARNING_CONFIG_FAILED;
 			}
 			/* Get the Edge from the Link State Database */
-			ekey.family = AF_INET;
-			IPV4_ADDR_COPY(&ekey.k.addr, &ip_addr);
-			edge = ls_find_edge_by_key(sg.ted, ekey);
+			key = ((uint64_t)ip_addr.s_addr) & 0xffffffff;
+			edge = ls_find_edge_by_key(sg.ted, key);
 			if (!edge) {
 				vty_out(vty, "No edge found for ID %pI4\n",
 					&ip_addr);
@@ -1061,7 +1074,7 @@ DEFUN (show_sharp_ted,
 				return CMD_WARNING_CONFIG_FAILED;
 			}
 			/* Get the Subnet from the Link State Database */
-			subnet = ls_find_subnet(sg.ted, &pref);
+			subnet = ls_find_subnet(sg.ted, pref);
 			if (!subnet) {
 				vty_out(vty, "No subnet found for ID %pFX\n",
 					&pref);
@@ -1247,7 +1260,6 @@ DEFPY (show_sharp_cspf,
 	}
 	if (path->status != SUCCESS) {
 		vty_out(vty, "Path computation failed: %d\n", path->status);
-		cpath_del(path);
 		return CMD_SUCCESS;
 	}
 
@@ -1263,7 +1275,7 @@ DEFPY (show_sharp_cspf,
 				&edge->attributes->standard.remote6);
 	}
 	vty_out(vty, "\n");
-	cpath_del(path);
+
 	return CMD_SUCCESS;
 }
 

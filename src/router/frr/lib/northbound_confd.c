@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2018  NetDEF, Inc.
  *                     Renato Westphal
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -23,10 +36,10 @@ DEFINE_MTYPE_STATIC(LIB, CONFD, "ConfD module");
 
 static struct debug nb_dbg_client_confd = {0, "Northbound client: ConfD"};
 
-static struct event_loop *master;
+static struct thread_master *master;
 static struct sockaddr confd_addr;
 static int cdb_sub_sock, dp_ctl_sock, dp_worker_sock;
-static struct event *t_cdb_sub, *t_dp_ctl, *t_dp_worker;
+static struct thread *t_cdb_sub, *t_dp_ctl, *t_dp_worker;
 static struct confd_daemon_ctx *dctx;
 static struct confd_notification_ctx *live_ctx;
 static bool confd_connected;
@@ -311,9 +324,8 @@ static void frr_confd_cdb_read_cb_prepare(int fd, int *subp, int reslen)
 	 */
 	transaction = NULL;
 	context.client = NB_CLIENT_CONFD;
-	ret = nb_candidate_commit_prepare(context, candidate, NULL,
-					  &transaction, false, false, errmsg,
-					  sizeof(errmsg));
+	ret = nb_candidate_commit_prepare(&context, candidate, NULL,
+					  &transaction, errmsg, sizeof(errmsg));
 	if (ret != NB_OK && ret != NB_ERR_NO_CHANGES) {
 		enum confd_errcode errcode;
 
@@ -401,15 +413,15 @@ static int frr_confd_cdb_read_cb_abort(int fd, int *subp, int reslen)
 	return 0;
 }
 
-static void frr_confd_cdb_read_cb(struct event *thread)
+static void frr_confd_cdb_read_cb(struct thread *thread)
 {
-	int fd = EVENT_FD(thread);
+	int fd = THREAD_FD(thread);
 	enum cdb_sub_notification cdb_ev;
 	int flags;
 	int *subp = NULL;
 	int reslen = 0;
 
-	event_add_read(master, frr_confd_cdb_read_cb, NULL, fd, &t_cdb_sub);
+	thread_add_read(master, frr_confd_cdb_read_cb, NULL, fd, &t_cdb_sub);
 
 	if (cdb_read_subscription_socket2(fd, &cdb_ev, &flags, &subp, &reslen)
 	    != CONFD_OK) {
@@ -574,8 +586,8 @@ static int frr_confd_init_cdb(void)
 	}
 	pthread_detach(cdb_trigger_thread);
 
-	event_add_read(master, frr_confd_cdb_read_cb, NULL, cdb_sub_sock,
-		       &t_cdb_sub);
+	thread_add_read(master, frr_confd_cdb_read_cb, NULL, cdb_sub_sock,
+			&t_cdb_sub);
 
 	return 0;
 
@@ -588,7 +600,7 @@ error:
 static void frr_confd_finish_cdb(void)
 {
 	if (cdb_sub_sock > 0) {
-		EVENT_OFF(t_cdb_sub);
+		THREAD_OFF(t_cdb_sub);
 		cdb_close(cdb_sub_sock);
 	}
 }
@@ -1173,23 +1185,22 @@ static int frr_confd_dp_read(struct confd_daemon_ctx *dctx, int fd)
 	return 0;
 }
 
-static void frr_confd_dp_ctl_read(struct event *thread)
+static void frr_confd_dp_ctl_read(struct thread *thread)
 {
-	struct confd_daemon_ctx *dctx = EVENT_ARG(thread);
-	int fd = EVENT_FD(thread);
+	struct confd_daemon_ctx *dctx = THREAD_ARG(thread);
+	int fd = THREAD_FD(thread);
 
-	event_add_read(master, frr_confd_dp_ctl_read, dctx, fd, &t_dp_ctl);
+	thread_add_read(master, frr_confd_dp_ctl_read, dctx, fd, &t_dp_ctl);
 
 	frr_confd_dp_read(dctx, fd);
 }
 
-static void frr_confd_dp_worker_read(struct event *thread)
+static void frr_confd_dp_worker_read(struct thread *thread)
 {
-	struct confd_daemon_ctx *dctx = EVENT_ARG(thread);
-	int fd = EVENT_FD(thread);
+	struct confd_daemon_ctx *dctx = THREAD_ARG(thread);
+	int fd = THREAD_FD(thread);
 
-	event_add_read(master, frr_confd_dp_worker_read, dctx, fd,
-		       &t_dp_worker);
+	thread_add_read(master, frr_confd_dp_worker_read, dctx, fd, &t_dp_worker);
 
 	frr_confd_dp_read(dctx, fd);
 }
@@ -1321,10 +1332,10 @@ static int frr_confd_init_dp(const char *program_name)
 		goto error;
 	}
 
-	event_add_read(master, frr_confd_dp_ctl_read, dctx, dp_ctl_sock,
-		       &t_dp_ctl);
-	event_add_read(master, frr_confd_dp_worker_read, dctx, dp_worker_sock,
-		       &t_dp_worker);
+	thread_add_read(master, frr_confd_dp_ctl_read, dctx, dp_ctl_sock,
+			&t_dp_ctl);
+	thread_add_read(master, frr_confd_dp_worker_read, dctx, dp_worker_sock,
+			&t_dp_worker);
 
 	return 0;
 
@@ -1337,11 +1348,11 @@ error:
 static void frr_confd_finish_dp(void)
 {
 	if (dp_worker_sock > 0) {
-		EVENT_OFF(t_dp_worker);
+		THREAD_OFF(t_dp_worker);
 		close(dp_worker_sock);
 	}
 	if (dp_ctl_sock > 0) {
-		EVENT_OFF(t_dp_ctl);
+		THREAD_OFF(t_dp_ctl);
 		close(dp_ctl_sock);
 	}
 	if (dctx != NULL)
@@ -1465,7 +1476,7 @@ static int frr_confd_finish(void)
 	return 0;
 }
 
-static int frr_confd_module_late_init(struct event_loop *tm)
+static int frr_confd_module_late_init(struct thread_master *tm)
 {
 	master = tm;
 

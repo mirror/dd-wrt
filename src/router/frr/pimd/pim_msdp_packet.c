@@ -1,14 +1,27 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * IP MSDP packet helper
  * Copyright (C) 2016 Cumulus Networks, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
 #include <lib/log.h>
 #include <lib/network.h>
 #include <lib/stream.h>
-#include "frrevent.h"
+#include <lib/thread.h>
 #include <lib/vty.h>
 #include <lib/lib_errors.h>
 
@@ -190,7 +203,7 @@ static void pim_msdp_write_proceed_actions(struct pim_msdp_peer *mp)
 	}
 }
 
-void pim_msdp_write(struct event *thread)
+void pim_msdp_write(struct thread *thread)
 {
 	struct pim_msdp_peer *mp;
 	struct stream *s;
@@ -200,7 +213,7 @@ void pim_msdp_write(struct event *thread)
 	int work_cnt = 0;
 	int work_max_cnt = 100;
 
-	mp = EVENT_ARG(thread);
+	mp = THREAD_ARG(thread);
 	mp->t_write = NULL;
 
 	if (PIM_DEBUG_MSDP_INTERNAL) {
@@ -268,12 +281,7 @@ void pim_msdp_write(struct event *thread)
 		case PIM_MSDP_V4_SOURCE_ACTIVE:
 			mp->sa_tx_cnt++;
 			break;
-		case PIM_MSDP_V4_SOURCE_ACTIVE_REQUEST:
-		case PIM_MSDP_V4_SOURCE_ACTIVE_RESPONSE:
-		case PIM_MSDP_RESERVED:
-		case PIM_MSDP_TRACEROUTE_PROGRESS:
-		case PIM_MSDP_TRACEROUTE_REPLY:
-			break;
+		default:;
 		}
 		if (PIM_DEBUG_MSDP_PACKETS) {
 			pim_msdp_pkt_dump(mp, type, len, false /*rx*/, s);
@@ -618,13 +626,8 @@ static void pim_msdp_pkt_rx(struct pim_msdp_peer *mp)
 		mp->sa_rx_cnt++;
 		pim_msdp_pkt_sa_rx(mp, len);
 		break;
-	case PIM_MSDP_V4_SOURCE_ACTIVE_REQUEST:
-	case PIM_MSDP_V4_SOURCE_ACTIVE_RESPONSE:
-	case PIM_MSDP_RESERVED:
-	case PIM_MSDP_TRACEROUTE_PROGRESS:
-	case PIM_MSDP_TRACEROUTE_REPLY:
+	default:
 		mp->unk_rx_cnt++;
-		break;
 	}
 }
 
@@ -686,13 +689,13 @@ static int pim_msdp_read_packet(struct pim_msdp_peer *mp)
 	return 0;
 }
 
-void pim_msdp_read(struct event *thread)
+void pim_msdp_read(struct thread *thread)
 {
 	struct pim_msdp_peer *mp;
 	int rc;
 	uint32_t len;
 
-	mp = EVENT_ARG(thread);
+	mp = THREAD_ARG(thread);
 	mp->t_read = NULL;
 
 	if (PIM_DEBUG_MSDP_INTERNAL) {

@@ -1,5 +1,19 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
+ * This file is part of Quagga.
+ *
+ * Quagga is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * Quagga is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -35,18 +49,18 @@ struct frr_signal_t sigs[] = {{
 				      .handler = &sigusr2,
 			      }};
 
-struct event_loop *master;
-struct event t;
+struct thread_master *master;
+struct thread t;
 
 int main(void)
 {
-	master = event_master_create(NULL);
+	master = thread_master_create(NULL);
 	signal_init(master, array_size(sigs), sigs);
 
 	zlog_aux_init("NONE: ", LOG_DEBUG);
 
-	while (event_fetch(master, &t))
-		event_call(&t);
+	while (thread_fetch(master, &t))
+		thread_call(&t);
 
 	exit(0);
 }

@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2003 Yasuhiro Ohara
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -13,7 +28,7 @@
 #include "routemap.h"
 #include "table.h"
 #include "plist.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "linklist.h"
 #include "lib/northbound_cli.h"
 
@@ -180,13 +195,13 @@ struct ospf6_lsa *ospf6_as_external_lsa_originate(struct ospf6_route *route,
 	return lsa;
 }
 
-void ospf6_orig_as_external_lsa(struct event *thread)
+void ospf6_orig_as_external_lsa(struct thread *thread)
 {
 	struct ospf6_interface *oi;
 	struct ospf6_lsa *lsa;
 	uint32_t type, adv_router;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)THREAD_ARG(thread);
 
 	if (oi->state == OSPF6_INTERFACE_DOWN)
 		return;
@@ -1065,9 +1080,9 @@ static void ospf6_asbr_routemap_unset(struct ospf6_redist *red)
 	ROUTEMAP(red) = NULL;
 }
 
-static void ospf6_asbr_routemap_update_timer(struct event *thread)
+static void ospf6_asbr_routemap_update_timer(struct thread *thread)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = THREAD_ARG(thread);
 	struct ospf6_redist *red;
 	int type;
 
@@ -1104,14 +1119,15 @@ void ospf6_asbr_distribute_list_update(struct ospf6 *ospf6,
 {
 	SET_FLAG(red->flag, OSPF6_IS_RMAP_CHANGED);
 
-	if (event_is_scheduled(ospf6->t_distribute_update))
+	if (thread_is_scheduled(ospf6->t_distribute_update))
 		return;
 
 	if (IS_OSPF6_DEBUG_ASBR)
 		zlog_debug("%s: trigger redistribute reset thread", __func__);
 
-	event_add_timer_msec(master, ospf6_asbr_routemap_update_timer, ospf6,
-			     OSPF_MIN_LS_INTERVAL, &ospf6->t_distribute_update);
+	thread_add_timer_msec(master, ospf6_asbr_routemap_update_timer, ospf6,
+			      OSPF_MIN_LS_INTERVAL,
+			      &ospf6->t_distribute_update);
 }
 
 void ospf6_asbr_routemap_update(const char *mapname)
@@ -1379,8 +1395,8 @@ ospf6_external_aggr_match(struct ospf6 *ospf6, struct prefix *p)
 void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 				 struct prefix *prefix,
 				 unsigned int nexthop_num,
-				 const struct in6_addr *nexthop,
-				 route_tag_t tag, struct ospf6 *ospf6)
+				 struct in6_addr *nexthop, route_tag_t tag,
+				 struct ospf6 *ospf6)
 {
 	route_map_result_t ret;
 	struct ospf6_route troute;
@@ -1468,13 +1484,9 @@ void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 
 		info->type = type;
 
-		if (nexthop_num && nexthop) {
+		if (nexthop_num && nexthop)
 			ospf6_route_add_nexthop(match, ifindex, nexthop);
-			if (!IN6_IS_ADDR_UNSPECIFIED(nexthop)
-			    && !IN6_IS_ADDR_LINKLOCAL(nexthop))
-				memcpy(&info->forwarding, nexthop,
-				       sizeof(struct in6_addr));
-		} else
+		else
 			ospf6_route_add_nexthop(match, ifindex, NULL);
 
 		match->path.origin.id = htonl(info->id);
@@ -1518,13 +1530,9 @@ void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 	}
 
 	info->type = type;
-	if (nexthop_num && nexthop) {
+	if (nexthop_num && nexthop)
 		ospf6_route_add_nexthop(route, ifindex, nexthop);
-		if (!IN6_IS_ADDR_UNSPECIFIED(nexthop)
-		    && !IN6_IS_ADDR_LINKLOCAL(nexthop))
-			memcpy(&info->forwarding, nexthop,
-			       sizeof(struct in6_addr));
-	} else
+	else
 		ospf6_route_add_nexthop(route, ifindex, NULL);
 
 	route = ospf6_route_add(route, ospf6->external_table);
@@ -3022,9 +3030,9 @@ static void ospf6_aggr_handle_external_info(void *data)
 			if (IS_OSPF6_DEBUG_AGGR)
 				zlog_debug("%s: LSA found, refresh it",
 					   __func__);
-			EVENT_OFF(lsa->refresh);
-			event_add_event(master, ospf6_lsa_refresh, lsa, 0,
-					&lsa->refresh);
+			THREAD_OFF(lsa->refresh);
+			thread_add_event(master, ospf6_lsa_refresh, lsa, 0,
+					 &lsa->refresh);
 			return;
 		}
 	}
@@ -3132,9 +3140,11 @@ static void ospf6_handle_external_aggr_update(struct ospf6 *ospf6)
 			aggr->action = OSPF6_ROUTE_AGGR_NONE;
 			ospf6_asbr_summary_config_delete(ospf6, rn);
 
-			hash_clean_and_free(&aggr->match_extnl_hash,
-					    ospf6_aggr_handle_external_info);
+			if (OSPF6_EXTERNAL_RT_COUNT(aggr))
+				hash_clean(aggr->match_extnl_hash,
+				ospf6_aggr_handle_external_info);
 
+			hash_free(aggr->match_extnl_hash);
 			XFREE(MTYPE_OSPF6_EXTERNAL_RT_AGGR, aggr);
 
 		} else if (aggr->action == OSPF6_ROUTE_AGGR_MODIFY) {
@@ -3172,13 +3182,17 @@ static void ospf6_aggr_unlink_external_info(void *data)
 
 void ospf6_external_aggregator_free(struct ospf6_external_aggr_rt *aggr)
 {
-	hash_clean_and_free(&aggr->match_extnl_hash,
-			    ospf6_aggr_unlink_external_info);
+	if (OSPF6_EXTERNAL_RT_COUNT(aggr))
+		hash_clean(aggr->match_extnl_hash,
+			ospf6_aggr_unlink_external_info);
 
 	if (IS_OSPF6_DEBUG_AGGR)
 		zlog_debug("%s: Release the aggregator Address(%pFX)",
 						__func__,
 						&aggr->p);
+
+	hash_free(aggr->match_extnl_hash);
+	aggr->match_extnl_hash = NULL;
 
 	XFREE(MTYPE_OSPF6_EXTERNAL_RT_AGGR, aggr);
 }
@@ -3225,9 +3239,9 @@ static void ospf6_handle_exnl_rt_after_aggr_del(struct ospf6 *ospf6,
 	lsa = ospf6_find_external_lsa(ospf6, &rt->prefix);
 
 	if (lsa) {
-		EVENT_OFF(lsa->refresh);
-		event_add_event(master, ospf6_lsa_refresh, lsa, 0,
-				&lsa->refresh);
+		THREAD_OFF(lsa->refresh);
+		thread_add_event(master, ospf6_lsa_refresh, lsa, 0,
+				 &lsa->refresh);
 	} else {
 		if (IS_OSPF6_DEBUG_AGGR)
 			zlog_debug("%s: Originate external route(%pFX)",
@@ -3331,9 +3345,9 @@ ospf6_handle_external_aggr_add(struct ospf6 *ospf6)
 	}
 }
 
-static void ospf6_asbr_summary_process(struct event *thread)
+static void ospf6_asbr_summary_process(struct thread *thread)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = THREAD_ARG(thread);
 	int operation = 0;
 
 	operation = ospf6->aggr_action;
@@ -3363,7 +3377,7 @@ ospf6_start_asbr_summary_delay_timer(struct ospf6 *ospf6,
 {
 	aggr->action = operation;
 
-	if (event_is_scheduled(ospf6->t_external_aggr)) {
+	if (thread_is_scheduled(ospf6->t_external_aggr)) {
 		if (ospf6->aggr_action == OSPF6_ROUTE_AGGR_ADD) {
 
 			if (IS_OSPF6_DEBUG_AGGR)
@@ -3376,7 +3390,7 @@ ospf6_start_asbr_summary_delay_timer(struct ospf6 *ospf6,
 			if (IS_OSPF6_DEBUG_AGGR)
 				zlog_debug("%s, Restarting Aggregator delay timer.",
 							__func__);
-			EVENT_OFF(ospf6->t_external_aggr);
+			THREAD_OFF(ospf6->t_external_aggr);
 		}
 	}
 
@@ -3385,8 +3399,10 @@ ospf6_start_asbr_summary_delay_timer(struct ospf6 *ospf6,
 			   __func__, ospf6->aggr_delay_interval);
 
 	ospf6->aggr_action = operation;
-	event_add_timer(master, ospf6_asbr_summary_process, ospf6,
-			ospf6->aggr_delay_interval, &ospf6->t_external_aggr);
+	thread_add_timer(master,
+			ospf6_asbr_summary_process,
+			ospf6, ospf6->aggr_delay_interval,
+			&ospf6->t_external_aggr);
 }
 
 int ospf6_asbr_external_rt_advertise(struct ospf6 *ospf6,

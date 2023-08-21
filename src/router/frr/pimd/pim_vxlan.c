@@ -1,7 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* PIM support for VxLAN BUM flooding
  *
  * Copyright (C) 2019 Cumulus Networks, Inc.
+ *
+ * This file is part of FRR.
+ *
+ * FRR is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * FRR is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  */
 
 #include <zebra.h>
@@ -169,7 +184,7 @@ void pim_vxlan_update_sg_reg_state(struct pim_instance *pim,
 		pim_vxlan_del_work(vxlan_sg);
 }
 
-static void pim_vxlan_work_timer_cb(struct event *t)
+static void pim_vxlan_work_timer_cb(struct thread *t)
 {
 	pim_vxlan_do_reg_work();
 	pim_vxlan_work_timer_setup(true /* start */);
@@ -178,10 +193,10 @@ static void pim_vxlan_work_timer_cb(struct event *t)
 /* global 1second timer used for periodic processing */
 static void pim_vxlan_work_timer_setup(bool start)
 {
-	EVENT_OFF(vxlan_info.work_timer);
+	THREAD_OFF(vxlan_info.work_timer);
 	if (start)
-		event_add_timer(router->master, pim_vxlan_work_timer_cb, NULL,
-				PIM_VXLAN_WORK_TIME, &vxlan_info.work_timer);
+		thread_add_timer(router->master, pim_vxlan_work_timer_cb, NULL,
+			PIM_VXLAN_WORK_TIME, &vxlan_info.work_timer);
 }
 
 /**************************** vxlan origination mroutes ***********************
@@ -225,7 +240,7 @@ static void pim_vxlan_orig_mr_up_del(struct pim_vxlan_sg *vxlan_sg)
 		 * if there are no other references.
 		 */
 		if (PIM_UPSTREAM_FLAG_TEST_SRC_STREAM(up->flags)) {
-			EVENT_OFF(up->t_ka_timer);
+			THREAD_OFF(up->t_ka_timer);
 			up = pim_upstream_keep_alive_timer_proc(up);
 		} else {
 			/* this is really unexpected as we force vxlan
@@ -1172,8 +1187,12 @@ void pim_vxlan_init(struct pim_instance *pim)
 
 void pim_vxlan_exit(struct pim_instance *pim)
 {
-	hash_clean_and_free(&pim->vxlan.sg_hash,
-			    (void (*)(void *))pim_vxlan_sg_del_item);
+	if (pim->vxlan.sg_hash) {
+		hash_clean(pim->vxlan.sg_hash,
+			   (void (*)(void *))pim_vxlan_sg_del_item);
+		hash_free(pim->vxlan.sg_hash);
+		pim->vxlan.sg_hash = NULL;
+	}
 }
 
 void pim_vxlan_terminate(void)

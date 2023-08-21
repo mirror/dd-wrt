@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* BGP advertisement and adjacency
  * Copyright (C) 1996, 97, 98, 99, 2000 Kunihiro Ishiguro
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -9,7 +24,7 @@
 #include "memory.h"
 #include "prefix.h"
 #include "hash.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "queue.h"
 #include "filter.h"
 
@@ -218,4 +233,30 @@ bool bgp_adj_in_unset(struct bgp_dest *dest, struct peer *peer,
 	}
 
 	return true;
+}
+
+void bgp_sync_init(struct peer *peer)
+{
+	afi_t afi;
+	safi_t safi;
+	struct bgp_synchronize *sync;
+
+	FOREACH_AFI_SAFI (afi, safi) {
+		sync = XCALLOC(MTYPE_BGP_SYNCHRONISE,
+			       sizeof(struct bgp_synchronize));
+		bgp_adv_fifo_init(&sync->update);
+		bgp_adv_fifo_init(&sync->withdraw);
+		bgp_adv_fifo_init(&sync->withdraw_low);
+		peer->sync[afi][safi] = sync;
+	}
+}
+
+void bgp_sync_delete(struct peer *peer)
+{
+	afi_t afi;
+	safi_t safi;
+
+	FOREACH_AFI_SAFI (afi, safi) {
+		XFREE(MTYPE_BGP_SYNCHRONISE, peer->sync[afi][safi]);
+	}
 }

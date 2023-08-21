@@ -1,8 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Server side of OSPF API.
  * Copyright (C) 2001, 2002 Ralph Keller
  * Copyright (c) 2022, LabN Consulting, L.L.C.
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation; either version 2, or (at your
+ * option) any later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -18,14 +33,14 @@
 #include "vty.h"
 #include "stream.h"
 #include "log.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "hash.h"
 #include "sockunion.h" /* for inet_aton() */
 #include "buffer.h"
 
 #include <sys/types.h>
 
-#include "ospfd/ospfd.h" /* for "struct event_loop" */
+#include "ospfd/ospfd.h" /* for "struct thread_master" */
 #include "ospfd/ospf_interface.h"
 #include "ospfd/ospf_ism.h"
 #include "ospfd/ospf_asbr.h"
@@ -278,28 +293,28 @@ void ospf_apiserver_event(enum ospf_apiserver_event event, int fd,
 {
 	switch (event) {
 	case OSPF_APISERVER_ACCEPT:
-		(void)event_add_read(master, ospf_apiserver_accept, apiserv, fd,
-				     NULL);
+		(void)thread_add_read(master, ospf_apiserver_accept, apiserv,
+				      fd, NULL);
 		break;
 	case OSPF_APISERVER_SYNC_READ:
 		apiserv->t_sync_read = NULL;
-		event_add_read(master, ospf_apiserver_read, apiserv, fd,
-			       &apiserv->t_sync_read);
+		thread_add_read(master, ospf_apiserver_read, apiserv, fd,
+				&apiserv->t_sync_read);
 		break;
 #ifdef USE_ASYNC_READ
 	case OSPF_APISERVER_ASYNC_READ:
 		apiserv->t_async_read = NULL;
-		event_add_read(master, ospf_apiserver_read, apiserv, fd,
-			       &apiserv->t_async_read);
+		thread_add_read(master, ospf_apiserver_read, apiserv, fd,
+				&apiserv->t_async_read);
 		break;
 #endif /* USE_ASYNC_READ */
 	case OSPF_APISERVER_SYNC_WRITE:
-		event_add_write(master, ospf_apiserver_sync_write, apiserv, fd,
-				&apiserv->t_sync_write);
+		thread_add_write(master, ospf_apiserver_sync_write, apiserv, fd,
+				 &apiserv->t_sync_write);
 		break;
 	case OSPF_APISERVER_ASYNC_WRITE:
-		event_add_write(master, ospf_apiserver_async_write, apiserv, fd,
-				&apiserv->t_async_write);
+		thread_add_write(master, ospf_apiserver_async_write, apiserv,
+				 fd, &apiserv->t_async_write);
 		break;
 	}
 }
@@ -312,12 +327,12 @@ void ospf_apiserver_free(struct ospf_apiserver *apiserv)
 	struct listnode *node;
 
 	/* Cancel read and write threads. */
-	EVENT_OFF(apiserv->t_sync_read);
+	THREAD_OFF(apiserv->t_sync_read);
 #ifdef USE_ASYNC_READ
-	EVENT_OFF(apiserv->t_async_read);
+	THREAD_OFF(apiserv->t_async_read);
 #endif /* USE_ASYNC_READ */
-	EVENT_OFF(apiserv->t_sync_write);
-	EVENT_OFF(apiserv->t_async_write);
+	THREAD_OFF(apiserv->t_sync_write);
+	THREAD_OFF(apiserv->t_async_write);
 
 	/* Unregister all opaque types that application registered
 	   and flush opaque LSAs if still in LSDB. */
@@ -360,15 +375,15 @@ void ospf_apiserver_free(struct ospf_apiserver *apiserv)
 	XFREE(MTYPE_APISERVER, apiserv);
 }
 
-void ospf_apiserver_read(struct event *thread)
+void ospf_apiserver_read(struct thread *thread)
 {
 	struct ospf_apiserver *apiserv;
 	struct msg *msg;
 	int fd;
 	enum ospf_apiserver_event event;
 
-	apiserv = EVENT_ARG(thread);
-	fd = EVENT_FD(thread);
+	apiserv = THREAD_ARG(thread);
+	fd = THREAD_FD(thread);
 
 	if (fd == apiserv->fd_sync) {
 		event = OSPF_APISERVER_SYNC_READ;
@@ -419,16 +434,16 @@ void ospf_apiserver_read(struct event *thread)
 	msg_free(msg);
 }
 
-void ospf_apiserver_sync_write(struct event *thread)
+void ospf_apiserver_sync_write(struct thread *thread)
 {
 	struct ospf_apiserver *apiserv;
 	struct msg *msg;
 	int fd;
 	int rc = -1;
 
-	apiserv = EVENT_ARG(thread);
+	apiserv = THREAD_ARG(thread);
 	assert(apiserv);
-	fd = EVENT_FD(thread);
+	fd = THREAD_FD(thread);
 
 	apiserv->t_sync_write = NULL;
 
@@ -479,16 +494,16 @@ out:
 }
 
 
-void ospf_apiserver_async_write(struct event *thread)
+void ospf_apiserver_async_write(struct thread *thread)
 {
 	struct ospf_apiserver *apiserv;
 	struct msg *msg;
 	int fd;
 	int rc = -1;
 
-	apiserv = EVENT_ARG(thread);
+	apiserv = THREAD_ARG(thread);
 	assert(apiserv);
-	fd = EVENT_FD(thread);
+	fd = THREAD_FD(thread);
 
 	apiserv->t_async_write = NULL;
 
@@ -577,7 +592,7 @@ int ospf_apiserver_serv_sock_family(unsigned short port, int family)
 
 /* Accept connection request from external applications. For each
    accepted connection allocate own connection instance. */
-void ospf_apiserver_accept(struct event *thread)
+void ospf_apiserver_accept(struct thread *thread)
 {
 	int accept_sock;
 	int new_sync_sock;
@@ -589,8 +604,8 @@ void ospf_apiserver_accept(struct event *thread)
 	unsigned int peerlen;
 	int ret;
 
-	/* EVENT_ARG (thread) is NULL */
-	accept_sock = EVENT_FD(thread);
+	/* THREAD_ARG (thread) is NULL */
+	accept_sock = THREAD_FD(thread);
 
 	/* Keep hearing on socket for further connections. */
 	ospf_apiserver_event(OSPF_APISERVER_ACCEPT, accept_sock, NULL);
@@ -1764,12 +1779,6 @@ int ospf_apiserver_originate1(struct ospf_lsa *lsa, struct ospf_lsa *old)
 		 * session. Dump it, but increment past it's seqnum.
 		 */
 		assert(!ospf_opaque_is_owned(old));
-		if (IS_DEBUG_OSPF_CLIENT_API)
-			zlog_debug(
-				"LSA[Type%d:%pI4]: OSPF API Server Originate LSA Old Seq: 0x%x Age: %d",
-				old->data->type, &old->data->id,
-				ntohl(old->data->ls_seqnum),
-				ntohl(old->data->ls_age));
 		if (IS_LSA_MAX_SEQ(old)) {
 			flog_warn(EC_OSPF_LSA_INSTALL_FAILURE,
 				  "%s: old LSA at maxseq", __func__);
@@ -1778,11 +1787,6 @@ int ospf_apiserver_originate1(struct ospf_lsa *lsa, struct ospf_lsa *old)
 		lsa->data->ls_seqnum = lsa_seqnum_increment(old);
 		ospf_discard_from_db(ospf, old->lsdb, old);
 	}
-	if (IS_DEBUG_OSPF_CLIENT_API)
-		zlog_debug(
-			"LSA[Type%d:%pI4]: OSPF API Server Originate LSA New Seq: 0x%x Age: %d",
-			lsa->data->type, &lsa->data->id,
-			ntohl(lsa->data->ls_seqnum), ntohl(lsa->data->ls_age));
 
 	/* Install this LSA into LSDB. */
 	if (ospf_lsa_install(ospf, lsa->oi, lsa) == NULL) {
@@ -1857,11 +1861,6 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 	ospf = ospf_lookup_by_vrf_id(VRF_DEFAULT);
 	assert(ospf);
 
-	if (IS_DEBUG_OSPF(lsa, LSA_GENERATE)) {
-		zlog_debug("LSA[Type%d:%pI4]: OSPF API Server LSA Refresher",
-			   lsa->data->type, &lsa->data->id);
-	}
-
 	apiserv = lookup_apiserver_by_lsa(lsa);
 	if (!apiserv) {
 		zlog_warn("%s: LSA[%s]: No apiserver?", __func__,
@@ -1871,14 +1870,14 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 		goto out;
 	}
 
+	if (IS_LSA_MAXAGE(lsa)) {
+		ospf_opaque_lsa_flush_schedule(lsa);
+		goto out;
+	}
+
 	/* Check if updated version of LSA instance has already prepared. */
 	new = ospf_lsdb_lookup(&apiserv->reserve, lsa);
 	if (!new) {
-		if (IS_LSA_MAXAGE(lsa)) {
-			ospf_opaque_lsa_flush_schedule(lsa);
-			goto out;
-		}
-
 		/* This is a periodic refresh, driven by core OSPF mechanism. */
 		new = ospf_apiserver_opaque_lsa_new(lsa->area, lsa->oi,
 						    lsa->data);

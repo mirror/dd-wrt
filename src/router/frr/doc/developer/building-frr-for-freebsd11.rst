@@ -17,8 +17,7 @@ is first package install and asked)
 .. code-block:: shell
 
    pkg install git autoconf automake libtool gmake json-c pkgconf \
-      bison flex py36-pytest c-ares python3.6 py36-sphinx texinfo libunwind \
-      protobuf-c
+      bison flex py36-pytest c-ares python3.6 py36-sphinx texinfo libunwind
 
 .. include:: building-libunwind-note.rst
 

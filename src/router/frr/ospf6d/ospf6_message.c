@@ -1,6 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2003 Yasuhiro Ohara
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -9,7 +24,7 @@
 #include "log.h"
 #include "vty.h"
 #include "command.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "linklist.h"
 #include "lib_errors.h"
 #include "checksum.h"
@@ -535,9 +550,9 @@ static void ospf6_hello_recv(struct in6_addr *src, struct in6_addr *dst,
 	oi->hello_in++;
 
 	/* Execute neighbor events */
-	event_execute(master, hello_received, on, 0);
+	thread_execute(master, hello_received, on, 0);
 	if (twoway)
-		event_execute(master, twoway_received, on, 0);
+		thread_execute(master, twoway_received, on, 0);
 	else {
 		if (OSPF6_GR_IS_ACTIVE_HELPER(on)) {
 			if (IS_DEBUG_OSPF6_GR)
@@ -553,7 +568,7 @@ static void ospf6_hello_recv(struct in6_addr *src, struct in6_addr *dst,
 			 * receives one_way hellow when it acts as HELPER for
 			 * that specific neighbor.
 			 */
-			event_execute(master, oneway_received, on, 0);
+			thread_execute(master, oneway_received, on, 0);
 		}
 	}
 
@@ -594,9 +609,9 @@ static void ospf6_hello_recv(struct in6_addr *src, struct in6_addr *dst,
 
 	/* Schedule interface events */
 	if (backupseen)
-		event_add_event(master, backup_seen, oi, 0, NULL);
+		thread_add_event(master, backup_seen, oi, 0, NULL);
 	if (neighborchange)
-		event_add_event(master, neighbor_change, oi, 0, NULL);
+		thread_add_event(master, neighbor_change, oi, 0, NULL);
 
 	if (neighbor_ifindex_change && on->state == OSPF6_NEIGHBOR_FULL)
 		OSPF6_ROUTER_LSA_SCHEDULE(oi->area);
@@ -624,7 +639,7 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 		return;
 
 	case OSPF6_NEIGHBOR_INIT:
-		event_execute(master, twoway_received, on, 0);
+		thread_execute(master, twoway_received, on, 0);
 		if (on->state != OSPF6_NEIGHBOR_EXSTART) {
 			if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
 				zlog_debug(
@@ -640,7 +655,7 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 		    && !CHECK_FLAG(dbdesc->bits, OSPF6_DBDESC_IBIT)
 		    && ntohl(dbdesc->seqnum) == on->dbdesc_seqnum) {
 			/* execute NegotiationDone */
-			event_execute(master, negotiation_done, on, 0);
+			thread_execute(master, negotiation_done, on, 0);
 
 			/* Record neighbor options */
 			memcpy(on->options, dbdesc->options,
@@ -667,24 +682,24 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 			zlog_warn(
 				"DbDesc recv: Master/Slave bit mismatch Nbr %s",
 				on->name);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
 		if (CHECK_FLAG(dbdesc->bits, OSPF6_DBDESC_IBIT)) {
 			zlog_warn("DbDesc recv: Initialize bit mismatch Nbr %s",
 				  on->name);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
 		if (memcmp(on->options, dbdesc->options, sizeof(on->options))) {
 			zlog_warn("DbDesc recv: Option field mismatch Nbr %s",
 				  on->name);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
@@ -693,7 +708,7 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 				"DbDesc recv: Sequence number mismatch Nbr %s (received %#lx, %#lx expected)",
 				on->name, (unsigned long)ntohl(dbdesc->seqnum),
 				(unsigned long)on->dbdesc_seqnum);
-			event_add_event(master, seqnumber_mismatch, on, 0,
+			thread_add_event(master, seqnumber_mismatch, on, 0,
 					 NULL);
 			return;
 		}
@@ -714,7 +729,7 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 		zlog_warn(
 			"DbDesc recv: Not duplicate dbdesc in state %s Nbr %s",
 			ospf6_neighbor_state_str[on->state], on->name);
-		event_add_event(master, seqnumber_mismatch, on, 0, NULL);
+		thread_add_event(master, seqnumber_mismatch, on, 0, NULL);
 		return;
 
 	default:
@@ -758,8 +773,8 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 				zlog_debug(
 					"SeqNumMismatch (E-bit mismatch), discard");
 			ospf6_lsa_delete(his);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
@@ -787,19 +802,19 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 
 	/* schedule send lsreq */
 	if (on->request_list->count)
-		event_add_event(master, ospf6_lsreq_send, on, 0,
-				&on->thread_send_lsreq);
+		thread_add_event(master, ospf6_lsreq_send, on, 0,
+				 &on->thread_send_lsreq);
 
-	EVENT_OFF(on->thread_send_dbdesc);
+	THREAD_OFF(on->thread_send_dbdesc);
 
 	/* More bit check */
 	if (!CHECK_FLAG(dbdesc->bits, OSPF6_DBDESC_MBIT)
 	    && !CHECK_FLAG(on->dbdesc_bits, OSPF6_DBDESC_MBIT))
-		event_add_event(master, exchange_done, on, 0,
-				&on->thread_exchange_done);
+		thread_add_event(master, exchange_done, on, 0,
+				 &on->thread_exchange_done);
 	else {
-		event_add_event(master, ospf6_dbdesc_send_newone, on, 0,
-				&on->thread_send_dbdesc);
+		thread_add_event(master, ospf6_dbdesc_send_newone, on, 0,
+				 &on->thread_send_dbdesc);
 	}
 
 	/* save last received dbdesc */
@@ -828,7 +843,7 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 		return;
 
 	case OSPF6_NEIGHBOR_INIT:
-		event_execute(master, twoway_received, on, 0);
+		thread_execute(master, twoway_received, on, 0);
 		if (on->state != OSPF6_NEIGHBOR_EXSTART) {
 			if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
 				zlog_debug(
@@ -855,7 +870,7 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 			on->dbdesc_seqnum = ntohl(dbdesc->seqnum);
 
 			/* schedule NegotiationDone */
-			event_execute(master, negotiation_done, on, 0);
+			thread_execute(master, negotiation_done, on, 0);
 
 			/* Record neighbor options */
 			memcpy(on->options, dbdesc->options,
@@ -875,9 +890,9 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 			if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
 				zlog_debug(
 					"Duplicated dbdesc causes retransmit");
-			EVENT_OFF(on->thread_send_dbdesc);
-			event_add_event(master, ospf6_dbdesc_send, on, 0,
-					&on->thread_send_dbdesc);
+			THREAD_OFF(on->thread_send_dbdesc);
+			thread_add_event(master, ospf6_dbdesc_send, on, 0,
+					 &on->thread_send_dbdesc);
 			return;
 		}
 
@@ -885,8 +900,8 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 			zlog_warn(
 				"DbDesc slave recv: Master/Slave bit mismatch Nbr %s",
 				on->name);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
@@ -894,8 +909,8 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 			zlog_warn(
 				"DbDesc slave recv: Initialize bit mismatch Nbr %s",
 				on->name);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
@@ -903,8 +918,8 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 			zlog_warn(
 				"DbDesc slave recv: Option field mismatch Nbr %s",
 				on->name);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
@@ -913,7 +928,7 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 				"DbDesc slave recv: Sequence number mismatch Nbr %s (received %#lx, %#lx expected)",
 				on->name, (unsigned long)ntohl(dbdesc->seqnum),
 				(unsigned long)on->dbdesc_seqnum + 1);
-			event_add_event(master, seqnumber_mismatch, on, 0,
+			thread_add_event(master, seqnumber_mismatch, on, 0,
 					 NULL);
 			return;
 		}
@@ -928,16 +943,16 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 			if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
 				zlog_debug(
 					"Duplicated dbdesc causes retransmit");
-			EVENT_OFF(on->thread_send_dbdesc);
-			event_add_event(master, ospf6_dbdesc_send, on, 0,
-					&on->thread_send_dbdesc);
+			THREAD_OFF(on->thread_send_dbdesc);
+			thread_add_event(master, ospf6_dbdesc_send, on, 0,
+					 &on->thread_send_dbdesc);
 			return;
 		}
 
 		zlog_warn(
 			"DbDesc slave recv: Not duplicate dbdesc in state %s Nbr %s",
 			ospf6_neighbor_state_str[on->state], on->name);
-		event_add_event(master, seqnumber_mismatch, on, 0, NULL);
+		thread_add_event(master, seqnumber_mismatch, on, 0, NULL);
 		return;
 
 	default:
@@ -977,8 +992,8 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 			if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV))
 				zlog_debug("E-bit mismatch with LSA Headers");
 			ospf6_lsa_delete(his);
-			event_add_event(master, seqnumber_mismatch, on, 0,
-					NULL);
+			thread_add_event(master, seqnumber_mismatch, on, 0,
+					 NULL);
 			return;
 		}
 
@@ -999,12 +1014,12 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 
 	/* schedule send lsreq */
 	if (on->request_list->count)
-		event_add_event(master, ospf6_lsreq_send, on, 0,
-				&on->thread_send_lsreq);
+		thread_add_event(master, ospf6_lsreq_send, on, 0,
+				 &on->thread_send_lsreq);
 
-	EVENT_OFF(on->thread_send_dbdesc);
-	event_add_event(master, ospf6_dbdesc_send_newone, on, 0,
-			&on->thread_send_dbdesc);
+	THREAD_OFF(on->thread_send_dbdesc);
+	thread_add_event(master, ospf6_dbdesc_send_newone, on, 0,
+			 &on->thread_send_dbdesc);
 
 	/* save last received dbdesc */
 	memcpy(&on->dbdesc_last, dbdesc, sizeof(struct ospf6_dbdesc));
@@ -1126,7 +1141,7 @@ static void ospf6_lsreq_recv(struct in6_addr *src, struct in6_addr *dst,
 				"Can't find requested lsa [%s Id:%pI4 Adv:%pI4] send badLSReq",
 				ospf6_lstype_name(e->type), &e->id,
 				&e->adv_router);
-			event_add_event(master, bad_lsreq, on, 0, NULL);
+			thread_add_event(master, bad_lsreq, on, 0, NULL);
 			return;
 		}
 
@@ -1136,9 +1151,9 @@ static void ospf6_lsreq_recv(struct in6_addr *src, struct in6_addr *dst,
 	assert(p == OSPF6_MESSAGE_END(oh));
 
 	/* schedule send lsupdate */
-	EVENT_OFF(on->thread_send_lsupdate);
-	event_add_event(master, ospf6_lsupdate_send_neighbor, on, 0,
-			&on->thread_send_lsupdate);
+	THREAD_OFF(on->thread_send_lsupdate);
+	thread_add_event(master, ospf6_lsupdate_send_neighbor, on, 0,
+			 &on->thread_send_lsupdate);
 }
 
 /* Verify, that the specified memory area contains exactly N valid IPv6
@@ -1907,18 +1922,18 @@ static int ospf6_read_helper(int sockfd, struct ospf6 *ospf6)
 	return OSPF6_READ_CONTINUE;
 }
 
-void ospf6_receive(struct event *thread)
+void ospf6_receive(struct thread *thread)
 {
 	int sockfd;
 	struct ospf6 *ospf6;
 	int count = 0;
 
 	/* add next read thread */
-	ospf6 = EVENT_ARG(thread);
-	sockfd = EVENT_FD(thread);
+	ospf6 = THREAD_ARG(thread);
+	sockfd = THREAD_FD(thread);
 
-	event_add_read(master, ospf6_receive, ospf6, ospf6->fd,
-		       &ospf6->t_ospf6_receive);
+	thread_add_read(master, ospf6_receive, ospf6, ospf6->fd,
+			&ospf6->t_ospf6_receive);
 
 	while (count < ospf6->write_oi_count) {
 		count++;
@@ -2082,9 +2097,9 @@ static uint16_t ospf6_make_hello(struct ospf6_interface *oi, struct stream *s)
 	return length;
 }
 
-static void ospf6_write(struct event *thread)
+static void ospf6_write(struct thread *thread)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = THREAD_ARG(thread);
 	struct ospf6_interface *oi;
 	struct ospf6_header *oh;
 	struct ospf6_packet *op;
@@ -2232,21 +2247,17 @@ static void ospf6_write(struct event *thread)
 
 	/* If packets still remain in queue, call write thread. */
 	if (!list_isempty(ospf6->oi_write_q))
-		event_add_write(master, ospf6_write, ospf6, ospf6->fd,
-				&ospf6->t_write);
+		thread_add_write(master, ospf6_write, ospf6, ospf6->fd,
+				 &ospf6->t_write);
 }
 
-void ospf6_hello_send(struct event *thread)
+void ospf6_hello_send(struct thread *thread)
 {
 	struct ospf6_interface *oi;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
-
-	/* Check if the GR hello-delay is active. */
-	if (oi->gr.hello_delay.t_grace_send)
-		return;
+	oi = (struct ospf6_interface *)THREAD_ARG(thread);
 
 	if (oi->state <= OSPF6_INTERFACE_DOWN) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_HELLO, SEND_HDR))
@@ -2283,8 +2294,8 @@ void ospf6_hello_send(struct event *thread)
 	ospf6_packet_add_top(oi, op);
 
 	/* set next thread */
-	event_add_timer(master, ospf6_hello_send, oi, oi->hello_interval,
-			&oi->thread_send_hello);
+	thread_add_timer(master, ospf6_hello_send, oi, oi->hello_interval,
+			 &oi->thread_send_hello);
 
 	OSPF6_MESSAGE_WRITE_ON(oi);
 }
@@ -2337,13 +2348,13 @@ static uint16_t ospf6_make_dbdesc(struct ospf6_neighbor *on, struct stream *s)
 	return length;
 }
 
-void ospf6_dbdesc_send(struct event *thread)
+void ospf6_dbdesc_send(struct thread *thread)
 {
 	struct ospf6_neighbor *on;
 	uint16_t length = OSPF6_HEADER_SIZE;
 	struct ospf6_packet *op;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)THREAD_ARG(thread);
 
 	if (on->state < OSPF6_NEIGHBOR_EXSTART) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_DBDESC, SEND))
@@ -2355,9 +2366,9 @@ void ospf6_dbdesc_send(struct event *thread)
 
 	/* set next thread if master */
 	if (CHECK_FLAG(on->dbdesc_bits, OSPF6_DBDESC_MSBIT))
-		event_add_timer(master, ospf6_dbdesc_send, on,
-				on->ospf6_if->rxmt_interval,
-				&on->thread_send_dbdesc);
+		thread_add_timer(master, ospf6_dbdesc_send, on,
+				 on->ospf6_if->rxmt_interval,
+				 &on->thread_send_dbdesc);
 
 	op = ospf6_packet_new(on->ospf6_if->ifmtu);
 	ospf6_make_header(OSPF6_MESSAGE_TYPE_DBDESC, on->ospf6_if, op->s);
@@ -2380,13 +2391,13 @@ void ospf6_dbdesc_send(struct event *thread)
 	OSPF6_MESSAGE_WRITE_ON(on->ospf6_if);
 }
 
-void ospf6_dbdesc_send_newone(struct event *thread)
+void ospf6_dbdesc_send_newone(struct thread *thread)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_lsa *lsa, *lsanext;
 	unsigned int size = 0;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)THREAD_ARG(thread);
 	ospf6_lsdb_remove_all(on->dbdesc_list);
 
 	/* move LSAs from summary_list to dbdesc_list (within neighbor
@@ -2422,10 +2433,10 @@ void ospf6_dbdesc_send_newone(struct event *thread)
 	if (!CHECK_FLAG(on->dbdesc_bits, OSPF6_DBDESC_MSBIT) && /* Slave */
 	    !CHECK_FLAG(on->dbdesc_last.bits, OSPF6_DBDESC_MBIT)
 	    && !CHECK_FLAG(on->dbdesc_bits, OSPF6_DBDESC_MBIT))
-		event_add_event(master, exchange_done, on, 0,
-				&on->thread_exchange_done);
+		thread_add_event(master, exchange_done, on, 0,
+				 &on->thread_exchange_done);
 
-	event_execute(master, ospf6_dbdesc_send, on, 0);
+	thread_execute(master, ospf6_dbdesc_send, on, 0);
 }
 
 static uint16_t ospf6_make_lsreq(struct ospf6_neighbor *on, struct stream *s)
@@ -2502,13 +2513,13 @@ static uint16_t ospf6_make_lsack_neighbor(struct ospf6_neighbor *on,
 	return length;
 }
 
-void ospf6_lsreq_send(struct event *thread)
+void ospf6_lsreq_send(struct thread *thread)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)THREAD_ARG(thread);
 
 	/* LSReq will be sent only in ExStart or Loading */
 	if (on->state != OSPF6_NEIGHBOR_EXCHANGE
@@ -2522,8 +2533,7 @@ void ospf6_lsreq_send(struct event *thread)
 
 	/* schedule loading_done if request list is empty */
 	if (on->request_list->count == 0) {
-		event_add_event(master, loading_done, on, 0,
-				&on->event_loading_done);
+		thread_add_event(master, loading_done, on, 0, NULL);
 		return;
 	}
 
@@ -2556,9 +2566,9 @@ void ospf6_lsreq_send(struct event *thread)
 
 	/* set next thread */
 	if (on->request_list->count != 0) {
-		event_add_timer(master, ospf6_lsreq_send, on,
-				on->ospf6_if->rxmt_interval,
-				&on->thread_send_lsreq);
+		thread_add_timer(master, ospf6_lsreq_send, on,
+				 on->ospf6_if->rxmt_interval,
+				 &on->thread_send_lsreq);
 	}
 }
 
@@ -2566,7 +2576,9 @@ static void ospf6_send_lsupdate(struct ospf6_neighbor *on,
 				struct ospf6_interface *oi,
 				struct ospf6_packet *op)
 {
+
 	if (on) {
+
 		if ((on->ospf6_if->state == OSPF6_INTERFACE_POINTTOPOINT)
 		    || (on->ospf6_if->state == OSPF6_INTERFACE_DR)
 		    || (on->ospf6_if->state == OSPF6_INTERFACE_BDR))
@@ -2583,8 +2595,6 @@ static void ospf6_send_lsupdate(struct ospf6_neighbor *on,
 			op->dst = alldrouters6;
 	}
 	if (oi) {
-		struct ospf6 *ospf6;
-
 		ospf6_fill_hdr_checksum(oi, op);
 		ospf6_packet_add(oi, op);
 		/* If ospf instance is being deleted, send the packet
@@ -2592,27 +2602,12 @@ static void ospf6_send_lsupdate(struct ospf6_neighbor *on,
 		 */
 		if ((oi->area == NULL) || (oi->area->ospf6 == NULL))
 			return;
-
-		ospf6 = oi->area->ospf6;
-		if (ospf6->inst_shutdown) {
+		if (oi->area->ospf6->inst_shutdown) {
 			if (oi->on_write_q == 0) {
-				listnode_add(ospf6->oi_write_q, oi);
+				listnode_add(oi->area->ospf6->oi_write_q, oi);
 				oi->on_write_q = 1;
 			}
-			/*
-			 * When ospf6d immediately calls event_execute
-			 * for items in the oi_write_q.  The event_execute
-			 * will call ospf6_write and cause the oi_write_q
-			 * to be emptied.  *IF* there is already an event
-			 * scheduled for the oi_write_q by something else
-			 * then when it wakes up in the future and attempts
-			 * to cycle through items in the queue it will
-			 * assert.  Let's stop the t_write event and
-			 * if ospf6_write doesn't finish up the work
-			 * it will schedule itself again.
-			 */
-			event_cancel(&ospf6->t_write);
-			event_execute(master, ospf6_write, ospf6, 0);
+			thread_execute(master, ospf6_write, oi->area->ospf6, 0);
 		} else
 			OSPF6_MESSAGE_WRITE_ON(oi);
 	}
@@ -2696,14 +2691,14 @@ static uint16_t ospf6_make_ls_retrans_list(struct ospf6_neighbor *on,
 	return length;
 }
 
-void ospf6_lsupdate_send_neighbor(struct event *thread)
+void ospf6_lsupdate_send_neighbor(struct thread *thread)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 	int lsa_cnt = 0;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)THREAD_ARG(thread);
 
 	if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSUPDATE, SEND_HDR))
 		zlog_debug("LSUpdate to neighbor %s", on->name);
@@ -2754,12 +2749,12 @@ void ospf6_lsupdate_send_neighbor(struct event *thread)
 		ospf6_packet_free(op);
 
 	if (on->lsupdate_list->count != 0) {
-		event_add_event(master, ospf6_lsupdate_send_neighbor, on, 0,
-				&on->thread_send_lsupdate);
+		thread_add_event(master, ospf6_lsupdate_send_neighbor, on, 0,
+				 &on->thread_send_lsupdate);
 	} else if (on->retrans_list->count != 0) {
-		event_add_timer(master, ospf6_lsupdate_send_neighbor, on,
-				on->ospf6_if->rxmt_interval,
-				&on->thread_send_lsupdate);
+		thread_add_timer(master, ospf6_lsupdate_send_neighbor, on,
+				 on->ospf6_if->rxmt_interval,
+				 &on->thread_send_lsupdate);
 	}
 }
 
@@ -2831,14 +2826,14 @@ static uint16_t ospf6_make_lsupdate_interface(struct ospf6_interface *oi,
 	return length;
 }
 
-void ospf6_lsupdate_send_interface(struct event *thread)
+void ospf6_lsupdate_send_interface(struct thread *thread)
 {
 	struct ospf6_interface *oi;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 	int lsa_cnt = 0;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)THREAD_ARG(thread);
 
 	if (oi->state <= OSPF6_INTERFACE_WAITING) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSUPDATE,
@@ -2867,18 +2862,18 @@ void ospf6_lsupdate_send_interface(struct event *thread)
 		ospf6_packet_free(op);
 
 	if (oi->lsupdate_list->count > 0) {
-		event_add_event(master, ospf6_lsupdate_send_interface, oi, 0,
-				&oi->thread_send_lsupdate);
+		thread_add_event(master, ospf6_lsupdate_send_interface, oi, 0,
+				 &oi->thread_send_lsupdate);
 	}
 }
 
-void ospf6_lsack_send_neighbor(struct event *thread)
+void ospf6_lsack_send_neighbor(struct thread *thread)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)THREAD_ARG(thread);
 
 	if (on->state < OSPF6_NEIGHBOR_EXCHANGE) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSACK, SEND_HDR))
@@ -2913,8 +2908,8 @@ void ospf6_lsack_send_neighbor(struct event *thread)
 	OSPF6_MESSAGE_WRITE_ON(on->ospf6_if);
 
 	if (on->lsack_list->count > 0)
-		event_add_event(master, ospf6_lsack_send_neighbor, on, 0,
-				&on->thread_send_lsack);
+		thread_add_event(master, ospf6_lsack_send_neighbor, on, 0,
+				 &on->thread_send_lsack);
 }
 
 static uint16_t ospf6_make_lsack_interface(struct ospf6_interface *oi,
@@ -2929,9 +2924,9 @@ static uint16_t ospf6_make_lsack_interface(struct ospf6_interface *oi,
 		    > ospf6_packet_max(oi)) {
 			/* if we run out of packet size/space here,
 			   better to try again soon. */
-			EVENT_OFF(oi->thread_send_lsack);
-			event_add_event(master, ospf6_lsack_send_interface, oi,
-					0, &oi->thread_send_lsack);
+			THREAD_OFF(oi->thread_send_lsack);
+			thread_add_event(master, ospf6_lsack_send_interface, oi,
+					 0, &oi->thread_send_lsack);
 
 			ospf6_lsa_unlock(lsa);
 			if (lsanext)
@@ -2948,13 +2943,13 @@ static uint16_t ospf6_make_lsack_interface(struct ospf6_interface *oi,
 	return length;
 }
 
-void ospf6_lsack_send_interface(struct event *thread)
+void ospf6_lsack_send_interface(struct thread *thread)
 {
 	struct ospf6_interface *oi;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)THREAD_ARG(thread);
 
 	if (oi->state <= OSPF6_INTERFACE_WAITING) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSACK, SEND_HDR))
@@ -2995,8 +2990,8 @@ void ospf6_lsack_send_interface(struct event *thread)
 	OSPF6_MESSAGE_WRITE_ON(oi);
 
 	if (oi->lsack_list->count > 0)
-		event_add_event(master, ospf6_lsack_send_interface, oi, 0,
-				&oi->thread_send_lsack);
+		thread_add_event(master, ospf6_lsack_send_interface, oi, 0,
+				 &oi->thread_send_lsack);
 }
 
 /* Commands */

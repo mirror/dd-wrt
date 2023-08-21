@@ -1,15 +1,28 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2015 Cumulus Networks, Inc.
  * Donald Sharp
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
 #include "log.h"
 #include "if.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "prefix.h"
 #include "vty.h"
 #include "plist.h"
@@ -32,7 +45,7 @@
 #include "pim_vxlan.h"
 #include "pim_addr.h"
 
-struct event *send_test_packet_timer = NULL;
+struct thread *send_test_packet_timer = NULL;
 
 void pim_register_join(struct pim_upstream *up)
 {
@@ -743,7 +756,7 @@ void pim_reg_del_on_couldreg_fail(struct interface *ifp)
 		    && (up->reg_state != PIM_REG_NOINFO)) {
 			pim_channel_del_oif(up->channel_oil, pim->regiface,
 					    PIM_OIF_FLAG_PROTO_PIM, __func__);
-			EVENT_OFF(up->t_rs_timer);
+			THREAD_OFF(up->t_rs_timer);
 			up->reg_state = PIM_REG_NOINFO;
 		}
 	}

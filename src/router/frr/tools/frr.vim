@@ -1,4 +1,3 @@
-" SPDX-License-Identifier: NONE
 " settings & syntax hilighting for FRR codebase
 " 2019 by David Lamparter, placed in public domain
 

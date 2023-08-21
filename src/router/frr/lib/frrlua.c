@@ -1,10 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * This file defines the lua interface into
  * FRRouting.
  *
  * Copyright (C) 2016-2019 Cumulus Networks, Inc.
  * Donald Sharp, Quentin Young
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -257,6 +270,25 @@ void *lua_tosockunion(lua_State *L, int idx)
 
 	lua_decode_sockunion(L, idx, su);
 	return su;
+}
+
+void lua_pushtimet(lua_State *L, const time_t *time)
+{
+	lua_pushinteger(L, *time);
+}
+
+void lua_decode_timet(lua_State *L, int idx, time_t *t)
+{
+	*t = lua_tointeger(L, idx);
+	lua_pop(L, 1);
+}
+
+void *lua_totimet(lua_State *L, int idx)
+{
+	time_t *t = XCALLOC(MTYPE_SCRIPT_RES, sizeof(time_t));
+
+	lua_decode_timet(L, idx, t);
+	return t;
 }
 
 void lua_pushintegerp(lua_State *L, const long long *num)

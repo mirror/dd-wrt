@@ -1,9 +1,24 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Main implementation file for interface to Forwarding Plane Manager.
  *
  * Copyright (C) 2012 by Open Source Routing.
  * Copyright (C) 2012 by Internet Systems Consortium, Inc. ("ISC")
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -11,7 +26,7 @@
 #include "log.h"
 #include "libfrr.h"
 #include "stream.h"
-#include "frrevent.h"
+#include "thread.h"
 #include "network.h"
 #include "command.h"
 #include "lib/version.h"
@@ -156,7 +171,7 @@ struct zfpm_glob {
 	 */
 	enum zfpm_msg_format message_format;
 
-	struct event_loop *master;
+	struct thread_master *master;
 
 	enum zfpm_state state;
 
@@ -204,15 +219,15 @@ struct zfpm_glob {
 	/*
 	 * Threads for I/O.
 	 */
-	struct event *t_connect;
-	struct event *t_write;
-	struct event *t_read;
+	struct thread *t_connect;
+	struct thread *t_write;
+	struct thread *t_read;
 
 	/*
 	 * Thread to clean up after the TCP connection to the FPM goes down
 	 * and the state that belongs to it.
 	 */
-	struct event *t_conn_down;
+	struct thread *t_conn_down;
 
 	struct {
 		struct zfpm_rnodes_iter iter;
@@ -222,7 +237,7 @@ struct zfpm_glob {
 	 * Thread to take actions once the TCP conn to the FPM comes up, and
 	 * the state that belongs to it.
 	 */
-	struct event *t_conn_up;
+	struct thread *t_conn_up;
 
 	struct {
 		struct zfpm_rnodes_iter iter;
@@ -251,7 +266,7 @@ struct zfpm_glob {
 	/*
 	 * Stats interval timer.
 	 */
-	struct event *t_stats;
+	struct thread *t_stats;
 
 	/*
 	 * If non-zero, the last time when statistics were cleared.
@@ -269,8 +284,8 @@ static struct zfpm_glob *zfpm_g = &zfpm_glob_space;
 
 static int zfpm_trigger_update(struct route_node *rn, const char *reason);
 
-static void zfpm_read_cb(struct event *thread);
-static void zfpm_write_cb(struct event *thread);
+static void zfpm_read_cb(struct thread *thread);
+static void zfpm_write_cb(struct thread *thread);
 
 static void zfpm_set_state(enum zfpm_state state, const char *reason);
 static void zfpm_start_connect_timer(const char *reason);
@@ -283,9 +298,9 @@ union g_addr ipv4ll_gateway;
 /*
  * zfpm_thread_should_yield
  */
-static inline int zfpm_thread_should_yield(struct event *t)
+static inline int zfpm_thread_should_yield(struct thread *t)
 {
-	return event_should_yield(t);
+	return thread_should_yield(t);
 }
 
 /*
@@ -460,8 +475,8 @@ static inline void zfpm_read_on(void)
 	assert(!zfpm_g->t_read);
 	assert(zfpm_g->sock >= 0);
 
-	event_add_read(zfpm_g->master, zfpm_read_cb, 0, zfpm_g->sock,
-		       &zfpm_g->t_read);
+	thread_add_read(zfpm_g->master, zfpm_read_cb, 0, zfpm_g->sock,
+			&zfpm_g->t_read);
 }
 
 /*
@@ -472,8 +487,8 @@ static inline void zfpm_write_on(void)
 	assert(!zfpm_g->t_write);
 	assert(zfpm_g->sock >= 0);
 
-	event_add_write(zfpm_g->master, zfpm_write_cb, 0, zfpm_g->sock,
-			&zfpm_g->t_write);
+	thread_add_write(zfpm_g->master, zfpm_write_cb, 0, zfpm_g->sock,
+			 &zfpm_g->t_write);
 }
 
 /*
@@ -481,7 +496,7 @@ static inline void zfpm_write_on(void)
  */
 static inline void zfpm_read_off(void)
 {
-	EVENT_OFF(zfpm_g->t_read);
+	THREAD_OFF(zfpm_g->t_read);
 }
 
 /*
@@ -489,17 +504,12 @@ static inline void zfpm_read_off(void)
  */
 static inline void zfpm_write_off(void)
 {
-	EVENT_OFF(zfpm_g->t_write);
+	THREAD_OFF(zfpm_g->t_write);
 }
 
 static inline void zfpm_connect_off(void)
 {
-	EVENT_OFF(zfpm_g->t_connect);
-}
-
-static inline void zfpm_conn_down_off(void)
-{
-	EVENT_OFF(zfpm_g->t_conn_down);
+	THREAD_OFF(zfpm_g->t_connect);
 }
 
 /*
@@ -508,7 +518,7 @@ static inline void zfpm_conn_down_off(void)
  * Callback for actions to be taken when the connection to the FPM
  * comes up.
  */
-static void zfpm_conn_up_thread_cb(struct event *thread)
+static void zfpm_conn_up_thread_cb(struct thread *thread)
 {
 	struct route_node *rnode;
 	struct zfpm_rnodes_iter *iter;
@@ -547,8 +557,8 @@ static void zfpm_conn_up_thread_cb(struct event *thread)
 
 		zfpm_g->stats.t_conn_up_yields++;
 		zfpm_rnodes_iter_pause(iter);
-		event_add_timer_msec(zfpm_g->master, zfpm_conn_up_thread_cb,
-				     NULL, 0, &zfpm_g->t_conn_up);
+		thread_add_timer_msec(zfpm_g->master, zfpm_conn_up_thread_cb,
+				      NULL, 0, &zfpm_g->t_conn_up);
 		return;
 	}
 
@@ -573,15 +583,15 @@ static void zfpm_connection_up(const char *detail)
 	/*
 	 * Start thread to push existing routes to the FPM.
 	 */
-	EVENT_OFF(zfpm_g->t_conn_up);
+	THREAD_OFF(zfpm_g->t_conn_up);
 
 	zfpm_rnodes_iter_init(&zfpm_g->t_conn_up_state.iter);
 	zfpm_g->fpm_mac_dump_done = false;
 
 	zfpm_debug("Starting conn_up thread");
 
-	event_add_timer_msec(zfpm_g->master, zfpm_conn_up_thread_cb, NULL, 0,
-			     &zfpm_g->t_conn_up);
+	thread_add_timer_msec(zfpm_g->master, zfpm_conn_up_thread_cb, NULL, 0,
+			      &zfpm_g->t_conn_up);
 	zfpm_g->stats.t_conn_up_starts++;
 }
 
@@ -624,7 +634,7 @@ static void zfpm_connect_check(void)
  * Callback that is invoked to clean up state after the TCP connection
  * to the FPM goes down.
  */
-static void zfpm_conn_down_thread_cb(struct event *thread)
+static void zfpm_conn_down_thread_cb(struct thread *thread)
 {
 	struct route_node *rnode;
 	struct zfpm_rnodes_iter *iter;
@@ -639,6 +649,8 @@ static void zfpm_conn_down_thread_cb(struct event *thread)
 	 */
 	while ((mac = TAILQ_FIRST(&zfpm_g->mac_q)) != NULL)
 		zfpm_mac_info_del(mac);
+
+	zfpm_g->t_conn_down = NULL;
 
 	iter = &zfpm_g->t_conn_down_state.iter;
 
@@ -670,8 +682,9 @@ static void zfpm_conn_down_thread_cb(struct event *thread)
 
 		zfpm_g->stats.t_conn_down_yields++;
 		zfpm_rnodes_iter_pause(iter);
-		event_add_timer_msec(zfpm_g->master, zfpm_conn_down_thread_cb,
-				     NULL, 0, &zfpm_g->t_conn_down);
+		zfpm_g->t_conn_down = NULL;
+		thread_add_timer_msec(zfpm_g->master, zfpm_conn_down_thread_cb,
+				      NULL, 0, &zfpm_g->t_conn_down);
 		return;
 	}
 
@@ -714,9 +727,9 @@ static void zfpm_connection_down(const char *detail)
 	 */
 	assert(!zfpm_g->t_conn_down);
 	zfpm_rnodes_iter_init(&zfpm_g->t_conn_down_state.iter);
-	zfpm_conn_down_off();
-	event_add_timer_msec(zfpm_g->master, zfpm_conn_down_thread_cb, NULL, 0,
-			     &zfpm_g->t_conn_down);
+	zfpm_g->t_conn_down = NULL;
+	thread_add_timer_msec(zfpm_g->master, zfpm_conn_down_thread_cb, NULL, 0,
+			      &zfpm_g->t_conn_down);
 	zfpm_g->stats.t_conn_down_starts++;
 
 	zfpm_set_state(ZFPM_STATE_IDLE, detail);
@@ -725,7 +738,7 @@ static void zfpm_connection_down(const char *detail)
 /*
  * zfpm_read_cb
  */
-static void zfpm_read_cb(struct event *thread)
+static void zfpm_read_cb(struct thread *thread)
 {
 	size_t already;
 	struct stream *ibuf;
@@ -889,7 +902,7 @@ static inline int zfpm_encode_route(rib_dest_t *dest, struct route_entry *re,
 #endif /* HAVE_NETLINK */
 		break;
 
-	case ZFPM_MSG_FORMAT_NONE:
+	default:
 		break;
 	}
 
@@ -1154,7 +1167,7 @@ static void zfpm_build_updates(void)
 /*
  * zfpm_write_cb
  */
-static void zfpm_write_cb(struct event *thread)
+static void zfpm_write_cb(struct thread *thread)
 {
 	struct stream *s;
 	int num_writes;
@@ -1236,7 +1249,7 @@ static void zfpm_write_cb(struct event *thread)
 /*
  * zfpm_connect_cb
  */
-static void zfpm_connect_cb(struct event *t)
+static void zfpm_connect_cb(struct thread *t)
 {
 	int sock, ret;
 	struct sockaddr_in serv;
@@ -1390,8 +1403,8 @@ static void zfpm_start_connect_timer(const char *reason)
 	delay_secs = zfpm_calc_connect_delay();
 	zfpm_debug("scheduling connect in %ld seconds", delay_secs);
 
-	event_add_timer(zfpm_g->master, zfpm_connect_cb, 0, delay_secs,
-			&zfpm_g->t_connect);
+	thread_add_timer(zfpm_g->master, zfpm_connect_cb, 0, delay_secs,
+			 &zfpm_g->t_connect);
 	zfpm_set_state(ZFPM_STATE_ACTIVE, reason);
 }
 
@@ -1666,7 +1679,7 @@ static void zfpm_iterate_rmac_table(struct hash_bucket *bucket, void *args)
 /*
  * struct zfpm_statsimer_cb
  */
-static void zfpm_stats_timer_cb(struct event *t)
+static void zfpm_stats_timer_cb(struct thread *t)
 {
 	zfpm_g->t_stats = NULL;
 
@@ -1699,7 +1712,7 @@ static void zfpm_stop_stats_timer(void)
 		return;
 
 	zfpm_debug("Stopping existing stats timer");
-	EVENT_OFF(zfpm_g->t_stats);
+	THREAD_OFF(zfpm_g->t_stats);
 }
 
 /*
@@ -1709,8 +1722,8 @@ void zfpm_start_stats_timer(void)
 {
 	assert(!zfpm_g->t_stats);
 
-	event_add_timer(zfpm_g->master, zfpm_stats_timer_cb, 0,
-			ZFPM_STATS_IVL_SECS, &zfpm_g->t_stats);
+	thread_add_timer(zfpm_g->master, zfpm_stats_timer_cb, 0,
+			 ZFPM_STATS_IVL_SECS, &zfpm_g->t_stats);
 }
 
 /*
@@ -1980,7 +1993,7 @@ static struct cmd_node zebra_node = {
  *
  * Returns true on success.
  */
-static int zfpm_init(struct event_loop *master)
+static int zfpm_init(struct thread_master *master)
 {
 	int enable = 1;
 	uint16_t port = 0;
@@ -2044,13 +2057,10 @@ static int zfpm_fini(void)
 	zfpm_write_off();
 	zfpm_read_off();
 	zfpm_connect_off();
-	zfpm_conn_down_off();
 
 	zfpm_stop_stats_timer();
 
 	hook_unregister(rib_update, zfpm_trigger_update);
-	hook_unregister(zebra_rmac_update, zfpm_trigger_rmac_update);
-
 	return 0;
 }
 

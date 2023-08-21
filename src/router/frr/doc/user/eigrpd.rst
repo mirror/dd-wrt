@@ -41,9 +41,8 @@ running EIGRP is:
 
 Please note that *zebra* must be invoked before *eigrpd*.
 
-To stop *eigrpd*, please use::
-
-   kill `cat /var/run/frr/eigrpd.pid`
+To stop *eigrpd*, please use ::
+   kill `cat /var/run/eigrpd.pid`
 
 Certain signals have special meanings to *eigrpd*.
 

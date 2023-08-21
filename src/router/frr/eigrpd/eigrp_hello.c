@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * EIGRP Sending and Receiving EIGRP Hello Packets.
  * Copyright (C) 2013-2016
@@ -12,11 +11,27 @@
  *   Tomas Hvorkovy
  *   Martin Kontsek
  *   Lukas Koribsky
+ *
+ * This file is part of GNU Zebra.
+ *
+ * GNU Zebra is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * GNU Zebra is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
-#include "frrevent.h"
+#include "thread.h"
 #include "memory.h"
 #include "linklist.h"
 #include "prefix.h"
@@ -66,11 +81,11 @@ static const struct message eigrp_general_tlv_type_str[] = {
  * Sends hello packet via multicast for all interfaces eigrp
  * is configured for
  */
-void eigrp_hello_timer(struct event *thread)
+void eigrp_hello_timer(struct thread *thread)
 {
 	struct eigrp_interface *ei;
 
-	ei = EVENT_ARG(thread);
+	ei = THREAD_ARG(thread);
 
 	if (IS_DEBUG_EIGRP(0, TIMERS))
 		zlog_debug("Start Hello Timer (%s) Expire [%u]", IF_NAME(ei),
@@ -80,8 +95,8 @@ void eigrp_hello_timer(struct event *thread)
 	eigrp_hello_send(ei, EIGRP_HELLO_NORMAL, NULL);
 
 	/* Hello timer set. */
-	event_add_timer(master, eigrp_hello_timer, ei, ei->params.v_hello,
-			&ei->t_hello);
+	thread_add_timer(master, eigrp_hello_timer, ei, ei->params.v_hello,
+			 &ei->t_hello);
 }
 
 /**
@@ -726,8 +741,8 @@ void eigrp_hello_send_ack(struct eigrp_neighbor *nbr)
 			listnode_add(nbr->ei->eigrp->oi_write_q, nbr->ei);
 			nbr->ei->on_write_q = 1;
 		}
-		event_add_write(master, eigrp_write, nbr->ei->eigrp,
-				nbr->ei->eigrp->fd, &nbr->ei->eigrp->t_write);
+		thread_add_write(master, eigrp_write, nbr->ei->eigrp,
+				 nbr->ei->eigrp->fd, &nbr->ei->eigrp->t_write);
 	}
 }
 
@@ -771,12 +786,12 @@ void eigrp_hello_send(struct eigrp_interface *ei, uint8_t flags,
 
 		if (ei->eigrp->t_write == NULL) {
 			if (flags & EIGRP_HELLO_GRACEFUL_SHUTDOWN) {
-				event_execute(master, eigrp_write, ei->eigrp,
-					      ei->eigrp->fd);
+				thread_execute(master, eigrp_write, ei->eigrp,
+					       ei->eigrp->fd);
 			} else {
-				event_add_write(master, eigrp_write, ei->eigrp,
-						ei->eigrp->fd,
-						&ei->eigrp->t_write);
+				thread_add_write(master, eigrp_write, ei->eigrp,
+						 ei->eigrp->fd,
+						 &ei->eigrp->t_write);
 			}
 		}
 	}

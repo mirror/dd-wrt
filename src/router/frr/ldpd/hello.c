@@ -1,9 +1,20 @@
-// SPDX-License-Identifier: ISC
 /*	$OpenBSD$ */
 
 /*
  * Copyright (c) 2013, 2016 Renato Westphal <renato@openbsd.org>
  * Copyright (c) 2009 Michele Marchetto <michele@openbsd.org>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <zebra.h>
@@ -41,8 +52,8 @@ send_hello(enum hello_type type, struct iface_af *ia, struct tnbr *tnbr)
 		/* multicast destination address */
 		switch (af) {
 		case AF_INET:
-			if (!CHECK_FLAG(leconf->ipv4.flags, F_LDPD_AF_NO_GTSM))
-				SET_FLAG(flags, F_HELLO_GTSM);
+			if (!(leconf->ipv4.flags & F_LDPD_AF_NO_GTSM))
+				flags |= F_HELLO_GTSM;
 			dst.v4 = global.mcast_addr_v4;
 			break;
 		case AF_INET6:
@@ -56,11 +67,9 @@ send_hello(enum hello_type type, struct iface_af *ia, struct tnbr *tnbr)
 		af = tnbr->af;
 		holdtime = tnbr_get_hello_holdtime(tnbr);
 		flags = F_HELLO_TARGETED;
-		if (CHECK_FLAG(tnbr->flags, F_TNBR_CONFIGURED) ||
-			tnbr->pw_count ||
-			tnbr->rlfa_count)
+		if ((tnbr->flags & F_TNBR_CONFIGURED) || tnbr->pw_count
+		    || tnbr->rlfa_count)
 			flags |= F_HELLO_REQ_TARG;
-
 		fd = (ldp_af_global_get(&global, af))->ldp_edisc_socket;
 
 		/* unicast destination address */
@@ -90,10 +99,10 @@ send_hello(enum hello_type type, struct iface_af *ia, struct tnbr *tnbr)
 	if ((buf = ibuf_open(size)) == NULL)
 		fatal(__func__);
 
-	SET_FLAG(err, gen_ldp_hdr(buf, size));
+	err |= gen_ldp_hdr(buf, size);
 	size -= LDP_HDR_SIZE;
-	SET_FLAG(err, gen_msg_hdr(buf, MSG_TYPE_HELLO, size));
-	SET_FLAG(err, gen_hello_prms_tlv(buf, holdtime, flags));
+	err |= gen_msg_hdr(buf, MSG_TYPE_HELLO, size);
+	err |= gen_hello_prms_tlv(buf, holdtime, flags);
 
 	/*
 	 * RFC 7552 - Section 6.1:
@@ -103,19 +112,19 @@ send_hello(enum hello_type type, struct iface_af *ia, struct tnbr *tnbr)
 	 */
 	switch (af) {
 	case AF_INET:
-		SET_FLAG(err, gen_opt4_hello_prms_tlv(buf, TLV_TYPE_IPV4TRANSADDR,
-		    leconf->ipv4.trans_addr.v4.s_addr));
+		err |= gen_opt4_hello_prms_tlv(buf, TLV_TYPE_IPV4TRANSADDR,
+		    leconf->ipv4.trans_addr.v4.s_addr);
 		break;
 	case AF_INET6:
-		SET_FLAG(err, gen_opt16_hello_prms_tlv(buf, TLV_TYPE_IPV6TRANSADDR,
-		    leconf->ipv6.trans_addr.v6.s6_addr));
+		err |= gen_opt16_hello_prms_tlv(buf, TLV_TYPE_IPV6TRANSADDR,
+		    leconf->ipv6.trans_addr.v6.s6_addr);
 		break;
 	default:
 		fatalx("send_hello: unknown af");
 	}
 
-	SET_FLAG(err, gen_opt4_hello_prms_tlv(buf, TLV_TYPE_CONFIG,
-	    htonl(global.conf_seqnum)));
+	err |= gen_opt4_hello_prms_tlv(buf, TLV_TYPE_CONFIG,
+	    htonl(global.conf_seqnum));
 
    	/*
 	 * RFC 7552 - Section 6.1.1:
@@ -123,7 +132,7 @@ send_hello(enum hello_type type, struct iface_af *ia, struct tnbr *tnbr)
 	 * MUST include the Dual-Stack capability TLV in all of its LDP Hellos".
 	 */
 	if (ldp_is_dual_stack(leconf))
-		SET_FLAG(err, gen_ds_hello_prms_tlv(buf, leconf->trans_pref));
+		err |= gen_ds_hello_prms_tlv(buf, leconf->trans_pref);
 
 	if (err) {
 		ibuf_free(buf);
@@ -171,7 +180,8 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 
 	r = tlv_decode_hello_prms(buf, len, &holdtime, &flags);
 	if (r == -1) {
-		log_debug("%s: lsr-id %pI4: failed to decode params", __func__, &lsr_id);
+		log_debug("%s: lsr-id %pI4: failed to decode params", __func__,
+		    &lsr_id);
 		return;
 	}
 	/* safety checks */
@@ -180,12 +190,14 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 		    __func__, &lsr_id, holdtime);
 		return;
 	}
-	if (multicast && CHECK_FLAG(flags, F_HELLO_TARGETED)) {
-		log_debug("%s: lsr-id %pI4: multicast targeted hello", __func__, &lsr_id);
+	if (multicast && (flags & F_HELLO_TARGETED)) {
+		log_debug("%s: lsr-id %pI4: multicast targeted hello", __func__,
+		    &lsr_id);
 		return;
 	}
-	if (!multicast && !CHECK_FLAG(flags, F_HELLO_TARGETED)) {
-		log_debug("%s: lsr-id %pI4: unicast link hello", __func__, &lsr_id);
+	if (!multicast && !((flags & F_HELLO_TARGETED))) {
+		log_debug("%s: lsr-id %pI4: unicast link hello", __func__,
+		    &lsr_id);
 		return;
 	}
 	buf += r;
@@ -203,10 +215,10 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 		    __func__, &lsr_id);
 		return;
 	}
-	ds_tlv = CHECK_FLAG(tlvs_rcvd, F_HELLO_TLV_RCVD_DS) ? 1 : 0;
+	ds_tlv = (tlvs_rcvd & F_HELLO_TLV_RCVD_DS) ? 1 : 0;
 
 	/* implicit transport address */
-	if (!CHECK_FLAG(tlvs_rcvd, F_HELLO_TLV_RCVD_ADDR))
+	if (!(tlvs_rcvd & F_HELLO_TLV_RCVD_ADDR))
 		trans_addr = *src;
 	if (bad_addr(af, &trans_addr)) {
 		log_debug("%s: lsr-id %pI4: invalid transport address %s",
@@ -222,7 +234,7 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 		 * (i.e., MUST discard the targeted Hello if it failed the
 		 * check)".
 		 */
-		if (CHECK_FLAG(flags, F_HELLO_TARGETED)) {
+		if (flags & F_HELLO_TARGETED) {
 			log_debug("%s: lsr-id %pI4: invalid targeted hello transport address %s", __func__, &lsr_id,
 			     log_addr(af, &trans_addr));
 			return;
@@ -231,7 +243,7 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 	}
 
 	memset(&source, 0, sizeof(source));
-	if (CHECK_FLAG(flags, F_HELLO_TARGETED)) {
+	if (flags & F_HELLO_TARGETED) {
 		/*
 	 	 * RFC 7552 - Section 5.2:
 		* "The link-local IPv6 addresses MUST NOT be used as the
@@ -246,27 +258,26 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 		tnbr = tnbr_find(leconf, af, src);
 
 		/* remove the dynamic tnbr if the 'R' bit was cleared */
-		if (tnbr && 
-		    CHECK_FLAG(tnbr->flags, F_TNBR_DYNAMIC) &&
-		    !CHECK_FLAG(flags, F_HELLO_REQ_TARG)) {
-			UNSET_FLAG(tnbr->flags, F_TNBR_DYNAMIC);
+		if (tnbr && (tnbr->flags & F_TNBR_DYNAMIC) &&
+		    !((flags & F_HELLO_REQ_TARG))) {
+			tnbr->flags &= ~F_TNBR_DYNAMIC;
 			tnbr = tnbr_check(leconf, tnbr);
 		}
 
 		if (!tnbr) {
 			struct ldpd_af_conf	*af_conf;
 
-			if (!CHECK_FLAG(flags, F_HELLO_REQ_TARG))
+			if (!(flags & F_HELLO_REQ_TARG))
 				return;
 			af_conf = ldp_af_conf_get(leconf, af);
-			if (!CHECK_FLAG(af_conf->flags, F_LDPD_AF_THELLO_ACCEPT))
+			if (!(af_conf->flags & F_LDPD_AF_THELLO_ACCEPT))
 				return;
 			if (ldpe_acl_check(af_conf->acl_thello_accept_from, af,
 			    src, (af == AF_INET) ? 32 : 128) != FILTER_PERMIT)
 				return;
 
 			tnbr = tnbr_new(af, src);
-			SET_FLAG(tnbr->flags, F_TNBR_DYNAMIC);
+			tnbr->flags |= F_TNBR_DYNAMIC;
 			tnbr_update(tnbr);
 			RB_INSERT(tnbr_head, &leconf->tnbr_tree, tnbr);
 		}
@@ -308,7 +319,8 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 		 */
 		log_debug("%s: lsr-id %pI4: remote transport preference does not match the local preference", __func__, &lsr_id);
 		if (nbr)
-			session_shutdown(nbr, S_TRANS_MISMTCH, msg->id, msg->type);
+			session_shutdown(nbr, S_TRANS_MISMTCH, msg->id,
+			    msg->type);
 		if (adj)
 			adj_del(adj, S_SHUTDOWN);
 		return;
@@ -322,13 +334,15 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 		switch (af) {
 		case AF_INET:
 			if (nbr_adj_count(nbr, AF_INET6) > 0) {
-				session_shutdown(nbr, S_DS_NONCMPLNCE, msg->id, msg->type);
+				session_shutdown(nbr, S_DS_NONCMPLNCE,
+				    msg->id, msg->type);
 				return;
 			}
 			break;
 		case AF_INET6:
 			if (nbr_adj_count(nbr, AF_INET) > 0) {
-				session_shutdown(nbr, S_DS_NONCMPLNCE, msg->id, msg->type);
+				session_shutdown(nbr, S_DS_NONCMPLNCE,
+				    msg->id, msg->type);
 				return;
 			}
 			break;
@@ -381,15 +395,16 @@ recv_hello(struct in_addr lsr_id, struct ldp_msg *msg, int af,
 
 	/* dynamic LDPv4 GTSM negotiation as per RFC 6720 */
 	if (nbr) {
-		if (CHECK_FLAG(flags, F_HELLO_GTSM))
-			SET_FLAG(nbr->flags, F_NBR_GTSM_NEGOTIATED);
+		if (flags & F_HELLO_GTSM)
+			nbr->flags |= F_NBR_GTSM_NEGOTIATED;
 		else
-			UNSET_FLAG(nbr->flags, F_NBR_GTSM_NEGOTIATED);
+			nbr->flags &= ~F_NBR_GTSM_NEGOTIATED;
 	}
 
 	/* update neighbor's configuration sequence number */
 	if (nbr && (tlvs_rcvd & F_HELLO_TLV_RCVD_CONF)) {
-		if (conf_seqnum > nbr->conf_seqnum && nbr_pending_idtimer(nbr))
+		if (conf_seqnum > nbr->conf_seqnum &&
+		    nbr_pending_idtimer(nbr))
 			nbr_stop_idtimer(nbr);
 		nbr->conf_seqnum = conf_seqnum;
 	}
@@ -461,7 +476,7 @@ gen_opt16_hello_prms_tlv(struct ibuf *buf, uint16_t type, uint8_t *value)
 static int
 gen_ds_hello_prms_tlv(struct ibuf *buf, uint32_t value)
 {
-	if (CHECK_FLAG(leconf->flags, F_LDPD_DS_CISCO_INTEROP))
+	if (leconf->flags & F_LDPD_DS_CISCO_INTEROP)
 		value = htonl(value);
 	else
 		value = htonl(value << 28);
@@ -529,26 +544,26 @@ tlv_decode_opt_hello_prms(char *buf, uint16_t len, int *tlvs_rcvd, int af,
 				return (-1);
 			if (af != AF_INET)
 				return (-1);
-			if (CHECK_FLAG(*tlvs_rcvd, F_HELLO_TLV_RCVD_ADDR))
+			if (*tlvs_rcvd & F_HELLO_TLV_RCVD_ADDR)
 				break;
 			memcpy(&addr->v4, buf, sizeof(addr->v4));
-			SET_FLAG(*tlvs_rcvd, F_HELLO_TLV_RCVD_ADDR);
+			*tlvs_rcvd |= F_HELLO_TLV_RCVD_ADDR;
 			break;
 		case TLV_TYPE_IPV6TRANSADDR:
 			if (tlv_len != sizeof(addr->v6))
 				return (-1);
 			if (af != AF_INET6)
 				return (-1);
-			if (CHECK_FLAG(*tlvs_rcvd, F_HELLO_TLV_RCVD_ADDR))
+			if (*tlvs_rcvd & F_HELLO_TLV_RCVD_ADDR)
 				break;
 			memcpy(&addr->v6, buf, sizeof(addr->v6));
-			SET_FLAG(*tlvs_rcvd, F_HELLO_TLV_RCVD_ADDR);
+			*tlvs_rcvd |= F_HELLO_TLV_RCVD_ADDR;
 			break;
 		case TLV_TYPE_CONFIG:
 			if (tlv_len != sizeof(uint32_t))
 				return (-1);
 			memcpy(conf_number, buf, sizeof(uint32_t));
-			SET_FLAG(*tlvs_rcvd, F_HELLO_TLV_RCVD_CONF);
+			*tlvs_rcvd |= F_HELLO_TLV_RCVD_CONF;
 			break;
 		case TLV_TYPE_DUALSTACK:
 			if (tlv_len != sizeof(uint32_t))
@@ -562,18 +577,19 @@ tlv_decode_opt_hello_prms(char *buf, uint16_t len, int *tlvs_rcvd, int af,
 			if (!ldp_is_dual_stack(leconf))
 				break;
 			/* Shame on you, Cisco! */
-			if (CHECK_FLAG(leconf->flags, F_LDPD_DS_CISCO_INTEROP)) {
-				memcpy(trans_pref, buf + sizeof(uint16_t), sizeof(uint16_t));
+			if (leconf->flags & F_LDPD_DS_CISCO_INTEROP) {
+				memcpy(trans_pref, buf + sizeof(uint16_t),
+				    sizeof(uint16_t));
 				*trans_pref = ntohs(*trans_pref);
 			} else {
 				memcpy(trans_pref, buf , sizeof(uint16_t));
 				*trans_pref = ntohs(*trans_pref) >> 12;
 			}
-			SET_FLAG(*tlvs_rcvd, F_HELLO_TLV_RCVD_DS);
+			*tlvs_rcvd |= F_HELLO_TLV_RCVD_DS;
 			break;
 		default:
 			/* if unknown flag set, ignore TLV */
-			if (!CHECK_FLAG(ntohs(tlv.type), UNKNOWN_FLAG))
+			if (!(ntohs(tlv.type) & UNKNOWN_FLAG))
 				return (-1);
 			break;
 		}

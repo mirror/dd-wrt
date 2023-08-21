@@ -1,7 +1,20 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Zebra dataplane layer api interfaces.
  * Copyright (c) 2018 Volta Networks, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _ZEBRA_DPLANE_H
@@ -555,7 +568,6 @@ uint32_t dplane_ctx_mac_get_update_flags(const struct zebra_dplane_ctx *ctx);
 uint32_t dplane_ctx_mac_get_nhg_id(const struct zebra_dplane_ctx *ctx);
 const struct ethaddr *dplane_ctx_mac_get_addr(
 	const struct zebra_dplane_ctx *ctx);
-vni_t dplane_ctx_mac_get_vni(const struct zebra_dplane_ctx *ctx);
 const struct in_addr *dplane_ctx_mac_get_vtep_ip(
 	const struct zebra_dplane_ctx *ctx);
 ifindex_t dplane_ctx_mac_get_br_ifindex(const struct zebra_dplane_ctx *ctx);
@@ -565,7 +577,6 @@ const struct ipaddr *dplane_ctx_neigh_get_ipaddr(
 	const struct zebra_dplane_ctx *ctx);
 const struct ethaddr *dplane_ctx_neigh_get_mac(
 	const struct zebra_dplane_ctx *ctx);
-vni_t dplane_ctx_neigh_get_vni(const struct zebra_dplane_ctx *ctx);
 const struct ipaddr *
 dplane_ctx_neigh_get_link_ip(const struct zebra_dplane_ctx *ctx);
 uint32_t dplane_ctx_neigh_get_flags(const struct zebra_dplane_ctx *ctx);
@@ -781,11 +792,14 @@ enum zebra_dplane_result dplane_neigh_ip_update(enum dplane_op_e op,
 /*
  * Enqueue evpn mac operations for the dataplane.
  */
-enum zebra_dplane_result
-dplane_rem_mac_add(const struct interface *ifp,
-		   const struct interface *bridge_ifp, vlanid_t vid,
-		   const struct ethaddr *mac, vni_t vni, struct in_addr vtep_ip,
-		   bool sticky, uint32_t nhg_id, bool was_static);
+enum zebra_dplane_result dplane_rem_mac_add(const struct interface *ifp,
+					const struct interface *bridge_ifp,
+					vlanid_t vid,
+					const struct ethaddr *mac,
+					struct in_addr vtep_ip,
+					bool sticky,
+					uint32_t nhg_id,
+					bool was_static);
 
 enum zebra_dplane_result dplane_local_mac_add(const struct interface *ifp,
 					const struct interface *bridge_ifp,
@@ -801,17 +815,20 @@ dplane_local_mac_del(const struct interface *ifp,
 		     const struct ethaddr *mac);
 
 enum zebra_dplane_result dplane_rem_mac_del(const struct interface *ifp,
-					    const struct interface *bridge_ifp,
-					    vlanid_t vid,
-					    const struct ethaddr *mac,
-					    vni_t vni, struct in_addr vtep_ip);
+					const struct interface *bridge_ifp,
+					vlanid_t vid,
+					const struct ethaddr *mac,
+					struct in_addr vtep_ip);
 
 /* Helper api to init an empty or new context for a MAC update */
-void dplane_mac_init(struct zebra_dplane_ctx *ctx, const struct interface *ifp,
-		     const struct interface *br_ifp, vlanid_t vid,
-		     const struct ethaddr *mac, vni_t vni,
-		     struct in_addr vtep_ip, bool sticky, uint32_t nhg_id,
-		     uint32_t update_flags);
+void dplane_mac_init(struct zebra_dplane_ctx *ctx,
+		     const struct interface *ifp,
+		     const struct interface *br_ifp,
+		     vlanid_t vid,
+		     const struct ethaddr *mac,
+		     struct in_addr vtep_ip,
+		     bool sticky,
+		     uint32_t nhg_id, uint32_t update_flags);
 
 /*
  * Enqueue evpn neighbor updates for the dataplane.
@@ -1006,7 +1023,7 @@ void dplane_provider_lock(struct zebra_dplane_provider *prov);
 void dplane_provider_unlock(struct zebra_dplane_provider *prov);
 
 /* Obtain thread_master for dataplane thread */
-struct event_loop *dplane_get_thread_master(void);
+struct thread_master *dplane_get_thread_master(void);
 
 /* Providers should (generally) limit number of updates per work cycle */
 int dplane_provider_get_work_limit(const struct zebra_dplane_provider *prov);

@@ -1,5 +1,4 @@
 #!/bin/sh
-# SPDX-License-Identifier: NONE
 #
 # Written by Daniil Baturin, 2018
 # Rewritten by Ondřej Surý, 2020

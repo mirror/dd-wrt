@@ -1,7 +1,23 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /* Zebra Router Code.
  * Copyright (C) 2018 Cumulus Networks, Inc.
  *                    Donald Sharp
+ *
+ * This file is part of FRR.
+ *
+ * FRR is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any
+ * later version.
+ *
+ * FRR is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FRR; see the file COPYING.  If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  */
 #include "zebra.h"
 
@@ -218,7 +234,7 @@ void zebra_router_terminate(void)
 {
 	struct zebra_router_table *zrt, *tmp;
 
-	EVENT_OFF(zrouter.sweeper);
+	THREAD_OFF(zrouter.sweeper);
 
 	RB_FOREACH_SAFE (zrt, zebra_router_table_head, &zrouter.tables, tmp)
 		zebra_router_free_table(zrt);
@@ -232,15 +248,20 @@ void zebra_router_terminate(void)
 
 	/* Free NHE in ID table only since it has unhashable entries as well */
 	hash_iterate(zrouter.nhgs_id, zebra_nhg_hash_free_zero_id, NULL);
-	hash_clean_and_free(&zrouter.nhgs_id, zebra_nhg_hash_free);
-	hash_clean_and_free(&zrouter.nhgs, NULL);
+	hash_clean(zrouter.nhgs_id, zebra_nhg_hash_free);
+	hash_free(zrouter.nhgs_id);
+	hash_clean(zrouter.nhgs, NULL);
+	hash_free(zrouter.nhgs);
 
-	hash_clean_and_free(&zrouter.rules_hash, zebra_pbr_rules_free);
+	hash_clean(zrouter.rules_hash, zebra_pbr_rules_free);
+	hash_free(zrouter.rules_hash);
 
-	hash_clean_and_free(&zrouter.ipset_entry_hash,
-			    zebra_pbr_ipset_entry_free);
-	hash_clean_and_free(&zrouter.ipset_hash, zebra_pbr_ipset_free);
-	hash_clean_and_free(&zrouter.iptable_hash, zebra_pbr_iptable_free);
+	hash_clean(zrouter.ipset_entry_hash, zebra_pbr_ipset_entry_free),
+		hash_clean(zrouter.ipset_hash, zebra_pbr_ipset_free);
+	hash_free(zrouter.ipset_hash);
+	hash_free(zrouter.ipset_entry_hash);
+	hash_clean(zrouter.iptable_hash, zebra_pbr_iptable_free);
+	hash_free(zrouter.iptable_hash);
 
 #ifdef HAVE_SCRIPTING
 	zebra_script_destroy();

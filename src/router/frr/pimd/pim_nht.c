@@ -1,8 +1,21 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2017 Cumulus Networks, Inc.
  * Chirag Shah
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; see the file COPYING; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 #include "network.h"
@@ -340,9 +353,6 @@ bool pim_nht_bsr_rpf_check(struct pim_instance *pim, pim_addr bsr_addr,
 		case NEXTHOP_TYPE_IPV4_IFINDEX:
 			nhaddr = nh->gate.ipv4;
 			break;
-		case NEXTHOP_TYPE_IPV6:
-		case NEXTHOP_TYPE_IPV6_IFINDEX:
-			continue;
 #else
 		case NEXTHOP_TYPE_IPV6:
 			if (nh->ifindex == IFINDEX_INTERNAL)
@@ -352,15 +362,12 @@ bool pim_nht_bsr_rpf_check(struct pim_instance *pim, pim_addr bsr_addr,
 		case NEXTHOP_TYPE_IPV6_IFINDEX:
 			nhaddr = nh->gate.ipv6;
 			break;
-		case NEXTHOP_TYPE_IPV4:
-		case NEXTHOP_TYPE_IPV4_IFINDEX:
-			continue;
 #endif
 		case NEXTHOP_TYPE_IFINDEX:
 			nhaddr = bsr_addr;
 			break;
 
-		case NEXTHOP_TYPE_BLACKHOLE:
+		default:
 			continue;
 		}
 
@@ -724,20 +731,27 @@ int pim_parse_nexthop_update(ZAPI_CALLBACK_ARGS)
 		return 0;
 	}
 
-	rpf.rpf_addr = pim_addr_from_prefix(&match);
-	pnc = pim_nexthop_cache_find(pim, &rpf);
-	if (!pnc) {
-		if (PIM_DEBUG_PIM_NHT)
-			zlog_debug(
-				"%s: Skipping NHT update, addr %pPA is not in local cached DB.",
-				__func__, &rpf.rpf_addr);
+	if (cmd == ZEBRA_NEXTHOP_UPDATE) {
+		rpf.rpf_addr = pim_addr_from_prefix(&match);
+		pnc = pim_nexthop_cache_find(pim, &rpf);
+		if (!pnc) {
+			if (PIM_DEBUG_PIM_NHT)
+				zlog_debug(
+					"%s: Skipping NHT update, addr %pPA is not in local cached DB.",
+					__func__, &rpf.rpf_addr);
+			return 0;
+		}
+	} else {
+		/*
+		 * We do not currently handle ZEBRA_IMPORT_CHECK_UPDATE
+		 */
 		return 0;
 	}
 
 	pnc->last_update = pim_time_monotonic_usec();
 
 	if (nhr.nexthop_num) {
-		pnc->nexthop_num = 0;
+		pnc->nexthop_num = 0; // Only increment for pim enabled rpf.
 
 		for (i = 0; i < nhr.nexthop_num; i++) {
 			nexthop = nexthop_from_zapi_nexthop(&nhr.nexthops[i]);
@@ -855,8 +869,7 @@ int pim_parse_nexthop_update(ZAPI_CALLBACK_ARGS)
 				nhlist_tail = nexthop;
 				nhlist_head = nexthop;
 			}
-
-			// Keep track of all nexthops, even PIM-disabled ones.
+			// Only keep track of nexthops which are PIM enabled.
 			pnc->nexthop_num++;
 		}
 		/* Reset existing pnc->nexthop before assigning new list */

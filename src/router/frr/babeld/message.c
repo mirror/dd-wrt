@@ -1,6 +1,23 @@
-// SPDX-License-Identifier: MIT
 /*
 Copyright (c) 2007, 2008 by Juliusz Chroboczek
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 */
 
 #include <zebra.h>
@@ -47,13 +64,6 @@ static const unsigned char tlv_min_length[MESSAGE_MAX + 1] =
     [ MESSAGE_REQUEST    ] =  2,
     [ MESSAGE_MH_REQUEST ] = 14,
 };
-
-/* Checks whether an AE exists or must be silently ignored */
-static bool
-known_ae(int ae)
-{
-    return ae <= 4;
-}
 
 /* Parse a network prefix, encoded in the somewhat baroque compressed
    representation used by Babel.  Return the number of bytes parsed. */
@@ -284,62 +294,6 @@ parse_ihu_subtlv(const unsigned char *a, int alen,
 }
 
 static int
-parse_request_subtlv(int ae, const unsigned char *a, int alen,
-                     unsigned char *src_prefix, unsigned char *src_plen)
-{
-    int type, len, i = 0;
-    int have_src_prefix = 0;
-
-    while(i < alen) {
-        type = a[0];
-        if(type == SUBTLV_PAD1) {
-            i++;
-            continue;
-        }
-
-        if(i + 2 > alen)
-            goto fail;
-
-        len = a[i + 1];
-        if(i + 2 + len > alen)
-            goto fail;
-
-        if(type == SUBTLV_PADN) {
-            /* Nothing to do. */
-        } else if(type == SUBTLV_SOURCE_PREFIX) {
-            int rc;
-            if(len < 1)
-                goto fail;
-            if(a[i + 2] == 0)
-                goto fail;
-            if(have_src_prefix != 0)
-                goto fail;
-            rc = network_prefix(ae, a[i + 2], 0, a + i + 3, NULL,
-                                len - 1, src_prefix);
-            if(rc < 0)
-                goto fail;
-            if(ae==1)
-                *src_plen = a[i + 2] + 96;
-            else
-                *src_plen = a[i + 2];
-            have_src_prefix = 1;
-        } else {
-            debugf(BABEL_DEBUG_COMMON,"Received unknown%s Route Request sub-TLV %d.",
-                   ((type & 0x80) != 0) ? " mandatory" : "", type);
-            if((type & 0x80) != 0)
-                return -1;
-        }
-
-        i += len + 2;
-    }
-    return 1;
-
- fail:
-    flog_err(EC_BABEL_PACKET, "Received truncated sub-TLV on Route Request.");
-    return -1;
-}
-
-static int
 network_address(int ae, const unsigned char *a, unsigned int len,
                 unsigned char *a_r)
 {
@@ -475,6 +429,18 @@ parse_packet(const unsigned char *from, struct interface *ifp,
 
 #define BABEL_UNICAST_HELLO 0x8000
 		DO_NTOHS(flags, message + 2);
+
+		/*
+		 * RFC 8966 4.6.5
+		 * All other bits MUST be sent as a 0 and silently
+		 * ignored on reception
+		 */
+		if (CHECK_FLAG(flags, ~BABEL_UNICAST_HELLO)) {
+			debugf(BABEL_DEBUG_COMMON,
+			       "Received Hello from %s on %s that does not have all 0's in the unused section of flags, ignoring",
+			       format_address(from), ifp->name);
+			goto done;
+		}
 
 		/*
 		 * RFC 8966 Appendix F
@@ -675,14 +641,8 @@ parse_packet(const unsigned char *from, struct interface *ifp,
 				 interval, neigh, nh, channels,
 				 channels_len(channels));
 	} else if(type == MESSAGE_REQUEST) {
-            unsigned char prefix[16], src_prefix[16], plen, src_plen;
-            int rc, is_ss;
-            if(len < 2) goto fail;
-            if(!known_ae(message[2])) {
-                debugf(BABEL_DEBUG_COMMON,"Received request with unknown AE %d. Ignoring.",
-                       message[2]);
-                goto done;
-            }
+            unsigned char prefix[16], plen;
+            int rc;
             rc = network_prefix(message[2], message[3], 0,
                                 message + 4, NULL, len - 2, prefix);
             if(rc < 0) goto fail;
@@ -690,26 +650,8 @@ parse_packet(const unsigned char *from, struct interface *ifp,
             debugf(BABEL_DEBUG_COMMON,"Received request for %s from %s on %s.",
                    message[2] == 0 ? "any" : format_prefix(prefix, plen),
                    format_address(from), ifp->name);
-            if(message[2] == 1) {
-                v4tov6(src_prefix, zeroes);
-                src_plen = 96;
-            } else {
-                memcpy(src_prefix, zeroes, 16);
-                src_plen = 0;
-            }
-            rc = parse_request_subtlv(message[2], message + 4 + rc,
-                                      len - 2 - rc, src_prefix, &src_plen);
-            if(rc < 0)
-                goto done;
-            is_ss = !is_default(src_prefix, src_plen);
             if(message[2] == 0) {
                 struct babel_interface *neigh_ifp =babel_get_if_nfo(neigh->ifp);
-                if(is_ss) {
-                    /* Wildcard requests don't carry a source prefix. */
-                    flog_err(EC_BABEL_PACKET,
-			      "Received source-specific wildcard request.");
-                    goto done;
-                }
                 /* If a neighbour is requesting a full route dump from us,
                    we might as well send it an IHU. */
                 send_ihu(neigh, NULL);
