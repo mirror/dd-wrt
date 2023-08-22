@@ -18,7 +18,7 @@
 #include "nvram_linux.h"
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
-static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
+static char *nvram_buf;
 
 void *MALLOC(size_t size)
 {
@@ -211,7 +211,7 @@ void _nvram_free(struct nvram_tuple *t)
 {
 	if (!t) {
 		nvram_offset = 0;
-		memset(nvram_buf, 0, sizeof(nvram_buf));
+		memset(nvram_buf, 0, NVRAM_SPACE);
 	} else {
 		MFREE(t);
 	}
@@ -515,6 +515,7 @@ static struct file_operations dev_nvram_fops = {
 static void dev_nvram_exit(void)
 {
 	int order = 0;
+//#ifdef CONFIG_X86
 	struct page *page, *end;
 
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
@@ -522,21 +523,25 @@ static void dev_nvram_exit(void)
 	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
 	for (page = virt_to_page(nvram_buf); page <= end; page++)
 		mem_map_unreserve(page);
+//#endif
 
 	_nvram_exit();
+	kfree(nvram_buf);
 }
 
 static int __init dev_nvram_init(void)
 {
 	int order = 0, ret = 0;
+//#ifdef CONFIG_X86
 	struct page *page, *end;
-
+	nvram_buf = kmalloc(NVRAM_SPACE, GFP_KERNEL);
 	/* Allocate and reserve memory to mmap() */
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
 		order++;
 	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
 	for (page = virt_to_page(nvram_buf); page <= end; page++)
 		mem_map_reserve(page);
+//#endif
 
 	/* Initialize hash table lock */
 	spin_lock_init(&nvram_lock);
