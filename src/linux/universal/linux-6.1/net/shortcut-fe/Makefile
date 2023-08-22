@@ -31,6 +31,6 @@ obj-m += fast-classifier.o
 #	sfe_cm.o
 
 
-ccflags-$(SFE_SUPPORT_IPV6) += -DSFE_SUPPORT_IPV6 
+ccflags-$(SFE_SUPPORT_IPV6) += -DSFE_SUPPORT_IPV6
 #-DSFE_TOS
 ccflags-y += -DCONFIG_NF_CONNTRACK_CHAIN_EVENTS

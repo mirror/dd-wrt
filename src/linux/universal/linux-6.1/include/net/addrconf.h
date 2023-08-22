@@ -292,6 +292,7 @@ int ipv6_anycast_init(void);
 void ipv6_anycast_cleanup(void);
 
 /* Device notifier */
+extern int has_ipv6;
 int __weak register_inet6addr_notifier(struct notifier_block *nb);
 int __weak unregister_inet6addr_notifier(struct notifier_block *nb);
 int inet6addr_notifier_call_chain(unsigned long val, void *v);
