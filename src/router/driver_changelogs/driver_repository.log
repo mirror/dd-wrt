@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7327 | brainslayer | 2023-08-23 14:40:11 +0600 (Wed, 23 Aug 2023) | 1 line
+
+custom kmt; modify newport version of kmt firmware
+------------------------------------------------------------------------
 r7326 | brainslayer | 2023-08-15 19:10:46 +0600 (Tue, 15 Aug 2023) | 1 line
 
 kmt defaults for newport
