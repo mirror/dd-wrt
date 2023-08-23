@@ -373,7 +373,7 @@ static int br_chk_addr_ip6(struct net_device *dev,
 {
 	struct in6_addr *addr = (struct in6_addr *)priv->data;
 
-	if (ipv6_chk_addr && ipv6_chk_addr(dev_net(dev), addr, dev, 0))
+	if (ipv6_chk_addr(dev_net(dev), addr, dev, 0))
 		return 1;
 
 	return 0;

@@ -137,10 +137,6 @@ bool early_boot_irqs_disabled __read_mostly;
 
 enum system_states system_state __read_mostly;
 EXPORT_SYMBOL(system_state);
-
-int has_ipv6;
-EXPORT_SYMBOL(has_ipv6);
-
 /*
  * Boot command-line arguments
  */

@@ -376,8 +376,7 @@ static bool fast_classifier_find_dev_and_mac_addr(struct sk_buff *skb, sfe_ip_ad
 
 		dst = (struct dst_entry *)rt;
 	} else {
-		if (has_ipv6)
-			rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, NULL, 0,NULL, 0);
+		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, NULL, 0,NULL, 0);
 		if (!rt6) {
 			goto ret_fail;
 		}
@@ -1924,8 +1923,7 @@ static int __init fast_classifier_init(void)
 #ifdef SFE_SUPPORT_IPV6
 	sc->inet6_notifier.notifier_call = fast_classifier_inet6_event;
 	sc->inet6_notifier.priority = 1;
-	if (has_ipv6)
-		register_inet6addr_notifier(&sc->inet6_notifier);
+	register_inet6addr_notifier(&sc->inet6_notifier);
 #endif
 	/*
 	 * Register our netfilter hooks.
@@ -1991,8 +1989,7 @@ exit4:
 exit3:
 	unregister_inetaddr_notifier(&sc->inet_notifier);
 #ifdef SFE_SUPPORT_IPV6
-	if (has_ipv6)
-		unregister_inet6addr_notifier(&sc->inet6_notifier);
+	unregister_inet6addr_notifier(&sc->inet6_notifier);
 #endif
 	unregister_netdevice_notifier(&sc->dev_notifier);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
@@ -2066,8 +2063,7 @@ static void __exit fast_classifier_exit(void)
 	nf_unregister_net_hooks(net, fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
 	}
 #ifdef SFE_SUPPORT_IPV6
-	if (has_ipv6)
-		unregister_inet6addr_notifier(&sc->inet6_notifier);
+	unregister_inet6addr_notifier(&sc->inet6_notifier);
 #endif
 	unregister_inetaddr_notifier(&sc->inet_notifier);
 	unregister_netdevice_notifier(&sc->dev_notifier);
