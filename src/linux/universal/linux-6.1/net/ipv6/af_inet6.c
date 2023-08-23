@@ -1006,7 +1006,6 @@ static int __net_init inet6_net_init(struct net *net)
 	if (err)
 		goto proc_ac6_fail;
 #endif
-	has_ipv6=1;
 	return err;
 
 #ifdef CONFIG_PROC_FS
@@ -1022,7 +1021,6 @@ out:
 
 static void __net_exit inet6_net_exit(struct net *net)
 {
-	has_ipv6=0;
 #ifdef CONFIG_PROC_FS
 	udp6_proc_exit(net);
 	tcp6_proc_exit(net);

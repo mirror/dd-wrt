@@ -1016,7 +1016,7 @@ static struct sk_buff *br_ip6_multicast_alloc_query(struct net_bridge_mcast *brm
 	ip6h->nexthdr = IPPROTO_HOPOPTS;
 	ip6h->hop_limit = 1;
 	ip6h->daddr = *ip6_dst;
-	if (!ipv6_dev_get_saddr || ipv6_dev_get_saddr(dev_net(brmctx->br->dev), brmctx->br->dev,
+	if (ipv6_dev_get_saddr(dev_net(brmctx->br->dev), brmctx->br->dev,
 			       &ip6h->daddr, 0, &ip6h->saddr)) {
 		kfree_skb(skb);
 		br_opt_toggle(brmctx->br, BROPT_HAS_IPV6_ADDR, false);
@@ -3931,8 +3931,7 @@ static void br_ip6_multicast_join_snoopers(struct net_bridge *br)
 	struct in6_addr addr;
 
 	ipv6_addr_set(&addr, htonl(0xff020000), 0, 0, htonl(0x6a));
-	if (ipv6_dev_mc_inc)
-		ipv6_dev_mc_inc(br->dev, &addr);
+	ipv6_dev_mc_inc(br->dev, &addr);
 }
 #else
 static inline void br_ip6_multicast_join_snoopers(struct net_bridge *br)
@@ -3963,8 +3962,7 @@ static void br_ip6_multicast_leave_snoopers(struct net_bridge *br)
 	struct in6_addr addr;
 
 	ipv6_addr_set(&addr, htonl(0xff020000), 0, 0, htonl(0x6a));
-	if (ipv6_dev_mc_dec)
-		ipv6_dev_mc_dec(br->dev, &addr);
+	ipv6_dev_mc_dec(br->dev, &addr);
 }
 #else
 static inline void br_ip6_multicast_leave_snoopers(struct net_bridge *br)
