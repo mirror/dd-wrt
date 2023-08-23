@@ -97,7 +97,7 @@ do {								\
 			     __func__, __LINE__, current->pid,	\
 			     ##__VA_ARGS__)
 
-static inline void mlx5_printk(struct mlx5_core_dev *dev, int level, const char *format, ...)
+static void mlx5_printk(struct mlx5_core_dev *dev, int level, const char *format, ...)
 {
 	struct device *device = dev->device;
 	struct va_format vaf;
