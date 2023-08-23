@@ -110,7 +110,11 @@ u64 __read_mostly hw_cache_extra_regs
  * Can only be executed on the CPU where the event is active.
  * Returns the delta events processed.
  */
+#ifdef CONFIG_LTO
 __visible_on_lto u64 x86_perf_event_update(struct perf_event *event)
+#else
+u64 x86_perf_event_update(struct perf_event *event)
+#endif
 {
 	struct hw_perf_event *hwc = &event->hw;
 	int shift = 64 - x86_pmu.cntval_bits;
@@ -1362,7 +1366,11 @@ DEFINE_PER_CPU(u64 [X86_PMC_IDX_MAX], pmc_prev_left);
  * Set the next IRQ period, based on the hwc->period_left value.
  * To be called with the event disabled in hw:
  */
+#ifdef CONFIG_LTO
 __visible_on_lto int x86_perf_event_set_period(struct perf_event *event)
+#else
+int x86_perf_event_set_period(struct perf_event *event)
+#endif
 {
 	struct hw_perf_event *hwc = &event->hw;
 	s64 left = local64_read(&hwc->period_left);
