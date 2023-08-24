@@ -31,6 +31,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
+#include <md5.h>
 
 void run_opt(void);
 static int usb_process_path(char *path, int host, char *part, char *devpath);
@@ -45,6 +46,8 @@ static void run_on_mount(char *p)
 {
 	struct stat tmp_stat;
 	char path[128];
+	md5_ctx_t MD;
+
 	if (!nvram_match("usb_runonmount", "")) {
 		snprintf(path, sizeof(path), "%s %s", nvram_safe_get("usb_runonmount"), p);
 		if (stat(path, &tmp_stat) == 0)	//file exists
@@ -55,6 +58,33 @@ static void run_on_mount(char *p)
 			system(path);
 		}
 	}
+	snprintf(path, sizeof(path), "%s/nvrambak.bin", p);
+	FILE *fp = fopen(path, "rb");
+	if (fp) {
+		unsigned char hash[32];
+		unsigned char shash[32*2];
+		size_t size;
+		fseek(fp, 0, SEEK_END);
+		size = ftell(fp);
+		rewind(fp);
+		char *mem = malloc(size);
+		fread(mem, size, 1, fp);
+		fclose(fp);
+		dd_md5_begin(&MD);
+		dd_md5_hash(mem, size, &MD);
+		dd_md5_end((unsigned char *)hash, &MD);
+		int i;
+		for (i = 0; i < size; i++)
+			sprintf(&shash[2 * i], "%02x", hash[i]);
+
+		if (!nvram_match("backup_hash", shash)) {
+			nvram_restore(path, 1);
+			nvram_set("backup_hash", shash);
+			nvram_commit();
+			sys_reboot();
+		}
+	}
+
 	return;
 }
 
