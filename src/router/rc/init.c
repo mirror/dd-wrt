@@ -293,7 +293,6 @@ void shutdown_system(void)
 		sleep(10);
 #endif
 		sync();
-		unmount_fs();	// try to unmount a first time
 		dd_loginfo("init", "Sending SIGKILL to all processes\n");
 		kill(-1, SIGKILL);
 		sync();
@@ -306,6 +305,7 @@ void shutdown_system(void)
 			dd_loginfo("init", "wait for nvram write to finish\n");
 			sleep(1);
 		}
+		unmount_fs();	// try to unmount a first time
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
 		eval("mount", "-o", "remount,ro", "/");
