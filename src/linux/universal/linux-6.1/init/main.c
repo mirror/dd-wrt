@@ -120,6 +120,10 @@
 #include <linux/of.h>
 #endif
 
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+#include <linux/of.h>
+#endif
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -997,8 +1001,6 @@ asmlinkage __visible void __init __no_sanitize_address start_kernel(void)
 	page_alloc_init();
 
 	pr_notice("Kernel command line: %s\n", saved_command_line);
-	/* parameters may set static keys */
-	jump_label_init();
 
 #if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
 	//Show bootloader's original command line for reference
@@ -1010,6 +1012,9 @@ asmlinkage __visible void __init __no_sanitize_address start_kernel(void)
 			pr_notice("Bootloader command line not present\n");
 	}
 #endif
+
+	/* parameters may set static keys */
+	jump_label_init();
 
 	parse_early_param();
 	after_dashes = parse_args("Booting kernel",
