@@ -29,8 +29,7 @@ int main(int argc, char *argv[])
 		/* 
 		 * child process 
 		 */
-		_nvram_commit();
-		exit(0);
+		(void)setsid();
 		break;
 	default:
 		/* 
@@ -38,5 +37,6 @@ int main(int argc, char *argv[])
 		 */
 		_exit(0);
 	}
+	_nvram_commit();
 	return 0;
 }
