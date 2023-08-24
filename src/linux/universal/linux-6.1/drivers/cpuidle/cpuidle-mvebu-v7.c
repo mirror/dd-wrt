@@ -39,8 +39,12 @@ static int mvebu_v7_enter_idle(struct cpuidle_device *dev,
 	ret = mvebu_v7_cpu_suspend(deepidle);
 	cpu_pm_exit();
 
+	/*
+	 * If we failed to enter the desired state, indicate that we
+	 * slept lightly.
+	 */
 	if (ret)
-		return ret;
+		return 0;
 
 	return index;
 }

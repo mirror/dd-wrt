@@ -41,6 +41,39 @@ struct omnia_leds {
 	struct omnia_led leds[];
 };
 
+static struct led_hw_trigger_type omnia_hw_trigger_type;
+
+static int omnia_hwtrig_activate(struct led_classdev *cdev)
+{
+	struct omnia_leds *leds = dev_get_drvdata(cdev->dev->parent);
+	struct omnia_led *led = to_omnia_led(lcdev_to_mccdev(cdev));
+
+	/* put the LED into MCU controlled mode */
+	return i2c_smbus_write_byte_data(leds->client, CMD_LED_MODE,
+					 CMD_LED_MODE_LED(led->reg));
+}
+
+static void omnia_hwtrig_deactivate(struct led_classdev *cdev)
+{
+	struct omnia_leds *leds = dev_get_drvdata(cdev->dev->parent);
+	struct omnia_led *led = to_omnia_led(lcdev_to_mccdev(cdev));
+	int ret;
+
+	/* put the LED into software mode */
+	ret = i2c_smbus_write_byte_data(leds->client, CMD_LED_MODE,
+					CMD_LED_MODE_LED(led->reg) |
+					CMD_LED_MODE_USER);
+	if (ret < 0)
+		dev_err(cdev->dev, "Cannot put to software mode: %i\n", ret);
+}
+
+static struct led_trigger omnia_hw_trigger = {
+	.name		= "omnia-mcu",
+	.activate	= omnia_hwtrig_activate,
+	.deactivate	= omnia_hwtrig_deactivate,
+	.trigger_type	= &omnia_hw_trigger_type,
+};
+
 static int omnia_led_brightness_set_blocking(struct led_classdev *cdev,
 					     enum led_brightness brightness)
 {
@@ -98,10 +131,13 @@ static int omnia_led_register(struct i2c_client *client, struct omnia_led *led,
 	}
 
 	led->subled_info[0].color_index = LED_COLOR_ID_RED;
+	led->subled_info[0].intensity = 255;
 	led->subled_info[0].channel = 0;
 	led->subled_info[1].color_index = LED_COLOR_ID_GREEN;
+	led->subled_info[1].intensity = 255;
 	led->subled_info[1].channel = 1;
 	led->subled_info[2].color_index = LED_COLOR_ID_BLUE;
+	led->subled_info[2].intensity = 255;
 	led->subled_info[2].channel = 2;
 
 	led->mc_cdev.subled_info = led->subled_info;
@@ -110,8 +146,10 @@ static int omnia_led_register(struct i2c_client *client, struct omnia_led *led,
 	init_data.fwnode = &np->fwnode;
 
 	cdev = &led->mc_cdev.led_cdev;
-	cdev->max_brightness = 255;
+	cdev->max_brightness = 1;
 	cdev->brightness_set_blocking = omnia_led_brightness_set_blocking;
+	cdev->trigger_type = &omnia_hw_trigger_type;
+	cdev->default_trigger = omnia_hw_trigger.name;
 
 	/* put the LED into software mode */
 	ret = i2c_smbus_write_byte_data(client, CMD_LED_MODE,
@@ -227,6 +265,12 @@ static int omnia_leds_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, leds);
 
 	mutex_init(&leds->lock);
+
+	ret = devm_led_trigger_register(dev, &omnia_hw_trigger);
+	if (ret < 0) {
+		dev_err(dev, "Cannot register private LED trigger: %d\n", ret);
+		return ret;
+	}
 
 	led = &leds->leds[0];
 	for_each_available_child_of_node(np, child) {
