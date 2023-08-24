@@ -78,7 +78,7 @@ static void run_on_mount(char *p)
 			sprintf(&shash[2 * i], "%02x", hash[i]);
 
 		if (!nvram_match("backup_hash", shash)) {
-			nvram_restore(path, 1);
+			nvram_restore(path, 0);
 			nvram_set("backup_hash", shash);
 			nvram_commit();
 			sys_reboot();
