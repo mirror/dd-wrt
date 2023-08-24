@@ -3679,6 +3679,7 @@ CONFIG_MFD_VX855=y
 # CONFIG_MFD_WM8350_I2C is not set
 # CONFIG_MFD_WM8994 is not set
 # CONFIG_MFD_ATC260X_I2C is not set
+# CONFIG_MFD_IEI_WT61P803_PUZZLE is not set
 # CONFIG_MFD_INTEL_M10_BMC is not set
 # end of Multifunction device drivers
 
