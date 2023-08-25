@@ -28,7 +28,7 @@
  * 3 = 2 + INFO
  * 4 = 3 + TRACE
  */
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 0
 
 #if (DEBUG_LEVEL < 1)
 #define DEBUG_ASSERT(s, ...)
