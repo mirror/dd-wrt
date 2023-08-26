@@ -53,7 +53,6 @@
 		} \
 		if (__sleep_us) \
 			usleep_range((__sleep_us >> 2) + 1, __sleep_us); \
-		cpu_relax(); \
 	} \
 	(cond) ? 0 : -ETIMEDOUT; \
 })
@@ -96,7 +95,6 @@
 		} \
 		if (__delay_us) \
 			udelay(__delay_us); \
-		cpu_relax(); \
 	} \
 	(cond) ? 0 : -ETIMEDOUT; \
 })

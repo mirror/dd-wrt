@@ -593,14 +593,7 @@ void v4l2_m2m_buf_queue(struct v4l2_m2m_ctx *m2m_ctx,
 static inline
 unsigned int v4l2_m2m_num_src_bufs_ready(struct v4l2_m2m_ctx *m2m_ctx)
 {
-	unsigned int num_buf_rdy;
-	unsigned long flags;
-
-	spin_lock_irqsave(&m2m_ctx->out_q_ctx.rdy_spinlock, flags);
-	num_buf_rdy = m2m_ctx->out_q_ctx.num_rdy;
-	spin_unlock_irqrestore(&m2m_ctx->out_q_ctx.rdy_spinlock, flags);
-
-	return num_buf_rdy;
+	return m2m_ctx->out_q_ctx.num_rdy;
 }
 
 /**
@@ -612,14 +605,7 @@ unsigned int v4l2_m2m_num_src_bufs_ready(struct v4l2_m2m_ctx *m2m_ctx)
 static inline
 unsigned int v4l2_m2m_num_dst_bufs_ready(struct v4l2_m2m_ctx *m2m_ctx)
 {
-	unsigned int num_buf_rdy;
-	unsigned long flags;
-
-	spin_lock_irqsave(&m2m_ctx->cap_q_ctx.rdy_spinlock, flags);
-	num_buf_rdy = m2m_ctx->cap_q_ctx.num_rdy;
-	spin_unlock_irqrestore(&m2m_ctx->cap_q_ctx.rdy_spinlock, flags);
-
-	return num_buf_rdy;
+	return m2m_ctx->cap_q_ctx.num_rdy;
 }
 
 /**

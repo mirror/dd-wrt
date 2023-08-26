@@ -995,9 +995,12 @@ static int hvfb_getmem(struct hv_device *hdev, struct fb_info *info)
 	struct pci_dev *pdev  = NULL;
 	void __iomem *fb_virt;
 	int gen2vm = efi_enabled(EFI_BOOT);
-	resource_size_t base, size;
 	phys_addr_t paddr;
 	int ret;
+
+	info->apertures = alloc_apertures(1);
+	if (!info->apertures)
+		return -ENOMEM;
 
 	if (!gen2vm) {
 		pdev = pci_get_device(PCI_VENDOR_ID_MICROSOFT,
@@ -1007,8 +1010,8 @@ static int hvfb_getmem(struct hv_device *hdev, struct fb_info *info)
 			return -ENODEV;
 		}
 
-		base = pci_resource_start(pdev, 0);
-		size = pci_resource_len(pdev, 0);
+		info->apertures->ranges[0].base = pci_resource_start(pdev, 0);
+		info->apertures->ranges[0].size = pci_resource_len(pdev, 0);
 
 		/*
 		 * For Gen 1 VM, we can directly use the contiguous memory
@@ -1031,8 +1034,8 @@ static int hvfb_getmem(struct hv_device *hdev, struct fb_info *info)
 		}
 		pr_info("Unable to allocate enough contiguous physical memory on Gen 1 VM. Using MMIO instead.\n");
 	} else {
-		base = screen_info.lfb_base;
-		size = screen_info.lfb_size;
+		info->apertures->ranges[0].base = screen_info.lfb_base;
+		info->apertures->ranges[0].size = screen_info.lfb_size;
 	}
 
 	/*
@@ -1074,7 +1077,9 @@ static int hvfb_getmem(struct hv_device *hdev, struct fb_info *info)
 	info->screen_size = dio_fb_size;
 
 getmem_done:
-	aperture_remove_conflicting_devices(base, size, false, KBUILD_MODNAME);
+	aperture_remove_conflicting_devices(info->apertures->ranges[0].base,
+					    info->apertures->ranges[0].size,
+					    false, KBUILD_MODNAME);
 
 	if (gen2vm) {
 		/* framebuffer is reallocated, clear screen_info to avoid misuse from kexec */

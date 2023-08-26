@@ -72,41 +72,32 @@ int qxl_gem_object_create(struct qxl_device *qdev, int size,
 	return 0;
 }
 
-/*
- * If the caller passed a valid gobj pointer, it is responsible to call
- * drm_gem_object_put() when it no longer needs to acess the object.
- *
- * If gobj is NULL, it is handled internally.
- */
 int qxl_gem_object_create_with_handle(struct qxl_device *qdev,
 				      struct drm_file *file_priv,
 				      u32 domain,
 				      size_t size,
 				      struct qxl_surface *surf,
-				      struct drm_gem_object **gobj,
+				      struct qxl_bo **qobj,
 				      uint32_t *handle)
 {
+	struct drm_gem_object *gobj;
 	int r;
-	struct drm_gem_object *local_gobj;
 
+	BUG_ON(!qobj);
 	BUG_ON(!handle);
 
 	r = qxl_gem_object_create(qdev, size, 0,
 				  domain,
 				  false, false, surf,
-				  &local_gobj);
+				  &gobj);
 	if (r)
 		return -ENOMEM;
-	r = drm_gem_handle_create(file_priv, local_gobj, handle);
+	r = drm_gem_handle_create(file_priv, gobj, handle);
 	if (r)
 		return r;
-
-	if (gobj)
-		*gobj = local_gobj;
-	else
-		/* drop reference from allocate - handle holds it now */
-		drm_gem_object_put(local_gobj);
-
+	/* drop reference from allocate - handle holds it now */
+	*qobj = gem_to_qxl_bo(gobj);
+	drm_gem_object_put(gobj);
 	return 0;
 }
 

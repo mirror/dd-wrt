@@ -874,7 +874,6 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 	if (err)
 		goto out1;
 
-	err = -EINVAL;
 	/* Call mi_remove_attr() in reverse order to keep pointers 'arr_move' valid. */
 	while (to_free > 0) {
 		struct ATTRIB *b = arr_move[--nb];
@@ -883,8 +882,7 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 
 		attr = mi_insert_attr(mi, b->type, Add2Ptr(b, name_off),
 				      b->name_len, asize, name_off);
-		if (!attr)
-			goto out1;
+		WARN_ON(!attr);
 
 		mi_get_ref(mi, &le_b[nb]->ref);
 		le_b[nb]->id = attr->id;
@@ -894,20 +892,17 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 		attr->id = le_b[nb]->id;
 
 		/* Remove from primary record. */
-		if (!mi_remove_attr(NULL, &ni->mi, b))
-			goto out1;
+		WARN_ON(!mi_remove_attr(NULL, &ni->mi, b));
 
 		if (to_free <= asize)
 			break;
 		to_free -= asize;
-		if (!nb)
-			goto out1;
+		WARN_ON(!nb);
 	}
 
 	attr = mi_insert_attr(&ni->mi, ATTR_LIST, NULL, 0,
 			      lsize + SIZEOF_RESIDENT, SIZEOF_RESIDENT);
-	if (!attr)
-		goto out1;
+	WARN_ON(!attr);
 
 	attr->non_res = 0;
 	attr->flags = 0;
@@ -927,10 +922,9 @@ out1:
 	kfree(ni->attr_list.le);
 	ni->attr_list.le = NULL;
 	ni->attr_list.size = 0;
-	return err;
 
 out:
-	return 0;
+	return err;
 }
 
 /*

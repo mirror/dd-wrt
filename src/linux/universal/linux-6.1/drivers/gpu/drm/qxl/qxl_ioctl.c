@@ -38,6 +38,7 @@ int qxl_alloc_ioctl(struct drm_device *dev, void *data, struct drm_file *file_pr
 	struct qxl_device *qdev = to_qxl(dev);
 	struct drm_qxl_alloc *qxl_alloc = data;
 	int ret;
+	struct qxl_bo *qobj;
 	uint32_t handle;
 	u32 domain = QXL_GEM_DOMAIN_VRAM;
 
@@ -49,7 +50,7 @@ int qxl_alloc_ioctl(struct drm_device *dev, void *data, struct drm_file *file_pr
 						domain,
 						qxl_alloc->size,
 						NULL,
-						NULL, &handle);
+						&qobj, &handle);
 	if (ret) {
 		DRM_ERROR("%s: failed to create gem ret=%d\n",
 			  __func__, ret);
@@ -385,6 +386,7 @@ int qxl_alloc_surf_ioctl(struct drm_device *dev, void *data, struct drm_file *fi
 {
 	struct qxl_device *qdev = to_qxl(dev);
 	struct drm_qxl_alloc_surf *param = data;
+	struct qxl_bo *qobj;
 	int handle;
 	int ret;
 	int size, actual_stride;
@@ -404,7 +406,7 @@ int qxl_alloc_surf_ioctl(struct drm_device *dev, void *data, struct drm_file *fi
 						QXL_GEM_DOMAIN_SURFACE,
 						size,
 						&surf,
-						NULL, &handle);
+						&qobj, &handle);
 	if (ret) {
 		DRM_ERROR("%s: failed to create gem ret=%d\n",
 			  __func__, ret);
