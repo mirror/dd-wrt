@@ -256,6 +256,11 @@ testimage:
 	#tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp tools/newport/boot/* /
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/boot.scr /
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/newport.scr /
+ifeq ($(KERNELVERSION),6.1)
+	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp tools/newport/linux/* /
+endif
+
+
 	# copy openwrt rootfs to image
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/newport.img bs=16M seek=1
@@ -339,7 +344,11 @@ endif
 
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/vmlinux
 	gzip -f $(ARCH)-uclibc/vmlinux
+ifeq ($(KERNELVERSION),6.1)
+	cd $(ARCH)-uclibc && ../tools/newport/mkits2.sh -o kernel.its -k vmlinux.gz -C gzip -v "dd-wrt"
+else
 	cd $(ARCH)-uclibc && ../tools/newport/mkits.sh -o kernel.its -k vmlinux.gz -C gzip -v "dd-wrt"
+endif
 	cd $(ARCH)-uclibc && ../tools/newport/mkimage -f kernel.its kernel.itb
 
 #FIXED_SIZE = 0x100000 # 1M of Fixed data, see flash_create()
@@ -368,6 +377,9 @@ endif
 	#tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp tools/newport/init/* /
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/newport.scr /
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/boot.scr /
+ifeq ($(KERNELVERSION),6.1)
+	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp tools/newport/linux/* /
+endif
 	# copy openwrt rootfs to image
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm -b 262144
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/newport.img bs=16M seek=1
