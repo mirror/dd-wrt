@@ -1,21 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* zebra routemap.
  * Copyright (C) 2006 IBM Corporation
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -43,7 +28,7 @@
 #include "zebra/zebra_routemap_clippy.c"
 
 static uint32_t zebra_rmap_update_timer = ZEBRA_RMAP_DEFAULT_UPDATE_TIMER;
-static struct thread *zebra_t_rmap_update = NULL;
+static struct event *zebra_t_rmap_update = NULL;
 char *zebra_import_table_routemap[AFI_MAX][ZEBRA_KERNEL_TABLE_MAX];
 
 struct nh_rmap_obj {
@@ -382,7 +367,7 @@ static int ip_nht_rm_add(struct zebra_vrf *zvrf, const char *rmap, int rtype,
 	route_map_counter_increment(NHT_RM_MAP(zvrf, afi, rtype));
 
 	if (NHT_RM_MAP(zvrf, afi, rtype))
-		zebra_evaluate_rnh(zvrf, AFI_IP, 1, NULL, SAFI_UNICAST);
+		zebra_evaluate_rnh(zvrf, afi, 1, NULL, SAFI_UNICAST);
 
 	return CMD_SUCCESS;
 }
@@ -403,7 +388,7 @@ static int ip_nht_rm_del(struct zebra_vrf *zvrf, const char *rmap, int rtype,
 					zvrf->vrf->vrf_id, rtype);
 			NHT_RM_MAP(zvrf, afi, rtype) = NULL;
 
-			zebra_evaluate_rnh(zvrf, AFI_IP, 1, NULL, SAFI_UNICAST);
+			zebra_evaluate_rnh(zvrf, afi, 1, NULL, SAFI_UNICAST);
 		}
 		XFREE(MTYPE_ROUTE_MAP_NAME, NHT_RM_NAME(zvrf, afi, rtype));
 	}
@@ -1049,12 +1034,19 @@ route_match_ip_next_hop(void *rule, const struct prefix *prefix, void *object)
 		p.prefix = nh_data->nexthop->gate.ipv4;
 		p.prefixlen = IPV4_MAX_BITLEN;
 		break;
-	default:
+	case NEXTHOP_TYPE_IPV6:
+	case NEXTHOP_TYPE_IPV6_IFINDEX:
+	case NEXTHOP_TYPE_BLACKHOLE:
 		return RMAP_NOMATCH;
 	}
 	alist = access_list_lookup(AFI_IP, (char *)rule);
-	if (alist == NULL)
+	if (alist == NULL) {
+		if (unlikely(CHECK_FLAG(rmap_debug, DEBUG_ROUTEMAP_DETAIL)))
+			zlog_debug(
+				"%s: Access-List Specified: %s does not exist defaulting to NO_MATCH",
+				__func__, (char *)rule);
 		return RMAP_NOMATCH;
+	}
 
 	return (access_list_apply(alist, &p) == FILTER_DENY ? RMAP_NOMATCH
 							    : RMAP_MATCH);
@@ -1105,12 +1097,19 @@ route_match_ip_next_hop_prefix_list(void *rule, const struct prefix *prefix,
 		p.prefix = nh_data->nexthop->gate.ipv4;
 		p.prefixlen = IPV4_MAX_BITLEN;
 		break;
-	default:
+	case NEXTHOP_TYPE_IPV6:
+	case NEXTHOP_TYPE_IPV6_IFINDEX:
+	case NEXTHOP_TYPE_BLACKHOLE:
 		return RMAP_NOMATCH;
 	}
 	plist = prefix_list_lookup(AFI_IP, (char *)rule);
-	if (plist == NULL)
+	if (plist == NULL) {
+		if (unlikely(CHECK_FLAG(rmap_debug, DEBUG_ROUTEMAP_DETAIL)))
+			zlog_debug(
+				"%s: Prefix List %s specified does not exist defaulting to NO_MATCH",
+				__func__, (char *)rule);
 		return RMAP_NOMATCH;
+	}
 
 	return (prefix_list_apply(plist, &p) == PREFIX_DENY ? RMAP_NOMATCH
 							    : RMAP_MATCH);
@@ -1145,8 +1144,13 @@ route_match_address(afi_t afi, void *rule, const struct prefix *prefix,
 	struct access_list *alist;
 
 	alist = access_list_lookup(afi, (char *)rule);
-	if (alist == NULL)
+	if (alist == NULL) {
+		if (unlikely(CHECK_FLAG(rmap_debug, DEBUG_ROUTEMAP_DETAIL)))
+			zlog_debug(
+				"%s: Access-List Specified: %s does not exist defaulting to NO_MATCH",
+				__func__, (char *)rule);
 		return RMAP_NOMATCH;
+	}
 
 	return (access_list_apply(alist, prefix) == FILTER_DENY ? RMAP_NOMATCH
 								: RMAP_MATCH);
@@ -1202,8 +1206,13 @@ route_match_address_prefix_list(void *rule, const struct prefix *prefix,
 	struct prefix_list *plist;
 
 	plist = prefix_list_lookup(afi, (char *)rule);
-	if (plist == NULL)
+	if (plist == NULL) {
+		if (unlikely(CHECK_FLAG(rmap_debug, DEBUG_ROUTEMAP_DETAIL)))
+			zlog_debug(
+				"%s: Prefix List %s specified does not exist defaulting to NO_MATCH",
+				__func__, (char *)rule);
 		return RMAP_NOMATCH;
+	}
 
 	return (prefix_list_apply(plist, prefix) == PREFIX_DENY ? RMAP_NOMATCH
 								: RMAP_MATCH);
@@ -1364,7 +1373,9 @@ route_match_ip_nexthop_prefix_len(void *rule, const struct prefix *prefix,
 		p.prefix = nh_data->nexthop->gate.ipv4;
 		p.prefixlen = IPV4_MAX_BITLEN;
 		break;
-	default:
+	case NEXTHOP_TYPE_IPV6:
+	case NEXTHOP_TYPE_IPV6_IFINDEX:
+	case NEXTHOP_TYPE_BLACKHOLE:
 		return RMAP_NOMATCH;
 	}
 	return ((p.prefixlen == *prefixlen) ? RMAP_MATCH : RMAP_NOMATCH);
@@ -1692,7 +1703,7 @@ static void zebra_nht_rm_update(const char *rmap)
 						afi_ipv6 = 1;
 
 						zebra_evaluate_rnh(
-							zvrf, AFI_IP, 1, NULL,
+							zvrf, AFI_IP6, 1, NULL,
 							SAFI_UNICAST);
 					}
 				}
@@ -1711,7 +1722,7 @@ static void zebra_route_map_process_update_cb(char *rmap_name)
 	zebra_nht_rm_update(rmap_name);
 }
 
-static void zebra_route_map_update_timer(struct thread *thread)
+static void zebra_route_map_update_timer(struct event *thread)
 {
 	if (IS_ZEBRA_DEBUG_EVENT)
 		zlog_debug("Event driven route-map update triggered");
@@ -1736,7 +1747,7 @@ static void zebra_route_map_set_delay_timer(uint32_t value)
 	if (!value && zebra_t_rmap_update) {
 		/* Event driven route map updates is being disabled */
 		/* But there's a pending timer. Fire it off now */
-		THREAD_OFF(zebra_t_rmap_update);
+		EVENT_OFF(zebra_t_rmap_update);
 		zebra_route_map_update_timer(NULL);
 	}
 }
@@ -1746,7 +1757,7 @@ void zebra_routemap_finish(void)
 	/* Set zebra_rmap_update_timer to 0 so that it wont schedule again */
 	zebra_rmap_update_timer = 0;
 	/* Thread off if any scheduled already */
-	THREAD_OFF(zebra_t_rmap_update);
+	EVENT_OFF(zebra_t_rmap_update);
 	route_map_finish();
 }
 
@@ -1863,10 +1874,10 @@ static void zebra_route_map_mark_update(const char *rmap_name)
 {
 	/* rmap_update_timer of 0 means don't do route updates */
 	if (zebra_rmap_update_timer)
-		THREAD_OFF(zebra_t_rmap_update);
+		EVENT_OFF(zebra_t_rmap_update);
 
-	thread_add_timer(zrouter.master, zebra_route_map_update_timer,
-			 NULL, zebra_rmap_update_timer, &zebra_t_rmap_update);
+	event_add_timer(zrouter.master, zebra_route_map_update_timer, NULL,
+			zebra_rmap_update_timer, &zebra_t_rmap_update);
 }
 
 static void zebra_route_map_add(const char *rmap_name)

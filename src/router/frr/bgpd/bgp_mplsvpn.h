@@ -1,21 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* MPLS-VPN
  * Copyright (C) 2000 Kunihiro Ishiguro <kunihiro@zebra.org>
  *
  * This file is part of GxNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _QUAGGA_BGP_MPLSVPN_H
@@ -44,6 +31,7 @@
 #define BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH 20
 
 extern void bgp_mplsvpn_init(void);
+extern void bgp_mplsvpn_path_nh_label_unlink(struct bgp_path_info *pi);
 extern int bgp_nlri_parse_vpn(struct peer *, struct attr *, struct bgp_nlri *);
 extern uint32_t decode_label(mpls_label_t *);
 extern void encode_label(mpls_label_t, mpls_label_t *);
@@ -336,5 +324,6 @@ extern void vpn_handle_router_id_update(struct bgp *bgp, bool withdraw,
 					bool is_config);
 extern void bgp_vpn_leak_unimport(struct bgp *from_bgp);
 extern void bgp_vpn_leak_export(struct bgp *from_bgp);
+extern void sid_unregister(struct bgp *bgp, const struct in6_addr *sid);
 
 #endif /* _QUAGGA_BGP_MPLSVPN_H */

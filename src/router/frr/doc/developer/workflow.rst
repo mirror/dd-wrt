@@ -95,7 +95,7 @@ March/July/November.  Walking backwards from this date:
    are considered lowest priority (regardless of when they were opened.)
 
  - 4 weeks earlier, the stable branch separates from master (named
-   ``dev/MAJOR.MINOR`` at this point) and tagged as ```base_X.Y``.
+   ``dev/MAJOR.MINOR`` at this point) and tagged as ``base_X.Y``.
    Master is unfrozen and new features may again proceed.
 
    Part of unfreezing master is editing the ``AC_INIT`` statement in
@@ -166,15 +166,15 @@ as early as possible, i.e. the first 2-week window.
 
 For reference, the expected release schedule according to the above is:
 
-+---------+------------+------------+------------+------------+------------+
-| Release | 2023-03-07 | 2023-07-04 | 2023-10-31 | 2024-02-27 | 2024-06-25 |
-+---------+------------+------------+------------+------------+------------+
-| RC      | 2023-02-21 | 2023-06-20 | 2023-10-17 | 2024-02-13 | 2024-06-11 |
-+---------+------------+------------+------------+------------+------------+
-| dev/X.Y | 2023-02-07 | 2023-06-06 | 2023-10-03 | 2024-01-30 | 2024-05-28 |
-+---------+------------+------------+------------+------------+------------+
-| freeze  | 2023-01-24 | 2023-05-23 | 2023-09-19 | 2024-01-16 | 2024-05-14 |
-+---------+------------+------------+------------+------------+------------+
++---------+------------+------------+------------+
+| Release | 2023-07-04 | 2023-10-31 | 2024-02-27 |
++---------+------------+------------+------------+
+| RC      | 2023-06-20 | 2023-10-17 | 2024-02-13 |
++---------+------------+------------+------------+
+| dev/X.Y | 2023-06-06 | 2023-10-03 | 2024-01-30 |
++---------+------------+------------+------------+
+| freeze  | 2023-05-23 | 2023-09-19 | 2024-01-16 |
++---------+------------+------------+------------+
 
 Here is the hint on how to get the dates easily:
 
@@ -365,7 +365,6 @@ There is a built-in commit linter. Basic rules:
    `Check <https://github.com/FRRouting/frr/tree/master/.github/commitlint.config.js>`_ all
    the supported subsystems.
 
-- Commit messages must start with a capital letter
 - Commit messages must not end with a period ``.``
 
 Why was my pull request closed?
@@ -538,7 +537,8 @@ Programming Languages, Tools and Libraries
 ==========================================
 
 The core of FRR is written in C (gcc or clang supported) and makes
-use of GNU compiler extensions. A few non-essential scripts are
+use of GNU compiler extensions. Additionally, the CLI generation
+tool, `clippy`, requires Python. A few other non-essential scripts are
 implemented in Perl and Python. FRR requires the following tools
 to build distribution packages: automake, autoconf, texinfo, libtool and
 gawk and various libraries (i.e. libpam and libjson-c).
@@ -671,33 +671,36 @@ above) added to the file. The header should be:
 
 .. code-block:: c
 
+    // SPDX-License-Identifier: GPL-2.0-or-later
     /*
      * Title/Function of file
      * Copyright (C) YEAR  Author’s Name
-     *
-     * This program is free software; you can redistribute it and/or modify it
-     * under the terms of the GNU General Public License as published by the Free
-     * Software Foundation; either version 2 of the License, or (at your option)
-     * any later version.
-     *
-     * This program is distributed in the hope that it will be useful, but WITHOUT
-     * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-     * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-     * more details.
-     *
-     * You should have received a copy of the GNU General Public License along
-     * with this program; see the file COPYING; if not, write to the Free Software
-     * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
      */
 
     #include <zebra.h>
 
-Please copy-paste this header verbatim. In particular:
+A ``SPDX-License-Identifier`` header is required in all source files, i.e.
+``.c``, ``.h``, ``.cpp`` and ``.py`` files.  The license boilerplate should be
+removed in these files.  Some existing files are missing this header, this is
+slowly being fixed.
 
-- Do not replace "This program" with "FRR"
-- Do not change the address of the FSF
-- keep ``#include <zebra.h>``.  The absolute first header included in any C
-  file **must** be either ``zebra.h`` or ``config.h`` (with HAVE_CONFIG_H guard)
+A ``SPDX-License-Identifier`` header *and* the full license boilerplate is
+required in schema definition files, i.e. ``.yang`` and ``.proto``.  The
+rationale for this is that these files are likely to be individually copied to
+places outside FRR, and having only the SPDX header would become a "dangling
+pointer".
+
+.. warning::
+
+   **DO NOT REMOVE A "Copyright" LINE OR AUTHOR NAME, EVER.**
+
+   **DO NOT APPLY AN SPDX HEADER WHEN THE LICENSE IS UNCLEAR, UNLESS YOU HAVE
+   CHECKED WITH *ALL* SIGNIFICANT AUTHORS.**
+
+Please to keep ``#include <zebra.h>``.  The absolute first header included in
+any C file **must** be either ``zebra.h`` or ``config.h`` (with HAVE_CONFIG_H
+guard.)
+
 
 Adding Copyright Claims to Existing Files
 -----------------------------------------

@@ -1,21 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2003 Yasuhiro Ohara
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -254,12 +239,18 @@ static int ospf6_zebra_gr_update(struct ospf6 *ospf6, int command,
 
 int ospf6_zebra_gr_enable(struct ospf6 *ospf6, uint32_t stale_time)
 {
+	if (IS_DEBUG_OSPF6_GR)
+		zlog_debug("Zebra enable GR [stale time %u]", stale_time);
+
 	return ospf6_zebra_gr_update(ospf6, ZEBRA_CLIENT_GR_CAPABILITIES,
 				     stale_time);
 }
 
 int ospf6_zebra_gr_disable(struct ospf6 *ospf6)
 {
+	if (IS_DEBUG_OSPF6_GR)
+		zlog_debug("Zebra disable GR");
+
 	return ospf6_zebra_gr_update(ospf6, ZEBRA_CLIENT_GR_DISABLE, 0);
 }
 
@@ -267,7 +258,7 @@ static int ospf6_zebra_read_route(ZAPI_CALLBACK_ARGS)
 {
 	struct zapi_route api;
 	unsigned long ifindex;
-	struct in6_addr *nexthop;
+	const struct in6_addr *nexthop = &in6addr_any;
 	struct ospf6 *ospf6;
 	struct prefix_ipv6 p;
 
@@ -287,7 +278,9 @@ static int ospf6_zebra_read_route(ZAPI_CALLBACK_ARGS)
 		return 0;
 
 	ifindex = api.nexthops[0].ifindex;
-	nexthop = &api.nexthops[0].gate.ipv6;
+	if (api.nexthops[0].type == NEXTHOP_TYPE_IPV6
+	    || api.nexthops[0].type == NEXTHOP_TYPE_IPV6_IFINDEX)
+		nexthop = &api.nexthops[0].gate.ipv6;
 
 	if (IS_OSPF6_DEBUG_ZEBRA(RECV))
 		zlog_debug(
@@ -748,10 +741,20 @@ uint8_t ospf6_distance_apply(struct prefix_ipv6 *p, struct ospf6_route * or,
 
 static void ospf6_zebra_connected(struct zclient *zclient)
 {
+	struct ospf6 *ospf6;
+	struct listnode *node;
+
 	/* Send the client registration */
 	bfd_client_sendmsg(zclient, ZEBRA_BFD_CLIENT_REGISTER, VRF_DEFAULT);
 
 	zclient_send_reg_requests(zclient, VRF_DEFAULT);
+
+	/* Activate graceful restart if configured. */
+	for (ALL_LIST_ELEMENTS_RO(om6->ospf6, node, ospf6)) {
+		if (!ospf6->gr_info.restart_support)
+			continue;
+		(void)ospf6_zebra_gr_enable(ospf6, ospf6->gr_info.grace_period);
+	}
 }
 
 static zclient_handler *const ospf6_handlers[] = {
@@ -763,7 +766,7 @@ static zclient_handler *const ospf6_handlers[] = {
 	[ZEBRA_NEXTHOP_UPDATE] = ospf6_zebra_import_check_update,
 };
 
-void ospf6_zebra_init(struct thread_master *master)
+void ospf6_zebra_init(struct event_loop *master)
 {
 	/* Allocate zebra structure. */
 	zclient = zclient_new(master, &zclient_options_default, ospf6_handlers,

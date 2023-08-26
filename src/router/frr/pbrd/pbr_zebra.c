@@ -1,25 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Zebra connect code.
  * Copyright (C) 2018 Cumulus Networks, Inc.
  *               Donald Sharp
- *
- * FRR is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * FRR is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <zebra.h>
 
-#include "thread.h"
+#include "frrevent.h"
 #include "command.h"
 #include "network.h"
 #include "prefix.h"
@@ -529,7 +516,7 @@ pbr_encode_pbr_map_sequence_vrf(struct stream *s,
 	stream_putl(s, pbr_vrf->vrf->data.l.table_id);
 }
 
-static void pbr_encode_pbr_map_sequence(struct stream *s,
+static bool pbr_encode_pbr_map_sequence(struct stream *s,
 					struct pbr_map_sequence *pbrms,
 					struct interface *ifp)
 {
@@ -562,7 +549,14 @@ static void pbr_encode_pbr_map_sequence(struct stream *s,
 		stream_putl(s, pbr_nht_get_table(pbrms->nhgrp_name));
 	else if (pbrms->nhg)
 		stream_putl(s, pbr_nht_get_table(pbrms->internal_nhg_name));
+	else {
+		/* Not valid for install without table */
+		return false;
+	}
+
 	stream_put(s, ifp->name, INTERFACE_NAMSIZ);
+
+	return true;
 }
 
 bool pbr_send_pbr_map(struct pbr_map_sequence *pbrms,
@@ -606,11 +600,13 @@ bool pbr_send_pbr_map(struct pbr_map_sequence *pbrms,
 	       install ? "Installing" : "Deleting", pbrm->name, pbrms->seqno,
 	       install, pmi->ifp->name, pmi->delete);
 
-	pbr_encode_pbr_map_sequence(s, pbrms, pmi->ifp);
-
-	stream_putw_at(s, 0, stream_get_endp(s));
-
-	zclient_send_message(zclient);
+	if (pbr_encode_pbr_map_sequence(s, pbrms, pmi->ifp)) {
+		stream_putw_at(s, 0, stream_get_endp(s));
+		zclient_send_message(zclient);
+	} else {
+		DEBUGD(&pbr_dbg_zebra, "%s: %s seq %u encode failed, skipped",
+		       __func__, pbrm->name, pbrms->seqno);
+	}
 
 	return true;
 }

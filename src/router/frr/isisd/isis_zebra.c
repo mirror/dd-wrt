@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * IS-IS Rout(e)ing protocol - isis_zebra.c
  *
@@ -5,25 +6,11 @@
  *                           Tampere University of Technology
  *                           Institute of Communications Engineering
  * Copyright (C) 2013-2015   Christian Franke <chris@opensourcerouting.org>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public Licenseas published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
-#include "thread.h"
+#include "frrevent.h"
 #include "command.h"
 #include "memory.h"
 #include "log.h"
@@ -340,14 +327,13 @@ void isis_zebra_route_del_route(struct isis *isis,
  */
 void isis_zebra_prefix_sid_install(struct isis_area *area,
 				   struct prefix *prefix,
-				   struct isis_route_info *rinfo,
 				   struct isis_sr_psid_info *psid)
 {
 	struct zapi_labels zl;
 	int count = 0;
 
-	sr_debug("ISIS-Sr (%s): update label %u for prefix %pFX",
-		 area->area_tag, psid->label, prefix);
+	sr_debug("ISIS-Sr (%s): update label %u for prefix %pFX algorithm %u",
+		 area->area_tag, psid->label, prefix, psid->algorithm);
 
 	/* Prepare message. */
 	memset(&zl, 0, sizeof(zl));
@@ -355,7 +341,7 @@ void isis_zebra_prefix_sid_install(struct isis_area *area,
 	zl.local_label = psid->label;
 
 	/* Local routes don't have any nexthop and require special handling. */
-	if (list_isempty(rinfo->nexthops)) {
+	if (list_isempty(psid->nexthops)) {
 		struct zapi_nexthop *znh;
 		struct interface *ifp;
 
@@ -374,9 +360,9 @@ void isis_zebra_prefix_sid_install(struct isis_area *area,
 		znh->labels[0] = MPLS_LABEL_IMPLICIT_NULL;
 	} else {
 		/* Add backup nexthops first. */
-		if (rinfo->backup) {
+		if (psid->nexthops_backup) {
 			count = isis_zebra_add_nexthops(
-				area->isis, rinfo->backup->nexthops,
+				area->isis, psid->nexthops_backup,
 				zl.backup_nexthops, ISIS_NEXTHOP_BACKUP, true,
 				0);
 			if (count > 0) {
@@ -386,7 +372,7 @@ void isis_zebra_prefix_sid_install(struct isis_area *area,
 		}
 
 		/* Add primary nexthops. */
-		count = isis_zebra_add_nexthops(area->isis, rinfo->nexthops,
+		count = isis_zebra_add_nexthops(area->isis, psid->nexthops,
 						zl.nexthops, ISIS_NEXTHOP_MAIN,
 						true, count);
 		if (!count)
@@ -413,8 +399,8 @@ void isis_zebra_prefix_sid_uninstall(struct isis_area *area,
 {
 	struct zapi_labels zl;
 
-	sr_debug("ISIS-Sr (%s): delete label %u for prefix %pFX",
-		 area->area_tag, psid->label, prefix);
+	sr_debug("ISIS-Sr (%s): delete label %u for prefix %pFX algorithm %u",
+		 area->area_tag, psid->label, prefix, psid->algorithm);
 
 	/* Prepare message. */
 	memset(&zl, 0, sizeof(zl));
@@ -841,7 +827,7 @@ static zclient_handler *const isis_handlers[] = {
 	[ZEBRA_CLIENT_CLOSE_NOTIFY] = isis_zebra_client_close_notify,
 };
 
-void isis_zebra_init(struct thread_master *master, int instance)
+void isis_zebra_init(struct event_loop *master, int instance)
 {
 	/* Initialize asynchronous zclient. */
 	zclient = zclient_new(master, &zclient_options_default, isis_handlers,

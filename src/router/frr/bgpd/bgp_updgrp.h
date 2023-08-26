@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /**
  * bgp_updgrp.c: BGP update group structures
  *
@@ -6,22 +7,6 @@
  * @author Avneesh Sachdev <avneesh@sproute.net>
  * @author Rajesh Varadarajan <rajesh@sproute.net>
  * @author Pradosh Mohapatra <pradosh@sproute.net>
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef _QUAGGA_BGP_UPDGRP_H
@@ -212,10 +197,10 @@ struct update_subgroup {
 	/* announcement attribute hash */
 	struct hash *hash;
 
-	struct thread *t_coalesce;
+	struct event *t_coalesce;
 	uint32_t v_coalesce;
 
-	struct thread *t_merge_check;
+	struct event *t_merge_check;
 
 	/* table version that the subgroup has caught up to. */
 	uint64_t version;
@@ -388,7 +373,7 @@ extern void update_group_af_walk(struct bgp *bgp, afi_t afi, safi_t safi,
 extern void update_group_walk(struct bgp *bgp, updgrp_walkcb cb, void *ctx);
 extern void update_group_periodic_merge(struct bgp *bgp);
 extern void
-update_group_refresh_default_originate_route_map(struct thread *thread);
+update_group_refresh_default_originate_route_map(struct event *thread);
 extern void update_group_start_advtimer(struct bgp *bgp);
 
 extern void update_subgroup_inherit_info(struct update_subgroup *to,
@@ -600,11 +585,9 @@ static inline void bgp_announce_peer(struct peer *peer)
  */
 static inline int advertise_list_is_empty(struct update_subgroup *subgrp)
 {
-	if (bgp_adv_fifo_count(&subgrp->sync->update)
-	    || bgp_adv_fifo_count(&subgrp->sync->withdraw)
-	    || bgp_adv_fifo_count(&subgrp->sync->withdraw_low)) {
+	if (bgp_adv_fifo_count(&subgrp->sync->update) ||
+	    bgp_adv_fifo_count(&subgrp->sync->withdraw))
 		return 0;
-	}
 
 	return 1;
 }

@@ -1,21 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * libfrr overall management functions
  *
  * Copyright (C) 2016  David Lamparter for NetDEF, Inc.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -46,10 +33,10 @@
 #include "frrscript.h"
 #include "systemd.h"
 
-DEFINE_HOOK(frr_early_init, (struct thread_master * tm), (tm));
-DEFINE_HOOK(frr_late_init, (struct thread_master * tm), (tm));
-DEFINE_HOOK(frr_config_pre, (struct thread_master * tm), (tm));
-DEFINE_HOOK(frr_config_post, (struct thread_master * tm), (tm));
+DEFINE_HOOK(frr_early_init, (struct event_loop * tm), (tm));
+DEFINE_HOOK(frr_late_init, (struct event_loop * tm), (tm));
+DEFINE_HOOK(frr_config_pre, (struct event_loop * tm), (tm));
+DEFINE_HOOK(frr_config_post, (struct event_loop * tm), (tm));
 DEFINE_KOOH(frr_early_fini, (), ());
 DEFINE_KOOH(frr_fini, (), ());
 
@@ -143,6 +130,7 @@ static const struct optspec os_always = {
 	"      --limit-fds    Limit number of fds supported\n",
 	lo_always};
 
+static bool logging_to_stdout = false; /* set when --log stdout specified */
 
 static const struct option lo_cfg[] = {
 	{"config_file", required_argument, NULL, 'f'},
@@ -709,8 +697,8 @@ static void _err_print(const void *cookie, const char *errstr)
 	fprintf(stderr, "%s: %s\n", prefix, errstr);
 }
 
-static struct thread_master *master;
-struct thread_master *frr_init(void)
+static struct event_loop *master;
+struct event_loop *frr_init(void)
 {
 	struct option_chain *oc;
 	struct log_arg *log_arg;
@@ -751,6 +739,11 @@ struct thread_master *frr_init(void)
 	while ((log_arg = log_args_pop(di->early_logging))) {
 		command_setup_early_logging(log_arg->target,
 					    di->early_loglevel);
+		/* this is a bit of a hack,
+		   but need to notice when
+		   the target is stdout */
+		if (strcmp(log_arg->target, "stdout") == 0)
+			logging_to_stdout = true;
 		XFREE(MTYPE_TMP, log_arg);
 	}
 
@@ -782,7 +775,7 @@ struct thread_master *frr_init(void)
 
 	zprivs_init(di->privs);
 
-	master = thread_master_create(NULL);
+	master = event_master_create(NULL);
 	signal_init(master, di->n_signals, di->signals);
 	hook_call(frr_early_init, master);
 
@@ -977,7 +970,7 @@ static void frr_daemonize(void)
  * to read the config in after thread execution starts, so that
  * we can match this behavior.
  */
-static void frr_config_read_in(struct thread *t)
+static void frr_config_read_in(struct event *t)
 {
 	hook_call(frr_config_pre, master);
 
@@ -1005,7 +998,7 @@ static void frr_config_read_in(struct thread *t)
 		int ret;
 
 		context.client = NB_CLIENT_CLI;
-		ret = nb_candidate_commit(&context, vty_shared_candidate_config,
+		ret = nb_candidate_commit(context, vty_shared_candidate_config,
 					  true, "Read configuration file", NULL,
 					  errmsg, sizeof(errmsg));
 		if (ret != NB_OK && ret != NB_ERR_NO_CHANGES)
@@ -1028,8 +1021,8 @@ void frr_config_fork(void)
 			exit(0);
 		}
 
-		thread_add_event(master, frr_config_read_in, NULL, 0,
-				 &di->read_in);
+		event_add_event(master, frr_config_read_in, NULL, 0,
+				&di->read_in);
 	}
 
 	if (di->daemon_mode || di->terminal)
@@ -1043,7 +1036,7 @@ void frr_config_fork(void)
 	zlog_tls_buffer_init();
 }
 
-static void frr_vty_serv(void)
+void frr_vty_serv_start(void)
 {
 	/* allow explicit override of vty_path in the future
 	 * (not currently set anywhere) */
@@ -1065,7 +1058,15 @@ static void frr_vty_serv(void)
 		di->vty_path = vtypath_default;
 	}
 
-	vty_serv_sock(di->vty_addr, di->vty_port, di->vty_path);
+	vty_serv_start(di->vty_addr, di->vty_port, di->vty_path);
+}
+
+void frr_vty_serv_stop(void)
+{
+	vty_serv_stop();
+
+	if (di->vty_path)
+		unlink(di->vty_path);
 }
 
 static void frr_check_detach(void)
@@ -1101,16 +1102,22 @@ static void frr_terminal_close(int isexit)
 			     "%s: failed to open /dev/null: %s", __func__,
 			     safe_strerror(errno));
 	} else {
-		dup2(nullfd, 0);
-		dup2(nullfd, 1);
-		dup2(nullfd, 2);
+		int fd;
+		/*
+		 * only redirect stdin, stdout, stderr to null when a tty also
+		 * don't redirect when stdout is set with --log stdout
+		 */
+		for (fd = 2; fd >= 0; fd--)
+			if (isatty(fd) &&
+			    (fd != STDOUT_FILENO || !logging_to_stdout))
+				dup2(nullfd, fd);
 		close(nullfd);
 	}
 }
 
-static struct thread *daemon_ctl_thread = NULL;
+static struct event *daemon_ctl_thread = NULL;
 
-static void frr_daemon_ctl(struct thread *t)
+static void frr_daemon_ctl(struct event *t)
 {
 	char buf[1];
 	ssize_t nr;
@@ -1142,8 +1149,8 @@ static void frr_daemon_ctl(struct thread *t)
 	}
 
 out:
-	thread_add_read(master, frr_daemon_ctl, NULL, daemon_ctl_sock,
-			&daemon_ctl_thread);
+	event_add_read(master, frr_daemon_ctl, NULL, daemon_ctl_sock,
+		       &daemon_ctl_thread);
 }
 
 void frr_detach(void)
@@ -1152,11 +1159,12 @@ void frr_detach(void)
 	frr_check_detach();
 }
 
-void frr_run(struct thread_master *master)
+void frr_run(struct event_loop *master)
 {
 	char instanceinfo[64] = "";
 
-	frr_vty_serv();
+	if (!(di->flags & FRR_MANUAL_VTY_START))
+		frr_vty_serv_start();
 
 	if (di->instance)
 		snprintf(instanceinfo, sizeof(instanceinfo), "instance %u ",
@@ -1171,8 +1179,8 @@ void frr_run(struct thread_master *master)
 		vty_stdio(frr_terminal_close);
 		if (daemon_ctl_sock != -1) {
 			set_nonblocking(daemon_ctl_sock);
-			thread_add_read(master, frr_daemon_ctl, NULL,
-					daemon_ctl_sock, &daemon_ctl_thread);
+			event_add_read(master, frr_daemon_ctl, NULL,
+				       daemon_ctl_sock, &daemon_ctl_thread);
 		}
 	} else if (di->daemon_mode) {
 		int nullfd = open("/dev/null", O_RDONLY | O_NOCTTY);
@@ -1181,9 +1189,16 @@ void frr_run(struct thread_master *master)
 				     "%s: failed to open /dev/null: %s",
 				     __func__, safe_strerror(errno));
 		} else {
-			dup2(nullfd, 0);
-			dup2(nullfd, 1);
-			dup2(nullfd, 2);
+			int fd;
+			/*
+			 * only redirect stdin, stdout, stderr to null when a
+			 * tty also don't redirect when stdout is set with --log
+			 * stdout
+			 */
+			for (fd = 2; fd >= 0; fd--)
+				if (isatty(fd) &&
+				    (fd != STDOUT_FILENO || !logging_to_stdout))
+					dup2(nullfd, fd);
 			close(nullfd);
 		}
 
@@ -1193,9 +1208,9 @@ void frr_run(struct thread_master *master)
 	/* end fixed stderr startup logging */
 	zlog_startup_end();
 
-	struct thread thread;
-	while (thread_fetch(master, &thread))
-		thread_call(&thread);
+	struct event thread;
+	while (event_fetch(master, &thread))
+		event_call(&thread);
 }
 
 void frr_early_fini(void)
@@ -1207,7 +1222,7 @@ void frr_fini(void)
 {
 	FILE *fp;
 	char filename[128];
-	int have_leftovers;
+	int have_leftovers = 0;
 
 	hook_call(frr_fini);
 
@@ -1226,23 +1241,22 @@ void frr_fini(void)
 	frr_pthread_finish();
 	zprivs_terminate(di->privs);
 	/* signal_init -> nothing needed */
-	thread_master_free(master);
+	event_master_free(master);
 	master = NULL;
 	zlog_tls_buffer_fini();
 	zlog_fini();
 	/* frrmod_init -> nothing needed / hooks */
 	rcu_shutdown();
 
-	if (!debug_memstats_at_exit)
-		return;
-
-	have_leftovers = log_memstats(stderr, di->name);
+	/* also log memstats to stderr when stderr goes to a file*/
+	if (debug_memstats_at_exit || !isatty(STDERR_FILENO))
+		have_leftovers = log_memstats(stderr, di->name);
 
 	/* in case we decide at runtime that we want exit-memstats for
-	 * a daemon, but it has no stderr because it's daemonized
+	 * a daemon
 	 * (only do this if we actually have something to print though)
 	 */
-	if (!have_leftovers)
+	if (!debug_memstats_at_exit || !have_leftovers)
 		return;
 
 	snprintf(filename, sizeof(filename), "/tmp/frr-memstats-%s-%llu-%llu",

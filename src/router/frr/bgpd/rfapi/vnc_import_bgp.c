@@ -1,21 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *
  * Copyright 2009-2016, LabN Consulting, L.L.C.
  *
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -847,6 +834,8 @@ static void vnc_import_bgp_add_route_mode_plain(struct bgp *bgp,
 
 	if (ecom)
 		ecommunity_free(&ecom);
+	if (iattr)
+		bgp_attr_unintern(&iattr);
 }
 
 static void vnc_import_bgp_add_route_mode_nvegroup(
@@ -1043,6 +1032,8 @@ static void vnc_import_bgp_add_route_mode_nvegroup(
 
 	if (ecom)
 		ecommunity_free(&ecom);
+	if (iattr)
+		bgp_attr_unintern(&iattr);
 }
 
 static void vnc_import_bgp_del_route_mode_plain(struct bgp *bgp,
@@ -1995,8 +1986,6 @@ void vnc_import_bgp_exterior_add_route_interior(
 
 	if (RFAPI_HAS_MONITOR_EXTERIOR(rn_interior)) {
 
-		int count = 0; /* debugging */
-
 		vnc_zlog_debug_verbose(
 			"%s: has exterior monitor; ext src: %p", __func__,
 			RFAPI_MONITOR_EXTERIOR(rn_interior)->source);
@@ -2019,9 +2008,6 @@ void vnc_import_bgp_exterior_add_route_interior(
 			struct prefix_rd *prd;
 			struct attr new_attr;
 			uint32_t label = 0;
-
-
-			++count; /* debugging */
 
 			assert(bpi_exterior);
 			assert(pfx_exterior);

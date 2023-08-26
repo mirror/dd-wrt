@@ -1,27 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* BGP Nexthop tracking
  * Copyright (C) 2013 Cumulus Networks, Inc.
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
 #include "command.h"
-#include "thread.h"
+#include "frrevent.h"
 #include "prefix.h"
 #include "zclient.h"
 #include "stream.h"
@@ -46,13 +31,14 @@
 #include "bgpd/bgp_flowspec_util.h"
 #include "bgpd/bgp_evpn.h"
 #include "bgpd/bgp_rd.h"
+#include "bgpd/bgp_mplsvpn.h"
 
 extern struct zclient *zclient;
 
 static void register_zebra_rnh(struct bgp_nexthop_cache *bnc);
 static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc);
 static int make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p);
-static void bgp_nht_ifp_initial(struct thread *thread);
+static void bgp_nht_ifp_initial(struct event *thread);
 
 static int bgp_isvalid_nexthop(struct bgp_nexthop_cache *bnc)
 {
@@ -163,6 +149,8 @@ static void bgp_unlink_nexthop_check(struct bgp_nexthop_cache *bnc)
 void bgp_unlink_nexthop(struct bgp_path_info *path)
 {
 	struct bgp_nexthop_cache *bnc = path->nexthop;
+
+	bgp_mplsvpn_path_nh_label_unlink(path);
 
 	if (!bnc)
 		return;
@@ -559,7 +547,7 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 		char bnc_buf[BNC_FLAG_DUMP_SIZE];
 
 		zlog_debug(
-			"%s(%u): Rcvd NH update %pFX(%u)%u) - metric %d/%d #nhops %d/%d flags %s",
+			"%s(%u): Rcvd NH update %pFX(%u)(%u) - metric %d/%d #nhops %d/%d flags %s",
 			bnc->bgp->name_pretty, bnc->bgp->vrf_id, &nhr->prefix,
 			bnc->ifindex, bnc->srte_color, nhr->metric, bnc->metric,
 			nhr->nexthop_num, bnc->nexthop_num,
@@ -771,10 +759,10 @@ void bgp_nht_ifp_down(struct interface *ifp)
 	bgp_nht_ifp_handle(ifp, false);
 }
 
-static void bgp_nht_ifp_initial(struct thread *thread)
+static void bgp_nht_ifp_initial(struct event *thread)
 {
-	ifindex_t ifindex = THREAD_VAL(thread);
-	struct bgp *bgp = THREAD_ARG(thread);
+	ifindex_t ifindex = EVENT_VAL(thread);
+	struct bgp *bgp = EVENT_ARG(thread);
 	struct interface *ifp = if_lookup_by_index(ifindex, bgp->vrf_id);
 
 	if (!ifp)
@@ -826,8 +814,8 @@ void bgp_nht_interface_events(struct peer *peer)
 		return;
 
 	if (bnc->ifindex)
-		thread_add_event(bm->master, bgp_nht_ifp_initial, bnc->bgp,
-				 bnc->ifindex, NULL);
+		event_add_event(bm->master, bgp_nht_ifp_initial, bnc->bgp,
+				bnc->ifindex, NULL);
 }
 
 void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
@@ -861,7 +849,7 @@ void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
 	if (!bnc_nhc) {
 		if (BGP_DEBUG(nht, NHT))
 			zlog_debug(
-				"parse nexthop update(%pFX(%u)(%s)): bnc info not found for nexthop cache",
+				"parse nexthop update %pFX(%u)(%s): bnc info not found for nexthop cache",
 				&nhr.prefix, nhr.srte_color, bgp->name_pretty);
 	} else
 		bgp_process_nexthop_update(bnc_nhc, &nhr, false);
@@ -872,7 +860,7 @@ void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
 	if (!bnc_import) {
 		if (BGP_DEBUG(nht, NHT))
 			zlog_debug(
-				"parse nexthop update(%pFX(%u)(%s)): bnc info not found for import check",
+				"parse nexthop update %pFX(%u)(%s): bnc info not found for import check",
 				&nhr.prefix, nhr.srte_color, bgp->name_pretty);
 	} else
 		bgp_process_nexthop_update(bnc_import, &nhr, true);
@@ -1149,10 +1137,21 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 	}
 
 	LIST_FOREACH (path, &(bnc->paths), nh_thread) {
-		if (!(path->type == ZEBRA_ROUTE_BGP
-		      && ((path->sub_type == BGP_ROUTE_NORMAL)
-			  || (path->sub_type == BGP_ROUTE_STATIC)
-			  || (path->sub_type == BGP_ROUTE_IMPORTED))))
+		if (path->type == ZEBRA_ROUTE_BGP &&
+		    (path->sub_type == BGP_ROUTE_NORMAL ||
+		     path->sub_type == BGP_ROUTE_STATIC ||
+		     path->sub_type == BGP_ROUTE_IMPORTED))
+			/* evaluate the path */
+			;
+		else if (path->sub_type == BGP_ROUTE_REDISTRIBUTE) {
+			/* evaluate the path for redistributed routes
+			 * except those from VNC
+			 */
+			if ((path->type == ZEBRA_ROUTE_VNC) ||
+			    (path->type == ZEBRA_ROUTE_VNC_DIRECT))
+				continue;
+		} else
+			/* don't evaluate the path */
 			continue;
 
 		dest = path->net;
@@ -1205,14 +1204,20 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 		}
 
 		if (BGP_DEBUG(nht, NHT)) {
-			if (dest->pdest)
-				zlog_debug(
-					"... eval path %d/%d %pBD RD %pRD %s flags 0x%x",
-					afi, safi, dest,
+
+			if (dest->pdest) {
+				char rd_buf[RD_ADDRSTRLEN];
+
+				prefix_rd2str(
 					(struct prefix_rd *)bgp_dest_get_prefix(
 						dest->pdest),
+					rd_buf, sizeof(rd_buf),
+					bgp_get_asnotation(bnc->bgp));
+				zlog_debug(
+					"... eval path %d/%d %pBD RD %s %s flags 0x%x",
+					afi, safi, dest, rd_buf,
 					bgp_path->name_pretty, path->flags);
-			else
+			} else
 				zlog_debug(
 					"... eval path %d/%d %pBD %s flags 0x%x",
 					afi, safi, dest, bgp_path->name_pretty,
@@ -1239,7 +1244,26 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 			SET_FLAG(path->flags, BGP_PATH_IGP_CHANGED);
 
 		path_valid = CHECK_FLAG(path->flags, BGP_PATH_VALID);
-		if (path_valid != bnc_is_valid_nexthop) {
+		if (path->type == ZEBRA_ROUTE_BGP &&
+		    path->sub_type == BGP_ROUTE_STATIC &&
+		    !CHECK_FLAG(bgp_path->flags, BGP_FLAG_IMPORT_CHECK))
+			/* static routes with 'no bgp network import-check' are
+			 * always valid. if nht is called with static routes,
+			 * the vpn exportation needs to be triggered
+			 */
+			vpn_leak_from_vrf_update(bgp_get_default(), bgp_path,
+						 path);
+		else if (path->sub_type == BGP_ROUTE_REDISTRIBUTE &&
+			 safi == SAFI_UNICAST &&
+			 (bgp_path->inst_type == BGP_INSTANCE_TYPE_VRF ||
+			  bgp_path->inst_type == BGP_INSTANCE_TYPE_DEFAULT))
+			/* redistribute routes are always valid
+			 * if nht is called with redistribute routes, the vpn
+			 * exportation needs to be triggered
+			 */
+			vpn_leak_from_vrf_update(bgp_get_default(), bgp_path,
+						 path);
+		else if (path_valid != bnc_is_valid_nexthop) {
 			if (path_valid) {
 				/* No longer valid, clear flag; also for EVPN
 				 * routes, unimport from VRFs if needed.
@@ -1252,6 +1276,12 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 				    bgp_evpn_is_prefix_nht_supported(bgp_dest_get_prefix(dest)))
 					bgp_evpn_unimport_route(bgp_path,
 						afi, safi, bgp_dest_get_prefix(dest), path);
+				if (safi == SAFI_UNICAST &&
+				    (bgp_path->inst_type !=
+				     BGP_INSTANCE_TYPE_VIEW))
+					vpn_leak_from_vrf_withdraw(
+						bgp_get_default(), bgp_path,
+						path);
 			} else {
 				/* Path becomes valid, set flag; also for EVPN
 				 * routes, import from VRFs if needed.
@@ -1264,6 +1294,12 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 				    bgp_evpn_is_prefix_nht_supported(bgp_dest_get_prefix(dest)))
 					bgp_evpn_import_route(bgp_path,
 						afi, safi, bgp_dest_get_prefix(dest), path);
+				if (safi == SAFI_UNICAST &&
+				    (bgp_path->inst_type !=
+				     BGP_INSTANCE_TYPE_VIEW))
+					vpn_leak_from_vrf_update(
+						bgp_get_default(), bgp_path,
+						path);
 			}
 		}
 

@@ -1,28 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2003 Yasuhiro Ohara
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
 
 #include "log.h"
 #include "linklist.h"
-#include "thread.h"
+#include "frrevent.h"
 #include "memory.h"
 #include "if.h"
 #include "prefix.h"
@@ -224,7 +209,7 @@ int ospf6_router_is_stub_router(struct ospf6_lsa *lsa)
 	return OSPF6_NOT_STUB_ROUTER;
 }
 
-void ospf6_router_lsa_originate(struct thread *thread)
+void ospf6_router_lsa_originate(struct event *thread)
 {
 	struct ospf6_area *oa;
 
@@ -243,7 +228,7 @@ void ospf6_router_lsa_originate(struct thread *thread)
 	uint32_t router;
 	int count;
 
-	oa = (struct ospf6_area *)THREAD_ARG(thread);
+	oa = (struct ospf6_area *)EVENT_ARG(thread);
 
 	if (oa->ospf6->gr_info.restart_in_progress) {
 		if (IS_DEBUG_OSPF6_GR)
@@ -509,7 +494,7 @@ static int ospf6_network_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
 	return 0;
 }
 
-void ospf6_network_lsa_originate(struct thread *thread)
+void ospf6_network_lsa_originate(struct event *thread)
 {
 	struct ospf6_interface *oi;
 
@@ -525,7 +510,7 @@ void ospf6_network_lsa_originate(struct thread *thread)
 	struct listnode *i;
 	uint16_t type;
 
-	oi = (struct ospf6_interface *)THREAD_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(thread);
 
 	/* The interface must be enabled until here. A Network-LSA of a
 	   disabled interface (but was once enabled) should be flushed
@@ -761,7 +746,7 @@ static int ospf6_link_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
 	return 0;
 }
 
-void ospf6_link_lsa_originate(struct thread *thread)
+void ospf6_link_lsa_originate(struct event *thread)
 {
 	struct ospf6_interface *oi;
 
@@ -773,7 +758,7 @@ void ospf6_link_lsa_originate(struct thread *thread)
 	struct ospf6_route *route;
 	struct ospf6_prefix *op;
 
-	oi = (struct ospf6_interface *)THREAD_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(thread);
 
 	assert(oi->area);
 
@@ -997,7 +982,7 @@ static int ospf6_intra_prefix_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
 	return 0;
 }
 
-void ospf6_intra_prefix_lsa_originate_stub(struct thread *thread)
+void ospf6_intra_prefix_lsa_originate_stub(struct event *thread)
 {
 	struct ospf6_area *oa;
 
@@ -1016,7 +1001,7 @@ void ospf6_intra_prefix_lsa_originate_stub(struct thread *thread)
 	struct ospf6_route_table *route_advertise;
 	int ls_id = 0;
 
-	oa = (struct ospf6_area *)THREAD_ARG(thread);
+	oa = (struct ospf6_area *)EVENT_ARG(thread);
 
 	if (oa->ospf6->gr_info.restart_in_progress) {
 		if (IS_DEBUG_OSPF6_GR)
@@ -1232,7 +1217,7 @@ void ospf6_intra_prefix_lsa_originate_stub(struct thread *thread)
 }
 
 
-void ospf6_intra_prefix_lsa_originate_transit(struct thread *thread)
+void ospf6_intra_prefix_lsa_originate_transit(struct event *thread)
 {
 	struct ospf6_interface *oi;
 
@@ -1252,7 +1237,7 @@ void ospf6_intra_prefix_lsa_originate_transit(struct thread *thread)
 	char *start, *end, *current;
 	uint16_t type;
 
-	oi = (struct ospf6_interface *)THREAD_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(thread);
 
 	assert(oi->area);
 
