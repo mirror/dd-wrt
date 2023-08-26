@@ -47,7 +47,7 @@ frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c-config
 		--with-vtysh-pager=less  \
 		--disable-eigrpd \
 		--disable-pbrd \
-		--disable-protobuf \
+		--enable-protobuf \
 		--disable-ldpd  \
 		--disable-rfptest \
 		--disable-ssd \
@@ -71,6 +71,8 @@ frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c-config
 		LIBYANG_LIBS="-L$(TOP)/libyang/build -lyang -L$(TOP)/pcre2/.libs -lpcre2-8" \
 		CARES_CFLAGS="-I$(TOP)/libcares/include" \
 		CARES_LIBS="-L$(TOP)/libcares/src/lib/.libs -lcares" \
+		PROTOBUF_C_CFLAGS="-I$(TOP)/protobuf-c" \
+		PROTOBUF_C_LIBS="-L$(TOP)/protobuf-c/protobuf-c/.libs -lprotobuf-c" \
 		PYTHON=/usr/bin/python3
 
 frr: ncurses json-c libyang libcap libcares protobuf-c
