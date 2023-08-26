@@ -18,8 +18,7 @@ protobuf-c-configure:
 				--host=$(ARCH) \
 				--disable-protoc \
 				CFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
-				CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/includ
-				e -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
+				CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
 				LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 protobuf-c:
