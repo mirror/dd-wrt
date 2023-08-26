@@ -1239,9 +1239,9 @@ void fpsimd_release_task(struct task_struct *dead_task)
  * the interest of testability and predictability, the architecture
  * guarantees that when ZA is enabled it will be zeroed.
  */
-void sme_alloc(struct task_struct *task, bool flush)
+void sme_alloc(struct task_struct *task)
 {
-	if (task->thread.za_state && flush) {
+	if (task->thread.za_state) {
 		memset(task->thread.za_state, 0, za_state_size(task));
 		return;
 	}
@@ -1460,7 +1460,7 @@ void do_sme_acc(unsigned long esr, struct pt_regs *regs)
 	}
 
 	sve_alloc(current, false);
-	sme_alloc(current, true);
+	sme_alloc(current);
 	if (!current->thread.sve_state || !current->thread.za_state) {
 		force_sig(SIGKILL);
 		return;
