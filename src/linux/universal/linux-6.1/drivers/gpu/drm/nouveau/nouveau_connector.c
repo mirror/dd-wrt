@@ -1407,7 +1407,8 @@ nouveau_connector_create(struct drm_device *dev,
 		ret = nvif_conn_ctor(&disp->disp, nv_connector->base.name, nv_connector->index,
 				     &nv_connector->conn);
 		if (ret) {
-			goto drm_conn_err;
+			kfree(nv_connector);
+			return ERR_PTR(ret);
 		}
 	}
 
@@ -1469,9 +1470,4 @@ nouveau_connector_create(struct drm_device *dev,
 
 	drm_connector_register(connector);
 	return connector;
-
-drm_conn_err:
-	drm_connector_cleanup(connector);
-	kfree(nv_connector);
-	return ERR_PTR(ret);
 }

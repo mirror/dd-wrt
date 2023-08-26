@@ -230,8 +230,7 @@
 	type DTBCLK_P2_SRC_SEL;\
 	type DTBCLK_P2_EN;\
 	type DTBCLK_P3_SRC_SEL;\
-	type DTBCLK_P3_EN;\
-	type DENTIST_DISPCLK_CHG_DONE;
+	type DTBCLK_P3_EN;
 
 struct dccg_shift {
 	DCCG_REG_FIELD_LIST(uint8_t)

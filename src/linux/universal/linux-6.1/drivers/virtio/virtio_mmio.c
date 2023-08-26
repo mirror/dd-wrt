@@ -590,8 +590,9 @@ static void virtio_mmio_release_dev(struct device *_d)
 	struct virtio_device *vdev =
 			container_of(_d, struct virtio_device, dev);
 	struct virtio_mmio_device *vm_dev = to_virtio_mmio_device(vdev);
+	struct platform_device *pdev = vm_dev->pdev;
 
-	kfree(vm_dev);
+	devm_kfree(&pdev->dev, vm_dev);
 }
 
 /* Platform device */
@@ -602,7 +603,7 @@ static int virtio_mmio_probe(struct platform_device *pdev)
 	unsigned long magic;
 	int rc;
 
-	vm_dev = kzalloc(sizeof(*vm_dev), GFP_KERNEL);
+	vm_dev = devm_kzalloc(&pdev->dev, sizeof(*vm_dev), GFP_KERNEL);
 	if (!vm_dev)
 		return -ENOMEM;
 

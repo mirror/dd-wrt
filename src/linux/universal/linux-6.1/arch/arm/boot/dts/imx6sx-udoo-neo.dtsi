@@ -15,14 +15,14 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led-red {
+		red {
 			label = "udoo-neo:red:mmc";
 			gpios = <&gpio6 0 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 			linux,default-trigger = "mmc0";
 		};
 
-		led-orange {
+		orange {
 			label = "udoo-neo:orange:user";
 			gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";

@@ -317,21 +317,15 @@ struct phylink_pcs *miic_create(struct device *dev, struct device_node *np)
 
 	pdev = of_find_device_by_node(pcs_np);
 	of_node_put(pcs_np);
-	if (!pdev || !platform_get_drvdata(pdev)) {
-		if (pdev)
-			put_device(&pdev->dev);
+	if (!pdev || !platform_get_drvdata(pdev))
 		return ERR_PTR(-EPROBE_DEFER);
-	}
 
 	miic_port = kzalloc(sizeof(*miic_port), GFP_KERNEL);
-	if (!miic_port) {
-		put_device(&pdev->dev);
+	if (!miic_port)
 		return ERR_PTR(-ENOMEM);
-	}
 
 	miic = platform_get_drvdata(pdev);
 	device_link_add(dev, miic->dev, DL_FLAG_AUTOREMOVE_CONSUMER);
-	put_device(&pdev->dev);
 
 	miic_port->miic = miic;
 	miic_port->port = port - 1;

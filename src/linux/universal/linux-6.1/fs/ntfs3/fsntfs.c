@@ -154,7 +154,7 @@ int ntfs_fix_post_read(struct NTFS_RECORD_HEADER *rhdr, size_t bytes,
 	/* Check errors. */
 	if ((fo & 1) || fo + fn * sizeof(short) > SECTOR_SIZE || !fn-- ||
 	    fn * SECTOR_SIZE > bytes) {
-		return -E_NTFS_CORRUPT;
+		return -EINVAL; /* Native chkntfs returns ok! */
 	}
 
 	/* Get fixup pointer. */

@@ -34,7 +34,6 @@ int qxl_mode_dumb_create(struct drm_file *file_priv,
 {
 	struct qxl_device *qdev = to_qxl(dev);
 	struct qxl_bo *qobj;
-	struct drm_gem_object *gobj;
 	uint32_t handle;
 	int r;
 	struct qxl_surface surf;
@@ -63,13 +62,11 @@ int qxl_mode_dumb_create(struct drm_file *file_priv,
 
 	r = qxl_gem_object_create_with_handle(qdev, file_priv,
 					      QXL_GEM_DOMAIN_CPU,
-					      args->size, &surf, &gobj,
+					      args->size, &surf, &qobj,
 					      &handle);
 	if (r)
 		return r;
-	qobj = gem_to_qxl_bo(gobj);
 	qobj->is_dumb = true;
-	drm_gem_object_put(gobj);
 	args->pitch = pitch;
 	args->handle = handle;
 	return 0;
