@@ -18,7 +18,8 @@ protobuf-c-configure:
 				--host=$(ARCH) \
 				--disable-protoc \
 				CFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
-				CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
+				CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/includ
+				e -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
 				LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 protobuf-c:
@@ -73,7 +74,7 @@ frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c
 		CARES_LIBS="-L$(TOP)/libcares/src/lib/.libs -lcares" \
 		PYTHON=/usr/bin/python3
 
-frr: ncurses json-c libyang libcap libcares
+frr: ncurses json-c libyang libcap libcares protobuf-c
 	make -C frr/build
 
 frr-install:
