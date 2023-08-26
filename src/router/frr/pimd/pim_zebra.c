@@ -1,20 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2008  Everton da Silva Marques
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -81,6 +68,8 @@ static int pim_zebra_interface_vrf_update(ZAPI_CALLBACK_ARGS)
 			   vrf_id, new_vrf_id);
 
 	pim = pim_get_pim_instance(new_vrf_id);
+	if (!pim)
+		return 0;
 
 	if_update_to_new_vrf(ifp, new_vrf_id);
 
@@ -410,9 +399,9 @@ void pim_scan_oil(struct pim_instance *pim)
 		pim_upstream_mroute_iif_update(c_oil, __func__);
 }
 
-static void on_rpf_cache_refresh(struct thread *t)
+static void on_rpf_cache_refresh(struct event *t)
 {
-	struct pim_instance *pim = THREAD_ARG(t);
+	struct pim_instance *pim = EVENT_ARG(t);
 
 	/* update kernel multicast forwarding cache (MFC) */
 	pim_scan_oil(pim);
@@ -442,9 +431,9 @@ void sched_rpf_cache_refresh(struct pim_instance *pim)
 			   router->rpf_cache_refresh_delay_msec);
 	}
 
-	thread_add_timer_msec(router->master, on_rpf_cache_refresh, pim,
-			      router->rpf_cache_refresh_delay_msec,
-			      &pim->rpf_cache_refresher);
+	event_add_timer_msec(router->master, on_rpf_cache_refresh, pim,
+			     router->rpf_cache_refresh_delay_msec,
+			     &pim->rpf_cache_refresher);
 }
 
 static void pim_zebra_connected(struct zclient *zclient)

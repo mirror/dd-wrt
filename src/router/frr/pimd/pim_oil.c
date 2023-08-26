@@ -1,20 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * PIM for Quagga
  * Copyright (C) 2008  Everton da Silva Marques
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -180,7 +167,7 @@ void pim_clear_nocache_state(struct pim_interface *pim_ifp)
 		if (*oil_parent(c_oil) != pim_ifp->mroute_vif_index)
 			continue;
 
-		THREAD_OFF(c_oil->up->t_ka_timer);
+		EVENT_OFF(c_oil->up->t_ka_timer);
 		PIM_UPSTREAM_FLAG_UNSET_SRC_NOCACHE(c_oil->up->flags);
 		PIM_UPSTREAM_FLAG_UNSET_SRC_STREAM(c_oil->up->flags);
 		pim_upstream_del(pim_ifp->pim, c_oil->up, __func__);

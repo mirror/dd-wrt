@@ -25,6 +25,8 @@ CommentPragmas: '\$(FRR|clippy)'
 ContinuationIndentWidth: 8
 ForEachMacros:
   # lib
+  - darr_foreach_p
+  - darr_foreach_i
   - frr_each
   - frr_each_safe
   - frr_each_from
@@ -52,6 +54,11 @@ ForEachMacros:
   - FOR_ALL_INTERFACES
   - FOR_ALL_INTERFACES_ADDRESSES
   - JSON_FOREACH
+  - FOREACH_BE_TXN_BATCH_IN_LIST
+  - FOREACH_BE_APPLY_BATCH_IN_LIST
+  - FOREACH_BE_TXN_IN_LIST
+  - FOREACH_SESSION_IN_LIST
+  - FOREACH_MGMTD_BE_CLIENT_ID
   # libyang
   - LY_FOR_KEYS
   - LY_LIST_FOR
@@ -76,3 +83,12 @@ ForEachMacros:
   - FOREACH_SAFI
   # ospfd
   - LSDB_LOOP
+  # mgmtd
+  - FOREACH_CMT_REC
+  - FOREACH_TXN_CFG_BATCH_IN_LIST
+  - FOREACH_TXN_REQ_IN_LIST
+  - FOREACH_TXN_IN_LIST
+  - FOREACH_MGMTD_DB_ID
+  - FOREACH_ADAPTER_IN_LIST
+  - FOREACH_SESSION_IN_LIST
+  - FOREACH_SESSION_IN_LIST_SAFE

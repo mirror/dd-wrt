@@ -1,20 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * BGP pbr
  * Copyright (C) 6WIND
- *
- * FRR is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * FRR is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "zebra.h"
@@ -1027,7 +1014,7 @@ static void bgp_pbr_match_free(void *arg)
 			bpm->action = NULL;
 		}
 	}
-	hash_free(bpm->entry_hash);
+	hash_clean_and_free(&bpm->entry_hash, NULL);
 
 	XFREE(MTYPE_PBR_MATCH, bpm);
 }
@@ -1399,23 +1386,13 @@ struct bgp_pbr_match *bgp_pbr_match_iptable_lookup(vrf_id_t vrf_id,
 
 void bgp_pbr_cleanup(struct bgp *bgp)
 {
-	if (bgp->pbr_match_hash) {
-		hash_clean(bgp->pbr_match_hash, bgp_pbr_match_free);
-		hash_free(bgp->pbr_match_hash);
-		bgp->pbr_match_hash = NULL;
-	}
-	if (bgp->pbr_rule_hash) {
-		hash_clean(bgp->pbr_rule_hash, bgp_pbr_rule_free);
-		hash_free(bgp->pbr_rule_hash);
-		bgp->pbr_rule_hash = NULL;
-	}
-	if (bgp->pbr_action_hash) {
-		hash_clean(bgp->pbr_action_hash, bgp_pbr_action_free);
-		hash_free(bgp->pbr_action_hash);
-		bgp->pbr_action_hash = NULL;
-	}
+	hash_clean_and_free(&bgp->pbr_match_hash, bgp_pbr_match_free);
+	hash_clean_and_free(&bgp->pbr_rule_hash, bgp_pbr_rule_free);
+	hash_clean_and_free(&bgp->pbr_action_hash, bgp_pbr_action_free);
+
 	if (bgp->bgp_pbr_cfg == NULL)
 		return;
+
 	bgp_pbr_reset(bgp, AFI_IP);
 	bgp_pbr_reset(bgp, AFI_IP6);
 	XFREE(MTYPE_PBR, bgp->bgp_pbr_cfg);

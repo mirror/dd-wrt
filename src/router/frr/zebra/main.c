@@ -1,21 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* zebra daemon main routine.
  * Copyright (C) 1997, 98 Kunihiro Ishiguro
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -23,7 +8,7 @@
 #include <lib/version.h>
 #include "getopt.h"
 #include "command.h"
-#include "thread.h"
+#include "frrevent.h"
 #include "filter.h"
 #include "memory.h"
 #include "prefix.h"
@@ -33,6 +18,7 @@
 #include "sigevent.h"
 #include "vrf.h"
 #include "libfrr.h"
+#include "affinitymap.h"
 #include "routemap.h"
 #include "routing_nb.h"
 
@@ -66,7 +52,7 @@
 pid_t pid;
 
 /* Pacify zclient.o in libfrr, which expects this variable. */
-struct thread_master *master;
+struct event_loop *master;
 
 /* Route retain mode flag. */
 int retain_mode = 0;
@@ -189,11 +175,6 @@ static void sigint(void)
 	if (zrouter.lsp_process_q)
 		work_queue_free_and_null(&zrouter.lsp_process_q);
 
-	vrf_terminate();
-
-	ns_walk_func(zebra_ns_early_shutdown, NULL, NULL);
-	zebra_ns_notify_close();
-
 	access_list_reset();
 	prefix_list_reset();
 	/*
@@ -219,12 +200,22 @@ static void sigint(void)
  * Final shutdown step for the zebra main thread. This is run after all
  * async update processing has completed.
  */
-void zebra_finalize(struct thread *dummy)
+void zebra_finalize(struct event *dummy)
 {
 	zlog_info("Zebra final shutdown");
 
-	/* Stop dplane thread and finish any cleanup */
+	vrf_terminate();
+
+	/*
+	 * Stop dplane thread and finish any cleanup
+	 * This is before the zebra_ns_early_shutdown call
+	 * because sockets that the dplane depends on are closed
+	 * in those functions
+	 */
 	zebra_dplane_shutdown();
+
+	ns_walk_func(zebra_ns_early_shutdown, NULL, NULL);
+	zebra_ns_notify_close();
 
 	/* Final shutdown of ns resources */
 	ns_walk_func(zebra_ns_final_shutdown, NULL, NULL);
@@ -261,6 +252,7 @@ struct frr_signal_t zebra_signals[] = {
 	},
 };
 
+/* clang-format off */
 static const struct frr_yang_module_info *const zebra_yang_modules[] = {
 	&frr_filter_info,
 	&frr_interface_info,
@@ -268,8 +260,10 @@ static const struct frr_yang_module_info *const zebra_yang_modules[] = {
 	&frr_zebra_info,
 	&frr_vrf_info,
 	&frr_routing_info,
+	&frr_affinity_map_info,
 	&frr_zebra_route_map_info,
 };
+/* clang-format on */
 
 FRR_DAEMON_INFO(
 	zebra, ZEBRA, .vty_port = ZEBRA_VTY_PORT, .flags = FRR_NO_ZCLIENT,
@@ -448,8 +442,8 @@ int main(int argc, char **argv)
 	* we have to have route_read() called before.
 	*/
 	zrouter.startup_time = monotime(NULL);
-	thread_add_timer(zrouter.master, rib_sweep_route, NULL,
-			 graceful_restart, &zrouter.sweeper);
+	event_add_timer(zrouter.master, rib_sweep_route, NULL, graceful_restart,
+			&zrouter.sweeper);
 
 	/* Needed for BSD routing socket. */
 	pid = getpid();

@@ -1,21 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2003 Yasuhiro Ohara
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; see the file COPYING; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <zebra.h>
@@ -28,8 +13,10 @@
 #include "vty.h"
 
 #include "ospf6_proto.h"
+#include "ospf6_area.h"
 #include "ospf6_lsa.h"
 #include "ospf6_lsdb.h"
+#include "ospf6_abr.h"
 #include "ospf6_asbr.h"
 #include "ospf6_route.h"
 #include "ospf6d.h"
@@ -231,6 +218,33 @@ struct ospf6_lsa *ospf6_find_external_lsa(struct ospf6 *ospf6, struct prefix *p)
 	return lsa;
 }
 
+struct ospf6_lsa *ospf6_find_inter_prefix_lsa(struct ospf6 *ospf6,
+					      struct ospf6_area *area,
+					      struct prefix *p)
+{
+	struct ospf6_lsa *lsa;
+	uint16_t type = htons(OSPF6_LSTYPE_INTER_PREFIX);
+
+	for (ALL_LSDB_TYPED_ADVRTR(area->lsdb, type, ospf6->router_id, lsa)) {
+		struct ospf6_inter_prefix_lsa *prefix_lsa;
+		struct prefix prefix;
+
+		prefix_lsa =
+			(struct ospf6_inter_prefix_lsa *)OSPF6_LSA_HEADER_END(
+				lsa->header);
+		prefix.family = AF_INET6;
+		prefix.prefixlen = prefix_lsa->prefix.prefix_length;
+		ospf6_prefix_in6_addr(&prefix.u.prefix6, prefix_lsa,
+				      &prefix_lsa->prefix);
+		if (prefix_same(p, &prefix)) {
+			ospf6_lsa_unlock(lsa);
+			return lsa;
+		}
+	}
+
+	return NULL;
+}
+
 struct ospf6_lsa *ospf6_lsdb_lookup_next(uint16_t type, uint32_t id,
 					 uint32_t adv_router,
 					 struct ospf6_lsdb *lsdb)
@@ -383,8 +397,8 @@ int ospf6_lsdb_maxage_remover(struct ospf6_lsdb *lsdb)
 				htonl(OSPF_MAX_SEQUENCE_NUMBER + 1);
 			ospf6_lsa_checksum(lsa->header);
 
-			THREAD_OFF(lsa->refresh);
-			thread_execute(master, ospf6_lsa_refresh, lsa, 0);
+			EVENT_OFF(lsa->refresh);
+			event_execute(master, ospf6_lsa_refresh, lsa, 0);
 		} else {
 			zlog_debug("calling ospf6_lsdb_remove %s", lsa->name);
 			ospf6_lsdb_remove(lsa, lsdb);
