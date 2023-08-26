@@ -31,7 +31,7 @@ protobuf-c-clean:
 protobuf-c-install:
 	@true
 
-frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c
+frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c-configure
 	make -C protobuf-c
 	cd frr && autoreconf --force --install
 	cd frr && chmod 777 configure
