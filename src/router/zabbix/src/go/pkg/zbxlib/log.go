@@ -34,7 +34,8 @@ void handleZabbixLog(int level, const char *message);
 
 void __zbx_zabbix_log(int level, const char *format, ...)
 {
-	if (zbx_agent_pid == getpid())
+	// no need to allocate memory for message if level is set to log.None (-1)
+	if (zbx_agent_pid == getpid() && -1 != level)
 	{
 		va_list	args;
 		char *message = NULL;

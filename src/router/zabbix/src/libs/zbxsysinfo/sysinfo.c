@@ -1898,6 +1898,7 @@ out:
  ******************************************************************************/
 void	zbx_mpoints_free(zbx_mpoint_t *mpoint)
 {
+	zbx_free(mpoint->options);
 	zbx_free(mpoint);
 }
 
