@@ -18,8 +18,8 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-define('ZABBIX_VERSION',		'6.4.4');
-define('ZABBIX_API_VERSION',	'6.4.4');
+define('ZABBIX_VERSION',		'6.4.6');
+define('ZABBIX_API_VERSION',	'6.4.6');
 define('ZABBIX_EXPORT_VERSION',	'6.4');
 
 define('ZABBIX_DB_VERSION',		6040000);
@@ -125,11 +125,11 @@ define('ZBX_SCRIPT_EXECUTE_ON_AGENT',	0);
 define('ZBX_SCRIPT_EXECUTE_ON_SERVER',	1);
 define('ZBX_SCRIPT_EXECUTE_ON_PROXY',	2);
 
+define('ZBX_PROXY_VERSION_ANY_OUTDATED', -2);
 define('ZBX_PROXY_VERSION_UNDEFINED', 0);
 define('ZBX_PROXY_VERSION_CURRENT', 1);
 define('ZBX_PROXY_VERSION_OUTDATED', 2);
 define('ZBX_PROXY_VERSION_UNSUPPORTED', 3);
-define('ZBX_PROXY_VERSION_ALL_OUTDATED', 4);
 
 define('ZBX_FLAG_DISCOVERY_NORMAL',		0x0);
 define('ZBX_FLAG_DISCOVERY_RULE',		0x1);
@@ -1363,9 +1363,15 @@ define('ZBX_TIME_SUFFIX_MULTIPLIERS', [
 	'y' => SEC_PER_YEAR
 ]);
 
-// Byte suffixes and multipliers.
-define('ZBX_BYTE_SUFFIXES', 'KMGT');
-define('ZBX_BYTE_SUFFIX_MULTIPLIERS', [
+// Size suffixes and multipliers.
+define('ZBX_SIZE_SUFFIXES', 'KMGT');
+define('ZBX_SIZE_SUFFIX_MULTIPLIERS', [
+	'K' => 1000,
+	'M' => 1000**2,
+	'G' => 1000**3,
+	'T' => 1000**4
+]);
+define('ZBX_SIZE_SUFFIX_MULTIPLIERS_BINARY', [
 	'K' => ZBX_KIBIBYTE,
 	'M' => ZBX_MEBIBYTE,
 	'G' => ZBX_GIBIBYTE,

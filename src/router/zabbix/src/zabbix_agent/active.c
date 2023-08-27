@@ -1265,7 +1265,7 @@ static void	process_active_checks(zbx_vector_ptr_t *addrs, const zbx_config_tls_
 		else if (0 != ((ZBX_METRIC_FLAG_LOG_LOG | ZBX_METRIC_FLAG_LOG_LOGRT) & metric->flags))
 		{
 			ret = process_log_check(addrs, NULL, &regexps, metric, process_value, &lastlogsize_sent,
-					&mtime_sent, &error, &pre_persistent_vec, config_tls, config_timeout);
+					&mtime_sent, &error, &pre_persistent_vec, config_tls, config_timeout, 0);
 		}
 		else if (0 != (ZBX_METRIC_FLAG_LOG_EVENTLOG & metric->flags))
 		{

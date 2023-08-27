@@ -139,9 +139,10 @@ function createFontSelect(string $name): CSelect {
 					)
 					->addRow(_('Label'),
 						(new CTextArea('label'))
+							->setId('elementLabel')
 							->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 							->setRows(2)
-							->setId('elementLabel')
+							->disableSpellcheck()
 					)
 					->addRow(new CLabel(_('Label location'), 'label-label-location'),
 						(new CSelect('label_location'))
@@ -179,6 +180,7 @@ function createFontSelect(string $name): CSelect {
 								->setId('triggerContainer')
 								->setAttribute('style', 'width: 100%;')
 								->addClass('ui-sortable')
+								->addClass('trigger-list')
 						]))
 							->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 							->setAttribute('style', 'min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
@@ -653,9 +655,10 @@ function createFontSelect(string $name): CSelect {
 							->setId('chkboxLabel')
 							->setLabel(_('Label')),
 						(new CTextArea('label'))
+							->setId('massLabel')
 							->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 							->setRows(2)
-							->setId('massLabel')
+							->disableSpellcheck()
 					)
 					->addRow(
 						(new CCheckBox('chkbox_label_location'))
@@ -770,9 +773,10 @@ function createFontSelect(string $name): CSelect {
 				(new CFormList())
 					->addRow(_('Label'),
 						(new CTextArea('label'))
+							->setId('linklabel')
 							->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 							->setRows(2)
-							->setId('linklabel')
+							->disableSpellcheck()
 					)
 					->addRow(new CLabel(_('Connect to'), 'label-selementid2'), (new CSelect('selementid2'))
 							->setFocusableElementId('label-selementid2')

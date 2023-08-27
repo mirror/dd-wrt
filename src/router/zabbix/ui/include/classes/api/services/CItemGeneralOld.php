@@ -1453,7 +1453,7 @@ abstract class CItemGeneralOld extends CApiService {
 							$types['lldmacros'] = true;
 						}
 
-						if (!(new CMacrosResolverGeneral)->getMacroPositions($params, $types)) {
+						if (!CMacrosResolverGeneral::getMacroPositions($params, $types)) {
 							self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
 								'params', _('a numeric value is expected')
 							));
@@ -2907,7 +2907,7 @@ abstract class CItemGeneralOld extends CApiService {
 					$types['lldmacros'] = true;
 				}
 
-				$matches = (new CMacrosResolverGeneral)->getMacroPositions($posts, $types);
+				$matches = CMacrosResolverGeneral::getMacroPositions($posts, $types);
 
 				$shift = 0;
 
