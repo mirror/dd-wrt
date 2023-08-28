@@ -919,7 +919,8 @@ ifeq ($(CONFIG_R6800),y)
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6350.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6220.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/wac124.img
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/3700.img
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.fs.3700.tmp bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs.3700.tmp >> $(ARCH)-uclibc/3700.img
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=128k conv=sync
@@ -1056,7 +1057,7 @@ ifeq ($(CONFIG_DIR860),y)
 	tools/buildimg4/packimgs -v -o mipsel-uclibc/raw-dir860.img -i mipsel-uclibc/vmlinus-mt7620.aligned
 	tools/buildimg4/seama -i mipsel-uclibc/raw-dir860.img -m dev=/dev/mtdblock/2 -m type=firmware 
 	tools/buildimg4/seama -s mipsel-uclibc/web-dir860.img -i mipsel-uclibc/raw-dir860.img.seama -m signature=wrgac13_dlink.2013gui_dir860lb
-	./tools/trx_n -m 30000000 -o mipsel-uclibc/dir860l-webflash.bin mipsel-uclibc/raw-dir860.img.seama
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/dir860l-webflash.bin mipsel-uclibc/raw-dir860.img.seama
 endif
 
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810la1
@@ -1066,7 +1067,7 @@ endif
 	./tools/dir810l/ncc_att_hwid -f mipsel-uclibc/aligned-mt7620.dir810lb1 -m DIR-810L -H B1 -r WW -c 1.0 -F 2.5 -a
 	./tools/dir810l/ncc_att_hwid -f mipsel-uclibc/aligned-mt7620.dir810la1 -m DIR-810L -H A1 -r WW -c 1.0 -F 2.5 -a
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/firmware_WHR-300HP2.ram
-	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/mt7620-webflash.bin mipsel-uclibc/firmware_WHR-300HP2.ram
+	./tools/trx_n -m 50000000 -a 1 -o mipsel-uclibc/mt7620-webflash.bin mipsel-uclibc/firmware_WHR-300HP2.ram
 	cp tools/CRC_tool $(ARCH)-uclibc
 	cp tools/conf.txt $(ARCH)-uclibc
 	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-300-jp
@@ -1140,8 +1141,8 @@ else
 	dd if=mipsel-uclibc/vmlinus.lzma of=mipsel-uclibc/vmlinus.aligned bs=4096 conv=sync
 endif
 #	cp mipsel-uclibc/aligned.uimage /GruppenLW/releases/firmware.bin
-	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/rt2880-webflash.bin mipsel-uclibc/aligned.uimage
-	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/raw-webflash.bin mipsel-uclibc/vmlinus.aligned
+	./tools/trx_n -m 50000000 -a 1 -o mipsel-uclibc/rt2880-webflash.bin mipsel-uclibc/aligned.uimage
+	./tools/trx_n -m 50000000 -a 1 -o mipsel-uclibc/raw-webflash.bin mipsel-uclibc/vmlinus.aligned
 ifeq ($(CONFIG_DIR600),y)
 	./tools/buildimg/packimgs -v -o mipsel-uclibc/raw.img -i mipsel-uclibc/aligned.uimage
 	./tools/buildimg/v2image -v -i mipsel-uclibc/raw.img -o mipsel-uclibc/dir600b-web.bin -d /dev/mtdblock/2 -s wrgn23_dlwbr_dir600b -c
