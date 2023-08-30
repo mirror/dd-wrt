@@ -3322,6 +3322,7 @@ static int __init ndpi_mt_init(void)
 	}
 	nf_ct_ext_id_ndpi = ndpi_extend.id;
 #elif defined(USE_HOOK)
+	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
 	register_ndpi_hook(&nf_ndpi_free_flow);
 #else
 #ifdef USE_LIVEPATCH
