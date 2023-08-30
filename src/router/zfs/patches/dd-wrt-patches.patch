@@ -296,21 +296,6 @@ Index: lib/libzutil/os/linux/zutil_import_os.c
  	char nodepath[MAXPATHLEN];
 Index: module/Kbuild.in
 ===================================================================
---- module/Kbuild.in	(revision 51025)
-+++ module/Kbuild.in	(working copy)
-@@ -471,8 +471,10 @@ zfs-objs            += $(addprefix zfs/,$(ZFS_OBJS
- zfs-$(CONFIG_X86)   += $(addprefix zfs/,$(ZFS_OBJS_X86))
- zfs-$(CONFIG_UML_X86)+= $(addprefix zfs/,$(ZFS_OBJS_X86))
- zfs-$(CONFIG_ARM64) += $(addprefix zfs/,$(ZFS_OBJS_ARM64))
-+ifeq ($(CONFIG_ALTIVEC),y)
- zfs-$(CONFIG_PPC)   += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
- zfs-$(CONFIG_PPC64) += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
-+endif
- 
- # Suppress incorrect warnings from versions of objtool which are not
- # aware of x86 EVEX prefix instructions used for AVX512.
-Index: module/os/linux/zfs/zpl_file.c
-===================================================================
 --- module/os/linux/zfs/zpl_file.c	(revision 51025)
 +++ module/os/linux/zfs/zpl_file.c	(working copy)
 @@ -552,6 +552,11 @@ zpl_direct_IO(int rw, struct kiocb *kiocb, struct
