@@ -4957,6 +4957,8 @@ static void rt5665_i2c_shutdown(struct i2c_client *client)
 	struct rt5665_priv *rt5665 = i2c_get_clientdata(client);
 
 	regmap_write(rt5665->regmap, RT5665_RESET, 0);
+
+	regulator_bulk_disable(ARRAY_SIZE(rt5665->supplies), rt5665->supplies);
 }
 
 #ifdef CONFIG_OF
