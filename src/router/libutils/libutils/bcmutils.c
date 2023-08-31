@@ -2078,6 +2078,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 					return 1;
 				}
 				*(new_name + slen) = *(old_name + i);
+				*(new_name + slen + 1) = '\0';
 			}
 		}
 
