@@ -57,6 +57,9 @@ extern "C" {
 #define DEFAULT_DNS_TLS_PORT 853
 #define DEFAULT_DNS_HTTPS_PORT 443
 #define DNS_MAX_CONF_CNAME_LEN 256
+#define MAX_QTYPE_NUM 65535
+#define DNS_MAX_REPLY_IP_NUM 8
+
 #define SMARTDNS_CONF_FILE "/etc/smartdns/smartdns.conf"
 #define SMARTDNS_LOG_FILE "/var/log/smartdns/smartdns.log"
 #define SMARTDNS_AUDIT_FILE "/var/log/smartdns/smartdns-audit.log"
@@ -114,8 +117,10 @@ typedef enum {
 #define DOMAIN_FLAG_NO_SERVE_EXPIRED (1 << 15)
 #define DOMAIN_FLAG_CNAME_IGN (1 << 16)
 #define DOMAIN_FLAG_NO_CACHE (1 << 17)
+#define DOMAIN_FLAG_NO_IPALIAS (1 << 18)
 
 #define SERVER_FLAG_EXCLUDE_DEFAULT (1 << 0)
+#define SERVER_FLAG_HITCHHIKING (1 << 1)
 
 #define BIND_FLAG_NO_RULE_ADDR (1 << 0)
 #define BIND_FLAG_NO_RULE_NAMESERVER (1 << 1)
@@ -148,12 +153,14 @@ struct dns_rule_flags {
 
 struct dns_rule_address_IPV4 {
 	struct dns_rule head;
-	unsigned char ipv4_addr[DNS_RR_A_LEN];
+	char addr_num;
+	unsigned char ipv4_addr[][DNS_RR_A_LEN];
 };
 
 struct dns_rule_address_IPV6 {
 	struct dns_rule head;
-	unsigned char ipv6_addr[DNS_RR_AAAA_LEN];
+	char addr_num;
+	unsigned char ipv6_addr[][DNS_RR_AAAA_LEN];
 };
 
 struct dns_ipset_name {
@@ -212,8 +219,9 @@ extern struct dns_nftset_names dns_conf_nftset_no_speed;
 
 struct dns_domain_rule {
 	struct dns_rule head;
+	unsigned char sub_rule_only : 1;
+	unsigned char root_rule_only : 1;
 	struct dns_rule *rules[DOMAIN_RULE_MAX];
-	int is_sub_rule[DOMAIN_RULE_MAX];
 };
 
 struct dns_nameserver_rule {
@@ -348,6 +356,22 @@ enum address_rule {
 	ADDRESS_RULE_WHITELIST = 2,
 	ADDRESS_RULE_BOGUS = 3,
 	ADDRESS_RULE_IP_IGNORE = 4,
+	ADDRESS_RULE_IP_ALIAS = 5,
+};
+
+struct dns_iplist_ip_address {
+	int addr_len;
+	union {
+		unsigned char ipv4_addr[DNS_RR_A_LEN];
+		unsigned char ipv6_addr[DNS_RR_AAAA_LEN];
+		unsigned char addr[0];
+	};
+};
+
+struct dns_iplist_ip_addresses {
+	atomic_t refcnt;
+	int ipaddr_num;
+	struct dns_iplist_ip_address *ipaddr;
 };
 
 struct dns_ip_address_rule {
@@ -355,6 +379,8 @@ struct dns_ip_address_rule {
 	unsigned int whitelist : 1;
 	unsigned int bogus : 1;
 	unsigned int ip_ignore : 1;
+	unsigned int ip_alias_enable : 1;
+	struct dns_iplist_ip_addresses *ip_alias;
 };
 
 struct dns_conf_address_rule {
@@ -381,15 +407,7 @@ struct dns_bind_ip {
 	struct nftset_ipset_rules nftset_ipset_rule;
 };
 
-struct dns_qtype_soa_list {
-	struct hlist_node node;
-	uint32_t qtypeid;
-};
-
-struct dns_qtype_soa_table {
-	DECLARE_HASHTABLE(qtype, 8);
-};
-extern struct dns_qtype_soa_table dns_qtype_soa_table;
+extern uint8_t *dns_qtype_soa_table;
 
 struct dns_domain_set_rule {
 	struct list_head list;
@@ -519,6 +537,9 @@ extern char dns_conf_sni_proxy_ip[DNS_MAX_IPLEN];
 extern int dns_save_fail_packet;
 extern char dns_save_fail_packet_dir[DNS_MAX_PATH];
 extern char dns_resolv_file[DNS_MAX_PATH];
+
+extern int dns_no_pidfile;
+extern int dns_no_daemon;
 
 void dns_server_load_exit(void);
 

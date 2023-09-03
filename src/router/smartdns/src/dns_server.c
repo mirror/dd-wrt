@@ -70,7 +70,7 @@
 #define SOCKET_PRIORITY (6)
 #define CACHE_AUTO_ENABLE_SIZE (1024 * 1024 * 128)
 #define EXPIRED_DOMAIN_PREFETCH_TIME (3600 * 8)
-#define DNS_MAX_DOMAIN_REFETCH_NUM 16
+#define DNS_MAX_DOMAIN_REFETCH_NUM 64
 
 #define RECV_ERROR_AGAIN 1
 #define RECV_ERROR_OK 0
@@ -128,6 +128,7 @@ struct dns_server_post_context {
 	struct dns_request *request;
 	struct dns_packet *packet;
 	int ip_num;
+	const unsigned char *ip_addr[MAX_IP_NUM];
 	dns_type_t qtype;
 	int do_cache;
 	int do_reply;
@@ -215,6 +216,11 @@ struct dns_request_pending_list {
 	struct hlist_node node;
 };
 
+struct dns_request_domain_rule {
+	struct dns_rule *rules[DOMAIN_RULE_MAX];
+	int is_sub_rule[DOMAIN_RULE_MAX];
+};
+
 typedef DNS_CHILD_POST_RESULT (*child_request_callback)(struct dns_request *request, struct dns_request *child_request,
 														int is_first_resp);
 
@@ -272,6 +278,7 @@ struct dns_request {
 
 	struct dns_soa soa;
 	int has_soa;
+	int force_soa;
 
 	atomic_t notified;
 	atomic_t do_callback;
@@ -302,7 +309,7 @@ struct dns_request {
 	atomic_t ip_map_num;
 	DECLARE_HASHTABLE(ip_map, 4);
 
-	struct dns_domain_rule domain_rule;
+	struct dns_request_domain_rule domain_rule;
 	int skip_domain_rule;
 	struct dns_domain_check_orders *check_order_list;
 	int check_order;
@@ -314,6 +321,7 @@ struct dns_request {
 	int no_select_possible_ip;
 	int no_cache_cname;
 	int no_cache;
+	int no_ipalias;
 
 	int has_cname_loop;
 };
@@ -630,6 +638,15 @@ static void _dns_server_post_context_init(struct dns_server_post_context *contex
 	context->request = request;
 }
 
+static void _dns_server_context_add_ip(struct dns_server_post_context *context, const unsigned char *ip_addr)
+{
+	if (context->ip_num < MAX_IP_NUM) {
+		context->ip_addr[context->ip_num] = ip_addr;
+	}
+
+	context->ip_num++;
+}
+
 static void _dns_server_post_context_init_from(struct dns_server_post_context *context, struct dns_request *request,
 											   struct dns_packet *packet, unsigned char *inpacket, int inpacket_len)
 {
@@ -709,7 +726,7 @@ static void _dns_server_audit_log(struct dns_server_post_context *context)
 		return;
 	}
 
-	for (j = 1; j < DNS_RRS_END && context->packet; j++) {
+	for (j = 1; j < DNS_RRS_OPT && context->packet; j++) {
 		rrs = dns_get_rrs_start(context->packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs && left_len > 0; i++, rrs = dns_get_rrs_next(context->packet, rrs)) {
 			switch (rrs->type) {
@@ -894,7 +911,7 @@ static int _dns_rrs_add_all_best_ip(struct dns_server_post_context *context)
 				}
 			}
 
-			context->ip_num++;
+			_dns_server_context_add_ip(context, addr_map->ip_addr);
 			if (addr_map->addr_type == DNS_T_A) {
 				ret |= dns_add_A(context->packet, DNS_RRS_AN, domain, request->ip_ttl, addr_map->ip_addr);
 			} else if (addr_map->addr_type == DNS_T_AAAA) {
@@ -947,7 +964,7 @@ static int _dns_add_rrs(struct dns_server_post_context *context)
 
 	/* add A record */
 	if (request->has_ip && context->do_force_soa == 0) {
-		context->ip_num++;
+		_dns_server_context_add_ip(context, request->ip_addr);
 		if (context->qtype == DNS_T_A) {
 			ret |= dns_add_A(context->packet, DNS_RRS_AN, domain, request->ip_ttl, request->ip_addr);
 			tlog(TLOG_DEBUG, "result: %s, rtt: %.1f ms, %d.%d.%d.%d", request->domain, ((float)request->ping_time) / 10,
@@ -1339,7 +1356,7 @@ static int _dns_cache_cname_packet(struct dns_server_post_context *context)
 		return -1;
 	}
 
-	for (j = 1; j < DNS_RRS_END && context->packet; j++) {
+	for (j = 1; j < DNS_RRS_OPT && context->packet; j++) {
 		rrs = dns_get_rrs_start(context->packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(context->packet, rrs)) {
 			switch (rrs->type) {
@@ -1487,21 +1504,9 @@ errout:
 	return -1;
 }
 
-static int _dns_result_callback_nxdomain(struct dns_request *request)
-{
-	char ip[DNS_MAX_CNAME_LEN];
-	unsigned int ping_time = -1;
-
-	ip[0] = 0;
-	if (request->result_callback == NULL) {
-		return 0;
-	}
-
-	return request->result_callback(request->domain, request->rcode, request->qtype, ip, ping_time, request->user_ptr);
-}
-
 static int _dns_result_callback(struct dns_server_post_context *context)
 {
+	struct dns_result result;
 	char ip[DNS_MAX_CNAME_LEN];
 	unsigned int ping_time = -1;
 	struct dns_request *request = context->request;
@@ -1514,38 +1519,36 @@ static int _dns_result_callback(struct dns_server_post_context *context)
 		return 0;
 	}
 
-	if (request->has_soa || context->do_force_soa || context->ip_num == 0) {
-		goto out;
-	}
-
-	if (request->has_ip == 0) {
-		goto out;
-	}
-
 	ip[0] = 0;
+	memset(&result, 0, sizeof(result));
 	ping_time = request->ping_time;
-	if (request->qtype == DNS_T_A) {
+	result.domain = request->domain;
+	result.rtcode = request->rcode;
+	result.addr_type = request->qtype;
+	result.ip = ip;
+	result.has_soa = request->has_soa | context->do_force_soa;
+	result.ping_time = ping_time;
+	result.ip_num = 0;
 
-		sprintf(ip, "%d.%d.%d.%d", request->ip_addr[0], request->ip_addr[1], request->ip_addr[2], request->ip_addr[3]);
-		return request->result_callback(request->domain, request->rcode, request->qtype, ip, ping_time,
-										request->user_ptr);
-	} else if (request->qtype == DNS_T_AAAA) {
-		sprintf(ip, "%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x", request->ip_addr[0],
-				request->ip_addr[1], request->ip_addr[2], request->ip_addr[3], request->ip_addr[4], request->ip_addr[5],
-				request->ip_addr[6], request->ip_addr[7], request->ip_addr[8], request->ip_addr[9],
-				request->ip_addr[10], request->ip_addr[11], request->ip_addr[12], request->ip_addr[13],
-				request->ip_addr[14], request->ip_addr[15]);
-		return request->result_callback(request->domain, request->rcode, request->qtype, ip, ping_time,
-										request->user_ptr);
+	if (request->has_ip != 0 && context->do_force_soa == 0) {
+		for (int i = 0; i < context->ip_num && i < MAX_IP_NUM; i++) {
+			result.ip_addr[i] = context->ip_addr[i];
+			result.ip_num++;
+		}
+
+		if (request->qtype == DNS_T_A) {
+			sprintf(ip, "%d.%d.%d.%d", request->ip_addr[0], request->ip_addr[1], request->ip_addr[2],
+					request->ip_addr[3]);
+		} else if (request->qtype == DNS_T_AAAA) {
+			sprintf(ip, "%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x", request->ip_addr[0],
+					request->ip_addr[1], request->ip_addr[2], request->ip_addr[3], request->ip_addr[4],
+					request->ip_addr[5], request->ip_addr[6], request->ip_addr[7], request->ip_addr[8],
+					request->ip_addr[9], request->ip_addr[10], request->ip_addr[11], request->ip_addr[12],
+					request->ip_addr[13], request->ip_addr[14], request->ip_addr[15]);
+		}
 	}
 
-	_dns_result_callback_nxdomain(request);
-
-	return 0;
-out:
-
-	_dns_result_callback_nxdomain(request);
-	return 0;
+	return request->result_callback(&result, request->user_ptr);
 }
 
 static int _dns_cache_specify_packet(struct dns_server_post_context *context)
@@ -1711,7 +1714,7 @@ static int _dns_server_setup_ipset_nftset_packet(struct dns_server_post_context 
 		timeout_value = _dns_server_get_conf_ttl(request, 0) * 3;
 	}
 
-	for (j = 1; j < DNS_RRS_END; j++) {
+	for (j = 1; j < DNS_RRS_OPT; j++) {
 		rrs = dns_get_rrs_start(context->packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(context->packet, rrs)) {
 			switch (rrs->type) {
@@ -2137,7 +2140,7 @@ out:
 	_dns_server_post_context_init(&context, request);
 	context.do_cache = 1;
 	context.do_ipset = 1;
-	context.do_force_soa = request->dualstack_selection_force_soa;
+	context.do_force_soa = request->dualstack_selection_force_soa | request->force_soa;
 	context.do_audit = 1;
 	context.do_reply = 1;
 	context.reply_ttl = _dns_server_get_reply_ttl(request, ttl);
@@ -2155,7 +2158,7 @@ static int _dns_server_request_complete(struct dns_request *request)
 }
 
 static int _dns_ip_address_check_add(struct dns_request *request, char *cname, unsigned char *addr,
-									 dns_type_t addr_type, int ping_time)
+									 dns_type_t addr_type, int ping_time, struct dns_ip_address **out_addr_map)
 {
 	uint32_t key = 0;
 	struct dns_ip_address *addr_map = NULL;
@@ -2213,6 +2216,10 @@ static int _dns_ip_address_check_add(struct dns_request *request, char *cname, u
 
 	hash_add(request->ip_map, &addr_map->node, key);
 	pthread_mutex_unlock(&request->ip_map_lock);
+
+	if (out_addr_map != NULL) {
+		*out_addr_map = addr_map;
+	}
 
 	return 0;
 }
@@ -2356,7 +2363,7 @@ static void _dns_server_complete_with_multi_ipaddress(struct dns_request *reques
 	context.do_log_result = 1;
 	context.select_all_best_ip = 1;
 	context.skip_notify_count = 1;
-	context.do_force_soa = request->dualstack_selection_force_soa;
+	context.do_force_soa = request->dualstack_selection_force_soa | request->force_soa;
 	_dns_request_post(&context);
 	_dns_server_reply_all_pending_list(request, &context);
 }
@@ -2727,8 +2734,8 @@ static int _dns_server_check_speed(struct dns_request *request, char *ip)
 	return -1;
 }
 
-static int _dns_server_ip_rule_check(struct dns_request *request, unsigned char *addr, int addr_len,
-									 dns_type_t addr_type, int result_flag)
+static struct dns_ip_address_rule *_dns_server_ip_rule_get(struct dns_request *request, unsigned char *addr,
+														   int addr_len, dns_type_t addr_type)
 {
 	prefix_t prefix;
 	radix_node_t *node = NULL;
@@ -2736,7 +2743,7 @@ static int _dns_server_ip_rule_check(struct dns_request *request, unsigned char 
 
 	/* Match IP address rules */
 	if (prefix_from_blob(addr, addr_len, addr_len * 8, &prefix) == NULL) {
-		return -1;
+		return NULL;
 	}
 
 	switch (prefix.family) {
@@ -2751,20 +2758,30 @@ static int _dns_server_ip_rule_check(struct dns_request *request, unsigned char 
 	}
 
 	if (node == NULL) {
-		goto rule_not_found;
+		return NULL;
 	}
 
 	if (node->data == NULL) {
+		return NULL;
+	}
+
+	rule = node->data;
+
+	return rule;
+}
+
+static int _dns_server_ip_rule_check(struct dns_request *request, struct dns_ip_address_rule *rule, int result_flag)
+{
+	if (rule == NULL) {
 		goto rule_not_found;
 	}
 
-	/* bogus-nxdomain */
-	rule = node->data;
 	if (rule->bogus) {
 		request->rcode = DNS_RC_NXDOMAIN;
 		request->has_soa = 1;
+		request->force_soa = 1;
 		_dns_server_setup_soa(request);
-		goto match;
+		goto nxdomain;
 	}
 
 	/* blacklist-ip */
@@ -2777,6 +2794,10 @@ static int _dns_server_ip_rule_check(struct dns_request *request, unsigned char 
 	/* ignore-ip */
 	if (rule->ip_ignore) {
 		goto skip;
+	}
+
+	if (rule->ip_alias_enable) {
+		goto match;
 	}
 
 rule_not_found:
@@ -2792,10 +2813,68 @@ rule_not_found:
 	return -1;
 skip:
 	return -2;
+nxdomain:
+	return -3;
 match:
 	if (request->rcode == DNS_RC_SERVFAIL) {
 		request->rcode = DNS_RC_NXDOMAIN;
 	}
+	return 0;
+}
+
+static int _dns_server_process_ip_alias(struct dns_request *request, struct dns_iplist_ip_addresses *alias,
+										unsigned char **paddrs, int *paddr_num, int max_paddr_num, int addr_len)
+{
+	int addr_num = 0;
+
+	if (alias == 0) {
+		return 0;
+	}
+
+	if (request == NULL) {
+		return -1;
+	}
+
+	if (alias->ipaddr_num <= 0) {
+		return 0;
+	}
+
+	for (int i = 0; i < alias->ipaddr_num && i < max_paddr_num; i++) {
+		if (alias->ipaddr[i].addr_len != addr_len) {
+			continue;
+		}
+		paddrs[i] = alias->ipaddr[i].addr;
+		addr_num++;
+	}
+
+	*paddr_num = addr_num;
+	return 0;
+}
+
+static int _dns_server_process_ip_rule(struct dns_request *request, unsigned char *addr, int addr_len,
+									   dns_type_t addr_type, int result_flag, struct dns_iplist_ip_addresses **alias)
+{
+	struct dns_ip_address_rule *rule = NULL;
+	int ret = 0;
+
+	rule = _dns_server_ip_rule_get(request, addr, addr_len, addr_type);
+	ret = _dns_server_ip_rule_check(request, rule, result_flag);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (rule->ip_alias_enable && alias != NULL) {
+		if (request->no_ipalias == 0) {
+			*alias = rule->ip_alias;
+			if (alias == NULL) {
+				return 0;
+			}
+		}
+
+		/* need process ip alias */
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -2822,8 +2901,11 @@ static int _dns_server_process_answer_A(struct dns_rrs *rrs, struct dns_request 
 	int ttl = 0;
 	int ip_check_result = 0;
 	unsigned char addr[4];
+	unsigned char *paddrs[MAX_IP_NUM];
+	int paddr_num = 0;
 	char name[DNS_MAX_CNAME_LEN] = {0};
 	char ip[DNS_MAX_CNAME_LEN] = {0};
+	struct dns_iplist_ip_addresses *alias = NULL;
 
 	if (request->qtype != DNS_T_A) {
 		/* ignore non-matched query type */
@@ -2831,65 +2913,71 @@ static int _dns_server_process_answer_A(struct dns_rrs *rrs, struct dns_request 
 			return 0;
 		}
 	}
-	_dns_server_request_get(request);
+
 	/* get A result */
 	dns_get_A(rrs, name, DNS_MAX_CNAME_LEN, &ttl, addr);
+	paddrs[paddr_num] = addr;
+	paddr_num = 1;
 
 	tlog(TLOG_DEBUG, "domain: %s TTL: %d IP: %d.%d.%d.%d", name, ttl, addr[0], addr[1], addr[2], addr[3]);
 
 	/* if domain is not match */
 	if (strncmp(name, domain, DNS_MAX_CNAME_LEN) != 0 && strncmp(cname, name, DNS_MAX_CNAME_LEN) != 0) {
-		_dns_server_request_release(request);
 		return -1;
 	}
 
 	/* ip rule check */
-	ip_check_result = _dns_server_ip_rule_check(request, addr, 4, DNS_T_A, result_flag);
+	ip_check_result = _dns_server_process_ip_rule(request, addr, 4, DNS_T_A, result_flag, &alias);
 	if (ip_check_result == 0) {
 		/* match */
-		_dns_server_request_release(request);
 		return -1;
-	} else if (ip_check_result == -2) {
-		/* skip */
-		_dns_server_request_release(request);
-		return -2;
+	} else if (ip_check_result == -2 || ip_check_result == -3) {
+		/* skip, nxdomain */
+		return ip_check_result;
 	}
 
-	if (atomic_read(&request->ip_map_num) == 0) {
-		request->has_ip = 1;
-		memcpy(request->ip_addr, addr, DNS_RR_A_LEN);
-		request->ip_ttl = _dns_server_get_conf_ttl(request, ttl);
-		if (cname[0] != 0 && request->has_cname == 0 && dns_conf_force_no_cname == 0) {
-			request->has_cname = 1;
-			safe_strncpy(request->cname, cname, DNS_MAX_CNAME_LEN);
-		}
-	} else {
-		if (ttl < request->ip_ttl) {
+	int ret = _dns_server_process_ip_alias(request, alias, paddrs, &paddr_num, MAX_IP_NUM, DNS_RR_A_LEN);
+	if (ret != 0) {
+		return ret;
+	}
+
+	for (int i = 0; i < paddr_num; i++) {
+		unsigned char *paddr = paddrs[i];
+		if (atomic_read(&request->ip_map_num) == 0) {
+			request->has_ip = 1;
+			memcpy(request->ip_addr, paddr, DNS_RR_A_LEN);
 			request->ip_ttl = _dns_server_get_conf_ttl(request, ttl);
+			if (cname[0] != 0 && request->has_cname == 0 && dns_conf_force_no_cname == 0) {
+				request->has_cname = 1;
+				safe_strncpy(request->cname, cname, DNS_MAX_CNAME_LEN);
+			}
+		} else {
+			if (ttl < request->ip_ttl) {
+				request->ip_ttl = _dns_server_get_conf_ttl(request, ttl);
+			}
 		}
-	}
 
-	/* Ad blocking result */
-	if (addr[0] == 0 || addr[0] == 127) {
-		/* If half of the servers return the same result, then ignore this address */
-		if (atomic_inc_return(&request->adblock) <= (dns_server_alive_num() / 2 + dns_server_alive_num() % 2)) {
-			request->rcode = DNS_RC_NOERROR;
-			_dns_server_request_release(request);
+		/* Ad blocking result */
+		if (paddr[0] == 0 || paddr[0] == 127) {
+			/* If half of the servers return the same result, then ignore this address */
+			if (atomic_inc_return(&request->adblock) <= (dns_server_alive_num() / 2 + dns_server_alive_num() % 2)) {
+				request->rcode = DNS_RC_NOERROR;
+				return -1;
+			}
+		}
+
+		/* add this ip to request */
+		if (_dns_ip_address_check_add(request, cname, paddr, DNS_T_A, 0, NULL) != 0) {
 			return -1;
 		}
-	}
 
-	/* add this ip to request */
-	if (_dns_ip_address_check_add(request, cname, addr, DNS_T_A, 0) != 0) {
-		_dns_server_request_release(request);
-		return -1;
-	}
+		sprintf(ip, "%d.%d.%d.%d", paddr[0], paddr[1], paddr[2], paddr[3]);
 
-	sprintf(ip, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
-
-	/* start ping */
-	if (_dns_server_check_speed(request, ip) != 0) {
-		_dns_server_request_release(request);
+		/* start ping */
+		_dns_server_request_get(request);
+		if (_dns_server_check_speed(request, ip) != 0) {
+			_dns_server_request_release(request);
+		}
 	}
 
 	return 0;
@@ -2899,17 +2987,22 @@ static int _dns_server_process_answer_AAAA(struct dns_rrs *rrs, struct dns_reque
 										   char *cname, unsigned int result_flag)
 {
 	unsigned char addr[16];
+	unsigned char *paddrs[MAX_IP_NUM];
+	int paddr_num = 0;
 	char name[DNS_MAX_CNAME_LEN] = {0};
 	char ip[DNS_MAX_CNAME_LEN] = {0};
 	int ttl = 0;
 	int ip_check_result = 0;
+	struct dns_iplist_ip_addresses *alias = NULL;
 
 	if (request->qtype != DNS_T_AAAA) {
 		/* ignore non-matched query type */
 		return -1;
 	}
-	_dns_server_request_get(request);
+
 	dns_get_AAAA(rrs, name, DNS_MAX_CNAME_LEN, &ttl, addr);
+	paddrs[paddr_num] = addr;
+	paddr_num = 1;
 
 	tlog(TLOG_DEBUG, "domain: %s TTL: %d IP: %.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x",
 		 name, ttl, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7], addr[8], addr[9], addr[10],
@@ -2917,58 +3010,62 @@ static int _dns_server_process_answer_AAAA(struct dns_rrs *rrs, struct dns_reque
 
 	/* if domain is not match */
 	if (strncmp(name, domain, DNS_MAX_CNAME_LEN) != 0 && strncmp(cname, name, DNS_MAX_CNAME_LEN) != 0) {
-		_dns_server_request_release(request);
 		return -1;
 	}
 
-	ip_check_result = _dns_server_ip_rule_check(request, addr, 16, DNS_T_AAAA, result_flag);
+	ip_check_result = _dns_server_process_ip_rule(request, addr, 16, DNS_T_AAAA, result_flag, &alias);
 	if (ip_check_result == 0) {
 		/* match */
-		_dns_server_request_release(request);
 		return -1;
-	} else if (ip_check_result == -2) {
-		/* skip */
-		_dns_server_request_release(request);
-		return -2;
+	} else if (ip_check_result == -2 || ip_check_result == -3) {
+		/* skip, nxdomain */
+		return ip_check_result;
 	}
 
-	if (atomic_read(&request->ip_map_num) == 0) {
-		request->has_ip = 1;
-		memcpy(request->ip_addr, addr, DNS_RR_AAAA_LEN);
-		request->ip_ttl = _dns_server_get_conf_ttl(request, ttl);
-		if (cname[0] != 0 && request->has_cname == 0 && dns_conf_force_no_cname == 0) {
-			request->has_cname = 1;
-			safe_strncpy(request->cname, cname, DNS_MAX_CNAME_LEN);
-		}
-	} else {
-		if (ttl < request->ip_ttl) {
+	int ret = _dns_server_process_ip_alias(request, alias, paddrs, &paddr_num, MAX_IP_NUM, DNS_RR_AAAA_LEN);
+	if (ret != 0) {
+		return ret;
+	}
+
+	for (int i = 0; i < paddr_num; i++) {
+		unsigned char *paddr = paddrs[i];
+		if (atomic_read(&request->ip_map_num) == 0) {
+			request->has_ip = 1;
+			memcpy(request->ip_addr, paddr, DNS_RR_AAAA_LEN);
 			request->ip_ttl = _dns_server_get_conf_ttl(request, ttl);
+			if (cname[0] != 0 && request->has_cname == 0 && dns_conf_force_no_cname == 0) {
+				request->has_cname = 1;
+				safe_strncpy(request->cname, cname, DNS_MAX_CNAME_LEN);
+			}
+		} else {
+			if (ttl < request->ip_ttl) {
+				request->ip_ttl = _dns_server_get_conf_ttl(request, ttl);
+			}
 		}
-	}
 
-	/* Ad blocking result */
-	if (_dns_server_is_adblock_ipv6(addr) == 0) {
-		/* If half of the servers return the same result, then ignore this address */
-		if (atomic_inc_return(&request->adblock) <= (dns_server_alive_num() / 2 + dns_server_alive_num() % 2)) {
-			request->rcode = DNS_RC_NOERROR;
-			_dns_server_request_release(request);
+		/* Ad blocking result */
+		if (_dns_server_is_adblock_ipv6(paddr) == 0) {
+			/* If half of the servers return the same result, then ignore this address */
+			if (atomic_inc_return(&request->adblock) <= (dns_server_alive_num() / 2 + dns_server_alive_num() % 2)) {
+				request->rcode = DNS_RC_NOERROR;
+				return -1;
+			}
+		}
+
+		/* add this ip to request */
+		if (_dns_ip_address_check_add(request, cname, paddr, DNS_T_AAAA, 0, NULL) != 0) {
 			return -1;
 		}
-	}
 
-	/* add this ip to request */
-	if (_dns_ip_address_check_add(request, cname, addr, DNS_T_AAAA, 0) != 0) {
-		_dns_server_request_release(request);
-		return -1;
-	}
+		sprintf(ip, "[%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x]", paddr[0], paddr[1],
+				paddr[2], paddr[3], paddr[4], paddr[5], paddr[6], paddr[7], paddr[8], paddr[9], paddr[10], paddr[11],
+				paddr[12], paddr[13], paddr[14], paddr[15]);
 
-	sprintf(ip, "[%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x]", addr[0], addr[1], addr[2],
-			addr[3], addr[4], addr[5], addr[6], addr[7], addr[8], addr[9], addr[10], addr[11], addr[12], addr[13],
-			addr[14], addr[15]);
-
-	/* start ping */
-	if (_dns_server_check_speed(request, ip) != 0) {
-		_dns_server_request_release(request);
+		/* start ping */
+		_dns_server_request_get(request);
+		if (_dns_server_check_speed(request, ip) != 0) {
+			_dns_server_request_release(request);
+		}
 	}
 
 	return 0;
@@ -3001,7 +3098,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 		request->rcode = packet->head.rcode;
 	}
 
-	for (j = 1; j < DNS_RRS_END; j++) {
+	for (j = 1; j < DNS_RRS_OPT; j++) {
 		rrs = dns_get_rrs_start(packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(packet, rrs)) {
 			switch (rrs->type) {
@@ -3011,6 +3108,8 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 					break;
 				} else if (ret == -2) {
 					continue;
+				} else if (ret == -3) {
+					return -1;
 				}
 				request->rcode = packet->head.rcode;
 			} break;
@@ -3020,6 +3119,8 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 					break;
 				} else if (ret == -2) {
 					continue;
+				} else if (ret == -3) {
+					return -1;
 				}
 				request->rcode = packet->head.rcode;
 			} break;
@@ -3065,7 +3166,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 				}
 			} break;
 			default:
-				tlog(TLOG_DEBUG, "%s, qtype: %d", name, rrs->type);
+				tlog(TLOG_DEBUG, "%s, qtype: %d, rrstype = %d", name, rrs->type, j);
 				break;
 			}
 		}
@@ -3101,7 +3202,7 @@ static int _dns_server_passthrough_rule_check(struct dns_request *request, const
 		request->rcode = packet->head.rcode;
 	}
 
-	for (j = 1; j < DNS_RRS_END; j++) {
+	for (j = 1; j < DNS_RRS_OPT; j++) {
 		rrs = dns_get_rrs_start(packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(packet, rrs)) {
 			switch (rrs->type) {
@@ -3128,13 +3229,9 @@ static int _dns_server_passthrough_rule_check(struct dns_request *request, const
 					 addr[3]);
 
 				/* ip rule check */
-				ip_check_result = _dns_server_ip_rule_check(request, addr, 4, DNS_T_A, result_flag);
-				if (ip_check_result == 0) {
-					/* match */
-					_dns_server_request_release(request);
-					return 0;
-				} else if (ip_check_result == -2) {
-					/* skip */
+				ip_check_result = _dns_server_process_ip_rule(request, addr, 4, DNS_T_A, result_flag, NULL);
+				if (ip_check_result == 0 || ip_check_result == -2 || ip_check_result == -3) {
+					/* match, skip, nxdomain */
 					_dns_server_request_release(request);
 					return 0;
 				}
@@ -3172,13 +3269,9 @@ static int _dns_server_passthrough_rule_check(struct dns_request *request, const
 					 name, ttl_tmp, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7], addr[8],
 					 addr[9], addr[10], addr[11], addr[12], addr[13], addr[14], addr[15]);
 
-				ip_check_result = _dns_server_ip_rule_check(request, addr, 16, DNS_T_AAAA, result_flag);
-				if (ip_check_result == 0) {
-					/* match */
-					_dns_server_request_release(request);
-					return 0;
-				} else if (ip_check_result == -2) {
-					/* skip */
+				ip_check_result = _dns_server_process_ip_rule(request, addr, 16, DNS_T_AAAA, result_flag, NULL);
+				if (ip_check_result == 0 || ip_check_result == -2 || ip_check_result == -3) {
+					/* match, skip, nxdomain */
 					_dns_server_request_release(request);
 					return 0;
 				}
@@ -3227,13 +3320,14 @@ static int _dns_server_get_answer(struct dns_server_post_context *context)
 	struct dns_request *request = context->request;
 	struct dns_packet *packet = context->packet;
 
-	for (j = 1; j < DNS_RRS_END; j++) {
+	for (j = 1; j < DNS_RRS_OPT; j++) {
 		rrs = dns_get_rrs_start(packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(packet, rrs)) {
 			switch (rrs->type) {
 			case DNS_T_A: {
 				unsigned char addr[4];
 				char name[DNS_MAX_CNAME_LEN] = {0};
+				struct dns_ip_address *addr_map = NULL;
 
 				if (request->qtype != DNS_T_A) {
 					continue;
@@ -3248,11 +3342,11 @@ static int _dns_server_get_answer(struct dns_server_post_context *context)
 				}
 
 				if (context->no_check_add_ip == 0 &&
-					_dns_ip_address_check_add(request, name, addr, DNS_T_A, request->ping_time) != 0) {
+					_dns_ip_address_check_add(request, name, addr, DNS_T_A, request->ping_time, &addr_map) != 0) {
 					continue;
 				}
 
-				context->ip_num++;
+				_dns_server_context_add_ip(context, addr_map->ip_addr);
 				if (request->has_ip == 1) {
 					continue;
 				}
@@ -3266,6 +3360,7 @@ static int _dns_server_get_answer(struct dns_server_post_context *context)
 			case DNS_T_AAAA: {
 				unsigned char addr[16];
 				char name[DNS_MAX_CNAME_LEN] = {0};
+				struct dns_ip_address *addr_map = NULL;
 
 				if (request->qtype != DNS_T_AAAA) {
 					/* ignore non-matched query type */
@@ -3279,11 +3374,11 @@ static int _dns_server_get_answer(struct dns_server_post_context *context)
 				}
 
 				if (context->no_check_add_ip == 0 &&
-					_dns_ip_address_check_add(request, name, addr, DNS_T_AAAA, request->ping_time) != 0) {
+					_dns_ip_address_check_add(request, name, addr, DNS_T_AAAA, request->ping_time, &addr_map) != 0) {
 					continue;
 				}
 
-				context->ip_num++;
+				_dns_server_context_add_ip(context, addr_map->ip_addr);
 				if (request->has_ip == 1) {
 					continue;
 				}
@@ -3396,7 +3491,7 @@ static void _dns_server_query_end(struct dns_request *request)
 	/* Not need to wait check result if only has one ip address */
 	if (ip_num <= 1 && request_wait == 1) {
 		if (request->dualstack_selection_query == 1) {
-			if ((dns_conf_ipset_no_speed.ipv4_enable || dns_conf_nftset_no_speed.ip6_enable ||
+			if ((dns_conf_ipset_no_speed.ipv4_enable || dns_conf_nftset_no_speed.ip_enable ||
 				 dns_conf_ipset_no_speed.ipv6_enable || dns_conf_nftset_no_speed.ip6_enable) &&
 				dns_conf_dns_dns64.prefix_len == 0) {
 				/* if speed check fail enabled, we need reply quickly, otherwise wait for ping result.*/
@@ -3417,21 +3512,20 @@ out:
 	_dns_server_request_release(request);
 }
 
-static int dns_server_dualstack_callback(const char *domain, dns_rtcode_t rtcode, dns_type_t addr_type, char *ip,
-										 unsigned int ping_time, void *user_ptr)
+static int dns_server_dualstack_callback(const struct dns_result *result, void *user_ptr)
 {
 	struct dns_request *request = (struct dns_request *)user_ptr;
-	tlog(TLOG_DEBUG, "dualstack result: domain: %s, ip: %s, type: %d, ping: %d, rcode: %d", domain, ip, addr_type,
-		 ping_time, rtcode);
+	tlog(TLOG_DEBUG, "dualstack result: domain: %s, ip: %s, type: %d, ping: %d, rcode: %d", result->domain, result->ip,
+		 result->addr_type, result->ping_time, result->rtcode);
 	if (request == NULL) {
 		return -1;
 	}
 
-	if (rtcode == DNS_RC_NOERROR && ip[0] != 0) {
+	if (result->rtcode == DNS_RC_NOERROR && result->ip[0] != 0) {
 		request->dualstack_selection_has_ip = 1;
 	}
 
-	request->dualstack_selection_ping_time = ping_time;
+	request->dualstack_selection_ping_time = result->ping_time;
 
 	_dns_server_query_end(request);
 
@@ -3628,6 +3722,10 @@ static int _dns_server_get_inet_by_addr(struct sockaddr_storage *localaddr, stru
 		}
 
 		break;
+	}
+
+	if (ifa == NULL) {
+		goto errout;
 	}
 
 	freeifaddrs(ifaddr);
@@ -3930,6 +4028,16 @@ static int _dns_server_get_rules(unsigned char *key, uint32_t key_len, int is_su
 		return 0;
 	}
 
+	/* only subkey rule */
+	if (domain_rule->sub_rule_only == 1 && is_subkey == 0) {
+		return 0;
+	}
+
+	/* only root key rule */
+	if (domain_rule->root_rule_only == 1 && is_subkey == 1) {
+		return 0;
+	}
+
 	for (i = 0; i < DOMAIN_RULE_MAX; i++) {
 		if (domain_rule->rules[i] == NULL) {
 			continue;
@@ -3965,6 +4073,10 @@ static void _dns_server_get_domain_rule_by_domain(struct dns_request *request, c
 
 	/* reverse domain string */
 	domain_len = strlen(domain);
+	if (domain_len >= (int)sizeof(domain_key) - 2) {
+		return;
+	}
+
 	reverse_string(domain_key, domain, domain_len, 1);
 	domain_key[domain_len] = '.';
 	domain_len++;
@@ -4027,6 +4139,10 @@ static int _dns_server_pre_process_rule_flags(struct dns_request *request)
 
 	if ((flags & DOMAIN_FLAG_NO_CACHE) || (_dns_server_has_bind_flag(request, BIND_FLAG_NO_CACHE) == 0)) {
 		request->no_cache = 1;
+	}
+
+	if (flags & DOMAIN_FLAG_NO_IPALIAS) {
+		request->no_ipalias = 1;
 	}
 
 	if (flags & DOMAIN_FLAG_ADDR_IGN) {
@@ -4115,10 +4231,35 @@ static int _dns_server_get_local_ttl(struct dns_request *request)
 	return DNS_SERVER_ADDR_TTL;
 }
 
+static int _dns_server_address_generate_order(int orders[], int order_num, int max_order_count)
+{
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	for (i = 0; i < order_num && i < max_order_count; i++) {
+		orders[i] = i;
+	}
+
+	for (i = 0; i < order_num && max_order_count; i++) {
+		k = rand() % order_num;
+		j = rand() % order_num;
+		if (j == k) {
+			continue;
+		}
+
+		int temp = orders[j];
+		orders[j] = orders[k];
+		orders[k] = temp;
+	}
+
+	return 0;
+}
+
 static int _dns_server_process_address(struct dns_request *request)
 {
 	struct dns_rule_address_IPV4 *address_ipv4 = NULL;
 	struct dns_rule_address_IPV6 *address_ipv6 = NULL;
+	int orders[DNS_MAX_REPLY_IP_NUM];
 
 	if (_dns_server_has_bind_flag(request, BIND_FLAG_NO_RULE_ADDR) == 0) {
 		goto errout;
@@ -4131,14 +4272,39 @@ static int _dns_server_process_address(struct dns_request *request)
 			goto errout;
 		}
 		address_ipv4 = _dns_server_get_dns_rule(request, DOMAIN_RULE_ADDRESS_IPV4);
-		memcpy(request->ip_addr, address_ipv4->ipv4_addr, DNS_RR_A_LEN);
+		if (address_ipv4 == NULL) {
+			goto errout;
+		}
+		_dns_server_address_generate_order(orders, address_ipv4->addr_num, DNS_MAX_REPLY_IP_NUM);
+
+		memcpy(request->ip_addr, address_ipv4->ipv4_addr[orders[0]], DNS_RR_A_LEN);
+		for (int i = 1; i < address_ipv4->addr_num; i++) {
+			int index = orders[i];
+			if (index >= address_ipv4->addr_num) {
+				continue;
+			}
+			_dns_ip_address_check_add(request, request->cname, address_ipv4->ipv4_addr[index], DNS_T_A, 1, NULL);
+		}
 		break;
 	case DNS_T_AAAA:
 		if (request->domain_rule.rules[DOMAIN_RULE_ADDRESS_IPV6] == NULL) {
 			goto errout;
 		}
+
 		address_ipv6 = _dns_server_get_dns_rule(request, DOMAIN_RULE_ADDRESS_IPV6);
-		memcpy(request->ip_addr, address_ipv6->ipv6_addr, DNS_RR_AAAA_LEN);
+		if (address_ipv6 == NULL) {
+			goto errout;
+		}
+		_dns_server_address_generate_order(orders, address_ipv6->addr_num, DNS_MAX_REPLY_IP_NUM);
+
+		memcpy(request->ip_addr, address_ipv6->ipv6_addr[orders[0]], DNS_RR_AAAA_LEN);
+		for (int i = 1; i < address_ipv6->addr_num; i++) {
+			int index = orders[i];
+			if (index >= address_ipv6->addr_num) {
+				continue;
+			}
+			_dns_ip_address_check_add(request, request->cname, address_ipv6->ipv6_addr[index], DNS_T_AAAA, 1, NULL);
+		}
 		break;
 	default:
 		goto errout;
@@ -4154,6 +4320,7 @@ static int _dns_server_process_address(struct dns_request *request)
 	context.do_reply = 1;
 	context.do_audit = 1;
 	context.do_ipset = 1;
+	context.select_all_best_ip = 1;
 	_dns_request_post(&context);
 
 	return 0;
@@ -4285,7 +4452,7 @@ static int _dns_server_process_cname_pre(struct dns_request *request)
 {
 	struct dns_cname_rule *cname = NULL;
 	struct dns_rule_flags *rule_flag = NULL;
-	struct dns_domain_rule domain_rule;
+	struct dns_request_domain_rule domain_rule;
 
 	if (_dns_server_has_bind_flag(request, BIND_FLAG_NO_RULE_CNAME) == 0) {
 		return 0;
@@ -4546,25 +4713,21 @@ errout:
 
 static int _dns_server_qtype_soa(struct dns_request *request)
 {
-	struct dns_qtype_soa_list *soa_list = NULL;
-
-	if (request->skip_qtype_soa) {
+	if (request->skip_qtype_soa || dns_qtype_soa_table == NULL) {
 		return -1;
 	}
 
-	uint32_t key = hash_32_generic(request->qtype, 32);
-	hash_for_each_possible(dns_qtype_soa_table.qtype, soa_list, node, key)
-	{
-		if (request->qtype != soa_list->qtypeid) {
-			continue;
+	if (request->qtype >= 0 && request->qtype <= MAX_QTYPE_NUM) {
+		int offset = request->qtype / 8;
+		int bit = request->qtype % 8;
+		if ((dns_qtype_soa_table[offset] & (1 << bit)) == 0) {
+			return -1;
 		}
-
-		_dns_server_reply_SOA(DNS_RC_NOERROR, request);
-		tlog(TLOG_DEBUG, "force qtype %d soa", request->qtype);
-		return 0;
 	}
 
-	return -1;
+	_dns_server_reply_SOA(DNS_RC_NOERROR, request);
+	tlog(TLOG_DEBUG, "force qtype %d soa", request->qtype);
+	return 0;
 }
 
 static void _dns_server_process_speed_rule(struct dns_request *request)
@@ -5476,7 +5639,7 @@ int dns_server_query(const char *domain, int qtype, struct dns_server_query_opti
 	_dns_server_request_set_callback(request, callback, user_ptr);
 	ret = _dns_server_do_query(request, 0);
 	if (ret != 0) {
-		tlog(TLOG_ERROR, "do query %s failed.\n", domain);
+		tlog(TLOG_DEBUG, "do query %s failed.\n", domain);
 		goto errout;
 	}
 
@@ -6112,9 +6275,7 @@ static int _dns_server_process_tls(struct dns_server_conn_tls_client *tls_client
 	if (tls_client->status == DNS_SERVER_CLIENT_STATUS_CONNECTING) {
 		/* do SSL hand shake */
 		ret = _ssl_do_accept(tls_client);
-		if (ret == 0) {
-			goto errout;
-		} else if (ret < 0) {
+		if (ret <= 0) {
 			memset(&fd_event, 0, sizeof(fd_event));
 			ssl_ret = _ssl_get_error(tls_client, ret);
 			if (ssl_ret == SSL_ERROR_WANT_READ) {
@@ -6126,7 +6287,9 @@ static int _dns_server_process_tls(struct dns_server_conn_tls_client *tls_client
 			} else {
 				unsigned long ssl_err = ERR_get_error();
 				int ssl_reason = ERR_GET_REASON(ssl_err);
-				tlog(TLOG_DEBUG, "Handshake with %s failed, error no: %s(%d, %d, %d)\n", "",
+				char name[DNS_MAX_CNAME_LEN];
+				tlog(TLOG_DEBUG, "Handshake with %s failed, error no: %s(%d, %d, %d)\n",
+					 get_host_by_addr(name, sizeof(name), (struct sockaddr *)&tls_client->addr),
 					 ERR_reason_error_string(ssl_err), ret, ssl_ret, ssl_reason);
 				ret = 0;
 				goto errout;
@@ -6663,7 +6826,7 @@ static int _dns_create_socket(const char *host_ip, int type)
 {
 	int fd = -1;
 	struct addrinfo *gai = NULL;
-	char port_str[8];
+	char port_str[16];
 	char ip[MAX_IP_LEN];
 	char host_ip_device[MAX_IP_LEN * 2];
 	int port = 0;

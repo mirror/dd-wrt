@@ -59,6 +59,11 @@ char *dir_name(char *path);
 
 char *get_host_by_addr(char *host, int maxsize, struct sockaddr *addr);
 
+int generate_random_addr(unsigned char *addr, int addr_len, int mask);
+
+int generate_addr_map(unsigned char *addr_from, unsigned char *addr_to, unsigned char *addr_out, int addr_len,
+					  int mask);
+
 int getaddr_by_host(const char *host, struct sockaddr *addr, socklen_t *addr_len);
 
 int getsocket_inet(int fd, struct sockaddr *addr, socklen_t *addr_len);
@@ -105,6 +110,8 @@ int generate_cert_key(const char *key_path, const char *cert_path, const char *s
 
 int create_pid_file(const char *pid_file);
 
+int full_path(char *normalized_path, int normalized_path_len, const char *path);
+
 /* Parse a TLS packet for the Server Name Indication extension in the client
  * hello handshake, returning the first server name found (pointer to static
  * array)
@@ -137,6 +144,14 @@ int set_sock_lingertime(int fd, int time);
 uint64_t get_free_space(const char *path);
 
 void print_stack(void);
+
+void close_all_fd(int keepfd);
+
+int daemon_run(void);
+
+int daemon_kickoff(int status, int no_close);
+
+int daemon_keepalive(void);
 
 int write_file(const char *filename, void *data, int data_len);
 

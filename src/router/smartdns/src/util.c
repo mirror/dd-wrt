@@ -25,6 +25,7 @@
 #include "util.h"
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -38,11 +39,13 @@
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+#include <poll.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/prctl.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <sys/sysinfo.h>
@@ -100,8 +103,20 @@ struct ipset_netlink_msg {
 	__be16 res_id;
 };
 
+enum daemon_msg_type {
+	DAEMON_MSG_KICKOFF,
+	DAEMON_MSG_KEEPALIVE,
+	DAEMON_MSG_DAEMON_PID,
+};
+
+struct daemon_msg {
+	enum daemon_msg_type type;
+	int value;
+};
+
 static int ipset_fd;
 static int pidfile_fd;
+static int daemon_fd;
 
 unsigned long get_tick_count(void)
 {
@@ -151,6 +166,55 @@ char *get_host_by_addr(char *host, int maxsize, struct sockaddr *addr)
 	return host;
 errout:
 	return NULL;
+}
+
+int generate_random_addr(unsigned char *addr, int addr_len, int mask)
+{
+	if (mask / 8 > addr_len) {
+		return -1;
+	}
+
+	int offset = mask / 8;
+	int bit = 0;
+
+	for (int i = offset; i < addr_len; i++) {
+		bit = 0xFF;
+		if (i == offset) {
+			bit = ~(0xFF << (8 - mask % 8)) & 0xFF;
+		}
+		addr[i] = jhash(&addr[i], 1, 0) & bit;
+	}
+
+	return 0;
+}
+
+int generate_addr_map(unsigned char *addr_from, unsigned char *addr_to, unsigned char *addr_out, int addr_len, int mask)
+{
+	if ((mask / 8) >= addr_len) {
+		if (mask % 8 != 0) {
+			return -1;
+		}
+	}
+
+	int offset = mask / 8;
+	int bit = mask % 8;
+	for (int i = 0; i < offset; i++) {
+		addr_out[i] = addr_to[i];
+	}
+
+	if (bit != 0) {
+		int mask1 = 0xFF >> bit;
+		int mask2 = (0xFF << (8 - bit)) & 0xFF;
+		addr_out[offset] = addr_from[offset] & mask1;
+		addr_out[offset] |= addr_to[offset] & mask2;
+		offset = offset + 1;
+	}
+
+	for (int i = offset; i < addr_len; i++) {
+		addr_out[i] = addr_from[i];
+	}
+
+	return 0;
 }
 
 int getaddr_by_host(const char *host, struct sockaddr *addr, socklen_t *addr_len)
@@ -830,7 +894,11 @@ int create_pid_file(const char *pid_file)
 	}
 
 	if (lockf(fd, F_TLOCK, 0) < 0) {
-		fprintf(stderr, "Server is already running.\n");
+		memset(buff, 0, TMP_BUFF_LEN_32);
+		if (read(fd, buff, TMP_BUFF_LEN_32) <= 0) {
+			buff[0] = '\0';
+		}
+		fprintf(stderr, "Server is already running, pid is %s", buff);
 		goto errout;
 	}
 
@@ -854,6 +922,28 @@ errout:
 	}
 	return -1;
 }
+
+int full_path(char *normalized_path, int normalized_path_len, const char *path)
+{
+	const char *p = path;
+
+	if (path == NULL || normalized_path == NULL) {
+		return -1;
+	}
+
+	while (*p == ' ') {
+		p++;
+	}
+
+	if (*p == '\0' || *p == '/') {
+		return -1;
+	}
+
+	char buf[PATH_MAX];
+	snprintf(normalized_path, normalized_path_len, "%s/%s", getcwd(buf, sizeof(buf)), path);
+	return 0;
+}
+
 #ifdef HAVE_OPENSSL
 int generate_cert_key(const char *key_path, const char *cert_path, const char *san, int days)
 {
@@ -1504,6 +1594,210 @@ out:
 	return ret;
 }
 
+static void _close_all_fd_by_res(void)
+{
+	struct rlimit lim;
+	int maxfd = 0;
+	int i = 0;
+
+	getrlimit(RLIMIT_NOFILE, &lim);
+
+	maxfd = lim.rlim_cur;
+	if (maxfd > 4096) {
+		maxfd = 4096;
+	}
+
+	for (i = 3; i < maxfd; i++) {
+		close(i);
+	}
+}
+
+void close_all_fd(int keepfd)
+{
+	DIR *dirp;
+	int dir_fd = -1;
+	struct dirent *dentp;
+
+	dirp = opendir("/proc/self/fd");
+	if (dirp == NULL) {
+		goto errout;
+	}
+
+	dir_fd = dirfd(dirp);
+
+	while ((dentp = readdir(dirp)) != NULL) {
+		int fd = atol(dentp->d_name);
+		if (fd < 0) {
+			continue;
+		}
+
+		if (fd == dir_fd || fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO || fd == keepfd) {
+			continue;
+		}
+		close(fd);
+	}
+
+	closedir(dirp);
+	return;
+errout:
+	if (dirp) {
+		closedir(dirp);
+	}
+	_close_all_fd_by_res();
+	return;
+}
+
+int daemon_kickoff(int status, int no_close)
+{
+	struct daemon_msg msg;
+
+	if (daemon_fd <= 0) {
+		return -1;
+	}
+
+	msg.type = DAEMON_MSG_KICKOFF;
+	msg.value = status;
+
+	int ret = write(daemon_fd, &msg, sizeof(msg));
+	if (ret != sizeof(msg)) {
+		fprintf(stderr, "notify parent process failed, %s\n", strerror(errno));
+		return -1;
+	}
+
+	if (no_close == 0) {
+		int fd_null = open("/dev/null", O_RDWR);
+		if (fd_null < 0) {
+			fprintf(stderr, "open /dev/null failed, %s\n", strerror(errno));
+			return -1;
+		}
+
+		dup2(fd_null, STDIN_FILENO);
+		dup2(fd_null, STDOUT_FILENO);
+		dup2(fd_null, STDERR_FILENO);
+
+		if (fd_null > 2) {
+			close(fd_null);
+		}
+	}
+
+	close(daemon_fd);
+	daemon_fd = -1;
+
+	return 0;
+}
+
+int daemon_keepalive(void)
+{
+	struct daemon_msg msg;
+	static time_t last = 0;
+	time_t now = time(NULL);
+
+	if (daemon_fd <= 0) {
+		return -1;
+	}
+
+	if (now == last) {
+		return 0;
+	}
+
+	last = now;
+
+	msg.type = DAEMON_MSG_KEEPALIVE;
+	msg.value = 0;
+
+	int ret = write(daemon_fd, &msg, sizeof(msg));
+	if (ret != sizeof(msg)) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int daemon_run(void)
+{
+	pid_t pid = 0;
+	int fds[2] = {0};
+
+	if (pipe(fds) != 0) {
+		fprintf(stderr, "run daemon process failed, pipe failed, %s\n", strerror(errno));
+		return -1;
+	}
+
+	pid = fork();
+	if (pid < 0) {
+		fprintf(stderr, "run daemon process failed, fork failed, %s\n", strerror(errno));
+		close(fds[0]);
+		close(fds[1]);
+		return -1;
+	} else if (pid > 0) {
+		struct pollfd pfd;
+		int ret = 0;
+
+		close(fds[1]);
+
+		pfd.fd = fds[0];
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+
+		do {
+			ret = poll(&pfd, 1, 3000);
+			if (ret <= 0) {
+				fprintf(stderr, "run daemon process failed, wait child timeout, kill child.\n");
+				goto errout;
+			}
+
+			if (!(pfd.revents & POLLIN)) {
+				goto errout;
+			}
+
+			struct daemon_msg msg;
+
+			ret = read(fds[0], &msg, sizeof(msg));
+			if (ret != sizeof(msg)) {
+				goto errout;
+			}
+
+			if (msg.type == DAEMON_MSG_KEEPALIVE) {
+				continue;
+			} else if (msg.type == DAEMON_MSG_DAEMON_PID) {
+				pid = msg.value;
+				continue;
+			} else if (msg.type == DAEMON_MSG_KICKOFF) {
+				return msg.value;
+			} else {
+				goto errout;
+			}
+		} while (true);
+	}
+
+	setsid();
+
+	pid = fork();
+	if (pid < 0) {
+		fprintf(stderr, "double fork failed, %s\n", strerror(errno));
+		_exit(1);
+	} else if (pid > 0) {
+		struct daemon_msg msg;
+		int unused __attribute__((unused));
+		msg.type = DAEMON_MSG_DAEMON_PID;
+		msg.value = pid;
+		unused = write(fds[1], &msg, sizeof(msg));
+		_exit(0);
+	}
+
+	umask(0);
+	if (chdir("/") != 0) {
+		goto errout;
+	}
+	close(fds[0]);
+
+	daemon_fd = fds[1];
+	return -2;
+errout:
+	kill(pid, SIGKILL);
+	return -1;
+}
+
 #ifdef DEBUG
 struct _dns_read_packet_info {
 	int data_len;
@@ -1629,7 +1923,7 @@ static int _dns_debug_display(struct dns_packet *packet)
 				int ret = 0;
 
 				ret = dns_get_HTTPS_svcparm_start(rrs, &p, name, DNS_MAX_CNAME_LEN, &ttl, &priority, target,
-												DNS_MAX_CNAME_LEN);
+												  DNS_MAX_CNAME_LEN);
 				if (ret != 0) {
 					printf("get HTTPS svcparm failed\n");
 					break;

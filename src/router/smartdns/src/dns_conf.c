@@ -30,7 +30,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#define DNS_MAX_REPLY_IP_NUM 8
+#define TMP_BUFF_LEN 1024
 
 /* ipset */
 struct dns_ipset_table {
@@ -43,7 +43,7 @@ struct dns_nftset_table {
 };
 static struct dns_nftset_table dns_nftset_table;
 
-struct dns_qtype_soa_table dns_qtype_soa_table;
+uint8_t *dns_qtype_soa_table;
 
 struct dns_domain_set_name_table dns_domain_set_name_table;
 
@@ -161,6 +161,8 @@ char dns_conf_user[DNS_CONF_USERNAME_LEN];
 int dns_save_fail_packet;
 char dns_save_fail_packet_dir[DNS_MAX_PATH];
 char dns_resolv_file[DNS_MAX_PATH];
+int dns_no_pidfile;
+int dns_no_daemon;
 
 /* ECS */
 struct dns_edns_client_subnet dns_conf_ipv4_ecs;
@@ -172,8 +174,10 @@ static int _conf_domain_rule_nameserver(char *domain, const char *group_name);
 static int _conf_ptr_add(const char *hostname, const char *ip, int is_dynamic);
 static int _conf_client_subnet(char *subnet, struct dns_edns_client_subnet *ipv4_ecs,
 							   struct dns_edns_client_subnet *ipv6_ecs);
+static int _conf_domain_rule_address(char *domain, const char *domain_address);
+static struct dns_domain_rule *_config_domain_rule_get(const char *domain);
 
-static void *_new_dns_rule(enum domain_rule domain_rule)
+static void *_new_dns_rule_ext(enum domain_rule domain_rule, int ext_size)
 {
 	struct dns_rule *rule;
 	int size = 0;
@@ -220,6 +224,7 @@ static void *_new_dns_rule(enum domain_rule domain_rule)
 		return NULL;
 	}
 
+	size += ext_size;
 	rule = malloc(size);
 	if (!rule) {
 		return NULL;
@@ -228,6 +233,11 @@ static void *_new_dns_rule(enum domain_rule domain_rule)
 	rule->rule = domain_rule;
 	atomic_set(&rule->refcnt, 1);
 	return rule;
+}
+
+static void *_new_dns_rule(enum domain_rule domain_rule)
+{
+	return _new_dns_rule_ext(domain_rule, 0);
 }
 
 static void _dns_rule_get(struct dns_rule *rule)
@@ -240,6 +250,38 @@ static void _dns_rule_put(struct dns_rule *rule)
 	if (atomic_dec_and_test(&rule->refcnt)) {
 		free(rule);
 	}
+}
+
+static struct dns_iplist_ip_addresses *_new_dns_iplist_ip_addresses(void)
+{
+	struct dns_iplist_ip_addresses *iplist;
+
+	iplist = malloc(sizeof(struct dns_iplist_ip_addresses));
+	if (!iplist) {
+		return NULL;
+	}
+	memset(iplist, 0, sizeof(struct dns_iplist_ip_addresses));
+	atomic_set(&iplist->refcnt, 1);
+	return iplist;
+}
+
+static void _dns_iplist_ip_addresses_put(struct dns_iplist_ip_addresses *iplist)
+{
+	if (atomic_dec_and_test(&iplist->refcnt)) {
+		free(iplist);
+	}
+}
+
+static void _dns_iplist_ip_address_add(struct dns_iplist_ip_addresses *iplist, unsigned char addr[], int addr_len)
+{
+	iplist->ipaddr = realloc(iplist->ipaddr, (iplist->ipaddr_num + 1) * sizeof(struct dns_iplist_ip_address));
+	if (iplist->ipaddr == NULL) {
+		return;
+	}
+	memset(&iplist->ipaddr[iplist->ipaddr_num], 0, sizeof(struct dns_iplist_ip_address));
+	iplist->ipaddr[iplist->ipaddr_num].addr_len = addr_len;
+	memcpy(iplist->ipaddr[iplist->ipaddr_num].addr, addr, addr_len);
+	iplist->ipaddr_num++;
 }
 
 static int _get_domain(char *value, char *domain, int max_domain_size, char **ptr_after_domain)
@@ -480,6 +522,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	unsigned char *spki = NULL;
 	int drop_packet_latency_ms = 0;
 	int is_bootstrap_dns = 0;
+	int is_hostip_set = 0;
 
 	int ttl = 0;
 	/* clang-format off */
@@ -506,6 +549,8 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		{"set-mark", required_argument, NULL, 254}, /* set mark */
 		{"bootstrap-dns", no_argument, NULL, 255}, /* set as bootstrap dns */
 		{"subnet", required_argument, NULL, 256}, /* set subnet */
+		{"hitchhiking", no_argument, NULL, 257}, /* hitchhiking */
+		{"host-ip", required_argument, NULL, 258}, /* host ip */
 		{NULL, no_argument, NULL, 0}
 	};
 	/* clang-format on */
@@ -657,6 +702,17 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			_conf_client_subnet(optarg, &server->ipv4_ecs, &server->ipv6_ecs);
 			break;
 		}
+		case 257: {
+			server_flag |= SERVER_FLAG_HITCHHIKING;
+			break;
+		}
+		case 258: {
+			if (check_is_ipaddr(server->server) != 0) {
+				_conf_domain_rule_address(server->server, optarg);
+				is_hostip_set = 1;
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -665,6 +721,18 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	/* if server is domain name, then verify domain */
 	if (server->tls_host_verify[0] == '\0' && check_is_ipaddr(server->server) != 0) {
 		safe_strncpy(server->tls_host_verify, server->server, DNS_MAX_CNAME_LEN);
+	}
+
+	/* update address rules for host-ip */
+	if (is_hostip_set == 1) {
+		struct dns_domain_rule *rule = _config_domain_rule_get(server->server);
+		if (rule) {
+			if (rule->rules[DOMAIN_RULE_ADDRESS_IPV4] != NULL && rule->rules[DOMAIN_RULE_ADDRESS_IPV6] == NULL) {
+				_conf_domain_rule_address(server->server, "#6");
+			} else if (rule->rules[DOMAIN_RULE_ADDRESS_IPV4] == NULL && rule->rules[DOMAIN_RULE_ADDRESS_IPV6] != NULL) {
+				_conf_domain_rule_address(server->server, "#4");
+			}
+		}
 	}
 
 	/* add new server */
@@ -748,12 +816,19 @@ static void _config_domain_destroy(void)
 
 static void _config_address_destroy(radix_node_t *node, void *cbctx)
 {
+	struct dns_ip_address_rule *address_rule = NULL;
 	if (node == NULL) {
 		return;
 	}
 
 	if (node->data == NULL) {
 		return;
+	}
+
+	address_rule = node->data;
+	if (address_rule->ip_alias) {
+		_dns_iplist_ip_addresses_put(address_rule->ip_alias);
+		address_rule->ip_alias = NULL;
 	}
 
 	free(node->data);
@@ -779,7 +854,7 @@ static int _config_domain_rule_each_from_list(const char *file, domain_set_rule_
 	line_no = 0;
 	while (fgets(line, MAX_LINE_LEN, fp)) {
 		line_no++;
-		filed_num = sscanf(line, "%256s", domain);
+		filed_num = sscanf(line, "%255s", domain);
 		if (filed_num <= 0) {
 			continue;
 		}
@@ -843,6 +918,23 @@ static int _config_domain_rule_add_callback(const char *domain, void *priv)
 	return _config_domain_rule_add(domain, args->type, args->rule);
 }
 
+static struct dns_domain_rule *_config_domain_rule_get(const char *domain)
+{
+	char domain_key[DNS_MAX_CONF_CNAME_LEN];
+	int len = 0;
+
+	len = strlen(domain);
+	if (len >= (int)sizeof(domain_key) - 2) {
+		return NULL;
+	}
+
+	reverse_string(domain_key, domain, len, 1);
+	domain_key[len] = '.';
+	len++;
+	domain_key[len] = 0;
+	return art_search(&dns_conf_domain_rule, (unsigned char *)domain_key, len);
+}
+
 static int _config_domain_rule_add(const char *domain, enum domain_rule type, void *rule)
 {
 	struct dns_domain_rule *domain_rule = NULL;
@@ -851,11 +943,18 @@ static int _config_domain_rule_add(const char *domain, enum domain_rule type, vo
 
 	char domain_key[DNS_MAX_CONF_CNAME_LEN];
 	int len = 0;
+	int sub_rule_only = 0;
+	int root_rule_only = 0;
 
 	/* Reverse string, for suffix match */
 	len = strlen(domain);
-	if (len >= (int)sizeof(domain_key)) {
+	if (len >= (int)sizeof(domain_key) - 2) {
 		tlog(TLOG_ERROR, "domain name %s too long", domain);
+		goto errout;
+	}
+
+	if (len <= 0) {
+		tlog(TLOG_ERROR, "domain name %s too short", domain);
 		goto errout;
 	}
 
@@ -868,8 +967,23 @@ static int _config_domain_rule_add(const char *domain, enum domain_rule type, vo
 	}
 
 	reverse_string(domain_key, domain, len, 1);
-	domain_key[len] = '.';
-	len++;
+	if (domain[0] == '*') {
+		/* prefix wildcard */
+		len--;
+		if (domain[1] == '.') {
+			sub_rule_only = 1;
+		}
+	} else if (domain[0] == '-') {
+		/* root match only */
+		len--;
+		if (domain[1] == '.') {
+			root_rule_only = 1;
+		}
+	} else {
+		/* suffix match */
+		domain_key[len] = '.';
+		len++;
+	}
 	domain_key[len] = 0;
 
 	if (type >= DOMAIN_RULE_MAX) {
@@ -894,6 +1008,8 @@ static int _config_domain_rule_add(const char *domain, enum domain_rule type, vo
 	}
 
 	domain_rule->rules[type] = rule;
+	domain_rule->sub_rule_only = sub_rule_only;
+	domain_rule->root_rule_only = root_rule_only;
 	_dns_rule_get(rule);
 
 	/* update domain rule */
@@ -1514,53 +1630,79 @@ static int _conf_domain_rule_address(char *domain, const char *domain_address)
 	struct dns_rule_address_IPV4 *address_ipv4 = NULL;
 	struct dns_rule_address_IPV6 *address_ipv6 = NULL;
 	struct dns_rule *address = NULL;
+
 	char ip[MAX_IP_LEN];
 	int port = 0;
 	struct sockaddr_storage addr;
 	socklen_t addr_len = sizeof(addr);
-	enum domain_rule type = 0;
 	unsigned int flag = 0;
+	char *ptr = NULL;
+	char *field = NULL;
+	char tmpbuff[TMP_BUFF_LEN] = {0};
 
-	if (*(domain_address) == '#') {
-		if (strncmp(domain_address, "#4", sizeof("#4")) == 0) {
-			flag = DOMAIN_FLAG_ADDR_IPV4_SOA;
-		} else if (strncmp(domain_address, "#6", sizeof("#6")) == 0) {
-			flag = DOMAIN_FLAG_ADDR_IPV6_SOA;
-		} else if (strncmp(domain_address, "#", sizeof("#")) == 0) {
-			flag = DOMAIN_FLAG_ADDR_SOA;
-		} else {
-			goto errout;
+	char ipv6_addr[DNS_MAX_REPLY_IP_NUM][DNS_RR_AAAA_LEN];
+	int ipv6_num = 0;
+	char ipv4_addr[DNS_MAX_REPLY_IP_NUM][DNS_RR_A_LEN];
+	int ipv4_num = 0;
+
+	safe_strncpy(tmpbuff, domain_address, sizeof(tmpbuff));
+
+	ptr = tmpbuff;
+
+	do {
+		field = ptr;
+		ptr = strstr(ptr, ",");
+
+		if (field == NULL || *field == '\0') {
+			break;
 		}
 
-		/* add SOA rule */
-		if (_config_domain_rule_flag_set(domain, flag, 0) != 0) {
-			goto errout;
+		if (ptr) {
+			*ptr = 0;
 		}
 
-		return 0;
-	} else if (*(domain_address) == '-') {
-		if (strncmp(domain_address, "-4", sizeof("-4")) == 0) {
-			flag = DOMAIN_FLAG_ADDR_IPV4_IGN;
-		} else if (strncmp(domain_address, "-6", sizeof("-6")) == 0) {
-			flag = DOMAIN_FLAG_ADDR_IPV6_IGN;
-		} else if (strncmp(domain_address, "-", sizeof("-")) == 0) {
-			flag = DOMAIN_FLAG_ADDR_IGN;
-		} else {
-			goto errout;
+		if (*(field) == '#') {
+			if (strncmp(field, "#4", sizeof("#4")) == 0) {
+				flag = DOMAIN_FLAG_ADDR_IPV4_SOA;
+			} else if (strncmp(field, "#6", sizeof("#6")) == 0) {
+				flag = DOMAIN_FLAG_ADDR_IPV6_SOA;
+			} else if (strncmp(field, "#", sizeof("#")) == 0) {
+				flag = DOMAIN_FLAG_ADDR_SOA;
+			} else {
+				goto errout;
+			}
+
+			/* add SOA rule */
+			if (_config_domain_rule_flag_set(domain, flag, 0) != 0) {
+				goto errout;
+			}
+
+			continue;
+		} else if (*(field) == '-') {
+			if (strncmp(field, "-4", sizeof("-4")) == 0) {
+				flag = DOMAIN_FLAG_ADDR_IPV4_IGN;
+			} else if (strncmp(field, "-6", sizeof("-6")) == 0) {
+				flag = DOMAIN_FLAG_ADDR_IPV6_IGN;
+			} else if (strncmp(field, "-", sizeof("-")) == 0) {
+				flag = DOMAIN_FLAG_ADDR_IGN;
+			} else {
+				goto errout;
+			}
+
+			/* ignore rule */
+			if (_config_domain_rule_flag_set(domain, flag, 0) != 0) {
+				goto errout;
+			}
+
+			continue;
 		}
 
-		/* ignore rule */
-		if (_config_domain_rule_flag_set(domain, flag, 0) != 0) {
-			goto errout;
-		}
-
-		return 0;
-	} else {
 		/* set address to domain */
-		if (parse_ip(domain_address, ip, &port) != 0) {
+		if (parse_ip(field, ip, &port) != 0) {
 			goto errout;
 		}
 
+		addr_len = sizeof(addr);
 		if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
 			goto errout;
 		}
@@ -1568,60 +1710,80 @@ static int _conf_domain_rule_address(char *domain, const char *domain_address)
 		switch (addr.ss_family) {
 		case AF_INET: {
 			struct sockaddr_in *addr_in = NULL;
-			address_ipv4 = _new_dns_rule(DOMAIN_RULE_ADDRESS_IPV4);
-			if (address_ipv4 == NULL) {
-				goto errout;
-			}
-
 			addr_in = (struct sockaddr_in *)&addr;
-			memcpy(address_ipv4->ipv4_addr, &addr_in->sin_addr.s_addr, 4);
-			type = DOMAIN_RULE_ADDRESS_IPV4;
-			address = (struct dns_rule *)address_ipv4;
+			if (ipv4_num < DNS_MAX_REPLY_IP_NUM) {
+				memcpy(ipv4_addr[ipv4_num], &addr_in->sin_addr.s_addr, DNS_RR_A_LEN);
+				ipv4_num++;
+			}
 		} break;
 		case AF_INET6: {
 			struct sockaddr_in6 *addr_in6 = NULL;
 			addr_in6 = (struct sockaddr_in6 *)&addr;
-			if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
-				address_ipv4 = _new_dns_rule(DOMAIN_RULE_ADDRESS_IPV4);
-				if (address_ipv4 == NULL) {
-					goto errout;
-				}
-				memcpy(address_ipv4->ipv4_addr, addr_in6->sin6_addr.s6_addr + 12, 4);
-				type = DOMAIN_RULE_ADDRESS_IPV4;
-				address = (struct dns_rule *)address_ipv4;
-			} else {
-				address_ipv6 = _new_dns_rule(DOMAIN_RULE_ADDRESS_IPV6);
-				if (address_ipv6 == NULL) {
-					goto errout;
-				}
-				memcpy(address_ipv6->ipv6_addr, addr_in6->sin6_addr.s6_addr, 16);
-				type = DOMAIN_RULE_ADDRESS_IPV6;
-				address = (struct dns_rule *)address_ipv6;
+			if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr) && ipv4_num < DNS_MAX_REPLY_IP_NUM) {
+				memcpy(ipv4_addr[ipv4_num], addr_in6->sin6_addr.s6_addr + 12, DNS_RR_A_LEN);
+				ipv4_num++;
+			} else if (ipv6_num < DNS_MAX_REPLY_IP_NUM) {
+				memcpy(ipv6_addr[ipv6_num], addr_in6->sin6_addr.s6_addr, DNS_RR_AAAA_LEN);
+				ipv6_num++;
 			}
 		} break;
 		default:
-			goto errout;
+			ip[0] = '\0';
+			break;
 		}
 
 		/* add PTR */
-		if (dns_conf_expand_ptr_from_address == 1 && _conf_ptr_add(domain, ip, 0) != 0) {
+		if (dns_conf_expand_ptr_from_address == 1 && ip[0] != '\0' && _conf_ptr_add(domain, ip, 0) != 0) {
 			goto errout;
 		}
+
+		if (ptr) {
+			ptr++;
+		}
+	} while (ptr);
+
+	if (ipv4_num > 0) {
+		address_ipv4 = _new_dns_rule_ext(DOMAIN_RULE_ADDRESS_IPV4, ipv4_num * DNS_RR_A_LEN);
+		if (address_ipv4 == NULL) {
+			goto errout;
+		}
+
+		memcpy(address_ipv4->ipv4_addr, ipv4_addr[0], ipv4_num * DNS_RR_A_LEN);
+		address_ipv4->addr_num = ipv4_num;
+		address = (struct dns_rule *)address_ipv4;
+
+		if (_config_domain_rule_add(domain, DOMAIN_RULE_ADDRESS_IPV4, address) != 0) {
+			goto errout;
+		}
+
+		_dns_rule_put(address);
 	}
 
-	/* add domain to ART-tree */
-	if (_config_domain_rule_add(domain, type, address) != 0) {
-		goto errout;
+	if (ipv6_num > 0) {
+		address_ipv6 = _new_dns_rule_ext(DOMAIN_RULE_ADDRESS_IPV6, ipv6_num * DNS_RR_AAAA_LEN);
+		if (address_ipv6 == NULL) {
+			goto errout;
+		}
+
+		memcpy(address_ipv6->ipv6_addr, ipv6_addr[0], ipv6_num * DNS_RR_AAAA_LEN);
+		address_ipv6->addr_num = ipv6_num;
+		address = (struct dns_rule *)address_ipv6;
+
+		if (_config_domain_rule_add(domain, DOMAIN_RULE_ADDRESS_IPV6, address) != 0) {
+			goto errout;
+		}
+
+		_dns_rule_put(address);
 	}
 
-	_dns_rule_put(address);
 	return 0;
 errout:
 	if (address) {
 		_dns_rule_put(address);
 	}
 
-	tlog(TLOG_ERROR, "add address %s, %s  failed", domain, domain_address);
+	tlog(TLOG_ERROR, "add address %s, %s at %s:%d failed", domain, domain_address, conf_get_conf_file(),
+		 conf_get_current_lineno());
 	return 0;
 }
 
@@ -2356,20 +2518,20 @@ static radix_node_t *_create_addr_node(char *addr)
 	return node;
 }
 
-static int _config_iplist_rule(char *subnet, enum address_rule rule)
+static struct dns_ip_address_rule *_config_iplist_rule(char *subnet, enum address_rule rule)
 {
 	radix_node_t *node = NULL;
 	struct dns_ip_address_rule *ip_rule = NULL;
 
 	node = _create_addr_node(subnet);
 	if (node == NULL) {
-		return -1;
+		return NULL;
 	}
 
 	if (node->data == NULL) {
 		ip_rule = malloc(sizeof(*ip_rule));
 		if (ip_rule == NULL) {
-			return -1;
+			return NULL;
 		}
 
 		node->data = ip_rule;
@@ -2391,17 +2553,21 @@ static int _config_iplist_rule(char *subnet, enum address_rule rule)
 	case ADDRESS_RULE_IP_IGNORE:
 		ip_rule->ip_ignore = 1;
 		break;
+	case ADDRESS_RULE_IP_ALIAS: {
+		ip_rule->ip_alias = _new_dns_iplist_ip_addresses();
+		ip_rule->ip_alias_enable = 1;
+	} break;
 	default:
-		return -1;
+		return NULL;
 	}
 
-	return 0;
+	return ip_rule;
 }
 
 static int _config_qtype_soa(void *data, int argc, char *argv[])
 {
-	struct dns_qtype_soa_list *soa_list = NULL;
 	int i = 0;
+	int j = 0;
 
 	if (argc <= 1) {
 		return -1;
@@ -2411,19 +2577,31 @@ static int _config_qtype_soa(void *data, int argc, char *argv[])
 		char sub_arg[1024];
 		safe_strncpy(sub_arg, argv[i], sizeof(sub_arg));
 		for (char *tok = strtok(sub_arg, ","); tok; tok = strtok(NULL, ",")) {
-			soa_list = malloc(sizeof(*soa_list));
-			if (soa_list == NULL) {
-				tlog(TLOG_ERROR, "cannot malloc memory");
-				return -1;
+			char *dash = strstr(tok, "-");
+			if (dash != NULL) {
+				*dash = '\0';
 			}
 
-			memset(soa_list, 0, sizeof(*soa_list));
-			soa_list->qtypeid = atol(tok);
-			if (soa_list->qtypeid == DNS_T_AAAA) {
-				dns_conf_force_AAAA_SOA = 1;
+			long start = atol(tok);
+			long end = start;
+
+			if (start > MAX_QTYPE_NUM || start < 0) {
+				tlog(TLOG_ERROR, "invalid qtype %ld", start);
+				continue;
 			}
-			uint32_t key = hash_32_generic(soa_list->qtypeid, 32);
-			hash_add(dns_qtype_soa_table.qtype, &soa_list->node, key);
+
+			if (dash != NULL && *(dash + 1) != '\0') {
+				end = atol(dash + 1);
+				if (end > MAX_QTYPE_NUM) {
+					end = MAX_QTYPE_NUM;
+				}
+			}
+
+			for (j = start; j <= end; j++) {
+				int offset = j / 8;
+				int bit = j % 8;
+				dns_qtype_soa_table[offset] |= (1 << bit);
+			}
 		}
 	}
 
@@ -2432,14 +2610,9 @@ static int _config_qtype_soa(void *data, int argc, char *argv[])
 
 static void _config_qtype_soa_table_destroy(void)
 {
-	struct dns_qtype_soa_list *soa_list = NULL;
-	struct hlist_node *tmp = NULL;
-	unsigned long i = 0;
-
-	hash_for_each_safe(dns_qtype_soa_table.qtype, i, tmp, soa_list, node)
-	{
-		hlist_del_init(&soa_list->node);
-		free(soa_list);
+	if (dns_qtype_soa_table) {
+		free(dns_qtype_soa_table);
+		dns_qtype_soa_table = NULL;
 	}
 }
 
@@ -2470,7 +2643,11 @@ static int _config_blacklist_ip(void *data, int argc, char *argv[])
 		return -1;
 	}
 
-	return _config_iplist_rule(argv[1], ADDRESS_RULE_BLACKLIST);
+	if (_config_iplist_rule(argv[1], ADDRESS_RULE_BLACKLIST) == NULL) {
+		return -1;
+	}
+
+	return 0;
 }
 
 static int _conf_bogus_nxdomain(void *data, int argc, char *argv[])
@@ -2479,7 +2656,11 @@ static int _conf_bogus_nxdomain(void *data, int argc, char *argv[])
 		return -1;
 	}
 
-	return _config_iplist_rule(argv[1], ADDRESS_RULE_BOGUS);
+	if (_config_iplist_rule(argv[1], ADDRESS_RULE_BOGUS) == NULL) {
+		return -1;
+	}
+
+	return 0;
 }
 
 static int _conf_ip_ignore(void *data, int argc, char *argv[])
@@ -2488,7 +2669,11 @@ static int _conf_ip_ignore(void *data, int argc, char *argv[])
 		return -1;
 	}
 
-	return _config_iplist_rule(argv[1], ADDRESS_RULE_IP_IGNORE);
+	if (_config_iplist_rule(argv[1], ADDRESS_RULE_IP_IGNORE) == NULL) {
+		return -1;
+	}
+
+	return 0;
 }
 
 static int _conf_whitelist_ip(void *data, int argc, char *argv[])
@@ -2497,7 +2682,82 @@ static int _conf_whitelist_ip(void *data, int argc, char *argv[])
 		return -1;
 	}
 
-	return _config_iplist_rule(argv[1], ADDRESS_RULE_WHITELIST);
+	if (_config_iplist_rule(argv[1], ADDRESS_RULE_WHITELIST) == NULL) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static int _conf_ip_alias(void *data, int argc, char *argv[])
+{
+	struct dns_ip_address_rule *ip_rule = NULL;
+	struct dns_iplist_ip_addresses *ip_alias = NULL;
+	char *target_ips = NULL;
+
+	if (argc <= 2) {
+		return -1;
+	}
+
+	ip_rule = _config_iplist_rule(argv[1], ADDRESS_RULE_IP_ALIAS);
+	if (ip_rule == NULL) {
+		return -1;
+	}
+
+	ip_alias = ip_rule->ip_alias;
+	if (ip_alias == NULL) {
+		tlog(TLOG_ERROR, "cannot malloc memory");
+		goto errout;
+	}
+
+	target_ips = strdup(argv[2]);
+	if (target_ips == NULL) {
+		goto errout;
+	}
+
+	for (char *tok = strtok(target_ips, ","); tok != NULL; tok = strtok(NULL, ",")) {
+		struct sockaddr_storage addr;
+		socklen_t addr_len = sizeof(addr);
+		unsigned char *paddr = NULL;
+		int ret = 0;
+
+		ret = getaddr_by_host(tok, (struct sockaddr *)&addr, &addr_len);
+		if (ret != 0) {
+			goto errout;
+		}
+
+		switch (addr.ss_family) {
+		case AF_INET: {
+			struct sockaddr_in *addr_in = NULL;
+			addr_in = (struct sockaddr_in *)&addr;
+			paddr = (unsigned char *)&(addr_in->sin_addr.s_addr);
+			_dns_iplist_ip_address_add(ip_alias, paddr, DNS_RR_A_LEN);
+		} break;
+		case AF_INET6: {
+			struct sockaddr_in6 *addr_in6 = NULL;
+			addr_in6 = (struct sockaddr_in6 *)&addr;
+			if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
+				paddr = addr_in6->sin6_addr.s6_addr + 12;
+				_dns_iplist_ip_address_add(ip_alias, paddr, DNS_RR_A_LEN);
+			} else {
+				paddr = addr_in6->sin6_addr.s6_addr;
+				_dns_iplist_ip_address_add(ip_alias, paddr, DNS_RR_AAAA_LEN);
+			}
+		} break;
+		default:
+			goto errout;
+			break;
+		}
+	}
+
+	free(target_ips);
+	return 0;
+errout:
+	if (target_ips) {
+		free(target_ips);
+	}
+
+	return -1;
 }
 
 static int _conf_client_subnet(char *subnet, struct dns_edns_client_subnet *ipv4_ecs,
@@ -2520,9 +2780,6 @@ static int _conf_client_subnet(char *subnet, struct dns_edns_client_subnet *ipv4
 		*slash = 0;
 		slash++;
 		subnet_len = atoi(slash);
-		if (subnet_len < 0 || subnet_len > 128) {
-			return -1;
-		}
 	}
 
 	if (getaddr_by_host(str_subnet, (struct sockaddr *)&addr, &addr_len) != 0) {
@@ -2531,9 +2788,23 @@ static int _conf_client_subnet(char *subnet, struct dns_edns_client_subnet *ipv4
 
 	switch (addr.ss_family) {
 	case AF_INET:
+		if (subnet_len < 0 || subnet_len > 32) {
+			return -1;
+		}
+
+		if (subnet_len == 0) {
+			subnet_len = 32;
+		}
 		ecs = ipv4_ecs;
 		break;
 	case AF_INET6:
+		if (subnet_len < 0 || subnet_len > 128) {
+			return -1;
+		}
+
+		if (subnet_len == 0) {
+			subnet_len = 128;
+		}
 		ecs = ipv6_ecs;
 		break;
 	default:
@@ -2718,6 +2989,18 @@ errout:
 	return -1;
 }
 
+static int _conf_ddns_domain(void *data, int argc, char *argv[])
+{
+	if (argc <= 1) {
+		tlog(TLOG_ERROR, "invalid parameter.");
+		return -1;
+	}
+
+	const char *domain = argv[1];
+	_config_domain_rule_flag_set(domain, DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
+	return 0;
+}
+
 static int _conf_domain_rule_rr_ttl(const char *domain, int ttl, int ttl_min, int ttl_max)
 {
 	struct dns_ttl_rule *rr_ttl = NULL;
@@ -2766,6 +3049,11 @@ static int _conf_domain_rule_no_cache(const char *domain)
 	return _config_domain_rule_flag_set(domain, DOMAIN_FLAG_NO_CACHE, 0);
 }
 
+static int _conf_domain_rule_no_ipalias(const char *domain)
+{
+	return _config_domain_rule_flag_set(domain, DOMAIN_FLAG_NO_IPALIAS, 0);
+}
+
 static int _conf_domain_rules(void *data, int argc, char *argv[])
 {
 	int opt = 0;
@@ -2791,6 +3079,7 @@ static int _conf_domain_rules(void *data, int argc, char *argv[])
 		{"no-serve-expired", no_argument, NULL, 254},
 		{"delete", no_argument, NULL, 255},
 		{"no-cache", no_argument, NULL, 256},
+		{"no-ip-alias", no_argument, NULL, 257},
 		{NULL, no_argument, NULL, 0}
 	};
 	/* clang-format on */
@@ -2941,6 +3230,14 @@ static int _conf_domain_rules(void *data, int argc, char *argv[])
 		case 256: {
 			if (_conf_domain_rule_no_cache(domain) != 0) {
 				tlog(TLOG_ERROR, "set no-cache rule failed.");
+				goto errout;
+			}
+
+			break;
+		}
+		case 257: {
+			if (_conf_domain_rule_no_ipalias(domain) != 0) {
+				tlog(TLOG_ERROR, "set no-ipalias rule failed.");
 				goto errout;
 			}
 
@@ -3216,7 +3513,7 @@ static int _conf_dhcp_lease_dnsmasq_add(const char *file)
 	line_no = 0;
 	while (fgets(line, MAX_LINE_LEN, fp)) {
 		line_no++;
-		filed_num = sscanf(line, "%*s %*s %64s %256s %*s", ip, hostname);
+		filed_num = sscanf(line, "%*s %*s %63s %255s %*s", ip, hostname);
 		if (filed_num <= 0) {
 			continue;
 		}
@@ -3460,17 +3757,21 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("force-qtype-SOA", _config_qtype_soa, NULL),
 	CONF_CUSTOM("blacklist-ip", _config_blacklist_ip, NULL),
 	CONF_CUSTOM("whitelist-ip", _conf_whitelist_ip, NULL),
+	CONF_CUSTOM("ip-alias", _conf_ip_alias, NULL),
 	CONF_CUSTOM("bogus-nxdomain", _conf_bogus_nxdomain, NULL),
 	CONF_CUSTOM("ignore-ip", _conf_ip_ignore, NULL),
 	CONF_CUSTOM("edns-client-subnet", _conf_edns_client_subnet, NULL),
 	CONF_CUSTOM("domain-rules", _conf_domain_rules, NULL),
 	CONF_CUSTOM("domain-set", _conf_domain_set, NULL),
+	CONF_CUSTOM("ddns-domain", _conf_ddns_domain, NULL),
 	CONF_CUSTOM("dnsmasq-lease-file", _conf_dhcp_lease_dnsmasq_file, NULL),
 	CONF_CUSTOM("hosts-file", _conf_hosts_file, NULL),
 	CONF_STRING("ca-file", (char *)&dns_conf_ca_file, DNS_MAX_PATH),
 	CONF_STRING("ca-path", (char *)&dns_conf_ca_path, DNS_MAX_PATH),
 	CONF_STRING("user", (char *)&dns_conf_user, sizeof(dns_conf_user)),
 	CONF_YESNO("debug-save-fail-packet", &dns_save_fail_packet),
+	CONF_YESNO("no-pidfile", &dns_no_pidfile),
+	CONF_YESNO("no-daemon", &dns_no_daemon),
 	CONF_STRING("resolv-file", (char *)&dns_resolv_file, sizeof(dns_resolv_file)),
 	CONF_STRING("debug-save-fail-packet-dir", (char *)&dns_save_fail_packet_dir, sizeof(dns_save_fail_packet_dir)),
 	CONF_CUSTOM("conf-file", config_additional_file, NULL),
@@ -3552,7 +3853,12 @@ static int _dns_server_load_conf_init(void)
 
 	hash_init(dns_ipset_table.ipset);
 	hash_init(dns_nftset_table.nftset);
-	hash_init(dns_qtype_soa_table.qtype);
+	dns_qtype_soa_table = malloc(MAX_QTYPE_NUM / 8 + 1);
+	if (dns_qtype_soa_table == NULL) {
+		tlog(TLOG_WARN, "malloc qtype soa table failed.");
+		return -1;
+	}
+	memset(dns_qtype_soa_table, 0, MAX_QTYPE_NUM / 8 + 1);
 	hash_init(dns_group_table.group);
 	hash_init(dns_hosts_table.hosts);
 	hash_init(dns_ptr_table.ptr);

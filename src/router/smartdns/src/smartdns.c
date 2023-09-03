@@ -20,6 +20,7 @@
 #include "smartdns.h"
 #include "art.h"
 #include "atomic.h"
+#include "dns_cache.h"
 #include "dns_client.h"
 #include "dns_conf.h"
 #include "dns_server.h"
@@ -31,6 +32,7 @@
 #include "util.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <libgen.h>
 #include <linux/capability.h>
 #include <openssl/err.h>
@@ -463,14 +465,21 @@ static int _smartdns_init(void)
 	int ret = 0;
 	const char *logfile = _smartdns_log_path();
 	int i = 0;
+	char logdir[PATH_MAX] = {0};
+	int logbuffersize = 0;
 
-	ret = tlog_init(logfile, dns_conf_log_size, dns_conf_log_num, 0, 0);
+	if (get_system_mem_size() > 1024 * 1024 * 1024) {
+		logbuffersize = 1024 * 1024;
+	}
+
+	ret = tlog_init(logfile, dns_conf_log_size, dns_conf_log_num, logbuffersize, TLOG_NONBLOCK);
 	if (ret != 0) {
 		tlog(TLOG_ERROR, "start tlog failed.\n");
 		goto errout;
 	}
 
-	if (verbose_screen != 0 || dns_conf_log_console != 0) {
+	safe_strncpy(logdir, _smartdns_log_path(), PATH_MAX);
+	if (verbose_screen != 0 || dns_conf_log_console != 0 || access(dir_name(logdir), W_OK) != 0) {
 		tlog_setlogscreen(1);
 	}
 
@@ -753,20 +762,28 @@ static void smartdns_test_notify_func(int fd_notify, uint64_t retval)
 	}
 }
 
-int smartdns_main(int argc, char *argv[], int fd_notify)
+#define smartdns_close_allfds()                                                                                        \
+	if (no_close_allfds == 0) {                                                                                        \
+		close_all_fd(fd_notify);                                                                                       \
+	}
+
+int smartdns_main(int argc, char *argv[], int fd_notify, int no_close_allfds)
 #else
 #define smartdns_test_notify(retval)
+#define smartdns_close_allfds() close_all_fd(-1)
 int main(int argc, char *argv[])
 #endif
 {
 	int ret = 0;
-	int is_foreground = 0;
+	int is_run_as_daemon = 1;
 	int opt = 0;
 	char config_file[MAX_LINE_LEN];
 	char pid_file[MAX_LINE_LEN];
 	int signal_ignore = 0;
 	sigset_t empty_sigblock;
 	struct stat sb;
+
+	static struct option long_options[] = {{"cache-print", required_argument, 0, 256}};
 
 	safe_strncpy(config_file, SMARTDNS_CONF_FILE, MAX_LINE_LEN);
 
@@ -779,17 +796,22 @@ int main(int argc, char *argv[])
 	/* patch for Asus router:  unblock all signal*/
 	sigemptyset(&empty_sigblock);
 	sigprocmask(SIG_SETMASK, &empty_sigblock, NULL);
+	smartdns_close_allfds();
 
-	while ((opt = getopt(argc, argv, "fhc:p:SvxN:")) != -1) {
+	while ((opt = getopt_long(argc, argv, "fhc:p:SvxN:", long_options, 0)) != -1) {
 		switch (opt) {
 		case 'f':
-			is_foreground = 1;
+			is_run_as_daemon = 0;
 			break;
 		case 'c':
-			snprintf(config_file, sizeof(config_file), "%s", optarg);
+			if (full_path(config_file, sizeof(config_file), optarg) != 0) {
+				snprintf(config_file, sizeof(config_file), "%s", optarg);
+			}
 			break;
 		case 'p':
-			snprintf(pid_file, sizeof(pid_file), "%s", optarg);
+			if (strncmp(optarg, "-", 2) == 0 || full_path(pid_file, sizeof(pid_file), optarg) != 0) {
+				snprintf(pid_file, sizeof(pid_file), "%s", optarg);
+			}
 			break;
 		case 'S':
 			signal_ignore = 1;
@@ -808,18 +830,32 @@ int main(int argc, char *argv[])
 		case 'h':
 			_help();
 			return 1;
+		case 256:
+			return dns_cache_print(optarg);
 		}
 	}
 
-	if (dns_server_load_conf(config_file) != 0) {
+	ret = dns_server_load_conf(config_file);
+	if (ret != 0) {
 		fprintf(stderr, "load config failed.\n");
 		goto errout;
 	}
 
-	if (is_foreground == 0) {
-		if (daemon(0, 0) < 0) {
-			fprintf(stderr, "run daemon process failed, %s\n", strerror(errno));
-			return 1;
+	if (dns_no_daemon) {
+		is_run_as_daemon = 0;
+	}
+
+	if (is_run_as_daemon) {
+		int daemon_ret = daemon_run();
+		if (daemon_ret != -2) {
+			char buff[4096];
+			char *log_path = realpath(_smartdns_log_path(), buff);
+
+			if (log_path != NULL && access(log_path, F_OK) == 0 && daemon_ret != -3 && daemon_ret != 0) {
+				fprintf(stderr, "run daemon failed, please check log at %s\n", log_path);
+			}
+
+			return daemon_ret;
 		}
 	}
 
@@ -827,7 +863,8 @@ int main(int argc, char *argv[])
 		_reg_signal();
 	}
 
-	if (strncmp(pid_file, "-", 2) != 0 && create_pid_file(pid_file) != 0) {
+	if (strncmp(pid_file, "-", 2) != 0 && dns_no_pidfile == 0 && create_pid_file(pid_file) != 0) {
+		ret = -3;
 		goto errout;
 	}
 
@@ -835,9 +872,10 @@ int main(int argc, char *argv[])
 	signal(SIGINT, _sig_exit);
 	signal(SIGTERM, _sig_exit);
 
-	if (_smartdns_init_pre() != 0) {
+	ret = _smartdns_init_pre();
+	if (ret != 0) {
 		fprintf(stderr, "init failed.\n");
-		return 1;
+		goto errout;
 	}
 
 	drop_root_privilege();
@@ -848,11 +886,21 @@ int main(int argc, char *argv[])
 		goto errout;
 	}
 
+	if (is_run_as_daemon) {
+		ret = daemon_kickoff(0, dns_conf_log_console | verbose_screen);
+		if (ret != 0) {
+			goto errout;
+		}
+	}
+
 	smartdns_test_notify(1);
 	ret = _smartdns_run();
 	_smartdns_exit();
 	return ret;
 errout:
+	if (is_run_as_daemon) {
+		daemon_kickoff(ret, dns_conf_log_console | verbose_screen);
+	}
 	smartdns_test_notify(2);
 	return 1;
 }
