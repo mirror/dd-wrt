@@ -42,6 +42,8 @@ extern struct task_struct init_task;
 #define	GROUP_AT(gi, i)	((gi)->gid[i])
 #endif
 
+extern zidmap_t *zfs_get_init_idmap(void);
+
 #ifdef HAVE_KUIDGID_T
 
 #define	KUID_TO_SUID(x)		(__kuid_val(x))
@@ -50,7 +52,6 @@ extern struct task_struct init_task;
 #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
 #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
 
-extern zidmap_t *zfs_get_init_idmap(void);
 
 #else /* HAVE_KUIDGID_T */
 
