@@ -1,8 +1,6 @@
-/* Plugin for Hurricate Electric's IPv6 service
+/* Plugin for ipv64.net
  *
- * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
- * Copyright (C) 2006       Steve Horbachuk
- * Copyright (C) 2010-2021  Joachim Wiberg <troglobit@gmail.com>
+ * Copyright (C) 2023 Dennis Schröder <info@ipv64.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,87 +19,101 @@
  * Boston, MA  02110-1301, USA.
  */
 
-#include "md5.h"
 #include "plugin.h"
 
-/* HE tunnelbroker.com specific update request format */
-#define HE_IPV6TB_UPDATE_IP_REQUEST					\
-	"GET %s?"							\
-	"ip=%s&"							\
-	"apikey=%s&"							\
-	"pass=%s&"							\
-	"tid=%s "							\
-	"HTTP/1.0\r\n"							\
-	"Host: %s\r\n"							\
+#define IPV64_UPDATE_IP_REQUEST					\
+	"GET %s?"						\
+	"token=%s&"						\
+	"ip=%s "						\
+	"HTTP/1.0\r\n"					        \
+	"Host: %s\r\n"					        \
+	"Authorization: Basic %s\r\n"				\
 	"User-Agent: %s\r\n\r\n"
-#define MD5_DIGEST_BYTES  16
+
+#define IPV64_UPDATE_IP6_REQUEST				\
+	"GET %s?"						\
+	"token=%s&"		  		  	 	\
+	"ip6=%s "					        \
+	"HTTP/1.0\r\n"					        \
+	"Host: %s\r\n"					        \
+	"Authorization: Basic %s\r\n"				\
+	"User-Agent: %s\r\n\r\n"
+
 
 static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias);
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
 
 static ddns_system_t plugin = {
-	.name         = "ipv6@he.net",
-	.alias        = "ipv6tb@he.net",
+	.name         = "ipv4@ipv64.net",
+	.alias        = "default@ipv64.net",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
 
-	.checkip_name = "checkip.dns.he.net",
-	.checkip_url  = "/",
+	.checkip_name = "ifconfig.me",
+	.checkip_url  = "/ip",
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
 
-	.server_name  = "ipv4.tunnelbroker.net",
-	.server_url   = "/ipv4_end.php"
+	.server_name  = "ipv4.ipv64.net",
+	.server_url   =  "/nic/update"
+};
+
+static ddns_system_t plugin_v6 = {
+	.name         = "ipv6@ipv64.net",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "ifconfig.me",
+	.checkip_url  = "/ip",
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+
+	.server_name  = "ipv6.ipv64.net",
+	.server_url   =  "/nic/update"
 };
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
-	int           i;
-	char          digeststr[MD5_DIGEST_BYTES * 2 + 1];
-	unsigned char digestbuf[MD5_DIGEST_BYTES];
-
-	md5((unsigned char *)info->creds.password, strlen(info->creds.password), digestbuf);
-	for (i = 0; i < MD5_DIGEST_BYTES; i++)
-		sprintf(&digeststr[i * 2], "%02x", digestbuf[i]);
+	if (strstr(info->system->name, "ipv6"))
+		return snprintf(ctx->request_buf, ctx->request_buflen,
+			info->system->server_req,
+			info->server_url,
+			alias->name,
+			alias->address,
+			info->server_name.name,
+			info->creds.encoded_password,
+			info->user_agent);
 
 	return snprintf(ctx->request_buf, ctx->request_buflen,
 			info->system->server_req,
 			info->server_url,
-			alias->address,
-			info->creds.username,
-			digeststr,
 			alias->name,
+			alias->address,
 			info->server_name.name,
+			info->creds.encoded_password,
 			info->user_agent);
 }
 
-/*
- * Hurricate Electric IPv6 tunnelbroker specific response validator
- * Own IP address and 'already in use' are the good answers.
- */
 static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 {
-	char *resp = trans->rsp_body;
-
 	(void)info;
 	(void)alias;
 
 	DO(http_status_valid(trans->status));
 
-	if (strstr(resp, alias->address) ||
-	    strstr(resp, "-ERROR: This tunnel is already associated with this IP address."))
-		return 0;
-
-	return RC_DDNS_RSP_NOTOK;
+	return 0;
 }
 
 PLUGIN_INIT(plugin_init)
 {
-	plugin_register(&plugin, HE_IPV6TB_UPDATE_IP_REQUEST);
+	plugin_register(&plugin, IPV64_UPDATE_IP_REQUEST);
+	plugin_register(&plugin_v6, IPV64_UPDATE_IP6_REQUEST);
 }
 
 PLUGIN_EXIT(plugin_exit)
 {
 	plugin_unregister(&plugin);
+	plugin_unregister(&plugin_v6);
 }
 
 /**

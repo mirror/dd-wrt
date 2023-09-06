@@ -13,6 +13,7 @@ Table of Contents
   * [Supported Providers](#supported-providers)
   * [Configuration](#configuration)
   * [Custom DDNS Providers](#custom-ddns-providers)
+  * [Troubleshooting](#troubleshooting)
   * [Build & Install](#build--install)
   * [Building from GIT](#building-from-git)
   * [Origin & References](#origin--references)
@@ -92,6 +93,11 @@ providers, ordered by the plugin that support them:
   * <https://connect.yandex.ru>
   * <https://www.cloudflare.com>
   * <https://www.goip.de>
+  * <https://www.dnshome.de>
+  * <https://ipv64.net>
+
+For the complete list, see `inadyn -L`, for machine friendly JSON
+output, use `inadyn -L -j`.
 
 DDNS providers not supported natively can be enabled using the custom,
 or generic, DDNS plugin.  E.g. <https://www.namecheap.com>.  See below
@@ -269,10 +275,10 @@ configuration tab.
 > \([0-9a-f:]\+\).*/\1/p' | head -n 1`
 
 Sometimes the default `checkip-server` for a DDNS provider can be slow
-to respond, even time out.  In-a-dyn support overriding the provider's
+to respond, even time out.  In-a-Dyn support overriding the provider's
 default with a custom one, or a custom command.  The easiest way to
 change it is to set `checkip-server = default` in you provider config,
-triggering In-a-dyn to use the default `http://ifconfig.me/ip`, which
+triggering In-a-Dyn to use the default `http://ifconfig.me/ip`, which
 also is the default for any custom DDNS configuration.  See the man
 pages, or the below section, for more information.
 
@@ -396,6 +402,32 @@ need to encode your DNS hostname in the `ddns-path` instead, as is done
 in the last example above.
 
 
+Troubleshooting
+---------------
+
+A common problem is getting started, which is understandable since In-a-Dyn
+has a lot of confusing options.
+
+### Initial Connection
+
+Having saved your `/etc/inadyn.conf`, first try starting it in the
+foreground with full debug logs:
+
+    inadyn -l debug --foreground --force
+
+Any misconfiguration or bad server responses should be a lot easier to
+spot.  Remember to censor your logs from any passwords and domain info
+if you file a bug report or ask a question in the forum/irc!
+
+### Not Updating
+
+Try clearing the cache:
+
+ 1. `sudo systemctl stop inadyn.service`
+ 2. `sudo rm -rf /var/cache/inadyn/*`
+ 3. `sudo systemctl restart inadyn.service`
+
+
 Build & Install
 ---------------
 
@@ -403,7 +435,7 @@ Build & Install
 
 For a long time, the project maintained its own `.deb` packaging and
 basic apt infrastructure.  However, the increasing level of features in
-In-a-dyn, and thus amount of dependencies, as well as the demands for
+In-a-Dyn, and thus amount of dependencies, as well as the demands for
 supporting more architectures and different distributions, the pre-built
 `.deb` support has been discontinued as of v2.9.1.
 
@@ -612,14 +644,13 @@ pull requests for bug fixes and proposed extensions at [GitHub][].
 > little D-Link DIR-645 router so I could get back on the interwebs :-)
 
 [original]:         http://www.inatech.eu/inadyn/
-[DDNS]:             http://en.wikipedia.org/wiki/Dynamic_DNS
+[DDNS]:             https://en.wikipedia.org/wiki/Dynamic_DNS
 [tunnelbroker]:     https://tunnelbroker.net/
-[Christian Eyrich]: http://eyrich-net.org/programmiertes.html
-[Joachim Wiberg]:   http://troglobit.com
+[Joachim Wiberg]:   https://troglobit.com
 [libConfuse]:       https://github.com/martinh/libconfuse
-[LibreSSL]:         http://www.libressl.org/
+[LibreSSL]:         https://www.libressl.org/
 [OpenSSL]:          https://www.openssl.org/
-[GnuTLS]:           http://www.gnutls.org/
+[GnuTLS]:           https://www.gnutls.org/
 [GitHub]:           https://github.com/troglobit/inadyn
 [buildsystem]:      https://airs.com/ian/configure/
 [License]:          https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html

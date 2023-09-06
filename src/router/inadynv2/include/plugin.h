@@ -47,6 +47,7 @@ typedef struct ddns_system {
 	TAILQ_ENTRY(ddns_system) link; /* BSD sys/queue.h linked list node. */
 
 	char          *name;
+	char          *alias;	      /* Previous name, lost in v2.11.0 regression */
 
 	int            cloned;	      /* marks this plugin as a clone */
 
@@ -71,7 +72,7 @@ int            plugin_register_v6 (ddns_system_t *system, const char *req);
 int            plugin_unregister  (ddns_system_t *system);
 
 /* Helper API */
-int            plugin_list (void);
+int            plugin_list (int json);
 int            plugin_show (char *name);
 ddns_system_t *plugin_find (const char *name, int loose);
 
