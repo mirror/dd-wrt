@@ -128,6 +128,7 @@ static int init_ddns(FILE * fp)
 		"default@regfish.de",
 		"default@simply.com",
 		"default@twodns.de",
+		"default@ipv64.net",
 	};
 
 #ifdef HAVE_IPV6
@@ -195,6 +196,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@regfish.de",
 		"ipv6@simply.com",
 		NULL,
+		"ipv6@ipv64.net",
 	};
 #endif
 	int ipv6_only = 0;
