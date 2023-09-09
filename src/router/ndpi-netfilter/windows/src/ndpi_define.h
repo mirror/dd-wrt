@@ -48,6 +48,9 @@
 #endif/* BYTE_ORDER */
 #endif/* __OPENBSD__ */
 
+#ifndef __LITTLE_ENDIAN
+#define __LITTLE_ENDIAN 0
+#endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #ifndef __LITTLE_ENDIAN__

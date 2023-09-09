@@ -4703,7 +4703,7 @@ int ndpi_load_malicious_sha1_file(struct ndpi_detection_module_struct *ndpi_str,
   udp:139@NETBIOS
 
 */
-int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_str, const char* path) {
+NDPI_STATIC int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_str, const char* path) {
 #ifdef __KERNEL__
   return -1;
 #else
@@ -4726,7 +4726,7 @@ int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_str, cons
   return rc;
 }
 
-int ndpi_load_protocols_file2(struct ndpi_detection_module_struct *ndpi_str, FILE *fd) {
+NDPI_STATIC int ndpi_load_protocols_file2(struct ndpi_detection_module_struct *ndpi_str, FILE *fd) {
   char *buffer, *old_buffer;
   int chunk_len = 1024, buffer_len = chunk_len, old_buffer_len;
   int i;

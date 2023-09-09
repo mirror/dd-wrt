@@ -66,7 +66,7 @@
 #endif/* __KERNEL__ */
 
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if defined(__LITTLE_ENDIAN) && __BYTE_ORDER == __LITTLE_ENDIAN
 #ifndef __LITTLE_ENDIAN__
 #define __LITTLE_ENDIAN__
 #endif

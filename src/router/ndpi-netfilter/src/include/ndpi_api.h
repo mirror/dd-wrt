@@ -177,7 +177,7 @@ NDPI_STATIC   u_int16_t ndpi_network_port_ptree_match(struct ndpi_detection_modu
    *
    * @return 0 on success, 1 otherwise
    */
-  int ndpi_init_empty_app_protocol(ndpi_protocol_match const * const hostname_list,
+NDPI_STATIC  int ndpi_init_empty_app_protocol(ndpi_protocol_match const * const hostname_list,
                                    ndpi_protocol_match * const empty_app_protocol);
 
   /**
@@ -188,7 +188,7 @@ NDPI_STATIC   u_int16_t ndpi_network_port_ptree_match(struct ndpi_detection_modu
    *
    * @return 0 on success, 1 otherwise
    */
-  int ndpi_init_app_protocol(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC  int ndpi_init_app_protocol(struct ndpi_detection_module_struct *ndpi_str,
                              ndpi_protocol_match const * const match);
 
   /**
@@ -1153,7 +1153,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC void ndpi_set_tls_cert_expire_days(struct ndpi_detection_module_struct *ndpi_str,
 				     u_int8_t days);
 
-  void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 				   struct ndpi_flow_struct *flow);
 
   /* Utility functions to set ndpi malloc/free/print wrappers */
