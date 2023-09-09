@@ -1149,9 +1149,6 @@ static void init_string_based_protocols(struct ndpi_detection_module_struct *ndp
   }
   ac_automata_finalize((AC_AUTOMATA_t *) ndpi_str->tls_cert_subject_automa.ac_automa);
 
-  for(i = 0; ndpi_protocol_gambling_hostname_list[i].string_to_match != NULL; i++)
-    ndpi_init_protocol_match(ndpi_str, &ndpi_protocol_gambling_hostname_list[i]);
-
   /* ************************ */
 
 #ifndef __KERNEL__
