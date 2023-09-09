@@ -3023,7 +3023,7 @@ char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen) {
 /* ******************************************* */
 
 /* Find the nearest (>=) value of x */
-u_int32_t ndpi_nearest_power_of_two(u_int32_t x) {
+NDPI_STATIC u_int32_t ndpi_nearest_power_of_two(u_int32_t x) {
   x--;
 
   x |= x >> 1;
