@@ -114,8 +114,8 @@ struct payload_stats *pstats = NULL;
 u_int32_t max_num_packets_per_flow      = 10; /* ETTA requires min 10 pkts for record. */
 u_int32_t max_packet_payload_dissection = 128;
 u_int32_t max_num_reported_top_payloads = 25;
-u_int16_t min_pattern_len = 4;
-u_int16_t max_pattern_len = 8;
+u_int16_t min_pattern_len               = 4;
+u_int16_t max_pattern_len               = 8;
 
 /* *********************************************************** */
 
@@ -477,14 +477,14 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
 
   if(module == NULL) {
     LOG(NDPI_LOG_ERROR, "global structure initialization failed\n");
-    exit(-1);
+    return NULL;
   }
 
   workflow = ndpi_calloc(1, sizeof(struct ndpi_workflow));
   if(workflow == NULL) {
     LOG(NDPI_LOG_ERROR, "global structure initialization failed\n");
     ndpi_free(module);
-    exit(-1);
+    return NULL;
   }
 
   workflow->pcap_handle = pcap_handle;
@@ -869,7 +869,7 @@ static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow
   flow.src_ip = iph->saddr, flow.dst_ip = iph->daddr;
   flow.src_port = htons(*sport), flow.dst_port = htons(*dport);
   flow.hashval = hashval = flow.protocol + ntohl(flow.src_ip) + ntohl(flow.dst_ip) 
-	  + ntohs(flow.src_port) + ntohs(flow.dst_port);
+    + ntohs(flow.src_port) + ntohs(flow.dst_port);
 
 #if 0
   {
@@ -1220,6 +1220,26 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     ndpi_snprintf(flow->softether.fqdn, sizeof(flow->softether.fqdn), "%s",
                   flow->ndpi_flow->protos.softether.fqdn);
   }
+  /* SERVICE_LOCATION */
+  else if(is_ndpi_proto(flow, NDPI_PROTOCOL_SERVICE_LOCATION)) {
+    size_t i;
+    
+    flow->info_type = INFO_GENERIC;
+    flow->info[0] = 0;
+    if (flow->ndpi_flow->protos.slp.url_count > 0)
+      strncat(flow->info, "URL(s): ", sizeof(flow->info));
+
+    for (i = 0; i < flow->ndpi_flow->protos.slp.url_count; ++i) {
+      size_t length = strlen(flow->info);
+      
+      strncat(flow->info + length, flow->ndpi_flow->protos.slp.url[i],
+              sizeof(flow->info) - length);
+      length = strlen(flow->info);
+
+      if (i < (size_t)flow->ndpi_flow->protos.slp.url_count - 1)
+        strncat(flow->info + length, ", ", sizeof(flow->info) - length);
+    }
+  }
   /* NATPMP */
   else if(is_ndpi_proto(flow, NDPI_PROTOCOL_NATPMP)) {
     flow->info_type = INFO_NATPMP;
@@ -1250,6 +1270,8 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
       /* For consistency across platforms replace :0: with :: */
       ndpi_patchIPv6Address(flow->info);
     }
+    if(flow->ndpi_flow->protos.dns.geolocation_iata_code[0] != '\0')
+      strcpy(flow->dns.geolocation_iata_code, flow->ndpi_flow->protos.dns.geolocation_iata_code);
   }
   /* MDNS */
   else if(is_ndpi_proto(flow, NDPI_PROTOCOL_MDNS)) {
@@ -1361,6 +1383,8 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
       flow->ssh_tls.encrypted_sni.cipher_suite = flow->ndpi_flow->protos.tls_quic.encrypted_sni.cipher_suite;
     }
 
+    flow->ssh_tls.encrypted_ch.version = flow->ndpi_flow->protos.tls_quic.encrypted_ch.version;
+
     if(flow->ndpi_flow->protos.tls_quic.tls_supported_versions) {
       if((flow->ssh_tls.tls_supported_versions = ndpi_strdup(flow->ndpi_flow->protos.tls_quic.tls_supported_versions)) != NULL)
 	correct_csv_data_field(flow->ssh_tls.tls_supported_versions);
@@ -1404,6 +1428,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     ndpi_snprintf(flow->http.server, sizeof(flow->http.server), "%s", flow->ndpi_flow->http.server ? flow->ndpi_flow->http.server : "");
     ndpi_snprintf(flow->http.request_content_type, sizeof(flow->http.request_content_type), "%s", flow->ndpi_flow->http.request_content_type ? flow->ndpi_flow->http.request_content_type : "");
     ndpi_snprintf(flow->http.nat_ip, sizeof(flow->http.nat_ip), "%s", flow->ndpi_flow->http.nat_ip ? flow->ndpi_flow->http.nat_ip : "");
+    ndpi_snprintf(flow->http.filename, sizeof(flow->http.filename), "%s", flow->ndpi_flow->http.filename ? flow->ndpi_flow->http.filename : "");
   }
 
   ndpi_snprintf(flow->http.user_agent,

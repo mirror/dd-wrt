@@ -368,13 +368,16 @@ typedef enum {
 
   NDPI_PROTOCOL_FACEBOOK_REEL_STORY   = 337,
   NDPI_PROTOCOL_SRTP                  = 338,
-  NDPI_PROTOCOL_GAMBLING              = 339,
+  NDPI_PROTOCOL_FREE                  = 339, /* Formerly used by gambling now a category. It can be reused in the future */
   NDPI_PROTOCOL_EPICGAMES             = 340,
   NDPI_PROTOCOL_GEFORCENOW            = 341,
   NDPI_PROTOCOL_NVIDIA                = 342,
   NDPI_PROTOCOL_BITCOIN               = 343, 
   NDPI_PROTOCOL_PROTONVPN             = 344,
   NDPI_PROTOCOL_APACHE_THRIFT         = 345,
+  NDPI_PROTOCOL_ROBLOX                = 346,
+  NDPI_PROTOCOL_SERVICE_LOCATION      = 347,
+  NDPI_PROTOCOL_MULLVAD               = 348,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"

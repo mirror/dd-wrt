@@ -13,6 +13,7 @@ foreach my $f (glob('inc_generated/*.c.inc')) {
 	next if $f eq 'inc_generated/ndpi_icloud_private_relay_match.c.inc';
 	next if $f eq 'inc_generated/ndpi_crawlers_match.c.inc';
 	next if $f eq 'inc_generated/ndpi_gambling_match.c.inc';
+	next if $f eq 'inc_generated/ndpi_protonvpn_out_match.c.inc';
 	match_inc($f,"ndpi_protocol_.*_protocol_list");
 }
 
@@ -40,6 +41,7 @@ my ($ev1, $ev2) = (0,0);
 print STDERR "Start $fn $listname\n";
 die "open $fn: ".$! if !open(F,'<'.$fn);
 die "create ${fn}.new: ".$! if !open(R,'>'.$fn.'.new');
+my $ipln = 0;
 while(<F>) {
 	chomp();
 
@@ -51,6 +53,7 @@ while(<F>) {
 			print R "#if 0\n";
 			print R "$_\n";
 			$st = 1;
+			$ipln = 0;
 			next;
 		}
 		print R "$_\n";
@@ -74,6 +77,7 @@ while(<F>) {
 		}
 		if(/^\s*\{/) { # No comments. Start network address
 			if(add_net(\$cmmnt,$_)) {
+				$ipln++;
 				$st = 3;
 				next;
 			}
@@ -112,7 +116,7 @@ while(<F>) {
 		if(/\};/) {
 			$st = 4;
 			$ev2++;
-			print STDERR "list end\n";
+			print STDERR "list end $ipln\n";
 #			print R "$_\n";
 			print R "#endif\n";
 			next;

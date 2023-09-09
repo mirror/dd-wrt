@@ -381,3 +381,5 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/epicgames.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/slp.c"
+#undef NDPI_CURRENT_PROTO

@@ -38,6 +38,8 @@
 #include "ndpi_patricia_typedefs.h"
 
 #ifndef __KERNEL__
+// #define USE_LEGACY_AHO_CORASICK
+
 #ifndef NDPI_CFFI_PREPROCESSING
 #ifndef u_char
 typedef unsigned char u_char;
@@ -153,7 +155,8 @@ typedef enum {
   NDPI_HTTP_OBSOLETE_SERVER,
   NDPI_PERIODIC_FLOW,          /* Set in case a flow repeats at a specific pace [used by apps on top of nDPI] */
   NDPI_MINOR_ISSUES,           /* Generic packet issues (e.g. DNS with 0 TTL) */
-  NDPI_TCP_ISSUES,             /* TCP issues such as connection failed, probing or scan */
+  NDPI_TCP_ISSUES,             /* 50 */ /* TCP issues such as connection failed, probing or scan */
+  NDPI_FULLY_ENCRYPTED,        /* This (unknown) session is fully encrypted */
 
   /* Leave this as last member */
   NDPI_MAX_RISK /* must be <= 63 due to (**) */
@@ -930,6 +933,9 @@ struct ndpi_flow_udp_struct {
   u_int32_t epicgames_stage:1;
   u_int32_t epicgames_word;
 
+  /* NDPI_PROTOCOL_RAKNET */
+  u_int32_t raknet_custom:1;
+
   /* NDPI_PROTOCOL_SKYPE */
   u_int8_t skype_crc[4];
 
@@ -1192,6 +1198,9 @@ typedef enum {
     Crypto Currency e.g Bitcoin, Litecoin, Etherum ..et.
   */
   NDPI_PROTOCOL_CATEGORY_CRYPTO_CURRENCY = 106,
+
+  /* Gambling websites */
+  NDPI_PROTOCOL_CATEGORY_GAMBLING = 107,
   
   /*
     IMPORTANT
@@ -1268,6 +1277,8 @@ typedef struct ndpi_proto {
 
 #define NUM_CUSTOM_CATEGORIES      5
 #define CUSTOM_CATEGORY_LABEL_LEN 32
+
+typedef void ndpi_domain_classify;
 
 #ifdef NDPI_LIB_COMPILATION
 
@@ -1365,7 +1376,11 @@ struct ndpi_detection_module_struct {
   /* *** If you add a new Patricia tree, please update ptree_type above! *** */
 
   struct {
+#ifdef USE_LEGACY_AHO_CORASICK
     ndpi_automa hostnames, hostnames_shadow;
+#else
+    ndpi_domain_classify *sc_hostnames, *sc_hostnames_shadow;
+#endif
     void *ipAddresses, *ipAddresses_shadow; /* Patricia */
     u_int8_t categories_loaded;
   } custom_categories;
@@ -1439,6 +1454,7 @@ struct ndpi_detection_module_struct {
   u_int32_t aggressiveness_ookla;
 
   int tcp_ack_paylod_heuristic;
+  int fully_encrypted_based_on_first_pkt_heuristic;
 
   u_int16_t ndpi_to_user_proto_id[NDPI_MAX_NUM_CUSTOM_PROTOCOLS]; /* custom protocolId mapping */
   ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
@@ -1502,8 +1518,9 @@ struct ndpi_flow_struct {
 
   /* init parameter, internal used to set up timestamp,... */
   u_int16_t guessed_protocol_id, guessed_protocol_id_by_ip, guessed_category, guessed_header_category;
-  u_int8_t l4_proto, protocol_id_already_guessed:1, fail_with_unknown:1,
-    init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, ip_port_finished:1, _pad1: 1;
+  u_int8_t l4_proto, protocol_id_already_guessed:1, fail_with_unknown:1, ip_port_finished:1,
+    init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1;
+
   u_int16_t num_dissector_calls;
   ndpi_confidence_t confidence; /* ndpi_confidence_t */
 
@@ -1561,7 +1578,7 @@ struct ndpi_flow_struct {
   u_int8_t initial_binary_bytes[8], initial_binary_bytes_len;
   u_int8_t risk_checked:1, ip_risk_mask_evaluated:1, host_risk_mask_evaluated:1, tree_risk_checked:1, _notused:4;
   ndpi_risk risk_mask; /* Stores the flow risk mask for flow peers */
-  ndpi_risk risk; /* Issues found with this flow [bitmask of ndpi_risk] */
+  ndpi_risk risk, risk_shadow; /* Issues found with this flow [bitmask of ndpi_risk] */
   struct ndpi_risk_information risk_infos[MAX_NUM_RISK_INFOS]; /* String that contains information about the risks found */
   u_int8_t num_risk_infos;
   
@@ -1579,6 +1596,7 @@ struct ndpi_flow_struct {
     char *url, *content_type /* response */, *request_content_type /* e.g. for POST */, *user_agent, *server;
     char *detected_os; /* Via HTTP/QUIC User-Agent */
     char *nat_ip; /* Via HTTP X-Forwarded-For */
+    char *filename; /* Via HTTP Content-Disposition */
   } http;
 
   ndpi_multimedia_flow_type flow_multimedia_type;
@@ -1608,6 +1626,7 @@ struct ndpi_flow_struct {
       u_int8_t num_queries, num_answers, reply_code, is_query;
       u_int16_t query_type, query_class, rsp_type, edns0_udp_payload_size;
       ndpi_ip_addr_t rsp_addr; /* The first address in a DNS response packet (A and AAAA) */
+      char geolocation_iata_code[4];
       char ptr_domain_name[64 /* large enough but smaller than { } tls */];
     } dns;
 
@@ -1649,6 +1668,11 @@ struct ndpi_flow_struct {
         u_int16_t cipher_suite;
         char *esni;
       } encrypted_sni;
+
+      struct {
+        u_int16_t version;
+      } encrypted_ch;
+
       ndpi_cipher_weakness server_unsafe_cipher;
     } tls_quic; /* Used also by DTLS and POPS/IMAPS/SMTPS/FTPS */
 
@@ -1724,6 +1748,11 @@ struct ndpi_flow_struct {
       u_int8_t message_type;
       char method[64];
     } thrift;
+
+    struct {
+      u_int8_t url_count;
+      char url[4][48];
+    } slp;
   } protos;
 
   /*** ALL protocol specific 64 bit variables here ***/
@@ -1810,8 +1839,8 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 210,
                "Size of the struct member protocols increased to more than 210 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 952,
-               "Size of the flow struct increased to more than 952 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 988,
+               "Size of the flow struct increased to more than 988 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
@@ -1876,6 +1905,13 @@ typedef enum {
     ndpi_enable_tcp_ack_payload_heuristic = (1 << 17),
     ndpi_dont_load_crawlers_list = (1 << 18),
     ndpi_dont_load_protonvpn_list = (1 << 19),
+    /* Heuristic to detect fully encrypted sessions, i.e. flows where every bytes of
+       the payload is encrypted in an attempt to “look like nothing”.
+       This heuristic only analyzes the first packet of the flow.
+       See: https://www.usenix.org/system/files/sec23fall-prepub-234-wu-mingshi.pdf */
+    ndpi_disable_fully_encrypted_heuristic = (1 << 20),
+    ndpi_dont_load_protonvpn_exit_nodes_list = (1 << 21),
+    ndpi_dont_load_mullvad_list = (1 << 22),
   } ndpi_prefs;
 
 typedef struct {
@@ -1888,7 +1924,8 @@ typedef enum {
   ndpi_serialization_format_unknown = 0,
   ndpi_serialization_format_tlv,
   ndpi_serialization_format_json,
-  ndpi_serialization_format_csv
+  ndpi_serialization_format_csv,
+  ndpi_serialization_format_multiline_json
 } ndpi_serialization_format;
 
 /* Note:
@@ -1953,6 +1990,7 @@ typedef struct {
   ndpi_serialization_format fmt;
   char csv_separator[2];
   u_int8_t has_snapshot;
+  u_int8_t multiline_json_array;
   ndpi_private_serializer_status snapshot;
 } ndpi_private_serializer;
 
@@ -2025,6 +2063,17 @@ struct ndpi_hll {
   u_int8_t bits;
   size_t size;
   u_int8_t *registers;
+};
+
+struct ndpi_cm_sketch {
+  u_int16_t num_hashes;       /* depth: Number of hash tables   */
+  u_int32_t num_hash_buckets; /* Number pf nuckets of each hash */
+  u_int32_t *tables;
+};
+
+struct ndpi_popcount {
+  u_int64_t pop_count;       /* Number of bits set to 1 found so far */
+  u_int64_t tot_bytes_count; /* Total number of bytes processed so far */
 };
 
 /* **************************************** */
@@ -2113,6 +2162,14 @@ typedef int (*ndpi_custom_dga_predict_fctn)(const char* domain, int domain_lengt
 
 typedef void ndpi_bitmap;
 typedef void ndpi_bitmap_iterator;
+typedef void ndpi_filter;
+
+typedef struct {
+  ndpi_filter *filter[2 /* direct and reverse */];
+} ndpi_string_search;
+
+
+#define MAX_NUM_NDPI_DOMAIN_CLASSIFICATIONS  16
 
 /* **************************************** */
 

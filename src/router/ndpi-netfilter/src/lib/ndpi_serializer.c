@@ -183,8 +183,12 @@ void ndpi_reset_serializer(ndpi_serializer *_serializer) {
     serializer->status.buffer.size_used = 0;
     buff_diff = serializer->buffer.size - serializer->status.buffer.size_used;
 
-    /* Note: please keep a space at the beginning as it is used for arrays when an end-of-record is used */
-    serializer->status.buffer.size_used += ndpi_snprintf((char *) &serializer->buffer.data[serializer->status.buffer.size_used], buff_diff, " {}");
+    if (serializer->multiline_json_array) {
+      serializer->status.buffer.size_used += ndpi_snprintf((char *) &serializer->buffer.data[serializer->status.buffer.size_used], buff_diff, "{}");
+    } else {
+      /* Note: please keep a space at the beginning as it is used for arrays when an end-of-record is used */
+      serializer->status.buffer.size_used += ndpi_snprintf((char *) &serializer->buffer.data[serializer->status.buffer.size_used], buff_diff, " {}");
+    }
   } else if(serializer->fmt == ndpi_serialization_format_csv) {
     serializer->status.header.size_used = 0;
     serializer->status.buffer.size_used = 0;
@@ -220,6 +224,11 @@ NDPI_STATIC int ndpi_init_serializer_ll(ndpi_serializer *_serializer,
   ndpi_private_serializer *serializer = (ndpi_private_serializer*)_serializer;
 
   memset(serializer, 0, sizeof(ndpi_private_serializer));
+
+  if (fmt == ndpi_serialization_format_multiline_json) {
+    fmt = ndpi_serialization_format_json;
+    serializer->multiline_json_array = 1;
+  }
 
   serializer->fmt = fmt;
 
@@ -620,10 +629,18 @@ NDPI_STATIC int ndpi_serialize_raw_record(ndpi_serializer *_serializer,
   if(serializer->fmt == ndpi_serialization_format_json) {
     needed += 1;
 
-    if(serializer->status.buffer.size_used == 3) /* Empty buffer [{} */
-      serializer->status.buffer.size_used = 2; /* Remove {} */
-    else
-      needed += 2, add_comma = 1;
+    if (serializer->multiline_json_array) {
+      if(serializer->status.buffer.size_used == 2) /* Empty buffer {} */
+        serializer->status.buffer.size_used = 0; /* Remove {} */
+      else
+        needed += 2;
+
+    } else {
+      if(serializer->status.buffer.size_used == 3) /* Empty buffer [{} */
+        serializer->status.buffer.size_used = 2; /* Remove {} */
+      else
+        needed += 2, add_comma = 1;
+    }
   }
 
   if(buff_diff < needed) {
@@ -634,18 +651,22 @@ NDPI_STATIC int ndpi_serialize_raw_record(ndpi_serializer *_serializer,
   }
 
   if(serializer->fmt == ndpi_serialization_format_json) {
-    if(add_comma)
-      serializer->buffer.data[serializer->status.buffer.size_used-1] = ',';
-    else
-      serializer->status.buffer.size_used--;
+    if (!serializer->multiline_json_array) {
+      if (add_comma)
+        serializer->buffer.data[serializer->status.buffer.size_used-1] = ',';
+      else
+        serializer->status.buffer.size_used--;
+    }
   }
 
   memcpy(&serializer->buffer.data[serializer->status.buffer.size_used], record, record_len);
   serializer->status.buffer.size_used += record_len;
 
   if(serializer->fmt == ndpi_serialization_format_json) {
-    serializer->buffer.data[serializer->status.buffer.size_used] = ']';
-    if(add_comma) serializer->status.buffer.size_used++;
+    if (!serializer->multiline_json_array) {
+      serializer->buffer.data[serializer->status.buffer.size_used] = ']';
+      if(add_comma) serializer->status.buffer.size_used++;
+    }
   }
 
   ndpi_serialize_end_of_record(_serializer);
@@ -671,20 +692,26 @@ NDPI_STATIC int ndpi_serialize_end_of_record(ndpi_serializer *_serializer) {
   }
 
   if(serializer->fmt == ndpi_serialization_format_csv) {
-    serializer->buffer.data[serializer->status.buffer.size_used] = '\n';
-    serializer->status.buffer.size_used += 1;
+    serializer->buffer.data[serializer->status.buffer.size_used++] = '\n';
     serializer->buffer.data[serializer->status.buffer.size_used] = '\0';
     serializer->status.flags |= NDPI_SERIALIZER_STATUS_HDR_DONE;
     serializer->status.flags |= NDPI_SERIALIZER_STATUS_EOR;
-  } else if(serializer->fmt == ndpi_serialization_format_json) {
-    if(!(serializer->status.flags & NDPI_SERIALIZER_STATUS_ARRAY)) {
-      serializer->buffer.data[0] = '[';
-      serializer->status.buffer.size_used += ndpi_snprintf((char *) &serializer->buffer.data[serializer->status.buffer.size_used],
-					       buff_diff, "]");
-    }
 
+  } else if(serializer->fmt == ndpi_serialization_format_json) {
+
+    if(serializer->multiline_json_array) {
+      serializer->buffer.data[serializer->status.buffer.size_used++] = '\n';
+      serializer->buffer.data[serializer->status.buffer.size_used] = '\0';
+
+    } else {
+      if(!(serializer->status.flags & NDPI_SERIALIZER_STATUS_ARRAY)) {
+        serializer->buffer.data[0] = '[';
+        serializer->status.buffer.size_used += ndpi_snprintf((char *) &serializer->buffer.data[serializer->status.buffer.size_used], buff_diff, "]");
+      }
+    }
     serializer->status.flags |= NDPI_SERIALIZER_STATUS_ARRAY | NDPI_SERIALIZER_STATUS_EOR;
     serializer->status.flags &= ~NDPI_SERIALIZER_STATUS_COMMA;
+
   } else /* ndpi_serialization_format_tlv */ {
     serializer->buffer.data[serializer->status.buffer.size_used++] = ndpi_serialization_end_of_record;
   }
@@ -715,18 +742,26 @@ static inline void ndpi_serialize_json_pre(ndpi_serializer *_serializer) {
   ndpi_private_serializer *serializer = (ndpi_private_serializer*)_serializer;
 
   if(serializer->status.flags & NDPI_SERIALIZER_STATUS_EOR) {
-    serializer->status.buffer.size_used--; /* Remove ']' */
     serializer->status.flags &= ~NDPI_SERIALIZER_STATUS_EOR;
-    serializer->buffer.data[serializer->status.buffer.size_used++] = ',';
-    serializer->buffer.data[serializer->status.buffer.size_used++] = '{';
-  } else {
-    if(serializer->status.flags & NDPI_SERIALIZER_STATUS_ARRAY)
+    if(serializer->multiline_json_array) {
+      serializer->buffer.data[serializer->status.buffer.size_used++] = '\n';
+    } else {
       serializer->status.buffer.size_used--; /* Remove ']' */
+      serializer->buffer.data[serializer->status.buffer.size_used++] = ',';
+    }
+    serializer->buffer.data[serializer->status.buffer.size_used++] = '{';
+
+  } else {
+    if(!serializer->multiline_json_array) {
+      if(serializer->status.flags & NDPI_SERIALIZER_STATUS_ARRAY)
+        serializer->status.buffer.size_used--; /* Remove ']' */
+    }
 
     serializer->status.buffer.size_used--; /* Remove '}' */
 
     if(serializer->status.flags & NDPI_SERIALIZER_STATUS_LIST) {
-      serializer->status.buffer.size_used--; /* Remove ']' */
+      if(!serializer->multiline_json_array)
+        serializer->status.buffer.size_used--; /* Remove ']' */
       if(serializer->status.flags & NDPI_SERIALIZER_STATUS_SOL)
         serializer->status.flags &= ~NDPI_SERIALIZER_STATUS_SOL;
       else
@@ -745,20 +780,24 @@ static inline void ndpi_serialize_json_pre(ndpi_serializer *_serializer) {
 static inline int ndpi_serialize_json_post(ndpi_serializer *_serializer) {
   ndpi_private_serializer *serializer = (ndpi_private_serializer*)_serializer;
 
-  if(serializer->status.flags & NDPI_SERIALIZER_STATUS_LIST) {
-    if(serializer->status.buffer.size_used >= serializer->buffer.size)
-      return -1;
-    serializer->buffer.data[serializer->status.buffer.size_used++] = ']';
+  if (!serializer->multiline_json_array) {
+    if(serializer->status.flags & NDPI_SERIALIZER_STATUS_LIST) {
+      if(serializer->status.buffer.size_used >= serializer->buffer.size)
+        return -1;
+      serializer->buffer.data[serializer->status.buffer.size_used++] = ']';
+    }
   }
 
   if(serializer->status.buffer.size_used >= serializer->buffer.size)
     return -1;
   serializer->buffer.data[serializer->status.buffer.size_used++] = '}';
 
-  if(serializer->status.flags & NDPI_SERIALIZER_STATUS_ARRAY) {
-    if(serializer->status.buffer.size_used >= serializer->buffer.size)
-      return -1;
-    serializer->buffer.data[serializer->status.buffer.size_used++] = ']';
+  if (!serializer->multiline_json_array) {
+    if(serializer->status.flags & NDPI_SERIALIZER_STATUS_ARRAY) {
+      if(serializer->status.buffer.size_used >= serializer->buffer.size)
+        return -1;
+      serializer->buffer.data[serializer->status.buffer.size_used++] = ']';
+    }
   }
 
   serializer->status.flags |= NDPI_SERIALIZER_STATUS_COMMA;
@@ -2397,9 +2436,11 @@ NDPI_STATIC void ndpi_serializer_rollback_snapshot(ndpi_serializer *_serializer)
 
     if(serializer->fmt == ndpi_serialization_format_json) {
       if(serializer->status.flags & NDPI_SERIALIZER_STATUS_ARRAY) {
-        serializer->buffer.data[serializer->status.buffer.size_used-1] = ']';
+        if (!serializer->multiline_json_array)
+          serializer->buffer.data[serializer->status.buffer.size_used-1] = ']';
       } else {
-        serializer->buffer.data[0] = ' ';
+        if (!serializer->multiline_json_array)
+          serializer->buffer.data[0] = ' ';
         serializer->buffer.data[serializer->status.buffer.size_used-1] = '}';
       }
     }

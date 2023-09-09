@@ -202,10 +202,10 @@ NDPI_STATIC void ndpi_int_stun_add_connection(struct ndpi_detection_module_struc
 
 	c_address = ntohl(flow->c_address.v4);
 	s_address = ntohl(flow->s_address.v4);
-        if((c_address & 0xFFFFFFF0) == 0x4a7dfa00 || /* 74.125.250.0/24 */
-           (c_address & 0xFFFFFFF0) == 0x8efa5200 || /* 142.250.82.0/24 */
-           (s_address & 0xFFFFFFF0) == 0x4a7dfa00 ||
-           (s_address & 0xFFFFFFF0) == 0x8efa5200) {
+	if((c_address & 0xFFFFFF00) == 0x4a7dfa00 || /* 74.125.250.0/24 */
+           (c_address & 0xFFFFFF00) == 0x8efa5200 || /* 142.250.82.0/24 */
+           (s_address & 0xFFFFFF00) == 0x4a7dfa00 ||
+           (s_address & 0xFFFFFF00) == 0x8efa5200) {
           app_proto = NDPI_PROTOCOL_HANGOUT_DUO;
 	}
       }
