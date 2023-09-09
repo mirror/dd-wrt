@@ -406,6 +406,9 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"bitcoin",
 	"protonvpn",
 	"apache_thrift",
+	"roblox",
+	"service-location",
+	"mullvad",
 	NULL,
 };
 
