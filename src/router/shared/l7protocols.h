@@ -203,7 +203,7 @@ l7filters filters_list[] = {
 	{ "genshinimpact", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
-	{ "gambling", NDPI_ONLY, 0, NULL },
+//	{ "gambling", NDPI_ONLY, 0, NULL },
 	{ "geforcenow", NDPI_ONLY, 0, NULL },
 #endif
 	{ "gif", L7_ONLY, 0, NULL },
@@ -379,6 +379,7 @@ l7filters filters_list[] = {
 	{ "mohaa", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "mongodb", NDPI_ONLY, 0, NULL },
+	{ "mullvad", NDPI_ONLY, 0, NULL },
 	{ "munin", NDPI_ONLY, 0, NULL },
 #endif
 	{ "mp3", L7_ONLY, 0, NULL },
@@ -521,6 +522,7 @@ l7filters filters_list[] = {
 #endif
 	{ "rlogin", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "roblox", NDPI_ONLY, 0, NULL },
 	{ "rpc", NDPI_ONLY, 0, NULL },
 #endif
 	{ "rpm", L7_ONLY, 0, NULL },
@@ -541,6 +543,7 @@ l7filters filters_list[] = {
 	{ "sap", NDPI_ONLY, 0, NULL },
 	{ "sctp", NDPI_ONLY, 0, NULL },
 	{ "sd-rtn", NDPI_ONLY, 0, NULL },
+	{ "service-location", NDPI_ONLY, 0, NULL },
 	{ "sflow", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
