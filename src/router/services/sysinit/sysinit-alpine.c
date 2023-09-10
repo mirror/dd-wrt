@@ -309,6 +309,7 @@ void start_postnetwork(void)
 
 int check_cfe_nv(void)
 {
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 
