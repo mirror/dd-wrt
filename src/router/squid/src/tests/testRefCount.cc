@@ -19,7 +19,7 @@ class _ToRefCount : public RefCountable
 {
 public:
     _ToRefCount () {++Instances;}
-    ~_ToRefCount() {--Instances;}
+    ~_ToRefCount() override {--Instances;}
 
     int someMethod() {
         if (!Instances)
@@ -55,7 +55,7 @@ testRefCount::testCountability()
         ToRefCount anObject(new _ToRefCount);
         CPPUNIT_ASSERT_EQUAL(1, _ToRefCount::Instances);
         CPPUNIT_ASSERT_EQUAL(1, anObject->someMethod());
-        anObject = anObject;
+        anObject = *&anObject;  // test self-assign without -Wself-assign-overloaded warnings
         CPPUNIT_ASSERT_EQUAL(1, _ToRefCount::Instances);
         ToRefCount objectTwo (anObject);
         anObject = objectTwo;

@@ -10,3 +10,12 @@
 
 #include "squid.h"
 
+#define STUB_API "acl/"
+#include "tests/STUB.h"
+
+#include "acl/Acl.h"
+const char *AclMatchedName = nullptr;
+
+#include "acl/Gadgets.h"
+size_t aclParseAclList(ConfigParser &, Acl::Tree **, const char *) STUB_RETVAL(0)
+

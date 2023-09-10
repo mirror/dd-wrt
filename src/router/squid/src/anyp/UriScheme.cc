@@ -48,7 +48,7 @@ AnyP::UriScheme::Init()
     }
 }
 
-const AnyP::ProtocolType
+AnyP::ProtocolType
 AnyP::UriScheme::FindProtocolType(const SBuf &scheme)
 {
     if (scheme.isEmpty())
@@ -86,9 +86,6 @@ AnyP::UriScheme::defaultPort() const
         // coaps:// default is TBA as of draft-ietf-core-coap-08.
         // Assuming IANA policy of allocating same port for base and TLS protocol versions will occur.
         return 5683;
-
-    case AnyP::PROTO_GOPHER:
-        return 70;
 
     case AnyP::PROTO_WAIS:
         return 210;

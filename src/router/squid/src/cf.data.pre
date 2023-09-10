@@ -16,8 +16,8 @@ COMMENT_START
 	You may wish to look at the Squid home page and wiki for the
 	FAQ and other documentation:
 		http://www.squid-cache.org/
-		http://wiki.squid-cache.org/SquidFaq
-		http://wiki.squid-cache.org/ConfigExamples
+		https://wiki.squid-cache.org/SquidFaq
+		https://wiki.squid-cache.org/ConfigExamples
 
 	This documentation shows what the defaults for various directives
 	happen to be.  If you don't need to change the default, you should
@@ -179,6 +179,38 @@ NAME: refresh_stale_hit
 TYPE: obsolete
 DOC_START
 	This option is not yet supported by Squid-3.
+DOC_END
+
+# Options removed in 6.x
+NAME: announce_file
+TYPE: obsolete
+DOC_START
+	Remove this line. Squid no longer supports this feature.
+DOC_END
+
+NAME: announce_host
+TYPE: obsolete
+DOC_START
+	Remove this line. Squid no longer supports this feature.
+DOC_END
+
+NAME: announce_period
+TYPE: obsolete
+DOC_START
+	Remove this line. Squid no longer supports this feature.
+DOC_END
+
+NAME: announce_port
+TYPE: obsolete
+DOC_START
+	Remove this line. Squid no longer supports this feature.
+DOC_END
+
+NAME: request_entities
+TYPE: obsolete
+DOC_START
+	Remove this line. Squid now accepts HTTP/1.1 requests with bodies.
+	To simplify UI and code, Squid rejects certain HTTP/1.0 requests with bodies.
 DOC_END
 
 # Options removed in 5.x
@@ -580,7 +612,7 @@ DOC_START
 		By default, each authentication scheme is not used unless a
 		program is specified.
 
-		See http://wiki.squid-cache.org/Features/AddonHelpers for
+		See https://wiki.squid-cache.org/Features/AddonHelpers for
 		more details on helper operations and creating your own.
 
 	"key_extras" format
@@ -596,7 +628,7 @@ DOC_START
 
 		The expanded key_extras value is added to the Squid credentials
 		cache and, hence, will affect authentication. It can be used to
-		autenticate different users with identical user names (e.g.,
+		authenticate different users with identical user names (e.g.,
 		when user authentication depends on http_port).
 
 		Avoid adding frequently changing information to key_extras. For
@@ -930,7 +962,7 @@ DOC_START
 			(e.g., with %#DATA, spaces between arguments become
 			%20).
 
-	If SSL is enabled, the following formating codes become available:
+	If SSL is enabled, the following formatting codes become available:
 
 	  %USER_CERT		SSL User certificate in PEM format
 	  %USER_CERTCHAIN	SSL User certificate chain in PEM format
@@ -1086,7 +1118,7 @@ DOC_START
 	to access some external data source.
 	Those which do are marked with the tag [slow], those which
 	don't are marked as [fast].
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl
 	for further information
 
 	***** ACL TYPES AVAILABLE *****
@@ -1188,7 +1220,7 @@ endif
 	  # regex matching on URL path [fast]
 
 	acl aclname port 80 70 21 0-1024...   # destination TCP port [fast]
-	                                      # ranges are alloed
+	                                      # ranges are allowed
 	acl aclname localport 3128 ...	      # TCP port the client connected to [fast]
 	                                      # NP: for interception mode this is usually '80'
 
@@ -1222,7 +1254,7 @@ endif
 	  # use REQUIRED to accept any valid username.
 	  #
 	  # Will use proxy authentication in forward-proxy scenarios, and plain
-	  # http authenticaiton in reverse-proxy scenarios
+	  # http authentication in reverse-proxy scenarios
 	  #
 	  # NOTE: when a Proxy-Authentication header is sent but it is not
 	  # needed during ACL checking the username is NOT logged
@@ -1479,6 +1511,13 @@ IF USE_OPENSSL
 	acl aclname ssl_error errorname
 	  # match against SSL certificate validation error [fast]
 	  #
+	  # When used with sslproxy_cert_error, this ACL tests a single
+	  # certificate validation error currently being evaluated by that
+	  # directive. When used with slproxy_cert_sign or sslproxy_cert_adapt,
+	  # the ACL tests all past certificate validation errors associated with
+	  # the current Squid-to-server connection (attempt). This ACL is not yet
+	  # supported for use with other directives.
+	  #
 	  # For valid error names see in @DEFAULT_ERROR_DIR@/templates/error-details.txt
 	  # template file.
 	  #
@@ -1493,18 +1532,14 @@ IF USE_OPENSSL
 	  # The ssl::certHasExpired, ssl::certNotYetValid, ssl::certDomainMismatch,
 	  # ssl::certUntrusted, and ssl::certSelfSigned can also be used as
 	  # predefined ACLs, just like the 'all' ACL.
-	  #
-	  # NOTE: The ssl_error ACL is only supported with sslproxy_cert_error,
-	  # sslproxy_cert_sign, and sslproxy_cert_adapt options.
 
-	acl aclname server_cert_fingerprint [-sha1] fingerprint
+	acl aclname server_cert_fingerprint fingerprint
 	  # match against server SSL certificate fingerprint [fast]
 	  #
 	  # The fingerprint is the digest of the DER encoded version
 	  # of the whole certificate. The user should use the form: XX:XX:...
-	  # Optional argument specifies the digest algorithm to use.
 	  # The SHA1 digest algorithm is the default and is currently
-	  # the only algorithm supported (-sha1).
+	  # the only algorithm supported.
 
 	acl aclname ssl::server_name [option] .foo.com ...
 	  # matches server name obtained from various sources [fast]
@@ -1606,7 +1641,7 @@ ENDIF
 		acl fileupload req_mime_type -i ^multipart/form-data$
 		acl javascript rep_mime_type -i ^application/x-javascript$
 
-NOCOMMENT_START
+CONFIG_START
 #
 # Recommended minimum configuration:
 #
@@ -1634,7 +1669,7 @@ acl Safe_ports port 280		# http-mgmt
 acl Safe_ports port 488		# gss-http
 acl Safe_ports port 591		# filemaker
 acl Safe_ports port 777		# multiling http
-NOCOMMENT_END
+CONFIG_END
 DOC_END
 
 NAME: proxy_protocol_access
@@ -1674,7 +1709,7 @@ DOC_START
 		based on the client's source addresses.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: follow_x_forwarded_for
@@ -1718,7 +1753,7 @@ DOC_START
 	log_uses_indirect_client and tproxy_uses_indirect_client options.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 	SECURITY CONSIDERATIONS:
 
@@ -1813,7 +1848,7 @@ DOC_START
 	Note that the cache_peer "no-tproxy" option overrides this ACL.
 
 	This clause supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: http_access
@@ -1840,9 +1875,9 @@ DOC_START
 	lists to avoid potential confusion.
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
-NOCOMMENT_START
+CONFIG_START
 
 #
 # Recommended minimum Access Permission configuration:
@@ -1884,7 +1919,7 @@ http_access deny to_linklocal
 
 # And finally deny all other access to this proxy
 http_access deny all
-NOCOMMENT_END
+CONFIG_END
 DOC_END
 
 NAME: adapted_http_access http_access2
@@ -1920,7 +1955,7 @@ DOC_START
 	with an "allow all" or "deny all" entry.
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: icp_access
@@ -1939,7 +1974,7 @@ DOC_START
 	using ICP.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 # Allow ICP queries from local networks only
 #icp_access allow localnet
@@ -1966,7 +2001,7 @@ DOC_START
 	using the htcp option.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 # Allow HTCP queries from local networks only
 #htcp_access allow localnet
@@ -1987,7 +2022,7 @@ DOC_START
 	htcp_clr_access  allow|deny [!]aclname ...
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 # Allow HTCP CLR requests from trusted peers
 acl htcp_clr_peer src 192.0.2.2 2001:DB8::2
@@ -2019,7 +2054,7 @@ DOC_START
 	http_access rules to relay via this proxy.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: ident_lookup_access
@@ -2048,7 +2083,7 @@ DOC_START
 	the correct result.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: reply_body_max_size
@@ -2484,11 +2519,11 @@ DOC_START
 	internal address:port in http_port. This way Squid will only be
 	visible on the internal address.
 
-NOCOMMENT_START
+CONFIG_START
 
 # Squid normally listens to port 3128
 http_port @DEFAULT_HTTP_PORT@
-NOCOMMENT_END
+CONFIG_END
 DOC_END
 
 NAME: https_port
@@ -2640,7 +2675,7 @@ DOC_START
 	The squid parser will enforce this by masking away the ECN bits.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: tcp_outgoing_mark
@@ -2688,7 +2723,7 @@ DOC_START
 	will be overwritten by mark values in qos_flows.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: mark_client_connection
@@ -2724,7 +2759,7 @@ DOC_START
 	mark_client_connection 0x200/0xff00 proto_ftp
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: qos_flows
@@ -2848,7 +2883,7 @@ DOC_START
 	client_dst_passthru directive re-enable normal forwarding such as this.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: host_verify_strict
@@ -3194,7 +3229,7 @@ DOC_START
 	See the at_step ACL for a list of the supported SslBump steps.
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 	See also: http_port ssl-bump, https_port ssl-bump, and acl at_step.
 
@@ -3226,7 +3261,7 @@ DOC_START
 		sslproxy_cert_error deny all
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 	Using slow acl types may result in server crashes
 
 	Without this option, all server certificate validation errors
@@ -3424,11 +3459,26 @@ DOC_START
 	Specify the location and options of the executable for ssl_crt_validator
 	process.
 
-	Usage:  sslcrtvalidator_program [ttl=n] [cache=n] path ...
+	Usage:  sslcrtvalidator_program [ttl=...] [cache=n] path ...
 
 	Options:
-	  ttl=n         TTL in seconds for cached results. The default is 60 secs
-	  cache=n       limit the result cache size. The default value is 2048
+
+	cache=bytes
+		Limits how much memory Squid can use for caching validator
+		responses. The default is 67108864 (i.e. 64 MB).
+		Reconfiguration purges any excess entries. To disable caching,
+		use cache=0. Currently, cache entry sizes are seriously
+		underestimated. Even with that bug, a typical estimate for a
+		single cache entry size would be at least a few kilobytes (the
+		size of the PEM certificates sent to the validator).
+
+	ttl=<seconds|"infinity">
+		Approximately how long Squid may reuse the validator results
+		for. The default is 3600 (i.e. 1 hour). Using ttl=infinity
+		disables TTL checks. Reconfiguration does not affect TTLs of
+		the already cached entries. To disable caching, use zero cache
+		size, not zero TTL -- zero TTL allows reuse for the remainder
+		of the second when the result was cached.
 DOC_END
 
 NAME: sslcrtvalidator_children
@@ -3467,7 +3517,7 @@ DOC_START
 		concurrency=
 
 	The number of requests each certificate validator helper can handle in
-	parallel. A value of 0 indicates the certficate validator does not
+	parallel. A value of 0 indicates the certificate validator does not
 	support concurrency. Defaults to 1.
 
 	When this directive is set to a value >= 1 then the protocol
@@ -3908,12 +3958,20 @@ DOC_START
 			configuration.
 
 	name=xxx	Unique name for the peer.
-			Required if you have multiple peers on the same host
-			but different ports.
-			This name can be used in cache_peer_access and similar
-			directives to identify the peer.
+			Required if you have multiple cache_peers with the same hostname.
+			Defaults to cache_peer hostname when not explicitly specified.
+
+			Other directives (e.g., cache_peer_access), cache manager reports,
+			and cache.log messages use this name to refer to this cache_peer.
+
+			The cache_peer name value affects hashing-based peer selection
+			methods (e.g., carp and sourcehash).
+
 			Can be used by outgoing access controls through the
 			peername ACL type.
+
+			The name value preserves configured spelling, but name uniqueness
+			checks and name-based search are case-insensitive.
 
 	no-tproxy	Do not use the client-spoof TPROXY support when forwarding
 			requests to this peer. Use normal address selection instead.
@@ -3961,7 +4019,7 @@ DOC_START
 	may be optimized away in future Squid versions.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 DOC_END
 
@@ -3975,7 +4033,11 @@ DOC_START
 	about specific domains to the peer.
 
 	Usage:
-		 neighbor_type_domain neighbor parent|sibling domain domain ...
+		neighbor_type_domain peer-name parent|sibling domain...
+
+	For the required peer-name parameter, use either the value of the
+	cache_peer name=value parameter or, if name=value is missing, the
+	cache_peer hostname parameter.
 
 	For example:
 		cache_peer foo.example.com parent 3128 3130
@@ -4022,7 +4084,7 @@ DOC_START
 	* unfinished Happy Eyeballs connection attempts (prevented by setting
 	  happy_eyeballs_connect_limit to 0)
 
-	See also: forward_timeout and connect_retries.
+	See also: forward_timeout, connect_retries, and %request_attempts.
 DOC_END
 
 COMMENT_START
@@ -4219,7 +4281,7 @@ DOC_END
 NAME: cache_dir
 TYPE: cachedir
 DEFAULT: none
-DEFAULT_DOC: No disk cache. Store cache ojects only in memory.
+DEFAULT_DOC: No disk cache. Store cache objects only in memory.
 LOC: Config.cacheSwap
 DOC_START
 	Format:
@@ -4238,9 +4300,11 @@ DOC_START
 	The directory must exist and be writable by the Squid
 	process.  Squid will NOT create this directory for you.
 
-	In SMP configurations, cache_dir must not precede the workers option
-	and should use configuration macros or conditionals to give each
-	worker interested in disk caching a dedicated cache directory.
+	Rock is currently the only SMP-aware cache_dir type. Using other
+	store types in configurations with multiple workers is not
+	supported and may lead to HTTP violations or undefined behavior,
+	even when each such cache_dir is given a dedicated worker using
+	configuration conditionals.
 
 
 	====  The ufs store type  ====
@@ -4372,11 +4436,11 @@ DOC_START
 	Note: To make optimal use of the max-size limits you should order
 	the cache_dir lines with the smallest max-size value first.
 
-NOCOMMENT_START
+CONFIG_START
 
 # Uncomment and adjust the following to add a disk cache directory.
 #cache_dir ufs @DEFAULT_SWAP_DIR@ 100 16 256
-NOCOMMENT_END
+CONFIG_END
 DOC_END
 
 NAME: store_dir_select_algorithm
@@ -4440,6 +4504,45 @@ DOC_START
 		cache_dir rock /ssd3 ... max-size=99999
 DOC_END
 
+NAME: paranoid_hit_validation
+COMMENT: time-units-small
+TYPE: time_nanoseconds
+DEFAULT: 0
+DEFAULT_DOC: validation disabled
+LOC: Config.paranoid_hit_validation
+DOC_START
+	Controls whether Squid should perform paranoid validation of cache entry
+	metadata integrity every time a cache entry is hit. This low-level
+	validation should always succeed. Each failed validation results in a
+	cache miss, a BUG line reported to cache.log, and the invalid entry
+	marked as unusable (and eventually purged from the cache).
+
+	Squid can only validate shared cache memory and rock cache_dir entries.
+
+	* Zero (default) value means that the validation is disabled.
+
+	* Positive values enable validation:
+	  - values less than 1 day approximate the maximum time that Squid is allowed
+	    to spend validating a single cache hit.
+	  - values greater or equal to 1 day are considered as no limitation:
+	    in this case all checks will be performed, regardless of how much time
+	    they take.
+
+	Hits are usually stored using 16KB slots (for rock, the size is
+	configurable via cache_dir slot-size). Larger hits require scanning more
+	slots and, hence, take more time. When validation is enabled, at least one
+	slot is always validated, regardless of the configured time limit.
+
+	A worker process validating an entry cannot do anything else (i.e. the
+	validation is blocking). The validation overhead is environment dependent,
+	but developers have observed Squid spending 3-10 microseconds to check each
+	slot of a Rock or shared memory hit entry. If Squid cuts validation short
+	because it runs out of configured time, it treats the entry as valid.
+
+	When hit validation is enabled, its statistics is included in Cache
+	Manager mgr:counters, mgr:5min, and mgr:60min reports.
+DOC_END
+
 NAME: max_open_disk_fds
 TYPE: int
 LOC: Config.max_open_disk_fds
@@ -4467,11 +4570,11 @@ DOC_START
 	near the low-water mark.
 
 	As swap utilization increases towards the high-water mark set
-	by cache_swap_high object eviction becomes more agressive.
+	by cache_swap_high object eviction becomes more aggressive.
 
 	The value difference in percentages between low- and high-water
 	marks represent an eviction rate of 300 objects per second and
-	the rate continues to scale in agressiveness by multiples of
+	the rate continues to scale in aggressiveness by multiples of
 	this above the high-water mark.
 
 	Defaults are 90% and 95%. If you have a large cache, 5% could be
@@ -4495,11 +4598,11 @@ DOC_START
 	maintain utilization near the low-water mark.
 
 	As swap utilization increases towards this high-water mark object
-	eviction becomes more agressive.
+	eviction becomes more aggressive.
 
 	The value difference in percentages between low- and high-water
 	marks represent an eviction rate of 300 objects per second and
-	the rate continues to scale in agressiveness by multiples of
+	the rate continues to scale in aggressiveness by multiples of
 	this above the high-water mark.
 
 	Defaults are 90% and 95%. If you have a large cache, 5% could be
@@ -4618,6 +4721,19 @@ DOC_START
 		>qos    Client connection TOS/DSCP value set by Squid
 		>nfmark Client connection netfilter packet MARK set by Squid
 
+		transport::>connection_id Identifies a transport connection
+			accepted by Squid (e.g., a connection carrying the
+			logged HTTP request). Currently, Squid only supports
+			TCP transport connections.
+
+			The logged identifier is an unsigned integer. These
+			IDs are guaranteed to monotonically increase within a
+			single worker process lifetime, with higher values
+			corresponding to connections that were accepted later.
+			Many IDs are skipped (i.e. never logged). Concurrent
+			workers and restarted workers use similar, partially
+			overlapping sequences of IDs.
+
 		la	Local listening IP address the client connection was connected to.
 		lp	Local listening port number the client connection was connected to.
 
@@ -4680,6 +4796,20 @@ DOC_START
 			Squid uses millisecond resolution for %tS values,
 			similar to the default access.log "current time" field
 			(%ts.%03tu).
+
+		busy_time	Time spent in transaction-related code (nanoseconds)
+			This cumulative measurement excludes periods of time when the
+			transaction was waiting (e.g., for a server or helper response)
+			while Squid worked on other transactions or was engaged in
+			transaction-unrelated activities (e.g., generating a cache index).
+			In other words, this measurement represents the total amount of
+			physical time when Squid was busy working on this transaction.
+
+			WARNING: This measurement relies on Squid transaction context
+			tracking features that currently have known context leak bugs and
+			coverage gaps. Until those features are fully implemented, logged
+			values may significantly understate or exaggerate actual times.
+			Do not use this measurement unless you know it works in your case.
 
 	Access Control related format codes:
 
@@ -4794,7 +4924,7 @@ DOC_START
 		[http::]<bs	Number of HTTP-equivalent message body bytes
 				received from the next hop, excluding chunked
 				transfer encoding and control messages.
-				Generated FTP/Gopher listings are treated as
+				Generated FTP listings are treated as
 				received bodies.
 
 	    TIMING
@@ -4811,6 +4941,16 @@ DOC_START
 
 		Ss	Squid request status (TCP_MISS etc)
 		Sh	Squid hierarchy status (DEFAULT_PARENT etc)
+
+		[http::]request_attempts	Number of request forwarding attempts
+
+			See forward_max_tries documentation that details what Squid counts
+			as a forwarding attempt. Pure cache hits log zero, but cache hits
+			that triggered HTTP cache revalidation log the number of attempts
+			made when sending an internal revalidation request. DNS, ICMP,
+			ICP, HTCP, ESI, ICAP, eCAP, helper, and other secondary requests
+			sent by Squid as a part of a master transaction do not increment
+			the counter logged for the received request.
 
 	SSL-related format codes:
 
@@ -5254,7 +5394,7 @@ DOC_START
 	in performance counters.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: cache_store_log
@@ -5427,6 +5567,64 @@ DOC_START
 	To disable, enter "none".
 DOC_END
 
+NAME: tls_key_log
+TYPE: Security::KeyLog*
+DEFAULT: none
+LOC: Config.Log.tlsKeys
+IFDEF: USE_OPENSSL
+DOC_START
+	Configures whether and where Squid records pre-master secret and
+	related encryption details for TLS connections accepted or established
+	by Squid. These connections include connections accepted at
+	https_port, TLS connections opened to origin servers/cache_peers/ICAP
+	services, and TLS tunnels bumped by Squid using the SslBump feature.
+	This log (a.k.a. SSLKEYLOGFILE) is meant for triage with traffic
+	inspection tools like Wireshark.
+
+	    tls_key_log <destination> [options] [if [!]<acl>...]
+
+	WARNING: This log allows anybody to decrypt the corresponding
+	encrypted TLS connections, both in-flight and postmortem.
+
+	At most one log file is supported at this time. Repeated tls_key_log
+	directives are treated as fatal configuration errors. By default, no
+	log is created or updated.
+
+	If the log file does not exist, Squid creates it. Otherwise, Squid
+	appends an existing log file.
+
+	The directive is consulted whenever a TLS connection is accepted or
+	established by Squid. TLS connections that fail the handshake may be
+	logged if Squid got enough information to form a log record. A record
+	is logged only if all of the configured ACLs match.
+
+	While transport-related ACLs like src and dst should work, Squid may
+	not have access to higher-level information. For example, when logging
+	accepted https_port connections, Squid does not yet have access to the
+	expected HTTPS request. Similarly, an HTTPS response is not available
+	when logging most TLS connections established by Squid.
+
+	The log record format is meant to be compatible with TLS deciphering
+	features of Wireshark which relies on fields like CLIENT_RANDOM and
+	RSA Master-Key. A single log record usually spans multiple lines.
+	Technical documentation for that format is maintained inside the
+	Wireshark code (e.g., see tls_keylog_process_lines() comments as of
+	Wireshark commit e3d44136f0f0026c5e893fa249f458073f3b7328). TLS key
+	log does not support custom record formats.
+
+	This clause only supports fast acl types.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+
+	See access_log's <module>:<place> parameter for a list of supported
+	logging destinations.
+
+	TLS key log supports all access_log key=value options with the
+	exception of logformat=name.
+
+	Requires Squid built with OpenSSL support.
+DOC_END
+
+
 COMMENT_START
  OPTIONS FOR TROUBLESHOOTING
  -----------------------------------------------------------------------------
@@ -5442,6 +5640,52 @@ DOC_START
 	This is where general information about Squid behavior goes. You can
 	increase the amount of data logged to this file and how often it is
 	rotated with "debug_options"
+DOC_END
+
+NAME: cache_log_message
+TYPE: cache_log_message
+DEFAULT: none
+DEFAULT_DOC: Use debug_options.
+LOC: DebugMessagesConfig
+DOC_START
+	Configures logging of individual cache.log messages.
+
+		cache_log_message id=<number> option...
+		cache_log_message ids=<number>-<number> option...
+
+	Most messages have _not_ been instrumented to support this directive
+	yet. For the list of instrumented messages and their IDs, please see
+	the doc/debug-messages.txt file.
+
+	Message ID corresponds to the message semantics rather than message
+	text or source code location. The ID is stable across Squid
+	instances and versions. Substantial changes in message semantics
+	result in a new ID assignment. To reduce the danger of suppressing
+	an important log message, the old IDs of removed (or substantially
+	changed) messages are never reused.
+
+	If more than one cache_log_message directive refers to the same
+	message ID, the last directive wins.
+
+	Use ids=min-max syntax to apply the same message configuration to an
+	inclusive range of message IDs. An ID range with N values has
+	exactly the same effect as typing N cache_log_message lines.
+
+	At least one option is required. Supported options are:
+
+	  level=<number>: The logging level to use for the message. Squid
+		command line options (-s and -d) as well as the debug_options
+		directive control which levels go to syslog, stderr, and/or
+		cache.log. In most environments, using level=2 or higher stops
+		Squid from logging the message anywhere. By default, the
+		hard-coded message-specific level is used.
+
+	  limit=<number>: After logging the specified number of messages at
+		the configured (or default) debugging level DL, start using
+		level 3 (for DL 0 and 1) or 8 (for higher DL values). Usually,
+		level-3+ messages are not logged anywhere so this option can
+		often be used to effectively suppress the message. Each SMP
+		Squid process gets the same limit.
 DOC_END
 
 NAME: debug_options
@@ -5475,11 +5719,16 @@ DOC_START
 	that exists, Squid will chdir() to that directory at startup
 	and coredump files will be left there.
 
-NOCOMMENT_START
+	In addition to changing the directory, the process permissions are updated
+	to enable process tracing and/or coredump file generation. The details are
+	OS-specific, but look for prctl(2) PR_SET_DUMPABLE and procctl(2)
+	PROC_TRACE_CTL documentation as guiding examples.
+
+CONFIG_START
 
 # Leave coredumps in the first cache dir
 coredump_dir @DEFAULT_SWAP_DIR@
-NOCOMMENT_END
+CONFIG_END
 DOC_END
 
 
@@ -5579,7 +5828,7 @@ DOC_START
 	straight to using PORT for IPv4 servers.
 
 	Some devices are known to not handle this extension correctly and
-	may result in crashes. Devices which suport EPRT enough to fail
+	may result in crashes. Devices which support EPRT enough to fail
 	cleanly will result in Squid attempting PORT anyway. This directive
 	should only be disabled when EPRT results in device failures.
 
@@ -5851,7 +6100,7 @@ DOC_START
 	sent to the redirector processes.
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: url_rewrite_bypass redirector_bypass
@@ -6060,7 +6309,7 @@ DOC_START
 	are sent.
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: store_id_bypass storeurl_rewrite_bypass
@@ -6095,7 +6344,7 @@ DOC_START
 	has no effect on other transactions and on already cached responses.
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 	This and the two other similar caching directives listed below are
 	checked at different transaction processing stages, have different
@@ -6142,7 +6391,7 @@ DOC_START
 	store_miss, send_hit, and cache directives.
 
 	Unlike the "cache" directive, send_hit only supports fast acl
-	types.  See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	types.  See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 	For example:
 
@@ -6177,7 +6426,7 @@ DOC_START
 	send_hit directive for a usage example.
 
 	Unlike the "cache" directive, store_miss only supports fast acl
-	types.  See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	types.  See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: max_stale
@@ -6188,7 +6437,7 @@ DEFAULT: 1 week
 DOC_START
 	This option puts an upper limit on how stale content Squid
 	will serve from the cache if cache validation fails.
-	Can be overriden by the refresh_pattern max-stale option.
+	Can be overridden by the refresh_pattern max-stale option.
 DOC_END
 
 NAME: refresh_pattern
@@ -6293,16 +6542,15 @@ DOC_START
 	to change one. The default setting is only active if none is
 	used.
 
-NOCOMMENT_START
+CONFIG_START
 
 #
 # Add any of your own refresh_pattern entries above these.
 #
 refresh_pattern ^ftp:		1440	20%	10080
-refresh_pattern ^gopher:	1440	0%	1440
 refresh_pattern -i (/cgi-bin/|\?) 0	0%	0
 refresh_pattern .		0	20%	4320
-NOCOMMENT_END
+CONFIG_END
 DOC_END
 
 NAME: quick_abort_min
@@ -6575,7 +6823,7 @@ DOC_START
 	  a request with an extra CRLF.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 Example:
  acl buggy_server url_regex ^http://....
@@ -6620,22 +6868,6 @@ DOC_START
 
 	WARNING: If turned on this may eventually cause some
 	varying objects not intended for caching to get cached.
-DOC_END
-
-NAME: request_entities
-TYPE: onoff
-LOC: Config.onoff.request_entities
-DEFAULT: off
-DOC_START
-	Squid defaults to deny GET and HEAD requests with request entities,
-	as the meaning of such requests are undefined in the HTTP standard
-	even if not explicitly forbidden.
-
-	Set this directive to on if you have clients which insists
-	on sending request entities in GET or HEAD requests. But be warned
-	that there is server software (both proxies and web servers) which
-	can fail to properly process this kind of request which may make you
-	vulnerable to cache pollution attacks if enabled.
 DOC_END
 
 NAME: request_header_access
@@ -6882,7 +7114,7 @@ DOC_START
 	    logformat myFormat ... %{key}note ...
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: relaxed_header_parser
@@ -7286,7 +7518,10 @@ TYPE: onoff
 DEFAULT: off
 LOC: Config.onoff.httpd_suppress_version_string
 DOC_START
-	Suppress Squid version string info in HTTP headers and HTML error pages.
+	Do not send Squid version string in HTTP metadata and generated content
+	such as HTML error pages. Squid version string is still present in certain
+	SNMP responses, cachemgr.cgi output, squidclient User-Agent request header
+	field, various console output, and cache.log.
 DOC_END
 
 NAME: visible_hostname
@@ -7331,73 +7566,6 @@ DOC_START
 
 	For a traditional octal representation of umasks, start
         your value with 0.
-DOC_END
-
-COMMENT_START
- OPTIONS FOR THE CACHE REGISTRATION SERVICE
- -----------------------------------------------------------------------------
-
-	This section contains parameters for the (optional) cache
-	announcement service.  This service is provided to help
-	cache administrators locate one another in order to join or
-	create cache hierarchies.
-
-	An 'announcement' message is sent (via UDP) to the registration
-	service by Squid.  By default, the announcement message is NOT
-	SENT unless you enable it with 'announce_period' below.
-
-	The announcement message includes your hostname, plus the
-	following information from this configuration file:
-
-		http_port
-		icp_port
-		cache_mgr
-
-	All current information is processed regularly and made
-	available on the Web at http://www.ircache.net/Cache/Tracker/.
-COMMENT_END
-
-NAME: announce_period
-TYPE: time_t
-LOC: Config.Announce.period
-DEFAULT: 0
-DEFAULT_DOC: Announcement messages disabled.
-DOC_START
-	This is how frequently to send cache announcements.
-
-	To enable announcing your cache, just set an announce period.
-
-	Example:
-		announce_period 1 day
-DOC_END
-
-NAME: announce_host
-TYPE: string
-DEFAULT: tracker.ircache.net
-LOC: Config.Announce.host
-DOC_START
-	Set the hostname where announce registration messages will be sent.
-
-	See also announce_port and announce_file
-DOC_END
-
-NAME: announce_file
-TYPE: string
-DEFAULT: none
-LOC: Config.Announce.file
-DOC_START
-	The contents of this file will be included in the announce
-	registration messages.
-DOC_END
-
-NAME: announce_port
-TYPE: u_short
-DEFAULT: 3131
-LOC: Config.Announce.port
-DOC_START
-	Set the port where announce registration messages will be sent.
-
-	See also announce_host and announce_file
 DOC_END
 
 COMMENT_START
@@ -7521,7 +7689,7 @@ DOC_START
 		IPv4 traffic. Class 1 and 5 pools may be used with IPv6 traffic.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 	See also delay_parameters and delay_access.
 DOC_END
@@ -7756,7 +7924,7 @@ DOC_START
 	based on their source IP addresses (one bucket per source IP).
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 	Additionally, only the client TCP connection details are available.
 	ACLs testing HTTP properties will not work.
 
@@ -8206,7 +8374,7 @@ DOC_START
 	snmp_access allow|deny [!]aclname ...
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 Example:
  snmp_access allow snmppublic localhost
@@ -8656,7 +8824,7 @@ DOC_START
 	a wide variety of languages. If you are making translations for a
 	language that Squid does not currently provide please consider
 	contributing your translation back to the project.
-	http://wiki.squid-cache.org/Translations
+	https://wiki.squid-cache.org/Translations
 
 	The squid developers working on translations are happy to supply drop-in
 	translated error files in exchange for any new language contributions.
@@ -8678,7 +8846,7 @@ DOC_START
 	The squid developers are interested in making squid available in
 	a wide variety of languages. If you are interested in making
 	translations for any language see the squid wiki for details.
-	http://wiki.squid-cache.org/Translations
+	https://wiki.squid-cache.org/Translations
 DOC_END
 
 NAME: error_log_languages
@@ -8759,7 +8927,7 @@ DOC_START
 	    you may also specify them by your custom file name:
 	    Example: deny_info ERR_CUSTOM_ACCESS_DENIED bad_guys
 
-	By defaut Squid will send "403 Forbidden". A different 4xx or 5xx
+	By default Squid will send "403 Forbidden". A different 4xx or 5xx
 	may be specified by prefixing the file name with the code and a colon.
 	e.g. 404:ERR_CUSTOM_ACCESS_DENIED
 
@@ -8910,7 +9078,7 @@ DOC_START
 	the replies see the 'cache' directive.
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: never_direct
@@ -8943,7 +9111,7 @@ DOC_START
 		never_direct allow all
 
 	This clause supports both fast and slow acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 COMMENT_START
@@ -9054,12 +9222,12 @@ DOC_START
 	client IP can use. Any more than this and Squid will begin to drop
 	new connections from the client until it closes some links.
 
-	Note that this is a global limit. It affects all HTTP, HTCP, Gopher and FTP
+	Note that this is a global limit. It affects all HTTP, HTCP, and FTP
 	connections from the client. For finer control use the ACL access controls.
 
 	Requires client_db to be enabled (the default).
 
-	WARNING: This may noticably slow down traffic received via external proxies
+	WARNING: This may noticeably slow down traffic received via external proxies
 	or NAT devices and cause them to rebound error messages back to their clients.
 DOC_END
 
@@ -9216,7 +9384,7 @@ DOC_START
 
 	Activation of the Partial Content extension is negotiated with each
 	ICAP service during OPTIONS exchange. Most ICAP servers should handle
-	negotation correctly even if they do not support the extension, but
+	negotiation correctly even if they do not support the extension, but
 	some might fail. To disable Partial Content support for all ICAP
 	services and to avoid any negotiation, set this option to "off".
 
@@ -10438,8 +10606,6 @@ DOC_START
 	processes, these sleep delays will add up and your
 	Squid will not service requests for some amount of time
 	until all the child processes have been started.
-	On Windows value less then 1000 (1 milliseconds) are
-	rounded to 1000.
 DOC_END
 
 NAME: windows_ipaddrchangemonitor
@@ -10588,7 +10754,7 @@ DOC_START
 	cache, using regular HTTP caching rules.
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 	Each of the following groups of configuration lines represents a
 	separate configuration example:
@@ -10639,7 +10805,7 @@ DOC_START
 	persistent connections (if any).
 
 	This clause only supports fast acl types.
-	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+	See https://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 
 	Example:
 		acl SpeedIsWorthTheRisk method POST

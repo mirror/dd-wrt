@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ERREUR : l'URL demandée n'a pas pu être chargée</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERREUR</h1>
+<h2>L'URL demandée n'a pas pu être trouvée</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>L'erreur suivante s'est produite en essayant d'accéder à l'URL : <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>URL invalide</b></p>
+</blockquote>
+
+<p>Certains aspects de l'adresse URL est incorrect.</p>
+
+<p>Problèmes possibles :</p>
+<ul>
+<li><p>Le protocole d'accès est absent ou incorrect (il doit être sous la forme <q>http://</q> ou similaire)</p></li>
+<li><p>Le nom d'hôte n'est pas spécifié</p></li>
+<li><p>Les doubles espaces sont illégaux dans une adresse URL</p></li>
+<li><p>Caractère illégal dans le nom d'hôte; Le caractère tiret bas n'est pas autorisé.</p></li>
+</ul>
+
+<p>Votre administrateur proxy est <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Générée le %T par %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

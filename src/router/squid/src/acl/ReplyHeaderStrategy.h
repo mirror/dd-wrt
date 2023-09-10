@@ -20,8 +20,8 @@ class ACLReplyHeaderStrategy : public ACLStrategy<char const *>
 {
 
 public:
-    virtual int match (ACLData<char const *> * &, ACLFilledChecklist *);
-    virtual bool requiresReply() const {return true;}
+    int match (ACLData<char const *> * &, ACLFilledChecklist *) override;
+    bool requiresReply() const override {return true;}
 };
 
 template <Http::HdrType header>
@@ -30,7 +30,7 @@ ACLReplyHeaderStrategy<header>::match (ACLData<char const *> * &data, ACLFilledC
 {
     char const *theHeader = checklist->reply->header.getStr(header);
 
-    if (NULL == theHeader)
+    if (nullptr == theHeader)
         return 0;
 
     return data->match(theHeader);

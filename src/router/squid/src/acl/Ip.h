@@ -47,17 +47,17 @@ public:
     void *operator new(size_t);
     void operator delete(void *);
 
-    ACLIP() : data(NULL) {}
-    ~ACLIP();
+    ACLIP() : data(nullptr) {}
+    ~ACLIP() override;
 
     typedef Splay<acl_ip_data *> IPSplay;
 
-    virtual char const *typeString() const = 0;
-    virtual void parse();
+    char const *typeString() const override = 0;
+    void parse() override;
     //    virtual bool isProxyAuth() const {return true;}
-    virtual int match(ACLChecklist *checklist) = 0;
-    virtual SBufList dump() const;
-    virtual bool empty () const;
+    int match(ACLChecklist *checklist) override = 0;
+    SBufList dump() const override;
+    bool empty () const override;
 
 protected:
 

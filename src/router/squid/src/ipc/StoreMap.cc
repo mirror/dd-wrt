@@ -11,10 +11,14 @@
 #include "squid.h"
 #include "ipc/StoreMap.h"
 #include "sbuf/SBuf.h"
+#include "SquidConfig.h"
+#include "StatCounters.h"
 #include "Store.h"
 #include "store/Controller.h"
 #include "store_key_md5.h"
 #include "tools.h"
+
+#include <chrono>
 
 static SBuf
 StoreMapSlicesId(const SBuf &path)
@@ -47,10 +51,11 @@ Ipc::StoreMap::Init(const SBuf &path, const int sliceLimit)
     return owner;
 }
 
-Ipc::StoreMap::StoreMap(const SBuf &aPath): cleaner(NULL), path(aPath),
+Ipc::StoreMap::StoreMap(const SBuf &aPath): cleaner(nullptr), path(aPath),
     fileNos(shm_old(FileNos)(StoreMapFileNosId(path).c_str())),
     anchors(shm_old(Anchors)(StoreMapAnchorsId(path).c_str())),
-    slices(shm_old(Slices)(StoreMapSlicesId(path).c_str()))
+    slices(shm_old(Slices)(StoreMapSlicesId(path).c_str())),
+    hitValidation(true)
 {
     debugs(54, 5, "attached " << path << " with " <<
            fileNos->capacity << '+' <<
@@ -64,7 +69,7 @@ Ipc::StoreMap::compareVersions(const sfileno fileno, time_t newVersion) const
 {
     const Anchor &inode = anchorAt(fileno);
 
-    // note: we do not lock, so comparison may be inacurate
+    // note: we do not lock, so comparison may be inaccurate
 
     if (inode.empty())
         return +2;
@@ -143,7 +148,7 @@ Ipc::StoreMap::openForWriting(const cache_key *const key, sfileno &fileno)
         return anchor;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 Ipc::StoreMap::Anchor *
@@ -160,7 +165,7 @@ Ipc::StoreMap::openForWritingAt(const sfileno fileno, bool overwriteExisting)
             lock.unlockExclusive();
             debugs(54, 5, "cannot open existing entry " << fileno <<
                    " for writing " << path);
-            return NULL;
+            return nullptr;
         }
 
         // free if the entry was used, keeping the entry locked
@@ -179,7 +184,7 @@ Ipc::StoreMap::openForWritingAt(const sfileno fileno, bool overwriteExisting)
 
     debugs(54, 5, "cannot open busy entry " << fileno <<
            " for writing " << path);
-    return NULL;
+    return nullptr;
 }
 
 void
@@ -248,15 +253,14 @@ Ipc::StoreMap::abortWriting(const sfileno fileno)
     debugs(54, 5, "aborting entry " << fileno << " for writing " << path);
     Anchor &s = anchorAt(fileno);
     assert(s.writing());
-    s.lock.appending = false; // locks out any new readers
-    if (!s.lock.readers) {
+    if (!s.lock.appending || s.lock.stopAppendingAndRestoreExclusive()) {
         freeChain(fileno, s, false);
-        debugs(54, 5, "closed clean entry " << fileno << " for writing " << path);
+        debugs(54, 5, "closed idle entry " << fileno << " for writing " << path);
     } else {
         s.waitingToBeFreed = true;
         s.writerHalted = true;
         s.lock.unlockExclusive();
-        debugs(54, 5, "closed dirty entry " << fileno << " for writing " << path);
+        debugs(54, 5, "closed busy entry " << fileno << " for writing " << path);
     }
 }
 
@@ -441,7 +445,7 @@ Ipc::StoreMap::openForReading(const cache_key *const key, sfileno &fileno)
         fileno = idx;
         return anchor; // locked for reading
     }
-    return NULL;
+    return nullptr;
 }
 
 const Ipc::StoreMap::Anchor *
@@ -453,26 +457,33 @@ Ipc::StoreMap::openForReadingAt(const sfileno fileno, const cache_key *const key
     if (!s.lock.lockShared()) {
         debugs(54, 5, "cannot open busy entry " << fileno <<
                " for reading " << path);
-        return NULL;
+        return nullptr;
     }
 
     if (s.empty()) {
         s.lock.unlockShared();
         debugs(54, 7, "cannot open empty entry " << fileno <<
                " for reading " << path);
-        return NULL;
+        return nullptr;
     }
 
     if (s.waitingToBeFreed) {
         s.lock.unlockShared();
         debugs(54, 7, "cannot open marked entry " << fileno <<
                " for reading " << path);
-        return NULL;
+        return nullptr;
     }
 
     if (!s.sameKey(key)) {
         s.lock.unlockShared();
         debugs(54, 5, "cannot open wrong-key entry " << fileno <<
+               " for reading " << path);
+        return nullptr;
+    }
+
+    if (Config.paranoid_hit_validation.count() && hitValidation && !validateHit(fileno)) {
+        s.lock.unlockShared();
+        debugs(54, 5, "cannot open corrupted entry " << fileno <<
                " for reading " << path);
         return nullptr;
     }
@@ -754,6 +765,107 @@ Ipc::StoreMap::validSlice(const int pos) const
     return 0 <= pos && pos < sliceLimit();
 }
 
+/// Checks whether the object lifetime has exceeded the specified maximum.
+/// The lifetime is considered to exceed the maximum if the time goes backwards.
+/// Uses the highest precision provided by the C++ implementation.
+class ConservativeTimer
+{
+public:
+    typedef std::chrono::high_resolution_clock Clock;
+
+    explicit ConservativeTimer(const Clock::duration max):
+        startTime(Clock::now()),
+        lastTime(startTime),
+        maxTime(startTime + max) {}
+
+    /// whether the current time reached the provided maximum time
+    bool expired() {
+        const auto currentTime = Clock::now();
+        if (currentTime < lastTime) // time went backwards
+            return true;
+        lastTime = currentTime;
+        return lastTime > maxTime;
+    }
+
+private:
+    /// the object creation time
+    Clock::time_point startTime;
+    /// the time of the last expired() call, initially equals to startTime
+    Clock::time_point lastTime;
+    /// after going past this point in time, expired() becomes true
+    const Clock::time_point maxTime;
+};
+
+bool
+Ipc::StoreMap::validateHit(const sfileno fileno)
+{
+    ConservativeTimer timer(Config.paranoid_hit_validation);
+    const auto timeIsLimited = Config.paranoid_hit_validation < std::chrono::hours(24);
+
+    const auto &anchor = anchorAt(fileno);
+
+    ++statCounter.hitValidation.attempts;
+
+    if (!anchor.basics.swap_file_sz) {
+        ++statCounter.hitValidation.refusalsDueToZeroSize;
+        return true; // presume valid; cannot validate w/o known swap_file_sz
+    }
+
+    if (!anchor.lock.lockHeaders()) {
+        ++statCounter.hitValidation.refusalsDueToLocking;
+        return true; // presume valid; cannot validate changing entry
+    }
+
+    const uint64_t expectedByteCount = anchor.basics.swap_file_sz;
+
+    size_t actualSliceCount = 0;
+    uint64_t actualByteCount = 0;
+    SliceId lastSeenSlice = anchor.start;
+    while (lastSeenSlice >= 0) {
+        ++actualSliceCount;
+        if (!validSlice(lastSeenSlice))
+            break;
+        const auto &slice = sliceAt(lastSeenSlice);
+        actualByteCount += slice.size;
+        if (actualByteCount > expectedByteCount)
+            break;
+        lastSeenSlice = slice.next;
+        if (timeIsLimited && timer.expired()) {
+            anchor.lock.unlockHeaders();
+            ++statCounter.hitValidation.refusalsDueToTimeLimit;
+            return true;
+        }
+    }
+
+    anchor.lock.unlockHeaders();
+
+    if (actualByteCount == expectedByteCount && lastSeenSlice < 0)
+        return true;
+
+    ++statCounter.hitValidation.failures;
+
+    debugs(54, DBG_IMPORTANT, "ERROR: Squid BUG: purging corrupted cache entry " << fileno <<
+           " from " << path <<
+           " expected swap_file_sz=" << expectedByteCount <<
+           " actual swap_file_sz=" << actualByteCount <<
+           " actual slices=" << actualSliceCount <<
+           " last slice seen=" << lastSeenSlice << "\n" <<
+           "    key=" << storeKeyText(reinterpret_cast<const cache_key*>(anchor.key)) << "\n" <<
+           "    tmestmp=" << anchor.basics.timestamp << "\n" <<
+           "    lastref=" << anchor.basics.lastref << "\n" <<
+           "    expires=" << anchor.basics.expires << "\n" <<
+           "    lastmod=" << anchor.basics.lastmod << "\n" <<
+           "    refcount=" << anchor.basics.refcount << "\n" <<
+           "    flags=0x" << std::hex << anchor.basics.flags << std::dec << "\n" <<
+           "    start=" << anchor.start << "\n" <<
+           "    splicingPoint=" << anchor.splicingPoint << "\n" <<
+           "    lock=" << anchor.lock << "\n" <<
+           "    waitingToBeFreed=" << (anchor.waitingToBeFreed ? 1 : 0) << "\n"
+          );
+    freeEntry(fileno);
+    return false;
+}
+
 Ipc::StoreMap::Anchor&
 Ipc::StoreMap::anchorAt(const sfileno fileno)
 {
@@ -872,12 +984,18 @@ Ipc::StoreMapAnchor::exportInto(StoreEntry &into) const
     into.lastModified(basics.lastmod);
     into.swap_file_sz = basics.swap_file_sz;
     into.refcount = basics.refcount;
+
+    // Some basics.flags are not meaningful and should not be overwritten here.
+    // ENTRY_REQUIRES_COLLAPSING is one of them. TODO: check other flags.
     const bool collapsingRequired = into.hittingRequiresCollapsing();
     into.flags = basics.flags;
-    // There are possibly several flags we do not need to overwrite,
-    // and ENTRY_REQUIRES_COLLAPSING is one of them.
-    // TODO: check for other flags.
-    into.setCollapsingRequirement(collapsingRequired);
+    // Avoid into.setCollapsingRequirement() here: We only restore the bit we
+    // just cleared in the assignment above, while that method debugging will
+    // falsely imply that the collapsing requirements have changed.
+    if (collapsingRequired)
+        EBIT_SET(into.flags, ENTRY_REQUIRES_COLLAPSING);
+    else
+        EBIT_CLR(into.flags, ENTRY_REQUIRES_COLLAPSING);
 }
 
 void

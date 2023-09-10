@@ -47,9 +47,9 @@ public:
     Comm::ConnectionPointer conn;
 };
 
-std::ostream &operator <<(std::ostream &, const Http::TunnelerAnswer &);
+std::ostream &operator <<(std::ostream &, const TunnelerAnswer &);
 
-} // namepace Http
+} // namespace Http
 
 #endif /* SQUID_SRC_CLIENTS_HTTP_TUNNELERANSWER_H */
 

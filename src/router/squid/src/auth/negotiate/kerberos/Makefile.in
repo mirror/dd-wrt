@@ -100,11 +100,13 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/squid-util.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
-	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
+	$(top_srcdir)/acinclude/krb5.m4 \
+	$(top_srcdir)/acinclude/ldap.m4 \
+	$(top_srcdir)/acinclude/nettle.m4 \
+	$(top_srcdir)/acinclude/pam.m4 $(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
+	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/src/auth/basic/helpers.m4 \
 	$(top_srcdir)/src/auth/basic/DB/required.m4 \
 	$(top_srcdir)/src/auth/basic/LDAP/required.m4 \
@@ -172,14 +174,12 @@ am_negotiate_kerberos_auth_OBJECTS =  \
 	negotiate_kerberos_pac.$(OBJEXT)
 negotiate_kerberos_auth_OBJECTS =  \
 	$(am_negotiate_kerberos_auth_OBJECTS)
-@ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
-am__DEPENDENCIES_2 = $(top_builddir)/compat/libcompatsquid.la \
-	$(am__DEPENDENCIES_1)
-am__DEPENDENCIES_3 =
+am__DEPENDENCIES_1 = $(top_builddir)/compat/libcompatsquid.la
+am__DEPENDENCIES_2 =
 negotiate_kerberos_auth_DEPENDENCIES =  \
-	$(top_builddir)/lib/libmiscencoding.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_3) \
-	$(am__DEPENDENCIES_3)
+	$(top_builddir)/lib/libmiscencoding.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_2)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -193,9 +193,9 @@ am_negotiate_kerberos_auth_test_OBJECTS =  \
 negotiate_kerberos_auth_test_OBJECTS =  \
 	$(am_negotiate_kerberos_auth_test_OBJECTS)
 negotiate_kerberos_auth_test_DEPENDENCIES =  \
-	$(top_builddir)/lib/libmiscencoding.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_3) \
-	$(am__DEPENDENCIES_3)
+	$(top_builddir)/lib/libmiscencoding.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_2)
 negotiate_kerberos_auth_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) \
@@ -550,7 +550,6 @@ EPOLL_LIBS = @EPOLL_LIBS@
 ETAGS = @ETAGS@
 EUILIB = @EUILIB@
 EXEEXT = @EXEEXT@
-EXPATLIB = @EXPATLIB@
 EXTERNAL_ACL_HELPERS = @EXTERNAL_ACL_HELPERS@
 EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
@@ -558,7 +557,7 @@ FALSE = @FALSE@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -567,9 +566,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KRB5INCS = @KRB5INCS@
 KRB5LIBS = @KRB5LIBS@
-LBERLIB = @LBERLIB@
 LD = @LD@
-LDAPLIB = @LDAPLIB@
 LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
@@ -577,17 +574,27 @@ LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
 LIBBDB_LIBS = @LIBBDB_LIBS@
+LIBCAP_CFLAGS = @LIBCAP_CFLAGS@
+LIBCAP_LIBS = @LIBCAP_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
+LIBEXPAT_CFLAGS = @LIBEXPAT_CFLAGS@
+LIBEXPAT_LIBS = @LIBEXPAT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
+LIBLDAP_CFLAGS = @LIBLDAP_CFLAGS@
+LIBLDAP_LIBS = @LIBLDAP_LIBS@
 LIBLTDL = @LIBLTDL@
+LIBNETTLE_CFLAGS = @LIBNETTLE_CFLAGS@
+LIBNETTLE_LIBS = @LIBNETTLE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBOPENSSL_CFLAGS = @LIBOPENSSL_CFLAGS@
 LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
 LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -617,7 +624,6 @@ MKDIR = @MKDIR@
 MKDIR_P = @MKDIR_P@
 MV = @MV@
 NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
-NETTLELIB = @NETTLELIB@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
@@ -656,21 +662,19 @@ SMBCLIENT = @SMBCLIENT@
 SNMPLIB = @SNMPLIB@
 SQUID_CFLAGS = @SQUID_CFLAGS@
 SQUID_CXXFLAGS = @SQUID_CXXFLAGS@
+SQUID_RELEASE = @SQUID_RELEASE@
 SSLLIB = @SSLLIB@
 STOREID_REWRITE_HELPERS = @STOREID_REWRITE_HELPERS@
 STORE_LIBS_TO_ADD = @STORE_LIBS_TO_ADD@
 STORE_LIBS_TO_BUILD = @STORE_LIBS_TO_BUILD@
 STORE_TESTS = @STORE_TESTS@
 STRIP = @STRIP@
-SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
-SYSTEMD_LIBS = @SYSTEMD_LIBS@
 TR = @TR@
 TRUE = @TRUE@
 URL_REWRITE_HELPERS = @URL_REWRITE_HELPERS@
 VERSION = @VERSION@
 WBINFO = @WBINFO@
 WIN32_PSAPI = @WIN32_PSAPI@
-XMLLIB = @XMLLIB@
 XTRA_LIBS = @XTRA_LIBS@
 XTRA_OBJS = @XTRA_OBJS@
 abs_builddir = @abs_builddir@
@@ -758,8 +762,6 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_builddir)/include $(LIBCPPUNIT_CFLAGS) $(KRB5INCS) \
 	$(am__append_1) -I$(srcdir)
-@ENABLE_XPROF_STATS_FALSE@LIBPROFILER = 
-@ENABLE_XPROF_STATS_TRUE@LIBPROFILER = $(top_builddir)/lib/profiler/libprofiler.la
 COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 EXTRA_DIST = \
@@ -776,7 +778,7 @@ negotiate_kerberos_auth_LDFLAGS =
 negotiate_kerberos_auth_LDADD = \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(COMPAT_LIB) \
-	$(NETTLELIB) \
+	$(LIBNETTLE_LIBS) \
 	$(KRB5LIBS) \
 	$(XTRA_LIBS)
 
@@ -787,7 +789,7 @@ negotiate_kerberos_auth_test_LDFLAGS =
 negotiate_kerberos_auth_test_LDADD = \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(COMPAT_LIB) \
-	$(NETTLELIB) \
+	$(LIBNETTLE_LIBS) \
 	$(KRB5LIBS) \
 	$(XTRA_LIBS)
 

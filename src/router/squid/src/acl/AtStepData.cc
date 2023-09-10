@@ -12,7 +12,7 @@
 #include "base/EnumIterator.h"
 #include "cache_cf.h"
 #include "ConfigParser.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "sbuf/Stream.h"
 #include "wordlist.h"
 
@@ -50,11 +50,6 @@ StepValue(const char *name)
 ACLAtStepData::ACLAtStepData()
 {}
 
-ACLAtStepData::ACLAtStepData(ACLAtStepData const &old)
-{
-    values.assign(old.values.begin(), old.values.end());
-}
-
 ACLAtStepData::~ACLAtStepData()
 {
 }
@@ -90,11 +85,5 @@ bool
 ACLAtStepData::empty() const
 {
     return values.empty();
-}
-
-ACLAtStepData *
-ACLAtStepData::clone() const
-{
-    return new ACLAtStepData(*this);
 }
 

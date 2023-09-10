@@ -36,7 +36,7 @@ class ACLFilledChecklist: public ACLChecklist
 public:
     ACLFilledChecklist();
     ACLFilledChecklist(const acl_access *, HttpRequest *, const char *ident = nullptr);
-    ~ACLFilledChecklist();
+    ~ACLFilledChecklist() override;
 
     /// configure client request-related fields for the first time
     void setRequest(HttpRequest *);
@@ -51,7 +51,7 @@ public:
     int fd() const;
 
     /// set either conn
-    void conn(ConnStateData *);
+    void setConn(ConnStateData *);
     /// set the client side FD
     void fd(int aDescriptor);
 
@@ -63,11 +63,11 @@ public:
     void markSourceDomainChecked();
 
     // ACLChecklist API
-    virtual bool hasRequest() const { return request != NULL; }
-    virtual bool hasReply() const { return reply != NULL; }
-    virtual bool hasAle() const { return al != NULL; }
-    virtual void syncAle(HttpRequest *adaptedRequest, const char *logUri) const;
-    virtual void verifyAle() const;
+    bool hasRequest() const override { return request != nullptr; }
+    bool hasReply() const override { return reply != nullptr; }
+    bool hasAle() const override { return al != nullptr; }
+    void syncAle(HttpRequest *adaptedRequest, const char *logUri) const override;
+    void verifyAle() const override;
 
 public:
     Ip::Address src_addr;
@@ -87,8 +87,12 @@ public:
     char *snmp_community;
 #endif
 
-    /// SSL [certificate validation] errors, in undefined order
-    const Security::CertErrors *sslErrors;
+    // TODO: RefCount errors; do not ignore them because their "owner" is gone!
+    /// TLS server [certificate validation] errors, in undefined order.
+    /// The errors are accumulated as Squid goes through validation steps
+    /// and server certificates. They are cleared on connection retries.
+    /// For sslproxy_cert_error checks, contains just the current/last error.
+    CbcPointer<Security::CertErrors> sslErrors;
 
     /// Peer certificate being checked by ssl_verify_cb() and by
     /// Security::PeerConnector class. In other contexts, the peer

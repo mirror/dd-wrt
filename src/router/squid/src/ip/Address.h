@@ -126,7 +126,7 @@ public:
      */
     bool isSiteLocal6() const;
 
-    /** Test whether content is an IPv6 address with SLAAC EUI-64 embeded.
+    /** Test whether content is an IPv6 address with SLAAC EUI-64 embedded.
      \retval true  if address matches ::ff:fe00:0
      \retval false if --disable-ipv6 has been compiled.
      \retval false if address does not match ::ff:fe00:0
@@ -297,6 +297,10 @@ public:
      */
     bool GetHostByName(const char *s);
 
+    /// \returns an Address with true isNoAddr()
+    /// \see isNoAddr() for more details
+    static const Address &NoAddr() { static const Address noAddr(v6_noaddr); return noAddr; }
+
 public:
     /* XXX: When C => C++ conversion is done will be fully private.
      * Legacy Transition Methods.
@@ -305,7 +309,7 @@ public:
      * these functions can be used to convert this object
      * and pull out the data needed by the unconverted code
      * they are intentionaly hard to use, use getAddrInfo() instead.
-     * these functiosn WILL NOT be in the final public API after transition.
+     * these functions WILL NOT be in the final public API after transition.
      */
 
     void getSockAddr(struct sockaddr_storage &addr, const int family) const;
@@ -359,8 +363,8 @@ operator << (std::ostream &os, const Address &ipa)
 class Address_list
 {
 public:
-    Address_list() { next = NULL; };
-    ~Address_list() { if (next) delete next; next = NULL; };
+    Address_list() { next = nullptr; };
+    ~Address_list() { if (next) delete next; next = nullptr; };
 
     Address s;
     Address_list *next;

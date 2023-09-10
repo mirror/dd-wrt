@@ -100,7 +100,7 @@ process_options(int argc, char *argv[])
             exit(EXIT_SUCCESS);
         case '?':
             opt = optopt;
-        /* fall thru to default */
+            [[fallthrough]];
         default:
             fprintf(stderr, "FATAL: Unknown option: -%c\n", opt);
             usage(argv[0]);
@@ -132,8 +132,8 @@ main(int argc, char **argv)
     atexit(UnloadSecurityDll);
 
     /* initialize FDescs */
-    setbuf(stdout, NULL);
-    setbuf(stderr, NULL);
+    setbuf(stdout, nullptr);
+    setbuf(stderr, nullptr);
 
     while (fgets(wstr, HELPER_INPUT_BUFFER, stdin) != NULL) {
 

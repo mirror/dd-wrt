@@ -16,6 +16,10 @@ libsecurity_la_SOURCES = \
 	BlindPeerConnector.cc \
 	BlindPeerConnector.h \
 	CertError.h \
+	Certificate.cc \
+	Certificate.h \
+	CommunicationSecrets.cc \
+	CommunicationSecrets.h \
 	Context.h \
 	EncryptorAnswer.cc \
 	EncryptorAnswer.h \
@@ -27,6 +31,10 @@ libsecurity_la_SOURCES = \
 	Io.h \
 	KeyData.cc \
 	KeyData.h \
+	KeyLog.cc \
+	KeyLog.h \
+	KeyLogger.cc \
+	KeyLogger.h \
 	LockingPointer.h \
 	NegotiationHistory.cc \
 	NegotiationHistory.h \

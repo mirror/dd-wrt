@@ -12,13 +12,8 @@
 #include "acl/Checklist.h"
 #include "acl/ProtocolData.h"
 #include "ConfigParser.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "wordlist.h"
-
-ACLProtocolData::ACLProtocolData(ACLProtocolData const &old)
-{
-    assert(old.values.empty());
-}
 
 ACLProtocolData::~ACLProtocolData()
 {
@@ -66,13 +61,5 @@ ACLProtocolData::parse()
             // XXX: store the text pattern of this protocol name for live comparisons
         }
     }
-}
-
-ACLData<AnyP::ProtocolType> *
-ACLProtocolData::clone() const
-{
-    /* Splay trees don't clone yet. */
-    assert(values.empty());
-    return new ACLProtocolData(*this);
 }
 

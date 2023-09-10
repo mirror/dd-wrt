@@ -42,9 +42,9 @@ public:
     nfmark_t mask = 0xffffffff;
 };
 
-} // namespace Ip
+std::ostream &operator <<(std::ostream &, NfMarkConfig);
 
-std::ostream &operator <<(std::ostream &os, const Ip::NfMarkConfig connmark);
+} // namespace Ip
 
 #endif // SQUID_NFMARKCONFIG_H
 

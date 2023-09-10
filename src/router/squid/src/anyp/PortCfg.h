@@ -14,6 +14,7 @@
 #include "anyp/TrafficMode.h"
 #include "base/CodeContext.h"
 #include "comm/Connection.h"
+#include "comm/Tcp.h"
 #include "sbuf/SBuf.h"
 #include "security/ServerOptions.h"
 
@@ -24,12 +25,16 @@ class PortCfg : public CodeContext
 {
 public:
     PortCfg();
-    ~PortCfg();
-    AnyP::PortCfgPointer clone() const;
+    // no public copying/moving but see ipV4clone()
+    PortCfg(PortCfg &&) = delete;
+    ~PortCfg() override;
+
+    /// creates the same port configuration but listening on any IPv4 address
+    PortCfg *ipV4clone() const;
 
     /* CodeContext API */
-    virtual ScopedId codeContextGist() const override;
-    virtual std::ostream &detailCodeContext(std::ostream &os) const override;
+    ScopedId codeContextGist() const override;
+    std::ostream &detailCodeContext(std::ostream &os) const override;
 
     PortCfgPointer next;
 
@@ -53,12 +58,7 @@ public:
     int disable_pmtu_discovery;
     bool workerQueues; ///< whether listening queues should be worker-specific
 
-    struct {
-        unsigned int idle;
-        unsigned int interval;
-        unsigned int timeout;
-        bool enabled;
-    } tcp_keepalive;
+    Comm::TcpKeepAlive tcp_keepalive;
 
     /**
      * The listening socket details.
@@ -69,6 +69,9 @@ public:
 
     /// TLS configuration options for this listening port
     Security::ServerOptions secure;
+
+private:
+    explicit PortCfg(const PortCfg &other); // for ipV4clone() needs only!
 };
 
 } // namespace AnyP

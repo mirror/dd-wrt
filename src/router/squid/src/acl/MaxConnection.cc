@@ -12,19 +12,10 @@
 #include "acl/FilledChecklist.h"
 #include "acl/MaxConnection.h"
 #include "client_db.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "SquidConfig.h"
 
-ACL *
-ACLMaxConnection::clone() const
-{
-    return new ACLMaxConnection(*this);
-}
-
 ACLMaxConnection::ACLMaxConnection (char const *theClass) : class_ (theClass), limit(-1)
-{}
-
-ACLMaxConnection::ACLMaxConnection (ACLMaxConnection const & old) :class_ (old.class_), limit (old.limit)
 {}
 
 ACLMaxConnection::~ACLMaxConnection()

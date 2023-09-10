@@ -94,11 +94,13 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/squid-util.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
-	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
+	$(top_srcdir)/acinclude/krb5.m4 \
+	$(top_srcdir)/acinclude/ldap.m4 \
+	$(top_srcdir)/acinclude/nettle.m4 \
+	$(top_srcdir)/acinclude/pam.m4 $(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
+	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/src/auth/basic/helpers.m4 \
 	$(top_srcdir)/src/auth/basic/DB/required.m4 \
 	$(top_srcdir)/src/auth/basic/LDAP/required.m4 \
@@ -236,7 +238,6 @@ EPOLL_LIBS = @EPOLL_LIBS@
 ETAGS = @ETAGS@
 EUILIB = @EUILIB@
 EXEEXT = @EXEEXT@
-EXPATLIB = @EXPATLIB@
 EXTERNAL_ACL_HELPERS = @EXTERNAL_ACL_HELPERS@
 EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
@@ -244,7 +245,7 @@ FALSE = @FALSE@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -253,9 +254,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KRB5INCS = @KRB5INCS@
 KRB5LIBS = @KRB5LIBS@
-LBERLIB = @LBERLIB@
 LD = @LD@
-LDAPLIB = @LDAPLIB@
 LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
@@ -263,17 +262,27 @@ LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
 LIBBDB_LIBS = @LIBBDB_LIBS@
+LIBCAP_CFLAGS = @LIBCAP_CFLAGS@
+LIBCAP_LIBS = @LIBCAP_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
+LIBEXPAT_CFLAGS = @LIBEXPAT_CFLAGS@
+LIBEXPAT_LIBS = @LIBEXPAT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
+LIBLDAP_CFLAGS = @LIBLDAP_CFLAGS@
+LIBLDAP_LIBS = @LIBLDAP_LIBS@
 LIBLTDL = @LIBLTDL@
+LIBNETTLE_CFLAGS = @LIBNETTLE_CFLAGS@
+LIBNETTLE_LIBS = @LIBNETTLE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBOPENSSL_CFLAGS = @LIBOPENSSL_CFLAGS@
 LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
 LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -303,7 +312,6 @@ MKDIR = @MKDIR@
 MKDIR_P = @MKDIR_P@
 MV = @MV@
 NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
-NETTLELIB = @NETTLELIB@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
@@ -342,21 +350,19 @@ SMBCLIENT = @SMBCLIENT@
 SNMPLIB = @SNMPLIB@
 SQUID_CFLAGS = @SQUID_CFLAGS@
 SQUID_CXXFLAGS = @SQUID_CXXFLAGS@
+SQUID_RELEASE = @SQUID_RELEASE@
 SSLLIB = @SSLLIB@
 STOREID_REWRITE_HELPERS = @STOREID_REWRITE_HELPERS@
 STORE_LIBS_TO_ADD = @STORE_LIBS_TO_ADD@
 STORE_LIBS_TO_BUILD = @STORE_LIBS_TO_BUILD@
 STORE_TESTS = @STORE_TESTS@
 STRIP = @STRIP@
-SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
-SYSTEMD_LIBS = @SYSTEMD_LIBS@
 TR = @TR@
 TRUE = @TRUE@
 URL_REWRITE_HELPERS = @URL_REWRITE_HELPERS@
 VERSION = @VERSION@
 WBINFO = @WBINFO@
 WIN32_PSAPI = @WIN32_PSAPI@
-XMLLIB = @XMLLIB@
 XTRA_LIBS = @XTRA_LIBS@
 XTRA_OBJS = @XTRA_OBJS@
 abs_builddir = @abs_builddir@
@@ -420,7 +426,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # requires the linuxdoc tools
-@ENABLE_RELEASE_DOCS_TRUE@DOC = release-5
+@ENABLE_RELEASE_DOCS_TRUE@DOC = release-$(SQUID_RELEASE)
 @ENABLE_RELEASE_DOCS_TRUE@EXTRA_DIST = $(DOC).html
 @ENABLE_RELEASE_DOCS_TRUE@CLEANFILES = \
 @ENABLE_RELEASE_DOCS_TRUE@	*.html \
@@ -627,14 +633,13 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
-@ENABLE_RELEASE_DOCS_TRUE@%.ps: %.sgml
-@ENABLE_RELEASE_DOCS_TRUE@	linuxdoc -B latex -o ps $(DOC)
-
-#$(DOC).dvi: $(DOC).tex
-#	latex $(DOC).tex
-#	latex $(DOC).tex
-#	latex $(DOC).tex
-#
+@ENABLE_RELEASE_DOCS_TRUE@%.sgml: %.sgml.in
+@ENABLE_RELEASE_DOCS_TRUE@	sed \
+@ENABLE_RELEASE_DOCS_TRUE@        -e "s%[@]SQUID_VERSION[@]%$(VERSION)%g" \
+@ENABLE_RELEASE_DOCS_TRUE@        -e "s%[@]SQUID_RELEASE[@]%$(SQUID_RELEASE)%g" \
+@ENABLE_RELEASE_DOCS_TRUE@        -e "s%[@]SQUID_RELEASE_OLD[@]%$$(( $(SQUID_RELEASE) - 1 ))%g" \
+@ENABLE_RELEASE_DOCS_TRUE@        < $< >$@
+@ENABLE_RELEASE_DOCS_TRUE@	test `grep -c "@SQUID" $@` -eq 0
 
 @ENABLE_RELEASE_DOCS_TRUE@%.txt: %.sgml
 @ENABLE_RELEASE_DOCS_TRUE@	linuxdoc -B txt --filter $<
@@ -645,7 +650,10 @@ uninstall-am:
 @ENABLE_RELEASE_DOCS_TRUE@	cp -p $@ $(top_builddir)/RELEASENOTES.html
 
 @ENABLE_RELEASE_DOCS_TRUE@%.man: %.sgml
-@ENABLE_RELEASE_DOCS_TRUE@	linuxdoc -B txt -T 2 -m $(DOC)
+@ENABLE_RELEASE_DOCS_TRUE@	linuxdoc -B txt --manpage $<
+
+@ENABLE_RELEASE_DOCS_TRUE@%.info: %.sgml
+@ENABLE_RELEASE_DOCS_TRUE@	linuxdoc -B info $<
 
 @ENABLE_RELEASE_DOCS_TRUE@dist-hook: $(DOC).html
 @ENABLE_RELEASE_DOCS_TRUE@	@if test -f $(builddir)/$(DOC).html; then \

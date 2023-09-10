@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>შეცდომა: მოთხოვნილი რესურსის გამოძახება ვერ მოხერხდა</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>შეცდომა</h1>
+<h2>მოთხოვნილი ბმულის გამოთხოვა ვერ მოხერხდა</h2>
+</div>
+<hr>
+
+<div id="content">
+<p><b>არასწორი მოთხოვნა</b> შეცდომა მოთხოვნის დამუშავებისას:</p>
+
+<blockquote id="data">
+<pre>%R</pre>
+</blockquote>
+
+<p>შესაძლო პრობლემებია:</p>
+<ul>
+<li id="missing-method"><p>მოთხოვნის არარსებული ან უცნობი მეთოდი.</p></li>
+<li id="missing-url"><p>ბმული სახელი მითითებული არაა.</p></li>
+<li id="missing-protocol"><p>HTTP-ის იდენტიფიკატორი ვერ ვიპოვე (HTTP/1.0).</p></li>
+<li><p>მოთხოვნა ძალიან დიდია.</p></li>
+<li><p>PUT/POST მოთხოვნაში Content-Length მითითებული არაა.</p></li>
+<li><p>ჰოსტის სახელი დაუშვებელ სიმბოლოს შეიცავს. ქვედახაზები დაშვებული არაა.</p></li>
+<li><p>HTTP/1.1 <q>Expect:</q> feature is being asked from an HTTP/1.0 software.</p></li>
+</ul>
+
+<p>თქვენი კეშის ადმინისტრატორია <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<script language="javascript">
+if ('%M' != '[unknown method]') document.getElementById('missing-method').style.display = 'none';
+if ('%u' != '[no URL]') document.getElementById('missing-url').style.display = 'none';
+if ('%P' != '[unknown protocol]') document.getElementById('missing-protocol').style.display = 'none';
+</script>
+
+<hr>
+<div id="footer">
+<p>დაგენერირების დრო: %T, სერვისი: %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

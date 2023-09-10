@@ -42,15 +42,15 @@ public:
  * A subscription may be passed to multiple producers.
  *
  * Call_ must have a copy constructor.
- * A pointer to Call_ must be convertable to AsyncCall::Pointer
+ * A pointer to Call_ must be convertible to AsyncCall::Pointer
  */
 template<class Call_>
 class CallSubscription: public Subscription
 {
 public:
     /// Must be passed an object. nil pointers are not permitted.
-    explicit CallSubscription(const RefCount<Call_> &aCall) : call(aCall) { assert(aCall != NULL); }
-    virtual AsyncCall::Pointer callback() const
+    explicit CallSubscription(const RefCount<Call_> &aCall) : call(aCall) { assert(aCall != nullptr); }
+    AsyncCall::Pointer callback() const override
     {
         const AsyncCall::Pointer cb = new Call_(*call);
         if (!cb->codeContext || CodeContext::Current())

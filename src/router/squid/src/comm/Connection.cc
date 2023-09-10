@@ -17,16 +17,16 @@
 #include "neighbors.h"
 #include "security/NegotiationHistory.h"
 #include "SquidConfig.h"
-#include "SquidTime.h"
+
 #include <ostream>
 
-InstanceIdDefinitions(Comm::Connection, "conn");
+InstanceIdDefinitions(Comm::Connection, "conn", uint64_t);
 
 class CachePeer;
 bool
 Comm::IsConnOpen(const Comm::ConnectionPointer &conn)
 {
-    return conn != NULL && conn->isOpen();
+    return conn != nullptr && conn->isOpen();
 }
 
 Comm::Connection::Connection() :
@@ -126,7 +126,7 @@ Comm::Connection::getPeer() const
     if (cbdataReferenceValid(peer_))
         return peer_;
 
-    return NULL;
+    return nullptr;
 }
 
 void
@@ -165,7 +165,7 @@ Comm::Connection::connectTimeout(const time_t fwdStart) const
 {
     // a connection opening timeout (ignoring forwarding time limits for now)
     const CachePeer *peer = getPeer();
-    const time_t ctimeout = peer ? peerConnectTimeout(peer) : Config.Timeout.connect;
+    const auto ctimeout = peer ? peer->connectTimeout() : Config.Timeout.connect;
 
     // time we have left to finish the whole forwarding process
     const time_t fwdTimeLeft = FwdState::ForwardTimeout(fwdStart);
@@ -192,7 +192,7 @@ Comm::Connection::detailCodeContext(std::ostream &os) const
 }
 
 std::ostream &
-operator << (std::ostream &os, const Comm::Connection &conn)
+Comm::operator << (std::ostream &os, const Connection &conn)
 {
     os << conn.id;
     if (!conn.local.isNoAddr() || conn.local.port())

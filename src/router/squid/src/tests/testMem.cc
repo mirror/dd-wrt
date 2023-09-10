@@ -7,7 +7,7 @@
  */
 
 #include "squid.h"
-#include "mem/forward.h"
+#include "mem/Allocator.h"
 #include "mem/Pool.h"
 #include "tests/testMem.h"
 #include "unitTestMain.h"
@@ -34,7 +34,7 @@ public:
 void
 testMem::testMemPool()
 {
-    MemAllocator *Pool = memPoolCreate("Test Pool", sizeof(SomethingToAlloc));
+    const auto Pool = memPoolCreate("Test Pool", sizeof(SomethingToAlloc));
     CPPUNIT_ASSERT(Pool);
 
     auto *something = static_cast<SomethingToAlloc *>(Pool->alloc());

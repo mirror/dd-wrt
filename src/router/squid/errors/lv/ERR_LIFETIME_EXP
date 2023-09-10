@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>KĻŪDA: Pieprasītā adrese nav atrodama</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>Kļūda</h1>
+<h2>Nevar atvērt pieprasīto adresi.</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Iestājusies sekojoša kļūda mēģinot atvērt adresi: <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>Savienojuma sesija beigusies</b></p>
+</blockquote>
+
+<p>Squid ir pārtraucis pieprasījumu, jo ir beigusies savienojuma sesija.</p>
+
+<p>Jūsu kešatmiņas administrators ir <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Ģenerēts %T by %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

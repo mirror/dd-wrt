@@ -87,16 +87,14 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = debug$(EXEEXT) $(am__EXEEXT_2) mem_node_test$(EXEEXT) \
+check_PROGRAMS = $(am__EXEEXT_2) mem_node_test$(EXEEXT) \
 	mem_hdr_test$(EXEEXT) splay$(EXEEXT) \
 	syntheticoperators$(EXEEXT) VirtualDeleteOperator$(EXEEXT)
-TESTS = debug$(EXEEXT) syntheticoperators$(EXEEXT) \
-	VirtualDeleteOperator$(EXEEXT) splay$(EXEEXT) \
-	mem_node_test$(EXEEXT) mem_hdr_test$(EXEEXT) $(am__EXEEXT_2) \
-	squid-conf-tests
+TESTS = syntheticoperators$(EXEEXT) VirtualDeleteOperator$(EXEEXT) \
+	splay$(EXEEXT) mem_node_test$(EXEEXT) mem_hdr_test$(EXEEXT) \
+	$(am__EXEEXT_2)
 @ENABLE_LOADABLE_MODULES_TRUE@am__append_1 = $(INCLTDL)
-EXTRA_PROGRAMS = mem_node_test$(EXEEXT) membanger$(EXEEXT) \
-	splay$(EXEEXT) tcp-banger2$(EXEEXT)
+EXTRA_PROGRAMS = mem_node_test$(EXEEXT) splay$(EXEEXT)
 subdir = test-suite
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
@@ -104,11 +102,13 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/squid-util.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
-	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
+	$(top_srcdir)/acinclude/krb5.m4 \
+	$(top_srcdir)/acinclude/ldap.m4 \
+	$(top_srcdir)/acinclude/nettle.m4 \
+	$(top_srcdir)/acinclude/pam.m4 $(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
+	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/src/auth/basic/helpers.m4 \
 	$(top_srcdir)/src/auth/basic/DB/required.m4 \
 	$(top_srcdir)/src/auth/basic/LDAP/required.m4 \
@@ -171,23 +171,22 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = ESIExpressions$(EXEEXT)
 @ENABLE_ESI_TRUE@am__EXEEXT_2 = $(am__EXEEXT_1)
-am__objects_1 = stub_cbdata.$(OBJEXT) stub_debug.$(OBJEXT) \
-	stub_MemBuf.$(OBJEXT) stub_SBuf.$(OBJEXT) stub_tools.$(OBJEXT) \
-	stub_fatal.$(OBJEXT)
+am__objects_1 = stub_cbdata.$(OBJEXT) stub_MemBuf.$(OBJEXT) \
+	stub_SBuf.$(OBJEXT) stub_tools.$(OBJEXT) stub_fatal.$(OBJEXT)
 am__objects_2 = test_tools.$(OBJEXT) $(am__objects_1)
 am_ESIExpressions_OBJECTS = $(am__objects_2) ESIExpressions.$(OBJEXT) \
 	stub_libmem.$(OBJEXT)
 ESIExpressions_OBJECTS = $(am_ESIExpressions_OBJECTS)
-@ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
-am__DEPENDENCIES_2 = $(top_builddir)/compat/libcompatsquid.la \
-	$(am__DEPENDENCIES_1)
-am__DEPENDENCIES_3 =
-am__DEPENDENCIES_4 = $(top_builddir)/src/base/libbase.la \
-	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
-	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+am__DEPENDENCIES_1 = $(top_builddir)/compat/libcompatsquid.la
+am__DEPENDENCIES_2 =
+am__DEPENDENCIES_3 = $(top_builddir)/src/base/libbase.la \
+	$(top_builddir)/src/globals.o \
+	$(top_builddir)/src/time/libtime.la \
+	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2)
 ESIExpressions_DEPENDENCIES = $(top_builddir)/src/esi/Expression.o \
-	$(am__DEPENDENCIES_4)
+	$(top_builddir)/src/debug/libdebug.la \
+	$(top_builddir)/src/comm/libminimal.la $(am__DEPENDENCIES_3)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -198,52 +197,41 @@ VirtualDeleteOperator_OBJECTS = $(am_VirtualDeleteOperator_OBJECTS)
 VirtualDeleteOperator_LDADD = $(LDADD)
 VirtualDeleteOperator_DEPENDENCIES =  \
 	$(top_builddir)/src/base/libbase.la \
-	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
-	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
-am_debug_OBJECTS = $(am__objects_2) debug.$(OBJEXT) \
-	stub_libmem.$(OBJEXT)
-debug_OBJECTS = $(am_debug_OBJECTS)
-debug_LDADD = $(LDADD)
-debug_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
-	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
-	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(top_builddir)/src/globals.o \
+	$(top_builddir)/src/time/libtime.la \
+	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2)
 am_mem_hdr_test_OBJECTS = $(am__objects_2) mem_hdr_test.$(OBJEXT)
 mem_hdr_test_OBJECTS = $(am_mem_hdr_test_OBJECTS)
 mem_hdr_test_DEPENDENCIES = $(top_builddir)/src/stmem.o \
 	$(top_builddir)/src/mem_node.o \
-	$(top_builddir)/src/mem/libmem.la $(am__DEPENDENCIES_4)
+	$(top_builddir)/src/mem/libmem.la \
+	$(top_builddir)/src/debug/libdebug.la \
+	$(top_builddir)/src/comm/libminimal.la $(am__DEPENDENCIES_3)
 am_mem_node_test_OBJECTS = $(am__objects_2) mem_node_test.$(OBJEXT)
 mem_node_test_OBJECTS = $(am_mem_node_test_OBJECTS)
 mem_node_test_DEPENDENCIES = $(top_builddir)/src/mem_node.o \
-	$(top_builddir)/src/mem/libmem.la $(am__DEPENDENCIES_4)
-membanger_SOURCES = membanger.c
-membanger_OBJECTS = membanger.$(OBJEXT)
-membanger_LDADD = $(LDADD)
-membanger_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
-	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
-	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(top_builddir)/src/mem/libmem.la \
+	$(top_builddir)/src/debug/libdebug.la \
+	$(top_builddir)/src/comm/libminimal.la $(am__DEPENDENCIES_3)
 am_splay_OBJECTS = $(am__objects_2) splay.$(OBJEXT) \
 	stub_libmem.$(OBJEXT)
 splay_OBJECTS = $(am_splay_OBJECTS)
 splay_LDADD = $(LDADD)
 splay_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
-	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
-	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(top_builddir)/src/globals.o \
+	$(top_builddir)/src/time/libtime.la \
+	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2)
 am_syntheticoperators_OBJECTS = $(am__objects_2) stub_libmem.$(OBJEXT) \
 	syntheticoperators.$(OBJEXT)
 syntheticoperators_OBJECTS = $(am_syntheticoperators_OBJECTS)
 syntheticoperators_LDADD = $(LDADD)
 syntheticoperators_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
-	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
-	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
-tcp_banger2_SOURCES = tcp-banger2.c
-tcp_banger2_OBJECTS = tcp-banger2.$(OBJEXT)
-tcp_banger2_DEPENDENCIES = $(top_builddir)/lib/libmiscutil.la
+	$(top_builddir)/src/globals.o \
+	$(top_builddir)/src/time/libtime.la \
+	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -260,33 +248,14 @@ DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/ESIExpressions.Po \
-	./$(DEPDIR)/VirtualDeleteOperator.Po ./$(DEPDIR)/debug.Po \
+	./$(DEPDIR)/VirtualDeleteOperator.Po \
 	./$(DEPDIR)/mem_hdr_test.Po ./$(DEPDIR)/mem_node_test.Po \
-	./$(DEPDIR)/membanger.Po ./$(DEPDIR)/splay.Po \
-	./$(DEPDIR)/stub_MemBuf.Po ./$(DEPDIR)/stub_SBuf.Po \
-	./$(DEPDIR)/stub_cbdata.Po ./$(DEPDIR)/stub_debug.Po \
+	./$(DEPDIR)/splay.Po ./$(DEPDIR)/stub_MemBuf.Po \
+	./$(DEPDIR)/stub_SBuf.Po ./$(DEPDIR)/stub_cbdata.Po \
 	./$(DEPDIR)/stub_fatal.Po ./$(DEPDIR)/stub_libmem.Po \
 	./$(DEPDIR)/stub_tools.Po ./$(DEPDIR)/syntheticoperators.Po \
-	./$(DEPDIR)/tcp-banger2.Po ./$(DEPDIR)/test_tools.Po
+	./$(DEPDIR)/test_tools.Po
 am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_@AM_V@)
-am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_@AM_V@)
-am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
@@ -305,14 +274,31 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
 SOURCES = $(ESIExpressions_SOURCES) $(VirtualDeleteOperator_SOURCES) \
-	$(debug_SOURCES) $(mem_hdr_test_SOURCES) \
-	$(mem_node_test_SOURCES) membanger.c $(splay_SOURCES) \
-	$(syntheticoperators_SOURCES) tcp-banger2.c
+	$(mem_hdr_test_SOURCES) $(mem_node_test_SOURCES) \
+	$(splay_SOURCES) $(syntheticoperators_SOURCES)
 DIST_SOURCES = $(ESIExpressions_SOURCES) \
-	$(VirtualDeleteOperator_SOURCES) $(debug_SOURCES) \
-	$(mem_hdr_test_SOURCES) $(mem_node_test_SOURCES) membanger.c \
-	$(splay_SOURCES) $(syntheticoperators_SOURCES) tcp-banger2.c
+	$(VirtualDeleteOperator_SOURCES) $(mem_hdr_test_SOURCES) \
+	$(mem_node_test_SOURCES) $(splay_SOURCES) \
+	$(syntheticoperators_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -602,7 +588,6 @@ EPOLL_LIBS = @EPOLL_LIBS@
 ETAGS = @ETAGS@
 EUILIB = @EUILIB@
 EXEEXT = @EXEEXT@
-EXPATLIB = @EXPATLIB@
 EXTERNAL_ACL_HELPERS = @EXTERNAL_ACL_HELPERS@
 EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
@@ -610,7 +595,7 @@ FALSE = @FALSE@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -619,9 +604,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KRB5INCS = @KRB5INCS@
 KRB5LIBS = @KRB5LIBS@
-LBERLIB = @LBERLIB@
 LD = @LD@
-LDAPLIB = @LDAPLIB@
 LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
@@ -629,17 +612,27 @@ LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
 LIBBDB_LIBS = @LIBBDB_LIBS@
+LIBCAP_CFLAGS = @LIBCAP_CFLAGS@
+LIBCAP_LIBS = @LIBCAP_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
+LIBEXPAT_CFLAGS = @LIBEXPAT_CFLAGS@
+LIBEXPAT_LIBS = @LIBEXPAT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
+LIBLDAP_CFLAGS = @LIBLDAP_CFLAGS@
+LIBLDAP_LIBS = @LIBLDAP_LIBS@
 LIBLTDL = @LIBLTDL@
+LIBNETTLE_CFLAGS = @LIBNETTLE_CFLAGS@
+LIBNETTLE_LIBS = @LIBNETTLE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBOPENSSL_CFLAGS = @LIBOPENSSL_CFLAGS@
 LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
 LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -669,7 +662,6 @@ MKDIR = @MKDIR@
 MKDIR_P = @MKDIR_P@
 MV = @MV@
 NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
-NETTLELIB = @NETTLELIB@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
@@ -708,21 +700,19 @@ SMBCLIENT = @SMBCLIENT@
 SNMPLIB = @SNMPLIB@
 SQUID_CFLAGS = @SQUID_CFLAGS@
 SQUID_CXXFLAGS = @SQUID_CXXFLAGS@
+SQUID_RELEASE = @SQUID_RELEASE@
 SSLLIB = @SSLLIB@
 STOREID_REWRITE_HELPERS = @STOREID_REWRITE_HELPERS@
 STORE_LIBS_TO_ADD = @STORE_LIBS_TO_ADD@
 STORE_LIBS_TO_BUILD = @STORE_LIBS_TO_BUILD@
 STORE_TESTS = @STORE_TESTS@
 STRIP = @STRIP@
-SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
-SYSTEMD_LIBS = @SYSTEMD_LIBS@
 TR = @TR@
 TRUE = @TRUE@
 URL_REWRITE_HELPERS = @URL_REWRITE_HELPERS@
 VERSION = @VERSION@
 WBINFO = @WBINFO@
 WIN32_PSAPI = @WIN32_PSAPI@
-XMLLIB = @XMLLIB@
 XTRA_LIBS = @XTRA_LIBS@
 XTRA_OBJS = @XTRA_OBJS@
 abs_builddir = @abs_builddir@
@@ -805,25 +795,26 @@ DEFAULT_ICON_DIR = $(datadir)/icons
 DEFAULT_ERROR_DIR = $(datadir)/errors
 AM_CFLAGS = $(SQUID_CFLAGS)
 AM_CXXFLAGS = $(SQUID_CXXFLAGS)
-CLEANFILES = $(STUBS) stub_libmem.cc squid-conf-tests
+CLEANFILES = $(STUBS) stub_libmem.cc squid-conf-tests squid-stderr.log
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_builddir)/include $(LIBCPPUNIT_CFLAGS) $(KRB5INCS) \
 	$(am__append_1) -I$(srcdir)
-@ENABLE_XPROF_STATS_FALSE@LIBPROFILER = 
-@ENABLE_XPROF_STATS_TRUE@LIBPROFILER = $(top_builddir)/lib/profiler/libprofiler.la
 COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 LDADD = \
 	$(top_builddir)/src/base/libbase.la \
 	$(top_builddir)/src/globals.o \
-	$(top_builddir)/src/time.o \
+	$(top_builddir)/src/time/libtime.la \
 	$(top_builddir)/lib/libmiscutil.la \
 	$(COMPAT_LIB) \
 	$(XTRA_LIBS)
 
 EXTRA_DIST = \
 	$(srcdir)/squidconf/* \
+	test-functionality.sh \
+	test-sources.sh \
+	test-squid-conf.sh \
 	testheaders.sh
 
 ESI_ALL_TESTS = \
@@ -831,13 +822,11 @@ ESI_ALL_TESTS = \
 
 @ENABLE_ESI_FALSE@ESI_TESTS = 
 @ENABLE_ESI_TRUE@ESI_TESTS = $(ESI_ALL_TESTS)
-tcp_banger2_LDADD = $(top_builddir)/lib/libmiscutil.la
 
 #do not include stub_libmem.cc here, as it would override libmem.la in
 # several tests whose purpose is testing libmem itself.
 STUBS = \
 	stub_cbdata.cc \
-	stub_debug.cc \
 	stub_MemBuf.cc \
 	stub_SBuf.cc \
 	stub_tools.cc \
@@ -845,17 +834,14 @@ STUBS = \
 	STUB.h
 
 DEBUG_SOURCE = test_tools.cc $(STUBS)
-debug_SOURCES = \
-	$(DEBUG_SOURCE) \
-	debug.cc \
-	stub_libmem.cc
-
 ESIExpressions_SOURCES = \
 	$(DEBUG_SOURCE) \
 	ESIExpressions.cc \
 	stub_libmem.cc
 
 ESIExpressions_LDADD = $(top_builddir)/src/esi/Expression.o \
+	$(top_builddir)/src/debug/libdebug.la \
+	$(top_builddir)/src/comm/libminimal.la \
 		$(LDADD)
 
 mem_node_test_SOURCES = \
@@ -865,6 +851,8 @@ mem_node_test_SOURCES = \
 mem_node_test_LDADD = \
 	$(top_builddir)/src/mem_node.o \
 	$(top_builddir)/src/mem/libmem.la \
+	$(top_builddir)/src/debug/libdebug.la \
+	$(top_builddir)/src/comm/libminimal.la \
 	$(LDADD)
 
 mem_hdr_test_SOURCES = \
@@ -875,6 +863,8 @@ mem_hdr_test_LDADD = \
 	$(top_builddir)/src/stmem.o \
 	$(top_builddir)/src/mem_node.o \
 	$(top_builddir)/src/mem/libmem.la \
+	$(top_builddir)/src/debug/libdebug.la \
+	$(top_builddir)/src/comm/libminimal.la \
 	$(LDADD)
 
 splay_SOURCES = \
@@ -895,7 +885,7 @@ VirtualDeleteOperator_SOURCES = \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .lo .log .o .obj .test .test$(EXEEXT) .trs
+.SUFFIXES: .cc .lo .log .o .obj .test .test$(EXEEXT) .trs
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/src/Common.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -944,10 +934,6 @@ VirtualDeleteOperator$(EXEEXT): $(VirtualDeleteOperator_OBJECTS) $(VirtualDelete
 	@rm -f VirtualDeleteOperator$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(VirtualDeleteOperator_OBJECTS) $(VirtualDeleteOperator_LDADD) $(LIBS)
 
-debug$(EXEEXT): $(debug_OBJECTS) $(debug_DEPENDENCIES) $(EXTRA_debug_DEPENDENCIES) 
-	@rm -f debug$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(debug_OBJECTS) $(debug_LDADD) $(LIBS)
-
 mem_hdr_test$(EXEEXT): $(mem_hdr_test_OBJECTS) $(mem_hdr_test_DEPENDENCIES) $(EXTRA_mem_hdr_test_DEPENDENCIES) 
 	@rm -f mem_hdr_test$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(mem_hdr_test_OBJECTS) $(mem_hdr_test_LDADD) $(LIBS)
@@ -955,10 +941,6 @@ mem_hdr_test$(EXEEXT): $(mem_hdr_test_OBJECTS) $(mem_hdr_test_DEPENDENCIES) $(EX
 mem_node_test$(EXEEXT): $(mem_node_test_OBJECTS) $(mem_node_test_DEPENDENCIES) $(EXTRA_mem_node_test_DEPENDENCIES) 
 	@rm -f mem_node_test$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(mem_node_test_OBJECTS) $(mem_node_test_LDADD) $(LIBS)
-
-membanger$(EXEEXT): $(membanger_OBJECTS) $(membanger_DEPENDENCIES) $(EXTRA_membanger_DEPENDENCIES) 
-	@rm -f membanger$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(membanger_OBJECTS) $(membanger_LDADD) $(LIBS)
 
 splay$(EXEEXT): $(splay_OBJECTS) $(splay_DEPENDENCIES) $(EXTRA_splay_DEPENDENCIES) 
 	@rm -f splay$(EXEEXT)
@@ -968,10 +950,6 @@ syntheticoperators$(EXEEXT): $(syntheticoperators_OBJECTS) $(syntheticoperators_
 	@rm -f syntheticoperators$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(syntheticoperators_OBJECTS) $(syntheticoperators_LDADD) $(LIBS)
 
-tcp-banger2$(EXEEXT): $(tcp_banger2_OBJECTS) $(tcp_banger2_DEPENDENCIES) $(EXTRA_tcp_banger2_DEPENDENCIES) 
-	@rm -f tcp-banger2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(tcp_banger2_OBJECTS) $(tcp_banger2_LDADD) $(LIBS)
-
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -980,20 +958,16 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ESIExpressions.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VirtualDeleteOperator.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mem_hdr_test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mem_node_test.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/membanger.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splay.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_MemBuf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_SBuf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_cbdata.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_debug.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_fatal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_libmem.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_tools.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syntheticoperators.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcp-banger2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_tools.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -1001,30 +975,6 @@ $(am__depfiles_remade):
 	@echo '# dummy' >$@-t && $(am__mv) $@-t $@
 
 am--depfiles: $(am__depfiles_remade)
-
-.c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -1249,13 +1199,6 @@ recheck: all $(check_PROGRAMS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
-debug.log: debug$(EXEEXT)
-	@p='debug$(EXEEXT)'; \
-	b='debug'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 syntheticoperators.log: syntheticoperators$(EXEEXT)
 	@p='syntheticoperators$(EXEEXT)'; \
 	b='syntheticoperators'; \
@@ -1294,13 +1237,6 @@ mem_hdr_test.log: mem_hdr_test$(EXEEXT)
 ESIExpressions.log: ESIExpressions$(EXEEXT)
 	@p='ESIExpressions$(EXEEXT)'; \
 	b='ESIExpressions'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-squid-conf-tests.log: squid-conf-tests
-	@p='squid-conf-tests'; \
-	b='squid-conf-tests'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1400,20 +1336,16 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/ESIExpressions.Po
 	-rm -f ./$(DEPDIR)/VirtualDeleteOperator.Po
-	-rm -f ./$(DEPDIR)/debug.Po
 	-rm -f ./$(DEPDIR)/mem_hdr_test.Po
 	-rm -f ./$(DEPDIR)/mem_node_test.Po
-	-rm -f ./$(DEPDIR)/membanger.Po
 	-rm -f ./$(DEPDIR)/splay.Po
 	-rm -f ./$(DEPDIR)/stub_MemBuf.Po
 	-rm -f ./$(DEPDIR)/stub_SBuf.Po
 	-rm -f ./$(DEPDIR)/stub_cbdata.Po
-	-rm -f ./$(DEPDIR)/stub_debug.Po
 	-rm -f ./$(DEPDIR)/stub_fatal.Po
 	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/stub_tools.Po
 	-rm -f ./$(DEPDIR)/syntheticoperators.Po
-	-rm -f ./$(DEPDIR)/tcp-banger2.Po
 	-rm -f ./$(DEPDIR)/test_tools.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -1457,25 +1389,21 @@ install-ps: install-ps-am
 
 install-ps-am:
 
-installcheck-am:
+installcheck-am: installcheck-local
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/ESIExpressions.Po
 	-rm -f ./$(DEPDIR)/VirtualDeleteOperator.Po
-	-rm -f ./$(DEPDIR)/debug.Po
 	-rm -f ./$(DEPDIR)/mem_hdr_test.Po
 	-rm -f ./$(DEPDIR)/mem_node_test.Po
-	-rm -f ./$(DEPDIR)/membanger.Po
 	-rm -f ./$(DEPDIR)/splay.Po
 	-rm -f ./$(DEPDIR)/stub_MemBuf.Po
 	-rm -f ./$(DEPDIR)/stub_SBuf.Po
 	-rm -f ./$(DEPDIR)/stub_cbdata.Po
-	-rm -f ./$(DEPDIR)/stub_debug.Po
 	-rm -f ./$(DEPDIR)/stub_fatal.Po
 	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/stub_tools.Po
 	-rm -f ./$(DEPDIR)/syntheticoperators.Po
-	-rm -f ./$(DEPDIR)/tcp-banger2.Po
 	-rm -f ./$(DEPDIR)/test_tools.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
@@ -1506,10 +1434,11 @@ uninstall-am:
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am
+	installcheck installcheck-am installcheck-local installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
+	uninstall-am
 
 .PRECIOUS: Makefile
 
@@ -1518,9 +1447,6 @@ $(OBJS): $(top_srcdir)/include/version.h $(top_builddir)/include/autoconf.h
 
 stub_cbdata.cc: $(top_srcdir)/src/tests/stub_cbdata.cc
 	cp $(top_srcdir)/src/tests/stub_cbdata.cc $@
-
-stub_debug.cc: $(top_srcdir)/src/tests/stub_debug.cc
-	cp $(top_srcdir)/src/tests/stub_debug.cc $@
 
 stub_MemBuf.cc: $(top_srcdir)/src/tests/stub_MemBuf.cc
 	cp $(top_srcdir)/src/tests/stub_MemBuf.cc $@
@@ -1540,10 +1466,12 @@ stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc STUB.h
 STUB.h: $(top_srcdir)/src/tests/STUB.h
 	cp $(top_srcdir)/src/tests/STUB.h $@
 
-squid-conf-tests: $(top_builddir)/src/squid.conf.default $(srcdir)/squidconf/*
-	@failed=0; cfglist="$?"; rm -f $@ || $(TRUE); \
+installcheck-local: squid-conf-tests
+
+squid-conf-tests: $(srcdir)/test-squid-conf.sh $(top_builddir)/src/squid.conf.default $(srcdir)/squidconf/*
+	@failed=0; cfglist="$(top_builddir)/src/squid.conf.default $(srcdir)/squidconf/*.conf"; rm -f $@ || $(TRUE); \
 	for cfg in $$cfglist ; do \
-		$(top_builddir)/src/squid -k parse -f $$cfg || \
+		$(srcdir)/test-squid-conf.sh $(top_builddir) $(sbindir) $$cfg || \
 			{ echo "FAIL: squid.conf test: $$cfg" | \
 				sed s%$(top_builddir)/src/%% | \
 				sed s%$(srcdir)/squidconf/%% ; \
@@ -1555,7 +1483,7 @@ squid-conf-tests: $(top_builddir)/src/squid.conf.default $(srcdir)/squidconf/*
 				sed s%$(srcdir)/squidconf/%% ; \
 		else break; fi; \
 	done; \
-	if test "$$failed" -eq 0; then cp $(TRUE) $@ ; fi
+	if test "$$failed" -eq 0; then cp $(TRUE) $@ ; else exit 1; fi
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

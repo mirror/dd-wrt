@@ -9,11 +9,11 @@
 #ifndef SQUID_STORE_H
 #define SQUID_STORE_H
 
+#include "base/DelayedAsyncCalls.h"
 #include "base/Packable.h"
 #include "base/Range.h"
 #include "base/RefCount.h"
 #include "comm/forward.h"
-#include "CommRead.h"
 #include "hash.h"
 #include "http/forward.h"
 #include "http/RequestMethod.h"
@@ -42,12 +42,11 @@ class StoreEntry : public hash_link, public Packable
 {
 
 public:
-    static DeferredRead::DeferrableRead DeferReader;
     bool checkDeferRead(int fd) const;
 
     const char *getMD5Text() const;
     StoreEntry();
-    virtual ~StoreEntry();
+    ~StoreEntry() override;
 
     MemObject &mem() { assert(mem_obj); return *mem_obj; }
     const MemObject &mem() const { assert(mem_obj); return *mem_obj; }
@@ -94,6 +93,8 @@ public:
     void memOutDecision(const bool willCacheInRam);
     // called when a decision to cache on disk has been made
     void swapOutDecision(const MemObject::SwapOut::Decision &decision);
+    /// called when a store writer ends its work (successfully or not)
+    void storeWriterDone();
 
     void abort();
     bool makePublic(const KeyScope keyScope = ksDefault);
@@ -171,8 +172,6 @@ public:
     void destroyMemObject();
     int checkTooSmall();
 
-    void delayAwareRead(const Comm::ConnectionPointer &conn, char *buf, int len, AsyncCall::Pointer callback);
-
     void setNoDelay (bool const);
     void lastModified(const time_t when) { lastModified_ = when; }
     /// \returns entry's 'effective' modification time
@@ -248,9 +247,6 @@ public:
 
 public:
     static size_t inUseCount();
-    static void getPublicByRequestMethod(StoreClient * aClient, HttpRequest * request, const HttpRequestMethod& method);
-    static void getPublicByRequest(StoreClient * aClient, HttpRequest * request);
-    static void getPublic(StoreClient * aClient, const char *uri, const HttpRequestMethod& method);
 
     void *operator new(size_t byteCount);
     void operator delete(void *address);
@@ -266,7 +262,7 @@ public:
     void lock(const char *context);
 
     /// disclaim shared ownership; may remove entry from store and delete it
-    /// returns remaning lock level (zero for unlocked and possibly gone entry)
+    /// returns remaining lock level (zero for unlocked and possibly gone entry)
     int unlock(const char *context);
 
     /// returns a local concurrent use counter, for debugging
@@ -301,15 +297,15 @@ public:
 #endif
 
     /* Packable API */
-    virtual void append(char const *, int);
-    virtual void vappendf(const char *, va_list);
-    virtual void buffer();
-    virtual void flush();
+    void append(char const *, int) override;
+    void vappendf(const char *, va_list) override;
+    void buffer() override;
+    void flush() override;
 
 protected:
     typedef Store::EntryGuard EntryGuard;
 
-    void transientsAbandonmentCheck();
+    void storeWritingCheckpoint();
     /// does nothing except throwing if disk-associated data members are inconsistent
     void checkDisk() const;
 
@@ -323,7 +319,7 @@ private:
     /// flags [truncated or too big] entry with ENTRY_BAD_LENGTH and releases it
     void lengthWentBad(const char *reason);
 
-    static MemAllocator *pool;
+    static Mem::Allocator *pool;
 
     unsigned short lock_count;      /* Assume < 65536! */
 
@@ -430,9 +426,6 @@ void storeInit(void);
 
 /// \ingroup StoreAPI
 void storeConfigure(void);
-
-/// \ingroup StoreAPI
-void storeFreeMemory(void);
 
 /// \ingroup StoreAPI
 int expiresMoreThan(time_t, time_t);

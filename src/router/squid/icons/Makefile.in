@@ -95,11 +95,13 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/squid-util.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
-	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
+	$(top_srcdir)/acinclude/krb5.m4 \
+	$(top_srcdir)/acinclude/ldap.m4 \
+	$(top_srcdir)/acinclude/nettle.m4 \
+	$(top_srcdir)/acinclude/pam.m4 $(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
+	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/src/auth/basic/helpers.m4 \
 	$(top_srcdir)/src/auth/basic/DB/required.m4 \
 	$(top_srcdir)/src/auth/basic/LDAP/required.m4 \
@@ -266,7 +268,6 @@ EPOLL_LIBS = @EPOLL_LIBS@
 ETAGS = @ETAGS@
 EUILIB = @EUILIB@
 EXEEXT = @EXEEXT@
-EXPATLIB = @EXPATLIB@
 EXTERNAL_ACL_HELPERS = @EXTERNAL_ACL_HELPERS@
 EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
@@ -274,7 +275,7 @@ FALSE = @FALSE@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -283,9 +284,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KRB5INCS = @KRB5INCS@
 KRB5LIBS = @KRB5LIBS@
-LBERLIB = @LBERLIB@
 LD = @LD@
-LDAPLIB = @LDAPLIB@
 LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
@@ -293,17 +292,27 @@ LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
 LIBBDB_LIBS = @LIBBDB_LIBS@
+LIBCAP_CFLAGS = @LIBCAP_CFLAGS@
+LIBCAP_LIBS = @LIBCAP_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
+LIBEXPAT_CFLAGS = @LIBEXPAT_CFLAGS@
+LIBEXPAT_LIBS = @LIBEXPAT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
+LIBLDAP_CFLAGS = @LIBLDAP_CFLAGS@
+LIBLDAP_LIBS = @LIBLDAP_LIBS@
 LIBLTDL = @LIBLTDL@
+LIBNETTLE_CFLAGS = @LIBNETTLE_CFLAGS@
+LIBNETTLE_LIBS = @LIBNETTLE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBOPENSSL_CFLAGS = @LIBOPENSSL_CFLAGS@
 LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
 LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -333,7 +342,6 @@ MKDIR = @MKDIR@
 MKDIR_P = @MKDIR_P@
 MV = @MV@
 NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
-NETTLELIB = @NETTLELIB@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
@@ -372,21 +380,19 @@ SMBCLIENT = @SMBCLIENT@
 SNMPLIB = @SNMPLIB@
 SQUID_CFLAGS = @SQUID_CFLAGS@
 SQUID_CXXFLAGS = @SQUID_CXXFLAGS@
+SQUID_RELEASE = @SQUID_RELEASE@
 SSLLIB = @SSLLIB@
 STOREID_REWRITE_HELPERS = @STOREID_REWRITE_HELPERS@
 STORE_LIBS_TO_ADD = @STORE_LIBS_TO_ADD@
 STORE_LIBS_TO_BUILD = @STORE_LIBS_TO_BUILD@
 STORE_TESTS = @STORE_TESTS@
 STRIP = @STRIP@
-SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
-SYSTEMD_LIBS = @SYSTEMD_LIBS@
 TR = @TR@
 TRUE = @TRUE@
 URL_REWRITE_HELPERS = @URL_REWRITE_HELPERS@
 VERSION = @VERSION@
 WBINFO = @WBINFO@
 WIN32_PSAPI = @WIN32_PSAPI@
-XMLLIB = @XMLLIB@
 XTRA_LIBS = @XTRA_LIBS@
 XTRA_OBJS = @XTRA_OBJS@
 abs_builddir = @abs_builddir@
@@ -449,56 +455,56 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ICONS = \
-    silk/application.png \
-    silk/arrow_up.png \
-    silk/bomb.png \
-    silk/box.png \
-    silk/bricks.png \
-    silk/bullet_red.png \
-    silk/cd.png \
-    silk/chart_line.png \
-    silk/compress.png \
-    silk/computer_link.png \
-    silk/css.png \
-    silk/cup.png \
-    silk/database.png \
-    silk/database_table.png \
-    silk/drive_disk.png \
-    silk/film_key.png \
-    silk/film.png \
-    silk/folder.png \
-    silk/folder_table.png \
-    silk/image.png \
-    silk/information.png \
-    silk/layers.png \
-    silk/layout.png \
-    silk/link.png \
-    silk/music.png \
-    silk/package_go.png \
-    silk/package.png \
-    silk/page_code.png \
-    silk/page_excel.png \
-    silk/page_green.png \
-    silk/page_white_acrobat.png \
-    silk/page_white_cplusplus.png \
-    silk/page_white_c.png \
-    silk/page_white_flash.png \
-    silk/page_white_magnify.png \
-    silk/page_white_picture.png \
-    silk/page_white.png \
-    silk/page_white_powerpoint.png \
-    silk/page_white_stack.png \
-    silk/page_white_text.png \
-    silk/page_white_word.png \
-    silk/page_white_zip.png \
-    silk/page_world.png \
-    silk/photo.png \
-    silk/picture.png \
-    silk/plugin_add.png \
-    silk/plugin.png \
-    silk/script_gear.png \
-    silk/script_palette.png \
-    silk/script.png
+	silk/application.png \
+	silk/arrow_up.png \
+	silk/bomb.png \
+	silk/box.png \
+	silk/bricks.png \
+	silk/bullet_red.png \
+	silk/cd.png \
+	silk/chart_line.png \
+	silk/compress.png \
+	silk/computer_link.png \
+	silk/css.png \
+	silk/cup.png \
+	silk/database.png \
+	silk/database_table.png \
+	silk/drive_disk.png \
+	silk/film.png \
+	silk/film_key.png \
+	silk/folder.png \
+	silk/folder_table.png \
+	silk/image.png \
+	silk/information.png \
+	silk/layers.png \
+	silk/layout.png \
+	silk/link.png \
+	silk/music.png \
+	silk/package.png \
+	silk/package_go.png \
+	silk/page_code.png \
+	silk/page_excel.png \
+	silk/page_green.png \
+	silk/page_white.png \
+	silk/page_white_acrobat.png \
+	silk/page_white_c.png \
+	silk/page_white_cplusplus.png \
+	silk/page_white_flash.png \
+	silk/page_white_magnify.png \
+	silk/page_white_picture.png \
+	silk/page_white_powerpoint.png \
+	silk/page_white_stack.png \
+	silk/page_white_text.png \
+	silk/page_white_word.png \
+	silk/page_white_zip.png \
+	silk/page_world.png \
+	silk/photo.png \
+	silk/picture.png \
+	silk/plugin.png \
+	silk/plugin_add.png \
+	silk/script.png \
+	silk/script_gear.png \
+	silk/script_palette.png
 
 icondir = $(datadir)/icons/silk
 icon_DATA = $(ICONS)

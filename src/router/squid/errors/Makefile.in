@@ -94,11 +94,13 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/squid-util.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
-	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
+	$(top_srcdir)/acinclude/krb5.m4 \
+	$(top_srcdir)/acinclude/ldap.m4 \
+	$(top_srcdir)/acinclude/nettle.m4 \
+	$(top_srcdir)/acinclude/pam.m4 $(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
+	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/src/auth/basic/helpers.m4 \
 	$(top_srcdir)/src/auth/basic/DB/required.m4 \
 	$(top_srcdir)/src/auth/basic/LDAP/required.m4 \
@@ -237,7 +239,6 @@ EPOLL_LIBS = @EPOLL_LIBS@
 ETAGS = @ETAGS@
 EUILIB = @EUILIB@
 EXEEXT = @EXEEXT@
-EXPATLIB = @EXPATLIB@
 EXTERNAL_ACL_HELPERS = @EXTERNAL_ACL_HELPERS@
 EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
@@ -245,7 +246,7 @@ FALSE = @FALSE@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -254,9 +255,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KRB5INCS = @KRB5INCS@
 KRB5LIBS = @KRB5LIBS@
-LBERLIB = @LBERLIB@
 LD = @LD@
-LDAPLIB = @LDAPLIB@
 LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
@@ -264,17 +263,27 @@ LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
 LIBBDB_LIBS = @LIBBDB_LIBS@
+LIBCAP_CFLAGS = @LIBCAP_CFLAGS@
+LIBCAP_LIBS = @LIBCAP_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
+LIBEXPAT_CFLAGS = @LIBEXPAT_CFLAGS@
+LIBEXPAT_LIBS = @LIBEXPAT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
+LIBLDAP_CFLAGS = @LIBLDAP_CFLAGS@
+LIBLDAP_LIBS = @LIBLDAP_LIBS@
 LIBLTDL = @LIBLTDL@
+LIBNETTLE_CFLAGS = @LIBNETTLE_CFLAGS@
+LIBNETTLE_LIBS = @LIBNETTLE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBOPENSSL_CFLAGS = @LIBOPENSSL_CFLAGS@
 LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
 LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -304,7 +313,6 @@ MKDIR = @MKDIR@
 MKDIR_P = @MKDIR_P@
 MV = @MV@
 NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
-NETTLELIB = @NETTLELIB@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
@@ -343,21 +351,19 @@ SMBCLIENT = @SMBCLIENT@
 SNMPLIB = @SNMPLIB@
 SQUID_CFLAGS = @SQUID_CFLAGS@
 SQUID_CXXFLAGS = @SQUID_CXXFLAGS@
+SQUID_RELEASE = @SQUID_RELEASE@
 SSLLIB = @SSLLIB@
 STOREID_REWRITE_HELPERS = @STOREID_REWRITE_HELPERS@
 STORE_LIBS_TO_ADD = @STORE_LIBS_TO_ADD@
 STORE_LIBS_TO_BUILD = @STORE_LIBS_TO_BUILD@
 STORE_TESTS = @STORE_TESTS@
 STRIP = @STRIP@
-SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
-SYSTEMD_LIBS = @SYSTEMD_LIBS@
 TR = @TR@
 TRUE = @TRUE@
 URL_REWRITE_HELPERS = @URL_REWRITE_HELPERS@
 VERSION = @VERSION@
 WBINFO = @WBINFO@
 WIN32_PSAPI = @WIN32_PSAPI@
-XMLLIB = @XMLLIB@
 XTRA_LIBS = @XTRA_LIBS@
 XTRA_OBJS = @XTRA_OBJS@
 abs_builddir = @abs_builddir@
@@ -423,97 +429,99 @@ errordir = $(datadir)/errors
 DEFAULT_ERROR_DIR = $(errordir)
 DEFAULT_STYLESHEET = $(sysconfdir)/errorpage.css
 ERROR_TEMPLATES = \
-    templates/ERR_ACCESS_DENIED \
-    templates/ERR_ACL_TIME_QUOTA_EXCEEDED \
-    templates/ERR_AGENT_CONFIGURE \
-    templates/ERR_AGENT_WPAD \
-    templates/ERR_CACHE_ACCESS_DENIED \
-    templates/ERR_CACHE_MGR_ACCESS_DENIED \
-    templates/ERR_CANNOT_FORWARD \
-    templates/ERR_CONFLICT_HOST \
-    templates/ERR_CONNECT_FAIL \
-    templates/ERR_DIR_LISTING \
-    templates/ERR_DNS_FAIL \
-    templates/ERR_ESI \
-    templates/ERR_FORWARDING_DENIED \
-    templates/ERR_FTP_DISABLED \
-    templates/ERR_FTP_FAILURE \
-    templates/ERR_FTP_FORBIDDEN \
-    templates/ERR_FTP_NOT_FOUND \
-    templates/ERR_FTP_PUT_CREATED \
-    templates/ERR_FTP_PUT_ERROR \
-    templates/ERR_FTP_PUT_MODIFIED \
-    templates/ERR_FTP_UNAVAILABLE \
-    templates/ERR_GATEWAY_FAILURE \
-    templates/ERR_ICAP_FAILURE \
-    templates/ERR_INVALID_REQ \
-    templates/ERR_INVALID_RESP \
-    templates/ERR_INVALID_URL \
-    templates/ERR_LIFETIME_EXP \
-    templates/ERR_NO_RELAY \
-    templates/ERR_ONLY_IF_CACHED_MISS \
-    templates/ERR_PRECONDITION_FAILED \
-    templates/ERR_PROTOCOL_UNKNOWN \
-    templates/ERR_READ_ERROR \
-    templates/ERR_READ_TIMEOUT \
-    templates/ERR_SECURE_CONNECT_FAIL \
-    templates/ERR_SHUTTING_DOWN \
-    templates/ERR_SOCKET_FAILURE \
-    templates/ERR_TOO_BIG \
-    templates/ERR_UNSUP_HTTPVERSION \
-    templates/ERR_UNSUP_REQ \
-    templates/ERR_URN_RESOLVE \
-    templates/ERR_WRITE_ERROR \
-    templates/ERR_ZERO_SIZE_OBJECT
+	templates/ERR_ACCESS_DENIED \
+	templates/ERR_ACL_TIME_QUOTA_EXCEEDED \
+	templates/ERR_AGENT_CONFIGURE \
+	templates/ERR_AGENT_WPAD \
+	templates/ERR_CACHE_ACCESS_DENIED \
+	templates/ERR_CACHE_MGR_ACCESS_DENIED \
+	templates/ERR_CANNOT_FORWARD \
+	templates/ERR_CONFLICT_HOST \
+	templates/ERR_CONNECT_FAIL \
+	templates/ERR_DIR_LISTING \
+	templates/ERR_DNS_FAIL \
+	templates/ERR_ESI \
+	templates/ERR_FORWARDING_DENIED \
+	templates/ERR_FTP_DISABLED \
+	templates/ERR_FTP_FAILURE \
+	templates/ERR_FTP_FORBIDDEN \
+	templates/ERR_FTP_NOT_FOUND \
+	templates/ERR_FTP_PUT_CREATED \
+	templates/ERR_FTP_PUT_ERROR \
+	templates/ERR_FTP_PUT_MODIFIED \
+	templates/ERR_FTP_UNAVAILABLE \
+	templates/ERR_GATEWAY_FAILURE \
+	templates/ERR_ICAP_FAILURE \
+	templates/ERR_INVALID_REQ \
+	templates/ERR_INVALID_RESP \
+	templates/ERR_INVALID_URL \
+	templates/ERR_LIFETIME_EXP \
+	templates/ERR_NO_RELAY \
+	templates/ERR_ONLY_IF_CACHED_MISS \
+	templates/ERR_PRECONDITION_FAILED \
+	templates/ERR_PROTOCOL_UNKNOWN \
+	templates/ERR_READ_ERROR \
+	templates/ERR_READ_TIMEOUT \
+	templates/ERR_SECURE_CONNECT_FAIL \
+	templates/ERR_SHUTTING_DOWN \
+	templates/ERR_SOCKET_FAILURE \
+	templates/ERR_TOO_BIG \
+	templates/ERR_UNSUP_HTTPVERSION \
+	templates/ERR_UNSUP_REQ \
+	templates/ERR_URN_RESOLVE \
+	templates/ERR_WRITE_ERROR \
+	templates/ERR_ZERO_SIZE_OBJECT
 
-TRANSLATE_LANGUAGES = \
-    af.lang \
-    ar.lang \
-    az.lang \
-    bg.lang \
-    ca.lang \
-    cs.lang \
-    da.lang \
-    de.lang \
-    el.lang \
-    en.lang \
-    es-mx.lang \
-    es.lang \
-    et.lang \
-    fa.lang \
-    fi.lang \
-    fr.lang \
-    he.lang \
-    hu.lang \
-    hy.lang \
-    id.lang \
-    it.lang \
-    ja.lang \
-    ka.lang \
-    ko.lang \
-    lt.lang \
-    lv.lang \
-    ms.lang \
-    nl.lang \
-    oc.lang \
-    pl.lang \
-    pt-br.lang \
-    pt.lang \
-    ro.lang \
-    ru.lang \
-    sk.lang \
-    sl.lang \
-    sr-cyrl.lang \
-    sr-latn.lang \
-    sv.lang \
-    th.lang \
-    tr.lang \
-    uk.lang \
-    uz.lang \
-    vi.lang \
-    zh-hans.lang \
-    zh-hant.lang
+LANGUAGE_FILES = \
+	af.lang \
+	ar.lang \
+	az.lang \
+	bg.lang \
+	ca.lang \
+	cs.lang \
+	da.lang \
+	de.lang \
+	el.lang \
+	en.lang \
+	es-mx.lang \
+	es.lang \
+	et.lang \
+	fa.lang \
+	fi.lang \
+	fr.lang \
+	he.lang \
+	hu.lang \
+	hy.lang \
+	id.lang \
+	it.lang \
+	ja.lang \
+	ka.lang \
+	ko.lang \
+	lt.lang \
+	lv.lang \
+	ms.lang \
+	nl.lang \
+	oc.lang \
+	pl.lang \
+	pt-br.lang \
+	pt.lang \
+	ro.lang \
+	ru.lang \
+	sk.lang \
+	sl.lang \
+	sr-cyrl.lang \
+	sr-latn.lang \
+	sv.lang \
+	th.lang \
+	tr.lang \
+	uk.lang \
+	uz.lang \
+	vi.lang \
+	zh-hans.lang \
+	zh-hant.lang
 
+@ENABLE_TRANSLATION_FALSE@TRANSLATE_LANGUAGES = 
+@ENABLE_TRANSLATION_TRUE@TRANSLATE_LANGUAGES = $(LANGUAGE_FILES)
 CLEANFILES = $(TRANSLATE_LANGUAGES) translate-warn
 EXTRA_DIST = \
 	$(ERROR_TEMPLATES) \
@@ -522,7 +530,9 @@ EXTRA_DIST = \
 	template.am \
 	aliases alias-link.sh alias-upgrade errorpage.css TRANSLATORS COPYRIGHT
 
-NOTIDY = `$(PO2HTML) --help | grep -o "\-\-notidy"`
+@ENABLE_TRANSLATION_FALSE@ALIAS_LINKER = $(TRUE)
+@ENABLE_TRANSLATION_TRUE@ALIAS_LINKER = $(SHELL) $(srcdir)/alias-link.sh "$(LN)" "$(RM)" "$(DESTDIR)$(DEFAULT_ERROR_DIR)"
+NOTIDY = `$(PO2HTML) --help | grep -o "[-]-notidy"`
 all: all-am
 
 .SUFFIXES:
@@ -784,7 +794,7 @@ install-data-local: translate
 	$(INSTALL_DATA) $(srcdir)/TRANSLATORS $(DESTDIR)$(DEFAULT_ERROR_DIR)/TRANSLATORS; \
 	$(INSTALL_DATA) $(srcdir)/COPYRIGHT $(DESTDIR)$(DEFAULT_ERROR_DIR)/COPYRIGHT; \
 	$(INSTALL_DATA) $(srcdir)/errorpage.css $(DESTDIR)$(DEFAULT_STYLESHEET).default; \
-	$(SHELL) $(srcdir)/alias-link.sh "$(LN)" "$(RM)" "$(DESTDIR)$(DEFAULT_ERROR_DIR)" "$(srcdir)/aliases" || exit 1 ;
+	$(ALIAS_LINKER) "$(srcdir)/aliases" || exit 1 ;
 
 uninstall-local:
 	for l in $(TRANSLATE_LANGUAGES) templates; do \
@@ -811,7 +821,7 @@ uninstall-local:
 	rm -f $(DESTDIR)$(DEFAULT_ERROR_DIR)/COPYRIGHT
 
 upgrade: install
-	$(SHELL) $(srcdir)/alias-link.sh "$(LN)" "$(RM)" "$(DESTDIR)$(DEFAULT_ERROR_DIR)" "$(srcdir)/alias-upgrade" || exit 1 ;
+	$(ALIAS_LINKER) "$(srcdir)/alias-upgrade" || exit 1 ;
 
 dist-hook: translate
 	for lang in $(TRANSLATE_LANGUAGES); do \

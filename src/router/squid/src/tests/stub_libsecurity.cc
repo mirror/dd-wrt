@@ -9,7 +9,6 @@
 #include "squid.h"
 #include "AccessLogEntry.h"
 #include "comm/Connection.h"
-#include "Downloader.h"
 #include "HttpRequest.h"
 
 #define STUB_API "security/libsecurity.la"
@@ -28,6 +27,12 @@ void BlindPeerConnector::noteNegotiationDone(ErrorState *) STUB
 Security::EncryptorAnswer::~EncryptorAnswer() {}
 std::ostream &Security::operator <<(std::ostream &os, const Security::EncryptorAnswer &) STUB_RETVAL(os)
 
+#include "security/Certificate.h"
+SBuf Security::SubjectName(Certificate &) STUB_RETVAL(SBuf())
+SBuf Security::IssuerName(Certificate &) STUB_RETVAL(SBuf())
+bool Security::IssuedBy(Certificate &, Certificate &) STUB_RETVAL(false)
+std::ostream &operator <<(std::ostream &os, Security::Certificate &) STUB_RETVAL(os)
+
 #include "security/Handshake.h"
 Security::HandshakeParser::HandshakeParser(MessageSource) STUB
 bool Security::HandshakeParser::parseHello(const SBuf &) STUB_RETVAL(false)
@@ -42,6 +47,9 @@ namespace Security
 {
 void KeyData::loadFromFiles(const AnyP::PortCfg &, const char *) STUB
 }
+
+#include "security/KeyLogger.h"
+void Security::KeyLogger::maybeLog(const Connection &, const Acl::ChecklistFiller &) STUB
 
 #include "security/ErrorDetail.h"
 Security::ErrorDetail::ErrorDetail(ErrorCode, const CertPointer &, const CertPointer &, const char *) STUB
@@ -61,20 +69,20 @@ Security::NegotiationHistory::NegotiationHistory() STUB
 void Security::NegotiationHistory::retrieveNegotiatedInfo(const Security::SessionPointer &) STUB
 void Security::NegotiationHistory::retrieveParsedInfo(Security::TlsDetails::Pointer const &) STUB
 const char *Security::NegotiationHistory::cipherName() const STUB
-const char *Security::NegotiationHistory::printTlsVersion(AnyP::ProtocolVersion const &v) const STUB
+const char *Security::NegotiationHistory::printTlsVersion(AnyP::ProtocolVersion const &) const STUB
 
 #include "security/PeerConnector.h"
 class TlsNegotiationDetails: public RefCountable {};
-CBDATA_NAMESPACED_CLASS_INIT(Security, PeerConnector);
 namespace Security
 {
-PeerConnector::PeerConnector(const Comm::ConnectionPointer &, AsyncCall::Pointer &, const AccessLogEntryPointer &, const time_t) :
+PeerConnector::PeerConnector(const Comm::ConnectionPointer &, const AsyncCallback<EncryptorAnswer> &, const AccessLogEntryPointer &, const time_t):
     AsyncJob("Security::PeerConnector") {STUB}
 PeerConnector::~PeerConnector() STUB
 void PeerConnector::start() STUB
 bool PeerConnector::doneAll() const STUB_RETVAL(true)
 void PeerConnector::swanSong() STUB
 const char *PeerConnector::status() const STUB_RETVAL("")
+void PeerConnector::fillChecklist(ACLFilledChecklist &) const STUB
 void PeerConnector::commCloseHandler(const CommCloseCbParams &) STUB
 void PeerConnector::commTimeoutHandler(const CommTimeoutCbParams &) STUB
 bool PeerConnector::initialize(Security::SessionPointer &) STUB_RETVAL(false)
@@ -89,7 +97,7 @@ void PeerConnector::bail(ErrorState *) STUB
 void PeerConnector::sendSuccess() STUB
 void PeerConnector::callBack() STUB
 void PeerConnector::disconnect() STUB
-void PeerConnector::countFailingConnection() STUB
+void PeerConnector::countFailingConnection(const ErrorState *) STUB
 void PeerConnector::recordNegotiationDetails() STUB
 EncryptorAnswer &PeerConnector::answer() STUB_RETREF(EncryptorAnswer)
 }

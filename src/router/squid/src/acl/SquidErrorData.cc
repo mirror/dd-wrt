@@ -11,7 +11,7 @@
 #include "acl/SquidErrorData.h"
 #include "cache_cf.h"
 #include "ConfigParser.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "error/Error.h"
 #include "fatal.h"
 #include "wordlist.h"
@@ -47,7 +47,7 @@ ACLSquidErrorData::dump() const
 void
 ACLSquidErrorData::parse()
 {
-    while (char *token = ConfigParser::NextToken()) {
+    while (const auto token = ConfigParser::strtokFile()) {
         err_type err = errorTypeByName(token);
 
         if (err < ERR_MAX)
@@ -64,14 +64,5 @@ bool
 ACLSquidErrorData::empty() const
 {
     return errors.empty();
-}
-
-ACLData<err_type> *
-ACLSquidErrorData::clone() const
-{
-    if (!errors.empty())
-        fatal("ACLSquidError::clone: attempt to clone used ACL");
-
-    return new ACLSquidErrorData (*this);
 }
 

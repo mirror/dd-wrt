@@ -10,7 +10,7 @@
 
 #include "squid.h"
 #include "base/TextException.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "globals.h"
 #include "ipc/Queue.h"
 
@@ -47,7 +47,7 @@ InstanceIdDefinitions(Ipc::QueueReader, "ipcQR");
 Ipc::QueueReader::QueueReader(): popBlocked(false), popSignal(false),
     rateLimit(0), balance(0)
 {
-    debugs(54, 7, HERE << "constructed " << id);
+    debugs(54, 7, "constructed " << id);
 }
 
 /* QueueReaders */
@@ -93,6 +93,25 @@ Ipc::OneToOneUniQueue::Items2Bytes(const unsigned int maxItemSize, const int siz
 {
     assert(size >= 0);
     return sizeof(OneToOneUniQueue) + maxItemSize * size;
+}
+
+/// start state reporting (by reporting queue parameters)
+/// The labels reflect whether the caller owns theIn or theOut data member and,
+/// hence, cannot report the other value reliably.
+void
+Ipc::OneToOneUniQueue::statOpen(std::ostream &os, const char *inLabel, const char *outLabel, const uint32_t count) const
+{
+    os << "{ size: " << count <<
+       ", capacity: " << theCapacity <<
+       ", " << inLabel << ": " << theIn <<
+       ", " << outLabel << ": " << theOut;
+}
+
+/// end state reporting started by statOpen()
+void
+Ipc::OneToOneUniQueue::statClose(std::ostream &os) const
+{
+    os << "}\n";
 }
 
 /* OneToOneUniQueues */
@@ -154,7 +173,6 @@ Ipc::BaseMultiQueue::clearAllReaderSignals()
 {
     QueueReader &reader = localReader();
     debugs(54, 7, "reader: " << reader.id);
-
     reader.clearSignal();
 }
 

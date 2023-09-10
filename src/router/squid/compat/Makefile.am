@@ -16,8 +16,6 @@ include $(top_srcdir)/src/Common.am
 
 noinst_LTLIBRARIES = libcompatsquid.la
 libcompatsquid_la_SOURCES = \
-	GnuRegex.c \
-	GnuRegex.h \
 	assert.cc \
 	assert.h \
 	cmsg.h \
@@ -40,6 +38,7 @@ libcompatsquid_la_SOURCES = \
 	inet_pton.cc \
 	inet_pton.h \
 	initgroups.h \
+	krb5.h \
 	memrchr.cc \
 	memrchr.h \
 	mswindows.cc \
@@ -53,7 +52,6 @@ libcompatsquid_la_SOURCES = \
 	os/macosx.h \
 	os/mswindows.h \
 	os/netbsd.h \
-	os/next.h \
 	os/openbsd.h \
 	os/opensolaris_10_netdb.h \
 	os/os2.h \

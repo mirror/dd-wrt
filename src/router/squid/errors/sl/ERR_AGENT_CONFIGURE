@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Nastavitev spletnega brskalnika</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>NAPAKA</h1>
+<h2>Nastavitev spletnega brskalnika</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>Nastavitve vašega spletnega brskalnika je treba spremeniti, če naj uporablja to omrežje.</p>
+</blockquote>
+
+<p>Kako najdete te nastavitve v svojem brskalniku:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Orodja -&gt; Možnosti -&gt; Napredno -&gt; Omrežje -&gt; Nastavitve povezave</li>
+<li>V polje za posredniški strežnik HTTP vnesite ime posredniškega strežnika %h in vrata %b.</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Orodja -&gt; Internetne možnosti -&gt; Povezava -&gt; Nastavitve LAN -&gt;Proxy</li>
+<li>V polje za posredniški strežnik HTTP vnesite ime posredniškega strežnika %h in vrata %b.</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Orodja -&gt; Nastavitve -&gt; Napredno -&gt; Omrežje -&gt; Posredovalni strežniki</li>
+<li>V polje za posredniški strežnik HTTP vnesite ime posredniškega strežnika %h in vrata %b.</li>
+</ul>
+</div>
+
+<p>Skrbnik vašega predpomnilnika je <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Ustvaril %h (%s) dne %T</p>
+<!-- %c -->
+</div>
+</body></html>

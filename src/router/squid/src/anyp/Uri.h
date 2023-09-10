@@ -186,24 +186,24 @@ private:
     mutable SBuf absolute_;          ///< RFC 7230 section 5.3.2 absolute-URI
 };
 
-} // namespace AnyP
-
 inline std::ostream &
-operator <<(std::ostream &os, const AnyP::Uri &url)
+operator <<(std::ostream &os, const Uri &url)
 {
     // none means explicit empty string for scheme.
-    if (url.getScheme() != AnyP::PROTO_NONE)
+    if (url.getScheme() != PROTO_NONE)
         os << url.getScheme().image();
     os << ":";
 
     // no authority section on URN
-    if (url.getScheme() != AnyP::PROTO_URN)
+    if (url.getScheme() != PROTO_URN)
         os << "//" << url.authority();
 
     // path is what it is - including absent
     os << url.path();
     return os;
 }
+
+} // namespace AnyP
 
 /* Deprecated functions for Legacy code handling URLs */
 
@@ -260,7 +260,7 @@ enum MatchDomainNameFlags {
  * \retval -1 means the host is less than the domain
  */
 int matchDomainName(const char *host, const char *domain, MatchDomainNameFlags flags = mdnNone);
-int urlCheckRequest(const HttpRequest *);
+bool urlCheckRequest(const HttpRequest *);
 void urlExtMethodConfigure(void);
 
 #endif /* SQUID_SRC_ANYP_URI_H */

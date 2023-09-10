@@ -10,13 +10,15 @@
 #define SQUID_SRC_SECURITY_PEERCONNECTOR_H
 
 #include "acl/Acl.h"
-#include "base/AsyncCbdataCalls.h"
+#include "acl/ChecklistFiller.h"
+#include "base/AsyncCallbacks.h"
 #include "base/AsyncJob.h"
 #include "base/JobWait.h"
 #include "CommCalls.h"
 #include "http/forward.h"
 #include "security/EncryptorAnswer.h"
 #include "security/forward.h"
+#include "security/KeyLogger.h"
 #if USE_OPENSSL
 #include "ssl/support.h"
 #endif
@@ -24,8 +26,8 @@
 #include <iosfwd>
 #include <queue>
 
-class ErrorState;
 class Downloader;
+class DownloaderAnswer;
 class AccessLogEntry;
 typedef RefCount<AccessLogEntry> AccessLogEntryPointer;
 
@@ -43,38 +45,31 @@ typedef RefCount<IoResult> IoResultPointer;
  * Contains common code and interfaces of various specialized PeerConnector's,
  * including peer certificate validation code.
  */
-class PeerConnector: virtual public AsyncJob
+class PeerConnector: virtual public AsyncJob, public Acl::ChecklistFiller
 {
-    CBDATA_CLASS(PeerConnector);
+    CBDATA_INTERMEDIATE();
 
 public:
     typedef CbcPointer<PeerConnector> Pointer;
 
-    /// Callback dialer API to allow PeerConnector to set the answer.
-    class CbDialer
-    {
-    public:
-        virtual ~CbDialer() {}
-        /// gives PeerConnector access to the in-dialer answer
-        virtual Security::EncryptorAnswer &answer() = 0;
-    };
-
-public:
     PeerConnector(const Comm::ConnectionPointer &aServerConn,
-                  AsyncCall::Pointer &aCallback,
+                  const AsyncCallback<EncryptorAnswer> &,
                   const AccessLogEntryPointer &alp,
                   const time_t timeout = 0);
-    virtual ~PeerConnector();
+    ~PeerConnector() override;
 
     /// hack: whether the connection requires fwdPconnPool->noteUses()
     bool noteFwdPconnUse;
 
 protected:
     // AsyncJob API
-    virtual void start();
-    virtual bool doneAll() const;
-    virtual void swanSong();
-    virtual const char *status() const;
+    void start() override;
+    bool doneAll() const override;
+    void swanSong() override;
+    const char *status() const override;
+
+    /* Acl::ChecklistFiller API */
+    void fillChecklist(ACLFilledChecklist &) const override;
 
     /// The connection read timeout callback handler.
     void commTimeoutHandler(const CommTimeoutCbParams &);
@@ -86,7 +81,7 @@ protected:
     virtual bool initialize(Security::SessionPointer &);
 
     /// Performs a single secure connection negotiation step.
-    /// It is called multiple times untill the negotiation finishes or aborts.
+    /// It is called multiple times until the negotiation finishes or aborts.
     void negotiate();
 
     /// Called after negotiation has finished. Cleans up TLS/SSL state.
@@ -120,7 +115,7 @@ protected:
     void startCertDownloading(SBuf &url);
 
     /// Called by Downloader after a certificate object downloaded.
-    void certDownloadingDone(SBuf &object, int status);
+    void certDownloadingDone(DownloaderAnswer &);
 #endif
 
     /// Called when the openSSL SSL_connect function needs to write data to
@@ -133,7 +128,7 @@ protected:
     /// Called when the SSL negotiation to the server completed and the certificates
     /// validated using the cert validator.
     /// \param error if not NULL the SSL negotiation was aborted with an error
-    virtual void noteNegotiationDone(ErrorState *error) {}
+    virtual void noteNegotiationDone(ErrorState *) {}
 
     /// Must implemented by the kid classes to return the TLS context object to use
     /// for building the encryption context objects.
@@ -155,7 +150,7 @@ protected:
     void disconnect();
 
     /// updates connection usage history before the connection is closed
-    void countFailingConnection();
+    void countFailingConnection(const ErrorState *);
 
     /// If called the certificates validator will not used
     void bypassCertValidator() {useCertValidator_ = false;}
@@ -170,7 +165,10 @@ protected:
     HttpRequestPointer request; ///< peer connection trigger or cause
     Comm::ConnectionPointer serverConn; ///< TCP connection to the peer
     AccessLogEntryPointer al; ///< info for the future access.log entry
-    AsyncCall::Pointer callback; ///< we call this with the results
+
+    /// answer destination
+    AsyncCallback<EncryptorAnswer> callback;
+
 private:
     PeerConnector(const PeerConnector &); // not implemented
     PeerConnector &operator =(const PeerConnector &); // not implemented
@@ -179,7 +177,7 @@ private:
     unsigned int certDownloadNestingLevel() const;
 
     /// Process response from cert validator helper
-    void sslCrtvdHandleReply(Ssl::CertValidationResponsePointer);
+    void sslCrtvdHandleReply(Ssl::CertValidationResponsePointer &);
 
     /// Check SSL errors returned from cert validator against sslproxy_cert_error access list
     Security::CertErrors *sslCrtvdCheckForErrors(Ssl::CertValidationResponse const &, ErrorDetailPointer &);
@@ -195,6 +193,9 @@ private:
 
     /// The maximum number of inter-dependent Downloader jobs a worker may initiate
     static const unsigned int MaxNestedDownloads = 3;
+
+    /// managers logging of the being-established TLS connection secrets
+    Security::KeyLogger keyLogger;
 
     AsyncCall::Pointer closeHandler; ///< we call this when the connection closed
     time_t negotiationTimeout; ///< the SSL connection timeout to use

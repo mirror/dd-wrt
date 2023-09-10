@@ -17,10 +17,8 @@ const SBuf MethodType_sb[] = {
 	SBuf("TRACE"),
 	SBuf("OPTIONS"),
 	SBuf("DELETE"),
-#if NO_SPECIAL_HANDLING
 	SBuf("LINK"),
 	SBuf("UNLINK"),
-#endif
 	SBuf("CHECKOUT"),
 	SBuf("CHECKIN"),
 	SBuf("UNCHECKOUT"),

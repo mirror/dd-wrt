@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ERREUR : l'URL demandée n'a pas pu être chargée</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERREUR</h1>
+<h2>L'URL demandée n'a pas pu être trouvée</h2>
+</div>
+<hr>
+
+<div id="content">
+<p><b>Requête invalide</b> une erreur a été rencontrée en essayant de traiter la requête :</p>
+
+<blockquote id="data">
+<pre>%R</pre>
+</blockquote>
+
+<p>Problèmes possibles :</p>
+<ul>
+<li id="missing-method"><p>Requête de la méthode non précisée ou inconnue.</p></li>
+<li id="missing-url"><p>L'URL n'est pas spécifiée</p></li>
+<li id="missing-protocol"><p>L'identifiant HTTP est absent pour (HTTP/1.0).</p></li>
+<li><p>La requête est trop grande</p></li>
+<li><p>Le champ "Content-Length" est absent, pour l'utilisation des requêtes avec POST ou PUT</p></li>
+<li><p>Caractère illégal dans le nom d'hôte; Le caractère tiret bas n'est pas autorisé.</p></li>
+<li><p>HTTP/1.1 <q>Expect:</q> cette fonction a besoin du logiciel HTTP/1.0.</p></li>
+</ul>
+
+<p>Votre administrateur proxy est <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<script language="javascript">
+if ('%M' != '[unknown method]') document.getElementById('missing-method').style.display = 'none';
+if ('%u' != '[no URL]') document.getElementById('missing-url').style.display = 'none';
+if ('%P' != '[unknown protocol]') document.getElementById('missing-protocol').style.display = 'none';
+</script>
+
+<hr>
+<div id="footer">
+<p>Générée le %T par %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

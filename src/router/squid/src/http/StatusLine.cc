@@ -10,7 +10,7 @@
 
 #include "squid.h"
 #include "base/Packable.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "http/one/ResponseParser.h"
 #include "http/StatusLine.h"
 #include "parser/forward.h"
@@ -21,13 +21,13 @@
 void
 Http::StatusLine::init()
 {
-    set(Http::ProtocolVersion(), Http::scNone, NULL);
+    set(Http::ProtocolVersion(), Http::scNone, nullptr);
 }
 
 void
 Http::StatusLine::clean()
 {
-    set(Http::ProtocolVersion(), Http::scInternalServerError, NULL);
+    set(Http::ProtocolVersion(), Http::scInternalServerError, nullptr);
 }
 
 /* set values */
@@ -57,7 +57,7 @@ Http::StatusLine::packInto(Packable * p) const
     if (packedStatus == Http::scNone) {
         static unsigned int reports = 0;
         if (++reports <= 100)
-            debugs(57, DBG_IMPORTANT, "BUG: the internalized response lacks status-code");
+            debugs(57, DBG_IMPORTANT, "ERROR: Squid BUG: the internalized response lacks status-code");
         packedStatus = Http::scInternalServerError;
         packedReason = Http::StatusCodeString(packedStatus); // ignore custom reason_ (if any)
     }

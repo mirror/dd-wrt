@@ -93,17 +93,16 @@ TESTS = tests/testRFC1738$(EXEEXT) testHeaders
 @ENABLE_LOADABLE_MODULES_TRUE@am__append_1 = $(INCLTDL)
 @ENABLE_ESI_TRUE@am__append_2 = libTrie
 @ENABLE_SNMP_TRUE@am__append_3 = snmplib
-@ENABLE_XPROF_STATS_TRUE@am__append_4 = profiler
 
 #
 # Some libraries are only available on Windows
 # and others are unable to be built.
 #
-@ENABLE_WIN32SPECIFIC_TRUE@am__append_5 = libsspwin32.la
-@ENABLE_WIN32SPECIFIC_FALSE@am__append_6 = sspwin32.cc
+@ENABLE_WIN32SPECIFIC_TRUE@am__append_4 = libsspwin32.la
+@ENABLE_WIN32SPECIFIC_FALSE@am__append_5 = sspwin32.cc
 # smblib is the only user of the rfcnb library
-@ENABLE_SMBLIB_TRUE@am__append_7 = rfcnb smblib
-@ENABLE_AUTH_NTLM_TRUE@am__append_8 = ntlmauth
+@ENABLE_SMBLIB_TRUE@am__append_6 = rfcnb smblib
+@ENABLE_AUTH_NTLM_TRUE@am__append_7 = ntlmauth
 subdir = lib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
@@ -111,11 +110,13 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/squid-util.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
-	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
+	$(top_srcdir)/acinclude/krb5.m4 \
+	$(top_srcdir)/acinclude/ldap.m4 \
+	$(top_srcdir)/acinclude/nettle.m4 \
+	$(top_srcdir)/acinclude/pam.m4 $(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
+	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/src/auth/basic/helpers.m4 \
 	$(top_srcdir)/src/auth/basic/DB/required.m4 \
 	$(top_srcdir)/src/auth/basic/LDAP/required.m4 \
@@ -190,8 +191,7 @@ am_libmiscencoding_la_OBJECTS = base64.lo html_quote.lo md5.lo \
 libmiscencoding_la_OBJECTS = $(am_libmiscencoding_la_OBJECTS)
 libmiscutil_la_LIBADD =
 am_libmiscutil_la_OBJECTS = Splay.lo getfullhostname.lo heap.lo \
-	iso3307.lo radix.lo rfc1123.lo stub_memaccount.lo util.lo \
-	xusleep.lo
+	radix.lo util.lo
 libmiscutil_la_OBJECTS = $(am_libmiscutil_la_OBJECTS)
 libsspwin32_la_LIBADD =
 am__libsspwin32_la_SOURCES_DIST = sspwin32.cc
@@ -202,13 +202,11 @@ am__dirstamp = $(am__leading_dot)dirstamp
 am_tests_testRFC1738_OBJECTS = tests/testRFC1738.$(OBJEXT)
 tests_testRFC1738_OBJECTS = $(am_tests_testRFC1738_OBJECTS)
 am__DEPENDENCIES_1 =
-@ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/lib/profiler/libprofiler.la
-am__DEPENDENCIES_3 = $(top_builddir)/compat/libcompatsquid.la \
-	$(am__DEPENDENCIES_2)
+am__DEPENDENCIES_2 = $(top_builddir)/compat/libcompatsquid.la
 tests_testRFC1738_DEPENDENCIES =  \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_2)
 tests_testRFC1738_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(tests_testRFC1738_LDFLAGS) \
@@ -232,12 +230,10 @@ am__depfiles_remade = ./$(DEPDIR)/Splay.Plo ./$(DEPDIR)/base64.Plo \
 	./$(DEPDIR)/dirent.Plo ./$(DEPDIR)/encrypt.Plo \
 	./$(DEPDIR)/getfullhostname.Plo ./$(DEPDIR)/getopt.Plo \
 	./$(DEPDIR)/hash.Plo ./$(DEPDIR)/heap.Plo \
-	./$(DEPDIR)/html_quote.Plo ./$(DEPDIR)/iso3307.Plo \
-	./$(DEPDIR)/md5.Plo ./$(DEPDIR)/radix.Plo \
-	./$(DEPDIR)/rfc1123.Plo ./$(DEPDIR)/rfc1738.Plo \
+	./$(DEPDIR)/html_quote.Plo ./$(DEPDIR)/md5.Plo \
+	./$(DEPDIR)/radix.Plo ./$(DEPDIR)/rfc1738.Plo \
 	./$(DEPDIR)/rfc2617.Plo ./$(DEPDIR)/sspwin32.Plo \
-	./$(DEPDIR)/stub_memaccount.Plo ./$(DEPDIR)/util.Plo \
-	./$(DEPDIR)/xusleep.Plo tests/$(DEPDIR)/testRFC1738.Po
+	./$(DEPDIR)/util.Plo tests/$(DEPDIR)/testRFC1738.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -613,7 +609,6 @@ EPOLL_LIBS = @EPOLL_LIBS@
 ETAGS = @ETAGS@
 EUILIB = @EUILIB@
 EXEEXT = @EXEEXT@
-EXPATLIB = @EXPATLIB@
 EXTERNAL_ACL_HELPERS = @EXTERNAL_ACL_HELPERS@
 EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
@@ -621,7 +616,7 @@ FALSE = @FALSE@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -630,9 +625,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KRB5INCS = @KRB5INCS@
 KRB5LIBS = @KRB5LIBS@
-LBERLIB = @LBERLIB@
 LD = @LD@
-LDAPLIB = @LDAPLIB@
 LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
@@ -640,17 +633,27 @@ LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
 LIBBDB_LIBS = @LIBBDB_LIBS@
+LIBCAP_CFLAGS = @LIBCAP_CFLAGS@
+LIBCAP_LIBS = @LIBCAP_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
+LIBEXPAT_CFLAGS = @LIBEXPAT_CFLAGS@
+LIBEXPAT_LIBS = @LIBEXPAT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
+LIBLDAP_CFLAGS = @LIBLDAP_CFLAGS@
+LIBLDAP_LIBS = @LIBLDAP_LIBS@
 LIBLTDL = @LIBLTDL@
+LIBNETTLE_CFLAGS = @LIBNETTLE_CFLAGS@
+LIBNETTLE_LIBS = @LIBNETTLE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBOPENSSL_CFLAGS = @LIBOPENSSL_CFLAGS@
 LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
 LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -680,7 +683,6 @@ MKDIR = @MKDIR@
 MKDIR_P = @MKDIR_P@
 MV = @MV@
 NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
-NETTLELIB = @NETTLELIB@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
@@ -719,21 +721,19 @@ SMBCLIENT = @SMBCLIENT@
 SNMPLIB = @SNMPLIB@
 SQUID_CFLAGS = @SQUID_CFLAGS@
 SQUID_CXXFLAGS = @SQUID_CXXFLAGS@
+SQUID_RELEASE = @SQUID_RELEASE@
 SSLLIB = @SSLLIB@
 STOREID_REWRITE_HELPERS = @STOREID_REWRITE_HELPERS@
 STORE_LIBS_TO_ADD = @STORE_LIBS_TO_ADD@
 STORE_LIBS_TO_BUILD = @STORE_LIBS_TO_BUILD@
 STORE_TESTS = @STORE_TESTS@
 STRIP = @STRIP@
-SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
-SYSTEMD_LIBS = @SYSTEMD_LIBS@
 TR = @TR@
 TRUE = @TRUE@
 URL_REWRITE_HELPERS = @URL_REWRITE_HELPERS@
 VERSION = @VERSION@
 WBINFO = @WBINFO@
 WIN32_PSAPI = @WIN32_PSAPI@
-XMLLIB = @XMLLIB@
 XTRA_LIBS = @XTRA_LIBS@
 XTRA_OBJS = @XTRA_OBJS@
 abs_builddir = @abs_builddir@
@@ -821,16 +821,14 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_builddir)/include $(LIBCPPUNIT_CFLAGS) $(KRB5INCS) \
 	$(am__append_1)
-@ENABLE_XPROF_STATS_FALSE@LIBPROFILER = 
-@ENABLE_XPROF_STATS_TRUE@LIBPROFILER = $(top_builddir)/lib/profiler/libprofiler.la
 COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
-DIST_SUBDIRS = ntlmauth profiler rfcnb smblib libTrie snmplib
-SUBDIRS = $(am__append_2) $(am__append_3) $(am__append_4) \
-	$(am__append_7) $(am__append_8)
-EXTRA_DIST = $(am__append_6)
+DIST_SUBDIRS = ntlmauth rfcnb smblib libTrie snmplib
+SUBDIRS = $(am__append_2) $(am__append_3) $(am__append_6) \
+	$(am__append_7)
+EXTRA_DIST = $(am__append_5)
 noinst_LTLIBRARIES = libmiscencoding.la libmisccontainers.la \
-	libmiscutil.la $(am__append_5)
+	libmiscutil.la $(am__append_4)
 @ENABLE_WIN32SPECIFIC_TRUE@libsspwin32_la_SOURCES = sspwin32.cc
 
 #
@@ -856,12 +854,8 @@ libmiscutil_la_SOURCES = \
 	Splay.cc \
 	getfullhostname.c \
 	heap.c \
-	iso3307.c \
 	radix.c \
-	rfc1123.c \
-	stub_memaccount.c \
-	util.c \
-	xusleep.c
+	util.c
 
 tests_testRFC1738_SOURCES = \
 	tests/testRFC1738.cc \
@@ -969,16 +963,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hash.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heap.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/html_quote.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iso3307.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radix.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rfc1123.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rfc1738.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rfc2617.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sspwin32.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_memaccount.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xusleep.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testRFC1738.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -1415,16 +1405,12 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/hash.Plo
 	-rm -f ./$(DEPDIR)/heap.Plo
 	-rm -f ./$(DEPDIR)/html_quote.Plo
-	-rm -f ./$(DEPDIR)/iso3307.Plo
 	-rm -f ./$(DEPDIR)/md5.Plo
 	-rm -f ./$(DEPDIR)/radix.Plo
-	-rm -f ./$(DEPDIR)/rfc1123.Plo
 	-rm -f ./$(DEPDIR)/rfc1738.Plo
 	-rm -f ./$(DEPDIR)/rfc2617.Plo
 	-rm -f ./$(DEPDIR)/sspwin32.Plo
-	-rm -f ./$(DEPDIR)/stub_memaccount.Plo
 	-rm -f ./$(DEPDIR)/util.Plo
-	-rm -f ./$(DEPDIR)/xusleep.Plo
 	-rm -f tests/$(DEPDIR)/testRFC1738.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -1480,16 +1466,12 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/hash.Plo
 	-rm -f ./$(DEPDIR)/heap.Plo
 	-rm -f ./$(DEPDIR)/html_quote.Plo
-	-rm -f ./$(DEPDIR)/iso3307.Plo
 	-rm -f ./$(DEPDIR)/md5.Plo
 	-rm -f ./$(DEPDIR)/radix.Plo
-	-rm -f ./$(DEPDIR)/rfc1123.Plo
 	-rm -f ./$(DEPDIR)/rfc1738.Plo
 	-rm -f ./$(DEPDIR)/rfc2617.Plo
 	-rm -f ./$(DEPDIR)/sspwin32.Plo
-	-rm -f ./$(DEPDIR)/stub_memaccount.Plo
 	-rm -f ./$(DEPDIR)/util.Plo
-	-rm -f ./$(DEPDIR)/xusleep.Plo
 	-rm -f tests/$(DEPDIR)/testRFC1738.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

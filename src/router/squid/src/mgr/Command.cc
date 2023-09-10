@@ -13,9 +13,9 @@
 #include "mgr/Command.h"
 
 std::ostream &
-operator <<(std::ostream &os, const Mgr::Command &cmd)
+Mgr::operator <<(std::ostream &os, const Command &cmd)
 {
-    if (cmd.profile != NULL)
+    if (cmd.profile != nullptr)
         return os << *cmd.profile;
     return os << "undef";
 }

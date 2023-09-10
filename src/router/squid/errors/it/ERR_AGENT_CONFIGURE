@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Configurazione del browser</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERRORE</h1>
+<h2>Configurazione del browser</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>La configurazione del tuo browser dev'essere modificata prima di poter utilizzare questa rete.</p>
+</blockquote>
+
+<p>Indicazioni su come configurare il tuo browser sono disponibili a:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Strumenti -&gt; Opzioni -&gt; Avanzate -&gt; Rete -&gt; Impostazioni di connessione</li>
+<li>Nel box "Proxy HTTP" inserisci l'indirizzo del proxy (%h) e la porta %b.</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Strumenti -&gt; Opzioni Internet -&gt; Connessioni -&gt; Impostazioni LAN -&gt;Proxy</li>
+<li>Nel box "Proxy HTTP" inserisci l'indirizzo del proxy (%h) e la porta %b.</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Strumenti -&gt; Preferenze -&gt; Avanzate -&gt; Rete -&gt; Server proxy</li>
+<li>Nel box "Proxy HTTP" inserisci l'indirizzo del proxy (%h) e la porta %b.</li>
+</ul>
+</div>
+
+<p>L'amministratore del proxy è <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Generato da %h (%s) il %T</p>
+<!-- %c -->
+</div>
+</body></html>

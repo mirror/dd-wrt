@@ -51,7 +51,7 @@
 char Default_NTDomain[DNLEN+1] = NTV_DEFAULT_DOMAIN;
 const char * errormsg;
 
-const char NTV_SERVER_ERROR_MSG[] = "Internal server errror";
+const char NTV_SERVER_ERROR_MSG[] = "Internal server error";
 const char NTV_GROUP_ERROR_MSG[] = "User not allowed to use this cache";
 const char NTV_LOGON_ERROR_MSG[] = "No such user or wrong password";
 const char NTV_VALID_DOMAIN_SEPARATOR[] = "\\/";
@@ -64,7 +64,7 @@ Valid_Group(char *UserName, char *Group)
     WCHAR wszUserName[256]; // Unicode user name
     WCHAR wszGroup[256];    // Unicode Group
 
-    LPLOCALGROUP_USERS_INFO_0 pBuf = NULL;
+    LPLOCALGROUP_USERS_INFO_0 pBuf = nullptr;
     LPLOCALGROUP_USERS_INFO_0 pTmpBuf;
     DWORD dwLevel = 0;
     DWORD dwFlags = LG_INCLUDE_INDIRECT;
@@ -91,7 +91,7 @@ Valid_Group(char *UserName, char *Group)
      * function should also return the names of the local
      * groups in which the user is indirectly a member.
      */
-    nStatus = NetUserGetLocalGroups(NULL,
+    nStatus = NetUserGetLocalGroups(nullptr,
                                     wszUserName,
                                     dwLevel,
                                     dwFlags,
@@ -130,7 +130,7 @@ Valid_User(char *UserName, char *Password, char *Group)
     int result = NTV_SERVER_ERROR;
     size_t i;
     char NTDomain[256];
-    char *domain_qualify = NULL;
+    char *domain_qualify = nullptr;
     char DomainUser[256];
     char User[256];
 

@@ -23,7 +23,7 @@
 #include "ip/Address.h"
 #include "ip/forward.h"
 #include "mem/forward.h"
-#include "SquidTime.h"
+#include "time/gadgets.h"
 
 #include <iosfwd>
 #include <ostream>
@@ -51,12 +51,14 @@ namespace Comm
 #define COMM_INTERCEPTION       0x20  // arrived via NAT
 #define COMM_REUSEPORT          0x40 //< needs SO_REUSEPORT
 /// not registered with Comm and not owned by any connection-closing code
-#define COMM_ORPHANED           0x40
+#define COMM_ORPHANED           0x80
+/// Internal Comm optimization: Keep the source port unassigned until connect(2)
+#define COMM_DOBIND_PORT_LATER 0x100
 
 /**
  * Store data about the physical and logical attributes of a connection.
  *
- * Some link state can be infered from the data, however this is not an
+ * Some link state can be inferred from the data, however this is not an
  * object for state data. But a semantic equivalent for FD with easily
  * accessible cached properties not requiring repeated complex lookups.
  *
@@ -75,7 +77,7 @@ public:
     Connection();
 
     /** Clear the connection properties and close any open socket. */
-    virtual ~Connection();
+    ~Connection() override;
 
     /// To prevent accidental copying of Connection objects that we started to
     /// open or that are open, use cloneProfile() instead.
@@ -136,8 +138,8 @@ public:
     const Security::NegotiationHistory *hasTlsNegotiations() const {return tlsHistory;}
 
     /* CodeContext API */
-    virtual ScopedId codeContextGist() const override;
-    virtual std::ostream &detailCodeContext(std::ostream &os) const override;
+    ScopedId codeContextGist() const override;
+    std::ostream &detailCodeContext(std::ostream &os) const override;
 
 public:
     /** Address/Port for the Squid end of a TCP link. */
@@ -178,7 +180,7 @@ public:
     Eui::Eui64 remoteEui64;
 #endif
 
-    InstanceId<Connection> id;
+    InstanceId<Connection, uint64_t> id;
 
 private:
     /** cache_peer data object (if any) */
@@ -191,17 +193,17 @@ private:
     Security::NegotiationHistory *tlsHistory;
 };
 
-}; // namespace Comm
-
-std::ostream &operator << (std::ostream &os, const Comm::Connection &conn);
+std::ostream &operator <<(std::ostream &, const Connection &);
 
 inline std::ostream &
-operator << (std::ostream &os, const Comm::ConnectionPointer &conn)
+operator <<(std::ostream &os, const ConnectionPointer &conn)
 {
-    if (conn != NULL)
+    if (conn != nullptr)
         os << *conn;
     return os;
 }
+
+} // namespace Comm
 
 #endif
 

@@ -19,6 +19,7 @@
 #include "fde.h"
 #include "http/StatusCode.h"
 #include "ip/Address.h"
+#include "ip/forward.h"
 #include "PeerSelectState.h"
 #include "ResolvedPeers.h"
 #include "security/forward.h"
@@ -30,7 +31,6 @@
 
 class AccessLogEntry;
 typedef RefCount<AccessLogEntry> AccessLogEntryPointer;
-class ErrorState;
 class HttpRequest;
 class PconnPool;
 class ResolvedPeers;
@@ -55,7 +55,7 @@ class FwdState: public RefCountable, public PeerSelectionInitiator
 
 public:
     typedef RefCount<FwdState> Pointer;
-    virtual ~FwdState();
+    ~FwdState() override;
     static void initModule();
 
     /// Initiates request forwarding to a peer or origin server.
@@ -84,7 +84,6 @@ public:
 
     void handleUnregisteredServerEnd();
     int reforward();
-    bool reforwardableStatus(const Http::StatusCode s) const;
     void serverClosed();
     void connectStart();
     void connectDone(const Comm::ConnectionPointer & conn, Comm::Flag status, int xerrno);
@@ -111,8 +110,8 @@ private:
     void stopAndDestroy(const char *reason);
 
     /* PeerSelectionInitiator API */
-    virtual void noteDestination(Comm::ConnectionPointer conn) override;
-    virtual void noteDestinationsEnd(ErrorState *selectionError) override;
+    void noteDestination(Comm::ConnectionPointer conn) override;
+    void noteDestinationsEnd(ErrorState *selectionError) override;
 
     bool transporting() const;
 
@@ -153,6 +152,7 @@ private:
 
     /// whether we have used up all permitted forwarding attempts
     bool exhaustedTries() const;
+    void updateAttempts(int);
 
     /// \returns the time left for this connection to become connected or 1 second if it is less than one second left
     time_t connectingTimeout(const Comm::ConnectionPointer &conn) const;
@@ -214,7 +214,11 @@ private:
     const char *storedWholeReply_;
 };
 
-void getOutgoingAddress(HttpRequest * request, const Comm::ConnectionPointer &conn);
+class acl_tos;
+tos_t aclMapTOS(acl_tos *, ACLChecklist *);
+
+Ip::NfMarkConfig aclFindNfMarkConfig(acl_nfmark *, ACLChecklist *);
+void getOutgoingAddress(HttpRequest *, const Comm::ConnectionPointer &);
 
 /// a collection of previously used persistent Squid-to-peer HTTP(S) connections
 extern PconnPool *fwdPconnPool;

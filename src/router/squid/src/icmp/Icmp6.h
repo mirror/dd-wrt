@@ -40,19 +40,19 @@
 
 /**
  * Class partially implementing RFC 4443 - ICMPv6 for IP version 6.
- * Provides ECHO-REQUEST, ECHO-REPLY (secion 4)
+ * Provides ECHO-REQUEST, ECHO-REPLY (section 4)
  */
 class Icmp6 : public Icmp
 {
 public:
     Icmp6();
-    virtual ~Icmp6();
+    ~Icmp6() override;
 
-    virtual int Open();
+    int Open() override;
 
 #if USE_ICMP
-    virtual void SendEcho(Ip::Address &, int, const char*, int);
-    virtual void Recv(void);
+    void SendEcho(Ip::Address &, int, const char*, int) override;
+    void Recv(void) override;
 #endif
 };
 

@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ПОМИЛКА: Запитаний URL не може бути отриманий</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ПОМИЛКА</h1>
+<h2>Запитаний URL не може бути отриманий.</h2>
+</div>
+<hr>
+
+<div id="content">
+<p><b>Невірний запит</b> виник при обробці запиту:</p>
+
+<blockquote id="data">
+<pre>%R</pre>
+</blockquote>
+
+<p>Ймовірні причини:</p>
+<ul>
+<li id="missing-method"><p>Відсутній або невідомий метод запиту</p></li>
+<li id="missing-url"><p>Відсутній URL</p></li>
+<li id="missing-protocol"><p>Відсутній HTTP ідентифікатор (HTTP/1.0)</p></li>
+<li><p>Запит завеликий</p></li>
+<li><p>Заголовок Content-Length відсутній для запитів POST чи PUT</p></li>
+<li><p>Неприпустимий символ в імені сервера; символ підкреслення заборонено.</p></li>
+<li><p>Запит з використанням заголовку <q>Expect:</q> протоколу HTTP/1.1 здійснено до програмного забезпечення яке підтримує протокол HTTP/1.0.</p></li>
+</ul>
+
+<p>Адміністратор даного кешу <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<script language="javascript">
+if ('%M' != '[unknown method]') document.getElementById('missing-method').style.display = 'none';
+if ('%u' != '[no URL]') document.getElementById('missing-url').style.display = 'none';
+if ('%P' != '[unknown protocol]') document.getElementById('missing-protocol').style.display = 'none';
+</script>
+
+<hr>
+<div id="footer">
+<p>Згенеровано %T на %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

@@ -97,11 +97,13 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/squid-util.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
-	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
+	$(top_srcdir)/acinclude/krb5.m4 \
+	$(top_srcdir)/acinclude/ldap.m4 \
+	$(top_srcdir)/acinclude/nettle.m4 \
+	$(top_srcdir)/acinclude/pam.m4 $(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
+	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/src/auth/basic/helpers.m4 \
 	$(top_srcdir)/src/auth/basic/DB/required.m4 \
 	$(top_srcdir)/src/auth/basic/LDAP/required.m4 \
@@ -164,9 +166,11 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libbase_la_LIBADD =
-am_libbase_la_OBJECTS = AsyncCall.lo AsyncCallQueue.lo AsyncJob.lo \
-	CharacterSet.lo CodeContext.lo File.lo Here.lo InstanceId.lo \
-	JobWait.lo RegexPattern.lo RunnersRegistry.lo TextException.lo
+am_libbase_la_OBJECTS = Assure.lo AsyncCall.lo AsyncCallList.lo \
+	AsyncCallQueue.lo AsyncJob.lo CharacterSet.lo CodeContext.lo \
+	DelayedAsyncCalls.lo File.lo Here.lo InstanceId.lo IoManip.lo \
+	JobWait.lo Random.lo RandomUuid.lo Raw.lo RegexPattern.lo \
+	RunnersRegistry.lo Stopwatch.lo TextException.lo
 libbase_la_OBJECTS = $(am_libbase_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -187,13 +191,16 @@ am__v_at_1 =
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/AsyncCall.Plo \
-	./$(DEPDIR)/AsyncCallQueue.Plo ./$(DEPDIR)/AsyncJob.Plo \
-	./$(DEPDIR)/CharacterSet.Plo ./$(DEPDIR)/CodeContext.Plo \
+am__depfiles_remade = ./$(DEPDIR)/Assure.Plo ./$(DEPDIR)/AsyncCall.Plo \
+	./$(DEPDIR)/AsyncCallList.Plo ./$(DEPDIR)/AsyncCallQueue.Plo \
+	./$(DEPDIR)/AsyncJob.Plo ./$(DEPDIR)/CharacterSet.Plo \
+	./$(DEPDIR)/CodeContext.Plo ./$(DEPDIR)/DelayedAsyncCalls.Plo \
 	./$(DEPDIR)/File.Plo ./$(DEPDIR)/Here.Plo \
-	./$(DEPDIR)/InstanceId.Plo ./$(DEPDIR)/JobWait.Plo \
+	./$(DEPDIR)/InstanceId.Plo ./$(DEPDIR)/IoManip.Plo \
+	./$(DEPDIR)/JobWait.Plo ./$(DEPDIR)/Random.Plo \
+	./$(DEPDIR)/RandomUuid.Plo ./$(DEPDIR)/Raw.Plo \
 	./$(DEPDIR)/RegexPattern.Plo ./$(DEPDIR)/RunnersRegistry.Plo \
-	./$(DEPDIR)/TextException.Plo
+	./$(DEPDIR)/Stopwatch.Plo ./$(DEPDIR)/TextException.Plo
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -523,7 +530,6 @@ EPOLL_LIBS = @EPOLL_LIBS@
 ETAGS = @ETAGS@
 EUILIB = @EUILIB@
 EXEEXT = @EXEEXT@
-EXPATLIB = @EXPATLIB@
 EXTERNAL_ACL_HELPERS = @EXTERNAL_ACL_HELPERS@
 EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
@@ -531,7 +537,7 @@ FALSE = @FALSE@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -540,9 +546,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KRB5INCS = @KRB5INCS@
 KRB5LIBS = @KRB5LIBS@
-LBERLIB = @LBERLIB@
 LD = @LD@
-LDAPLIB = @LDAPLIB@
 LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
@@ -550,17 +554,27 @@ LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
 LIBBDB_LIBS = @LIBBDB_LIBS@
+LIBCAP_CFLAGS = @LIBCAP_CFLAGS@
+LIBCAP_LIBS = @LIBCAP_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
+LIBEXPAT_CFLAGS = @LIBEXPAT_CFLAGS@
+LIBEXPAT_LIBS = @LIBEXPAT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
+LIBLDAP_CFLAGS = @LIBLDAP_CFLAGS@
+LIBLDAP_LIBS = @LIBLDAP_LIBS@
 LIBLTDL = @LIBLTDL@
+LIBNETTLE_CFLAGS = @LIBNETTLE_CFLAGS@
+LIBNETTLE_LIBS = @LIBNETTLE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBOPENSSL_CFLAGS = @LIBOPENSSL_CFLAGS@
 LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBSYSTEMD_CFLAGS = @LIBSYSTEMD_CFLAGS@
+LIBSYSTEMD_LIBS = @LIBSYSTEMD_LIBS@
 LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
 LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -590,7 +604,6 @@ MKDIR = @MKDIR@
 MKDIR_P = @MKDIR_P@
 MV = @MV@
 NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
-NETTLELIB = @NETTLELIB@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
@@ -629,21 +642,19 @@ SMBCLIENT = @SMBCLIENT@
 SNMPLIB = @SNMPLIB@
 SQUID_CFLAGS = @SQUID_CFLAGS@
 SQUID_CXXFLAGS = @SQUID_CXXFLAGS@
+SQUID_RELEASE = @SQUID_RELEASE@
 SSLLIB = @SSLLIB@
 STOREID_REWRITE_HELPERS = @STOREID_REWRITE_HELPERS@
 STORE_LIBS_TO_ADD = @STORE_LIBS_TO_ADD@
 STORE_LIBS_TO_BUILD = @STORE_LIBS_TO_BUILD@
 STORE_TESTS = @STORE_TESTS@
 STRIP = @STRIP@
-SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
-SYSTEMD_LIBS = @SYSTEMD_LIBS@
 TR = @TR@
 TRUE = @TRUE@
 URL_REWRITE_HELPERS = @URL_REWRITE_HELPERS@
 VERSION = @VERSION@
 WBINFO = @WBINFO@
 WIN32_PSAPI = @WIN32_PSAPI@
-XMLLIB = @XMLLIB@
 XTRA_LIBS = @XTRA_LIBS@
 XTRA_OBJS = @XTRA_OBJS@
 abs_builddir = @abs_builddir@
@@ -732,16 +743,19 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_builddir)/include $(LIBCPPUNIT_CFLAGS) $(KRB5INCS) \
 	$(am__append_1)
-@ENABLE_XPROF_STATS_FALSE@LIBPROFILER = 
-@ENABLE_XPROF_STATS_TRUE@LIBPROFILER = $(top_builddir)/lib/profiler/libprofiler.la
 COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libbase.la
 libbase_la_SOURCES = \
+	Assure.cc \
+	Assure.h \
 	AsyncCall.cc \
 	AsyncCall.h \
+	AsyncCallList.cc \
+	AsyncCallList.h \
 	AsyncCallQueue.cc \
 	AsyncCallQueue.h \
+	AsyncCallbacks.h \
 	AsyncCbdataCalls.h \
 	AsyncFunCalls.h \
 	AsyncJob.cc \
@@ -752,8 +766,11 @@ libbase_la_SOURCES = \
 	CbcPointer.h \
 	CharacterSet.cc \
 	CharacterSet.h \
+	ClpMap.h \
 	CodeContext.cc \
 	CodeContext.h \
+	DelayedAsyncCalls.cc \
+	DelayedAsyncCalls.h \
 	EnumIterator.h \
 	File.cc \
 	File.h \
@@ -762,20 +779,30 @@ libbase_la_SOURCES = \
 	Here.h \
 	InstanceId.cc \
 	InstanceId.h \
+	IoManip.cc \
+	IoManip.h \
 	JobWait.cc \
 	JobWait.h \
 	Lock.h \
 	LookupTable.h \
-	LruMap.h \
 	Packable.h \
 	PackableStream.h \
+	Random.cc \
+	Random.h \
+	RandomUuid.cc \
+	RandomUuid.h \
 	Range.h \
+	Raw.cc \
+	Raw.h \
 	RefCount.h \
 	RegexPattern.cc \
 	RegexPattern.h \
 	RunnersRegistry.cc \
 	RunnersRegistry.h \
+	Stopwatch.cc \
+	Stopwatch.h \
 	Subscription.h \
+	SupportOrVeto.h \
 	TextException.cc \
 	TextException.h \
 	TypeTraits.h \
@@ -846,17 +873,25 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Assure.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AsyncCall.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AsyncCallList.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AsyncCallQueue.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AsyncJob.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CharacterSet.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CodeContext.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DelayedAsyncCalls.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/File.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Here.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/InstanceId.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IoManip.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JobWait.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Random.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RandomUuid.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Raw.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RegexPattern.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RunnersRegistry.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stopwatch.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextException.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -1188,17 +1223,25 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 	clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/AsyncCall.Plo
+		-rm -f ./$(DEPDIR)/Assure.Plo
+	-rm -f ./$(DEPDIR)/AsyncCall.Plo
+	-rm -f ./$(DEPDIR)/AsyncCallList.Plo
 	-rm -f ./$(DEPDIR)/AsyncCallQueue.Plo
 	-rm -f ./$(DEPDIR)/AsyncJob.Plo
 	-rm -f ./$(DEPDIR)/CharacterSet.Plo
 	-rm -f ./$(DEPDIR)/CodeContext.Plo
+	-rm -f ./$(DEPDIR)/DelayedAsyncCalls.Plo
 	-rm -f ./$(DEPDIR)/File.Plo
 	-rm -f ./$(DEPDIR)/Here.Plo
 	-rm -f ./$(DEPDIR)/InstanceId.Plo
+	-rm -f ./$(DEPDIR)/IoManip.Plo
 	-rm -f ./$(DEPDIR)/JobWait.Plo
+	-rm -f ./$(DEPDIR)/Random.Plo
+	-rm -f ./$(DEPDIR)/RandomUuid.Plo
+	-rm -f ./$(DEPDIR)/Raw.Plo
 	-rm -f ./$(DEPDIR)/RegexPattern.Plo
 	-rm -f ./$(DEPDIR)/RunnersRegistry.Plo
+	-rm -f ./$(DEPDIR)/Stopwatch.Plo
 	-rm -f ./$(DEPDIR)/TextException.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -1245,17 +1288,25 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/AsyncCall.Plo
+		-rm -f ./$(DEPDIR)/Assure.Plo
+	-rm -f ./$(DEPDIR)/AsyncCall.Plo
+	-rm -f ./$(DEPDIR)/AsyncCallList.Plo
 	-rm -f ./$(DEPDIR)/AsyncCallQueue.Plo
 	-rm -f ./$(DEPDIR)/AsyncJob.Plo
 	-rm -f ./$(DEPDIR)/CharacterSet.Plo
 	-rm -f ./$(DEPDIR)/CodeContext.Plo
+	-rm -f ./$(DEPDIR)/DelayedAsyncCalls.Plo
 	-rm -f ./$(DEPDIR)/File.Plo
 	-rm -f ./$(DEPDIR)/Here.Plo
 	-rm -f ./$(DEPDIR)/InstanceId.Plo
+	-rm -f ./$(DEPDIR)/IoManip.Plo
 	-rm -f ./$(DEPDIR)/JobWait.Plo
+	-rm -f ./$(DEPDIR)/Random.Plo
+	-rm -f ./$(DEPDIR)/RandomUuid.Plo
+	-rm -f ./$(DEPDIR)/Raw.Plo
 	-rm -f ./$(DEPDIR)/RegexPattern.Plo
 	-rm -f ./$(DEPDIR)/RunnersRegistry.Plo
+	-rm -f ./$(DEPDIR)/Stopwatch.Plo
 	-rm -f ./$(DEPDIR)/TextException.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

@@ -26,7 +26,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION( testSBuf );
 #include "event.h"
 #include "MemObject.h"
 void
-eventAdd(const char *name, EVH * func, void *arg, double when, int, bool cbdata)
+eventAdd(const char *, EVH *, void *, double, int, bool)
 {}
 int64_t
 MemObject::endOffset() const
@@ -67,7 +67,7 @@ testSBuf::testSBufConstructDestruct()
 
     // TEST: copy-construct NULL string (implicit destructor non-crash test)
     {
-        SBuf s1(NULL);
+        SBuf s1(nullptr);
         CPPUNIT_ASSERT_EQUAL(0U,s1.length());
         CPPUNIT_ASSERT_EQUAL(SBuf(""),s1);
         CPPUNIT_ASSERT_EQUAL(empty_sbuf,s1);
@@ -1088,7 +1088,7 @@ testSBuf::testSBufHash()
     CPPUNIT_ASSERT_EQUAL(hasher(literal),hasher(SBuf(fox)));
     CPPUNIT_ASSERT_EQUAL(hasher(SBuf(fox)),hasher(SBuf(fox)));
 
-    //differen content should have different hash
+    //different content should have different hash
     CPPUNIT_ASSERT(hasher(SBuf(fox)) != hasher(SBuf(fox1)));
 
     {

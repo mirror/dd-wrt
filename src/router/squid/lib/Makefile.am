@@ -7,7 +7,7 @@
 
 include $(top_srcdir)/src/Common.am
 
-DIST_SUBDIRS = ntlmauth profiler rfcnb smblib libTrie snmplib
+DIST_SUBDIRS = ntlmauth rfcnb smblib libTrie snmplib
 SUBDIRS=
 EXTRA_DIST=
 
@@ -16,9 +16,6 @@ SUBDIRS += libTrie
 endif
 if ENABLE_SNMP
 SUBDIRS += snmplib
-endif
-if ENABLE_XPROF_STATS
-SUBDIRS += profiler
 endif
 
 install: all
@@ -70,12 +67,8 @@ libmiscutil_la_SOURCES = \
 	Splay.cc \
 	getfullhostname.c \
 	heap.c \
-	iso3307.c \
 	radix.c \
-	rfc1123.c \
-	stub_memaccount.c \
-	util.c \
-	xusleep.c
+	util.c
 
 TESTS += tests/testRFC1738
 

@@ -17,7 +17,6 @@
 #include "fde.h"
 #include "ICP.h"
 #include "mgr/Registration.h"
-#include "SquidTime.h"
 #include "StatCounters.h"
 #include "StatHist.h"
 #include "Store.h"
@@ -64,7 +63,7 @@ static int nwritefds;
  * The variables 'incoming_udp_interval' and 'incoming_tcp_interval'
  * determine how many normal I/O events to process before checking
  * incoming sockets again.  Note we store the incoming_interval
- * multipled by a factor of (2^INCOMING_FACTOR) to have some
+ * multiplied by a factor of (2^INCOMING_FACTOR) to have some
  * pseudo-floating point precision.
  *
  * The variable 'udp_io_events' and 'tcp_io_events' counts how many normal
@@ -119,7 +118,7 @@ Comm::SetSelect(int fd, unsigned int type, PF * handler, void *client_data, time
     fde *F = &fd_table[fd];
     assert(fd >= 0);
     assert(F->flags.open || (!handler && !client_data && !timeout));
-    debugs(5, 5, HERE << "FD " << fd << ", type=" << type <<
+    debugs(5, 5, "FD " << fd << ", type=" << type <<
            ", handler=" << handler << ", client_data=" << client_data <<
            ", timeout=" << timeout);
 
@@ -180,7 +179,7 @@ comm_check_incoming_select_handlers(int nfds, int *fds)
     int i;
     int fd;
     int maxfd = 0;
-    PF *hdl = NULL;
+    PF *hdl = nullptr;
     fd_set read_mask;
     fd_set write_mask;
     FD_ZERO(&read_mask);
@@ -212,7 +211,7 @@ comm_check_incoming_select_handlers(int nfds, int *fds)
 
     ++ statCounter.syscalls.selects;
 
-    if (select(maxfd, &read_mask, &write_mask, NULL, &zero_tv) < 1)
+    if (select(maxfd, &read_mask, &write_mask, nullptr, &zero_tv) < 1)
         return incoming_sockets_accepted;
 
     for (i = 0; i < nfds; ++i) {
@@ -220,8 +219,8 @@ comm_check_incoming_select_handlers(int nfds, int *fds)
 
         if (FD_ISSET(fd, &read_mask)) {
             if ((hdl = fd_table[fd].read_handler) != NULL) {
-                fd_table[fd].read_handler = NULL;
-                commUpdateReadBits(fd, NULL);
+                fd_table[fd].read_handler = nullptr;
+                commUpdateReadBits(fd, nullptr);
                 hdl(fd, fd_table[fd].read_data);
             } else {
                 debugs(5, DBG_IMPORTANT, "comm_select_incoming: FD " << fd << " NULL read handler");
@@ -230,8 +229,8 @@ comm_check_incoming_select_handlers(int nfds, int *fds)
 
         if (FD_ISSET(fd, &write_mask)) {
             if ((hdl = fd_table[fd].write_handler) != NULL) {
-                fd_table[fd].write_handler = NULL;
-                commUpdateWriteBits(fd, NULL);
+                fd_table[fd].write_handler = nullptr;
+                commUpdateWriteBits(fd, nullptr);
                 hdl(fd, fd_table[fd].write_data);
             } else {
                 debugs(5, DBG_IMPORTANT, "comm_select_incoming: FD " << fd << " NULL write handler");
@@ -311,7 +310,6 @@ comm_select_tcp_incoming(void)
     statCounter.comm_tcp_incoming.count(nevents);
 }
 
-#define DEBUG_FDBITS 0
 /* Select on all sockets; call handlers for those that are ready. */
 Comm::Flag
 Comm::DoSelect(int msec)
@@ -320,17 +318,13 @@ Comm::DoSelect(int msec)
     fd_set pendingfds;
     fd_set writefds;
 
-    PF *hdl = NULL;
+    PF *hdl = nullptr;
     int fd;
     int maxfd;
     int num;
     int pending;
     int calldns = 0, calludp = 0, calltcp = 0;
     int j;
-#if DEBUG_FDBITS
-
-    int i;
-#endif
     struct timeval poll_time;
     double timeout = current_dtime + (msec / 1000.0);
     fde *F;
@@ -390,20 +384,6 @@ Comm::DoSelect(int msec)
             }
         }
 
-#if DEBUG_FDBITS
-        for (i = 0; i < maxfd; ++i) {
-            /* Check each open socket for a handler. */
-
-            if (fd_table[i].read_handler) {
-                assert(FD_ISSET(i, readfds));
-            }
-
-            if (fd_table[i].write_handler) {
-                assert(FD_ISSET(i, writefds));
-            }
-        }
-
-#endif
         if (nreadfds + nwritefds == 0) {
             assert(shutting_down);
             return Comm::SHUTDOWN;
@@ -475,14 +455,6 @@ Comm::DoSelect(int msec)
             if (no_bits)
                 continue;
 
-#if DEBUG_FDBITS
-
-            debugs(5, 9, "FD " << fd << " bit set for reading");
-
-            assert(FD_ISSET(fd, readfds));
-
-#endif
-
             if (fdIsUdpListener(fd)) {
                 calludp = 1;
                 continue;
@@ -502,8 +474,8 @@ Comm::DoSelect(int msec)
             debugs(5, 6, "comm_select: FD " << fd << " ready for reading");
 
             if ((hdl = F->read_handler)) {
-                F->read_handler = NULL;
-                commUpdateReadBits(fd, NULL);
+                F->read_handler = nullptr;
+                commUpdateReadBits(fd, nullptr);
                 hdl(fd, F->read_data);
                 ++ statCounter.select_fds;
 
@@ -532,8 +504,8 @@ Comm::DoSelect(int msec)
                 F = &fd_table[fd];
 
                 if ((hdl = F->write_handler)) {
-                    F->write_handler = NULL;
-                    commUpdateWriteBits(fd, NULL);
+                    F->write_handler = nullptr;
+                    commUpdateWriteBits(fd, nullptr);
                     hdl(fd, F->write_data);
                     ++ statCounter.select_fds;
                 }
@@ -558,14 +530,6 @@ Comm::DoSelect(int msec)
             if (no_bits)
                 continue;
 
-#if DEBUG_FDBITS
-
-            debugs(5, 9, "FD " << fd << " bit set for writing");
-
-            assert(FD_ISSET(fd, writefds));
-
-#endif
-
             if (fdIsUdpListener(fd)) {
                 calludp = 1;
                 continue;
@@ -585,8 +549,8 @@ Comm::DoSelect(int msec)
             debugs(5, 6, "comm_select: FD " << fd << " ready for writing");
 
             if ((hdl = F->write_handler)) {
-                F->write_handler = NULL;
-                commUpdateWriteBits(fd, NULL);
+                F->write_handler = nullptr;
+                commUpdateWriteBits(fd, nullptr);
                 hdl(fd, F->write_data);
                 ++ statCounter.select_fds;
 
@@ -693,8 +657,8 @@ examine_select(fd_set * readfds, fd_set * writefds)
     fd_set write_x;
 
     struct timeval tv;
-    AsyncCall::Pointer ch = NULL;
-    fde *F = NULL;
+    AsyncCall::Pointer ch = nullptr;
+    fde *F = nullptr;
 
     struct stat sb;
     debugs(5, DBG_CRITICAL, "examine_select: Examining open file descriptors...");
@@ -736,10 +700,10 @@ examine_select(fd_set * readfds, fd_set * writefds)
             ScheduleCallHere(F->timeoutHandler);
         }
 
-        F->closeHandler = NULL;
-        F->timeoutHandler = NULL;
-        F->read_handler = NULL;
-        F->write_handler = NULL;
+        F->closeHandler = nullptr;
+        F->timeoutHandler = nullptr;
+        F->read_handler = nullptr;
+        F->write_handler = nullptr;
         FD_CLR(fd, readfds);
         FD_CLR(fd, writefds);
     }

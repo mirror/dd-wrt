@@ -35,23 +35,21 @@
  */
 
 class CallDialer;
-class AsyncCallQueue;
 
 class AsyncCall: public RefCountable
 {
 public:
     typedef RefCount <AsyncCall> Pointer;
-    friend class AsyncCallQueue;
 
     AsyncCall(int aDebugSection, int aDebugLevel, const char *aName);
-    virtual ~AsyncCall();
+    ~AsyncCall() override;
 
     void make(); // fire if we can; handles general call debugging
 
     // can be called from canFire() for debugging; always returns false
     bool cancel(const char *reason);
 
-    bool canceled() { return isCanceled != NULL; }
+    bool canceled() const { return isCanceled != nullptr; }
 
     virtual CallDialer *getDialer() = 0;
 
@@ -83,10 +81,10 @@ protected:
 
     virtual void fire() = 0;
 
-    AsyncCall::Pointer theNext; // used exclusively by AsyncCallQueue
+    AsyncCall::Pointer theNext; ///< for AsyncCallList and similar lists
 
 private:
-    const char *isCanceled; // set to the cancelation reason by cancel()
+    const char *isCanceled; // set to the cancellation reason by cancel()
 
     // not implemented to prevent nil calls from being passed around and unknowingly scheduled, for now.
     AsyncCall();
@@ -121,10 +119,12 @@ public:
  \ingroup AsyncCallAPI
  * This template implements an AsyncCall using a specified Dialer class
  */
-template <class Dialer>
+template <class DialerClass>
 class AsyncCallT: public AsyncCall
 {
 public:
+    using Dialer = DialerClass;
+
     AsyncCallT(int aDebugSection, int aDebugLevel, const char *aName,
                const Dialer &aDialer): AsyncCall(aDebugSection, aDebugLevel, aName),
         dialer(aDialer) {}
@@ -133,26 +133,25 @@ public:
         AsyncCall(o.debugSection, o.debugLevel, o.name),
         dialer(o.dialer) {}
 
-    ~AsyncCallT() {}
+    ~AsyncCallT() override {}
 
-    CallDialer *getDialer() { return &dialer; }
+    CallDialer *getDialer() override { return &dialer; }
+
+    Dialer dialer;
 
 protected:
-    virtual bool canFire() {
+    bool canFire() override {
         return AsyncCall::canFire() &&
                dialer.canDial(*this);
     }
-    virtual void fire() { dialer.dial(*this); }
-
-    Dialer dialer;
+    void fire() override { dialer.dial(*this); }
 
 private:
     AsyncCallT & operator=(const AsyncCallT &); // not defined. call assignments not permitted.
 };
 
 template <class Dialer>
-inline
-AsyncCall *
+RefCount< AsyncCallT<Dialer> >
 asyncCall(int aDebugSection, int aDebugLevel, const char *aName,
           const Dialer &aDialer)
 {
@@ -160,7 +159,7 @@ asyncCall(int aDebugSection, int aDebugLevel, const char *aName,
 }
 
 /** Call scheduling helper. Use ScheduleCallHere if you can. */
-bool ScheduleCall(const char *fileName, int fileLine, AsyncCall::Pointer &call);
+bool ScheduleCall(const char *fileName, int fileLine, const AsyncCall::Pointer &);
 
 /** Call scheduling helper. */
 #define ScheduleCallHere(call) ScheduleCall(__FILE__, __LINE__, (call))

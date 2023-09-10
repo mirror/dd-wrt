@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>FOUT: Die aangevraagde URL kon nie verkry word nie</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>FOUT</h1>
+<h2>Die aangevraagde URL kon nie verkry word nie</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Die volgende fout is teëgekom tydens verkryging van die URL: <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>Tydkwota oorskry.</b></p>
+</blockquote>
+
+<p>This proxy limits your time online with a quota. Your time budget is now empty but will be refilled when the configured time period starts again.</p>
+<p>These limits have been established by the Internet Service Provider who operates this cache. Please contact them directly if you feel this is an error.</p>
+
+<p>Die kasbediener se administrateur is <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Gegenereer op %T deur %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

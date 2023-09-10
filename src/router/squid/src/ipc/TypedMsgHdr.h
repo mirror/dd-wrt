@@ -23,6 +23,8 @@
 #include <sys/un.h>
 #endif
 
+#include <type_traits>
+
 class String;
 
 namespace Ipc
@@ -115,8 +117,7 @@ template <class Pod>
 void
 Ipc::TypedMsgHdr::getPod(Pod &pod) const
 {
-    // TODO: Enable after fixing Ipc::SharedListenRequest::SharedListenRequest()
-    //static_assert(std::is_trivially_copyable<Pod>::value, "getPod() used for a POD");
+    static_assert(std::is_trivially_copyable<Pod>::value, "getPod() used for a POD");
     getFixed(&pod, sizeof(pod));
 }
 
@@ -124,8 +125,7 @@ template <class Pod>
 void
 Ipc::TypedMsgHdr::putPod(const Pod &pod)
 {
-    // TODO: Enable after fixing Ipc::SharedListenRequest::pack()
-    //static_assert(std::is_trivially_copyable<Pod>::value, "putPod() used for a POD");
+    static_assert(std::is_trivially_copyable<Pod>::value, "putPod() used for a POD");
     putFixed(&pod, sizeof(pod));
 }
 

@@ -8,11 +8,11 @@
 
 #include "squid.h"
 #include "adaptation/icap/Client.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 
 void Adaptation::Icap::InitModule()
 {
-    debugs(93,2, HERE << "module enabled.");
+    debugs(93,2, "module enabled.");
 }
 
 void Adaptation::Icap::CleanModule()

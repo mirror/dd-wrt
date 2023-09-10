@@ -127,6 +127,23 @@ Ipc::ReadWriteLock::startAppending()
     appending = true;
 }
 
+bool
+Ipc::ReadWriteLock::stopAppendingAndRestoreExclusive()
+{
+    assert(writing);
+    assert(appending);
+
+    appending = false;
+
+    // Checking `readers` here would mishandle a lockShared() call that started
+    // before we banned appending above, saw still true `appending`, got on a
+    // "success" code path, but had not incremented the `readers` counter yet.
+    // Checking `readLevel` mishandles lockShared() that saw false `appending`,
+    // got on a "failure" code path, but had not decremented `readLevel` yet.
+    // Our callers prefer the wrong "false" to the wrong "true" result.
+    return !readLevel;
+}
+
 void
 Ipc::ReadWriteLock::updateStats(ReadWriteLockStats &stats) const
 {
@@ -174,5 +191,14 @@ Ipc::ReadWriteLockStats::dump(StoreEntry &e) const
                           writers, (100.0 * writers / locked),
                           appenders, appPerc);
     }
+}
+
+std::ostream &
+Ipc::operator <<(std::ostream &os, const Ipc::ReadWriteLock &lock)
+{
+    return os << lock.readers << 'R' <<
+           (lock.writing ? "W" : "") <<
+           (lock.appending ? "A" : "");
+    // impossible to report lock.updating without setting/clearing that flag
 }
 

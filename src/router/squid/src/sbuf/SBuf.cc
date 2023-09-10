@@ -8,9 +8,9 @@
 
 #include "squid.h"
 #include "base/CharacterSet.h"
+#include "base/Raw.h"
 #include "base/RefCount.h"
-#include "Debug.h"
-#include "sbuf/DetailedStats.h"
+#include "debug/Stream.h"
 #include "sbuf/SBuf.h"
 #include "util.h"
 
@@ -69,7 +69,7 @@ SBuf::~SBuf()
 {
     debugs(24, 8, id << " destructed");
     --stats.live;
-    recordSBufSizeAtDestruct(len_);
+    SBufStats::RecordSBufSizeAtDestruct(len_);
 }
 
 MemBlob::Pointer
@@ -174,15 +174,8 @@ SBuf::rawSpace(size_type minSpace)
 void
 SBuf::clear()
 {
-#if 0
-    //enabling this code path, the store will be freed and reinitialized
-    store_ = GetStorePrototype(); //uncomment to actually free storage upon clear()
-#else
-    //enabling this code path, we try to release the store without deallocating it.
-    // will be lazily reallocated if needed.
     if (store_->LockCount() == 1)
         store_->clear();
-#endif
     len_ = 0;
     off_ = 0;
     ++stats.clear;
@@ -202,7 +195,7 @@ SBuf &
 SBuf::append(const char * S, size_type Ssize)
 {
     const Locker blobKeeper(this, S);
-    if (S == NULL)
+    if (S == nullptr)
         return *this;
     if (Ssize == SBuf::npos)
         Ssize = strlen(S);
@@ -221,7 +214,7 @@ SBuf&
 SBuf::Printf(const char *fmt, ...)
 {
     // with printf() the fmt or an arg might be a dangerous char*
-    // NP: cant rely on vappendf() Locker because of clear()
+    // NP: can't rely on vappendf() Locker because of clear()
     const Locker blobKeeper(this, buf());
 
     va_list args;
@@ -248,7 +241,7 @@ SBuf::vappendf(const char *fmt, va_list vargs)
     // with (v)appendf() the fmt or an arg might be a dangerous char*
     const Locker blobKeeper(this, buf());
 
-    Must(fmt != NULL);
+    Must(fmt != nullptr);
     int sz = 0;
     //reserve twice the format-string size, it's a likely heuristic
     size_type requiredSpaceEstimate = strlen(fmt)*2;
@@ -525,7 +518,7 @@ SBuf::c_str()
     ++stats.rawAccess;
     /* null-terminate the current buffer, by hand-appending a \0 at its tail but
      * without increasing its length. May COW, the side-effect is to guarantee that
-     * the MemBlob's tail is availabe for us to use */
+     * the MemBlob's tail is available for us to use */
     *rawSpace(1) = '\0';
     ++store_->size;
     ++stats.setChar;
@@ -560,7 +553,7 @@ SBuf::trim(const SBuf &toRemove, bool atBeginning, bool atEnd)
     ++stats.trim;
     if (atEnd) {
         const char *p = bufEnd()-1;
-        while (!isEmpty() && memchr(toRemove.buf(), *p, toRemove.length()) != NULL) {
+        while (!isEmpty() && memchr(toRemove.buf(), *p, toRemove.length()) != nullptr) {
             //current end-of-buf is in the searched set
             --len_;
             --p;
@@ -568,7 +561,7 @@ SBuf::trim(const SBuf &toRemove, bool atBeginning, bool atEnd)
     }
     if (atBeginning) {
         const char *p = buf();
-        while (!isEmpty() && memchr(toRemove.buf(), *p, toRemove.length()) != NULL) {
+        while (!isEmpty() && memchr(toRemove.buf(), *p, toRemove.length()) != nullptr) {
             --len_;
             ++off_;
             ++p;
@@ -601,7 +594,7 @@ SBuf::find(char c, size_type startPos) const
 
     const void *i = memchr(buf()+startPos, (int)c, (size_type)length()-startPos);
 
-    if (i == NULL)
+    if (i == nullptr)
         return npos;
 
     return (static_cast<const char *>(i)-buf());
@@ -644,11 +637,11 @@ SBuf::find(const SBuf &needle, size_type startPos) const
         debugs(24, 8, " begin=" << (void *) start <<
                ", lastPossible=" << (void*) lastPossible );
         tmp = static_cast<char *>(memchr(start, needleBegin, lastPossible-start));
-        if (tmp == NULL) {
+        if (tmp == nullptr) {
             debugs(24, 8, "First byte not found");
             return npos;
         }
-        // lastPossible guarrantees no out-of-bounds with memcmp()
+        // lastPossible guarantees no out-of-bounds with memcmp()
         if (0 == memcmp(needle.buf(), tmp, needle.length())) {
             debugs(24, 8, "Found at " << (tmp-buf()));
             return (tmp-buf());
@@ -720,7 +713,7 @@ SBuf::rfind(char c, SBuf::size_type endPos) const
 
     const void *i = memrchr(buf(), (int)c, (size_type)endPos);
 
-    if (i == NULL)
+    if (i == nullptr)
         return npos;
 
     return (static_cast<const char *>(i)-buf());
@@ -846,7 +839,7 @@ SBuf::toUpper()
  * NO verifications are made on the size parameters, it's up to the caller to
  * make sure that the new size is big enough to hold the copied contents.
  * The re-allocated storage MAY be bigger than the requested size due to size-chunking
- * algorithms in MemBlock, it is guarranteed NOT to be smaller.
+ * algorithms in MemBlock, it is guaranteed NOT to be smaller.
  */
 void
 SBuf::reAlloc(size_type newsize)

@@ -11,7 +11,7 @@
 #include "client_side.h"
 #include "comm.h"
 #include "comm/Read.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "error/SysErrorDetail.h"
 #include "fd.h"
 #include "fde.h"
@@ -29,7 +29,9 @@ Server::Server(const MasterXaction::Pointer &xact) :
     transferProtocol(xact->squidPort->transport),
     port(xact->squidPort),
     receivedFirstByte_(false)
-{}
+{
+    clientConnection->leaveOrphanage();
+}
 
 bool
 Server::doneAll() const
@@ -59,7 +61,7 @@ Server::stopReading()
 {
     if (reading()) {
         Comm::ReadCancel(clientConnection->fd, reader);
-        reader = NULL;
+        reader = nullptr;
     }
 }
 
@@ -105,7 +107,7 @@ Server::doClientRead(const CommIoCbParams &io)
 {
     debugs(33,5, io.conn);
     Must(reading());
-    reader = NULL;
+    reader = nullptr;
 
     /* Bail out quickly on Comm::ERR_CLOSING - close handlers will tidy up */
     if (io.flag == Comm::ERR_CLOSING) {

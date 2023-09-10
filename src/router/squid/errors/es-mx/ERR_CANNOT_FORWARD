@@ -1,0 +1,46 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ERROR: El URL solicitado no se ha podido obetener</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERROR</h1>
+<h2>El URL solicitado no se ha podido recuperar</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Se encontró el siguiente error al intentar recuperar la dirección URL: <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>No se puede reenviar la solicitud en este momento.</b></p>
+</blockquote>
+
+<p>Esta solicitud no se pudo reenviar al servidor de origen ni a ningún caché principal.</p>
+
+<p>Algunos problemas posibles son:</p>
+<ul>
+<li id="network-down">Se requiere de una conexión a internet o los servidores de origen de este dominio pueden estar fuera de servicio</li>
+<li id="no-peer">Los servidores de cache principales configurados no estan disponibles en este momento.</li>
+<li id="permission-denied">Es posible que el administrador no permita que este caché realice conexiones directas a los servidores de origen.</li>
+</ul>
+
+<p>El administrador del cach&eacute; es <a href="mailto:%w%W">%w</a>.</p>
+
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Generado %T por %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

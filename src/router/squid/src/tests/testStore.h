@@ -25,6 +25,7 @@ class testStore : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST( testUnsetRoot );
     CPPUNIT_TEST( testStats );
     CPPUNIT_TEST( testMaxSize );
+    CPPUNIT_TEST( testSwapMetaTypeClassification );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -34,6 +35,7 @@ protected:
     void testUnsetRoot();
     void testStats();
     void testMaxSize();
+    void testSwapMetaTypeClassification();
 };
 
 /// allows testing of methods without having all the other components live
@@ -45,29 +47,29 @@ public:
 
     bool statsCalled;
 
-    virtual int callback();
+    int callback() override;
 
     virtual StoreEntry* get(const cache_key*);
 
     virtual void get(String, void (*)(StoreEntry*, void*), void*);
 
-    virtual void init();
+    void init() override;
 
-    virtual void maintain() {};
+    void maintain() override {};
 
-    virtual uint64_t maxSize() const;
+    uint64_t maxSize() const override;
 
-    virtual uint64_t minSize() const;
+    uint64_t minSize() const override;
 
-    virtual uint64_t currentSize() const;
+    uint64_t currentSize() const override;
 
-    virtual uint64_t currentCount() const;
+    uint64_t currentCount() const override;
 
-    virtual int64_t maxObjectSize() const;
+    int64_t maxObjectSize() const override;
 
-    virtual void getStats(StoreInfoStats &) const;
+    void getStats(StoreInfoStats &) const override;
 
-    virtual void stat(StoreEntry &) const; /* output stats to the provided store entry */
+    void stat(StoreEntry &) const override; /* output stats to the provided store entry */
 
     virtual void reference(StoreEntry &) {} /* Reference this object */
 

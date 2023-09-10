@@ -88,15 +88,11 @@ void releaseServerSockets(void);
 void PrintRusage(void);
 void dumpMallocStats(void);
 
-#if _SQUID_NEXT_
-typedef union wait PidStatus;
-#else
 typedef int PidStatus;
-#endif
 
 /**
  * Compatibility wrapper function for waitpid
- * \pid the pid of child proccess to wait for.
+ * \pid the pid of child process to wait for.
  * \param status the exit status returned by waitpid
  * \param flags WNOHANG or 0
  */

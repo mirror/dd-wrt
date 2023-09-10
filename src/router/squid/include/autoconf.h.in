@@ -25,7 +25,7 @@
 /* Enable following X-Forwarded-For headers */
 #undef FOLLOW_X_FORWARDED_FOR
 
-/* If gettimeofday is known to take only one argument */
+/* Whether gettimeofday takes only one argument */
 #undef GETTIMEOFDAY_NO_TZP
 
 /* Define to 1 if you have the <aio.h> header file. */
@@ -112,9 +112,6 @@
 /* Define to 1 if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
 
-/* Define to 1 if you have the `clock_gettime_nsec_np' function. */
-#undef HAVE_CLOCK_GETTIME_NSEC_NP
-
 /* Define to 1 if you have the `closedir' function. */
 #undef HAVE_CLOSEDIR
 
@@ -146,8 +143,8 @@
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 
-/* define if the compiler supports basic C++11 syntax */
-#undef HAVE_CXX11
+/* define if the compiler supports basic C++17 syntax */
+#undef HAVE_CXX17
 
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
@@ -187,8 +184,7 @@
 /* Define to 1 if you have the <direct.h> header file. */
 #undef HAVE_DIRECT_H
 
-/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
-   */
+/* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
 /* POSIX AIO Disk I/O module is built */
@@ -450,7 +446,7 @@
 /* Define to 1 if you have the <lber.h> header file. */
 #undef HAVE_LBER_H
 
-/* LDAP support */
+/* Define to 1 if you have LDAP */
 #undef HAVE_LDAP
 
 /* Define to 1 if you have ldapssl_client_init */
@@ -458,6 +454,9 @@
 
 /* Define to 1 if you have the <ldap.h> header file. */
 #undef HAVE_LDAP_H
+
+/* Define to 1 if you have LDAP_OPT_DEBUG_LEVEL */
+#undef HAVE_LDAP_OPT_DEBUG_LEVEL
 
 /* Define to 1 if you have LDAP_REBINDPROC_CALLBACK */
 #undef HAVE_LDAP_REBINDPROC_CALLBACK
@@ -477,7 +476,7 @@
 /* Define to 1 if you have ldap_url_desc2str */
 #undef HAVE_LDAP_URL_DESC2STR
 
-/* Define to 1 if you have LDAPURLDesc.lud_scheme */
+/* Define to 1 if you have LDAP_URL_LUD_SCHEME */
 #undef HAVE_LDAP_URL_LUD_SCHEME
 
 /* Define to 1 if you have ldap_url_parse */
@@ -488,9 +487,6 @@
 
 /* Define to 1 if you have the `le32toh' function. */
 #undef HAVE_LE32TOH
-
-/* Define to 1 if you have the `cap' library (-lcap). */
-#undef HAVE_LIBCAP
 
 /* "Define to 1 if the ASN1_STRING_get0_data() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_ASN1_STRING_GET0_DATA
@@ -579,10 +575,17 @@
    exists" */
 #undef HAVE_LIBSSL_SSL_CTX_SET_TMP_RSA_CALLBACK
 
+/* "Define to 1 if the SSL_get_client_random() OpenSSL API function exists" */
+#undef HAVE_LIBSSL_SSL_GET_CLIENT_RANDOM
+
 /* "Define to 1 if the SSL_SESSION_get_id() OpenSSL API function exists" */
 #undef HAVE_LIBSSL_SSL_SESSION_GET_ID
 
-/* Define to 1 if you have the libxml2 library */
+/* "Define to 1 if the SSL_SESSION_get_master_key() OpenSSL API function
+   exists" */
+#undef HAVE_LIBSSL_SSL_SESSION_GET_MASTER_KEY
+
+/* Define to 1 if you have the xml2 library */
 #undef HAVE_LIBXML2
 
 /* Define to 1 if you have the <libxml/HTMLparser.h> header file. */
@@ -661,9 +664,6 @@
 /* Define to 1 if you have the <mount.h> header file. */
 #undef HAVE_MOUNT_H
 
-/* Mozilla LDAP SDK support */
-#undef HAVE_MOZILLA_LDAP_SDK
-
 /* Define to 1 if you have the <mozldap/ldap.h> header file. */
 #undef HAVE_MOZLDAP_LDAP_H
 
@@ -678,9 +678,6 @@
 
 /* mtyp_t is defined by the system headers */
 #undef HAVE_MTYP_T
-
-/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
-#undef HAVE_NDIR_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
@@ -751,14 +748,8 @@
 /* Define to 1 if you have the <net/route.h> header file. */
 #undef HAVE_NET_ROUTE_H
 
-/* Define to 1 if nullptr_t is supported */
-#undef HAVE_NULLPTR_T
-
 /* Define to 1 if you have the `opendir' function. */
 #undef HAVE_OPENDIR
-
-/* OpenLDAP support */
-#undef HAVE_OPENLDAP
 
 /* Define to 1 if you have the <openssl/asn1.h> header file. */
 #undef HAVE_OPENSSL_ASN1_H
@@ -837,6 +828,12 @@
 
 /* Define if libtool can extract symbol lists from object files. */
 #undef HAVE_PRELOADED_SYMBOLS
+
+/* Define to 1 if you have the <priv.h> header file. */
+#undef HAVE_PRIV_H
+
+/* Define to 1 if you have the `procctl' function. */
+#undef HAVE_PROCCTL
 
 /* Define to 1 if you have profile_get_integer */
 #undef HAVE_PROFILE_GET_INTEGER
@@ -931,6 +928,9 @@
 /* Define to 1 if you have the `setgroups' function. */
 #undef HAVE_SETGROUPS
 
+/* Define to 1 if you have the `setpflags' function. */
+#undef HAVE_SETPFLAGS
+
 /* Define to 1 if you have the `setpgrp' function. */
 #undef HAVE_SETPGRP
 
@@ -1014,15 +1014,6 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define if stdlibc support std::underlying_type for enums */
-#undef HAVE_STD_UNDERLYING_TYPE
-
-/* Define if c++11 std::uniform_int_distribution is supported */
-#undef HAVE_STD_UNIFORM_INT_DISTRIBUTION
-
-/* Define if c++11 std::uniform_real_distribution is supported */
-#undef HAVE_STD_UNIFORM_REAL_DISTRIBUTION
-
 /* Define to 1 if you have the `strerror' function. */
 #undef HAVE_STRERROR
 
@@ -1059,9 +1050,6 @@
 /* Define to 1 if `tm_gmtoff' is a member of `struct tm'. */
 #undef HAVE_STRUCT_TM_TM_GMTOFF
 
-/* Sun LDAP SDK support */
-#undef HAVE_SUN_LDAP_SDK
-
 /* Define to 1 if you have the <syscall.h> header file. */
 #undef HAVE_SYSCALL_H
 
@@ -1088,10 +1076,6 @@
 
 /* Define to 1 if you have the <sys/devpoll.h> header file. */
 #undef HAVE_SYS_DEVPOLL_H
-
-/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
-   */
-#undef HAVE_SYS_DIR_H
 
 /* Define to 1 if you have the <sys/dl.h> header file. */
 #undef HAVE_SYS_DL_H
@@ -1129,15 +1113,14 @@
 /* Define to 1 if you have the <sys/msg.h> header file. */
 #undef HAVE_SYS_MSG_H
 
-/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
-   */
-#undef HAVE_SYS_NDIR_H
-
 /* Define to 1 if you have the <sys/param.h> header file. */
 #undef HAVE_SYS_PARAM_H
 
 /* Define to 1 if you have the <sys/prctl.h> header file. */
 #undef HAVE_SYS_PRCTL_H
+
+/* Define to 1 if you have the <sys/procctl.h> header file. */
+#undef HAVE_SYS_PROCCTL_H
 
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
@@ -1198,12 +1181,6 @@
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
-
-/* Define to 1 if you have the <tr1/random> header file. */
-#undef HAVE_TR1_RANDOM
-
-/* Define to 1 if std::unique_ptr<T> is supported */
-#undef HAVE_UNIQUE_PTR
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
@@ -1287,14 +1264,6 @@
 
 /* Enable support for IPF-style transparent proxying */
 #undef IPF_TRANSPARENT
-
-/* A dangerous feature which causes Squid to kill its parent process
-   (presumably the RunCache script) upon receipt of SIGTERM or SIGINT.
-   Deprecated, Use with caution. */
-#undef KILL_PARENT_OPT
-
-/* libcap2 headers are broken and clashing with glibc */
-#undef LIBCAP_BROKEN
 
 /* libresolv.a has been hacked to export _dns_ttl_ */
 #undef LIBRESOLV_DNS_TTL_HACK
@@ -1438,9 +1407,6 @@
    argument" */
 #undef SQUID_USE_CONST_SSL_SESSION_CBID
 
-/* "Define to 1 if hello message can be overwritten in SSL struct" */
-#undef SQUID_USE_OPENSSL_HELLO_OVERWRITE_HACK
-
 /* "Define to 1 to use squid workaround for SSL_get_certificate" */
 #undef SQUID_USE_SSLGETCERTIFICATE_HACK
 
@@ -1461,9 +1427,6 @@
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
-/* Define to 1 if your <sys/time.h> declares `struct tm'. */
-#undef TM_IN_SYS_TIME
-
 /* common adaptation support */
 #undef USE_ADAPTATION
 
@@ -1478,9 +1441,6 @@
 
 /* Use Cache Digests for locating objects in neighbor caches. */
 #undef USE_CACHE_DIGESTS
-
-/* Enable support for cbdata debug information */
-#undef USE_CBDATA_DEBUG
 
 /* Traffic management via "delay pools". */
 #undef USE_DELAY_POOLS
@@ -1505,9 +1465,6 @@
 
 /* GNU Kerberos support is available */
 #undef USE_GNUGSS
-
-/* Define if we should use GNU regex */
-#undef USE_GNUREGEX
 
 /* GnuTLS support is available */
 #undef USE_GNUTLS
@@ -1534,11 +1491,7 @@
 /* Use kqueue() for the IO loop */
 #undef USE_KQUEUE
 
-/* Enable code for assisting in finding memory leaks. Not for the faint of
-   heart */
-#undef USE_LEAKFINDER
-
-/* use libcap to set capabilities required for TPROXY */
+/* Linux capabilities library support */
 #undef USE_LIBCAP
 
 /* Enable support for QOS netfilter mark preservation */
@@ -1691,9 +1644,6 @@
 /* Enable code supporting MS Windows service mode */
 #undef USE_WIN32_SERVICE
 
-/* Define to enable CPU profiling within Squid */
-#undef USE_XPROF_STATS
-
 /* Version number of package */
 #undef VERSION
 
@@ -1776,8 +1726,8 @@
    a type exists and the standard includes do not define it. */
 #undef int8_t
 
-/* Leave undefined if nullptr is supported */
-#undef nullptr
+/* Define to 1 if you have Mozilla LDAP SDK */
+#undef m4_translit
 
 /* Define to `long int' if <sys/types.h> does not define. */
 #undef off_t
@@ -1809,6 +1759,3 @@
 /* Define to the type of an unsigned integer type of width exactly 8 bits if
    such a type exists and the standard includes do not define it. */
 #undef uint8_t
-
-/* Leave undefined if std::unique_ptr<T> is supported */
-#undef unique_ptr

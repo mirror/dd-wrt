@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ERROR: El URL solicitado no se ha podido obetener</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERROR</h1>
+<h2>El URL solicitado no se ha podido recuperar</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Se encontró el siguiente error al intentar recuperar la dirección URL: <a href="%U">%U</a></p>
+
+<blockquote id="error">
+<p><b>La petición o respuesta es demasiado larga.</b></p>
+</blockquote>
+
+<p>Si estas haciendo una petición POST o PUT, entonces el elemento que estas intentando cargar es demasiado grande.</p>
+<p>Si estas haciendo una petición GET, entonces el elemento que estas intentando descargar es demasiado grande.</p>
+<p>Estos límites han sido establecidos por el proveedor de servicios de Internet que opera este caché. Por favor, comunícate con ellos directamente si crees   que esto es un error</p>
+
+<p>El administrador del cach&eacute; es <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Generado %T por %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

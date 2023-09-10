@@ -8,7 +8,7 @@
 
 #include "squid.h"
 #include "base/Packable.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "fatal.h"
 #include "globals.h"
 #include "parser/Tokenizer.h"
@@ -55,7 +55,7 @@ Security::PeerOptions::parse(const char *token)
         KeyData &t = certs.back();
         t.privateKeyFile = SBuf(token + 4);
     } else if (strncmp(token, "version=", 8) == 0) {
-        debugs(0, DBG_PARSE_NOTE(1), "UPGRADE WARNING: SSL version= is deprecated. Use options= and tls-min-version= to limit protocols instead.");
+        debugs(0, DBG_PARSE_NOTE(1), "WARNING: UPGRADE: SSL version= is deprecated. Use options= and tls-min-version= to limit protocols instead.");
         sslVersion = xatoi(token + 8);
     } else if (strncmp(token, "min-version=", 12) == 0) {
         tlsMinVersion = SBuf(token + 12);
@@ -429,7 +429,7 @@ static struct ssl_option {
         "", 0
     },
     {
-        NULL, 0
+        nullptr, 0
     }
 };
 #endif /* USE_OPENSSL */
@@ -623,7 +623,7 @@ Security::PeerOptions::loadCrlFile()
         return;
     }
 
-    while (X509_CRL *crl = PEM_read_bio_X509_CRL(in,NULL,NULL,NULL)) {
+    while (X509_CRL *crl = PEM_read_bio_X509_CRL(in,nullptr,nullptr,nullptr)) {
         parsedCrl.emplace_back(Security::CrlPointer(crl));
     }
     BIO_free(in);
@@ -638,13 +638,16 @@ Security::PeerOptions::updateContextOptions(Security::ContextPointer &ctx)
     SSL_CTX_set_options(ctx.get(), parsedOptions);
 #elif USE_GNUTLS
     // NP: GnuTLS uses 'priorities' which are set only per-session instead.
+    (void)ctx;
+#else
+    (void)ctx;
 #endif
 }
 
 #if USE_OPENSSL && defined(TLSEXT_TYPE_next_proto_neg)
 // Dummy next_proto_neg callback
 static int
-ssl_next_proto_cb(SSL *s, unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *arg)
+ssl_next_proto_cb(SSL *, unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void * /* arg */)
 {
     static const unsigned char supported_protos[] = {8, 'h','t','t', 'p', '/', '1', '.', '1'};
     (void)SSL_select_next_proto(out, outlen, in, inlen, supported_protos, sizeof(supported_protos));
@@ -660,10 +663,11 @@ Security::PeerOptions::updateContextNpn(Security::ContextPointer &ctx)
 
 #if USE_OPENSSL && defined(TLSEXT_TYPE_next_proto_neg)
     SSL_CTX_set_next_proto_select_cb(ctx.get(), &ssl_next_proto_cb, nullptr);
-#endif
-
+#else
     // NOTE: GnuTLS does not support the obsolete NPN extension.
     //       it does support ALPN per-session, not per-context.
+    (void)ctx;
+#endif
 }
 
 static const char *
@@ -741,6 +745,8 @@ Security::PeerOptions::updateContextCrl(Security::ContextPointer &ctx)
         X509_STORE_set_flags(st, X509_V_FLAG_CRL_CHECK);
 #endif
 
+#else /* USE_OPENSSL */
+    (void)ctx;
 #endif /* USE_OPENSSL */
 }
 
@@ -758,6 +764,9 @@ Security::PeerOptions::updateContextTrust(Security::ContextPointer &ctx)
 #endif
 #elif USE_GNUTLS
     // Modern GnuTLS versions trust intermediate CA certificates by default.
+    (void)ctx;
+#else
+    (void)ctx;
 #endif /* TLS library */
 }
 
@@ -787,6 +796,8 @@ Security::PeerOptions::updateSessionOptions(Security::SessionPointer &s)
     if (x != GNUTLS_E_SUCCESS) {
         debugs(83, DBG_IMPORTANT, "ERROR: session=" << s << " Failed to set TLS options (" << errMsg << ":" << tlsMinVersion << "). error: " << Security::ErrorString(x));
     }
+#else
+    (void)s;
 #endif
 }
 

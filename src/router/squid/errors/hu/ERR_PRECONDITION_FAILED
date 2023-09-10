@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>HIBA: Az oldal nem tölthető be</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>HIBA</h1>
+<h2>Az oldal nem tölthető be</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Hiba történt a(z) <a href="%U">%U</a> URL betöltése közben:</p>
+
+<blockquote id="error">
+<p><b>Egy előfeltétel nem teljesült</b></p>
+</blockquote>
+
+<p>A hiba lehetséges okai:</p>
+<blockquote>
+    <p>A HTTP-kérésben szereplő előfeltételek nem teljesíthetők.</p>
+</blockquote>
+
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Dátum: %T, szerveradatok: %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

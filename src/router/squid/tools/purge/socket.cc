@@ -120,14 +120,14 @@ setSocketNoDelay( int sockfd, bool)
         return 0;
 }
 
-int
-commonCode( int& sockfd, bool nodelay, int sendBufferSize, int recvBufferSize )
+static int
+commonCode(int &sockfd, bool nodelay, int sendBufferSize, int recvBufferSize)
 // purpose: common code in server sockets and client sockets
 // paramtr: sockfd (IO): socket filedescriptor
 //          nodelay (IN): true=set TCP_NODELAY option.
 //          sendBufferSize (IN): don't set (use sys defaults) if < 0
 //          recvBufferSize (IN): don't set (use sys defaults) if < 0
-// returns: 0 == if everthing went ok, -1 otherwise
+// returns: 0 == if everything went ok, -1 otherwise
 // warning: sockfd will be closed, if -1 is returned!
 {
     // set TCP_NODELAY option, if that is wanted.

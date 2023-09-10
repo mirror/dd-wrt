@@ -55,7 +55,7 @@ public:
     static void Init();
 
     /// \returns ProtocolType for the given scheme name or PROTO_UNKNOWN
-    static const AnyP::ProtocolType FindProtocolType(const SBuf &);
+    static AnyP::ProtocolType FindProtocolType(const SBuf &);
 
 private:
     /// optimization: stores down-cased protocol scheme names, copied from
@@ -69,14 +69,14 @@ private:
     SBuf image_;
 };
 
-} // namespace AnyP
-
 inline std::ostream &
-operator << (std::ostream &os, AnyP::UriScheme const &scheme)
+operator <<(std::ostream &os, const UriScheme &scheme)
 {
     os << scheme.image();
     return os;
 }
+
+} // namespace AnyP
 
 #endif /* SQUID_ANYP_URISCHEME_H */
 

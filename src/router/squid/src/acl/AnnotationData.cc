@@ -12,7 +12,7 @@
 #include "acl/Checklist.h"
 #include "cache_cf.h"
 #include "ConfigParser.h"
-#include "Debug.h"
+#include "debug/Stream.h"
 #include "format/Format.h"
 #include "sbuf/Algorithms.h"
 
@@ -43,11 +43,5 @@ void
 ACLAnnotationData::annotate(NotePairs::Pointer pairs, const CharacterSet *delimiters, const AccessLogEntry::Pointer &al)
 {
     notes->updateNotePairs(pairs, delimiters, al);
-}
-
-ACLData<NotePairs::Entry *> *
-ACLAnnotationData::clone() const
-{
-    return new ACLAnnotationData;
 }
 

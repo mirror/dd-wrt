@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2023 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ბრაუზერის კონფიგურაცია</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>შეცდომა</h1>
+<h2>ბრაუზერის კონფიგურაცია</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>Your Web Browser configuration needs to be corrected to use this network.</p>
+</blockquote>
+
+<p>როგორ ვიპოვოთ ეს პარამეტრები ბრაუზერში:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>ხელსაწყოები -&gt; მორგება -&gt; დამატებით -&gt; ქსელი -&gt; მიერთების პარამეტრები</li>
+<li>აირჩიეთ ამ ქსელისთვის პროქსის პარამეტრების ავტომატური ამოცნობა</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>ხელსაწყოები -&gt; ინტერნეტის პარამეტრები -&gt; დაკავშირება -&gt; ქსელის პარამეტრები -&gt;პროქსი</li>
+<li>არჩიეთ პარამეტრების ავტომატური დაყენება</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>ხელსაწყოები -&gt; მორგება -&gt; დამატებით -&gt; ქსელი -&gt; პროქსი სერვერები</li>
+<li>აირჩიეთ ავტომატური პროქსის კონფიგურაციის გამოყენება</li>
+</ul>
+</div>
+
+<p>თქვენი კეშის ადმინისტრატორია <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>დაგენერირების დრო: %T, სერვისი: %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

@@ -16,14 +16,14 @@
 #include <iostream>
 #include <sstream>
 
-void
+static void
 testLowAndHigh()
 {
     mem_hdr aHeader;
     assert (aHeader.lowestOffset() == 0);
     assert (aHeader.write (StoreIOBuffer()));
     assert (aHeader.lowestOffset() == 0);
-    assert (aHeader.write (StoreIOBuffer(0, 1, (char *)NULL)));
+    assert (aHeader.write (StoreIOBuffer(0, 1, (char *)nullptr)));
     assert (aHeader.lowestOffset() == 0);
     char * sampleData = xstrdup ("A");
     assert (aHeader.write (StoreIOBuffer(1, 100, sampleData)));
@@ -40,7 +40,7 @@ testLowAndHigh()
     assert (!aHeader.hasContigousContentRange(Range<int64_t>(10,101)));
 }
 
-void
+static void
 testSplayOfNodes()
 {
     Splay<mem_node *> aSplay;
@@ -71,7 +71,7 @@ testSplayOfNodes()
     aSplay.destroy();
 }
 
-void
+static void
 testHdrVisit()
 {
     mem_hdr aHeader;

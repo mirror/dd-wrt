@@ -13,7 +13,6 @@
 #include "globals.h"
 #include "RebuildState.h"
 #include "SquidConfig.h"
-#include "SquidTime.h"
 #include "store/Disks.h"
 #include "store_key_md5.h"
 #include "store_rebuild.h"
@@ -32,17 +31,17 @@ CBDATA_NAMESPACED_CLASS_INIT(Fs::Ufs,RebuildState);
 Fs::Ufs::RebuildState::RebuildState(RefCount<UFSSwapDir> aSwapDir) :
     sd(aSwapDir),
     n_read(0),
-    LogParser(NULL),
+    LogParser(nullptr),
     curlvl1(0),
     curlvl2(0),
     in_dir(0),
     done(0),
     fn(0),
-    entry(NULL),
-    td(NULL),
+    entry(nullptr),
+    td(nullptr),
     fromLog(true),
     _done(false),
-    cbdata(NULL)
+    cbdata(nullptr)
 {
 
     /*
@@ -58,10 +57,10 @@ Fs::Ufs::RebuildState::RebuildState(RefCount<UFSSwapDir> aSwapDir) :
     if (fp && !zeroLengthLog)
         LogParser = Fs::Ufs::UFSSwapLogParser::GetUFSSwapLogParser(fp);
 
-    if (LogParser == NULL ) {
+    if (LogParser == nullptr ) {
         fromLog = false;
 
-        if (fp != NULL)
+        if (fp != nullptr)
             fclose(fp);
 
     } else {
@@ -71,6 +70,8 @@ Fs::Ufs::RebuildState::RebuildState(RefCount<UFSSwapDir> aSwapDir) :
 
     if (!clean)
         flags.need_to_validate = true;
+
+    counts.updateStartTime(current_time);
 
     debugs(47, DBG_IMPORTANT, "Rebuilding storage in " << sd->path << " (" <<
            (clean ? "clean log" : (LogParser ? "dirty log" : "no log")) << ")");
@@ -95,7 +96,6 @@ Fs::Ufs::RebuildState::RebuildStep(void *data)
     if (!rb->isDone() || reconfiguring)
         eventAdd("storeRebuild", RebuildStep, rb, 0.01, 1);
     else {
-        -- StoreController::store_dirs_rebuilding;
         storeRebuildComplete(&rb->counts);
         delete rb;
     }
@@ -129,7 +129,7 @@ Fs::Ufs::RebuildState::rebuildStep()
         getCurrentTime();
         const double elapsedMsec = tvSubMsec(loopStart, current_time);
         if (elapsedMsec > maxSpentMsec || elapsedMsec < 0) {
-            debugs(47, 5, HERE << "pausing after " << n_read << " entries in " <<
+            debugs(47, 5, "pausing after " << n_read << " entries in " <<
                    elapsedMsec << "ms; " << (elapsedMsec/n_read) << "ms per entry");
             break;
         }
@@ -144,7 +144,7 @@ Fs::Ufs::RebuildState::rebuildFromDirectory()
 
     struct stat sb;
     int fd = -1;
-    debugs(47, 3, HERE << "DIR #" << sd->index);
+    debugs(47, 3, "DIR #" << sd->index);
 
     assert(fd == -1);
     sfileno filn = 0;
@@ -274,7 +274,7 @@ Fs::Ufs::RebuildState::rebuildFromSwapLog()
         debugs(47, DBG_IMPORTANT, "Done reading " << sd->path << " swaplog (" << n_read << " entries)");
         LogParser->Close();
         delete LogParser;
-        LogParser = NULL;
+        LogParser = nullptr;
         _done = true;
         return;
     }
@@ -296,7 +296,7 @@ Fs::Ufs::RebuildState::rebuildFromSwapLog()
      */
     swapData.swap_filen &= 0x00FFFFFF;
 
-    debugs(47, 3, HERE << swap_log_op_str[(int) swapData.op]  << " " <<
+    debugs(47, 3, swap_log_op_str[(int) swapData.op]  << " " <<
            storeKeyText(swapData.key)  << " "<< std::setfill('0') <<
            std::hex << std::uppercase << std::setw(8) <<
            swapData.swap_filen);
@@ -355,7 +355,7 @@ Fs::Ufs::RebuildState::getNextFile(sfileno * filn_p, int *)
 {
     int fd = -1;
     int dirs_opened = 0;
-    debugs(47, 3, HERE << "flag=" << flags.init  << ", " <<
+    debugs(47, 3, "flag=" << flags.init  << ", " <<
            sd->index  << ": /"<< std::setfill('0') << std::hex <<
            std::uppercase << std::setw(2) << curlvl1  << "/" << std::setw(2) <<
            curlvl2);
@@ -390,27 +390,27 @@ Fs::Ufs::RebuildState::getNextFile(sfileno * filn_p, int *)
 
             if (!td) {
                 int xerrno = errno;
-                debugs(47, DBG_IMPORTANT, MYNAME << "error in opendir (" << fullpath << "): " << xstrerr(xerrno));
+                debugs(47, DBG_IMPORTANT, "ERROR: " << MYNAME << "in opendir (" << fullpath << "): " << xstrerr(xerrno));
             } else {
                 entry = readdir(td);    /* skip . and .. */
                 entry = readdir(td);
 
-                if (entry == NULL && errno == ENOENT)
-                    debugs(47, DBG_IMPORTANT, HERE << "WARNING: directory does not exist!");
-                debugs(47, 3, HERE << "Directory " << fullpath);
+                if (entry == nullptr && errno == ENOENT)
+                    debugs(47, DBG_IMPORTANT, "WARNING: directory does not exist!");
+                debugs(47, 3, "Directory " << fullpath);
             }
         }
 
-        if (td != NULL && (entry = readdir(td)) != NULL) {
+        if (td != nullptr && (entry = readdir(td)) != nullptr) {
             ++in_dir;
 
             if (sscanf(entry->d_name, "%x", &fn) != 1) {
-                debugs(47, 3, HERE << "invalid entry " << entry->d_name);
+                debugs(47, 3, "invalid entry " << entry->d_name);
                 continue;
             }
 
             if (!UFSSwapDir::FilenoBelongsHere(fn, sd->index, curlvl1, curlvl2)) {
-                debugs(47, 3, HERE << std::setfill('0') <<
+                debugs(47, 3, std::setfill('0') <<
                        std::hex << std::uppercase << std::setw(8) << fn  <<
                        " does not belong in " << std::dec << sd->index  << "/" <<
                        curlvl1  << "/" << curlvl2);
@@ -419,7 +419,7 @@ Fs::Ufs::RebuildState::getNextFile(sfileno * filn_p, int *)
             }
 
             if (sd->mapBitTest(fn)) {
-                debugs(47, 3, HERE << "Locked, continuing with next.");
+                debugs(47, 3, "Locked, continuing with next.");
                 continue;
             }
 
@@ -430,17 +430,17 @@ Fs::Ufs::RebuildState::getNextFile(sfileno * filn_p, int *)
 
             if (fd < 0) {
                 int xerrno = errno;
-                debugs(47, DBG_IMPORTANT, MYNAME << "error opening " << fullfilename << ": " << xstrerr(xerrno));
+                debugs(47, DBG_IMPORTANT, "ERROR: " << MYNAME << "opening " << fullfilename << ": " << xstrerr(xerrno));
             } else
                 ++store_open_disk_fd;
 
             continue;
         }
 
-        if (td != NULL)
+        if (td != nullptr)
             closedir(td);
 
-        td = NULL;
+        td = nullptr;
 
         in_dir = 0;
 

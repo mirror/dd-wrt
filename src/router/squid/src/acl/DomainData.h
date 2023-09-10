@@ -19,12 +19,11 @@ class ACLDomainData : public ACLData<char const *>
 
 public:
     ACLDomainData() : domains(nullptr) {}
-    virtual ~ACLDomainData();
-    virtual bool match(char const *);
-    virtual SBufList dump() const;
-    void parse();
-    bool empty() const;
-    virtual ACLData<char const *> *clone() const;
+    ~ACLDomainData() override;
+    bool match(char const *) override;
+    SBufList dump() const override;
+    void parse() override;
+    bool empty() const override;
 
     Splay<char *> *domains;
 };

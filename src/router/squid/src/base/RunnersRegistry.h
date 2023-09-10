@@ -41,6 +41,10 @@ public:
 
     /* Configuration events */
 
+    /// Called right before parsing squid.conf.
+    /// Meant for initializing/preparing configuration parsing facilities.
+    virtual void bootstrapConfig() {}
+
     /// Called after parsing squid.conf.
     /// Meant for setting configuration options that depend on other
     /// configuration options and were not explicitly configured.
@@ -102,7 +106,7 @@ void RunRegistered(const RegisteredRunner::Method &m);
 class IndependentRunner: public RegisteredRunner
 {
 public:
-    virtual ~IndependentRunner() { unregisterRunner(); }
+    ~IndependentRunner() override { unregisterRunner(); }
 
 protected:
     void registerRunner();
