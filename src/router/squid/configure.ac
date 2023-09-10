@@ -1043,27 +1043,27 @@ AM_CONDITIONAL(ENABLE_HTCP, [test "x$enable_htcp" = "xyes"])
 AC_MSG_NOTICE([HTCP support enabled: $enable_htcp])
 
 # Cryptograhic libraries
-SQUID_AUTO_LIB(nettle,[Nettle crypto],[LIBNETTLE])
-AS_IF(test "x$with_nettle" != "xno"],[
-  SQUID_STATE_SAVE(squid_nettle_state)
-  PKG_CHECK_MODULES([LIBNETTLE],[nettle >= 3.4],[],[
-    CPPFLAGS="$LIBNETTLE_CFLAGS $CPPFLAGS"
-    AC_CHECK_LIB(nettle,[nettle_md5_init],[LIBNETTLE_LIBS="-lnettle"])
-  ])
-  AC_CHECK_HEADERS(nettle/base64.h nettle/md5.h)
-  SQUID_CHECK_NETTLE_BASE64
-  SQUID_STATE_ROLLBACK(squid_nettle_state)
-  AS_IF([test "x$LIBNETTLE_LIBS" != "x"],[
-    CXXFLAGS="$LIBNETTLE_CFLAGS $CXXFLAGS"
-    LIBNETTLE_LIBS="$LIBNETTLE_PATH $LIBNETTLE_LIBS"
-  ],[test "x$with_nettle" = "xyes"],[
-    AC_MSG_ERROR([Required library nettle not found])
-  ],[
-    AC_MSG_NOTICE([Library nettle not found.])
-  ])
-])
-AC_MSG_NOTICE([Using Nettle cryptographic library: ${with_nettle:=yes}])
-AC_SUBST(LIBNETTLE_LIBS)
+#SQUID_AUTO_LIB(nettle,[Nettle crypto],[LIBNETTLE])
+#AS_IF(test "x$with_nettle" != "xno"],[
+#  SQUID_STATE_SAVE(squid_nettle_state)
+#  PKG_CHECK_MODULES([LIBNETTLE],[nettle >= 3.4],[],[
+#    CPPFLAGS="$LIBNETTLE_CFLAGS $CPPFLAGS"
+#    AC_CHECK_LIB(nettle,[nettle_md5_init],[LIBNETTLE_LIBS="-lnettle"])
+#  ])
+#  AC_CHECK_HEADERS(nettle/base64.h nettle/md5.h)
+#  SQUID_CHECK_NETTLE_BASE64
+#  SQUID_STATE_ROLLBACK(squid_nettle_state)
+#  AS_IF([test "x$LIBNETTLE_LIBS" != "x"],[
+#    CXXFLAGS="$LIBNETTLE_CFLAGS $CXXFLAGS"
+#    LIBNETTLE_LIBS="$LIBNETTLE_PATH $LIBNETTLE_LIBS"
+#  ],[test "x$with_nettle" = "xyes"],[
+#    AC_MSG_ERROR([Required library nettle not found])
+#  ],[
+#    AC_MSG_NOTICE([Library nettle not found.])
+#  ])
+#])
+#AC_MSG_NOTICE([Using Nettle cryptographic library: ${with_nettle:=yes}])
+#AC_SUBST(LIBNETTLE_LIBS)
 
 dnl Check for libcrypt
 CRYPTLIB=
