@@ -548,13 +548,13 @@ namespace
 {
 namespace queue_helpers
 {
-struct CompareTorrentByQueuePosition
+constexpr struct
 {
     constexpr bool operator()(tr_torrent const* a, tr_torrent const* b) const noexcept
     {
         return a->queuePosition < b->queuePosition;
     }
-};
+} CompareTorrentByQueuePosition{};
 
 #ifdef TR_ENABLE_ASSERTS
 bool queueIsSequenced(tr_session const* session)
@@ -624,7 +624,7 @@ void tr_torrentsQueueMoveTop(tr_torrent* const* torrents_in, size_t torrent_coun
     using namespace queue_helpers;
 
     auto torrents = std::vector<tr_torrent*>(torrents_in, torrents_in + torrent_count);
-    std::sort(std::rbegin(torrents), std::rend(torrents), CompareTorrentByQueuePosition{});
+    std::sort(std::rbegin(torrents), std::rend(torrents), CompareTorrentByQueuePosition);
     for (auto* tor : torrents)
     {
         tr_torrentSetQueuePosition(tor, 0);
@@ -636,7 +636,7 @@ void tr_torrentsQueueMoveUp(tr_torrent* const* torrents_in, size_t torrent_count
     using namespace queue_helpers;
 
     auto torrents = std::vector<tr_torrent*>(torrents_in, torrents_in + torrent_count);
-    std::sort(std::begin(torrents), std::end(torrents), CompareTorrentByQueuePosition{});
+    std::sort(std::begin(torrents), std::end(torrents), CompareTorrentByQueuePosition);
     for (auto* tor : torrents)
     {
         if (tor->queuePosition > 0)
@@ -651,7 +651,7 @@ void tr_torrentsQueueMoveDown(tr_torrent* const* torrents_in, size_t torrent_cou
     using namespace queue_helpers;
 
     auto torrents = std::vector<tr_torrent*>(torrents_in, torrents_in + torrent_count);
-    std::sort(std::rbegin(torrents), std::rend(torrents), CompareTorrentByQueuePosition{});
+    std::sort(std::rbegin(torrents), std::rend(torrents), CompareTorrentByQueuePosition);
     for (auto* tor : torrents)
     {
         if (tor->queuePosition < UINT_MAX)
@@ -666,7 +666,7 @@ void tr_torrentsQueueMoveBottom(tr_torrent* const* torrents_in, size_t torrent_c
     using namespace queue_helpers;
 
     auto torrents = std::vector<tr_torrent*>(torrents_in, torrents_in + torrent_count);
-    std::sort(std::begin(torrents), std::end(torrents), CompareTorrentByQueuePosition{});
+    std::sort(std::begin(torrents), std::end(torrents), CompareTorrentByQueuePosition);
     for (auto* tor : torrents)
     {
         tr_torrentSetQueuePosition(tor, UINT_MAX);
@@ -2448,10 +2448,36 @@ namespace
 {
 namespace rename_helpers
 {
-bool renameArgsAreValid(std::string_view oldpath, std::string_view newname)
+bool renameArgsAreValid(tr_torrent const* tor, std::string_view oldpath, std::string_view newname)
 {
-    return !std::empty(oldpath) && !std::empty(newname) && newname != "."sv && newname != ".."sv &&
-        !tr_strvContains(newname, TR_PATH_DELIMITER);
+    if (std::empty(oldpath) || std::empty(newname) || newname == "."sv || newname == ".."sv ||
+        tr_strvContains(newname, TR_PATH_DELIMITER))
+    {
+        return false;
+    }
+
+    auto const newpath = tr_strvContains(oldpath, TR_PATH_DELIMITER) ?
+        tr_pathbuf{ tr_sys_path_dirname(oldpath), '/', newname } :
+        tr_pathbuf{ newname };
+
+    if (newpath == oldpath)
+    {
+        return true;
+    }
+
+    auto const newpath_as_dir = tr_pathbuf{ newpath, '/' };
+    auto const n_files = tor->fileCount();
+
+    for (tr_file_index_t i = 0; i < n_files; ++i)
+    {
+        auto const& name = tor->fileSubpath(i);
+        if (newpath == name || tr_strvStartsWith(name, newpath_as_dir))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 auto renameFindAffectedFiles(tr_torrent const* tor, std::string_view oldpath)
@@ -2568,7 +2594,7 @@ void torrentRenamePath(
 
     int error = 0;
 
-    if (!renameArgsAreValid(oldpath, newname))
+    if (!renameArgsAreValid(tor, oldpath, newname))
     {
         error = EINVAL;
     }

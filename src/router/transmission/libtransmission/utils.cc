@@ -9,16 +9,18 @@
 #include <cerrno>
 #include <cfloat> // DBL_DIG
 #include <chrono>
-#include <clocale> // localeconv()
 #include <cstdint> // SIZE_MAX
 #include <cstdlib> // getenv()
 #include <cstring> /* strerror() */
 #include <ctime> // nanosleep()
+#include <iostream>
 #include <iterator> // for std::back_inserter
+#include <locale>
 #include <optional>
 #include <set>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 #ifdef _WIN32
@@ -57,6 +59,23 @@
 using namespace std::literals;
 
 time_t libtransmission::detail::tr_time::current_time = {};
+
+// ---
+
+void tr_locale_set_global(char const* locale_name) noexcept
+{
+    try
+    {
+        std::ignore = std::locale::global(std::locale{ locale_name });
+
+        std::ignore = std::cout.imbue(std::locale{});
+        std::ignore = std::cerr.imbue(std::locale{});
+    }
+    catch (std::exception const&)
+    {
+        // Ignore.
+    }
+}
 
 // ---
 
@@ -268,7 +287,7 @@ double tr_getRatio(uint64_t numerator, uint64_t denominator)
 
 // ---
 
-#ifndef __APPLE__
+#if !(defined(__APPLE__) && defined(__clang__))
 
 std::string tr_strv_convert_utf8(std::string_view sv)
 {
@@ -494,10 +513,10 @@ std::vector<int> tr_parseNumberRange(std::string_view str)
 double tr_truncd(double x, int decimal_places)
 {
     auto buf = std::array<char, 128>{};
-    auto const [out, len] = fmt::format_to_n(std::data(buf), std::size(buf) - 1, "{:.{}Lf}", x, DBL_DIG);
+    auto const [out, len] = fmt::format_to_n(std::data(buf), std::size(buf) - 1, "{:.{}f}", x, DBL_DIG);
     *out = '\0';
 
-    if (auto* const pt = strstr(std::data(buf), localeconv()->decimal_point); pt != nullptr)
+    if (auto* const pt = strchr(std::data(buf), '.'); pt != nullptr)
     {
         pt[decimal_places != 0 ? decimal_places + 1 : 0] = '\0';
     }
