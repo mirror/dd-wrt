@@ -340,8 +340,10 @@ tor_tls_init(void)
     SSL_load_error_strings();
 #endif /* defined(OPENSSL_1_1_API) */
 
-#if (SIZEOF_VOID_P >= 8 &&                              \
-     OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,1))
+#if (SIZEOF_VOID_P >= 8 &&                                \
+     OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,1) && \
+     (!defined(LIBRESSL_VERSION_NUMBER) ||                \
+      LIBRESSL_VERSION_NUMBER < 0x3080000fL))
     long version = tor_OpenSSL_version_num();
 
     /* LCOV_EXCL_START : we can't test these lines on the same machine */
@@ -1734,8 +1736,7 @@ tor_tls_export_key_material,(tor_tls_t *tls, uint8_t *secrets_out,
          * issue 7712. */
         openssl_bug_7712_is_present = 1;
         log_warn(LD_GENERAL, "Detected OpenSSL bug 7712: disabling TLS 1.3 on "
-                 "future connections. A fix is expected to appear in OpenSSL "
-                 "1.1.1b.");
+                 "future connections.");
       }
     }
     if (openssl_bug_7712_is_present)

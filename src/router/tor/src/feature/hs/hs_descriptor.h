@@ -15,6 +15,7 @@
 #include "trunnel/ed25519_cert.h" /* needed for trunnel */
 #include "feature/nodelist/torcert.h"
 #include "core/crypto/hs_ntor.h" /* for hs_subcredential_t */
+#include "feature/hs/hs_pow.h"
 
 /* Trunnel */
 struct link_specifier_t;
@@ -171,8 +172,18 @@ typedef struct hs_desc_encrypted_data_t {
   char *flow_control_pv;
   uint8_t sendme_inc;
 
+  /** PoW parameters. If NULL, it is not present. */
+  hs_pow_desc_params_t *pow_params;
+
   /** A list of intro points. Contains hs_desc_intro_point_t objects. */
   smartlist_t *intro_points;
+
+#ifdef TOR_UNIT_TESTS
+  /** In unit tests only, we can include additional arbitrary plaintext.
+   * This is used to test parser validation by adding invalid inner data to
+   * descriptors that are otherwise correct and correctly encrypted. */
+  const char *test_extra_plaintext;
+#endif
 } hs_desc_encrypted_data_t;
 
 /** The superencrypted data section of a descriptor. Obviously the data in
