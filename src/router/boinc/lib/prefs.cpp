@@ -252,7 +252,7 @@ void GLOBAL_PREFS::defaults() {
 #else
     suspend_cpu_usage = 25;
 #endif
-    suspend_if_no_recent_input = 60;
+    suspend_if_no_recent_input = 0;
     vm_max_used_frac = 0.75;
     work_buf_additional_days = 0.5;
     work_buf_min_days = 0.1;
@@ -272,6 +272,7 @@ void GLOBAL_PREFS::defaults() {
 //
 void GLOBAL_PREFS::enabled_defaults() {
     defaults();
+    suspend_if_no_recent_input = 60;
     disk_max_used_gb = 100;
     disk_min_free_gb = 1.0;
     daily_xfer_limit_mb = 10000;
@@ -935,3 +936,10 @@ int GLOBAL_PREFS::write_subset(MIOFILE& f, GLOBAL_PREFS_MASK& mask) {
     return 0;
 }
 
+// parse the <mod_time> element from a prefs XML string
+//
+double GLOBAL_PREFS::parse_mod_time(const char* p) {
+    const char *q = strstr(p, "<mod_time>");
+    if (!q) return 0;
+    return atof(q+strlen("<mod_time>"));
+}

@@ -1328,7 +1328,7 @@ void get_app_params() {
         "\n"
         "Note: an app's job parameters are taken from a job for that app.\n"
         "   They can also be specified by adding tags to client_state.xml.\n"
-        "   See http://boinc.berkeley.edu/trac/wiki/ClientSim.\n"
+        "   See https://github.com/BOINC/boinc/wiki/ClientSim.\n"
         "\n"
     );
 }
@@ -1423,9 +1423,9 @@ void do_client_simulation() {
 
     snprintf(buf, sizeof(buf), "%s%s", infile_prefix, CONFIG_FILE);
     cc_config.defaults();
+    log_flags.init();
     read_config_file(true, buf);
 
-    log_flags.init();
     snprintf(buf, sizeof(buf), "%s%s", outfile_prefix, "log_flags.xml");
     f = fopen(buf, "r");
     if (f) {

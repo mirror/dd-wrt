@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2016 University of California
+// Copyright (C) 2023 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -34,6 +34,19 @@
 #define BOINC_ADVANCEDGUI                   1
 #define BOINC_SIMPLEGUI                     2
 
+// NOTE: MacOS automatically adjusts all standard OS-drawn UI items
+// in Dark Mode, so BOINC must not modify their colors for Dark Mode.
+// For MacOS, we adjust Dark Mode colors only for our custom UI items.
+// If you implement Dark Mode support for another OS which requires
+// BOINC to adjust standard UI items for Dark Mode, be sure to guard
+// those changes so they do not affect the Mac implementation.
+//
+#if (defined(__WXMAC__) || defined(__WXGTK__))
+#define SUPPORTDARKMODE true
+#else
+#define SUPPORTDARKMODE false
+#endif
+
 
 class wxLogBOINC;
 class CBOINCBaseFrame;
@@ -44,6 +57,11 @@ class CTaskBarIcon;
 class CSkinManager;
 class CDlgEventLog;
 class CRPCFinishedEvent;
+
+struct GUI_SUPPORTED_LANG {
+    int Language;       // wxLanguage ID, used to set the locale
+    wxString Label;     // Text to display in the options dialog
+};
 
 #ifdef __WXMAC__
     OSErr               QuitAppleEventHandler(const AppleEvent *appleEvt, AppleEvent* reply, UInt32 refcon);
@@ -117,12 +135,13 @@ protected:
     bool                m_bRunDaemon;
     bool                m_bNeedRunDaemon;
 
-    // The last value defined in the wxLanguage enum is wxLANGUAGE_USER_DEFINED.
-    // defined in: wx/intl.h
-    wxArrayString       m_astrLanguages;
+    std::vector<GUI_SUPPORTED_LANG> m_astrLanguages;
     wxString            m_strISOLanguageCode;
+    bool                m_bUseDefaultLocale;
 
     int                 m_bSafeMessageBoxDisplayed;
+
+    bool                m_isDarkMode;
 
 public:
 
@@ -187,10 +206,12 @@ public:
     bool                GetNeedRunDaemon()
                                                     { return m_bNeedRunDaemon; }
 
-    wxArrayString&      GetSupportedLanguages()     { return m_astrLanguages; }
+    const std::vector<GUI_SUPPORTED_LANG>& GetSupportedLanguages() const { return m_astrLanguages; }
     wxString            GetISOLanguageCode()        { return m_strISOLanguageCode; }
     void                SetISOLanguageCode(wxString strISOLanguageCode)
                                                     { m_strISOLanguageCode = strISOLanguageCode; }
+    bool                UseDefaultLocale() const    { return m_bUseDefaultLocale; }
+    void                SetUseDefaultLocale(bool b) { m_bUseDefaultLocale = b; }
 
     void                SetEventLogWasActive(bool wasActive) { m_bEventLogWasActive = wasActive; }
     void                DisplayEventLog(bool bShowWindow = true);
@@ -236,6 +257,13 @@ public:
     void                SetAboutDialogIsOpen(bool set) { m_bAboutDialogIsOpen = set; }
     bool                GetAboutDialogIsOpen() { return m_bAboutDialogIsOpen; }
 
+#if SUPPORTDARKMODE
+    void                SetIsDarkMode (bool isDarkMode) { m_isDarkMode = isDarkMode; }
+    bool                GetIsDarkMode() { return m_isDarkMode; }
+#else
+    void                SetIsDarkMode (bool WXUNUSED(isDarkMode)) {}
+    bool                GetIsDarkMode() { return false; }
+#endif
 #ifdef __WXMAC__
     // The following Cocoa routines are in CBOINCGUIApp.mm
     //

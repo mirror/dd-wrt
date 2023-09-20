@@ -6,7 +6,7 @@ dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.58)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 7.22.2)
+AC_INIT(BOINC, 7.24.1)
 AC_CONFIG_MACRO_DIR([m4])
 LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
 AC_SUBST([LIBBOINC_VERSION])
@@ -1086,7 +1086,7 @@ fi
 
 dnl ---------- wxWidgets --------------------------------------------------
 if test "${enable_manager}" = yes ; then
-  BOINC_OPTIONS_WXWIDGETS([3.0.0])
+  BOINC_OPTIONS_WXWIDGETS([3.1.3])
 else
   AM_CONDITIONAL([GUI_GTK], false)
 fi
