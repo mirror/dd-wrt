@@ -2,7 +2,7 @@
 #
 # Warning: The structure of this file has been completely changed with the version 4.0!
 #
-# All lines starting with # or empty lines are ignoted.
+# All lines starting with # or empty lines are ignored.
 #
 # IMPORTANT: mc scans this file only upon first use or after editing it using the
 # mc "Edit extension file" command (F9-c-e). If you edit this file in any other way
@@ -455,6 +455,11 @@ Include=editor
 Regex=\.(so|so\.[0-9\.]*)$
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view so
 
+# .dylib libraries
+[dylib]
+Regex=\.(dylib|dylib\.[0-9\.]*)$
+View=%view{ascii} @EXTHELPERSDIR@/misc.sh view dylib
+
 
 ### Documentation ###
 
@@ -748,8 +753,8 @@ ShellIgnoreCase=true
 Include=editor
 
 [markdown]
-Regex=\.(md|mkd)$
-ShellIgnoreCase=true
+Regex=\.mk?d$
+RegexIgnoreCase=true
 Include=editor
 
 [djvu]
@@ -893,6 +898,10 @@ Type=^ELF
 #Open=%var{PAGER:more} %f
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view elf
 
+[Mach-O]
+Type=^Mach-O
+#Open=%var{PAGER:more} %f
+View=%view{ascii} @EXTHELPERSDIR@/misc.sh view dylib
 
 ### Documentation ###
 

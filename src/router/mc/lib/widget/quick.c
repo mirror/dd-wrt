@@ -1,7 +1,7 @@
 /*
    Widget based utility functions.
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Authors:
@@ -58,6 +58,8 @@ typedef struct
     Widget *widget;
     quick_widget_t *quick_widget;
 } quick_widget_item_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

@@ -1,7 +1,7 @@
 /*
    Text conversion from one charset to another.
 
-   Copyright (C) 2001-2022
+   Copyright (C) 2001-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -58,8 +58,11 @@ const char *cp_source = NULL;
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -78,10 +81,9 @@ new_codepage_desc (const char *id, const char *name)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-free_codepage_desc (gpointer data, gpointer user_data)
+free_codepage_desc (gpointer data)
 {
     codepage_desc *desc = (codepage_desc *) data;
-    (void) user_data;
 
     g_free (desc->id);
     g_free (desc->name);
@@ -213,10 +215,10 @@ load_codepages_list (void)
 
     if (codepages == NULL)
     {
-        /* files are not found, add defaullt codepage */
+        /* files are not found, add default codepage */
         fprintf (stderr, "%s\n", _("Warning: cannot load codepages list"));
 
-        codepages = g_ptr_array_new ();
+        codepages = g_ptr_array_new_with_free_func (free_codepage_desc);
         g_ptr_array_add (codepages, new_codepage_desc (DEFAULT_CHARSET, _("7-bit ASCII")));
     }
 }
@@ -226,7 +228,6 @@ load_codepages_list (void)
 void
 free_codepages_list (void)
 {
-    g_ptr_array_foreach (codepages, free_codepage_desc, NULL);
     g_ptr_array_free (codepages, TRUE);
     /* NULL-ize pointer to make unit tests happy */
     codepages = NULL;
@@ -357,7 +358,7 @@ str_nconvert_to_display (const char *str, int len)
     GIConv conv;
 
     if (str == NULL)
-        return g_string_new ("");
+        return NULL;
 
     if (cp_display == cp_source)
         return g_string_new (str);
@@ -389,7 +390,7 @@ str_nconvert_to_input (const char *str, int len)
     GIConv conv;
 
     if (str == NULL)
-        return g_string_new ("");
+        return NULL;
 
     if (cp_display == cp_source)
         return g_string_new (str);

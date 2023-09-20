@@ -1,7 +1,7 @@
 /*
    Chown command -- for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -67,8 +67,9 @@
 
 /*** file scope type declarations ****************************************************************/
 
-/*** file scope variables ************************************************************************/
+/*** forward declarations (file scope functions) *************************************************/
 
+/*** file scope variables ************************************************************************/
 
 static struct
 {
@@ -234,7 +235,7 @@ chown_dlg_create (WPanel * panel)
     /* add widgets for the file information */
     for (i = 0; i < LABELS; i++)
     {
-        chown_label[i].l = label_new (chown_label[i].y, 7 + GW * 2, "");
+        chown_label[i].l = label_new (chown_label[i].y, 7 + GW * 2, NULL);
         group_add_widget (g, chown_label[i].l);
     }
 
@@ -286,7 +287,7 @@ chown_done (gboolean need_update)
 static const GString *
 next_file (const WPanel * panel)
 {
-    while (!panel->dir.list[current_file].f.marked)
+    while (panel->dir.list[current_file].f.marked == 0)
         current_file++;
 
     return panel->dir.list[current_file].fname;
@@ -297,15 +298,17 @@ next_file (const WPanel * panel)
 static gboolean
 try_chown (const vfs_path_t * p, uid_t u, gid_t g)
 {
+    const char *fname = NULL;
+
     while (mc_chown (p, u, g) == -1 && !ignore_all)
     {
         int my_errno = errno;
         int result;
         char *msg;
 
-        msg =
-            g_strdup_printf (_("Cannot chown \"%s\"\n%s"), x_basename (vfs_path_as_str (p)),
-                             unix_error_string (my_errno));
+        if (fname == NULL)
+            fname = x_basename (vfs_path_as_str (p));
+        msg = g_strdup_printf (_("Cannot chown \"%s\"\n%s"), fname, unix_error_string (my_errno));
         result =
             query_dialog (MSG_ERROR, msg, D_ERROR, 4, _("&Ignore"), _("Ignore &all"), _("&Retry"),
                           _("&Cancel"));
@@ -420,7 +423,7 @@ chown_cmd (WPanel * panel)
         if (panel->marked != 0)
             fname = next_file (panel);  /* next marked file */
         else
-            fname = selection (panel)->fname;   /* single file */
+            fname = panel_current_entry (panel)->fname; /* single file */
 
         vpath = vfs_path_from_str (fname->str);
 
@@ -433,8 +436,8 @@ chown_cmd (WPanel * panel)
         ch_dlg = chown_dlg_create (panel);
 
         /* select in listboxes */
-        listbox_select_entry (l_user, listbox_search_text (l_user, get_owner (sf_stat.st_uid)));
-        listbox_select_entry (l_group, listbox_search_text (l_group, get_group (sf_stat.st_gid)));
+        listbox_set_current (l_user, listbox_search_text (l_user, get_owner (sf_stat.st_uid)));
+        listbox_set_current (l_group, listbox_search_text (l_group, get_group (sf_stat.st_gid)));
 
         chown_label (0, str_trunc (fname->str, GW - 4));
         chown_label (1, str_trunc (get_owner (sf_stat.st_uid), GW - 4));

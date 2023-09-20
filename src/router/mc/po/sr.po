@@ -9,10 +9,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-01-21 18:03+0100\n"
+"POT-Creation-Date: 2023-08-13 21:07+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>, 2011\n"
-"Language-Team: Serbian (http://www.transifex.com/mc/mc/language/sr/)\n"
+"Language-Team: Serbian (http://app.transifex.com/mc/mc/language/sr/)\n"
 "Language: sr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -811,8 +811,8 @@ msgstr "Грешка обраде аргумената!"
 msgid "No arguments given to the viewer."
 msgstr "Аргументи нису дати прегледачу."
 
-msgid "Two files are required to envoke the diffviewer."
-msgstr "Потребне су две датотеке за призивање прегледача разлика."
+msgid "Two files are required to invoke the diffviewer."
+msgstr ""
 
 msgid "Background protocol error"
 msgstr "Грешка позадинског протокола"
@@ -1612,7 +1612,7 @@ msgstr ""
 "Уређивач текста наклоњен кориснику\n"
 "написан за Поноћног наредника."
 
-msgid "Copyright (C) 1996-2022 the Free Software Foundation"
+msgid "Copyright (C) 1996-2023 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2146,11 +2146,10 @@ msgstr "Позадински послови"
 
 #, c-format
 msgid ""
-"Cannot chdir to \"%s\"\n"
+"Cannot change directory to\n"
+"%s\n"
 "%s"
 msgstr ""
-"Не могу да пређем у директоријум „%s“\n"
-"%s"
 
 msgid "Secure deletion"
 msgstr ""
@@ -2243,9 +2242,6 @@ msgstr ""
 msgid ""
 "Cannot chattr \"%s\"\n"
 "%s"
-msgstr ""
-
-msgid "Cannot change attributes on non-local filesystems"
 msgstr ""
 
 #, c-format
@@ -2347,9 +2343,6 @@ msgstr "Унесите назив рачунара (Ф1 за појединос�
 msgid "Files tagged, want to cd?"
 msgstr "Датотеке су означене, желите ли да променим директоријум?"
 
-msgid "Cannot change directory"
-msgstr "Не могу да променим директоријум"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Повежите „%s“ са:"
@@ -2364,10 +2357,6 @@ msgstr "веза: %s"
 #, c-format
 msgid "symlink: %s"
 msgstr "симболичка веза: %s"
-
-#, c-format
-msgid "Cannot chdir to \"%s\""
-msgstr "Не могу да пређем у директоријум „%s“"
 
 msgid "View file"
 msgstr "Прегледајте датотеку"
@@ -2504,24 +2493,22 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid " %s%s file error"
-msgstr " %s%s грешка датотеке"
-
-#, c-format
 msgid ""
-"The format of the %s%s file has changed with version 4.0. It seems that the "
-"installation has failed. Please fetch a fresh copy from the Midnight "
-"Commander package."
+"The format of the\n"
+"%s%s\n"
+"file has changed with version 4.0.\n"
+"It seems that the installation has failed.\n"
+"Please fetch a fresh copy from the Midnight Commander package."
 msgstr ""
 
 #, c-format
-msgid "%s file error"
-msgstr "Грешка датотеке „%s“"
-
-#, c-format
 msgid ""
-"The format of the %s file has changed with version 4.0. You may either want "
-"to copy it from %s%s or use that file as an example of how to write it."
+"The format of the\n"
+"%s\n"
+"file has changed with version 4.0.\n"
+"You may either want to copy it from\n"
+"%s%s\n"
+"or use that file as an example of how to write it."
 msgstr ""
 
 msgid "DialogTitle|Copy"
@@ -2894,8 +2881,8 @@ msgid "Con&tinue"
 msgstr "&Настави"
 
 #, c-format
-msgid "%d:%02d.%02d"
-msgstr "%d:%02d.%02d"
+msgid "%d:%02d:%02d"
+msgstr ""
 
 #, c-format
 msgid "ETA %s"
@@ -3483,9 +3470,6 @@ msgstr "Власник:      %s/%s"
 #, c-format
 msgid "Links:      %d"
 msgstr "Везе:      %d"
-
-msgid "Attributes: not supported"
-msgstr ""
 
 #, c-format
 msgid "Attributes: %s"
@@ -4111,9 +4095,8 @@ msgstr ""
 "Неочекивани крај датотеке\n"
 "%s"
 
-#, fuzzy
 msgid "Inconsistent archive"
-msgstr "Недоследна тар архива"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4438,14 +4421,6 @@ msgstr "sftp: (Ктрл-Г прекида) Исписујем... %s"
 msgid "sftp: Listing done."
 msgstr "sftp: Исписивање је готово."
 
-#, c-format
-msgid ""
-"Cannot open tar archive\n"
-"%s"
-msgstr ""
-"Не могу да отворим тар архиву\n"
-"%s"
-
 msgid "Inconsistent tar archive"
 msgstr "Недоследна тар архива"
 
@@ -4454,11 +4429,20 @@ msgstr "Неочекивани крај датотеке у архиви"
 
 #, c-format
 msgid ""
-"%s\n"
-"doesn't look like a tar archive."
+"Cannot open tar archive\n"
+"%s"
 msgstr ""
+"Не могу да отворим тар архиву\n"
+"%s"
+
+#, c-format
+msgid ""
 "%s\n"
-"не изгледа да је тар архива."
+"doesn't look like a tar archive"
+msgstr ""
+
+msgid "tar: mc_lseek not stopped at a record boundary"
+msgstr ""
 
 msgid "undelfs: error"
 msgstr "undelfs: грешка"

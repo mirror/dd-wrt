@@ -1,7 +1,7 @@
 /*
    Directory hotlist -- for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -147,6 +147,8 @@ struct hotlist
     struct hotlist *up;
     struct hotlist *next;
 };
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -505,7 +507,7 @@ hotlist_handle_key (WDialog * h, int key)
         if (hotlist_button_callback (NULL, B_ENTER) != 0)
         {
             h->ret_value = B_ENTER;
-            dlg_stop (h);
+            dlg_close (h);
         }
         return MSG_HANDLED;
 
@@ -548,7 +550,7 @@ hotlist_handle_key (WDialog * h, int key)
                     input_insert (cmdline, tmp, FALSE);
                     g_free (tmp);
                     h->ret_value = B_CANCEL;
-                    dlg_stop (h);
+                    dlg_close (h);
                 }
             }
         }
@@ -642,7 +644,7 @@ hotlist_listbox_callback (WListbox * list)
             if (hlp->type == HL_TYPE_ENTRY)
             {
                 dlg->ret_value = B_ENTER;
-                dlg_stop (dlg);
+                dlg_close (dlg);
                 return LISTBOX_DONE;
             }
             else
@@ -655,7 +657,7 @@ hotlist_listbox_callback (WListbox * list)
         else
         {
             dlg->ret_value = B_ENTER;
-            dlg_stop (dlg);
+            dlg_close (dlg);
             return LISTBOX_DONE;
         }
     }
@@ -813,7 +815,7 @@ init_hotlist (hotlist_t list_type)
     path_box = groupbox_new (y, UX, 3, hotlist_widget->rect.cols, _("Directory path"));
     group_add_widget_autopos (g, path_box, WPOS_KEEP_BOTTOM | WPOS_KEEP_HORZ, NULL);
 
-    pname = label_new (y + 1, UX + 2, "");
+    pname = label_new (y + 1, UX + 2, NULL);
     group_add_widget_autopos (g, pname, WPOS_KEEP_BOTTOM | WPOS_KEEP_LEFT, NULL);
     y += WIDGET (path_box)->rect.lines;
 
@@ -991,7 +993,7 @@ add2hotlist (char *label, char *directory, enum HotListType type, listbox_append
         }
         else
             listbox_add_item (l_hotlist, pos, 0, new->label, new, FALSE);
-        listbox_select_entry (l_hotlist, l_hotlist->pos);
+        listbox_set_current (l_hotlist, l_hotlist->current);
     }
 
     return new;

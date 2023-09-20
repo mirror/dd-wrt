@@ -1,7 +1,7 @@
 /*
    Load and show history of edited and viewed files
 
-   Copyright (C) 2020-2022
+   Copyright (C) 2020-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -49,6 +49,8 @@ typedef struct file_history_data_t
     char *file_name;
     char *file_pos;
 } file_history_data_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

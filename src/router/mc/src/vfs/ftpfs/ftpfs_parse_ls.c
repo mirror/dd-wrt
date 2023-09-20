@@ -1,7 +1,7 @@
 /*
    Virtual File System: FTP file system
 
-   Copyright (C) 2015-2022
+   Copyright (C) 2015-2023
    The Free Software Foundation, Inc.
 
    Written by: Andrew Borodin <aborodin@vmail.ru>, 2013
@@ -79,7 +79,8 @@ typedef enum
 typedef gboolean (*ftpfs_line_parser) (char *line, struct stat * s, char **filename,
                                        char **linkname, int *err);
 
-/* formard declarations */
+/*** forward declarations (file scope functions) *************************************************/
+
 static gboolean ftpfs_parse_long_list_UNIX (char *line, struct stat *s, char **filename,
                                             char **linkname, int *err);
 static gboolean ftpfs_parse_long_list_NT (char *line, struct stat *s, char **filename,
@@ -208,7 +209,7 @@ mktime_from_utc (const struct tm *t)
     memcpy (&tc, t, sizeof (struct tm));
 
     /* UTC times are never DST; if we say -1, we'll introduce odd localtime-
-     * dependant errors. */
+     * dependent errors. */
 
     tc.tm_isdst = 0;
 
@@ -425,8 +426,6 @@ ftpfs_parse_long_list_UNIX (char *line, struct stat *s, char **filename, char **
 
     if (strncasecmp (line, "Status of ", 10) == 0)
         return FALSE;           /* STAT output. */
-    if (strchr ("bcpsD", line[0]) != NULL)      /* block, char, pipe, socket, Door. */
-        return FALSE;
 
     ret = parse_ls_line (line, s, filename, linkname);
     if (!ret)

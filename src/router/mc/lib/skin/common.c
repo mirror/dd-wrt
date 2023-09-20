@@ -2,7 +2,7 @@
    Skins engine.
    Interface functions
 
-   Copyright (C) 2009-2022
+   Copyright (C) 2009-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -40,6 +40,8 @@ mc_skin_t mc_skin__default;
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -103,7 +105,6 @@ mc_skin_try_to_load_default (void)
         mc_skin_reinit ();
         mc_skin_set_hardcoded_skin (&mc_skin__default);
     }
-
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -200,9 +201,8 @@ gchar *
 mc_skin_get (const gchar * group, const gchar * key, const gchar * default_value)
 {
     if (mc_global.tty.ugly_line_drawing)
-    {
         return g_strdup (default_value);
-    }
+
     return mc_config_get_string (mc_skin__default.config, group, key, default_value);
 }
 

@@ -1,7 +1,7 @@
 /*
    Time formatting functions
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -53,6 +53,8 @@ char *user_old_timeformat = NULL;       /* time format string for older dates */
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 /*
@@ -62,10 +64,12 @@ char *user_old_timeformat = NULL;       /* time format string for older dates */
  */
 static size_t i18n_timelength_cache = MAX_I18NTIMELENGTH + 1;
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
-
 /* --------------------------------------------------------------------------------------------- */
 /**
  * Check strftime() results. Some systems (i.e. Solaris) have different
@@ -86,7 +90,7 @@ i18n_checktimelength (void)
 
     if (lt == NULL)
     {
-        /* huh, localtime() doesnt seem to work ... falling back to "(invalid)" */
+        /* huh, localtime() doesn't seem to work ... falling back to "(invalid)" */
         length = str_term_width1 (_(INVALID_TIME_TEXT));
     }
     else

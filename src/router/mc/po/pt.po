@@ -5,17 +5,17 @@
 # Translators:
 # Gilberto J <2101458@my.ipleiria.pt>, 2012
 # Gilberto Jorge <gmj125@gmail.com>, 2012-2013
-# Gilberto Jorge <gmj125@gmail.com>, 2013-2022
+# Gilberto Jorge <gmj125@gmail.com>, 2013-2023
 # Peter J. Mello <admin@petermello.net>, 2021
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-01-21 18:03+0100\n"
+"POT-Creation-Date: 2023-08-13 21:07+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Gilberto Jorge <gmj125@gmail.com>, 2013-2022\n"
-"Language-Team: Portuguese (http://www.transifex.com/mc/mc/language/pt/)\n"
+"Last-Translator: Gilberto Jorge <gmj125@gmail.com>, 2013-2023\n"
+"Language-Team: Portuguese (http://app.transifex.com/mc/mc/language/pt/)\n"
 "Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -833,8 +833,8 @@ msgstr "Erro de parseamento de argumentos!"
 msgid "No arguments given to the viewer."
 msgstr "Nenhum argumento dado ao visualizador."
 
-msgid "Two files are required to envoke the diffviewer."
-msgstr "São necessários 2 ficheiros para invocar o diffviewer."
+msgid "Two files are required to invoke the diffviewer."
+msgstr "São necessários dois ficheiros para invocar o diffviewer."
 
 msgid "Background protocol error"
 msgstr "Erro de protocolo em background"
@@ -1636,8 +1636,8 @@ msgstr ""
 "Um editor de texto amigo do utilizador\n"
 "escrito para o Midnight Commander."
 
-msgid "Copyright (C) 1996-2022 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2022 the Free Software Foundation"
+msgid "Copyright (C) 1996-2023 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2023 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca"
@@ -2172,10 +2172,12 @@ msgstr "Jobs em background"
 
 #, c-format
 msgid ""
-"Cannot chdir to \"%s\"\n"
+"Cannot change directory to\n"
+"%s\n"
 "%s"
 msgstr ""
-"Não é possível chdir para \"%s\"\n"
+"Não é possível alterar directório para\n"
+"%s\n"
 "%s"
 
 msgid "Secure deletion"
@@ -2272,9 +2274,6 @@ msgid ""
 msgstr ""
 "Não é possível chattr \"%s\"\n"
 "%s"
-
-msgid "Cannot change attributes on non-local filesystems"
-msgstr "Não é possível alterar atributos em sistemas de ficheiros não locais"
 
 #, c-format
 msgid ""
@@ -2377,9 +2376,6 @@ msgstr "Insira nome da máquina (F1 para detalhes):"
 msgid "Files tagged, want to cd?"
 msgstr "Ficheiros etiquetados, quer executar cd?"
 
-msgid "Cannot change directory"
-msgstr "Não é possível mudar de directório"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Ligar %s a:"
@@ -2394,10 +2390,6 @@ msgstr "ligar: %s"
 #, c-format
 msgid "symlink: %s"
 msgstr "symlink: %s"
-
-#, c-format
-msgid "Cannot chdir to \"%s\""
-msgstr "Não é possível chdir para \"%s\""
 
 msgid "View file"
 msgstr "Ver ficheiro"
@@ -2537,30 +2529,34 @@ msgstr ""
 "Por favor copie as suas modificações do ficheiro antigo para o novo."
 
 #, c-format
-msgid " %s%s file error"
-msgstr " %s%s erro de ficheiro"
+msgid ""
+"The format of the\n"
+"%s%s\n"
+"file has changed with version 4.0.\n"
+"It seems that the installation has failed.\n"
+"Please fetch a fresh copy from the Midnight Commander package."
+msgstr ""
+"O formato do ficheiro\n"
+"%s%s\n"
+"foi alterado na versão 4.0.\n"
+"Parece que a instalação falhou.\n"
+"Por favor obtenha uma nova cópia a partir do pacote do Midnight Commander."
 
 #, c-format
 msgid ""
-"The format of the %s%s file has changed with version 4.0. It seems that the "
-"installation has failed. Please fetch a fresh copy from the Midnight "
-"Commander package."
+"The format of the\n"
+"%s\n"
+"file has changed with version 4.0.\n"
+"You may either want to copy it from\n"
+"%s%s\n"
+"or use that file as an example of how to write it."
 msgstr ""
-"O formato do ficheiro %s%s foi alterado com a versão 4.0. Parece que a "
-"instalação falhou. Por favor obtenha uma cópia nova no pacote do Midnight "
-"Commander."
-
-#, c-format
-msgid "%s file error"
-msgstr "%s erro de ficheiro"
-
-#, c-format
-msgid ""
-"The format of the %s file has changed with version 4.0. You may either want "
-"to copy it from %s%s or use that file as an example of how to write it."
-msgstr ""
-"O formato do ficheiro %s foi alterado com a versão 4.0. Pode querer copia-lo "
-"do %s%s ou usar esse ficheiro como um exemplo de como escreve-lo."
+"O formato do ficheiro\n"
+"%s\n"
+"foi alterado na versão 4.0.\n"
+"Pode copia-lo a partir de\n"
+"%s%s\n"
+"ou usar esse ficheiro como um exemplo de como o escrever."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Copiar"
@@ -2942,8 +2938,8 @@ msgid "Con&tinue"
 msgstr "Con&tinuar"
 
 #, c-format
-msgid "%d:%02d.%02d"
-msgstr "%d:%02d.%02d"
+msgid "%d:%02d:%02d"
+msgstr "%d:%02d:%02d"
 
 #, c-format
 msgid "ETA %s"
@@ -3531,9 +3527,6 @@ msgstr "Proprietário:      %s/%s"
 #, c-format
 msgid "Links:      %d"
 msgstr "Ligações:      %d"
-
-msgid "Attributes: not supported"
-msgstr "Atributos: não suportado"
 
 #, c-format
 msgid "Attributes: %s"
@@ -4167,9 +4160,8 @@ msgstr ""
 "Fim de ficheiro inesperado\n"
 "%s"
 
-#, fuzzy
 msgid "Inconsistent archive"
-msgstr "Arquivo tar inconsistente"
+msgstr "Arquivo inconsistente"
 
 #, c-format
 msgid ""
@@ -4516,14 +4508,6 @@ msgstr "sftp: (Ctrl-G break) A listar... %s"
 msgid "sftp: Listing done."
 msgstr "sftp: Listagem efetuada."
 
-#, c-format
-msgid ""
-"Cannot open tar archive\n"
-"%s"
-msgstr ""
-"Não é possível abrir arquivo tar\n"
-"%s"
-
 msgid "Inconsistent tar archive"
 msgstr "Arquivo tar inconsistente"
 
@@ -4532,11 +4516,22 @@ msgstr "EOF (final ficheiro) inesperado no arquivo"
 
 #, c-format
 msgid ""
+"Cannot open tar archive\n"
+"%s"
+msgstr ""
+"Não é possível abrir arquivo tar\n"
+"%s"
+
+#, c-format
+msgid ""
 "%s\n"
-"doesn't look like a tar archive."
+"doesn't look like a tar archive"
 msgstr ""
 "%s\n"
-"não parece ser um ficheiro tar."
+"não parece um arquivo tar"
+
+msgid "tar: mc_lseek not stopped at a record boundary"
+msgstr "tar: mc_lseek não parou num limite de registo"
 
 msgid "undelfs: error"
 msgstr "undelfs: erro"

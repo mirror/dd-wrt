@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Ncurses wrapper.
 
-   Copyright (C) 2005-2022
+   Copyright (C) 2005-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -78,15 +78,16 @@
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 /* ncurses supports cursor positions only within window */
 /* We use our own cursor coordinates to support partially visible widgets */
 static int mc_curs_row, mc_curs_col;
 
-/*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
-
+/*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
 static void
@@ -364,7 +365,7 @@ tty_reset_shell_mode (void)
 void
 tty_raw_mode (void)
 {
-    raw ();                     /* FIXME: uneeded? */
+    raw ();                     /* FIXME: unneeded? */
     cbreak ();
 }
 

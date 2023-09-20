@@ -1,7 +1,7 @@
 /*
    Handle command line arguments.
 
-   Copyright (C) 2009-2022
+   Copyright (C) 2009-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -55,7 +55,7 @@ gboolean mc_args__nokeymap = FALSE;
 
 char *mc_args__last_wd_file = NULL;
 
-/* when enabled NETCODE, use folowing file as logfile */
+/* when enabled NETCODE, use following file as logfile */
 char *mc_args__netfs_logfile = NULL;
 
 /* keymap file */
@@ -68,16 +68,17 @@ char *mc_run_param1 = NULL;
 
 /*** file scope type declarations ****************************************************************/
 
-/*** file scope variables ************************************************************************/
+/*** forward declarations (file scope functions) *************************************************/
 
-/* If true, show version info and exit */
-static gboolean mc_args__show_version = FALSE;
-
-/* forward declarations */
 static gboolean parse_mc_e_argument (const gchar * option_name, const gchar * value,
                                      gpointer data, GError ** mcerror);
 static gboolean parse_mc_v_argument (const gchar * option_name, const gchar * value,
                                      gpointer data, GError ** mcerror);
+
+/*** file scope variables ************************************************************************/
+
+/* If true, show version info and exit */
+static gboolean mc_args__show_version = FALSE;
 
 static GOptionContext *context;
 
@@ -415,7 +416,7 @@ mc_args_add_extended_info_to_help (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static gchar *
+static GString *
 mc_args__convert_help_to_syscharset (const gchar * charset, const gchar * error_message_str,
                                      const gchar * help_str)
 {
@@ -432,7 +433,7 @@ mc_args__convert_help_to_syscharset (const gchar * charset, const gchar * error_
     g_free (full_help_str);
     g_iconv_close (conv);
 
-    return g_string_free (buffer, FALSE);
+    return buffer;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -694,13 +695,13 @@ mc_args_parse (int *argc, char ***argv, const char *translation_domain, GError *
                                   help_str);
             else
             {
-                gchar *full_help_str;
+                GString *full_help_str;
 
                 full_help_str =
                     mc_args__convert_help_to_syscharset (_system_codepage, (*mcerror)->message,
                                                          help_str);
-                mc_replace_error (mcerror, (*mcerror)->code, "%s", full_help_str);
-                g_free (full_help_str);
+                mc_replace_error (mcerror, (*mcerror)->code, "%s", full_help_str->str);
+                g_string_free (full_help_str, TRUE);
             }
             g_free (help_str);
         }
@@ -804,7 +805,7 @@ mc_setup_by_args (int argc, char **argv, GError ** mcerror)
         if (argc < 3)
         {
             mc_propagate_error (mcerror, 0, "%s\n",
-                                _("Two files are required to envoke the diffviewer."));
+                                _("Two files are required to invoke the diffviewer."));
             return FALSE;
         }
         MC_FALLTHROUGH;

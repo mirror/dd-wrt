@@ -2,7 +2,7 @@
    Skins engine.
    Reading and parse ini-files
 
-   Copyright (C) 2009-2022
+   Copyright (C) 2009-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -40,10 +40,12 @@
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
-
 /* --------------------------------------------------------------------------------------------- */
 
 static void
@@ -133,7 +135,7 @@ mc_skin_list (void)
 {
     GPtrArray *list;
 
-    list = g_ptr_array_new ();
+    list = g_ptr_array_new_with_free_func (g_free);
     mc_skin_get_list_from_dir (mc_config_get_data_path (), list);
     mc_skin_get_list_from_dir (mc_global.sysconfig_dir, list);
     mc_skin_get_list_from_dir (mc_global.share_data_dir, list);

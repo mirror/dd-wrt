@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Authors:
@@ -50,6 +50,8 @@
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -260,7 +262,7 @@ hotkey_equal (const hotkey_t hotkey1, const hotkey_t hotkey2)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-hotkey_draw (Widget * w, const hotkey_t hotkey, gboolean focused)
+hotkey_draw (const Widget * w, const hotkey_t hotkey, gboolean focused)
 {
     if (hotkey.start[0] != '\0')
     {
@@ -326,9 +328,6 @@ widget_init (Widget * w, const WRect * r, widget_cb_fn callback, widget_mouse_cb
 
     w->options = WOP_DEFAULT;
     w->state = WST_CONSTRUCT | WST_VISIBLE;
-
-    w->make_global = widget_default_make_global;
-    w->make_local = widget_default_make_local;
 
     w->make_global = widget_default_make_global;
     w->make_local = widget_default_make_local;
@@ -445,7 +444,7 @@ widget_set_size (Widget * w, int y, int x, int lines, int cols)
  * Change widget position and size.
  *
  * @param w widget
- * @param r WRect obgect that holds position and size
+ * @param r WRect object that holds position and size
  */
 
 void
@@ -458,7 +457,7 @@ widget_set_size_rect (Widget * w, WRect * r)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-widget_selectcolor (Widget * w, gboolean focused, gboolean hotkey)
+widget_selectcolor (const Widget * w, gboolean focused, gboolean hotkey)
 {
     int color;
     const int *colors;
@@ -791,14 +790,23 @@ widget_default_set_state (Widget * w, widget_state_t state, gboolean enable)
     if (enable)
     {
         /* exclusive bits */
-        if ((state & WST_CONSTRUCT) != 0)
+        switch (state)
+        {
+        case WST_CONSTRUCT:
             w->state &= ~(WST_ACTIVE | WST_SUSPENDED | WST_CLOSED);
-        else if ((state & WST_ACTIVE) != 0)
+            break;
+        case WST_ACTIVE:
             w->state &= ~(WST_CONSTRUCT | WST_SUSPENDED | WST_CLOSED);
-        else if ((state & WST_SUSPENDED) != 0)
+            break;
+        case WST_SUSPENDED:
             w->state &= ~(WST_CONSTRUCT | WST_ACTIVE | WST_CLOSED);
-        else if ((state & WST_CLOSED) != 0)
+            break;
+        case WST_CLOSED:
             w->state &= ~(WST_CONSTRUCT | WST_ACTIVE | WST_SUSPENDED);
+            break;
+        default:
+            break;
+        }
     }
 
     if (owner == NULL)
@@ -822,7 +830,6 @@ widget_default_set_state (Widget * w, widget_state_t state, gboolean enable)
             }
         }
         break;
-
 
     case WST_DISABLED:
         ret = send_message (w, NULL, enable ? MSG_DISABLE : MSG_ENABLE, 0, NULL);

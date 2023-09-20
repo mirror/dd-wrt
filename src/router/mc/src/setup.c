@@ -1,7 +1,7 @@
 /*
    Setup loading/saving.
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -77,8 +77,6 @@
 #include "setup.h"
 
 /*** global variables ****************************************************************************/
-
-char *global_profile_name;      /* mc.lib */
 
 /* Only used at program boot */
 gboolean boot_current_is_left = TRUE;
@@ -224,6 +222,8 @@ GArray *macros_list;
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static char *profile_name = NULL;       /* ${XDG_CONFIG_HOME}/mc/ini */
@@ -338,27 +338,27 @@ static const struct
 #endif /* ENABLE_VFS_FTP */
 #endif /* ENABLE_VFS */
 #ifdef USE_INTERNAL_EDIT
-    { "editor_fill_tabs_with_spaces", &option_fill_tabs_with_spaces },
-    { "editor_return_does_auto_indent", &option_return_does_auto_indent },
-    { "editor_backspace_through_tabs", &option_backspace_through_tabs },
-    { "editor_fake_half_tabs", &option_fake_half_tabs },
-    { "editor_option_save_position", &option_save_position },
-    { "editor_option_auto_para_formatting", &option_auto_para_formatting },
-    { "editor_option_typewriter_wrap", &option_typewriter_wrap },
-    { "editor_edit_confirm_save", &edit_confirm_save },
-    { "editor_syntax_highlighting", &option_syntax_highlighting },
-    { "editor_persistent_selections", &option_persistent_selections },
-    { "editor_drop_selection_on_copy", &option_drop_selection_on_copy },
-    { "editor_cursor_beyond_eol", &option_cursor_beyond_eol },
-    { "editor_cursor_after_inserted_block", &option_cursor_after_inserted_block },
-    { "editor_visible_tabs", &visible_tabs },
-    { "editor_visible_spaces", &visible_tws },
-    { "editor_line_state", &option_line_state },
-    { "editor_simple_statusbar", &simple_statusbar },
-    { "editor_check_new_line", &option_check_nl_at_eof },
-    { "editor_show_right_margin", &show_right_margin },
-    { "editor_group_undo", &option_group_undo },
-    { "editor_state_full_filename", &option_state_full_filename },
+    { "editor_fill_tabs_with_spaces", &edit_options.fill_tabs_with_spaces },
+    { "editor_return_does_auto_indent", &edit_options.return_does_auto_indent },
+    { "editor_backspace_through_tabs", &edit_options.backspace_through_tabs },
+    { "editor_fake_half_tabs", &edit_options.fake_half_tabs },
+    { "editor_option_save_position", &edit_options.save_position },
+    { "editor_option_auto_para_formatting", &edit_options.auto_para_formatting },
+    { "editor_option_typewriter_wrap", &edit_options.typewriter_wrap },
+    { "editor_edit_confirm_save", &edit_options.confirm_save },
+    { "editor_syntax_highlighting", &edit_options.syntax_highlighting },
+    { "editor_persistent_selections", &edit_options.persistent_selections },
+    { "editor_drop_selection_on_copy", &edit_options.drop_selection_on_copy },
+    { "editor_cursor_beyond_eol", &edit_options.cursor_beyond_eol },
+    { "editor_cursor_after_inserted_block", &edit_options.cursor_after_inserted_block },
+    { "editor_visible_tabs", &edit_options.visible_tabs },
+    { "editor_visible_spaces", &edit_options.visible_tws },
+    { "editor_line_state", &edit_options.line_state },
+    { "editor_simple_statusbar", &edit_options.simple_statusbar },
+    { "editor_check_new_line", &edit_options.check_nl_at_eof },
+    { "editor_show_right_margin", &edit_options.show_right_margin },
+    { "editor_group_undo", &edit_options.group_undo },
+    { "editor_state_full_filename", &edit_options.state_full_filename },
 #endif /* USE_INTERNAL_EDIT */
     { "editor_ask_filename_before_edit", &editor_ask_filename_before_edit },
     { "nice_rotating_dash", &nice_rotating_dash },
@@ -393,8 +393,8 @@ static const struct
     /* option_tab_spacing is used in internal viewer */
     { "editor_tab_spacing", &option_tab_spacing },
 #ifdef USE_INTERNAL_EDIT
-    { "editor_word_wrap_line_length", &option_word_wrap_line_length },
-    { "editor_option_save_mode", &option_save_mode },
+    { "editor_word_wrap_line_length", &edit_options.word_wrap_line_length },
+    { "editor_option_save_mode", &edit_options.save_mode },
 #endif /* USE_INTERNAL_EDIT */
     { NULL, NULL }
 };
@@ -406,9 +406,9 @@ static const struct
     const char *opt_defval;
 } str_options[] = {
 #ifdef USE_INTERNAL_EDIT
-    { "editor_backup_extension", &option_backup_ext, "~" },
-    { "editor_filesize_threshold", &option_filesize_threshold, "64M" },
-    { "editor_stop_format_chars", &option_stop_format_chars, "-+*\\,.;:&>" },
+    { "editor_backup_extension", &edit_options.backup_ext, "~" },
+    { "editor_filesize_threshold", &edit_options.filesize_threshold, "64M" },
+    { "editor_stop_format_chars", &edit_options.stop_format_chars, "-+*\\,.;:&>" },
 #endif
     { "mcview_eof", &mcview_show_eof, "" },
     {  NULL, NULL, NULL }
@@ -533,8 +533,8 @@ load_config (void)
 
     /* Overwrite some options */
 #ifdef USE_INTERNAL_EDIT
-    if (option_word_wrap_line_length <= 0)
-        option_word_wrap_line_length = DEFAULT_WRAP_LINE_LENGTH;
+    if (edit_options.word_wrap_line_length <= 0)
+        edit_options.word_wrap_line_length = DEFAULT_WRAP_LINE_LENGTH;
 #else
     /* Reset forced in case of build without internal editor */
     use_internal_edit = FALSE;
@@ -628,7 +628,7 @@ load_keys_from_section (const char *terminal, mc_config_t * cfg)
             continue;
         }
 
-        key_code = lookup_key (*profile_keys, NULL);
+        key_code = tty_keyname_to_keycode (*profile_keys, NULL);
         if (key_code != 0)
         {
             gchar **values;
@@ -872,12 +872,12 @@ load_setup (void)
 
     /* mc.lib is common for all users, but has priority lower than
        ${XDG_CONFIG_HOME}/mc/ini.  FIXME: it's only used for keys and treestore now */
-    global_profile_name =
+    mc_global.profile_name =
         g_build_filename (mc_global.sysconfig_dir, MC_GLOBAL_CONFIG_FILE, (char *) NULL);
-    if (!exist_file (global_profile_name))
+    if (!exist_file (mc_global.profile_name))
     {
-        g_free (global_profile_name);
-        global_profile_name =
+        g_free (mc_global.profile_name);
+        mc_global.profile_name =
             g_build_filename (mc_global.share_data_dir, MC_GLOBAL_CONFIG_FILE, (char *) NULL);
     }
 
@@ -893,7 +893,7 @@ load_setup (void)
     load_config ();
     load_layout ();
     panels_load_options ();
-    load_panelize ();
+    external_panelize_load ();
 
     /* Load time formats */
     user_recent_timeformat =
@@ -990,7 +990,7 @@ save_setup (gboolean save_options, gboolean save_panel_options)
         save_config ();
         save_layout ();
         panels_save_options ();
-        save_panelize ();
+        external_panelize_save ();
         /* directory_history_save (); */
 
 #ifdef ENABLE_VFS_FTP
@@ -1039,7 +1039,7 @@ done_setup (void)
 
     g_free (clipboard_store_path);
     g_free (clipboard_paste_path);
-    g_free (global_profile_name);
+    g_free (mc_global.profile_name);
     g_free (mc_global.tty.color_terminal_string);
     g_free (mc_global.tty.term_color_string);
     g_free (mc_global.tty.setup_color_string);
@@ -1055,7 +1055,7 @@ done_setup (void)
         g_free (*str_options[i].opt_addr);
 
     done_hotlist ();
-    done_panelize ();
+    external_panelize_free ();
     /*    directory_history_free (); */
 
 #ifdef HAVE_CHARSET
@@ -1093,7 +1093,7 @@ load_key_defs (void)
      */
     mc_config_t *mc_global_config;
 
-    mc_global_config = mc_config_init (global_profile_name, FALSE);
+    mc_global_config = mc_config_init (mc_global.profile_name, FALSE);
     if (mc_global_config != NULL)
     {
         load_keys_from_section ("general", mc_global_config);

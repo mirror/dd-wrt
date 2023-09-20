@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Authors:
@@ -49,6 +49,8 @@
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

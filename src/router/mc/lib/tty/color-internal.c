@@ -1,7 +1,7 @@
 /*
    Internal stuff of color setup
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -51,6 +51,8 @@ typedef struct mc_tty_color_table_struct
     const char *name;
     int value;
 } mc_tty_color_table_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

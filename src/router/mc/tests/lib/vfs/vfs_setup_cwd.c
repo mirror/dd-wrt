@@ -1,7 +1,7 @@
 /*
    lib/vfs - test vfs_setup_cwd() functionality
 
-   Copyright (C) 2013-2022
+   Copyright (C) 2013-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -129,7 +129,7 @@ START_PARAMETRIZED_TEST (test_vfs_setup_cwd_symlink, test_vfs_setup_cwd_symlink_
     vfs_setup_cwd ();
 
     /* then */
-    mctest_assert_str_eq (vfs_path_as_str (vfs_get_raw_current_dir ()), data->expected_result);
+    mctest_assert_str_eq (vfs_get_current_dir (), data->expected_result);
 }
 /* *INDENT-OFF* */
 END_PARAMETRIZED_TEST

@@ -1,7 +1,7 @@
 /*
    Some misc dialog boxes for the program.
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -87,6 +87,8 @@
 #endif /* ENABLE_BACKGROUND */
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -189,7 +191,7 @@ skin_dlg_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
     case MSG_RESIZE:
         {
             WDialog *d = DIALOG (w);
-            const WRect *wd = &WIDGET (d->data)->rect;
+            const WRect *wd = &WIDGET (d->data.p)->rect;
             WRect r = w->rect;
 
             r.y = wd->y + (wd->lines - r.lines) / 2;
@@ -221,7 +223,7 @@ sel_skin_button (WButton * button, int action)
         dlg_create (TRUE, 0, 0, 13, 24, WPOS_KEEP_DEFAULT, TRUE, dialog_colors, skin_dlg_callback,
                     NULL, "[Appearance]", _("Skins"));
     /* use Appearance dialog for positioning */
-    skin_dlg->data = WIDGET (button)->owner;
+    skin_dlg->data.p = WIDGET (button)->owner;
 
     /* set dialog location before all */
     send_message (skin_dlg, NULL, MSG_RESIZE, 0, NULL);
@@ -232,7 +234,7 @@ sel_skin_button (WButton * button, int action)
                       (void *) skin_name, FALSE);
 
     if (strcmp (skin_name, current_skin_name) == 0)
-        listbox_select_entry (skin_list, 0);
+        listbox_set_current (skin_list, 0);
 
     for (i = 0; i < skin_names->len; i++)
     {
@@ -242,7 +244,7 @@ sel_skin_button (WButton * button, int action)
             listbox_add_item (skin_list, LISTBOX_APPEND_AT_END, 0, skin_name_to_label (skin_name),
                               (void *) skin_name, FALSE);
             if (strcmp (skin_name, current_skin_name) == 0)
-                listbox_select_entry (skin_list, pos);
+                listbox_set_current (skin_list, pos);
             pos++;
         }
     }
@@ -410,7 +412,7 @@ tree_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
             r.cols = COLS - 20;
             dlg_default_callback (w, NULL, MSG_RESIZE, 0, &r);
 
-            bar = WIDGET (find_buttonbar (h));
+            bar = WIDGET (buttonbar_find (h));
             bar->rect.x = 0;
             bar->rect.y = LINES - 1;
             return MSG_HANDLED;
@@ -667,7 +669,6 @@ appearance_box (void)
     }
 
     g_free (current_skin_name);
-    g_ptr_array_foreach (skin_names, (GFunc) g_free, NULL);
     g_ptr_array_free (skin_names, TRUE);
 }
 

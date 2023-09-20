@@ -1,7 +1,7 @@
 /* Virtual File System: SFTP file system.
    The internal functions: files
 
-   Copyright (C) 2011-2022
+   Copyright (C) 2011-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -26,7 +26,8 @@
 
 #include <config.h>
 
-#include <errno.h>
+#include <errno.h>              /* ENOENT, EACCES */
+
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 
@@ -51,6 +52,8 @@ typedef struct
     int flags;
     mode_t mode;
 } sftpfs_file_handler_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

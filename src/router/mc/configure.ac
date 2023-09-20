@@ -71,6 +71,7 @@ dnl ############################################################################
 dnl Check for programs
 dnl ############################################################################
 
+AC_PROG_SED
 PKG_PROG_PKG_CONFIG
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -215,7 +216,7 @@ mc_UNIT_TESTS
 
 
 dnl ############################################################################
-dnl Check for main libraies
+dnl Check for main libraries
 dnl ############################################################################
 
 mc_CHECK_GLIB
@@ -255,6 +256,8 @@ AC_TYPE_MODE_T
 gl_PROMOTED_TYPE_MODE_T
 AC_TYPE_PID_T
 AC_TYPE_UID_T
+AC_CHECK_TYPE([major_t], [], [AC_DEFINE([major_t], [int], [Type of major device numbers.])])
+AC_CHECK_TYPE([minor_t], [], [AC_DEFINE([minor_t], [int], [Type of minor device numbers.])])
 
 AC_STRUCT_ST_BLOCKS
 AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev, struct stat.st_mtim])
@@ -313,7 +316,7 @@ dnl replacing lstat with statlstat on sco makes it more portable between
 dnl sco clones
 AC_CHECK_FUNCS(statlstat)
 
-dnl Ovverriding mmap support.  This has to be before AC_FUNC_MMAP is used.
+dnl Overriding mmap support.  This has to be before AC_FUNC_MMAP is used.
 dnl We use only part of the functionality of mmap, so on AIX,
 dnl it's possible to use mmap, even if it doesn't pass the autoconf test.
 AC_ARG_WITH([mmap],
@@ -707,7 +710,8 @@ po/Makefile.in
 
 dnl https://stackoverflow.com/questions/30897170/ac-subst-does-not-expand-variable/30932102#30932102
 AC_CONFIG_FILES(
-[misc/syntax/Syntax], [sed -i -e "s%\${prefix}%$PREFIX%" misc/syntax/Syntax], [export PREFIX=$prefix]
+[misc/syntax/Syntax], [${SED-sed} -e "s%\${prefix}%$PREFIX%" misc/syntax/Syntax > misc/syntax/Syntax.tmp && \
+  mv -f misc/syntax/Syntax.tmp misc/syntax/Syntax], [export PREFIX=$prefix]
 )
 
 AC_CONFIG_FILES([

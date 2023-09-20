@@ -1,7 +1,7 @@
 /*
    Execution routines for GNU Midnight Commander
 
-   Copyright (C) 2003-2022
+   Copyright (C) 2003-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -63,9 +63,7 @@ int pause_after_run = pause_on_dumb_terminals;
 
 /*** file scope type declarations ****************************************************************/
 
-/*** file scope variables ************************************************************************/
-
-/*** file scope functions ************************************************************************/
+/*** forward declarations (file scope functions) *************************************************/
 
 void do_execute (const char *shell, const char *command, int flags);
 void do_executev (const char *shell, int flags, char *const argv[]);
@@ -73,6 +71,10 @@ char *execute_get_external_cmd_opts_from_config (const char *command,
                                                  const vfs_path_t * filename_vpath,
                                                  long start_line);
 
+/*** file scope variables ************************************************************************/
+
+/* --------------------------------------------------------------------------------------------- */
+/*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
 static void
@@ -240,7 +242,7 @@ execute_get_opts_from_cfg (const char *command, const char *default_str)
     {
         mc_config_t *cfg;
 
-        cfg = mc_config_init (global_profile_name, TRUE);
+        cfg = mc_config_init (mc_global.profile_name, TRUE);
         if (cfg == NULL)
             return g_strdup (default_str);
 

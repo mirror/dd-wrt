@@ -1,7 +1,7 @@
 /*
    Common strings utilities
 
-   Copyright (C) 2007-2022
+   Copyright (C) 2007-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -43,6 +43,8 @@ GIConv str_cnv_not_convert = INVALID_CONV;
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -380,7 +382,7 @@ str_detect_termencoding (void)
         /* On Linux, nl_langinfo (CODESET) returns upper case UTF-8 whether the LANG is set
            to utf-8 or UTF-8.
            On Mac OS X, it returns the same case as the LANG input.
-           So let tranform result of nl_langinfo (CODESET) to upper case  unconditionally. */
+           So let transform result of nl_langinfo (CODESET) to upper case  unconditionally. */
         term_encoding = g_ascii_strup (nl_langinfo (CODESET), -1);
     }
 
@@ -983,12 +985,12 @@ strrstr_skip_count (const char *haystack, const char *needle, size_t skip_count)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/* Interprete string as a non-negative decimal integer, optionally multiplied by various values.
+/* Interpret string as a non-negative decimal integer, optionally multiplied by various values.
  *
  * @param str input value
  * @param invalid set to TRUE if "str" does not represent a number in this format
  *
- * @return non-integer representation of "str", 0 in case of error.
+ * @return non-negative integer representation of "str", 0 in case of error.
  */
 
 uintmax_t

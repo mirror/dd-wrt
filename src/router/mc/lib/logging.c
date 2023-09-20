@@ -1,7 +1,7 @@
 /*
    Provides a log file to ease tracing the program.
 
-   Copyright (C) 2006-2022
+   Copyright (C) 2006-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -49,11 +49,14 @@
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static gboolean logging_initialized = FALSE;
 static gboolean logging_enabled = FALSE;
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 

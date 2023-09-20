@@ -1,7 +1,7 @@
 /*
    Default values and initialization of keybinding engine
 
-   Copyright (C) 2009-2022
+   Copyright (C) 2009-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -92,6 +92,8 @@ typedef struct global_keymap_ini_t
     const char *key;
     const char *value;
 } global_keymap_ini_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -617,12 +619,6 @@ static const global_keymap_ini_t default_diff_keymap[] = {
     {NULL, NULL}
 };
 #endif
-
-/*** file scope macro definitions ****************************************************************/
-
-/*** file scope type declarations ****************************************************************/
-
-/*** file scope variables ************************************************************************/
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/

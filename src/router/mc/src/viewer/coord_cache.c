@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for work with coordinate cache (ccache)
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -70,6 +70,8 @@
 /*** file scope type declarations ****************************************************************/
 
 typedef gboolean (*cmp_func_t) (const coord_cache_entry_t * a, const coord_cache_entry_t * b);
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Slang wrapper.
 
-   Copyright (C) 2005-2022
+   Copyright (C) 2005-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -73,6 +73,8 @@ int reset_hp_softkeys = 0;
 #endif
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

@@ -1,7 +1,7 @@
 /*
    Chmod command -- for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -59,6 +59,8 @@
 #define LABELS       4
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -413,7 +415,7 @@ chmod_done (gboolean need_update)
 static const GString *
 next_file (const WPanel * panel)
 {
-    while (!panel->dir.list[current_file].f.marked)
+    while (panel->dir.list[current_file].f.marked == 0)
         current_file++;
 
     return panel->dir.list[current_file].fname;
@@ -424,15 +426,17 @@ next_file (const WPanel * panel)
 static gboolean
 try_chmod (const vfs_path_t * p, mode_t m)
 {
+    const char *fname = NULL;
+
     while (mc_chmod (p, m) == -1 && !ignore_all)
     {
         int my_errno = errno;
         int result;
         char *msg;
 
-        msg =
-            g_strdup_printf (_("Cannot chmod \"%s\"\n%s"), x_basename (vfs_path_as_str (p)),
-                             unix_error_string (my_errno));
+        if (fname == NULL)
+            fname = x_basename (vfs_path_as_str (p));
+        msg = g_strdup_printf (_("Cannot chmod \"%s\"\n%s"), fname, unix_error_string (my_errno));
         result =
             query_dialog (MSG_ERROR, msg, D_ERROR, 4, _("&Ignore"), _("Ignore &all"), _("&Retry"),
                           _("&Cancel"));
@@ -550,7 +554,7 @@ chmod_cmd (WPanel * panel)
         if (panel->marked != 0)
             fname = next_file (panel);  /* next marked file */
         else
-            fname = selection (panel)->fname;   /* single file */
+            fname = panel_current_entry (panel)->fname; /* single file */
 
         vpath = vfs_path_from_str (fname->str);
 

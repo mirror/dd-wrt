@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for search data
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -68,6 +68,8 @@ typedef struct
     WView *view;
     off_t offset;
 } mcview_search_status_msg_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

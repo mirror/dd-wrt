@@ -27,13 +27,6 @@
 
 #define VFS_CLASS(a) ((struct vfs_class *) (a))
 
-/**
- * This is the type of callback function passed to vfs_fill_names.
- * It gets the name of the virtual file system as its first argument.
- * See also:
- *    vfs_fill_names().
- */
-
 #define VFS_ENCODING_PREFIX "#enc:"
 
 #define O_ALL (O_CREAT | O_EXCL | O_NOCTTY | O_NDELAY | O_SYNC | O_WRONLY | O_RDWR | O_RDONLY)
@@ -86,6 +79,12 @@
 #define E_PROTO EIO
 #endif
 
+/**
+ * This is the type of callback function passed to vfs_fill_names.
+ * It gets the name of the virtual file system as its first argument.
+ * See also:
+ *    vfs_fill_names().
+ */
 typedef void (*fill_names_f) (const char *);
 
 typedef void *vfsid;
@@ -170,6 +169,10 @@ typedef struct vfs_class
 
     int (*chmod) (const vfs_path_t * vpath, mode_t mode);
     int (*chown) (const vfs_path_t * vpath, uid_t owner, gid_t group);
+
+    int (*fgetflags) (const vfs_path_t * vpath, unsigned long *flags);
+    int (*fsetflags) (const vfs_path_t * vpath, unsigned long flags);
+
     int (*utime) (const vfs_path_t * vpath, mc_timesbuf_t * times);
 
     int (*readlink) (const vfs_path_t * vpath, char *buf, size_t size);
@@ -290,7 +293,7 @@ struct vfs_class *vfs_class_find_by_handle (int handle, void **fsinfo);
 void vfs_free_handle (int handle);
 
 void vfs_setup_cwd (void);
-char *_vfs_get_cwd (void);
+char *vfs_get_cwd (void);
 
 int vfs_preallocate (int dest_desc, off_t src_fsize, off_t dest_fsize);
 
@@ -319,6 +322,8 @@ int mc_symlink (const vfs_path_t * vpath1, const vfs_path_t * vpath2);
 int mc_rename (const vfs_path_t * vpath1, const vfs_path_t * vpath2);
 int mc_chmod (const vfs_path_t * vpath, mode_t mode);
 int mc_chown (const vfs_path_t * vpath, uid_t owner, gid_t group);
+int mc_fgetflags (const vfs_path_t * vpath, unsigned long *flags);
+int mc_fsetflags (const vfs_path_t * vpath, unsigned long flags);
 int mc_chdir (const vfs_path_t * vpath);
 int mc_unlink (const vfs_path_t * vpath);
 int mc_ctl (int fd, int ctlop, void *arg);

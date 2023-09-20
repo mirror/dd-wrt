@@ -45,13 +45,13 @@ include filehighlight.syntax
 file ..\*\\.e$ Eiffel\sSource\sFile
 include eiffel.syntax
 
-file ..\*\\.(diff|rej|patch)$ Diff\sOutput ^(diff|Index:)\s
+file ..\*\\.(diff|rej|patch)|COMMIT_EDITMSG$ Diff\sOutput ^(diff|Index:)\s
 include diff.syntax
 
 file ..\*\\.lsm$ LSM\sFile
 include lsm.syntax
 
-file .\*(bash(_completion|rc)|profile|\\.(sh|bash(rc|_(completion|profile|log(in|out)|aliases|exports|history))|profile|zlog(in|out)|zprofile|zsh(env|rc)))$ Shell\sScript ^#!\s\*/(.\*/|usr/bin/env\s)([a-z]?|ba|pdk)sh
+file .\*(bash(_completion|rc)|profile|\\.(sh|bash(rc|_(completion|profile|log(in|out)|aliases|exports|history))|profile|zlog(in|out)|zprofile|zsh(env|rc)?))$ Shell\sScript ^#!\s\*/(.\*/|usr/bin/env\s)([a-z]?|ba|pdk)sh
 include sh.syntax
 
 # Since openrc scripts have no extension "by definition", use an empty pattern
@@ -150,7 +150,7 @@ include php.syntax
 file ..\*\\.ij[xs]$ J\sFile
 include j.syntax
 
-file ..\*\\.(?i:java?|groovy)$ Java\sProgram
+file ..\*\\.(?i:java?|groovy|Jenkinsfile)$ Java\sProgram
 include java.syntax
 
 file ..\*\\.(properties|config)$ Java\sFile
@@ -344,6 +344,9 @@ include privoxy.syntax
 
 file .\*\\.toml$ TOML\sFile
 include toml.syntax
+
+file .\*\\.(mch|ref|imp)$ B\sFile
+include b.syntax
 
 file .\* unknown
 include unknown.syntax

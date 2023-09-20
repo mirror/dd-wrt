@@ -1,7 +1,7 @@
 /*
    File difference viewer
 
-   Copyright (C) 2007-2022
+   Copyright (C) 2007-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -112,8 +112,11 @@ typedef enum
     FROM_RIGHT_TO_LEFT
 } action_direction_t;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -136,7 +139,7 @@ rewrite_backup_content (const vfs_path_t * from_file_name_vpath, const char *to_
     gsize length;
     const char *from_file_name;
 
-    from_file_name = vfs_path_get_by_index (from_file_name_vpath, -1)->path;
+    from_file_name = vfs_path_get_last_path_str (from_file_name_vpath);
     if (!g_file_get_contents (from_file_name, &contents, &length, NULL))
         return FALSE;
 
@@ -186,7 +189,7 @@ open_temp (void **name)
 /* --------------------------------------------------------------------------------------------- */
 
 /**
- * Alocate file structure and associate file descriptor to it.
+ * Allocate file structure and associate file descriptor to it.
  *
  * @param fd file descriptor
  * @return file structure
@@ -358,7 +361,7 @@ f_gets (char *buf, size_t size, FBUF * fs)
  * @param off offset
  * @param whence seek directive: SEEK_SET, SEEK_CUR or SEEK_END
  *
- * @return position in file, starting from begginning
+ * @return position in file, starting from beginning
  */
 
 static off_t
@@ -846,7 +849,7 @@ dff_execute (const char *args, const char *extra, const char *file1, const char 
 /**
  * Reparse and display file according to diff statements.
  *
- * @param ord DIFF_LEFT if 1nd file is displayed , DIFF_RIGHT if 2nd file is displayed.
+ * @param ord DIFF_LEFT if 1st file is displayed , DIFF_RIGHT if 2nd file is displayed.
  * @param filename file name to display
  * @param ops list of diff statements
  * @param printer printf-like function to be used for displaying
@@ -2353,6 +2356,67 @@ dview_select_encoding (WDiff * dview)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
+dview_load_options (WDiff * dview)
+{
+    gboolean show_numbers, show_symbols;
+    int tab_size;
+
+    show_symbols = mc_config_get_bool (mc_global.main_config, "DiffView", "show_symbols", FALSE);
+    if (show_symbols)
+        dview->display_symbols = 1;
+    show_numbers = mc_config_get_bool (mc_global.main_config, "DiffView", "show_numbers", FALSE);
+    if (show_numbers)
+        dview->display_numbers = calc_nwidth ((const GArray * const *) dview->a);
+    tab_size = mc_config_get_int (mc_global.main_config, "DiffView", "tab_size", 8);
+    if (tab_size > 0 && tab_size < 9)
+        dview->tab_size = tab_size;
+    else
+        dview->tab_size = 8;
+
+    dview->opt.quality = mc_config_get_int (mc_global.main_config, "DiffView", "diff_quality", 0);
+
+    dview->opt.strip_trailing_cr =
+        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_tws", FALSE);
+    dview->opt.ignore_all_space =
+        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_all_space", FALSE);
+    dview->opt.ignore_space_change =
+        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_space_change", FALSE);
+    dview->opt.ignore_tab_expansion =
+        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_tab_expansion", FALSE);
+    dview->opt.ignore_case =
+        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_case", FALSE);
+
+    dview->new_frame = TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+dview_save_options (WDiff * dview)
+{
+    mc_config_set_bool (mc_global.main_config, "DiffView", "show_symbols",
+                        dview->display_symbols != 0);
+    mc_config_set_bool (mc_global.main_config, "DiffView", "show_numbers",
+                        dview->display_numbers != 0);
+    mc_config_set_int (mc_global.main_config, "DiffView", "tab_size", dview->tab_size);
+
+    mc_config_set_int (mc_global.main_config, "DiffView", "diff_quality", dview->opt.quality);
+
+    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_tws",
+                        dview->opt.strip_trailing_cr);
+    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_all_space",
+                        dview->opt.ignore_all_space);
+    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_space_change",
+                        dview->opt.ignore_space_change);
+    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_tab_expansion",
+                        dview->opt.ignore_tab_expansion);
+    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_case",
+                        dview->opt.ignore_case);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
 dview_diff_options (WDiff * dview)
 {
     const char *quality_str[] = {
@@ -2429,6 +2493,26 @@ dview_init (WDiff * dview, const char *args, const char *file1, const char *file
         }
     }
 
+    dview->view_quit = FALSE;
+
+    dview->bias = 0;
+    dview->new_frame = TRUE;
+    dview->skip_rows = 0;
+    dview->skip_cols = 0;
+    dview->display_symbols = 0;
+    dview->display_numbers = 0;
+    dview->show_cr = TRUE;
+    dview->tab_size = 8;
+    dview->ord = DIFF_LEFT;
+    dview->full = FALSE;
+
+    dview->search.handle = NULL;
+    dview->search.last_string = NULL;
+    dview->search.last_found_line = -1;
+    dview->search.last_accessed_num_line = -1;
+
+    dview_load_options (dview);
+
     dview->args = args;
     dview->file[DIFF_LEFT] = file1;
     dview->file[DIFF_RIGHT] = file2;
@@ -2457,31 +2541,6 @@ dview_init (WDiff * dview, const char *args, const char *file1, const char *file
     }
 
     dview->ndiff = ndiff;
-
-    dview->view_quit = FALSE;
-
-    dview->bias = 0;
-    dview->new_frame = TRUE;
-    dview->skip_rows = 0;
-    dview->skip_cols = 0;
-    dview->display_symbols = 0;
-    dview->display_numbers = 0;
-    dview->show_cr = TRUE;
-    dview->tab_size = 8;
-    dview->ord = DIFF_LEFT;
-    dview->full = FALSE;
-
-    dview->search.handle = NULL;
-    dview->search.last_string = NULL;
-    dview->search.last_found_line = -1;
-    dview->search.last_accessed_num_line = -1;
-
-    dview->opt.quality = 0;
-    dview->opt.strip_trailing_cr = 0;
-    dview->opt.ignore_tab_expansion = 0;
-    dview->opt.ignore_space_change = 0;
-    dview->opt.ignore_all_space = 0;
-    dview->opt.ignore_case = 0;
 
     dview_compute_areas (dview);
 
@@ -2971,7 +3030,7 @@ dview_labels (WDiff * dview)
     Widget *d = WIDGET (dview);
     WButtonBar *b;
 
-    b = find_buttonbar (DIALOG (d->owner));
+    b = buttonbar_find (DIALOG (d->owner));
 
     buttonbar_set_label (b, 1, Q_ ("ButtonBar|Help"), d->keymap, d);
     buttonbar_set_label (b, 2, Q_ ("ButtonBar|Save"), d->keymap, d);
@@ -3008,67 +3067,6 @@ static void
 dview_do_save (WDiff * dview)
 {
     (void) dview_save (dview);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-dview_save_options (WDiff * dview)
-{
-    mc_config_set_bool (mc_global.main_config, "DiffView", "show_symbols",
-                        dview->display_symbols != 0);
-    mc_config_set_bool (mc_global.main_config, "DiffView", "show_numbers",
-                        dview->display_numbers != 0);
-    mc_config_set_int (mc_global.main_config, "DiffView", "tab_size", dview->tab_size);
-
-    mc_config_set_int (mc_global.main_config, "DiffView", "diff_quality", dview->opt.quality);
-
-    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_tws",
-                        dview->opt.strip_trailing_cr);
-    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_all_space",
-                        dview->opt.ignore_all_space);
-    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_space_change",
-                        dview->opt.ignore_space_change);
-    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_tab_expansion",
-                        dview->opt.ignore_tab_expansion);
-    mc_config_set_bool (mc_global.main_config, "DiffView", "diff_ignore_case",
-                        dview->opt.ignore_case);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-dview_load_options (WDiff * dview)
-{
-    gboolean show_numbers, show_symbols;
-    int tab_size;
-
-    show_symbols = mc_config_get_bool (mc_global.main_config, "DiffView", "show_symbols", FALSE);
-    if (show_symbols)
-        dview->display_symbols = 1;
-    show_numbers = mc_config_get_bool (mc_global.main_config, "DiffView", "show_numbers", FALSE);
-    if (show_numbers)
-        dview->display_numbers = calc_nwidth ((const GArray * const *) dview->a);
-    tab_size = mc_config_get_int (mc_global.main_config, "DiffView", "tab_size", 8);
-    if (tab_size > 0 && tab_size < 9)
-        dview->tab_size = tab_size;
-    else
-        dview->tab_size = 8;
-
-    dview->opt.quality = mc_config_get_int (mc_global.main_config, "DiffView", "diff_quality", 0);
-
-    dview->opt.strip_trailing_cr =
-        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_tws", FALSE);
-    dview->opt.ignore_all_space =
-        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_all_space", FALSE);
-    dview->opt.ignore_space_change =
-        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_space_change", FALSE);
-    dview->opt.ignore_tab_expansion =
-        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_tab_expansion", FALSE);
-    dview->opt.ignore_case =
-        mc_config_get_bool (mc_global.main_config, "DiffView", "diff_ignore_case", FALSE);
-
-    dview->new_frame = TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3312,7 +3310,6 @@ dview_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
     {
     case MSG_INIT:
         dview_labels (dview);
-        dview_load_options (dview);
         dview_update (dview);
         return MSG_HANDLED;
 
@@ -3324,7 +3321,7 @@ dview_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
     case MSG_KEY:
         i = dview_handle_key (dview, parm);
         if (dview->view_quit)
-            dlg_stop (h);
+            dlg_close (h);
         else
             dview_update (dview);
         return i;
@@ -3332,7 +3329,7 @@ dview_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
     case MSG_ACTION:
         i = dview_execute_cmd (dview, parm);
         if (dview->view_quit)
-            dlg_stop (h);
+            dlg_close (h);
         else
             dview_update (dview);
         return i;
@@ -3401,7 +3398,7 @@ dview_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, 
         /* don't stop the dialog before final decision */
         widget_set_state (w, WST_ACTIVE, TRUE);
         if (dview_ok_to_exit (dview))
-            dlg_stop (h);
+            dlg_close (h);
         return MSG_HANDLED;
 
     default:
@@ -3537,26 +3534,26 @@ dview_diff_cmd (const void *f0, const void *f1)
             /* run from panels */
             const WPanel *panel0 = (const WPanel *) f0;
             const WPanel *panel1 = (const WPanel *) f1;
+            const file_entry_t *fe0;
+            const file_entry_t *fe1;
 
-            file0 =
-                vfs_path_append_new (panel0->cwd_vpath, selection (panel0)->fname->str,
-                                     (char *) NULL);
-            is_dir0 = S_ISDIR (selection (panel0)->st.st_mode);
+            fe0 = panel_current_entry (panel0);
+            file0 = vfs_path_append_new (panel0->cwd_vpath, fe0->fname->str, (char *) NULL);
+            is_dir0 = S_ISDIR (fe0->st.st_mode);
             if (is_dir0)
             {
                 message (D_ERROR, MSG_ERROR, _("\"%s\" is a directory"),
-                         path_trunc (selection (panel0)->fname->str, 30));
+                         path_trunc (fe0->fname->str, 30));
                 goto ret;
             }
 
-            file1 =
-                vfs_path_append_new (panel1->cwd_vpath, selection (panel1)->fname->str,
-                                     (char *) NULL);
-            is_dir1 = S_ISDIR (selection (panel1)->st.st_mode);
+            fe1 = panel_current_entry (panel1);
+            file1 = vfs_path_append_new (panel1->cwd_vpath, fe1->fname->str, (char *) NULL);
+            is_dir1 = S_ISDIR (fe1->st.st_mode);
             if (is_dir1)
             {
                 message (D_ERROR, MSG_ERROR, _("\"%s\" is a directory"),
-                         path_trunc (selection (panel1)->fname->str, 30));
+                         path_trunc (fe1->fname->str, 30));
                 goto ret;
             }
             break;
@@ -3606,7 +3603,7 @@ dview_diff_cmd (const void *f0, const void *f1)
         }
 
     default:
-        /* this should not happaned */
+        /* this should not happened */
         message (D_ERROR, MSG_ERROR, _("Diff viewer: invalid mode"));
         return FALSE;
     }

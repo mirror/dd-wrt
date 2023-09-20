@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Functions for searching in nroff-like view
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -42,8 +42,6 @@
 #include "lib/charsets.h"
 #endif
 
-#include "src/setup.h"          /* option_tab_spacing */
-
 #include "internal.h"
 
 /*** global variables ****************************************************************************/
@@ -52,8 +50,11 @@
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 

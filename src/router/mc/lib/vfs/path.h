@@ -57,7 +57,7 @@ typedef struct
 
 /*** declarations of public functions ************************************************************/
 
-vfs_path_t *vfs_path_new (void);
+vfs_path_t *vfs_path_new (gboolean relative);
 vfs_path_t *vfs_path_clone (const vfs_path_t * vpath);
 void vfs_path_remove_element_by_index (vfs_path_t * vpath, int element_index);
 char *vfs_path_free (vfs_path_t * path, gboolean free_str);
@@ -89,8 +89,8 @@ vfs_path_t *vfs_path_change_encoding (vfs_path_t * vpath, const char *encoding);
 char *vfs_path_serialize (const vfs_path_t * vpath, GError ** error);
 vfs_path_t *vfs_path_deserialize (const char *data, GError ** error);
 
-char *vfs_path_build_url_params_str (const vfs_path_element_t * element, gboolean keep_password);
-char *vfs_path_element_build_pretty_path_str (const vfs_path_element_t * element);
+GString *vfs_path_build_url_params_str (const vfs_path_element_t * element, gboolean keep_password);
+GString *vfs_path_element_build_pretty_path_str (const vfs_path_element_t * element);
 
 size_t vfs_path_len (const vfs_path_t * vpath);
 gboolean vfs_path_equal (const vfs_path_t * vpath1, const vfs_path_t * vpath2);

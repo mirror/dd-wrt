@@ -6,7 +6,7 @@
    or, if etags utility not installed:
    $ find . -type f -name "*.[ch]" | ctags --c-kinds=+p --fields=+iaS --extra=+q -e -L-
 
-   Copyright (C) 2009-2022
+   Copyright (C) 2009-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -41,7 +41,7 @@
 #include "lib/fileloc.h"        /* TAGS_NAME */
 #include "lib/tty/tty.h"        /* LINES, COLS */
 #include "lib/strutil.h"
-#include "lib/util.h"           /* canonicalize_pathname() */
+#include "lib/util.h"
 
 #include "editwidget.h"
 
@@ -52,6 +52,8 @@
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -253,7 +255,6 @@ etags_set_definition_hash (const char *tagfile, const char *start_path, const ch
                     def_hash = g_new (etags_hash_t, 1);
 
                     def_hash->fullpath = mc_build_filename (start_path, filename, (char *) NULL);
-                    canonicalize_pathname (def_hash->fullpath);
                     def_hash->filename = g_strdup (filename);
 
                     def_hash->line = 0;
@@ -326,13 +327,13 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, GPtrArray
     def_dlg_h = def_hash->len + 2;
     def_dlg_w = COLS - 2;       /* will be clarified later */
     start_x = w->x + edit->curs_col + edit->start_col + EDIT_TEXT_HORIZONTAL_OFFSET +
-        (edit->fullscreen ? 0 : 1) + option_line_state_width;
+        (edit->fullscreen ? 0 : 1) + edit_options.line_state_width;
     start_y = w->y + edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
 
     if (start_x < 0)
         start_x = 0;
     if (start_x < w->x + 1)
-        start_x = w->x + 1 + option_line_state_width;
+        start_x = w->x + 1 + edit_options.line_state_width;
 
     if (def_dlg_h > LINES - 2)
         def_dlg_h = LINES - 2;
@@ -346,7 +347,7 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, GPtrArray
     def_list = listbox_new (1, 1, def_dlg_h - 2, def_dlg_w - 2, FALSE, NULL);
     group_add_widget_autopos (GROUP (def_dlg), def_list, WPOS_KEEP_ALL, NULL);
 
-    /* fill the listbox with the completions and get the maximim width */
+    /* fill the listbox with the completions and get the maximum width */
     def_max_width = 0;
     g_ptr_array_foreach (def_hash, editcmd_dialog_select_definition_add, def_list);
 

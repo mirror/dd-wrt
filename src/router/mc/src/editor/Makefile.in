@@ -110,6 +110,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/windows-stat-inodes.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
+	$(top_srcdir)/m4.include/ax_check_pcre2.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/ax_require_defined.m4 \
 	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
@@ -363,7 +364,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PCRE_CPPFLAGS = @PCRE_CPPFLAGS@
+PCRE_CFLAGS = @PCRE_CFLAGS@
 PCRE_LIBS = @PCRE_LIBS@
 PERL = @PERL@
 PERL_FOR_BUILD = @PERL_FOR_BUILD@
@@ -455,7 +456,7 @@ libedit_la_SOURCES = bookmark.c edit-impl.h edit.c edit.h \
 	editcmd.c editdraw.c editmacros.c editmacros.h editmenu.c \
 	editoptions.c editsearch.c editsearch.h editwidget.c \
 	editwidget.h etags.c etags.h format.c syntax.c $(am__append_1)
-AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(PCRE_CPPFLAGS)
+AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:

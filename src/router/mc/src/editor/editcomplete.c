@@ -1,7 +1,7 @@
 /*
    Editor word completion engine
 
-   Copyright (C) 2021-2022
+   Copyright (C) 2021-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -50,6 +50,8 @@
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -181,13 +183,17 @@ edit_collect_completion_from_one_buffer (gboolean active_buffer, GQueue ** compl
         {
             GString *recoded;
 
-            recoded = str_convert_to_display (temp->str);
-            if (recoded->len != 0)
-                mc_g_string_copy (temp, recoded);
+            recoded = str_nconvert_to_display (temp->str, temp->len);
+            if (recoded != NULL)
+            {
+                if (recoded->len != 0)
+                    mc_g_string_copy (temp, recoded);
 
-            g_string_free (recoded, TRUE);
+                g_string_free (recoded, TRUE);
+            }
         }
 #endif
+
         if (active_buffer)
             g_queue_push_tail (*compl, temp);
         else
@@ -278,7 +284,7 @@ edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
             if (!edit_widget_is_editor (ww))
                 continue;
 
-            e = (WEdit *) ww;
+            e = EDIT (ww);
 
             if (e == edit)
                 continue;
@@ -321,10 +327,12 @@ edit_complete_word_insert_recoded_completion (WEdit * edit, char *completion, gs
     GString *temp;
 
     temp = str_convert_to_input (completion);
-
-    for (completion = temp->str + word_len; *completion != '\0'; completion++)
-        edit_insert (edit, *completion);
-    g_string_free (temp, TRUE);
+    if (temp != NULL)
+    {
+        for (completion = temp->str + word_len; *completion != '\0'; completion++)
+            edit_insert (edit, *completion);
+        g_string_free (temp, TRUE);
+    }
 #else
     for (completion += word_len; *completion != '\0'; completion++)
         edit_insert (edit, *completion);
@@ -361,13 +369,13 @@ edit_completion_dialog_show (const WEdit * edit, GQueue * compl, int max_width)
     compl_dlg_h = g_queue_get_length (compl) + 2;
     compl_dlg_w = max_width + 4;
     start_x = we->x + edit->curs_col + edit->start_col + EDIT_TEXT_HORIZONTAL_OFFSET +
-        (edit->fullscreen ? 0 : 1) + option_line_state_width;
+        (edit->fullscreen ? 0 : 1) + edit_options.line_state_width;
     start_y = we->y + edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
 
     if (start_x < 0)
         start_x = 0;
     if (start_x < we->x + 1)
-        start_x = we->x + 1 + option_line_state_width;
+        start_x = we->x + 1 + edit_options.line_state_width;
     if (compl_dlg_w > COLS)
         compl_dlg_w = COLS;
     if (compl_dlg_h > LINES - 2)

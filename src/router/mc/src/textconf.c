@@ -1,7 +1,7 @@
 /*
    Print features specific for this build
 
-   Copyright (C) 2000-2022
+   Copyright (C) 2000-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -47,6 +47,8 @@
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

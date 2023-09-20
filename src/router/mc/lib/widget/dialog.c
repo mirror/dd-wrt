@@ -1,7 +1,7 @@
 /*
    Dialog box features module for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -55,16 +55,8 @@ dlg_colors_t dialog_colors;
 dlg_colors_t alarm_colors;
 dlg_colors_t listbox_colors;
 
-/* Primitive way to check if the the current dialog is our dialog */
-/* This is needed by async routines like load_prompt */
-GList *top_dlg = NULL;
-
 /* A hook list for idle events */
 hook_t *idle_hook = NULL;
-
-/* If set then dialogs just clean the screen when refreshing, else */
-/* they do a complete refresh, refreshing all the parts of the program */
-gboolean fast_refresh = FALSE;
 
 /* left click outside of dialog closes it */
 gboolean mouse_close_dialog = FALSE;
@@ -74,6 +66,8 @@ const global_keymap_t *dialog_map = NULL;
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -141,11 +135,11 @@ dlg_execute_cmd (WDialog * h, long command)
     {
     case CK_Ok:
         h->ret_value = B_ENTER;
-        dlg_stop (h);
+        dlg_close (h);
         break;
     case CK_Cancel:
         h->ret_value = B_CANCEL;
-        dlg_stop (h);
+        dlg_close (h);
         break;
 
     case CK_Up:
@@ -334,6 +328,7 @@ dlg_default_destroy (Widget * w)
     /* if some widgets have history, save all histories at one moment here */
     dlg_save_history (h);
     group_default_callback (w, NULL, MSG_DESTROY, 0, NULL);
+    send_message (w, NULL, MSG_DESTROY, 0, NULL);
     mc_event_group_del (h->event_group);
     g_free (h->event_group);
     g_free (h);
@@ -380,7 +375,7 @@ dlg_default_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         if (event->y < 0 || event->y >= w->rect.lines || event->x < 0 || event->x >= w->rect.cols)
         {
             DIALOG (w)->ret_value = B_CANCEL;
-            dlg_stop (DIALOG (w));
+            dlg_close (DIALOG (w));
         }
         break;
 
@@ -427,7 +422,7 @@ dlg_create (gboolean modal, int y1, int x1, int lines, int cols, widget_pos_flag
     new_d->colors = colors;
     new_d->help_ctx = help_ctx;
     new_d->compact = compact;
-    new_d->data = NULL;
+    new_d->data.p = NULL;
 
     if (modal)
     {
@@ -472,37 +467,7 @@ dlg_set_default_colors (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-do_refresh (void)
-{
-    GList *d = top_dlg;
-
-    if (fast_refresh)
-    {
-        if (d != NULL)
-            widget_draw (WIDGET (d->data));
-    }
-    else
-    {
-        /* Search first fullscreen dialog */
-        for (; d != NULL; d = g_list_next (d))
-            if ((WIDGET (d->data)->pos_flags & WPOS_FULLSCREEN) != 0)
-                break;
-
-        /* when small dialog (i.e. error message) is created first,
-           there is no fullscreen dialog in the stack */
-        if (d == NULL)
-            d = g_list_last (top_dlg);
-
-        /* back to top dialog */
-        for (; d != NULL; d = g_list_previous (d))
-            widget_draw (WIDGET (d->data));
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-dlg_stop (WDialog * h)
+dlg_close (WDialog * h)
 {
     widget_set_state (WIDGET (h), WST_CLOSED, TRUE);
 }
@@ -538,8 +503,7 @@ dlg_init (WDialog * h)
         group_set_current_widget_next (g);
 
     widget_set_state (wh, WST_ACTIVE, TRUE);
-    /* draw dialog and focus found widget */
-    widget_set_state (wh, WST_FOCUSED, TRUE);
+    widget_draw (wh);
 
     h->ret_value = 0;
 }

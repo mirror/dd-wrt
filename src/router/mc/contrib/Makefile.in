@@ -107,6 +107,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/windows-stat-inodes.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
+	$(top_srcdir)/m4.include/ax_check_pcre2.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/ax_require_defined.m4 \
 	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
@@ -327,7 +328,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PCRE_CPPFLAGS = @PCRE_CPPFLAGS@
+PCRE_CFLAGS = @PCRE_CFLAGS@
 PCRE_LIBS = @PCRE_LIBS@
 PERL = @PERL@
 PERL_FOR_BUILD = @PERL_FOR_BUILD@
@@ -683,16 +684,16 @@ uninstall-am: uninstall-cfgDATA uninstall-pkglibexecSCRIPTS
 
 
 mc.csh: $(top_builddir)/config.status $(srcdir)/mc.csh.in
-	sed "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.csh.in > mc.csh
+	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.csh.in > mc.csh
 
 mc.sh: $(top_builddir)/config.status $(srcdir)/mc.sh.in
-	sed "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.sh.in > mc.sh
+	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.sh.in > mc.sh
 
 mc-wrapper.csh: $(top_builddir)/config.status $(srcdir)/mc-wrapper.csh.in
-	sed "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.csh.in > mc-wrapper.csh
+	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.csh.in > mc-wrapper.csh
 
 mc-wrapper.sh: $(top_builddir)/config.status $(srcdir)/mc-wrapper.sh.in
-	sed "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.sh.in > mc-wrapper.sh
+	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.sh.in > mc-wrapper.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Authors:
@@ -52,8 +52,11 @@
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -249,7 +252,7 @@ buttonbar_new (void)
     widget_init (w, &r, buttonbar_callback, buttonbar_mouse_callback);
 
     w->pos_flags = WPOS_KEEP_HORZ | WPOS_KEEP_BOTTOM;
-    widget_want_hotkey (w, TRUE);
+    w->options |= WOP_WANT_HOTKEY;
 
     return bb;
 }
@@ -281,7 +284,7 @@ buttonbar_set_label (WButtonBar * bb, int idx, const char *text, const global_ke
 
 /* Find ButtonBar widget in the dialog */
 WButtonBar *
-find_buttonbar (const WDialog * h)
+buttonbar_find (const WDialog * h)
 {
     return BUTTONBAR (widget_find_by_type (CONST_WIDGET (h), buttonbar_callback));
 }

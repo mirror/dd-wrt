@@ -9,11 +9,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-01-21 18:03+0100\n"
+"POT-Creation-Date: 2023-08-13 21:07+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Iñigo Salvador Azurmendi <xalba@euskalnet.net>, "
 "2011,2015-2019\n"
-"Language-Team: Basque (http://www.transifex.com/mc/mc/language/eu/)\n"
+"Language-Team: Basque (http://app.transifex.com/mc/mc/language/eu/)\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -821,8 +821,8 @@ msgstr "Argumentuen azterketak akatsa!"
 msgid "No arguments given to the viewer."
 msgstr "Ez zaizkio argumentuak eman erakusleari."
 
-msgid "Two files are required to envoke the diffviewer."
-msgstr "Bi fitxategi behar dira diffviewer deitzeko."
+msgid "Two files are required to invoke the diffviewer."
+msgstr ""
 
 msgid "Background protocol error"
 msgstr "Hondoko protokolo baten akatsa"
@@ -1622,7 +1622,7 @@ msgstr ""
 "Testu editore lagunkoi bat\n"
 "Midnight Commander-rarentzako idatzia."
 
-msgid "Copyright (C) 1996-2022 the Free Software Foundation"
+msgid "Copyright (C) 1996-2023 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2158,11 +2158,10 @@ msgstr "Hondoko lanak"
 
 #, c-format
 msgid ""
-"Cannot chdir to \"%s\"\n"
+"Cannot change directory to\n"
+"%s\n"
 "%s"
 msgstr ""
-"Ezin da \"%s\" direktoriora aldatu\n"
-"%s"
 
 msgid "Secure deletion"
 msgstr ""
@@ -2255,9 +2254,6 @@ msgstr ""
 msgid ""
 "Cannot chattr \"%s\"\n"
 "%s"
-msgstr ""
-
-msgid "Cannot change attributes on non-local filesystems"
 msgstr ""
 
 #, c-format
@@ -2359,9 +2355,6 @@ msgstr "Sartu makinaren izena (F1 xehetasunetarako):"
 msgid "Files tagged, want to cd?"
 msgstr "Fitxategiak hautatuta, direktoria aldatu nahi?"
 
-msgid "Cannot change directory"
-msgstr "Direktorioa ezin aldatu"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Estekatu %s hona:"
@@ -2376,10 +2369,6 @@ msgstr "esteka: %s"
 #, c-format
 msgid "symlink: %s"
 msgstr "esteka sinbolikoa: %s"
-
-#, c-format
-msgid "Cannot chdir to \"%s\""
-msgstr "\"%s\" direktoriora ezin aldatu (\"chdir\")"
 
 msgid "View file"
 msgstr "Ikusi fitxategia"
@@ -2516,24 +2505,22 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid " %s%s file error"
-msgstr " %s%s fitxategi akatsa"
-
-#, c-format
 msgid ""
-"The format of the %s%s file has changed with version 4.0. It seems that the "
-"installation has failed. Please fetch a fresh copy from the Midnight "
-"Commander package."
+"The format of the\n"
+"%s%s\n"
+"file has changed with version 4.0.\n"
+"It seems that the installation has failed.\n"
+"Please fetch a fresh copy from the Midnight Commander package."
 msgstr ""
 
 #, c-format
-msgid "%s file error"
-msgstr "%s fitxategi akatsa"
-
-#, c-format
 msgid ""
-"The format of the %s file has changed with version 4.0. You may either want "
-"to copy it from %s%s or use that file as an example of how to write it."
+"The format of the\n"
+"%s\n"
+"file has changed with version 4.0.\n"
+"You may either want to copy it from\n"
+"%s%s\n"
+"or use that file as an example of how to write it."
 msgstr ""
 
 msgid "DialogTitle|Copy"
@@ -2917,8 +2904,8 @@ msgid "Con&tinue"
 msgstr "&Jarraitu"
 
 #, c-format
-msgid "%d:%02d.%02d"
-msgstr "%d:%02d.%02d"
+msgid "%d:%02d:%02d"
+msgstr ""
 
 #, c-format
 msgid "ETA %s"
@@ -3503,9 +3490,6 @@ msgstr "Jabea: %s/%s"
 #, c-format
 msgid "Links:      %d"
 msgstr "Estekak: %d"
-
-msgid "Attributes: not supported"
-msgstr ""
 
 #, c-format
 msgid "Attributes: %s"
@@ -4130,9 +4114,8 @@ msgstr ""
 "Ustekabeko fitxategi bukaera\n"
 "%s"
 
-#, fuzzy
 msgid "Inconsistent archive"
-msgstr "tar artxibo inkoherentea"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4458,14 +4441,6 @@ msgstr "sftp: (Ktrl-G eteteko) Zerrendatzen... %s"
 msgid "sftp: Listing done."
 msgstr "sftp: Zerrenda osatuta."
 
-#, c-format
-msgid ""
-"Cannot open tar archive\n"
-"%s"
-msgstr ""
-"tar artxiboa ezin ireki\n"
-"%s"
-
 msgid "Inconsistent tar archive"
 msgstr "tar artxibo inkoherentea"
 
@@ -4474,11 +4449,20 @@ msgstr "Ustekabeko EOF artxibo fitxategian"
 
 #, c-format
 msgid ""
-"%s\n"
-"doesn't look like a tar archive."
+"Cannot open tar archive\n"
+"%s"
 msgstr ""
+"tar artxiboa ezin ireki\n"
+"%s"
+
+#, c-format
+msgid ""
 "%s\n"
-"ez dirudi tar artxiboa denik."
+"doesn't look like a tar archive"
+msgstr ""
+
+msgid "tar: mc_lseek not stopped at a record boundary"
+msgstr ""
 
 msgid "undelfs: error"
 msgstr "undelfs: akatsa"

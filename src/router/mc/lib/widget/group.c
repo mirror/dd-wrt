@@ -1,7 +1,7 @@
 /*
    Widget group features module for the Midnight Commander
 
-   Copyright (C) 2020-2022
+   Copyright (C) 2020-2023
    The Free Software Foundation, Inc.
 
    Written by:
@@ -59,6 +59,8 @@ typedef struct
     widget_state_t state;
     gboolean enable;
 } widget_state_info_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

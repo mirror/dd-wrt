@@ -111,6 +111,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/windows-stat-inodes.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
+	$(top_srcdir)/m4.include/ax_check_pcre2.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/ax_require_defined.m4 \
 	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
@@ -190,14 +191,14 @@ libmc_la_DEPENDENCIES = event/libmcevent.la \
 	search/libsearch.la strutil/libmcstrutil.la skin/libmcskin.la \
 	tty/libmctty.la vfs/libmcvfs.la widget/libmcwidget.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_3)
 am__libmc_la_SOURCES_DIST = event.h event-types.h filehighlight.h \
 	mcconfig.h search.h skin.h strescape.h strutil.h widget.h \
-	utilunix.c utilunix.h unixcompat.h util.c util.h fileloc.h \
-	fs.h hook.c hook.h glibcompat.c glibcompat.h global.c global.h \
-	keybind.c keybind.h lock.c lock.h serialize.c serialize.h \
-	shell.c shell.h stat-size.h timefmt.c timefmt.h logging.c \
-	logging.h charsets.c charsets.h
+	utilunix.c utilunix.h unixcompat.h util.c util.h file-entry.h \
+	fileloc.h fs.h hook.c hook.h glibcompat.c glibcompat.h \
+	global.c global.h keybind.c keybind.h lock.c lock.h \
+	serialize.c serialize.h shell.c shell.h stat-size.h timefmt.c \
+	timefmt.h logging.c logging.h charsets.c charsets.h
 am__objects_1 =
 am__objects_2 = utilunix.lo util.lo
 @USE_MAINTAINER_MODE_TRUE@am__objects_3 = logging.lo
@@ -446,7 +447,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PCRE_CPPFLAGS = @PCRE_CPPFLAGS@
+PCRE_CFLAGS = @PCRE_CFLAGS@
 PCRE_LIBS = @PCRE_LIBS@
 PERL = @PERL@
 PERL_FOR_BUILD = @PERL_FOR_BUILD@
@@ -553,18 +554,17 @@ SRC_mc_utils = \
 	unixcompat.h \
 	util.c util.h
 
-libmc_la_SOURCES = $(SUBLIB_includes) $(SRC_mc_utils) fileloc.h fs.h \
-	hook.c hook.h glibcompat.c glibcompat.h global.c global.h \
-	keybind.c keybind.h lock.c lock.h serialize.c serialize.h \
-	shell.c shell.h stat-size.h timefmt.c timefmt.h \
-	$(am__append_1) $(am__append_2)
+libmc_la_SOURCES = $(SUBLIB_includes) $(SRC_mc_utils) file-entry.h \
+	fileloc.h fs.h hook.c hook.h glibcompat.c glibcompat.h \
+	global.c global.h keybind.c keybind.h lock.c lock.h \
+	serialize.c serialize.h shell.c shell.h stat-size.h timefmt.c \
+	timefmt.h $(am__append_1) $(am__append_2)
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)
 libmc_la_LIBADD = event/libmcevent.la \
 	filehighlight/libmcfilehighlight.la mcconfig/libmcconfig.la \
 	search/libsearch.la strutil/libmcstrutil.la skin/libmcskin.la \
 	tty/libmctty.la vfs/libmcvfs.la widget/libmcwidget.la \
-	$(MCLIBS) $(SLANGLIB) $(am__append_3) $(am__append_4) \
-	$(PCRE_LIBS)
+	$(MCLIBS) $(SLANGLIB) $(am__append_3) $(am__append_4)
 all: all-recursive
 
 .SUFFIXES:

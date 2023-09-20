@@ -1,7 +1,7 @@
 /*
    Editor book mark handling
 
-   Copyright (C) 2001-2022
+   Copyright (C) 2001-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -32,7 +32,6 @@
 #include <config.h>
 
 #include <ctype.h>
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,8 +52,11 @@
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 

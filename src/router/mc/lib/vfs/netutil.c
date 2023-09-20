@@ -1,7 +1,7 @@
 /*
    Network utilities for the Midnight Commander Virtual File System.
 
-   Copyright (C) 1995-2022
+   Copyright (C) 1995-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -43,8 +43,11 @@ SIG_ATOMIC_VOLATILE_T got_sigpipe = 0;
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 

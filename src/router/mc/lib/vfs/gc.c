@@ -1,7 +1,7 @@
 /*
    Virtual File System garbage collection code
 
-   Copyright (C) 2003-2022
+   Copyright (C) 2003-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -62,7 +62,7 @@
  *
  * (1) When the last open file in your filesystem gets closed, conditionally
  *     create a stamp. You do this with vfs_stamp_create(). (The meaning
- *     of "conditionaly" is explained below.)
+ *     of "conditionally" is explained below.)
  *
  * (2) When a file in your filesystem is opened, delete the stamp. You do
  *     this with vfs_rmstamp().
@@ -99,6 +99,8 @@ struct vfs_stamping
     vfsid id;
     gint64 time;
 };
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -184,12 +186,11 @@ void
 vfs_stamp_path (const vfs_path_t * vpath)
 {
     vfsid id;
-    const vfs_path_element_t *path_element;
+    struct vfs_class *me;
 
-    path_element = vfs_path_get_by_index (vpath, -1);
-
+    me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
     id = vfs_getid (vpath);
-    vfs_addstamp (path_element->class, id);
+    vfs_addstamp (me, id);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -204,10 +205,10 @@ vfs_stamp_create (struct vfs_class *vclass, vfsid id)
 
     ev_vfs_stamp_create_t event_data = { vclass, id, FALSE };
     const vfs_path_t *vpath;
-    const vfs_path_element_t *path_element;
+    struct vfs_class *me;
 
     /* There are three directories we have to take care of: current_dir,
-       current_panel->cwd and other_panel->cwd. Athough most of the time either
+       current_panel->cwd and other_panel->cwd. Although most of the time either
        current_dir and current_panel->cwd or current_dir and other_panel->cwd are the
        same, it's possible that all three are different -- Norbert */
 
@@ -215,12 +216,12 @@ vfs_stamp_create (struct vfs_class *vclass, vfsid id)
         return;
 
     vpath = vfs_get_raw_current_dir ();
-    path_element = vfs_path_get_by_index (vpath, -1);
+    me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
     nvfsid = vfs_getid (vpath);
-    vfs_rmstamp (path_element->class, nvfsid);
+    vfs_rmstamp (me, nvfsid);
 
-    if (!(id == NULL || (path_element->class == vclass && nvfsid == id)))
+    if (!(id == NULL || (me == vclass && nvfsid == id)))
     {
         mc_event_raise (MCEVENT_GROUP_CORE, "vfs_timestamp", (gpointer) & event_data);
 
@@ -314,10 +315,12 @@ vfs_timeout_handler (void)
 void
 vfs_release_path (const vfs_path_t * vpath)
 {
-    const vfs_path_element_t *path_element;
+    vfsid id;
+    struct vfs_class *me;
 
-    path_element = vfs_path_get_by_index (vpath, -1);
-    vfs_stamp_create (path_element->class, vfs_getid (vpath));
+    me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
+    id = vfs_getid (vpath);
+    vfs_stamp_create (me, id);
 }
 
 /* --------------------------------------------------------------------------------------------- */

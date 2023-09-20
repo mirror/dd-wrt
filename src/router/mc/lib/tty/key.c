@@ -1,7 +1,7 @@
 /*
    Keyboard support routines.
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -275,6 +275,8 @@ typedef int (*ph_ov_f) (void *);
 typedef int (*ph_pqc_f) (unsigned short, PhCursorInfo_t *);
 #endif
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static key_define_t mc_default_keys[] = {
@@ -450,7 +452,7 @@ static key_define_t xterm_key_defines[] = {
     {0, NULL, MCKEY_NOACTION},
 };
 
-/* qansi-m terminals have a much more key combinatios,
+/* qansi-m terminals have a much more key combinations,
    which are undefined in termcap/terminfo */
 static key_define_t qansi_key_defines[] = {
     /* qansi-m terminal */
@@ -1449,7 +1451,7 @@ channels_down (void)
  */
 
 long
-lookup_key (const char *name, char **label)
+tty_keyname_to_keycode (const char *name, char **label)
 {
     char **lc_keys, **p;
     char *cname;
@@ -1564,7 +1566,7 @@ lookup_key (const char *name, char **label)
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-lookup_key_by_code (const int keycode)
+tty_keycode_to_keyname (const int keycode)
 {
     /* code without modifier */
     unsigned int k = keycode & ~KEY_M_MASK;
@@ -2164,7 +2166,7 @@ learn_key (void)
     char buffer[256];
     char *p = buffer;
 
-    tty_keypad (FALSE);         /* disable intepreting keys by ncurses */
+    tty_keypad (FALSE);         /* disable interpreting keys by ncurses */
     c = tty_lowlevel_getch ();
     while (c == -1)
         c = tty_lowlevel_getch ();      /* Sanity check, should be unnecessary */

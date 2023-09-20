@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2022
+# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2023
 # Daniel <danicases@gmail.com>, 2011
 # Daniel <danicases@gmail.com>, 2011-2012
 # Daniel <danicases@gmail.com>, 2012
@@ -16,10 +16,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-01-21 18:03+0100\n"
+"POT-Creation-Date: 2023-08-13 21:07+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2022\n"
-"Language-Team: Catalan (http://www.transifex.com/mc/mc/language/ca/)\n"
+"Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2023\n"
+"Language-Team: Catalan (http://app.transifex.com/mc/mc/language/ca/)\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -543,7 +543,7 @@ msgstr ""
 "%s"
 
 msgid "Cannot close pipe descriptor (p == NULL)"
-msgstr ""
+msgstr "No s'ha pogut tancar el descriptor de la canonada (p == NULL)"
 
 #, c-format
 msgid ""
@@ -840,8 +840,8 @@ msgstr "Error en analitzar els arguments!"
 msgid "No arguments given to the viewer."
 msgstr "No s'han donat arguments al visor."
 
-msgid "Two files are required to envoke the diffviewer."
-msgstr "Calen dos fitxers per a executar el visor de diferències."
+msgid "Two files are required to invoke the diffviewer."
+msgstr "Calen dos fitxers per a invocar el visualitzador de diferències."
 
 msgid "Background protocol error"
 msgstr "S'ha produït un error de protocol en segon pla"
@@ -1644,8 +1644,8 @@ msgstr ""
 "Un editor de text fàcil d'emprar\n"
 "escrit per al Midnight Commander."
 
-msgid "Copyright (C) 1996-2022 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2022 la Free Software Foundation"
+msgid "Copyright (C) 1996-2023 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2023 la «Free Software Foundation»"
 
 msgid "About"
 msgstr "Quant a"
@@ -2180,11 +2180,10 @@ msgstr "Tasques en segon pla"
 
 #, c-format
 msgid ""
-"Cannot chdir to \"%s\"\n"
+"Cannot change directory to\n"
+"%s\n"
 "%s"
 msgstr ""
-"No s'ha pogut fer chdir a «%s»\n"
-"%s"
 
 msgid "Secure deletion"
 msgstr "Supressió segura"
@@ -2280,9 +2279,6 @@ msgid ""
 msgstr ""
 "No s'ha pogut fer chattr «%s»\n"
 "%s"
-
-msgid "Cannot change attributes on non-local filesystems"
-msgstr "No es poden canviar els atributs en sistemes de fitxers no locals"
 
 #, c-format
 msgid ""
@@ -2385,9 +2381,6 @@ msgstr "Introduïu el nom de la màquina (F1 per a més detalls):"
 msgid "Files tagged, want to cd?"
 msgstr "Hi ha fitxers seleccionats. Voleu canviar de directori?"
 
-msgid "Cannot change directory"
-msgstr "No s'ha pogut canviar de directori"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Enllaça %s a:"
@@ -2402,10 +2395,6 @@ msgstr "enllaç: %s"
 #, c-format
 msgid "symlink: %s"
 msgstr "enllaç simbòlic: %s"
-
-#, c-format
-msgid "Cannot chdir to \"%s\""
-msgstr "No s'ha pogut fer chdir a «%s»"
 
 msgid "View file"
 msgstr "Veure el fitxer"
@@ -2540,27 +2529,39 @@ msgid ""
 "Midnight Commander now uses %s file.\n"
 "Please copy your modifications of the old file to the new one."
 msgstr ""
-
-#, c-format
-msgid " %s%s file error"
-msgstr " error en el fitxer %s%s"
-
-#, c-format
-msgid ""
-"The format of the %s%s file has changed with version 4.0. It seems that the "
-"installation has failed. Please fetch a fresh copy from the Midnight "
-"Commander package."
-msgstr ""
-
-#, c-format
-msgid "%s file error"
-msgstr "Error en el fitxer %s"
+"Teniu un fitxer obsolet %s.\n"
+"El Midnight Commander ara utilitza el fitxer %s.\n"
+"Copieu les vostres modificacions des del fitxer antic al nou."
 
 #, c-format
 msgid ""
-"The format of the %s file has changed with version 4.0. You may either want "
-"to copy it from %s%s or use that file as an example of how to write it."
+"The format of the\n"
+"%s%s\n"
+"file has changed with version 4.0.\n"
+"It seems that the installation has failed.\n"
+"Please fetch a fresh copy from the Midnight Commander package."
 msgstr ""
+"El format del\n"
+"%s%s\n"
+"el fitxer ha canviat amb la versió 4.0.\n"
+"Sembla que la instal·lació ha fallat.\n"
+"Obteniu una còpia fresca des del paquet Midnight Commander."
+
+#, c-format
+msgid ""
+"The format of the\n"
+"%s\n"
+"file has changed with version 4.0.\n"
+"You may either want to copy it from\n"
+"%s%s\n"
+"or use that file as an example of how to write it."
+msgstr ""
+"El format del\n"
+"%s\n"
+"El fitxer ha canviat amb la versió 4.0.\n"
+"És possible que vulgueu copiar-lo des de\n"
+"%s%s\n"
+"o useu aquest fitxer com a exemple de com escriure'l."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Copia"
@@ -2856,13 +2857,13 @@ msgid "(stalled)"
 msgstr "(encallat)"
 
 msgid "Incomplete file was retrieved"
-msgstr ""
+msgstr "S'ha recuperat un fitxer incomplet"
 
 msgid "&Keep"
 msgstr "&Conserva'l"
 
 msgid "&Continue copy"
-msgstr ""
+msgstr "&Continua la còpia"
 
 #, c-format
 msgid ""
@@ -2942,8 +2943,8 @@ msgid "Con&tinue"
 msgstr "&Continua"
 
 #, c-format
-msgid "%d:%02d.%02d"
-msgstr "%d:%02d.%02d"
+msgid "%d:%02d:%02d"
+msgstr "%d:%02d:%02d"
 
 #, c-format
 msgid "ETA %s"
@@ -2999,7 +3000,7 @@ msgstr "Procés en segon pla: El fitxer existeix"
 
 #, c-format
 msgid "Files processed: %zu / %zu"
-msgstr ""
+msgstr "Fitxers processats: %zu / %zu"
 
 #, c-format
 msgid "Files processed: %zu"
@@ -3027,7 +3028,7 @@ msgstr " Total: %s "
 
 #, c-format
 msgid " Total: %s / %s "
-msgstr ""
+msgstr " Total: %s / %s "
 
 msgid "Source"
 msgstr "Origen"
@@ -3079,7 +3080,7 @@ msgid "&Listing format..."
 msgstr "Format del &llistat..."
 
 msgid "&Sort order..."
-msgstr ""
+msgstr "Ordre de cla&ssificació..."
 
 msgid "&Filter..."
 msgstr "&Filtra..."
@@ -3094,7 +3095,7 @@ msgid "S&hell link..."
 msgstr "Enllaç per a l'i&ntèrpret..."
 
 msgid "SFTP li&nk..."
-msgstr ""
+msgstr "E&nllaç SFTP..."
 
 msgid "Paneli&ze"
 msgstr "&Quadre de cerca"
@@ -3477,7 +3478,7 @@ msgstr "No hi ha informació d'espai"
 
 #, c-format
 msgid "Free space: %s / %s (%d%%)"
-msgstr ""
+msgstr "Espai lliure: %s / %s (%d%%)"
 
 #, c-format
 msgid "Type:       %s"
@@ -3528,9 +3529,6 @@ msgstr "Propietari: %s/%s"
 #, c-format
 msgid "Links:      %d"
 msgstr "Enllaços:   %d"
-
-msgid "Attributes: not supported"
-msgstr "Atributs: no admesos"
 
 #, c-format
 msgid "Attributes: %s"
@@ -4167,9 +4165,8 @@ msgstr ""
 "Fi de fitxer inesperat a\n"
 "%s"
 
-#, fuzzy
 msgid "Inconsistent archive"
-msgstr "L'arxiu TAR no és coherent"
+msgstr "Arxiu inconsistent"
 
 #, c-format
 msgid ""
@@ -4523,14 +4520,6 @@ msgstr "sftp: (Ctrl-G per a cancel·lar) s'està llistant... %s"
 msgid "sftp: Listing done."
 msgstr "sftp: el llistat s'ha completat."
 
-#, c-format
-msgid ""
-"Cannot open tar archive\n"
-"%s"
-msgstr ""
-"No s'ha pogut obrir l'arxiu TAR\n"
-"%s"
-
 msgid "Inconsistent tar archive"
 msgstr "L'arxiu TAR no és coherent"
 
@@ -4539,11 +4528,20 @@ msgstr "Fi de fitxer inesperat al fitxer d'arxiu"
 
 #, c-format
 msgid ""
-"%s\n"
-"doesn't look like a tar archive."
+"Cannot open tar archive\n"
+"%s"
 msgstr ""
+"No s'ha pogut obrir l'arxiu TAR\n"
+"%s"
+
+#, c-format
+msgid ""
 "%s\n"
-"no sembla un arxiu TAR."
+"doesn't look like a tar archive"
+msgstr ""
+
+msgid "tar: mc_lseek not stopped at a record boundary"
+msgstr ""
 
 msgid "undelfs: error"
 msgstr "undelfs: error"

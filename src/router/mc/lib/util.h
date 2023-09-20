@@ -122,27 +122,6 @@ typedef struct
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
-/* keys are set only during sorting */
-typedef struct
-{
-    /* File attributes */
-    GString *fname;
-    struct stat st;
-    /* key used for comparing names */
-    char *sort_key;
-    /* key used for comparing extensions */
-    char *second_sort_key;
-
-    /* Flags */
-    struct
-    {
-        unsigned int marked:1;  /* File marked in pane window */
-        unsigned int link_to_dir:1;     /* If this is a link, does it point to directory? */
-        unsigned int stale_link:1;      /* If this is a symlink and points to Charon's land */
-        unsigned int dir_size_computed:1;       /* Size of directory was computed with dirsizes_cmd */
-    } f;
-} file_entry_t;
-
 /*** global variables defined in .c file *********************************************************/
 
 extern struct sigaction startup_handler;
@@ -234,7 +213,6 @@ void save_stop_handler (void);
 char *tilde_expand (const char *directory);
 
 void canonicalize_pathname_custom (char *path, canon_path_flags_t flags);
-void canonicalize_pathname (char *path);
 
 char *mc_realpath (const char *path, char *resolved_path);
 
@@ -279,7 +257,9 @@ void mc_replace_error (GError ** dest, int code, const char *format, ...) G_GNUC
 
 gboolean mc_time_elapsed (gint64 * timestamp, gint64 delay);
 
-/*** inline functions **************************************************/
+/* --------------------------------------------------------------------------------------------- */
+/*** inline functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
 static inline gboolean
 exist_file (const char *name)
@@ -287,10 +267,31 @@ exist_file (const char *name)
     return (access (name, R_OK) == 0);
 }
 
+/* --------------------------------------------------------------------------------------------- */
+
 static inline gboolean
 is_exe (mode_t mode)
 {
     return ((mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0);
 }
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Canonicalize path with CANON_PATH_ALL.
+ *
+ * @param path path to file
+ * @param flags canonicalization flags
+ *
+ * All modifications of @path are made in place.
+ * Well formed UNC paths are modified only in the local part.
+ */
+
+static inline void
+canonicalize_pathname (char *path)
+{
+    canonicalize_pathname_custom (path, CANON_PATH_ALL);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 
 #endif /* MC_UTIL_H */

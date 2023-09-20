@@ -111,6 +111,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/windows-stat-inodes.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
+	$(top_srcdir)/m4.include/ax_check_pcre2.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/ax_require_defined.m4 \
 	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
@@ -577,7 +578,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PCRE_CPPFLAGS = @PCRE_CPPFLAGS@
+PCRE_CFLAGS = @PCRE_CFLAGS@
 PCRE_LIBS = @PCRE_LIBS@
 PERL = @PERL@
 PERL_FOR_BUILD = @PERL_FOR_BUILD@

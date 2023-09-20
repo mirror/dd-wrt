@@ -1,7 +1,7 @@
 /*
    Client interface for General purpose Linux console save/restore server
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -68,6 +68,8 @@ do \
 
 /*** file scope type declarations ****************************************************************/
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 #ifdef __linux__
@@ -80,6 +82,7 @@ static struct scrshot screen_shot;
 static struct vid_info screen_info;
 #endif /* __linux__ */
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 

@@ -1,7 +1,7 @@
 /*
    File management.
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -178,6 +178,8 @@ static const char *prompt_parts[] = {
     N_(" with source mask:")
 };
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 /* the hard link cache */
@@ -192,7 +194,7 @@ static GQueue *erase_list = NULL;
  * directories and is used to detect cyclic symbolic links.
  * The second ('dest_dirs' below) holds information about just created
  * target directories and is used to detect when an directory is copied
- * into itself (we don't want to copy infinitly).
+ * into itself (we don't want to copy infinitely).
  * Both lists don't use the linkcount and name structure members of struct
  * link.
  */
@@ -557,35 +559,36 @@ make_symlink (file_op_context_t * ctx, const vfs_path_t * src_vpath, const vfs_p
         r = strrchr (src_path, PATH_SEP);
         if (r != NULL)
         {
-            char *p;
+            size_t slen;
+            GString *p;
             vfs_path_t *q;
 
-            p = g_strndup (src_path, r - src_path + 1);
+            slen = r - src_path + 1;
+
+            p = g_string_sized_new (slen + len);
+            g_string_append_len (p, src_path, slen);
+
             if (g_path_is_absolute (dst_path))
                 q = vfs_path_from_str_flags (dst_path, VPF_NO_CANON);
             else
-                q = vfs_path_build_filename (p, dst_path, (char *) NULL);
+                q = vfs_path_build_filename (p->str, dst_path, (char *) NULL);
 
             if (vfs_path_tokens_count (q) > 1)
             {
-                char *s;
+                char *s = NULL;
                 vfs_path_t *tmp_vpath1, *tmp_vpath2;
 
+                g_string_append_len (p, link_target, len);
                 tmp_vpath1 = vfs_path_vtokens_get (q, -1, 1);
-                s = g_strconcat (p, link_target, (char *) NULL);
-                g_strlcpy (link_target, s, sizeof (link_target));
-                g_free (s);
-                tmp_vpath2 = vfs_path_from_str (link_target);
+                tmp_vpath2 = vfs_path_from_str (p->str);
                 s = diff_two_paths (tmp_vpath1, tmp_vpath2);
-                vfs_path_free (tmp_vpath1, TRUE);
                 vfs_path_free (tmp_vpath2, TRUE);
-                if (s != NULL)
-                {
-                    g_strlcpy (link_target, s, sizeof (link_target));
-                    g_free (s);
-                }
+                vfs_path_free (tmp_vpath1, TRUE);
+                g_strlcpy (link_target, s != NULL ? s : p->str, sizeof (link_target));
+                g_free (s);
             }
-            g_free (p);
+
+            g_string_free (p, TRUE);
             vfs_path_free (q, TRUE);
         }
     }
@@ -1347,7 +1350,7 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
     if (panel != NULL)
     {
         /* In case of single file, calculate totals. In case of many files,
-           totals are calcuated already. */
+           totals are calculated already. */
         return_status =
             panel_operate_init_totals (panel, src_vpath, &src_stat, ctx, TRUE,
                                        FILEGUI_DIALOG_ONE_ITEM);
@@ -1516,8 +1519,8 @@ recursive_erase (file_op_total_context_t * tctx, file_op_context_t * ctx, const 
   *          1 if there are no entries besides "." and ".." in the directory path points to,
   *          0 else.
   *
-  * ATTENTION! Be carefull when modifying this function (like commit 25e419ba0886f)!
-  * Some implementations of readdir() in MC VFS (for example, vfs_s_readdir(), whuch is uded
+  * ATTENTION! Be careful when modifying this function (like commit 25e419ba0886f)!
+  * Some implementations of readdir() in MC VFS (for example, vfs_s_readdir(), which is used
   * in FISH) don't return "." and ".." entries.
   */
 static int
@@ -1572,7 +1575,7 @@ static void
 erase_dir_after_copy (file_op_total_context_t * tctx, file_op_context_t * ctx,
                       const vfs_path_t * vpath, FileProgressStatus * status)
 {
-    if (ctx->erase_at_end)
+    if (ctx->erase_at_end && erase_list != NULL)
     {
         /* Reset progress count before delete to avoid counting files twice */
         tctx->progress_count = tctx->prev_progress_count;
@@ -1669,7 +1672,7 @@ do_move_dir_dir (const WPanel * panel, file_op_total_context_t * tctx, file_op_c
             if (panel != NULL)
             {
                 /* In case of single directory, calculate totals. In case of many directories,
-                   totals are calcuated already. */
+                   totals are calculated already. */
                 return_status =
                     panel_operate_init_totals (panel, src_vpath, &src_stat, ctx, TRUE,
                                                FILEGUI_DIALOG_MULTI_ITEM);
@@ -1724,7 +1727,7 @@ do_move_dir_dir (const WPanel * panel, file_op_total_context_t * tctx, file_op_c
     if (panel != NULL)
     {
         /* In case of single directory, calculate totals. In case of many directories,
-           totals are calcuated already. */
+           totals are calculated already. */
         return_status =
             panel_operate_init_totals (panel, src_vpath, &src_stat, ctx, TRUE,
                                        FILEGUI_DIALOG_MULTI_ITEM);
@@ -1790,11 +1793,11 @@ panel_get_file (const WPanel * panel)
         int i;
 
         for (i = 0; i < panel->dir.len; i++)
-            if (panel->dir.list[i].f.marked)
+            if (panel->dir.list[i].f.marked != 0)
                 return panel->dir.list[i].fname->str;
     }
 
-    return panel->dir.list[panel->selected].fname->str;
+    return panel_current_entry (panel)->fname->str;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1806,7 +1809,7 @@ check_single_entry (const WPanel * panel, gboolean force_single, struct stat *sr
     gboolean ok;
 
     if (force_single)
-        source = selection (panel)->fname->str;
+        source = panel_current_entry (panel)->fname->str;
     else
         source = panel_get_file (panel);
 
@@ -1934,9 +1937,8 @@ panel_operate_generate_prompt (const WPanel * panel, FileOperation operation,
 /* --------------------------------------------------------------------------------------------- */
 
 static char *
-do_confirm_copy_move (const WPanel * panel, FileOperation operation, gboolean force_single,
-                      const char *source, struct stat *src_stat, file_op_context_t * ctx,
-                      gboolean * do_bg)
+do_confirm_copy_move (const WPanel * panel, gboolean force_single, const char *source,
+                      struct stat *src_stat, file_op_context_t * ctx, gboolean * do_bg)
 {
     const char *tmp_dest_dir;
     char *dest_dir;
@@ -1975,9 +1977,9 @@ do_confirm_copy_move (const WPanel * panel, FileOperation operation, gboolean fo
         src_stat = NULL;
 
     /* Generate confirmation prompt */
-    format = panel_operate_generate_prompt (panel, operation, src_stat);
+    format = panel_operate_generate_prompt (panel, ctx->operation, src_stat);
 
-    ret = file_mask_dialog (ctx, operation, source != NULL, format,
+    ret = file_mask_dialog (ctx, source != NULL, format,
                             source != NULL ? source : (const void *) &panel->marked, dest_dir,
                             do_bg);
 
@@ -2025,9 +2027,9 @@ do_confirm_erase (const WPanel * panel, const char *source, struct stat *src_sta
 /* --------------------------------------------------------------------------------------------- */
 
 static FileProgressStatus
-operate_single_file (const WPanel * panel, FileOperation operation, file_op_total_context_t * tctx,
-                     file_op_context_t * ctx, const char *src, struct stat *src_stat,
-                     const char *dest, filegui_dialog_type_t dialog_type)
+operate_single_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_context_t * ctx,
+                     const char *src, struct stat *src_stat, const char *dest,
+                     filegui_dialog_type_t dialog_type)
 {
     FileProgressStatus value;
     vfs_path_t *src_vpath;
@@ -2048,8 +2050,7 @@ operate_single_file (const WPanel * panel, FileOperation operation, file_op_tota
         is_file = !(is_link && ctx->follow_links);
     }
 
-
-    if (operation == OP_DELETE)
+    if (ctx->operation == OP_DELETE)
     {
         value = panel_operate_init_totals (panel, src_vpath, src_stat, ctx, !is_file, dialog_type);
         if (value == FILE_CONT)
@@ -2071,7 +2072,7 @@ operate_single_file (const WPanel * panel, FileOperation operation, file_op_tota
         {
             dest = temp;
 
-            switch (operation)
+            switch (ctx->operation)
             {
             case OP_COPY:
                 /* we use file_mask_op_follow_links only with OP_COPY */
@@ -2101,10 +2102,11 @@ operate_single_file (const WPanel * panel, FileOperation operation, file_op_tota
 
             case OP_MOVE:
 #ifdef ENABLE_BACKGROUND
-                /* create UI to show confirmation dialog */
                 if (!mc_global.we_are_background)
-                    file_op_context_create_ui (ctx, TRUE, FILEGUI_DIALOG_ONE_ITEM);
 #endif
+                    /* create UI to show confirmation dialog */
+                    file_op_context_create_ui (ctx, TRUE, FILEGUI_DIALOG_ONE_ITEM);
+
                 if (is_file)
                     value = move_file_file (panel, tctx, ctx, src, dest);
                 else
@@ -2128,8 +2130,8 @@ operate_single_file (const WPanel * panel, FileOperation operation, file_op_tota
 /* --------------------------------------------------------------------------------------------- */
 
 static FileProgressStatus
-operate_one_file (const WPanel * panel, FileOperation operation, file_op_total_context_t * tctx,
-                  file_op_context_t * ctx, const char *src, struct stat *src_stat, const char *dest)
+operate_one_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_context_t * ctx,
+                  const char *src, struct stat *src_stat, const char *dest)
 {
     FileProgressStatus value = FILE_CONT;
     vfs_path_t *src_vpath;
@@ -2142,7 +2144,7 @@ operate_one_file (const WPanel * panel, FileOperation operation, file_op_total_c
 
     is_file = !S_ISDIR (src_stat->st_mode);
 
-    if (operation == OP_DELETE)
+    if (ctx->operation == OP_DELETE)
     {
         if (is_file)
             value = erase_file (tctx, ctx, src_vpath);
@@ -2160,7 +2162,7 @@ operate_one_file (const WPanel * panel, FileOperation operation, file_op_total_c
         {
             dest = temp;
 
-            switch (operation)
+            switch (ctx->operation)
             {
             case OP_COPY:
                 /* we use file_mask_op_follow_links only with OP_COPY */
@@ -2866,7 +2868,7 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
 
     if (is_in_linklist (dest_dirs, src_vpath, &src_stat) != NULL)
     {
-        /* Don't copy a directory we created before (we don't want to copy 
+        /* Don't copy a directory we created before (we don't want to copy
            infinitely if a directory is copied into itself) */
         /* FIXME: should there be an error message and FILE_SKIP? - Norbert */
         return_status = FILE_CONT;
@@ -2917,7 +2919,7 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
     }
 
     lp = g_new0 (struct link, 1);
-    lp->vfs = vfs_path_get_by_index (src_vpath, -1)->class;
+    lp->vfs = vfs_path_get_last_path_vfs (src_vpath);
     lp->ino = src_stat.st_ino;
     lp->dev = src_stat.st_dev;
     parent_dirs = g_slist_prepend (parent_dirs, lp);
@@ -2993,7 +2995,7 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
 
         lp = g_new0 (struct link, 1);
         mc_stat (dst_vpath, &dst_stat);
-        lp->vfs = vfs_path_get_by_index (dst_vpath, -1)->class;
+        lp->vfs = vfs_path_get_last_path_vfs (dst_vpath);
         lp->ino = dst_stat.st_ino;
         lp->dev = dst_stat.st_dev;
         dest_dirs = g_slist_prepend (dest_dirs, lp);
@@ -3183,9 +3185,9 @@ dirsize_status_init_cb (status_msg_t * sm)
         b_width += str_term_width1 (b2_name) + 4 + 1;
 
     ui_width = MAX (COLS / 2, b_width + 6);
-    dsm->dirname = label_new (2, 3, "");
+    dsm->dirname = label_new (2, 3, NULL);
     group_add_widget (gd, dsm->dirname);
-    dsm->count_size = label_new (3, 3, "");
+    dsm->count_size = label_new (3, 3, NULL);
     group_add_widget (gd, dsm->count_size);
     group_add_widget (gd, hline_new (4, -1, -1));
 
@@ -3275,7 +3277,7 @@ compute_dir_size (const vfs_path_t * dirname_vpath, dirsize_status_msg_t * sm,
 /**
  * panel_operate:
  *
- * Performs one of the operations on the selection on the source_panel
+ * Performs one of the operations on the current on the source_panel
  * (copy, delete, move).
  *
  * Returns TRUE if did change the directory
@@ -3295,14 +3297,13 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
     const char *source = NULL;
     char *dest = NULL;
     vfs_path_t *dest_vpath = NULL;
-    char *save_cwd = NULL, *save_dest = NULL;
+    vfs_path_t *save_cwd = NULL, *save_dest = NULL;
     struct stat src_stat;
     gboolean ret_val = TRUE;
     int i;
     FileProgressStatus value;
     file_op_context_t *ctx;
     file_op_total_context_t *tctx;
-    vfs_path_t *tmp_vpath;
     filegui_dialog_type_t dialog_type = FILEGUI_DIALOG_ONE_ITEM;
 
     gboolean do_bg = FALSE;     /* do background operation? */
@@ -3333,9 +3334,7 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
     /* Show confirmation dialog */
     if (operation != OP_DELETE)
     {
-        dest =
-            do_confirm_copy_move (panel, operation, force_single, source, &src_stat, ctx, &do_bg);
-
+        dest = do_confirm_copy_move (panel, force_single, source, &src_stat, ctx, &do_bg);
         if (dest == NULL)
         {
             ret_val = FALSE;
@@ -3382,7 +3381,7 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
     {
         if (operation == OP_DELETE)
             dialog_type = FILEGUI_DIALOG_DELETE_ITEM;
-        else if (single_entry && S_ISDIR (selection (panel)->st.st_mode))
+        else if (single_entry && S_ISDIR (panel_current_entry (panel)->st.st_mode))
             dialog_type = FILEGUI_DIALOG_MULTI_ITEM;
         else if (single_entry || force_single)
             dialog_type = FILEGUI_DIALOG_ONE_ITEM;
@@ -3396,11 +3395,11 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
        invalid data. */
     if ((dest != NULL)
         && (mc_setctl (dest_vpath, VFS_SETCTL_STALE_DATA, GUINT_TO_POINTER (1)) != 0))
-        save_dest = g_strdup (dest);
+        save_dest = vfs_path_from_str (dest);
 
     if ((vfs_path_tokens_count (panel->cwd_vpath) != 0)
         && (mc_setctl (panel->cwd_vpath, VFS_SETCTL_STALE_DATA, GUINT_TO_POINTER (1)) != 0))
-        save_cwd = g_strdup (vfs_path_as_str (panel->cwd_vpath));
+        save_cwd = vfs_path_clone (panel->cwd_vpath);
 
     /* Now, let's do the job */
 
@@ -3425,9 +3424,7 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
             }
         }
 
-        value =
-            operate_single_file (panel, operation, tctx, ctx, source, &src_stat, dest, dialog_type);
-
+        value = operate_single_file (panel, tctx, ctx, source, &src_stat, dest, dialog_type);
         if ((value == FILE_CONT) && !force_single)
             unmark_files (panel);
     }
@@ -3465,13 +3462,13 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
             {
                 const char *source2;
 
-                if (!panel->dir.list[i].f.marked)
+                if (panel->dir.list[i].f.marked == 0)
                     continue;   /* Skip the unmarked ones */
 
                 source2 = panel->dir.list[i].fname->str;
                 src_stat = panel->dir.list[i].st;
 
-                value = operate_one_file (panel, operation, tctx, ctx, source2, &src_stat, dest);
+                value = operate_one_file (panel, tctx, ctx, source2, &src_stat, dest);
 
                 if (value == FILE_ABORT)
                     break;
@@ -3500,18 +3497,14 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
     /* Clean up */
     if (save_cwd != NULL)
     {
-        tmp_vpath = vfs_path_from_str (save_cwd);
-        mc_setctl (tmp_vpath, VFS_SETCTL_STALE_DATA, NULL);
-        vfs_path_free (tmp_vpath, TRUE);
-        g_free (save_cwd);
+        mc_setctl (save_cwd, VFS_SETCTL_STALE_DATA, NULL);
+        vfs_path_free (save_cwd, TRUE);
     }
 
     if (save_dest != NULL)
     {
-        tmp_vpath = vfs_path_from_str (save_dest);
-        mc_setctl (tmp_vpath, VFS_SETCTL_STALE_DATA, NULL);
-        vfs_path_free (tmp_vpath, TRUE);
-        g_free (save_dest);
+        mc_setctl (save_dest, VFS_SETCTL_STALE_DATA, NULL);
+        vfs_path_free (save_dest, TRUE);
     }
 
     linklist = free_linklist (linklist);
@@ -3537,9 +3530,10 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
 
     file_op_total_context_destroy (tctx);
   ret_fast:
-    /* update panels before redraw screen in file_op_total_context_destroy() */
-    update_panels (UP_OPTIMIZE, UP_KEEPSEL);
     file_op_context_destroy (ctx);
+
+    update_panels (UP_OPTIMIZE, UP_KEEPSEL);
+    repaint_screen ();
 
     return ret_val;
 }

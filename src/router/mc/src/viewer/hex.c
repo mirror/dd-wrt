@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for hex view
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -65,13 +65,14 @@ typedef enum
     MARK_CHANGED
 } mark_t;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static const char hex_char[] = "0123456789ABCDEF";
 
-/*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
-
+/*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 /** Determine the state of the current byte.
  *

@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Authors:
@@ -100,7 +100,7 @@ button_default_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm
 
         h->ret_value = b->action;
         if (b->callback == NULL || b->callback (b, b->action) != 0)
-            dlg_stop (h);
+            dlg_close (h);
 
         return MSG_HANDLED;
 

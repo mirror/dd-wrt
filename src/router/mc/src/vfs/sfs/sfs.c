@@ -1,7 +1,7 @@
 /*
    Single File fileSystem
 
-   Copyright (C) 1998-2022
+   Copyright (C) 1998-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -38,7 +38,6 @@
  */
 
 #include <config.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -102,6 +101,8 @@ typedef struct cachedfile
     char *cache;
 } cachedfile;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static GSList *head = NULL;
@@ -117,7 +118,9 @@ static struct
     sfs_flags_t flags;
 } sfs_info[MAXFS];
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
 static int
 cachedfile_compare (const void *a, const void *b)
@@ -195,7 +198,7 @@ sfs_vfmake (const vfs_path_t * vpath, vfs_path_t * cache_vpath)
                 ptr = path_element->path;
                 break;
             case '3':
-                ptr = vfs_path_get_by_index (cache_vpath, -1)->path;
+                ptr = vfs_path_get_last_path_str (cache_vpath);
                 break;
             case '%':
                 COPY_CHAR;
@@ -255,9 +258,7 @@ sfs_redirect (const vfs_path_t * vpath)
     cachedfile *cf;
     vfs_path_t *cache_vpath;
     int handle;
-    const vfs_path_element_t *path_element;
 
-    path_element = vfs_path_get_by_index (vpath, -1);
     cur = g_slist_find_custom (head, vfs_path_as_str (vpath), cachedfile_compare);
 
     if (cur != NULL)
@@ -267,7 +268,7 @@ sfs_redirect (const vfs_path_t * vpath)
         return cf->cache;
     }
 
-    handle = vfs_mkstemps (&cache_vpath, "sfs", path_element->path);
+    handle = vfs_mkstemps (&cache_vpath, "sfs", vfs_path_get_last_path_str (vpath));
 
     if (handle == -1)
         return "/SOMEONE_PLAYING_DIRTY_TMP_TRICKS_ON_US";

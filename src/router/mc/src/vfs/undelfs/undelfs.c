@@ -7,7 +7,7 @@
    Parts of this program were taken from the lsdel.c and dump.c files
    written by Ted Ts'o (tytso@mit.edu) for the ext2fs package.
 
-   Copyright (C) 1995-2022
+   Copyright (C) 1995-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -45,7 +45,6 @@
 
 #include <config.h>
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>             /* memset() */
@@ -111,6 +110,8 @@ typedef struct
     size_t count;               /* bytes to read */
 } undelfs_file;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 /* We only allow one opened ext2fs */
@@ -148,16 +149,13 @@ static void
 undelfs_get_path (const vfs_path_t * vpath, char **fsname, char **file)
 {
     const char *p, *dirname;
-    const vfs_path_element_t *path_element;
 
-    path_element = vfs_path_get_by_index (vpath, -1);
+    dirname = vfs_path_get_last_path_str (vpath);
 
     /* To look like filesystem, we have virtual directories
        undel://XXX, which have no subdirectories. XXX is replaced with
        hda5, sdb8 etc, which is assumed to live under /dev. 
        -- pavel@ucw.cz */
-
-    dirname = path_element->path;
 
     *fsname = NULL;
 
@@ -168,7 +166,7 @@ undelfs_get_path (const vfs_path_t * vpath, char **fsname, char **file)
 
     /* Since we don't allow subdirectories, it's easy to get a filename,
      * just scan backwards for a slash */
-    if (*dirname == 0)
+    if (*dirname == '\0')
         return;
 
     p = dirname + strlen (dirname);
@@ -335,9 +333,9 @@ static void *
 undelfs_opendir (const vfs_path_t * vpath)
 {
     char *file, *f = NULL;
-    const vfs_path_element_t *path_element;
+    const char *class_name;
 
-    path_element = vfs_path_get_by_index (vpath, -1);
+    class_name = vfs_path_get_last_path_vfs (vpath)->name;
     undelfs_get_path (vpath, &file, &f);
     if (file == NULL)
     {
@@ -381,10 +379,10 @@ undelfs_opendir (const vfs_path_t * vpath)
     /* Now load the deleted information */
     if (!undelfs_loaddel ())
         goto quit_opendir;
-    vfs_print_message (_("%s: done."), path_element->class->name);
+    vfs_print_message (_("%s: done."), class_name);
     return fs;
   quit_opendir:
-    vfs_print_message (_("%s: failure"), path_element->class->name);
+    vfs_print_message (_("%s: failure"), class_name);
     ext2fs_close (fs);
     fs = NULL;
     return 0;

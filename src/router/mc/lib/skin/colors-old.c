@@ -2,7 +2,7 @@
    Skins engine.
    Work with colors - backward compatibility
 
-   Copyright (C) 2009-2022
+   Copyright (C) 2009-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -38,6 +38,8 @@
 /*** global variables ****************************************************************************/
 
 /*** file scope macro definitions ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope type declarations ****************************************************************/
 
@@ -104,7 +106,9 @@ static const mc_skin_colors_old_t old_colors[] = {
 
 static const size_t num_old_colors = G_N_ELEMENTS (old_colors);
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
 static int
 old_color_comparator (const void *p1, const void *p2)

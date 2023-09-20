@@ -1,7 +1,7 @@
 /*
    UTF-8 strings utilities
 
-   Copyright (C) 2007-2022
+   Copyright (C) 2007-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -56,6 +56,8 @@ struct term_form
     size_t width;
     gboolean compose;
 };
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Interface functions
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc
 
    Written by:
@@ -78,6 +78,8 @@ char *mcview_show_eof = NULL;
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -265,7 +267,7 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
     if (succeeded)
         dlg_run (view_dlg);
     else
-        dlg_stop (view_dlg);
+        dlg_close (view_dlg);
 
     if (widget_get_state (vw, WST_CLOSED))
         widget_destroy (vw);

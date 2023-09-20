@@ -1,7 +1,7 @@
 /*
    Learn keys
 
-   Copyright (C) 1995-2022
+   Copyright (C) 1995-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -65,6 +65,8 @@ typedef struct
     char *sequence;
 } learnkey_t;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static WDialog *learn_dlg;
@@ -75,6 +77,7 @@ static int learn_total;
 static int learnok;
 static gboolean learnchanged = FALSE;
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -199,7 +202,7 @@ learn_check_key (int c)
                          ("Great! You have a complete terminal database!\n"
                           "All your keys work well."));
             }
-            dlg_stop (learn_dlg);
+            dlg_close (learn_dlg);
         }
         return TRUE;
     }
@@ -310,7 +313,7 @@ init_learn (void)
 
         learnkeys[i].button =
             WIDGET (button_new (y, x, B_USER + i, NARROW_BUTTON, buffer, learn_button));
-        learnkeys[i].label = WIDGET (label_new (y, x + 19, ""));
+        learnkeys[i].label = WIDGET (label_new (y, x + 19, NULL));
         group_add_widget (g, learnkeys[i].button);
         group_add_widget (g, learnkeys[i].label);
 

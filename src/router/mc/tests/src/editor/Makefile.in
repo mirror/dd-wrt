@@ -109,6 +109,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/windows-stat-inodes.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
+	$(top_srcdir)/m4.include/ax_check_pcre2.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/ax_require_defined.m4 \
 	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
@@ -516,7 +517,7 @@ LIBMC_RELEASE = @LIBMC_RELEASE@
 LIBMC_VERSION = @LIBMC_VERSION@
 LIBOBJS = @LIBOBJS@
 LIBS = @CHECK_LIBS@ $(top_builddir)/src/libinternal.la \
-	$(top_builddir)/lib/libmc.la @PCRE_LIBS@ $(am__append_1)
+	$(top_builddir)/lib/libmc.la $(am__append_1)
 LIBSSH_CFLAGS = @LIBSSH_CFLAGS@
 LIBSSH_LIBS = @LIBSSH_LIBS@
 LIBTOOL = @LIBTOOL@
@@ -552,7 +553,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PCRE_CPPFLAGS = @PCRE_CPPFLAGS@
+PCRE_CFLAGS = @PCRE_CFLAGS@
 PCRE_LIBS = @PCRE_LIBS@
 PERL = @PERL@
 PERL_FOR_BUILD = @PERL_FOR_BUILD@
@@ -640,8 +641,7 @@ AM_CPPFLAGS = \
 	-DTEST_SHARE_DIR=\"$(abs_srcdir)\" \
 	$(GLIB_CFLAGS) \
 	-I$(top_srcdir) \
-	@CHECK_CFLAGS@ \
-	@PCRE_CPPFLAGS@
+	@CHECK_CFLAGS@
 
 AM_LDFLAGS = @TESTS_LDFLAGS@
 EXTRA_DIST = mc.charsets test-data.txt.in

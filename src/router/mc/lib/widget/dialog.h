@@ -69,9 +69,15 @@ struct WDialog
     int ret_value;              /* Result of dlg_run() */
 
     /* Internal variables */
-    void *data;                 /* Data can be passed to dialog */
     char *event_group;          /* Name of event group for this dialog */
     Widget *bg;                 /* WFrame or WBackground */
+
+    /* Data can be passed to dialog */
+    union
+    {
+        void *p;
+        int i;
+    } data;
 
     dlg_shortcut_str get_shortcut;      /* Shortcut string */
     dlg_title_str get_title;    /* useless for modal dialogs */
@@ -84,12 +90,9 @@ extern dlg_colors_t dialog_colors;
 extern dlg_colors_t alarm_colors;
 extern dlg_colors_t listbox_colors;
 
-extern GList *top_dlg;
-
 /* A hook list for idle events */
 extern hook_t *idle_hook;
 
-extern gboolean fast_refresh;
 extern gboolean mouse_close_dialog;
 
 extern const global_keymap_t *dialog_map;
@@ -117,10 +120,7 @@ char *dlg_get_title (const WDialog * h, size_t len);
 cb_ret_t dlg_default_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data);
 void dlg_default_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event);
 
-void dlg_stop (WDialog * h);
-
-/* Redraw all dialogs */
-void do_refresh (void);
+void dlg_close (WDialog * h);
 
 /* --------------------------------------------------------------------------------------------- */
 /*** inline functions ****************************************************************************/

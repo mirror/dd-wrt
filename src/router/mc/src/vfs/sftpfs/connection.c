@@ -1,7 +1,7 @@
 /* Virtual File System: SFTP file system.
    The internal functions: connections
 
-   Copyright (C) 2011-2022
+   Copyright (C) 2011-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -54,6 +54,8 @@
 #define SHA1_DIGEST_LENGTH 20
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -319,7 +321,7 @@ sftpfs_read_known_hosts (struct vfs_s_super *super, GError ** mcerror)
                                 _("sftp: found host key of unsupported type: RSA1"));
             return FALSE;
         default:
-            mc_propagate_error (mcerror, 0, "%s %u", _("sftp: unknown host key type:"),
+            mc_propagate_error (mcerror, 0, "%s 0x%x", _("sftp: unknown host key type:"),
                                 (unsigned int) mask);
             return FALSE;
         }

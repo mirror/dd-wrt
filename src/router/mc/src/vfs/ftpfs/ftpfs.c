@@ -1,7 +1,7 @@
 /*
    Virtual File System: FTP file system.
 
-   Copyright (C) 1995-2022
+   Copyright (C) 1995-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -95,6 +95,7 @@ What to do with this?
 #include <inttypes.h>           /* uintmax_t */
 
 #include "lib/global.h"
+#include "lib/file-entry.h"
 #include "lib/util.h"
 #include "lib/strutil.h"        /* str_move() */
 #include "lib/mcconfig.h"
@@ -231,6 +232,16 @@ typedef struct
     gboolean append;
 } ftp_file_handler_t;
 
+/*** forward declarations (file scope functions) *************************************************/
+
+static char *ftpfs_get_current_directory (struct vfs_class *me, struct vfs_s_super *super);
+static int ftpfs_chdir_internal (struct vfs_class *me, struct vfs_s_super *super,
+                                 const char *remote_path);
+static int ftpfs_open_socket (struct vfs_class *me, struct vfs_s_super *super);
+static gboolean ftpfs_login_server (struct vfs_class *me, struct vfs_s_super *super,
+                                    const char *netrcpass);
+static gboolean ftpfs_netrc_lookup (const char *host, char **login, char **pass);
+
 /*** file scope variables ************************************************************************/
 
 static int code;
@@ -248,29 +259,6 @@ static const char *netrcp;
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
-/* --------------------------------------------------------------------------------------------- */
-
-/* char *ftpfs_translate_path (struct ftpfs_connection *bucket, char *remote_path)
-   Translate a Unix path, i.e. MC's internal path representation (e.g.
-   /somedir/somefile) to a path valid for the remote server. Every path
-   transferred to the remote server has to be mangled by this function
-   right prior to sending it.
-   Currently only Amiga ftp servers are handled in a special manner.
-
-   When the remote server is an amiga:
-   a) strip leading slash if necesarry
-   b) replace first occurrence of ":/" with ":"
-   c) strip trailing "/."
- */
-
-static char *ftpfs_get_current_directory (struct vfs_class *me, struct vfs_s_super *super);
-static int ftpfs_chdir_internal (struct vfs_class *me, struct vfs_s_super *super,
-                                 const char *remote_path);
-static int ftpfs_open_socket (struct vfs_class *me, struct vfs_s_super *super);
-static gboolean ftpfs_login_server (struct vfs_class *me, struct vfs_s_super *super,
-                                    const char *netrcpass);
-static gboolean ftpfs_netrc_lookup (const char *host, char **login, char **pass);
-
 /* --------------------------------------------------------------------------------------------- */
 
 static void
@@ -298,6 +286,17 @@ ftpfs_default_stat (struct vfs_class *me)
 
 /* --------------------------------------------------------------------------------------------- */
 
+/* Translate a Unix path, i.e. MC's internal path representation (e.g.
+   /somedir/somefile) to a path valid for the remote server. Every path
+   transferred to the remote server has to be mangled by this function
+   right prior to sending it.
+   Currently only Amiga ftp servers are handled in a special manner.
+
+   When the remote server is an amiga:
+   a) strip leading slash if necessary
+   b) replace first occurrence of ":/" with ":"
+   c) strip trailing "/."
+ */
 static char *
 ftpfs_translate_path (struct vfs_class *me, struct vfs_s_super *super, const char *remote_path)
 {
@@ -1156,13 +1155,10 @@ ftpfs_setup_passive_epsv (struct vfs_class *me, struct vfs_s_super *super,
 
     /* (|||<port>|) */
     c = strchr (reply_str, '|');
-    if (c == NULL)
-        return FALSE;
-    if (strlen (c) > 3)
-        c += 3;
-    else
+    if (c == NULL || strlen (c) <= 3)
         return FALSE;
 
+    c += 3;
     port = atoi (c);
     if (port < 0 || port > 65535)
         return FALSE;
@@ -1411,7 +1407,7 @@ ftpfs_initconn (struct vfs_class *me, struct vfs_s_super *super)
         close (data_sock);
     }
 
-    /* If passive setup is diabled or failed, fallback to active connections */
+    /* If passive setup is disabled or failed, fallback to active connections */
     if (!ftp_super->use_passive_connection)
     {
         int data_sock;
@@ -1597,7 +1593,7 @@ resolve_symlink_without_ls_options (struct vfs_class *me, struct vfs_s_super *su
     dir->symlink_status = FTPFS_RESOLVING_SYMLINKS;
     for (flist = dir->file_list->next; flist != dir->file_list; flist = flist->next)
     {
-        /* flist->data->l_stat is alread initialized with 0 */
+        /* flist->data->l_stat is already initialized with 0 */
         fel = flist->data;
         if (S_ISLNK (fel->s.st_mode) && fel->linkname != NULL)
         {
@@ -1890,13 +1886,13 @@ ftpfs_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, const char *remot
     {
         /* The LIST command may produce an empty output. In such scenario
            it is not clear whether this is caused by  'remote_path' being
-           a non-existent path or for some other reason (listing emtpy
+           a non-existent path or for some other reason (listing empty
            directory without the -a option, non-readable directory, etc.).
 
            Since 'dir_load' is a crucial method, when it comes to determine
            whether a given path is a _directory_, the code must try its best
            to determine the type of 'remote_path'. The only reliable way to
-           achieve this is trough issuing a CWD command. */
+           achieve this is through issuing a CWD command. */
 
         cd_first = TRUE;
         goto again;
@@ -2125,28 +2121,28 @@ ftpfs_send_command (const vfs_path_t * vpath, const char *cmd, int flags)
     char *p;
     struct vfs_s_super *super;
     int r;
-    const vfs_path_element_t *path_element;
+    struct vfs_class *me;
     gboolean flush_directory_cache = (flags & OPT_FLUSH) != 0;
 
-    path_element = vfs_path_get_by_index (vpath, -1);
+    me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
     rpath = vfs_s_get_path (vpath, &super, 0);
     if (rpath == NULL)
         return (-1);
 
-    p = ftpfs_translate_path (path_element->class, super, rpath);
-    r = ftpfs_command (path_element->class, super, WAIT_REPLY, cmd, p);
+    p = ftpfs_translate_path (me, super, rpath);
+    r = ftpfs_command (me, super, WAIT_REPLY, cmd, p);
     g_free (p);
     vfs_stamp_create (vfs_ftpfs_ops, super);
     if ((flags & OPT_IGNORE_ERROR) != 0)
         r = COMPLETE;
     if (r != COMPLETE)
     {
-        path_element->class->verrno = EPERM;
+        me->verrno = EPERM;
         return (-1);
     }
     if (flush_directory_cache)
-        vfs_s_invalidate (path_element->class, super);
+        vfs_s_invalidate (me, super);
     return 0;
 }
 
@@ -2431,12 +2427,12 @@ ftpfs_fill_names (struct vfs_class *me, fill_names_f func)
     for (iter = VFS_SUBCLASS (me)->supers; iter != NULL; iter = g_list_next (iter))
     {
         const struct vfs_s_super *super = (const struct vfs_s_super *) iter->data;
-        char *name;
+        GString *name;
 
         name = vfs_path_element_build_pretty_path_str (super->path_element);
 
-        func (name);
-        g_free (name);
+        func (name->str);
+        g_string_free (name, TRUE);
     }
 }
 

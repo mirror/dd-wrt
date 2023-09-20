@@ -1,7 +1,7 @@
 /*
    Panel layout module for the Midnight Commander
 
-   Copyright (C) 1995-2022
+   Copyright (C) 1995-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -46,7 +46,7 @@
 #include "lib/tty/key.h"
 #include "lib/tty/mouse.h"
 #include "lib/mcconfig.h"
-#include "lib/vfs/vfs.h"        /* For _vfs_get_cwd () */
+#include "lib/vfs/vfs.h"        /* vfs_get_cwd () */
 #include "lib/strutil.h"
 #include "lib/widget.h"
 #include "lib/event.h"
@@ -136,6 +136,8 @@ typedef struct
     int output_lines;
 } layout_t;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static struct
@@ -185,6 +187,7 @@ static int output_lines_label_len;
 
 static WButton *bleft_widget, *bright_widget;
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -828,7 +831,7 @@ setup_panels (void)
     if (active)
         widget_set_state (mw, WST_SUSPENDED, TRUE);
 
-    /* iniitial height of panels */
+    /* initial height of panels */
     height =
         r->lines - (menubar_visible ? 1 : 0) - (mc_global.message_visible ? 1 : 0) -
         (command_prompt ? 1 : 0) - (mc_global.keybar_visible ? 1 : 0);
@@ -1170,7 +1173,7 @@ create_panel (int num, panel_view_mode_t type)
     /* Restoring saved path from panels.ini for nonlist panel */
     /* when it's first creation (for example view_info) */
     if (old_widget == NULL && type != view_listing)
-        panels[num].last_saved_dir = _vfs_get_cwd ();
+        panels[num].last_saved_dir = vfs_get_cwd ();
 
     switch (type)
     {
@@ -1197,7 +1200,7 @@ create_panel (int num, panel_view_mode_t type)
         new_widget = WIDGET (mcview_new (r.y, r.x, r.lines, r.cols, TRUE));
         the_other_panel = PANEL (panels[the_other].widget);
         if (the_other_panel != NULL)
-            file_name = the_other_panel->dir.list[the_other_panel->selected].fname->str;
+            file_name = panel_current_entry (the_other_panel)->fname->str;
         else
             file_name = "";
 
@@ -1258,7 +1261,7 @@ create_panel (int num, panel_view_mode_t type)
      * It's just a quick hack to prevent segfaults. Comment out and
      * try following:
      * - select left panel
-     * - invoke menue left/tree
+     * - invoke menu left/tree
      * - as long as you stay in the left panel almost everything that uses
      *   current_panel causes segfault, e.g. C-Enter, C-x c, ...
      */
@@ -1296,11 +1299,11 @@ swap_panels (void)
         panelswap (marked);
         panelswap (dirs_marked);
         panelswap (total);
-        panelswap (top_file);
-        panelswap (selected);
+        panelswap (top);
+        panelswap (current);
         panelswap (is_panelized);
+        panelswap (panelized_descr);
         panelswap (dir_stat);
-        panelswap (sort_field);
 #undef panelswap
 
         panel1->quick_search.active = FALSE;

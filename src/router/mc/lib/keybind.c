@@ -1,7 +1,7 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2005-2022
+   Copyright (C) 2005-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -50,6 +50,8 @@ typedef struct name_keymap_t
     const char *name;
     long val;
 } name_keymap_t;
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -382,6 +384,7 @@ static name_keymap_t command_names[] = {
 static const size_t num_command_names = G_N_ELEMENTS (command_names) - 1;
 /* *INDENT-ON* */
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -435,7 +438,7 @@ keybind_cmd_bind (GArray * keymap, const char *keybind, long action)
     char *caption = NULL;
     long key;
 
-    key = lookup_key (keybind, &caption);
+    key = tty_keyname_to_keycode (keybind, &caption);
     keymap_add (keymap, key, action, caption);
     g_free (caption);
 }

@@ -1,7 +1,7 @@
 /* Virtual File System: SFTP file system.
    The SSH config parser
 
-   Copyright (C) 2011-2022
+   Copyright (C) 2011-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -67,6 +67,8 @@ enum config_var_type
     BOOLEAN,
     FILENAME
 };
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

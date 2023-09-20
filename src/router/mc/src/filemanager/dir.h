@@ -9,7 +9,7 @@
 
 #include "lib/global.h"
 #include "lib/search.h"
-#include "lib/util.h"
+#include "lib/file-entry.h"
 #include "lib/vfs/vfs.h"
 
 /*** typedefs(not structures) and defined constants **********************************************/
@@ -109,7 +109,7 @@ void file_filter_clear (file_filter_t * filter);
 static inline gboolean
 link_isdir (const file_entry_t * file)
 {
-    return (gboolean) file->f.link_to_dir;
+    return (file->f.link_to_dir != 0);
 }
 
 #endif /* MC__DIR_H */

@@ -32,6 +32,7 @@ SRC_mc_utils = \
 libmc_la_SOURCES = \
 	$(SUBLIB_includes) \
 	$(SRC_mc_utils) \
+	file-entry.h \
 	fileloc.h \
 	fs.h \
 	hook.c hook.h \
@@ -72,5 +73,3 @@ if HAVE_GMODULE
 else
     libmc_la_LIBADD += $(GLIB_LIBS)
 endif
-
-libmc_la_LIBADD += $(PCRE_LIBS)

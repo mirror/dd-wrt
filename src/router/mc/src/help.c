@@ -1,7 +1,7 @@
 /*
    Hypertext file browser.
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -29,7 +29,7 @@
  *  node ends with a ^D character and starts with a bracket, then the
  *  name of the node and then a closing bracket. Right after the closing
  *  bracket a newline is placed. This newline is not to be displayed by
- *  the help viewer and must be skipped - its sole purpose is to faciliate
+ *  the help viewer and must be skipped - its sole purpose is to facilitate
  *  the work of the people managing the help file template (xnc.hlp) .
  *
  *  Links in the hypertext file are specified like this: the text that
@@ -40,7 +40,7 @@
  *  The file must contain a ^D at the beginning and at the end of the
  *  file or the program will not be able to detect the end of file.
  *
- *  Lazyness/widgeting attack: This file does use the dialog manager
+ *  Laziness/widgeting attack: This file does use the dialog manager
  *  and uses mainly the dialog to achieve the help work.  there is only
  *  one specialized widget and it's only used to forward the mouse messages
  *  to the appropriate routine.
@@ -90,6 +90,8 @@ typedef struct Link_Area
     const char *link_name;
 } Link_Area;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
 static char *fdata = NULL;      /* Pointer to the loaded data file */
@@ -113,8 +115,7 @@ static struct
 static GSList *link_area = NULL;
 static gboolean inside_link_area = FALSE;
 
-static cb_ret_t help_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data);
-
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -834,7 +835,7 @@ help_execute_cmd (long command)
         help_prev_node ();
         break;
     case CK_Quit:
-        dlg_stop (whelp);
+        dlg_close (whelp);
         break;
     default:
         ret = MSG_NOT_HANDLED;
@@ -888,7 +889,7 @@ help_resize (WDialog * h)
     r.lines = help_lines + 4;
     r.cols = HELP_WINDOW_WIDTH + 4;
     dlg_default_callback (w, NULL, MSG_RESIZE, 0, &r);
-    bb = find_buttonbar (h);
+    bb = buttonbar_find (h);
     widget_set_size (WIDGET (bb), LINES - 1, 0, 1, COLS);
 
     return MSG_HANDLED;

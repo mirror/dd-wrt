@@ -98,32 +98,33 @@ AC_DEFUN([mc_WITH_NCURSES], [
         dnl check the user supplied location
         mc_CHECK_NCURSES_BY_PATH([$ac_ncurses_inc_path],[$ac_ncurses_lib_path])
 
-        LIBS=
-        AC_SEARCH_LIBS([has_colors], [ncurses], [MCLIBS="$MCLIBS $LIBS"], 
+        LIBS="$MCLIBS"
+        AC_SEARCH_LIBS([has_colors], [ncurses], [], 
                        [AC_MSG_ERROR([Cannot find ncurses library])])
-        AC_SEARCH_LIBS([stdscr], [tinfo ncurses], [MCLIBS="$MCLIBS $LIBS"],
+        AC_SEARCH_LIBS([stdscr], [tinfo], [],
                        [AC_MSG_ERROR([Cannot find a library providing stdscr])])
-
+        MCLIBS="$LIBS"
 
         screen_type=ncurses
         screen_msg="NCurses"
         AC_DEFINE(USE_NCURSES, 1, 
                   [Define to use ncurses for screen management])
     else
-        LIBS=
-        AC_SEARCH_LIBS([addwstr], [ncursesw ncurses curses], [MCLIBS="$MCLIBS $LIBS";ncursesw_found=yes],
+        LIBS="$MCLIBS"
+        AC_SEARCH_LIBS([addwstr], [ncursesw ncurses curses], [ncursesw_found=yes],
                        [AC_MSG_WARN([Cannot find ncurses library, that support wide characters])])
-
-        AC_SEARCH_LIBS([stdscr], [tinfow tinfo ncursesw ncurses curses], [MCLIBS="$MCLIBS $LIBS"],
-                       [AC_MSG_ERROR([Cannot find a library providing stdscr])])
+        MCLIBS="$LIBS"
 
         if test x"$ncursesw_found" = "x"; then
-            LIBS=
-            AC_SEARCH_LIBS([has_colors], [ncurses curses], [MCLIBS="$MCLIBS $LIBS"], 
+            LIBS="$MCLIBS"
+            AC_SEARCH_LIBS([has_colors], [ncurses curses], [], 
                            [AC_MSG_ERROR([Cannot find ncurses library])])
-            AC_SEARCH_LIBS([stdscr], [tinfo ncurses curses], [MCLIBS="$MCLIBS $LIBS"],
-                           [AC_MSG_ERROR([Cannot find a library providing stdscr])])
+            MCLIBS="$LIBS"
         fi
+        LIBS="$MCLIBS"
+        AC_SEARCH_LIBS([stdscr], [tinfow tinfo], [],
+                       [AC_MSG_ERROR([Cannot find a library providing stdscr])])
+        MCLIBS="$LIBS"
 
         dnl Check the header
         ncurses_h_found=
@@ -133,6 +134,8 @@ AC_DEFUN([mc_WITH_NCURSES], [
         if test x"$ncurses_h_found" = "x"; then
             AC_MSG_ERROR([Cannot find ncurses header file])
         fi
+
+        AC_CHECK_HEADERS([ncurses/term.h])
 
         screen_type=ncurses
         screen_msg="NCurses"

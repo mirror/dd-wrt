@@ -8,7 +8,7 @@
 # 666ac67b8cef279621e9f9f0d4368bd5_672ede5, 2018
 # 7ad110ef65cb8fea3e45887cffdf497a_28ca6f3 <3e77beb79c064caff61514bbc685d086_451299>, 2016
 # Nicolae Crefelean, 2014,2019
-# Simona Iacob <s@zp1.net>, 2021-2022
+# Simona Iacob <s@zp1.net>, 2021-2023
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Sorin Sfirlogea, 2016
 # Vitalie Ciubotaru <vitalie@ciubotaru.tk>, 2015
@@ -16,10 +16,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-01-21 18:03+0100\n"
+"POT-Creation-Date: 2023-08-13 21:07+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Simona Iacob <s@zp1.net>, 2021-2022\n"
-"Language-Team: Romanian (http://www.transifex.com/mc/mc/language/ro/)\n"
+"Last-Translator: Simona Iacob <s@zp1.net>, 2021-2023\n"
+"Language-Team: Romanian (http://app.transifex.com/mc/mc/language/ro/)\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -834,8 +834,8 @@ msgstr "Eroare de interpretare a argumentelor!"
 msgid "No arguments given to the viewer."
 msgstr "Nu au fost date argumente către vizualizator."
 
-msgid "Two files are required to envoke the diffviewer."
-msgstr "Sunt necesare două fișiere pentru a invoca vizualizatorul de diferențe"
+msgid "Two files are required to invoke the diffviewer."
+msgstr "Sunt necesare două fișiere pentru a invoca diffviewer."
 
 msgid "Background protocol error"
 msgstr "Eroare în protocolul de fundal"
@@ -1637,8 +1637,8 @@ msgstr ""
 "Un editor de text ușor de utilizat\n"
 "creat pentru Midnight Commander."
 
-msgid "Copyright (C) 1996-2022 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2022 Fundația pentru Software Liber"
+msgid "Copyright (C) 1996-2023 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2023 Fundația pentru Software Liber"
 
 msgid "About"
 msgstr "Despre"
@@ -2173,11 +2173,10 @@ msgstr "Sarcini în fundal"
 
 #, c-format
 msgid ""
-"Cannot chdir to \"%s\"\n"
+"Cannot change directory to\n"
+"%s\n"
 "%s"
 msgstr ""
-"Nu se poate chdir în \"%s\"\n"
-"%s"
 
 msgid "Secure deletion"
 msgstr "Ștergere securizată"
@@ -2273,9 +2272,6 @@ msgid ""
 msgstr ""
 "Nu se poate chattr \"%s\"\n"
 "%s"
-
-msgid "Cannot change attributes on non-local filesystems"
-msgstr "Nu se pot modifica atributele pe sisteme de fișiere non-locale"
 
 #, c-format
 msgid ""
@@ -2378,9 +2374,6 @@ msgstr "Introdu numele mașinii (F1 pentru detalii):"
 msgid "Files tagged, want to cd?"
 msgstr "Există fișiere marcate, doriți să cd?"
 
-msgid "Cannot change directory"
-msgstr "Nu pot deschide directorul %s"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Leagă %s la:"
@@ -2395,10 +2388,6 @@ msgstr "legătură: %s"
 #, c-format
 msgid "symlink: %s"
 msgstr "legătură: %s"
-
-#, c-format
-msgid "Cannot chdir to \"%s\""
-msgstr "Nu se poate chdir în \"%s\""
 
 msgid "View file"
 msgstr "Vizualizare fișier"
@@ -2538,31 +2527,34 @@ msgstr ""
 "Vă rugăm să copiați modificările din fișierul vechi în cel nou."
 
 #, c-format
-msgid " %s%s file error"
-msgstr " %s%s eroare fișier"
+msgid ""
+"The format of the\n"
+"%s%s\n"
+"file has changed with version 4.0.\n"
+"It seems that the installation has failed.\n"
+"Please fetch a fresh copy from the Midnight Commander package."
+msgstr ""
+"Formatul de\n"
+"%s%s\n"
+"s-a modificat odată cu versiunea 4.0.\n"
+"Se pare că instalarea a eșuat.\n"
+"Vă rugăm să obțineți o copie nouă din pachetul Midnight Commander."
 
 #, c-format
 msgid ""
-"The format of the %s%s file has changed with version 4.0. It seems that the "
-"installation has failed. Please fetch a fresh copy from the Midnight "
-"Commander package."
+"The format of the\n"
+"%s\n"
+"file has changed with version 4.0.\n"
+"You may either want to copy it from\n"
+"%s%s\n"
+"or use that file as an example of how to write it."
 msgstr ""
-"Formatul fișierului %s%s s-a schimbat odată cu versiunea 4.0. Se pare că "
-"instalarea a eșuat. Vă rugăm să obțineți o copie nouă din pachetul Midnight "
-"Commander."
-
-#, c-format
-msgid "%s file error"
-msgstr "%s eroare fișier"
-
-#, c-format
-msgid ""
-"The format of the %s file has changed with version 4.0. You may either want "
-"to copy it from %s%s or use that file as an example of how to write it."
-msgstr ""
-"Formatul fișierului %s s-a schimbat odată cu versiunea 4.0. Este posibil să "
-"doriți să îl copiați de la%s%s sau să utilizați acest fișier ca exemplu de "
-"scriere."
+"Formatul de\n"
+"%s\n"
+"s-a modificat odată cu versiunea 4.0.\n"
+"Este posibil să doriți să îl copiați de la\n"
+"%s%s\n"
+"sau folosiți fișierul respectiv ca exemplu de scriere a acestuia."
 
 msgid "DialogTitle|Copy"
 msgstr "DialogTitle|Copiere"
@@ -2943,8 +2935,8 @@ msgid "Con&tinue"
 msgstr "Con&tinuă"
 
 #, c-format
-msgid "%d:%02d.%02d"
-msgstr "%d:%02d.%02d"
+msgid "%d:%02d:%02d"
+msgstr "%d:%02d:%02d"
 
 #, c-format
 msgid "ETA %s"
@@ -3532,9 +3524,6 @@ msgstr "Proprietar: %s/%s"
 #, c-format
 msgid "Links:      %d"
 msgstr "Legături: %d"
-
-msgid "Attributes: not supported"
-msgstr "Atribute: nu este acceptat"
 
 #, c-format
 msgid "Attributes: %s"
@@ -4168,9 +4157,8 @@ msgstr ""
 "Sfârșit de fișier (EOF) neașteptat\n"
 "%s"
 
-#, fuzzy
 msgid "Inconsistent archive"
-msgstr "Arhivă tar trunchiată"
+msgstr "Arhivă inconsistentă"
 
 #, c-format
 msgid ""
@@ -4521,14 +4509,6 @@ msgstr "sftp: (Ctrl-G întrerupe) Afișare... %s"
 msgid "sftp: Listing done."
 msgstr "sftp: Afișarea a fost efectuată."
 
-#, c-format
-msgid ""
-"Cannot open tar archive\n"
-"%s"
-msgstr ""
-"Nu pot deschide arhiva tar\n"
-"%s"
-
 msgid "Inconsistent tar archive"
 msgstr "Arhivă tar trunchiată"
 
@@ -4537,11 +4517,20 @@ msgstr "Sfârșit de fișier (EOF) neașteptat în fișierul arhivă"
 
 #, c-format
 msgid ""
-"%s\n"
-"doesn't look like a tar archive."
+"Cannot open tar archive\n"
+"%s"
 msgstr ""
+"Nu pot deschide arhiva tar\n"
+"%s"
+
+#, c-format
+msgid ""
 "%s\n"
-"nu pare a fi o arhivă tar."
+"doesn't look like a tar archive"
+msgstr ""
+
+msgid "tar: mc_lseek not stopped at a record boundary"
+msgstr ""
 
 msgid "undelfs: error"
 msgstr "undelfs: eroare"

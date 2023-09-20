@@ -1,7 +1,7 @@
 /*
    Search & replace engine of MCEditor.
 
-   Copyright (C) 2021-2022
+   Copyright (C) 2021-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -63,6 +63,8 @@ edit_search_options_t edit_search_options = {
 #define B_SKIP_REPLACE (B_USER+3)
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 
@@ -134,7 +136,10 @@ edit_dialog_search_show (WEdit * edit)
 
         tmp = str_convert_to_input (search_text);
         g_free (search_text);
-        search_text = g_string_free (tmp, FALSE);
+        if (tmp != NULL)
+            search_text = g_string_free (tmp, FALSE);
+        else
+            search_text = g_strdup ("");
     }
 #endif
 
@@ -219,7 +224,7 @@ edit_dialog_replace_prompt_show (WEdit * edit, char *from_text, char *to_text, i
     int retval;
 
     if (xpos == -1)
-        xpos = w->rect.x + option_line_state_width + 1;
+        xpos = w->rect.x + edit_options.line_state_width + 1;
     if (ypos == -1)
         ypos = w->rect.y + w->rect.lines / 2;
     /* Sometimes menu can hide replaced text. I don't like it */
@@ -554,9 +559,12 @@ edit_replace_cmd__conv_to_input (char *str)
     GString *tmp;
 
     tmp = str_convert_to_input (str);
-    if (tmp->len != 0)
-        return g_string_free (tmp, FALSE);
-    g_string_free (tmp, TRUE);
+    if (tmp != NULL)
+    {
+        if (tmp->len != 0)
+            return g_string_free (tmp, FALSE);
+        g_string_free (tmp, TRUE);
+    }
 #endif
     return g_strdup (str);
 }

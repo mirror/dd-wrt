@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2022
+   Copyright (C) 1994-2023
    Free Software Foundation, Inc.
 
    Authors:
@@ -61,9 +61,13 @@ typedef struct
     size_t max_width;
 } history_dlg_data;
 
+/*** forward declarations (file scope functions) *************************************************/
+
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
 history_dlg_reposition (WDialog * dlg_head)
@@ -73,10 +77,10 @@ history_dlg_reposition (WDialog * dlg_head)
     WRect r;
 
     /* guard checks */
-    if ((dlg_head == NULL) || (dlg_head->data == NULL))
+    if (dlg_head == NULL || dlg_head->data.p == NULL)
         return MSG_NOT_HANDLED;
 
-    data = (history_dlg_data *) dlg_head->data;
+    data = (history_dlg_data *) dlg_head->data.p;
 
     y = data->y;
     he = data->count + 2;
@@ -138,7 +142,7 @@ history_dlg_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
                 return MSG_NOT_HANDLED;
             }
 
-            dlg_stop (d);
+            dlg_close (d);
             return MSG_HANDLED;
         }
 
@@ -227,7 +231,7 @@ history_show (history_descriptor_t * hd)
     query_dlg =
         dlg_create (TRUE, 0, 0, 4, 4, WPOS_KEEP_DEFAULT, TRUE, dialog_colors, history_dlg_callback,
                     NULL, "[History-query]", _("History"));
-    query_dlg->data = &hist_data;
+    query_dlg->data.p = &hist_data;
 
     /* this call makes list stick to all sides of dialog, effectively make
        it be resized with dialog */
@@ -248,13 +252,13 @@ history_show (history_descriptor_t * hd)
         if (hd->current < 0 || (size_t) hd->current >= count)
             listbox_select_last (hd->listbox);
         else
-            listbox_select_entry (hd->listbox, count - 1 - (size_t) hd->current);
+            listbox_set_current (hd->listbox, count - 1 - (size_t) hd->current);
     }
     else
     {
         /* history is below base widget -- keep order to place recent item on top  */
         if (hd->current > 0)
-            listbox_select_entry (hd->listbox, hd->current);
+            listbox_set_current (hd->listbox, hd->current);
     }
 
     dlg_ret = dlg_run (query_dlg);

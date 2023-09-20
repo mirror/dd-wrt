@@ -1,7 +1,7 @@
 /*
    Common code for testing functions in src/execute.c file.
 
-   Copyright (C) 2013-2022
+   Copyright (C) 2013-2023
 
    Free Software Foundation, Inc.
 
@@ -48,22 +48,20 @@ vfs_file_is_local (const vfs_path_t * vpath)
 }
 
 static void
-vfs_file_is_local__init (void)
+vpath_captured_free (gpointer data)
 {
-    vfs_file_is_local__vpath__captured = g_ptr_array_new ();
+    vfs_path_free ((vfs_path_t *) data, TRUE);
 }
 
 static void
-vpath_captured_free (gpointer data, gpointer user_data)
+vfs_file_is_local__init (void)
 {
-    (void) user_data;
-    vfs_path_free ((vfs_path_t *) data, TRUE);
+    vfs_file_is_local__vpath__captured = g_ptr_array_new_with_free_func (vpath_captured_free);
 }
 
 static void
 vfs_file_is_local__deinit (void)
 {
-    g_ptr_array_foreach (vfs_file_is_local__vpath__captured, vpath_captured_free, NULL);
     g_ptr_array_free (vfs_file_is_local__vpath__captured, TRUE);
 }
 
@@ -193,13 +191,12 @@ mc_stat (const vfs_path_t * vpath, struct stat *stat_ignored)
 static void
 mc_stat__init (void)
 {
-    mc_stat__vpath__captured = g_ptr_array_new ();
+    mc_stat__vpath__captured = g_ptr_array_new_with_free_func (vpath_captured_free);
 }
 
 static void
 mc_stat__deinit (void)
 {
-    g_ptr_array_foreach (mc_stat__vpath__captured, vpath_captured_free, NULL);
     g_ptr_array_free (mc_stat__vpath__captured, TRUE);
     mc_stat__vpath__captured = NULL;
 }

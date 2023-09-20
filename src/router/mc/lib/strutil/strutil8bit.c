@@ -1,7 +1,7 @@
 /*
    8bit strings utilities
 
-   Copyright (C) 2007-2022
+   Copyright (C) 2007-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -55,6 +55,8 @@ static inline int char_##func_name(char c)     \
 }
 
 /*** file scope type declarations ****************************************************************/
+
+/*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
 

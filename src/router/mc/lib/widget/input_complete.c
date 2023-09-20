@@ -2,7 +2,7 @@
    Input line filename/username/hostname/variable/command completion.
    (Let mc type for you...)
 
-   Copyright (C) 1995-2022
+   Copyright (C) 1995-2023
    Free Software Foundation, Inc.
 
    Written by:
@@ -87,6 +87,11 @@ typedef struct
     input_complete_t flags;
 } try_complete_automation_state_t;
 
+/*** forward declarations (file scope functions) *************************************************/
+
+char **try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags);
+void complete_engine_fill_completions (WInput * in);
+
 /*** file scope variables ************************************************************************/
 
 static char **hosts = NULL;
@@ -99,11 +104,9 @@ static int min_end;
 static int start = 0;
 static int end = 0;
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
-
-char **try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags);
-void complete_engine_fill_completions (WInput * in);
 
 #ifdef DO_COMPLETION_DEBUG
 /**
@@ -665,7 +668,6 @@ command_completion_function (const char *text, int state, input_complete_t flags
                 expanded = tilde_expand (*cur_path != '\0' ? cur_path : ".");
                 cur_word = mc_build_filename (expanded, u_text, (char *) NULL);
                 g_free (expanded);
-                canonicalize_pathname (cur_word);
                 cur_path = strchr (cur_path, '\0') + 1;
                 init_state = state;
             }
@@ -1042,7 +1044,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
         case KEY_RIGHT:
             bl = 0;
             h->ret_value = 0;
-            dlg_stop (h);
+            dlg_close (h);
             return MSG_HANDLED;
 
         case KEY_BACKSPACE:
@@ -1051,7 +1053,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
             if (end == 0)
             {
                 h->ret_value = 0;
-                dlg_stop (h);
+                dlg_close (h);
             }
             /* Refill the list box and start again */
             else if (end == min_end)
@@ -1059,7 +1061,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                 end = str_get_prev_char (input->buffer->str + end) - input->buffer->str;
                 input_handle_char (input, parm);
                 h->ret_value = B_USER;
-                dlg_stop (h);
+                dlg_close (h);
             }
             else
             {
@@ -1076,7 +1078,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 
                     if (strncmp (input->buffer->str + start, le->text, new_end - start) == 0)
                     {
-                        listbox_select_entry (LISTBOX (g->current->data), i);
+                        listbox_set_current (LISTBOX (g->current->data), i);
                         end = new_end;
                         input_handle_char (input, parm);
                         widget_draw (WIDGET (g->current->data));
@@ -1098,7 +1100,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 
                 /* This means we want to refill the list box and start again */
                 h->ret_value = B_USER;
-                dlg_stop (h);
+                dlg_close (h);
             }
             else
             {
@@ -1134,7 +1136,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                         if (need_redraw == 0)
                         {
                             need_redraw = 1;
-                            listbox_select_entry (LISTBOX (g->current->data), i);
+                            listbox_set_current (LISTBOX (g->current->data), i);
                             last_text = le->text;
                         }
                         else
@@ -1190,7 +1192,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                 else if (need_redraw == 1)
                 {
                     h->ret_value = B_ENTER;
-                    dlg_stop (h);
+                    dlg_close (h);
                 }
                 bl = 0;
             }

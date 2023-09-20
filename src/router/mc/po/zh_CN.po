@@ -18,10 +18,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2023-01-21 18:03+0100\n"
+"POT-Creation-Date: 2023-08-13 21:07+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Gurbuzguven <6mehmet6@gmail.com>, 2021\n"
-"Language-Team: Chinese (China) (http://www.transifex.com/mc/mc/language/"
+"Language-Team: Chinese (China) (http://app.transifex.com/mc/mc/language/"
 "zh_CN/)\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -824,8 +824,8 @@ msgstr "参数解析错误!"
 msgid "No arguments given to the viewer."
 msgstr "查看器没有指定参数。"
 
-msgid "Two files are required to envoke the diffviewer."
-msgstr "需要两个文件才能调用差异查看器。"
+msgid "Two files are required to invoke the diffviewer."
+msgstr ""
 
 msgid "Background protocol error"
 msgstr "后台协议错误"
@@ -1625,7 +1625,7 @@ msgstr ""
 "为 Midnight Commander 编写的\n"
 "一个界面友好的文本编辑器。"
 
-msgid "Copyright (C) 1996-2022 the Free Software Foundation"
+msgid "Copyright (C) 1996-2023 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2159,11 +2159,10 @@ msgstr "后台任务"
 
 #, c-format
 msgid ""
-"Cannot chdir to \"%s\"\n"
+"Cannot change directory to\n"
+"%s\n"
 "%s"
 msgstr ""
-"无法进入目录“%s”\n"
-"%s"
 
 msgid "Secure deletion"
 msgstr ""
@@ -2256,9 +2255,6 @@ msgstr ""
 msgid ""
 "Cannot chattr \"%s\"\n"
 "%s"
-msgstr ""
-
-msgid "Cannot change attributes on non-local filesystems"
 msgstr ""
 
 #, c-format
@@ -2360,9 +2356,6 @@ msgstr "输入机器名 (F1 查看细节): "
 msgid "Files tagged, want to cd?"
 msgstr "文件已经标记，要更改目录吗?"
 
-msgid "Cannot change directory"
-msgstr "无法改变目录"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "链接 %s 到: "
@@ -2377,10 +2370,6 @@ msgstr "链接: %s"
 #, c-format
 msgid "symlink: %s"
 msgstr "符号链接: %s"
-
-#, c-format
-msgid "Cannot chdir to \"%s\""
-msgstr "无法进入目录“%s”"
 
 msgid "View file"
 msgstr "查看文件"
@@ -2517,24 +2506,22 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid " %s%s file error"
-msgstr " %s%s 文件错误"
-
-#, c-format
 msgid ""
-"The format of the %s%s file has changed with version 4.0. It seems that the "
-"installation has failed. Please fetch a fresh copy from the Midnight "
-"Commander package."
+"The format of the\n"
+"%s%s\n"
+"file has changed with version 4.0.\n"
+"It seems that the installation has failed.\n"
+"Please fetch a fresh copy from the Midnight Commander package."
 msgstr ""
 
 #, c-format
-msgid "%s file error"
-msgstr "%s 文件错误"
-
-#, c-format
 msgid ""
-"The format of the %s file has changed with version 4.0. You may either want "
-"to copy it from %s%s or use that file as an example of how to write it."
+"The format of the\n"
+"%s\n"
+"file has changed with version 4.0.\n"
+"You may either want to copy it from\n"
+"%s%s\n"
+"or use that file as an example of how to write it."
 msgstr ""
 
 msgid "DialogTitle|Copy"
@@ -2914,8 +2901,8 @@ msgid "Con&tinue"
 msgstr "继续(&T)"
 
 #, c-format
-msgid "%d:%02d.%02d"
-msgstr "%d:%02d.%02d"
+msgid "%d:%02d:%02d"
+msgstr ""
 
 #, c-format
 msgid "ETA %s"
@@ -3497,9 +3484,6 @@ msgstr "所有者:  %s/%s"
 #, c-format
 msgid "Links:      %d"
 msgstr "链接:   %d"
-
-msgid "Attributes: not supported"
-msgstr ""
 
 #, c-format
 msgid "Attributes: %s"
@@ -4122,9 +4106,8 @@ msgstr ""
 "异常的文件结束\n"
 "%s"
 
-#, fuzzy
 msgid "Inconsistent archive"
-msgstr "不完整的 tar 档案文件"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4449,14 +4432,6 @@ msgstr "sftp: (Ctrl-G 终止) 正在列出... %s"
 msgid "sftp: Listing done."
 msgstr "sftp: 列出完毕。"
 
-#, c-format
-msgid ""
-"Cannot open tar archive\n"
-"%s"
-msgstr ""
-"无法打开 tar 档案文件\n"
-"%s"
-
 msgid "Inconsistent tar archive"
 msgstr "不完整的 tar 档案文件"
 
@@ -4465,11 +4440,20 @@ msgstr "档案文件出现不可预料的文件末端"
 
 #, c-format
 msgid ""
-"%s\n"
-"doesn't look like a tar archive."
+"Cannot open tar archive\n"
+"%s"
 msgstr ""
+"无法打开 tar 档案文件\n"
+"%s"
+
+#, c-format
+msgid ""
 "%s\n"
-"不是 tar 档案文件。"
+"doesn't look like a tar archive"
+msgstr ""
+
+msgid "tar: mc_lseek not stopped at a record boundary"
+msgstr ""
 
 msgid "undelfs: error"
 msgstr "undelfs: 错误"

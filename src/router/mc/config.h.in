@@ -208,6 +208,9 @@
 /* Define to 1 if you have the <OS.h> header file. */
 #undef HAVE_OS_H
 
+/* Define to 1 if you have `PCRE2' library (-lpcre2-8) */
+#undef HAVE_PCRE2
+
 /* Define to 1 if you have the `pmap_getmaps' function. */
 #undef HAVE_PMAP_GETMAPS
 
@@ -488,7 +491,7 @@
 /* Define to select 'glib-regexp' search type */
 #undef SEARCH_TYPE_GLIB
 
-/* Define to select 'pcre' search type */
+/* Define to select 'pcre2' or 'pcre' search type */
 #undef SEARCH_TYPE_PCRE
 
 /* Some systems declare sig_atomic_t as volatile, some others -- no. This
@@ -669,6 +672,12 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
+
+/* Type of major device numbers. */
+#undef major_t
+
+/* Type of minor device numbers. */
+#undef minor_t
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
