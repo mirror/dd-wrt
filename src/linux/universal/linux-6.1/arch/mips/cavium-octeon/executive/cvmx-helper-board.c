@@ -170,10 +170,28 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
 		else
 			return -1;
 	case CVMX_BOARD_TYPE_UBNT_E100:
-		if (ipd_port >= 0 && ipd_port <= 2)
-			return 7 - ipd_port;
-		else
-			return -1;
+		if (ipd_port == 0) {
+			return 7;
+		} else if (ipd_port == 1) {
+			return 6;
+		} else if (ipd_port == 2
+			   && cvmx_sysinfo_get()->board_rev_major == 2) {
+			return 5;
+		}
+		return -1;
+
+	case CVMX_BOARD_TYPE_UBNT_USG:
+		if (ipd_port == 0) {
+			return 7;
+		} else if (ipd_port == 1) {
+			return 6;
+		} else if (ipd_port == 2) {
+			return 5;
+		}
+		return -1;
+	case CVMX_BOARD_TYPE_UBNT_E200:
+	case CVMX_BOARD_TYPE_UBNT_E220:
+		return -1;
 	case CVMX_BOARD_TYPE_KONTRON_S1901:
 		if (ipd_port == CVMX_HELPER_BOARD_MGMT_IPD_PORT)
 			return 1;
@@ -216,6 +234,20 @@ union cvmx_helper_link_info __cvmx_helper_board_link_get(int ipd_port)
 
 	/* Unless we fix it later, all links are defaulted to down */
 	result.u64 = 0;
+
+	switch (cvmx_sysinfo_get()->board_type) {
+	case CVMX_BOARD_TYPE_UBNT_E100:
+		if (ipd_port == 2
+		    && cvmx_sysinfo_get()->board_rev_major == 1) {
+			result.s.link_up = 1;
+			result.s.full_duplex = 1;
+			result.s.speed = 1000;
+			return result;
+		}
+		break;
+        case CVMX_BOARD_TYPE_UBNT_USG:
+            break;
+	}
 
 	if (octeon_is_simulation()) {
 		/* The simulator gives you a simulated 1Gbps full duplex link */
@@ -335,6 +367,7 @@ enum cvmx_helper_board_usb_clock_types __cvmx_helper_board_usb_get_clock_type(vo
 	case CVMX_BOARD_TYPE_LANAI2_G:
 	case CVMX_BOARD_TYPE_NIC10E_66:
 	case CVMX_BOARD_TYPE_UBNT_E100:
+	case CVMX_BOARD_TYPE_UBNT_USG:
 		return USB_CLOCK_TYPE_CRYSTAL_12;
 	case CVMX_BOARD_TYPE_NIC10E:
 		return USB_CLOCK_TYPE_REF_12;

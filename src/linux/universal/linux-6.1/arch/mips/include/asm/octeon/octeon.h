@@ -283,6 +283,8 @@ extern void octeon_check_cpu_bist(void);
 int octeon_prune_device_tree(void);
 extern const char __dtb_octeon_3xxx_begin;
 extern const char __dtb_octeon_68xx_begin;
+extern const char __dtb_ubnt_e100_begin;
+extern const char __dtb_ubnt_e101_begin;
 
 /**
  * Write a 32bit value to the Octeon NPI register space

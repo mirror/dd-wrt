@@ -407,7 +407,11 @@ static int cvm_oct_common_set_mac_address(struct net_device *dev, void *addr)
 int cvm_oct_common_init(struct net_device *dev)
 {
 	struct octeon_ethernet *priv = netdev_priv(dev);
+	const u8 *label = NULL;
 	int ret;
+
+	if (priv->of_node)
+		label = of_get_property(priv->of_node, "label", NULL);
 
 	ret = of_get_ethdev_address(priv->of_node, dev);
 	if (ret)
@@ -440,6 +444,9 @@ int cvm_oct_common_init(struct net_device *dev)
 
 	if (dev->netdev_ops->ndo_stop)
 		dev->netdev_ops->ndo_stop(dev);
+
+	if (!IS_ERR_OR_NULL(label))
+		dev_alloc_name(dev, label);
 
 	return 0;
 }
@@ -676,6 +683,7 @@ static int cvm_oct_probe(struct platform_device *pdev)
 	int interface;
 	int fau = FAU_NUM_PACKET_BUFFERS_TO_FREE;
 	int qos;
+	int i;
 	struct device_node *pip;
 	int mtu_overhead = ETH_HLEN + ETH_FCS_LEN;
 
@@ -797,13 +805,19 @@ static int cvm_oct_probe(struct platform_device *pdev)
 	}
 
 	num_interfaces = cvmx_helper_get_number_of_interfaces();
-	for (interface = 0; interface < num_interfaces; interface++) {
-		cvmx_helper_interface_mode_t imode =
-		    cvmx_helper_interface_get_mode(interface);
-		int num_ports = cvmx_helper_ports_on_interface(interface);
+	for (i = 0; i < num_interfaces; i++) {
+		cvmx_helper_interface_mode_t imode;
+		int interface;
+		int num_ports;
 		int port;
 		int port_index;
 
+		interface = i;
+		if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E200)
+			interface = num_interfaces - (i + 1);
+
+		num_ports = cvmx_helper_ports_on_interface(interface);
+		imode = cvmx_helper_interface_get_mode(interface);
 		for (port_index = 0,
 		     port = cvmx_helper_get_ipd_port(interface, 0);
 		     port < cvmx_helper_get_ipd_port(interface, num_ports);
@@ -863,8 +877,10 @@ static int cvm_oct_probe(struct platform_device *pdev)
 
 			case CVMX_HELPER_INTERFACE_MODE_SGMII:
 				priv->phy_mode = PHY_INTERFACE_MODE_SGMII;
-				dev->netdev_ops = &cvm_oct_sgmii_netdev_ops;
-				strscpy(dev->name, "eth%d", sizeof(dev->name));
+				if (of_device_is_available(priv->of_node)) {
+					dev->netdev_ops = &cvm_oct_sgmii_netdev_ops;
+					strscpy(dev->name, "eth%d", sizeof(dev->name));
+				}
 				break;
 
 			case CVMX_HELPER_INTERFACE_MODE_SPI:

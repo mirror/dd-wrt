@@ -59,6 +59,8 @@ static int interface_port_count[9];
  */
 int cvmx_helper_get_number_of_interfaces(void)
 {
+	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E220)
+		return 1;
 	if (OCTEON_IS_MODEL(OCTEON_CN68XX))
 		return 9;
 	if (OCTEON_IS_MODEL(OCTEON_CN66XX)) {

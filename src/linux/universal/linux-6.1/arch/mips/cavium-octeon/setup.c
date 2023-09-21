@@ -653,6 +653,35 @@ void octeon_user_io_init(void)
 	write_c0_derraddr1(0);
 }
 
+#ifdef CONFIG_IMAGE_CMDLINE_HACK
+extern char __image_cmdline[];
+
+static int __init octeon_use_image_cmdline(void)
+{
+       char *p = __image_cmdline;
+       int replace = 0;
+
+       if (*p == '-') {
+               replace = 1;
+               p++;
+       }
+
+       if (*p == '\0')
+               return 0;
+
+       if (replace) {
+               strlcpy(arcs_cmdline, p, sizeof(arcs_cmdline));
+       } else {
+               strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
+               strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
+       }
+
+       return 1;
+}
+#else
+static inline int octeon_use_image_cmdline(void) { return 0; }
+#endif
+
 /**
  * prom_init - Early entry point for arch setup
  */
@@ -896,6 +925,8 @@ void __init prom_init(void)
 		}
 	}
 
+	octeon_use_image_cmdline();
+
 	if (strstr(arcs_cmdline, "console=") == NULL) {
 		if (octeon_uart == 1)
 			strcat(arcs_cmdline, " console=ttyS1,115200");
@@ -1138,12 +1169,14 @@ void __init prom_free_prom_memory(void)
 }
 
 void __init octeon_fill_mac_addresses(void);
+int ubnt_dt_set_mac(void);
 
 void __init device_tree_init(void)
 {
 	const void *fdt;
 	bool do_prune;
 	bool fill_mac;
+	bool do_set_mac = false;
 
 #ifdef CONFIG_MIPS_ELF_APPENDED_DTB
 	if (!fdt_check_header(&__appended_dtb)) {
@@ -1164,6 +1197,26 @@ void __init device_tree_init(void)
 		fdt = &__dtb_octeon_68xx_begin;
 		do_prune = true;
 		fill_mac = true;
+	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E100) {
+		switch (octeon_bootinfo->board_rev_major) {
+		case 1:
+			fdt = (struct boot_param_header *)
+			      &__dtb_ubnt_e101_begin;
+			break;
+		default:
+			fdt = (struct boot_param_header *)
+			      &__dtb_ubnt_e100_begin;
+			break;
+		}
+		do_prune = false;
+		do_set_mac = true;
+		fill_mac = false;
+	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_USG) {
+		fdt = (void*)
+			&__dtb_ubnt_e100_begin;
+		do_prune = false;
+		do_set_mac = true;
+		fill_mac = false;
 	} else {
 		fdt = &__dtb_octeon_3xxx_begin;
 		do_prune = true;
@@ -1178,6 +1231,8 @@ void __init device_tree_init(void)
 	}
 	if (fill_mac)
 		octeon_fill_mac_addresses();
+	if (do_set_mac)
+		ubnt_dt_set_mac();
 	unflatten_and_copy_device_tree();
 	init_octeon_system_type();
 }

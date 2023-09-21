@@ -334,6 +334,14 @@ static void bcm54xx_ptp_config_init(struct phy_device *phydev)
 		bcm_ptp_config_init(phydev);
 }
 
+static int bcm50280_config_init(struct phy_device *phydev)
+{
+	/* enable phy leds. for ubnt edgepro routers. this is reverse engineered. stupid vendor behaviour, not to release such simple things but hiding them im propertiery drivers */
+	bcm_phy_write_shadow(phydev, 0xf , 0xf);
+	bcm_phy_write_shadow(phydev, 9 , 0x10);
+	return 0;
+}
+
 static int bcm54xx_config_init(struct phy_device *phydev)
 {
 	int reg, err, val;
@@ -888,6 +896,20 @@ static struct phy_driver broadcom_drivers[] = {
 	.handle_interrupt = bcm_phy_handle_interrupt,
 	.link_change_notify	= bcm54xx_link_change_notify,
 }, {
+	.phy_id		= PHY_ID_BCM50280,
+	.phy_id_mask	= 0xfffffff0,
+	.name		= "Broadcom BCM50280",
+	.get_sset_count	= bcm_phy_get_sset_count,
+	.get_strings	= bcm_phy_get_strings,
+	.get_stats	= bcm54xx_get_stats,
+	.probe		= bcm54xx_phy_probe,
+	.features	= PHY_GBIT_FEATURES |
+			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
+	.flags		= 0,
+	.config_init	= bcm50280_config_init,
+	.config_aneg	= genphy_config_aneg,
+	.read_status	= genphy_read_status,
+}, {
 	.phy_id		= PHY_ID_BCM5421,
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Broadcom BCM5421",
@@ -1170,6 +1192,7 @@ static struct mdio_device_id __maybe_unused broadcom_tbl[] = {
 	{ PHY_ID_BCM53125, 0xfffffff0 },
 	{ PHY_ID_BCM53128, 0xfffffff0 },
 	{ PHY_ID_BCM89610, 0xfffffff0 },
+	{ PHY_ID_BCM50280, 0xfffffff0 },
 	{ }
 };
 
