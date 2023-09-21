@@ -81,7 +81,7 @@
 					local-mac-address = [ 00 00 00 00 00 00 ];
 					phy-handle = <&phy0>;
 					rx-delay = <0>;
-					tx-delay = <0x10>;
+					tx-delay = <0x16>;
 				};
 				ethernet@1 {
 					compatible = "cavium,octeon-3860-pip-port";
@@ -89,12 +89,14 @@
 					local-mac-address = [ 00 00 00 00 00 00 ];
 					phy-handle = <&phy1>;
 					rx-delay = <0>;
-					tx-delay = <0x10>;
+					tx-delay = <0x16>;
 				};
 				ethernet@2 {
 					compatible = "cavium,octeon-3860-pip-port";
 					reg = <0x2>; /* Port */
 					local-mac-address = [ 00 00 00 00 00 00 ];
+					rx-delay = <0>;
+					tx-delay = <0x16>;
 				};
 			};
 		};
