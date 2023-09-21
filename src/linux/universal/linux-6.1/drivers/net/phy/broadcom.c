@@ -903,9 +903,6 @@ static struct phy_driver broadcom_drivers[] = {
 	.get_strings	= bcm_phy_get_strings,
 	.get_stats	= bcm54xx_get_stats,
 	.probe		= bcm54xx_phy_probe,
-	.features	= PHY_GBIT_FEATURES |
-			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
-	.flags		= 0,
 	.config_init	= bcm50280_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,
