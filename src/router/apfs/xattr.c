@@ -112,9 +112,7 @@ static int apfs_xattr_extents_read(struct inode *parent,
 {
 	struct super_block *sb = parent->i_sb;
 	struct apfs_dstream_info *dstream;
-	int length, blkcnt, i;
-	struct buffer_head **bhs = NULL;
-	int ret;
+	int length, ret;
 
 	dstream = kzalloc(sizeof(*dstream), GFP_KERNEL);
 	if (!dstream)
@@ -146,59 +144,11 @@ static int apfs_xattr_extents_read(struct inode *parent,
 			length = size;
 	}
 
-	blkcnt = (length + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
-	bhs = kcalloc(blkcnt, sizeof(*bhs), GFP_KERNEL);
-	for (i = 0; i < blkcnt; i++) {
-		struct buffer_head *bh = NULL;
-		u64 bno = 0;
-
-		ret = apfs_logic_to_phys_bno(dstream, i, &bno);
-		if (ret)
-			goto out;
-		if (bno == 0) {
-			/* No holes in xattr dstreams, I believe */
-			apfs_err(sb, "xattr dstream has a hole");
-			ret = -EFSCORRUPTED;
-			goto out;
-		}
-
-		bhs[i] = __getblk_gfp(APFS_NXI(sb)->nx_bdev, bno, sb->s_blocksize, __GFP_MOVABLE);
-		if (!bhs[i]) {
-			apfs_err(sb, "failed to map block 0x%llx", bno);
-			ret = -EIO;
-			goto out;
-		}
-
-		bh = bhs[i];
-		if (!buffer_uptodate(bh)) {
-			get_bh(bh);
-			lock_buffer(bh);
-			bh->b_end_io = end_buffer_read_sync;
-			apfs_submit_bh(REQ_OP_READ, 0, bh);
-		}
-	}
-	for (i = 0; i < blkcnt; i++) {
-		int off, tocopy;
-
-		wait_on_buffer(bhs[i]);
-		if (!buffer_uptodate(bhs[i])) {
-			apfs_err(sb, "failed to read a block");
-			ret = -EIO;
-			goto out;
-		}
-
-		off = i << sb->s_blocksize_bits;
-		tocopy = min(sb->s_blocksize, (unsigned long)(length - off));
-		memcpy(buffer + off, bhs[i]->b_data, tocopy);
-	}
-	ret = length;
+	ret = apfs_nonsparse_dstream_read(dstream, buffer, length, 0 /* offset */);
+	if (ret == 0)
+		ret = length;
 
 out:
-	if (bhs) {
-		for (i = 0; i < blkcnt; i++)
-			brelse(bhs[i]);
-		kfree(bhs);
-	}
 	kfree(dstream);
 	return ret;
 }
@@ -231,6 +181,63 @@ static int apfs_xattr_inline_read(struct apfs_xattr *xattr, void *buffer, size_t
 	}
 	memcpy(buffer, xattr->xdata, length);
 	return length;
+}
+
+/**
+ * apfs_xattr_get_dstream - Get the dstream for a named attribute
+ * @inode:	inode the attribute belongs to
+ * @name:	name of the attribute
+ * @dstream_p:	on return, the dstream info
+ *
+ * Returns 0 on success or a negative error code in case of failure, which may
+ * be -EFSCORRUPTED if the xattr is inline.
+ */
+int apfs_xattr_get_dstream(struct inode *inode, const char *name, struct apfs_dstream_info **dstream_p)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_key key;
+	struct apfs_query *query;
+	struct apfs_xattr xattr;
+	struct apfs_dstream_info *dstream = NULL;
+	u64 cnid = apfs_ino(inode);
+	int ret;
+
+	apfs_init_xattr_key(cnid, name, &key);
+
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret)
+		goto done;
+
+	ret = apfs_xattr_from_query(query, &xattr);
+	if (ret) {
+		apfs_alert(sb, "bad xattr record in inode 0x%llx", cnid);
+		goto done;
+	}
+
+	if (!xattr.has_dstream) {
+		ret = -EFSCORRUPTED;
+		goto done;
+	}
+
+	dstream = kzalloc(sizeof(*dstream), GFP_KERNEL);
+	if (!dstream) {
+		ret = -ENOMEM;
+		goto done;
+	}
+	apfs_dstream_from_xattr(sb, &xattr, dstream);
+	*dstream_p = dstream;
+	ret = 0;
+
+done:
+	apfs_free_query(query);
+	return ret;
 }
 
 /**
@@ -465,7 +472,7 @@ static int apfs_build_xattr_key(const char *name, u64 ino, struct apfs_xattr_key
 
 	apfs_key_set_hdr(APFS_TYPE_XATTR, ino, key);
 	key->name_len = cpu_to_le16(namelen);
-	strcpy(key->name, name);
+	strscpy(key->name, name, namelen);
 
 	*key_p = key;
 	return key_len;

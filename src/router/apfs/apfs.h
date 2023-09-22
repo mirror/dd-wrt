@@ -904,6 +904,7 @@ extern loff_t apfs_remap_file_range(struct file *src_file, loff_t off, struct fi
 extern int apfs_clone_file_range(struct file *src_file, loff_t off, struct file *dst_file, loff_t destoff, u64 len);
 #endif
 extern int apfs_clone_extents(struct apfs_dstream_info *dstream, u64 new_id);
+extern int apfs_nonsparse_dstream_read(struct apfs_dstream_info *dstream, void *buf, size_t count, u64 offset);
 
 /* file.c */
 extern int apfs_fsync(struct file *file, loff_t start, loff_t end, int datasync);
@@ -1046,6 +1047,7 @@ extern int apfs_xattr_set(struct inode *inode, const char *name, const void *val
 			  size_t size, int flags);
 extern int APFS_XATTR_SET_MAXOPS(void);
 extern ssize_t apfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+extern int apfs_xattr_get_dstream(struct inode *inode, const char *name, struct apfs_dstream_info **dstream_p);
 
 /* xfield.c */
 extern int apfs_find_xfield(u8 *xfields, int len, u8 xtype, char **xval);
