@@ -453,7 +453,7 @@ endif
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade_2GB.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade_2GB.bin
-
+	cd grub-efi && ./makeefi.sh
 #	mkdir -p $(TARGETDIR)/boot/grub
 #	cp $(INSTALLDIR)/grub/usr/local/lib/grub/i386-pc/stage2_eltorito $(TARGETDIR)/boot/grub
 #	mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot  -boot-load-size 4 -boot-info-table -o grub.iso $(TARGETDIR)
