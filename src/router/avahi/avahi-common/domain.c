@@ -201,7 +201,7 @@ char *avahi_normalize_name(const char *s, char *ret_s, size_t size) {
         }
 
         if (!empty) {
-            if (size < 1)
+            if (size < 2)
                 return NULL;
 
             *(r++) = '.';
@@ -210,7 +210,8 @@ char *avahi_normalize_name(const char *s, char *ret_s, size_t size) {
         } else
             empty = 0;
 
-        avahi_escape_label(label, strlen(label), &r, &size);
+        if (!(avahi_escape_label(label, strlen(label), &r, &size)))
+            return NULL;
     }
 
     return ret_s;
