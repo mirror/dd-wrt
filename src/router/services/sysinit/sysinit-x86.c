@@ -97,6 +97,11 @@ void start_sysinit(void)
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
 	cprintf("sysinit() get router\n");
 
+	modprobe("nouveau");
+	modprobe("i915");
+	modprobe("amdgpu");
+	modprobe("radeon");
+	
 	/*
 	 * eval("insmod","md5"); eval("insmod","aes"); eval("insmod","blowfish");
 	 * eval("insmod","deflate"); eval("insmod","des");
