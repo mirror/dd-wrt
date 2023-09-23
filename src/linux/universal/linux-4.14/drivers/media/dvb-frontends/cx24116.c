@@ -1151,7 +1151,7 @@ struct dvb_frontend *cx24116_attach(const struct cx24116_config *config,
 error2: kfree(state);
 error1: return NULL;
 }
-EXPORT_SYMBOL(cx24116_attach);
+EXPORT_SYMBOL_GPL(cx24116_attach);
 
 /*
  * Initialise or wake up device

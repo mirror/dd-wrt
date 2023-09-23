@@ -854,6 +854,8 @@ void da7219_aad_suspend(struct snd_soc_codec *codec)
 			}
 		}
 	}
+
+	synchronize_irq(da7219_aad->irq);
 }
 
 void da7219_aad_resume(struct snd_soc_codec *codec)
