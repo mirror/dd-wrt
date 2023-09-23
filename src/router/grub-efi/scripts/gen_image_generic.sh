@@ -49,11 +49,11 @@ dos_dircopy() {
   done
 }
 
-#[ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$PART3FSOFFSET" conv=notrunc count="$PART3FSSIZE"
+[ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$PART3FSOFFSET" conv=notrunc count="$PART3FSSIZE"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 
 if [ -n "$GUID" ]; then
-    #[ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$((ROOTFSOFFSET + ROOTFSSIZE + PART3FSSIZE))" conv=notrunc count="$sect"
+    [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$((ROOTFSOFFSET + ROOTFSSIZE + PART3FSSIZE))" conv=notrunc count="$sect"
     mkfs.fat --invariant -n kernel -C "$OUTPUT.kernel" -S 512 "$((KERNELSIZE / 1024))"
     LC_ALL=C dos_dircopy "$KERNELDIR" /
 else
