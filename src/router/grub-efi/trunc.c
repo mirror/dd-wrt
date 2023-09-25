@@ -17,9 +17,10 @@ for (i=0;i<len;i++) {
     if (mem[i]!=0)
 	rlen = i;
 }
-rlen +=511;
-rlen /=512;
-rlen *=512;
+rlen = 688640*512;
+//rlen +=511;
+//rlen /=512;
+//rlen *=512;
 fwrite(mem,rlen,1,out);
 fclose(in);
 fclose(out);
