@@ -232,8 +232,7 @@ case $1 in
     "update" )
 	checkDbArg
 	wan=$(detectWAN)
-	wan=$(detectLAN)
-	interfaces="$interfaces $wan $lan"
+	interfaces="$interfaces $wan"
 	update
 	rm -f /tmp/*_$$.tmp
 	exit
@@ -279,9 +278,8 @@ case $1 in
 	done
 
 	wan=$(detectWAN)
-	lan=$(detectLAN)
 	checkWAN
-	interfaces="$interfaces $wan $lan"
+	interfaces="$interfaces $wan"
 
 	# track local data
 	for chain in INPUT OUTPUT; do
