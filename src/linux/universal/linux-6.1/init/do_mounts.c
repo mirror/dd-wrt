@@ -45,7 +45,14 @@ char * __initdata root_device_name2[]={
 	"/dev/sdh2",
 	"/dev/sdi2",
 	"/dev/sr0", 
-	"/dev/mmcblk0p2"};
+	"/dev/mmcblk0p2",
+	"/dev/nvme0n1p2",
+	"/dev/nvme1n1p2",
+	"/dev/nvme2n1p2",
+	"/dev/nvme3n1p2",
+	"/dev/nvme4n1p2",
+	"/dev/nvme5n1p2",
+	};
 static const int root_devices=ARRAY_SIZE(root_device_name2);
 #define root_device_name root_device_name2[0]
 dev_t ROOT_DEV[ARRAY_SIZE(root_device_name2)];

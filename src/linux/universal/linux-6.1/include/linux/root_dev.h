@@ -21,7 +21,7 @@ enum {
 };
 
 #ifdef CONFIG_X86
-extern dev_t ROOT_DEV[15];
+extern dev_t ROOT_DEV[21];
 #else
 extern dev_t ROOT_DEV;
 #endif
