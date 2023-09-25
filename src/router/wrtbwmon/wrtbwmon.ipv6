@@ -104,7 +104,7 @@ detectIF()
 
 detectLAN()
 {
-    [ -e /sys/class/net/br-lan ] && echo br-lan && return
+    [ -e /sys/class/net/br0 ] && echo br0 && return
     lan=$(detectIF lan)
     [ -n "$lan" ] && echo $lan && return
 }
