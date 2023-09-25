@@ -1,0 +1,59 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+
+from common_records import Person, Chapter
+from common_templates import MediaProxyContainer
+from extra_models import Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other
+
+class Movie(MetadataModel):
+  xml_tag = 'Video'
+  xml_attributes = dict(type = 'movie')
+  
+  title                     = Template.String()
+  year                      = Template.Integer()
+  originally_available_at   = Template.Date()
+  studio                    = Template.String()
+  tagline                   = Template.String()
+  summary                   = Template.String()
+  trivia                    = Template.String()
+  quotes                    = Template.String()
+  content_rating            = Template.String()
+  content_rating_age        = Template.Integer()
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  roles                     = Template.Set(Person())
+  countries                 = Template.Set(Template.String())
+  posters                   = MediaProxyContainer()
+  art                       = MediaProxyContainer()
+  banners                   = MediaProxyContainer()
+  themes                    = MediaProxyContainer()
+  chapters                  = Template.Set(Chapter())
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
+  similar                   = Template.Set(Template.String())
+  
+  # Interface settings
+  writers.xml_tag           = 'Writer'
+  directors.xml_tag         = 'Director'
+  producers.xml_tag         = 'Producer'
+  roles.xml_tag             = 'Role'
+  countries.xml_tag         = 'Country'
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+  
+  posters.exclude_from_interface
+  art.exclude_from_interface
+  banners.exclude_from_interface
+  themes.exclude_from_interface
+  chapters.exclude_from_interface
+  
+
+class VideoClip(Movie):
+  xml_attributes = dict(type = 'clip')
