@@ -106,7 +106,7 @@
 static struct avNode {  
   LIST_ENTRY ( avNode ) nodes; 
   char *data;                                 // pointer to data
-};
+} avNode;
 
 typedef LIST_HEAD ( , avNode ) avList_t;
 
