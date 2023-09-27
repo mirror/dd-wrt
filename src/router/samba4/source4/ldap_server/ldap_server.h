@@ -114,8 +114,9 @@ struct ldapsrv_call {
 #define LDAP_SERVER_MAX_CHUNK_SIZE ((size_t)(25 * 1024 * 1024))
 
 struct ldapsrv_service {
+	const char *dns_host_name;
+	pid_t parent_pid;
 	struct tstream_tls_params *tls_params;
-	struct task_server *task;
 	struct tevent_queue *call_queue;
 	struct ldapsrv_connection *connections;
 	struct {
@@ -123,6 +124,9 @@ struct ldapsrv_service {
 		struct tevent_req *retry;
 	} notification;
 
+	struct loadparm_context *lp_ctx;
+	struct tevent_context *current_ev;
+	struct imessaging_context *current_msg;
 	struct ldb_context *sam_ctx;
 };
 

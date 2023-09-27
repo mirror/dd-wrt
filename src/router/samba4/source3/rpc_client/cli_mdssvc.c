@@ -43,10 +43,12 @@ char *mdscli_get_basepath(TALLOC_CTX *mem_ctx,
 struct mdscli_connect_state {
 	struct tevent_context *ev;
 	struct mdscli_ctx *mdscli_ctx;
+	struct mdssvc_blob response_blob;
 };
 
 static void mdscli_connect_open_done(struct tevent_req *subreq);
 static void mdscli_connect_unknown1_done(struct tevent_req *subreq);
+static void mdscli_connect_fetch_props_done(struct tevent_req *subreq);
 
 struct tevent_req *mdscli_connect_send(TALLOC_CTX *mem_ctx,
 				       struct tevent_context *ev,
@@ -111,6 +113,7 @@ static void mdscli_connect_open_done(struct tevent_req *subreq)
 	struct mdscli_connect_state *state = tevent_req_data(
 		req, struct mdscli_connect_state);
 	struct mdscli_ctx *mdscli_ctx = state->mdscli_ctx;
+	size_t share_path_len;
 	NTSTATUS status;
 
 	status = dcerpc_mdssvc_open_recv(subreq, state);
@@ -118,6 +121,18 @@ static void mdscli_connect_open_done(struct tevent_req *subreq)
 	state->mdscli_ctx->async_pending--;
 	if (tevent_req_nterror(req, status)) {
 		return;
+	}
+
+	share_path_len = strlen(mdscli_ctx->mdscmd_open.share_path);
+	if (share_path_len < 1 || share_path_len > UINT16_MAX) {
+		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
+		return;
+	}
+	mdscli_ctx->mdscmd_open.share_path_len = share_path_len;
+
+	if (mdscli_ctx->mdscmd_open.share_path[share_path_len-1] == '/') {
+		mdscli_ctx->mdscmd_open.share_path[share_path_len-1] = '\0';
+		mdscli_ctx->mdscmd_open.share_path_len--;
 	}
 
 	subreq = dcerpc_mdssvc_unknown1_send(
@@ -146,12 +161,116 @@ static void mdscli_connect_unknown1_done(struct tevent_req *subreq)
 		subreq, struct tevent_req);
 	struct mdscli_connect_state *state = tevent_req_data(
 		req, struct mdscli_connect_state);
+	struct mdscli_ctx *mdscli_ctx = state->mdscli_ctx;
+	struct mdssvc_blob request_blob;
 	NTSTATUS status;
 
 	status = dcerpc_mdssvc_unknown1_recv(subreq, state);
 	TALLOC_FREE(subreq);
 	if (tevent_req_nterror(req, status)) {
 		return;
+	}
+
+	status = mdscli_blob_fetch_props(state,
+					 state->mdscli_ctx,
+					 &request_blob);
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+
+	subreq = dcerpc_mdssvc_cmd_send(state,
+					state->ev,
+					mdscli_ctx->bh,
+					&mdscli_ctx->ph,
+					0,
+					mdscli_ctx->dev,
+					mdscli_ctx->mdscmd_open.unkn2,
+					0,
+					mdscli_ctx->flags,
+					request_blob,
+					0,
+					mdscli_ctx->max_fragment_size,
+					1,
+					mdscli_ctx->max_fragment_size,
+					0,
+					0,
+					&mdscli_ctx->mdscmd_cmd.fragment,
+					&state->response_blob,
+					&mdscli_ctx->mdscmd_cmd.unkn9);
+	if (tevent_req_nomem(subreq, req)) {
+		return;
+	}
+	tevent_req_set_callback(subreq, mdscli_connect_fetch_props_done, req);
+	mdscli_ctx->async_pending++;
+	return;
+}
+
+static void mdscli_connect_fetch_props_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct mdscli_connect_state *state = tevent_req_data(
+		req, struct mdscli_connect_state);
+	struct mdscli_ctx *mdscli_ctx = state->mdscli_ctx;
+	DALLOC_CTX *d = NULL;
+	sl_array_t *path_scope_array = NULL;
+	char *path_scope = NULL;
+	NTSTATUS status;
+	bool ok;
+
+	status = dcerpc_mdssvc_cmd_recv(subreq, state);
+	TALLOC_FREE(subreq);
+	state->mdscli_ctx->async_pending--;
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+
+	d = dalloc_new(state);
+	if (tevent_req_nomem(d, req)) {
+		return;
+	}
+
+	ok = sl_unpack(d,
+		       (char *)state->response_blob.spotlight_blob,
+		       state->response_blob.length);
+	if (!ok) {
+		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
+		return;
+	}
+
+	path_scope_array = dalloc_value_for_key(d,
+						"DALLOC_CTX", 0,
+						"kMDSStorePathScopes",
+						"sl_array_t");
+	if (path_scope_array == NULL) {
+		DBG_ERR("Missing kMDSStorePathScopes\n");
+		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
+		return;
+	}
+
+	path_scope = dalloc_get(path_scope_array, "char *", 0);
+	if (path_scope == NULL) {
+		DBG_ERR("Missing path in kMDSStorePathScopes\n");
+		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
+		return;
+	}
+
+	mdscli_ctx->path_scope_len = strlen(path_scope);
+	if (mdscli_ctx->path_scope_len < 1 ||
+	    mdscli_ctx->path_scope_len > UINT16_MAX)
+	{
+		DBG_ERR("Bad path_scope: %s\n", path_scope);
+		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
+		return;
+	}
+	mdscli_ctx->path_scope = talloc_strdup(mdscli_ctx, path_scope);
+	if (tevent_req_nomem(mdscli_ctx->path_scope, req)) {
+		return;
+	}
+
+	if (mdscli_ctx->path_scope[mdscli_ctx->path_scope_len-1] == '/') {
+		mdscli_ctx->path_scope[mdscli_ctx->path_scope_len-1] = '\0';
+		mdscli_ctx->path_scope_len--;
 	}
 
 	tevent_req_done(req);
@@ -275,15 +394,6 @@ struct tevent_req *mdscli_search_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, ev);
 	}
-
-	state->response_blob.spotlight_blob = talloc_array(
-		state,
-		uint8_t,
-		mdscli_ctx->max_fragment_size);
-	if (tevent_req_nomem(state->response_blob.spotlight_blob, req)) {
-		return tevent_req_post(req, ev);
-	}
-	state->response_blob.size = mdscli_ctx->max_fragment_size;
 
 	subreq = dcerpc_mdssvc_cmd_send(state,
 					ev,
@@ -422,10 +532,13 @@ fail:
 }
 
 struct mdscli_get_results_state {
+	struct tevent_context *ev;
 	struct mdscli_search_ctx *search;
 	struct mdssvc_blob request_blob;
-	struct mdssvc_blob response_blob;
+	struct mdssvc_blob response_fragment;
+	DATA_BLOB response_data;
 	uint64_t *cnids;
+	uint32_t fragment;
 };
 
 static void mdscli_get_results_cmd_done(struct tevent_req *subreq);
@@ -447,6 +560,7 @@ struct tevent_req *mdscli_get_results_send(
 	}
 
 	*state = (struct mdscli_get_results_state) {
+		.ev = ev,
 		.search = search,
 	};
 
@@ -456,15 +570,6 @@ struct tevent_req *mdscli_get_results_send(
 	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, ev);
 	}
-
-	state->response_blob.spotlight_blob = talloc_array(
-		state,
-		uint8_t,
-		mdscli_ctx->max_fragment_size);
-	if (tevent_req_nomem(state->response_blob.spotlight_blob, req)) {
-		return tevent_req_post(req, ev);
-	}
-	state->response_blob.size = mdscli_ctx->max_fragment_size;
 
 	subreq = dcerpc_mdssvc_cmd_send(state,
 					ev,
@@ -482,8 +587,8 @@ struct tevent_req *mdscli_get_results_send(
 					mdscli_ctx->max_fragment_size,
 					0,
 					0,
-					&mdscli_ctx->mdscmd_cmd.fragment,
-					&state->response_blob,
+					&state->fragment,
+					&state->response_fragment,
 					&mdscli_ctx->mdscmd_cmd.unkn9);
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
@@ -499,8 +604,11 @@ static void mdscli_get_results_cmd_done(struct tevent_req *subreq)
 		subreq, struct tevent_req);
 	struct mdscli_get_results_state *state = tevent_req_data(
 		req, struct mdscli_get_results_state);
+	struct mdscli_ctx *mdscli_ctx = state->search->mdscli_ctx;
+	size_t oldsize, newsize;
 	DALLOC_CTX *d = NULL;
 	uint64_t *uint64p = NULL;
+	bool search_in_progress = false;
 	sl_cnids_t *cnids = NULL;
 	size_t ncnids;
 	size_t i;
@@ -514,14 +622,66 @@ static void mdscli_get_results_cmd_done(struct tevent_req *subreq)
 		return;
 	}
 
+	oldsize = state->response_data.length;
+	newsize = oldsize + state->response_fragment.length;
+	if (newsize < oldsize) {
+		tevent_req_nterror(req, NT_STATUS_INTEGER_OVERFLOW);
+		return;
+	}
+
+	ok = data_blob_realloc(state, &state->response_data, newsize);
+	if (!ok) {
+		tevent_req_nterror(req, NT_STATUS_NO_MEMORY);
+		return;
+	}
+	(void)memcpy(state->response_data.data + oldsize,
+		     state->response_fragment.spotlight_blob,
+		     state->response_fragment.length);
+
+	TALLOC_FREE(state->response_fragment.spotlight_blob);
+	state->response_fragment.length = 0;
+	state->response_fragment.size = 0;
+
+	if (state->fragment != 0) {
+		subreq = dcerpc_mdssvc_cmd_send(
+				state,
+				state->ev,
+				mdscli_ctx->bh,
+				&mdscli_ctx->ph,
+				0,
+				mdscli_ctx->dev,
+				mdscli_ctx->mdscmd_open.unkn2,
+				1,
+				mdscli_ctx->flags,
+				state->request_blob,
+				0,
+				mdscli_ctx->max_fragment_size,
+				1,
+				mdscli_ctx->max_fragment_size,
+				0,
+				0,
+				&state->fragment,
+				&state->response_fragment,
+				&mdscli_ctx->mdscmd_cmd.unkn9);
+		if (tevent_req_nomem(subreq, req)) {
+			tevent_req_post(req, state->ev);
+			return;
+		}
+		tevent_req_set_callback(subreq,
+					mdscli_get_results_cmd_done,
+					req);
+		mdscli_ctx->async_pending++;
+		return;
+	}
+
 	d = dalloc_new(state);
 	if (tevent_req_nomem(d, req)) {
 		return;
 	}
 
 	ok = sl_unpack(d,
-		       (char *)state->response_blob.spotlight_blob,
-		       state->response_blob.length);
+		       (char *)state->response_data.data,
+		       state->response_data.length);
 	if (!ok) {
 		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
 		return;
@@ -537,9 +697,8 @@ static void mdscli_get_results_cmd_done(struct tevent_req *subreq)
 	}
 
 	if (*uint64p == 35) {
-		DBG_DEBUG("search done: %s", dalloc_dump(d, 0));
-		tevent_req_done(req);
-		return;
+		DBG_DEBUG("Search in progress\n");
+		search_in_progress = true;
 	}
 
 	cnids = dalloc_get(d, "DALLOC_CTX", 0, "sl_cnids_t", 1);
@@ -550,7 +709,7 @@ static void mdscli_get_results_cmd_done(struct tevent_req *subreq)
 	}
 
 	ncnids = dalloc_size(cnids->ca_cnids);
-	if (ncnids == 0) {
+	if (ncnids == 0 && !search_in_progress) {
 		tevent_req_nterror(req, NT_STATUS_NO_MORE_MATCHES);
 		return;
 	}
@@ -681,15 +840,6 @@ struct tevent_req *mdscli_get_path_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	state->response_blob.spotlight_blob = talloc_array(
-		state,
-		uint8_t,
-		mdscli_ctx->max_fragment_size);
-	if (tevent_req_nomem(state->response_blob.spotlight_blob, req)) {
-		return tevent_req_post(req, ev);
-	}
-	state->response_blob.size = mdscli_ctx->max_fragment_size;
-
 	subreq = dcerpc_mdssvc_cmd_send(state,
 					ev,
 					mdscli_ctx->bh,
@@ -724,7 +874,10 @@ static void mdscli_get_path_done(struct tevent_req *subreq)
 	struct mdscli_get_path_state *state = tevent_req_data(
 		req, struct mdscli_get_path_state);
 	DALLOC_CTX *d = NULL;
+	size_t pathlen;
+	size_t prefixlen;
 	char *path = NULL;
+	const char *p = NULL;
 	NTSTATUS status;
 	bool ok;
 
@@ -759,7 +912,38 @@ static void mdscli_get_path_done(struct tevent_req *subreq)
 		tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);
 		return;
 	}
-	state->path = talloc_move(state, &path);
+
+	/* Path is prefixed by /PATHSCOPE/SHARENAME/, strip it */
+	pathlen = strlen(path);
+
+	/*
+	 * path_scope_len and share_path_len are already checked to be smaller
+	 * then UINT16_MAX so this can't overflow
+	 */
+	prefixlen = state->mdscli_ctx->path_scope_len
+		+ state->mdscli_ctx->mdscmd_open.share_path_len;
+
+	if (pathlen < prefixlen) {
+		DBG_DEBUG("Bad path: %s\n", path);
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		return;
+	}
+
+	p = path + prefixlen;
+	while (*p == '/') {
+		p++;
+	}
+	if (*p == '\0') {
+		DBG_DEBUG("Bad path: %s\n", path);
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		return;
+	}
+
+	state->path = talloc_strdup(state, p);
+	if (state->path == NULL) {
+		tevent_req_nterror(req, NT_STATUS_NO_MEMORY);
+		return;
+	}
 	DBG_DEBUG("path: %s\n", state->path);
 
 	tevent_req_done(req);
@@ -851,15 +1035,6 @@ struct tevent_req *mdscli_close_search_send(TALLOC_CTX *mem_ctx,
 	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, ev);
 	}
-
-	state->response_blob.spotlight_blob = talloc_array(
-		state,
-		uint8_t,
-		mdscli_ctx->max_fragment_size);
-	if (tevent_req_nomem(state->response_blob.spotlight_blob, req)) {
-		return tevent_req_post(req, ev);
-	}
-	state->response_blob.size = mdscli_ctx->max_fragment_size;
 
 	subreq = dcerpc_mdssvc_cmd_send(state,
 					ev,

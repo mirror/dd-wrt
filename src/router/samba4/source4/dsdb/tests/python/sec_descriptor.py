@@ -183,6 +183,8 @@ class OwnerGroupDescriptorTests(DescriptorTests):
         delete_force(self.ldb_admin, "OU=test_domain_ou2,OU=test_domain_ou1," + self.base_dn)
         delete_force(self.ldb_admin, "OU=test_domain_ou1," + self.base_dn)
         # SCHEMA
+        mod = "(A;CI;WDCC;;;AU)(A;;CC;;;AU)"
+        self.sd_utils.dacl_delete_aces(self.schema_dn, mod)
         # CONFIGURATION
         delete_force(self.ldb_admin, "CN=test-specifier1,CN=test-container1,CN=DisplaySpecifiers,"
                      + self.configuration_dn)
@@ -336,8 +338,11 @@ class OwnerGroupDescriptorTests(DescriptorTests):
         super(OwnerGroupDescriptorTests, self).tearDown()
         self.deleteAll()
 
-    def check_user_belongs(self, user_dn, groups=[]):
+    def check_user_belongs(self, user_dn, groups=None):
         """ Test whether user is member of the expected group(s) """
+        if groups is None:
+            groups = []
+
         if groups != []:
             # User is member of at least one additional group
             res = self.ldb_admin.search(user_dn, attrs=["memberOf"])
@@ -351,7 +356,7 @@ class OwnerGroupDescriptorTests(DescriptorTests):
             # User is not a member of any additional groups but default
             res = self.ldb_admin.search(user_dn, attrs=["*"])
             res = [x.upper() for x in res[0].keys()]
-            self.assertFalse("MEMBEROF" in res)
+            self.assertNotIn("MEMBEROF", res)
 
     def check_modify_inheritance(self, _ldb, object_dn, owner_group=""):
         # Modify
@@ -363,7 +368,7 @@ class OwnerGroupDescriptorTests(DescriptorTests):
             sd_user_utils.modify_sd_on_dn(object_dn, "D:" + ace)
         # Make sure the modify operation has been applied
         desc_sddl = self.sd_utils.get_sd_as_sddl(object_dn)
-        self.assertTrue(ace in desc_sddl)
+        self.assertIn(ace, desc_sddl)
         # Make sure we have identical result for both "add" and "modify"
         res = re.search("(O:.*G:.*?)D:", desc_sddl).group(1)
         print(self._testMethodName)
@@ -865,6 +870,9 @@ class OwnerGroupDescriptorTests(DescriptorTests):
         self.check_user_belongs(self.get_users_domain_dn(user_name), [])
         # Open Ldb connection with the tested user
         _ldb = self.get_ldb_connection(user_name, "samba123@")
+        # Change Schema partition descriptor
+        mod = "(A;;CC;;;AU)"
+        self.sd_utils.dacl_add_ace(self.schema_dn, mod)
         # Create a custom security descriptor
         # NB! Problematic owner part won't accept DA only <User Sid> !!!
         user_sid = self.sd_utils.get_object_sid(self.get_users_domain_dn(user_name))
@@ -1271,8 +1279,8 @@ class DaclDescriptorTests(DescriptorTests):
         self.sd_utils.modify_sd_on_dn(object_dn, desc_sddl)
         # Verify all inheritable ACEs are gone
         desc_sddl = self.sd_utils.get_sd_as_sddl(object_dn)
-        self.assertFalse("CI" in desc_sddl)
-        self.assertFalse("OI" in desc_sddl)
+        self.assertNotIn("CI", desc_sddl)
+        self.assertNotIn("OI", desc_sddl)
 
     def test_200(self):
         """ OU with protected flag and child group. See if the group has inherit ACEs.
@@ -1285,7 +1293,7 @@ class DaclDescriptorTests(DescriptorTests):
         self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4)
         # Make sure created group object contains NO inherit ACEs
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertFalse("ID" in desc_sddl)
+        self.assertNotIn("ID", desc_sddl)
 
     def test_201(self):
         """ OU with protected flag and no inherit ACEs, child group with custom descriptor.
@@ -1329,17 +1337,17 @@ class DaclDescriptorTests(DescriptorTests):
         # Make sure created group object contains NO inherit ACEs
         # also make sure the added above non-inheritable ACEs are absent too
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertFalse("ID" in desc_sddl)
+        self.assertNotIn("ID", desc_sddl)
         for x in re.findall(r"\(.*?\)", mod):
-            self.assertFalse(x in desc_sddl)
+            self.assertNotIn(x, desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertFalse("ID" in desc_sddl)
+        self.assertNotIn("ID", desc_sddl)
         for x in re.findall(r"\(.*?\)", mod):
-            self.assertFalse(x in desc_sddl)
+            self.assertNotIn(x, desc_sddl)
 
     def test_203(self):
         """ OU with protected flag and add 'CI' ACE, child group.
@@ -1361,14 +1369,14 @@ class DaclDescriptorTests(DescriptorTests):
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
         mod = mod.replace(";CI;", ";CIID;")
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(mod, desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue(moded in desc_sddl)
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
 
     def test_204(self):
         """ OU with protected flag and add 'OI' ACE, child group.
@@ -1390,14 +1398,14 @@ class DaclDescriptorTests(DescriptorTests):
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
         mod = mod.replace(";OI;", ";OIIOID;")  # change it how it's gonna look like
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(mod, desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue(moded in desc_sddl)
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
 
     def test_205(self):
         """ OU with protected flag and add 'OA' for GUID & 'CI' ACE, child group.
@@ -1419,14 +1427,14 @@ class DaclDescriptorTests(DescriptorTests):
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
         mod = mod.replace(";CI;", ";CIID;")  # change it how it's gonna look like
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(mod, desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue(moded in desc_sddl)
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
 
     def test_206(self):
         """ OU with protected flag and add 'OA' for GUID & 'OI' ACE, child group.
@@ -1448,14 +1456,14 @@ class DaclDescriptorTests(DescriptorTests):
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
         mod = mod.replace(";OI;", ";OIIOID;")  # change it how it's gonna look like
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(mod, desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue(moded in desc_sddl)
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
 
     def test_207(self):
         """ OU with protected flag and add 'OA' for OU specific GUID & 'CI' ACE, child group.
@@ -1477,14 +1485,14 @@ class DaclDescriptorTests(DescriptorTests):
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
         mod = mod.replace(";CI;", ";CIID;")  # change it how it's gonna look like
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(mod, desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue(moded in desc_sddl)
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
 
     def test_208(self):
         """ OU with protected flag and add 'OA' for OU specific GUID & 'OI' ACE, child group.
@@ -1506,14 +1514,14 @@ class DaclDescriptorTests(DescriptorTests):
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
         mod = mod.replace(";OI;", ";OIIOID;")  # change it how it's gonna look like
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(mod, desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:(OA;OI;WP;bf967a39-0de6-11d0-a285-00aa003049e2;;DU)" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue(moded in desc_sddl)
-        self.assertTrue(mod in desc_sddl)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
 
     def test_209(self):
         """ OU with protected flag and add 'CI' ACE with 'CO' SID, child group.
@@ -1534,16 +1542,16 @@ class DaclDescriptorTests(DescriptorTests):
         # Make sure created group object contains only the above inherited ACE(s)
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue("(D;ID;WP;;;AU)" in desc_sddl)
-        self.assertTrue("(D;CIIOID;WP;;;CO)" in desc_sddl)
+        self.assertIn("(D;ID;WP;;;AU)", desc_sddl)
+        self.assertIn("(D;CIIOID;WP;;;CO)", desc_sddl)
         try:
             self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
         except LdbError as e:
             self.fail(str(e))
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue(moded in desc_sddl)
-        self.assertTrue("(D;ID;WP;;;DA)" in desc_sddl)
-        self.assertTrue("(D;CIIOID;WP;;;CO)" in desc_sddl)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn("(D;ID;WP;;;DA)", desc_sddl)
+        self.assertIn("(D;CIIOID;WP;;;CO)", desc_sddl)
 
     def test_210(self):
         """ OU with protected flag, provide ACEs with ID flag raised. Should be ignored.
@@ -1557,7 +1565,7 @@ class DaclDescriptorTests(DescriptorTests):
         self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
         # Make sure created group object does not contain the ID ace
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertFalse("(A;ID;WP;;;AU)" in desc_sddl)
+        self.assertNotIn("(A;ID;WP;;;AU)", desc_sddl)
 
     def test_211(self):
         """ Provide ACE with CO SID, should be expanded and replaced
@@ -1571,8 +1579,8 @@ class DaclDescriptorTests(DescriptorTests):
         tmp_desc = security.descriptor.from_sddl(mod, self.domain_sid)
         self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue("(D;;WP;;;DA)" in desc_sddl)
-        self.assertTrue("(D;CIIO;WP;;;CO)" in desc_sddl)
+        self.assertIn("(D;;WP;;;DA)", desc_sddl)
+        self.assertIn("(D;CIIO;WP;;;CO)", desc_sddl)
 
     def test_212(self):
         """ Provide ACE with IO flag, should be ignored
@@ -1588,9 +1596,9 @@ class DaclDescriptorTests(DescriptorTests):
         # Make sure created group object contains only the above inherited ACE(s)
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertTrue("(D;CIIO;WP;;;CO)" in desc_sddl)
-        self.assertFalse("(D;;WP;;;DA)" in desc_sddl)
-        self.assertFalse("(D;CIIO;WP;;;CO)(D;CIIO;WP;;;CO)" in desc_sddl)
+        self.assertIn("(D;CIIO;WP;;;CO)", desc_sddl)
+        self.assertNotIn("(D;;WP;;;DA)", desc_sddl)
+        self.assertNotIn("(D;CIIO;WP;;;CO)(D;CIIO;WP;;;CO)", desc_sddl)
 
     def test_213(self):
         """ Provide ACE with IO flag, should be ignored
@@ -1605,7 +1613,7 @@ class DaclDescriptorTests(DescriptorTests):
         # Make sure created group object contains only the above inherited ACE(s)
         # that we've added manually
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertFalse("(D;IO;WP;;;DA)" in desc_sddl)
+        self.assertNotIn("(D;IO;WP;;;DA)", desc_sddl)
 
     def test_214(self):
         """ Test behavior of ACEs containing generic rights
@@ -1618,7 +1626,7 @@ class DaclDescriptorTests(DescriptorTests):
         ou_dn5 = "OU=test_inherit_ou5," + ou_dn1
         ou_dn6 = "OU=test_inherit_ou6," + ou_dn2
         # Create inheritable-free OU
-        mod = "D:P(A;CI;WPRPLCCCDCWDRC;;;DA)"
+        mod = "D:P(A;CI;WPRPLCCCDCWDRCSD;;;DA)"
         tmp_desc = security.descriptor.from_sddl(mod, self.domain_sid)
         self.ldb_admin.create_ou(ou_dn, sd=tmp_desc)
         mod = "D:(A;CI;GA;;;DU)"
@@ -1638,23 +1646,23 @@ class DaclDescriptorTests(DescriptorTests):
         self.ldb_admin.create_ou(ou_dn6)
 
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn1)
-        self.assertTrue("(A;;RPWPCRCCDCLCLORCWOWDSDDTSW;;;DU)" in desc_sddl)
-        self.assertTrue("(A;CIIO;GA;;;DU)" in desc_sddl)
+        self.assertIn("(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DU)", desc_sddl)
+        self.assertIn("(A;CIIO;GA;;;DU)", desc_sddl)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn2)
-        self.assertFalse("(A;;RPWPCRCCDCLCLORCWOWDSDDTSW;;;DU)" in desc_sddl)
-        self.assertTrue("(A;CIIO;GA;;;DU)" in desc_sddl)
+        self.assertNotIn("(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DU)", desc_sddl)
+        self.assertIn("(A;CIIO;GA;;;DU)", desc_sddl)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn3)
-        self.assertTrue("(A;;RPWPCRCCDCLCLORCWOWDSDDTSW;;;DU)" in desc_sddl)
-        self.assertFalse("(A;CIIO;GA;;;DU)" in desc_sddl)
+        self.assertIn("(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DU)", desc_sddl)
+        self.assertNotIn("(A;CIIO;GA;;;DU)", desc_sddl)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn4)
-        self.assertFalse("(A;;RPWPCRCCDCLCLORCWOWDSDDTSW;;;DU)" in desc_sddl)
-        self.assertFalse("(A;CIIO;GA;;;DU)" in desc_sddl)
+        self.assertNotIn("(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DU)", desc_sddl)
+        self.assertNotIn("(A;CIIO;GA;;;DU)", desc_sddl)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn5)
-        self.assertTrue("(A;ID;RPWPCRCCDCLCLORCWOWDSDDTSW;;;DU)" in desc_sddl)
-        self.assertTrue("(A;CIIOID;GA;;;DU)" in desc_sddl)
+        self.assertIn("(A;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DU)", desc_sddl)
+        self.assertIn("(A;CIIOID;GA;;;DU)", desc_sddl)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn6)
-        self.assertTrue("(A;ID;RPWPCRCCDCLCLORCWOWDSDDTSW;;;DU)" in desc_sddl)
-        self.assertTrue("(A;CIIOID;GA;;;DU)" in desc_sddl)
+        self.assertIn("(A;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DU)", desc_sddl)
+        self.assertIn("(A;CIIOID;GA;;;DU)", desc_sddl)
 
     def test_215(self):
         """ Make sure IO flag is removed in child objects
@@ -1663,7 +1671,7 @@ class DaclDescriptorTests(DescriptorTests):
         ou_dn1 = "OU=test_inherit_ou1," + ou_dn
         ou_dn5 = "OU=test_inherit_ou5," + ou_dn1
         # Create inheritable-free OU
-        mod = "D:P(A;CI;WPRPLCCCDCWDRC;;;DA)"
+        mod = "D:P(A;CI;WPRPLCCCDCWDRCSD;;;DA)"
         tmp_desc = security.descriptor.from_sddl(mod, self.domain_sid)
         self.ldb_admin.create_ou(ou_dn, sd=tmp_desc)
         mod = "D:(A;CIIO;WP;;;DU)"
@@ -1671,15 +1679,15 @@ class DaclDescriptorTests(DescriptorTests):
         self.ldb_admin.create_ou(ou_dn1, sd=tmp_desc)
         self.ldb_admin.create_ou(ou_dn5)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn5)
-        self.assertTrue("(A;CIID;WP;;;DU)" in desc_sddl)
-        self.assertFalse("(A;CIIOID;WP;;;DU)" in desc_sddl)
+        self.assertIn("(A;CIID;WP;;;DU)", desc_sddl)
+        self.assertNotIn("(A;CIIOID;WP;;;DU)", desc_sddl)
 
     def test_216(self):
         """ Make sure ID ACES provided by user are ignored
         """
         ou_dn = "OU=test_inherit_ou," + self.base_dn
         group_dn = "CN=test_inherit_group," + ou_dn
-        mod = "D:P(A;;WPRPLCCCDCWDRC;;;DA)"
+        mod = "D:P(A;;WPRPLCCCDCWDRCSD;;;DA)"
         tmp_desc = security.descriptor.from_sddl(mod, self.domain_sid)
         self.ldb_admin.create_ou(ou_dn, sd=tmp_desc)
         # Add some custom  ACE
@@ -1688,15 +1696,15 @@ class DaclDescriptorTests(DescriptorTests):
         self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
         # Make sure created group object does not contain the ID ace
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertFalse("(A;ID;WP;;;AU)" in desc_sddl)
-        self.assertFalse("(A;;WP;;;AU)" in desc_sddl)
+        self.assertNotIn("(A;ID;WP;;;AU)", desc_sddl)
+        self.assertNotIn("(A;;WP;;;AU)", desc_sddl)
 
     def test_217(self):
         """ Make sure ID ACES provided by user are not ignored if P flag is set
         """
         ou_dn = "OU=test_inherit_ou," + self.base_dn
         group_dn = "CN=test_inherit_group," + ou_dn
-        mod = "D:P(A;;WPRPLCCCDCWDRC;;;DA)"
+        mod = "D:P(A;;WPRPLCCCDCWDRCSD;;;DA)"
         tmp_desc = security.descriptor.from_sddl(mod, self.domain_sid)
         self.ldb_admin.create_ou(ou_dn, sd=tmp_desc)
         # Add some custom  ACE
@@ -1705,8 +1713,509 @@ class DaclDescriptorTests(DescriptorTests):
         self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
         # Make sure created group object does not contain the ID ace
         desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
-        self.assertFalse("(A;ID;WP;;;AU)" in desc_sddl)
-        self.assertTrue("(A;;WP;;;AU)" in desc_sddl)
+        self.assertNotIn("(A;ID;WP;;;AU)", desc_sddl)
+        self.assertIn("(A;;WP;;;AU)", desc_sddl)
+
+    def test_ci_and_io_on_attribute(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CIOI;WP;bf967a0e-0de6-11d0-a285-00aa003049e2;;DU)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        mod = mod.replace(";CIOI;", ";OICIID;")  # change it how it's gonna look like
+        self.assertIn(mod, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
+
+    def test_ci_and_np_on_attribute(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;WP;bf967a0e-0de6-11d0-a285-00aa003049e2;;DU)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        mod = mod.replace(";CINP;", ";ID;")  # change it how it's gonna look like
+        self.assertIn(mod, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(mod, desc_sddl)
+
+    def test_oi_and_np_on_attribute(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;OINP;WP;bf967a0e-0de6-11d0-a285-00aa003049e2;;DU)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        mod = mod.replace(";OINP;", ";ID;")  # change it how it's gonna look like
+        self.assertNotIn(mod, desc_sddl)
+        self.assertNotIn("bf967a0e-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(mod, desc_sddl)
+        self.assertNotIn("bf967a0e-0de6-11d0-a285-00aa003049e2", desc_sddl)
+
+    def test_ci_ga_no_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;GA;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modob = "(A;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DA)"
+        modid = "(OA;CIIOID;GA;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(modob, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(modob, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_ga_no_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;GA;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        modno = "(A;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DA)"
+        modid = "(OA;CIIOID;GA;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_ga_name_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;GA;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modob = "(OA;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;bf967a0e-0de6-11d0-a285-00aa003049e2;;DA)"
+        modid = "(OA;CIIOID;GA;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(modob, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(modob, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_ga_name_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;GA;bf967a0e-0de6-11d0-a285-00aa003049e2;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        modno = "(OA;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;bf967a0e-0de6-11d0-a285-00aa003049e2;;DA)"
+        modid = "(OA;CIIOID;GA;bf967a0e-0de6-11d0-a285-00aa003049e2;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_lc_no_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;LC;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modno = "(A;ID;LC;;;DA)"
+        modid = "(OA;CIID;LC;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_lc_no_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;LC;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        modno = "(A;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DA)"
+        modid = "(OA;CIIOID;LC;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_lc_name_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modob = "(OA;ID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;;DA)"
+        modid = "(OA;CIID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modob, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modob, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_lc_name_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CI;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        modno = "(OA;ID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;;DA)"
+        modid = "(OA;CIIOID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertIn(modid, desc_sddl)
+
+    def test_ci_np_ga_no_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        # Add some custom 'OA' for 'name' attribute & 'CI'+'OI' ACE
+        mod = "(OA;CINP;GA;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modob = "(A;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DA)"
+        modid = "(OA;CIIOID;GA;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(modob, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+
+    def test_ci_np_ga_no_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;GA;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        modno = "(A;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;DA)"
+        modid = "(OA;CIIOID;GA;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
+
+    def test_ci_np_ga_name_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;GA;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modob = "(OA;ID;CCDCLCSWRPWPDTLOCRSDRCWDWO;bf967a0e-0de6-11d0-a285-00aa003049e2;;DA)"
+        modid = "(OA;CIIOID;GA;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(modob, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(modob, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+
+    def test_ci_np_ga_name_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;GA;bf967a0e-0de6-11d0-a285-00aa003049e2;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn("bf967a0e-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn("bf967a0e-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
+
+    def test_ci_np_lc_no_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;LC;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modno = "(A;ID;LC;;;DA)"
+        modid = "(OA;CIID;LC;;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+
+    def test_ci_np_lc_no_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;LC;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        modno = "(A;ID;LC;;;DA)"
+        modid = "(OA;CIIOID;LC;;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
+
+    def test_ci_np_lc_name_attr_objectclass_same(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        modob = "(OA;ID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;;DA)"
+        modid = "(OA;CIID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;bf967a9c-0de6-11d0-a285-00aa003049e2;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(modob, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertIn(modob, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a9c-0de6-11d0-a285-00aa003049e2", desc_sddl)
+
+    def test_ci_np_lc_name_attr_objectclass_different(self):
+        ou_dn = "OU=test_inherit_ou," + self.base_dn
+        group_dn = "CN=test_inherit_group," + ou_dn
+        # Create inheritable-free OU
+        self.create_clean_ou(ou_dn)
+        mod = "(OA;CINP;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        modno = "(OA;ID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;;DA)"
+        modid = "(OA;CIIOID;LC;bf967a0e-0de6-11d0-a285-00aa003049e2;aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee;DA)"
+        moded = "(D;;CC;;;LG)"
+        self.sd_utils.dacl_add_ace(ou_dn, mod)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
+        # Create group child object
+        tmp_desc = security.descriptor.from_sddl("O:AUG:AUD:AI(A;;CC;;;AU)", self.domain_sid)
+        self.ldb_admin.newgroup("test_inherit_group", groupou="OU=test_inherit_ou", grouptype=4, sd=tmp_desc)
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a0e-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
+        try:
+            self.sd_utils.modify_sd_on_dn(group_dn, "D:" + moded)
+        except LdbError as e:
+            self.fail(str(e))
+        desc_sddl = self.sd_utils.get_sd_as_sddl(group_dn)
+        self.assertIn(moded, desc_sddl)
+        self.assertNotIn(modno, desc_sddl)
+        self.assertNotIn(modid, desc_sddl)
+        self.assertNotIn("bf967a0e-0de6-11d0-a285-00aa003049e2", desc_sddl)
+        self.assertNotIn("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", desc_sddl)
 
     ########################################################################################
 
@@ -1729,11 +2238,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.sd_utils.modify_sd_on_dn(ou_dn, self.test_descr, controls=["sd_flags:1:%d" % (SECINFO_OWNER)])
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
         # make sure we have modified the owner
-        self.assertTrue("O:AU" in desc_sddl)
+        self.assertIn("O:AU", desc_sddl)
         # make sure nothing else has been modified
-        self.assertFalse("G:AU" in desc_sddl)
-        self.assertFalse("D:(D;;CC;;;LG)" in desc_sddl)
-        self.assertFalse("(OU;;WP;;;AU)" in desc_sddl)
+        self.assertNotIn("G:AU", desc_sddl)
+        self.assertNotIn("D:(D;;CC;;;LG)", desc_sddl)
+        self.assertNotIn("(OU;;WP;;;AU)", desc_sddl)
 
     def test_302(self):
         """ Modify a descriptor with GROUP_SECURITY_INFORMATION set.
@@ -1744,11 +2253,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.sd_utils.modify_sd_on_dn(ou_dn, self.test_descr, controls=["sd_flags:1:%d" % (SECINFO_GROUP)])
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
         # make sure we have modified the group
-        self.assertTrue("G:AU" in desc_sddl)
+        self.assertIn("G:AU", desc_sddl)
         # make sure nothing else has been modified
-        self.assertFalse("O:AU" in desc_sddl)
-        self.assertFalse("D:(D;;CC;;;LG)" in desc_sddl)
-        self.assertFalse("(OU;;WP;;;AU)" in desc_sddl)
+        self.assertNotIn("O:AU", desc_sddl)
+        self.assertNotIn("D:(D;;CC;;;LG)", desc_sddl)
+        self.assertNotIn("(OU;;WP;;;AU)", desc_sddl)
 
     def test_303(self):
         """ Modify a descriptor with SACL_SECURITY_INFORMATION set.
@@ -1759,11 +2268,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.sd_utils.modify_sd_on_dn(ou_dn, self.test_descr, controls=["sd_flags:1:%d" % (SECINFO_DACL)])
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
         # make sure we have modified the DACL
-        self.assertTrue("(D;;CC;;;LG)" in desc_sddl)
+        self.assertIn("(D;;CC;;;LG)", desc_sddl)
         # make sure nothing else has been modified
-        self.assertFalse("O:AU" in desc_sddl)
-        self.assertFalse("G:AU" in desc_sddl)
-        self.assertFalse("(OU;;WP;;;AU)" in desc_sddl)
+        self.assertNotIn("O:AU", desc_sddl)
+        self.assertNotIn("G:AU", desc_sddl)
+        self.assertNotIn("(OU;;WP;;;AU)", desc_sddl)
 
     def test_304(self):
         """ Modify a descriptor with SACL_SECURITY_INFORMATION set.
@@ -1774,11 +2283,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.sd_utils.modify_sd_on_dn(ou_dn, self.test_descr, controls=["sd_flags:1:%d" % (SECINFO_SACL)])
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
         # make sure we have modified the DACL
-        self.assertTrue("(OU;;WP;;;AU)" in desc_sddl)
+        self.assertIn("(OU;;WP;;;AU)", desc_sddl)
         # make sure nothing else has been modified
-        self.assertFalse("O:AU" in desc_sddl)
-        self.assertFalse("G:AU" in desc_sddl)
-        self.assertFalse("(D;;CC;;;LG)" in desc_sddl)
+        self.assertNotIn("O:AU", desc_sddl)
+        self.assertNotIn("G:AU", desc_sddl)
+        self.assertNotIn("(D;;CC;;;LG)", desc_sddl)
 
     def test_305(self):
         """ Modify a descriptor with 0x0 set.
@@ -1790,11 +2299,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.sd_utils.modify_sd_on_dn(ou_dn, self.test_descr, controls=["sd_flags:1:0"])
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
         # make sure we have modified the DACL
-        self.assertTrue("(OU;;WP;;;AU)" in desc_sddl)
+        self.assertIn("(OU;;WP;;;AU)", desc_sddl)
         # make sure nothing else has been modified
-        self.assertTrue("O:AU" in desc_sddl)
-        self.assertTrue("G:AU" in desc_sddl)
-        self.assertTrue("(D;;CC;;;LG)" in desc_sddl)
+        self.assertIn("O:AU", desc_sddl)
+        self.assertIn("G:AU", desc_sddl)
+        self.assertIn("(D;;CC;;;LG)", desc_sddl)
 
     def test_306(self):
         """ Modify a descriptor with 0xF set.
@@ -1804,11 +2313,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.sd_utils.modify_sd_on_dn(ou_dn, self.test_descr, controls=["sd_flags:1:15"])
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn)
         # make sure we have modified the DACL
-        self.assertTrue("(OU;;WP;;;AU)" in desc_sddl)
+        self.assertIn("(OU;;WP;;;AU)", desc_sddl)
         # make sure nothing else has been modified
-        self.assertTrue("O:AU" in desc_sddl)
-        self.assertTrue("G:AU" in desc_sddl)
-        self.assertTrue("(D;;CC;;;LG)" in desc_sddl)
+        self.assertIn("O:AU", desc_sddl)
+        self.assertIn("G:AU", desc_sddl)
+        self.assertIn("(D;;CC;;;LG)", desc_sddl)
 
     def test_307(self):
         """ Read a descriptor with OWNER_SECURITY_INFORMATION
@@ -1818,11 +2327,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.ldb_admin.create_ou(ou_dn)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn, controls=["sd_flags:1:%d" % (SECINFO_OWNER)])
         # make sure we have read the owner
-        self.assertTrue("O:" in desc_sddl)
+        self.assertIn("O:", desc_sddl)
         # make sure we have read nothing else
-        self.assertFalse("G:" in desc_sddl)
-        self.assertFalse("D:" in desc_sddl)
-        self.assertFalse("S:" in desc_sddl)
+        self.assertNotIn("G:", desc_sddl)
+        self.assertNotIn("D:", desc_sddl)
+        self.assertNotIn("S:", desc_sddl)
 
     def test_308(self):
         """ Read a descriptor with GROUP_SECURITY_INFORMATION
@@ -1832,11 +2341,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.ldb_admin.create_ou(ou_dn)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn, controls=["sd_flags:1:%d" % (SECINFO_GROUP)])
         # make sure we have read the owner
-        self.assertTrue("G:" in desc_sddl)
+        self.assertIn("G:", desc_sddl)
         # make sure we have read nothing else
-        self.assertFalse("O:" in desc_sddl)
-        self.assertFalse("D:" in desc_sddl)
-        self.assertFalse("S:" in desc_sddl)
+        self.assertNotIn("O:", desc_sddl)
+        self.assertNotIn("D:", desc_sddl)
+        self.assertNotIn("S:", desc_sddl)
 
     def test_309(self):
         """ Read a descriptor with SACL_SECURITY_INFORMATION
@@ -1846,11 +2355,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.ldb_admin.create_ou(ou_dn)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn, controls=["sd_flags:1:%d" % (SECINFO_SACL)])
         # make sure we have read the owner
-        self.assertTrue("S:" in desc_sddl)
+        self.assertIn("S:", desc_sddl)
         # make sure we have read nothing else
-        self.assertFalse("O:" in desc_sddl)
-        self.assertFalse("D:" in desc_sddl)
-        self.assertFalse("G:" in desc_sddl)
+        self.assertNotIn("O:", desc_sddl)
+        self.assertNotIn("D:", desc_sddl)
+        self.assertNotIn("G:", desc_sddl)
 
     def test_310(self):
         """ Read a descriptor with DACL_SECURITY_INFORMATION
@@ -1860,11 +2369,11 @@ class SdFlagsDescriptorTests(DescriptorTests):
         self.ldb_admin.create_ou(ou_dn)
         desc_sddl = self.sd_utils.get_sd_as_sddl(ou_dn, controls=["sd_flags:1:%d" % (SECINFO_DACL)])
         # make sure we have read the owner
-        self.assertTrue("D:" in desc_sddl)
+        self.assertIn("D:", desc_sddl)
         # make sure we have read nothing else
-        self.assertFalse("O:" in desc_sddl)
-        self.assertFalse("S:" in desc_sddl)
-        self.assertFalse("G:" in desc_sddl)
+        self.assertNotIn("O:", desc_sddl)
+        self.assertNotIn("S:", desc_sddl)
+        self.assertNotIn("G:", desc_sddl)
 
     def test_311(self):
         sd_flags = (SECINFO_OWNER |
@@ -1874,121 +2383,121 @@ class SdFlagsDescriptorTests(DescriptorTests):
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     [], controls=None)
-        self.assertFalse("nTSecurityDescriptor" in res[0])
+        self.assertNotIn("nTSecurityDescriptor", res[0])
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["name"], controls=None)
-        self.assertFalse("nTSecurityDescriptor" in res[0])
+        self.assertNotIn("nTSecurityDescriptor", res[0])
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["name"], controls=["sd_flags:1:%d" % (sd_flags)])
-        self.assertFalse("nTSecurityDescriptor" in res[0])
+        self.assertNotIn("nTSecurityDescriptor", res[0])
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     controls=["sd_flags:1:%d" % (sd_flags)])
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["*"], controls=["sd_flags:1:%d" % (sd_flags)])
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["nTSecurityDescriptor", "*"], controls=["sd_flags:1:%d" % (sd_flags)])
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["*", "nTSecurityDescriptor"], controls=["sd_flags:1:%d" % (sd_flags)])
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["nTSecurityDescriptor", "name"], controls=["sd_flags:1:%d" % (sd_flags)])
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["name", "nTSecurityDescriptor"], controls=["sd_flags:1:%d" % (sd_flags)])
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["nTSecurityDescriptor"], controls=None)
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["name", "nTSecurityDescriptor"], controls=None)
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None,
                                     ["nTSecurityDescriptor", "name"], controls=None)
-        self.assertTrue("nTSecurityDescriptor" in res[0])
+        self.assertIn("nTSecurityDescriptor", res[0])
         tmp = res[0]["nTSecurityDescriptor"][0]
         sd = ndr_unpack(security.descriptor, tmp)
         sddl = sd.as_sddl(self.sd_utils.domain_sid)
-        self.assertTrue("O:" in sddl)
-        self.assertTrue("G:" in sddl)
-        self.assertTrue("D:" in sddl)
-        self.assertTrue("S:" in sddl)
+        self.assertIn("O:", sddl)
+        self.assertIn("G:", sddl)
+        self.assertIn("D:", sddl)
+        self.assertIn("S:", sddl)
 
     def test_312(self):
         """This search is done by the windows dc join..."""
 
         res = self.ldb_admin.search(self.base_dn, SCOPE_BASE, None, ["1.1"],
                                     controls=["extended_dn:1:0", "sd_flags:1:0", "search_options:1:1"])
-        self.assertFalse("nTSecurityDescriptor" in res[0])
+        self.assertNotIn("nTSecurityDescriptor", res[0])
 
 
 class RightsAttributesTests(DescriptorTests):
@@ -2063,7 +2572,7 @@ class RightsAttributesTests(DescriptorTests):
                           attrs=["allowedChildClassesEffective"])
         # there should be no allowed child classes
         self.assertEqual(len(res), 1)
-        self.assertFalse("allowedChildClassesEffective" in res[0].keys())
+        self.assertNotIn("allowedChildClassesEffective", res[0].keys())
         # give the user the right to create children of type user
         mod = "(OA;CI;CC;bf967aba-0de6-11d0-a285-00aa003049e2;;%s)" % str(user_sid)
         self.sd_utils.dacl_add_ace(object_dn, mod)
@@ -2087,7 +2596,7 @@ class RightsAttributesTests(DescriptorTests):
                           attrs=["allowedAttributesEffective"])
         # there should be no allowed attributes
         self.assertEqual(len(res), 1)
-        self.assertFalse("allowedAttributesEffective" in res[0].keys())
+        self.assertNotIn("allowedAttributesEffective", res[0].keys())
         # give the user the right to write displayName and managedBy
         mod2 = "(OA;CI;WP;bf967953-0de6-11d0-a285-00aa003049e2;;%s)" % str(user_sid)
         mod = "(OA;CI;WP;0296c120-40da-11d1-a9c0-0000f80367c1;;%s)" % str(user_sid)
@@ -2099,8 +2608,8 @@ class RightsAttributesTests(DescriptorTests):
         # value should only contain user and managedBy
         self.assertEqual(len(res), 1)
         self.assertEqual(len(res[0]["allowedAttributesEffective"]), 2)
-        self.assertTrue(b"displayName" in res[0]["allowedAttributesEffective"])
-        self.assertTrue(b"managedBy" in res[0]["allowedAttributesEffective"])
+        self.assertIn(b"displayName", res[0]["allowedAttributesEffective"])
+        self.assertIn(b"managedBy", res[0]["allowedAttributesEffective"])
 
 
 class SdAutoInheritTests(DescriptorTests):
@@ -2139,8 +2648,8 @@ class SdAutoInheritTests(DescriptorTests):
         ou_sddl0 = ou_sd0.as_sddl(self.domain_sid)
         sub_sddl0 = sub_sd0.as_sddl(self.domain_sid)
 
-        self.assertFalse(ace in ou_sddl0)
-        self.assertFalse(ace in sub_sddl0)
+        self.assertNotIn(ace, ou_sddl0)
+        self.assertNotIn(ace, sub_sddl0)
 
         ou_sddl1 = (ou_sddl0[:ou_sddl0.index("(")] + ace +
                     ou_sddl0[ou_sddl0.index("("):])
@@ -2163,8 +2672,8 @@ class SdAutoInheritTests(DescriptorTests):
         ou_sddl2 = ou_sd2.as_sddl(self.domain_sid)
         sub_sddl2 = sub_sd2.as_sddl(self.domain_sid)
 
-        self.assertFalse(ou_sddl2 == ou_sddl0)
-        self.assertFalse(sub_sddl2 == sub_sddl0)
+        self.assertNotEqual(ou_sddl2, ou_sddl0)
+        self.assertNotEqual(sub_sddl2, sub_sddl0)
 
         if ace not in ou_sddl2:
             print("ou0: %s" % ou_sddl0)
@@ -2174,12 +2683,12 @@ class SdAutoInheritTests(DescriptorTests):
             print("sub0: %s" % sub_sddl0)
             print("sub2: %s" % sub_sddl2)
 
-        self.assertTrue(ace in ou_sddl2)
-        self.assertTrue(sub_ace in sub_sddl2)
+        self.assertIn(ace, ou_sddl2)
+        self.assertIn(sub_ace, sub_sddl2)
 
         ou_usn0 = int(ou_res0[0]["uSNChanged"][0])
         ou_usn2 = int(ou_res2[0]["uSNChanged"][0])
-        self.assertTrue(ou_usn2 > ou_usn0)
+        self.assertGreater(ou_usn2, ou_usn0)
 
         sub_usn0 = int(sub_res0[0]["uSNChanged"][0])
         sub_usn2 = int(sub_res2[0]["uSNChanged"][0])

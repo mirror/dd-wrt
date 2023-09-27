@@ -31,6 +31,7 @@ apt-get -y install \
     gdb \
     git \
     glusterfs-common \
+    gnutls-bin \
     gzip \
     heimdal-multidev \
     hostname \
@@ -58,6 +59,7 @@ apt-get -y install \
     libjansson-dev \
     libjs-jquery \
     libjson-perl \
+    libkeyutils-dev \
     libkrb5-dev \
     libldap2-dev \
     liblmdb-dev \

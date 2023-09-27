@@ -908,10 +908,16 @@ NTSTATUS cli_setfileinfo_ext(
 ****************************************************************************/
 
 struct cli_qpathinfo2_state {
-	uint32_t num_data;
-	uint8_t *data;
+	struct timespec create_time;
+	struct timespec access_time;
+	struct timespec write_time;
+	struct timespec change_time;
+	off_t size;
+	uint32_t attr;
+	SMB_INO_T ino;
 };
 
+static void cli_qpathinfo2_done2(struct tevent_req *subreq);
 static void cli_qpathinfo2_done(struct tevent_req *subreq);
 
 struct tevent_req *cli_qpathinfo2_send(TALLOC_CTX *mem_ctx,
@@ -926,6 +932,14 @@ struct tevent_req *cli_qpathinfo2_send(TALLOC_CTX *mem_ctx,
 	if (req == NULL) {
 		return NULL;
 	}
+	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
+		subreq = cli_smb2_qpathinfo2_send(state, ev, cli, fname);
+		if (tevent_req_nomem(subreq, req)) {
+			return tevent_req_post(req, ev);
+		}
+		tevent_req_set_callback(subreq, cli_qpathinfo2_done2, req);
+		return req;
+	}
 	subreq = cli_qpathinfo_send(state, ev, cli, fname,
 				    SMB_QUERY_FILE_ALL_INFO,
 				    68, CLI_BUFFER_SIZE);
@@ -936,21 +950,64 @@ struct tevent_req *cli_qpathinfo2_send(TALLOC_CTX *mem_ctx,
 	return req;
 }
 
+static void cli_qpathinfo2_done2(struct tevent_req *subreq)
+{
+	struct tevent_req *req =
+		tevent_req_callback_data(subreq, struct tevent_req);
+	struct cli_qpathinfo2_state *state =
+		tevent_req_data(req, struct cli_qpathinfo2_state);
+	NTSTATUS status;
+
+	status = cli_smb2_qpathinfo2_recv(subreq,
+					  &state->create_time,
+					  &state->access_time,
+					  &state->write_time,
+					  &state->change_time,
+					  &state->size,
+					  &state->attr,
+					  &state->ino);
+	TALLOC_FREE(subreq);
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+	tevent_req_done(req);
+}
+
 static void cli_qpathinfo2_done(struct tevent_req *subreq)
 {
 	struct tevent_req *req = tevent_req_callback_data(
 		subreq, struct tevent_req);
 	struct cli_qpathinfo2_state *state = tevent_req_data(
 		req, struct cli_qpathinfo2_state);
+	uint8_t *data = NULL;
+	uint32_t num_data;
 	NTSTATUS status;
 
-	status = cli_qpathinfo_recv(subreq, state, &state->data,
-				    &state->num_data);
+	status = cli_qpathinfo_recv(subreq, state, &data, &num_data);
 	TALLOC_FREE(subreq);
 	if (!NT_STATUS_IS_OK(status)) {
 		tevent_req_nterror(req, status);
 		return;
 	}
+
+	state->create_time = interpret_long_date((char *)data + 0);
+	state->access_time = interpret_long_date((char *)data + 8);
+	state->write_time = interpret_long_date((char *)data + 16);
+	state->change_time = interpret_long_date((char *)data + 24);
+	state->attr = PULL_LE_U32(data, 32);
+	state->size = PULL_LE_U64(data, 48);
+
+	/*
+	 * SMB1 qpathinfo2 uses SMB_QUERY_FILE_ALL_INFO which doesn't
+	 * return an inode number (fileid).  We can't change this to
+	 * one of the FILE_ID info levels as only Win2003 and above
+	 * support these [MS-SMB: 2.2.2.3.1] and the SMB1 code needs
+	 * to support older servers.
+	 */
+	state->ino = 0;
+
+	TALLOC_FREE(data);
+
 	tevent_req_done(req);
 }
 
@@ -971,34 +1028,25 @@ NTSTATUS cli_qpathinfo2_recv(struct tevent_req *req,
 	}
 
 	if (create_time) {
-                *create_time = interpret_long_date((char *)state->data+0);
+		*create_time = state->create_time;
 	}
 	if (access_time) {
-		*access_time = interpret_long_date((char *)state->data+8);
+		*access_time = state->access_time;
 	}
 	if (write_time) {
-		*write_time = interpret_long_date((char *)state->data+16);
+		*write_time = state->write_time;
 	}
 	if (change_time) {
-		*change_time = interpret_long_date((char *)state->data+24);
+		*change_time = state->change_time;
 	}
 	if (pattr) {
-		/* SMB_QUERY_FILE_ALL_INFO returns 32-bit attributes. */
-		*pattr = IVAL(state->data, 32);
+		*pattr = state->attr;
 	}
 	if (size) {
-                *size = IVAL2_TO_SMB_BIG_UINT(state->data,48);
+		*size = state->size;
 	}
 	if (ino) {
-		/*
-		 * SMB1 qpathinfo2 uses SMB_QUERY_FILE_ALL_INFO
-		 * which doesn't return an inode number (fileid).
-		 * We can't change this to one of the FILE_ID
-		 * info levels as only Win2003 and above support
-		 * these [MS-SMB: 2.2.2.3.1] and the SMB1 code
-		 * needs to support older servers.
-		 */
-		*ino = 0;
+		*ino = state->ino;
 	}
 	return NT_STATUS_OK;
 }
@@ -1015,18 +1063,6 @@ NTSTATUS cli_qpathinfo2(struct cli_state *cli, const char *fname,
 	struct tevent_context *ev;
 	struct tevent_req *req;
 	NTSTATUS status = NT_STATUS_NO_MEMORY;
-
-	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
-		return cli_smb2_qpathinfo2(cli,
-					fname,
-					create_time,
-					access_time,
-					write_time,
-					change_time,
-					size,
-					pattr,
-					ino);
-	}
 
 	frame = talloc_stackframe();
 

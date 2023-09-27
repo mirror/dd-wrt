@@ -80,12 +80,13 @@
 #include "source3/lib/substitute.h"
 #include "source3/librpc/gen_ndr/ads.h"
 #include "lib/util/time_basic.h"
+#include "libds/common/flags.h"
 
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
 
-bool bLoaded = false;
+bool b_loaded = false;
 
 /* the special value for the include parameter
  * to be interpreted not as a file name but to
@@ -246,7 +247,6 @@ static const struct loadparm_service _sDefault =
 	.aio_read_size = 1,
 	.aio_write_size = 1,
 	.map_readonly = MAP_READONLY_NO,
-	.directory_name_cache_size = 100,
 	.server_smb_encrypt = SMB_ENCRYPTION_DEFAULT,
 	.kernel_share_modes = false,
 	.durable_handles = true,
@@ -995,6 +995,8 @@ static void init_globals(struct loadparm_context *lp_ctx, bool reinit_globals)
 	 */
 	Globals.rpc_start_on_demand_helpers = true;
 
+	Globals.ad_dc_functional_level = DS_DOMAIN_FUNCTION_2008_R2,
+
 	/* Now put back the settings that were set with lp_set_cmdline() */
 	apply_lp_set_cmdline();
 }
@@ -1706,7 +1708,7 @@ bool lp_add_printer(const char *pszPrintername, int iDefaultService)
 			 pszPrintername);
 	lpcfg_string_set(ServicePtrs[i], &ServicePtrs[i]->comment, comment);
 
-	/* set the browseable flag from the gloabl default */
+	/* set the browseable flag from the global default */
 	ServicePtrs[i]->browseable = sDefault.browseable;
 
 	/* Printers cannot be read_only. */
@@ -1782,7 +1784,7 @@ bool lp_canonicalize_parameter(const char *parm_name, const char **canon_parm,
 /**************************************************************************
  Determine the canonical name for a parameter.
  Turn the value given into the inverse boolean expression when
- the synonym is an invers boolean synonym.
+ the synonym is an inverse boolean synonym.
 
  Return true if
  - parm_name is a valid parameter name and
@@ -1843,7 +1845,7 @@ static int map_parameter_canonical(const char *pszParmName, bool *inverse)
 
 	parm_num = lpcfg_map_parameter(pszParmName);
 	if ((parm_num < 0) || !(parm_table[parm_num].flags & FLAG_SYNONYM)) {
-		/* invalid, parametric or no canidate for synonyms ... */
+		/* invalid, parametric or no candidate for synonyms ... */
 		goto done;
 	}
 
@@ -3045,7 +3047,7 @@ void lp_add_one_printer(const char *name, const char *comment,
 
 bool lp_loaded(void)
 {
-	return (bLoaded);
+	return (b_loaded);
 }
 
 /***************************************************************************
@@ -3092,7 +3094,7 @@ void lp_killservice(int iServiceIn)
 }
 
 /***************************************************************************
- Save the curent values of all global and sDefault parameters into the
+ Save the current values of all global and sDefault parameters into the
  defaults union. This allows testparm to show only the
  changed (ie. non-default) parameters.
 ***************************************************************************/
@@ -3161,7 +3163,7 @@ static void lp_save_defaults(void)
 }
 
 /***********************************************************
- If we should send plaintext/LANMAN passwords in the clinet
+ If we should send plaintext/LANMAN passwords in the client
 ************************************************************/
 
 static void set_allowed_client_auth(void)
@@ -4107,7 +4109,7 @@ static bool lp_load_ex(const char *pszFname,
 			  lp_password_server()));
 	}
 
-	bLoaded = true;
+	b_loaded = true;
 
 	/* Now we check we_are_a_wins_server and set szWINSserver to 127.0.0.1 */
 	/* if we_are_a_wins_server is true and we are in the client            */
@@ -4422,7 +4424,7 @@ const char *volume_label(TALLOC_CTX *ctx, int snum)
 		}
 	}
 
-	/* This returns a max of 33 byte guarenteed null terminated string. */
+	/* This returns a max of 33 byte guaranteed null terminated string. */
 	ret = talloc_strndup(ctx, label, end);
 	if (!ret) {
 		return "";

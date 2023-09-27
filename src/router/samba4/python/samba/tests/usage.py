@@ -15,10 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import subprocess
 from samba.tests import TestCase, check_help_consistency
-from unittest import TestSuite
 import re
 import stat
 
@@ -84,40 +82,7 @@ EXCLUDE_USAGE = {
     'selftest/tests.py',
     'python/samba/subunit/run.py',
     'bin/python/samba/subunit/run.py',
-    'python/samba/tests/dcerpc/raw_protocol.py',
-    'python/samba/tests/smb-notify.py',
-    'python/samba/tests/krb5/kcrypto.py',
-    'python/samba/tests/krb5/simple_tests.py',
-    'python/samba/tests/krb5/s4u_tests.py',
-    'python/samba/tests/krb5/xrealm_tests.py',
-    'python/samba/tests/krb5/as_canonicalization_tests.py',
-    'python/samba/tests/krb5/compatability_tests.py',
-    'python/samba/tests/krb5/rfc4120_constants.py',
-    'python/samba/tests/krb5/kdc_tests.py',
-    'python/samba/tests/krb5/kdc_base_test.py',
-    'python/samba/tests/krb5/kdc_tgs_tests.py',
-    'python/samba/tests/krb5/test_ccache.py',
-    'python/samba/tests/krb5/test_ldap.py',
-    'python/samba/tests/krb5/test_rpc.py',
-    'python/samba/tests/krb5/test_smb.py',
-    'python/samba/tests/krb5/ms_kile_client_principal_lookup_tests.py',
-    'python/samba/tests/krb5/as_req_tests.py',
-    'python/samba/tests/krb5/fast_tests.py',
-    'python/samba/tests/krb5/rodc_tests.py',
-    'python/samba/tests/krb5/salt_tests.py',
-    'python/samba/tests/krb5/spn_tests.py',
-    'python/samba/tests/krb5/alias_tests.py',
-    'python/samba/tests/krb5/test_min_domain_uid.py',
-    'python/samba/tests/krb5/test_idmap_nss.py',
-    'python/samba/tests/krb5/pac_align_tests.py',
-    'python/samba/tests/krb5/protected_users_tests.py',
-    'python/samba/tests/krb5/nt_hash_tests.py',
-    'python/samba/tests/krb5/kpasswd_tests.py',
-    'python/samba/tests/krb5/claims_tests.py',
-    'python/samba/tests/krb5/lockout_tests.py',
-    'python/samba/tests/krb5/group_tests.py',
     'lib/compression/tests/scripts/three-byte-hash',
-    'python/samba/tests/krb5/etype_tests.py',
 }
 
 EXCLUDE_HELP = {
@@ -135,7 +100,10 @@ EXCLUDE_DIRS = {
     'bin/python/samba/tests',
     'bin/python/samba/tests/dcerpc',
     'bin/python/samba/tests/krb5',
+    'python/samba/tests',
     'python/samba/tests/bin',
+    'python/samba/tests/dcerpc',
+    'python/samba/tests/krb5',
 }
 
 
@@ -161,7 +129,9 @@ is_git_file = _init_git_file_finder()
 def script_iterator(d=BASEDIR, cache=None,
                     shebang_filter=None,
                     filename_filter=None,
-                    subdirs=TEST_DIRS):
+                    subdirs=None):
+    if subdirs is None:
+        subdirs = TEST_DIRS
     if not cache:
         safename = re.compile(r'\W+').sub
         for subdir in subdirs:
@@ -285,7 +255,10 @@ class PythonScriptUsageTests(TestCase):
                 self.assertIn('usage', out.lower() + err.lower(),
                               'stdout:\n%s\nstderr:\n%s' % (out, err))
 
-            setattr(cls, 'test_%s' % name, _f)
+            attr = 'test_%s' % name
+            if hasattr(cls, attr):
+                raise RuntimeError(f'Usage test ‘{attr}’ already exists!')
+            setattr(cls, attr, _f)
 
 
 class HelpTestSuper(TestCase):
@@ -374,7 +347,10 @@ class HelpTestSuper(TestCase):
                     if self.check_multiline:
                         self.assertIn('\n', out, 'expected multi-line output')
 
-            setattr(cls, 'test_%s' % name, _f)
+            attr = 'test_%s' % name
+            if hasattr(cls, attr):
+                raise RuntimeError(f'Usage test ‘{attr}’ already exists!')
+            setattr(cls, attr, _f)
 
 
 class PythonScriptHelpTests(HelpTestSuper):

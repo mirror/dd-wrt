@@ -158,7 +158,8 @@ static int ldb_kv_parse_data_unpack(struct ldb_val key,
 			talloc_free(data_parse.data);
 		}
 
-		ldb_debug(ldb, LDB_DEBUG_ERROR, "Invalid data for index %*.*s\n",
+		ldb_debug(ldb, LDB_DEBUG_ERROR,
+			  __location__ ": Invalid data for index %*.*s\n",
 			  (int)key.length, (int)key.length, key.data);
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
@@ -623,7 +624,7 @@ static int ldb_kv_search_and_return_base(struct ldb_kv_private *ldb_kv,
 	ret = ldb_module_send_entry(ctx->req, msg, NULL);
 	if (ret != LDB_SUCCESS) {
 		/* Regardless of success or failure, the msg
-		 * is the callbacks responsiblity, and should
+		 * is the callbacks responsibility, and should
 		 * not be talloc_free()'ed */
 		ctx->request_terminated = true;
 		return ret;

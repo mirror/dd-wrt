@@ -257,8 +257,10 @@ class LdbTestCase(TestCase):
         self.filename = self.tempfile.name
         self.ldb = samba.Ldb(self.filename)
 
-    def set_modules(self, modules=[]):
+    def set_modules(self, modules=None):
         """Change the modules for this Ldb."""
+        if modules is None:
+            modules = []
         m = ldb.Message()
         m.dn = ldb.Dn(self.ldb, "@MODULES")
         m["@LIST"] = ",".join(modules)
@@ -391,7 +393,8 @@ class BlackboxProcessError(Exception):
 class BlackboxTestCase(TestCaseInTempDir):
     """Base test case for blackbox tests."""
 
-    def _make_cmdline(self, line):
+    @staticmethod
+    def _make_cmdline(line):
         """Expand the called script into a fully resolved path in the bin
         directory."""
         if isinstance(line, list):
@@ -456,8 +459,9 @@ class BlackboxTestCase(TestCaseInTempDir):
     # where ret is the return code
     #       stdout is a string containing the commands stdout
     #       stderr is a string containing the commands stderr
-    def run_command(self, line):
-        line = self._make_cmdline(line)
+    @classmethod
+    def run_command(cls, line):
+        line = cls._make_cmdline(line)
         use_shell = not isinstance(line, list)
         p = subprocess.Popen(line,
                              stdout=subprocess.PIPE,

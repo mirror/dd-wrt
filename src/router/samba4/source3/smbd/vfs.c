@@ -847,7 +847,6 @@ off_t vfs_transfer_file(files_struct *in, files_struct *out, off_t n)
 const char *vfs_readdirname(connection_struct *conn,
 			    struct files_struct *dirfsp,
 			    void *p,
-			    SMB_STRUCT_STAT *sbuf,
 			    char **talloced)
 {
 	struct dirent *ptr= NULL;
@@ -858,7 +857,7 @@ const char *vfs_readdirname(connection_struct *conn,
 	if (!p)
 		return(NULL);
 
-	ptr = SMB_VFS_READDIR(conn, dirfsp, (DIR *)p, sbuf);
+	ptr = SMB_VFS_READDIR(conn, dirfsp, (DIR *)p);
 	if (!ptr)
 		return(NULL);
 
@@ -1491,25 +1490,10 @@ DIR *smb_vfs_call_fdopendir(struct vfs_handle_struct *handle,
 
 struct dirent *smb_vfs_call_readdir(struct vfs_handle_struct *handle,
 				    struct files_struct *dirfsp,
-				    DIR *dirp,
-				    SMB_STRUCT_STAT *sbuf)
+				    DIR *dirp)
 {
 	VFS_FIND(readdir);
-	return handle->fns->readdir_fn(handle, dirfsp, dirp, sbuf);
-}
-
-void smb_vfs_call_seekdir(struct vfs_handle_struct *handle,
-			  DIR *dirp, long offset)
-{
-	VFS_FIND(seekdir);
-	handle->fns->seekdir_fn(handle, dirp, offset);
-}
-
-long smb_vfs_call_telldir(struct vfs_handle_struct *handle,
-			  DIR *dirp)
-{
-	VFS_FIND(telldir);
-	return handle->fns->telldir_fn(handle, dirp);
+	return handle->fns->readdir_fn(handle, dirfsp, dirp);
 }
 
 void smb_vfs_call_rewind_dir(struct vfs_handle_struct *handle,

@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
+import sys
 import samba.getopt as options
 import ldb
 import re
@@ -43,7 +44,6 @@ import samba.auth
 from samba.auth import AUTH_SESSION_INFO_DEFAULT_GROUPS, AUTH_SESSION_INFO_AUTHENTICATED, AUTH_SESSION_INFO_SIMPLE_PRIVILEGES
 from samba.netcmd.common import netcmd_finddc
 from samba import policy
-from samba.samba3 import param as s3param
 from samba.samba3 import libsmb_samba_internal as libsmb
 from samba import NTSTATUSError
 import uuid
@@ -62,13 +62,30 @@ from samba.gp_parse.gp_csv import GPAuditCsvParser
 from samba.gp_parse.gp_inf import GptTmplInfParser
 from samba.gp_parse.gp_aas import GPAasParser
 from samba import param
-from samba.credentials import SMB_SIGNING_REQUIRED
 from samba.netcmd.common import attr_default
 from samba.common import get_bytes, get_string
 from configparser import ConfigParser
 from io import StringIO, BytesIO
 from samba.gp.vgp_files_ext import calc_mode, stat_from_mode
 import hashlib
+import json
+from samba.registry import str_regtype
+from samba.ntstatus import (
+    NT_STATUS_OBJECT_NAME_INVALID,
+    NT_STATUS_OBJECT_NAME_NOT_FOUND,
+    NT_STATUS_OBJECT_PATH_NOT_FOUND,
+    NT_STATUS_OBJECT_NAME_COLLISION,
+    NT_STATUS_ACCESS_DENIED
+)
+from samba.netcmd.gpcommon import (
+    create_directory_hier,
+    smb_connection,
+    get_gpo_dn
+)
+from samba.policies import RegistryGroupPolicies
+from samba.dcerpc.misc import REG_MULTI_SZ
+from samba.gp.gpclass import register_gp_extension, list_gp_extensions, \
+    unregister_gp_extension
 
 
 def gpo_flags_string(value):
@@ -127,15 +144,6 @@ def dc_url(lp, creds, url=None, dc=None):
                 raise RuntimeError("Could not find a DC for domain", e)
         url = 'ldap://' + dc
     return url
-
-
-def get_gpo_dn(samdb, gpo):
-    '''Construct the DN for gpo'''
-
-    dn = samdb.get_default_basedn()
-    dn.add_child(ldb.Dn(samdb, "CN=Policies,CN=System"))
-    dn.add_child(ldb.Dn(samdb, "CN=%s" % gpo))
-    return dn
 
 
 def get_gpo_info(samdb, gpo=None, displayname=None, dn=None,
@@ -374,31 +382,6 @@ def copy_directory_local_to_remote(conn, localdir, remotedir,
                 conn.savefile(r_name, data)
 
 
-def create_directory_hier(conn, remotedir):
-    elems = remotedir.replace('/', '\\').split('\\')
-    path = ""
-    for e in elems:
-        path = path + '\\' + e
-        if not conn.chkpath(path):
-            conn.mkdir(path)
-
-def smb_connection(dc_hostname, service, lp, creds):
-    # SMB connect to DC
-    # Force signing for the smb connection
-    saved_signing_state = creds.get_smb_signing()
-    creds.set_smb_signing(SMB_SIGNING_REQUIRED)
-    try:
-        # the SMB bindings rely on having a s3 loadparm
-        s3_lp = s3param.get_context()
-        s3_lp.load(lp.configfile)
-        conn = libsmb.Conn(dc_hostname, service, lp=s3_lp, creds=creds)
-    except Exception:
-        raise CommandError("Error connecting to '%s' using SMB" % dc_hostname)
-    # Reset signing state
-    creds.set_smb_signing(saved_signing_state)
-    return conn
-
-
 class GPOCommand(Command):
     def construct_tmpdir(self, tmpdir, gpo):
         """Ensure that the temporary directory structure used in fetch,
@@ -621,7 +604,13 @@ class cmd_show(GPOCommand):
         self.lp = sambaopts.get_loadparm()
         self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
 
-        self.url = dc_url(self.lp, self.creds, H)
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
 
         self.samdb_connect()
 
@@ -640,11 +629,260 @@ class cmd_show(GPOCommand):
         self.outf.write("GPO          : %s\n" % msg['name'][0])
         self.outf.write("display name : %s\n" % msg['displayName'][0])
         self.outf.write("path         : %s\n" % msg['gPCFileSysPath'][0])
+        if 'gPCMachineExtensionNames' in msg:
+            self.outf.write("Machine Exts : %s\n" % msg['gPCMachineExtensionNames'][0])
+        if 'gPCUserExtensionNames' in msg:
+            self.outf.write("User Exts    : %s\n" % msg['gPCUserExtensionNames'][0])
         self.outf.write("dn           : %s\n" % msg.dn)
         self.outf.write("version      : %s\n" % attr_default(msg, 'versionNumber', '0'))
         self.outf.write("flags        : %s\n" % gpo_flags_string(int(attr_default(msg, 'flags', 0))))
         self.outf.write("ACL          : %s\n" % secdesc_sddl)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        pol_file = '\\'.join([realm.lower(), 'Policies', gpo,
+                                '%s\\Registry.pol'])
+        policy_defs = []
+        for policy_class in ['MACHINE', 'USER']:
+            try:
+                pol_data = ndr_unpack(preg.file,
+                                      conn.loadfile(pol_file % policy_class))
+            except NTSTATUSError as e:
+                if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                                 NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                                 NT_STATUS_OBJECT_PATH_NOT_FOUND]:
+                    continue # The file doesn't exist, so there is nothing to list
+                if e.args[0] == NT_STATUS_ACCESS_DENIED:
+                    raise CommandError("The authenticated user does "
+                                       "not have sufficient privileges")
+                raise
+
+            for entry in pol_data.entries:
+                if entry.valuename == "**delvals.":
+                    continue
+                defs = {}
+                defs['keyname'] = entry.keyname
+                defs['valuename'] = entry.valuename
+                defs['class'] = policy_class
+                defs['type'] = str_regtype(entry.type)
+                defs['data'] = entry.data
+                # Bytes aren't JSON serializable
+                if type(defs['data']) == bytes:
+                    if entry.type == REG_MULTI_SZ:
+                        data = defs['data'].decode('utf-16-le')
+                        defs['data'] = data.rstrip('\x00').split('\x00')
+                    else:
+                        defs['data'] = list(defs['data'])
+                policy_defs.append(defs)
+        self.outf.write("Policies     :\n")
+        json.dump(policy_defs, self.outf, indent=4)
         self.outf.write("\n")
+
+
+class cmd_load(GPOCommand):
+    """Load policies onto a GPO.
+
+    Reads json from standard input until EOF, unless a json formatted
+    file is provided via --content.
+
+    Example json_input:
+    [
+        {
+            "keyname": "Software\\Policies\\Mozilla\\Firefox\\Homepage",
+            "valuename": "StartPage",
+            "class": "USER",
+            "type": "REG_SZ",
+            "data": "homepage"
+        },
+        {
+            "keyname": "Software\\Policies\\Mozilla\\Firefox\\Homepage",
+            "valuename": "URL",
+            "class": "USER",
+            "type": "REG_SZ",
+            "data": "google.com"
+        },
+        {
+            "keyname": "Software\\Microsoft\\Internet Explorer\\Toolbar",
+            "valuename": "IEToolbar",
+            "class": "USER",
+            "type": "REG_BINARY",
+            "data": [0]
+        },
+        {
+            "keyname": "Software\\Policies\\Microsoft\\InputPersonalization",
+            "valuename": "RestrictImplicitTextCollection",
+            "class": "USER",
+            "type": "REG_DWORD",
+            "data": 1
+        }
+    ]
+
+    Valid class attributes: MACHINE|USER|BOTH
+    Data arrays are interpreted as bytes.
+
+    The --machine-ext-name and --user-ext-name options are multi-value inputs
+    which respectively set the gPCMachineExtensionNames and gPCUserExtensionNames
+    ldap attributes on the GPO. These attributes must be set to the correct GUID
+    names for Windows Group Policy to work correctly. These GUIDs represent
+    the client side extensions to apply on the machine. Linux Group Policy does
+    not enforce this constraint.
+    {35378EAC-683F-11D2-A89A-00C04FBBCFA2} is provided by default, which
+    enables most Registry policies.
+    """
+
+    synopsis = "%prog <gpo> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_args = ['gpo']
+
+    takes_options = [
+        Option("-H", help="LDB URL for database or target server", type=str),
+        Option("--content", help="JSON file of policy inputs", type=str),
+        Option("--machine-ext-name",
+            action="append", dest="machine_exts",
+            default=['{35378EAC-683F-11D2-A89A-00C04FBBCFA2}'],
+            help="A machine extension name to add to gPCMachineExtensionNames"),
+        Option("--user-ext-name",
+            action="append", dest="user_exts",
+            default=['{35378EAC-683F-11D2-A89A-00C04FBBCFA2}'],
+            help="A user extension name to add to gPCUserExtensionNames"),
+        Option("--replace", action='store_true', default=False,
+               help="Replace the existing Group Policies, rather than merging")
+    ]
+
+    def run(self, gpo, H=None, content=None,
+            machine_exts=None,
+            user_exts=None,
+            replace=False, sambaopts=None, credopts=None, versionopts=None):
+        if machine_exts is None:
+            machine_exts = ['{35378EAC-683F-11D2-A89A-00C04FBBCFA2}']
+        if user_exts is None:
+            user_exts = ['{35378EAC-683F-11D2-A89A-00C04FBBCFA2}']
+        if content is None:
+            policy_defs = json.loads(sys.stdin.read())
+        elif os.path.exists(content):
+            with open(content, 'rb') as r:
+                policy_defs = json.load(r)
+        else:
+            raise CommandError("The JSON content file does not exist")
+
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+        self.url = dc_url(self.lp, self.creds, H)
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+        for ext_name in machine_exts:
+            reg.register_extension_name(ext_name, 'gPCMachineExtensionNames')
+        for ext_name in user_exts:
+            reg.register_extension_name(ext_name, 'gPCUserExtensionNames')
+        try:
+            if replace:
+                reg.replace_s(policy_defs)
+            else:
+                reg.merge_s(policy_defs)
+        except NTSTATUSError as e:
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            else:
+                raise
+
+
+class cmd_remove(GPOCommand):
+    """Remove policies from a GPO.
+
+    Reads json from standard input until EOF, unless a json formatted
+    file is provided via --content.
+
+    Example json_input:
+    [
+        {
+            "keyname": "Software\\Policies\\Mozilla\\Firefox\\Homepage",
+            "valuename": "StartPage",
+            "class": "USER",
+        },
+        {
+            "keyname": "Software\\Policies\\Mozilla\\Firefox\\Homepage",
+            "valuename": "URL",
+            "class": "USER",
+        },
+        {
+            "keyname": "Software\\Microsoft\\Internet Explorer\\Toolbar",
+            "valuename": "IEToolbar",
+            "class": "USER"
+        },
+        {
+            "keyname": "Software\\Policies\\Microsoft\\InputPersonalization",
+            "valuename": "RestrictImplicitTextCollection",
+            "class": "USER"
+        }
+    ]
+
+    Valid class attributes: MACHINE|USER|BOTH
+    """
+
+    synopsis = "%prog <gpo> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_args = ['gpo']
+
+    takes_options = [
+        Option("-H", help="LDB URL for database or target server", type=str),
+        Option("--content", help="JSON file of policy inputs", type=str),
+        Option("--machine-ext-name",
+            action="append", default=[], dest="machine_exts",
+            help="A machine extension name to remove from gPCMachineExtensionNames"),
+        Option("--user-ext-name",
+            action="append", default=[], dest="user_exts",
+            help="A user extension name to remove from gPCUserExtensionNames")
+    ]
+
+    def run(self, gpo, H=None, content=None, machine_exts=None, user_exts=None,
+            sambaopts=None, credopts=None, versionopts=None):
+        if machine_exts is None:
+            machine_exts = []
+        if user_exts is None:
+            user_exts = []
+        if content is None:
+            policy_defs = json.loads(sys.stdin.read())
+        elif os.path.exists(content):
+            with open(content, 'rb') as r:
+                policy_defs = json.load(r)
+        else:
+            raise CommandError("The JSON content file does not exist")
+
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+        self.url = dc_url(self.lp, self.creds, H)
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+        for ext_name in machine_exts:
+            reg.unregister_extension_name(ext_name, 'gPCMachineExtensionNames')
+        for ext_name in user_exts:
+            reg.unregister_extension_name(ext_name, 'gPCUserExtensionNames')
+        try:
+            reg.remove_s(policy_defs)
+        except NTSTATUSError as e:
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            else:
+                raise
 
 
 class cmd_getlink(GPOCommand):
@@ -1413,7 +1651,7 @@ class cmd_restore(cmd_create):
                 entities_content = entities_file.read()
 
                 # Do a basic regex test of the entities file format
-                if re.match('(\s*<!ENTITY\s*[a-zA-Z0-9_]+\s*.*?>)+\s*\Z',
+                if re.match(r'(\s*<!ENTITY\s*[a-zA-Z0-9_]+\s*.*?>)+\s*\Z',
                             entities_content, flags=re.MULTILINE) is None:
                     raise CommandError("Entities file does not appear to "
                                        "conform to format\n"
@@ -1645,10 +1883,10 @@ class cmd_admxload(Command):
         try:
             conn.mkdir(smb_dir)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
-            elif e.args[0] != 0xC0000035: # STATUS_OBJECT_NAME_COLLISION
+            elif e.args[0] != NT_STATUS_OBJECT_NAME_COLLISION:
                 raise
 
         for dirname, dirs, files in os.walk(admx_dir):
@@ -1660,16 +1898,16 @@ class cmd_admxload(Command):
                 try:
                     create_directory_hier(conn, sub_dir)
                 except NTSTATUSError as e:
-                    if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                    if e.args[0] == NT_STATUS_ACCESS_DENIED:
                         raise CommandError("The authenticated user does "
                                            "not have sufficient privileges")
-                    elif e.args[0] != 0xC0000035: # STATUS_OBJECT_NAME_COLLISION
+                    elif e.args[0] != NT_STATUS_OBJECT_NAME_COLLISION:
                         raise
                 with open(full_path, 'rb') as f:
                     try:
                         conn.savefile(smb_path, f.read())
                     except NTSTATUSError as e:
-                        if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                        if e.args[0] == NT_STATUS_ACCESS_DENIED:
                             raise CommandError("The authenticated user does "
                                                "not have sufficient privileges")
         self.outf.write('Installing ADMX templates to the Central Store '
@@ -1679,7 +1917,7 @@ class cmd_admxload(Command):
                         'from https://www.microsoft.com/en-us/download/102157 '
                         'to continue using Windows Administrative Templates.\n')
 
-class cmd_add_sudoers(Command):
+class cmd_add_sudoers(GPOCommand):
     """Adds a Samba Sudoers Group Policy to the sysvol
 
 This command adds a sudo rule to the sysvol for applying to winbind clients.
@@ -1735,6 +1973,9 @@ fakeu,fakeg% ALL=(ALL) NOPASSWD: ALL
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Sudo',
@@ -1745,9 +1986,9 @@ fakeu,fakeg% ALL=(ALL) NOPASSWD: ALL
             policysetting = xml_data.getroot().find('policysetting')
             data = policysetting.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -1763,7 +2004,7 @@ fakeu,fakeg% ALL=(ALL) NOPASSWD: ALL
                 data = ET.SubElement(policysetting, 'data')
                 load_plugin = ET.SubElement(data, 'load_plugin')
                 load_plugin.text = 'true'
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -1793,8 +2034,9 @@ fakeu,fakeg% ALL=(ALL) NOPASSWD: ALL
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -1848,12 +2090,12 @@ samba-tool gpo manage sudoers list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so there is nothing to list
                 xml_data = None
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -1884,11 +2126,11 @@ samba-tool gpo manage sudoers list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -1900,7 +2142,7 @@ samba-tool gpo manage sudoers list {31B2F340-016D-11D2-945F-00C04FB984F9}
                     get_string(entry.data).strip():
                 self.outf.write('%s\n' % entry.data)
 
-class cmd_remove_sudoers(Command):
+class cmd_remove_sudoers(GPOCommand):
     """Removes a Samba Sudoers Group Policy from the sysvol
 
 This command removes a sudo rule from the sysvol from applying to winbind clients.
@@ -1942,6 +2184,9 @@ samba-tool gpo manage sudoers remove {31B2F340-016D-11D2-945F-00C04FB984F9} 'fak
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Sudo',
@@ -1952,11 +2197,11 @@ samba-tool gpo manage sudoers remove {31B2F340-016D-11D2-945F-00C04FB984F9} 'fak
             policysetting = xml_data.getroot().find('policysetting')
             data = policysetting.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 data = None
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -1967,11 +2212,11 @@ samba-tool gpo manage sudoers remove {31B2F340-016D-11D2-945F-00C04FB984F9} 'fak
         try:
             pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 pol_data = None
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -2004,8 +2249,9 @@ samba-tool gpo manage sudoers remove {31B2F340-016D-11D2-945F-00C04FB984F9} 'fak
             try:
                 create_directory_hier(conn, vgp_dir)
                 conn.savefile(vgp_xml, out.read())
+                reg.increment_gpt_ini(machine_changed=True)
             except NTSTATUSError as e:
-                if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                if e.args[0] == NT_STATUS_ACCESS_DENIED:
                     raise CommandError("The authenticated user does "
                                        "not have sufficient privileges")
                 raise
@@ -2016,8 +2262,9 @@ samba-tool gpo manage sudoers remove {31B2F340-016D-11D2-945F-00C04FB984F9} 'fak
 
             try:
                 conn.savefile(pol_file, ndr_pack(pol_data))
+                reg.increment_gpt_ini(machine_changed=True)
             except NTSTATUSError as e:
-                if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                if e.args[0] == NT_STATUS_ACCESS_DENIED:
                     raise CommandError("The authenticated user does "
                                        "not have sufficient privileges")
                 raise
@@ -2032,7 +2279,7 @@ class cmd_sudoers(SuperCommand):
     subcommands["list"] = cmd_list_sudoers()
     subcommands["remove"] = cmd_remove_sudoers()
 
-class cmd_set_security(Command):
+class cmd_set_security(GPOCommand):
     """Set Samba Security Group Policy to the sysvol
 
 This command sets a security setting to the sysvol for applying to winbind
@@ -2099,6 +2346,9 @@ PasswordComplexity      Password must meet complexity requirements
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         inf_dir = '\\'.join([realm.lower(), 'Policies', gpo,
             'MACHINE\\Microsoft\\Windows NT\\SecEdit'])
@@ -2112,11 +2362,12 @@ PasswordComplexity      Password must meet complexity requirements
             except UnicodeDecodeError:
                 inf_data.readfp(StringIO(raw.decode('utf-16')))
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] not in [0xC0000033, 0xC000003A]:
+            if e.args[0] not in [NT_STATUS_OBJECT_NAME_INVALID,
+                                 NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                                 NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 raise
 
         section_map = { 'MaxTicketAge' : 'Kerberos Policy',
@@ -2143,8 +2394,9 @@ PasswordComplexity      Password must meet complexity requirements
         try:
             create_directory_hier(conn, inf_dir)
             conn.savefile(inf_file, get_bytes(out.getvalue()))
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -2205,9 +2457,11 @@ samba-tool gpo manage security list {31B2F340-016D-11D2-945F-00C04FB984F9}
             except UnicodeDecodeError:
                 inf_data.readfp(StringIO(raw.decode('utf-16')))
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000033: # STATUS_OBJECT_NAME_INVALID
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2272,9 +2526,11 @@ samba-tool gpo manage smb_conf list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000033: # STATUS_OBJECT_NAME_INVALID
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2287,7 +2543,7 @@ samba-tool gpo manage smb_conf list {31B2F340-016D-11D2-945F-00C04FB984F9}
                 val = lp.get(entry.valuename)
                 self.outf.write('%s = %s\n' % (entry.valuename, val))
 
-class cmd_set_smb_conf(Command):
+class cmd_set_smb_conf(GPOCommand):
     """Sets a Samba smb.conf Group Policy to the sysvol
 
 This command sets an smb.conf setting to the sysvol for applying to winbind
@@ -2331,16 +2587,20 @@ samba-tool gpo manage smb_conf set {31B2F340-016D-11D2-945F-00C04FB984F9} 'apply
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         pol_dir = '\\'.join([realm.lower(), 'Policies', gpo, 'MACHINE'])
         pol_file = '\\'.join([pol_dir, 'Registry.pol'])
         try:
             pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 pol_data = preg.file() # The file doesn't exist
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -2380,8 +2640,9 @@ samba-tool gpo manage smb_conf set {31B2F340-016D-11D2-945F-00C04FB984F9} 'apply
         try:
             create_directory_hier(conn, pol_dir)
             conn.savefile(pol_file, ndr_pack(pol_data))
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2441,11 +2702,11 @@ samba-tool gpo manage symlink list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2457,7 +2718,7 @@ samba-tool gpo manage symlink list {31B2F340-016D-11D2-945F-00C04FB984F9}
             target = file_properties.find('target')
             self.outf.write('ln -s %s %s\n' % (source.text, target.text))
 
-class cmd_add_symlink(Command):
+class cmd_add_symlink(GPOCommand):
     """Adds a VGP Symbolic Link Group Policy to the sysvol
 
 This command adds a symlink setting to the sysvol that will be applied to winbind clients.
@@ -2500,6 +2761,9 @@ samba-tool gpo manage symlink add {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp/so
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\Symlink'])
@@ -2509,9 +2773,9 @@ samba-tool gpo manage symlink add {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp/so
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -2523,7 +2787,7 @@ samba-tool gpo manage symlink add {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp/so
                 description = ET.SubElement(policysetting, 'description')
                 description.text = 'Specifies symbolic link data'
                 data = ET.SubElement(policysetting, 'data')
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -2541,16 +2805,18 @@ samba-tool gpo manage symlink add {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp/so
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
 
-class cmd_remove_symlink(Command):
+class cmd_remove_symlink(GPOCommand):
     """Removes a VGP Symbolic Link Group Policy from the sysvol
 
-This command removes a symlink setting from the sysvol from appling to winbind clients.
+This command removes a symlink setting from the sysvol from applying to winbind
+clients.
 
 Example:
 samba-tool gpo manage symlink remove {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp/source /tmp/target
@@ -2590,6 +2856,9 @@ samba-tool gpo manage symlink remove {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\Symlink'])
@@ -2599,12 +2868,12 @@ samba-tool gpo manage symlink remove {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 raise CommandError("Cannot remove link from '%s' to '%s' "
                     "because it does not exist" % source, target)
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -2627,8 +2896,9 @@ samba-tool gpo manage symlink remove {31B2F340-016D-11D2-945F-00C04FB984F9} /tmp
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2689,11 +2959,11 @@ samba-tool gpo manage files list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2710,7 +2980,7 @@ samba-tool gpo manage files list {31B2F340-016D-11D2-945F-00C04FB984F9}
                     (stat_from_mode(mode), user, group, target, source)
             self.outf.write('%s\n' % p)
 
-class cmd_add_files(Command):
+class cmd_add_files(GPOCommand):
     """Add VGP Files Group Policy to the sysvol
 
 This command adds files which will be copied from the sysvol and applied to winbind clients.
@@ -2756,6 +3026,9 @@ samba-tool gpo manage files add {31B2F340-016D-11D2-945F-00C04FB984F9} ./source.
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\Files'])
@@ -2765,9 +3038,9 @@ samba-tool gpo manage files add {31B2F340-016D-11D2-945F-00C04FB984F9} ./source.
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -2779,7 +3052,7 @@ samba-tool gpo manage files add {31B2F340-016D-11D2-945F-00C04FB984F9} ./source.
                 description = ET.SubElement(policysetting, 'description')
                 description.text = 'Represents file data to set/copy on clients'
                 data = ET.SubElement(policysetting, 'data')
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -2813,13 +3086,14 @@ samba-tool gpo manage files add {31B2F340-016D-11D2-945F-00C04FB984F9} ./source.
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
             conn.savefile(sysvol_source, source_data)
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
 
-class cmd_remove_files(Command):
+class cmd_remove_files(GPOCommand):
     """Remove VGP Files Group Policy from the sysvol
 
 This command removes files which would be copied from the sysvol and applied to winbind clients.
@@ -2862,6 +3136,9 @@ samba-tool gpo manage files remove {31B2F340-016D-11D2-945F-00C04FB984F9} /usr/s
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\Files'])
@@ -2871,12 +3148,12 @@ samba-tool gpo manage files remove {31B2F340-016D-11D2-945F-00C04FB984F9} /usr/s
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 raise CommandError("Cannot remove file '%s' "
                     "because it does not exist" % target)
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -2901,8 +3178,9 @@ samba-tool gpo manage files remove {31B2F340-016D-11D2-945F-00C04FB984F9} /usr/s
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2963,11 +3241,11 @@ samba-tool gpo manage openssh list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -2982,7 +3260,7 @@ samba-tool gpo manage openssh list {31B2F340-016D-11D2-945F-00C04FB984F9}
                 self.outf.write('%s %s\n' % (kv.find('key').text,
                                              kv.find('value').text))
 
-class cmd_set_openssh(Command):
+class cmd_set_openssh(GPOCommand):
     """Sets a VGP OpenSSH Group Policy to the sysvol
 
 This command sets an openssh setting to the sysvol for applying to winbind
@@ -3026,6 +3304,9 @@ samba-tool gpo manage openssh set {31B2F340-016D-11D2-945F-00C04FB984F9} Kerbero
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\SshCfg\\SshD'])
@@ -3036,9 +3317,9 @@ samba-tool gpo manage openssh set {31B2F340-016D-11D2-945F-00C04FB984F9} Kerbero
             data = policy.find('data')
             configfile = data.find('configfile')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -3055,7 +3336,7 @@ samba-tool gpo manage openssh set {31B2F340-016D-11D2-945F-00C04FB984F9} Kerbero
                 configfile = ET.SubElement(data, 'configfile')
                 configsection = ET.SubElement(configfile, 'configsection')
                 ET.SubElement(configsection, 'sectionname')
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3095,8 +3376,9 @@ samba-tool gpo manage openssh set {31B2F340-016D-11D2-945F-00C04FB984F9} Kerbero
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -3156,11 +3438,11 @@ samba-tool gpo manage scripts startup list {31B2F340-016D-11D2-945F-00C04FB984F9
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -3185,7 +3467,7 @@ samba-tool gpo manage scripts startup list {31B2F340-016D-11D2-945F-00C04FB984F9
             self.outf.write('@reboot %s %s %s\n' % (run_as, script_path,
                                                   parameters))
 
-class cmd_add_startup(Command):
+class cmd_add_startup(GPOCommand):
     """Adds VGP Startup Script Group Policy to the sysvol
 
 This command adds a startup script policy to the sysvol.
@@ -3233,6 +3515,9 @@ samba-tool gpo manage scripts startup add {31B2F340-016D-11D2-945F-00C04FB984F9}
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\Scripts\\Startup'])
@@ -3242,9 +3527,9 @@ samba-tool gpo manage scripts startup add {31B2F340-016D-11D2-945F-00C04FB984F9}
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -3257,7 +3542,7 @@ samba-tool gpo manage scripts startup add {31B2F340-016D-11D2-945F-00C04FB984F9}
                 description.text = \
                     'Represents Unix scripts to run on Group Policy clients'
                 data = ET.SubElement(policysetting, 'data')
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3286,13 +3571,14 @@ samba-tool gpo manage scripts startup add {31B2F340-016D-11D2-945F-00C04FB984F9}
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
             conn.savefile(sysvol_script, script_data)
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
 
-class cmd_remove_startup(Command):
+class cmd_remove_startup(GPOCommand):
     """Removes VGP Startup Script Group Policy from the sysvol
 
 This command removes a startup script policy from the sysvol.
@@ -3335,6 +3621,9 @@ samba-tool gpo manage scripts startup remove {31B2F340-016D-11D2-945F-00C04FB984
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\Scripts\\Startup'])
@@ -3344,12 +3633,12 @@ samba-tool gpo manage scripts startup remove {31B2F340-016D-11D2-945F-00C04FB984
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 raise CommandError("Cannot remove script '%s' "
                     "because it does not exist" % script)
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3370,8 +3659,9 @@ samba-tool gpo manage scripts startup remove {31B2F340-016D-11D2-945F-00C04FB984
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -3438,11 +3728,11 @@ samba-tool gpo manage motd list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -3452,7 +3742,7 @@ samba-tool gpo manage motd list {31B2F340-016D-11D2-945F-00C04FB984F9}
         text = data.find('text')
         self.outf.write(text.text)
 
-class cmd_set_motd(Command):
+class cmd_set_motd(GPOCommand):
     """Sets a VGP MOTD Group Policy to the sysvol
 
 This command sets the Message of the Day to the sysvol for applying to winbind
@@ -3496,6 +3786,9 @@ samba-tool gpo manage motd set {31B2F340-016D-11D2-945F-00C04FB984F9} "Message f
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\MOTD'])
@@ -3503,14 +3796,15 @@ samba-tool gpo manage motd set {31B2F340-016D-11D2-945F-00C04FB984F9} "Message f
 
         if value is None:
             conn.unlink(vgp_xml)
+            reg.increment_gpt_ini(machine_changed=True)
             return
 
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -3526,7 +3820,7 @@ samba-tool gpo manage motd set {31B2F340-016D-11D2-945F-00C04FB984F9} "Message f
                 data = ET.SubElement(policysetting, 'data')
                 filename = ET.SubElement(data, 'filename')
                 filename.text = 'motd'
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3541,8 +3835,9 @@ samba-tool gpo manage motd set {31B2F340-016D-11D2-945F-00C04FB984F9} "Message f
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -3603,11 +3898,11 @@ samba-tool gpo manage issue list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 return # The file doesn't exist, so there is nothing to list
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -3617,7 +3912,7 @@ samba-tool gpo manage issue list {31B2F340-016D-11D2-945F-00C04FB984F9}
         text = data.find('text')
         self.outf.write(text.text)
 
-class cmd_set_issue(Command):
+class cmd_set_issue(GPOCommand):
     """Sets a VGP Issue Group Policy to the sysvol
 
 This command sets the Prelogin Message to the sysvol for applying to winbind
@@ -3661,6 +3956,9 @@ samba-tool gpo manage issue set {31B2F340-016D-11D2-945F-00C04FB984F9} "Welcome 
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
                              'MACHINE\\VGP\\VTLA\\Unix\\Issue'])
@@ -3668,14 +3966,15 @@ samba-tool gpo manage issue set {31B2F340-016D-11D2-945F-00C04FB984F9} "Welcome 
 
         if value is None:
             conn.unlink(vgp_xml)
+            reg.increment_gpt_ini(machine_changed=True)
             return
 
         try:
             xml_data = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -3691,7 +3990,7 @@ samba-tool gpo manage issue set {31B2F340-016D-11D2-945F-00C04FB984F9} "Welcome 
                 data = ET.SubElement(policysetting, 'data')
                 filename = ET.SubElement(data, 'filename')
                 filename.text = 'issue'
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3706,8 +4005,9 @@ samba-tool gpo manage issue set {31B2F340-016D-11D2-945F-00C04FB984F9} "Welcome 
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
@@ -3767,11 +4067,11 @@ samba-tool gpo manage access list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             allow = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 allow = None # The file doesn't exist, ignore it
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3792,11 +4092,11 @@ samba-tool gpo manage access list {31B2F340-016D-11D2-945F-00C04FB984F9}
         try:
             deny = ET.fromstring(conn.loadfile(vgp_xml))
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 deny = None # The file doesn't exist, ignore it
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3811,7 +4111,7 @@ samba-tool gpo manage access list {31B2F340-016D-11D2-945F-00C04FB984F9}
                 domain = adobject.find('domain')
                 self.outf.write('-:%s\\%s:ALL\n' % (domain.text, name.text))
 
-class cmd_add_access(Command):
+class cmd_add_access(GPOCommand):
     """Adds a VGP Host Access Group Policy to the sysvol
 
 This command adds a host access setting to the sysvol for applying to winbind
@@ -3856,6 +4156,9 @@ samba-tool gpo manage access add {31B2F340-016D-11D2-945F-00C04FB984F9} allow go
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         if etype == 'allow':
             vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
@@ -3874,9 +4177,9 @@ samba-tool gpo manage access add {31B2F340-016D-11D2-945F-00C04FB984F9} allow go
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 # The file doesn't exist, so create the xml structure
                 xml_data = ET.ElementTree(ET.Element('vgppolicy'))
                 policysetting = ET.SubElement(xml_data.getroot(),
@@ -3890,7 +4193,7 @@ samba-tool gpo manage access add {31B2F340-016D-11D2-945F-00C04FB984F9} allow go
                 apply_mode = ET.SubElement(policysetting, 'apply_mode')
                 apply_mode.text = 'merge'
                 data = ET.SubElement(policysetting, 'data')
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -3936,13 +4239,14 @@ samba-tool gpo manage access add {31B2F340-016D-11D2-945F-00C04FB984F9} allow go
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
 
-class cmd_remove_access(Command):
+class cmd_remove_access(GPOCommand):
     """Remove a VGP Host Access Group Policy from the sysvol
 
 This command removes a host access setting from the sysvol for applying to
@@ -3986,6 +4290,9 @@ samba-tool gpo manage access remove {31B2F340-016D-11D2-945F-00C04FB984F9} allow
                               lp=self.lp,
                               creds=self.creds)
 
+        self.samdb_connect()
+        reg = RegistryGroupPolicies(gpo, self.lp, self.creds, self.samdb, H)
+
         realm = self.lp.get('realm')
         if etype == 'allow':
             vgp_dir = '\\'.join([realm.lower(), 'Policies', gpo,
@@ -4004,12 +4311,12 @@ samba-tool gpo manage access remove {31B2F340-016D-11D2-945F-00C04FB984F9} allow
             policy = xml_data.getroot().find('policysetting')
             data = policy.find('data')
         except NTSTATUSError as e:
-            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND,
-            # STATUS_OBJECT_PATH_NOT_FOUND
-            if e.args[0] in [0xC0000033, 0xC0000034, 0xC000003A]:
+            if e.args[0] in [NT_STATUS_OBJECT_NAME_INVALID,
+                             NT_STATUS_OBJECT_NAME_NOT_FOUND,
+                             NT_STATUS_OBJECT_PATH_NOT_FOUND]:
                 raise CommandError("Cannot remove %s entry because it does "
                                    "not exist" % etype)
-            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            elif e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             else:
@@ -4033,11 +4340,123 @@ samba-tool gpo manage access remove {31B2F340-016D-11D2-945F-00C04FB984F9} allow
         try:
             create_directory_hier(conn, vgp_dir)
             conn.savefile(vgp_xml, out.read())
+            reg.increment_gpt_ini(machine_changed=True)
         except NTSTATUSError as e:
-            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+            if e.args[0] == NT_STATUS_ACCESS_DENIED:
                 raise CommandError("The authenticated user does "
                                    "not have sufficient privileges")
             raise
+
+class cmd_cse_register(Command):
+    """Register a Client Side Extension (CSE) on the current host
+
+This command takes a CSE filename as an argument, and registers it for
+applying policy on the current host. This is not necessary for CSEs which
+are distributed with the current version of Samba, but is useful for installing
+experimental CSEs or custom built CSEs.
+The <cse_file> argument MUST be a permanent location for the CSE. The register
+command does not copy the file to some other directory. The samba-gpupdate
+command will execute the CSE from the exact location specified from this
+command.
+
+Example:
+samba-tool gpo cse register ./gp_chromium_ext.py gp_chromium_ext --machine
+    """
+
+    synopsis = "%prog <cse_file> <cse_name> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+    }
+
+    takes_options = [
+        Option("--machine", default=False, action='store_true',
+               help="Whether to register the CSE as Machine policy"),
+        Option("--user", default=False, action='store_true',
+               help="Whether to register the CSE as User policy"),
+    ]
+
+    takes_args = ["cse_file", "cse_name"]
+
+    def run(self, cse_file, cse_name, machine=False, user=False,
+            sambaopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+
+        if machine == False and user == False:
+            raise CommandError("Either --machine or --user must be selected")
+
+        ext_guid = "{%s}" % str(uuid.uuid4())
+        ext_path = os.path.realpath(cse_file)
+        ret = register_gp_extension(ext_guid, cse_name, ext_path,
+                                    smb_conf=self.lp.configfile,
+                                    machine=machine, user=user)
+        if not ret:
+            raise CommandError('Failed to register CSE "%s"' % cse_name)
+
+class cmd_cse_list(Command):
+    """List the registered Client Side Extensions (CSEs) on the current host
+
+This command lists the currently registered CSEs on the host.
+
+Example:
+samba-tool gpo cse list
+    """
+
+    synopsis = "%prog [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+    }
+
+    def run(self, sambaopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+
+        cses = list_gp_extensions(self.lp.configfile)
+        for guid, gp_ext in cses.items():
+            self.outf.write("UniqueGUID         : %s\n" % guid)
+            self.outf.write("FileName           : %s\n" % gp_ext['DllName'])
+            self.outf.write("ProcessGroupPolicy : %s\n" % \
+                    gp_ext['ProcessGroupPolicy'])
+            self.outf.write("MachinePolicy      : %s\n" % \
+                    str(gp_ext['MachinePolicy']))
+            self.outf.write("UserPolicy         : %s\n\n" % \
+                    str(gp_ext['UserPolicy']))
+
+class cmd_cse_unregister(Command):
+    """Unregister a Client Side Extension (CSE) from the current host
+
+This command takes a unique GUID as an argument (representing a registered
+CSE), and unregisters it for applying policy on the current host. Use the
+`samba-tool gpo cse list` command to determine the unique GUIDs of CSEs.
+
+Example:
+samba-tool gpo cse unregister {3F60F344-92BF-11ED-A1EB-0242AC120002}
+    """
+
+    synopsis = "%prog <guid> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+    }
+
+    takes_args = ["guid"]
+
+    def run(self, guid, sambaopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+
+        ret = unregister_gp_extension(guid, self.lp.configfile)
+        if not ret:
+            raise CommandError('Failed to unregister CSE "%s"' % guid)
+
+class cmd_cse(SuperCommand):
+    """Manage Client Side Extensions"""
+    subcommands = {}
+    subcommands["register"] = cmd_cse_register()
+    subcommands["list"] = cmd_cse_list()
+    subcommands["unregister"] = cmd_cse_unregister()
 
 class cmd_access(SuperCommand):
     """Manage Host Access Group Policy Objects"""
@@ -4067,6 +4486,8 @@ class cmd_gpo(SuperCommand):
     subcommands["listall"] = cmd_listall()
     subcommands["list"] = cmd_list()
     subcommands["show"] = cmd_show()
+    subcommands["load"] = cmd_load()
+    subcommands["remove"] = cmd_remove()
     subcommands["getlink"] = cmd_getlink()
     subcommands["setlink"] = cmd_setlink()
     subcommands["dellink"] = cmd_dellink()
@@ -4081,3 +4502,4 @@ class cmd_gpo(SuperCommand):
     subcommands["restore"] = cmd_restore()
     subcommands["admxload"] = cmd_admxload()
     subcommands["manage"] = cmd_manage()
+    subcommands["cse"] = cmd_cse()

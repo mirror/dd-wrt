@@ -36,7 +36,7 @@ def check(self, *k, **kw):
                  if d:
                      additional_dirs.append(d)
 
-    # we add the additional dirs twice: once for the test data, and again if the compilation test suceeds below
+    # we add the additional dirs twice: once for the test data, and again if the compilation test succeeds below
     def add_options_dir(dirs, env):
         for x in dirs:
              if not x in env.CPPPATH:
@@ -398,7 +398,7 @@ WriteMakefile(
 
     if section:
         man = Utils.readf(os.path.join(bdir,'Makefile'))
-        m = re.search('MAN%sEXT\s+=\s+(\w+)' % section, man)
+        m = re.search(r'MAN%sEXT\s+=\s+(\w+)' % section, man)
         if not m:
             conf.end_msg('not found', color='YELLOW')
             return

@@ -84,7 +84,7 @@ static void ads_cached_connection_reuse(ADS_STRUCT **adsp)
  * @param[in]    target_realm     Realm of domain to connect to
  * @param[in]    target_dom_name  'workgroup' name of domain to connect to
  * @param[in]    ldap_server      DNS name of server to connect to
- * @param[in]    password         Our machine acount secret
+ * @param[in]    password         Our machine account secret
  * @param[in]    auth_realm       Realm of local domain for creating krb token
  * @param[in]    renewable        Renewable ticket time
  *
@@ -204,7 +204,7 @@ ADS_STATUS ads_idmap_cached_connection(const char *dom_name,
 
 	/*
 	 * At this point we only have the NetBIOS domain name.
-	 * Check if we can get server nam and realm from SAF cache
+	 * Check if we can get server name and realm from SAF cache
 	 * and the domain list.
 	 */
 	ldap_server = saf_fetch(tmp_ctx, dom_name);
@@ -509,9 +509,10 @@ static NTSTATUS enum_dom_groups(struct winbindd_domain *domain,
 	 *
 	 * Thanks to Ralf Haferkamp for input and testing - Guenther */
 
-	filter = talloc_asprintf(mem_ctx, "(&(objectCategory=group)(&(groupType:dn:%s:=%d)(!(groupType:dn:%s:=%d))))",
-				 ADS_LDAP_MATCHING_RULE_BIT_AND, GROUP_TYPE_SECURITY_ENABLED,
-				 ADS_LDAP_MATCHING_RULE_BIT_AND,
+	filter = talloc_asprintf(mem_ctx, "(&(objectCategory=group)"
+				 "(&(groupType:dn:"ADS_LDAP_MATCHING_RULE_BIT_AND":=%d)"
+				 "(!(groupType:dn:"ADS_LDAP_MATCHING_RULE_BIT_AND":=%d))))",
+                                GROUP_TYPE_SECURITY_ENABLED,
 				 enum_dom_local_groups ? GROUP_TYPE_BUILTIN_LOCAL_GROUP : GROUP_TYPE_RESOURCE_GROUP);
 
 	if (filter == NULL) {
@@ -686,9 +687,9 @@ static NTSTATUS lookup_usergroups_member(struct winbindd_domain *domain,
 	}
 
 	ldap_exp = talloc_asprintf(mem_ctx,
-		"(&(member=%s)(objectCategory=group)(groupType:dn:%s:=%d))",
+		"(&(member=%s)(objectCategory=group)"
+		"(groupType:dn:"ADS_LDAP_MATCHING_RULE_BIT_AND":=%d))",
 		escaped_dn,
-		ADS_LDAP_MATCHING_RULE_BIT_AND,
 		GROUP_TYPE_SECURITY_ENABLED);
 	if (!ldap_exp) {
 		DEBUG(1,("lookup_usergroups(dn=%s) asprintf failed!\n", user_dn));
@@ -1370,6 +1371,31 @@ done:
 	return status;
 }
 
+static NTSTATUS lookup_aliasmem(struct winbindd_domain *domain,
+				TALLOC_CTX *mem_ctx,
+				const struct dom_sid *sid,
+				enum lsa_SidType type,
+				uint32_t *num_sids,
+				struct dom_sid **sids)
+{
+	char **names = NULL;
+	uint32_t *name_types = NULL;
+	struct dom_sid_buf buf;
+
+	DBG_DEBUG("ads: lookup_aliasmem %s sid=%s\n",
+		  domain->name,
+		  dom_sid_str_buf(sid, &buf));
+	/* Search for alias and group membership uses the same LDAP command. */
+	return lookup_groupmem(domain,
+			       mem_ctx,
+			       sid,
+			       type,
+			       num_sids,
+			       sids,
+			       &names,
+			       &name_types);
+}
+
 /* find the lockout policy of a domain - use rpc methods */
 static NTSTATUS lockout_policy(struct winbindd_domain *domain,
 			       TALLOC_CTX *mem_ctx,
@@ -1396,7 +1422,6 @@ static NTSTATUS trusted_domains(struct winbindd_domain *domain,
 	uint32_t		i;
 	uint32_t		flags;
 	struct rpc_pipe_client *cli;
-	int ret_count;
 	struct dcerpc_binding_handle *b;
 
 	DEBUG(3,("ads: trusted_domains\n"));
@@ -1444,7 +1469,6 @@ static NTSTATUS trusted_domains(struct winbindd_domain *domain,
 
 	/* Copy across names and sids */
 
-	ret_count = 0;
 	for (i = 0; i < trusts->count; i++) {
 		struct netr_DomainTrust *trust = &trusts->array[i];
 		struct winbindd_domain d;
@@ -1491,7 +1515,6 @@ static NTSTATUS trusted_domains(struct winbindd_domain *domain,
 			d.domain_trust_attribs = trust->trust_attributes;
 
 			wcache_tdc_add_domain( &d );
-			ret_count++;
 		} else if (domain_is_forest_root(domain)) {
 			/* Check if we already have this record. If
 			 * we are following our forest root that is not
@@ -1513,7 +1536,6 @@ static NTSTATUS trusted_domains(struct winbindd_domain *domain,
 					trust->trust_attributes;
 
 				wcache_tdc_add_domain( &d );
-				ret_count++;
 			}
 			TALLOC_FREE(exist);
 		} else {
@@ -1554,7 +1576,6 @@ static NTSTATUS trusted_domains(struct winbindd_domain *domain,
 			trust->trust_attributes = d.domain_trust_attribs;
 
 			wcache_tdc_add_domain( &d );
-			ret_count++;
 		}
 	}
 	return result;
@@ -1572,6 +1593,7 @@ struct winbindd_methods ads_methods = {
 	lookup_usergroups,
 	lookup_useraliases,
 	lookup_groupmem,
+	lookup_aliasmem,
 	lockout_policy,
 	password_policy,
 	trusted_domains,

@@ -25,7 +25,7 @@ os.environ['PYTHONUNBUFFERED'] = '1'
 
 from functools import partial
 
-from samba import generate_random_password, unix2nttime
+from samba import generate_random_password
 from samba.dcerpc import krb5pac, security
 from samba.sd_utils import SDUtils
 
@@ -90,19 +90,6 @@ class KpasswdTests(KDCBaseTest):
 
         return creds
 
-    def issued_by_rodc(self, ticket):
-        krbtgt_creds = self.get_mock_rodc_krbtgt_creds()
-
-        krbtgt_key = self.TicketDecryptionKey_from_creds(krbtgt_creds)
-        checksum_keys = {
-            krb5pac.PAC_TYPE_KDC_CHECKSUM: krbtgt_key,
-        }
-
-        return self.modified_ticket(
-            ticket,
-            new_ticket_key=krbtgt_key,
-            checksum_keys=checksum_keys)
-
     def get_kpasswd_sname(self):
         return self.PrincipalName_create(name_type=NT_PRINCIPAL,
                                          names=['kadmin', 'changepw'])
@@ -118,26 +105,6 @@ class KpasswdTests(KDCBaseTest):
         endtime = self.get_EpochFromKerberosTime(endtime)
 
         return endtime - starttime
-
-    def add_requester_sid(self, pac, sid):
-        pac_buffers = pac.buffers
-
-        buffer_types = [pac_buffer.type for pac_buffer in pac_buffers]
-        self.assertNotIn(krb5pac.PAC_TYPE_REQUESTER_SID, buffer_types)
-
-        requester_sid = krb5pac.PAC_REQUESTER_SID()
-        requester_sid.sid = security.dom_sid(sid)
-
-        requester_sid_buffer = krb5pac.PAC_BUFFER()
-        requester_sid_buffer.type = krb5pac.PAC_TYPE_REQUESTER_SID
-        requester_sid_buffer.info = requester_sid
-
-        pac_buffers.append(requester_sid_buffer)
-
-        pac.buffers = pac_buffers
-        pac.num_buffers += 1
-
-        return pac
 
     # Test setting a password with kpasswd.
     def test_kpasswd_set(self):
@@ -537,7 +504,7 @@ class KpasswdTests(KDCBaseTest):
                               target_realm=creds.get_realm())
 
     # Test setting a password, specifying both principal and realm of the
-    # target user, whem the user has control access on their account.
+    # target user, when the user has control access on their account.
     def test_kpasswd_set_target_princ_and_realm_access(self):
         # Create an account for testing.
         creds = self._get_creds()
@@ -551,7 +518,7 @@ class KpasswdTests(KDCBaseTest):
         sd_utils = SDUtils(samdb)
 
         user_dn = creds.get_dn()
-        user_sid = self.get_objectSid(samdb, user_dn)
+        user_sid = creds.get_sid()
 
         # Give the user control access on their account.
         ace = f'(A;;CR;;;{user_sid})'
@@ -654,64 +621,6 @@ class KpasswdTests(KDCBaseTest):
                                expect_error=(KDC_ERR_TGT_REVOKED,
                                              KDC_ERR_TKT_EXPIRED))
 
-    def modify_requester_sid_time(self, ticket, sid, lifetime):
-        # Get the krbtgt key.
-        krbtgt_creds = self.get_krbtgt_creds()
-
-        krbtgt_key = self.TicketDecryptionKey_from_creds(krbtgt_creds)
-        checksum_keys = {
-            krb5pac.PAC_TYPE_KDC_CHECKSUM: krbtgt_key,
-        }
-
-        # Set authtime and starttime to an hour in the past, to show that they
-        # do not affect ticket rejection.
-        start_time = self.get_KerberosTime(offset=-60 * 60)
-
-        # Set the endtime of the ticket relative to our current time, so that
-        # the ticket has 'lifetime' seconds remaining to live.
-        end_time = self.get_KerberosTime(offset=lifetime)
-
-        # Modify the times in the ticket.
-        def modify_ticket_times(enc_part):
-            enc_part['authtime'] = start_time
-            if 'starttime' in enc_part:
-                enc_part['starttime'] = start_time
-
-            enc_part['endtime'] = end_time
-
-            return enc_part
-
-        # We have to set the times in both the ticket and the PAC, otherwise
-        # Heimdal will complain.
-        def modify_pac_time(pac):
-            pac_buffers = pac.buffers
-
-            for pac_buffer in pac_buffers:
-                if pac_buffer.type == krb5pac.PAC_TYPE_LOGON_NAME:
-                    logon_time = self.get_EpochFromKerberosTime(start_time)
-                    pac_buffer.info.logon_time = unix2nttime(logon_time)
-                    break
-            else:
-                self.fail('failed to find LOGON_NAME PAC buffer')
-
-            pac.buffers = pac_buffers
-
-            return pac
-
-        # Add a requester SID to show that the KDC will then accept this
-        # kpasswd ticket as if it were a TGT.
-        def modify_pac_fn(pac):
-            pac = self.add_requester_sid(pac, sid=sid)
-            pac = modify_pac_time(pac)
-            return pac
-
-        # Do the actual modification.
-        return self.modified_ticket(ticket,
-                                    new_ticket_key=krbtgt_key,
-                                    modify_fn=modify_ticket_times,
-                                    modify_pac_fn=modify_pac_fn,
-                                    checksum_keys=checksum_keys)
-
     # Ensure we cannot perform a TGS-REQ with a kpasswd ticket containing a
     # requester SID and having a remaining lifetime of two minutes.
     def test_kpasswd_ticket_requester_sid_tgs(self):
@@ -727,17 +636,11 @@ class KpasswdTests(KDCBaseTest):
                                                  names=['krbtgt', realm])
         ticket.set_sname(krbtgt_sname)
 
-        # Get the user's SID.
-        samdb = self.get_samdb()
-
-        user_dn = creds.get_dn()
-        user_sid = self.get_objectSid(samdb, user_dn)
-
         # Modify the ticket to add a requester SID and give it two minutes to
         # live.
-        ticket = self.modify_requester_sid_time(ticket,
-                                                sid=user_sid,
-                                                lifetime=2 * 60)
+        ticket = self.modify_lifetime(ticket,
+                                      lifetime=2 * 60,
+                                      requester_sid=creds.get_sid())
 
         # Try to use that ticket to get a service ticket.
         service_creds = self.get_service_creds()
@@ -761,17 +664,11 @@ class KpasswdTests(KDCBaseTest):
                                                  names=['krbtgt', realm])
         ticket.set_sname(krbtgt_sname)
 
-        # Get the user's SID.
-        samdb = self.get_samdb()
-
-        user_dn = creds.get_dn()
-        user_sid = self.get_objectSid(samdb, user_dn)
-
         # Modify the ticket to add a requester SID and give it two minutes and
         # ten seconds to live.
-        ticket = self.modify_requester_sid_time(ticket,
-                                                sid=user_sid,
-                                                lifetime=2 * 60 + 10)
+        ticket = self.modify_lifetime(ticket,
+                                      lifetime=2 * 60 + 10,
+                                      requester_sid=creds.get_sid())
 
         # Try to use that ticket to get a service ticket.
         service_creds = self.get_service_creds()

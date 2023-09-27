@@ -5,8 +5,8 @@ A pure python3 module with CLI to bootstrap Samba envs for multiple distribution
 ## Features
 
 - manage Samba dependencies list for multiple distributions
-- render dependencies package list to boostrap shell scripts(apt, yum and dnf)
-- render Vagrantfile to provision vitual machines with bootstrap scripts
+- render dependencies package list to bootstrap shell scripts(apt, yum and dnf)
+- render Vagrantfile to provision virtual machines with bootstrap scripts
 - render Dockerfile to build docker images with bootstrap scripts
 - build/tag/push docker images
 
@@ -33,6 +33,15 @@ Just calculate the sha1sum for consistency checks:
 
 The checksum needs to be added as `SAMBA_CI_CONTAINER_TAG` in
 the toplevel .gitlab-ci-main.yml file.
+
+NOTE: Remember to remove any files not tracked by git from the bootstrap
+directory before running bootstrap/template.py.
+
+  git clean -dfx bootstrap
+
+Otherwise the files will affect the checksum but because they are not
+checked in and won't be pushed to CI system the checksum calculated there
+won't match.
 
 ## User Stories
 

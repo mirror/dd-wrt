@@ -37,6 +37,7 @@
 #include "kdc/db-glue.h"
 #include "auth/auth_sam.h"
 #include "auth/common_auth.h"
+#include "auth/authn_policy.h"
 #include <ldb.h>
 #include "sdb.h"
 #include "sdb_hdb.h"
@@ -47,6 +48,7 @@
 #include "lib/messaging/irpc.h"
 #include "hdb.h"
 #include <kdc-audit.h>
+#include <kdc-plugin.h>
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_KERBEROS
@@ -118,125 +120,12 @@ static void hdb_samba4_free_entry_context(krb5_context context, struct HDB *db, 
 	}
 }
 
-static int hdb_samba4_fill_fast_cookie(krb5_context context,
-				       struct samba_kdc_db_context *kdc_db_ctx)
-{
-	struct ldb_message *msg = ldb_msg_new(kdc_db_ctx);
-	int ldb_ret;
-
-	uint8_t secretbuffer[32];
-	struct ldb_val val = data_blob_const(secretbuffer,
-					     sizeof(secretbuffer));
-
-	if (msg == NULL) {
-		DBG_ERR("Failed to allocate msg for new fast cookie\n");
-		return LDB_ERR_OPERATIONS_ERROR;
-	}
-
-	/* Fill in all the keys with the same secret */
-	generate_secret_buffer(secretbuffer,
-			       sizeof(secretbuffer));
-
-	msg->dn = kdc_db_ctx->fx_cookie_dn;
-
-	ldb_ret = ldb_msg_add_value(msg, "secret", &val, NULL);
-
-	if (ldb_ret != LDB_SUCCESS) {
-		return ldb_ret;
-	}
-
-	ldb_ret = ldb_add(kdc_db_ctx->secrets_db,
-			  msg);
-	if (ldb_ret != LDB_SUCCESS) {
-		DBG_ERR("Failed to add fast cookie to ldb: %s\n",
-			ldb_errstring(kdc_db_ctx->secrets_db));
-	}
-	return ldb_ret;
-}
-
 static krb5_error_code hdb_samba4_fetch_fast_cookie(krb5_context context,
 						    struct samba_kdc_db_context *kdc_db_ctx,
 						    hdb_entry *entry)
 {
-	krb5_error_code ret = SDB_ERR_NOENTRY;
-	TALLOC_CTX *mem_ctx;
-	struct ldb_result *res;
-	int ldb_ret;
-	struct sdb_entry sentry = {};
-	const char *attrs[] = {
-		"secret",
-		NULL
-	};
-	const struct ldb_val *val;
-
-	mem_ctx = talloc_named(kdc_db_ctx, 0, "samba_kdc_fetch context");
-	if (!mem_ctx) {
-		ret = ENOMEM;
-		krb5_set_error_message(context, ret, "samba_kdc_fetch: talloc_named() failed!");
-		return ret;
-	}
-
-	/* search for CN=FX-COOKIE */
-	ldb_ret = ldb_search(kdc_db_ctx->secrets_db,
-			     mem_ctx,
-			     &res,
-			     kdc_db_ctx->fx_cookie_dn,
-			     LDB_SCOPE_BASE,
-			     attrs, NULL);
-
-	if (ldb_ret == LDB_ERR_NO_SUCH_OBJECT || res->count == 0) {
-
-		ldb_ret = hdb_samba4_fill_fast_cookie(context,
-						      kdc_db_ctx);
-
-		if (ldb_ret != LDB_SUCCESS) {
-			TALLOC_FREE(mem_ctx);
-			return HDB_ERR_NO_WRITE_SUPPORT;
-		}
-
-		/* search for CN=FX-COOKIE */
-		ldb_ret = ldb_search(kdc_db_ctx->secrets_db,
-				     mem_ctx,
-				     &res,
-				     kdc_db_ctx->fx_cookie_dn,
-				     LDB_SCOPE_BASE,
-				     attrs, NULL);
-
-		if (ldb_ret != LDB_SUCCESS || res->count != 1) {
-			TALLOC_FREE(mem_ctx);
-			return HDB_ERR_NOENTRY;
-		}
-	}
-
-	val = ldb_msg_find_ldb_val(res->msgs[0],
-				   "secret");
-	if (val == NULL || val->length != 32) {
-		TALLOC_FREE(mem_ctx);
-		return HDB_ERR_NOENTRY;
-	}
-
-
-	ret = krb5_make_principal(context,
-				  &sentry.principal,
-				  KRB5_WELLKNOWN_ORG_H5L_REALM,
-				  KRB5_WELLKNOWN_NAME, "org.h5l.fast-cookie",
-				  NULL);
-	if (ret) {
-		TALLOC_FREE(mem_ctx);
-		return ret;
-	}
-
-	ret = samba_kdc_set_fixed_keys(context, val, ENC_ALL_TYPES,
-				       &sentry.keys);
-	if (ret != 0) {
-		return ret;
-	}
-
-	ret = sdb_entry_to_hdb_entry(context, &sentry, entry);
-	sdb_entry_free(&sentry);
-	TALLOC_FREE(mem_ctx);
-
-	return ret;
+	DBG_ERR("Looked up HDB entry for unsupported FX-COOKIE.\n");
+	return HDB_ERR_NOENTRY;
 }
 
 static krb5_error_code hdb_samba4_fetch_kvno(krb5_context context, HDB *db,
@@ -414,35 +303,40 @@ hdb_samba4_check_constrained_delegation(krb5_context context, HDB *db,
 					hdb_entry *entry,
 					krb5_const_principal target_principal)
 {
-	struct samba_kdc_db_context *kdc_db_ctx;
-	struct samba_kdc_entry *skdc_entry;
-	krb5_error_code ret;
+	struct samba_kdc_db_context *kdc_db_ctx = NULL;
+	struct samba_kdc_entry *skdc_entry = NULL;
 
 	kdc_db_ctx = talloc_get_type_abort(db->hdb_db,
 					   struct samba_kdc_db_context);
 	skdc_entry = talloc_get_type_abort(entry->context,
 					   struct samba_kdc_entry);
 
-	ret = samba_kdc_check_s4u2proxy(context, kdc_db_ctx,
-					skdc_entry,
-					target_principal);
-	switch (ret) {
-	case 0:
-		break;
-	case SDB_ERR_WRONG_REALM:
-		ret = HDB_ERR_WRONG_REALM;
-		break;
-	case SDB_ERR_NOENTRY:
-		ret = HDB_ERR_NOENTRY;
-		break;
-	case SDB_ERR_NOT_FOUND_HERE:
-		ret = HDB_ERR_NOT_FOUND_HERE;
-		break;
-	default:
-		break;
-	}
+	return samba_kdc_check_s4u2proxy(context, kdc_db_ctx,
+					 skdc_entry,
+					 target_principal);
+}
 
-	return ret;
+static krb5_error_code
+hdb_samba4_check_rbcd(krb5_context context, HDB *db,
+		      krb5_const_principal client_principal,
+		      krb5_const_principal server_principal,
+		      krb5_const_pac header_pac,
+		      const hdb_entry *proxy)
+{
+	struct samba_kdc_db_context *kdc_db_ctx = NULL;
+	struct samba_kdc_entry *proxy_skdc_entry = NULL;
+
+	kdc_db_ctx = talloc_get_type_abort(db->hdb_db,
+					   struct samba_kdc_db_context);
+	proxy_skdc_entry = talloc_get_type_abort(proxy->context,
+						 struct samba_kdc_entry);
+
+	return samba_kdc_check_s4u2proxy_rbcd(context,
+					      kdc_db_ctx,
+					      client_principal,
+					      server_principal,
+					      header_pac,
+					      proxy_skdc_entry);
 }
 
 static krb5_error_code
@@ -531,6 +425,327 @@ static void reset_bad_password_netlogon(TALLOC_CTX *mem_ctx,
 	TALLOC_FREE(subreq);
 }
 
+#define SAMBA_HDB_AUTHN_AUDIT_INFO_OBJ "samba:authn_audit_info_obj"
+#define SAMBA_HDB_CLIENT_AUDIT_INFO "samba:client_audit_info"
+#define SAMBA_HDB_SERVER_AUDIT_INFO "samba:server_audit_info"
+
+#define SAMBA_HDB_NT_STATUS_OBJ "samba:nt_status_obj"
+#define SAMBA_HDB_NT_STATUS "samba:nt_status"
+
+struct hdb_audit_info_obj {
+	struct authn_audit_info *audit_info;
+};
+
+static void hdb_audit_info_obj_dealloc(void *ptr)
+{
+	struct hdb_audit_info_obj *audit_info_obj = ptr;
+
+	if (audit_info_obj == NULL) {
+		return;
+	}
+
+	TALLOC_FREE(audit_info_obj->audit_info);
+}
+
+/*
+ * Set talloc-allocated auditing information of the KDC request. On success,
+ * ‘audit_info’ is invalidated and may no longer be used by the caller.
+ */
+static krb5_error_code hdb_samba4_set_steal_audit_info(astgs_request_t r,
+						       const char *key,
+						       struct authn_audit_info *audit_info)
+{
+	struct hdb_audit_info_obj *audit_info_obj = NULL;
+
+	audit_info_obj = kdc_object_alloc(sizeof (*audit_info_obj),
+					  SAMBA_HDB_AUTHN_AUDIT_INFO_OBJ,
+					  hdb_audit_info_obj_dealloc);
+	if (audit_info_obj == NULL) {
+		return ENOMEM;
+	}
+
+	/*
+	 * Steal a handle to the audit information onto the NULL context —
+	 * Heimdal will be responsible for the deallocation of the object.
+	 */
+	audit_info_obj->audit_info = talloc_steal(NULL, audit_info);
+
+	heim_audit_setkv_object((heim_svc_req_desc)r, key, audit_info_obj);
+	heim_release(audit_info_obj);
+
+	return 0;
+}
+
+/*
+ * Set talloc-allocated client auditing information of the KDC request. On
+ * success, ‘client_audit_info’ is invalidated and may no longer be used by the
+ * caller.
+ */
+krb5_error_code hdb_samba4_set_steal_client_audit_info(astgs_request_t r,
+						       struct authn_audit_info *client_audit_info)
+{
+	return hdb_samba4_set_steal_audit_info(r,
+					       SAMBA_HDB_CLIENT_AUDIT_INFO,
+					       client_audit_info);
+}
+
+static const struct authn_audit_info *hdb_samba4_get_client_audit_info(hdb_request_t r)
+{
+	const struct hdb_audit_info_obj *audit_info_obj = NULL;
+
+	audit_info_obj = heim_audit_getkv((heim_svc_req_desc)r, SAMBA_HDB_CLIENT_AUDIT_INFO);
+	if (audit_info_obj == NULL) {
+		return NULL;
+	}
+
+	return audit_info_obj->audit_info;
+}
+
+/*
+ * Set talloc-allocated server auditing information of the KDC request. On
+ * success, ‘server_audit_info’ is invalidated and may no longer be used by the
+ * caller.
+ */
+krb5_error_code hdb_samba4_set_steal_server_audit_info(astgs_request_t r,
+						       struct authn_audit_info *server_audit_info)
+{
+	return hdb_samba4_set_steal_audit_info(r,
+					       SAMBA_HDB_SERVER_AUDIT_INFO,
+					       server_audit_info);
+}
+
+static const struct authn_audit_info *hdb_samba4_get_server_audit_info(hdb_request_t r)
+{
+	const struct hdb_audit_info_obj *audit_info_obj = NULL;
+
+	audit_info_obj = heim_audit_getkv((heim_svc_req_desc)r, SAMBA_HDB_SERVER_AUDIT_INFO);
+	if (audit_info_obj == NULL) {
+		return NULL;
+	}
+
+	return audit_info_obj->audit_info;
+}
+
+struct hdb_ntstatus_obj {
+	NTSTATUS status;
+	krb5_error_code current_error;
+};
+
+/*
+ * Add an NTSTATUS code to a Kerberos request. ‘error’ is the error value we
+ * want to return to the client. When it comes time to generating the error
+ * request, we shall compare this error value to whatever error we are about to
+ * return; if the two match, we shall replace the ‘e-data’ field in the reply
+ * with the NTSTATUS code.
+ */
+krb5_error_code hdb_samba4_set_ntstatus(astgs_request_t r,
+					const NTSTATUS status,
+					const krb5_error_code error)
+{
+	struct hdb_ntstatus_obj *status_obj = NULL;
+
+	status_obj = kdc_object_alloc(sizeof (*status_obj),
+				      SAMBA_HDB_NT_STATUS_OBJ,
+				      NULL);
+	if (status_obj == NULL) {
+		return ENOMEM;
+	}
+
+	*status_obj = (struct hdb_ntstatus_obj) {
+		.status = status,
+		.current_error = error,
+	};
+
+	heim_audit_setkv_object((heim_svc_req_desc)r, SAMBA_HDB_NT_STATUS, status_obj);
+	heim_release(status_obj);
+
+	return 0;
+}
+
+static krb5_error_code hdb_samba4_make_nt_status_edata(const NTSTATUS status,
+						       const uint32_t flags,
+						       krb5_data *edata_out)
+{
+    const uint32_t status_code = NT_STATUS_V(status);
+    const uint32_t zero = 0;
+    KERB_ERROR_DATA error_data;
+    krb5_data e_data;
+
+    krb5_error_code ret;
+    size_t size;
+
+    /* The raw KERB-ERR-TYPE-EXTENDED structure. */
+    uint8_t data[12];
+
+    PUSH_LE_U32(data, 0, status_code);
+    PUSH_LE_U32(data, 4, zero);
+    PUSH_LE_U32(data, 8, flags);
+
+    e_data = (krb5_data) {
+	    .data = &data,
+	    .length = sizeof(data),
+    };
+
+    error_data = (KERB_ERROR_DATA) {
+	    .data_type = kERB_ERR_TYPE_EXTENDED,
+	    .data_value = &e_data,
+    };
+
+    ASN1_MALLOC_ENCODE(KERB_ERROR_DATA,
+		       edata_out->data, edata_out->length,
+		       &error_data,
+		       &size, ret);
+    if (ret) {
+	    return ret;
+    }
+    if (size != edata_out->length) {
+	    /* Internal ASN.1 encoder error */
+	    krb5_data_free(edata_out);
+	    return KRB5KRB_ERR_GENERIC;
+    }
+
+    return 0;
+}
+
+static krb5_error_code hdb_samba4_set_edata_from_ntstatus(hdb_request_t r, const NTSTATUS status)
+{
+	const KDC_REQ *req = kdc_request_get_req((astgs_request_t)r);
+	krb5_error_code ret = 0;
+	krb5_data e_data;
+	uint32_t flags = 1;
+
+	if (req->msg_type == krb_tgs_req) {
+		/* This flag is used to indicate a TGS-REQ. */
+		flags |= 2;
+	}
+
+	ret = hdb_samba4_make_nt_status_edata(status, flags, &e_data);
+	if (ret) {
+		return ret;
+	}
+
+	ret = kdc_set_e_data((astgs_request_t)r, e_data);
+	if (ret) {
+		krb5_data_free(&e_data);
+	}
+
+	return ret;
+}
+
+static NTSTATUS hdb_samba4_get_ntstatus(hdb_request_t r)
+{
+	struct hdb_ntstatus_obj *status_obj = NULL;
+
+	status_obj = heim_audit_getkv((heim_svc_req_desc)r, SAMBA_HDB_NT_STATUS);
+	if (status_obj == NULL) {
+		return NT_STATUS_OK;
+	}
+
+	if (r->error_code != status_obj->current_error) {
+		/*
+		 * The error code has changed from what we expect. Consider the
+		 * NTSTATUS to be invalidated.
+		 */
+		return NT_STATUS_OK;
+	}
+
+	return status_obj->status;
+}
+
+static krb5_error_code hdb_samba4_tgs_audit(const struct samba_kdc_db_context *kdc_db_ctx,
+					    const hdb_entry *entry,
+					    hdb_request_t r)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	const struct authn_audit_info *server_audit_info = NULL;
+	struct tsocket_address *remote_host = NULL;
+	struct samba_kdc_entry *client_entry = NULL;
+	struct dom_sid sid_buf = {};
+	const char *account_name = NULL;
+	const char *domain_name = NULL;
+	const struct dom_sid *sid = NULL;
+	size_t sa_socklen = 0;
+	NTSTATUS auth_status = NT_STATUS_OK;
+	krb5_error_code ret = 0;
+	krb5_error_code final_ret = 0;
+
+	/* Have we got a status code indicating an error? */
+	auth_status = hdb_samba4_get_ntstatus(r);
+	if (!NT_STATUS_IS_OK(auth_status)) {
+		/*
+		 * Include this status code in the ‘e-data’ field of the reply.
+		 */
+		ret = hdb_samba4_set_edata_from_ntstatus(r, auth_status);
+		if (ret) {
+			final_ret = ret;
+		}
+	} else if (entry == NULL) {
+		auth_status = NT_STATUS_NO_SUCH_USER;
+	} else if (r->error_code) {
+		/*
+		 * Don’t include a status code in the reply. Just log the
+		 * request as being unsuccessful.
+		 */
+		auth_status = NT_STATUS_UNSUCCESSFUL;
+	}
+
+	switch (r->addr->sa_family) {
+	case AF_INET:
+		sa_socklen = sizeof(struct sockaddr_in);
+		break;
+#ifdef HAVE_IPV6
+	case AF_INET6:
+		sa_socklen = sizeof(struct sockaddr_in6);
+		break;
+#endif
+	}
+
+	ret = tsocket_address_bsd_from_sockaddr(frame, r->addr,
+						sa_socklen,
+						&remote_host);
+	if (ret != 0) {
+		remote_host = NULL;
+		/* Ignore the error. */
+	}
+
+	server_audit_info = hdb_samba4_get_server_audit_info(r);
+
+	if (entry != NULL) {
+		client_entry = talloc_get_type_abort(entry->context,
+						     struct samba_kdc_entry);
+
+		ret = samdb_result_dom_sid_buf(client_entry->msg, "objectSid", &sid_buf);
+		if (ret) {
+			/* Ignore the error. */
+		} else {
+			sid = &sid_buf;
+		}
+
+		account_name = ldb_msg_find_attr_as_string(client_entry->msg, "sAMAccountName", NULL);
+		domain_name = lpcfg_sam_name(kdc_db_ctx->lp_ctx);
+	}
+
+	log_authz_event(kdc_db_ctx->msg_ctx,
+			kdc_db_ctx->lp_ctx,
+			remote_host,
+			NULL /* local */,
+			server_audit_info,
+			r->sname,
+			"TGS-REQ with Ticket-Granting Ticket",
+			domain_name,
+			account_name,
+			sid,
+			lpcfg_netbios_name(kdc_db_ctx->lp_ctx),
+			krb5_kdc_get_time(),
+			auth_status);
+
+	talloc_free(frame);
+	if (final_ret) {
+		r->error_code = final_ret;
+	}
+	return final_ret;
+}
+
 static krb5_error_code hdb_samba4_audit(krb5_context context,
 					HDB *db,
 					hdb_entry *entry,
@@ -539,7 +754,6 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 	struct samba_kdc_db_context *kdc_db_ctx = talloc_get_type_abort(db->hdb_db,
 									struct samba_kdc_db_context);
 	struct ldb_dn *domain_dn = ldb_get_default_basedn(kdc_db_ctx->samdb);
-	uint64_t logon_id = generate_random_u64();
 	heim_object_t auth_details_obj = NULL;
 	const char *auth_details = NULL;
 	char *etype_str = NULL;
@@ -549,7 +763,20 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 	const char *pa_type = NULL;
 	struct auth_usersupplied_info ui;
 	size_t sa_socklen = 0;
-	int final_ret = 0;
+	const KDC_REQ *req = kdc_request_get_req((astgs_request_t)r);
+	krb5_error_code final_ret = 0;
+	NTSTATUS edata_status;
+
+	if (req->msg_type == krb_tgs_req) {
+		return hdb_samba4_tgs_audit(kdc_db_ctx, entry, r);
+	}
+
+	if (r->error_code == KRB5KDC_ERR_PREAUTH_REQUIRED) {
+		/* Let’s not log PREAUTH_REQUIRED errors. */
+		return 0;
+	}
+
+	edata_status = hdb_samba4_get_ntstatus(r);
 
 	hdb_auth_status_obj = heim_audit_getkv((heim_svc_req_desc)r, KDC_REQUEST_KV_AUTH_EVENT);
 	if (hdb_auth_status_obj == NULL) {
@@ -559,7 +786,7 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 
 	hdb_auth_status = heim_number_get_int(hdb_auth_status_obj);
 
-	pa_type_obj = heim_audit_getkv((heim_svc_req_desc)r, "pa");
+	pa_type_obj = heim_audit_getkv((heim_svc_req_desc)r, KDC_REQUEST_KV_PA_NAME);
 	if (pa_type_obj != NULL) {
 		pa_type = heim_string_get_utf8(pa_type_obj);
 	}
@@ -600,7 +827,7 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 		.service_description = "Kerberos KDC",
 		.auth_description = "Unknown Auth Description",
 		.password_type = auth_details,
-		.logon_id = logon_id
+		.logon_id = generate_random_u64(),
 	};
 
 	switch (r->addr->sa_family) {
@@ -618,8 +845,8 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 	default:
 	{
 		TALLOC_CTX *frame = talloc_stackframe();
-		struct samba_kdc_entry *p = talloc_get_type(entry->context,
-							    struct samba_kdc_entry);
+		struct samba_kdc_entry *p = talloc_get_type_abort(entry->context,
+								  struct samba_kdc_entry);
 		struct dom_sid *sid
 			= samdb_result_dom_sid(frame, p->msg, "objectSid");
 		const char *account_name
@@ -627,6 +854,8 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 		const char *domain_name = lpcfg_sam_name(p->kdc_db_ctx->lp_ctx);
 		struct tsocket_address *remote_host;
 		const char *auth_description = NULL;
+		const struct authn_audit_info *client_audit_info = NULL;
+		const struct authn_audit_info *server_audit_info = NULL;
 		NTSTATUS status;
 		int ret;
 		bool rwdc_fallback = false;
@@ -666,18 +895,26 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 			status = authsam_logon_success_accounting(kdc_db_ctx->samdb, p->msg,
 								  domain_dn, true, frame, &send_to_sam);
 			if (NT_STATUS_EQUAL(status, NT_STATUS_ACCOUNT_LOCKED_OUT)) {
-				final_ret = KRB5KDC_ERR_CLIENT_REVOKED;
-				r->error_code = final_ret;
+				edata_status = status;
+
+				r->error_code = final_ret = KRB5KDC_ERR_CLIENT_REVOKED;
 				rwdc_fallback = kdc_db_ctx->rodc;
 			} else if (!NT_STATUS_IS_OK(status)) {
-				final_ret = KRB5KRB_ERR_GENERIC;
-				r->error_code = final_ret;
+				r->error_code = final_ret = KRB5KRB_ERR_GENERIC;
 				rwdc_fallback = kdc_db_ctx->rodc;
-			} else if (kdc_db_ctx->rodc && send_to_sam != NULL) {
-				reset_bad_password_netlogon(frame, kdc_db_ctx, send_to_sam);
+			} else {
+				if (r->error_code == KRB5KDC_ERR_NEVER_VALID) {
+					edata_status = status = NT_STATUS_TIME_DIFFERENCE_AT_DC;
+				} else {
+					status = krb5_to_nt_status(r->error_code);
+				}
+
+				if (kdc_db_ctx->rodc && send_to_sam != NULL) {
+					reset_bad_password_netlogon(frame, kdc_db_ctx, send_to_sam);
+				}
 			}
 
-			/* This is the final sucess */
+			/* This is the final success */
 		} else if (hdb_auth_status == KDC_AUTH_EVENT_VALIDATED_LONG_TERM_KEY) {
 			/*
 			 * This was only a pre-authentication success,
@@ -689,8 +926,7 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 				DBG_ERR("ERROR: VALIDATED_LONG_TERM_KEY "
 					"with error=0 => INTERNAL_ERROR\n");
 				status = NT_STATUS_INTERNAL_ERROR;
-				final_ret = KRB5KRB_ERR_GENERIC;
-				r->error_code = final_ret;
+				r->error_code = final_ret = KRB5KRB_ERR_GENERIC;
 			} else if (!NT_STATUS_IS_OK(p->reject_status)) {
 				status = p->reject_status;
 			} else {
@@ -707,8 +943,24 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 				DBG_ERR("ERROR: PREAUTH_SUCCEEDED "
 					"with error=0 => INTERNAL_ERROR\n");
 				status = NT_STATUS_INTERNAL_ERROR;
-				final_ret = KRB5KRB_ERR_GENERIC;
-				r->error_code = final_ret;
+				r->error_code = final_ret = KRB5KRB_ERR_GENERIC;
+			} else if (!NT_STATUS_IS_OK(p->reject_status)) {
+				status = p->reject_status;
+			} else {
+				status = krb5_to_nt_status(r->error_code);
+			}
+		} else if (hdb_auth_status == KDC_AUTH_EVENT_CLIENT_FOUND) {
+			/*
+			 * We found the client principal,
+			 * but we didn’t reach the final
+			 * KDC_AUTH_EVENT_CLIENT_AUTHORIZED,
+			 * so consult the error code.
+			 */
+			if (r->error_code == 0) {
+				DBG_ERR("ERROR: CLIENT_FOUND "
+					"with error=0 => INTERNAL_ERROR\n");
+				status = NT_STATUS_INTERNAL_ERROR;
+				r->error_code = final_ret = KRB5KRB_ERR_GENERIC;
 			} else if (!NT_STATUS_IS_OK(p->reject_status)) {
 				status = p->reject_status;
 			} else {
@@ -719,14 +971,26 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 		} else if (hdb_auth_status == KDC_AUTH_EVENT_WRONG_LONG_TERM_KEY) {
 			status = authsam_update_bad_pwd_count(kdc_db_ctx->samdb, p->msg, domain_dn);
 			if (NT_STATUS_EQUAL(status, NT_STATUS_ACCOUNT_LOCKED_OUT)) {
-				final_ret = KRB5KDC_ERR_CLIENT_REVOKED;
-				r->error_code = final_ret;
+				edata_status = status;
+
+				r->error_code = final_ret = KRB5KDC_ERR_CLIENT_REVOKED;
 			} else {
 				status = NT_STATUS_WRONG_PASSWORD;
 			}
 			rwdc_fallback = kdc_db_ctx->rodc;
+		} else if (hdb_auth_status == KDC_AUTH_EVENT_HISTORIC_LONG_TERM_KEY) {
+			/*
+			 * The pre-authentication succeeds with a password
+			 * from the password history, so we don't
+			 * update the badPwdCount, but still return
+			 * PREAUTH_FAILED and need to forward to
+			 * a RWDC in order to produce an autoritative
+			 * response for the client.
+			 */
+			status = NT_STATUS_WRONG_PASSWORD;
+			rwdc_fallback = kdc_db_ctx->rodc;
 		} else if (hdb_auth_status == KDC_AUTH_EVENT_CLIENT_LOCKED_OUT) {
-			status = NT_STATUS_ACCOUNT_LOCKED_OUT;
+			edata_status = status = NT_STATUS_ACCOUNT_LOCKED_OUT;
 			rwdc_fallback = kdc_db_ctx->rodc;
 		} else if (hdb_auth_status == KDC_AUTH_EVENT_CLIENT_NAME_UNAUTHORIZED) {
 			if (pa_type != NULL && strncmp(pa_type, "PK-INIT", strlen("PK-INIT")) == 0) {
@@ -746,8 +1010,16 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 			DBG_ERR("Unhandled hdb_auth_status=%d => INTERNAL_ERROR\n",
 				hdb_auth_status);
 			status = NT_STATUS_INTERNAL_ERROR;
-			final_ret = KRB5KRB_ERR_GENERIC;
-			r->error_code = final_ret;
+			r->error_code = final_ret = KRB5KRB_ERR_GENERIC;
+		}
+
+		if (!NT_STATUS_IS_OK(edata_status)) {
+			krb5_error_code code;
+
+			code = hdb_samba4_set_edata_from_ntstatus(r, edata_status);
+			if (code) {
+				r->error_code = final_ret = code;
+			}
 		}
 
 		if (rwdc_fallback) {
@@ -764,6 +1036,9 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 			final_ret = HDB_ERR_NOT_FOUND_HERE;
 		}
 
+		client_audit_info = hdb_samba4_get_client_audit_info(r);
+		server_audit_info = hdb_samba4_get_server_audit_info(r);
+
 		log_authentication_event(kdc_db_ctx->msg_ctx,
 					 kdc_db_ctx->lp_ctx,
 					 &r->tv_start,
@@ -771,7 +1046,9 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 					 status,
 					 domain_name,
 					 account_name,
-					 sid);
+					 sid,
+					 client_audit_info,
+					 server_audit_info);
 		if (final_ret == KRB5KRB_ERR_GENERIC && socket_wrapper_enabled()) {
 			/*
 			 * If we're running under make test
@@ -811,7 +1088,9 @@ static krb5_error_code hdb_samba4_audit(krb5_context context,
 					 &ui,
 					 NT_STATUS_NO_SUCH_USER,
 					 NULL, NULL,
-					 NULL);
+					 NULL,
+					 NULL /* client_audit_info */,
+					 NULL /* server_audit_info */);
 		TALLOC_FREE(frame);
 		break;
 	}
@@ -876,6 +1155,7 @@ NTSTATUS hdb_samba4_create_kdc(struct samba_kdc_base_context *base_ctx,
 
 	(*db)->hdb_audit = hdb_samba4_audit;
 	(*db)->hdb_check_constrained_delegation = hdb_samba4_check_constrained_delegation;
+	(*db)->hdb_check_rbcd = hdb_samba4_check_rbcd;
 	(*db)->hdb_check_pkinit_ms_upn_match = hdb_samba4_check_pkinit_ms_upn_match;
 	(*db)->hdb_check_client_matches_target_service = hdb_samba4_check_client_matches_target_service;
 

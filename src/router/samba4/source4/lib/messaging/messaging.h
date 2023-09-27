@@ -22,8 +22,10 @@
 #define _SOURCE4_LIB_MESSAGING_MESSAGES_H_
 
 #include "librpc/gen_ndr/server_id.h"
+#include "lib/util/data_blob.h"
 #include "librpc/gen_ndr/messaging.h"
 
+struct loadparm_context;
 struct imessaging_context;
 
 /* taskid for messaging of parent process */
@@ -62,7 +64,7 @@ struct imessaging_context *imessaging_client_init(TALLOC_CTX *mem_ctx,
 					 struct tevent_context *ev);
 NTSTATUS imessaging_send_ptr(struct imessaging_context *msg, struct server_id server,
 			    uint32_t msg_type, void *ptr);
-void imessaging_deregister(struct imessaging_context *msg, uint32_t msg_type, void *private_data);
+size_t imessaging_deregister(struct imessaging_context *msg, uint32_t msg_type, void *private_data);
 struct server_id imessaging_get_server_id(struct imessaging_context *msg_ctx);
 NTSTATUS imessaging_process_cleanup(struct imessaging_context *msg_ctx,
 				    pid_t pid);

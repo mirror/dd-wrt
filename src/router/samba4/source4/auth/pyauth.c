@@ -350,40 +350,6 @@ static PyObject *py_session_info_set_unix(PyObject *module,
 }
 
 
-static const char **PyList_AsStringList(TALLOC_CTX *mem_ctx, PyObject *list, 
-					const char *paramname)
-{
-	const char **ret;
-	Py_ssize_t i;
-	if (!PyList_Check(list)) {
-		PyErr_Format(PyExc_TypeError, "%s is not a list", paramname);
-		return NULL;
-	}
-	ret = talloc_array(NULL, const char *, PyList_Size(list)+1);
-	if (ret == NULL) {
-		PyErr_NoMemory();
-		return NULL;
-	}
-
-	for (i = 0; i < PyList_Size(list); i++) {
-		const char *value;
-		Py_ssize_t size;
-		PyObject *item = PyList_GetItem(list, i);
-		if (!PyUnicode_Check(item)) {
-			PyErr_Format(PyExc_TypeError, "%s should be strings", paramname);
-			return NULL;
-		}
-		value = PyUnicode_AsUTF8AndSize(item, &size);
-		if (value == NULL) {
-			talloc_free(ret);
-			return NULL;
-		}
-		ret[i] = talloc_strndup(ret, value, size);
-	}
-	ret[i] = NULL;
-	return ret;
-}
-
 static PyObject *PyAuthContext_FromContext(struct auth4_context *auth_context)
 {
 	return pytalloc_reference(&PyAuthContext, auth_context);
@@ -401,7 +367,7 @@ static PyObject *py_auth_context_new(PyTypeObject *type, PyObject *args, PyObjec
 	struct tevent_context *ev;
 	struct ldb_context *ldb = NULL;
 	NTSTATUS nt_status;
-	const char **methods;
+	const char *const *methods;
 
 	const char *const kwnames[] = {"lp_ctx", "ldb", "methods", NULL};
 
@@ -447,7 +413,7 @@ static PyObject *py_auth_context_new(PyTypeObject *type, PyObject *args, PyObjec
 		    mem_ctx, ev, NULL, lp_ctx, &auth_context);
 	} else {
 		if (py_methods != Py_None) {
-			methods = PyList_AsStringList(mem_ctx, py_methods, "methods");
+			methods = (const char * const *)PyList_AsStringList(mem_ctx, py_methods, "methods");
 			if (methods == NULL) {
 				talloc_free(mem_ctx);
 				return NULL;

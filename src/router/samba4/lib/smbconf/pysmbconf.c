@@ -602,12 +602,12 @@ PyDoc_STRVAR(obj_drop_doc,
 
 PyDoc_STRVAR(obj_set_parameter_doc,
 "set_parameter(str, str, str) -> None\n"
-"Set a configuration parmeter. Specify service name, parameter name,\n"
+"Set a configuration parameter. Specify service name, parameter name,\n"
 "and parameter value.\n");
 
 PyDoc_STRVAR(obj_set_global_parameter_doc,
 "set_global_parameter(str, str) -> None\n"
-"Set a global configuration parmeter. Specify the parameter name\n"
+"Set a global configuration parameter. Specify the parameter name\n"
 "and parameter value.\n");
 
 PyDoc_STRVAR(obj_delete_share_doc,
@@ -747,7 +747,7 @@ PyDoc_STRVAR(py_smbconf_doc,
 "types. Future, write based functions need a writable backend (registry).\n"
 "\n"
 "Note that the registry backend will be provided by a different\n"
-"library module from the source3 tree (implemenation TBD).\n");
+"library module from the source3 tree (implementation TBD).\n");
 
 static struct PyModuleDef moduledef = {
 	PyModuleDef_HEAD_INIT,

@@ -53,7 +53,7 @@ struct ldbtest_ctx {
  *
  * This test checks the current behaviour of the function, however
  * this is not in a public ABI and many of the tested behaviours are
- * not ideal.  If the behaviour is deliberatly improved, this test
+ * not ideal.  If the behaviour is deliberately improved, this test
  * should be updated without worry to the new better behaviour.
  *
  * In particular the test is particularly to ensure the current
@@ -209,7 +209,7 @@ static void test_filter_attrs_in_place_two_attr_matched_attrs(void **state)
 
 	struct ldb_message *msg = ldb_msg_new(ctx);
 
-	/* deliberatly the other order */
+	/* deliberately the other order */
 	const char *attrs[] = {"bar", "foo", NULL};
 
 	char value1[] = "The value.......end";
@@ -833,7 +833,7 @@ static void test_filter_attrs_in_place_one_attr_matched_dn(void **state)
 	assert_non_null(msg->dn);
 	assert_string_equal(msg->elements[0].name, "distinguishedName");
 	assert_int_equal(msg->elements[0].num_values, 1);
-	assert_string_equal(msg->elements[0].values[0].data,
+	assert_string_equal((char *)msg->elements[0].values[0].data,
 			    ldb_dn_get_linearized(msg->dn));
 }
 

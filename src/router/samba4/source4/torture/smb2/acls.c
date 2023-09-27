@@ -2139,40 +2139,6 @@ done:
 }
 #endif
 
-/**
- * SMB2 connect with explicit share
- **/
-static bool torture_smb2_con_share(struct torture_context *tctx,
-                           const char *share,
-                           struct smb2_tree **tree)
-{
-        struct smbcli_options options;
-        NTSTATUS status;
-        const char *host = torture_setting_string(tctx, "host", NULL);
-
-        lpcfg_smbcli_options(tctx->lp_ctx, &options);
-
-        status = smb2_connect_ext(tctx,
-                                  host,
-                                  lpcfg_smb_ports(tctx->lp_ctx),
-                                  share,
-                                  lpcfg_resolve_context(tctx->lp_ctx),
-                                  samba_cmdline_get_creds(),
-                                  0,
-                                  tree,
-                                  tctx->ev,
-                                  &options,
-                                  lpcfg_socket_options(tctx->lp_ctx),
-                                  lpcfg_gensec_settings(tctx, tctx->lp_ctx)
-                                  );
-        if (!NT_STATUS_IS_OK(status)) {
-		torture_comment(tctx, "Failed to connect to SMB2 share \\\\%s\\%s - %s\n",
-			host, share, nt_errstr(status));
-                return false;
-        }
-        return true;
-}
-
 static bool test_access_based(struct torture_context *tctx,
 				struct smb2_tree *tree)
 {
@@ -2918,7 +2884,7 @@ done:
  * test SEC_FLAG_MAXIMUM_ALLOWED with not-granted access
  *
  * When access_mask contains SEC_FLAG_MAXIMUM_ALLOWED, the server must still
- * proces other bits from access_mask. Eg if access_mask contains a right that
+ * process other bits from access_mask. Eg if access_mask contains a right that
  * the requester doesn't have, the function must validate that against the
  * effective permissions.
  */

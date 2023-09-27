@@ -30,6 +30,7 @@
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "lib/util/memcache.h"
+#include "libcli/smb/reparse_symlink.h"
 
 uint32_t ucf_flags_from_smb_request(struct smb_request *req)
 {
@@ -277,7 +278,6 @@ NTSTATUS get_real_filename_full_scan_at(struct files_struct *dirfsp,
 	const char *dname = NULL;
 	char *talloced = NULL;
 	char *unmangled_name = NULL;
-	long curpos;
 	NTSTATUS status;
 
 	/* If we have a case-sensitive filesystem, it doesn't do us any
@@ -324,8 +324,7 @@ NTSTATUS get_real_filename_full_scan_at(struct files_struct *dirfsp,
 	}
 
 	/* now scan for matching names */
-	curpos = 0;
-	while ((dname = ReadDirName(cur_dir, &curpos, NULL, &talloced))) {
+	while ((dname = ReadDirName(cur_dir, &talloced))) {
 
 		/* Is it dot or dot dot. */
 		if (ISDOT(dname) || ISDOTDOT(dname)) {
@@ -643,7 +642,7 @@ static bool filename_split_lcomp(
 	}
 
 	/*
-	 * No slash, dir is emtpy
+	 * No slash, dir is empty
 	 */
 	dirname = talloc_strdup(mem_ctx, "");
 	if (dirname == NULL) {
@@ -1024,30 +1023,7 @@ static NTSTATUS filename_convert_dirfsp_nosymlink(
 	bool ok;
 	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
 
-	if (ucf_flags & UCF_DFS_PATHNAME) {
-		/*
-		 * We've been given a raw DFS pathname.
-		 */
-		char *pathname = NULL;
-		DBG_DEBUG("Before dfs_filename_convert name_in: %s\n",
-			  name_in);
-		status = dfs_filename_convert(mem_ctx,
-					      conn,
-					      ucf_flags,
-					      name_in,
-					      &pathname);
-		if (!NT_STATUS_IS_OK(status)) {
-			DBG_DEBUG("dfs_filename_convert "
-				"failed for name %s with %s\n",
-				name_in,
-				nt_errstr(status));
-			return status;
-		}
-		ucf_flags &= ~UCF_DFS_PATHNAME;
-		name_in = pathname;
-		DBG_DEBUG("After dfs_filename_convert name_in: %s\n",
-			  name_in);
-	}
+	SMB_ASSERT(!(ucf_flags & UCF_DFS_PATHNAME));
 
 	if (is_fake_file_path(name_in)) {
 		smb_fname = synthetic_smb_fname_split(mem_ctx, name_in, posix);
@@ -1120,8 +1096,7 @@ static NTSTATUS filename_convert_dirfsp_nosymlink(
 			posix ? SMB_FILENAME_POSIX_PATH : 0,
 			&smb_dirname);
 	} else {
-		char *substitute = NULL;
-		size_t unparsed = 0;
+		struct open_symlink_err *symlink_err = NULL;
 
 		status = normalize_filename_case(conn, dirname, ucf_flags);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -1131,25 +1106,36 @@ static NTSTATUS filename_convert_dirfsp_nosymlink(
 			goto fail;
 		}
 
-		status = openat_pathref_dirfsp_nosymlink(
-			mem_ctx,
-			conn,
-			dirname,
-			0,
-			posix,
-			&smb_dirname,
-			&unparsed,
-			&substitute);
+		status = openat_pathref_fsp_nosymlink(mem_ctx,
+						      conn,
+						      conn->cwd_fsp,
+						      dirname,
+						      0,
+						      posix,
+						      &smb_dirname,
+						      &symlink_err);
 
 		if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
+			size_t name_in_len, dirname_len;
 
-			size_t name_in_len = strlen(name_in);
-			size_t dirname_len = strlen(dirname);
+			if (lp_host_msdfs() && lp_msdfs_root(SNUM(conn)) &&
+			    strnequal(symlink_err->reparse->substitute_name,
+				      "msdfs:",
+				      6)) {
+				status = NT_STATUS_PATH_NOT_COVERED;
+				goto fail;
+			}
+
+			name_in_len = strlen(name_in);
+			dirname_len = strlen(dirname);
 
 			SMB_ASSERT(name_in_len >= dirname_len);
 
-			*_substitute = substitute;
-			*_unparsed = unparsed + (name_in_len - dirname_len);
+			*_substitute = talloc_move(
+				mem_ctx,
+				&symlink_err->reparse->substitute_name);
+			*_unparsed = symlink_err->unparsed +
+				     (name_in_len - dirname_len);
 
 			goto fail;
 		}
@@ -1160,11 +1146,6 @@ static NTSTATUS filename_convert_dirfsp_nosymlink(
 			  dirname,
 			  nt_errstr(status));
 		TALLOC_FREE(dirname);
-
-		if (NT_STATUS_EQUAL(status, NT_STATUS_PATH_NOT_COVERED)) {
-			/* MS-DFS error must propagate back out. */
-			goto fail;
-		}
 
 		if (!NT_STATUS_EQUAL(status, NT_STATUS_ACCESS_DENIED)) {
 			/*
@@ -1181,6 +1162,7 @@ static NTSTATUS filename_convert_dirfsp_nosymlink(
 		status = NT_STATUS_OBJECT_PATH_NOT_FOUND;
 		goto fail;
 	}
+	smb_dirname->fsp->fsp_flags.is_directory = true;
 
 	/*
 	 * Only look at bad last component values
@@ -1501,27 +1483,39 @@ next:
 	goto next;
 }
 
+char *full_path_from_dirfsp_at_basename(TALLOC_CTX *mem_ctx,
+					const struct files_struct *dirfsp,
+					const char *at_base_name)
+{
+	char *path = NULL;
+
+	if (dirfsp == dirfsp->conn->cwd_fsp ||
+	    ISDOT(dirfsp->fsp_name->base_name) || at_base_name[0] == '/') {
+		path = talloc_strdup(mem_ctx, at_base_name);
+	} else {
+		path = talloc_asprintf(mem_ctx,
+				       "%s/%s",
+				       dirfsp->fsp_name->base_name,
+				       at_base_name);
+	}
+
+	return path;
+}
+
 /*
  * Build the full path from a dirfsp and dirfsp relative name
  */
-struct smb_filename *full_path_from_dirfsp_atname(
-	TALLOC_CTX *mem_ctx,
-	const struct files_struct *dirfsp,
-	const struct smb_filename *atname)
+struct smb_filename *
+full_path_from_dirfsp_atname(TALLOC_CTX *mem_ctx,
+			     const struct files_struct *dirfsp,
+			     const struct smb_filename *atname)
 {
 	struct smb_filename *fname = NULL;
 	char *path = NULL;
 
-	if (dirfsp == dirfsp->conn->cwd_fsp ||
-	    ISDOT(dirfsp->fsp_name->base_name) ||
-	    atname->base_name[0] == '/')
-	{
-		path = talloc_strdup(mem_ctx, atname->base_name);
-	} else {
-		path = talloc_asprintf(mem_ctx, "%s/%s",
-				       dirfsp->fsp_name->base_name,
-				       atname->base_name);
-	}
+	path = full_path_from_dirfsp_at_basename(mem_ctx,
+						 dirfsp,
+						 atname->base_name);
 	if (path == NULL) {
 		return NULL;
 	}

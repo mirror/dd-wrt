@@ -24,17 +24,18 @@ from samba.tests import TestCase
 from samba.tests import delete_force
 from samba.ndr import ndr_unpack, ndr_pack
 from samba.dcerpc import drsblobs, security, misc
-from samba import dsdb
+from samba.param import LoadParm
+from samba import dsdb, functional_level
 from samba import werror
 import ldb
 import samba
 import uuid
 
 
-class DsdbTests(TestCase):
+class DsdbAccountTests(TestCase):
 
     def setUp(self):
-        super(DsdbTests, self).setUp()
+        super().setUp()
         self.lp = samba.tests.env_loadparm()
         self.creds = Credentials()
         self.creds.guess(self.lp)
@@ -86,7 +87,7 @@ class DsdbTests(TestCase):
 
     def test_ridalloc_next_free_rid(self):
         # Test RID allocation. We assume that RID
-        # pools allocated to us are continguous.
+        # pools allocated to us are contiguous.
         self.samdb.transaction_start()
         try:
             orig_rid_set = self.get_rid_set(self.rid_set_dn)
@@ -359,10 +360,6 @@ class DsdbTests(TestCase):
         finally:
             self.samdb.transaction_cancel()
 
-    def test_get_oid_from_attrid(self):
-        oid = self.samdb.get_oid_from_attid(591614)
-        self.assertEqual(oid, "1.2.840.113556.1.4.1790")
-
     def test_error_replpropertymetadata(self):
         res = self.samdb.search(scope=ldb.SCOPE_SUBTREE,
                                 base=self.account_dn,
@@ -445,12 +442,6 @@ class DsdbTests(TestCase):
         msg["replPropertyMetaData"] = ldb.MessageElement(replBlob, ldb.FLAG_MOD_REPLACE, "replPropertyMetaData")
         self.samdb.modify(msg, ["local_oid:1.3.6.1.4.1.7165.4.3.14:0"])
 
-    def test_ok_get_attribute_from_attid(self):
-        self.assertEqual(self.samdb.get_attribute_from_attid(13), "description")
-
-    def test_ko_get_attribute_from_attid(self):
-        self.assertEqual(self.samdb.get_attribute_from_attid(11979), None)
-
     def test_get_attribute_replmetadata_version(self):
         res = self.samdb.search(scope=ldb.SCOPE_SUBTREE,
                                 base=self.account_dn,
@@ -492,6 +483,17 @@ class DsdbTests(TestCase):
                 self.fail("Got %s should have got ERR_UNSUPPORTED_CRITICAL_EXTENSION"
                           % e[1])
 
+class DsdbTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.lp = samba.tests.env_loadparm()
+        self.creds = Credentials()
+        self.creds.guess(self.lp)
+        self.session = system_session()
+        self.samdb = SamDB(session_info=self.session,
+                           credentials=self.creds,
+                           lp=self.lp)
+
     # Allocate a unique RID for use in the objectSID tests.
     #
     def allocate_rid(self):
@@ -503,6 +505,16 @@ class DsdbTests(TestCase):
             raise
         self.samdb.transaction_commit()
         return str(rid)
+
+    def test_get_oid_from_attrid(self):
+        oid = self.samdb.get_oid_from_attid(591614)
+        self.assertEqual(oid, "1.2.840.113556.1.4.1790")
+
+    def test_ok_get_attribute_from_attid(self):
+        self.assertEqual(self.samdb.get_attribute_from_attid(13), "description")
+
+    def test_ko_get_attribute_from_attid(self):
+        self.assertEqual(self.samdb.get_attribute_from_attid(11979), None)
 
     # Ensure that duplicate objectSID's are permitted for foreign security
     # principals.
@@ -1170,3 +1182,42 @@ class DsdbFullScanTests(TestCase):
         except ldb.LdbError as err:
             estr = err.args[1]
             self.fail("sam.ldb required a full scan to start up")
+
+class DsdbStartUpTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        lp = samba.tests.env_loadparm()
+        path = lp.configfile
+
+        # This is to avoid a tattoo of the global state
+        self.lp = LoadParm(filename_for_non_global_lp=path)
+        self.creds = Credentials()
+        self.creds.guess(self.lp)
+        self.session = system_session()
+        self.samdb = SamDB(session_info=self.session,
+                           credentials=self.creds,
+                           lp=self.lp)
+
+    def test_correct_fl(self):
+        res = self.samdb.search(base="",
+                                 scope=ldb.SCOPE_BASE,
+                                 attrs=["domainFunctionality"])
+        # This confirms the domain is in FL 2016 by default, this is
+        # important to verify the original state
+        self.assertEqual(int(res[0]["domainFunctionality"][0]),
+                         dsdb.DS_DOMAIN_FUNCTION_2016)
+        self.assertEqual(functional_level.dc_level_from_lp(self.lp),
+                         dsdb.DS_DOMAIN_FUNCTION_2016)
+        dsdb.check_and_update_fl(self.samdb, self.lp)
+
+    def test_lower_smb_conf_fl(self):
+        old_lp_fl = self.lp.get("ad dc functional level")
+        self.lp.set("ad dc functional level",
+                    "2008_R2")
+        self.addCleanup(self.lp.set, "ad dc functional level", old_lp_fl)
+        try:
+            dsdb.check_and_update_fl(self.samdb, self.lp)
+            self.fail("Should have failed to start DC with 2008 R2 FL in 2016 domain")
+        except ldb.LdbError as err:
+            (errno, estr) = err.args
+            self.assertEqual(errno, ldb.ERR_CONSTRAINT_VIOLATION)

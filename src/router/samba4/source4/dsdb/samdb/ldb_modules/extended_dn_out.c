@@ -303,6 +303,7 @@ static int extended_callback(struct ldb_request *req, struct ldb_reply *ares)
 	 * interpret the list with) */
 	for (i = 0; ac->schema && i < msg->num_elements; i++) {
 		bool make_extended_dn;
+		bool bl_requested = true;
 		const struct dsdb_attribute *attribute;
 
 		attribute = dsdb_attribute_by_lDAPDisplayName(ac->schema, msg->elements[i].name);
@@ -338,23 +339,47 @@ static int extended_callback(struct ldb_request *req, struct ldb_reply *ares)
 			make_extended_dn = (strcmp(attribute->syntax->ldap_oid, DSDB_SYNTAX_OR_NAME) != 0);
 		}
 
+		if (attribute->linkID & 1 &&
+		    attribute->bl_maybe_invisible &&
+		    !have_reveal_control)
+		{
+			const char * const *attrs = ac->req->op.search.attrs;
+
+			if (attrs != NULL) {
+				bl_requested = ldb_attr_in_list(attrs,
+						attribute->lDAPDisplayName);
+			} else {
+				bl_requested = false;
+			}
+		}
+
 		for (k = 0, j = 0; j < msg->elements[i].num_values; j++) {
 			const char *dn_str;
 			struct ldb_dn *dn;
 			struct dsdb_dn *dsdb_dn = NULL;
 			struct ldb_val *plain_dn = &msg->elements[i].values[j];
 			bool is_deleted_objects = false;
+			uint32_t rmd_flags;
 
 			/* this is a fast method for detecting deleted
 			   linked attributes, working on the unparsed
 			   ldb_val */
-			if (dsdb_dn_is_deleted_val(plain_dn) && !have_reveal_control) {
+			rmd_flags = dsdb_dn_val_rmd_flags(plain_dn);
+			if (rmd_flags & DSDB_RMD_FLAG_DELETED && !have_reveal_control) {
 				/* it's a deleted linked attribute,
 				  and we don't have the reveal control */
 				/* we won't keep this one, so not incrementing k */
 				continue;
 			}
-
+			if (rmd_flags & DSDB_RMD_FLAG_HIDDEN_BL && !bl_requested) {
+				/*
+				 * Hidden backlinks are not revealed unless
+				 * requested.
+				 *
+				 * we won't keep this one, so not incrementing k
+				 */
+				continue;
+			}
 
 			dsdb_dn = dsdb_dn_parse_trusted(msg, ldb, plain_dn, attribute->syntax->ldap_oid);
 
@@ -402,8 +427,7 @@ static int extended_callback(struct ldb_request *req, struct ldb_reply *ares)
 					talloc_free(dsdb_dn);
 					return ldb_module_done(ac->req, NULL, NULL, ret);
 				}
-				if (remove_value &&
-				    !ldb_request_get_control(req, LDB_CONTROL_REVEAL_INTERNALS)) {
+				if (remove_value && !have_reveal_control) {
 					/* we show these with REVEAL
 					   to allow dbcheck to find and
 					   cleanup these orphaned links */
@@ -530,11 +554,11 @@ static int extended_dn_out_search(struct ldb_module *module, struct ldb_request 
 		}
 
 		/* check if attrs only is specified, in that case check whether we need to modify them */
-		if (req->op.search.attrs && !is_attr_in_list(req->op.search.attrs, "*")) {
-			if (! is_attr_in_list(req->op.search.attrs, "objectGUID")) {
+		if (req->op.search.attrs && !ldb_attr_in_list(req->op.search.attrs, "*")) {
+			if (! ldb_attr_in_list(req->op.search.attrs, "objectGUID")) {
 				ac->remove_guid = true;
 			}
-			if (! is_attr_in_list(req->op.search.attrs, "objectSid")) {
+			if (! ldb_attr_in_list(req->op.search.attrs, "objectSid")) {
 				ac->remove_sid = true;
 			}
 			if (ac->remove_guid || ac->remove_sid) {

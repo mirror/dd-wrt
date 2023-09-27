@@ -45,7 +45,7 @@ struct huffman_node {
 
 /*
  * This struct just coalesces all the memory you need for LZ77 + Huffman
- * compresssion together in one bundle.
+ * compression together in one bundle.
  *
  * There are a few different things you want, you usually want them all, so
  * this makes it easy to allocate them all at once.
@@ -82,6 +82,14 @@ uint8_t *lzxpress_huffman_decompress_talloc(TALLOC_CTX *mem_ctx,
 					    const uint8_t *input_bytes,
 					    size_t input_size,
 					    size_t output_size);
+
+/*
+ * lzxpress_huffman_max_compressed_size()
+ *
+ * Return the most bytes the compression can take, to allow
+ * pre-allocation.
+ */
+size_t lzxpress_huffman_max_compressed_size(size_t input_size);
 
 
 #endif /* HAVE_LZXPRESS_HUFFMAN_H */

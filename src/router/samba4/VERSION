@@ -24,8 +24,8 @@
 #  ->  "3.0.0"                                         #
 ########################################################
 SAMBA_VERSION_MAJOR=4
-SAMBA_VERSION_MINOR=18
-SAMBA_VERSION_RELEASE=3
+SAMBA_VERSION_MINOR=19
+SAMBA_VERSION_RELEASE=0
 
 ########################################################
 # If a official release has a serious bug              #
@@ -117,7 +117,7 @@ SAMBA_VERSION_RELEASE_NICKNAME=
 #                                                      #
 # <MAJOR>.<MINOR>.<RELEASE>[...]-<VENDOR_SUFFIX>       #
 #                                                      #
-# Note the '-' is automaticaly added                   #
+# Note the '-' is automatically added                  #
 #                                                      #
 # e.g. SAMBA_VERSION_VENDOR_SUFFIX=VendorVersion       #
 #  ->  "3.0.0rc2-VendorVersion"                        #

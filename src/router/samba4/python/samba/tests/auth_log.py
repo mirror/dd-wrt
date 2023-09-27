@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Unix SMB/CIFS implementation.
 # Copyright (C) Andrew Bartlett <abartlet@samba.org> 2017
 #
@@ -17,6 +18,11 @@
 
 """Tests for the Auth and AuthZ logging.
 """
+
+import sys
+
+sys.path.insert(0, 'bin/python')
+
 import samba.tests
 from samba.dcerpc import srvsvc, dnsserver
 import os
@@ -170,13 +176,14 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         # returning message too big,
         msg = messages[0]
         self.assertEqual("Authentication", msg["type"])
-        self.assertEqual("NT_STATUS_OK", msg["Authentication"]["status"])
+        self.assertEqual("NT_STATUS_PROTOCOL_UNREACHABLE",  # RESPONSE_TOO_BIG
+                         msg["Authentication"]["status"])
         self.assertEqual("Kerberos KDC",
                           msg["Authentication"]["serviceDescription"])
         self.assertEqual(authTypes[1],
                           msg["Authentication"]["authDescription"])
         self.assertEqual(
-            EVT_ID_SUCCESSFUL_LOGON, msg["Authentication"]["eventId"])
+            EVT_ID_UNSUCCESSFUL_LOGON, msg["Authentication"]["eventId"])
         self.assertEqual(
             EVT_LOGON_NETWORK, msg["Authentication"]["logonType"])
 
@@ -366,13 +373,14 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         # Check the second message it should be an Authentication
         msg = messages[1]
         self.assertEqual("Authentication", msg["type"])
-        self.assertEqual("NT_STATUS_OK", msg["Authentication"]["status"])
+        self.assertEqual("NT_STATUS_PROTOCOL_UNREACHABLE",  # RESPONSE_TOO_BIG
+                         msg["Authentication"]["status"])
         self.assertEqual("Kerberos KDC",
                           msg["Authentication"]["serviceDescription"])
         self.assertEqual(authTypes[2],
                           msg["Authentication"]["authDescription"])
         self.assertEqual(
-            EVT_ID_SUCCESSFUL_LOGON, msg["Authentication"]["eventId"])
+            EVT_ID_UNSUCCESSFUL_LOGON, msg["Authentication"]["eventId"])
         self.assertEqual(
             EVT_LOGON_NETWORK, msg["Authentication"]["logonType"])
 
@@ -485,14 +493,15 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         # Check the first message it should be an Authentication
         msg = messages[0]
         self.assertEqual("Authentication", msg["type"])
-        self.assertEqual("NT_STATUS_OK", msg["Authentication"]["status"])
+        self.assertEqual("NT_STATUS_PROTOCOL_UNREACHABLE",  # RESPONSE_TOO_BIG
+                         msg["Authentication"]["status"])
         self.assertEqual("Kerberos KDC",
                           msg["Authentication"]["serviceDescription"])
         self.assertEqual("ENC-TS Pre-authentication",
                           msg["Authentication"]["authDescription"])
         self.assertTrue(msg["Authentication"]["duration"] > 0)
         self.assertEqual(
-            EVT_ID_SUCCESSFUL_LOGON, msg["Authentication"]["eventId"])
+            EVT_ID_UNSUCCESSFUL_LOGON, msg["Authentication"]["eventId"])
         self.assertEqual(
             EVT_LOGON_NETWORK, msg["Authentication"]["logonType"])
 
@@ -729,12 +738,13 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         # Check the first message it should be an Authentication
         msg = messages[0]
         self.assertEqual("Authentication", msg["type"])
-        self.assertEqual("NT_STATUS_OK", msg["Authentication"]["status"])
+        self.assertEqual("NT_STATUS_PROTOCOL_UNREACHABLE",  # RESPONSE_TOO_BIG
+                         msg["Authentication"]["status"])
         self.assertEqual("Kerberos KDC",
                           msg["Authentication"]["serviceDescription"])
         self.assertEqual("ENC-TS Pre-authentication",
                           msg["Authentication"]["authDescription"])
-        self.assertEqual(EVT_ID_SUCCESSFUL_LOGON,
+        self.assertEqual(EVT_ID_UNSUCCESSFUL_LOGON,
                           msg["Authentication"]["eventId"])
         self.assertEqual(EVT_LOGON_NETWORK,
                           msg["Authentication"]["logonType"])
@@ -1475,3 +1485,8 @@ class AuthLogTests(samba.tests.auth_log_base.AuthLogTestBase):
         self.assertEqual("schannel", msg["Authorization"]["authType"])
         self.assertEqual("SEAL", msg["Authorization"]["transportProtection"])
         self.assertTrue(self.is_guid(msg["Authorization"]["sessionId"]))
+
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()

@@ -175,7 +175,7 @@ interface drsuapi
 		[case(48)][subcontext(0), subcontext_size(48)] drsuapi_DsBindInfo48 info48;
 		[case(52)][subcontext(0), subcontext_size(52)] drsuapi_DsBindInfo52 info52;
 		/*
-		 * The size for the defaut case is a bit arbitrary it in fact the value
+		 * The size for the default case is a bit arbitrary it in fact the value
 		 * of the switch but we can't reference it.
 		 * As we hand(un-)marshall this structure it has 0 impact and makes
 		 * pidl happy for wireshark too
@@ -200,7 +200,7 @@ interface drsuapi
 		[size_is(cb)] BYTE rgb[];
 	} DRS_EXTENSIONS;
 
-	But we use a subcontext which has a slighly different signification on how
+	But we use a subcontext which has a slightly different signification on how
 	data are laid out.
 	With the MS-DRSR definition we will have
 		size_is_cb cv rgb_array
@@ -356,7 +356,7 @@ interface drsuapi
 	 * the following table shows the mapping used between the two representations
 	 * e.g. - objectClass 'nTDSDSA' has governsID: 1.2.840.113556.1.5.7000.47
 	 *        and a UINT32-ID of '0x0017002F'.
-	 *      - so the OID 1.2.840.113556.1.5.7000.47 is splitted into a
+	 *      - so the OID 1.2.840.113556.1.5.7000.47 is split into a
 	 *        OID-prefix: 1.2.840.113556.1.5.7000
 	 *	  and a value: 47 => 0x2F
 	 *      - the mapping table gives a UINT32-prefix: 0x00170000
@@ -790,28 +790,28 @@ interface drsuapi
 		uint32 decompressed_length;
 		uint32 compressed_length;
 		[subcontext(4),subcontext_size(compressed_length),
-		 compression(NDR_COMPRESSION_XPRESS,compressed_length,decompressed_length)]
+		 compression(NDR_COMPRESSION_WIN2K3_LZ77_DIRECT2,compressed_length,decompressed_length)]
 		 drsuapi_DsGetNCChangesCtr1TS *ts;
-	} drsuapi_DsGetNCChangesXPRESSCtr1;
+	} drsuapi_DsGetNCChangesWIN2K3_LZ77_DIRECT2Ctr1;
 
 	typedef [nopush] struct {
 		uint32 decompressed_length;
 		uint32 compressed_length;
 		[subcontext(4),subcontext_size(compressed_length),
-		 compression(NDR_COMPRESSION_XPRESS,compressed_length,decompressed_length)]
+		 compression(NDR_COMPRESSION_WIN2K3_LZ77_DIRECT2,compressed_length,decompressed_length)]
 		 drsuapi_DsGetNCChangesCtr6TS *ts;
-	} drsuapi_DsGetNCChangesXPRESSCtr6;
+	} drsuapi_DsGetNCChangesWIN2K3_LZ77_DIRECT2Ctr6;
 
 	typedef [enum16bit] enum {
 		DRSUAPI_COMPRESSION_TYPE_MSZIP	= 2,
-		DRSUAPI_COMPRESSION_TYPE_XPRESS	= 3
+		DRSUAPI_COMPRESSION_TYPE_WIN2K3_LZ77_DIRECT2	= 3 /* CompressOrDecompressWin2k3 DRS_COMP_ALG_WIN2K3 */
 	} drsuapi_DsGetNCChangesCompressionType;
 
 	typedef [nodiscriminant,flag(NDR_PAHEX)] union {
 		[case(1|(DRSUAPI_COMPRESSION_TYPE_MSZIP<<16))]	drsuapi_DsGetNCChangesMSZIPCtr1 mszip1;
 		[case(6|(DRSUAPI_COMPRESSION_TYPE_MSZIP<<16))]	drsuapi_DsGetNCChangesMSZIPCtr6 mszip6;
-		[case(1|(DRSUAPI_COMPRESSION_TYPE_XPRESS<<16))]	drsuapi_DsGetNCChangesXPRESSCtr1 xpress1;
-		[case(6|(DRSUAPI_COMPRESSION_TYPE_XPRESS<<16))]	drsuapi_DsGetNCChangesXPRESSCtr6 xpress6;
+		[case(1|(DRSUAPI_COMPRESSION_TYPE_WIN2K3_LZ77_DIRECT2<<16))]	drsuapi_DsGetNCChangesWIN2K3_LZ77_DIRECT2Ctr1 xpress1;
+		[case(6|(DRSUAPI_COMPRESSION_TYPE_WIN2K3_LZ77_DIRECT2<<16))]	drsuapi_DsGetNCChangesWIN2K3_LZ77_DIRECT2Ctr6 xpress6;
 	} drsuapi_DsGetNCChangesCompressedCtr;
 
 	typedef struct {

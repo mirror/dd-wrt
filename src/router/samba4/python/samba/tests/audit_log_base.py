@@ -126,12 +126,12 @@ class AuditLogTestBase(samba.tests.TestCase):
         self.discardMessages()
         self.msg_ctx.irpc_remove_name(self.event_type)
         self.msg_ctx.irpc_remove_name(AUTH_EVENT_NAME)
-        if self.msg_handler_and_context:
-            self.msg_ctx.deregister(self.msg_handler_and_context,
-                                    msg_type=self.message_type)
-        if self.auth_handler_and_context:
-            self.msg_ctx.deregister(self.auth_handler_and_context,
-                                    msg_type=MSG_AUTH_LOG)
+        self.msg_ctx.deregister(self.msg_handler_and_context,
+                                msg_type=self.message_type)
+        self.msg_ctx.deregister(self.auth_handler_and_context,
+                                msg_type=MSG_AUTH_LOG)
+
+        super().tearDown()
 
     def haveExpected(self, expected, dn):
         if dn is None:
@@ -175,21 +175,29 @@ class AuditLogTestBase(samba.tests.TestCase):
 
     # Discard any previously queued messages.
     def discardMessages(self):
-        self.msg_ctx.loop_once(0.001)
-        while (len(self.context["messages"]) or
-               self.context["txnMessage"] is not None):
+        messages = self.context["messages"]
 
-            self.context["messages"] = []
+        while True:
+            messages.clear()
             self.context["txnMessage"] = None
-            self.msg_ctx.loop_once(0.001)
 
-    GUID_RE = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+            # tevent presumably has other tasks to run, so we might need two or
+            # three loops before a message comes through.
+            for _ in range(5):
+                self.msg_ctx.loop_once(0.001)
+
+            if not messages and self.context["txnMessage"] is None:
+                # No new messages. We’ve probably got them all.
+                break
+
+    GUID_RE = re.compile(
+        "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
     #
     # Is the supplied GUID string correctly formatted
     #
     def is_guid(self, guid):
-        return re.match(self.GUID_RE, guid)
+        return self.GUID_RE.fullmatch(guid)
 
     def get_session(self):
         return self.auth_context["sessionId"]

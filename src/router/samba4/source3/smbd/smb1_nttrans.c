@@ -84,10 +84,10 @@ static void send_nt_replies(connection_struct *conn,
 		}
 		show_msg((char *)req->outbuf);
 		if (!smb1_srv_send(xconn,
-				(char *)req->outbuf,
-				true, req->seqnum+1,
-				IS_CONN_ENCRYPTED(conn),
-				&req->pcd)) {
+				   (char *)req->outbuf,
+				   true,
+				   req->seqnum + 1,
+				   IS_CONN_ENCRYPTED(conn))) {
 			exit_server_cleanly("send_nt_replies: smb1_srv_send failed.");
 		}
 		TALLOC_FREE(req->outbuf);
@@ -248,10 +248,10 @@ static void send_nt_replies(connection_struct *conn,
 		/* Send the packet */
 		show_msg((char *)req->outbuf);
 		if (!smb1_srv_send(xconn,
-				(char *)req->outbuf,
-				true, req->seqnum+1,
-				IS_CONN_ENCRYPTED(conn),
-				&req->pcd)) {
+				   (char *)req->outbuf,
+				   true,
+				   req->seqnum + 1,
+				   IS_CONN_ENCRYPTED(conn))) {
 			exit_server_cleanly("send_nt_replies: smb1_srv_send failed.");
 		}
 
@@ -628,6 +628,12 @@ void reply_ntcreate_and_X(struct smb_request *req)
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
+
 	status = filename_convert_dirfsp(
 		ctx, conn, fname, ucf_flags, twrp, &dirfsp, &smb_fname);
 
@@ -1083,6 +1089,12 @@ static void call_nt_transact_create(connection_struct *conn,
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
+
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 fname,
@@ -1470,6 +1482,12 @@ void reply_ntrename(struct smb_request *req)
 	if (ucf_flags_src & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(oldname, &src_twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags_src, &oldname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
+
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 oldname,
@@ -1511,6 +1529,11 @@ void reply_ntrename(struct smb_request *req)
 		if (ucf_flags_dst & UCF_GMT_PATHNAME) {
 			extract_snapshot_token(newname,
 					       &dst_twrp);
+		}
+		status = smb1_strip_dfs_path(ctx, &ucf_flags_dst, &newname);
+		if (!NT_STATUS_IS_OK(status)) {
+			reply_nterror(req, status);
+			goto out;
 		}
 		status = filename_convert_dirfsp(ctx,
 						 conn,
@@ -2002,8 +2025,6 @@ static void call_nt_transact_ioctl(connection_struct *conn,
 		return;
 	}
 
-	SMB_PERFCOUNT_SET_IOCTL(&req->pcd, function);
-
 	/*
 	 * out_data might be allocated by the VFS module, but talloc should be
 	 * used, and should be cleaned up when the request ends.
@@ -2261,13 +2282,13 @@ static void handle_nttrans(connection_struct *conn,
 			   struct trans_state *state,
 			   struct smb_request *req)
 {
-	if (get_Protocol() >= PROTOCOL_NT1) {
+	struct smbXsrv_connection *xconn = req->xconn;
+
+	if (xconn->protocol >= PROTOCOL_NT1) {
 		req->flags2 |= 0x40; /* IS_LONG_NAME */
 		SSVAL(discard_const_p(uint8_t, req->inbuf),smb_flg2,req->flags2);
 	}
 
-
-	SMB_PERFCOUNT_SET_SUBOP(&req->pcd, state->call);
 
 	/* Now we must call the relevant NT_TRANS function */
 	switch(state->call) {

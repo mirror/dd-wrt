@@ -211,7 +211,7 @@ static NTSTATUS smbd_smb2_close(struct smbd_smb2_request *req,
 	DEBUG(10,("smbd_smb2_close: %s - %s\n",
 		  fsp_str_dbg(fsp), fsp_fnum_dbg(fsp)));
 
-	smbreq = smbd_smb2_fake_smb_request(req);
+	smbreq = smbd_smb2_fake_smb_request(req, fsp);
 	if (smbreq == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
@@ -225,6 +225,8 @@ static NTSTATUS smbd_smb2_close(struct smbd_smb2_request *req,
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(5,("smbd_smb2_close: close_file[%s]: %s\n",
 			 smb_fname_str_dbg(smb_fname), nt_errstr(status)));
+		file_free(smbreq, fsp);
+		*_fsp = fsp = NULL;
 		return status;
 	}
 

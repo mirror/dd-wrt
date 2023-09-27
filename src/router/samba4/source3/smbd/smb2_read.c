@@ -353,7 +353,6 @@ static NTSTATUS schedule_smb2_sendfile_read(struct smbd_smb2_request *smb2req,
 	 * Signing is active OR
 	 * This is a compound SMB2 operation OR
 	 * fsp is a STREAM file OR
-	 * We're using a write cache OR
 	 * It's not a regular file OR
 	 * Requested offset is greater than file size OR
 	 * there's not enough data in the file.
@@ -480,7 +479,7 @@ static struct tevent_req *smbd_smb2_read_send(TALLOC_CTX *mem_ctx,
 	DEBUG(10,("smbd_smb2_read: %s - %s\n",
 		  fsp_str_dbg(fsp), fsp_fnum_dbg(fsp)));
 
-	smbreq = smbd_smb2_fake_smb_request(smb2req);
+	smbreq = smbd_smb2_fake_smb_request(smb2req, fsp);
 	if (tevent_req_nomem(smbreq, req)) {
 		return tevent_req_post(req, ev);
 	}

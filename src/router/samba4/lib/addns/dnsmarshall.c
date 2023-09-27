@@ -88,7 +88,9 @@ void dns_marshall_buffer(struct dns_buffer *buf, const uint8_t *data,
 		buf->data = new_data;
 	}
 
-	memcpy(buf->data + buf->offset, data, len);
+	if (data != NULL) {
+		memcpy(buf->data + buf->offset, data, len);
+	}
 	buf->offset += len;
 	return;
 }
@@ -369,7 +371,7 @@ DNS_ERROR dns_marshall_request(TALLOC_CTX *mem_ctx,
 		dns_marshall_rr(buf, req->auths[i]);
 	}
 	for (i=0; i<req->num_additionals; i++) {
-		dns_marshall_rr(buf, req->additionals[i]);
+		dns_marshall_rr(buf, req->additional[i]);
 	}
 
 	if (!ERR_DNS_IS_OK(buf->error)) {
@@ -424,7 +426,7 @@ DNS_ERROR dns_unmarshall_request(TALLOC_CTX *mem_ctx,
 		goto error;
 	}
 	if ((req->num_additionals != 0) &&
-	    !(req->additionals = talloc_zero_array(req, struct dns_rrec *,
+	    !(req->additional = talloc_zero_array(req, struct dns_rrec *,
 					      req->num_additionals))) {
 		goto error;
 	}
@@ -442,8 +444,8 @@ DNS_ERROR dns_unmarshall_request(TALLOC_CTX *mem_ctx,
 				  &req->auths[i]);
 	}
 	for (i=0; i<req->num_additionals; i++) {
-		dns_unmarshall_rr(req->additionals, buf,
-				  &req->additionals[i]);
+		dns_unmarshall_rr(req->additional, buf,
+				  &req->additional[i]);
 	}
 
 	if (!ERR_DNS_IS_OK(buf->error)) {
@@ -492,7 +494,7 @@ struct dns_request *dns_update2request(struct dns_update_request *update)
 		(struct dns_question **)(void *)update->zones) &&
 	       (req->answers == update->preqs) &&
 	       (req->auths == update->updates) &&
-	       (req->additionals == update->additionals));
+	       (req->additional == update->additional));
 #endif
 
 	return req;

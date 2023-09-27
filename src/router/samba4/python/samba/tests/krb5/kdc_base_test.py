@@ -23,16 +23,24 @@ sys.path.insert(0, "bin/python")
 os.environ["PYTHONUNBUFFERED"] = "1"
 
 from datetime import datetime, timezone
+from functools import partial
 import tempfile
 import binascii
 import collections
+import numbers
 import secrets
 from enum import Enum
 
 from collections import namedtuple
 import ldb
 from ldb import SCOPE_BASE
-from samba import common, generate_random_password
+from samba import (
+    NTSTATUSError,
+    arcfour_encrypt,
+    common,
+    generate_random_password,
+    ntstatus,
+)
 from samba.auth import system_session
 from samba.credentials import (
     Credentials,
@@ -40,7 +48,20 @@ from samba.credentials import (
     DONT_USE_KERBEROS,
     MUST_USE_KERBEROS,
 )
-from samba.dcerpc import drsblobs, drsuapi, misc, krb5pac, krb5ccache, security
+from samba.crypto import des_crypt_blob_16, md4_hash_blob
+from samba.dcerpc import (
+    claims,
+    drsblobs,
+    drsuapi,
+    krb5ccache,
+    krb5pac,
+    lsa,
+    misc,
+    netlogon,
+    ntlmssp,
+    samr,
+    security,
+)
 from samba.drs_utils import drs_Replicate, drsuapi_connect
 from samba.dsdb import (
     DSDB_SYNTAX_BINARY_DN,
@@ -48,7 +69,11 @@ from samba.dsdb import (
     DS_DOMAIN_FUNCTION_2008,
     DS_GUID_COMPUTERS_CONTAINER,
     DS_GUID_DOMAIN_CONTROLLERS_CONTAINER,
+    DS_GUID_MANAGED_SERVICE_ACCOUNTS_CONTAINER,
     DS_GUID_USERS_CONTAINER,
+    GTYPE_SECURITY_DOMAIN_LOCAL_GROUP,
+    GTYPE_SECURITY_GLOBAL_GROUP,
+    GTYPE_SECURITY_UNIVERSAL_GROUP,
     UF_WORKSTATION_TRUST_ACCOUNT,
     UF_NO_AUTH_DATA_REQUIRED,
     UF_NORMAL_ACCOUNT,
@@ -65,12 +90,13 @@ from samba.dcerpc.misc import (
 from samba.join import DCJoinContext
 from samba.ndr import ndr_pack, ndr_unpack
 from samba import net
+from samba.netcmd.domain.models import AuthenticationPolicy, AuthenticationSilo
 from samba.samdb import SamDB, dsdb_Dn
 
 rc4_bit = security.KERB_ENCTYPE_RC4_HMAC_MD5
 aes256_sk_bit = security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK
 
-from samba.tests import delete_force
+from samba.tests import TestCaseInTempDir, delete_force
 import samba.tests.krb5.kcrypto as kcrypto
 from samba.tests.krb5.raw_testcase import (
     KerberosCredentials,
@@ -103,7 +129,23 @@ global_asn1_print = False
 global_hexdump = False
 
 
-class KDCBaseTest(RawKerberosTest):
+class GroupType(Enum):
+    GLOBAL = GTYPE_SECURITY_GLOBAL_GROUP
+    DOMAIN_LOCAL = GTYPE_SECURITY_DOMAIN_LOCAL_GROUP
+    UNIVERSAL = GTYPE_SECURITY_UNIVERSAL_GROUP
+
+
+# This simple class encapsulates the DN and SID of a Principal.
+class Principal:
+    def __init__(self, dn, sid):
+        if dn is not None and not isinstance(dn, ldb.Dn):
+            raise AssertionError(f'expected {dn} to be an ldb.Dn')
+
+        self.dn = dn
+        self.sid = sid
+
+
+class KDCBaseTest(TestCaseInTempDir, RawKerberosTest):
     """ Base class for KDC tests.
     """
 
@@ -112,6 +154,7 @@ class KDCBaseTest(RawKerberosTest):
         COMPUTER = object()
         SERVER = object()
         RODC = object()
+        MANAGED_SERVICE = object()
 
     @classmethod
     def setUpClass(cls):
@@ -120,6 +163,8 @@ class KDCBaseTest(RawKerberosTest):
 
         cls._ldb = None
         cls._rodc_ldb = None
+
+        cls._drsuapi_connection = None
 
         cls._functional_level = None
 
@@ -133,6 +178,7 @@ class KDCBaseTest(RawKerberosTest):
         cls.accounts = []
 
         cls.account_cache = {}
+        cls.policy_cache = {}
         cls.tkt_cache = {}
 
         cls._rodc_ctx = None
@@ -140,6 +186,9 @@ class KDCBaseTest(RawKerberosTest):
         cls.ldb_cleanups = []
 
         cls._claim_types_dn = None
+        cls._authn_policy_config_dn = None
+        cls._authn_policies_dn = None
+        cls._authn_silos_dn = None
 
     def get_claim_types_dn(self):
         samdb = self.get_samdb()
@@ -181,7 +230,93 @@ class KDCBaseTest(RawKerberosTest):
         # Return a copy of the DN.
         return ldb.Dn(samdb, str(self._claim_types_dn))
 
+    def get_authn_policy_config_dn(self):
+        samdb = self.get_samdb()
+
+        if self._authn_policy_config_dn is None:
+            authn_policy_config_dn = samdb.get_config_basedn()
+
+            authn_policy_config_dn.add_child(
+                'CN=AuthN Policy Configuration,CN=Services')
+            details = {
+                'dn': authn_policy_config_dn,
+                'objectClass': 'container',
+                'description': ('Contains configuration for authentication '
+                                'policy'),
+            }
+            try:
+                samdb.add(details)
+            except ldb.LdbError as err:
+                num, _ = err.args
+                if num != ldb.ERR_ENTRY_ALREADY_EXISTS:
+                    raise
+            else:
+                self.accounts.append(str(authn_policy_config_dn))
+
+            type(self)._authn_policy_config_dn = authn_policy_config_dn
+
+        # Return a copy of the DN.
+        return ldb.Dn(samdb, str(self._authn_policy_config_dn))
+
+    def get_authn_policies_dn(self):
+        samdb = self.get_samdb()
+
+        if self._authn_policies_dn is None:
+            authn_policies_dn = self.get_authn_policy_config_dn()
+            authn_policies_dn.add_child('CN=AuthN Policies')
+            details = {
+                'dn': authn_policies_dn,
+                'objectClass': 'msDS-AuthNPolicies',
+                'description': 'Contains authentication policy objects',
+            }
+            try:
+                samdb.add(details)
+            except ldb.LdbError as err:
+                num, _ = err.args
+                if num != ldb.ERR_ENTRY_ALREADY_EXISTS:
+                    raise
+            else:
+                self.accounts.append(str(authn_policies_dn))
+
+            type(self)._authn_policies_dn = authn_policies_dn
+
+        # Return a copy of the DN.
+        return ldb.Dn(samdb, str(self._authn_policies_dn))
+
+    def get_authn_silos_dn(self):
+        samdb = self.get_samdb()
+
+        if self._authn_silos_dn is None:
+            authn_silos_dn = self.get_authn_policy_config_dn()
+            authn_silos_dn.add_child('CN=AuthN Silos')
+            details = {
+                'dn': authn_silos_dn,
+                'objectClass': 'msDS-AuthNPolicySilos',
+                'description': 'Contains authentication policy silo objects',
+            }
+            try:
+                samdb.add(details)
+            except ldb.LdbError as err:
+                num, _ = err.args
+                if num != ldb.ERR_ENTRY_ALREADY_EXISTS:
+                    raise
+            else:
+                self.accounts.append(str(authn_silos_dn))
+
+            type(self)._authn_silos_dn = authn_silos_dn
+
+        # Return a copy of the DN.
+        return ldb.Dn(samdb, str(self._authn_silos_dn))
+
+    @staticmethod
+    def freeze(m):
+        return frozenset((k, v) for k, v in m.items())
+
     def tearDown(self):
+        # Run any cleanups that may modify accounts prior to deleting those
+        # accounts.
+        self.doCleanups()
+
         # Clean up any accounts created for single tests.
         if self._ldb is not None:
             for dn in reversed(self.test_accounts):
@@ -251,6 +386,18 @@ class KDCBaseTest(RawKerberosTest):
 
         return self._rodc_ldb
 
+    def get_drsuapi_connection(self):
+        if self._drsuapi_connection is None:
+            admin_creds = self.get_admin_creds()
+            samdb = self.get_samdb()
+            dns_hostname = samdb.host_dns_name()
+            type(self)._drsuapi_connection = drsuapi_connect(dns_hostname,
+                                                             self.get_lp(),
+                                                             admin_creds,
+                                                             ip=self.dc_host)
+
+        return self._drsuapi_connection
+
     def get_server_dn(self, samdb):
         server = samdb.get_serverName()
 
@@ -282,8 +429,11 @@ class KDCBaseTest(RawKerberosTest):
 
         return self._rodc_ctx
 
-    def get_domain_functional_level(self, ldb):
+    def get_domain_functional_level(self, ldb=None):
         if self._functional_level is None:
+            if ldb is None:
+                ldb = self.get_samdb()
+
             res = ldb.search(base='',
                              scope=SCOPE_BASE,
                              attrs=['domainFunctionality'])
@@ -296,16 +446,20 @@ class KDCBaseTest(RawKerberosTest):
 
         return self._functional_level
 
-    def get_default_enctypes(self):
-        samdb = self.get_samdb()
-        functional_level = self.get_domain_functional_level(samdb)
+    def get_default_enctypes(self, creds):
+        self.assertIsNotNone(creds, 'expected client creds to be passed in')
 
-        # RC4 should always be supported
-        default_enctypes = {kcrypto.Enctype.RC4}
+        functional_level = self.get_domain_functional_level()
+
+        default_enctypes = []
+
         if functional_level >= DS_DOMAIN_FUNCTION_2008:
             # AES is only supported at functional level 2008 or higher
-            default_enctypes.add(kcrypto.Enctype.AES256)
-            default_enctypes.add(kcrypto.Enctype.AES128)
+            default_enctypes.append(kcrypto.Enctype.AES256)
+            default_enctypes.append(kcrypto.Enctype.AES128)
+
+        if self.expect_nt_hash or creds.get_workstation():
+            default_enctypes.append(kcrypto.Enctype.RC4)
 
         return default_enctypes
 
@@ -334,33 +488,233 @@ class KDCBaseTest(RawKerberosTest):
         return dn
 
     def get_dn_from_attribute(self, attribute):
-        return self.get_dn_from_schema(attribute, 'attributeSchema')
+        return self.get_from_attribute(attribute).dn
 
     def get_dn_from_class(self, attribute):
-        return self.get_dn_from_schema(attribute, 'classSchema')
+        return self.get_from_class(attribute).dn
 
-    def get_dn_from_schema(self, name, object_class):
+    def get_schema_id_guid_from_attribute(self, attribute):
+        guid = self.get_from_attribute(attribute).get('schemaIDGUID', idx=0)
+        return misc.GUID(guid)
+
+    def get_from_attribute(self, attribute):
+        return self.get_from_schema(attribute, 'attributeSchema')
+
+    def get_from_class(self, attribute):
+        return self.get_from_schema(attribute, 'classSchema')
+
+    def get_from_schema(self, name, object_class):
         samdb = self.get_samdb()
         schema_dn = samdb.get_schema_basedn()
 
         res = samdb.search(base=schema_dn,
                            scope=ldb.SCOPE_ONELEVEL,
+                           attrs=['schemaIDGUID'],
                            expression=(f'(&(objectClass={object_class})'
                                        f'(lDAPDisplayName={name}))'))
         self.assertEqual(1, len(res),
                          f'could not locate {name} in {object_class}')
 
-        return res[0].dn
+        return res[0]
+
+    def create_authn_silo(self, *,
+                          members=None,
+                          user_policy=None,
+                          computer_policy=None,
+                          service_policy=None,
+                          enforced=None):
+        samdb = self.get_samdb()
+
+        silo_id = self.get_new_username()
+
+        authn_silo_dn = self.get_authn_silos_dn()
+        authn_silo_dn.add_child(f'CN={silo_id}')
+
+        details = {
+            'dn': authn_silo_dn,
+            'objectClass': 'msDS-AuthNPolicySilo',
+        }
+
+        if enforced is True:
+            enforced = 'TRUE'
+        elif enforced is False:
+            enforced = 'FALSE'
+
+        if members is not None:
+            details['msDS-AuthNPolicySiloMembers'] = members
+        if user_policy is not None:
+            details['msDS-UserAuthNPolicy'] = str(user_policy.dn)
+        if computer_policy is not None:
+            details['msDS-ComputerAuthNPolicy'] = str(computer_policy.dn)
+        if service_policy is not None:
+            details['msDS-ServiceAuthNPolicy'] = str(service_policy.dn)
+        if enforced is not None:
+            details['msDS-AuthNPolicySiloEnforced'] = enforced
+
+        # Save the silo DN so it can be deleted in tearDownClass().
+        self.accounts.append(str(authn_silo_dn))
+
+        # Remove the silo if it exists; this will happen if a previous test run
+        # failed.
+        delete_force(samdb, authn_silo_dn)
+
+        samdb.add(details)
+
+        return AuthenticationSilo.get(samdb, dn=authn_silo_dn)
+
+    def create_authn_silo_claim_id(self):
+        claim_id = 'ad://ext/AuthenticationSilo'
+
+        for_classes = [
+            'msDS-GroupManagedServiceAccount',
+            'user',
+            'msDS-ManagedServiceAccount',
+            'computer',
+        ]
+
+        self.create_claim(claim_id,
+                          enabled=True,
+                          single_valued=True,
+                          value_space_restricted=False,
+                          source_type='Constructed',
+                          for_classes=for_classes,
+                          value_type=claims.CLAIM_TYPE_STRING,
+                          # It's OK if the claim type already exists.
+                          force=False)
+
+        return claim_id
+
+    def create_authn_policy(self, *,
+                            use_cache=True,
+                            **kwargs):
+
+        if use_cache:
+            cache_key = self.freeze(kwargs)
+
+            authn_policy = self.policy_cache.get(cache_key)
+            if authn_policy is not None:
+                return authn_policy
+
+        authn_policy = self.create_authn_policy_opts(**kwargs)
+        if use_cache:
+            self.policy_cache[cache_key] = authn_policy
+
+        return authn_policy
+
+    def create_authn_policy_opts(self, *,
+                                 enforced=None,
+                                 strong_ntlm_policy=None,
+                                 user_allowed_from=None,
+                                 user_allowed_ntlm=None,
+                                 user_allowed_to=None,
+                                 user_tgt_lifetime=None,
+                                 computer_allowed_to=None,
+                                 computer_tgt_lifetime=None,
+                                 service_allowed_from=None,
+                                 service_allowed_ntlm=None,
+                                 service_allowed_to=None,
+                                 service_tgt_lifetime=None):
+        samdb = self.get_samdb()
+
+        policy_id = self.get_new_username()
+
+        policy_dn = self.get_authn_policies_dn()
+        policy_dn.add_child(f'CN={policy_id}')
+
+        details = {
+            'dn': policy_dn,
+            'objectClass': 'msDS-AuthNPolicy',
+        }
+
+        _domain_sid = None
+
+        def sd_from_sddl(sddl):
+            nonlocal _domain_sid
+            if _domain_sid is None:
+                _domain_sid = security.dom_sid(samdb.get_domain_sid())
+
+            return ndr_pack(security.descriptor.from_sddl(sddl, _domain_sid))
+
+        if enforced is True:
+            enforced = 'TRUE'
+        elif enforced is False:
+            enforced = 'FALSE'
+
+        if user_allowed_ntlm is True:
+            user_allowed_ntlm = 'TRUE'
+        elif user_allowed_ntlm is False:
+            user_allowed_ntlm = 'FALSE'
+
+        if service_allowed_ntlm is True:
+            service_allowed_ntlm = 'TRUE'
+        elif service_allowed_ntlm is False:
+            service_allowed_ntlm = 'FALSE'
+
+        if enforced is not None:
+            details['msDS-AuthNPolicyEnforced'] = enforced
+        if strong_ntlm_policy is not None:
+            details['msDS-StrongNTLMPolicy'] = strong_ntlm_policy
+
+        if user_allowed_from is not None:
+            details['msDS-UserAllowedToAuthenticateFrom'] = sd_from_sddl(
+                user_allowed_from)
+        if user_allowed_ntlm is not None:
+            details['msDS-UserAllowedNTLMNetworkAuthentication'] = (
+                user_allowed_ntlm)
+        if user_allowed_to is not None:
+            details['msDS-UserAllowedToAuthenticateTo'] = sd_from_sddl(
+                user_allowed_to)
+        if user_tgt_lifetime is not None:
+            if isinstance(user_tgt_lifetime, numbers.Number):
+                user_tgt_lifetime = str(int(user_tgt_lifetime * 10_000_000))
+            details['msDS-UserTGTLifetime'] = user_tgt_lifetime
+
+        if computer_allowed_to is not None:
+            details['msDS-ComputerAllowedToAuthenticateTo'] = sd_from_sddl(
+                computer_allowed_to)
+        if computer_tgt_lifetime is not None:
+            if isinstance(computer_tgt_lifetime, numbers.Number):
+                computer_tgt_lifetime = str(
+                    int(computer_tgt_lifetime * 10_000_000))
+            details['msDS-ComputerTGTLifetime'] = computer_tgt_lifetime
+
+        if service_allowed_from is not None:
+            details['msDS-ServiceAllowedToAuthenticateFrom'] = sd_from_sddl(
+                service_allowed_from)
+        if service_allowed_ntlm is not None:
+            details['msDS-ServiceAllowedNTLMNetworkAuthentication'] = (
+                service_allowed_ntlm)
+        if service_allowed_to is not None:
+            details['msDS-ServiceAllowedToAuthenticateTo'] = sd_from_sddl(
+                service_allowed_to)
+        if service_tgt_lifetime is not None:
+            if isinstance(service_tgt_lifetime, numbers.Number):
+                service_tgt_lifetime = str(
+                    int(service_tgt_lifetime * 10_000_000))
+            details['msDS-ServiceTGTLifetime'] = service_tgt_lifetime
+
+        # Save the policy DN so it can be deleted in tearDownClass().
+        self.accounts.append(str(policy_dn))
+
+        # Remove the policy if it exists; this will happen if a previous test
+        # run failed.
+        delete_force(samdb, policy_dn)
+
+        samdb.add(details)
+
+        return AuthenticationPolicy.get(samdb, dn=policy_dn)
 
     def create_claim(self,
                      claim_id,
                      enabled=None,
                      attribute=None,
                      single_valued=None,
+                     value_space_restricted=None,
                      source=None,
                      source_type=None,
                      for_classes=None,
-                     value_type=None):
+                     value_type=None,
+                     force=True):
         samdb = self.get_samdb()
 
         claim_dn = self.get_claim_types_dn()
@@ -384,6 +738,11 @@ class KDCBaseTest(RawKerberosTest):
         elif single_valued is False:
             single_valued = 'FALSE'
 
+        if value_space_restricted is True:
+            value_space_restricted = 'TRUE'
+        elif value_space_restricted is False:
+            value_space_restricted = 'FALSE'
+
         if for_classes is not None:
             for_classes = [str(self.get_dn_from_class(name))
                            for name in for_classes]
@@ -397,6 +756,9 @@ class KDCBaseTest(RawKerberosTest):
             details['msDS-ClaimAttributeSource'] = attribute
         if single_valued is not None:
             details['msDS-ClaimIsSingleValued'] = single_valued
+        if value_space_restricted is not None:
+            details['msDS-ClaimIsValueSpaceRestricted'] = (
+                value_space_restricted)
         if source is not None:
             details['msDS-ClaimSource'] = source
         if source_type is not None:
@@ -406,26 +768,38 @@ class KDCBaseTest(RawKerberosTest):
         if value_type is not None:
             details['msDS-ClaimValueType'] = value_type
 
-        # Save the claim DN so it can be deleted in tearDown()
-        self.test_accounts.append(str(claim_dn))
+        if force:
+            # Remove the claim if it exists; this will happen if a previous
+            # test run failed
+            delete_force(samdb, claim_dn)
 
-        # Remove the claim if it exists; this will happen if a previous test
-        # run failed
-        delete_force(samdb, claim_dn)
-
-        samdb.add(details)
+        try:
+            samdb.add(details)
+        except ldb.LdbError as err:
+            num, estr = err.args
+            self.assertFalse(force, 'should not fail with force=True')
+            self.assertEqual(num, ldb.ERR_ENTRY_ALREADY_EXISTS)
+        else:
+            # Save the claim DN so it can be deleted in tearDown()
+            self.test_accounts.append(str(claim_dn))
 
     def create_account(self, samdb, name, account_type=AccountType.USER,
                        spn=None, upn=None, additional_details=None,
-                       ou=None, account_control=0, add_dollar=True,
-                       expired_password=False, force_nt4_hash=False):
+                       ou=None, account_control=0, add_dollar=None,
+                       expired_password=False, force_nt4_hash=False,
+                       preserve=True):
         '''Create an account for testing.
            The dn of the created account is added to self.accounts,
            which is used by tearDownClass to clean up the created accounts.
         '''
+        if add_dollar is None and account_type is not self.AccountType.USER:
+            add_dollar = True
+
         if ou is None:
             if account_type is self.AccountType.COMPUTER:
                 guid = DS_GUID_COMPUTERS_CONTAINER
+            elif account_type is self.AccountType.MANAGED_SERVICE:
+                guid = DS_GUID_MANAGED_SERVICE_ACCOUNTS_CONTAINER
             elif account_type is self.AccountType.SERVER:
                 guid = DS_GUID_DOMAIN_CONTROLLERS_CONTAINER
             else:
@@ -439,14 +813,18 @@ class KDCBaseTest(RawKerberosTest):
         # run failed
         delete_force(samdb, dn)
         account_name = name
+        if add_dollar:
+            account_name += '$'
         secure_schannel_type = SEC_CHAN_NULL
         if account_type is self.AccountType.USER:
             object_class = "user"
             account_control |= UF_NORMAL_ACCOUNT
+        elif account_type is self.AccountType.MANAGED_SERVICE:
+            object_class = "msDS-ManagedServiceAccount"
+            account_control |= UF_WORKSTATION_TRUST_ACCOUNT
+            secure_schannel_type = SEC_CHAN_WKSTA
         else:
             object_class = "computer"
-            if add_dollar:
-                account_name += '$'
             if account_type is self.AccountType.COMPUTER:
                 account_control |= UF_WORKSTATION_TRUST_ACCOUNT
                 secure_schannel_type = SEC_CHAN_WKSTA
@@ -461,7 +839,7 @@ class KDCBaseTest(RawKerberosTest):
 
         details = {
             "dn": dn,
-            "objectclass": object_class,
+            "objectClass": object_class,
             "sAMAccountName": account_name,
             "userAccountControl": str(account_control),
             "unicodePwd": utf16pw}
@@ -479,8 +857,17 @@ class KDCBaseTest(RawKerberosTest):
             details["pwdLastSet"] = "0"
         if additional_details is not None:
             details.update(additional_details)
-        # Save the account name so it can be deleted in tearDownClass
-        self.accounts.append(dn)
+        if preserve:
+            # Mark this account for deletion in tearDownClass() after all the
+            # tests in this class finish.
+            self.accounts.append(dn)
+        else:
+            # Mark this account for deletion in tearDown() after the current
+            # test finishes. Because the time complexity of deleting an account
+            # in Samba scales with the number of accounts, it is faster to
+            # delete accounts as soon as possible than to keep them around
+            # until all the tests are finished.
+            self.test_accounts.append(dn)
         samdb.add(details)
 
         expected_kvno = 1
@@ -517,16 +904,24 @@ class KDCBaseTest(RawKerberosTest):
         creds.set_dn(ldb.Dn(samdb, dn))
         creds.set_upn(upn)
         creds.set_spn(spn)
+        creds.set_type(account_type)
 
         self.creds_set_enctypes(creds)
 
         res = samdb.search(base=dn,
                            scope=ldb.SCOPE_BASE,
-                           attrs=['msDS-KeyVersionNumber'])
+                           attrs=['msDS-KeyVersionNumber',
+                                  'objectSid'])
+
         kvno = res[0].get('msDS-KeyVersionNumber', idx=0)
         if kvno is not None:
             self.assertEqual(int(kvno), expected_kvno)
         creds.set_kvno(expected_kvno)
+
+        sid = res[0].get('objectSid', idx=0)
+        sid = samdb.schema_format_value('objectSID', sid)
+        sid = sid.decode('utf-8')
+        creds.set_sid(sid)
 
         return (creds, dn)
 
@@ -651,7 +1046,6 @@ class KDCBaseTest(RawKerberosTest):
         rodc_ctx = self.get_mock_rodc_ctx()
 
         self.get_secrets(
-            samdb,
             dn,
             destination_dsa_guid=rodc_ctx.ntds_guid,
             source_dsa_invocation_id=misc.GUID(samdb.invocation_id))
@@ -677,16 +1071,10 @@ class KDCBaseTest(RawKerberosTest):
         else:
             self.assertNotIn(str(dn), revealed_dns)
 
-    def get_secrets(self, samdb, dn,
+    def get_secrets(self, dn,
                     destination_dsa_guid,
                     source_dsa_invocation_id):
-        admin_creds = self.get_admin_creds()
-
-        dns_hostname = samdb.host_dns_name()
-        (bind, handle, _) = drsuapi_connect(dns_hostname,
-                                            self.get_lp(),
-                                            admin_creds,
-                                            ip=self.dc_host)
+        bind, handle, _ = self.get_drsuapi_connection()
 
         req = drsuapi.DsGetNCChangesRequest8()
 
@@ -738,11 +1126,13 @@ class KDCBaseTest(RawKerberosTest):
 
         return bind, identifier, attributes
 
-    def get_keys(self, samdb, dn, expected_etypes=None):
+    def get_keys(self, creds, expected_etypes=None):
         admin_creds = self.get_admin_creds()
+        samdb = self.get_samdb()
+
+        dn = creds.get_dn()
 
         bind, identifier, attributes = self.get_secrets(
-            samdb,
             str(dn),
             destination_dsa_guid=misc.GUID(samdb.get_ntds_GUID()),
             source_dsa_invocation_id=misc.GUID())
@@ -780,7 +1170,7 @@ class KDCBaseTest(RawKerberosTest):
                     keys[kcrypto.Enctype.RC4] = pwd.hex()
 
         if expected_etypes is None:
-            expected_etypes = self.get_default_enctypes()
+            expected_etypes = self.get_default_enctypes(creds)
 
         self.assertCountEqual(expected_etypes, keys)
 
@@ -826,7 +1216,7 @@ class KDCBaseTest(RawKerberosTest):
                                    fast_support=False,
                                    claims_support=False,
                                    compound_id_support=False):
-        default_enctypes = self.get_default_enctypes()
+        default_enctypes = self.get_default_enctypes(creds)
         supported_enctypes = KerberosCredentials.etypes_to_bits(
             default_enctypes)
 
@@ -842,7 +1232,8 @@ class KDCBaseTest(RawKerberosTest):
         creds.set_tgs_supported_enctypes(supported_enctypes)
         creds.set_ap_supported_enctypes(supported_enctypes)
 
-    def add_to_group(self, account_dn, group_dn, group_attr, expect_attr=True):
+    def add_to_group(self, account_dn, group_dn, group_attr, expect_attr=True,
+                     new_group_type=None):
         samdb = self.get_samdb()
 
         try:
@@ -862,12 +1253,15 @@ class KDCBaseTest(RawKerberosTest):
             self.assertIsNotNone(members)
         elif members is None:
             members = ()
+        else:
+            members = map(lambda s: s.decode('utf-8'), members)
 
         # Use a set so we can handle the same group being added twice.
         members = set(members)
 
         self.assertNotIsInstance(account_dn, ldb.Dn,
                                  'ldb.MessageElement does not support ldb.Dn')
+        self.assertNotIsInstance(account_dn, bytes)
 
         if isinstance(account_dn, str):
             members.add(account_dn)
@@ -876,9 +1270,14 @@ class KDCBaseTest(RawKerberosTest):
 
         msg = ldb.Message()
         msg.dn = group_dn
-        msg[group_attr] = ldb.MessageElement(list(members),
-                                             ldb.FLAG_MOD_REPLACE,
-                                             group_attr)
+        if new_group_type is not None:
+            msg['0'] = ldb.MessageElement(
+                common.normalise_int32(new_group_type),
+                ldb.FLAG_MOD_REPLACE,
+                'groupType')
+        msg['1'] = ldb.MessageElement(list(members),
+                                      ldb.FLAG_MOD_REPLACE,
+                                      group_attr)
         cleanup = samdb.msg_diff(msg, orig_msg)
         self.ldb_cleanups.append(cleanup)
         samdb.modify(msg)
@@ -911,6 +1310,367 @@ class KDCBaseTest(RawKerberosTest):
 
         return cleanup
 
+    # Create a new group and return a Principal object representing it.
+    def create_group_principal(self, samdb, group_type):
+        name = self.get_new_username()
+        dn = self.create_group(samdb, name, gtype=group_type.value)
+        sid = self.get_objectSid(samdb, dn)
+
+        return Principal(ldb.Dn(samdb, dn), sid)
+
+    def set_group_type(self, samdb, dn, gtype):
+        group_type = common.normalise_int32(gtype.value)
+        msg = ldb.Message(dn)
+        msg['groupType'] = ldb.MessageElement(group_type,
+                                              ldb.FLAG_MOD_REPLACE,
+                                              'groupType')
+        samdb.modify(msg)
+
+    def set_primary_group(self, samdb, dn, primary_sid,
+                          expected_error=None,
+                          expected_werror=None):
+        # Get the RID to be set as our primary group.
+        primary_rid = primary_sid.rsplit('-', 1)[1]
+
+        # Find out our current primary group.
+        res = samdb.search(dn,
+                           scope=ldb.SCOPE_BASE,
+                           attrs=['primaryGroupId'])
+        orig_msg = res[0]
+
+        # Prepare to modify the attribute.
+        msg = ldb.Message(dn)
+        msg['primaryGroupId'] = ldb.MessageElement(str(primary_rid),
+                                                   ldb.FLAG_MOD_REPLACE,
+                                                   'primaryGroupId')
+
+        # We'll remove the primaryGroupId attribute after the test, to avoid
+        # problems in the teardown if the user outlives the group.
+        remove_msg = samdb.msg_diff(msg, orig_msg)
+        self.addCleanup(samdb.modify, remove_msg)
+
+        # Set primaryGroupId.
+        if expected_error is None:
+            self.assertIsNone(expected_werror)
+
+            samdb.modify(msg)
+        else:
+            self.assertIsNotNone(expected_werror)
+
+            with self.assertRaises(
+                    ldb.LdbError,
+                    msg='expected setting primary group to fail'
+            ) as err:
+                samdb.modify(msg)
+
+            error, estr = err.exception.args
+            self.assertEqual(expected_error, error)
+            self.assertIn(f'{expected_werror:08X}', estr)
+
+    # Create an arrangement of groups based on a configuration specified in a
+    # test case. 'user_principal' is a principal representing the user account;
+    # 'trust_principal', a principal representing the account of a user from
+    # another domain.
+    def setup_groups(self,
+                     samdb,
+                     preexisting_groups,
+                     group_setup,
+                     primary_groups):
+        groups = dict(preexisting_groups)
+
+        primary_group_types = {}
+
+        # Create each group and add it to the group mapping.
+        if group_setup is not None:
+            for group_id, (group_type, _) in group_setup.items():
+                self.assertNotIn(group_id, preexisting_groups,
+                                 "don't specify placeholders")
+                self.assertNotIn(group_id, groups,
+                                 'group ID specified more than once')
+
+                if primary_groups is not None and (
+                        group_id in primary_groups.values()):
+                    # Windows disallows setting a domain-local group as a
+                    # primary group, unless we create it as Universal first and
+                    # change it back to Domain-Local later.
+                    primary_group_types[group_id] = group_type
+                    group_type = GroupType.UNIVERSAL
+
+                groups[group_id] = self.create_group_principal(samdb,
+                                                               group_type)
+
+        if group_setup is not None:
+            # Map a group ID to that group's DN, and generate an
+            # understandable error message if the mapping fails.
+            def group_id_to_dn(group_id):
+                try:
+                    group = groups[group_id]
+                except KeyError:
+                    self.fail(f"included group member '{group_id}', but it is "
+                              f"not specified in {groups.keys()}")
+                else:
+                    if group.dn is not None:
+                        return str(group.dn)
+
+                    return f'<SID={group.sid}>'
+
+            # Populate each group's members.
+            for group_id, (_, members) in group_setup.items():
+                # Get the group's DN and the mapped DNs of its members.
+                dn = groups[group_id].dn
+                principal_members = map(group_id_to_dn, members)
+
+                # Add the members to the group.
+                self.add_to_group(principal_members, dn, 'member',
+                                  expect_attr=False)
+
+        # Set primary groups.
+        if primary_groups is not None:
+            for user, primary_group in primary_groups.items():
+                primary_sid = groups[primary_group].sid
+                self.set_primary_group(samdb, user.dn, primary_sid)
+
+        # Change the primary groups to their actual group types.
+        for primary_group, primary_group_type in primary_group_types.items():
+            self.set_group_type(samdb,
+                                groups[primary_group].dn,
+                                primary_group_type)
+
+        # Return the mapping from group IDs to principals.
+        return groups
+
+    def map_to_sid(self, val, mapping, domain_sid):
+        if isinstance(val, int):
+            # If it's an integer, we assume it's a RID, and prefix the domain
+            # SID.
+            self.assertIsNotNone(domain_sid)
+            return f'{domain_sid}-{val}'
+
+        if val in mapping:
+            # Or if we have a mapping for it, apply that.
+            return mapping[val].sid
+
+        # Otherwise leave it unmodified.
+        return val
+
+    def map_to_dn(self, val, mapping, domain_sid):
+        sid = self.map_to_sid(val, mapping, domain_sid)
+        return ldb.Dn(self.get_samdb(), f'<SID={sid}>')
+
+    # Return SIDs from principal placeholders based on a supplied mapping.
+    def map_sids(self, sids, mapping, domain_sid):
+        if sids is None:
+            return None
+
+        mapped_sids = set()
+
+        for entry in sids:
+            if isinstance(entry, frozenset):
+                mapped_sids.add(frozenset(self.map_sids(entry,
+                                                        mapping,
+                                                        domain_sid)))
+            else:
+                val, sid_type, attrs = entry
+                sid = self.map_to_sid(val, mapping, domain_sid)
+
+                # There's no point expecting the 'Claims Valid' SID to be
+                # present if we don't support claims. Filter it out to give the
+                # tests a chance of passing.
+                if not self.kdc_claims_support and (
+                        sid == security.SID_CLAIMS_VALID):
+                    continue
+
+                mapped_sids.add((sid, sid_type, attrs))
+
+        return mapped_sids
+
+    def issued_by_rodc(self, ticket):
+        krbtgt_creds = self.get_mock_rodc_krbtgt_creds()
+
+        krbtgt_key = self.TicketDecryptionKey_from_creds(krbtgt_creds)
+        checksum_keys = {
+            krb5pac.PAC_TYPE_KDC_CHECKSUM: krbtgt_key,
+        }
+
+        return self.modified_ticket(
+            ticket,
+            new_ticket_key=krbtgt_key,
+            checksum_keys=checksum_keys)
+
+    def signed_by_rodc(self, ticket):
+        rodc_krbtgt_creds = self.get_mock_rodc_krbtgt_creds()
+        rodc_krbtgt_key = self.TicketDecryptionKey_from_creds(
+            rodc_krbtgt_creds)
+
+        checksum_keys = {
+            krb5pac.PAC_TYPE_KDC_CHECKSUM: rodc_krbtgt_key,
+        }
+
+        return self.modified_ticket(ticket,
+                                    checksum_keys=checksum_keys)
+
+    # Get a ticket with the SIDs in the PAC replaced with ones we specify. This
+    # is useful for creating arbitrary tickets that can be used to perform a
+    # TGS-REQ.
+    def ticket_with_sids(self,
+                         ticket,
+                         new_sids,
+                         domain_sid,
+                         user_rid,
+                         set_user_flags=0,
+                         reset_user_flags=0,
+                         from_rodc=False):
+        if from_rodc:
+            krbtgt_creds = self.get_mock_rodc_krbtgt_creds()
+        else:
+            krbtgt_creds = self.get_krbtgt_creds()
+        krbtgt_key = self.TicketDecryptionKey_from_creds(krbtgt_creds)
+
+        checksum_keys = {
+            krb5pac.PAC_TYPE_KDC_CHECKSUM: krbtgt_key
+        }
+
+        modify_pac_fn = partial(self.set_pac_sids,
+                                new_sids=new_sids,
+                                domain_sid=domain_sid,
+                                user_rid=user_rid,
+                                set_user_flags=set_user_flags,
+                                reset_user_flags=reset_user_flags)
+
+        return self.modified_ticket(ticket,
+                                    new_ticket_key=krbtgt_key,
+                                    modify_pac_fn=modify_pac_fn,
+                                    checksum_keys=checksum_keys)
+
+    # Replace the SIDs in a PAC with 'new_sids'.
+    def set_pac_sids(self,
+                     pac,
+                     new_sids,
+                     domain_sid,
+                     user_rid,
+                     set_user_flags=0,
+                     reset_user_flags=0):
+        base_sids = []
+        extra_sids = []
+        resource_sids = []
+
+        resource_domain = None
+
+        primary_gid = None
+
+        # Filter our SIDs into three arrays depending on their ultimate
+        # location in the PAC.
+        for sid, sid_type, attrs in new_sids:
+            if sid_type is self.SidType.BASE_SID:
+                domain, rid = sid.rsplit('-', 1)
+                self.assertEqual(domain_sid, domain,
+                                 f'base SID {sid} must be in our domain')
+
+                base_sid = samr.RidWithAttribute()
+                base_sid.rid = int(rid)
+                base_sid.attributes = attrs
+
+                base_sids.append(base_sid)
+            elif sid_type is self.SidType.EXTRA_SID:
+                extra_sid = netlogon.netr_SidAttr()
+                extra_sid.sid = security.dom_sid(sid)
+                extra_sid.attributes = attrs
+
+                extra_sids.append(extra_sid)
+            elif sid_type is self.SidType.RESOURCE_SID:
+                domain, rid = sid.rsplit('-', 1)
+                if resource_domain is None:
+                    resource_domain = domain
+                else:
+                    self.assertEqual(resource_domain, domain,
+                                     'resource SIDs must share the same '
+                                     'domain')
+
+                resource_sid = samr.RidWithAttribute()
+                resource_sid.rid = int(rid)
+                resource_sid.attributes = attrs
+
+                resource_sids.append(resource_sid)
+            elif sid_type is self.SidType.PRIMARY_GID:
+                self.assertIsNone(primary_gid,
+                                  f'must not specify a second primary GID '
+                                  f'{sid}')
+                self.assertIsNone(attrs, 'cannot specify primary GID attrs')
+
+                domain, primary_gid = sid.rsplit('-', 1)
+                self.assertEqual(domain_sid, domain,
+                                 f'primary GID {sid} must be in our domain')
+            else:
+                self.fail(f'invalid SID type {sid_type}')
+
+        found_logon_info = True
+
+        user_sid = security.dom_sid(f'{domain_sid}-{user_rid}')
+
+        pac_buffers = pac.buffers
+        for pac_buffer in pac_buffers:
+            # Find the LOGON_INFO PAC buffer.
+            if pac_buffer.type == krb5pac.PAC_TYPE_LOGON_INFO:
+                logon_info = pac_buffer.info.info
+
+                # Add Extra SIDs and set the EXTRA_SIDS flag as needed.
+                logon_info.info3.sidcount = len(extra_sids)
+                if extra_sids:
+                    logon_info.info3.sids = extra_sids
+                    logon_info.info3.base.user_flags |= (
+                        netlogon.NETLOGON_EXTRA_SIDS)
+                else:
+                    logon_info.info3.sids = None
+                    logon_info.info3.base.user_flags &= ~(
+                        netlogon.NETLOGON_EXTRA_SIDS)
+
+                # Add Base SIDs.
+                logon_info.info3.base.groups.count = len(base_sids)
+                if base_sids:
+                    logon_info.info3.base.groups.rids = base_sids
+                else:
+                    logon_info.info3.base.groups.rids = None
+
+                logon_info.info3.base.domain_sid = security.dom_sid(domain_sid)
+                logon_info.info3.base.rid = int(user_rid)
+
+                if primary_gid is not None:
+                    logon_info.info3.base.primary_gid = int(primary_gid)
+
+                # Add Resource SIDs and set the RESOURCE_GROUPS flag as needed.
+                logon_info.resource_groups.groups.count = len(resource_sids)
+                if resource_sids:
+                    resource_domain = security.dom_sid(resource_domain)
+                    logon_info.resource_groups.domain_sid = resource_domain
+                    logon_info.resource_groups.groups.rids = resource_sids
+                    logon_info.info3.base.user_flags |= (
+                        netlogon.NETLOGON_RESOURCE_GROUPS)
+                else:
+                    logon_info.resource_groups.domain_sid = None
+                    logon_info.resource_groups.groups.rids = None
+                    logon_info.info3.base.user_flags &= ~(
+                        netlogon.NETLOGON_RESOURCE_GROUPS)
+
+                logon_info.info3.base.user_flags |= set_user_flags
+                logon_info.info3.base.user_flags &= ~reset_user_flags
+
+                found_logon_info = True
+
+            # Also replace the user's SID in the UPN DNS buffer.
+            elif pac_buffer.type == krb5pac.PAC_TYPE_UPN_DNS_INFO:
+                upn_dns_info_ex = pac_buffer.info.ex
+
+                upn_dns_info_ex.objectsid = user_sid
+
+            # But don't replace the user's SID in the Requester SID buffer, or
+            # we'll get a SID mismatch.
+
+        self.assertTrue(found_logon_info, 'no LOGON_INFO PAC buffer')
+
+        pac.buffers = pac_buffers
+
+        return pac
+
     def get_cached_creds(self, *,
                          account_type,
                          opts=None,
@@ -921,7 +1681,7 @@ class KDCBaseTest(RawKerberosTest):
         opts_default = {
             'name_prefix': None,
             'name_suffix': None,
-            'add_dollar': True,
+            'add_dollar': None,
             'upn': None,
             'spn': None,
             'additional_details': None,
@@ -939,12 +1699,17 @@ class KDCBaseTest(RawKerberosTest):
             'delegation_from_dn': None,
             'trusted_to_auth_for_delegation': False,
             'fast_support': False,
+            'claims_support': False,
+            'compound_id_support': False,
             'sid_compression_support': True,
             'member_of': None,
             'kerberos_enabled': True,
             'secure_channel_type': None,
             'id': None,
             'force_nt4_hash': False,
+            'assigned_policy': None,
+            'assigned_silo': None,
+            'logon_hours': None,
         }
 
         account_opts = {
@@ -953,20 +1718,19 @@ class KDCBaseTest(RawKerberosTest):
             **opts
         }
 
-        cache_key = tuple(sorted(account_opts.items()))
-
         if use_cache:
+            cache_key = tuple(sorted(account_opts.items()))
             creds = self.account_cache.get(cache_key)
             if creds is not None:
                 return creds
 
-        creds = self.create_account_opts(**account_opts)
+        creds = self.create_account_opts(use_cache, **account_opts)
         if use_cache:
             self.account_cache[cache_key] = creds
 
         return creds
 
-    def create_account_opts(self, *,
+    def create_account_opts(self, use_cache, *,
                             account_type,
                             name_prefix,
                             name_suffix,
@@ -988,14 +1752,18 @@ class KDCBaseTest(RawKerberosTest):
                             delegation_from_dn,
                             trusted_to_auth_for_delegation,
                             fast_support,
+                            claims_support,
+                            compound_id_support,
                             sid_compression_support,
                             member_of,
                             kerberos_enabled,
                             secure_channel_type,
                             id,
-                            force_nt4_hash):
+                            force_nt4_hash,
+                            assigned_policy,
+                            assigned_silo,
+                            logon_hours):
         if account_type is self.AccountType.USER:
-            self.assertIsNone(spn)
             self.assertIsNone(delegation_to_spn)
             self.assertIsNone(delegation_from_dn)
             self.assertFalse(trusted_to_auth_for_delegation)
@@ -1026,7 +1794,13 @@ class KDCBaseTest(RawKerberosTest):
         enctypes = supported_enctypes
         if fast_support:
             enctypes = enctypes or 0
-            enctypes |= KerberosCredentials.fast_supported_bits
+            enctypes |= security.KERB_ENCTYPE_FAST_SUPPORTED
+        if claims_support:
+            enctypes = enctypes or 0
+            enctypes |= security.KERB_ENCTYPE_CLAIMS_SUPPORTED
+        if compound_id_support:
+            enctypes = enctypes or 0
+            enctypes |= security.KERB_ENCTYPE_COMPOUND_IDENTITY_SUPPORTED
         if sid_compression_support is False:
             enctypes = enctypes or 0
             enctypes |= security.KERB_ENCTYPE_RESOURCE_SID_COMPRESSION_DISABLED
@@ -1038,13 +1812,23 @@ class KDCBaseTest(RawKerberosTest):
             details['msDS-AllowedToDelegateTo'] = delegation_to_spn
 
         if delegation_from_dn:
-            security_descriptor = self.get_security_descriptor(
-                delegation_from_dn)
+            if isinstance(delegation_from_dn, str):
+                delegation_from_dn = self.get_security_descriptor(
+                    delegation_from_dn)
             details['msDS-AllowedToActOnBehalfOfOtherIdentity'] = (
-                security_descriptor)
+                delegation_from_dn)
 
         if spn is None and account_type is not self.AccountType.USER:
             spn = 'host/' + user_name
+
+        if assigned_policy is not None:
+            details['msDS-AssignedAuthNPolicy'] = assigned_policy
+
+        if assigned_silo is not None:
+            details['msDS-AssignedAuthNPolicySilo'] = assigned_silo
+
+        if logon_hours is not None:
+            details['logonHours'] = logon_hours
 
         creds, dn = self.create_account(samdb, user_name,
                                         account_type=account_type,
@@ -1054,12 +1838,13 @@ class KDCBaseTest(RawKerberosTest):
                                         account_control=user_account_control,
                                         add_dollar=add_dollar,
                                         force_nt4_hash=force_nt4_hash,
-                                        expired_password=expired_password)
+                                        expired_password=expired_password,
+                                        preserve=use_cache)
 
         expected_etypes = None
         if force_nt4_hash:
             expected_etypes = {kcrypto.Enctype.RC4}
-        keys = self.get_keys(samdb, dn, expected_etypes=expected_etypes)
+        keys = self.get_keys(creds, expected_etypes=expected_etypes)
         self.creds_set_keys(creds, keys)
 
         # Handle secret replication to the RODC.
@@ -1169,6 +1954,8 @@ class KDCBaseTest(RawKerberosTest):
                 account_type=self.AccountType.COMPUTER,
                 opts={
                     'fast_support': True,
+                    'claims_support': True,
+                    'compound_id_support': True,
                     'supported_enctypes': (
                         security.KERB_ENCTYPE_RC4_HMAC_MD5 |
                         security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK
@@ -1190,6 +1977,8 @@ class KDCBaseTest(RawKerberosTest):
                 opts={
                     'trusted_to_auth_for_delegation': True,
                     'fast_support': True,
+                    'claims_support': True,
+                    'compound_id_support': True,
                     'supported_enctypes': (
                         security.KERB_ENCTYPE_RC4_HMAC_MD5 |
                         security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK
@@ -1239,7 +2028,7 @@ class KDCBaseTest(RawKerberosTest):
             creds.set_kvno(rodc_kvno)
             creds.set_dn(krbtgt_dn)
 
-            keys = self.get_keys(samdb, krbtgt_dn)
+            keys = self.get_keys(creds)
             self.creds_set_keys(creds, keys)
 
             # The RODC krbtgt account should support the default enctypes,
@@ -1292,11 +2081,14 @@ class KDCBaseTest(RawKerberosTest):
             creds.set_kvno(rodc_kvno)
             creds.set_dn(dn)
 
-            keys = self.get_keys(samdb, dn)
+            keys = self.get_keys(creds)
             self.creds_set_keys(creds, keys)
 
-            extra_bits = (security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96 |
-                          security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96)
+            if self.get_domain_functional_level() >= DS_DOMAIN_FUNCTION_2008:
+                extra_bits = (security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96 |
+                              security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96)
+            else:
+                extra_bits = 0
             remove_bits = (security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK |
                            security.KERB_ENCTYPE_RC4_HMAC_MD5)
             self.creds_set_enctypes(creds,
@@ -1340,7 +2132,7 @@ class KDCBaseTest(RawKerberosTest):
             creds.set_kvno(kvno)
             creds.set_dn(dn)
 
-            keys = self.get_keys(samdb, dn)
+            keys = self.get_keys(creds)
             self.creds_set_keys(creds, keys)
 
             # The krbtgt account should support the default enctypes, although
@@ -1391,11 +2183,14 @@ class KDCBaseTest(RawKerberosTest):
             creds.set_workstation(username[:-1])
             creds.set_dn(dn)
 
-            keys = self.get_keys(samdb, dn)
+            keys = self.get_keys(creds)
             self.creds_set_keys(creds, keys)
 
-            extra_bits = (security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96 |
-                          security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96)
+            if self.get_domain_functional_level() >= DS_DOMAIN_FUNCTION_2008:
+                extra_bits = (security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96 |
+                              security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96)
+            else:
+                extra_bits = 0
             remove_bits = security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK
             self.creds_set_enctypes(creds,
                                     extra_bits=extra_bits,
@@ -1438,11 +2233,14 @@ class KDCBaseTest(RawKerberosTest):
             creds.set_kvno(kvno)
             creds.set_dn(dn)
 
-            keys = self.get_keys(samdb, dn)
+            keys = self.get_keys(creds)
             self.creds_set_keys(creds, keys)
 
-            extra_bits = (security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96 |
-                          security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96)
+            if self.get_domain_functional_level() >= DS_DOMAIN_FUNCTION_2008:
+                extra_bits = (security.KERB_ENCTYPE_AES128_CTS_HMAC_SHA1_96 |
+                              security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96)
+            else:
+                extra_bits = 0
             remove_bits = security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96_SK
             self.creds_set_enctypes(creds,
                                     extra_bits=extra_bits,
@@ -1456,6 +2254,47 @@ class KDCBaseTest(RawKerberosTest):
                                  require_strongest_key=require_strongest_key,
                                  fallback_creds_fn=download_server_creds)
         return c
+
+    # Get the credentials and server principal name of either the krbtgt, or a
+    # specially created account, with resource SID compression either supported
+    # or unsupported.
+    def get_target(self,
+                   to_krbtgt, *,
+                   compound_id=None,
+                   compression=None,
+                   extra_enctypes=0):
+        if to_krbtgt:
+            self.assertIsNone(compound_id,
+                              "it's no good specifying compound id support "
+                              "for the krbtgt")
+            self.assertIsNone(compression,
+                              "it's no good specifying compression support "
+                              "for the krbtgt")
+            self.assertFalse(extra_enctypes,
+                             "it's no good specifying extra enctypes "
+                             "for the krbtgt")
+            creds = self.get_krbtgt_creds()
+            sname = self.get_krbtgt_sname()
+        else:
+            creds = self.get_cached_creds(
+                account_type=self.AccountType.COMPUTER,
+                opts={
+                    'supported_enctypes':
+                        security.KERB_ENCTYPE_RC4_HMAC_MD5 |
+                        security.KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_96 |
+                        extra_enctypes,
+                    'compound_id_support': compound_id,
+                    'sid_compression_support': compression,
+                })
+            target_name = creds.get_username()
+
+            if target_name[-1] == '$':
+                target_name = target_name[:-1]
+            sname = self.PrincipalName_create(
+                name_type=NT_PRINCIPAL,
+                names=['host', target_name])
+
+        return creds, sname
 
     def as_req(self, cname, sname, realm, etypes, padata=None, kdc_options=0):
         '''Send a Kerberos AS_REQ, returns the undecoded response
@@ -1613,7 +2452,7 @@ class KDCBaseTest(RawKerberosTest):
 
     def tgs_req(self, cname, sname, realm, ticket, key, etypes,
                 expected_error_mode=0, padata=None, kdc_options=0,
-                to_rodc=False, service_creds=None, expect_pac=True,
+                to_rodc=False, creds=None, service_creds=None, expect_pac=True,
                 expect_edata=None, expected_flags=None, unexpected_flags=None):
         '''Send a TGS-REQ, returns the response and the decrypted and
            decoded enc-part
@@ -1650,6 +2489,7 @@ class KDCBaseTest(RawKerberosTest):
             return padata, req_body
 
         kdc_exchange_dict = self.tgs_exchange_dict(
+            creds=creds,
             expected_crealm=realm,
             expected_cname=cname,
             expected_srealm=realm,
@@ -1809,6 +2649,7 @@ class KDCBaseTest(RawKerberosTest):
                 unexpected_groups=None,
                 pac_request=True, expect_pac=True,
                 expect_pac_attrs=None, expect_pac_attrs_pac_request=None,
+                pac_options=None,
                 expect_requester_sid=None,
                 rc4_support=True,
                 expect_edata=None,
@@ -1821,7 +2662,7 @@ class KDCBaseTest(RawKerberosTest):
         else:
             user_name = creds.get_username()
 
-        cache_key = (user_name, to_rodc, kdc_options, pac_request,
+        cache_key = (user_name, to_rodc, kdc_options, pac_request, pac_options,
                      client_name_type,
                      ticket_etype,
                      str(expected_flags), str(unexpected_flags),
@@ -1850,7 +2691,7 @@ class KDCBaseTest(RawKerberosTest):
 
         salt = creds.get_salt()
 
-        etype = (AES256_CTS_HMAC_SHA1_96, ARCFOUR_HMAC_MD5)
+        etype = self.get_default_enctypes(creds)
         cname = self.PrincipalName_create(name_type=client_name_type,
                                           names=user_name.split('/'))
         if sname is None:
@@ -1885,14 +2726,15 @@ class KDCBaseTest(RawKerberosTest):
                            'renewable-ok')
         kdc_options = krb5_asn1.KDCOptions(kdc_options)
 
-        pac_options = '1'  # supports claims
+        if pac_options is None:
+            pac_options = '1'  # supports claims
 
         rep, kdc_exchange_dict = self._test_as_exchange(
+            creds=creds,
             cname=cname,
             realm=realm,
             sname=sname,
             till=till,
-            client_as_etypes=etype,
             expected_error_mode=KDC_ERR_PREAUTH_REQUIRED,
             expected_crealm=realm,
             expected_cname=expected_cname,
@@ -1941,11 +2783,11 @@ class KDCBaseTest(RawKerberosTest):
         expected_realm = realm.upper()
 
         rep, kdc_exchange_dict = self._test_as_exchange(
+            creds=creds,
             cname=cname,
             realm=realm,
             sname=sname,
             till=till,
-            client_as_etypes=etype,
             expected_error_mode=0,
             expected_crealm=expected_realm,
             expected_cname=expected_cname,
@@ -2120,19 +2962,15 @@ class KDCBaseTest(RawKerberosTest):
         '''Decrypt and decode a service ticket
         '''
 
-        name = creds.get_username()
-        if name.endswith('$'):
-            name = name[:-1]
-        realm = creds.get_realm()
-        salt = "%s.%s@%s" % (name, realm.lower(), realm.upper())
+        enc_part = ticket['enc-part']
 
-        key = self.PasswordKey_create(
-            ticket['enc-part']['etype'],
-            creds.get_password(),
-            salt,
-            ticket['enc-part']['kvno'])
+        key = self.TicketDecryptionKey_from_creds(creds,
+                                                  enc_part['etype'])
 
-        enc_part = key.decrypt(KU_TICKET, ticket['enc-part']['cipher'])
+        if key.kvno is not None:
+            self.assertElementKVNO(enc_part, 'kvno', key.kvno)
+
+        enc_part = key.decrypt(KU_TICKET, enc_part['cipher'])
         enc_ticket_part = self.der_decode(
             enc_part, asn1Spec=krb5_asn1.EncTicketPart())
         return enc_ticket_part
@@ -2182,6 +3020,14 @@ class KDCBaseTest(RawKerberosTest):
         dn = ldb.Dn(samdb, dn_str)
         msg = ldb.Message(dn)
         msg[name] = ldb.MessageElement(values, flag, name)
+        samdb.modify(msg)
+
+    def remove_attribute(self, samdb, dn_str, name):
+        flag = ldb.FLAG_MOD_DELETE
+
+        dn = ldb.Dn(samdb, dn_str)
+        msg = ldb.Message(dn)
+        msg[name] = ldb.MessageElement([], flag, name)
         samdb.modify(msg)
 
     def create_ccache(self, cname, ticket, enc_part):
@@ -2328,3 +3174,277 @@ class KDCBaseTest(RawKerberosTest):
 
         return self.create_ccache_with_ticket(user_credentials, ticket,
                                               pac=pac)
+
+    # Test credentials by connecting to the DC through LDAP.
+    def _connect(self, creds, simple_bind, expect_error=None):
+        samdb = self.get_samdb()
+        dn = creds.get_dn()
+
+        if simple_bind:
+            url = f'ldaps://{samdb.host_dns_name()}'
+            creds.set_bind_dn(str(dn))
+        else:
+            url = f'ldap://{samdb.host_dns_name()}'
+            creds.set_bind_dn(None)
+        try:
+            ldap = SamDB(url=url,
+                         credentials=creds,
+                         lp=self.get_lp())
+        except ldb.LdbError as err:
+            self.assertIsNotNone(expect_error, 'got unexpected error')
+            num, estr = err.args
+            if num != ldb.ERR_INVALID_CREDENTIALS:
+                raise
+
+            self.assertIn(expect_error, estr)
+
+            return
+        else:
+            self.assertIsNone(expect_error, 'expected to get an error')
+
+        res = ldap.search('',
+                          scope=ldb.SCOPE_BASE,
+                          attrs=['tokenGroups'])
+        self.assertEqual(1, len(res))
+
+        sid = creds.get_sid()
+
+        token_groups = res[0].get('tokenGroups', idx=0)
+        token_sid = ndr_unpack(security.dom_sid, token_groups)
+
+        self.assertEqual(sid, str(token_sid))
+
+    # Test the two SAMR password change methods implemented in Samba. If the
+    # user is protected, we should get an ACCOUNT_RESTRICTION error indicating
+    # that the password change is not allowed.
+    def _test_samr_change_password(self, creds, expect_error,
+                                   connect_error=None):
+        samdb = self.get_samdb()
+        server_name = samdb.host_dns_name()
+        try:
+            conn = samr.samr(f'ncacn_np:{server_name}[seal,smb2]',
+                             self.get_lp(),
+                             creds)
+        except NTSTATUSError as err:
+            self.assertIsNotNone(connect_error,
+                                 'connection unexpectedly failed')
+            self.assertIsNone(expect_error, 'don’t specify both errors')
+
+            num, _ = err.args
+            self.assertEqual(num, connect_error)
+
+            return
+        else:
+            self.assertIsNone(connect_error, 'expected connection to fail')
+
+        # Get the NT hash.
+        nt_hash = creds.get_nt_hash()
+
+        # Generate a new UTF-16 password.
+        new_password_str = generate_random_password(32, 32)
+        new_password = new_password_str.encode('utf-16le')
+
+        # Generate the MD4 hash of the password.
+        new_password_md4 = md4_hash_blob(new_password)
+
+        # Prefix the password with padding so it is 512 bytes long.
+        new_password_len = len(new_password)
+        remaining_len = 512 - new_password_len
+        new_password = bytes(remaining_len) + new_password
+
+        # Append the 32-bit length of the password.
+        new_password += int.to_bytes(new_password_len,
+                                     length=4,
+                                     byteorder='little')
+
+        # Create a key from the MD4 hash of the new password.
+        key = new_password_md4[:14]
+
+        # Encrypt the old NT hash with DES to obtain the verifier.
+        verifier = des_crypt_blob_16(nt_hash, key)
+
+        server = lsa.String()
+        server.string = server_name
+
+        account = lsa.String()
+        account.string = creds.get_username()
+
+        nt_verifier = samr.Password()
+        nt_verifier.hash = list(verifier)
+
+        nt_password = samr.CryptPassword()
+        nt_password.data = list(arcfour_encrypt(nt_hash, new_password))
+
+        if not self.expect_nt_hash:
+            expect_error = ntstatus.NT_STATUS_NTLM_BLOCKED
+
+        try:
+            conn.ChangePasswordUser2(server=server,
+                                     account=account,
+                                     nt_password=nt_password,
+                                     nt_verifier=nt_verifier,
+                                     lm_change=False,
+                                     lm_password=None,
+                                     lm_verifier=None)
+        except NTSTATUSError as err:
+            num, _ = err.args
+            self.assertIsNotNone(expect_error,
+                                 f'unexpectedly failed with {num:08X}')
+            self.assertEqual(num, expect_error)
+        else:
+            self.assertIsNone(expect_error, 'expected to fail')
+
+        creds.set_password(new_password_str)
+
+        # Get the NT hash.
+        nt_hash = creds.get_nt_hash()
+
+        # Generate a new UTF-16 password.
+        new_password = generate_random_password(32, 32)
+        new_password = new_password.encode('utf-16le')
+
+        # Generate the MD4 hash of the password.
+        new_password_md4 = md4_hash_blob(new_password)
+
+        # Prefix the password with padding so it is 512 bytes long.
+        new_password_len = len(new_password)
+        remaining_len = 512 - new_password_len
+        new_password = bytes(remaining_len) + new_password
+
+        # Append the 32-bit length of the password.
+        new_password += int.to_bytes(new_password_len,
+                                     length=4,
+                                     byteorder='little')
+
+        # Create a key from the MD4 hash of the new password.
+        key = new_password_md4[:14]
+
+        # Encrypt the old NT hash with DES to obtain the verifier.
+        verifier = des_crypt_blob_16(nt_hash, key)
+
+        nt_verifier.hash = list(verifier)
+
+        nt_password.data = list(arcfour_encrypt(nt_hash, new_password))
+
+        try:
+            conn.ChangePasswordUser3(server=server,
+                                     account=account,
+                                     nt_password=nt_password,
+                                     nt_verifier=nt_verifier,
+                                     lm_change=False,
+                                     lm_password=None,
+                                     lm_verifier=None,
+                                     password3=None)
+        except NTSTATUSError as err:
+            self.assertIsNotNone(expect_error, 'unexpectedly failed')
+
+            num, _ = err.args
+            self.assertEqual(num, expect_error)
+        else:
+            self.assertIsNone(expect_error, 'expected to fail')
+
+    # Test SamLogon. Authentication should succeed for non-protected accounts,
+    # and fail for protected accounts.
+    def _test_samlogon(self, creds, logon_type, expect_error=None,
+                       validation_level=netlogon.NetlogonValidationSamInfo2,
+                       domain_joined_mach_creds=None):
+        samdb = self.get_samdb()
+
+        if domain_joined_mach_creds is None:
+            domain_joined_mach_creds = self.get_cached_creds(
+                account_type=self.AccountType.COMPUTER,
+                opts={'secure_channel_type': misc.SEC_CHAN_WKSTA})
+
+        dc_server = samdb.host_dns_name()
+        username, domain = creds.get_ntlm_username_domain()
+        workstation = domain_joined_mach_creds.get_username()
+
+        # Calling this initializes netlogon_creds on mach_creds, as is required
+        # before calling mach_creds.encrypt_samr_password().
+        conn = netlogon.netlogon(f'ncacn_ip_tcp:{dc_server}[schannel,seal]',
+                                 self.get_lp(),
+                                 domain_joined_mach_creds)
+
+        if logon_type == netlogon.NetlogonInteractiveInformation:
+            logon = netlogon.netr_PasswordInfo()
+
+            lm_pass = samr.Password()
+            lm_pass.hash = [0] * 16
+
+            nt_pass = samr.Password()
+            nt_pass.hash = list(creds.get_nt_hash())
+            domain_joined_mach_creds.encrypt_samr_password(nt_pass)
+
+            logon.lmpassword = lm_pass
+            logon.ntpassword = nt_pass
+
+        elif logon_type == netlogon.NetlogonNetworkInformation:
+            computername = ntlmssp.AV_PAIR()
+            computername.AvId = ntlmssp.MsvAvNbComputerName
+            computername.Value = workstation
+
+            domainname = ntlmssp.AV_PAIR()
+            domainname.AvId = ntlmssp.MsvAvNbDomainName
+            domainname.Value = domain
+
+            eol = ntlmssp.AV_PAIR()
+            eol.AvId = ntlmssp.MsvAvEOL
+
+            target_info = ntlmssp.AV_PAIR_LIST()
+            target_info.count = 3
+            target_info.pair = [domainname, computername, eol]
+
+            target_info_blob = ndr_pack(target_info)
+
+            challenge = b'abcdefgh'
+            response = creds.get_ntlm_response(flags=0,
+                                               challenge=challenge,
+                                               target_info=target_info_blob)
+
+            logon = netlogon.netr_NetworkInfo()
+
+            logon.challenge = list(challenge)
+            logon.nt = netlogon.netr_ChallengeResponse()
+            logon.nt.length = len(response['nt_response'])
+            logon.nt.data = list(response['nt_response'])
+
+        else:
+            self.fail(f'unknown logon type {logon_type}')
+
+        identity_info = netlogon.netr_IdentityInfo()
+        identity_info.domain_name.string = domain
+        identity_info.account_name.string = username
+        identity_info.parameter_control = (
+            netlogon.MSV1_0_ALLOW_SERVER_TRUST_ACCOUNT) | (
+                netlogon.MSV1_0_ALLOW_WORKSTATION_TRUST_ACCOUNT)
+        identity_info.workstation.string = workstation
+
+        logon.identity_info = identity_info
+
+        netr_flags = 0
+
+        validation = None
+
+        if not expect_error and not self.expect_nt_hash:
+            expect_error = ntstatus.NT_STATUS_NTLM_BLOCKED
+
+        try:
+            (validation, authoritative, flags) = (
+                conn.netr_LogonSamLogonEx(dc_server,
+                                          domain_joined_mach_creds.get_workstation(),
+                                          logon_type,
+                                          logon,
+                                          validation_level,
+                                          netr_flags))
+        except NTSTATUSError as err:
+            status, _ = err.args
+            self.assertIsNotNone(expect_error,
+                                 f'unexpectedly failed with {status:08X}')
+            self.assertEqual(expect_error, status, 'got wrong status code')
+        else:
+            self.assertIsNone(expect_error, 'expected error')
+
+            self.assertEqual(1, authoritative)
+            self.assertEqual(0, flags)
+
+        return validation

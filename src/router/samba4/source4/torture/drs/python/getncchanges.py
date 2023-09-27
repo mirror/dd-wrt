@@ -49,21 +49,14 @@ class DrsReplicaSyncIntegrityTestCase(drs_base.DrsBaseTestCase):
         self.set_test_ldb_dc(self.ldb_dc2)
 
         self.ou = str(samba.tests.create_test_ou(self.test_ldb_dc,
-                                                 "getncchanges"))
+                                                 "getncchanges." + self.id().rsplit(".", 1)[1]))
+
+        self.addCleanup(self.ldb_dc2.delete, self.ou, ["tree_delete:1"])
+
         self.base_dn = self.test_ldb_dc.get_default_basedn()
 
         self.default_conn = DcConnection(self, self.ldb_dc2, self.dnsname_dc2)
         self.set_dc_connection(self.default_conn)
-
-    def tearDown(self):
-        super(DrsReplicaSyncIntegrityTestCase, self).tearDown()
-        # tidyup groups and users
-        try:
-            self.ldb_dc2.delete(self.ou, ["tree_delete:1"])
-        except ldb.LdbError as e:
-            (enum, string) = e.args
-            if enum == ldb.ERR_NO_SUCH_OBJECT:
-                pass
 
     def init_test_state(self):
         self.rxd_dn_list = []
@@ -1220,6 +1213,208 @@ class DrsReplicaSyncIntegrityTestCase(drs_base.DrsBaseTestCase):
         # The NC should be the first object returned due to GET_ANC
         self.assertEqual(ctr.first_object.object.identifier.guid, guid)
 
+    def _test_do_full_repl_no_overlap(self, mix=True, get_anc=False):
+        self.default_hwm = drsuapi.DsReplicaHighWaterMark()
+
+        # We set get_anc=True so we can assert the BASE DN will be the
+        # first object
+        ctr6 = self._repl_send_request(get_anc=get_anc)
+        guid_list_1 = self._get_ctr6_object_guids(ctr6)
+
+        if mix:
+            dc_guid_1 = self.ldb_dc1.get_invocation_id()
+
+            req8 = self._exop_req8(dest_dsa=None,
+                                   invocation_id=dc_guid_1,
+                                   nc_dn_str=self.ldb_dc1.get_default_basedn(),
+                                   exop=drsuapi.DRSUAPI_EXOP_REPL_OBJ)
+
+            (level, ctr_repl_obj) = self.drs.DsGetNCChanges(self.drs_handle, 8, req8)
+
+            self.assertEqual(ctr_repl_obj.extended_ret, drsuapi.DRSUAPI_EXOP_ERR_SUCCESS)
+
+            repl_obj_guid_list = self._get_ctr6_object_guids(ctr_repl_obj)
+
+            self.assertEqual(len(repl_obj_guid_list), 1)
+
+            # This should be the first object in the main replication due
+            # to get_anc=True above in one case, and a rule that the NC must be first regardless otherwise
+            self.assertEqual(repl_obj_guid_list[0], guid_list_1[0])
+
+        self.last_ctr = ctr6
+        ctr6 = self._repl_send_request(get_anc=True)
+        guid_list_2 = self._get_ctr6_object_guids(ctr6)
+
+        self.assertNotEqual(guid_list_1, guid_list_2)
+
+    def test_do_full_repl_no_overlap_get_anc(self):
+        """
+        Make sure that a full replication on an nc succeeds to the goal despite needing multiple passes
+        """
+        self._test_do_full_repl_no_overlap(mix=False, get_anc=True)
+
+    def test_do_full_repl_no_overlap(self):
+        """
+        Make sure that a full replication on an nc succeeds to the goal despite needing multiple passes
+        """
+        self._test_do_full_repl_no_overlap(mix=False)
+
+    def test_do_full_repl_mix_no_overlap(self):
+        """
+        Make sure that a full replication on an nc succeeds to the goal despite needing multiple passes
+
+        Assert this is true even if we do a REPL_OBJ in between the replications
+
+        """
+        self._test_do_full_repl_no_overlap(mix=True)
+
+    def nc_change(self):
+        old_base_msg = self.default_conn.ldb_dc.search(base=self.base_dn,
+                                                       scope=SCOPE_BASE,
+                                                       attrs=["oEMInformation"])
+        rec_cleanup = {"dn": self.base_dn,
+                       "oEMInformation": old_base_msg[0]["oEMInformation"][0]}
+        m_cleanup = ldb.Message.from_dict(self.default_conn.ldb_dc,
+                                          rec_cleanup,
+                                          ldb.FLAG_MOD_REPLACE)
+
+        self.addCleanup(self.default_conn.ldb_dc.modify, m_cleanup)
+
+        rec = {"dn": self.base_dn,
+               "oEMInformation": f"Tortured by Samba's getncchanges.py {self.id()} against {self.default_conn.dnsname_dc}"}
+        m = ldb.Message.from_dict(self.default_conn.ldb_dc, rec, ldb.FLAG_MOD_REPLACE)
+        self.default_conn.ldb_dc.modify(m)
+
+    def _test_repl_nc_is_first(self, start_at_zero=True, nc_change=True, ou_change=True, mid_change=False):
+        """Tests that the NC is always replicated first, but does not move the
+           tmp_highest_usn at that point, just like 'early' GET_ANC objects.
+        """
+
+        # create objects, twice more than the page size of 133
+        objs = self.create_object_range(0, 300, prefix="obj")
+
+        if nc_change:
+            self.nc_change()
+
+        if mid_change:
+            # create even moire objects
+            objs = self.create_object_range(301, 450, prefix="obj2")
+
+        base_msg = self.default_conn.ldb_dc.search(base=self.base_dn,
+                                                   scope=SCOPE_BASE,
+                                                   attrs=["uSNChanged",
+                                                          "objectGUID"])
+
+        base_guid = misc.GUID(base_msg[0]["objectGUID"][0])
+        base_usn = int(base_msg[0]["uSNChanged"][0])
+
+        if ou_change:
+            # Make one more modification.  We want to assert we have
+            # caught up to the base DN, but Windows both promotes the NC
+            # to the front and skips including it in the tmp_highest_usn,
+            # so we make a later modification that will be to show we get
+            # this change.
+            rec = {"dn": self.ou,
+                   "postalCode": "0"}
+            m = ldb.Message.from_dict(self.default_conn.ldb_dc, rec, ldb.FLAG_MOD_REPLACE)
+            self.default_conn.ldb_dc.modify(m)
+
+        ou_msg = self.default_conn.ldb_dc.search(base=self.ou,
+                                                   scope=SCOPE_BASE,
+                                                   attrs=["uSNChanged",
+                                                          "objectGUID"])
+
+        ou_guid = misc.GUID(ou_msg[0]["objectGUID"][0])
+        ou_usn = int(ou_msg[0]["uSNChanged"][0])
+
+        # Check some predicates about USN ordering that the below tests will rely on
+        if ou_change and nc_change:
+            self.assertGreater(ou_usn, base_usn);
+        elif not ou_change and nc_change:
+            self.assertGreater(base_usn, ou_usn);
+
+        ctr6 = self.repl_get_next()
+
+        guid_list_1 = self._get_ctr6_object_guids(ctr6)
+        if nc_change or start_at_zero:
+            self.assertEqual(base_guid, misc.GUID(guid_list_1[0]))
+            self.assertIn(str(base_guid), guid_list_1)
+            self.assertNotIn(str(base_guid), guid_list_1[1:])
+        else:
+            self.assertNotEqual(base_guid, misc.GUID(guid_list_1[0]))
+            self.assertNotIn(str(base_guid), guid_list_1)
+
+        self.assertTrue(ctr6.more_data)
+
+        if not ou_change and nc_change:
+            self.assertLess(ctr6.new_highwatermark.tmp_highest_usn, base_usn)
+
+        i = 0
+        while not self.replication_complete():
+            i = i + 1
+            last_tmp_highest_usn = ctr6.new_highwatermark.tmp_highest_usn
+            ctr6 = self.repl_get_next()
+            guid_list_2 = self._get_ctr6_object_guids(ctr6)
+            if len(guid_list_2) > 0:
+                self.assertNotEqual(last_tmp_highest_usn, ctr6.new_highwatermark.tmp_highest_usn)
+
+            if (nc_change or start_at_zero) and base_usn > last_tmp_highest_usn:
+                self.assertEqual(base_guid, misc.GUID(guid_list_2[0]),
+                                 f"pass={i} more_data={ctr6.more_data} base_usn={base_usn} tmp_highest_usn={ctr6.new_highwatermark.tmp_highest_usn} last_tmp_highest_usn={last_tmp_highest_usn}")
+                self.assertIn(str(base_guid), guid_list_2,
+                                 f"pass {i}·more_data={ctr6.more_data} base_usn={base_usn} tmp_highest_usn={ctr6.new_highwatermark.tmp_highest_usn} last_tmp_highest_usn={last_tmp_highest_usn}")
+            else:
+                self.assertNotIn(str(base_guid), guid_list_2,
+                                 f"pass {i}·more_data={ctr6.more_data} base_usn={base_usn} tmp_highest_usn={ctr6.new_highwatermark.tmp_highest_usn} last_tmp_highest_usn={last_tmp_highest_usn}")
+
+        if ou_change:
+            # The modification to the base OU should be in the final chunk
+            self.assertIn(str(ou_guid), guid_list_2)
+            self.assertGreaterEqual(ctr6.new_highwatermark.highest_usn,
+                                    ou_usn)
+        else:
+            # Show that the NC root change does not show up in the
+            # highest_usn.  We either get the change before or after
+            # it.
+            self.assertNotEqual(ctr6.new_highwatermark.highest_usn,
+                                base_usn)
+        self.assertEqual(ctr6.new_highwatermark.highest_usn,
+                          ctr6.new_highwatermark.tmp_highest_usn)
+
+        self.assertFalse(ctr6.more_data)
+
+    def test_repl_nc_is_first_start_zero_nc_change(self):
+        self.default_hwm = drsuapi.DsReplicaHighWaterMark()
+        self._test_repl_nc_is_first(start_at_zero=True, nc_change=True, ou_change=True)
+
+    def test_repl_nc_is_first_start_zero(self):
+        # Get the NC change in the middle of the replication stream, certainly not at the start or end
+        self.nc_change()
+        self.default_hwm = drsuapi.DsReplicaHighWaterMark()
+        self._test_repl_nc_is_first(start_at_zero=True, nc_change=False, ou_change=False)
+
+    def test_repl_nc_is_first_mid(self):
+        # This is a modification of the next test, that Samba
+        # will pass as it will always include the NC in the
+        # tmp_highest_usn at the point where it belongs
+        self._test_repl_nc_is_first(start_at_zero=False,
+                                    nc_change=True,
+                                    ou_change=True,
+                                    mid_change=True)
+
+    def test_repl_nc_is_first(self):
+        # This is a modification of the next test, that Samba
+        # will pass as it will always include the NC in the
+        # tmp_highest_usn at the point where it belongs
+        self._test_repl_nc_is_first(start_at_zero=False, nc_change=True, ou_change=True)
+
+    def test_repl_nc_is_first_nc_change_only(self):
+        # This shows that the NC change is not reflected in the tmp_highest_usn
+        self._test_repl_nc_is_first(start_at_zero=False, nc_change=True, ou_change=False)
+
+    def test_repl_nc_is_first_no_change(self):
+        # The NC should not be present in this replication
+        self._test_repl_nc_is_first(start_at_zero=False, nc_change=False, ou_change=False)
 
 class DcConnection:
     """Helper class to track a connection to another DC"""
@@ -1229,3 +1424,4 @@ class DcConnection:
         (self.drs, self.drs_handle) = drs_base._ds_bind(dnsname_dc)
         (self.default_hwm, utdv) = drs_base._get_highest_hwm_utdv(ldb_dc)
         self.default_utdv = utdv
+        self.dnsname_dc = dnsname_dc

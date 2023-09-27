@@ -86,9 +86,11 @@ struct krb5_kdc_configuration {
     unsigned int strict_nametypes : 1;
     enum krb5_kdc_trpolicy trpolicy;
 
+    unsigned int disable_pac : 1;
     unsigned int enable_unarmored_pa_enc_timestamp : 1;
 
     unsigned int enable_pkinit : 1;
+    unsigned int require_pkinit_freshness : 1;
     unsigned int pkinit_princ_in_cert : 1;
     const char *pkinit_kdc_identity;
     const char *pkinit_kdc_anchors;
@@ -168,6 +170,7 @@ struct astgs_request_desc {
     unsigned int rk_is_subkey : 1;
     unsigned int fast_asserted : 1;
     unsigned int explicit_armor_present : 1;
+    krb5_keyblock enc_ad_key;
 
     krb5_crypto armor_crypto;
     hdb_entry *armor_server;
@@ -175,9 +178,9 @@ struct astgs_request_desc {
     krb5_ticket *armor_ticket;
     Key *armor_key;
 
-    hdb_entry *explicit_armor_client;
-    HDB *explicit_armor_clientdb;
-    krb5_pac explicit_armor_pac;
+    hdb_entry *armor_client;
+    HDB *armor_clientdb;
+    krb5_pac armor_pac;
 
     KDCFastState fast;
 };

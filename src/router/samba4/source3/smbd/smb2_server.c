@@ -62,26 +62,24 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn);
 
 static const struct smbd_smb2_dispatch_table {
 	uint16_t opcode;
-	const char *name;
-	bool need_session;
-	bool need_tcon;
-	bool as_root;
 	uint16_t fileid_ofs;
-	bool modify;
+	bool need_session : 1;
+	bool need_tcon : 1;
+	bool as_root : 1;
+	bool modify : 1;
 } smbd_smb2_table[] = {
-#define _OP(o) .opcode = o, .name = #o
 	{
-		_OP(SMB2_OP_NEGPROT),
+		.opcode = SMB2_OP_NEGPROT,
 		.as_root = true,
 	},{
-		_OP(SMB2_OP_SESSSETUP),
+		.opcode = SMB2_OP_SESSSETUP,
 		.as_root = true,
 	},{
-		_OP(SMB2_OP_LOGOFF),
+		.opcode = SMB2_OP_LOGOFF,
 		.need_session = true,
 		.as_root = true,
 	},{
-		_OP(SMB2_OP_TCON),
+		.opcode = SMB2_OP_TCON,
 		.need_session = true,
 		/*
 		 * This call needs to be run as root.
@@ -92,75 +90,74 @@ static const struct smbd_smb2_dispatch_table {
 		 */
 		.as_root = true,
 	},{
-		_OP(SMB2_OP_TDIS),
+		.opcode = SMB2_OP_TDIS,
 		.need_session = true,
 		.need_tcon = true,
 		.as_root = true,
 	},{
-		_OP(SMB2_OP_CREATE),
+		.opcode = SMB2_OP_CREATE,
 		.need_session = true,
 		.need_tcon = true,
 	},{
-		_OP(SMB2_OP_CLOSE),
-		.need_session = true,
-		.need_tcon = true,
-		.fileid_ofs = 0x08,
-	},{
-		_OP(SMB2_OP_FLUSH),
+		.opcode = SMB2_OP_CLOSE,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x08,
 	},{
-		_OP(SMB2_OP_READ),
+		.opcode = SMB2_OP_FLUSH,
+		.need_session = true,
+		.need_tcon = true,
+		.fileid_ofs = 0x08,
+	},{
+		.opcode = SMB2_OP_READ,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x10,
 	},{
-		_OP(SMB2_OP_WRITE),
+		.opcode = SMB2_OP_WRITE,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x10,
 		.modify = true,
 	},{
-		_OP(SMB2_OP_LOCK),
+		.opcode = SMB2_OP_LOCK,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x08,
 	},{
-		_OP(SMB2_OP_IOCTL),
+		.opcode = SMB2_OP_IOCTL,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x08,
 		.modify = true,
 	},{
-		_OP(SMB2_OP_CANCEL),
+		.opcode = SMB2_OP_CANCEL,
 		.as_root = true,
 	},{
-		_OP(SMB2_OP_KEEPALIVE),
-		.as_root = true,
+		.opcode = SMB2_OP_KEEPALIVE,
 	},{
-		_OP(SMB2_OP_QUERY_DIRECTORY),
+		.opcode = SMB2_OP_QUERY_DIRECTORY,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x08,
 	},{
-		_OP(SMB2_OP_NOTIFY),
+		.opcode = SMB2_OP_NOTIFY,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x08,
 	},{
-		_OP(SMB2_OP_GETINFO),
+		.opcode = SMB2_OP_GETINFO,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x18,
 	},{
-		_OP(SMB2_OP_SETINFO),
+		.opcode = SMB2_OP_SETINFO,
 		.need_session = true,
 		.need_tcon = true,
 		.fileid_ofs = 0x10,
 		.modify = true,
 	},{
-		_OP(SMB2_OP_BREAK),
+		.opcode = SMB2_OP_BREAK,
 		.need_session = true,
 		.need_tcon = true,
 		/*
@@ -174,10 +171,70 @@ static const struct smbd_smb2_dispatch_table {
 
 const char *smb2_opcode_name(uint16_t opcode)
 {
-	if (opcode >= ARRAY_SIZE(smbd_smb2_table)) {
-		return "Bad SMB2 opcode";
+	const char *result = "Bad SMB2 opcode";
+
+	switch (opcode) {
+	case SMB2_OP_NEGPROT:
+		result = "SMB2_OP_NEGPROT";
+		break;
+	case SMB2_OP_SESSSETUP:
+		result = "SMB2_OP_SESSSETUP";
+		break;
+	case SMB2_OP_LOGOFF:
+		result = "SMB2_OP_LOGOFF";
+		break;
+	case SMB2_OP_TCON:
+		result = "SMB2_OP_TCON";
+		break;
+	case SMB2_OP_TDIS:
+		result = "SMB2_OP_TDIS";
+		break;
+	case SMB2_OP_CREATE:
+		result = "SMB2_OP_CREATE";
+		break;
+	case SMB2_OP_CLOSE:
+		result = "SMB2_OP_CLOSE";
+		break;
+	case SMB2_OP_FLUSH:
+		result = "SMB2_OP_FLUSH";
+		break;
+	case SMB2_OP_READ:
+		result = "SMB2_OP_READ";
+		break;
+	case SMB2_OP_WRITE:
+		result = "SMB2_OP_WRITE";
+		break;
+	case SMB2_OP_LOCK:
+		result = "SMB2_OP_LOCK";
+		break;
+	case SMB2_OP_IOCTL:
+		result = "SMB2_OP_IOCTL";
+		break;
+	case SMB2_OP_CANCEL:
+		result = "SMB2_OP_CANCEL";
+		break;
+	case SMB2_OP_KEEPALIVE:
+		result = "SMB2_OP_KEEPALIVE";
+		break;
+	case SMB2_OP_QUERY_DIRECTORY:
+		result = "SMB2_OP_QUERY_DIRECTORY";
+		break;
+	case SMB2_OP_NOTIFY:
+		result = "SMB2_OP_NOTIFY";
+		break;
+	case SMB2_OP_GETINFO:
+		result = "SMB2_OP_GETINFO";
+		break;
+	case SMB2_OP_SETINFO:
+		result = "SMB2_OP_SETINFO";
+		break;
+	case SMB2_OP_BREAK:
+		result = "SMB2_OP_BREAK";
+		break;
+	default:
+		break;
 	}
-	return smbd_smb2_table[opcode].name;
+	return result;
 }
 
 static const struct smbd_smb2_dispatch_table *smbd_smb2_call(uint16_t opcode)
@@ -267,11 +324,23 @@ static NTSTATUS smbd_initialize_smb2(struct smbXsrv_connection *xconn,
 	}
 	tevent_fd_set_auto_close(xconn->transport.fde);
 
-	/* Ensure child is set to non-blocking mode */
+	/*
+	 * Ensure child is set to non-blocking mode,
+	 * unless the system supports MSG_DONTWAIT,
+	 * if MSG_DONTWAIT is available we should force
+	 * blocking mode.
+	 */
+#ifdef MSG_DONTWAIT
+	rc = set_blocking(xconn->transport.sock, true);
+	if (rc < 0) {
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+#else
 	rc = set_blocking(xconn->transport.sock, false);
 	if (rc < 0) {
 		return NT_STATUS_INTERNAL_ERROR;
 	}
+#endif
 
 	return NT_STATUS_OK;
 }
@@ -798,7 +867,7 @@ static bool smb2_validate_message_id(struct smbXsrv_connection *xconn,
 		}
 	}
 
-	/* substract used credits */
+	/* subtract used credits */
 	xconn->smb2.credits.granted -= credit_charge;
 
 	return true;
@@ -2177,7 +2246,7 @@ static NTSTATUS smb2_get_new_nonce(struct smbXsrv_session *session,
 	 * nonce wrap, or the security of the whole
 	 * communication and the keys is destroyed.
 	 * We must drop the connection once we have
-	 * transfered too much data.
+	 * transferred too much data.
 	 *
 	 * NOTE: We assume nonces greater than 8 bytes.
 	 */
@@ -3195,7 +3264,7 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 		 * checks below.
 		 */
 		static const struct smbd_smb2_dispatch_table _root_ioctl_call = {
-			_OP(SMB2_OP_IOCTL),
+			.opcode = SMB2_OP_IOCTL,
 			.as_root = true,
 		};
 		const uint8_t *body = SMBD_SMB2_IN_BODY_PTR(req);
@@ -3357,7 +3426,7 @@ skipped_signing:
 		SMB_ASSERT(call->fileid_ofs == 0);
 		/* This call needs to be run as root */
 		change_to_root_user();
-	} else {
+	} else if (opcode != SMB2_OP_KEEPALIVE) {
 		SMB_ASSERT(call->need_tcon);
 	}
 
@@ -4316,7 +4385,7 @@ static void smbXsrv_pending_break_done(struct tevent_req *subreq)
 		status = smbXsrv_pending_break_submit(pb);
 		if (NT_STATUS_EQUAL(status, NT_STATUS_ABANDONED)) {
 			/*
-			 * If there's no remaing connection
+			 * If there's no remaining connection
 			 * there's no need to send a break again.
 			 */
 			goto remove;
@@ -4671,6 +4740,7 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 
 	while (xconn->smb2.send_queue != NULL) {
 		struct smbd_smb2_send_queue *e = xconn->smb2.send_queue;
+		unsigned sendmsg_flags = 0;
 		bool ok;
 		struct msghdr msg;
 
@@ -4744,7 +4814,14 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 			.msg_iovlen = e->count,
 		};
 
-		ret = sendmsg(xconn->transport.sock, &msg, 0);
+#ifdef MSG_NOSIGNAL
+		sendmsg_flags |= MSG_NOSIGNAL;
+#endif
+#ifdef MSG_DONTWAIT
+		sendmsg_flags |= MSG_DONTWAIT;
+#endif
+
+		ret = sendmsg(xconn->transport.sock, &msg, sendmsg_flags);
 		if (ret == 0) {
 			/* propagate end of file */
 			return NT_STATUS_INTERNAL_ERROR;
@@ -4807,6 +4884,7 @@ static NTSTATUS smbd_smb2_io_handler(struct smbXsrv_connection *xconn,
 	struct smbd_smb2_request_read_state *state = &xconn->smb2.request_read_state;
 	struct smbd_smb2_request *req = NULL;
 	size_t min_recvfile_size = UINT32_MAX;
+	unsigned recvmsg_flags = 0;
 	int ret;
 	int err;
 	bool retry;
@@ -4852,7 +4930,14 @@ again:
 		.msg_iovlen = 1,
 	};
 
-	ret = recvmsg(xconn->transport.sock, &msg, 0);
+#ifdef MSG_NOSIGNAL
+	recvmsg_flags |= MSG_NOSIGNAL;
+#endif
+#ifdef MSG_DONTWAIT
+	recvmsg_flags |= MSG_DONTWAIT;
+#endif
+
+	ret = recvmsg(xconn->transport.sock, &msg, recvmsg_flags);
 	if (ret == 0) {
 		/* propagate end of file */
 		status = NT_STATUS_END_OF_FILE;

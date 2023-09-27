@@ -277,7 +277,7 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 	DEBUG(10,("smbd_smb2_getinfo_send: %s - %s\n",
 		  fsp_str_dbg(fsp), fsp_fnum_dbg(fsp)));
 
-	smbreq = smbd_smb2_fake_smb_request(smb2req);
+	smbreq = smbd_smb2_fake_smb_request(smb2req, fsp);
 	if (tevent_req_nomem(smbreq, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -297,7 +297,6 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 		bool delete_pending = false;
 		struct timespec write_time_ts;
 		struct file_id fileid;
-		struct ea_list *ea_list = NULL;
 		size_t fixed_portion;
 
 		ZERO_STRUCT(write_time_ts);
@@ -421,7 +420,7 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 					       fsp->fsp_name,
 					       delete_pending,
 					       write_time_ts,
-					       ea_list,
+					       NULL,
 					       STR_UNICODE,
 					       in_output_buffer_length,
 					       &fixed_portion,

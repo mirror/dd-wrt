@@ -41,7 +41,7 @@ without =O_PATH= support other mechanisms are used described in more detail
 below.
 
 Path processing in Samba typically means processing client supplied paths by
-Samba's core path processing function =filename_convert()= which returs a
+Samba's core path processing function =filename_convert()= which returns a
 pointer to an object of type =struct smb_filename=. Pointers to such objects are
 then passed around, often passing many layers of code.
 
@@ -106,7 +106,7 @@ whenever VFS access is done in a piecemeal fashion.
 *** When to open with O_PATH
  In Samba the decision whether to call POSIX ~open()~ on a client pathname or
  whether to leave the low-level handle at -1 (what we call a stat-open) is based
- on the client requested SMB acccess mask.
+ on the client requested SMB access mask.
 
  The set of access rights that trigger an ~open()~ includes
  ~READ_CONTROL_ACCESS~. As a result, the open() will be done with at least
@@ -140,12 +140,12 @@ whenever VFS access is done in a piecemeal fashion.
  support ~O_PATH~ is needed.
 
  The way this is implemented on such systems is impersonating the root user for
- the ~open()~ syscall. In order to avoid privelege escalations security issues,
+ the ~open()~ syscall. In order to avoid privilege escalations security issues,
  we must carefully control the use these file-handles.
 
  The low level filehandle is stored in a public struct ~struct file_handle~ that
  is part of the widely used ~struct files_struct~. Consumers used to simply
- access the fd directly by derefencing pointers to ~struct files_struct~.
+ access the fd directly by dereferencing pointers to ~struct files_struct~.
 
  In order to guard access to such file-handles we do two things:
 
@@ -260,7 +260,7 @@ whenever VFS access is done in a piecemeal fashion.
 | SMB_VFS_LSTAT()                   | [[Path][Path]]     | Todo   |
 | SMB_VFS_MKDIRAT()                 | [[NsC][NsC]]      | -      |
 | SMB_VFS_MKNODAT()                 | [[NsC][NsC]]      | -      |
-| SMB_VFS_NTIMES()                  | [[Path][Path]]    | -      |
+| SMB_VFS_NTIMES()                  | [[Path][Path]]     | -      |
 | SMB_VFS_OFFLOAD_READ_RECV()       | [[fsp][fsp]]      | -      |
 | SMB_VFS_OFFLOAD_READ_SEND()       | [[fsp][fsp]]      | -      |
 | SMB_VFS_OFFLOAD_WRITE_RECV()      | [[fsp][fsp]]      | -      |
@@ -272,14 +272,13 @@ whenever VFS access is done in a piecemeal fashion.
 | SMB_VFS_PWRITE_SEND()             | [[fsp][fsp]]      | -      |
 | SMB_VFS_READ_DFS_PATHAT()         | [[Symlink][Symlink]]  | -      |
 | SMB_VFS_READDIR()                 | [[fsp][fsp]]      | -      |
-| SMB_VFS_READDIR_ATTR()            | [[Path][Path]]    | -      |
+| SMB_VFS_READDIR_ATTR()            | [[Path][Path]]     | -      |
 | SMB_VFS_READLINKAT()              | [[Symlink][Symlink]]  | -      |
 | SMB_VFS_REALPATH()                | [[P2px][P2px]]     | -      |
 | SMB_VFS_RECVFILE()                | [[fsp][fsp]]      | -      |
 | SMB_VFS_REMOVEXATTR()             | [[Path][Path]]     | -      |
 | SMB_VFS_RENAMEAT()                | [[Path][Path]]     | ----   |
 | SMB_VFS_REWINDDIR()               | [[fsp][fsp]]      | -      |
-| SMB_VFS_SEEKDIR()                 | [[fsp][fsp]]      | -      |
 | SMB_VFS_SENDFILE()                | [[fsp][fsp]]      | -      |
 | SMB_VFS_SET_COMPRESSION()         | [[fsp][fsp]]      | -      |
 | SMB_VFS_SET_DOS_ATTRIBUTES()      | [[Path][Path]]     | -      |
@@ -299,7 +298,6 @@ whenever VFS access is done in a piecemeal fashion.
 | SMB_VFS_SYS_ACL_GET_FD()          | [[xpathref][xpathref]] | -      |
 | SMB_VFS_SYS_ACL_GET_FILE()        | [[Path][Path]]     | -      |
 | SMB_VFS_SYS_ACL_SET_FD()          | [[xpathref][xpathref]] | -      |
-| SMB_VFS_TELLDIR()                 | [[fsp][fsp]]      | -      |
 | SMB_VFS_TRANSLATE_NAME()          | [[P2px][P2px]]     | -      |
 | SMB_VFS_UNLINKAT()                | [[NsC][NsC]]      | -      |
 |-----------------------------------+----------+--------|
@@ -363,11 +361,9 @@ whenever VFS access is done in a piecemeal fashion.
  - SMB_VFS_READDIR()
  - SMB_VFS_RECVFILE()
  - SMB_VFS_REWINDDIR()
- - SMB_VFS_SEEKDIR()
  - SMB_VFS_SENDFILE()
  - SMB_VFS_SET_COMPRESSION()
  - SMB_VFS_STRICT_LOCK_CHECK()
- - SMB_VFS_TELLDIR()
 
  If an fsp is provided by the SMB layer we use that, otherwise we use the
  pathref fsp =smb_fname->fsp= provided by =filename_convert()=.
@@ -399,7 +395,7 @@ whenever VFS access is done in a piecemeal fashion.
  Callers use =openat_pathref_fsp()= to open a fsp on the parent directory.
 
 *** Path based VFS functions <<Path>>
- All path based VFS functtions  will be replaced by handle based variants using the
+ All path based VFS functions  will be replaced by handle based variants using the
  =smb_fname->fsp= provided by =filename_convert()=.
 
  - SMB_VFS_CHDIR()

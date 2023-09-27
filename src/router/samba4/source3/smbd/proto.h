@@ -52,7 +52,6 @@ struct dcesrv_context;
 
 /* The following definitions come from smbd/smb2_signing.c */
 
-bool smb2_srv_init_signing(struct smbXsrv_connection *conn);
 bool srv_init_signing(struct smbXsrv_connection *conn);
 
 /* The following definitions come from smbd/aio.c  */
@@ -187,38 +186,22 @@ NTSTATUS dptr_create(connection_struct *conn,
 		struct smb_request *req,
 		files_struct *fsp,
 		bool old_handle,
-		bool expect_close,
-		uint16_t spid,
 		const char *wcard,
 		uint32_t attr,
 		struct dptr_struct **dptr_ret);
 void dptr_CloseDir(files_struct *fsp);
-void dptr_SeekDir(struct dptr_struct *dptr, long offset);
-long dptr_TellDir(struct dptr_struct *dptr);
+void dptr_RewindDir(struct dptr_struct *dptr);
+unsigned int dptr_FileNumber(struct dptr_struct *dptr);
 bool dptr_has_wild(struct dptr_struct *dptr);
 int dptr_dnum(struct dptr_struct *dptr);
 bool dptr_get_priv(struct dptr_struct *dptr);
 void dptr_set_priv(struct dptr_struct *dptr);
 bool dptr_case_sensitive(struct dptr_struct *dptr);
-bool dptr_SearchDir(struct dptr_struct *dptr, const char *name, long *poffset, SMB_STRUCT_STAT *pst);
-bool dptr_fill(struct smbd_server_connection *sconn,
-	       char *buf1,unsigned int key);
-files_struct *dptr_fetch_fsp(struct smbd_server_connection *sconn,
-			       char *buf,int *num);
+char *dptr_ReadDirName(TALLOC_CTX *ctx, struct dptr_struct *dptr);
 struct smb_Dir;
 struct files_struct *dir_hnd_fetch_fsp(struct smb_Dir *dir_hnd);
 files_struct *dptr_fetch_lanman2_fsp(struct smbd_server_connection *sconn,
 				       int dptr_num);
-bool get_dir_entry(TALLOC_CTX *ctx,
-		struct dptr_struct *dirptr,
-		const char *mask,
-		uint32_t dirtype,
-		char **pp_fname_out,
-		off_t *size,
-		uint32_t *mode,
-		struct timespec *date,
-		bool check_descend,
-		bool ask_sharemode);
 struct smb_Dir;
 bool is_visible_fsp(files_struct *fsp);
 NTSTATUS OpenDir(TALLOC_CTX *mem_ctx,
@@ -232,11 +215,8 @@ NTSTATUS OpenDir_from_pathref(TALLOC_CTX *mem_ctx,
 			      const char *mask,
 			      uint32_t attr,
 			      struct smb_Dir **_dir_hnd);
-const char *ReadDirName(struct smb_Dir *dir_hnd, long *poffset,
-			SMB_STRUCT_STAT *sbuf, char **talloced);
-void RewindDir(struct smb_Dir *dir_hnd, long *poffset);
-void SeekDir(struct smb_Dir *dirp, long offset);
-long TellDir(struct smb_Dir *dirp);
+const char *ReadDirName(struct smb_Dir *dir_hnd, char **talloced);
+void RewindDir(struct smb_Dir *dir_hnd);
 NTSTATUS can_delete_directory(struct connection_struct *conn,
 				const char *dirname);
 bool have_file_open_below(connection_struct *conn,
@@ -262,7 +242,8 @@ mode_t unix_mode(connection_struct *conn, int dosmode,
 		 const struct smb_filename *smb_fname,
 		 struct files_struct *parent_dirfsp);
 uint32_t dos_mode_msdfs(connection_struct *conn,
-		      const struct smb_filename *smb_fname);
+			const char *name,
+			const struct stat_ex *st);
 uint32_t fdos_mode(struct files_struct *fsp);
 struct tevent_req *dos_mode_at_send(TALLOC_CTX *mem_ctx,
 				    struct tevent_context *ev,
@@ -448,20 +429,36 @@ NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
 NTSTATUS open_stream_pathref_fsp(
 	struct files_struct **_base_fsp,
 	struct smb_filename *smb_fname);
-NTSTATUS openat_pathref_dirfsp_nosymlink(
-	TALLOC_CTX *mem_ctx,
-	struct connection_struct *conn,
-	const char *path_in,
-	NTTIME twrp,
-	bool posix,
-	struct smb_filename **_smb_fname,
-	size_t *unparsed,
-	char **substitute);
+
+struct symlink_reparse_struct;
+
+struct open_symlink_err {
+	struct stat_ex st;
+	size_t unparsed;
+	struct symlink_reparse_struct *reparse;
+};
+
+NTSTATUS openat_pathref_fsp_nosymlink(TALLOC_CTX *mem_ctx,
+				      struct connection_struct *conn,
+				      struct files_struct *dirfsp,
+				      const char *path_in,
+				      NTTIME twrp,
+				      bool posix,
+				      struct smb_filename **_smb_fname,
+				      struct open_symlink_err **_symlink_err);
 NTSTATUS readlink_talloc(
 	TALLOC_CTX *mem_ctx,
 	struct files_struct *dirfsp,
 	struct smb_filename *smb_relname,
 	char **_substitute);
+
+struct symlink_reparse_struct;
+
+NTSTATUS read_symlink_reparse(
+	TALLOC_CTX *mem_ctx,
+	struct files_struct *dirfsp,
+	struct smb_filename *smb_relname,
+	struct symlink_reparse_struct **_symlink);
 
 void smb_fname_fsp_unlink(struct smb_filename *smb_fname);
 
@@ -556,11 +553,6 @@ bool remove_msdfs_link(const struct junction_map *jucn,
 struct junction_map *enum_msdfs_links(TALLOC_CTX *ctx,
 				      struct auth_session_info *session_info,
 				      size_t *p_num_jn);
-NTSTATUS dfs_filename_convert(TALLOC_CTX *ctx,
-			      connection_struct *conn,
-			      uint32_t ucf_flags,
-			      const char *dfs_path_in,
-			      char **pp_path_out);
 struct connection_struct;
 struct smb_filename;
 
@@ -871,15 +863,12 @@ NTSTATUS make_default_filesystem_acl(
 
 /* The following definitions come from smbd/smb2_process.c  */
 
-bool smb2_srv_send(struct smbXsrv_connection *xconn, char *buffer,
-		   bool no_signing, uint32_t seqnum,
-		   bool do_encrypt,
-		   struct smb_perfcount_data *pcd);
 #if !defined(WITH_SMB1SERVER)
-bool smb1_srv_send(struct smbXsrv_connection *xconn, char *buffer,
-		   bool do_signing, uint32_t seqnum,
-		   bool do_encrypt,
-		   struct smb_perfcount_data *pcd);
+bool smb1_srv_send(struct smbXsrv_connection *xconn,
+		   char *buffer,
+		   bool do_signing,
+		   uint32_t seqnum,
+		   bool do_encrypt);
 #endif
 size_t srv_smb1_set_message(char *buf,
 		       size_t num_words,
@@ -913,9 +902,11 @@ bool create_smb1_outbuf(TALLOC_CTX *mem_ctx, struct smb_request *req,
 void construct_smb1_reply_common_req(struct smb_request *req, char *outbuf);
 void reply_smb1_outbuf(struct smb_request *req, uint8_t num_words, uint32_t num_bytes);
 void process_smb(struct smbXsrv_connection *xconn,
-		 uint8_t *inbuf, size_t nread, size_t unread_bytes,
-		 uint32_t seqnum, bool encrypted,
-		 struct smb_perfcount_data *deferred_pcd);
+		 uint8_t *inbuf,
+		 size_t nread,
+		 size_t unread_bytes,
+		 uint32_t seqnum,
+		 bool encrypted);
 void smbd_process(struct tevent_context *ev_ctx,
 		  struct messaging_context *msg_ctx,
 		  int sock_fd,
@@ -935,9 +926,11 @@ bool disk_quotas(connection_struct *conn, struct smb_filename *fname,
 
 /* The following definitions come from smbd/smb2_reply.c  */
 
-NTSTATUS check_path_syntax(char *path);
-NTSTATUS check_path_syntax_posix(char *path);
-NTSTATUS check_path_syntax_smb2(char *path, bool dfs_path);
+NTSTATUS check_path_syntax(char *path, bool posix);
+NTSTATUS smb1_strip_dfs_path(TALLOC_CTX *mem_ctx,
+			     uint32_t *ucf_flags,
+			     char **in_path);
+NTSTATUS smb2_strip_dfs_path(const char *in_path, const char **out_path);
 size_t srvstr_get_path(TALLOC_CTX *ctx,
 			const char *inbuf,
 			uint16_t smb_flags2,
@@ -1230,7 +1223,6 @@ off_t vfs_transfer_file(files_struct *in, files_struct *out, off_t n);
 const char *vfs_readdirname(connection_struct *conn,
 			    struct files_struct *dirfsp,
 			    void *p,
-			    SMB_STRUCT_STAT *sbuf,
 			    char **talloced);
 int vfs_ChDir(connection_struct *conn,
 			const struct smb_filename *smb_fname);

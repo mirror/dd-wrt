@@ -42,8 +42,11 @@ import random
 import time
 
 
-def drs_get_rodc_partial_attribute_set(samdb, samdb1, exceptions=[]):
+def drs_get_rodc_partial_attribute_set(samdb, samdb1, exceptions=None):
     '''get a list of attributes for RODC replication'''
+    if exceptions is None:
+        exceptions = []
+
     partial_attribute_set = drsuapi.DsPartialAttributeSet()
     partial_attribute_set.version = 1
 
@@ -523,11 +526,6 @@ class DrsRodcTestCase(drs_base.DrsBaseTestCase):
         (other_rodc_drs, other_rodc_drs_handle) = self._ds_bind(self.dnsname_dc1, other_rodc_creds)
 
         rand = random.randint(1, 10000000)
-        expected_user_attributes = [drsuapi.DRSUAPI_ATTID_lmPwdHistory,
-                                    drsuapi.DRSUAPI_ATTID_supplementalCredentials,
-                                    drsuapi.DRSUAPI_ATTID_ntPwdHistory,
-                                    drsuapi.DRSUAPI_ATTID_unicodePwd,
-                                    drsuapi.DRSUAPI_ATTID_dBCSPwd]
 
         user_name = "test_rodcF_%s" % rand
         user_dn = "CN=%s,%s" % (user_name, self.ou)

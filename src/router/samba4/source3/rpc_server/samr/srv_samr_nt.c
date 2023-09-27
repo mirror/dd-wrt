@@ -3360,8 +3360,7 @@ NTSTATUS _samr_GetGroupsForUser(struct pipes_struct *p,
 	gids = NULL;
 	num_gids = 0;
 
-	dom_gid.attributes = (SE_GROUP_MANDATORY|SE_GROUP_ENABLED_BY_DEFAULT|
-			      SE_GROUP_ENABLED);
+	dom_gid.attributes = SE_GROUP_DEFAULT_FLAGS;
 	dom_gid.rid = primary_group_rid;
 	ADD_TO_ARRAY(p->mem_ctx, struct samr_RidWithAttribute, dom_gid, &gids, &num_gids);
 
@@ -6074,9 +6073,7 @@ NTSTATUS _samr_QueryGroupMember(struct pipes_struct *p,
 	}
 
 	for (i=0; i<num_members; i++) {
-		attr[i] = SE_GROUP_MANDATORY |
-			  SE_GROUP_ENABLED_BY_DEFAULT |
-			  SE_GROUP_ENABLED;
+		attr[i] = SE_GROUP_DEFAULT_FLAGS;
 	}
 
 	rids->count = num_members;
@@ -6597,9 +6594,7 @@ NTSTATUS _samr_QueryGroupInfo(struct pipes_struct *p,
 	GROUP_MAP *map;
 	union samr_GroupInfo *info = NULL;
 	bool ret;
-	uint32_t attributes = SE_GROUP_MANDATORY |
-			      SE_GROUP_ENABLED_BY_DEFAULT |
-			      SE_GROUP_ENABLED;
+	uint32_t attributes = SE_GROUP_DEFAULT_FLAGS;
 	const char *group_name = NULL;
 	const char *group_description = NULL;
 
@@ -7675,7 +7670,6 @@ void _samr_Opnum72NotUsedOnWire(struct pipes_struct *p,
 NTSTATUS _samr_ChangePasswordUser4(struct pipes_struct *p,
 				   struct samr_ChangePasswordUser4 *r)
 {
-#ifdef HAVE_GNUTLS_PBKDF2
 	TALLOC_CTX *frame = talloc_stackframe();
 	struct dcesrv_call_state *dce_call = p->dce_call;
 	struct dcesrv_connection *dcesrv_conn = dce_call->conn;
@@ -7776,7 +7770,7 @@ NTSTATUS _samr_ChangePasswordUser4(struct pipes_struct *p,
 	BURN_DATA(cdk_data);
 
 	/*
-	 * We must re-load the sam acount information under a mutex
+	 * We must re-load the sam account information under a mutex
 	 * lock to ensure we don't miss any concurrent account lockout
 	 * changes.
 	 */
@@ -7909,10 +7903,6 @@ done:
 	}
 
 	return status;
-#else  /* HAVE_GNUTLS_PBKDF2 */
-	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
-	return NT_STATUS_NOT_IMPLEMENTED;
-#endif /* HAVE_GNUTLS_PBKDF2 */
 }
 
 /* include the generated boilerplate */

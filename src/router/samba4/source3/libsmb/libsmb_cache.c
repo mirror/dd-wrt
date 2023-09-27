@@ -55,49 +55,45 @@ SMBC_add_cached_server(SMBCCTX * context,
 {
 	struct smbc_server_cache * srvcache = NULL;
 
-	if (!(srvcache = SMB_MALLOC_P(struct smbc_server_cache))) {
-		errno = ENOMEM;
+	srvcache = SMB_CALLOC_ARRAY(struct smbc_server_cache, 1);
+	if (srvcache == NULL) {
 		DEBUG(3, ("Not enough space for server cache allocation\n"));
+		errno = ENOMEM;
 		return 1;
 	}
-
-	ZERO_STRUCTP(srvcache);
 
 	srvcache->server = newsrv;
 
 	srvcache->server_name = SMB_STRDUP(server);
 	if (!srvcache->server_name) {
-		errno = ENOMEM;
-		goto failed;
+		goto nomem;
 	}
 
 	srvcache->share_name = SMB_STRDUP(share);
 	if (!srvcache->share_name) {
-		errno = ENOMEM;
-		goto failed;
+		goto nomem;
 	}
 
 	srvcache->workgroup = SMB_STRDUP(workgroup);
 	if (!srvcache->workgroup) {
-		errno = ENOMEM;
-		goto failed;
+		goto nomem;
 	}
 
 	srvcache->username = SMB_STRDUP(username);
 	if (!srvcache->username) {
-		errno = ENOMEM;
-		goto failed;
+		goto nomem;
 	}
 
 	DLIST_ADD(context->internal->server_cache, srvcache);
 	return 0;
 
-failed:
+nomem:
 	SAFE_FREE(srvcache->server_name);
 	SAFE_FREE(srvcache->share_name);
 	SAFE_FREE(srvcache->workgroup);
 	SAFE_FREE(srvcache->username);
 	SAFE_FREE(srvcache);
+	errno = ENOMEM;
 
 	return 1;
 }

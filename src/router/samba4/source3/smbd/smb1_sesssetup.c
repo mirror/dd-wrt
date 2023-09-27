@@ -86,7 +86,7 @@ static void reply_sesssetup_and_X_spnego(struct smb_request *req)
 	DATA_BLOB in_blob;
 	DATA_BLOB out_blob = data_blob_null;
 	size_t bufrem;
-	char *tmp;
+	char *tmp = NULL;
 	const char *native_os;
 	const char *native_lanman;
 	const char *primary_domain;
@@ -581,7 +581,7 @@ void reply_sesssetup_and_X(struct smb_request *req)
 	struct reply_sesssetup_and_X_state *state = NULL;
 	uint64_t sess_vuid;
 	uint16_t smb_bufsize;
-	char *tmp;
+	char *tmp = NULL;
 	fstring sub_user; /* Sanitised username for substitution */
 	const char *native_os;
 	const char *native_lanman;
@@ -655,7 +655,7 @@ void reply_sesssetup_and_X(struct smb_request *req)
 
 	smb_bufsize = SVAL(req->vwv+2, 0);
 
-	if (get_Protocol() < PROTOCOL_NT1) {
+	if (xconn->protocol < PROTOCOL_NT1) {
 		uint16_t passlen1 = SVAL(req->vwv+7, 0);
 
 		/* Never do NT status codes with protocols before NT1 as we
@@ -959,7 +959,7 @@ void reply_sesssetup_and_X(struct smb_request *req)
 	SSVAL(req->outbuf, smb_vwv0, 0xff); /* andx chain ends */
 	SSVAL(req->outbuf, smb_vwv1, 0);    /* no andx offset */
 
-	if (get_Protocol() >= PROTOCOL_NT1) {
+	if (xconn->protocol >= PROTOCOL_NT1) {
 		push_signature(&req->outbuf);
 		/* perhaps grab OS version here?? */
 	}

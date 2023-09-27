@@ -28,10 +28,10 @@
 /*
   see if any SIDs in list1 are in list2
  */
-bool sid_list_match(uint32_t num_sids1,
-		    const struct dom_sid *list1,
-		    uint32_t num_sids2,
-		    const struct dom_sid *list2)
+static bool sid_list_match(uint32_t num_sids1,
+			   const struct dom_sid *list1,
+			   uint32_t num_sids2,
+			   const struct dom_sid *list2)
 {
 	unsigned int i, j;
 	/* do we ever have enough SIDs here to worry about O(n^2) ? */
@@ -71,7 +71,7 @@ static WERROR samdb_result_sid_array_ndr(struct ldb_context *sam_ctx,
 			       el->num_values + 1);
 	W_ERROR_HAVE_NO_MEMORY(*sids);
 
-	(*sids)[0] = *primary_sid;
+	(*sids)[PRIMARY_USER_SID_INDEX] = *primary_sid;
 
 	for (i = 0; i<el->num_values; i++) {
 		enum ndr_err_code ndr_err;
@@ -96,7 +96,7 @@ static WERROR samdb_result_sid_array_ndr(struct ldb_context *sam_ctx,
   assumes the SIDs are in extended DN format
  */
 WERROR samdb_result_sid_array_dn(struct ldb_context *sam_ctx,
-				 struct ldb_message *msg,
+				 const struct ldb_message *msg,
 				 TALLOC_CTX *mem_ctx,
 				 const char *attr,
 				 uint32_t *num_sids,
@@ -132,10 +132,10 @@ WERROR samdb_result_sid_array_dn(struct ldb_context *sam_ctx,
 
 WERROR samdb_confirm_rodc_allowed_to_repl_to_sid_list(struct ldb_context *sam_ctx,
 						      const struct dom_sid *rodc_machine_account_sid,
-						      struct ldb_message *rodc_msg,
-						      struct ldb_message *obj_msg,
+						      const struct ldb_message *rodc_msg,
+						      const struct ldb_message *obj_msg,
 						      uint32_t num_token_sids,
-						      struct dom_sid *token_sids)
+						      const struct dom_sid *token_sids)
 {
 	uint32_t num_never_reveal_sids, num_reveal_sids;
 	struct dom_sid *never_reveal_sids, *reveal_sids;
@@ -204,7 +204,7 @@ WERROR samdb_confirm_rodc_allowed_to_repl_to_sid_list(struct ldb_context *sam_ct
 	}
 
 	/* The RODC can replicate and print tickets for itself. */
-	if (dom_sid_equal(&token_sids[0], rodc_machine_account_sid)) {
+	if (dom_sid_equal(&token_sids[PRIMARY_USER_SID_INDEX], rodc_machine_account_sid)) {
 		TALLOC_FREE(frame);
 		return WERR_OK;
 	}

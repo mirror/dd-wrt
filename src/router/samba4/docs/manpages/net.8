@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: net
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "NET" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "NET" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 net \- Tool for administration of Samba and remote CIFS servers\&.
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-net {<ads|rap|rpc>} [\-h|\-\-help] [\-d|\-\-debuglevel=DEBUGLEVEL] [\-\-debug\-stdout] [\-\-configfile=CONFIGFILE] [\-\-option=name=value] [\-l|\-\-log\-basename=LOGFILEBASE] [\-\-leak\-report] [\-\-leak\-report\-full] [\-R|\-\-name\-resolve=NAME\-RESOLVE\-ORDER] [\-O|\-\-socket\-options=SOCKETOPTIONS] [\-m|\-\-max\-protocol=MAXPROTOCOL] [\-n|\-\-netbiosname=NETBIOSNAME] [\-\-netbios\-scope=SCOPE] [\-W|\-\-workgroup=WORKGROUP] [\-\-realm=REALM] [\-U|\-\-user=[DOMAIN/]USERNAME[%PASSWORD]] [\-N|\-\-no\-pass] [\-\-password=STRING] [\-\-pw\-nt\-hash] [\-A|\-\-authentication\-file=FILE] [\-P|\-\-machine\-pass] [\-\-simple\-bind\-dn=DN] [\-\-use\-kerberos=desired|required|off] [\-\-use\-krb5\-ccache=CCACHE] [\-\-use\-winbind\-ccache] [\-\-client\-protection=sign|encrypt|off] [\-V|\-\-version] [\-w|\-\-target\-workgroup\ workgroup] [\-I|\-\-ipaddress\ ip\-address] [\-p|\-\-port\ port] [\-\-myname] [\-S|\-\-server\ server] [\-\-long] [\-v|\-\-verbose] [\-f|\-\-force] [\-\-request\-timeout\ seconds] [\-t|\-\-timeout\ seconds] [\-i|\-\-stdin]
+net {<ads|rap|rpc>} [\-h|\-\-help] [\-d|\-\-debuglevel=DEBUGLEVEL] [\-\-debug\-stdout] [\-\-configfile=CONFIGFILE] [\-\-option=name=value] [\-l|\-\-log\-basename=LOGFILEBASE] [\-\-leak\-report] [\-\-leak\-report\-full] [\-R|\-\-name\-resolve=NAME\-RESOLVE\-ORDER] [\-O|\-\-socket\-options=SOCKETOPTIONS] [\-m|\-\-max\-protocol=MAXPROTOCOL] [\-n|\-\-netbiosname=NETBIOSNAME] [\-\-netbios\-scope=SCOPE] [\-W|\-\-workgroup=WORKGROUP] [\-\-realm=REALM] [\-U|\-\-user=[DOMAIN/]USERNAME[%PASSWORD]] [\-N|\-\-no\-pass] [\-\-password=STRING] [\-\-pw\-nt\-hash] [\-A|\-\-authentication\-file=FILE] [\-P|\-\-machine\-pass] [\-\-simple\-bind\-dn=DN] [\-\-use\-kerberos=desired|required|off] [\-\-use\-krb5\-ccache=CCACHE] [\-\-use\-winbind\-ccache] [\-\-client\-protection=sign|encrypt|off] [\-V|\-\-version] [\-w|\-\-target\-workgroup\ workgroup] [\-I|\-\-ipaddress\ ip\-address] [\-p|\-\-port\ port] [\-\-myname] [\-S|\-\-server\ server] [\-\-long] [\-v|\-\-verbose] [\-f|\-\-force] [\-\-request\-timeout\ seconds] [\-t|\-\-timeout\ seconds] [\-\-dns\-ttl\ TTL\-IN\-SECONDS] [\-i|\-\-stdin]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -256,6 +256,11 @@ Continue traversing a directory hierarchy in case conversion of one file fails\&
 Follow symlinks encountered while traversing a directory\&.
 .RE
 .PP
+\-\-dns\-ttl TTL\-IN\-SECONDS
+.RS 4
+Specify the Time to Live (TTL) of DNS records\&. DNS records will be created or updated with the given TTL\&. The TTL is specified in seconds\&. Can be used with "net ads dns register" and "net ads join"\&. The default is 3600 seconds\&.
+.RE
+.PP
 \-d|\-\-debuglevel=DEBUGLEVEL
 .RS 4
 \fIlevel\fR
@@ -316,7 +321,7 @@ Prints the program version number\&.
 .PP
 \-R|\-\-name\-resolve=NAME\-RESOLVE\-ORDER
 .RS 4
-This option is used to determine what naming services and in what order to resolve host names to IP addresses\&. The option takes a space\-separated string of different name resolution options\&. The best ist to wrap the whole \-\-name\-resolve=NAME\-RESOLVE\-ORDER into quotes\&.
+This option is used to determine what naming services and in what order to resolve host names to IP addresses\&. The option takes a space\-separated string of different name resolution options\&. The best is to wrap the whole \-\-name\-resolve=NAME\-RESOLVE\-ORDER into quotes\&.
 .sp
 The options are: "lmhosts", "host", "wins" and "bcast"\&. They cause names to be resolved as follows:
 .RS
@@ -1217,7 +1222,7 @@ Container to link to a GPO\&.
 GPO to link container to\&. DNs must be provided properly escaped\&. See RFC 4514 for details\&.
 .SS "ADS GPO LINKGET [CONTAINER]"
 .PP
-Lists gPLink of a containter\&.
+Lists gPLink of a container\&.
 .SS "ADS GPO LIST <USERNAME|MACHINENAME> "
 .PP
 Lists all GPOs for a username or machine name\&. Either username or machine name should be provided to the command, not both\&.

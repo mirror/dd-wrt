@@ -57,8 +57,16 @@ NTSTATUS dsdb_add_user(struct ldb_context *ldb,
 	struct ldb_dn *account_dn;
 	struct dom_sid *account_sid;
 
+	const char *account_name_encoded = NULL;
+
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
 	NT_STATUS_HAVE_NO_MEMORY(tmp_ctx);
+
+	account_name_encoded = ldb_binary_encode_string(tmp_ctx, account_name);
+	if (account_name_encoded == NULL) {
+		talloc_free(tmp_ctx);
+		return NT_STATUS_NO_MEMORY;
+	}
 
 	/*
 	 * Start a transaction, so we can query and do a subsequent atomic
@@ -77,7 +85,7 @@ NTSTATUS dsdb_add_user(struct ldb_context *ldb,
 	name = samdb_search_string(ldb, tmp_ctx, NULL,
 				   "sAMAccountName",
 				   "(&(sAMAccountName=%s)(objectclass=user))",
-				   ldb_binary_encode_string(tmp_ctx, account_name));
+				   account_name_encoded);
 	if (name != NULL) {
 		ldb_transaction_cancel(ldb);
 		talloc_free(tmp_ctx);
@@ -265,22 +273,31 @@ NTSTATUS dsdb_add_domain_group(struct ldb_context *ldb,
 	const char *name;
 	struct ldb_message *msg;
 	struct dom_sid *group_sid;
+	const char *groupname_encoded = NULL;
 	int ret;
 
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
 	NT_STATUS_HAVE_NO_MEMORY(tmp_ctx);
 
+	groupname_encoded = ldb_binary_encode_string(tmp_ctx, groupname);
+	if (groupname_encoded == NULL) {
+		talloc_free(tmp_ctx);
+		return NT_STATUS_NO_MEMORY;
+	}
+
 	/* check if the group already exists */
 	name = samdb_search_string(ldb, tmp_ctx, NULL,
 				   "sAMAccountName",
 				   "(&(sAMAccountName=%s)(objectclass=group))",
-				   ldb_binary_encode_string(tmp_ctx, groupname));
+				   groupname_encoded);
 	if (name != NULL) {
+		talloc_free(tmp_ctx);
 		return NT_STATUS_GROUP_EXISTS;
 	}
 
 	msg = ldb_msg_new(tmp_ctx);
 	if (msg == NULL) {
+		talloc_free(tmp_ctx);
 		return NT_STATUS_NO_MEMORY;
 	}
 
@@ -323,6 +340,7 @@ NTSTATUS dsdb_add_domain_group(struct ldb_context *ldb,
 	group_sid = samdb_search_dom_sid(ldb, tmp_ctx,
 					 msg->dn, "objectSid", NULL);
 	if (group_sid == NULL) {
+		talloc_free(tmp_ctx);
 		return NT_STATUS_UNSUCCESSFUL;
 	}
 
@@ -341,13 +359,20 @@ NTSTATUS dsdb_add_domain_alias(struct ldb_context *ldb,
 	const char *name;
 	struct ldb_message *msg;
 	struct dom_sid *alias_sid;
+	const char *alias_name_encoded = NULL;
 	int ret;
 
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
 	NT_STATUS_HAVE_NO_MEMORY(tmp_ctx);
 
+	alias_name_encoded = ldb_binary_encode_string(tmp_ctx, alias_name);
+	if (alias_name_encoded == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
 	if (ldb_transaction_start(ldb) != LDB_SUCCESS) {
 		DEBUG(0, ("Failed to start transaction in dsdb_add_domain_alias(): %s\n", ldb_errstring(ldb)));
+		talloc_free(tmp_ctx);
 		return NT_STATUS_INTERNAL_ERROR;
 	}
 
@@ -355,7 +380,7 @@ NTSTATUS dsdb_add_domain_alias(struct ldb_context *ldb,
 	name = samdb_search_string(ldb, tmp_ctx, NULL,
 				   "sAMAccountName",
 				   "(sAMAccountName=%s)(objectclass=group))",
-				   ldb_binary_encode_string(mem_ctx, alias_name));
+				   alias_name_encoded);
 
 	if (name != NULL) {
 		talloc_free(tmp_ctx);
@@ -412,6 +437,7 @@ NTSTATUS dsdb_add_domain_alias(struct ldb_context *ldb,
 	if (ldb_transaction_commit(ldb) != LDB_SUCCESS) {
 		DEBUG(0, ("Failed to commit transaction in dsdb_add_domain_alias(): %s\n",
 			  ldb_errstring(ldb)));
+		talloc_free(tmp_ctx);
 		return NT_STATUS_INTERNAL_ERROR;
 	}
 

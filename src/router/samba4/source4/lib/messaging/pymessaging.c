@@ -42,6 +42,8 @@ extern PyTypeObject imessaging_Type;
 
 static bool server_id_from_py(PyObject *object, struct server_id *server_id)
 {
+	Py_ssize_t tuple_size;
+
 	if (!PyTuple_Check(object)) {
 		if (!py_check_dcerpc_type(object, "samba.dcerpc.server_id", "server_id")) {
 
@@ -51,7 +53,9 @@ static bool server_id_from_py(PyObject *object, struct server_id *server_id)
 		*server_id = *pytalloc_get_type(object, struct server_id);
 		return true;
 	}
-	if (PyTuple_Size(object) == 3) {
+
+	tuple_size = PyTuple_Size(object);
+	if (tuple_size == 3) {
 		unsigned long long pid;
 		int task_id, vnn;
 
@@ -62,20 +66,23 @@ static bool server_id_from_py(PyObject *object, struct server_id *server_id)
 		server_id->task_id = task_id;
 		server_id->vnn = vnn;
 		return true;
-	} else if (PyTuple_Size(object) == 2) {
+	} else if (tuple_size == 2) {
 		unsigned long long pid;
 		int task_id;
 		if (!PyArg_ParseTuple(object, "Ki", &pid, &task_id))
 			return false;
 		*server_id = cluster_id(pid, task_id);
 		return true;
-	} else {
+	} else if (tuple_size == 1) {
 		unsigned long long pid = getpid();
 		int task_id;
 		if (!PyArg_ParseTuple(object, "i", &task_id))
 			return false;
 		*server_id = cluster_id(pid, task_id);
 		return true;
+	} else {
+		PyErr_SetString(PyExc_ValueError, "Expected tuple containing one, two, or three elements");
+		return false;
 	}
 }
 
@@ -94,7 +101,7 @@ static PyObject *py_imessaging_connect(PyTypeObject *self, PyObject *args, PyObj
 	imessaging_Object *ret;
 	struct loadparm_context *lp_ctx;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO:connect", 
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO",
 		discard_const_p(char *, kwnames), &own_id, &py_lp_ctx)) {
 		return NULL;
 	}
@@ -107,7 +114,7 @@ static PyObject *py_imessaging_connect(PyTypeObject *self, PyObject *args, PyObj
 
 	lp_ctx = lpcfg_from_py_object(ret->mem_ctx, py_lp_ctx);
 	if (lp_ctx == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "imessaging_connect unable to interpret loadparm_context");
+		PyErr_SetString(PyExc_RuntimeError, "unable to interpret loadparm_context");
 		talloc_free(ret->mem_ctx);
 		return NULL;
 	}
@@ -117,8 +124,10 @@ static PyObject *py_imessaging_connect(PyTypeObject *self, PyObject *args, PyObj
 	if (own_id != Py_None) {
 		struct server_id server_id;
 
-		if (!server_id_from_py(own_id, &server_id)) 
+		if (!server_id_from_py(own_id, &server_id)) {
+			talloc_free(ret->mem_ctx);
 			return NULL;
+		}
 
 		ret->msg_ctx = imessaging_init(ret->mem_ctx,
 					       lp_ctx,
@@ -131,7 +140,7 @@ static PyObject *py_imessaging_connect(PyTypeObject *self, PyObject *args, PyObj
 	}
 
 	if (ret->msg_ctx == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "imessaging_connect unable to create a messaging context");
+		PyErr_SetString(PyExc_RuntimeError, "unable to create a messaging context");
 		talloc_free(ret->mem_ctx);
 		return NULL;
 	}
@@ -187,19 +196,27 @@ static void py_msg_callback_wrapper(struct imessaging_context *msg,
 {
 	PyObject *py_server_id, *callback_and_tuple = (PyObject *)private_data;
 	PyObject *callback, *py_private;
+	PyObject *result = NULL;
 
-	struct server_id *p_server_id = talloc(NULL, struct server_id);
+	struct server_id *p_server_id = NULL;
 
 	if (num_fds != 0) {
 		DBG_WARNING("Received %zu fds, ignoring message\n", num_fds);
 		return;
 	}
 
+	p_server_id = talloc(NULL, struct server_id);
 	if (!p_server_id) {
 		PyErr_NoMemory();
 		return;
 	}
 	*p_server_id = server_id;
+
+	py_server_id = py_return_ndr_struct("samba.dcerpc.server_id", "server_id", p_server_id, p_server_id);
+	talloc_unlink(NULL, p_server_id);
+	if (py_server_id == NULL) {
+		return;
+	}
 
 	if (!PyArg_ParseTuple(callback_and_tuple, "OO",
 			      &callback,
@@ -207,14 +224,12 @@ static void py_msg_callback_wrapper(struct imessaging_context *msg,
 		return;
 	}
 
-	py_server_id = py_return_ndr_struct("samba.dcerpc.server_id", "server_id", p_server_id, p_server_id);
-	talloc_unlink(NULL, p_server_id);
-
-	PyObject_CallFunction(callback, discard_const_p(char, "OiOs#"),
-			      py_private,
-			      msg_type,
-			      py_server_id,
-			      data->data, data->length);
+	result = PyObject_CallFunction(callback, discard_const_p(char, "OiOs#"),
+				       py_private,
+				       msg_type,
+				       py_server_id,
+				       data->data, data->length);
+	Py_XDECREF(result);
 }
 
 static PyObject *py_imessaging_register(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -232,7 +247,7 @@ static PyObject *py_imessaging_register(PyObject *self, PyObject *args, PyObject
 	}
 	if (!PyTuple_Check(callback_and_context)
 	    || PyTuple_Size(callback_and_context) != 2) {
-		PyErr_SetString(PyExc_ValueError, "Expected of size 2 for callback_and_context");
+		PyErr_SetString(PyExc_ValueError, "Expected tuple of size 2 for callback_and_context");
 		return NULL;
 	}
 
@@ -248,6 +263,7 @@ static PyObject *py_imessaging_register(PyObject *self, PyObject *args, PyObject
 				    msg_type, py_msg_callback_wrapper);
 	}
 	if (NT_STATUS_IS_ERR(status)) {
+		Py_DECREF(callback_and_context);
 		PyErr_SetNTSTATUS(status);
 		return NULL;
 	}
@@ -261,13 +277,17 @@ static PyObject *py_imessaging_deregister(PyObject *self, PyObject *args, PyObje
 	int msg_type = -1;
 	PyObject *callback;
 	const char *kwnames[] = { "callback", "msg_type", NULL };
+	size_t removed;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:deregister",
 		discard_const_p(char *, kwnames), &callback, &msg_type)) {
 		return NULL;
 	}
 
-	imessaging_deregister(iface->msg_ctx, msg_type, callback);
+	removed = imessaging_deregister(iface->msg_ctx, msg_type, callback);
+	while (removed-- > 0) {
+		Py_DECREF(callback);
+	}
 
 	Py_RETURN_NONE;
 }
@@ -389,6 +409,7 @@ static PyObject *py_irpc_servers_byname(PyObject *self, PyObject *args)
 		PyObject *py_server_id;
 		struct server_id *p_server_id = talloc(NULL, struct server_id);
 		if (!p_server_id) {
+			TALLOC_FREE(mem_ctx);
 			PyErr_NoMemory();
 			return NULL;
 		}
@@ -396,6 +417,7 @@ static PyObject *py_irpc_servers_byname(PyObject *self, PyObject *args)
 
 		py_server_id = py_return_ndr_struct("samba.dcerpc.server_id", "server_id", p_server_id, p_server_id);
 		if (!py_server_id) {
+			TALLOC_FREE(mem_ctx);
 			return NULL;
 		}
 		PyList_SetItem(pylist, i, py_server_id);
@@ -420,6 +442,8 @@ static PyObject *py_irpc_all_servers(PyObject *self,
 
 	records = irpc_all_servers(iface->msg_ctx, mem_ctx);
 	if (records == NULL) {
+		TALLOC_FREE(mem_ctx);
+		PyErr_NoMemory();
 		return NULL;
 	}
 
@@ -436,6 +460,7 @@ static PyObject *py_irpc_all_servers(PyObject *self,
 					       records->names[i],
 					       records->names[i]);
 		if (!py_name_record) {
+			TALLOC_FREE(mem_ctx);
 			return NULL;
 		}
 		PyList_SetItem(pylist, i,
@@ -458,7 +483,7 @@ static PyMethodDef py_imessaging_methods[] = {
 		METH_VARARGS|METH_KEYWORDS,
 		"S.deregister((callback, context), msg_type) -> None\nDeregister a message handler "
 	        "The callback and context must be supplied as the exact same two-element tuple "
-	        "as was used as registration time." },
+	        "as was used at registration time." },
 	{ "loop_once", PY_DISCARD_FUNC_SIG(PyCFunction,
 					   py_imessaging_loop_once),
 		METH_VARARGS|METH_KEYWORDS,
@@ -519,7 +544,7 @@ PyTypeObject imessaging_Type = {
 	.tp_dealloc = py_imessaging_dealloc,
 	.tp_methods = py_imessaging_methods,
 	.tp_getset = py_imessaging_getset,
-	.tp_doc = "Messaging(own_id=None)\n" \
+	.tp_doc = "Messaging(own_id=None, lp_ctx=None)\n" \
 		  "Create a new object that can be used to communicate with the peers in the specified messaging path.\n"
 };
 

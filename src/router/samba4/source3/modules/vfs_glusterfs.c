@@ -314,7 +314,7 @@ static int check_for_write_behind_translator(TALLOC_CTX *mem_ctx,
 
 	/*
 	 * file_lines_parse() plays horrible tricks with
-	 * the passed-in talloc pointers and the hierarcy
+	 * the passed-in talloc pointers and the hierarchy
 	 * which makes freeing hard to get right.
 	 *
 	 * As we know mem_ctx is freed by the caller, after
@@ -649,55 +649,23 @@ static int vfs_gluster_closedir(struct vfs_handle_struct *handle, DIR *dirp)
 
 static struct dirent *vfs_gluster_readdir(struct vfs_handle_struct *handle,
 					  struct files_struct *dirfsp,
-					  DIR *dirp,
-					  SMB_STRUCT_STAT *sbuf)
+					  DIR *dirp)
 {
 	static char direntbuf[512];
 	int ret;
-	struct stat stat;
 	struct dirent *dirent = 0;
 
 	START_PROFILE(syscall_readdir);
-	if (sbuf != NULL) {
-		ret = glfs_readdirplus_r((void *)dirp, &stat, (void *)direntbuf,
-					 &dirent);
-	} else {
-		ret = glfs_readdir_r((void *)dirp, (void *)direntbuf, &dirent);
-	}
+
+	ret = glfs_readdir_r((void *)dirp, (void *)direntbuf, &dirent);
 
 	if ((ret < 0) || (dirent == NULL)) {
 		END_PROFILE(syscall_readdir);
 		return NULL;
 	}
 
-	if (sbuf != NULL) {
-		SET_STAT_INVALID(*sbuf);
-		if (!S_ISLNK(stat.st_mode)) {
-			smb_stat_ex_from_stat(sbuf, &stat);
-		}
-	}
-
 	END_PROFILE(syscall_readdir);
 	return dirent;
-}
-
-static long vfs_gluster_telldir(struct vfs_handle_struct *handle, DIR *dirp)
-{
-	long ret;
-
-	START_PROFILE(syscall_telldir);
-	ret = glfs_telldir((void *)dirp);
-	END_PROFILE(syscall_telldir);
-
-	return ret;
-}
-
-static void vfs_gluster_seekdir(struct vfs_handle_struct *handle, DIR *dirp,
-				long offset)
-{
-	START_PROFILE(syscall_seekdir);
-	glfs_seekdir((void *)dirp, offset);
-	END_PROFILE(syscall_seekdir);
 }
 
 static void vfs_gluster_rewinddir(struct vfs_handle_struct *handle, DIR *dirp)
@@ -760,7 +728,7 @@ static int vfs_gluster_openat(struct vfs_handle_struct *handle,
 	struct smb_filename *full_fname = NULL;
 	bool have_opath = false;
 	bool became_root = false;
-	glfs_fd_t *glfd;
+	glfs_fd_t *glfd = NULL;
 	glfs_fd_t *pglfd = NULL;
 	glfs_fd_t **p_tmp;
 
@@ -2608,8 +2576,6 @@ static struct vfs_fn_pointers glusterfs_fns = {
 
 	.fdopendir_fn = vfs_gluster_fdopendir,
 	.readdir_fn = vfs_gluster_readdir,
-	.seekdir_fn = vfs_gluster_seekdir,
-	.telldir_fn = vfs_gluster_telldir,
 	.rewind_dir_fn = vfs_gluster_rewinddir,
 	.mkdirat_fn = vfs_gluster_mkdirat,
 	.closedir_fn = vfs_gluster_closedir,

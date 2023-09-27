@@ -79,8 +79,24 @@ bool check_cldap_reply_required_flags(uint32_t ret_flags,
 	if (req_flags & DS_TIMESERV_REQUIRED)
 		RETURN_ON_FALSE(ret_flags & NBT_SERVER_TIMESERV);
 
+	if (req_flags & DS_WEB_SERVICE_REQUIRED)
+		RETURN_ON_FALSE(ret_flags & NBT_SERVER_ADS_WEB_SERVICE);
+
 	if (req_flags & DS_WRITABLE_REQUIRED)
 		RETURN_ON_FALSE(ret_flags & NBT_SERVER_WRITABLE);
+
+	if (req_flags & DS_DIRECTORY_SERVICE_6_REQUIRED)
+		RETURN_ON_FALSE(ret_flags & (NBT_SERVER_SELECT_SECRET_DOMAIN_6
+					     |NBT_SERVER_FULL_SECRET_DOMAIN_6));
+
+	if (req_flags & DS_DIRECTORY_SERVICE_8_REQUIRED)
+		RETURN_ON_FALSE(ret_flags & NBT_SERVER_DS_8);
+
+	if (req_flags & DS_DIRECTORY_SERVICE_9_REQUIRED)
+		RETURN_ON_FALSE(ret_flags & NBT_SERVER_DS_9);
+
+	if (req_flags & DS_DIRECTORY_SERVICE_10_REQUIRED)
+		RETURN_ON_FALSE(ret_flags & NBT_SERVER_DS_10);
 
 	return true;
 }

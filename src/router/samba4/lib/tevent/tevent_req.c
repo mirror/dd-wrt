@@ -27,6 +27,10 @@
 #include "tevent_internal.h"
 #include "tevent_util.h"
 
+#undef tevent_req_set_callback
+#undef tevent_req_set_cancel_fn
+#undef tevent_req_set_cleanup_fn
+
 char *tevent_req_default_print(struct tevent_req *req, TALLOC_CTX *mem_ctx)
 {
 	return talloc_asprintf(mem_ctx,
@@ -63,6 +67,21 @@ struct tevent_req *_tevent_req_create(TALLOC_CTX *mem_ctx,
 				    size_t data_size,
 				    const char *type,
 				    const char *location)
+{
+	return __tevent_req_create(mem_ctx,
+				   pdata,
+				   data_size,
+				   type,
+				   NULL,
+				   location);
+}
+
+struct tevent_req *__tevent_req_create(TALLOC_CTX *mem_ctx,
+				       void *pdata,
+				       size_t data_size,
+				       const char *type,
+				       const char *func,
+				       const char *location)
 {
 	struct tevent_req *req;
 	struct tevent_req *parent;
@@ -122,10 +141,13 @@ struct tevent_req *_tevent_req_create(TALLOC_CTX *mem_ctx,
 	*ppdata = data;
 
 	/* Initially, talloc_zero_size() sets internal.call_depth to 0 */
-	if (parent != NULL && parent->internal.call_depth > 0) {
+	if (parent != NULL) {
 		req->internal.call_depth = parent->internal.call_depth + 1;
-		tevent_thread_call_depth_set(req->internal.call_depth);
 	}
+	tevent_thread_call_depth_notify(TEVENT_CALL_FLOW_REQ_CREATE,
+					req,
+					req->internal.call_depth,
+					func);
 
 	return req;
 }
@@ -146,23 +168,32 @@ void _tevent_req_notify_callback(struct tevent_req *req, const char *location)
 	}
 	if (req->async.fn != NULL) {
 		/* Calling back the parent code, decrement the call depth. */
-		tevent_thread_call_depth_set(req->internal.call_depth > 0 ?
-					     req->internal.call_depth - 1 : 0);
+		size_t new_depth = req->internal.call_depth > 0 ?
+				   req->internal.call_depth - 1 : 0;
+		tevent_thread_call_depth_notify(TEVENT_CALL_FLOW_REQ_NOTIFY_CB,
+						req,
+						new_depth,
+						req->async.fn_name);
 		req->async.fn(req);
 	}
 }
 
 static void tevent_req_cleanup(struct tevent_req *req)
 {
-	if (req->private_cleanup.fn == NULL) {
-		return;
-	}
-
 	if (req->private_cleanup.state >= req->internal.state) {
 		/*
 		 * Don't call the cleanup_function multiple times for the same
 		 * state recursively
 		 */
+		return;
+	}
+
+	tevent_thread_call_depth_notify(TEVENT_CALL_FLOW_REQ_CLEANUP,
+					req,
+					req->internal.call_depth,
+					req->private_cleanup.fn_name);
+
+	if (req->private_cleanup.fn == NULL) {
 		return;
 	}
 
@@ -289,7 +320,8 @@ void tevent_req_received(struct tevent_req *req)
 	talloc_set_destructor(req, NULL);
 
 	req->private_print = NULL;
-	req->private_cancel = NULL;
+	req->private_cancel.fn = NULL;
+	req->private_cancel.fn_name = NULL;
 
 	TALLOC_FREE(req->internal.trigger);
 	TALLOC_FREE(req->internal.timer);
@@ -366,7 +398,16 @@ void tevent_req_reset_endtime(struct tevent_req *req)
 
 void tevent_req_set_callback(struct tevent_req *req, tevent_req_fn fn, void *pvt)
 {
+	return _tevent_req_set_callback(req, fn, NULL, pvt);
+}
+
+void _tevent_req_set_callback(struct tevent_req *req,
+			      tevent_req_fn fn,
+			      const char *fn_name,
+			      void *pvt)
+{
 	req->async.fn = fn;
+	req->async.fn_name = fn_name;
 	req->async.private_data = pvt;
 }
 
@@ -387,22 +428,43 @@ void tevent_req_set_print_fn(struct tevent_req *req, tevent_req_print_fn fn)
 
 void tevent_req_set_cancel_fn(struct tevent_req *req, tevent_req_cancel_fn fn)
 {
-	req->private_cancel = fn;
+	_tevent_req_set_cancel_fn(req, fn, NULL);
+}
+
+void _tevent_req_set_cancel_fn(struct tevent_req *req,
+			       tevent_req_cancel_fn fn,
+			       const char *fn_name)
+{
+	req->private_cancel.fn = fn;
+	req->private_cancel.fn_name = fn != NULL ? fn_name : NULL;
 }
 
 bool _tevent_req_cancel(struct tevent_req *req, const char *location)
 {
-	if (req->private_cancel == NULL) {
+	tevent_thread_call_depth_notify(TEVENT_CALL_FLOW_REQ_CANCEL,
+					req,
+					req->internal.call_depth,
+					req->private_cancel.fn_name);
+
+	if (req->private_cancel.fn == NULL) {
 		return false;
 	}
 
-	return req->private_cancel(req);
+	return req->private_cancel.fn(req);
 }
 
 void tevent_req_set_cleanup_fn(struct tevent_req *req, tevent_req_cleanup_fn fn)
 {
+	_tevent_req_set_cleanup_fn(req, fn, NULL);
+}
+
+void _tevent_req_set_cleanup_fn(struct tevent_req *req,
+				tevent_req_cleanup_fn fn,
+				const char *fn_name)
+{
 	req->private_cleanup.state = req->internal.state;
 	req->private_cleanup.fn = fn;
+	req->private_cleanup.fn_name = fn != NULL ? fn_name : NULL;
 }
 
 static int tevent_req_profile_destructor(struct tevent_req_profile *p);

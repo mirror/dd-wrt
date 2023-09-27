@@ -71,6 +71,78 @@ bool check_fsp_open(connection_struct *conn, struct smb_request *req,
 }
 
 /****************************************************************************
+ SMB1 version of smb2_strip_dfs_path()
+ Differs from SMB2 in that all Windows path separator '\' characters
+ have already been converted to '/' by check_path_syntax().
+****************************************************************************/
+
+NTSTATUS smb1_strip_dfs_path(TALLOC_CTX *mem_ctx,
+			     uint32_t *_ucf_flags,
+			     char **in_path)
+{
+	uint32_t ucf_flags = *_ucf_flags;
+	char *path = *in_path;
+	char *return_path = NULL;
+
+	if (!(ucf_flags & UCF_DFS_PATHNAME)) {
+		return NT_STATUS_OK;
+	}
+
+	/* Strip any leading '/' characters - MacOSX client behavior. */
+	while (*path == '/') {
+		path++;
+	}
+
+	/* We should now be pointing at the server name. Go past it. */
+	for (;;) {
+		if (*path == '\0') {
+			/* End of complete path. Exit OK. */
+			goto done;
+		}
+		if (*path == '/') {
+			/* End of server name. Go past and break. */
+			path++;
+			break;
+		}
+		path++; /* Continue looking for end of server name or string. */
+	}
+
+	/* We should now be pointing at the share name. Go past it. */
+	for (;;) {
+		if (*path == '\0') {
+			/* End of complete path. Exit OK. */
+			goto done;
+                }
+		if (*path == '/') {
+			/* End of share name. Go past and break. */
+			path++;
+			break;
+		}
+		if (*path == ':') {
+			/* Only invalid character in sharename. */
+			return NT_STATUS_OBJECT_NAME_INVALID;
+		}
+		path++; /* Continue looking for end of share name or string. */
+	}
+
+  done:
+	/* path now points at the start of the real filename (if any). */
+	/* Duplicate it first. */
+	return_path = talloc_strdup(mem_ctx, path);
+	if (return_path == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	/* Now we can free the original (path points to part of this). */
+	TALLOC_FREE(*in_path);
+
+	*in_path = return_path;
+	ucf_flags &= ~UCF_DFS_PATHNAME;
+	*_ucf_flags = ucf_flags;
+	return NT_STATUS_OK;
+}
+
+/****************************************************************************
  Check if we have a correct fsp pointing to a file.
 ****************************************************************************/
 
@@ -398,7 +470,7 @@ void reply_tcon_and_X(struct smb_request *req)
 	else
 		server_devicetype = "A:";
 
-	if (get_Protocol() < PROTOCOL_NT1) {
+	if (xconn->protocol < PROTOCOL_NT1) {
 		reply_smb1_outbuf(req, 2, 0);
 		if (message_push_string(&req->outbuf, server_devicetype,
 					STR_TERMINATE|STR_ASCII) == -1) {
@@ -530,7 +602,7 @@ void reply_ioctl(struct smb_request *req)
 	p += 1;          /* Allow for alignment */
 
 	switch (ioctl_code) {
-		case IOCTL_QUERY_JOB_INFO:		    
+		case IOCTL_QUERY_JOB_INFO:
 		{
 			NTSTATUS status;
 			size_t len = 0;
@@ -623,6 +695,12 @@ void reply_checkpath(struct smb_request *req)
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(name, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &name);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
+
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 name,
@@ -690,6 +768,7 @@ void reply_checkpath(struct smb_request *req)
 
 void reply_getatr(struct smb_request *req)
 {
+	struct smbXsrv_connection *xconn = req->xconn;
 	connection_struct *conn = req->conn;
 	struct smb_filename *smb_fname = NULL;
 	char *fname = NULL;
@@ -728,6 +807,11 @@ void reply_getatr(struct smb_request *req)
 
 		if (ucf_flags & UCF_GMT_PATHNAME) {
 			extract_snapshot_token(fname, &twrp);
+		}
+		status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+		if (!NT_STATUS_IS_OK(status)) {
+			reply_nterror(req, status);
+			goto out;
 		}
 		status = filename_convert_dirfsp(ctx,
 						 conn,
@@ -786,7 +870,7 @@ void reply_getatr(struct smb_request *req)
 	}
 	SIVAL(req->outbuf,smb_vwv3,(uint32_t)size);
 
-	if (get_Protocol() >= PROTOCOL_NT1) {
+	if (xconn->protocol >= PROTOCOL_NT1) {
 		SSVAL(req->outbuf, smb_flg2,
 		      SVAL(req->outbuf, smb_flg2) | FLAGS2_IS_LONG_NAME);
 	}
@@ -837,6 +921,11 @@ void reply_setatr(struct smb_request *req)
 
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
+	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
 	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
@@ -919,6 +1008,7 @@ void reply_setatr(struct smb_request *req)
 
 void reply_dskattr(struct smb_request *req)
 {
+	struct smbXsrv_connection *xconn = req->xconn;
 	connection_struct *conn = req->conn;
 	uint64_t ret;
 	uint64_t dfree,dsize,bsize;
@@ -961,11 +1051,11 @@ void reply_dskattr(struct smb_request *req)
 
 	reply_smb1_outbuf(req, 5, 0);
 
-	if (get_Protocol() <= PROTOCOL_LANMAN2) {
+	if (xconn->protocol <= PROTOCOL_LANMAN2) {
 		double total_space, free_space;
 		/* we need to scale this to a number that DOS6 can handle. We
 		   use floating point so we can handle large drives on systems
-		   that don't have 64 bit integers 
+		   that don't have 64 bit integers
 
 		   we end up displaying a maximum of 2G to DOS systems
 		*/
@@ -999,7 +1089,7 @@ void reply_dskattr(struct smb_request *req)
  Make a dir struct.
 ****************************************************************************/
 
-static bool make_dir_struct(TALLOC_CTX *ctx,
+static void make_dir_struct(TALLOC_CTX *ctx,
 			    char *buf,
 			    const char *mask,
 			    const char *fname,
@@ -1009,24 +1099,19 @@ static bool make_dir_struct(TALLOC_CTX *ctx,
 			    bool uc)
 {
 	char *p;
-	char *mask2 = talloc_strdup(ctx, mask);
-
-	if (!mask2) {
-		return False;
-	}
 
 	if ((mode & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		size = 0;
 	}
 
 	memset(buf+1,' ',11);
-	if ((p = strchr_m(mask2,'.')) != NULL) {
-		*p = 0;
-		push_ascii(buf+1,mask2,8, 0);
+	if ((p = strchr_m(mask, '.')) != NULL) {
+		char name[p - mask + 1];
+		strlcpy(name, mask, sizeof(name));
+		push_ascii(buf + 1, name, 8, 0);
 		push_ascii(buf+9,p+1,3, 0);
-		*p = '.';
 	} else {
-		push_ascii(buf+1,mask2,11, 0);
+		push_ascii(buf + 1, mask, 11, 0);
 	}
 
 	memset(buf+21,'\0',DIR_STRUCT_SIZE-21);
@@ -1038,7 +1123,146 @@ static bool make_dir_struct(TALLOC_CTX *ctx,
 	   Strange, but verified on W2K3. Needed for OS/2. JRA. */
 	push_ascii(buf+30,fname,12, uc ? STR_UPPER : 0);
 	DEBUG(8,("put name [%s] from [%s] into dir struct\n",buf+30, fname));
-	return True;
+}
+
+static bool mangle_mask_match(connection_struct *conn,
+			      const char *filename,
+			      const char *mask)
+{
+	char mname[13];
+
+	if (!name_to_8_3(filename, mname, False, conn->params)) {
+		return False;
+	}
+	return mask_match_search(mname, mask, False);
+}
+
+/****************************************************************************
+ Get an 8.3 directory entry.
+****************************************************************************/
+
+static bool smbd_dirptr_8_3_match_fn(TALLOC_CTX *ctx,
+				     void *private_data,
+				     const char *dname,
+				     const char *mask,
+				     char **_fname)
+{
+	connection_struct *conn = (connection_struct *)private_data;
+
+	if ((strcmp(mask, "*.*") == 0) ||
+	    mask_match_search(dname, mask, false) ||
+	    mangle_mask_match(conn, dname, mask)) {
+		char mname[13];
+		const char *fname;
+		/*
+		 * Ensure we can push the original name as UCS2. If
+		 * not, then just don't return this name.
+		 */
+		NTSTATUS status;
+		size_t ret_len = 0;
+		size_t len = (strlen(dname) + 2) * 4; /* Allow enough space. */
+		uint8_t *tmp = talloc_array(talloc_tos(), uint8_t, len);
+
+		status = srvstr_push(NULL,
+				     FLAGS2_UNICODE_STRINGS,
+				     tmp,
+				     dname,
+				     len,
+				     STR_TERMINATE,
+				     &ret_len);
+
+		TALLOC_FREE(tmp);
+
+		if (!NT_STATUS_IS_OK(status)) {
+			return false;
+		}
+
+		if (!mangle_is_8_3(dname, false, conn->params)) {
+			bool ok =
+				name_to_8_3(dname, mname, false, conn->params);
+			if (!ok) {
+				return false;
+			}
+			fname = mname;
+		} else {
+			fname = dname;
+		}
+
+		*_fname = talloc_strdup(ctx, fname);
+		if (*_fname == NULL) {
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+static bool smbd_dirptr_8_3_mode_fn(TALLOC_CTX *ctx,
+				    void *private_data,
+				    struct files_struct *dirfsp,
+				    struct smb_filename *smb_fname,
+				    bool get_dosmode,
+				    uint32_t *_mode)
+{
+	if (*_mode & FILE_ATTRIBUTE_REPARSE_POINT) {
+		/*
+		 * Don't show symlinks/special files to old clients
+		 */
+		return false;
+	}
+
+	if (get_dosmode) {
+		SMB_ASSERT(smb_fname != NULL);
+		*_mode = fdos_mode(smb_fname->fsp);
+		if (smb_fname->fsp != NULL) {
+			smb_fname->st = smb_fname->fsp->fsp_name->st;
+		}
+	}
+	return true;
+}
+
+static bool get_dir_entry(TALLOC_CTX *ctx,
+			  connection_struct *conn,
+			  struct dptr_struct *dirptr,
+			  const char *mask,
+			  uint32_t dirtype,
+			  char **_fname,
+			  off_t *_size,
+			  uint32_t *_mode,
+			  struct timespec *_date,
+			  bool check_descend,
+			  bool ask_sharemode)
+{
+	char *fname = NULL;
+	struct smb_filename *smb_fname = NULL;
+	uint32_t mode = 0;
+	bool ok;
+
+	ok = smbd_dirptr_get_entry(ctx,
+				   dirptr,
+				   mask,
+				   dirtype,
+				   check_descend,
+				   ask_sharemode,
+				   true,
+				   smbd_dirptr_8_3_match_fn,
+				   smbd_dirptr_8_3_mode_fn,
+				   conn,
+				   &fname,
+				   &smb_fname,
+				   &mode);
+	if (!ok) {
+		return false;
+	}
+
+	*_fname = talloc_move(ctx, &fname);
+	*_size = smb_fname->st.st_ex_size;
+	*_mode = mode;
+	*_date = smb_fname->st.st_ex_mtime;
+	TALLOC_FREE(smb_fname);
+	return true;
 }
 
 /****************************************************************************
@@ -1122,6 +1346,12 @@ void reply_search(struct smb_request *req)
 		struct smb_filename *smb_dname = NULL;
 		uint32_t ucf_flags = ucf_flags_from_smb_request(req);
 
+		nt_status = smb1_strip_dfs_path(ctx, &ucf_flags, &path);
+		if (!NT_STATUS_IS_OK(nt_status)) {
+			reply_nterror(req, nt_status);
+			goto out;
+		}
+
 		nt_status = filename_convert_smb1_search_path(ctx,
 					conn,
 					path,
@@ -1179,8 +1409,6 @@ void reply_search(struct smb_request *req)
 					NULL, /* req */
 					fsp, /* fsp */
 					True,
-					expect_close,
-					req->smbpid,
 					mask,
 					dirtype,
 					&fsp->dptr);
@@ -1191,7 +1419,7 @@ void reply_search(struct smb_request *req)
 			/*
 			 * Use NULL here for the first parameter (req)
 			 * as this is not a client visible handle so
-			 * can'tbe part of an SMB1 chain.
+			 * can't be part of an SMB1 chain.
 			 */
 			close_file_free(NULL, &fsp, NORMAL_CLOSE);
 			reply_nterror(req, nt_status);
@@ -1209,6 +1437,8 @@ void reply_search(struct smb_request *req)
 	} else {
 		int status_dirtype;
 		const char *dirpath;
+		unsigned int dptr_filenum;
+		uint32_t resume_key_index;
 
 		if (smbreq_bufrem(req, p) < 21) {
 			reply_nterror(req, NT_STATUS_INVALID_PARAMETER);
@@ -1221,10 +1451,56 @@ void reply_search(struct smb_request *req)
 			dirtype = status_dirtype;
 		}
 
-		fsp = dptr_fetch_fsp(sconn, status+12,&dptr_num);
+		dptr_num = CVAL(status, 12);
+		fsp = dptr_fetch_lanman2_fsp(sconn, dptr_num);
 		if (fsp == NULL) {
 			goto SearchEmpty;
 		}
+
+		resume_key_index = PULL_LE_U32(status, 13);
+		dptr_filenum = dptr_FileNumber(fsp->dptr);
+
+		if (resume_key_index > dptr_filenum) {
+			/*
+			 * Haven't seen this resume key yet. Just stop
+			 * the search.
+			 */
+			goto SearchEmpty;
+		}
+
+		if (resume_key_index < dptr_filenum) {
+			/*
+			 * The resume key was not the last one we
+			 * sent, rewind and skip to what the client
+			 * sent.
+			 */
+			dptr_RewindDir(fsp->dptr);
+
+			dptr_filenum = dptr_FileNumber(fsp->dptr);
+			SMB_ASSERT(dptr_filenum == 0);
+
+			while (dptr_filenum < resume_key_index) {
+				bool ok = get_dir_entry(
+					ctx,
+					conn,
+					fsp->dptr,
+					dptr_wcard(sconn, dptr_num),
+					dirtype,
+					&fname,
+					&size,
+					&mode,
+					&date,
+					check_descend,
+					false);
+				TALLOC_FREE(fname);
+				if (!ok) {
+					goto SearchEmpty;
+				}
+
+				dptr_filenum = dptr_FileNumber(fsp->dptr);
+			}
+		}
+
 		dirpath = dptr_path(sconn, dptr_num);
 		directory = talloc_strdup(ctx, dirpath);
 		if (!directory) {
@@ -1246,17 +1522,16 @@ void reply_search(struct smb_request *req)
 	if ((dirtype&0x1F) == FILE_ATTRIBUTE_VOLUME) {
 		char buf[DIR_STRUCT_SIZE];
 		memcpy(buf,status,21);
-		if (!make_dir_struct(ctx,buf,"???????????",volume_label(ctx, SNUM(conn)),
-				0,FILE_ATTRIBUTE_VOLUME,0,!allow_long_path_components)) {
-			reply_nterror(req, NT_STATUS_NO_MEMORY);
-			goto out;
-		}
-		dptr_fill(sconn, buf+12,dptr_num);
-		if (dptr_zero(buf+12) && (status_len==0)) {
-			numentries = 1;
-		} else {
-			numentries = 0;
-		}
+		make_dir_struct(ctx,
+				buf,
+				"???????????",
+				volume_label(ctx, SNUM(conn)),
+				0,
+				FILE_ATTRIBUTE_VOLUME,
+				0,
+				!allow_long_path_components);
+		SCVAL(buf, 12, dptr_num);
+		numentries = 1;
 		if (message_push_blob(&req->outbuf,
 				      data_blob_const(buf, sizeof(buf)))
 		    == -1) {
@@ -1281,6 +1556,7 @@ void reply_search(struct smb_request *req)
 
 		for (i=numentries;(i<maxentries) && !finished;i++) {
 			finished = !get_dir_entry(ctx,
+						  conn,
 						  fsp->dptr,
 						  mask,
 						  dirtype,
@@ -1293,20 +1569,19 @@ void reply_search(struct smb_request *req)
 			if (!finished) {
 				char buf[DIR_STRUCT_SIZE];
 				memcpy(buf,status,21);
-				if (!make_dir_struct(ctx,
-						buf,
-						mask,
-						fname,
-						size,
-						mode,
-						convert_timespec_to_time_t(date),
-						!allow_long_path_components)) {
-					reply_nterror(req, NT_STATUS_NO_MEMORY);
-					goto out;
-				}
-				if (!dptr_fill(sconn, buf+12,dptr_num)) {
-					break;
-				}
+				make_dir_struct(
+					ctx,
+					buf,
+					mask,
+					fname,
+					size,
+					mode,
+					convert_timespec_to_time_t(date),
+					!allow_long_path_components);
+				SCVAL(buf, 12, dptr_num);
+				PUSH_LE_U32(buf,
+					    13,
+					    dptr_FileNumber(fsp->dptr));
 				if (message_push_blob(&req->outbuf,
 						      data_blob_const(buf, sizeof(buf)))
 				    == -1) {
@@ -1315,6 +1590,7 @@ void reply_search(struct smb_request *req)
 				}
 				numentries++;
 			}
+			TALLOC_FREE(fname);
 		}
 	}
 
@@ -1391,7 +1667,6 @@ void reply_search(struct smb_request *req)
 void reply_fclose(struct smb_request *req)
 {
 	int status_len;
-	char status[21];
 	int dptr_num= -2;
 	const char *p;
 	char *path = NULL;
@@ -1439,9 +1714,9 @@ void reply_fclose(struct smb_request *req)
 		return;
 	}
 
-	memcpy(status,p,21);
+	dptr_num = CVAL(p, 12);
 
-	fsp = dptr_fetch_fsp(sconn, status+12,&dptr_num);
+	fsp = dptr_fetch_lanman2_fsp(sconn, dptr_num);
 	if(fsp != NULL) {
 		/*  Close the file - we know it's gone */
 		close_file_free(NULL, &fsp, NORMAL_CLOSE);
@@ -1515,6 +1790,11 @@ void reply_open(struct smb_request *req)
 
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
+	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
 	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
@@ -1711,6 +1991,11 @@ void reply_open_and_X(struct smb_request *req)
 
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
+	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
 	}
 
 	status = filename_convert_dirfsp(ctx,
@@ -2144,6 +2429,11 @@ void reply_mknew(struct smb_request *req)
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
 
 	status = filename_convert_dirfsp(ctx,
 					 conn,
@@ -2294,6 +2584,12 @@ void reply_ctemp(struct smb_request *req)
 		if (ucf_flags & UCF_GMT_PATHNAME) {
 			extract_snapshot_token(fname, &twrp);
 		}
+		status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+		if (!NT_STATUS_IS_OK(status)) {
+			reply_nterror(req, status);
+			goto out;
+		}
+
 		status = filename_convert_dirfsp(ctx,
 						 conn,
 						 fname,
@@ -2441,6 +2737,11 @@ void reply_unlink(struct smb_request *req)
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(name, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &name);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 name,
@@ -2530,12 +2831,14 @@ static void reply_readbraw_error(struct smbXsrv_connection *xconn)
  Ensure we don't use sendfile if server smb signing is active.
 ********************************************************************/
 
-static bool lp_use_sendfile(int snum, struct smb1_signing_state *signing_state)
+static bool lp_use_sendfile(struct smbXsrv_connection *xconn,
+			    int snum,
+			    struct smb1_signing_state *signing_state)
 {
 	bool sign_active = false;
 
 	/* Using sendfile blows the brains out of any DOS or Win9x TCP stack... JRA. */
-	if (get_Protocol() < PROTOCOL_NT1) {
+	if (xconn->protocol < PROTOCOL_NT1) {
 		return false;
 	}
 	if (signing_state) {
@@ -2561,7 +2864,7 @@ static void send_file_readbraw(connection_struct *conn,
 	ssize_t ret=0;
 
 	/*
-	 * We can only use sendfile on a non-chained packet 
+	 * We can only use sendfile on a non-chained packet
 	 * but we can use on a non-oplocked file. tridge proved this
 	 * on a train in Germany :-). JRA.
 	 * reply_readbraw has already checked the length.
@@ -2570,7 +2873,7 @@ static void send_file_readbraw(connection_struct *conn,
 	if ( !req_is_in_chain(req) &&
 	     (nread > 0) &&
 	     !fsp_is_alternate_stream(fsp) &&
-	     lp_use_sendfile(SNUM(conn), xconn->smb1.signing_state) ) {
+	     lp_use_sendfile(xconn, SNUM(conn), xconn->smb1.signing_state) ) {
 		ssize_t sendfile_read = -1;
 		char header[4];
 		DATA_BLOB header_blob;
@@ -2872,7 +3175,7 @@ void reply_lockread(struct smb_request *req)
 
 	/*
 	 * NB. Discovered by Menny Hamburger at Mainsoft. This is a core+
-	 * protocol request that predates the read/write lock concept. 
+	 * protocol request that predates the read/write lock concept.
 	 * Thus instead of asking for a read lock here we need to ask
 	 * for a write lock. JRA.
 	 * Note that the requested lock size is unaffected by max_send.
@@ -2979,11 +3282,10 @@ static void reply_lockread_locked(struct tevent_req *subreq)
 
 send:
 	ok = smb1_srv_send(req->xconn,
-			  (char *)req->outbuf,
-			  true,
-			  req->seqnum+1,
-			  IS_CONN_ENCRYPTED(req->conn),
-			  NULL);
+			   (char *)req->outbuf,
+			   true,
+			   req->seqnum + 1,
+			   IS_CONN_ENCRYPTED(req->conn));
 	if (!ok) {
 		exit_server_cleanly("reply_lock_done: smb1_srv_send failed.");
 	}
@@ -3155,7 +3457,7 @@ static void send_file_readX(connection_struct *conn, struct smb_request *req,
 	if (!req_is_in_chain(req) &&
 	    !req->encrypted &&
 	    !fsp_is_alternate_stream(fsp) &&
-	    lp_use_sendfile(SNUM(conn), xconn->smb1.signing_state) ) {
+	    lp_use_sendfile(xconn, SNUM(conn), xconn->smb1.signing_state) ) {
 		uint8_t headerbuf[smb_size + 12 * 2 + 1 /* padding byte */];
 		DATA_BLOB header;
 
@@ -3263,8 +3565,6 @@ static void send_file_readX(connection_struct *conn, struct smb_request *req,
 			}
 		}
 		/* No outbuf here means successful sendfile. */
-		SMB_PERFCOUNT_SET_MSGLEN_OUT(&req->pcd, nread);
-		SMB_PERFCOUNT_END(&req->pcd);
 		goto out;
 	}
 
@@ -3640,7 +3940,7 @@ void reply_writebraw(struct smb_request *req)
 	/* We have to deal with slightly different formats depending
 		on whether we are using the core+ or lanman1.0 protocol */
 
-	if(get_Protocol() <= PROTOCOL_COREPLUS) {
+	if(xconn->protocol <= PROTOCOL_COREPLUS) {
 		numtowrite = SVAL(smb_buf_const(req->inbuf),-2);
 		data = smb_buf_const(req->inbuf);
 	} else {
@@ -3705,15 +4005,15 @@ void reply_writebraw(struct smb_request *req)
 	 * it to send more bytes */
 
 	memcpy(buf, req->inbuf, smb_size);
-	srv_smb1_set_message(buf,get_Protocol()>PROTOCOL_COREPLUS?1:0,0,True);
+	srv_smb1_set_message(buf,xconn->protocol>PROTOCOL_COREPLUS?1:0,0,True);
 	SCVAL(buf,smb_com,SMBwritebraw);
 	SSVALS(buf,smb_vwv0,0xFFFF);
 	show_msg(buf);
 	if (!smb1_srv_send(req->xconn,
-			  buf,
-			  false, 0, /* no signing */
-			  IS_CONN_ENCRYPTED(conn),
-			  &req->pcd)) {
+			   buf,
+			   false,
+			   0, /* no signing */
+			   IS_CONN_ENCRYPTED(conn))) {
 		exit_server_cleanly("reply_writebraw: smb1_srv_send "
 			"failed.");
 	}
@@ -4705,6 +5005,7 @@ static void reply_exit_done(struct tevent_req *req)
 		reply_force_doserror(smb1req, ERRSRV, ERRinvnid);
 		smb_request_done(smb1req);
 		END_PROFILE(SMBexit);
+		return;
 	}
 
 	/*
@@ -4744,6 +5045,7 @@ static void reply_exit_done(struct tevent_req *req)
 			reply_force_doserror(smb1req, ERRSRV, ERRinvnid);
 			smb_request_done(smb1req);
 			END_PROFILE(SMBexit);
+			return;
 		}
 		close_file_free(NULL, &fsp, SHUTDOWN_CLOSE);
 	}
@@ -5165,11 +5467,10 @@ static void reply_lock_done(struct tevent_req *subreq)
 	}
 
 	ok = smb1_srv_send(req->xconn,
-			  (char *)req->outbuf,
-			  true,
-			  req->seqnum+1,
-			  IS_CONN_ENCRYPTED(req->conn),
-			  NULL);
+			   (char *)req->outbuf,
+			   true,
+			   req->seqnum + 1,
+			   IS_CONN_ENCRYPTED(req->conn));
 	if (!ok) {
 		exit_server_cleanly("reply_lock_done: smb1_srv_send failed.");
 	}
@@ -5455,14 +5756,10 @@ static void reply_tdis_done(struct tevent_req *req)
 void reply_echo(struct smb_request *req)
 {
 	connection_struct *conn = req->conn;
-	struct smb_perfcount_data local_pcd;
-	struct smb_perfcount_data *cur_pcd;
 	int smb_reverb;
 	int seq_num;
 
 	START_PROFILE(SMBecho);
-
-	smb_init_perfcount_data(&local_pcd);
 
 	if (req->wct < 1) {
 		reply_nterror(req, NT_STATUS_INVALID_PARAMETER);
@@ -5486,22 +5783,14 @@ void reply_echo(struct smb_request *req)
 
 	for (seq_num = 1 ; seq_num <= smb_reverb ; seq_num++) {
 
-		/* this makes sure we catch the request pcd */
-		if (seq_num == smb_reverb) {
-			cur_pcd = &req->pcd;
-		} else {
-			SMB_PERFCOUNT_COPY_CONTEXT(&req->pcd, &local_pcd);
-			cur_pcd = &local_pcd;
-		}
-
 		SSVAL(req->outbuf,smb_vwv0,seq_num);
 
 		show_msg((char *)req->outbuf);
 		if (!smb1_srv_send(req->xconn,
-				(char *)req->outbuf,
-				true, req->seqnum+1,
-				IS_CONN_ENCRYPTED(conn)||req->encrypted,
-				cur_pcd))
+				   (char *)req->outbuf,
+				   true,
+				   req->seqnum + 1,
+				   IS_CONN_ENCRYPTED(conn) || req->encrypted))
 			exit_server_cleanly("reply_echo: smb1_srv_send failed.");
 	}
 
@@ -5880,6 +6169,12 @@ void reply_mkdir(struct smb_request *req)
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(directory, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &directory);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
+
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 directory,
@@ -5956,6 +6251,12 @@ void reply_rmdir(struct smb_request *req)
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(directory, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &directory);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
+
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 directory,
@@ -6101,6 +6402,11 @@ void reply_mv(struct smb_request *req)
 	if (src_ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(name, &src_twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &src_ucf_flags, &name);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 name,
@@ -6121,6 +6427,11 @@ void reply_mv(struct smb_request *req)
 
 	if (dst_ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(newname, &dst_twrp);
+	}
+	status = smb1_strip_dfs_path(ctx, &dst_ucf_flags, &newname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
 	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
@@ -6553,11 +6864,10 @@ static void reply_lockingx_done(struct tevent_req *subreq)
 	}
 
 	ok = smb1_srv_send(req->xconn,
-			  (char *)req->outbuf,
-			  true,
-			  req->seqnum+1,
-			  IS_CONN_ENCRYPTED(req->conn),
-			  NULL);
+			   (char *)req->outbuf,
+			   true,
+			   req->seqnum + 1,
+			   IS_CONN_ENCRYPTED(req->conn));
 	if (!ok) {
 		exit_server_cleanly("reply_lock_done: smb1_srv_send failed.");
 	}
@@ -6635,7 +6945,7 @@ void reply_setattrE(struct smb_request *req)
 
 	reply_smb1_outbuf(req, 0, 0);
 
-	/* 
+	/*
 	 * Patch from Ray Frush <frush@engr.colostate.edu>
 	 * Sometimes times are sent as zero - ignore them.
 	 */

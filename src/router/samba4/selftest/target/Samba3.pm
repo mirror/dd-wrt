@@ -1194,7 +1194,7 @@ sub setup_admem_idmap_autorid
 	idmap config * : range = 1000000-19999999
 	idmap config * : rangesize = 1000000
 
-	# Prevent overridding the provisioned lib/krb5.conf which sets certain
+	# Prevent overriding the provisioned lib/krb5.conf which sets certain
 	# values required for tests to succeed
 	create krb5 conf = no
 ";
@@ -1290,10 +1290,12 @@ sub setup_ad_member_idmap_rid
 	idmap config * : range = 1000000-1999999
 	idmap config $dcvars->{DOMAIN} : backend = rid
 	idmap config $dcvars->{DOMAIN} : range = 2000000-2999999
-	# Prevent overridding the provisioned lib/krb5.conf which sets certain
+	# Prevent overriding the provisioned lib/krb5.conf which sets certain
 	# values required for tests to succeed
 	create krb5 conf = no
         map to guest = bad user
+	winbind expand groups = 10
+	server signing = required
 ";
 
 	my $ret = $self->provision(
@@ -1390,6 +1392,7 @@ sub setup_ad_member_idmap_ad
 	idmap config $dcvars->{DOMAIN} : range = 2000000-2999999
 	idmap config $dcvars->{DOMAIN} : unix_primary_group = yes
 	idmap config $dcvars->{DOMAIN} : unix_nss_info = yes
+	idmap config $dcvars->{DOMAIN} : deny ous = \"ou=sub,DC=samba2008r2,DC=example,DC=com\"
 	idmap config $dcvars->{TRUST_DOMAIN} : backend = ad
 	idmap config $dcvars->{TRUST_DOMAIN} : range = 2000000-2999999
 	gensec_gssapi:requested_life_time = 5
@@ -1815,9 +1818,6 @@ sub setup_fileserver
 	my $force_user_valid_users_dir = "$share_dir/force_user_valid_users";
 	push(@dirs, $force_user_valid_users_dir);
 
-	my $smbget_sharedir="$share_dir/smbget";
-	push(@dirs,$smbget_sharedir);
-
 	my $tarmode_sharedir="$share_dir/tarmode";
 	push(@dirs,$tarmode_sharedir);
 
@@ -1916,10 +1916,6 @@ sub setup_fileserver
 	force group = everyone
 	write list = force_user
 
-[smbget]
-	path = $smbget_sharedir
-	comment = smb username is [%U]
-	guest ok = yes
 [ign_sysacls]
 	path = $share_dir
 	comment = ignore system acls
@@ -2273,6 +2269,7 @@ sub setup_maptoguest
 	print "PROVISIONING maptoguest...";
 
 	my $options = "
+domain logons = yes
 map to guest = bad user
 ntlm auth = yes
 server min protocol = LANMAN1
@@ -2296,6 +2293,7 @@ server min protocol = LANMAN1
 	if (not $self->check_or_start(
 		env_vars => $vars,
 		nmbd => "yes",
+		winbindd => "yes",
 		smbd => "yes")) {
 	       return undef;
 	}
@@ -2652,6 +2650,9 @@ sub provision($$)
 	my $fruit_resource_stream_shrdir="$shrdir/fruit_resource_stream";
 	push(@dirs,$fruit_resource_stream_shrdir);
 
+	my $smbget_sharedir="$shrdir/smbget";
+	push(@dirs, $smbget_sharedir);
+
 	# this gets autocreated by winbindd
 	my $wbsockdir="$prefix_abs/wbsock";
 
@@ -2859,8 +2860,12 @@ sub provision($$)
 	lock directory = $lockdir
 	log file = $logdir/log.\%m
 	log level = $server_log_level
+	winbind debug traceid = yes
 	debug pid = yes
         max log size = 0
+
+	debug syslog format = always
+	debug hires timestamp = yes
 
 	state directory = $lockdir
 	cache directory = $lockdir
@@ -3028,6 +3033,11 @@ sub provision($$)
 	path = $msdfs_shrdir
 	msdfs root = yes
 	msdfs shuffle referrals = yes
+	guest ok = yes
+[msdfs-share-wl]
+	path = $msdfs_shrdir
+	msdfs root = yes
+	wide links = yes
 	guest ok = yes
 [msdfs-share2]
 	path = $msdfs_shrdir2
@@ -3258,7 +3268,7 @@ sub provision($$)
 
 [fsrvp_share]
 	path = $fsrvp_shrdir
-	comment = fake shapshots using rsync
+	comment = fake snapshots using rsync
 	vfs objects = shell_snap shadow_copy2
 	shell_snap:check path command = $fake_snap_pl --check
 	shell_snap:create command = $fake_snap_pl --create
@@ -3549,6 +3559,11 @@ sub provision($$)
 	copy = tmpguest
 	server addresses = $server_ipv6
 
+[smbget]
+	path = $smbget_sharedir
+	comment = smb username is [%U]
+	guest ok = yes
+
 include = $aliceconfdir/%U.conf
 	";
 
@@ -3678,7 +3693,7 @@ jacknomappergroup:x:$gid_jacknomapper:jacknomapper
 	$createuser_env{NSS_WRAPPER_PASSWD} = $nss_wrapper_passwd;
 	$createuser_env{NSS_WRAPPER_GROUP} = $nss_wrapper_group;
 	$createuser_env{NSS_WRAPPER_HOSTS} = $nss_wrapper_hosts;
-	$createuser_env{NSS_WRAPPER_HOSTNAME} = "${hostname}.samba.example.com";
+	$createuser_env{NSS_WRAPPER_HOSTNAME} = "${hostname}.${dns_domain}";
 	if ($ENV{SAMBA_DNS_FAKING}) {
 		$createuser_env{RESOLV_WRAPPER_HOSTS} = $dns_host_file;
 	} else {
@@ -3732,7 +3747,7 @@ jacknomappergroup:x:$gid_jacknomapper:jacknomapper
 	$ret{NSS_WRAPPER_PASSWD} = $nss_wrapper_passwd;
 	$ret{NSS_WRAPPER_GROUP} = $nss_wrapper_group;
 	$ret{NSS_WRAPPER_HOSTS} = $nss_wrapper_hosts;
-	$ret{NSS_WRAPPER_HOSTNAME} = "${hostname}.samba.example.com";
+	$ret{NSS_WRAPPER_HOSTNAME} = "${hostname}.${dns_domain}";
 	$ret{NSS_WRAPPER_MODULE_SO_PATH} = Samba::nss_wrapper_winbind_so_path($self);
 	$ret{NSS_WRAPPER_MODULE_FN_PREFIX} = "winbind";
 	if ($ENV{SAMBA_DNS_FAKING}) {

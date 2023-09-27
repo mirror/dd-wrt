@@ -782,7 +782,7 @@ again:
 					entry, gidNumber, memctx);
 		}
 		if ( ! tmp) { /* wow very strange entry, how did it match ? */
-			DEBUG(5, ("Unprobable match on (%s), no uidNumber, "
+			DEBUG(5, ("Improbable match on (%s), no uidNumber, "
 				  "nor gidNumber returned\n", sidstr));
 			TALLOC_FREE(sidstr);
 			continue;
@@ -852,7 +852,7 @@ again:
 
 	ret = NT_STATUS_OK;
 
-	/* mark all unknwon/expired ones as unmapped */
+	/* mark all unknown/expired ones as unmapped */
 	for (i = 0; ids[i]; i++) {
 		if (ids[i]->status != ID_MAPPED)
 			ids[i]->status = ID_UNMAPPED;
@@ -936,8 +936,7 @@ again:
 		bidx = idx;
 		for (i = 0; (i < IDMAP_LDAP_MAX_IDS) && ids[idx]; i++, idx++) {
 			struct dom_sid_buf buf;
-			filter = talloc_asprintf_append_buffer(filter, "(%s=%s)",
-					LDAP_ATTRIBUTE_SID,
+			filter = talloc_asprintf_append_buffer(filter, "("LDAP_ATTRIBUTE_SID"=%s)",
 					dom_sid_str_buf(ids[idx]->sid, &buf));
 			CHECK_ALLOC_DONE(filter);
 		}

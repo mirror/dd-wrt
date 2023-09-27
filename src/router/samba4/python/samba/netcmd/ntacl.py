@@ -70,7 +70,7 @@ def get_local_domain_sid(lp):
 class cmd_ntacl_set(Command):
     """Set ACLs on a file."""
 
-    synopsis = "%prog <acl> <file> [options]"
+    synopsis = "%prog <acl> <path> [options]"
 
     takes_optiongroups = {
         "sambaopts": options.SambaOptions,
@@ -79,21 +79,25 @@ class cmd_ntacl_set(Command):
     }
 
     takes_options = [
-        Option("-q", "--quiet", help="Be quiet", action="store_true"),
+        # --quiet is not used at all...
+        Option("-q", "--quiet", help=Option.SUPPRESS_HELP, action="store_true"),
+        Option("-v", "--verbose", help="Be verbose", action="store_true"),
         Option("--xattr-backend", type="choice", help="xattr backend type (native fs or tdb)",
                choices=["native", "tdb"]),
         Option("--eadb-file", help="Name of the tdb file where attributes are stored", type="string"),
         Option("--use-ntvfs", help="Set the ACLs directly to the TDB or xattr for use with the ntvfs file server", action="store_true"),
         Option("--use-s3fs", help="Set the ACLs for use with the default s3fs file server via the VFS layer", action="store_true"),
+        Option("--recursive", help="Set the ACLs for directories and their contents recursively", action="store_true"),
+        Option("--follow-symlinks", help="Follow symlinks", action="store_true"),
         Option("--service", help="Name of the smb.conf service to use when applying the ACLs", type="string")
     ]
 
-    takes_args = ["acl", "file"]
+    takes_args = ["acl", "path"]
 
-    def run(self, acl, file, use_ntvfs=False, use_s3fs=False,
-            quiet=False, xattr_backend=None, eadb_file=None,
+    def run(self, acl, path, use_ntvfs=False, use_s3fs=False,
+            quiet=False, verbose=False, xattr_backend=None, eadb_file=None,
             credopts=None, sambaopts=None, versionopts=None,
-            service=None):
+            recursive=False, follow_symlinks=False, service=None):
         logger = self.get_logger()
         lp = sambaopts.get_loadparm()
         domain_sid = get_local_domain_sid(lp)
@@ -103,15 +107,41 @@ class cmd_ntacl_set(Command):
         elif use_s3fs:
             use_ntvfs = False
 
-        setntacl(lp,
-                 file,
-                 acl,
-                 str(domain_sid),
-                 system_session_unix(),
-                 xattr_backend,
-                 eadb_file,
-                 use_ntvfs=use_ntvfs,
-                 service=service)
+        def _setntacl_path(_path):
+            if not follow_symlinks and os.path.islink(_path):
+                if recursive:
+                    self.outf.write("ignored symlink: %s\n" % _path)
+                    return
+                raise CommandError("symlink: %s: requires --follow-symlinks" % (_path))
+
+            if verbose:
+                if os.path.islink(_path):
+                    self.outf.write("symlink: %s\n" % _path)
+                elif os.path.isdir(_path):
+                    self.outf.write("dir: %s\n" % _path)
+                else:
+                    self.outf.write("file: %s\n" % _path)
+            try:
+                return setntacl(lp,
+                                _path,
+                                acl,
+                                str(domain_sid),
+                                system_session_unix(),
+                                xattr_backend,
+                                eadb_file,
+                                use_ntvfs=use_ntvfs,
+                                service=service)
+            except Exception as e:
+                raise CommandError("Could not set acl for %s: %s" % (_path, e))
+
+        _setntacl_path(path)
+
+        if recursive and os.path.isdir(path):
+            for root, dirs, files in os.walk(path, followlinks=follow_symlinks):
+                for name in files:
+                    _setntacl_path(os.path.join(root, name))
+                for name in dirs:
+                    _setntacl_path(os.path.join(root, name))
 
         if use_ntvfs:
             logger.warning("Please note that POSIX permissions have NOT been changed, only the stored NT ACL")
@@ -234,12 +264,12 @@ class cmd_ntacl_changedomsid(Command):
             action="store_true"),
     ]
 
-    takes_args = ["old_domain_sid", "new_domain_sid", "file"]
+    takes_args = ["old_domain_sid", "new_domain_sid", "path"]
 
     def run(self,
             old_domain_sid_str,
             new_domain_sid_str,
-            file,
+            path,
             use_ntvfs=False,
             use_s3fs=False,
             service=None,
@@ -274,20 +304,31 @@ class cmd_ntacl_changedomsid(Command):
             raise CommandError("Could not parse old sid %s: %s" %
                                (new_domain_sid_str, e))
 
-        def changedom_sids(file):
+        def changedom_sids(_path):
+            if not follow_symlinks and os.path.islink(_path):
+                if recursive:
+                    self.outf.write("ignored symlink: %s\n" % _path)
+                    return
+                raise CommandError("symlink: %s: requires --follow-symlinks" % (_path))
+
             if verbose:
-                self.outf.write("file: %s\n" % file)
+                if os.path.islink(_path):
+                    self.outf.write("symlink: %s\n" % _path)
+                elif os.path.isdir(_path):
+                    self.outf.write("dir: %s\n" % _path)
+                else:
+                    self.outf.write("file: %s\n" % _path)
 
             try:
                 acl = getntacl(lp,
-                               file,
+                               _path,
                                system_session_unix(),
                                xattr_backend,
                                eadb_file,
                                direct_db_access=use_ntvfs,
                                service=service)
             except Exception as e:
-                raise CommandError("Could not get acl for %s: %s" % (file, e))
+                raise CommandError("Could not get acl for %s: %s" % (_path, e))
 
             orig_sddl = acl.as_sddl(domain_sid)
             if verbose:
@@ -320,7 +361,7 @@ class cmd_ntacl_changedomsid(Command):
 
             try:
                 setntacl(lp,
-                         file,
+                         _path,
                          acl,
                          new_domain_sid,
                          system_session_unix(),
@@ -329,19 +370,19 @@ class cmd_ntacl_changedomsid(Command):
                          use_ntvfs=use_ntvfs,
                          service=service)
             except Exception as e:
-                raise CommandError("Could not set acl for %s: %s" % (file, e))
+                raise CommandError("Could not set acl for %s: %s" % (_path, e))
 
-        def recursive_changedom_sids(file):
-            for root, dirs, files in os.walk(file, followlinks=follow_symlinks):
+        def recursive_changedom_sids(_path):
+            for root, dirs, files in os.walk(_path, followlinks=follow_symlinks):
                 for f in files:
                     changedom_sids(os.path.join(root, f))
 
                 for d in dirs:
                     changedom_sids(os.path.join(root, d))
 
-        changedom_sids(file)
-        if recursive and os.path.isdir(file):
-            recursive_changedom_sids(file)
+        changedom_sids(path)
+        if recursive and os.path.isdir(path):
+            recursive_changedom_sids(path)
 
         if use_ntvfs:
             logger.warning("Please note that POSIX permissions have NOT been "

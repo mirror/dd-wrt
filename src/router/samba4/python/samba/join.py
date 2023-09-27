@@ -50,7 +50,7 @@ import tempfile
 from collections import OrderedDict
 from samba.common import get_string
 from samba.netcmd import CommandError
-from samba import dsdb
+from samba import dsdb, functional_level
 
 
 class DCJoinException(Exception):
@@ -554,7 +554,12 @@ class DCJoinContext(object):
         nc_list = [ctx.base_dn, ctx.config_dn, ctx.schema_dn]
 
         if ctx.behavior_version >= samba.dsdb.DS_DOMAIN_FUNCTION_2003:
-            rec["msDS-Behavior-Version"] = str(samba.dsdb.DS_DOMAIN_FUNCTION_2008_R2)
+            # This allows an override via smb.conf or --option using
+            # "ad dc functional level" to make us seem like 2016 to
+            # join such a domain for (say) a migration, or to test the
+            # partially implemented 2016 support.
+            domainControllerFunctionality = functional_level.dc_level_from_lp(ctx.lp)
+            rec["msDS-Behavior-Version"] = str(domainControllerFunctionality)
 
         if ctx.behavior_version >= samba.dsdb.DS_DOMAIN_FUNCTION_2003:
             rec["msDS-HasDomainNCs"] = ctx.base_dn
@@ -921,11 +926,38 @@ class DCJoinContext(object):
 
         provision_fill(ctx.local_samdb, secrets_ldb,
                        ctx.logger, ctx.names, ctx.paths,
-                       dom_for_fun_level=DS_DOMAIN_FUNCTION_2003,
+                       dom_for_fun_level=ctx.behavior_version,
                        targetdir=ctx.targetdir, samdb_fill=FILL_SUBDOMAIN,
                        machinepass=ctx.acct_pass, serverrole="active directory domain controller",
                        lp=ctx.lp, hostip=ctx.names.hostip, hostip6=ctx.names.hostip6,
                        dns_backend=ctx.dns_backend, adminpass=ctx.adminpass)
+
+        if ctx.behavior_version >= samba.dsdb.DS_DOMAIN_FUNCTION_2012:
+            adprep_level = ctx.behavior_version
+
+            updates_allowed_overridden = False
+            if lp.get("dsdb:schema update allowed") is None:
+                lp.set("dsdb:schema update allowed", "yes")
+                print("Temporarily overriding 'dsdb:schema update allowed' setting")
+                updates_allowed_overridden = True
+
+            samdb.transaction_start()
+            try:
+                from samba.domain_update import DomainUpdate
+
+                domain = DomainUpdate(ctx.local_samdb, fix=True)
+                domain.check_updates_functional_level(adprep_level,
+                                                      samba.dsdb.DS_DOMAIN_FUNCTION_2008,
+                                                      update_revision=True)
+
+                samdb.transaction_commit()
+            except Exception as e:
+                samdb.transaction_cancel()
+                raise DCJoinException("DomainUpdate() failed: %s" % e)
+
+            if updates_allowed_overridden:
+                lp.set("dsdb:schema update allowed", "no")
+
         print("Provision OK for domain %s" % ctx.names.dnsdomain)
 
     def create_replicator(ctx, repl_creds, binding_options):
@@ -1023,7 +1055,7 @@ class DCJoinContext(object):
             print("Done with always replicated NC (base, config, schema)")
 
             # At this point we should already have an entry in the ForestDNS
-            # and DomainDNS NC (those under CN=Partions,DC=...) in order to
+            # and DomainDNS NC (those under CN=Partitions,DC=...) in order to
             # indicate that we hold a replica for this NC.
             for nc in (ctx.domaindns_zone, ctx.forestdns_zone):
                 if nc in ctx.nc_list:
@@ -1308,7 +1340,7 @@ class DCJoinContext(object):
             # Note: as RODC the invocationId is only stored
             # on the RODC itself, the other DCs never see it.
             #
-            # Thats is why we fix up the replPropertyMetaData stamp
+            # That's is why we fix up the replPropertyMetaData stamp
             # for the 'invocationId' attribute, we need to change
             # the 'version' to '0', this is what windows 2008r2 does as RODC
             #

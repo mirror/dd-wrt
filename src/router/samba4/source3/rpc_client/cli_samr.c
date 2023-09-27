@@ -476,7 +476,6 @@ NTSTATUS dcerpc_samr_chgpasswd_user4(struct dcerpc_binding_handle *h,
 				     const char *newpassword,
 				     NTSTATUS *presult)
 {
-#ifdef HAVE_GNUTLS_PBKDF2
 	struct lsa_String server, user_account;
 	uint8_t old_nt_key_data[16] = {0};
 	gnutls_datum_t old_nt_key = {
@@ -565,12 +564,9 @@ NTSTATUS dcerpc_samr_chgpasswd_user4(struct dcerpc_binding_handle *h,
 	data_blob_free(&ciphertext);
 
 	return status;
-#else /* HAVE_GNUTLS_PBKDF2 */
-	return NT_STATUS_NOT_IMPLEMENTED;
-#endif /* HAVE_GNUTLS_PBKDF2 */
 }
 
-/* This function returns the bizzare set of (max_entries, max_size) required
+/* This function returns the bizarre set of (max_entries, max_size) required
    for the QueryDisplayInfo RPC to actually work against a domain controller
    with large (10k and higher) numbers of users.  These values were
    obtained by inspection using ethereal and NT4 running User Manager. */

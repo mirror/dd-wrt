@@ -22,7 +22,6 @@ import drs_base
 from samba.dcerpc import drsuapi
 from samba import drs_utils
 import os
-import re
 import json
 import ldb
 import random
@@ -303,7 +302,6 @@ class SambaToolDrsShowReplTests(drs_base.DrsBaseTestCase):
                 os.environ.pop('NO_COLOR', None)
             else:
                 os.environ['NO_COLOR'] = old_no_color
-
 
     def test_samba_tool_showrepl_summary_forced_failure(self):
         """Tests 'samba-tool drs showrepl --summary' command when we break the

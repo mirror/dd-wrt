@@ -529,7 +529,7 @@ class TestDNSUpdates(DNSTest):
         self.assert_dns_rcode_equals(response, dns.DNS_RCODE_NXDOMAIN)
 
     def test_readd_record(self):
-        "Test if adding, deleting and then readding a records works"
+        "Test if adding, deleting and then re-adding a records works"
 
         NAME = "readdrec.%s" % self.get_dns_domain()
 
@@ -1221,7 +1221,9 @@ class TestZones(DNSTest):
                         Aging=int(bool(enable)),
                         AllowUpdate=dnsp.DNS_ZONE_UPDATE_UNSECURE)
 
-    def test_set_aging(self, enable=True, name='agingtest', txt=['test txt']):
+    def test_set_aging(self, enable=True, name='agingtest', txt=None):
+        if txt is None:
+            txt = ['test txt']
         self.set_aging(enable=True)
         settings = self.ldap_get_zone_settings()
         self.assertTrue(settings['aging_state'] is not None)

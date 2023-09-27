@@ -1,19 +1,19 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    SMB client generic functions
    Copyright (C) Andrew Tridgell 1994-1998
    Copyright (C) Jeremy Allison 2007.
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -61,7 +61,8 @@ struct GUID cli_state_client_guid;
 struct cli_state *cli_state_create(TALLOC_CTX *mem_ctx,
 				   int fd,
 				   const char *remote_name,
-				   int signing_state, int flags)
+				   enum smb_signing_setting signing_state,
+				   int flags)
 {
 	struct cli_state *cli = NULL;
 	bool use_spnego = lp_client_use_spnego();
@@ -119,7 +120,7 @@ struct cli_state *cli_state_create(TALLOC_CTX *mem_ctx,
 
 	/* Set the CLI_FORCE_DOSERR environment variable to test
 	   client routines using DOS errors instead of STATUS32
-	   ones.  This intended only as a temporary hack. */	
+	   ones.  This intended only as a temporary hack. */
 	if (getenv("CLI_FORCE_DOSERR")) {
 		force_dos_errors = true;
 	}
@@ -498,10 +499,11 @@ time_t cli_state_server_time(struct cli_state *cli)
 }
 
 struct cli_echo_state {
-	bool is_smb2;
+	uint8_t dummy;
 };
 
-static void cli_echo_done(struct tevent_req *subreq);
+static void cli_echo_done1(struct tevent_req *subreq);
+static void cli_echo_done2(struct tevent_req *subreq);
 
 struct tevent_req *cli_echo_send(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 				 struct cli_state *cli, uint16_t num_echos,
@@ -516,45 +518,35 @@ struct tevent_req *cli_echo_send(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 	}
 
 	if (smbXcli_conn_protocol(cli->conn) >= PROTOCOL_SMB2_02) {
-		state->is_smb2 = true;
-		subreq = smb2cli_echo_send(state, ev,
-					   cli->conn,
-					   cli->timeout);
-	} else {
-		subreq = smb1cli_echo_send(state, ev,
-					   cli->conn,
-					   cli->timeout,
-					   num_echos,
-					   data);
+		subreq = smb2cli_echo_send(
+			state, ev, cli->conn, cli->timeout);
+		if (tevent_req_nomem(subreq, req)) {
+			return tevent_req_post(req, ev);
+		}
+		tevent_req_set_callback(subreq, cli_echo_done2, req);
+		return req;
 	}
+
+	subreq = smb1cli_echo_send(
+		state, ev, cli->conn, cli->timeout, num_echos, data);
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}
-	tevent_req_set_callback(subreq, cli_echo_done, req);
+	tevent_req_set_callback(subreq, cli_echo_done1, req);
 
 	return req;
 }
 
-static void cli_echo_done(struct tevent_req *subreq)
+static void cli_echo_done1(struct tevent_req *subreq)
 {
-	struct tevent_req *req = tevent_req_callback_data(
-		subreq, struct tevent_req);
-	struct cli_echo_state *state = tevent_req_data(
-		req, struct cli_echo_state);
-	NTSTATUS status;
+	NTSTATUS status = smb1cli_echo_recv(subreq);
+	return tevent_req_simple_finish_ntstatus(subreq, status);
+}
 
-	if (state->is_smb2) {
-		status = smb2cli_echo_recv(subreq);
-	} else {
-		status = smb1cli_echo_recv(subreq);
-	}
-	TALLOC_FREE(subreq);
-	if (!NT_STATUS_IS_OK(status)) {
-		tevent_req_nterror(req, status);
-		return;
-	}
-
-	tevent_req_done(req);
+static void cli_echo_done2(struct tevent_req *subreq)
+{
+	NTSTATUS status = smb2cli_echo_recv(subreq);
+	return tevent_req_simple_finish_ntstatus(subreq, status);
 }
 
 /**

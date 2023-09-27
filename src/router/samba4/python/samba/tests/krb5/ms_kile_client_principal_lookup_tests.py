@@ -42,7 +42,7 @@ global_hexdump = False
 class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
     ''' Tests for MS-KILE client principal look-up
         See [MS-KILE]: Kerberos Protocol Extensions
-            secion 3.3.5.6.1 Client Principal Lookup
+            section 3.3.5.6.1 Client Principal Lookup
     '''
 
     def setUp(self):
@@ -50,10 +50,9 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
         self.do_asn1_print = global_asn1_print
         self.do_hexdump = global_hexdump
 
-    def check_pac(self, samdb, auth_data, dn, uc, name, upn=None):
+    def check_pac(self, samdb, auth_data, uc, name, upn=None):
 
         pac_data = self.get_pac_data(auth_data)
-        sid = self.get_objectSid(samdb, dn)
         if upn is None:
             upn = "%s@%s" % (name, uc.get_realm().lower())
         if name.endswith('$'):
@@ -76,7 +75,7 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
             pac_data.upn,
             "pac_data = {%s}" % str(pac_data))
         self.assertEqual(
-            sid,
+            uc.get_sid(),
             pac_data.account_sid,
             "pac_data = {%s}" % str(pac_data))
 
@@ -129,13 +128,13 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=uc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the pac, and the ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
-        self.check_pac(samdb, enc_part['authorization-data'], dn, uc, user_name)
+        self.check_pac(samdb, enc_part['authorization-data'], uc, user_name)
         # check the crealm and cname
         cname = enc_part['cname']
         self.assertEqual(NT_PRINCIPAL, cname['name-type'])
@@ -187,13 +186,13 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, mc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=mc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the pac, and the ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
-        self.check_pac(samdb, enc_part['authorization-data'], dn, mc, mach_name + '$')
+        self.check_pac(samdb, enc_part['authorization-data'], mc, mach_name + '$')
         # check the crealm and cname
         cname = enc_part['cname']
         self.assertEqual(NT_PRINCIPAL, cname['name-type'])
@@ -251,13 +250,13 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=uc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the service ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
-        self.check_pac(samdb, enc_part['authorization-data'], dn, uc, upn_name)
+        self.check_pac(samdb, enc_part['authorization-data'], uc, upn_name)
         # check the crealm and cname
         cname = enc_part['cname']
         self.assertEqual(NT_PRINCIPAL, cname['name-type'])
@@ -323,7 +322,7 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc, expect_pac=False,
+            creds=uc, service_creds=mc, expect_pac=False,
             expect_edata=False,
             expected_error_mode=KDC_ERR_TGT_REVOKED)
         self.check_error_rep(rep, KDC_ERR_TGT_REVOKED)
@@ -382,14 +381,14 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=uc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the pac, and the ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
         self.check_pac(samdb,
-                       enc_part['authorization-data'], dn, uc, user_name)
+                       enc_part['authorization-data'], uc, user_name)
         # check the crealm and cname
         cname = enc_part['cname']
         self.assertEqual(NT_PRINCIPAL, cname['name-type'])
@@ -487,14 +486,14 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=uc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the pac, and the ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
         self.check_pac(
-            samdb, enc_part['authorization-data'], dn, uc, upn, upn=upn)
+            samdb, enc_part['authorization-data'], uc, upn, upn=upn)
         # check the crealm and cname
         cname = enc_part['cname']
         crealm = enc_part['crealm']
@@ -552,14 +551,14 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=uc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the pac, and the ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
         self.check_pac(
-            samdb, enc_part['authorization-data'], dn, uc, ename, upn=ename)
+            samdb, enc_part['authorization-data'], uc, ename, upn=ename)
         # check the crealm and cname
         cname = enc_part['cname']
         crealm = enc_part['crealm']
@@ -618,14 +617,14 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=uc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the pac, and the ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
         self.check_pac(
-            samdb, enc_part['authorization-data'], dn, mc, ename, upn=uname)
+            samdb, enc_part['authorization-data'], mc, ename, upn=uname)
         # check the crealm and cname
         cname = enc_part['cname']
         crealm = enc_part['crealm']
@@ -693,7 +692,7 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc, expect_pac=False,
+            creds=uc, service_creds=mc, expect_pac=False,
             expect_edata=False,
             expected_error_mode=KDC_ERR_TGT_REVOKED)
         self.check_error_rep(rep, KDC_ERR_TGT_REVOKED)
@@ -754,14 +753,14 @@ class MS_Kile_Client_Principal_Lookup_Tests(KDCBaseTest):
 
         (rep, enc_part) = self.tgs_req(
             cname, sname, uc.get_realm(), ticket, key, etype,
-            service_creds=mc)
+            creds=uc, service_creds=mc)
         self.check_tgs_reply(rep)
 
         # Check the contents of the pac, and the ticket
         ticket = rep['ticket']
         enc_part = self.decode_service_ticket(mc, ticket)
         self.check_pac(
-            samdb, enc_part['authorization-data'], dn, uc, uname, upn=uname)
+            samdb, enc_part['authorization-data'], uc, uname, upn=uname)
         # check the crealm and cname
         cname = enc_part['cname']
         self.assertEqual(NT_ENTERPRISE_PRINCIPAL, cname['name-type'])

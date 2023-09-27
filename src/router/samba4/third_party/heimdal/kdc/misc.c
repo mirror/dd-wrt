@@ -139,6 +139,8 @@ _kdc_db_fetch(krb5_context context,
     krb5_const_principal princ;
 
     *h = NULL;
+    if (db)
+        *db = NULL;
 
     if (!name_type_ok(context, config, principal))
         return HDB_ERR_NOENTRY;
@@ -329,6 +331,10 @@ _kdc_verify_checksum(krb5_context context,
  * tickets, policy is governed by whether the client explicitly requested
  * a PAC be omitted when requesting a TGT, or if the no-auth-data-reqd
  * flag is set on the service principal entry.
+ *
+ * However, when issuing a cross-realm TGT to an AD realm our PAC might not
+ * interoperate correctly.  Therefore we honor the no-auth-data-reqd HDB entry
+ * flag on cross-realm TGTs.
  */
 
 krb5_boolean

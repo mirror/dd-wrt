@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "05/31/2023" "Samba 4\&.18\&.3" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "09/04/2023" "Samba 4\&.19\&.0" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -863,6 +863,94 @@ Default:
 \fI\fIacl map full control\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
+ad dc functional level (G)
+.PP
+.RS 4
+The value of the parameter (a string) is the Active Directory functional level that this Domain Controller will claim to support\&.
+.sp
+Possible values are :
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB2008_R2\fR: Similar to Windows 2008 R2 Functional Level
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB2012\fR: Similar to Windows 2012 Functional Level
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB2012_R2\fR: Similar to Windows 2012 R2 Functional Level
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB2016\fR: Similar to Windows 2016 Functional Level
+.RE
+.sp
+.RE
+Normally this option should not be set as Samba will operate per the released functionality of the Samba Active Directory Domain Controller\&.
+.sp
+However to access incomplete features in domain functional level 2016 it may be useful to set this value, prior to upgrading the domain functional level\&.
+.sp
+If this is set manually, the protection against mismatching features between domain controllers is reduced, so all domain controllers should be running the same version of Samba, to ensure that behaviour as seen by the client is the same no matter which DC is contacted\&.
+.sp
+Setting this to
+\fB2016\fR
+will allow raising the domain functional level with
+samba\-tool domain level raise \-\-domain\-level=2016
+and provide access to Samba\*(Aqs Kerberos Claims and Dynamic Access Control feature\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+The Samba\*(Aqs Kerberos Claims and Dynamic Access Control features enabled with
+\fB2016\fR
+are incomplete in Samba 4\&.19\&.
+.sp .5v
+.RE
+Default:
+\fI\fIad dc functional level\fR\fR\fI = \fR\fI2008_R2\fR\fI \fR
+.sp
+Example:
+\fI\fIad dc functional level\fR\fR\fI = \fR\fI2016\fR\fI \fR
+.RE
+
 add group script (G)
 .PP
 .RS 4
@@ -1301,7 +1389,7 @@ Default:
 aio read size (S)
 .PP
 .RS 4
-If this integer parameter is set to a non\-zero value, Samba will read from files asynchronously when the request size is bigger than this value\&. Note that it happens only for non\-chained and non\-chaining reads and when not using write cache\&.
+If this integer parameter is set to a non\-zero value, Samba will read from files asynchronously when the request size is bigger than this value\&. Note that it happens only for non\-chained and non\-chaining reads\&.
 .sp
 The only reasonable values for this parameter are 0 (no async I/O) and 1 (always do async I/O)\&.
 .sp
@@ -1334,7 +1422,7 @@ Example:
 aio write size (S)
 .PP
 .RS 4
-If this integer parameter is set to a non\-zero value, Samba will write to files asynchronously when the request size is bigger than this value\&. Note that it happens only for non\-chained and non\-chaining reads and when not using write cache\&.
+If this integer parameter is set to a non\-zero value, Samba will write to files asynchronously when the request size is bigger than this value\&. Note that it happens only for non\-chained and non\-chaining writes\&.
 .sp
 The only reasonable values for this parameter are 0 (no async I/O) and 1 (always do async I/O)\&.
 .sp
@@ -2775,7 +2863,7 @@ That is, in the future, the current default of
 client use spnego = yes
 will be the enforced behaviour\&.
 .sp
-This variable controls whether Samba clients will try to use Simple and Protected NEGOciation (as specified by rfc2478) with supporting servers (including WindowsXP, Windows2000 and Samba 3\&.0) to agree upon an authentication mechanism\&. This enables Kerberos authentication in particular\&.
+This variable controls whether Samba clients will try to use Simple and Protected NEGOtiation (as specified by rfc2478) with supporting servers (including WindowsXP, Windows2000 and Samba 3\&.0) to agree upon an authentication mechanism\&. This enables Kerberos authentication in particular\&.
 .sp
 When
 \m[blue]\fBclient NTLMv2 auth\fR\m[]
@@ -3184,7 +3272,21 @@ Default:
 debug syslog format (G)
 .PP
 .RS 4
-With this option enabled, debug messages are printed in a single\-line format like that traditionally produced by syslog\&. The timestamp consists of an abbreviated month, space\-padded date, and time including seconds\&. This is followed by the hostname and the program name, with the process\-ID in square brackets\&.
+With this option enabled (\fByes\fR
+(alias
+\fBin_logs\fR) or
+\fBalways\fR), debug messages are printed in a single\-line format like that traditionally produced by syslog\&. The timestamp consists of an abbreviated month, space\-padded date, and time including seconds\&. This is followed by the hostname and the program name, with the process\-ID in square brackets\&.
+.sp
+The value
+\fBalways\fR
+produces this log format even to
+\fBSTDOUT\fR
+or
+\fBSTDERR\fR
+.sp
+The value
+\fBno\fR
+defers to other parameters and typically produces traditional two\-line Samba logs to log files\&.
 .sp
 If
 \m[blue]\fBdebug hires timestamp\fR\m[]
@@ -3603,15 +3705,6 @@ Example:
 \fI\fIdirectory mask\fR\fR\fI = \fR\fI0775\fR\fI \fR
 .RE
 
-directory name cache size (S)
-.PP
-.RS 4
-This parameter specifies the size of the directory name cache for SMB1 connections\&. It is not used for SMB2\&. It will be needed to turn this off for *BSD systems\&.
-.sp
-Default:
-\fI\fIdirectory name cache size\fR\fR\fI = \fR\fI100\fR\fI \fR
-.RE
-
 directory security mask (S)
 .PP
 .RS 4
@@ -3895,7 +3988,7 @@ Example:
 dos charset (G)
 .PP
 .RS 4
-DOS SMB clients assume the server has the same charset as they do\&. This option specifies which charset Samba should talk to DOS clients\&.
+DOS SMB clients assume the server has the same charset as they do\&. This option specifies which charset Samba should use to talk to DOS clients\&.
 .sp
 The default depends on which charsets you have installed\&. Samba tries to use charset 850 but falls back to ASCII in case it is not available\&. Run
 \fBtestparm\fR(1)
@@ -6040,7 +6133,7 @@ ldap group suffix (G)
 .RS 4
 This parameter specifies the suffix that is used for groups when these are added to the LDAP directory\&. If this parameter is unset, the value of
 \m[blue]\fBldap suffix\fR\m[]
-will be used instead\&. The suffix string is pre\-pended to the
+will be used instead\&. The suffix string is prepended to the
 \m[blue]\fBldap suffix\fR\m[]
 string so use a partial DN\&.
 .sp
@@ -6056,7 +6149,7 @@ ldap idmap suffix (G)
 .RS 4
 This parameters specifies the suffix that is used when storing idmap mappings\&. If this parameter is unset, the value of
 \m[blue]\fBldap suffix\fR\m[]
-will be used instead\&. The suffix string is pre\-pended to the
+will be used instead\&. The suffix string is prepended to the
 \m[blue]\fBldap suffix\fR\m[]
 string so use a partial DN\&.
 .sp
@@ -6072,7 +6165,7 @@ ldap machine suffix (G)
 .RS 4
 It specifies where machines should be added to the ldap tree\&. If this parameter is unset, the value of
 \m[blue]\fBldap suffix\fR\m[]
-will be used instead\&. The suffix string is pre\-pended to the
+will be used instead\&. The suffix string is prepended to the
 \m[blue]\fBldap suffix\fR\m[]
 string so use a partial DN\&.
 .sp
@@ -6435,7 +6528,7 @@ ldap user suffix (G)
 .RS 4
 This parameter specifies where users are added to the tree\&. If this parameter is unset, the value of
 \m[blue]\fBldap suffix\fR\m[]
-will be used instead\&. The suffix string is pre\-pended to the
+will be used instead\&. The suffix string is prepended to the
 \m[blue]\fBldap suffix\fR\m[]
 string so use a partial DN\&.
 .sp
@@ -7618,7 +7711,7 @@ This option takes the standard substitutions, allowing you to have separate logo
 .br
 Do not quote the value\&. Setting this as
 \(lq\e\e%N\eprofile\e%U\(rq
-will break profile handling\&. Where the tdbsam or ldapsam passdb backend is used, at the time the user account is created the value configured for this parameter is written to the passdb backend and that value will over\-ride the parameter value present in the smb\&.conf file\&. Any error present in the passdb backend account record must be editted using the appropriate tool (pdbedit on the command\-line, or any other locally provided system tool)\&.
+will break profile handling\&. Where the tdbsam or ldapsam passdb backend is used, at the time the user account is created the value configured for this parameter is written to the passdb backend and that value will over\-ride the parameter value present in the smb\&.conf file\&. Any error present in the passdb backend account record must be edited using the appropriate tool (pdbedit on the command\-line, or any other locally provided system tool)\&.
 .sp .5v
 .RE
 Note that this option is only useful if Samba is set up as a domain controller\&.
@@ -11273,7 +11366,7 @@ that a valid UNIX user must still exist as well as the account on the Domain Con
 .sp
 \fISERVER ROLE = CLASSIC PRIMARY DOMAIN CONTROLLER\fR
 .sp
-This mode of operation runs a classic Samba primary domain controller, providing domain logon services to Windows and Samba clients of an NT4\-like domain\&. Clients must be joined to the domain to create a secure, trusted path across the network\&. There must be only one PDC per NetBIOS scope (typcially a broadcast network or clients served by a single WINS server)\&.
+This mode of operation runs a classic Samba primary domain controller, providing domain logon services to Windows and Samba clients of an NT4\-like domain\&. Clients must be joined to the domain to create a secure, trusted path across the network\&. There must be only one PDC per NetBIOS scope (typically a broadcast network or clients served by a single WINS server)\&.
 .sp
 \fISERVER ROLE = CLASSIC BACKUP DOMAIN CONTROLLER\fR
 .sp
@@ -12193,8 +12286,6 @@ This is only available with
 \m[blue]\fBoplocks = yes\fR\m[]
 and
 \m[blue]\fBkernel oplocks = no\fR\m[]\&.
-.sp
-Note that the write cache won\*(Aqt be used for file handles with a smb2 write lease\&.
 .sp
 Default:
 \fI\fIsmb2 leases\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -13338,7 +13429,7 @@ Default:
 use mmap (G)
 .PP
 .RS 4
-This global parameter determines if the tdb internals of Samba can depend on mmap working correctly on the running system\&. Samba requires a coherent mmap/read\-write system memory cache\&. Currently only OpenBSD and HPUX do not have such a coherent cache, and on those platforms this parameter is overridden internally to be effeceively
+This global parameter determines if the tdb internals of Samba can depend on mmap working correctly on the running system\&. Samba requires a coherent mmap/read\-write system memory cache\&. Currently only OpenBSD and HPUX do not have such a coherent cache, and on those platforms this parameter is overridden internally to be effectively
 \fBno\fR\&. On all systems this parameter should be left alone\&. This parameter is provided to help the Samba developers track down problems with the tdb internal code\&.
 .sp
 Default:
@@ -14531,7 +14622,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.18\&.3 of the Samba suite\&.
+This man page is part of version 4\&.19\&.0 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

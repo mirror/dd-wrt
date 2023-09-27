@@ -50,7 +50,7 @@ bool dbgsetclass(int level, int cls);
 
 /*
  * Define all new debug classes here. A class is represented by an entry in
- * the DEBUGLEVEL_CLASS array. Index zero of this arrray is equivalent to the
+ * the DEBUGLEVEL_CLASS array. Index zero of this array is equivalent to the
  * old DEBUGLEVEL. Any source file that does NOT add the following lines:
  *
  *   #undef  DBGC_CLASS
@@ -113,7 +113,7 @@ bool dbgsetclass(int level, int cls);
  *
  * DEBUGLVL()
  *   If the 'file specific' debug class level >= level OR the system-wide
- *   DEBUGLEVEL (synomym for DEBUGLEVEL_CLASS[ DBGC_ALL ]) >= level then
+ *   DEBUGLEVEL (synonym for DEBUGLEVEL_CLASS[ DBGC_ALL ]) >= level then
  *   generate a header using the default macros for file, line, and
  *   function name. Returns True if the debug level was <= DEBUGLEVEL.
  *
@@ -121,7 +121,7 @@ bool dbgsetclass(int level, int cls);
  *
  * DEBUG()
  *   If the 'file specific' debug class level >= level OR the system-wide
- *   DEBUGLEVEL (synomym for DEBUGLEVEL_CLASS[ DBGC_ALL ]) >= level then
+ *   DEBUGLEVEL (synonym for DEBUGLEVEL_CLASS[ DBGC_ALL ]) >= level then
  *   generate a header using the default macros for file, line, and
  *   function name. Each call to DEBUG() generates a new header *unless* the
  *   previous debug output was unterminated (i.e. no '\n').
@@ -131,7 +131,7 @@ bool dbgsetclass(int level, int cls);
  *
  * DEBUGC()
  *   If the 'macro specified' debug class level >= level OR the system-wide
- *   DEBUGLEVEL (synomym for DEBUGLEVEL_CLASS[ DBGC_ALL ]) >= level then
+ *   DEBUGLEVEL (synonym for DEBUGLEVEL_CLASS[ DBGC_ALL ]) >= level then
  *   generate a header using the default macros for file, line, and
  *   function name. Each call to DEBUG() generates a new header *unless* the
  *   previous debug output was unterminated (i.e. no '\n').
@@ -344,12 +344,18 @@ enum debug_logtype {
 	DEBUG_CALLBACK = 5
 };
 
+enum debug_syslog_format {
+	DEBUG_SYSLOG_FORMAT_NO = 0,
+	DEBUG_SYSLOG_FORMAT_IN_LOGS = 1,
+	DEBUG_SYSLOG_FORMAT_ALWAYS = 2,
+};
+
 struct debug_settings {
 	size_t max_log_size;
 	bool timestamp_logs;
 	bool debug_prefix_timestamp;
 	bool debug_hires_timestamp;
-	bool debug_syslog_format;
+	enum debug_syslog_format debug_syslog_format;
 	bool debug_pid;
 	bool debug_uid;
 	bool debug_class;
@@ -396,5 +402,7 @@ uint64_t debug_traceid_set(uint64_t id);
 
 /* Get the current traceid. */
 uint64_t debug_traceid_get(void);
+
+size_t *debug_call_depth_addr(void);
 
 #endif /* _SAMBA_DEBUG_H */

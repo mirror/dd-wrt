@@ -24,6 +24,10 @@
 #ifndef _SAMBA_KDC_H_
 #define _SAMBA_KDC_H_
 
+#include "lib/replace/replace.h"
+#include "system/time.h"
+#include "libcli/util/ntstatus.h"
+
 struct samba_kdc_policy {
 	time_t svc_tkt_lifetime;
 	time_t usr_tkt_lifetime;
@@ -48,8 +52,6 @@ struct samba_kdc_db_context {
 	unsigned int my_krbtgt_number;
 	struct ldb_dn *krbtgt_dn;
 	struct samba_kdc_policy policy;
-	struct ldb_dn *fx_cookie_dn;
-	struct ldb_context *secrets_db;
 };
 
 struct samba_kdc_entry {
@@ -59,6 +61,8 @@ struct samba_kdc_entry {
 	struct ldb_message *msg;
 	struct ldb_dn *realm_dn;
 	struct auth_user_info_dc *user_info_dc;
+	const struct authn_kerberos_client_policy *client_policy;
+	const struct authn_server_policy *server_policy;
 	bool is_krbtgt;
 	bool is_rodc;
 	bool is_trust;

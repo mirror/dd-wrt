@@ -173,7 +173,7 @@ static const char *lpcfg_string(const char *s)
  * for code compatibility between existing Samba4 and Samba3 code.
  */
 
-/* this global context supports the lp_*() function varients */
+/* this global context supports the lp_*() function variants */
 static struct loadparm_context *global_loadparm_context;
 
 #define FN_GLOBAL_SUBSTITUTED_STRING(fn_name,var_name) \
@@ -2111,7 +2111,7 @@ bool lpcfg_set_option(struct loadparm_context *lp_ctx, const char *option)
 
 void lpcfg_print_parameter(struct parm_struct *p, void *ptr, FILE * f)
 {
-	/* For the seperation of lists values that we print below */
+	/* For the separation of lists values that we print below */
 	const char *list_sep = ", ";
 	int i;
 	switch (p->type)
@@ -3048,8 +3048,6 @@ struct loadparm_context *loadparm_init(TALLOC_CTX *mem_ctx)
 
 	lpcfg_do_global_parameter(lp_ctx, "lock spin time", "200");
 
-	lpcfg_do_global_parameter(lp_ctx, "directory name cache size", "100");
-
 	lpcfg_do_global_parameter(lp_ctx, "nmbd bind explicit broadcast", "yes");
 
 	lpcfg_do_global_parameter(lp_ctx, "init logon delay", "100");
@@ -3153,6 +3151,10 @@ struct loadparm_context *loadparm_init(TALLOC_CTX *mem_ctx)
 	lpcfg_do_global_parameter(lp_ctx,
 				  "rpc start on demand helpers",
 				  "yes");
+
+	lpcfg_do_global_parameter(lp_ctx,
+				  "ad dc functional level",
+				  "2008_R2");
 
 	for (i = 0; parm_table[i].label; i++) {
 		if (!(lp_ctx->flags[i] & FLAG_CMDLINE)) {
@@ -3361,7 +3363,7 @@ static bool lpcfg_load_internal(struct loadparm_context *lp_ctx,
 		setenv("SMB_CONF_PATH", filename, 1);
 
 		/* set the context used by the lp_*() function
-		   varients */
+		   variants */
 		global_loadparm_context = lp_ctx;
 		lp_ctx->loaded = true;
 	}

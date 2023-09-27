@@ -261,7 +261,7 @@ static int db_list_check_and_add(struct db_list *dblist,
 	/*
 	 * These flags are masked out because they are only set on a
 	 * node when a client attaches to that node, so they might not
-	 * be set yet.  They can't be passed as part of the attch, so
+	 * be set yet.  They can't be passed as part of the attach, so
 	 * they're no use here.
 	 */
 	db_flags &= ~(CTDB_DB_FLAGS_READONLY | CTDB_DB_FLAGS_STICKY);
@@ -2297,7 +2297,7 @@ static void ban_node_check_done(struct tevent_req *subreq)
 	talloc_free(nodemap);
 	talloc_free(reply);
 
-	/* If node becames inactive during recovery, pick next */
+	/* If node becomes inactive during recovery, pick next */
 	if (state->max_pnn == CTDB_UNKNOWN_PNN) {
 		(void) ban_node_check(req);
 		return;
@@ -2327,8 +2327,8 @@ static void ban_node_done(struct tevent_req *subreq)
 {
 	struct tevent_req *req = tevent_req_callback_data(
 		subreq, struct tevent_req);
-	struct node_ban_state *state = tevent_req_data(
-		req, struct node_ban_state);
+	struct ban_node_state *state = tevent_req_data(
+		req, struct ban_node_state);
 	struct ctdb_reply_control *reply;
 	int ret;
 	bool status;

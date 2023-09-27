@@ -22,6 +22,7 @@
 #ifndef __SAMDB_H__
 #define __SAMDB_H__
 
+struct auth_SidAttr;
 struct auth_session_info;
 struct dsdb_control_current_partition;
 struct dsdb_extended_replicated_object;
@@ -374,7 +375,11 @@ struct dsdb_extended_dn_store_format {
 
 #define DSDB_FULL_JOIN_REPLICATION_COMPLETED_OPAQUE_NAME "DSDB_FULL_JOIN_REPLICATION_COMPLETED"
 
-#define DSDB_ACL_CHECKS_DIRSYNC_FLAG 0x1
+#define DSDB_OPAQUE_ENCRYPTED_CONNECTION_STATE_NAME "DSDB_OPAQUE_ENCRYPTED_CONNECTION_STATE_MSG"
+struct dsdb_encrypted_connection_state {
+	bool using_encrypted_connection;
+};
+
 #define DSDB_SAMDB_MINIMUM_ALLOWED_RID   1000
 
 #define DSDB_METADATA_SCHEMA_SEQ_NUM	"SCHEMA_SEQ_NUM"

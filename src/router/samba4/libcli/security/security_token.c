@@ -21,7 +21,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
+#include "lib/util/debug.h"
+#include "lib/util/fault.h"
 #include "libcli/security/security_token.h"
 #include "libcli/security/dom_sid.h"
 #include "libcli/security/privileges.h"
@@ -65,13 +67,13 @@ void security_token_debug(int dbg_class, int dbg_lev, const struct security_toke
 
 bool security_token_is_sid(const struct security_token *token, const struct dom_sid *sid)
 {
+	bool ret;
+
 	if (token->sids == NULL) {
 		return false;
 	}
-	if (dom_sid_equal(&token->sids[PRIMARY_USER_SID_INDEX], sid)) {
-		return true;
-	}
-	return false;
+	ret = dom_sid_equal(&token->sids[PRIMARY_USER_SID_INDEX], sid);
+	return ret;
 }
 
 bool security_token_is_system(const struct security_token *token)

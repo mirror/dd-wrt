@@ -343,7 +343,7 @@ static int ldb_ldif_write_trace(struct ldb_context *ldb,
 		}
 
 		if (in_trace && secret_attributes && ldb_attr_in_list(secret_attributes, msg->elements[i].name)) {
-			/* Deliberatly skip printing this password */
+			/* Deliberately skip printing this password */
 			ret = fprintf_fn(private_data, "# %s::: REDACTED SECRET ATTRIBUTE\n",
 					 msg->elements[i].name);
 			CHECK_RET;
@@ -584,6 +584,7 @@ int ldb_ldif_parse_modrdn(struct ldb_context *ldb,
 			  struct ldb_dn **_newdn)
 {
 	struct ldb_message *msg = ldif->msg;
+	struct ldb_val _newrdn_val = {};
 	struct ldb_val *newrdn_val = NULL;
 	struct ldb_val *deleteoldrdn_val = NULL;
 	struct ldb_val *newsuperior_val = NULL;
@@ -665,6 +666,25 @@ int ldb_ldif_parse_modrdn(struct ldb_context *ldb,
 			  "Error: failed to copy olddn '%s'",
 			  ldb_dn_get_linearized(msg->dn));
 		goto err_op;
+	}
+
+	if (newrdn_val->length != 0 && strchr((const char *)newrdn_val->data, '=') == NULL) {
+		const char *rdn_name = ldb_dn_get_rdn_name(olddn);
+		char *new_rdn = NULL;
+
+		new_rdn = talloc_asprintf(tmp_ctx,
+					  "%s=%s",
+					  rdn_name,
+					  (const char *)newrdn_val->data);
+		if (new_rdn == NULL) {
+			ldb_debug(ldb, LDB_DEBUG_ERROR,
+				  "Error: failed to allocate '%s=%s'",
+				  rdn_name, (char *)newrdn_val->data);
+			goto err_op;
+		}
+		_newrdn_val.data = (uint8_t *)new_rdn;
+		_newrdn_val.length = strlen(new_rdn);
+		newrdn_val = &_newrdn_val;
 	}
 
 	newrdn = ldb_dn_from_ldb_val(tmp_ctx, ldb, newrdn_val);
@@ -858,12 +878,12 @@ struct ldb_ldif *ldb_ldif_read(struct ldb_context *ldb,
 			continue;
 		}
 
-		el = &msg->elements[msg->num_elements-1];
-
 		a = ldb_schema_attribute_by_name(ldb, attr);
+		el = (msg->num_elements > 0
+		      ? &msg->elements[msg->num_elements - 1]
+		      : NULL);
 
-		if (msg->num_elements > 0 && ldb_attr_cmp(attr, el->name) == 0 &&
-		    flags == el->flags) {
+		if (el && ldb_attr_cmp(attr, el->name) == 0 && flags == el->flags) {
 			/* its a continuation */
 			el->values =
 				talloc_realloc(msg->elements, el->values,

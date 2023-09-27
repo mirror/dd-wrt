@@ -34,6 +34,7 @@
 #include "../lib/crypto/md4.h"
 #include "system/kerberos.h"
 #include "auth/kerberos/kerberos.h"
+#include "kdc/authn_policy_util.h"
 #include "kdc/sdb.h"
 #include "kdc/samba_kdc.h"
 #include "kdc/db-glue.h"
@@ -193,12 +194,12 @@ static struct SDBFlags uf2SDBFlags(krb5_context context, uint32_t userAccountCon
 		flags.locked_out = 1;
 	}
 /*
-	if (userAccountControl & UF_PASSWORD_NOTREQD) {
+	if (userAccountControl & UF_PASSWD_NOTREQD) {
 		flags.invalid = 1;
 	}
 */
 /*
-	UF_PASSWORD_CANT_CHANGE and UF_ENCRYPTED_TEXT_PASSWORD_ALLOWED are irrelevent
+	UF_PASSWD_CANT_CHANGE and UF_ENCRYPTED_TEXT_PASSWORD_ALLOWED are irrelevant
 */
 	if (userAccountControl & UF_TEMP_DUPLICATE_ACCOUNT) {
 		flags.invalid = 1;
@@ -1089,6 +1090,10 @@ static krb5_error_code samba_kdc_message2entry(krb5_context context,
 		ENC_ALL_TYPES;
 	const char *samAccountName = ldb_msg_find_attr_as_string(msg, "samAccountName", NULL);
 
+	const struct authn_kerberos_client_policy *authn_client_policy = NULL;
+	const struct authn_server_policy *authn_server_policy = NULL;
+	int64_t enforced_tgt_lifetime_raw;
+
 	ZERO_STRUCTP(entry);
 
 	if (supported_enctypes == 0) {
@@ -1392,9 +1397,59 @@ static krb5_error_code samba_kdc_message2entry(krb5_context context,
 
 	*entry->max_renew = kdc_db_ctx->policy.renewal_lifetime;
 
+	/*
+	 * A principal acting as a client that is not being looked up as the
+	 * principal of an armor ticket may have an authentication policy apply
+	 * to it.
+	 *
+	 * We won’t get an authentication policy for the client of an S4U2Self
+	 * or S4U2Proxy request. Those clients are looked up with
+	 * SDB_F_FOR_TGS_REQ instead of with SDB_F_FOR_AS_REQ.
+	 */
+	if (ent_type == SAMBA_KDC_ENT_TYPE_CLIENT &&
+	    (flags & SDB_F_FOR_AS_REQ) &&
+	    !(flags & SDB_F_ARMOR_PRINCIPAL))
+	{
+		ret = authn_policy_kerberos_client(kdc_db_ctx->samdb, mem_ctx, msg,
+						   &authn_client_policy);
+		if (ret) {
+			goto out;
+		}
+	}
+
+	/*
+	 * A principal acting as a server may have an authentication policy
+	 * apply to it.
+	 */
+	if (ent_type == SAMBA_KDC_ENT_TYPE_SERVER) {
+		ret = authn_policy_server(kdc_db_ctx->samdb, mem_ctx, msg,
+					  &authn_server_policy);
+		if (ret) {
+			goto out;
+		}
+	}
+
+	enforced_tgt_lifetime_raw = authn_policy_enforced_tgt_lifetime_raw(authn_client_policy);
+	if (enforced_tgt_lifetime_raw != 0) {
+		int64_t lifetime_secs = enforced_tgt_lifetime_raw;
+
+		lifetime_secs /= INT64_C(1000) * 1000 * 10;
+		lifetime_secs = MIN(lifetime_secs, INT_MAX);
+		lifetime_secs = MAX(lifetime_secs, INT_MIN);
+
+		/*
+		 * Set both lifetime and renewal time based only on the
+		 * configured maximum lifetime — not on the configured renewal
+		 * time. Yes, this is what Windows does.
+		 */
+		lifetime_secs = MIN(*entry->max_life, lifetime_secs);
+		*entry->max_life = lifetime_secs;
+		*entry->max_renew = lifetime_secs;
+	}
+
 	if (ent_type == SAMBA_KDC_ENT_TYPE_CLIENT && (flags & SDB_F_FOR_AS_REQ)) {
 		int result;
-		struct auth_user_info_dc *user_info_dc = NULL;
+		const struct auth_user_info_dc *user_info_dc = NULL;
 		/*
 		 * These protections only apply to clients, so servers in the
 		 * Protected Users group may still have service tickets to them
@@ -1423,7 +1478,12 @@ static krb5_error_code samba_kdc_message2entry(krb5_context context,
 
 		protected_user = result;
 
-		if (protected_user) {
+		if (protected_user && enforced_tgt_lifetime_raw == 0)
+		{
+			/*
+			 * If a TGT lifetime hasn’t been set, Protected Users
+			 * enforces a four hour TGT lifetime.
+			 */
 			*entry->max_life = MIN(*entry->max_life, 4 * 60 * 60);
 			*entry->max_renew = MIN(*entry->max_renew, 4 * 60 * 60);
 
@@ -1448,6 +1508,15 @@ static krb5_error_code samba_kdc_message2entry(krb5_context context,
 		if (enable_fast) {
 			supported_enctypes |= ENC_FAST_SUPPORTED;
 		}
+
+		supported_enctypes |= ENC_CLAIMS_SUPPORTED;
+		supported_enctypes |= ENC_COMPOUND_IDENTITY_SUPPORTED;
+
+		/*
+		 * Resource SID compression is enabled implicitly, unless
+		 * disabled in msDS-SupportedEncryptionTypes.
+		 */
+
 	} else if (userAccountControl & (UF_PARTIAL_SECRETS_ACCOUNT|UF_SERVER_TRUST_ACCOUNT)) {
 		/*
 		 * DCs and RODCs computer accounts take
@@ -1618,6 +1687,9 @@ static krb5_error_code samba_kdc_message2entry(krb5_context context,
 
 	p->msg = talloc_steal(p, msg);
 	p->supported_enctypes = pa_supported_enctypes;
+
+	p->client_policy = talloc_steal(p, authn_client_policy);
+	p->server_policy = talloc_steal(p, authn_server_policy);
 
 out:
 	if (ret != 0) {
@@ -2113,11 +2185,11 @@ static krb5_error_code samba_kdc_lookup_trust(krb5_context context, struct ldb_c
 		return SDB_ERR_NOENTRY;
 	} else if (NT_STATUS_EQUAL(status, NT_STATUS_NO_MEMORY)) {
 		int ret = ENOMEM;
-		krb5_set_error_message(context, ret, "get_sam_result_trust: out of memory");
+		krb5_set_error_message(context, ret, "samba_kdc_lookup_trust: out of memory");
 		return ret;
 	} else {
 		int ret = EINVAL;
-		krb5_set_error_message(context, ret, "get_sam_result_trust: %s", nt_errstr(status));
+		krb5_set_error_message(context, ret, "samba_kdc_lookup_trust: %s", nt_errstr(status));
 		return ret;
 	}
 }
@@ -2352,17 +2424,17 @@ static krb5_error_code samba_kdc_fetch_krbtgt(krb5_context context,
 		}
 
 		if (lret == LDB_ERR_NO_SUCH_OBJECT) {
-			krb5_warnx(context, "samba_kdc_fetch: could not find KRBTGT number %u in DB!",
+			krb5_warnx(context, "samba_kdc_fetch_krbtgt: could not find KRBTGT number %u in DB!",
 				   (unsigned)(krbtgt_number));
 			krb5_set_error_message(context, SDB_ERR_NOENTRY,
-					       "samba_kdc_fetch: could not find KRBTGT number %u in DB!",
+					       "samba_kdc_fetch_krbtgt: could not find KRBTGT number %u in DB!",
 					       (unsigned)(krbtgt_number));
 			return SDB_ERR_NOENTRY;
 		} else if (lret != LDB_SUCCESS) {
-			krb5_warnx(context, "samba_kdc_fetch: could not find KRBTGT number %u in DB!",
+			krb5_warnx(context, "samba_kdc_fetch_krbtgt: could not find KRBTGT number %u in DB!",
 				   (unsigned)(krbtgt_number));
 			krb5_set_error_message(context, SDB_ERR_NOENTRY,
-					       "samba_kdc_fetch: could not find KRBTGT number %u in DB!",
+					       "samba_kdc_fetch_krbtgt: could not find KRBTGT number %u in DB!",
 					       (unsigned)(krbtgt_number));
 			return SDB_ERR_NOENTRY;
 		}
@@ -2371,7 +2443,7 @@ static krb5_error_code samba_kdc_fetch_krbtgt(krb5_context context,
 					      principal, SAMBA_KDC_ENT_TYPE_KRBTGT,
 					      flags, kvno, realm_dn, msg, entry);
 		if (ret != 0) {
-			krb5_warnx(context, "samba_kdc_fetch: self krbtgt message2entry failed");
+			krb5_warnx(context, "samba_kdc_fetch_krbtgt: self krbtgt message2entry failed");
 		}
 		return ret;
 
@@ -2390,10 +2462,10 @@ static krb5_error_code samba_kdc_fetch_krbtgt(krb5_context context,
 			direction = OUTBOUND;
 			realm = realm_from_princ;
 		} else {
-			krb5_warnx(context, "samba_kdc_fetch: not our realm for trusts ('%s', '%s')",
+			krb5_warnx(context, "samba_kdc_fetch_krbtgt: not our realm for trusts ('%s', '%s')",
 				   realm_from_princ,
 				   realm_princ_comp);
-			krb5_set_error_message(context, SDB_ERR_NOENTRY, "samba_kdc_fetch: not our realm for trusts ('%s', '%s')",
+			krb5_set_error_message(context, SDB_ERR_NOENTRY, "samba_kdc_fetch_krbtgt: not our realm for trusts ('%s', '%s')",
 					       realm_from_princ,
 					       realm_princ_comp);
 			return SDB_ERR_NOENTRY;
@@ -2406,8 +2478,8 @@ static krb5_error_code samba_kdc_fetch_krbtgt(krb5_context context,
 				       realm, realm_dn, &msg);
 
 		if (ret != 0) {
-			krb5_warnx(context, "samba_kdc_fetch: could not find principal in DB");
-			krb5_set_error_message(context, ret, "samba_kdc_fetch: could not find principal in DB");
+			krb5_warnx(context, "samba_kdc_fetch_krbtgt: could not find principal in DB");
+			krb5_set_error_message(context, ret, "samba_kdc_fetch_krbtgt: could not find principal in DB");
 			return ret;
 		}
 
@@ -2415,9 +2487,9 @@ static krb5_error_code samba_kdc_fetch_krbtgt(krb5_context context,
 						    direction,
 						    realm_dn, flags, kvno, msg, entry);
 		if (ret != 0) {
-			krb5_warnx(context, "samba_kdc_fetch: trust_message2entry failed for %s",
+			krb5_warnx(context, "samba_kdc_fetch_krbtgt: trust_message2entry failed for %s",
 				   ldb_dn_get_linearized(msg->dn));
-			krb5_set_error_message(context, ret, "samba_kdc_fetch: "
+			krb5_set_error_message(context, ret, "samba_kdc_fetch_krbtgt: "
 					       "trust_message2entry failed for %s",
 					       ldb_dn_get_linearized(msg->dn));
 		}
@@ -2542,8 +2614,8 @@ static krb5_error_code samba_kdc_lookup_server(krb5_context context,
 		enterprise_principal = NULL;
 
 		if (ret != 0) {
-			krb5_set_error_message(context, ret, "samba_kdc_lookup_principal: could not parse principal");
-			krb5_warnx(context, "samba_kdc_lookup_principal: could not parse principal");
+			krb5_set_error_message(context, ret, "samba_kdc_lookup_server: could not parse principal");
+			krb5_warnx(context, "samba_kdc_lookup_server: could not parse principal");
 			return ret;
 		}
 
@@ -2625,12 +2697,12 @@ static krb5_error_code samba_kdc_fetch_server(krb5_context context,
 		code = krb5_unparse_name(context, principal, &client_name);
 		if (code == 0) {
 			krb5_warnx(context,
-				   "samba_kdc_fetch: message2entry failed for "
+				   "samba_kdc_fetch_server: message2entry failed for "
 				   "%s",
 				   client_name);
 		} else {
 			krb5_warnx(context,
-				   "samba_kdc_fetch: message2entry and "
+				   "samba_kdc_fetch_server: message2entry and "
 				   "krb5_unparse_name failed");
 		}
 		SAFE_FREE(client_name);
@@ -2988,6 +3060,7 @@ krb5_error_code samba_kdc_firstkey(krb5_context context,
 	if (!mem_ctx) {
 		ret = ENOMEM;
 		krb5_set_error_message(context, ret, "samba_kdc_firstkey: talloc_named() failed!");
+		TALLOC_FREE(priv);
 		return ret;
 	}
 
@@ -3091,7 +3164,7 @@ samba_kdc_check_pkinit_ms_upn_match(krb5_context context,
 
 	if (!mem_ctx) {
 		ret = ENOMEM;
-		krb5_set_error_message(context, ret, "samba_kdc_fetch: talloc_named() failed!");
+		krb5_set_error_message(context, ret, "samba_kdc_check_pkinit_ms_upn_match: talloc_named() failed!");
 		return ret;
 	}
 
@@ -3161,6 +3234,7 @@ samba_kdc_check_s4u2proxy(krb5_context context,
 		krb5_set_error_message(context, ret,
 				       "samba_kdc_check_s4u2proxy:"
 				       " ldb_dn_get_linearized() failed!");
+		talloc_free(mem_ctx);
 		return ret;
 	}
 
@@ -3178,6 +3252,7 @@ samba_kdc_check_s4u2proxy(krb5_context context,
 	 * delegation target, allow to forward.
 	 */
 	if (target_principal == NULL) {
+		talloc_free(mem_ctx);
 		return 0;
 	}
 
@@ -3209,6 +3284,7 @@ samba_kdc_check_s4u2proxy(krb5_context context,
 		krb5_set_error_message(context, ret,
 				       "samba_kdc_check_s4u2proxy:"
 				       " talloc_strdup() failed!");
+		talloc_free(mem_ctx);
 		return ret;
 	}
 
@@ -3240,7 +3316,7 @@ samba_kdc_check_s4u2proxy(krb5_context context,
 	}
 
 	DEBUG(10,("samba_kdc_check_s4u2proxy: client[%s] allowed target[%s]\n",
-		 client_dn, tmp));
+		 client_dn, target_principal_name));
 	talloc_free(mem_ctx);
 	return 0;
 
@@ -3264,7 +3340,7 @@ krb5_error_code samba_kdc_check_s4u2proxy_rbcd(
 		struct samba_kdc_db_context *kdc_db_ctx,
 		krb5_const_principal client_principal,
 		krb5_const_principal server_principal,
-		krb5_pac header_pac,
+		krb5_const_pac header_pac,
 		struct samba_kdc_entry *proxy_skdc_entry)
 {
 	krb5_error_code code;
@@ -3275,8 +3351,10 @@ krb5_error_code samba_kdc_check_s4u2proxy_rbcd(
 	const DATA_BLOB *data = NULL;
 	struct security_descriptor *rbcd_security_descriptor = NULL;
 	struct auth_user_info_dc *user_info_dc = NULL;
-	struct auth_session_info *session_info = NULL;
-	uint32_t session_info_flags = AUTH_SESSION_INFO_SIMPLE_PRIVILEGES;
+	struct security_token *security_token = NULL;
+	uint32_t session_info_flags =
+		AUTH_SESSION_INFO_DEFAULT_GROUPS |
+		AUTH_SESSION_INFO_SIMPLE_PRIVILEGES;
 	/*
 	 * Testing shows that although Windows grants SEC_ADS_GENERIC_ALL access
 	 * in security descriptors it creates for RBCD, its KDC only requires
@@ -3300,7 +3378,6 @@ krb5_error_code samba_kdc_check_s4u2proxy_rbcd(
 	proxy_dn = ldb_dn_get_linearized(proxy_skdc_entry->msg->dn);
 	if (proxy_dn == NULL) {
 		DBG_ERR("ldb_dn_get_linearized failed for proxy_dn!\n");
-		TALLOC_FREE(mem_ctx);
 		if (errno == 0) {
 			errno = ENOMEM;
 		}
@@ -3333,7 +3410,6 @@ krb5_error_code samba_kdc_check_s4u2proxy_rbcd(
 				       &server_name);
 	if (code != 0) {
 		DBG_ERR("Unable to parse server_principal!\n");
-		SAFE_FREE(client_name);
 		goto out;
 	}
 
@@ -3347,22 +3423,24 @@ krb5_error_code samba_kdc_check_s4u2proxy_rbcd(
 					    header_pac,
 					    context,
 					    &user_info_dc,
+					    AUTH_INCLUDE_RESOURCE_GROUPS,
+					    NULL,
 					    NULL,
 					    NULL);
 	if (code != 0) {
 		goto out;
 	}
 
-	if (user_info_dc->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		session_info_flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 
-	nt_status = auth_generate_session_info(mem_ctx,
-					       kdc_db_ctx->lp_ctx,
-					       kdc_db_ctx->samdb,
-					       user_info_dc,
-					       session_info_flags,
-					       &session_info);
+	nt_status = auth_generate_security_token(mem_ctx,
+						 kdc_db_ctx->lp_ctx,
+						 kdc_db_ctx->samdb,
+						 user_info_dc,
+						 session_info_flags,
+						 &security_token);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		code = map_errno_from_nt_status(nt_status);
 		goto out;
@@ -3371,10 +3449,10 @@ krb5_error_code samba_kdc_check_s4u2proxy_rbcd(
 	data = ldb_msg_find_ldb_val(proxy_skdc_entry->msg,
 				    "msDS-AllowedToActOnBehalfOfOtherIdentity");
 	if (data == NULL) {
-		DBG_ERR("Could not find security descriptor "
-			"msDS-AllowedToActOnBehalfOfOtherIdentity in "
-			"proxy[%s]\n",
-			proxy_dn);
+		DBG_WARNING("Could not find security descriptor "
+			    "msDS-AllowedToActOnBehalfOfOtherIdentity in "
+			    "proxy[%s]\n",
+			    proxy_dn);
 		code = KRB5KDC_ERR_BADOPTION;
 		goto out;
 	}
@@ -3395,12 +3473,12 @@ krb5_error_code samba_kdc_check_s4u2proxy_rbcd(
 	}
 
 	if (DEBUGLEVEL >= 10) {
-		NDR_PRINT_DEBUG(security_token, session_info->security_token);
+		NDR_PRINT_DEBUG(security_token, security_token);
 		NDR_PRINT_DEBUG(security_descriptor, rbcd_security_descriptor);
 	}
 
 	nt_status = sec_access_check_ds(rbcd_security_descriptor,
-					session_info->security_token,
+					security_token,
 					access_desired,
 					&access_granted,
 					NULL,
@@ -3436,7 +3514,7 @@ NTSTATUS samba_kdc_setup_db_ctx(TALLOC_CTX *mem_ctx, struct samba_kdc_base_conte
 	struct auth_session_info *session_info;
 	struct samba_kdc_db_context *kdc_db_ctx;
 	/* The idea here is very simple.  Using Kerberos to
-	 * authenticate the KDC to the LDAP server is higly likely to
+	 * authenticate the KDC to the LDAP server is highly likely to
 	 * be circular.
 	 *
 	 * In future we may set this up to use EXERNAL and SSL
@@ -3460,23 +3538,9 @@ NTSTATUS samba_kdc_setup_db_ctx(TALLOC_CTX *mem_ctx, struct samba_kdc_base_conte
 
 	session_info = system_session(kdc_db_ctx->lp_ctx);
 	if (session_info == NULL) {
+		talloc_free(kdc_db_ctx);
 		return NT_STATUS_INTERNAL_ERROR;
 	}
-
-	/* Setup the link to secrets.ldb */
-
-	kdc_db_ctx->secrets_db = secrets_db_connect(kdc_db_ctx,
-						    base_ctx->lp_ctx);
-	if (kdc_db_ctx->secrets_db == NULL) {
-		DEBUG(1, ("samba_kdc_setup_db_ctx: "
-			  "Cannot open secrets.ldb for KDC backend!"));
-		talloc_free(kdc_db_ctx);
-		return NT_STATUS_CANT_ACCESS_DOMAIN_INFO;
-	}
-
-	kdc_db_ctx->fx_cookie_dn = ldb_dn_new(kdc_db_ctx,
-					      kdc_db_ctx->secrets_db,
-					      "CN=FX Cookie");
 
 	/* Setup the link to LDB */
 	kdc_db_ctx->samdb = samdb_connect(kdc_db_ctx,
@@ -3564,7 +3628,7 @@ NTSTATUS samba_kdc_setup_db_ctx(TALLOC_CTX *mem_ctx, struct samba_kdc_base_conte
 					  "(&(objectClass=user)(samAccountName=krbtgt))");
 
 		if (ldb_ret != LDB_SUCCESS) {
-			DEBUG(1, ("samba_kdc_fetch: could not find own KRBTGT in DB: %s\n", ldb_errstring(kdc_db_ctx->samdb)));
+			DEBUG(1, ("samba_kdc_setup_db_ctx: could not find own KRBTGT in DB: %s\n", ldb_errstring(kdc_db_ctx->samdb)));
 			talloc_free(kdc_db_ctx);
 			return NT_STATUS_CANT_ACCESS_DOMAIN_INFO;
 		}

@@ -122,7 +122,8 @@ attrNotCopied.extend(nonDSDBAttrNotCopied)
 hashOverwrittenAtt = {  "prefixMap": replace, "systemMayContain": replace,
                         "systemOnly":replace, "searchFlags":replace,
                         "mayContain":replace, "systemFlags":replace+add,
-                        "description":replace, "operatingSystemVersion":replace,
+                        "description":replace,
+                        "operatingSystem": replace, "operatingSystemVersion":replace,
                         "adminPropertyPages":replace, "groupType":replace,
                         "wellKnownObjects":replace, "privilege":never,
                         "rIDAvailablePool": never,
@@ -311,10 +312,10 @@ def sanitychecks(samdb, names):
         print("No DC found. Your provision is most probably broken!")
         return False
     elif len(res) != 1:
-        print("Found %d domain controllers. For the moment " \
-              "upgradeprovision is not able to handle an upgrade on a " \
-              "domain with more than one DC. Please demote the other " \
-              "DC(s) before upgrading") % len(res)
+        print("Found %d domain controllers. For the moment "
+              "upgradeprovision is not able to handle an upgrade on a "
+              "domain with more than one DC. Please demote the other "
+              "DC(s) before upgrading" % len(res))
         return False
     else:
         return True
@@ -742,7 +743,6 @@ def add_missing_entries(ref_samdb, samdb, names, basedn, list):
                       provision
     :param samdb: Ldb object representing the SAM db of the upgraded
                   provision
-    :param dn: DN of the object to be added
     :param names: List of key provision parameters
     :param basedn: DN of the partition to be updated
     :param list: List of DN to be added in the upgraded provision"""
@@ -1081,7 +1081,7 @@ def update_partition(ref_samdb, samdb, basedn, names, schema, provisionUSNs, pre
     This function will also add the missing object and update existing object
     to add or remove attributes that were missing.
 
-    :param ref_sambdb: An LDB object conntected to the sam.ldb of the
+    :param ref_samdb: An LDB object connected to the sam.ldb of the
                        reference provision
     :param samdb: An LDB object connected to the sam.ldb of the update
                   provision
@@ -1343,7 +1343,7 @@ def simple_update_basesamdb(newpaths, paths, names):
 def update_samdb(ref_samdb, samdb, names, provisionUSNs, schema, prereloadfunc):
     """Upgrade the SAM DB contents for all the provision partitions
 
-    :param ref_sambdb: An LDB object conntected to the sam.ldb of the reference
+    :param ref_samdb: An LDB object connected to the sam.ldb of the reference
                        provision
     :param samdb: An LDB object connected to the sam.ldb of the update
                   provision
@@ -1649,7 +1649,7 @@ if __name__ == '__main__':
         provisiondir = tempfile.mkdtemp(dir=paths.private_dir,
                         prefix="referenceprovision")
         result = newprovision(names, session, smbconf, provisiondir,
-                provision_logger, base_schema="2008_R2")
+                provision_logger, base_schema="2008_R2", adprep_level=None)
         result.report_logger(provision_logger)
 
         # TODO

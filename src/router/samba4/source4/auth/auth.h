@@ -68,6 +68,8 @@ struct auth_operations {
 	NTSTATUS (*check_password_recv)(struct tevent_req *subreq,
 				TALLOC_CTX *mem_ctx,
 				struct auth_user_info_dc **interim_info,
+				const struct authn_audit_info **client_audit_info,
+				const struct authn_audit_info **server_audit_info,
 				bool *authoritative);
 };
 
@@ -121,12 +123,15 @@ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx, struct ldb_context *sam_
 					   const char *domain_name,
 					   const char *dns_domain_name,
 					   struct ldb_dn *domain_dn,
-					   struct ldb_message *msg,
+					   const struct ldb_message *msg,
 					   DATA_BLOB user_sess_key, DATA_BLOB lm_sess_key,
 				  struct auth_user_info_dc **_user_info_dc);
 NTSTATUS authsam_update_user_info_dc(TALLOC_CTX *mem_ctx,
 			struct ldb_context *sam_ctx,
 			struct auth_user_info_dc *user_info_dc);
+NTSTATUS authsam_shallow_copy_user_info_dc(TALLOC_CTX *mem_ctx,
+					   const struct auth_user_info_dc *user_info_dc_in,
+					   struct auth_user_info_dc **user_info_dc_out);
 NTSTATUS auth_system_session_info(TALLOC_CTX *parent_ctx,
 					   struct loadparm_context *lp_ctx,
 					   struct auth_session_info **_session_info) ;

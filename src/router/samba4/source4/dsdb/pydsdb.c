@@ -1426,6 +1426,57 @@ static PyObject *py_dsdb_user_account_control_flag_bit_to_string(PyObject *self,
 	return PyUnicode_FromString(str);
 }
 
+static PyObject *py_dsdb_check_and_update_fl(PyObject *self, PyObject *args)
+{
+	TALLOC_CTX *frame = NULL;
+
+	PyObject *py_ldb = NULL, *py_lp = NULL;
+	struct ldb_context *ldb = NULL;
+	struct loadparm_context *lp_ctx = NULL;
+
+	int ret;
+
+	if (!PyArg_ParseTuple(args, "OO", &py_ldb, &py_lp)) {
+		return NULL;
+	}
+
+	PyErr_LDB_OR_RAISE(py_ldb, ldb);
+
+	frame = talloc_stackframe();
+
+	lp_ctx = lpcfg_from_py_object(frame, py_lp);
+	if (lp_ctx == NULL) {
+		TALLOC_FREE(frame);
+		return NULL;
+	}
+
+	ret = dsdb_check_and_update_fl(ldb, lp_ctx);
+	TALLOC_FREE(frame);
+
+	PyErr_LDB_ERROR_IS_ERR_RAISE(py_ldb_get_exception(), ret, ldb);
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *py_dsdb_dc_operatingSystemVersion(PyObject *self, PyObject *args)
+{
+	const char *str = NULL;
+	int dc_level = 0;
+
+	if (!PyArg_ParseTuple(args, "i", &dc_level)) {
+		return NULL;
+	}
+
+	str = dsdb_dc_operatingSystemVersion(dc_level);
+	if (str == NULL) {
+		return PyErr_Format(PyExc_KeyError,
+				    "dsdb_dc_operatingSystemVersion(%d) failed",
+				    dc_level);
+	}
+
+	return PyUnicode_FromString(str);
+}
+
 static PyMethodDef py_dsdb_methods[] = {
 	{ "_samdb_server_site_name", (PyCFunction)py_samdb_server_site_name,
 		METH_VARARGS, "Get the server site name as a string"},
@@ -1511,6 +1562,17 @@ static PyMethodDef py_dsdb_methods[] = {
 	        (PyCFunction)py_dsdb_user_account_control_flag_bit_to_string,
 	        METH_VARARGS,
 	        "user_account_control_flag_bit_to_string(bit)"
+                " -> string name" },
+	{ "check_and_update_fl",
+	        (PyCFunction)py_dsdb_check_and_update_fl,
+	        METH_VARARGS,
+	        "check_and_update_fl(ldb, lp) -> None\n"
+	  "Hook to run in testing the code run on samba server startup "
+	  "to validate and update DC functional levels"},
+	{ "dc_operatingSystemVersion",
+	        (PyCFunction)py_dsdb_dc_operatingSystemVersion,
+	        METH_VARARGS,
+	        "dsdb_dc_operatingSystemVersion(dc_level)"
                 " -> string name" },
 	{0}
 };
@@ -1754,6 +1816,7 @@ MODULE_INIT_FUNC(dsdb)
 	ADD_DSDB_STRING(DS_GUID_PROGRAM_DATA_CONTAINER);
 	ADD_DSDB_STRING(DS_GUID_SYSTEMS_CONTAINER);
 	ADD_DSDB_STRING(DS_GUID_USERS_CONTAINER);
+	ADD_DSDB_STRING(DS_GUID_MANAGED_SERVICE_ACCOUNTS_CONTAINER);
 
 	ADD_DSDB_STRING(DS_GUID_SCHEMA_ATTR_DEPARTMENT);
 	ADD_DSDB_STRING(DS_GUID_SCHEMA_ATTR_DNS_HOST_NAME);

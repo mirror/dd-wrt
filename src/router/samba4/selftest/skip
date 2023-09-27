@@ -107,8 +107,6 @@
 ^samba4.ntvfs.cifs.*.base.smb
 ^samba4.ntvfs.cifs.*.raw.
 ^samba4.rpc.samsync
-^samba4.rpc.remact							# Not provided by Samba 4
-^samba4.rpc.oxidresolve						# Not provided by Samba 4
 ^samba4.rpc.eventlog						# Not provided by Samba 4
 ^samba4.rpc.initshutdown					# Not provided by Samba 4
 ^samba4.rpc.spoolss						# Not provided by Samba 4
@@ -150,3 +148,4 @@ bench # don't run benchmarks in our selftest
 ^samba4.smb2.mkdir.*\(ad_dc_ntvfs\)$ # Ignore ad_dc_ntvfs since this is a new test
 ^samba.tests.reparsepoints.*
 ^samba.tests.smb2symlink.*
+^samba3.blackbox.open-eintr.*

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Unix SMB/CIFS implementation.
 #
 # Copyright (C) Catalyst.Net Ltd. 2021
@@ -15,15 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import subprocess
 import os
 import sys
+
+sys.path.insert(0, 'bin/python')
+os.environ['PYTHONUNBUFFERED'] = '1'
+
+import subprocess
 from collections import Counter
 from samba.colour import c_RED, c_GREEN, c_DARK_YELLOW, switch_colour_off
 import re
 import unicodedata as u
-from samba.tests import TestCase
+from samba.tests import TestCase, SkipTest
 
 if not sys.stdout.isatty():
     switch_colour_off()
@@ -35,10 +39,15 @@ def _find_root():
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,
                            timeout=10)
-    except subprocess.SubprocessError as e:
-        print(c_RED(f"Error running git (is this a git tree?): {e}"))
-        print("This test is only useful in a git working tree")
-        sys.exit(1)
+    except subprocess.CalledProcessError as err:
+        print(c_RED("Error running git (is this a git tree?): %s" % (err)))
+
+        SkipTest("This test is only useful in a git working tree")
+        sys.exit(0)
+
+    if p.returncode != 0:
+        raise SkipTest("This test is only useful in a git working tree")
+        sys.exit(0)
 
     root = p.stdout.decode().strip()
 
@@ -54,8 +63,7 @@ def _find_root():
     return root
 
 
-ROOT = _find_root()
-
+ROOT = None
 
 IGNORED_FILES = (
     'examples/validchars/validchr.com',
@@ -202,6 +210,11 @@ def is_bad_char(c):
 
 
 class CharacterTests(TestCase):
+    def setUp(self):
+        global ROOT
+        if not ROOT:
+            ROOT = _find_root()
+
     def test_no_unexpected_format_chars(self):
         """This test tries to ensure that no source file has unicode control
         characters that can change the apparent order of other
@@ -267,6 +280,10 @@ class CharacterTests(TestCase):
 
 def check_file_text():
     """If called directly as a script, count the found characters."""
+    global ROOT
+    if not ROOT:
+        ROOT = _find_root()
+
     counts = Counter()
     for name in iter_source_files():
         fullname = os.path.join(ROOT, name)
@@ -302,9 +319,9 @@ def check_file_text():
         elif c[0] == 'C':
             others.append(x)
 
-    print("normal control characters {controls}")
-    print("format characters {formats}")
-    print("other control characters {others}")
+    print(f"normal control characters {controls}")
+    print(f"format characters {formats}")
+    print(f"other control characters {others}")
 
 
 if __name__ == '__main__':

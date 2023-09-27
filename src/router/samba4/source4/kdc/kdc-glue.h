@@ -49,6 +49,18 @@ NTSTATUS hdb_samba4_create_kdc(struct samba_kdc_base_context *base_ctx,
 NTSTATUS hdb_samba4_kpasswd_create_kdc(struct samba_kdc_base_context *base_ctx,
 				       krb5_context context, struct HDB **db);
 
+krb5_error_code hdb_samba4_set_ntstatus(astgs_request_t r,
+					NTSTATUS status,
+					krb5_error_code error);
+
+struct authn_audit_info;
+
+krb5_error_code hdb_samba4_set_steal_client_audit_info(astgs_request_t r,
+						       struct authn_audit_info *client_audit_info);
+
+krb5_error_code hdb_samba4_set_steal_server_audit_info(astgs_request_t r,
+						       struct authn_audit_info *server_audit_info);
+
 /* from kdc-glue.c */
 int kdc_check_pac(krb5_context krb5_context,
 		  DATA_BLOB server_sig,

@@ -389,7 +389,7 @@ static PyObject *py_creds_set_bind_dn(PyObject *self, PyObject *args)
 		PyErr_Format(PyExc_TypeError, "Credentials expected");
 		return NULL;
 	}
-	if (!PyArg_ParseTuple(args, "s", &newval))
+	if (!PyArg_ParseTuple(args, "z", &newval))
 		return NULL;
 
 	return PyBool_FromLong(cli_credentials_set_bind_dn(creds, newval));
@@ -544,6 +544,32 @@ static PyObject *py_creds_get_nt_hash(PyObject *self, PyObject *unused)
 	ret = PyBytes_FromStringAndSize(discard_const_p(char, ntpw->hash), 16);
 	TALLOC_FREE(ntpw);
 	return ret;
+}
+
+static PyObject *py_creds_set_nt_hash(PyObject *self, PyObject *args)
+{
+	PyObject *py_cp = Py_None;
+	const struct samr_Password *pwd = NULL;
+	enum credentials_obtained obt = CRED_SPECIFIED;
+	int _obt = obt;
+	struct cli_credentials *creds = PyCredentials_AsCliCredentials(self);
+	if (creds == NULL) {
+		PyErr_Format(PyExc_TypeError, "Credentials expected");
+		return NULL;
+	}
+
+	if (!PyArg_ParseTuple(args, "O|i", &py_cp, &_obt)) {
+		return NULL;
+	}
+	obt = _obt;
+
+	pwd = pytalloc_get_type(py_cp, struct samr_Password);
+	if (pwd == NULL) {
+		/* pytalloc_get_type sets TypeError */
+		return NULL;
+	}
+
+	return PyBool_FromLong(cli_credentials_set_nt_hash(creds, pwd, obt));
 }
 
 static PyObject *py_creds_get_kerberos_state(PyObject *self, PyObject *unused)
@@ -1033,6 +1059,11 @@ static PyObject *py_creds_encrypt_samr_password(PyObject *self,
 		return NULL;
 	}
 
+	if (creds->netlogon_creds == NULL) {
+		PyErr_Format(PyExc_ValueError, "NetLogon credentials not set");
+		return NULL;
+	}
+
 	if (!PyArg_ParseTuple(args, "O", &py_cp)) {
 		return NULL;
 	}
@@ -1385,6 +1416,13 @@ static PyMethodDef py_creds_methods[] = {
 		.ml_flags = METH_NOARGS,
 	},
 	{
+		.ml_name  = "set_nt_hash",
+		.ml_meth  = py_creds_set_nt_hash,
+		.ml_flags = METH_VARARGS,
+		.ml_doc = "S.set_net_sh(samr_Password[, credentials.SPECIFIED]) -> bool\n"
+			"Change NT hash.",
+	},
+	{
 		.ml_name  = "get_kerberos_state",
 		.ml_meth  = py_creds_get_kerberos_state,
 		.ml_flags = METH_NOARGS,
@@ -1551,7 +1589,7 @@ static PyObject *py_ccache_name(PyObject *self, PyObject *unused)
 				    ccc->ccache, &name);
 	if (ret == 0) {
 		py_name = PyString_FromStringOrNULL(name);
-		SAFE_FREE(name);
+		krb5_free_string(ccc->smb_krb5_context->krb5_context, name);
 	} else {
 		PyErr_SetString(PyExc_RuntimeError,
 				"Failed to get ccache name");

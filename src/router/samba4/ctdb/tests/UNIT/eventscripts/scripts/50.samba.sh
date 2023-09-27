@@ -1,13 +1,15 @@
-setup ()
+setup()
 {
+	# shellcheck disable=SC2034
+	# Used in expected output
 	service_name="samba"
 
-	if [ "$1" != "down" ] ; then
+	if [ "$1" != "down" ]; then
 
 		debug "Marking Samba services as up, listening and managed by CTDB"
 
 		# All possible service names for all known distros.
-		for i in "smb" "samba" "smbd" ; do
+		for i in "smb" "samba" "smbd"; do
 			service "$i" force-started
 		done
 
@@ -21,7 +23,7 @@ setup ()
 		debug "Marking Samba services as down, not listening and not managed by CTDB"
 
 		# All possible service names for all known distros.
-		for i in "smb" "samba" "smbd" ; do
+		for i in "smb" "samba" "smbd"; do
 			service "$i" force-stopped
 		done
 
@@ -36,7 +38,7 @@ EOF
 
 }
 
-samba_setup_fake_threads ()
+samba_setup_fake_threads()
 {
 	export FAKE_SMBD_THREAD_PIDS="$*"
 
@@ -44,11 +46,13 @@ samba_setup_fake_threads ()
 "
 	_out=""
 	_count=0
-	for _pid ; do
+	for _pid; do
 		[ "$_count" -lt 5 ] || break
-		_t=$(program_stack_trace "smbd" $_pid)
+		_t=$(program_stack_trace "smbd" "$_pid")
 		_out="${_out:+${_out}${_nl}}${_t}"
 		_count=$((_count + 1))
 	done
+	# shellcheck disable=SC2034
+	# Used in expected output
 	SAMBA_STACK_TRACES="$_out"
 }

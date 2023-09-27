@@ -109,7 +109,7 @@ static NTSTATUS test_generate_session_info_pac(struct auth4_context *auth_ctx,
 	talloc_steal(pac_data, pac_data->pac_srv_sig);
 	talloc_steal(pac_data, pac_data->pac_kdc_sig);
 
-	if (user_info_dc->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		session_info_flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 
@@ -313,7 +313,7 @@ static bool test_PACVerify(struct torture_context *tctx,
 				       (ndr_pull_flags_fn_t)ndr_pull_PAC_DATA);
 	torture_assert(tctx, NDR_ERR_CODE_IS_SUCCESS(ndr_err), "ndr_pull_struct_blob of PAC_DATA structure failed");
 
-	num_pac_buffers = 6;
+	num_pac_buffers = 7;
 	if (expect_pac_upn_dns_info) {
 		num_pac_buffers += 1;
 	}
@@ -738,17 +738,25 @@ static bool test_S4U2Self(struct torture_context *tctx,
 	struct auth_session_info *s4u2self_session_info;
 	struct auth_user_info_dc *netlogon_user_info_dc;
 
-	struct netr_NetworkInfo ninfo;
+	struct netr_NetworkInfo ninfo = {};
 	DATA_BLOB names_blob, chal, lm_resp, nt_resp;
 	size_t i;
+	size_t j;
+	size_t k;
 	int flags = CLI_CRED_NTLMv2_AUTH;
 
 	struct dom_sid *builtin_domain;
 
 	struct dom_sid *ai_auth_authority = NULL;
 	struct dom_sid *ai_service = NULL;
+	struct dom_sid *ai_claims_valid = NULL;
 	size_t ai_auth_authority_count = 0;
 	size_t ai_service_count = 0;
+	size_t ai_claims_valid_count = 0;
+	size_t kinit_asserted_identity_index = 0;
+	size_t kinit_claims_valid_index = 0;
+	size_t s4u2self_asserted_identity_index = 0;
+	size_t s4u2self_claims_valid_index = 0;
 	bool ok;
 
 	TALLOC_CTX *tmp_ctx = talloc_new(tctx);
@@ -975,13 +983,6 @@ static bool test_S4U2Self(struct torture_context *tctx,
 	status = check_primary_group_in_validation(tmp_ctx, r.in.validation_level, r.out.validation);
 	torture_assert_ntstatus_ok(tctx, status, "check_primary_group_in_validation failed");
 
-	/* Check that the primary group is not duplicated in user_info_dc SID array */
-	for (i = 2; i < netlogon_user_info_dc->num_sids; i++) {
-		torture_assert(tctx, !dom_sid_equal(&netlogon_user_info_dc->sids[1],
-						    &netlogon_user_info_dc->sids[i]),
-			       "Duplicate PrimaryGroupId in return SID array");
-	}
-
 	torture_assert_str_equal(tctx, netlogon_user_info_dc->info->account_name == NULL ? "" : netlogon_user_info_dc->info->account_name,
 				 kinit_session_info->info->account_name, "Account name differs for kinit-based PAC");
 	torture_assert_str_equal(tctx,netlogon_user_info_dc->info->account_name == NULL ? "" : netlogon_user_info_dc->info->account_name,
@@ -990,29 +991,48 @@ static bool test_S4U2Self(struct torture_context *tctx,
 	torture_assert_str_equal(tctx, netlogon_user_info_dc->info->full_name == NULL ? "" : netlogon_user_info_dc->info->full_name, s4u2self_session_info->info->full_name, "Full name differs for S4U2Self");
 
 	builtin_domain = dom_sid_parse_talloc(tmp_ctx, SID_BUILTIN);
+	torture_assert_not_null(tctx, builtin_domain, "failed to parse SID");
 
 	/* KRB5 might have an additional sid, the asserted identity */
 	ai_auth_authority = dom_sid_parse_talloc(
 			tmp_ctx,
 			SID_AUTHENTICATION_AUTHORITY_ASSERTED_IDENTITY);
+	torture_assert_not_null(tctx, ai_auth_authority, "failed to parse SID");
 
 	ai_service = dom_sid_parse_talloc(
 			tmp_ctx,
 			SID_SERVICE_ASSERTED_IDENTITY);
+	torture_assert_not_null(tctx, ai_service, "failed to parse SID");
+
+	/* ...and the Claims Valid SID. */
+	ai_claims_valid = dom_sid_parse_talloc(
+			tmp_ctx,
+			SID_CLAIMS_VALID);
+	torture_assert_not_null(tctx, ai_claims_valid, "failed to parse SID");
 
 	ai_auth_authority_count = 0;
 	ai_service_count = 0;
+	ai_claims_valid_count = 0;
 	for (i = 0; i < kinit_session_info->torture->num_dc_sids; i++) {
-		ok = dom_sid_equal(&kinit_session_info->torture->dc_sids[i],
+		ok = dom_sid_equal(&kinit_session_info->torture->dc_sids[i].sid,
 				   ai_auth_authority);
 		if (ok) {
 			ai_auth_authority_count++;
+			kinit_asserted_identity_index = i;
 		}
 
-		ok = dom_sid_equal(&kinit_session_info->torture->dc_sids[i],
+		ok = dom_sid_equal(&kinit_session_info->torture->dc_sids[i].sid,
 				   ai_service);
 		if (ok) {
 			ai_service_count++;
+			kinit_asserted_identity_index = i;
+		}
+
+		ok = dom_sid_equal(&kinit_session_info->torture->dc_sids[i].sid,
+				   ai_claims_valid);
+		if (ok) {
+			ai_claims_valid_count++;
+			kinit_claims_valid_index = i;
 		}
 	}
 
@@ -1020,20 +1040,32 @@ static bool test_S4U2Self(struct torture_context *tctx,
 		"Kinit authority asserted identity should be (1)");
 	torture_assert_int_equal(tctx, ai_service_count, 0,
 		"Kinit service asserted identity should be (0)");
+	torture_assert_int_equal(tctx, ai_claims_valid_count, 1,
+		"Kinit Claims Valid should be (1)");
 
 	ai_auth_authority_count = 0;
 	ai_service_count = 0;
+	ai_claims_valid_count = 0;
 	for (i = 0; i < s4u2self_session_info->torture->num_dc_sids; i++) {
-		ok = dom_sid_equal(&s4u2self_session_info->torture->dc_sids[i],
+		ok = dom_sid_equal(&s4u2self_session_info->torture->dc_sids[i].sid,
 				   ai_auth_authority);
 		if (ok) {
 			ai_auth_authority_count++;
+			s4u2self_asserted_identity_index = i;
 		}
 
-		ok = dom_sid_equal(&s4u2self_session_info->torture->dc_sids[i],
+		ok = dom_sid_equal(&s4u2self_session_info->torture->dc_sids[i].sid,
 				   ai_service);
 		if (ok) {
 			ai_service_count++;
+			s4u2self_asserted_identity_index = i;
+		}
+
+		ok = dom_sid_equal(&s4u2self_session_info->torture->dc_sids[i].sid,
+				   ai_claims_valid);
+		if (ok) {
+			ai_claims_valid_count++;
+			s4u2self_claims_valid_index = i;
 		}
 	}
 
@@ -1041,16 +1073,33 @@ static bool test_S4U2Self(struct torture_context *tctx,
 		"S4U2Self authority asserted identity should be (0)");
 	torture_assert_int_equal(tctx, ai_service_count, 1,
 		"S4U2Self service asserted identity should be (1)");
+	torture_assert_int_equal(tctx, ai_claims_valid_count, 1,
+		"S4U2Self Claims Valid should be (1)");
 
-	torture_assert_int_equal(tctx, netlogon_user_info_dc->num_sids, kinit_session_info->torture->num_dc_sids - 1, "Different numbers of domain groups for kinit-based PAC");
-	torture_assert_int_equal(tctx, netlogon_user_info_dc->num_sids, s4u2self_session_info->torture->num_dc_sids - 1, "Different numbers of domain groups for S4U2Self");
+	/*
+	 * Subtract 2 to account for the Asserted Identity and Claims Valid
+	 * SIDs.
+	 */
+	torture_assert_int_equal(tctx, netlogon_user_info_dc->num_sids, kinit_session_info->torture->num_dc_sids - 2, "Different numbers of domain groups for kinit-based PAC");
+	torture_assert_int_equal(tctx, netlogon_user_info_dc->num_sids, s4u2self_session_info->torture->num_dc_sids - 2, "Different numbers of domain groups for S4U2Self");
 
-	for (i = 0; i < netlogon_user_info_dc->num_sids; i++) {
-		torture_assert(tctx, dom_sid_equal(&netlogon_user_info_dc->sids[i], &kinit_session_info->torture->dc_sids[i]), "Different domain groups for kinit-based PAC");
-		torture_assert(tctx, dom_sid_equal(&netlogon_user_info_dc->sids[i], &s4u2self_session_info->torture->dc_sids[i]), "Different domain groups for S4U2Self");
-		torture_assert(tctx, !dom_sid_in_domain(builtin_domain, &s4u2self_session_info->torture->dc_sids[i]), "Returned BUILTIN domain in groups for S4U2Self");
-		torture_assert(tctx, !dom_sid_in_domain(builtin_domain, &kinit_session_info->torture->dc_sids[i]), "Returned BUILTIN domain in groups kinit-based PAC");
-		torture_assert(tctx, !dom_sid_in_domain(builtin_domain, &netlogon_user_info_dc->sids[i]), "Returned BUILTIN domian in groups from NETLOGON SamLogon reply");
+	/* Loop over all three SID arrays. */
+	for (i = 0, j = 0, k = 0; i < netlogon_user_info_dc->num_sids; i++, j++, k++) {
+		while (j == kinit_asserted_identity_index || j == kinit_claims_valid_index) {
+			/* Skip over the asserted identity and Claims Valid SIDs. */
+			++j;
+		}
+		while (k == s4u2self_asserted_identity_index || k == s4u2self_claims_valid_index) {
+			/* Skip over the asserted identity and Claims Valid SIDs. */
+			++k;
+		}
+		torture_assert_sid_equal(tctx, &netlogon_user_info_dc->sids[i].sid, &kinit_session_info->torture->dc_sids[j].sid, "Different domain groups for kinit-based PAC");
+		torture_assert_u32_equal(tctx, netlogon_user_info_dc->sids[i].attrs, kinit_session_info->torture->dc_sids[j].attrs, "Different domain group attrs for kinit-based PAC");
+		torture_assert_sid_equal(tctx, &netlogon_user_info_dc->sids[i].sid, &s4u2self_session_info->torture->dc_sids[k].sid, "Different domain groups for S4U2Self");
+		torture_assert_u32_equal(tctx, netlogon_user_info_dc->sids[i].attrs, s4u2self_session_info->torture->dc_sids[k].attrs, "Different domain group attrs for S4U2Self");
+		torture_assert(tctx, !dom_sid_in_domain(builtin_domain, &s4u2self_session_info->torture->dc_sids[k].sid), "Returned BUILTIN domain in groups for S4U2Self");
+		torture_assert(tctx, !dom_sid_in_domain(builtin_domain, &kinit_session_info->torture->dc_sids[j].sid), "Returned BUILTIN domain in groups kinit-based PAC");
+		torture_assert(tctx, !dom_sid_in_domain(builtin_domain, &netlogon_user_info_dc->sids[i].sid), "Returned BUILTIN domian in groups from NETLOGON SamLogon reply");
 	}
 
 	return true;
@@ -1197,7 +1246,7 @@ static bool test_S4U2Proxy(struct torture_context *tctx,
 				       (ndr_pull_flags_fn_t)ndr_pull_PAC_DATA);
 	torture_assert(tctx, NDR_ERR_CODE_IS_SUCCESS(ndr_err), "ndr_pull_struct_blob of PAC_DATA structure failed");
 
-	num_pac_buffers = 8;
+	num_pac_buffers = 9;
 
 	torture_assert_int_equal(tctx, pac_data_struct.version, 0, "version");
 	torture_assert_int_equal(tctx, pac_data_struct.num_buffers, num_pac_buffers, "num_buffers");
@@ -1229,6 +1278,10 @@ static bool test_S4U2Proxy(struct torture_context *tctx,
 	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_FULL_CHECKSUM);
 	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_FULL_CHECKSUM");
 	torture_assert_not_null(tctx, pac_buf->info, "PAC_TYPE_FULL_CHECKSUM info");
+
+	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_CLIENT_CLAIMS_INFO);
+	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_CLIENT_CLAIMS_INFO");
+	torture_assert_not_null(tctx, pac_buf->info, "PAC_TYPE_CLIENT_CLAIMS_INFO info");
 
 	pac_buf = get_pac_buffer(&pac_data_struct, PAC_TYPE_CONSTRAINED_DELEGATION);
 	torture_assert_not_null(tctx, pac_buf, "PAC_TYPE_CONSTRAINED_DELEGATION");

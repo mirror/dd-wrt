@@ -817,10 +817,8 @@ err:
  * End of data: return NULL
  * Failure: set errno, return NULL
  */
-static struct dirent *mh_readdir(vfs_handle_struct *handle,
-				 struct files_struct *dirfsp,
-				 DIR *dirp,
-				 SMB_STRUCT_STAT *sbuf)
+static struct dirent *
+mh_readdir(vfs_handle_struct *handle, struct files_struct *dirfsp, DIR *dirp)
 {
 	mh_dirinfo_struct* dirInfo = (mh_dirinfo_struct*)dirp;
 	struct dirent *d = NULL;
@@ -843,7 +841,7 @@ static struct dirent *mh_readdir(vfs_handle_struct *handle,
 
 	if (! dirInfo->isInMediaFiles)
 	{
-		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
+		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream);
 		goto out;
 	}
 
@@ -853,7 +851,7 @@ static struct dirent *mh_readdir(vfs_handle_struct *handle,
 		bool isAppleDouble;
 
 		skip = False;
-		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
+		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream);
 
 		if (d == NULL)
 		{
@@ -946,31 +944,6 @@ static struct dirent *mh_readdir(vfs_handle_struct *handle,
 out:
 	DEBUG(MH_INFO_DEBUG, ("Leaving mh_readdir\n"));
 	return d;
-}
-
-/*
- * Success: no success result defined.
- * Failure: no failure result defined.
- */
-static void mh_seekdir(vfs_handle_struct *handle,
-		DIR *dirp,
-		long offset)
-{
-	DEBUG(MH_INFO_DEBUG, ("Entering and leaving mh_seekdir\n"));
-	SMB_VFS_NEXT_SEEKDIR(handle,
-			((mh_dirinfo_struct*)dirp)->dirstream, offset);
-}
-
-/*
- * Success: return long
- * Failure: no failure result defined.
- */
-static long mh_telldir(vfs_handle_struct *handle,
-		DIR *dirp)
-{
-	DEBUG(MH_INFO_DEBUG, ("Entering and leaving mh_telldir\n"));
-	return SMB_VFS_NEXT_TELLDIR(handle,
-			((mh_dirinfo_struct*)dirp)->dirstream);
 }
 
 /*
@@ -1845,8 +1818,6 @@ static struct vfs_fn_pointers vfs_mh_fns = {
 
 	.fdopendir_fn = mh_fdopendir,
 	.readdir_fn = mh_readdir,
-	.seekdir_fn = mh_seekdir,
-	.telldir_fn = mh_telldir,
 	.rewind_dir_fn = mh_rewinddir,
 	.mkdirat_fn = mh_mkdirat,
 	.closedir_fn = mh_closedir,

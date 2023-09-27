@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    status reporting
    Copyright (C) Andrew Tridgell 1994-1998
@@ -86,10 +86,10 @@ static void Ucrit_addUid(uid_t uid)
 
 static unsigned int Ucrit_checkUid(uid_t uid)
 {
-	if ( !Ucrit_IsActive ) 
+	if ( !Ucrit_IsActive )
 		return 1;
 
-	if ( uid == Ucrit_uid ) 
+	if ( uid == Ucrit_uid )
 		return 1;
 
 	return 0;
@@ -99,7 +99,7 @@ static unsigned int Ucrit_checkPid(struct server_id pid)
 {
 	int i;
 
-	if ( !Ucrit_IsActive ) 
+	if ( !Ucrit_IsActive )
 		return 1;
 
 	for (i=0;i<Ucrit_MaxPid;i++) {
@@ -381,7 +381,7 @@ static int prepare_brl(struct traverse_state *state)
 }
 
 static void print_brl(struct file_id id,
-			struct server_id pid, 
+			struct server_id pid,
 			enum brl_type lock_type,
 			enum brl_flavour lock_flav,
 			br_off start,
@@ -550,7 +550,6 @@ static int traverse_connections(const struct connections_data *crec,
 			break;
 		default:
 			encryption = "???";
-			result = -1;
 			break;
 		}
 		encryption_degree = CRYPTO_DEGREE_FULL;
@@ -572,7 +571,6 @@ static int traverse_connections(const struct connections_data *crec,
 			break;
 		default:
 			signing = "???";
-			result = -1;
 			break;
 		}
 		signing_degree = CRYPTO_DEGREE_FULL;
@@ -1080,7 +1078,9 @@ int main(int argc, const char *argv[])
 
 #ifdef HAVE_JANSSON
 	state.root_json = json_new_object();
-	add_general_information_to_json(&state);
+	if (!json_is_invalid(&state.root_json)) {
+		add_general_information_to_json(&state);
+	}
 #else /* HAVE_JANSSON */
 	if (state.json_output) {
 		fprintf(stderr, "JSON support not available, please install lib Jansson\n");

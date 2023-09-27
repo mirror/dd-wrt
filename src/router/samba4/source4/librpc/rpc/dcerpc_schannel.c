@@ -173,6 +173,9 @@ static void continue_srv_challenge(struct tevent_req *subreq)
 
 	/* prepare credentials for auth2 request */
 	s->mach_pwd = cli_credentials_get_nt_hash(s->credentials, c);
+	if (s->mach_pwd == NULL) {
+		return composite_error(c, NT_STATUS_INTERNAL_ERROR);
+	}
 
 	/* auth2 request arguments */
 	s->a.in.server_name      = s->r.in.server_name;
@@ -231,7 +234,7 @@ static void continue_srv_auth2(struct tevent_req *subreq)
 	}
 
 	/*
-	 * Strong keys could be unsupported (NT4) or disables. So retry with the
+	 * Strong keys could be unsupported (NT4) or disabled. So retry with the
 	 * flags returned by the server. - asn
 	 */
 	if (NT_STATUS_EQUAL(s->a.out.result, NT_STATUS_ACCESS_DENIED)) {

@@ -85,6 +85,8 @@ struct krb5_pac_data {
 
     /* PAC_ATTRIBUTES_INFO */
     uint64_t pac_attributes;
+
+    krb5_boolean is_trusted;
 };
 
 #define PAC_ALIGNMENT			8
@@ -139,7 +141,7 @@ pac_dealloc(void *ctx)
     free(pac->pac);
 }
 
-struct heim_type_data pac_object = {
+static const struct heim_type_data pac_object = {
     HEIM_TID_PAC,
     "heim-pac",
     NULL,
@@ -595,7 +597,7 @@ krb5_pac_get_buffer(krb5_context context, krb5_const_pac p,
     return ENOENT;
 }
 
-static struct {
+static const struct {
     uint32_t type;
     krb5_data name;
 } pac_buffer_name_map[] = {
@@ -657,6 +659,30 @@ krb5_pac_get_types(krb5_context context,
 
     return 0;
 }
+
+/*
+ *
+ */
+
+KRB5_LIB_FUNCTION krb5_boolean KRB5_LIB_CALL
+krb5_pac_is_trusted(krb5_const_pac p)
+{
+    return p->is_trusted;
+}
+
+/*
+ *
+ */
+
+KRB5_LIB_FUNCTION void KRB5_LIB_CALL
+krb5_pac_set_trusted(krb5_pac p, krb5_boolean is_trusted)
+{
+    p->is_trusted = is_trusted;
+}
+
+/*
+ *
+ */
 
 /*
  *
@@ -1956,8 +1982,8 @@ _krb5_pac_get_attributes_info(krb5_context context,
     return 0;
 }
 
-static unsigned char single_zero = '\0';
-static krb5_data single_zero_pac = { 1, &single_zero };
+static const unsigned char single_zero = '\0';
+static const krb5_data single_zero_pac = { 1, rk_UNCONST(&single_zero) };
 
 KRB5_LIB_FUNCTION krb5_error_code KRB5_LIB_CALL
 _krb5_kdc_pac_ticket_parse(krb5_context context,

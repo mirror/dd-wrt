@@ -1,25 +1,25 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
 
-   security descriptror utility functions
+   security descriptor utility functions
 
    Copyright (C) Andrew Tridgell 		2004
-      
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
 #include "libcli/security/security.h"
 #include "librpc/ndr/libndr.h"
 
@@ -87,7 +87,7 @@ struct security_acl *security_acl_dup(TALLOC_CTX *mem_ctx,
  failed:
 	talloc_free (nacl);
 	return NULL;
-	
+
 }
 
 struct security_acl *security_acl_concatenate(TALLOC_CTX *mem_ctx,
@@ -140,10 +140,10 @@ struct security_acl *security_acl_concatenate(TALLOC_CTX *mem_ctx,
 
 }
 
-/* 
+/*
    talloc and copy a security descriptor
  */
-struct security_descriptor *security_descriptor_copy(TALLOC_CTX *mem_ctx, 
+struct security_descriptor *security_descriptor_copy(TALLOC_CTX *mem_ctx,
 						     const struct security_descriptor *osd)
 {
 	struct security_descriptor *nsd;
@@ -159,7 +159,7 @@ struct security_descriptor *security_descriptor_copy(TALLOC_CTX *mem_ctx,
 			goto failed;
 		}
 	}
-	
+
 	if (osd->group_sid) {
 		nsd->group_sid = dom_sid_dup(nsd, osd->group_sid);
 		if (nsd->group_sid == NULL) {
@@ -226,7 +226,7 @@ NTSTATUS security_descriptor_for_client(TALLOC_CTX *mem_ctx,
 	}
 
 	/*
-	 * ... and remove everthing not wanted
+	 * ... and remove everything not wanted
 	 */
 
 	if (!(sec_info & SECINFO_OWNER)) {
@@ -268,9 +268,11 @@ NTSTATUS security_descriptor_for_client(TALLOC_CTX *mem_ctx,
 
 static NTSTATUS security_descriptor_acl_add(struct security_descriptor *sd,
 					    bool add_to_sacl,
-					    const struct security_ace *ace)
+					    const struct security_ace *ace,
+					    ssize_t _idx)
 {
 	struct security_acl *acl = NULL;
+	ssize_t idx;
 
 	if (add_to_sacl) {
 		acl = sd->sacl;
@@ -289,15 +291,28 @@ static NTSTATUS security_descriptor_acl_add(struct security_descriptor *sd,
 		acl->aces     = NULL;
 	}
 
+	if (_idx < 0) {
+		idx = (acl->num_aces + 1) + _idx;
+	} else {
+		idx = _idx;
+	}
+
+	if (idx < 0) {
+		return NT_STATUS_ARRAY_BOUNDS_EXCEEDED;
+	} else if (idx > acl->num_aces) {
+		return NT_STATUS_ARRAY_BOUNDS_EXCEEDED;
+	}
+
 	acl->aces = talloc_realloc(acl, acl->aces,
 				   struct security_ace, acl->num_aces+1);
 	if (acl->aces == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	acl->aces[acl->num_aces] = *ace;
+	ARRAY_INSERT_ELEMENT(acl->aces, acl->num_aces, *ace, idx);
+	acl->num_aces++;
 
-	switch (acl->aces[acl->num_aces].type) {
+	switch (acl->aces[idx].type) {
 	case SEC_ACE_TYPE_ACCESS_ALLOWED_OBJECT:
 	case SEC_ACE_TYPE_ACCESS_DENIED_OBJECT:
 	case SEC_ACE_TYPE_SYSTEM_AUDIT_OBJECT:
@@ -307,8 +322,6 @@ static NTSTATUS security_descriptor_acl_add(struct security_descriptor *sd,
 	default:
 		break;
 	}
-
-	acl->num_aces++;
 
 	if (add_to_sacl) {
 		sd->sacl = acl;
@@ -328,7 +341,21 @@ static NTSTATUS security_descriptor_acl_add(struct security_descriptor *sd,
 NTSTATUS security_descriptor_sacl_add(struct security_descriptor *sd,
 				      const struct security_ace *ace)
 {
-	return security_descriptor_acl_add(sd, true, ace);
+	return security_descriptor_acl_add(sd, true, ace, -1);
+}
+
+/*
+  insert an ACE at a given index to the SACL of a security_descriptor
+
+  idx can be negative, which means it's related to the new size from the
+  end, so -1 means the ace is appended at the end.
+*/
+
+NTSTATUS security_descriptor_sacl_insert(struct security_descriptor *sd,
+					 const struct security_ace *ace,
+					 ssize_t idx)
+{
+	return security_descriptor_acl_add(sd, true, ace, idx);
 }
 
 /*
@@ -338,7 +365,21 @@ NTSTATUS security_descriptor_sacl_add(struct security_descriptor *sd,
 NTSTATUS security_descriptor_dacl_add(struct security_descriptor *sd,
 				      const struct security_ace *ace)
 {
-	return security_descriptor_acl_add(sd, false, ace);
+	return security_descriptor_acl_add(sd, false, ace, -1);
+}
+
+/*
+  insert an ACE at a given index to the DACL of a security_descriptor
+
+  idx can be negative, which means it's related to the new size from the
+  end, so -1 means the ace is appended at the end.
+*/
+
+NTSTATUS security_descriptor_dacl_insert(struct security_descriptor *sd,
+					 const struct security_ace *ace,
+					 ssize_t idx)
+{
+	return security_descriptor_acl_add(sd, false, ace, idx);
 }
 
 /*
@@ -373,6 +414,7 @@ static NTSTATUS security_descriptor_acl_del(struct security_descriptor *sd,
 				acl->aces = NULL;
 			}
 			found = true;
+			--i;
 		}
 	}
 
@@ -552,7 +594,7 @@ bool security_ace_equal(const struct security_ace *ace1,
 /*
   compare two security acl structures
 */
-bool security_acl_equal(const struct security_acl *acl1, 
+bool security_acl_equal(const struct security_acl *acl1,
 			const struct security_acl *acl2)
 {
 	uint32_t i;
@@ -565,13 +607,13 @@ bool security_acl_equal(const struct security_acl *acl1,
 	for (i=0;i<acl1->num_aces;i++) {
 		if (!security_ace_equal(&acl1->aces[i], &acl2->aces[i])) return false;
 	}
-	return true;	
+	return true;
 }
 
 /*
   compare two security descriptors.
 */
-bool security_descriptor_equal(const struct security_descriptor *sd1, 
+bool security_descriptor_equal(const struct security_descriptor *sd1,
 			       const struct security_descriptor *sd2)
 {
 	if (sd1 == sd2) return true;
@@ -584,15 +626,15 @@ bool security_descriptor_equal(const struct security_descriptor *sd1,
 	if (!security_acl_equal(sd1->sacl, sd2->sacl))      return false;
 	if (!security_acl_equal(sd1->dacl, sd2->dacl))      return false;
 
-	return true;	
+	return true;
 }
 
 /*
   compare two security descriptors, but allow certain (missing) parts
   to be masked out of the comparison
 */
-bool security_descriptor_mask_equal(const struct security_descriptor *sd1, 
-				    const struct security_descriptor *sd2, 
+bool security_descriptor_mask_equal(const struct security_descriptor *sd1,
+				    const struct security_descriptor *sd2,
 				    uint32_t mask)
 {
 	if (sd1 == sd2) return true;
@@ -605,7 +647,7 @@ bool security_descriptor_mask_equal(const struct security_descriptor *sd1,
 	if ((mask & SEC_DESC_DACL_PRESENT) && !security_acl_equal(sd1->dacl, sd2->dacl))      return false;
 	if ((mask & SEC_DESC_SACL_PRESENT) && !security_acl_equal(sd1->sacl, sd2->sacl))      return false;
 
-	return true;	
+	return true;
 }
 
 

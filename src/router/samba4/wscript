@@ -45,7 +45,6 @@ def options(opt):
     opt.RECURSE('pidl')
     opt.RECURSE('source3')
     opt.RECURSE('lib/util')
-    opt.RECURSE('lib/crypto')
     opt.RECURSE('ctdb')
 
 # Optional Libraries
@@ -115,6 +114,14 @@ def options(opt):
     opt.add_option('--without-relro',
                   help=("Disable RELRO builds"),
                   action="store_false", dest='enable_relro')
+
+    opt.add_option('--with-kernel-keyring',
+                  help=('Enable kernely keyring support for credential storage ' +
+                        '(default if keyutils libraries are available)'),
+                  action='store_true', dest='enable_keyring')
+    opt.add_option('--without-kernel-keyring',
+                  help=('Disable kernely keyring support for credential storage'),
+                  action='store_false', dest='enable_keyring')
 
     gr = opt.option_group('developer options')
 
@@ -199,6 +206,13 @@ def configure(conf):
                    args='--cflags --libs',
                    mandatory=True)
     conf.CHECK_FUNCS_IN('inflateInit2', 'z')
+
+    if Options.options.enable_keyring != False:
+        conf.env['WITH_KERNEL_KEYRING'] = 'auto'
+        if Options.options.enable_keyring == True:
+            conf.env['WITH_KERNEL_KEYRING'] = True
+    else:
+        conf.env['WITH_KERNEL_KEYRING'] = False
 
     if conf.CHECK_FOR_THIRD_PARTY():
         conf.RECURSE('third_party')
@@ -310,7 +324,6 @@ def configure(conf):
     conf.RECURSE('source4/auth')
     conf.RECURSE('nsswitch')
     conf.RECURSE('libcli/smbreadline')
-    conf.RECURSE('lib/crypto')
     conf.RECURSE('pidl')
     if conf.CONFIG_GET('ENABLE_SELFTEST'):
         if not (Options.options.without_ad_dc):
@@ -441,7 +454,7 @@ def etags(ctx):
     '''build TAGS file using etags'''
     from waflib import Utils
     source_root = os.path.dirname(Context.g_module.root_path)
-    cmd = 'rm -f %s/TAGS && (find %s -name "*.[ch]" | egrep -v \.inst\. | xargs -n 100 etags -a)' % (source_root, source_root)
+    cmd = r'rm -f %s/TAGS && (find %s -name "*.[ch]" | egrep -v \.inst\. | xargs -n 100 etags -a)' % (source_root, source_root)
     print("Running: %s" % cmd)
     status = os.system(cmd)
     if os.WEXITSTATUS(status):
@@ -451,7 +464,7 @@ def ctags(ctx):
     "build 'tags' file using ctags"
     from waflib import Utils
     source_root = os.path.dirname(Context.g_module.root_path)
-    cmd = 'ctags --python-kinds=-i $(find %s -name "*.[ch]" | grep -v "*_proto\.h" | egrep -v \.inst\.) $(find %s -name "*.py")' % (source_root, source_root)
+    cmd = r'ctags --python-kinds=-i $(find %s -name "*.[ch]" | grep -v "*_proto\.h" | egrep -v \.inst\.) $(find %s -name "*.py")' % (source_root, source_root)
     print("Running: %s" % cmd)
     status = os.system(cmd)
     if os.WEXITSTATUS(status):
@@ -465,28 +478,6 @@ def build(bld):
     samba_version.load_version(env=bld.env, is_install=bld.is_install)
 
 
-def pydoctor(ctx):
-    '''build python apidocs'''
-    bp = os.path.abspath('bin/python')
-    mpaths = {}
-    modules = ['talloc', 'tdb', 'ldb']
-    for m in modules:
-        f = os.popen("PYTHONPATH=%s python -c 'import %s; print %s.__file__'" % (bp, m, m), 'r')
-        try:
-            mpaths[m] = f.read().strip()
-        finally:
-            f.close()
-    mpaths['main'] = bp
-    cmd = ('PYTHONPATH=%(main)s pydoctor --introspect-c-modules --project-name=Samba '
-           '--project-url=http://www.samba.org --make-html --docformat=restructuredtext '
-           '--add-package bin/python/samba ' + ''.join('--add-module %s ' % n for n in modules))
-    cmd = cmd % mpaths
-    print("Running: %s" % cmd)
-    status = os.system(cmd)
-    if os.WEXITSTATUS(status):
-        raise Errors.WafError('pydoctor failed')
-
-
 def pep8(ctx):
     '''run pep8 validator'''
     cmd='PYTHONPATH=bin/python pep8 -r bin/python/samba'
@@ -494,21 +485,6 @@ def pep8(ctx):
     status = os.system(cmd)
     if os.WEXITSTATUS(status):
         raise Errors.WafError('pep8 failed')
-
-
-def wafdocs(ctx):
-    '''build wafsamba apidocs'''
-    from samba_utils import recursive_dirlist
-    os.system('pwd')
-    list = recursive_dirlist('../buildtools/wafsamba', '.', pattern='*.py')
-
-    print(list)
-    cmd='PYTHONPATH=bin/python pydoctor --project-name=wafsamba --project-url=http://www.samba.org --make-html --docformat=restructuredtext' +\
-        "".join(' --add-module %s' % f for f in list)
-    print("Running: %s" % cmd)
-    status = os.system(cmd)
-    if os.WEXITSTATUS(status):
-        raise Errors.WafError('wafdocs failed')
 
 
 def dist():

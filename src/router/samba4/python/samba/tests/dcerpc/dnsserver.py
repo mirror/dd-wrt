@@ -22,7 +22,7 @@ import ldb
 
 from samba.auth import system_session
 from samba.samdb import SamDB
-from samba.ndr import ndr_unpack, ndr_pack
+from samba.ndr import ndr_unpack
 from samba.dcerpc import dnsp, dnsserver, security
 from samba.tests import RpcInterfaceTestCase, env_get_var_value
 from samba.dnsserver import record_from_string, flag_from_string, ARecord
@@ -34,6 +34,8 @@ class DnsserverTests(RpcInterfaceTestCase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
+
         good_dns = ["SAMDOM.EXAMPLE.COM",
                     "1.EXAMPLE.COM",
                     "%sEXAMPLE.COM" % ("1." * 100),
@@ -362,7 +364,7 @@ class DnsserverTests(RpcInterfaceTestCase):
         # there should be no A record, and one TOMBSTONE record.
         self.assert_num_records(self.custom_zone, "testrecord", 'A', 0)
         # we can't make assertions about the tombstone count based on
-        # RPC calls, as ther are no tombstones in RPCs (there is
+        # RPC calls, as there are no tombstones in RPCs (there is
         # "DNS_TYPE_ZERO" instead). Nor do tombstones show up if we
         # use DNS_TYPE_ALL.
         self.assert_num_records(self.custom_zone, "testrecord", 'ALL', 0)

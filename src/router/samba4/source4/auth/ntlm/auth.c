@@ -158,6 +158,8 @@ struct auth_check_password_state {
 	const struct auth_usersupplied_info *user_info;
 	struct auth_user_info_dc *user_info_dc;
 	struct auth_method_context *method;
+	const struct authn_audit_info *client_audit_info;
+	const struct authn_audit_info *server_audit_info;
 	uint8_t authoritative;
 };
 
@@ -231,7 +233,7 @@ _PUBLIC_ struct tevent_req *auth_check_password_send(TALLOC_CTX *mem_ctx,
 		 */
 		user_info_tmp = talloc_zero(state, struct auth_usersupplied_info);
 		if (tevent_req_nomem(user_info_tmp, req)) {
-			return tevent_req_post(req, ev);;
+			return tevent_req_post(req, ev);
 		}
 
 		/*
@@ -335,6 +337,8 @@ static void auth_check_password_done(struct tevent_req *subreq)
 
 	status = state->method->ops->check_password_recv(subreq, state,
 							 &state->user_info_dc,
+							 &state->client_audit_info,
+							 &state->server_audit_info,
 							 &authoritative);
 	TALLOC_FREE(subreq);
 	if (!authoritative ||
@@ -404,7 +408,9 @@ _PUBLIC_ NTSTATUS auth_check_password_recv(struct tevent_req *req,
 					 state->auth_ctx->lp_ctx,
 					 &state->auth_ctx->start_time,
 					 state->user_info, status,
-					 NULL, NULL, NULL);
+					 NULL, NULL, NULL,
+					 state->client_audit_info,
+					 state->server_audit_info);
 		tevent_req_received(req);
 		return status;
 	}
@@ -421,9 +427,17 @@ _PUBLIC_ NTSTATUS auth_check_password_recv(struct tevent_req *req,
 				 state->user_info, status,
 				 state->user_info_dc->info->domain_name,
 				 state->user_info_dc->info->account_name,
-				 &state->user_info_dc->sids[0]);
+				 &state->user_info_dc->sids[PRIMARY_USER_SID_INDEX].sid,
+				 state->client_audit_info,
+				 state->server_audit_info);
 
-	*user_info_dc = talloc_move(mem_ctx, &state->user_info_dc);
+	/*
+	 * Release our handle to state->user_info_dc.
+	 * state->{client,server}_audit_info, if non-NULL, becomes the new
+	 * parent.
+	*/
+	*user_info_dc = talloc_reparent(state, mem_ctx, state->user_info_dc);
+	state->user_info_dc = NULL;
 
 	tevent_req_received(req);
 	return NT_STATUS_OK;
@@ -540,7 +554,7 @@ static NTSTATUS auth_generate_session_info_wrapper(struct auth4_context *auth_co
 	NTSTATUS status;
 	struct auth_user_info_dc *user_info_dc = talloc_get_type_abort(server_returned_info, struct auth_user_info_dc);
 
-	if (user_info_dc->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		session_info_flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 
@@ -581,7 +595,7 @@ static NTSTATUS auth_generate_session_info_pac(struct auth4_context *auth_ctx,
 
 	if (!pac_blob) {
 		/*
-		 * This should already be catched at the main
+		 * This should already have been caught at the main
 		 * gensec layer, but better check twice
 		 */
 		return NT_STATUS_INTERNAL_ERROR;
@@ -599,7 +613,7 @@ static NTSTATUS auth_generate_session_info_pac(struct auth4_context *auth_ctx,
 		return status;
 	}
 
-	if (user_info_dc->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		session_info_flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 

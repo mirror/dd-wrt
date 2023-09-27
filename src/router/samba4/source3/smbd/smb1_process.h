@@ -18,10 +18,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-bool smb1_srv_send(struct smbXsrv_connection *xconn, char *buffer,
-		   bool do_signing, uint32_t seqnum,
-		   bool do_encrypt,
-		   struct smb_perfcount_data *pcd);
+bool smb1_srv_send(struct smbXsrv_connection *xconn,
+		   char *buffer,
+		   bool do_signing,
+		   uint32_t seqnum,
+		   bool do_encrypt);
 NTSTATUS allow_new_trans(struct trans_state *list, uint64_t mid);
 void smb_request_done(struct smb_request *req);
 const char *smb_fn_name(int type);
@@ -54,14 +55,18 @@ bool push_deferred_open_message_smb1(struct smb_request *req,
 				     struct file_id id,
 				     struct deferred_open_record *open_rec);
 void process_smb1(struct smbXsrv_connection *xconn,
-		  uint8_t *inbuf, size_t nread, size_t unread_bytes,
-		  uint32_t seqnum, bool encrypted,
-		  struct smb_perfcount_data *deferred_pcd);
+		  uint8_t *inbuf,
+		  size_t nread,
+		  size_t unread_bytes,
+		  uint32_t seqnum,
+		  bool encrypted);
 void smbd_echo_init(struct smbXsrv_connection *xconn);
 void construct_reply(struct smbXsrv_connection *xconn,
-		     char *inbuf, int size, size_t unread_bytes,
-		     uint32_t seqnum, bool encrypted,
-		     struct smb_perfcount_data *deferred_pcd);
+		     char *inbuf,
+		     int size,
+		     size_t unread_bytes,
+		     uint32_t seqnum,
+		     bool encrypted);
 void smbd_smb1_server_connection_read_handler(struct smbXsrv_connection *xconn,
 					      int fd);
 bool keepalive_fn(const struct timeval *now, void *private_data);

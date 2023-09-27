@@ -29,7 +29,7 @@
 #define IPSTR_LIST_CHAR	','
 
 /**
- * Allocate and initialise an ipstr list using samba_sockaddr ip adresses
+ * Allocate and initialise an ipstr list using samba_sockaddr ip addresses
  * passed as arguments.
  *
  * @param ctx TALLOC_CTX to use
@@ -126,7 +126,7 @@ static int ipstr_list_parse(TALLOC_CTX *ctx,
 	TALLOC_CTX *frame = talloc_stackframe();
 	struct samba_sockaddr *sa_list = NULL;
 	char *token_str = NULL;
-	size_t i, count;
+	size_t count;
 	size_t array_size;
 
 	*sa_list_out = NULL;
@@ -141,8 +141,10 @@ static int ipstr_list_parse(TALLOC_CTX *ctx,
 	}
 
 	count = 0;
-	for (i=0; next_token_talloc(frame, &ipstr_list, &token_str,
-				IPSTR_LIST_SEP); i++ ) {
+	while (next_token_talloc(frame,
+				 &ipstr_list,
+				 &token_str,
+				 IPSTR_LIST_SEP)) {
 		bool ok;
 		char *s = token_str;
 		char *p = strrchr(token_str, ':');
@@ -327,7 +329,7 @@ bool namecache_fetch(TALLOC_CTX *ctx,
 	DBG_INFO("name %s#%02X found.\n", name, name_type);
 
 	/*
-	 * Split up the stored value into the list of IP adresses
+	 * Split up the stored value into the list of IP addresses
 	 */
 	*num_names = ipstr_list_parse(ctx, value, sa_list);
 

@@ -97,6 +97,7 @@ PKGS = [
     ('libgpgme11-dev', 'gpgme-devel'),
     # NOTE: Debian 8+ and Ubuntu 14.04+
     ('libgnutls28-dev', 'gnutls-devel'),
+    ('gnutls-bin', 'gnutls-utils'),
     ('libtasn1-bin', 'libtasn1-tools'),
     ('libtasn1-dev', 'libtasn1-devel'),
     ('', 'quota-devel'),
@@ -135,6 +136,7 @@ PKGS = [
     ('', 'mold'),
     ('', 'ShellCheck'),
     ('', 'shfmt'),
+    ('', 'crypto-policies-scripts'),
 
     ('/usr/bin/python3', 'python3'),
     ('python3-cryptography', 'python3-cryptography'), # for krb5 tests
@@ -180,7 +182,7 @@ PKGS = [
     # rpm has no pkg for docbook-xml
     ('docbook-xml', 'docbook-dtds'),
     ('docbook-xsl', 'docbook-style-xsl'),
-    ('', 'keyutils-libs-devel'),
+    ('libkeyutils-dev', 'keyutils-libs-devel'),
     ('', 'which'),
     ('xz-utils', 'xz')
 ]
@@ -268,6 +270,8 @@ dnf install -y \
     {pkgs}
 
 dnf clean all
+
+update-crypto-policies --set DEFAULT:AD-SUPPORT
 """
 
 DNF_BOOTSTRAP_MIT = r"""
@@ -386,7 +390,7 @@ RUN useradd -m -U -s /bin/bash samba && \
 USER samba
 WORKDIR /home/samba
 # samba tests rely on this
-ENV USER=samba LC_ALL=en_US.utf8 LANG=en_US.utf8
+ENV USER=samba LC_ALL=en_US.utf8 LANG=en_US.utf8 LANGUAGE=en_US
 """
 
 # Vagrantfile snippet for each dist
@@ -411,13 +415,35 @@ Vagrant.configure("2") do |config|
 end
 """
 
-
 DEB_DISTS = {
     'debian11': {
         'docker_image': 'debian:11',
         'vagrant_box': 'debian/bullseye64',
         'replace': {
             'language-pack-en': '',   # included in locales
+        }
+    },
+    'debian11-32bit': {
+        'docker_image': 'registry-1.docker.io/i386/debian:11',
+        'vagrant_box': 'debian/bullseye32',
+        'replace': {
+            'language-pack-en': '',   # included in locales
+        }
+    },
+    'debian12': {
+        'docker_image': 'debian:12',
+        'vagrant_box': 'debian/bookworm64',
+        'replace': {
+            'language-pack-en': '',   # included in locales
+            'libtracker-sparql-2.0-dev': '',  # only tracker 3.x is available
+        }
+    },
+    'debian12-32bit': {
+        'docker_image': 'registry-1.docker.io/i386/debian:12',
+        'vagrant_box': 'debian/bookworm32',
+        'replace': {
+            'language-pack-en': '',   # included in locales
+            'libtracker-sparql-2.0-dev': '',  # only tracker 3.x is available
         }
     },
     'ubuntu1804': {
@@ -483,6 +509,7 @@ RPM_DISTS = {
             'glusterfs-devel': '',
             'libcephfs-devel': '',
             'gnutls-devel': 'compat-gnutls37-devel',
+            'gnutls-utils': 'compat-gnutls37-utils',
             'liburing-devel': '',   # not available
             'python3-setproctitle': 'python36-setproctitle',
             'tracker-devel': '', # do not install
@@ -508,9 +535,9 @@ RPM_DISTS = {
             'shfmt': '',
         }
     },
-    'fedora37': {
-        'docker_image': 'quay.io/fedora/fedora:37',
-        'vagrant_box': 'fedora/37-cloud-base',
+    'fedora38': {
+        'docker_image': 'quay.io/fedora/fedora:38',
+        'vagrant_box': 'fedora/38-cloud-base',
         'bootstrap': DNF_BOOTSTRAP,
         'replace': {
             'lsb-release': 'redhat-lsb',
@@ -519,20 +546,9 @@ RPM_DISTS = {
             'libtracker-sparql-2.0-dev': '',  # only tracker 3.x is available
         }
     },
-    'f37mit120': {
-        'docker_image': 'quay.io/fedora/fedora:37',
-        'vagrant_box': 'fedora/37-cloud-base',
-        'bootstrap': DNF_BOOTSTRAP_MIT,
-        'replace': {
-            'lsb-release': 'redhat-lsb',
-            'perl-FindBin': '',
-            'python3-iso8601': 'python3-dateutil',
-            'libtracker-sparql-2.0-dev': '',  # only tracker 3.x is available
-        }
-    },
-    'opensuse154': {
-        'docker_image': 'opensuse/leap:15.4',
-        'vagrant_box': 'opensuse/openSUSE-15.4-x86_64',
+    'opensuse155': {
+        'docker_image': 'opensuse/leap:15.5',
+        'vagrant_box': 'opensuse/openSUSE-15.5-x86_64',
         'bootstrap': ZYPPER_BOOTSTRAP,
         'replace': {
             '@development-tools': '',
@@ -557,6 +573,7 @@ RPM_DISTS = {
             'python3-markdown': 'python3-Markdown',
             'quota-devel': '',
             'glusterfs-api-devel': '',
+            'gnutls-utils': 'gnutls',
             'libtasn1-tools': '', # asn1Parser is part of libtasn1
             'mold': '',
             'shfmt': '',

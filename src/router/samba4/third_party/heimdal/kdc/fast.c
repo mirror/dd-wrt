@@ -266,6 +266,33 @@ fast_add_cookie(astgs_request_t r,
     return ret;
 }
 
+static krb5_error_code
+fast_add_dummy_cookie(astgs_request_t r,
+		      METHOD_DATA *method_data)
+{
+    krb5_error_code ret;
+    krb5_data data;
+    const krb5_data *dummy_fast_cookie = &r->config->dummy_fast_cookie;
+
+    if (dummy_fast_cookie->data == NULL)
+	return 0;
+
+    ret = krb5_data_copy(&data,
+			 dummy_fast_cookie->data,
+			 dummy_fast_cookie->length);
+    if (ret)
+	return ret;
+
+    ret = krb5_padata_add(r->context, method_data,
+			  KRB5_PADATA_FX_COOKIE,
+			  data.data, data.length);
+    if (ret) {
+	krb5_data_free(&data);
+    }
+
+    return ret;
+}
+
 krb5_error_code
 _kdc_fast_mk_response(krb5_context context,
 		      krb5_crypto armor_crypto,
@@ -323,8 +350,8 @@ _kdc_fast_mk_response(krb5_context context,
 }
 
 
-krb5_error_code
-_kdc_fast_mk_error(astgs_request_t r,
+static krb5_error_code
+_kdc_fast_mk_e_data(astgs_request_t r,
 		   METHOD_DATA *error_method,
 		   krb5_crypto armor_crypto,
 		   const KDC_REQ_BODY *req_body,
@@ -332,27 +359,33 @@ _kdc_fast_mk_error(astgs_request_t r,
 		   krb5_principal error_client,
 		   krb5_principal error_server,
 		   time_t *csec, int *cusec,
-		   krb5_data *error_msg)
+		   krb5_data *e_data)
 {
-    krb5_error_code ret;
-    krb5_data e_data;
+    krb5_error_code ret = 0;
     size_t size;
-
-    krb5_data_zero(&e_data);
-
-    heim_assert(r != NULL, "invalid request in _kdc_fast_mk_error");
 
     /*
      * FX-COOKIE can be used outside of FAST, e.g. SRP or GSS.
      */
     if (armor_crypto || r->fast.fast_state.len) {
-        kdc_log(r->context, r->config, 5, "Adding FAST cookie for KRB-ERROR");
-	ret = fast_add_cookie(r, error_client, error_method);
-	if (ret) {
-	    kdc_log(r->context, r->config, 1,
-		    "Failed to add FAST cookie: %d", ret);
-	    free_METHOD_DATA(error_method);
-	    return ret;
+	if (r->config->enable_fast_cookie) {
+	    kdc_log(r->context, r->config, 5, "Adding FAST cookie for KRB-ERROR");
+	    ret = fast_add_cookie(r, error_client, error_method);
+	    if (ret) {
+		kdc_log(r->context, r->config, 1,
+			"Failed to add FAST cookie: %d", ret);
+		free_METHOD_DATA(error_method);
+		return ret;
+	    }
+	} else {
+	    kdc_log(r->context, r->config, 5, "Adding dummy FAST cookie for KRB-ERROR");
+	    ret = fast_add_dummy_cookie(r, error_method);
+	    if (ret) {
+		kdc_log(r->context, r->config, 1,
+			"Failed to add dummy FAST cookie: %d", ret);
+		free_METHOD_DATA(error_method);
+		return ret;
+	    }
 	}
     }
 
@@ -375,7 +408,7 @@ _kdc_fast_mk_error(astgs_request_t r,
 			    error_server,
 			    NULL,
 			    NULL,
-			    &e_data);
+			    e_data);
 	if (ret) {
 	    kdc_log(r->context, r->config, 1,
 		    "Failed to make inner KRB-ERROR: %d", ret);
@@ -384,11 +417,11 @@ _kdc_fast_mk_error(astgs_request_t r,
 
 	ret = krb5_padata_add(r->context, error_method,
 			      KRB5_PADATA_FX_ERROR,
-			      e_data.data, e_data.length);
+			      e_data->data, e_data->length);
 	if (ret) {
 	    kdc_log(r->context, r->config, 1,
 		    "Failed to make add FAST PADATA to inner KRB-ERROR: %d", ret);
-	    krb5_data_free(&e_data);
+	    krb5_data_free(e_data);
 	    return ret;
 	}
 
@@ -402,7 +435,7 @@ _kdc_fast_mk_error(astgs_request_t r,
 
 	ret = _kdc_fast_mk_response(r->context, armor_crypto,
 				    error_method, NULL, NULL,
-				    req_body->nonce, &e_data);
+				    req_body->nonce, e_data);
 	free_METHOD_DATA(error_method);
 	if (ret) {
 	    kdc_log(r->context, r->config, 1,
@@ -412,7 +445,7 @@ _kdc_fast_mk_error(astgs_request_t r,
 
 	ret = krb5_padata_add(r->context, error_method,
 			      KRB5_PADATA_FX_FAST,
-			      e_data.data, e_data.length);
+			      e_data->data, e_data->length);
 	if (ret) {
 	    kdc_log(r->context, r->config, 1,
 		    "Failed to make add FAST PADATA to outer KRB-ERROR: %d", ret);
@@ -422,26 +455,70 @@ _kdc_fast_mk_error(astgs_request_t r,
         kdc_log(r->context, r->config, 5, "Making non-FAST KRB-ERROR");
 
     if (error_method && error_method->len) {
-	ASN1_MALLOC_ENCODE(METHOD_DATA, e_data.data, e_data.length,
+	ASN1_MALLOC_ENCODE(METHOD_DATA, e_data->data, e_data->length,
 			   error_method, &size, ret);
 	if (ret) {
 	    kdc_log(r->context, r->config, 1,
 		    "Failed to make encode METHOD-DATA: %d", ret);
 	    return ret;
         }
-	heim_assert(size == e_data.length, "internal asn.1 encoder error");
+	heim_assert(size == e_data->length, "internal asn.1 encoder error");
+    }
+
+    return ret;
+}
+
+
+krb5_error_code
+_kdc_fast_mk_error(astgs_request_t r,
+		   METHOD_DATA *error_method,
+		   krb5_crypto armor_crypto,
+		   const KDC_REQ_BODY *req_body,
+		   krb5_error_code outer_error,
+		   krb5_principal error_client,
+		   krb5_principal error_server,
+		   time_t *csec, int *cusec,
+		   krb5_data *error_msg)
+{
+    krb5_error_code ret;
+    krb5_data _e_data;
+    krb5_data *e_data = NULL;
+
+    krb5_data_zero(&_e_data);
+
+    heim_assert(r != NULL, "invalid request in _kdc_fast_mk_error");
+
+    if (r->e_data != NULL) {
+	e_data = r->e_data;
+    } else {
+	ret = _kdc_fast_mk_e_data(r,
+				  error_method,
+				  armor_crypto,
+				  req_body,
+				  outer_error,
+				  error_client,
+				  error_server,
+				  csec, cusec,
+				  &_e_data);
+	if (ret) {
+	    kdc_log(r->context, r->config, 1,
+		    "Failed to make FAST e-data: %d", ret);
+	    return ret;
+	}
+
+	e_data = &_e_data;
     }
 
     ret = krb5_mk_error(r->context,
 			outer_error,
 			r->e_text,
-			(e_data.length ? &e_data : NULL),
+			(e_data->length ? e_data : NULL),
 			error_client,
 			error_server,
 			csec,
 			cusec,
 			error_msg);
-    krb5_data_free(&e_data);
+    krb5_data_free(&_e_data);
 
     if (ret)
         kdc_log(r->context, r->config, 1,
@@ -605,9 +682,11 @@ fast_unwrap_request(astgs_request_t r,
 	ticket = tgs_ticket;
     }
 
-    krb5_unparse_name(r->context, ticket->client, &armor_client_principal_name);
+    (void) krb5_unparse_name(r->context, ticket->client, &armor_client_principal_name);
     kdc_audit_addkv((kdc_request_t)r, 0, "armor_client_name", "%s",
-		    armor_client_principal_name ? armor_client_principal_name : "<unknown>");
+		    armor_client_principal_name ?
+			armor_client_principal_name :
+			"<out of memory>");
 
     if (ac->remote_subkey == NULL) {
 	krb5_auth_con_free(r->context, ac);
@@ -762,17 +841,19 @@ _kdc_fast_unwrap_request(astgs_request_t r,
     if (ret)
 	return ret;
 
-    /*
-     * FX-COOKIE can be used outside of FAST, e.g. SRP or GSS.
-     */
-    pa = _kdc_find_padata(&r->req, &i, KRB5_PADATA_FX_COOKIE);
-    if (pa) {
-	krb5_const_principal ticket_client = NULL;
+    if (r->config->enable_fast_cookie) {
+	/*
+	 * FX-COOKIE can be used outside of FAST, e.g. SRP or GSS.
+	 */
+	pa = _kdc_find_padata(&r->req, &i, KRB5_PADATA_FX_COOKIE);
+	if (pa) {
+	    krb5_const_principal ticket_client = NULL;
 
-	if (tgs_ticket)
-	    ticket_client = tgs_ticket->client;
+	    if (tgs_ticket)
+		ticket_client = tgs_ticket->client;
 
-	ret = fast_parse_cookie(r, ticket_client, pa);
+	    ret = fast_parse_cookie(r, ticket_client, pa);
+	}
     }
 
     return ret;
@@ -796,8 +877,10 @@ _kdc_fast_strengthen_reply_key(astgs_request_t r)
 
 	ret = krb5_generate_random_keyblock(r->context, r->reply_key.keytype,
 					    &r->strengthen_key);
-	if (ret)
-	    krb5_abortx(r->context, "random generator fail");
+	if (ret) {
+	    kdc_log(r->context, r->config, 0, "failed to prepare random keyblock");
+	    return ret;
+	}
 
 	ret = _krb5_fast_cf2(r->context,
 			     &r->strengthen_key, "strengthenkey",
@@ -832,10 +915,9 @@ _kdc_free_fast_state(KDCFastState *state)
 }
 
 krb5_error_code
-_kdc_fast_check_armor_pac(astgs_request_t r)
+_kdc_fast_check_armor_pac(astgs_request_t r, int flags)
 {
     krb5_error_code ret;
-    int flags;
     krb5_boolean ad_kdc_issued = FALSE;
     krb5_pac mspac = NULL;
     krb5_principal armor_client_principal = NULL;
@@ -843,7 +925,7 @@ _kdc_fast_check_armor_pac(astgs_request_t r)
     hdb_entry *armor_client = NULL;
     char *armor_client_principal_name = NULL;
 
-    flags = HDB_F_FOR_TGS_REQ;
+    flags |= HDB_F_ARMOR_PRINCIPAL;
     if (_kdc_synthetic_princ_used_p(r->context, r->armor_ticket))
 	flags |= HDB_F_SYNTHETIC_OK;
     if (r->req.req_body.kdc_options.canonicalize)
@@ -889,16 +971,14 @@ _kdc_fast_check_armor_pac(astgs_request_t r)
 	goto out;
     }
 
-    if (r->explicit_armor_present) {
-	r->explicit_armor_clientdb = armor_db;
-	armor_db = NULL;
+    r->armor_clientdb = armor_db;
+    armor_db = NULL;
 
-	r->explicit_armor_client = armor_client;
-	armor_client = NULL;
+    r->armor_client = armor_client;
+    armor_client = NULL;
 
-	r->explicit_armor_pac = mspac;
-	mspac = NULL;
-    }
+    r->armor_pac = mspac;
+    mspac = NULL;
 
 out:
     krb5_xfree(armor_client_principal_name);

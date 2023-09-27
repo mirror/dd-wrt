@@ -273,19 +273,18 @@ verify_directory(krb5_context context, const char *path)
         return EINVAL;
     }
 
+    /* XXX should use mkdirx_np()  */
+    if (rk_mkdir(path, S_IRWXU) == 0)
+        return 0;
+
     if (stat(path, &sb) != 0) {
 	if (errno == ENOENT) {
-	    /* XXX should use mkdirx_np()  */
-	    if (rk_mkdir(path, S_IRWXU) == 0)
-		return 0;
-
 	    krb5_set_error_message(context, ENOENT,
 				   N_("DIR directory %s doesn't exists", ""), path);
 	    return ENOENT;
 	} else {
-	    int ret = errno;
-	    krb5_set_error_message(context, ret,
-				   N_("DIR directory %s is bad: %s", ""), path, strerror(ret));
+	    krb5_set_error_message(context, errno,
+				   N_("DIR directory %s is bad: %s", ""), path, strerror(errno));
 	    return errno;
 	}
     }
@@ -378,7 +377,7 @@ dcc_resolve_2(krb5_context context,
          *
          */
 
-        if (*res == '\0' || (res[0] == ':' && res[1] == '\0')) {
+        if (res == NULL || *res == '\0' || (res[0] == ':' && res[1] == '\0')) {
             /* XXX Why not? */
             krb5_set_error_message(context, KRB5_CC_FORMAT,
                                    N_("\"DIR:\" is not a valid ccache name", ""));

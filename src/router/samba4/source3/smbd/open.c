@@ -292,7 +292,7 @@ NTSTATUS smbd_check_access_rights_fsp(struct files_struct *dirfsp,
 	 * Samba 3.6 and earlier granted execute access even
 	 * if the ACL did not contain execute rights.
 	 * Samba 4.0 is more correct and checks it.
-	 * The compatibilty mode allows one to skip this check
+	 * The compatibility mode allows one to skip this check
 	 * to smoothen upgrades.
 	 */
 	if (lp_acl_allow_execute_always(SNUM(fsp->conn))) {
@@ -780,6 +780,15 @@ again:
 			smb_fname_rel,
 			&fsp->fsp_name->st,
 			AT_SYMLINK_NOFOLLOW);
+
+		if (ret == -1) {
+			/*
+			 * Keep the original error. Otherwise we would
+			 * mask for example EROFS for open(O_CREAT),
+			 * turning it into ENOENT.
+			 */
+			goto out;
+		}
 	} else {
 		ret = SMB_VFS_FSTAT(fsp, &fsp->fsp_name->st);
 	}
@@ -1617,7 +1626,7 @@ static NTSTATUS open_file(struct smb_request *req,
 
 		/*
 		 * Access to streams is checked by checking the basefile and
-		 * that has alreay been checked by check_base_file_access()
+		 * that has already been checked by check_base_file_access()
 		 * in create_file_unixpath().
 		 */
 		if (!fsp_is_alternate_stream(fsp)) {
@@ -2969,7 +2978,7 @@ static void defer_open(struct share_mode_lock *lck,
 	watch_state->xconn = req->xconn;
 	watch_state->mid = req->mid;
 
-	DBG_DEBUG("defering mid %" PRIu64 "\n", req->mid);
+	DBG_DEBUG("deferring mid %" PRIu64 "\n", req->mid);
 
 	watch_req = share_mode_watch_send(
 		watch_state,
@@ -6536,7 +6545,7 @@ NTSTATUS create_file_default(connection_struct *conn,
 			 * We need to fake up to open this MAGIC QUOTA file
 			 * and return a valid FID.
 			 *
-			 * w2k close this file directly after openening xp
+			 * w2k close this file directly after opening xp
 			 * also tries a QUERY_FILE_INFO on the file and then
 			 * close it
 			 */

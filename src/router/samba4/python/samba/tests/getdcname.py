@@ -24,9 +24,9 @@ from samba import WERRORError, werror
 import samba.tests
 import os
 from samba.credentials import Credentials
-from samba.dcerpc import netlogon
+from samba.dcerpc import netlogon, nbt
 from samba.dcerpc.misc import GUID
-
+from samba.net import Net
 
 class GetDCNameEx(samba.tests.TestCase):
 
@@ -40,11 +40,12 @@ class GetDCNameEx(samba.tests.TestCase):
         self.domain = os.environ.get('DOMAIN')
         self.trust_realm = os.environ.get('TRUST_REALM')
         self.trust_domain = os.environ.get('TRUST_DOMAIN')
+        self.trust_server = os.environ.get('TRUST_SERVER')
 
     def _call_get_dc_name(self, domain=None, domain_guid=None,
                           site_name=None, ex2=False, flags=0):
         if self.netlogon_conn is None:
-            self.netlogon_conn = netlogon.netlogon("ncalrpc:[schannel]",
+            self.netlogon_conn = netlogon.netlogon(f"ncacn_ip_tcp:{self.server}",
                                                    self.get_loadparm())
 
         if ex2:
@@ -70,9 +71,9 @@ class GetDCNameEx(samba.tests.TestCase):
         """
         response = self._call_get_dc_name(ex2=True)
 
-        self.assertTrue(response.dc_unc is not None)
+        self.assertIsNotNone(response.dc_unc)
         self.assertTrue(response.dc_unc.startswith('\\\\'))
-        self.assertTrue(response.dc_address is not None)
+        self.assertIsNotNone(response.dc_address)
         self.assertTrue(response.dc_address.startswith('\\\\'))
 
         self.assertTrue(response.domain_name.lower() ==
@@ -97,17 +98,16 @@ class GetDCNameEx(samba.tests.TestCase):
         b) The returned domain does not match our own domain
         c) The domain matches the format requested
         """
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         response_trust = self._call_get_dc_name(domain=self.trust_realm,
                                                 ex2=True)
         response = self._call_get_dc_name(domain=self.realm,
                                           ex2=True)
 
-        self.assertTrue(response_trust.dc_unc is not None)
+        self.assertIsNotNone(response_trust.dc_unc)
         self.assertTrue(response_trust.dc_unc.startswith('\\\\'))
-        self.assertTrue(response_trust.dc_address is not None)
+        self.assertIsNotNone(response_trust.dc_address)
         self.assertTrue(response_trust.dc_address.startswith('\\\\'))
 
         self.assertNotEqual(response_trust.dc_unc,
@@ -137,15 +137,14 @@ class GetDCNameEx(samba.tests.TestCase):
 
         Ex calls Ex2 anyways, from now on, just test Ex.
         """
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         response_trust = self._call_get_dc_name(domain=self.trust_realm,
                                                 flags=netlogon.DS_RETURN_DNS_NAME)
 
-        self.assertTrue(response_trust.dc_unc is not None)
+        self.assertIsNotNone(response_trust.dc_unc)
         self.assertTrue(response_trust.dc_unc.startswith('\\\\'))
-        self.assertTrue(response_trust.dc_address is not None)
+        self.assertIsNotNone(response_trust.dc_address)
         self.assertTrue(response_trust.dc_address.startswith('\\\\'))
 
         self.assertEqual(response_trust.domain_name.lower(),
@@ -156,17 +155,16 @@ class GetDCNameEx(samba.tests.TestCase):
 
         We assume that there is a Default-First-Site-Name site.
         """
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         site = 'Default-First-Site-Name'
         response_trust = self._call_get_dc_name(domain=self.trust_realm,
                                                 site_name=site,
                                                 flags=netlogon.DS_RETURN_DNS_NAME)
 
-        self.assertTrue(response_trust.dc_unc is not None)
+        self.assertIsNotNone(response_trust.dc_unc)
         self.assertTrue(response_trust.dc_unc.startswith('\\\\'))
-        self.assertTrue(response_trust.dc_address is not None)
+        self.assertIsNotNone(response_trust.dc_address)
         self.assertTrue(response_trust.dc_address.startswith('\\\\'))
 
         self.assertEqual(response_trust.domain_name.lower(),
@@ -179,8 +177,7 @@ class GetDCNameEx(samba.tests.TestCase):
 
         We assume that there is no Invalid-First-Site-Name site.
         """
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         site = 'Invalid-First-Site-Name'
         try:
@@ -199,8 +196,7 @@ class GetDCNameEx(samba.tests.TestCase):
 
         We assume that there is no Invalid-First-Site-Name site.
         """
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         site = 'Invalid-First-Site-Name'
         try:
@@ -219,8 +215,7 @@ class GetDCNameEx(samba.tests.TestCase):
 
         We assume that there is a Default-First-Site-Name site.
         """
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         site = ''
         try:
@@ -230,21 +225,20 @@ class GetDCNameEx(samba.tests.TestCase):
         except WERRORError as e:
             self.fail("Unable to get empty string site result: " + str(e))
 
-        self.assertTrue(response_trust.dc_unc is not None)
+        self.assertIsNotNone(response_trust.dc_unc)
         self.assertTrue(response_trust.dc_unc.startswith('\\\\'))
-        self.assertTrue(response_trust.dc_address is not None)
+        self.assertIsNotNone(response_trust.dc_address)
         self.assertTrue(response_trust.dc_address.startswith('\\\\'))
 
         self.assertEqual(response_trust.domain_name.lower(),
                          self.trust_realm.lower())
 
-        self.assertTrue(response_trust.dc_site_name is not None)
+        self.assertIsNotNone(response_trust.dc_site_name)
         self.assertNotEqual('', response_trust.dc_site_name)
 
     def test_get_dc_over_winbind_netbios(self):
         """Supply a NETBIOS trust domain name."""
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         try:
             response_trust = self._call_get_dc_name(domain=self.trust_domain,
@@ -253,7 +247,7 @@ class GetDCNameEx(samba.tests.TestCase):
         except WERRORError as e:
             self.fail("Failed to succeed over winbind: " + str(e))
 
-        self.assertTrue(response_trust is not None)
+        self.assertIsNotNone(response_trust)
         self.assertEqual(response_trust.domain_name.lower(),
                          self.trust_realm.lower())
 
@@ -265,8 +259,7 @@ class GetDCNameEx(samba.tests.TestCase):
 
         Currently marked in flapping...
         """
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         site = 'Default-First-Site-Name'
         try:
@@ -278,7 +271,7 @@ class GetDCNameEx(samba.tests.TestCase):
             self.fail("get_dc_name (domain=%s,site=%s) over winbind failed: %s"
                       % (self.trust_domain, site, e))
 
-        self.assertTrue(response_trust is not None)
+        self.assertIsNotNone(response_trust)
         self.assertEqual(response_trust.domain_name.lower(),
                          self.trust_realm.lower())
 
@@ -287,8 +280,7 @@ class GetDCNameEx(samba.tests.TestCase):
     def test_get_dc_over_winbind_domain_guid(self):
         """Ensure that we do not reject requests supplied with a NULL GUID"""
 
-        if self.trust_realm is None:
-            return
+        self.assertIsNotNone(self.trust_realm)
 
         null_guid = GUID()
         try:
@@ -298,9 +290,9 @@ class GetDCNameEx(samba.tests.TestCase):
         except WERRORError as e:
             self.fail("Unable to get NULL domain GUID result: " + str(e))
 
-        self.assertTrue(response_trust.dc_unc is not None)
+        self.assertIsNotNone(response_trust.dc_unc)
         self.assertTrue(response_trust.dc_unc.startswith('\\\\'))
-        self.assertTrue(response_trust.dc_address is not None)
+        self.assertIsNotNone(response_trust.dc_address)
         self.assertTrue(response_trust.dc_address.startswith('\\\\'))
 
         self.assertEqual(response_trust.domain_name.lower(),
@@ -317,9 +309,9 @@ class GetDCNameEx(samba.tests.TestCase):
                                           site_name=site,
                                           flags=netlogon.DS_RETURN_DNS_NAME)
 
-        self.assertTrue(response.dc_unc is not None)
+        self.assertIsNotNone(response.dc_unc)
         self.assertTrue(response.dc_unc.startswith('\\\\'))
-        self.assertTrue(response.dc_address is not None)
+        self.assertIsNotNone(response.dc_address)
         self.assertTrue(response.dc_address.startswith('\\\\'))
 
         self.assertEqual(response.domain_name.lower(),
@@ -332,8 +324,7 @@ class GetDCNameEx(samba.tests.TestCase):
 
         We assume that there is no Invalid-First-Site-Name site.
         """
-        if self.realm is None:
-            return
+        self.assertIsNotNone(self.realm)
 
         site = 'Invalid-First-Site-Name'
         try:
@@ -379,15 +370,15 @@ class GetDCNameEx(samba.tests.TestCase):
         except WERRORError as e:
             self.fail("Unable to get empty string site result: " + str(e))
 
-        self.assertTrue(response.dc_unc is not None)
+        self.assertIsNotNone(response.dc_unc)
         self.assertTrue(response.dc_unc.startswith('\\\\'))
-        self.assertTrue(response.dc_address is not None)
+        self.assertIsNotNone(response.dc_address)
         self.assertTrue(response.dc_address.startswith('\\\\'))
 
         self.assertEqual(response.domain_name.lower(),
                          self.realm.lower())
 
-        self.assertTrue(response.dc_site_name is not None)
+        self.assertIsNotNone(response.dc_site_name)
         self.assertNotEqual('', response.dc_site_name)
 
     def test_get_dc_netbios(self):
@@ -400,7 +391,7 @@ class GetDCNameEx(samba.tests.TestCase):
         except WERRORError as e:
             self.fail("Failed to succeed over winbind: " + str(e))
 
-        self.assertTrue(response is not None)
+        self.assertIsNotNone(response)
         self.assertEqual(response.domain_name.lower(),
                          self.realm.lower())
 
@@ -416,7 +407,7 @@ class GetDCNameEx(samba.tests.TestCase):
         except WERRORError as e:
             self.fail("Failed to succeed over winbind: " + str(e))
 
-        self.assertTrue(response is not None)
+        self.assertIsNotNone(response)
         self.assertEqual(response.domain_name.lower(),
                          self.realm.lower())
 
@@ -430,9 +421,9 @@ class GetDCNameEx(samba.tests.TestCase):
                                           domain_guid=null_guid,
                                           flags=netlogon.DS_RETURN_DNS_NAME)
 
-        self.assertTrue(response.dc_unc is not None)
+        self.assertIsNotNone(response.dc_unc)
         self.assertTrue(response.dc_unc.startswith('\\\\'))
-        self.assertTrue(response.dc_address is not None)
+        self.assertIsNotNone(response.dc_address)
         self.assertTrue(response.dc_address.startswith('\\\\'))
 
         self.assertEqual(response.domain_name.lower(),
@@ -443,13 +434,266 @@ class GetDCNameEx(samba.tests.TestCase):
         response = self._call_get_dc_name(domain='',
                                           flags=netlogon.DS_RETURN_DNS_NAME)
 
-        self.assertTrue(response.dc_unc is not None)
+        self.assertIsNotNone(response.dc_unc)
         self.assertTrue(response.dc_unc.startswith('\\\\'))
-        self.assertTrue(response.dc_address is not None)
+        self.assertIsNotNone(response.dc_address)
         self.assertTrue(response.dc_address.startswith('\\\\'))
 
         self.assertEqual(response.domain_name.lower(),
                          self.realm.lower())
+
+    def test_get_dc_winbind_need_2012r2(self):
+        """Test requiring that we have a FL2012R2 DC as answer
+        """
+        self.assertIsNotNone(self.trust_realm)
+
+        try:
+            response_trust = self._call_get_dc_name(domain=self.trust_realm,
+                                                flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_9_REQUIRED)
+        except WERRORError as e:
+            enum, estr = e.args
+            self.fail(f"netr_DsRGetDCNameEx failed: {estr}")
+
+        self.assertIsNotNone(response_trust.dc_unc)
+        self.assertTrue(response_trust.dc_unc.startswith('\\\\'))
+        self.assertIsNotNone(response_trust.dc_address)
+        self.assertTrue(response_trust.dc_address.startswith('\\\\'))
+
+        self.assertEqual(response_trust.domain_name.lower(),
+                         self.trust_realm.lower())
+
+        # Now check the CLDAP netlogon response matches the above
+        dc_ip = response_trust.dc_address[2:]
+
+        net = Net(creds=self.creds, lp=self.lp)
+        cldap_netlogon_reply = net.finddc(domain=self.trust_realm, address=dc_ip,
+                                          flags=(nbt.NBT_SERVER_LDAP |
+                                                 nbt.NBT_SERVER_DS))
+        self.assertTrue(cldap_netlogon_reply.server_type & nbt.NBT_SERVER_DS_9)
+
+    def test_get_dc_direct_need_2012r2_but_not_found(self):
+        """Test requiring that we have a FL2012R2 DC as answer, against the FL2008R2 domain
+
+        This test requires that the DC in the FL2008R2 does not claim
+        to be 2012R2 capable (off by default in Samba)
+
+        """
+        self.assertIsNotNone(self.realm)
+
+
+        try:
+            response = self._call_get_dc_name(domain=self.realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_9_REQUIRED)
+
+            self.fail("Failed to detect that requirement for 2012R2 was not met")
+        except WERRORError as e:
+            enum, estr = e.args
+            if enum != werror.WERR_NO_SUCH_DOMAIN:
+                self.fail(f"Incorrect error {estr} from GetDcNameEx looking for 2012R2 DC that was not available")
+
+    def test_get_dc_direct_need_web_but_not_found(self):
+        """Test requiring that we (do not) have a AD Web Services on the DC
+
+        This test requires that the DC does not advertise AD Web Services
+
+        This is used as a test that is easy for a modern windows
+        version to fail, as (say) Windows 2022 will succeed for all
+        the DS_DIRECTORY_SERVICE_* flags.  Disable AD Web services in
+        services.mmc to run this test successfully.
+
+        """
+        self.assertIsNotNone(self.realm)
+
+
+        try:
+            response = self._call_get_dc_name(domain=self.realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_WEB_SERVICE_REQUIRED)
+
+            self.fail("Failed to detect that requirement for Web Services was not")
+        except WERRORError as e:
+            enum, estr = e.args
+            if enum != werror.WERR_NO_SUCH_DOMAIN:
+                self.fail(f"Incorrect error {estr} from GetDcNameEx looking for AD Web Services enabled DC that should not be available")
+
+        # Now check the CLDAP netlogon response matches the above - that the bit was not set
+        net = Net(creds=self.creds, lp=self.lp)
+        cldap_netlogon_reply = net.finddc(domain=self.realm,
+                                          flags=(nbt.NBT_SERVER_LDAP |
+                                                 nbt.NBT_SERVER_DS))
+        # We can assert this, even without looking for a particular
+        # DC, as if any DC has WEB_SERVICE we would have got it above.
+        self.assertFalse(cldap_netlogon_reply.server_type & nbt.NBT_SERVER_ADS_WEB_SERVICE)
+
+    def test_get_dc_winbind_need_web_but_not_found(self):
+        """Test requiring that we (do not) have a AD Web Services on the trusted DC
+
+        This test requires that the DC does not advertise AD Web Services
+
+        This is used as a test that is easy for a modern windows
+        version to fail, as (say) Windows 2022 will succeed for all
+        the DS_DIRECTORY_SERVICE_* flags.  Disable AD Web services in
+        services.mmc to run this test successfully.
+
+        """
+        self.assertIsNotNone(self.trust_realm)
+
+
+        try:
+            response = self._call_get_dc_name(domain=self.trust_realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_WEB_SERVICE_REQUIRED)
+
+            self.fail("Failed to detect that requirement for Web Services was not")
+        except WERRORError as e:
+            enum, estr = e.args
+            if enum != werror.WERR_NO_SUCH_DOMAIN:
+                self.fail(f"Incorrect error {estr} from GetDcNameEx looking for AD Web Services enabled DC that should not be available")
+
+        # Now check the CLDAP netlogon response matches the above - that the bit was not set
+        net = Net(creds=self.creds, lp=self.lp)
+        cldap_netlogon_reply = net.finddc(domain=self.trust_realm,
+                                          flags=(nbt.NBT_SERVER_LDAP |
+                                                 nbt.NBT_SERVER_DS))
+        # We can assert this, even without looking for a particular
+        # DC, as if any DC has WEB_SERVICE we would have got it above.
+        self.assertFalse(cldap_netlogon_reply.server_type & nbt.NBT_SERVER_ADS_WEB_SERVICE)
+
+    def test_get_dc_direct_need_2012r2(self):
+        """Test requiring that we have a FL2012R2 DC as answer
+        """
+        self.assertIsNotNone(self.trust_realm)
+
+        self.netlogon_conn = netlogon.netlogon(f"ncacn_ip_tcp:{self.trust_server}",
+                                               self.get_loadparm())
+
+        response_trust = self._call_get_dc_name(domain=self.trust_realm,
+                                                flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_9_REQUIRED)
+
+        self.assertIsNotNone(response_trust.dc_unc)
+        self.assertTrue(response_trust.dc_unc.startswith('\\\\'))
+        self.assertIsNotNone(response_trust.dc_address)
+        self.assertTrue(response_trust.dc_address.startswith('\\\\'))
+
+        self.assertEqual(response_trust.domain_name.lower(),
+                         self.trust_realm.lower())
+
+        # Now check the CLDAP netlogon response matches the above
+        dc_ip = response_trust.dc_address[2:]
+
+        net = Net(creds=self.creds, lp=self.lp)
+        cldap_netlogon_reply = net.finddc(domain=self.trust_realm, address=dc_ip,
+                                          flags=(nbt.NBT_SERVER_LDAP |
+                                                 nbt.NBT_SERVER_DS))
+        self.assertTrue(cldap_netlogon_reply.server_type & nbt.NBT_SERVER_DS_9)
+
+    def test_get_dc_winbind_need_2012r2_but_not_found(self):
+        """Test requiring that we have a FL2012R2 DC as answer, against the FL2008R2 domain
+
+        This test requires that the DC in the FL2008R2 does not claim
+        to be 2012R2 capable (off by default in Samba)
+
+        """
+        self.assertIsNotNone(self.realm)
+
+        self.netlogon_conn = netlogon.netlogon(f"ncacn_ip_tcp:{self.trust_server}",
+                                               self.get_loadparm())
+
+
+        try:
+            response = self._call_get_dc_name(domain=self.realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_9_REQUIRED)
+
+            self.fail("Failed to detect requirement for 2012R2 that is not met")
+        except WERRORError as e:
+            enum, estr = e.args
+            if enum != werror.WERR_NO_SUCH_DOMAIN:
+                self.fail("Failed to detect requirement for 2012R2 that is not met")
+
+        # Now check the CLDAP netlogon response matches the above - that the DS_9 bit was not set
+        net = Net(creds=self.creds, lp=self.lp)
+        cldap_netlogon_reply = net.finddc(domain=self.realm,
+                                          flags=(nbt.NBT_SERVER_LDAP |
+                                                 nbt.NBT_SERVER_DS))
+        self.assertFalse(cldap_netlogon_reply.server_type & nbt.NBT_SERVER_DS_9)
+
+    def test_get_dc_winbind_need_2012r2_but_not_found_fallback(self):
+        """Test requiring that we have a FL2012R2 DC as answer, against the
+        FL2008R2 domain, then trying for just FL2008R2 (to show caching bugs)
+
+        This test requires that the DC in the FL2008R2 does not claim
+        to be 2012R2 capable (off by default in Samba)
+
+        """
+        self.assertIsNotNone(self.realm)
+
+        self.netlogon_conn = netlogon.netlogon(f"ncacn_ip_tcp:{self.trust_server}",
+                                               self.get_loadparm())
+
+
+        try:
+            response = self._call_get_dc_name(domain=self.realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_9_REQUIRED)
+
+            self.fail("Failed to detect requirement for 2012R2 that is not met")
+        except WERRORError as e:
+            enum, estr = e.args
+            if enum != werror.WERR_NO_SUCH_DOMAIN:
+                self.fail("Failed to detect requirement for 2012R2 that is not met")
+
+        try:
+            response = self._call_get_dc_name(domain=self.realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_6_REQUIRED)
+
+        except WERRORError as e:
+            enum, estr = e.args
+            self.fail("Unexpectedly failed to find 2008 DC")
+
+        dc_ip = response.dc_address[2:]
+
+        net = Net(creds=self.creds, lp=self.lp)
+        cldap_netlogon_reply = net.finddc(domain=self.realm, address=dc_ip,
+                                          flags=(nbt.NBT_SERVER_LDAP |
+                                                 nbt.NBT_SERVER_DS))
+        self.assertTrue(cldap_netlogon_reply.server_type & nbt.NBT_SERVER_FULL_SECRET_DOMAIN_6)
+
+    def test_get_dc_direct_need_2012r2_but_not_found_fallback(self):
+        """Test requiring that we have a FL2012R2 DC as answer, against the
+        FL2008R2 domain, then trying for just FL2008R2 (to show caching bugs)
+
+        This test requires that the DC in the FL2008R2 does not claim
+        to be 2012R2 capable (off by default in Samba)
+
+        """
+        self.assertIsNotNone(self.realm)
+
+        self.netlogon_conn = netlogon.netlogon(f"ncacn_ip_tcp:{self.server}",
+                                               self.get_loadparm())
+
+
+        try:
+            response = self._call_get_dc_name(domain=self.realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_9_REQUIRED)
+
+            self.fail("Failed to detect requirement for 2012R2 that is not met")
+        except WERRORError as e:
+            enum, estr = e.args
+            if enum != werror.WERR_NO_SUCH_DOMAIN:
+                self.fail("Failed to detect requirement for 2012R2 that is not met")
+
+        try:
+            response = self._call_get_dc_name(domain=self.realm,
+                                              flags=netlogon.DS_RETURN_DNS_NAME|netlogon.DS_DIRECTORY_SERVICE_6_REQUIRED)
+
+        except WERRORError as e:
+            enum, estr = e.args
+            self.fail("Unexpectedly failed to find 2008 DC")
+
+        dc_ip = response.dc_address[2:]
+
+        net = Net(creds=self.creds, lp=self.lp)
+        cldap_netlogon_reply = net.finddc(domain=self.realm, address=dc_ip,
+                                          flags=(nbt.NBT_SERVER_LDAP |
+                                                 nbt.NBT_SERVER_DS))
+        self.assertTrue(cldap_netlogon_reply.server_type & nbt.NBT_SERVER_FULL_SECRET_DOMAIN_6)
 
     # TODO Thorough tests of domain GUID
     #

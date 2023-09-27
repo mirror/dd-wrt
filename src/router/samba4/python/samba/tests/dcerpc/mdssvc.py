@@ -84,10 +84,11 @@ class MdssvcTests(RpcInterfaceTestCase):
         self.t = threading.Thread(target=MdssvcTests.http_server, args=(self,))
         self.t.setDaemon(True)
         self.t.start()
+        self.sharepath = os.environ["LOCAL_PATH"]
         time.sleep(1)
 
         conn = mdscli.conn(self.pipe, 'spotlight', '/foo')
-        self.sharepath = conn.sharepath()
+        self.fakepath = conn.sharepath()
         conn.disconnect(self.pipe)
 
         for file in testfiles:
@@ -105,12 +106,11 @@ class MdssvcTests(RpcInterfaceTestCase):
         self.server.serve_forever()
 
     def run_test(self, query, expect, json_in, json_out):
-        expect = [s.replace("%BASEPATH%", self.sharepath) for s in expect]
         self.server.json_in = json_in.replace("%BASEPATH%", self.sharepath)
         self.server.json_out = json_out.replace("%BASEPATH%", self.sharepath)
 
         self.conn = mdscli.conn(self.pipe, 'spotlight', '/foo')
-        search = self.conn.search(self.pipe, query, self.sharepath)
+        search = self.conn.search(self.pipe, query, self.fakepath)
 
         # Give it some time, the get_results() below returns immediately
         # what's available, so if we ask to soon, we might get back no results
@@ -125,7 +125,7 @@ class MdssvcTests(RpcInterfaceTestCase):
 
     def test_mdscli_search(self):
         exp_json_query = r'''{
-          "from": 0, "size": 100, "_source": ["path.real"],
+          "from": 0, "size": 50, "_source": ["path.real"],
           "query": {
             "query_string": {
               "query": "(samba*) AND path.real.fulltext:\"%BASEPATH%\""
@@ -141,7 +141,7 @@ class MdssvcTests(RpcInterfaceTestCase):
             ]
           }
         }'''
-        exp_results = ["%BASEPATH%/foo", "%BASEPATH%/bar"]
+        exp_results = ["foo", "bar"]
         self.run_test('*=="samba*"', exp_results, exp_json_query, fake_json_response)
 
     def test_mdscli_search_escapes(self):
@@ -157,7 +157,7 @@ class MdssvcTests(RpcInterfaceTestCase):
             r'kMDItemFSName=="x\\x"'
         )
         exp_json_query = r'''{
-          "from": 0, "size": 100, "_source": ["path.real"],
+          "from": 0, "size": 50, "_source": ["path.real"],
           "query": {
             "query_string": {
               "query": "(file.filename:x\\+x OR file.filename:x\\*x OR file.filename:x=x OR file.filename:x'x OR file.filename:x\\?x OR file.filename:x\\ x OR file.filename:x\\(x OR file.filename:x\\\"x OR file.filename:x\\\\x) AND path.real.fulltext:\"%BASEPATH%\""
@@ -166,7 +166,7 @@ class MdssvcTests(RpcInterfaceTestCase):
         }'''
         fake_json_response = r'''{
           "hits" : {
-            "total" : {"value" : 2},
+            "total" : {"value" : 9},
             "hits" : [
               {"_source" : {"path" : {"real" : "%BASEPATH%/x+x"}}},
               {"_source" : {"path" : {"real" : "%BASEPATH%/x*x"}}},
@@ -181,14 +181,14 @@ class MdssvcTests(RpcInterfaceTestCase):
           }
         }'''
         exp_results = [
-            r"%BASEPATH%/x+x",
-            r"%BASEPATH%/x*x",
-            r"%BASEPATH%/x=x",
-            r"%BASEPATH%/x'x",
-            r"%BASEPATH%/x?x",
-            r"%BASEPATH%/x x",
-            r"%BASEPATH%/x(x",
-            "%BASEPATH%/x\"x",
-            r"%BASEPATH%/x\x",
+            r"x+x",
+            r"x*x",
+            r"x=x",
+            r"x'x",
+            r"x?x",
+            r"x x",
+            r"x(x",
+            "x\"x",
+            r"x\x",
         ]
         self.run_test(sl_query, exp_results, exp_json_query, fake_json_response)

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Blackbox test for fetching a large ACL
 #
@@ -43,7 +43,7 @@ build_files
 test_large_acl()
 {
 	#An ACL with 200 entries, ~7K
-	new_acl=$(seq 1001 1200 | sed -r -e '1 i\D:(A;;0x001f01ff;;;WD)' -e 's/(.*)/(A;;0x001f01ff;;;S-1-5-21-11111111-22222222-33333333-\1)/' | tr -d '\n')
+	new_acl=$(seq 1001 1200 | sed -r -e '1 i\D:(A;;FA;;;WD)' -e 's/(.*)/(A;;FA;;;S-1-5-21-11111111-22222222-33333333-\1)/' | tr -d '\n')
 	$SMBCACLS //$SERVER/acl_xattr_ign_sysacl_windows -U $USERNAME%$PASSWORD --sddl -S $new_acl large_acl
 	actual_acl=$($SMBCACLS //$SERVER/acl_xattr_ign_sysacl_windows -U $USERNAME%$PASSWORD --sddl --numeric large_acl 2>/dev/null | sed -rn 's/.*(D:.*)/\1/p' | tr -d '\n')
 	if [ ! "$new_acl" = "$actual_acl" ]; then

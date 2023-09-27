@@ -54,7 +54,7 @@ setup
 
 	Failure of this event will cause CTDB to terminate.
 
-	Example: 00.ctdb processes tunables defined in ctdb.tunables.
+	Example: 11.natgw checks that it has valid configuration
 
 startup
 
@@ -168,7 +168,7 @@ ipreallocated
 	events, even though these events may not run on some nodes if
 	there are no relevant changes.  That is, the "ipreallocated"
 	event is triggered unconditionally, even on nodes where public
-	IP addresses assignements have not changed.
+	IP addresses assignments have not changed.
 
 	This event is used to reconfigure services.
 

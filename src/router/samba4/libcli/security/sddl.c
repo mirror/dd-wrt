@@ -1,28 +1,38 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
 
    security descriptor description language functions
 
    Copyright (C) Andrew Tridgell 		2005
-      
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
+#include "lib/util/debug.h"
 #include "libcli/security/security.h"
 #include "librpc/gen_ndr/ndr_misc.h"
+#include "lib/util/smb_strtox.h"
 #include "system/locale.h"
+#include "lib/util/util_str_hex.h"
+
+
+struct sddl_transition_state {
+	const struct dom_sid *machine_sid;
+	const struct dom_sid *domain_sid;
+	const struct dom_sid *forest_sid;
+};
 
 struct flag_map {
 	const char *name;
@@ -52,23 +62,23 @@ static bool sddl_map_flag(
 /*
   map a series of letter codes into a uint32_t
 */
-static bool sddl_map_flags(const struct flag_map *map, const char *str, 
-			   uint32_t *pflags, size_t *plen)
+static bool sddl_map_flags(const struct flag_map *map, const char *str,
+			   uint32_t *pflags, size_t *plen,
+                           bool unknown_flag_is_part_of_next_thing)
 {
 	const char *str0 = str;
 	if (plen != NULL) {
 		*plen = 0;
 	}
 	*pflags = 0;
-	while (str[0] && isupper(str[0])) {
+	while (str[0] != '\0' && isupper((unsigned char)str[0])) {
 		size_t len;
 		uint32_t flags;
 		bool found;
 
 		found = sddl_map_flag(map, str, &len, &flags);
 		if (!found) {
-			DEBUG(1, ("Unknown flag - %s in %s\n", str, str0));
-			return false;
+			break;
 		}
 
 		*pflags |= flags;
@@ -77,8 +87,21 @@ static bool sddl_map_flags(const struct flag_map *map, const char *str,
 		}
 		str += len;
 	}
-	return true;
+	/*
+	 * For ACL flags, unknown_flag_is_part_of_next_thing is set,
+	 * and we expect some more stuff that isn't flags.
+	 *
+         * For ACE flags, unknown_flag_is_part_of_next_thing is unset,
+         * and the flags have been tokenised into their own little
+         * string. We don't expect anything here, even whitespace.
+         */
+        if (*str == '\0' || unknown_flag_is_part_of_next_thing) {
+                return true;
+        }
+	DBG_WARNING("Unknown flag - '%s' in '%s'\n", str, str0);
+        return false;
 }
+
 
 /*
   a mapping between the 2 letter SID codes and sid strings
@@ -86,7 +109,9 @@ static bool sddl_map_flags(const struct flag_map *map, const char *str,
 static const struct {
 	const char *code;
 	const char *sid;
-	uint32_t rid;
+	uint32_t machine_rid;
+	uint32_t domain_rid;
+	uint32_t forest_rid;
 } sid_codes[] = {
 	{ .code = "WD", .sid = SID_WORLD },
 
@@ -146,28 +171,28 @@ static const struct {
 	{ .code = "AS", .sid = SID_AUTHENTICATION_AUTHORITY_ASSERTED_IDENTITY },
 	{ .code = "SS", .sid = SID_SERVICE_ASSERTED_IDENTITY },
 
-	{ .code = "RO", .sid = NULL, .rid = DOMAIN_RID_ENTERPRISE_READONLY_DCS },
+	{ .code = "RO", .forest_rid = DOMAIN_RID_ENTERPRISE_READONLY_DCS },
 
-	{ .code = "LA", .sid = NULL, .rid = DOMAIN_RID_ADMINISTRATOR },
-	{ .code = "LG", .sid = NULL, .rid = DOMAIN_RID_GUEST },
+	{ .code = "LA", .machine_rid = DOMAIN_RID_ADMINISTRATOR },
+	{ .code = "LG", .machine_rid = DOMAIN_RID_GUEST },
 
-	{ .code = "DA", .sid = NULL, .rid = DOMAIN_RID_ADMINS },
-	{ .code = "DU", .sid = NULL, .rid = DOMAIN_RID_USERS },
-	{ .code = "DG", .sid = NULL, .rid = DOMAIN_RID_GUESTS },
-	{ .code = "DC", .sid = NULL, .rid = DOMAIN_RID_DOMAIN_MEMBERS },
-	{ .code = "DD", .sid = NULL, .rid = DOMAIN_RID_DCS },
-	{ .code = "CA", .sid = NULL, .rid = DOMAIN_RID_CERT_ADMINS },
-	{ .code = "SA", .sid = NULL, .rid = DOMAIN_RID_SCHEMA_ADMINS },
-	{ .code = "EA", .sid = NULL, .rid = DOMAIN_RID_ENTERPRISE_ADMINS },
-	{ .code = "PA", .sid = NULL, .rid = DOMAIN_RID_POLICY_ADMINS },
+	{ .code = "DA", .domain_rid = DOMAIN_RID_ADMINS },
+	{ .code = "DU", .domain_rid = DOMAIN_RID_USERS },
+	{ .code = "DG", .domain_rid = DOMAIN_RID_GUESTS },
+	{ .code = "DC", .domain_rid = DOMAIN_RID_DOMAIN_MEMBERS },
+	{ .code = "DD", .domain_rid = DOMAIN_RID_DCS },
+	{ .code = "CA", .domain_rid = DOMAIN_RID_CERT_ADMINS },
+	{ .code = "SA", .forest_rid = DOMAIN_RID_SCHEMA_ADMINS },
+	{ .code = "EA", .forest_rid = DOMAIN_RID_ENTERPRISE_ADMINS },
+	{ .code = "PA", .domain_rid = DOMAIN_RID_POLICY_ADMINS },
 
-	{ .code = "CN", .sid = NULL, .rid = DOMAIN_RID_CLONEABLE_CONTROLLERS },
+	{ .code = "CN", .domain_rid = DOMAIN_RID_CLONEABLE_CONTROLLERS },
 
-	{ .code = "AP", .sid = NULL, .rid = DOMAIN_RID_PROTECTED_USERS },
-	{ .code = "KA", .sid = NULL, .rid = DOMAIN_RID_KEY_ADMINS },
-	{ .code = "EK", .sid = NULL, .rid = DOMAIN_RID_ENTERPRISE_KEY_ADMINS },
+	{ .code = "AP", .domain_rid = DOMAIN_RID_PROTECTED_USERS },
+	{ .code = "KA", .domain_rid = DOMAIN_RID_KEY_ADMINS },
+	{ .code = "EK", .forest_rid = DOMAIN_RID_ENTERPRISE_KEY_ADMINS },
 
-	{ .code = "RS", .sid = NULL, .rid = DOMAIN_RID_RAS_SERVERS }
+	{ .code = "RS", .domain_rid = DOMAIN_RID_RAS_SERVERS }
 };
 
 /*
@@ -175,23 +200,54 @@ static const struct {
   It can either be a special 2 letter code, or in S-* format
 */
 static struct dom_sid *sddl_decode_sid(TALLOC_CTX *mem_ctx, const char **sddlp,
-				       const struct dom_sid *domain_sid)
+				       struct sddl_transition_state *state)
 {
 	const char *sddl = (*sddlp);
 	size_t i;
 
 	/* see if its in the numeric format */
 	if (strncmp(sddl, "S-", 2) == 0) {
-		struct dom_sid *sid;
-		char *sid_str;
-		size_t len = strspn(sddl+2, "-0123456789");
-		sid_str = talloc_strndup(mem_ctx, sddl, len+2);
-		if (!sid_str) {
+		struct dom_sid *sid = NULL;
+		char *sid_str = NULL;
+                const char *end = NULL;
+                bool ok;
+		size_t len = strspn(sddl + 2, "-0123456789ABCDEFabcdefxX") + 2;
+		if (len < 5) { /* S-1-x */
 			return NULL;
 		}
-		(*sddlp) += len+2;
-		sid = dom_sid_parse_talloc(mem_ctx, sid_str);
-		talloc_free(sid_str);
+		if (sddl[len - 1] == 'D' && sddl[len] == ':') {
+			/*
+			 * we have run into the "D:" dacl marker, mistaking it
+			 * for a hex digit. There is no other way for this
+			 * pair to occur at the end of a SID in SDDL.
+			 */
+			len--;
+		}
+
+		sid_str = talloc_strndup(mem_ctx, sddl, len);
+		if (sid_str == NULL) {
+			return NULL;
+		}
+                sid = talloc(mem_ctx, struct dom_sid);
+                if (sid == NULL) {
+			TALLOC_FREE(sid_str);
+                        return NULL;
+                };
+                ok = dom_sid_parse_endp(sid_str, sid, &end);
+                if (!ok) {
+			DBG_WARNING("could not parse SID '%s'\n", sid_str);
+			TALLOC_FREE(sid_str);
+                        TALLOC_FREE(sid);
+                        return NULL;
+                }
+		if (end - sid_str != len) {
+			DBG_WARNING("trailing junk after SID '%s'\n", sid_str);
+			TALLOC_FREE(sid_str);
+                        TALLOC_FREE(sid);
+                        return NULL;
+		}
+		TALLOC_FREE(sid_str);
+		(*sddlp) += len;
 		return sid;
 	}
 
@@ -206,8 +262,20 @@ static struct dom_sid *sddl_decode_sid(TALLOC_CTX *mem_ctx, const char **sddlp,
 
 	(*sddlp) += 2;
 
-	if (sid_codes[i].sid == NULL) {
-		return dom_sid_add_rid(mem_ctx, domain_sid, sid_codes[i].rid);
+
+	if (sid_codes[i].machine_rid != 0) {
+		return dom_sid_add_rid(mem_ctx, state->machine_sid,
+				       sid_codes[i].machine_rid);
+	}
+
+	if (sid_codes[i].domain_rid != 0) {
+		return dom_sid_add_rid(mem_ctx, state->domain_sid,
+				       sid_codes[i].domain_rid);
+	}
+
+	if (sid_codes[i].forest_rid != 0) {
+		return dom_sid_add_rid(mem_ctx, state->forest_sid,
+				       sid_codes[i].forest_rid);
 	}
 
 	return dom_sid_parse_talloc(mem_ctx, sid_codes[i].sid);
@@ -237,51 +305,117 @@ static const struct flag_map ace_flags[] = {
 };
 
 static const struct flag_map ace_access_mask[] = {
-	{ "RP", SEC_ADS_READ_PROP },
-	{ "WP", SEC_ADS_WRITE_PROP },
-	{ "CR", SEC_ADS_CONTROL_ACCESS },
 	{ "CC", SEC_ADS_CREATE_CHILD },
 	{ "DC", SEC_ADS_DELETE_CHILD },
 	{ "LC", SEC_ADS_LIST },
-	{ "LO", SEC_ADS_LIST_OBJECT },
-	{ "RC", SEC_STD_READ_CONTROL },
-	{ "WO", SEC_STD_WRITE_OWNER },
-	{ "WD", SEC_STD_WRITE_DAC },
-	{ "SD", SEC_STD_DELETE },
-	{ "DT", SEC_ADS_DELETE_TREE },
 	{ "SW", SEC_ADS_SELF_WRITE },
+	{ "RP", SEC_ADS_READ_PROP },
+	{ "WP", SEC_ADS_WRITE_PROP },
+	{ "DT", SEC_ADS_DELETE_TREE },
+	{ "LO", SEC_ADS_LIST_OBJECT },
+	{ "CR", SEC_ADS_CONTROL_ACCESS },
+	{ "SD", SEC_STD_DELETE },
+	{ "RC", SEC_STD_READ_CONTROL },
+	{ "WD", SEC_STD_WRITE_DAC },
+	{ "WO", SEC_STD_WRITE_OWNER },
 	{ "GA", SEC_GENERIC_ALL },
-	{ "GR", SEC_GENERIC_READ },
-	{ "GW", SEC_GENERIC_WRITE },
 	{ "GX", SEC_GENERIC_EXECUTE },
+	{ "GW", SEC_GENERIC_WRITE },
+	{ "GR", SEC_GENERIC_READ },
 	{ NULL, 0 }
 };
 
 static const struct flag_map decode_ace_access_mask[] = {
-	{ "FA", FILE_ALL_ACCESS },
+	{ "FA", FILE_GENERIC_ALL },
 	{ "FR", FILE_GENERIC_READ },
 	{ "FW", FILE_GENERIC_WRITE },
 	{ "FX", FILE_GENERIC_EXECUTE },
 	{ NULL, 0 },
 };
 
+
+static char *sddl_match_file_rights(TALLOC_CTX *mem_ctx,
+				uint32_t flags)
+{
+	int i;
+
+	/* try to find an exact match */
+	for (i=0;decode_ace_access_mask[i].name;i++) {
+		if (decode_ace_access_mask[i].flag == flags) {
+			return talloc_strdup(mem_ctx,
+					decode_ace_access_mask[i].name);
+		}
+	}
+	return NULL;
+}
+
 static bool sddl_decode_access(const char *str, uint32_t *pmask)
 {
 	const char *str0 = str;
+        char *end = NULL;
 	uint32_t mask = 0;
-	int cmp;
-
-	cmp = strncmp(str, "0x", 2);
-	if (cmp == 0) {
-		*pmask = strtol(str, NULL, 16);
+	unsigned long long numeric_mask;
+	int err;
+	/*
+	 * The access mask can be a number or a series of flags.
+	 *
+	 * Canonically the number is expressed in hexadecimal (with 0x), but
+	 * per MS-DTYP and Windows behaviour, octal and decimal numbers are
+	 * also accepted.
+	 *
+	 * Windows has two behaviours we choose not to replicate:
+	 *
+	 * 1. numbers exceeding 0xffffffff are truncated at that point,
+	 *    turning on all access flags.
+	 *
+	 * 2. negative numbers are accepted, so e.g. -2 becomes 0xfffffffe.
+	 */
+	numeric_mask = smb_strtoull(str, &end, 0, &err, SMB_STR_STANDARD);
+	if (err == 0) {
+		if (numeric_mask > UINT32_MAX) {
+			DBG_WARNING("Bad numeric flag value - %llu in %s\n",
+				    numeric_mask, str0);
+			return false;
+		}
+		if (end - str > sizeof("037777777777")) {
+			/* here's the tricky thing: if a number is big
+			 * enough to overflow the uint64, it might end
+			 * up small enough to fit in the uint32, and
+			 * we'd miss that it overflowed. So we count
+			 * the digits -- any more than 12 (for
+			 * "037777777777") is too long for 32 bits,
+			 * and the shortest 64-bit wrapping string is
+			 * 19 (for "0x1" + 16 zeros).
+			 */
+			DBG_WARNING("Bad numeric flag value in '%s'\n", str0);
+			return false;
+		}
+		if (*end != '\0') {
+			DBG_WARNING("Bad characters in '%s'\n", str0);
+			return false;
+		}
+		*pmask = numeric_mask;
 		return true;
 	}
+	/* It's not a positive number, so we'll look for flags */
 
-	while ((str[0] != '\0') && isupper(str[0])) {
+	while ((str[0] != '\0') &&
+	       (isupper((unsigned char)str[0]) || str[0] == ' ')) {
 		uint32_t flags = 0;
 		size_t len = 0;
 		bool found;
-
+		while (str[0] == ' ') {
+			/*
+			 * Following Windows we accept spaces between flags
+			 * but not after flags. Not tabs, though, never tabs.
+			 */
+			str++;
+			if (str[0] == '\0') {
+				DBG_WARNING("trailing whitespace in flags "
+					    "- '%s'\n", str0);
+				return false;
+			}
+		}
 		found = sddl_map_flag(
 			ace_access_mask, str, &len, &flags);
 		found |= sddl_map_flag(
@@ -293,10 +427,23 @@ static bool sddl_decode_access(const char *str, uint32_t *pmask)
 		mask |= flags;
 		str += len;
 	}
-
+        if (*str != '\0') {
+		DBG_WARNING("Bad characters in '%s'\n", str0);
+                return false;
+        }
 	*pmask = mask;
 	return true;
 }
+
+
+static bool sddl_decode_guid(const char *str, struct GUID *guid)
+{
+        if (strlen(str) != 36) {
+                return false;
+        }
+        return parse_guid_string(str, guid);
+}
+
 
 /*
   decode an ACE
@@ -304,7 +451,7 @@ static bool sddl_decode_access(const char *str, uint32_t *pmask)
   note that this routine modifies the string
 */
 static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char *str,
-			    const struct dom_sid *domain_sid)
+			    struct sddl_transition_state *state)
 {
 	const char *tok[6];
 	const char *s;
@@ -312,6 +459,7 @@ static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char 
 	uint32_t v;
 	struct dom_sid *sid;
 	bool ok;
+	size_t len;
 
 	ZERO_STRUCTP(ace);
 
@@ -326,17 +474,24 @@ static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char 
 	}
 
 	/* parse ace type */
-	if (!sddl_map_flags(ace_types, tok[0], &v, NULL)) {
+	ok = sddl_map_flag(ace_types, tok[0], &len, &v);
+	if (!ok) {
+		DBG_WARNING("Unknown ACE type - %s\n", tok[0]);
 		return false;
 	}
+	if (tok[0][len] != '\0') {
+		DBG_WARNING("Garbage after ACE type - %s\n", tok[0]);
+		return false;
+	}
+
 	ace->type = v;
 
 	/* ace flags */
-	if (!sddl_map_flags(ace_flags, tok[1], &v, NULL)) {
+	if (!sddl_map_flags(ace_flags, tok[1], &v, NULL, false)) {
 		return false;
 	}
 	ace->flags = v;
-	
+
 	/* access mask */
 	ok = sddl_decode_access(tok[2], &ace->access_mask);
 	if (!ok) {
@@ -345,9 +500,8 @@ static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char 
 
 	/* object */
 	if (tok[3][0] != 0) {
-		NTSTATUS status = GUID_from_string(tok[3], 
-						   &ace->object.object.type.type);
-		if (!NT_STATUS_IS_OK(status)) {
+		ok = sddl_decode_guid(tok[3], &ace->object.object.type.type);
+		if (!ok) {
 			return false;
 		}
 		ace->object.object.flags |= SEC_ACE_OBJECT_TYPE_PRESENT;
@@ -355,9 +509,9 @@ static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char 
 
 	/* inherit object */
 	if (tok[4][0] != 0) {
-		NTSTATUS status = GUID_from_string(tok[4], 
-						   &ace->object.object.inherited_type.inherited_type);
-		if (!NT_STATUS_IS_OK(status)) {
+		ok = sddl_decode_guid(tok[4],
+				      &ace->object.object.inherited_type.inherited_type);
+		if (!ok) {
 			return false;
 		}
 		ace->object.object.flags |= SEC_ACE_INHERITED_OBJECT_TYPE_PRESENT;
@@ -365,13 +519,15 @@ static bool sddl_decode_ace(TALLOC_CTX *mem_ctx, struct security_ace *ace, char 
 
 	/* trustee */
 	s = tok[5];
-	sid = sddl_decode_sid(mem_ctx, &s, domain_sid);
+	sid = sddl_decode_sid(mem_ctx, &s, state);
 	if (sid == NULL) {
 		return false;
 	}
 	ace->trustee = *sid;
 	talloc_free(sid);
-
+	if (*s != '\0') {
+		return false;
+	}
 	return true;
 }
 
@@ -385,9 +541,9 @@ static const struct flag_map acl_flags[] = {
 /*
   decode an ACL
 */
-static struct security_acl *sddl_decode_acl(struct security_descriptor *sd, 
+static struct security_acl *sddl_decode_acl(struct security_descriptor *sd,
 					    const char **sddlp, uint32_t *flags,
-					    const struct dom_sid *domain_sid)
+					    struct sddl_transition_state *state)
 {
 	const char *sddl = *sddlp;
 	struct security_acl *acl;
@@ -405,7 +561,7 @@ static struct security_acl *sddl_decode_acl(struct security_descriptor *sd,
 	}
 
 	/* work out the ACL flags */
-	if (!sddl_map_flags(acl_flags, sddl, flags, &len)) {
+	if (!sddl_map_flags(acl_flags, sddl, flags, &len, true)) {
 		talloc_free(acl);
 		return NULL;
 	}
@@ -420,14 +576,14 @@ static struct security_acl *sddl_decode_acl(struct security_descriptor *sd,
 			talloc_free(acl);
 			return NULL;
 		}
-		acl->aces = talloc_realloc(acl, acl->aces, struct security_ace, 
+		acl->aces = talloc_realloc(acl, acl->aces, struct security_ace,
 					   acl->num_aces+1);
 		if (acl->aces == NULL) {
 			talloc_free(acl);
 			return NULL;
 		}
-		if (!sddl_decode_ace(acl->aces, &acl->aces[acl->num_aces], 
-				     astr, domain_sid)) {
+		if (!sddl_decode_ace(acl->aces, &acl->aces[acl->num_aces],
+				     astr, state)) {
 			talloc_free(acl);
 			return NULL;
 		}
@@ -456,12 +612,22 @@ static struct security_acl *sddl_decode_acl(struct security_descriptor *sd,
 struct security_descriptor *sddl_decode(TALLOC_CTX *mem_ctx, const char *sddl,
 					const struct dom_sid *domain_sid)
 {
+	struct sddl_transition_state state = {
+		/*
+		 * TODO: verify .machine_rid values really belong to
+		 * to the machine_sid on a member, once
+		 * we pass machine_sid from the caller...
+		 */
+		.machine_sid = domain_sid,
+		.domain_sid = domain_sid,
+		.forest_sid = domain_sid,
+	};
 	struct security_descriptor *sd;
 	sd = talloc_zero(mem_ctx, struct security_descriptor);
 
 	sd->revision = SECURITY_DESCRIPTOR_REVISION_1;
 	sd->type     = SEC_DESC_SELF_RELATIVE;
-	
+
 	while (*sddl) {
 		uint32_t flags;
 		char c = sddl[0];
@@ -471,13 +637,13 @@ struct security_descriptor *sddl_decode(TALLOC_CTX *mem_ctx, const char *sddl,
 		switch (c) {
 		case 'D':
 			if (sd->dacl != NULL) goto failed;
-			sd->dacl = sddl_decode_acl(sd, &sddl, &flags, domain_sid);
+			sd->dacl = sddl_decode_acl(sd, &sddl, &flags, &state);
 			if (sd->dacl == NULL) goto failed;
 			sd->type |= flags | SEC_DESC_DACL_PRESENT;
 			break;
 		case 'S':
 			if (sd->sacl != NULL) goto failed;
-			sd->sacl = sddl_decode_acl(sd, &sddl, &flags, domain_sid);
+			sd->sacl = sddl_decode_acl(sd, &sddl, &flags, &state);
 			if (sd->sacl == NULL) goto failed;
 			/* this relies on the SEC_DESC_SACL_* flags being
 			   1 bit shifted from the SEC_DESC_DACL_* flags */
@@ -485,14 +651,16 @@ struct security_descriptor *sddl_decode(TALLOC_CTX *mem_ctx, const char *sddl,
 			break;
 		case 'O':
 			if (sd->owner_sid != NULL) goto failed;
-			sd->owner_sid = sddl_decode_sid(sd, &sddl, domain_sid);
+			sd->owner_sid = sddl_decode_sid(sd, &sddl, &state);
 			if (sd->owner_sid == NULL) goto failed;
 			break;
 		case 'G':
 			if (sd->group_sid != NULL) goto failed;
-			sd->group_sid = sddl_decode_sid(sd, &sddl, domain_sid);
+			sd->group_sid = sddl_decode_sid(sd, &sddl, &state);
 			if (sd->group_sid == NULL) goto failed;
 			break;
+		default:
+			goto failed;
 		}
 	}
 
@@ -546,45 +714,57 @@ failed:
   encode a sid in SDDL format
 */
 static char *sddl_encode_sid(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
-			     const struct dom_sid *domain_sid)
+			     struct sddl_transition_state *state)
 {
+	bool in_machine = dom_sid_in_domain(state->machine_sid, sid);
+	bool in_domain = dom_sid_in_domain(state->domain_sid, sid);
+	bool in_forest = dom_sid_in_domain(state->forest_sid, sid);
+	struct dom_sid_buf buf;
+	const char *sidstr = dom_sid_str_buf(sid, &buf);
+	uint32_t rid = 0;
 	size_t i;
-	char *sidstr;
 
-	sidstr = dom_sid_string(mem_ctx, sid);
-	if (sidstr == NULL) return NULL;
+	if (sid->num_auths > 1) {
+		rid = sid->sub_auths[sid->num_auths-1];
+	}
 
-	/* seen if its a well known sid */ 
-	for (i=0;sid_codes[i].sid;i++) {
-		if (strcmp(sidstr, sid_codes[i].sid) == 0) {
-			talloc_free(sidstr);
+	for (i=0;i<ARRAY_SIZE(sid_codes);i++) {
+		/* seen if its a well known sid */
+		if (sid_codes[i].sid != NULL) {
+			int cmp;
+
+			cmp = strcmp(sidstr, sid_codes[i].sid);
+			if (cmp != 0) {
+				continue;
+			}
+
+			return talloc_strdup(mem_ctx, sid_codes[i].code);
+		}
+
+		if (rid == 0) {
+			continue;
+		}
+
+		if (in_machine && sid_codes[i].machine_rid == rid) {
+			return talloc_strdup(mem_ctx, sid_codes[i].code);
+		}
+		if (in_domain && sid_codes[i].domain_rid == rid) {
+			return talloc_strdup(mem_ctx, sid_codes[i].code);
+		}
+		if (in_forest && sid_codes[i].forest_rid == rid) {
 			return talloc_strdup(mem_ctx, sid_codes[i].code);
 		}
 	}
 
-	/* or a well known rid in our domain */
-	if (dom_sid_in_domain(domain_sid, sid)) {
-		uint32_t rid = sid->sub_auths[sid->num_auths-1];
-		for (;i<ARRAY_SIZE(sid_codes);i++) {
-			if (rid == sid_codes[i].rid) {
-				talloc_free(sidstr);
-				return talloc_strdup(mem_ctx, sid_codes[i].code);
-			}
-		}
-	}
-	
-	talloc_free(sidstr);
-
-	/* TODO: encode well known sids as two letter codes */
-	return dom_sid_string(mem_ctx, sid);
+	return talloc_strdup(mem_ctx, sidstr);
 }
 
 
 /*
   encode an ACE in SDDL format
 */
-char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace,
-		      const struct dom_sid *domain_sid)
+static char *sddl_transition_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace,
+					struct sddl_transition_state *state)
 {
 	char *sddl = NULL;
 	TALLOC_CTX *tmp_ctx;
@@ -612,8 +792,12 @@ char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace,
 	sddl_mask = sddl_flags_to_string(tmp_ctx, ace_access_mask,
 					 ace->access_mask, true);
 	if (sddl_mask == NULL) {
-		sddl_mask = talloc_asprintf(tmp_ctx, "0x%08x",
-					     ace->access_mask);
+		sddl_mask = sddl_match_file_rights(tmp_ctx,
+				ace->access_mask);
+		if (sddl_mask == NULL) {
+			sddl_mask = talloc_asprintf(tmp_ctx, "0x%x",
+						    ace->access_mask);
+		}
 		if (sddl_mask == NULL) {
 			goto failed;
 		}
@@ -638,7 +822,7 @@ char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace,
 		}
 	}
 
-	sddl_trustee = sddl_encode_sid(tmp_ctx, &ace->trustee, domain_sid);
+	sddl_trustee = sddl_encode_sid(tmp_ctx, &ace->trustee, state);
 	if (sddl_trustee == NULL) {
 		goto failed;
 	}
@@ -652,11 +836,27 @@ failed:
 	return sddl;
 }
 
+char *sddl_encode_ace(TALLOC_CTX *mem_ctx, const struct security_ace *ace,
+		      const struct dom_sid *domain_sid)
+{
+	struct sddl_transition_state state = {
+		/*
+		 * TODO: verify .machine_rid values really belong to
+		 * to the machine_sid on a member, once
+		 * we pass machine_sid from the caller...
+		 */
+		.machine_sid = domain_sid,
+		.domain_sid = domain_sid,
+		.forest_sid = domain_sid,
+	};
+	return sddl_transition_encode_ace(mem_ctx, ace, &state);
+}
+
 /*
   encode an ACL in SDDL format
 */
 static char *sddl_encode_acl(TALLOC_CTX *mem_ctx, const struct security_acl *acl,
-			     uint32_t flags, const struct dom_sid *domain_sid)
+			     uint32_t flags, struct sddl_transition_state *state)
 {
 	char *sddl;
 	uint32_t i;
@@ -667,7 +867,7 @@ static char *sddl_encode_acl(TALLOC_CTX *mem_ctx, const struct security_acl *acl
 
 	/* now the ACEs, encoded in braces */
 	for (i=0;i<acl->num_aces;i++) {
-		char *ace = sddl_encode_ace(sddl, &acl->aces[i], domain_sid);
+		char *ace = sddl_transition_encode_ace(sddl, &acl->aces[i], state);
 		if (ace == NULL) goto failed;
 		sddl = talloc_asprintf_append_buffer(sddl, "(%s)", ace);
 		if (sddl == NULL) goto failed;
@@ -688,6 +888,16 @@ failed:
 char *sddl_encode(TALLOC_CTX *mem_ctx, const struct security_descriptor *sd,
 		  const struct dom_sid *domain_sid)
 {
+	struct sddl_transition_state state = {
+		/*
+		 * TODO: verify .machine_rid values really belong to
+		 * to the machine_sid on a member, once
+		 * we pass machine_sid from the caller...
+		 */
+		.machine_sid = domain_sid,
+		.domain_sid = domain_sid,
+		.forest_sid = domain_sid,
+	};
 	char *sddl;
 	TALLOC_CTX *tmp_ctx;
 
@@ -698,28 +908,28 @@ char *sddl_encode(TALLOC_CTX *mem_ctx, const struct security_descriptor *sd,
 	tmp_ctx = talloc_new(mem_ctx);
 
 	if (sd->owner_sid != NULL) {
-		char *sid = sddl_encode_sid(tmp_ctx, sd->owner_sid, domain_sid);
+		char *sid = sddl_encode_sid(tmp_ctx, sd->owner_sid, &state);
 		if (sid == NULL) goto failed;
 		sddl = talloc_asprintf_append_buffer(sddl, "O:%s", sid);
 		if (sddl == NULL) goto failed;
 	}
 
 	if (sd->group_sid != NULL) {
-		char *sid = sddl_encode_sid(tmp_ctx, sd->group_sid, domain_sid);
+		char *sid = sddl_encode_sid(tmp_ctx, sd->group_sid, &state);
 		if (sid == NULL) goto failed;
 		sddl = talloc_asprintf_append_buffer(sddl, "G:%s", sid);
 		if (sddl == NULL) goto failed;
 	}
 
 	if ((sd->type & SEC_DESC_DACL_PRESENT) && sd->dacl != NULL) {
-		char *acl = sddl_encode_acl(tmp_ctx, sd->dacl, sd->type, domain_sid);
+		char *acl = sddl_encode_acl(tmp_ctx, sd->dacl, sd->type, &state);
 		if (acl == NULL) goto failed;
 		sddl = talloc_asprintf_append_buffer(sddl, "D:%s", acl);
 		if (sddl == NULL) goto failed;
 	}
 
 	if ((sd->type & SEC_DESC_SACL_PRESENT) && sd->sacl != NULL) {
-		char *acl = sddl_encode_acl(tmp_ctx, sd->sacl, sd->type>>1, domain_sid);
+		char *acl = sddl_encode_acl(tmp_ctx, sd->sacl, sd->type>>1, &state);
 		if (acl == NULL) goto failed;
 		sddl = talloc_asprintf_append_buffer(sddl, "S:%s", acl);
 		if (sddl == NULL) goto failed;
@@ -732,5 +942,3 @@ failed:
 	talloc_free(sddl);
 	return NULL;
 }
-
-

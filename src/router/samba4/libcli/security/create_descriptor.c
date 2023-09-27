@@ -26,7 +26,8 @@
  *
  *  Author: Nadezhda Ivanova
  */
-#include "includes.h"
+#include "replace.h"
+#include "lib/util/debug.h"
 #include "libcli/security/security.h"
 #include "librpc/gen_ndr/ndr_security.h"
 
@@ -303,7 +304,7 @@ static struct security_acl *calculate_inherited_from_parent(TALLOC_CTX *mem_ctx,
 			/*
 			 * If the ACE had an explicit object class
 			 * schemaId, but no attribute/propertySet
-			 * we need to downgrate the _OBJECT variants
+			 * we need to downgrade the _OBJECT variants
 			 * to the normal ones.
 			 */
 			if (inherited_property == NULL) {

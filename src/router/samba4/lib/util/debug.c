@@ -406,7 +406,9 @@ static void debug_lttng_log(int msg_level, const char *msg, size_t msg_len)
 static void debug_gpfs_reload(bool enabled, bool previously_enabled,
 			      const char *prog_name, char *option)
 {
-	gpfswrap_init();
+	if (enabled) {
+		gpfswrap_init();
+	}
 
 	if (enabled && !previously_enabled) {
 		gpfswrap_init_trace();
@@ -1568,13 +1570,18 @@ static void Debug1(const char *msg, size_t msg_len)
 	case DEBUG_STDERR:
 	case DEBUG_DEFAULT_STDOUT:
 	case DEBUG_DEFAULT_STDERR:
-		if (dbgc_config[DBGC_ALL].fd > 0) {
-			ssize_t ret;
-			do {
-				ret = write(dbgc_config[DBGC_ALL].fd,
-					    msg,
-					    msg_len);
-			} while (ret == -1 && errno == EINTR);
+		if (state.settings.debug_syslog_format ==
+		    DEBUG_SYSLOG_FORMAT_ALWAYS) {
+			debug_file_log(current_msg_level, msg, msg_len);
+		} else {
+			if (dbgc_config[DBGC_ALL].fd > 0) {
+				ssize_t ret;
+				do {
+					ret = write(dbgc_config[DBGC_ALL].fd,
+						    msg,
+						    msg_len);
+				} while (ret == -1 && errno == EINTR);
+			}
 		}
 		break;
 	case DEBUG_FILE:
@@ -1596,6 +1603,17 @@ static void bufr_print( void )
 	format_bufr[format_pos] = '\0';
 	(void)Debug1(format_bufr, format_pos);
 	format_pos = 0;
+}
+
+/*
+ * If set (by tevent_thread_call_depth_set()) to value > 0, debug code will use
+ * it for the trace indentation.
+ */
+static size_t debug_call_depth = 0;
+
+size_t *debug_call_depth_addr(void)
+{
+	return &debug_call_depth;
 }
 
 /***************************************************************************
@@ -1624,8 +1642,21 @@ static void format_debug_text( const char *msg )
 	for( i = 0; msg[i]; i++ ) {
 		/* Indent two spaces at each new line. */
 		if(timestamp && 0 == format_pos) {
+			/* Limit the maximum indentation to 20 levels */
+			size_t depth = MIN(20, debug_call_depth);
 			format_bufr[0] = format_bufr[1] = ' ';
 			format_pos = 2;
+			/*
+			 * Indent by four spaces for each depth level,
+			 * but only if the current debug level is >= 8.
+			 */
+			if (depth > 0 && debuglevel_get() >= 8 &&
+			    format_pos + 4 * depth < FORMAT_BUFR_SIZE) {
+				memset(&format_bufr[format_pos],
+				       ' ',
+				       4 * depth);
+				format_pos += 4 * depth;
+			}
 		}
 
 		/* If there's room, copy the character to the format buffer. */
@@ -1725,23 +1756,31 @@ bool dbghdrclass(int level, int cls, const char *location, const char *func)
 
 	dbgsetclass(level, cls);
 
-	/* Don't print a header if we're logging to stdout. */
-	if ( state.logtype != DEBUG_FILE ) {
-		return( true );
+	/*
+	 * Don't print a header if we're logging to stdout,
+	 * unless 'debug syslog format = always'
+	 */
+	if (state.logtype != DEBUG_FILE &&
+	    state.settings.debug_syslog_format != DEBUG_SYSLOG_FORMAT_ALWAYS)
+	{
+		return true;
 	}
 
-	/* Print the header if timestamps are turned on.  If parameters are
-	 * not yet loaded, then default to timestamps on.
+	/*
+	 * Print the header if timestamps (or debug syslog format) is
+	 * turned on.  If parameters are not yet loaded, then default
+	 * to timestamps on.
 	 */
 	if (!(state.settings.timestamp_logs ||
 	      state.settings.debug_prefix_timestamp ||
-	      state.settings.debug_syslog_format)) {
+	      state.settings.debug_syslog_format != DEBUG_SYSLOG_FORMAT_NO))
+	{
 		return true;
 	}
 
 	GetTimeOfDay(&tv);
 
-	if (state.settings.debug_syslog_format) {
+	if (state.settings.debug_syslog_format != DEBUG_SYSLOG_FORMAT_NO) {
 		if (state.settings.debug_hires_timestamp) {
 			timeval_str_buf(&tv, true, true, &tvbuf);
 		} else {
@@ -1841,6 +1880,16 @@ bool dbghdrclass(int level, int cls, const char *location, const char *func)
 		}
 	}
 
+	if (debug_call_depth > 0) {
+		state.hs_len += snprintf(state.header_str + state.hs_len,
+					 sizeof(state.header_str) - state.hs_len,
+					 ", depth=%zu",
+					 debug_call_depth);
+		if (state.hs_len >= sizeof(state.header_str) - 1) {
+			goto full;
+		}
+	}
+
 	state.header_str[state.hs_len] = ']';
 	state.hs_len++;
 	if (state.hs_len < sizeof(state.header_str) - 1) {
@@ -1929,12 +1978,12 @@ static uint64_t debug_traceid = 0;
 
 uint64_t debug_traceid_set(uint64_t id)
 {
-    uint64_t old_id = debug_traceid;
-    debug_traceid = id;
-    return old_id;
+	uint64_t old_id = debug_traceid;
+	debug_traceid = id;
+	return old_id;
 }
 
 uint64_t debug_traceid_get(void)
 {
-    return debug_traceid;
+	return debug_traceid;
 }

@@ -97,13 +97,45 @@ check_constrained_delegation(krb5_context context,
 }
 
 /*
- * Validate a protocol transition (S4U2Self) request. If present and
- * successfully validated then the client in the request structure
- * will be replaced with the impersonated client.
+ * Determine if resource-based constrained delegation is allowed from this
+ * client to this server
  */
 
 static krb5_error_code
-validate_protocol_transition(astgs_request_t r)
+check_rbcd(krb5_context context,
+	   krb5_kdc_configuration *config,
+	   HDB *clientdb,
+	   krb5_const_principal s4u_principal,
+	   krb5_const_principal client_principal,
+	   krb5_const_pac client_pac,
+	   const hdb_entry *target)
+{
+    krb5_error_code ret = KRB5KDC_ERR_BADOPTION;
+
+    if (clientdb->hdb_check_rbcd) {
+	ret = clientdb->hdb_check_rbcd(context,
+				       clientdb,
+				       s4u_principal,
+				       client_principal,
+				       client_pac,
+				       target);
+	if (ret == 0)
+	    return 0;
+    }
+
+    kdc_log(context, config, 4,
+	    "Bad request for resource-based constrained delegation");
+    return ret;
+}
+
+/*
+ * Validate a protocol transition (S4U2Self) request. If successfully
+ * validated then the client in the request structure will be replaced
+ * with the impersonated client.
+ */
+
+krb5_error_code
+_kdc_validate_protocol_transition(astgs_request_t r, const PA_DATA *for_user)
 {
     krb5_error_code ret;
     KDC_REQ_BODY *b = &r->req.req_body;
@@ -113,28 +145,21 @@ validate_protocol_transition(astgs_request_t r)
     int flags = HDB_F_FOR_TGS_REQ;
     krb5_principal s4u_client_name = NULL, s4u_canon_client_name = NULL;
     krb5_pac s4u_pac = NULL;
-    const PA_DATA *sdata;
     char *s4ucname = NULL;
-    int i = 0;
     krb5_crypto crypto;
     krb5_data datack;
     PA_S4U2Self self;
     const char *str;
 
-    if (r->client == NULL)
-	return 0;
-
-    sdata = _kdc_find_padata(&r->req, &i, KRB5_PADATA_FOR_USER);
-    if (sdata == NULL)
-	return 0;
+    heim_assert(r->client != NULL, "client must be non-NULL");
 
     memset(&self, 0, sizeof(self));
 
     if (b->kdc_options.canonicalize)
 	flags |= HDB_F_CANON;
 
-    ret = decode_PA_S4U2Self(sdata->padata_value.data,
-			     sdata->padata_value.length,
+    ret = decode_PA_S4U2Self(for_user->padata_value.data,
+			     for_user->padata_value.length,
 			     &self, NULL);
     if (ret) {
 	kdc_audit_addreason((kdc_request_t)r,
@@ -293,13 +318,13 @@ validate_protocol_transition(astgs_request_t r)
      */
     if (r->client->flags.trusted_for_delegation &&
 	s4u_client->flags.forwardable) {
-	str = "[forwardable]";
+	str = " [forwardable]";
     } else {
 	b->kdc_options.forwardable = 0;
 	str = "";
     }
     kdc_log(r->context, r->config, 4, "s4u2self %s impersonating %s to "
-	    "service %s %s", r->cname, s4ucname, r->sname, str);
+	    "service %s%s", r->cname, s4ucname, r->sname, str);
 
     /*
      * Replace all client information in the request with the
@@ -332,13 +357,13 @@ out:
 }
 
 /*
- * Validate a constrained delegation (S4U2Proxy) request. If present
- * and successfully validated then the client in the request structure
- * will be replaced with the client from the evidence ticket.
+ * Validate a constrained delegation (S4U2Proxy) request. If
+ * successfully validated then the client in the request structure will
+ * be replaced with the client from the evidence ticket.
  */
 
-static krb5_error_code
-validate_constrained_delegation(astgs_request_t r)
+krb5_error_code
+_kdc_validate_constrained_delegation(astgs_request_t r)
 {
     krb5_error_code ret;
     KDC_REQ_BODY *b = &r->req.req_body;
@@ -351,17 +376,15 @@ validate_constrained_delegation(astgs_request_t r)
     EncTicketPart evidence_tkt;
     HDB *s4u_clientdb;
     hdb_entry *s4u_client = NULL;
+    HDB *s4u_serverdb = NULL;
+    hdb_entry *s4u_server = NULL;
     krb5_boolean ad_kdc_issued = FALSE;
     Key *clientkey;
     Ticket *t;
     krb5_const_realm local_realm;
-
-    if (r->client == NULL
-	|| b->additional_tickets == NULL
-	|| b->additional_tickets->len == 0
-	|| b->kdc_options.cname_in_addl_tkt == 0
-	|| b->kdc_options.enc_tkt_in_skey)
-	return 0;
+    const PA_DATA *pac_options_data = NULL;
+    int pac_options_data_idx = 0;
+    krb5_boolean rbcd_support = FALSE;
 
     memset(&evidence_tkt, 0, sizeof(evidence_tkt));
     local_realm =
@@ -382,6 +405,49 @@ validate_constrained_delegation(astgs_request_t r)
 
     t = &b->additional_tickets->val[0];
 
+    ret = _krb5_principalname2krb5_principal(r->context,
+					     &s4u_server_name,
+					     t->sname,
+					     t->realm);
+    if (ret)
+	goto out;
+
+    ret = krb5_unparse_name(r->context, s4u_server_name, &s4usname);
+    if (ret)
+	goto out;
+
+    /*
+     * Look up the name given in the ticket in the database. We don’t ask for
+     * canonicalisation, so that we get back the same principal that was
+     * specified in the ticket.
+     */
+    ret = _kdc_db_fetch(r->context, r->config, s4u_server_name,
+			HDB_F_GET_SERVER | HDB_F_DELAY_NEW_KEYS | flags,
+			NULL, &s4u_serverdb, &s4u_server);
+    if (ret == HDB_ERR_NOENTRY)
+	ret = KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN;
+    if (ret) {
+	kdc_audit_addreason((kdc_request_t)r,
+			    "Constrained delegation service principal unknown");
+	goto out;
+    }
+
+    /*
+     * Check that the delegating server (r->client) is the same one as specified
+     * in the ticket. This is to make sure that the server hasn’t forged the
+     * sname, which is in the unencrypted part of the ticket.
+     */
+    ret = _kdc_check_client_matches_target_service(r->context,
+						   r->config,
+						   s4u_serverdb,
+						   s4u_server,
+						   r->client,
+						   r->client_princ);
+    if (ret == KRB5KRB_AP_ERR_BADMATCH)
+	ret = KRB5KDC_ERR_BADOPTION;
+    if (ret)
+	goto out;
+
     ret = hdb_enctype2key(r->context, r->client,
 			  hdb_kvno2keys(r->context, r->client,
 					t->enc_part.kvno ? * t->enc_part.kvno : 0),
@@ -397,7 +463,7 @@ validate_constrained_delegation(astgs_request_t r)
 			    "Failed to decrypt constrained delegation ticket");
 	kdc_log(r->context, r->config, 4,
 		"failed to decrypt ticket for "
-		"constrained delegation from %s to %s ", r->cname, r->sname);
+		"constrained delegation from %s to %s", r->cname, r->sname);
 	goto out;
     }
 
@@ -414,17 +480,6 @@ validate_constrained_delegation(astgs_request_t r)
 
     kdc_audit_addkv((kdc_request_t)r, 0, "impersonatee", "%s", s4ucname);
 
-    ret = _krb5_principalname2krb5_principal(r->context,
-					     &s4u_server_name,
-					     t->sname,
-					     t->realm);
-    if (ret)
-	goto out;
-
-    ret = krb5_unparse_name(r->context, s4u_server_name, &s4usname);
-    if (ret)
-	goto out;
-
 	/* check that ticket is valid */
     if (evidence_tkt.flags.forwardable == 0) {
 	kdc_audit_addreason((kdc_request_t)r,
@@ -437,13 +492,55 @@ validate_constrained_delegation(astgs_request_t r)
 	goto out;
     }
 
-    ret = check_constrained_delegation(r->context, r->config, r->clientdb,
-				       r->client, r->server, r->server_princ);
-    if (ret) {
+    pac_options_data = _kdc_find_padata(&r->req,
+					&pac_options_data_idx,
+					KRB5_PADATA_PAC_OPTIONS);
+    if (pac_options_data != NULL) {
+	PA_PAC_OPTIONS pac_options;
+	size_t size = 0;
+
+	ret = decode_PA_PAC_OPTIONS(pac_options_data->padata_value.data,
+				    pac_options_data->padata_value.length,
+				    &pac_options,
+				    &size);
+	if (ret) {
+	    goto out;
+	}
+
+	if (size != pac_options_data->padata_value.length) {
+	    free_PA_PAC_OPTIONS(&pac_options);
+	    ret = KRB5KDC_ERR_BADOPTION;
+	    goto out;
+	}
+
+	rbcd_support = pac_options.flags.resource_based_constrained_delegation != 0;
+
+	free_PA_PAC_OPTIONS(&pac_options);
+    }
+
+    if (rbcd_support) {
+	ret = check_rbcd(r->context, r->config, r->clientdb,
+			 s4u_client_name, r->client_princ, r->pac, r->server);
+    } else {
+	ret = KRB5KDC_ERR_BADOPTION;
+    }
+    if (ret == KRB5KDC_ERR_BADOPTION) {
+	/* RBCD was denied or not supported; try constrained delegation. */
+	ret = check_constrained_delegation(r->context, r->config, r->clientdb,
+					   r->client, r->server, r->server_princ);
+	if (ret) {
+	    kdc_audit_addreason((kdc_request_t)r,
+				"Constrained delegation not allowed");
+	    kdc_log(r->context, r->config, 4,
+		    "constrained delegation from %s (%s) as %s to %s not allowed",
+		    r->cname, s4usname, s4ucname, r->sname);
+	    goto out;
+	}
+    } else if (ret) {
 	kdc_audit_addreason((kdc_request_t)r,
-			    "Constrained delegation not allowed");
+			    "Resource-based constrained delegation not allowed");
 	kdc_log(r->context, r->config, 4,
-		"constrained delegation from %s (%s) as %s to %s not allowed",
+		"resource-based constrained delegation from %s (%s) as %s to %s not allowed",
 		r->cname, s4usname, s4ucname, r->sname);
 	goto out;
     }
@@ -472,7 +569,7 @@ validate_constrained_delegation(astgs_request_t r)
      * TODO: pass in t->sname and t->realm and build
      * a S4U_DELEGATION_INFO blob to the PAC.
      */
-    ret = _kdc_check_pac(r, s4u_client_name, s4u_server_name,
+    ret = _kdc_check_pac(r, s4u_client_name, s4u_server,
 			 s4u_client, r->server, r->krbtgt, r->client,
 			 &clientkey->key, &r->ticket_key->key, &evidence_tkt,
 			 &ad_kdc_issued, &s4u_pac,
@@ -482,7 +579,7 @@ validate_constrained_delegation(astgs_request_t r)
         kdc_audit_addreason((kdc_request_t)r,
 			    "Constrained delegation ticket PAC check failed");
 	kdc_log(r->context, r->config, 4,
-		"Verify delegated PAC failed to %s for client"
+		"Verify delegated PAC failed to %s for client "
 		"%s (%s) as %s from %s with %s",
 		r->sname, r->cname, s4usname, s4ucname, r->from, msg);
 	krb5_free_error_message(r->context, msg);
@@ -501,6 +598,26 @@ validate_constrained_delegation(astgs_request_t r)
 	goto out;
     }
 
+    heim_assert(s4u_pac != NULL, "ad_kdc_issued implies the PAC is non-NULL");
+
+    ret = _kdc_pac_update(r, s4u_client_name, s4u_server, r->pac,
+			  s4u_client, r->server, r->krbtgt,
+			  &s4u_pac);
+    if (ret == KRB5_PLUGIN_NO_HANDLE) {
+	ret = 0;
+    }
+    if (ret) {
+	const char *msg = krb5_get_error_message(r->context, ret);
+        kdc_audit_addreason((kdc_request_t)r,
+			    "Constrained delegation ticket PAC update failed");
+	kdc_log(r->context, r->config, 4,
+		"Update delegated PAC failed to %s for client "
+		"%s (%s) as %s from %s with %s",
+		r->sname, r->cname, s4usname, s4ucname, r->from, msg);
+	krb5_free_error_message(r->context, msg);
+	goto out;
+    }
+
     /*
      * If the evidence ticket PAC didn't include PAC_UPN_DNS_INFO with
      * the canonical client name, but the user is local to our KDC, we
@@ -509,6 +626,15 @@ validate_constrained_delegation(astgs_request_t r)
     if (s4u_canon_client_name == NULL && s4u_client != NULL) {
 	ret = krb5_copy_principal(r->context, s4u_client->principal,
 				  &s4u_canon_client_name);
+	if (ret)
+	    goto out;
+    }
+
+    if (b->enc_authorization_data && r->rk_is_subkey == 0) {
+	krb5_free_keyblock_contents(r->context, &r->enc_ad_key);
+	ret = krb5_copy_keyblock_contents(r->context,
+					  &evidence_tkt.key,
+					  &r->enc_ad_key);
 	if (ret)
 	    goto out;
     }
@@ -535,9 +661,13 @@ validate_constrained_delegation(astgs_request_t r)
 
     r->pac_attributes = s4u_pac_attributes;
 
+    r->et.authtime = evidence_tkt.authtime;
+
 out:
     if (s4u_client)
 	_kdc_free_ent(r->context, s4u_clientdb, s4u_client);
+    if (s4u_server)
+	_kdc_free_ent(r->context, s4u_serverdb, s4u_server);
     krb5_free_principal(r->context, s4u_client_name);
     krb5_xfree(s4ucname);
     krb5_free_principal(r->context, s4u_server_name);
@@ -546,22 +676,6 @@ out:
     krb5_pac_free(r->context, s4u_pac);
 
     free_EncTicketPart(&evidence_tkt);
-
-    return ret;
-}
-
-/*
- *
- */
-
-krb5_error_code
-_kdc_validate_services_for_user(astgs_request_t r)
-{
-    krb5_error_code ret;
-
-    ret = validate_protocol_transition(r);
-    if (ret == 0)
-	ret = validate_constrained_delegation(r);
 
     return ret;
 }

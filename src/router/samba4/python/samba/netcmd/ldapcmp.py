@@ -278,7 +278,7 @@ class Descriptor(object):
             self.dacl_list.sort()
 
     def extract_dacl(self):
-        """ Extracts the DACL as a list of ACE string (with the brakets).
+        """ Extracts the DACL as a list of ACE string (with the brackets).
         """
         try:
             if "S:" in self.sddl:
@@ -467,7 +467,8 @@ class LDAPObject(object):
                 "ipsecISAKMPReference", "ipsecFilterReference",
                 "msDs-masteredBy", "lastSetTime",
                 "ipsecNegotiationPolicyReference", "subRefs", "gPCFileSysPath",
-                "accountExpires", "invocationId", "operatingSystemVersion",
+                "accountExpires", "invocationId",
+                "operatingSystem", "operatingSystemVersion",
                 "oEMInformation", "schemaInfo",
                 # After Exchange preps
                 "targetAddress", "msExchMailboxGuid", "siteFolderGUID"]
@@ -876,7 +877,7 @@ class cmd_ldapcmp(Command):
         Option("-v", "--verbose", dest="verbose", action="store_true", default=False,
                help="Print all DN pairs that have been compared"),
         Option("--sd", dest="descriptor", action="store_true", default=False,
-               help="Compare nTSecurityDescriptor attibutes only"),
+               help="Compare nTSecurityDescriptor attributes only"),
         Option("--sort-aces", dest="sort_aces", action="store_true", default=False,
                help="Sort ACEs before comparison of nTSecurityDescriptor attribute"),
         Option("--view", dest="view", default="section", choices=["section", "collision"],
@@ -888,7 +889,7 @@ class cmd_ldapcmp(Command):
         Option("--scope", dest="scope", default="SUB", choices=["SUB", "ONE", "BASE"],
                help="Pass search scope that builds DN list. Options: SUB, ONE, BASE"),
         Option("--filter", dest="filter", default="",
-               help="List of comma separated attributes to ignore in the comparision"),
+               help="List of comma separated attributes to ignore in the comparison"),
         Option("--skip-missing-dn", dest="skip_missing_dn", action="store_true", default=False,
                help="Skip report and failure due to missing DNs in one server or another"),
     ]

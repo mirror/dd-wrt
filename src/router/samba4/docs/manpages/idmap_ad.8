@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: idmap_ad
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "IDMAP_AD" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "IDMAP_AD" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -79,6 +79,42 @@ and
 are used\&.
 .sp
 Default: no
+.RE
+.PP
+deny ous
+.RS 4
+This parameter is a list of OUs from which objects will not be mapped via the ad idmap module\&. If
+\fIdeny ous\fR
+is set but
+\fIallow ous\fR
+is not set, every object outside the OUs listed in
+\fIdeny ous\fR
+is allowed\&.
+.sp
+Default: none
+.RE
+.PP
+allow ous
+.RS 4
+This parameter is a list of OUs from which objects will be mapped via the ad idmap module\&. If
+\fIallow ous\fR
+is set but
+\fIdeny ous\fR
+is not set, every object outside the OUs
+\fIallow ous\fR
+is denied\&.
+.sp
+If both
+\fIallow ous\fR
+and
+\fIdeny ous\fR
+are set,
+\fIdeny ous\fR
+is evaluated first, then
+\fIallow ous\fR
+is looked at\&. If an AD object matches neither, it is denied\&.
+.sp
+Default: none
 .RE
 .SH "EXAMPLES"
 .PP

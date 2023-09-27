@@ -19,8 +19,11 @@
 #include "includes.h"
 #include "system/filesys.h"
 #include "lib/cmdline/cmdline.h"
+#include "lib/param/param.h"
 #include "libsmbclient.h"
 #include "cmdline_contexts.h"
+#include "auth/credentials/credentials.h"
+#include "auth/gensec/gensec.h"
 
 static int columns = 0;
 
@@ -40,22 +43,14 @@ static off_t total_bytes = 0;
 #define SMB_DEFAULT_BLOCKSIZE 	64000
 
 struct opt {
-	char *workgroup;
-	bool username_specified;
-	char *username;
-	bool password_specified;
-	char *password;
-
 	char *outputfile;
 	size_t blocksize;
 
-	bool nonprompt;
-	bool quiet;
-	bool dots;
-	bool verbose;
-	bool send_stdout;
-	bool update;
-	int debuglevel;
+	int quiet;
+	int dots;
+	int verbose;
+	int send_stdout;
+	int update;
 	unsigned limit_rate;
 };
 static struct opt opt = { .blocksize = SMB_DEFAULT_BLOCKSIZE };
@@ -100,65 +95,51 @@ static void human_readable(off_t s, char *buffer, int l)
 	}
 }
 
-static void get_auth_data(const char *srv, const char *shr, char *wg, int wglen,
-			  char *un, int unlen, char *pw, int pwlen)
+/*
+ * Authentication callback for libsmbclient.
+ *
+ * The command line parser will take care asking for a password interactively!
+ */
+static void get_auth_data_with_context_fn(SMBCCTX *ctx,
+					  const char *srv,
+					  const char *shr,
+					  char *dom,
+					  int dom_len,
+					  char *usr,
+					  int usr_len,
+					  char *pwd,
+					  int pwd_len)
 {
-	static bool hasasked = false;
-	static char *savedwg;
-	static char *savedun;
-	static char *savedpw;
+	struct cli_credentials *creds = samba_cmdline_get_creds();
+	const char *username = NULL;
+	const char *password = NULL;
+	const char *domain = NULL;
 
-	if (hasasked) {
-		strncpy(wg, savedwg, wglen - 1);
-		strncpy(un, savedun, unlen - 1);
-		strncpy(pw, savedpw, pwlen - 1);
-		return;
-	}
-	hasasked = true;
-
-	/*
-	 * If no user has been specified un is initialized with the current
-	 * username of the user who started smbget.
-	 */
-	if (opt.username_specified) {
-		strncpy(un, opt.username, unlen - 1);
+	username = cli_credentials_get_username(creds);
+	if (username != NULL) {
+		strncpy(usr, username, usr_len - 1);
 	}
 
-	if (!opt.nonprompt && !opt.password_specified && pw[0] == '\0') {
-		char *prompt;
-		int rc;
+	password = cli_credentials_get_password(creds);
+	if (password != NULL) {
+		strncpy(pwd, password, pwd_len - 1);
+	}
 
-		rc = asprintf(&prompt,
-			      "Password for [%s] connecting to //%s/%s: ",
-			      un, srv, shr);
-		if (rc == -1) {
-			return;
+	domain = cli_credentials_get_domain(creds);
+	if (domain != NULL) {
+		strncpy(dom, domain, dom_len - 1);
+	}
+
+	smbc_set_credentials_with_fallback(ctx, domain, username, password);
+
+	if (!opt.quiet && username != NULL) {
+		if (username[0] == '\0') {
+			printf("Using guest user\n");
+		} else {
+			printf("Using domain: %s, user: %s\n",
+				domain,
+				username);
 		}
-		(void)samba_getpass(prompt, pw, pwlen, false, false);
-		free(prompt);
-	} else if (opt.password != NULL) {
-		strncpy(pw, opt.password, pwlen-1);
-	}
-
-	if (opt.workgroup != NULL) {
-		strncpy(wg, opt.workgroup, wglen-1);
-	}
-
-	/* save the values found for later */
-	savedwg = SMB_STRDUP(wg);
-	savedun = SMB_STRDUP(un);
-	savedpw = SMB_STRDUP(pw);
-
-	if (!opt.quiet) {
-		char *wgtmp, *usertmp;
-		wgtmp = SMB_STRNDUP(wg, wglen);
-		usertmp = SMB_STRNDUP(un, unlen);
-		printf("Using workgroup %s, %s%s\n",
-		       wgtmp,
-		       *usertmp ? "user " : "guest user",
-		       usertmp);
-		free(wgtmp);
-		free(usertmp);
 	}
 }
 
@@ -265,6 +246,7 @@ static bool smb_download_dir(const char *base, const char *name, int resume)
 		if (!ok) {
 			fprintf(stderr, "Failed to download %s: %s\n",
 				newname, strerror(errno));
+			free(newname);
 			free(tmpname);
 			return false;
 		}
@@ -646,7 +628,7 @@ static bool smb_download_file(const char *base, const char *name,
 					/* Pause until `ticks_to_fill_bucket` */
 					double sleep_us
 					 = (ticks_to_fill_bucket - diff_ticks)
-					  * 1000000 / CLOCKS_PER_SEC;
+					  * 1000000.0 / CLOCKS_PER_SEC;
 					usleep(sleep_us);
 				}
 				/* Reset the byte counter and the ticks. */
@@ -735,122 +717,18 @@ static void signal_quit(int v)
 	clean_exit();
 }
 
-static int readrcfile(const char *name, const struct poptOption long_options[])
-{
-	FILE *fd = fopen(name, "r");
-	int lineno = 0, i;
-	char var[101], val[101];
-	bool found;
-	int *intdata;
-	char **stringdata;
-	if (!fd) {
-		fprintf(stderr, "Can't open RC file %s\n", name);
-		return 1;
-	}
-
-	while (!feof(fd)) {
-		lineno++;
-		if (fscanf(fd, "%100s %100s\n", var, val) < 2) {
-			fprintf(stderr,
-				"Can't parse line %d of %s, ignoring.\n",
-				lineno, name);
-			continue;
-		}
-
-		found = false;
-
-		for (i = 0; long_options[i].argInfo; i++) {
-			if (!long_options[i].longName) {
-				continue;
-			}
-			if (strcmp(long_options[i].longName, var)) {
-				continue;
-			}
-			if (!long_options[i].arg) {
-				continue;
-			}
-
-			switch (long_options[i].argInfo) {
-			case POPT_ARG_NONE:
-				intdata = (int *)long_options[i].arg;
-				if (!strcmp(val, "on")) {
-					*intdata = 1;
-				} else if (!strcmp(val, "off")) {
-					*intdata = 0;
-				} else {
-					fprintf(stderr, "Illegal value %s for "
-						"%s at line %d in %s\n",
-						val, var, lineno, name);
-				}
-				break;
-			case POPT_ARG_INT:
-				intdata = (int *)long_options[i].arg;
-				*intdata = atoi(val);
-				break;
-			case POPT_ARG_STRING:
-				stringdata = (char **)long_options[i].arg;
-				*stringdata = SMB_STRDUP(val);
-				if (long_options[i].shortName == 'U') {
-					char *p;
-					opt.username_specified = true;
-					p = strchr(*stringdata, '%');
-					if (p != NULL) {
-						*p = '\0';
-						opt.password = p + 1;
-						opt.password_specified = true;
-					}
-				}
-				break;
-			default:
-				fprintf(stderr, "Invalid variable %s at "
-					"line %d in %s\n",
-					var, lineno, name);
-				break;
-			}
-
-			found = true;
-		}
-		if (!found) {
-			fprintf(stderr,
-				"Invalid variable %s at line %d in %s\n", var,
-				lineno, name);
-		}
-	}
-
-	fclose(fd);
-	return 0;
-}
-
 int main(int argc, char **argv)
 {
 	int c = 0;
 	const char *file = NULL;
-	char *rcfile = NULL;
-	bool smb_encrypt = false;
+	int smb_encrypt = false;
 	int resume = 0, recursive = 0;
 	TALLOC_CTX *frame = talloc_stackframe();
-	bool ret = true;
-	char *p;
+	bool ok = false;
 	const char **argv_const = discard_const_p(const char *, argv);
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
 
-		{
-			.longName   = "workgroup",
-			.shortName  = 'w',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = &opt.workgroup,
-			.val        = 'w',
-			.descrip    = "Workgroup to use (optional)"
-		},
-		{
-			.longName   = "user",
-			.shortName  = 'U',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = &opt.username,
-			.val        = 'U',
-			.descrip    = "Username to use"
-		},
 		{
 			.longName   = "guest",
 			.shortName  = 'a',
@@ -859,56 +737,38 @@ int main(int argc, char **argv)
 			.val        = 'a',
 			.descrip    = "Work as user guest"
 		},
-
-		{
-			.longName   = "nonprompt",
-			.shortName  = 'n',
-			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'n',
-			.descrip    = "Don't ask anything (non-interactive)"
-		},
-		{
-			.longName   = "debuglevel",
-			.shortName  = 'd',
-			.argInfo    = POPT_ARG_INT,
-			.arg        = &opt.debuglevel,
-			.val        = 'd',
-			.descrip    = "Debuglevel to use"
-		},
-
 		{
 			.longName   = "encrypt",
 			.shortName  = 'e',
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'e',
+			.arg        = &smb_encrypt,
+			.val        = 1,
 			.descrip    = "Encrypt SMB transport"
 		},
 		{
 			.longName   = "resume",
 			.shortName  = 'r',
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'r',
+			.arg        = &resume,
+			.val        = 1,
 			.descrip    = "Automatically resume aborted files"
 		},
 		{
 			.longName   = "update",
 			.shortName  = 'u',
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'u',
+			.arg        = &opt.update,
+			.val        = 1,
 			.descrip    = "Download only when remote file is "
 				      "newer than local file or local file "
 				      "is missing"
 		},
 		{
 			.longName   = "recursive",
-			.shortName  = 'R',
+			.shortName  = 0,
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'R',
+			.arg        = &recursive,
+			.val        = true,
 			.descrip    = "Recursively download files"
 		},
 		{
@@ -930,66 +790,75 @@ int main(int argc, char **argv)
 		},
 		{
 			.longName   = "stdout",
-			.shortName  = 'O',
+			.shortName  = 0,
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'O',
+			.arg        = &opt.send_stdout,
+			.val        = true,
 			.descrip    = "Write data to stdout"
 		},
 		{
 			.longName   = "dots",
 			.shortName  = 'D',
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'D',
+			.arg        = &opt.dots,
+			.val        = 1,
 			.descrip    = "Show dots as progress indication"
 		},
 		{
 			.longName   = "quiet",
 			.shortName  = 'q',
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'q',
+			.arg        = &opt.quiet,
+			.val        = 1,
 			.descrip    = "Be quiet"
 		},
 		{
 			.longName   = "verbose",
 			.shortName  = 'v',
 			.argInfo    = POPT_ARG_NONE,
-			.arg        = NULL,
-			.val        = 'v',
+			.arg        = &opt.verbose,
+			.val        = 1,
 			.descrip    = "Be verbose"
 		},
 		{
-			.longName   = "rcfile",
-			.shortName  = 'f',
-			.argInfo    = POPT_ARG_STRING,
-			.arg        = NULL,
-			.val        = 'f',
-			.descrip    = "Use specified rc file"
-		},
-		{
 			.longName   = "limit-rate",
+			.shortName  = 0,
 			.argInfo    = POPT_ARG_INT,
 			.arg        = &opt.limit_rate,
 			.val        = 'l',
 			.descrip    = "Limit download speed to this many KB/s"
 		},
 
+		POPT_COMMON_SAMBA
+		POPT_COMMON_CONNECTION
+		POPT_COMMON_CREDENTIALS
+		POPT_LEGACY_S3
+		POPT_COMMON_VERSION
 		POPT_TABLEEND
 	};
-	poptContext pc;
+	poptContext pc = NULL;
+	struct cli_credentials *creds = NULL;
+	enum smb_encryption_setting encryption_state = SMB_ENCRYPTION_DEFAULT;
+	enum credentials_use_kerberos use_kerberos = CRED_USE_KERBEROS_DESIRED;
+	smbc_smb_encrypt_level encrypt_level = SMBC_ENCRYPTLEVEL_DEFAULT;
+#if 0
+	enum smb_signing_setting signing_state = SMB_SIGNING_DEFAULT;
+	const char *use_signing = "auto";
+#endif
+	bool is_nt_hash = false;
+	uint32_t gensec_features;
+	bool use_wbccache = false;
+	SMBCCTX *smb_ctx = NULL;
+	int rc;
 
 	smb_init_locale();
 
-	/* only read rcfile if it exists */
-	if (asprintf(&rcfile, "%s/.smbgetrc", getenv("HOME")) == -1) {
-		return 1;
+	ok = samba_cmdline_init(frame,
+				SAMBA_CMDLINE_CONFIG_CLIENT,
+				false);
+	if (!ok) {
+		goto done;
 	}
-	if (access(rcfile, F_OK) == 0) {
-		readrcfile(rcfile, long_options);
-	}
-	free(rcfile);
 
 #ifdef SIGWINCH
 	signal(SIGWINCH, change_columns);
@@ -997,106 +866,153 @@ int main(int argc, char **argv)
 	signal(SIGINT, signal_quit);
 	signal(SIGTERM, signal_quit);
 
-	pc = poptGetContext(argv[0], argc, argv_const, long_options, 0);
+	pc = samba_popt_get_context(getprogname(),
+				    argc,
+				    argv_const,
+				    long_options,
+				    0);
+	if (pc == NULL) {
+		ok = false;
+		goto done;
+	}
 
-	while ((c = poptGetNextOpt(pc)) > 0) {
+	creds = samba_cmdline_get_creds();
+
+	while ((c = poptGetNextOpt(pc)) != -1) {
 		switch (c) {
-		case 'f':
-			readrcfile(poptGetOptArg(pc), long_options);
-			break;
 		case 'a':
-			opt.username_specified = true;
-			opt.username = talloc_strdup(frame, "");
-			opt.password_specified = true;
-			opt.password = talloc_strdup(frame, "");
-			break;
-		case 'e':
-			smb_encrypt = true;
-			break;
-		case 'U':
-			opt.username_specified = true;
-			opt.username = talloc_strdup(frame, opt.username);
-			p = strchr(opt.username,'%');
-			if (p != NULL) {
-				*p = '\0';
-				opt.password = p + 1;
-				opt.password_specified = true;
-			}
-			break;
-		case 'n':
-			opt.nonprompt = true;
-			break;
-		case 'r':
-			resume = true;
-			break;
-		case 'u':
-			opt.update = true;
-			break;
-		case 'R':
-			recursive = true;
-			break;
-		case 'O':
-			opt.send_stdout = true;
-			break;
-		case 'D':
-			opt.dots = true;
-			break;
-		case 'q':
-			opt.quiet = true;
-			break;
-		case 'v':
-			opt.verbose = true;
+			cli_credentials_set_anonymous(creds);
 			break;
 		case POPT_ERROR_BADOPT:
 			fprintf(stderr, "\nInvalid option %s: %s\n\n",
 				poptBadOption(pc, 0), poptStrerror(c));
 			poptPrintUsage(pc, stderr, 0);
-			exit(1);
+			ok = false;
+			goto done;
 		}
-	}
 
-	if (c < -1) {
-		fprintf(stderr, "%s: %s\n",
-			poptBadOption(pc, POPT_BADOPTION_NOALIAS),
-			poptStrerror(c));
-		ret = 1;
-		goto done;
+		if (c < -1) {
+			fprintf(stderr, "%s: %s\n",
+				poptBadOption(pc, POPT_BADOPTION_NOALIAS),
+				poptStrerror(c));
+			ok = false;
+			goto done;
+		}
 	}
 
 	if ((opt.send_stdout || resume || opt.outputfile) && opt.update) {
 		fprintf(stderr, "The -o, -R or -O and -U options can not be "
 			"used together.\n");
-		ret = 1;
+		ok = true;
 		goto done;
 	}
 	if ((opt.send_stdout || opt.outputfile) && recursive) {
 		fprintf(stderr, "The -o or -O and -R options can not be "
 			"used together.\n");
-		ret = 1;
+		ok = true;
 		goto done;
 	}
 
 	if (opt.outputfile && opt.send_stdout) {
 		fprintf(stderr, "The -o and -O options can not be "
 			"used together.\n");
-		ret = 1;
+		ok = true;
 		goto done;
 	}
 
 	samba_cmdline_burn(argc, argv);
 
-	if (smbc_init(get_auth_data, opt.debuglevel) < 0) {
+	smb_ctx = smbc_new_context();
+	if (smb_ctx == NULL) {
 		fprintf(stderr, "Unable to initialize libsmbclient\n");
-		ret= 1;
+		ok = false;
+		goto done;
+	}
+	smbc_setDebug(smb_ctx, debuglevel_get());
+
+	rc = smbc_setConfiguration(smb_ctx, lp_default_path());
+	if (rc < 0) {
+		ok = false;
 		goto done;
 	}
 
-	if (smb_encrypt) {
-		SMBCCTX *smb_ctx = smbc_set_context(NULL);
-		smbc_option_set(smb_ctx,
-				discard_const_p(char, "smb_encrypt_level"),
-				"require");
+	smbc_setFunctionAuthDataWithContext(smb_ctx,
+					    get_auth_data_with_context_fn);
+
+	ok = smbc_init_context(smb_ctx);
+	if (!ok) {
+		goto done;
 	}
+	smbc_set_context(smb_ctx);
+
+	encryption_state = cli_credentials_get_smb_encryption(creds);
+	switch (encryption_state) {
+	case SMB_ENCRYPTION_REQUIRED:
+		encrypt_level = SMBC_ENCRYPTLEVEL_REQUIRE;
+		break;
+	case SMB_ENCRYPTION_DESIRED:
+	case SMB_ENCRYPTION_IF_REQUIRED:
+		encrypt_level = SMBC_ENCRYPTLEVEL_REQUEST;
+		break;
+	case SMB_ENCRYPTION_OFF:
+		encrypt_level = SMBC_ENCRYPTLEVEL_NONE;
+		break;
+	case SMB_ENCRYPTION_DEFAULT:
+		encrypt_level = SMBC_ENCRYPTLEVEL_DEFAULT;
+		break;
+	}
+	if (smb_encrypt) {
+		encrypt_level = SMBC_ENCRYPTLEVEL_REQUIRE;
+	}
+	smbc_setOptionSmbEncryptionLevel(smb_ctx, encrypt_level);
+
+#if 0
+	signing_state = cli_credentials_get_smb_signing(creds);
+	if (encryption_state >= SMB_ENCRYPTION_DESIRED) {
+		signing_state = SMB_SIGNING_REQUIRED;
+	}
+	switch (signing_state) {
+	case SMB_SIGNING_REQUIRED:
+		use_signing = "required";
+		break;
+	case SMB_SIGNING_DEFAULT:
+	case SMB_SIGNING_DESIRED:
+	case SMB_SIGNING_IF_REQUIRED:
+		use_signing = "yes";
+		break;
+	case SMB_SIGNING_OFF:
+		use_signing = "off";
+		break;
+	default:
+		use_signing = "auto";
+		break;
+	}
+	/* FIXME: There is no libsmbclient function to set signing state */
+#endif
+
+	use_kerberos = cli_credentials_get_kerberos_state(creds);
+	switch (use_kerberos) {
+	case CRED_USE_KERBEROS_REQUIRED:
+		smbc_setOptionUseKerberos(smb_ctx, true);
+		smbc_setOptionFallbackAfterKerberos(smb_ctx, false);
+		break;
+	case CRED_USE_KERBEROS_DESIRED:
+		smbc_setOptionUseKerberos(smb_ctx, true);
+		smbc_setOptionFallbackAfterKerberos(smb_ctx, true);
+		break;
+	case CRED_USE_KERBEROS_DISABLED:
+		smbc_setOptionUseKerberos(smb_ctx, false);
+		break;
+	}
+
+	/* Check if the password supplied is an NT hash */
+	is_nt_hash = cli_credentials_is_password_nt_hash(creds);
+	smbc_setOptionUseNTHash(smb_ctx, is_nt_hash);
+
+	/* Check if we should use the winbind ccache */
+	gensec_features = cli_credentials_get_gensec_features(creds);
+	use_wbccache = (gensec_features & GENSEC_FEATURE_NTLM_CCACHE);
+	smbc_setOptionUseCCache(smb_ctx, use_wbccache);
 
 	columns = get_num_cols();
 
@@ -1104,18 +1020,18 @@ int main(int argc, char **argv)
 
 	while ((file = poptGetArg(pc))) {
 		if (!recursive) {
-			ret = smb_download_file(file, "", recursive, resume,
+			ok = smb_download_file(file, "", recursive, resume,
 						true, opt.outputfile);
 		} else {
-			ret = smb_download_dir(file, "", resume);
+			ok = smb_download_dir(file, "", resume);
 		}
 	}
 
 done:
 	poptFreeContext(pc);
 	TALLOC_FREE(frame);
-	if (ret) {
+	if (ok) {
 		clean_exit();
 	}
-	return ret?0:1;
+	return ok ? 0 : 1;
 }

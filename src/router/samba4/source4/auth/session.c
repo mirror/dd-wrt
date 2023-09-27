@@ -49,21 +49,166 @@ _PUBLIC_ struct auth_session_info *anonymous_session(TALLOC_CTX *mem_ctx,
 	return session_info;
 }
 
+_PUBLIC_ NTSTATUS auth_generate_security_token(TALLOC_CTX *mem_ctx,
+					       struct loadparm_context *lp_ctx, /* Optional, if you don't want privileges */
+					       struct ldb_context *sam_ctx, /* Optional, if you don't want local groups */
+					       const struct auth_user_info_dc *user_info_dc,
+					       uint32_t session_info_flags,
+					       struct security_token **_security_token)
+{
+	struct security_token *security_token = NULL;
+	NTSTATUS nt_status;
+	uint32_t i;
+	uint32_t num_sids = 0;
+	const char *filter = NULL;
+	struct auth_SidAttr *sids = NULL;
+	const struct dom_sid *anonymous_sid = NULL;
+	const struct dom_sid *system_sid = NULL;
+
+	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
+	if (tmp_ctx == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	anonymous_sid = dom_sid_parse_talloc(tmp_ctx, SID_NT_ANONYMOUS);
+	if (anonymous_sid == NULL) {
+		TALLOC_FREE(tmp_ctx);
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	system_sid = dom_sid_parse_talloc(tmp_ctx, SID_NT_SYSTEM);
+	if (system_sid == NULL) {
+		TALLOC_FREE(tmp_ctx);
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	sids = talloc_array(tmp_ctx, struct auth_SidAttr, user_info_dc->num_sids);
+	if (sids == NULL) {
+		TALLOC_FREE(tmp_ctx);
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	num_sids = user_info_dc->num_sids;
+
+	for (i=0; i < user_info_dc->num_sids; i++) {
+		sids[i] = user_info_dc->sids[i];
+	}
+
+	/*
+	 * Finally add the "standard" sids.
+	 * The only difference between guest and "anonymous"
+	 * is the addition of Authenticated_Users.
+	 */
+
+	if (session_info_flags & AUTH_SESSION_INFO_DEFAULT_GROUPS) {
+		sids = talloc_realloc(tmp_ctx, sids, struct auth_SidAttr, num_sids + 2);
+		if (sids == NULL) {
+			TALLOC_FREE(tmp_ctx);
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		sid_copy(&sids[num_sids].sid, &global_sid_World);
+		sids[num_sids].attrs = SE_GROUP_DEFAULT_FLAGS;
+		num_sids++;
+
+		sid_copy(&sids[num_sids].sid, &global_sid_Network);
+		sids[num_sids].attrs = SE_GROUP_DEFAULT_FLAGS;
+		num_sids++;
+	}
+
+	if (session_info_flags & AUTH_SESSION_INFO_AUTHENTICATED) {
+		sids = talloc_realloc(tmp_ctx, sids, struct auth_SidAttr, num_sids + 1);
+		if (sids == NULL) {
+			TALLOC_FREE(tmp_ctx);
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		sid_copy(&sids[num_sids].sid, &global_sid_Authenticated_Users);
+		sids[num_sids].attrs = SE_GROUP_DEFAULT_FLAGS;
+		num_sids++;
+	}
+
+	if (session_info_flags & AUTH_SESSION_INFO_NTLM) {
+		sids = talloc_realloc(tmp_ctx, sids, struct auth_SidAttr, num_sids + 1);
+		if (sids == NULL) {
+			TALLOC_FREE(tmp_ctx);
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		if (!dom_sid_parse(SID_NT_NTLM_AUTHENTICATION, &sids[num_sids].sid)) {
+			TALLOC_FREE(tmp_ctx);
+			return NT_STATUS_INTERNAL_ERROR;
+		}
+		sids[num_sids].attrs = SE_GROUP_DEFAULT_FLAGS;
+		num_sids++;
+	}
+
+
+	if (num_sids > PRIMARY_USER_SID_INDEX && dom_sid_equal(anonymous_sid, &sids[PRIMARY_USER_SID_INDEX].sid)) {
+		/* Don't expand nested groups of system, anonymous etc*/
+	} else if (num_sids > PRIMARY_USER_SID_INDEX && dom_sid_equal(system_sid, &sids[PRIMARY_USER_SID_INDEX].sid)) {
+		/* Don't expand nested groups of system, anonymous etc*/
+	} else if (sam_ctx != NULL) {
+		filter = talloc_asprintf(tmp_ctx, "(&(objectClass=group)(groupType:"LDB_OID_COMPARATOR_AND":=%u))",
+					 GROUP_TYPE_BUILTIN_LOCAL_GROUP);
+
+		/* Search for each group in the token */
+		for (i = 0; i < num_sids; i++) {
+			struct dom_sid_buf buf;
+			const char *sid_dn;
+			DATA_BLOB sid_blob;
+
+			sid_dn = talloc_asprintf(
+				tmp_ctx,
+				"<SID=%s>",
+				dom_sid_str_buf(&sids[i].sid, &buf));
+			if (sid_dn == NULL) {
+				TALLOC_FREE(tmp_ctx);
+				return NT_STATUS_NO_MEMORY;
+			}
+			sid_blob = data_blob_string_const(sid_dn);
+
+			/* This function takes in memberOf values and expands
+			 * them, as long as they meet the filter - so only
+			 * builtin groups
+			 *
+			 * We already have the SID in the token, so set
+			 * 'only childs' flag to true */
+			nt_status = dsdb_expand_nested_groups(sam_ctx, &sid_blob, true, filter,
+							      tmp_ctx, &sids, &num_sids);
+			if (!NT_STATUS_IS_OK(nt_status)) {
+				talloc_free(tmp_ctx);
+				return nt_status;
+			}
+		}
+	}
+
+	nt_status = security_token_create(mem_ctx,
+					  lp_ctx,
+					  num_sids,
+					  sids,
+					  session_info_flags,
+					  &security_token);
+	if (!NT_STATUS_IS_OK(nt_status)) {
+		TALLOC_FREE(tmp_ctx);
+		return nt_status;
+	}
+
+	talloc_steal(mem_ctx, security_token);
+	*_security_token = security_token;
+	talloc_free(tmp_ctx);
+	return NT_STATUS_OK;
+}
+
 _PUBLIC_ NTSTATUS auth_generate_session_info(TALLOC_CTX *mem_ctx,
-					     struct loadparm_context *lp_ctx, /* Optional, if you don't want privilages */
+					     struct loadparm_context *lp_ctx, /* Optional, if you don't want privileges */
 					     struct ldb_context *sam_ctx, /* Optional, if you don't want local groups */
-					     struct auth_user_info_dc *user_info_dc,
+					     const struct auth_user_info_dc *user_info_dc,
 					     uint32_t session_info_flags,
 					     struct auth_session_info **_session_info)
 {
 	struct auth_session_info *session_info;
 	NTSTATUS nt_status;
-	unsigned int i, num_sids = 0;
-
-	const char *filter;
-
-	struct dom_sid *sids = NULL;
-	const struct dom_sid *anonymous_sid, *system_sid;
 
 	TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
 	NT_STATUS_HAVE_NO_MEMORY(tmp_ctx);
@@ -89,7 +234,7 @@ _PUBLIC_ NTSTATUS auth_generate_session_info(TALLOC_CTX *mem_ctx,
 	}
 
 	/* unless set otherwise, the session key is the user session
-	 * key from the auth subsystem */ 
+	 * key from the auth subsystem */
 	session_info->session_key = data_blob_talloc(session_info, user_info_dc->user_session_key.data, user_info_dc->user_session_key.length);
 	if (!session_info->session_key.data && session_info->session_key.length) {
 		if (session_info->session_key.data == NULL) {
@@ -98,121 +243,12 @@ _PUBLIC_ NTSTATUS auth_generate_session_info(TALLOC_CTX *mem_ctx,
 		}
 	}
 
-	anonymous_sid = dom_sid_parse_talloc(tmp_ctx, SID_NT_ANONYMOUS);
-	if (anonymous_sid == NULL) {
-		TALLOC_FREE(tmp_ctx);
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	system_sid = dom_sid_parse_talloc(tmp_ctx, SID_NT_SYSTEM);
-	if (system_sid == NULL) {
-		TALLOC_FREE(tmp_ctx);
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	sids = talloc_array(tmp_ctx, struct dom_sid, user_info_dc->num_sids);
-	if (sids == NULL) {
-		TALLOC_FREE(tmp_ctx);
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	num_sids = user_info_dc->num_sids;
-
-	for (i=0; i < user_info_dc->num_sids; i++) {
-		sids[i] = user_info_dc->sids[i];
-	}
-
-	/*
-	 * Finally add the "standard" sids.
-	 * The only difference between guest and "anonymous"
-	 * is the addition of Authenticated_Users.
-	 */
-
-	if (session_info_flags & AUTH_SESSION_INFO_DEFAULT_GROUPS) {
-		sids = talloc_realloc(tmp_ctx, sids, struct dom_sid, num_sids + 2);
-		if (sids == NULL) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
-		}
-
-		sid_copy(&sids[num_sids], &global_sid_World);
-		num_sids++;
-
-		sid_copy(&sids[num_sids], &global_sid_Network);
-		num_sids++;
-	}
-
-	if (session_info_flags & AUTH_SESSION_INFO_AUTHENTICATED) {
-		sids = talloc_realloc(tmp_ctx, sids, struct dom_sid, num_sids + 1);
-		if (sids == NULL) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
-		}
-
-		sid_copy(&sids[num_sids], &global_sid_Authenticated_Users);
-		num_sids++;
-	}
-
-	if (session_info_flags & AUTH_SESSION_INFO_NTLM) {
-		sids = talloc_realloc(tmp_ctx, sids, struct dom_sid, num_sids + 1);
-		if (sids == NULL) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_NO_MEMORY;
-		}
-
-		if (!dom_sid_parse(SID_NT_NTLM_AUTHENTICATION, &sids[num_sids])) {
-			TALLOC_FREE(tmp_ctx);
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-		num_sids++;
-	}
-
-
-	if (num_sids > PRIMARY_USER_SID_INDEX && dom_sid_equal(anonymous_sid, &sids[PRIMARY_USER_SID_INDEX])) {
-		/* Don't expand nested groups of system, anonymous etc*/
-	} else if (num_sids > PRIMARY_USER_SID_INDEX && dom_sid_equal(system_sid, &sids[PRIMARY_USER_SID_INDEX])) {
-		/* Don't expand nested groups of system, anonymous etc*/
-	} else if (sam_ctx) {
-		filter = talloc_asprintf(tmp_ctx, "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=%u))",
-					 GROUP_TYPE_BUILTIN_LOCAL_GROUP);
-
-		/* Search for each group in the token */
-		for (i = 0; i < num_sids; i++) {
-			struct dom_sid_buf buf;
-			const char *sid_dn;
-			DATA_BLOB sid_blob;
-
-			sid_dn = talloc_asprintf(
-				tmp_ctx,
-				"<SID=%s>",
-				dom_sid_str_buf(&sids[i], &buf));
-			if (sid_dn == NULL) {
-				TALLOC_FREE(tmp_ctx);
-				return NT_STATUS_NO_MEMORY;
-			}
-			sid_blob = data_blob_string_const(sid_dn);
-
-			/* This function takes in memberOf values and expands
-			 * them, as long as they meet the filter - so only
-			 * builtin groups
-			 *
-			 * We already have the SID in the token, so set
-			 * 'only childs' flag to true */
-			nt_status = dsdb_expand_nested_groups(sam_ctx, &sid_blob, true, filter,
-							      tmp_ctx, &sids, &num_sids);
-			if (!NT_STATUS_IS_OK(nt_status)) {
-				talloc_free(tmp_ctx);
-				return nt_status;
-			}
-		}
-	}
-
-	nt_status = security_token_create(session_info,
-					  lp_ctx,
-					  num_sids,
-					  sids,
-					  session_info_flags,
-					  &session_info->security_token);
+	nt_status = auth_generate_security_token(session_info,
+						 lp_ctx,
+						 sam_ctx,
+						 user_info_dc,
+						 session_info_flags,
+						 &session_info->security_token);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		TALLOC_FREE(tmp_ctx);
 		return nt_status;

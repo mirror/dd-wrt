@@ -83,11 +83,11 @@ testit()
 {
 	name="$1"
 	shift
-	cmdline="$@"
+	cmdline="$*"
 	subunit_start_test "$name"
 	output=$($cmdline 2>&1)
 	status=$?
-	if [ x$status = x0 ]; then
+	if [ ${status} -eq 0 ]; then
 		subunit_pass_test "$name"
 	else
 		echo "$output" | subunit_fail_test "$name"
@@ -103,22 +103,22 @@ testit_grep()
 	shift
 	grep="$1"
 	shift
-	cmdline="$@"
+	cmdline="$*"
 	subunit_start_test "$name"
 	output=$($cmdline 2>&1)
 	status=$?
-	if [ x$status != x0 ]; then
+	if [ ${status} -ne 0 ]; then
 		printf '%s' "$output" | subunit_fail_test "$name"
 		return $status
 	fi
 	printf '%s' "$output" | grep -q "$grep"
 	gstatus=$?
-	if [ x$gstatus = x0 ]; then
+	if [ ${gstatus} -eq 0 ]; then
 		subunit_pass_test "$name"
 	else
 		printf 'GREP: "%s" not found in output:\n%s' "$grep" "$output" | subunit_fail_test "$name"
 	fi
-	return $status
+	return $gstatus
 }
 
 # This returns 0 if the command gave success and the grep value was found
@@ -131,39 +131,41 @@ testit_grep_count()
 	shift
 	num="$1"
 	shift
-	cmdline="$@"
+	cmdline="$*"
 	subunit_start_test "$name"
 	output=$($cmdline 2>&1)
 	status=$?
-	if [ x$status != x0 ]; then
+	if [ ${status} -ne 0 ]; then
 		printf '%s' "$output" | subunit_fail_test "$name"
 		return $status
 	fi
 	found=$(printf '%s' "$output" | grep -c "$grep")
-	if [ x"$found" = x"$num" ]; then
+	if [ "${found}" -eq "$num" ]; then
 	    subunit_pass_test "$name"
 	else
 	    printf 'GREP: "%s" found "%d" times, expected "%d" in output:\n%s'\
 		   "$grep" "$found" "$num" "$output" |
 		subunit_fail_test "$name"
+	    return 1
 	fi
-	return $status
+	return 0
 }
 
 testit_expect_failure()
 {
 	name="$1"
 	shift
-	cmdline="$@"
+	cmdline="$*"
 	subunit_start_test "$name"
 	output=$($cmdline 2>&1)
 	status=$?
-	if [ x$status = x0 ]; then
+	if [ ${status} = 0 ]; then
 		echo "$output" | subunit_fail_test "$name"
+		return 1
 	else
 		subunit_pass_test "$name"
+		return 0
 	fi
-	return $status
 }
 
 # This returns 0 if the command gave a failure and the grep value was found
@@ -174,20 +176,21 @@ testit_expect_failure_grep()
 	shift
 	grep="$1"
 	shift
-	cmdline="$@"
+	cmdline="$*"
 	subunit_start_test "$name"
 	output=$($cmdline 2>&1)
 	status=$?
-	if [ x$status = x0 ]; then
+	if [ ${status} -eq 0 ]; then
 		printf '%s' "$output" | subunit_fail_test "$name"
 		return 1
 	fi
 	printf '%s' "$output" | grep -q "$grep"
 	gstatus=$?
-	if [ x$gstatus = x0 ]; then
+	if [ ${gstatus} -eq 0 ]; then
 		subunit_pass_test "$name"
 	else
 		printf 'GREP: "%s" not found in output:\n%s' "$grep" "$output" | subunit_fail_test "$name"
+		return 1
 	fi
 	return 0
 }

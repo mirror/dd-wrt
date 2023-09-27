@@ -54,6 +54,12 @@
 static int my_copy_vers_called;
 static int my_free_vers_called;
 
+#include <limits.h>
+#if UINT_MAX == 0xffffffff
+// 32 bit
+#define DISABLE_TEST_64
+#endif
+
 int
 my_copy_vers(const my_vers *from, my_vers *to)
 {
@@ -655,6 +661,12 @@ test_cert(void)
     size_t i;
     int ret;
 
+    memset(&c, 0, sizeof(c));
+    ret = copy_Certificate(&c, &c2);
+    if (ret)
+        return ret;
+    free_Certificate(&c2);
+
     for (i = 0; i < sizeof(certs)/sizeof(certs[0]); i++) {
 
 	ret = decode_Certificate((unsigned char *)certs[i].cert,
@@ -1111,6 +1123,57 @@ test_decorated(void)
         warnx("free_TESTDecorated() did not work correctly (3)");
         return 1;
     }
+    return 0;
+}
+
+static int
+test_extensible_choice(void)
+{
+    PA_FX_FAST_REQUEST r, r2;
+    size_t len, size;
+    void *ptr;
+    int ret;
+
+    memset(&r, 0, sizeof(r));
+
+    ret = copy_PA_FX_FAST_REQUEST(&r, &r2);
+    if (ret)
+        return ret;
+    free_PA_FX_FAST_REQUEST(&r2);
+
+    r.element = 0;
+    r.u.asn1_ellipsis.data = "hello";
+    r.u.asn1_ellipsis.length = sizeof("hello") - 1;
+    ret = copy_PA_FX_FAST_REQUEST(&r, &r2);
+    if (ret)
+        errx(1, "Out of memory");
+    if (r2.element != 0)
+        errx(1, "Extensible CHOICE copy failure to set discriminant to 0");
+    if (r2.u.asn1_ellipsis.length != r.u.asn1_ellipsis.length)
+        errx(1, "Extensible CHOICE copy failure to copy extension");
+    if (memcmp(r.u.asn1_ellipsis.data, r2.u.asn1_ellipsis.data,
+               r.u.asn1_ellipsis.length) != 0)
+        errx(1, "Extensible CHOICE copy failure to copy extension (2)");
+    free_PA_FX_FAST_REQUEST(&r2);
+
+    ASN1_MALLOC_ENCODE(PA_FX_FAST_REQUEST, ptr, len, &r, &size, ret);
+    if (ret || len != size)
+        errx(1, "Extensible CHOICE encoding failure");
+
+    ret = decode_PA_FX_FAST_REQUEST(ptr, len, &r2, &size);
+    if (ret || len != size)
+        errx(1, "Extensible CHOICE decoding failure");
+
+    if (r2.element != 0)
+        errx(1, "Extensible CHOICE decode failure to set discriminant to 0");
+    if (r2.u.asn1_ellipsis.length != r.u.asn1_ellipsis.length)
+        errx(1, "Extensible CHOICE decode failure to copy extension");
+    if (memcmp(r.u.asn1_ellipsis.data, r2.u.asn1_ellipsis.data,
+               r.u.asn1_ellipsis.length) != 0)
+        errx(1, "Extensible CHOICE decode failure to copy extension (2)");
+
+    free_PA_FX_FAST_REQUEST(&r2);
+    free(ptr);
     return 0;
 }
 
@@ -2086,17 +2149,21 @@ static int
 test_default(void)
 {
     struct test_case tests[] = {
+#ifndef DISABLE_TEST_64
 	{ NULL, 2, "\x30\x00", NULL },
+#endif
 	{ NULL, 25,
           "\x30\x17\x0c\x07\x68\x65\x69\x6d\x64\x61"
           "\x6c\xa0\x03\x02\x01\x07\x02\x04\x7f\xff"
           "\xff\xff\x01\x01\x00",
 	  NULL
 	},
+#ifndef DISABLE_TEST_64
 	{ NULL, 10,
           "\x30\x08\xa0\x03\x02\x01\x07\x01\x01\x00",
 	  NULL
 	},
+#endif
 	{ NULL, 17,
           "\x30\x0f\x0c\x07\x68\x65\x69\x6d\x64\x61\x6c\x02\x04"
           "\x7f\xff\xff\xff",
@@ -2105,9 +2172,13 @@ test_default(void)
     };
 
     TESTDefault values[] = {
-	{ "Heimdal", 8, 9223372036854775807, 1 },
+#ifndef DISABLE_TEST_64
+	{ "Heimdal", 8, 9223372036854775807LL, 1 },
+#endif
 	{ "heimdal", 7, 2147483647, 0 },
-	{ "Heimdal", 7, 9223372036854775807, 0 },
+#ifndef DISABLE_TEST_64
+	{ "Heimdal", 7, 9223372036854775807LL, 0 },
+#endif
 	{ "heimdal", 8, 2147483647, 1 },
     };
     int i, ret;
@@ -2673,6 +2744,8 @@ main(int argc, char **argv)
     DO_ONE(test_x690sample);
 
     DO_ONE(test_default);
+
+    DO_ONE(test_extensible_choice);
 
     DO_ONE(test_decorated_choice);
     DO_ONE(test_decorated);

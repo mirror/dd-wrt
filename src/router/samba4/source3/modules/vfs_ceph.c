@@ -66,16 +66,190 @@
 	return _res \
 
 /*
- * We mount only one file system and then all shares are assumed to be in that.
- * FIXME: If we want to support more than one FS, then we have to deal with
- * this differently.
+ * Track unique connections, as virtual mounts, to cephfs file systems.
+ * Individual mounts will be set on the handle->data attribute, but
+ * the mounts themselves will be shared so as not to spawn extra mounts
+ * to the same cephfs.
  *
- * So, cmount tells us if we have been this way before and whether
- * we need to mount ceph and cmount_cnt tells us how many times we have
- * connected
+ * Individual mounts are IDed by a 'cookie' value that is a string built
+ * from identifying parameters found in smb.conf.
  */
-static struct ceph_mount_info * cmount = NULL;
-static uint32_t cmount_cnt = 0;
+
+static struct cephmount_cached {
+	char *cookie;
+	uint32_t count;
+	struct ceph_mount_info *mount;
+	struct cephmount_cached *next, *prev;
+} *cephmount_cached;
+
+static int cephmount_cache_add(const char *cookie,
+			       struct ceph_mount_info *mount)
+{
+	struct cephmount_cached *entry = NULL;
+
+	entry = talloc_zero(NULL, struct cephmount_cached);
+	if (entry == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	entry->cookie = talloc_strdup(entry, cookie);
+	if (entry->cookie == NULL) {
+		talloc_free(entry);
+		errno = ENOMEM;
+		return -1;
+	}
+
+	entry->mount = mount;
+	entry->count = 1;
+
+	DBG_DEBUG("adding mount cache entry for %s\n", entry->cookie);
+	DLIST_ADD(cephmount_cached, entry);
+	return 0;
+}
+
+static struct ceph_mount_info *cephmount_cache_update(const char *cookie)
+{
+	struct cephmount_cached *entry = NULL;
+
+	for (entry = cephmount_cached; entry; entry = entry->next) {
+		if (strcmp(entry->cookie, cookie) == 0) {
+			entry->count++;
+			DBG_DEBUG("updated mount cache: count is [%"
+				  PRIu32 "]\n", entry->count);
+			return entry->mount;
+		}
+	}
+
+	errno = ENOENT;
+	return NULL;
+}
+
+static int cephmount_cache_remove(struct ceph_mount_info *mount)
+{
+	struct cephmount_cached *entry = NULL;
+
+	for (entry = cephmount_cached; entry; entry = entry->next) {
+		if (entry->mount == mount) {
+			if (--entry->count) {
+				DBG_DEBUG("updated mount cache: count is [%"
+					  PRIu32 "]\n", entry->count);
+				return entry->count;
+			}
+
+			DBG_DEBUG("removing mount cache entry for %s\n",
+				  entry->cookie);
+			DLIST_REMOVE(cephmount_cached, entry);
+			talloc_free(entry);
+			return 0;
+		}
+	}
+	errno = ENOENT;
+	return -1;
+}
+
+static char *cephmount_get_cookie(TALLOC_CTX * mem_ctx, const int snum)
+{
+	const char *conf_file =
+	    lp_parm_const_string(snum, "ceph", "config_file", ".");
+	const char *user_id = lp_parm_const_string(snum, "ceph", "user_id", "");
+	const char *fsname =
+	    lp_parm_const_string(snum, "ceph", "filesystem", "");
+	return talloc_asprintf(mem_ctx, "(%s/%s/%s)", conf_file, user_id,
+			       fsname);
+}
+
+static int cephmount_select_fs(struct ceph_mount_info *mnt, const char *fsname)
+{
+	/*
+	 * ceph_select_filesystem was added in ceph 'nautilus' (v14).
+	 * Earlier versions of libcephfs will lack that API function.
+	 * At the time of this writing (Feb 2023) all versions of ceph
+	 * supported by ceph upstream have this function.
+	 */
+#if defined(HAVE_CEPH_SELECT_FILESYSTEM)
+	DBG_DEBUG("[CEPH] calling: ceph_select_filesystem with %s\n", fsname);
+	return ceph_select_filesystem(mnt, fsname);
+#else
+	DBG_ERR("[CEPH] ceph_select_filesystem not available\n");
+	return -ENOTSUP;
+#endif
+}
+
+static struct ceph_mount_info *cephmount_mount_fs(const int snum)
+{
+	int ret;
+	char buf[256];
+	struct ceph_mount_info *mnt = NULL;
+	/* if config_file and/or user_id are NULL, ceph will use defaults */
+	const char *conf_file =
+	    lp_parm_const_string(snum, "ceph", "config_file", NULL);
+	const char *user_id =
+	    lp_parm_const_string(snum, "ceph", "user_id", NULL);
+	const char *fsname =
+	    lp_parm_const_string(snum, "ceph", "filesystem", NULL);
+
+	DBG_DEBUG("[CEPH] calling: ceph_create\n");
+	ret = ceph_create(&mnt, user_id);
+	if (ret) {
+		errno = -ret;
+		return NULL;
+	}
+
+	DBG_DEBUG("[CEPH] calling: ceph_conf_read_file with %s\n",
+		  (conf_file == NULL ? "default path" : conf_file));
+	ret = ceph_conf_read_file(mnt, conf_file);
+	if (ret) {
+		goto err_cm_release;
+	}
+
+	DBG_DEBUG("[CEPH] calling: ceph_conf_get\n");
+	ret = ceph_conf_get(mnt, "log file", buf, sizeof(buf));
+	if (ret < 0) {
+		goto err_cm_release;
+	}
+
+	/* libcephfs disables POSIX ACL support by default, enable it... */
+	ret = ceph_conf_set(mnt, "client_acl_type", "posix_acl");
+	if (ret < 0) {
+		goto err_cm_release;
+	}
+	/* tell libcephfs to perform local permission checks */
+	ret = ceph_conf_set(mnt, "fuse_default_permissions", "false");
+	if (ret < 0) {
+		goto err_cm_release;
+	}
+	/*
+	 * select a cephfs file system to use:
+	 * In ceph, multiple file system support has been stable since 'pacific'.
+	 * Permit different shares to access different file systems.
+	 */
+	if (fsname != NULL) {
+		ret = cephmount_select_fs(mnt, fsname);
+		if (ret < 0) {
+			goto err_cm_release;
+		}
+	}
+
+	DBG_DEBUG("[CEPH] calling: ceph_mount\n");
+	ret = ceph_mount(mnt, NULL);
+	if (ret >= 0) {
+		goto cm_done;
+	}
+
+      err_cm_release:
+	ceph_release(mnt);
+	mnt = NULL;
+	DBG_DEBUG("[CEPH] Error mounting fs: %s\n", strerror(-ret));
+      cm_done:
+	/*
+	 * Handle the error correctly. Ceph returns -errno.
+	 */
+	if (ret) {
+		errno = -ret;
+	}
+	return mnt;
+}
 
 /* Check for NULL pointer parameters in cephwrap_* functions */
 
@@ -83,111 +257,66 @@ static uint32_t cmount_cnt = 0;
    is sure to try and execute them.  These stubs are used to prevent
    this possibility. */
 
-static int cephwrap_connect(struct vfs_handle_struct *handle,  const char *service, const char *user)
+static int cephwrap_connect(struct vfs_handle_struct *handle,
+			    const char *service, const char *user)
 {
-	int ret;
-	char buf[256];
+	int ret = 0;
+	struct ceph_mount_info *cmount = NULL;
 	int snum = SNUM(handle->conn);
-	const char *conf_file;
-	const char *user_id;
-
-	if (cmount) {
-		handle->data = cmount; /* We have been here before */
-		cmount_cnt++;
-		return 0;
+	char *cookie = cephmount_get_cookie(handle, snum);
+	if (cookie == NULL) {
+		return -1;
 	}
 
-	/* if config_file and/or user_id are NULL, ceph will use defaults */
-	conf_file = lp_parm_const_string(snum, "ceph", "config_file", NULL);
-	user_id = lp_parm_const_string(snum, "ceph", "user_id", NULL);
+	cmount = cephmount_cache_update(cookie);
+	if (cmount != NULL) {
+		goto connect_ok;
+	}
 
-	DBG_DEBUG("[CEPH] calling: ceph_create\n");
-	ret = ceph_create(&cmount, user_id);
+	cmount = cephmount_mount_fs(snum);
+	if (cmount == NULL) {
+		ret = -1;
+		goto connect_fail;
+	}
+	ret = cephmount_cache_add(cookie, cmount);
 	if (ret) {
-		goto err_out;
+		goto connect_fail;
 	}
 
-	DBG_DEBUG("[CEPH] calling: ceph_conf_read_file with %s\n",
-		  (conf_file == NULL ? "default path" : conf_file));
-	ret = ceph_conf_read_file(cmount, conf_file);
-	if (ret) {
-		goto err_cm_release;
-	}
-
-	DBG_DEBUG("[CEPH] calling: ceph_conf_get\n");
-	ret = ceph_conf_get(cmount, "log file", buf, sizeof(buf));
-	if (ret < 0) {
-		goto err_cm_release;
-	}
-
-	/* libcephfs disables POSIX ACL support by default, enable it... */
-	ret = ceph_conf_set(cmount, "client_acl_type", "posix_acl");
-	if (ret < 0) {
-		goto err_cm_release;
-	}
-	/* tell libcephfs to perform local permission checks */
-	ret = ceph_conf_set(cmount, "fuse_default_permissions", "false");
-	if (ret < 0) {
-		goto err_cm_release;
-	}
-
-	DBG_DEBUG("[CEPH] calling: ceph_mount\n");
-	ret = ceph_mount(cmount, NULL);
-	if (ret < 0) {
-		goto err_cm_release;
-	}
-
-	/*
-	 * encode mount context/state into our vfs/connection holding structure
-	 * cmount is a ceph_mount_t*
-	 */
+      connect_ok:
 	handle->data = cmount;
-	cmount_cnt++;
-
 	/*
 	 * Unless we have an async implementation of getxattrat turn this off.
 	 */
 	lp_do_parameter(SNUM(handle->conn), "smbd async dosmode", "false");
-
-	return 0;
-
-err_cm_release:
-	ceph_release(cmount);
-	cmount = NULL;
-err_out:
-	/*
-	 * Handle the error correctly. Ceph returns -errno.
-	 */
-	DBG_DEBUG("[CEPH] Error return: %s\n", strerror(-ret));
-	WRAP_RETURN(ret);
+      connect_fail:
+	talloc_free(cookie);
+	return ret;
 }
 
 static void cephwrap_disconnect(struct vfs_handle_struct *handle)
 {
-	int ret;
-
-	if (!cmount) {
-		DBG_ERR("[CEPH] Error, ceph not mounted\n");
+	int ret = cephmount_cache_remove(handle->data);
+	if (ret < 0) {
+		DBG_ERR("failed to remove ceph mount from cache: %s\n",
+			strerror(errno));
+		return;
+	}
+	if (ret > 0) {
+		DBG_DEBUG("mount cache entry still in use\n");
 		return;
 	}
 
-	/* Should we unmount/shutdown? Only if the last disconnect? */
-	if (--cmount_cnt) {
-		DBG_DEBUG("[CEPH] Not shuting down CEPH because still more connections\n");
-		return;
-	}
-
-	ret = ceph_unmount(cmount);
+	ret = ceph_unmount(handle->data);
 	if (ret < 0) {
 		DBG_ERR("[CEPH] failed to unmount: %s\n", strerror(-ret));
 	}
 
-	ret = ceph_release(cmount);
+	ret = ceph_release(handle->data);
 	if (ret < 0) {
 		DBG_ERR("[CEPH] failed to release: %s\n", strerror(-ret));
 	}
-
-	cmount = NULL;  /* Make it safe */
+	handle->data = NULL;
 }
 
 /* Disk operations */
@@ -322,8 +451,7 @@ static DIR *cephwrap_fdopendir(struct vfs_handle_struct *handle,
 
 static struct dirent *cephwrap_readdir(struct vfs_handle_struct *handle,
 				       struct files_struct *dirfsp,
-				       DIR *dirp,
-				       SMB_STRUCT_STAT *sbuf)
+				       DIR *dirp)
 {
 	struct dirent *result;
 
@@ -331,26 +459,7 @@ static struct dirent *cephwrap_readdir(struct vfs_handle_struct *handle,
 	result = ceph_readdir(handle->data, (struct ceph_dir_result *) dirp);
 	DBG_DEBUG("[CEPH] readdir(...) = %p\n", result);
 
-	/* Default Posix readdir() does not give us stat info.
-	 * Set to invalid to indicate we didn't return this info. */
-	if (sbuf)
-		SET_STAT_INVALID(*sbuf);
 	return result;
-}
-
-static void cephwrap_seekdir(struct vfs_handle_struct *handle, DIR *dirp, long offset)
-{
-	DBG_DEBUG("[CEPH] seekdir(%p, %p, %ld)\n", handle, dirp, offset);
-	ceph_seekdir(handle->data, (struct ceph_dir_result *) dirp, offset);
-}
-
-static long cephwrap_telldir(struct vfs_handle_struct *handle, DIR *dirp)
-{
-	long ret;
-	DBG_DEBUG("[CEPH] telldir(%p, %p)\n", handle, dirp);
-	ret = ceph_telldir(handle->data, (struct ceph_dir_result *) dirp);
-	DBG_DEBUG("[CEPH] telldir(...) = %ld\n", ret);
-	WRAP_RETURN(ret);
 }
 
 static void cephwrap_rewinddir(struct vfs_handle_struct *handle, DIR *dirp)
@@ -1596,8 +1705,6 @@ static struct vfs_fn_pointers ceph_fns = {
 
 	.fdopendir_fn = cephwrap_fdopendir,
 	.readdir_fn = cephwrap_readdir,
-	.seekdir_fn = cephwrap_seekdir,
-	.telldir_fn = cephwrap_telldir,
 	.rewind_dir_fn = cephwrap_rewinddir,
 	.mkdirat_fn = cephwrap_mkdirat,
 	.closedir_fn = cephwrap_closedir,

@@ -76,6 +76,8 @@
 
 #include "libcli/security/security.h"
 
+#include "auth/auth.h"
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 #endif
@@ -149,8 +151,8 @@ static int construct_primary_group_token(struct ldb_module *module,
  */
 static int get_group_sids(struct ldb_context *ldb, TALLOC_CTX *mem_ctx,
 			  struct ldb_message *msg, const char *attribute_string,
-			  enum search_type type, struct dom_sid **groupSIDs,
-			  unsigned int *num_groupSIDs)
+			  enum search_type type, struct auth_SidAttr **groupSIDs,
+			  uint32_t *num_groupSIDs)
 {
 	const char *filter = NULL;
 	NTSTATUS status;
@@ -192,19 +194,28 @@ static int get_group_sids(struct ldb_context *ldb, TALLOC_CTX *mem_ctx,
 	/* only return security groups */
 	switch(type) {
 	case TOKEN_GROUPS_GLOBAL_AND_UNIVERSAL:
-		filter = talloc_asprintf(mem_ctx, "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=%u)(|(groupType:1.2.840.113556.1.4.803:=%u)(groupType:1.2.840.113556.1.4.803:=%u)))",
-					 GROUP_TYPE_SECURITY_ENABLED, GROUP_TYPE_ACCOUNT_GROUP, GROUP_TYPE_UNIVERSAL_GROUP);
+		filter = talloc_asprintf(mem_ctx,
+					 "(&(objectClass=group)"
+					 "(groupType:"LDB_OID_COMPARATOR_AND":=%u)"
+					 "(groupType:"LDB_OID_COMPARATOR_OR":=%u))",
+					 GROUP_TYPE_SECURITY_ENABLED,
+					 GROUP_TYPE_ACCOUNT_GROUP | GROUP_TYPE_UNIVERSAL_GROUP);
 		break;
 	case TOKEN_GROUPS_NO_GC_ACCEPTABLE:
 	case TOKEN_GROUPS:
-		filter = talloc_asprintf(mem_ctx, "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=%u))",
+		filter = talloc_asprintf(mem_ctx,
+					 "(&(objectClass=group)"
+					 "(groupType:"LDB_OID_COMPARATOR_AND":=%u))",
 					 GROUP_TYPE_SECURITY_ENABLED);
 		break;
 
 	/* for RevMembGetAccountGroups, exclude built-in groups */
 	case ACCOUNT_GROUPS:
-		filter = talloc_asprintf(mem_ctx, "(&(objectClass=group)(!(groupType:1.2.840.113556.1.4.803:=%u))(groupType:1.2.840.113556.1.4.803:=%u))",
-				GROUP_TYPE_BUILTIN_LOCAL_GROUP, GROUP_TYPE_SECURITY_ENABLED);
+		filter = talloc_asprintf(mem_ctx,
+					 "(&(objectClass=group)"
+					 "(!(groupType:"LDB_OID_COMPARATOR_AND":=%u))"
+					 "(groupType:"LDB_OID_COMPARATOR_AND":=%u))",
+					 GROUP_TYPE_BUILTIN_LOCAL_GROUP, GROUP_TYPE_SECURITY_ENABLED);
 		break;
 	}
 
@@ -278,10 +289,10 @@ static int construct_generic_token_groups(struct ldb_module *module,
 {
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	TALLOC_CTX *tmp_ctx = talloc_new(msg);
-	unsigned int i;
+	uint32_t i;
 	int ret;
-	struct dom_sid *groupSIDs = NULL;
-	unsigned int num_groupSIDs = 0;
+	struct auth_SidAttr *groupSIDs = NULL;
+	uint32_t num_groupSIDs = 0;
 
 	if (scope != LDB_SCOPE_BASE) {
 		ldb_set_errstring(ldb, "Cannot provide tokenGroups attribute, this is not a BASE search");
@@ -299,7 +310,7 @@ static int construct_generic_token_groups(struct ldb_module *module,
 
 	/* add these SIDs to the search result */
 	for (i=0; i < num_groupSIDs; i++) {
-		ret = samdb_msg_add_dom_sid(ldb, msg, msg, attribute_string, &groupSIDs[i]);
+		ret = samdb_msg_add_dom_sid(ldb, msg, msg, attribute_string, &groupSIDs[i].sid);
 		if (ret) {
 			talloc_free(tmp_ctx);
 			return ret;
@@ -998,17 +1009,18 @@ static int get_pso_count(struct ldb_module *module, TALLOC_CTX *mem_ctx,
 {
 	static const char * const attrs[] = { NULL };
 	int ret;
-	struct ldb_dn *domain_dn = NULL;
 	struct ldb_dn *psc_dn = NULL;
 	struct ldb_result *res = NULL;
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
+	bool psc_ok;
 
 	*pso_count = 0;
-	domain_dn = ldb_get_default_basedn(ldb);
-	psc_dn = ldb_dn_new_fmt(mem_ctx, ldb,
-			        "CN=Password Settings Container,CN=System,%s",
-				ldb_dn_get_linearized(domain_dn));
+	psc_dn = samdb_system_container_dn(ldb, mem_ctx);
 	if (psc_dn == NULL) {
+		return ldb_oom(ldb);
+	}
+	psc_ok = ldb_dn_add_child_fmt(psc_dn, "CN=Password Settings Container");
+	if (psc_ok == false) {
 		return ldb_oom(ldb);
 	}
 
@@ -1070,15 +1082,15 @@ static int pso_compare(struct ldb_message **m1, struct ldb_message **m2)
  */
 static int pso_search_by_sids(struct ldb_module *module, TALLOC_CTX *mem_ctx,
 			      struct ldb_request *parent,
-			      struct dom_sid *sid_array, unsigned int num_sids,
+			      struct auth_SidAttr *sid_array, unsigned int num_sids,
 			      struct ldb_result **result)
 {
 	int ret;
 	int i;
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	char *sid_filter = NULL;
-	struct ldb_dn *domain_dn = NULL;
 	struct ldb_dn *psc_dn = NULL;
+	bool psc_ok;
 	const char *attrs[] = {
 		"msDS-PasswordSettingsPrecedence",
 		"objectGUID",
@@ -1089,6 +1101,9 @@ static int pso_search_by_sids(struct ldb_module *module, TALLOC_CTX *mem_ctx,
 
 	/* build a query for PSO objects that apply to any of the SIDs given */
 	sid_filter = talloc_strdup(mem_ctx, "");
+	if (sid_filter == NULL) {
+		return ldb_oom(ldb);
+	}
 
 	for (i = 0; sid_filter && i < num_sids; i++) {
 		struct dom_sid_buf sid_buf;
@@ -1096,19 +1111,19 @@ static int pso_search_by_sids(struct ldb_module *module, TALLOC_CTX *mem_ctx,
 		sid_filter = talloc_asprintf_append(
 			sid_filter,
 			"(msDS-PSOAppliesTo=<SID=%s>)",
-			dom_sid_str_buf(&sid_array[i], &sid_buf));
-	}
-
-	if (sid_filter == NULL) {
-		return ldb_oom(ldb);
+			dom_sid_str_buf(&sid_array[i].sid, &sid_buf));
+		if (sid_filter == NULL) {
+			return ldb_oom(ldb);
+		}
 	}
 
 	/* only PSOs located in the Password Settings Container are valid */
-	domain_dn = ldb_get_default_basedn(ldb);
-	psc_dn = ldb_dn_new_fmt(mem_ctx, ldb,
-			        "CN=Password Settings Container,CN=System,%s",
-				ldb_dn_get_linearized(domain_dn));
+	psc_dn = samdb_system_container_dn(ldb, mem_ctx);
 	if (psc_dn == NULL) {
+		return ldb_oom(ldb);
+	}
+	psc_ok = ldb_dn_add_child_fmt(psc_dn, "CN=Password Settings Container");
+	if (psc_ok == false) {
 		return ldb_oom(ldb);
 	}
 
@@ -1125,7 +1140,7 @@ static int pso_search_by_sids(struct ldb_module *module, TALLOC_CTX *mem_ctx,
  * Returns the best PSO object that applies to the object SID(s) specified
  */
 static int pso_find_best(struct ldb_module *module, TALLOC_CTX *mem_ctx,
-			 struct ldb_request *parent, struct dom_sid *sid_array,
+			 struct ldb_request *parent, struct auth_SidAttr *sid_array,
 			 unsigned int num_sids, struct ldb_message **best_pso)
 {
 	struct ldb_result *res = NULL;
@@ -1160,8 +1175,8 @@ static int get_pso_for_user(struct ldb_module *module,
                             struct ldb_message **pso_msg)
 {
 	bool pso_supported;
-	struct dom_sid *groupSIDs = NULL;
-	unsigned int num_groupSIDs = 0;
+	struct auth_SidAttr *groupSIDs = NULL;
+	uint32_t num_groupSIDs = 0;
 	struct ldb_context *ldb = ldb_module_get_ctx(module);
 	struct ldb_message *best_pso = NULL;
 	struct ldb_dn *pso_dn = NULL;
@@ -1219,10 +1234,12 @@ static int get_pso_for_user(struct ldb_module *module,
 	el = ldb_msg_find_element(user_msg, "msDS-PSOApplied");
 
 	if (el != NULL && el->num_values > 0) {
-		struct dom_sid *user_sid = NULL;
+		struct auth_SidAttr *user_sid = NULL;
 
 		/* lookup the best PSO object, based on the user's SID */
-		user_sid = samdb_result_dom_sid(tmp_ctx, user_msg, "objectSid");
+		user_sid = samdb_result_dom_sid_attrs(
+			tmp_ctx, user_msg, "objectSid",
+			SE_GROUP_DEFAULT_FLAGS);
 
 		ret = pso_find_best(module, tmp_ctx, parent, user_sid, 1,
 				    &best_pso);

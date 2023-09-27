@@ -125,8 +125,11 @@ NTSTATUS auth_system_user_info_dc(TALLOC_CTX *mem_ctx, const char *netbios_name,
 	/* This returns a pointer to a struct dom_sid, which is the
 	 * same as a 1 element list of struct dom_sid */
 	user_info_dc->num_sids = 1;
-	user_info_dc->sids = dom_sid_dup(user_info_dc, &global_sid_System);
+	user_info_dc->sids = talloc(user_info_dc, struct auth_SidAttr);
 	NT_STATUS_HAVE_NO_MEMORY(user_info_dc->sids);
+
+	user_info_dc->sids->sid = global_sid_System;
+	user_info_dc->sids->attrs = SE_GROUP_DEFAULT_FLAGS;
 
 	/* annoying, but the Anonymous really does have a session key, 
 	   and it is all zeros! */
@@ -178,7 +181,7 @@ NTSTATUS auth_system_user_info_dc(TALLOC_CTX *mem_ctx, const char *netbios_name,
 
 	info->acct_flags = ACB_NORMAL;
 
-	info->authenticated = true;
+	info->user_flags = 0;
 
 	*_user_info_dc = user_info_dc;
 
@@ -198,25 +201,35 @@ static NTSTATUS auth_domain_admin_user_info_dc(TALLOC_CTX *mem_ctx,
 	user_info_dc = talloc_zero(mem_ctx, struct auth_user_info_dc);
 	NT_STATUS_HAVE_NO_MEMORY(user_info_dc);
 
-	user_info_dc->num_sids = 7;
-	user_info_dc->sids = talloc_array(user_info_dc, struct dom_sid, user_info_dc->num_sids);
+	user_info_dc->num_sids = 8;
+	user_info_dc->sids = talloc_array(user_info_dc, struct auth_SidAttr, user_info_dc->num_sids);
 
-	user_info_dc->sids[PRIMARY_USER_SID_INDEX] = *domain_sid;
-	sid_append_rid(&user_info_dc->sids[PRIMARY_USER_SID_INDEX], DOMAIN_RID_ADMINISTRATOR);
+	user_info_dc->sids[PRIMARY_USER_SID_INDEX].sid = *domain_sid;
+	sid_append_rid(&user_info_dc->sids[PRIMARY_USER_SID_INDEX].sid, DOMAIN_RID_ADMINISTRATOR);
+	user_info_dc->sids[PRIMARY_USER_SID_INDEX].attrs = SE_GROUP_DEFAULT_FLAGS;
 
-	user_info_dc->sids[PRIMARY_GROUP_SID_INDEX] = *domain_sid;
-	sid_append_rid(&user_info_dc->sids[PRIMARY_GROUP_SID_INDEX], DOMAIN_RID_USERS);
+	user_info_dc->sids[PRIMARY_GROUP_SID_INDEX].sid = *domain_sid;
+	sid_append_rid(&user_info_dc->sids[PRIMARY_GROUP_SID_INDEX].sid, DOMAIN_RID_USERS);
+	user_info_dc->sids[PRIMARY_GROUP_SID_INDEX].attrs = SE_GROUP_DEFAULT_FLAGS;
 
-	user_info_dc->sids[2] = global_sid_Builtin_Administrators;
+	/* Add the primary group again. */
+	user_info_dc->sids[2] = user_info_dc->sids[PRIMARY_GROUP_SID_INDEX];
 
-	user_info_dc->sids[3] = *domain_sid;
-	sid_append_rid(&user_info_dc->sids[3], DOMAIN_RID_ADMINS);
-	user_info_dc->sids[4] = *domain_sid;
-	sid_append_rid(&user_info_dc->sids[4], DOMAIN_RID_ENTERPRISE_ADMINS);
-	user_info_dc->sids[5] = *domain_sid;
-	sid_append_rid(&user_info_dc->sids[5], DOMAIN_RID_POLICY_ADMINS);
-	user_info_dc->sids[6] = *domain_sid;
-	sid_append_rid(&user_info_dc->sids[6], DOMAIN_RID_SCHEMA_ADMINS);
+	user_info_dc->sids[3].sid = global_sid_Builtin_Administrators;
+	user_info_dc->sids[3].attrs = SE_GROUP_DEFAULT_FLAGS;
+
+	user_info_dc->sids[4].sid = *domain_sid;
+	sid_append_rid(&user_info_dc->sids[4].sid, DOMAIN_RID_ADMINS);
+	user_info_dc->sids[4].attrs = SE_GROUP_DEFAULT_FLAGS;
+	user_info_dc->sids[5].sid = *domain_sid;
+	sid_append_rid(&user_info_dc->sids[5].sid, DOMAIN_RID_ENTERPRISE_ADMINS);
+	user_info_dc->sids[5].attrs = SE_GROUP_DEFAULT_FLAGS;
+	user_info_dc->sids[6].sid = *domain_sid;
+	sid_append_rid(&user_info_dc->sids[6].sid, DOMAIN_RID_POLICY_ADMINS);
+	user_info_dc->sids[6].attrs = SE_GROUP_DEFAULT_FLAGS;
+	user_info_dc->sids[7].sid = *domain_sid;
+	sid_append_rid(&user_info_dc->sids[7].sid, DOMAIN_RID_SCHEMA_ADMINS);
+	user_info_dc->sids[7].attrs = SE_GROUP_DEFAULT_FLAGS;
 
 	/* What should the session key be?*/
 	user_info_dc->user_session_key = data_blob_talloc(user_info_dc, NULL, 16);
@@ -267,7 +280,7 @@ static NTSTATUS auth_domain_admin_user_info_dc(TALLOC_CTX *mem_ctx,
 
 	info->acct_flags = ACB_NORMAL;
 
-	info->authenticated = true;
+	info->user_flags = 0;
 
 	*_user_info_dc = user_info_dc;
 
@@ -296,7 +309,7 @@ static NTSTATUS auth_domain_admin_session_info(TALLOC_CTX *parent_ctx,
 	nt_status = auth_generate_session_info(mem_ctx, NULL, NULL, user_info_dc,
 					       AUTH_SESSION_INFO_SIMPLE_PRIVILEGES|AUTH_SESSION_INFO_AUTHENTICATED|AUTH_SESSION_INFO_DEFAULT_GROUPS,
 					       session_info);
-	/* There is already a reference between the sesion_info and user_info_dc */
+	/* There is already a reference between the session_info and user_info_dc */
 	if (NT_STATUS_IS_OK(nt_status)) {
 		talloc_steal(parent_ctx, *session_info);
 	}
@@ -370,8 +383,11 @@ _PUBLIC_ NTSTATUS auth_anonymous_user_info_dc(TALLOC_CTX *mem_ctx,
 	/* This returns a pointer to a struct dom_sid, which is the
 	 * same as a 1 element list of struct dom_sid */
 	user_info_dc->num_sids = 1;
-	user_info_dc->sids = dom_sid_dup(user_info_dc, &global_sid_Anonymous);
+	user_info_dc->sids = talloc(user_info_dc, struct auth_SidAttr);
 	NT_STATUS_HAVE_NO_MEMORY(user_info_dc->sids);
+
+	user_info_dc->sids->sid = global_sid_Anonymous;
+	user_info_dc->sids->attrs = SE_GROUP_DEFAULT_FLAGS;
 
 	/* annoying, but the Anonymous really does have a session key... */
 	user_info_dc->user_session_key = data_blob_talloc(user_info_dc, NULL, 16);
@@ -423,7 +439,8 @@ _PUBLIC_ NTSTATUS auth_anonymous_user_info_dc(TALLOC_CTX *mem_ctx,
 
 	info->acct_flags = ACB_NORMAL;
 
-	info->authenticated = false;
+	/* The user is not authenticated. */
+	info->user_flags = NETLOGON_GUEST;
 
 	*_user_info_dc = user_info_dc;
 

@@ -192,6 +192,17 @@ static bool do_idmap_check(void)
 			uint32_t maxranges =
 				(c->high - c->low  + 1) / rangesize;
 
+			if (((c->high - c->low  + 1) % rangesize) != 0) {
+				fprintf(stderr,
+					"WARNING: The idmap autorid range "
+					"[%u-%u] SHOULD be a multiple of "
+					"the rangesize [%u]!"
+					"\n\n",
+					c->low,
+					c->high,
+					rangesize);
+			}
+
 			if (maxranges < 2) {
 				fprintf(stderr,
 					"ERROR: The idmap autorid range "
@@ -602,7 +613,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'server schannel = yes' (the default). "
-			"Your server is vulernable to \"ZeroLogon\" "
+			"Your server is vulnerable to \"ZeroLogon\" "
 			"(CVE-2020-1472)\n"
 			"If required use individual "
 			"'server require schannel:COMPUTERACCOUNT$ = no' "
@@ -612,7 +623,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'allow nt4 crypto = no' (the default). "
-			"Your server is vulernable to "
+			"Your server is vulnerable to "
 			"CVE-2022-38023 and others!\n"
 			"If required use individual "
 			"'allow nt4 crypto:COMPUTERACCOUNT$ = yes' "
@@ -622,7 +633,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'reject md5 clients = yes' (the default). "
-			"Your server is vulernable to "
+			"Your server is vulnerable to "
 			"CVE-2022-38023!\n"
 			"If required use individual "
 			"'server reject md5 schannel:COMPUTERACCOUNT$ = yes' "
@@ -632,7 +643,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'server schannel require seal = yes' (the default). "
-			"Your server is vulernable to "
+			"Your server is vulnerable to "
 			"CVE-2022-38023!\n"
 			"If required use individual "
 			"'server schannel require seal:COMPUTERACCOUNT$ = no' "
@@ -643,7 +654,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'client schannel = yes' (the default). "
-			"Your server is vulernable to \"ZeroLogon\" "
+			"Your server is vulnerable to \"ZeroLogon\" "
 			"(CVE-2020-1472)\n"
 			"If required use individual "
 			"'client schannel:NETBIOSDOMAIN = no' "
@@ -653,7 +664,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'reject md5 servers = yes' (the default). "
-			"Your server is vulernable to "
+			"Your server is vulnerable to "
 			"CVE-2022-38023\n"
 			"If required use individual "
 			"'reject md5 servers:NETBIOSDOMAIN = no' "
@@ -663,7 +674,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'require strong key = yes' (the default). "
-			"Your server is vulernable to "
+			"Your server is vulnerable to "
 			"CVE-2022-38023\n"
 			"If required use individual "
 			"'require strong key:NETBIOSDOMAIN = no' "
@@ -673,7 +684,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have not configured "
 			"'winbind sealed pipes = yes' (the default). "
-			"Your server is vulernable to "
+			"Your server is vulnerable to "
 			"CVE-2022-38023\n"
 			"If required use individual "
 			"'winbind sealed pipes:NETBIOSDOMAIN = no' "
@@ -684,7 +695,7 @@ static int do_global_checks(void)
 		fprintf(stderr,
 			"WARNING: You have configured "
 			"'kerberos encryption types = legacy'. "
-			"Your server is vulernable to "
+			"Your server is vulnerable to "
 			"CVE-2022-37966\n\n");
 	}
 

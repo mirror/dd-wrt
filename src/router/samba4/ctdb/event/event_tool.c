@@ -197,9 +197,63 @@ static void print_status_one(struct ctdb_event_script *script)
 		       ctime(&script->begin.tv_sec));
 	}
 
-	if (script->result != 0 && script->result != -ENOEXEC) {
-		printf("  OUTPUT: %s\n",
-		       script->output == NULL ? "" : script->output);
+	if ((script->result != 0 && script->result != -ENOEXEC) ||
+	    script->output != NULL) {
+		/* Empty output is informative so always print it on failure */
+		const char *t = script->output == NULL ? "" : script->output;
+		size_t len = strlen(t);
+		char output[len+1];
+		char *t1, *t2;
+
+		strlcpy(output, t, sizeof(output));
+
+		/*
+		 * Strip trailing newlines, they are clutter and
+		 * interfere with multi-line detection
+		 */
+		t1 = output + len - 1;
+		while (t1 >= output && *t1 == '\n') {
+			*t1 = '\0';
+			t1--;
+		}
+
+		/* If the output is a single line then print it inline */
+		t2 = strchr(output, '\n');
+		if (t2 == NULL) {
+			printf("  OUTPUT: %s\n", output);
+			return;
+		}
+
+		/*
+		 * More than 1 line.  Print a header and then each
+		 * line, with suitable indent.  There are more general
+		 * ways to do this, but let's maintain intermediate
+		 * blank lines (e.g. strv_split() loses blank lines).
+		 */
+		printf("  OUTPUT:\n");
+		t1 = output;
+		do {
+			/*
+			 * Points to newline character. t2 initially
+			 * set non-NULL outside loop because this loop
+			 * only covers multi-line output.
+			 */
+			*t2 = '\0';
+
+
+			printf("    %s\n", t1);
+			t1 = t2 + 1;
+
+			if (t1 >= output + len) {
+				break;
+			}
+
+			/* strchrnul() would be awesome, but isn't portable */
+			t2 = strchr(t1, '\n');
+			if (t2 == NULL) {
+				t2 = output + len;
+			}
+		} while (true);
 	}
 }
 

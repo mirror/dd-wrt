@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: vfs_zfsacl
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "VFS_ZFSACL" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "VFS_ZFSACL" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -64,7 +64,7 @@ This module makes use of the smb\&.conf parameter
 \m[blue]\fBacl map full control = acl map full control\fR\m[]
 When set to yes (the default), this parameter will add in the FILE_DELETE_CHILD bit on a returned ACE entry for a file (not a directory) that already contains all file permissions except for FILE_DELETE and FILE_DELETE_CHILD\&. This can prevent Windows applications that request GENERIC_ALL access from getting ACCESS_DENIED errors when running against a filesystem with NFSv4 compatible ACLs\&.
 .PP
-ZFS has mutiple dataset configuration parameters that determine ACL behavior\&. Although the nuances of these parameters are outside the scope of this manpage, the "aclmode" and "aclinherit" are of particular importance for samba shares\&. For datasets that are intended solely as Samba shares, "aclmode = restricted" and "aclinherit = passthrough" provide inheritance behavior most consistent with NTFS ACLs\&. A "restricted" aclmode prevents chmod() on files that have a non\-trivial ACL (one that cannot be expressed as a POSIX mode without loss of information)\&. Consult the relevant ZFS manpages for further information\&.
+ZFS has multiple dataset configuration parameters that determine ACL behavior\&. Although the nuances of these parameters are outside the scope of this manpage, the "aclmode" and "aclinherit" are of particular importance for samba shares\&. For datasets that are intended solely as Samba shares, "aclmode = restricted" and "aclinherit = passthrough" provide inheritance behavior most consistent with NTFS ACLs\&. A "restricted" aclmode prevents chmod() on files that have a non\-trivial ACL (one that cannot be expressed as a POSIX mode without loss of information)\&. Consult the relevant ZFS manpages for further information\&.
 .PP
 This module is stackable\&.
 .PP
@@ -261,7 +261,7 @@ no
 .PP
 zfsacl:map_dacl_protected = [yes|no]
 .RS 4
-If enabled and the ZFS ACL on the underlying filesystem does not contain any inherited access control entires, then set the SEC_DESC_DACL_PROTECTED flag on the Security Descriptor returned to SMB clients\&. This ensures correct Windows client behavior when disabling inheritance on directories\&.
+If enabled and the ZFS ACL on the underlying filesystem does not contain any inherited access control entries, then set the SEC_DESC_DACL_PROTECTED flag on the Security Descriptor returned to SMB clients\&. This ensures correct Windows client behavior when disabling inheritance on directories\&.
 .sp
 Following is the behaviour of Samba for different values :
 .RS
@@ -310,7 +310,7 @@ A ZFS mount can be exported via Samba as follows :
 .\}
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.18\&.3 of the Samba suite\&.
+This man page is part of version 4\&.19\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

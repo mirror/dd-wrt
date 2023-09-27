@@ -27,9 +27,11 @@
 #include "librpc/ndr/libndr.h"
 #include "lib/tsocket/tsocket.h"
 #include "libcli/security/dom_sid.h"
+#include "libcli/security/security_token.h"
 #include "lib/messaging/messaging.h"
 #include "auth/common_auth.h"
 #include "audit_logging.h"
+#include "auth/authn_policy.h"
 
 /*
  * @brief Get a human readable timestamp.
@@ -385,31 +387,33 @@ bool json_is_invalid(const struct json_object *object)
  *        -1 the operation failed
  *
  */
-int json_add_int(struct json_object *object, const char *name, const int value)
+int json_add_int(struct json_object *object, const char *name, const json_int_t value)
 {
 	int ret = 0;
 	json_t *integer = NULL;
 
 	if (json_is_invalid(object)) {
-		DBG_ERR("Unable to add int [%s] value [%d], "
+		DBG_ERR("Unable to add int [%s] value [%jd], "
 			"target object is invalid\n",
 			name,
-			value);
+			(intmax_t)value);
 		return JSON_ERROR;
 	}
 
 	integer = json_integer(value);
 	if (integer == NULL) {
-		DBG_ERR("Unable to create integer value [%s] value [%d]\n",
+		DBG_ERR("Unable to create integer value [%s] value [%jd]\n",
 			name,
-			value);
+			(intmax_t)value);
 		return JSON_ERROR;
 	}
 
 	ret = json_object_set_new(object->root, name, integer);
 	if (ret != 0) {
 		json_decref(integer);
-		DBG_ERR("Unable to add int [%s] value [%d]\n", name, value);
+		DBG_ERR("Unable to add int [%s] value [%jd]\n",
+			name,
+			(intmax_t)value);
 	}
 	return ret;
 }
@@ -445,6 +449,50 @@ int json_add_bool(struct json_object *object,
 	if (ret != 0) {
 		DBG_ERR("Unable to add boolean [%s] value [%d]\n", name, value);
 	}
+	return ret;
+}
+
+/*
+ * @brief Add an optional boolean value to a JSON object.
+ *
+ * Add an optional boolean value named 'name' to the json object.
+ *
+ * @param object the JSON object to be updated.
+ * @param name the name.
+ * @param value the value.
+ *
+ * @return 0 the operation was successful
+ *        -1 the operation failed
+ *
+ */
+int json_add_optional_bool(struct json_object *object,
+			   const char *name,
+			   const bool *value)
+{
+	int ret = 0;
+
+	if (json_is_invalid(object)) {
+		DBG_ERR("Unable to add boolean [%s] value [%d], "
+			"target object is invalid\n",
+			name,
+			*value);
+		return JSON_ERROR;
+	}
+
+	if (value != NULL) {
+		ret = json_object_set_new(object->root, name, json_boolean(*value));
+		if (ret != 0) {
+			DBG_ERR("Unable to add boolean [%s] value [%d]\n", name, *value);
+			return ret;
+		}
+	} else {
+		ret = json_object_set_new(object->root, name, json_null());
+		if (ret != 0) {
+			DBG_ERR("Unable to add null boolean [%s]\n", name);
+			return ret;
+		}
+	}
+
 	return ret;
 }
 
@@ -684,37 +732,28 @@ int json_add_version(struct json_object *object, int major, int minor)
 /*
  * @brief add an ISO 8601 timestamp to the object.
  *
- * Add the current date and time as a timestamp in ISO 8601 format
- * to a JSON object
+ * Add a date and time as a timestamp in ISO 8601 format to a JSON object
  *
- * "timestamp":"2017-03-06T17:18:04.455081+1300"
+ * "time":"2017-03-06T17:18:04.455081+1300"
  *
  *
  * @param object the JSON object to be updated.
+ * @param name the name.
+ * @param time the value to set.
  *
  * @return 0 the operation was successful
  *        -1 the operation failed
  */
-int json_add_timestamp(struct json_object *object)
+int json_add_time(struct json_object *object, const char *name, const struct timeval tv)
 {
 	char buffer[40];	/* formatted time less usec and timezone */
 	char timestamp[65];	/* the formatted ISO 8601 time stamp	 */
 	char tz[10];		/* formatted time zone			 */
 	struct tm* tm_info;	/* current local time			 */
-	struct timeval tv;	/* current system time			 */
-	int r;			/* response code from gettimeofday	 */
 	int ret;		/* return code from json operations	*/
 
 	if (json_is_invalid(object)) {
-		DBG_ERR("Unable to add time stamp, target object is invalid\n");
-		return JSON_ERROR;
-	}
-
-	r = gettimeofday(&tv, NULL);
-	if (r) {
-		DBG_ERR("Unable to get time of day: (%d) %s\n",
-			errno,
-			strerror(errno));
+		DBG_ERR("Unable to add time, target object is invalid\n");
 		return JSON_ERROR;
 	}
 
@@ -733,11 +772,46 @@ int json_add_timestamp(struct json_object *object)
 		buffer,
 		tv.tv_usec,
 		tz);
-	ret = json_add_string(object, "timestamp", timestamp);
+	ret = json_add_string(object, name, timestamp);
 	if (ret != 0) {
-		DBG_ERR("Unable to add time stamp to JSON object\n");
+		DBG_ERR("Unable to add time to JSON object\n");
 	}
 	return ret;
+}
+
+/*
+ * @brief add an ISO 8601 timestamp to the object.
+ *
+ * Add the current date and time as a timestamp in ISO 8601 format
+ * to a JSON object
+ *
+ * "timestamp":"2017-03-06T17:18:04.455081+1300"
+ *
+ *
+ * @param object the JSON object to be updated.
+ *
+ * @return 0 the operation was successful
+ *        -1 the operation failed
+ */
+int json_add_timestamp(struct json_object *object)
+{
+	struct timeval tv;	/* current system time			 */
+	int r;			/* response code from gettimeofday	 */
+
+	if (json_is_invalid(object)) {
+		DBG_ERR("Unable to add time stamp, target object is invalid\n");
+		return JSON_ERROR;
+	}
+
+	r = gettimeofday(&tv, NULL);
+	if (r) {
+		DBG_ERR("Unable to get time of day: (%d) %s\n",
+			errno,
+			strerror(errno));
+		return JSON_ERROR;
+	}
+
+	return json_add_time(object, "timestamp", tv);
 }
 
 /*
@@ -896,12 +970,63 @@ int json_add_guid(struct json_object *object,
 		guid_str = GUID_buf_string(guid, &guid_buff);
 		ret = json_add_string(object, name, guid_str);
 		if (ret != 0) {
-			DBG_ERR("Unable to guid GUID [%s] value [%s]\n",
+			DBG_ERR("Unable to add GUID [%s] value [%s]\n",
 				name,
 				guid_str);
 			return ret;
 		}
 	}
+	return ret;
+}
+
+/*
+ * @brief Add a hex-formatted string representation of a 32-bit integer to a
+ * json object.
+ *
+ * Add a hex-formatted string representation of a 32-bit flags integer to the
+ * object.
+ *
+ * "accountFlags":"0x12345678"
+ *
+ *
+ * @param object the JSON object to be updated.
+ * @param name the name.
+ * @param flags the flags.
+ *
+ * @return 0 the operation was successful
+ *        -1 the operation failed
+ *
+ *
+ */
+int json_add_flags32(struct json_object *object,
+		  const char *name,
+		  const uint32_t flags)
+{
+	int ret = 0;
+	char buf[sizeof("0x12345678")];
+
+	if (json_is_invalid(object)) {
+		DBG_ERR("Unable to add flags [%s], "
+			"target object is invalid\n",
+			name);
+		return JSON_ERROR;
+	}
+
+	ret = snprintf(buf, sizeof (buf), "0x%08X", flags);
+	if (ret != sizeof (buf) - 1) {
+		DBG_ERR("Unable to format flags [%s] value [0x%08X]\n",
+			name,
+			flags);
+		return JSON_ERROR;
+	}
+
+	ret = json_add_string(object, name, buf);
+	if (ret != 0) {
+		DBG_ERR("Unable to add flags [%s] value [%s]\n",
+			name,
+			buf);
+	}
+
 	return ret;
 }
 
@@ -916,7 +1041,7 @@ int json_add_guid(struct json_object *object,
  * @param new_obj the new value object to be inserted.
  *
  * @return 0 the operation was successful
- *        -1 the operation failed (e.j. if one of the paramters is invalid)
+ *        -1 the operation failed (e.j. if one of the parameters is invalid)
  */
 int json_update_object(struct json_object *object,
 		       const char *key,
@@ -1062,6 +1187,12 @@ struct json_object json_get_object(struct json_object *object, const char *name)
 	json_t *v = NULL;
 	int ret = 0;
 
+	if (json_is_invalid(&o)) {
+		DBG_ERR("Unable to get object [%s]\n", name);
+		json_free(&o);
+		return o;
+	}
+
 	if (json_is_invalid(object)) {
 		DBG_ERR("Invalid JSON object, unable to get object [%s]\n",
 			name);
@@ -1081,4 +1212,151 @@ struct json_object json_get_object(struct json_object *object, const char *name)
 	}
 	return o;
 }
+
+/*
+ * @brief Return the JSON null object.
+ *
+ * @return the JSON null object.
+ */
+_WARN_UNUSED_RESULT_ struct json_object json_null_object(void)
+{
+	struct json_object object = json_empty_object;
+
+	object.root = json_null();
+	if (object.root != NULL) {
+		object.valid = true;
+	}
+
+	return object;
+}
+
+/*
+ * @brief Create a JSON object from a structure containing audit information.
+ *
+ * @param audit_info the audit information from which to create a JSON object.
+ *
+ * @return the JSON object (which may be valid or not)
+ *
+ *
+ */
+struct json_object json_from_audit_info(const struct authn_audit_info *audit_info)
+{
+	struct json_object object = json_new_object();
+	enum auth_event_id_type auth_event_id;
+	const struct auth_user_info_dc *client_info = NULL;
+	const char *policy_name = NULL;
+	const char *silo_name = NULL;
+	const bool *policy_enforced = NULL;
+	NTSTATUS policy_status;
+	struct authn_int64_optional tgt_lifetime_mins;
+	const char *location = NULL;
+	const char *audit_event = NULL;
+	const char *audit_reason = NULL;
+	int rc = 0;
+
+	if (json_is_invalid(&object)) {
+		goto failure;
+	}
+
+	auth_event_id = authn_audit_info_event_id(audit_info);
+	rc = json_add_int(&object, "eventId", auth_event_id);
+	if (rc != 0) {
+		goto failure;
+	}
+
+	policy_name = authn_audit_info_policy_name(audit_info);
+	rc = json_add_string(&object, "policyName", policy_name);
+	if (rc != 0) {
+		goto failure;
+	}
+
+	silo_name = authn_audit_info_silo_name(audit_info);
+	rc = json_add_string(&object, "siloName", silo_name);
+	if (rc != 0) {
+		goto failure;
+	}
+
+	policy_enforced = authn_audit_info_policy_enforced(audit_info);
+	rc = json_add_optional_bool(&object, "policyEnforced", policy_enforced);
+	if (rc != 0) {
+		goto failure;
+	}
+
+	policy_status = authn_audit_info_policy_status(audit_info);
+	rc = json_add_string(&object, "status", nt_errstr(policy_status));
+	if (rc != 0) {
+		goto failure;
+	}
+
+	tgt_lifetime_mins = authn_audit_info_policy_tgt_lifetime_mins(audit_info);
+	if (tgt_lifetime_mins.is_present) {
+		rc = json_add_int(&object, "tgtLifetime", tgt_lifetime_mins.val);
+		if (rc != 0) {
+			goto failure;
+		}
+	}
+
+	location = authn_audit_info_location(audit_info);
+	rc = json_add_string(&object, "location", location);
+	if (rc != 0) {
+		goto failure;
+	}
+
+	audit_event = authn_audit_info_event(audit_info);
+	rc = json_add_string(&object, "auditEvent", audit_event);
+	if (rc != 0) {
+		goto failure;
+	}
+
+	audit_reason = authn_audit_info_reason(audit_info);
+	rc = json_add_string(&object, "reason", audit_reason);
+	if (rc != 0) {
+		goto failure;
+	}
+
+	client_info = authn_audit_info_client_info(audit_info);
+	if (client_info != NULL) {
+		const struct auth_user_info *client_user_info = NULL;
+
+		client_user_info = client_info->info;
+		if (client_user_info != NULL) {
+			rc = json_add_string(&object, "checkedDomain", client_user_info->domain_name);
+			if (rc != 0) {
+				goto failure;
+			}
+
+			rc = json_add_string(&object, "checkedAccount", client_user_info->account_name);
+			if (rc != 0) {
+				goto failure;
+			}
+
+			rc = json_add_string(&object, "checkedLogonServer", client_user_info->logon_server);
+			if (rc != 0) {
+				goto failure;
+			}
+
+			rc = json_add_flags32(&object, "checkedAccountFlags", client_user_info->acct_flags);
+			if (rc != 0) {
+				goto failure;
+			}
+		}
+
+		if (client_info->num_sids) {
+			const struct dom_sid *policy_checked_sid = NULL;
+
+			policy_checked_sid = &client_info->sids[PRIMARY_USER_SID_INDEX].sid;
+			rc = json_add_sid(&object, "checkedSid", policy_checked_sid);
+			if (rc != 0) {
+				goto failure;
+			}
+		}
+	}
+
+	return object;
+
+failure:
+	json_free(&object);
+	return object;
+}
+
 #endif

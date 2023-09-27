@@ -39,7 +39,7 @@
 
 /*
  * Versions before 1.2.0 doesn't define these values
- * so we assime 1.1.29 (which was used in Samba 4.6)
+ * so we assume 1.1.29 (which was used in Samba 4.6)
  *
  * See https://bugzilla.samba.org/show_bug.cgi?id=12859
  */
@@ -103,8 +103,8 @@ struct ldb_module;
 #define LDB_FLAG_INTERNAL_SHARED_VALUES 0x200
 
 /*
- * this attribute has been access checked. We know the user has the right to
- * view it. Used internally in Samba aclread module.
+ * this attribute has been access checked. Used internally in Samba aclread
+ * module.
  */
 #define LDB_FLAG_INTERNAL_ACCESS_CHECKED 0x400
 
@@ -629,4 +629,12 @@ void ldb_handle_use_global_event_context(struct ldb_handle *handle);
  *
  */
 const char **ldb_options_get(struct ldb_context *ldb);
+
+struct ldb_dn *ldb_val_as_dn(struct ldb_context *ldb,
+			     TALLOC_CTX *mem_ctx,
+			     const struct ldb_val *v);
+int ldb_val_as_int64(const struct ldb_val *v, int64_t *val);
+int ldb_val_as_uint64(const struct ldb_val *v, uint64_t *val);
+int ldb_val_as_bool(const struct ldb_val *v, bool *val);
+
 #endif

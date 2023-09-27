@@ -119,11 +119,8 @@ uint64_t get_file_size_stat(const SMB_STRUCT_STAT *sbuf)
 bool check_same_dev_ino(const SMB_STRUCT_STAT *sbuf1,
                         const SMB_STRUCT_STAT *sbuf2)
 {
-	if (sbuf1->st_ex_dev != sbuf2->st_ex_dev ||
-			sbuf1->st_ex_ino != sbuf2->st_ex_ino) {
-		return false;
-	}
-	return true;
+	return ((sbuf1->st_ex_dev == sbuf2->st_ex_dev) &&
+		(sbuf1->st_ex_ino == sbuf2->st_ex_ino));
 }
 
 /****************************************************************************
@@ -131,14 +128,11 @@ bool check_same_dev_ino(const SMB_STRUCT_STAT *sbuf1,
 ****************************************************************************/
 
 bool check_same_stat(const SMB_STRUCT_STAT *sbuf1,
-			const SMB_STRUCT_STAT *sbuf2)
+		     const SMB_STRUCT_STAT *sbuf2)
 {
-	if (sbuf1->st_ex_uid != sbuf2->st_ex_uid ||
-			sbuf1->st_ex_gid != sbuf2->st_ex_gid ||
-			!check_same_dev_ino(sbuf1, sbuf2)) {
-		return false;
-	}
-	return true;
+	return ((sbuf1->st_ex_uid == sbuf2->st_ex_uid) &&
+		(sbuf1->st_ex_gid == sbuf2->st_ex_gid) &&
+		check_same_dev_ino(sbuf1, sbuf2));
 }
 
 /*******************************************************************
@@ -917,10 +911,10 @@ bool fcntl_getlock(int fd, int op, off_t *poffset, off_t *pcount, int *ptype, pi
 	ret = sys_fcntl_ptr(fd,op,&lock);
 
 	if (ret == -1) {
-		int sav = errno;
+		int saved_errno = errno;
 		DEBUG(3,("fcntl_getlock: lock request failed at offset %.0f count %.0f type %d (%s)\n",
 			(double)*poffset,(double)*pcount,*ptype,strerror(errno)));
-		errno = sav;
+		errno = saved_errno;
 		return False;
 	}
 
@@ -1448,19 +1442,8 @@ bool parent_dirname(TALLOC_CTX *mem_ctx, const char *dir, char **parent,
 
 bool ms_has_wild(const char *s)
 {
-	char c;
-
-	while ((c = *s++)) {
-		switch (c) {
-		case '*':
-		case '?':
-		case '<':
-		case '>':
-		case '"':
-			return True;
-		}
-	}
-	return False;
+	const char *found = strpbrk(s, "*?<>\"");
+	return (found != NULL);
 }
 
 bool ms_has_wild_w(const smb_ucs2_t *s)
@@ -1497,7 +1480,7 @@ bool mask_match(const char *string, const char *pattern, bool is_case_sensitive)
 
 /*******************************************************************
  A wrapper that handles case sensitivity and the special handling
- of the ".." name. Varient that is only called by old search code which requires
+ of the ".." name. Variant that is only called by old search code which requires
  pattern translation.
 *******************************************************************/
 
@@ -1512,7 +1495,7 @@ bool mask_match_search(const char *string, const char *pattern, bool is_case_sen
 }
 
 /*******************************************************************
- A wrapper that handles a list of patters and calls mask_match()
+ A wrapper that handles a list of patterns and calls mask_match()
  on each.  Returns True if any of the patterns match.
 *******************************************************************/
 

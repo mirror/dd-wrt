@@ -470,14 +470,14 @@ sub PythonFunctionStruct($$$$)
 	$self->indent;
 
 	# This creates a new, zeroed C structure and python object.
-	# Thse may not be valid or sensible values, but this is as
+	# These may not be valid or sensible values, but this is as
 	# well as we can do.
 
 	$self->pidl("PyObject *self = pytalloc_new($cname, type);");
 
 	# If there are any children that are ref pointers, we need to
 	# allocate something for them to point to just as the pull
-	# routine will when parsing the stucture from NDR.
+	# routine will when parsing the structure from NDR.
 	#
 	# We then make those pointers point to zeroed memory
 	#
@@ -1747,7 +1747,7 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->pidl("}");
 		$self->pidl("if (test_var > uint_max) {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s within range 0 - %llu, got %llu\",\\");
+		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s within range 0 - %llu, got %llu\",");
 		$self->pidl("  PyLong_Type.tp_name, uint_max, test_var);");
 		$self->pidl($fail);
 		$self->deindent;
@@ -1756,7 +1756,7 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->deindent;
 		$self->pidl("} else {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s\",\\");
+		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s\",");
 		$self->pidl("  PyLong_Type.tp_name);");
 		$self->pidl($fail);
 		$self->deindent;
@@ -1786,7 +1786,7 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->pidl("}");
 		$self->pidl("if (test_var < int_min || test_var > int_max) {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s within range %lld - %lld, got %lld\",\\");
+		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s within range %lld - %lld, got %lld\",");
 		$self->pidl("  PyLong_Type.tp_name, int_min, int_max, test_var);");
 		$self->pidl($fail);
 		$self->deindent;
@@ -1795,7 +1795,7 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->deindent;
 		$self->pidl("} else {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s\",\\");
+		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s\",");
 		$self->pidl("  PyLong_Type.tp_name);");
 		$self->pidl($fail);
 		$self->deindent;

@@ -61,7 +61,7 @@ static void sdb_flags_to_hdb_flags(const struct SDBFlags *s,
 	h->virtual = s->virtual;
 	h->synthetic = s->synthetic;
 	h->no_auth_data_reqd = s->no_auth_data_reqd;
-	h->_unused24 = s->_unused24;
+	h->auth_data_reqd = s->auth_data_reqd;
 	h->_unused25 = s->_unused25;
 	h->_unused26 = s->_unused26;
 	h->_unused27 = s->_unused27;
@@ -147,6 +147,31 @@ static int sdb_keys_to_Keys(const struct sdb_keys *s, Keys *h)
 	return 0;
 }
 
+static int sdb_keys_to_HistKeys(krb5_context context,
+				const struct sdb_keys *s,
+				krb5_kvno kvno,
+				hdb_entry *h)
+{
+	unsigned int i;
+
+	for (i = 0; i < s->len; i++) {
+		Key k = { 0, };
+		int ret;
+
+		ret = sdb_key_to_Key(&s->val[i], &k);
+		if (ret != 0) {
+			return ENOMEM;
+		}
+		ret = hdb_add_history_key(context, h, kvno, &k);
+		free_Key(&k);
+		if (ret != 0) {
+			return ENOMEM;
+		}
+	}
+
+	return 0;
+}
+
 static int sdb_event_to_Event(krb5_context context,
 			      const struct sdb_event *s, Event *h)
 {
@@ -190,6 +215,26 @@ int sdb_entry_to_hdb_entry(krb5_context context,
 	rc = sdb_keys_to_Keys(&s->keys, &h->keys);
 	if (rc != 0) {
 		goto error;
+	}
+
+	if (h->kvno > 1) {
+		rc = sdb_keys_to_HistKeys(context,
+					  &s->old_keys,
+					  h->kvno - 1,
+					  h);
+		if (rc != 0) {
+			goto error;
+		}
+	}
+
+	if (h->kvno > 2) {
+		rc = sdb_keys_to_HistKeys(context,
+					  &s->older_keys,
+					  h->kvno - 2,
+					  h);
+		if (rc != 0) {
+			goto error;
+		}
 	}
 
 	rc = sdb_event_to_Event(context,
@@ -250,7 +295,7 @@ int sdb_entry_to_hdb_entry(krb5_context context,
 	}
 
 	if (s->max_life != NULL) {
-		h->max_life = malloc(sizeof(unsigned int));
+		h->max_life = malloc(sizeof(*h->max_life));
 		if (h->max_life == NULL) {
 			rc = ENOMEM;
 			goto error;
@@ -261,7 +306,7 @@ int sdb_entry_to_hdb_entry(krb5_context context,
 	}
 
 	if (s->max_renew != NULL) {
-		h->max_renew = malloc(sizeof(unsigned int));
+		h->max_renew = malloc(sizeof(*h->max_renew));
 		if (h->max_renew == NULL) {
 			rc = ENOMEM;
 			goto error;

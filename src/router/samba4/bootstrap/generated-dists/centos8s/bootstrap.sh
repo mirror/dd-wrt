@@ -28,6 +28,7 @@ yum install -y \
     bison \
     ccache \
     chrpath \
+    crypto-policies-scripts \
     cups-devel \
     curl \
     dbus-devel \
@@ -44,6 +45,7 @@ yum install -y \
     glusterfs-api-devel \
     glusterfs-devel \
     gnutls-devel \
+    gnutls-utils \
     gpgme-devel \
     gzip \
     hostname \

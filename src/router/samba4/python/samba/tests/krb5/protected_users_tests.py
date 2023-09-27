@@ -26,10 +26,8 @@ from functools import partial
 
 import ldb
 
-from samba import NTSTATUSError, generate_random_password, ntstatus
-from samba.dcerpc import lsa, misc, netlogon, ntlmssp, samr, security
-from samba.ndr import ndr_pack, ndr_unpack
-from samba.samdb import SamDB
+from samba import generate_random_password, ntstatus
+from samba.dcerpc import netlogon, security
 
 import samba.tests.krb5.kcrypto as kcrypto
 from samba.tests.krb5.kdc_base_test import KDCBaseTest
@@ -53,12 +51,25 @@ import samba.tests.krb5.rfc4120_pyasn1 as krb5_asn1
 global_asn1_print = False
 global_hexdump = False
 
+HRES_SEC_E_LOGON_DENIED = 0x8009030C
+
 
 class ProtectedUsersTests(KDCBaseTest):
     def setUp(self):
         super().setUp()
         self.do_asn1_print = global_asn1_print
         self.do_hexdump = global_hexdump
+
+        samdb = self.get_samdb()
+
+        # Get the old ‘minPwdAge’.
+        minPwdAge = samdb.get_minPwdAge()
+
+        # Reset the ‘minPwdAge’ as it was before.
+        self.addCleanup(samdb.set_minPwdAge, minPwdAge)
+
+        # Set it temporarily to ‘0’.
+        samdb.set_minPwdAge('0')
 
     # Get account credentials for testing.
     def _get_creds(self,
@@ -87,35 +98,6 @@ class ProtectedUsersTests(KDCBaseTest):
                                      opts=opts,
                                      use_cache=cached)
 
-    # Test credentials by connecting to the DC through LDAP.
-    def _connect(self, creds, expect_error=False):
-        samdb = self.get_samdb()
-        try:
-            ldap = SamDB(url=f'ldap://{samdb.host_dns_name()}',
-                         credentials=creds,
-                         lp=self.get_lp())
-        except ldb.LdbError as err:
-            self.assertTrue(expect_error, 'got unexpected error')
-            num, _ = err.args
-            if num != ldb.ERR_INVALID_CREDENTIALS:
-                raise
-
-            return
-        else:
-            self.assertFalse(expect_error, 'expected to get an error')
-
-        res = ldap.search('',
-                          scope=ldb.SCOPE_BASE,
-                          attrs=['tokenGroups'])
-        self.assertEqual(1, len(res))
-
-        sid = self.get_objectSid(samdb, creds.get_dn())
-
-        token_groups = res[0].get('tokenGroups', idx=0)
-        token_sid = ndr_unpack(security.dom_sid, token_groups)
-
-        self.assertEqual(sid, str(token_sid))
-
     # Test NTLM authentication with a normal account. Authentication should
     # succeed.
     def test_ntlm_not_protected(self):
@@ -123,7 +105,7 @@ class ProtectedUsersTests(KDCBaseTest):
                                        ntlm=True,
                                        cached=False)
 
-        self._connect(client_creds)
+        self._connect(client_creds, simple_bind=False)
 
     # Test NTLM authentication with a protected account. Authentication should
     # fail, as Protected User accounts cannot use NTLM authentication.
@@ -132,7 +114,8 @@ class ProtectedUsersTests(KDCBaseTest):
                                        ntlm=True,
                                        cached=False)
 
-        self._connect(client_creds, expect_error=True)
+        self._connect(client_creds, simple_bind=False,
+                      expect_error=f'{HRES_SEC_E_LOGON_DENIED:08X}')
 
     # Test that the Protected Users restrictions still apply when the user is a
     # member of a group that is itself a member of Protected Users.
@@ -150,77 +133,8 @@ class ProtectedUsersTests(KDCBaseTest):
                                        ntlm=True,
                                        member_of=group_dn)
 
-        self._connect(client_creds, expect_error=True)
-
-    # Test the three SAMR password change methods implemented in Samba. If the
-    # user is protected, we should get an ACCOUNT_RESTRICTION error indicating
-    # that the password change is not allowed; otherwise we should get a
-    # WRONG_PASSWORD error.
-    def _test_samr_change_password(self, creds, protected):
-        samdb = self.get_samdb()
-        server_name = samdb.host_dns_name()
-        conn = samr.samr(f'ncacn_np:{server_name}[krb5,seal,smb2]')
-
-        username = creds.get_username()
-
-        server = lsa.String()
-        server.string = server_name
-
-        account = lsa.String()
-        account.string = username
-
-        nt_password = samr.CryptPassword()
-        nt_verifier = samr.Password()
-
-        with self.assertRaises(NTSTATUSError) as err:
-            conn.ChangePasswordUser2(server=server,
-                                     account=account,
-                                     nt_password=nt_password,
-                                     nt_verifier=nt_verifier,
-                                     lm_change=True,
-                                     lm_password=None,
-                                     lm_verifier=None)
-
-        num, _ = err.exception.args
-        if protected:
-            self.assertEqual(ntstatus.NT_STATUS_ACCOUNT_RESTRICTION, num)
-        else:
-            self.assertEqual(ntstatus.NT_STATUS_WRONG_PASSWORD, num)
-
-        with self.assertRaises(NTSTATUSError) as err:
-            conn.ChangePasswordUser3(server=server,
-                                     account=account,
-                                     nt_password=nt_password,
-                                     nt_verifier=nt_verifier,
-                                     lm_change=True,
-                                     lm_password=None,
-                                     lm_verifier=None,
-                                     password3=None)
-
-        num, _ = err.exception.args
-        if protected:
-            self.assertEqual(ntstatus.NT_STATUS_ACCOUNT_RESTRICTION, num)
-        else:
-            self.assertEqual(ntstatus.NT_STATUS_WRONG_PASSWORD, num)
-
-        server = lsa.AsciiString()
-        server.string = server_name
-
-        account = lsa.AsciiString()
-        account.string = username
-
-        with self.assertRaises(NTSTATUSError) as err:
-            conn.OemChangePasswordUser2(server=server,
-                                        account=account,
-                                        password=nt_password,
-                                        hash=nt_verifier)
-
-        num, _ = err.exception.args
-        if num != ntstatus.NT_STATUS_NOT_IMPLEMENTED:
-            if protected:
-                self.assertEqual(ntstatus.NT_STATUS_ACCOUNT_RESTRICTION, num)
-            else:
-                self.assertEqual(ntstatus.NT_STATUS_WRONG_PASSWORD, num)
+        self._connect(client_creds, simple_bind=False,
+                      expect_error=f'{HRES_SEC_E_LOGON_DENIED:08X}')
 
     # Test SAMR password changes for unprotected and protected accounts.
     def test_samr_change_password_not_protected(self):
@@ -229,7 +143,9 @@ class ProtectedUsersTests(KDCBaseTest):
         client_creds = self._get_creds(protected=False,
                                        cached=False)
 
-        self._test_samr_change_password(client_creds, protected=False)
+        self._test_samr_change_password(
+            client_creds,
+            expect_error=None)
 
     def test_samr_change_password_protected(self):
         # Use a non-cached account so that it is not locked out for other
@@ -237,127 +153,41 @@ class ProtectedUsersTests(KDCBaseTest):
         client_creds = self._get_creds(protected=True,
                                        cached=False)
 
-        self._test_samr_change_password(client_creds, protected=True)
-
-    # Test SamLogon. Authentication should succeed for non-protected accounts,
-    # and fail for protected accounts.
-    def _test_samlogon(self, creds, logon_type, protected):
-        samdb = self.get_samdb()
-
-        server = samdb.host_dns_name()
-        username, domain = creds.get_ntlm_username_domain()
-        workstation = 'Workstation'
-
-        target_info = ntlmssp.AV_PAIR_LIST()
-        target_info.count = 3
-        computername = ntlmssp.AV_PAIR()
-        computername.AvId = ntlmssp.MsvAvNbComputerName
-        computername.Value = workstation
-
-        domainname = ntlmssp.AV_PAIR()
-        domainname.AvId = ntlmssp.MsvAvNbDomainName
-        domainname.Value = domain
-
-        eol = ntlmssp.AV_PAIR()
-        eol.AvId = ntlmssp.MsvAvEOL
-        target_info.pair = [domainname, computername, eol]
-
-        target_info_blob = ndr_pack(target_info)
-
-        challenge = b'abcdefgh'
-        response = creds.get_ntlm_response(flags=0,
-                                           challenge=challenge,
-                                           target_info=target_info_blob)
-
-        mach_creds = self.get_cached_creds(
-            account_type=self.AccountType.COMPUTER,
-            opts={'secure_channel_type': misc.SEC_CHAN_WKSTA})
-
-        conn = netlogon.netlogon(f'ncacn_ip_tcp:{server}[schannel,seal]',
-                                 self.get_lp(),
-                                 mach_creds)
-
-        if logon_type == netlogon.NetlogonInteractiveInformation:
-            logon = netlogon.netr_PasswordInfo()
-
-            lm_pass = samr.Password()
-            lm_pass.hash = [0] * 16
-
-            nt_pass = samr.Password()
-            nt_pass.hash = list(creds.get_nt_hash())
-            mach_creds.encrypt_samr_password(nt_pass)
-
-            logon.lmpassword = lm_pass
-            logon.ntpassword = nt_pass
-
-        elif logon_type == netlogon.NetlogonNetworkInformation:
-            logon = netlogon.netr_NetworkInfo()
-
-            logon.challenge = list(challenge)
-            logon.nt = netlogon.netr_ChallengeResponse()
-            logon.nt.length = len(response['nt_response'])
-            logon.nt.data = list(response['nt_response'])
-
-        else:
-            self.fail(f'unknown logon type {logon_type}')
-
-        identity_info = netlogon.netr_IdentityInfo()
-        identity_info.domain_name.string = domain
-        identity_info.account_name.string = username
-        identity_info.workstation.string = workstation
-
-        logon.identity_info = identity_info
-
-        validation_level = netlogon.NetlogonValidationSamInfo2
-        netr_flags = 0
-
-        try:
-            conn.netr_LogonSamLogonEx(server,
-                                      mach_creds.get_workstation(),
-                                      logon_type,
-                                      logon,
-                                      validation_level,
-                                      netr_flags)
-        except NTSTATUSError as err:
-            self.assertTrue(protected, 'got unexpected error')
-
-            num, _ = err.args
-            if num != ntstatus.NT_STATUS_ACCOUNT_RESTRICTION:
-                raise
-        else:
-            self.assertFalse(protected, 'expected error')
+        self._test_samr_change_password(
+            client_creds,
+            expect_error=ntstatus.NT_STATUS_ACCOUNT_RESTRICTION)
 
     # Test interactive SamLogon with an unprotected account.
     def test_samlogon_interactive_not_protected(self):
         client_creds = self._get_creds(protected=False,
                                        ntlm=True)
         self._test_samlogon(creds=client_creds,
-                            logon_type=netlogon.NetlogonInteractiveInformation,
-                            protected=False)
+                            logon_type=netlogon.NetlogonInteractiveInformation)
 
     # Test interactive SamLogon with a protected account.
     def test_samlogon_interactive_protected(self):
         client_creds = self._get_creds(protected=True,
                                        ntlm=True)
-        self._test_samlogon(creds=client_creds,
-                            logon_type=netlogon.NetlogonInteractiveInformation,
-                            protected=True)
+        self._test_samlogon(
+            creds=client_creds,
+            logon_type=netlogon.NetlogonInteractiveInformation,
+            expect_error=ntstatus.NT_STATUS_ACCOUNT_RESTRICTION)
 
     # Test network SamLogon with an unprotected account.
     def test_samlogon_network_not_protected(self):
         client_creds = self._get_creds(protected=False,
                                        ntlm=True)
         self._test_samlogon(creds=client_creds,
-                            logon_type=netlogon.NetlogonNetworkInformation,
-                            protected=False)
+                            logon_type=netlogon.NetlogonNetworkInformation)
 
     # Test network SamLogon with a protected account.
     def test_samlogon_network_protected(self):
         client_creds = self._get_creds(protected=True,
                                        ntlm=True)
-        self._test_samlogon(creds=client_creds,
-                            logon_type=netlogon.NetlogonNetworkInformation,
-                            protected=True)
+        self._test_samlogon(
+            creds=client_creds,
+            logon_type=netlogon.NetlogonNetworkInformation,
+            expect_error=ntstatus.NT_STATUS_ACCOUNT_RESTRICTION)
 
     # Test that changing the password of an account in the Protected Users
     # group still generates an NT hash.
@@ -379,10 +209,15 @@ class ProtectedUsersTests(KDCBaseTest):
 
         client_creds.set_password(new_password)
 
-        self.get_keys(samdb, client_dn,
-                      expected_etypes={kcrypto.Enctype.AES256,
-                                       kcrypto.Enctype.AES128,
-                                       kcrypto.Enctype.RC4})
+        expected_etypes = {
+            kcrypto.Enctype.AES256,
+            kcrypto.Enctype.AES128,
+        }
+        if self.expect_nt_hash:
+            expected_etypes.add(kcrypto.Enctype.RC4)
+
+        self.get_keys(client_creds,
+                      expected_etypes=expected_etypes)
 
     # Test that DES-CBC-CRC cannot be used whether or not the user is
     # protected.
@@ -776,9 +611,9 @@ class ProtectedUsersTests(KDCBaseTest):
         self.check_ticket_times(tgt, expected_end=till,
                                 expected_renew_time=till)
 
-        # Test that requesting a ticket with a long lifetime produces a ticket
-        # with that lifetime, unless the user is protected, whereupon the
-        # lifetime will be capped at four hours.
+    # Test that requesting a ticket with a long lifetime produces a ticket with
+    # that lifetime, unless the user is protected, whereupon the lifetime will
+    # be capped at four hours.
     def test_tgt_lifetime_longer_not_protected(self):
         client_creds = self._get_creds(protected=False)
 
@@ -1030,12 +865,12 @@ class ProtectedUsersTests(KDCBaseTest):
                 expected_error_mode = KDC_ERR_PREAUTH_REQUIRED
 
             rep, kdc_exchange_dict = self._test_as_exchange(
+                creds=creds,
                 cname=cname,
                 realm=realm,
                 sname=sname,
                 till=till,
                 renew_time=renew_time,
-                client_as_etypes=etype,
                 expected_error_mode=expected_error_mode,
                 expected_crealm=realm,
                 expected_cname=expected_cname,
@@ -1074,12 +909,12 @@ class ProtectedUsersTests(KDCBaseTest):
         expected_realm = realm.upper()
 
         rep, kdc_exchange_dict = self._test_as_exchange(
+            creds=creds,
             cname=cname,
             realm=realm,
             sname=sname,
             till=till,
             renew_time=renew_time,
-            client_as_etypes=etype,
             expected_error_mode=expected_error,
             expected_crealm=expected_realm,
             expected_cname=expected_cname,
@@ -1144,11 +979,11 @@ class ProtectedUsersTests(KDCBaseTest):
             unexpected_flags = krb5_asn1.TicketFlags(unexpected_flags)
 
         rep, kdc_exchange_dict = self._test_as_exchange(
+            creds=creds,
             cname=cname,
             realm=realm,
             sname=sname,
             till=till,
-            client_as_etypes=etype,
             expected_error_mode=KDC_ERR_PREAUTH_REQUIRED,
             expected_crealm=realm,
             expected_cname=expected_cname,
@@ -1179,11 +1014,11 @@ class ProtectedUsersTests(KDCBaseTest):
         expected_error = KDC_ERR_POLICY if expect_error else 0
 
         rep, kdc_exchange_dict = self._test_as_exchange(
+            creds=creds,
             cname=cname,
             realm=realm,
             sname=sname,
             till=till,
-            client_as_etypes=etype,
             expected_error_mode=expected_error,
             expected_crealm=expected_realm,
             expected_cname=expected_cname,

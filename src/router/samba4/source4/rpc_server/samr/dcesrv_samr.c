@@ -1781,6 +1781,17 @@ static NTSTATUS dcesrv_samr_EnumDomainUsers(struct dcesrv_call_state *dce_call,
 			DBG_WARNING("No users in domain %s",
 				    ldb_dn_get_linearized(d_state->domain_dn));
 			talloc_free(ac);
+
+			/*
+			 * test_EnumDomainUsers_all() expects that r.out.sam
+			 * should be non-NULL, even if we have no entries.
+			 */
+			sam = talloc_zero(mem_ctx, struct samr_SamArray);
+			if (sam == NULL) {
+				return NT_STATUS_NO_MEMORY;
+			}
+			*r->out.sam = sam;
+
 			return NT_STATUS_OK;
 		}
 
@@ -2356,7 +2367,7 @@ static NTSTATUS dcesrv_samr_QueryGroupInfo(struct dcesrv_call_state *dce_call, T
 	switch (r->in.level) {
 	case GROUPINFOALL:
 		QUERY_STRING(msg, all.name,        "sAMAccountName");
-		info->all.attributes = SE_GROUP_MANDATORY | SE_GROUP_ENABLED_BY_DEFAULT | SE_GROUP_ENABLED; /* Do like w2k3 */
+		info->all.attributes = SE_GROUP_DEFAULT_FLAGS; /* Do like w2k3 */
 		QUERY_UINT  (msg, all.num_members,      "numMembers")
 		QUERY_STRING(msg, all.description, "description");
 		break;
@@ -2364,14 +2375,14 @@ static NTSTATUS dcesrv_samr_QueryGroupInfo(struct dcesrv_call_state *dce_call, T
 		QUERY_STRING(msg, name,            "sAMAccountName");
 		break;
 	case GROUPINFOATTRIBUTES:
-		info->attributes.attributes = SE_GROUP_MANDATORY | SE_GROUP_ENABLED_BY_DEFAULT | SE_GROUP_ENABLED; /* Do like w2k3 */
+		info->attributes.attributes = SE_GROUP_DEFAULT_FLAGS; /* Do like w2k3 */
 		break;
 	case GROUPINFODESCRIPTION:
 		QUERY_STRING(msg, description, "description");
 		break;
 	case GROUPINFOALL2:
 		QUERY_STRING(msg, all2.name,        "sAMAccountName");
-		info->all.attributes = SE_GROUP_MANDATORY | SE_GROUP_ENABLED_BY_DEFAULT | SE_GROUP_ENABLED; /* Do like w2k3 */
+		info->all.attributes = SE_GROUP_DEFAULT_FLAGS; /* Do like w2k3 */
 		QUERY_UINT  (msg, all2.num_members,      "numMembers")
 		QUERY_STRING(msg, all2.description, "description");
 		break;
@@ -2608,6 +2619,7 @@ static NTSTATUS dcesrv_samr_DeleteGroupMember(struct dcesrv_call_state *dce_call
 	case LDB_SUCCESS:
 		return NT_STATUS_OK;
 	case LDB_ERR_UNWILLING_TO_PERFORM:
+	case LDB_ERR_NO_SUCH_ATTRIBUTE:
 		return NT_STATUS_MEMBER_NOT_IN_GROUP;
 	case LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS:
 		return NT_STATUS_ACCESS_DENIED;
@@ -2676,9 +2688,7 @@ static NTSTATUS dcesrv_samr_QueryGroupMember(struct dcesrv_call_state *dce_call,
 			return status;
 		}
 
-		array->attributes[array->count] = SE_GROUP_MANDATORY |
-						  SE_GROUP_ENABLED_BY_DEFAULT |
-						  SE_GROUP_ENABLED;
+		array->attributes[array->count] = SE_GROUP_DEFAULT_FLAGS;
 		array->count++;
 	}
 
@@ -4437,8 +4447,7 @@ static NTSTATUS dcesrv_samr_GetGroupsForUser(struct dcesrv_call_state *dce_call,
 	/* Adds the primary group */
 
 	array->rids[0].rid = primary_group_id;
-	array->rids[0].attributes = SE_GROUP_MANDATORY
-		| SE_GROUP_ENABLED_BY_DEFAULT | SE_GROUP_ENABLED;
+	array->rids[0].attributes = SE_GROUP_DEFAULT_FLAGS;
 	array->count += 1;
 
 	/* Adds the additional groups */
@@ -4454,8 +4463,7 @@ static NTSTATUS dcesrv_samr_GetGroupsForUser(struct dcesrv_call_state *dce_call,
 
 		array->rids[i + 1].rid =
 			group_sid->sub_auths[group_sid->num_auths-1];
-		array->rids[i + 1].attributes = SE_GROUP_MANDATORY
-			| SE_GROUP_ENABLED_BY_DEFAULT | SE_GROUP_ENABLED;
+		array->rids[i + 1].attributes = SE_GROUP_DEFAULT_FLAGS;
 		array->count += 1;
 	}
 
@@ -4740,9 +4748,7 @@ static NTSTATUS dcesrv_samr_QueryDisplayInfo(struct dcesrv_call_state *dce_call,
 			/*
 			 * We get a "7" here for groups
 			 */
-			entriesFullGroup[count].acct_flags =
-			    SE_GROUP_MANDATORY | SE_GROUP_ENABLED_BY_DEFAULT |
-			    SE_GROUP_ENABLED;
+			entriesFullGroup[count].acct_flags = SE_GROUP_DEFAULT_FLAGS;
 			entriesFullGroup[count].account_name.string =
 			    ldb_msg_find_attr_as_string(
 				rec->msgs[0], "sAMAccountName", "");

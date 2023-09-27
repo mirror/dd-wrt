@@ -174,15 +174,20 @@ bool smbd_dirptr_get_entry(TALLOC_CTX *ctx,
 			   bool (*mode_fn)(TALLOC_CTX *ctx,
 					   void *private_data,
 					   struct files_struct *dirfsp,
-					   struct smb_filename *atname,
 					   struct smb_filename *smb_fname,
 					   bool get_dosmode,
 					   uint32_t *_mode),
 			   void *private_data,
 			   char **_fname,
 			   struct smb_filename **_smb_fname,
-			   uint32_t *_mode,
-			   long *_prev_offset);
+			   uint32_t *_mode);
+void smbd_dirptr_push_overflow(struct dptr_struct *dirptr,
+			       char **_fname,
+			       struct smb_filename **_smb_fname,
+			       uint32_t mode);
+void smbd_dirptr_set_last_name_sent(struct dptr_struct *dirptr,
+				    char **_fname);
+char *smbd_dirptr_get_last_name_sent(struct dptr_struct *dirptr);
 
 NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 			       connection_struct *conn,
@@ -202,7 +207,6 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 			       char *end_data,
 			       int space_remaining,
 			       struct smb_filename **smb_fname,
-			       bool *got_exact_match,
 			       int *_last_entry_off,
 			       struct ea_list *name_list,
 			       struct file_id *file_id);
@@ -277,7 +281,8 @@ NTSTATUS smbd_smb2_request_pending_queue(struct smbd_smb2_request *req,
 					 struct tevent_req *subreq,
 					 uint32_t defer_time);
 
-struct smb_request *smbd_smb2_fake_smb_request(struct smbd_smb2_request *req);
+struct smb_request *smbd_smb2_fake_smb_request(struct smbd_smb2_request *req,
+					       struct files_struct *fsp);
 size_t smbd_smb2_unread_bytes(struct smbd_smb2_request *req);
 void remove_smb2_chained_fsp(files_struct *fsp);
 
@@ -490,7 +495,7 @@ struct smbXsrv_connection {
 			 *
 			 * This gets incremented when new credits are
 			 * granted and gets decremented when any credit
-			 * is comsumed.
+			 * is consumed.
 			 *
 			 * Note: the decrementing is different compared
 			 *       to seq_range.

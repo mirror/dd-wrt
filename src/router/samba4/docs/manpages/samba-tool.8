@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: samba-tool
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "SAMBA\-TOOL" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "SAMBA\-TOOL" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -507,6 +507,613 @@ Copy a running DC\*(Aqs DB to backup file, renaming the domain in the process\&.
 .SS "domain backup restore"
 .PP
 Restore the domain\*(Aqs DB from a backup\-file\&.
+.SS "domain auth policy list"
+.PP
+List authentication policies on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-json
+.RS 4
+View authentication policies as JSON instead of a list\&.
+.RE
+.SS "domain auth policy view"
+.PP
+View an authentication policy on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of the authentication policy to view (required)\&.
+.RE
+.SS "domain auth policy create"
+.PP
+Create authentication policies on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of the authentication policy (required)\&.
+.RE
+.PP
+\-\-description
+.RS 4
+Optional description for the authentication policy\&.
+.RE
+.PP
+\-\-protect
+.RS 4
+Protect authentication policy from accidental deletion\&.
+.sp
+Cannot be used together with \-\-unprotect\&.
+.RE
+.PP
+\-\-unprotect
+.RS 4
+Unprotect authentication policy from accidental deletion\&.
+.sp
+Cannot be used together with \-\-protect\&.
+.RE
+.PP
+\-\-audit
+.RS 4
+Only audit authentication policy\&.
+.sp
+Cannot be used together with \-\-enforce\&.
+.RE
+.PP
+\-\-enforce
+.RS 4
+Enforce authentication policy\&.
+.sp
+Cannot be used together with \-\-audit\&.
+.RE
+.PP
+\-\-strong\-ntlm\-policy
+.RS 4
+Strong NTLM Policy (Disabled, Optional, Required)\&.
+.RE
+.PP
+\-\-user\-tgt\-lifetime
+.RS 4
+Ticket\-Granting\-Ticket lifetime for user accounts\&.
+.RE
+.PP
+\-\-user\-allow\-ntlm\-auth
+.RS 4
+Allow NTLM network authentication when user is restricted to selected devices\&.
+.RE
+.PP
+\-\-service\-tgt\-lifetime
+.RS 4
+Ticket\-Granting\-Ticket lifetime for service accounts\&.
+.RE
+.PP
+\-\-service\-allow\-ntlm\-auth
+.RS 4
+Allow NTLM network authentication when service is restricted to selected devices\&.
+.RE
+.PP
+\-\-computer\-tgt\-lifetime
+.RS 4
+Ticket\-Granting\-Ticket lifetime for computer accounts\&.
+.RE
+.SS "domain auth policy modify"
+.PP
+Modify authentication policies on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of the authentication policy (required)\&.
+.RE
+.PP
+\-\-description
+.RS 4
+Optional description for the authentication policy\&.
+.RE
+.PP
+\-\-protect
+.RS 4
+Protect authentication policy from accidental deletion\&.
+.sp
+Cannot be used together with \-\-unprotect\&.
+.RE
+.PP
+\-\-unprotect
+.RS 4
+Unprotect authentication policy from accidental deletion\&.
+.sp
+Cannot be used together with \-\-protect\&.
+.RE
+.PP
+\-\-audit
+.RS 4
+Only audit authentication policy\&.
+.sp
+Cannot be used together with \-\-enforce\&.
+.RE
+.PP
+\-\-enforce
+.RS 4
+Enforce authentication policy\&.
+.sp
+Cannot be used together with \-\-audit\&.
+.RE
+.PP
+\-\-strong\-ntlm\-policy
+.RS 4
+Strong NTLM Policy (Disabled, Optional, Required)\&.
+.RE
+.PP
+\-\-user\-tgt\-lifetime
+.RS 4
+Ticket\-Granting\-Ticket lifetime for user accounts\&.
+.RE
+.PP
+\-\-user\-allow\-ntlm\-auth
+.RS 4
+Allow NTLM network authentication when user is restricted to selected devices\&.
+.RE
+.PP
+\-\-service\-tgt\-lifetime
+.RS 4
+Ticket\-Granting\-Ticket lifetime for service accounts\&.
+.RE
+.PP
+\-\-service\-allow\-ntlm\-auth
+.RS 4
+Allow NTLM network authentication when service is restricted to selected devices\&.
+.RE
+.PP
+\-\-computer\-tgt\-lifetime
+.RS 4
+Ticket\-Granting\-Ticket lifetime for computer accounts\&.
+.RE
+.SS "domain auth policy delete"
+.PP
+Delete authentication policies on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of authentication policy to delete (required)\&.
+.RE
+.PP
+\-\-force
+.RS 4
+Force authentication policy delete even if it is protected\&.
+.RE
+.SS "domain auth silo list"
+.PP
+List authentication silos on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-json
+.RS 4
+View authentication silos as JSON instead of a list\&.
+.RE
+.SS "domain auth silo view"
+.PP
+View an authentication silo on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of the authentication silo to view (required)\&.
+.RE
+.SS "domain auth silo create"
+.PP
+Create authentication silos on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of the authentication silo (required)\&.
+.RE
+.PP
+\-\-description
+.RS 4
+Optional description for the authentication silo\&.
+.RE
+.PP
+\-\-policy
+.RS 4
+Use single policy for all principals in this silo\&.
+.RE
+.PP
+\-\-user\-policy
+.RS 4
+User account policy\&.
+.RE
+.PP
+\-\-service\-policy
+.RS 4
+Managed Service Account policy\&.
+.RE
+.PP
+\-\-computer\-policy
+.RS 4
+Computer Account policy\&.
+.RE
+.PP
+\-\-protect
+.RS 4
+Protect authentication silo from accidental deletion\&.
+.sp
+Cannot be used together with \-\-unprotect\&.
+.RE
+.PP
+\-\-unprotect
+.RS 4
+Unprotect authentication silo from accidental deletion\&.
+.sp
+Cannot be used together with \-\-protect\&.
+.RE
+.PP
+\-\-audit
+.RS 4
+Only audit silo policies\&.
+.sp
+Cannot be used together with \-\-enforce\&.
+.RE
+.PP
+\-\-enforce
+.RS 4
+Enforce silo policies\&.
+.sp
+Cannot be used together with \-\-audit\&.
+.RE
+.SS "domain auth silo modify"
+.PP
+Modify authentication silos on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of the authentication silo (required)\&.
+.RE
+.PP
+\-\-description
+.RS 4
+Optional description for the authentication silo\&.
+.RE
+.PP
+\-\-policy
+.RS 4
+Use single policy for all principals in this silo\&.
+.RE
+.PP
+\-\-user\-policy
+.RS 4
+User account policy\&.
+.RE
+.PP
+\-\-service\-policy
+.RS 4
+Managed Service Account policy\&.
+.RE
+.PP
+\-\-computer\-policy
+.RS 4
+Computer Account policy\&.
+.RE
+.PP
+\-\-protect
+.RS 4
+Protect authentication silo from accidental deletion\&.
+.sp
+Cannot be used together with \-\-unprotect\&.
+.RE
+.PP
+\-\-unprotect
+.RS 4
+Unprotect authentication silo from accidental deletion\&.
+.sp
+Cannot be used together with \-\-protect\&.
+.RE
+.PP
+\-\-audit
+.RS 4
+Only audit silo policies\&.
+.sp
+Cannot be used together with \-\-enforce\&.
+.RE
+.PP
+\-\-enforce
+.RS 4
+Enforce silo policies\&.
+.sp
+Cannot be used together with \-\-audit\&.
+.RE
+.SS "domain auth silo delete"
+.PP
+Delete authentication silos on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of authentication silo to delete (required)\&.
+.RE
+.PP
+\-\-force
+.RS 4
+Force authentication silo delete even if it is protected\&.
+.RE
+.SS "domain auth silo member add"
+.PP
+Add a member to an authentication silo\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of authentication silo (required)\&.
+.RE
+.PP
+\-\-member
+.RS 4
+Member to add to the silo (DN or account name)\&.
+.RE
+.SS "domain auth silo member list"
+.PP
+List members in an authentication silo\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of authentication silo (required)\&.
+.RE
+.PP
+\-\-json
+.RS 4
+View members as JSON instead of a list\&.
+.RE
+.SS "domain auth silo member remove"
+.PP
+Remove a member from an authentication silo\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Name of authentication silo (required)\&.
+.RE
+.PP
+\-\-member
+.RS 4
+Member to remove from the silo (DN or account name)\&.
+.RE
+.SS "domain claim claim-type list"
+.PP
+List claim types on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-json
+.RS 4
+View claim types as JSON instead of a list\&.
+.RE
+.SS "domain claim claim-type view"
+.PP
+View a single claim type on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Display name of claim type to view (required)\&.
+.RE
+.SS "domain claim claim-type create"
+.PP
+Create claim types on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-attribute
+.RS 4
+Attribute of claim type to create (required)\&.
+.RE
+.PP
+\-\-class
+.RS 4
+Object classes to set claim type to\&.
+.sp
+Example: \-\-class=user \-\-class=computer
+.RE
+.PP
+\-\-name
+.RS 4
+Optional display name or use attribute name\&.
+.RE
+.PP
+\-\-description
+.RS 4
+Optional description or use from attribute\&.
+.RE
+.PP
+\-\-enable
+.RS 4
+Enable claim type\&.
+.sp
+Cannot be used together with \-\-disable\&.
+.RE
+.PP
+\-\-disable
+.RS 4
+Disable claim type\&.
+.sp
+Cannot be used together with \-\-enable\&.
+.RE
+.PP
+\-\-protect
+.RS 4
+Protect claim type from accidental deletion\&.
+.sp
+Cannot be used together with \-\-unprotect\&.
+.RE
+.PP
+\-\-unprotect
+.RS 4
+Unprotect claim type from accidental deletion\&.
+.sp
+Cannot be used together with \-\-protect\&.
+.RE
+.SS "domain claim claim-type modify"
+.PP
+Modify claim types on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Display name of claim type to modify (required)\&.
+.RE
+.PP
+\-\-class
+.RS 4
+Object classes to set claim type to\&.
+.sp
+Example: \-\-class=user \-\-class=computer
+.RE
+.PP
+\-\-description
+.RS 4
+Set the claim type description\&.
+.RE
+.PP
+\-\-enable
+.RS 4
+Enable claim type\&.
+.sp
+Cannot be used together with \-\-disable\&.
+.RE
+.PP
+\-\-disable
+.RS 4
+Disable claim type\&.
+.sp
+Cannot be used together with \-\-enable\&.
+.RE
+.PP
+\-\-protect
+.RS 4
+Protect claim type from accidental deletion\&.
+.sp
+Cannot be used together with \-\-unprotect\&.
+.RE
+.PP
+\-\-unprotect
+.RS 4
+Unprotect claim type from accidental deletion\&.
+.sp
+Cannot be used together with \-\-protect\&.
+.RE
+.SS "domain claim claim-type delete"
+.PP
+Delete claim types on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Display name of claim type to delete (required)\&.
+.RE
+.PP
+\-\-force
+.RS 4
+Force claim type delete even if it is protected\&.
+.RE
+.SS "domain claim value-type list"
+.PP
+List claim value types on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-json
+.RS 4
+View claim value types as JSON instead of a list\&.
+.RE
+.SS "domain claim value-type view"
+.PP
+View a single claim value type on the domain\&.
+.PP
+\-H, \-\-URL
+.RS 4
+LDB URL for database or target server\&.
+.RE
+.PP
+\-\-name
+.RS 4
+Display name of claim value type to view (required)\&.
+.RE
 .SS "domain classicupgrade [options] classic_smb_conf"
 .PP
 Upgrade from Samba classic (NT4\-like) database to Samba AD DC database\&.
@@ -933,7 +1540,7 @@ The name of the organizational unit can be specified as a full DN or without the
 .PP
 \-\-force\-subtree\-delete
 .RS 4
-Delete organizational unit and all children reclusively\&.
+Delete organizational unit and all children recursively\&.
 .RE
 .SS "ou list [options]"
 .PP
@@ -992,12 +1599,43 @@ Display an objectclass schema definition\&.
 .SS "sites"
 .PP
 Manage sites\&.
+.SS "sites list [options]"
+.PP
+List sites\&.
+.PP
+\-\-json
+.RS 4
+Output as JSON instead of a list
+.RE
+.SS "sites view site [options]"
+.PP
+View site details\&.
 .SS "sites create site [options]"
 .PP
 Create a new site\&.
 .SS "sites remove site [options]"
 .PP
 Delete an existing site\&.
+.SS "sites subnet list site [options]"
+.PP
+List subnets for a site\&.
+.PP
+\-\-json
+.RS 4
+Output as JSON instead of a list
+.RE
+.SS "sites subnet view subnet [options]"
+.PP
+View subnet details\&.
+.SS "sites subnet create subnet site-of-subnet [options]"
+.PP
+Create a new subnet\&.
+.SS "sites subnet remove subnet [options]"
+.PP
+Delete an existing subnet\&.
+.SS "sites subnet set-site subnet site-of-subnet [options]"
+.PP
+Assign a subnet to a site\&.
 .SS "spn"
 .PP
 Manage Service Principal Names (SPN)\&.
@@ -1231,7 +1869,7 @@ because the repsFrom/To objects are not replicated, and it can reveal replicatio
 Gives usage information\&.
 .SH "VERSION"
 .PP
-This man page is complete for version 4\&.18\&.3 of the Samba suite\&.
+This man page is complete for version 4\&.19\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -52,8 +52,27 @@ def ndr_unpack(cls, data, allow_remaining=False):
 def ndr_print(object):
     ndr_print = getattr(object, "__ndr_print__", None)
     if ndr_print is None:
-        raise TypeError("%r is not a NDR object" % object)
+        raise TypeError(f"{object} is not a NDR object")
     return ndr_print()
+
+
+def ndr_deepcopy(object):
+    """Create a deep copy of a NDR object, using pack/unpack
+
+    :param object: Object to copy
+    :return: The object copy
+    """
+    ndr_pack = getattr(object, "__ndr_pack__", None)
+    if ndr_pack is None:
+        raise TypeError("%r is not a NDR object" % object)
+    data = ndr_pack()
+    cls = type(object)
+    copy = cls()
+    ndr_unpack = getattr(copy, "__ndr_unpack__", None)
+    if ndr_unpack is None:
+        raise TypeError("%r is not a NDR object" % copy)
+    ndr_unpack(data, allow_remaining=False)
+    return copy
 
 
 def ndr_pack_in(object, bigendian=False, ndr64=False):

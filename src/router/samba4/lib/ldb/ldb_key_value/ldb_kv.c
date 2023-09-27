@@ -637,7 +637,7 @@ static int ldb_kv_add_internal(struct ldb_module *module,
 		 * case, which will only fail for a duplicate DN
 		 * in the index add.
 		 *
-		 * Note that the caller may not cancel the transation
+		 * Note that the caller may not cancel the transaction
 		 * and this means the above add might really show up!
 		 */
 		ldb_kv_delete_noindex(module, msg);
@@ -1289,13 +1289,14 @@ int ldb_kv_modify_internal(struct ldb_module *module,
 				    ldb_kv,
 				    msg2,
 				    msg->elements[i].name);
-				if (ret == LDB_ERR_NO_SUCH_ATTRIBUTE &&
-				    control_permissive) {
-					ret = LDB_SUCCESS;
-				} else {
-					ldb_asprintf_errstring(ldb,
-							       "attribute '%s': no such attribute for delete on '%s'",
-							       msg->elements[i].name, dn);
+				if (ret == LDB_ERR_NO_SUCH_ATTRIBUTE) {
+					if (control_permissive) {
+						ret = LDB_SUCCESS;
+					} else {
+						ldb_asprintf_errstring(ldb,
+								       "attribute '%s': no such attribute for delete on '%s'",
+								       msg->elements[i].name, dn);
+					}
 				}
 				if (ret != LDB_SUCCESS) {
 					goto done;

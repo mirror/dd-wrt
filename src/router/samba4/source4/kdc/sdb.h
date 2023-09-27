@@ -74,7 +74,7 @@ struct SDBFlags {
 	unsigned int virtual:1;
 	unsigned int synthetic:1;
 	unsigned int no_auth_data_reqd:1;
-	unsigned int _unused24:1;
+	unsigned int auth_data_reqd:1;
 	unsigned int _unused25:1;
 	unsigned int _unused26:1;
 	unsigned int _unused27:1;
@@ -98,8 +98,8 @@ struct sdb_entry {
 	time_t *valid_start;
 	time_t *valid_end;
 	time_t *pw_end;
-	unsigned int *max_life;
-	unsigned int *max_renew;
+	int *max_life;
+	int *max_renew;
 	struct SDBFlags flags;
 };
 
@@ -114,11 +114,12 @@ struct sdb_entry {
 #define SDB_F_GET_SERVER	8	/* fetch server */
 #define SDB_F_GET_KRBTGT	16	/* fetch krbtgt */
 #define SDB_F_GET_ANY		28	/* fetch any of client,server,krbtgt */
-#define SDB_F_CANON		32	/* want canonicalition */
+#define SDB_F_CANON		32	/* want canonicalization */
 #define SDB_F_ADMIN_DATA	64	/* want data that kdc don't use  */
 #define SDB_F_KVNO_SPECIFIED	128	/* we want a particular KVNO */
 #define SDB_F_FOR_AS_REQ	4096	/* fetch is for a AS REQ */
 #define SDB_F_FOR_TGS_REQ	8192	/* fetch is for a TGS REQ */
+#define SDB_F_ARMOR_PRINCIPAL 262144	/* fetch is for the client of an armor ticket */
 
 #define SDB_F_HDB_MASK		(SDB_F_DECRYPT | \
 				 SDB_F_GET_CLIENT| \
@@ -128,10 +129,11 @@ struct sdb_entry {
 				 SDB_F_ADMIN_DATA | \
 				 SDB_F_KVNO_SPECIFIED | \
 				 SDB_F_FOR_AS_REQ | \
-				 SDB_F_FOR_TGS_REQ)
+				 SDB_F_FOR_TGS_REQ | \
+				 SDB_F_ARMOR_PRINCIPAL)
 
 /* This is not supported by HDB */
-#define SDB_F_FORCE_CANON	16384	/* force canonicalition */
+#define SDB_F_FORCE_CANON	16384	/* force canonicalization */
 
 void sdb_key_free(struct sdb_key *key);
 void sdb_keys_free(struct sdb_keys *keys);

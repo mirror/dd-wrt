@@ -21,8 +21,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import sys, os.path, io, string
-from gen_error_common import parseErrorDescriptions, ErrorDef
+import sys, io
+from gen_error_common import ErrorDef, parseErrorDescriptions
 
 def generateHeaderFile(out_file, errors):
     out_file.write("/*\n")
@@ -84,16 +84,16 @@ def generatePythonFile(out_file, errors):
     out_file.write("MODULE_INIT_FUNC(ntstatus)\n")
     out_file.write("{\n")
     out_file.write("\tPyObject *m;\n\n")
-    out_file.write("\tm = PyModule_Create(&moduledef);\n");
-    out_file.write("\tif (m == NULL)\n");
-    out_file.write("\t\treturn NULL;\n\n");
+    out_file.write("\tm = PyModule_Create(&moduledef);\n")
+    out_file.write("\tif (m == NULL)\n")
+    out_file.write("\t\treturn NULL;\n\n")
     for err in errors:
         line = """\tPyModule_AddObject(m, \"%s\", 
                   \t\tPyLong_FromUnsignedLongLong(NT_STATUS_V(%s)));\n""" % (err.err_define, err.err_define)
         out_file.write(line)
-    out_file.write("\n");
-    out_file.write("\treturn m;\n");
-    out_file.write("}\n");
+    out_file.write("\n")
+    out_file.write("\treturn m;\n")
+    out_file.write("}\n")
 
 def transformErrorName( error_name ):
     if error_name.startswith("STATUS_"):
@@ -114,7 +114,7 @@ def transformErrorName( error_name ):
 # [3]: The name of the output generated source file with C arrays
 # [4]: The name of the output generated python file
 def main ():
-    input_file = None;
+    input_file = None
 
     if len(sys.argv) == 5:
         input_file =  sys.argv[1]
@@ -126,9 +126,17 @@ def main ():
         sys.exit()
 
     # read in the data
-    file_contents = io.open(input_file, "rt", encoding='utf8')
+    with io.open(input_file, "rt", encoding='utf8') as file_contents:
+        errors = parseErrorDescriptions(file_contents, False, transformErrorName)
 
-    errors = parseErrorDescriptions(file_contents, False, transformErrorName)
+    # NT_STATUS_OK is a synonym of NT_STATUS_SUCCESS, and is very widely used
+    # throughout Samba. It must go first in the list to ensure that to ensure
+    # that code that previously found this error code in ‘special_errs’
+    # maintains the same behaviour by falling back to ‘nt_errs’.
+    ok_status = ErrorDef()
+    ok_status.err_code = 0
+    ok_status.err_define = 'NT_STATUS_OK'
+    errors.insert(0, ok_status)
 
     print("writing new header file: %s" % gen_headerfile_name)
     out_file = io.open(gen_headerfile_name, "wt", encoding='utf8')

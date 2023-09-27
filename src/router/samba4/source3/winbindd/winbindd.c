@@ -1397,7 +1397,7 @@ int main(int argc, const char **argv)
 	/* Set environment variable so we don't recursively call ourselves.
 	   This may also be useful interactively. */
 	if ( !winbind_off() ) {
-		DEBUG(0,("Failed to disable recusive winbindd calls.  Exiting.\n"));
+		DEBUG(0,("Failed to disable recursive winbindd calls.  Exiting.\n"));
 		exit(1);
 	}
 
@@ -1636,6 +1636,10 @@ int main(int argc, const char **argv)
 
 	if (lp_winbind_debug_traceid()) {
 		winbind_debug_traceid_setup(global_event_context());
+		winbind_debug_call_depth_setup(debug_call_depth_addr());
+		tevent_thread_call_depth_set_callback(
+			debuglevel_get() > 1 ? winbind_call_flow : NULL,
+			NULL);
 	}
 	ok = initialize_password_db(true, global_event_context());
 	if (!ok) {

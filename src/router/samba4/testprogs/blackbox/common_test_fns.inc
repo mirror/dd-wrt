@@ -33,10 +33,11 @@ test_smbclient_expect_failure()
 	status=$?
 	if [ x$status = x0 ]; then
 		printf '%s' "$output" | subunit_fail_test "$name"
+		return 1
 	else
 		subunit_pass_test "$name"
+		return 0
 	fi
-	return $status
 }
 
 test_rpcclient_grep()
@@ -63,7 +64,7 @@ test_rpcclient_grep()
 	else
 		printf '%s' "$output" | subunit_fail_test "$name"
 	fi
-	return $status
+	return $gstatus
 }
 
 test_rpcclient_expect_failure_grep()
@@ -81,7 +82,7 @@ test_rpcclient_expect_failure_grep()
 	status=$?
 	if [ x$status = x0 ]; then
 		printf '%s' "$output" | subunit_fail_test "$name"
-		return $status
+		return 1
 	fi
 	printf '%s' "$output" | grep -q "$grep"
 	gstatus=$?
@@ -90,7 +91,7 @@ test_rpcclient_expect_failure_grep()
 	else
 		printf '%s' "$output" | subunit_fail_test "$name"
 	fi
-	return $status
+	return $gstatus
 }
 
 kerberos_kinit()
@@ -118,7 +119,7 @@ remove_directory()
 	local xdir=${1}
 	shift
 
-	if [ "$xdir" == "/" ] || [ ! -d "$xdir" ] || [ -z "$(ls -A "$xdir")" ]; then
+	if [ "$xdir" = "/" ] || [ ! -d "$xdir" ] || [ -z "$(ls -A "$xdir")" ]; then
 		return
 	fi
 

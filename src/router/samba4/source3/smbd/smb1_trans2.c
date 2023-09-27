@@ -109,10 +109,10 @@ static void send_trans2_replies(connection_struct *conn,
 		}
 		show_msg((char *)req->outbuf);
 		if (!smb1_srv_send(xconn,
-				(char *)req->outbuf,
-				true, req->seqnum+1,
-				IS_CONN_ENCRYPTED(conn),
-				&req->pcd)) {
+				   (char *)req->outbuf,
+				   true,
+				   req->seqnum + 1,
+				   IS_CONN_ENCRYPTED(conn))) {
 			exit_server_cleanly("send_trans2_replies: smb1_srv_send failed.");
 		}
 		TALLOC_FREE(req->outbuf);
@@ -249,11 +249,12 @@ static void send_trans2_replies(connection_struct *conn,
 		/* Send the packet */
 		show_msg((char *)req->outbuf);
 		if (!smb1_srv_send(xconn,
-				(char *)req->outbuf,
-				true, req->seqnum+1,
-				IS_CONN_ENCRYPTED(conn),
-				&req->pcd))
+				   (char *)req->outbuf,
+				   true,
+				   req->seqnum + 1,
+				   IS_CONN_ENCRYPTED(conn))) {
 			exit_server_cleanly("send_trans2_replies: smb1_srv_send failed.");
+		}
 
 		TALLOC_FREE(req->outbuf);
 
@@ -428,13 +429,11 @@ static void smb_set_posix_lock_done(struct tevent_req *subreq)
 			0xffff);
 	} else {
 		reply_nterror(req, status);
-		ok = smb1_srv_send(
-			req->xconn,
-			(char *)req->outbuf,
-			true,
-			req->seqnum+1,
-			IS_CONN_ENCRYPTED(req->conn),
-			NULL);
+		ok = smb1_srv_send(req->xconn,
+				   (char *)req->outbuf,
+				   true,
+				   req->seqnum + 1,
+				   IS_CONN_ENCRYPTED(req->conn));
 		if (!ok) {
 			exit_server_cleanly("smb_set_posix_lock_done: "
 					    "smb1_srv_send failed.");
@@ -591,6 +590,11 @@ static void call_trans2open(connection_struct *conn,
 
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
+	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
 	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
@@ -780,7 +784,6 @@ static NTSTATUS get_lanman2_dir_entry(TALLOC_CTX *ctx,
 				char *base_data,
 				char *end_data,
 				int space_remaining,
-				bool *got_exact_match,
 				int *last_entry_off,
 				struct ea_list *name_list)
 {
@@ -799,7 +802,6 @@ static NTSTATUS get_lanman2_dir_entry(TALLOC_CTX *ctx,
 					 ppdata, base_data, end_data,
 					 space_remaining,
 					 NULL,
-					 got_exact_match,
 					 last_entry_off, name_list, NULL);
 }
 
@@ -843,6 +845,7 @@ static void call_trans2findfirst(connection_struct *conn,
 	struct ea_list *ea_list = NULL;
 	NTSTATUS ntstatus = NT_STATUS_OK;
 	bool ask_sharemode;
+	struct smbXsrv_connection *xconn = req->xconn;
 	struct smbd_server_connection *sconn = req->sconn;
 	uint32_t ucf_flags = ucf_flags_from_smb_request(req);
 	bool backup_priv = false;
@@ -942,6 +945,12 @@ static void call_trans2findfirst(connection_struct *conn,
 		become_root();
 		as_root = true;
 	}
+	ntstatus = smb1_strip_dfs_path(talloc_tos(), &ucf_flags, &directory);
+	if (!NT_STATUS_IS_OK(ntstatus)) {
+		reply_nterror(req, ntstatus);
+		goto out;
+	}
+
 	ntstatus = filename_convert_smb1_search_path(talloc_tos(),
 						     conn,
 						     directory,
@@ -975,8 +984,10 @@ static void call_trans2findfirst(connection_struct *conn,
 
 		ea_size = IVAL(pdata,0);
 		if (ea_size != total_data) {
-			DEBUG(4,("call_trans2findfirst: Rejecting EA request with incorrect \
-total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pdata,0) ));
+			DBG_NOTICE("Rejecting EA request with incorrect "
+				   "total_data=%d (should be %" PRIu32 ")\n",
+				   total_data,
+				   ea_size);
 			reply_nterror(req, NT_STATUS_INVALID_PARAMETER);
 			goto out;
 		}
@@ -1059,8 +1070,6 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 				req,
 				fsp, /* fsp */
 				False,
-				True,
-				req->smbpid,
 				mask,
 				dirtype,
 				&fsp->dptr);
@@ -1069,7 +1078,7 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 		/*
 		 * Use NULL here for the first parameter (req)
 		 * as this is not a client visible handle so
-		 * can'tbe part of an SMB1 chain.
+		 * can't be part of an SMB1 chain.
 		 */
 		close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		reply_nterror(req, ntstatus);
@@ -1103,52 +1112,39 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 	ask_sharemode = fsp_search_ask_sharemode(fsp);
 
 	for (i=0;(i<maxentries) && !finished && !out_of_space;i++) {
-		bool got_exact_match = False;
 
-		/* this is a heuristic to avoid seeking the dirptr except when
-			absolutely necessary. It allows for a filename of about 40 chars */
-		if (space_remaining < DIRLEN_GUESS && numentries > 0) {
-			out_of_space = True;
-			finished = False;
+		ntstatus = get_lanman2_dir_entry(talloc_tos(),
+						 conn,
+						 fsp->dptr,
+						 req->flags2,
+						 mask,
+						 dirtype,
+						 info_level,
+						 requires_resume_key,
+						 dont_descend,
+						 ask_sharemode,
+						 &p,
+						 pdata,
+						 data_end,
+						 space_remaining,
+						 &last_entry_off,
+						 ea_list);
+		if (NT_STATUS_EQUAL(ntstatus, NT_STATUS_ILLEGAL_CHARACTER)) {
+			/*
+			 * Bad character conversion on name. Ignore
+			 * this entry.
+			 */
+			continue;
+		}
+		if (NT_STATUS_EQUAL(ntstatus, STATUS_MORE_ENTRIES)) {
+			out_of_space = true;
 		} else {
-			ntstatus = get_lanman2_dir_entry(talloc_tos(),
-					conn,
-					fsp->dptr,
-					req->flags2,
-					mask,dirtype,info_level,
-					requires_resume_key,dont_descend,
-					ask_sharemode,
-					&p,pdata,data_end,
-					space_remaining,
-					&got_exact_match,
-					&last_entry_off, ea_list);
-			if (NT_STATUS_EQUAL(ntstatus,
-					NT_STATUS_ILLEGAL_CHARACTER)) {
-				/*
-				 * Bad character conversion on name. Ignore this
-				 * entry.
-				 */
-				continue;
-			}
-			if (NT_STATUS_EQUAL(ntstatus, STATUS_MORE_ENTRIES)) {
-				out_of_space = true;
-			} else {
-				finished = !NT_STATUS_IS_OK(ntstatus);
-			}
+			finished = !NT_STATUS_IS_OK(ntstatus);
 		}
 
-		if (!finished && !out_of_space)
+		if (!finished && !out_of_space) {
 			numentries++;
-
-		/*
-		 * As an optimisation if we know we aren't looking
-		 * for a wildcard name (ie. the name matches the wildcard exactly)
-		 * then we can finish on any (first) match.
-		 * This speeds up large directory searches. JRA.
-		 */
-
-		if(got_exact_match)
-			finished = True;
+		}
 
 		/* Ensure space_remaining never goes -ve. */
 		if (PTR_DIFF(p,pdata) > max_data_bytes) {
@@ -1182,7 +1178,7 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 		if (fsp != NULL) {
 			close_file_free(NULL, &fsp, NORMAL_CLOSE);
 		}
-		if (get_Protocol() < PROTOCOL_NT1) {
+		if (xconn->protocol < PROTOCOL_NT1) {
 			reply_force_doserror(req, ERRDOS, ERRnofiles);
 			goto out;
 		} else {
@@ -1235,6 +1231,21 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 
 	TALLOC_FREE(smb_dname);
 	return;
+}
+
+static bool smbd_dptr_name_equal(struct dptr_struct *dptr,
+				 const char *name1,
+				 const char *name2)
+{
+	bool equal;
+
+	if (dptr_case_sensitive(dptr)) {
+		equal = (strcmp(name1, name2) == 0);
+	} else {
+		equal = strequal(name1, name2);
+	}
+
+	return equal;
 }
 
 /****************************************************************************
@@ -1339,12 +1350,20 @@ static void call_trans2findnext(connection_struct *conn,
 		}
 	}
 
-	DEBUG(3,("call_trans2findnext: dirhandle = %d, max_data_bytes = %d, maxentries = %d, \
-close_after_request=%d, close_if_end = %d requires_resume_key = %d \
-resume_key = %d resume name = %s continue=%d level = %d\n",
-		dptr_num, max_data_bytes, maxentries, close_after_request, close_if_end,
-		requires_resume_key, resume_key,
-		resume_name ? resume_name : "(NULL)", continue_bit, info_level));
+	DBG_NOTICE("dirhandle = %d, max_data_bytes = %u, maxentries = %d, "
+		   "close_after_request=%d, close_if_end = %d "
+		   "requires_resume_key = %d resume_key = %d "
+		   "resume name = %s continue=%d level = %d\n",
+		   dptr_num,
+		   max_data_bytes,
+		   maxentries,
+		   close_after_request,
+		   close_if_end,
+		   requires_resume_key,
+		   resume_key,
+		   resume_name ? resume_name : "(NULL)",
+		   continue_bit,
+		   info_level);
 
 	if (!maxentries) {
 		/* W2K3 seems to treat zero as 1. */
@@ -1388,8 +1407,10 @@ resume_key = %d resume name = %s continue=%d level = %d\n",
 
 		ea_size = IVAL(pdata,0);
 		if (ea_size != total_data) {
-			DEBUG(4,("call_trans2findnext: Rejecting EA request with incorrect \
-total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pdata,0) ));
+			DBG_NOTICE("Rejecting EA request with incorrect "
+				   "total_data=%d (should be %" PRIu32 ")\n",
+				   total_data,
+				   ea_size);
 			reply_nterror(req, NT_STATUS_INVALID_PARAMETER);
 			return;
 		}
@@ -1457,11 +1478,10 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 
 	backup_priv = dptr_get_priv(fsp->dptr);
 
-	DEBUG(3,("dptr_num is %d, mask = %s, attr = %x, dirptr=(0x%lX,%ld) "
+	DEBUG(3,("dptr_num is %d, mask = %s, attr = %x, dirptr=(0x%lX) "
 		"backup_priv = %d\n",
 		dptr_num, mask, dirtype,
 		(long)fsp->dptr,
-		dptr_TellDir(fsp->dptr),
 		(int)backup_priv));
 
 	/* We don't need to check for VOL here as this is returned by
@@ -1488,10 +1508,10 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 	 */
 
 	if(!continue_bit && resume_name && *resume_name) {
-		SMB_STRUCT_STAT st;
 		bool posix_open = (fsp->posix_flags & FSP_POSIX_FLAGS_OPEN);
+		char *last_name_sent = NULL;
+		bool sequential;
 
-		long current_pos = 0;
 		/*
 		 * Remember, name_to_8_3 is called by
 		 * get_lanman2_dir_entry(), so the resume name
@@ -1519,58 +1539,76 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 		 * should already be at the correct place.
 		 */
 
-		finished = !dptr_SearchDir(fsp->dptr, resume_name, &current_pos, &st);
+		last_name_sent = smbd_dirptr_get_last_name_sent(fsp->dptr);
+		sequential = smbd_dptr_name_equal(fsp->dptr,
+						  resume_name,
+						  last_name_sent);
+		if (!sequential) {
+			char *name = NULL;
+			bool found = false;
+
+			dptr_RewindDir(fsp->dptr);
+
+			while ((name = dptr_ReadDirName(talloc_tos(),
+							fsp->dptr)) != NULL) {
+				found = smbd_dptr_name_equal(fsp->dptr,
+							     resume_name,
+							     name);
+				TALLOC_FREE(name);
+				if (found) {
+					break;
+				}
+			}
+
+			if (!found) {
+				/*
+				 * We got a name that used to exist
+				 * but does not anymore. Just start
+				 * from the beginning. Shown by the
+				 * "raw.search.os2 delete" smbtorture
+				 * test.
+				 */
+				dptr_RewindDir(fsp->dptr);
+			}
+		}
 	} /* end if resume_name && !continue_bit */
 
 	ask_sharemode = fsp_search_ask_sharemode(fsp);
 
 	for (i=0;(i<(int)maxentries) && !finished && !out_of_space ;i++) {
-		bool got_exact_match = False;
 
-		/* this is a heuristic to avoid seeking the fsp->dptr except when
-			absolutely necessary. It allows for a filename of about 40 chars */
-		if (space_remaining < DIRLEN_GUESS && numentries > 0) {
-			out_of_space = True;
-			finished = False;
+		ntstatus = get_lanman2_dir_entry(ctx,
+						 conn,
+						 fsp->dptr,
+						 req->flags2,
+						 mask,
+						 dirtype,
+						 info_level,
+						 requires_resume_key,
+						 dont_descend,
+						 ask_sharemode,
+						 &p,
+						 pdata,
+						 data_end,
+						 space_remaining,
+						 &last_entry_off,
+						 ea_list);
+		if (NT_STATUS_EQUAL(ntstatus, NT_STATUS_ILLEGAL_CHARACTER)) {
+			/*
+			 * Bad character conversion on name. Ignore
+			 * this entry.
+			 */
+			continue;
+		}
+		if (NT_STATUS_EQUAL(ntstatus, STATUS_MORE_ENTRIES)) {
+			out_of_space = true;
 		} else {
-			ntstatus = get_lanman2_dir_entry(ctx,
-						conn,
-						fsp->dptr,
-						req->flags2,
-						mask,dirtype,info_level,
-						requires_resume_key,dont_descend,
-						ask_sharemode,
-						&p,pdata,data_end,
-						space_remaining,
-						&got_exact_match,
-						&last_entry_off, ea_list);
-			if (NT_STATUS_EQUAL(ntstatus,
-					NT_STATUS_ILLEGAL_CHARACTER)) {
-				/*
-				 * Bad character conversion on name. Ignore this
-				 * entry.
-				 */
-				continue;
-			}
-			if (NT_STATUS_EQUAL(ntstatus, STATUS_MORE_ENTRIES)) {
-				out_of_space = true;
-			} else {
-				finished = !NT_STATUS_IS_OK(ntstatus);
-			}
+			finished = !NT_STATUS_IS_OK(ntstatus);
 		}
 
-		if (!finished && !out_of_space)
+		if (!finished && !out_of_space) {
 			numentries++;
-
-		/*
-		 * As an optimisation if we know we aren't looking
-		 * for a wildcard name (ie. the name matches the wildcard exactly)
-		 * then we can finish on any (first) match.
-		 * This speeds up large directory searches. JRA.
-		 */
-
-		if(got_exact_match)
-			finished = True;
+		}
 
 		space_remaining = max_data_bytes - PTR_DIFF(p,pdata);
 	}
@@ -1581,7 +1619,7 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 
 	/* Check if we can close the fsp->dptr */
 	if(close_after_request || (finished && close_if_end)) {
-		DEBUG(5,("call_trans2findnext: closing dptr_num = %d\n", dptr_num));
+		DBG_INFO("closing dptr_num = %d\n", dptr_num);
 		dptr_num = -1;
 		close_file_free(NULL, &fsp, NORMAL_CLOSE);
 	}
@@ -2643,6 +2681,11 @@ static void call_trans2qpathinfo(
 
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
+	}
+	status = smb1_strip_dfs_path(req, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		return;
 	}
 	status = filename_convert_dirfsp(req,
 					 conn,
@@ -3797,6 +3840,10 @@ static NTSTATUS smb_set_file_unix_hlink(connection_struct *conn,
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(oldname, &old_twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &oldname);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 oldname,
@@ -4471,6 +4518,11 @@ static void call_trans2setpathinfo(
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(fname, &twrp);
 	}
+	status = smb1_strip_dfs_path(req, &ucf_flags, &fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		return;
+	}
 	status = filename_convert_dirfsp(req,
 					 conn,
 					 fname,
@@ -4812,6 +4864,11 @@ static void call_trans2mkdir(connection_struct *conn, struct smb_request *req,
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(directory, &twrp);
 	}
+	status = smb1_strip_dfs_path(ctx, &ucf_flags, &directory);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_nterror(req, status);
+		goto out;
+	}
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 directory,
@@ -5128,7 +5185,9 @@ static void call_trans2ioctl(connection_struct *conn,
 static void handle_trans2(connection_struct *conn, struct smb_request *req,
 			  struct trans_state *state)
 {
-	if (get_Protocol() >= PROTOCOL_NT1) {
+	struct smbXsrv_connection *xconn = req->xconn;
+
+	if (xconn->protocol >= PROTOCOL_NT1) {
 		req->flags2 |= 0x40; /* IS_LONG_NAME */
 		SSVAL((discard_const_p(uint8_t, req->inbuf)),smb_flg2,req->flags2);
 	}
@@ -5143,8 +5202,6 @@ static void handle_trans2(connection_struct *conn, struct smb_request *req,
 			return;
 		}
 	}
-
-	SMB_PERFCOUNT_SET_SUBOP(&req->pcd, state->call);
 
 	/* Now we must call the relevant TRANS2 function */
 	switch(state->call)  {

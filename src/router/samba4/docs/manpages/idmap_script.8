@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: idmap_script
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "IDMAP_SCRIPT" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "IDMAP_SCRIPT" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -47,14 +47,12 @@ This option can be used to configure an external program for performing id mappi
 .RE
 .SH "IDMAP SCRIPT"
 .PP
-The tdb2 idmap backend supports an external program for performing id mappings through the
+The script idmap backend supports an external program for performing id mappings through the
 ${prefix}/etc/smb\&.conf
 option
 \fIidmap config * : script\fR
 or its deprecated legacy form
 \fIidmap : script\fR\&.
-.PP
-The mappings obtained by the script are then stored in the idmap tdb2 database instead of mappings created by the incrementing id counters\&. It is therefore important that the script covers the complete range of SIDs that can be passed in for SID to Unix ID mapping, since otherwise SIDs unmapped by the script might get mapped to IDs that had previously been mapped by the script\&.
 .PP
 The script should accept the following command line options\&.
 .sp
@@ -92,7 +90,7 @@ And it should return one of the following responses as a single line of text\&.
 XID indicates that the ID returned should be both a UID and a GID\&. That is, it requests an ID_TYPE_BOTH, but it is ultimately up to the script whether or not it can honor that request\&. It can choose to return a UID or a GID mapping only\&.
 .SH "EXAMPLES"
 .PP
-This example shows how script is used as a the default idmap backend using an external program via the script parameter:
+This example shows how script is used as the default idmap backend using an external program via the script parameter:
 .sp
 .if n \{\
 .RS 4

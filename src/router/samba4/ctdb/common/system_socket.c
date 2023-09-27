@@ -980,15 +980,45 @@ int ctdb_sys_open_capture_socket(const char *iface, void **private_data)
 	int pcap_packet_type;
 	const char *t = NULL;
 	int fd;
+	int ret;
 
-	pt = pcap_open_live(iface, 100, 0, 0, errbuf);
+	pt = pcap_create(iface, errbuf);
 	if (pt == NULL) {
 		DBG_ERR("Failed to open pcap capture device %s (%s)\n",
 			iface,
 			errbuf);
 		return -1;
 	}
-	*((pcap_t **)private_data) = pt;
+	/*
+	 * pcap isn't very clear about defaults...
+	 */
+	ret = pcap_set_snaplen(pt, 100);
+	if (ret < 0) {
+		DBG_ERR("Failed to set snaplen for pcap capture\n");
+		goto fail;
+	}
+	ret = pcap_set_promisc(pt, 0);
+	if (ret < 0) {
+		DBG_ERR("Failed to unset promiscuous mode for pcap capture\n");
+		goto fail;
+	}
+	ret = pcap_set_timeout(pt, 0);
+	if (ret < 0) {
+		DBG_ERR("Failed to set timeout for pcap capture\n");
+		goto fail;
+	}
+#ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
+	ret = pcap_set_immediate_mode(pt, 1);
+	if (ret < 0) {
+		DBG_ERR("Failed to set immediate mode for pcap capture\n");
+		goto fail;
+	}
+#endif
+	ret = pcap_activate(pt);
+	if (ret < 0) {
+		DBG_ERR("Failed to activate pcap capture\n");
+		goto fail;
+	}
 
 	pcap_packet_type = pcap_datalink(pt);
 	switch (pcap_packet_type) {
@@ -1005,8 +1035,7 @@ int ctdb_sys_open_capture_socket(const char *iface, void **private_data)
 #endif /* DLT_LINUX_SLL2 */
 	default:
 		DBG_ERR("Unknown pcap packet type %d\n", pcap_packet_type);
-		pcap_close(pt);
-		return -1;
+		goto fail;
 	}
 
 	fd = pcap_get_selectable_fd(pt);
@@ -1014,7 +1043,12 @@ int ctdb_sys_open_capture_socket(const char *iface, void **private_data)
 		  t,
 		  fd);
 
+	*((pcap_t **)private_data) = pt;
 	return fd;
+
+fail:
+	pcap_close(pt);
+	return -1;
 }
 
 int ctdb_sys_close_capture_socket(void *private_data)

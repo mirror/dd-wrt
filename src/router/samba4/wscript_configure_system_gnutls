@@ -4,7 +4,7 @@ import os
 def parse_version(v):
     return tuple(map(int, (v.split("."))))
 
-gnutls_min_required_version = "3.4.7"
+gnutls_min_required_version = "3.6.13"
 
 conf.CHECK_FUNCS('getrandom', headers='sys/random.h')
 if not conf.CONFIG_SET('HAVE_GETRANDOM'):
@@ -25,15 +25,6 @@ gnutls_version = parse_version(gnutls_version_str)
 # Define gnutls as a system library
 conf.SET_TARGET_TYPE('gnutls', 'SYSLIB')
 
-# Check for gnutls_pkcs7_get_embedded_data_oid (>= 3.5.5) required by libmscat
-conf.CHECK_FUNCS_IN('gnutls_pkcs7_get_embedded_data_oid', 'gnutls')
-
-# Check for gnutls_set_default_priority_append (>= 3.6.3)
-conf.CHECK_FUNCS_IN('gnutls_set_default_priority_append', 'gnutls')
-
-# Check for gnutls_pbkdf2 (>= 3.6.13)
-conf.CHECK_FUNCS_IN('gnutls_pbkdf2', 'gnutls')
-
 # Check for gnutls_aead_cipher_encryptv2
 #
 # This is available since version 3.6.10, but 3.6.10 has a bug which got fixed
@@ -43,14 +34,8 @@ conf.CHECK_FUNCS_IN('gnutls_pbkdf2', 'gnutls')
 #
 # 3.6.10 - 3.6.14 have a severe memory leak with AES-CCM
 #     https://gitlab.com/gnutls/gnutls/-/merge_requests/1278
-if (gnutls_version > parse_version('3.6.10')):
-    if conf.CHECK_FUNCS_IN('gnutls_aead_cipher_encryptv2', 'gnutls'):
-        conf.DEFINE('ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM', 1)
-        if (gnutls_version > parse_version('3.6.14')):
-            conf.DEFINE('ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_CCM', 1)
-
-if (gnutls_version < parse_version('3.5.2')):
-    conf.DEFINE('HAVE_GNUTLS_AEAD_CIPHER_DECRYPT_PTEXT_LEN_BUG', 1)
+if (gnutls_version > parse_version('3.6.14')):
+      conf.DEFINE('ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_CCM', 1)
 
 # Check if gnutls has fips mode support
 # gnutls_fips140_mode_enabled() is available since 3.3.0
@@ -78,12 +63,3 @@ conf.CHECK_CODE(fragment,
                 msg='Checking for gnutls fips mode support')
 del os.environ['GNUTLS_FORCE_FIPS_MODE']
 
-if conf.CHECK_VALUEOF('GNUTLS_CIPHER_AES_128_CFB8', headers='gnutls/gnutls.h'):
-    conf.DEFINE('HAVE_GNUTLS_AES_CFB8', 1)
-else:
-    Logs.warn('No gnutls support for AES CFB8')
-
-if conf.CHECK_VALUEOF('GNUTLS_MAC_AES_CMAC_128', headers='gnutls/gnutls.h'):
-    conf.DEFINE('HAVE_GNUTLS_AES_CMAC', 1)
-else:
-    Logs.warn('No gnutls support for AES CMAC')

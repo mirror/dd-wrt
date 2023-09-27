@@ -150,26 +150,6 @@ bld.SAMBA_SUBSYSTEM('NDR_ORPC',
     public_deps='ndr'
     )
 
-bld.SAMBA_SUBSYSTEM('NDR_OXIDRESOLVER',
-    source='gen_ndr/ndr_oxidresolver.c',
-    public_deps='ndr NDR_ORPC'
-    )
-
-bld.SAMBA_SUBSYSTEM('NDR_REMACT',
-    source='gen_ndr/ndr_remact.c',
-    public_deps='ndr NDR_ORPC'
-    )
-
-bld.SAMBA_SUBSYSTEM('NDR_DCOM',
-    source='gen_ndr/ndr_dcom.c',
-    public_deps='ndr NDR_SECURITY NDR_ORPC'
-    )
-
-bld.SAMBA_SUBSYSTEM('NDR_WMI',
-    source='ndr/ndr_wmi.c gen_ndr/ndr_wmi.c',
-    public_deps='ndr NDR_SECURITY NDR_DCOM'
-    )
-
 bld.SAMBA_SUBSYSTEM('NDR_WZCSVC',
     source='gen_ndr/ndr_wzcsvc.c',
     public_deps='ndr'
@@ -381,12 +361,12 @@ bld.SAMBA_LIBRARY('ndr-krb5pac',
 
 bld.SAMBA_SUBSYSTEM('NDR_KRB5CCACHE',
     source='gen_ndr/ndr_krb5ccache.c',
-    deps='ndr NDR_COMPRESSION NDR_SECURITY ndr-standard asn1util'
+    deps='ndr NDR_SECURITY ndr-standard asn1util'
     )
 
 bld.SAMBA_SUBSYSTEM('NDR_CLAIMS',
-    source='gen_ndr/ndr_claims.c',
-    deps='ndr')
+    source='gen_ndr/ndr_claims.c ndr/ndr_claims.c',
+    deps='ndr NDR_COMPRESSION LZXPRESS')
 
 bld.SAMBA_LIBRARY('ndr-standard',
     source='',
@@ -570,16 +550,6 @@ bld.SAMBA_SUBSYSTEM('RPC_NDR_MGMT',
     deps='tevent NDR_MGMT'
     )
 
-bld.SAMBA_SUBSYSTEM('RPC_NDR_OXIDRESOLVER',
-    source='gen_ndr/ndr_oxidresolver_c.c',
-    public_deps='dcerpc-binding NDR_OXIDRESOLVER'
-    )
-
-bld.SAMBA_SUBSYSTEM('RPC_NDR_REMACT',
-    source='gen_ndr/ndr_remact_c.c',
-    public_deps='dcerpc-binding NDR_REMACT'
-    )
-
 bld.SAMBA_SUBSYSTEM('RPC_NDR_NTSVCS',
     source='gen_ndr/ndr_ntsvcs_c.c',
     public_deps='dcerpc-binding ndr-standard'
@@ -629,7 +599,7 @@ bld.SAMBA_SUBSYSTEM('RPC_NDR_MDSSVC',
 bld.SAMBA_LIBRARY('ndr-samba',
     source=[],
     deps='''NDR_DRSBLOBS NDR_DRSUAPI NDR_IDMAP NDR_NTLMSSP NDR_NEGOEX NDR_SCHANNEL NDR_MGMT
-    NDR_DNSSERVER NDR_EPMAPPER NDR_XATTR NDR_UNIXINFO NDR_NAMED_PIPE_AUTH NDR_DCOM
+    NDR_DNSSERVER NDR_EPMAPPER NDR_XATTR NDR_UNIXINFO NDR_NAMED_PIPE_AUTH
     NDR_NTPRINTING NDR_FSRVP NDR_WITNESS NDR_MDSSVC NDR_OPEN_FILES NDR_SMBXSRV
     NDR_KRB5CCACHE''',
     private_library=True,
@@ -658,7 +628,7 @@ bld.SAMBA_LIBRARY('ndr',
     public_deps='samba-errors talloc samba-util util_str_hex',
     public_headers='gen_ndr/misc.h gen_ndr/ndr_misc.h ndr/libndr.h:ndr.h',
     header_path= [('*gen_ndr*', 'gen_ndr')],
-    vnum='3.0.0',
+    vnum='3.0.1',
     abi_directory='ABI',
     abi_match='!ndr_table_* ndr_* GUID_* _ndr_pull_error* _ndr_push_error*',
     )

@@ -64,12 +64,23 @@
 	/* Needed for RODC rule processing */	\
 	"msDS-KrbTgtLinkBL"
 
+#define AUTHN_POLICY_ATTRS                     \
+	/* Required for authentication policies / silos */ \
+	"msDS-AssignedAuthNPolicy",             \
+	"msDS-AssignedAuthNPolicySilo"
+
 const char *krbtgt_attrs[] = {
+	/*
+	 * Authentication policies will not be enforced on the TGS
+	 * account. Don’t include the relevant attributes in the account search.
+	 */
 	KRBTGT_ATTRS, NULL
 };
 
 const char *server_attrs[] = {
-	KRBTGT_ATTRS, NULL
+	KRBTGT_ATTRS,
+	AUTHN_POLICY_ATTRS,
+	NULL
 };
 
 const char *user_attrs[] = {
@@ -82,6 +93,7 @@ const char *user_attrs[] = {
 	"msDS-ResultantPSO",
 
 	KRBTGT_ATTRS,
+	AUTHN_POLICY_ATTRS,
 
 	"logonHours",
 
@@ -315,13 +327,13 @@ static NTSTATUS authsam_domain_group_filter(TALLOC_CTX *mem_ctx,
 	 * Skip all builtin groups, they're added later.
 	 */
 	talloc_asprintf_addbuf(&filter,
-			       "(!(groupType:1.2.840.113556.1.4.803:=%u))",
+			       "(!(groupType:"LDB_OID_COMPARATOR_AND":=%u))",
 			       GROUP_TYPE_BUILTIN_LOCAL_GROUP);
 	/*
 	 * Only include security groups.
 	 */
 	talloc_asprintf_addbuf(&filter,
-			       "(groupType:1.2.840.113556.1.4.803:=%u))",
+			       "(groupType:"LDB_OID_COMPARATOR_AND":=%u))",
 			       GROUP_TYPE_SECURITY_ENABLED);
 	if (filter == NULL) {
 		return NT_STATUS_NO_MEMORY;
@@ -337,12 +349,13 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 					   const char *domain_name,
 					   const char *dns_domain_name,
 					   struct ldb_dn *domain_dn,
-					   struct ldb_message *msg,
+					   const struct ldb_message *msg,
 					   DATA_BLOB user_sess_key,
 					   DATA_BLOB lm_sess_key,
 					   struct auth_user_info_dc **_user_info_dc)
 {
 	NTSTATUS status;
+	int ret;
 	struct auth_user_info_dc *user_info_dc;
 	struct auth_user_info *info;
 	const char *str = NULL;
@@ -350,14 +363,19 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 	/* SIDs for the account and his primary group */
 	struct dom_sid *account_sid;
 	struct dom_sid_buf buf;
-	const char *primary_group_dn;
+	const char *primary_group_dn_str = NULL;
 	DATA_BLOB primary_group_blob;
+	struct ldb_dn *primary_group_dn = NULL;
+	struct ldb_message *primary_group_msg = NULL;
+	unsigned primary_group_type;
 	/* SID structures for the expanded group memberships */
-	struct dom_sid *sids = NULL;
-	unsigned int num_sids = 0, i;
+	struct auth_SidAttr *sids = NULL;
+	uint32_t num_sids = 0;
+	unsigned int i;
 	struct dom_sid *domain_sid;
 	TALLOC_CTX *tmp_ctx;
 	struct ldb_message_element *el;
+	static const char * const group_type_attrs[] = { "groupType", NULL };
 
 	user_info_dc = talloc_zero(mem_ctx, struct auth_user_info_dc);
 	NT_STATUS_HAVE_NO_MEMORY(user_info_dc);
@@ -368,7 +386,12 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	sids = talloc_array(user_info_dc, struct dom_sid, 2);
+	/*
+	 * We'll typically store three SIDs: the SID of the user, the SID of the
+	 * primary group, and a copy of the latter if it's not a resource
+	 * group. Allocate enough memory for these three SIDs.
+	 */
+	sids = talloc_zero_array(user_info_dc, struct auth_SidAttr, 3);
 	if (sids == NULL) {
 		TALLOC_FREE(user_info_dc);
 		return NT_STATUS_NO_MEMORY;
@@ -388,9 +411,11 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 		return status;
 	}
 
-	sids[PRIMARY_USER_SID_INDEX] = *account_sid;
-	sids[PRIMARY_GROUP_SID_INDEX] = *domain_sid;
-	sid_append_rid(&sids[PRIMARY_GROUP_SID_INDEX], ldb_msg_find_attr_as_uint(msg, "primaryGroupID", ~0));
+	sids[PRIMARY_USER_SID_INDEX].sid = *account_sid;
+	sids[PRIMARY_USER_SID_INDEX].attrs = SE_GROUP_DEFAULT_FLAGS;
+	sids[PRIMARY_GROUP_SID_INDEX].sid = *domain_sid;
+	sid_append_rid(&sids[PRIMARY_GROUP_SID_INDEX].sid, ldb_msg_find_attr_as_uint(msg, "primaryGroupID", ~0));
+	sids[PRIMARY_GROUP_SID_INDEX].attrs = SE_GROUP_DEFAULT_FLAGS;
 
 	/*
 	 * Filter out builtin groups from this token. We will search
@@ -403,16 +428,58 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 		return status;
 	}
 
-	primary_group_dn = talloc_asprintf(
+	primary_group_dn_str = talloc_asprintf(
 		tmp_ctx,
 		"<SID=%s>",
-		dom_sid_str_buf(&sids[PRIMARY_GROUP_SID_INDEX], &buf));
+		dom_sid_str_buf(&sids[PRIMARY_GROUP_SID_INDEX].sid, &buf));
+	if (primary_group_dn_str == NULL) {
+		TALLOC_FREE(user_info_dc);
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	/* Get the DN of the primary group. */
+	primary_group_dn = ldb_dn_new(tmp_ctx, sam_ctx, primary_group_dn_str);
 	if (primary_group_dn == NULL) {
 		TALLOC_FREE(user_info_dc);
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	primary_group_blob = data_blob_string_const(primary_group_dn);
+	/*
+	 * Do a search for the primary group, for the purpose of checking
+	 * whether it's a resource group.
+	 */
+	ret = dsdb_search_one(sam_ctx, tmp_ctx,
+			      &primary_group_msg,
+			      primary_group_dn,
+			      LDB_SCOPE_BASE,
+			      group_type_attrs,
+			      0,
+			      NULL);
+	if (ret != LDB_SUCCESS) {
+		talloc_free(user_info_dc);
+		return NT_STATUS_INTERNAL_DB_CORRUPTION;
+	}
+
+	/* Check the type of the primary group. */
+	primary_group_type = ldb_msg_find_attr_as_uint(primary_group_msg, "groupType", 0);
+	if (primary_group_type & GROUP_TYPE_RESOURCE_GROUP) {
+		/*
+		 * If it's a resource group, we might as well indicate that in
+		 * its attributes. At any rate, the primary group's attributes
+		 * are unlikely to be used in the code, as there's nowhere to
+		 * store them.
+		 */
+		sids[PRIMARY_GROUP_SID_INDEX].attrs |= SE_GROUP_RESOURCE;
+	} else {
+		/*
+		 * The primary group is not a resource group. Make a copy of its
+		 * SID to ensure it is added to the Base SIDs in the PAC.
+		 */
+		sids[REMAINING_SIDS_INDEX] = sids[PRIMARY_GROUP_SID_INDEX];
+		++num_sids;
+	}
+
+	primary_group_blob = data_blob_string_const(primary_group_dn_str);
 
 	/* Expands the primary group - this function takes in
 	 * memberOf-like values, so we fake one up with the
@@ -448,7 +515,10 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 	user_info_dc->num_sids = num_sids;
 
 	user_info_dc->info = info = talloc_zero(user_info_dc, struct auth_user_info);
-	NT_STATUS_HAVE_NO_MEMORY(user_info_dc->info);
+	if (user_info_dc->info == NULL) {
+		talloc_free(user_info_dc);
+		return NT_STATUS_NO_MEMORY;
+	}
 
 	str = ldb_msg_find_attr_as_string(msg, "sAMAccountName", NULL);
 	info->account_name = talloc_strdup(info, str);
@@ -570,13 +640,14 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 		   PAC */
 		user_info_dc->sids = talloc_realloc(user_info_dc,
 						   user_info_dc->sids,
-						   struct dom_sid,
+						   struct auth_SidAttr,
 						   user_info_dc->num_sids+1);
 		if (user_info_dc->sids == NULL) {
 			TALLOC_FREE(user_info_dc);
 			return NT_STATUS_NO_MEMORY;
 		}
-		user_info_dc->sids[user_info_dc->num_sids] = global_sid_Enterprise_DCs;
+		user_info_dc->sids[user_info_dc->num_sids].sid = global_sid_Enterprise_DCs;
+		user_info_dc->sids[user_info_dc->num_sids].attrs = SE_GROUP_DEFAULT_FLAGS;
 		user_info_dc->num_sids++;
 	}
 
@@ -585,19 +656,20 @@ _PUBLIC_ NTSTATUS authsam_make_user_info_dc(TALLOC_CTX *mem_ctx,
 		/* the DOMAIN_RID_ENTERPRISE_READONLY_DCS PAC */
 		user_info_dc->sids = talloc_realloc(user_info_dc,
 						   user_info_dc->sids,
-						   struct dom_sid,
+						   struct auth_SidAttr,
 						   user_info_dc->num_sids+1);
 		if (user_info_dc->sids == NULL) {
 			TALLOC_FREE(user_info_dc);
 			return NT_STATUS_NO_MEMORY;
 		}
-		user_info_dc->sids[user_info_dc->num_sids] = *domain_sid;
-		sid_append_rid(&user_info_dc->sids[user_info_dc->num_sids],
+		user_info_dc->sids[user_info_dc->num_sids].sid = *domain_sid;
+		sid_append_rid(&user_info_dc->sids[user_info_dc->num_sids].sid,
 			    DOMAIN_RID_ENTERPRISE_READONLY_DCS);
+		user_info_dc->sids[user_info_dc->num_sids].attrs = SE_GROUP_DEFAULT_FLAGS;
 		user_info_dc->num_sids++;
 	}
 
-	info->authenticated = true;
+	info->user_flags = 0;
 
 	talloc_free(tmp_ctx);
 	*_user_info_dc = user_info_dc;
@@ -626,7 +698,6 @@ _PUBLIC_ NTSTATUS authsam_update_user_info_dc(TALLOC_CTX *mem_ctx,
 	 */
 	status = authsam_domain_group_filter(mem_ctx, &filter);
 	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(user_info_dc);
 		return status;
 	}
 
@@ -636,7 +707,7 @@ _PUBLIC_ NTSTATUS authsam_update_user_info_dc(TALLOC_CTX *mem_ctx,
 	 */
 	n = user_info_dc->num_sids;
 	for (i = 0; i < n; i++) {
-		struct dom_sid *sid = &user_info_dc->sids[i];
+		struct dom_sid *sid = &user_info_dc->sids[i].sid;
 		struct dom_sid_buf sid_buf;
 		char dn_str[sizeof(sid_buf.buf)*2];
 		DATA_BLOB dn_blob = data_blob_null;
@@ -663,6 +734,74 @@ _PUBLIC_ NTSTATUS authsam_update_user_info_dc(TALLOC_CTX *mem_ctx,
 	}
 
 	return NT_STATUS_OK;
+}
+
+/*
+ * Make a shallow copy of a talloc-allocated user_info_dc structure, holding a
+ * reference to each of the original fields.
+ */
+NTSTATUS authsam_shallow_copy_user_info_dc(TALLOC_CTX *mem_ctx,
+					   const struct auth_user_info_dc *user_info_dc_in,
+					   struct auth_user_info_dc **user_info_dc_out)
+{
+	struct auth_user_info_dc *user_info_dc = NULL;
+	NTSTATUS status = NT_STATUS_OK;
+
+	user_info_dc = talloc_zero(mem_ctx, struct auth_user_info_dc);
+	if (user_info_dc == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto out;
+	}
+
+	*user_info_dc = *user_info_dc_in;
+
+	if (user_info_dc->info != NULL) {
+		if (talloc_reference(user_info_dc, user_info_dc->info) == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto out;
+		}
+	}
+
+	if (user_info_dc->user_session_key.data != NULL) {
+		if (talloc_reference(user_info_dc, user_info_dc->user_session_key.data) == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto out;
+		}
+	}
+
+	if (user_info_dc->lm_session_key.data != NULL) {
+		if (talloc_reference(user_info_dc, user_info_dc->lm_session_key.data) == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto out;
+		}
+	}
+
+	if (user_info_dc->sids != NULL) {
+		/*
+		 * Because we want to modify the SIDs in the user_info_dc
+		 * structure, adding various well-known SIDs such as Asserted
+		 * Identity or Claims Valid, make a copy of the SID array to
+		 * guard against modification of the original.
+		 *
+		 * It’s better not to make a reference, because anything that
+		 * tries to call talloc_realloc() on the original or the copy
+		 * will fail when called for any referenced talloc context.
+		 */
+		user_info_dc->sids = talloc_memdup(user_info_dc,
+						   user_info_dc->sids,
+						   talloc_get_size(user_info_dc->sids));
+		if (user_info_dc->sids == NULL) {
+			status = NT_STATUS_NO_MEMORY;
+			goto out;
+		}
+	}
+
+	*user_info_dc_out = user_info_dc;
+	user_info_dc = NULL;
+
+out:
+	talloc_free(user_info_dc);
+	return status;
 }
 
 NTSTATUS sam_get_results_principal(struct ldb_context *sam_ctx,
@@ -1365,15 +1504,21 @@ NTSTATUS authsam_search_account(TALLOC_CTX *mem_ctx, struct ldb_context *sam_ctx
 					 struct ldb_message **ret_msg)
 {
 	int ret;
+	char *account_name_encoded = NULL;
+
+	account_name_encoded = ldb_binary_encode_string(mem_ctx, account_name);
+	if (account_name_encoded == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
 
 	/* pull the user attributes */
 	ret = dsdb_search_one(sam_ctx, mem_ctx, ret_msg, domain_dn, LDB_SCOPE_SUBTREE,
 			      user_attrs,
 			      DSDB_SEARCH_SHOW_EXTENDED_DN,
 			      "(&(sAMAccountName=%s)(objectclass=user))",
-			      ldb_binary_encode_string(mem_ctx, account_name));
+			      account_name_encoded);
 	if (ret == LDB_ERR_NO_SUCH_OBJECT) {
-		DEBUG(3,("sam_search_user: Couldn't find user [%s] in samdb, under %s\n",
+		DEBUG(3,("authsam_search_account: Couldn't find user [%s] in samdb, under %s\n",
 			 account_name, ldb_dn_get_linearized(domain_dn)));
 		return NT_STATUS_NO_SUCH_USER;
 	}

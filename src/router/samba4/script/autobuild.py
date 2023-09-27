@@ -19,12 +19,17 @@ from email.mime.multipart import MIMEMultipart
 from sysconfig import get_path
 import platform
 
+import logging
+
 try:
     from waflib.Build import CACHE_SUFFIX
 except ImportError:
     sys.path.insert(0, "./third_party/waf")
     from waflib.Build import CACHE_SUFFIX
 
+logging.basicConfig(format='%(asctime)s %(message)s')
+logger = logging.getLogger('autobuild')
+logger.setLevel(logging.INFO)
 
 os.environ["PYTHONUNBUFFERED"] = "1"
 
@@ -103,6 +108,9 @@ parser.add_option("--enable-coverage", dest='enable_coverage',
 if options.retry:
     if options.rebase is None:
         raise Exception('You can only use --retry if you also rebase')
+
+if options.verbose:
+    logger.setLevel(logging.DEBUG)
 
 if options.full_testbase is not None:
     testbase = options.full_testbase
@@ -1186,16 +1194,22 @@ if os.environ.get("AUTOBUILD_SKIP_SAMBA_O3", "0") == "1":
 
 
 def do_print(msg):
-    print("%s" % msg)
+    logger.info(msg)
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+def do_debug(msg):
+    logger.debug(msg)
     sys.stdout.flush()
     sys.stderr.flush()
 
 
 def run_cmd(cmd, dir=".", show=None, output=False, checkfail=True):
     if show is None:
-        show = options.verbose
-    if show:
+        do_debug("Running: '%s' in '%s'" % (cmd, dir))
+    elif show:
         do_print("Running: '%s' in '%s'" % (cmd, dir))
+
     if output:
         out = check_output([cmd], shell=True, cwd=dir)
         return out.decode(encoding='utf-8', errors='backslashreplace')
@@ -1233,9 +1247,8 @@ class builder(object):
         self.next = 0
         self.stdout_path = "%s/%s.stdout" % (gitroot, self.tag)
         self.stderr_path = "%s/%s.stderr" % (gitroot, self.tag)
-        if options.verbose:
-            do_print("stdout for %s in %s" % (self.name, self.stdout_path))
-            do_print("stderr for %s in %s" % (self.name, self.stderr_path))
+        do_debug("stdout for %s in %s" % (self.name, self.stdout_path))
+        do_debug("stderr for %s in %s" % (self.name, self.stderr_path))
         run_cmd("rm -f %s %s" % (self.stdout_path, self.stderr_path))
         self.stdout = open(self.stdout_path, 'w')
         self.stderr = open(self.stderr_path, 'w')
@@ -1252,12 +1265,12 @@ class builder(object):
             assert "dependency" not in definition
 
     def mark_existing(self):
-        do_print('%s: Mark as existing dependency' % self.name)
+        do_debug('%s: Mark as existing dependency' % self.name)
         self.next = len(self.sequence)
         self.done = True
 
     def add_consumer(self, consumer):
-        do_print("%s: add consumer: %s" % (self.name, consumer.name))
+        do_debug("%s: add consumer: %s" % (self.name, consumer.name))
         consumer.producer = self
         consumer.test_source_dir = self.test_source_dir
         self.consumers.append(consumer)
@@ -1265,7 +1278,7 @@ class builder(object):
     def start_next(self):
         if self.producer is not None:
             if not self.producer.done:
-                do_print("%s: Waiting for producer: %s" % (self.name, self.producer.name))
+                do_debug("%s: Waiting for producer: %s" % (self.name, self.producer.name))
                 return
 
         if self.next == 0:
@@ -1355,9 +1368,9 @@ class buildlist(object):
 
         tasknames = implicit_tasknames.copy()
         tasknames.extend(given_tasknames)
-        do_print("given_tasknames: %s" % given_tasknames)
-        do_print("implicit_tasknames: %s" % implicit_tasknames)
-        do_print("tasknames: %s" % tasknames)
+        do_debug("given_tasknames: %s" % given_tasknames)
+        do_debug("implicit_tasknames: %s" % implicit_tasknames)
+        do_debug("tasknames: %s" % tasknames)
         self.tlist = [builder(n, tasks[n]) for n in tasknames]
 
         if options.retry:
@@ -1393,11 +1406,11 @@ class buildlist(object):
                     b.mark_existing()
 
         for b in self.tlist:
-            do_print("b.name=%s" % b.name)
+            do_debug("b.name=%s" % b.name)
             if "dependency" not in b.definition:
                 continue
             depname = b.definition["dependency"]
-            do_print("b.name=%s: dependency:%s" % (b.name, depname))
+            do_debug("b.name=%s: dependency:%s" % (b.name, depname))
             for p in self.tlist:
                 if p.name == depname:
                     p.add_consumer(b)
@@ -1673,14 +1686,16 @@ The top commit for the tree that was built was:
 
 ''' % (log_base, failed_tag, log_base, failed_tag, log_base, top_commit_msg)
 
-    if add_log_tail:
-        f = open("%s/%s.stdout" % (gitroot, failed_tag), 'r')
+    log_stdout = "%s/%s.stdout" % (gitroot, failed_tag)
+    if add_log_tail and os.access(log_stdout, os.R_OK):
+        f = open(log_stdout, 'r')
         lines = f.readlines()
         log_tail = "".join(lines[-50:])
         num_lines = len(lines)
-        if num_lines < 50:
+        log_stderr = "%s/%s.stderr" % (gitroot, failed_tag)
+        if num_lines < 50 and os.access(log_stderr, os.R_OK):
             # Also include stderr (compile failures) if < 50 lines of stdout
-            f = open("%s/%s.stderr" % (gitroot, failed_tag), 'r')
+            f = open(log_stderr, 'r')
             log_tail += "".join(f.readlines()[-(50 - num_lines):])
 
         text += '''

@@ -352,7 +352,13 @@ append_host_hostinfo(struct krb5_krbhst_data *kd, struct krb5_krbhst_info *host)
 	    _krb5_free_krbhst_info(host);
 	    return;
 	}
-    *kd->end = host;
+    /*
+     * We should always initialize kd->end in common_init(), but static
+     * analyzers may not see that we do, and the compiler might conclude
+     * there's UB here.
+     */
+    if (kd->end)
+        *kd->end = host;
     kd->end = &host->next;
 }
 
@@ -571,6 +577,7 @@ fallback_get_hosts(krb5_context context, struct krb5_krbhst_data *kd,
 			   "Realm %s needs immediate attention "
 			   "see https://icann.org/namecollision",
 			   kd->realm);
+                free(host);
 		freeaddrinfo(ai);
 		return KRB5_KDC_UNREACH;
 	    }
@@ -702,9 +709,9 @@ plcallback(krb5_context context,
     return KRB5_PLUGIN_NO_HANDLE;
 }
 
-static const char *locate_plugin_deps[] = { "krb5", NULL };
+static const char *const locate_plugin_deps[] = { "krb5", NULL };
 
-static struct heim_plugin_data
+static const struct heim_plugin_data
 locate_plugin_data = {
     "krb5",
     KRB5_PLUGIN_LOCATE,

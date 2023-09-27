@@ -29,9 +29,6 @@ unc="//$SERVER/tmp"
 . $(dirname $0)/subunit.sh
 . $(dirname $0)/common_test_fns.inc
 
-UID_WRAPPER_ROOT=1
-export UID_WRAPPER_ROOT
-
 test_smbpasswd()
 {
 	user=$1
@@ -91,7 +88,7 @@ test_smbclient "Test login with user (ntlm)" 'ls' "$unc" -U$USER%$NEWUSERPASS "$
 
 testit "modify user - disabled" $VALGRIND $net sam set disabled $USER yes "$@" || failed=$(expr $failed + 1)
 
-testit_expect_failure "Test login with disabled suer" $VALGRIND $smbclient //$SERVER/tmp -c 'ls' -U$USER@%$USERPASS && failed=$(expr $failed + 1)
+testit_expect_failure "Test login with disabled suer" $VALGRIND $smbclient //$SERVER/tmp -c 'ls' -U$USER@%$USERPASS || failed=$(expr $failed + 1)
 
 testit "modify user - enabled" $VALGRIND $net sam set disabled $USER no "$@" || failed=$(expr $failed + 1)
 
@@ -99,7 +96,7 @@ test_smbclient "Test login with re-enabled user (ntlm)" 'ls' "$unc" -U$USER%$NEW
 
 testit "modify user - must change password now" $VALGRIND $net sam set pwdmustchangenow $USER yes "$@" || failed=$(expr $failed + 1)
 
-testit_expect_failure "Test login with expired password" $VALGRIND $smbclient //$SERVER/tmp -c 'ls' -U$USER@%$USERPASS && failed=$(expr $failed + 1)
+testit_expect_failure "Test login with expired password" $VALGRIND $smbclient //$SERVER/tmp -c 'ls' -U$USER@%$USERPASS || failed=$(expr $failed + 1)
 
 testit "modify user - disable password expiry" $VALGRIND $net sam set pwnoexp $USER yes "$@" || failed=$(expr $failed + 1)
 

@@ -1,8 +1,10 @@
-setup ()
+setup()
 {
+	# shellcheck disable=SC2034
+	# Used in expected output
 	service_name="winbind"
 
-	if [ "$1" != "down" ] ; then
+	if [ "$1" != "down" ]; then
 
 		debug "Marking Winbind service as up and managed by CTDB"
 
@@ -19,7 +21,7 @@ setup ()
 	fi
 }
 
-wbinfo_down ()
+wbinfo_down()
 {
 	debug "Making wbinfo commands fail"
 	FAKE_WBINFO_FAIL="yes"

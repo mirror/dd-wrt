@@ -232,6 +232,36 @@ static int net_ads_cldap_netlogon_json
 		goto failure;
 	}
 
+	ret = json_add_bool(&flagsobj, "Runs on Windows 2012R2 or later",
+			    reply->server_type & NBT_SERVER_DS_9);
+	if (ret != 0) {
+		goto failure;
+	}
+
+	ret = json_add_bool(&flagsobj, "Runs on Windows 2016 or later",
+			    reply->server_type & NBT_SERVER_DS_10);
+	if (ret != 0) {
+		goto failure;
+	}
+
+	ret = json_add_bool(&flagsobj, "Has a DNS name",
+			    reply->server_type & NBT_SERVER_HAS_DNS_NAME);
+	if (ret != 0) {
+		goto failure;
+	}
+
+	ret = json_add_bool(&flagsobj, "Is a default NC",
+			    reply->server_type & NBT_SERVER_IS_DEFAULT_NC);
+	if (ret != 0) {
+		goto failure;
+	}
+
+	ret = json_add_bool(&flagsobj, "Is the forest root",
+			    reply->server_type & NBT_SERVER_FOREST_ROOT);
+	if (ret != 0) {
+		goto failure;
+	}
+
 	ret = json_add_string(&jsobj, "Forest", reply->forest);
 	if (ret != 0) {
 		goto failure;
@@ -372,7 +402,12 @@ static int net_ads_cldap_netlogon(struct net_context *c, ADS_STRUCT *ads)
 		   "\tIs NT6 DC that has some secrets:            %s\n"
 		   "\tIs NT6 DC that has all secrets:             %s\n"
 		   "\tRuns Active Directory Web Services:         %s\n"
-		   "\tRuns on Windows 2012 or later:              %s\n"),
+		   "\tRuns on Windows 2012 or later:              %s\n"
+		   "\tRuns on Windows 2012R2 or later:            %s\n"
+		   "\tRuns on Windows 2016 or later:              %s\n"
+		   "\tHas a DNS name:                             %s\n"
+		   "\tIs a default NC:                            %s\n"
+		   "\tIs the forest root:                         %s\n"),
 		   (reply.server_type & NBT_SERVER_PDC) ? _("yes") : _("no"),
 		   (reply.server_type & NBT_SERVER_GC) ? _("yes") : _("no"),
 		   (reply.server_type & NBT_SERVER_LDAP) ? _("yes") : _("no"),
@@ -386,7 +421,12 @@ static int net_ads_cldap_netlogon(struct net_context *c, ADS_STRUCT *ads)
 		   (reply.server_type & NBT_SERVER_SELECT_SECRET_DOMAIN_6) ? _("yes") : _("no"),
 		   (reply.server_type & NBT_SERVER_FULL_SECRET_DOMAIN_6) ? _("yes") : _("no"),
 		   (reply.server_type & NBT_SERVER_ADS_WEB_SERVICE) ? _("yes") : _("no"),
-		   (reply.server_type & NBT_SERVER_DS_8) ? _("yes") : _("no"));
+		   (reply.server_type & NBT_SERVER_DS_8) ? _("yes") : _("no"),
+		   (reply.server_type & NBT_SERVER_DS_9) ? _("yes") : _("no"),
+		   (reply.server_type & NBT_SERVER_DS_10) ? _("yes") : _("no"),
+		   (reply.server_type & NBT_SERVER_HAS_DNS_NAME) ? _("yes") : _("no"),
+		   (reply.server_type & NBT_SERVER_IS_DEFAULT_NC) ? _("yes") : _("no"),
+		   (reply.server_type & NBT_SERVER_FOREST_ROOT) ? _("yes") : _("no"));
 
 
 	printf(_("Forest: %s\n"), reply.forest);
@@ -713,10 +753,12 @@ retry:
 	} else if (ads->auth.realm == NULL) {
 		const char *c_realm = cli_credentials_get_realm(c->creds);
 
-		ads->auth.realm = talloc_strdup(ads, c_realm);
-		if (ads->auth.realm == NULL) {
-			TALLOC_FREE(ads);
-			return ADS_ERROR(LDAP_NO_MEMORY);
+		if (c_realm != NULL) {
+			ads->auth.realm = talloc_strdup(ads, c_realm);
+			if (ads->auth.realm == NULL) {
+				TALLOC_FREE(ads);
+				return ADS_ERROR(LDAP_NO_MEMORY);
+			}
 		}
 	}
 
@@ -1900,7 +1942,8 @@ static int net_ads_dns_register(struct net_context *c, int argc, const char **ar
 
 	if (c->display_usage) {
 		d_printf(  "%s\n"
-			   "net ads dns register [hostname [IP [IP...]]]\n"
+			   "net ads dns register [hostname [IP [IP...]]] "
+			   "[--force] [--dns-ttl TTL]\n"
 			   "    %s\n",
 			 _("Usage:"),
 			 _("Register hostname with DNS\n"));
@@ -1996,7 +2039,7 @@ static int net_ads_dns_unregister(struct net_context *c,
 			   "net ads dns unregister [hostname]\n"
 			   "    %s\n",
 			 _("Usage:"),
-			 _("Remove all IP Address entires for a given\n"
+			 _("Remove all IP Address entries for a given\n"
                            "    hostname from the Active Directory server.\n"));
 		TALLOC_FREE(tmp_ctx);
 		return -1;
@@ -2598,7 +2641,7 @@ static int net_ads_password(struct net_context *c, int argc, const char **argv)
 	}
 
 	/* we don't actually need a full connect, but it's the easy way to
-		fill in the KDC's addresss */
+		fill in the KDC's address */
 	ads_connect(ads);
 
 	if (!ads->config.realm) {

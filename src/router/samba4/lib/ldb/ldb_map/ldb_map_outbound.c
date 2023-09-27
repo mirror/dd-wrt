@@ -546,6 +546,7 @@ static bool ldb_parse_tree_check_splittable(const struct ldb_parse_tree *tree)
 /* Collect a list of attributes required to match a given parse tree. */
 static int ldb_parse_tree_collect_attrs(struct ldb_module *module, void *mem_ctx, const char ***attrs, const struct ldb_parse_tree *tree)
 {
+	const char *attr = NULL;
 	const char **new_attrs;
 	unsigned int i;
 	int ret;
@@ -570,7 +571,11 @@ static int ldb_parse_tree_collect_attrs(struct ldb_module *module, void *mem_ctx
 		return ldb_parse_tree_collect_attrs(module, mem_ctx, attrs, tree->u.isnot.child);
 
 	default:			/* single attribute in tree */
-		new_attrs = ldb_attr_list_copy_add(mem_ctx, *attrs, tree->u.equality.attr);
+		attr = ldb_parse_tree_get_attr(tree);
+		new_attrs = ldb_attr_list_copy_add(mem_ctx, *attrs, attr);
+		if (new_attrs == NULL) {
+			return ldb_module_oom(module);
+		}
 		talloc_free(*attrs);
 		*attrs = new_attrs;
 		return 0;
@@ -1154,7 +1159,7 @@ int ldb_map_search(struct ldb_module *module, struct ldb_request *req)
 	}
 
 	/* TODO: How can we be sure about which partition we are
-	 *	 targetting when there is no search base? */
+	 *	 targeting when there is no search base? */
 
 	/* Prepare context and handle */
 	ac = map_init_context(module, req);
@@ -1266,7 +1271,7 @@ static int map_remote_search_callback(struct ldb_request *req,
 
 		/* if we have no local db, then we can just return the reply to
 		 * the upper layer, otherwise we must save it and process it
-		 * when all replies ahve been gathered */
+		 * when all replies have been gathered */
 		if ( ! map_check_local_db(ac->module)) {
 			ret = map_return_entry(ac, ares);
 		} else {

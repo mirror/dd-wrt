@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: idmap_rid
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "IDMAP_RID" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "IDMAP_RID" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -35,7 +35,7 @@ The idmap_rid backend provides a way to use an algorithmic mapping scheme to map
 .PP
 Currently, there should to be an explicit idmap configuration for each domain that should use the idmap_rid backend, using disjoint ranges\&.
 .PP
-NOTE: The idmap_rid backend can NOT bet used as the default backend\&. One usually needs to define a writeable default idmap range, using a backend like
+NOTE: The idmap_rid backend can NOT be used as the default backend\&. One usually needs to define a writeable default idmap range, using a backend like
 \fItdb\fR
 or
 \fIldap\fR
@@ -101,6 +101,7 @@ This example shows how to configure two domains with idmap_rid, the principal do
 
 	idmap config TRUSTED : backend  = rid
 	idmap config TRUSTED : range    = 50000 \- 99999
+	idmap config TRUSTED : base_rid = 500000
 	
 .fi
 .if n \{\

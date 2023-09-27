@@ -47,6 +47,7 @@ fi
 cleanup_output_directories()
 {
 	remove_directory $PREFIX_ABS/2012R2_schema
+	remove_directory $PREFIX_ABS/2019_schema
 	remove_directory $PREFIX_ABS/$RELEASE
 	remove_directory $PREFIX_ABS/$OLD_RELEASE
 }
@@ -62,6 +63,11 @@ undump_old()
 }
 
 PROVISION_OPTS="--use-ntvfs --host-ip6=::1 --host-ip=127.0.0.1"
+
+provision_schema_2019_prep_skip()
+{
+	$PYTHON $BINDIR/samba-tool domain provision $PROVISION_OPTS --domain=REALM --realm=REALM.COM --targetdir=$PREFIX_ABS/2019_schema --base-schema=2019 --adprep-level=SKIP --host-name=FLPREP
+}
 
 provision_2012r2()
 {
@@ -82,14 +88,40 @@ ldapcmp()
 	ldapcmp_ignore "msDS-ClaimPossibleValues" "$RELEASE" "2012R2_schema"
 }
 
-functional_prep()
+functional_prep_2016()
+{
+	$PYTHON $BINDIR/samba-tool domain functionalprep -H tdb://$PREFIX_ABS/2019_schema/private/sam.ldb --function-level=2016
+}
+
+level_raise_2012R2()
+{
+	$PYTHON $BINDIR/samba-tool domain level raise \
+		-H tdb://$PREFIX_ABS/2019_schema/private/sam.ldb \
+		--option="ad dc functional level = 2012_R2" \
+		--domain-level=2012_R2 --forest-level=2012_R2
+}
+
+level_raise_2016()
+{
+	$PYTHON $BINDIR/samba-tool domain level raise \
+		-H tdb://$PREFIX_ABS/2019_schema/private/sam.ldb \
+		--option="ad dc functional level = 2016" \
+		--domain-level=2016 --forest-level=2016
+}
+
+functional_prep_2012R2()
 {
 	$PYTHON $BINDIR/samba-tool domain functionalprep -H tdb://$PREFIX_ABS/2012R2_schema/private/sam.ldb --function-level=2012_R2
 }
 
-functional_prep_old()
+functional_prep_2012R2_old()
 {
 	$PYTHON $BINDIR/samba-tool domain functionalprep -H tdb://$PREFIX_ABS/$OLD_RELEASE/private/sam.ldb --function-level=2012_R2
+}
+
+functional_prep_2016_old()
+{
+	$PYTHON $BINDIR/samba-tool domain functionalprep -H tdb://$PREFIX_ABS/$OLD_RELEASE/private/sam.ldb --function-level=2016
 }
 
 steal_roles()
@@ -99,9 +131,14 @@ steal_roles()
 	$PYTHON $BINDIR/samba-tool fsmo seize --role=infrastructure -H tdb://$PREFIX_ABS/$OLD_RELEASE/private/sam.ldb --force
 }
 
-schema_upgrade()
+schema_upgrade_2012R2_old()
 {
 	$PYTHON $BINDIR/samba-tool domain schemaupgrade -H tdb://$PREFIX_ABS/$OLD_RELEASE/private/sam.ldb --schema=2012_R2
+}
+
+schema_upgrade_2019_old()
+{
+	$PYTHON $BINDIR/samba-tool domain schemaupgrade -H tdb://$PREFIX_ABS/$OLD_RELEASE/private/sam.ldb --schema=2019
 }
 
 # double-check we cleaned up from the last test run
@@ -113,7 +150,7 @@ testit $RELEASE undump || failed=$(expr $failed + 1)
 testit "provision_2012R2_schema" provision_2012r2 || failed=$(expr $failed + 1)
 
 # Perform functional prep up to 2012 R2 level
-testit "functional_prep" functional_prep || failed=$(expr $failed + 1)
+testit "functional_prep_2012R2" functional_prep_2012R2 || failed=$(expr $failed + 1)
 
 # check that the databases are now the same
 testit "check_databases_same" ldapcmp || failed=$(expr $failed + 1)
@@ -122,9 +159,24 @@ testit $OLD_RELEASE undump_old || failed=$(expr $failed + 1)
 
 testit "steal_roles" steal_roles || failed=$(expr $failed + 1)
 
-testit "schema_upgrade" schema_upgrade || failed=$(expr $failed + 1)
+testit "schema_upgrade_2012R2_old" schema_upgrade_2012R2_old || failed=$(expr $failed + 1)
+testit "functional_prep_2012R2_old" functional_prep_2012R2_old || failed=$(expr $failed + 1)
 
-testit "functional_prep_old" functional_prep_old || failed=$(expr $failed + 1)
+testit "schema_upgrade_2019_old" schema_upgrade_2019_old || failed=$(expr $failed + 1)
+testit "functional_prep_2016_old" functional_prep_2016_old || failed=$(expr $failed + 1)
+
+cleanup_output_directories
+
+# Provision a DC based on 2019 schema
+testit "provision_schema_2019_prep_skip" provision_schema_2019_prep_skip || failed=$(expr $failed + 1)
+
+# Perform functional prep up to 2016 level
+testit "functional_prep_2016" functional_prep_2016 || failed=$(expr $failed + 1)
+
+# raise the levels to 2012_R2
+testit "level_raise_2012R2" level_raise_2012R2 || failed=$(expr $failed + 1)
+# raise the levels to 2016
+testit "level_raise_2016" level_raise_2016 || failed=$(expr $failed + 1)
 
 cleanup_output_directories
 

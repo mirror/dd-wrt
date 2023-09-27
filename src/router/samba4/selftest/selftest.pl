@@ -129,7 +129,11 @@ sub run_testsuite($$$$$)
 	Subunit::start_testsuite($name);
 	Subunit::progress_push();
 	Subunit::report_time();
-	system($cmd);
+	# Enable pipefail so that we catch failing testsuites that are part of a
+	# pipeline (typically, piped through filter-subunit). This won't catch
+	# any testsuite failures that are turned into testsuite-xfails by
+	# filter-subunit.
+	system("bash", "-o", "pipefail", "-c", $cmd);
 	Subunit::report_time();
 	Subunit::progress_pop();
 
@@ -281,6 +285,7 @@ $ENV{SAMBA_DEPRECATED_SUPPRESS} = 1;
 # see also bootstrap/config.py
 $ENV{TZ} = "UTC";
 $ENV{LC_ALL} = $ENV{LANG} = "en_US.utf8";
+$ENV{LANGUAGE} = "en_US";
 
 my $bindir_abs = abs_path($bindir);
 
@@ -548,7 +553,7 @@ sub write_clientconf($$$)
 	# each user has a USER-${USER_PRINCIPAL_NAME}-cert.pem and
 	# USER-${USER_PRINCIPAL_NAME}-private-key.pem symlink
 	# We make a copy here and make the certificated easily
-	# accessable in the client environment.
+	# accessible in the client environment.
 	my $mask = umask;
 	umask 0077;
 	opendir USERS, "${ca_users_dir}" or die "Could not open dir '${ca_users_dir}': $!";

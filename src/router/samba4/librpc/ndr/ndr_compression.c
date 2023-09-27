@@ -22,6 +22,7 @@
 
 #include "includes.h"
 #include "../lib/compression/lzxpress.h"
+#include "../lib/compression/lzxpress_huffman.h"
 #include "librpc/ndr/libndr.h"
 #include "../librpc/ndr/ndr_compression.h"
 #include <zlib.h>
@@ -34,6 +35,9 @@ struct ndr_compression_state {
 			uint8_t *dict;
 			size_t dict_size;
 		} mszip;
+		struct {
+			struct lzxhuff_compressor_mem *mem;
+		} lzxpress_huffman;
 	} alg;
 };
 
@@ -358,7 +362,7 @@ static enum ndr_err_code ndr_pull_compression_mszip_chunk(struct ndr_pull *ndrpu
 	z->total_out	= 0;
 
 	if (!z->opaque) {
-		/* the first time we need to intialize completely */
+		/* the first time we need to initialize completely */
 		z->zalloc	= ndr_zlib_alloc;
 		z->zfree	= ndr_zlib_free;
 		z->opaque	= ndrpull;
@@ -372,7 +376,7 @@ static enum ndr_err_code ndr_pull_compression_mszip_chunk(struct ndr_pull *ndrpu
 		}
 	}
 
-	/* call inflate untill we get Z_STREAM_END or an error */
+	/* call inflate until we get Z_STREAM_END or an error */
 	while (true) {
 		z_ret = inflate(z, Z_BLOCK);
 		if (z_ret != Z_OK) break;
@@ -471,7 +475,7 @@ static enum ndr_err_code ndr_push_compression_mszip_chunk(struct ndr_push *ndrpu
 	z->total_out	= 0;
 
 	if (!z->opaque) {
-		/* the first time we need to intialize completely */
+		/* the first time we need to initialize completely */
 		z->zalloc	= ndr_zlib_alloc;
 		z->zfree	= ndr_zlib_free;
 		z->opaque	= ndrpull;
@@ -491,14 +495,14 @@ static enum ndr_err_code ndr_push_compression_mszip_chunk(struct ndr_push *ndrpu
 		}
 	}
 
-	/* call deflate untill we get Z_STREAM_END or an error */
+	/* call deflate until we get Z_STREAM_END or an error */
 	while (true) {
 		z_ret = deflate(z, Z_FINISH);
 		if (z_ret != Z_OK) break;
 	}
 	if (z_ret != Z_STREAM_END) {
 		return ndr_push_error(ndrpush, NDR_ERR_COMPRESSION,
-				      "Bad delate(Z_BLOCK) error %s(%d) (PUSH)",
+				      "Bad deflate(Z_BLOCK) error %s(%d) (PUSH)",
 				      zError(z_ret), z_ret);
 	}
 
@@ -646,6 +650,165 @@ static enum ndr_err_code ndr_push_compression_xpress_chunk(struct ndr_push *ndrp
 	return NDR_ERR_SUCCESS;
 }
 
+static enum ndr_err_code ndr_pull_compression_none(struct ndr_pull *ndrpull,
+						   struct ndr_push *ndrpush,
+						   ssize_t decompressed_len,
+						   ssize_t compressed_len)
+{
+	DATA_BLOB comp_chunk;
+	uint32_t comp_chunk_size = compressed_len;
+	uint32_t comp_chunk_offset;
+
+	if (decompressed_len != compressed_len) {
+		return ndr_pull_error(ndrpull, NDR_ERR_COMPRESSION,
+				      "decompressed len %zd != compressed_len %zd in 'NONE' compression!",
+				      decompressed_len,
+				      compressed_len);
+	}
+
+	if (comp_chunk_size != compressed_len) {
+		return ndr_pull_error(ndrpull, NDR_ERR_COMPRESSION,
+				      "compressed_len %zd overflows uint32_t in 'NONE' compression!",
+				      compressed_len);
+	}
+
+	comp_chunk_offset = ndrpull->offset;
+	NDR_CHECK(ndr_pull_advance(ndrpull, comp_chunk_size));
+	comp_chunk.length = comp_chunk_size;
+	comp_chunk.data = ndrpull->data + comp_chunk_offset;
+
+	NDR_CHECK(ndr_push_array_uint8(ndrpush,
+				       NDR_SCALARS,
+				       comp_chunk.data,
+				       comp_chunk.length));
+
+	return NDR_ERR_SUCCESS;
+}
+
+static enum ndr_err_code ndr_push_compression_none(struct ndr_push *ndrpush,
+						   struct ndr_pull *ndrpull)
+{
+	DATA_BLOB plain_chunk;
+	uint32_t plain_chunk_size;
+	uint32_t plain_chunk_offset;
+
+	plain_chunk_size = ndrpull->data_size - ndrpull->offset;
+	plain_chunk_offset = ndrpull->offset;
+	NDR_CHECK(ndr_pull_advance(ndrpull, plain_chunk_size));
+
+	plain_chunk.data = ndrpull->data + plain_chunk_offset;
+	plain_chunk.length = plain_chunk_size;
+
+	NDR_CHECK(ndr_push_array_uint8(ndrpush,
+				       NDR_SCALARS,
+				       plain_chunk.data,
+				       plain_chunk.length));
+	return NDR_ERR_SUCCESS;
+}
+
+static enum ndr_err_code ndr_pull_compression_xpress_huff_raw_chunk(struct ndr_pull *ndrpull,
+								    struct ndr_push *ndrpush,
+								    ssize_t decompressed_len,
+								    ssize_t compressed_len)
+{
+	DATA_BLOB comp_chunk;
+	uint32_t comp_chunk_offset;
+	uint32_t comp_chunk_size;
+	DATA_BLOB plain_chunk;
+	uint32_t plain_chunk_offset;
+	uint32_t plain_chunk_size;
+	ssize_t ret;
+
+	plain_chunk_size = decompressed_len;
+	comp_chunk_size = compressed_len;
+
+	DEBUG(9,("XPRESS_HUFF plain_chunk_size: %08X (%u) comp_chunk_size: %08X (%u)\n",
+		 plain_chunk_size, plain_chunk_size, comp_chunk_size, comp_chunk_size));
+
+	comp_chunk_offset = ndrpull->offset;
+	NDR_CHECK(ndr_pull_advance(ndrpull, comp_chunk_size));
+	comp_chunk.length = comp_chunk_size;
+	comp_chunk.data = ndrpull->data + comp_chunk_offset;
+
+	plain_chunk_offset = ndrpush->offset;
+	NDR_CHECK(ndr_push_zero(ndrpush, plain_chunk_size));
+	plain_chunk.length = plain_chunk_size;
+	plain_chunk.data = ndrpush->data + plain_chunk_offset;
+
+	/* Decompressing the buffer using LZ Xpress w/ Huffman algorithm */
+	ret = lzxpress_huffman_decompress(comp_chunk.data,
+					  comp_chunk.length,
+					  plain_chunk.data,
+					  plain_chunk.length);
+	if (ret < 0) {
+		return ndr_pull_error(ndrpull, NDR_ERR_COMPRESSION,
+				      "XPRESS HUFF lzxpress_huffman_decompress() returned %d\n",
+				      (int)ret);
+	}
+
+	if (plain_chunk.length != ret) {
+		return ndr_pull_error(ndrpull, NDR_ERR_COMPRESSION,
+				      "XPRESS HUFF lzxpress_huffman_decompress() output is not as expected (%zd != %zu) (PULL)",
+				      ret, plain_chunk.length);
+	}
+
+	return NDR_ERR_SUCCESS;
+}
+
+static enum ndr_err_code ndr_push_compression_xpress_huff_raw_chunk(struct ndr_push *ndrpush,
+								    struct ndr_pull *ndrpull,
+								    struct ndr_compression_state *state)
+{
+	DATA_BLOB comp_chunk;
+	DATA_BLOB plain_chunk;
+	uint32_t plain_chunk_size;
+	uint32_t plain_chunk_offset;
+	ssize_t ret;
+
+	struct lzxhuff_compressor_mem *mem = state->alg.lzxpress_huffman.mem;
+
+	if (ndrpull->data_size <= ndrpull->offset) {
+		return ndr_push_error(ndrpush, NDR_ERR_COMPRESSION,
+				      "strange NDR pull size and offset (integer overflow?)");
+
+	}
+
+	plain_chunk_size = ndrpull->data_size - ndrpull->offset;
+	plain_chunk_offset = ndrpull->offset;
+	NDR_CHECK(ndr_pull_advance(ndrpull, plain_chunk_size));
+
+	plain_chunk.data = ndrpull->data + plain_chunk_offset;
+	plain_chunk.length = plain_chunk_size;
+
+	comp_chunk.length = lzxpress_huffman_max_compressed_size(plain_chunk_size);
+	NDR_CHECK(ndr_push_expand(ndrpush, comp_chunk.length));
+
+	comp_chunk.data = ndrpush->data + ndrpush->offset;
+
+
+	/* Compressing the buffer using LZ Xpress w/ Huffman algorithm */
+	ret = lzxpress_huffman_compress(mem,
+					plain_chunk.data,
+					plain_chunk.length,
+					comp_chunk.data,
+					comp_chunk.length);
+	if (ret < 0) {
+		return ndr_pull_error(ndrpull, NDR_ERR_COMPRESSION,
+				      "XPRESS HUFF lzxpress_huffman_compress() returned %d\n",
+				      (int)ret);
+	}
+
+	if (ret > comp_chunk.length) {
+		return ndr_pull_error(ndrpull, NDR_ERR_COMPRESSION,
+				      "XPRESS HUFF lzxpress_huffman_compress() output is not as expected (%zd > %zu) (PULL)",
+				      ret, comp_chunk.length);
+	}
+
+	ndrpush->offset += ret;
+	return NDR_ERR_SUCCESS;
+}
+
+
 /*
   handle compressed subcontext buffers, which in midl land are user-marshalled, but
   we use magic in pidl to make them easier to cope with
@@ -666,6 +829,11 @@ enum ndr_err_code ndr_pull_compression_start(struct ndr_pull *subndr,
 	NDR_ERR_HAVE_NO_MEMORY(ndrpush);
 
 	switch (compression_alg) {
+	case NDR_COMPRESSION_NONE:
+		NDR_CHECK(ndr_pull_compression_none(subndr, ndrpush,
+						    decompressed_len,
+						    compressed_len));
+		break;
 	case NDR_COMPRESSION_MSZIP_CAB:
 		NDR_CHECK(ndr_pull_compression_mszip_cab_chunk(subndr, ndrpush,
 							       subndr->cstate,
@@ -683,6 +851,12 @@ enum ndr_err_code ndr_pull_compression_start(struct ndr_pull *subndr,
 		while (!last) {
 			NDR_CHECK(ndr_pull_compression_xpress_chunk(subndr, ndrpush, &last));
 		}
+		break;
+
+	case NDR_COMPRESSION_XPRESS_HUFF_RAW:
+		NDR_CHECK(ndr_pull_compression_xpress_huff_raw_chunk(subndr, ndrpush,
+								     decompressed_len,
+								     compressed_len));
 		break;
 
 	default:
@@ -724,16 +898,17 @@ enum ndr_err_code ndr_pull_compression_end(struct ndr_pull *subndr,
   push a compressed subcontext
 */
 enum ndr_err_code ndr_push_compression_start(struct ndr_push *subndr,
-				    struct ndr_push **_uncomndr,
-				    enum ndr_compression_alg compression_alg,
-				    ssize_t decompressed_len)
+				    struct ndr_push **_uncomndr)
 {
 	struct ndr_push *uncomndr;
+	enum ndr_compression_alg compression_alg = subndr->cstate->type;
 
 	switch (compression_alg) {
+	case NDR_COMPRESSION_NONE:
 	case NDR_COMPRESSION_MSZIP_CAB:
 	case NDR_COMPRESSION_MSZIP:
 	case NDR_COMPRESSION_XPRESS:
+	case NDR_COMPRESSION_XPRESS_HUFF_RAW:
 		break;
 	default:
 		return ndr_push_error(subndr, NDR_ERR_COMPRESSION,
@@ -753,13 +928,13 @@ enum ndr_err_code ndr_push_compression_start(struct ndr_push *subndr,
   push a compressed subcontext
 */
 enum ndr_err_code ndr_push_compression_end(struct ndr_push *subndr,
-				  struct ndr_push *uncomndr,
-				  enum ndr_compression_alg compression_alg,
-				  ssize_t decompressed_len)
+				  struct ndr_push *uncomndr)
 {
 	struct ndr_pull *ndrpull;
 	bool last = false;
 	z_stream z;
+
+	enum ndr_compression_alg compression_alg = subndr->cstate->type;
 
 	ndrpull = talloc_zero(uncomndr, struct ndr_pull);
 	NDR_ERR_HAVE_NO_MEMORY(ndrpull);
@@ -769,6 +944,10 @@ enum ndr_err_code ndr_push_compression_end(struct ndr_push *subndr,
 	ndrpull->offset		= 0;
 
 	switch (compression_alg) {
+	case NDR_COMPRESSION_NONE:
+		NDR_CHECK(ndr_push_compression_none(subndr, ndrpull));
+		break;
+
 	case NDR_COMPRESSION_MSZIP_CAB:
 		NDR_CHECK(ndr_push_compression_mszip_cab_chunk(subndr, ndrpull, subndr->cstate));
 		break;
@@ -786,6 +965,10 @@ enum ndr_err_code ndr_push_compression_end(struct ndr_push *subndr,
 		}
 		break;
 
+	case NDR_COMPRESSION_XPRESS_HUFF_RAW:
+		NDR_CHECK(ndr_push_compression_xpress_huff_raw_chunk(subndr, ndrpull, subndr->cstate));
+		break;
+
 	default:
 		return ndr_push_error(subndr, NDR_ERR_COMPRESSION, "Bad compression algorithm %d (PUSH)",
 				      compression_alg);
@@ -795,35 +978,23 @@ enum ndr_err_code ndr_push_compression_end(struct ndr_push *subndr,
 	return NDR_ERR_SUCCESS;
 }
 
-static enum ndr_err_code generic_mszip_init(TALLOC_CTX *mem_ctx,
-					    struct ndr_compression_state *state)
+static enum ndr_err_code generic_mszip_init(struct ndr_compression_state *state)
 {
-	z_stream *z = talloc_zero(mem_ctx, z_stream);
+	z_stream *z = talloc_zero(state, z_stream);
 	NDR_ERR_HAVE_NO_MEMORY(z);
 
 	z->zalloc = ndr_zlib_alloc;
 	z->zfree  = ndr_zlib_free;
-	z->opaque = mem_ctx;
+	z->opaque = state;
 
 	state->alg.mszip.z = z;
 	state->alg.mszip.dict_size = 0;
 	/* pre-alloc dictionary */
-	state->alg.mszip.dict = talloc_array(mem_ctx, uint8_t, 0x8000);
+	state->alg.mszip.dict = talloc_array(state, uint8_t, 0x8000);
 	NDR_ERR_HAVE_NO_MEMORY(state->alg.mszip.dict);
 
 	return NDR_ERR_SUCCESS;
 }
-
-static void generic_mszip_free(struct ndr_compression_state *state)
-{
-	if (state == NULL) {
-		return;
-	}
-
-	TALLOC_FREE(state->alg.mszip.z);
-	TALLOC_FREE(state->alg.mszip.dict);
-}
-
 
 enum ndr_err_code ndr_pull_compression_state_init(struct ndr_pull *ndr,
 						  enum ndr_compression_alg compression_alg,
@@ -837,11 +1008,13 @@ enum ndr_err_code ndr_pull_compression_state_init(struct ndr_pull *ndr,
 	s->type = compression_alg;
 
 	switch (compression_alg) {
+	case NDR_COMPRESSION_NONE:
 	case NDR_COMPRESSION_MSZIP:
 	case NDR_COMPRESSION_XPRESS:
+	case NDR_COMPRESSION_XPRESS_HUFF_RAW:
 		break;
 	case NDR_COMPRESSION_MSZIP_CAB:
-		NDR_CHECK(generic_mszip_init(ndr, s));
+		NDR_CHECK(generic_mszip_init(s));
 		z_ret = inflateInit2(s->alg.mszip.z, -MAX_WBITS);
 		if (z_ret != Z_OK) {
 			return ndr_pull_error(ndr, NDR_ERR_COMPRESSION,
@@ -861,42 +1034,38 @@ enum ndr_err_code ndr_pull_compression_state_init(struct ndr_pull *ndr,
 	return NDR_ERR_SUCCESS;
 }
 
-void ndr_pull_compression_state_free(struct ndr_compression_state *state)
-{
-	if (state == NULL) {
-		return;
-	}
-
-	switch (state->type) {
-	case NDR_COMPRESSION_MSZIP:
-	case NDR_COMPRESSION_XPRESS:
-		break;
-	case NDR_COMPRESSION_MSZIP_CAB:
-		generic_mszip_free(state);
-		break;
-	default:
-		break;
-	}
-	TALLOC_FREE(state);
-}
-
 enum ndr_err_code ndr_push_compression_state_init(struct ndr_push *ndr,
-						  enum ndr_compression_alg compression_alg,
-						  struct ndr_compression_state **state)
+						  enum ndr_compression_alg compression_alg)
 {
 	struct ndr_compression_state *s;
 	int z_ret;
+
+	/*
+	 * Avoid confusion, NULL out ndr->cstate at the start of the
+	 * compression block
+	 */
+	ndr->cstate = NULL;
 
 	s = talloc_zero(ndr, struct ndr_compression_state);
 	NDR_ERR_HAVE_NO_MEMORY(s);
 	s->type = compression_alg;
 
 	switch (compression_alg) {
+	case NDR_COMPRESSION_NONE:
 	case NDR_COMPRESSION_XPRESS:
+		break;
+
+	case NDR_COMPRESSION_XPRESS_HUFF_RAW:
+		s->alg.lzxpress_huffman.mem = talloc(s, struct lzxhuff_compressor_mem);
+		if (s->alg.lzxpress_huffman.mem == NULL) {
+			return NDR_ERR_ALLOC;
+		}
+		break;
+
 	case NDR_COMPRESSION_MSZIP:
 		break;
 	case NDR_COMPRESSION_MSZIP_CAB:
-		NDR_CHECK(generic_mszip_init(ndr, s));
+		NDR_CHECK(generic_mszip_init(s));
 		z_ret = deflateInit2(s->alg.mszip.z,
 				     Z_DEFAULT_COMPRESSION,
 				     Z_DEFLATED,
@@ -916,26 +1085,8 @@ enum ndr_err_code ndr_push_compression_state_init(struct ndr_push *ndr,
 		break;
 	}
 
-	*state = s;
+	ndr->cstate = s;
 
 	return NDR_ERR_SUCCESS;
 }
 
-void ndr_push_compression_state_free(struct ndr_compression_state *state)
-{
-	if (state == NULL) {
-		return;
-	}
-
-	switch (state->type) {
-	case NDR_COMPRESSION_MSZIP:
-	case NDR_COMPRESSION_XPRESS:
-		break;
-	case NDR_COMPRESSION_MSZIP_CAB:
-		generic_mszip_free(state);
-		break;
-	default:
-		break;
-	}
-	TALLOC_FREE(state);
-}

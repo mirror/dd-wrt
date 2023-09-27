@@ -1,18 +1,18 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    SMB Byte handling
    Copyright (C) Andrew Tridgell 1992-1998
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -23,7 +23,7 @@
 #include "bytearray.h"
 
 /*
-   This file implements macros for machine independent short and 
+   This file implements macros for machine independent short and
    int manipulation
 
 Here is a description of this file that I emailed to the samba list once:
@@ -32,7 +32,7 @@ Here is a description of this file that I emailed to the samba list once:
 > looked at it, and I would have thought that you might make a distinction
 > between LE and BE machines, but you only seem to distinguish between 386
 > and all other architectures.
-> 
+>
 > Can you give me a clue?
 
 sure.
@@ -55,7 +55,7 @@ then to extract a uint16_t value at offset 25 in a buffer you do this:
 char *buffer = foo_bar();
 uint16_t xx = SVAL(buffer,25);
 
-We are using the byteoder independence of the ANSI C bitshifts to do
+We are using the byteorder independence of the ANSI C bitshifts to do
 the work. A good optimising compiler should turn this into efficient
 code, especially if it happens to have the right byteorder :-)
 
@@ -138,7 +138,7 @@ it also defines lots of intermediate macros, just ignore those :-)
 
 /* now the reverse routines - these are used in nmb packets (mostly) */
 #define SREV(x) ((((x)&0xFF)<<8) | (((x)>>8)&0xFF))
-#define IREV(x) ((SREV(x)<<16) | (SREV((x)>>16)))
+#define IREV(x) ((SREV((uint32_t)x)<<16) | (SREV(((uint32_t)x)>>16)))
 #define BREV(x) ((IREV((uint64_t)x)<<32) | (IREV(((uint64_t)x)>>32)))
 
 /****************************************************************************

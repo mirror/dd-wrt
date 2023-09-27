@@ -369,7 +369,7 @@ done:
 	}
 
 	/*
-	 * Explicity invalidate the data, as the delete has done this
+	 * Explicitly invalidate the data, as the delete has done this
 	 */
 	data.length = 0;
 	data.data = NULL;
@@ -413,6 +413,14 @@ static int lmdb_parse_record(struct ldb_kv_private *ldb_kv,
 		mdb_dbi_close(lmdb->env, dbi);
 		if (lmdb->error == MDB_NOTFOUND) {
 			return LDB_ERR_NO_SUCH_OBJECT;
+		}
+		if (lmdb->error == MDB_CORRUPTED) {
+			ldb_debug(lmdb->ldb, LDB_DEBUG_ERROR,
+				__location__
+				": MDB corrupted for key [%*.*s]\n",
+				(int)key.length,
+				(int)key.length,
+				key.data);
 		}
 		return ldb_mdb_error(lmdb->ldb, lmdb->error);
 	}

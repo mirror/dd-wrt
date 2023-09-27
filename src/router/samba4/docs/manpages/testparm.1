@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: testparm
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "TESTPARM" "1" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
+.TH "TESTPARM" "1" "09/04/2023" "Samba 4\&.19\&.0" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -184,7 +184,7 @@ The program will issue a message saying whether the configuration file loaded OK
 For certain use cases, SMB protocol requires use of cryptographic algorithms which are known to be weak and already broken\&. DES and ARCFOUR (RC4) ciphers and the SHA1 and MD5 hash algorithms are considered weak but they are required for backward compatibility\&. The testparm utility shows whether the Samba tools will fall back to these weak crypto algorithms if it is not possible to use strong cryptography by default\&. In FIPS mode weak crypto cannot be enabled\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.18\&.3 of the Samba suite\&.
+This man page is part of version 4\&.19\&.0 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsmb.conf\fR(5),

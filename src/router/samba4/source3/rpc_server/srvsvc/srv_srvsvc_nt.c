@@ -1501,8 +1501,9 @@ WERROR _srvsvc_NetSrvGetInfo(struct pipes_struct *p,
 		info102->version_major	= SAMBA_MAJOR_NBT_ANNOUNCE_VERSION;
 		info102->version_minor	= SAMBA_MINOR_NBT_ANNOUNCE_VERSION;
 		info102->server_type	= lp_default_server_announce();
-		info102->comment	= string_truncate(lp_server_string(talloc_tos(), lp_sub),
-						MAX_SERVER_STRING_LENGTH);
+		info102->comment =
+			string_truncate(lp_server_string(info102, lp_sub),
+					MAX_SERVER_STRING_LENGTH);
 		info102->users		= 0xffffffff;
 		info102->disc		= 0xf;
 		info102->hidden		= 0;
@@ -1527,8 +1528,9 @@ WERROR _srvsvc_NetSrvGetInfo(struct pipes_struct *p,
 		info101->version_major	= SAMBA_MAJOR_NBT_ANNOUNCE_VERSION;
 		info101->version_minor	= SAMBA_MINOR_NBT_ANNOUNCE_VERSION;
 		info101->server_type	= lp_default_server_announce();
-		info101->comment	= string_truncate(lp_server_string(talloc_tos(), lp_sub),
-						MAX_SERVER_STRING_LENGTH);
+		info101->comment =
+			string_truncate(lp_server_string(info101, lp_sub),
+					MAX_SERVER_STRING_LENGTH);
 
 		r->out.info->info101 = info101;
 		break;
@@ -1993,7 +1995,7 @@ WERROR _srvsvc_NetShareSetInfo(struct pipes_struct *p,
 	case 1005:
                 /* XP re-sets the csc policy even if it wasn't changed by the
 		   user, so we must compare it to see if it's what is set in
-		   smb.conf, so that we can contine other ops like setting
+		   smb.conf, so that we can continue other ops like setting
 		   ACLs on a share */
 		client_csc_policy = (info->info1005->dfs_flags &
 				     SHARE_1005_CSC_POLICY_MASK) >>

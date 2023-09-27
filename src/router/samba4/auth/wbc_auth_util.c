@@ -50,9 +50,7 @@ static NTSTATUS wbcsids_to_samr_RidWithAttributeArray(
 					&groups->rids[j].rid);
 		if (!ok) continue;
 
-		groups->rids[j].attributes = SE_GROUP_MANDATORY |
-					     SE_GROUP_ENABLED_BY_DEFAULT |
-					     SE_GROUP_ENABLED;
+		groups->rids[j].attributes = SE_GROUP_DEFAULT_FLAGS;
 		j++;
 	}
 
@@ -91,9 +89,7 @@ static NTSTATUS wbcsids_to_netr_SidAttrArray(
 			talloc_free(info3_sids);
 			return NT_STATUS_NO_MEMORY;
 		}
-		info3_sids[j].attributes = SE_GROUP_MANDATORY |
-					   SE_GROUP_ENABLED_BY_DEFAULT |
-					   SE_GROUP_ENABLED;
+		info3_sids[j].attributes = SE_GROUP_DEFAULT_FLAGS;
 		j++;
 	}
 
@@ -120,8 +116,8 @@ struct netr_SamInfo6 *wbcAuthUserInfo_to_netr_SamInfo6(TALLOC_CTX *mem_ctx,
 	NTSTATUS status;
 	bool ok;
 
-	memcpy(&user_sid, &info->sids[0].sid, sizeof(user_sid));
-	memcpy(&group_sid, &info->sids[1].sid, sizeof(group_sid));
+	memcpy(&user_sid, &info->sids[PRIMARY_USER_SID_INDEX].sid, sizeof(user_sid));
+	memcpy(&group_sid, &info->sids[PRIMARY_GROUP_SID_INDEX].sid, sizeof(group_sid));
 
 	info6 = talloc_zero(mem_ctx, struct netr_SamInfo6);
 	if (!info6) return NULL;
@@ -200,7 +196,7 @@ struct netr_SamInfo6 *wbcAuthUserInfo_to_netr_SamInfo6(TALLOC_CTX *mem_ctx,
 	status = wbcsids_to_samr_RidWithAttributeArray(info6,
 						       &info6->base.groups,
 						       &domain_sid,
-						       &info->sids[1],
+						       &info->sids[PRIMARY_GROUP_SID_INDEX],
 						       info->num_sids - 1);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(info6);
@@ -208,7 +204,7 @@ struct netr_SamInfo6 *wbcAuthUserInfo_to_netr_SamInfo6(TALLOC_CTX *mem_ctx,
 	}
 
 	status = wbcsids_to_netr_SidAttrArray(&domain_sid,
-					      &info->sids[1],
+					      &info->sids[PRIMARY_GROUP_SID_INDEX],
 					      info->num_sids - 1,
 					      info6,
 					      &info6->sids,

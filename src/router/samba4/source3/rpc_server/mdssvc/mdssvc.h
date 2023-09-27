@@ -34,8 +34,8 @@
 #undef TRUE
 #undef FALSE
 
-#define MAX_SL_FRAGMENT_SIZE 0xFFFFF
 #define MAX_SL_RESULTS 100
+#define SL_PAGESIZE 50
 #define MAX_SL_RUNTIME 30
 #define MDS_TRACKER_ASYNC_TIMEOUT_MS 250
 
@@ -68,10 +68,10 @@ typedef enum {
 	SLQ_STATE_NEW,       /* Query received from client         */
 	SLQ_STATE_RUNNING,   /* Query dispatched to Tracker        */
 	SLQ_STATE_RESULTS,   /* Async Tracker query read           */
-	SLQ_STATE_FULL,	     /* the max amount of result has beed queued */
+	SLQ_STATE_FULL,	     /* the max amount of result has been queued */
 	SLQ_STATE_DONE,      /* Got all results from Tracker       */
 	SLQ_STATE_END,       /* Query results returned to client   */
-	SLQ_STATE_ERROR	     /* an error happended somewhere       */
+	SLQ_STATE_ERROR	     /* an error happened somewhere       */
 } slq_state_t;
 
 /* query structure */
@@ -105,6 +105,7 @@ struct sl_inode_path_map {
 	struct mds_ctx    *mds_ctx;
 	uint64_t           ino;
 	char              *path;
+	struct stat_ex     st;
 };
 
 /* Per process state */
@@ -126,6 +127,7 @@ struct mds_ctx {
 	int snum;
 	const char *sharename;
 	const char *spath;
+	size_t spath_len;
 	struct connection_struct *conn;
 	struct sl_query *query_list;     /* list of active queries */
 	struct db_context *ino_path_map; /* dbwrap rbt for storing inode->path mappings */
@@ -157,9 +159,10 @@ NTSTATUS mds_init_ctx(TALLOC_CTX *mem_ctx,
 		      const char *sharename,
 		      const char *path,
 		      struct mds_ctx **_mds_ctx);
-extern bool mds_dispatch(struct mds_ctx *query_ctx,
+extern bool mds_dispatch(struct mds_ctx *mds_ctx,
 			 struct mdssvc_blob *request_blob,
-			 struct mdssvc_blob *response_blob);
+			 struct mdssvc_blob *response_blob,
+			 size_t max_fragment_size);
 bool mds_add_result(struct sl_query *slq, const char *path);
 
 #endif /* _MDSSVC_H */

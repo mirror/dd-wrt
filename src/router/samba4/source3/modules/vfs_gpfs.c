@@ -2041,7 +2041,24 @@ static int vfs_gpfs_connect(struct vfs_handle_struct *handle,
 		return 0;
 	}
 
-	gpfswrap_lib_init(0);
+	ret = gpfswrap_init();
+	if (ret < 0) {
+		DBG_ERR("Could not load GPFS library.\n");
+		return ret;
+	}
+
+	ret = gpfswrap_lib_init(0);
+	if (ret < 0) {
+		DBG_ERR("Could not open GPFS device file: %s\n",
+			strerror(errno));
+		return ret;
+	}
+
+	ret = gpfswrap_register_cifs_export();
+	if (ret < 0) {
+		DBG_ERR("Failed to register with GPFS: %s\n", strerror(errno));
+		return ret;
+	}
 
 	config = talloc_zero(handle->conn, struct gpfs_config_data);
 	if (!config) {
@@ -2605,13 +2622,6 @@ static struct vfs_fn_pointers vfs_gpfs_fns = {
 static_decl_vfs;
 NTSTATUS vfs_gpfs_init(TALLOC_CTX *ctx)
 {
-	int ret;
-
-	ret = gpfswrap_init();
-	if (ret != 0) {
-		DEBUG(1, ("Could not initialize GPFS library wrapper\n"));
-	}
-
 	return smb_register_vfs(SMB_VFS_INTERFACE_VERSION, "gpfs",
 				&vfs_gpfs_fns);
 }

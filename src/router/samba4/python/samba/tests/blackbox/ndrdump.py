@@ -234,65 +234,6 @@ dump OK
             self.fail(e)
         self.assertEqual(actual, expected)
 
-    def test_ndrdump_fuzzed_IOXIDResolver_ResolveOxid(self):
-        expected = '''pull returned Character Conversion Error
-'''
-        try:
-            actual = self.check_exit_code(
-                'ndrdump --debug-stdout IOXIDResolver ResolveOxid out ' +\
-                '--base64-input --input=' +\
-                'c87PMf7CBAUAAAAADgQMBASjfPqKw0KPld6DY87PMfQ=',
-                2)
-        except BlackboxProcessError as e:
-            self.fail(e)
-        self.assertRegex(actual.decode('utf8'), expected + "$")
-
-    def test_ndrdump_fuzzed_IOXIDResolver_ResolveOxid2(self):
-        expected = '''pull returned Buffer Size Error
-'''
-        try:
-            actual = self.check_exit_code(
-                'ndrdump --debug-stdout IOXIDResolver ResolveOxid2 out ' +\
-                '--base64-input --input=' +\
-                'AAAAAQ0K9Q0AAAAAAAAAA6ampqampqampqampqampqampqampqamNAAAAAAtNDQ=',
-                2)
-        except BlackboxProcessError as e:
-            self.fail(e)
-        self.assertRegex(actual.decode('utf8'), expected + "$")
-
-    def test_ndrdump_fuzzed_IOXIDResolver_ServerAlive2(self):
-        expected = b'''pull returned Success
-WARNING! 46 unread bytes
-[0000] 0D 36 0A 0A 0A 0A 0A 00   00 00 00 00 00 00 03 00   .6...... ........
-[0010] 00 00 01 00 00 33 39 36   31 36 31 37 37 36 38 34   .....396 16177684
-[0020] 32 34 FC 85 AC 49 0B 61   87 0A 0A 0A F5 00         24...I.a ......
-    ServerAlive: struct ServerAlive
-        out: struct ServerAlive
-            result                   : DOS code 0x01000000
-dump OK
-'''
-        try:
-            actual = self.check_output(
-                'ndrdump --debug-stdout IOXIDResolver ServerAlive out ' +\
-                '--base64-input --input=' +\
-                'AAAAAQ02CgoKCgoAAAAAAAAAAwAAAAEAADM5NjE2MTc3Njg0MjT8haxJC2GHCgoK9QA=')
-        except BlackboxProcessError as e:
-            self.fail(e)
-        self.assertEqual(actual, expected)
-
-    def test_ndrdump_fuzzed_IRemoteActivation_RemoteActivation(self):
-        expected = '''pull returned Buffer Size Error
-'''
-        try:
-            actual = self.check_exit_code(
-                'ndrdump --debug-stdout IRemoteActivation RemoteActivation out ' +\
-                '--base64-input --input=' +\
-                'AAAAAQAAAAAAAABKAAD/AAAAAP4AAAAAAAAASgAAAAAAAAABIiIjIiIiIiIiIiIiIiMiAAAAAAD/AAAAAAAA',
-                2)
-        except BlackboxProcessError as e:
-            self.fail(e)
-        self.assertRegex(actual.decode('utf8'), expected + "$")
-
     def test_ndrdump_fuzzed_ntlmsssp_AUTHENTICATE_MESSAGE(self):
         expected = open(self.data_path("fuzzed_ntlmssp-AUTHENTICATE_MESSAGE.txt")).read()
         try:
@@ -525,7 +466,7 @@ dump OK
         self.assertEqual(actual, expected)
 
     def test_ndrdump_fuzzed_ndr_compression(self):
-        expected = 'pull returned Buffer Size Error'
+        expected = r'ndr_pull_compression_start: ndr_pull_error\(Compression Error\): Bad compression algorithm 204 \(PULL\)'
         command = (
             "ndrdump --debug-stdout drsuapi 3 out --base64-input "
             "--input BwAAAAcAAAAGAAAAAwAgICAgICAJAAAAICAgIAkAAAAgIAAA//////8=")
@@ -535,7 +476,7 @@ dump OK
             self.fail(e)
         # check_output will return bytes
         # convert expected to bytes for python 3
-        self.assertRegex(actual.decode('utf8'), expected + '$')
+        self.assertRegex(actual.decode('utf8'), expected)
 
     def test_ndrdump_short_dnsProperty(self):
         expected = b'''pull returned Success
@@ -556,4 +497,43 @@ dump OK
             actual = self.check_output(command)
         except BlackboxProcessError as e:
             self.fail(e)
+        self.assertEqual(actual, expected)
+
+    # This is compressed with Microsoft's compression, so we can't do a validate
+    def test_ndrdump_compressed_claims(self):
+        expected =  open(self.data_path("compressed_claims.txt"), 'rb').read()
+
+        try:
+            actual = self.check_output(
+                "ndrdump --debug-stdout claims CLAIMS_SET_METADATA_NDR struct --hex-input --input " + \
+                "01100800cccccccc500200000000000000000200290200000400020004000000282000000000000000000000000000002902000073778788878808880700080007800800060007000700070887770780080088008870070008000808000080000000008070787787770076770867868788000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000007700080080000000870000000000000085070000000000007476800000000000750587000800000066078000000080706677880080008060878708000000008000800000000000800000000000000000000000000000000000000000000000006080080000000070000000000000000000000000000000000000000000000000fd74eaf001add6213aecf4346587eec48c323e3e1a5a32042eecf243669a581e383d2940e80e383c294463b8c0b49024f1def20df819586b086cd2ab98700923386674845663ef57e91718110c1ad4c0ac88912126d2180545e98670ea2aa002052aa54189cc318d26c46b667f18b6876262a9a4985ecdf76e5161033fd457ba020075360c837aaa3aa82749ee8152420999b553c60195be5e5c35c4330557538772972a7d527aeca1fc6b2951ca254ac83960272a930f3194892d4729eff48e48ccfb929329ff501c356c0e8ed18471ec70986c31da86a8090b4022c1db257514fdba4347532146648d4f99f9065e0d9a0d90d80f38389c39cb9ebe6d4e5e681e5a8a5418f591f1dbb7594a3f2aa3220ced1cd18cb49cffcc2ff18eef6caf443663640c5664000012000000")
+        except BlackboxProcessError as e:
+            self.fail(e)
+
+        self.assertEqual(actual, expected)
+
+    def test_ndrdump_uncompressed_claims(self):
+        expected =  open(self.data_path("uncompressed_claims.txt"), 'rb').read()
+
+        try:
+            actual = self.check_output(
+                "ndrdump --debug-stdout claims CLAIMS_SET_METADATA_NDR struct --hex-input --input " + \
+                "01100800cccccccc800100000000000000000200580100000400020000000000580100000000000000000000000000005801000001100800cccccccc480100000000000000000200010000000400020000000000000000000000000001000000010000000300000008000200030000000c000200060006000100000010000200140002000300030003000000180002002800020002000200040000002c0002000b000000000000000b000000370032003000660064003300630033005f00390000000000010000000000000001000000000000000b000000000000000b000000370032003000660064003300630033005f00370000000000030000001c000200200002002400020004000000000000000400000066006f006f0000000400000000000000040000006200610072000000040000000000000004000000620061007a0000000b000000000000000b000000370032003000660064003300630033005f003800000000000400000009000a000000000007000100000000000600010000000000000001000000000000000000")
+        except BlackboxProcessError as e:
+            self.fail(e)
+
+        self.assertEqual(actual, expected)
+
+    # We can't run --validate here as currently we can't round-trip
+    # this data due to uninitialised padding in the sample
+    def test_ndrdump_claims_CLAIMS_SET_NDR(self):
+        expected =  open(self.data_path("claims_CLAIMS_SET_NDR.txt"), 'rb').read()
+
+        try:
+            actual = self.check_output(
+                "ndrdump --debug-stdout claims CLAIMS_SET_NDR struct --hex-input " + \
+                self.data_path("claims_CLAIMS_SET_NDR.dat"))
+        except BlackboxProcessError as e:
+            self.fail(e)
+
         self.assertEqual(actual, expected)

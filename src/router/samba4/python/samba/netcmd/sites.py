@@ -17,15 +17,89 @@
 #
 
 from samba import sites, subnets
-from samba.samdb import SamDB
 import samba.getopt as options
-from samba.auth import system_session
 from samba.netcmd import (
     Command,
     CommandError,
     SuperCommand,
     Option,
 )
+from samba.netcmd.domain.models import Site, Subnet
+from samba.netcmd.domain.models.exceptions import ModelError
+
+
+class cmd_sites_list(Command):
+    """List sites."""
+
+    synopsis = "%prog [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server",
+               type=str, metavar="URL", dest="ldap_url"),
+        Option("--json", help="Output results in JSON format.",
+               dest="output_format", action="store_const", const="json"),
+    ]
+
+    def run(self, ldap_url=None, sambaopts=None, credopts=None,
+            versionopts=None, output_format=None):
+
+        ldb = self.ldb_connect(ldap_url, sambaopts, credopts)
+
+        # sites by cn.
+        try:
+            sites_dict = {site.cn: site.as_dict()
+                          for site in Site.query(ldb)}
+        except ModelError as e:
+            raise CommandError(e)
+
+        # Using json output format gives more detail.
+        if output_format == "json":
+            self.print_json(sites_dict)
+        else:
+            for site in sites_dict.keys():
+                self.outf.write(f"{site}\n")
+
+
+class cmd_sites_view(Command):
+    """View one site."""
+
+    synopsis = "%prog <site> [options]"
+
+    takes_args = ["sitename"]
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server",
+               type=str, metavar="URL", dest="ldap_url"),
+    ]
+
+    def run(self, sitename, ldap_url=None, sambaopts=None, credopts=None,
+            versionopts=None):
+
+        ldb = self.ldb_connect(ldap_url, sambaopts, credopts)
+
+        try:
+            site = Site.get(ldb, cn=sitename)
+        except ModelError as e:
+            raise CommandError(e)
+
+        # Check if site exists first.
+        if site is None:
+            raise CommandError(f"Site {sitename} not found.")
+
+        # Display site as JSON.
+        self.print_json(site.as_dict())
 
 
 class cmd_sites_create(Command):
@@ -48,10 +122,7 @@ class cmd_sites_create(Command):
 
     def run(self, sitename, H=None, sambaopts=None, credopts=None,
             versionopts=None):
-        lp = sambaopts.get_loadparm()
-        creds = credopts.get_credentials(lp, fallback_machine=True)
-        samdb = SamDB(url=H, session_info=system_session(),
-                      credentials=creds, lp=lp)
+        samdb = self.ldb_connect(H, sambaopts, credopts)
 
         samdb.transaction_start()
         try:
@@ -85,10 +156,7 @@ class cmd_sites_delete(Command):
 
     def run(self, sitename, H=None, sambaopts=None, credopts=None,
             versionopts=None):
-        lp = sambaopts.get_loadparm()
-        creds = credopts.get_credentials(lp, fallback_machine=True)
-        samdb = SamDB(url=H, session_info=system_session(),
-                      credentials=creds, lp=lp)
+        samdb = self.ldb_connect(H, sambaopts, credopts)
 
         samdb.transaction_start()
         try:
@@ -100,6 +168,92 @@ class cmd_sites_delete(Command):
                 "Error while removing site %s, error: %s" % (sitename, str(e)))
 
         self.outf.write("Site %s removed!\n" % sitename)
+
+
+class cmd_sites_subnet_list(Command):
+    """List subnets."""
+
+    synopsis = "%prog <site> [options]"
+
+    takes_args = ["sitename"]
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server",
+               type=str, metavar="URL", dest="ldap_url"),
+        Option("--json", help="Output results in JSON format.",
+               dest="output_format", action="store_const", const="json"),
+    ]
+
+    def run(self, sitename, ldap_url=None, sambaopts=None, credopts=None,
+            versionopts=None, output_format=None):
+
+        ldb = self.ldb_connect(ldap_url, sambaopts, credopts)
+
+        try:
+            site = Site.get(ldb, cn=sitename)
+        except ModelError as e:
+            raise CommandError(e)
+
+        # Check if site exists first.
+        if site is None:
+            raise CommandError(f"Site {sitename} not found.")
+
+        # subnets by cn.
+        try:
+            subnets_dict = {subnet.cn: subnet.as_dict()
+                            for subnet in Subnet.query(ldb,
+                                                       site_object=str(site.dn))}
+        except ModelError as e:
+            raise CommandError(e)
+
+        # Using json output format gives more detail.
+        if output_format == "json":
+            self.print_json(subnets_dict)
+        else:
+            for subnet in subnets_dict.keys():
+                self.outf.write(f"{subnet}\n")
+
+
+class cmd_sites_subnet_view(Command):
+    """View subnet details."""
+
+    synopsis = "%prog <subnet> [options]"
+
+    takes_args = ["subnetname"]
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server",
+               type=str, metavar="URL", dest="ldap_url"),
+    ]
+
+    def run(self, subnetname, ldap_url=None, sambaopts=None, credopts=None,
+            versionopts=None):
+
+        ldb = self.ldb_connect(ldap_url, sambaopts, credopts)
+
+        try:
+            subnet = Subnet.get(ldb, cn=subnetname)
+        except ModelError as e:
+            raise CommandError(e)
+
+        # Check if subnet exists first.
+        if subnet is None:
+            raise CommandError(f"Subnet {subnetname} not found.")
+
+        # Display subnet as JSON.
+        self.print_json(subnet.as_dict())
 
 
 class cmd_sites_subnet_create(Command):
@@ -120,10 +274,7 @@ class cmd_sites_subnet_create(Command):
 
     def run(self, subnetname, site_of_subnet, H=None, sambaopts=None,
             credopts=None, versionopts=None):
-        lp = sambaopts.get_loadparm()
-        creds = credopts.get_credentials(lp)
-        samdb = SamDB(url=H, session_info=system_session(),
-                      credentials=creds, lp=lp)
+        samdb = self.ldb_connect(H, sambaopts, credopts)
 
         samdb.transaction_start()
         try:
@@ -158,10 +309,7 @@ class cmd_sites_subnet_delete(Command):
 
     def run(self, subnetname, H=None, sambaopts=None, credopts=None,
             versionopts=None):
-        lp = sambaopts.get_loadparm()
-        creds = credopts.get_credentials(lp)
-        samdb = SamDB(url=H, session_info=system_session(),
-                      credentials=creds, lp=lp)
+        samdb = self.ldb_connect(H, sambaopts, credopts)
 
         samdb.transaction_start()
         try:
@@ -193,10 +341,7 @@ class cmd_sites_subnet_set_site(Command):
 
     def run(self, subnetname, site_of_subnet, H=None, sambaopts=None,
             credopts=None, versionopts=None):
-        lp = sambaopts.get_loadparm()
-        creds = credopts.get_credentials(lp)
-        samdb = SamDB(url=H, session_info=system_session(),
-                      credentials=creds, lp=lp)
+        samdb = self.ldb_connect(H, sambaopts, credopts)
 
         samdb.transaction_start()
         try:
@@ -217,6 +362,8 @@ class cmd_sites_subnet(SuperCommand):
     subcommands = {
         "create": cmd_sites_subnet_create(),
         "remove": cmd_sites_subnet_delete(),
+        "list": cmd_sites_subnet_list(),
+        "view": cmd_sites_subnet_view(),
         "set-site": cmd_sites_subnet_set_site(),
     }
 
@@ -224,6 +371,8 @@ class cmd_sites_subnet(SuperCommand):
 class cmd_sites(SuperCommand):
     """Sites management."""
     subcommands = {}
+    subcommands["list"] = cmd_sites_list()
+    subcommands["view"] = cmd_sites_view()
     subcommands["create"] = cmd_sites_create()
     subcommands["remove"] = cmd_sites_delete()
     subcommands["subnet"] = cmd_sites_subnet()

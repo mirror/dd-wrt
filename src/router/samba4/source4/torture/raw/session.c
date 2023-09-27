@@ -1,18 +1,18 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    test suite for session setup operations
    Copyright (C) Gregor Beck 2012
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -246,12 +246,18 @@ static bool test_session_expire1(struct torture_context *tctx)
 	use_kerberos = cli_credentials_get_kerberos_state(
 				samba_cmdline_get_creds());
 	if (use_kerberos != CRED_USE_KERBEROS_REQUIRED) {
-		torture_warning(tctx, "smb2.session.expire1 requires -k yes!");
-		torture_skip(tctx, "smb2.session.expire1 requires -k yes!");
+		torture_warning(tctx,
+				"smb2.session.expire1 requires "
+				"--use-kerberos=required!");
+		torture_skip(tctx,
+			     "smb2.session.expire1 requires "
+			     "--use-kerberos=required!");
 	}
 
-	torture_assert_int_equal(tctx, use_kerberos, CRED_USE_KERBEROS_REQUIRED,
-				 "please use -k yes");
+	torture_assert_int_equal(tctx,
+				 use_kerberos,
+				 CRED_USE_KERBEROS_REQUIRED,
+				 "please use --use-kerberos=required");
 
 	lpcfg_set_option(tctx->lp_ctx, "gensec_gssapi:requested_life_time=4");
 

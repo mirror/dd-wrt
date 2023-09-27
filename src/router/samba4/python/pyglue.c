@@ -20,11 +20,13 @@
 #include <Python.h>
 #include "python/py3compat.h"
 #include "includes.h"
+#include "python/modules.h"
 #include "version.h"
 #include "param/pyparam.h"
 #include "lib/socket/netif.h"
 #include "lib/util/debug.h"
 #include "librpc/ndr/ndr_private.h"
+#include "lib/cmdline/cmdline.h"
 
 void init_glue(void);
 static PyObject *PyExc_NTSTATUSError;
@@ -34,40 +36,44 @@ static PyObject *PyExc_DsExtendedError;
 
 static PyObject *py_generate_random_str(PyObject *self, PyObject *args)
 {
-	int len;
+	Py_ssize_t len;
 	PyObject *ret;
 	char *retstr;
-	if (!PyArg_ParseTuple(args, "i", &len)) {
+
+	if (!PyArg_ParseTuple(args, "n", &len)) {
 		return NULL;
 	}
 	if (len < 0) {
 		PyErr_Format(PyExc_ValueError,
-			     "random string length should be positive, not %d",
+			     "random string length should be positive, not %zd",
 			     len);
 		return NULL;
 	}
 	retstr = generate_random_str(NULL, len);
-	ret = PyUnicode_FromString(retstr);
+	if (retstr == NULL) {
+		return PyErr_NoMemory();
+	}
+	ret = PyUnicode_FromStringAndSize(retstr, len);
 	talloc_free(retstr);
 	return ret;
 }
 
 static PyObject *py_generate_random_password(PyObject *self, PyObject *args)
 {
-	int min, max;
+	Py_ssize_t min, max;
 	PyObject *ret;
 	char *retstr;
-	if (!PyArg_ParseTuple(args, "ii", &min, &max)) {
+
+	if (!PyArg_ParseTuple(args, "nn", &min, &max)) {
 		return NULL;
 	}
 	if (max < 0 || min < 0) {
 		/*
-		 * The real range checks happen in generate_random_password().
-		 * Here we are just checking the values won't overflow into
-		 * numbers when cast to size_t.
+		 * The real range checks happens in generate_random_password().
+		 * Here just filter out any negative numbers.
 		 */
 		PyErr_Format(PyExc_ValueError,
-			     "invalid range: %d - %d",
+			     "invalid range: %zd - %zd",
 			     min, max);
 		return NULL;
 	}
@@ -75,11 +81,11 @@ static PyObject *py_generate_random_password(PyObject *self, PyObject *args)
 	retstr = generate_random_password(NULL, min, max);
 	if (retstr == NULL) {
 		if (errno == EINVAL) {
-			PyErr_Format(PyExc_ValueError,
-				     "invalid range: %d - %d",
-				     min, max);
+			return PyErr_Format(PyExc_ValueError,
+					    "invalid range: %zd - %zd",
+					    min, max);
 		}
-		return NULL;
+		return PyErr_NoMemory();
 	}
 	ret = PyUnicode_FromString(retstr);
 	talloc_free(retstr);
@@ -88,21 +94,21 @@ static PyObject *py_generate_random_password(PyObject *self, PyObject *args)
 
 static PyObject *py_generate_random_machine_password(PyObject *self, PyObject *args)
 {
-	int min, max;
+	Py_ssize_t min, max;
 	PyObject *ret;
 	char *retstr;
-	if (!PyArg_ParseTuple(args, "ii", &min, &max)) {
+
+	if (!PyArg_ParseTuple(args, "nn", &min, &max)) {
 		return NULL;
 	}
 	if (max < 0 || min < 0) {
 		/*
-		 * The real range checks happen in
+		 * The real range checks happens in
 		 * generate_random_machine_password().
-		 * Here we are just checking the values won't overflow into
-		 * numbers when cast to size_t.
+		 * Here we just filter out any negative numbers.
 		 */
 		PyErr_Format(PyExc_ValueError,
-			     "invalid range: %d - %d",
+			     "invalid range: %zd - %zd",
 			     min, max);
 		return NULL;
 	}
@@ -110,11 +116,11 @@ static PyObject *py_generate_random_machine_password(PyObject *self, PyObject *a
 	retstr = generate_random_machine_password(NULL, min, max);
 	if (retstr == NULL) {
 		if (errno == EINVAL) {
-			PyErr_Format(PyExc_ValueError,
-				     "invalid range: %d - %d",
-				     min, max);
+			return PyErr_Format(PyExc_ValueError,
+					    "invalid range: %zd - %zd",
+					    min, max);
 		}
-		return NULL;
+		return PyErr_NoMemory();
 	}
 	ret = PyUnicode_FromString(retstr);
 	talloc_free(retstr);
@@ -134,16 +140,16 @@ static PyObject *py_check_password_quality(PyObject *self, PyObject *args)
 
 static PyObject *py_generate_random_bytes(PyObject *self, PyObject *args)
 {
-	int len;
+	Py_ssize_t len;
 	PyObject *ret;
 	uint8_t *bytes = NULL;
 
-	if (!PyArg_ParseTuple(args, "i", &len)) {
+	if (!PyArg_ParseTuple(args, "n", &len)) {
 		return NULL;
 	}
 	if (len < 0) {
 		PyErr_Format(PyExc_ValueError,
-			     "random bytes length should be positive, not %d",
+			     "random bytes length should be positive, not %zd",
 			     len);
 		return NULL;
 	}
@@ -353,7 +359,7 @@ static PyObject *py_interface_ips(PyObject *self, PyObject *args)
 	lp_ctx = lpcfg_from_py_object(tmp_ctx, py_lp_ctx);
 	if (lp_ctx == NULL) {
 		talloc_free(tmp_ctx);
-		return NULL;
+		return PyErr_NoMemory();
 	}
 
 	load_interface_list(tmp_ctx, lp_ctx, &ifaces);
@@ -461,6 +467,62 @@ static PyObject *py_strstr_m(PyObject *self, PyObject *args)
 	return result;
 }
 
+static PyObject *py_get_burnt_commandline(PyObject *self, PyObject *args)
+{
+	PyObject *cmdline_as_list, *ret;
+	char *burnt_cmdline = NULL;
+	Py_ssize_t i, argc;
+	char **argv = NULL;
+	TALLOC_CTX *frame = talloc_stackframe();
+	bool burnt;
+
+	if (!PyArg_ParseTuple(args, "O!", &PyList_Type, &cmdline_as_list))
+	{
+		TALLOC_FREE(frame);
+		return NULL;
+	}
+
+	argc = PyList_GET_SIZE(cmdline_as_list);
+
+	if (argc == 0) {
+		TALLOC_FREE(frame);
+		Py_RETURN_NONE;
+	}
+
+	argv = PyList_AsStringList(frame, cmdline_as_list, "sys.argv");
+	if (argv == NULL) {
+		return NULL;
+	}
+
+	burnt = samba_cmdline_burn(argc, argv);
+	if (!burnt) {
+		TALLOC_FREE(frame);
+		Py_RETURN_NONE;
+	}
+
+	for (i = 0; i < argc; i++) {
+		if (i == 0) {
+			burnt_cmdline = talloc_strdup(frame,
+						      argv[i]);
+		} else {
+			burnt_cmdline
+				= talloc_asprintf_append(burnt_cmdline,
+							 " %s",
+							 argv[i]);
+		}
+		if (burnt_cmdline == NULL) {
+			PyErr_NoMemory();
+			TALLOC_FREE(frame);
+			return NULL;
+		}
+	}
+
+	ret = PyUnicode_FromString(burnt_cmdline);
+	TALLOC_FREE(frame);
+
+	return ret;
+}
+
 static PyMethodDef py_misc_methods[] = {
 	{ "generate_random_str", (PyCFunction)py_generate_random_str, METH_VARARGS,
 		"generate_random_str(len) -> string\n"
@@ -520,6 +582,8 @@ static PyMethodDef py_misc_methods[] = {
 		METH_NOARGS, "is Samba built with selftest enabled?" },
 	{ "ndr_token_max_list_size", (PyCFunction)py_ndr_token_max_list_size,
 		METH_NOARGS, "How many NDR internal tokens is too many for this build?" },
+	{ "get_burnt_commandline", (PyCFunction)py_get_burnt_commandline,
+		METH_VARARGS, "Return a redacted commandline to feed to setproctitle (None if no redaction required)" },
 	{0}
 };
 

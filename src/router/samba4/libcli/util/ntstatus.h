@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    NT error code constants
    Copyright (C) Andrew Tridgell              1992-2000
@@ -23,12 +23,14 @@
 #ifndef _NTSTATUS_H
 #define _NTSTATUS_H
 
+#include <stdint.h>
+
 #include "libcli/util/ntstatus_gen.h"
 
-/* the following rather strange looking definitions of NTSTATUS 
+/* the following rather strange looking definitions of NTSTATUS
    are there in order to catch common coding errors where different error types
    are mixed up. This is especially important as we slowly convert Samba
-   from using bool for internal functions 
+   from using bool for internal functions
 */
 
 #if defined(HAVE_IMMEDIATE_STRUCTURES)
@@ -49,8 +51,6 @@ typedef uint32_t NTSTATUS;
 #define NT_STATUS_SMB_NO_PREAUTH_INTEGRITY_HASH_OVERLAP	NT_STATUS(0xC05D0000)
 
 /* Other error codes that aren't in the list we use */
-#define NT_STATUS_OK			  NT_STATUS_SUCCESS
-
 #define STATUS_MORE_ENTRIES		  NT_STATUS_MORE_ENTRIES
 #define STATUS_BUFFER_OVERFLOW		  NT_STATUS_BUFFER_OVERFLOW
 #define STATUS_NO_MORE_FILES		  NT_STATUS_NO_MORE_FILES

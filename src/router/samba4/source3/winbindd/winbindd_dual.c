@@ -952,6 +952,13 @@ void winbindd_msg_reload_services_parent(struct messaging_context *msg,
 
 	winbindd_reload_services_file((const char *)private_data);
 
+	/* Set tevent_thread_call_depth_set_callback according to debug level */
+	if (lp_winbind_debug_traceid() && debuglevel_get() > 1) {
+		tevent_thread_call_depth_set_callback(winbind_call_flow, NULL);
+	} else {
+		tevent_thread_call_depth_set_callback(NULL, NULL);
+	}
+
 	forall_children(winbind_msg_relay_fn, &state);
 }
 
@@ -1742,6 +1749,12 @@ static bool fork_domain_child(struct winbindd_child *child)
 	state.cli.sock = fdpair[0];
 	close(fdpair[1]);
 
+	/* Reset traceid and deactivate call_depth tracking */
+	if (lp_winbind_debug_traceid()) {
+		debug_traceid_set(1);
+		tevent_thread_call_depth_set_callback(NULL, NULL);
+	}
+
 	status = winbindd_reinit_after_fork(child, child->logfilename);
 
 	/* setup callbacks again, one of them is removed in reinit_after_fork */
@@ -2012,7 +2025,7 @@ static void flush_caches_noinit(void)
 	 * If domain is not initialized, it means it is never
 	 * used or never become online. look, wcache_invalidate_cache()
 	 * -> get_cache() -> init_dc_connection(). It causes a lot of traffic
-	 * for unused domains and large traffic for primay domain's DC if there
+	 * for unused domains and large traffic for primary domain's DC if there
 	 * are many domains..
 	 */
 

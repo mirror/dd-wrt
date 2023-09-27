@@ -469,7 +469,7 @@ bld.SAMBA3_LIBRARY('secrets3',
                           passdb/secrets_lsa.c
                           ''',
                    deps='''
-                        NDR_SECRETS
+                        ndr-samba4
                         smbconf
                         samba3util
                         dbwrap
@@ -645,7 +645,6 @@ bld.SAMBA3_LIBRARY('smbd_base',
                           smbd/sec_ctx.c
                           smbd/srvstr.c
                           smbd/vfs.c
-                          smbd/perfcount.c
                           smbd/seal.c
                           smbd/posix_acls.c
                           lib/sysacls.c
@@ -774,11 +773,14 @@ bld.SAMBA3_SUBSYSTEM('LEASES_UTIL',
                     deps='NDR_OPEN_FILES')
 
 if bld.CONFIG_GET("WITH_PROFILE"):
+    bld.SAMBA_SUBSYSTEM('PROFILE_READ',
+                        source='profile/profile_read.c',
+                        deps='gnutls talloc tdb')
     bld.SAMBA3_SUBSYSTEM('PROFILE',
                          source='profile/profile.c',
                          deps='''
                               samba-util
-                              gnutls
+                              PROFILE_READ
                               ''')
 else:
     bld.SAMBA3_SUBSYSTEM('PROFILE',

@@ -58,7 +58,7 @@ struct ldb_message_element *ldb_msg_find_element(const struct ldb_message *msg,
 
 /*
   see if two ldb_val structures contain exactly the same data
-  return 1 for a match, 0 for a mis-match
+  return 1 for a match, 0 for a mismatch
 */
 int ldb_val_equal_exact(const struct ldb_val *v1, const struct ldb_val *v2)
 {
@@ -569,8 +569,6 @@ int ldb_msg_add_steal_string(struct ldb_message *msg,
 
 /*
   add a DN element to a message
-  WARNING: this uses the linearized string from the dn, and does not
-  copy the string.
 */
 int ldb_msg_add_linearized_dn(struct ldb_message *msg, const char *attr_name,
 			      struct ldb_dn *dn)
@@ -703,8 +701,6 @@ int ldb_msg_append_string(struct ldb_message *msg,
 
 /*
   append a DN element to a message
-  WARNING: this uses the linearized string from the dn, and does not
-  copy the string.
 */
 int ldb_msg_append_linearized_dn(struct ldb_message *msg, const char *attr_name,
 				 struct ldb_dn *dn, int flags)
@@ -903,64 +899,82 @@ int64_t ldb_msg_find_attr_as_int64(const struct ldb_message *msg,
 				   const char *attr_name,
 				   int64_t default_value)
 {
+	int64_t val = 0;
 	const struct ldb_val *v = ldb_msg_find_ldb_val(msg, attr_name);
+	int ret = ldb_val_as_int64(v, &val);
+	return ret ? default_value : val;
+}
+
+int ldb_val_as_int64(const struct ldb_val *v, int64_t *val)
+{
 	char buf[sizeof("-9223372036854775808")];
 	char *end = NULL;
-	int64_t ret;
+	int64_t result;
 
 	if (!v || !v->data) {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
 	ZERO_STRUCT(buf);
 	if (v->length >= sizeof(buf)) {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
 	memcpy(buf, v->data, v->length);
 	errno = 0;
-	ret = (int64_t) strtoll(buf, &end, 10);
+	result = (int64_t) strtoll(buf, &end, 10);
 	if (errno != 0) {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
 	if (end && end[0] != '\0') {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
-	return ret;
+
+	*val = result;
+	return LDB_SUCCESS;
 }
 
 uint64_t ldb_msg_find_attr_as_uint64(const struct ldb_message *msg,
 				     const char *attr_name,
 				     uint64_t default_value)
 {
+	uint64_t val = 0;
 	const struct ldb_val *v = ldb_msg_find_ldb_val(msg, attr_name);
+	int ret = ldb_val_as_uint64(v, &val);
+	return ret ? default_value : val;
+}
+
+int ldb_val_as_uint64(const struct ldb_val *v, uint64_t *val)
+{
 	char buf[sizeof("-9223372036854775808")];
 	char *end = NULL;
-	uint64_t ret;
+	uint64_t result;
 
 	if (!v || !v->data) {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
 	ZERO_STRUCT(buf);
 	if (v->length >= sizeof(buf)) {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
 	memcpy(buf, v->data, v->length);
 	errno = 0;
-	ret = (uint64_t) strtoll(buf, &end, 10);
+	result = (uint64_t) strtoll(buf, &end, 10);
 	if (errno != 0) {
 		errno = 0;
-		ret = (uint64_t) strtoull(buf, &end, 10);
+		result = (uint64_t) strtoull(buf, &end, 10);
 		if (errno != 0) {
-			return default_value;
+			return LDB_ERR_OPERATIONS_ERROR;
 		}
 	}
 	if (end && end[0] != '\0') {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
-	return ret;
+
+	*val = result;
+	return LDB_SUCCESS;
 }
 
 double ldb_msg_find_attr_as_double(const struct ldb_message *msg,
@@ -996,17 +1010,26 @@ int ldb_msg_find_attr_as_bool(const struct ldb_message *msg,
 			      const char *attr_name,
 			      int default_value)
 {
+	bool val = false;
 	const struct ldb_val *v = ldb_msg_find_ldb_val(msg, attr_name);
+	int ret = ldb_val_as_bool(v, &val);
+	return ret ? default_value : val;
+}
+
+int ldb_val_as_bool(const struct ldb_val *v, bool *val)
+{
 	if (!v || !v->data) {
-		return default_value;
+		return LDB_ERR_OPERATIONS_ERROR;
 	}
 	if (v->length == 5 && strncasecmp((const char *)v->data, "FALSE", 5) == 0) {
-		return 0;
+		*val = false;
+		return LDB_SUCCESS;
 	}
 	if (v->length == 4 && strncasecmp((const char *)v->data, "TRUE", 4) == 0) {
-		return 1;
+		*val = true;
+		return LDB_SUCCESS;
 	}
-	return default_value;
+	return LDB_ERR_OPERATIONS_ERROR;
 }
 
 const char *ldb_msg_find_attr_as_string(const struct ldb_message *msg,
@@ -1028,10 +1051,16 @@ struct ldb_dn *ldb_msg_find_attr_as_dn(struct ldb_context *ldb,
 				       const struct ldb_message *msg,
 				       const char *attr_name)
 {
-	struct ldb_dn *res_dn;
-	const struct ldb_val *v;
+	const struct ldb_val *v = ldb_msg_find_ldb_val(msg, attr_name);
+	return ldb_val_as_dn(ldb, mem_ctx, v);
+}
 
-	v = ldb_msg_find_ldb_val(msg, attr_name);
+struct ldb_dn *ldb_val_as_dn(struct ldb_context *ldb,
+			     TALLOC_CTX *mem_ctx,
+			     const struct ldb_val *v)
+{
+	struct ldb_dn *res_dn;
+
 	if (!v || !v->data) {
 		return NULL;
 	}
@@ -1490,11 +1519,18 @@ void ldb_msg_remove_element(struct ldb_message *msg, struct ldb_message_element 
 */
 void ldb_msg_remove_attr(struct ldb_message *msg, const char *attr)
 {
-	struct ldb_message_element *el;
+	unsigned int i;
+	unsigned int num_del = 0;
 
-	while ((el = ldb_msg_find_element(msg, attr)) != NULL) {
-		ldb_msg_remove_element(msg, el);
+	for (i = 0; i < msg->num_elements; ++i) {
+		if (ldb_attr_cmp(msg->elements[i].name, attr) == 0) {
+			++num_del;
+		} else if (num_del) {
+			msg->elements[i - num_del] = msg->elements[i];
+		}
 	}
+
+	msg->num_elements -= num_del;
 }
 
 /* Reallocate elements to drop any excess capacity. */
@@ -1526,7 +1562,7 @@ char *ldb_timestring(TALLOC_CTX *mem_ctx, time_t t)
 		return NULL;
 	}
 
-	/* we now excatly how long this string will be */
+	/* we now exactly how long this string will be */
 	ts = talloc_array(mem_ctx, char, 18);
 
 	/* formatted like: 20040408072012.0Z */
@@ -1642,7 +1678,7 @@ char *ldb_timestring_utc(TALLOC_CTX *mem_ctx, time_t t)
 		return NULL;
 	}
 
-	/* we now excatly how long this string will be */
+	/* we now exactly how long this string will be */
 	ts = talloc_array(mem_ctx, char, 14);
 
 	/* formatted like: 20040408072012.0Z => 040408072012Z */

@@ -98,7 +98,7 @@ bld.SAMBA_SUBSYSTEM('KDC-GLUE',
 bld.SAMBA_SUBSYSTEM('WDC_SAMBA4',
 	source='wdc-samba4.c',
         includes=kdc_include,
-	deps='ldb auth4_sam common_auth samba-credentials hdb PAC_GLUE samba-hostconfig com_err KDC-GLUE',
+	deps='ldb auth4_sam common_auth samba-credentials hdb PAC_GLUE samba-hostconfig com_err KDC-GLUE authn_policy_util',
 	enabled=bld.CONFIG_SET('SAMBA4_USES_HEIMDAL')
 	)
 
@@ -122,8 +122,8 @@ bld.SAMBA_SUBSYSTEM('sdb_kdb',
 	)
 
 bld.SAMBA_SUBSYSTEM('PAC_GLUE',
-	source='pac-glue.c',
-	deps='ldb auth4_sam common_auth samba-credentials samba-hostconfig com_err'
+	source='pac-glue.c pac-blobs.c',
+	deps='ldb auth4_sam common_auth samba-credentials samba-hostconfig com_err ad_claims authn_policy authn_policy_util'
 	)
 
 bld.SAMBA_LIBRARY('pac',
@@ -135,7 +135,19 @@ bld.SAMBA_LIBRARY('pac',
 
 bld.SAMBA_LIBRARY('db-glue',
 	source='db-glue.c',
-	deps='ldb auth4_sam common_auth samba-credentials sdb samba-hostconfig com_err RPC_NDR_IRPC MESSAGING PAC_GLUE',
+	deps='ldb auth4_sam common_auth samba-credentials sdb samba-hostconfig com_err RPC_NDR_IRPC MESSAGING PAC_GLUE authn_policy_util',
+	private_library=True,
+	)
+
+bld.SAMBA_LIBRARY('ad_claims',
+	source='ad_claims.c',
+	deps='ldb samba-util samdb dsdb-module authn_policy_util',
+	private_library=True,
+	)
+
+bld.SAMBA_LIBRARY('authn_policy_util',
+	source='authn_policy_util.c',
+	deps='authn_policy samdb dsdb-module',
 	private_library=True,
 	)
 

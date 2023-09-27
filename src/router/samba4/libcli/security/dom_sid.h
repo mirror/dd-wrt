@@ -70,6 +70,7 @@ extern const struct dom_sid global_sid_Samba_NPA_Flags;
 #define SAMBA_NPA_FLAGS_NEED_IDLE 1
 #define SAMBA_NPA_FLAGS_WINBIND_OFF 2
 
+struct auth_SidAttr;
 enum lsa_SidType;
 
 NTSTATUS dom_sid_lookup_predefined_name(const char *name,
@@ -105,6 +106,7 @@ NTSTATUS dom_sid_split_rid(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 			   struct dom_sid **domain, uint32_t *rid);
 bool dom_sid_in_domain(const struct dom_sid *domain_sid,
 		       const struct dom_sid *sid);
+bool dom_sid_has_account_domain(const struct dom_sid *sid);
 bool dom_sid_is_valid_account_domain(const struct dom_sid *sid);
 
 #define DOM_SID_STR_BUFLEN (15*11+25)
@@ -126,6 +128,12 @@ NTSTATUS add_sid_to_array(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 			  struct dom_sid **sids, uint32_t *num);
 NTSTATUS add_sid_to_array_unique(TALLOC_CTX *mem_ctx, const struct dom_sid *sid,
 				 struct dom_sid **sids, uint32_t *num_sids);
+NTSTATUS add_sid_to_array_attrs(TALLOC_CTX *mem_ctx,
+				const struct dom_sid *sid, uint32_t attrs,
+				struct auth_SidAttr **sids, uint32_t *num);
+NTSTATUS add_sid_to_array_attrs_unique(TALLOC_CTX *mem_ctx,
+				       const struct dom_sid *sid, uint32_t attrs,
+				       struct auth_SidAttr **sids, uint32_t *num_sids);
 void del_sid_from_array(const struct dom_sid *sid, struct dom_sid **sids,
 			uint32_t *num);
 bool add_rid_to_array_unique(TALLOC_CTX *mem_ctx,

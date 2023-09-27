@@ -1,0 +1,150 @@
+'\" t
+.\"     Title: samba-log-parser
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
+.\"    Manual: User Commands
+.\"    Source: Samba 4.19.0
+.\"  Language: English
+.\"
+.TH "SAMBA\-LOG\-PARSER" "1" "09/04/2023" "Samba 4\&.19\&.0" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+samba-log-parser \- Samba (winbind) trace parser\&.
+
+options:
+  \-h, \-\-help     show this help message and exit
+  \-\-traceid ID   specify the traceid of the trace records
+  \-\-pid PID      specify the pid of winbind client
+  \-\-breakdown    breakdown the traces into per traceid files
+  \-\-merge\-by\-timestamp   merge logs by timestamp
+  \-\-flow         show the request/sub\-request flow traces
+  \-\-flow\-compact show the request/sub\-request flow traces without dcerpc details
+.SH "SYNOPSIS"
+.HP \w'\ 'u
+samba\-log\-parser {path} [\-\-pid=PID] [\-\-traceid=ID] [\-\-breakdown] [\-\-merge\-by\-timestamp] [\-\-flow] [\-\-flow\-compact] [\-h|\-\-help]
+.SH "DESCRIPTION"
+.PP
+This tool is part of the
+\fBsamba\fR(7)
+suite\&.
+.PP
+The
+samba\-log\-parser
+program parses samba winbind logs\&.
+.SH "OPTIONS"
+.PP
+The following options are available to the
+samba\-log\-parser
+program\&.
+.PP
+\-\-pid=PID
+.RS 4
+Display traces for winbind client with the matching PID\&.
+.RE
+.PP
+\-\-traceid=ID
+.RS 4
+Display traces with matching traceid debug header field\&.
+.RE
+.PP
+\-\-breakdown
+.RS 4
+Break down all traces to separate files in the current working directory\&. For each traceid, three files are created: traceid\&.full traceid\&.flow traceid\&.flowcompact
+.RE
+.PP
+\-\-merge\-by\-timestamp
+.RS 4
+Sort the trace lines according to the timestamp\&. Works with log files without traceid header field as well\&.
+.RE
+.PP
+\-\-flow
+.RS 4
+Display the request/sub\-request flow\&.
+.RE
+.PP
+\-\-flow\-compact
+.RS 4
+Display the request/sub\-request flow without dcerpc call details\&.
+.RE
+.SH "EXAMPLES"
+.PP
+Show the flow traces for trace id
+\fI1234\fR
+from log file log\&.winbind:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	# samba\-log\-parser \-\-traceid 1234 \-\-flow /var/log/samba/log\&.winbind
+	
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Show the full traces for winbind client with PID
+\fI999999\fR
+sorted using the timestamp for log files found in the samba log directory:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	# samba\-log\-parser \-\-pid 999999 \-\-merge\-by\-timestamp /var/log/samba
+	
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Break down the traces into separate files according to traceid sorted using the timestamp for log files found in the samba log directory:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	# samba\-log\-parser \-\-breakdown \-\-merge\-by\-timestamp /var/log/samba
+	
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Sort traces using the timestamp for log files found in the samba log directory\&. Traces do not need to contain the traceid header field\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	# samba\-log\-parser \-\-merge\-by\-timestamp /var/log/samba
+	
+.fi
+.if n \{\
+.RE
+.\}
+.SH "VERSION"
+.PP
+This man page is part of version 4\&.19\&.0 of the Samba suite\&.
+.SH "AUTHOR"
+.PP
+The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -140,12 +140,22 @@ static bool dreplsrv_spn_exists(struct ldb_context *samdb, struct ldb_dn *accoun
 	const char *attrs_empty[] = { NULL };
 	int ret;
 	struct ldb_result *res;
+	const char *principal_name_encoded = NULL;
 
 	tmp_ctx = talloc_new(samdb);
+	if (tmp_ctx == NULL) {
+		return false;
+	}
+
+	principal_name_encoded = ldb_binary_encode_string(tmp_ctx, principal_name);
+	if (principal_name_encoded == NULL) {
+		talloc_free(tmp_ctx);
+		return false;
+	}
 
 	ret = dsdb_search(samdb, tmp_ctx, &res, account_dn, LDB_SCOPE_BASE, attrs_empty,
 			0, "servicePrincipalName=%s",
-			ldb_binary_encode_string(tmp_ctx, principal_name));
+			principal_name_encoded);
 	if (ret != LDB_SUCCESS || res->count != 1) {
 		talloc_free(tmp_ctx);
 		return false;
@@ -224,6 +234,10 @@ static NTSTATUS dreplsrv_get_target_principal(struct dreplsrv_service *s,
 		local_principal = talloc_asprintf(mem_ctx, "GC/%s/%s",
 						    hostname,
 						    samdb_dn_to_dns_domain(tmp_ctx, forest_dn));
+		if (local_principal == NULL) {
+			talloc_free(tmp_ctx);
+			return NT_STATUS_NO_MEMORY;
+		}
 		if (dreplsrv_spn_exists(s->samdb, computer_dn, local_principal)) {
 			*target_principal = local_principal;
 			talloc_free(tmp_ctx);

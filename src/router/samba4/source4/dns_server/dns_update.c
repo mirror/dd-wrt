@@ -394,8 +394,8 @@ static WERROR handle_one_update(struct dns_server *dns,
 	bool needs_add = false;
 	bool name_is_static;
 
-	DEBUG(2, ("Looking at record: \n"));
-	if (DEBUGLVL(2)) {
+	DBG_NOTICE("Looking at record: \n");
+	if (DEBUGLVL(DBGLVL_NOTICE)) {
 		NDR_PRINT_DEBUG(dns_res_rec, discard_const(update));
 	}
 
@@ -418,10 +418,12 @@ static WERROR handle_one_update(struct dns_server *dns,
 	}
 
 	werror = dns_name2dn(dns, mem_ctx, update->name, &dn);
+	DBG_DEBUG("dns_name2dn(): %s\n", win_errstr(werror));
 	W_ERROR_NOT_OK_RETURN(werror);
 
 	werror = dns_common_lookup(dns->samdb, mem_ctx, dn,
 				   &recs, &rcount, &tombstoned);
+	DBG_DEBUG("dns_common_lookup(): %s\n", win_errstr(werror));
 	if (W_ERROR_EQUAL(werror, WERR_DNS_ERROR_NAME_DOES_NOT_EXIST)) {
 		needs_add = true;
 		werror = WERR_OK;
@@ -439,7 +441,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 		if (rcount != 1) {
 			DBG_WARNING("Tombstoned dnsNode has %u records, "
 				    "expected 1\n", rcount);
-			if (DEBUGLVL(1)) {
+			if (DEBUGLVL(DBGLVL_WARNING)) {
 				NDR_PRINT_DEBUG(dns_res_rec, discard_const(update));
 			}
 		}
@@ -459,7 +461,6 @@ static WERROR handle_one_update(struct dns_server *dns,
 					DEBUG(5, ("Skipping update\n"));
 					return WERR_OK;
 				}
-				break;
 			}
 
 			/*
@@ -474,11 +475,13 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 			werror = dns_rr_to_dnsp(
 			    recs, update, &recs[rcount], name_is_static);
+			DBG_DEBUG("dns_rr_to_dnsp(CNAME): %s\n", win_errstr(werror));
 			W_ERROR_NOT_OK_RETURN(werror);
 			rcount += 1;
 
 			werror = dns_replace_records(dns, mem_ctx, dn,
 						     needs_add, recs, rcount);
+			DBG_DEBUG("dns_replace_records(CNAME): %s\n", win_errstr(werror));
 			W_ERROR_NOT_OK_RETURN(werror);
 
 			return WERR_OK;
@@ -527,6 +530,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 			werror = dns_rr_to_dnsp(
 			    mem_ctx, update, &recs[i], name_is_static);
+			DBG_DEBUG("dns_rr_to_dnsp(SOA): %s\n", win_errstr(werror));
 			W_ERROR_NOT_OK_RETURN(werror);
 
 			/*
@@ -539,7 +543,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 					continue;
 				}
 				DBG_ERR("Duplicate SOA records found.\n");
-				if (DEBUGLVL(0)) {
+				if (DEBUGLVL(DBGLVL_ERR)) {
 					NDR_PRINT_DEBUG(dns_res_rec,
 							discard_const(update));
 				}
@@ -550,6 +554,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 			werror = dns_replace_records(dns, mem_ctx, dn,
 						     needs_add, recs, rcount);
+			DBG_DEBUG("dns_replace_records(SOA): %s\n", win_errstr(werror));
 			W_ERROR_NOT_OK_RETURN(werror);
 
 			return WERR_OK;
@@ -561,6 +566,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 		werror =
 		    dns_rr_to_dnsp(recs, update, &recs[rcount], name_is_static);
+		DBG_DEBUG("dns_rr_to_dnsp(GENERIC): %s\n", win_errstr(werror));
 		W_ERROR_NOT_OK_RETURN(werror);
 
 		for (i = first; i < rcount; i++) {
@@ -576,6 +582,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 			recs[i].flags = 0;
 			werror = dns_replace_records(dns, mem_ctx, dn,
 						     needs_add, recs, rcount);
+			DBG_DEBUG("dns_replace_records(REPLACE): %s\n", win_errstr(werror));
 			W_ERROR_NOT_OK_RETURN(werror);
 
 			return WERR_OK;
@@ -583,6 +590,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 		/* we did not find a matching record. This is new. */
 		werror = dns_replace_records(dns, mem_ctx, dn,
 					     needs_add, recs, rcount+1);
+		DBG_DEBUG("dns_replace_records(ADD): %s\n", win_errstr(werror));
 		W_ERROR_NOT_OK_RETURN(werror);
 
 		return WERR_OK;
@@ -593,7 +601,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 		 * work out if the node as a whole needs tombstoning.
 		 */
 		if (update->rr_type == DNS_QTYPE_ALL) {
-			if (dns_name_equal(update->name, zone->name)) {
+			if (samba_dns_name_equal(update->name, zone->name)) {
 				for (i = first; i < rcount; i++) {
 
 					if (recs[i].wType == DNS_TYPE_SOA) {
@@ -617,7 +625,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 				}
 			}
 
-		} else if (dns_name_equal(update->name, zone->name)) {
+		} else if (samba_dns_name_equal(update->name, zone->name)) {
 
 			if (update->rr_type == DNS_QTYPE_SOA) {
 				return WERR_OK;
@@ -637,6 +645,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 		werror = dns_replace_records(dns, mem_ctx, dn,
 					     needs_add, recs, rcount);
+		DBG_DEBUG("dns_replace_records(DELETE-ANY): %s\n", win_errstr(werror));
 		W_ERROR_NOT_OK_RETURN(werror);
 
 		return WERR_OK;
@@ -655,6 +664,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 			werror = dns_rr_to_dnsp(
 			    ns_rec, update, ns_rec, name_is_static);
+			DBG_DEBUG("dns_rr_to_dnsp(NS): %s\n", win_errstr(werror));
 			W_ERROR_NOT_OK_RETURN(werror);
 
 			for (i = first; i < rcount; i++) {
@@ -673,6 +683,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 		werror =
 		    dns_rr_to_dnsp(del_rec, update, del_rec, name_is_static);
+		DBG_DEBUG("dns_rr_to_dnsp(DELETE-NONE): %s\n", win_errstr(werror));
 		W_ERROR_NOT_OK_RETURN(werror);
 
 		for (i = first; i < rcount; i++) {
@@ -685,6 +696,7 @@ static WERROR handle_one_update(struct dns_server *dns,
 
 		werror = dns_replace_records(dns, mem_ctx, dn,
 					     needs_add, recs, rcount);
+		DBG_DEBUG("dns_replace_records(DELETE-NONE): %s\n", win_errstr(werror));
 		W_ERROR_NOT_OK_RETURN(werror);
 	}
 
@@ -717,6 +729,7 @@ static WERROR handle_updates(struct dns_server *dns,
 	}
 
 	werror = dns_name2dn(dns, tmp_ctx, zone->name, &zone_dn);
+	DBG_DEBUG("dns_name2dn(): %s\n", win_errstr(werror));
 	W_ERROR_NOT_OK_GOTO(werror, failed);
 
 	ret = ldb_transaction_start(dns->samdb);
@@ -733,6 +746,8 @@ static WERROR handle_updates(struct dns_server *dns,
 	for (ri = 0; ri < upd_count; ri++) {
 		werror = handle_one_update(dns, tmp_ctx, zone,
 					   &updates[ri], tkey);
+		DBG_DEBUG("handle_one_update(%u): %s\n",
+			  ri, win_errstr(werror));
 		W_ERROR_NOT_OK_GOTO(werror, failed);
 	}
 
@@ -857,10 +872,12 @@ WERROR dns_server_process_update(struct dns_server *dns,
 	*update_count = in->nscount;
 	*updates = in->nsrecs;
 	werror = update_prescan(in->questions, *updates, *update_count);
+	DBG_DEBUG("update_prescan(): %s\n", win_errstr(werror));
 	W_ERROR_NOT_OK_RETURN(werror);
 
 	werror = handle_updates(dns, mem_ctx, in->questions, *prereqs,
 			        *prereq_count, *updates, *update_count, tkey);
+	DBG_DEBUG("handle_updates(): %s\n", win_errstr(werror));
 	W_ERROR_NOT_OK_RETURN(werror);
 
 	return werror;

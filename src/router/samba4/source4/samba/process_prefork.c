@@ -315,6 +315,9 @@ static void prefork_fork_master(
 		if (task != NULL && service_details->post_fork != NULL) {
 			service_details->post_fork(task, &pd);
 		}
+		if (task != NULL && service_details->before_loop != NULL) {
+			service_details->before_loop(task);
+		}
 		tevent_loop_wait(ev);
 		TALLOC_FREE(ev);
 		exit(0);
@@ -399,6 +402,51 @@ static void prefork_fork_master(
 	}
 
 	/*
+	 * Note, we call this before the first
+	 * prefork_fork_worker() in order to have
+	 * a stable order of:
+	 *  task_init(master) -> before_loop(master)
+	 *  -> post_fork(worker) -> before_loop(worker)
+	 *
+	 * Otherwise we would have different behaviors
+	 * between the first prefork_fork_worker() loop
+	 * and restarting of died workers
+	 */
+	if (task != NULL && service_details->before_loop != NULL) {
+		struct task_server *task_copy = NULL;
+
+		/*
+		 * We need to use ev as parent in order to
+		 * keep everything alive during the loop
+		 */
+		task_copy = talloc(ev, struct task_server);
+		if (task_copy == NULL) {
+			TALLOC_FREE(ev);
+			TALLOC_FREE(ev2);
+			exit(127);
+		}
+		*task_copy = *task;
+
+		/*
+		 * In order to allow the before_loop() hook
+		 * to register messages or event handlers,
+		 * we need to fix up task->event_ctx
+		 * and create a new task->msg_ctx
+		 */
+		task_copy->event_ctx = ev;
+		task_copy->msg_ctx = imessaging_init(task_copy,
+						task_copy->lp_ctx,
+						task_copy->server_id,
+						task_copy->event_ctx);
+		if (task_copy->msg_ctx == NULL) {
+			TALLOC_FREE(ev);
+			TALLOC_FREE(ev2);
+			exit(127);
+		}
+		service_details->before_loop(task_copy);
+	}
+
+	/*
 	 * We are now free to spawn some worker processes
 	 */
 	for (i=0; i < num_children; i++) {
@@ -414,8 +462,19 @@ static void prefork_fork_master(
 		pd.instances++;
 	}
 
+	/*
+	 * Make sure the messaging context
+	 * used by the workers is no longer
+	 * active on ev2, otherwise we
+	 * would have memory leaks, because
+	 * we queue incoming messages
+	 * and never process them via ev2.
+	 */
+	imessaging_dgm_unref_ev(ev2);
+
 	/* Don't listen on the sockets we just gave to the children */
 	tevent_loop_wait(ev);
+	imessaging_dgm_unref_ev(ev);
 	TALLOC_FREE(ev);
 	/* We need to keep ev2 until we're finished for the messaging to work */
 	TALLOC_FREE(ev2);
@@ -748,6 +807,7 @@ static void prefork_fork_worker(struct task_server *task,
 		 */
 		free(w);
 
+		imessaging_dgm_unref_ev(ev);
 		TALLOC_FREE(ev);
 
 		process_set_title("%s(%d)",
@@ -772,7 +832,11 @@ static void prefork_fork_worker(struct task_server *task,
 			irpc_add_name(task->msg_ctx, name);
 			TALLOC_FREE(ctx);
 		}
+		if (service_details->before_loop != NULL) {
+			service_details->before_loop(task);
+		}
 		tevent_loop_wait(ev2);
+		imessaging_dgm_unref_ev(ev2);
 		talloc_free(ev2);
 		exit(0);
 	}

@@ -721,10 +721,11 @@ NTSTATUS auth3_user_info_dc_add_hints(struct auth_user_info_dc *user_info_dc,
 	sid_compose(&tmp_sid,
 		    &global_sid_Unix_NFS_Users,
 		    (uint32_t)uid);
-	status = add_sid_to_array_unique(user_info_dc->sids,
-					 &tmp_sid,
-					 &user_info_dc->sids,
-					 &user_info_dc->num_sids);
+	status = add_sid_to_array_attrs_unique(user_info_dc->sids,
+					       &tmp_sid,
+					       SE_GROUP_DEFAULT_FLAGS,
+					       &user_info_dc->sids,
+					       &user_info_dc->num_sids);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("add_sid_to_array_unique failed: %s\n",
 			  nt_errstr(status)));
@@ -738,10 +739,11 @@ NTSTATUS auth3_user_info_dc_add_hints(struct auth_user_info_dc *user_info_dc,
 	sid_compose(&tmp_sid,
 		    &global_sid_Unix_NFS_Groups,
 		    (uint32_t)gid);
-	status = add_sid_to_array_unique(user_info_dc->sids,
-					 &tmp_sid,
-					 &user_info_dc->sids,
-					 &user_info_dc->num_sids);
+	status = add_sid_to_array_attrs_unique(user_info_dc->sids,
+					       &tmp_sid,
+					       SE_GROUP_DEFAULT_FLAGS,
+					       &user_info_dc->sids,
+					       &user_info_dc->num_sids);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("add_sid_to_array_unique failed: %s\n",
 			  nt_errstr(status)));
@@ -755,10 +757,11 @@ NTSTATUS auth3_user_info_dc_add_hints(struct auth_user_info_dc *user_info_dc,
 	sid_compose(&tmp_sid,
 		    &global_sid_Unix_NFS_Mode,
 		    flags);
-	status = add_sid_to_array_unique(user_info_dc->sids,
-					 &tmp_sid,
-					 &user_info_dc->sids,
-					 &user_info_dc->num_sids);
+	status = add_sid_to_array_attrs_unique(user_info_dc->sids,
+					       &tmp_sid,
+					       SE_GROUP_DEFAULT_FLAGS,
+					       &user_info_dc->sids,
+					       &user_info_dc->num_sids);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(0, ("add_sid_to_array_unique failed: %s\n",
 			  nt_errstr(status)));
@@ -861,18 +864,18 @@ static NTSTATUS auth3_session_info_create(
 		 * S-1-5-88-3-Y gives flags=Y: AUTH3_UNIX_HINT_*
 		 */
 		cmp = dom_sid_compare_domain(&global_sid_Unix_NFS,
-					     &user_info_dc->sids[i]);
+					     &user_info_dc->sids[i].sid);
 		if (cmp == 0) {
 			bool match;
 			uint32_t hint = 0;
 
-			match = sid_peek_rid(&user_info_dc->sids[i], &hint);
+			match = sid_peek_rid(&user_info_dc->sids[i].sid, &hint);
 			if (!match) {
 				continue;
 			}
 
 			match = dom_sid_in_domain(&global_sid_Unix_NFS_Users,
-						  &user_info_dc->sids[i]);
+						  &user_info_dc->sids[i].sid);
 			if (match) {
 				if (found_hint_uid) {
 					TALLOC_FREE(frame);
@@ -884,7 +887,7 @@ static NTSTATUS auth3_session_info_create(
 			}
 
 			match = dom_sid_in_domain(&global_sid_Unix_NFS_Groups,
-						  &user_info_dc->sids[i]);
+						  &user_info_dc->sids[i].sid);
 			if (match) {
 				if (found_hint_gid) {
 					TALLOC_FREE(frame);
@@ -896,7 +899,7 @@ static NTSTATUS auth3_session_info_create(
 			}
 
 			match = dom_sid_in_domain(&global_sid_Unix_NFS_Mode,
-						  &user_info_dc->sids[i]);
+						  &user_info_dc->sids[i].sid);
 			if (match) {
 				if (found_hint_flags) {
 					TALLOC_FREE(frame);
@@ -911,7 +914,7 @@ static NTSTATUS auth3_session_info_create(
 		}
 
 		status = add_sid_to_array_unique(nt_token->sids,
-						 &user_info_dc->sids[i],
+						 &user_info_dc->sids[i].sid,
 						 &nt_token->sids,
 						 &nt_token->num_sids);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -949,7 +952,7 @@ static NTSTATUS auth3_session_info_create(
 		}
 	}
 
-	if (session_info->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		session_info_flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 
@@ -2292,7 +2295,7 @@ bool is_trusted_domain(const char* dom_name)
 
 /*
   on a logon error possibly map the error to success if "map to guest"
-  is set approriately
+  is set appropriately
 */
 NTSTATUS do_map_to_guest_server_info(TALLOC_CTX *mem_ctx,
 				     NTSTATUS status,

@@ -101,10 +101,13 @@ krb5_kdc_get_config(krb5_context context, krb5_kdc_configuration **config)
     c->strict_nametypes = FALSE;
     c->trpolicy = TRPOLICY_ALWAYS_CHECK;
     c->require_pac = FALSE;
+    c->disable_pac = FALSE;
     c->enable_fast = TRUE;
+    c->enable_fast_cookie = TRUE;
     c->enable_armored_pa_enc_timestamp = TRUE;
     c->enable_unarmored_pa_enc_timestamp = TRUE;
     c->enable_pkinit = FALSE;
+    c->require_pkinit_freshness = FALSE;
     c->pkinit_princ_in_cert = TRUE;
     c->pkinit_require_binding = TRUE;
     c->synthetic_clients = FALSE;
@@ -263,12 +266,28 @@ krb5_kdc_get_config(krb5_context context, krb5_kdc_configuration **config)
 				     "require_pac",
 				     NULL);
 
+    c->disable_pac =
+	krb5_config_get_bool_default(context,
+				     NULL,
+				     c->disable_pac,
+				     "kdc",
+				     "disable_pac",
+				     NULL);
+
     c->enable_fast =
 	krb5_config_get_bool_default(context,
 				     NULL,
 				     c->enable_fast,
 				     "kdc",
 				     "enable_fast",
+				     NULL);
+
+    c->enable_fast_cookie =
+	krb5_config_get_bool_default(context,
+				     NULL,
+				     c->enable_fast_cookie,
+				     "kdc",
+				     "enable_fast_cookie",
 				     NULL);
 
     c->enable_armored_pa_enc_timestamp =
@@ -295,6 +314,13 @@ krb5_kdc_get_config(krb5_context context, krb5_kdc_configuration **config)
 				     "enable-pkinit",
 				     NULL);
 
+    c->require_pkinit_freshness =
+	krb5_config_get_bool_default(context,
+				     NULL,
+				     c->require_pkinit_freshness,
+				     "kdc",
+				     "require-pkinit-freshness",
+				     NULL);
 
     c->pkinit_kdc_identity =
 	krb5_config_get_string(context, NULL,

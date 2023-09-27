@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test smbd let cluster node 0 destroy the connection,
 # if the client with a specific client-guid connections to node 1
@@ -46,9 +46,6 @@ cd "$SELFTEST_TMPDIR" || exit 1
 # Create the smbclient communication pipes.
 rm -f smbclient-stdin smbclient-stdout smbclient-stderr
 mkfifo smbclient-stdin smbclient-stdout smbclient-stderr
-
-UID_WRAPPER_ROOT=1
-export UID_WRAPPER_ROOT
 
 smbstatus_num_sessions()
 {

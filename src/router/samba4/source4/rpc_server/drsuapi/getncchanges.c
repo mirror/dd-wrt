@@ -62,6 +62,7 @@ struct drsuapi_getncchanges_state {
 	bool is_get_anc;
 	bool broken_samba_4_5_get_anc_emulation;
 	bool is_get_tgt;
+	bool send_nc_root_first;
 	uint64_t min_usn;
 	uint64_t max_usn;
 	struct drsuapi_DsReplicaHighWaterMark last_hwm;
@@ -1038,18 +1039,6 @@ static int site_res_cmp_usn_order(struct drsuapi_changed_objects *m1,
 				  struct drsuapi_changed_objects *m2,
 				  struct drsuapi_getncchanges_state *getnc_state)
 {
-	int ret;
-
-	ret = ldb_dn_compare(getnc_state->ncRoot_dn, m1->dn);
-	if (ret == 0) {
-		return -1;
-	}
-
-	ret = ldb_dn_compare(getnc_state->ncRoot_dn, m2->dn);
-	if (ret == 0) {
-		return 1;
-	}
-
 	if (m1->usn == m2->usn) {
 		return ldb_dn_compare(m2->dn, m1->dn);
 	}
@@ -1711,6 +1700,7 @@ static const char *collect_objects_attrs[] = { "uSNChanged",
  */
 static WERROR getncchanges_collect_objects(struct drsuapi_bind_state *b_state,
 					   TALLOC_CTX *mem_ctx,
+					   struct drsuapi_getncchanges_state *getnc_state,
 					   struct drsuapi_DsGetNCChangesRequest10 *req10,
 					   struct ldb_dn *search_dn,
 					   const char *extra_filter,
@@ -1719,7 +1709,6 @@ static WERROR getncchanges_collect_objects(struct drsuapi_bind_state *b_state,
 	int ret;
 	char* search_filter;
 	enum ldb_scope scope = LDB_SCOPE_SUBTREE;
-	struct drsuapi_getncchanges_state *getnc_state = b_state->getncchanges_state;
 	bool critical_only = false;
 
 	if (req10->replica_flags & DRSUAPI_DRS_CRITICAL_ONLY) {
@@ -1773,6 +1762,7 @@ static WERROR getncchanges_collect_objects(struct drsuapi_bind_state *b_state,
  */
 static WERROR getncchanges_collect_objects_exop(struct drsuapi_bind_state *b_state,
 						TALLOC_CTX *mem_ctx,
+						struct drsuapi_getncchanges_state *getnc_state,
 						struct drsuapi_DsGetNCChangesRequest10 *req10,
 						struct drsuapi_DsGetNCChangesCtr6 *ctr6,
 						struct ldb_dn *search_dn,
@@ -1932,7 +1922,13 @@ static WERROR getncchanges_collect_objects_exop(struct drsuapi_bind_state *b_sta
 		/* TODO: implement extended op specific collection
 		 * of objects. Right now we just normal procedure
 		 * for collecting objects */
-		return getncchanges_collect_objects(b_state, mem_ctx, req10, search_dn, extra_filter, search_res);
+		return getncchanges_collect_objects(b_state,
+						    mem_ctx,
+						    getnc_state,
+						    req10,
+						    search_dn,
+						    extra_filter,
+						    search_res);
 	}
 }
 
@@ -2117,7 +2113,7 @@ static WERROR getncchanges_get_sorted_array(const struct drsuapi_DsReplicaLinked
  * @param new_objs if parents are added, this gets updated to point to a chain
  * of parent objects (with the parents first and the child last)
  */
-static WERROR getncchanges_add_ancestors(struct drsuapi_DsReplicaObjectListItemEx *child_obj,
+static WERROR getncchanges_add_ancestors(const struct GUID *parent_object_guid,
 					 struct ldb_dn *child_dn,
 					 TALLOC_CTX *mem_ctx,
 					 struct ldb_context *sam_ctx,
@@ -2140,7 +2136,7 @@ static WERROR getncchanges_add_ancestors(struct drsuapi_DsReplicaObjectListItemE
 					    DSDB_SECRET_ATTRIBUTES,
 					    NULL };
 
-	next_anc_guid = child_obj->parent_object_guid;
+	next_anc_guid = parent_object_guid;
 
 	while (next_anc_guid != NULL) {
 		struct drsuapi_DsReplicaObjectListItemEx *anc_obj = NULL;
@@ -2149,19 +2145,24 @@ static WERROR getncchanges_add_ancestors(struct drsuapi_DsReplicaObjectListItemE
 		struct ldb_dn *anc_dn = NULL;
 
 		/*
-		 * Don't send an object twice. (If we've sent the object, then
-		 * we've also sent all its parents as well)
+		 * For the GET_ANC case (but not the 'send NC root
+		 * first' case), don't send an object twice.
+		 *
+		 * (If we've sent the object, then we've also sent all
+		 * its parents as well)
 		 */
-		werr = dcesrv_drsuapi_obj_cache_exists(getnc_state->obj_cache,
-						       next_anc_guid);
-		if (W_ERROR_EQUAL(werr, WERR_OBJECT_NAME_EXISTS)) {
-			return WERR_OK;
-		}
-		if (W_ERROR_IS_OK(werr)) {
-			return WERR_INTERNAL_ERROR;
-		}
-		if (!W_ERROR_EQUAL(werr, WERR_OBJECT_NOT_FOUND)) {
-			return werr;
+		if (getnc_state->obj_cache) {
+			werr = dcesrv_drsuapi_obj_cache_exists(getnc_state->obj_cache,
+							       next_anc_guid);
+			if (W_ERROR_EQUAL(werr, WERR_OBJECT_NAME_EXISTS)) {
+				return WERR_OK;
+			}
+			if (W_ERROR_IS_OK(werr)) {
+				return WERR_INTERNAL_ERROR;
+			}
+			if (!W_ERROR_EQUAL(werr, WERR_OBJECT_NOT_FOUND)) {
+				return werr;
+			}
 		}
 
 		anc_obj = talloc_zero(mem_ctx,
@@ -2215,11 +2216,18 @@ static WERROR getncchanges_add_ancestors(struct drsuapi_DsReplicaObjectListItemE
 		/*
 		 * Regardless of whether we actually use it or not,
 		 * we add it to the cache so we don't look at it again
+		 *
+		 * The only time we are here without
+		 * getnc_state->obj_cache is for the forced addition
+		 * of the NC root to the start of the reply, this we
+		 * want to add each and every call..
 		 */
-		werr = dcesrv_drsuapi_obj_cache_add(getnc_state->obj_cache,
-						    next_anc_guid);
-		if (!W_ERROR_IS_OK(werr)) {
-			return werr;
+		if (getnc_state->obj_cache) {
+			werr = dcesrv_drsuapi_obj_cache_add(getnc_state->obj_cache,
+							    next_anc_guid);
+			if (!W_ERROR_IS_OK(werr)) {
+				return werr;
+			}
 		}
 
 		/*
@@ -2348,7 +2356,8 @@ static WERROR getncchanges_get_obj_to_send(const struct ldb_message *msg,
 	 */
 	if (getnc_state->is_get_anc
 	    && !getnc_state->broken_samba_4_5_get_anc_emulation) {
-		werr = getncchanges_add_ancestors(obj, msg->dn, mem_ctx,
+		werr = getncchanges_add_ancestors(obj->parent_object_guid,
+						  msg->dn, mem_ctx,
 						  sam_ctx, getnc_state,
 						  schema, session_key,
 						  req10, local_pas,
@@ -2701,7 +2710,7 @@ WERROR dcesrv_drsuapi_DsGetNCChanges(struct dcesrv_call_state *dce_call, TALLOC_
 		dcesrv_call_session_info(dce_call);
 	struct imessaging_context *imsg_ctx =
 		dcesrv_imessaging_context(dce_call->conn);
-	struct drsuapi_DsReplicaObjectIdentifier *ncRoot;
+	struct drsuapi_DsReplicaObjectIdentifier *untrusted_ncRoot;
 	int ret;
 	uint32_t i, k;
 	struct dsdb_schema *schema;
@@ -2712,7 +2721,7 @@ WERROR dcesrv_drsuapi_DsGetNCChanges(struct dcesrv_call_state *dce_call, TALLOC_
 	WERROR werr;
 	struct dcesrv_handle *h;
 	struct drsuapi_bind_state *b_state;
-	struct drsuapi_getncchanges_state *getnc_state;
+	struct drsuapi_getncchanges_state *getnc_state = NULL;
 	struct drsuapi_DsGetNCChangesRequest10 *req10;
 	uint32_t options;
 	uint32_t link_count = 0;
@@ -2823,8 +2832,8 @@ WERROR dcesrv_drsuapi_DsGetNCChanges(struct dcesrv_call_state *dce_call, TALLOC_
 	}
 
 	/* Perform access checks. */
-	ncRoot = req10->naming_context;
-	if (ncRoot == NULL) {
+	untrusted_ncRoot = req10->naming_context;
+	if (untrusted_ncRoot == NULL) {
 		DEBUG(0,(__location__ ": Request for DsGetNCChanges with no NC\n"));
 		return WERR_DS_DRA_INVALID_PARAMETER;
 	}
@@ -2962,23 +2971,50 @@ allowed:
 		ZERO_STRUCT(req10->highwatermark);
 	}
 
-	getnc_state = b_state->getncchanges_state;
+	/*
+	 * An extended operation is "special single-response cycle"
+	 * per MS-DRSR 4.1.10.1.1 "Start and Finish" so we don't need
+	 * to guess if this is a continuation of any long-term
+	 * state.
+	 *
+	 * Otherwise, maintain (including marking as stale, which is
+	 * what the below is for) the replication state.
+	 *
+	 * Note that point 5 "The server implementation MAY declare
+	 * the supplied values ... as too stale to use."  would allow
+	 * resetting the state at almost any point, Microsoft Azure AD
+	 * Connect will switch back and forth between a REPL_OBJ and a
+	 * full replication, so we must not reset the statue during
+	 * extended operations.
+	 */
+	if (req10->extended_op == DRSUAPI_EXOP_NONE &&
+	    b_state->getncchanges_full_repl_state != NULL) {
+		/*
+		 * Knowing that this is not an extended operation, we
+		 * can access (and validate) the full replication
+		 * state
+		 */
+		getnc_state = b_state->getncchanges_full_repl_state;
+	}
 
 	/* see if a previous replication has been abandoned */
-	if (getnc_state) {
+	if (getnc_state != NULL) {
 		struct ldb_dn *new_dn;
 		ret = drs_ObjectIdentifier_to_dn_and_nc_root(getnc_state,
 							     sam_ctx,
-							     ncRoot,
+							     untrusted_ncRoot,
 							     &new_dn,
 							     NULL);
 		if (ret != LDB_SUCCESS) {
 			/*
 			 * This can't fail as we have done this above
-			 * implicitly but not got the DN out
+			 * implicitly but not got the DN out, but
+			 * print a good error message regardless just
+			 * in case.
 			 */
-			DBG_ERR("Bad DN '%s'\n",
-				drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot));
+			DBG_ERR("Bad DN '%s' as Naming Context for GetNCChanges: %s\n",
+				drs_ObjectIdentifier_to_debug_string(mem_ctx, untrusted_ncRoot),
+				ldb_strerror(ret));
 			return WERR_DS_DRA_INVALID_PARAMETER;
 		}
 		if (ldb_dn_compare(new_dn, getnc_state->ncRoot_dn) != 0) {
@@ -2987,11 +3023,11 @@ allowed:
 				 ldb_dn_get_linearized(getnc_state->ncRoot_dn),
 				 ldb_dn_get_linearized(getnc_state->last_dn)));
 			TALLOC_FREE(getnc_state);
-			b_state->getncchanges_state = NULL;
+			b_state->getncchanges_full_repl_state = NULL;
 		}
 	}
 
-	if (getnc_state) {
+	if (getnc_state != NULL) {
 		ret = drsuapi_DsReplicaHighWaterMark_cmp(&getnc_state->last_hwm,
 							 &req10->highwatermark);
 		if (ret != 0) {
@@ -3001,10 +3037,15 @@ allowed:
 				 (ret > 0) ? "older" : "newer",
 				 ldb_dn_get_linearized(getnc_state->last_dn)));
 			TALLOC_FREE(getnc_state);
-			b_state->getncchanges_state = NULL;
+			b_state->getncchanges_full_repl_state = NULL;
 		}
 	}
 
+	 /*
+	  * This is either a new replication cycle, or an extended
+	  * operation.  A new cycle is triggered above by the
+	  * TALLOC_FREE() which sets getnc_state to NULL.
+	  */
 	if (getnc_state == NULL) {
 		struct ldb_result *res = NULL;
 		const char *attrs[] = {
@@ -3017,10 +3058,13 @@ allowed:
 
 		ret = drs_ObjectIdentifier_to_dn_and_nc_root(mem_ctx,
 							     sam_ctx,
-							     ncRoot,
+							     untrusted_ncRoot,
 							     &ncRoot_dn,
 							     NULL);
 		if (ret != LDB_SUCCESS) {
+			DBG_ERR("Bad DN '%s' as Naming Context or EXOP DN for GetNCChanges: %s\n",
+				drs_ObjectIdentifier_to_debug_string(mem_ctx, untrusted_ncRoot),
+				ldb_strerror(ret));
 			return WERR_DS_DRA_BAD_DN;
 		}
 
@@ -3110,19 +3154,39 @@ allowed:
 			return WERR_DS_DRA_NOT_SUPPORTED;
 		}
 
-		/* Initialize the state we'll store over the replication cycle */
-		getnc_state = talloc_zero(b_state, struct drsuapi_getncchanges_state);
+		/*
+		 * Initialize the state, initially for the remainder
+		 * of this call (EXOPs)
+		 *
+		 * An extended operation is a "special single-response
+		 * cycle" per MS-DRSR 4.1.10.1.1 "Start and Finish"
+		 *
+		 */
+		getnc_state = talloc_zero(mem_ctx, struct drsuapi_getncchanges_state);
 		if (getnc_state == NULL) {
 			return WERR_NOT_ENOUGH_MEMORY;
 		}
-		b_state->getncchanges_state = getnc_state;
+
+		if (req10->extended_op == DRSUAPI_EXOP_NONE) {
+			/*
+			 * Promote the memory to being a store of
+			 * long-term state that we will use over the
+			 * replication cycle for full replication
+			 * requests
+			 *
+			 * Store the state in a clearly named location
+			 * for pulling back only during full
+			 * replications
+			 */
+			b_state->getncchanges_full_repl_state
+				= talloc_steal(b_state, getnc_state);
+		}
 
 		getnc_state->ncRoot_dn = ncRoot_dn;
 		talloc_steal(getnc_state, ncRoot_dn);
 
 		getnc_state->ncRoot_guid = samdb_result_guid(res->msgs[0],
 							     "objectGUID");
-		ncRoot->guid = getnc_state->ncRoot_guid;
 
 		/* find out if we are to replicate Schema NC */
 		ret = ldb_dn_compare_base(ldb_get_schema_basedn(sam_ctx),
@@ -3131,15 +3195,6 @@ allowed:
 
 		TALLOC_FREE(res);
 	}
-
-	if (!ldb_dn_validate(getnc_state->ncRoot_dn) ||
-	    ldb_dn_is_null(getnc_state->ncRoot_dn)) {
-		DEBUG(0,(__location__ ": Bad DN '%s'\n",
-			 drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot)));
-		return WERR_DS_DRA_INVALID_PARAMETER;
-	}
-
-	ncRoot->guid = getnc_state->ncRoot_guid;
 
 	/* we need the session key for encrypting password attributes */
 	status = dcesrv_auth_session_key(dce_call, &session_key);
@@ -3203,11 +3258,13 @@ allowed:
 		}
 
 		if (req10->extended_op == DRSUAPI_EXOP_NONE) {
-			werr = getncchanges_collect_objects(b_state, mem_ctx, req10,
+			werr = getncchanges_collect_objects(b_state, mem_ctx,
+							    getnc_state, req10,
 							    search_dn, extra_filter,
 							    &search_res);
 		} else {
-			werr = getncchanges_collect_objects_exop(b_state, mem_ctx, req10,
+			werr = getncchanges_collect_objects_exop(b_state, mem_ctx,
+								 getnc_state, req10,
 								 &r->out.ctr->ctr6,
 								 search_dn, extra_filter,
 								 &search_res);
@@ -3231,6 +3288,12 @@ allowed:
 
 			if (changes[i].usn > getnc_state->max_usn) {
 				getnc_state->max_usn = changes[i].usn;
+			}
+
+			if (req10->extended_op == DRSUAPI_EXOP_NONE &&
+			    GUID_equal(&changes[i].guid, &getnc_state->ncRoot_guid))
+			{
+				getnc_state->send_nc_root_first = true;
 			}
 		}
 
@@ -3320,10 +3383,18 @@ allowed:
 	if (r->out.ctr->ctr6.naming_context == NULL) {
 		return WERR_NOT_ENOUGH_MEMORY;
 	}
-	*r->out.ctr->ctr6.naming_context = *ncRoot;
+
+	/*
+	 * Match Windows and echo back the original values from the request, even if
+	 * they say DummyDN for the string NC
+	 */
+	*r->out.ctr->ctr6.naming_context = *untrusted_ncRoot;
 
 	/* find the SID if there is one */
 	dsdb_find_sid_by_dn(sam_ctx, getnc_state->ncRoot_dn, &r->out.ctr->ctr6.naming_context->sid);
+
+	/* Set GUID */
+	r->out.ctr->ctr6.naming_context->guid = getnc_state->ncRoot_guid;
 
 	dsdb_get_oid_mappings_drsuapi(schema, true, mem_ctx, &ctr);
 	r->out.ctr->ctr6.mapping_ctr = *ctr;
@@ -3365,6 +3436,36 @@ allowed:
 	}
 
 	/*
+	 * If we have the NC root in this replication, send it
+	 * first regardless.  However, don't bump the USN now,
+	 * treat it as if it was sent early due to GET_ANC
+	 *
+	 * This is triggered for each call, so every page of responses
+	 * gets the NC root as the first object, up to the point where
+	 * it naturally occurs in the replication.
+	 */
+
+	if (getnc_state->send_nc_root_first) {
+		struct drsuapi_DsReplicaObjectListItemEx *new_objs = NULL;
+
+		werr = getncchanges_add_ancestors(&getnc_state->ncRoot_guid,
+						  NULL, mem_ctx,
+						  sam_ctx, getnc_state,
+						  schema, &session_key,
+						  req10, local_pas,
+						  machine_dn, &new_objs);
+
+		if (!W_ERROR_IS_OK(werr)) {
+			return werr;
+		}
+
+		getncchanges_chunk_add_objects(repl_chunk, new_objs);
+
+		DEBUG(8,(__location__ ": replicating NC root %s\n",
+			 ldb_dn_get_linearized(getnc_state->ncRoot_dn)));
+	}
+
+	/*
 	 * Check in case we're still processing the links from an object in the
 	 * previous chunk. We want to send the links (and any targets needed)
 	 * before moving on to the next object.
@@ -3401,6 +3502,23 @@ allowed:
 		bool obj_already_sent = false;
 		TALLOC_CTX *tmp_ctx = talloc_new(mem_ctx);
 		uint32_t old_la_index;
+
+		/*
+		 * Once we get to the 'natural' place to send the NC
+		 * root, stop sending it at the front of each reply
+		 * and make sure to suppress sending it now
+		 *
+		 * We don't just 'continue' here as we must send links
+		 * and unlike Windows we want to update the
+		 * tmp_highest_usn
+		 */
+
+		if (getnc_state->send_nc_root_first &&
+		    GUID_equal(&getnc_state->guids[i], &getnc_state->ncRoot_guid))
+		{
+			getnc_state->send_nc_root_first = false;
+			obj_already_sent = true;
+		}
 
 		msg_dn = ldb_dn_new_fmt(tmp_ctx, sam_ctx, "<GUID=%s>",
 					GUID_string(tmp_ctx, &getnc_state->guids[i]));
@@ -3504,12 +3622,21 @@ allowed:
 			getncchanges_chunk_add_objects(repl_chunk, new_objs);
 
 			talloc_free(getnc_state->last_dn);
-			getnc_state->last_dn = talloc_move(getnc_state, &msg->dn);
+			/*
+			 * talloc_steal() as we still need msg->dn to
+			 * be a valid pointer for the log on the next
+			 * line.
+			 *
+			 * msg only remains in scope for the next 25
+			 * lines or so anyway.
+			 */
+			getnc_state->last_dn = talloc_steal(getnc_state, msg->dn);
 		}
 
-		DEBUG(8,(__location__ ": %s object %s\n",
+		DEBUG(8,(__location__ ": %s object %s new tmp_highest_usn=%" PRIu64 "\n",
 			 new_objs ? "replicating" : "skipping send of",
-			 ldb_dn_get_linearized(msg->dn)));
+			 ldb_dn_get_linearized(msg->dn),
+			 r->out.ctr->ctr6.new_highwatermark.tmp_highest_usn));
 
 		getnc_state->total_links += (getnc_state->la_count - old_la_index);
 
@@ -3551,7 +3678,15 @@ allowed:
 		struct drsuapi_DsReplicaUpdateRefsRequest1 ureq;
 		DEBUG(3,("UpdateRefs on getncchanges for %s\n",
 			 GUID_string(mem_ctx, &req10->destination_dsa_guid)));
-		ureq.naming_context = ncRoot;
+
+		/*
+		 * We pass the pre-validation NC root here as
+		 * drsuapi_UpdateRefs() has to check its own input
+		 * values due to being called from
+		 * dcesrv_drsuapi_DsReplicaUpdateRefs()
+		 */
+
+		ureq.naming_context = untrusted_ncRoot;
 		ureq.dest_dsa_dns_name = samdb_ntds_msdcs_dns_name(sam_ctx, mem_ctx,
 								   &req10->destination_dsa_guid);
 		if (!ureq.dest_dsa_dns_name) {
@@ -3574,7 +3709,7 @@ allowed:
 					  &ureq);
 		if (!W_ERROR_IS_OK(werr)) {
 			DEBUG(0,(__location__ ": Failed UpdateRefs on %s for %s in DsGetNCChanges - %s\n",
-				 drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot),
+				 drs_ObjectIdentifier_to_debug_string(mem_ctx, untrusted_ncRoot),
 				 ureq.dest_dsa_dns_name,
 				 win_errstr(werr)));
 		}
@@ -3658,21 +3793,29 @@ allowed:
 		r->out.ctr->ctr6.nc_linked_attributes_count = getnc_state->total_links;
 	}
 
-	if (!r->out.ctr->ctr6.more_data) {
+	if (req10->extended_op != DRSUAPI_EXOP_NONE) {
+		r->out.ctr->ctr6.uptodateness_vector = NULL;
+		r->out.ctr->ctr6.nc_object_count = 0;
+		ZERO_STRUCT(r->out.ctr->ctr6.new_highwatermark);
+	} else if (!r->out.ctr->ctr6.more_data) {
 
 		/* this is the last response in the replication cycle */
 		r->out.ctr->ctr6.new_highwatermark = getnc_state->final_hwm;
 		r->out.ctr->ctr6.uptodateness_vector = talloc_move(mem_ctx,
-							&getnc_state->final_udv);
+								   &getnc_state->final_udv);
 
 		/*
 		 * Free the state info stored for the replication cycle. Note
 		 * that the RPC message we're sending contains links stored in
 		 * getnc_state. mem_ctx is local to this RPC call, so the memory
 		 * will get freed after the RPC message is sent on the wire.
+		 *
+		 * We must not do this for an EXOP, as that should not
+		 * end the replication state, which is why that is
+		 * checked first above.
 		 */
 		talloc_steal(mem_ctx, getnc_state);
-		b_state->getncchanges_state = NULL;
+		b_state->getncchanges_full_repl_state = NULL;
 	} else {
 		ret = drsuapi_DsReplicaHighWaterMark_cmp(&r->out.ctr->ctr6.old_highwatermark,
 							 &r->out.ctr->ctr6.new_highwatermark);
@@ -3694,19 +3837,13 @@ allowed:
 		getnc_state->last_hwm = r->out.ctr->ctr6.new_highwatermark;
 	}
 
-	if (req10->extended_op != DRSUAPI_EXOP_NONE) {
-		r->out.ctr->ctr6.uptodateness_vector = NULL;
-		r->out.ctr->ctr6.nc_object_count = 0;
-		ZERO_STRUCT(r->out.ctr->ctr6.new_highwatermark);
-	}
-
 	TALLOC_FREE(repl_chunk);
 
 	DEBUG(r->out.ctr->ctr6.more_data?4:2,
 	      ("DsGetNCChanges with uSNChanged >= %llu flags 0x%08x on %s gave %u objects (done %u/%u) %u links (done %u/%u (as %s))\n",
 	       (unsigned long long)(req10->highwatermark.highest_usn+1),
 	       req10->replica_flags,
-	       drs_ObjectIdentifier_to_debug_string(mem_ctx, ncRoot),
+	       drs_ObjectIdentifier_to_debug_string(mem_ctx, untrusted_ncRoot),
 	       r->out.ctr->ctr6.object_count,
 	       i, r->out.ctr->ctr6.more_data?getnc_state->num_records:i,
 	       r->out.ctr->ctr6.linked_attributes_count,

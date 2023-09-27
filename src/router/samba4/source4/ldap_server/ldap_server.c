@@ -48,6 +48,9 @@
 #include "../libcli/util/tstream.h"
 #include "libds/common/roles.h"
 #include "lib/util/time.h"
+#include "lib/util/server_id.h"
+#include "lib/util/server_id_db.h"
+#include "lib/messaging/messaging_internal.h"
 
 #undef strcasecmp
 
@@ -338,7 +341,7 @@ static void ldapsrv_accept(struct stream_connection *c,
 
 	conn->connection  = c;
 	conn->service     = ldapsrv_service;
-	conn->lp_ctx      = ldapsrv_service->task->lp_ctx;
+	conn->lp_ctx      = ldapsrv_service->lp_ctx;
 
 	c->private_data   = conn;
 
@@ -920,7 +923,7 @@ void ldapsrv_notification_retry_setup(struct ldapsrv_service *service, bool forc
 	}
 
 	service->notification.retry = tevent_wakeup_send(service,
-							 service->task->event_ctx,
+							 service->current_ev,
 							 retry);
 	if (service->notification.retry == NULL) {
 		/* retry later */
@@ -1117,7 +1120,7 @@ static void ldapsrv_accept_nonpriv(struct stream_connection *c)
 	NTSTATUS status;
 
 	status = auth_anonymous_session_info(
-		c, ldapsrv_service->task->lp_ctx, &session_info);
+		c, ldapsrv_service->lp_ctx, &session_info);
 	if (!NT_STATUS_IS_OK(status)) {
 		stream_terminate_connection(c, "failed to setup anonymous "
 					    "session info");
@@ -1145,7 +1148,7 @@ static void ldapsrv_accept_priv(struct stream_connection *c)
 		c->private_data, struct ldapsrv_service);
 	struct auth_session_info *session_info;
 
-	session_info = system_session(ldapsrv_service->task->lp_ctx);
+	session_info = system_session(ldapsrv_service->lp_ctx);
 	if (!session_info) {
 		stream_terminate_connection(c, "failed to setup system "
 					    "session info");
@@ -1206,7 +1209,7 @@ static NTSTATUS add_socket(struct task_server *task,
 
 	/* Load LDAP database, but only to read our settings */
 	ldb = samdb_connect(ldap_service,
-			    ldap_service->task->event_ctx,
+			    ldap_service->current_ev,
 			    lp_ctx,
 			    system_session(lp_ctx),
 			    NULL,
@@ -1254,6 +1257,106 @@ static NTSTATUS add_socket(struct task_server *task,
 	return NT_STATUS_OK;
 }
 
+static void ldap_reload_certs(struct imessaging_context *msg_ctx,
+			      void *private_data,
+			      uint32_t msg_type,
+			      struct server_id server_id,
+			      size_t num_fds,
+			      int *fds,
+			      DATA_BLOB *data)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	struct ldapsrv_service *ldap_service =
+		talloc_get_type_abort(private_data,
+		struct ldapsrv_service);
+	int default_children;
+	int num_children;
+	int i;
+	bool ok;
+	struct server_id ldap_master_id;
+	NTSTATUS status;
+	struct tstream_tls_params *new_tls_params = NULL;
+
+	SMB_ASSERT(msg_ctx == ldap_service->current_msg);
+
+	/* reload certificates */
+	status = tstream_tls_params_server(ldap_service,
+					   ldap_service->dns_host_name,
+					   lpcfg_tls_enabled(ldap_service->lp_ctx),
+					   lpcfg_tls_keyfile(frame, ldap_service->lp_ctx),
+					   lpcfg_tls_certfile(frame, ldap_service->lp_ctx),
+					   lpcfg_tls_cafile(frame, ldap_service->lp_ctx),
+					   lpcfg_tls_crlfile(frame, ldap_service->lp_ctx),
+					   lpcfg_tls_dhpfile(frame, ldap_service->lp_ctx),
+					   lpcfg_tls_priority(ldap_service->lp_ctx),
+					   &new_tls_params);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("ldapsrv failed tstream_tls_params_server - %s\n",
+			nt_errstr(status));
+		TALLOC_FREE(frame);
+		return;
+	}
+
+	TALLOC_FREE(ldap_service->tls_params);
+	ldap_service->tls_params = new_tls_params;
+
+	if (getpid() != ldap_service->parent_pid) {
+		/*
+		 * If we are not the master process we are done
+		 */
+		TALLOC_FREE(frame);
+		return;
+	}
+
+	/*
+	 * Check we're running under the prefork model,
+	 * by checking if the prefork-master-ldap name
+	 * was registered
+	 */
+	ok = server_id_db_lookup_one(msg_ctx->names, "prefork-master-ldap", &ldap_master_id);
+	if (!ok) {
+		/*
+		 * We are done if another process model is in use.
+		 */
+		TALLOC_FREE(frame);
+		return;
+	}
+
+	/*
+	 * Now we loop over all possible prefork workers
+	 * in order to notify them about the reload
+	 */
+	default_children = lpcfg_prefork_children(ldap_service->lp_ctx);
+	num_children = lpcfg_parm_int(ldap_service->lp_ctx,
+				      NULL, "prefork children", "ldap",
+				      default_children);
+	for (i = 0; i < num_children; i++) {
+		char child_name[64] = { 0, };
+		struct server_id ldap_worker_id;
+
+		snprintf(child_name, sizeof(child_name), "prefork-worker-ldap-%d", i);
+		ok = server_id_db_lookup_one(msg_ctx->names, child_name, &ldap_worker_id);
+		if (!ok) {
+			DBG_ERR("server_id_db_lookup_one(%s) - failed\n",
+				child_name);
+			continue;
+		}
+
+		status = imessaging_send(msg_ctx, ldap_worker_id,
+				         MSG_RELOAD_TLS_CERTIFICATES, NULL);
+		if (!NT_STATUS_IS_OK(status)) {
+			struct server_id_buf id_buf;
+			DBG_ERR("ldapsrv failed imessaging_send(%s, %s) - %s\n",
+				child_name,
+				server_id_str_buf(ldap_worker_id, &id_buf),
+				nt_errstr(status));
+			continue;
+		}
+	}
+
+	TALLOC_FREE(frame);
+}
+
 /*
   open the ldap server sockets
 */
@@ -1263,7 +1366,6 @@ static NTSTATUS ldapsrv_task_init(struct task_server *task)
 #ifdef WITH_LDAPI_PRIV_SOCKET
 	char *priv_dir;
 #endif
-	const char *dns_host_name;
 	struct ldapsrv_service *ldap_service;
 	NTSTATUS status;
 
@@ -1289,18 +1391,22 @@ static NTSTATUS ldapsrv_task_init(struct task_server *task)
 		goto failed;
 	}
 
-	ldap_service->task = task;
+	ldap_service->lp_ctx = task->lp_ctx;
+	ldap_service->current_ev = task->event_ctx;
+	ldap_service->current_msg = task->msg_ctx;
 
-	dns_host_name = talloc_asprintf(ldap_service, "%s.%s",
+	ldap_service->dns_host_name = talloc_asprintf(ldap_service, "%s.%s",
 					lpcfg_netbios_name(task->lp_ctx),
 					lpcfg_dnsdomain(task->lp_ctx));
-	if (dns_host_name == NULL) {
+	if (ldap_service->dns_host_name == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto failed;
 	}
 
+	ldap_service->parent_pid = getpid();
+
 	status = tstream_tls_params_server(ldap_service,
-					   dns_host_name,
+					   ldap_service->dns_host_name,
 					   lpcfg_tls_enabled(task->lp_ctx),
 					   lpcfg_tls_keyfile(ldap_service, task->lp_ctx),
 					   lpcfg_tls_certfile(ldap_service, task->lp_ctx),
@@ -1437,14 +1543,57 @@ static void ldapsrv_post_fork(struct task_server *task, struct process_details *
 	struct ldapsrv_service *ldap_service =
 		talloc_get_type_abort(task->private_data, struct ldapsrv_service);
 
+	/*
+	 * As ldapsrv_before_loop() may changed the values for the parent loop
+	 * we need to adjust the pointers to the correct value in the child
+	 */
+	ldap_service->lp_ctx = task->lp_ctx;
+	ldap_service->current_ev = task->event_ctx;
+	ldap_service->current_msg = task->msg_ctx;
+
 	ldap_service->sam_ctx = samdb_connect(ldap_service,
-					      ldap_service->task->event_ctx,
-					      ldap_service->task->lp_ctx,
-					      system_session(ldap_service->task->lp_ctx),
+					      ldap_service->current_ev,
+					      ldap_service->lp_ctx,
+					      system_session(ldap_service->lp_ctx),
 					      NULL,
 					      0);
 	if (ldap_service->sam_ctx == NULL) {
 		task_server_terminate(task, "Cannot open system session LDB",
+				      true);
+		return;
+	}
+}
+
+static void ldapsrv_before_loop(struct task_server *task)
+{
+	struct ldapsrv_service *ldap_service =
+		talloc_get_type_abort(task->private_data, struct ldapsrv_service);
+	NTSTATUS status;
+
+	if (ldap_service->sam_ctx != NULL) {
+		/*
+		 * Make sure the values are still the same
+		 * as set in ldapsrv_post_fork()
+		 */
+		SMB_ASSERT(task->lp_ctx == ldap_service->lp_ctx);
+		SMB_ASSERT(task->event_ctx == ldap_service->current_ev);
+		SMB_ASSERT(task->msg_ctx == ldap_service->current_msg);
+	} else {
+		/*
+		 * We need to adjust the pointers to the correct value
+		 * in the parent loop.
+		 */
+		ldap_service->lp_ctx = task->lp_ctx;
+		ldap_service->current_ev = task->event_ctx;
+		ldap_service->current_msg = task->msg_ctx;
+	}
+
+	status = imessaging_register(ldap_service->current_msg,
+				     ldap_service,
+				     MSG_RELOAD_TLS_CERTIFICATES,
+				     ldap_reload_certs);
+	if (!NT_STATUS_IS_OK(status)) {
+		task_server_terminate(task, "Cannot register ldap_reload_certs",
 				      true);
 		return;
 	}
@@ -1535,6 +1684,7 @@ NTSTATUS server_service_ldap_init(TALLOC_CTX *ctx)
 		.inhibit_pre_fork = false,
 		.task_init = ldapsrv_task_init,
 		.post_fork = ldapsrv_post_fork,
+		.before_loop = ldapsrv_before_loop,
 	};
 	return register_server_service(ctx, "ldap", &details);
 }

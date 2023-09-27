@@ -55,7 +55,6 @@ struct pending_message_list {
 	struct smbd_server_connection *sconn;
 	struct smbXsrv_connection *xconn;
 	struct tevent_timer *te;
-	struct smb_perfcount_data pcd;
 	uint32_t seqnum;
 	bool encrypted;
 	bool processed;
@@ -66,54 +65,12 @@ struct pending_message_list {
 static struct pending_message_list *get_deferred_open_message_smb(
 	struct smbd_server_connection *sconn, uint64_t mid);
 
-bool smb2_srv_send(struct smbXsrv_connection *xconn, char *buffer,
-		   bool do_signing, uint32_t seqnum,
-		   bool do_encrypt,
-		   struct smb_perfcount_data *pcd)
-{
-	size_t len = 0;
-	ssize_t ret;
-	char *buf_out = buffer;
-
-	if (!NT_STATUS_IS_OK(xconn->transport.status)) {
-		/*
-		 * we're not supposed to do any io
-		 */
-		return true;
-	}
-
-	len = smb_len_large(buf_out) + 4;
-
-	ret = write_data(xconn->transport.sock, buf_out, len);
-	if (ret <= 0) {
-		int saved_errno = errno;
-		/*
-		 * Try and give an error message saying what
-		 * client failed.
-		 */
-		DEBUG(1,("pid[%d] Error writing %d bytes to client %s. %d. (%s)\n",
-			 (int)getpid(), (int)len,
-			 smbXsrv_connection_dbg(xconn),
-			 (int)ret, strerror(saved_errno)));
-		errno = saved_errno;
-
-		srv_free_enc_buffer(xconn, buf_out);
-		goto out;
-	}
-
-	SMB_PERFCOUNT_SET_MSGLEN_OUT(pcd, len);
-	srv_free_enc_buffer(xconn, buf_out);
-out:
-	SMB_PERFCOUNT_END(pcd);
-
-	return (ret > 0);
-}
-
 #if !defined(WITH_SMB1SERVER)
-bool smb1_srv_send(struct smbXsrv_connection *xconn, char *buffer,
-		   bool do_signing, uint32_t seqnum,
-		   bool do_encrypt,
-		   struct smb_perfcount_data *pcd)
+bool smb1_srv_send(struct smbXsrv_connection *xconn,
+		   char *buffer,
+		   bool do_signing,
+		   uint32_t seqnum,
+		   bool do_encrypt)
 {
 	size_t len = 0;
 	ssize_t ret;
@@ -310,9 +267,12 @@ static void smbd_deferred_open_timer(struct tevent_context *ev,
 	 * re-processed in error. */
 	msg->processed = true;
 
-	process_smb(xconn, inbuf,
-		    msg->buf.length, 0,
-		    msg->seqnum, msg->encrypted, &msg->pcd);
+	process_smb(xconn,
+		    inbuf,
+		    msg->buf.length,
+		    0,
+		    msg->seqnum,
+		    msg->encrypted);
 
 	/* If it's still there and was processed, remove it. */
 	msg = get_deferred_open_message_smb(sconn, mid);
@@ -585,9 +545,11 @@ bool valid_smb1_header(const uint8_t *inbuf)
 ****************************************************************************/
 
 static void process_smb2(struct smbXsrv_connection *xconn,
-			 uint8_t *inbuf, size_t nread, size_t unread_bytes,
-			 uint32_t seqnum, bool encrypted,
-			 struct smb_perfcount_data *deferred_pcd)
+			 uint8_t *inbuf,
+			 size_t nread,
+			 size_t unread_bytes,
+			 uint32_t seqnum,
+			 bool encrypted)
 {
 	const uint8_t *inpdu = inbuf + NBT_HDR_SIZE;
 	size_t pdulen = nread - NBT_HDR_SIZE;
@@ -598,9 +560,11 @@ static void process_smb2(struct smbXsrv_connection *xconn,
 }
 
 void process_smb(struct smbXsrv_connection *xconn,
-		 uint8_t *inbuf, size_t nread, size_t unread_bytes,
-		 uint32_t seqnum, bool encrypted,
-		 struct smb_perfcount_data *deferred_pcd)
+		 uint8_t *inbuf,
+		 size_t nread,
+		 size_t unread_bytes,
+		 uint32_t seqnum,
+		 bool encrypted)
 {
 	struct smbd_server_connection *sconn = xconn->client->sconn;
 	int msg_type = CVAL(inbuf,0);
@@ -626,8 +590,12 @@ void process_smb(struct smbXsrv_connection *xconn,
 		 * we make the decision here.. */
 		if (smbd_is_smb2_header(inbuf, nread)) {
 #endif
-			process_smb2(xconn, inbuf, nread, unread_bytes, seqnum,
-				     encrypted, deferred_pcd);
+			process_smb2(xconn,
+				     inbuf,
+				     nread,
+				     unread_bytes,
+				     seqnum,
+				     encrypted);
 			return;
 #if defined(WITH_SMB1SERVER)
 		}
@@ -638,8 +606,7 @@ void process_smb(struct smbXsrv_connection *xconn,
 			sconn->using_smb2 = false;
 		}
 	}
-	process_smb1(xconn, inbuf, nread, unread_bytes, seqnum, encrypted,
-		     deferred_pcd);
+	process_smb1(xconn, inbuf, nread, unread_bytes, seqnum, encrypted);
 #endif
 
 done:
@@ -764,6 +731,8 @@ bool init_smb1_request(struct smb_request *req,
 		return false;
 	}
 
+	*req = (struct smb_request) { .cmd = 0};
+
 	req->request_time = timeval_current();
 	now = timeval_to_nttime(&req->request_time);
 
@@ -782,18 +751,13 @@ bool init_smb1_request(struct smb_request *req,
 	req->encrypted = encrypted;
 	req->sconn = sconn;
 	req->xconn = xconn;
-	req->conn = NULL;
 	if (xconn != NULL) {
 		status = smb1srv_tcon_lookup(xconn, req->tid, now, &tcon);
 		if (NT_STATUS_IS_OK(status)) {
 			req->conn = tcon->compat;
 		}
 	}
-	req->chain_fsp = NULL;
-	req->smb2req = NULL;
-	req->chain = NULL;
 	req->posix_pathnames = lp_posix_pathnames();
-	smb_init_perfcount_data(&req->pcd);
 
 	/* Ensure we have at least wct words and 2 bytes of bcc. */
 	if (smb_size + req->wct*2 > req_size) {
@@ -812,7 +776,6 @@ bool init_smb1_request(struct smb_request *req,
 		return false;
 	}
 
-	req->outbuf = NULL;
 	return true;
 }
 
@@ -849,9 +812,10 @@ static void construct_reply_smb1negprot(struct smbXsrv_connection *xconn,
 	if (!NT_STATUS_IS_OK(status)) {
 		if (!smb1_srv_send(req->xconn,
 				   (char *)req->outbuf,
-				   true, req->seqnum+1,
-				   IS_CONN_ENCRYPTED(req->conn)||req->encrypted,
-				   &req->pcd)) {
+				   true,
+				   req->seqnum + 1,
+				   IS_CONN_ENCRYPTED(req->conn) ||
+					   req->encrypted)) {
 			exit_server_cleanly("construct_reply_smb1negprot: "
 					    "smb1_srv_send failed.");
 		}
@@ -1697,8 +1661,43 @@ struct smbd_tevent_trace_state {
 	SMBPROFILE_BASIC_ASYNC_STATE(profile_idle);
 };
 
+static inline void smbd_tevent_trace_callback_before_loop_once(
+	struct smbd_tevent_trace_state *state)
+{
+	talloc_free(state->frame);
+	state->frame = talloc_stackframe_pool(8192);
+}
+
+static inline void smbd_tevent_trace_callback_after_loop_once(
+	struct smbd_tevent_trace_state *state)
+{
+	TALLOC_FREE(state->frame);
+}
+
 static void smbd_tevent_trace_callback(enum tevent_trace_point point,
 				       void *private_data)
+{
+	struct smbd_tevent_trace_state *state =
+		(struct smbd_tevent_trace_state *)private_data;
+
+	switch (point) {
+	case TEVENT_TRACE_BEFORE_WAIT:
+		break;
+	case TEVENT_TRACE_AFTER_WAIT:
+		break;
+	case TEVENT_TRACE_BEFORE_LOOP_ONCE:
+		smbd_tevent_trace_callback_before_loop_once(state);
+		break;
+	case TEVENT_TRACE_AFTER_LOOP_ONCE:
+		smbd_tevent_trace_callback_after_loop_once(state);
+		break;
+	}
+
+	errno = 0;
+}
+
+static void smbd_tevent_trace_callback_profile(enum tevent_trace_point point,
+					       void *private_data)
 {
 	struct smbd_tevent_trace_state *state =
 		(struct smbd_tevent_trace_state *)private_data;
@@ -1732,11 +1731,10 @@ static void smbd_tevent_trace_callback(enum tevent_trace_point point,
 		}
 		break;
 	case TEVENT_TRACE_BEFORE_LOOP_ONCE:
-		TALLOC_FREE(state->frame);
-		state->frame = talloc_stackframe_pool(8192);
+		smbd_tevent_trace_callback_before_loop_once(state);
 		break;
 	case TEVENT_TRACE_AFTER_LOOP_ONCE:
-		TALLOC_FREE(state->frame);
+		smbd_tevent_trace_callback_after_loop_once(state);
 		break;
 	}
 
@@ -1825,8 +1823,7 @@ void smbd_process(struct tevent_context *ev_ctx,
 		 * name"
 		 */
 		unsigned char buf[5] = {0x83, 0, 0, 1, 0x81};
-		(void)smb1_srv_send(xconn,(char *)buf, false,
-				    0, false, NULL);
+		(void)smb1_srv_send(xconn, (char *)buf, false, 0, false);
 		exit_server_cleanly("connection denied");
 	} else if (!NT_STATUS_IS_OK(status)) {
 		exit_server_cleanly(nt_errstr(status));
@@ -1903,8 +1900,6 @@ void smbd_process(struct tevent_context *ev_ctx,
 	if (lp_preload_modules()) {
 		smb_load_all_modules_absoute_path(lp_preload_modules());
 	}
-
-	smb_perfcount_init();
 
 	if (!init_account_policy()) {
 		exit_server("Could not open account policy tdb.\n");
@@ -2009,8 +2004,15 @@ void smbd_process(struct tevent_context *ev_ctx,
 
 	TALLOC_FREE(trace_state.frame);
 
-	tevent_set_trace_callback(ev_ctx, smbd_tevent_trace_callback,
-				  &trace_state);
+	if (smbprofile_active()) {
+		tevent_set_trace_callback(ev_ctx,
+					  smbd_tevent_trace_callback_profile,
+					  &trace_state);
+	} else {
+		tevent_set_trace_callback(ev_ctx,
+					  smbd_tevent_trace_callback,
+					  &trace_state);
+	}
 
 	ret = tevent_loop_wait(ev_ctx);
 	if (ret != 0) {

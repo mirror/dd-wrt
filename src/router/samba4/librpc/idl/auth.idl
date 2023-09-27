@@ -52,14 +52,18 @@ interface auth
 
 		uint32 acct_flags;
 
-		uint8 authenticated;
+		/*
+		 * The NETLOGON_GUEST flag being set indicates the user is not
+		 * authenticated.
+		 */
+		uint32 user_flags;
 	} auth_user_info;
 
 	/* This information is preserved only to assist torture tests */
 	typedef [public] struct {
 		/* Number SIDs from the DC netlogon validation info */
 		uint32 num_dc_sids;
-		[size_is(num_dc_sids)] dom_sid dc_sids[*];
+		[size_is(num_dc_sids)] auth_SidAttr dc_sids[*];
 	} auth_user_info_torture;
 
 	typedef [public] struct {
@@ -80,7 +84,7 @@ interface auth
 	 * the type of the ticket; TGT, or non-TGT (i.e. service ticket). If
 	 * unset, the type is unknown. This indicator is useful for the KDC and
 	 * the kpasswd service, which share the same account and keys. By
-	 * ensuring it is provided with the appopriate ticket type, each service
+	 * ensuring it is provided with the appropriate ticket type, each service
 	 * avoids accepting a ticket meant for the other.
 	 *
 	 * The heuristic used to determine the type is the presence or absence
@@ -95,11 +99,33 @@ interface auth
 		TICKET_TYPE_NON_TGT = 2
 	} ticket_type;
 
+	/*
+	 * Used to indicate whether or not to include or disregard resource
+	 * groups when forming a SamInfo structure, user_info_dc structure, or
+	 * PAC, and whether or not to compress them when forming a PAC.
+	 *
+	 * When producing a TGT, existing resource groups are always copied
+	 * unmodified into the PAC. When producing a service ticket, existing
+	 * resource groups and resource groups in other domains are always
+	 * discarded.
+	 */
+	typedef enum {
+		AUTH_GROUP_INCLUSION_INVALID = 0, /* require invalid values to be handled. */
+		AUTH_INCLUDE_RESOURCE_GROUPS = 2,
+		AUTH_INCLUDE_RESOURCE_GROUPS_COMPRESSED = 3,
+		AUTH_EXCLUDE_RESOURCE_GROUPS = 4
+	} auth_group_inclusion;
+
+	typedef [public] struct {
+		dom_sid sid;
+		security_GroupAttrs attrs;
+	} auth_SidAttr;
+
 	/* This is the interim product of the auth subsystem, before
 	 * privileges and local groups are handled */
 	typedef [public] struct {
 		uint32 num_sids;
-		[size_is(num_sids)] dom_sid sids[*];
+		[size_is(num_sids)] auth_SidAttr sids[*];
 		auth_user_info *info;
 		[noprint] DATA_BLOB user_session_key;
 		[noprint] DATA_BLOB lm_session_key;

@@ -491,48 +491,6 @@ NTSTATUS rpc_lookup_groupmem(TALLOC_CTX *mem_ctx,
 
 		break;
 	}
-	case SID_NAME_WKN_GRP:
-	case SID_NAME_ALIAS:
-	{
-		struct lsa_SidArray sid_array;
-		struct lsa_SidPtr sid_ptr;
-		struct samr_Ids rids_query;
-
-		sid_ptr.sid = dom_sid_dup(mem_ctx, group_sid);
-		if (sid_ptr.sid == NULL) {
-			return NT_STATUS_NO_MEMORY;
-		}
-
-		sid_array.num_sids = 1;
-		sid_array.sids = &sid_ptr;
-
-		status = dcerpc_samr_GetAliasMembership(b,
-							mem_ctx,
-							samr_policy,
-							&sid_array,
-							&rids_query,
-							&result);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
-		if (!NT_STATUS_IS_OK(result)) {
-			return result;
-		}
-
-		if (rids_query.count == 0) {
-			pnum_names = 0;
-			pnames = NULL;
-			pname_types = NULL;
-			psid_mem = NULL;
-
-			return NT_STATUS_OK;
-		}
-
-		num_names = rids_query.count;
-		rid_mem = rids_query.ids;
-
-		break;
-	}
 	default:
 		return NT_STATUS_UNSUCCESSFUL;
 	}
@@ -604,6 +562,81 @@ NTSTATUS rpc_lookup_groupmem(TALLOC_CTX *mem_ctx,
 	*psid_mem = sid_mem;
 
 	return NT_STATUS_OK;
+}
+
+/* Lookup alias membership using a rid taken from alias_sid. */
+NTSTATUS rpc_lookup_aliasmem(TALLOC_CTX *mem_ctx,
+			     struct rpc_pipe_client *samr_pipe,
+			     struct policy_handle *samr_policy,
+			     const struct dom_sid *domain_sid,
+			     const struct dom_sid *alias_sid,
+			     enum lsa_SidType type,
+			     uint32_t *pnum_sids,
+			     struct dom_sid **psids)
+{
+	uint32_t alias_rid;
+	struct dom_sid *sid_mem = NULL;
+	struct lsa_SidArray sid_array;
+	uint32_t i;
+	NTSTATUS status, result;
+	struct dcerpc_binding_handle *b = samr_pipe->binding_handle;
+
+	if (!sid_peek_check_rid(domain_sid, alias_sid, &alias_rid)) {
+		return NT_STATUS_UNSUCCESSFUL;
+	}
+
+	switch (type) {
+	case SID_NAME_ALIAS: {
+		struct policy_handle alias_policy;
+
+		status = dcerpc_samr_OpenAlias(b,
+					       mem_ctx,
+					       samr_policy,
+					       SEC_FLAG_MAXIMUM_ALLOWED,
+					       alias_rid,
+					       &alias_policy,
+					       &result);
+		if (any_nt_status_not_ok(status, result, &status)) {
+			return status;
+		}
+
+		status = dcerpc_samr_GetMembersInAlias(b,
+						       mem_ctx,
+						       &alias_policy,
+						       &sid_array,
+						       &result);
+		{
+			NTSTATUS _result;
+			dcerpc_samr_Close(b, mem_ctx, &alias_policy, &_result);
+		}
+		if (any_nt_status_not_ok(status, result, &status)) {
+			return status;
+		}
+
+		sid_mem = talloc_zero_array(mem_ctx,
+					    struct dom_sid,
+					    sid_array.num_sids);
+		if (sid_mem == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		/*
+		 * We cannot just simply assign '*psids = sid_array.sids;'
+		 * we need to copy every sid since these are incompatible types:
+		 * 'struct dom_sid *' vs 'struct lsa_SidPtr *'
+		 */
+		for (i = 0; i < sid_array.num_sids; i++) {
+			sid_copy(&sid_mem[i], sid_array.sids[i].sid);
+		}
+
+		*pnum_sids = sid_array.num_sids;
+		*psids = sid_mem;
+
+		return NT_STATUS_OK;
+	}
+	default:
+		return NT_STATUS_UNSUCCESSFUL;
+	}
 }
 
 /* Get a list of trusted domains */

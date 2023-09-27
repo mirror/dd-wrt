@@ -447,7 +447,7 @@ static int generate_huffman_codes(struct huffman_node *leaf_nodes,
 		n_leaves = 2;
 	}
 
-	/* note, in sort we're using internal_nodes as auxillary space */
+	/* note, in sort we're using internal_nodes as auxiliary space */
 	stable_sort(leaf_nodes,
 		    internal_nodes,
 		    n_leaves,
@@ -465,7 +465,7 @@ static int generate_huffman_codes(struct huffman_node *leaf_nodes,
 	 * In practice it will almost always resolve in the first round; if
 	 * not then, in the second or third. Remember we'll looking at 64k or
 	 * less, so the rarest we can have is 1 in 64k; each round of
-	 * quantization effecively doubles its frequency to 1 in 32k, 1 in
+	 * quantization effectively doubles its frequency to 1 in 32k, 1 in
 	 * 16k, etc, until we're treating the rare symbol as actually quite
 	 * common.
 	 */
@@ -591,7 +591,7 @@ static int generate_huffman_codes(struct huffman_node *leaf_nodes,
 			 *
 			 * We need to sort the nodes of equal depth, so that
 			 * they are sorted by depth first, and symbol value
-			 * second. The internal_nodes can again be auxillary
+			 * second. The internal_nodes can again be auxiliary
 			 * memory.
 			 */
 			stable_sort(
@@ -1210,6 +1210,21 @@ static ssize_t lzx_huffman_compress_block(struct lzxhuff_compressor_context *cmp
 	return bytes_written;
 }
 
+/*
+ * lzxpress_huffman_max_compressed_size()
+ *
+ * Return the most bytes the compression can take, to allow
+ * pre-allocation.
+ */
+size_t lzxpress_huffman_max_compressed_size(size_t input_size)
+{
+	/*
+	 * In the worst case, the output size should be about the same as the
+	 * input size, plus the 256 byte header per 64k block. We aim for
+	 * ample, but within the order of magnitude.
+	 */
+	return input_size + (input_size / 8) + 270;
+}
 
 /*
  * lzxpress_huffman_compress_talloc()
@@ -1236,12 +1251,8 @@ ssize_t lzxpress_huffman_compress_talloc(TALLOC_CTX *mem_ctx,
 					 uint8_t **output)
 {
 	struct lzxhuff_compressor_mem *cmp = NULL;
-	/*
-	 * In the worst case, the output size should be about the same as the
-	 * input size, plus the 256 byte header per 64k block. We aim for
-	 * ample, but within the order of magnitude.
-	 */
-	size_t alloc_size = input_size + (input_size / 8) + 270;
+	size_t alloc_size = lzxpress_huffman_max_compressed_size(input_size);
+
 	ssize_t output_size;
 
 	*output = talloc_array(mem_ctx, uint8_t, alloc_size);
@@ -1283,11 +1294,11 @@ ssize_t lzxpress_huffman_compress_talloc(TALLOC_CTX *mem_ctx,
  * lzxpress_huffman_compress_talloc().
  *
  * To use this, you need to have allocated (but not initialised) a `struct
- * lzxhuff_compressor_context`, and an output buffer. If the buffer is not big
+ * lzxhuff_compressor_mem`, and an output buffer. If the buffer is not big
  * enough (per `output_size`), you'll get a negative return value, otherwise
  * the number of bytes actually consumed, which will always be at least 260.
  *
- * The `struct lzxhuff_compressor_context` is reusable -- it is basically a
+ * The `struct lzxhuff_compressor_mem` is reusable -- it is basically a
  * collection of uninitialised memory buffers. The total size is less than
  * 150k, so stack allocation is plausible.
  *

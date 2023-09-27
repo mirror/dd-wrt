@@ -27,11 +27,6 @@
 #include "../lib/crypto/crypto.h"
 #include "lib/util/iov_buf.h"
 
-#ifndef HAVE_GNUTLS_AES_CMAC
-#include "lib/crypto/aes.h"
-#include "lib/crypto/aes_cmac_128.h"
-#endif
-
 #include "lib/crypto/gnutls_helpers.h"
 
 void smb2_signing_derivations_fill_const_stack(struct smb2_signing_derivations *ds,
@@ -324,7 +319,6 @@ static NTSTATUS smb2_signing_gmac(gnutls_aead_cipher_hd_t cipher_hnd,
 {
 	size_t tag_size = _tag_size;
 	int rc;
-#ifdef ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM
 
 	rc = gnutls_aead_cipher_encryptv2(cipher_hnd,
 					  iv, iv_size,
@@ -336,58 +330,6 @@ static NTSTATUS smb2_signing_gmac(gnutls_aead_cipher_hd_t cipher_hnd,
 	}
 
 	return NT_STATUS_OK;
-#else /* ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM */
-	TALLOC_CTX *tmp_ctx = NULL;
-	size_t atext_size = 0;
-	uint8_t *atext = NULL;
-	size_t len = 0;
-	size_t i;
-
-	/*
-	 * If we come from python bindings, we don't have a stackframe
-	 * around, so use the NULL context.
-	 *
-	 * This is fine as we make sure we free the memory.
-	 */
-	if (talloc_stackframe_exists()) {
-		tmp_ctx = talloc_tos();
-	}
-
-	for (i=0; i < auth_iovcnt; i++) {
-		atext_size += auth_iov[i].iov_len;
-	}
-
-	atext = talloc_size(tmp_ctx, atext_size);
-	if (atext == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	for (i = 0; i < auth_iovcnt; i++) {
-		memcpy(atext + len,
-		       auth_iov[i].iov_base,
-		       auth_iov[i].iov_len);
-
-		len += auth_iov[i].iov_len;
-		if (len > atext_size) {
-			TALLOC_FREE(atext);
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-	}
-
-	rc = gnutls_aead_cipher_encrypt(cipher_hnd,
-					iv, iv_size,
-					atext,
-					atext_size,
-					tag_size,
-					NULL, 0,
-					tag, &tag_size);
-	TALLOC_FREE(atext);
-	if (rc < 0) {
-		return gnutls_error_to_ntstatus(rc, NT_STATUS_HMAC_NOT_SUPPORTED);
-	}
-
-	return NT_STATUS_OK;
-#endif /* ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM */
 }
 
 static NTSTATUS smb2_signing_calc_signature(struct smb2_signing_key *signing_key,
@@ -514,33 +456,8 @@ static NTSTATUS smb2_signing_calc_signature(struct smb2_signing_key *signing_key
 	}	break;
 
 	case SMB2_SIGNING_AES128_CMAC:
-#ifdef HAVE_GNUTLS_AES_CMAC
 		hmac_algo = GNUTLS_MAC_AES_CMAC_128;
 		break;
-#else /* NOT HAVE_GNUTLS_AES_CMAC */
-	{
-		struct aes_cmac_128_context ctx;
-		uint8_t key[AES_BLOCK_SIZE] = {0};
-
-		memcpy(key,
-		       signing_key->blob.data,
-		       MIN(signing_key->blob.length, 16));
-
-		aes_cmac_128_init(&ctx, key);
-		aes_cmac_128_update(&ctx, hdr, SMB2_HDR_SIGNATURE);
-		aes_cmac_128_update(&ctx, zero_sig, 16);
-		for (i=1; i < count; i++) {
-			aes_cmac_128_update(&ctx,
-					(const uint8_t *)vector[i].iov_base,
-					vector[i].iov_len);
-		}
-		aes_cmac_128_final(&ctx, signature);
-
-		ZERO_ARRAY(key);
-
-		return NT_STATUS_OK;
-	}	break;
-#endif
 	case SMB2_SIGNING_HMAC_SHA256:
 		hmac_algo = GNUTLS_MAC_SHA256;
 		break;
@@ -816,9 +733,7 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 				  struct iovec *vector,
 				  int count)
 {
-#ifdef HAVE_GNUTLS_AEAD_CIPHER_ENCRYPTV2
 	bool use_encryptv2 = false;
-#endif
 	uint16_t cipher_id;
 	uint8_t *tf;
 	size_t a_total;
@@ -869,9 +784,7 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 	case SMB2_ENCRYPTION_AES128_GCM:
 		algo = GNUTLS_CIPHER_AES_128_GCM;
 		iv_size = gnutls_cipher_get_iv_size(algo);
-#ifdef ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM
 		use_encryptv2 = true;
-#endif
 		break;
 	case SMB2_ENCRYPTION_AES256_CCM:
 		algo = GNUTLS_CIPHER_AES_256_CCM;
@@ -883,9 +796,7 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 	case SMB2_ENCRYPTION_AES256_GCM:
 		algo = GNUTLS_CIPHER_AES_256_GCM;
 		iv_size = gnutls_cipher_get_iv_size(algo);
-#ifdef ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM
 		use_encryptv2 = true;
-#endif
 		break;
 	default:
 		return NT_STATUS_INVALID_PARAMETER;
@@ -926,7 +837,6 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 	       0,
 	       16 - iv_size);
 
-#ifdef HAVE_GNUTLS_AEAD_CIPHER_ENCRYPTV2
 	if (use_encryptv2) {
 		uint8_t tag[tag_size];
 		giovec_t auth_iov[1];
@@ -952,7 +862,6 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 
 		memcpy(tf + SMB2_TF_SIGNATURE, tag, tag_size);
 	} else
-#endif /* HAVE_GNUTLS_AEAD_CIPHER_ENCRYPTV2 */
 	{
 		size_t ptext_size = m_total;
 		uint8_t *ptext = NULL;
@@ -1046,9 +955,7 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 				  struct iovec *vector,
 				  int count)
 {
-#ifdef HAVE_GNUTLS_AEAD_CIPHER_ENCRYPTV2
 	bool use_encryptv2 = false;
-#endif
 	uint16_t cipher_id;
 	uint8_t *tf;
 	uint16_t flags;
@@ -1109,9 +1016,7 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 	case SMB2_ENCRYPTION_AES128_GCM:
 		algo = GNUTLS_CIPHER_AES_128_GCM;
 		iv_size = gnutls_cipher_get_iv_size(algo);
-#ifdef ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM
 		use_encryptv2 = true;
-#endif
 		break;
 	case SMB2_ENCRYPTION_AES256_CCM:
 		algo = GNUTLS_CIPHER_AES_256_CCM;
@@ -1123,9 +1028,7 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 	case SMB2_ENCRYPTION_AES256_GCM:
 		algo = GNUTLS_CIPHER_AES_256_GCM;
 		iv_size = gnutls_cipher_get_iv_size(algo);
-#ifdef ALLOW_GNUTLS_AEAD_CIPHER_ENCRYPTV2_AES_GCM
 		use_encryptv2 = true;
-#endif
 		break;
 	default:
 		return NT_STATUS_INVALID_PARAMETER;
@@ -1162,8 +1065,6 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 		}
 	}
 
-/* gnutls_aead_cipher_encryptv2() has a bug in version 3.6.10 */
-#ifdef HAVE_GNUTLS_AEAD_CIPHER_ENCRYPTV2
 	if (use_encryptv2) {
 		giovec_t auth_iov[1];
 
@@ -1186,7 +1087,6 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 			goto out;
 		}
 	} else
-#endif /* HAVE_GNUTLS_AEAD_CIPHER_ENCRYPTV2 */
 	{
 		size_t ctext_size = m_total + tag_size;
 		uint8_t *ctext = NULL;
@@ -1257,21 +1157,6 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 			status = gnutls_error_to_ntstatus(rc, NT_STATUS_INTERNAL_ERROR);
 			goto out;
 		}
-#ifdef HAVE_GNUTLS_AEAD_CIPHER_DECRYPT_PTEXT_LEN_BUG
-		/*
-		 * Note that gnutls before 3.5.2 had a bug and returned
-		 * *ptext_len = ctext_len, instead of
-		 * *ptext_len = ctext_len - tag_size
-		 */
-		if (ptext_size != ctext_size) {
-			TALLOC_FREE(ptext);
-			TALLOC_FREE(ctext);
-			rc = GNUTLS_E_SHORT_MEMORY_BUFFER;
-			status = gnutls_error_to_ntstatus(rc, NT_STATUS_INTERNAL_ERROR);
-			goto out;
-		}
-		ptext_size -= tag_size;
-#endif /* HAVE_GNUTLS_AEAD_CIPHER_DECRYPT_PTEXT_LEN_BUG */
 		if (ptext_size != m_total) {
 			TALLOC_FREE(ptext);
 			TALLOC_FREE(ctext);

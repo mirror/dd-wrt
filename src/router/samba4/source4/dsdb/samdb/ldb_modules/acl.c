@@ -1543,7 +1543,7 @@ static int acl_check_password_rights(
 {
 	int ret = LDB_SUCCESS;
 	unsigned int del_attr_cnt = 0, add_attr_cnt = 0, rep_attr_cnt = 0;
-	unsigned int del_val_cnt = 0, add_val_cnt = 0, rep_val_cnt = 0;
+	unsigned int del_val_cnt = 0, add_val_cnt = 0;
 	struct ldb_message_element *el;
 	struct ldb_message *msg;
 	struct ldb_control *c = NULL;
@@ -1651,7 +1651,6 @@ static int acl_check_password_rights(
 			}
 			if (LDB_FLAG_MOD_TYPE(el->flags) == LDB_FLAG_MOD_REPLACE) {
 				++rep_attr_cnt;
-				rep_val_cnt += el->num_values;
 			}
 			ldb_msg_remove_element(msg, el);
 		}
@@ -2665,7 +2664,7 @@ static int acl_search_callback(struct ldb_request *req, struct ldb_reply *ares)
 	switch (ares->type) {
 	case LDB_REPLY_ENTRY:
 		if (ac->constructed_attrs) {
-			ret = dsdb_module_search_dn(ac->module, ac, &acl_res, ares->message->dn, 
+			ret = dsdb_module_search_dn(ac->module, ac, &acl_res, ares->message->dn,
 						    acl_attrs,
 						    DSDB_FLAG_NEXT_MODULE |
 						    DSDB_FLAG_AS_SYSTEM |

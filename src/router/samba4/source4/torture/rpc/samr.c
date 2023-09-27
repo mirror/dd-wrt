@@ -3052,7 +3052,6 @@ bool test_ChangePasswordUser4(struct dcerpc_pipe *p,
 			      char **password,
 			      const char *newpassword)
 {
-#ifdef HAVE_GNUTLS_PBKDF2
 	struct dcerpc_binding_handle *b = p->binding_handle;
 	struct samr_ChangePasswordUser4 r;
 	const char *oldpassword = *password;
@@ -3158,7 +3157,6 @@ bool test_ChangePasswordUser4(struct dcerpc_pipe *p,
 	torture_assert_ntstatus_ok(tctx, status, "ChangePasswordUser4 failed");
 
 	*password = talloc_strdup(tctx, newpassword);
-#endif /* HAVE_GNUTLS_PBKDF2 */
 	return true;
 }
 
@@ -8801,7 +8799,7 @@ static bool test_OpenDomain(struct dcerpc_pipe *p, struct torture_context *tctx,
 
 	torture_assert(tctx, test_samr_handle_Close(b, tctx, &domain_handle), "Failed to close SAMR domain handle");
 
-	torture_assert(tctx, test_Connect(b, tctx, &ctx->handle), "Faile to re-connect SAMR handle");
+	torture_assert(tctx, test_Connect(b, tctx, &ctx->handle), "Failed to re-connect SAMR handle");
 	/* reconnect the main handle */
 
 	if (!ret) {

@@ -372,7 +372,7 @@ kt_ops_copy(krb5_context context, const krb5_context src_context)
     return 0;
 }
 
-static const char *sysplugin_dirs[] =  {
+static const char *const sysplugin_dirs[] =  {
 #ifdef _WIN32
     "$ORIGIN",
 #else
@@ -584,7 +584,7 @@ krb5_copy_context(krb5_context context, krb5_context *out)
             ret = ENOMEM;
     }
     if (ret == 0 && context->configured_default_cc_name) {
-        free(context->configured_default_cc_name);
+        free(p->configured_default_cc_name);
         if ((p->configured_default_cc_name =
              strdup(context->configured_default_cc_name)) == NULL)
             ret = ENOMEM;

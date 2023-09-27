@@ -49,6 +49,7 @@
 #include "lib/util/sys_rw_data.h"
 #include "libcli/util/ntstatus.h"
 #include "lib/util/smb_strtox.h"
+#include "auth/auth.h"
 
 #undef strncasecmp
 #undef strcasecmp
@@ -365,6 +366,40 @@ struct dom_sid *samdb_result_dom_sid(TALLOC_CTX *mem_ctx, const struct ldb_messa
 	return sid;
 }
 
+
+/**
+ * Makes an auth_SidAttr structure from a objectSid in a result set and a
+ * supplied attribute value.
+ *
+ * @param [in] mem_ctx	Talloc memory context on which to allocate the auth_SidAttr.
+ * @param [in] msg	The message from which to take the objectSid.
+ * @param [in] attr	The attribute name, usually "objectSid".
+ * @param [in] attrs	SE_GROUP_* flags to go with the SID.
+ * @returns A pointer to the auth_SidAttr structure, or NULL on failure.
+ */
+struct auth_SidAttr *samdb_result_dom_sid_attrs(TALLOC_CTX *mem_ctx, const struct ldb_message *msg,
+						const char *attr, uint32_t attrs)
+{
+	ssize_t ret;
+	const struct ldb_val *v;
+	struct auth_SidAttr *sid;
+	v = ldb_msg_find_ldb_val(msg, attr);
+	if (v == NULL) {
+		return NULL;
+	}
+	sid = talloc(mem_ctx, struct auth_SidAttr);
+	if (sid == NULL) {
+		return NULL;
+	}
+	ret = sid_parse(v->data, v->length, &sid->sid);
+	if (ret == -1) {
+		talloc_free(sid);
+		return NULL;
+	}
+	sid->attrs = attrs;
+	return sid;
+}
+
 /*
   pull a dom_sid structure from a objectSid in a result set.
 */
@@ -473,7 +508,7 @@ NTTIME samdb_result_account_expires(const struct ldb_message *msg)
 NTTIME samdb_result_allow_password_change(struct ldb_context *sam_ldb,
 					  TALLOC_CTX *mem_ctx,
 					  struct ldb_dn *domain_dn,
-					  struct ldb_message *msg,
+					  const struct ldb_message *msg,
 					  const char *attr)
 {
 	uint64_t attr_time = ldb_msg_find_attr_as_uint64(msg, attr, 0);
@@ -1239,6 +1274,25 @@ struct ldb_dn *samdb_infrastructure_dn(struct ldb_context *sam_ctx, TALLOC_CTX *
                return NULL;
        }
        return new_dn;
+}
+
+struct ldb_dn *samdb_system_container_dn(struct ldb_context *sam_ctx, TALLOC_CTX *mem_ctx)
+{
+	struct ldb_dn *new_dn = NULL;
+	bool ok;
+
+	new_dn = ldb_dn_copy(mem_ctx, ldb_get_default_basedn(sam_ctx));
+	if (new_dn == NULL) {
+		return NULL;
+	}
+
+	ok = ldb_dn_add_child_fmt(new_dn, "CN=System");
+	if (!ok) {
+		TALLOC_FREE(new_dn);
+		return NULL;
+	}
+
+	return new_dn;
 }
 
 struct ldb_dn *samdb_sites_dn(struct ldb_context *sam_ctx, TALLOC_CTX *mem_ctx)
@@ -3027,6 +3081,12 @@ struct ldb_dn *samdb_dns_domain_to_dn(struct ldb_context *ldb, TALLOC_CTX *mem_c
 	dn = ldb_dn_new(mem_ctx, ldb, NULL);
 	for (i=0; split_realm[i]; i++) {
 		binary_encoded = ldb_binary_encode_string(tmp_ctx, split_realm[i]);
+		if (binary_encoded == NULL) {
+			DEBUG(2, ("Failed to add dc= element to DN %s\n",
+				  ldb_dn_get_linearized(dn)));
+			talloc_free(tmp_ctx);
+			return NULL;
+		}
 		if (!ldb_dn_add_base_fmt(dn, "dc=%s", binary_encoded)) {
 			DEBUG(2, ("Failed to add dc=%s element to DN %s\n",
 				  binary_encoded, ldb_dn_get_linearized(dn)));
@@ -3129,14 +3189,20 @@ struct ldb_dn *samdb_domain_to_dn(struct ldb_context *ldb, TALLOC_CTX *mem_ctx,
 	};
 	struct ldb_result *res_domain_ref;
 	char *escaped_domain = ldb_binary_encode_string(mem_ctx, domain_name);
+	int ret_domain;
+
+	if (escaped_domain == NULL) {
+		return NULL;
+	}
+
 	/* find the domain's DN */
-	int ret_domain = ldb_search(ldb, mem_ctx,
-					    &res_domain_ref,
-					    samdb_partitions_dn(ldb, mem_ctx),
-					    LDB_SCOPE_ONELEVEL,
-					    domain_ref_attrs,
-					    "(&(nETBIOSName=%s)(objectclass=crossRef))",
-					    escaped_domain);
+	ret_domain = ldb_search(ldb, mem_ctx,
+				&res_domain_ref,
+				samdb_partitions_dn(ldb, mem_ctx),
+				LDB_SCOPE_ONELEVEL,
+				domain_ref_attrs,
+				"(&(nETBIOSName=%s)(objectclass=crossRef))",
+				escaped_domain);
 	if (ret_domain != LDB_SUCCESS) {
 		return NULL;
 	}
@@ -3181,18 +3247,14 @@ int dsdb_find_dn_by_guid(struct ldb_context *ldb,
 	int ret;
 	struct ldb_result *res;
 	const char *attrs[] = { NULL };
-	char *guid_str = GUID_string(mem_ctx, guid);
-
-	if (!guid_str) {
-		return ldb_operr(ldb);
-	}
+	struct GUID_txt_buf buf;
+	char *guid_str = GUID_buf_string(guid, &buf);
 
 	ret = dsdb_search(ldb, mem_ctx, &res, NULL, LDB_SCOPE_SUBTREE, attrs,
 			  DSDB_SEARCH_SEARCH_ALL_PARTITIONS |
 			  DSDB_SEARCH_SHOW_EXTENDED_DN |
 			  DSDB_SEARCH_ONE_ONLY | dsdb_flags,
 			  "objectGUID=%s", guid_str);
-	talloc_free(guid_str);
 	if (ret != LDB_SUCCESS) {
 		return ret;
 	}
@@ -3942,7 +4004,7 @@ int dsdb_forest_functional_level(struct ldb_context *ldb)
 int dsdb_dc_functional_level(struct ldb_context *ldb)
 {
 	int *dcFunctionality =
-		talloc_get_type(ldb_get_opaque(ldb, "domainFunctionality"), int);
+		talloc_get_type(ldb_get_opaque(ldb, "domainControllerFunctionality"), int);
 	if (!dcFunctionality) {
 		/* this is expected during initial provision */
 		DEBUG(4,(__location__ ": WARNING: domainControllerFunctionality not setup\n"));
@@ -3950,6 +4012,222 @@ int dsdb_dc_functional_level(struct ldb_context *ldb)
 	}
 	return *dcFunctionality;
 }
+
+const char *dsdb_dc_operatingSystemVersion(int dc_functional_level)
+{
+	const char *operatingSystemVersion = NULL;
+
+	/*
+	 * While we are there also update
+	 * operatingSystem and operatingSystemVersion
+	 * as at least operatingSystemVersion is really
+	 * important for some clients/applications (like exchange).
+	 */
+
+	if (dc_functional_level >= DS_DOMAIN_FUNCTION_2016) {
+		/* Pretend Windows 2016 */
+		operatingSystemVersion = "10.0 (14393)";
+	} else if (dc_functional_level >= DS_DOMAIN_FUNCTION_2012_R2) {
+		/* Pretend Windows 2012 R2 */
+		operatingSystemVersion = "6.3 (9600)";
+	} else if (dc_functional_level >= DS_DOMAIN_FUNCTION_2012) {
+		/* Pretend Windows 2012 */
+		operatingSystemVersion = "6.2 (9200)";
+	} else {
+		/* Pretend Windows 2008 R2 */
+		operatingSystemVersion = "6.1 (7600)";
+	}
+
+	return operatingSystemVersion;
+}
+
+int dsdb_check_and_update_fl(struct ldb_context *ldb_ctx, struct loadparm_context *lp_ctx)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	int ret;
+
+	int db_dc_functional_level;
+	int db_domain_functional_level;
+	int db_forest_functional_level;
+	int lp_dc_functional_level = lpcfg_ad_dc_functional_level(lp_ctx);
+	bool am_rodc;
+	struct ldb_message *msg = NULL;
+	struct ldb_dn *dc_ntds_settings_dn = NULL;
+	struct ldb_dn *dc_computer_dn = NULL;
+	const char *operatingSystem = NULL;
+	const char *operatingSystemVersion = NULL;
+
+	db_dc_functional_level = dsdb_dc_functional_level(ldb_ctx);
+	db_domain_functional_level = dsdb_functional_level(ldb_ctx);
+	db_forest_functional_level = dsdb_forest_functional_level(ldb_ctx);
+
+	if (lp_dc_functional_level < db_domain_functional_level) {
+		DBG_ERR("Refusing to start as smb.conf 'ad dc functional level' maps to %d, "
+			"which is less than the domain functional level of %d\n",
+			lp_dc_functional_level, db_domain_functional_level);
+		TALLOC_FREE(frame);
+		return LDB_ERR_CONSTRAINT_VIOLATION;
+	}
+
+	if (lp_dc_functional_level < db_forest_functional_level) {
+		DBG_ERR("Refusing to start as smb.conf 'ad dc functional level' maps to %d, "
+			"which is less than the forest functional level of %d\n",
+			lp_dc_functional_level, db_forest_functional_level);
+		TALLOC_FREE(frame);
+		return LDB_ERR_CONSTRAINT_VIOLATION;
+	}
+
+	/* Check if we need to update the DB */
+	if (db_dc_functional_level == lp_dc_functional_level) {
+		/*
+		 * Note that this early return means
+		 * we're not updating operatingSystem and
+		 * operatingSystemVersion.
+		 *
+		 * But at least for now that's
+		 * exactly what we want.
+		 */
+		TALLOC_FREE(frame);
+		return LDB_SUCCESS;
+	}
+
+	/* Confirm we are not an RODC before we try a modify */
+	ret = samdb_rodc(ldb_ctx, &am_rodc);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to determine if this server is an RODC\n");
+		TALLOC_FREE(frame);
+		return ret;
+	}
+
+	if (am_rodc) {
+		DBG_WARNING("Unable to update DC's msDS-Behavior-Version "
+			    "(from %d to %d) and operatingSystem[Version] "
+			    "as we are an RODC\n",
+			    db_dc_functional_level, lp_dc_functional_level);
+		TALLOC_FREE(frame);
+		return LDB_SUCCESS;
+	}
+
+	dc_ntds_settings_dn = samdb_ntds_settings_dn(ldb_ctx, frame);
+
+	if (dc_ntds_settings_dn == NULL) {
+		DBG_ERR("Failed to find own NTDS Settings DN\n");
+		TALLOC_FREE(frame);
+		return LDB_ERR_NO_SUCH_OBJECT;
+	}
+
+	/* Now update our msDS-Behavior-Version */
+
+	msg = ldb_msg_new(frame);
+	if (msg == NULL) {
+		DBG_ERR("Failed to allocate message to update msDS-Behavior-Version\n");
+		TALLOC_FREE(frame);
+		return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	msg->dn = dc_ntds_settings_dn;
+
+	ret = samdb_msg_add_int(ldb_ctx, frame, msg, "msDS-Behavior-Version", lp_dc_functional_level);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to set new msDS-Behavior-Version on message\n");
+		TALLOC_FREE(frame);
+		return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	ret = dsdb_replace(ldb_ctx, msg, 0);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to update DB with new msDS-Behavior-Version on %s: %s\n",
+			ldb_dn_get_linearized(dc_ntds_settings_dn),
+			ldb_errstring(ldb_ctx));
+		TALLOC_FREE(frame);
+		return ret;
+	}
+
+	/*
+	 * We have to update the opaque because this particular ldb_context
+	 * will not re-read the DB
+	 */
+	{
+		int *val = talloc(ldb_ctx, int);
+		if (!val) {
+			TALLOC_FREE(frame);
+			return LDB_ERR_OPERATIONS_ERROR;
+		}
+		*val = lp_dc_functional_level;
+		ret = ldb_set_opaque(ldb_ctx,
+				     "domainControllerFunctionality", val);
+		if (ret != LDB_SUCCESS) {
+			DBG_ERR("Failed to re-set domainControllerFunctionality opaque\n");
+			TALLOC_FREE(val);
+			TALLOC_FREE(frame);
+			return ret;
+		}
+	}
+
+	/*
+	 * While we are there also update
+	 * operatingSystem and operatingSystemVersion
+	 * as at least operatingSystemVersion is really
+	 * important for some clients/applications (like exchange).
+	 */
+
+	operatingSystem = talloc_asprintf(frame, "Samba-%s",
+					  samba_version_string());
+	if (operatingSystem == NULL) {
+		TALLOC_FREE(frame);
+		return ldb_oom(ldb_ctx);
+	}
+
+	operatingSystemVersion = dsdb_dc_operatingSystemVersion(db_dc_functional_level);
+
+	ret = samdb_server_reference_dn(ldb_ctx, frame, &dc_computer_dn);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed get the dc_computer_dn: %s\n",
+			ldb_errstring(ldb_ctx));
+		TALLOC_FREE(frame);
+		return ret;
+	}
+
+	msg = ldb_msg_new(frame);
+	if (msg == NULL) {
+		DBG_ERR("Failed to allocate message to update msDS-Behavior-Version\n");
+		TALLOC_FREE(frame);
+		return LDB_ERR_OPERATIONS_ERROR;
+	}
+
+	msg->dn = dc_computer_dn;
+
+	ret = samdb_msg_add_addval(ldb_ctx, frame, msg,
+				   "operatingSystem",
+				   operatingSystem);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to set new operatingSystem on message\n");
+		TALLOC_FREE(frame);
+		return ldb_operr(ldb_ctx);
+	}
+
+	ret = samdb_msg_add_addval(ldb_ctx, frame, msg,
+				   "operatingSystemVersion",
+				   operatingSystemVersion);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to set new operatingSystemVersion on message\n");
+		TALLOC_FREE(frame);
+		return ldb_operr(ldb_ctx);
+	}
+
+	ret = dsdb_replace(ldb_ctx, msg, 0);
+	if (ret != LDB_SUCCESS) {
+		DBG_ERR("Failed to update DB with new operatingSystem[Version] on %s: %s\n",
+			ldb_dn_get_linearized(dc_computer_dn),
+			ldb_errstring(ldb_ctx));
+		TALLOC_FREE(frame);
+		return ret;
+	}
+
+	TALLOC_FREE(frame);
+	return LDB_SUCCESS;
+}
+
 
 /*
   set a GUID in an extended DN structure
@@ -5365,7 +5643,7 @@ static const char * const secret_attributes[] = {
 bool dsdb_attr_in_rodc_fas(const struct dsdb_attribute *sa)
 {
 	/* they never get secret attributes */
-	if (is_attr_in_list(secret_attributes, sa->lDAPDisplayName)) {
+	if (ldb_attr_in_list(secret_attributes, sa->lDAPDisplayName)) {
 		return false;
 	}
 
@@ -5518,18 +5796,6 @@ bool dsdb_attr_in_parse_tree(struct ldb_parse_tree *tree,
                return false;
        }
        return false;
-}
-
-bool is_attr_in_list(const char * const * attrs, const char *attr)
-{
-	unsigned int i;
-
-	for (i = 0; attrs[i]; i++) {
-		if (ldb_attr_cmp(attrs[i], attr) == 0)
-			return true;
-	}
-
-	return false;
 }
 
 int dsdb_werror_at(struct ldb_context *ldb, int ldb_ecode, WERROR werr,
@@ -6362,7 +6628,7 @@ done:
  * if not. Returns a negative value on error.
  */
 int dsdb_is_protected_user(struct ldb_context *ldb,
-			   const struct dom_sid *sids,
+			   const struct auth_SidAttr *sids,
 			   uint32_t num_sids)
 {
 	const struct dom_sid *domain_sid = NULL;
@@ -6380,7 +6646,7 @@ int dsdb_is_protected_user(struct ldb_context *ldb,
 	}
 
 	for (i = 0; i < num_sids; ++i) {
-		if (dom_sid_equal(&protected_users_sid, &sids[i])) {
+		if (dom_sid_equal(&protected_users_sid, &sids[i].sid)) {
 			return 1;
 		}
 	}

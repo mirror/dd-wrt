@@ -16,19 +16,52 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import json
 import optparse
+import sys
+import textwrap
+import traceback
+
 import samba
+from ldb import ERR_INVALID_CREDENTIALS, LdbError
 from samba import colour
+from samba.auth import system_session
 from samba.getopt import SambaOption, OptionError
 from samba.logger import get_samba_logger
-from ldb import LdbError, ERR_INVALID_CREDENTIALS
-import sys
-import traceback
-import textwrap
+from samba.samdb import SamDB
+
+from .encoders import JSONEncoder
+from .validators import ValidationError
 
 
 class Option(SambaOption):
+    ATTRS = SambaOption.ATTRS + ["validators"]
     SUPPRESS_HELP = optparse.SUPPRESS_HELP
+
+    def run_validators(self, opt, value):
+        """Runs the list of validators on the current option.
+
+        If the validator raises ValidationError, turn that into CommandError
+        which gives nicer output.
+        """
+        validators = getattr(self, "validators") or []
+
+        for validator in validators:
+            try:
+                validator(opt, value)
+            except ValidationError as e:
+                raise CommandError(e)
+
+    def convert_value(self, opt, value):
+        """Override convert_value to run validators just after.
+
+        This can also be done in process() but there we would have to
+        replace the entire method.
+        """
+        value = super().convert_value(opt, value)
+        self.run_validators(opt, value)
+        return value
+
 
 # This help formatter does text wrapping and preserves newlines
 
@@ -113,8 +146,24 @@ class Command(object):
         else:
             print(f"{err}{klass}: {msg} - {evalue}", file=self.errf)
 
+    def ldb_connect(self, ldap_url, sambaopts, credopts):
+        """Helper to connect to Ldb database using command line opts."""
+        lp = sambaopts.get_loadparm()
+        creds = credopts.get_credentials(lp)
+        return SamDB(ldap_url, credentials=creds,
+                     session_info=system_session(lp), lp=lp)
+
+    def print_json(self, data):
+        """Print json on the screen using consistent formatting and sorting.
+
+        A custom JSONEncoder class is used to help with serializing unknown
+        objects such as Dn for example.
+        """
+        json.dump(data, self.outf, cls=JSONEncoder, indent=2, sort_keys=True)
+        self.outf.write("\n")
+
     def show_command_error(self, e):
-        '''display a command error'''
+        """display a command error"""
         if isinstance(e, CommandError):
             (etype, evalue, etraceback) = e.exception_info
             inner_exception = e.inner_exception
@@ -205,9 +254,9 @@ class Command(object):
             self.apply_colour_choice(kwargs.pop('color', 'auto'))
 
         # Check for a min a max number of allowed arguments, whenever possible
-        # The suffix "?" means zero or one occurence
-        # The suffix "+" means at least one occurence
-        # The suffix "*" means zero or more occurences
+        # The suffix "?" means zero or one occurrence
+        # The suffix "+" means at least one occurrence
+        # The suffix "*" means zero or more occurrences
         min_args = 0
         max_args = 0
         undetermined_max_args = False

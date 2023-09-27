@@ -155,16 +155,16 @@ struct ldb_dn;
 #define LDB_FLAG_INTERNAL_MASK 0xFFFFFFF0
 
 /**
-  OID for logic AND comaprison.
+  OID for logic AND comparison.
 
-  This is the well known object ID for a logical AND comparitor.
+  This is the well known object ID for a logical AND comparator.
 */
 #define LDB_OID_COMPARATOR_AND  "1.2.840.113556.1.4.803"
 
 /**
   OID for logic OR comparison.
 
-  This is the well known object ID for a logical OR comparitor.
+  This is the well known object ID for a logical OR comparator.
 */
 #define LDB_OID_COMPARATOR_OR   "1.2.840.113556.1.4.804"
 
@@ -817,6 +817,11 @@ typedef int (*ldb_qsort_cmp_fn_t) (void *v1, void *v2, void *opaque);
 */
 #define LDB_EXTENDED_DYNAMIC_OID	"1.3.6.1.4.1.1466.101.119.1"
 
+/**
+   OID for RFC4532 "Who Am I" extended operation
+*/
+#define LDB_EXTENDED_WHOAMI_OID		"1.3.6.1.4.1.4203.1.11.3"
+
 struct ldb_sd_flags_control {
 	/*
 	 * request the owner	0x00000001
@@ -1185,8 +1190,8 @@ int ldb_modify_default_callback(struct ldb_request *req, struct ldb_reply *ares)
   \param attrs the search attributes for the query (pass NULL if none required)
   \param controls an array of controls
   \param context the callback function context
-  \param the callback function to handle the async replies
-  \param the parent request if any
+  \param callback the callback function to handle the async replies
+  \param parent the parent request if any
 
   \return result code (LDB_SUCCESS on success, or a failure code)
 */
@@ -1224,8 +1229,8 @@ int ldb_build_search_req_ex(struct ldb_request **ret_req,
   \param message contains the entry to be added
   \param controls an array of controls
   \param context the callback function context
-  \param the callback function to handle the async replies
-  \param the parent request if any
+  \param callback the callback function to handle the async replies
+  \param parent the parent request if any
 
   \return result code (LDB_SUCCESS on success, or a failure code)
 */
@@ -1248,8 +1253,8 @@ int ldb_build_add_req(struct ldb_request **ret_req,
   \param message contains the entry to be modified
   \param controls an array of controls
   \param context the callback function context
-  \param the callback function to handle the async replies
-  \param the parent request if any
+  \param callback the callback function to handle the async replies
+  \param parent the parent request if any
 
   \return result code (LDB_SUCCESS on success, or a failure code)
 */
@@ -1272,8 +1277,8 @@ int ldb_build_mod_req(struct ldb_request **ret_req,
   \param dn the DN to be deleted
   \param controls an array of controls
   \param context the callback function context
-  \param the callback function to handle the async replies
-  \param the parent request if any
+  \param callback the callback function to handle the async replies
+  \param parent the parent request if any
 
   \return result code (LDB_SUCCESS on success, or a failure code)
 */
@@ -1297,8 +1302,8 @@ int ldb_build_del_req(struct ldb_request **ret_req,
   \param newdn the new DN
   \param controls an array of controls
   \param context the callback function context
-  \param the callback function to handle the async replies
-  \param the parent request if any
+  \param callback the callback function to handle the async replies
+  \param parent the parent request if any
 
   \return result code (LDB_SUCCESS on success, or a failure code)
 */
@@ -1470,8 +1475,8 @@ int ldb_extended_default_callback(struct ldb_request *req, struct ldb_reply *are
   it needs to be NULL or a valid talloc pointer! talloc_get_type() will be used on it
   \param controls an array of controls
   \param context the callback function context
-  \param the callback function to handle the async replies
-  \param the parent request if any
+  \param callback the callback function to handle the async replies
+  \param parent the parent request if any
 
   \return result code (LDB_SUCCESS on success, or a failure code)
 */
@@ -2343,7 +2348,7 @@ char* ldb_control_to_string(TALLOC_CTX *mem_ctx, const struct ldb_control *contr
 */
 struct ldb_control *ldb_parse_control_from_string(struct ldb_context *ldb, TALLOC_CTX *mem_ctx, const char *control_strings);
 /**
-   Convert an array of string represention of a control into an array of ldb_control structures
+   Convert an array of string representation of a control into an array of ldb_control structures
 
    \param ldb LDB context
    \param mem_ctx TALLOC context to return result on, and to allocate error_string on

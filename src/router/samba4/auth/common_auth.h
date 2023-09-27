@@ -37,7 +37,7 @@ enum auth_password_state {
 
 #define AUTH_SESSION_INFO_DEFAULT_GROUPS     0x01 /* Add the user to the default world and network groups */
 #define AUTH_SESSION_INFO_AUTHENTICATED      0x02 /* Add the user to the 'authenticated users' group */
-#define AUTH_SESSION_INFO_SIMPLE_PRIVILEGES  0x04 /* Use a trivial map between users and privilages, rather than a DB */
+#define AUTH_SESSION_INFO_SIMPLE_PRIVILEGES  0x04 /* Use a trivial map between users and privileges, rather than a DB */
 #define AUTH_SESSION_INFO_UNIX_TOKEN         0x08 /* The returned token must have the unix_token and unix_info elements provided */
 #define AUTH_SESSION_INFO_NTLM               0x10 /* The returned token must have authenticated-with-NTLM flag set */
 
@@ -177,14 +177,17 @@ struct auth4_context {
  * NOTE: msg_ctx and lp_ctx is optional, but when supplied allows streaming the
  * authentication events over the message bus.
  */
+struct authn_audit_info;
 void log_authentication_event(struct imessaging_context *msg_ctx,
 			      struct loadparm_context *lp_ctx,
 			      const struct timeval *start_time,
 			      const struct auth_usersupplied_info *ui,
 			      NTSTATUS status,
-			      const char *account_name,
 			      const char *domain_name,
-			      struct dom_sid *sid);
+			      const char *account_name,
+			      struct dom_sid *sid,
+			      const struct authn_audit_info *client_audit_info,
+			      const struct authn_audit_info *server_audit_info);
 
 /*
  * Log details of a successful authorization to a service.
@@ -206,5 +209,29 @@ void log_successful_authz_event(struct imessaging_context *msg_ctx,
 				const char *service_description,
 				const char *auth_type,
 				const char *transport_protection,
-				struct auth_session_info *session_info);
+				struct auth_session_info *session_info,
+				const struct authn_audit_info *client_audit_info,
+				const struct authn_audit_info *server_audit_info);
+
+/*
+ * Log details of an authorization to a service.
+ *
+ * NOTE: msg_ctx and lp_ctx are optional, but when supplied, allow streaming the
+ * authorization events over the message bus.
+ */
+void log_authz_event(
+	struct imessaging_context *msg_ctx,
+	struct loadparm_context *lp_ctx,
+	const struct tsocket_address *remote,
+	const struct tsocket_address *local,
+	const struct authn_audit_info *server_audit_info,
+	const char *service_description,
+	const char *auth_type,
+	const char *domain_name,
+	const char *account_name,
+	const struct dom_sid *sid,
+	const char *logon_server,
+	const struct timeval authtime,
+	NTSTATUS status);
+
 #endif

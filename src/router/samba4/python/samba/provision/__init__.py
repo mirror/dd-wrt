@@ -48,7 +48,6 @@ import samba
 from samba import auth
 from samba.samba3 import smbd, passdb
 from samba.samba3 import param as s3param
-from samba.dsdb import DS_DOMAIN_FUNCTION_2000
 from samba import (
     Ldb,
     MAX_NETBIOS_NAME_LEN,
@@ -66,8 +65,13 @@ from samba.dcerpc.misc import (
     SEC_CHAN_WKSTA,
 )
 from samba.dsdb import (
+    DS_DOMAIN_FUNCTION_2000,
     DS_DOMAIN_FUNCTION_2003,
+    DS_DOMAIN_FUNCTION_2008,
     DS_DOMAIN_FUNCTION_2008_R2,
+    DS_DOMAIN_FUNCTION_2012,
+    DS_DOMAIN_FUNCTION_2012_R2,
+    DS_DOMAIN_FUNCTION_2016,
     ENC_ALL_TYPES,
 )
 from samba.idmap import IDmapDB
@@ -122,6 +126,7 @@ from samba.samdb import SamDB
 from samba.dbchecker import dbcheck
 from samba.provision.kerberos import create_kdc_conf
 from samba.samdb import get_default_backend_store
+from samba import functional_level
 
 DEFAULT_POLICY_GUID = "31B2F340-016D-11D2-945F-00C04FB984F9"
 DEFAULT_DC_POLICY_GUID = "6AC1786C-016F-11D2-945F-00C04FB984F9"
@@ -1132,6 +1137,14 @@ def setup_self_join(samdb, admin_session_info, names, fill, machinepass,
     if dc_rid is None:
         dc_rid = next_rid
 
+    # Some clients/applications (like exchange) make use of
+    # the operatingSystemVersion attribute in order to
+    # find if a DC is good enough.
+    #
+    # So we better use a value matching a Windows DC
+    # with the same domainControllerFunctionality level
+    operatingSystemVersion = samba.dsdb.dc_operatingSystemVersion(domainControllerFunctionality)
+
     setup_add_ldif(samdb, setup_path("provision_self_join.ldif"), {
               "CONFIGDN": names.configdn,
               "SCHEMADN": names.schemadn,
@@ -1143,7 +1156,8 @@ def setup_self_join(samdb, admin_session_info, names, fill, machinepass,
               "MACHINEPASS_B64": b64encode(machinepass.encode('utf-16-le')).decode('utf8'),
               "DOMAINSID": str(domainsid),
               "DCRID": str(dc_rid),
-              "SAMBA_VERSION_STRING": version,
+              "OPERATING_SYSTEM": "Samba-%s" % version,
+              "OPERATING_SYSTEM_VERSION": operatingSystemVersion,
               "NTDSGUID": ntdsguid_line,
               "DOMAIN_CONTROLLER_FUNCTIONALITY": str(
                   domainControllerFunctionality),
@@ -1252,7 +1266,7 @@ def create_default_gpo(sysvolpath, dnsdomain, policyguid, policyguid_dc):
     :param sysvolpath: Physical path for the sysvol folder
     :param dnsdomain: DNS domain name of the AD domain
     :param policyguid: GUID of the default domain policy
-    :param policyguid_dc: GUID of the default domain controler policy
+    :param policyguid_dc: GUID of the default domain controller policy
     """
     policy_path = getpolicypath(sysvolpath, dnsdomain, policyguid)
     create_gpo_struct(policy_path)
@@ -1349,15 +1363,16 @@ def fill_samdb(samdb, lp, names, logger, policyguid,
             1000, 1000000000, 1000)
         raise ProvisioningError(error)
 
+    domainControllerFunctionality = functional_level.dc_level_from_lp(lp)
+
     # ATTENTION: Do NOT change these default values without discussion with the
     # team and/or release manager. They have a big impact on the whole program!
-    domainControllerFunctionality = DS_DOMAIN_FUNCTION_2008_R2
-
     if dom_for_fun_level is None:
         dom_for_fun_level = DS_DOMAIN_FUNCTION_2008_R2
 
     if dom_for_fun_level > domainControllerFunctionality:
-        raise ProvisioningError("You want to run SAMBA 4 on a domain and forest function level which itself is higher than its actual DC function level (2008_R2). This won't work!")
+        level = functional_level.level_to_string(domainControllerFunctionality)
+        raise ProvisioningError(f"You want to run SAMBA 4 on a domain and forest function level which itself is higher than its actual DC function level ({level}). This won't work!")
 
     domainFunctionality = dom_for_fun_level
     forestFunctionality = dom_for_fun_level
@@ -1594,8 +1609,8 @@ def fill_samdb(samdb, lp, names, logger, policyguid,
     return samdb
 
 
-SYSVOL_ACL = "O:LAG:BAD:P(A;OICI;0x001f01ff;;;BA)(A;OICI;0x001200a9;;;SO)(A;OICI;0x001f01ff;;;SY)(A;OICI;0x001200a9;;;AU)"
-POLICIES_ACL = "O:LAG:BAD:P(A;OICI;0x001f01ff;;;BA)(A;OICI;0x001200a9;;;SO)(A;OICI;0x001f01ff;;;SY)(A;OICI;0x001200a9;;;AU)(A;OICI;0x001301bf;;;PA)"
+SYSVOL_ACL = "O:LAG:BAD:P(A;OICI;FA;;;BA)(A;OICI;0x1200a9;;;SO)(A;OICI;FA;;;SY)(A;OICI;0x1200a9;;;AU)"
+POLICIES_ACL = "O:LAG:BAD:P(A;OICI;FA;;;BA)(A;OICI;0x1200a9;;;SO)(A;OICI;FA;;;SY)(A;OICI;0x1200a9;;;AU)(A;OICI;0x1301bf;;;PA)"
 SYSVOL_SERVICE = "sysvol"
 
 
@@ -1651,7 +1666,7 @@ def setsysvolacl(samdb, netlogon, sysvol, uid, gid, domainsid, dnsdomain,
     :param netlogon: Physical path for the netlogon folder
     :param sysvol: Physical path for the sysvol folder
     :param uid: The UID of the "Administrator" user
-    :param gid: The GID of the "Domain adminstrators" group
+    :param gid: The GID of the "Domain administrators" group
     :param domainsid: The SID of the domain
     :param dnsdomain: The DNS name of the domain
     :param domaindn: The DN of the domain (ie. DC=...)
@@ -1696,7 +1711,7 @@ def setsysvolacl(samdb, netlogon, sysvol, uid, gid, domainsid, dnsdomain,
         # marked in secrets.tdb
         s4_passdb = passdb.PDB(s3conf.get("passdb backend"))
 
-        # now ensure everything matches correctly, to avoid wierd issues
+        # now ensure everything matches correctly, to avoid weird issues
         if passdb.get_global_sam_sid() != domainsid:
             raise ProvisioningError('SID as seen by smbd [%s] does not match SID as seen by the provision script [%s]!' % (passdb.get_global_sam_sid(), domainsid))
 
@@ -1835,7 +1850,7 @@ def checksysvolacl(samdb, netlogon, sysvol, domainsid, dnsdomain, domaindn,
     :param netlogon: Physical path for the netlogon folder
     :param sysvol: Physical path for the sysvol folder
     :param uid: The UID of the "Administrator" user
-    :param gid: The GID of the "Domain adminstrators" group
+    :param gid: The GID of the "Domain administrators" group
     :param domainsid: The SID of the domain
     :param dnsdomain: The DNS name of the domain
     :param domaindn: The DN of the domain (ie. DC=...)
@@ -1849,7 +1864,7 @@ def checksysvolacl(samdb, netlogon, sysvol, domainsid, dnsdomain, domaindn,
     # ensure that we init the samba_dsdb backend, so the domain sid is marked in secrets.tdb
     s4_passdb = passdb.PDB(s3conf.get("passdb backend"))
 
-    # now ensure everything matches correctly, to avoid wierd issues
+    # now ensure everything matches correctly, to avoid weird issues
     if passdb.get_global_sam_sid() != domainsid:
         raise ProvisioningError('SID as seen by smbd [%s] does not match SID as seen by the provision script [%s]!' % (passdb.get_global_sam_sid(), domainsid))
 
@@ -2146,7 +2161,7 @@ def provision(logger, session_info, smbconf=None,
               sitename=None, serverrole=None, dom_for_fun_level=None,
               useeadb=False, am_rodc=False, lp=None, use_ntvfs=False,
               use_rfc2307=False, maxuid=None, maxgid=None, skip_sysvolacl=True,
-              base_schema="2012_R2",
+              base_schema="2019", adprep_level=DS_DOMAIN_FUNCTION_2016,
               plaintext_secrets=False, backend_store=None,
               backend_store_size=None, batch_mode=False):
     """Provision samba4
@@ -2158,6 +2173,30 @@ def provision(logger, session_info, smbconf=None,
         serverrole = sanitize_server_role(serverrole)
     except ValueError:
         raise ProvisioningError('server role (%s) should be one of "active directory domain controller", "member server", "standalone server"' % serverrole)
+
+    if dom_for_fun_level is None:
+        dom_for_fun_level = DS_DOMAIN_FUNCTION_2008_R2
+
+    if base_schema in ["2008_R2", "2008_R2_old"]:
+        max_adprep_level = DS_DOMAIN_FUNCTION_2008_R2
+    elif base_schema in ["2012"]:
+        max_adprep_level = DS_DOMAIN_FUNCTION_2012
+    elif base_schema in ["2012_R2"]:
+        max_adprep_level = DS_DOMAIN_FUNCTION_2012_R2
+    else:
+        max_adprep_level = DS_DOMAIN_FUNCTION_2016
+
+    if max_adprep_level < dom_for_fun_level:
+        raise ProvisioningError('dom_for_fun_level[%u] incompatible with base_schema[%s]' %
+                                (dom_for_fun_level, base_schema))
+
+    if adprep_level is not None and max_adprep_level < adprep_level:
+        raise ProvisioningError('base_schema[%s] incompatible with adprep_level[%u]' %
+                                (base_schema, adprep_level))
+
+    if adprep_level is not None and adprep_level < dom_for_fun_level:
+        raise ProvisioningError('dom_for_fun_level[%u] incompatible with adprep_level[%u]' %
+                                (dom_for_fun_level, adprep_level))
 
     if ldapadminpass is None:
         # Make a new, random password between Samba and it's LDAP server
@@ -2336,6 +2375,46 @@ def provision(logger, session_info, smbconf=None,
                            skip_sysvolacl=skip_sysvolacl,
                            backend_store=backend_store,
                            backend_store_size=backend_store_size)
+
+            if adprep_level is not None:
+                updates_allowed_overridden = False
+                if lp.get("dsdb:schema update allowed") is None:
+                    lp.set("dsdb:schema update allowed", "yes")
+                    print("Temporarily overriding 'dsdb:schema update allowed' setting")
+                    updates_allowed_overridden = True
+
+                samdb.transaction_start()
+                try:
+                    from samba.forest_update import ForestUpdate
+                    forest = ForestUpdate(samdb, fix=True)
+
+                    forest.check_updates_iterator([11, 54, 79, 80, 81, 82, 83])
+                    forest.check_updates_functional_level(adprep_level,
+                                                          DS_DOMAIN_FUNCTION_2008_R2,
+                                                          update_revision=True)
+
+                    samdb.transaction_commit()
+                except Exception as e:
+                    samdb.transaction_cancel()
+                    raise e
+
+                samdb.transaction_start()
+                try:
+                    from samba.domain_update import DomainUpdate
+
+                    DomainUpdate(samdb, fix=True).check_updates_functional_level(
+                        adprep_level,
+                        DS_DOMAIN_FUNCTION_2008,
+                        update_revision=True,
+                    )
+
+                    samdb.transaction_commit()
+                except Exception as e:
+                    samdb.transaction_cancel()
+                    raise e
+
+                if updates_allowed_overridden:
+                    lp.set("dsdb:schema update allowed", "no")
 
         if not is_heimdal_built():
             create_kdc_conf(paths.kdcconf, realm, domain, os.path.dirname(lp.get("log file")))

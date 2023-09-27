@@ -21,6 +21,7 @@
 #include "auth/gensec/gensec.h"
 #include "libcli/smb/smb_util.h"
 #include "cmdline_private.h"
+#include "lib/util/util_process.h"
 
 #include <samba/version.h>
 
@@ -134,8 +135,9 @@ void samba_cmdline_set_machine_account_fn(
 	cli_credentials_set_machine_account_fn = fn;
 }
 
-void samba_cmdline_burn(int argc, char *argv[])
+bool samba_cmdline_burn(int argc, char *argv[])
 {
+	bool burnt = false;
 	bool found = false;
 	bool is_user = false;
 	char *p = NULL;
@@ -145,9 +147,13 @@ void samba_cmdline_burn(int argc, char *argv[])
 	for (i = 0; i < argc; i++) {
 		p = argv[i];
 		if (p == NULL) {
-			return;
+			return false;
 		}
 
+		/*
+		 * Take care that this list must be in longest-match
+		 * first order
+		 */
 		if (strncmp(p, "-U", 2) == 0) {
 			ulen = 2;
 			found = true;
@@ -156,8 +162,14 @@ void samba_cmdline_burn(int argc, char *argv[])
 			ulen = 6;
 			found = true;
 			is_user = true;
+		} else if (strncmp(p, "--password2", 11) == 0) {
+			ulen = 11;
+			found = true;
 		} else if (strncmp(p, "--password", 10) == 0) {
 			ulen = 10;
+			found = true;
+		} else if (strncmp(p, "--newpassword", 13) == 0) {
+			ulen = 13;
 			found = true;
 		}
 
@@ -180,8 +192,10 @@ void samba_cmdline_burn(int argc, char *argv[])
 			memset_s(p, strlen(p), '\0', strlen(p));
 			found = false;
 			is_user = false;
+			burnt = true;
 		}
 	}
+	return burnt;
 }
 
 static bool is_popt_table_end(const struct poptOption *o)
@@ -296,6 +310,7 @@ poptContext samba_popt_get_context(const char * name,
 		return NULL;
 	}
 #endif
+	process_save_binary_name(name);
 	return poptGetContext(name, argc, argv, options, flags);
 }
 
@@ -779,7 +794,7 @@ static void popt_common_credentials_callback(poptContext popt_ctx,
 		 * This calls cli_credentials_set_conf() to get the defaults
 		 * form smb.conf and set the winbind separator.
 		 *
-		 * Just warn that we can't read the smb.conf. The might not be
+		 * Just warn that we can't read the smb.conf. There might not be
 		 * one available or we want to ignore it.
 		 */
 		ok = cli_credentials_guess(creds, lp_ctx);

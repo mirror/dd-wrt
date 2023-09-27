@@ -614,10 +614,8 @@ err:
  * End of data: return NULL
  * Failure: set errno, return NULL
  */
-static struct dirent *um_readdir(vfs_handle_struct *handle,
-				 struct files_struct *dirfsp,
-				 DIR *dirp,
-				 SMB_STRUCT_STAT *sbuf)
+static struct dirent *
+um_readdir(vfs_handle_struct *handle, struct files_struct *dirfsp, DIR *dirp)
 {
 	um_dirinfo_struct* dirInfo = (um_dirinfo_struct*)dirp;
 	struct dirent *d = NULL;
@@ -633,7 +631,7 @@ static struct dirent *um_readdir(vfs_handle_struct *handle,
 		   dirInfo->clientSubDirname));
 
 	if (!dirInfo->isInMediaFiles) {
-		return SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
+		return SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream);
 	}
 
 	do {
@@ -644,7 +642,7 @@ static struct dirent *um_readdir(vfs_handle_struct *handle,
 		uintmax_t number;
 
 		skip = false;
-		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
+		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream);
 
 		if (d == NULL) {
 			break;
@@ -710,23 +708,6 @@ static struct dirent *um_readdir(vfs_handle_struct *handle,
 err:
 	TALLOC_FREE(dirInfo);
 	return NULL;
-}
-
-static void um_seekdir(vfs_handle_struct *handle,
-		       DIR *dirp,
-		       long offset)
-{
-	DEBUG(10, ("Entering and leaving um_seekdir\n"));
-	SMB_VFS_NEXT_SEEKDIR(handle,
-			     ((um_dirinfo_struct*)dirp)->dirstream, offset);
-}
-
-static long um_telldir(vfs_handle_struct *handle,
-		       DIR *dirp)
-{
-	DEBUG(10, ("Entering and leaving um_telldir\n"));
-	return SMB_VFS_NEXT_TELLDIR(handle,
-				    ((um_dirinfo_struct*)dirp)->dirstream);
 }
 
 static void um_rewinddir(vfs_handle_struct *handle,
@@ -1516,8 +1497,6 @@ static struct vfs_fn_pointers vfs_um_fns = {
 
 	.fdopendir_fn = um_fdopendir,
 	.readdir_fn = um_readdir,
-	.seekdir_fn = um_seekdir,
-	.telldir_fn = um_telldir,
 	.rewind_dir_fn = um_rewinddir,
 	.mkdirat_fn = um_mkdirat,
 	.closedir_fn = um_closedir,

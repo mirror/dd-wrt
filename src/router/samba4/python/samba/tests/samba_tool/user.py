@@ -394,7 +394,7 @@ class UserCmdTestCase(SambaToolCmdTest):
             expires = nttime2unix(int("%s" % found.get("accountExpires")))
             self.assertWithin(expires, twodays, 5, "Ensure account expires is within 5 seconds of the expected time")
 
-        # TODO: renable this after the filter case is sorted out
+        # TODO: re-enable this after the filter case is sorted out
         if "filters are broken, bail now":
             return
 
@@ -435,8 +435,8 @@ class UserCmdTestCase(SambaToolCmdTest):
 
         for userobj in userlist:
             name = str(userobj.get("samaccountname", idx=0))
-            found = self.assertMatch(out, name,
-                                     "user '%s' not found" % name)
+            self.assertMatch(out, name,
+                             "user '%s' not found" % name)
 
 
     def test_list_base_dn(self):
@@ -459,8 +459,8 @@ class UserCmdTestCase(SambaToolCmdTest):
 
         for userobj in userlist:
             name = str(userobj.get("samaccountname", idx=0))
-            found = self.assertMatch(out, name,
-                                     "user '%s' not found" % name)
+            self.assertMatch(out, name,
+                             "user '%s' not found" % name)
 
     def test_list_full_dn(self):
         (result, out, err) = self.runsubcmd("user", "list", "--full-dn",
@@ -481,8 +481,8 @@ class UserCmdTestCase(SambaToolCmdTest):
 
         for userobj in userlist:
             name = str(userobj.get("dn", idx=0))
-            found = self.assertMatch(out, name,
-                                     "user '%s' not found" % name)
+            self.assertMatch(out, name,
+                             "user '%s' not found" % name)
 
     def test_list_hide_expired(self):
         expire_username = "expireUser"
@@ -1100,8 +1100,10 @@ sAMAccountName: %s
             self.assertCmdSuccess(result, out, err, "Error running user unlock")
             self.assertEqual(err, "", "Shouldn't be any error messages")
 
-    def _randomUser(self, base={}):
+    def _randomUser(self, base=None):
         """create a user with random attribute values, you can specify base attributes"""
+        if base is None:
+            base = {}
         user = {
             "name": self.randomName(),
             "password": self.random_password(16),
@@ -1117,9 +1119,11 @@ sAMAccountName: %s
         user.update(base)
         return user
 
-    def _randomPosixUser(self, base={}):
+    def _randomPosixUser(self, base=None):
         """create a user with random attribute values and additional RFC2307
         attributes, you can specify base attributes"""
+        if base is None:
+            base = {}
         user = self._randomUser({})
         user.update(base)
         posixAttributes = {
@@ -1135,9 +1139,11 @@ sAMAccountName: %s
         user.update(base)
         return user
 
-    def _randomUnixUser(self, base={}):
+    def _randomUnixUser(self, base=None):
         """create a user with random attribute values and additional RFC2307
         attributes, you can specify base attributes"""
+        if base is None:
+            base = {}
         user = self._randomUser({})
         user.update(base)
         posixAttributes = {

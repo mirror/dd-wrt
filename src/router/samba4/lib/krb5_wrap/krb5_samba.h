@@ -170,6 +170,14 @@ krb5_error_code krb5_auth_con_setuseruserkey(krb5_context context, krb5_auth_con
 void krb5_free_unparsed_name(krb5_context ctx, char *val);
 #endif
 
+#if !defined(HAVE_KRB5_FREE_ENCTYPES)
+void krb5_free_enctypes(krb5_context context, krb5_enctype *val);
+#endif
+
+#if !defined(HAVE_KRB5_FREE_STRING)
+void krb5_free_string(krb5_context context, char *val);
+#endif
+
 /* Stub out initialize_krb5_error_table since it is not present in all
  * Kerberos implementations. If it's not present, it's not necessary to
  * call it.
@@ -303,7 +311,7 @@ krb5_error_code smb_krb5_cc_get_lifetime(krb5_context context,
 #elif defined (HAVE_FREE_CHECKSUM)
 void smb_krb5_free_checksum_contents(krb5_context ctx, krb5_checksum *cksum);
 #else
-#error krb5_free_checksum_contents/free_Checksum is not vailable
+#error krb5_free_checksum_contents/free_Checksum is not available
 #endif
 
 krb5_error_code smb_krb5_make_pac_checksum(TALLOC_CTX *mem_ctx,

@@ -958,7 +958,7 @@ static void merge_aces( canon_ace **pp_list_head, bool dir_acl)
 					 * Even after removing permissions, there
 					 * are still allow permissions - delete the deny.
 					 * It is safe to delete the deny here,
-					 * as we are guarenteed by the deny first
+					 * as we are guaranteed by the deny first
 					 * ordering that all the deny entries for
 					 * this SID have already been merged into one
 					 * before we can get to an allow ace.
@@ -2108,7 +2108,7 @@ static bool create_canon_ace_lists(files_struct *fsp,
  push to the end of the list. Note if the user was in no groups
  this maps to a specific allow nothing entry for this user.
 
- The common case from the NT ACL choser (userX deny all) is
+ The common case from the NT ACL chooser (userX deny all) is
  optimised so we don't do the group lookup - we just map to
  an allow nothing entry.
 
@@ -2137,7 +2137,7 @@ static bool create_canon_ace_lists(files_struct *fsp,
  If there is no group Everyone allow entry then convert the
  group1 entry to a allow nothing entry and push to the end of the list.
 
- Note that the common case from the NT ACL choser (groupX deny all)
+ Note that the common case from the NT ACL chooser (groupX deny all)
  cannot be optimised here as we need to modify user entries who are
  in the group to change them to a deny all also.
 
@@ -2163,7 +2163,7 @@ static bool create_canon_ace_lists(files_struct *fsp,
  group pass.
 
  The above algorithm took a *lot* of thinking about - hence this
- explaination :-). JRA.
+ explanation :-). JRA.
 ****************************************************************************/
 
 /****************************************************************************
@@ -3127,6 +3127,15 @@ static size_t merge_default_aces( struct security_ace *nt_ace_list, size_t num_a
 
 					DEBUG(10,("merge_default_aces: Merging zero access ACE %u onto ACE %u.\n",
 						(unsigned int)i, (unsigned int)j ));
+
+					/*
+					 * If we remove the i'th element, we
+					 * should decrement i so that we don't
+					 * skip over the succeeding element.
+					*/
+					i--;
+					num_aces--;
+					break;
 				} else {
 					/*
 					 * These are identical except for the flags.
@@ -3139,9 +3148,16 @@ static size_t merge_default_aces( struct security_ace *nt_ace_list, size_t num_a
 
 					DEBUG(10,("merge_default_aces: Merging ACE %u onto ACE %u.\n",
 						(unsigned int)j, (unsigned int)i ));
+
+					/*
+					 * If we remove the j'th element, we
+					 * should decrement j and continue
+					 * around the loop, so as not to skip
+					 * subsequent elements.
+					 */
+					j--;
+					num_aces--;
 				}
-				num_aces--;
-				break;
 			}
 		}
 	}

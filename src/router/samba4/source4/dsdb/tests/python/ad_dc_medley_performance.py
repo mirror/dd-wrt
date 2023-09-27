@@ -14,7 +14,7 @@ import shutil
 import time
 import itertools
 
-from samba.netcmd.main import cmd_sambatool
+from samba.netcmd.main import samba_tool
 
 # We try to use the test infrastructure of Samba 4.3+, but if it
 # doesn't work, we are probably in a back-ported patch and trying to
@@ -176,13 +176,13 @@ class UserTests(samba.tests.TestCase):
             server = host.split('://', 1)[1]
         else:
             server = host
-        cmd = cmd_sambatool.subcommands['domain'].subcommands['join']
-        result = cmd._run("samba-tool domain join",
-                          creds.get_realm(),
-                          "dc", "-U%s%%%s" % (creds.get_username(),
-                                              creds.get_password()),
-                          '--targetdir=%s' % tmpdir,
-                          '--server=%s' % server)
+        result = samba_tool('domain', 'join',
+                            creds.get_realm(),
+                            "dc", "-U%s%%%s" % (creds.get_username(),
+                                                creds.get_password()),
+                            '--targetdir=%s' % tmpdir,
+                            '--server=%s' % server)
+        self.assertIsNone(result)
 
         shutil.rmtree(tmpdir)
 
@@ -241,20 +241,22 @@ class UserTests(samba.tests.TestCase):
                                 scope=SCOPE_BASE,
                                 attrs=['cn'])
             except LdbError as e:
-                (num, msg) = e
+                (num, msg) = e.args
                 if num != ERR_NO_SUCH_OBJECT:
                     raise
 
     def search_expression_list(self, expressions, rounds,
-                               attrs=['cn'],
+                               attrs=None,
                                scope=SCOPE_SUBTREE):
+        if attrs is None:
+            attrs = ['cn']
         for expression in expressions:
             t = time.time()
             for i in range(rounds):
                 self.ldb.search(self.ou,
                                 expression=expression,
-                                scope=SCOPE_SUBTREE,
-                                attrs=['cn'])
+                                scope=scope,
+                                attrs=attrs)
             print('%d runs %s took %s' % (i, expression,
                                           time.time() - t),
                   file=sys.stderr)
@@ -266,7 +268,7 @@ class UserTests(samba.tests.TestCase):
         maybe_not = ['!(', '']
         joiners = ['&', '|']
 
-        # The number of permuations is 18432, which is not huge but
+        # The number of permutations is 18432, which is not huge but
         # would take hours to search. So we take a sample.
         all_permutations = list(itertools.product(joiners,
                                                   classes, classes,

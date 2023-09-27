@@ -4,7 +4,7 @@
   who contributed!
 */
 
-import "misc.idl", "lsa.idl", "samr.idl", "security.idl";
+import "misc.idl", "lsa.idl", "samr.idl", "security.idl", "nbt.idl";
 
 #include "idl_types.h"
 
@@ -20,7 +20,28 @@ cpp_quote("#define ENC_HMAC_SHA1_96_AES256_SK KERB_ENCTYPE_AES256_CTS_HMAC_SHA1_
 cpp_quote("#define ENC_FAST_SUPPORTED KERB_ENCTYPE_FAST_SUPPORTED")
 cpp_quote("#define ENC_COMPOUND_IDENTITY_SUPPORTED KERB_ENCTYPE_COMPOUND_IDENTITY_SUPPORTED")
 cpp_quote("#define ENC_CLAIMS_SUPPORTED KERB_ENCTYPE_CLAIMS_SUPPORTED")
+cpp_quote("#define ENC_RESOURCE_SID_COMPRESSION_DISABLED KERB_ENCTYPE_RESOURCE_SID_COMPRESSION_DISABLED")
 cpp_quote("#define NETLOGON_SERVER_PIPE_STATE_MAGIC 0x4f555358")
+
+cpp_quote("#define DS_SERVER_PDC NBT_SERVER_PDC")
+cpp_quote("#define DS_SERVER_GC NBT_SERVER_GC")
+cpp_quote("#define DS_SERVER_LDAP NBT_SERVER_LDAP")
+cpp_quote("#define DS_SERVER_DS NBT_SERVER_DS")
+cpp_quote("#define DS_SERVER_KDC NBT_SERVER_KDC")
+cpp_quote("#define DS_SERVER_TIMESERV NBT_SERVER_TIMESERV")
+cpp_quote("#define DS_SERVER_CLOSEST NBT_SERVER_CLOSEST")
+cpp_quote("#define DS_SERVER_WRITABLE NBT_SERVER_WRITABLE")
+cpp_quote("#define DS_SERVER_GOOD_TIMESERV NBT_SERVER_GOOD_TIMESERV")
+cpp_quote("#define DS_SERVER_NDNC NBT_SERVER_NDNC")
+cpp_quote("#define DS_SERVER_SELECT_SECRET_DOMAIN_6 NBT_SERVER_SELECT_SECRET_DOMAIN_6 /* 2008 / RODC */")
+cpp_quote("#define DS_SERVER_FULL_SECRET_DOMAIN_6 NBT_SERVER_FULL_SECRET_DOMAIN_6 /* 2008 */")
+cpp_quote("#define DS_SERVER_WEBSERV NBT_SERVER_ADS_WEB_SERVICE")
+cpp_quote("#define DS_SERVER_DS_8 NBT_SERVER_DS_8 /* 2012 */")
+cpp_quote("#define DS_SERVER_DS_9 NBT_SERVER_DS_9 /* 2012R2 */")
+cpp_quote("#define DS_SERVER_DS_10 NBT_SERVER_DS_10 /* 2016 */")
+cpp_quote("#define DS_DNS_CONTROLLER NBT_SERVER_HAS_DNS_NAME")
+cpp_quote("#define DS_DNS_DOMAIN NBT_SERVER_IS_DEFAULT_NC")
+cpp_quote("#define DS_DNS_FOREST_ROOT NBT_SERVER_FOREST_ROOT")
 
 [
   uuid("12345678-1234-abcd-ef00-01234567cffb"),
@@ -1153,13 +1174,9 @@ interface netlogon
 					 DS_TRY_NEXTCLOSEST_SITE |
 					 DS_DIRECTORY_SERVICE_6_REQUIRED |
 					 DS_WEB_SERVICE_REQUIRED |
-					 /*
-					  * For now we skip these until
-					  * we have test for them:
-					  * DS_DIRECTORY_SERVICE_8_REQUIRED |
-					  * DS_DIRECTORY_SERVICE_9_REQUIRED |
-					  * DS_DIRECTORY_SERVICE_10_REQUIRED |
-					  */
+					 DS_DIRECTORY_SERVICE_8_REQUIRED |
+					 DS_DIRECTORY_SERVICE_9_REQUIRED |
+					 DS_DIRECTORY_SERVICE_10_REQUIRED |
 					 DS_RETURN_FLAT_NAME |
 					 DS_RETURN_DNS_NAME);
 
@@ -1194,28 +1211,6 @@ interface netlogon
 		DS_ADDRESS_TYPE_NETBIOS		= 2
 	} netr_DsRGetDCNameInfo_AddressType;
 
-	typedef [bitmap32bit] bitmap {
-		DS_SERVER_PDC			 = 0x00000001,
-		DS_SERVER_GC			 = 0x00000004,
-		DS_SERVER_LDAP			 = 0x00000008,
-		DS_SERVER_DS			 = 0x00000010,
-		DS_SERVER_KDC			 = 0x00000020,
-		DS_SERVER_TIMESERV		 = 0x00000040,
-		DS_SERVER_CLOSEST		 = 0x00000080,
-		DS_SERVER_WRITABLE		 = 0x00000100,
-		DS_SERVER_GOOD_TIMESERV		 = 0x00000200,
-		DS_SERVER_NDNC			 = 0x00000400,
-		DS_SERVER_SELECT_SECRET_DOMAIN_6 = 0x00000800, /* 2008 / RODC */
-		DS_SERVER_FULL_SECRET_DOMAIN_6	 = 0x00001000, /* 2008 / RWDC */
-		DS_SERVER_WEBSERV		 = 0x00002000,
-		DS_SERVER_DS_8			 = 0x00004000, /* 2012 */
-		DS_SERVER_DS_9			 = 0x00008000, /* 2012R2 */
-		DS_SERVER_DS_10			 = 0x00010000, /* 2016 */
-		DS_DNS_CONTROLLER		 = 0x20000000,
-		DS_DNS_DOMAIN			 = 0x40000000,
-		DS_DNS_FOREST_ROOT		 = 0x80000000
-	} netr_DsR_DcFlags;
-
 	typedef [public] struct {
 		[string,charset(UTF16)] uint16 *dc_unc;
 		[string,charset(UTF16)] uint16 *dc_address;
@@ -1223,7 +1218,7 @@ interface netlogon
 		GUID domain_guid;
 		[string,charset(UTF16)] uint16 *domain_name;
 		[string,charset(UTF16)] uint16 *forest_name;
-		netr_DsR_DcFlags dc_flags;
+		nbt_server_type dc_flags;
 		[string,charset(UTF16)] uint16 *dc_site_name;
 		[string,charset(UTF16)] uint16 *client_site_name;
 	} netr_DsRGetDCNameInfo;
@@ -1241,6 +1236,7 @@ interface netlogon
 	/* Function 0x15 */
 	typedef [switch_type(uint32)] union {
 		[case(1)] netr_NegotiateFlags server_capabilities;
+		[case(2)] netr_NegotiateFlags server_capabilities;
 	} netr_Capabilities;
 
 	NTSTATUS netr_LogonGetCapabilities(
@@ -1352,8 +1348,76 @@ interface netlogon
 
 	typedef struct {
 		[value(284)] uint32 OSVersionInfoSize;
+		/*
+		 * [MS-NRPC] 2.2.1.3.15 NL_OSVERSIONINFO_V1
+		 *
+		 * 4  The operating system is Windows NT 4.0.
+		 * 5  The operating system is
+		 *    Windows 2000,
+		 *    Windows XP,
+		 *    Windows Server 2003, or
+		 *    Windows Server 2003 R2 operating system.
+		 * 6  The operating system is
+		 *    Windows Vista, Windows Server 2008,
+		 *    Windows 7, Windows Server 2008 R2,
+		 *    Windows 8, Windows Server 2012,
+		 *    Windows 8.1, or Windows Server 2012 R2.
+		 * 10 The operating system is
+		 *    Windows 10 and later.
+		 */
 		uint32 MajorVersion;
+		/*
+		 * [MS-NRPC] 2.2.1.3.15 NL_OSVERSIONINFO_V1
+		 *
+		 * 0 The operating system is
+		 *   Windows NT 4.0, Windows 2000,
+		 *   Windows Vista, Windows Server 2008,
+		 *   Windows 10, Windows Server 2016, and later.
+		 * 1 The operating system is
+		 *   Windows XP, Windows 7, or Windows Server 2008 R2.
+		 * 2 The operating system is
+		 *   Windows XP Professional x64 Edition operating system,
+		 *   Windows Server 2003, Windows Server 2003 R2,
+		 *   Windows 8, or Windows Server 2012.
+		 * 3 The operating system is
+		 *   Windows 8.1 or Windows Server 2012 R2.
+		 *
+		 * I guess this results in:
+		 *
+		 * Windows Server 2022                              => 10.0 (20348)
+		 * Windows Server 2019                              => 10.0
+		 * Windows Server operating system                  => 10.0
+		 * Windows 10 and Windows Server 2016               => 10.0 (14393)
+		 * Windows 8.1 and Windows Server 2012 R2           => 6.3 (9600)
+		 * Windows 8 and Windows Server 2012                => 6.2
+		 * Windows 7 and Windows Server 2008 R2             => 6.1 (7600)
+		 * Windows Vista and Windows Server 2008            => 6.0
+		 * Windows XP operating system Service Pack 1 (SP1) => 5.2
+		 * Windows XP and Windows Server 2003               => 5.1
+		 * Windows 2000                                     => 5.0
+		 * Windows NT 4.0                                   => 4.0
+		 */
 		uint32 MinorVersion;
+		/*
+		 * From [MS-RPRN] 7 Appendix B: Product Behavior:
+		 *
+		 * Windows Server 2019 >= 17633
+		 * Windows Server operating system >= 16299
+		 * Windows 10 and Windows Server 2016 >= 10586
+		 * Windows 8.1 and Windows Server 2012 R2 >= 9431
+		 * Windows 8 and Windows Server 2012 >= 9200
+		 * Windows 7 and Windows Server 2008 R2 >= 7007
+		 * Windows Vista operating system with Service Pack 1 (SP1) and
+		 * Windows Server 2008 >= 6001
+		 * Windows Vista and Windows Server 2008 >= 6000
+		 * Windows XP operating system Service Pack 1 (SP1) >= 2196
+		 * Windows XP and Windows Server 2003 >= 2196
+		 * Windows 2000 >= 1382
+		 * Windows NT 4.0 >= 1381
+		 *
+		 * From testing:
+		 * Windows Server 2022 => 10.0 (20348)
+		 */
 		uint32 BuildNumber;
 		uint32 PlatformId;
 		[subcontext(0),subcontext_size(256)] nstring CSDVersion;
@@ -1731,7 +1795,7 @@ interface netlogon
 	/****************/
 	/* Function 0x2d */
 
-	/* this is the ADS varient. I don't yet know what the "flags" are for */
+	/* this is the ADS variant. I don't yet know what the "flags" are for */
 	NTSTATUS netr_LogonSamLogonWithFlags(
 		[in,unique] [string,charset(UTF16)] uint16 *server_name,
 		[in,unique] [string,charset(UTF16)] uint16 *computer_name,

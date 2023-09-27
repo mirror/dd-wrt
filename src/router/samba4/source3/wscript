@@ -43,7 +43,7 @@ def options(opt):
 # ------------------
 #
 # Most of the calls to opt.samba_add_onoff_option() implicitly
-# or explicity use default=True
+# or explicitly use default=True
 #
 # To assist users and distributors to build Samba with the full feature
 # set, the build system will abort if our dependent libraries and their
@@ -1097,7 +1097,7 @@ syscall(SYS_setgroups32, 0, NULL);
 
 #define DATA "ofdtest.fcntl"
 
-int main() {
+int main(void) {
         struct flock lck = {
            .l_whence = SEEK_SET,
            .l_type = F_WRLCK,
@@ -1255,7 +1255,7 @@ err:
             'HAVE_RW_HINTS',
             addmain=False,
             execute=True,
-            msg="Checking whether fcntl supports setting/geting hints")
+            msg="Checking whether fcntl supports setting/getting hints")
 
     conf.CHECK_STRUCTURE_MEMBER('struct stat', 'st_mtim.tv_nsec',
                                 define='HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC') # Linux, Solaris
@@ -1326,7 +1326,7 @@ syscall(SYS_initgroups, 16, NULL, NULL, 0);
 
     if conf.CHECK_CODE('''
 #include <time.h>
-int main() {
+int main(void) {
         struct tm *tm;
         if (sizeof(time_t) == 8) {
                 time_t max_time = 0x7fffffffffffffffll;
@@ -1357,7 +1357,7 @@ int main() {
 #if defined(HAVE_SYS_SYSMACROS_H)
 #include <sys/sysmacros.h>
 #endif
-int main() { dev_t dev = makedev(1,2); return 0; }
+int main(void) { dev_t dev = makedev(1,2); return 0; }
 ''',
         'HAVE_MAKEDEV',
         addmain=False,
@@ -1373,7 +1373,7 @@ void exit_on_core(int ignored) {
         exit(1);
 }
 
-int main() {
+int main(void) {
         char *newpath;
         signal(SIGSEGV, exit_on_core);
         newpath = realpath("/tmp", NULL);
@@ -1530,7 +1530,7 @@ int main() {
     # Check for getcwd allowing a NULL arg.
     conf.CHECK_CODE('''
 #include <unistd.h>
-int main() {
+int main(void) {
         char *s = getcwd(NULL,0);
         return s != NULL ?  0 : 1;
 }''', 'GETCWD_TAKES_NULL', addmain=False, execute=True,
@@ -1572,7 +1572,7 @@ int main() {
                 execute=False,
                 local_include=False)
 
-        # For IRIX like dqb_isoftlimit instead of dqb_fsoftlimit in struc dqblk
+        # For IRIX like dqb_isoftlimit instead of dqb_fsoftlimit in struct dqblk
         conf.CHECK_STRUCTURE_MEMBER('struct dqblk', 'dqb_fsoftlimit', define='HAVE_DQB_FSOFTLIMIT',
                                 headers='sys/quota.h')
         #darwin style quota bytecount
@@ -1660,18 +1660,6 @@ int main() {
                     define='HAVE_UNSHARE_CLONE_FS',
                     msg='for Linux unshare(CLONE_FS)')
 
-    # Check for mallinfo
-    conf.CHECK_CODE('''
-    struct mallinfo mi;
-    int tmp;
-
-    mi = mallinfo();
-    tmp = mi.arena + mi.ordblks + mi.smblks + mi.hblks +
-          mi.hblkhd + mi.usmblks + mi.fsmblks +  mi.uordblks +
-          mi.fordblks + mi.keepcost;
-    return tmp;
-    ''', 'HAVE_MALLINFO', msg="Checking for mallinfo()", headers='malloc.h')
-
     #
     # cluster support (CTDB)
     #
@@ -1682,11 +1670,6 @@ int main() {
         Logs.info("building with cluster support")
         conf.env.with_ctdb = True
         conf.DEFINE('CLUSTER_SUPPORT', 1)
-
-    conf.CHECK_CODE('void seekdir(DIR *d, long loc) { return; }',
-                    'SEEKDIR_RETURNS_VOID',
-                    headers='sys/types.h dirent.h',
-                    msg='Checking whether seekdir returns void')
 
     if Options.options.with_profiling_data:
         conf.DEFINE('WITH_PROFILE', 1);
@@ -1709,6 +1692,8 @@ int main() {
             conf.CHECK_FUNCS_IN('ceph_statx', 'cephfs',
                                 headers='cephfs/libcephfs.h')):
             conf.DEFINE('HAVE_CEPH', '1')
+            conf.CHECK_FUNCS_IN('ceph_select_filesystem', 'cephfs',
+                                headers='cephfs/libcephfs.h')
         else:
             Logs.warn('''Ceph support disabled due to --without-acl-support
                       or lack of ceph_statx support''')
@@ -1764,7 +1749,7 @@ int main() {
             # when we try to include both files.
             #
             # check if struct open_how is defined in liburing/compat.h
-            # itself and not via inclusing linux/openat2.h
+            # itself and not via including linux/openat2.h
             conf.CHECK_TYPE_IN('struct open_how', 'liburing/compat.h',
                                cflags='-D_LINUX_OPENAT2_H',
                                define='HAVE_STRUCT_OPEN_HOW_LIBURING_COMPAT_H')
@@ -1920,8 +1905,9 @@ int main() {
 
     if Options.options.developer:
         default_static_modules.extend(['charset_weird'])
-        default_shared_modules.extend(['perfcount_test',
-                                       'vfs_skel_opaque', 'vfs_skel_transparent', 'vfs_shadow_copy_test',
+        default_shared_modules.extend(['vfs_skel_opaque',
+                                       'vfs_skel_transparent',
+                                       'vfs_shadow_copy_test',
                                        'pdb_test',
                                        'vfs_fake_dfq',
                                        'gpext_security', 'gpext_registry', 'gpext_scripts'])
@@ -2069,7 +2055,7 @@ int main() {
     static_list = {}
     shared_list = {}
 
-    prefixes = ['vfs', 'pdb', 'auth', 'nss_info', 'charset', 'idmap', 'gpext', 'perfcount']
+    prefixes = ['vfs', 'pdb', 'auth', 'nss_info', 'charset', 'idmap', 'gpext']
     conf.env['MODULE_PREFIXES'] = prefixes
     for p in prefixes:
         for m in final_static_modules:

@@ -21,7 +21,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "includes.h"
+#include "replace.h"
+#include "lib/util/debug.h"
 #include "libcli/security/security.h"
 
 /* Map generic access rights to object specific rights.  This technique is
@@ -643,7 +644,7 @@ done:
  * Perform DS access checks for the user represented by its security_token, on
  * the provided security descriptor. If an tree associating GUID and access
  * required is provided then object access (OA) are checked as well. *
- * @param[in]   sd             The security descritor against which the required
+ * @param[in]   sd             The security descriptor against which the required
  *                             access are requested
  *
  * @param[in]   token          The security_token associated with the user to

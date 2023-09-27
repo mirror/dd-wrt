@@ -56,7 +56,6 @@ struct pending_message_list {
 	struct smbd_server_connection *sconn;
 	struct smbXsrv_connection *xconn;
 	struct tevent_timer *te;
-	struct smb_perfcount_data pcd;
 	uint32_t seqnum;
 	bool encrypted;
 	bool processed;
@@ -208,10 +207,11 @@ void smbd_unlock_socket(struct smbXsrv_connection *xconn)
  Send an smb to a fd.
 ****************************************************************************/
 
-bool smb1_srv_send(struct smbXsrv_connection *xconn, char *buffer,
-		   bool do_signing, uint32_t seqnum,
-		   bool do_encrypt,
-		   struct smb_perfcount_data *pcd)
+bool smb1_srv_send(struct smbXsrv_connection *xconn,
+		   char *buffer,
+		   bool do_signing,
+		   uint32_t seqnum,
+		   bool do_encrypt)
 {
 	size_t len = 0;
 	ssize_t ret;
@@ -271,11 +271,8 @@ bool smb1_srv_send(struct smbXsrv_connection *xconn, char *buffer,
 		goto out;
 	}
 
-	SMB_PERFCOUNT_SET_MSGLEN_OUT(pcd, len);
 	srv_free_enc_buffer(xconn, buf_out);
 out:
-	SMB_PERFCOUNT_END(pcd);
-
 	smbd_unlock_socket(xconn);
 	return (ret > 0);
 }
@@ -566,7 +563,6 @@ static bool push_queued_message(struct smb_request *req,
 	msg->seqnum = req->seqnum;
 	msg->encrypted = req->encrypted;
 	msg->processed = false;
-	SMB_PERFCOUNT_DEFER_OP(&req->pcd, &msg->pcd);
 
 	if (open_rec) {
 		msg->open_rec = talloc_move(msg, &open_rec);
@@ -990,7 +986,7 @@ static void smb1srv_update_crypto_flags(struct smbXsrv_session *session,
 		sign_flag = SMBXSRV_PROCESSED_SIGNED_PACKET;
 	} else if ((type == SMBecho) || (type == SMBsesssetupX)) {
 		/*
-		 * echo can be unsigned. Sesssion setup except final
+		 * echo can be unsigned. Session setup except final
 		 * session setup response too
 		 */
 		sign_flag &= ~SMBXSRV_PROCESSED_UNSIGNED_PACKET;
@@ -1033,7 +1029,7 @@ static void set_current_case_sensitive(connection_struct *conn, uint16_t flags)
 	switch (lp_case_sensitive(snum)) {
 	case Auto:
 		/*
-		 * We need this uglyness due to DOS/Win9x clients that lie
+		 * We need this ugliness due to DOS/Win9x clients that lie
 		 * about case insensitivity. */
 		ra_type = get_remote_arch();
 		if ((ra_type != RA_SAMBA) && (ra_type != RA_CIFSFS)) {
@@ -1299,9 +1295,11 @@ static connection_struct *switch_message(uint8_t type, struct smb_request *req)
 ****************************************************************************/
 
 void construct_reply(struct smbXsrv_connection *xconn,
-		     char *inbuf, int size, size_t unread_bytes,
-		     uint32_t seqnum, bool encrypted,
-		     struct smb_perfcount_data *deferred_pcd)
+		     char *inbuf,
+		     int size,
+		     size_t unread_bytes,
+		     uint32_t seqnum,
+		     bool encrypted)
 {
 	struct smbd_server_connection *sconn = xconn->client->sconn;
 	struct smb_request *req;
@@ -1316,15 +1314,6 @@ void construct_reply(struct smbXsrv_connection *xconn,
 	}
 
 	req->inbuf  = (uint8_t *)talloc_move(req, &inbuf);
-
-	/* we popped this message off the queue - keep original perf data */
-	if (deferred_pcd)
-		req->pcd = *deferred_pcd;
-	else {
-		SMB_PERFCOUNT_START(&req->pcd);
-		SMB_PERFCOUNT_SET_OP(&req->pcd, req->cmd);
-		SMB_PERFCOUNT_SET_MSGLEN_IN(&req->pcd, size);
-	}
 
 	req->conn = switch_message(req->cmd, req);
 
@@ -1342,9 +1331,10 @@ void construct_reply(struct smbXsrv_connection *xconn,
 }
 
 static void construct_reply_chain(struct smbXsrv_connection *xconn,
-				  char *inbuf, int size, uint32_t seqnum,
-				  bool encrypted,
-				  struct smb_perfcount_data *deferred_pcd)
+				  char *inbuf,
+				  int size,
+				  uint32_t seqnum,
+				  bool encrypted)
 {
 	struct smb_request **reqs = NULL;
 	struct smb_request *req;
@@ -1357,8 +1347,7 @@ static void construct_reply_chain(struct smbXsrv_connection *xconn,
 		char errbuf[smb_size];
 		error_packet(errbuf, 0, 0, NT_STATUS_INVALID_PARAMETER,
 			     __LINE__, __FILE__);
-		if (!smb1_srv_send(xconn, errbuf, true, seqnum, encrypted,
-				  NULL)) {
+		if (!smb1_srv_send(xconn, errbuf, true, seqnum, encrypted)) {
 			exit_server_cleanly("construct_reply_chain: "
 					    "smb1_srv_send failed.");
 		}
@@ -1480,10 +1469,11 @@ void smb_request_done(struct smb_request *req)
 
 shipit:
 	if (!smb1_srv_send(first_req->xconn,
-			  (char *)first_req->outbuf,
-			  true, first_req->seqnum+1,
-			  IS_CONN_ENCRYPTED(req->conn)||first_req->encrypted,
-			  &first_req->pcd)) {
+			   (char *)first_req->outbuf,
+			   true,
+			   first_req->seqnum + 1,
+			   IS_CONN_ENCRYPTED(req->conn) ||
+				   first_req->encrypted)) {
 		exit_server_cleanly("construct_reply_chain: smb1_srv_send "
 				    "failed.");
 	}
@@ -1495,9 +1485,11 @@ error:
 	{
 		char errbuf[smb_size];
 		error_packet(errbuf, 0, 0, status, __LINE__, __FILE__);
-		if (!smb1_srv_send(req->xconn, errbuf, true,
-				  req->seqnum+1, req->encrypted,
-				  NULL)) {
+		if (!smb1_srv_send(req->xconn,
+				   errbuf,
+				   true,
+				   req->seqnum + 1,
+				   req->encrypted)) {
 			exit_server_cleanly("construct_reply_chain: "
 					    "smb1_srv_send failed.");
 		}
@@ -1511,9 +1503,11 @@ error:
 ****************************************************************************/
 
 void process_smb1(struct smbXsrv_connection *xconn,
-		  uint8_t *inbuf, size_t nread, size_t unread_bytes,
-		  uint32_t seqnum, bool encrypted,
-		  struct smb_perfcount_data *deferred_pcd)
+		  uint8_t *inbuf,
+		  size_t nread,
+		  size_t unread_bytes,
+		  uint32_t seqnum,
+		  bool encrypted)
 {
 	struct smbd_server_connection *sconn = xconn->client->sconn;
 
@@ -1539,11 +1533,18 @@ void process_smb1(struct smbXsrv_connection *xconn,
 	show_msg((char *)inbuf);
 
 	if ((unread_bytes == 0) && smb1_is_chain(inbuf)) {
-		construct_reply_chain(xconn, (char *)inbuf, nread,
-				      seqnum, encrypted, deferred_pcd);
+		construct_reply_chain(xconn,
+				      (char *)inbuf,
+				      nread,
+				      seqnum,
+				      encrypted);
 	} else {
-		construct_reply(xconn, (char *)inbuf, nread, unread_bytes,
-				seqnum,	encrypted, deferred_pcd);
+		construct_reply(xconn,
+				(char *)inbuf,
+				nread,
+				unread_bytes,
+				seqnum,
+				encrypted);
 	}
 
 	sconn->trans_num++;
@@ -2078,8 +2079,7 @@ void smbd_smb1_server_connection_read_handler(struct smbXsrv_connection *xconn,
 	}
 
 process:
-	process_smb(xconn, inbuf, inbuf_len, unread_bytes,
-		    seqnum, encrypted, NULL);
+	process_smb(xconn, inbuf, inbuf_len, unread_bytes, seqnum, encrypted);
 }
 
 static void smbd_server_echo_handler(struct tevent_context *ev,
@@ -2400,8 +2400,7 @@ static bool smbd_echo_reply(struct smbd_echo_state *state,
 	req.inbuf = inbuf;
 
 	DEBUG(10, ("smbecho handler got cmd %d (%s)\n", (int)req.cmd,
-		   smb_messages[req.cmd].name
-		   ? smb_messages[req.cmd].name : "unknown"));
+		   smb_fn_name(req.cmd)));
 
 	if (req.cmd != SMBecho) {
 		return false;
@@ -2429,10 +2428,7 @@ static bool smbd_echo_reply(struct smbd_echo_state *state,
 		memcpy(smb_buf(req.outbuf), req.buf, req.buflen);
 	}
 
-	ok = smb1_srv_send(req.xconn,
-			  (char *)outbuf,
-			  true, seqnum+1,
-			  false, &req.pcd);
+	ok = smb1_srv_send(req.xconn, (char *)outbuf, true, seqnum + 1, false);
 	TALLOC_FREE(outbuf);
 	if (!ok) {
 		exit(1);

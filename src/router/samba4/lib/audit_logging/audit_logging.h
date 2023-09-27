@@ -58,10 +58,13 @@ _WARN_UNUSED_RESULT_ bool json_is_invalid(const struct json_object *object);
 
 _WARN_UNUSED_RESULT_ int json_add_int(struct json_object *object,
 				      const char *name,
-				      const int value);
+				      const json_int_t value);
 _WARN_UNUSED_RESULT_ int json_add_bool(struct json_object *object,
 				       const char *name,
 				       const bool value);
+_WARN_UNUSED_RESULT_ int json_add_optional_bool(struct json_object *object,
+						const char *name,
+						const bool *value);
 _WARN_UNUSED_RESULT_ int json_add_string(struct json_object *object,
 					 const char *name,
 					 const char *value);
@@ -75,6 +78,7 @@ _WARN_UNUSED_RESULT_ int json_add_stringn(struct json_object *object,
 _WARN_UNUSED_RESULT_ int json_add_version(struct json_object *object,
 					  int major,
 					  int minor);
+_WARN_UNUSED_RESULT_ int json_add_time(struct json_object *object, const char *name, struct timeval tv);
 _WARN_UNUSED_RESULT_ int json_add_timestamp(struct json_object *object);
 _WARN_UNUSED_RESULT_ int json_add_address(
     struct json_object *object,
@@ -87,6 +91,10 @@ _WARN_UNUSED_RESULT_ int json_add_guid(struct json_object *object,
 				       const char *name,
 				       const struct GUID *guid);
 
+_WARN_UNUSED_RESULT_ int json_add_flags32(struct json_object *object,
+					  const char *name,
+					  uint32_t flags);
+
 _WARN_UNUSED_RESULT_ int json_update_object(struct json_object *object,
 					    const char *key,
 					    struct json_object *new_obj);
@@ -97,5 +105,9 @@ _WARN_UNUSED_RESULT_ struct json_object json_get_object(
     struct json_object *object, const char *name);
 _WARN_UNUSED_RESULT_ char *json_to_string(TALLOC_CTX *mem_ctx,
 					  const struct json_object *object);
+_WARN_UNUSED_RESULT_ struct json_object json_null_object(void);
+struct authn_audit_info;
+_WARN_UNUSED_RESULT_ struct json_object json_from_audit_info(
+	const struct authn_audit_info *audit_info);
 #endif
 #endif

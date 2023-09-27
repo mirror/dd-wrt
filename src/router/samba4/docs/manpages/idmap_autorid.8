@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: idmap_autorid
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "IDMAP_AUTORID" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "IDMAP_AUTORID" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -45,7 +45,7 @@ range = low \- high
 Defines the available matching uid and gid range for which the backend is authoritative\&. Note that the range acts as a filter\&. If algorithmically determined UID or GID fall outside the range, they are ignored and the corresponding map is discarded\&. It is intended as a way to avoid accidental UID/GID overlaps between local and remotely defined IDs\&. Note that the range should be a multiple of the rangesize and needs to be at least twice as large in order to have sufficient id range space for the mandatory BUILTIN domain\&. With a default rangesize of 100000 the range needs to span at least 200000\&. This would be: range = 100000 \- 299999\&.
 .RE
 .PP
-rangesize = numberofidsperdomain
+rangesize = numberofidsperrange
 .RS 4
 Defines the number of uids/gids available per domain range\&. The minimum needed value is 2000\&. SIDs with RIDs larger than this value will be mapped into extension ranges depending upon number of available ranges\&. If the autorid backend runs out of available ranges, mapping requests for new domains (or new extension ranges for domains already known) are ignored and the corresponding map is discarded\&.
 .sp

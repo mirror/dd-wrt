@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: vfs_preopen
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "VFS_PREOPEN" "8" "05/31/2023" "Samba 4\&.18\&.3" "System Administration tools"
+.TH "VFS_PREOPEN" "8" "09/04/2023" "Samba 4\&.19\&.0" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -63,7 +63,7 @@ changes the meaning of the
 preopen:names
 option\&. It means \*(AqPOSIX Basic Regular Expression\*(Aq strings are used as patterns\&. The key is each pattern requires exactly one \*(Aqsubexpression\*(Aq starting with \*(Aq\e(\*(Aq and ending with \*(Aq\e)\*(Aq in order to specify the position of the digits representing the incrementing frame numbers\&. Given a file names like Movie7599Frame0v1234\&.txt, Movie7599Frame1v1234\&.txt, Movie7599Frame2v1234\&.txt up to Movie7599Frame9v1234\&.txt you can use
 preopen:names = /\&.*Frame\e([0\-9]\e)\&.*\e\&.txt/
-in order to match just a single digits, this might not be a real world example, but it shows the flexiblity that is possible here\&.
+in order to match just a single digits, this might not be a real world example, but it shows the flexibility that is possible here\&.
 .RE
 .PP
 preopen:num_bytes = BYTES
@@ -147,7 +147,7 @@ in the \*(Aq\m[blue]\fBlog level\fR\m[]\*(Aq section for special handling of the
 .RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.18\&.3 of the Samba suite\&.
+This man page is part of version 4\&.19\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -61,7 +61,9 @@ void smbsrv_not_spengo_sesssetup_authz_log(struct smbsrv_request *req,
 				   "SMB",
 				   "bare-NTLM",
 				   AUTHZ_TRANSPORT_PROTECTION_SMB,
-				   session_info);
+				   session_info,
+				   NULL /* client_audit_info */,
+				   NULL /* server_audit_info */);
 
 	talloc_free(frame);
 	return;
@@ -111,7 +113,7 @@ static void sesssetup_old_send(struct tevent_req *subreq)
 	if (!NT_STATUS_IS_OK(status)) goto failed;
 
 	flags = AUTH_SESSION_INFO_DEFAULT_GROUPS;
-	if (user_info_dc->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 	/* This references user_info_dc into session_info */
@@ -252,7 +254,7 @@ static void sesssetup_nt1_send(struct tevent_req *subreq)
 	if (!NT_STATUS_IS_OK(status)) goto failed;
 
 	flags = AUTH_SESSION_INFO_DEFAULT_GROUPS;
-	if (user_info_dc->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 	/* This references user_info_dc into session_info */

@@ -544,6 +544,11 @@ static NTSTATUS cli_list_old_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 		return status;
 	}
 
+	if (state->dirlist == NULL) {
+		*pfinfo = NULL;
+		return NT_STATUS_OK;
+	}
+
 	num_received = talloc_array_length(state->dirlist) / DIR_STRUCT_SIZE;
 
 	finfo = talloc_array(mem_ctx, struct file_info, num_received);
@@ -570,6 +575,7 @@ static NTSTATUS cli_list_old_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 			return status;
 		}
 	}
+	TALLOC_FREE(state->dirlist);
 	*pfinfo = finfo;
 	return NT_STATUS_OK;
 }
@@ -875,7 +881,7 @@ static void cli_list_trans_done(struct tevent_req *subreq)
 	SIVAL(param, 6, resume_key); /* ff_resume_key */
 	/*
 	 * NB. *DON'T* use continue here. If you do it seems that W2K
-	 * and bretheren can miss filenames. Use last filename
+	 * and brethren can miss filenames. Use last filename
 	 * continue instead. JRA
 	 */
 	SSVAL(param, 10, (FLAG_TRANS2_FIND_REQUIRE_RESUME

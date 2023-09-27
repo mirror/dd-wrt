@@ -210,7 +210,7 @@ _PUBLIC_ const char *cli_credentials_get_username(struct cli_credentials *cred)
  *
  * @param[in]  obtained  A pointer to store the obtained information.
  *
- * return The user name or NULL if an error occured.
+ * return The user name or NULL if an error occurred.
  */
 _PUBLIC_ const char *
 cli_credentials_get_username_and_obtained(struct cli_credentials *cred,
@@ -259,7 +259,7 @@ _PUBLIC_ bool cli_credentials_set_bind_dn(struct cli_credentials *cred,
  * Obtain the BIND DN for this credentials context.
  * @param cred credentials context
  * @retval The username set on this context.
- * @note Return value will be NULL if not specified explictly
+ * @note Return value will be NULL if not specified explicitly
  */
 _PUBLIC_ const char *cli_credentials_get_bind_dn(struct cli_credentials *cred)
 {
@@ -459,7 +459,7 @@ _PUBLIC_ const char *cli_credentials_get_password(struct cli_credentials *cred)
  *
  * @param[in]  obtained  A pointer to store the obtained information.
  *
- * return The user name or NULL if an error occured.
+ * return The user name or NULL if an error occurred.
  */
 _PUBLIC_ const char *
 cli_credentials_get_password_and_obtained(struct cli_credentials *cred,
@@ -1290,7 +1290,7 @@ _PUBLIC_ void cli_credentials_set_secure_channel_type(struct cli_credentials *cr
 }
 
 /**
- * Return NETLOGON secure chanel type
+ * Return NETLOGON secure channel type
  */
 
 _PUBLIC_ time_t cli_credentials_get_password_last_changed_time(struct cli_credentials *cred)
@@ -1309,7 +1309,7 @@ _PUBLIC_ void cli_credentials_set_password_last_changed_time(struct cli_credenti
 }
 
 /**
- * Return NETLOGON secure chanel type
+ * Return NETLOGON secure channel type
  */
 
 _PUBLIC_ enum netr_SchannelType cli_credentials_get_secure_channel_type(struct cli_credentials *cred)
@@ -1556,7 +1556,7 @@ _PUBLIC_ bool cli_credentials_parse_password_fd(struct cli_credentials *credenti
 	char pass[128];
 
 	for(p = pass, *p = '\0'; /* ensure that pass is null-terminated */
-		p && p - pass < sizeof(pass);) {
+		p && p - pass < sizeof(pass) - 1;) {
 		switch (read(fd, p, 1)) {
 		case 1:
 			if (*p != '\n' && *p != '\0') {
@@ -1619,7 +1619,7 @@ _PUBLIC_ bool cli_credentials_set_smb_signing(struct cli_credentials *creds,
  * @param[in]  creds  The credential structure to obtain the SMB signing state
  *                    from.
  *
- * @return The SMB singing state.
+ * @return The SMB signing state.
  */
 _PUBLIC_ enum smb_signing_setting
 cli_credentials_get_smb_signing(struct cli_credentials *creds)
@@ -1658,7 +1658,7 @@ cli_credentials_set_smb_ipc_signing(struct cli_credentials *creds,
  * @param[in]  creds  The credential structure to obtain the SMB IPC signing
  *                    state from.
  *
- * @return The SMB singing state.
+ * @return The SMB signing state.
  */
 _PUBLIC_ enum smb_signing_setting
 cli_credentials_get_smb_ipc_signing(struct cli_credentials *creds)
@@ -1858,7 +1858,7 @@ _PUBLIC_ void cli_credentials_dump(struct cli_credentials *creds)
  * @param[in]  creds  The credential structure to obtain the SMB encryption state
  *                    from.
  *
- * @return The SMB singing state.
+ * @return The SMB signing state.
  */
 _PUBLIC_ enum smb_encryption_setting
 cli_credentials_get_smb_encryption(struct cli_credentials *creds)

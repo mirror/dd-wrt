@@ -575,10 +575,14 @@ NTSTATUS contact_winbind_auth_crap(const char *username,
 	memcpy(request.data.auth_crap.chal, challenge->data, MIN(challenge->length, 8));
 
 	if (lm_response && lm_response->length) {
+		size_t capped_lm_response_len = MIN(
+			lm_response->length,
+			sizeof(request.data.auth_crap.lm_resp));
+
 		memcpy(request.data.auth_crap.lm_resp,
 		       lm_response->data,
-		       MIN(lm_response->length, sizeof(request.data.auth_crap.lm_resp)));
-		request.data.auth_crap.lm_resp_len = lm_response->length;
+		       capped_lm_response_len);
+		request.data.auth_crap.lm_resp_len = capped_lm_response_len;
 	}
 
 	if (nt_response && nt_response->length) {
@@ -1233,7 +1237,7 @@ static struct auth4_context *make_auth4_context_ntlm_auth(TALLOC_CTX *mem_ctx, b
 {
 	struct auth4_context *auth4_context = talloc_zero(mem_ctx, struct auth4_context);
 	if (auth4_context == NULL) {
-		DEBUG(10, ("failed to allocate auth4_context failed\n"));
+		DEBUG(10, ("failed to allocate auth4_context\n"));
 		return NULL;
 	}
 	auth4_context->generate_session_info = ntlm_auth_generate_session_info;

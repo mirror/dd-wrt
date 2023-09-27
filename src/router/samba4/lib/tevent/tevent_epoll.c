@@ -36,7 +36,7 @@ struct epoll_event_context {
 	/* a pointer back to the generic event_context */
 	struct tevent_context *ev;
 
-	/* when using epoll this is the handle from epoll_create */
+	/* when using epoll this is the handle from epoll_create1(2) */
 	int epoll_fd;
 
 	pid_t pid;
@@ -53,11 +53,11 @@ struct epoll_event_context {
 
 #ifdef TEST_PANIC_FALLBACK
 
-static int epoll_create_panic_fallback(struct epoll_event_context *epoll_ev,
-				       int size)
+static int epoll_create1_panic_fallback(struct epoll_event_context *epoll_ev,
+					int flags)
 {
 	if (epoll_ev->panic_fallback == NULL) {
-		return epoll_create(size);
+		return epoll_create1(flags);
 	}
 
 	/* 50% of the time, fail... */
@@ -66,7 +66,7 @@ static int epoll_create_panic_fallback(struct epoll_event_context *epoll_ev,
 		return -1;
 	}
 
-	return epoll_create(size);
+	return epoll_create1(flags);
 }
 
 static int epoll_ctl_panic_fallback(struct epoll_event_context *epoll_ev,
@@ -105,8 +105,8 @@ static int epoll_wait_panic_fallback(struct epoll_event_context *epoll_ev,
 	return epoll_wait(epfd, events, maxevents, timeout);
 }
 
-#define epoll_create(_size) \
-	epoll_create_panic_fallback(epoll_ev, _size)
+#define epoll_create1(_flags) \
+	epoll_create1_panic_fallback(epoll_ev, _flags)
 #define epoll_ctl(_epfd, _op, _fd, _event) \
 	epoll_ctl_panic_fallback(epoll_ev,_epfd, _op, _fd, _event)
 #define epoll_wait(_epfd, _events, _maxevents, _timeout) \
@@ -194,16 +194,12 @@ static int epoll_ctx_destructor(struct epoll_event_context *epoll_ev)
 */
 static int epoll_init_ctx(struct epoll_event_context *epoll_ev)
 {
-	epoll_ev->epoll_fd = epoll_create(64);
+	epoll_ev->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
 	if (epoll_ev->epoll_fd == -1) {
 		tevent_debug(epoll_ev->ev, TEVENT_DEBUG_FATAL,
-			     "Failed to create epoll handle.\n");
+			     "Failed to create epoll handle (%s).\n",
+			     strerror(errno));
 		return -1;
-	}
-
-	if (!ev_set_close_on_exec(epoll_ev->epoll_fd)) {
-		tevent_debug(epoll_ev->ev, TEVENT_DEBUG_WARNING,
-			     "Failed to set close-on-exec, file descriptor may be leaked to children.\n");
 	}
 
 	epoll_ev->pid = tevent_cached_getpid();
@@ -231,21 +227,18 @@ static void epoll_check_reopen(struct epoll_event_context *epoll_ev)
 	}
 
 	close(epoll_ev->epoll_fd);
-	epoll_ev->epoll_fd = epoll_create(64);
+	epoll_ev->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
 	if (epoll_ev->epoll_fd == -1) {
 		epoll_panic(epoll_ev, "epoll_create() failed", false);
 		return;
-	}
-
-	if (!ev_set_close_on_exec(epoll_ev->epoll_fd)) {
-		tevent_debug(epoll_ev->ev, TEVENT_DEBUG_WARNING,
-			     "Failed to set close-on-exec, file descriptor may be leaked to children.\n");
 	}
 
 	epoll_ev->pid = pid;
 	epoll_ev->panic_state = &panic_triggered;
 	for (fde=epoll_ev->ev->fd_events;fde;fde=fde->next) {
 		fde->additional_flags &= ~EPOLL_ADDITIONAL_FD_FLAG_HAS_EVENT;
+	}
+	for (fde=epoll_ev->ev->fd_events;fde;fde=fde->next) {
 		epoll_update_event(epoll_ev, fde);
 
 		if (panic_triggered) {
@@ -457,7 +450,7 @@ static void epoll_del_event(struct epoll_event_context *epoll_ev, struct tevent_
 		 * This can happen after a epoll_check_reopen
 		 * within epoll_event_fd_destructor.
 		 */
-		tevent_debug(epoll_ev->ev, TEVENT_DEBUG_TRACE,
+		TEVENT_DEBUG(epoll_ev->ev, TEVENT_DEBUG_TRACE,
 			     "EPOLL_CTL_DEL ignoring ENOENT for fd[%d]\n",
 			     fde->fd);
 		return;
@@ -809,9 +802,11 @@ static int epoll_event_fd_destructor(struct tevent_fd *fde)
 	}
 
 	epoll_ev->panic_state = &panic_triggered;
-	epoll_check_reopen(epoll_ev);
-	if (panic_triggered) {
-		return tevent_common_fd_destructor(fde);
+	if (epoll_ev->pid != tevent_cached_getpid()) {
+		epoll_check_reopen(epoll_ev);
+		if (panic_triggered) {
+			return tevent_common_fd_destructor(fde);
+		}
 	}
 
 	if (mpx_fde != NULL) {
@@ -848,6 +843,7 @@ static struct tevent_fd *epoll_event_add_fd(struct tevent_context *ev, TALLOC_CT
 		struct epoll_event_context);
 	struct tevent_fd *fde;
 	bool panic_triggered = false;
+	pid_t old_pid = epoll_ev->pid;
 
 	fde = tevent_common_add_fd(ev, mem_ctx, fd, flags,
 				   handler, private_data,
@@ -856,14 +852,18 @@ static struct tevent_fd *epoll_event_add_fd(struct tevent_context *ev, TALLOC_CT
 
 	talloc_set_destructor(fde, epoll_event_fd_destructor);
 
-	epoll_ev->panic_state = &panic_triggered;
-	epoll_check_reopen(epoll_ev);
-	if (panic_triggered) {
-		return fde;
+	if (epoll_ev->pid != tevent_cached_getpid()) {
+		epoll_ev->panic_state = &panic_triggered;
+		epoll_check_reopen(epoll_ev);
+		if (panic_triggered) {
+			return fde;
+		}
+		epoll_ev->panic_state = NULL;
 	}
-	epoll_ev->panic_state = NULL;
 
-	epoll_update_event(epoll_ev, fde);
+	if (epoll_ev->pid == old_pid) {
+		epoll_update_event(epoll_ev, fde);
+	}
 
 	return fde;
 }
@@ -876,23 +876,29 @@ static void epoll_event_set_fd_flags(struct tevent_fd *fde, uint16_t flags)
 	struct tevent_context *ev;
 	struct epoll_event_context *epoll_ev;
 	bool panic_triggered = false;
+	pid_t old_pid;
 
 	if (fde->flags == flags) return;
 
 	ev = fde->event_ctx;
 	epoll_ev = talloc_get_type_abort(ev->additional_data,
 					 struct epoll_event_context);
+	old_pid = epoll_ev->pid;
 
 	fde->flags = flags;
 
-	epoll_ev->panic_state = &panic_triggered;
-	epoll_check_reopen(epoll_ev);
-	if (panic_triggered) {
-		return;
+	if (epoll_ev->pid != tevent_cached_getpid()) {
+		epoll_ev->panic_state = &panic_triggered;
+		epoll_check_reopen(epoll_ev);
+		if (panic_triggered) {
+			return;
+		}
+		epoll_ev->panic_state = NULL;
 	}
-	epoll_ev->panic_state = NULL;
 
-	epoll_update_event(epoll_ev, fde);
+	if (epoll_ev->pid == old_pid) {
+		epoll_update_event(epoll_ev, fde);
+	}
 }
 
 /*
@@ -925,15 +931,17 @@ static int epoll_event_loop_once(struct tevent_context *ev, const char *location
 		return 0;
 	}
 
-	epoll_ev->panic_state = &panic_triggered;
-	epoll_ev->panic_force_replay = true;
-	epoll_check_reopen(epoll_ev);
-	if (panic_triggered) {
-		errno = EINVAL;
-		return -1;
+	if (epoll_ev->pid != tevent_cached_getpid()) {
+		epoll_ev->panic_state = &panic_triggered;
+		epoll_ev->panic_force_replay = true;
+		epoll_check_reopen(epoll_ev);
+		if (panic_triggered) {
+			errno = EINVAL;
+			return -1;
+		}
+		epoll_ev->panic_force_replay = false;
+		epoll_ev->panic_state = NULL;
 	}
-	epoll_ev->panic_force_replay = false;
-	epoll_ev->panic_state = NULL;
 
 	return epoll_event_loop(epoll_ev, &tval);
 }

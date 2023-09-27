@@ -832,33 +832,6 @@ static struct ea_list *ea_list_union(struct ea_list *name_list, struct ea_list *
 	return name_list;
 }
 
-/*********************************************************
- Routine to check if a given string matches exactly.
- as a special case a mask of "." does NOT match. That
- is required for correct wildcard semantics
- Case can be significant or not.
-**********************************************************/
-
-static bool exact_match(bool has_wild,
-			bool case_sensitive,
-			const char *str,
-			const char *mask)
-{
-	if (mask[0] == '.' && mask[1] == 0) {
-		return false;
-	}
-
-	if (has_wild) {
-		return false;
-	}
-
-	if (case_sensitive) {
-		return strcmp(str,mask)==0;
-	} else {
-		return strcasecmp_m(str,mask) == 0;
-	}
-}
-
 /****************************************************************************
  Return the filetype for UNIX extensions.
 ****************************************************************************/
@@ -940,39 +913,6 @@ NTSTATUS unix_perms_from_wire(connection_struct *conn,
 }
 
 /****************************************************************************
- Needed to show the msdfs symlinks as directories. Modifies psbuf
- to be a directory if it's a msdfs link.
-****************************************************************************/
-
-static bool check_msdfs_link(struct files_struct *dirfsp,
-			     struct smb_filename *atname,
-			     struct smb_filename *smb_fname)
-{
-	int saved_errno = errno;
-	if(lp_host_msdfs() &&
-		lp_msdfs_root(SNUM(dirfsp->conn)) &&
-		is_msdfs_link(dirfsp, atname)) {
-
-		/*
-		 * Copy the returned stat struct from the relative
-		 * to the full pathname.
-		 */
-		smb_fname->st = atname->st;
-
-		DEBUG(5,("check_msdfs_link: Masquerading msdfs link %s "
-			"as a directory\n",
-			smb_fname->base_name));
-		smb_fname->st.st_ex_mode =
-			(smb_fname->st.st_ex_mode & 0xFFF) | S_IFDIR;
-		errno = saved_errno;
-		return true;
-	}
-	errno = saved_errno;
-	return false;
-}
-
-
-/****************************************************************************
  Get a level dependent lanman2 dir entry.
 ****************************************************************************/
 
@@ -980,8 +920,6 @@ struct smbd_dirptr_lanman2_state {
 	connection_struct *conn;
 	uint32_t info_level;
 	bool check_mangled_names;
-	bool has_wild;
-	bool got_exact_match;
 	bool case_sensitive;
 };
 
@@ -1035,21 +973,15 @@ static bool smbd_dirptr_lanman2_match_fn(TALLOC_CTX *ctx,
 		fname = dname;
 	}
 
-	got_match = exact_match(state->has_wild,
-				state->case_sensitive,
-				fname, mask);
-	state->got_exact_match = got_match;
-	if (!got_match) {
-		got_match = mask_match(fname, mask,
-				       state->case_sensitive);
-	}
+	got_match = mask_match(fname, mask,
+			       state->case_sensitive);
 
 	if(!got_match && state->check_mangled_names &&
 	   !mangle_is_8_3(fname, false, state->conn->params)) {
 		/*
 		 * It turns out that NT matches wildcards against
 		 * both long *and* short names. This may explain some
-		 * of the wildcard wierdness from old DOS clients
+		 * of the wildcard weirdness from old DOS clients
 		 * that some people have been seeing.... JRA.
 		 */
 		/* Force the mangling into 8.3. */
@@ -1059,14 +991,8 @@ static bool smbd_dirptr_lanman2_match_fn(TALLOC_CTX *ctx,
 			return false;
 		}
 
-		got_match = exact_match(state->has_wild,
-					state->case_sensitive,
-					mangled_name, mask);
-		state->got_exact_match = got_match;
-		if (!got_match) {
-			got_match = mask_match(mangled_name, mask,
-					       state->case_sensitive);
-		}
+		got_match = mask_match(mangled_name, mask,
+				       state->case_sensitive);
 	}
 
 	if (!got_match) {
@@ -1084,53 +1010,17 @@ static bool smbd_dirptr_lanman2_match_fn(TALLOC_CTX *ctx,
 static bool smbd_dirptr_lanman2_mode_fn(TALLOC_CTX *ctx,
 					void *private_data,
 					struct files_struct *dirfsp,
-					struct smb_filename *atname,
 					struct smb_filename *smb_fname,
 					bool get_dosmode,
 					uint32_t *_mode)
 {
-	struct smbd_dirptr_lanman2_state *state =
-		(struct smbd_dirptr_lanman2_state *)private_data;
-	bool ms_dfs_link = false;
-
-	if (smb_fname->flags & SMB_FILENAME_POSIX_PATH) {
-		if (SMB_VFS_LSTAT(state->conn, smb_fname) != 0) {
-			DEBUG(5,("smbd_dirptr_lanman2_mode_fn: "
-				 "Couldn't lstat [%s] (%s)\n",
-				 smb_fname_str_dbg(smb_fname),
-				 strerror(errno)));
-			return false;
+	if (get_dosmode) {
+		SMB_ASSERT(smb_fname != NULL);
+		*_mode = fdos_mode(smb_fname->fsp);
+		if (smb_fname->fsp != NULL) {
+			smb_fname->st = smb_fname->fsp->fsp_name->st;
 		}
-		return true;
 	}
-
-	if (!VALID_STAT(smb_fname->st) &&
-	    SMB_VFS_STAT(state->conn, smb_fname) != 0) {
-		/* Needed to show the msdfs symlinks as
-		 * directories */
-
-		ms_dfs_link = check_msdfs_link(dirfsp,
-					       atname,
-					       smb_fname);
-		if (!ms_dfs_link) {
-			DEBUG(5,("smbd_dirptr_lanman2_mode_fn: "
-				 "Couldn't stat [%s] (%s)\n",
-				 smb_fname_str_dbg(smb_fname),
-				 strerror(errno)));
-			return false;
-		}
-
-		*_mode = dos_mode_msdfs(state->conn, smb_fname);
-		return true;
-	}
-
-	if (!get_dosmode) {
-		return true;
-	}
-
-	*_mode = fdos_mode(smb_fname->fsp);
-	smb_fname->st = smb_fname->fsp->fsp_name->st;
-
 	return true;
 }
 
@@ -1912,14 +1802,12 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 			       char *end_data,
 			       int space_remaining,
 			       struct smb_filename **_smb_fname,
-			       bool *got_exact_match,
 			       int *_last_entry_off,
 			       struct ea_list *name_list,
 			       struct file_id *file_id)
 {
 	const char *p;
 	const char *mask = NULL;
-	long prev_dirpos = 0;
 	uint32_t mode = 0;
 	char *fname = NULL;
 	struct smb_filename *smb_fname = NULL;
@@ -1938,11 +1826,7 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 	if (mangled_names != MANGLED_NAMES_NO) {
 		state.check_mangled_names = true;
 	}
-	state.has_wild = dptr_has_wild(dirptr);
-	state.got_exact_match = false;
 	state.case_sensitive = dptr_case_sensitive(dirptr);
-
-	*got_exact_match = false;
 
 	p = strrchr_m(path_mask,'/');
 	if(p != NULL) {
@@ -1967,13 +1851,10 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 				   &state,
 				   &fname,
 				   &smb_fname,
-				   &mode,
-				   &prev_dirpos);
+				   &mode);
 	if (!ok) {
 		return NT_STATUS_END_OF_FILE;
 	}
-
-	*got_exact_match = state.got_exact_match;
 
 	marshall_with_83_names = (mangled_names == MANGLED_NAMES_YES);
 
@@ -2003,13 +1884,17 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 		*file_id = vfs_file_id_from_sbuf(conn, &smb_fname->st);
 	}
 
-	if (!NT_STATUS_IS_OK(status) &&
-	    !NT_STATUS_EQUAL(status, STATUS_MORE_ENTRIES))
-	{
+	if (NT_STATUS_EQUAL(status, STATUS_MORE_ENTRIES)) {
+		smbd_dirptr_push_overflow(dirptr, &fname, &smb_fname, mode);
+	}
+
+	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(smb_fname);
 		TALLOC_FREE(fname);
 		return status;
 	}
+
+	smbd_dirptr_set_last_name_sent(dirptr, &smb_fname->base_name);
 
 	if (_smb_fname != NULL) {
 		/*
@@ -2021,7 +1906,11 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 		 * for asynchronous handle lookups.
 		 */
 		TALLOC_FREE(smb_fname->stream_name);
-		TALLOC_FREE(smb_fname->base_name);
+
+		/*
+		 * smbd_dirptr_set_last_name_sent() above consumed
+		 * base_name
+		 */
 		smb_fname->base_name = talloc_strdup(smb_fname, fname);
 
 		if (smb_fname->base_name == NULL) {
@@ -2034,11 +1923,6 @@ NTSTATUS smbd_dirptr_lanman2_entry(TALLOC_CTX *ctx,
 		TALLOC_FREE(smb_fname);
 	}
 	TALLOC_FREE(fname);
-
-	if (NT_STATUS_EQUAL(status, STATUS_MORE_ENTRIES)) {
-		dptr_SeekDir(dirptr, prev_dirpos);
-		return status;
-	}
 
 	*_last_entry_off = last_entry_off;
 	return NT_STATUS_OK;
@@ -2434,7 +2318,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 		 * what we have to send --metze:
 		 *
 		 * Unknown1: 		24 NULL bytes
-		 * Soft Quota Treshold: 8 bytes seems like uint64_t or so
+		 * Soft Quota Threshold: 8 bytes seems like uint64_t or so
 		 * Hard Quota Limit:	8 bytes seems like uint64_t or so
 		 * Quota Flags:		2 byte :
 		 * Unknown3:		6 NULL bytes
@@ -3251,9 +3135,9 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 
 	if (fsp == NULL || !fsp->fsp_flags.is_fsa) {
 		/* Do we have this path open ? */
-		files_struct *fsp1;
 		struct file_id fileid = vfs_file_id_from_sbuf(conn, psbuf);
-		fsp1 = file_find_di_first(conn->sconn, fileid, true);
+		files_struct *fsp1 = file_find_di_first(
+			conn->sconn, fileid, true);
 		if (fsp1 && fsp1->initial_allocation_size) {
 			allocation_size = SMB_VFS_GET_ALLOC_SIZE(conn, fsp1, psbuf);
 		}
@@ -4411,9 +4295,7 @@ static NTSTATUS smb2_file_rename_information(connection_struct *conn,
 	struct smb_filename *smb_fname_dst = NULL;
 	const char *dst_original_lcomp = NULL;
 	uint32_t ucf_flags = ucf_flags_from_smb_request(req);
-	NTTIME dst_twrp = 0;
 	NTSTATUS status = NT_STATUS_OK;
-	bool is_dfs = (req->flags2 & FLAGS2_DFS_PATHNAMES);
 	TALLOC_CTX *ctx = talloc_tos();
 
 	if (!fsp) {
@@ -4442,7 +4324,13 @@ static NTSTATUS smb2_file_rename_information(connection_struct *conn,
 	if (newname == NULL) {
 		return NT_STATUS_INVALID_PARAMETER;
 	}
-	status = check_path_syntax_smb2(newname, is_dfs);
+
+	/* SMB2 rename paths are never DFS. */
+	req->flags2 &= ~FLAGS2_DFS_PATHNAMES;
+	ucf_flags &= ~UCF_DFS_PATHNAME;
+
+	status = check_path_syntax(newname,
+			fsp->fsp_name->flags & SMB_FILENAME_POSIX_PATH);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -4463,14 +4351,11 @@ static NTSTATUS smb2_file_rename_information(connection_struct *conn,
 			goto out;
 		}
 	} else {
-		if (ucf_flags & UCF_GMT_PATHNAME) {
-			extract_snapshot_token(newname, &dst_twrp);
-		}
 		status = filename_convert_dirfsp(ctx,
 						 conn,
 						 newname,
 						 ucf_flags,
-						 dst_twrp,
+						 0, /* Never a TWRP. */
 						 &dst_dirfsp,
 						 &smb_fname_dst);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -4504,6 +4389,94 @@ static NTSTATUS smb2_file_rename_information(connection_struct *conn,
 				overwrite);
 
  out:
+	TALLOC_FREE(smb_fname_dst);
+	return status;
+}
+
+static NTSTATUS smb2_file_link_information(connection_struct *conn,
+					    struct smb_request *req,
+					    const char *pdata,
+					    int total_data,
+					    files_struct *fsp,
+					    struct smb_filename *smb_fname_src)
+{
+	bool overwrite;
+	uint32_t len;
+	char *newname = NULL;
+	struct files_struct *dst_dirfsp = NULL;
+	struct smb_filename *smb_fname_dst = NULL;
+	NTSTATUS status = NT_STATUS_OK;
+	uint32_t ucf_flags = ucf_flags_from_smb_request(req);
+	size_t ret;
+	TALLOC_CTX *ctx = talloc_tos();
+
+	if (!fsp) {
+		return NT_STATUS_INVALID_HANDLE;
+	}
+
+	if (total_data < 20) {
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	overwrite = (CVAL(pdata,0) ? true : false);
+	len = IVAL(pdata,16);
+
+	if (len > (total_data - 20) || (len == 0)) {
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	ret = srvstr_pull_talloc(ctx,
+				 pdata,
+				 req->flags2,
+				 &newname,
+				 &pdata[20],
+                                 len,
+				 STR_TERMINATE);
+
+        if (ret == (size_t)-1 || newname == NULL) {
+		return NT_STATUS_INVALID_PARAMETER;
+	}
+
+	/* SMB2 hardlink paths are never DFS. */
+	req->flags2 &= ~FLAGS2_DFS_PATHNAMES;
+	ucf_flags &= ~UCF_DFS_PATHNAME;
+
+	status = check_path_syntax(newname,
+			fsp->fsp_name->flags & SMB_FILENAME_POSIX_PATH);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	DBG_DEBUG("got name |%s|\n", newname);
+
+	status = filename_convert_dirfsp(ctx,
+					 conn,
+					 newname,
+					 ucf_flags,
+					 0, /* No TWRP. */
+					 &dst_dirfsp,
+					 &smb_fname_dst);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	if (fsp->base_fsp) {
+		/* No stream names. */
+		return NT_STATUS_NOT_SUPPORTED;
+	}
+
+	DBG_DEBUG("SMB_FILE_LINK_INFORMATION (%s) %s -> %s\n",
+		  fsp_fnum_dbg(fsp), fsp_str_dbg(fsp),
+		  smb_fname_str_dbg(smb_fname_dst));
+	status = hardlink_internals(ctx,
+				conn,
+				req,
+				overwrite,
+				NULL, /* src_dirfsp */
+				fsp->fsp_name,
+				dst_dirfsp, /* dst_dirfsp */
+				smb_fname_dst);
+
 	TALLOC_FREE(smb_fname_dst);
 	return status;
 }
@@ -4570,6 +4543,9 @@ static NTSTATUS smb_file_link_information(connection_struct *conn,
 	if (ucf_flags & UCF_GMT_PATHNAME) {
 		extract_snapshot_token(newname, &dst_twrp);
 	}
+	/* hardlink paths are never DFS. */
+	ucf_flags &= ~UCF_DFS_PATHNAME;
+
 	status = filename_convert_dirfsp(ctx,
 					 conn,
 					 newname,
@@ -4602,6 +4578,7 @@ static NTSTATUS smb_file_link_information(connection_struct *conn,
 	TALLOC_FREE(smb_fname_dst);
 	return status;
 }
+
 
 /****************************************************************************
  Deal with SMB_FILE_RENAME_INFORMATION.
@@ -4742,6 +4719,10 @@ static NTSTATUS smb_file_rename_information(connection_struct *conn,
 		if (ucf_flags & UCF_GMT_PATHNAME) {
 			extract_snapshot_token(base_name, &dst_twrp);
 		}
+
+		/* The newname is *not* a DFS path. */
+		ucf_flags &= ~UCF_DFS_PATHNAME;
+
 		status = filename_convert_dirfsp(ctx,
 					 conn,
 					 base_name,
@@ -5210,9 +5191,21 @@ NTSTATUS smbd_do_setfilepathinfo(connection_struct *conn,
 
 		case SMB_FILE_LINK_INFORMATION:
 		{
-			status = smb_file_link_information(conn, req,
-							pdata, total_data,
-							fsp, smb_fname);
+			if (conn->sconn->using_smb2) {
+				status = smb2_file_link_information(conn,
+							req,
+							pdata,
+							total_data,
+							fsp,
+							smb_fname);
+			} else {
+				status = smb_file_link_information(conn,
+							req,
+							pdata,
+							total_data,
+							fsp,
+							smb_fname);
+			}
 			break;
 		}
 

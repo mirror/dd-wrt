@@ -76,10 +76,7 @@ class MdfindBlackboxTests(BlackboxTestCase):
         self.t.start()
         time.sleep(1)
 
-        pipe = mdssvc.mdssvc('ncacn_np:fileserver[/pipe/mdssvc]', self.get_loadparm())
-        conn = mdscli.conn(pipe, 'spotlight', '/foo')
-        self.sharepath = conn.sharepath()
-        conn.disconnect(pipe)
+        self.sharepath = os.environ["LOCAL_PATH"]
 
         for file in testfiles:
             f = open("%s/%s" % (self.sharepath, file), "w")
@@ -103,7 +100,7 @@ class MdfindBlackboxTests(BlackboxTestCase):
         config = os.environ["SMB_CONF_PATH"]
 
         json_in = r'''{
-          "from": 0, "size": 100, "_source": ["path.real"],
+          "from": 0, "size": 50, "_source": ["path.real"],
           "query": {
             "query_string": {
               "query": "(samba*) AND path.real.fulltext:\"%BASEPATH%\""
@@ -126,5 +123,4 @@ class MdfindBlackboxTests(BlackboxTestCase):
         output = self.check_output("mdsearch --configfile=%s -U %s%%%s fileserver spotlight '*==\"samba*\"'" % (config, username, password))
 
         actual = output.decode('utf-8').splitlines()
-        expected = ["%s/%s" % (self.sharepath, file) for file in testfiles]
-        self.assertEqual(expected, actual)
+        self.assertEqual(testfiles, actual)

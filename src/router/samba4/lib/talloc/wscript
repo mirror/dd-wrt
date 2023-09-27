@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 APPNAME = 'talloc'
-VERSION = '2.4.0'
+VERSION = '2.4.1'
 
 import os
 import sys
@@ -190,10 +190,3 @@ def dist():
 def reconfigure(ctx):
     '''reconfigure if config scripts have changed'''
     samba_utils.reconfigure(ctx)
-
-
-def pydoctor(ctx):
-    '''build python apidocs'''
-    cmd='PYTHONPATH=bin/python pydoctor --project-name=talloc --project-url=http://talloc.samba.org/ --make-html --docformat=restructuredtext --introspect-c-modules --add-module bin/python/talloc.*'
-    print("Running: %s" % cmd)
-    os.system(cmd)

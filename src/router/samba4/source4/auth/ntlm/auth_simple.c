@@ -115,7 +115,9 @@ _PUBLIC_ struct tevent_req *authenticate_ldap_simple_bind_send(TALLOC_CTX *mem_c
 		log_authentication_event(msg, lp_ctx,
 					 &state->auth_context->start_time,
 					 user_info, status,
-					 NULL, NULL, NULL);
+					 NULL, NULL, NULL,
+					 NULL /* client_audit_info */,
+					 NULL /* server_audit_info */);
 	}
 	if (tevent_req_nterror(req, status)) {
 		return tevent_req_post(req, ev);
@@ -169,7 +171,7 @@ static void authenticate_ldap_simple_bind_done(struct tevent_req *subreq)
 	}
 
 	flags = AUTH_SESSION_INFO_DEFAULT_GROUPS;
-	if (user_info_dc->info->authenticated) {
+	if (!(user_info_dc->info->user_flags & NETLOGON_GUEST)) {
 		flags |= AUTH_SESSION_INFO_AUTHENTICATED;
 	}
 
@@ -190,7 +192,9 @@ static void authenticate_ldap_simple_bind_done(struct tevent_req *subreq)
 				   "LDAP",
 				   "simple bind",
 				   transport_protection,
-				   state->session_info);
+				   state->session_info,
+				   NULL /* client_audit_info */,
+				   NULL /* server_audit_info */);
 
 	tevent_req_done(req);
 }

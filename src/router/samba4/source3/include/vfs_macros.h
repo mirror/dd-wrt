@@ -111,20 +111,10 @@
 #define SMB_VFS_NEXT_FDOPENDIR(handle, fsp, mask, attr) \
 	smb_vfs_call_fdopendir((handle)->next, (fsp), (mask), (attr))
 
-#define SMB_VFS_READDIR(conn, dirfsp, dirp, sbuf) \
-	smb_vfs_call_readdir((conn)->vfs_handles, (dirfsp), (dirp), (sbuf))
-#define SMB_VFS_NEXT_READDIR(handle, dirfsp, dirp, sbuf) \
-	smb_vfs_call_readdir((handle)->next, (dirfsp), (dirp), (sbuf))
-
-#define SMB_VFS_SEEKDIR(conn, dirp, offset) \
-	smb_vfs_call_seekdir((conn)->vfs_handles, (dirp), (offset))
-#define SMB_VFS_NEXT_SEEKDIR(handle, dirp, offset) \
-	smb_vfs_call_seekdir((handle)->next, (dirp), (offset))
-
-#define SMB_VFS_TELLDIR(conn, dirp) \
-	smb_vfs_call_telldir((conn)->vfs_handles, (dirp))
-#define SMB_VFS_NEXT_TELLDIR(handle, dirp) \
-	smb_vfs_call_telldir((handle)->next, (dirp))
+#define SMB_VFS_READDIR(conn, dirfsp, dirp) \
+	smb_vfs_call_readdir((conn)->vfs_handles, (dirfsp), (dirp))
+#define SMB_VFS_NEXT_READDIR(handle, dirfsp, dirp) \
+	smb_vfs_call_readdir((handle)->next, (dirfsp), (dirp))
 
 #define SMB_VFS_REWINDDIR(conn, dirp) \
 	smb_vfs_call_rewind_dir((conn)->vfs_handles, (dirp))

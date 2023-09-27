@@ -302,12 +302,12 @@ struct tevent_thread_proxy *tevent_thread_proxy_create(
  *
  * pp_im must be a pointer to an immediate event talloced on
  * a context owned by the calling thread, or the NULL context.
- * Ownership of *pp_im will be transfered to the tevent library.
+ * Ownership of *pp_im will be transferred to the tevent library.
  *
  * pp_private can be null, or contents of *pp_private must be
  * talloc'ed memory on a context owned by the calling thread
  * or the NULL context. If non-null, ownership of *pp_private will
- * be transfered to the tevent library.
+ * be transferred to the tevent library.
  *
  * If you want to return a message, have the destination use the
  * same function call to send back to the caller.
@@ -576,7 +576,7 @@ void tevent_common_threaded_activate_immediate(struct tevent_context *ev)
 
 		DLIST_REMOVE(ev->scheduled_immediates, im);
 
-		tevent_debug(ev, TEVENT_DEBUG_TRACE,
+		TEVENT_DEBUG(ev, TEVENT_DEBUG_TRACE,
 			     "Schedule immediate event \"%s\": %p from thread into main\n",
 			     im->handler_name, im);
 		im->handler_name = NULL;

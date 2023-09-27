@@ -25,6 +25,7 @@
 #include "util_tdb.h"
 #include "lib/util/bitmap.h"
 #include "lib/util/strv.h"
+#include "libcli/smb/reparse_symlink.h"
 
 #define FILE_HANDLE_OFFSET 0x1000
 
@@ -729,17 +730,109 @@ NTSTATUS readlink_talloc(
 	return NT_STATUS_OK;
 }
 
-NTSTATUS openat_pathref_dirfsp_nosymlink(
+NTSTATUS read_symlink_reparse(
 	TALLOC_CTX *mem_ctx,
-	struct connection_struct *conn,
-	const char *path_in,
-	NTTIME twrp,
-	bool posix,
-	struct smb_filename **_smb_fname,
-	size_t *unparsed,
-	char **substitute)
+	struct files_struct *dirfsp,
+	struct smb_filename *smb_relname,
+	struct symlink_reparse_struct **_symlink)
 {
-	struct files_struct *dirfsp = conn->cwd_fsp;
+	struct symlink_reparse_struct *symlink = NULL;
+	NTSTATUS status;
+
+	symlink = talloc_zero(mem_ctx, struct symlink_reparse_struct);
+	if (symlink == NULL) {
+		goto nomem;
+	}
+
+	status = readlink_talloc(
+		symlink, dirfsp, smb_relname, &symlink->substitute_name);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("readlink_talloc failed: %s\n", nt_errstr(status));
+		goto fail;
+	}
+
+	if (symlink->substitute_name[0] == '/') {
+		const char *connectpath = dirfsp->conn->connectpath;
+		char *abs_target_canon = NULL;
+		const char *relative = NULL;
+		bool in_share;
+
+		abs_target_canon =
+			canonicalize_absolute_path(talloc_tos(),
+						   symlink->substitute_name);
+		if (abs_target_canon == NULL) {
+			goto nomem;
+		}
+
+		in_share = subdir_of(connectpath,
+				     strlen(connectpath),
+				     abs_target_canon,
+				     &relative);
+		if (in_share) {
+			TALLOC_FREE(symlink->substitute_name);
+			symlink->substitute_name =
+				talloc_strdup(symlink, relative);
+			if (symlink->substitute_name == NULL) {
+				goto nomem;
+			}
+		}
+	}
+
+	if (!IS_DIRECTORY_SEP(symlink->substitute_name[0])) {
+		symlink->flags |= SYMLINK_FLAG_RELATIVE;
+	}
+
+	*_symlink = symlink;
+	return NT_STATUS_OK;
+nomem:
+	status = NT_STATUS_NO_MEMORY;
+fail:
+	TALLOC_FREE(symlink);
+	return status;
+}
+
+static bool full_path_extend(char **dir, const char *atname)
+{
+	talloc_asprintf_addbuf(dir,
+			       "%s%s",
+			       (*dir)[0] == '\0' ? "" : "/",
+			       atname);
+	return (*dir) != NULL;
+}
+
+static NTSTATUS create_open_symlink_err(TALLOC_CTX *mem_ctx,
+					files_struct *dirfsp,
+					struct smb_filename *smb_relname,
+					struct open_symlink_err **_err)
+{
+	struct open_symlink_err *err = NULL;
+	NTSTATUS status;
+
+	err = talloc_zero(mem_ctx, struct open_symlink_err);
+	if (err == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	status = read_symlink_reparse(err, dirfsp, smb_relname, &err->reparse);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(err);
+		return status;
+	}
+
+	*_err = err;
+	return NT_STATUS_OK;
+}
+
+NTSTATUS openat_pathref_fsp_nosymlink(TALLOC_CTX *mem_ctx,
+				      struct connection_struct *conn,
+				      struct files_struct *in_dirfsp,
+				      const char *path_in,
+				      NTTIME twrp,
+				      bool posix,
+				      struct smb_filename **_smb_fname,
+				      struct open_symlink_err **_symlink_err)
+{
+	struct files_struct *dirfsp = in_dirfsp;
 	struct smb_filename full_fname = {
 		.base_name = NULL,
 		.twrp = twrp,
@@ -751,13 +844,14 @@ NTSTATUS openat_pathref_dirfsp_nosymlink(
 		.flags = full_fname.flags,
 	};
 	struct smb_filename *result = NULL;
+	struct open_symlink_err *symlink_err = NULL;
 	struct files_struct *fsp = NULL;
 	char *path = NULL, *next = NULL;
-	bool case_sensitive;
+	bool case_sensitive, ok, is_toplevel;
 	int fd;
 	NTSTATUS status;
 	struct vfs_open_how how = {
-		.flags = O_NOFOLLOW|O_DIRECTORY,
+		.flags = O_NOFOLLOW | O_NONBLOCK,
 		.mode = 0,
 	};
 
@@ -768,6 +862,11 @@ NTSTATUS openat_pathref_dirfsp_nosymlink(
 		DBG_DEBUG("fsp_new() failed: %s\n", nt_errstr(status));
 		goto fail;
 	}
+
+	GetTimeOfDay(&fsp->open_time);
+	fsp_set_gen_id(fsp);
+	ZERO_STRUCT(conn->sconn->fsp_fi_cache);
+
 	fsp->fsp_name = &full_fname;
 
 #ifdef O_PATH
@@ -791,7 +890,12 @@ NTSTATUS openat_pathref_dirfsp_nosymlink(
 #endif
 #endif
 
-	full_fname.base_name = talloc_strdup(talloc_tos(), "");
+	is_toplevel = (dirfsp == dirfsp->conn->cwd_fsp);
+	is_toplevel |= ISDOT(dirfsp->fsp_name->base_name);
+
+	full_fname.base_name =
+		talloc_strdup(talloc_tos(),
+			      is_toplevel ? "" : dirfsp->fsp_name->base_name);
 	if (full_fname.base_name == NULL) {
 		DBG_DEBUG("talloc_strdup() failed\n");
 		goto nomem;
@@ -852,8 +956,11 @@ NTSTATUS openat_pathref_dirfsp_nosymlink(
 		fd = SMB_VFS_OPENAT(conn, dirfsp, &rel_fname, fsp, &how);
 		if (fd >= 0) {
 			fsp_set_fd(fsp, fd);
-			TALLOC_FREE(full_fname.base_name);
-			full_fname = rel_fname;
+			ok = full_path_extend(&full_fname.base_name,
+					      rel_fname.base_name);
+			if (!ok) {
+				goto nomem;
+			}
 			goto done;
 		}
 
@@ -958,54 +1065,95 @@ next:
 			&how);
 	}
 
-	/*
-	 * O_NOFOLLOW|O_DIRECTORY results in
-	 * ENOTDIR instead of ELOOP.
-	 *
-	 * But we should be prepared to handle ELOOP too.
-	 */
-	if ((fd == -1) && (errno == ENOTDIR || errno == ELOOP)) {
-		NTSTATUS orig_status = map_nt_error_from_unix(errno);
+#ifndef O_PATH
+	if ((fd == -1) && (errno == ELOOP)) {
+		int ret;
 
-		status = readlink_talloc(
-			mem_ctx, dirfsp, &rel_fname, substitute);
+		/*
+		 * openat() hit a symlink. With O_PATH we open the
+		 * symlink and get ENOTDIR in the next round, see
+		 * below.
+		 */
 
-		if (NT_STATUS_IS_OK(status)) {
-			/*
-			 * readlink_talloc() found a symlink
-			 */
-			status = NT_STATUS_STOPPED_ON_SYMLINK;
-
-			if (unparsed != NULL) {
-				if (next == NULL) {
-					*unparsed = 0;
-				} else {
-					size_t parsed = next - path;
-					size_t len = talloc_get_size(path);
-					*unparsed = len - parsed;
-				}
-			}
-			/*
-			 * If we're on an MSDFS share, see if this is
-			 * an MSDFS link.
-			 */
-			if (lp_host_msdfs() &&
-			    lp_msdfs_root(SNUM(conn)) &&
-			    (substitute != NULL) &&
-			    strnequal(*substitute, "msdfs:", 6) &&
-			    is_msdfs_link(dirfsp, &rel_fname))
-			{
-				status = NT_STATUS_PATH_NOT_COVERED;
-			}
-		} else {
-
-			DBG_DEBUG("readlink_talloc failed: %s\n",
+		status = create_open_symlink_err(mem_ctx,
+						 dirfsp,
+						 &rel_fname,
+						 &symlink_err);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_DEBUG("create_open_symlink_err failed: %s\n",
 				  nt_errstr(status));
-			/*
-			 * Restore the error status from SMB_VFS_OPENAT()
-			 */
-			status = orig_status;
+			goto fail;
 		}
+
+		if (next != NULL) {
+			size_t parsed = next - path;
+			size_t len = talloc_get_size(path);
+			symlink_err->unparsed = len - parsed;
+		}
+
+		/*
+		 * We know rel_fname is a symlink, now fill in the
+		 * rest of the metadata for our callers.
+		 */
+
+		ret = SMB_VFS_FSTATAT(conn,
+				      dirfsp,
+				      &rel_fname,
+				      &symlink_err->st,
+				      AT_SYMLINK_NOFOLLOW);
+		if (ret == -1) {
+			status = map_nt_error_from_unix(errno);
+			DBG_DEBUG("SMB_VFS_FSTATAT(%s/%s) failed: %s\n",
+				  fsp_str_dbg(dirfsp),
+				  rel_fname.base_name,
+				  strerror(errno));
+			TALLOC_FREE(symlink_err);
+			goto fail;
+		}
+
+		if (!S_ISLNK(symlink_err->st.st_ex_mode)) {
+			/*
+			 * Hit a race: readlink_talloc() worked before
+			 * the fstatat(), but rel_fname changed to
+			 * something that's not a symlink.
+			 */
+			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+			TALLOC_FREE(symlink_err);
+			goto fail;
+		}
+
+		status = NT_STATUS_STOPPED_ON_SYMLINK;
+		goto fail;
+	}
+#endif
+
+	if ((fd == -1) && (errno == ENOTDIR)) {
+		size_t parsed, len;
+
+		/*
+		 * dirfsp does not point at a directory, try a
+		 * freadlink.
+		 */
+
+		status = create_open_symlink_err(mem_ctx,
+						 dirfsp,
+						 NULL,
+						 &symlink_err);
+
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_DEBUG("create_open_symlink_err failed: %s\n",
+				  nt_errstr(status));
+			status = NT_STATUS_NOT_A_DIRECTORY;
+			goto fail;
+		}
+
+		parsed = rel_fname.base_name - path;
+		len = talloc_get_size(path);
+		symlink_err->unparsed = len - parsed;
+
+		symlink_err->st = dirfsp->fsp_name->st;
+
+		status = NT_STATUS_STOPPED_ON_SYMLINK;
 		goto fail;
 	}
 
@@ -1017,30 +1165,22 @@ next:
 	}
 	fsp_set_fd(fsp, fd);
 
-	fsp->fsp_flags.is_directory = true; /* See O_DIRECTORY above */
-
-	full_fname.base_name = talloc_asprintf_append_buffer(
-			full_fname.base_name,
-			"%s%s",
-			full_fname.base_name[0] == '\0' ? "" : "/",
-			rel_fname.base_name);
-
-	if (full_fname.base_name == NULL) {
-		DBG_DEBUG("talloc_asprintf_append_buffer() failed\n");
+	ok = full_path_extend(&full_fname.base_name, rel_fname.base_name);
+	if (!ok) {
 		goto nomem;
 	}
 
 	if (next != NULL) {
 		struct files_struct *tmp = NULL;
 
-		if (dirfsp != conn->cwd_fsp) {
+		if (dirfsp != in_dirfsp) {
 			fd_close(dirfsp);
 		}
 
 		tmp = dirfsp;
 		dirfsp = fsp;
 
-		if (tmp == conn->cwd_fsp) {
+		if (tmp == in_dirfsp) {
 			status = fsp_new(conn, conn, &fsp);
 			if (!NT_STATUS_IS_OK(status)) {
 				DBG_DEBUG("fsp_new() failed: %s\n",
@@ -1057,7 +1197,7 @@ next:
 		goto next;
 	}
 
-	if (dirfsp != conn->cwd_fsp) {
+	if (dirfsp != in_dirfsp) {
 		SMB_ASSERT(fsp_get_pathref_fd(dirfsp) != -1);
 		fd_close(dirfsp);
 		dirfsp->fsp_name = NULL;
@@ -1083,6 +1223,25 @@ done:
 			  nt_errstr(status));
 		goto fail;
 	}
+
+	if (S_ISLNK(fsp->fsp_name->st.st_ex_mode)) {
+		/*
+		 * Last component was a symlink we opened with O_PATH, fail it
+		 * here.
+		 */
+		status = create_open_symlink_err(mem_ctx,
+						 fsp,
+						 NULL,
+						 &symlink_err);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+		symlink_err->st = fsp->fsp_name->st;
+
+		status = NT_STATUS_STOPPED_ON_SYMLINK;
+		goto fail;
+	}
+
 	/*
 	 * We must correctly set fsp->file_id as code inside
 	 * open.c will use this to check if delete_on_close
@@ -1121,12 +1280,16 @@ fail:
 		fsp = NULL;
 	}
 
-	if ((dirfsp != NULL) && (dirfsp != conn->cwd_fsp)) {
+	if ((dirfsp != NULL) && (dirfsp != in_dirfsp)) {
 		SMB_ASSERT(fsp_get_pathref_fd(dirfsp) != -1);
 		fd_close(dirfsp);
 		dirfsp->fsp_name = NULL;
 		file_free(NULL, dirfsp);
 		dirfsp = NULL;
+	}
+
+	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
+		*_symlink_err = symlink_err;
 	}
 
 	TALLOC_FREE(path);
@@ -2030,6 +2193,7 @@ NTSTATUS file_name_hash(connection_struct *conn,
 static NTSTATUS fsp_attach_smb_fname(struct files_struct *fsp,
 				     struct smb_filename **_smb_fname)
 {
+	TALLOC_CTX *frame = talloc_stackframe();
 	struct smb_filename *smb_fname_new = talloc_move(fsp, _smb_fname);
 	const char *name_str = NULL;
 	uint32_t name_hash = 0;
@@ -2037,12 +2201,15 @@ static NTSTATUS fsp_attach_smb_fname(struct files_struct *fsp,
 
 	name_str = smb_fname_str_dbg(smb_fname_new);
 	if (name_str == NULL) {
+		TALLOC_FREE(frame);
 		return NT_STATUS_NO_MEMORY;
 	}
 
 	status = file_name_hash(fsp->conn,
 				name_str,
 				&name_hash);
+	TALLOC_FREE(frame);
+	name_str = NULL;
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}

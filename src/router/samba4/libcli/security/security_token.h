@@ -24,10 +24,14 @@
 #ifndef _LIBCLI_SECURITY_SECURITY_TOKEN_H_
 #define _LIBCLI_SECURITY_SECURITY_TOKEN_H_
 
+#include "replace.h"
+#include "lib/util/data_blob.h"
 #include "librpc/gen_ndr/security.h"
 
 #define PRIMARY_USER_SID_INDEX 0
 #define PRIMARY_GROUP_SID_INDEX 1
+#define PRIMARY_SIDS_COUNT 2
+#define REMAINING_SIDS_INDEX 2
 
 /*
   return a blank security token

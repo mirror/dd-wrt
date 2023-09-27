@@ -146,7 +146,7 @@ static struct {
 } while (0)
 
 #if defined(DEVELOPER) && defined(VALGRIND_MAKE_MEM_NOACCESS)
-/* Mark the whole chunk as not accessable */
+/* Mark the whole chunk as not accessible */
 #define TC_INVALIDATE_FULL_VALGRIND_CHUNK(_tc) do { \
 	size_t _flen = TC_HDR_SIZE + (_tc)->size; \
 	char *_fptr = (char *)(_tc); \
@@ -171,7 +171,7 @@ static struct {
 } while (0)
 
 #if defined(DEVELOPER) && defined(VALGRIND_MAKE_MEM_NOACCESS)
-/* Mark the unused bytes not accessable */
+/* Mark the unused bytes not accessible */
 #define TC_INVALIDATE_SHRINK_VALGRIND_CHUNK(_tc, _new_size) do { \
 	size_t _flen = (_tc)->size - (_new_size); \
 	char *_fptr = (char *)TC_PTR_FROM_CHUNK(_tc); \
@@ -661,7 +661,7 @@ static inline void *tc_pool_first_chunk(struct talloc_pool_hdr *pool_hdr)
 	return tc_next_chunk(tc);
 }
 
-/* Mark the whole remaining pool as not accessable */
+/* Mark the whole remaining pool as not accessible */
 static inline void tc_invalidate_pool(struct talloc_pool_hdr *pool_hdr)
 {
 	size_t flen = tc_pool_space_left(pool_hdr);
@@ -2598,7 +2598,6 @@ static struct talloc_chunk *_vasprintf_tc(const void *t,
 	struct talloc_chunk *tc = NULL;
 	char buf[1024];
 
-	/* this call looks strange, but it makes it work on older solaris boxes */
 	va_copy(ap2, ap);
 	vlen = vsnprintf(buf, sizeof(buf), fmt, ap2);
 	va_end(ap2);
@@ -2662,6 +2661,7 @@ static inline char *__talloc_vaslenprintf_append(char *s, size_t slen,
 	char c;
 
 	va_copy(ap2, ap);
+	/* this call looks strange, but it makes it work on older solaris boxes */
 	alen = vsnprintf(&c, 1, fmt, ap2);
 	va_end(ap2);
 
@@ -2678,9 +2678,7 @@ static inline char *__talloc_vaslenprintf_append(char *s, size_t slen,
 	s = talloc_realloc(NULL, s, char, slen + alen + 1);
 	if (!s) return NULL;
 
-	va_copy(ap2, ap);
-	vsnprintf(s + slen, alen + 1, fmt, ap2);
-	va_end(ap2);
+	vsnprintf(s + slen, alen + 1, fmt, ap);
 
 	_tc_set_name_const(talloc_chunk_from_ptr(s), s);
 	return s;

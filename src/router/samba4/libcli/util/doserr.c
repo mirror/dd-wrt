@@ -1,25 +1,26 @@
-/* 
+/*
  *  Unix SMB/CIFS implementation.
  *  DOS error routines
  *  Copyright (C) Tim Potter 2002.
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 3 of the License, or
  *  (at your option) any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /* DOS error codes.  please read doserr.h */
 
-#include "includes.h"
+#include "replace.h"
+#include "libcli/util/werror.h"
 
 struct werror_code_struct {
         const char *dos_errstr;
@@ -30,8 +31,6 @@ struct werror_str_struct {
         WERROR werror;
         const char *friendly_errstr;
 };
-
-#include "werror_gen.c"
 
 static const struct werror_code_struct special_errs[] =
 {
@@ -107,11 +106,10 @@ const char *win_errstr(WERROR werror)
 
 	idx = 0;
 
-	while (dos_errs[idx].dos_errstr != NULL) {
-		if (W_ERROR_V(dos_errs[idx].werror) ==
-                    W_ERROR_V(werror))
-                        return dos_errs[idx].dos_errstr;
-		idx++;
+	switch W_ERROR_V(werror) {
+#include "werror_gen.c"
+	default:
+		break;
 	}
 
 	slprintf(msg, sizeof(msg), "DOS code 0x%08x", W_ERROR_V(werror));
@@ -125,13 +123,10 @@ const char *win_errstr(WERROR werror)
 
 const char *get_friendly_werror_msg(WERROR werror)
 {
-	size_t i = 0;
-
-	for (i = 0; i < ARRAY_SIZE(dos_err_strs); i++) {
-		if (W_ERROR_V(dos_err_strs[i].werror) ==
-                    W_ERROR_V(werror)) {
-			return dos_err_strs[i].friendly_errstr;
-		}
+	switch W_ERROR_V(werror) {
+#include "werror_friendly_gen.c"
+	default:
+		break;
 	}
 
 	return win_errstr(werror);

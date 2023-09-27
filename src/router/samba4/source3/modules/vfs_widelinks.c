@@ -83,7 +83,7 @@
 
  idiom in the vfs functions.
 
- 2). The module hides the existance of symlinks by inside
+ 2). The module hides the existence of symlinks by inside
  lstat(), open(), and readdir() so long as it's not a POSIX
  pathname request (those requests *must* be aware of symlinks
  and the POSIX client has to follow them, it's expected that
@@ -106,6 +106,7 @@
 
 struct widelinks_config {
 	bool active;
+	bool is_dfs_share;
 	char *cwd;
 };
 
@@ -134,7 +135,8 @@ static int widelinks_connect(struct vfs_handle_struct *handle,
 		DBG_ERR("vfs_widelinks module loaded with "
 			"widelinks = no\n");
 	}
-
+	config->is_dfs_share =
+		(lp_host_msdfs() && lp_msdfs_root(SNUM(handle->conn)));
         SMB_VFS_HANDLE_SET_DATA(handle,
 				config,
 				NULL, /* free_fn */
@@ -346,7 +348,7 @@ static int widelinks_openat(vfs_handle_struct *handle,
 {
 	struct vfs_open_how how = *_how;
 	struct widelinks_config *config = NULL;
-
+	int ret;
 	SMB_VFS_HANDLE_GET_DATA(handle,
 				config,
 				struct widelinks_config,
@@ -363,46 +365,33 @@ static int widelinks_openat(vfs_handle_struct *handle,
 		how.flags = (how.flags & ~O_NOFOLLOW);
 	}
 
-	return SMB_VFS_NEXT_OPENAT(handle,
+	ret = SMB_VFS_NEXT_OPENAT(handle,
 				   dirfsp,
 				   smb_fname,
 				   fsp,
 				   &how);
-}
+	if (config->is_dfs_share && ret == -1 && errno == ENOENT) {
+		struct smb_filename *full_fname = NULL;
+		int lstat_ret;
 
-static struct dirent *widelinks_readdir(vfs_handle_struct *handle,
-					struct files_struct *dirfsp,
-					DIR *dirp,
-					SMB_STRUCT_STAT *sbuf)
-{
-	struct widelinks_config *config = NULL;
-	struct dirent *result;
-
-	SMB_VFS_HANDLE_GET_DATA(handle,
-				config,
-				struct widelinks_config,
-				return NULL);
-
-	result = SMB_VFS_NEXT_READDIR(handle,
-				      dirfsp,
-				      dirp,
-				      sbuf);
-
-	if (!config->active) {
-		/* Module not active. */
-		return result;
+		full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+				dirfsp,
+				smb_fname);
+		if (full_fname == NULL) {
+			errno = ENOMEM;
+			return -1;
+		}
+		lstat_ret = SMB_VFS_NEXT_LSTAT(handle,
+				full_fname);
+		if (lstat_ret != -1 &&
+		    VALID_STAT(full_fname->st) &&
+		    S_ISLNK(full_fname->st.st_ex_mode)) {
+			fsp->fsp_name->st = full_fname->st;
+		}
+		TALLOC_FREE(full_fname);
+		errno = ENOENT;
 	}
-
-	/*
-	 * Prevent optimization of returning
-	 * the stat info. Force caller to go
-	 * through our LSTAT that hides symlinks.
-	 */
-
-	if (sbuf) {
-		SET_STAT_INVALID(*sbuf);
-	}
-	return result;
+	return ret;
 }
 
 static struct vfs_fn_pointers vfs_widelinks_fns = {
@@ -418,7 +407,6 @@ static struct vfs_fn_pointers vfs_widelinks_fns = {
 	.chdir_fn = widelinks_chdir,
 	.getwd_fn = widelinks_getwd,
 	.realpath_fn = widelinks_realpath,
-	.readdir_fn = widelinks_readdir
 };
 
 static_decl_vfs;

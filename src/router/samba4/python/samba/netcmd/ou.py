@@ -27,7 +27,6 @@ from samba.netcmd import (
     SuperCommand,
 )
 from samba.samdb import SamDB
-from samba import dsdb
 from operator import attrgetter
 
 
@@ -67,7 +66,6 @@ class cmd_rename(Command):
         creds = credopts.get_credentials(lp, fallback_machine=True)
         samdb = SamDB(url=H, session_info=system_session(),
                       credentials=creds, lp=lp)
-        domain_dn = ldb.Dn(samdb, samdb.domain_dn())
 
         try:
             full_old_ou_dn = samdb.normalize_dn_in_domain(old_ou_dn)
@@ -133,7 +131,6 @@ class cmd_move(Command):
         samdb = SamDB(url=H, session_info=system_session(),
                       credentials=creds, lp=lp)
 
-        domain_dn = ldb.Dn(samdb, samdb.domain_dn())
         try:
             full_old_ou_dn = samdb.normalize_dn_in_domain(old_ou_dn)
         except Exception as e:
@@ -257,21 +254,21 @@ class cmd_listobjects(Command):
         except Exception as e:
             raise CommandError('Invalid ou_dn "%s": %s' % (ou_dn, e))
 
-        minchilds = 0
+        minchildren = 0
         scope = ldb.SCOPE_ONELEVEL
         if recursive:
-            minchilds = 1
+            minchildren = 1
             scope = ldb.SCOPE_SUBTREE
 
         try:
-            childs = samdb.search(base=full_ou_dn,
-                                  expression="(objectclass=*)",
-                                  scope=scope, attrs=[])
-            if len(childs) <= minchilds:
+            children = samdb.search(base=full_ou_dn,
+                                    expression="(objectclass=*)",
+                                    scope=scope, attrs=[])
+            if len(children) <= minchildren:
                 self.outf.write('ou "%s" is empty\n' % ou_dn)
                 return
 
-            for child in sorted(childs, key=attrgetter('dn')):
+            for child in sorted(children, key=attrgetter('dn')):
                 if child.dn == full_ou_dn:
                     continue
                 if not full_dn:
@@ -361,7 +358,7 @@ class cmd_delete(Command):
                type=str, metavar="URL", dest="H"),
         Option("--force-subtree-delete", dest="force_subtree_delete",
                default=False, action='store_true',
-               help="Delete organizational unit and all children reclusively"),
+               help="Delete organizational unit and all children recursively"),
     ]
 
     takes_args = ["ou_dn"]
@@ -377,7 +374,6 @@ class cmd_delete(Command):
         creds = credopts.get_credentials(lp, fallback_machine=True)
         samdb = SamDB(url=H, session_info=system_session(),
                       credentials=creds, lp=lp)
-        domain_dn = ldb.Dn(samdb, samdb.domain_dn())
 
         try:
             full_ou_dn = samdb.normalize_dn_in_domain(ou_dn)

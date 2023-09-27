@@ -486,6 +486,29 @@ NTSTATUS _wbint_LookupGroupMembers(struct pipes_struct *p,
 	return NT_STATUS_OK;
 }
 
+NTSTATUS _wbint_LookupAliasMembers(struct pipes_struct *p,
+				   struct wbint_LookupAliasMembers *r)
+{
+	struct winbindd_domain *domain = wb_child_domain();
+	NTSTATUS status;
+
+	if (domain == NULL) {
+		return NT_STATUS_REQUEST_NOT_ACCEPTED;
+	}
+	status = wb_cache_lookup_aliasmem(domain,
+					  p->mem_ctx,
+					  r->in.sid,
+					  r->in.type,
+					  &r->out.sids->num_sids,
+					  &r->out.sids->sids);
+	reset_cm_connection_on_error(domain, NULL, status);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	return NT_STATUS_OK;
+}
+
 NTSTATUS _wbint_QueryGroupList(struct pipes_struct *p,
 			       struct wbint_QueryGroupList *r)
 {
@@ -514,6 +537,21 @@ NTSTATUS _wbint_QueryGroupList(struct pipes_struct *p,
 			/*
 			 * we want to include local groups
 			 * for BUILTIN and WORKGROUP
+			 */
+			include_local_groups = true;
+		}
+		break;
+	case ROLE_DOMAIN_MEMBER:
+		/*
+		 * This is needed for GETGRENT to show also e.g. BUILTIN/users.
+		 * Otherwise the test_membership_user (smbtorture
+		 * local.nss.membership) would fail (getgrouplist() would
+		 * reports BUILTIN/users).
+		 */
+		if (domain->internal) {
+			/*
+			 * we want to include local groups
+			 * for BUILTIN and LOCALSAM
 			 */
 			include_local_groups = true;
 		}
@@ -1214,7 +1252,9 @@ check_return:
 	}
 	info2->tc_connection_status = check_result;
 
-	if (!W_ERROR_IS_OK(info2->pdc_connection_status)) {
+	if (!W_ERROR_IS_OK(info2->pdc_connection_status) ||
+	    !W_ERROR_IS_OK(info2->tc_connection_status))
+	{
 		DEBUG(2, ("%s: domain[%s/%s] dcname[%s] "
 			  "pdc_connection[%s] tc_connection[%s]\n",
 			  __func__, domain->name, domain->alt_name,
@@ -1282,7 +1322,9 @@ check_return:
 	}
 	info2->tc_connection_status = check_result;
 
-	if (!W_ERROR_IS_OK(info2->pdc_connection_status)) {
+	if (!W_ERROR_IS_OK(info2->pdc_connection_status) ||
+	    !W_ERROR_IS_OK(info2->tc_connection_status))
+	{
 		DEBUG(2, ("%s: domain[%s/%s] dcname[%s] "
 			  "pdc_connection[%s] tc_connection[%s]\n",
 			  __func__, domain->name, domain->alt_name,
@@ -1604,7 +1646,9 @@ verify_return:
 	}
 	info2->tc_connection_status = check_result;
 
-	if (!W_ERROR_IS_OK(info2->pdc_connection_status)) {
+	if (!W_ERROR_IS_OK(info2->pdc_connection_status) ||
+	    !W_ERROR_IS_OK(info2->tc_connection_status))
+	{
 		DEBUG(2, ("%s: domain[%s/%s] dcname[%s] "
 			  "pdc_connection[%s] tc_connection[%s]\n",
 			  __func__, domain->name, domain->alt_name,

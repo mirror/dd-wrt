@@ -365,8 +365,6 @@ class DrsReplicaSyncTestCase(drs_base.DrsBaseTestCase):
 
             self.assertFalse("rIDSetReferences" in res[0])
 
-            smbconf = os.path.join(targetdir, "etc/smb.conf")
-
             chk = dbcheck(new_ldb, verbose=False, fix=True, yes=True, quiet=True)
 
             self.assertEqual(chk.check_database(DN=server_ref_dn, scope=ldb.SCOPE_BASE), 1, "Should have fixed one error (missing RID Set)")
@@ -416,8 +414,6 @@ class DrsReplicaSyncTestCase(drs_base.DrsBaseTestCase):
 
             self.assertFalse("rIDSetReferences" in res[0])
 
-            smbconf = os.path.join(targetdir, "etc/smb.conf")
-
             new_ldb.newuser("ridalloctestuser", "P@ssword!")
 
             # 3. Assert we get the RID Set
@@ -466,8 +462,6 @@ class DrsReplicaSyncTestCase(drs_base.DrsBaseTestCase):
 
             self.assertFalse("rIDSetReferences" in res[0])
 
-            smbconf = os.path.join(targetdir, "etc/smb.conf")
-
             # Create a user to allocate a RID Set for itself (the RID master)
             new_ldb.newuser("ridalloctestuser", "P@ssword!")
 
@@ -491,7 +485,6 @@ class DrsReplicaSyncTestCase(drs_base.DrsBaseTestCase):
         try:
             # Connect to the database
             ldb_url = "tdb://%s" % os.path.join(targetdir, "private/sam.ldb")
-            smbconf = os.path.join(targetdir, "etc/smb.conf")
 
             lp = self.get_loadparm()
             new_ldb = SamDB(ldb_url, credentials=self.get_credentials(),
@@ -523,7 +516,6 @@ class DrsReplicaSyncTestCase(drs_base.DrsBaseTestCase):
         try:
             # Connect to the database
             ldb_url = "tdb://%s" % os.path.join(targetdir, "private/sam.ldb")
-            smbconf = os.path.join(targetdir, "etc/smb.conf")
 
             lp = self.get_loadparm()
             new_ldb = SamDB(ldb_url, credentials=self.get_credentials(),

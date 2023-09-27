@@ -51,7 +51,7 @@ static const char *kdc_plugin_deps[] = {
 static struct heim_plugin_data kdc_plugin_data = {
     "krb5",
     "kdc",
-    KRB5_PLUGIN_KDC_VERSION_10,
+    KRB5_PLUGIN_KDC_VERSION_11,
     kdc_plugin_deps,
     kdc_get_instance
 };
@@ -140,12 +140,14 @@ _kdc_pac_generate(astgs_request_t r,
 
 struct verify_uc {
     astgs_request_t r;
-    krb5_principal client_principal;
-    krb5_principal delegated_proxy_principal;
+    krb5_const_principal client_principal;
+    hdb_entry *delegated_proxy;
     hdb_entry *client;
     hdb_entry *server;
     hdb_entry *krbtgt;
-    krb5_pac *pac;
+    EncTicketPart *ticket;
+    krb5_pac pac;
+    krb5_boolean *is_trusted;
 };
 
 static krb5_error_code KRB5_LIB_CALL
@@ -161,19 +163,23 @@ verify(krb5_context context, const void *plug, void *plugctx, void *userctx)
     ret = ft->pac_verify((void *)plug,
 			 uc->r,
 			 uc->client_principal,
-			 uc->delegated_proxy_principal,
-			 uc->client, uc->server, uc->krbtgt, uc->pac);
+			 uc->delegated_proxy,
+			 uc->client, uc->server, uc->krbtgt,
+			 uc->ticket, uc->pac,
+			 uc->is_trusted);
     return ret;
 }
 
 krb5_error_code
 _kdc_pac_verify(astgs_request_t r,
-		const krb5_principal client_principal,
-		const krb5_principal delegated_proxy_principal,
+		krb5_const_principal client_principal,
+		hdb_entry *delegated_proxy,
 		hdb_entry *client,
 		hdb_entry *server,
 		hdb_entry *krbtgt,
-		krb5_pac *pac)
+		EncTicketPart *ticket,
+		krb5_pac pac,
+		krb5_boolean *is_trusted)
 {
     struct verify_uc uc;
 
@@ -182,14 +188,74 @@ _kdc_pac_verify(astgs_request_t r,
 
     uc.r = r;
     uc.client_principal = client_principal;
-    uc.delegated_proxy_principal = delegated_proxy_principal;
+    uc.delegated_proxy = delegated_proxy;
+    uc.client = client;
+    uc.server = server;
+    uc.krbtgt = krbtgt;
+    uc.ticket = ticket,
+    uc.pac = pac;
+    uc.is_trusted = is_trusted;
+
+    return _krb5_plugin_run_f(r->context, &kdc_plugin_data,
+			     0, &uc, verify);
+}
+
+struct update_uc {
+    astgs_request_t r;
+    krb5_const_principal client_principal;
+    hdb_entry *delegated_proxy;
+    krb5_const_pac delegated_proxy_pac;
+    hdb_entry *client;
+    hdb_entry *server;
+    hdb_entry *krbtgt;
+    krb5_pac *pac;
+};
+
+static krb5_error_code KRB5_LIB_CALL
+update(krb5_context context, const void *plug, void *plugctx, void *userctx)
+{
+    const krb5plugin_kdc_ftable *ft = (const krb5plugin_kdc_ftable *)plug;
+    struct update_uc *uc = (struct update_uc *)userctx;
+    krb5_error_code ret;
+
+    if (ft->pac_update == NULL)
+	return KRB5_PLUGIN_NO_HANDLE;
+
+    ret = ft->pac_update((void *)plug,
+			 uc->r,
+			 uc->client_principal,
+			 uc->delegated_proxy,
+			 uc->delegated_proxy_pac,
+			 uc->client, uc->server, uc->krbtgt, uc->pac);
+    return ret;
+}
+
+krb5_error_code
+_kdc_pac_update(astgs_request_t r,
+		krb5_const_principal client_principal,
+		hdb_entry *delegated_proxy,
+		krb5_const_pac delegated_proxy_pac,
+		hdb_entry *client,
+		hdb_entry *server,
+		hdb_entry *krbtgt,
+		krb5_pac *pac)
+{
+    struct update_uc uc;
+
+    if (!have_plugin)
+	return KRB5_PLUGIN_NO_HANDLE;
+
+    uc.r = r;
+    uc.client_principal = client_principal;
+    uc.delegated_proxy = delegated_proxy;
+    uc.delegated_proxy_pac = delegated_proxy_pac;
     uc.client = client;
     uc.server = server;
     uc.krbtgt = krbtgt;
     uc.pac = pac;
 
     return _krb5_plugin_run_f(r->context, &kdc_plugin_data,
-			     0, &uc, verify);
+			     0, &uc, update);
 }
 
 static krb5_error_code KRB5_LIB_CALL
@@ -652,3 +718,27 @@ free_keyblock(EncryptionKey *key)
 
 #undef HEIMDAL_KDC_KDC_ACCESSORS_H
 #include "kdc-accessors.h"
+
+KDC_LIB_FUNCTION const HDB * KDC_LIB_CALL
+kdc_request_get_explicit_armor_clientdb(astgs_request_t r)
+{
+    return r->explicit_armor_present ? r->armor_clientdb : NULL;
+}
+
+KDC_LIB_FUNCTION const hdb_entry * KDC_LIB_CALL
+kdc_request_get_explicit_armor_client(astgs_request_t r)
+{
+    return r->explicit_armor_present ? r->armor_client : NULL;
+}
+
+KDC_LIB_FUNCTION const hdb_entry * KDC_LIB_CALL
+kdc_request_get_explicit_armor_server(astgs_request_t r)
+{
+    return r->explicit_armor_present ? r->armor_server : NULL;
+}
+
+KDC_LIB_FUNCTION krb5_const_pac KDC_LIB_CALL
+kdc_request_get_explicit_armor_pac(astgs_request_t r)
+{
+    return r->explicit_armor_present ? r->armor_pac : NULL;
+}

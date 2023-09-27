@@ -47,7 +47,7 @@ bool fill_grent(TALLOC_CTX *mem_ctx, struct winbindd_gr *gr,
 		full_group_name = fill_domain_username_talloc(mem_ctx, dom_name,
 				     mapped_name, true);
 	}
-	/* Mapped to an aliase */
+	/* Mapped to an alias */
 	else if (NT_STATUS_EQUAL(nt_status, NT_STATUS_FILE_RENAMED)) {
 		full_group_name = mapped_name;
 	}
@@ -145,7 +145,9 @@ NTSTATUS winbindd_print_groupmembers(struct db_context *members,
 		DBG_NOTICE("dbwrap_traverse failed: %s\n", nt_errstr(status));
 		return status;
 	}
-	m.buf[c.len-1] = '\0';
+	if (c.len > 0) {
+		m.buf[c.len - 1] = '\0';
+	}
 
 	*num_members = c.num;
 	*result = m.buf;

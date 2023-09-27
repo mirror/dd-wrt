@@ -80,10 +80,10 @@ struct samba_cmdline_daemon_cfg {
  *                      This should be a long living context till the client
  *                      exits.
  *
- * @param[in]  require_smbconf  Wether the smb.conf file is required to be
+ * @param[in]  require_smbconf  Whether the smb.conf file is required to be
  *                              present or not?
  *
- * @return true on success, false if an error occured.
+ * @return true on success, false if an error occurred.
  */
 bool samba_cmdline_init(TALLOC_CTX *mem_ctx,
 			enum samba_cmdline_config_type config_type,
@@ -147,8 +147,10 @@ void samba_cmdline_set_machine_account_fn(
  * @param[in]  argc     The number of arguments.
  *
  * @param[in]  argv[]   The argument array we should remove secrets from.
+ *
+ * @return true if a password was removed, false otherwise.
  */
-void samba_cmdline_burn(int argc, char *argv[]);
+bool samba_cmdline_burn(int argc, char *argv[]);
 
 /**
  * @brief Sanity check the command line options.

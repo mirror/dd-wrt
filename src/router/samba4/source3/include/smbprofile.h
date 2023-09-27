@@ -21,6 +21,10 @@
 
 */
 
+#include "replace.h"
+#include <tdb.h>
+#include "lib/util/time.h"
+
 struct tevent_context;
 
 #ifdef WITH_PROFILE
@@ -45,8 +49,6 @@ struct tevent_context;
 	SMBPROFILE_STATS_BASIC(syscall_opendir) \
 	SMBPROFILE_STATS_BASIC(syscall_fdopendir) \
 	SMBPROFILE_STATS_BASIC(syscall_readdir) \
-	SMBPROFILE_STATS_BASIC(syscall_seekdir) \
-	SMBPROFILE_STATS_BASIC(syscall_telldir) \
 	SMBPROFILE_STATS_BASIC(syscall_rewinddir) \
 	SMBPROFILE_STATS_BASIC(syscall_mkdirat) \
 	SMBPROFILE_STATS_BASIC(syscall_closedir) \
@@ -497,6 +499,11 @@ static inline void smbprofile_dump_schedule(void)
 	smbprofile_dump_schedule_timer();
 }
 
+static inline bool smbprofile_active(void)
+{
+	return smbprofile_state.config.do_count;
+}
+
 static inline bool smbprofile_dump_pending(void)
 {
 	if (smbprofile_state.internal.te == NULL) {
@@ -511,6 +518,10 @@ void smbprofile_dump(void);
 void smbprofile_cleanup(pid_t pid, pid_t dst);
 void smbprofile_stats_accumulate(struct profile_stats *acc,
 				 const struct profile_stats *add);
+int smbprofile_magic(const struct profile_stats *stats, uint64_t *_magic);
+void smbprofile_collect_tdb(struct tdb_context *tdb,
+			    uint64_t magic,
+			    struct profile_stats *stats);
 void smbprofile_collect(struct profile_stats *stats);
 
 static inline uint64_t profile_timestamp(void)
@@ -573,6 +584,11 @@ static inline uint64_t profile_timestamp(void)
 #define END_PROFILE_BYTES(x)
 
 #define PROFILE_TIMESTAMP(x) (*(x)=(struct timespec){0})
+
+static inline bool smbprofile_active(void)
+{
+	return false;
+}
 
 static inline bool smbprofile_dump_pending(void)
 {

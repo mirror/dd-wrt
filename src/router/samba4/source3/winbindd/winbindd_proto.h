@@ -34,6 +34,12 @@ bool winbindd_use_cache(void);
 void winbindd_set_use_cache(bool use_cache);
 char *get_winbind_priv_pipe_dir(void);
 void winbindd_flush_caches(void);
+void winbind_debug_call_depth_setup(size_t *depth);
+void winbind_call_flow(void *private_data,
+		       enum tevent_thread_call_depth_cmd cmd,
+		       struct tevent_req *req,
+		       size_t depth,
+		       const char *fname);
 bool winbindd_reload_services_file(const char *lfile);
 
 /* The following definitions come from winbindd/winbindd_ads.c  */
@@ -106,6 +112,12 @@ NTSTATUS wb_cache_lookup_groupmem(struct winbindd_domain *domain,
 				  struct dom_sid **sid_mem,
 				  char ***names,
 				  uint32_t **name_types);
+NTSTATUS wb_cache_lookup_aliasmem(struct winbindd_domain *domain,
+				  TALLOC_CTX *mem_ctx,
+				  const struct dom_sid *group_sid,
+				  enum lsa_SidType type,
+				  uint32_t *num_names,
+				  struct dom_sid **sid_mem);
 NTSTATUS wb_cache_sequence_number(struct winbindd_domain *domain,
 				  uint32_t *seq);
 NTSTATUS wb_cache_lockout_policy(struct winbindd_domain *domain,
@@ -382,6 +394,9 @@ const char *idmap_config_const_string(const char *domname, const char *option,
 				      const char *def);
 bool idmap_config_bool(const char *domname, const char *option, bool def);
 int idmap_config_int(const char *domname, const char *option, int def);
+const char **idmap_config_string_list(const char *domname,
+				      const char *option,
+				      const char **def);
 bool domain_has_idmap_config(const char *domname);
 bool lp_scan_idmap_domains(bool (*fn)(const char *domname,
 				      void *private_data),
@@ -693,7 +708,7 @@ struct tevent_req *wb_seqnums_send(TALLOC_CTX *mem_ctx,
 				   struct tevent_context *ev);
 NTSTATUS wb_seqnums_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 			 int *num_domains, struct winbindd_domain ***domains,
-			 NTSTATUS **stati, uint32_t **seqnums);
+			 NTSTATUS **statuses, uint32_t **seqnums);
 
 struct tevent_req *winbindd_show_sequence_send(TALLOC_CTX *mem_ctx,
 					       struct tevent_context *ev,
@@ -705,10 +720,22 @@ NTSTATUS winbindd_show_sequence_recv(struct tevent_req *req,
 struct tevent_req *wb_group_members_send(TALLOC_CTX *mem_ctx,
 					 struct tevent_context *ev,
 					 const struct dom_sid *sid,
-					 enum lsa_SidType type,
+					 uint32_t num_sids,
+					 enum lsa_SidType *type,
 					 int max_depth);
 NTSTATUS wb_group_members_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 			       struct db_context **members);
+
+struct tevent_req *wb_alias_members_send(TALLOC_CTX *mem_ctx,
+					 struct tevent_context *ev,
+					 const struct dom_sid *sid,
+					 enum lsa_SidType type,
+					 int max_nesting);
+NTSTATUS wb_alias_members_recv(struct tevent_req *req,
+			       TALLOC_CTX *mem_ctx,
+			       uint32_t *num_sids,
+			       struct dom_sid **sids);
+
 NTSTATUS add_member_to_db(struct db_context *db, struct dom_sid *sid,
 			  const char *name);
 

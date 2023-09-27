@@ -169,7 +169,7 @@ class Ldb(_Ldb):
         # Try to delete user/computer accounts to allow deletion of groups
         self.erase_users_computers(basedn)
 
-        # Delete the 'visible' records, and the invisble 'deleted' records (if
+        # Delete the 'visible' records, and the invisible 'deleted' records (if
         # this DB supports it)
         for msg in self.search(basedn, ldb.SCOPE_SUBTREE,
                                "(&(|(objectclass=*)(distinguishedName=*))(!(distinguishedName=@BASEINFO)))",
@@ -235,17 +235,32 @@ class Ldb(_Ldb):
         :param ldif: LDIF text.
         """
         for changetype, msg in self.parse_ldif(ldif):
+            if changetype == ldb.CHANGETYPE_NONE:
+                changetype = ldb.CHANGETYPE_MODIFY
+
             if changetype == ldb.CHANGETYPE_ADD:
                 self.add(msg, controls)
-            else:
+            elif changetype == ldb.CHANGETYPE_MODIFY:
                 self.modify(msg, controls)
+            elif changetype == ldb.CHANGETYPE_DELETE:
+                deldn = msg
+                self.delete(deldn, controls)
+            elif changetype == ldb.CHANGETYPE_MODRDN:
+                olddn = msg["olddn"]
+                deleteoldrdn = msg["deleteoldrdn"]
+                newdn = msg["newdn"]
+                if deleteoldrdn is False:
+                    raise ValueError("Invalid ldb.CHANGETYPE_MODRDN with deleteoldrdn=False")
+                self.rename(olddn, newdn, controls)
+            else:
+                raise ValueError("Invalid ldb.CHANGETYPE_%u: %s" % (changetype, msg))
 
 
 def substitute_var(text, values):
     """Substitute strings of the form ${NAME} in str, replacing
     with substitutions from values.
 
-    :param text: Text in which to subsitute.
+    :param text: Text in which to substitute.
     :param values: Dictionary with keys and values.
     """
 
@@ -278,7 +293,7 @@ def read_and_sub_file(file_name, subst_vars):
     """Read a file and sub in variables found in it
 
     :param file_name: File to be read (typically from setup directory)
-     param subst_vars: Optional variables to subsitute in the file.
+     param subst_vars: Optional variables to substitute in the file.
     """
     with open(file_name, 'r', encoding="utf-8") as data_file:
         data = data_file.read()

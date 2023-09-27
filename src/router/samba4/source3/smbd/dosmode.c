@@ -189,44 +189,48 @@ mode_t unix_mode(connection_struct *conn, int dosmode,
 ****************************************************************************/
 
 static uint32_t dos_mode_from_sbuf(connection_struct *conn,
-				 const struct smb_filename *smb_fname)
+				   const struct stat_ex *st,
+				   struct files_struct *fsp)
 {
 	int result = 0;
-	enum mapreadonly_options ro_opts = (enum mapreadonly_options)lp_map_readonly(SNUM(conn));
+	enum mapreadonly_options ro_opts =
+		(enum mapreadonly_options)lp_map_readonly(SNUM(conn));
 
 #if defined(UF_IMMUTABLE) && defined(SF_IMMUTABLE)
 	/* if we can find out if a file is immutable we should report it r/o */
-	if (smb_fname->st.st_ex_flags & (UF_IMMUTABLE | SF_IMMUTABLE)) {
+	if (st->st_ex_flags & (UF_IMMUTABLE | SF_IMMUTABLE)) {
 		result |= FILE_ATTRIBUTE_READONLY;
 	}
 #endif
 	if (ro_opts == MAP_READONLY_YES) {
 		/* Original Samba method - map inverse of user "w" bit. */
-		if ((smb_fname->st.st_ex_mode & S_IWUSR) == 0) {
+		if ((st->st_ex_mode & S_IWUSR) == 0) {
 			result |= FILE_ATTRIBUTE_READONLY;
 		}
 	} else if (ro_opts == MAP_READONLY_PERMISSIONS) {
 		/* smb_fname->fsp can be NULL for an MS-DFS link. */
 		/* Check actual permissions for read-only. */
-		if (smb_fname->fsp != NULL) {
-			if (!can_write_to_fsp(smb_fname->fsp))
-			{
-				result |= FILE_ATTRIBUTE_READONLY;
-			}
+		if ((fsp != NULL) && !can_write_to_fsp(fsp)) {
+			result |= FILE_ATTRIBUTE_READONLY;
 		}
 	} /* Else never set the readonly bit. */
 
-	if (MAP_ARCHIVE(conn) && ((smb_fname->st.st_ex_mode & S_IXUSR) != 0))
+	if (MAP_ARCHIVE(conn) && ((st->st_ex_mode & S_IXUSR) != 0)) {
 		result |= FILE_ATTRIBUTE_ARCHIVE;
+	}
 
-	if (MAP_SYSTEM(conn) && ((smb_fname->st.st_ex_mode & S_IXGRP) != 0))
+	if (MAP_SYSTEM(conn) && ((st->st_ex_mode & S_IXGRP) != 0)) {
 		result |= FILE_ATTRIBUTE_SYSTEM;
+	}
 
-	if (MAP_HIDDEN(conn) && ((smb_fname->st.st_ex_mode & S_IXOTH) != 0))
+	if (MAP_HIDDEN(conn) && ((st->st_ex_mode & S_IXOTH) != 0)) {
 		result |= FILE_ATTRIBUTE_HIDDEN;
+	}
 
-	if (S_ISDIR(smb_fname->st.st_ex_mode))
-		result = FILE_ATTRIBUTE_DIRECTORY | (result & FILE_ATTRIBUTE_READONLY);
+	if (S_ISDIR(st->st_ex_mode)) {
+		result = FILE_ATTRIBUTE_DIRECTORY |
+			 (result & FILE_ATTRIBUTE_READONLY);
+	}
 
 	dos_mode_debug_print(__func__, result);
 
@@ -525,29 +529,20 @@ NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 	return NT_STATUS_OK;
 }
 
-/****************************************************************************
- Change a unix mode to a dos mode for an ms dfs link.
-****************************************************************************/
-
-uint32_t dos_mode_msdfs(connection_struct *conn,
-		      const struct smb_filename *smb_fname)
+static uint32_t
+dos_mode_from_name(connection_struct *conn, const char *name, uint32_t dosmode)
 {
-	uint32_t result = 0;
+	const char *p = NULL;
+	uint32_t result = dosmode;
 
-	DEBUG(8,("dos_mode_msdfs: %s\n", smb_fname_str_dbg(smb_fname)));
-
-	if (!VALID_STAT(smb_fname->st)) {
-		return 0;
-	}
-
-	/* First do any modifications that depend on the path name. */
-	/* hide files with a name starting with a . */
-	if (lp_hide_dot_files(SNUM(conn))) {
-		const char *p = strrchr_m(smb_fname->base_name, '/');
+	if (!(result & FILE_ATTRIBUTE_HIDDEN) &&
+	    lp_hide_dot_files(SNUM(conn)))
+	{
+		p = strrchr_m(name, '/');
 		if (p) {
 			p++;
 		} else {
-			p = smb_fname->base_name;
+			p = name;
 		}
 
 		/* Only . and .. are not hidden. */
@@ -556,14 +551,31 @@ uint32_t dos_mode_msdfs(connection_struct *conn,
 		}
 	}
 
-	result |= dos_mode_from_sbuf(conn, smb_fname);
-
-	/* Optimization : Only call is_hidden_path if it's not already
-	   hidden. */
-	if (!(result & FILE_ATTRIBUTE_HIDDEN) &&
-	    IS_HIDDEN_PATH(conn, smb_fname->base_name)) {
+	if (!(result & FILE_ATTRIBUTE_HIDDEN) && IS_HIDDEN_PATH(conn, name)) {
 		result |= FILE_ATTRIBUTE_HIDDEN;
 	}
+
+	return result;
+}
+
+/****************************************************************************
+ Change a unix mode to a dos mode for an ms dfs link.
+****************************************************************************/
+
+uint32_t dos_mode_msdfs(connection_struct *conn,
+			const char *name,
+			const struct stat_ex *st)
+{
+	uint32_t result = 0;
+
+	DEBUG(8, ("dos_mode_msdfs: %s\n", name));
+
+	if (!VALID_STAT(*st)) {
+		return 0;
+	}
+
+	result = dos_mode_from_name(conn, name, result);
+	result |= dos_mode_from_sbuf(conn, st, NULL);
 
 	if (result == 0) {
 		result = FILE_ATTRIBUTE_NORMAL;
@@ -604,38 +616,6 @@ static NTSTATUS dos_mode_check_compressed(struct files_struct *fsp,
 	return NT_STATUS_OK;
 }
 
-static uint32_t dos_mode_from_name(connection_struct *conn,
-				   const struct smb_filename *smb_fname,
-				   uint32_t dosmode)
-{
-	const char *p = NULL;
-	uint32_t result = dosmode;
-
-	if (!(result & FILE_ATTRIBUTE_HIDDEN) &&
-	    lp_hide_dot_files(SNUM(conn)))
-	{
-		p = strrchr_m(smb_fname->base_name, '/');
-		if (p) {
-			p++;
-		} else {
-			p = smb_fname->base_name;
-		}
-
-		/* Only . and .. are not hidden. */
-		if ((p[0] == '.') && !(ISDOT(p) || ISDOTDOT(p))) {
-			result |= FILE_ATTRIBUTE_HIDDEN;
-		}
-	}
-
-	if (!(result & FILE_ATTRIBUTE_HIDDEN) &&
-	    IS_HIDDEN_PATH(conn, smb_fname->base_name))
-	{
-		result |= FILE_ATTRIBUTE_HIDDEN;
-	}
-
-	return result;
-}
-
 static uint32_t dos_mode_post(uint32_t dosmode,
 			      struct files_struct *fsp,
 			      const char *func)
@@ -674,7 +654,7 @@ static uint32_t dos_mode_post(uint32_t dosmode,
 		}
 	}
 
-	dosmode |= dos_mode_from_name(fsp->conn, smb_fname, dosmode);
+	dosmode |= dos_mode_from_name(fsp->conn, smb_fname->base_name, dosmode);
 
 	if (S_ISDIR(smb_fname->st.st_ex_mode)) {
 		dosmode |= FILE_ATTRIBUTE_DIRECTORY;
@@ -734,7 +714,9 @@ uint32_t fdos_mode(struct files_struct *fsp)
 		 * Only fall back to using UNIX modes if we get NOT_IMPLEMENTED.
 		 */
 		if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_IMPLEMENTED)) {
-			result |= dos_mode_from_sbuf(fsp->conn, fsp->fsp_name);
+			result |= dos_mode_from_sbuf(fsp->conn,
+						     &fsp->fsp_name->st,
+						     fsp);
 		}
 	}
 
@@ -1115,7 +1097,7 @@ NTSTATUS file_set_sparse(connection_struct *conn,
 		 * MS-FSA 2.1.1.5 IsSparse
 		 *
 		 * This is a per stream attribute, but our backends don't
-		 * support it a consistent way, therefor just pretend
+		 * support it a consistent way, therefore just pretend
 		 * success and ignore the request.
 		 */
 		DBG_DEBUG("Ignoring request to set FILE_ATTRIBUTE_SPARSE on "

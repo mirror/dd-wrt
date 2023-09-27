@@ -333,7 +333,7 @@ hdb_next_enctype2key(krb5_context context,
 
 krb5_error_code
 hdb_enctype2key(krb5_context context,
-		hdb_entry *e,
+		const hdb_entry *e,
 		const Keys *keyset,
 		krb5_enctype enctype,
 		Key **key)
@@ -517,7 +517,7 @@ is_pathish(const char *s)
         strncmp(s, "../", sizeof("../") - 1) == 0)
         return 1;
 #ifdef WIN32
-    if (s[0] == '\\' || (isalpha(s[0]) && s[0] == ':') ||
+    if (s[0] == '\\' || (isalpha((unsigned char)s[0]) && s[0] == ':') ||
         strncmp(s, ".\\", sizeof(".\\") - 1) == 0 ||
         strncmp(s, "\\\\", sizeof("\\\\") - 1) == 0)
         return 1;

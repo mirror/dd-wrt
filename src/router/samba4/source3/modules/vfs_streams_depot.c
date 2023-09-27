@@ -466,7 +466,7 @@ static NTSTATUS stream_smb_fname(vfs_handle_struct *handle,
 			goto fail;
 		}
 	} else {
-		/* Normalize the stream type to upercase. */
+		/* Normalize the stream type to uppercase. */
 		if (!strupper_m(strrchr_m(stream_fname, ':') + 1)) {
 			status = NT_STATUS_INVALID_PARAMETER;
 			goto fail;
@@ -508,7 +508,6 @@ static NTSTATUS walk_streams(vfs_handle_struct *handle,
 	struct smb_filename *dir_smb_fname = NULL;
 	struct smb_Dir *dir_hnd = NULL;
 	const char *dname = NULL;
-	long offset = 0;
 	char *talloced = NULL;
 	NTSTATUS status;
 
@@ -564,9 +563,7 @@ static NTSTATUS walk_streams(vfs_handle_struct *handle,
 		return status;
 	}
 
-        while ((dname = ReadDirName(dir_hnd, &offset, NULL, &talloced))
-	       != NULL)
-	{
+	while ((dname = ReadDirName(dir_hnd, &talloced)) != NULL) {
 		if (ISDOT(dname) || ISDOTDOT(dname)) {
 			TALLOC_FREE(talloced);
 			continue;

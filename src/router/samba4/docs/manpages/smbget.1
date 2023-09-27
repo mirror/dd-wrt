@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: smbget
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/31/2023
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/04/2023
 .\"    Manual: User Commands
-.\"    Source: Samba 4.18.3
+.\"    Source: Samba 4.19.0
 .\"  Language: English
 .\"
-.TH "SMBGET" "1" "05/31/2023" "Samba 4\&.18\&.3" "User Commands"
+.TH "SMBGET" "1" "09/04/2023" "Samba 4\&.19\&.0" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 smbget \- wget\-like utility for download files over SMB
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-smbget [\-a,\ \-\-guest] [\-r,\ \-\-resume] [\-R,\ \-\-recursive] [\-U,\ \-\-user=STRING] [\-w,\ \-\-workgroup=STRING] [\-n,\ \-\-nonprompt] [\-d,\ \-\-debuglevel=INT] [\-D,\ \-\-dots] [\-o,\ \-\-outputfile] [\-f,\ \-\-rcfile] [\-q,\ \-\-quiet] [\-v,\ \-\-verbose] [\-b,\ \-\-blocksize] [\-O,\ \-\-stdout] [\-u,\ \-\-update] [\-e,\ \-\-encrypt] [\-\-limit\-rate=INT] [\-?,\ \-\-help] [\-\-usage] {smb://host/share/path/to/file} [smb://url2/] [\&.\&.\&.]
+smbget [\-a,\ \-\-guest] [\-r,\ \-\-resume] [\-\-recursive] [\-D,\ \-\-dots] [\-o,\ \-\-outputfile] [\-q,\ \-\-quiet] [\-v,\ \-\-verbose] [\-b,\ \-\-blocksize] [\-O,\ \-\-stdout] [\-u,\ \-\-update] [\-e,\ \-\-encrypt] [\-\-limit\-rate=INT] [\-?|\-\-help] [\-\-usage] [\-d|\-\-debuglevel=DEBUGLEVEL] [\-\-debug\-stdout] [\-s|\-\-configfile=CONFIGFILE] [\-\-option=name=value] [\-l|\-\-log\-basename=LOGFILEBASE] [\-\-leak\-report] [\-\-leak\-report\-full] [\-R|\-\-name\-resolve=NAME\-RESOLVE\-ORDER] [\-O|\-\-socket\-options=SOCKETOPTIONS] [\-m|\-\-max\-protocol=MAXPROTOCOL] [\-n|\-\-netbiosname=NETBIOSNAME] [\-\-netbios\-scope=SCOPE] [\-W|\-\-workgroup=WORKGROUP] [\-\-realm=REALM] [\-U|\-\-user=[DOMAIN/]USERNAME%[PASSWORD]] [\-N|\-\-no\-pass] [\-\-password=STRING] [\-\-pw\-nt\-hash] [\-A|\-\-authentication\-file=FILE] [\-P|\-\-machine\-pass] [\-\-simple\-bind\-dn=DN] [\-\-use\-kerberos=desired|required|off] [\-\-use\-krb5\-ccache=CCACHE] [\-\-use\-winbind\-ccache] [\-\-client\-protection=sign|encrypt|off] [\-V|\-\-version] {smb://host/share/path/to/file} [smb://url2/] [\&.\&.\&.]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -54,29 +54,9 @@ Work as user guest
 Automatically resume aborted files
 .RE
 .PP
-\-R, \-\-recursive
+\-\-recursive
 .RS 4
 Recursively download files
-.RE
-.PP
-\-U, \-\-user=\fIusername[%password]\fR
-.RS 4
-Username (and password) to use
-.RE
-.PP
-\-w, \-\-workgroup=STRING
-.RS 4
-Workgroup to use (optional)
-.RE
-.PP
-\-n, \-\-nonprompt
-.RS 4
-Don\*(Aqt ask anything (non\-interactive)
-.RE
-.PP
-\-d, \-\-debuglevel=INT
-.RS 4
-Debuglevel to use
 .RE
 .PP
 \-D, \-\-dots
@@ -89,14 +69,9 @@ Show dots as progress indication
 Write the file that is being downloaded to the specified file\&. Can not be used together with \-R\&.
 .RE
 .PP
-\-O, \-\-stdout
+\-\-stdout
 .RS 4
 Write the file that is being downloaded to standard output\&.
-.RE
-.PP
-\-f, \-\-rcfile
-.RS 4
-Use specified rcfile\&. This will be loaded in the order it was specified \- e\&.g\&. if you specify any options before this one, they might get overridden by the contents of the rcfile\&.
 .RE
 .PP
 \-q, \-\-quiet
@@ -114,16 +89,6 @@ Be verbose
 Number of bytes to download in a block\&. Defaults to 64000\&.
 .RE
 .PP
-\-?, \-\-help
-.RS 4
-Show help message
-.RE
-.PP
-\-\-usage
-.RS 4
-Display brief usage message
-.RE
-.PP
 \-u, \-\-update
 .RS 4
 Download only when remote file is newer than local file or local file is missing\&.
@@ -137,6 +102,328 @@ Enable SMB encryption\&.
 \-\-limit\-rate=INT
 .RS 4
 Limit download rate by this many KB/s\&.
+.RE
+.PP
+\-?|\-\-help
+.RS 4
+Print a summary of command line options\&.
+.RE
+.PP
+\-\-usage
+.RS 4
+Display brief usage message\&.
+.RE
+.PP
+\-d|\-\-debuglevel=DEBUGLEVEL
+.RS 4
+\fIlevel\fR
+is an integer from 0 to 10\&. The default value if this parameter is not specified is 1 for client applications\&.
+.sp
+The higher this value, the more detail will be logged to the log files about the activities of the server\&. At level 0, only critical errors and serious warnings will be logged\&. Level 1 is a reasonable level for day\-to\-day running \- it generates a small amount of information about operations carried out\&.
+.sp
+Levels above 1 will generate considerable amounts of log data, and should only be used when investigating a problem\&. Levels above 3 are designed for use only by developers and generate HUGE amounts of log data, most of which is extremely cryptic\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBlog level\fR\m[]
+parameter in the
+${prefix}/etc/smb\&.conf
+file\&.
+.RE
+.PP
+\-\-debug\-stdout
+.RS 4
+This will redirect debug output to STDOUT\&. By default all clients are logging to STDERR\&.
+.RE
+.PP
+\-\-configfile=<configuration file>
+.RS 4
+The file specified contains the configuration details required by the client\&. The information in this file can be general for client and server or only provide client specific like options such as
+\m[blue]\fBclient smb encrypt\fR\m[]\&. See
+${prefix}/etc/smb\&.conf
+for more information\&. The default configuration file name is determined at compile time\&.
+.RE
+.PP
+\-\-option=<name>=<value>
+.RS 4
+Set the
+\fBsmb.conf\fR(5)
+option "<name>" to value "<value>" from the command line\&. This overrides compiled\-in defaults and options read from the configuration file\&. If a name or a value includes a space, wrap whole \-\-option=name=value into quotes\&.
+.RE
+.PP
+\-l|\-\-log\-basename=logdirectory
+.RS 4
+Base directory name for log/debug files\&. The extension
+\fB"\&.progname"\fR
+will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
+.RE
+.PP
+\-\-leak\-report
+.RS 4
+Enable talloc leak reporting on exit\&.
+.RE
+.PP
+\-\-leak\-report\-full
+.RS 4
+Enable full talloc leak reporting on exit\&.
+.RE
+.PP
+\-V|\-\-version
+.RS 4
+Prints the program version number\&.
+.RE
+.PP
+\-R|\-\-name\-resolve=NAME\-RESOLVE\-ORDER
+.RS 4
+This option is used to determine what naming services and in what order to resolve host names to IP addresses\&. The option takes a space\-separated string of different name resolution options\&. The best is to wrap the whole \-\-name\-resolve=NAME\-RESOLVE\-ORDER into quotes\&.
+.sp
+The options are: "lmhosts", "host", "wins" and "bcast"\&. They cause names to be resolved as follows:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBlmhosts\fR: Lookup an IP address in the Samba lmhosts file\&. If the line in lmhosts has no name type attached to the NetBIOS name (see the
+\fBlmhosts\fR(5)
+for details) then any name type matches for lookup\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBhost\fR: Do a standard host name to IP address resolution, using the system
+/etc/hosts, NIS, or DNS lookups\&. This method of name resolution is operating system dependent, for instance on IRIX or Solaris this may be controlled by the
+/etc/nsswitch\&.conf
+file)\&. Note that this method is only used if the NetBIOS name type being queried is the 0x20 (server) name type, otherwise it is ignored\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBwins\fR: Query a name with the IP address listed in the
+\fIwins server\fR
+parameter\&. If no WINS server has been specified this method will be ignored\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbcast\fR: Do a broadcast on each of the known local interfaces listed in the
+\fIinterfaces\fR
+parameter\&. This is the least reliable of the name resolution methods as it depends on the target host being on a locally connected subnet\&.
+.RE
+.sp
+.RE
+If this parameter is not set then the name resolve order defined in the
+${prefix}/etc/smb\&.conf
+file parameter (\m[blue]\fBname resolve order\fR\m[]) will be used\&.
+.sp
+The default order is lmhosts, host, wins, bcast\&. Without this parameter or any entry in the
+\m[blue]\fBname resolve order\fR\m[]
+parameter of the
+${prefix}/etc/smb\&.conf
+file, the name resolution methods will be attempted in this order\&.
+.RE
+.PP
+\-O|\-\-socket\-options=SOCKETOPTIONS
+.RS 4
+TCP socket options to set on the client socket\&. See the socket options parameter in the
+${prefix}/etc/smb\&.conf
+manual page for the list of valid options\&.
+.RE
+.PP
+\-m|\-\-max\-protocol=MAXPROTOCOL
+.RS 4
+The value of the parameter (a string) is the highest protocol level that will be supported by the client\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBclient max protocol\fR\m[]
+parameter in the
+${prefix}/etc/smb\&.conf
+file\&.
+.RE
+.PP
+\-n|\-\-netbiosname=NETBIOSNAME
+.RS 4
+This option allows you to override the NetBIOS name that Samba uses for itself\&. This is identical to setting the
+\m[blue]\fBnetbios name\fR\m[]
+parameter in the
+${prefix}/etc/smb\&.conf
+file\&. However, a command line setting will take precedence over settings in
+${prefix}/etc/smb\&.conf\&.
+.RE
+.PP
+\-\-netbios\-scope=SCOPE
+.RS 4
+This specifies a NetBIOS scope that
+nmblookup
+will use to communicate with when generating NetBIOS names\&. For details on the use of NetBIOS scopes, see rfc1001\&.txt and rfc1002\&.txt\&. NetBIOS scopes are
+\fIvery\fR
+rarely used, only set this parameter if you are the system administrator in charge of all the NetBIOS systems you communicate with\&.
+.RE
+.PP
+\-W|\-\-workgroup=WORKGROUP
+.RS 4
+Set the SMB domain of the username\&. This overrides the default domain which is the domain defined in smb\&.conf\&. If the domain specified is the same as the servers NetBIOS name, it causes the client to log on using the servers local SAM (as opposed to the Domain SAM)\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBworkgroup\fR\m[]
+parameter in the
+${prefix}/etc/smb\&.conf
+file\&.
+.RE
+.PP
+\-r|\-\-realm=REALM
+.RS 4
+Set the realm for the domain\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBrealm\fR\m[]
+parameter in the
+${prefix}/etc/smb\&.conf
+file\&.
+.RE
+.PP
+\-U|\-\-user=[DOMAIN\e]USERNAME[%PASSWORD]
+.RS 4
+Sets the SMB username or username and password\&.
+.sp
+If %PASSWORD is not specified, the user will be prompted\&. The client will first check the
+\fBUSER\fR
+environment variable (which is also permitted to also contain the password separated by a %), then the
+\fBLOGNAME\fR
+variable (which is not permitted to contain a password) and if either exists, the value is used\&. If these environmental variables are not found, the username found in a Kerberos Credentials cache may be used\&.
+.sp
+A third option is to use a credentials file which contains the plaintext of the username and password\&. This option is mainly provided for scripts where the admin does not wish to pass the credentials on the command line or via environment variables\&. If this method is used, make certain that the permissions on the file restrict access from unwanted users\&. See the
+\fI\-A\fR
+for more details\&.
+.sp
+Be cautious about including passwords in scripts or passing user\-supplied values onto the command line\&. For security it is better to let the Samba client tool ask for the password if needed, or obtain the password once with
+kinit\&.
+.sp
+While Samba will attempt to scrub the password from the process title (as seen in ps), this is after startup and so is subject to a race\&.
+.RE
+.PP
+\-N|\-\-no\-pass
+.RS 4
+If specified, this parameter suppresses the normal password prompt from the client to the user\&. This is useful when accessing a service that does not require a password\&.
+.sp
+Unless a password is specified on the command line or this parameter is specified, the client will request a password\&.
+.sp
+If a password is specified on the command line and this option is also defined the password on the command line will be silently ignored and no password will be used\&.
+.RE
+.PP
+\-\-password
+.RS 4
+Specify the password on the commandline\&.
+.sp
+Be cautious about including passwords in scripts or passing user\-supplied values onto the command line\&. For security it is better to let the Samba client tool ask for the password if needed, or obtain the password once with
+kinit\&.
+.sp
+If \-\-password is not specified, the tool will check the
+\fBPASSWD\fR
+environment variable, followed by
+\fBPASSWD_FD\fR
+which is expected to contain an open file descriptor (FD) number\&.
+.sp
+Finally it will check
+\fBPASSWD_FILE\fR
+(containing a file path to be opened)\&. The file should only contain the password\&. Make certain that the permissions on the file restrict access from unwanted users!
+.sp
+While Samba will attempt to scrub the password from the process title (as seen in ps), this is after startup and so is subject to a race\&.
+.RE
+.PP
+\-\-pw\-nt\-hash
+.RS 4
+The supplied password is the NT hash\&.
+.RE
+.PP
+\-A|\-\-authentication\-file=filename
+.RS 4
+This option allows you to specify a file from which to read the username and password used in the connection\&. The format of the file is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+				username = <value>
+				password = <value>
+				domain   = <value>
+			
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Make certain that the permissions on the file restrict access from unwanted users!
+.RE
+.PP
+\-P|\-\-machine\-pass
+.RS 4
+Use stored machine account password\&.
+.RE
+.PP
+\-\-simple\-bind\-dn=DN
+.RS 4
+DN to use for a simple bind\&.
+.RE
+.PP
+\-\-use\-kerberos=desired|required|off
+.RS 4
+This parameter determines whether Samba client tools will try to authenticate using Kerberos\&. For Kerberos authentication you need to use dns names instead of IP addresses when connecting to a service\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBclient use kerberos\fR\m[]
+parameter in the
+${prefix}/etc/smb\&.conf
+file\&.
+.RE
+.PP
+\-\-use\-krb5\-ccache=CCACHE
+.RS 4
+Specifies the credential cache location for Kerberos authentication\&.
+.sp
+This will set \-\-use\-kerberos=required too\&.
+.RE
+.PP
+\-\-use\-winbind\-ccache
+.RS 4
+Try to use the credential cache by winbind\&.
+.RE
+.PP
+\-\-client\-protection=sign|encrypt|off
+.RS 4
+Sets the connection protection the client tool should use\&.
+.sp
+Note that specifying this parameter here will override the
+\m[blue]\fBclient protection\fR\m[]
+parameter in the
+${prefix}/etc/smb\&.conf
+file\&.
+.sp
+In case you need more fine grained control you can use:
+\-\-option=clientsmbencrypt=OPTION,
+\-\-option=clientipcsigning=OPTION,
+\-\-option=clientsigning=OPTION\&.
 .RE
 .SH "SMB URLS"
 .PP
@@ -178,23 +465,23 @@ smb://name/ means, if \fIname\fR is a workgroup, all the servers in this workgro
 .\}
 .nf
 # Recursively download \*(Aqsrc\*(Aq directory
-smbget \-R smb://rhonwyn/jelmer/src
+smbget \-\-recursive smb://rhonwyn/jelmer/src
 # Download FreeBSD ISO and enable resuming
-smbget \-r smb://rhonwyn/isos/FreeBSD5\&.1\&.iso
+smbget \-\-resume smb://rhonwyn/isos/FreeBSD5\&.1\&.iso
 # Recursively download all ISOs
-smbget \-Rr smb://rhonwyn/isos
+smbget \-\-recursive \-\-resume smb://rhonwyn/isos
 # Backup my data on rhonwyn
-smbget \-Rr smb://rhonwyn/
+smbget \-\-recursive \-resume smb://rhonwyn/
 .fi
 .if n \{\
 .RE
 .\}
 .SH "BUGS"
 .PP
-Permission denied is returned in some cases where the cause of the error is unknown (such as an illegally formatted smb:// url or trying to get a directory without \-R turned on)\&.
+Permission denied is returned in some cases where the cause of the error is unknown (such as an illegally formatted smb:// url or trying to get a directory without \-\-resursive turned on)\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.18\&.3 of the Samba suite\&.
+This man page is part of version 4\&.19\&.0 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

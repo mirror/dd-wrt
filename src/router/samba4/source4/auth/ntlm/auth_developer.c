@@ -82,8 +82,11 @@ static NTSTATUS name_to_ntstatus_check_password(struct auth_method_context *ctx,
 	/* This returns a pointer to a struct dom_sid, which is the
 	 * same as a 1 element list of struct dom_sid */
 	user_info_dc->num_sids = 1;
-	user_info_dc->sids = dom_sid_parse_talloc(user_info_dc, SID_NT_ANONYMOUS);
+	user_info_dc->sids = talloc(user_info_dc, struct auth_SidAttr);
 	NT_STATUS_HAVE_NO_MEMORY(user_info_dc->sids);
+
+	user_info_dc->sids->sid = global_sid_Anonymous;
+	user_info_dc->sids->attrs = SE_GROUP_DEFAULT_FLAGS;
 
 	/* annoying, but the Anonymous really does have a session key, 
 	   and it is all zeros! */
@@ -132,7 +135,7 @@ static NTSTATUS name_to_ntstatus_check_password(struct auth_method_context *ctx,
 
 	info->acct_flags = ACB_NORMAL;
 
-	info->authenticated = true;
+	info->user_flags = 0;
 
 	*_user_info_dc = user_info_dc;
 
@@ -179,18 +182,23 @@ static NTSTATUS name_to_ntstatus_check_password_recv(
 	struct tevent_req *req,
 	TALLOC_CTX *mem_ctx,
 	struct auth_user_info_dc **interim_info,
+	const struct authn_audit_info **client_audit_info,
+	const struct authn_audit_info **server_audit_info,
 	bool *authoritative)
 {
 	struct name_to_ntstatus_check_password_state *state = tevent_req_data(
 		req, struct name_to_ntstatus_check_password_state);
 	NTSTATUS status;
 
+	*authoritative = state->authoritative;
+	*client_audit_info = NULL;
+	*server_audit_info = NULL;
+
 	if (tevent_req_is_nterror(req, &status)) {
 		tevent_req_received(req);
 		return status;
 	}
 	*interim_info = talloc_move(mem_ctx, &state->user_info_dc);
-	*authoritative = state->authoritative;
 	tevent_req_received(req);
 	return NT_STATUS_OK;
 }

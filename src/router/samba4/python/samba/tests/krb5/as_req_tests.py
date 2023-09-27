@@ -22,11 +22,13 @@ import os
 sys.path.insert(0, "bin/python")
 os.environ["PYTHONUNBUFFERED"] = "1"
 
+from samba import ntstatus
 from samba.tests import DynamicTestCase
 from samba.tests.krb5.kdc_base_test import KDCBaseTest
 import samba.tests.krb5.kcrypto as kcrypto
 import samba.tests.krb5.rfc4120_pyasn1 as krb5_asn1
 from samba.tests.krb5.rfc4120_constants import (
+    KDC_ERR_CLIENT_REVOKED,
     KDC_ERR_C_PRINCIPAL_UNKNOWN,
     KDC_ERR_S_PRINCIPAL_UNKNOWN,
     KDC_ERR_ETYPE_NOSUPP,
@@ -48,11 +50,12 @@ class AsReqBaseTest(KDCBaseTest):
                                   name_type=NT_PRINCIPAL, etypes=None,
                                   expected_error=None, expect_edata=None,
                                   expected_pa_error=None, expect_pa_edata=None,
+                                  expect_status=None,
+                                  expect_pa_status=None,
                                   kdc_options=None, till=None):
         user_name = client_creds.get_username()
         if client_account is None:
             client_account = user_name
-        client_as_etypes = self.get_default_enctypes()
         client_kvno = client_creds.get_kvno()
         krbtgt_creds = self.get_krbtgt_creds(require_strongest_key=True)
         krbtgt_account = krbtgt_creds.get_username()
@@ -76,7 +79,7 @@ class AsReqBaseTest(KDCBaseTest):
             till = self.get_KerberosTime(offset=36000)
 
         if etypes is None:
-            etypes = client_as_etypes
+            etypes = self.get_default_enctypes(client_creds)
         if kdc_options is None:
             kdc_options = krb5_asn1.KDCOptions('forwardable')
         if expected_error is not None:
@@ -89,7 +92,6 @@ class AsReqBaseTest(KDCBaseTest):
             realm,
             sname,
             till,
-            client_as_etypes,
             initial_error_mode,
             expected_crealm,
             expected_cname,
@@ -99,12 +101,14 @@ class AsReqBaseTest(KDCBaseTest):
             etypes,
             None,
             kdc_options,
+            creds=client_creds,
             expected_supported_etypes=krbtgt_supported_etypes,
             expected_account_name=user_name,
             pac_request=True,
-            expect_edata=expect_edata)
+            expect_edata=expect_edata,
+            expected_status=expect_status)
 
-        if expected_error is not None:
+        if rep['error-code'] != KDC_ERR_PREAUTH_REQUIRED:
             return None
 
         etype_info2 = kdc_exchange_dict['preauth_etype_info2']
@@ -137,7 +141,6 @@ class AsReqBaseTest(KDCBaseTest):
             realm,
             sname,
             till,
-            client_as_etypes,
             preauth_error_mode,
             expected_crealm,
             expected_cname,
@@ -150,6 +153,7 @@ class AsReqBaseTest(KDCBaseTest):
             expected_supported_etypes=krbtgt_supported_etypes,
             expected_account_name=user_name,
             expect_edata=expect_pa_edata,
+            expected_status=expect_pa_status,
             preauth_key=preauth_key,
             ticket_decryption_key=krbtgt_decryption_key,
             pac_request=True)
@@ -180,7 +184,6 @@ class AsReqKerberosTests(AsReqBaseTest):
                                initial_kdc_options=None):
         client_creds = self.get_client_creds()
         client_account = client_creds.get_username()
-        client_as_etypes = self.get_default_enctypes()
         krbtgt_creds = self.get_krbtgt_creds(require_keys=False)
         krbtgt_account = krbtgt_creds.get_username()
         realm = krbtgt_creds.get_realm()
@@ -196,15 +199,14 @@ class AsReqKerberosTests(AsReqBaseTest):
         expected_sname = sname
         expected_salt = client_creds.get_salt()
 
-        if any(etype in client_as_etypes and etype in initial_etypes
-               for etype in (kcrypto.Enctype.AES256,
-                             kcrypto.Enctype.AES128,
-                             kcrypto.Enctype.RC4)):
+        if any(etype in initial_etypes
+               for etype in self.get_default_enctypes(client_creds)):
             expected_error_mode = KDC_ERR_PREAUTH_REQUIRED
         else:
             expected_error_mode = KDC_ERR_ETYPE_NOSUPP
 
         kdc_exchange_dict = self.as_exchange_dict(
+            creds=client_creds,
             expected_crealm=expected_crealm,
             expected_cname=expected_cname,
             expected_srealm=expected_srealm,
@@ -213,7 +215,6 @@ class AsReqKerberosTests(AsReqBaseTest):
             check_error_fn=self.generic_check_kdc_error,
             check_rep_fn=None,
             expected_error_mode=expected_error_mode,
-            client_as_etypes=client_as_etypes,
             expected_salt=expected_salt,
             kdc_options=str(initial_kdc_options),
             pac_request=pac)
@@ -243,41 +244,41 @@ class AsReqKerberosTests(AsReqBaseTest):
         client_creds = self.get_client_creds()
         self._run_as_req_enc_timestamp(
             client_creds,
-            etypes={kcrypto.Enctype.RC4})
+            etypes=(kcrypto.Enctype.RC4,))
 
     def test_as_req_enc_timestamp_mac_rc4(self):
         client_creds = self.get_mach_creds()
         self._run_as_req_enc_timestamp(
             client_creds,
-            etypes={kcrypto.Enctype.RC4})
+            etypes=(kcrypto.Enctype.RC4,))
 
     def test_as_req_enc_timestamp_rc4_dummy(self):
         client_creds = self.get_client_creds()
         self._run_as_req_enc_timestamp(
             client_creds,
-            etypes={kcrypto.Enctype.RC4,
-                    -1111})
+            etypes=(kcrypto.Enctype.RC4,
+                    -1111))
 
     def test_as_req_enc_timestamp_mac_rc4_dummy(self):
         client_creds = self.get_mach_creds()
         self._run_as_req_enc_timestamp(
             client_creds,
-            etypes={kcrypto.Enctype.RC4,
-                    -1111})
+            etypes=(kcrypto.Enctype.RC4,
+                    -1111))
 
     def test_as_req_enc_timestamp_aes128_rc4(self):
         client_creds = self.get_client_creds()
         self._run_as_req_enc_timestamp(
             client_creds,
-            etypes={kcrypto.Enctype.AES128,
-                    kcrypto.Enctype.RC4})
+            etypes=(kcrypto.Enctype.AES128,
+                    kcrypto.Enctype.RC4))
 
     def test_as_req_enc_timestamp_mac_aes128_rc4(self):
         client_creds = self.get_mach_creds()
         self._run_as_req_enc_timestamp(
             client_creds,
-            etypes={kcrypto.Enctype.AES128,
-                    kcrypto.Enctype.RC4})
+            etypes=(kcrypto.Enctype.AES128,
+                    kcrypto.Enctype.RC4))
 
     def test_as_req_enc_timestamp_spn(self):
         client_creds = self.get_mach_creds()
@@ -535,6 +536,43 @@ class AsReqKerberosTests(AsReqBaseTest):
         self._run_as_req_enc_timestamp(
             client_creds,
             till='99990913024805Z')
+
+    def test_logon_hours(self):
+        """Test making an AS-REQ with a logonHours attribute that disallows
+        logging in."""
+
+        client_creds = self.get_cached_creds(
+            account_type=self.AccountType.USER,
+            opts={'logon_hours': bytes(21)})
+
+        # Expect to get a CLIENT_REVOKED error.
+        self._run_as_req_enc_timestamp(
+            client_creds,
+            expected_error=(KDC_ERR_CLIENT_REVOKED, KDC_ERR_PREAUTH_REQUIRED),
+            expect_status=ntstatus.NT_STATUS_INVALID_LOGON_HOURS,
+            expected_pa_error=KDC_ERR_CLIENT_REVOKED,
+            expect_pa_status=ntstatus.NT_STATUS_INVALID_LOGON_HOURS)
+
+    def test_logon_hours_wrong_password(self):
+        """Test making an AS-REQ with a wrong password and a logonHours
+        attribute that disallows logging in."""
+
+        # Use a non-cached account so that it is not locked out for other
+        # tests.
+        client_creds = self.get_cached_creds(
+            account_type=self.AccountType.USER,
+            opts={'logon_hours': bytes(21)},
+            use_cache=False)
+
+        client_creds.set_password('wrong password')
+
+        # Expect to get a CLIENT_REVOKED error.
+        self._run_as_req_enc_timestamp(
+            client_creds,
+            expected_error=(KDC_ERR_CLIENT_REVOKED, KDC_ERR_PREAUTH_REQUIRED),
+            expect_status=ntstatus.NT_STATUS_INVALID_LOGON_HOURS,
+            expected_pa_error=KDC_ERR_CLIENT_REVOKED,
+            expect_pa_status=ntstatus.NT_STATUS_INVALID_LOGON_HOURS)
 
 
 if __name__ == "__main__":

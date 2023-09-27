@@ -133,7 +133,7 @@ static bool smb1_crtime_matches(struct cli_state *cli,
 	if (!equal) {
 		struct timeval_buf test_buf;
 		struct timeval_buf tomatch_buf;
-		printf("%s: crtime missmatch "
+		printf("%s: crtime mismatch "
 			"%s:crtime_tomatch=%s, %s:test_crtime = %s\n",
 			__func__,
 			match_pathname,
@@ -2089,7 +2089,7 @@ static NTSTATUS smb1_findfirst(TALLOC_CTX *mem_ctx,
 			   10, /* max returned param */
 			   NULL, /* data */
 			   0, /* num_data */
-			   SMB_BUFFER_SIZE_MAX, /* max retured data */
+			   SMB_BUFFER_SIZE_MAX, /* max returned data */
 			   /* Return values from here on.. */
 			   &recv_flags2, /* recv_flags2 */
 			   NULL, /* rsetup */
@@ -2188,7 +2188,7 @@ static bool test_smb1_findfirst_path(struct cli_state *cli,
 		bool match = strequal_m(finfo[i].name,
 					root_finfo[i].name);
 		if (!match) {
-			printf("%s:%d Missmatch. For %s, at position %zu, "
+			printf("%s:%d Mismatch. For %s, at position %zu, "
 			       "finfo[i].name = %s, "
 			       "root_finfo[i].name = %s\n",
 				__FILE__,
@@ -3229,7 +3229,7 @@ static bool test_smb1_open(struct cli_state *cli)
 	}
 	equal = (timespec_compare(&testfile_crtime, &open_crtime) == 0);
 	if (!equal) {
-		printf("%s:%d crtime missmatch of test file %s\n",
+		printf("%s:%d crtime mismatch of test file %s\n",
 			__FILE__,
 			__LINE__,
 			"\\BAD\\BAD\\openfile");
@@ -3261,13 +3261,9 @@ static NTSTATUS smb1_create(struct cli_state *cli,
 {
 	uint16_t vwv[3] = { 0, 0, 0};
 	uint8_t *bytes = NULL;
-	uint16_t accessmode = 0;
 	uint16_t *return_words = NULL;
 	uint8_t return_wcount = 0;
 	NTSTATUS status;
-
-	accessmode = (DENY_NONE<<4);
-	accessmode |= DOS_OPEN_RDONLY;
 
 	PUSH_LE_U16(vwv + 0, 0, FILE_ATTRIBUTE_NORMAL);
 
@@ -3814,6 +3810,26 @@ static bool test_smb1_chkpath(struct cli_state *cli)
 	return retval;
 }
 
+/*
+ * Test BUG: https://bugzilla.samba.org/show_bug.cgi?id=15419
+ */
+
+static bool test_smb1_chkpath_bad(struct cli_state *cli)
+{
+	NTSTATUS status;
+
+	status = smb1_chkpath(cli, "\\x//\\/");
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("%s:%d SMB1chkpath of %s failed (%s)\n",
+			__FILE__,
+			__LINE__,
+			"\\x//\\/",
+			nt_errstr(status));
+		return false;
+	}
+	return true;
+}
+
 static NTSTATUS smb1_ctemp(struct cli_state *cli,
 			   const char *path,
 			   char **tmp_path)
@@ -4009,7 +4025,7 @@ static NTSTATUS smb1_qpathinfo(struct cli_state *cli,
 			   2, /* max returned param */
 			   NULL, /* data */
 			   0, /* num_data */
-			   SMB_BUFFER_SIZE_MAX, /* max retured data */
+			   SMB_BUFFER_SIZE_MAX, /* max returned data */
 			   /* Return values from here on.. */
 			   NULL, /* recv_flags2 */
 			   NULL, /* rsetup */
@@ -4229,4 +4245,40 @@ bool run_smb1_dfs_operations(int dummy)
 	/* Delete anything we made. */
 	(void)smb1_dfs_delete(cli, "\\BAD\\BAD\\file");
 	return retval;
+}
+
+/*
+ * Test BUG: https://bugzilla.samba.org/show_bug.cgi?id=15419
+ */
+
+bool run_smb1_dfs_check_badpath(int dummy)
+{
+	struct cli_state *cli = NULL;
+	bool dfs_supported = false;
+
+	printf("Starting SMB1-DFS-CHECK-BADPATH\n");
+
+	if (!torture_init_connection(&cli)) {
+		return false;
+	}
+
+	if (!torture_open_connection(&cli, 0)) {
+		return false;
+	}
+
+	/* Ensure this is a DFS share. */
+	dfs_supported = smbXcli_conn_dfs_supported(cli->conn);
+	if (!dfs_supported) {
+		printf("Server %s does not support DFS\n",
+			smbXcli_conn_remote_name(cli->conn));
+		return false;
+	}
+	dfs_supported = smbXcli_tcon_is_dfs_share(cli->smb1.tcon);
+	if (!dfs_supported) {
+		printf("Share %s does not support DFS\n",
+			cli->share);
+		return false;
+	}
+
+	return test_smb1_chkpath_bad(cli);
 }

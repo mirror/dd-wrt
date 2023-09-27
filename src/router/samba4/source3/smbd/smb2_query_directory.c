@@ -290,7 +290,7 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 	DEBUG(10,("smbd_smb2_query_directory_send: %s - %s\n",
 		  fsp_str_dbg(fsp), fsp_fnum_dbg(fsp)));
 
-	state->smbreq = smbd_smb2_fake_smb_request(smb2req);
+	state->smbreq = smbd_smb2_fake_smb_request(smb2req, fsp);
 	if (tevent_req_nomem(state->smbreq, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -426,8 +426,6 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 				     NULL, /* req */
 				     fsp,
 				     false, /* old_handle */
-				     false, /* expect_close */
-				     0, /* spid */
 				     state->in_file_name, /* wcard */
 				     state->dirtype,
 				     &fsp->dptr);
@@ -442,7 +440,7 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 	}
 
 	if (in_flags & SMB2_CONTINUE_FLAG_RESTART) {
-		dptr_SeekDir(fsp->dptr, 0);
+		dptr_RewindDir(fsp->dptr);
 	}
 
 	if (in_flags & SMB2_CONTINUE_FLAG_SINGLE) {
@@ -548,7 +546,6 @@ static bool smb2_query_directory_next_entry(struct tevent_req *req)
 	struct smbd_smb2_query_directory_state *state = tevent_req_data(
 		req, struct smbd_smb2_query_directory_state);
 	struct smb_filename *smb_fname = NULL; /* relative to fsp !! */
-	bool got_exact_match = false;
 	int off = state->out_output_buffer.length;
 	int space_remaining = state->in_output_buffer_length - off;
 	struct file_id file_id;
@@ -576,7 +573,6 @@ static bool smb2_query_directory_next_entry(struct tevent_req *req)
 					   state->end_data,
 					   space_remaining,
 					   &smb_fname,
-					   &got_exact_match,
 					   &state->last_entry_off,
 					   NULL,
 					   &file_id);
@@ -590,15 +586,19 @@ static bool smb2_query_directory_next_entry(struct tevent_req *req)
 			 * entry.
 			 */
 			return false;
-		} else if (state->num > 0) {
+		}
+
+		if (state->num > 0) {
 			goto last_entry_done;
-		} else if (NT_STATUS_EQUAL(status, STATUS_MORE_ENTRIES)) {
+		}
+
+		if (NT_STATUS_EQUAL(status, STATUS_MORE_ENTRIES)) {
 			tevent_req_nterror(req, NT_STATUS_INFO_LENGTH_MISMATCH);
 			return true;
-		} else {
-			tevent_req_nterror(req, state->empty_status);
-			return true;
 		}
+
+		tevent_req_nterror(req, state->empty_status);
+		return true;
 	}
 
 	if (state->async_ask_sharemode &&

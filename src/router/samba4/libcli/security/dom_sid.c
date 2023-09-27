@@ -131,8 +131,8 @@ bool dom_sid_parse_endp(const char *sidstr,struct dom_sid *sidout,
 			const char **endp)
 {
 	const char *p;
-	char *q;
-	/* BIG NOTE: this function only does SIDS where the identauth is not >= 2^32 */
+	char *q = NULL;
+	char *end = NULL;
 	uint64_t conv;
 	int error = 0;
 
@@ -145,28 +145,42 @@ bool dom_sid_parse_endp(const char *sidstr,struct dom_sid *sidout,
 	/* Get the revision number. */
 	p = sidstr + 2;
 
-	if (!isdigit(*p)) {
+	if (!isdigit((unsigned char)*p)) {
 		goto format_error;
 	}
 
 	conv = smb_strtoul(p, &q, 10, &error, SMB_STR_STANDARD);
-	if (error != 0 || (*q != '-') || conv > UINT8_MAX) {
+	if (error != 0 || (*q != '-') || conv > UINT8_MAX || q - p > 4) {
 		goto format_error;
 	}
 	sidout->sid_rev_num = (uint8_t) conv;
 	q++;
 
-	if (!isdigit(*q)) {
+	if (!isdigit((unsigned char)*q)) {
 		goto format_error;
+	}
+	while (q[0] == '0' && isdigit((unsigned char)q[1])) {
+		/*
+		 * strtoull will think this is octal, which is not how SIDs
+		 * work! So let's walk along until there are no leading zeros
+		 * (or a single zero).
+		 */
+		q++;
 	}
 
 	/* get identauth */
-	conv = smb_strtoull(q, &q, 0, &error, SMB_STR_STANDARD);
+	conv = smb_strtoull(q, &end, 0, &error, SMB_STR_STANDARD);
 	if (conv & AUTHORITY_MASK || error != 0) {
 		goto format_error;
 	}
+	if (conv >= (1ULL << 48) || end - q > 15) {
+		/*
+		 * This identauth looks like a big number, but resolves to a
+		 * small number after rounding.
+		 */
+		goto format_error;
+	}
 
-	/* When identauth >= UINT32_MAX, it's in hex with a leading 0x */
 	/* NOTE - the conv value is in big-endian format. */
 	sidout->id_auth[0] = (conv & 0xff0000000000ULL) >> 40;
 	sidout->id_auth[1] = (conv & 0x00ff00000000ULL) >> 32;
@@ -176,6 +190,7 @@ bool dom_sid_parse_endp(const char *sidstr,struct dom_sid *sidout,
 	sidout->id_auth[5] = (conv & 0x0000000000ffULL);
 
 	sidout->num_auths = 0;
+	q = end;
 	if (*q != '-') {
 		/* Just id_auth, no subauths */
 		goto done;
@@ -184,14 +199,27 @@ bool dom_sid_parse_endp(const char *sidstr,struct dom_sid *sidout,
 	q++;
 
 	while (true) {
-		char *end;
-
-		if (!isdigit(*q)) {
+		if (!isdigit((unsigned char)*q)) {
 			goto format_error;
 		}
-
-		conv = smb_strtoull(q, &end, 10, &error, SMB_STR_STANDARD);
-		if (conv > UINT32_MAX || error != 0) {
+		while (q[0] == '0' && isdigit((unsigned char)q[1])) {
+			/*
+			 * strtoull will think this is octal, which is not how
+			 * SIDs work! So let's walk along until there are no
+			 * leading zeros (or a single zero).
+			 */
+			q++;
+		}
+		conv = smb_strtoull(q, &end, 0, &error, SMB_STR_STANDARD);
+		if (conv > UINT32_MAX || error != 0 || end - q > 12) {
+			/*
+			 * This sub-auth is greater than 4294967295,
+			 * and hence invalid. Windows will treat it as
+			 * 4294967295, while we prefer to refuse (old
+			 * versions of Samba will wrap, arriving at
+			 * another number altogether).
+                         */
+			DBG_NOTICE("bad sub-auth in %s\n", sidstr);
 			goto format_error;
 		}
 
@@ -262,7 +290,6 @@ struct dom_sid *dom_sid_parse_length(TALLOC_CTX *mem_ctx, const DATA_BLOB *sid)
 struct dom_sid *dom_sid_dup(TALLOC_CTX *mem_ctx, const struct dom_sid *dom_sid)
 {
 	struct dom_sid *ret;
-	int i;
 
 	if (!dom_sid) {
 		return NULL;
@@ -272,19 +299,7 @@ struct dom_sid *dom_sid_dup(TALLOC_CTX *mem_ctx, const struct dom_sid *dom_sid)
 	if (!ret) {
 		return NULL;
 	}
-
-	ret->sid_rev_num = dom_sid->sid_rev_num;
-	ret->id_auth[0] = dom_sid->id_auth[0];
-	ret->id_auth[1] = dom_sid->id_auth[1];
-	ret->id_auth[2] = dom_sid->id_auth[2];
-	ret->id_auth[3] = dom_sid->id_auth[3];
-	ret->id_auth[4] = dom_sid->id_auth[4];
-	ret->id_auth[5] = dom_sid->id_auth[5];
-	ret->num_auths = dom_sid->num_auths;
-
-	for (i=0;i<dom_sid->num_auths;i++) {
-		ret->sub_auths[i] = dom_sid->sub_auths[i];
-	}
+	sid_copy(ret, dom_sid);
 
 	return ret;
 }
@@ -362,6 +377,43 @@ bool dom_sid_in_domain(const struct dom_sid *domain_sid,
 	}
 
 	return dom_sid_compare_auth(domain_sid, sid) == 0;
+}
+
+bool dom_sid_has_account_domain(const struct dom_sid *sid)
+{
+	if (sid == NULL) {
+		return false;
+	}
+
+	if (sid->sid_rev_num != 1) {
+		return false;
+	}
+	if (sid->num_auths != 5) {
+		return false;
+	}
+	if (sid->id_auth[5] != 5) {
+		return false;
+	}
+	if (sid->id_auth[4] != 0) {
+		return false;
+	}
+	if (sid->id_auth[3] != 0) {
+		return false;
+	}
+	if (sid->id_auth[2] != 0) {
+		return false;
+	}
+	if (sid->id_auth[1] != 0) {
+		return false;
+	}
+	if (sid->id_auth[0] != 0) {
+		return false;
+	}
+	if (sid->sub_auths[0] != 21) {
+		return false;
+	}
+
+	return true;
 }
 
 bool dom_sid_is_valid_account_domain(const struct dom_sid *sid)

@@ -143,7 +143,7 @@ struct ctdb_req_tunnel_old {
 };
 
 /*
-   Structure used for a nodemap. 
+   Structure used for a nodemap.
    The nodemap is the structure containing a list of all nodes
    known to the cluster and their associated flags.
 */
@@ -202,7 +202,7 @@ struct ctdb_db_statistics_old {
 	char hot_keys_wire[1];
 };
 
-/* 
+/*
    a wire representation of the vnn map
  */
 struct ctdb_vnn_map_wire {
@@ -233,7 +233,7 @@ struct ctdb_tickle_list_old {
 
 /*
   struct holding a ctdb_sock_addr and an interface name,
-  used to add/remove public addresses and grat arp
+  used to add/remove public addresses and gratuitous arp
  */
 struct ctdb_addr_info_old {
 	ctdb_sock_addr addr;

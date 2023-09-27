@@ -309,7 +309,7 @@ append_char(struct snprintf_state *state,
 	(*state->append_char) (state, ' ');
 	++len;
     }
-    return 0;
+    return len;
 }
 
 /*
@@ -437,8 +437,7 @@ xyzprintf (struct snprintf_state *state, const char *char_format, va_list ap)
 
 	    switch (c) {
 	    case 'c' :
-		append_char(state, va_arg(ap, int), width, flags);
-		++len;
+		len += append_char(state, va_arg(ap, int), width, flags);
 		break;
 	    case 's' :
 		len += append_string(state,
@@ -449,13 +448,16 @@ xyzprintf (struct snprintf_state *state, const char *char_format, va_list ap)
 		break;
 	    case 'd' :
 	    case 'i' : {
-		longest arg;
-		u_longest num;
+		int64_t arg;
+		uint64_t num;
 		int minusp = 0;
 
 		PARSE_INT_FORMAT(arg, ap, signed);
 
-		if (arg < 0) {
+                if (arg == INT64_MIN) {
+		    minusp = 1;
+                    num = (uint64_t)INT64_MAX + 1;
+                } else if (arg < 0) {
 		    minusp = 1;
 		    num = -arg;
 		} else
@@ -696,5 +698,32 @@ rk_vsnprintf (char *str, size_t sz, const char *format, va_list args)
     if (state.s != NULL && sz != 0)
 	*state.s = '\0';
     return ret;
+}
+#endif
+
+#if !defined(HAVE_EVASPRINTF) || defined(TEST_SNPRINTF)
+ROKEN_LIB_FUNCTION char * ROKEN_LIB_CALL
+rk_evasprintf(const char *format, va_list args)
+{
+    char *s = NULL;
+
+    if (vasprintf(&s, format, args) == -1 || s == NULL)
+        errx(1, "Out of memory");
+    return s;
+}
+#endif
+
+#if !defined(HAVE_EASPRINTF) || defined(TEST_SNPRINTF)
+ROKEN_LIB_FUNCTION char * ROKEN_LIB_CALL
+rk_easprintf(const char *format, ...)
+{
+    va_list args;
+    char *s = NULL;
+
+    va_start(args, format);
+    if (vasprintf(&s, format, args) == -1 || s == NULL)
+        errx(1, "Out of memory");
+    va_end(args);
+    return s;
 }
 #endif

@@ -79,4 +79,16 @@ _PUBLIC_ void dump_data_file_diff(FILE *f,
 				  const uint8_t *buf1, size_t len1,
 				  const uint8_t *buf2, size_t len2);
 
+/**
+ * Write a password to the log file.
+ *
+ * @note Only actually does something if DEBUG_PASSWORD was defined during
+ * compile-time.
+ */
+_PUBLIC_ void dump_data_pw(const char *msg, const uint8_t * data, size_t len);
+
+/**
+ * Dump data to "str" via talloc_asprintf_addbuf()
+ */
+_PUBLIC_ void dump_data_addbuf(const uint8_t *buf, size_t buflen, char **str);
 #endif

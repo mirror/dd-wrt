@@ -189,7 +189,7 @@ static void ctdb_send_dmaster_reply(struct ctdb_db_context *ctdb_db,
 	}
 
 	if (ctdb->methods == NULL) {
-		ctdb_fatal(ctdb, "ctdb_send_dmaster_reply cant update dmaster since transport is down");
+		ctdb_fatal(ctdb, "ctdb_send_dmaster_reply can't update dmaster since transport is down");
 		return;
 	}
 
@@ -1416,6 +1416,10 @@ void ctdb_call_resend_db(struct ctdb_db_context *ctdb_db)
 		next = state->next;
 		ctdb_call_resend(state);
 		count++;
+	}
+	/* Avoid logging a 0 count below */
+	if (count == 0) {
+		return;
 	}
 	D_NOTICE("Resent calls for database=%s, generation=%u, count=%u\n",
 		 ctdb_db->db_name,

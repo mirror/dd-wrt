@@ -1,4 +1,4 @@
-/* 
+/*
    Unix SMB/CIFS implementation.
    Database interface wrapper around tdb
    Copyright (C) Volker Lendecke 2005-2007
@@ -71,6 +71,19 @@ NTSTATUS dbwrap_record_store(struct db_record *rec, TDB_DATA data, int flags);
 NTSTATUS dbwrap_record_storev(struct db_record *rec,
 			      const TDB_DATA *dbufs, int num_dbufs, int flags);
 NTSTATUS dbwrap_record_delete(struct db_record *rec);
+
+/**
+ * @brief Adds TDB records from one db_context to another
+ *
+ * @param to	Destination db_context
+ * @param from	Source db_context
+ * @param flags	(TDB_INSERT or TDB_REPLACE)
+ *
+ * @return NT_STATUS_OK on success or NT_STATUS_INTERNAL_DB_CORRUPTION
+ */
+NTSTATUS
+dbwrap_merge_dbs(struct db_context *to, struct db_context *from, int flags);
+
 struct db_record *dbwrap_fetch_locked(struct db_context *db,
 				      TALLOC_CTX *mem_ctx,
 				      TDB_DATA key);
@@ -123,7 +136,7 @@ NTSTATUS dbwrap_parse_record(struct db_context *db, TDB_DATA key,
  * @param[out] req_state    Pointer to a enum dbwrap_req_state variable
  *
  * @note req_state is updated in the send function. To determine the final
- * result of the request the caller should therefor not rely on req_state. The
+ * result of the request the caller should therefore not rely on req_state. The
  * primary use case is to give the caller an indication whether the request is
  * already sent to ctdb (DBWRAP_REQ_DISPATCHED) or if it's still stuck in the
  * sendqueue (DBWRAP_REQ_QUEUED).

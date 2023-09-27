@@ -24,7 +24,7 @@
  */
 
 /*
- * This is a second implemetation of a shadow copy module for exposing
+ * This is a second implementation of a shadow copy module for exposing
  * file system snapshots to windows clients as shadow copies.
  *
  * See the manual page for documentation.
@@ -368,7 +368,7 @@ static char *shadow_copy2_insert_string(TALLOC_CTX *mem_ctx,
 					 config->snapdir, snaptime_string);
 	}
 	if (result == NULL) {
-		DEBUG(1, (__location__ " talloc_asprintf failed\n"));
+		DBG_WARNING("talloc_asprintf failed\n");
 	}
 
 	return result;
@@ -405,7 +405,7 @@ static char *shadow_copy2_snapshot_path(TALLOC_CTX *mem_ctx,
 	result = talloc_asprintf(mem_ctx, "%s/%s",
 				 priv->config->snapshot_basepath, snaptime_string);
 	if (result == NULL) {
-		DEBUG(1, (__location__ " talloc_asprintf failed\n"));
+		DBG_WARNING("talloc_asprintf failed\n");
 	}
 
 	return result;
@@ -864,7 +864,7 @@ static char *shadow_copy2_do_convert(TALLOC_CTX *mem_ctx,
 	insertlen = talloc_get_size(insert)-1;
 
 	/*
-	 * Note: We deliberatly don't expensively initialize the
+	 * Note: We deliberately don't expensively initialize the
 	 * array with talloc_zero here: Putting zero into
 	 * converted[pathlen+insertlen] below is sufficient, because
 	 * in the following for loop, the insert string is inserted
@@ -2276,7 +2276,7 @@ static int shadow_copy2_get_shadow_copy_data(
 		time(&(priv->snaps->fetch_time));
 	}
 
-	while ((d = SMB_VFS_NEXT_READDIR(handle, dirfsp, p, NULL))) {
+	while ((d = SMB_VFS_NEXT_READDIR(handle, dirfsp, p))) {
 		char snapshot[GMT_NAME_LEN+1];
 		SHADOW_COPY_LABEL *tlabels;
 
@@ -3056,9 +3056,9 @@ static int shadow_copy2_connect(struct vfs_handle_struct *handle,
 	const char *snapsharepath = NULL;
 	const char *mount_point;
 
-	DEBUG(10, (__location__ ": cnum[%u], connectpath[%s]\n",
-		   (unsigned)handle->conn->cnum,
-		   handle->conn->connectpath));
+	DBG_DEBUG("cnum[%" PRIu32 "], connectpath[%s]\n",
+		  handle->conn->cnum,
+		  handle->conn->connectpath);
 
 	ret = SMB_VFS_NEXT_CONNECT(handle, service, user);
 	if (ret < 0) {
@@ -3186,10 +3186,10 @@ static int shadow_copy2_connect(struct vfs_handle_struct *handle,
 					   "shadow", "mountpoint", NULL);
 	if (mount_point != NULL) {
 		if (mount_point[0] != '/') {
-			DEBUG(1, (__location__ " Warning: 'mountpoint' is "
-				  "relative ('%s'), but it has to be an "
-				  "absolute path. Ignoring provided value.\n",
-				  mount_point));
+			DBG_WARNING("Warning: 'mountpoint' is relative "
+				    "('%s'), but it has to be an absolute "
+				    "path. Ignoring provided value.\n",
+				    mount_point);
 			mount_point = NULL;
 		} else {
 			char *p;
@@ -3209,7 +3209,7 @@ static int shadow_copy2_connect(struct vfs_handle_struct *handle,
 	if (mount_point != NULL) {
 		config->mount_point = talloc_strdup(config, mount_point);
 		if (config->mount_point == NULL) {
-			DEBUG(0, (__location__ " talloc_strdup() failed\n"));
+			DBG_ERR("talloc_strdup() failed\n");
 			return -1;
 		}
 	} else {
@@ -3228,10 +3228,10 @@ static int shadow_copy2_connect(struct vfs_handle_struct *handle,
 
 	if (basedir != NULL) {
 		if (basedir[0] != '/') {
-			DEBUG(1, (__location__ " Warning: 'basedir' is "
-				  "relative ('%s'), but it has to be an "
-				  "absolute path. Disabling basedir.\n",
-				  basedir));
+			DBG_WARNING("Warning: 'basedir' is "
+				    "relative ('%s'), but it has to be an "
+				    "absolute path. Disabling basedir.\n",
+				    basedir);
 			basedir = NULL;
 		} else {
 			char *p;
@@ -3248,8 +3248,8 @@ static int shadow_copy2_connect(struct vfs_handle_struct *handle,
 	}
 
 	if (config->snapdirseverywhere && basedir != NULL) {
-		DEBUG(1, (__location__ " Warning: 'basedir' is incompatible "
-			  "with 'snapdirseverywhere'. Disabling basedir.\n"));
+		DBG_WARNING("Warning: 'basedir' is incompatible "
+			    "with 'snapdirseverywhere'. Disabling basedir.\n");
 		basedir = NULL;
 	}
 
@@ -3304,17 +3304,18 @@ static int shadow_copy2_connect(struct vfs_handle_struct *handle,
 	if (config->snapdir[0] == '/') {
 		config->snapdir_absolute = true;
 
-		if (config->snapdirseverywhere == true) {
-			DEBUG(1, (__location__ " Warning: An absolute snapdir "
-				  "is incompatible with 'snapdirseverywhere', "
-				  "setting 'snapdirseverywhere' to false.\n"));
+		if (config->snapdirseverywhere) {
+			DBG_WARNING("Warning: An absolute snapdir is "
+				    "incompatible with 'snapdirseverywhere', "
+				    "setting 'snapdirseverywhere' to "
+				    "false.\n");
 			config->snapdirseverywhere = false;
 		}
 
-		if (config->crossmountpoints == true) {
-			DEBUG(1, (__location__ " Warning: 'crossmountpoints' "
-				  "is not supported with an absolute snapdir. "
-				  "Disabling it.\n"));
+		if (config->crossmountpoints) {
+			DBG_WARNING("Warning: 'crossmountpoints' is not "
+				    "supported with an absolute snapdir. "
+				    "Disabling it.\n");
 			config->crossmountpoints = false;
 		}
 
@@ -3372,96 +3373,6 @@ static int shadow_copy2_connect(struct vfs_handle_struct *handle,
 	return 0;
 }
 
-static struct dirent *shadow_copy2_readdir(vfs_handle_struct *handle,
-					   struct files_struct *dirfsp,
-					   DIR *dirp,
-					   SMB_STRUCT_STAT *sbuf)
-{
-	struct shadow_copy2_private *priv = NULL;
-	struct dirent *ent = NULL;
-	struct smb_filename atname;
-	struct smb_filename *full_fname = NULL;
-	time_t timestamp = 0;
-	char *stripped = NULL;
-	char *conv = NULL;
-	char *abspath = NULL;
-	bool converted = false;
-
-	SMB_VFS_HANDLE_GET_DATA(handle, priv, struct shadow_copy2_private,
-				return NULL);
-
-	ent = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirp, sbuf);
-	if (ent == NULL) {
-		return NULL;
-	}
-	if (sbuf == NULL) {
-		return ent;
-	}
-	if (ISDOT(dirfsp->fsp_name->base_name) && ISDOTDOT(ent->d_name)) {
-		return ent;
-	}
-
-	atname = (struct smb_filename) {
-		.base_name = ent->d_name,
-		.twrp = dirfsp->fsp_name->twrp,
-		.flags = dirfsp->fsp_name->flags,
-	};
-
-	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
-						  dirfsp,
-						  &atname);
-	if (full_fname == NULL) {
-		return NULL;
-	}
-
-	if (!shadow_copy2_strip_snapshot_converted(talloc_tos(),
-						   handle,
-						   full_fname,
-						   &timestamp,
-						   &stripped,
-						   &converted)) {
-		TALLOC_FREE(full_fname);
-		return NULL;
-	}
-
-	if (timestamp == 0 && !converted) {
-		/* Not a snapshot path, no need for convert_sbuf() */
-		TALLOC_FREE(stripped);
-		TALLOC_FREE(full_fname);
-		return ent;
-	}
-
-	if (timestamp == 0) {
-		abspath = make_path_absolute(talloc_tos(),
-					     priv,
-					     full_fname->base_name);
-		TALLOC_FREE(full_fname);
-		if (abspath == NULL) {
-			return NULL;
-		}
-	} else {
-		conv = shadow_copy2_convert(talloc_tos(),
-					    handle,
-					    stripped,
-					    timestamp);
-		TALLOC_FREE(stripped);
-		if (conv == NULL) {
-			return NULL;
-		}
-
-		abspath = make_path_absolute(talloc_tos(), priv, conv);
-		TALLOC_FREE(conv);
-		if (abspath == NULL) {
-			return NULL;
-		}
-	}
-
-	convert_sbuf(handle, abspath, sbuf);
-
-	TALLOC_FREE(abspath);
-	return ent;
-}
-
 static struct vfs_fn_pointers vfs_shadow_copy2_fns = {
 	.connect_fn = shadow_copy2_connect,
 	.disk_free_fn = shadow_copy2_disk_free,
@@ -3493,7 +3404,6 @@ static struct vfs_fn_pointers vfs_shadow_copy2_fns = {
 	.pwrite_recv_fn = shadow_copy2_pwrite_recv,
 	.connectpath_fn = shadow_copy2_connectpath,
 	.parent_pathname_fn = shadow_copy2_parent_pathname,
-	.readdir_fn = shadow_copy2_readdir,
 };
 
 static_decl_vfs;

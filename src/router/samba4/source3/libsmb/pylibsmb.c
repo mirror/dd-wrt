@@ -991,9 +991,11 @@ static PyObject *py_cli_create_returns(const struct smb_create_returns *r)
 	PyObject *v = NULL;
 
 	v = Py_BuildValue(
-		"{sLsLsLsLsLsLsLsLsL}",
+		"{sLsLsLsLsLsLsLsLsLsL}",
 		"oplock_level",
 		(unsigned long long)r->oplock_level,
+		"flags",
+		(unsigned long long)r->flags,
 		"create_action",
 		(unsigned long long)r->create_action,
 		"creation_time",
@@ -1135,12 +1137,17 @@ static PyObject *py_cli_create_ex(
 	}
 
 	if (smbXcli_conn_protocol(self->cli->conn) >= PROTOCOL_SMB2_02) {
+		struct cli_smb2_create_flags cflags = {
+			.batch_oplock = (CreateFlags & REQUEST_BATCH_OPLOCK),
+			.exclusive_oplock = (CreateFlags & REQUEST_OPLOCK),
+		};
+
 		req = cli_smb2_create_fnum_send(
 			NULL,
 			self->ev,
 			self->cli,
 			fname,
-			CreateFlags,
+			cflags,
 			ImpersonationLevel,
 			DesiredAccess,
 			FileAttributes,
@@ -1661,10 +1668,7 @@ struct py_cli_notify_state {
 static void py_cli_notify_state_dealloc(struct py_cli_notify_state *self)
 {
 	TALLOC_FREE(self->req);
-	if (self->py_cli_state != NULL) {
-		Py_DECREF(self->py_cli_state);
-		self->py_cli_state = NULL;
-	}
+	Py_CLEAR(self->py_cli_state);
 	Py_TYPE(self)->tp_free(self);
 }
 
@@ -1816,8 +1820,7 @@ static PyObject *py_cli_notify_get_changes(struct py_cli_notify_state *self,
 
 	ok = py_tevent_req_wait_exc(py_cli_state, req);
 	self->req = NULL;
-	Py_DECREF(self->py_cli_state);
-	self->py_cli_state = NULL;
+	Py_CLEAR(self->py_cli_state);
 	if (!ok) {
 		return NULL;
 	}
@@ -2505,6 +2508,116 @@ static PyObject *py_smb_smb1_symlink(
 	Py_RETURN_NONE;
 }
 
+static PyObject *py_smb_smb1_stat(
+	struct py_cli_state *self, PyObject *args)
+{
+	NTSTATUS status;
+	const char *fname = NULL;
+	struct tevent_req *req = NULL;
+	struct stat_ex sbuf = { .st_ex_nlink = 0, };
+
+	if (!PyArg_ParseTuple(args, "s:smb1_stat", &fname)) {
+		return NULL;
+	}
+
+	req = cli_posix_stat_send(NULL, self->ev, self->cli, fname);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_posix_stat_recv(req, &sbuf);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	return Py_BuildValue(
+		"{sLsLsLsLsLsLsLsLsLsLsLsLsLsLsLsLsLsLsLsL}",
+		"dev",
+		(unsigned long long)sbuf.st_ex_dev,
+		"ino",
+		(unsigned long long)sbuf.st_ex_ino,
+		"mode",
+		(unsigned long long)sbuf.st_ex_mode,
+		"nlink",
+		(unsigned long long)sbuf.st_ex_nlink,
+		"uid",
+		(unsigned long long)sbuf.st_ex_uid,
+		"gid",
+		(unsigned long long)sbuf.st_ex_gid,
+		"rdev",
+		(unsigned long long)sbuf.st_ex_size,
+		"atime_sec",
+		(unsigned long long)sbuf.st_ex_atime.tv_sec,
+		"atime_nsec",
+		(unsigned long long)sbuf.st_ex_atime.tv_nsec,
+		"mtime_sec",
+		(unsigned long long)sbuf.st_ex_mtime.tv_sec,
+		"mtime_nsec",
+		(unsigned long long)sbuf.st_ex_mtime.tv_nsec,
+		"ctime_sec",
+		(unsigned long long)sbuf.st_ex_ctime.tv_sec,
+		"ctime_nsec",
+		(unsigned long long)sbuf.st_ex_ctime.tv_nsec,
+		"btime_sec",
+		(unsigned long long)sbuf.st_ex_btime.tv_sec,
+		"btime_nsec",
+		(unsigned long long)sbuf.st_ex_btime.tv_nsec,
+		"cached_dos_attributes",
+		(unsigned long long)sbuf.cached_dos_attributes,
+		"blksize",
+		(unsigned long long)sbuf.st_ex_blksize,
+		"blocks",
+		(unsigned long long)sbuf.st_ex_blocks,
+		"flags",
+		(unsigned long long)sbuf.st_ex_flags,
+		"iflags",
+		(unsigned long long)sbuf.st_ex_iflags);
+}
+
+static PyObject *py_cli_mknod(
+	struct py_cli_state *self, PyObject *args, PyObject *kwds)
+{
+	char *fname = NULL;
+	int mode = 0, major = 0, minor = 0, dev = 0;
+	struct tevent_req *req = NULL;
+	static const char *kwlist[] = {
+		"fname", "mode", "major", "minor", NULL,
+	};
+	NTSTATUS status;
+	bool ok;
+
+	ok = ParseTupleAndKeywords(
+		args,
+		kwds,
+		"sI|II:mknod",
+		kwlist,
+		&fname,
+		&mode,
+		&major,
+		&minor);
+	if (!ok) {
+		return NULL;
+	}
+
+#if defined(HAVE_MAKEDEV)
+	dev = makedev(major, minor);
+#endif
+
+	req = cli_mknod_send(
+		NULL, self->ev, self->cli, fname, mode, dev);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_mknod_recv(req);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+	Py_RETURN_NONE;
+}
+
 static PyObject *py_cli_fsctl(
 	struct py_cli_state *self, PyObject *args, PyObject *kwds)
 {
@@ -2657,10 +2770,20 @@ static PyMethodDef py_cli_state_methods[] = {
 	  METH_VARARGS,
 	  "smb1_symlink(target, newname) -> None",
 	},
+	{ "smb1_stat",
+	  (PyCFunction)py_smb_smb1_stat,
+	  METH_VARARGS,
+	  "smb1_stat(path) -> stat info",
+	},
 	{ "fsctl",
 	  (PyCFunction)py_cli_fsctl,
 	  METH_VARARGS|METH_KEYWORDS,
 	  "fsctl(fnum, ctl_code, in_bytes, max_out) -> out_bytes",
+	},
+	{ "mknod",
+	  PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_mknod),
+	  METH_VARARGS|METH_KEYWORDS,
+	  "mknod(path, mode | major, minor)",
 	},
 	{ NULL, NULL, 0, NULL }
 };

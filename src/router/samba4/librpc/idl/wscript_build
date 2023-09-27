@@ -15,7 +15,7 @@ bld.SAMBA_PIDL_LIST('PIDL',
                     output_dir='../gen_ndr')
 
 # The interface names here are not the same as the IDL name, so the
-# auto-genration of the fuzzer fails to link
+# auto-generation of the fuzzer fails to link
 bld.SAMBA_PIDL_LIST('PIDL',
                     '''echo.idl
                        fsrvp.idl
@@ -38,7 +38,7 @@ bld.SAMBA_PIDL_LIST('PIDL',
                     output_dir='../gen_ndr')
 
 # The interface names here are not the same as the IDL name, so the
-# auto-genration of the fuzzer fails to link
+# auto-generation of the fuzzer fails to link
 bld.SAMBA_PIDL_LIST('PIDL',
                     '''dfs.idl''',
                     options='--header --ndr-parser --client --python --server-compat',
@@ -51,24 +51,6 @@ bld.SAMBA_PIDL_LIST('PIDL',
                     '''unixinfo.idl''',
                     options='--header --ndr-parser --client --python --server',
                     output_dir='../gen_ndr')
-
-# DCOM stuff
-
-# The interface names here are not the same as the IDL name, so the
-# auto-genration of the fuzzer fails to link
-bld.SAMBA_PIDL_LIST('PIDL',
-                    '''oxidresolver.idl remact.idl''',
-                    options='--header --ndr-parser --client',
-                    output_dir='../gen_ndr',
-                    generate_fuzzers=False)
-
-# The interface names here are not the same as the IDL name, so the
-# auto-genration of the fuzzer fails to link
-bld.SAMBA_PIDL_LIST('PIDL',
-                    'wmi.idl dcom.idl',
-                    options='--header --ndr-parser --server --client --dcom-proxy --com-header',
-                    output_dir='../gen_ndr',
-                    generate_fuzzers=False)
 
 # DCE/RPC protocols which Samba does not implement a client or server
 # for.  We don't generate a fuzzer for these as they are unreachable
@@ -123,7 +105,7 @@ bld.SAMBA_PIDL_LIST('PIDL',
                     output_dir='../gen_ndr')
 
 # The interface names here are not the same as the IDL name, so the
-# auto-genration of the fuzzer fails to link
+# auto-generation of the fuzzer fails to link
 
 bld.SAMBA_PIDL_LIST('PIDL',
                     '''
@@ -135,7 +117,7 @@ bld.SAMBA_PIDL_LIST('PIDL',
                     output_dir='../gen_ndr',
                     generate_fuzzers=False)
 
-# Non-DCE/RPC protocls with Python bindings
+# Non-DCE/RPC protocols with Python bindings
 # (for structures or constants)
 
 bld.SAMBA_PIDL_LIST('PIDL',

@@ -30,6 +30,9 @@
 #include "auth/gensec/gensec.h"
 #include "lib/util/string_wrappers.h"
 #include "source3/lib/substitute.h"
+#ifdef HAVE_VALGRIND_CALLGRIND_H
+#include <valgrind/callgrind.h>
+#endif /* HAVE_VALGRIND_CALLGRIND_H */
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_SMB2
@@ -365,12 +368,6 @@ NTSTATUS smbd_smb2_request_process_negprot(struct smbd_smb2_request *req)
 	}
 
 	security_mode = SMB2_NEGOTIATE_SIGNING_ENABLED;
-	/*
-	 * We use xconn->smb2.signing_mandatory set up via
-	 * srv_init_signing() -> smb2_srv_init_signing().
-	 * This calls lpcfg_server_signing_allowed() to get the correct
-	 * defaults, e.g. signing_required for an ad_dc.
-	 */
 	if (xconn->smb2.signing_mandatory) {
 		security_mode |= SMB2_NEGOTIATE_SIGNING_REQUIRED;
 	}
@@ -914,6 +911,19 @@ static void smbd_smb2_request_process_negprot_mc_done(struct tevent_req *subreq)
 	 */
 	status = smbd_smb2_request_done(req, state->outbody, &state->outdyn);
 	if (NT_STATUS_IS_OK(status)) {
+		/*
+		 * This allows us to support starting smbd under
+		 * callgrind and only start the overhead and
+		 * instrumentation after the SMB2 negprot,
+		 * this allows us to profile only useful
+		 * stuff and not all the smbd startup, forking
+		 * and multichannel handling.
+		 *
+		 * valgrind --tool=callgrind --instr-atstart=no smbd
+		 */
+#ifdef CALLGRIND_START_INSTRUMENTATION
+		CALLGRIND_START_INSTRUMENTATION;
+#endif
 		return;
 	}
 
@@ -979,7 +989,7 @@ DATA_BLOB negprot_spnego(TALLOC_CTX *ctx, struct smbXsrv_connection *xconn)
 	/* strangely enough, NT does not sent the single OID NTLMSSP when
 	   not a ADS member, it sends no OIDs at all
 
-	   OLD COMMENT : "we can't do this until we teach our sesssion setup parser to know
+	   OLD COMMENT : "we can't do this until we teach our session setup parser to know
 		   about raw NTLMSSP (clients send no ASN.1 wrapping if we do this)"
 
 	   Our sessionsetup code now handles raw NTLMSSP connects, so we can go
@@ -1164,8 +1174,7 @@ NTSTATUS smb2_multi_protocol_reply_negprot(struct smb_request *req)
 		reply_smb1_outbuf(req, 1, 0);
 		SSVAL(req->outbuf, smb_vwv0, NO_PROTOCOL_CHOSEN);
 
-		ok = smb1_srv_send(xconn, (char *)req->outbuf,
-				  false, 0, false, NULL);
+		ok = smb1_srv_send(xconn, (char *)req->outbuf, false, 0, false);
 		if (!ok) {
 			DBG_NOTICE("smb1_srv_send failed\n");
 		}
