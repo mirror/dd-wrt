@@ -29,16 +29,16 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -48,7 +48,7 @@
 #include <netinet/in.h>
 #endif
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include "memcheck.h"
@@ -65,6 +65,7 @@ netsnmp_feature_child_of(usm_scapi, usm_support);
 #ifdef NETSNMP_USE_INTERNAL_MD5
 #include <net-snmp/library/md5.h>
 #endif
+#include <net-snmp/library/openssl_config.h>
 #include <net-snmp/library/snmp_api.h>
 #include <net-snmp/library/callback.h>
 #include <net-snmp/library/snmp_secmod.h>
@@ -554,7 +555,7 @@ sc_init(void)
     gettimeofday(&tv, (struct timezone *) 0);
 
     netsnmp_srandom((unsigned)(tv.tv_sec ^ tv.tv_usec));
-#elif NETSNMP_USE_PKCS11
+#elif defined(NETSNMP_USE_PKCS11)
     DEBUGTRACE;
     rval = pkcs_init();
 #else

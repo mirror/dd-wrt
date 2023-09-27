@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     return ret;
 }
 
-int test1() {
+int test1(void) {
     int sum = 0;
     callback_called = 0;
     fprintf(stdout, "# snmpd_unregister_config_handler tests\n");

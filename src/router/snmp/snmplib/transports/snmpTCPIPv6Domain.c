@@ -3,22 +3,22 @@
 #ifdef NETSNMP_TRANSPORT_TCPIPV6_DOMAIN
 
 #include <net-snmp/types.h>
-#include <net-snmp/library/snmpIPBaseDomain.h>
+#include "snmpIPBaseDomain.h"
 #include <net-snmp/library/snmpTCPIPv6Domain.h>
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <errno.h>
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
@@ -33,7 +33,7 @@
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 

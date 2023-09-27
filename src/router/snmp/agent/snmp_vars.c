@@ -61,13 +61,13 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <net-snmp/net-snmp-config.h>
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #include <sys/types.h>
@@ -75,11 +75,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #include <errno.h>
 
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -163,19 +163,6 @@ static char     done_init_agent = 0;
 
 struct module_init_list *initlist = NULL;
 struct module_init_list *noinitlist = NULL;
-
-/*
- * mib clients are passed a pointer to a oid buffer.  Some mib clients
- * * (namely, those first noticed in mibII/vacm.c) modify this oid buffer
- * * before they determine if they really need to send results back out
- * * using it.  If the master agent determined that the client was not the
- * * right one to talk with, it will use the same oid buffer to pass to the
- * * rest of the clients, which may not longer be valid.  This should be
- * * fixed in all clients rather than the master.  However, its not a
- * * particularily easy bug to track down so this saves debugging time at
- * * the expense of a few memcpy's.
- */
-#define MIB_CLIENTS_ARE_EVIL 1
 
 /*
  *      Each variable name is placed in the variable table, without the

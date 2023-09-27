@@ -14,6 +14,7 @@
  */
 void            init_snmpTlstmCertToTSNTable(void);
 void            init_snmpTlstmCertToTSNTable_context(const char *);
+void            shutdown_snmpTlstmCertToTSNTable(void);
 
 /*
  * index definitions for table tlstmCertToTSNTable 

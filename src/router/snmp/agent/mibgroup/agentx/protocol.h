@@ -1,7 +1,7 @@
 #ifndef AGENTX_PROTOCOL_H
 #define AGENTX_PROTOCOL_H
 
-config_belongs_in(agent_module)
+config_belongs_in(agent_module);
 
 #ifdef __cplusplus
 extern          "C" {

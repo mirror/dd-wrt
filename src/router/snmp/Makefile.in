@@ -11,7 +11,7 @@ FTSUBDIRS	= @FTMAINSUBS@ snmplib
 TESTDIRS	= testing
 
 CPP		= @CPP@ 					        \
-		-Iinclude -I$(srcdir)/include -I$(srcdir)/agent/mibgroup -I. -I$(srcdir)	\
+		-I$(srcdir)/include -I.					\
 		-DDONT_INC_STRUCTS -DBINDIR=$(bindir) 		        \
 		$(EXTRACPPFLAGS)
 
@@ -113,8 +113,8 @@ agentxtrap snmptrapd: @FEATURETARGS@
 #
 # local build rules
 #
-sedscript: sedscript.in include/net-snmp/net-snmp-config.h $(srcdir)/agent/mibgroup/mibdefs.h
-	$(CPP) $(srcdir)/sedscript.in | egrep '^s[/#]' | sed 's/REMOVEME//g;s# */#/#g;s/ *#/#/g;s#/ *#/#g;s/# g/#g/;' > sedscript
+sedscript: $(srcdir)/sedscript.in include/net-snmp/net-snmp-config.h $(srcdir)/agent/mibgroup/mibdefs.h
+	$(CPP) -I$(srcdir) -Iinclude $(srcdir)/sedscript.in | $(EGREP) '^s[/#]' | sed 's/REMOVEME//g;s# */#/#g;s/ *#/#/g;s#/ *#/#g;s/# g/#g/;' > sedscript
 	echo 's/VERSIONINFO/$(VERSION)/g' >> sedscript
 	echo 's#DATADIR#$(datadir)#g' >> sedscript
 	echo 's#LIBDIR#$(libdir)#g' >> sedscript
@@ -122,14 +122,14 @@ sedscript: sedscript.in include/net-snmp/net-snmp-config.h $(srcdir)/agent/mibgr
 	echo 's#PERSISTENT_DIRECTORY#$(PERSISTENT_DIRECTORY)#g' >> sedscript
 	echo 's#SYSCONFDIR#@sysconfdir@#g' >> sedscript
 
-EXAMPLE.conf: sedscript EXAMPLE.conf.def
+EXAMPLE.conf: sedscript $(srcdir)/EXAMPLE.conf.def
 	$(SED) -f sedscript $(srcdir)/EXAMPLE.conf.def > EXAMPLE.conf
 
 docs: docsdir 
 
 docsdir: docsdox
 
-docsdox: doxygen.conf
+docsdox: $(srcdir)/doxygen.conf
 	srcdir=$(srcdir) VERSION=$(VERSION) doxygen $(srcdir)/doxygen.conf
 
 net-snmp-config-x: net-snmp-config

@@ -27,6 +27,8 @@ done
 #
 AC_MSG_CHECKING([for and configuring mib modules to use])
 
+AH_TOP([#define NETSNMP_REQUIRE_SEMICOLON extern void netsnmp_unused_function(void)])
+
 # set up the CPP command
 MODULECPP="$CPP $PARTIALTARGETFLAGS $CPPFLAGS -DNETSNMP_FEATURE_CHECKING -I${srcdir}/include -I${srcdir}/agent/mibgroup"
 if test "x$enable_mfd_rewrites" = "xyes"; then
@@ -192,7 +194,7 @@ while test "x$new_module_list" != "x"; do
     #     - mib_module   => libnetsnmpmibs   (default)
     #     - agent_module => libnetsnmpagent
     #
-    AH_TOP([#define config_belongs_in(x)])
+    AH_TOP([#define config_belongs_in(x) NETSNMP_REQUIRE_SEMICOLON])
     module_type=mib_module
     if test -f $srcdir/$mibdir/$i.h; then
       changequote(, )
@@ -277,7 +279,7 @@ while test "x$new_module_list" != "x"; do
       	#
         # check if $i has any conflicts
         #
-        AH_TOP([#define config_exclude(x)])
+        AH_TOP([#define config_exclude(x) NETSNMP_REQUIRE_SEMICOLON])
         new_list_excl=`$MODULECPP module_tmp_header.h | \
                        $SED -n 's/.*config_exclude(\(.*\)).*/\1/p'`
 	if test "x$new_list_excl" != "x"; then
@@ -306,7 +308,7 @@ while test "x$new_module_list" != "x"; do
         #
         # check if $i has any architecture specific requirements
         #
-        AH_TOP([#define config_arch_require(x,y)])
+        AH_TOP([#define config_arch_require(x,y) NETSNMP_REQUIRE_SEMICOLON])
         changequote(, )
         new_list_arch=`$MODULECPP module_tmp_header.h | \
                        $SED -n 's/.*config_arch_require( *\([^ ]*\) *, *\([^ ]*\) *).*/\1-xarchx-\2/p'`
@@ -328,7 +330,7 @@ while test "x$new_module_list" != "x"; do
       	# macro: config_version_require((base, version, version-modules, ...))
       	#  - lists alternative modules used from different versions.
         #
-        AH_TOP([#define config_version_require(x)])
+        AH_TOP([#define config_version_require(x) NETSNMP_REQUIRE_SEMICOLON])
         [new_list_alt3=`$MODULECPP module_tmp_header.h | \
             $AWK '
                 BEGIN {
@@ -370,7 +372,7 @@ while test "x$new_module_list" != "x"; do
         #
         # check if $i has any other required modules
         #
-        AH_TOP([#define config_require(x)])
+        AH_TOP([#define config_require(x) NETSNMP_REQUIRE_SEMICOLON])
         new_list="$new_list `$MODULECPP module_tmp_header.h | \
                   $SED -n 's/.*config_require(\(.*\)).*/\1/p'`"
         AC_MSG_MODULE_DBG(" $i will test: $new_list")
@@ -407,7 +409,7 @@ while test "x$new_module_list" != "x"; do
         #
         # check if $i has any mibs to add
         #
-        AH_TOP([#define config_add_mib(x)])
+        AH_TOP([#define config_add_mib(x) NETSNMP_REQUIRE_SEMICOLON])
         new_mibs=`$MODULECPP module_tmp_header.h | \
                   $SED -n 's/.*config_add_mib(\(.*\)).*/\1/p'`
 	if test "x$new_mibs" != "x"; then
@@ -454,7 +456,7 @@ while test "x$new_module_list" != "x"; do
         # check for config_parse_dot_conf
         #  (generally not used any longer; old auto-load a .conf token)
         #
-        AH_TOP([#define config_parse_dot_conf(w,x,y,z)])
+        AH_TOP([#define config_parse_dot_conf(w,x,y,z) NETSNMP_REQUIRE_SEMICOLON])
         changequote(, )
         $MODULECPP module_tmp_header.h | \
         $SED -n 's@.*config_parse_dot_conf(\([^)]*\), *\([^),]*\), *\([^),]*\), *\([^),]*\)).*@register_config_handler("snmpd",\1, \2, \3, \4);@p' >> $mibdir/mib_module_dot_conf.h
@@ -466,7 +468,7 @@ while test "x$new_module_list" != "x"; do
         #
         # check if $i has any errors, or warnings
         #
-        AH_TOP([#define config_error(x)])
+        AH_TOP([#define config_error(x) NETSNMP_REQUIRE_SEMICOLON])
         error=`$MODULECPP module_tmp_header.h | \
                $SED -n 's/.*config_error(\(.*\)).*/\1/p'`
 	if test "x$error" != "x"; then
@@ -479,7 +481,7 @@ while test "x$new_module_list" != "x"; do
       	# macro: config_warning(warning text)
       	#  - used to signal a configuration "warning" to be printed to the user
         #
-        AH_TOP([#define config_warning(x)])
+        AH_TOP([#define config_warning(x) NETSNMP_REQUIRE_SEMICOLON])
         warning=`$MODULECPP module_tmp_header.h | \
                  $SED -n 's/.*config_warning(\(.*\)).*/\1/p'`
 	if test "x$warning" != "x"; then
@@ -792,8 +794,8 @@ if test "x$NETSNMP_DEFAULT_MIBS" = "x"; then
 fi
 if test "x$ENV_SEPARATOR" != "x"; then
   :
-elif test "x$PARTIALTARGETOS" = "xmingw32" -o "x$PARTIALTARGETOS" = "xmingw32msvc" -o "x$PARTIALTARGETOS" = "xcygwin"; then
-  # mingw32 and cygwin use ';' as the default environment variable separator
+elif test "x$PARTIALTARGETOS" = "xmingw32" -o "x$PARTIALTARGETOS" = "xmingw32msvc"; then
+  # mingw32 uses ';' as the default environment variable separator
   ENV_SEPARATOR=";"
   NETSNMP_DEFAULT_MIBS=`echo "$NETSNMP_DEFAULT_MIBS" | $SED 's/:/;/g'`
   default_mibs=`echo "$default_mibs" | $SED 's/:/;/g'`
@@ -814,8 +816,8 @@ AC_MSG_RESULT($NETSNMP_DEFAULT_MIBS)
 #
 
 if echo " $agent_module_list " | \
-   fgrep ' agentx/agentx_config ' | \
-   fgrep ' agentx/protocol ' > /dev/null ; then
+   $FGREP ' agentx/agentx_config ' | \
+   $FGREP ' agentx/protocol ' > /dev/null ; then
    NETSNMP_HAVE_AGENTX_LIBS_TRUE=''
    NETSNMP_HAVE_AGENTX_LIBS_FALSE='#'
 else

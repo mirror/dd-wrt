@@ -15,7 +15,7 @@
 #ifndef HRSWRUNPERFTABLE_H
 #define HRSWRUNPERFTABLE_H
 
-config_require(host/hrSWRunTable)
+config_require(host/hrSWRunTable);
 
 /*
  * function declarations 

@@ -3,5 +3,5 @@
  */
 
 #if defined(linux)
-config_require(rmon-mib/data_access/etherstats_linux)
+config_require(rmon-mib/data_access/etherstats_linux);
 #endif

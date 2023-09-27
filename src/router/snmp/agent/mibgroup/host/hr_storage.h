@@ -5,7 +5,7 @@
 #ifndef _MIBGROUP_HRSTORAGE_H
 #define _MIBGROUP_HRSTORAGE_H
 
-config_require(hardware/memory)
+config_require(hardware/memory);
 /* config_require(host/hr_filesys) */
 
 extern void     init_hr_storage(void);

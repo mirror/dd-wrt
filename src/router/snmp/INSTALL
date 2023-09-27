@@ -127,7 +127,7 @@ Installing the Perl/SNMP Module
 (which includes other Net-SNMP specific modules as well), all of which
 are located in the net-snmp/perl directory. The Perl package provides
 a high level abstract interface to the functionality found in the
-Net-SNMP libraries and demon applications.
+Net-SNMP libraries and daemon applications.
 
    It is recommended you install the perl modules as you build the
    Net-SNMP package.  The configure script can be run as follows to

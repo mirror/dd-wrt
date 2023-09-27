@@ -10,7 +10,7 @@ SKIPIFNOT USING_AGENTX_MASTER_MODULE
 # Begin test
 #
 
-# start the trap demon
+# start the trap daemon
 CONFIGTRAPD disableAuthorization yes
 STARTTRAPD
 
@@ -33,7 +33,7 @@ CAPTURE "agentxtrap $AGENTX_SERVER 1.3.6.1.4.1.8072.9999.9999.0 0.0 s mostly_har
 # stop the master agent
 STOPAGENT
 
-# stop the trap demon
+# stop the trap daemon
 STOPTRAPD
 
 # Check that the trap was received

@@ -12,37 +12,45 @@
 #include "expValue.h"
 #include "expValueTable.h"
 
+static Netsnmp_Node_Handler expValueTable_handler;
+static netsnmp_handler_registration *value_table_reg;
+static netsnmp_table_registration_info *value_table_info;
+
 /** Initializes the expValueTable module */
 void
 init_expValueTable(void)
 {
     static oid  expValueTable_oid[]   = { 1, 3, 6, 1, 2, 1, 90, 1, 3, 1 };
     size_t      expValueTable_oid_len = OID_LENGTH(expValueTable_oid);
-    netsnmp_handler_registration *reg;
-    netsnmp_table_registration_info *table_info;
 
-    reg =
+    value_table_reg =
         netsnmp_create_handler_registration("expValueTable",
                                             expValueTable_handler,
                                             expValueTable_oid,
                                             expValueTable_oid_len,
                                             HANDLER_CAN_RONLY);
 
-    table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
-    netsnmp_table_helper_add_indexes(table_info,
+    value_table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    netsnmp_table_helper_add_indexes(value_table_info,
                                      ASN_OCTET_STR, /* expExpressionOwner */
                                      ASN_OCTET_STR, /* expExpressionName  */
                                                     /* expValueInstance   */
                                      ASN_PRIV_IMPLIED_OBJECT_ID,
                                      0);
 
-    table_info->min_column = COLUMN_EXPVALUECOUNTER32VAL;
-    table_info->max_column = COLUMN_EXPVALUECOUNTER64VAL;
+    value_table_info->min_column = COLUMN_EXPVALUECOUNTER32VAL;
+    value_table_info->max_column = COLUMN_EXPVALUECOUNTER64VAL;
 
-    netsnmp_register_table(reg, table_info);
+    netsnmp_register_table(value_table_reg, value_table_info);
     DEBUGMSGTL(("disman:expr:init", "Expression Value Table\n"));
 }
 
+void
+shutdown_expValueTable(void)
+{
+    netsnmp_tdata_unregister(value_table_reg);
+    netsnmp_table_registration_info_free(value_table_info);
+}
 
 netsnmp_variable_list *
 expValueTable_getEntry(netsnmp_variable_list * indexes,

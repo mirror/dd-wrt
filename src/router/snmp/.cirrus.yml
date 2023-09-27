@@ -2,10 +2,9 @@ env:
   CIRRUS_CLONE_DEPTH: 5
 
 freebsd_instance:
-  image: freebsd-12-0-release-amd64
-  image: freebsd-11-2-release-amd64
-  image: freebsd-11-1-release-amd64
-  image: freebsd-10-4-release-amd64
+  image_family: freebsd-14-0-snap
+  image_family: freebsd-13-1
+  image_family: freebsd-13-0
 
 task:
   install_script: sudo ci/install.sh

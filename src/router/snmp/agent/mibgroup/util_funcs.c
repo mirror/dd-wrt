@@ -24,10 +24,10 @@
 #include <spawn.h>
 #endif
 #include <stdio.h>
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_MALLOC_H
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #ifdef __alpha
@@ -51,25 +51,25 @@
 #ifndef WIFEXITED
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #include <errno.h>
 #include <signal.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -110,7 +110,7 @@ typedef __u8 u8;           /* ditto */
 #include "util_funcs.h"
 #include "utilities/execute.h"
 
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 #include "limits.h"
 #endif
 #ifdef USING_UCD_SNMP_ERRORMIB_MODULE
@@ -153,7 +153,7 @@ make_tempfile(void)
 int
 shell_command(struct extensible *ex)
 {
-#if HAVE_SYSTEM
+#ifdef HAVE_SYSTEM
     const char     *ofname;
     char           *shellline = NULL;
     FILE           *shellout;
@@ -1241,13 +1241,14 @@ int netsnmp_get_link_settings(struct netsnmp_linux_link_settings *nlls,
 #ifdef ETHTOOL_GLINKSETTINGS
     {
         /*
-         * For Linux kernel v5.2 __ETHTOOL_LINK_MODE_MASK_NBITS == 67 or
-         * 3 32-bit words. Increase the 'nwords' constant if necessary.
+         * For Linux kernel v6.3 __ETHTOOL_LINK_MODE_MASK_NBITS == 101 or
+         * 4 32-bit words. Increase the 'nwords' constant if necessary.
          */
-        enum { mask_nwords = 4 };
-        struct {
+        enum { mask_nwords = 8 };
+        union {
             struct ethtool_link_settings elinkset;
-            uint32_t masks[3 * mask_nwords];
+            uint8_t _data[sizeof(struct ethtool_link_settings) +
+                          mask_nwords * 3 * 4];
         } data;
 
         memset(&data, 0, sizeof(data));

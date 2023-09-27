@@ -1,12 +1,12 @@
 #ifndef _SNMPDTLSUDPDOMAIN_H
 #define _SNMPDTLSUDPDOMAIN_H
 
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-config_require(UDP)
-config_require(TLSBase)
+config_require(UDP);
+config_require(TLSBase);
 
 #include <net-snmp/types.h>
 #include <net-snmp/library/snmp_transport.h>

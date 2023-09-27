@@ -4,9 +4,9 @@
 #ifndef _MIBGROUP_PASS_PERSIST_H
 #define _MIBGROUP_PASS_PERSIST_H
 
-config_require(ucd-snmp/pass_common)
-config_require(util_funcs)
-config_require(utilities/execute)
+config_require(ucd-snmp/pass_common);
+config_require(util_funcs);
+config_require(utilities/execute);
 
 void            init_pass_persist(void);
 void            shutdown_pass_persist(void);

@@ -29,13 +29,13 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -228,7 +228,7 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
         if (rval != 0) {
             return SNMPERR_USM_ENCRYPTIONERROR;
         }
-#elif NETSNMP_USE_INTERNAL_MD5
+#elif defined(NETSNMP_USE_INTERNAL_MD5)
         if (MDupdate(&MD, buf, USM_LENGTH_KU_HASHBLOCK * 8)) {
             rval = SNMPERR_USM_ENCRYPTIONERROR;
             goto md5_fin;
@@ -258,7 +258,7 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
     if (ret == SNMPERR_GENERR)
         return SNMPERR_GENERR;
     *kulen = ret;
-#elif NETSNMP_USE_INTERNAL_MD5
+#elif defined(NETSNMP_USE_INTERNAL_MD5)
     if (MDupdate(&MD, buf, 0)) {
         rval = SNMPERR_USM_ENCRYPTIONERROR;
         goto md5_fin;
@@ -299,7 +299,7 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
     return rval;
 
 }                               /* end generate_Ku() */
-#elif NETSNMP_USE_PKCS11
+#elif defined(NETSNMP_USE_PKCS11)
 {
     int             rval = SNMPERR_SUCCESS, auth_type;;
 

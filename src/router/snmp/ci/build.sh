@@ -40,7 +40,7 @@ case "$MODE" in
 	# parallel compilation for minimalist mode.
 	nproc=1;;
     *)
-	if type nproc >&/dev/null; then
+	if type nproc >/dev/null 2>&1; then
 	    nproc=$(nproc)
 	else
 	    nproc=1

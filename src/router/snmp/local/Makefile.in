@@ -149,9 +149,9 @@ snmp-bridge-mib.made: $(srcdir)/snmp-bridge-mib
 	  touch snmp-bridge-mib.made; \
         fi
 
-checkbandwidth.made: checkbandwidth
+checkbandwidth.made: $(srcdir)/checkbandwidth
 	if test "x$(PERL)" != "x" ; then \
-	  $(PERL) -p -e 's%^#!.*/perl.*%#!$(PERL)%' checkbandwidth > checkbandwidth.made ; \
+	  $(PERL) -p -e 's%^#!.*/perl.*%#!$(PERL)%' $(srcdir)/checkbandwidth > checkbandwidth.made ; \
 	else \
 	  touch checkbandwidth.made ; \
 	fi

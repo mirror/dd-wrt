@@ -13,10 +13,10 @@
 
 #include "mibII/mibII_common.h"
 
-#if HAVE_NETINET_UDP_H
+#ifdef HAVE_NETINET_UDP_H
 #include <netinet/udp.h>
 #endif
-#if HAVE_NETINET_UDP_VAR_H
+#ifdef HAVE_NETINET_UDP_VAR_H
 #include <netinet/udp_var.h>
 #endif
 
@@ -110,6 +110,7 @@ _load(netsnmp_container *container, u_int load_flags)
     char     *udpcb_buf = NULL;
 #if defined(dragonfly)
     struct xinpcb  *xig = NULL;
+    int      i, count;
 #else
     struct xinpgen *xig = NULL;
 #endif
@@ -134,13 +135,14 @@ _load(netsnmp_container *container, u_int load_flags)
      */
 #if defined(dragonfly)
     xig = (struct xinpcb  *) udpcb_buf;
+    count = len / sizeof(NS_ELEM);
 #else
     xig = (struct xinpgen *) udpcb_buf;
     xig = (struct xinpgen *) ((char *) xig + xig->xig_len);
 #endif
 
 #if defined(dragonfly)
-    while (xig && (xig->xi_len >= sizeof(struct xinpcb)))
+    for (i = 0; i < count; i++)
 #else
     while (xig && (xig->xig_len > sizeof(struct xinpgen)))
 #endif

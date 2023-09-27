@@ -8,11 +8,19 @@ jobs:
   build_and_test:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [regular, disable-set, mini, read-only, wolfssl]
+
+    env:
+      MODE: ${{ matrix.mode }}
+
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
 
     - name: install required packages
-      run: sudo ci/install.sh
+      run: sudo bash -c "MODE=$MODE ci/install.sh"
 
     - name: build
       run: ci/build.sh

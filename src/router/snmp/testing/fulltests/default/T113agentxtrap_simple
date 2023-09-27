@@ -13,7 +13,7 @@ SKIPIFNOT NETSNMP_SECMOD_USM
 # Begin test
 #
 
-# start the trap demon
+# start the trap daemon
 CONFIGTRAPD authcommunity log public
 STARTTRAPD
 
@@ -72,7 +72,7 @@ fi
 # stop the master agent
 STOPAGENT
 
-# stop the trap demon
+# stop the trap daemon
 STOPTRAPD
 
 # all done (whew)

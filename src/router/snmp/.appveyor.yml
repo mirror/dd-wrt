@@ -1,10 +1,9 @@
 image:
   - Ubuntu
   - Ubuntu1604
-  # - Ubuntu2004 - Disabled because apt-get fails.
-  - macos
-  - macos-mojave
-  - Visual Studio 2019
+  - Ubuntu2004
+  - macos-monterey
+  - Visual Studio 2022
 
 environment:
   CYG_MIRROR: http://mirrors.kernel.org/sourceware/cygwin/
@@ -16,6 +15,49 @@ environment:
     - BUILD: MSYS2
     - BUILD: MinGW64
 
+matrix:
+  exclude:
+    - image: Ubuntu
+      BUILD: MSVCSTATIC64
+    - image: Ubuntu
+      BUILD: INSTALLER
+    - image: Ubuntu
+      BUILD: MinGW32
+    - image: Ubuntu
+      BUILD: MSYS2
+    - image: Ubuntu
+      BUILD: MinGW64
+    - image: Ubuntu1604
+      BUILD: MSVCSTATIC64
+    - image: Ubuntu1604
+      BUILD: INSTALLER
+    - image: Ubuntu1604
+      BUILD: MinGW32
+    - image: Ubuntu1604
+      BUILD: MSYS2
+    - image: Ubuntu1604
+      BUILD: MinGW64
+    - image: Ubuntu2004
+      BUILD: MSVCSTATIC64
+    - image: Ubuntu2004
+      BUILD: INSTALLER
+    - image: Ubuntu2004
+      BUILD: MinGW32
+    - image: Ubuntu2004
+      BUILD: MSYS2
+    - image: Ubuntu2004
+      BUILD: MinGW64
+    - image: macos-monterey
+      BUILD: MSVCSTATIC64
+    - image: macos-monterey
+      BUILD: INSTALLER
+    - image: macos-monterey
+      BUILD: MinGW32
+    - image: macos-monterey
+      BUILD: MSYS2
+    - image: macos-monterey
+      BUILD: MinGW64
+
 artifacts:
   - path: installer
 
@@ -23,12 +65,12 @@ clone_depth: 5
 
 install:
   - cmd: 'ci\openssl.bat'
-  - sh:  'if [ $BUILD = MSVCDYNAMIC64 ]; then sudo ci/install.sh; fi'
+  - sh:  'sudo ci/install.sh'
 
 build_script:
   - cmd: 'ci\build.bat'
-  - sh:  'if [ $BUILD = MSVCDYNAMIC64 ]; then ci/build.sh; fi'
+  - sh:  'ci/build.sh'
 
 test_script:
   - cmd: 'ci\test.bat'
-  - sh:  'if [ $BUILD = MSVCDYNAMIC64 ] && [ $(uname) != Darwin ]; then ci/test.sh; fi'
+  - sh:  'if [ $(uname) != Darwin ]; then ci/test.sh; fi'

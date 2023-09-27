@@ -44,13 +44,13 @@
  *
  */
 
-config_require(Rmon/rows)
-config_require(Rmon/agutil)
-config_require(Rmon/statistics)
+config_require(Rmon/rows);
+config_require(Rmon/agutil);
+config_require(Rmon/statistics);
 /* older implementation: */
 /* config_require(Rmon/alarm) */
-config_require(Rmon/alarmTable)
-config_require(Rmon/history)
-config_require(Rmon/event)
-config_add_mib(RMON-MIB)
+config_require(Rmon/alarmTable);
+config_require(Rmon/history);
+config_require(Rmon/event);
+config_add_mib(RMON-MIB);
 

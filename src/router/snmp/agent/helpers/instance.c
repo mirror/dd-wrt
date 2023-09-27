@@ -22,7 +22,7 @@
 #include <net-snmp/agent/instance.h>
 
 #include <stdlib.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

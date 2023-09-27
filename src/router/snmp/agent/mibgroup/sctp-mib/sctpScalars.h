@@ -4,19 +4,19 @@
  */
 #ifndef SCTP_SCALARS_H
 #define SCTP_SCALARS_H
-config_require(sctp-mib/sctpScalars_common)
+config_require(sctp-mib/sctpScalars_common);
 #if defined( linux )
-config_require(sctp-mib/sctpScalars_linux)
+config_require(sctp-mib/sctpScalars_linux);
 #elif defined( freebsd8 ) || defined ( freebsd7 )
-config_require(sctp-mib/sctpScalars_freebsd)	 
+config_require(sctp-mib/sctpScalars_freebsd);
 #elif defined( solaris2 )
-config_require(sctp-mib/sctpScalars_solaris2)	 
+config_require(sctp-mib/sctpScalars_solaris2);
 #else
 /*
  * couldn't determine the correct file!
  * require a bogus file to generate an error.
  */
-config_require(sctp-mib/scalars-unknown-arch)
+config_require(sctp-mib/scalars-unknown-arch);
 #endif
 /*
  * Initialize and register the sctpStats and sctpParams handlers.

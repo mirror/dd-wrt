@@ -6,9 +6,9 @@
 #define NETSNMPHOSTSTABLE_H
 
 /** other required module components */
-config_require(examples/netSnmpHostsTable_access)
-config_require(examples/netSnmpHostsTable_checkfns)
-config_add_mib(NET-SNMP-EXAMPLES-MIB)
+config_require(examples/netSnmpHostsTable_access);
+config_require(examples/netSnmpHostsTable_checkfns);
+config_add_mib(NET-SNMP-EXAMPLES-MIB);
 
 #ifdef __cplusplus
 extern "C" {

@@ -5,7 +5,7 @@
 #ifndef _MIBGROUP_SNMP_RIP2_H
 #define _MIBGROUP_SNMP_RIP2_H
 
-config_require(smux/smux)
+config_require(smux/smux);
 
      extern FindVarMethod var_rip2;
      void            init_snmp_rip2(void);

@@ -20,14 +20,15 @@ netsnmp_feature_require(check_vb_truthvalue);
 netsnmp_feature_require(table_tdata_insert_row);
 #endif /* NETSNMP_NO_WRITE_SUPPORT */
 
+static netsnmp_handler_registration *object_table_reg;
+static netsnmp_table_registration_info *object_table_info;
+
 /* Initializes the expObjectTable module */
 void
 init_expObjectTable(void)
 {
     static oid   expObjectTable_oid[]   = { 1, 3, 6, 1, 2, 1, 90, 1, 2, 3 };
     size_t       expObjectTable_oid_len = OID_LENGTH(expObjectTable_oid);
-    netsnmp_handler_registration    *reg;
-    netsnmp_table_registration_info *table_info;
 
     /*
      * Ensure the expObject table container is available...
@@ -37,14 +38,14 @@ init_expObjectTable(void)
     /*
      * ... then set up the MIB interface to the expObjectTable
      */
-    reg = netsnmp_create_handler_registration("expObjectTable",
+    object_table_reg = netsnmp_create_handler_registration("expObjectTable",
                                             expObjectTable_handler,
                                             expObjectTable_oid,
                                             expObjectTable_oid_len,
                                             HANDLER_CAN_RWRITE);
 
-    table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
-    netsnmp_table_helper_add_indexes(table_info,
+    object_table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    netsnmp_table_helper_add_indexes(object_table_info,
                                           /* index: expExpressionOwner */
                                      ASN_OCTET_STR,
                                           /* index: expExpressionName */
@@ -53,15 +54,21 @@ init_expObjectTable(void)
                                      ASN_UNSIGNED,
                                      0);
 
-    table_info->min_column = COLUMN_EXPOBJECTID;
-    table_info->max_column = COLUMN_EXPOBJECTENTRYSTATUS;
+    object_table_info->min_column = COLUMN_EXPOBJECTID;
+    object_table_info->max_column = COLUMN_EXPOBJECTENTRYSTATUS;
 
     /* Register this using the common expObject_table_data container */
-    netsnmp_tdata_register(reg, expObject_table_data, table_info);
+    netsnmp_tdata_register(object_table_reg, expObject_table_data, object_table_info);
     DEBUGMSGTL(("disman:expr:init", "Expression Object Table container (%p)\n",
                                      expObject_table_data));
 }
 
+void
+shutdown_expObjectTable(void)
+{
+    netsnmp_tdata_unregister(object_table_reg);
+    netsnmp_table_registration_info_free(object_table_info);
+}
 
 /** handles requests for the expObjectTable table */
 int

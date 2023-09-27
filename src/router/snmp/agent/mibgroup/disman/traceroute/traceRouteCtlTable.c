@@ -578,10 +578,8 @@ traceRouteProbeHistoryTable_addall(struct traceRouteCtlTable_data *thedata)
 
             p = p->next;
         } while (p != NULL);
-    else {
-        return SNMP_ERR_INCONSISTENTNAME;
-    }
 
+    return SNMP_ERR_INCONSISTENTNAME;
 }
 
 
@@ -6067,8 +6065,8 @@ freehostinfo(struct hostinfo *hi)
         free(hi->name);
         hi->name = NULL;
     }
-    free((char *) hi->addrs);
-    free((char *) hi);
+    free(hi->addrs);
+    free(hi);
 }
 
 void

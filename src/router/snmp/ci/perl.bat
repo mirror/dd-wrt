@@ -1,7 +1,7 @@
 REM Download and install Perl
 setlocal
 echo on
-if %1 == "" goto help
+if "%1" == "" goto help
 set PERL_VERSION=5.37.0
 set INST_DRV=c:
 set INST_TOP=c:\perl-msvc

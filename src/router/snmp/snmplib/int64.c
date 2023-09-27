@@ -14,7 +14,7 @@
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>

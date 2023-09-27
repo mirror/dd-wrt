@@ -1,11 +1,12 @@
 #ifndef LM_SENSORS_MIB_H
 #define LM_SENSORS_MIB_H
 
-config_require(hardware/sensors)
-config_add_mib(LM-SENSORS-MIB)
+config_require(hardware/sensors);
+config_add_mib(LM-SENSORS-MIB);
 
 /* function declarations */
 void init_lmsensorsMib(void);
+void shutdown_lmsensorsMib(void);
 
 /*
  * Handler and Column definitions for lmXxxxSensorsTable

@@ -14,7 +14,7 @@
 /*
  * Directive to include utility module 
  */
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
     /*
      * MIB wants V_CPU_SYSTEM which is sysinfo V_CPU_KERNEL + V_CPU_WAIT 

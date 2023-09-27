@@ -160,7 +160,7 @@
 #endif /* USING_UCD_SNMP_MODULE */
 
  
-#if HAVE_REGEX_H
+#ifdef HAVE_REGEX_H
 /* Define if compiling with the ucd-snmp/logmatch module files.  */
 #define USING_UCD_SNMP_LOGMATCH_MODULE 1
 #endif

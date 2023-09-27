@@ -151,6 +151,12 @@ init_udp(void)
 #define USES_TRADITIONAL_UDPSTAT
 #endif
 
+#ifdef UDP_NSTATS
+typedef struct udpstat {
+	uint64_t st[UDP_NSTATS];
+};
+#define UDP_STAT_STRUCTURE	struct udpstat
+#endif
 
 #if !defined(UDP_STAT_STRUCTURE)
 #define UDP_STAT_STRUCTURE	struct udpstat
@@ -238,7 +244,7 @@ udp_handler(netsnmp_mib_handler          *handler,
 #define udpstat          udpstat.udpstat
 #endif
     case UDPINDATAGRAMS:
-#if HAVE_STRUCT_UDPSTAT_UDPS_IPACKETS
+#ifdef HAVE_STRUCT_UDPSTAT_UDPS_IPACKETS
         ret_value = udpstat.udps_ipackets;
         break;
 #else
@@ -247,7 +253,7 @@ udp_handler(netsnmp_mib_handler          *handler,
 #endif
 
     case UDPNOPORTS:
-#if HAVE_STRUCT_UDPSTAT_UDPS_NOPORT
+#ifdef HAVE_STRUCT_UDPSTAT_UDPS_NOPORT
         ret_value = udpstat.udps_noport;
         break;
 #else
@@ -256,7 +262,7 @@ udp_handler(netsnmp_mib_handler          *handler,
 #endif
 
     case UDPOUTDATAGRAMS:
-#if HAVE_STRUCT_UDPSTAT_UDPS_OPACKETS
+#ifdef HAVE_STRUCT_UDPSTAT_UDPS_OPACKETS
         ret_value = udpstat.udps_opackets;
         break;
 #else

@@ -15,7 +15,7 @@
 
 #include <net-snmp/agent/old_api.h>
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -25,6 +25,17 @@
 
 #include <stddef.h>
 
+/*
+ * mib clients are passed a pointer to a oid buffer.  Some mib clients
+ * * (namely, those first noticed in mibII/vacm.c) modify this oid buffer
+ * * before they determine if they really need to send results back out
+ * * using it.  If the master agent determined that the client was not the
+ * * right one to talk with, it will use the same oid buffer to pass to the
+ * * rest of the clients, which may not longer be valid.  This should be
+ * * fixed in all clients rather than the master.  However, its not a
+ * * particularily easy bug to track down so this saves debugging time at
+ * * the expense of a few memcpy's.
+ */
 #define MIB_CLIENTS_ARE_EVIL 1
 
 #ifdef HAVE_DMALLOC_H
@@ -270,7 +281,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
                        netsnmp_request_info *requests)
 {
 
-#if MIB_CLIENTS_ARE_EVIL
+#ifdef MIB_CLIENTS_ARE_EVIL
     oid             save[MAX_OID_LEN];
     size_t          savelen = 0;
 #endif
@@ -278,7 +289,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
     int             exact = 1;
     int             status;
 
-    struct variable *vp;
+    struct variable *const vp = handler->myvoid;
     netsnmp_old_api_cache *cacheptr;
     netsnmp_agent_session *oldasp = NULL;
     u_char         *access = NULL;
@@ -286,8 +297,6 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
     size_t          len;
     size_t          tmp_len;
     oid             tmp_name[MAX_OID_LEN];
-
-    vp = (struct variable *) handler->myvoid;
 
     /*
      * create old variable structure with right information 
@@ -308,7 +317,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
 
     for (; requests; requests = requests->next) {
 
-#if MIB_CLIENTS_ARE_EVIL
+#ifdef MIB_CLIENTS_ARE_EVIL
         savelen = requests->requestvb->name_length;
         memcpy(save, requests->requestvb->name, savelen * sizeof(oid));
 #endif
@@ -322,7 +331,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
             /*
              * Actually call the old mib-module function 
              */
-            if (vp && vp->findVar) {
+            if (vp->findVar) {
                 tmp_len = requests->requestvb->name_length*sizeof(oid);
                 memcpy(tmp_name, requests->requestvb->name, tmp_len);
                 /** clear the rest of tmp_name to keep valgrind happy */
@@ -361,7 +370,7 @@ netsnmp_old_api_helper(netsnmp_mib_handler *handler,
                 /*
                  * no result returned 
                  */
-#if MIB_CLIENTS_ARE_EVIL
+#ifdef MIB_CLIENTS_ARE_EVIL
                 if (access == NULL) {
                     if (netsnmp_oid_equals(requests->requestvb->name,
                                          requests->requestvb->name_length,

@@ -21,7 +21,7 @@ extern          "C" {
 #include <netinet/in.h>
 #endif
 
-config_require(UDPIPv4Base)
+config_require(UDPIPv4Base);
 #include <net-snmp/library/snmpUDPIPv4BaseDomain.h>
 
 netsnmp_transport *

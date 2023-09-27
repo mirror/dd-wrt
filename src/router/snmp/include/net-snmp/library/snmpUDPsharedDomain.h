@@ -8,14 +8,14 @@
 #ifndef SNMPUDPsharedBASE_H
 #define SNMPUDPsharedBASE_H
 
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-config_require(UDP)
+config_require(UDP);
 
 #include <net-snmp/library/snmpUDPBaseDomain.h>
 #include <net-snmp/library/snmpUDPIPv4BaseDomain.h>

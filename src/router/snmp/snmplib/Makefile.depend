@@ -3641,7 +3641,7 @@
 ./transports/snmpIPBaseDomain.lo: ../include/net-snmp/library/snmp.h
 ./transports/snmpIPBaseDomain.lo: ../include/net-snmp/library/snmp-tc.h
 ./transports/snmpIPBaseDomain.lo: ../include/net-snmp/library/system.h
-./transports/snmpIPBaseDomain.lo: ../include/net-snmp/library/snmpIPBaseDomain.h
+./transports/snmpIPBaseDomain.lo: transports/snmpIPBaseDomain.h
 ./transports/snmpIPXDomain.lo: ../include/net-snmp/net-snmp-config.h
 ./transports/snmpIPXDomain.lo: ../include/net-snmp/library/snmpIPXDomain.h
 ./transports/snmpIPXDomain.lo: ../include/net-snmp/library/snmp_transport.h
@@ -3728,7 +3728,7 @@
 ./transports/snmpIPv4BaseDomain.lo: ../include/net-snmp/library/snmp_impl.h
 ./transports/snmpIPv4BaseDomain.lo: ../include/net-snmp/library/snmp.h
 ./transports/snmpIPv4BaseDomain.lo: ../include/net-snmp/library/snmp-tc.h
-./transports/snmpIPv4BaseDomain.lo: ../include/net-snmp/library/snmpIPBaseDomain.h
+./transports/snmpIPv4BaseDomain.lo: transports/snmpIPBaseDomain.h
 ./transports/snmpIPv4BaseDomain.lo: ../include/net-snmp/library/snmp_assert.h
 ./transports/snmpIPv4BaseDomain.lo: ../include/net-snmp/library/default_store.h
 ./transports/snmpIPv4BaseDomain.lo: ../include/net-snmp/library/system.h
@@ -3948,7 +3948,7 @@
 ./transports/snmpTCPDomain.lo: ../include/net-snmp/library/snmp_impl.h
 ./transports/snmpTCPDomain.lo: ../include/net-snmp/library/snmp.h
 ./transports/snmpTCPDomain.lo: ../include/net-snmp/library/snmp-tc.h
-./transports/snmpTCPDomain.lo: ../include/net-snmp/library/snmpIPBaseDomain.h
+./transports/snmpTCPDomain.lo: transports/snmpIPBaseDomain.h
 ./transports/snmpTCPDomain.lo: ../include/net-snmp/library/snmpSocketBaseDomain.h
 ./transports/snmpTCPDomain.lo: ../include/net-snmp/library/snmpTCPBaseDomain.h
 ./transports/snmpTCPDomain.lo: ../include/net-snmp/library/tools.h
@@ -4148,7 +4148,7 @@
 ./transports/snmpUDPDomain.lo: ../include/net-snmp/library/snmp_impl.h
 ./transports/snmpUDPDomain.lo: ../include/net-snmp/library/snmp.h
 ./transports/snmpUDPDomain.lo: ../include/net-snmp/library/snmp-tc.h
-./transports/snmpUDPDomain.lo: ../include/net-snmp/library/snmpIPBaseDomain.h
+./transports/snmpUDPDomain.lo: transports/snmpIPBaseDomain.h
 ./transports/snmpUDPDomain.lo: ../include/net-snmp/config_api.h
 ./transports/snmpUDPDomain.lo: ../include/net-snmp/library/read_config.h
 ./transports/snmpUDPDomain.lo: ../include/net-snmp/library/default_store.h
@@ -4198,14 +4198,14 @@
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/snmp_impl.h
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/snmp.h
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/snmp-tc.h
-./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/snmpIPBaseDomain.h
+./transports/snmpUDPIPv4BaseDomain.lo: transports/snmpIPBaseDomain.h
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/tools.h
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/snmp_assert.h
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/default_store.h
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/snmpSocketBaseDomain.h
 ./transports/snmpUDPIPv4BaseDomain.lo: ../include/net-snmp/library/sd-daemon.h
 ./transports/snmpUDPIPv6Domain.lo: ../include/net-snmp/net-snmp-config.h
-./transports/snmpUDPIPv6Domain.lo: ../include/net-snmp/library/snmpIPBaseDomain.h
+./transports/snmpUDPIPv6Domain.lo: transports/snmpIPBaseDomain.h
 ./transports/snmpUDPIPv6Domain.lo: ../include/net-snmp/types.h
 ./transports/snmpUDPIPv6Domain.lo: ../include/net-snmp/library/oid.h
 ./transports/snmpUDPIPv6Domain.lo: ../include/net-snmp/library/types.h
@@ -4284,7 +4284,7 @@
 ./transports/snmpUDPsharedDomain.lo: ../include/net-snmp/library/snmp_impl.h
 ./transports/snmpUDPsharedDomain.lo: ../include/net-snmp/library/snmp.h
 ./transports/snmpUDPsharedDomain.lo: ../include/net-snmp/library/snmp-tc.h
-./transports/snmpUDPsharedDomain.lo: ../include/net-snmp/library/snmpIPBaseDomain.h
+./transports/snmpUDPsharedDomain.lo: transports/snmpIPBaseDomain.h
 ./transports/snmpUDPsharedDomain.lo: ../include/net-snmp/library/snmpUDPsharedDomain.h
 ./transports/snmpUDPsharedDomain.lo: ../include/net-snmp/library/tools.h
 ./transports/snmpUDPsharedDomain.lo: ../include/net-snmp/library/snmp_assert.h

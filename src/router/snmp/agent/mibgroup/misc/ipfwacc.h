@@ -9,12 +9,12 @@
  * we use header_simple_table from the util_funcs module
  */
 
-config_require(util_funcs/header_simple_table)
+config_require(util_funcs/header_simple_table);
 
     /*
      * add the mib we implement to the list of default mibs to load 
      */
-config_add_mib(UCD-IPFWACC-MIB)
+config_add_mib(UCD-IPFWACC-MIB);
 
     /*
      * Magic number definitions: 

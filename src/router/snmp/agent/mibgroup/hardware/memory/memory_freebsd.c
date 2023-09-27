@@ -12,7 +12,7 @@
 #include <sys/vmmeter.h>
 #include <kvm.h>
 
-#if HAVE_SYS_VMPARAM_H
+#ifdef HAVE_SYS_VMPARAM_H
 #include <sys/vmparam.h>
 #else
 #include <vm/vm_param.h>

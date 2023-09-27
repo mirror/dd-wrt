@@ -16,30 +16,30 @@
 #include <net-snmp/net-snmp-config.h>
 #include "host_res.h"
 #include "hr_disk.h"
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 
 #include <fcntl.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_KVM_H
 #include <kvm.h>
 #endif
-#if HAVE_DIRENT_H
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #else
 # define dirent direct
-# if HAVE_SYS_NDIR_H
+# ifdef HAVE_SYS_NDIR_H
 #  include <sys/ndir.h>
 # endif
-# if HAVE_SYS_DIR_H
+# ifdef HAVE_SYS_DIR_H
 #  include <sys/dir.h>
 # endif
-# if HAVE_NDIR_H
+# ifdef HAVE_NDIR_H
 #  include <ndir.h>
 # endif
 #endif
@@ -63,11 +63,11 @@
 #include <sys/disk.h>
 #endif
 #endif
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -78,7 +78,7 @@
 #include <regex.h>
 #endif
 
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
 #ifdef HAVE_UNISTD_H
@@ -461,10 +461,10 @@ free_disk_config(void)
             di_next = di_ptr->item_next;
             if (di_ptr->item_details)
                 free(di_ptr->item_details);
-            free((void *) di_ptr);
+            free(di_ptr);
             di_ptr = di_next;
         }
-        free((void *) d_ptr);
+        free(d_ptr);
         d_ptr = d_next;
     }
     conf_list = (conf_disk_list *) 0;

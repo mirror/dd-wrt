@@ -12,6 +12,8 @@
 /* function declarations */
 void init_snmpTlstmParamsTable(void);
 void initialize_table_snmpTlstmParamsTable(void);
+void shutdown_snmpTlstmParamsTable(void);
+
 #define SNMPTLSTMPARAMSTABLE_TIMEOUT  60
 
 /* index definitions for table snmpTlstmParamsTable */

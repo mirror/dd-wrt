@@ -608,11 +608,24 @@ to determine the list of devices that will be scanned.
 .IP
 The pattern can include one or more wildcard expressions.
 See \fIsnmpd.examples(5)\fR for illustration of the wildcard syntax.
+.IP "ignoremount [-r] STRING"
+controls which mounts should be omitted from the hrStorageTable.
+If the Net-SNMP agent gets hung on accessing a filesystem, or the
+filesystem is always mostly full (and thus leads to spurious alerts),
+you can omit it by listing the full path in this directive.
+.RE
+.IP
+If the "-r" option is provided, the pattern can include one or more
+regular expressions.
 .IP "skipNFSInHostResources true"
 controls whether NFS and NFS-like file systems should be omitted
 from the hrStorageTable (true or 1) or not (false or 0, which is the default).
 If the Net-SNMP agent gets hung on NFS-mounted filesystems, you
 can try setting this to '1'.
+.RE
+.IP
+Alternately, more granular control over which mounts should be omitted
+from the hrStorageTable can be achieved via the \fIignoremount\fR directive.
 .IP "storageUseNFS [1|2]"
 controls how NFS and NFS-like file systems should be reported
 in the hrStorageTable.

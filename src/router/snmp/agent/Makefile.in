@@ -16,7 +16,7 @@ mysubdir=agent
 # what to install
 #
 SUBDIRS=helpers
-FTSUBDIRS=helpers
+FTSUBDIRS=mibgroup helpers
 
 INSTALLSBINPROGS= @SNMPD@
 INSTALLLIBS	= libnetsnmpagent.$(LIB_EXTENSION)$(LIB_VERSION)

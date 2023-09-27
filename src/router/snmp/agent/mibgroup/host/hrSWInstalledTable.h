@@ -5,7 +5,7 @@
 #ifndef HRSWINSTALLEDTABLE_H
 #define HRSWINSTALLEDTABLE_H
 
-config_require(host/data_access/swinst)
+config_require(host/data_access/swinst);
 
 /*
  * function declarations 

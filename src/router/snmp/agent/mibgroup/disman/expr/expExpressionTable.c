@@ -22,14 +22,17 @@ netsnmp_feature_require(table_tdata_insert_row);
 netsnmp_feature_require(iquery_pdu_session);
 #endif /* NETSNMP_NO_WRITE_SUPPORT */
 
+static Netsnmp_Node_Handler expExpressionTable_handler;
+
+static netsnmp_handler_registration *expr_table_reg;
+static netsnmp_table_registration_info *expr_table_info;
+
 /* Initializes the expExpressionTable module */
 void
 init_expExpressionTable(void)
 {
     static oid  expExpressionTable_oid[]   = { 1, 3, 6, 1, 2, 1, 90, 1, 2, 1 };
     size_t      expExpressionTable_oid_len = OID_LENGTH(expExpressionTable_oid);
-    netsnmp_handler_registration    *reg;
-    netsnmp_table_registration_info *table_info;
 
     /*
      * Ensure the expression table container is available...
@@ -39,29 +42,35 @@ init_expExpressionTable(void)
     /*
      * ... then set up the MIB interface to the expExpressionTable slice
      */
-    reg = netsnmp_create_handler_registration("expExpressionTable",
+    expr_table_reg = netsnmp_create_handler_registration("expExpressionTable",
                                             expExpressionTable_handler,
                                             expExpressionTable_oid,
                                             expExpressionTable_oid_len,
                                             HANDLER_CAN_RWRITE);
 
-    table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
-    netsnmp_table_helper_add_indexes(table_info,
+    expr_table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    netsnmp_table_helper_add_indexes(expr_table_info,
                                           /* index: expExpressionOwner */
                                      ASN_OCTET_STR,
                                           /* index: expExpressionName */
                                      ASN_OCTET_STR,
                                      0);
 
-    table_info->min_column = COLUMN_EXPEXPRESSION;
-    table_info->max_column = COLUMN_EXPEXPRESSIONENTRYSTATUS;
+    expr_table_info->min_column = COLUMN_EXPEXPRESSION;
+    expr_table_info->max_column = COLUMN_EXPEXPRESSIONENTRYSTATUS;
 
     /* Register this using the (common) expr_table_data container */
-    netsnmp_tdata_register(reg, expr_table_data, table_info);
+    netsnmp_tdata_register(expr_table_reg, expr_table_data, expr_table_info);
     DEBUGMSGTL(("disman:expr:init", "Expression Table container (%p)\n",
                                      expr_table_data));
 }
 
+void
+shutdown_expExpressionTable(void)
+{
+    netsnmp_tdata_unregister(expr_table_reg);
+    netsnmp_table_registration_info_free(expr_table_info);
+}
 
 /** handles requests for the expExpressionTable table */
 int

@@ -59,6 +59,34 @@ AC_DEFINE([in_addr_t], [unsigned long],
 fi
 
 #
+# Determine the type of fd_set::fds_bits on Unix systems.
+#
+
+netsnmp_save_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -Werror"
+
+AC_MSG_CHECKING([for the type of fd_set::fds_bits])
+for type in __fd_mask __int32_t unknown; do
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <sys/select.h>
+#include <stddef.h>
+#include <string.h>
+    ], [
+      fd_set set;
+      memset(&set, 0, sizeof(set));
+      {
+        ${type} *fds_array = set.fds_bits;
+        return fds_array != NULL;
+      }
+    ])], [break])
+done
+AC_MSG_RESULT(${type})
+AC_DEFINE_UNQUOTED([NETSNMP_FD_MASK_TYPE], [${type}],
+                   [Type of fd_set::fds_bits])
+
+CFLAGS=$netsnmp_save_CFLAGS
+
+#
 # Check for the type of the fifth argument of select()
 #
 

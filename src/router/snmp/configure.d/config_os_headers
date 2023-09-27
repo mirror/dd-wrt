@@ -123,7 +123,7 @@ fi
 AC_CHECK_HEADERS(sys/swap.h,,,
     AC_INCLUDES_DEFAULT([])
     [
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
     ])
@@ -136,10 +136,10 @@ AC_CHECK_HEADERS([malloc.h        osreldate.h                   ] dnl
                  [sys/mount.h     sys/proc.h    sys/queue.h     ] dnl
                  [sys/user.h                                    ],,,
     [[
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
     ]])
@@ -162,7 +162,7 @@ AC_CHECK_HEADERS([sys/sema.h])
 AC_CHECK_HEADERS(sys/hashing.h,,,
     AC_INCLUDES_DEFAULT([])
     [
-#if HAVE_SYS_SEMA_H
+#ifdef HAVE_SYS_SEMA_H
 #include <sys/sema.h>
 #endif
     ])
@@ -173,7 +173,7 @@ AC_CHECK_HEADERS(sys/hashing.h,,,
 AC_CHECK_HEADERS(sys/vnode.h,,,
     [
 #define _KMEMUSER 1
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
     ])
@@ -183,13 +183,13 @@ AC_CHECK_HEADERS(sys/vnode.h,,,
 #
 AC_CHECK_HEADERS(sys/disklabel.h,,,
     [[
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_MACHINE_TYPES_H
+#ifdef HAVE_MACHINE_TYPES_H
 #include <machine/types.h>
 #endif
     ]])
@@ -202,13 +202,13 @@ AC_CHECK_HEADERS([nbutil.h])
 #
 AC_CHECK_HEADERS([ufs/ufs/dinode.h ufs/ufs/quota.h ufs/ufs/inode.h ufs/ffs/fs.h],,,
     [[
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if HAVE_UFS_UFS_DINODE_H
+#ifdef HAVE_UFS_UFS_DINODE_H
 #include <ufs/ufs/dinode.h>
 #endif
-#if HAVE_UFS_UFS_QUOTA_H
+#ifdef HAVE_UFS_UFS_QUOTA_H
 #include <ufs/ufs/quota.h>
 #endif
     ]])
@@ -218,7 +218,7 @@ AC_CHECK_HEADERS([ufs/ufs/dinode.h ufs/ufs/quota.h ufs/ufs/inode.h ufs/ffs/fs.h]
 #
 AC_CHECK_HEADERS(vm/swap_pager.h,,,
     [[
-#if HAVE_VM_VM_H
+#ifdef HAVE_VM_VM_H
 #include <vm/vm.h>
 #endif
     ]])
@@ -228,13 +228,13 @@ AC_CHECK_HEADERS(vm/swap_pager.h,,,
 #
 AC_CHECK_HEADERS([linux/netlink.h  linux/rtnetlink.h],,,
     [[
-#if HAVE_ASM_TYPES_H
+#ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_LINUX_NETLINK_H
+#ifdef HAVE_LINUX_NETLINK_H
 #include <linux/netlink.h>
 #endif
     ]])
@@ -291,61 +291,61 @@ AC_CHECK_HEADERS([sys/socket.h]dnl
                  [netinet6/tcp6_var.h]dnl
                  ,,,
     [[
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if HAVE_SYS_TIMEOUT_H
+#ifdef HAVE_SYS_TIMEOUT_H
 #include <sys/timeout.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_SYS_SOCKETVAR_H
+#ifdef HAVE_SYS_SOCKETVAR_H
 #include <sys/socketvar.h>
 #endif
-#if HAVE_ARPA_INET_H
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#if HAVE_NETINET_IN_SYSTM_H
+#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_NETINET_IP_H
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
 #endif
-#if HAVE_NETINET_IP_H
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip_icmp.h>
 #endif
-#if HAVE_NET_IF_H
+#ifdef HAVE_NET_IF_H
 #include <net/if.h>
 #endif
-#if HAVE_NET_IF_VAR_H
+#ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-#if HAVE_NETINET_IP_VAR_H
+#ifdef HAVE_NETINET_IP_VAR_H
 #include <netinet/ip_var.h>
 #endif
-#if HAVE_NETINET_IP_ICMP_H
+#ifdef HAVE_NETINET_IP_ICMP_H
 #include <netinet/ip_icmp.h>
 #endif
-#if HAVE_NETINET_TCP_H
+#ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#if HAVE_NETINET_UDP_H
+#ifdef HAVE_NETINET_UDP_H
 #include <netinet/udp.h>
 #endif
-#if HAVE_NETINET_TCP_TIMER_H
+#ifdef HAVE_NETINET_TCP_TIMER_H
 #include <netinet/tcp_timer.h>
 #endif
-#if HAVE_NETINET_IP6_H
+#ifdef HAVE_NETINET_IP6_H
 #include <netinet/ip6.h>
 #endif
-#if HAVE_NETINET_ICMP6_H
+#ifdef HAVE_NETINET_ICMP6_H
 #include <netinet/icmp6.h>
 #endif
     ]])
@@ -420,7 +420,7 @@ case $target_os in
 ]),,
                 LMIBLIBS),,
     [[
-#if HAVE_SYS_PROTOSW_H
+#ifdef HAVE_SYS_PROTOSW_H
 #include <sys/protosw.h>
 #endif
     ]])

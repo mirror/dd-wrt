@@ -191,10 +191,10 @@ int netsnmp_cpu_arch_load( netsnmp_cache *cache, void *magic ) {
 #ifdef freebsd3
     static int     cp_times = -1;
 #endif
+#ifdef NETSNMP_KERN_MCPU 
 #ifdef KERN_CPTIME2
     int            mcpu_mib[] = { CTL_KERN, KERN_CPTIME2, 0 };
 #endif
-#ifdef NETSNMP_KERN_MCPU 
     int            i;
     int            act_cpu = cpu_num;
     NETSNMP_KERN_MCPU_TYPE *mcpu_stats;

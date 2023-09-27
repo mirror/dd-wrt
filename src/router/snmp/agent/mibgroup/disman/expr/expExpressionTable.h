@@ -9,7 +9,7 @@
  * function declarations 
  */
 void            init_expExpressionTable(void);
-Netsnmp_Node_Handler expExpressionTable_handler;
+void            shutdown_expExpressionTable(void);
 
 /*
  * column number definitions for table expExpressionTable 

@@ -24,9 +24,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(ip-mib/data_access/systemstats)
-config_require(ip-mib/ipSystemStatsTable/ipSystemStatsTable_interface)
-config_require(ip-mib/ipSystemStatsTable/ipSystemStatsTable_data_access)
+config_require(ip-mib/data_access/systemstats);
+config_require(ip-mib/ipSystemStatsTable/ipSystemStatsTable_interface);
+config_require(ip-mib/ipSystemStatsTable/ipSystemStatsTable_data_access);
     /* *INDENT-ON*  */
 
     /*

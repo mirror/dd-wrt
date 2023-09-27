@@ -209,7 +209,7 @@ sub decide_exec {
 
 sub configured_with {
     my ($opt) = @_;
-    my $cfglog = "$opts{'srcdir'}/config.log";
+    my $cfglog = "$opts{'builddir'}/config.log";
 
     if (open my $fh, $cfglog) {
 	while (my $line = <$fh>) {

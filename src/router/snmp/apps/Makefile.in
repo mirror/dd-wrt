@@ -53,8 +53,6 @@ mysubdir=apps
 @NETSNMP_HAVE_AGENTX_LIBS_TRUE@AGENTXTRAP = agentxtrap$(EXEEXT)
 @NETSNMP_HAVE_AGENTX_LIBS_FALSE@AGENTXTRAP =
 
-INSTALLBINPROGS_LIBCURSES_TRUE = snmpps$(EXEEXT)
-
 INSTALLBINPROGS	= snmpget$(EXEEXT) 			\
 		snmpgetnext$(EXEEXT) 			\
 		$(SNMPSETINSTALLBINPROG)	        \
@@ -68,7 +66,7 @@ INSTALLBINPROGS	= snmpget$(EXEEXT) 			\
 		snmpdelta$(EXEEXT) 			\
 		snmptest$(EXEEXT)			\
 		snmpdf$(EXEEXT) 			\
-		$(INSTALLBINPROGS_LIBCURSES_@HAVE_LIBCURSES@) \
+		snmpps$(EXEEXT)				\
 		$(SNMPPINGINSTALLBINPROG)               \
 		$(AGENTXTRAP)				\
 		$(SNMPVACMINSTALLBINPROG)	        \

@@ -1459,7 +1459,7 @@ _etherStatsTable_check_column(etherStatsTable_rowreq_ctx * rowreq_ctx,
          * check defined range(s). 
          */
         if ((SNMPERR_SUCCESS == rc)
-            && ((var->val_len < 0) || (var->val_len > 127))
+            && (var->val_len > 127)
             ) {
             rc = SNMP_ERR_WRONGLENGTH;
         }

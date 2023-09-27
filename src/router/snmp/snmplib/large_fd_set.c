@@ -91,41 +91,28 @@ netsnmp_large_fd_is_set(SOCKET fd, netsnmp_large_fd_set * fdset)
 
 #else
 
-/*
- * Recent versions of glibc trigger abort() if FD_SET(), FD_CLR() or
- * FD_ISSET() is invoked with n >= FD_SETSIZE. Hence these replacement
- * functions. However, since NFDBITS != 8 * sizeof(fd_set.fds_bits[0]) for at
- * least HP-UX on ia64 and since that combination uses big endian, use the
- * macros from <sys/select.h> on such systems.
- */
 NETSNMP_STATIC_INLINE void LFD_SET(unsigned n, fd_set *p)
 {
     enum { nfdbits = 8 * sizeof(p->fds_bits[0]) };
+    NETSNMP_FD_MASK_TYPE *fds_array = p->fds_bits;
 
-    if (nfdbits == NFDBITS)
-        p->fds_bits[n / nfdbits] |= (1ULL << (n % nfdbits));
-    else
-        FD_SET(n, p);
+    fds_array[n / nfdbits] |= (1ULL << (n % nfdbits));
 }
 
 NETSNMP_STATIC_INLINE void LFD_CLR(unsigned n, fd_set *p)
 {
     enum { nfdbits = 8 * sizeof(p->fds_bits[0]) };
+    NETSNMP_FD_MASK_TYPE *fds_array = p->fds_bits;
 
-    if (nfdbits == NFDBITS)
-        p->fds_bits[n / nfdbits] &= ~(1ULL << (n % nfdbits));
-    else
-        FD_CLR(n, p);
+    fds_array[n / nfdbits] &= ~(1ULL << (n % nfdbits));
 }
 
 NETSNMP_STATIC_INLINE unsigned LFD_ISSET(unsigned n, const fd_set *p)
 {
     enum { nfdbits = 8 * sizeof(p->fds_bits[0]) };
+    const NETSNMP_FD_MASK_TYPE *fds_array = p->fds_bits;
 
-    if (nfdbits == NFDBITS)
-        return (p->fds_bits[n / nfdbits] & (1ULL << (n % nfdbits))) != 0;
-    else
-        return FD_ISSET(n, p) != 0;
+    return (fds_array[n / nfdbits] & (1ULL << (n % nfdbits))) != 0;
 }
 
 void

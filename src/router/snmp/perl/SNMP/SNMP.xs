@@ -106,12 +106,12 @@ static int __translate_asn_type _((int));
 static int __snprint_value _((char *, size_t,
                               netsnmp_variable_list*, struct tree *,
                              int, int));
-static int __sprint_num_objid _((char *, oid *, int));
+static int __snprint_num_objid _((char *, size_t, const oid *, int));
 static int __scan_num_objid _((char *, oid *, size_t *));
 static int __get_type_str _((int, char *));
 static int __get_label_iid _((char *, char **, char **, int));
 static int __oid_cmp _((oid *, size_t, oid *, size_t));
-static int __tp_sprint_num_objid _((char*,SnmpMibNode *));
+static int __tp_sprint_num_objid _((char*, size_t, const SnmpMibNode *));
 static SnmpMibNode * __get_next_mib_node _((SnmpMibNode *));
 static struct tree * __tag2oid _((char *, char *, oid  *, size_t *, int *, int));
 static int __concat_oid_str _((oid *, size_t *, char *));
@@ -487,8 +487,8 @@ int flag;
            break;
 
         case ASN_OBJECT_ID:
-          __sprint_num_objid(buf, (oid *)(var->val.objid),
-                             var->val_len/sizeof(oid));
+          __snprint_num_objid(buf, buf_len, var->val.objid,
+                              var->val_len / sizeof(oid));
           len = strlen(buf);
           break;
 
@@ -543,24 +543,28 @@ int flag;
 }
 
 static int
-__sprint_num_objid (buf, objid, len)
+__snprint_num_objid (buf, buf_len, objid, len)
 char *buf;
-oid *objid;
+size_t buf_len;
+const oid *objid;
 int len;
 {
+   const char* const end = buf + buf_len;
    int i;
+
    buf[0] = '\0';
    for (i=0; i < len; i++) {
-	sprintf(buf,".%" NETSNMP_PRIo "u",*objid++);
+        snprintf(buf, end - buf, ".%" NETSNMP_PRIo "u", *objid++);
 	buf += strlen(buf);
    }
    return SUCCESS;
 }
 
 static int
-__tp_sprint_num_objid (buf, tp)
+__tp_sprint_num_objid (buf, buf_len, tp)
 char *buf;
-SnmpMibNode *tp;
+size_t buf_len;
+const SnmpMibNode *tp;
 {
    oid newname[MAX_OID_LEN], *op;
    /* code taken from get_node in snmp_client.c */
@@ -569,7 +573,7 @@ SnmpMibNode *tp;
       tp = tp->parent;
       if (tp == NULL) break;
    }
-   return __sprint_num_objid(buf, op, newname + MAX_OID_LEN - op);
+   return __snprint_num_objid(buf, buf_len, op, newname + MAX_OID_LEN - op);
 }
 
 static int
@@ -4821,7 +4825,7 @@ snmp_translate_obj(var,mode,use_long,auto_init,best_guess,include_module_name)
 		if (!__tag2oid(var, NULL, oid_arr, &oid_arr_len, NULL, best_guess)) {
 		   if (verbose) warn("error:snmp_translate_obj:Unknown OID %s\n",var);
                 } else {
-                   status = __sprint_num_objid(str_buf, oid_arr, oid_arr_len);
+                   status = __snprint_num_objid(str_buf, sizeof(str_buf), oid_arr, oid_arr_len);
                 }
                 break;
              case SNMP_XLATE_MODE_OID2TAG:
@@ -5190,7 +5194,7 @@ snmp_mib_node_FETCH(tp_ref, key)
                     mib_hv = perl_get_hv("SNMP::MIB", FALSE);
                     if (SvMAGICAL(mib_hv)) mg = mg_find((SV*)mib_hv, 'P');
                     if (mg) mib_tied_href = (SV*)mg->mg_obj;
-                    __tp_sprint_num_objid(str_buf, tp);
+                    __tp_sprint_num_objid(str_buf, sizeof(str_buf), tp);
                     nn_hrefp = hv_fetch((HV*)SvRV(mib_tied_href),
                                         str_buf, strlen(str_buf), 1);
                     if (!SvROK(*nn_hrefp)) {
@@ -5281,7 +5285,7 @@ snmp_mib_node_FETCH(tp_ref, key)
                  mib_hv = perl_get_hv("SNMP::MIB", FALSE);
                  if (SvMAGICAL(mib_hv)) mg = mg_find((SV*)mib_hv, 'P');
                  if (mg) mib_tied_href = (SV*)mg->mg_obj;
-                 __tp_sprint_num_objid(str_buf, tp);
+                 __tp_sprint_num_objid(str_buf, sizeof(str_buf), tp);
 
                  nn_hrefp = hv_fetch((HV*)SvRV(mib_tied_href),
                                      str_buf, strlen(str_buf), 1);
@@ -5306,7 +5310,7 @@ snmp_mib_node_FETCH(tp_ref, key)
                  break;
 	      case 'o': /* objectID */
                  if (strncmp("objectID", key, strlen(key))) break;
-                 __tp_sprint_num_objid(str_buf, tp);
+                 __tp_sprint_num_objid(str_buf, sizeof(str_buf), tp);
                  sv_setpv(ret,str_buf);
                  break;
 	      case 'p': /* parent */
@@ -5319,7 +5323,7 @@ snmp_mib_node_FETCH(tp_ref, key)
                  mib_hv = perl_get_hv("SNMP::MIB", FALSE);
                  if (SvMAGICAL(mib_hv)) mg = mg_find((SV*)mib_hv, 'P');
                  if (mg) mib_tied_href = (SV*)mg->mg_obj;
-                 __tp_sprint_num_objid(str_buf, tp);
+                 __tp_sprint_num_objid(str_buf, sizeof(str_buf), tp);
                  nn_hrefp = hv_fetch((HV*)SvRV(mib_tied_href),
                                      str_buf, strlen(str_buf), 1);
                  if (!SvROK(*nn_hrefp)) {

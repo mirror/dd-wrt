@@ -8,18 +8,18 @@
 #include <io.h>
 #endif
 #include <stdio.h>
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_MALLOC_H
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #include <sys/types.h>
 #include <ctype.h>
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #ifdef HAVE_SYS_WAIT_H
@@ -62,7 +62,7 @@ int
 run_shell_command(const char *command, const char *input,
                   char *output, int *out_len)
 {
-#if HAVE_SYSTEM
+#ifdef HAVE_SYSTEM
     int         result;    /* and the return value of the command */
 
     if (!command)

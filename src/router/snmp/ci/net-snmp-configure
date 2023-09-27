@@ -13,25 +13,25 @@ ssl_include_path() {
 }
 
 rpm_version() {
-    if type -p rpm >&/dev/null; then
+    if type -p rpm >/dev/null 2>&1; then
 	rpm -q --qf '%{version}\n' "$1" 2>/dev/null | grep -v 'not installed'
     fi
 }
 
 dpkg_version() {
-    if type -p dpkg-query >&/dev/null; then
+    if type -p dpkg-query >/dev/null 2>&1; then
 	dpkg-query --show -f '${Version}\n' "$1" 2>/dev/null | grep -v '^$'
     fi
 }
 
 pacman_version() {
-    if type -p pacman >&/dev/null; then
+    if type -p pacman >/dev/null 2>&1; then
 	pacman -Q "$1" 2>/dev/null | sed -n 's/^[^[:blank:]]*[[:blank:]]*//p'
     fi
 }
 
 apk_version() {
-    if type -p apk >&/dev/null; then
+    if type -p apk >/dev/null 2>&1; then
 	apk info -d "$1" | sed -n "s/^$1-\(.*\)-r[0-9]* description:/\1/p"
     fi
 }
@@ -54,6 +54,7 @@ compiler_type() {
         sed -n 's/^gcc version .*/gcc/p;s/^clang version .*/clang/p;s/.*xlc.*IBM.*xlc.*/xlc/p'
 }
 
+scriptdir=$(cd "$(dirname "$0")" && pwd)
 branch_name="$1"
 shift
 
@@ -81,34 +82,12 @@ libsensorsver="$(rpm_version libsensors4-devel;
 		 dpkg_version libsensors4-dev)"
 echo "libsensorsver=$libsensorsver"
 
-if ! echo "$*" | grep -Eq 'with-openssl=(no|internal)|without-openssl'; then
-    case "$(uname -a)" in
-	FreeBSD*)
-	    opensslver="$(freebsd_pkg_version libressl-devel openssl111 openssl)"
-	    if [ -z "$opensslver" ]; then
-		opensslver="$(openssl version 2>&1 |
-				{ read -r a b c; echo "$b"; echo "$a $c" >/dev/null; })"
-	    fi
-	    ;;
-	Linux*)
-	    opensslver="$(
-	    for p in openssl-devel libopenssl-devel libressl-devel; do
-	      rpm_version "$p";
-            done;
-	    dpkg_version libssl-dev;
-	    pacman_version mingw-w64-x86_64-openssl)";;
-	MSYS*x86_64*)
-	    opensslver="$(pacman_version openssl-devel)";;
-	MINGW64*)
-	    opensslver="$(pacman_version mingw-w64-x86_64-openssl)";;
-	*)
-	    opensslver=1.0;;
-    esac
+if echo "$*" | grep -q wolfssl; then
+    have_ssl=true
+elif ! echo "$*" | grep -Eq 'with-openssl=(no|internal)|without-openssl'; then
+    have_ssl=true
 fi
-if grep -q 'CentOS release 4' /etc/issue 2>/dev/null; then
-  opensslver=""
-fi
-echo "opensslver=$opensslver"
+echo "have_ssl=$have_ssl"
 
 case "$(uname)" in
     FreeBSD*)
@@ -153,6 +132,7 @@ transports=()
 # git grep -lE 'void[[:blank:]]*init_.*\(void\)|config_require\(' |
 #  sed -n 's/\.h$//p')
 mibs=()
+mibs+=(agent/extend)
 case "$MODE" in
     read-only)
         ;;
@@ -219,11 +199,7 @@ case "$(uname)" in
 	      mibs+=(rmon-mib)
               ;;
       esac
-      # Disable MySQL support because of the following Perl test failure on
-      # Travis:
-      # t/1.t .. Can't load '/home/travis/build/bvanassche/net-snmp/perl/TrapReceiver/../blib/arch/auto/NetSNMP/TrapReceiver/TrapReceiver.so' for module NetSNMP::TrapReceiver: /home/travis/build/bvanassche/net-snmp/apps/.libs/libnetsnmptrapd.so.35: undefined symbol: mysql_sqlstate at /usr/lib/x86_64-linux-gnu/perl/5.22/DynaLoader.pm line 187.
-      # at t/1.t line 16.
-      if false && [ -n "$libmysqlver" ]; then
+      if [ -n "$libmysqlver" ]; then
 	  options+=(--with-mysql)
       fi
       if [ -n "$perldevver" ] && [ "$perlcc" = "$(compiler_type "${CC:-cc}")" ];
@@ -263,11 +239,6 @@ case "$(uname)" in
               ;;
       esac
       options+=("--with-openssl=$(brew --prefix openssl)")
-      if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
-          # On Travis OS/X linking the Perl modules fails with "undefined symbol
-          # _BN_bin2bn" etc.
-          options+=(--disable-embedded-perl --without-perl-modules)
-      fi
     ;;
   FreeBSD*)
       case "$MODE" in
@@ -325,32 +296,49 @@ case "$(uname)" in
 esac
 
 with_openssl=""
-for o in "${options[@]}"; do
-    if [ "${o#--with-openssl=}" != "$o" ]; then
-        with_openssl="${o#--with-openssl=}"
-    fi
-done
-if [ "$opensslver" = "" ]; then
+case "$MODE" in
+    wolfssl)
+	with_openssl=wolfssl
+	wolfssl_dir=$(dirname "${scriptdir}")/wolfssl-inst
+	options+=(--with-wolfssl=${wolfssl_dir})
+	ssl_include_path=${wolfssl_dir}/include/wolfssl/openssl
+	;;
+    *)
+	with_openssl=""
+	for o in "${options[@]}"; do
+	    if [ "${o#--with-openssl=}" != "$o" ]; then
+		with_openssl="${o#--with-openssl=}"
+	    fi
+	done
+	ssl_include_path=$(ssl_include_path)
+	;;
+esac
+echo "ssl_include_path=${ssl_include_path}"
+if [ -z "$have_ssl" ]; then
     options+=("--with-openssl=internal")
     with_openssl="internal"
 else
-    if grep -rqw BIO_dgram_get_peer "$(ssl_include_path)" 2>/dev/null; then
+    if grep -rq 'DTLS_method(void)\|define DTLS_method' "${ssl_include_path}" 2>/dev/null; then
 	transports+=(DTLSUDP TLSTCP)
+    else
+	echo "DTLS_method not found:"
+	grep -r DTLS_method "${ssl_include_path}"
     fi
     if [ "$MODE" != "read-only" ]; then
 	# these MIB modules do not support read-only
-	if [ -e "$(ssl_include_path)/dh.h" ]; then
+	if [ -e "${ssl_include_path}/dh.h" ]; then
 	    mibs+=(snmp-usm-dh-objects-mib)
 	fi
-	if [ -e "$(ssl_include_path)/ssl.h" ]; then
+	if [ -e "${ssl_include_path}/ssl.h" ]; then
 	    mibs+=(tlstm-mib)
 	fi
 	mibs+=(tsm-mib)
     fi
 fi
 if [ "$with_openssl" != "internal" ] && $is_5_8_or_above &&
-       [ -e "$(ssl_include_path)/aes.h" ] &&
-       [ -e "$(ssl_include_path)/evp.h" ]; then
+       [ -e "${ssl_include_path}/aes.h" ] &&
+       [ -e "${ssl_include_path}/evp.h" ] &&
+       grep -qw EVP_aes_256_cfb "${ssl_include_path}/evp.h"; then
     options+=(--enable-blumenthal-aes)
 fi
 security_modules=(usm tsm)
@@ -393,7 +381,7 @@ case "$MODE" in
         options+=(--enable-minimalist);;
     read-only)
         options+=(--enable-read-only);;
-    regular|"")
+    regular|wolfssl|"")
         ;;
     *)
         echo "Error: unknown build type $MODE"

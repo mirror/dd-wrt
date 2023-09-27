@@ -23,33 +23,35 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
+#if !defined(HAVE_MYSQL_INIT)
 #ifdef HAVE_MY_GLOBAL_H
 #include <my_global.h>
 #endif
 #ifdef HAVE_MY_SYS_H
 #include <my_sys.h>
 #endif
+#endif
 #include <mysql.h>
 #include <errmsg.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <stdio.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 #include <ctype.h>
 #include <sys/types.h>
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_NETDB_H
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
@@ -454,7 +456,7 @@ netsnmp_mysql_init(void)
     char **not_argv = not_args;
 
     /** load .my.cnf values */
-#if HAVE_MY_LOAD_DEFAULTS
+#ifdef HAVE_MY_LOAD_DEFAULTS
     my_load_defaults ("my", _sql.groups, &not_argc, &not_argv, 0);
 #elif defined(HAVE_LOAD_DEFAULTS)
     load_defaults ("my", _sql.groups, &not_argc, &not_argv);
@@ -561,7 +563,7 @@ netsnmp_mysql_init(void)
         return -1;
     }
 
-#if HAVE_MYSQL_OPTIONS
+#ifdef HAVE_MYSQL_OPTIONS
     mysql_options(_sql.conn, MYSQL_READ_DEFAULT_GROUP, "snmptrapd");
 #endif
 

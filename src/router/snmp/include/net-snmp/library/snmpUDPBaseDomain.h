@@ -1,7 +1,7 @@
 #ifndef SNMPUDPBASEDOMAIN_H
 #define SNMPUDPBASEDOMAIN_H
 
-config_require(SocketBase)
+config_require(SocketBase);
 
 #include <net-snmp/library/snmp_transport.h>
 

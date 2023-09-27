@@ -23,21 +23,18 @@ $(FEATUREFILE): $(FTOBJS) $(top_builddir)/include/net-snmp/feature-details.h
 	cat $(FTOBJS) > $(FEATUREFILE).in
 	$(FEATUREPROCESS) $(FEATUREFILE) $(top_builddir)/include/net-snmp/feature-details.h @FEATURE_REMOVE_FLAGS@ @FEATURE_ADD_FLAGS@
 ftsubdirs:
-	@if test "$(FTSUBDIRS)" != ""; then \
-	    SUBDIRS="$(FTSUBDIRS)" ;        \
-        else 			 	    \
-            SUBDIRS="$(SUBDIRS)" ;          \
-        fi ;                                \
-	if test "$$SUBDIRS" != ""; then \
-		it="$$SUBDIRS" ; \
-		for i in $$it ; do \
-			echo "making features in `pwd`/$$i"; \
-			( cd $$i ; $(MAKE) features ) ; \
-			if test $$? != 0 ; then \
-				exit 1 ; \
-			fi  \
-		done \
-	fi
+	@if test "$(FTSUBDIRS)" != ""; then			\
+		SUBDIRS="$(FTSUBDIRS)";				\
+	else							\
+		SUBDIRS="$(SUBDIRS)";				\
+	fi;							\
+	echo "$(PWD): making feature files in $${SUBDIRS}";	\
+	for i in $${SUBDIRS}; do				\
+		test "$$i" != "" || continue;			\
+		echo "making features in `pwd`/$$i";		\
+		(cd "$$i" && $(MAKE) features) || exit "$$?";	\
+	done;							\
+	echo "$(PWD): finished making feature files."
 
 .PHONY: cleanfeatures cleanfeaturessubdirs
 cleanfeatures: cleanfeaturessubdirs

@@ -25,13 +25,13 @@ SOFTWARE.
 ******************************************************************/
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -52,7 +52,7 @@ SOFTWARE.
 #include <stdio.h>
 #if !defined(mingw32) && defined(HAVE_SYS_TIME_H)
 # include <sys/time.h>
-# if TIME_WITH_SYS_TIME
+# ifdef TIME_WITH_SYS_TIME
 #  include <time.h>
 # endif
 #else
@@ -61,7 +61,7 @@ SOFTWARE.
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 #ifdef HAVE_SYSLOG_H
@@ -79,7 +79,7 @@ SOFTWARE.
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #ifdef HAVE_PROCESS_H
@@ -145,7 +145,7 @@ char           *logfile = NULL;
 static int      reconfig = 0;
 char            ddefault_port[] = "udp:162";	/* Default default port */
 char           *default_port = ddefault_port;
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
     FILE           *PID;
     char           *pid_file = NULL;
 #endif
@@ -201,7 +201,7 @@ usage(void)
     fprintf(stderr, "  -f\t\t\tdo not fork from the shell\n");
     fprintf(stderr,
             "  -F FORMAT\t\tuse specified format for logging to standard error\n");
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
     fprintf(stderr, "  -g GID\t\tchange to this numeric gid after opening\n"
 	   "\t\t\t  transport endpoints\n");
 #endif
@@ -214,7 +214,7 @@ usage(void)
             "  -M DIRLIST\t\tuse DIRLIST as the list of locations\n\t\t\t  to look for MIBs\n");
     fprintf(stderr,
             "  -n\t\t\tuse numeric addresses instead of attempting\n\t\t\t  hostname lookups (no DNS)\n");
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
     fprintf(stderr, "  -p FILE\t\tstore process id in FILE\n");
 #endif
 #ifdef WIN32SERVICE
@@ -224,7 +224,7 @@ usage(void)
     fprintf(stderr, "  \t\t\t  Note that some parameters are not relevant when running as a service\n");
 #endif
     fprintf(stderr, "  -t\t\t\tPrevent traps from being logged to syslog\n");
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
     fprintf(stderr, "  -u UID\t\tchange to this uid (numeric or textual) after\n"
 	   "\t\t\t  opening transport endpoints\n");
 #endif
@@ -541,7 +541,7 @@ main(int argc, char *argv[])
 #endif
 {
     static const char options[] = "aAc:CdD::efF:g:hHI:L:m:M:no:O:Ptu:vx:X-:"
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
         "p:"
 #endif
         ;
@@ -601,7 +601,7 @@ main(int argc, char *argv[])
 
     register_config_handler("snmptrapd", "doNotLogTraps",
                             parse_config_doNotLogTraps, NULL, "(1|yes|true|0|no|false)");
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
     register_config_handler("snmptrapd", "pidFile",
                             parse_config_pidFile, NULL, "string");
 #endif
@@ -709,7 +709,7 @@ main(int argc, char *argv[])
             }
             break;
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
         case 'g':
             if (optarg != NULL) {
                 int gid;
@@ -814,7 +814,7 @@ main(int argc, char *argv[])
             }
             break;
 
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
         case 'p':
             if (optarg != NULL) {
                 parse_config_pidFile(NULL, optarg);
@@ -839,7 +839,7 @@ main(int argc, char *argv[])
             SyslogTrap++;
             break;
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
         case 'u':
             if (optarg != NULL) {
                 int             uid;
@@ -1175,7 +1175,7 @@ main(int argc, char *argv[])
         }
     }
 #endif                          /* WIN32 */
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
     if (pid_file != NULL) {
         if ((PID = fopen(pid_file, "w")) == NULL) {
             snmp_log_perror("fopen");
@@ -1194,7 +1194,7 @@ main(int argc, char *argv[])
      */
     reconfig = 0;
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #ifdef HAVE_SETGID
     {
     int gid;

@@ -27,6 +27,10 @@ netsnmp_feature_require(table_tdata_insert_row);
 netsnmp_feature_require(iquery_pdu_session);
 #endif /* NETSNMP_NO_WRITE_SUPPORT */
 
+static netsnmp_tdata  *alarm_data;
+static netsnmp_table_registration_info *alarm_info;
+static netsnmp_handler_registration *alarm_reg;
+
 /** Initializes the alarmTable module */
 void
 init_alarmTable(void)
@@ -43,32 +47,37 @@ initialize_table_alarmTable(void)
 {
     static oid      alarmTable_oid[] = { 1, 3, 6, 1, 2, 1, 16, 3, 1 };
     size_t          alarmTable_oid_len = OID_LENGTH(alarmTable_oid);
-    netsnmp_handler_registration *reg;
-    netsnmp_tdata  *table_data;
-    netsnmp_table_registration_info *table_info;
 
     DEBUGMSGTL(( "rmon:alarmTable", "initialize_table_alarmTable called.\n"));
-    reg =
+    alarm_reg =
         netsnmp_create_handler_registration("alarmTable",
                                             alarmTable_handler,
                                             alarmTable_oid,
                                             alarmTable_oid_len,
                                             HANDLER_CAN_RWRITE);
 
-    table_data = netsnmp_tdata_create_table("alarmTable", 0);
-    table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
-    netsnmp_table_helper_add_indexes(table_info, ASN_INTEGER,   /* index: alarmIndex */
+    alarm_data = netsnmp_tdata_create_table("alarmTable", 0);
+    alarm_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    netsnmp_table_helper_add_indexes(alarm_info, ASN_INTEGER,   /* index: alarmIndex */
                                      0);
 
-    table_info->min_column = COLUMN_ALARMINDEX;
-    table_info->max_column = COLUMN_ALARMSTATUS;
+    alarm_info->min_column = COLUMN_ALARMINDEX;
+    alarm_info->max_column = COLUMN_ALARMSTATUS;
 
-    netsnmp_tdata_register(reg, table_data, table_info);
+    netsnmp_tdata_register(alarm_reg, alarm_data, alarm_info);
 
     /*
      * Initialise the contents of the table here 
      */
 }
+
+
+void shutdown_alarmTable(void)
+{
+    netsnmp_tdata_unregister(alarm_reg);
+    netsnmp_table_registration_info_free(alarm_info);
+}
+
 
 #define ALARM_STR1_LEN	32
 typedef enum {

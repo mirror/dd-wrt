@@ -16,7 +16,7 @@
  * we use header_generic from the util_funcs module
  */
 
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
 #include "snmpTargetAddrEntry_data.h"
 
@@ -24,7 +24,7 @@ config_require(util_funcs/header_generic)
      * add the SNMPv2-TM mib into the default list of mibs to load, since
      * it contains the Domain definitions (EG, netsnmpUDPDomain) 
      */
-config_add_mib(SNMPv2-TM)
+config_add_mib(SNMPv2-TM);
 
 
 /*

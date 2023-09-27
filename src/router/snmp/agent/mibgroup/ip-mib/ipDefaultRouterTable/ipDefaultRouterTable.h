@@ -23,10 +23,10 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(ip-mib/data_access/defaultrouter)
-config_require(ip-mib/ipDefaultRouterTable/ipDefaultRouterTable_interface)
-config_require(ip-mib/ipDefaultRouterTable/ipDefaultRouterTable_data_access)
-config_require(ip-mib/ipDefaultRouterTable/ipDefaultRouterTable_data_get)
+config_require(ip-mib/data_access/defaultrouter);
+config_require(ip-mib/ipDefaultRouterTable/ipDefaultRouterTable_interface);
+config_require(ip-mib/ipDefaultRouterTable/ipDefaultRouterTable_data_access);
+config_require(ip-mib/ipDefaultRouterTable/ipDefaultRouterTable_data_get);
     /* *INDENT-ON*  */
 
     /*

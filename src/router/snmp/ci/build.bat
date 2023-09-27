@@ -1,7 +1,11 @@
 echo "Build type %BUILD%"
 @echo on
 @rem dir /b /s "C:\Program Files (x86)" | findstr /i /e "\vcvars64.bat"
-set "VCVARSPATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
+@rem dir /b /s "C:\Program Files" | findstr /i /e "\vcvars64.bat"
+set p=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build
+if exist "%p%" set "VCVARSPATH=%p%"
+set p=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary/Build
+if exist "%p%" set "VCVARSPATH=%p%"
 goto %BUILD%
 echo "Error: unknown build type %BUILD%"
 goto eof

@@ -158,7 +158,6 @@ netsnmp_arch_ipaddress_container_load(netsnmp_container *container,
     struct ifa_msghdr *ifa;
     struct sockaddr *a;
     int amask;
-    int rc = 0;
     int idx_offset = 0;
 
     DEBUGMSGTL(("access:ipaddress:container:sysctl",
@@ -206,10 +205,8 @@ netsnmp_arch_ipaddress_container_load(netsnmp_container *container,
                     ifa->ifam_addrs, ifa->ifam_index));
 
         entry = netsnmp_access_ipaddress_entry_create();
-        if (entry == NULL) {
-            rc = -3;
-            break;
-        }
+        if (entry == NULL)
+            return -3;
 
         a = (struct sockaddr *) (ifa + 1);
         entry->ia_status = IPADDRESSSTATUSTC_UNKNOWN;

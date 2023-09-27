@@ -9,7 +9,7 @@
 
 #include <net-snmp/library/snmp_transport.h>
 
-config_require(IPBase)
+config_require(IPBase);
 
 #ifdef __cplusplus
 extern          "C" {

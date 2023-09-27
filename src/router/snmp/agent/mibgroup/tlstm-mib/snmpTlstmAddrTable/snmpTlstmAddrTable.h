@@ -13,6 +13,7 @@
  * function declarations 
  */
 void            init_snmpTlstmAddrTable(void);
+void            shutdown_snmpTlstmAddrTable(void);
 
 /*
  * index definitions for table tlstmAddrTable 

@@ -9,6 +9,12 @@
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
+#if defined(HAVE_PCRE_H)
+#include <pcre.h>
+#elif defined(HAVE_REGEX_H)
+#include <sys/types.h>
+#include <regex.h>
+#endif
 
 netsnmp_feature_child_of(hw_fsys_get_container, netsnmp_unused);
 
@@ -18,6 +24,10 @@ static netsnmp_cache     *_fsys_cache;
 static netsnmp_container *_fsys_container;
 static int         _fsys_idx;
 
+static void _parse_mount_config(const char *, char *);
+static void _free_mount_config(void);
+
+conf_mount_list *ignoremount_list;
 
 /*
  * Architecture-independent processing of loading filesystem statistics
@@ -90,6 +100,9 @@ void init_hw_fsys( void ) {
         DEBUGMSGTL(("fsys", "Reloading Hardware FileSystems on-demand (%p)\n",
                                _fsys_cache));
     }
+
+    snmpd_register_config_handler("ignoremount", _parse_mount_config,
+                                  _free_mount_config, "name");
 }
 
 void shutdown_hw_fsys( void ) {
@@ -347,4 +360,103 @@ netsnmp_fsys_calculate32(netsnmp_fsys_info *f)
                 " used %" PRIu64 " -> %lu\n",
 		(uint64_t)f->size, f->size_32, (uint64_t)f->units, f->units_32,
 		(uint64_t)f->avail, f->avail_32, (uint64_t)f->used, f->used_32));
+}
+
+static void
+_parse_mount_config(const char *token, char *cptr)
+{
+    conf_mount_list *m_new;
+    char            *name, *st = NULL;
+#if defined(HAVE_PCRE_H)
+    const char      *pcre_error;
+    int             pcre_error_offset;
+    int             is_regex = 0;
+#elif defined(HAVE_REGEX_H)
+    int             r = 0;
+    int             is_regex = 0;
+#endif
+
+    name = strtok_r(cptr, " \t", &st);
+    if (strcmp(name, "-r") == 0) {
+#if defined(HAVE_PCRE_H) || defined(HAVE_REGEX_H)
+        is_regex = 1;
+        name = strtok_r(NULL, " \t", &st);
+#else
+        config_perror("Missing regex support");
+        return;
+#endif
+    }
+    if (!name) {
+        config_perror("Missing mount parameter");
+        return;
+    }
+    m_new = SNMP_MALLOC_TYPEDEF(conf_mount_list);
+    if (!m_new) {
+        config_perror("Out of memory");
+        goto err;
+    }
+    m_new->name = strdup(name);
+    if (!m_new->name) {
+        config_perror("Out of memory");
+        goto err;
+    }
+#if defined(HAVE_PCRE_H)
+    if (is_regex) {
+        m_new->regex_ptr = pcre_compile(m_new->name, 0, &pcre_error,
+                                        &pcre_error_offset, NULL);
+        if (!m_new->regex_ptr) {
+            config_perror(pcre_error);
+            goto err;
+        }
+    }
+#elif defined(HAVE_REGEX_H)
+    if (is_regex) {
+        m_new->regex_ptr = malloc(sizeof(regex_t));
+        if (!m_new->regex_ptr) {
+            config_perror("Out of memory");
+            goto err;
+        }
+        r = regcomp(m_new->regex_ptr, m_new->name, REG_NOSUB);
+        if (r) {
+            char buf[BUFSIZ];
+            size_t regerror_len = 0;
+
+            regerror_len = regerror(r, m_new->regex_ptr, buf, BUFSIZ);
+            if (regerror_len >= BUFSIZ)
+                buf[BUFSIZ - 1] = '\0';
+            else
+                buf[regerror_len] = '\0';
+            config_perror(buf);
+            goto err;
+        }
+    }
+#endif
+    m_new->next = ignoremount_list;
+    ignoremount_list = m_new;
+    return;
+
+err:
+    if (m_new) {
+#if defined(HAVE_PCRE_H) || defined(HAVE_REGEX_H)
+        free(m_new->regex_ptr);
+#endif
+        free(m_new->name);
+    }
+    free (m_new);
+}
+
+static void
+_free_mount_config(void)
+{
+    conf_mount_list *m_ptr = ignoremount_list, *m_next;
+    while (m_ptr) {
+        m_next = m_ptr->next;
+#if defined(HAVE_PCRE_H) || defined(HAVE_REGEX_H)
+        free(m_ptr->regex_ptr);
+#endif
+        free(m_ptr->name);
+        free(m_ptr);
+        m_ptr = m_next;
+    }
+    ignoremount_list = NULL;
 }

@@ -1,2 +1,2 @@
-config_require(disman/event)
+config_require(disman/event);
 

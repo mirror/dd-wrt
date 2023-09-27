@@ -29,19 +29,19 @@ netsnmp_feature_provide(interface_legacy);
 #define _I_DEFINED_KERNEL
 #endif
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 #include <sys/types.h>
@@ -49,108 +49,108 @@ netsnmp_feature_provide(interface_legacy);
 #define _KERNEL 1
 #define _I_DEFINED_KERNEL
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 #ifndef STREAM_NEEDS_KERNEL_ISLANDS
-#if HAVE_SYS_STREAM_H
+#ifdef HAVE_SYS_STREAM_H
 #include <sys/stream.h>
 #endif
 #endif
-#if HAVE_SYS_SOCKETVAR_H
+#ifdef HAVE_SYS_SOCKETVAR_H
 #include <sys/socketvar.h>
 #endif
 
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
-#if HAVE_SYS_SOCKIO_H
+#ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#if HAVE_SYS_IOCTL_H
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_NET_IF_H
+#ifdef HAVE_NET_IF_H
 #include <net/if.h>
 #endif
-#if HAVE_NETINET_IN_VAR_H
+#ifdef HAVE_NETINET_IN_VAR_H
 #include <netinet/in_var.h>
 #endif
-#if HAVE_NET_IF_VAR_H
+#ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
 #ifdef _I_DEFINED_KERNEL
 #undef _KERNEL
 #endif
 #ifdef STREAM_NEEDS_KERNEL_ISLANDS
-#if HAVE_SYS_STREAM_H
+#ifdef HAVE_SYS_STREAM_H
 #include <sys/stream.h>
 #endif
 #endif
-#if HAVE_NET_ROUTE_H
+#ifdef HAVE_NET_ROUTE_H
 #include <net/route.h>
 #endif
-#if HAVE_NETINET_IN_SYSTM_H
+#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif
-#if HAVE_SYS_HASHING_H
+#ifdef HAVE_SYS_HASHING_H
 #include <sys/hashing.h>
 #endif
-#if HAVE_NETINET_IN_VAR_H
+#ifdef HAVE_NETINET_IN_VAR_H
 #include <netinet/in_var.h>
 #endif
-#if HAVE_NETINET_IP_H
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
 #endif
 #ifdef NETSNMP_ENABLE_IPV6
-#if HAVE_NETINET_IP6_H
+#ifdef HAVE_NETINET_IP6_H
 #include <netinet/ip6.h>
 #endif
 #endif
-#if HAVE_SYS_QUEUE_H
+#ifdef HAVE_SYS_QUEUE_H
 #include <sys/queue.h>
 #endif
-#if HAVE_NETINET_IP_VAR_H
+#ifdef HAVE_NETINET_IP_VAR_H
 #include <netinet/ip_var.h>
 #endif
 #ifdef NETSNMP_ENABLE_IPV6
-#if HAVE_NETNETSNMP_ENABLE_IPV6_IP6_VAR_H
+#ifdef HAVE_NETNETSNMP_ENABLE_IPV6_IP6_VAR_H
 #include <netinet6/ip6_var.h>
 #endif
 #endif
-#if HAVE_NETINET_IN_PCB_H
+#ifdef HAVE_NETINET_IN_PCB_H
 #include <netinet/in_pcb.h>
 #endif
-#if HAVE_NETINET_IF_ETHER_H
+#ifdef HAVE_NETINET_IF_ETHER_H
 #include <netinet/if_ether.h>
 #endif
-#if HAVE_NET_IF_TYPES_H
+#ifdef HAVE_NET_IF_TYPES_H
 #include <net/if_types.h>
 #endif
-#if HAVE_NET_IF_DL_H
+#ifdef HAVE_NET_IF_DL_H
 #ifndef dynix
 #include <net/if_dl.h>
 #else
 #include <sys/net/if_dl.h>
 #endif
 #endif
-#if HAVE_INET_MIB2_H
+#ifdef HAVE_INET_MIB2_H
 #include <inet/mib2.h>
 #endif
-#if HAVE_IOCTLS_H
+#ifdef HAVE_IOCTLS_H
 #include <ioctls.h>
 #endif
 
@@ -170,7 +170,7 @@ netsnmp_feature_provide(interface_legacy);
 #include <windows.h>
 #endif
 
-#if HAVE_SYS_SYSCTL_H
+#ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 
 #if defined(freebsd3) || defined(freebsd4) || defined(freebsd5)
@@ -188,7 +188,7 @@ netsnmp_feature_provide(interface_legacy);
 #endif                          /* defined(freebsd3) */
 #endif                          /* HAVE_SYS_SYSCTL_H */
 
-#if HAVE_OSRELDATE_H
+#ifdef HAVE_OSRELDATE_H
 #include <osreldate.h>
 #endif
 #ifdef NETSNMP_CAN_USE_SYSCTL
@@ -292,7 +292,7 @@ init_interfaces(void)
                          "The MIB module to describe generic objects for network interface sub-layers");
 
 #ifndef USE_SYSCTL_IFLIST
-#if HAVE_NET_IF_MIB_H
+#ifdef HAVE_NET_IF_MIB_H
     init_interfaces_setup();
 #endif
 #endif
@@ -621,7 +621,7 @@ var_ifEntry(struct variable *vp,
         if (if_ptr)
             long_return = if_ptr->speed;
         else {
-#if HAVE_STRUCT_IFNET_IF_BAUDRATE_IFS_VALUE
+#ifdef HAVE_STRUCT_IFNET_IF_BAUDRATE_IFS_VALUE
         long_return = (u_long) if_msg.ifm_data.ifi_baudrate.ifs_value <<
             if_msg.ifm_data.ifi_baudrate.ifs_log2;
 #else
@@ -678,7 +678,7 @@ var_ifEntry(struct variable *vp,
 #ifdef if_odrops
         long_return = (u_long) if_msg.ifm_data.ifi_odrops;
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;
@@ -692,7 +692,7 @@ var_ifEntry(struct variable *vp,
         long_return = 0;
 #else
         if (if_msg.ifm_data.ifi_lastchange.tv_sec == 0 &&
-#if STRUCT_IFNET_HAS_IF_LASTCHANGE_TV_NSEC
+#ifdef STRUCT_IFNET_HAS_IF_LASTCHANGE_TV_NSEC
             if_msg.ifm_data.ifi_lastchange.tv_nsec == 0
 #else
             if_msg.ifm_data.ifi_lastchange.tv_usec == 0
@@ -706,7 +706,7 @@ var_ifEntry(struct variable *vp,
                 ((if_msg.ifm_data.ifi_lastchange.tv_sec -
                   starttime.tv_sec) * 100 +
                  (
-#if STRUCT_IFNET_HAS_IF_LASTCHANGE_TV_NSEC
+#ifdef STRUCT_IFNET_HAS_IF_LASTCHANGE_TV_NSEC
                   if_msg.ifm_data.ifi_lastchange.tv_nsec / 1000
 #else
                   if_msg.ifm_data.ifi_lastchange.tv_usec
@@ -802,7 +802,7 @@ var_ifEntry(struct variable *vp,
         if (if_ptr)
             long_return = if_ptr->type;
         else {
-#if HAVE_STRUCT_IFNET_IF_TYPE
+#ifdef HAVE_STRUCT_IFNET_IF_TYPE
             long_return = ifnet.if_type;
 #else
             long_return = 1;    /* OTHER */
@@ -817,11 +817,11 @@ var_ifEntry(struct variable *vp,
         if (if_ptr)
             long_return = if_ptr->speed;
         else {
-#if HAVE_STRUCT_IFNET_IF_BAUDRATE
+#ifdef HAVE_STRUCT_IFNET_IF_BAUDRATE
             long_return = ifnet.if_baudrate;
-#elif HAVE_STRUCT_IFNET_IF_SPEED
+#elif defined(HAVE_STRUCT_IFNET_IF_SPEED)
             long_return = ifnet.if_speed;
-#elif HAVE_STRUCT_IFNET_IF_TYPE && defined(IFT_ETHER)
+#elif defined(HAVE_STRUCT_IFNET_IF_TYPE) && defined(IFT_ETHER)
             if (ifnet.if_type == IFT_ETHER)
                 long_return = 10000000;
             if (ifnet.if_type == IFT_P10)
@@ -833,7 +833,7 @@ var_ifEntry(struct variable *vp,
             if (ifnet.if_type == IFT_ISDNPRIMARY)
                 long_return = 64000 * 30;
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
             return NULL;
 #endif
             long_return = (u_long) 10000000;
@@ -863,27 +863,33 @@ var_ifEntry(struct variable *vp,
 #if defined(HAVE_STRUCT_IFNET_IF_LASTCHANGE_TV_SEC) && !(defined(freebsd2) && __FreeBSD_version < 199607)
         /*
          * XXX - SNMP's ifLastchange is time when op. status changed
-         * * FreeBSD's if_lastchange is time when packet was input or output
-         * * (at least in 2.1.0-RELEASE. Changed in later versions of the kernel?)
-         */
-        /*
          * FreeBSD's if_lastchange before the 2.1.5 release is the time when
-         * * a packet was last input or output.  In the 2.1.5 and later releases,
-         * * this is fixed, thus the 199607 comparison.
+         * a packet was last input or output.  In the 2.1.5 and later releases,
+         * this is fixed, thus the 199607 comparison.
          */
         if (ifnet.if_lastchange.tv_sec == 0 &&
-            ifnet.if_lastchange.tv_usec == 0)
+#ifdef STRUCT_IFNET_HAS_IF_LASTCHANGE_TV_NSEC
+            ifnet.if_lastchange.tv_nsec == 0
+#else
+            ifnet.if_lastchange.tv_usec == 0
+#endif
+            )
             long_return = 0;
         else if (ifnet.if_lastchange.tv_sec < starttime.tv_sec)
             long_return = 0;
         else {
             long_return = (u_long)
                 ((ifnet.if_lastchange.tv_sec - starttime.tv_sec) * 100
-                 + (ifnet.if_lastchange.tv_usec -
-                    starttime.tv_usec) / 10000);
+                 + (
+#ifdef STRUCT_IFNET_HAS_IF_LASTCHANGE_TV_NSEC
+                   ifnet.if_lastchange.tv_nsec / 1000
+#else
+                   ifnet.if_lastchange.tv_usec
+#endif
+                   - starttime.tv_usec) / 10000);
         }
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;        /* XXX */
@@ -897,7 +903,7 @@ var_ifEntry(struct variable *vp,
         long_return = (u_long) ifnet.if_ibytes;
 #endif
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = (u_long) ifnet.if_ipackets * 308; /* XXX */
@@ -910,7 +916,7 @@ var_ifEntry(struct variable *vp,
 #else
             long_return = (u_long) ifnet.if_ipackets;
 #endif
-#if HAVE_STRUCT_IFNET_IF_IMCASTS
+#ifdef HAVE_STRUCT_IFNET_IF_IMCASTS
 #if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
             long_return -= (u_long) ifnet.if_imcasts & 0xffffffff;
 #else
@@ -920,28 +926,28 @@ var_ifEntry(struct variable *vp,
         }
         return (u_char *) & long_return;
     case NETSNMP_IFINNUCASTPKTS:
-#if HAVE_STRUCT_IFNET_IF_IMCASTS
+#ifdef HAVE_STRUCT_IFNET_IF_IMCASTS
 #if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
         long_return = (u_long) ifnet.if_imcasts & 0xffffffff;
 #else
         long_return = (u_long) ifnet.if_imcasts;
 #endif
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = (u_long) 0;       /* XXX */
 #endif
         return (u_char *) & long_return;
     case NETSNMP_IFINDISCARDS:
-#if HAVE_STRUCT_IFNET_IF_IQDROPS
+#ifdef HAVE_STRUCT_IFNET_IF_IQDROPS
 #if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
         long_return = (u_long) ifnet.if_iqdrops & 0xffffffff;
 #else
         long_return = (u_long) ifnet.if_iqdrops;
 #endif
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = (u_long) 0;       /* XXX */
@@ -955,14 +961,14 @@ var_ifEntry(struct variable *vp,
 #endif
         return (u_char *) & long_return;
     case NETSNMP_IFINUNKNOWNPROTOS:
-#if HAVE_STRUCT_IFNET_IF_NOPROTO
+#ifdef HAVE_STRUCT_IFNET_IF_NOPROTO
 #if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
         long_return = (u_long) ifnet.if_noproto & 0xffffffff;
 #else
         long_return = (u_long) ifnet.if_noproto;
 #endif
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = (u_long) 0;       /* XXX */
@@ -976,7 +982,7 @@ var_ifEntry(struct variable *vp,
         long_return = (u_long) ifnet.if_obytes;
 #endif
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = (u_long) ifnet.if_opackets * 308; /* XXX */
@@ -989,7 +995,7 @@ var_ifEntry(struct variable *vp,
 #else
             long_return = (u_long) ifnet.if_opackets;
 #endif
-#if HAVE_STRUCT_IFNET_IF_OMCASTS
+#ifdef HAVE_STRUCT_IFNET_IF_OMCASTS
 #if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
             long_return -= (u_long) ifnet.if_omcasts & 0xffffffff;
 #else
@@ -999,14 +1005,14 @@ var_ifEntry(struct variable *vp,
         }
         return (u_char *) & long_return;
     case NETSNMP_IFOUTNUCASTPKTS:
-#if HAVE_STRUCT_IFNET_IF_OMCASTS
+#ifdef HAVE_STRUCT_IFNET_IF_OMCASTS
 #if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
         long_return = (u_long) ifnet.if_omcasts & 0xffffffff;
 #else
         long_return = (u_long) ifnet.if_omcasts;
 #endif
 #else
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = (u_long) 0;       /* XXX */
@@ -1066,7 +1072,7 @@ var_ifEntry(struct variable *vp,
     static char     Name[16];
 #endif
     register char  *cp;
-#if HAVE_STRUCT_IFNET_IF_LASTCHANGE_TV_SEC
+#ifdef HAVE_STRUCT_IFNET_IF_LASTCHANGE_TV_SEC
     struct timeval  now;
 #endif
 #if !defined(hpux11)
@@ -1578,9 +1584,11 @@ Interface_Scan_Init(void)
     while (fgets(line, sizeof(line), devin)) {
         struct ifnet   *nnew;
         char           *stats, *ifstart = line;
+        size_t          len;
 
-        if (line[strlen(line) - 1] == '\n')
-            line[strlen(line) - 1] = '\0';
+        len = strlen(line);
+        if (len && line[len - 1] == '\n')
+            line[len - 1] = '\0';
 
         while (*ifstart && *ifstart == ' ')
             ifstart++;
@@ -2030,7 +2038,7 @@ Interface_Scan_NextInt(int *Index,
             DEBUGMSGTL(("mibII/interfaces:Interface_Scan_Next", "klookup failed\n"));
             break;
         }
-#if HAVE_STRUCT_IFNET_IF_XNAME
+#ifdef HAVE_STRUCT_IFNET_IF_XNAME
 #if defined(netbsd1) || defined(openbsd2)
         strlcpy(saveName, ifnet.if_xname, sizeof(saveName));
 #else

@@ -4,8 +4,6 @@
 
 HEADER "full snmpwalk (SNMPv2c) against agent (may take time)"
 
-[ "${TRAVIS_OS_NAME}" = "osx" ] && SKIP "Skipping MIB walk on OS/X"
-
 if test `uname -s` = "HP-UX" ; then
     if test `id -u` != "0" ; then
         # The agent needs to be run as root - else force skip

@@ -20,6 +20,7 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/auto_nlist.h>
 #include <net-snmp/agent/sysORTable.h>
+#include <net-snmp/data_access/ip_scalars.h>
 
 #include "util_funcs/MIB_STATS_CACHE_TIMEOUT.h"
 #include "ip.h"
@@ -247,6 +248,13 @@ long            ipTTL, oldipTTL;
 #define	USES_TRADITIONAL_IPSTAT
 #endif
 
+#ifdef IP_NSTATS
+typedef struct ipstat {
+        uint64_t st[IP_NSTATS];
+};
+#define IP_STAT_STRUCTURE      struct ipstat
+#endif
+
 #ifdef dragonfly
 #define IP_STAT_STRUCTURE	struct ip_stats
 #define	USES_TRADITIONAL_IPSTAT
@@ -407,7 +415,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         ret_value = ipstat.ips_forward;
         break;
     case IPINUNKNOWNPROTOS:
-#if HAVE_STRUCT_IPSTAT_IPS_NOPROTO
+#ifdef HAVE_STRUCT_IPSTAT_IPS_NOPROTO
         ret_value = ipstat.ips_noproto;
         break;
 #else
@@ -415,7 +423,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         continue;
 #endif
     case IPINDISCARDS:
-#if HAVE_STRUCT_IPSTAT_IPS_FRAGDROPPED
+#ifdef HAVE_STRUCT_IPSTAT_IPS_FRAGDROPPED
         ret_value = ipstat.ips_fragdropped;   /* ?? */
         break;
 #else
@@ -423,7 +431,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         continue;
 #endif
     case IPINDELIVERS:
-#if HAVE_STRUCT_IPSTAT_IPS_DELIVERED
+#ifdef HAVE_STRUCT_IPSTAT_IPS_DELIVERED
         ret_value = ipstat.ips_delivered & 0xffffffff;
         break;
 #else
@@ -431,7 +439,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         continue;
 #endif
     case IPOUTREQUESTS:
-#if HAVE_STRUCT_IPSTAT_IPS_LOCALOUT
+#ifdef HAVE_STRUCT_IPSTAT_IPS_LOCALOUT
         ret_value = ipstat.ips_localout & 0xffffffff;
         break;
 #else
@@ -439,7 +447,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         continue;
 #endif
     case IPOUTDISCARDS:
-#if HAVE_STRUCT_IPSTAT_IPS_ODROPPED
+#ifdef HAVE_STRUCT_IPSTAT_IPS_ODROPPED
         ret_value = ipstat.ips_odropped;
         break;
 #else
@@ -455,14 +463,14 @@ ip_handler(netsnmp_mib_handler          *handler,
         netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
         continue;
     case IPREASMTIMEOUT:
-        ret_value = IPFRAGTTL;
+        ret_value = netsnmp_arch_ip_scalars_ipReasmTimeout_get();
         type = ASN_INTEGER;
         break;
     case IPREASMREQDS:
         ret_value = ipstat.ips_fragments;
         break;
     case IPREASMOKS:
-#if HAVE_STRUCT_IPSTAT_IPS_REASSEMBLED
+#ifdef HAVE_STRUCT_IPSTAT_IPS_REASSEMBLED
         ret_value = ipstat.ips_reassembled;
         break;
 #else
@@ -473,7 +481,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         ret_value = ipstat.ips_fragdropped + ipstat.ips_fragtimeout;
         break;
     case IPFRAGOKS:
-#if HAVE_STRUCT_IPSTAT_IPS_FRAGMENTED
+#ifdef HAVE_STRUCT_IPSTAT_IPS_FRAGMENTED
         ret_value = ipstat.ips_fragments;
         break;
 #else            /* XXX */
@@ -482,7 +490,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         break;
 #endif
     case IPFRAGFAILS:
-#if HAVE_STRUCT_IPSTAT_IPS_CANTFRAG
+#ifdef HAVE_STRUCT_IPSTAT_IPS_CANTFRAG
         ret_value = ipstat.ips_cantfrag;
         break;
 #else
@@ -490,7 +498,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         continue;
 #endif
     case IPFRAGCREATES:
-#if HAVE_STRUCT_IPSTAT_IPS_OFRAGMENTS
+#ifdef HAVE_STRUCT_IPSTAT_IPS_OFRAGMENTS
         ret_value = ipstat.ips_ofragments;
         break;
 #else
@@ -498,7 +506,7 @@ ip_handler(netsnmp_mib_handler          *handler,
         continue;
 #endif
     case IPROUTEDISCARDS:
-#if HAVE_STRUCT_IPSTAT_IPS_NOROUTE
+#ifdef HAVE_STRUCT_IPSTAT_IPS_NOROUTE
         ret_value = ipstat.ips_noroute;
         break;
 #else

@@ -44,15 +44,15 @@
 #endif
 #include <stdio.h>
 #include <errno.h>
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
 #endif
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <sys/types.h>
@@ -62,11 +62,11 @@
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -87,7 +87,7 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
-#if HAVE_SYS_FILE_H
+#ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
 #ifdef HAVE_FCNTL_H
@@ -103,7 +103,7 @@
 #ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
 #ifdef HAVE_PWD_H
@@ -236,7 +236,7 @@ usage(char *prog)
 	   "\t\t\t  Don't put space(s) between -D and TOKEN(s).\n"
 #endif
            "  -f\t\t\tdo not fork from the shell\n",
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
            "  -g GID\t\tchange to this numeric gid after opening\n"
 	   "\t\t\t  transport endpoints\n"
 #endif
@@ -264,7 +264,7 @@ usage(char *prog)
            "  \t\t\t  (followed by the startup parameter list)\n"
            "  \t\t\t  Note that some parameters are not relevant when running as a service\n"
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
            "  -u UID\t\tchange to this uid (numeric or textual) after\n"
 	   "\t\t\t  opening transport endpoints\n"
 #endif
@@ -383,7 +383,7 @@ main(int argc, char *argv[])
 #endif
 {
     static const char options[] = "aAc:CdD::fhHI:l:L:m:M:n:p:P:qrsS:UvV-:Y:"
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
         "g:u:"
 #endif
 #if defined(USING_AGENTX_SUBAGENT_MODULE)|| defined(USING_AGENTX_MASTER_MODULE)
@@ -402,7 +402,7 @@ main(int argc, char *argv[])
 #ifndef WIN32
     int             prepared_sockets = 0;
 #endif
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
     int fd;
     FILE           *PID;
 #endif
@@ -549,7 +549,7 @@ main(int argc, char *argv[])
             dont_fork = 1;
             break;
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
         case 'g':
             if (optarg != NULL) {
                 char           *ecp;
@@ -727,7 +727,7 @@ main(int argc, char *argv[])
 				      NETSNMP_DS_AGENT_LEAVE_PIDFILE);
             break;
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
         case 'u':
             if (optarg != NULL) {
                 char           *ecp;
@@ -938,7 +938,7 @@ main(int argc, char *argv[])
         }
     }
 
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
     if (pid_file != NULL) {
         /*
          * unlink the pid_file, if it exists, prior to open.  Without
@@ -1004,7 +1004,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SETUID
     if ((uid = netsnmp_ds_get_int(NETSNMP_DS_APPLICATION_ID, 
 				  NETSNMP_DS_AGENT_USERID)) > 0) {
-#if HAVE_GETPWNAM && HAVE_PWD_H && HAVE_INITGROUPS
+#if defined(HAVE_GETPWNAM) && defined(HAVE_PWD_H) && defined(HAVE_INITGROUPS)
         struct passwd *info;
 
         /*

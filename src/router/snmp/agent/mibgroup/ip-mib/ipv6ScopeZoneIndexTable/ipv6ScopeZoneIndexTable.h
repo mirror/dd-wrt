@@ -22,9 +22,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(ip-mib/data_access/ipv6scopezone)
-config_require(ip-mib/ipv6ScopeZoneIndexTable/ipv6ScopeZoneIndexTable_interface)
-config_require(ip-mib/ipv6ScopeZoneIndexTable/ipv6ScopeZoneIndexTable_data_access)
+config_require(ip-mib/data_access/ipv6scopezone);
+config_require(ip-mib/ipv6ScopeZoneIndexTable/ipv6ScopeZoneIndexTable_interface);
+config_require(ip-mib/ipv6ScopeZoneIndexTable/ipv6ScopeZoneIndexTable_data_access);
     /* *INDENT-ON*  */
 
     /*

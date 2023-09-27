@@ -14,8 +14,8 @@
 /*
  * wrapper for the disman traceroute mib code files 
  */
-config_require(disman/traceroute/traceRouteCtlTable)
-config_require(disman/traceroute/traceRouteResultsTable)
-config_require(disman/traceroute/traceRouteProbeHistoryTable)
-config_require(disman/traceroute/traceRouteHopsTable)
-config_add_mib(DISMAN-TRACEROUTE-MIB)
+config_require(disman/traceroute/traceRouteCtlTable);
+config_require(disman/traceroute/traceRouteResultsTable);
+config_require(disman/traceroute/traceRouteProbeHistoryTable);
+config_require(disman/traceroute/traceRouteHopsTable);
+config_add_mib(DISMAN-TRACEROUTE-MIB);

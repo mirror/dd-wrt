@@ -11,15 +11,16 @@
 #ifndef ALARMTABLE_H
 #define ALARMTABLE_H
 
-config_require(utilities/iquery)
-config_require(Rmon/agutil)
-config_require(Rmon/rows)
-config_require(Rmon/event)
+config_require(utilities/iquery);
+config_require(Rmon/agutil);
+config_require(Rmon/rows);
+config_require(Rmon/event);
 
 /*
  * function declarations 
  */
 void            init_alarmTable(void);
+void            shutdown_alarmTable(void);
 void            initialize_table_alarmTable(void);
 Netsnmp_Node_Handler alarmTable_handler;
 

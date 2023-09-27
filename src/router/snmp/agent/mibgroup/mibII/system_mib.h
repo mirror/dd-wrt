@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-config_require(util_funcs mibII/updates)
+config_require(util_funcs mibII/updates);
 
 extern oid system_module_oid[];
 extern int system_module_oid_len;

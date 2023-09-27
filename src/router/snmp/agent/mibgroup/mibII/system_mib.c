@@ -16,13 +16,13 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -216,7 +216,7 @@ handle_sysServices(netsnmp_mib_handler *handler,
                    netsnmp_agent_request_info *reqinfo,
                    netsnmp_request_info *requests)
 {
-#if NETSNMP_NO_DUMMY_VALUES
+#ifdef NETSNMP_NO_DUMMY_VALUES
     if (reqinfo->mode == MODE_GET && !sysServicesConfiged)
         netsnmp_request_set_error(requests, SNMP_NOSUCHINSTANCE);
 #endif

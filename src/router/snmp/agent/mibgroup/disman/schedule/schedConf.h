@@ -1,7 +1,7 @@
 #ifndef SCHEDCONF_H
 #define SCHEDCONF_H
 
-config_require(disman/schedule/schedCore)
+config_require(disman/schedule/schedCore);
 
 /*
  * function declarations 

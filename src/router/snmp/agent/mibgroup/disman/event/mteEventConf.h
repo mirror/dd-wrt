@@ -1,7 +1,7 @@
 #ifndef MTEEVENTCONF_H
 #define MTEEVENTCONF_H
 
-config_require(utilities/iquery)
+config_require(utilities/iquery);
 
 /*
  * function declarations 

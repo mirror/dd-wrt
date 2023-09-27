@@ -19,10 +19,10 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <ctype.h>
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -315,7 +315,7 @@ int netsnmp_udpbase_sendto_unix(int fd, const struct in_addr *srcip,
                         sizeof(struct sockaddr));
         else
             rc = sendmsg(fd, &m, MSG_DONTWAIT);
-        if (rc >= 0 || errno != EINVAL)
+        if (rc >= 0 || (errno != EINVAL && errno != ENETUNREACH))
             return rc;
 
         /*

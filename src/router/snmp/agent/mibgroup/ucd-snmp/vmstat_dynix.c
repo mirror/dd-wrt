@@ -407,7 +407,7 @@ take_snapshot(struct cpu_stat_snapshot *css)
         }                       /* end while */
     }
 
-    free((void *) origcs);
+    free(origcs);
 
     /*
      * All engines running at warp speed, no problems (if there are any engines, that is) 

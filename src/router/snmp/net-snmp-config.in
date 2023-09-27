@@ -545,7 +545,7 @@ main (int argc, char **argv)
         exit(1);
     }
 
-#if HAVE_GETPID
+#ifdef HAVE_GETPID
     if (pid_file != NULL) {
       /*
        * unlink the pid_file, if it exists, prior to open.  Without

@@ -22,9 +22,9 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_require(udp-mib/data_access/udp_endpoint)
-config_require(udp-mib/udpEndpointTable/udpEndpointTable_interface)
-config_require(udp-mib/udpEndpointTable/udpEndpointTable_data_access)
+config_require(udp-mib/data_access/udp_endpoint);
+config_require(udp-mib/udpEndpointTable/udpEndpointTable_interface);
+config_require(udp-mib/udpEndpointTable/udpEndpointTable_data_access);
     /* *INDENT-ON*  */
 
     /*

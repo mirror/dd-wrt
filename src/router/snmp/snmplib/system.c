@@ -61,18 +61,18 @@ SOFTWARE.
 #ifdef HAVE_DIRECT_H
 #include <direct.h>
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_STDLIB_H
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -108,7 +108,7 @@ SOFTWARE.
 #include <nlist.h>
 #endif
 
-#if HAVE_SYS_FILE_H
+#ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
 
@@ -116,14 +116,14 @@ SOFTWARE.
 #include <kstat.h>
 #endif
 
-#if HAVE_SYS_PARAM_H
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
 
-#if HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
@@ -137,7 +137,7 @@ SOFTWARE.
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#if HAVE_FCNTL_H
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 
@@ -172,7 +172,7 @@ SOFTWARE.
 #include <grp.h>
 #endif
 
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
 
@@ -771,7 +771,7 @@ netsnmp_validator_context(void)
 int
 netsnmp_gethostbyname_v4(const char* name, in_addr_t *addr_out)
 {
-#if HAVE_GETADDRINFO
+#ifdef HAVE_GETADDRINFO
     struct addrinfo *addrs = NULL;
     struct addrinfo hint;
     int             err;
@@ -798,7 +798,7 @@ netsnmp_gethostbyname_v4(const char* name, in_addr_t *addr_out)
     }
     return 0;
 
-#elif HAVE_GETHOSTBYNAME
+#elif defined(HAVE_GETHOSTBYNAME)
     struct hostent *hp = NULL;
 
     hp = netsnmp_gethostbyname(name);
@@ -817,7 +817,7 @@ netsnmp_gethostbyname_v4(const char* name, in_addr_t *addr_out)
     }
     return 0;
 
-#elif HAVE_GETIPNODEBYNAME
+#elif defined(HAVE_GETIPNODEBYNAME)
     struct hostent *hp = NULL;
     int             err;
 
@@ -841,7 +841,7 @@ int
 netsnmp_getaddrinfo(const char *name, const char *service,
                     const struct addrinfo *hints, struct addrinfo **res)
 {
-#if HAVE_GETADDRINFO
+#ifdef HAVE_GETADDRINFO
     struct addrinfo *addrs = NULL;
     struct addrinfo hint;
     int             err;
@@ -949,7 +949,7 @@ netsnmp_getaddrinfo(const char *name, const char *service,
 struct hostent *
 netsnmp_gethostbyname(const char *name)
 {
-#if HAVE_GETHOSTBYNAME
+#ifdef HAVE_GETHOSTBYNAME
 #ifdef DNSSEC_LOCAL_VALIDATION
     val_status_t val_status;
 #endif

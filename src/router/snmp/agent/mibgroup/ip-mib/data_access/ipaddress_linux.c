@@ -430,8 +430,8 @@ _load_v6(netsnmp_container *container, int idx_offset)
     return idx_offset;
 #endif /* HAVE_LINUX_RTNETLINK_H */
 }
-#endif /* NETSNMP_ENABLE_IPV6 */
 
+#ifdef HAVE_LINUX_RTNETLINK_H
 struct address_flag_info
 netsnmp_access_other_info_get(int index, int family)
 {
@@ -521,8 +521,6 @@ out:
     return addr;
 }
 
-#if defined (NETSNMP_ENABLE_IPV6)
-#ifdef HAVE_LINUX_RTNETLINK_H
 int
 netsnmp_access_ipaddress_extra_prefix_info(int index, u_long *preferedlt,
                                            ulong *validlt, char *addr)

@@ -5,8 +5,7 @@
  * function declarations 
  */
 void              init_expValueTable(void);
-Netsnmp_Node_Handler   expValueTable_handler;
-netsnmp_variable_list *expValue_getVal(netsnmp_variable_list *, int);
+void              shutdown_expValueTable(void);
 
 /*
  * column number definitions for table expValueTable 

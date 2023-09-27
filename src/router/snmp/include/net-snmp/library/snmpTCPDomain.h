@@ -5,9 +5,9 @@
 #include <netinet/in.h>
 #endif
 
-config_require(IPv4Base)
-config_require(SocketBase)
-config_require(TCPBase)
+config_require(IPv4Base);
+config_require(SocketBase);
+config_require(TCPBase);
 
 #ifdef NETSNMP_TRANSPORT_TCP_DOMAIN
 

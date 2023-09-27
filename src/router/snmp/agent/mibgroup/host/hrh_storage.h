@@ -5,11 +5,11 @@
 #ifndef _MIBGROUP_HRSTORAGE_H
 #define _MIBGROUP_HRSTORAGE_H
 
-config_require(hardware/memory)
-config_require(hardware/fsys)
-config_require(host/hrh_filesys)
+config_require(hardware/memory);
+config_require(hardware/fsys);
+config_require(host/hrh_filesys);
 
-config_exclude( host/hr_storage )
+config_exclude( host/hr_storage );
 
 extern void     init_hrh_storage(void);
 extern FindVarMethod var_hrstore;

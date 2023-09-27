@@ -17,7 +17,7 @@ extern "C" {
      * We use 'header_generic' from the util_funcs/header_generic module,
      *  so make sure this module is included in the agent.
      */
-config_require(util_funcs/header_generic)
+config_require(util_funcs/header_generic);
 
 
     /*

@@ -6,14 +6,14 @@
 #define _MIBGROUP_UDP_H
 
 
-config_require(mibII/udpTable)
+config_require(mibII/udpTable);
 
 #ifdef solaris2
-config_require(kernel_sunos5)
+config_require(kernel_sunos5);
 #elif defined(linux)
-config_require(mibII/kernel_linux)
+config_require(mibII/kernel_linux);
 #elif defined(netbsd5) || defined(netbsdelf5)
-config_require(mibII/kernel_netbsd)
+config_require(mibII/kernel_netbsd);
 #endif
 
 extern void     init_udp(void);

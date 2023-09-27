@@ -15,14 +15,17 @@
 
 netsnmp_feature_require(table_tdata);
 
+static Netsnmp_Node_Handler expErrorTable_handler;
+
+static netsnmp_handler_registration *error_table_reg;
+static netsnmp_table_registration_info *error_table_info;
+
 /* Initializes the expExpressionErrorTable module */
 void
 init_expErrorTable(void)
 {
     static oid  expErrorTable_oid[]   = { 1, 3, 6, 1, 2, 1, 90, 1, 2, 2 };
     size_t      expErrorTable_oid_len = OID_LENGTH(expErrorTable_oid);
-    netsnmp_handler_registration    *reg;
-    netsnmp_table_registration_info *table_info;
 
     /*
      * Ensure the expression table container is available...
@@ -32,29 +35,33 @@ init_expErrorTable(void)
     /*
      * ... then set up the MIB interface to the expExpressionErrorTable slice
      */
-    reg = netsnmp_create_handler_registration("expErrorTable",
+    error_table_reg = netsnmp_create_handler_registration("expErrorTable",
                                             expErrorTable_handler,
                                             expErrorTable_oid,
                                             expErrorTable_oid_len,
                                             HANDLER_CAN_RWRITE);
 
-    table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
-    netsnmp_table_helper_add_indexes(table_info,
+    error_table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    netsnmp_table_helper_add_indexes(error_table_info,
                                           /* index: expExpressionOwner */
                                      ASN_OCTET_STR,
                                           /* index: expExpressionName */
                                      ASN_OCTET_STR,
                                      0);
 
-    table_info->min_column = COLUMN_EXPERRORTIME;
-    table_info->max_column = COLUMN_EXPERRORINSTANCE;
+    error_table_info->min_column = COLUMN_EXPERRORTIME;
+    error_table_info->max_column = COLUMN_EXPERRORINSTANCE;
 
     /* Register this using the (common) expr_table_data container */
-    netsnmp_tdata_register(reg, expr_table_data, table_info);
+    netsnmp_tdata_register(error_table_reg, expr_table_data, error_table_info);
     DEBUGMSGTL(("disman:expr:init", "Expression Error Table container (%p)\n",
                                      expr_table_data));
 }
 
+void
+shutdown_expErrorTable(void)
+{
+}
 
 /** handles requests for the expExpressionErrorTable table */
 int
