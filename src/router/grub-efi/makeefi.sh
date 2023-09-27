@@ -18,6 +18,11 @@ cp grub.cfg tmp/boot/grub
 echo "menuentry \"DD-WRT\" {" >> tmp/boot/grub/grub.cfg
 echo "	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd video=vga16fb:off nofb console=ttyS0,115200n8 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5" >> tmp/boot/grub/grub.cfg
 echo "}" >> tmp/boot/grub/grub.cfg
+
+echo "menuentry \"MEMTEST86\" {" >> tmp/boot/grub/grub.cfg
+echo "	set root='hd0,gpt1'" >> tmp/boot/grub/grub.cfg
+echo "	chainloader (\$root)/efi/memtest86/memtest64.efi" >> tmp/boot/grub/grub.cfg
+echo "}" >> tmp/boot/grub/grub.cfg
 PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi.img 16 tmp 320 ../x86_64-uclibc/root.fs 256 128
 
 rm -rf imp
@@ -59,6 +64,12 @@ echo "menuentry \"DD-WRT\" {" >> tmp/boot/grub/grub.cfg
 echo "	set gfxpayload=keep" >> tmp/boot/grub/grub.cfg
 echo "	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 video=efifb:1024x768x32 initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5" >> tmp/boot/grub/grub.cfg
 echo "}" >> tmp/boot/grub/grub.cfg
+
+echo "menuentry \"MEMTEST86\" {" >> tmp/boot/grub/grub.cfg
+echo "	set root='hd0,gpt1'" >> tmp/boot/grub/grub.cfg
+echo "	chainloader (\$root)/efi/memtest86/memtest64.efi" >> tmp/boot/grub/grub.cfg
+echo "}" >> tmp/boot/grub/grub.cfg
+
 PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-vga.img 16 tmp 320 ../x86_64-uclibc/root.fs 256 128
 rm -rf imp
 mkdir -p img
