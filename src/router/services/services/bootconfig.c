@@ -111,12 +111,12 @@ void start_bootconfig_legacy(void)
 	if (strlen(args)) {
 		fprintf(out, "title   DD-WRT\n");
 		fprintf(out, "root    (hd0,0)\n");
-		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s reboot=bios rootdelay=5%s\n", vga, args);
+		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n", vga, args);
 		fprintf(out, "boot\n\n");
 	}
 	fprintf(out, "title   default\n");
 	fprintf(out, "root    (hd0,0)\n");
-	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s reboot=bios rootdelay=5\n", vga);
+	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n", vga);
 	fprintf(out, "boot\n");
 	fprintf(out, "\n");
 	fclose(out);
