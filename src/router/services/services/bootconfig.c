@@ -169,13 +169,13 @@ void start_bootconfig_efi(void)
 
 		fprintf(out, " menuentry \"DD-WRT\" {\n");
 		fprintf(out, " 	set gfxpayload=keep\n");
-		fprintf(out, " 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%sinitcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n", vga, args);
+		fprintf(out, " 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n", vga, args);
 		fprintf(out, " }\n");
 	}
 
 	fprintf(out, " menuentry \"default\" {\n");
 	fprintf(out, " 	set gfxpayload=keep\n");
-	fprintf(out, " 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%sinitcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n", vga);
+	fprintf(out, " 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n", vga);
 	fprintf(out, " }\n");
 
 	fprintf(out, "menuentry \"MEMTEST86\" {\n");
