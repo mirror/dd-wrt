@@ -166,12 +166,18 @@ typedef size_t machine_word_t;
 #endif /* else assume 'inline' is usable as-is */
 
 /* forceinline - force a function to be inlined, if possible */
-#if defined(__GNUC__) || __has_attribute(always_inline)
+#if (defined(__GNUC__) || __has_attribute(always_inline)) && defined(__ARMEB__)
 #  define forceinline		inline __attribute__((always_inline))
+#  define forceinline_arm	inline
+#elif defined(__GNUC__) || __has_attribute(always_inline)
+#  define forceinline		inline __attribute__((always_inline))
+#  define forceinline_arm		inline __attribute__((always_inline))
 #elif defined(_MSC_VER)
 #  define forceinline		__forceinline
+#  define forceinline_arm		__forceinline
 #else
 #  define forceinline		inline
+#  define forceinline_arm		inline
 #endif
 
 /* MAYBE_UNUSED - mark a function or variable as maybe unused */
@@ -311,7 +317,7 @@ static forceinline bool CPU_IS_LITTLE_ENDIAN(void)
 #endif
 
 /* bswap16(v) - swap the bytes of a 16-bit integer */
-static forceinline u16 bswap16(u16 v)
+static forceinline_arm u16 bswap16(u16 v)
 {
 #if GCC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
 	return __builtin_bswap16(v);
@@ -323,7 +329,7 @@ static forceinline u16 bswap16(u16 v)
 }
 
 /* bswap32(v) - swap the bytes of a 32-bit integer */
-static forceinline u32 bswap32(u32 v)
+static forceinline_arm u32 bswap32(u32 v)
 {
 #if GCC_PREREQ(4, 3) || __has_builtin(__builtin_bswap32)
 	return __builtin_bswap32(v);
@@ -338,7 +344,7 @@ static forceinline u32 bswap32(u32 v)
 }
 
 /* bswap64(v) - swap the bytes of a 64-bit integer */
-static forceinline u64 bswap64(u64 v)
+static forceinline_arm u64 bswap64(u64 v)
 {
 #if GCC_PREREQ(4, 3) || __has_builtin(__builtin_bswap64)
 	return __builtin_bswap64(v);
@@ -442,7 +448,7 @@ DEFINE_UNALIGNED_TYPE(machine_word_t)
 
 /* Unaligned loads with endianness conversion */
 
-static forceinline u16
+static forceinline_arm u16
 get_unaligned_le16(const u8 *p)
 {
 	if (UNALIGNED_ACCESS_IS_FAST)
@@ -451,7 +457,7 @@ get_unaligned_le16(const u8 *p)
 		return ((u16)p[1] << 8) | p[0];
 }
 
-static forceinline u16
+static forceinline_arm u16
 get_unaligned_be16(const u8 *p)
 {
 	if (UNALIGNED_ACCESS_IS_FAST)
@@ -460,7 +466,7 @@ get_unaligned_be16(const u8 *p)
 		return ((u16)p[0] << 8) | p[1];
 }
 
-static forceinline u32
+static forceinline_arm u32
 get_unaligned_le32(const u8 *p)
 {
 	if (UNALIGNED_ACCESS_IS_FAST)
@@ -470,7 +476,7 @@ get_unaligned_le32(const u8 *p)
 			((u32)p[1] << 8) | p[0];
 }
 
-static forceinline u32
+static forceinline_arm u32
 get_unaligned_be32(const u8 *p)
 {
 	if (UNALIGNED_ACCESS_IS_FAST)
@@ -480,7 +486,7 @@ get_unaligned_be32(const u8 *p)
 			((u32)p[2] << 8) | p[3];
 }
 
-static forceinline u64
+static forceinline_arm u64
 get_unaligned_le64(const u8 *p)
 {
 	if (UNALIGNED_ACCESS_IS_FAST)
