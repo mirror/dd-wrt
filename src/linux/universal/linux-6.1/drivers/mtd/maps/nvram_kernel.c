@@ -176,11 +176,13 @@ int nvram_unset(const char *name)
 	return ret;
 }
 
+#if 0
 static void erase_callback(struct erase_info *done)
 {
 	wait_queue_head_t *wait_q = (wait_queue_head_t *) done->priv;
 	wake_up(wait_q);
 }
+#endif
 
 static u_int32_t bad[256];
 int nvram_commit(void)
@@ -195,8 +197,6 @@ int nvram_commit(void)
 	unsigned long flags;
 	static int waiting=0;
 	u_int32_t offset, cnt = 0;
-	DECLARE_WAITQUEUE(wait, current);
-	wait_queue_head_t wait_q;
 	struct erase_info erase;
 //      printk(KERN_EMERG "commit\n");
 
@@ -253,7 +253,6 @@ int nvram_commit(void)
 	if (ret)
 		goto done;
 	/* Erase sector blocks */
-	init_waitqueue_head(&wait_q);
 	memset(&bad[0], -1, 256 * sizeof(int));
 	esize = nvram_mtd->erasesize;
 	counts = (NVRAM_SPACE / esize);
@@ -261,20 +260,13 @@ int nvram_commit(void)
 		counts = 1;
 	fullerase:;
 	for (; offset < nvram_mtd->size - NVRAM_SPACE + header->len; offset += nvram_mtd->erasesize) {
-		erase.mtd = nvram_mtd;
 		erase.addr = offset;
 		erase.len = nvram_mtd->erasesize;
-		erase.callback = erase_callback;
-		erase.priv = (u_long) & wait_q;
 
-		set_current_state(TASK_INTERRUPTIBLE);
-		add_wait_queue(&wait_q, &wait);
 
 		/* Unlock sector blocks */
 		mtd_unlock(nvram_mtd, offset, nvram_mtd->erasesize);
 		if ((ret = mtd_erase(nvram_mtd, &erase))) {
-			set_current_state(TASK_RUNNING);
-			remove_wait_queue(&wait_q, &wait);
 			printk("nvram_commit: erase error offset %X, skipping\n", offset);
 			for (i = 0; i < counts; i++) {
 				if ((cnt + i) < 256)
@@ -291,8 +283,6 @@ int nvram_commit(void)
 		}
 		cnt++;
 		/* Wait for erase to finish */
-		schedule();
-		remove_wait_queue(&wait_q, &wait);
 	}
 	offset = nvram_off;
 	alternate = 0;

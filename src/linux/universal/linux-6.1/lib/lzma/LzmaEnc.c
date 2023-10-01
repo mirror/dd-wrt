@@ -1,6 +1,7 @@
 /* LzmaEnc.c -- LZMA Encoder
 2009-11-24 : Igor Pavlov : Public domain */
 
+#include <linux/module.h>
 #include <string.h>
 
 /* #define SHOW_STAT */
@@ -52,6 +53,7 @@ void LzmaEncProps_Init(CLzmaEncProps *p)
   p->lc = p->lp = p->pb = p->algo = p->fb = p->btMode = p->numHashBytes = p->numThreads = -1;
   p->writeEndMark = 0;
 }
+EXPORT_SYMBOL(LzmaEncProps_Init);
 
 void LzmaEncProps_Normalize(CLzmaEncProps *p)
 {
@@ -444,6 +446,7 @@ SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
 
   return SZ_OK;
 }
+EXPORT_SYMBOL(LzmaEnc_SetProps);
 
 static const int kLiteralNextStates[kNumStates] = {0, 0, 0, 0, 1, 2, 3, 4,  5,  6,   4, 5};
 static const int kMatchNextStates[kNumStates]   = {7, 7, 7, 7, 7, 7, 7, 10, 10, 10, 10, 10};
@@ -1708,6 +1711,7 @@ CLzmaEncHandle LzmaEnc_Create(ISzAlloc *alloc)
     LzmaEnc_Construct((CLzmaEnc *)p);
   return p;
 }
+EXPORT_SYMBOL(LzmaEnc_Create);
 
 void LzmaEnc_FreeLits(CLzmaEnc *p, ISzAlloc *alloc)
 {
@@ -1733,6 +1737,7 @@ void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAlloc *alloc, ISzAlloc *allocBig)
   alloc->Free(alloc, p);
 }
 
+EXPORT_SYMBOL(LzmaEnc_Destroy);
 static SRes LzmaEnc_CodeOneBlock(CLzmaEnc *p, Bool useLimits, UInt32 maxPackSize, UInt32 maxUnpackSize)
 {
   UInt32 nowPos32, startPos32;
@@ -2219,6 +2224,7 @@ SRes LzmaEnc_WriteProperties(CLzmaEncHandle pp, Byte *props, SizeT *size)
     props[1 + i] = (Byte)(dictSize >> (8 * i));
   return SZ_OK;
 }
+EXPORT_SYMBOL(LzmaEnc_WriteProperties);
 
 SRes LzmaEnc_MemEncode(CLzmaEncHandle pp, Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
     int writeEndMark, ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig)
@@ -2269,3 +2275,5 @@ SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
   LzmaEnc_Destroy(p, alloc, allocBig);
   return res;
 }
+EXPORT_SYMBOL(LzmaEnc_MemEncode);
+MODULE_LICENSE("GPL");
