@@ -160,7 +160,6 @@ do {									\
 		    "%s == 0 (0x%llx == 0)", #LEFT,			\
 		    (u_longlong_t)__left);				\
 } while (0)
-<<<<<<< HEAD
 
 #define	VERIFY0P(LEFT)							\
 do {									\
@@ -171,9 +170,8 @@ do {									\
 		    (void *)__left);					\
 } while (0)
 
-=======
 #endif
->>>>>>> 64ff1e384 (disable debug bloat)
+
 #ifdef assert
 #undef assert
 #endif
