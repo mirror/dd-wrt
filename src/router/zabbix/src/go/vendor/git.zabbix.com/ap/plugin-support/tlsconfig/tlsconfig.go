@@ -29,13 +29,47 @@ import (
 	"git.zabbix.com/ap/plugin-support/uri"
 )
 
+// Details holds required data for TLS connections
 type Details struct {
-	SessionName string
-	TlsConnect  string
-	TlsCaFile   string
-	TlsCertFile string
-	TlsKeyFile  string
-	RawUri      string
+	SessionName        string
+	TlsConnect         string
+	TlsCaFile          string
+	TlsCertFile        string
+	TlsKeyFile         string
+	RawUri             string
+	AllowedConnections map[string]bool
+}
+
+// Validate checks if set TlsConnect type is allowed
+// if checkCA is true checks if TLSCAFile is set (does not validate the file)
+// if checkCertFile is true checks if TlsCertFile is set (does not validate the file)
+// if checkKeyFile is true checks if TlsKeyFile is set (does not validate the file)
+func (d *Details) Validate(checkCA, checkCertFile, checkKeyFile bool) error {
+	if len(d.AllowedConnections) == 0 {
+		return errors.New("no connection types allowed")
+	}
+
+	if d.TlsConnect == "" {
+		return errors.New("connection type must be set")
+	}
+
+	if !d.AllowedConnections[d.TlsConnect] {
+		return fmt.Errorf("connection type %s not allowed", d.TlsConnect)
+	}
+
+	if checkCA && d.TlsCaFile == "" {
+		return fmt.Errorf("TLS CA file must be set with connection type %s", d.TlsConnect)
+	}
+
+	if checkCertFile && d.TlsCertFile == "" {
+		return fmt.Errorf("TLS certificate file must be set with connection type %s", d.TlsConnect)
+	}
+
+	if checkKeyFile && d.TlsKeyFile == "" {
+		return fmt.Errorf("TLS key file must be set with connection type %s", d.TlsConnect)
+	}
+
+	return nil
 }
 
 func CreateConfig(details Details, skipVerify bool) (*tls.Config, error) {
@@ -71,6 +105,17 @@ func CreateConfig(details Details, skipVerify bool) (*tls.Config, error) {
 	}, nil
 }
 
+// NewDetails creates new Details struct with no validation
+func NewDetails(session, dbConnect, caFile, certFile, keyFile, uri string, connectionTypes ...string) Details {
+	connTypes := make(map[string]bool)
+	for _, v := range connectionTypes {
+		connTypes[v] = true
+	}
+
+	return Details{session, dbConnect, caFile, certFile, keyFile, uri, connTypes}
+}
+
+// CreateDetails (deprecated) creates details with validation
 func CreateDetails(session, dbConnect, caFile, certFile, keyFile, uri string) (Details, error) {
 	if dbConnect != "" && dbConnect != "required" {
 		if err := validateSetTLSFiles(caFile, certFile, keyFile); err != nil {
@@ -82,7 +127,7 @@ func CreateDetails(session, dbConnect, caFile, certFile, keyFile, uri string) (D
 		}
 	}
 
-	return Details{session, dbConnect, caFile, certFile, keyFile, uri}, nil
+	return Details{session, dbConnect, caFile, certFile, keyFile, uri, nil}, nil
 }
 
 func validateSetTLSFiles(caFile, certFile, keyFile string) error {

@@ -33,13 +33,23 @@ $fields = [
 	'groupids' =>	[T_ZBX_INT,			O_OPT,	P_SYS|P_ONLY_ARRAY,	DB_ID,	null],
 	'hostids' =>	[T_ZBX_INT,			O_OPT,	P_SYS|P_ONLY_ARRAY,	DB_ID,	null],
 	'severities' =>	[T_ZBX_INT,			O_OPT,	P_SYS|P_ONLY_ARRAY,	null,	null],
-	'from' =>		[T_ZBX_RANGE_TIME,	O_OPT,	P_SYS,	null,	null],
-	'to' =>			[T_ZBX_RANGE_TIME,	O_OPT,	P_SYS,	null,	null],
 	'filter_rst' =>	[T_ZBX_STR,			O_OPT,	P_SYS,	null,	null],
-	'filter_set' =>	[T_ZBX_STR,			O_OPT,	P_SYS,	null,	null]
+	'filter_set' =>	[T_ZBX_STR,			O_OPT,	P_SYS,	null,	null],
+	'from' =>		[T_ZBX_RANGE_TIME,	O_OPT,	P_SYS,	null,	null],
+	'to' =>			[T_ZBX_RANGE_TIME,	O_OPT,	P_SYS,	null,	null]
 ];
 check_fields($fields);
-validateTimeSelectorPeriod(getRequest('from'), getRequest('to'));
+
+if (hasRequest('from') || hasRequest('to')) {
+	validateTimeSelectorPeriod(
+		hasRequest('from') ? getRequest('from') : null,
+		hasRequest('to') ? getRequest('to') : null
+	);
+}
+
+$timeselector_from = getRequest('from', CProfile::get('web.toptriggers.filter.from',
+	'now-'.CSettingsHelper::get(CSettingsHelper::PERIOD_DEFAULT)));
+$timeselector_to = getRequest('to', CProfile::get('web.toptriggers.filter.to', 'now'));
 
 /*
  * Filter
@@ -48,6 +58,8 @@ if (hasRequest('filter_set')) {
 	CProfile::updateArray('web.toptriggers.filter.severities', getRequest('severities', []), PROFILE_TYPE_STR);
 	CProfile::updateArray('web.toptriggers.filter.groupids', getRequest('groupids', []), PROFILE_TYPE_STR);
 	CProfile::updateArray('web.toptriggers.filter.hostids', getRequest('hostids', []), PROFILE_TYPE_STR);
+	CProfile::update('web.toptriggers.filter.from', $timeselector_from, PROFILE_TYPE_STR);
+	CProfile::update('web.toptriggers.filter.to', $timeselector_to, PROFILE_TYPE_STR);
 }
 elseif (hasRequest('filter_rst')) {
 	DBstart();
@@ -57,17 +69,14 @@ elseif (hasRequest('filter_rst')) {
 	DBend();
 }
 
-$timeselector_options = [
-	'profileIdx' => 'web.toptriggers.filter',
-	'profileIdx2' => 0,
-	'from' => getRequest('from'),
-	'to' => getRequest('to')
-];
-updateTimeSelectorPeriod($timeselector_options);
-
 $data['filter'] = [
 	'severities' => CProfile::getArray('web.toptriggers.filter.severities', []),
-	'timeline' => getTimeSelectorPeriod($timeselector_options),
+	'timeline' => getTimeSelectorPeriod([
+		'profileIdx' => 'web.toptriggers.filter',
+		'profileIdx2' => 0,
+		'from' => $timeselector_from,
+		'to' => $timeselector_to
+	]),
 	'active_tab' => CProfile::get('web.toptriggers.filter.active', 1)
 ];
 

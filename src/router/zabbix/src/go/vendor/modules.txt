@@ -1,4 +1,4 @@
-# git.zabbix.com/ap/plugin-support v1.2.2-0.20230727113441-f6d586857c14
+# git.zabbix.com/ap/plugin-support v1.2.2-0.20230830115138-70c19a28dd7c
 ## explicit; go 1.19
 git.zabbix.com/ap/plugin-support/conf
 git.zabbix.com/ap/plugin-support/log
@@ -13,10 +13,12 @@ git.zabbix.com/ap/plugin-support/zbxerr
 # github.com/BurntSushi/locker v0.0.0-20171006230638-a6e239ea1c69
 ## explicit
 github.com/BurntSushi/locker
-# github.com/Microsoft/go-winio v0.6.0
+# github.com/Microsoft/go-winio v0.6.1
 ## explicit; go 1.17
 github.com/Microsoft/go-winio
+github.com/Microsoft/go-winio/internal/fs
 github.com/Microsoft/go-winio/internal/socket
+github.com/Microsoft/go-winio/internal/stringbuffer
 github.com/Microsoft/go-winio/pkg/guid
 # github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 ## explicit; go 1.19

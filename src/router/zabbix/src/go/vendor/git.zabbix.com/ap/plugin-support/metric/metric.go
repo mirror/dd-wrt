@@ -41,6 +41,9 @@ const (
 )
 
 const (
+	// SessionParam key name where session name will be stored during parameter evaluation
+	SessionParam = "sessionName"
+
 	required = true
 	optional = false
 )
@@ -405,7 +408,7 @@ func (m *Metric) EvalParams(rawParams []string, sessions interface{}) (
 			return nil, nil, nil, err
 		}
 
-		params["sessionName"] = rawParams[0]
+		params[SessionParam] = rawParams[0]
 	}
 
 	if i < len(rawParams) {

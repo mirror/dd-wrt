@@ -197,7 +197,7 @@ static void	add_history_dbl(const zbx_vector_ptr_t *history)
 	zbx_db_insert_t	*db_insert;
 
 	db_insert = (zbx_db_insert_t *)zbx_malloc(NULL, sizeof(zbx_db_insert_t));
-	zbx_db_insert_prepare(db_insert, "history", "itemid", "clock", "ns", "value", NULL);
+	zbx_db_insert_prepare(db_insert, "history", "itemid", "clock", "ns", "value", (char *)NULL);
 
 	for (i = 0; i < history->values_num; i++)
 	{
@@ -218,7 +218,7 @@ static void	add_history_uint(const zbx_vector_ptr_t *history)
 	zbx_db_insert_t	*db_insert;
 
 	db_insert = (zbx_db_insert_t *)zbx_malloc(NULL, sizeof(zbx_db_insert_t));
-	zbx_db_insert_prepare(db_insert, "history_uint", "itemid", "clock", "ns", "value", NULL);
+	zbx_db_insert_prepare(db_insert, "history_uint", "itemid", "clock", "ns", "value", (char *)NULL);
 
 	for (i = 0; i < history->values_num; i++)
 	{
@@ -239,7 +239,7 @@ static void	add_history_str(const zbx_vector_ptr_t *history)
 	zbx_db_insert_t	*db_insert;
 
 	db_insert = (zbx_db_insert_t *)zbx_malloc(NULL, sizeof(zbx_db_insert_t));
-	zbx_db_insert_prepare(db_insert, "history_str", "itemid", "clock", "ns", "value", NULL);
+	zbx_db_insert_prepare(db_insert, "history_str", "itemid", "clock", "ns", "value", (char *)NULL);
 
 	for (i = 0; i < history->values_num; i++)
 	{
@@ -260,7 +260,7 @@ static void	add_history_text(const zbx_vector_ptr_t *history)
 	zbx_db_insert_t	*db_insert;
 
 	db_insert = (zbx_db_insert_t *)zbx_malloc(NULL, sizeof(zbx_db_insert_t));
-	zbx_db_insert_prepare(db_insert, "history_text", "itemid", "clock", "ns", "value", NULL);
+	zbx_db_insert_prepare(db_insert, "history_text", "itemid", "clock", "ns", "value", (char *)NULL);
 
 	for (i = 0; i < history->values_num; i++)
 	{
@@ -282,7 +282,7 @@ static void	add_history_log(const zbx_vector_ptr_t *history)
 
 	db_insert = (zbx_db_insert_t *)zbx_malloc(NULL, sizeof(zbx_db_insert_t));
 	zbx_db_insert_prepare(db_insert, "history_log", "itemid", "clock", "ns", "timestamp", "source", "severity",
-			"value", "logeventid", NULL);
+			"value", "logeventid", (char *)NULL);
 
 	for (i = 0; i < history->values_num; i++)
 	{

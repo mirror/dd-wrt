@@ -24568,6 +24568,10 @@ msgstr "now() - エポックを基準とした経過秒数"
 msgid "number"
 msgstr "数値"
 
+#: include/classes/api/services/CHostPrototype.php:836
+msgid "object does not exist or belongs to another object"
+msgstr ""
+
 #: app/views/monitoring.widget.problemhosts.view.php:127
 #: include/blocks.inc.php:504
 msgid "of"

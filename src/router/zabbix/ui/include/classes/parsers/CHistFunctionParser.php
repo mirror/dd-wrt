@@ -329,22 +329,10 @@ class CHistFunctionParser extends CParser {
 					$_parameters[$num]['match'] .= $source[$p];
 					$_parameters[$num]['length']++;
 
-					switch ($source[$p]) {
-						case '\\':
-							if (!isset($source[$p + 1]) || ($source[$p + 1] !== '"' && $source[$p + 1] !== '\\')) {
-								break 3;
-							}
-
-							$_parameters[$num]['match'] .= $source[$p + 1];
-							$_parameters[$num]['length']++;
-							$p++;
-
-							break;
-
-						case '"':
-							$state = self::STATE_END;
-							break;
+					if ($source[$p] === '"' && $source[$p - 1] !== '\\') {
+						$state = self::STATE_END;
 					}
+
 					break;
 
 				// end of parameters
@@ -391,7 +379,7 @@ class CHistFunctionParser extends CParser {
 	 * @return string
 	 */
 	public static function unquoteParam(string $param): string {
-		return strtr(substr($param, 1, -1), ['\\"' => '"', '\\\\' => '\\']);
+		return strtr(substr($param, 1, -1), ['\\"' => '"']);
 	}
 
 	/*
@@ -400,7 +388,7 @@ class CHistFunctionParser extends CParser {
 	 * @return string
 	 */
 	public static function quoteParam(string $param): string {
-		return '"'.strtr($param, ['\\' => '\\\\', '"' => '\\"']).'"';
+		return '"'.strtr($param, ['"' => '\\"']).'"';
 	}
 
 	/**

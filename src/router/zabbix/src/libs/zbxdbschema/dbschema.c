@@ -1665,8 +1665,8 @@ ZBX_TABLE	tables[] = {
 		{"tag_filterid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | 0 ,	ZBX_FK_CASCADE_DELETE},
 		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	" ",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	" ",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		NULL
@@ -2593,24 +2593,24 @@ ZBX_TABLE	tables[] = {
 };
 
 const zbx_db_table_changelog_t	changelog_tables[] = {
+	{"drules", 9},
+	{"connector_tag", 18},
+	{"httpstep", 14},
 	{"item_preproc", 8},
-	{"items", 3},
 	{"connector", 17},
-	{"dchecks", 10},
-	{"httpstepitem", 16},
 	{"functions", 7},
 	{"httptest", 11},
 	{"trigger_tag", 6},
-	{"httpstep_field", 15},
-	{"drules", 9},
-	{"hosts", 1},
-	{"triggers", 5},
-	{"host_tag", 2},
-	{"connector_tag", 18},
-	{"httpstep", 14},
+	{"dchecks", 10},
 	{"httptest_field", 12},
 	{"item_tag", 4},
+	{"host_tag", 2},
 	{"httptestitem", 13},
+	{"hosts", 1},
+	{"items", 3},
+	{"httpstepitem", 16},
+	{"triggers", 5},
+	{"httpstep_field", 15},
 	{0}
 };
 #if defined(HAVE_SQLITE3)
@@ -2647,6 +2647,7 @@ PRIMARY KEY (userid)\n\
 );\n\
 CREATE UNIQUE INDEX users_1 ON users (username);\n\
 CREATE INDEX users_2 ON users (userdirectoryid);\n\
+CREATE INDEX users_3 ON users (roleid);\n\
 CREATE TABLE maintenances (\n\
 maintenanceid bigint  NOT NULL,\n\
 name varchar(128) DEFAULT '' NOT NULL,\n\
@@ -2698,6 +2699,7 @@ CREATE INDEX hosts_3 ON hosts (proxy_hostid);\n\
 CREATE INDEX hosts_4 ON hosts (name);\n\
 CREATE INDEX hosts_5 ON hosts (maintenanceid);\n\
 CREATE INDEX hosts_6 ON hosts (name_upper);\n\
+CREATE INDEX hosts_7 ON hosts (templateid);\n\
 CREATE TABLE hstgrp (\n\
 groupid bigint  NOT NULL,\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
@@ -2716,6 +2718,8 @@ templateid bigint  NULL REFERENCES group_prototype (group_prototypeid) ON DELETE
 PRIMARY KEY (group_prototypeid)\n\
 );\n\
 CREATE INDEX group_prototype_1 ON group_prototype (hostid);\n\
+CREATE INDEX group_prototype_2 ON group_prototype (groupid);\n\
+CREATE INDEX group_prototype_3 ON group_prototype (templateid);\n\
 CREATE TABLE group_discovery (\n\
 groupid bigint  NOT NULL REFERENCES hstgrp (groupid) ON DELETE CASCADE,\n\
 parent_group_prototypeid bigint  NOT NULL REFERENCES group_prototype (group_prototypeid),\n\
@@ -2724,6 +2728,7 @@ lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (groupid)\n\
 );\n\
+CREATE INDEX group_discovery_1 ON group_discovery (parent_group_prototypeid);\n\
 CREATE TABLE drules (\n\
 druleid bigint  NOT NULL,\n\
 proxy_hostid bigint  NULL REFERENCES hosts (hostid),\n\
@@ -3480,6 +3485,7 @@ PRIMARY KEY (sysmapid)\n\
 CREATE UNIQUE INDEX sysmaps_1 ON sysmaps (name);\n\
 CREATE INDEX sysmaps_2 ON sysmaps (backgroundid);\n\
 CREATE INDEX sysmaps_3 ON sysmaps (iconmapid);\n\
+CREATE INDEX sysmaps_4 ON sysmaps (userid);\n\
 CREATE TABLE sysmaps_elements (\n\
 selementid bigint  NOT NULL,\n\
 sysmapid bigint  NOT NULL REFERENCES sysmaps (sysmapid) ON DELETE CASCADE,\n\
@@ -3555,6 +3561,7 @@ permission integer DEFAULT '2' NOT NULL,\n\
 PRIMARY KEY (sysmapuserid)\n\
 );\n\
 CREATE UNIQUE INDEX sysmap_user_1 ON sysmap_user (sysmapid,userid);\n\
+CREATE INDEX sysmap_user_2 ON sysmap_user (userid);\n\
 CREATE TABLE sysmap_usrgrp (\n\
 sysmapusrgrpid bigint  NOT NULL,\n\
 sysmapid bigint  NOT NULL REFERENCES sysmaps (sysmapid) ON DELETE CASCADE,\n\
@@ -3563,6 +3570,7 @@ permission integer DEFAULT '2' NOT NULL,\n\
 PRIMARY KEY (sysmapusrgrpid)\n\
 );\n\
 CREATE UNIQUE INDEX sysmap_usrgrp_1 ON sysmap_usrgrp (sysmapid,usrgrpid);\n\
+CREATE INDEX sysmap_usrgrp_2 ON sysmap_usrgrp (usrgrpid);\n\
 CREATE TABLE maintenances_hosts (\n\
 maintenance_hostid bigint  NOT NULL,\n\
 maintenanceid bigint  NOT NULL REFERENCES maintenances (maintenanceid) ON DELETE CASCADE,\n\
@@ -3992,11 +4000,14 @@ lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (hostid)\n\
 );\n\
+CREATE INDEX host_discovery_1 ON host_discovery (parent_hostid);\n\
+CREATE INDEX host_discovery_2 ON host_discovery (parent_itemid);\n\
 CREATE TABLE interface_discovery (\n\
 interfaceid bigint  NOT NULL REFERENCES interface (interfaceid) ON DELETE CASCADE,\n\
 parent_interfaceid bigint  NOT NULL REFERENCES interface (interfaceid) ON DELETE CASCADE,\n\
 PRIMARY KEY (interfaceid)\n\
 );\n\
+CREATE INDEX interface_discovery_1 ON interface_discovery (parent_interfaceid);\n\
 CREATE TABLE profiles (\n\
 profileid bigint  NOT NULL,\n\
 userid bigint  NOT NULL REFERENCES users (userid) ON DELETE CASCADE,\n\
@@ -4100,10 +4111,12 @@ CREATE TABLE tag_filter (\n\
 tag_filterid bigint  NOT NULL,\n\
 usrgrpid bigint  NOT NULL REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE,\n\
 groupid bigint  NOT NULL REFERENCES hstgrp (groupid) ON DELETE CASCADE,\n\
-tag varchar(255) DEFAULT ''  NOT NULL,\n\
-value varchar(255) DEFAULT ''  NOT NULL,\n\
+tag varchar(255) DEFAULT '' NOT NULL,\n\
+value varchar(255) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (tag_filterid)\n\
 );\n\
+CREATE INDEX tag_filter_1 ON tag_filter (usrgrpid);\n\
+CREATE INDEX tag_filter_2 ON tag_filter (groupid);\n\
 CREATE TABLE event_recovery (\n\
 eventid bigint  NOT NULL REFERENCES events (eventid) ON DELETE CASCADE,\n\
 r_eventid bigint  NOT NULL REFERENCES events (eventid) ON DELETE CASCADE,\n\
@@ -4174,6 +4187,7 @@ proxy_hostid bigint  NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
 PRIMARY KEY (taskid)\n\
 );\n\
 CREATE INDEX task_1 ON task (status,proxy_hostid);\n\
+CREATE INDEX task_2 ON task (proxy_hostid);\n\
 CREATE TABLE task_close_problem (\n\
 taskid bigint  NOT NULL REFERENCES task (taskid) ON DELETE CASCADE,\n\
 acknowledgeid bigint  NOT NULL,\n\
@@ -4262,6 +4276,7 @@ triggerid bigint  NOT NULL REFERENCES triggers (triggerid) ON DELETE CASCADE,\n\
 PRIMARY KEY (selement_triggerid)\n\
 );\n\
 CREATE UNIQUE INDEX sysmap_element_trigger_1 ON sysmap_element_trigger (selementid,triggerid);\n\
+CREATE INDEX sysmap_element_trigger_2 ON sysmap_element_trigger (triggerid);\n\
 CREATE TABLE httptest_field (\n\
 httptest_fieldid bigint  NOT NULL,\n\
 httptestid bigint  NOT NULL REFERENCES httptest (httptestid),\n\
@@ -4301,6 +4316,7 @@ permission integer DEFAULT '2' NOT NULL,\n\
 PRIMARY KEY (dashboard_userid)\n\
 );\n\
 CREATE UNIQUE INDEX dashboard_user_1 ON dashboard_user (dashboardid,userid);\n\
+CREATE INDEX dashboard_user_2 ON dashboard_user (userid);\n\
 CREATE TABLE dashboard_usrgrp (\n\
 dashboard_usrgrpid bigint  NOT NULL,\n\
 dashboardid bigint  NOT NULL REFERENCES dashboard (dashboardid) ON DELETE CASCADE,\n\
@@ -4309,6 +4325,7 @@ permission integer DEFAULT '2' NOT NULL,\n\
 PRIMARY KEY (dashboard_usrgrpid)\n\
 );\n\
 CREATE UNIQUE INDEX dashboard_usrgrp_1 ON dashboard_usrgrp (dashboardid,usrgrpid);\n\
+CREATE INDEX dashboard_usrgrp_2 ON dashboard_usrgrp (usrgrpid);\n\
 CREATE TABLE dashboard_page (\n\
 dashboard_pageid bigint  NOT NULL,\n\
 dashboardid bigint  NOT NULL REFERENCES dashboard (dashboardid) ON DELETE CASCADE,\n\
@@ -4377,6 +4394,7 @@ PRIMARY KEY (event_suppressid)\n\
 CREATE UNIQUE INDEX event_suppress_1 ON event_suppress (eventid,maintenanceid);\n\
 CREATE INDEX event_suppress_2 ON event_suppress (suppress_until);\n\
 CREATE INDEX event_suppress_3 ON event_suppress (maintenanceid);\n\
+CREATE INDEX event_suppress_4 ON event_suppress (userid);\n\
 CREATE TABLE maintenance_tag (\n\
 maintenancetagid bigint  NOT NULL,\n\
 maintenanceid bigint  NOT NULL REFERENCES maintenances (maintenanceid) ON DELETE CASCADE,\n\
@@ -4604,6 +4622,8 @@ info varchar(2048) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (reportid)\n\
 );\n\
 CREATE UNIQUE INDEX report_1 ON report (name);\n\
+CREATE INDEX report_2 ON report (userid);\n\
+CREATE INDEX report_3 ON report (dashboardid);\n\
 CREATE TABLE report_param (\n\
 reportparamid bigint  NOT NULL,\n\
 reportid bigint  NOT NULL REFERENCES report (reportid) ON DELETE CASCADE,\n\
@@ -4621,6 +4641,8 @@ access_userid bigint  NULL REFERENCES users (userid),\n\
 PRIMARY KEY (reportuserid)\n\
 );\n\
 CREATE INDEX report_user_1 ON report_user (reportid);\n\
+CREATE INDEX report_user_2 ON report_user (userid);\n\
+CREATE INDEX report_user_3 ON report_user (access_userid);\n\
 CREATE TABLE report_usrgrp (\n\
 reportusrgrpid bigint  NOT NULL,\n\
 reportid bigint  NOT NULL REFERENCES report (reportid) ON DELETE CASCADE,\n\
@@ -4629,6 +4651,8 @@ access_userid bigint  NULL REFERENCES users (userid),\n\
 PRIMARY KEY (reportusrgrpid)\n\
 );\n\
 CREATE INDEX report_usrgrp_1 ON report_usrgrp (reportid);\n\
+CREATE INDEX report_usrgrp_2 ON report_usrgrp (usrgrpid);\n\
+CREATE INDEX report_usrgrp_3 ON report_usrgrp (access_userid);\n\
 CREATE TABLE service_problem_tag (\n\
 service_problem_tagid bigint  NOT NULL,\n\
 serviceid bigint  NOT NULL REFERENCES services (serviceid) ON DELETE CASCADE,\n\
@@ -4864,7 +4888,7 @@ mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dbversionid)\n\
 );\n\
-INSERT INTO dbversion VALUES ('1','6040000','6040001');\n\
+INSERT INTO dbversion VALUES ('1','6040000','6040025');\n\
 create trigger hosts_insert after insert on hosts\n\
 for each row\n\
 begin\n\

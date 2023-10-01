@@ -1865,7 +1865,7 @@ void	zbx_db_register_host_flush(zbx_vector_ptr_t *autoreg_hosts, zbx_uint64_t pr
 		autoreg_hostid = zbx_db_get_maxid_num("autoreg_host", create);
 
 		zbx_db_insert_prepare(&db_insert, "autoreg_host", "autoreg_hostid", "proxy_hostid", "host", "listen_ip",
-				"listen_dns", "listen_port", "tls_accepted", "host_metadata", "flags", NULL);
+				"listen_dns", "listen_port", "tls_accepted", "host_metadata", "flags", (char *)NULL);
 	}
 
 	if (0 != (update = autoreg_hosts->values_num - create))

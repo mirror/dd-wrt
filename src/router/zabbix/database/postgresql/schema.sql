@@ -30,6 +30,7 @@ CREATE TABLE users (
 );
 CREATE UNIQUE INDEX users_1 ON users (username);
 CREATE INDEX users_2 ON users (userdirectoryid);
+CREATE INDEX users_3 ON users (roleid);
 CREATE TABLE maintenances (
 	maintenanceid            bigint                                    NOT NULL,
 	name                     varchar(128)    DEFAULT ''                NOT NULL,
@@ -81,6 +82,7 @@ CREATE INDEX hosts_3 ON hosts (proxy_hostid);
 CREATE INDEX hosts_4 ON hosts (name);
 CREATE INDEX hosts_5 ON hosts (maintenanceid);
 CREATE INDEX hosts_6 ON hosts (name_upper);
+CREATE INDEX hosts_7 ON hosts (templateid);
 CREATE TABLE hstgrp (
 	groupid                  bigint                                    NOT NULL,
 	name                     varchar(255)    DEFAULT ''                NOT NULL,
@@ -99,6 +101,8 @@ CREATE TABLE group_prototype (
 	PRIMARY KEY (group_prototypeid)
 );
 CREATE INDEX group_prototype_1 ON group_prototype (hostid);
+CREATE INDEX group_prototype_2 ON group_prototype (groupid);
+CREATE INDEX group_prototype_3 ON group_prototype (templateid);
 CREATE TABLE group_discovery (
 	groupid                  bigint                                    NOT NULL,
 	parent_group_prototypeid bigint                                    NOT NULL,
@@ -107,6 +111,7 @@ CREATE TABLE group_discovery (
 	ts_delete                integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (groupid)
 );
+CREATE INDEX group_discovery_1 ON group_discovery (parent_group_prototypeid);
 CREATE TABLE drules (
 	druleid                  bigint                                    NOT NULL,
 	proxy_hostid             bigint                                    NULL,
@@ -863,6 +868,7 @@ CREATE TABLE sysmaps (
 CREATE UNIQUE INDEX sysmaps_1 ON sysmaps (name);
 CREATE INDEX sysmaps_2 ON sysmaps (backgroundid);
 CREATE INDEX sysmaps_3 ON sysmaps (iconmapid);
+CREATE INDEX sysmaps_4 ON sysmaps (userid);
 CREATE TABLE sysmaps_elements (
 	selementid               bigint                                    NOT NULL,
 	sysmapid                 bigint                                    NOT NULL,
@@ -938,6 +944,7 @@ CREATE TABLE sysmap_user (
 	PRIMARY KEY (sysmapuserid)
 );
 CREATE UNIQUE INDEX sysmap_user_1 ON sysmap_user (sysmapid,userid);
+CREATE INDEX sysmap_user_2 ON sysmap_user (userid);
 CREATE TABLE sysmap_usrgrp (
 	sysmapusrgrpid           bigint                                    NOT NULL,
 	sysmapid                 bigint                                    NOT NULL,
@@ -946,6 +953,7 @@ CREATE TABLE sysmap_usrgrp (
 	PRIMARY KEY (sysmapusrgrpid)
 );
 CREATE UNIQUE INDEX sysmap_usrgrp_1 ON sysmap_usrgrp (sysmapid,usrgrpid);
+CREATE INDEX sysmap_usrgrp_2 ON sysmap_usrgrp (usrgrpid);
 CREATE TABLE maintenances_hosts (
 	maintenance_hostid       bigint                                    NOT NULL,
 	maintenanceid            bigint                                    NOT NULL,
@@ -1378,11 +1386,14 @@ CREATE TABLE host_discovery (
 	ts_delete                integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (hostid)
 );
+CREATE INDEX host_discovery_1 ON host_discovery (parent_hostid);
+CREATE INDEX host_discovery_2 ON host_discovery (parent_itemid);
 CREATE TABLE interface_discovery (
 	interfaceid              bigint                                    NOT NULL,
 	parent_interfaceid       bigint                                    NOT NULL,
 	PRIMARY KEY (interfaceid)
 );
+CREATE INDEX interface_discovery_1 ON interface_discovery (parent_interfaceid);
 CREATE TABLE profiles (
 	profileid                bigint                                    NOT NULL,
 	userid                   bigint                                    NOT NULL,
@@ -1490,6 +1501,8 @@ CREATE TABLE tag_filter (
 	value                    varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (tag_filterid)
 );
+CREATE INDEX tag_filter_1 ON tag_filter (usrgrpid);
+CREATE INDEX tag_filter_2 ON tag_filter (groupid);
 CREATE TABLE event_recovery (
 	eventid                  bigint                                    NOT NULL,
 	r_eventid                bigint                                    NOT NULL,
@@ -1560,6 +1573,7 @@ CREATE TABLE task (
 	PRIMARY KEY (taskid)
 );
 CREATE INDEX task_1 ON task (status,proxy_hostid);
+CREATE INDEX task_2 ON task (proxy_hostid);
 CREATE TABLE task_close_problem (
 	taskid                   bigint                                    NOT NULL,
 	acknowledgeid            bigint                                    NOT NULL,
@@ -1648,6 +1662,7 @@ CREATE TABLE sysmap_element_trigger (
 	PRIMARY KEY (selement_triggerid)
 );
 CREATE UNIQUE INDEX sysmap_element_trigger_1 ON sysmap_element_trigger (selementid,triggerid);
+CREATE INDEX sysmap_element_trigger_2 ON sysmap_element_trigger (triggerid);
 CREATE TABLE httptest_field (
 	httptest_fieldid         bigint                                    NOT NULL,
 	httptestid               bigint                                    NOT NULL,
@@ -1687,6 +1702,7 @@ CREATE TABLE dashboard_user (
 	PRIMARY KEY (dashboard_userid)
 );
 CREATE UNIQUE INDEX dashboard_user_1 ON dashboard_user (dashboardid,userid);
+CREATE INDEX dashboard_user_2 ON dashboard_user (userid);
 CREATE TABLE dashboard_usrgrp (
 	dashboard_usrgrpid       bigint                                    NOT NULL,
 	dashboardid              bigint                                    NOT NULL,
@@ -1695,6 +1711,7 @@ CREATE TABLE dashboard_usrgrp (
 	PRIMARY KEY (dashboard_usrgrpid)
 );
 CREATE UNIQUE INDEX dashboard_usrgrp_1 ON dashboard_usrgrp (dashboardid,usrgrpid);
+CREATE INDEX dashboard_usrgrp_2 ON dashboard_usrgrp (usrgrpid);
 CREATE TABLE dashboard_page (
 	dashboard_pageid         bigint                                    NOT NULL,
 	dashboardid              bigint                                    NOT NULL,
@@ -1763,6 +1780,7 @@ CREATE TABLE event_suppress (
 CREATE UNIQUE INDEX event_suppress_1 ON event_suppress (eventid,maintenanceid);
 CREATE INDEX event_suppress_2 ON event_suppress (suppress_until);
 CREATE INDEX event_suppress_3 ON event_suppress (maintenanceid);
+CREATE INDEX event_suppress_4 ON event_suppress (userid);
 CREATE TABLE maintenance_tag (
 	maintenancetagid         bigint                                    NOT NULL,
 	maintenanceid            bigint                                    NOT NULL,
@@ -1990,6 +2008,8 @@ CREATE TABLE report (
 	PRIMARY KEY (reportid)
 );
 CREATE UNIQUE INDEX report_1 ON report (name);
+CREATE INDEX report_2 ON report (userid);
+CREATE INDEX report_3 ON report (dashboardid);
 CREATE TABLE report_param (
 	reportparamid            bigint                                    NOT NULL,
 	reportid                 bigint                                    NOT NULL,
@@ -2007,6 +2027,8 @@ CREATE TABLE report_user (
 	PRIMARY KEY (reportuserid)
 );
 CREATE INDEX report_user_1 ON report_user (reportid);
+CREATE INDEX report_user_2 ON report_user (userid);
+CREATE INDEX report_user_3 ON report_user (access_userid);
 CREATE TABLE report_usrgrp (
 	reportusrgrpid           bigint                                    NOT NULL,
 	reportid                 bigint                                    NOT NULL,
@@ -2015,6 +2037,8 @@ CREATE TABLE report_usrgrp (
 	PRIMARY KEY (reportusrgrpid)
 );
 CREATE INDEX report_usrgrp_1 ON report_usrgrp (reportid);
+CREATE INDEX report_usrgrp_2 ON report_usrgrp (usrgrpid);
+CREATE INDEX report_usrgrp_3 ON report_usrgrp (access_userid);
 CREATE TABLE service_problem_tag (
 	service_problem_tagid    bigint                                    NOT NULL,
 	serviceid                bigint                                    NOT NULL,
@@ -2251,7 +2275,7 @@ CREATE TABLE dbversion (
 	optional                 integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dbversionid)
 );
-INSERT INTO dbversion VALUES ('1','6040000','6040001');
+INSERT INTO dbversion VALUES ('1','6040000','6040025');
 create or replace function changelog_hosts_insert() returns trigger as $$
 begin
 insert into changelog (object,objectid,operation,clock)

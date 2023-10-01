@@ -1298,7 +1298,8 @@ class CItemPrototype extends CItemGeneral {
 	 */
 	public static function unlinkTemplateObjects(array $ruleids): void {
 		$result = DBselect(
-			'SELECT id.itemid,i.name,i.type,i.key_,i.templateid,i.uuid,i.valuemapid,i.hostid,h.status AS host_status'.
+			'SELECT id.itemid,i.name,i.type,i.key_,i.templateid,i.uuid,i.valuemapid,i.hostid,i.flags,'.
+				'h.status AS host_status'.
 			' FROM item_discovery id,items i,hosts h'.
 			' WHERE id.itemid=i.itemid'.
 				' AND i.hostid=h.hostid'.
@@ -1310,6 +1311,7 @@ class CItemPrototype extends CItemGeneral {
 		$db_items = [];
 		$i = 0;
 		$tpl_itemids = [];
+		$internal_fields = array_flip(['key_', 'hostid', 'flags']);
 
 		while ($row = DBfetch($result)) {
 			$item = [
@@ -1329,7 +1331,7 @@ class CItemPrototype extends CItemGeneral {
 
 				if ($row['host_status'] == HOST_STATUS_TEMPLATE) {
 					$tpl_itemids[$i] = $row['itemid'];
-					$item += array_intersect_key($row, array_flip(['key_', 'hostid']));
+					$item += array_intersect_key($row, $internal_fields);
 				}
 			}
 

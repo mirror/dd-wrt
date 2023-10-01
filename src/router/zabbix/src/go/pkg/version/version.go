@@ -26,13 +26,13 @@ import (
 )
 
 const (
-	ZABBIX_REVDATE          = "22 August 2023"
+	ZABBIX_REVDATE          = "26 September 2023"
 	ZABBIX_VERSION_MAJOR    = 6
 	ZABBIX_VERSION_MINOR    = 4
-	ZABBIX_VERSION_PATCH    = 6
+	ZABBIX_VERSION_PATCH    = 7
 	ZABBIX_VERSION_RC       = ""
 	ZABBIX_VERSION_RC_NUM   = "2400"
-	ZABBIX_VERSION_REVISION = "52b7e2cb506"
+	ZABBIX_VERSION_REVISION = "4e555c6d64d"
 	copyrightMessage        = "Copyright (C) 2023 Zabbix SIA\n" +
 		"License GPLv2+: GNU GPL version 2 or later <https://www.gnu.org/licenses/>.\n" +
 		"This is free software: you are free to change and redistribute it according to\n" +

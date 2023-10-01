@@ -873,7 +873,6 @@ else {
 		? CArrayHelper::renameObjectsKeys(API::TemplateGroup()->get([
 			'output' => ['groupid', 'name'],
 			'groupids' => $filter['groups'],
-			'editable' => true,
 			'preservekeys' => true
 		]), ['groupid' => 'id'])
 		: [];
