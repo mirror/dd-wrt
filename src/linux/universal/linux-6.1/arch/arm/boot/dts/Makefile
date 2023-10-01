@@ -125,12 +125,10 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
 	bcm4709-buffalo-wxr-1900dhp.dtb \
 	bcm4709-linksys-ea9200.dtb \
 	bcm4709-netgear-r7000.dtb \
-	bcm4709-netgear-r7900.dtb \
 	bcm4709-netgear-r8000.dtb \
 	bcm4709-tplink-archer-c9-v1.dtb \
 	bcm47094-asus-rt-ac88u.dtb \
 	bcm47094-dlink-dir-885l.dtb \
-	bcm47094-dlink-dir-890l.dtb \
 	bcm47094-linksys-panamera.dtb \
 	bcm47094-luxul-abr-4500.dtb \
 	bcm47094-luxul-xap-1610.dtb \
@@ -141,7 +139,6 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
 	bcm47094-netgear-r8500.dtb \
 	bcm47094-phicomm-k3.dtb \
 	bcm53015-meraki-mr26.dtb \
-	bcm53016-dlink-dwl-8610ap.dtb \
 	bcm53016-meraki-mr32.dtb \
 	bcm94708.dtb \
 	bcm94709.dtb \

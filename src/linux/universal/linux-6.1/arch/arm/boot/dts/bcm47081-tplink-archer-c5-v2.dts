@@ -91,56 +91,34 @@
 	};
 };
 
-&srab {
-	status = "okay";
-
-	ports {
-		port@0 {
-			reg = <0>;
-			label = "wan";
-		};
-
-		port@1 {
-			reg = <1>;
-			label = "lan1";
-		};
-
-		port@2 {
-			reg = <2>;
-			label = "lan2";
-		};
-
-		port@3 {
-			reg = <3>;
-			label = "lan3";
-		};
-
-		port@4 {
-			reg = <4>;
-			label = "lan4";
-		};
-
-		port@5 {
-			reg = <5>;
-			label = "cpu";
-			ethernet = <&gmac0>;
-		};
-	};
-};
-
 &spi_nor {
 	status = "okay";
 
 	partitions {
-		compatible = "tplink,safeloader-partitions";
-		partitions-table-offset = <0xe50000>;
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		partition-os-image {
+		boot@0 {
+			label = "boot";
+			reg = <0x000000 0x040000>;
+			read-only;
+		};
+
+		os-image@100000 {
+			label = "os-image";
+			reg = <0x040000 0x200000>;
 			compatible = "brcm,trx";
 		};
 
-		partition-file-system {
-			linux,rootfs;
+		rootfs@240000 {
+			label = "rootfs";
+			reg = <0x240000 0xc00000>;
+		};
+
+		nvram@ff0000 {
+			label = "nvram";
+			reg = <0xff0000 0x010000>;
 		};
 	};
 };

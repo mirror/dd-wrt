@@ -14,13 +14,6 @@
 	compatible = "linksys,armada385", "marvell,armada385",
 		     "marvell,armada380";
 
-	aliases {
-		led-boot = &led_power;
-		led-failsafe = &led_power;
-		led-running = &led_power;
-		led-upgrade = &led_power;
-	};
-
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
@@ -78,7 +71,7 @@
 		pinctrl-0 = <&gpio_leds_pins>;
 		pinctrl-names = "default";
 
-		led_power: power {
+		power {
 			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
@@ -116,7 +109,7 @@
 };
 
 &eth2 {
-	status = "disabled";
+	status = "okay";
 	phy-mode = "sgmii";
 	buffer-manager = <&bm>;
 	bm,pool-long = <2>;
@@ -200,10 +193,10 @@
 				label = "wan";
 			};
 
-			port@6 {
-				reg = <6>;
+			port@5 {
+				reg = <5>;
 				label = "cpu";
-				ethernet = <&eth0>;
+				ethernet = <&eth2>;
 
 				fixed-link {
 					speed = <1000>;
@@ -221,19 +214,11 @@
 &pcie1 {
 	/* Marvell 88W8864, 5GHz-only */
 	status = "okay";
-
-	mwlwifi {
-		marvell,2ghz = <0>;
-	};
 };
 
 &pcie2 {
 	/* Marvell 88W8864, 2GHz-only */
 	status = "okay";
-
-	mwlwifi {
-		marvell,5ghz = <0>;
-	};
 };
 
 &pinctrl {

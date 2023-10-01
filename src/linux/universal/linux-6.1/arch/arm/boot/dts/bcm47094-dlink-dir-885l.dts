@@ -35,7 +35,6 @@
 				partition@0 {
 					label = "firmware";
 					reg = <0x00000000 0x08000000>;
-					compatible = "seama";
 				};
 			};
 		};
