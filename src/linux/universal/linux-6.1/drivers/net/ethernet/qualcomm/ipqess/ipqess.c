@@ -625,9 +625,22 @@ static int ipqess_stop(struct net_device *netdev)
 	netif_tx_stop_all_queues(netdev);
 	phylink_stop(ess->phylink);
 	ipqess_irq_disable(ess);
+
 	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
+		int qid;
+
 		napi_disable(&ess->tx_ring[i].napi_tx);
 		napi_disable(&ess->rx_ring[i].napi_rx);
+
+		qid = ess->tx_ring[i].idx;
+		devm_free_irq(&netdev->dev,
+			      ess->tx_irq[qid],
+			      &ess->tx_ring[i]);
+
+		qid = ess->rx_ring[i].idx;
+		devm_free_irq(&netdev->dev,
+			      ess->rx_irq[qid],
+			      &ess->rx_ring[i]);
 	}
 
 	return 0;
@@ -756,6 +769,8 @@ static int ipqess_tx_map_and_fill(struct ipqess_tx_ring *tx_ring, struct sk_buff
 	int i;
 
 	ipqess_get_dp_info(tx_ring->ess, skb, &word3);
+
+	ipqess_process_dsa_tag_sh(tx_ring->ess, skb, &word3);
 
 	if (skb_is_gso(skb)) {
 		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4) {
@@ -956,6 +971,33 @@ static const struct net_device_ops ipqess_axi_netdev_ops = {
 	.ndo_set_mac_address	= ipqess_set_mac_address,
 	.ndo_tx_timeout		= ipqess_tx_timeout,
 };
+
+static int ipqess_netdevice_event(struct notifier_block *nb,
+				  unsigned long event, void *ptr)
+{
+	struct ipqess *ess = container_of(nb, struct ipqess, netdev_notifier);
+	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
+	struct netdev_notifier_changeupper_info *info;
+
+	if (dev != ess->netdev)
+		return NOTIFY_DONE;
+
+	switch (event) {
+	case NETDEV_CHANGEUPPER:
+		info = ptr;
+
+		if (!dsa_slave_dev_check(info->upper_dev))
+			return NOTIFY_DONE;
+
+		if (info->linking)
+			ess->dsa_ports++;
+		else
+			ess->dsa_ports--;
+
+		return NOTIFY_DONE;
+	}
+	return NOTIFY_OK;
+}
 
 static void ipqess_hw_stop(struct ipqess *ess)
 {
@@ -1294,6 +1336,8 @@ static int ipqess_axi_probe(struct platform_device *pdev)
 		if (err)
 			goto err_out;
 	}
+
+	dev_set_threaded(netdev, true);
 
 	return 0;
 

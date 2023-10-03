@@ -252,6 +252,10 @@ struct ifreq {
 		char	ifru_newname[IFNAMSIZ];
 		void __user *	ifru_data;
 		struct	if_settings ifru_settings;
+		struct {
+			__u16 weight;
+			char slave[IFNAMSIZ];	
+		} ifru_weight;
 	} ifr_ifru;
 };
 #endif /* __UAPI_DEF_IF_IFREQ */

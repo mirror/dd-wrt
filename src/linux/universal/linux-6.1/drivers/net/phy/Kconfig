@@ -362,6 +362,13 @@ config AT803X_PHY
 	  Currently supports the AR8030, AR8031, AR8033, AR8035 and internal
 	  QCA8337(Internal qca8k PHY) model
 
+config QCA807X_PHY
+	tristate "Qualcomm QCA807x PHYs"
+	depends on OF_MDIO
+	help
+	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
+	  control PHY.
+
 config QSEMI_PHY
 	tristate "Quality Semiconductor PHYs"
 	help

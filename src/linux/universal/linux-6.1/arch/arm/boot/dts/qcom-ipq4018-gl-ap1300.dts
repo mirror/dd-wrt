@@ -9,12 +9,6 @@
 	model = "GL.iNet GL-AP1300";
 	compatible = "glinet,gl-ap1300";
 
-	aliases {
-		led-boot = &led_power;
-		led-failsafe = &led_power;
-		led-running = &led_power;
-		led-upgrade = &led_power;
-	};
 
 	memory {
 		device_type = "memory";
@@ -77,30 +71,6 @@
 		};
 	};
 
-	keys {
-		compatible = "gpio-keys";
-
-		reset {
-			label = "reset";
-			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_power: power {
-			label = "white:power";
-			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-		};
-
-		wan {
-			label = "white:wan";
-			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &blsp_dma {

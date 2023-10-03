@@ -11,4 +11,6 @@ qcauart-objs := qca_uart.o
 
 obj-y += emac/
 
+obj-$(CONFIG_QCOM_IPQ4019_ESS_EDMA) += ipqess/
+
 obj-$(CONFIG_RMNET) += rmnet/

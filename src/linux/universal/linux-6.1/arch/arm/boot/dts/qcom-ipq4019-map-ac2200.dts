@@ -11,10 +11,6 @@
 	compatible = "asus,map-ac2200";
 
 	aliases {
-		led-boot = &led_blue0;
-		led-failsafe = &led_red0;
-		led-running = &led_blue0;
-		led-upgrade = &led_red0;
 		ethernet1 = &swport4;
 	};
 
@@ -58,21 +54,6 @@
 		};
 	};
 
-	keys {
-		compatible = "gpio-keys";
-
-		reset {
-			label = "reset";
-			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
-		};
-
-		wps {
-			label = "wps";
-			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_WPS_BUTTON>;
-		};
-	};
 };
 
 &nand {

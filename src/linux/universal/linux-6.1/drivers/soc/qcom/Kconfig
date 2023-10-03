@@ -255,4 +255,11 @@ config QCOM_ICC_BWMON
 	  the fixed bandwidth votes from cpufreq (CPU nodes) thus achieve high
 	  memory throughput even with lower CPU frequencies.
 
+config QCOM_TCSR
+	tristate "QCOM Top Control and Status Registers"
+	depends on ARCH_QCOM
+	help
+	  Say y here to enable TCSR support.  The TCSR provides control
+	  functions for various peripherals.
+
 endmenu
