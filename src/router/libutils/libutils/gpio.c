@@ -403,7 +403,7 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
-	return get_linux_gpio(gpio);
+	return get_linux_gpio(gpio+443);
 }
 
 void set_gpio(int gpio, int value)
@@ -467,7 +467,7 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 	} else {
-		set_linux_gpio(gpio, value);
+		set_linux_gpio(gpio+443, value);
 	}
 
 }
