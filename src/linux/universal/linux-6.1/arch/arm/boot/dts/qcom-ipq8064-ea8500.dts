@@ -24,13 +24,6 @@
 	status = "okay";
 };
 
-&partitions {
-	partition@5f80000 {
-		label = "syscfg";
-		reg = <0x5f80000 0x2080000>;
-	};
-};
-
 &gmac1 {
 	qcom,phy_mdio_addr = <4>;
 	qcom,poll_required = <1>;
