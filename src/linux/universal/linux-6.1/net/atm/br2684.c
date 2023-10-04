@@ -598,6 +598,11 @@ static int br2684_regvcc(struct atm_vcc *atmvcc, void __user * arg)
 	atmvcc->push = br2684_push;
 	atmvcc->pop = br2684_pop;
 	atmvcc->release_cb = br2684_release_cb;
+#if IS_ENABLED(CONFIG_ATM_MPOA_INTEL_DSL_PHY_SUPPORT)
+	if (atm_hook_mpoa_setup) /* IPoA or EoA w/o FCS */
+		atm_hook_mpoa_setup(atmvcc, brdev->payload == p_routed ? 3 : 0,
+			brvcc->encaps == BR2684_ENCAPS_LLC ? 1 : 0, net_dev);
+#endif
 	atmvcc->owner = THIS_MODULE;
 
 	/* initialize netdev carrier state */

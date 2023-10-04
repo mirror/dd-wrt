@@ -53,4 +53,6 @@ int svc_change_qos(struct atm_vcc *vcc,struct atm_qos *qos);
 
 void atm_dev_release_vccs(struct atm_dev *dev);
 
+extern void (*atm_hook_mpoa_setup)(struct atm_vcc *, int, int, struct net_device *);
+
 #endif

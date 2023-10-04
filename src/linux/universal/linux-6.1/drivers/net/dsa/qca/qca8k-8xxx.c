@@ -426,15 +426,11 @@ qca8k_regmap_update_bits_eth(struct qca8k_priv *priv, u32 reg, u32 mask, u32 wri
 }
 
 static int
-qca8k_regmap_read(void *ctx, uint32_t reg, uint32_t *val)
+qca8k_read_mii(struct qca8k_priv *priv, uint32_t reg, uint32_t *val)
 {
-	struct qca8k_priv *priv = (struct qca8k_priv *)ctx;
 	struct mii_bus *bus = priv->bus;
 	u16 r1, r2, page;
 	int ret;
-
-	if (!qca8k_read_eth(priv, reg, val, sizeof(*val)))
-		return 0;
 
 	qca8k_split_addr(reg, &r1, &r2, &page);
 
@@ -452,15 +448,11 @@ exit:
 }
 
 static int
-qca8k_regmap_write(void *ctx, uint32_t reg, uint32_t val)
+qca8k_write_mii(struct qca8k_priv *priv, uint32_t reg, uint32_t val)
 {
-	struct qca8k_priv *priv = (struct qca8k_priv *)ctx;
 	struct mii_bus *bus = priv->bus;
 	u16 r1, r2, page;
 	int ret;
-
-	if (!qca8k_write_eth(priv, reg, &val, sizeof(val)))
-		return 0;
 
 	qca8k_split_addr(reg, &r1, &r2, &page);
 
@@ -478,16 +470,13 @@ exit:
 }
 
 static int
-qca8k_regmap_update_bits(void *ctx, uint32_t reg, uint32_t mask, uint32_t write_val)
+qca8k_regmap_update_bits_mii(struct qca8k_priv *priv, uint32_t reg,
+			     uint32_t mask, uint32_t write_val)
 {
-	struct qca8k_priv *priv = (struct qca8k_priv *)ctx;
 	struct mii_bus *bus = priv->bus;
 	u16 r1, r2, page;
 	u32 val;
 	int ret;
-
-	if (!qca8k_regmap_update_bits_eth(priv, reg, mask, write_val))
-		return 0;
 
 	qca8k_split_addr(reg, &r1, &r2, &page);
 
@@ -511,17 +500,87 @@ exit:
 	return ret;
 }
 
+static int
+qca8k_bulk_read(void *ctx, const void *reg_buf, size_t reg_len,
+		void *val_buf, size_t val_len)
+{
+	int i, count = val_len / sizeof(u32), ret;
+	u32 reg = *(u32 *)reg_buf & U16_MAX;
+	struct qca8k_priv *priv = ctx;
+
+	if (priv->mgmt_master &&
+	    !qca8k_read_eth(priv, reg, val_buf, val_len))
+		return 0;
+
+	/* loop count times and increment reg of 4 */
+	for (i = 0; i < count; i++, reg += sizeof(u32)) {
+		ret = qca8k_read_mii(priv, reg, val_buf + i);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int
+qca8k_bulk_gather_write(void *ctx, const void *reg_buf, size_t reg_len,
+			const void *val_buf, size_t val_len)
+{
+	int i, count = val_len / sizeof(u32), ret;
+	u32 reg = *(u32 *)reg_buf & U16_MAX;
+	struct qca8k_priv *priv = ctx;
+	u32 *val = (u32 *)val_buf;
+
+	if (priv->mgmt_master &&
+	    !qca8k_write_eth(priv, reg, val, val_len))
+		return 0;
+
+	/* loop count times, increment reg of 4 and increment val ptr to
+	 * the next value
+	 */
+	for (i = 0; i < count; i++, reg += sizeof(u32), val++) {
+		ret = qca8k_write_mii(priv, reg, *val);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int
+qca8k_bulk_write(void *ctx, const void *data, size_t bytes)
+{
+	return qca8k_bulk_gather_write(ctx, data, sizeof(u16), data + sizeof(u16),
+				       bytes - sizeof(u16));
+}
+
+static int
+qca8k_regmap_update_bits(void *ctx, uint32_t reg, uint32_t mask, uint32_t write_val)
+{
+	struct qca8k_priv *priv = ctx;
+
+	if (!qca8k_regmap_update_bits_eth(priv, reg, mask, write_val))
+		return 0;
+
+	return qca8k_regmap_update_bits_mii(priv, reg, mask, write_val);
+}
+
 static struct regmap_config qca8k_regmap_config = {
 	.reg_bits = 16,
 	.val_bits = 32,
 	.reg_stride = 4,
 	.max_register = 0x16ac, /* end MIB - Port6 range */
-	.reg_read = qca8k_regmap_read,
-	.reg_write = qca8k_regmap_write,
+	.read = qca8k_bulk_read,
+	.write = qca8k_bulk_write,
 	.reg_update_bits = qca8k_regmap_update_bits,
 	.rd_table = &qca8k_readable_table,
 	.disable_locking = true, /* Locking is handled by qca8k read/write */
 	.cache_type = REGCACHE_NONE, /* Explicitly disable CACHE */
+	.max_raw_read = 32, /* mgmt eth can read up to 8 registers at time */
+	/* ATU regs suffer from a bug where some data are not correctly
+	 * written. Disable bulk write to correctly write ATU entry.
+	 */
+	.use_single_write = true,
 };
 
 static int
@@ -1660,6 +1719,117 @@ qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
 	return DSA_TAG_PROTO_QCA;
 }
 
+static int qca8k_port_change_master(struct dsa_switch *ds, int port,
+				    struct net_device *master,
+				    struct netlink_ext_ack *extack)
+{
+	struct dsa_switch_tree *dst = ds->dst;
+	struct qca8k_priv *priv = ds->priv;
+	u8 cpu_port_mask = 0;
+	struct dsa_port *dp;
+	u32 val;
+	int ret;
+
+	/* With LAG of CPU port, compose the mask for port LOOKUP MEMBER */
+	if (netif_is_lag_master(master)) {
+		struct dsa_lag *lag;
+		int id;
+
+		id = dsa_lag_id(dst, master);
+		lag = dsa_lag_by_id(dst, id);
+
+		dsa_lag_foreach_port(dp, dst, lag)
+			if (dsa_port_is_cpu(dp))
+				cpu_port_mask |= BIT(dp->index);
+	} else {
+		dp = master->dsa_ptr;
+		cpu_port_mask |= BIT(dp->index);
+	}
+
+	/* Connect port to new cpu port */
+	ret = regmap_read(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port), &val);
+	if (ret)
+		return ret;
+
+	/* Reset connected CPU port in port LOOKUP MEMBER */
+	val &=  ~dsa_cpu_ports(ds);
+	/* Assign the new CPU port in port LOOKUP MEMBER */
+	val |= cpu_port_mask;
+
+	ret = regmap_update_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port),
+				 QCA8K_PORT_LOOKUP_MEMBER,
+				 val);
+	if (ret)
+		return ret;
+
+	/* Refresh CPU port LOOKUP MEMBER with new port */
+	dsa_tree_for_each_cpu_port(dp, ds->dst) {
+		u32 reg = QCA8K_PORT_LOOKUP_CTRL(dp->index);
+
+		/* If CPU port in mask assign port, else remove port */
+		if (BIT(dp->index) & cpu_port_mask)
+			ret = regmap_set_bits(priv->regmap, reg, BIT(port));
+		else
+			ret = regmap_clear_bits(priv->regmap, reg, BIT(port));
+
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int qca8k_port_lag_refresh_user_ports(struct dsa_switch *ds,
+					     struct dsa_lag lag)
+{
+	struct net_device *lag_dev = lag.dev;
+	struct dsa_port *dp;
+	int ret;
+
+	/* Ignore if LAG is not a DSA master */
+	if (!netif_is_lag_master(lag_dev))
+		return 0;
+
+	dsa_switch_for_each_user_port(dp, ds) {
+		/* Skip if assigned master is not the LAG */
+		if (dsa_port_to_master(dp) != lag_dev)
+			continue;
+
+		ret = qca8k_port_change_master(ds, dp->index,
+					       lag_dev, NULL);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int qca8xxx_port_lag_join(struct dsa_switch *ds, int port,
+				 struct dsa_lag lag,
+				 struct netdev_lag_upper_info *info,
+				 struct netlink_ext_ack *extack)
+{
+	int ret;
+
+	ret = qca8k_port_lag_join(ds, port, lag, info, extack);
+	if (ret)
+		return ret;
+
+	return qca8k_port_lag_refresh_user_ports(ds, lag);
+}
+
+static int qca8xxx_port_lag_leave(struct dsa_switch *ds, int port,
+				  struct dsa_lag lag)
+{
+	int ret;
+
+	ret = qca8k_port_lag_leave(ds, port, lag);
+	if (ret)
+		return ret;
+
+	return qca8k_port_lag_refresh_user_ports(ds, lag);
+}
+
 static void
 qca8k_master_change(struct dsa_switch *ds, const struct net_device *master,
 		    bool operational)
@@ -1700,11 +1870,52 @@ static int qca8k_connect_tag_protocol(struct dsa_switch *ds,
 	return 0;
 }
 
+static void qca8k_setup_hol_fixup(struct qca8k_priv *priv, int port)
+{
+	u32 mask;
+
+	switch (port) {
+	/* The 2 CPU port and port 5 requires some different
+	 * priority than any other ports.
+	 */
+	case 0:
+	case 5:
+	case 6:
+		mask = QCA8K_PORT_HOL_CTRL0_EG_PRI0(0x3) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI1(0x4) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI2(0x4) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI3(0x4) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI4(0x6) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI5(0x8) |
+			QCA8K_PORT_HOL_CTRL0_EG_PORT(0x1e);
+		break;
+	default:
+		mask = QCA8K_PORT_HOL_CTRL0_EG_PRI0(0x3) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI1(0x4) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI2(0x6) |
+			QCA8K_PORT_HOL_CTRL0_EG_PRI3(0x8) |
+			QCA8K_PORT_HOL_CTRL0_EG_PORT(0x19);
+	}
+	regmap_write(priv->regmap, QCA8K_REG_PORT_HOL_CTRL0(port), mask);
+
+	mask = QCA8K_PORT_HOL_CTRL1_ING(0x6) |
+	       QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
+	       QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
+	       QCA8K_PORT_HOL_CTRL1_WRED_EN;
+	regmap_update_bits(priv->regmap, QCA8K_REG_PORT_HOL_CTRL1(port),
+			   QCA8K_PORT_HOL_CTRL1_ING_BUF_MASK |
+			   QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
+			   QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
+			   QCA8K_PORT_HOL_CTRL1_WRED_EN,
+			   mask);
+}
+
 static int
 qca8k_setup(struct dsa_switch *ds)
 {
 	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
-	int cpu_port, ret, i;
+	struct dsa_port *dp;
+	int cpu_port, ret;
 	u32 mask;
 
 	cpu_port = qca8k_find_cpu_port(ds);
@@ -1759,126 +1970,86 @@ qca8k_setup(struct dsa_switch *ds)
 		dev_warn(priv->dev, "mib init failed");
 
 	/* Initial setup of all ports */
-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+	dsa_switch_for_each_port(dp, ds) {
 		/* Disable forwarding by default on all ports */
-		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
+		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(dp->index),
 				QCA8K_PORT_LOOKUP_MEMBER, 0);
 		if (ret)
 			return ret;
-
-		/* Enable QCA header mode on all cpu ports */
-		if (dsa_is_cpu_port(ds, i)) {
-			ret = qca8k_write(priv, QCA8K_REG_PORT_HDR_CTRL(i),
-					  FIELD_PREP(QCA8K_PORT_HDR_CTRL_TX_MASK, QCA8K_PORT_HDR_CTRL_ALL) |
-					  FIELD_PREP(QCA8K_PORT_HDR_CTRL_RX_MASK, QCA8K_PORT_HDR_CTRL_ALL));
-			if (ret) {
-				dev_err(priv->dev, "failed enabling QCA header mode");
-				return ret;
-			}
-		}
-
-		/* Disable MAC by default on all user ports */
-		if (dsa_is_user_port(ds, i))
-			qca8k_port_set_status(priv, i, 0);
 	}
 
-	/* Forward all unknown frames to CPU port for Linux processing
-	 * Notice that in multi-cpu config only one port should be set
-	 * for igmp, unknown, multicast and broadcast packet
-	 */
+	/* Disable MAC by default on all user ports */
+	dsa_switch_for_each_user_port(dp, ds)
+		qca8k_port_set_status(priv, dp->index, 0);
+
+	/* Enable QCA header mode on all cpu ports */
+	dsa_switch_for_each_cpu_port(dp, ds) {
+		ret = qca8k_write(priv, QCA8K_REG_PORT_HDR_CTRL(dp->index),
+				  FIELD_PREP(QCA8K_PORT_HDR_CTRL_TX_MASK, QCA8K_PORT_HDR_CTRL_ALL) |
+				  FIELD_PREP(QCA8K_PORT_HDR_CTRL_RX_MASK, QCA8K_PORT_HDR_CTRL_ALL));
+		if (ret) {
+			dev_err(priv->dev, "failed enabling QCA header mode on port %d", dp->index);
+			return ret;
+		}
+	}
+
+	/* Forward all unknown frames to CPU port for Linux processing */
 	ret = qca8k_write(priv, QCA8K_REG_GLOBAL_FW_CTRL1,
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_IGMP_DP_MASK, BIT(cpu_port)) |
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_BC_DP_MASK, BIT(cpu_port)) |
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_MC_DP_MASK, BIT(cpu_port)) |
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_UC_DP_MASK, BIT(cpu_port)));
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_IGMP_DP_MASK, dsa_cpu_ports(ds)) |
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_BC_DP_MASK, dsa_cpu_ports(ds)) |
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_MC_DP_MASK, dsa_cpu_ports(ds)) |
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_UC_DP_MASK, dsa_cpu_ports(ds)));
+	if (ret)
+		return ret;
+
+	/* CPU port gets connected to all user ports of the switch */
+	ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(cpu_port),
+			QCA8K_PORT_LOOKUP_MEMBER, dsa_user_ports(ds));
 	if (ret)
 		return ret;
 
 	/* Setup connection between CPU port & user ports
-	 * Configure specific switch configuration for ports
+	 * Individual user ports get connected to CPU port only
 	 */
-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
-		/* CPU port gets connected to all user ports of the switch */
-		if (dsa_is_cpu_port(ds, i)) {
-			ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
-					QCA8K_PORT_LOOKUP_MEMBER, dsa_user_ports(ds));
-			if (ret)
-				return ret;
-		}
+	dsa_switch_for_each_user_port(dp, ds) {
+		u8 port = dp->index;
 
-		/* Individual user ports get connected to CPU port only */
-		if (dsa_is_user_port(ds, i)) {
-			ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
-					QCA8K_PORT_LOOKUP_MEMBER,
-					BIT(cpu_port));
-			if (ret)
-				return ret;
+		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
+				QCA8K_PORT_LOOKUP_MEMBER,
+				BIT(cpu_port));
+		if (ret)
+			return ret;
 
-			/* Enable ARP Auto-learning by default */
-			ret = regmap_set_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(i),
-					      QCA8K_PORT_LOOKUP_LEARN);
-			if (ret)
-				return ret;
+		ret = regmap_clear_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port),
+					QCA8K_PORT_LOOKUP_LEARN);
+		if (ret)
+			return ret;
 
-			/* For port based vlans to work we need to set the
-			 * default egress vid
-			 */
-			ret = qca8k_rmw(priv, QCA8K_EGRESS_VLAN(i),
-					QCA8K_EGREES_VLAN_PORT_MASK(i),
-					QCA8K_EGREES_VLAN_PORT(i, QCA8K_PORT_VID_DEF));
-			if (ret)
-				return ret;
-
-			ret = qca8k_write(priv, QCA8K_REG_PORT_VLAN_CTRL0(i),
-					  QCA8K_PORT_VLAN_CVID(QCA8K_PORT_VID_DEF) |
-					  QCA8K_PORT_VLAN_SVID(QCA8K_PORT_VID_DEF));
-			if (ret)
-				return ret;
-		}
-
-		/* The port 5 of the qca8337 have some problem in flood condition. The
-		 * original legacy driver had some specific buffer and priority settings
-		 * for the different port suggested by the QCA switch team. Add this
-		 * missing settings to improve switch stability under load condition.
-		 * This problem is limited to qca8337 and other qca8k switch are not affected.
+		/* For port based vlans to work we need to set the
+		 * default egress vid
 		 */
-		if (priv->switch_id == QCA8K_ID_QCA8337) {
-			switch (i) {
-			/* The 2 CPU port and port 5 requires some different
-			 * priority than any other ports.
-			 */
-			case 0:
-			case 5:
-			case 6:
-				mask = QCA8K_PORT_HOL_CTRL0_EG_PRI0(0x3) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI1(0x4) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI2(0x4) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI3(0x4) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI4(0x6) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI5(0x8) |
-					QCA8K_PORT_HOL_CTRL0_EG_PORT(0x1e);
-				break;
-			default:
-				mask = QCA8K_PORT_HOL_CTRL0_EG_PRI0(0x3) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI1(0x4) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI2(0x6) |
-					QCA8K_PORT_HOL_CTRL0_EG_PRI3(0x8) |
-					QCA8K_PORT_HOL_CTRL0_EG_PORT(0x19);
-			}
-			qca8k_write(priv, QCA8K_REG_PORT_HOL_CTRL0(i), mask);
+		ret = qca8k_rmw(priv, QCA8K_EGRESS_VLAN(port),
+				QCA8K_EGREES_VLAN_PORT_MASK(port),
+				QCA8K_EGREES_VLAN_PORT(port, QCA8K_PORT_VID_DEF));
+		if (ret)
+			return ret;
 
-			mask = QCA8K_PORT_HOL_CTRL1_ING(0x6) |
-			QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
-			QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
-			QCA8K_PORT_HOL_CTRL1_WRED_EN;
-			qca8k_rmw(priv, QCA8K_REG_PORT_HOL_CTRL1(i),
-				  QCA8K_PORT_HOL_CTRL1_ING_BUF_MASK |
-				  QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
-				  QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
-				  QCA8K_PORT_HOL_CTRL1_WRED_EN,
-				  mask);
-		}
+		ret = qca8k_write(priv, QCA8K_REG_PORT_VLAN_CTRL0(port),
+				  QCA8K_PORT_VLAN_CVID(QCA8K_PORT_VID_DEF) |
+				  QCA8K_PORT_VLAN_SVID(QCA8K_PORT_VID_DEF));
+		if (ret)
+			return ret;
 	}
+
+	/* The port 5 of the qca8337 have some problem in flood condition. The
+	 * original legacy driver had some specific buffer and priority settings
+	 * for the different port suggested by the QCA switch team. Add this
+	 * missing settings to improve switch stability under load condition.
+	 * This problem is limited to qca8337 and other qca8k switch are not affected.
+	 */
+	if (priv->switch_id == QCA8K_ID_QCA8337)
+		dsa_switch_for_each_available_port(dp, ds)
+			qca8k_setup_hol_fixup(priv, dp->index);
 
 	/* Special GLOBAL_FC_THRESH value are needed for ar8327 switch */
 	if (priv->switch_id == QCA8K_ID_QCA8327) {
@@ -1922,12 +2093,16 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
 	.port_change_mtu	= qca8k_port_change_mtu,
 	.port_max_mtu		= qca8k_port_max_mtu,
 	.port_stp_state_set	= qca8k_port_stp_state_set,
+	.port_pre_bridge_flags	= qca8k_port_pre_bridge_flags,
+	.port_bridge_flags	= qca8k_port_bridge_flags,
 	.port_bridge_join	= qca8k_port_bridge_join,
 	.port_bridge_leave	= qca8k_port_bridge_leave,
 	.port_fast_age		= qca8k_port_fast_age,
 	.port_fdb_add		= qca8k_port_fdb_add,
 	.port_fdb_del		= qca8k_port_fdb_del,
 	.port_fdb_dump		= qca8k_port_fdb_dump,
+	.lag_fdb_add		= qca8k_lag_fdb_add,
+	.lag_fdb_del		= qca8k_lag_fdb_del,
 	.port_mdb_add		= qca8k_port_mdb_add,
 	.port_mdb_del		= qca8k_port_mdb_del,
 	.port_mirror_add	= qca8k_port_mirror_add,
@@ -1941,8 +2116,9 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
 	.phylink_mac_link_down	= qca8k_phylink_mac_link_down,
 	.phylink_mac_link_up	= qca8k_phylink_mac_link_up,
 	.get_phy_flags		= qca8k_get_phy_flags,
-	.port_lag_join		= qca8k_port_lag_join,
-	.port_lag_leave		= qca8k_port_lag_leave,
+	.port_lag_join		= qca8xxx_port_lag_join,
+	.port_lag_leave		= qca8xxx_port_lag_leave,
+	.port_change_master	= qca8k_port_change_master,
 	.master_state_change	= qca8k_master_change,
 	.connect_tag_protocol	= qca8k_connect_tag_protocol,
 };
@@ -2081,8 +2257,6 @@ static SIMPLE_DEV_PM_OPS(qca8k_pm_ops,
 
 static const struct qca8k_info_ops qca8xxx_ops = {
 	.autocast_mib = qca8k_get_ethtool_stats_eth,
-	.read_eth = qca8k_read_eth,
-	.write_eth = qca8k_write_eth,
 };
 
 static const struct qca8k_match_data qca8327 = {

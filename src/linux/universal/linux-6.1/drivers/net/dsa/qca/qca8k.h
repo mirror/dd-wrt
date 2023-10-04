@@ -19,7 +19,10 @@
 #define QCA8K_ETHERNET_TIMEOUT				5
 
 #define QCA8K_NUM_PORTS					7
+#define QCA8K_IPQ4019_NUM_PORTS				6
 #define QCA8K_NUM_CPU_PORTS				2
+#define QCA8K_IPQ4019_NUM_CPU_PORTS			1
+#define QCA8K_IPQ4019_CPU_PORT				0
 #define QCA8K_MAX_MTU					9000
 #define QCA8K_NUM_LAGS					4
 #define QCA8K_NUM_PORTS_FOR_LAG				4
@@ -28,6 +31,7 @@
 #define QCA8K_ID_QCA8327				0x12
 #define PHY_ID_QCA8337					0x004dd036
 #define QCA8K_ID_QCA8337				0x13
+#define QCA8K_ID_IPQ4019				0x14
 
 #define QCA8K_QCA832X_MIB_COUNT				39
 #define QCA8K_QCA833X_MIB_COUNT				41
@@ -194,6 +198,8 @@
 #define QCA8K_REG_IPV4_PRI_ADDR_MASK			0x474
 
 /* Lookup registers */
+#define QCA8K_ATU_TABLE_SIZE				3 /* 12 bytes wide table / sizeof(u32) */
+
 #define QCA8K_REG_ATU_DATA0				0x600
 #define   QCA8K_ATU_ADDR2_MASK				GENMASK(31, 24)
 #define   QCA8K_ATU_ADDR3_MASK				GENMASK(23, 16)
@@ -263,6 +269,7 @@
 #define   QCA8K_PORT_LOOKUP_STATE_LEARNING		QCA8K_PORT_LOOKUP_STATE(0x3)
 #define   QCA8K_PORT_LOOKUP_STATE_FORWARD		QCA8K_PORT_LOOKUP_STATE(0x4)
 #define   QCA8K_PORT_LOOKUP_LEARN			BIT(20)
+#define   QCA8K_PORT_LOOKUP_LOOPBACK_EN			BIT(21)
 #define   QCA8K_PORT_LOOKUP_ING_MIRROR_EN		BIT(25)
 
 #define QCA8K_REG_GOL_TRUNK_CTRL0			0x700
@@ -339,6 +346,53 @@
 #define MII_ATH_MMD_ADDR				0x0d
 #define MII_ATH_MMD_DATA				0x0e
 
+/* IPQ4019 PSGMII PHY registers */
+#define QCA8K_IPQ4019_REG_RGMII_CTRL			0x004
+#define   QCA8K_IPQ4019_RGMII_CTRL_RGMII_RXC		GENMASK(1, 0)
+#define   QCA8K_IPQ4019_RGMII_CTRL_RGMII_TXC		GENMASK(9, 8)
+/* Some kind of CLK selection
+ * 0: gcc_ess_dly2ns
+ * 1: gcc_ess_clk
+ */
+#define   QCA8K_IPQ4019_RGMII_CTRL_CLK				BIT(10)
+#define   QCA8K_IPQ4019_RGMII_CTRL_DELAY_RMII0			GENMASK(17, 16)
+#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII0_REF_CLK		BIT(18)
+#define   QCA8K_IPQ4019_RGMII_CTRL_DELAY_RMII1			GENMASK(20, 19)
+#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII1_REF_CLK		BIT(21)
+#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII0_MASTER_EN	BIT(24)
+#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII1_MASTER_EN	BIT(25)
+
+#define PSGMIIPHY_MODE_CONTROL				0x1b4
+#define   PSGMIIPHY_MODE_ATHR_CSCO_MODE_25M		BIT(0)
+#define PSGMIIPHY_TX_CONTROL				0x288
+#define   PSGMIIPHY_TX_CONTROL_MAGIC_VALUE		0x8380
+#define PSGMIIPHY_VCO_CALIBRATION_CONTROL_REGISTER_1	0x9c
+#define   PSGMIIPHY_REG_PLL_VCO_CALIB_RESTART		BIT(14)
+#define PSGMIIPHY_VCO_CALIBRATION_CONTROL_REGISTER_2	0xa0
+#define   PSGMIIPHY_REG_PLL_VCO_CALIB_READY		BIT(0)
+
+#define   QCA8K_PSGMII_CALB_NUM				100
+#define   MII_QCA8075_SSTATUS				0x11
+#define   QCA8075_PHY_SPEC_STATUS_LINK			BIT(10)
+#define   QCA8075_MMD7_CRC_AND_PKTS_COUNT		0x8029
+#define   QCA8075_MMD7_PKT_GEN_PKT_NUMB			0x8021
+#define   QCA8075_MMD7_PKT_GEN_PKT_SIZE			0x8062
+#define   QCA8075_MMD7_PKT_GEN_CTRL			0x8020
+#define   QCA8075_MMD7_CNT_SELFCLR			BIT(1)
+#define   QCA8075_MMD7_CNT_FRAME_CHK_EN			BIT(0)
+#define   QCA8075_MMD7_PKT_GEN_START			BIT(13)
+#define   QCA8075_MMD7_PKT_GEN_INPROGR			BIT(15)
+#define   QCA8075_MMD7_IG_FRAME_RECV_CNT_HI		0x802a
+#define   QCA8075_MMD7_IG_FRAME_RECV_CNT_LO		0x802b
+#define   QCA8075_MMD7_IG_FRAME_ERR_CNT			0x802c
+#define   QCA8075_MMD7_EG_FRAME_RECV_CNT_HI		0x802d
+#define   QCA8075_MMD7_EG_FRAME_RECV_CNT_LO		0x802e
+#define   QCA8075_MMD7_EG_FRAME_ERR_CNT			0x802f
+#define   QCA8075_MMD7_MDIO_BRDCST_WRITE		0x8028
+#define   QCA8075_MMD7_MDIO_BRDCST_WRITE_EN 		BIT(15)
+#define   QCA8075_MDIO_BRDCST_PHY_ADDR			0x1f
+#define   QCA8075_PKT_GEN_PKTS_COUNT			4096
+
 enum {
 	QCA8K_PORT_SPEED_10M = 0,
 	QCA8K_PORT_SPEED_100M = 1,
@@ -374,9 +428,6 @@ struct qca8k_priv;
 
 struct qca8k_info_ops {
 	int (*autocast_mib)(struct dsa_switch *ds, int port, u64 *data);
-	/* TODO: remove these extra ops when we can support regmap bulk read/write */
-	int (*read_eth)(struct qca8k_priv *priv, u32 reg, u32 *val, int len);
-	int (*write_eth)(struct qca8k_priv *priv, u32 reg, u32 *val, int len);
 };
 
 struct qca8k_match_data {
@@ -467,6 +518,10 @@ struct qca8k_priv {
 	struct qca8k_pcs pcs_port_6;
 	const struct qca8k_match_data *info;
 	struct qca8k_led ports_led[QCA8K_LED_COUNT];
+	/* IPQ4019 specific */
+	struct regmap *psgmii;
+	struct phy_device *psgmii_ethphy;
+	bool psgmii_calibrated;
 };
 
 struct qca8k_mib_desc {
@@ -523,6 +578,12 @@ int qca8k_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_eee *e);
 
 /* Common bridge function */
 void qca8k_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
+int qca8k_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+				struct switchdev_brport_flags flags,
+				struct netlink_ext_ack *extack);
+int qca8k_port_bridge_flags(struct dsa_switch *ds, int port,
+			    struct switchdev_brport_flags flags,
+			    struct netlink_ext_ack *extack);
 int qca8k_port_bridge_join(struct dsa_switch *ds, int port,
 			   struct dsa_bridge bridge,
 			   bool *tx_fwd_offload,
@@ -585,5 +646,11 @@ int qca8k_port_lag_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 			struct netlink_ext_ack *extack);
 int qca8k_port_lag_leave(struct dsa_switch *ds, int port,
 			 struct dsa_lag lag);
+int qca8k_lag_fdb_add(struct dsa_switch *ds, struct dsa_lag lag,
+		      const unsigned char *addr, u16 vid,
+		      struct dsa_db db);
+int qca8k_lag_fdb_del(struct dsa_switch *ds, struct dsa_lag lag,
+		      const unsigned char *addr, u16 vid,
+		      struct dsa_db db);
 
 #endif /* __QCA8K_H */

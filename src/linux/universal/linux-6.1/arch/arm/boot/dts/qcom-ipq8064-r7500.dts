@@ -24,15 +24,10 @@
 
 	aliases {
 		mdio-gpio0 = &mdio0;
-
-		led-boot = &power_white;
-		led-failsafe = &power_amber;
-		led-running = &power_white;
-		led-upgrade = &power_amber;
 	};
 
 	chosen {
-		bootargs = "rootfstype=squashfs noinitrd";
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock5";
 	};
 
 	keys {
@@ -65,55 +60,60 @@
 		};
 	};
 
-	leds {
+	gpio-leds {
 		compatible = "gpio-leds";
 		pinctrl-0 = <&led_pins>;
 		pinctrl-names = "default";
 
 		usb1 {
-			label = "white:usb1";
-			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:amber:usb1";
+			gpios = <&qcom_pinmux 7 0>;
 		};
 
-		usb2 {
-			label = "white:usb2";
-			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
+		usb3 {
+			label = "r7X00:amber:usb3";
+			gpios = <&qcom_pinmux 8 0>;
 		};
 
-		power_amber: power_amber {
-			label = "amber:power";
-			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
+		status {
+			label = "r7X00:amber:status";
+			gpios = <&qcom_pinmux 9 0>;
 		};
 
-		wan_white {
-			label = "white:wan";
-			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
+		internet {
+			label = "r7X00:white:internet";
+			gpios = <&qcom_pinmux 22 0>;
 		};
 
-		wan_amber {
-			label = "amber:wan";
-			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
+		wan {
+			label = "r7X00:white:wan";
+			gpios = <&qcom_pinmux 23 0>;
 		};
 
 		wps {
-			label = "white:wps";
-			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:white:wps";
+			gpios = <&qcom_pinmux 24 0>;
 		};
 
 		esata {
-			label = "white:esata";
-			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:white:esata";
+			gpios = <&qcom_pinmux 26 0>;
 		};
 
-		power_white: power_white {
-			label = "white:power";
-			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
-			default-state = "keep";
+		power {
+			label = "r7X00:white:power";
+			gpios = <&qcom_pinmux 53 0>;
+			default-state = "on";
 		};
 
-		wifi {
-			label = "white:wifi";
-			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
+		rfkill {
+			label = "r7X00:white:rfkill";
+			gpios = <&qcom_pinmux 64 0>;
+		};
+
+		wifi5g {
+			label = "r7X00:white:wifi5g";
+			gpios = <&qcom_pinmux 67 0>;
 		};
 	};
 };
@@ -191,13 +191,10 @@
 		nand-bus-width = <8>;
 		nand-ecc-step-size = <512>;
 
-		nand-is-boot-medium;
-		qcom,boot-partitions = <0x0 0x1180000>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
 			qcadata@0 {
 				label = "qcadata";
@@ -220,17 +217,16 @@
 			art: art@1200000 {
 				label = "art";
 				reg = <0x1200000 0x0140000>;
-				read-only;
 			};
 
-			kernel@1340000 {
-				label = "kernel";
-				reg = <0x1340000 0x0400000>;
+			linux@1340000 {
+				label = "linux";
+				reg = <0x1340000 0x1800000>;
 			};
-
-			ubi@1740000 {
-				label = "ubi";
-				reg = <0x1740000 0x1600000>;
+			
+			nvram@2B40000 {
+				label = "nvram";
+				reg = <0x2B40000 0x0200000>;
 			};
 
 			netgear@2d40000 {
@@ -244,7 +240,12 @@
 				reg = <0x3940000 0x46c0000>;
 				read-only;
 			};
-		};
+
+			firmware@1340000 {
+				label = "firmware";
+				reg = <0x1340000 0x1a00000>;
+			};
+				};
 	};
 };
 
@@ -254,104 +255,25 @@
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
 
-	switch@10 {
-		compatible = "qca,qca8337";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x10>;
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
+			phy0: ethernet-phy@0 {
+				device_type = "ethernet-phy";
 				reg = <0>;
-				label = "cpu";
-				ethernet = <&gmac1>;
-				phy-mode = "rgmii";
-				tx-internal-delay-ps = <1000>;
-				rx-internal-delay-ps = <1000>;
-
-				fixed-link {
-					speed = <1000>;
-					full-duplex;
-				};
+				qca,ar8327-initvals = <
+					0x00004 0x7600000   /* PAD0_MODE */
+					0x00008 0x1000000   /* PAD5_MODE */
+					0x0000c 0x80        /* PAD6_MODE */
+					0x000e4 0x6a545     /* MAC_POWER_SEL */
+					0x000e0 0xc74164de  /* SGMII_CTRL */
+					0x0007c 0x4e        /* PORT0_STATUS */
+					0x00094 0x4e        /* PORT6_STATUS */
+					>;
 			};
 
-			port@1 {
-				reg = <1>;
-				label = "lan1";
-				phy-mode = "internal";
-				phy-handle = <&phy_port1>;
-			};
-
-			port@2 {
-				reg = <2>;
-				label = "lan2";
-				phy-mode = "internal";
-				phy-handle = <&phy_port2>;
-			};
-
-			port@3 {
-				reg = <3>;
-				label = "lan3";
-				phy-mode = "internal";
-				phy-handle = <&phy_port3>;
-			};
-
-			port@4 {
-				reg = <4>;
-				label = "lan4";
-				phy-mode = "internal";
-				phy-handle = <&phy_port4>;
-			};
-
-			port@5 {
-				reg = <5>;
-				label = "wan";
-				phy-mode = "internal";
-				phy-handle = <&phy_port5>;
-			};
-
-			port@6 {
-				reg = <6>;
-				label = "cpu";
-				ethernet = <&gmac2>;
-				phy-mode = "sgmii";
-				qca,sgmii-enable-pll;
-
-				fixed-link {
-					speed = <1000>;
-					full-duplex;
-				};
-			};
-		};
-
-		mdio {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			phy_port1: phy@0 {
-				reg = <0>;
-			};
-
-			phy_port2: phy@1 {
-				reg = <1>;
-			};
-
-			phy_port3: phy@2 {
-				reg = <2>;
-			};
-
-			phy_port4: phy@3 {
-				reg = <3>;
-			};
-
-			phy_port5: phy@4 {
+			phy4: ethernet-phy@4 {
+				device_type = "ethernet-phy";
 				reg = <4>;
 			};
-		};
-	};
+
 };
 
 &gmac1 {
@@ -362,8 +284,8 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
-	nvmem-cells = <&macaddr_art_6>;
-	nvmem-cell-names = "mac-address";
+
+			mtd-mac-address = <&art 6>;
 
 	fixed-link {
 		speed = <1000>;
@@ -376,8 +298,8 @@
 	phy-mode = "sgmii";
 	qcom,id = <2>;
 
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
+
+			mtd-mac-address = <&art 0>;
 
 	fixed-link {
 		speed = <1000>;

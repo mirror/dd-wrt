@@ -120,34 +120,6 @@
 				};
 			};
 		};
-
-		gpio-keys {
-			compatible = "gpio-keys";
-			pinctrl-0 = <&buttons_pins>;
-			pinctrl-names = "default";
-
-			button {
-				label = "reset";
-				linux,code = <KEY_RESTART>;
-				gpios = <&qcom_pinmux 66 GPIO_ACTIVE_LOW>;
-				linux,input-type = <1>;
-				debounce-interval = <60>;
-			};
-		};
-
-		leds {
-			compatible = "gpio-leds";
-			pinctrl-0 = <&leds_pins>;
-			pinctrl-names = "default";
-
-			led@7 {
-				label = "rb3011:green:user";
-				color = <LED_COLOR_ID_GREEN>;
-				gpios = <&qcom_pinmux 33 GPIO_ACTIVE_HIGH>;
-				default-state = "off";
-			};
-		};
-
 	};
 };
 
@@ -291,21 +263,7 @@
 };
 
 &qcom_pinmux {
-	buttons_pins: buttons_pins {
-		mux {
-			pins = "gpio66";
-			drive-strength = <16>;
-			bias-disable;
-		};
-	};
 
-	leds_pins: leds_pins {
-		mux {
-			pins = "gpio33";
-			drive-strength = <16>;
-			bias-disable;
-		};
-	};
 
 	mdio1_pins: mdio1_pins {
 		mux {

@@ -1243,6 +1243,29 @@ static const struct clk_fepll_vco gcc_fepll_vco = {
 	.reg = 0x2f020,
 };
 
+
+const struct freq_tbl *qcom_find_freq_close(const struct freq_tbl *f,
+					     unsigned long rate)
+{
+	const struct freq_tbl *last = NULL;
+
+	for ( ; f->freq; f++) {
+		if (rate == f->freq)
+			return f;
+
+		if (f->freq > rate) {
+			if (!last ||
+			   (f->freq - rate) < (rate - last->freq))
+				return f;
+			else
+				return last;
+		}
+		last = f;
+	}
+
+	return last;
+}
+
 /*
  * Round rate function for APSS CPU PLL Clock divider.
  * It looks up the frequency table and returns the next higher frequency
@@ -1255,7 +1278,7 @@ static long clk_cpu_div_round_rate(struct clk_hw *hw, unsigned long rate,
 	struct clk_hw *p_hw;
 	const struct freq_tbl *f;
 
-	f = qcom_find_freq(pll->freq_tbl, rate);
+	f = qcom_find_freq_close(pll->freq_tbl, rate);
 	if (!f)
 		return -EINVAL;
 
@@ -1277,7 +1300,7 @@ static int clk_cpu_div_set_rate(struct clk_hw *hw, unsigned long rate,
 	const struct freq_tbl *f;
 	u32 mask;
 
-	f = qcom_find_freq(pll->freq_tbl, rate);
+	f = qcom_find_freq_close(pll->freq_tbl, rate);
 	if (!f)
 		return -EINVAL;
 
@@ -1304,6 +1327,7 @@ static unsigned long
 clk_cpu_div_recalc_rate(struct clk_hw *hw,
 			unsigned long parent_rate)
 {
+	const struct freq_tbl *f;
 	struct clk_fepll *pll = to_clk_fepll(hw);
 	u32 cdiv, pre_div;
 	u64 rate;
@@ -1324,7 +1348,11 @@ clk_cpu_div_recalc_rate(struct clk_hw *hw,
 	rate = clk_fepll_vco_calc_rate(pll, parent_rate) * 2;
 	do_div(rate, pre_div);
 
-	return rate;
+	f = qcom_find_freq_close(pll->freq_tbl, rate);
+	if (!f)
+		return rate;
+
+	return f->freq;
 };
 
 static const struct clk_ops clk_regmap_cpu_div_ops = {
@@ -1707,6 +1735,12 @@ static const struct qcom_reset_map gcc_ipq4019_resets[] = {
 	[GCC_TCSR_BCR] = {0x22000, 0},
 	[GCC_MPM_BCR] = {0x24000, 0},
 	[GCC_SPDM_BCR] = {0x25000, 0},
+	[ESS_MAC1_ARES] = {0x1200C, 0},
+	[ESS_MAC2_ARES] = {0x1200C, 1},
+	[ESS_MAC3_ARES] = {0x1200C, 2},
+	[ESS_MAC4_ARES] = {0x1200C, 3},
+	[ESS_MAC5_ARES] = {0x1200C, 4},
+	[ESS_PSGMII_ARES] = {0x1200C, 5},
 };
 
 static const struct regmap_config gcc_ipq4019_regmap_config = {
