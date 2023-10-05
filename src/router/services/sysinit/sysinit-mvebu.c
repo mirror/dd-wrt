@@ -98,6 +98,7 @@ void start_sysinit(void)
 	insmod("rtc-armada38x");	// for WRT1200AC / WRT1900ACv2 only
 	insmod("mii");
 	// crypto drivers
+	insmod("libdes");
 	insmod("des_generic");
 	insmod("marvell-cesa");	// tested on WRT1900AC v1 so far
 	/*
