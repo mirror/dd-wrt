@@ -673,10 +673,10 @@ void start_postnetwork(void)
 	case ROUTER_HABANERO:
 		break;
 	default:
-		set_gpio(459-443 + 17, 0);	// reset wifi card gpio pin
-		set_gpio(494-443 + 17, 0);	// reset wifi card gpio pin
-		set_gpio(459-443 + 17, 1);	// reset wifi card gpio pin
-		set_gpio(494-443 + 17, 1);	// reset wifi card gpio pin
+		set_gpio(373 + 17, 0);	// reset wifi card gpio pin
+		set_gpio(408 + 17, 0);	// reset wifi card gpio pin
+		set_gpio(373 + 17, 1);	// reset wifi card gpio pin
+		set_gpio(408 + 17, 1);	// reset wifi card gpio pin
 		break;
 	}
 }
