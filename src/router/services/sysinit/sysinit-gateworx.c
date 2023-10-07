@@ -468,8 +468,10 @@ void start_sysinit(void)
 	    || !strcmp(modelname, "Gateworks Avila GW2355")
 	    || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
+		insmod("scsi_common");
 		insmod("scsi_mod");
 		insmod("scsi_wait_scan");
+		insmod("crct10dif_common crct10dif_generic crct10dif-arm-ce crc-t10dif crc64 crc64-rocksoft crc64-rocksoft_generic crct-t10dif t10-pi");
 		insmod("sd_mod");
 		insmod("libata");
 		insmod("pata_ixp4xx_cf");

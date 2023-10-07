@@ -92,6 +92,7 @@ void start_sysinit(void)
 	insmod("sdhci-cns3xxx");
 	insmod("mmc_block");
 	//sata drivers
+	insmod("scsi_common");
 	insmod("scsi_mod");
 	insmod("scsi_wait_scan");
 	insmod("scsi_sd_mod");

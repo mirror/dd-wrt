@@ -467,7 +467,10 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 	} else {
-		set_linux_gpio(gpio+443, value);
+		if (gpio <= 64)
+			set_linux_gpio(gpio+443, value);
+		else
+			set_linux_gpio(gpio, value);
 	}
 
 }

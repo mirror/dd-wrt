@@ -603,6 +603,13 @@
 				bias-pull-down;
 			};
 
+			button_pins: button_pins {
+				pins = "gpio6", "gpio54", "gpio65";
+				function = "gpio";
+				drive-strength = <2>;
+				bias-pull-up;
+			};
+
 			nand_pins: nand_pins {
 				disable {
 					pins = "gpio34", "gpio35", "gpio36",
