@@ -9,7 +9,7 @@
 #include <net/ip.h>
 #include "xt_WGOBFS.h"
 #include "wg.h"
-#include "chacha8.h"
+#include "chacha.h"
 
 #define WG_HANDSHAKE_INIT       0x01
 #define WG_HANDSHAKE_RESP       0x02
@@ -17,13 +17,21 @@
 #define WG_DATA                 0x04
 #define OBFS_WG_HANDSHAKE_INIT  0x11
 #define OBFS_WG_HANDSHAKE_RESP  0x12
-#define WG_MIN_LEN           32
-#define MAX_RND_LEN          32
-#define MIN_RND_LEN           4
+#define WG_MIN_LEN              32
+#define MIN_RND_LEN             4
+
+enum chacha_output_lengths {
+	MAX_RND_LEN = 32,
+	MAX_RND_WORDS = MAX_RND_LEN / sizeof(u32),
+	WG_COOKIE_WORDS = WG_COOKIE_LEN / sizeof(u32),
+	ONE_WORD = 1,
+	HEAD_OBFS_WORDS = 16 / sizeof(u32) + 1
+};
 
 struct obfs_buf {
-        u8 rnd[CHACHA8_OUTPUT_SIZE];
-        u8 chacha_out[CHACHA8_OUTPUT_SIZE];
+        u8 chacha_in[CHACHA_INPUT_SIZE];
+        u8 chacha_out[MAX_RND_LEN];
+        u8 rnd[MAX_RND_LEN];
         u8 rnd_len;
 };
 
@@ -32,27 +40,13 @@ static u8 get_prn_insert(u8 *buf, struct obfs_buf *ob, const u8 *k,
                          const u8 min_len, const u8 max_len)
 {
         u8 r, i;
-        u64 chacha_input, *p64;
-
-        /* The 16th to 23rd bytes is:
-         *  - handshake initiation unencrypted_ephemeral (32 bytes starts at 8)
-         *  - handshake response unencrypted_ephemeral (32 bytes starts at 12)
-         *  - cookie nonce (24 bytes starts at 8)
-         *  - data encrypted packet (var length starts at 16)
-         *  - keepalive random poly1305 tag (16 bytes starts at 16)
-         */
-        p64 = (u64 *)(buf + 16);
-
-        /* add a constant 42 to avoid accidentally use the same chacha input
-         * elsewhere
-         */
-        chacha_input = *p64 + 42;
+        u8 *counter = ob->chacha_in;
  
-
         r = 0;
         while (1) {
-                chacha8_hash(chacha_input++, k, ob->rnd);
-                for (i = 0; i < CHACHA8_OUTPUT_SIZE; i++) {
+                (*counter)++;
+                chacha_hash(ob->chacha_in, k, ob->rnd, MAX_RND_WORDS);
+                for (i = 0; i < MAX_RND_LEN; i++) {
                         if (ob->rnd[i] >= min_len && ob->rnd[i] <= max_len) {
                                 r = ob->rnd[i];
                                 break;
@@ -77,7 +71,7 @@ static void obfs_mac2(u8 *buf, const int data_len, struct obfs_buf *ob,
         struct wg_message_handshake_initiation *hsi;
         struct wg_message_handshake_response *hsr;
         u32 *np;
-        u64 *p64;
+        u8 *counter = ob->chacha_in;
 
         type = buf[0];
         if (type == WG_HANDSHAKE_INIT && data_len == 148) {
@@ -87,13 +81,9 @@ static void obfs_mac2(u8 *buf, const int data_len, struct obfs_buf *ob,
                 if (*np)
                         return;
 
-                /* Generate pseudo-random bytes as mac2.
-                 * - Use 8th - 15th byte of WG packet as input of chacha8
-                 * - Write 128bits output to mac2
-                 */
-                p64 = (u64 *)(buf + 8);
-                chacha8_hash((const u64)*p64, k, ob->chacha_out);
-                memcpy(hsi->macs.mac2, ob->chacha_out, WG_COOKIE_LEN);
+                /* Write 128bits PRN to mac2 */
+                (*counter)++;
+                chacha_hash(ob->chacha_in, k, hsi->macs.mac2, WG_COOKIE_WORDS);
 
                 /* mark the packet as need restore mac2 upon receiving */
                 buf[0] |= 0x10;
@@ -104,28 +94,25 @@ static void obfs_mac2(u8 *buf, const int data_len, struct obfs_buf *ob,
                 if (*np)
                         return;
 
-                p64 = (u64 *)(buf + 8);
-                chacha8_hash((const u64)*p64, k, ob->chacha_out);
-		memcpy(hsr->macs.mac2, ob->chacha_out, WG_COOKIE_LEN);
+                (*counter)++;
+                chacha_hash(ob->chacha_in, k, hsr->macs.mac2, WG_COOKIE_WORDS);
                 buf[0] |= 0x10;
         }
 }
 
 static int random_drop_wg_keepalive(u8 *buf, const int len, const u8 *key)
 {
-        u8 type;
-        u8 buf_prn[CHACHA8_OUTPUT_SIZE];
-        u64 *p64;
+        u8 type = *buf;
+        u8 *counter = ob->chacha_in;
 
-        type = *buf;
         if (type != WG_DATA || len != 32)
                 return 0;
 
-        /* generate a pseudo-random string by hashing last 8 bytes of keepalive
-         * message. We can assume the probability of s[0] > 50 is 0.8 */
-        p64 = (u64 *)(buf + len - CHACHA8_INPUT_SIZE);
-        chacha8_hash((const u64)*p64, key, buf_prn);
-        if (buf_prn[0] > 50)
+        /* assume the probability of a 1 byte PRN > 50 is 0.8 */
+        (*counter)++;
+        chacha_hash(ob->chacha_in, key, ob->chacha_out, ONE_WORD);
+
+        if (ob->chacha_out[0] > 50)
                 return 1;
         else
                 return 0;
@@ -149,18 +136,15 @@ static void obfs_wg(u8 *buf, const int len, struct obfs_buf *ob, const u8 *key)
         u8 *b;
         u8 rnd_len;
         int i;
-        u64 *p64;
 
         obfs_mac2(buf, len, ob, key);
         rnd_len = ob->rnd_len;
         memcpy(buf + len, ob->rnd, rnd_len);
 
-        /* Generate pseudo-random string from last 9 to 2 bytes of WG packet.
-         * Use it to XOR with the first 16 bytes of WG message. It has message
+        /* Use PRN to XOR with the first 16 bytes of WG message. It has message
          * type, reserved field and counter. They look distinct.
          */
-        p64 = (u64 *)(buf + len + rnd_len - CHACHA8_INPUT_SIZE - 1);
-        chacha8_hash((const u64)*p64, key, ob->chacha_out);
+        chacha_hash(buf + 16, key, ob->chacha_out, HEAD_OBFS_WORDS);
 
         /* set the last byte of random as its length */
         buf[len + rnd_len - 1] = rnd_len ^ ob->chacha_out[16];
@@ -178,15 +162,14 @@ static int prepare_skb_for_insert(struct sk_buff *skb, int ntail)
         if (extra_len > 0) {
                 if (pskb_expand_head(skb, 0, extra_len, GFP_ATOMIC))
                         return -1;
-        } else {
+        }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0)
-                if (unlikely(skb_ensure_writable(skb, skb->len)))
+        if (unlikely(skb_ensure_writable(skb, skb->len)))
 #else
-                if (unlikely(!skb_make_writable(skb, skb->len)))
+        if (unlikely(!skb_make_writable(skb, skb->len)))
 #endif
-                        return -1;
-        }
+                return -1;
 
         skb_put(skb, ntail);
         return 0;
@@ -206,7 +189,27 @@ static unsigned int xt_obfs(struct sk_buff *skb,
         buf_udp = (u8 *) udph + sizeof(struct udphdr);
         wg_data_len = ntohs(udph->len) - sizeof(struct udphdr);
 
-        if (random_drop_wg_keepalive(buf_udp, wg_data_len, info->chacha_key))
+        /* Use 16th to 31st bytes of WG message as input of chacha.
+         *
+         * The 16th to 31st bytes is:
+         *  - handshake initiation unencrypted_ephemeral (32 bytes starts at 8)
+         *  - handshake response unencrypted_ephemeral (32 bytes starts at 12)
+         *  - cookie nonce (24 bytes starts at 8)
+         *  - data encrypted packet (var length starts at 16)
+         *  - keepalive random poly1305 tag (16 bytes starts at 16)
+         *
+         *  Increment the first byte as counter to generate different PRN
+         */
+        memcpy(&(ob.chacha_in), buf_udp + 16, CHACHA_INPUT_SIZE);
+
+        /* Later will use the unchange 16th to 31st bytes to gernerate a PRN,
+         * which XOR with first 16 bytes of WG. Peer will need generate an
+         * identical PRN to recover the original WG.
+         * Other PRNs will be generated with incremented counter.
+         */
+        ob.chacha_in[0] += 42;
+
+        if (random_drop_wg_keepalive(buf_udp, wg_data_len, &ob, info->chacha_key))
                 return NF_DROP;
 
         /* Insert a long pseudo-random string if the WG packet is small, or a
@@ -273,17 +276,14 @@ static void restore_mac2(u8 *buf)
 
 static int restore_wg(u8 *buf, int len, const u8 *key)
 {
-        u8 buf_prn[CHACHA8_OUTPUT_SIZE];
+        u8 buf_prn[MAX_RND_LEN];
         u8 *head;
         int i, rnd_len;
-        u64 *p64;
 
-        /* Same as obfuscate, generate the same pseudo-random string from last
-         * 9 to 2 bytes of UDP packet. Need it for restoring the first 16 bytes
-         * of WG packet.
+        /* Same as obfuscate, generate the same PRN from 16th to 31st bytes of
+         * WG message. Need it for restoring the first 16 bytes of WG message.
          */
-        p64 = (u64 *)(buf + len - CHACHA8_INPUT_SIZE - 1);
-        chacha8_hash((const u64)*p64, key, buf_prn);
+        chacha_hash(buf + 16, key, buf_prn, HEAD_OBFS_WORDS);
 
         /* Restore the length of random padding. It is stored in the last byte
          * of obfuscated WG.
@@ -423,5 +423,5 @@ module_exit(wg_obfs_target_exit);
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Iptables obfuscation module for WireGuard");
 MODULE_AUTHOR("Wei Chen <weichen302@gmail.com>");
-MODULE_VERSION("0.3");
+MODULE_VERSION("0.5");
 MODULE_ALIAS("xt_WGOBFS");

@@ -7,7 +7,7 @@ EXTRA_CFLAGS := -I$(src)/../include -DbKERNELMOD -Wimplicit-fallthrough=3
 
 
 obj-m += xt_WGOBFS.o
-xt_WGOBFS-objs += xt_WGOBFS_main.o chacha8.o
+xt_WGOBFS-objs += xt_WGOBFS_main.o chacha.o
 
 all:
 	make -C $(KERNEL_DIR) M=$(PWD) modules
