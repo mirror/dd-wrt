@@ -169,7 +169,6 @@ do {									\
 		    "%s == 0 (%p == 0)", #LEFT,				\
 		    (void *)__left);					\
 } while (0)
-
 #endif
 
 #ifdef assert
