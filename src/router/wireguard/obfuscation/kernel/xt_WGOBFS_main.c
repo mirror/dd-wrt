@@ -100,7 +100,8 @@ static void obfs_mac2(u8 *buf, const int data_len, struct obfs_buf *ob,
         }
 }
 
-static int random_drop_wg_keepalive(u8 *buf, const int len, const u8 *key)
+static int random_drop_wg_keepalive(u8 *buf, const int len,
+                                    struct obfs_buf *ob, const u8 *key)
 {
         u8 type = *buf;
         u8 *counter = ob->chacha_in;
