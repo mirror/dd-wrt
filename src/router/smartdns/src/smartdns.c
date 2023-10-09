@@ -30,6 +30,7 @@
 #include "rbtree.h"
 #include "tlog.h"
 #include "util.h"
+#include "timer.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -264,7 +265,6 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 		safe_strncpy(flag_tls->hostname, server->hostname, sizeof(flag_tls->hostname));
 		safe_strncpy(flag_tls->tls_host_verify, server->tls_host_verify, sizeof(flag_tls->tls_host_verify));
 		flag_tls->skip_check_cert = server->skip_check_cert;
-
 	} break;
 #endif
 	case DNS_SERVER_TCP:
@@ -491,6 +491,11 @@ static int _smartdns_init(void)
 	tlog(TLOG_NOTICE, "smartdns starting...(Copyright (C) Nick Peng <pymumu@gmail.com>, build: %s %s)", __DATE__,
 		 __TIME__);
 
+	if (dns_timer_init() != 0) {
+		tlog(TLOG_ERROR, "init timer failed.");
+		goto errout;
+	}
+
 #ifdef HAVE_OPENSSL
 	if (_smartdns_init_ssl() != 0) {
 		tlog(TLOG_ERROR, "init ssl failed.");
@@ -582,6 +587,7 @@ static void _smartdns_exit(void)
 #ifdef HAVE_OPENSSL
 	_smartdns_destroy_ssl();
 #endif
+	dns_timer_destroy();
 	tlog_exit();
 	dns_server_load_exit();
 }
@@ -783,7 +789,8 @@ int main(int argc, char *argv[])
 	sigset_t empty_sigblock;
 	struct stat sb;
 
-	static struct option long_options[] = {{"cache-print", required_argument, 0, 256}};
+	static struct option long_options[] = {
+		{"cache-print", required_argument, 0, 256}, {"help", no_argument, 0, 'h'}, {NULL, 0, 0, 0}};
 
 	safe_strncpy(config_file, SMARTDNS_CONF_FILE, MAX_LINE_LEN);
 
@@ -829,9 +836,13 @@ int main(int argc, char *argv[])
 #endif
 		case 'h':
 			_help();
-			return 1;
+			return 0;
 		case 256:
 			return dns_cache_print(optarg);
+			break;
+		default:
+			fprintf(stderr, "unknown option, please run %s -h for help.\n", argv[0]);
+			return 1;
 		}
 	}
 

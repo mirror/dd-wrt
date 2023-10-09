@@ -25,6 +25,7 @@
 #include "hash.h"
 #include "hashtable.h"
 #include "list.h"
+#include "timer.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -45,14 +46,9 @@ enum CACHE_TYPE {
 	CACHE_TYPE_PACKET,
 };
 
-enum CACHE_RECORD_TYPE {
-	CACHE_RECORD_TYPE_ACTIVE,
-	CACHE_RECORD_TYPE_INACTIVE,
-	CACHE_RECORD_TYPE_END,
-};
-
 struct dns_cache_data_head {
 	enum CACHE_TYPE cache_type;
+	atomic_t ref;
 	int is_soa;
 	ssize_t size;
 	uint32_t magic;
@@ -90,7 +86,7 @@ struct dns_cache_info {
 	int ttl;
 	int hitnum;
 	int speed;
-	int no_inactive;
+	int timeout;
 	int hitnum_update_add;
 	int is_visited;
 	time_t insert_time;
@@ -99,7 +95,6 @@ struct dns_cache_info {
 
 struct dns_cache_record {
 	uint32_t magic;
-	enum CACHE_RECORD_TYPE type;
 	struct dns_cache_info info;
 };
 
@@ -113,6 +108,8 @@ struct dns_cache {
 
 	struct dns_cache_info info;
 	struct dns_cache_data *cache_data;
+
+	struct tw_timer_list timer;
 };
 
 struct dns_cache_file {
@@ -134,19 +131,16 @@ uint32_t dns_cache_get_query_flag(struct dns_cache *dns_cache);
 
 const char *dns_cache_get_dns_group_name(struct dns_cache *dns_cache);
 
-void dns_cache_data_free(struct dns_cache_data *data);
-
 struct dns_cache_data *dns_cache_new_data_packet(void *packet, size_t packet_len);
 
-int dns_cache_init(int size, int enable_inactive, int inactive_list_expired);
+typedef int (*dns_cache_callback)(struct dns_cache *dns_cache);
 
-int dns_cache_replace(struct dns_cache_key *key, int ttl, int speed, int no_inactive,
+int dns_cache_init(int size, dns_cache_callback timeout_callback);
+
+int dns_cache_replace(struct dns_cache_key *key, int ttl, int speed, int tiemout, int update_time,
 					  struct dns_cache_data *cache_data);
 
-int dns_cache_replace_inactive(struct dns_cache_key *key, int ttl, int speed, int no_inactive,
-							   struct dns_cache_data *cache_data);
-
-int dns_cache_insert(struct dns_cache_key *key, int ttl, int speed, int no_inactive, struct dns_cache_data *cache_data);
+int dns_cache_insert(struct dns_cache_key *key, int ttl, int speed, int timeout, struct dns_cache_data *cache_data);
 
 struct dns_cache *dns_cache_lookup(struct dns_cache_key *key);
 
@@ -162,11 +156,6 @@ int dns_cache_is_visited(struct dns_cache *dns_cache);
 
 void dns_cache_update(struct dns_cache *dns_cache);
 
-typedef void dns_cache_callback(struct dns_cache *dns_cache);
-
-void dns_cache_invalidate(dns_cache_callback precallback, int ttl_pre, unsigned int max_callback_num,
-						  dns_cache_callback inactive_precallback, int ttl_inactive_pre);
-
 int dns_cache_get_ttl(struct dns_cache *dns_cache);
 
 int dns_cache_get_cname_ttl(struct dns_cache *dns_cache);
@@ -176,6 +165,10 @@ int dns_cache_is_soa(struct dns_cache *dns_cache);
 struct dns_cache_data *dns_cache_new_data_addr(void);
 
 struct dns_cache_data *dns_cache_get_data(struct dns_cache *dns_cache);
+
+void dns_cache_data_get(struct dns_cache_data *cache_data);
+
+void dns_cache_data_put(struct dns_cache_data *cache_data);
 
 void dns_cache_set_data_addr(struct dns_cache_data *dns_cache, char *cname, int cname_ttl, unsigned char *addr,
 							 int addr_len);
