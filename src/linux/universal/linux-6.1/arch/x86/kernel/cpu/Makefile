@@ -19,6 +19,7 @@ KCSAN_SANITIZE_common.o := n
 
 # Make sure load_percpu_segment has no stackprotector
 CFLAGS_common.o		:= -fno-stack-protector
+CFLAGS_bugs.o = $(DISABLE_LTO_GCC)
 
 obj-y			:= cacheinfo.o scattered.o topology.o
 obj-y			+= common.o
