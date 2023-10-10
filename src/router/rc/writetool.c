@@ -47,6 +47,15 @@
 #error unkown endianness!
 #endif
 
+#define GPT_MAGIC 0x5452415020494645ULL
+
+enum {
+	LEGACY_GPT_TYPE = 0xee,
+	GPT_MAX_PARTS   = 256,
+	GPT_MAX_PART_ENTRY_LEN = 4096,
+	GUID_LEN        = 16,
+};
+
 struct pte {
 	uint8_t active;
 	uint8_t chs_start[3];
@@ -55,6 +64,35 @@ struct pte {
 	uint32_t start;
 	uint32_t length;
 };
+
+
+typedef struct {
+	uint64_t magic;
+	uint32_t revision;
+	uint32_t hdr_size;
+	uint32_t hdr_crc32;
+	uint32_t reserved;
+	uint64_t current_lba;
+	uint64_t backup_lba;
+	uint64_t first_usable_lba;
+	uint64_t last_usable_lba;
+	uint8_t  disk_guid[GUID_LEN];
+	uint64_t first_part_lba;
+	uint32_t n_parts;
+	uint32_t part_entry_len;
+	uint32_t part_array_crc32;
+} gpt_header;
+
+typedef struct {
+	uint8_t  type_guid[GUID_LEN];
+	uint8_t  part_guid[GUID_LEN];
+	uint64_t lba_start;
+	uint64_t lba_end;
+	uint64_t flags;
+	uint16_t name36[36];
+} gpt_partition;
+
+
 
 int sectors = 63;
 int heads = 16;
@@ -118,7 +156,7 @@ static void copy(FILE * out, size_t inoff, size_t outoff, int len)
 	free(mem);
 }
 
-int main(int argc, char *argv[])
+int main_mbr(int argc, char *argv[])
 {
 	FILE *in = fopen(argv[1], "r+b");
 	FILE *out = fopen(argv[2], "r+b");
@@ -188,4 +226,90 @@ int main(int argc, char *argv[])
 //	}
 	fclose(out);
 	fclose(in);
+	return 0;
+}
+
+int main_gpt(int argc, char *argv[])
+{
+	gpt_header header;
+	gpt_header header2;
+	gpt_partition *part;
+	unsigned char *buf;
+	unsigned char *buf2;
+	FILE *in = fopen(argv[1], "r+b");
+	FILE *out = fopen(argv[2], "r+b");
+	fseek(in, 512, SEEK_SET);
+	fseek(out, 512, SEEK_SET);
+	fread(&header, sizeof(header), 1, in);
+	fread(&header2, sizeof(header), 1, in);
+	fseek(in, 512 * cpu_to_le64(header.first_part_lba), SEEK_SET);
+	fseek(out, 512 * cpu_to_le64(header.first_part_lba), SEEK_SET);
+	uint32_t n_parts;
+	uint32_t part_entry_len;
+	
+	buf = malloc(cpu_to_le32(header.n_parts) * cpu_to_le32(header.part_entry_len));
+	fread(buf, cpu_to_le32(header.n_parts) * cpu_to_le32(header.part_entry_len), 1, in);
+
+	buf2 = malloc(cpu_to_le32(header2.n_parts) * cpu_to_le32(header2.part_entry_len));
+	fread(buf2, cpu_to_le32(header2.n_parts) * cpu_to_le32(header2.part_entry_len), 1, out);
+
+
+	int i;
+	fprintf(stderr, "old layout\n");
+	for (i = 0; i < 4; i++) {
+		part = (gpt_partition *)&buf2[i*cpu_to_le32(header2.part_entry_len)];
+		fprintf(stderr, "p[%d]: start %lld end %lld flags %llX name %s\n", i, cpu_to_le64(part->lba_start), cpu_to_le64(part->lba_end), cpu_to_le64(part->flags), part->name36);
+	}
+	fprintf(stderr, "new layout\n");
+	for (i = 0; i < 4; i++) {
+		part = (gpt_partition *)&buf[i*cpu_to_le32(header.part_entry_len)];
+		fprintf(stderr, "p[%d]: start %lld end %lld flags %llX name %s\n", i, cpu_to_le64(part->lba_start), cpu_to_le64(part->lba_end), cpu_to_le64(part->flags), part->name36);
+	}
+	gpt_partition *nvram = (gpt_partition *)&buf2[2 * cpu_to_le32(header2.part_entry_len)];
+	gpt_partition *newnvram = (gpt_partition *)&buf[2 * cpu_to_le32(header.part_entry_len)];
+	fseek(out, cpu_to_le64(nvram->lba_start) * 512, SEEK_SET);
+	int64_t nvlen = (cpu_to_le64(nvram->lba_end) - cpu_to_le64(nvram->lba_start)) * 512;
+	if (nvlen>0) {
+		if (nvram->lba_start == newnvram->lba_start) {
+			if (cpu_to_le64(nvram->lba_end) > cpu_to_le64(newnvram->lba_end)) {
+				// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
+				memcpy(newnvram, nvram, cpu_to_le32(header.part_entry_len));
+				fseek(out, cpu_to_le32(header.part_entry_len) * 2, SEEK_SET);
+				fwrite(newnvram, cpu_to_le32(header.part_entry_len), 1, out);
+			}
+		} else {
+			fprintf(stderr, "read nvram from old offset %lld with len %lld and write to offset %lld\n", cpu_to_le64(nvram->lba_start) * 512, nvlen, cpu_to_le64(newnvram->lba_start) * 512);
+			copy(out, cpu_to_le64(nvram->lba_start) * 512, cpu_to_le64(newnvram->lba_start) * 512, nvlen);
+		}
+	}
+	fseek(in, 0, SEEK_END);
+	uint32_t len = ftell(in);
+	fseek(in, 0, SEEK_SET);
+	fseek(out, 0, SEEK_SET);
+	char *sbuf = malloc(65536);
+	int count = len / 65536;
+	fprintf(stderr, "write image len = %d\n", len);
+	for (i = 0; i < count; i++) {
+		fread(sbuf, 65536, 1, in);
+		fwrite(sbuf, 65536, 1, out);
+	}
+	fread(sbuf, len % 65536, 1, in);
+	fwrite(sbuf, len % 65536, 1, out);
+	free(sbuf);
+	fclose(out);
+	fclose(in);
+	return 0;
+}
+int main(int argc, char *argv[])
+{
+	gpt_header header;
+	FILE *in = fopen(argv[1], "r+b");
+	fseek(in,512,SEEK_SET);
+	fread(&header, sizeof(header), 1, in);
+	fclose(in);
+	if (header.magic == cpu_to_le64(GPT_MAGIC))
+		return main_gpt(argc, argv);
+	else
+		return main_mbr(argc, argv);
+	    
 }
