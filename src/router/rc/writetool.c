@@ -241,9 +241,9 @@ int main_gpt(int argc, char *argv[])
 	fseek(in, 512, SEEK_SET);
 	fseek(out, 512, SEEK_SET);
 	fread(&header, sizeof(header), 1, in);
-	fread(&header2, sizeof(header), 1, in);
+	fread(&header2, sizeof(header), 1, out);
 	fseek(in, 512 * cpu_to_le64(header.first_part_lba), SEEK_SET);
-	fseek(out, 512 * cpu_to_le64(header.first_part_lba), SEEK_SET);
+	fseek(out, 512 * cpu_to_le64(header2.first_part_lba), SEEK_SET);
 	uint32_t n_parts;
 	uint32_t part_entry_len;
 	
@@ -253,7 +253,7 @@ int main_gpt(int argc, char *argv[])
 	buf2 = malloc(cpu_to_le32(header2.n_parts) * cpu_to_le32(header2.part_entry_len));
 	fread(buf2, cpu_to_le32(header2.n_parts) * cpu_to_le32(header2.part_entry_len), 1, out);
 
-
+	fprintf(stderr, "%d\n", cpu_to_le32(header2.part_entry_len));
 	int i;
 	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
