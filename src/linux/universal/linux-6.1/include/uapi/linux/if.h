@@ -277,6 +277,8 @@ struct ifreq {
 #define ifr_qlen	ifr_ifru.ifru_ivalue	/* Queue length 	*/
 #define ifr_newname	ifr_ifru.ifru_newname	/* New name		*/
 #define ifr_settings	ifr_ifru.ifru_settings	/* Device/proto settings*/
+#define	ifr_weight_weight ifr_ifru.ifru_weight.weight /* bonding weight*/
+#define	ifr_weight_slave  ifr_ifru.ifru_weight.slave  /* bonding weight slave */
 
 /*
  * Structure used in SIOCGIFCONF request.
