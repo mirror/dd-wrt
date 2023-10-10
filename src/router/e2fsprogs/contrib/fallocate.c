@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <syscall.h>
 
 // #include <linux/falloc.h>
 #define FALLOC_FL_KEEP_SIZE	0x01

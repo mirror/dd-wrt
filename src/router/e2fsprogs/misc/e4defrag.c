@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <sys/statfs.h>
 #include <sys/vfs.h>
+#include <syscall.h>
 
 #include "../version.h"
 
