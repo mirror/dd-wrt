@@ -16,6 +16,13 @@ obj-$(CONFIG_USERMODE_DRIVER) += usermode_driver.o
 obj-$(CONFIG_MODULES) += kmod.o
 obj-$(CONFIG_MULTIUSER) += groups.o
 
+CFLAGS_sys_ni.o = $(DISABLE_LTO_GCC)
+CFLAGS_sys.o = $(DISABLE_LTO_GCC)
+CFLAGS_capability.o = $(DISABLE_LTO_GCC)
+CFLAGS_utsname.o = $(DISABLE_LTO_GCC)
+CFLAGS_utsname_sysctl.o = $(DISABLE_LTO_GCC)
+
+
 ifdef CONFIG_FUNCTION_TRACER
 # Do not trace internal ftrace files
 CFLAGS_REMOVE_irq_work.o = $(CC_FLAGS_FTRACE)
