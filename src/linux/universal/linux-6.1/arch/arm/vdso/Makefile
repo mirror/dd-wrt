@@ -1,3 +1,4 @@
+KBUILD_CFLAGS += $(DISABLE_LTO_GCC)
 # SPDX-License-Identifier: GPL-2.0
 
 # Absolute relocation type $(ARCH_REL_TYPE_ABS) needs to be defined before
@@ -14,7 +15,7 @@ targets := $(obj-vdso) vdso.so vdso.so.dbg vdso.so.raw vdso.lds
 obj-vdso := $(addprefix $(obj)/, $(obj-vdso))
 
 ccflags-y := -fPIC -fno-common -fno-builtin -fno-stack-protector
-ccflags-y += -DDISABLE_BRANCH_PROFILING -DBUILD_VDSO32
+ccflags-y += -DDISABLE_BRANCH_PROFILING -DBUILD_VDSO32 $(DISABLE_LTO_GCC)
 
 ldflags-$(CONFIG_CPU_ENDIAN_BE8) := --be8
 ldflags-y := -Bsymbolic --no-undefined -soname=linux-vdso.so.1 \
@@ -23,7 +24,7 @@ ldflags-y := -Bsymbolic --no-undefined -soname=linux-vdso.so.1 \
 	    -T
 
 obj-$(CONFIG_VDSO) += vdso.o
-CPPFLAGS_vdso.lds += -P -C -U$(ARCH)
+CPPFLAGS_vdso.lds += -P -C -U$(ARCH) $(DISABLE_LTO)
 
 CFLAGS_REMOVE_vdso.o = -pg
 

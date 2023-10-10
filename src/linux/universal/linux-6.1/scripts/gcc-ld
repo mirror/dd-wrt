@@ -36,5 +36,5 @@ while [ "$1" != "" ] ; do
 done
 
 [ -n "$V" ] && echo >&2 $CC $ARGS
-
-exec $CC $ARGS
+exec $CC $ARGS $KBUILD_CFLAGS
+#exec $CC  $ARGS -specs=./scripts/better_specs -Wl,-debug

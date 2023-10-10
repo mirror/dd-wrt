@@ -836,7 +836,8 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
 KBUILD_CFLAGS   += -O2 $(EXTRA_OPTIMIZATION)
 KBUILD_RUSTFLAGS += -Copt-level=2
 else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
+#KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os)
+KBUILD_CFLAGS	+= -Os
 KBUILD_CFLAGS	+= -fno-reorder-blocks -fno-tree-ch -fno-caller-saves $(EXTRA_OPTIMIZATION)
 KBUILD_RUSTFLAGS += -Copt-level=s
 else ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3

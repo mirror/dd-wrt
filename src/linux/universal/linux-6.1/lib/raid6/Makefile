@@ -35,13 +35,13 @@ endif
 # The GCC option -ffreestanding is required in order to compile code containing
 # ARM/NEON intrinsics in a non C99-compliant environment (such as the kernel)
 ifeq ($(CONFIG_KERNEL_MODE_NEON),y)
-NEON_FLAGS := -ffreestanding
+NEON_FLAGS := -ffreestanding $(DISABLE_LTO_GCC)
 # Enable <arm_neon.h>
 NEON_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
 ifeq ($(ARCH),arm)
-NEON_FLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=neon
+NEON_FLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=neon-vfpv4 
 endif
-CFLAGS_recov_neon_inner.o += $(NEON_FLAGS)
+CFLAGS_recov_neon_inner.o += $(NEON_FLAGS) 
 ifeq ($(ARCH),arm64)
 CFLAGS_REMOVE_recov_neon_inner.o += -mgeneral-regs-only
 CFLAGS_REMOVE_neon1.o += -mgeneral-regs-only

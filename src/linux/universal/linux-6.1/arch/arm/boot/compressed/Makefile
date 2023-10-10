@@ -103,7 +103,7 @@ OBJS	+= lib1funcs.o ashldi3.o bswapsdi2.o
 targets       := vmlinux vmlinux.lds piggy_data piggy.o \
 		 head.o $(OBJS)
 
-KBUILD_CFLAGS += -DDISABLE_BRANCH_PROFILING
+KBUILD_CFLAGS += -DDISABLE_BRANCH_PROFILING $(DISABLE_LTO_GCC)
 
 ccflags-y := -fpic $(call cc-option,-mno-single-pic-base,) -fno-builtin \
 	     -I$(srctree)/scripts/dtc/libfdt -fno-stack-protector \

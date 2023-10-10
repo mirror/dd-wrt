@@ -4,6 +4,7 @@
 #
 # Copyright (C) 1995-2000 Russell King
 #
+#CFLAGS_delay.o += $(DISABLE_LTO_GCC)
 
 lib-y		:= changebit.o csumipv6.o csumpartial.o               \
 		   csumpartialcopy.o csumpartialcopyuser.o clearbit.o \

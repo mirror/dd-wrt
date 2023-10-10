@@ -6,7 +6,7 @@ DISABLE_LTO_GCC :=
 export DISABLE_LTO_GCC
 
 ifdef CONFIG_LTO_GCC
-	CC_FLAGS_LTO_GCC := -flto
+	CC_FLAGS_LTO_GCC := -flto=$(shell getconf _NPROCESSORS_ONLN)
 	DISABLE_LTO_GCC := -fno-lto
 
 	KBUILD_CFLAGS += ${CC_FLAGS_LTO_GCC}

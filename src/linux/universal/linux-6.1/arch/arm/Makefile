@@ -58,13 +58,35 @@ endif
 # (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65932)
 #
 KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-sra)
+ifeq ($(CONFIG_AEABI),y)
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+else
+CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
+endif
 
 # This selects which instruction set is used.
 # Note that GCC does not numerically define an architecture version
 # macro, but instead defines a whole series of macros which makes
 # testing for a specific architecture or later rather impossible.
 arch-$(CONFIG_CPU_32v7M)	=-D__LINUX_ARM_ARCH__=7 -march=armv7-m
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+ifeq ($(CONFIG_ARCH_ALPINE),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
+else
+ifeq ($(CONFIG_ARCH_QCOM),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
+else
+ifeq ($(CONFIG_ARM_VIRT_EXT),y)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
+else
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7-a
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
+endif
+endif
+endif
 arch-$(CONFIG_CPU_32v6)		=-D__LINUX_ARM_ARCH__=6 -march=armv6
 # Only override the compiler option if ARMv6. The ARMv6K extensions are
 # always available in ARMv7
@@ -102,11 +124,6 @@ tune-$(CONFIG_CPU_V6K)		=-mtune=arm1136j-s
 # Evaluate tune cc-option calls now
 tune-y := $(tune-y)
 
-ifeq ($(CONFIG_AEABI),y)
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
-else
-CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
-endif
 
 ifeq ($(CONFIG_ARM_UNWIND),y)
 CFLAGS_ABI	+=-funwind-tables
