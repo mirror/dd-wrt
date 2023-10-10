@@ -3302,7 +3302,7 @@ linux_smart_interface::sssraid_pdlist_cmd(int bus_no, uint16_t start_idx_param, 
   char line[128];
   snprintf(line, sizeof(line) - 1, "/dev/bsg/sssraid%d", bus_no);
   if ((fd = ::open(line, O_RDONLY)) < 0) {
-    pout("open %s error %d\n", line, fd);
+    //pout("open %s error %d\n", line, fd);
     return (errno);
   }
 
