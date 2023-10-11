@@ -135,14 +135,11 @@ endif
 	$(MAKE) -C $(LINUXDIR) oldconfig
 	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs KALLSYMS_EXTRA_PASS=1 CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs KALLSYMS_EXTRA_PASS=1 CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  KALLSYMS_EXTRA_PASS=1 ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS= KALLSYMS_EXTRA_PASS=1 ; \
 	fi
-	
-
-	
 	
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
@@ -222,7 +219,7 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	#rm -f $(LINUXDIR)/vmlinux
-	#$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" KALLSYMS_EXTRA_PASS=1
+	# $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" KALLSYMS_EXTRA_PASS=1 CFLAGS=
 	
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage; 
 	-rm -rf $(ARCH)-uclibc/ipq806x;
@@ -242,33 +239,33 @@ endif
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-asrockg10.dtb >> $(ARCH)-uclibc/ipq806x-G10-uImage;
 	./tools/r7500/mkimage -A arm -O linux -T filesystem -C none -a 0x42208000 -e 0x42208000 -n 'DD-WRT - Fakeroot' -s $(ARCH)-uclibc/rootfs.dummy
 	
-	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500.uImage.new; )
 	
-	( dd if=$(ARCH)-uclibc/ipq806x-R7500v2-uImage of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-R7500v2-uImage of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.new; )
 	
-	( dd if=$(ARCH)-uclibc/ipq806x-R7800-uImage of=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-R7800-uImage of=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7800.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7800.uImage.new; )
 
-	( dd if=$(ARCH)-uclibc/ipq806x-XR500-uImage of=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-XR500-uImage of=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-xr500.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-xr500.uImage.new; )
 
-	( dd if=$(ARCH)-uclibc/ipq806x-TEW827-uImage of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-TEW827-uImage of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.new; )
 
-	( dd if=$(ARCH)-uclibc/ipq806x-G10-uImage of=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-G10-uImage of=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-G10.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-G10.uImage.new; )
 	
-	( dd if=$(ARCH)-uclibc/ipq806x-EA8500-uImage of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-EA8500-uImage of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.new; )	
+	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.new; )	
 
 	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
 	
@@ -398,33 +395,33 @@ endif
 	./tools/r7500/mkimage -A arm -O linux -T filesystem -C none -a 0x42208000 -e 0x42208000 -n 'DD-WRT - Fakeroot' -s $(ARCH)-uclibc/rootfs.dummy
 
 
-	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500.uImage.new; )
 	
-	( dd if=$(ARCH)-uclibc/ipq806x-R7500v2-uImage of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-R7500v2-uImage of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.new; )
 	
-	( dd if=$(ARCH)-uclibc/ipq806x-R7800-uImage of=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-R7800-uImage of=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7800.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7800.uImage.new; )
 
-	( dd if=$(ARCH)-uclibc/ipq806x-XR500-uImage of=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-XR500-uImage of=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-xr500.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-xr500.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-xr500.uImage.new; )
 
-	( dd if=$(ARCH)-uclibc/ipq806x-TEW827-uImage of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-TEW827-uImage of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.new; )
 
-	( dd if=$(ARCH)-uclibc/ipq806x-G10-uImage of=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-G10-uImage of=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-G10.uImage.new; )
+	( dd if=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-G10.uImage.new; )
 	
-	( dd if=$(ARCH)-uclibc/ipq806x-EA8500-uImage of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=3072k conv=sync; )
+	( dd if=$(ARCH)-uclibc/ipq806x-EA8500-uImage of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=4096k conv=sync; )
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=3145599 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.new; )	
+	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=4194175 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.new; )	
 
 	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
 	
@@ -462,19 +459,19 @@ endif
 	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-EA8500.uImage.final;
 	
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.final bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7500v1.bin
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.final bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7500v1.bin
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.final bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7500v2.bin
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.final bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7500v2.bin
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.final bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7800.bin
+	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.final bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7800.bin
 
-	( dd if=$(ARCH)-uclibc/vmlinux-xr500.uImage.final bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-XR500.bin
+	( dd if=$(ARCH)-uclibc/vmlinux-xr500.uImage.final bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-XR500.bin
 
-	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.final bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-TEW827.bin
+	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.final bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-TEW827.bin
 
-	( dd if=$(ARCH)-uclibc/vmlinux-G10.uImage.final bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-G10.bin
+	( dd if=$(ARCH)-uclibc/vmlinux-G10.uImage.final bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-G10.bin
 	
-	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.final bs=3145728 conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-EA8500.bin
+	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.final bs=4194304 conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-EA8500.bin
 	
 	cp $(ARCH)-uclibc/ddwrt-EA8500.bin $(ARCH)-uclibc/ddwrt-EA8500-WW.bin
 	cat tools/ea8500/ea8500.tag >> $(ARCH)-uclibc/ddwrt-EA8500.bin
@@ -526,7 +523,7 @@ endif
 	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
 	-./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
 
-	-( dd if=$(ARCH)-uclibc/habanero.itb.new bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/habanero.image
+	-( dd if=$(ARCH)-uclibc/habanero.itb.new bs=4096k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/habanero.image
 
 	--./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/habanero.bin $(ARCH)-uclibc/habanero.image
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
