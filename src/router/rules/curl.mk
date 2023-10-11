@@ -101,6 +101,12 @@ curl-configure: openssl zlib
 	--without-libpsl \
 	--without-zstd \
 	--without-zlib \
+	--without-ngtcp2 \
+	--without-nghttp3 \
+	--without-quiche \
+	--without-msh3 \
+	--disable-websockets \
+	--disable-headers-api \
 	--enable-static \
 	--with-ca-bundle=/etc/ssl/ca-bundle.crt \
 	--without-openssl \
