@@ -33,7 +33,7 @@ endif
 ldflags-y += -T
 
 ccflags-y := -fno-common -fno-builtin -fno-stack-protector -ffixed-x18
-ccflags-y += -DDISABLE_BRANCH_PROFILING -DBUILD_VDSO
+ccflags-y += -DDISABLE_BRANCH_PROFILING -DBUILD_VDSO  $(DISABLE_LTO_GCC)
 
 # -Wmissing-prototypes and -Wmissing-declarations are removed from
 # the CFLAGS of vgettimeofday.c to make possible to build the
