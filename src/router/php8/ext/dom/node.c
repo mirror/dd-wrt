@@ -769,17 +769,28 @@ int dom_node_text_content_write(dom_object *obj, zval *newval)
 		return FAILURE;
 	}
 
-	if (nodep->type == XML_ELEMENT_NODE || nodep->type == XML_ATTRIBUTE_NODE) {
+	const xmlChar *xmlChars = (const xmlChar *) ZSTR_VAL(str);
+	int type = nodep->type;
+
+	/* We can't directly call xmlNodeSetContent, because it might encode the string through
+	 * xmlStringLenGetNodeList for types XML_DOCUMENT_FRAG_NODE, XML_ELEMENT_NODE, XML_ATTRIBUTE_NODE.
+	 * See tree.c:xmlNodeSetContent in libxml.
+	 * In these cases we need to use a text node to avoid the encoding.
+	 * For the other cases, we *can* rely on xmlNodeSetContent because it is either a no-op, or handles
+	 * the content without encoding. */
+	if (type == XML_DOCUMENT_FRAG_NODE || type == XML_ELEMENT_NODE || type == XML_ATTRIBUTE_NODE) {
 		if (nodep->children) {
 			node_list_unlink(nodep->children);
 			php_libxml_node_free_list((xmlNodePtr) nodep->children);
 			nodep->children = NULL;
 		}
+
+		xmlNode *textNode = xmlNewText(xmlChars);
+		xmlAddChild(nodep, textNode);
+	} else {
+		xmlNodeSetContent(nodep, xmlChars);
 	}
 
-	/* we have to use xmlNodeAddContent() to get the same behavior as with xmlNewText() */
-	xmlNodeSetContent(nodep, (xmlChar *) "");
-	xmlNodeAddContent(nodep, (xmlChar *) ZSTR_VAL(str));
 	zend_string_release_ex(str, 0);
 
 	return SUCCESS;
@@ -932,12 +943,20 @@ PHP_METHOD(DOMNode, insertBefore)
 					return;
 				}
 			}
-		} else if (child->type == XML_DOCUMENT_FRAG_NODE) {
-			new_child = _php_dom_insert_fragment(parentp, refp->prev, refp, child, intern, childobj);
-		}
-
-		if (new_child == NULL) {
 			new_child = xmlAddPrevSibling(refp, child);
+			if (UNEXPECTED(NULL == new_child)) {
+				goto cannot_add;
+			}
+		} else if (child->type == XML_DOCUMENT_FRAG_NODE) {
+			xmlNodePtr last = child->last;
+			new_child = _php_dom_insert_fragment(parentp, refp->prev, refp, child, intern, childobj);
+			dom_reconcile_ns_list(parentp->doc, new_child, last);
+		} else {
+			new_child = xmlAddPrevSibling(refp, child);
+			if (UNEXPECTED(NULL == new_child)) {
+				goto cannot_add;
+			}
+			dom_reconcile_ns(parentp->doc, new_child);
 		}
 	} else {
 		if (child->parent != NULL){
@@ -974,23 +993,28 @@ PHP_METHOD(DOMNode, insertBefore)
 					return;
 				}
 			}
-		} else if (child->type == XML_DOCUMENT_FRAG_NODE) {
-			new_child = _php_dom_insert_fragment(parentp, parentp->last, NULL, child, intern, childobj);
-		}
-		if (new_child == NULL) {
 			new_child = xmlAddChild(parentp, child);
+			if (UNEXPECTED(NULL == new_child)) {
+				goto cannot_add;
+			}
+		} else if (child->type == XML_DOCUMENT_FRAG_NODE) {
+			xmlNodePtr last = child->last;
+			new_child = _php_dom_insert_fragment(parentp, parentp->last, NULL, child, intern, childobj);
+			dom_reconcile_ns_list(parentp->doc, new_child, last);
+		} else {
+			new_child = xmlAddChild(parentp, child);
+			if (UNEXPECTED(NULL == new_child)) {
+				goto cannot_add;
+			}
+			dom_reconcile_ns(parentp->doc, new_child);
 		}
 	}
-
-	if (NULL == new_child) {
-		zend_throw_error(NULL, "Cannot add newnode as the previous sibling of refnode");
-		RETURN_THROWS();
-	}
-
-	dom_reconcile_ns(parentp->doc, new_child);
 
 	DOM_RET_OBJ(new_child, &ret, intern);
-
+	return;
+cannot_add:
+	zend_throw_error(NULL, "Cannot add newnode as the previous sibling of refnode");
+	RETURN_THROWS();
 }
 /* }}} end dom_node_insert_before */
 
@@ -1055,9 +1079,10 @@ PHP_METHOD(DOMNode, replaceChild)
 
 		xmlUnlinkNode(oldchild);
 
+		xmlNodePtr last = newchild->last;
 		newchild = _php_dom_insert_fragment(nodep, prevsib, nextsib, newchild, intern, newchildobj);
 		if (newchild) {
-			dom_reconcile_ns(nodep->doc, newchild);
+			dom_reconcile_ns_list(nodep->doc, newchild, last);
 		}
 	} else if (oldchild != newchild) {
 		xmlDtdPtr intSubset = xmlGetIntSubset(nodep->doc);
@@ -1204,22 +1229,28 @@ PHP_METHOD(DOMNode, appendChild)
 				php_libxml_node_free_resource((xmlNodePtr) lastattr);
 			}
 		}
-	} else if (child->type == XML_DOCUMENT_FRAG_NODE) {
-		new_child = _php_dom_insert_fragment(nodep, nodep->last, NULL, child, intern, childobj);
-	}
-
-	if (new_child == NULL) {
 		new_child = xmlAddChild(nodep, child);
-		if (new_child == NULL) {
-			// TODO Convert to Error?
-			php_error_docref(NULL, E_WARNING, "Couldn't append node");
-			RETURN_FALSE;
+		if (UNEXPECTED(new_child == NULL)) {
+			goto cannot_add;
 		}
+	} else if (child->type == XML_DOCUMENT_FRAG_NODE) {
+		xmlNodePtr last = child->last;
+		new_child = _php_dom_insert_fragment(nodep, nodep->last, NULL, child, intern, childobj);
+		dom_reconcile_ns_list(nodep->doc, new_child, last);
+	} else {
+		new_child = xmlAddChild(nodep, child);
+		if (UNEXPECTED(new_child == NULL)) {
+			goto cannot_add;
+		}
+		dom_reconcile_ns(nodep->doc, new_child);
 	}
-
-	dom_reconcile_ns(nodep->doc, new_child);
 
 	DOM_RET_OBJ(new_child, &ret, intern);
+	return;
+cannot_add:
+	// TODO Convert to Error?
+	php_error_docref(NULL, E_WARNING, "Couldn't append node");
+	RETURN_FALSE;
 }
 /* }}} end dom_node_append_child */
 

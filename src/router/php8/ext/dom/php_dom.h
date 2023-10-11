@@ -93,6 +93,18 @@ typedef struct {
 	HashPosition pos;
 } php_dom_iterator;
 
+typedef struct {
+	/* This may be a fake object that isn't actually in the children list of the parent.
+	 * This is because some namespace declaration nodes aren't stored on the parent in libxml2, so we have to fake it.
+	 * We could use a zval for this, but since this is always going to be an object let's save space... */
+	dom_object *parent_intern;
+	dom_object dom;
+} dom_object_namespace_node;
+
+static inline dom_object_namespace_node *php_dom_namespace_node_obj_from_obj(zend_object *obj) {
+	return (dom_object_namespace_node*)((char*)(obj) - XtOffsetOf(dom_object_namespace_node, dom.std));
+}
+
 #include "domexception.h"
 
 dom_object *dom_object_get_data(xmlNodePtr obj);
@@ -110,6 +122,7 @@ int dom_check_qname(char *qname, char **localname, char **prefix, int uri_len, i
 xmlNsPtr dom_get_ns(xmlNodePtr node, char *uri, int *errorcode, char *prefix);
 void dom_set_old_ns(xmlDoc *doc, xmlNs *ns);
 void dom_reconcile_ns(xmlDocPtr doc, xmlNodePtr nodep);
+void dom_reconcile_ns_list(xmlDocPtr doc, xmlNodePtr nodep, xmlNodePtr last);
 xmlNsPtr dom_get_nsdecl(xmlNode *node, xmlChar *localName);
 void dom_normalize (xmlNodePtr nodep);
 xmlNode *dom_get_elements_by_tag_name_ns_raw(xmlNodePtr nodep, char *ns, char *local, int *cur, int index);
@@ -125,12 +138,23 @@ xmlNode *php_dom_libxml_hash_iter(xmlHashTable *ht, int index);
 xmlNode *php_dom_libxml_notation_iter(xmlHashTable *ht, int index);
 zend_object_iterator *php_dom_get_iterator(zend_class_entry *ce, zval *object, int by_ref);
 void dom_set_doc_classmap(php_libxml_ref_obj *document, zend_class_entry *basece, zend_class_entry *ce);
+xmlNodePtr php_dom_create_fake_namespace_decl(xmlNodePtr nodep, xmlNsPtr original, zval *return_value, dom_object *parent_intern);
 
 void dom_parent_node_prepend(dom_object *context, zval *nodes, int nodesc);
 void dom_parent_node_append(dom_object *context, zval *nodes, int nodesc);
 void dom_parent_node_after(dom_object *context, zval *nodes, int nodesc);
 void dom_parent_node_before(dom_object *context, zval *nodes, int nodesc);
 void dom_child_node_remove(dom_object *context);
+void dom_child_replace_with(dom_object *context, zval *nodes, int nodesc);
+
+/* nodemap and nodelist APIs */
+xmlNodePtr php_dom_named_node_map_get_named_item(dom_nnodemap_object *objmap, const char *named, bool may_transform);
+void php_dom_named_node_map_get_named_item_into_zval(dom_nnodemap_object *objmap, const char *named, zval *return_value);
+xmlNodePtr php_dom_named_node_map_get_item(dom_nnodemap_object *objmap, zend_long index);
+void php_dom_named_node_map_get_item_into_zval(dom_nnodemap_object *objmap, zend_long index, zval *return_value);
+void php_dom_nodelist_get_item_into_zval(dom_nnodemap_object *objmap, zend_long index, zval *return_value);
+int php_dom_get_namednodemap_length(dom_object *obj);
+int php_dom_get_nodelist_length(dom_object *obj);
 
 #define DOM_GET_OBJ(__ptr, __id, __prtype, __intern) { \
 	__intern = Z_DOMOBJ_P(__id); \

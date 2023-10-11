@@ -17,7 +17,7 @@ dnl Basic autoconf initialization, generation of config.nice.
 dnl ----------------------------------------------------------------------------
 
 AC_PREREQ([2.68])
-AC_INIT([PHP],[8.2.7],[https://github.com/php/php-src/issues],[php],[https://www.php.net])
+AC_INIT([PHP],[8.2.11],[https://github.com/php/php-src/issues],[php],[https://www.php.net])
 AC_CONFIG_SRCDIR([main/php_version.h])
 AC_CONFIG_AUX_DIR([build])
 AC_PRESERVE_HELP_ORDER
@@ -128,7 +128,9 @@ PKG_PROG_PKG_CONFIG
 AC_PROG_CC([cc gcc])
 PHP_DETECT_ICC
 PHP_DETECT_SUNCC
-AC_PROG_CC_C99
+
+dnl AC_PROG_CC_C99 is obsolete with autoconf >= 2.70 yet necessary for <= 2.69.
+m4_version_prereq([2.70],,[AC_PROG_CC_C99])
 AC_PROG_CPP
 AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_LN_S
@@ -370,6 +372,12 @@ if test "$ac_cv_func_dlopen" = "yes"; then
   AC_DEFINE(HAVE_LIBDL, 1, [ ])
 fi
 AC_CHECK_LIB(m, sin)
+
+case $host_alias in
+  riscv64*)
+    PHP_CHECK_FUNC(__atomic_exchange_1, atomic)
+    ;;
+esac
 
 dnl Check for inet_aton in -lc, -lbind and -lresolv.
 PHP_CHECK_FUNC(inet_aton, resolv, bind)
@@ -621,8 +629,10 @@ asprintf \
 nanosleep \
 memmem \
 memrchr \
-strerror_r \
 )
+
+dnl Check for strerror_r, and if its a POSIX-compatible or a GNU specific version.
+AC_FUNC_STRERROR_R
 
 AX_FUNC_WHICH_GETHOSTBYNAME_R
 

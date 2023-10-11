@@ -24,6 +24,7 @@
 #include "php_test.h"
 #include "observer.h"
 #include "fiber.h"
+#include "iterators.h"
 #include "zend_attributes.h"
 #include "zend_enum.h"
 #include "zend_interfaces.h"
@@ -31,6 +32,11 @@
 #include "Zend/Optimizer/zend_optimizer.h"
 #include "test.h"
 #include "test_arginfo.h"
+
+#if defined(HAVE_LIBXML) && !defined(PHP_WIN32)
+# include <libxml/globals.h>
+# include <libxml/parser.h>
+#endif
 
 ZEND_DECLARE_MODULE_GLOBALS(zend_test)
 
@@ -305,6 +311,20 @@ static ZEND_FUNCTION(zend_get_current_func_name)
 
     RETURN_STR(function_name);
 }
+
+#if defined(HAVE_LIBXML) && !defined(PHP_WIN32)
+static ZEND_FUNCTION(zend_test_override_libxml_global_state)
+{
+	ZEND_PARSE_PARAMETERS_NONE();
+
+	xmlLoadExtDtdDefaultValue = 1;
+	xmlDoValidityCheckingDefaultValue = 1;
+	(void) xmlPedanticParserDefault(1);
+	(void) xmlSubstituteEntitiesDefault(1);
+	(void) xmlLineNumbersDefault(1);
+	(void) xmlKeepBlanksDefault(0);
+}
+#endif
 
 /* TESTS Z_PARAM_ITERABLE and Z_PARAM_ITERABLE_OR_NULL */
 static ZEND_FUNCTION(zend_iterable)
@@ -826,6 +846,7 @@ PHP_MINIT_FUNCTION(zend_test)
 
 	zend_test_observer_init(INIT_FUNC_ARGS_PASSTHRU);
 	zend_test_fiber_init();
+	zend_test_iterators_init();
 
 	return SUCCESS;
 }

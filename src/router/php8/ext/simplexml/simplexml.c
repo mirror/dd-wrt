@@ -1322,7 +1322,7 @@ PHP_METHOD(SimpleXMLElement, xpath)
 
 		for (i = 0; i < result->nodeNr; ++i) {
 			nodeptr = result->nodeTab[i];
-			if (nodeptr->type == XML_TEXT_NODE || nodeptr->type == XML_ELEMENT_NODE || nodeptr->type == XML_ATTRIBUTE_NODE) {
+			if (nodeptr->type == XML_TEXT_NODE || nodeptr->type == XML_ELEMENT_NODE || nodeptr->type == XML_ATTRIBUTE_NODE || nodeptr->type == XML_PI_NODE) {
 				/**
 				 * Detect the case where the last selector is text(), simplexml
 				 * always accesses the text() child by default, therefore we assign
@@ -2262,7 +2262,9 @@ PHP_FUNCTION(simplexml_load_file)
 		RETURN_THROWS();
 	}
 
+	PHP_LIBXML_SANITIZE_GLOBALS(read_file);
 	docp = xmlReadFile(filename, NULL, (int)options);
+	PHP_LIBXML_RESTORE_GLOBALS(read_file);
 
 	if (!docp) {
 		RETURN_FALSE;
@@ -2315,7 +2317,9 @@ PHP_FUNCTION(simplexml_load_string)
 		RETURN_THROWS();
 	}
 
+	PHP_LIBXML_SANITIZE_GLOBALS(read_memory);
 	docp = xmlReadMemory(data, (int)data_len, NULL, NULL, (int)options);
+	PHP_LIBXML_RESTORE_GLOBALS(read_memory);
 
 	if (!docp) {
 		RETURN_FALSE;
@@ -2364,7 +2368,9 @@ PHP_METHOD(SimpleXMLElement, __construct)
 		RETURN_THROWS();
 	}
 
+	PHP_LIBXML_SANITIZE_GLOBALS(read_file_or_memory);
 	docp = is_url ? xmlReadFile(data, NULL, (int)options) : xmlReadMemory(data, (int)data_len, NULL, NULL, (int)options);
+	PHP_LIBXML_RESTORE_GLOBALS(read_file_or_memory);
 
 	if (!docp) {
 		((php_libxml_node_object *)sxe)->document = NULL;

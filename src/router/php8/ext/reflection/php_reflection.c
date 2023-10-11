@@ -639,6 +639,7 @@ static int format_default_value(smart_str *str, zval *value) {
 		} ZEND_HASH_FOREACH_END();
 		smart_str_appendc(str, ']');
 	} else if (Z_TYPE_P(value) == IS_OBJECT) {
+		/* This branch may only be reached for default properties, which don't support arbitrary objects. */
 		zend_object *obj = Z_OBJ_P(value);
 		zend_class_entry *class = obj->ce;
 		ZEND_ASSERT(class->ce_flags & ZEND_ACC_ENUM);
@@ -6863,7 +6864,7 @@ ZEND_METHOD(ReflectionEnum, getCase)
 
 	GET_REFLECTION_OBJECT_PTR(ce);
 
-	zend_class_constant *constant = zend_hash_find_ptr(&ce->constants_table, name);
+	zend_class_constant *constant = zend_hash_find_ptr(CE_CONSTANTS_TABLE(ce), name);
 	if (constant == NULL) {
 		zend_throw_exception_ex(reflection_exception_ptr, 0, "Case %s::%s does not exist", ZSTR_VAL(ce->name), ZSTR_VAL(name));
 		RETURN_THROWS();
@@ -6890,7 +6891,7 @@ ZEND_METHOD(ReflectionEnum, getCases)
 	GET_REFLECTION_OBJECT_PTR(ce);
 
 	array_init(return_value);
-	ZEND_HASH_MAP_FOREACH_STR_KEY_PTR(&ce->constants_table, name, constant) {
+	ZEND_HASH_MAP_FOREACH_STR_KEY_PTR(CE_CONSTANTS_TABLE(ce), name, constant) {
 		if (ZEND_CLASS_CONST_FLAGS(constant) & ZEND_CLASS_CONST_IS_CASE) {
 			zval class_const;
 			reflection_enum_case_factory(ce, name, constant, &class_const);

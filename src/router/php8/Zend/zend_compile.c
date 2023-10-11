@@ -1423,6 +1423,35 @@ ZEND_API zend_result zend_unmangle_property_name_ex(const zend_string *name, con
 }
 /* }}} */
 
+static bool array_is_const_ex(zend_array *array, uint32_t *max_checks)
+{
+	if (zend_hash_num_elements(array) > *max_checks) {
+		return false;
+	}
+	*max_checks -= zend_hash_num_elements(array);
+
+	zval *element;
+	ZEND_HASH_FOREACH_VAL(array, element) {
+		if (Z_TYPE_P(element) < IS_ARRAY) {
+			continue;
+		} else if (Z_TYPE_P(element) == IS_ARRAY) {
+			if (!array_is_const_ex(array, max_checks)) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	} ZEND_HASH_FOREACH_END();
+
+	return true;
+}
+
+static bool array_is_const(zend_array *array)
+{
+	uint32_t max_checks = 50;
+	return array_is_const_ex(array, &max_checks);
+}
+
 static bool can_ct_eval_const(zend_constant *c) {
 	if (ZEND_CONSTANT_FLAGS(c) & CONST_DEPRECATED) {
 		return 0;
@@ -1433,8 +1462,12 @@ static bool can_ct_eval_const(zend_constant *c) {
 				&& (CG(compiler_options) & ZEND_COMPILE_WITH_FILE_CACHE))) {
 		return 1;
 	}
-	if (Z_TYPE(c->value) < IS_OBJECT
+	if (Z_TYPE(c->value) < IS_ARRAY
 			&& !(CG(compiler_options) & ZEND_COMPILE_NO_CONSTANT_SUBSTITUTION)) {
+		return 1;
+	} else if (Z_TYPE(c->value) == IS_ARRAY
+			&& !(CG(compiler_options) & ZEND_COMPILE_NO_CONSTANT_SUBSTITUTION)
+			&& array_is_const(Z_ARR(c->value))) {
 		return 1;
 	}
 	return 0;
@@ -1660,7 +1693,10 @@ static bool zend_try_ct_eval_class_const(zval *zv, zend_string *class_name, zend
 	c = &cc->value;
 
 	/* Substitute case-sensitive (or lowercase) persistent class constants */
-	if (Z_TYPE_P(c) < IS_OBJECT) {
+	if (Z_TYPE_P(c) < IS_ARRAY) {
+		ZVAL_COPY_OR_DUP(zv, c);
+		return 1;
+	} else if (Z_TYPE_P(c) == IS_ARRAY && array_is_const(Z_ARR_P(c))) {
 		ZVAL_COPY_OR_DUP(zv, c);
 		return 1;
 	}
@@ -2771,7 +2807,11 @@ static zend_op *zend_compile_simple_var(znode *result, zend_ast *ast, uint32_t t
 
 static void zend_separate_if_call_and_write(znode *node, zend_ast *ast, uint32_t type) /* {{{ */
 {
-	if (type != BP_VAR_R && type != BP_VAR_IS && zend_is_call(ast)) {
+	if (type != BP_VAR_R
+	 && type != BP_VAR_IS
+	 /* Whether a FUNC_ARG is R may only be determined at runtime. */
+	 && type != BP_VAR_FUNC_ARG
+	 && zend_is_call(ast)) {
 		if (node->op_type == IS_VAR) {
 			zend_op *opline = zend_emit_op(NULL, ZEND_SEPARATE, node, NULL);
 			opline->result_type = IS_VAR;
@@ -3264,6 +3304,9 @@ static void zend_compile_assign(znode *result, zend_ast *ast) /* {{{ */
 				if (!zend_is_variable_or_call(expr_ast)) {
 					zend_error_noreturn(E_COMPILE_ERROR,
 						"Cannot assign reference to non referenceable value");
+				} else if (zend_ast_is_short_circuited(expr_ast)) {
+					zend_error_noreturn(E_COMPILE_ERROR,
+						"Cannot take reference of a nullsafe chain");
 				}
 
 				zend_compile_var(&expr_node, expr_ast, BP_VAR_W, 1);
@@ -4456,7 +4499,14 @@ static void zend_compile_call(znode *result, zend_ast *ast, uint32_t type) /* {{
 		if (runtime_resolution) {
 			if (zend_string_equals_literal_ci(zend_ast_get_str(name_ast), "assert")
 					&& !is_callable_convert) {
-				zend_compile_assert(result, zend_ast_get_list(args_ast), Z_STR(name_node.u.constant), NULL, ast->lineno);
+				if (CG(memoize_mode) == ZEND_MEMOIZE_NONE) {
+					zend_compile_assert(result, zend_ast_get_list(args_ast), Z_STR(name_node.u.constant), NULL, ast->lineno);
+				} else {
+					/* We want to always memoize assert calls, even if they are positioned in
+					 * write-context. This prevents memoizing their arguments that might not be
+					 * evaluated if assertions are disabled, using a TMPVAR that wasn't initialized. */
+					zend_compile_memoized_expr(result, ast);
+				}
 			} else {
 				zend_compile_ns_call(result, &name_node, args_ast, ast->lineno);
 			}
@@ -4475,7 +4525,14 @@ static void zend_compile_call(znode *result, zend_ast *ast, uint32_t type) /* {{
 
 		/* Special assert() handling should apply independently of compiler flags. */
 		if (fbc && zend_string_equals_literal(lcname, "assert") && !is_callable_convert) {
-			zend_compile_assert(result, zend_ast_get_list(args_ast), lcname, fbc, ast->lineno);
+			if (CG(memoize_mode) == ZEND_MEMOIZE_NONE) {
+				zend_compile_assert(result, zend_ast_get_list(args_ast), lcname, fbc, ast->lineno);
+			} else {
+				/* We want to always memoize assert calls, even if they are positioned in
+				 * write-context. This prevents memoizing their arguments that might not be
+				 * evaluated if assertions are disabled, using a TMPVAR that wasn't initialized. */
+				zend_compile_memoized_expr(result, ast);
+			}
 			zend_string_release(lcname);
 			zval_ptr_dtor(&name_node.u.constant);
 			return;
@@ -5417,6 +5474,9 @@ static void zend_compile_if(zend_ast *ast) /* {{{ */
 			zend_compile_stmt(stmt_ast);
 
 			if (i != list->children - 1) {
+				/* Set the lineno of JMP to the position of the if keyword, as we don't want to
+				 * report the last line in the if branch as covered if it hasn't actually executed. */
+				CG(zend_lineno) = elem_ast->lineno;
 				jmp_opnums[i] = zend_emit_jump(0);
 			}
 			zend_update_jump_target_to_next(opnum_jmpz);
@@ -7413,7 +7473,7 @@ static void zend_compile_func_decl(znode *result, zend_ast *ast, bool toplevel) 
 		zend_compile_closure_uses(uses_ast);
 	}
 
-	if (ast->kind == ZEND_AST_ARROW_FUNC) {
+	if (ast->kind == ZEND_AST_ARROW_FUNC && decl->child[2]->kind != ZEND_AST_RETURN) {
 		bool needs_return = true;
 		if (op_array->fn_flags & ZEND_ACC_HAS_RETURN_TYPE) {
 			zend_arg_info *return_info = CG(active_op_array)->arg_info - 1;

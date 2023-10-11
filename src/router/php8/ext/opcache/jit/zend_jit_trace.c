@@ -1062,6 +1062,7 @@ static const zend_op *zend_jit_trace_find_init_fcall_op(zend_jit_trace_rec *p, c
 					case ZEND_DO_ICALL:
 					case ZEND_DO_UCALL:
 					case ZEND_DO_FCALL_BY_NAME:
+					case ZEND_CALLABLE_CONVERT:
 						call_level++;
 						break;
 				}
@@ -6202,6 +6203,7 @@ done:
 				case ZEND_DO_ICALL:
 				case ZEND_DO_UCALL:
 				case ZEND_DO_FCALL_BY_NAME:
+				case ZEND_CALLABLE_CONVERT:
 					frame->call_level--;
 			}
 
@@ -6578,7 +6580,8 @@ done:
 			op_array_ssa = &jit_extension->func_info.ssa;
 			top = frame;
 			if (frame->prev) {
-				checked_stack -= frame->used_stack;
+				checked_stack = frame->old_checked_stack;
+				peek_checked_stack = frame->old_peek_checked_stack;
 				frame = frame->prev;
 				stack = frame->stack;
 				ZEND_ASSERT(&frame->func->op_array == op_array);
@@ -6751,24 +6754,40 @@ done:
 					}
 				}
 			}
+			call->old_checked_stack = checked_stack;
+			call->old_peek_checked_stack = peek_checked_stack;
 			if (p->info & ZEND_JIT_TRACE_FAKE_INIT_CALL) {
 				frame->call_level++;
-				call->used_stack = 0;
+				call->used_stack = checked_stack = peek_checked_stack = 0;
 			} else {
 				if (p->func) {
 					call->used_stack = zend_vm_calc_used_stack(init_opline->extended_value, (zend_function*)p->func);
 				} else {
 					call->used_stack = (ZEND_CALL_FRAME_SLOT + init_opline->extended_value) * sizeof(zval);
 				}
-				checked_stack += call->used_stack;
-				if (checked_stack > peek_checked_stack) {
-					peek_checked_stack = checked_stack;
+				switch (init_opline->opcode) {
+					case ZEND_INIT_FCALL:
+					case ZEND_INIT_FCALL_BY_NAME:
+					case ZEND_INIT_NS_FCALL_BY_NAME:
+					case ZEND_INIT_METHOD_CALL:
+					case ZEND_INIT_DYNAMIC_CALL:
+					//case ZEND_INIT_STATIC_METHOD_CALL:
+					//case ZEND_INIT_USER_CALL:
+					//case ZEND_NEW:
+						checked_stack += call->used_stack;
+						if (checked_stack > peek_checked_stack) {
+							peek_checked_stack = checked_stack;
+						}
+						break;
+					default:
+						checked_stack = peek_checked_stack = 0;
 				}
 			}
 		} else if (p->op == ZEND_JIT_TRACE_DO_ICALL) {
 			call = frame->call;
 			if (call) {
-				checked_stack -= call->used_stack;
+				checked_stack = call->old_checked_stack;
+				peek_checked_stack = call->old_peek_checked_stack;
 				top = call;
 				frame->call = call->prev;
 			}
@@ -6823,7 +6842,8 @@ done:
 				if (!(t->flags & ZEND_JIT_TRACE_USES_INITIAL_IP)
 				 || (ra
 				  && zend_jit_trace_stack_needs_deoptimization(stack, op_array->last_var + op_array->T))) {
-					uint32_t exit_point = zend_jit_trace_get_exit_point(opline, ZEND_JIT_EXIT_TO_VM);
+					/* Deoptimize to the first instruction of the loop */
+					uint32_t exit_point = zend_jit_trace_get_exit_point(trace_buffer[1].opline, ZEND_JIT_EXIT_TO_VM);
 
 					timeout_exit_addr = zend_jit_trace_get_exit_addr(exit_point);
 					if (!timeout_exit_addr) {
@@ -7175,8 +7195,6 @@ static void zend_jit_stop_hot_trace_counters(zend_op_array *op_array)
 	uint32_t i;
 
 	jit_extension = (zend_jit_op_array_trace_extension*)ZEND_FUNC_INFO(op_array);
-	zend_shared_alloc_lock();
-	SHM_UNPROTECT();
 	for (i = 0; i < op_array->last; i++) {
 		/* Opline with Jit-ed code handler is skipped. */
 		if (jit_extension->trace_info[i].trace_flags &
@@ -7188,8 +7206,6 @@ static void zend_jit_stop_hot_trace_counters(zend_op_array *op_array)
 			op_array->opcodes[i].handler = jit_extension->trace_info[i].orig_handler;
 		}
 	}
-	SHM_PROTECT();
-	zend_shared_alloc_unlock();
 }
 
 /* Get the tracing op_array. */
@@ -7228,6 +7244,9 @@ static void zend_jit_stop_persistent_script(zend_persistent_script *script)
 /* Get all scripts which are accelerated by JIT */
 static void zend_jit_stop_counter_handlers(void)
 {
+	zend_shared_alloc_lock();
+	/* mprotect has an extreme overhead, avoid calls to it for every function. */
+	SHM_UNPROTECT();
 	for (uint32_t i = 0; i < ZCSG(hash).max_num_entries; i++) {
 		zend_accel_hash_entry *cache_entry;
 		for (cache_entry = ZCSG(hash).hash_table[i]; cache_entry; cache_entry = cache_entry->next) {
@@ -7237,6 +7256,8 @@ static void zend_jit_stop_counter_handlers(void)
 			zend_jit_stop_persistent_script(script);
 		}
 	}
+	SHM_PROTECT();
+	zend_shared_alloc_unlock();
 }
 
 static void zend_jit_blacklist_root_trace(const zend_op *opline, size_t offset)

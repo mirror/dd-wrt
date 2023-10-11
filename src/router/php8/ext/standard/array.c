@@ -3728,7 +3728,12 @@ PHPAPI int php_array_merge_recursive(HashTable *dest, HashTable *src) /* {{{ */
 					}
 				} else {
 					Z_TRY_ADDREF_P(src_zval);
-					zend_hash_next_index_insert(Z_ARRVAL_P(dest_zval), src_zval);
+					zval *zv = zend_hash_next_index_insert(Z_ARRVAL_P(dest_zval), src_zval);
+					if (EXPECTED(!zv)) {
+						Z_TRY_DELREF_P(src_zval);
+						zend_cannot_add_element();
+						return 0;
+					}
 				}
 				zval_ptr_dtor(&tmp);
 			} else {
@@ -3737,6 +3742,10 @@ PHPAPI int php_array_merge_recursive(HashTable *dest, HashTable *src) /* {{{ */
 			}
 		} else {
 			zval *zv = zend_hash_next_index_insert(dest, src_entry);
+			if (UNEXPECTED(!zv)) {
+				zend_cannot_add_element();
+				return 0;
+			}
 			zval_add_ref(zv);
 		}
 	} ZEND_HASH_FOREACH_END();
@@ -5752,6 +5761,9 @@ PHP_FUNCTION(array_multisort)
 
 	/* Do the actual sort magic - bada-bim, bada-boom. */
 	zend_sort(indirect, array_size, sizeof(Bucket *), php_multisort_compare, (swap_func_t)array_bucket_p_sawp);
+	if (EG(exception)) {
+		goto clean_up;
+	}
 
 	/* Restructure the arrays based on sorted indirect - this is mostly taken from zend_hash_sort() function. */
 	for (i = 0; i < num_arrays; i++) {
@@ -5781,15 +5793,15 @@ PHP_FUNCTION(array_multisort)
 			}
 		}
 	}
+	RETVAL_TRUE;
 
-	/* Clean up. */
+clean_up:
 	for (i = 0; i < array_size; i++) {
 		efree(indirect[i]);
 	}
 	efree(indirect);
 	efree(func);
 	efree(arrays);
-	RETURN_TRUE;
 }
 /* }}} */
 

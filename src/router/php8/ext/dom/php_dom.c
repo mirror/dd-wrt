@@ -61,6 +61,8 @@ PHP_DOM_EXPORT zend_class_entry *dom_namespace_node_class_entry;
 
 zend_object_handlers dom_object_handlers;
 zend_object_handlers dom_nnodemap_object_handlers;
+zend_object_handlers dom_nodelist_object_handlers;
+zend_object_handlers dom_object_namespace_node_handlers;
 #ifdef LIBXML_XPATH_ENABLED
 zend_object_handlers dom_xpath_object_handlers;
 #endif
@@ -85,6 +87,11 @@ static HashTable dom_namespace_node_prop_handlers;
 static HashTable dom_xpath_prop_handlers;
 #endif
 /* }}} */
+
+static zend_object *dom_objects_namespace_node_new(zend_class_entry *class_type);
+static void dom_object_namespace_node_free_storage(zend_object *object);
+static xmlNodePtr php_dom_create_fake_namespace_decl_node_ptr(xmlNodePtr nodep, xmlNsPtr original);
+static zend_object *dom_nodelist_objects_new(zend_class_entry *class_type);
 
 typedef int (*dom_read_t)(dom_object *obj, zval *retval);
 typedef int (*dom_write_t)(dom_object *obj, zval *newval);
@@ -473,6 +480,19 @@ PHP_FUNCTION(dom_import_simplexml)
 
 static dom_object* dom_objects_set_class(zend_class_entry *class_type);
 
+static void dom_update_refcount_after_clone(dom_object *original, xmlNodePtr original_node, dom_object *clone, xmlNodePtr cloned_node)
+{
+	/* If we cloned a document then we must create new doc proxy */
+	if (cloned_node->doc == original_node->doc) {
+		clone->document = original->document;
+	}
+	php_libxml_increment_doc_ref((php_libxml_node_object *)clone, cloned_node->doc);
+	php_libxml_increment_node_ptr((php_libxml_node_object *)clone, cloned_node, (void *)clone);
+	if (original->document != clone->document) {
+		dom_copy_doc_props(original->document, clone->document);
+	}
+}
+
 static zend_object *dom_objects_store_clone_obj(zend_object *zobject) /* {{{ */
 {
 	dom_object *intern = php_dom_obj_from_obj(zobject);
@@ -485,15 +505,7 @@ static zend_object *dom_objects_store_clone_obj(zend_object *zobject) /* {{{ */
 		if (node != NULL) {
 			xmlNodePtr cloned_node = xmlDocCopyNode(node, node->doc, 1);
 			if (cloned_node != NULL) {
-				/* If we cloned a document then we must create new doc proxy */
-				if (cloned_node->doc == node->doc) {
-					clone->document = intern->document;
-				}
-				php_libxml_increment_doc_ref((php_libxml_node_object *)clone, cloned_node->doc);
-				php_libxml_increment_node_ptr((php_libxml_node_object *)clone, cloned_node, (void *)clone);
-				if (intern->document != clone->document) {
-					dom_copy_doc_props(intern->document, clone->document);
-				}
+				dom_update_refcount_after_clone(intern, node, clone, cloned_node);
 			}
 
 		}
@@ -504,6 +516,26 @@ static zend_object *dom_objects_store_clone_obj(zend_object *zobject) /* {{{ */
 	return &clone->std;
 }
 /* }}} */
+
+static zend_object *dom_object_namespace_node_clone_obj(zend_object *zobject)
+{
+	dom_object_namespace_node *intern = php_dom_namespace_node_obj_from_obj(zobject);
+	zend_object *clone = dom_objects_namespace_node_new(intern->dom.std.ce);
+	dom_object_namespace_node *clone_intern = php_dom_namespace_node_obj_from_obj(clone);
+
+	xmlNodePtr original_node = dom_object_get_node(&intern->dom);
+	ZEND_ASSERT(original_node->type == XML_NAMESPACE_DECL);
+	xmlNodePtr cloned_node = php_dom_create_fake_namespace_decl_node_ptr(original_node->parent, original_node->ns);
+
+	if (intern->parent_intern) {
+		clone_intern->parent_intern = intern->parent_intern;
+		GC_ADDREF(&clone_intern->parent_intern->std);
+	}
+	dom_update_refcount_after_clone(&intern->dom, original_node, &clone_intern->dom, cloned_node);
+
+	zend_objects_clone_members(clone, &intern->dom.std);
+	return clone;
+}
 
 static void dom_copy_prop_handler(zval *zv) /* {{{ */
 {
@@ -547,6 +579,8 @@ void dom_objects_free_storage(zend_object *object);
 void dom_nnodemap_objects_free_storage(zend_object *object);
 static zval *dom_nodelist_read_dimension(zend_object *object, zval *offset, int type, zval *rv);
 static int dom_nodelist_has_dimension(zend_object *object, zval *member, int check_empty);
+static zval *dom_nodemap_read_dimension(zend_object *object, zval *offset, int type, zval *rv);
+static int dom_nodemap_has_dimension(zend_object *object, zval *member, int check_empty);
 static zend_object *dom_objects_store_clone_obj(zend_object *zobject);
 #ifdef LIBXML_XPATH_ENABLED
 void dom_xpath_objects_free_storage(zend_object *object);
@@ -567,8 +601,17 @@ PHP_MINIT_FUNCTION(dom)
 
 	memcpy(&dom_nnodemap_object_handlers, &dom_object_handlers, sizeof(zend_object_handlers));
 	dom_nnodemap_object_handlers.free_obj = dom_nnodemap_objects_free_storage;
-	dom_nnodemap_object_handlers.read_dimension = dom_nodelist_read_dimension;
-	dom_nnodemap_object_handlers.has_dimension = dom_nodelist_has_dimension;
+	dom_nnodemap_object_handlers.read_dimension = dom_nodemap_read_dimension;
+	dom_nnodemap_object_handlers.has_dimension = dom_nodemap_has_dimension;
+
+	memcpy(&dom_nodelist_object_handlers, &dom_nnodemap_object_handlers, sizeof(zend_object_handlers));
+	dom_nodelist_object_handlers.read_dimension = dom_nodelist_read_dimension;
+	dom_nodelist_object_handlers.has_dimension = dom_nodelist_has_dimension;
+
+	memcpy(&dom_object_namespace_node_handlers, &dom_object_handlers, sizeof(zend_object_handlers));
+	dom_object_namespace_node_handlers.offset = XtOffsetOf(dom_object_namespace_node, dom.std);
+	dom_object_namespace_node_handlers.free_obj = dom_object_namespace_node_free_storage;
+	dom_object_namespace_node_handlers.clone_obj = dom_object_namespace_node_clone_obj;
 
 	zend_hash_init(&classes, 0, NULL, NULL, 1);
 
@@ -604,7 +647,7 @@ PHP_MINIT_FUNCTION(dom)
 	zend_hash_add_ptr(&classes, dom_node_class_entry->name, &dom_node_prop_handlers);
 
 	dom_namespace_node_class_entry = register_class_DOMNameSpaceNode();
-	dom_namespace_node_class_entry->create_object = dom_objects_new;
+	dom_namespace_node_class_entry->create_object = dom_objects_namespace_node_new;
 
 	zend_hash_init(&dom_namespace_node_prop_handlers, 0, NULL, dom_dtor_prop_handler, 1);
 	dom_register_prop_handler(&dom_namespace_node_prop_handlers, "nodeName", sizeof("nodeName")-1, dom_node_node_name_read, NULL);
@@ -659,7 +702,7 @@ PHP_MINIT_FUNCTION(dom)
 	zend_hash_add_ptr(&classes, dom_document_class_entry->name, &dom_document_prop_handlers);
 
 	dom_nodelist_class_entry = register_class_DOMNodeList(zend_ce_aggregate, zend_ce_countable);
-	dom_nodelist_class_entry->create_object = dom_nnodemap_objects_new;
+	dom_nodelist_class_entry->create_object = dom_nodelist_objects_new;
 	dom_nodelist_class_entry->get_iterator = php_dom_get_iterator;
 
 	zend_hash_init(&dom_nodelist_prop_handlers, 0, NULL, dom_dtor_prop_handler, 1);
@@ -952,10 +995,8 @@ void dom_namednode_iter(dom_object *basenode, int ntype, dom_object *intern, xml
 }
 /* }}} */
 
-static dom_object* dom_objects_set_class(zend_class_entry *class_type) /* {{{ */
+static void dom_objects_set_class_ex(zend_class_entry *class_type, dom_object *intern)
 {
-	dom_object *intern = zend_object_alloc(sizeof(dom_object), class_type);
-
 	zend_class_entry *base_class = class_type;
 	while ((base_class->type != ZEND_INTERNAL_CLASS || base_class->info.internal.module->module_number != dom_module_entry.module_number) && base_class->parent != NULL) {
 		base_class = base_class->parent;
@@ -965,10 +1006,14 @@ static dom_object* dom_objects_set_class(zend_class_entry *class_type) /* {{{ */
 
 	zend_object_std_init(&intern->std, class_type);
 	object_properties_init(&intern->std, class_type);
+}
 
+static dom_object* dom_objects_set_class(zend_class_entry *class_type)
+{
+	dom_object *intern = zend_object_alloc(sizeof(dom_object), class_type);
+	dom_objects_set_class_ex(class_type, intern);
 	return intern;
 }
-/* }}} */
 
 /* {{{ dom_objects_new */
 zend_object *dom_objects_new(zend_class_entry *class_type)
@@ -978,6 +1023,25 @@ zend_object *dom_objects_new(zend_class_entry *class_type)
 	return &intern->std;
 }
 /* }}} */
+
+static zend_object *dom_objects_namespace_node_new(zend_class_entry *class_type)
+{
+	dom_object_namespace_node *intern = zend_object_alloc(sizeof(dom_object_namespace_node), class_type);
+	dom_objects_set_class_ex(class_type, &intern->dom);
+	intern->dom.std.handlers = &dom_object_namespace_node_handlers;
+	return &intern->dom.std;
+}
+
+static void dom_object_namespace_node_free_storage(zend_object *object)
+{
+	dom_object_namespace_node *intern = php_dom_namespace_node_obj_from_obj(object);
+	if (intern->parent_intern != NULL) {
+		zval tmp;
+		ZVAL_OBJ(&tmp, &intern->parent_intern->std);
+		zval_ptr_dtor(&tmp);
+	}
+	dom_objects_free_storage(object);
+}
 
 #ifdef LIBXML_XPATH_ENABLED
 /* {{{ zend_object dom_xpath_objects_new(zend_class_entry *class_type) */
@@ -1024,7 +1088,7 @@ void dom_nnodemap_objects_free_storage(zend_object *object) /* {{{ */
 }
 /* }}} */
 
-zend_object *dom_nnodemap_objects_new(zend_class_entry *class_type) /* {{{ */
+static zend_object *dom_nodemap_or_nodelist_objects_new(zend_class_entry *class_type, const zend_object_handlers *handlers)
 {
 	dom_object *intern;
 	dom_nnodemap_object *objmap;
@@ -1039,11 +1103,21 @@ zend_object *dom_nnodemap_objects_new(zend_class_entry *class_type) /* {{{ */
 	objmap->local = NULL;
 	objmap->ns = NULL;
 
-	intern->std.handlers = &dom_nnodemap_object_handlers;
+	intern->std.handlers = handlers;
 
 	return &intern->std;
 }
+
+zend_object *dom_nnodemap_objects_new(zend_class_entry *class_type) /* {{{ */
+{
+	return dom_nodemap_or_nodelist_objects_new(class_type, &dom_nnodemap_object_handlers);
+}
 /* }}} */
+
+zend_object *dom_nodelist_objects_new(zend_class_entry *class_type)
+{
+	return dom_nodemap_or_nodelist_objects_new(class_type, &dom_nodelist_object_handlers);
+}
 
 void php_dom_create_iterator(zval *return_value, int ce_type) /* {{{ */
 {
@@ -1221,10 +1295,15 @@ xmlNode *dom_get_elements_by_tag_name_ns_raw(xmlNodePtr nodep, char *ns, char *l
 {
 	xmlNodePtr ret = NULL;
 
+	/* Note: The spec says that ns == '' must be transformed to ns == NULL. In other words, they are equivalent.
+	 *       PHP however does not do this and internally uses the empty string everywhere when the user provides ns == NULL.
+	 *       This is because for PHP ns == NULL has another meaning: "match every namespace" instead of "match the empty namespace". */
+	bool ns_match_any = ns == NULL || (ns[0] == '*' && ns[1] == '\0');
+
 	while (nodep != NULL && (*cur <= index || index == -1)) {
 		if (nodep->type == XML_ELEMENT_NODE) {
 			if (xmlStrEqual(nodep->name, (xmlChar *)local) || xmlStrEqual((xmlChar *)"*", (xmlChar *)local)) {
-				if (ns == NULL || (!strcmp(ns, "") && nodep->ns == NULL) || (nodep->ns != NULL && (xmlStrEqual(nodep->ns->href, (xmlChar *)ns) || xmlStrEqual((xmlChar *)"*", (xmlChar *)ns)))) {
+				if (ns_match_any || (!strcmp(ns, "") && nodep->ns == NULL) || (nodep->ns != NULL && xmlStrEqual(nodep->ns->href, (xmlChar *)ns))) {
 					if (*cur == index) {
 						ret = nodep;
 						break;
@@ -1331,37 +1410,85 @@ void dom_set_old_ns(xmlDoc *doc, xmlNs *ns) {
 }
 /* }}} end dom_set_old_ns */
 
-void dom_reconcile_ns(xmlDocPtr doc, xmlNodePtr nodep) /* {{{ */
+static void dom_reconcile_ns_internal(xmlDocPtr doc, xmlNodePtr nodep, xmlNodePtr search_parent)
 {
 	xmlNsPtr nsptr, nsdftptr, curns, prevns = NULL;
 
-	if (nodep->type == XML_ELEMENT_NODE) {
-		/* Following if block primarily used for inserting nodes created via createElementNS */
-		if (nodep->nsDef != NULL) {
-			curns = nodep->nsDef;
-			while (curns) {
-				nsdftptr = curns->next;
-				if (curns->href != NULL) {
-					if((nsptr = xmlSearchNsByHref(doc, nodep->parent, curns->href)) &&
-						(curns->prefix == NULL || xmlStrEqual(nsptr->prefix, curns->prefix))) {
-						curns->next = NULL;
-						if (prevns == NULL) {
-							nodep->nsDef = nsdftptr;
-						} else {
-							prevns->next = nsdftptr;
-						}
-						dom_set_old_ns(doc, curns);
-						curns = prevns;
+	/* Following if block primarily used for inserting nodes created via createElementNS */
+	if (nodep->nsDef != NULL) {
+		curns = nodep->nsDef;
+		while (curns) {
+			nsdftptr = curns->next;
+			if (curns->href != NULL) {
+				if((nsptr = xmlSearchNsByHref(doc, search_parent, curns->href)) &&
+					(curns->prefix == NULL || xmlStrEqual(nsptr->prefix, curns->prefix))) {
+					curns->next = NULL;
+					if (prevns == NULL) {
+						nodep->nsDef = nsdftptr;
+					} else {
+						prevns->next = nsdftptr;
 					}
+					dom_set_old_ns(doc, curns);
+					curns = prevns;
 				}
-				prevns = curns;
-				curns = nsdftptr;
 			}
+			prevns = curns;
+			curns = nsdftptr;
 		}
-		xmlReconciliateNs(doc, nodep);
+	}
+}
+
+static void dom_libxml_reconcile_ensure_namespaces_are_declared(xmlNodePtr nodep)
+{
+	/* Put on stack to avoid allocation.
+	 * Although libxml2 currently does not use this for the reconciliation, it still
+	 * makes sense to do this just in case libxml2's internal change in the future. */
+	xmlDOMWrapCtxt dummy_ctxt = {0};
+	xmlDOMWrapReconcileNamespaces(&dummy_ctxt, nodep, /* options */ 0);
+}
+
+void dom_reconcile_ns(xmlDocPtr doc, xmlNodePtr nodep) /* {{{ */
+{
+	/* Although the node type will be checked by the libxml2 API,
+	 * we still want to do the internal reconciliation conditionally. */
+	if (nodep->type == XML_ELEMENT_NODE) {
+		dom_reconcile_ns_internal(doc, nodep, nodep->parent);
+		dom_libxml_reconcile_ensure_namespaces_are_declared(nodep);
 	}
 }
 /* }}} */
+
+static void dom_reconcile_ns_list_internal(xmlDocPtr doc, xmlNodePtr nodep, xmlNodePtr last, xmlNodePtr search_parent)
+{
+	ZEND_ASSERT(nodep != NULL);
+	while (true) {
+		if (nodep->type == XML_ELEMENT_NODE) {
+			dom_reconcile_ns_internal(doc, nodep, search_parent);
+			if (nodep->children) {
+				dom_reconcile_ns_list_internal(doc, nodep->children, nodep->last /* process the whole children list */, search_parent);
+			}
+		}
+		if (nodep == last) {
+			break;
+		}
+		nodep = nodep->next;
+	}
+}
+
+void dom_reconcile_ns_list(xmlDocPtr doc, xmlNodePtr nodep, xmlNodePtr last)
+{
+	dom_reconcile_ns_list_internal(doc, nodep, last, nodep->parent);
+	/* The loop is outside of the recursion in the above call because
+	 * dom_libxml_reconcile_ensure_namespaces_are_declared() performs its own recursion. */
+	while (true) {
+		/* The internal libxml2 call will already check the node type, no need for us to do it here. */
+		dom_libxml_reconcile_ensure_namespaces_are_declared(nodep);
+		if (nodep == last) {
+			break;
+		}
+		nodep = nodep->next;
+	}
+}
 
 /*
 http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-DocCrElNS
@@ -1461,34 +1588,111 @@ xmlNsPtr dom_get_nsdecl(xmlNode *node, xmlChar *localName) {
 }
 /* }}} end dom_get_nsdecl */
 
+static xmlNodePtr php_dom_create_fake_namespace_decl_node_ptr(xmlNodePtr nodep, xmlNsPtr original)
+{
+	xmlNodePtr attrp;
+	xmlNsPtr curns = xmlNewNs(NULL, original->href, NULL);
+	if (original->prefix) {
+		curns->prefix = xmlStrdup(original->prefix);
+		attrp = xmlNewDocNode(nodep->doc, NULL, (xmlChar *) original->prefix, original->href);
+	} else {
+		attrp = xmlNewDocNode(nodep->doc, NULL, (xmlChar *)"xmlns", original->href);
+	}
+	attrp->type = XML_NAMESPACE_DECL;
+	attrp->parent = nodep;
+	attrp->ns = curns;
+	return attrp;
+}
+
+/* Note: Assumes the additional lifetime was already added in the caller. */
+xmlNodePtr php_dom_create_fake_namespace_decl(xmlNodePtr nodep, xmlNsPtr original, zval *return_value, dom_object *parent_intern)
+{
+	xmlNodePtr attrp = php_dom_create_fake_namespace_decl_node_ptr(nodep, original);
+	php_dom_create_object(attrp, return_value, parent_intern);
+	/* This object must exist, because we just created an object for it via php_dom_create_object(). */
+	php_dom_namespace_node_obj_from_obj(Z_OBJ_P(return_value))->parent_intern = parent_intern;
+	return attrp;
+}
+
+static bool dom_nodemap_or_nodelist_process_offset_as_named(zval *offset, zend_long *lval)
+{
+	if (Z_TYPE_P(offset) == IS_STRING) {
+		/* See zval_get_long_func() */
+		double dval;
+		zend_uchar is_numeric_string_type;
+		if (0 == (is_numeric_string_type = is_numeric_string(Z_STRVAL_P(offset), Z_STRLEN_P(offset), lval, &dval, true))) {
+			return true;
+		} else if (is_numeric_string_type == IS_DOUBLE) {
+			*lval = zend_dval_to_lval_cap(dval);
+		}
+	} else {
+		*lval = zval_get_long(offset);
+	}
+	return false;
+}
+
 static zval *dom_nodelist_read_dimension(zend_object *object, zval *offset, int type, zval *rv) /* {{{ */
 {
-	zval offset_copy;
-
-	if (!offset) {
-		zend_throw_error(NULL, "Cannot access node list without offset");
+	if (UNEXPECTED(!offset)) {
+		zend_throw_error(NULL, "Cannot access DOMNodeList without offset");
 		return NULL;
 	}
 
-	ZVAL_LONG(&offset_copy, zval_get_long(offset));
+	zend_long lval;
+	if (dom_nodemap_or_nodelist_process_offset_as_named(offset, &lval)) {
+		/* does not support named lookup */
+		ZVAL_NULL(rv);
+		return rv;
+	}
 
-	zend_call_method_with_1_params(object, object->ce, NULL, "item", rv, &offset_copy);
-
+	php_dom_nodelist_get_item_into_zval(php_dom_obj_from_obj(object)->ptr, lval, rv);
 	return rv;
 } /* }}} end dom_nodelist_read_dimension */
 
 static int dom_nodelist_has_dimension(zend_object *object, zval *member, int check_empty)
 {
-	zend_long offset = zval_get_long(member);
-	zval rv;
-
-	if (offset < 0) {
+	zend_long offset;
+	if (dom_nodemap_or_nodelist_process_offset_as_named(member, &offset)) {
+		/* does not support named lookup */
 		return 0;
-	} else {
-		zval *length = zend_read_property(
-			object->ce, object, "length", sizeof("length") - 1, 0, &rv);
-		return length && offset < Z_LVAL_P(length);
 	}
+
+	return offset >= 0 && offset < php_dom_get_nodelist_length(php_dom_obj_from_obj(object));
 } /* }}} end dom_nodelist_has_dimension */
+
+static zval *dom_nodemap_read_dimension(zend_object *object, zval *offset, int type, zval *rv) /* {{{ */
+{
+	if (UNEXPECTED(!offset)) {
+		zend_throw_error(NULL, "Cannot access DOMNamedNodeMap without offset");
+		return NULL;
+	}
+
+	zend_long lval;
+	if (dom_nodemap_or_nodelist_process_offset_as_named(offset, &lval)) {
+		/* exceptional case, switch to named lookup */
+		php_dom_named_node_map_get_named_item_into_zval(php_dom_obj_from_obj(object)->ptr, Z_STRVAL_P(offset), rv);
+		return rv;
+	}
+
+	/* see PHP_METHOD(DOMNamedNodeMap, item) */
+	if (UNEXPECTED(lval < 0 || ZEND_LONG_INT_OVFL(lval))) {
+		zend_value_error("must be between 0 and %d", INT_MAX);
+		return NULL;
+	}
+
+	php_dom_named_node_map_get_item_into_zval(php_dom_obj_from_obj(object)->ptr, lval, rv);
+	return rv;
+} /* }}} end dom_nodemap_read_dimension */
+
+static int dom_nodemap_has_dimension(zend_object *object, zval *member, int check_empty)
+{
+	zend_long offset;
+	if (dom_nodemap_or_nodelist_process_offset_as_named(member, &offset)) {
+		/* exceptional case, switch to named lookup */
+		return php_dom_named_node_map_get_named_item(php_dom_obj_from_obj(object)->ptr, Z_STRVAL_P(member), false) != NULL;
+	}
+
+	return offset >= 0 && offset < php_dom_get_namednodemap_length(php_dom_obj_from_obj(object));
+} /* }}} end dom_nodemap_has_dimension */
 
 #endif /* HAVE_DOM */

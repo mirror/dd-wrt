@@ -390,6 +390,10 @@ static inline void accel_unlock_all(void)
 #ifdef ZEND_WIN32
 	accel_deactivate_sub();
 #else
+	if (lock_file == -1) {
+		return;
+	}
+
 	struct flock mem_usage_unlock_all;
 
 	mem_usage_unlock_all.l_type = F_UNLCK;
@@ -2854,7 +2858,7 @@ static int zend_accel_init_shm(void)
 	zend_shared_alloc_lock();
 
 	if (ZCG(accel_directives).interned_strings_buffer) {
-		accel_shared_globals_size = ZCG(accel_directives).interned_strings_buffer * 1024 * 1024;
+		accel_shared_globals_size = sizeof(zend_accel_shared_globals) + ZCG(accel_directives).interned_strings_buffer * 1024 * 1024;
 	} else {
 		/* Make sure there is always at least one interned string hash slot,
 		 * so the table can be queried unconditionally. */
@@ -2863,10 +2867,10 @@ static int zend_accel_init_shm(void)
 
 	accel_shared_globals = zend_shared_alloc(accel_shared_globals_size);
 	if (!accel_shared_globals) {
+		zend_shared_alloc_unlock();
 		zend_accel_error_noreturn(ACCEL_LOG_FATAL,
 				"Insufficient shared memory for interned strings buffer! (tried to allocate %zu bytes)",
 				accel_shared_globals_size);
-		zend_shared_alloc_unlock();
 		return FAILURE;
 	}
 	memset(accel_shared_globals, 0, sizeof(zend_accel_shared_globals));
@@ -2895,7 +2899,7 @@ static int zend_accel_init_shm(void)
 		ZCSG(interned_strings).top =
 			ZCSG(interned_strings).start;
 		ZCSG(interned_strings).end =
-			(zend_string*)((char*)accel_shared_globals +
+			(zend_string*)((char*)(accel_shared_globals + 1) + /* table data is stored after accel_shared_globals */
 				ZCG(accel_directives).interned_strings_buffer * 1024 * 1024);
 		ZCSG(interned_strings).saved_top = NULL;
 

@@ -139,7 +139,6 @@ int dom_document_encoding_read(dom_object *obj, zval *retval)
 zend_result dom_document_encoding_write(dom_object *obj, zval *newval)
 {
 	xmlDoc *docp = (xmlDocPtr) dom_object_get_node(obj);
-	zend_string *str;
 	xmlCharEncodingHandlerPtr handler;
 
 	if (docp == NULL) {
@@ -147,10 +146,14 @@ zend_result dom_document_encoding_write(dom_object *obj, zval *newval)
 		return FAILURE;
 	}
 
-	str = zval_try_get_string(newval);
-	if (UNEXPECTED(!str)) {
-		return FAILURE;
+	/* Typed property, can only be IS_STRING or IS_NULL. */
+	ZEND_ASSERT(Z_TYPE_P(newval) == IS_STRING || Z_TYPE_P(newval) == IS_NULL);
+
+	if (Z_TYPE_P(newval) == IS_NULL) {
+		goto invalid_encoding;
 	}
+
+	zend_string *str = Z_STR_P(newval);
 
 	handler = xmlFindCharEncodingHandler(ZSTR_VAL(str));
 
@@ -161,12 +164,14 @@ zend_result dom_document_encoding_write(dom_object *obj, zval *newval)
 		}
 		docp->encoding = xmlStrdup((const xmlChar *) ZSTR_VAL(str));
 	} else {
-		zend_value_error("Invalid document encoding");
-		return FAILURE;
+		goto invalid_encoding;
 	}
 
-	zend_string_release_ex(str, 0);
 	return SUCCESS;
+
+invalid_encoding:
+	zend_value_error("Invalid document encoding");
+	return FAILURE;
 }
 
 /* }}} */
@@ -187,7 +192,7 @@ int dom_document_standalone_read(dom_object *obj, zval *retval)
 		return FAILURE;
 	}
 
-	ZVAL_BOOL(retval, docp->standalone);
+	ZVAL_BOOL(retval, docp->standalone > 0);
 	return SUCCESS;
 }
 
@@ -1008,6 +1013,19 @@ PHP_METHOD(DOMDocument, getElementsByTagNameNS)
 }
 /* }}} end dom_document_get_elements_by_tag_name_ns */
 
+static bool php_dom_is_node_attached(const xmlNode *node)
+{
+	ZEND_ASSERT(node != NULL);
+	node = node->parent;
+	while (node != NULL) {
+		if (node->type == XML_DOCUMENT_NODE || node->type == XML_HTML_DOCUMENT_NODE) {
+			return true;
+		}
+		node = node->parent;
+	}
+	return false;
+}
+
 /* {{{ URL: http://www.w3.org/TR/2003/WD-DOM-Level-3-Core-20030226/DOM3-Core.html#core-ID-getElBId
 Since: DOM Level 2
 */
@@ -1030,7 +1048,13 @@ PHP_METHOD(DOMDocument, getElementById)
 
 	attrp = xmlGetID(docp, (xmlChar *) idname);
 
-	if (attrp && attrp->parent) {
+	/* From the moment an ID is created, libxml2's behaviour is to cache that element, even
+	 * if that element is not yet attached to the document. Similarly, only upon destruction of
+	 * the element the ID is actually removed by libxml2. Since libxml2 has such behaviour deeply
+	 * ingrained in the library, and uses the cache for various purposes, it seems like a bad
+	 * idea and lost cause to fight it. Instead, we'll simply walk the tree upwards to check
+	 * if the node is attached to the document. */
+	if (attrp && attrp->parent && php_dom_is_node_attached(attrp->parent)) {
 		DOM_RET_OBJ((xmlNodePtr) attrp->parent, &ret, intern);
 	} else {
 		RETVAL_NULL();
@@ -1099,22 +1123,20 @@ PHP_METHOD(DOMDocument, __construct)
 	}
 
 	intern = Z_DOMOBJ_P(ZEND_THIS);
-	if (intern != NULL) {
-		olddoc = (xmlDocPtr) dom_object_get_node(intern);
-		if (olddoc != NULL) {
-			php_libxml_decrement_node_ptr((php_libxml_node_object *) intern);
-			refcount = php_libxml_decrement_doc_ref((php_libxml_node_object *)intern);
-			if (refcount != 0) {
-				olddoc->_private = NULL;
-			}
+	olddoc = (xmlDocPtr) dom_object_get_node(intern);
+	if (olddoc != NULL) {
+		php_libxml_decrement_node_ptr((php_libxml_node_object *) intern);
+		refcount = php_libxml_decrement_doc_ref((php_libxml_node_object *)intern);
+		if (refcount != 0) {
+			olddoc->_private = NULL;
 		}
-		intern->document = NULL;
-		if (php_libxml_increment_doc_ref((php_libxml_node_object *)intern, docp) == -1) {
-			/* docp is always non-null so php_libxml_increment_doc_ref() never returns -1 */
-			ZEND_UNREACHABLE();
-		}
-		php_libxml_increment_node_ptr((php_libxml_node_object *)intern, (xmlNodePtr)docp, (void *)intern);
 	}
+	intern->document = NULL;
+	if (php_libxml_increment_doc_ref((php_libxml_node_object *)intern, docp) == -1) {
+		/* docp is always non-null so php_libxml_increment_doc_ref() never returns -1 */
+		ZEND_UNREACHABLE();
+	}
+	php_libxml_increment_node_ptr((php_libxml_node_object *)intern, (xmlNodePtr)docp, (void *)intern);
 }
 /* }}} end DOMDocument::__construct */
 
@@ -1262,6 +1284,7 @@ static xmlDocPtr dom_document_parser(zval *id, int mode, char *source, size_t so
 		options |= XML_PARSE_NOBLANKS;
 	}
 
+	php_libxml_sanitize_parse_ctxt_options(ctxt);
 	xmlCtxtUseOptions(ctxt, options);
 
 	ctxt->recovery = recover;
@@ -1556,7 +1579,9 @@ PHP_METHOD(DOMDocument, xinclude)
 
 	DOM_GET_OBJ(docp, id, xmlDocPtr, intern);
 
+	PHP_LIBXML_SANITIZE_GLOBALS(xinclude);
 	err = xmlXIncludeProcessFlags(docp, (int)flags);
+	PHP_LIBXML_RESTORE_GLOBALS(xinclude);
 
 	/* XML_XINCLUDE_START and XML_XINCLUDE_END nodes need to be removed as these
 	are added via xmlXIncludeProcess to mark beginning and ending of xincluded document
@@ -1594,6 +1619,7 @@ PHP_METHOD(DOMDocument, validate)
 
 	DOM_GET_OBJ(docp, id, xmlDocPtr, intern);
 
+	PHP_LIBXML_SANITIZE_GLOBALS(validate);
 	cvp = xmlNewValidCtxt();
 
 	cvp->userData = NULL;
@@ -1605,6 +1631,7 @@ PHP_METHOD(DOMDocument, validate)
 	} else {
 		RETVAL_FALSE;
 	}
+	PHP_LIBXML_RESTORE_GLOBALS(validate);
 
 	xmlFreeValidCtxt(cvp);
 
@@ -1639,14 +1666,18 @@ static void _dom_document_schema_validate(INTERNAL_FUNCTION_PARAMETERS, int type
 
 	DOM_GET_OBJ(docp, id, xmlDocPtr, intern);
 
+	PHP_LIBXML_SANITIZE_GLOBALS(new_parser_ctxt);
+
 	switch (type) {
 	case DOM_LOAD_FILE:
 		if (CHECK_NULL_PATH(source, source_len)) {
+			PHP_LIBXML_RESTORE_GLOBALS(new_parser_ctxt);
 			zend_argument_value_error(1, "must not contain any null bytes");
 			RETURN_THROWS();
 		}
 		valid_file = _dom_get_valid_file_path(source, resolved_path, MAXPATHLEN);
 		if (!valid_file) {
+			PHP_LIBXML_RESTORE_GLOBALS(new_parser_ctxt);
 			php_error_docref(NULL, E_WARNING, "Invalid Schema file source");
 			RETURN_FALSE;
 		}
@@ -1667,6 +1698,7 @@ static void _dom_document_schema_validate(INTERNAL_FUNCTION_PARAMETERS, int type
 		parser);
 	sptr = xmlSchemaParse(parser);
 	xmlSchemaFreeParserCtxt(parser);
+	PHP_LIBXML_RESTORE_GLOBALS(new_parser_ctxt);
 	if (!sptr) {
 		if (!EG(exception)) {
 			php_error_docref(NULL, E_WARNING, "Invalid Schema");
@@ -1687,11 +1719,13 @@ static void _dom_document_schema_validate(INTERNAL_FUNCTION_PARAMETERS, int type
 		valid_opts |= XML_SCHEMA_VAL_VC_I_CREATE;
 	}
 
+	PHP_LIBXML_SANITIZE_GLOBALS(validate);
 	xmlSchemaSetValidOptions(vptr, valid_opts);
 	xmlSchemaSetValidErrors(vptr, php_libxml_error_handler, php_libxml_error_handler, vptr);
 	is_valid = xmlSchemaValidateDoc(vptr, docp);
 	xmlSchemaFree(sptr);
 	xmlSchemaFreeValidCtxt(vptr);
+	PHP_LIBXML_RESTORE_GLOBALS(validate);
 
 	if (is_valid == 0) {
 		RETURN_TRUE;
@@ -1762,12 +1796,14 @@ static void _dom_document_relaxNG_validate(INTERNAL_FUNCTION_PARAMETERS, int typ
 		return;
 	}
 
+	PHP_LIBXML_SANITIZE_GLOBALS(parse);
 	xmlRelaxNGSetParserErrors(parser,
 		(xmlRelaxNGValidityErrorFunc) php_libxml_error_handler,
 		(xmlRelaxNGValidityWarningFunc) php_libxml_error_handler,
 		parser);
 	sptr = xmlRelaxNGParse(parser);
 	xmlRelaxNGFreeParserCtxt(parser);
+	PHP_LIBXML_RESTORE_GLOBALS(parse);
 	if (!sptr) {
 		php_error_docref(NULL, E_WARNING, "Invalid RelaxNG");
 		RETURN_FALSE;
@@ -1866,6 +1902,7 @@ static void dom_load_html(INTERNAL_FUNCTION_PARAMETERS, int mode) /* {{{ */
 		ctxt->sax->error = php_libxml_ctx_error;
 		ctxt->sax->warning = php_libxml_ctx_warning;
 	}
+	php_libxml_sanitize_parse_ctxt_options(ctxt);
 	if (options) {
 		htmlCtxtUseOptions(ctxt, (int)options);
 	}
@@ -2073,12 +2110,12 @@ Since: DOM Living Standard (DOM4)
 */
 PHP_METHOD(DOMDocument, append)
 {
-	int argc;
+	int argc = 0;
 	zval *args, *id;
 	dom_object *intern;
 	xmlNode *context;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "+", &args, &argc) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "*", &args, &argc) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -2094,12 +2131,12 @@ Since: DOM Living Standard (DOM4)
 */
 PHP_METHOD(DOMDocument, prepend)
 {
-	int argc;
+	int argc = 0;
 	zval *args, *id;
 	dom_object *intern;
 	xmlNode *context;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "+", &args, &argc) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "*", &args, &argc) == FAILURE) {
 		RETURN_THROWS();
 	}
 
