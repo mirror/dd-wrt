@@ -13,8 +13,24 @@
 		ethernet1 = &gmac0;
 	};
 
+	memory@0 {
+		reg = <0x42000000 0x1e000000>;
+		device_type = "memory";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		rsvd@41200000 {
+			reg = <0x41200000 0x300000>;
+			no-map;
+		};
+	};
+
 	chosen {
 		bootargs-override = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd earlyprintk";
+		stdout-path = "serial0:115200n8";
 	};
 
 	i2c-gpio {
@@ -82,7 +98,6 @@
 	pinctrl-names = "default";
 
 	phy0: ethernet-phy@0 {
-		device_type = "ethernet-phy";
 		reg = <0>;
 		qca,ar8327-initvals = <
 			0x00004 0x7600000   /* PAD0_MODE */
