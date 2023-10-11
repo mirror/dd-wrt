@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,12 +18,14 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSL_CTX_DATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_SSL_CTX_DATA 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
-CURLOPT_SSL_CTX_DATA \- pointer passed to ssl_ctx callback
+CURLOPT_SSL_CTX_DATA \- pointer passed to SSL context callback
 .SH SYNOPSIS
 .nf
 #include <curl/curl.h>
@@ -32,7 +34,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSL_CTX_DATA, void *pointer);
 .fi
 .SH DESCRIPTION
 Data \fIpointer\fP to pass to the ssl context callback set by the option
-\fICURLOPT_SSL_CTX_FUNCTION(3)\fP, this is the pointer you will get as third
+\fICURLOPT_SSL_CTX_FUNCTION(3)\fP, this is the pointer you get as third
 parameter.
 .SH DEFAULT
 NULL
@@ -98,10 +100,6 @@ int main(void)
   curl_easy_setopt(ch, CURLOPT_SSL_VERIFYPEER, 1L);
   curl_easy_setopt(ch, CURLOPT_URL, "https://www.example.com/");
 
-  /* Retrieve page using cacerts' certificate -> will succeed
-   * load the certificate by installing a function doing the necessary
-   * "modifications" to the SSL CONTEXT just before link init
-   */
   curl_easy_setopt(ch, CURLOPT_SSL_CTX_FUNCTION, *sslctx_function);
   curl_easy_setopt(ch, CURLOPT_SSL_CTX_DATA, mypem);
   rv = curl_easy_perform(ch);
@@ -116,8 +114,8 @@ int main(void)
 }
 .fi
 .SH AVAILABILITY
-Added in 7.11.0 for OpenSSL, in 7.42.0 for wolfSSL and in 7.54.0 for
-mbedTLS. Other SSL backends are not supported.
+Added in 7.11.0 for OpenSSL, in 7.42.0 for wolfSSL, in 7.54.0 for mbedTLS,
+in 7.83.0 in BearSSL. Other SSL backends are not supported.
 .SH RETURN VALUE
 CURLE_OK if supported; or an error such as:
 
@@ -125,4 +123,5 @@ CURLE_NOT_BUILT_IN - Not supported by the SSL backend
 
 CURLE_UNKNOWN_OPTION
 .SH "SEE ALSO"
-.BR CURLOPT_SSL_CTX_FUNCTION "(3), " CURLOPT_SSLVERSION "(3), "
+.BR CURLOPT_SSL_CTX_FUNCTION (3),
+.BR CURLOPT_SSLVERSION (3)

@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,8 +18,10 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
-.TH curl_multi_cleanup 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
+.TH curl_multi_cleanup 3 "September 26, 2023" "libcurl 8.4.0" "libcurl"
 
 .SH NAME
 curl_multi_cleanup - close down a multi session
@@ -43,7 +45,7 @@ handle is no longer connected to the multi handle
 3 - \fIcurl_multi_cleanup(3)\fP should be called when all easy handles are
 removed
 
-Passing in a NULL pointer in \fImulti_handle\fP will make this function return
+Passing in a NULL pointer in \fImulti_handle\fP makes this function return
 CURLM_BAD_HANDLE immediately with no other action.
 .SH EXAMPLE
 .nf
@@ -58,4 +60,8 @@ Added in 7.9.6
 CURLMcode type, general libcurl multi interface error code. On success,
 CURLM_OK is returned.
 .SH "SEE ALSO"
-.BR curl_multi_init "(3)," curl_easy_cleanup "(3)," curl_easy_init "(3)"
+.BR curl_easy_cleanup (3),
+.BR curl_multi_get_handles (3),
+.BR curl_easy_init (3),
+.BR curl_multi_init (3)
+

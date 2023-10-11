@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_CUSTOMREQUEST 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_CUSTOMREQUEST 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_CUSTOMREQUEST \- custom request method
@@ -28,15 +30,15 @@ CURLOPT_CUSTOMREQUEST \- custom request method
 .nf
 #include <curl/curl.h>
 
-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_CUSTOMREQUEST, char *request);
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_CUSTOMREQUEST, char *method);
 .fi
 .SH DESCRIPTION
 Pass a pointer to a null-terminated string as parameter.
 
-When you change the request method by setting \fICURLOPT_CUSTOMREQUEST(3)\fP
-to something, you do not actually change how libcurl behaves or acts in regards
-to the particular request method, it will only change the actual string sent
-in the request.
+When you change the request \fImethod\fP by setting
+\fICURLOPT_CUSTOMREQUEST(3)\fP to something, you do not actually change how
+libcurl behaves or acts in regards to the particular request method, it only
+changes the actual string sent in the request.
 
 Restore to the internal default by setting this to NULL.
 
@@ -48,14 +50,14 @@ particularly useful, for example, for performing an HTTP DELETE request.
 For example:
 
 When you tell libcurl to do a HEAD request, but then specify a GET though a
-custom request libcurl will still act as if it sent a HEAD. To switch to a
-proper HEAD use \fICURLOPT_NOBODY(3)\fP, to switch to a proper POST use
+custom request libcurl still acts as if it sent a HEAD. To switch to a proper
+HEAD use \fICURLOPT_NOBODY(3)\fP, to switch to a proper POST use
 \fICURLOPT_POST(3)\fP or \fICURLOPT_POSTFIELDS(3)\fP and to switch to a proper
 GET use \fICURLOPT_HTTPGET(3)\fP.
 
 Many people have wrongly used this option to replace the entire request with
 their own, including multiple headers and POST contents. While that might work
-in many cases, it will cause libcurl to send invalid requests and it could
+in many cases, it might cause libcurl to send invalid requests and it could
 possibly confuse the remote server badly. Use \fICURLOPT_POST(3)\fP and
 \fICURLOPT_POSTFIELDS(3)\fP to set POST data. Use \fICURLOPT_HTTPHEADER(3)\fP
 to replace or extend the set of headers sent by libcurl. Use
@@ -70,19 +72,19 @@ Instead of LIST and RETR when issuing POP3 based requests.
 
 For example:
 
-When you tell libcurl to use a custom request it will behave like a LIST or
-RETR command was sent where it expects data to be returned by the server. As
-such \fICURLOPT_NOBODY(3)\fP should be used when specifying commands such as
-DELE and NOOP for example.
+When you tell libcurl to use a custom request it behaves like a LIST or RETR
+command was sent where it expects data to be returned by the server. As such
+\fICURLOPT_NOBODY(3)\fP should be used when specifying commands such as
+\fBDELE\fP and \fBNOOP\fP for example.
 .IP SMTP
-Instead of a HELP or VRFY when issuing SMTP based requests.
+Instead of a \fBHELP\fP or \fBVRFY\fP when issuing SMTP based requests.
 
 For example:
 
-Normally a multiline response is returned which can be used, in conjunction
+Normally a multi line response is returned which can be used, in conjunction
 with \fICURLOPT_MAIL_RCPT(3)\fP, to specify an EXPN request. If the
 \fICURLOPT_NOBODY(3)\fP option is specified then the request can be used to
-issue NOOP and RSET commands.
+issue \fBNOOP\fP and \fBRSET\fP commands.
 
 The application does not have to keep the string around after setting this
 option.
@@ -110,5 +112,7 @@ IMAP is supported since 7.30.0, POP3 since 7.26.0 and SMTP since 7.34.0.
 Returns CURLE_OK if the option is supported, CURLE_UNKNOWN_OPTION if not, or
 CURLE_OUT_OF_MEMORY if there was insufficient heap space.
 .SH "SEE ALSO"
-.BR CURLOPT_HTTPHEADER "(3), " CURLOPT_NOBODY "(3), "
-.BR CURLOPT_REQUEST_TARGET "(3), "
+.BR CURLINFO_EFFECTIVE_METHOD (3),
+.BR CURLOPT_HTTPHEADER (3),
+.BR CURLOPT_NOBODY (3),
+.BR CURLOPT_REQUEST_TARGET (3)

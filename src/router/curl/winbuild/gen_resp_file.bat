@@ -6,7 +6,7 @@ rem *                             / __| | | | |_) | |
 rem *                            | (__| |_| |  _ <| |___
 rem *                             \___|\___/|_| \_\_____|
 rem *
-rem * Copyright (C) 2011 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+rem * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 rem *
 rem * This software is licensed as described in the file COPYING, which
 rem * you should have received as part of this distribution. The terms
@@ -19,6 +19,8 @@ rem *
 rem * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 rem * KIND, either express or implied.
 rem *
+rem * SPDX-License-Identifier: curl
+rem *
 rem ***************************************************************************
 
 if exist %OUTFILE% (
@@ -26,7 +28,7 @@ if exist %OUTFILE% (
 )
 
 echo %MACRO_NAME% = \> %OUTFILE%
-for %%i in (%*) do echo		%DIROBJ%/%%i \>>  %OUTFILE%
-echo. >>  %OUTFILE%
+for %%i in (%*) do echo		%DIROBJ%/%%i \>> %OUTFILE%
+echo. >> %OUTFILE%
 
 :END

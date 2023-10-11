@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_RESOLVER_START_FUNCTION 3 "September 08, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_RESOLVER_START_FUNCTION 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_RESOLVER_START_FUNCTION \- callback called before a new name resolve is started
@@ -50,8 +52,8 @@ socket callback options.
 \fIuserdata\fP is the user pointer set with the
 \fICURLOPT_RESOLVER_START_DATA(3)\fP option.
 
-The callback must return 0 on success. Returning a non-zero value will cause
-the resolve to fail.
+The callback must return 0 on success. Returning a non-zero value causes the
+resolve to fail.
 .SH DEFAULT
 NULL (No callback)
 .SH PROTOCOLS
@@ -81,4 +83,5 @@ Added in 7.59.0
 .SH RETURN VALUE
 Returns CURLE_OK
 .SH "SEE ALSO"
-.BR CURLOPT_RESOLVER_START_DATA "(3) "
+.BR CURLOPT_PREREQFUNCTION (3),
+.BR CURLOPT_RESOLVER_START_DATA (3)

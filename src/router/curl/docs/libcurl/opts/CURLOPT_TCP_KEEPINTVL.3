@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_TCP_KEEPINTVL 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_TCP_KEEPINTVL 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_TCP_KEEPINTVL \- TCP keep-alive interval
@@ -31,9 +33,11 @@ CURLOPT_TCP_KEEPINTVL \- TCP keep-alive interval
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TCP_KEEPINTVL, long interval);
 .fi
 .SH DESCRIPTION
-Pass a long. Sets the interval, in seconds, that the operating system will
-wait between sending keepalive probes. Not all operating systems support this
-option. (Added in 7.25.0)
+Pass a long. Sets the interval, in seconds, to wait between sending keepalive
+probes. Not all operating systems support this option. (Added in 7.25.0)
+
+The maximum value this accepts is 2147483648. Any larger value is capped to
+this amount.
 .SH DEFAULT
 60
 .SH PROTOCOLS
@@ -61,4 +65,5 @@ Always
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_TCP_KEEPALIVE "(3), " CURLOPT_TCP_KEEPIDLE "(3), "
+.BR CURLOPT_TCP_KEEPALIVE (3),
+.BR CURLOPT_TCP_KEEPIDLE (3)

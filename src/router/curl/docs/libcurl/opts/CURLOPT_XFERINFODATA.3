@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_XFERINFODATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_XFERINFODATA 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_XFERINFODATA \- pointer passed to the progress callback
@@ -31,7 +33,7 @@ CURLOPT_XFERINFODATA \- pointer passed to the progress callback
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_XFERINFODATA, void *pointer);
 .fi
 .SH DESCRIPTION
-Pass a \fIpointer\fP that will be untouched by libcurl and passed as the first
+Pass a \fIpointer\fP that is untouched by libcurl and passed as the first
 argument in the progress callback set with \fICURLOPT_XFERINFOFUNCTION(3)\fP.
 
 This is an alias for \fICURLOPT_PROGRESSDATA(3)\fP.
@@ -52,7 +54,7 @@ All
                                  curl_off_t ultotal,
                                  curl_off_t ulnow)
  {
-   struct memory *progress = (struct progress *)userp;
+   struct memory *progress = (struct progress *)clientp;
 
    /* use the values */
 
@@ -71,4 +73,6 @@ Added in 7.32.0
 .SH RETURN VALUE
 Returns CURLE_OK
 .SH "SEE ALSO"
-.BR CURLOPT_XFERINFOFUNCTION "(3), " CURLOPT_VERBOSE "(3), "
+.BR CURLOPT_NOPROGRESS (3),
+.BR CURLOPT_VERBOSE (3),
+.BR CURLOPT_XFERINFOFUNCTION (3)

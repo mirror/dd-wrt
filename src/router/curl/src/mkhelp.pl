@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,6 +18,8 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
 #
 ###########################################################################
 
@@ -49,6 +51,7 @@ while (<STDIN>) {
     # remove trailing CR from line. msysgit checks out files as line+CRLF
     $line =~ s/\r$//;
 
+    $line =~ s/\x1b\x5b[0-9]+m//g; # escape sequence
     if($line =~ /^([ \t]*\n|curl)/i) {
         # cut off headers and empty lines
         $wline++; # count number of cut off lines
@@ -148,12 +151,12 @@ static void zfree_func(voidpf opaque, voidpf ptr)
 /* Decompress and send to stdout a gzip-compressed buffer */
 void hugehelp(void)
 {
-  unsigned char* buf;
-  int status,headerlen;
+  unsigned char *buf;
+  int status, headerlen;
   z_stream z;
 
   /* Make sure no gzip options are set */
-  if (hugehelpgz[3] & 0xfe)
+  if(hugehelpgz[3] & 0xfe)
     return;
 
   headerlen = 10;
@@ -163,18 +166,18 @@ void hugehelp(void)
   z.avail_in = (unsigned int)(sizeof(hugehelpgz) - headerlen);
   z.next_in = (unsigned char *)hugehelpgz + headerlen;
 
-  if (inflateInit2(&z, -MAX_WBITS) != Z_OK)
+  if(inflateInit2(&z, -MAX_WBITS) != Z_OK)
     return;
 
   buf = malloc(BUF_SIZE);
-  if (buf) {
+  if(buf) {
     while(1) {
       z.avail_out = BUF_SIZE;
       z.next_out = buf;
       status = inflate(&z, Z_SYNC_FLUSH);
-      if (status == Z_OK || status == Z_STREAM_END) {
+      if(status == Z_OK || status == Z_STREAM_END) {
         fwrite(buf, BUF_SIZE - z.avail_out, 1, stdout);
-        if (status == Z_STREAM_END)
+        if(status == Z_STREAM_END)
           break;
       }
       else
@@ -225,10 +228,6 @@ foot();
 
 sub foot {
   print <<FOOT
-#else /* !USE_MANUAL */
-/* built-in manual is disabled, blank function */
-#include "tool_hugehelp.h"
-void hugehelp(void) {}
 #endif /* USE_MANUAL */
 FOOT
   ;

@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_CLOSESOCKETDATA 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_CLOSESOCKETDATA 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_CLOSESOCKETDATA \- pointer passed to the socket close callback
@@ -32,7 +34,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_CLOSESOCKETDATA,
                           void *pointer);
 .fi
 .SH DESCRIPTION
-Pass a \fIpointer\fP that will be untouched by libcurl and passed as the first
+Pass a \fIpointer\fP that remains untouched by libcurl and passed as the first
 argument in the closesocket callback set with
 \fICURLOPT_CLOSESOCKETFUNCTION(3)\fP.
 .SH DEFAULT
@@ -56,4 +58,5 @@ Added in 7.21.7
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_CLOSESOCKETFUNCTION "(3), " CURLOPT_OPENSOCKETFUNCTION "(3), "
+.BR CURLOPT_CLOSESOCKETFUNCTION (3),
+.BR CURLOPT_OPENSOCKETFUNCTION (3)

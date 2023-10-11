@@ -1,7 +1,5 @@
 $! File: GENERATE_CONFIG_H_CURL.COM
 $!
-$! $Id$
-$!
 $! Curl like most open source products uses a variant of a config.h file.
 $! Depending on the curl version, this could be config.h or curl_config.h.
 $!
@@ -16,8 +14,7 @@ $! which is used to supplement that file.  Note that the config_vms.h file
 $! and the [.lib]config-vms.h file do two different tasks and that the
 $! filenames are slightly different.
 $!
-$!
-$! Copyright 2013 - 2021, John Malmberg
+$! Copyright (C) John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -31,8 +28,7 @@ $! WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 $! ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
-$!
-$! 06-Jan-2013	J. Malmberg
+$! SPDX-License-Identifier: ISC
 $!
 $!=========================================================================
 $!
@@ -241,9 +237,6 @@ $!
 $write cvh "#ifdef CURL_DISABLE_COOKIES"
 $write cvh "#undef CURL_DISABLE_COOKIES"
 $write cvh "#endif"
-$write cvh "#ifdef CURL_DISABLE_CRYPTO_AUTH"
-$write cvh "#undef CURL_DISABLE_CRYPTO_AUTH"
-$write cvh "#endif"
 $write cvh "#ifdef CURL_DISABLE_DICT"
 $write cvh "#undef CURL_DISABLE_DICT"
 $write cvh "#endif"
@@ -340,9 +333,6 @@ $write cvh "#endif"
 $write cvh "#ifdef USE_NGHTTP2"
 $write cvh "#undef USE_NGHTTP2"
 $write cvh "#endif"
-$write cvh "#ifdef USE_NSS"
-$write cvh "#undef USE_NSS"
-$write cvh "#endif"
 $write cvh "#ifdef USE_OPENLDAP"
 $write cvh "#undef USE_OPENLDAP"
 $write cvh "#endif"
@@ -425,12 +415,10 @@ $! Allow explicit experimentation.
 $if libssh2
 $then
 $   write cvh "#define HAVE_LIBSSH2_EXIT 1"
-$   write cvh "#define HAVE_LIBSSH2_H 1"
 $   write cvh "#define HAVE_LIBSSH2_INIT 1"
 $   write cvh "#define HAVE_LIBSSH2_SCP_SEND64 1"
 $   write cvh "#define HAVE_LIBSSH2_SESSION_HANDSHAKE 1"
 $   write cvh "#define HAVE_LIBSSH2_VERSION 1
-$   write cvh "#define HAVE_LIBSSH2 1
 $!
 $   write cvh "#ifndef USE_LIBSSH2"
 $   write cvh "#define USE_LIBSSH2 1"
@@ -446,7 +434,6 @@ $!
 $if .not. nozlib
 $then
 $   write cvh "#define HAVE_LIBZ 1"
-$   write cvh "#define HAVE_ZLIB_H 1"
 $endif
 $!
 $!

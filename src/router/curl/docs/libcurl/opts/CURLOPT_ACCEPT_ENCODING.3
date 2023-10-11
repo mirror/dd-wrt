@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_ACCEPT_ENCODING 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_ACCEPT_ENCODING 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_ACCEPT_ENCODING \- automatic decompression of HTTP downloads
@@ -45,22 +47,20 @@ set ("") to ask for an Accept-Encoding: header to be used that contains all
 built-in supported encodings.
 
 Alternatively, you can specify exactly the encoding or list of encodings you
-want in the response. Four encodings are supported: \fIidentity\fP, meaning
-non-compressed, \fIdeflate\fP which requests the server to compress its
-response using the zlib algorithm, \fIgzip\fP which requests the gzip
+want in the response. The following encodings are supported: \fIidentity\fP,
+meaning non-compressed, \fIdeflate\fP which requests the server to compress
+its response using the zlib algorithm, \fIgzip\fP which requests the gzip
 algorithm, (since curl 7.57.0) \fIbr\fP which is brotli and (since curl
-7.72.0) \fIzstd\fP which is zstd.  Provide them in the string as a
-comma-separated list of accepted encodings, like:
-
-  "br, gzip, deflate".
+7.72.0) \fIzstd\fP which is zstd. Provide them in the string as a
+comma-separated list of accepted encodings, like: \fB"br, gzip, deflate"\fP.
 
 Set \fICURLOPT_ACCEPT_ENCODING(3)\fP to NULL to explicitly disable it, which
 makes libcurl not send an Accept-Encoding: header and not decompress received
 contents automatically.
 
 You can also opt to just include the Accept-Encoding: header in your request
-with \fICURLOPT_HTTPHEADER(3)\fP but then there will be no automatic
-decompressing when receiving data.
+with \fICURLOPT_HTTPHEADER(3)\fP but then there is no automatic decompressing
+when receiving data.
 
 This is a request, not an order; the server may or may not do it.  This option
 must be set (to any non-NULL value) or else any unsolicited encoding done by
@@ -105,5 +105,6 @@ responses.
 Returns CURLE_OK if the option is supported, CURLE_UNKNOWN_OPTION if not, or
 CURLE_OUT_OF_MEMORY if there was insufficient heap space.
 .SH "SEE ALSO"
-.BR CURLOPT_TRANSFER_ENCODING "(3), " CURLOPT_HTTPHEADER "(3), "
-.BR CURLOPT_HTTP_CONTENT_DECODING "(3), "
+.BR CURLOPT_HTTP_CONTENT_DECODING (3),
+.BR CURLOPT_HTTPHEADER (3),
+.BR CURLOPT_TRANSFER_ENCODING (3)

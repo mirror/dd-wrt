@@ -14,7 +14,7 @@ curl features support for the Alt-Svc: HTTP header.
 
 # Alt-Svc cache file format
 
-This a text based file with one line per entry and each line consists of nine
+This is a text based file with one line per entry and each line consists of nine
 space separated fields.
 
 ## Example
@@ -32,6 +32,9 @@ space separated fields.
 7. The expiration date and time of this entry within double quotes. The date format is "YYYYMMDD HH:MM:SS" and the time zone is GMT.
 8. Boolean (1 or 0) if "persist" was set for this entry
 9. Integer priority value (not currently used)
+
+If the host name is an IPv6 numerical address, it is stored with brackets such
+as `[::1]`.
 
 # TODO
 

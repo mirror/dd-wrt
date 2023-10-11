@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /* <DESC>
@@ -39,7 +41,7 @@
  *
  * Synchronising your computer clock via Internet time server usually relies
  * on DAYTIME, TIME, or NTP protocols. These protocols provide good accurate
- * time synchronisation but it does not work very well through a
+ * time synchronization but it does not work well through a
  * firewall/proxy. Some adjustment has to be made to the firewall/proxy for
  * these protocols to work properly.
  *
@@ -52,7 +54,7 @@
  * 2. Webserver system time must in sync with the NTP time server,
  *    or at least provide an accurate time keeping.
  * 3. Webserver HTTP header does not provide the milliseconds units,
- *    so there is no way to get very accurate time.
+ *    so there is no way to get an accurate time.
  * 4. This software could only provide an accuracy of +- a few seconds,
  *    as Round-Trip delay time is not taken into consideration.
  *    Compensation of network, firewall/proxy delay cannot be simply divide

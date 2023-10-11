@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,8 +18,10 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
-.TH CURLSHOPT_UNLOCKFUNC 3 "November 12, 2021" "libcurl 7.82.0" "libcurl Manual"
+.TH CURLSHOPT_UNLOCKFUNC 3 "September 27, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLSHOPT_UNLOCKFUNC - mutex unlock callback
@@ -27,13 +29,12 @@ CURLSHOPT_UNLOCKFUNC - mutex unlock callback
 .nf
 #include <curl/curl.h>
 
-void unlockcb(CURL *handle, curl_lock_data data, curl_lock_access access,
-              void *userptr);
+void unlockcb(CURL *handle, curl_lock_data data, void *clientp);
 
 CURLSHcode curl_share_setopt(CURLSH *share, CURLSHOPT_UNLOCKFUNC, unlockcb);
 .fi
 .SH DESCRIPTION
-Set a mutex unlock callback for the share object. There's a corresponding
+Set a mutex unlock callback for the share object. There is a corresponding
 \fICURLSHOPT_LOCKFUNC(3)\fP callback called when the mutex is first locked.
 
 The \fIunlockcb\fP argument must be a pointer to a function matching the
@@ -45,15 +46,13 @@ is released.
 The \fIdata\fP argument tells what kind of data libcurl wants to unlock. Make
 sure that the callback uses a different lock for each kind of data.
 
-\fIaccess\fP defines what access type libcurl wants, shared or single.
-
-\fIuserptr\fP is the private pointer you set with \fICURLSHOPT_USERDATA\fP.
+\fIclientp\fP is the private pointer you set with \fICURLSHOPT_USERDATA(3)\fP.
 This pointer is not used by libcurl itself.
 .SH PROTOCOLS
 All
 .SH EXAMPLE
 .nf
-  CURLSHcode sh
+  CURLSHcode sh;
   share = curl_share_init();
   sh = curl_share_setopt(share, CURLSHOPT_UNLOCKFUNC, mutex_unlock);
   if(sh)
@@ -66,5 +65,7 @@ CURLSHE_OK (zero) means that the option was set properly, non-zero means an
 error occurred. See \fIlibcurl-errors(3)\fP for the full list with
 descriptions.
 .SH "SEE ALSO"
-.BR CURLSHOPT_LOCKFUNC "(3), "
-.BR curl_share_setopt "(3), " curl_share_cleanup "(3), " curl_share_init "(3)"
+.BR curl_share_cleanup (3),
+.BR curl_share_init (3),
+.BR curl_share_setopt (3),
+.BR CURLSHOPT_LOCKFUNC (3)

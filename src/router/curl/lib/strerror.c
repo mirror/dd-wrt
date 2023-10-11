@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2004 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -179,13 +181,13 @@ curl_easy_strerror(CURLcode error)
   case CURLE_INTERFACE_FAILED:
     return "Failed binding local connection end";
 
-  case CURLE_TOO_MANY_REDIRECTS :
+  case CURLE_TOO_MANY_REDIRECTS:
     return "Number of redirects hit maximum amount";
 
   case CURLE_UNKNOWN_OPTION:
     return "An unknown option was passed in to libcurl";
 
-  case CURLE_SETOPT_OPTION_SYNTAX :
+  case CURLE_SETOPT_OPTION_SYNTAX:
     return "Malformed option provided in a setopt";
 
   case CURLE_GOT_NOTHING:
@@ -263,9 +265,6 @@ curl_easy_strerror(CURLcode error)
   case CURLE_TFTP_NOSUCHUSER:
     return "TFTP: No such user";
 
-  case CURLE_CONV_FAILED:
-    return "Conversion failed";
-
   case CURLE_REMOTE_FILE_NOT_FOUND:
     return "Remote file not found";
 
@@ -317,6 +316,9 @@ curl_easy_strerror(CURLcode error)
   case CURLE_SSL_CLIENTCERT:
     return "SSL Client Certificate required";
 
+  case CURLE_UNRECOVERABLE_POLL:
+    return "Unrecoverable error in select/poll";
+
     /* error codes not used by current libcurl */
   case CURLE_OBSOLETE20:
   case CURLE_OBSOLETE24:
@@ -329,6 +331,7 @@ curl_easy_strerror(CURLcode error)
   case CURLE_OBSOLETE51:
   case CURLE_OBSOLETE57:
   case CURLE_OBSOLETE62:
+  case CURLE_OBSOLETE75:
   case CURLE_OBSOLETE76:
   case CURL_LAST:
     break;
@@ -400,6 +403,9 @@ curl_multi_strerror(CURLMcode error)
   case CURLM_ABORTED_BY_CALLBACK:
     return "Operation was aborted by an application callback";
 
+  case CURLM_UNRECOVERABLE_POLL:
+    return "Unrecoverable error in select/poll";
+
   case CURLM_LAST:
     break;
   }
@@ -470,7 +476,7 @@ curl_url_strerror(CURLUcode error)
     return "Port number was not a decimal number between 0 and 65535";
 
   case CURLUE_UNSUPPORTED_SCHEME:
-    return "This libcurl build doesn't support the given URL scheme";
+    return "Unsupported URL scheme";
 
   case CURLUE_URLDECODE:
     return "URL decode error, most likely because of rubbish in the input";
@@ -524,7 +530,7 @@ curl_url_strerror(CURLUcode error)
     return "Bad file:// URL";
 
   case CURLUE_BAD_SLASHES:
-    return "Unsupported number of slashes";
+    return "Unsupported number of slashes following scheme";
 
   case CURLUE_BAD_SCHEME:
     return "Bad scheme";
@@ -543,6 +549,9 @@ curl_url_strerror(CURLUcode error)
 
   case CURLUE_BAD_USER:
     return "Bad user";
+
+  case CURLUE_LACKS_IDN:
+    return "libcurl lacks IDN support";
 
   case CURLUE_LAST:
     break;
@@ -929,7 +938,7 @@ const char *Curl_winapi_strerror(DWORD err, char *buf, size_t buflen)
 
 #ifndef CURL_DISABLE_VERBOSE_STRINGS
   if(!get_winapi_error(err, buf, buflen)) {
-    msnprintf(buf, buflen, "Unknown error %u (0x%08X)", err, err);
+    msnprintf(buf, buflen, "Unknown error %lu (0x%08lX)", err, err);
   }
 #else
   {

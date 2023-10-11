@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,11 +18,13 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
-.TH curl_mime_subparts 3 "December 17, 2021" "libcurl 7.82.0" "libcurl Manual"
+.TH curl_mime_subparts 3 "September 27, 2023" "libcurl 8.4.0" "libcurl"
 
 .SH NAME
-curl_mime_subparts - set subparts of a multipart mime part
+curl_mime_subparts - set sub-parts of a multipart mime part
 .SH SYNOPSIS
 .nf
 #include <curl/curl.h>
@@ -35,14 +37,14 @@ structure.
 
 \fIpart\fP is a handle to the multipart part.
 
-\fIsubparts\fP is a mime structure handle holding the subparts. After
-\fIcurl_mime_subparts\fP succeeds, the mime structure handle belongs to the
+\fIsubparts\fP is a mime structure handle holding the sub-parts. After
+\fIcurl_mime_subparts(3)\fP succeeds, the mime structure handle belongs to the
 multipart part and must not be freed explicitly. It may however be updated by
 subsequent calls to mime API functions.
 
-Setting a part's contents twice is valid: only the value set by the last call
-is retained. It is possible to unassign previous part's contents by setting
-\fIsubparts\fP to NULL.
+Setting a part's contents multiple times is valid: only the value set by the
+last call is retained. It is possible to unassign previous part's contents by
+setting \fIsubparts\fP to NULL.
 .SH EXAMPLE
 .nf
  /* The inline part is an alternative proposing the html and the text
@@ -70,5 +72,5 @@ As long as at least one of HTTP, SMTP or IMAP is enabled. Added in 7.56.0.
 .SH RETURN VALUE
 CURLE_OK or a CURL error code upon failure.
 .SH "SEE ALSO"
-.BR curl_mime_addpart "(3),"
-.BR curl_mime_init "(3)"
+.BR curl_mime_addpart (3),
+.BR curl_mime_init (3)

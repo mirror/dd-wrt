@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,8 +18,10 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
-.TH curl_multi_setopt 3 "November 26, 2021" "libcurl 7.82.0" "libcurl Manual"
+.TH curl_multi_setopt 3 "September 26, 2023" "libcurl 8.4.0" "libcurl"
 
 .SH NAME
 curl_multi_setopt \- set options for a curl multi handle
@@ -84,5 +86,7 @@ The standard CURLMcode for multi interface error codes. Note that it returns a
 CURLM_UNKNOWN_OPTION if you try setting an option that this version of libcurl
 does not know of.
 .SH "SEE ALSO"
-.BR curl_multi_cleanup "(3), " curl_multi_init "(3), "
-.BR curl_multi_socket "(3), " curl_multi_info_read "(3)"
+.BR curl_multi_cleanup (3),
+.BR curl_multi_info_read (3),
+.BR curl_multi_init (3),
+.BR curl_multi_socket (3)

@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_POSTFIELDSIZE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_POSTFIELDSIZE 3 "September 27, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_POSTFIELDSIZE \- size of POST data pointed to
@@ -31,10 +33,11 @@ CURLOPT_POSTFIELDSIZE \- size of POST data pointed to
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_POSTFIELDSIZE, long size);
 .fi
 .SH DESCRIPTION
-If you want to post data to the server without having libcurl do a strlen() to
-measure the data size, this option must be used. When this option is used you
-can post fully binary data, which otherwise is likely to fail. If this size is
-set to -1, the library will use strlen() to get the size.
+If you want to post static data to the server without having libcurl do a
+strlen() to measure the data size, this option must be used. When this option
+is used you can post fully binary data, which otherwise is likely to fail. If
+this size is set to -1, libcurl uses strlen() to get the size or relies on the
+\fICURLOPT_READFUNCTION(3)\fP (if used) to signal the end of data.
 
 If you post more than 2GB, use \fICURLOPT_POSTFIELDSIZE_LARGE(3)\fP.
 .SH DEFAULT
@@ -62,4 +65,5 @@ Along with HTTP
 .SH RETURN VALUE
 Returns CURLE_OK if HTTP is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_POSTFIELDS "(3), " CURLOPT_POSTFIELDSIZE_LARGE "(3), "
+.BR CURLOPT_POSTFIELDS (3),
+.BR CURLOPT_POSTFIELDSIZE_LARGE (3)

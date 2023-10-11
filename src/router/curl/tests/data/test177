@@ -21,17 +21,17 @@ Content-Type: text/html; charset=iso-8859-1
 
 # Client-side
 <client>
-# 
+#
 <server>
 http
 </server>
 <features>
 crypto
 </features>
- <name>
+<name>
 HTTP POST --digest to server doing a 302-location response
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -u auser:apasswd --digest -d "junkelijunk"
 </command>
 </client>

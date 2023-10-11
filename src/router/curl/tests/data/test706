@@ -31,14 +31,17 @@ dr-xr-xr-x   5 0        1            512 Oct  1  1997 usr
 #
 # Client-side
 <client>
+<features>
+proxy
+</features>
 <server>
 ftp
 socks4
 </server>
- <name>
+<name>
 FTP dir list PASV via SOCKS4
- </name>
- <command>
+</name>
+<command>
 --socks4 %HOSTIP:%SOCKSPORT ftp://%HOSTIP:%FTPPORT/
 </command>
 </client>

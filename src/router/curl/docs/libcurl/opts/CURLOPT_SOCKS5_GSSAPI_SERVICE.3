@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SOCKS5_GSSAPI_SERVICE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_SOCKS5_GSSAPI_SERVICE 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_SOCKS5_GSSAPI_SERVICE \- SOCKS5 proxy authentication service name
@@ -34,9 +36,9 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SOCKS5_GSSAPI_SERVICE,
 .SH DESCRIPTION
 Deprecated since 7.49.0. Use \fICURLOPT_PROXY_SERVICE_NAME(3)\fP instead.
 
-Pass a char * as parameter to a string holding the \fIname\fP of the service.
-The default service name for a SOCKS5 server is "rcmd". This option allows you
-to change it.
+Pass a \fBchar *\fP as parameter to a string holding the \fIname\fP of the
+service.  The default service name for a SOCKS5 server is \fI"rcmd"\fP. This
+option allows you to change it.
 
 The application does not have to keep the string around after setting this
 option.
@@ -61,4 +63,5 @@ Added in 7.19.4, deprecated in 7.49.0
 Returns CURLE_OK if the option is supported, CURLE_UNKNOWN_OPTION if not, or
 CURLE_OUT_OF_MEMORY if there was insufficient heap space.
 .SH "SEE ALSO"
-.BR CURLOPT_PROXY "(3), " CURLOPT_PROXYTYPE "(3), "
+.BR CURLOPT_PROXY (3),
+.BR CURLOPT_PROXYTYPE (3)

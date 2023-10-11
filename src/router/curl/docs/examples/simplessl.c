@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /* <DESC>
@@ -116,7 +118,7 @@ int main(void)
       /* set the private key (file or ID in engine) */
       curl_easy_setopt(curl, CURLOPT_SSLKEY, pKeyName);
 
-      /* set the file with the certs vaildating the server */
+      /* set the file with the certs validating the server */
       curl_easy_setopt(curl, CURLOPT_CAINFO, pCACertFile);
 
       /* disconnect if we cannot validate server's cert */

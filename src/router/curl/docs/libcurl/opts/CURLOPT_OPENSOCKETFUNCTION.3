@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_OPENSOCKETFUNCTION 3 "September 08, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_OPENSOCKETFUNCTION 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_OPENSOCKETFUNCTION \- callback for opening socket
@@ -63,8 +65,8 @@ is allowed to modify the address or refuse to connect completely. The callback
 function should return the newly created socket or \fICURL_SOCKET_BAD\fP in
 case no connection could be established or another error was detected. Any
 additional \fIsetsockopt(2)\fP calls can of course be done on the socket at
-the user's discretion.  A \fICURL_SOCKET_BAD\fP return value from the callback
-function will signal an unrecoverable error to libcurl and it will return
+the user's discretion. A \fICURL_SOCKET_BAD\fP return value from the callback
+function signals an unrecoverable error to libcurl and it returns
 \fICURLE_COULDNT_CONNECT\fP from the function that triggered this callback.
 This return code can be used for IP address block listing.
 
@@ -102,7 +104,7 @@ static int sockopt_callback(void *clientp, curl_socket_t curlfd,
 
 curl = curl_easy_init();
 if(curl) {
-  /* libcurl will internally think that you connect to the host
+  /* libcurl thinks that you connect to the host
    * and port that you specify in the URL option. */
   curl_easy_setopt(curl, CURLOPT_URL, "http://99.99.99.99:9999");
   /* call this function to get a socket */
@@ -122,5 +124,7 @@ Added in 7.17.1.
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_OPENSOCKETDATA "(3), " CURLOPT_SOCKOPTFUNCTION "(3), "
-.BR CURLOPT_CLOSESOCKETFUNCTION "(3), "
+.BR CURLOPT_CLOSESOCKETFUNCTION (3),
+.BR CURLOPT_OPENSOCKETFUNCTION (3),
+.BR CURLOPT_SOCKOPTFUNCTION (3)
+

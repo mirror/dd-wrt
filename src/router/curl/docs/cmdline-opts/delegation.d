@@ -1,3 +1,5 @@
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Long: delegation
 Arg: <LEVEL>
 Help: GSS-API delegation permission
@@ -6,6 +8,7 @@ Category: auth
 Example: --delegation "none" $URL
 Added: 7.22.0
 See-also: insecure ssl
+Multi: single
 ---
 Set LEVEL to tell the server what it is allowed to delegate when it
 comes to user credentials.
@@ -18,5 +21,4 @@ service ticket, which is a matter of realm policy.
 .IP "always"
 Unconditionally allow the server to delegate.
 .RE
-
-If this option is used several times, the last one will be used.
+.IP

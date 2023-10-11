@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLMOPT_SOCKETDATA 3 "November 04, 2020" "libcurl 7.82.0" "curl_multi_setopt options"
+.TH CURLMOPT_SOCKETDATA 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLMOPT_SOCKETDATA \- custom pointer passed to the socket callback
@@ -33,8 +35,8 @@ CURLMcode curl_multi_setopt(CURLM *handle, CURLMOPT_SOCKETDATA, void *pointer);
 A data \fIpointer\fP to pass to the socket callback set with the
 \fICURLMOPT_SOCKETFUNCTION(3)\fP option.
 
-This pointer will not be touched by libcurl but will only be passed in to the
-socket callbacks's \fBuserp\fP argument.
+This pointer is not touched by libcurl but is only passed in as the socket
+callbacks's \fBclientp\fP argument.
 .SH DEFAULT
 NULL
 .SH PROTOCOLS
@@ -73,5 +75,6 @@ Added in 7.15.4
 .SH RETURN VALUE
 Returns CURLM_OK.
 .SH "SEE ALSO"
-.BR CURLMOPT_SOCKETFUNCTION "(3), " curl_multi_socket_action "(3), "
-.BR CURLMOPT_TIMERFUNCTION "(3) "
+.BR curl_multi_socket_action (3),
+.BR CURLMOPT_SOCKETFUNCTION (3),
+.BR CURLMOPT_TIMERFUNCTION (3)

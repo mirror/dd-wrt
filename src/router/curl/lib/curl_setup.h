@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -19,6 +19,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -85,7 +87,7 @@
 #  endif
 #endif
 
-#if defined(macintosh) && defined(__MRC__)
+#ifdef macintosh
 #  include "config-mac.h"
 #endif
 
@@ -103,6 +105,10 @@
 
 #ifdef __PLAN9__
 #  include "config-plan9.h"
+#endif
+
+#ifdef MSDOS
+#  include "config-dos.h"
 #endif
 
 #endif /* HAVE_CONFIG_H */
@@ -150,8 +156,6 @@
 /*  If you need to include a system header file for your platform,  */
 /*  please, do it beyond the point further indicated in this file.  */
 /* ================================================================ */
-
-#include <curl/curl.h>
 
 /*
  * Disable other protocols when http is the only one desired.
@@ -212,7 +216,7 @@
 
 /* ================================================================ */
 /* No system header file shall be included in this file before this */
-/* point. The only allowed ones are those included from curl/system.h */
+/* point.                                                           */
 /* ================================================================ */
 
 /*
@@ -239,6 +243,8 @@
 #  include "setup-win32.h"
 #endif
 
+#include <curl/system.h>
+
 /*
  * Use getaddrinfo to resolve the IPv4 address literal. If the current network
  * interface doesn't support IPv4, but supports IPv6, NAT64, and DNS64,
@@ -247,8 +253,9 @@
 #if defined(__APPLE__) && !defined(USE_ARES)
 #include <TargetConditionals.h>
 #define USE_RESOLVE_ON_IPS 1
-#  if defined(TARGET_OS_OSX) && TARGET_OS_OSX
-#    define CURL_OSX_CALL_COPYPROXIES 1
+#  if TARGET_OS_MAC && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) && \
+     defined(ENABLE_IPV6)
+#    define CURL_MACOS_CALL_COPYPROXIES 1
 #  endif
 #endif
 
@@ -267,14 +274,42 @@
 #endif
 
 #ifdef __AMIGA__
+#  ifdef __amigaos4__
+#    define __USE_INLINE__
+     /* use our own resolver which uses runtime feature detection */
+#    define CURLRES_AMIGA
+     /* getaddrinfo() currently crashes bsdsocket.library, so disable */
+#    undef HAVE_GETADDRINFO
+#    if !(defined(__NEWLIB__) || \
+          (defined(__CLIB2__) && defined(__THREAD_SAFE)))
+       /* disable threaded resolver with clib2 - requires newlib or clib-ts */
+#      undef USE_THREADS_POSIX
+#    endif
+#  endif
 #  include <exec/types.h>
 #  include <exec/execbase.h>
 #  include <proto/exec.h>
 #  include <proto/dos.h>
 #  include <unistd.h>
-#  ifdef HAVE_PROTO_BSDSOCKET_H
-#    include <proto/bsdsocket.h> /* ensure bsdsocket.library use */
-#    define select(a,b,c,d,e) WaitSelect(a,b,c,d,e,0)
+#  if defined(HAVE_PROTO_BSDSOCKET_H) && \
+    (!defined(__amigaos4__) || defined(USE_AMISSL))
+     /* use bsdsocket.library directly, instead of libc networking functions */
+#    define _SYS_MBUF_H /* m_len define clashes with curl */
+#    include <proto/bsdsocket.h>
+#    ifdef __amigaos4__
+       int Curl_amiga_select(int nfds, fd_set *readfds, fd_set *writefds,
+                             fd_set *errorfds, struct timeval *timeout);
+#      define select(a,b,c,d,e) Curl_amiga_select(a,b,c,d,e)
+#    else
+#      define select(a,b,c,d,e) WaitSelect(a,b,c,d,e,0)
+#    endif
+     /* must not use libc's fcntl() on bsdsocket.library sockfds! */
+#    undef HAVE_FCNTL
+#    undef HAVE_FCNTL_O_NONBLOCK
+#  else
+     /* use libc networking and hence close() and fnctl() */
+#    undef HAVE_CLOSESOCKET_CAMEL
+#    undef HAVE_IOCTLSOCKET_CAMEL
 #  endif
 /*
  * In clib2 arpa/inet.h warns that some prototypes may clash
@@ -284,12 +319,12 @@
 #endif
 
 #include <stdio.h>
-#ifdef HAVE_ASSERT_H
 #include <assert.h>
-#endif
 
-#ifdef __TANDEM /* for nsr-tandem-nsk systems */
-#include <floss.h>
+#ifdef __TANDEM /* for ns*-tandem-nsk systems */
+# if ! defined __LP64
+#  include <floss.h> /* FLOSS is only used for 32-bit builds. */
+# endif
 #endif
 
 #ifndef STDC_HEADERS /* no standard C headers! */
@@ -403,8 +438,8 @@
 #  endif
 #endif
 
-#if (SIZEOF_CURL_OFF_T == 4)
-#  define CURL_OFF_T_MAX CURL_OFF_T_C(0x7FFFFFFF)
+#if (SIZEOF_CURL_OFF_T < 8)
+#error "too small curl_off_t"
 #else
    /* assume SIZEOF_CURL_OFF_T == 8 */
 #  define CURL_OFF_T_MAX CURL_OFF_T_C(0x7FFFFFFFFFFFFFFF)
@@ -556,7 +591,6 @@
 /* now undef the stock libc functions just to avoid them being used */
 #  undef HAVE_GETADDRINFO
 #  undef HAVE_FREEADDRINFO
-#  undef HAVE_GETHOSTBYNAME
 #elif defined(USE_THREADS_POSIX) || defined(USE_THREADS_WIN32)
 #  define CURLRES_ASYNCH
 #  define CURLRES_THREADED
@@ -606,32 +640,30 @@
 
 #define LIBIDN_REQUIRED_VERSION "0.4.1"
 
-#if defined(USE_GNUTLS) || defined(USE_OPENSSL) || defined(USE_NSS) || \
-    defined(USE_MBEDTLS) || \
-    defined(USE_WOLFSSL) || defined(USE_SCHANNEL) || \
-    defined(USE_SECTRANSP) || defined(USE_GSKIT) || \
-    defined(USE_BEARSSL) || defined(USE_RUSTLS)
+#if defined(USE_GNUTLS) || defined(USE_OPENSSL) || defined(USE_MBEDTLS) || \
+  defined(USE_WOLFSSL) || defined(USE_SCHANNEL) || defined(USE_SECTRANSP) || \
+  defined(USE_BEARSSL) || defined(USE_RUSTLS)
 #define USE_SSL    /* SSL support has been enabled */
 #endif
 
 /* Single point where USE_SPNEGO definition might be defined */
-#if !defined(CURL_DISABLE_CRYPTO_AUTH) && \
+#if !defined(CURL_DISABLE_NEGOTIATE_AUTH) && \
     (defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI))
 #define USE_SPNEGO
 #endif
 
 /* Single point where USE_KERBEROS5 definition might be defined */
-#if !defined(CURL_DISABLE_CRYPTO_AUTH) && \
+#if !defined(CURL_DISABLE_KERBEROS_AUTH) && \
     (defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI))
 #define USE_KERBEROS5
 #endif
 
 /* Single point where USE_NTLM definition might be defined */
-#if !defined(CURL_DISABLE_CRYPTO_AUTH) && !defined(CURL_DISABLE_NTLM)
-#  if defined(USE_OPENSSL) || defined(USE_MBEDTLS) ||                       \
-      defined(USE_GNUTLS) || defined(USE_NSS) || defined(USE_SECTRANSP) ||  \
-      defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO) ||              \
-      (defined(USE_WOLFSSL) && defined(HAVE_WOLFSSL_DES_ECB_ENCRYPT))
+#if !defined(CURL_DISABLE_NTLM)
+#  if defined(USE_OPENSSL) || defined(USE_MBEDTLS) ||                   \
+  defined(USE_GNUTLS) || defined(USE_SECTRANSP) ||                      \
+  defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO) ||              \
+  (defined(USE_WOLFSSL) && defined(HAVE_WOLFSSL_DES_ECB_ENCRYPT))
 #    define USE_CURL_NTLM_CORE
 #  endif
 #  if defined(USE_CURL_NTLM_CORE) || defined(USE_WINDOWS_SSPI)
@@ -658,7 +690,7 @@
 #  define UNUSED_PARAM __attribute__((__unused__))
 #  define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
-#  define UNUSED_PARAM /*NOTHING*/
+#  define UNUSED_PARAM /* NOTHING */
 #  define WARN_UNUSED_RESULT
 #endif
 
@@ -707,12 +739,12 @@
 #define SHUT_RDWR 0x02
 #endif
 
-/* Define S_ISREG if not defined by system headers, f.e. MSVC */
+/* Define S_ISREG if not defined by system headers, e.g. MSVC */
 #if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
 #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
 #endif
 
-/* Define S_ISDIR if not defined by system headers, f.e. MSVC */
+/* Define S_ISDIR if not defined by system headers, e.g. MSVC */
 #if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #endif
@@ -739,21 +771,6 @@ endings either CRLF or LF so 't' is appropriate.
 #define FOPEN_WRITETEXT "w"
 #define FOPEN_APPENDTEXT "a"
 #endif
-
-/* WinSock destroys recv() buffer when send() failed.
- * Enabled automatically for Windows and for Cygwin as Cygwin sockets are
- * wrappers for WinSock sockets. https://github.com/curl/curl/issues/657
- * Define DONT_USE_RECV_BEFORE_SEND_WORKAROUND to force disable workaround.
- */
-#if !defined(DONT_USE_RECV_BEFORE_SEND_WORKAROUND)
-#  if defined(WIN32) || defined(__CYGWIN__)
-#    define USE_RECV_BEFORE_SEND_WORKAROUND
-#  endif
-#else  /* DONT_USE_RECV_BEFORE_SEND_WORKAROUND */
-#  ifdef USE_RECV_BEFORE_SEND_WORKAROUND
-#    undef USE_RECV_BEFORE_SEND_WORKAROUND
-#  endif
-#endif /* DONT_USE_RECV_BEFORE_SEND_WORKAROUND */
 
 /* for systems that don't detect this in configure */
 #ifndef CURL_SA_FAMILY_T
@@ -794,14 +811,20 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf,
 #define USE_HTTP2
 #endif
 
-#if defined(USE_NGTCP2) || defined(USE_QUICHE)
+#if (defined(USE_NGTCP2) && defined(USE_NGHTTP3)) || \
+    defined(USE_QUICHE) || defined(USE_MSH3)
 #define ENABLE_QUIC
+#define USE_HTTP3
+#endif
+
+/* Certain Windows implementations are not aligned with what curl expects,
+   so always use the local one on this platform. E.g. the mingw-w64
+   implementation can return wrong results for non-ASCII inputs. */
+#if defined(HAVE_BASENAME) && defined(WIN32)
+#undef HAVE_BASENAME
 #endif
 
 #if defined(USE_UNIX_SOCKETS) && defined(WIN32)
-#  if defined(__MINGW32__) && !defined(LUP_SECURE)
-     typedef u_short ADDRESS_FAMILY; /* Classic mingw, 11y+ old mingw-w64 */
-#  endif
 #  if !defined(UNIX_PATH_MAX)
      /* Replicating logic present in afunix.h
         (distributed with newer Windows 10 SDK versions only) */
@@ -813,6 +836,12 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf,
      } SOCKADDR_UN, *PSOCKADDR_UN;
 #    define WIN32_SOCKADDR_UN
 #  endif
+#endif
+
+/* OpenSSLv3 marks DES, MD5 and ENGINE functions deprecated but we have no
+   replacements (yet) so tell the compiler to not warn for them. */
+#ifdef USE_OPENSSL
+#define OPENSSL_SUPPRESS_DEPRECATED
 #endif
 
 #endif /* HEADER_CURL_SETUP_H */

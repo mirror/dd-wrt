@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "curlcheck.h"
@@ -34,7 +36,7 @@ static void unit_stop(void)
 
 static CURLcode unit_setup(void)
 {
-  int res = CURLE_OK;
+  CURLcode res = CURLE_OK;
 
   global_init(CURL_GLOBAL_ALL);
 
@@ -187,7 +189,7 @@ UNITTEST_START
 
       if(port != tests[i].port) {
         fprintf(stderr, "%s:%d tests[%d] failed. the retrieved port "
-                "for tests[%d].address[%d] is %ld but tests[%d].port is %d.\n",
+                "for tests[%d].address[%d] is %d but tests[%d].port is %d.\n",
                 __FILE__, __LINE__, i, i, j, port, i, tests[i].port);
         problem = true;
         break;
@@ -210,7 +212,7 @@ UNITTEST_START
     }
   }
   goto unit_test_abort;
-  error:
+error:
   curl_easy_cleanup(easy);
   curl_multi_cleanup(multi);
   curl_slist_free_all(list);

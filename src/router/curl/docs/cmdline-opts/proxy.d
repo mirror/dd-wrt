@@ -1,3 +1,5 @@
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Long: proxy
 Short: x
 Arg: [protocol://]host[:port]
@@ -6,28 +8,33 @@ Category: proxy
 Example: --proxy http://proxy.example $URL
 Added: 4.0
 See-also: socks5 proxy-basic
+Multi: single
 ---
 Use the specified proxy.
 
 The proxy string can be specified with a protocol:// prefix. No protocol
-specified or http:// will be treated as HTTP proxy. Use socks4://, socks4a://,
-socks5:// or socks5h:// to request a specific SOCKS version to be used.
-(Added in 7.21.7)
+specified or http:// it is treated as an HTTP proxy. Use socks4://,
+socks4a://, socks5:// or socks5h:// to request a specific SOCKS version to be
+used.  (Added in 7.21.7)
 
-HTTPS proxy support via https:// protocol prefix was added in 7.52.0 for
-OpenSSL, GnuTLS and NSS.
+Unix domain sockets are supported for socks proxy. Set localhost for the host
+part. e.g. socks5h://localhost/path/to/socket.sock
 
-Unrecognized and unsupported proxy protocols cause an error since 7.52.0.
-Prior versions may ignore the protocol and use http:// instead.
+HTTPS proxy support works set with the https:// protocol prefix for OpenSSL
+and GnuTLS (added in 7.52.0). It also works for BearSSL, mbedTLS, rustls,
+Schannel, Secure Transport and wolfSSL (added in 7.87.0).
+
+Unrecognized and unsupported proxy protocols cause an error (added in 7.52.0).
+Ancient curl versions ignored unknown schemes and used http:// instead.
 
 If the port number is not specified in the proxy string, it is assumed to be
 1080.
 
 This option overrides existing environment variables that set the proxy to
-use. If there's an environment variable setting a proxy, you can set proxy to
-\&"" to override it.
+use. If there is an environment variable setting a proxy, you can set proxy to
+"" to override it.
 
-All operations that are performed over an HTTP proxy will transparently be
+All operations that are performed over an HTTP proxy are transparently
 converted to HTTP. It means that certain protocol specific operations might
 not be available. This is not the case if you can tunnel through the proxy, as
 one with the --proxytunnel option.
@@ -40,4 +47,5 @@ The proxy host can be specified the same way as the proxy environment
 variables, including the protocol prefix (http://) and the embedded user +
 password.
 
-If this option is used several times, the last one will be used.
+When a proxy is used, the active FTP mode as set with --ftp-port, cannot be
+used.

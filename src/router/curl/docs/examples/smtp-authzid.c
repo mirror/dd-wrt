@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -37,7 +39,7 @@
  */
 
 /* The libcurl options want plain addresses, the viewable headers in the mail
- * can very well get a full name as well.
+ * can get a full name as well.
  */
 #define FROM_ADDR    "<ursel@example.org>"
 #define SENDER_ADDR  "<kurt@example.org>"
@@ -55,11 +57,11 @@ static const char *payload_text =
   "Message-ID: <dcd7cb36-11db-487a-9f3a-e652a9458efd@"
   "rfcpedant.example.org>\r\n"
   "Subject: SMTP example message\r\n"
-  "\r\n" /* empty line to divide headers from body, see RFC5322 */
+  "\r\n" /* empty line to divide headers from body, see RFC 5322 */
   "The body of the message starts here.\r\n"
   "\r\n"
   "It could be a lot of lines, could be MIME encoded, whatever.\r\n"
-  "Check RFC5322.\r\n";
+  "Check RFC 5322.\r\n";
 
 struct upload_status {
   size_t bytes_read;
@@ -107,7 +109,7 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_USERNAME, "kurt");
     curl_easy_setopt(curl, CURLOPT_PASSWORD, "xipj3plmq");
 
-    /* Set the authorisation identity (identity to act as) */
+    /* Set the authorization identity (identity to act as) */
     curl_easy_setopt(curl, CURLOPT_SASL_AUTHZID, "ursel");
 
     /* Force PLAIN authentication */
@@ -146,12 +148,12 @@ int main(void)
     curl_slist_free_all(recipients);
 
     /* curl will not send the QUIT command until you call cleanup, so you
-     * should be able to re-use this connection for additional messages
+     * should be able to reuse this connection for additional messages
      * (setting CURLOPT_MAIL_FROM and CURLOPT_MAIL_RCPT as required, and
      * calling curl_easy_perform() again. It may not be a good idea to keep
-     * the connection open for a very long time though (more than a few
-     * minutes may result in the server timing out the connection), and you do
-     * want to clean up in the end.
+     * the connection open for a long time though (more than a few minutes may
+     * result in the server timing out the connection), and you do want to
+     * clean up in the end.
      */
     curl_easy_cleanup(curl);
   }

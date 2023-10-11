@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_HTTPPOST 3 "September 08, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_HTTPPOST 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_HTTPPOST \- multipart formpost content
@@ -31,21 +33,20 @@ CURLOPT_HTTPPOST \- multipart formpost content
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HTTPPOST,
                           struct curl_httppost *formpost);
 .SH DESCRIPTION
-Tells libcurl you want a multipart/formdata HTTP POST to be made and you
+\fBThis option is deprecated.\fP Use \fICURLOPT_MIMEPOST(3)\fP instead.
+
+Tells libcurl you want a \fBmultipart/formdata\fP HTTP POST to be made and you
 instruct what data to pass on to the server in the \fIformpost\fP argument.
-Pass a pointer to a linked list of curl_httppost structs as parameter.  The
-easiest way to create such a list, is to use \fIcurl_formadd(3)\fP as
+Pass a pointer to a linked list of \fIcurl_httppost\fP structs as parameter.
+The easiest way to create such a list, is to use \fIcurl_formadd(3)\fP as
 documented. The data in this list must remain intact as long as the curl
 transfer is alive and is using it.
 
 Using POST with HTTP 1.1 implies the use of a "Expect: 100-continue" header.
 You can disable this header with \fICURLOPT_HTTPHEADER(3)\fP.
 
-When setting \fICURLOPT_HTTPPOST(3)\fP, it will automatically set
+When setting \fICURLOPT_HTTPPOST(3)\fP, libcurl automatically sets
 \fICURLOPT_NOBODY(3)\fP to 0.
-
-This option is deprecated! Do not use it. Use \fICURLOPT_MIMEPOST(3)\fP
-instead after having prepared mime data.
 .SH DEFAULT
 NULL
 .SH PROTOCOLS
@@ -79,5 +80,9 @@ As long as HTTP is enabled. Deprecated in 7.56.0.
 .SH RETURN VALUE
 Returns CURLE_OK if HTTP is enabled, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_POSTFIELDS "(3), " CURLOPT_POST "(3), " CURLOPT_MIMEPOST "(3),"
-.BR curl_formadd "(3), " curl_formfree "(3), " curl_mime_init "(3)"
+.BR curl_formadd (3),
+.BR curl_formfree (3),
+.BR curl_mime_init (3),
+.BR CURLOPT_MIMEPOST (3),
+.BR CURLOPT_POST (3),
+.BR CURLOPT_POSTFIELDS (3)

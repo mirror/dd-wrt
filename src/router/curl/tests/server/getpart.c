@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "server_setup.h"
@@ -147,7 +149,7 @@ static int readline(char **buffer, size_t *bufsize, size_t *length,
   char *newptr;
 
   if(!*buffer) {
-    *buffer = malloc(128);
+    *buffer = calloc(128, 1);
     if(!*buffer)
       return GPE_OUT_OF_MEMORY;
     *bufsize = 128;
@@ -169,6 +171,7 @@ static int readline(char **buffer, size_t *bufsize, size_t *length,
     newptr = realloc(*buffer, *bufsize * 2);
     if(!newptr)
       return GPE_OUT_OF_MEMORY;
+    memset(&newptr[*bufsize], 0, *bufsize);
     *buffer = newptr;
     *bufsize *= 2;
   }

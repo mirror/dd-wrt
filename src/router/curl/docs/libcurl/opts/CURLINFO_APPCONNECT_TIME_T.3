@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 2018 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,12 +18,14 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_APPCONNECT_TIME_T 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_getinfo options"
+.TH CURLINFO_APPCONNECT_TIME_T 3 "September 26, 2023" "libcurl 8.4.0" "libcurl"
 
 .SH NAME
-CURLINFO_APPCONNECT_TIME_T \- get the time until the SSL/SSH handshake is completed
+CURLINFO_APPCONNECT_TIME_T \- time until the SSL/SSH handshake completed
 .SH SYNOPSIS
 .nf
 #include <curl/curl.h>
@@ -67,4 +69,6 @@ Added in 7.61.0
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR curl_easy_getinfo "(3), " curl_easy_setopt "(3), " CURLINFO_APPCONNECT_TIME "(3)"
+.BR curl_easy_getinfo (3),
+.BR curl_easy_setopt (3),
+.BR CURLINFO_APPCONNECT_TIME (3)

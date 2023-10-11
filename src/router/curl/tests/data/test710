@@ -29,15 +29,18 @@ Funny-head: yesyes
 #
 # Client-side
 <client>
+<features>
+proxy
+</features>
 <server>
 http
 socks5
 </server>
- <name>
+<name>
 HTTP GET via SOCKS5 set with --proxy
- </name>
- <command>
-http://%HOSTIP:%HTTPPORT/%TESTNUMBER --proxy socks5://%HOSTIP:%SOCKSPORT 
+</name>
+<command>
+http://%HOSTIP:%HTTPPORT/%TESTNUMBER --proxy socks5://%HOSTIP:%SOCKSPORT
 </command>
 </client>
 

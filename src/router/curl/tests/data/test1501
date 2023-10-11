@@ -5,6 +5,7 @@ FTP
 RETR
 multi
 LIST
+DELAY
 </keywords>
 </info>
 
@@ -26,10 +27,13 @@ ftp
 <tool>
 lib%TESTNUMBER
 </tool>
- <name>
-FTP with multi interface and slow LIST response 
- </name>
- <command>
+<killserver>
+ftp
+</killserver>
+<name>
+FTP with multi interface and slow LIST response
+</name>
+<command>
 ftp://%HOSTIP:%FTPPORT/%TESTNUMBER/
 </command>
 </client>

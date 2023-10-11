@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "tool_setup.h"
@@ -62,9 +64,9 @@ static CURLcode glob_fixed(struct URLGlob *glob, char *fixed, size_t len)
  *
  * Multiplies and checks for overflow.
  */
-static int multiply(unsigned long *amount, long with)
+static int multiply(curl_off_t *amount, curl_off_t with)
 {
-  unsigned long sum = *amount * with;
+  curl_off_t sum = *amount * with;
   if(!with) {
     *amount = 0;
     return 0;
@@ -76,7 +78,7 @@ static int multiply(unsigned long *amount, long with)
 }
 
 static CURLcode glob_set(struct URLGlob *glob, char **patternp,
-                         size_t *posp, unsigned long *amount,
+                         size_t *posp, curl_off_t *amount,
                          int globindex)
 {
   /* processes a set expression with the point behind the opening '{'
@@ -98,7 +100,7 @@ static CURLcode glob_set(struct URLGlob *glob, char **patternp,
   pat->globindex = globindex;
 
   while(!done) {
-    switch (*pattern) {
+    switch(*pattern) {
     case '\0':                  /* URL ended while set was still open */
       return GLOBERROR("unmatched brace", opos, CURLE_URL_MALFORMAT);
 
@@ -121,7 +123,8 @@ static CURLcode glob_set(struct URLGlob *glob, char **patternp,
       *buf = '\0';
       if(pat->content.Set.elements) {
         char **new_arr = realloc(pat->content.Set.elements,
-                                 (pat->content.Set.size + 1) * sizeof(char *));
+                                 (size_t)(pat->content.Set.size + 1) *
+                                 sizeof(char *));
         if(!new_arr)
           return GLOBERROR("out of memory", 0, CURLE_OUT_OF_MEMORY);
 
@@ -170,7 +173,7 @@ static CURLcode glob_set(struct URLGlob *glob, char **patternp,
 }
 
 static CURLcode glob_range(struct URLGlob *glob, char **patternp,
-                           size_t *posp, unsigned long *amount,
+                           size_t *posp, curl_off_t *amount,
                            int globindex)
 {
   /* processes a range expression with the point behind the opening '['
@@ -293,7 +296,7 @@ static CURLcode glob_range(struct URLGlob *glob, char **patternp,
       }
     }
 
-    fail:
+fail:
     *posp += (pattern - *patternp);
 
     if(!endp || !step_n ||
@@ -348,7 +351,7 @@ static bool peek_ipv6(const char *str, size_t *skip)
   memcpy(hostname, str, hlen);
   hostname[hlen] = 0;
 
-  /* ask to "guess scheme" as then it works without a https:// prefix */
+  /* ask to "guess scheme" as then it works without an https:// prefix */
   rc = curl_url_set(u, CURLUPART_URL, hostname, CURLU_GUESS_SCHEME);
 
   curl_url_cleanup(u);
@@ -358,7 +361,7 @@ static bool peek_ipv6(const char *str, size_t *skip)
 }
 
 static CURLcode glob_parse(struct URLGlob *glob, char *pattern,
-                           size_t pos, unsigned long *amount)
+                           size_t pos, curl_off_t *amount)
 {
   /* processes a literal string component of a URL
      special characters '{' and '[' branch to set/range processing functions
@@ -409,7 +412,7 @@ static CURLcode glob_parse(struct URLGlob *glob, char *pattern,
       res = glob_fixed(glob, glob->glob_buffer, sublen);
     }
     else {
-      switch (*pattern) {
+      switch(*pattern) {
       case '\0': /* done  */
         break;
 
@@ -435,7 +438,7 @@ static CURLcode glob_parse(struct URLGlob *glob, char *pattern,
   return res;
 }
 
-CURLcode glob_url(struct URLGlob **glob, char *url, unsigned long *urlnum,
+CURLcode glob_url(struct URLGlob **glob, char *url, curl_off_t *urlnum,
                   FILE *error)
 {
   /*
@@ -443,7 +446,7 @@ CURLcode glob_url(struct URLGlob **glob, char *url, unsigned long *urlnum,
    * as the specified URL!
    */
   struct URLGlob *glob_expand;
-  unsigned long amount = 0;
+  curl_off_t amount = 0;
   char *glob_buffer;
   CURLcode res;
 
@@ -494,7 +497,7 @@ CURLcode glob_url(struct URLGlob **glob, char *url, unsigned long *urlnum,
 void glob_cleanup(struct URLGlob *glob)
 {
   size_t i;
-  int elem;
+  curl_off_t elem;
 
   if(!glob)
     return;
@@ -588,7 +591,7 @@ CURLcode glob_next_url(char **globbed, struct URLGlob *glob)
       }
       break;
     case UPTNumRange:
-      msnprintf(buf, buflen, "%0*lu",
+      msnprintf(buf, buflen, "%0*" CURL_FORMAT_CURL_OFF_T,
                 pat->content.NumRange.padlength,
                 pat->content.NumRange.ptr_n);
       len = strlen(buf);
@@ -658,14 +661,14 @@ CURLcode glob_match_url(char **result, char *filename, struct URLGlob *glob)
           appendlen = 1;
           break;
         case UPTNumRange:
-          msnprintf(numbuf, sizeof(numbuf), "%0*lu",
+          msnprintf(numbuf, sizeof(numbuf), "%0*" CURL_FORMAT_CURL_OFF_T,
                     pat->content.NumRange.padlength,
                     pat->content.NumRange.ptr_n);
           appendthis = numbuf;
           appendlen = strlen(numbuf);
           break;
         default:
-          fprintf(stderr, "internal error: invalid pattern type (%d)\n",
+          fprintf(tool_stderr, "internal error: invalid pattern type (%d)\n",
                   (int)pat->type);
           curlx_dyn_free(&dyn);
           return CURLE_FAILED_INIT;
@@ -685,6 +688,9 @@ CURLcode glob_match_url(char **result, char *filename, struct URLGlob *glob)
     if(curlx_dyn_addn(&dyn, appendthis, appendlen))
       return CURLE_OUT_OF_MEMORY;
   }
+
+  if(curlx_dyn_addn(&dyn, "", 0))
+    return CURLE_OUT_OF_MEMORY;
 
 #if defined(MSDOS) || defined(WIN32)
   {

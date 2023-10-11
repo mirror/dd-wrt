@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_POSTREDIR 3 "December 31, 2020" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_POSTREDIR 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_POSTREDIR \- how to act on an HTTP POST redirect
@@ -71,4 +73,8 @@ only supported the 301 then. CURL_REDIR_POST_303 was added in 7.26.0.
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_FOLLOWLOCATION "(3), " CURLOPT_POSTFIELDS "(3), "
+.BR CURLINFO_EFFECTIVE_METHOD (3),
+.BR CURLINFO_REDIRECT_COUNT (3),
+.BR CURLOPT_FOLLOWLOCATION (3),
+.BR CURLOPT_MAXREDIRS (3),
+.BR CURLOPT_POSTFIELDS (3)

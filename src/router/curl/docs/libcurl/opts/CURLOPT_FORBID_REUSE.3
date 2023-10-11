@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_FORBID_REUSE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_FORBID_REUSE 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_FORBID_REUSE \- make connection get closed at once after use
@@ -34,10 +36,10 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_FORBID_REUSE, long close);
 Pass a long. Set \fIclose\fP to 1 to make libcurl explicitly close the
 connection when done with the transfer. Normally, libcurl keeps all
 connections alive when done with one transfer in case a succeeding one follows
-that can re-use them.  This option should be used with caution and only if you
+that can reuse them. This option should be used with caution and only if you
 understand what it does as it can seriously impact performance.
 
-Set to 0 to have libcurl keep the connection open for possible later re-use
+Set to 0 to have libcurl keep the connection open for possible later reuse
 (default behavior).
 .SH DEFAULT
 0
@@ -59,5 +61,6 @@ Always
 .SH RETURN VALUE
 Returns CURLE_OK
 .SH "SEE ALSO"
-.BR CURLOPT_FRESH_CONNECT "(3), " CURLOPT_MAXCONNECTS "(3), "
-.BR CURLOPT_MAXLIFETIME_CONN "(3), "
+.BR CURLOPT_FRESH_CONNECT (3),
+.BR CURLOPT_MAXCONNECTS (3),
+.BR CURLOPT_MAXLIFETIME_CONN (3)

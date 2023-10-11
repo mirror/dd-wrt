@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSL_VERIFYHOST 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_SSL_VERIFYHOST 3 "September 27, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_SSL_VERIFYHOST \- verify the certificate's name against host
@@ -53,8 +55,8 @@ If \fIverify\fP value is set to 1:
 In 7.28.0 and earlier: treated as a debug option of some sorts, not supported
 anymore due to frequently leading to programmer mistakes.
 
-From 7.28.1 to 7.65.3: setting it to 1 made curl_easy_setopt() return an error
-and leaving the flag untouched.
+From 7.28.1 to 7.65.3: setting it to 1 made \fIcurl_easy_setopt(3)\fP return
+an error and leaving the flag untouched.
 
 From 7.66.0: treats 1 and 2 the same.
 
@@ -66,15 +68,23 @@ The default value for this option is 2.
 This option controls checking the server's certificate's claimed identity.
 The server could be lying.  To control lying, see
 \fICURLOPT_SSL_VERIFYPEER(3)\fP.
+
+WARNING: disabling verification of the certificate allows bad guys to
+man-in-the-middle the communication without you knowing it. Disabling
+verification makes the communication insecure. Just having encryption on a
+transfer is not enough as you cannot be sure that you are communicating with
+the correct end-point.
+
+When libcurl uses secure protocols it trusts responses and allows for example
+HSTS and Alt-Svc information to be stored and used subsequently. Disabling
+certificate verification can make libcurl trust and use such information from
+malicious servers.
 .SH LIMITATIONS
 Secure Transport: If \fIverify\fP value is 0, then SNI is also disabled. SNI is
 a TLS extension that sends the hostname to the server. The server may use that
 information to do such things as sending back a specific certificate for the
 hostname, or forwarding the request to a specific origin server. Some hostnames
 may be inaccessible if SNI is not sent.
-
-NSS: If \fICURLOPT_SSL_VERIFYPEER(3)\fP is zero,
-\fICURLOPT_SSL_VERIFYHOST(3)\fP is also set to zero and cannot be overridden.
 .SH DEFAULT
 2
 .SH PROTOCOLS
@@ -98,4 +108,6 @@ Returns CURLE_OK if TLS is supported, and CURLE_UNKNOWN_OPTION if not.
 
 If 1 is set as argument, \fICURLE_BAD_FUNCTION_ARGUMENT\fP is returned.
 .SH "SEE ALSO"
-.BR CURLOPT_SSL_VERIFYPEER "(3), " CURLOPT_CAINFO "(3), "
+.BR CURLOPT_CAINFO (3),
+.BR CURLOPT_PINNEDPUBLICKEY (3),
+.BR CURLOPT_SSL_VERIFYPEER (3)

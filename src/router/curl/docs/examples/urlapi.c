@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /* <DESC>
@@ -56,6 +58,9 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_CURLU, urlp);
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
+    /* only allow HTTP, TFTP and SFTP */
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "http,tftp,sftp");
+
     res = curl_easy_perform(curl);
     /* Check for errors */
     if(res != CURLE_OK)
@@ -65,7 +70,7 @@ int main(void)
     goto cleanup;
   }
 
-  cleanup:
+cleanup:
   curl_url_cleanup(urlp);
   curl_easy_cleanup(curl);
   return 0;

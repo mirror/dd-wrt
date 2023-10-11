@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_CERTINFO 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_CERTINFO 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_CERTINFO \- request SSL certificate information
@@ -32,7 +34,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_CERTINFO, long certinfo);
 .fi
 .SH DESCRIPTION
 Pass a long set to 1 to enable libcurl's certificate chain info gatherer. With
-this enabled, libcurl will extract lots of information and data about the
+this enabled, libcurl extracts lots of information and data about the
 certificates in the certificate chain used in the SSL connection. This data
 may then be retrieved after a transfer using \fIcurl_easy_getinfo(3)\fP and
 its option \fICURLINFO_CERTINFO(3)\fP.
@@ -73,10 +75,14 @@ if(curl) {
 }
 .fi
 .SH AVAILABILITY
-This option is supported by the OpenSSL, GnuTLS, Schannel, NSS, GSKit and
-Secure Transport backends. Schannel support added in 7.50.0. Secure Transport
-support added in 7.79.0.
+This option is supported by the OpenSSL, GnuTLS, Schannel and Secure
+Transport backends. Schannel support added in 7.50.0. Secure Transport support
+added in 7.79.0.
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_CAINFO "(3), " CURLOPT_SSL_VERIFYPEER "(3), "
+.BR CURLINFO_CAINFO (3),
+.BR CURLINFO_CAPATH (3),
+.BR CURLINFO_CERTINFO (3),
+.BR CURLOPT_CAINFO (3),
+.BR CURLOPT_SSL_VERIFYPEER (3)

@@ -20,10 +20,10 @@ REPLY VRFY 550 Unknown user
 <server>
 smtp
 </server>
- <name>
+<name>
 SMTP unknown user VRFY
- </name>
- <command>
+</name>
+<command>
 smtp://%HOSTIP:%SMTPPORT/%TESTNUMBER --mail-rcpt recipient
 </command>
 </client>
@@ -31,9 +31,9 @@ smtp://%HOSTIP:%SMTPPORT/%TESTNUMBER --mail-rcpt recipient
 #
 # Verify data after the test has been "shot"
 <verify>
-# 56 - CURLE_RECV_ERROR
+# 8 - CURLE_WEIRD_SERVER_REPLY
 <errorcode>
-56
+8
 </errorcode>
 <protocol>
 EHLO %TESTNUMBER

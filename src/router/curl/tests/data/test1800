@@ -23,16 +23,19 @@ Content-Type: text/html
 
 # Client-side
 <client>
+<features>
+h2c
+</features>
 <server>
 http
 </server>
 <features>
 http/2
 </features>
- <name>
+<name>
 HTTP/2 upgrade refused
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER --http2
 </command>
 
@@ -46,7 +49,7 @@ User-Agent: curl/%VERSION
 Accept: */*
 Connection: Upgrade, HTTP2-Settings
 Upgrade: %H2CVER
-HTTP2-Settings: AAMAAABkAAQCAAAAAAIAAAAA
+HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA
 
 </protocol>
 </verify>

@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 2019 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -19,6 +19,8 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
+# SPDX-License-Identifier: curl
+#
 ###########################################################################
 #
 # Scan man page(s) and detect some simple and yet common formatting mistakes.
@@ -27,6 +29,7 @@
 
 use strict;
 use warnings;
+use File::Basename;
 
 # get the file name first
 my $symbolsinversions=shift @ARGV;
@@ -35,6 +38,7 @@ my $symbolsinversions=shift @ARGV;
 my @manpages=@ARGV;
 my $errors = 0;
 
+my %docsdirs;
 my %optblessed;
 my %funcblessed;
 my @optorder = (
@@ -60,20 +64,63 @@ my @funcorder = (
 my %shline; # section => line number
 
 my %symbol;
+
+# some CURLINFO_ symbols are not actual options for curl_easy_getinfo,
+# mark them as "deprecated" to hide them from link-warnings
+my %deprecated = (
+    CURLINFO_TEXT => 1,
+    CURLINFO_HEADER_IN => 1,
+    CURLINFO_HEADER_OUT => 1,
+    CURLINFO_DATA_IN => 1,
+    CURLINFO_DATA_OUT => 1,
+    CURLINFO_SSL_DATA_IN => 1,
+    CURLINFO_SSL_DATA_OUT => 1,
+    );
 sub allsymbols {
-    open(F, "<$symbolsinversions") ||
+    open(my $f, "<", "$symbolsinversions") ||
         die "$symbolsinversions: $|";
-    while(<F>) {
-        if($_ =~ /^([^ ]*)/) {
-            $symbol{$1}=$1;
+    while(<$f>) {
+        if($_ =~ /^([^ ]*) +(.*)/) {
+            my ($name, $info) = ($1, $2);
+            $symbol{$name}=$name;
+
+            if($info =~ /([0-9.]+) +([0-9.]+)/) {
+                $deprecated{$name}=$info;
+            }
         }
     }
-    close(F);
+    close($f);
+}
+
+
+my %ref = (
+    'curl.1' => 1
+    );
+sub checkref {
+    my ($f, $sec, $file, $line)=@_;
+    my $present = 0;
+    #print STDERR "check $f.$sec\n";
+    if($ref{"$f.$sec"}) {
+        # present
+        return;
+    }
+    foreach my $d (keys %docsdirs) {
+        if( -f "$d/$f.$sec") {
+            $present = 1;
+            $ref{"$f.$sec"}=1;
+            last;
+        }
+    }
+    if(!$present) {
+        print STDERR "$file:$line broken reference to $f($sec)\n";
+        $errors++;
+    }
 }
 
 sub scanmanpage {
     my ($file) = @_;
     my $reqex = 0;
+    my $inseealso = 0;
     my $inex = 0;
     my $insynop = 0;
     my $exsize = 0;
@@ -81,8 +128,11 @@ sub scanmanpage {
     my $shc = 0;
     my $optpage = 0; # option or function
     my @sh;
+    my $SH="";
+    my @separators;
+    my @sepline;
 
-    open(M, "<$file") || die "no such file: $file";
+    open(my $m, "<", "$file") || die "no such file: $file";
     if($file =~ /[\/\\](CURL|curl_)[^\/\\]*.3/) {
         # This is a man page for libcurl. It requires an example!
         $reqex = 1;
@@ -91,11 +141,11 @@ sub scanmanpage {
         }
     }
     my $line = 1;
-    while(<M>) {
+    while(<$m>) {
         chomp;
         if($_ =~ /^.so /) {
             # this man page is just a referral
-            close(M);
+            close($m);
             return;
         }
         if(($_ =~ /^\.SH SYNOPSIS/i) && ($reqex)) {
@@ -107,9 +157,39 @@ sub scanmanpage {
             $insynop = 0;
             $inex = 1;
         }
+        elsif($_ =~ /^\.SH \"SEE ALSO\"/i) {
+            $inseealso = 1;
+        }
         elsif($_ =~ /^\.SH/i) {
             $insynop = 0;
             $inex = 0;
+        }
+        elsif($inseealso) {
+            if($_ =~ /^\.BR (.*)/i) {
+                my $f = $1;
+                if($f =~ /^(lib|)curl/i) {
+                    $f =~ s/[\n\r]//g;
+                    if($f =~ s/([a-z_0-9-]*) \(([13])\)([, ]*)//i) {
+                        push @separators, $3;
+                        push @sepline, $line;
+                        checkref($1, $2, $file, $line);
+                    }
+                    if($f !~ /^ *$/) {
+                        print STDERR "$file:$line bad SEE ALSO format\n";
+                        $errors++;
+                    }
+                }
+                else {
+                    if($f =~ /.*(, *)\z/) {
+                        push @separators, $1;
+                        push @sepline, $line;
+                    }
+                    else {
+                        push @separators, " ";
+                        push @sepline, $line;
+                    }
+                }
+            }
         }
         elsif($inex)  {
             $exsize++;
@@ -129,6 +209,7 @@ sub scanmanpage {
             $n =~ s/\"(.*)\"\z/$1/;
             push @sh, $n;
             $shline{$n} = $line;
+            $SH = $n;
         }
 
         if($_ =~ /^\'/) {
@@ -142,23 +223,71 @@ sub scanmanpage {
                 $errors++;
             }
         }
+        my $c = $_;
+        while($c =~ s/\\f([BI])((lib|)curl[a-z_0-9-]*)\(([13])\)//i) {
+            checkref($2, $4, $file, $line);
+        }
+        if(($_ =~ /\\f([BI])((libcurl|CURLOPT_|CURLSHOPT_|CURLINFO_|CURLMOPT_|curl_easy_|curl_multi_|curl_url|curl_mime|curl_global|curl_share)[a-zA-Z_0-9-]+)(.)/) &&
+           ($4 ne "(")) {
+            print STDERR "$file:$line curl ref to $2 without section\n";
+            $errors++;
+        }
+        if($_ =~ /(.*)\\f([^BIP])/) {
+            my ($pre, $format) = ($1, $2);
+            if($pre !~ /\\\z/) {
+                # only if there wasn't another backslash before the \f
+                print STDERR "$file:$line suspicious \\f format!\n";
+                $errors++;
+            }
+        }
+        if(($SH =~ /^(DESCRIPTION|RETURN VALUE|AVAILABILITY)/i) &&
+           ($_ =~ /(.*)((curl_multi|curl_easy|curl_url|curl_global|curl_url|curl_share)[a-zA-Z_0-9-]+)/) &&
+           ($1 !~ /\\fI$/)) {
+            print STDERR "$file:$line unrefed curl call: $2\n";
+            $errors++;
+        }
+
+
+        if($optpage && $SH && ($SH !~ /^(SYNOPSIS|EXAMPLE|NAME|SEE ALSO)/i) &&
+           ($_ =~ /(.*)(CURL(OPT_|MOPT_|INFO_|SHOPT_)[A-Z0-9_]*)/)) {
+            # an option with its own man page, check that it is tagged
+            # for linking
+            my ($pref, $symbol) = ($1, $2);
+            if($deprecated{$symbol}) {
+                # let it be
+            }
+            elsif($pref !~ /\\fI\z/) {
+                print STDERR "$file:$line option $symbol missing \\fI tagging\n";
+                $errors++;
+            }
+        }
         if($_ =~ /[ \t]+$/) {
             print STDERR "$file:$line trailing whitespace\n";
             $errors++;
         }
-        if($_ =~ /\\f([BI])([^\\]*)\\fP/) {
-            my $r = $2;
-            if($r =~ /^(CURL.*)\(3\)/) {
-                my $rr = $1;
-                if(!$symbol{$rr}) {
-                    print STDERR "$file:$line link to non-libcurl option $rr!\n";
-                    $errors++;
-                }
-            }
-        }
         $line++;
     }
-    close(M);
+    close($m);
+
+    if(@separators) {
+        # all except the last one need comma
+        for(0 .. $#separators - 1) {
+            my $l = $_;
+            my $sep = $separators[$l];
+            if($sep ne ",") {
+                printf STDERR "$file:%d: bad not-last SEE ALSO separator: '%s'\n",
+                    $sepline[$l], $sep;
+                $errors++;
+            }
+        }
+        # the last one should not do comma
+        my $sep = $separators[$#separators];
+        if($sep eq ",") {
+            printf STDERR "$file:%d: superfluous comma separator\n",
+                $sepline[$#separators];
+            $errors++;
+        }
+    }
 
     if($reqex) {
         # only for libcurl options man-pages
@@ -235,6 +364,10 @@ for my $s (@optorder) {
 $ind = 1;
 for my $s (@funcorder) {
     $funcblessed{$s} = $ind++
+}
+
+for my $m (@manpages) {
+    $docsdirs{dirname($m)}++;
 }
 
 for my $m (@manpages) {

@@ -21,14 +21,14 @@ This is not the real page
 
 # Client-side
 <client>
-# 
+#
 <server>
 http
 </server>
- <name>
+<name>
 HTTP POST --anyauth to server not requiring any auth at all
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -u testuser:testpass --anyauth -d "junkelijunk"
 </command>
 </client>

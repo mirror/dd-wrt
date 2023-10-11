@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_REDIR_PROTOCOLS 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_REDIR_PROTOCOLS 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_REDIR_PROTOCOLS \- protocols allowed to redirect to
@@ -31,6 +33,10 @@ CURLOPT_REDIR_PROTOCOLS \- protocols allowed to redirect to
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_REDIR_PROTOCOLS, long bitmask);
 .fi
 .SH DESCRIPTION
+This option is deprecated. We strongly recommend using
+\fICURLOPT_REDIR_PROTOCOLS_STR(3)\fP instead because this option cannot
+control all available protocols!
+
 Pass a long that holds a bitmask of CURLPROTO_* defines. If used, this bitmask
 limits what protocols libcurl may use in a transfer that it follows to in a
 redirect when \fICURLOPT_FOLLOWLOCATION(3)\fP is enabled. This allows you to
@@ -40,11 +46,9 @@ redirections.
 Protocols denied by \fICURLOPT_PROTOCOLS(3)\fP are not overridden by this
 option.
 
-By default libcurl will allow HTTP, HTTPS, FTP and FTPS on redirect (7.65.2).
-Older versions of libcurl allowed all protocols on redirect except several
-disabled for security reasons: Since 7.19.4 FILE and SCP are disabled, and
-since 7.40.0 SMB and SMBS are also disabled. \fICURLPROTO_ALL\fP enables all
-protocols on redirect, including those disabled for security.
+By default libcurl allows HTTP, HTTPS, FTP and FTPS on redirect (7.65.2).
+\fICURLPROTO_ALL\fP enables all protocols on redirect, including those
+otherwise disabled for security.
 
 These are the available protocol defines:
 .nf
@@ -100,8 +104,12 @@ if(curl) {
 }
 .fi
 .SH AVAILABILITY
-Added in 7.19.4, before then it would follow all protocols.
+Added in 7.19.4, before then it would follow all protocols. Deprecated
+since 7.85.0.
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_PROTOCOLS "(3), "
+.BR CURLINFO_SCHEME (3),
+.BR CURLOPT_DEFAULT_PROTOCOL (3),
+.BR CURLOPT_PROTOCOLS (3),
+.BR CURLOPT_REDIR_PROTOCOLS_STR (3)

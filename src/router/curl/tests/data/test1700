@@ -38,14 +38,17 @@ Content-Type: text/html
 #
 # Client-side
 <client>
+<features>
+h2c
+</features>
 <server>
 http
 http/2
 </server>
- <name>
+<name>
 HTTP/2 GET with Upgrade:
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTP2PORT/%TESTNUMBER --http2 http://%HOSTIP:%HTTP2PORT/%TESTNUMBER0001
 </command>
 </client>

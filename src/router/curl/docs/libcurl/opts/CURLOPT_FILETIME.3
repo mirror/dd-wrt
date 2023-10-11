@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_FILETIME 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_FILETIME 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_FILETIME \- get the modification time of the remote resource
@@ -31,15 +33,15 @@ CURLOPT_FILETIME \- get the modification time of the remote resource
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_FILETIME, long gettime);
 .fi
 .SH DESCRIPTION
-Pass a long. If it is 1, libcurl will attempt to get the modification time of
-the remote document in this operation. This requires that the remote server
-sends the time or replies to a time querying command. The
-\fIcurl_easy_getinfo(3)\fP function with the \fICURLINFO_FILETIME(3)\fP
-argument can be used after a transfer to extract the received time (if any).
+Pass a long. If it is 1, libcurl attempts to get the modification time of the
+remote document in this operation. This requires that the remote server sends
+the time or replies to a time querying command. The \fIcurl_easy_getinfo(3)\fP
+function with the \fICURLINFO_FILETIME(3)\fP argument can be used after a
+transfer to extract the received time (if any).
 .SH DEFAULT
 0
 .SH PROTOCOLS
-HTTP, FTP, SFTP, FILE
+HTTP(S), FTP(S), SFTP, FILE, SMB(S)
 .SH EXAMPLE
 .nf
 curl = curl_easy_init();
@@ -64,4 +66,5 @@ Always, for SFTP since 7.49.0
 .SH RETURN VALUE
 Returns CURLE_OK
 .SH "SEE ALSO"
-.BR curl_easy_getinfo "(3), "
+.BR curl_easy_getinfo (3),
+.BR CURLINFO_FILETIME (3)

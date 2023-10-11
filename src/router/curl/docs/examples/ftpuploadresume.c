@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 /* <DESC>
- * Upload to FTP, resuming failed transfers.
+ * Upload to FTP, resuming failed transfers. Active mode.
  * </DESC>
  */
 
@@ -84,7 +86,7 @@ static int upload(CURL *curlhandle, const char *remotepath,
   curl_easy_setopt(curlhandle, CURLOPT_URL, remotepath);
 
   if(timeout)
-    curl_easy_setopt(curlhandle, CURLOPT_FTP_RESPONSE_TIMEOUT, timeout);
+    curl_easy_setopt(curlhandle, CURLOPT_SERVER_RESPONSE_TIMEOUT, timeout);
 
   curl_easy_setopt(curlhandle, CURLOPT_HEADERFUNCTION, getcontentlengthfunc);
   curl_easy_setopt(curlhandle, CURLOPT_HEADERDATA, &uploaded_len);
@@ -94,8 +96,12 @@ static int upload(CURL *curlhandle, const char *remotepath,
   curl_easy_setopt(curlhandle, CURLOPT_READFUNCTION, readfunc);
   curl_easy_setopt(curlhandle, CURLOPT_READDATA, f);
 
-  /* disable passive mode */
+  /* enable active mode */
   curl_easy_setopt(curlhandle, CURLOPT_FTPPORT, "-");
+
+  /* allow the server no more than 7 seconds to connect back */
+  curl_easy_setopt(curlhandle, CURLOPT_ACCEPTTIMEOUT_MS, 7000L);
+
   curl_easy_setopt(curlhandle, CURLOPT_FTP_CREATE_MISSING_DIRS, 1L);
 
   curl_easy_setopt(curlhandle, CURLOPT_VERBOSE, 1L);

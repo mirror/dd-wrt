@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 #include "server_setup.h"
@@ -83,9 +85,7 @@
  * it!
  */
 
-#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -107,6 +107,7 @@
 #include "inet_pton.h"
 #include "util.h"
 #include "server_sockaddr.h"
+#include "timediff.h"
 #include "warnless.h"
 
 /* include memdebug.h last */
@@ -128,6 +129,10 @@
 #ifndef DEFAULT_LOGFILE
 #define DEFAULT_LOGFILE "log/sockfilt.log"
 #endif
+
+/* buffer is this excessively large only to be able to support things like
+  test 1003 which tests exceedingly large server response lines */
+#define BUFFER_SIZE 17010
 
 const char *serverlogfile = DEFAULT_LOGFILE;
 
@@ -385,6 +390,36 @@ static void lograw(unsigned char *buffer, ssize_t len)
     logmsg("'%s'", data);
 }
 
+/*
+ * handle the DATA command
+ * maxlen is the available space in buffer (input)
+ * *buffer_len is the amount of data in the buffer (output)
+ */
+static bool read_data_block(unsigned char *buffer, ssize_t maxlen,
+    ssize_t *buffer_len)
+{
+  if(!read_stdin(buffer, 5))
+    return FALSE;
+
+  buffer[5] = '\0';
+
+  *buffer_len = (ssize_t)strtol((char *)buffer, NULL, 16);
+  if(*buffer_len > maxlen) {
+    logmsg("ERROR: Buffer size (%zd bytes) too small for data size "
+           "(%zd bytes)", maxlen, *buffer_len);
+    return FALSE;
+  }
+  logmsg("> %zd bytes data, server => client", *buffer_len);
+
+  if(!read_stdin(buffer, *buffer_len))
+    return FALSE;
+
+  lograw(buffer, *buffer_len);
+
+  return TRUE;
+}
+
+
 #ifdef USE_WINSOCK
 /*
  * WinSock select() does not support standard file descriptors,
@@ -401,13 +436,17 @@ static void lograw(unsigned char *buffer, ssize_t len)
 struct select_ws_wait_data {
   HANDLE handle; /* actual handle to wait for during select */
   HANDLE signal; /* internal event to signal handle trigger */
-  HANDLE abort;  /* internal event to abort waiting thread */
-  HANDLE mutex;  /* mutex to prevent event race-condition */
+  HANDLE abort;  /* internal event to abort waiting threads */
 };
+#ifdef _WIN32_WCE
 static DWORD WINAPI select_ws_wait_thread(LPVOID lpParameter)
+#else
+#include <process.h>
+static unsigned int WINAPI select_ws_wait_thread(void *lpParameter)
+#endif
 {
   struct select_ws_wait_data *data;
-  HANDLE mutex, signal, handle, handles[2];
+  HANDLE signal, handle, handles[2];
   INPUT_RECORD inputrecord;
   LARGE_INTEGER size, pos;
   DWORD type, length, ret;
@@ -419,7 +458,6 @@ static DWORD WINAPI select_ws_wait_thread(LPVOID lpParameter)
     handles[0] = data->abort;
     handles[1] = handle;
     signal = data->signal;
-    mutex = data->mutex;
     free(data);
   }
   else
@@ -439,41 +477,29 @@ static DWORD WINAPI select_ws_wait_thread(LPVOID lpParameter)
         */
       while(WaitForMultipleObjectsEx(1, handles, FALSE, 0, FALSE)
             == WAIT_TIMEOUT) {
-        ret = WaitForSingleObjectEx(mutex, 0, FALSE);
-        if(ret == WAIT_OBJECT_0) {
-          /* get total size of file */
-          length = 0;
-          size.QuadPart = 0;
-          size.LowPart = GetFileSize(handle, &length);
-          if((size.LowPart != INVALID_FILE_SIZE) ||
-             (GetLastError() == NO_ERROR)) {
-            size.HighPart = length;
-            /* get the current position within the file */
-            pos.QuadPart = 0;
-            pos.LowPart = SetFilePointer(handle, 0, &pos.HighPart,
-                                        FILE_CURRENT);
-            if((pos.LowPart != INVALID_SET_FILE_POINTER) ||
-               (GetLastError() == NO_ERROR)) {
-              /* compare position with size, abort if not equal */
-              if(size.QuadPart == pos.QuadPart) {
-                /* sleep and continue waiting */
-                SleepEx(0, FALSE);
-                ReleaseMutex(mutex);
-                continue;
-              }
+        /* get total size of file */
+        length = 0;
+        size.QuadPart = 0;
+        size.LowPart = GetFileSize(handle, &length);
+        if((size.LowPart != INVALID_FILE_SIZE) ||
+            (GetLastError() == NO_ERROR)) {
+          size.HighPart = length;
+          /* get the current position within the file */
+          pos.QuadPart = 0;
+          pos.LowPart = SetFilePointer(handle, 0, &pos.HighPart, FILE_CURRENT);
+          if((pos.LowPart != INVALID_SET_FILE_POINTER) ||
+              (GetLastError() == NO_ERROR)) {
+            /* compare position with size, abort if not equal */
+            if(size.QuadPart == pos.QuadPart) {
+              /* sleep and continue waiting */
+              SleepEx(0, FALSE);
+              continue;
             }
           }
-          /* there is some data available, stop waiting */
-          logmsg("[select_ws_wait_thread] data available, DISK: %p", handle);
-          SetEvent(signal);
-          ReleaseMutex(mutex);
-          break;
         }
-        else if(ret == WAIT_ABANDONED) {
-          /* we are not allowed to process this event, because select_ws
-             is post-processing the signalled events and we must exit. */
-          break;
-        }
+        /* there is some data available, stop waiting */
+        logmsg("[select_ws_wait_thread] data available, DISK: %p", handle);
+        SetEvent(signal);
       }
       break;
 
@@ -487,33 +513,22 @@ static DWORD WINAPI select_ws_wait_thread(LPVOID lpParameter)
         */
       while(WaitForMultipleObjectsEx(2, handles, FALSE, INFINITE, FALSE)
             == WAIT_OBJECT_0 + 1) {
-        ret = WaitForSingleObjectEx(mutex, 0, FALSE);
-        if(ret == WAIT_OBJECT_0) {
-          /* check if this is an actual console handle */
-          if(GetConsoleMode(handle, &ret)) {
-            /* retrieve an event from the console buffer */
-            length = 0;
-            if(PeekConsoleInput(handle, &inputrecord, 1, &length)) {
-              /* check if the event is not an actual key-event */
-              if(length == 1 && inputrecord.EventType != KEY_EVENT) {
-                /* purge the non-key-event and continue waiting */
-                ReadConsoleInput(handle, &inputrecord, 1, &length);
-                ReleaseMutex(mutex);
-                continue;
-              }
+        /* check if this is an actual console handle */
+        if(GetConsoleMode(handle, &ret)) {
+          /* retrieve an event from the console buffer */
+          length = 0;
+          if(PeekConsoleInput(handle, &inputrecord, 1, &length)) {
+            /* check if the event is not an actual key-event */
+            if(length == 1 && inputrecord.EventType != KEY_EVENT) {
+              /* purge the non-key-event and continue waiting */
+              ReadConsoleInput(handle, &inputrecord, 1, &length);
+              continue;
             }
           }
-          /* there is some data available, stop waiting */
-          logmsg("[select_ws_wait_thread] data available, CHAR: %p", handle);
-          SetEvent(signal);
-          ReleaseMutex(mutex);
-          break;
         }
-        else if(ret == WAIT_ABANDONED) {
-          /* we are not allowed to process this event, because select_ws
-             is post-processing the signalled events and we must exit. */
-          break;
-        }
+        /* there is some data available, stop waiting */
+        logmsg("[select_ws_wait_thread] data available, CHAR: %p", handle);
+        SetEvent(signal);
       }
       break;
 
@@ -527,45 +542,33 @@ static DWORD WINAPI select_ws_wait_thread(LPVOID lpParameter)
         */
       while(WaitForMultipleObjectsEx(1, handles, FALSE, 0, FALSE)
             == WAIT_TIMEOUT) {
-        ret = WaitForSingleObjectEx(mutex, 0, FALSE);
-        if(ret == WAIT_OBJECT_0) {
-          /* peek into the pipe and retrieve the amount of data available */
-          length = 0;
-          if(PeekNamedPipe(handle, NULL, 0, NULL, &length, NULL)) {
-            /* if there is no data available, sleep and continue waiting */
-            if(length == 0) {
-              SleepEx(0, FALSE);
-              ReleaseMutex(mutex);
-              continue;
-            }
-            else {
-              logmsg("[select_ws_wait_thread] PeekNamedPipe len: %d", length);
-            }
+        /* peek into the pipe and retrieve the amount of data available */
+        length = 0;
+        if(PeekNamedPipe(handle, NULL, 0, NULL, &length, NULL)) {
+          /* if there is no data available, sleep and continue waiting */
+          if(length == 0) {
+            SleepEx(0, FALSE);
+            continue;
           }
           else {
-            /* if the pipe has NOT been closed, sleep and continue waiting */
-            ret = GetLastError();
-            if(ret != ERROR_BROKEN_PIPE) {
-              logmsg("[select_ws_wait_thread] PeekNamedPipe error: %d", ret);
-              SleepEx(0, FALSE);
-              ReleaseMutex(mutex);
-              continue;
-            }
-            else {
-              logmsg("[select_ws_wait_thread] pipe closed, PIPE: %p", handle);
-            }
+            logmsg("[select_ws_wait_thread] PeekNamedPipe len: %d", length);
           }
-          /* there is some data available, stop waiting */
-          logmsg("[select_ws_wait_thread] data available, PIPE: %p", handle);
-          SetEvent(signal);
-          ReleaseMutex(mutex);
-          break;
         }
-        else if(ret == WAIT_ABANDONED) {
-          /* we are not allowed to process this event, because select_ws
-             is post-processing the signalled events and we must exit. */
-          break;
+        else {
+          /* if the pipe has NOT been closed, sleep and continue waiting */
+          ret = GetLastError();
+          if(ret != ERROR_BROKEN_PIPE) {
+            logmsg("[select_ws_wait_thread] PeekNamedPipe error: %d", ret);
+            SleepEx(0, FALSE);
+            continue;
+          }
+          else {
+            logmsg("[select_ws_wait_thread] pipe closed, PIPE: %p", handle);
+          }
         }
+        /* there is some data available, stop waiting */
+        logmsg("[select_ws_wait_thread] data available, PIPE: %p", handle);
+        SetEvent(signal);
       }
       break;
 
@@ -573,22 +576,23 @@ static DWORD WINAPI select_ws_wait_thread(LPVOID lpParameter)
       /* The handle has an unknown type, try to wait on it */
       if(WaitForMultipleObjectsEx(2, handles, FALSE, INFINITE, FALSE)
          == WAIT_OBJECT_0 + 1) {
-        if(WaitForSingleObjectEx(mutex, 0, FALSE) == WAIT_OBJECT_0) {
-          logmsg("[select_ws_wait_thread] data available, HANDLE: %p", handle);
-          SetEvent(signal);
-          ReleaseMutex(mutex);
-        }
+        logmsg("[select_ws_wait_thread] data available, HANDLE: %p", handle);
+        SetEvent(signal);
       }
       break;
   }
 
   return 0;
 }
-static HANDLE select_ws_wait(HANDLE handle, HANDLE signal,
-                             HANDLE abort, HANDLE mutex)
+static HANDLE select_ws_wait(HANDLE handle, HANDLE signal, HANDLE abort)
 {
+#ifdef _WIN32_WCE
+  typedef HANDLE curl_win_thread_handle_t;
+#else
+  typedef uintptr_t curl_win_thread_handle_t;
+#endif
   struct select_ws_wait_data *data;
-  HANDLE thread = NULL;
+  curl_win_thread_handle_t thread;
 
   /* allocate internal waiting data structure */
   data = malloc(sizeof(struct select_ws_wait_data));
@@ -596,20 +600,21 @@ static HANDLE select_ws_wait(HANDLE handle, HANDLE signal,
     data->handle = handle;
     data->signal = signal;
     data->abort = abort;
-    data->mutex = mutex;
 
     /* launch waiting thread */
-    thread = CreateThread(NULL, 0,
-                          &select_ws_wait_thread,
-                          data, 0, NULL);
+#ifdef _WIN32_WCE
+    thread = CreateThread(NULL, 0,  &select_ws_wait_thread, data, 0, NULL);
+#else
+    thread = _beginthreadex(NULL, 0, &select_ws_wait_thread, data, 0, NULL);
+#endif
 
     /* free data if thread failed to launch */
     if(!thread) {
       free(data);
     }
+    return (HANDLE)thread;
   }
-
-  return thread;
+  return NULL;
 }
 struct select_ws_data {
   int fd;                /* provided file descriptor  (indexed by nfd) */
@@ -622,8 +627,8 @@ struct select_ws_data {
 static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
                      fd_set *exceptfds, struct timeval *tv)
 {
-  HANDLE abort, mutex, signal, handle, *handles;
   DWORD timeout_ms, wait, nfd, nth, nws, i;
+  HANDLE abort, signal, handle, *handles;
   fd_set readsock, writesock, exceptsock;
   struct select_ws_data *data;
   WSANETWORKEVENTS wsaevents;
@@ -639,7 +644,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
 
   /* convert struct timeval to milliseconds */
   if(tv) {
-    timeout_ms = (tv->tv_sec*1000) + (DWORD)(((double)tv->tv_usec)/1000.0);
+    timeout_ms = (DWORD)curlx_tvtoms(tv);
   }
   else {
     timeout_ms = INFINITE;
@@ -658,19 +663,10 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
     return -1;
   }
 
-  /* create internal mutex to lock event handling in threads */
-  mutex = CreateMutex(NULL, FALSE, NULL);
-  if(!mutex) {
-    CloseHandle(abort);
-    errno = ENOMEM;
-    return -1;
-  }
-
   /* allocate internal array for the internal data */
   data = calloc(nfds, sizeof(struct select_ws_data));
   if(!data) {
     CloseHandle(abort);
-    CloseHandle(mutex);
     errno = ENOMEM;
     return -1;
   }
@@ -679,7 +675,6 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   handles = calloc(nfds + 1, sizeof(HANDLE));
   if(!handles) {
     CloseHandle(abort);
-    CloseHandle(mutex);
     free(data);
     errno = ENOMEM;
     return -1;
@@ -720,7 +715,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
         signal = CreateEvent(NULL, TRUE, FALSE, NULL);
         if(signal) {
           handle = GetStdHandle(STD_INPUT_HANDLE);
-          handle = select_ws_wait(handle, signal, abort, mutex);
+          handle = select_ws_wait(handle, signal, abort);
           if(handle) {
             handles[nfd] = signal;
             data[nth].signal = signal;
@@ -774,7 +769,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
             signal = CreateEvent(NULL, TRUE, FALSE, NULL);
             if(signal) {
               handle = (HANDLE)wsasock;
-              handle = select_ws_wait(handle, signal, abort, mutex);
+              handle = select_ws_wait(handle, signal, abort);
               if(handle) {
                 handles[nfd] = signal;
                 data[nth].signal = signal;
@@ -805,8 +800,12 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   /* wait for one of the internal handles to trigger */
   wait = WaitForMultipleObjectsEx(wait, handles, FALSE, timeout_ms, FALSE);
 
-  /* wait for internal mutex to lock event handling in threads */
-  WaitForSingleObjectEx(mutex, INFINITE, FALSE);
+  /* signal the abort event handle and join the other waiting threads */
+  SetEvent(abort);
+  for(i = 0; i < nth; i++) {
+    WaitForSingleObjectEx(data[i].thread, INFINITE, FALSE);
+    CloseHandle(data[i].thread);
+  }
 
   /* loop over the internal handles returned in the descriptors */
   ret = 0; /* number of ready file descriptors */
@@ -865,9 +864,6 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
     }
   }
 
-  /* signal the event handle for the other waiting threads */
-  SetEvent(abort);
-
   for(fd = 0; fd < nfds; fd++) {
     if(FD_ISSET(fd, readfds))
       logmsg("[select_ws] %d is readable", fd);
@@ -883,13 +879,9 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   }
 
   for(i = 0; i < nth; i++) {
-    WaitForSingleObjectEx(data[i].thread, INFINITE, FALSE);
-    CloseHandle(data[i].thread);
     CloseHandle(data[i].signal);
   }
-
   CloseHandle(abort);
-  CloseHandle(mutex);
 
   free(handles);
   free(data);
@@ -898,6 +890,63 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
 }
 #define select(a,b,c,d,e) select_ws(a,b,c,d,e)
 #endif  /* USE_WINSOCK */
+
+
+/* Perform the disconnect handshake with sockfilt
+ * This involves waiting for the disconnect acknowledgmeent after the DISC
+ * command, while throwing away anything else that might come in before
+ * that.
+ */
+static bool disc_handshake(void)
+{
+  if(!write_stdout("DISC\n", 5))
+    return FALSE;
+
+  do {
+      unsigned char buffer[BUFFER_SIZE];
+      ssize_t buffer_len;
+      if(!read_stdin(buffer, 5))
+        return FALSE;
+      logmsg("Received %c%c%c%c (on stdin)",
+             buffer[0], buffer[1], buffer[2], buffer[3]);
+
+      if(!memcmp("ACKD", buffer, 4)) {
+        /* got the ack we were waiting for */
+        break;
+      }
+      else if(!memcmp("DISC", buffer, 4)) {
+        logmsg("Crikey! Client also wants to disconnect");
+        if(!write_stdout("ACKD\n", 5))
+          return FALSE;
+      }
+      else if(!memcmp("DATA", buffer, 4)) {
+        /* We must read more data to stay in sync */
+        if(!read_data_block(buffer, sizeof(buffer), &buffer_len))
+          return FALSE;
+
+        logmsg("Throwing again %zd data bytes", buffer_len);
+
+      }
+      else if(!memcmp("QUIT", buffer, 4)) {
+        /* just die */
+        logmsg("quits");
+        return FALSE;
+      }
+      else {
+        logmsg("Error: unexpected message; aborting");
+        /*
+         * The only other messages that could occur here are PING and PORT,
+         * and both of them occur at the start of a test when nothing should be
+         * trying to DISC. Therefore, we should not ever get here, but if we
+         * do, it's probably due to some kind of unclean shutdown situation so
+         * us shutting down is what we probably ought to be doing, anyway.
+         */
+        return FALSE;
+      }
+
+  } while(TRUE);
+  return TRUE;
+}
 
 /*
   sockfdp is a pointer to an established stream or CURL_SOCKET_BAD
@@ -918,9 +967,7 @@ static bool juggle(curl_socket_t *sockfdp,
   ssize_t rc;
   int error = 0;
 
- /* 'buffer' is this excessively large only to be able to support things like
-    test 1003 which tests exceedingly large server response lines */
-  unsigned char buffer[17010];
+  unsigned char buffer[BUFFER_SIZE];
   char data[16];
 
   if(got_exit_signal) {
@@ -1067,28 +1114,12 @@ static bool juggle(curl_socket_t *sockfdp,
     }
     else if(!memcmp("DATA", buffer, 4)) {
       /* data IN => data OUT */
-
-      if(!read_stdin(buffer, 5))
+      if(!read_data_block(buffer, sizeof(buffer), &buffer_len))
         return FALSE;
-
-      buffer[5] = '\0';
-
-      buffer_len = (ssize_t)strtol((char *)buffer, NULL, 16);
-      if(buffer_len > (ssize_t)sizeof(buffer)) {
-        logmsg("ERROR: Buffer size (%zu bytes) too small for data size "
-               "(%zd bytes)", sizeof(buffer), buffer_len);
-        return FALSE;
-      }
-      logmsg("> %zd bytes data, server => client", buffer_len);
-
-      if(!read_stdin(buffer, buffer_len))
-        return FALSE;
-
-      lograw(buffer, buffer_len);
 
       if(*mode == PASSIVE_LISTEN) {
         logmsg("*** We are disconnected!");
-        if(!write_stdout("DISC\n", 5))
+        if(!disc_handshake())
           return FALSE;
       }
       else {
@@ -1102,7 +1133,7 @@ static bool juggle(curl_socket_t *sockfdp,
     }
     else if(!memcmp("DISC", buffer, 4)) {
       /* disconnect! */
-      if(!write_stdout("DISC\n", 5))
+      if(!write_stdout("ACKD\n", 5))
         return FALSE;
       if(sockfd != CURL_SOCKET_BAD) {
         logmsg("====> Client forcibly disconnected");
@@ -1129,7 +1160,7 @@ static bool juggle(curl_socket_t *sockfdp,
       if(CURL_SOCKET_BAD == newfd) {
         error = SOCKERRNO;
         logmsg("accept(%d, NULL, NULL) failed with error: (%d) %s",
-               sockfd, error, strerror(error));
+               sockfd, error, sstrerror(error));
       }
       else {
         logmsg("====> Client connect");
@@ -1157,7 +1188,7 @@ static bool juggle(curl_socket_t *sockfdp,
 
     if(nread_socket <= 0) {
       logmsg("====> Client disconnect");
-      if(!write_stdout("DISC\n", 5))
+      if(!disc_handshake())
         return FALSE;
       sclose(sockfd);
       *sockfdp = CURL_SOCKET_BAD;
@@ -1193,7 +1224,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
     if(rc) {
       error = SOCKERRNO;
       logmsg("setsockopt(SO_REUSEADDR) failed with error: (%d) %s",
-             error, strerror(error));
+             error, sstrerror(error));
       if(maxretr) {
         rc = wait_ms(delay);
         if(rc) {
@@ -1245,7 +1276,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
   if(rc) {
     error = SOCKERRNO;
     logmsg("Error binding socket on port %hu: (%d) %s",
-           *listenport, error, strerror(error));
+           *listenport, error, sstrerror(error));
     sclose(sock);
     return CURL_SOCKET_BAD;
   }
@@ -1267,7 +1298,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
     if(getsockname(sock, &localaddr.sa, &la_size) < 0) {
       error = SOCKERRNO;
       logmsg("getsockname() failed with error: (%d) %s",
-             error, strerror(error));
+             error, sstrerror(error));
       sclose(sock);
       return CURL_SOCKET_BAD;
     }
@@ -1305,7 +1336,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
   if(0 != rc) {
     error = SOCKERRNO;
     logmsg("listen(%d, 5) failed with error: (%d) %s",
-           sock, error, strerror(error));
+           sock, error, sstrerror(error));
     sclose(sock);
     return CURL_SOCKET_BAD;
   }
@@ -1452,8 +1483,7 @@ int main(int argc, char *argv[])
 
   if(CURL_SOCKET_BAD == sock) {
     error = SOCKERRNO;
-    logmsg("Error creating socket: (%d) %s",
-           error, strerror(error));
+    logmsg("Error creating socket: (%d) %s", error, sstrerror(error));
     write_stdout("FAIL\n", 5);
     goto sockfilt_cleanup;
   }
@@ -1489,7 +1519,7 @@ int main(int argc, char *argv[])
     if(rc) {
       error = SOCKERRNO;
       logmsg("Error connecting to port %hu: (%d) %s",
-             connectport, error, strerror(error));
+             connectport, error, sstrerror(error));
       write_stdout("FAIL\n", 5);
       goto sockfilt_cleanup;
     }

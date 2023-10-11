@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,6 +20,8 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 #include "server_setup.h"
 
@@ -28,9 +30,8 @@ void logmsg(const char *msg, ...);
 long timediff(struct timeval newer, struct timeval older);
 
 #define TEST_DATA_PATH "%s/data/test%ld"
-#define ALTTEST_DATA_PATH "%s/log/test%ld"
-
-#define SERVERLOGS_LOCK "log/serverlogs.lock"
+#define ALTTEST_DATA_PATH "%s/test%ld"
+#define SERVERLOGS_LOCKDIR "lock"  /* within logdir */
 
 /* global variable, where to find the 'data' dir */
 extern const char *path;
@@ -40,7 +41,7 @@ extern const char *serverlogfile;
 
 extern const char *cmdfile;
 
-#if defined(WIN32) || defined(_WIN32)
+#ifdef WIN32
 #include <process.h>
 #include <fcntl.h>
 
@@ -49,15 +50,17 @@ extern const char *cmdfile;
 #undef perror
 #define perror(m) win32_perror(m)
 void win32_perror(const char *msg);
-#endif  /* WIN32 or _WIN32 */
 
-#ifdef USE_WINSOCK
 void win32_init(void);
 void win32_cleanup(void);
-#endif  /* USE_WINSOCK */
+const char *sstrerror(int err);
+#else   /* WIN32 */
+
+#define sstrerror(e) strerror(e)
+#endif  /* WIN32 */
 
 /* fopens the test case file */
-FILE *test2fopen(long testno);
+FILE *test2fopen(long testno, const char *logdir);
 
 int wait_ms(int timeout_ms);
 curl_off_t our_getpid(void);
@@ -80,5 +83,17 @@ extern HANDLE exit_event;
 
 void install_signal_handlers(bool keep_sigalrm);
 void restore_signal_handlers(bool keep_sigalrm);
+
+#ifdef USE_UNIX_SOCKETS
+
+#include <curl/curl.h> /* for curl_socket_t */
+
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h> /* for sockaddr_un */
+#endif /* HAVE_SYS_UN_H */
+
+int bind_unix_socket(curl_socket_t sock, const char *unix_socket,
+        struct sockaddr_un *sau);
+#endif  /* USE_UNIX_SOCKETS */
 
 #endif  /* HEADER_CURL_SERVER_UTIL_H */

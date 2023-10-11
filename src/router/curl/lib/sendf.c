@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -36,7 +38,9 @@
 
 #include "urldata.h"
 #include "sendf.h"
+#include "cfilters.h"
 #include "connect.h"
+#include "content_encoding.h"
 #include "vtls/vtls.h"
 #include "vssh/ssh.h"
 #include "easyif.h"
@@ -45,13 +49,15 @@
 #include "select.h"
 #include "strdup.h"
 #include "http2.h"
+#include "headers.h"
+#include "ws.h"
 
 /* The last 3 #include files should be in this order */
 #include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 
-#ifdef CURL_DO_LINEEND_CONV
+#if defined(CURL_DO_LINEEND_CONV) && !defined(CURL_DISABLE_FTP)
 /*
  * convert_lineends() changes CRLF (\r\n) end-of-line markers to a single LF
  * (\n), with special processing for CRLF sequences that are split between two
@@ -131,151 +137,56 @@ static size_t convert_lineends(struct Curl_easy *data,
   }
   return size;
 }
-#endif /* CURL_DO_LINEEND_CONV */
+#endif /* CURL_DO_LINEEND_CONV && !CURL_DISABLE_FTP */
 
-#ifdef USE_RECV_BEFORE_SEND_WORKAROUND
-bool Curl_recv_has_postponed_data(struct connectdata *conn, int sockindex)
-{
-  struct postponed_data * const psnd = &(conn->postponed[sockindex]);
-  return psnd->buffer && psnd->allocated_size &&
-         psnd->recv_size > psnd->recv_processed;
-}
-
-static CURLcode pre_receive_plain(struct Curl_easy *data,
-                                  struct connectdata *conn, int num)
-{
-  const curl_socket_t sockfd = conn->sock[num];
-  struct postponed_data * const psnd = &(conn->postponed[num]);
-  size_t bytestorecv = psnd->allocated_size - psnd->recv_size;
-  /* WinSock will destroy unread received data if send() is
-     failed.
-     To avoid lossage of received data, recv() must be
-     performed before every send() if any incoming data is
-     available. However, skip this, if buffer is already full. */
-  if((conn->handler->protocol&PROTO_FAMILY_HTTP) != 0 &&
-     conn->recv[num] == Curl_recv_plain &&
-     (!psnd->buffer || bytestorecv)) {
-    const int readymask = Curl_socket_check(sockfd, CURL_SOCKET_BAD,
-                                            CURL_SOCKET_BAD, 0);
-    if(readymask != -1 && (readymask & CURL_CSELECT_IN) != 0) {
-      /* Have some incoming data */
-      if(!psnd->buffer) {
-        /* Use buffer double default size for intermediate buffer */
-        psnd->allocated_size = 2 * data->set.buffer_size;
-        psnd->buffer = malloc(psnd->allocated_size);
-        if(!psnd->buffer)
-          return CURLE_OUT_OF_MEMORY;
-        psnd->recv_size = 0;
-        psnd->recv_processed = 0;
-#ifdef DEBUGBUILD
-        psnd->bindsock = sockfd; /* Used only for DEBUGASSERT */
-#endif /* DEBUGBUILD */
-        bytestorecv = psnd->allocated_size;
-      }
-      if(psnd->buffer) {
-        ssize_t recvedbytes;
-        DEBUGASSERT(psnd->bindsock == sockfd);
-        recvedbytes = sread(sockfd, psnd->buffer + psnd->recv_size,
-                            bytestorecv);
-        if(recvedbytes > 0)
-          psnd->recv_size += recvedbytes;
-      }
-      else
-        psnd->allocated_size = 0;
-    }
-  }
-  return CURLE_OK;
-}
-
-static ssize_t get_pre_recved(struct connectdata *conn, int num, char *buf,
-                              size_t len)
-{
-  struct postponed_data * const psnd = &(conn->postponed[num]);
-  size_t copysize;
-  if(!psnd->buffer)
-    return 0;
-
-  DEBUGASSERT(psnd->allocated_size > 0);
-  DEBUGASSERT(psnd->recv_size <= psnd->allocated_size);
-  DEBUGASSERT(psnd->recv_processed <= psnd->recv_size);
-  /* Check and process data that already received and storied in internal
-     intermediate buffer */
-  if(psnd->recv_size > psnd->recv_processed) {
-    DEBUGASSERT(psnd->bindsock == conn->sock[num]);
-    copysize = CURLMIN(len, psnd->recv_size - psnd->recv_processed);
-    memcpy(buf, psnd->buffer + psnd->recv_processed, copysize);
-    psnd->recv_processed += copysize;
-  }
-  else
-    copysize = 0; /* buffer was allocated, but nothing was received */
-
-  /* Free intermediate buffer if it has no unprocessed data */
-  if(psnd->recv_processed == psnd->recv_size) {
-    free(psnd->buffer);
-    psnd->buffer = NULL;
-    psnd->allocated_size = 0;
-    psnd->recv_size = 0;
-    psnd->recv_processed = 0;
-#ifdef DEBUGBUILD
-    psnd->bindsock = CURL_SOCKET_BAD;
-#endif /* DEBUGBUILD */
-  }
-  return (ssize_t)copysize;
-}
-#else  /* ! USE_RECV_BEFORE_SEND_WORKAROUND */
-/* Use "do-nothing" macros instead of functions when workaround not used */
-bool Curl_recv_has_postponed_data(struct connectdata *conn, int sockindex)
-{
-  (void)conn;
-  (void)sockindex;
-  return false;
-}
-#define pre_receive_plain(d,c,n) CURLE_OK
-#define get_pre_recved(c,n,b,l) 0
-#endif /* ! USE_RECV_BEFORE_SEND_WORKAROUND */
-
-/* Curl_infof() is for info message along the way */
-#define MAXINFO 2048
-
-void Curl_infof(struct Curl_easy *data, const char *fmt, ...)
-{
-  DEBUGASSERT(!strchr(fmt, '\n'));
-  if(data && data->set.verbose) {
-    va_list ap;
-    size_t len;
-    char buffer[MAXINFO + 2];
-    va_start(ap, fmt);
-    len = mvsnprintf(buffer, MAXINFO, fmt, ap);
-    va_end(ap);
-    buffer[len++] = '\n';
-    buffer[len] = '\0';
-    Curl_debug(data, CURLINFO_TEXT, buffer, len);
-  }
-}
-
-/* Curl_failf() is for messages stating why we failed.
- * The message SHALL NOT include any LF or CR.
+/*
+ * Curl_nwrite() is an internal write function that sends data to the
+ * server. Works with a socket index for the connection.
+ *
+ * If the write would block (CURLE_AGAIN), it returns CURLE_OK and
+ * (*nwritten == 0). Otherwise we return regular CURLcode value.
  */
-
-void Curl_failf(struct Curl_easy *data, const char *fmt, ...)
+CURLcode Curl_nwrite(struct Curl_easy *data,
+                     int sockindex,
+                     const void *buf,
+                     size_t blen,
+                     ssize_t *pnwritten)
 {
-  DEBUGASSERT(!strchr(fmt, '\n'));
-  if(data->set.verbose || data->set.errorbuffer) {
-    va_list ap;
-    size_t len;
-    char error[CURL_ERROR_SIZE + 2];
-    va_start(ap, fmt);
-    len = mvsnprintf(error, CURL_ERROR_SIZE, fmt, ap);
+  ssize_t nwritten;
+  CURLcode result = CURLE_OK;
+  struct connectdata *conn;
 
-    if(data->set.errorbuffer && !data->state.errorbuf) {
-      strcpy(data->set.errorbuffer, error);
-      data->state.errorbuf = TRUE; /* wrote error string */
+  DEBUGASSERT(sockindex >= 0 && sockindex < 2);
+  DEBUGASSERT(pnwritten);
+  DEBUGASSERT(data);
+  DEBUGASSERT(data->conn);
+  conn = data->conn;
+#ifdef CURLDEBUG
+  {
+    /* Allow debug builds to override this logic to force short sends
+    */
+    char *p = getenv("CURL_SMALLSENDS");
+    if(p) {
+      size_t altsize = (size_t)strtoul(p, NULL, 10);
+      if(altsize)
+        blen = CURLMIN(blen, altsize);
     }
-    error[len++] = '\n';
-    error[len] = '\0';
-    Curl_debug(data, CURLINFO_TEXT, error, len);
-    va_end(ap);
   }
+#endif
+  nwritten = conn->send[sockindex](data, sockindex, buf, blen, &result);
+  if(result == CURLE_AGAIN) {
+    nwritten = 0;
+    result = CURLE_OK;
+  }
+  else if(result) {
+    nwritten = -1; /* make sure */
+  }
+  else {
+    DEBUGASSERT(nwritten >= 0);
+  }
+
+  *pnwritten = nwritten;
+  return result;
 }
 
 /*
@@ -291,185 +202,19 @@ CURLcode Curl_write(struct Curl_easy *data,
                     size_t len,
                     ssize_t *written)
 {
-  ssize_t bytes_written;
-  CURLcode result = CURLE_OK;
   struct connectdata *conn;
   int num;
-  DEBUGASSERT(data);
-  DEBUGASSERT(data->conn);
-  conn = data->conn;
-  num = (sockfd == conn->sock[SECONDARYSOCKET]);
-
-#ifdef CURLDEBUG
-  {
-    /* Allow debug builds to override this logic to force short sends
-    */
-    char *p = getenv("CURL_SMALLSENDS");
-    if(p) {
-      size_t altsize = (size_t)strtoul(p, NULL, 10);
-      if(altsize)
-        len = CURLMIN(len, altsize);
-    }
-  }
-#endif
-  bytes_written = conn->send[num](data, num, mem, len, &result);
-
-  *written = bytes_written;
-  if(bytes_written >= 0)
-    /* we completely ignore the curlcode value when subzero is not returned */
-    return CURLE_OK;
-
-  /* handle CURLE_AGAIN or a send failure */
-  switch(result) {
-  case CURLE_AGAIN:
-    *written = 0;
-    return CURLE_OK;
-
-  case CURLE_OK:
-    /* general send failure */
-    return CURLE_SEND_ERROR;
-
-  default:
-    /* we got a specific curlcode, forward it */
-    return result;
-  }
-}
-
-ssize_t Curl_send_plain(struct Curl_easy *data, int num,
-                        const void *mem, size_t len, CURLcode *code)
-{
-  struct connectdata *conn;
-  curl_socket_t sockfd;
-  ssize_t bytes_written;
 
   DEBUGASSERT(data);
   DEBUGASSERT(data->conn);
   conn = data->conn;
-  sockfd = conn->sock[num];
-  /* WinSock will destroy unread received data if send() is
-     failed.
-     To avoid lossage of received data, recv() must be
-     performed before every send() if any incoming data is
-     available. */
-  if(pre_receive_plain(data, conn, num)) {
-    *code = CURLE_OUT_OF_MEMORY;
-    return -1;
-  }
-
-#if defined(MSG_FASTOPEN) && !defined(TCP_FASTOPEN_CONNECT) /* Linux */
-  if(conn->bits.tcp_fastopen) {
-    bytes_written = sendto(sockfd, mem, len, MSG_FASTOPEN,
-                           conn->ip_addr->ai_addr, conn->ip_addr->ai_addrlen);
-    conn->bits.tcp_fastopen = FALSE;
-  }
-  else
-#endif
-    bytes_written = swrite(sockfd, mem, len);
-
-  *code = CURLE_OK;
-  if(-1 == bytes_written) {
-    int err = SOCKERRNO;
-
-    if(
-#ifdef WSAEWOULDBLOCK
-      /* This is how Windows does it */
-      (WSAEWOULDBLOCK == err)
-#else
-      /* errno may be EWOULDBLOCK or on some systems EAGAIN when it returned
-         due to its inability to send off data without blocking. We therefore
-         treat both error codes the same here */
-      (EWOULDBLOCK == err) || (EAGAIN == err) || (EINTR == err) ||
-      (EINPROGRESS == err)
-#endif
-      ) {
-      /* this is just a case of EWOULDBLOCK */
-      bytes_written = 0;
-      *code = CURLE_AGAIN;
-    }
-    else {
-      char buffer[STRERROR_LEN];
-      failf(data, "Send failure: %s",
-            Curl_strerror(err, buffer, sizeof(buffer)));
-      data->state.os_errno = err;
-      *code = CURLE_SEND_ERROR;
-    }
-  }
-  return bytes_written;
-}
-
-/*
- * Curl_write_plain() is an internal write function that sends data to the
- * server using plain sockets only. Otherwise meant to have the exact same
- * proto as Curl_write()
- */
-CURLcode Curl_write_plain(struct Curl_easy *data,
-                          curl_socket_t sockfd,
-                          const void *mem,
-                          size_t len,
-                          ssize_t *written)
-{
-  CURLcode result;
-  struct connectdata *conn = data->conn;
-  int num;
-  DEBUGASSERT(conn);
-  num = (sockfd == conn->sock[SECONDARYSOCKET]);
-
-  *written = Curl_send_plain(data, num, mem, len, &result);
-
-  return result;
-}
-
-ssize_t Curl_recv_plain(struct Curl_easy *data, int num, char *buf,
-                        size_t len, CURLcode *code)
-{
-  struct connectdata *conn;
-  curl_socket_t sockfd;
-  ssize_t nread;
-  DEBUGASSERT(data);
-  DEBUGASSERT(data->conn);
-  conn = data->conn;
-  sockfd = conn->sock[num];
-  /* Check and return data that already received and storied in internal
-     intermediate buffer */
-  nread = get_pre_recved(conn, num, buf, len);
-  if(nread > 0) {
-    *code = CURLE_OK;
-    return nread;
-  }
-
-  nread = sread(sockfd, buf, len);
-
-  *code = CURLE_OK;
-  if(-1 == nread) {
-    int err = SOCKERRNO;
-
-    if(
-#ifdef WSAEWOULDBLOCK
-      /* This is how Windows does it */
-      (WSAEWOULDBLOCK == err)
-#else
-      /* errno may be EWOULDBLOCK or on some systems EAGAIN when it returned
-         due to its inability to send off data without blocking. We therefore
-         treat both error codes the same here */
-      (EWOULDBLOCK == err) || (EAGAIN == err) || (EINTR == err)
-#endif
-      ) {
-      /* this is just a case of EWOULDBLOCK */
-      *code = CURLE_AGAIN;
-    }
-    else {
-      char buffer[STRERROR_LEN];
-      failf(data, "Recv failure: %s",
-            Curl_strerror(err, buffer, sizeof(buffer)));
-      data->state.os_errno = err;
-      *code = CURLE_RECV_ERROR;
-    }
-  }
-  return nread;
+  num = (sockfd != CURL_SOCKET_BAD && sockfd == conn->sock[SECONDARYSOCKET]);
+  return Curl_nwrite(data, num, mem, len, written);
 }
 
 static CURLcode pausewrite(struct Curl_easy *data,
                            int type, /* what type of data */
+                           bool paused_body,
                            const char *ptr,
                            size_t len)
 {
@@ -481,18 +226,21 @@ static CURLcode pausewrite(struct Curl_easy *data,
   unsigned int i;
   bool newtype = TRUE;
 
-  /* If this transfers over HTTP/2, pause the stream! */
-  Curl_http2_stream_pause(data, TRUE);
+  Curl_conn_ev_data_pause(data, TRUE);
 
   if(s->tempcount) {
     for(i = 0; i< s->tempcount; i++) {
-      if(s->tempwrite[i].type == type) {
+      if(s->tempwrite[i].type == type &&
+         !!s->tempwrite[i].paused_body == !!paused_body) {
         /* data for this type exists */
         newtype = FALSE;
         break;
       }
     }
     DEBUGASSERT(i < 3);
+    if(i >= 3)
+      /* There are more types to store than what fits: very bad */
+      return CURLE_OUT_OF_MEMORY;
   }
   else
     i = 0;
@@ -501,6 +249,7 @@ static CURLcode pausewrite(struct Curl_easy *data,
     /* store this information in the state struct for later use */
     Curl_dyn_init(&s->tempwrite[i].b, DYN_PAUSE_BUFFER);
     s->tempwrite[i].type = type;
+    s->tempwrite[i].paused_body = paused_body;
     s->tempcount++;
   }
 
@@ -520,6 +269,7 @@ static CURLcode pausewrite(struct Curl_easy *data,
  */
 static CURLcode chop_write(struct Curl_easy *data,
                            int type,
+                           bool skip_body_write,
                            char *optr,
                            size_t olen)
 {
@@ -528,6 +278,7 @@ static CURLcode chop_write(struct Curl_easy *data,
   curl_write_callback writebody = NULL;
   char *ptr = optr;
   size_t len = olen;
+  void *writebody_ptr = data->set.out;
 
   if(!len)
     return CURLE_OK;
@@ -535,12 +286,22 @@ static CURLcode chop_write(struct Curl_easy *data,
   /* If reading is paused, append this data to the already held data for this
      type. */
   if(data->req.keepon & KEEP_RECV_PAUSE)
-    return pausewrite(data, type, ptr, len);
+    return pausewrite(data, type, !skip_body_write, ptr, len);
 
   /* Determine the callback(s) to use. */
-  if(type & CLIENTWRITE_BODY)
+  if(!skip_body_write &&
+     ((type & CLIENTWRITE_BODY) ||
+      ((type & CLIENTWRITE_HEADER) && data->set.include_header))) {
+#ifdef USE_WEBSOCKETS
+    if(conn->handler->protocol & (CURLPROTO_WS|CURLPROTO_WSS)) {
+      writebody = Curl_ws_writecb;
+      writebody_ptr = data;
+    }
+    else
+#endif
     writebody = data->set.fwrite_func;
-  if((type & CLIENTWRITE_HEADER) &&
+  }
+  if((type & (CLIENTWRITE_HEADER|CLIENTWRITE_INFO)) &&
      (data->set.fwrite_header || data->set.writeheader)) {
     /*
      * Write headers to the same callback or to the especially setup
@@ -557,7 +318,7 @@ static CURLcode chop_write(struct Curl_easy *data,
     if(writebody) {
       size_t wrote;
       Curl_set_in_callback(data, true);
-      wrote = writebody(ptr, 1, chunklen, data->set.out);
+      wrote = writebody(ptr, 1, chunklen, writebody_ptr);
       Curl_set_in_callback(data, false);
 
       if(CURL_WRITEFUNC_PAUSE == wrote) {
@@ -565,10 +326,10 @@ static CURLcode chop_write(struct Curl_easy *data,
           /* Protocols that work without network cannot be paused. This is
              actually only FILE:// just now, and it can't pause since the
              transfer isn't done using the "normal" procedure. */
-          failf(data, "Write callback asked for PAUSE when not supported!");
+          failf(data, "Write callback asked for PAUSE when not supported");
           return CURLE_WRITE_ERROR;
         }
-        return pausewrite(data, type, ptr, len);
+        return pausewrite(data, type, TRUE, ptr, len);
       }
       if(wrote != chunklen) {
         failf(data, "Failure writing output to destination");
@@ -580,21 +341,31 @@ static CURLcode chop_write(struct Curl_easy *data,
     len -= chunklen;
   }
 
+#ifndef CURL_DISABLE_HTTP
+  /* HTTP header, but not status-line */
+  if((conn->handler->protocol & PROTO_FAMILY_HTTP) &&
+     (type & CLIENTWRITE_HEADER) && !(type & CLIENTWRITE_STATUS) ) {
+    unsigned char htype = (unsigned char)
+      (type & CLIENTWRITE_CONNECT ? CURLH_CONNECT :
+       (type & CLIENTWRITE_1XX ? CURLH_1XX :
+        (type & CLIENTWRITE_TRAILER ? CURLH_TRAILER :
+         CURLH_HEADER)));
+    CURLcode result = Curl_headers_push(data, optr, htype);
+    if(result)
+      return result;
+  }
+#endif
+
   if(writeheader) {
     size_t wrote;
-    ptr = optr;
-    len = olen;
+
     Curl_set_in_callback(data, true);
-    wrote = writeheader(ptr, 1, len, data->set.writeheader);
+    wrote = writeheader(optr, 1, olen, data->set.writeheader);
     Curl_set_in_callback(data, false);
 
     if(CURL_WRITEFUNC_PAUSE == wrote)
-      /* here we pass in the HEADER bit only since if this was body as well
-         then it was passed already and clearly that didn't trigger the
-         pause, so this is saved for later with the HEADER bit only */
-      return pausewrite(data, CLIENTWRITE_HEADER, ptr, len);
-
-    if(wrote != len) {
+      return pausewrite(data, type, FALSE, optr, olen);
+    if(wrote != olen) {
       failf(data, "Failed writing header");
       return CURLE_WRITE_ERROR;
     }
@@ -618,52 +389,195 @@ CURLcode Curl_client_write(struct Curl_easy *data,
                            char *ptr,
                            size_t len)
 {
-  struct connectdata *conn = data->conn;
-
-  DEBUGASSERT(!(type & ~CLIENTWRITE_BOTH));
-
-  if(!len)
-    return CURLE_OK;
-
+#if !defined(CURL_DISABLE_FTP) && defined(CURL_DO_LINEEND_CONV)
   /* FTP data may need conversion. */
   if((type & CLIENTWRITE_BODY) &&
-     (conn->handler->protocol & PROTO_FAMILY_FTP) &&
-     conn->proto.ftpc.transfertype == 'A') {
-
-#ifdef CURL_DO_LINEEND_CONV
+     (data->conn->handler->protocol & PROTO_FAMILY_FTP) &&
+     data->conn->proto.ftpc.transfertype == 'A') {
     /* convert end-of-line markers */
     len = convert_lineends(data, ptr, len);
-#endif /* CURL_DO_LINEEND_CONV */
   }
+#endif
+  /* it is one of those, at least */
+  DEBUGASSERT(type & (CLIENTWRITE_BODY|CLIENTWRITE_HEADER|CLIENTWRITE_INFO));
+  /* BODY is only BODY */
+  DEBUGASSERT(!(type & CLIENTWRITE_BODY) || (type == CLIENTWRITE_BODY));
+  /* INFO is only INFO */
+  DEBUGASSERT(!(type & CLIENTWRITE_INFO) || (type == CLIENTWRITE_INFO));
 
-  return chop_write(data, type, ptr, len);
+  if(type == CLIENTWRITE_BODY) {
+    if(data->req.ignorebody)
+      return CURLE_OK;
+
+    if(data->req.writer_stack && !data->set.http_ce_skip)
+      return Curl_unencode_write(data, data->req.writer_stack, ptr, len);
+  }
+  return chop_write(data, type, FALSE, ptr, len);
 }
 
-CURLcode Curl_read_plain(curl_socket_t sockfd,
-                         char *buf,
-                         size_t bytesfromsocket,
-                         ssize_t *n)
+CURLcode Curl_client_unpause(struct Curl_easy *data)
 {
-  ssize_t nread = sread(sockfd, buf, bytesfromsocket);
+  CURLcode result = CURLE_OK;
 
-  if(-1 == nread) {
-    const int err = SOCKERRNO;
-    const bool return_error =
-#ifdef USE_WINSOCK
-      WSAEWOULDBLOCK == err
-#else
-      EWOULDBLOCK == err || EAGAIN == err || EINTR == err
-#endif
-      ;
-    *n = 0; /* no data returned */
-    if(return_error)
-      return CURLE_AGAIN;
-    return CURLE_RECV_ERROR;
+  if(data->state.tempcount) {
+    /* there are buffers for sending that can be delivered as the receive
+       pausing is lifted! */
+    unsigned int i;
+    unsigned int count = data->state.tempcount;
+    struct tempbuf writebuf[3]; /* there can only be three */
+
+    /* copy the structs to allow for immediate re-pausing */
+    for(i = 0; i < data->state.tempcount; i++) {
+      writebuf[i] = data->state.tempwrite[i];
+      Curl_dyn_init(&data->state.tempwrite[i].b, DYN_PAUSE_BUFFER);
+    }
+    data->state.tempcount = 0;
+
+    for(i = 0; i < count; i++) {
+      /* even if one function returns error, this loops through and frees
+         all buffers */
+      if(!result)
+        result = chop_write(data, writebuf[i].type,
+                            !writebuf[i].paused_body,
+                            Curl_dyn_ptr(&writebuf[i].b),
+                            Curl_dyn_len(&writebuf[i].b));
+      Curl_dyn_free(&writebuf[i].b);
+    }
+  }
+  return result;
+}
+
+void Curl_client_cleanup(struct Curl_easy *data)
+{
+  struct contenc_writer *writer = data->req.writer_stack;
+  size_t i;
+
+  while(writer) {
+    data->req.writer_stack = writer->downstream;
+    writer->handler->close_writer(data, writer);
+    free(writer);
+    writer = data->req.writer_stack;
   }
 
-  *n = nread;
+  for(i = 0; i < data->state.tempcount; i++) {
+    Curl_dyn_free(&data->state.tempwrite[i].b);
+  }
+  data->state.tempcount = 0;
+
+}
+
+/* Real client writer: no downstream. */
+static CURLcode client_cew_init(struct Curl_easy *data,
+                                struct contenc_writer *writer)
+{
+  (void) data;
+  (void)writer;
   return CURLE_OK;
 }
+
+static CURLcode client_cew_write(struct Curl_easy *data,
+                                 struct contenc_writer *writer,
+                                 const char *buf, size_t nbytes)
+{
+  (void)writer;
+  if(!nbytes || data->req.ignorebody)
+    return CURLE_OK;
+  return chop_write(data, CLIENTWRITE_BODY, FALSE, (char *)buf, nbytes);
+}
+
+static void client_cew_close(struct Curl_easy *data,
+                             struct contenc_writer *writer)
+{
+  (void) data;
+  (void) writer;
+}
+
+static const struct content_encoding client_cew = {
+  NULL,
+  NULL,
+  client_cew_init,
+  client_cew_write,
+  client_cew_close,
+  sizeof(struct contenc_writer)
+};
+
+/* Create an unencoding writer stage using the given handler. */
+CURLcode Curl_client_create_writer(struct contenc_writer **pwriter,
+                                   struct Curl_easy *data,
+                                   const struct content_encoding *ce_handler,
+                                   int order)
+{
+  struct contenc_writer *writer;
+  CURLcode result = CURLE_OUT_OF_MEMORY;
+
+  DEBUGASSERT(ce_handler->writersize >= sizeof(struct contenc_writer));
+  writer = (struct contenc_writer *) calloc(1, ce_handler->writersize);
+  if(!writer)
+    goto out;
+
+  writer->handler = ce_handler;
+  writer->order = order;
+  result = ce_handler->init_writer(data, writer);
+
+out:
+  *pwriter = result? NULL : writer;
+  if(result)
+    free(writer);
+  return result;
+}
+
+void Curl_client_free_writer(struct Curl_easy *data,
+                             struct contenc_writer *writer)
+{
+  if(writer) {
+    writer->handler->close_writer(data, writer);
+    free(writer);
+  }
+}
+
+/* allow no more than 5 "chained" compression steps */
+#define MAX_ENCODE_STACK 5
+
+
+static CURLcode init_writer_stack(struct Curl_easy *data)
+{
+  DEBUGASSERT(!data->req.writer_stack);
+  return Curl_client_create_writer(&data->req.writer_stack,
+                                   data, &client_cew, 0);
+}
+
+CURLcode Curl_client_add_writer(struct Curl_easy *data,
+                                struct contenc_writer *writer)
+{
+  CURLcode result;
+
+  if(!data->req.writer_stack) {
+    result = init_writer_stack(data);
+    if(result)
+      return result;
+  }
+
+  if(data->req.writer_stack_depth++ >= MAX_ENCODE_STACK) {
+    failf(data, "Reject response due to more than %u content encodings",
+          MAX_ENCODE_STACK);
+    return CURLE_BAD_CONTENT_ENCODING;
+  }
+
+  /* Stack the unencoding stage. */
+  if(writer->order >= data->req.writer_stack->order) {
+    writer->downstream = data->req.writer_stack;
+    data->req.writer_stack = writer;
+  }
+  else {
+    struct contenc_writer *w = data->req.writer_stack;
+    while(w->downstream && writer->order < w->downstream->order)
+      w = w->downstream;
+    writer->downstream = w->downstream;
+    w->downstream = writer;
+  }
+  return CURLE_OK;
+}
+
 
 /*
  * Internal read-from-socket function. This is meant to deal with plain
@@ -695,38 +609,10 @@ CURLcode Curl_read(struct Curl_easy *data,   /* transfer */
 
   nread = conn->recv[num](data, num, buffertofill, bytesfromsocket, &result);
   if(nread < 0)
-    return result;
+    goto out;
 
   *n += nread;
-
-  return CURLE_OK;
-}
-
-/* return 0 on success */
-int Curl_debug(struct Curl_easy *data, curl_infotype type,
-               char *ptr, size_t size)
-{
-  int rc = 0;
-  if(data->set.verbose) {
-    static const char s_infotype[CURLINFO_END][3] = {
-      "* ", "< ", "> ", "{ ", "} ", "{ ", "} " };
-    if(data->set.fdebug) {
-      Curl_set_in_callback(data, true);
-      rc = (*data->set.fdebug)(data, type, ptr, size, data->set.debugdata);
-      Curl_set_in_callback(data, false);
-    }
-    else {
-      switch(type) {
-      case CURLINFO_TEXT:
-      case CURLINFO_HEADER_OUT:
-      case CURLINFO_HEADER_IN:
-        fwrite(s_infotype[type], 2, 1, data->set.err);
-        fwrite(ptr, size, 1, data->set.err);
-        break;
-      default: /* nada */
-        break;
-      }
-    }
-  }
-  return rc;
+  result = CURLE_OK;
+out:
+  return result;
 }

@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PREQUOTE 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_PREQUOTE 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_PREQUOTE \- commands to run before an FTP transfer
@@ -37,6 +39,9 @@ the transfer type is set. The linked list should be a fully valid list of
 struct curl_slist structs properly filled in as described for
 \fICURLOPT_QUOTE(3)\fP. Disable this operation again by setting a NULL to this
 option.
+
+These commands are not performed when a directory listing is performed, only
+for file transfers.
 
 While \fICURLOPT_QUOTE(3)\fP and \fICURLOPT_POSTQUOTE(3)\fP work for SFTP,
 this option does not.
@@ -66,4 +71,5 @@ Along with the protocol support
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_QUOTE "(3), " CURLOPT_POSTQUOTE "(3), "
+.BR CURLOPT_POSTQUOTE (3),
+.BR CURLOPT_QUOTE (3)

@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,7 +18,11 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
+# SPDX-License-Identifier: curl
+#
 ###########################################################################
+set(CMAKE_UNITY_BUILD OFF)
+
 add_custom_target(testdeps)
 add_subdirectory(data)
 add_subdirectory(libtest)
@@ -44,8 +48,8 @@ endfunction()
 add_runtests(test-quiet     "-a -s")
 add_runtests(test-am        "-a -am")
 add_runtests(test-full      "-a -p -r")
-# !flaky means that it'll skip all tests using the flaky keyword
-add_runtests(test-nonflaky  "-a -p !flaky")
-add_runtests(test-ci        "-a -p !flaky -r -rm")
+# ~flaky means that it'll ignore results of tests using the flaky keyword
+add_runtests(test-nonflaky  "-a -p ~flaky ~timing-dependent")
+add_runtests(test-ci        "-a -p ~flaky ~timing-dependent -r -rm")
 add_runtests(test-torture   "-a -t")
 add_runtests(test-event     "-a -e")

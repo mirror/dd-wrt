@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_SSL_FALSESTART 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_SSL_FALSESTART 3 "August 22, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_SSL_FALSESTART \- TLS false start
@@ -34,9 +36,9 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSL_FALSESTART, long enable);
 Pass a long as parameter set to 1L to enable or 0 to disable.
 
 This option determines whether libcurl should use false start during the TLS
-handshake. False start is a mode where a TLS client will start sending
-application data before verifying the server's Finished message, thus saving a
-round trip when performing a full handshake.
+handshake. False start is a mode where a TLS client starts sending application
+data before verifying the server's Finished message, thus saving a round trip
+when performing a full handshake.
 .SH DEFAULT
 0
 .SH PROTOCOLS
@@ -51,8 +53,8 @@ if(curl) {
 }
 .fi
 .SH AVAILABILITY
-Added in 7.42.0. This option is currently only supported by the NSS and
-Secure Transport (on iOS 7.0 or later, or OS X 10.9 or later) TLS backends.
+Added in 7.42.0. This option is currently only supported by the Secure
+Transport (on iOS 7.0 or later, or OS X 10.9 or later) TLS backend.
 .SH RETURN VALUE
 Returns CURLE_OK if false start is supported by the SSL backend, otherwise
 returns CURLE_NOT_BUILT_IN.

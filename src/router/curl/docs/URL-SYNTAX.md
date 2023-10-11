@@ -52,7 +52,7 @@ security concerns:
 
 3. Such a URL might use other schemes than you thought of or planned for.
 
-## "RFC3986 plus"
+## "RFC 3986 plus"
 
 curl recognizes a URL syntax that we call "RFC 3986 plus". It is grounded on
 the well established RFC 3986 to make sure previously written command lines and
@@ -125,7 +125,7 @@ character or string.
 
 For example, this could look like:
 
-    http://user:password@www.example.com:80/index.hmtl?foo=bar#top
+    http://user:password@www.example.com:80/index.html?foo=bar#top
 
 ## Scheme
 
@@ -197,7 +197,7 @@ of Windows.
 
 ## Port number
 
-If there's a colon after the hostname, that should be followed by the port
+If there is a colon after the hostname, that should be followed by the port
 number to use. 1 - 65535. curl also supports a blank port number field - but
 only if the URL starts with a scheme.
 
@@ -259,7 +259,7 @@ A folder list on the user's inbox:
 
     imap://user:password@mail.example.com/INBOX
 
-Select the user's inbox and fetch message with uid = 1:
+Select the user's inbox and fetch message with `uid = 1`:
 
     imap://user:password@mail.example.com/INBOX/;UID=1
 
@@ -289,26 +289,26 @@ subject line:
 
     imap://user:password@mail.example.com/INBOX?SUBJECT%20shadows
 
-Searching via the query part of the URL `?` is a search request for the results
-to be returned as message sequence numbers (MAILINDEX). It is possible to make
-a search request for results to be returned as unique ID numbers (UID) by using
-a custom curl request via `-X`. UID numbers are unique per session (and
-multiple sessions when UIDVALIDITY is the same). For example, if you are
-searching for `"foo bar"` in header+body (TEXT) and you want the matching
-MAILINDEX numbers returned then you could search via URL:
+Searching via the query part of the URL `?` is a search request for the
+results to be returned as message sequence numbers (`MAILINDEX`). It is
+possible to make a search request for results to be returned as unique ID
+numbers (`UID`) by using a custom curl request via `-X`. `UID` numbers are
+unique per session (and multiple sessions when `UIDVALIDITY` is the same). For
+example, if you are searching for `"foo bar"` in header+body (`TEXT`) and you
+want the matching `MAILINDEX` numbers returned then you could search via URL:
 
     imap://user:password@mail.example.com/INBOX?TEXT%20%22foo%20bar%22
 
-.. but if you wanted matching UID numbers you would have to use a custom request:
+If you want matching `UID` numbers you have to use a custom request:
 
     imap://user:password@mail.example.com/INBOX -X "UID SEARCH TEXT \"foo bar\""
 
 For more information about IMAP commands please see RFC 9051. For more
 information about the individual components of an IMAP URL please see RFC 5092.
 
-* Note old curl versions would FETCH by message sequence number when UID was
-specified in the URL. That was a bug fixed in 7.62.0, which added MAILINDEX to
-FETCH by mail sequence number.
+* Note old curl versions would `FETCH` by message sequence number when `UID`
+was specified in the URL. That was a bug fixed in 7.62.0, which added
+`MAILINDEX` to `FETCH` by mail sequence number.
 
 ## LDAP
 
@@ -317,15 +317,15 @@ Name, Attributes, Scope, Filter and Extension for a LDAP search. Each field is
 separated by a question mark and when that field is not required an empty
 string with the question mark separator should be included.
 
-Search for the DN as `My Organisation`:
+Search for the `DN` as `My Organization`:
 
-    ldap://ldap.example.com/o=My%20Organisation
+    ldap://ldap.example.com/o=My%20Organization
 
-the same search but will only return postalAddress attributes:
+the same search but will only return `postalAddress` attributes:
 
-    ldap://ldap.example.com/o=My%20Organisation?postalAddress
+    ldap://ldap.example.com/o=My%20Organization?postalAddress
 
-Search for an empty DN and request information about the
+Search for an empty `DN` and request information about the
 `rootDomainNamingContext` attribute for an Active Directory server:
 
     ldap://ldap.example.com/?rootDomainNamingContext
@@ -360,6 +360,9 @@ share and directory or the share to upload to and as such, may not be omitted.
 If the user name is embedded in the URL then it must contain the domain name
 and as such, the backslash must be URL encoded as %2f.
 
+When uploading to SMB, the size of the file needs to be known ahead of time,
+meaning that you can upload a file passed to curl over a pipe like stdin.
+
 curl supports SMB version 1 (only)
 
 ## SMTP
@@ -376,7 +379,7 @@ The default smtp port is 25. Some servers use port 587 as an alternative.
 
 ## RTMP
 
-There's no official URL spec for RTMP so libcurl uses the URL syntax supported
+There is no official URL spec for RTMP so libcurl uses the URL syntax supported
 by the underlying librtmp library. It has a syntax where it wants a
 traditional URL, followed by a space and a series of space-separated
 `name=value` pairs.

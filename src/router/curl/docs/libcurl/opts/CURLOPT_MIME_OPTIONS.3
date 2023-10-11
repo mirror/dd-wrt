@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_MIME_OPTIONS 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_MIME_OPTIONS 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_MIME_OPTIONS \- set MIME option flags
@@ -46,7 +48,7 @@ carriage return and line feed to %22, %0D and %0A respectively.
 Before version 7.81.0, percent-encoding was never applied.
 
 HTTP browsers used to do backslash-escaping in the past but have over time
-transitioned to use percent-encoding. This option allows to address
+transitioned to use percent-encoding. This option allows one to address
 server-side applications that have not yet have been converted.
 
 As an example, consider field or file name \fIstrange\\name"kind\fP.
@@ -89,4 +91,5 @@ Option added in 7.81.0.
 .SH RETURN VALUE
 Returns CURLE_OK
 .SH "SEE ALSO"
-.BR CURLOPT_MIMEPOST "(3), " CURLOPT_HTTPPOST "(3)"
+.BR CURLOPT_HTTPPOST (3),
+.BR CURLOPT_MIMEPOST (3)

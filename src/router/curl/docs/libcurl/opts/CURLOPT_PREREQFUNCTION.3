@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 2021 - 2022, Max Dymond, <max.dymond@microsoft.com>, et al.
+.\" * Copyright (C) Max Dymond, <max.dymond@microsoft.com>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PREREQFUNCTION 3 "January 05, 2022" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_PREREQFUNCTION 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_PREREQFUNCTION \- user callback called when a connection has been
@@ -58,20 +60,20 @@ The callback function must return \fICURL_PREREQFUNC_OK\fP on success, or
 
 This function is passed the following arguments:
 .IP conn_primary_ip
-A nul-terminated pointer to a C string containing the primary IP of the remote
-server established with this connection. For FTP, this is the IP for the
-control connection. IPv6 addresses are represented without surrounding
+A null-terminated pointer to a C string containing the primary IP of the
+remote server established with this connection. For FTP, this is the IP for
+the control connection. IPv6 addresses are represented without surrounding
 brackets.
 .IP conn_local_ip
-A nul-terminated pointer to a C string containing the originating IP for this
+A null-terminated pointer to a C string containing the originating IP for this
 connection. IPv6 addresses are represented without surrounding brackets.
 .IP conn_primary_port
 The primary port number on the remote server established with this connection.
 For FTP, this is the port for the control connection. This can be a TCP or a
-UDP port number dependending on the protocol.
+UDP port number depending on the protocol.
 .IP conn_local_port
 The originating port number for this connection. This can be a TCP or a UDP
-port number dependending on the protocol.
+port number depending on the protocol.
 .IP clientp
 The pointer you set with \fICURLOPT_PREREQDATA(3)\fP.
 .SH DEFAULT
@@ -101,4 +103,6 @@ Added in 7.80.0
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR CURLOPT_PREREQDATA "(3) "
+.BR CURLINFO_PRIMARY_IP (3),
+.BR CURLINFO_PRIMARY_PORT (3),
+.BR CURLOPT_PREREQDATA (3)

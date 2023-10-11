@@ -5,8 +5,8 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2012 - 2016, Linus Nielsen Feltzing, <linus@haxx.se>
- * Copyright (C) 2012 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Linus Nielsen Feltzing, <linus@haxx.se>
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,6 +18,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -43,13 +45,6 @@
 
 #define HASHKEY_SIZE 128
 
-static void conn_llist_dtor(void *user, void *element)
-{
-  struct connectdata *conn = element;
-  (void)user;
-  conn->bundle = NULL;
-}
-
 static CURLcode bundle_create(struct connectbundle **bundlep)
 {
   DEBUGASSERT(*bundlep == NULL);
@@ -60,17 +55,12 @@ static CURLcode bundle_create(struct connectbundle **bundlep)
   (*bundlep)->num_connections = 0;
   (*bundlep)->multiuse = BUNDLE_UNKNOWN;
 
-  Curl_llist_init(&(*bundlep)->conn_list, (Curl_llist_dtor) conn_llist_dtor);
+  Curl_llist_init(&(*bundlep)->conn_list, NULL);
   return CURLE_OK;
 }
 
 static void bundle_destroy(struct connectbundle *bundle)
 {
-  if(!bundle)
-    return;
-
-  Curl_llist_destroy(&bundle->conn_list, NULL);
-
   free(bundle);
 }
 
@@ -117,6 +107,7 @@ int Curl_conncache_init(struct conncache *connc, int size)
   connc->closure_handle = curl_easy_init();
   if(!connc->closure_handle)
     return 1; /* bad */
+  connc->closure_handle->internal = true;
 
   Curl_hash_init(&connc->hash, size, Curl_hash_str,
                  Curl_str_key_compare, free_bundle_hash_entry);
@@ -132,13 +123,11 @@ void Curl_conncache_destroy(struct conncache *connc)
 }
 
 /* creates a key to find a bundle for this connection */
-static void hashkey(struct connectdata *conn, char *buf,
-                    size_t len,  /* something like 128 is fine */
-                    const char **hostp)
+static void hashkey(struct connectdata *conn, char *buf, size_t len)
 {
   const char *hostname;
   long port = conn->remote_port;
-
+  DEBUGASSERT(len >= HASHKEY_SIZE);
 #ifndef CURL_DISABLE_PROXY
   if(conn->bits.httpproxy && !conn->bits.tunnel_proxy) {
     hostname = conn->http_proxy.host.name;
@@ -151,12 +140,12 @@ static void hashkey(struct connectdata *conn, char *buf,
   else
     hostname = conn->host.name;
 
-  if(hostp)
-    /* report back which name we used */
-    *hostp = hostname;
-
-  /* put the number first so that the hostname gets cut off if too long */
-  msnprintf(buf, len, "%ld%s", port, hostname);
+  /* put the numbers first so that the hostname gets cut off if too long */
+#ifdef ENABLE_IPV6
+  msnprintf(buf, len, "%u/%ld/%s", conn->scope_id, port, hostname);
+#else
+  msnprintf(buf, len, "%ld/%s", port, hostname);
+#endif
   Curl_strntolower(buf, buf, len);
 }
 
@@ -179,14 +168,13 @@ size_t Curl_conncache_size(struct Curl_easy *data)
 struct connectbundle *
 Curl_conncache_find_bundle(struct Curl_easy *data,
                            struct connectdata *conn,
-                           struct conncache *connc,
-                           const char **hostp)
+                           struct conncache *connc)
 {
   struct connectbundle *bundle = NULL;
   CONNCACHE_LOCK(data);
   if(connc) {
     char key[HASHKEY_SIZE];
-    hashkey(conn, key, sizeof(key), hostp);
+    hashkey(conn, key, sizeof(key));
     bundle = Curl_hash_pick(&connc->hash, key, strlen(key));
   }
 
@@ -233,8 +221,7 @@ CURLcode Curl_conncache_add_conn(struct Curl_easy *data)
   DEBUGASSERT(conn);
 
   /* *find_bundle() locks the connection cache */
-  bundle = Curl_conncache_find_bundle(data, conn, data->state.conn_cache,
-                                      NULL);
+  bundle = Curl_conncache_find_bundle(data, conn, data->state.conn_cache);
   if(!bundle) {
     char key[HASHKEY_SIZE];
 
@@ -243,7 +230,7 @@ CURLcode Curl_conncache_add_conn(struct Curl_easy *data)
       goto unlock;
     }
 
-    hashkey(conn, key, sizeof(key), NULL);
+    hashkey(conn, key, sizeof(key));
 
     if(!conncache_add_bundle(data->state.conn_cache, key, bundle)) {
       bundle_destroy(bundle);
@@ -260,7 +247,7 @@ CURLcode Curl_conncache_add_conn(struct Curl_easy *data)
                "The cache now contains %zu members",
                conn->connection_id, connc->num_conn));
 
-  unlock:
+unlock:
   CONNCACHE_UNLOCK(data);
 
   return result;
@@ -500,7 +487,7 @@ Curl_conncache_extract_oldest(struct Curl_easy *data)
       conn = curr->ptr;
 
       if(!CONN_INUSE(conn) && !conn->bits.close &&
-         !conn->bits.connect_only) {
+         !conn->connect_only) {
         /* Set higher score for the age passed since the connection was used */
         score = Curl_timediff(now, conn->lastused);
 
@@ -531,6 +518,7 @@ void Curl_conncache_close_all_connections(struct conncache *connc)
 {
   struct connectdata *conn;
   char buffer[READBUFFER_MIN + 1];
+  SIGPIPE_VARIABLE(pipe_st);
   if(!connc->closure_handle)
     return;
   connc->closure_handle->state.buffer = buffer;
@@ -538,7 +526,6 @@ void Curl_conncache_close_all_connections(struct conncache *connc)
 
   conn = conncache_find_first_connection(connc);
   while(conn) {
-    SIGPIPE_VARIABLE(pipe_st);
     sigpipe_ignore(connc->closure_handle, &pipe_st);
     /* This will remove the connection from the cache */
     connclose(conn, "kill all");
@@ -550,15 +537,12 @@ void Curl_conncache_close_all_connections(struct conncache *connc)
   }
 
   connc->closure_handle->state.buffer = NULL;
-  if(connc->closure_handle) {
-    SIGPIPE_VARIABLE(pipe_st);
-    sigpipe_ignore(connc->closure_handle, &pipe_st);
+  sigpipe_ignore(connc->closure_handle, &pipe_st);
 
-    Curl_hostcache_clean(connc->closure_handle,
-                         connc->closure_handle->dns.hostcache);
-    Curl_close(&connc->closure_handle);
-    sigpipe_restore(&pipe_st);
-  }
+  Curl_hostcache_clean(connc->closure_handle,
+                       connc->closure_handle->dns.hostcache);
+  Curl_close(&connc->closure_handle);
+  sigpipe_restore(&pipe_st);
 }
 
 #if 0

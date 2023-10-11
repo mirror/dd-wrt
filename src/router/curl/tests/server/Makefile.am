@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
 #
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
 #
 ###########################################################################
 AUTOMAKE_OPTIONS = foreign nostdinc
@@ -33,6 +35,9 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 AM_CPPFLAGS = -I$(top_srcdir)/include        \
               -I$(top_builddir)/lib          \
               -I$(top_srcdir)/lib
+
+disabled_CPPFLAGS = $(AM_CPPFLAGS) \
+              -I$(top_srcdir)/src
 
 # Prevent LIBS from being used for all link targets
 LIBS = $(BLANK_AT_MAKETIME)
@@ -52,7 +57,7 @@ CS_1 =
 CS_ = $(CS_0)
 
 checksrc:
-	$(CHECKSRC)@PERL@ $(top_srcdir)/lib/checksrc.pl $(srcdir)/*.[ch]
+	$(CHECKSRC)@PERL@ $(top_srcdir)/scripts/checksrc.pl $(srcdir)/*.[ch]
 
 if CURLDEBUG
 # for debug builds, we scan the sources on all regular make invokes

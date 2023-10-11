@@ -28,14 +28,17 @@ Funny-head: yesyes
 #
 # Client-side
 <client>
+<features>
+h2c
+</features>
 <server>
 http
 http/2
 </server>
- <name>
+<name>
 HTTP/2 HEAD with Upgrade:
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTP2PORT/%TESTNUMBER --http2 --head
 </command>
 </client>

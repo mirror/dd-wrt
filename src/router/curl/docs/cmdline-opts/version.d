@@ -1,3 +1,5 @@
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+SPDX-License-Identifier: curl
 Long: version
 Short: V
 Help: Show version number and quit
@@ -5,16 +7,19 @@ Category: important curl
 Example: --version
 Added: 4.0
 See-also: help manual
+Multi: custom
 ---
 Displays information about curl and the libcurl version it uses.
 
 The first line includes the full version of curl, libcurl and other 3rd party
 libraries linked with the executable.
 
-The second line (starts with "Protocols:") shows all protocols that libcurl
+The second line (starts with "Release-Date:") shows the release date.
+
+The third line (starts with "Protocols:") shows all protocols that libcurl
 reports to support.
 
-The third line (starts with "Features:") shows specific features libcurl
+The fourth line (starts with "Features:") shows specific features libcurl
 reports to offer. Available features include:
 .RS
 .IP "alt-svc"
@@ -80,3 +85,4 @@ Unix sockets support is provided.
 .IP "zstd"
 Automatic decompression (via zstd) of compressed files over HTTP is supported.
 .RE
+.IP

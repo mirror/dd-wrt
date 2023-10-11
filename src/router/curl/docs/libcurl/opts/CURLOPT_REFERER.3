@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -18,9 +18,11 @@
 .\" * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 .\" * KIND, either express or implied.
 .\" *
+.\" * SPDX-License-Identifier: curl
+.\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_REFERER 3 "November 26, 2021" "libcurl 7.82.0" "curl_easy_setopt options"
+.TH CURLOPT_REFERER 3 "September 26, 2023" "ibcurl 8.4.0" libcurl
 
 .SH NAME
 CURLOPT_REFERER \- the HTTP referer header
@@ -31,10 +33,9 @@ CURLOPT_REFERER \- the HTTP referer header
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_REFERER, char *where);
 .fi
 .SH DESCRIPTION
-Pass a pointer to a null-terminated string as parameter. It will be used to
-set the Referer: header in the http request sent to the remote server. This
-can be used to fool servers or scripts. You can also set any custom header
-with \fICURLOPT_HTTPHEADER(3)\fP.
+Pass a pointer to a null-terminated string as parameter. It is used to set the
+Referer: header field in the HTTP request sent to the remote server. You can
+set any custom header with \fICURLOPT_HTTPHEADER(3)\fP.
 
 The application does not have to keep the string around after setting this
 option.
@@ -60,5 +61,7 @@ If built with HTTP support
 Returns CURLE_OK if HTTP support is enabled, CURLE_UNKNOWN_OPTION if not, or
 CURLE_OUT_OF_MEMORY if there was insufficient heap space.
 .SH "SEE ALSO"
-.BR CURLOPT_USERAGENT "(3), " CURLOPT_HTTPHEADER "(3), "
-.BR CURLINFO_REFERER "(3), "
+.BR CURLINFO_REDIRECT_URL (3),
+.BR CURLINFO_REFERER (3),
+.BR CURLOPT_HTTPHEADER (3),
+.BR CURLOPT_USERAGENT (3)

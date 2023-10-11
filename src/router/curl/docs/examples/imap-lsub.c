@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,10 +18,12 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 
 /* <DESC>
- * IMAP example to list the subscribed folders
+ * List the subscribed IMAP folders
  * </DESC>
  */
 
@@ -48,7 +50,7 @@ int main(void)
     /* This is just the server URL */
     curl_easy_setopt(curl, CURLOPT_URL, "imap://imap.example.com");
 
-    /* Set the LSUB command. Note the syntax is very similar to that of a LIST
+    /* Set the LSUB command. Note the syntax is similar to that of a LIST
        command. */
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "LSUB \"\" *");
 
