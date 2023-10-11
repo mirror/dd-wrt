@@ -53,6 +53,7 @@
 #include "memdebug.h"
 
 
+#if 0
 void Curl_debug(struct Curl_easy *data, curl_infotype type,
                 char *ptr, size_t size)
 {
@@ -83,7 +84,7 @@ void Curl_debug(struct Curl_easy *data, curl_infotype type,
     }
   }
 }
-
+#endif
 
 /* Curl_failf() is for messages stating why we failed.
  * The message SHALL NOT include any LF or CR.

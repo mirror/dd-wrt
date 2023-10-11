@@ -51,8 +51,12 @@ CURLcode Curl_trc_init(void);
 CURLcode Curl_trc_opt(const char *config);
 
 /* the function used to output verbose information */
+#if !defined(CURL_DISABLE_VERBOSE_STRINGS)
 void Curl_debug(struct Curl_easy *data, curl_infotype type,
                 char *ptr, size_t size);
+#else
+#define Curl_debug(...) do { } while(0)
+#endif
 
 /**
  * Output an informational message when transfer's verbose logging is enabled.
@@ -135,10 +139,14 @@ void Curl_trc_cf_infof(struct Curl_easy *data, struct Curl_cfilter *cf,
 
 #if defined(HAVE_VARIADIC_MACROS_C99)
 #define infof(...)  Curl_nop_stmt
+#undef failf
+#define failf(...) Curl_nop_stmt
 #define CURL_TRC_CF(...)  Curl_nop_stmt
 #define Curl_trc_cf_infof(...)  Curl_nop_stmt
 #elif defined(HAVE_VARIADIC_MACROS_GCC)
 #define infof(x...)  Curl_nop_stmt
+#undef failf
+#define failf(...) Curl_nop_stmt
 #define CURL_TRC_CF(x...)  Curl_nop_stmt
 #define Curl_trc_cf_infof(x...)  Curl_nop_stmt
 #else
