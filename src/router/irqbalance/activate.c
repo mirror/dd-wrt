@@ -96,13 +96,13 @@ error:
 		info->irq, strerror(errsave));
 	switch (errsave) {
 	case ENOSPC: /* Specified CPU APIC is full. */
-	case EAGAIN: /* Interrupted by signal. */
 	case EBUSY: /* Affinity change already in progress. */
-	case EINVAL: /* IRQ would be bound to no CPU. */
+	case EAGAIN: /* Interrupted by signal. */
 	case ERANGE: /* CPU in mask is offline. */
 	case ENOMEM: /* Kernel cannot allocate CPU mask. */
 		/* Do not blacklist the IRQ on transient errors. */
 		break;
+	case EINVAL: /* IRQ would be bound to no CPU. */
 	default:
 		/* Any other error is considered permanent. */
 		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
