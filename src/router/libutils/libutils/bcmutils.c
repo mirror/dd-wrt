@@ -2070,6 +2070,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 				}
 			}
 			if (!match) {
+				// strlen() depends on NULL termination
 				size_t slen = strlen(new_name);
 				if (slen > size) {
 					cprintf("%s(): overflow\n", __FUNCTION__);	// avoid 
@@ -2077,7 +2078,8 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 					new_name[size - 1] = '\0';
 					return 1;
 				}
-				*(new_name + slen) = *(old_name + i);
+				*(new_name + slen) = *(old_name + i); // Copy character over
+				*(new_name + slen + 1) = '\0'; // add a NULL terminator so strlen() works
 			}
 		}
 
