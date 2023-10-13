@@ -372,10 +372,6 @@ int detect_gpt_partmap(SECTION * section, int level)
 		return 0;
 
 	for (blocksize = 512; blocksize <= 4096; blocksize <<= 1) {
-		if (blocksize == 0xf0)
-		    break;
-		if (blocksize == 4096)
-		    blocksize = 0xf0;
 		/* get LBA 1: GPT header */
 		if (get_buffer(section, blocksize, blocksize, (void **)&buf) < blocksize)
 			continue;
