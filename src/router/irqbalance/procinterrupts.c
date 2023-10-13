@@ -107,10 +107,10 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 	static int compiled = 0;
 	/* Note: Last entry is a catchall */
 	static struct irq_match matches[] = {
-		{ "eth.*" ,{NULL} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
-		{ "[A-Z0-9]{4}[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
-		{ "PNP[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
-		{ ".*", {NULL}, NULL, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{ "eth.*" , {0},NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
+		{ "[A-Z0-9]{4}[0-9a-f]{4}", {0}, check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{ "PNP[0-9a-f]{4}", {0}, check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{ ".*", {0}, NULL, IRQ_TYPE_LEGACY, IRQ_OTHER},
 		{NULL},
 	};
 
@@ -178,12 +178,14 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 	}
 
 #ifdef AARCH64
-	if (savedptr && strlen(savedptr) > 0) {
+	if (savedptr && strlen(savedptr) > 0)
 		snprintf(irq_fullname, PATH_MAX, "%s %s", last_token, savedptr);
-		tmp = strchr(irq_fullname, '\n');
-		if (tmp)
-			*tmp = 0;
-	}
+	else
+		snprintf(irq_fullname, PATH_MAX, "%s", last_token);
+
+	tmp = strchr(irq_fullname, '\n');
+	if (tmp)
+		*tmp = 0;
 #else
 	snprintf(irq_fullname, PATH_MAX, "%s", last_token);
 #endif
