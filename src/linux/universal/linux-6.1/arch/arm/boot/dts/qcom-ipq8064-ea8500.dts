@@ -9,6 +9,16 @@
 		device_type = "memory";
 	};
 
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		rsvd@41200000 {
+			reg = <0x41200000 0x300000>;
+			no-map;
+		};
+	};
+
 	aliases {
 		mdio-gpio0 = &mdio0;
 
