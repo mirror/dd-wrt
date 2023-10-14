@@ -1454,7 +1454,7 @@ EJ_VISIBLE void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 		return;
 	//exclude proftpd bind mount points and don't display the first 3 lines which are header and rootfs
 
-	if ((fp = popen("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +3", "rb"))) {
+	if ((fp = popen("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $2 \" \" $5 \" \" $6}' | tail -n +3", "rb"))) {
 		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
 				bzero(used, sizeof(used));
