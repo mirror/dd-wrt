@@ -257,3 +257,6 @@
 &adm_dma {
 	status = "okay";
 };
+
+/delete-node/ &pcie2_pins;
+/delete-node/ &pcie2;
