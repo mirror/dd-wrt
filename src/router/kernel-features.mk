@@ -181,6 +181,9 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_KERNELLTO_CP_CLONE)" = "y" ]; then \
 		sed -i 's/\# CONFIG_LTO_CP_CLONE is not set/CONFIG_LTO_CP_CLONE=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_LTO_CP_CLONE=y" >> $(LINUXDIR)/.config; \
+	else \
+		echo "# CONFIG_LTO_CP_CLONE is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_IPETH)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config; \
