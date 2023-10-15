@@ -220,6 +220,24 @@
 };
 
 &qcom_pinmux {
+	led_pins: led_pins {
+		mux {
+			pins = "gpio7", "gpio8", "gpio9", "gpio26";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio15", "gpio16", "gpio64", "gpio65";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
 	uart0_pins: uart0_pins {
 		mux {
 			pins = "gpio10", "gpio11";

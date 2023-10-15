@@ -26,6 +26,26 @@
 
 };
 
+&qcom_pinmux {
+	button_pins: button_pins {
+		mux {
+			pins = "gpio65", "gpio67", "gpio68";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio6", "gpio53", "gpio54";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+};
+
 &sata_phy {
 	status = "okay";
 };
