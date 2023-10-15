@@ -116,17 +116,6 @@
 #include <linux/of.h>
 #endif
 
-#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
-#include <linux/of.h>
-#endif
-
-#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
-#include <linux/of.h>
-#endif
-
-#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
-#include <linux/of.h>
-#endif
 
 static int kernel_init(void *);
 
