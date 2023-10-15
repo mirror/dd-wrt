@@ -203,7 +203,7 @@
 
 	/* Switch from documentation require at least 10ms for reset */
 	reset-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
-	reset-post-delay-us = <12000>;
+	reset-duration = <12>;
 
 			phy0: ethernet-phy@0 {
 				device_type = "ethernet-phy";
