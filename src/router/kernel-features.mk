@@ -678,4 +678,13 @@ define kernelfeatures
 		sed -i 's/\CONFIG_RAID6_PQ=m/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_RAID6_PQ=y/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_BATMANADV)" = "y" ] && [ "$(KERNELVERSION)" = "6.1" ]; then \
+		sed -i 's/\# CONFIG_BATMAN_ADV is not set/CONFIG_BATMAN_ADV=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_BATMAN_ADV_BATMAN_V=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BATMAN_ADV_BLA=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BATMAN_ADV_DAT=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BATMAN_ADV_NC is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BATMAN_ADV_MCAST=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BATMAN_ADV_DEBUG is not set" >> $(LINUXDIR)/.config; \
+	fi
 endef
