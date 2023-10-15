@@ -3,7 +3,6 @@
 #include <asm/setup.h>
 #include <libfdt.h>
 
-#ifndef CONFIG_ARCH_MVEBU
 #if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND)
 #define do_extend_cmdline 1
 #elif defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
@@ -148,6 +147,15 @@ static char *append_rootblock(char *dest, const char *str, int len, void *fdt)
 			dest += i;
 		}
 	}
+#ifdef CONFIG_ARCH_MVEBU
+	else {
+		len = strlen(str);
+		if (len + 1 < COMMAND_LINE_SIZE) {
+			memcpy(dest, str, len);
+			dest += len;
+		}
+	}
+#endif
 	return dest;
 }
 #endif
@@ -317,4 +325,3 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
 
 	return fdt_pack(fdt);
 }
-#endif
