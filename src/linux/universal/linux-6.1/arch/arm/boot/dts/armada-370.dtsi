@@ -254,7 +254,7 @@
 				clocks = <&gateclk 23>;
 				clock-names = "cesa0";
 				marvell,crypto-srams = <&crypto_sram>;
-				marvell,crypto-sram-size = <0x7e0>;
+				marvell,crypto-sram-size = <0x800>;
 			};
 		};
 
@@ -275,10 +275,15 @@
 			 * cpuidle workaround.
 			 */
 			idle-sram@0 {
+				status = "disabled";
 				reg = <0x0 0x20>;
 			};
 		};
 	};
+};
+
+&coherencyfab {
+	broken-idle;
 };
 
 /*

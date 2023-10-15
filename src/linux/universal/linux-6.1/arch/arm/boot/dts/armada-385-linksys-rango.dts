@@ -12,8 +12,22 @@
 
 / {
 	model = "Linksys WRT3200ACM";
-	compatible = "linksys,rango", "linksys,armada385", "marvell,armada385",
-		     "marvell,armada380";
+	compatible = "linksys,wrt3200acm", "linksys,rango", "linksys,armada385",
+		     "marvell,armada385", "marvell,armada380";
+
+	switch {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		mvsw61xx {	
+			compatible = "marvell,88e6352";
+			status = "okay";
+			reg = <0x10>;
+
+			mii-bus = <&mdio>;
+			cpu-port-0 = <5>;
+			cpu-port-1 = <6>;
+		};
+	};
 };
 
 &expander0 {
@@ -154,6 +168,30 @@
 					label = "unused_area";
 					reg = <0x280000 0x680000>;   /* 6.5MB */
 				};
+	};
+};
+
+&pcie1 {
+	mwlwifi {
+		marvell,chainmask = <4 4>;
+	};
+};
+
+&pcie2 {
+	mwlwifi {
+		marvell,chainmask = <4 4>;
+	};
+};
+
+&pcie1 {
+	mwlwifi {
+		marvell,chainmask = <4 4>;
+	};
+};
+
+&pcie2 {
+	mwlwifi {
+		marvell,chainmask = <4 4>;
 	};
 };
 
