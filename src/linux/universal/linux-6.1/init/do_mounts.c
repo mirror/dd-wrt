@@ -693,6 +693,9 @@ void __init prepare_namespace(void)
 		       root_delay);
 		ssleep(root_delay);
 	}
+#ifdef CONFIG_ARCH_MVEBU
+	strcpy(saved_root_name, "/dev/ubiblock0_0");
+#endif
 
 	/*
 	 * wait for the known devices to complete their probing
