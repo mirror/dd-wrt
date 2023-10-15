@@ -103,12 +103,13 @@ SECTIONS
 
   _edata = .;
 
+#ifdef CONFIG_ARCH_IPQ40XX
   .appended_dtb : {
     /* leave space for appended DTB */
     . += 0x100000;
   }
-
   _edata_dtb = .;
+#endif
 
   /*
    * The image_end section appears after any additional loadable sections
@@ -147,4 +148,9 @@ SECTIONS
 
   ARM_ASSERTS
 }
+
+#ifdef CONFIG_ARCH_IPQ40XX
 ASSERT(_edata_real == _edata_dtb, "error: zImage file size is incorrect");
+#else
+ASSERT(_edata_real == _edata, "error: zImage file size is incorrect");
+#endif
