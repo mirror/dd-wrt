@@ -367,13 +367,21 @@ endif
 	#cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 2048 -o ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin ubinize.cfg && cd ..
 
 
+ifeq ($(KERNELVERSION),6.1)
 	( dd if=$(ARCH)-uclibc/uImage-armada-xp-linksys-mamba bs=4096k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-caiman bs=4096k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-caiman-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-cobra bs=4096k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-cobra-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-shelby bs=4096k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-shelby-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-rango bs=6144k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/zImage-armada-385-linksys-venom bs=4096k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
-
+else
+	( dd if=$(ARCH)-uclibc/uImage-armada-xp-linksys-mamba bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
+	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-caiman bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-caiman-squashfs-factory.img
+	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-cobra bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-cobra-squashfs-factory.img
+	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-shelby bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-shelby-squashfs-factory.img
+	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-rango bs=6144k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
+	( dd if=$(ARCH)-uclibc/zImage-armada-385-linksys-venom bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
+endif
 	-./tools/trx_n -m 45000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 	-./tools/trx_n -m 45000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900acv2.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-cobra-squashfs-factory.img
 	-./tools/trx_n -m 45000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1200ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-caiman-squashfs-factory.img
