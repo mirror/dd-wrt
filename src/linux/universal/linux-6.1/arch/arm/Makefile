@@ -69,7 +69,7 @@ endif
 # macro, but instead defines a whole series of macros which makes
 # testing for a specific architecture or later rather impossible.
 arch-$(CONFIG_CPU_32v7M)	=-D__LINUX_ARM_ARCH__=7 -march=armv7-m
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+
 ifeq ($(CONFIG_ARCH_ALPINE),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
@@ -78,12 +78,17 @@ ifeq ($(CONFIG_ARCH_QCOM),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
 else
+ifeq ($(CONFIG_ARCH_MVEVU),y)
+#arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+#CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfpv3-d16
+else
 ifeq ($(CONFIG_ARM_VIRT_EXT),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
 else
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7-a
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
+endif
 endif
 endif
 endif

@@ -3,6 +3,7 @@
 #include <asm/setup.h>
 #include <libfdt.h>
 
+#ifndef CONFIG_ARCH_MVEBU
 #if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND)
 #define do_extend_cmdline 1
 #elif defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
@@ -316,3 +317,4 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
 
 	return fdt_pack(fdt);
 }
+#endif
