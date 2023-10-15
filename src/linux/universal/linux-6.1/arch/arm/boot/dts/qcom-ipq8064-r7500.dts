@@ -4,7 +4,7 @@
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
-	model = "Netgear Nighthawk X4 R7500";
+	model = "Netgear R7500 Nighthawk X4";
 	compatible = "netgear,r7500", "qcom,ipq8064";
 
 	memory@0 {

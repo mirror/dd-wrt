@@ -1,7 +1,7 @@
 #include "qcom-ipq8065-nighthawk.dtsi"
 
 / {
-	model = "Netgear Nighthawk X4S R7800";
+	model = "Netgear R7800 Nighthawk X4S";
 	compatible = "netgear,r7800", "qcom,ipq8065", "qcom,ipq8064";
 
 	keys {
