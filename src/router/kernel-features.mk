@@ -342,6 +342,8 @@ define kernelfeatures
 		echo "CONFIG_F2FS_CHECK_FS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_FAULT_INJECTION=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_CRYPTO_DRBG_HASH is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_F2FS_FS_COMPRESSION is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_F2FS_FS_IOSTAT=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_F2FS)" != "y" ]; then \
 		sed -i 's/\CONFIG_F2FS_FS=m/# CONFIG_F2FS_FS is not set/g' $(LINUXDIR)/.config; \
@@ -490,6 +492,7 @@ define kernelfeatures
 		echo "# CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BTRFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BTRFS_ASSERT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BTRFS_FSREF_VERIFY is not set" >> $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\CONFIG_BTRFS_FS=m/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 	fi
