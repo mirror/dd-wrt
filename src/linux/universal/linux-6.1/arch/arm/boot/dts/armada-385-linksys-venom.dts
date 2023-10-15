@@ -53,10 +53,9 @@
 		append-rootblock = "root=/dev/mtdblock";
 	};
 
-	switch {
+		mvsw61xx {	
 		#address-cells = <1>;
 		#size-cells = <0>;
-		mvsw61xx {	
 			compatible = "marvell,88e6352";
 			status = "okay";
 			reg = <0x10>;
@@ -65,7 +64,6 @@
 			cpu-port-0 = <5>;
 			cpu-port-1 = <6>;
 		};
-	};
 
 };
 
@@ -172,9 +170,9 @@
 					reg = <0x900000 0x7b00000>;  /* 123MB */
 				};
 
-				partition@c00000 {
+				partition@d00000 {
 					label = "rootfs";
-					reg = <0xc00000 0x7800000>;  /* 120MB */
+					reg = <0xd00000 0x7700000>;  /* 120MB */
 				};
 
 				/* kernel2 overlaps with rootfs2 by design */
@@ -183,9 +181,9 @@
 					reg = <0x8400000 0x7b00000>; /* 123MB */
 				};
 
-				partition@8700000 {
+				partition@8800000 {
 					label = "rootfs2";
-					reg = <0x8700000 0x7700000>;  /* 120MB */
+					reg = <0x8800000 0x7600000>;  /* 120MB */
 				};
 
 				partition@fe00000 {

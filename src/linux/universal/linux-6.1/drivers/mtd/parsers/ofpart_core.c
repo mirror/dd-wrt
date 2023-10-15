@@ -91,12 +91,10 @@ static int parse_fixed_partitions(struct mtd_info *master,
 #ifdef CONFIG_ARCH_MVEBU
 	for (i = 0;i < COMMAND_LINE_SIZE - sizeof("/dev/mtdblockxx"); i++) {
 	    if (!memcmp(&boot_command_line[i],"/dev/mtdblock",13)) {
-		    printk(KERN_INFO "found commandline\n");
 		    mangled_rootblock = boot_command_line[i + 13] - '0';
 		    break;
 	    }
 	}
-	printk(KERN_INFO "rename part %d to ubi",mangled_rootblock);
 #endif
 
 

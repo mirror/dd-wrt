@@ -210,10 +210,9 @@
 		pwms = <&gpio0 24 4000>;
 	};
 
-	switch {
+		mvsw61xx {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		mvsw61xx {
 	
 			compatible = "marvell,88e6172";
 			status = "okay";
@@ -223,7 +222,6 @@
 			cpu-port-0 = <5>;
 			cpu-port-1 = <6>;
 		};
-	};
 };
 
 &pciec {
@@ -460,9 +458,9 @@
 					reg = <0xa00000 0x2800000>;    /* 3MB */
 				};
 
-				partition@d00000 {
+				partition@e00000 {
 					label = "rootfs";
-					reg = <0xd00000 0x2500000>;    /* 37MB */
+					reg = <0xd00000 0x2400000>;    /* 37MB */
 				};
 
 				partition@3200000 {
@@ -470,9 +468,9 @@
 					reg = <0x3200000 0x2700000>;    /* 3MB */
 				};
 
-				partition@3500000 {
+				partition@3600000 {
 					label = "rootfs2";
-					reg = <0x3500000 0x2400000>;    /* 37MB */
+					reg = <0x3500000 0x2300000>;    /* 37MB */
 				};
 				
 				partition@5900000 {
