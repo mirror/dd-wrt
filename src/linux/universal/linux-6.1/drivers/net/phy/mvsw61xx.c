@@ -32,6 +32,8 @@ MODULE_AUTHOR("Nikita Nazarenko <nnazarenko@radiofid.com>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:mvsw61xx");
 
+static void mvsw6176_quirks(struct switch_dev *dev);
+
 /*
  * Register access is done through direct or indirect addressing,
  * depending on how the switch is physically connected.
@@ -814,6 +816,9 @@ static int _mvsw61xx_reset(struct switch_dev *dev, bool full)
 
 	mvsw61xx_update_state(dev);
 
+	/* Hack Hack Hack */
+	mvsw6176_quirks(dev);
+
 	/* Re-enable ports */
 	for (i = 0; i < dev->ports; i++) {
 		reg = sr16(dev, MV_PORTREG(CONTROL, i)) |
@@ -822,6 +827,121 @@ static int _mvsw61xx_reset(struct switch_dev *dev, bool full)
 	}
 
 	return 0;
+}
+
+static int smi_wait_mask_raw(struct switch_dev *dev, int addr,
+		int reg, u16 mask, u16 val)
+{
+	int i = 100;
+	u16 r;
+
+	do {
+		r = sr16(dev, addr, reg);
+		if ((r & mask) == val)
+			return 0;
+	} while (--i > 0);
+
+	return -ETIMEDOUT;
+}
+
+
+
+static u16 smisr16(struct switch_dev *dev, int addr, int reg)
+{
+	int ret;
+	u16 ind_addr;
+
+	/* Indirect read: First, make sure switch is free */
+	ret=smi_wait_mask_raw(dev, MV_SWITCH_GLOBAL2,
+		MV_SWITCH_GLOBAL2_SMI_COMMAND, MV_INDIRECT_INPROGRESS, 0);
+
+	/* Load address and request read */
+	ind_addr = MV_INDIRECT_READ | (addr << MV_INDIRECT_ADDR_S) | reg;
+	sw16(dev, MV_SWITCH_GLOBAL2, MV_SWITCH_GLOBAL2_SMI_COMMAND, ind_addr);
+
+	/* Wait until it's ready */
+	smi_wait_mask_raw(dev, MV_SWITCH_GLOBAL2, MV_SWITCH_GLOBAL2_SMI_COMMAND,
+		MV_INDIRECT_INPROGRESS, 0);
+
+	/* Read the requested data */
+	return sr16(dev, MV_SWITCH_GLOBAL2, MV_SWITCH_GLOBAL2_SMI_DATA);
+
+}
+
+static void smisw16(struct switch_dev *dev, int addr, int reg, u16 val)
+{
+	u16 ind_addr;
+
+        /* Indirect write: First, make sure switch is free */
+	smi_wait_mask_raw(dev, MV_SWITCH_GLOBAL2, MV_SWITCH_GLOBAL2_SMI_COMMAND,
+		MV_INDIRECT_INPROGRESS, 0);
+
+        /* Load the data to be written */
+        sw16(dev, MV_SWITCH_GLOBAL2, MV_SWITCH_GLOBAL2_SMI_DATA, val);
+
+        /* Wait again for switch to be free */ 
+	smi_wait_mask_raw(dev, MV_SWITCH_GLOBAL2, MV_SWITCH_GLOBAL2_SMI_COMMAND,
+		MV_INDIRECT_INPROGRESS, 0);
+
+        /* Load address, and issue write command */
+        ind_addr = MV_INDIRECT_WRITE | (addr << MV_INDIRECT_ADDR_S) | reg;
+        sw16(dev, MV_SWITCH_GLOBAL2, MV_SWITCH_GLOBAL2_SMI_COMMAND, ind_addr);
+}
+
+static void mvsw6176_quirks(struct switch_dev *dev)
+{
+	int i;
+	u16 pagereg, copperreg, copperspecreg, reg;
+
+	for (i=0; i<=MV6176_MAX_PHY; i++) {
+		pagereg=smisr16(dev, PHY_ADDR(i, PHY_PAGE_REG));
+		pagereg&=~(PHY_PAGE_MASK);
+		smisw16(dev, PHY_ADDR(i, PHY_PAGE_REG), pagereg);
+
+		copperspecreg=smisr16(dev, PHY_ADDR(i, PHY_SPECCONTROL_REG));
+		copperspecreg&=~PHY_SPECCONTROL_PWR;
+		smisw16(dev, PHY_ADDR(i, PHY_SPECCONTROL_REG), copperspecreg);
+
+		copperreg=smisr16(dev, PHY_ADDR(i, PHY_CONTROL_REG));
+		/* Reset copper PHY. Added to overcome problems with Broadcom and Netgear
+		 * EEE-enabled switches that didn't set the link up after software reset
+		 * of the MVSW.
+		 */
+		smisw16(dev, PHY_ADDR(i, PHY_CONTROL_REG), (copperreg | MV_CONTROL_RESET));
+
+		/* Cleanup after PHY reset: Set autonegotiation, set mode advertisement. */
+		copperreg &= ~PHY_CONTROL_PWR;
+		copperreg |= (MV_CONTROL_ANEG | MV_CONTROL_ANEG_RESTART);
+		smisw16(dev, PHY_ADDR(i, PHY_CONTROL_REG), copperreg);
+
+		reg=smisr16(dev, PHY_ADDR(i, PHY_1000CONTROL_REG));
+		reg |= (MV_1000CONTROL_ADV1000FULL | MV_1000CONTROL_ADV1000HALF);
+		smisw16(dev, PHY_ADDR(i, PHY_1000CONTROL_REG), reg);
+
+		reg=smisr16(dev, PHY_ADDR(i, PHY_ANEG_REG));
+		reg &= ~(MV_ANEG_ADV100T4 | MV_ANEG_ADVPAUSE | MV_ANEG_ADVASYMPAUSE);
+		reg |= (MV_ANEG_ADV10HALF | MV_ANEG_ADV10FULL | MV_ANEG_ADV100HALF | MV_ANEG_ADV100FULL);
+		smisw16(dev, PHY_ADDR(i, PHY_ANEG_REG), reg);
+	}
+
+	/* Enable forwarding (STP mode) */
+	for (i = 0; i < dev->ports; i++) {
+		reg = sr16(dev, MV_PORTREG(CONTROL, i)) |
+			MV_PORTCTRL_FORWARDING;
+		sw16(dev, MV_PORTREG(CONTROL, i), reg);
+	}
+
+	/* Disable PHYDetect on CPU ports. */
+	for(i=5; i<=6; i++) {
+		reg = sr16(dev, MV_PORTREG(STATUS, i));
+		reg &= ~(MV_PORT_STATUS_PHYDETECT);
+		sw16(dev, MV_PORTREG(STATUS, i), reg);
+
+		// RGMII timing
+		reg = sr16(dev, MV_PORTREG(PHYCTL, i));
+		reg |= 0xc000;
+		sw16(dev, MV_PORTREG(PHYCTL, i), reg);
+	}
 }
 
 static int mvsw61xx_reset(struct switch_dev *dev)
@@ -1035,6 +1155,9 @@ static int mvsw61xx_probe(struct platform_device *pdev)
 	state->dev.alias = dev_name(&pdev->dev);
 
 	_mvsw61xx_reset(&state->dev, true);
+
+	if (state->model == MV_IDENT_VALUE_6176)
+		mvsw6176_quirks(&state->dev);
 
 	err = register_switch(&state->dev, NULL);
 	if (err < 0)
