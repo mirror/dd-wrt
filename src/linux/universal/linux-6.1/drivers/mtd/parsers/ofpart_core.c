@@ -16,6 +16,7 @@
 #include <linux/slab.h>
 #include <linux/mtd/partitions.h>
 #include <linux/magic.h>
+#include <asm/setup.h>
 
 #include "ofpart_bcm4908.h"
 #include "ofpart_linksys_ns.h"

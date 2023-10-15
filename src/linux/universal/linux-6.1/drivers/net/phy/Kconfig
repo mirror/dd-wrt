@@ -449,6 +449,11 @@ config XILINX_GMII2RGMII
 	  the Reduced Gigabit Media Independent Interface(RGMII) between
 	  Ethernet physical media devices and the Gigabit Ethernet controller.
 
+config MVSW61XX_PHY
+	tristate "Driver for Marvell 88E6171/6172 switches"
+	select SWCONFIG 
+	depends on ARCH_MVEBU
+
 endif # PHYLIB
 
 config MICREL_KS8995MA
