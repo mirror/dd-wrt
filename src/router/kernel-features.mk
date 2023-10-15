@@ -170,14 +170,11 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_KERNELLTO)" = "y" ]; then \
 		echo "CONFIG_LTO_MENU=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_LTO_GCC=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_DISABLE is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_LTO=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_CP_CLONE is not set" >> $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_OPTIMIZE_INLINING=y/# CONFIG_OPTIMIZE_INLINING is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_KALLSYMS=y/# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
 	else \
 		echo "# CONFIG_LTO_MENU is not set" >> $(LINUXDIR)/.config; \
@@ -670,6 +667,7 @@ define kernelfeatures
 		echo "CONFIG_NR_DEV_DAX=32768" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_CACHE_MQ=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_CRYPTO_CRCT10DIF_ARM64_CE=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_CRYPTO_CRCT10DIF_ARM_CE=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_ASYNC_RAID6_TEST is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BCACHE_EDEBUG is not set" >> $(LINUXDIR)/.config; \
 	else \
