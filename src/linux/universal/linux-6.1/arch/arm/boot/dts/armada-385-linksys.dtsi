@@ -114,7 +114,7 @@
 	phy-mode = "rgmii-id";
 	buffer-manager = <&bm>;
 	bm,pool-long = <0>;
-	bm,pool-short = <1>;
+	bm,pool-short = <3>;
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -122,7 +122,7 @@
 };
 
 &eth2 {
-	status = "disabled";
+	status = "okay";
 	phy-mode = "sgmii";
 	buffer-manager = <&bm>;
 	bm,pool-long = <2>;
