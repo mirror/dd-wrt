@@ -443,7 +443,7 @@ zfs_zstd_compress_wrap(void *s_start, void *d_start, size_t s_len, size_t d_len,
 	/*
 	 * A zstd early abort heuristic.
 	 *
-	 * - Zeroth, if this is <= zstd-3, or < zstd_abort_size (currently
+	 * - Zeroth, if this is < zstd-3, or < zstd_abort_size (currently
 	 *   128k), don't try any of this, just go.
 	 *   (because experimentally that was a reasonable cutoff for a perf win
 	 *   with tiny ratio change)
