@@ -292,8 +292,8 @@ static int etherip_param_check(struct ip_tunnel_parm *p)
 /* central ioctl function for all netdevices this driver manages
  * it allows to create, delete, modify a tunnel and fetch tunnel
  * information */
-static int etherip_tunnel_ioctl(struct net_device *dev, struct ifreq *ifr,
-		int cmd)
+static int etherip_tunnel_siocdevprivate(struct net_device *dev, struct ifreq *ifr,
+		       void __user *data, int cmd)
 {
 	int err = 0;
 	struct ip_tunnel_parm p;
@@ -305,7 +305,7 @@ static int etherip_tunnel_ioctl(struct net_device *dev, struct ifreq *ifr,
 	switch (cmd) {
 	case SIOCGETTUNNEL:
 		t = netdev_priv(dev);
-		if (copy_to_user(ifr->ifr_ifru.ifru_data, &t->parms,
+		if (copy_to_user(data, &t->parms,
 				sizeof(t->parms)))
 			err = -EFAULT;
 		break;
@@ -320,7 +320,7 @@ static int etherip_tunnel_ioctl(struct net_device *dev, struct ifreq *ifr,
 			goto out;
 
 		err = -EFAULT;
-		if (copy_from_user(&p, ifr->ifr_ifru.ifru_data,
+		if (copy_from_user(&p, data,
 					sizeof(p)))
 			goto out;
 		p.i_flags = p.o_flags = 0;
@@ -366,7 +366,7 @@ static int etherip_tunnel_ioctl(struct net_device *dev, struct ifreq *ifr,
 			memcpy(&(t->parms), &p, sizeof(p));
 
 			err = -EFAULT;
-			if (copy_to_user(ifr->ifr_ifru.ifru_data, &p,
+			if (copy_to_user(data, &p,
 						sizeof(p)))
 				goto add_err;
 			
@@ -401,7 +401,7 @@ add_err:
 			goto out;
 
 		err = -EFAULT;
-		if (copy_from_user(&p, ifr->ifr_ifru.ifru_data,
+		if (copy_from_user(&p, data,
 					sizeof(p)))
 			goto out;
 
@@ -435,7 +435,8 @@ static const struct net_device_ops etherip_netdev_ops = {
 	.ndo_open		= etherip_tunnel_open,
 	.ndo_stop		= etherip_tunnel_stop,
 	.ndo_start_xmit		= etherip_tunnel_xmit,
-	.ndo_do_ioctl		= etherip_tunnel_ioctl,
+	.ndo_siocdevprivate 	= etherip_tunnel_siocdevprivate,
+//	.ndo_do_ioctl		= etherip_tunnel_ioctl,
 //	.ndo_get_stats  	= etherip_get_stats,
 };
 
