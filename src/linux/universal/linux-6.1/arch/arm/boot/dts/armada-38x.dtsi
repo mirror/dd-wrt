@@ -469,14 +469,6 @@
 			 * labeling of interfaces on the boards, which
 			 * is very confusing for users.
 			 */
-			eth0: ethernet@70000 {
-				compatible = "marvell,armada-370-neta";
-				reg = <0x70000 0x4000>;
-				interrupts-extended = <&mpic 8>;
-				clocks = <&gateclk 4>;
-				tx-csum-limit = <9800>;
-				status = "disabled";
-			};
 
 			eth1: ethernet@30000 {
 				compatible = "marvell,armada-370-neta";
@@ -491,6 +483,15 @@
 				reg = <0x34000 0x4000>;
 				interrupts-extended = <&mpic 12>;
 				clocks = <&gateclk 2>;
+				status = "disabled";
+			};
+
+			eth0: ethernet@70000 {
+				compatible = "marvell,armada-370-neta";
+				reg = <0x70000 0x4000>;
+				interrupts-extended = <&mpic 8>;
+				clocks = <&gateclk 4>;
+				tx-csum-limit = <9800>;
 				status = "disabled";
 			};
 
