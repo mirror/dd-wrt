@@ -4687,7 +4687,7 @@ CONFIG_LOCK_DEBUGGING_SUPPORT=y
 # end of Lock Debugging (spinlocks, mutexes, etc...)
 
 # CONFIG_DEBUG_IRQFLAGS is not set
-CONFIG_STACKTRACE=y
+# CONFIG_STACKTRACE is not set
 # CONFIG_WARN_ALL_UNSEEDED_RANDOM is not set
 # CONFIG_DEBUG_KOBJECT is not set
 
