@@ -73,7 +73,7 @@ void start_redial(void)
 	}
 
 	mkdir("/tmp/ppp", 0777);
-	symlink("/sbin/rc", "/tmp/ppp/redial");
+	symlink("/sbin/redial", "/tmp/ppp/redial");
 
 	dd_logstart("ppp_redial", _evalpid(redial_argv, NULL, 0, NULL));
 
