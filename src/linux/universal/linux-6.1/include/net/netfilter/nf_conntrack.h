@@ -53,6 +53,8 @@ struct nf_conntrack_net {
 	/* only used when new connection is allocated: */
 	atomic_t count;
 	unsigned int expect_count;
+	u8 sysctl_auto_assign_helper;
+	bool auto_assign_helper_warned;
 
 	/* only used from work queues, configuration plane, and so on: */
 	unsigned int users4;
