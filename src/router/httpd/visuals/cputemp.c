@@ -32,7 +32,7 @@ static int show_temp(webs_t wp, int mon, int input, char *fmt)
 		fscanf(tempfp, "%d", &cpu);
 		fclose(tempfp);
 		if (cpu > 0) {
-6			websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
+			websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
 			return 1;
 		}
 	}
