@@ -7265,6 +7265,14 @@ static int _dns_server_audit_init(void)
 	}
 #endif
 
+	if (dns_conf_audit_file_mode > 0) {
+		tlog_set_permission(dns_audit, dns_conf_audit_file_mode, dns_conf_audit_file_mode);
+	}
+
+	if (dns_conf_audit_console != 0) {
+		tlog_logscreen(dns_audit, 1);
+	}
+
 	return 0;
 }
 
@@ -7312,13 +7320,6 @@ static int _dns_server_cache_save(int check_lock)
 		return -1;
 	}
 
-	if (dns_conf_audit_file_mode > 0) {
-		tlog_set_permission(dns_audit, dns_conf_audit_file_mode, dns_conf_audit_file_mode);
-	}
-
-	if (dns_conf_audit_console != 0) {
-		tlog_logscreen(dns_audit, 1);
-	}
 
 	return 0;
 }

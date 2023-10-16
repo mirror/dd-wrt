@@ -20,7 +20,6 @@
 #ifndef _GENERIC_ATOMIC_H
 #define _GENERIC_ATOMIC_H
 
-
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 
 #define READ_ONCE(x) \
