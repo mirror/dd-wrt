@@ -871,7 +871,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 	count = 1;
 
 	if (has_gateway()) {
-		writeprocsysnet("netfilter/nf_conntrack_helper", "1");	// kerne 4.7 uses 0 as new default which disables several nat helpers
+		writeprocsysnet("netfilter/nf_conntrack_helper", nvram_default_get("net.netfilter.nf_conntrack_helper", "1"));	// kerne 4.7 uses 0 as new default which disables several nat helpers
 
 		/*
 		 * Port forwarding 
