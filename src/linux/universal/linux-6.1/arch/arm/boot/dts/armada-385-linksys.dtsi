@@ -114,7 +114,7 @@
 	phy-mode = "rgmii-id";
 	buffer-manager = <&bm>;
 	bm,pool-long = <0>;
-	bm,pool-short = <3>;
+	bm,pool-short = <1>;
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
