@@ -587,9 +587,6 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 
 #ifdef HAVE_OPENSSL
 	if (type == DNS_SERVER_HTTPS) {
-		if (parse_uri(ip, NULL, server->server, &port, server->path) != 0) {
-			return -1;
-		}
 		safe_strncpy(server->hostname, server->server, sizeof(server->hostname));
 		safe_strncpy(server->httphost, server->server, sizeof(server->httphost));
 		if (server->path[0] == 0) {
