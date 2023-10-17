@@ -16,8 +16,9 @@ endif
 #endif
 
 #obj-m += shortcut-fe-cm.o
+obj-m += fast_classifier_test.o
 
-obj-m += fast-classifier_test.o
+fast_classifier_test-y += fast-classifier.o
 
 #shortcut-fe-objs := \
 #	sfe_ipv4.o
