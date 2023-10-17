@@ -264,7 +264,7 @@ void start_hotplug_block(void)
 
 	optimize_block_device(devp + 1);
 
-	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr", 2) && strncmp(part, "md", 2))
+	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr", 2) && strncmp(part, "md", 2) && strncmp(part, "nvme", 4))
 		return;
 
 	if (!strcmp(action, "add")) {
