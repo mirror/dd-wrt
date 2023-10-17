@@ -1,4 +1,4 @@
-MAKE_FLAGS += STATIC_WORKER="fork"
+MAKE_FLAGS += STATIC_WORKER="single"
 hotplug2:
 	$(MAKE) $(MAKE_FLAGS) COPTS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" -C hotplug2 
 
