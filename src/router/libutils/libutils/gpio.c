@@ -403,7 +403,7 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
-	return get_linux_gpio(gpio+443);
+	return get_linux_gpio(gpio + 443);
 }
 
 void set_gpio(int gpio, int value)
@@ -448,7 +448,10 @@ void set_gpio(int gpio, int value)
 			writeint("/sys/class/leds/r7X00:amber:status/brightness", value);
 			break;
 		default:
-			set_linux_gpio(gpio, value);
+			if (gpio <= 64)
+				set_linux_gpio(gpio + 443, value);
+			else
+				set_linux_gpio(gpio, value);
 			break;
 		}
 	} else if (brand == ROUTER_LINKSYS_EA8500) {
@@ -463,12 +466,15 @@ void set_gpio(int gpio, int value)
 			writeint("/sys/class/leds/ea8500:green:wps/brightness", value);
 			break;
 		default:
-			set_linux_gpio(gpio, value);
+			if (gpio <= 64)
+				set_linux_gpio(gpio + 443, value);
+			else
+				set_linux_gpio(gpio, value);
 			break;
 		}
 	} else {
 		if (gpio <= 64)
-			set_linux_gpio(gpio+443, value);
+			set_linux_gpio(gpio + 443, value);
 		else
 			set_linux_gpio(gpio, value);
 	}
