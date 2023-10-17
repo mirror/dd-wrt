@@ -178,10 +178,10 @@ void start_hotplug_usb(void)
 			eval("touch", MOUNTSTAT);
 		}
 
-//		if (!strcmp(action, "add")) {	//let the disc settle before we mount
-//			for (i = 0; i <= 10; i++)
-//				sleep(1);
-//		}
+		if (!strcmp(action, "add")) {	//let the disc settle before we mount
+			for (i = 0; i <= 10; i++)
+				sleep(1);
+		}
 
 		/* loop through sysfs to find out the correct lun0 */
 		for (host = 0; host < 10; host++) {
