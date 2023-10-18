@@ -358,18 +358,16 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 	      repeat:;
-		if (!first) {
 #ifdef HAVE_LEGACY_KERNEL
-			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
 #else
-			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
 #endif
-		}
-		if (ret) {
+		if (!first && ret) {
 			first = 1;
 			eval("ntfsfix", "-d", path);
 			goto repeat;
@@ -401,7 +399,7 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
 #endif
-			if (ret) {
+			if (!first && ret) {
 				first = 1;
 				eval("ntfsfix", "-d", path);
 				goto again;
