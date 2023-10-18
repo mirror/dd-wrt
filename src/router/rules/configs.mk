@@ -153,6 +153,8 @@ else
 ifeq ($(CONFIG_NTFS3),y)
 ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_NTFS3G) += ntfs3 ntfs-3g
+else
+obj-$(CONFIG_NTFS3G) += ntfs-3g
 endif
 else
 obj-$(CONFIG_NTFS3G) += antfs ntfs-3g
