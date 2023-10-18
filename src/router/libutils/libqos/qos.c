@@ -478,7 +478,7 @@ char *get_tcfmark(char *tcfmark, uint32 mark, int seg)
 }
 #endif
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
-static void add_tc_class(char *dev, int pref, int handle, int classid)
+static void add_tc_class(char *dev, int pref, int pref6 int handle, int classid)
 {
 	char h[32];
 	char c[32];
@@ -487,17 +487,17 @@ static void add_tc_class(char *dev, int pref, int handle, int classid)
 	sprintf(h, "0x%02x", handle);
 	sprintf(c, "1:", classid);
 	sprintf(p, "%d", pref);
-	sprintf(p6, "%d", pref + 10);
+	sprintf(p6, "%d", pref6);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
 	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p6, "handle", h, "fw", "classid", c);
 }
 #else
-static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
+static void add_tc_mark(char *dev, int pref, int pref6, char *mark, char *mark2, int flow)
 {
 	char p[32];
 	char p6[32];
 	sprintf(p, "%d", pref);
-	sprintf(p6, "%d", pref + 10);
+	sprintf(p6, "%d", pref6);
 	char f[32];
 	sprintf(f, "1:%d", flow);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
@@ -774,10 +774,11 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	// filter rules
 	int i;
-	char priorities[5] = { 1, 3, 5, 8, 9 };
+	char priorities[5] = { 1, 3, 5, 8, 10 };
+	char priorities6[5] = { 2, 4, 6, 9, 11 };
 	for (i = 0; i < 5; i++) {
-		add_tc_class(wan_dev, priorities[i] + 1, base + i, base + 1 + i);
-		add_tc_class("imq0", priorities[i] + 1, base + i, base + 1 + i);
+		add_tc_class(wan_dev, priorities[i] + 1, priorities6[i] + 1 base + i, base + 1 + i);
+		add_tc_class("imq0", priorities[i] + 1, priorities6[i] + 1, base + i, base + 1 + i);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
 			add_tc_class("imq1", priorities[i] + 1, base + i, base + 1 + i);
@@ -785,14 +786,15 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	}
 #else
 	int i;
-	char priorities[5] = { 1, 3, 5, 8, 9 };
+	char priorities[5] = { 1, 3, 5, 8, 10 };
+	char priorities6[5] = { 2, 4, 6, 9, 11 };
 	for (i = 0; i < 5; i++) {
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
-		add_tc_mark(wan_dev, priorities[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
-		add_tc_mark("imq0", priorities[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
+		add_tc_mark(wan_dev, priorities[i] + 1, priorities6[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
+		add_tc_mark("imq0", priorities[i] + 1, priorities6[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_mark("imq1", priorities[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
+			add_tc_mark("imq1", priorities[i] + 1, priorities6[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
 		}
 	}
 #endif
@@ -1099,7 +1101,7 @@ void init_ackprio(const char *dev)
 }
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
-static void add_filter(const char *dev, int pref, int handle, int classid)
+static void add_filter(const char *dev, int pref, int pref6, int handle, int classid)
 {
 
 	char p[32];
@@ -1107,7 +1109,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 	char h[32];
 	char c[32];
 	sprintf(p, "%d", pref);
-	sprintf(p6, "%d", pref + 10);
+	sprintf(p6, "%d", pref6);
 	sprintf(h, "0x%02X", handle);
 	sprintf(c, "1:%d", classid);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
@@ -1118,11 +1120,11 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 static void init_filter(const char *dev)
 {
 //      add_filter(dev, 0 + 1, 1000, 1000);
-	add_filter(dev, 1 + 1, 100, 100);
-	add_filter(dev, 3 + 1, 10, 10);
-	add_filter(dev, 5 + 1, 20, 20);
-	add_filter(dev, 8 + 1, 30, 30);
-	add_filter(dev, 9 + 1, 40, 40);
+	add_filter(dev, 1 + 1, 2 + 1, 100, 100);
+	add_filter(dev, 3 + 1, 4 + 1, 10, 10);
+	add_filter(dev, 5 + 1, 6 + 1, 20, 20);
+	add_filter(dev, 8 + 1, 9 + 1, 30, 30);
+	add_filter(dev, 10 + 1, 11 + 1, 40, 40);
 }
 #else
 static inline void init_filter(const char *dev)
