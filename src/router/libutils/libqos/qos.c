@@ -60,9 +60,9 @@ struct NF_MASKS {
 };
 
 static struct NF_MASKS service_masks[] = {
-	{ "FORWARD", 1, 31 },
-	{ "HOTSPOT", 8, 23 },
-	{ "QOS", 13, 10 },
+	{"FORWARD", 1, 31},
+	{"HOTSPOT", 8, 23},
+	{"QOS", 13, 10},
 };
 
 char *get_NFServiceMark(char *buffer, size_t len, char *service, uint32 mark)
@@ -132,13 +132,13 @@ struct namemaps {
 	char *to;
 };
 static struct namemaps NM[] = {
-	{ "applejuice", "apple" },
-	{ "bearshare", "gnu" },
-	{ "bittorrent", "bit" },
-	{ "directconnect", "dc" },
-	{ "edonkey", "edk" },
-	{ "gnutella", "gnu" },
-	{ "soulseek", "soul" }
+	{"applejuice", "apple"},
+	{"bearshare", "gnu"},
+	{"bittorrent", "bit"},
+	{"directconnect", "dc"},
+	{"edonkey", "edk"},
+	{"gnutella", "gnu"},
+	{"soulseek", "soul"}
 };
 
 #ifdef HAVE_IPV6
@@ -483,21 +483,25 @@ static void add_tc_class(char *dev, int pref, int handle, int classid)
 	char h[32];
 	char c[32];
 	char p[32];
+	char p6[32];
 	sprintf(h, "0x%02x", handle);
 	sprintf(c, "1:", classid);
 	sprintf(p, "%d", pref);
+	sprintf(p6, "%d", pref + 10);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
-	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
+	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p6, "handle", h, "fw", "classid", c);
 }
 #else
 static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
 {
 	char p[32];
+	char p6[32];
 	sprintf(p, "%d", pref);
+	sprintf(p6, "%d", pref + 10);
 	char f[32];
 	sprintf(f, "1:%d", flow);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
-	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
+	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p6, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
 }
 #endif
 
@@ -608,7 +612,8 @@ static void add_htb_class(const char *dev, int parent, int class, int rate, int 
 	sprintf(parentid, "1:%d", parent);
 	sprintf(classid, "1:%d", class);
 	if (p != -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, sizeof(buf), rate, "kbit"), "ceil", math(buf2, sizeof(buf2), limit, "kbit"), "prio", prio, "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, sizeof(buf), rate, "kbit"), "ceil", math(buf2, sizeof(buf2), limit, "kbit"), "prio", prio,
+		     "quantum", qmtu);
 	else
 		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, sizeof(buf), rate, "kbit"), "ceil", math(buf2, sizeof(buf2), limit, "kbit"), "quantum", qmtu);
 }
@@ -1098,13 +1103,15 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 {
 
 	char p[32];
+	char p6[32];
 	char h[32];
 	char c[32];
 	sprintf(p, "%d", pref);
+	sprintf(p6, "%d", pref + 10);
 	sprintf(h, "0x%02X", handle);
 	sprintf(c, "1:%d", classid);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
-	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
+	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p6, "handle", h, "fw", "classid", c);
 
 }
 
