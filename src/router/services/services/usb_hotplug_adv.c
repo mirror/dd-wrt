@@ -62,7 +62,7 @@ static void run_on_mount(char *p)
 	FILE *fp = fopen(path, "rb");
 	if (fp) {
 		unsigned char hash[32];
-		unsigned char shash[32*2];
+		unsigned char shash[32 * 2];
 		size_t size;
 		fseek(fp, 0, SEEK_END);
 		size = ftell(fp);
@@ -353,19 +353,28 @@ static bool usb_load_modules(char *fs)
 static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 {
 	int ret = 0;
-
+	int first = 0;
 	/* lets start mounting */
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
+	      repeat:;
+		if (!first) {
 #ifdef HAVE_LEGACY_KERNEL
-		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
 #else
-		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
 #endif
+		}
+		if (ret) {
+			first = 1;
+			eval("ntfsfix", "-d", path);
+			goto repeat;
+		}
+
 	} else
 #endif
 	if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
@@ -379,6 +388,8 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	}
 
 	if (ret != 0) {		//give it another try
+		first = 0;
+	      again:;
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
@@ -390,6 +401,11 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
 #endif
+			if (ret) {
+				first = 1;
+				eval("ntfsfix", "-d", path);
+				goto again;
+			}
 		} else
 #endif
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
