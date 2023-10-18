@@ -609,8 +609,10 @@ static int svqos_iptables(void)
 	char *wshaper_dev = nvram_safe_get("wshaper_dev");
 	char ifbuf[16 + 1];
 	char *wan_dev = get_wanface(ifbuf);
+	char inv_wan_dev[33];
 	char buffer[32];
 	char nullmask[24];
+	snprintf(inv_wan_dev, sizeof(inv_wan_dev), "!%s", wan_dev);
 	strcpy(nullmask, qos_nfmark(buffer, sizeof(buffer), 0));
 
 	insmod("ipt_mark");
@@ -748,22 +750,22 @@ static int svqos_iptables(void)
 				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 
-				eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 
-				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
 
 				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 
-				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 
-				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
 			}
 		} else {
 			eval("iptables", "-t", "mangle", "-D", "INPUT", "-j", "IMQ", "--todev", "1");
@@ -879,12 +881,13 @@ static int svqos_iptables(void)
 
 	if (wan_dev && strcmp(wan_dev, "wwan0")) {
 		if (wanactive(get_wan_ipaddr()) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
-			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "!", safe_get_wan_face(wan_if_buffer), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark",
-			     get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
+			char *wan_face = safe_get_wan_face(wan_if_buffer);
+			char inv_wan_face[33];
+			snprintf(inv_wan_face, sizeof(inv_wan_face), "!%s", wan_face);
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
 			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 
-			evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", "!", safe_get_wan_face(wan_if_buffer), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark",
-				get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
+			evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
 			evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 		}
 	}
