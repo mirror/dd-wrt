@@ -753,8 +753,8 @@ static int svqos_iptables(void)
 				eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 
-				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 
 				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
@@ -764,8 +764,8 @@ static int svqos_iptables(void)
 				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 
-				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j", "IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 			}
 		} else {
 			eval("iptables", "-t", "mangle", "-D", "INPUT", "-j", "IMQ", "--todev", "1");
