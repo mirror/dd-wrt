@@ -47,7 +47,7 @@ ntfs_log_handler ntfs_log_handler_outerr  __attribute__((format(printf, 6, 0)));
 ntfs_log_handler ntfs_log_handler_stderr  __attribute__((format(printf, 6, 0)));
 
 /* Enable/disable certain log levels */
-#ifdef DEBUG
+#if defined(DEBUG) || defined(NEED_PRINTF)
 /* Set the logging handler from one of the functions, below. */
 void ntfs_log_early_error(const char *format, ...)
                 __attribute__((format(printf, 1, 2)));
@@ -124,14 +124,23 @@ int ntfs_log_redirect(const char *function, const char *file, int line,
 #define ntfs_log_enter(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_ENTER,NULL,FORMAT,##ARGS)
 #define ntfs_log_leave(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_LEAVE,NULL,FORMAT,##ARGS)
 #else
+#ifdef NEED_PRINTF
+#define ntfs_log_critical(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_CRITICAL,NULL,FORMAT,##ARGS)
+#define ntfs_log_error(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_ERROR,NULL,FORMAT,##ARGS)
+#define ntfs_log_info(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_INFO,NULL,FORMAT,##ARGS)
+#define ntfs_log_perror(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_PERROR,NULL,FORMAT,##ARGS)
+#define ntfs_log_progress(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_PROGRESS,NULL,FORMAT,##ARGS)
+#define ntfs_log_warning(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_WARNING,NULL,FORMAT,##ARGS)
+#else
 #define ntfs_log_critical(FORMAT, ARGS...) do {} while (0)
 #define ntfs_log_error(FORMAT, ARGS...) do {} while (0)
 #define ntfs_log_info(FORMAT, ARGS...) do {} while (0)
 #define ntfs_log_perror(FORMAT, ARGS...) do {} while (0)
 #define ntfs_log_progress(FORMAT, ARGS...) do {} while (0)
+#define ntfs_log_warning(FORMAT, ARGS...) do {} while (0)
+#endif
 #define ntfs_log_quiet(FORMAT, ARGS...) do {} while (0)
 #define ntfs_log_verbose(FORMAT, ARGS...) do {} while (0)
-#define ntfs_log_warning(FORMAT, ARGS...) do {} while (0)
 #define ntfs_log_debug(FORMAT, ARGS...)do {} while (0)
 #define ntfs_log_trace(FORMAT, ARGS...)do {} while (0)
 #define ntfs_log_enter(FORMAT, ARGS...)do {} while (0)
