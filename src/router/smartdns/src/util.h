@@ -22,6 +22,7 @@
 #include "stringutil.h"
 #include <netdb.h>
 #include <time.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
