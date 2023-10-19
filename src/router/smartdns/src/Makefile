@@ -41,7 +41,7 @@ override LDFLAGS += -lpthread
 endif
 ifeq ($(SSL), yes)
 override LDFLAGS += -lssl -lcrypto
-override CFLAGS += -DHAVE_OPENSSL
+override CFLAGS += -DHAVE_OPENSSL -DNEED_PRINTF
 endif
 
 
