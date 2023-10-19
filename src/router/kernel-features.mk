@@ -690,4 +690,8 @@ define kernelfeatures
 		echo "CONFIG_BATMAN_ADV_MCAST=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BATMAN_ADV_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.1" ]; then \
+		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
+	fi
 endef
