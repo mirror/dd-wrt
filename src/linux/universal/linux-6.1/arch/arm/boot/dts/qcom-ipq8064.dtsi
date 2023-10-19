@@ -780,6 +780,46 @@
 			reg = <0x03000000 0x0000FFFF>;
 		};
 
+
+		hs_phy_0: phy@100f8800 {
+			compatible = "qcom,ipq806x-usb-phy-hs";
+			reg = <0x100f8800 0x30>;
+			clocks = <&gcc USB30_0_UTMI_CLK>;
+			clock-names = "ref";
+			#phy-cells = <0>;
+
+			status = "disabled";
+		};
+
+		ss_phy_0: phy@100f8830 {
+			compatible = "qcom,ipq806x-usb-phy-ss";
+			reg = <0x100f8830 0x30>;
+			clocks = <&gcc USB30_0_MASTER_CLK>;
+			clock-names = "ref";
+			#phy-cells = <0>;
+
+			status = "disabled";
+		};
+		hs_phy_1: phy@110f8800 {
+			compatible = "qcom,ipq806x-usb-phy-hs";
+			reg = <0x110f8800 0x30>;
+			clocks = <&gcc USB30_1_UTMI_CLK>;
+			clock-names = "ref";
+			#phy-cells = <0>;
+
+			status = "disabled";
+		};
+
+		ss_phy_1: phy@110f8830 {
+			compatible = "qcom,ipq806x-usb-phy-ss";
+			reg = <0x110f8830 0x30>;
+			clocks = <&gcc USB30_1_MASTER_CLK>;
+			clock-names = "ref";
+			#phy-cells = <0>;
+
+			status = "disabled";
+		};
+
 		usb3_0: usb3@100f8800 {
 			compatible = "qcom,ipq8064-dwc3", "qcom,dwc3";
 			#address-cells = <1>;
@@ -804,26 +844,6 @@
 				dr_mode = "host";
 				snps,dis_u3_susphy_quirk;
 			};
-		};
-
-		hs_phy_0: phy@100f8800 {
-			compatible = "qcom,ipq806x-usb-phy-hs";
-			reg = <0x100f8800 0x30>;
-			clocks = <&gcc USB30_0_UTMI_CLK>;
-			clock-names = "ref";
-			#phy-cells = <0>;
-
-			status = "disabled";
-		};
-
-		ss_phy_0: phy@100f8830 {
-			compatible = "qcom,ipq806x-usb-phy-ss";
-			reg = <0x100f8830 0x30>;
-			clocks = <&gcc USB30_0_MASTER_CLK>;
-			clock-names = "ref";
-			#phy-cells = <0>;
-
-			status = "disabled";
 		};
 
 		usb3_1: usb3@110f8800 {
@@ -852,25 +872,6 @@
 			};
 		};
 
-		hs_phy_1: phy@110f8800 {
-			compatible = "qcom,ipq806x-usb-phy-hs";
-			reg = <0x110f8800 0x30>;
-			clocks = <&gcc USB30_1_UTMI_CLK>;
-			clock-names = "ref";
-			#phy-cells = <0>;
-
-			status = "disabled";
-		};
-
-		ss_phy_1: phy@110f8830 {
-			compatible = "qcom,ipq806x-usb-phy-ss";
-			reg = <0x110f8830 0x30>;
-			clocks = <&gcc USB30_1_MASTER_CLK>;
-			clock-names = "ref";
-			#phy-cells = <0>;
-
-			status = "disabled";
-		};
 
 		sdcc3bam: dma-controller@12182000 {
 			compatible = "qcom,bam-v1.3.0";
