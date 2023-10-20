@@ -214,15 +214,15 @@ archive: archive file permission, default is 440
 
 static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archive){return ;}
 
-#define tlog_debug(...) if (tlog_getlevel() <= TLOG_DEBUG) syslog(LOG_DEBUG, ##__VA_ARGS__)
-#define tlog_info(...) if (tlog_getlevel() <= TLOG_INFO) syslog(LOG_INFO, ##__VA_ARGS__)
-#define tlog_notice(...) if (tlog_getlevel() <= TLOG_NOTICE) syslog(LOG_NOTICE, ##__VA_ARGS__)
-#define tlog_warn(...) if (tlog_getlevel() <= TLOG_WARN) syslog(LOG_WARNING, ##__VA_ARGS__)
-#define tlog_error(...) if (tlog_getlevel() <= TLOG_ERROR) syslog(LOG_ERR, ##__VA_ARGS__)
-#define tlog_fatal(...) if (tlog_getlevel() <= TLOG_FATAL) syslog(LOG_EMERG, ##__VA_ARGS__)
-#define tlog(level, format, ...) \
-	switch(level) \
-	{ \
+#define tlog_debug(...) { if (tlog_getlevel() <= TLOG_DEBUG) syslog(LOG_DEBUG, ##__VA_ARGS__); }
+#define tlog_info(...) {if (tlog_getlevel() <= TLOG_INFO) syslog(LOG_INFO, ##__VA_ARGS__);}
+#define tlog_notice(...) {if (tlog_getlevel() <= TLOG_NOTICE) syslog(LOG_NOTICE, ##__VA_ARGS__);}
+#define tlog_warn(...) {if (tlog_getlevel() <= TLOG_WARN) syslog(LOG_WARNING, ##__VA_ARGS__);}
+#define tlog_error(...) {if (tlog_getlevel() <= TLOG_ERROR) syslog(LOG_ERR, ##__VA_ARGS__);}
+#define tlog_fatal(...) {if (tlog_getlevel() <= TLOG_FATAL) syslog(LOG_EMERG, ##__VA_ARGS__);}
+#define tlog(level, format, ...) do {	\
+	switch(level)	\
+	{	\
 	case TLOG_INFO: \
 	    tlog_info(format, ##__VA_ARGS__); \
 	break; \
@@ -241,7 +241,7 @@ static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archiv
 	case TLOG_FATAL: \
 	    tlog_fatal(format,##__VA_ARGS__); \
 	break;  \
-	} \
+	} }while(0) \
 
 #else
 #define tlog(level, format, ...) tlog_ext(level, BASE_FILE_NAME, __LINE__, __func__, NULL, format, ##__VA_ARGS__)
