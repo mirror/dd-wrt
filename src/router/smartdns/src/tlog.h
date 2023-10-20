@@ -220,6 +220,8 @@ static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archiv
 #define tlog_warn(...) {if (tlog_getlevel() <= TLOG_WARN) syslog(LOG_WARNING, ##__VA_ARGS__);}
 #define tlog_error(...) {if (tlog_getlevel() <= TLOG_ERROR) syslog(LOG_ERR, ##__VA_ARGS__);}
 #define tlog_fatal(...) {if (tlog_getlevel() <= TLOG_FATAL) syslog(LOG_EMERG, ##__VA_ARGS__);}
+
+#ifdef DEBUG
 #define tlog(level, format, ...) do {	\
 	switch(level)	\
 	{	\
@@ -241,8 +243,31 @@ static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archiv
 	case TLOG_FATAL: \
 	    tlog_fatal(format,##__VA_ARGS__); \
 	break;  \
-	} }while(0) \
+	} }while(0)
 
+#else
+
+#define tlog(level, format, ...) do {	\
+	switch(level)	\
+	{	\
+	case TLOG_INFO: \
+	    tlog_info(format, ##__VA_ARGS__); \
+	break; \
+	case TLOG_NOTICE: \
+	    tlog_notice(format,##__VA_ARGS__); \
+	break; \
+ 	case TLOG_WARN: \
+	    tlog_warn(format,##__VA_ARGS__); \
+	break; \
+	case TLOG_ERROR: \
+	    tlog_error(format,##__VA_ARGS__); \
+	break; \
+	case TLOG_FATAL: \
+	    tlog_fatal(format,##__VA_ARGS__); \
+	break;  \
+	} }while(0)
+
+#endif
 #else
 #define tlog(level, format, ...) tlog_ext(level, BASE_FILE_NAME, __LINE__, __func__, NULL, format, ##__VA_ARGS__)
 
