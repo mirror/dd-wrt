@@ -40,6 +40,7 @@
 #else
 #include <unistd.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
 #endif
 #ifdef linux
 #include <pcap/nflog.h>
@@ -222,10 +223,7 @@ void ndpi_payload_analyzer(struct ndpi_flow_info *flow,
     for(j=min_pattern_len; j <= max_pattern_len; j++) {
       if((i+j) < payload_len) {
 	if(ndpi_analyze_payload(flow, src_to_dst_direction, &payload[i], j, packet_id) == -1) {
-#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-          /* Avoid too much logging while fuzzing */
           LOG(NDPI_LOG_ERROR, "Error ndpi_analyze_payload (allocation failure)\n");
-#endif
 	}
       }
     }
@@ -442,7 +440,7 @@ int parse_proto_name_list(char *str, NDPI_PROTOCOL_BITMASK *bitmask, int inverte
     }
     proto = ndpi_get_proto_id(module, n);
     if(proto == NDPI_PROTOCOL_UNKNOWN && strcmp(n,"unknown") && strcmp(n,"0")) {
-      fprintf(stderr,"Invalid protocol %s\n",n);
+      LOG(NDPI_LOG_ERROR, "Invalid protocol %s\n", n);
       ndpi_exit_detection_module(module);
       return 1;
     }
@@ -469,8 +467,11 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
   struct ndpi_workflow * workflow;
   static int _debug_protocols_ok = 0;
 
+  /* On some fuzzers we don't want to use these memory allocators, but some custom ones */
+#ifndef DISABLE_CUSTOM_ALLOCATOR_ON_READERUTILS
   set_ndpi_malloc(ndpi_malloc_wrapper), set_ndpi_free(free_wrapper);
   set_ndpi_flow_malloc(NULL), set_ndpi_flow_free(NULL);
+#endif
 
   /* TODO: just needed here to init ndpi ndpi_malloc wrapper */
   module = ndpi_init_detection_module(init_prefs);
@@ -483,7 +484,7 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
   workflow = ndpi_calloc(1, sizeof(struct ndpi_workflow));
   if(workflow == NULL) {
     LOG(NDPI_LOG_ERROR, "global structure initialization failed\n");
-    ndpi_free(module);
+    ndpi_exit_detection_module(module);
     return NULL;
   }
 
@@ -497,15 +498,24 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
 
   if(_debug_protocols != NULL && ! _debug_protocols_ok) {
     NDPI_BITMASK_RESET(debug_bitmask);
-    if(parse_proto_name_list(_debug_protocols, &debug_bitmask, 0))
-      exit(-1);
+    if(parse_proto_name_list(_debug_protocols, &debug_bitmask, 0)) {
+      ndpi_exit_detection_module(module);
+      ndpi_free(workflow);
+      return NULL;
+    }
     _debug_protocols_ok = 1;
   }
   if(_debug_protocols_ok)
     ndpi_set_debug_bitmask(module, debug_bitmask);
 
-  if(do_init_flows_root)
+  if(do_init_flows_root) {
     workflow->ndpi_flows_root = ndpi_calloc(workflow->prefs.num_roots, sizeof(void *));
+    if(!workflow->ndpi_flows_root) {
+      ndpi_exit_detection_module(module);
+      ndpi_free(workflow);
+      return NULL;
+    }
+  }
 
   workflow->ndpi_serialization_format = serialization_format;
 
@@ -746,24 +756,6 @@ ndpi_flow_update_byte_dist_mean_var(ndpi_flow_info_t *flow, const void *x,
 
 /* ***************************************************** */
 
-double ndpi_flow_get_byte_count_entropy(const uint32_t byte_count[256],
-				       unsigned int num_bytes)
-{
-  int i;
-  double sum = 0.0;
-
-  for(i=0; i<256; i++) {
-    double tmp = (double) byte_count[i] / (double) num_bytes;
-
-    if(tmp > FLT_EPSILON) {
-      sum -= tmp * logf(tmp);
-    }
-  }
-  return(sum / log(2.0));
-}
-
-/* ***************************************************** */
-
 static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow,
 						 const u_int8_t version,
 						 u_int16_t vlan_id,
@@ -912,10 +904,7 @@ static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow
       struct ndpi_flow_info *newflow = (struct ndpi_flow_info*)ndpi_malloc(sizeof(struct ndpi_flow_info));
 
       if(newflow == NULL) {
-#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-	/* Avoid too much logging while fuzzing */
 	LOG(NDPI_LOG_ERROR, "[NDPI] %s(1): not enough memory\n", __FUNCTION__);
-#endif
 	return(NULL);
       } else
         workflow->num_allocated_flows++;
@@ -956,10 +945,7 @@ static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow
       }
 
       if((newflow->ndpi_flow = ndpi_flow_malloc(SIZEOF_FLOW_STRUCT)) == NULL) {
-#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-	/* Avoid too much logging while fuzzing */
 	LOG(NDPI_LOG_ERROR, "[NDPI] %s(2): not enough memory\n", __FUNCTION__);
-#endif
 	ndpi_flow_info_free_data(newflow);
 	ndpi_free(newflow);
 	return(NULL);
@@ -1151,9 +1137,11 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
   ndpi_snprintf(flow->host_server_name, sizeof(flow->host_server_name), "%s",
 		flow->ndpi_flow->host_server_name);
 
-  ndpi_snprintf(flow->flow_extra_info, sizeof(flow->flow_extra_info), "%s",
-		flow->ndpi_flow->flow_extra_info);
-
+  if(is_ndpi_proto(flow, NDPI_PROTOCOL_MINING)) {
+    ndpi_snprintf(flow->mining.currency, sizeof(flow->mining.currency), "%s",
+		  flow->ndpi_flow->protos.mining.currency);
+  }
+  
   flow->risk = flow->ndpi_flow->risk;
 
   if(is_ndpi_proto(flow, NDPI_PROTOCOL_DHCP)) {
@@ -1351,6 +1339,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 	  || ((is_quic = is_ndpi_proto(flow, NDPI_PROTOCOL_QUIC)))
 	  ) {
     flow->ssh_tls.ssl_version = flow->ndpi_flow->protos.tls_quic.ssl_version;
+    flow->ssh_tls.quic_version = flow->ndpi_flow->protos.tls_quic.quic_version;
 
     if(flow->ndpi_flow->protos.tls_quic.server_names_len > 0 && flow->ndpi_flow->protos.tls_quic.server_names)
       flow->ssh_tls.server_names = ndpi_strdup(flow->ndpi_flow->protos.tls_quic.server_names);

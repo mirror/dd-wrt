@@ -28,7 +28,7 @@
 #include "ndpi_encryption.h"
 
 extern char *strptime(const char *s, const char *format, struct tm *tm);
-extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+static int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow, uint32_t quic_version);
 static void ndpi_search_tls_wrapper(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow);
@@ -87,7 +87,7 @@ typedef union ja3_info ja3_info_t;
 /* **************************************** */
 
 extern char *strptime(const char *s, const char *format, struct tm *tm);
-extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+static int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow, uint32_t quic_version);
 NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
@@ -1510,6 +1510,8 @@ NDPI_STATIC void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
   ndpi_search_tls_wrapper(ndpi_struct, flow);
 }
 
+/* **************************************** */
+
 static void tls_subclassify_by_alpn(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow) {
   /* Right now we have only one rule so we can keep it trivial */
@@ -2621,7 +2623,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		}
 	      } else if(extension_id == 65037 /* ECH: latest drafts */) {
 #ifdef DEBUG_TLS
-		printf("Client TLS: ECH version 0x%x\n", extension_id;
+		printf("Client TLS: ECH version 0x%x\n", extension_id);
 #endif
 		/* Beginning with draft-08, the version is the same as the code point
 		   for the "encrypted_client_hello" extension. */
@@ -2803,8 +2805,25 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 	       ) {
 	      /* This is a bit suspicious */
 	      ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_MISSING_SNI, NULL);
-	    }
+	      
+	      if(flow->protos.tls_quic.advertised_alpns != NULL) {
+		char buf[256], *tmp, *item;
 
+		snprintf(buf, sizeof(buf), "%s", flow->protos.tls_quic.advertised_alpns);
+
+		item = strtok_r(buf, ",", &tmp);
+		
+		while(item != NULL) {
+		  if(item[0] == 'h') {
+		    /* Example 'h2' */
+		    ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_ALPN_SNI_MISMATCH, NULL);
+		    break;
+		  } else
+		    item = strtok_r(NULL, ",", &tmp);
+		}
+	      }
+	    }
+	    
 	    return(2 /* Client Certificate */);
 	  } else {
 #ifdef DEBUG_TLS
@@ -2827,7 +2846,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
   return(0); /* Not found */
 }
 
-int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+static int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow, uint32_t quic_version) {
     ja3_info_t *ja3 = ndpi_calloc(1,sizeof(ja3_info_t));
     if(ja3) {

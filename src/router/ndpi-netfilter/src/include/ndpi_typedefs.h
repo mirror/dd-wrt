@@ -1,5 +1,5 @@
 /*
- * ndpi_typedefs.h
+E * ndpi_typedefs.h
  *
  * Copyright (C) 2011-23 - ntop.org
  *
@@ -31,6 +31,9 @@
 #undef HAVE_HYPERSCAN
 #endif
 #include "ndpi_define.h"
+#ifndef NDPI_CFFI_PREPROCESSING
+#include "ndpi_includes.h"
+#endif
 #include "ndpi_protocol_ids.h"
 #include "ndpi_utils.h"
 
@@ -54,6 +57,12 @@ typedef unsigned int u_int;
 #endif
 #endif
 #endif /* __KERNEL__ */
+
+#ifdef __APPLE__
+typedef unsigned char u_char;
+typedef unsigned short u_short;
+typedef unsigned int u_int;
+#endif
 
 /* NDPI_LOG_LEVEL */
 typedef enum {
@@ -143,7 +152,7 @@ typedef enum {
   NDPI_DNS_LARGE_PACKET,
   NDPI_DNS_FRAGMENTED,
   NDPI_INVALID_CHARACTERS,
-  NDPI_POSSIBLE_EXPLOIT, /* Log4J, Wordpress and other exploits */
+  NDPI_POSSIBLE_EXPLOIT, /* 40 */ /* Log4J, Wordpress and other exploits */
   NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE,
   NDPI_PUNYCODE_IDN, /* https://en.wikipedia.org/wiki/Punycode */
   NDPI_ERROR_CODE_DETECTED,
@@ -157,7 +166,9 @@ typedef enum {
   NDPI_MINOR_ISSUES,           /* Generic packet issues (e.g. DNS with 0 TTL) */
   NDPI_TCP_ISSUES,             /* 50 */ /* TCP issues such as connection failed, probing or scan */
   NDPI_FULLY_ENCRYPTED,        /* This (unknown) session is fully encrypted */
-
+  NDPI_TLS_ALPN_SNI_MISMATCH,  /* Invalid ALPN/SNI combination */
+  NDPI_MALWARE_HOST_CONTACTED, /* Flow client contacted a malware host */
+				 
   /* Leave this as last member */
   NDPI_MAX_RISK /* must be <= 63 due to (**) */
 } ndpi_risk_enum;
@@ -634,6 +645,19 @@ struct ndpi_flow_input_info {
   unsigned char seen_flow_beginning;
 };
 
+/* Save memory limiting the key to 56 bit */
+//#define SAVE_BINARY_BITMAP_MEMORY
+
+PACK_ON
+struct ndpi_binary_bitmap_entry {
+#ifdef SAVE_BINARY_BITMAP_MEMORY
+  u_int64_t value:56, category:8;
+#else
+  u_int64_t value;
+  u_int8_t category;
+#endif
+} PACK_OFF;
+
 /* ******************* ********************* ****************** */
 /* ************************************************************ */
 
@@ -975,6 +999,10 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_LINE_CALL */
   u_int8_t line_pkts[2];
   u_int8_t line_base_cnt[2];
+
+  /* NDPI_PROTOCOL_TFTP */
+  u_int16_t tftp_data_num;
+  u_int16_t tftp_ack_num;
 };
 
 /* ************************************************** */
@@ -1278,7 +1306,25 @@ typedef struct ndpi_proto {
 #define NUM_CUSTOM_CATEGORIES      5
 #define CUSTOM_CATEGORY_LABEL_LEN 32
 
-typedef void ndpi_domain_classify;
+typedef void ndpi_bitmap;
+typedef void ndpi_bitmap64;
+typedef void ndpi_bitmap_iterator;
+typedef void ndpi_filter;
+    
+typedef struct {
+  u_int32_t num_allocated_entries, num_used_entries;
+  struct ndpi_binary_bitmap_entry *entries;
+  bool is_compressed;
+} ndpi_binary_bitmap;
+
+#define MAX_NUM_NDPI_DOMAIN_CLASSIFICATIONS          16
+
+typedef struct {
+  struct {
+    u_int16_t class_id;
+    ndpi_bitmap64 *domains;
+  } classes[MAX_NUM_NDPI_DOMAIN_CLASSIFICATIONS];
+} ndpi_domain_classify;
 
 #ifdef NDPI_LIB_COMPILATION
 
@@ -1564,9 +1610,6 @@ struct ndpi_flow_struct {
   /* Some protocols calculate the entropy. */
   float entropy;
 
-  /* Place textual flow info here */
-  char flow_extra_info[16];
-
   /* General purpose field used to save mainly hostname/SNI information.
    * In details it used for: MGCP, COLLECTD, DNS, SSDP and NETBIOS name, HTTP, MUNIN and DHCP hostname,
    * WHOIS request, TLS/QUIC server name, XIAOMI domain and STUN realm.
@@ -1647,6 +1690,10 @@ struct ndpi_flow_struct {
     } softether;
 
     struct {
+      char currency[16];
+    } mining;  
+
+    struct {
       char *server_names, *advertised_alpns, *negotiated_alpn, *tls_supported_versions, *issuerDN, *subjectDN;
       u_int32_t notBefore, notAfter;
       char ja3_client[33], ja3_server[33];
@@ -1674,6 +1721,8 @@ struct ndpi_flow_struct {
       } encrypted_ch;
 
       ndpi_cipher_weakness server_unsafe_cipher;
+
+      u_int32_t quic_version;
     } tls_quic; /* Used also by DTLS and POPS/IMAPS/SMTPS/FTPS */
 
     struct {
@@ -1836,8 +1885,8 @@ struct ndpi_flow_struct {
 
 #if !defined(NDPI_CFFI_PREPROCESSING) && defined(__linux__)
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 210,
-               "Size of the struct member protocols increased to more than 210 bytes, "
+_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 216,
+               "Size of the struct member protocols increased to more than 216 bytes, "
                "please check if this change is necessary.");
 _Static_assert(sizeof(struct ndpi_flow_struct) <= 988,
                "Size of the flow struct increased to more than 988 bytes, "
@@ -2157,19 +2206,6 @@ struct ndpi_des_struct {
 
 /* Prototype used to define custom DGA detection function */
 typedef int (*ndpi_custom_dga_predict_fctn)(const char* domain, int domain_length);
-
-/* **************************************** */
-
-typedef void ndpi_bitmap;
-typedef void ndpi_bitmap_iterator;
-typedef void ndpi_filter;
-
-typedef struct {
-  ndpi_filter *filter[2 /* direct and reverse */];
-} ndpi_string_search;
-
-
-#define MAX_NUM_NDPI_DOMAIN_CLASSIFICATIONS  16
 
 /* **************************************** */
 

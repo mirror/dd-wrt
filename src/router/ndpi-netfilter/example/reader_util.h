@@ -93,6 +93,10 @@ extern int dpdk_port_deinit(int port);
 #define SERIALIZATION_BUFSIZ     (8192 * 2)
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // inner hash table (ja3 -> security state)
 typedef struct ndpi_ja3_info {
   char * ja3;
@@ -254,12 +258,15 @@ typedef struct ndpi_flow_info {
 
   ndpi_serializer ndpi_flow_serializer;
 
-  char flow_extra_info[16];
   char host_server_name[80]; /* Hostname/SNI */
   char *bittorent_hash;
   char *dhcp_fingerprint;
   char *dhcp_class_ident;
   ndpi_risk risk;
+
+  struct {
+    char currency[16];
+  } mining;
   
   struct {
     u_int16_t ssl_version;
@@ -284,6 +291,8 @@ typedef struct ndpi_flow_info {
     time_t notBefore, notAfter;
     u_int16_t server_cipher;
     ndpi_cipher_weakness client_unsafe_cipher, server_unsafe_cipher;
+
+    u_int32_t quic_version;
   } ssh_tls;
 
   struct {
@@ -408,11 +417,11 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 void ndpi_flow_info_free_data(struct ndpi_flow_info *flow);
 void ndpi_flow_info_freer(void *node);
 const char* print_cipher_id(u_int32_t cipher);
-double ndpi_flow_get_byte_count_entropy(const uint32_t byte_count[256], unsigned int num_bytes);
+int parse_proto_name_list(char *str, NDPI_PROTOCOL_BITMASK *bitmask, int inverted_logic);
 
 extern int nDPI_LogLevel;
 
-#ifdef NDPI_ENABLE_DEBUG_MESSAGES
+#if defined(NDPI_ENABLE_DEBUG_MESSAGES) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #define LOG(log_level, args...)			\
   {						\
     if(log_level <= nDPI_LogLevel)		\
@@ -424,6 +433,10 @@ extern int nDPI_LogLevel;
 
 #ifndef LINKTYPE_LINUX_SLL2
 #define LINKTYPE_LINUX_SLL2 276
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

@@ -736,21 +736,21 @@ NDPI_STATIC   int ndpi_get_category_id(struct ndpi_detection_module_struct *ndpi
    *
    * @par  ndpi_mod = the detection module
    */
-NDPI_STATIC   void ndpi_dump_protocols(struct ndpi_detection_module_struct *mod);
+NDPI_STATIC void ndpi_dump_protocols(struct ndpi_detection_module_struct *mod, FILE *dump_out);
 
   /**
    * Generate Options list used in OPNsense firewall plugin
    *
    * @par  opt = The Option list to generate
    */
-NDPI_STATIC   void ndpi_generate_options(u_int opt);
+NDPI_STATIC void ndpi_generate_options(u_int opt, FILE *dump_out);
 
   /**
    * Write the list of the scores and their associated risks
    *
    * @par  ndpi_mod = the detection module
    */
-NDPI_STATIC   void ndpi_dump_risks_score(void);
+NDPI_STATIC void ndpi_dump_risks_score(FILE *dump_out);
 
   /**
    * Read a file and load the protocols
@@ -770,7 +770,7 @@ NDPI_STATIC   void ndpi_dump_risks_score(void);
 NDPI_STATIC   int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_mod,
 			       const char* path);
 
-NDPI_STATIC ndpi_load_protocols_file2(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC int ndpi_load_protocols_file2(struct ndpi_detection_module_struct *ndpi_mod,
 			        FILE *fd);
 #endif
 
@@ -827,7 +827,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    */
   int ndpi_load_category_file(struct ndpi_detection_module_struct *ndpi_str,
 			      char* path, ndpi_protocol_category_t category_id);
-  
+
   /**
    * Load files (whose name is <categoryid>_<label>.<extension>) stored
    * in a directory and bind each domain to the specified category.
@@ -1221,8 +1221,6 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 #endif
 
   NDPI_STATIC char *ndpi_get_ip_proto_name(u_int16_t ip_proto, char *name, unsigned int name_len);
-  NDPI_STATIC void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]);
-  NDPI_STATIC u_int32_t ndpi_quick_hash(unsigned char *str, u_int str_len);
 
   NDPI_STATIC const char* ndpi_http_method2str(ndpi_http_method m);
   NDPI_STATIC ndpi_http_method ndpi_http_str2method(const char* method, u_int16_t method_len);
@@ -1817,8 +1815,20 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 
   /* ******************************* */
 
+  NDPI_STATIC void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]);
   NDPI_STATIC u_int32_t ndpi_crc32(const void* data, size_t n_bytes);
   NDPI_STATIC u_int32_t ndpi_nearest_power_of_two(u_int32_t x);
+
+  NDPI_STATIC u_int32_t ndpi_crc32(const void* data, size_t n_bytes);
+  NDPI_STATIC u_int32_t ndpi_nearest_power_of_two(u_int32_t x);
+
+  /* ******************************* */
+
+  NDPI_STATIC u_int64_t ndpi_quick_hash64(const char *str, u_int str_len);
+  NDPI_STATIC u_int32_t ndpi_hash_string(const char *str);
+  NDPI_STATIC u_int32_t ndpi_rev_hash_string(const char *str);
+  NDPI_STATIC u_int32_t ndpi_hash_string_len(const char *str, u_int len);
+  NDPI_STATIC u_int32_t ndpi_murmur_hash(const char *str, u_int str_len);
 
   /* ******************************* */
   NDPI_STATIC int ndpi_des_init(struct ndpi_des_struct *des, double alpha, double beta, float significance);
@@ -1851,6 +1861,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
                             ndpi_confidence_t confidence,
                             ndpi_protocol l7_protocol);
 #endif /* KERNEL */
+  NDPI_STATIC u_int32_t ndpi_quick_hash(const unsigned char *str, u_int str_len);
   NDPI_STATIC const char* ndpi_risk2str(ndpi_risk_enum risk);
   NDPI_STATIC const char* ndpi_severity2str(ndpi_risk_severity s);
   NDPI_STATIC ndpi_risk_info* ndpi_risk2severity(ndpi_risk_enum risk);
@@ -2051,11 +2062,51 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC void ndpi_bitmap_iterator_free(ndpi_bitmap* b);
   NDPI_STATIC bool ndpi_bitmap_iterator_next(ndpi_bitmap_iterator* i, u_int32_t *value);
   /* ******************************* */
-  /*
-    Bloom-filter on steroids based on ndpi_bitmap
-  */
 
-  NDPI_STATIC ndpi_filter* ndpi_filter_alloc();
+  /*
+    Bitmap with 64 bit values based
+    on https://github.com/FastFilter/xor_singleheader/tree/master
+
+    This is
+    - a probabilistic datastructure !!! (i.e. be prepared to false positives)
+    - immutable (i.e. adding keys after a search (i.e. ndpi_bitmap64_isset)
+      is not allowed
+   */
+
+  NDPI_STATIC ndpi_bitmap64* ndpi_bitmap64_alloc(void);
+  NDPI_STATIC bool ndpi_bitmap64_set(ndpi_bitmap64 *b, u_int64_t value);
+  NDPI_STATIC bool ndpi_bitmap64_compress(ndpi_bitmap64 *b);
+  NDPI_STATIC bool ndpi_bitmap64_isset(ndpi_bitmap64 *b, u_int64_t value);
+  NDPI_STATIC void ndpi_bitmap64_free(ndpi_bitmap64 *b);
+  NDPI_STATIC u_int32_t ndpi_bitmap64_size(ndpi_bitmap64 *b);
+
+  /* ******************************* */
+
+  /*
+ Bloom-filter on steroids based on ndpi_bitmap
+
+    The main difference with respect to bloom filters
+    is that here the filter cardinality is 2^32 and thus
+    not limited as in blooms. This combined with compression
+    of ndpi_bitmap creates a memory savvy datastructure at the
+    price of little performance penalty due to using a
+    compressed datastucture.
+
+    The result is a datatructure with few false positives
+    (see https://hur.st/bloomfilter/) computed as
+
+    p = (1 - e(-((k * n)/m)))^k
+
+    number of hash function (k)
+    false positive rate (p)
+    number of item (n)
+    the number of bits (m)
+
+    As in our case m = 2^32, k = 1, for n = 1000000
+    (see https://hur.st/bloomfilter/?n=1000000&p=&m=4294967296&k=1)
+    p = 2.3 x 10^-4
+  */
+  NDPI_STATIC ndpi_filter* ndpi_filter_alloc(void);
   NDPI_STATIC bool         ndpi_filter_add(ndpi_filter *f, u_int32_t value); /* returns true on success, false on failure */
   NDPI_STATIC bool         ndpi_filter_add_string(ndpi_filter *f, char *string); /* returns true on success, false on failure */
   NDPI_STATIC bool         ndpi_filter_contains(ndpi_filter *f, u_int32_t value); /* returns true on success, false on failure */
@@ -2063,20 +2114,6 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC void         ndpi_filter_free(ndpi_filter *f);
   NDPI_STATIC size_t       ndpi_filter_size(ndpi_filter *f);
   NDPI_STATIC u_int32_t    ndpi_filter_cardinality(ndpi_filter *f);
-  
-  /* ******************************* */
- 
-  /*
-    Efficient (space and speed) probabilitic datastructure
-    for exact string searching with a false positive rate
-    of 5 * 10 ^ -8
-  */
-  NDPI_STATIC ndpi_string_search* ndpi_string_search_alloc();
-  NDPI_STATIC void                ndpi_string_search_free(ndpi_string_search *s);
-  NDPI_STATIC u_int32_t           ndpi_string_search_size(ndpi_string_search *s);
-  NDPI_STATIC bool                ndpi_string_search_add(ndpi_string_search *s, char *string);
-  NDPI_STATIC bool                ndpi_string_search_contains(ndpi_string_search *s, char *string);
-  NDPI_STATIC u_int32_t           ndpi_string_search_cardinality(ndpi_string_search *f);
 
   /* ******************************* */
 
@@ -2085,16 +2122,35 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
     for substring domain matching and classification
   */
 
-  NDPI_STATIC ndpi_domain_classify* ndpi_domain_classify_alloc();
+  NDPI_STATIC ndpi_domain_classify* ndpi_domain_classify_alloc(void);
   NDPI_STATIC void                  ndpi_domain_classify_free(ndpi_domain_classify *s);
   NDPI_STATIC u_int32_t             ndpi_domain_classify_size(ndpi_domain_classify *s);
   NDPI_STATIC bool                  ndpi_domain_classify_add(ndpi_domain_classify *s,
-						 u_int16_t classification_id, char *domain);
-  NDPI_STATIC u_int32_t             ndpi_domain_classify_add_domains(ndpi_domain_classify *_s,
-							 u_int16_t classification_id,
+						 u_int8_t class_id, const char *domain);
+  NDPI_STATIC u_int32_t             ndpi_domain_classify_add_domains(ndpi_domain_classify *s,
+							 u_int8_t class_id,
 							 char *file_path);
-  NDPI_STATIC u_int16_t             ndpi_domain_classify_contains(ndpi_domain_classify *s, char *domain);
 
+  NDPI_STATIC bool                  ndpi_domain_classify_finalize(ndpi_domain_classify *s);
+  NDPI_STATIC bool                  ndpi_domain_classify_contains(ndpi_domain_classify *s,
+						      u_int8_t *class_id /* out */,
+						      const char *domain);
+
+  /* ******************************* */
+
+  /*
+    Similar to ndpi_filter but based on binary search and with the
+    ability to store a category per value (as ndpi_domain_classify)
+  */
+  NDPI_STATIC ndpi_binary_bitmap* ndpi_binary_bitmap_alloc(void);
+  NDPI_STATIC bool ndpi_binary_bitmap_set(ndpi_binary_bitmap *b, u_int64_t value, u_int8_t category);
+  NDPI_STATIC bool ndpi_binary_bitmap_compress(ndpi_binary_bitmap *b);
+  NDPI_STATIC bool ndpi_binary_bitmap_isset(ndpi_binary_bitmap *b, u_int64_t value, u_int8_t *out_category);
+  NDPI_STATIC void ndpi_binary_bitmap_free(ndpi_binary_bitmap *b);
+  NDPI_STATIC u_int32_t ndpi_binary_bitmap_size(ndpi_binary_bitmap *b);
+  NDPI_STATIC u_int32_t ndpi_binary_bitmap_cardinality(ndpi_binary_bitmap *b);
+
+  /* ******************************* */
 
   /* ******************************* */
 

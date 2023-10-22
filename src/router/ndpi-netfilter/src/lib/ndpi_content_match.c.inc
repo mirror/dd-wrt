@@ -891,6 +891,8 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "hotspotshield.com",                    "HotspotShield",    NDPI_PROTOCOL_HOTSPOT_SHIELD, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".northghost.com",                      "HotspotShield",    NDPI_PROTOCOL_HOTSPOT_SHIELD, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
+   { ".sec-tunnel.com",                      "OperaVPN",    NDPI_PROTOCOL_OPERA_VPN, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
    { ".webex.com",                              "Webex",           NDPI_PROTOCOL_WEBEX, NDPI_PROTOCOL_CATEGORY_VOIP, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".webexcontent.com",                       "Webex",           NDPI_PROTOCOL_WEBEX, NDPI_PROTOCOL_CATEGORY_VOIP, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
@@ -1216,6 +1218,7 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "senderscore.com",                  "Cybersec", NDPI_PROTOCOL_CYBERSECURITY, NDPI_PROTOCOL_CATEGORY_CYBERSECURITY, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "ixhash.net",                       "Cybersec", NDPI_PROTOCOL_CYBERSECURITY, NDPI_PROTOCOL_CATEGORY_CYBERSECURITY, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "esvarbl.com",                      "Cybersec", NDPI_PROTOCOL_CYBERSECURITY, NDPI_PROTOCOL_CATEGORY_CYBERSECURITY, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "abuse.ch",                         "Cybersec", NDPI_PROTOCOL_CYBERSECURITY, NDPI_PROTOCOL_CATEGORY_CYBERSECURITY, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".dnsbl.", /* www.dnsbl.info */     "Cybersec", NDPI_PROTOCOL_CYBERSECURITY, NDPI_PROTOCOL_CATEGORY_CYBERSECURITY, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "iqiyi.com",                        "PPStream", NDPI_PROTOCOL_PPSTREAM, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1584,6 +1587,7 @@ static ndpi_tls_cert_name_match tls_certificate_match [] = {
 */
 
 #ifndef __KERNEL__
+#ifndef __KERNEL__
 static ndpi_category_match category_match[] = {
    { ".edgecastcdn.net",                 NDPI_PROTOCOL_CATEGORY_MEDIA },
    { ".hwcdn.net",                       NDPI_PROTOCOL_CATEGORY_MEDIA },
@@ -1616,4 +1620,5 @@ static ndpi_category_match category_match[] = {
 
    { NULL, 0 }
 };
+#endif
 #endif

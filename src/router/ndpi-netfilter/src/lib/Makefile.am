@@ -33,6 +33,11 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_domain_classify.c \
 		     ndpi_filter.c \
 		     ndpi_geoip.c \
+		     ndpi_binary_bitmap.c \
+		     ndpi_domain_classify.c \
+		     ndpi_bitmap64.c \
+		     ndpi_binary_bitmap.c \
+		     ndpi_hash.c \
 		     protocols/activision.c \
 		     protocols/afp.c \
 		     protocols/alicloud.c \
@@ -88,10 +93,12 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/guildwars.c \
 		     protocols/h323.c \
 		     protocols/halflife2_and_mods.c \
+		     protocols/haproxy.c \
 		     protocols/hots.c \
 		     protocols/hpvirtgrp.c \
 		     protocols/hsrp.c \
 		     protocols/http.c \
+		     protocols/http2.c \
 		     protocols/iax.c \
 		     protocols/icecast.c \
 		     protocols/i3d.c \

@@ -25,9 +25,14 @@
 #define __NDPI_UTILS_H__
 
 #include "ndpi_define.h"
+#ifndef NDPI_CFFI_PREPROCESSING
+#include "ndpi_includes.h"
+#endif
 
 #ifndef NDPI_CFFI_PREPROCESSING
-NDPI_STATIC u_int8_t ndpi_ends_with(char *str, char *ends);
+struct ndpi_detection_module_struct;
+NDPI_STATIC u_int8_t ndpi_ends_with(struct ndpi_detection_module_struct *ndpi_struct,
+                               char *str, char *ends);
 #endif // NDPI_CFFI_PREPROCESSING
 /* **************************************** */
 

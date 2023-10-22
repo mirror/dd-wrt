@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <float.h> /* FLT_EPSILON */
 #ifdef WIN32
 #include <winsock2.h> /* winsock.h is included automatically */
 #include <windows.h>
@@ -40,6 +41,7 @@
 #else
 #include <unistd.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
 #include <sys/socket.h>
 #include <sys/mman.h>
 #endif
@@ -407,6 +409,22 @@ static void ndpiCheckIPMatch(char *testChar) {
 
 /********************** FUNCTIONS ********************* */
 
+static double ndpi_flow_get_byte_count_entropy(const uint32_t byte_count[256],
+					       unsigned int num_bytes)
+{
+  int i;
+  double sum = 0.0;
+
+  for(i=0; i<256; i++) {
+    double tmp = (double) byte_count[i] / (double) num_bytes;
+
+    if(tmp > FLT_EPSILON) {
+      sum -= tmp * logf(tmp);
+    }
+  }
+  return(sum / log(2.0));
+}
+
 /**
  * @brief Set main components necessary to the detection
  */
@@ -433,6 +451,8 @@ flowGetBDMeanandVariance(struct ndpi_flow_info* flow) {
    * Sum up the byte_count array for outbound and inbound flows,
    * if this flow is bidirectional
    */
+  /* TODO: we could probably use ndpi_data_* generic functions to simplify the code and
+     to get rid of `ndpi_flow_get_byte_count_entropy()` */
   if (!flow->bidirectional) {
     array = last_entropy->src2dst_byte_count;
     num_bytes = last_entropy->src2dst_l4_bytes;
@@ -613,10 +633,10 @@ static void help(u_int long_help) {
     NDPI_BITMASK_SET_ALL(all);
     ndpi_set_protocol_detection_bitmask2(ndpi_info_mod, &all);
 
-    ndpi_dump_protocols(ndpi_info_mod);
+    ndpi_dump_protocols(ndpi_info_mod, stdout);
 
     printf("\n\nnDPI supported risks:\n");
-    ndpi_dump_risks_score();
+    ndpi_dump_risks_score(stdout);
 
     ndpi_exit_detection_module(ndpi_info_mod);
   }
@@ -849,7 +869,7 @@ void printCSVHeader() {
 
   /* Flow info */
   fprintf(csv_fp, "server_info,");
-  fprintf(csv_fp, "tls_version,ja3c,tls_client_unsafe,");
+  fprintf(csv_fp, "tls_version,quic_version,ja3c,tls_client_unsafe,");
   fprintf(csv_fp, "ja3s,tls_server_unsafe,");
   fprintf(csv_fp, "advertised_alpns,negotiated_alpn,tls_supported_versions,");
 #if 0
@@ -978,7 +998,7 @@ static void parseOptions(int argc, char **argv) {
 
     switch (opt) {
     case 'a':
-      ndpi_generate_options(atoi(optarg));
+      ndpi_generate_options(atoi(optarg), stdout);
       exit(0);
 
     case 'A':
@@ -1480,6 +1500,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
   u_int8_t known_tls;
   char buf[32], buf1[64];
   char buf_ver[16];
+  char buf2_ver[16];
   char l4_proto_name[32];
   u_int i;
 
@@ -1543,8 +1564,9 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     fprintf(csv_fp, "%s,",
             (flow->ssh_tls.server_info[0] != '\0')  ? flow->ssh_tls.server_info : "");
 
-    fprintf(csv_fp, "%s,%s,%s,%s,%s,",
+    fprintf(csv_fp, "%s,%s,%s,%s,%s,%s,",
             (flow->ssh_tls.ssl_version != 0)        ? ndpi_ssl_version2str(buf_ver, sizeof(buf_ver), flow->ssh_tls.ssl_version, &known_tls) : "0",
+            (flow->ssh_tls.quic_version != 0)       ? ndpi_quic_version2str(buf2_ver, sizeof(buf2_ver), flow->ssh_tls.quic_version) : "0",
             (flow->ssh_tls.ja3_client[0] != '\0')   ? flow->ssh_tls.ja3_client : "",
             (flow->ssh_tls.ja3_client[0] != '\0')   ? is_unsafe_cipher(flow->ssh_tls.client_unsafe_cipher) : "0",
             (flow->ssh_tls.ja3_server[0] != '\0')   ? flow->ssh_tls.ja3_server : "",
@@ -1787,7 +1809,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     if(flow->ssh_tls.tls_supported_versions)
       fprintf(out, "[TLS Supported Versions: %s]", flow->ssh_tls.tls_supported_versions);
 
-    if(flow->flow_extra_info[0] != '\0') fprintf(out, "[%s]", flow->flow_extra_info);
+    if(flow->mining.currency[0] != '\0') fprintf(out, "[currency: %s]", flow->mining.currency);
 
     if(flow->dns.geolocation_iata_code[0] != '\0') fprintf(out, "[GeoLocation: %s]", flow->dns.geolocation_iata_code);
 
@@ -1862,6 +1884,9 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
     if(flow->ssh_tls.ssl_version != 0) fprintf(out, "[%s]", ndpi_ssl_version2str(buf_ver, sizeof(buf_ver),
 										 flow->ssh_tls.ssl_version, &known_tls));
+
+    if(flow->ssh_tls.quic_version != 0) fprintf(out, "[QUIC ver: %s]", ndpi_quic_version2str(buf_ver, sizeof(buf_ver),
+										 flow->ssh_tls.quic_version));
 
     if(flow->ssh_tls.client_hassh[0] != '\0') fprintf(out, "[HASSH-C: %s]", flow->ssh_tls.client_hassh);
 
@@ -5452,15 +5477,35 @@ void sketchUnitTest() {
 
 /* *********************************************** */
 
+void binaryBitmapUnitTest() {
+  ndpi_binary_bitmap *b = ndpi_binary_bitmap_alloc();
+  u_int64_t hashval = 8149764909040470312;
+  u_int8_t category = 33;
+  
+  ndpi_binary_bitmap_set(b, hashval, category);
+  ndpi_binary_bitmap_set(b, hashval+1, category);
+  category = 0;
+  assert(ndpi_binary_bitmap_isset(b, hashval, &category));
+  assert(category == 33);
+  ndpi_binary_bitmap_free(b);
+}
+
+/* *********************************************** */
+
 void domainSearchUnitTest() {
   ndpi_domain_classify *sc = ndpi_domain_classify_alloc();
   char *domain = "ntop.org";
+  u_int8_t class_id;
   
   assert(sc);
-
+    
   ndpi_domain_classify_add(sc, NDPI_PROTOCOL_NTOP, ".ntop.org");
   ndpi_domain_classify_add(sc, NDPI_PROTOCOL_NTOP, domain);
-  assert(ndpi_domain_classify_contains(sc, domain));
+  assert(ndpi_domain_classify_contains(sc, &class_id, domain));
+
+  ndpi_domain_classify_add(sc, NDPI_PROTOCOL_CATEGORY_GAMBLING, "123vc.club");
+  assert(ndpi_domain_classify_contains(sc, &class_id, "123vc.club"));
+  assert(class_id == NDPI_PROTOCOL_CATEGORY_GAMBLING);
 
 #if 0
   {
@@ -5475,7 +5520,8 @@ void domainSearchUnitTest() {
 #endif
   
   /* Subdomain check */
-  assert(ndpi_domain_classify_contains(sc, "blog.ntop.org") == NDPI_PROTOCOL_NTOP);
+  assert(ndpi_domain_classify_contains(sc, &class_id, "blog.ntop.org"));
+  assert(class_id == NDPI_PROTOCOL_NTOP);
   
 #ifdef DEBUG_TRACE
   struct stat st;
@@ -5489,6 +5535,20 @@ void domainSearchUnitTest() {
 #endif
   
   ndpi_domain_classify_free(sc);
+}
+
+/* *********************************************** */
+
+void domainSearchUnitTest2() {
+  ndpi_domain_classify *c = ndpi_domain_classify_alloc();
+  u_int8_t class_id = 9;
+
+  ndpi_domain_classify_add(c, class_id, "ntop.org");
+  ndpi_domain_classify_add(c, class_id, "apple.com");
+
+  assert(!ndpi_domain_classify_contains(c, &class_id, "ntop.com"));
+  
+  ndpi_domain_classify_free(c);
 }
 
 /* *********************************************** */
@@ -5532,7 +5592,9 @@ int main(int argc, char **argv) {
     exit(0);
 #endif
 
+    binaryBitmapUnitTest();
     domainSearchUnitTest();
+    domainSearchUnitTest2();
     sketchUnitTest();
     linearUnitTest();
     zscoreUnitTest();

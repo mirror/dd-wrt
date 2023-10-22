@@ -7,6 +7,7 @@
 #include "third_party/src/ndpi_patricia.c"
 #include "third_party/src/gcrypt_light.c"
 #include "third_party/src/btlib.c"
+#include "third_party/src/hll/MurmurHash3.c"
 
 #undef NDPI_CURRENT_PROTO
 #include "protocols/afp.c"
@@ -382,4 +383,8 @@
 #include "protocols/epicgames.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/slp.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/haproxy.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/http2.c"
 #undef NDPI_CURRENT_PROTO

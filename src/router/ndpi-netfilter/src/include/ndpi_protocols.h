@@ -467,6 +467,8 @@ NDPI_STATIC void init_epicgames_dissector(struct ndpi_detection_module_struct *n
 NDPI_STATIC void init_bitcoin_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_apache_thrift_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_slp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_http2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_haproxy_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 /* ndpi_main.c */
 NDPI_STATIC  u_int32_t ndpi_ip_port_hash_funct(u_int32_t ip, u_int16_t port);

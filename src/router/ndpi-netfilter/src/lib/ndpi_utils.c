@@ -62,6 +62,8 @@
 #include "third_party/include/rce_injection.h"
 #endif
 
+#include "ndpi_replace_printf.h"
+
 #define NDPI_CONST_GENERIC_PROTOCOL_NAME  "GenericProtocol"
 
 // #define MATCH_DEBUG 1
@@ -1255,6 +1257,7 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 		  ndpi_serializer *serializer) {
   char buf[64];
   char const *host_server_name;
+  char quic_version[16];
 
   if(flow == NULL) return(-1);
 
@@ -1287,7 +1290,9 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
       char bittorent_hash[sizeof(flow->protos.bittorrent.hash)*2+1];
 
       for(i=0, j = 0; j < sizeof(bittorent_hash)-1; i++) {
-	sprintf(&bittorent_hash[j], "%02x",
+	snprintf(&bittorent_hash[j],
+		 sizeof(bittorent_hash) - j,
+		 "%02x",
 		flow->protos.bittorrent.hash[i]);
 
 	j += 2, n += flow->protos.bittorrent.hash[i];
@@ -1450,6 +1455,10 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_start_of_block(serializer, "quic");
     if(flow->http.user_agent)
       ndpi_serialize_string_string(serializer, "user_agent", flow->http.user_agent);
+
+    ndpi_quic_version2str(quic_version, sizeof(quic_version),
+                          flow->protos.tls_quic.quic_version);
+    ndpi_serialize_string_string(serializer, "quic_version", quic_version);
 
     ndpi_tls2json(serializer, flow);
 
@@ -2035,7 +2044,7 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
     return("Fragmented DNS Message");
 
   case NDPI_INVALID_CHARACTERS:
-    return("Text With Non-Printable Chars");
+    return("Non-Printable/Invalid Chars Detected");
 
   case NDPI_POSSIBLE_EXPLOIT:
     return("Possible Exploit");
@@ -2073,6 +2082,13 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
   case NDPI_FULLY_ENCRYPTED:
     return("Fully encrypted flow");
 
+  case NDPI_TLS_ALPN_SNI_MISMATCH:
+    return("ALPN/SNI Mismatch");
+    
+  case NDPI_MALWARE_HOST_CONTACTED:
+    return("Client contacted a malware host");
+    break;
+    
   default:
     ndpi_snprintf(buf, sizeof(buf), "%d", (int)risk);
     return(buf);
@@ -3035,3 +3051,4 @@ NDPI_STATIC u_int32_t ndpi_nearest_power_of_two(u_int32_t x) {
   x++;
   return(x);
 }
+

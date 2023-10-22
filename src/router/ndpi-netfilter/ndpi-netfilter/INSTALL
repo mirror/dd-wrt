@@ -7,13 +7,14 @@ The minimum required kernel version is 4.4.
 If you need to use the extension 'connlabel' you need
 to use a patch for the kernel.
 
-For linux kernels since 5.18 patches are not implemented yet.
+Linux kernels 5.18 and higher that do not support
+CONFIG_LIVEPATCH require a patch.
 
 --------------------------------------------------------
 2. The minimum requirements for the kernel configuration
 --------------------------------------------------------
 
-Kernel version >= 5.18
+Kernel version >= 5.18 with "Kernel Live Patching"
 
   Processor type and features  --->
     [*] Kernel Live Patching
@@ -27,6 +28,21 @@ Kernel version >= 5.18
   or
 
     CONFIG_LIVEPATCH=y
+    CONFIG_NF_CONNTRACK=m or y
+    CONFIG_NF_CONNTRACK_LABELS=y
+    CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
+
+Kernel version >= 5.18 with patch, without "Kernel Live Patching"
+
+  Networking support  --->
+    Networking options  --->
+    [*] Network packet filtering framework (Netfilter)  --->
+        Core Netfilter Configuration  --->
+          Netfilter connection tracking support (M/Y)
+	  "connlabel" match support (M)
+
+  or
+
     CONFIG_NF_CONNTRACK=m or y
     CONFIG_NF_CONNTRACK_LABELS=y
     CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
