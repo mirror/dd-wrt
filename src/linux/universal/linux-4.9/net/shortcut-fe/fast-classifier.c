@@ -1846,6 +1846,68 @@ static ssize_t fast_classifier_get_exceptions(struct device *dev,
 	return len;
 }
 #endif
+
+static ssize_t fast_classifier_get_stop(struct device *dev,
+                               struct device_attribute *attr,
+                               char *buf)
+{
+	int (*fast_recv)(struct sk_buff *skb);
+	rcu_read_lock();
+	fast_recv = rcu_dereference(fast_nat_recv);
+	rcu_read_unlock();
+	return snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", fast_recv ? 0 : 1);
+}
+
+static ssize_t fast_classifier_set_stop(struct device *dev,
+                               struct device_attribute *attr,
+                               const char *buf, size_t count)
+{
+	int ret;
+	u32 num;
+	int (*fast_recv)(struct sk_buff *skb);
+
+	ret = kstrtou32(buf, 0, &num);
+	if (ret)
+		return ret;
+
+	/*
+	 * Hook/Unhook the receive path in the network stack.
+	 */
+	if (num) {
+		RCU_INIT_POINTER(fast_nat_recv, NULL);
+	} else {
+		rcu_read_lock();
+		fast_recv = rcu_dereference(fast_nat_recv);
+		rcu_read_unlock();
+		if (!fast_recv) {
+			BUG_ON(fast_nat_recv);
+			RCU_INIT_POINTER(fast_nat_recv, fast_classifier_recv);
+		}
+	}
+
+	return count;
+}
+
+/*
+ * sfe_cm_get_defunct_all
+ * 	dump state of SFE
+ */
+static ssize_t fast_classifier_get_defunct_all(struct device *dev,
+                                      struct device_attribute *attr,
+                                      char *buf)
+{
+	return snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", 0);
+}
+
+static ssize_t fast_classifier_set_defunct_all(struct device *dev,
+                                      struct device_attribute *attr,
+                                      const char *buf, size_t count)
+{
+	sfe_ipv4_destroy_all_rules_for_dev(NULL);
+	sfe_ipv6_destroy_all_rules_for_dev(NULL);
+	return count;
+}
+
 /*
  * sysfs attributes.
  */
@@ -1855,6 +1917,10 @@ static const struct device_attribute fast_classifier_debug_info_attr =
 	__ATTR(debug_info, S_IRUGO, fast_classifier_get_debug_info, NULL);
 static const struct device_attribute fast_classifier_skip_bridge_ingress =
 	__ATTR(skip_to_bridge_ingress, S_IWUSR | S_IRUGO, fast_classifier_get_skip_bridge_ingress, fast_classifier_set_skip_bridge_ingress);
+static const struct device_attribute fast_classifier_stop =
+	__ATTR(stop, S_IWUSR | S_IRUGO, fast_classifier_get_stop, fast_classifier_set_stop);
+static const struct device_attribute fast_classifier_defunct_all =
+	__ATTR(defunct_all, S_IWUSR | S_IRUGO, fast_classifier_get_defunct_all, fast_classifier_set_defunct_all);
 
 #if (DEBUG_LEVEL > 0)
 static const struct device_attribute fast_classifier_exceptions_attr =
@@ -1907,6 +1973,25 @@ static int __init fast_classifier_init(void)
 		goto exit2;
 	}
 
+	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_stop.attr);
+	if (result) {
+		DEBUG_ERROR("failed to register skip bridge on ingress: %d\n", result);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+		goto exit2;
+	}
+
+	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_defunct_all.attr);
+	if (result) {
+		DEBUG_ERROR("failed to register skip bridge on ingress: %d\n", result);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_stop.attr);
+		goto exit2;
+	}
+
 #if (DEBUG_LEVEL > 0)
 	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
 	if (result) {
@@ -1914,6 +1999,8 @@ static int __init fast_classifier_init(void)
 		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
 		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
 		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_stop.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_defunct_all.attr);
 		goto exit2;
 	}
 #endif
@@ -2006,7 +2093,7 @@ exit6:
 
 exit5:
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
-	nf_conntrack_unregister_notifier(&init_net, &fast_classifier_conntrack_notifier);
+	nf_conntrack_unregister_notifier(&init_net);
 
 exit4:
 #endif
@@ -2022,6 +2109,8 @@ exit3:
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_stop.attr);
+	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_defunct_all.attr);
 #if (DEBUG_LEVEL > 0)
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
 #endif
@@ -2082,7 +2171,7 @@ static void __exit fast_classifier_exit(void)
 	}
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
-	nf_conntrack_unregister_notifier(&init_net, &fast_classifier_conntrack_notifier);
+	nf_conntrack_unregister_notifier(&init_net);
 
 #endif
 	nf_unregister_hooks(fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
