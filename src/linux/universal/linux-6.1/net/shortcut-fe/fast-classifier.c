@@ -2028,74 +2028,58 @@ static void __exit fast_classifier_exit(void)
 	/*
 	 * Unregister our sync callback.
 	 */
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	sfe_ipv4_register_sync_rule_callback(NULL);
 #ifdef SFE_SUPPORT_IPV6
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	sfe_ipv6_register_sync_rule_callback(NULL);
 #endif
 
 	/*
 	 * Unregister our receive callback.
 	 */
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	RCU_INIT_POINTER(fast_nat_recv, NULL);
 
 	/*
 	 * Wait for all callbacks to complete.
 	 */
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	rcu_barrier();
 
 	/*
 	 * Destroy all connections.
 	 */
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	sfe_ipv4_destroy_all_rules_for_dev(NULL);
 #ifdef SFE_SUPPORT_IPV6
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	sfe_ipv6_destroy_all_rules_for_dev(NULL);
 #endif
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	result = genl_unregister_ops(&fast_classifier_gnl_family, fast_classifier_gnl_ops);
 	if (result != 0) {
 		printk(KERN_CRIT "Unable to unreigster genl_ops\n");
 	}
 #endif
 
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	result = genl_unregister_family(&fast_classifier_gnl_family);
 	if (result != 0) {
 		printk(KERN_CRIT "Unable to unreigster genl_family\n");
 	}
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	nf_conntrack_unregister_notifier(&init_net, &fast_classifier_conntrack_notifier);
 
 #endif
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	for_each_net(net) {
-	nf_unregister_net_hooks(net, fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
+		nf_unregister_net_hooks(net, fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
 	}
 #ifdef SFE_SUPPORT_IPV6
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	unregister_inet6addr_notifier(&sc->inet6_notifier);
 #endif
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	unregister_inetaddr_notifier(&sc->inet_notifier);
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	unregister_netdevice_notifier(&sc->dev_notifier);
 
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	kobject_put(sc->sys_fast_classifier);
 #ifdef SFE_SUPPORT_IPV6
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	sfe_ipv6_exit();
 #endif
-printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	sfe_ipv4_exit();
 
 }
