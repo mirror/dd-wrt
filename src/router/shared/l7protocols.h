@@ -256,6 +256,7 @@ l7filters filters_list[] = {
 	{ "halflife2-deathmatch", L7_ONLY, 0, NULL },
 	{ "hamachi1", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "haproxy", NDPI_ONLY, 0, NULL },
 	{ "hbo", NDPI_ONLY, 0, NULL },
 #endif
 	{ "hddtemp", L7_ONLY, 0, NULL },
@@ -279,6 +280,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "http_connect", NDPI_ONLY, 0, NULL },
 	{ "http_proxy", NDPI_ONLY, 0, NULL },
+	{ "http2", NDPI_ONLY, 0, NULL },
 #endif
 	{ "httpaudio", L7_ONLY, 0, NULL },
 	{ "httpcachehit", L7_ONLY, 0, NULL },
@@ -437,6 +439,7 @@ l7filters filters_list[] = {
 #endif
 #ifdef HAVE_OPENDPI
 	{ "openvpn", NDPI_ONLY, 0, NULL },
+	{ "opera_vpn", NDPI_ONLY, 0, NULL },
 	{ "oracle", NDPI_ONLY, 0, NULL },
 	{ "ospf", NDPI_ONLY, 0, NULL },
 	{ "outlook", NDPI_ONLY, 0, NULL },
