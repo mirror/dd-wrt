@@ -6293,6 +6293,8 @@ void __show_free_areas(unsigned int filter, nodemask_t *nodemask, int max_zone_i
 	show_swap_cache_info();
 }
 
+EXPORT_SYMBOL(__show_free_areas);
+
 static void zoneref_set_zone(struct zone *zone, struct zoneref *zoneref)
 {
 	zoneref->zone = zone;
