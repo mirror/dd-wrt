@@ -630,6 +630,7 @@ ndpi_mt_check (unsigned int flags)
 	if(flags & FLAGS_JA3C)  nopt++;
 	if(flags & FLAGS_TLSFP) nopt++;
 	if(flags & FLAGS_TLSV)  nopt++;
+	if(flags & FLAGS_RISK)  nopt++;
 	if(flags & FLAGS_INPROGRESS) nopt++;
 	if(nopt != 1)
 		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--ja3s|--ja3c|--tlsfp|--tlsv|--inprogress %x %d",flags,nopt);
