@@ -105,7 +105,7 @@ struct netns_ct {
 	u8			sysctl_checksum;
 
 	struct ip_conntrack_stat __percpu *stat;
-	struct atomic_notifier_head nf_conntrack_chain;
+	struct nf_ct_event_notifier __rcu *nf_conntrack_event_cb;
 	struct nf_ip_net	nf_ct_proto;
 #if defined(CONFIG_NF_CONNTRACK_LABELS)
 	unsigned int		labels_used;
