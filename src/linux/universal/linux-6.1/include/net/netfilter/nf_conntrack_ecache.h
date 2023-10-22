@@ -59,16 +59,23 @@ struct nf_exp_event {
 	u32 portid;
 	int report;
 };
-
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+extern int nf_conntrack_register_notifier(struct net *net, struct notifier_block *nb);
+extern int nf_conntrack_unregister_notifier(struct net *net, struct notifier_block *nb);
+extern int nf_conntrack_register_chain_notifier(struct net *net, struct notifier_block *nb);
+extern int nf_conntrack_unregister_chain_notifier(struct net *net, struct notifier_block *nb);
 struct nf_ct_event_notifier {
+#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	int (*ct_event)(unsigned int events, const struct nf_ct_event *item);
+#endif
 	int (*exp_event)(unsigned int events, const struct nf_exp_event *item);
 };
-
+#else
 void nf_conntrack_register_notifier(struct net *net,
 				   const struct nf_ct_event_notifier *nb);
 void nf_conntrack_unregister_notifier(struct net *net);
 
+#endif
 void nf_ct_deliver_cached_events(struct nf_conn *ct);
 int nf_conntrack_eventmask_report(unsigned int eventmask, struct nf_conn *ct,
 				  u32 portid, int report);
@@ -98,11 +105,13 @@ static inline void
 nf_conntrack_event_cache(enum ip_conntrack_events event, struct nf_conn *ct)
 {
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
-	struct net *net = nf_ct_net(ct);
 	struct nf_conntrack_ecache *e;
 
+#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+	struct net *net = nf_ct_net(ct);
 	if (!rcu_access_pointer(net->ct.nf_conntrack_event_cb))
 		return;
+#endif
 
 	e = nf_ct_ecache_find(ct);
 	if (e == NULL)
@@ -117,7 +126,9 @@ nf_conntrack_event_report(enum ip_conntrack_events event, struct nf_conn *ct,
 			  u32 portid, int report)
 {
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
+#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	if (nf_ct_ecache_exist(ct))
+#endif
 		return nf_conntrack_eventmask_report(1 << event, ct, portid, report);
 #endif
 	return 0;
@@ -127,13 +138,16 @@ static inline int
 nf_conntrack_event(enum ip_conntrack_events event, struct nf_conn *ct)
 {
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
+#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	if (nf_ct_ecache_exist(ct))
+#endif
 		return nf_conntrack_eventmask_report(1 << event, ct, 0, 0);
 #endif
 	return 0;
 }
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
+
 void nf_ct_expect_event_report(enum ip_conntrack_expect_events event,
 			       struct nf_conntrack_expect *exp,
 			       u32 portid, int report);

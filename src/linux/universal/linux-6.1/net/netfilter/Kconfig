@@ -177,6 +177,14 @@ config NF_CONNTRACK_RTCACHE
 	  To compile it as a module, choose M here.  If unsure, say N.
 	  The module will be called nf_conntrack_rtcache.
 
+config NF_CONNTRACK_CHAIN_EVENTS
+	bool "Register multiple callbacks to ct events"
+	depends on NF_CONNTRACK_EVENTS
+	help
+	  Support multiple registrations.
+
+	  If unsure, say `N'.
+
 config NF_CONNTRACK_TIMEOUT
 	bool  'Connection tracking timeout'
 	depends on NETFILTER_ADVANCED
