@@ -9986,7 +9986,7 @@ int ndpi_ptree_match_addr(ndpi_ptree_t *tree,
 
 /* ******************************************************************** */
 
-void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]) {
+NDPI_STATIC void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]) {
   ndpi_MD5_CTX ctx;
 
   ndpi_MD5Init(&ctx);
