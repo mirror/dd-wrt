@@ -399,7 +399,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"heroes_of_the_storm",
 	"facebook_reel_story",
 	"srtp",
-	"gambling",
+	"opera_vpn",
 	"epicgames",
 	"geforcenow",
 	"nvidia",
@@ -409,6 +409,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"roblox",
 	"service-location",
 	"mullvad",
+	"http2",
+	"haproxy",
 	NULL,
 };
 
