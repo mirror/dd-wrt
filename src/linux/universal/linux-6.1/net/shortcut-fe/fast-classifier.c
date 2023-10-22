@@ -1332,7 +1332,7 @@ static void fast_classifier_update_mark(struct sfe_connection_mark *mark, bool i
  *	Callback event invoked when a conntrack connection's state changes.
  */
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
- static int fast_classifier_conntrack_event(struct notifier_block *this,
+static  int fast_classifier_conntrack_event(struct notifier_block *this,
  					   unsigned long events, void *ptr)
 #else
 static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_event *item)
@@ -1554,7 +1554,6 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 		struct rtnl_link_stats64 nlstats;
 		nlstats.tx_packets = 0;
 		nlstats.tx_bytes = 0;
-
 		if (sis->src_dev && sis->src_dev->priv_flags & IFF_EBRIDGE &&
 		    (sis->src_new_packet_count || sis->src_new_byte_count)) {
 			nlstats.rx_packets = sis->src_new_packet_count;
@@ -1651,13 +1650,24 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 			}
 		}
 		timeouts = nf_ct_timeout_lookup(ct);
-		spin_lock_bh(&ct->lock);
-		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
-			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
+		if (!timeouts) {
+			struct nf_udp_net *tn = nf_udp_pernet(&init_net);
+			spin_lock_bh(&ct->lock);
+			if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
+				ct->timeout = nfct_time_stamp + tn->timeouts[UDP_CT_REPLIED];
+			} else {
+				ct->timeout = nfct_time_stamp + tn->timeouts[UDP_CT_UNREPLIED];
+			}
+			spin_unlock_bh(&ct->lock);
 		} else {
-			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
+			spin_lock_bh(&ct->lock);
+			if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
+				ct->timeout = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
+			} else {
+				ct->timeout = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
+			}
+			spin_unlock_bh(&ct->lock);
 		}
-		spin_unlock_bh(&ct->lock);
 		}
 		break;
 #endif
@@ -1667,6 +1677,7 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 	 * Release connection
 	 */
 	nf_ct_put(ct);
+
 }
 
 /*
