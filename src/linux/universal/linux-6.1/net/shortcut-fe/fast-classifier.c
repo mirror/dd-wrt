@@ -1357,6 +1357,14 @@ static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_eve
 		return NOTIFY_DONE;
 	}
 
+	/*
+	 * If this is an untracked connection then we can't have any state either.
+	 */
+	if (unlikely(nf_ct_is_untracked(ct))) {
+		DEBUG_TRACE("ignoring untracked conn\n");
+		return NOTIFY_DONE;
+	}
+
 	orig_tuple = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
 	sid.protocol = (s32)orig_tuple.dst.protonum;
 
