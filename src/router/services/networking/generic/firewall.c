@@ -2211,7 +2211,7 @@ int filtersync_main(int argc, char *argv[])
 	}
 #ifdef HAVE_SFE
 	if (changed && nvram_match("sfe", "1")) {
-		reload_sfe();
+		restart_sfe();
 	}
 #endif
 	return 0;
@@ -3738,7 +3738,7 @@ void start_firewall(void)
 	}
 #endif
 #ifdef HAVE_SFE
-	reload_sfe();
+	restart_sfe();
 #endif
 #ifdef HAVE_NODOG
 	stop_splashd();
@@ -3805,7 +3805,7 @@ void stop_firewall(void)
 	halt_firewall6();
 #endif
 #ifdef HAVE_SFE
-	reload_sfe();
+	restart_sfe();
 #endif
 	unlock();
 #if !defined(HAVE_MICRO)	//&& !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))

@@ -52,7 +52,7 @@ void start_sfe(void)
 	return;
 }
 
-void reload_sfe(void)
+void restart_sfe(void)
 {
 	sysprintf("echo 1 > /sys/fast_classifier/defunct_all");
 }
