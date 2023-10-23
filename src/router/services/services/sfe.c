@@ -31,22 +31,21 @@
 
 void start_sfe(void)
 {
+	insmod("shortcut-fe");
+	insmod("shortcut-fe-ipv6");
+	insmod("fast-classifier");
 	if (nvram_match("sfe", "1")) {
-		insmod("shortcut-fe");
-		insmod("shortcut-fe-ipv6");
-		insmod("fast-classifier");
 		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
+		sysprintf("echo 0 > /sys/fast_classifier/stop");
 		dd_loginfo("sfe", "shortcut forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "2")) {
-		rmmod("fast-classifier");
-		rmmod("shortcut-fe-ipv6");
-		rmmod("shortcut-fe");
+		sysprintf("echo 1 > /sys/fast_classifier/stop");
+		sysprintf("echo 1 > /sys/fast_classifier/defunct_all");
 		writeproc("/proc/ctf", "1");
 		dd_loginfo("ctf", "fast path forwarding successfully started\n");
 	} else {
-		rmmod("fast-classifier");
-		rmmod("shortcut-fe-ipv6");
-		rmmod("shortcut-fe");
+		sysprintf("echo 1 > /sys/fast_classifier/stop");
+		sysprintf("echo 1 > /sys/fast_classifier/defunct_all");
 		writeproc("/proc/ctf", "0");
 	}
 
@@ -55,9 +54,8 @@ void start_sfe(void)
 
 void stop_sfe(void)
 {
-	rmmod("fast-classifier");
-	rmmod("shortcut-fe-ipv6");
-	rmmod("shortcut-fe");
+	sysprintf("echo 1 > /sys/fast_classifier/stop");
+	sysprintf("echo 1 > /sys/fast_classifier/defunct_all");
 	writeproc("/proc/ctf", "0");
 	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
 	return;
