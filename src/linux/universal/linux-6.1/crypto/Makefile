@@ -212,3 +212,4 @@ obj-$(CONFIG_CRYPTO_SIMD) += crypto_simd.o
 # Key derivation function
 #
 obj-$(CONFIG_CRYPTO_KDF800108_CTR) += kdf_sp800108.o
+EXTRA_CFLAGS += -O2 $(DISABLE_LTO_GCC)
