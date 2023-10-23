@@ -87,6 +87,20 @@
  * be at least three characters long. There is no upper length limit. The first
  * character must be a letter (a–z or A–Z) or an underscore (‘_’). Subsequent
  * characters can be letters, numbers or any of ‘-_+’.
+ *
+ * # Runtime Debugging
+ *
+ * When `G_ENABLE_DEBUG` is defined during compilation, the GObject library
+ * supports an environment variable `GOBJECT_DEBUG` that can be set to a
+ * combination of flags to trigger debugging messages about
+ * object bookkeeping and signal emissions during runtime.
+ *
+ * The currently supported flags are:
+ *  - `objects`: Tracks all #GObject instances in a global hash table called
+ *    `debug_objects_ht`, and prints the still-alive objects on exit.
+ *  - `instance-count`: Tracks the number of instances of every #GType and makes
+ *    it available via the g_type_get_instance_count() function.
+ *  - `signals`: Currently unused.
  */
 
 
@@ -3915,11 +3929,15 @@ type_add_flags_W (TypeNode  *node,
  *     filled in with constant values upon success
  *
  * Queries the type system for information about a specific type.
+ *
  * This function will fill in a user-provided structure to hold
  * type-specific information. If an invalid #GType is passed in, the
  * @type member of the #GTypeQuery is 0. All members filled into the
  * #GTypeQuery structure should be considered constant and have to be
  * left untouched.
+ *
+ * Since GLib 2.78, this function allows queries on dynamic types. Previously
+ * it only supported static types.
  */
 void
 g_type_query (GType       type,
@@ -3929,10 +3947,10 @@ g_type_query (GType       type,
   
   g_return_if_fail (query != NULL);
   
-  /* if node is not static and classed, we won't allow query */
+  /* if node is not classed, we won't allow query */
   query->type = 0;
   node = lookup_type_node_I (type);
-  if (node && node->is_classed && !node->plugin)
+  if (node && node->is_classed)
     {
       /* type is classed and probably even instantiatable */
       G_READ_LOCK (&type_rw_lock);
@@ -3953,8 +3971,8 @@ g_type_query (GType       type,
  *
  * Returns the number of instances allocated of the particular type;
  * this is only available if GLib is built with debugging support and
- * the instance_count debug flag is set (by setting the GOBJECT_DEBUG
- * variable to include instance-count).
+ * the `instance-count` debug flag is set (by setting the `GOBJECT_DEBUG`
+ * variable to include `instance-count`).
  *
  * Returns: the number of instances allocated of the given type;
  *   if instance counts are not available, returns 0.
@@ -4468,7 +4486,7 @@ _g_type_boxed_init (GType          type,
  * flags.  Since GLib 2.36, the type system is initialised automatically
  * and this function does nothing.
  *
- * If you need to enable debugging features, use the GOBJECT_DEBUG
+ * If you need to enable debugging features, use the `GOBJECT_DEBUG`
  * environment variable.
  *
  * Deprecated: 2.36: the type system is now initialised automatically

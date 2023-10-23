@@ -56,6 +56,9 @@ int
 main (int   argc,
       char *argv[])
 {
+  /* We expect this test to abort, so try to avoid that creating a coredump */
+  g_test_disable_crash_reporting ();
+
   g_setenv ("LC_ALL", "C", TRUE);
 
 #ifndef ENOMEM

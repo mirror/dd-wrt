@@ -150,6 +150,10 @@ glib_headers = files(
 )
 install_headers(glib_headers, install_dir : glib_includedir)
 
+if host_system == 'windows'
+  install_headers([ 'msvc_recommended_pragmas.h' ], install_dir : glib_includedir)
+endif
+
 # Expose as variable to be used by gobject-introspection
 # when it includes GLib as a subproject
 glib_unix_h = files('glib-unix.h')
@@ -440,10 +444,16 @@ pkg.generate(libglib,
   libraries_private : [win32_ldflags],
   subdirs : ['glib-2.0'],
   extra_cflags : ['-I${libdir}/glib-2.0/include'] + win32_cflags,
-  variables : ['bindir=' + join_paths('${prefix}', get_option('bindir')),
-               'glib_genmarshal=' + join_paths('${bindir}', 'glib-genmarshal'),
-               'gobject_query=' + join_paths('${bindir}', 'gobject-query'),
-               'glib_mkenums=' + join_paths('${bindir}', 'glib-mkenums')],
+  variables : [
+    'bindir=' + '${prefix}' / get_option('bindir'),
+    'datadir=' + '${prefix}' / get_option('datadir'),
+    'glib_genmarshal=' + '${bindir}' / 'glib-genmarshal',
+    'gobject_query=' + '${bindir}' / 'gobject-query',
+    'glib_mkenums=' + '${bindir}' / 'glib-mkenums',
+    'glib_valgrind_suppressions=' + '${datadir}' /
+      valgrind_suppression_file_install_subdir /
+      fs.name(valgrind_suppression_file),
+  ],
   version : glib_version,
   install_dir : glib_pkgconfigreldir,
   filebase : 'glib-2.0',
@@ -484,6 +494,9 @@ else
     c_args : ['-UG_DISABLE_ASSERT'],
     include_directories : configinc,
     dependencies : [libglib_dep])
+
+  # Provide tools for others when we're a subproject and they use the Meson GNOME module
+  meson.override_find_program('gtester', gtester)
 endif
 
 report_conf = configuration_data()

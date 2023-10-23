@@ -33,6 +33,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
+#ifdef HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
+#endif
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif
@@ -174,7 +178,7 @@
  * }
  * ]|
  *
- * ### Integrating GTest in your project
+ * ## Integrating GTest in your project
  *
  * If you are using the [Meson](http://mesonbuild.com) build system, you will
  * typically use the provided `test()` primitive to call the test binaries,
@@ -925,6 +929,14 @@ const GTestConfig * const g_test_config_vars = &mutable_test_config_vars;
 static gboolean  no_g_set_prgname = FALSE;
 static GPrintFunc g_default_print_func = NULL;
 
+enum
+{
+  G_TEST_CASE_LARGS_RESULT = 0,
+  G_TEST_CASE_LARGS_RUN_FORKS = 1,
+  G_TEST_CASE_LARGS_EXECUTION_TIME = 2,
+
+  G_TEST_CASE_LARGS_MAX
+};
 
 /* --- functions --- */
 static inline gboolean
@@ -1088,6 +1100,7 @@ g_test_log (GTestLogType lbit,
   guint8 *dbuffer;
   guint32 dbufferlen;
   unsigned subtest_level;
+  gdouble timing;
 
   if (g_once_init_enter (&g_default_print_func))
     {
@@ -1144,7 +1157,8 @@ g_test_log (GTestLogType lbit,
         }
       break;
     case G_TEST_LOG_STOP_CASE:
-      result = largs[0];
+      result = largs[G_TEST_CASE_LARGS_RESULT];
+      timing = largs[G_TEST_CASE_LARGS_EXECUTION_TIME];
       fail = result == G_TEST_RUN_FAILURE;
       if (test_tap_log)
         {
@@ -1175,6 +1189,16 @@ g_test_log (GTestLogType lbit,
           g_string_append_c (tap_output, '\n');
           g_default_print_func (tap_output->str);
           g_string_free (g_steal_pointer (&tap_output), TRUE);
+
+          /* Print msg for any slow tests, where 'slow' means >= 0.5 secs */
+          if (timing > 0.5)
+            {
+              tap_output = g_string_new ("# ");
+              g_string_append_printf (tap_output, "slow test %s executed in %0.2lf secs\n",
+                                      string1, timing);
+              g_default_print_func (tap_output->str);
+              g_string_free (g_steal_pointer (&tap_output), TRUE);
+            }
         }
       else if (g_test_verbose ())
         g_print ("GTest: result: %s\n", g_test_result_names[result]);
@@ -1281,6 +1305,33 @@ g_test_log (GTestLogType lbit,
     }
 }
 
+/**
+ * g_test_disable_crash_reporting:
+ *
+ * Attempt to disable system crash reporting infrastructure.
+ *
+ * This function should be called before exercising code paths that are
+ * expected or intended to crash, to avoid wasting resources in system-wide
+ * crash collection infrastructure such as systemd-coredump or abrt.
+ *
+ * Since: 2.78
+ */
+void
+g_test_disable_crash_reporting (void)
+{
+#ifdef HAVE_SYS_RESOURCE_H
+  struct rlimit limit = { 0, 0 };
+
+  (void) setrlimit (RLIMIT_CORE, &limit);
+#endif
+
+#if defined(HAVE_PRCTL) && defined(PR_SET_DUMPABLE)
+  /* On Linux, RLIMIT_CORE = 0 is ignored if core dumps are
+   * configured to be written to a pipe, but PR_SET_DUMPABLE is not. */
+  (void) prctl (PR_SET_DUMPABLE, 0, 0, 0, 0);
+#endif
+}
+
 /* We intentionally parse the command line without GOptionContext
  * because otherwise you would never be able to test it.
  */
@@ -1355,12 +1406,8 @@ parse_args (gint    *argc_p,
            * tests spawn a *lot* of them.  Avoid spamming system crash
            * collection programs such as systemd-coredump and abrt.
            */
-#ifdef HAVE_SYS_RESOURCE_H
-          {
-            struct rlimit limit = { 0, 0 };
-            (void) setrlimit (RLIMIT_CORE, &limit);
-          }
-#endif
+          g_test_disable_crash_reporting ();
+
           argv[i] = NULL;
 
           /* Force non-TAP output when spawning a subprocess, since people often
@@ -3085,7 +3132,7 @@ test_case_run (GTestCase *tc)
   else
     {
       GTimer *test_run_timer = g_timer_new();
-      long double largs[3];
+      long double largs[G_TEST_CASE_LARGS_MAX];
       void *fixture;
       g_test_log (G_TEST_LOG_START_CASE, test_run_name, NULL, 0, NULL);
       test_run_forks = 0;
@@ -3131,9 +3178,9 @@ test_case_run (GTestCase *tc)
         }
       success = test_run_success;
       test_run_success = G_TEST_RUN_FAILURE;
-      largs[0] = success; /* OK */
-      largs[1] = test_run_forks;
-      largs[2] = g_timer_elapsed (test_run_timer, NULL);
+      largs[G_TEST_CASE_LARGS_RESULT] = success; /* OK */
+      largs[G_TEST_CASE_LARGS_RUN_FORKS] = test_run_forks;
+      largs[G_TEST_CASE_LARGS_EXECUTION_TIME] = g_timer_elapsed (test_run_timer, NULL);
       g_test_log (G_TEST_LOG_STOP_CASE, test_run_name, test_run_msg, G_N_ELEMENTS (largs), largs);
       g_clear_pointer (&test_run_msg, g_free);
       g_timer_destroy (test_run_timer);
@@ -3487,6 +3534,43 @@ g_assertion_message_expr (const char     *domain,
 }
 
 void
+g_assertion_message_cmpint (const char     *domain,
+                            const char     *file,
+                            int             line,
+                            const char     *func,
+                            const char     *expr,
+                            guint64         arg1,
+                            const char     *cmp,
+                            guint64         arg2,
+                            char            numtype)
+{
+  char *s = NULL;
+
+  switch (numtype)
+    {
+    case 'i':
+      s = g_strdup_printf ("assertion failed (%s): "
+                           "(%" PRIi64 " %s %" PRIi64 ")",
+                           expr, (int64_t) arg1, cmp, (int64_t) arg2);
+      break;
+    case 'u':
+      s = g_strdup_printf ("assertion failed (%s): "
+                           "(%" PRIu64 " %s %" PRIu64 ")",
+                           expr, (uint64_t) arg1, cmp, (uint64_t) arg2);
+      break;
+    case 'x':
+      s = g_strdup_printf ("assertion failed (%s): "
+                           "(0x%08" PRIx64 " %s 0x%08" PRIx64 ")",
+                           expr, (uint64_t) arg1, cmp, (uint64_t) arg2);
+      break;
+    default:
+      g_assert_not_reached ();
+    }
+  g_assertion_message (domain, file, line, func, s);
+  g_free (s);
+}
+
+void
 g_assertion_message_cmpnum (const char     *domain,
                             const char     *file,
                             int             line,
@@ -3501,10 +3585,16 @@ g_assertion_message_cmpnum (const char     *domain,
 
   switch (numtype)
     {
-    case 'i':   s = g_strdup_printf ("assertion failed (%s): (%" G_GINT64_MODIFIER "i %s %" G_GINT64_MODIFIER "i)", expr, (gint64) arg1, cmp, (gint64) arg2); break;
-    case 'x':   s = g_strdup_printf ("assertion failed (%s): (0x%08" G_GINT64_MODIFIER "x %s 0x%08" G_GINT64_MODIFIER "x)", expr, (guint64) arg1, cmp, (guint64) arg2); break;
     case 'f':   s = g_strdup_printf ("assertion failed (%s): (%.9g %s %.9g)", expr, (double) arg1, cmp, (double) arg2); break;
       /* ideally use: floats=%.7g double=%.17g */
+    case 'i':
+    case 'x':
+      /* Backwards compatibility to apps compiled before 2.78 */
+      g_assertion_message_cmpint (domain, file, line, func, expr,
+                                  (guint64) arg1, cmp, (guint64) arg2, numtype);
+      break;
+    default:
+      g_assert_not_reached ();
     }
   g_assertion_message (domain, file, line, func, s);
   g_free (s);
@@ -3916,12 +4006,7 @@ g_test_trap_fork (guint64        usec_timeout,
        * tests spawn a *lot* of them.  Avoid spamming system crash
        * collection programs such as systemd-coredump and abrt.
        */
-#ifdef HAVE_SYS_RESOURCE_H
-      {
-        struct rlimit limit = { 0, 0 };
-        (void) setrlimit (RLIMIT_CORE, &limit);
-      }
-#endif
+      g_test_disable_crash_reporting ();
 
       return TRUE;
     }
@@ -3981,6 +4066,11 @@ G_GNUC_END_IGNORE_DEPRECATIONS
  * If your `main ()` needs to behave differently in
  * the subprocess, you can call g_test_subprocess() (after calling
  * g_test_init()) to see whether you are in a subprocess.
+ *
+ * Internally, this function tracks the child process using
+ * g_child_watch_source_new(), so your process must not ignore `SIGCHLD`, and
+ * must not attempt to watch or wait for the child process via another
+ * mechanism.
  *
  * The following example tests that calling
  * `my_object_new(1000000)` will abort with an error

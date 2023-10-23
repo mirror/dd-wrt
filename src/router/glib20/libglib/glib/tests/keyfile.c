@@ -382,7 +382,9 @@ test_comments (void)
     "key4 = value4\n"
     "# group comment\n"
     "# group comment, continued\n"
-    "[group2]\n";
+    "[group2]\n\n"
+    "[group3]\n"
+    "[group4]\n";
 
   const gchar *top_comment = " top comment\n top comment, continued";
   const gchar *group_comment = " group comment\n group comment, continued";
@@ -427,6 +429,12 @@ test_comments (void)
   check_name ("top comment", comment, top_comment, 0);
   g_free (comment);
 
+  g_key_file_remove_comment (keyfile, NULL, NULL, &error);
+  check_no_error (&error);
+  comment = g_key_file_get_comment (keyfile, NULL, NULL, &error);
+  check_no_error (&error);
+  g_assert_null (comment);
+
   comment = g_key_file_get_comment (keyfile, "group1", "key2", &error);
   check_no_error (&error);
   check_name ("key comment", comment, key_comment, 0);
@@ -448,10 +456,47 @@ test_comments (void)
   check_name ("group comment", comment, group_comment, 0);
   g_free (comment);
 
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3047");
+
+  /* check if adding a key to group N preserve group comment of group N+1 */
+  g_key_file_set_string (keyfile, "group1", "key5", "value5");
+  comment = g_key_file_get_comment (keyfile, "group2", NULL, &error);
+  check_no_error (&error);
+  check_name ("group comment", comment, group_comment, 0);
+  g_free (comment);
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/104");
+
+  /* check if comments above another group than the first one are properly removed */
+  g_key_file_remove_comment (keyfile, "group2", NULL, &error);
+  check_no_error (&error);
+  comment = g_key_file_get_comment (keyfile, "group2", NULL, &error);
+  check_no_error (&error);
+  g_assert_null (comment);
+
   comment = g_key_file_get_comment (keyfile, "group3", NULL, &error);
+  check_no_error (&error);
+  check_name ("group comment", comment, "", 0);
+  g_free (comment);
+
+  comment = g_key_file_get_comment (keyfile, "group4", NULL, &error);
+  check_no_error (&error);
+  g_assert_null (comment);
+
+  comment = g_key_file_get_comment (keyfile, "group5", NULL, &error);
   check_error (&error,
                G_KEY_FILE_ERROR,
                G_KEY_FILE_ERROR_GROUP_NOT_FOUND);
+  g_assert_null (comment);
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3047");
+
+  /* check if we don't add a blank line above new group if last value of preceding
+   * group was added via g_key_file_set_value() and contains line breaks */
+  g_key_file_set_value (keyfile, "group4", "key1", "value1\n\n# group comment");
+  g_key_file_set_string (keyfile, "group5", "key1", "value1");
+  comment = g_key_file_get_comment (keyfile, "group5", NULL, &error);
+  check_no_error (&error);
   g_assert_null (comment);
 
   g_key_file_free (keyfile);
@@ -535,16 +580,17 @@ test_string (void)
     "3",
   };
   const gchar *data =
-    "[valid]\n"
-    "key1=\\s\\n\\t\\r\\\\\n"
-    "key2=\"quoted\"\n"
-    "key3='quoted'\n"
-    "key4=\xe2\x89\xa0\xe2\x89\xa0\n"
-    "key5=  leading space\n"
-    "key6=trailing space  \n"
-    "[invalid]\n"
-    "key1=\\a\\b\\0800xff\n"
-    "key2=blabla\\\n";
+      "[valid]\n"
+      "key1=\\s\\n\\t\\r\\\\\n"
+      "key2=\"quoted\"\n"
+      "key3='quoted'\n"
+      "key4=\xe2\x89\xa0\xe2\x89\xa0\n"
+      "key5=  leading space\n"
+      "key6=trailing space  \n"
+      "[invalid]\n"
+      "key1=\\a\\b\\0800xff\n"
+      "key2=blabla\\\n"
+      "key3=foo\\i\\\n";
 
   keyfile = load_data (data, 0);
 
@@ -560,6 +606,10 @@ test_string (void)
   g_free (value);
 
   value = g_key_file_get_string (keyfile, "invalid", "key2", &error);
+  check_error (&error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE);
+  g_free (value);
+
+  value = g_key_file_get_string (keyfile, "invalid", "key3", &error);
   check_error (&error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE);
   g_free (value);
 
@@ -1321,8 +1371,15 @@ test_reload_idempotency (void)
     "[fifth]\n";
   GKeyFile *keyfile;
   GError *error = NULL;
-  gchar *data1, *data2;
+  gchar *data1, *data2, *comment;
   gsize len1, len2;
+
+  const gchar *key_comment = " A random comment in the first group";
+  const gchar *top_comment = " Top comment\n\n First comment";
+  const gchar *group_comment_1 = top_comment;
+  const gchar *group_comment_2 = " Second comment - one line";
+  const gchar *group_comment_3 = " Third comment - two lines\n Third comment - two lines";
+  const gchar *group_comment_4 = "\n";
 
   g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=420686");
 
@@ -1347,6 +1404,44 @@ test_reload_idempotency (void)
 
   data2 = g_key_file_to_data (keyfile, &len2, &error);
   g_assert_nonnull (data2);
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/2927");
+
+  /* check if comments are preserved on reload */
+  comment = g_key_file_get_comment (keyfile, "first", "anotherkey", &error);
+  check_no_error (&error);
+  g_assert_cmpstr (comment, ==, key_comment);
+  g_free (comment);
+
+  comment = g_key_file_get_comment (keyfile, NULL, NULL, &error);
+  check_no_error (&error);
+  g_assert_cmpstr (comment, ==, top_comment);
+  g_free (comment);
+
+  comment = g_key_file_get_comment (keyfile, "first", NULL, &error);
+  check_no_error (&error);
+  g_assert_cmpstr (comment, ==, group_comment_1);
+  g_free (comment);
+
+  comment = g_key_file_get_comment (keyfile, "second", NULL, &error);
+  check_no_error (&error);
+  g_assert_cmpstr (comment, ==, group_comment_2);
+  g_free (comment);
+
+  comment = g_key_file_get_comment (keyfile, "third", NULL, &error);
+  check_no_error (&error);
+  g_assert_cmpstr (comment, ==, group_comment_3);
+  g_free (comment);
+
+  comment = g_key_file_get_comment (keyfile, "fourth", NULL, &error);
+  check_no_error (&error);
+  g_assert_cmpstr (comment, ==, group_comment_4);
+  g_free (comment);
+
+  comment = g_key_file_get_comment (keyfile, "fifth", NULL, &error);
+  check_no_error (&error);
+  g_assert_null (comment);
+
   g_key_file_free (keyfile);
 
   g_assert_cmpstr (data1, ==, data2);

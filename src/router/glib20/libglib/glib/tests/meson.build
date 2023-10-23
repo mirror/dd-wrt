@@ -356,12 +356,21 @@ subdir('path-test-subdir')
 foreach test_name, extra_args : glib_tests
   source = extra_args.get('source', test_name + '.c')
   install = installed_tests_enabled and extra_args.get('install', true)
+  installed_tests_env = extra_args.get('installed_tests_env', {})
 
   if install
     test_conf = configuration_data()
     test_conf.set('installed_tests_dir', installed_tests_execdir)
     test_conf.set('program', test_name)
-    test_conf.set('env', '')
+    test_env_override = ''
+    if installed_tests_env != {}
+      envs = []
+      foreach var, value : installed_tests_env
+         envs += '@0@=@1@'.format(var, value)
+      endforeach
+      test_env_override = '@0@ @1@ '.format(env_program.full_path(), ' '.join(envs))
+    endif
+    test_conf.set('env', test_env_override)
     configure_file(
       input: installed_tests_template_tap,
       output: test_name + '.test',
@@ -394,11 +403,16 @@ foreach test_name, extra_args : glib_tests
     depends += test_extra_programs_targets[program]
   endforeach
 
+  local_test_env = test_env
+  foreach var, value : extra_args.get('env', {})
+    local_test_env.append(var, value)
+  endforeach
+  
   test(test_name, exe,
     args: extra_args.get('args', []),
     protocol : extra_args.get('protocol', test_protocol),
     depends : depends,
-    env : test_env,
+    env : local_test_env,
     timeout : timeout,
     suite : suite,
     should_fail : extra_args.get('should_fail', false),
@@ -491,3 +505,34 @@ if not meson.is_cross_build() and host_system != 'windows'
   endif
 endif
 
+if have_bash and have_pkg_config
+  prefix = get_option('prefix')
+  if prefix.endswith(':/')
+    prefix += '/'
+  endif
+  test('glib-2.0-pkg-config',
+    bash,
+    args: [
+      '-xe', '-c',
+      '\n'.join([
+        'pkg-config --validate glib-2.0',
+        'test "$(pkg-config --modversion glib-2.0)" = "@0@"'.format(glib_version),
+        'test "$(pkg-config --variable=prefix glib-2.0)" = "@0@"'.format(
+          get_option('prefix')),
+        'test "$(pkg-config --variable=datadir glib-2.0)" = "@0@"'.format(
+          prefix / get_option('datadir')),
+        'test "$(pkg-config --variable=gobject_query glib-2.0)" = "@0@"'.format(
+          prefix / get_option('bindir') / 'gobject-query'),
+        'test "$(pkg-config --variable=glib_mkenums glib-2.0)" = "@0@"'.format(
+          prefix / get_option('bindir') / 'glib-mkenums'),
+        'test "$(pkg-config --variable=glib_valgrind_suppressions glib-2.0)" = "@0@"'.format(
+          prefix / get_option('datadir') /
+          valgrind_suppression_file_install_subdir / fs.name(valgrind_suppression_file)),
+      ]),
+    ],
+    suite: ['glib', 'core', 'no-valgrind', 'pkg-config'],
+    env: {
+      'PKG_CONFIG_PATH': meson.project_build_root() / 'meson-private',
+    },
+  )
+endif

@@ -27,7 +27,7 @@ Policy
  * Any change which requires changes or additions to translatable strings should
    not be backported unless unavoidable to fix a widely-occurring bug
    - If possible, existing translatable strings should be reused
-   - If unavoidable, liase with the GNOME Translation Team and ensure string
+   - If unavoidable, liaise with the GNOME Translation Team and ensure string
      changes are landed with plenty of time to allow translators to provide new
      translations
    - See https://wiki.gnome.org/TranslationProject/HandlingStringFreezes
@@ -52,6 +52,11 @@ Policy
    - For example, by splitting changes to be backported into a separate commit
      from those which should not be backported, or splitting out changes which
      are more likely to cause conflicts when cherry-picked
+ * Backports should be done as soon as a fix lands on the unstable branch,
+   rather than waiting until when the next stable release is due and then
+   backporting multiple changes from the unstable branch at once. This gives
+   more opportunity for backported changes to be tested, and reduces the chance
+   of backporting the wrong thing, or missing a backport.
  * These rules are not entirely prescriptive: there may be situations where
    maintainers agree that a backport is necessary even if it breaks some of
    these rules, due to the balance of fixing a critical bug vs keeping things

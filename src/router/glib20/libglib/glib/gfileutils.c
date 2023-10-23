@@ -1500,7 +1500,7 @@ get_tmp_file (gchar            *tmpl,
   static const char letters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   static const int NLETTERS = sizeof (letters) - 1;
-  glong value;
+  gint64 value;
   gint64 now_us;
   static int counter = 0;
 
@@ -1521,7 +1521,7 @@ get_tmp_file (gchar            *tmpl,
 
   for (count = 0; count < 100; value += 7777, ++count)
     {
-      glong v = value;
+      gint64 v = value;
 
       /* Fill in the random bits.  */
       XXXXXX[0] = letters[v % NLETTERS];
@@ -2940,7 +2940,7 @@ g_get_current_dir (void)
   const gchar *pwd;
   gchar *buffer = NULL;
   gchar *dir = NULL;
-  static gulong max_len = 0;
+  static gsize buffer_size = 0;
   struct stat pwdbuf, dotbuf;
 
   pwd = g_getenv ("PWD");
@@ -2949,27 +2949,31 @@ g_get_current_dir (void)
       dotbuf.st_dev == pwdbuf.st_dev && dotbuf.st_ino == pwdbuf.st_ino)
     return g_strdup (pwd);
 
-  if (max_len == 0)
-    max_len = (G_PATH_LENGTH == -1) ? 2048 : G_PATH_LENGTH;
+  if (buffer_size == 0)
+    buffer_size = (G_PATH_LENGTH == -1) ? 2048 : G_PATH_LENGTH;
 
-  while (max_len < G_MAXULONG / 2)
+  while (buffer_size < G_MAXSIZE / 2)
     {
       g_free (buffer);
-      buffer = g_new (gchar, max_len + 1);
+      buffer = g_new (gchar, buffer_size);
       *buffer = 0;
-      dir = getcwd (buffer, max_len);
+      dir = getcwd (buffer, buffer_size);
 
       if (dir || errno != ERANGE)
         break;
 
-      max_len *= 2;
+      buffer_size *= 2;
     }
+
+  /* Check that getcwd() nul-terminated the string. It should do, but the specs
+   * don’t actually explicitly state that:
+   * https://pubs.opengroup.org/onlinepubs/9699919799/functions/getcwd.html */
+  g_assert (dir == NULL || strnlen (dir, buffer_size) < buffer_size);
 
   if (!dir || !*buffer)
     {
-      /* hm, should we g_error() out here?
-       * this can happen if e.g. "./" has mode \0000
-       */
+      /* Fallback return value */
+      g_assert (buffer_size >= 2);
       buffer[0] = G_DIR_SEPARATOR;
       buffer[1] = 0;
     }

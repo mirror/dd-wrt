@@ -17,10 +17,18 @@ endif
 if host_system != 'windows'
   # Install Valgrind suppression file (except on Windows,
   # as Valgrind is currently not supported on Windows)
-  install_data('glib.supp',
-    install_dir : get_option('datadir') / 'glib-2.0' / 'valgrind',
+  install_data(fs.name(valgrind_suppression_file),
+    install_dir : get_option('datadir') / valgrind_suppression_file_install_subdir,
     install_tag : 'devel',
   )
 endif
 
 gen_visibility_macros = find_program('gen-visibility-macros.py')
+
+# This is only needed for 32-bit (x86) Windows builds
+if host_system == 'windows' and host_machine.cpu_family() == 'x86'
+  embed_uac_manifest = true
+  gen_uac_manifest = find_program('generate-uac-manifest.py')
+else
+  embed_uac_manifest = false
+endif

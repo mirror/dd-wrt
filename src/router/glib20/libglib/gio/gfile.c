@@ -77,6 +77,13 @@
 #include "gioerror.h"
 #include "glibintl.h"
 
+/* Linux defines loff_t as a way to simplify the offset types for calls like
+ * splice() and copy_file_range(). BSD has copy_file_range() but doesn’t define
+ * loff_t. Abstract that. */
+#ifndef HAVE_LOFF_T
+typedef off_t loff_t;
+#endif
+
 
 /**
  * SECTION:gfile
@@ -99,7 +106,7 @@
  * - g_file_new_tmp_async() to asynchronously create a temporary file.
  * - g_file_new_tmp_dir_async() to asynchronously create a temporary directory.
  * - g_file_parse_name() from a UTF-8 string gotten from g_file_get_parse_name().
- * - g_file_new_build_filename() to create a file from path elements.
+ * - g_file_new_build_filename() or g_file_new_build_filenamev() to create a file from path elements.
  *
  * One way to think of a #GFile is as an abstraction of a pathname. For
  * normal files the system pathname is what is stored internally, but as
@@ -1108,9 +1115,9 @@ g_file_enumerate_children (GFile                *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call when the
- *   request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously gets the requested information about the files
  * in a directory. The result is a #GFileEnumerator object that will
@@ -1345,9 +1352,9 @@ g_file_query_info (GFile                *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call when the
- *   request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously gets the requested information about specified @file.
  * The result is a #GFileInfo object that contains key-value attributes
@@ -1482,9 +1489,9 @@ g_file_query_filesystem_info (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously gets the requested information about the filesystem
  * that the specified @file is on. The result is a #GFileInfo object
@@ -1604,9 +1611,9 @@ g_file_find_enclosing_mount (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously gets the mount for the file.
  *
@@ -2092,9 +2099,9 @@ g_file_replace_readwrite (GFile             *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously opens @file for reading.
  *
@@ -2160,9 +2167,9 @@ g_file_read_finish (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously opens @file for appending.
  *
@@ -2231,9 +2238,9 @@ g_file_append_to_finish (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously creates a new file and returns an output stream
  * for writing to it. The file must not already exist.
@@ -2305,9 +2312,9 @@ g_file_create_finish (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously overwrites the file, replacing the contents,
  * possibly creating a backup copy of the file first.
@@ -2379,9 +2386,9 @@ g_file_replace_finish (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously opens @file for reading and writing.
  *
@@ -2451,9 +2458,9 @@ g_file_open_readwrite_finish (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously creates a new file and returns a stream
  * for reading and writing to it. The file must not already exist.
@@ -2529,9 +2536,9 @@ g_file_create_readwrite_finish (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously overwrites the file in read-write mode,
  * replacing the contents, possibly creating a backup copy
@@ -2807,6 +2814,11 @@ g_file_build_attribute_list_for_copy (GFile                  *file,
   first = TRUE;
   s = g_string_new ("");
 
+  /* Always query the source file size, even though we can’t set that on the
+   * destination. This is useful for the copy functions. */
+  first = FALSE;
+  g_string_append (s, G_FILE_ATTRIBUTE_STANDARD_SIZE);
+
   if (attributes)
     {
       for (i = 0; i < attributes->n_infos; i++)
@@ -3002,6 +3014,122 @@ copy_stream_with_progress (GInputStream           *in,
   return res;
 }
 
+#ifdef HAVE_COPY_FILE_RANGE
+static gboolean
+do_copy_file_range (int      fd_in,
+                    loff_t  *off_in,
+                    int      fd_out,
+                    loff_t  *off_out,
+                    size_t   len,
+                    size_t  *bytes_transferred,
+                    GError **error)
+{
+  ssize_t result;
+
+  do
+    {
+      result = copy_file_range (fd_in, off_in, fd_out, off_out, len, 0);
+
+      if (result == -1)
+        {
+          int errsv = errno;
+
+          if (errsv == EINTR)
+            {
+              continue;
+            }
+          else if (errsv == ENOSYS || errsv == EINVAL || errsv == EOPNOTSUPP || errsv == EXDEV)
+            {
+              g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                                   _("Copy file range not supported"));
+            }
+          else
+            {
+              g_set_error (error, G_IO_ERROR,
+                           g_io_error_from_errno (errsv),
+                           _("Error splicing file: %s"),
+                           g_strerror (errsv));
+            }
+
+          return FALSE;
+        }
+    } while (result == -1);
+
+  g_assert (result >= 0);
+  *bytes_transferred = result;
+
+  return TRUE;
+}
+
+static gboolean
+copy_file_range_with_progress (GInputStream           *in,
+                               GFileInfo              *in_info,
+                               GOutputStream          *out,
+                               GCancellable           *cancellable,
+                               GFileProgressCallback   progress_callback,
+                               gpointer                progress_callback_data,
+                               GError                **error)
+{
+  goffset total_size, last_notified_size;
+  size_t copy_len;
+  loff_t offset_in;
+  loff_t offset_out;
+  int fd_in, fd_out;
+
+  fd_in = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (in));
+  fd_out = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (out));
+
+  g_assert (g_file_info_has_attribute (in_info, G_FILE_ATTRIBUTE_STANDARD_SIZE));
+  total_size = g_file_info_get_size (in_info);
+
+  /* Bail out if the reported size of the file is zero. It might be zero, but it
+   * might also just be a kernel file in /proc. They report their file size as
+   * zero, but then have data when you start reading. Go to the fallback code
+   * path for those. */
+  if (total_size == 0)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                   _("Copy file range not supported"));
+      return FALSE;
+    }
+
+  offset_in = offset_out = 0;
+  copy_len = total_size;
+  last_notified_size = 0;
+
+  /* Call copy_file_range() in a loop until the whole contents are copied. For
+   * smaller files, this loop will iterate only once. For larger files, the
+   * kernel (at least, kernel 6.1.6) will return after 2GB anyway, so that gives
+   * us more loop iterations and more progress reporting. */
+  while (copy_len > 0)
+    {
+      size_t n_copied;
+
+      if (g_cancellable_set_error_if_cancelled (cancellable, error) ||
+          !do_copy_file_range (fd_in, &offset_in, fd_out, &offset_out, copy_len, &n_copied, error))
+        return FALSE;
+
+      if (n_copied == 0)
+        break;
+
+      g_assert (n_copied <= copy_len);
+      copy_len -= n_copied;
+
+      if (progress_callback)
+        {
+          progress_callback (offset_in, total_size, progress_callback_data);
+          last_notified_size = total_size;
+        }
+    }
+
+  /* Make sure we send full copied size */
+  if (progress_callback && last_notified_size != total_size)
+    progress_callback (offset_in, total_size, progress_callback_data);
+
+  return TRUE;
+}
+#endif  /* HAVE_COPY_FILE_RANGE */
+
 #ifdef HAVE_SPLICE
 
 static gboolean
@@ -3042,6 +3170,7 @@ retry:
 
 static gboolean
 splice_stream_with_progress (GInputStream           *in,
+                             GFileInfo              *in_info,
                              GOutputStream          *out,
                              GCancellable           *cancellable,
                              GFileProgressCallback   progress_callback,
@@ -3059,7 +3188,7 @@ splice_stream_with_progress (GInputStream           *in,
   fd_in = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (in));
   fd_out = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (out));
 
-  if (!g_unix_open_pipe (buffer, FD_CLOEXEC, error))
+  if (!g_unix_open_pipe (buffer, O_CLOEXEC, error))
     return FALSE;
 
   /* Try a 1MiB buffer for improved throughput. If that fails, use the default
@@ -3085,10 +3214,8 @@ splice_stream_with_progress (GInputStream           *in,
   /* avoid performance impact of querying total size when it's not needed */
   if (progress_callback)
     {
-      struct stat sbuf;
-
-      if (fstat (fd_in, &sbuf) == 0)
-        total_size = sbuf.st_size;
+      g_assert (g_file_info_has_attribute (in_info, G_FILE_ATTRIBUTE_STANDARD_SIZE));
+      total_size = g_file_info_get_size (in_info);
     }
 
   if (total_size == -1)
@@ -3151,6 +3278,7 @@ splice_stream_with_progress (GInputStream           *in,
 #ifdef __linux__
 static gboolean
 btrfs_reflink_with_progress (GInputStream           *in,
+                             GFileInfo              *in_info,
                              GOutputStream          *out,
                              GFileInfo              *info,
                              GCancellable           *cancellable,
@@ -3169,10 +3297,8 @@ btrfs_reflink_with_progress (GInputStream           *in,
   /* avoid performance impact of querying total size when it's not needed */
   if (progress_callback)
     {
-      struct stat sbuf;
-
-      if (fstat (fd_in, &sbuf) == 0)
-        total_size = sbuf.st_size;
+      g_assert (g_file_info_has_attribute (in_info, G_FILE_ATTRIBUTE_STANDARD_SIZE));
+      total_size = g_file_info_get_size (in_info);
     }
 
   if (total_size == -1)
@@ -3376,7 +3502,7 @@ file_copy_fallback (GFile                  *source,
     {
       GError *reflink_err = NULL;
 
-      if (!btrfs_reflink_with_progress (in, out, info, cancellable,
+      if (!btrfs_reflink_with_progress (in, info, out, info, cancellable,
                                         progress_callback, progress_callback_data,
                                         &reflink_err))
         {
@@ -3398,12 +3524,36 @@ file_copy_fallback (GFile                  *source,
     }
 #endif
 
+#ifdef HAVE_COPY_FILE_RANGE
+  if (G_IS_FILE_DESCRIPTOR_BASED (in) && G_IS_FILE_DESCRIPTOR_BASED (out))
+    {
+      GError *copy_file_range_error = NULL;
+
+      if (copy_file_range_with_progress (in, info, out, cancellable,
+                                         progress_callback, progress_callback_data,
+                                         &copy_file_range_error))
+        {
+          ret = TRUE;
+          goto out;
+        }
+      else if (!g_error_matches (copy_file_range_error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))
+        {
+          g_propagate_error (error, g_steal_pointer (&copy_file_range_error));
+          goto out;
+        }
+      else
+        {
+          g_clear_error (&copy_file_range_error);
+        }
+    }
+#endif  /* HAVE_COPY_FILE_RANGE */
+
 #ifdef HAVE_SPLICE
   if (G_IS_FILE_DESCRIPTOR_BASED (in) && G_IS_FILE_DESCRIPTOR_BASED (out))
     {
       GError *splice_err = NULL;
 
-      if (!splice_stream_with_progress (in, out, cancellable,
+      if (!splice_stream_with_progress (in, info, out, cancellable,
                                         progress_callback, progress_callback_data,
                                         &splice_err))
         {
@@ -3601,11 +3751,13 @@ g_file_copy (GFile                  *source,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @progress_callback: (nullable) (scope notified): function to callback with progress
- *   information, or %NULL if progress information is not needed
- * @progress_callback_data: (closure progress_callback) (nullable): user data to pass to @progress_callback
- * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
- * @user_data: (closure callback): the data to pass to callback function
+ * @progress_callback: (nullable) (scope notified) (closure progress_callback_data):
+ *   function to callback with progress information, or %NULL if
+ *   progress information is not needed
+ * @progress_callback_data: user data to pass to @progress_callback
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback
  *
  * Copies the file @source to the location specified by @destination
  * asynchronously. For details of the behaviour, see g_file_copy().
@@ -3815,12 +3967,11 @@ g_file_move (GFile                  *source,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @progress_callback: (nullable) (scope call): #GFileProgressCallback
- *   function for updates
- * @progress_callback_data: (closure): gpointer to user data for
- *   the callback function
- * @callback: a #GAsyncReadyCallback to call
- *   when the request is satisfied
+ * @progress_callback: (nullable) (scope call) (closure progress_callback_data):
+ *   #GFileProgressCallback function for updates
+ * @progress_callback_data: gpointer to user data for the callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
  * @user_data: the data to pass to callback function
  *
  * Asynchronously moves a file @source to the location of @destination. For details of the behaviour, see g_file_move().
@@ -4588,9 +4739,9 @@ g_file_set_display_name (GFile         *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback to call
- *   when the request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously sets the display name for a given #GFile.
  *
@@ -4922,8 +5073,9 @@ g_file_real_set_attributes_from_info (GFile                *file,
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async): a #GAsyncReadyCallback
- * @user_data: (closure): a #gpointer
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously sets the attributes of @file with @info.
  *
@@ -5192,9 +5344,9 @@ g_file_set_attribute_int64 (GFile                *file,
  *   or %NULL to avoid user interaction
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async) (nullable): a #GAsyncReadyCallback to call
- *   when the request is satisfied, or %NULL
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Mounts a file of type G_FILE_TYPE_MOUNTABLE.
  * Using @mount_operation, you can request callbacks when, for instance,
@@ -5278,9 +5430,9 @@ g_file_mount_mountable_finish (GFile         *file,
  * @flags: flags affecting the operation
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async) (nullable): a #GAsyncReadyCallback to call
- *   when the request is satisfied, or %NULL
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (nullable) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Unmounts a file of type G_FILE_TYPE_MOUNTABLE.
  *
@@ -5367,9 +5519,9 @@ g_file_unmount_mountable_finish (GFile         *file,
  *   or %NULL to avoid user interaction
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async) (nullable): a #GAsyncReadyCallback to call
- *   when the request is satisfied, or %NULL
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (nullable) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Unmounts a file of type %G_FILE_TYPE_MOUNTABLE.
  *
@@ -5466,9 +5618,9 @@ g_file_unmount_mountable_with_operation_finish (GFile         *file,
  * @flags: flags affecting the operation
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async) (nullable): a #GAsyncReadyCallback to call
- *   when the request is satisfied, or %NULL
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (nullable) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Starts an asynchronous eject on a mountable.
  * When this operation has completed, @callback will be called with
@@ -5552,9 +5704,9 @@ g_file_eject_mountable_finish (GFile         *file,
  *   or %NULL to avoid user interaction
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
- * @callback: (scope async) (nullable): a #GAsyncReadyCallback to call
- *   when the request is satisfied, or %NULL
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (nullable) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Starts an asynchronous eject on a mountable.
  * When this operation has completed, @callback will be called with
@@ -7250,6 +7402,35 @@ g_file_new_build_filename (const gchar *first_element,
   str = g_build_filename_valist (first_element, &args);
   va_end (args);
 
+  file = g_file_new_for_path (str);
+  g_free (str);
+
+  return file;
+}
+
+
+/**
+ * g_file_new_build_filenamev:
+ * @args: (array zero-terminated=1) (element-type filename): %NULL-terminated
+ *   array of strings containing the path elements.
+ *
+ * Constructs a #GFile from a vector of elements using the correct
+ * separator for filenames.
+ *
+ * Using this function is equivalent to calling g_build_filenamev(),
+ * followed by g_file_new_for_path() on the result.
+ *
+ * Returns: (transfer full): a new #GFile
+ *
+ * Since: 2.78
+ */
+GFile *
+g_file_new_build_filenamev (const gchar * const *args)
+{
+  gchar *str;
+  GFile *file;
+
+  str = g_build_filenamev ((gchar **) args);
   file = g_file_new_for_path (str);
   g_free (str);
 
@@ -9150,9 +9331,9 @@ g_file_load_bytes_cb (GObject      *object,
  * g_file_load_bytes_async:
  * @file: a #GFile
  * @cancellable: (nullable): a #GCancellable or %NULL
- * @callback: (scope async): a #GAsyncReadyCallback to call when the
- *   request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  *
  * Asynchronously loads the contents of @file as #GBytes.
  *

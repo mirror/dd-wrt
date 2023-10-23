@@ -967,6 +967,30 @@ g_file_info_get_attribute_byte_string (GFileInfo  *info,
 }
 
 /**
+ * g_file_info_get_attribute_file_path:
+ * @info: a #GFileInfo.
+ * @attribute: a file attribute key.
+ *
+ * Gets the value of a byte string attribute as a file path.
+ *
+ * If the attribute does not contain a byte string, `NULL` will be returned.
+ *
+ * This function is meant to be used by language bindings that have specific
+ * handling for Unix paths.
+ *
+ * Returns: (type filename) (nullable): the contents of the @attribute value as
+ * a file path, or %NULL otherwise.
+ *
+ * Since: 2.78
+ **/
+const char *
+g_file_info_get_attribute_file_path (GFileInfo  *info,
+                                     const char *attribute)
+{
+  return g_file_info_get_attribute_byte_string (info, attribute);
+}
+
+/**
  * g_file_info_get_attribute_stringv:
  * @info: a #GFileInfo.
  * @attribute: a file attribute key.
@@ -1318,6 +1342,28 @@ g_file_info_set_attribute_byte_string (GFileInfo  *info,
                                                 attr_value);
 }
 
+/**
+ * g_file_info_set_attribute_file_path:
+ * @info: a #GFileInfo.
+ * @attribute: a file attribute key.
+ * @attr_value: (type filename): a file path.
+ *
+ * Sets the @attribute to contain the given @attr_value,
+ * if possible.
+ *
+ * This function is meant to be used by language bindings that have specific
+ * handling for Unix paths.
+ *
+ * Since: 2.78
+ **/
+void
+g_file_info_set_attribute_file_path (GFileInfo  *info,
+                                     const char *attribute,
+                                     const char *attr_value)
+{
+  g_file_info_set_attribute_byte_string (info, attribute, attr_value);
+}
+
 void
 _g_file_info_set_attribute_boolean_by_id (GFileInfo *info,
                                           guint32    attribute,
@@ -1500,8 +1546,8 @@ g_file_info_set_attribute_int64  (GFileInfo  *info,
     *value_ptr = g_file_info_find_value (info, attr); \
     if (G_UNLIKELY (*value_ptr == NULL)) \
       { \
-        g_debug ("GFileInfo created without " attribute_name); \
-        return error_value; \
+        g_critical ("GFileInfo created without " attribute_name); \
+        g_return_val_if_reached (error_value); \
       } \
   } G_STMT_END
 
@@ -1837,9 +1883,9 @@ g_file_info_get_modification_time (GFileInfo *info,
 
   if (G_UNLIKELY (value == NULL))
     {
-      g_debug ("GFileInfo created without " G_FILE_ATTRIBUTE_TIME_MODIFIED);
+      g_critical ("GFileInfo created without " G_FILE_ATTRIBUTE_TIME_MODIFIED);
       result->tv_sec = result->tv_usec = 0;
-      return;
+      g_return_if_reached ();
     }
 
   result->tv_sec = _g_file_attribute_value_get_uint64 (value);
@@ -2004,7 +2050,7 @@ g_file_info_get_creation_date_time (GFileInfo *info)
  * It is an error to call this if the #GFileInfo does not contain
  * %G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET.
  *
- * Returns: (nullable): a string containing the symlink target.
+ * Returns: (type filename) (nullable): a string containing the symlink target.
  **/
 const char *
 g_file_info_get_symlink_target (GFileInfo *info)
@@ -2492,7 +2538,7 @@ g_file_info_set_creation_date_time (GFileInfo *info,
 /**
  * g_file_info_set_symlink_target:
  * @info: a #GFileInfo.
- * @symlink_target: a static string containing a path to a symlink target.
+ * @symlink_target: (type filename): a static string containing a path to a symlink target.
  *
  * Sets the %G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET attribute in the file info
  * to the given symlink target.

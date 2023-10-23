@@ -346,6 +346,41 @@ test_timeval_to_iso8601_overflow (void)
   g_assert_null (out);
 }
 
+static void
+test_usleep_with_zero_wait (void)
+{
+  GTimer *timer;
+  unsigned int n_times_shorter = 0;
+
+  timer = g_timer_new ();
+
+  /* Test that g_usleep(0) sleeps for less time than g_usleep(1). We can’t
+   * actually guarantee this, since the exact length of g_usleep(1) is not
+   * guaranteed, but we can say that it probably should be longer 9 times out
+   * of 10. */
+  for (unsigned int i = 0; i < 10; i++)
+    {
+      gdouble elapsed0, elapsed1;
+
+      g_timer_start (timer);
+      g_usleep (0);
+      elapsed0 = g_timer_elapsed (timer, NULL);
+      g_timer_stop (timer);
+
+      g_timer_start (timer);
+      g_usleep (1);
+      elapsed1 = g_timer_elapsed (timer, NULL);
+      g_timer_stop (timer);
+
+      if (elapsed0 <= elapsed1)
+        n_times_shorter++;
+    }
+
+  g_assert_cmpuint (n_times_shorter, >=, 9);
+
+  g_clear_pointer (&timer, g_timer_destroy);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -360,6 +395,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/timeval/from-iso8601", test_timeval_from_iso8601);
   g_test_add_func ("/timeval/to-iso8601", test_timeval_to_iso8601);
   g_test_add_func ("/timeval/to-iso8601/overflow", test_timeval_to_iso8601_overflow);
+  g_test_add_func ("/usleep/with-zero-wait", test_usleep_with_zero_wait);
 
   return g_test_run ();
 }

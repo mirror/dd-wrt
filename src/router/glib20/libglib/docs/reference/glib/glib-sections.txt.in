@@ -586,6 +586,7 @@ g_timeout_add_once
 g_timeout_add_full
 g_timeout_add_seconds
 g_timeout_add_seconds_full
+g_timeout_add_seconds_once
 
 <SUBSECTION>
 g_idle_source_new
@@ -2063,7 +2064,7 @@ GErrorType
 
 <SECTION>
 <TITLE>Key-value file parser</TITLE>
-<FILE>keyfile</FILE>
+<FILE>gkeyfile</FILE>
 GKeyFile
 G_KEY_FILE_ERROR
 GKeyFileError
@@ -2158,7 +2159,7 @@ g_key_file_get_type
 
 <SECTION>
 <TITLE>Bookmark file parser</TITLE>
-<FILE>bookmarkfile</FILE>
+<FILE>gbookmarkfile</FILE>
 GBookmarkFile
 G_BOOKMARK_FILE_ERROR
 GBookmarkFileError
@@ -2624,6 +2625,7 @@ g_str_hash
 <FILE>strings</FILE>
 GString
 g_string_new
+g_string_new_take
 g_string_new_len
 g_string_sized_new
 g_string_assign
@@ -3129,6 +3131,7 @@ g_utf8_strchr
 g_utf8_strrchr
 g_utf8_strreverse
 g_utf8_substring
+g_utf8_truncate_middle
 g_utf8_validate
 g_utf8_validate_len
 g_utf8_make_valid
@@ -3356,6 +3359,7 @@ g_test_trap_assert_stdout_unmatched
 g_test_trap_assert_stderr
 g_test_trap_assert_stderr_unmatched
 g_test_trap_fork
+g_test_disable_crash_reporting
 
 g_test_rand_bit
 g_test_rand_int
@@ -3401,6 +3405,7 @@ g_test_trap_assertions
 g_assertion_message
 g_assertion_message_expr
 g_assertion_message_cmpstr
+g_assertion_message_cmpint
 g_assertion_message_cmpnum
 g_assertion_message_error
 g_test_assert_expected_messages_internal
@@ -3689,12 +3694,14 @@ g_ref_count_init
 g_ref_count_inc
 g_ref_count_dec
 g_ref_count_compare
+G_REF_COUNT_INIT
 <SUBSECTION>
 gatomicrefcount
 g_atomic_ref_count_init
 g_atomic_ref_count_inc
 g_atomic_ref_count_dec
 g_atomic_ref_count_compare
+G_ATOMIC_REF_COUNT_INIT
 </SECTION>
 
 <SECTION>

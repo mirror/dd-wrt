@@ -37,6 +37,8 @@ cb (gpointer data)
 static gboolean
 prepare (GSource *source, gint *time)
 {
+  g_assert_nonnull (time);
+  g_assert_cmpint (*time, ==, -1);
   return FALSE;
 }
 static gboolean
@@ -1169,6 +1171,75 @@ test_unref_while_pending (void)
   g_assert_cmpint (n_finalized, ==, 1);
 }
 
+typedef struct {
+  GSource parent;
+  GMainLoop *loop;
+} LoopedSource;
+
+static gboolean
+prepare_loop_run (GSource *source, gint *time)
+{
+  LoopedSource *looped_source = (LoopedSource*) source;
+  *time = 0;
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*called recursively from within a source's check() "
+                         "or prepare() member*");
+  g_main_loop_run (looped_source->loop);
+  g_test_assert_expected_messages ();
+
+  return FALSE;
+}
+
+static gboolean
+check_loop_run (GSource *source)
+{
+  LoopedSource *looped_source = (LoopedSource*) source;
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*called recursively from within a source's check() "
+                         "or prepare() member*");
+  g_main_loop_run (looped_source->loop);
+  g_test_assert_expected_messages ();
+
+  return TRUE;
+}
+
+static gboolean
+dispatch_loop_run (GSource    *source,
+                   GSourceFunc callback,
+                   gpointer    user_data)
+{
+  LoopedSource *looped_source = (LoopedSource*) source;
+
+  g_main_loop_quit (looped_source->loop);
+
+  return FALSE;
+}
+
+static void
+test_recursive_loop_child_sources (void)
+{
+  GMainLoop *loop;
+  GSource *source;
+  GSourceFuncs loop_run_funcs = {
+    prepare_loop_run, check_loop_run, dispatch_loop_run, NULL, NULL, NULL,
+  };
+
+  loop = g_main_loop_new (NULL, FALSE);
+
+  source = g_source_new (&loop_run_funcs, sizeof (LoopedSource));
+  ((LoopedSource*)source)->loop = loop;
+
+  g_source_attach (source, NULL);
+
+  g_main_loop_run (loop);
+  g_source_unref (source);
+
+  g_main_loop_unref (loop);
+}
+
+
 #ifdef G_OS_UNIX
 
 #include <glib-unix.h>
@@ -1702,10 +1773,6 @@ threadf (gpointer data)
 static void
 test_mainloop_wait (void)
 {
-#ifdef _GLIB_ADDRESS_SANITIZER
-  (void) threadf;
-  g_test_incomplete ("FIXME: Leaks a GMainLoop, see glib#2307");
-#else
   GMainContext *context;
   GThread *t1, *t2;
 
@@ -1718,7 +1785,6 @@ test_mainloop_wait (void)
   g_thread_join (t2);
 
   g_main_context_unref (context);
-#endif
 }
 #endif
 
@@ -2445,6 +2511,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/mainloop/invoke", test_invoke);
   g_test_add_func ("/mainloop/child_sources", test_child_sources);
   g_test_add_func ("/mainloop/recursive_child_sources", test_recursive_child_sources);
+  g_test_add_func ("/mainloop/recursive_loop_child_sources", test_recursive_loop_child_sources);
   g_test_add_func ("/mainloop/swapping_child_sources", test_swapping_child_sources);
   g_test_add_func ("/mainloop/blocked_child_sources", test_blocked_child_sources);
   g_test_add_func ("/mainloop/source_time", test_source_time);

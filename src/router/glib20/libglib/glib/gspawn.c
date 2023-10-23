@@ -218,8 +218,9 @@ G_DEFINE_QUARK (g-spawn-exit-error-quark, g_spawn_exit_error)
  * @envp: (array zero-terminated=1) (element-type filename) (nullable):
  *     child's environment, or %NULL to inherit parent's
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (nullable): function to run in the child just before exec()
- * @user_data: (closure): user data for @child_setup
+ * @child_setup: (scope async) (closure user_data) (nullable): function to run
+ *     in the child just before `exec()`
+ * @user_data: user data for @child_setup
  * @child_pid: (out) (optional): return location for child process reference, or %NULL
  * @error: return location for error
  *
@@ -332,8 +333,9 @@ read_data (GString *str,
  * @envp: (array zero-terminated=1) (element-type filename) (nullable):
  *     child's environment, or %NULL to inherit parent's
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (nullable): function to run in the child just before exec()
- * @user_data: (closure): user data for @child_setup
+ * @child_setup: (scope call) (closure user_data) (nullable): function to run
+ *     in the child just before `exec()`
+ * @user_data: user data for @child_setup
  * @standard_output: (out) (array zero-terminated=1) (element-type guint8) (optional): return location for child output, or %NULL
  * @standard_error: (out) (array zero-terminated=1) (element-type guint8) (optional): return location for child error messages, or %NULL
  * @wait_status: (out) (optional): return location for child wait status, as returned by waitpid(), or %NULL
@@ -593,8 +595,9 @@ g_spawn_sync (const gchar          *working_directory,
  *     child's environment, or %NULL to inherit parent's, in the GLib file
  *     name encoding
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (nullable): function to run in the child just before exec()
- * @user_data: (closure): user data for @child_setup
+ * @child_setup: (scope async) (closure user_data) (nullable): function to run
+ *     in the child just before `exec()`
+ * @user_data: user data for @child_setup
  * @child_pid: (out) (optional): return location for child process ID, or %NULL
  * @standard_input: (out) (optional): return location for file descriptor to write to child's stdin, or %NULL
  * @standard_output: (out) (optional): return location for file descriptor to read child's stdout, or %NULL
@@ -643,8 +646,9 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
  *     child's environment, or %NULL to inherit parent's, in the GLib file
  *     name encoding
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (nullable): function to run in the child just before `exec()`
- * @user_data: (closure): user data for @child_setup
+ * @child_setup: (scope async) (closure user_data) (nullable): function to run
+ *     in the child just before `exec()`
+ * @user_data: user data for @child_setup
  * @stdin_fd: file descriptor to use for child's stdin, or `-1`
  * @stdout_fd: file descriptor to use for child's stdout, or `-1`
  * @stderr_fd: file descriptor to use for child's stderr, or `-1`
@@ -929,8 +933,9 @@ g_spawn_async_with_pipes_and_fds (const gchar           *working_directory,
  *   it must be non-empty and %NULL-terminated
  * @envp: (array zero-terminated=1) (nullable): child's environment, or %NULL to inherit parent's, in the GLib file name encoding
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (nullable): function to run in the child just before exec()
- * @user_data: (closure): user data for @child_setup
+ * @child_setup: (scope async) (closure user_data) (nullable): function to run
+ *   in the child just before `exec()`
+ * @user_data: user data for @child_setup
  * @child_pid: (out) (optional): return location for child process ID, or %NULL
  * @stdin_fd: file descriptor to use for child's stdin, or `-1`
  * @stdout_fd: file descriptor to use for child's stdout, or `-1`
@@ -1553,7 +1558,7 @@ safe_fdwalk_with_invalid_fds (int (*cb)(void *data, int fd), void *data)
    * It's just a thin wrapper around a syscall, so it's probably okay.
    */
   {
-    char buffer[open_max * PROC_PIDLISTFD_SIZE];
+    char buffer[4096 * PROC_PIDLISTFD_SIZE];
     ssize_t buffer_size;
 
     buffer_size = proc_pidinfo (getpid (), PROC_PIDLISTFDS, 0, buffer, sizeof (buffer));

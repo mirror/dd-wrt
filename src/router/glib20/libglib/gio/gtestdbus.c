@@ -62,13 +62,12 @@ typedef struct
   gboolean   timed_out;
 } WeakNotifyData;
 
-static gboolean
+static void
 on_weak_notify_timeout (gpointer user_data)
 {
   WeakNotifyData *data = user_data;
   data->timed_out = TRUE;
   g_main_loop_quit (data->loop);
-  return FALSE;
 }
 
 static gboolean
@@ -95,7 +94,7 @@ _g_object_unref_and_wait_weak_notify (gpointer object)
   g_idle_add (unref_on_idle, object);
 
   /* Make sure we don't block forever */
-  timeout_id = g_timeout_add_seconds (30, on_weak_notify_timeout, &data);
+  timeout_id = g_timeout_add_seconds_once (30, on_weak_notify_timeout, &data);
 
   g_main_loop_run (data.loop);
 
@@ -249,7 +248,7 @@ watcher_init (void)
       gint pipe_fds[2];
 
       /* fork a child to clean up when we are killed */
-      if (!g_unix_open_pipe_internal (pipe_fds, TRUE))
+      if (!g_unix_open_pipe_internal (pipe_fds, TRUE, FALSE))
         {
           errsv = errno;
           g_warning ("pipe() failed: %s", g_strerror (errsv));
@@ -605,7 +604,7 @@ make_pipe (gint     pipe_fds[2],
            GError **error)
 {
 #if defined(G_OS_UNIX)
-  return g_unix_open_pipe (pipe_fds, FD_CLOEXEC, error);
+  return g_unix_open_pipe (pipe_fds, O_CLOEXEC, error);
 #elif defined(G_OS_WIN32)
   if (_pipe (pipe_fds, 4096, _O_BINARY) < 0)
     {

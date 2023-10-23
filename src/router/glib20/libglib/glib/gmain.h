@@ -73,7 +73,7 @@ typedef struct _GMainContext            GMainContext;
  * GMainLoop:
  *
  * The `GMainLoop` struct is an opaque data type
- * representing the main event loop of a GLib or GTK+ application.
+ * representing the main event loop of a GLib or GTK application.
  */
 typedef struct _GMainLoop               GMainLoop;
 
@@ -324,7 +324,7 @@ struct _GSourceFuncs
  *
  * Use this for high priority event sources.
  *
- * It is not used within GLib or GTK+.
+ * It is not used within GLib or GTK.
  */
 #define G_PRIORITY_HIGH            -100
 
@@ -344,7 +344,7 @@ struct _GSourceFuncs
  *
  * Use this for high priority idle functions.
  *
- * GTK+ uses %G_PRIORITY_HIGH_IDLE + 10 for resizing operations,
+ * GTK uses %G_PRIORITY_HIGH_IDLE + 10 for resizing operations,
  * and %G_PRIORITY_HIGH_IDLE + 20 for redrawing operations. (This is
  * done to ensure that any pending resizes are processed before any
  * pending redraws, so that widgets are not redrawn twice unnecessarily.)
@@ -366,7 +366,7 @@ struct _GSourceFuncs
  *
  * Use this for very low priority background tasks.
  *
- * It is not used within GLib or GTK+.
+ * It is not used within GLib or GTK.
  */
 #define G_PRIORITY_LOW              300
 
@@ -799,6 +799,10 @@ guint    g_timeout_add_seconds_full (gint            priority,
 GLIB_AVAILABLE_IN_ALL
 guint    g_timeout_add_seconds      (guint           interval,
                                      GSourceFunc     function,
+                                     gpointer        data);
+GLIB_AVAILABLE_IN_2_78
+guint    g_timeout_add_seconds_once (guint           interval,
+                                     GSourceOnceFunc function,
                                      gpointer        data);
 GLIB_AVAILABLE_IN_ALL
 guint    g_child_watch_add_full     (gint            priority,

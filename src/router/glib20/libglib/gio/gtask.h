@@ -194,6 +194,14 @@ gboolean      g_task_had_error                 (GTask           *task);
 GIO_AVAILABLE_IN_2_44
 gboolean      g_task_get_completed             (GTask           *task);
 
+/*< private >*/
+#ifndef __GTK_DOC_IGNORE__
+#ifndef __GI_SCANNER__
+/* Debugging API, not part of the public API */
+void g_task_print_alive_tasks (void);
+#endif /* !__GI_SCANNER__ */
+#endif  /* !__GTK_DOC_IGNORE__ */
+
 G_END_DECLS
 
 #endif /* __G_TASK_H__ */

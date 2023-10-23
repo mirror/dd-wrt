@@ -46,6 +46,15 @@
 #include <gstdio.h>
 #include <dirent.h>
 
+#if defined(__BIONIC__) && (__ANDROID_API__ < 26)
+#include <mntent.h>
+/* the shared object of recent bionic libc's have hasmntopt symbol, but
+   some a possible common build environment for android, termux ends
+   up with inssuficient __ANDROID_API__ value for building.
+*/
+extern char* hasmntopt(const struct mntent* mnt, const char* opt);
+#endif
+
 #if HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
 #endif
@@ -3036,7 +3045,7 @@ g_unix_mount_point_guess_can_eject (GUnixMountPoint *mount_point)
 /* Utility functions {{{1 */
 
 #ifdef HAVE_MNTENT_H
-/* borrowed from gtk/gtkfilesystemunix.c in GTK+ on 02/23/2006 */
+/* borrowed from gtk/gtkfilesystemunix.c in GTK on 02/23/2006 */
 static void
 _canonicalize_filename (gchar *filename)
 {

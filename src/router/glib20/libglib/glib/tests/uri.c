@@ -130,7 +130,8 @@ file_from_uri_tests[] = {
   { "file:////etc/%C3%B6%C3%C3%C3%A5", "//etc/\xc3\xb6\xc3\xc3\xc3\xa5", NULL, 0 },
   { "file://\xE5\xE4\xF6/etc", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
   { "file://%E5%E4%F6/etc", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
-  { "file:///some/file#bad", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
+  { "file:///some/file?query", "/some/file", NULL, 0 },
+  { "file:///some/file#bad", "/some/file", NULL, 0 },
   { "file://some", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
   { "", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
   { "file:test", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
@@ -1912,6 +1913,16 @@ static const struct
       "ftp", "", 21 },
     { "scheme://foo", G_URI_FLAGS_SCHEME_NORMALIZE,
       "scheme", "", -1 },
+    { "socks://foo", G_URI_FLAGS_SCHEME_NORMALIZE,
+      "socks", "", 1080 },
+    { "socks4://foo", G_URI_FLAGS_SCHEME_NORMALIZE,
+      "socks4", "", 1080 },
+    { "socks4a://foo", G_URI_FLAGS_SCHEME_NORMALIZE,
+      "socks4a", "", 1080 },
+    { "socks5://foo", G_URI_FLAGS_SCHEME_NORMALIZE,
+      "socks5", "", 1080 },
+    { "socks5h://foo", G_URI_FLAGS_SCHEME_NORMALIZE,
+      "socks5h", "", 1080 },
   };
 
 static const struct

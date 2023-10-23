@@ -90,6 +90,7 @@ g_file_new_tmp_dir_async
 g_file_new_tmp_dir_finish
 g_file_parse_name
 g_file_new_build_filename
+g_file_new_build_filenamev
 g_file_dup
 g_file_hash
 g_file_equal
@@ -390,6 +391,7 @@ g_file_info_get_attribute_status
 g_file_info_get_attribute_string
 g_file_info_get_attribute_stringv
 g_file_info_get_attribute_byte_string
+g_file_info_get_attribute_file_path
 g_file_info_get_attribute_boolean
 g_file_info_get_attribute_uint32
 g_file_info_get_attribute_int32
@@ -401,6 +403,7 @@ g_file_info_set_attribute_status
 g_file_info_set_attribute_string
 g_file_info_set_attribute_stringv
 g_file_info_set_attribute_byte_string
+g_file_info_set_attribute_file_path
 g_file_info_set_attribute_boolean
 g_file_info_set_attribute_uint32
 g_file_info_set_attribute_int32
@@ -1934,6 +1937,8 @@ g_resolver_lookup_service
 g_resolver_lookup_service_async
 g_resolver_lookup_service_finish
 g_resolver_free_targets
+g_resolver_get_timeout
+g_resolver_set_timeout
 <SUBSECTION>
 GResolverRecordType
 g_resolver_lookup_records
@@ -3556,6 +3561,7 @@ g_action_map_lookup_action
 GActionEntry
 g_action_map_add_action_entries
 g_action_map_add_action
+g_action_map_remove_action_entries
 g_action_map_remove_action
 
 <SUBSECTION Standard>

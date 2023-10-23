@@ -144,12 +144,13 @@
 #define G_DATALIST_GET_POINTER(datalist)						\
   ((GData*) ((gsize) g_atomic_pointer_get (datalist) & ~(gsize) G_DATALIST_FLAGS_MASK_INTERNAL))
 
-#define G_DATALIST_SET_POINTER(datalist, pointer)       G_STMT_START {                  \
-  gpointer _oldv, _newv;                                                                \
-  do {                                                                                  \
-    _oldv = g_atomic_pointer_get (datalist);                                            \
+#define G_DATALIST_SET_POINTER(datalist, pointer)       G_STMT_START {                           \
+  gpointer _oldv = g_atomic_pointer_get (datalist);                                              \
+  gpointer _newv;                                                                                \
+  do {                                                                                           \
     _newv = (gpointer) (((gsize) _oldv & G_DATALIST_FLAGS_MASK_INTERNAL) | (gsize) pointer);     \
-  } while (!g_atomic_pointer_compare_and_exchange ((void**) datalist, _oldv, _newv));   \
+  } while (!g_atomic_pointer_compare_and_exchange_full ((void**) datalist, _oldv,                \
+                                                        _newv, &_oldv));                         \
 } G_STMT_END
 
 /* --- structures --- */
@@ -934,8 +935,9 @@ g_datalist_id_get_data (GData  **datalist,
  * g_datalist_id_dup_data: (skip)
  * @datalist: location of a datalist
  * @key_id: the #GQuark identifying a data element
- * @dup_func: (nullable) (scope call): function to duplicate the old value
- * @user_data: (closure): passed as user_data to @dup_func
+ * @dup_func: (scope call) (closure user_data) (nullable): function to
+ *   duplicate the old value
+ * @user_data: passed as user_data to @dup_func
  *
  * This is a variant of g_datalist_id_get_data() which
  * returns a 'duplicate' of the value. @dup_func defines the
@@ -1175,8 +1177,8 @@ g_datalist_get_data (GData	 **datalist,
 /**
  * g_dataset_foreach:
  * @dataset_location: (not nullable): the location identifying the dataset.
- * @func: (scope call): the function to call for each data element.
- * @user_data: (closure): user data to pass to the function.
+ * @func: (scope call) (closure user_data): the function to call for each data element.
+ * @user_data: user data to pass to the function.
  *
  * Calls the given function for each data element which is associated
  * with the given location. Note that this function is NOT thread-safe.
@@ -1214,8 +1216,8 @@ g_dataset_foreach (gconstpointer    dataset_location,
 /**
  * g_datalist_foreach:
  * @datalist: a datalist.
- * @func: (scope call): the function to call for each data element.
- * @user_data: (closure): user data to pass to the function.
+ * @func: (scope call) (closure user_data): the function to call for each data element.
+ * @user_data: user data to pass to the function.
  *
  * Calls the given function for each data element of the datalist. The
  * function is called with each data element's #GQuark id and data,
