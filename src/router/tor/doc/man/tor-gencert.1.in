@@ -2,12 +2,12 @@
 .\"     Title: tor-gencert
 .\"    Author: Tor Project, Inc.
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 09/18/2023
+.\"      Date: 09/25/2023
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR\-GENCERT" "1" "09/18/2023" "Tor" "Tor Manual"
+.TH "TOR\-GENCERT" "1" "09/25/2023" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

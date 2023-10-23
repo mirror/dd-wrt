@@ -1,3 +1,21 @@
+Changes in version 0.4.8.7 - 2023-09-25
+  This version fixes a single major bug in the Conflux subsystem on the client
+  side. See below for more information. The upcoming Tor Browser 13 stable will
+  pick this up.
+
+  o Major bugfixes (conflux):
+    - Fix an issue that prevented us from pre-building more conflux sets
+      after existing sets had been used. Fixes bug 40862; bugfix
+      on 0.4.8.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on September 25, 2023.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2023/09/25.
+
+
 Changes in version 0.4.8.6 - 2023-09-18
   This version contains an important fix for onion service regarding congestion
   control and its reliability. Apart from that, uneeded BUG warnings have been

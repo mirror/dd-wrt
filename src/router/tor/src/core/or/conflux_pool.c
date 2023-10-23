@@ -1322,7 +1322,12 @@ count_client_usable_sets(void)
       log_warn(LD_BUG, "Client conflux linked set leg without a circuit");
       continue;
     }
-    if (!CONST_TO_ORIGIN_CIRCUIT(leg->circ)->unusable_for_new_conns) {
+
+    /* The maze marks circuits used several different ways. If any of
+     * them are marked for this leg, launch a new one. */
+    if (!CONST_TO_ORIGIN_CIRCUIT(leg->circ)->unusable_for_new_conns &&
+        !CONST_TO_ORIGIN_CIRCUIT(leg->circ)->isolation_values_set &&
+        !leg->circ->timestamp_dirty) {
       count++;
     }
   } DIGEST256MAP_FOREACH_END;
