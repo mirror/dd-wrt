@@ -2187,11 +2187,6 @@ int filtersync_main(int argc, char *argv[])
 			break;
 		}
 	}
-#ifdef HAVE_SFE
-	if (changed && nvram_match("sfe", "1")) {
-		stop_sfe();
-	}
-#endif
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		int state = if_tod_intime(seq);
 		char enabled[32];
@@ -2216,7 +2211,7 @@ int filtersync_main(int argc, char *argv[])
 	}
 #ifdef HAVE_SFE
 	if (changed && nvram_match("sfe", "1")) {
-		start_sfe();
+		reload_sfe();
 	}
 #endif
 	return 0;
@@ -3442,10 +3437,6 @@ void start_firewall(void)
 	int remotetelnet = 0;
 	int remotemanage = 0;
 	lock();
-#ifdef HAVE_SFE
-	if (nvram_match("sfe", "1"))
-		stop_sfe();
-#endif
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
 	if (isregistered_real())
@@ -3747,7 +3738,7 @@ void start_firewall(void)
 	}
 #endif
 #ifdef HAVE_SFE
-	start_sfe();
+	reload_sfe();
 #endif
 #ifdef HAVE_NODOG
 	stop_splashd();
@@ -3790,10 +3781,6 @@ void stop_firewall(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DMZ, STOP_LED);
 #endif
-#ifdef HAVE_SFE
-	if (nvram_match("sfe", "1"))
-		stop_sfe();
-#endif
 	char num[32];
 	int i;
 	eval("iptables", "-F");
@@ -3818,7 +3805,7 @@ void stop_firewall(void)
 	halt_firewall6();
 #endif
 #ifdef HAVE_SFE
-	start_sfe();
+	reload_sfe();
 #endif
 	unlock();
 #if !defined(HAVE_MICRO)	//&& !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
