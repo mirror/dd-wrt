@@ -267,25 +267,25 @@ for i in $(seq 1 $tunnels); do
 			VXLANARG=""
 			# detect ipv6 addr handling
 			if [[ ! -z "$($nv get oet${i}_mcast)" && "$($nv get oet${i}_mcast)" == "1" ]]; then
-				[[ ! -z $($nv get oet${i}_rem6) ]] && if [[ "$(expr $($nv get oet${i}_group) : '.*')" -ge 16 ]]; then
+				[[ ! -z $($nv get oet${i}_remip6) ]] && if [[ "$(expr $($nv get oet${i}_group) : '.*')" -ge 16 ]]; then
 					VXLANARG="$VXLANARG -6"
 				fi
 			else
-				[[ ! -z $($nv get oet${i}_rem6) ]] && if [[ "$(expr $($nv get oet${i}_rem6) : '.*')" -ge 16 ]]; then
+				[[ ! -z $($nv get oet${i}_remip6) ]] && if [[ "$(expr $($nv get oet${i}_remip6) : '.*')" -ge 16 ]]; then
 					VXLANARG="$VXLANARG -6"
 				fi	
-				[[ ! -z $($nv get oet${i}_local6) ]] && if [[ "$(expr $($nv get oet${i}_local6) : '.*')" -ge 16 ]]; then
-					VXLANARG="$VXLANARG -6"
+				[[ ! -z $($nv get oet${i}_localip6) ]] && if [[ "$(expr $($nv get oet${i}_localip6) : '.*')" -ge 16 ]]; then
+					VXLANARG="$VXLANARG -ip6"
 				fi
 			fi
 			VXLANARG="$VXLANARG link add vxlan${i} type vxlan id $($nv get oet${i}_id)"
 			if [[ ! -z "$($nv get oet${i}_mcast)" && "$($nv get oet${i}_mcast)" == "1" ]]; then
 				VXLANARG="$VXLANARG group $($nv get oet${i}_group)"
 			else
-				VXLANARG="$VXLANARG remote $($nv get oet${i}_rem6)"
+				VXLANARG="$VXLANARG remote $($nv get oet${i}_remip6)"
 			fi
-			if [[ ! -z "$($nv get oet${i}_local6)" ]]; then
-				VXLANARG="$VXLANARG local $($nv get oet${i}_local6)"
+			if [[ ! -z "$($nv get oet${i}_localip6)" ]]; then
+				VXLANARG="$VXLANARG local $($nv get oet${i}_localip6)"
 			fi
 			if [[ ! -z "$($nv get oet${i}_dev)" && "$($nv get oet${i}_dev)" != "any" ]]; then
 				VXLANARG="$VXLANARG dev $($nv get oet${i}_dev)"
