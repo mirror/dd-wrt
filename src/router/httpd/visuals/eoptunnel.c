@@ -606,12 +606,12 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idremoteip6%d\">\n", tun);
 			{
-				show_oet_textfield(wp, 0, "eoip.remoteIP", 48, 128, "", tun, NULL, "oet%d_rem6", tun);
+				show_oet_textfield(wp, 0, "eoip.remoteIP", 48, 128, "", tun, NULL, "oet%d_remip6", tun);
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idlocalip6%d\">\n", tun);
 			{
-				show_oet_textfield(wp, 0, "eoip.localIP", 48, 128, "", tun, NULL, "oet%d_local6", tun);
+				show_oet_textfield(wp, 0, "eoip.localIP", 48, 128, "", tun, NULL, "oet%d_localip6", tun);
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idvxlansettings%d\">\n", tun);

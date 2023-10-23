@@ -2021,8 +2021,8 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_ipaddrmask", i);
 		copytonv(wp, "oet%d_obf", i);
 		copytonv(wp, "oet%d_obfkey", i);
-		copytonv(wp, "oet%d_rem6", i);
-		copytonv(wp, "oet%d_local6", i);
+		copytonv(wp, "oet%d_remip6", i);
+		copytonv(wp, "oet%d_localip6", i);
 		copytonv(wp, "oet%d_group", i);
 		copytonv(wp, "oet%d_dev", i);
 		copytonv(wp, "oet%d_dstport", i);
@@ -2490,8 +2490,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("bridged", i, i - 1);
 		copytunvalue_prefix("vxlan", "bridged", i, i - 1);
 		copytunvalue("port", i, i - 1);
-		copytunvalue("rem6", i, i - 1);
-		copytunvalue("local6", i, i - 1);
+		copytunvalue("remip6", i, i - 1);
+		copytunvalue("localip6", i, i - 1);
 		copytunvalue("group", i, i - 1);
 		copytunvalue("dev", i, i - 1);
 		copytunvalue("dstport", i, i - 1);
@@ -2571,8 +2571,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("bridged", tunnels);
 	deltunvalue_prefix("vxlan", "bridged", tunnels);
 	deltunvalue("port", tunnels);
-	deltunvalue("rem6", tunnels);
-	deltunvalue("local6", tunnels);
+	deltunvalue("remip6", tunnels);
+	deltunvalue("localip6", tunnels);
 	deltunvalue("group", tunnels);
 	deltunvalue("dev", tunnels);
 	deltunvalue("dstport", tunnels);
