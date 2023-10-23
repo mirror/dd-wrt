@@ -1909,7 +1909,9 @@ static ssize_t fast_classifier_set_defunct_all(struct device *dev,
                                       const char *buf, size_t count)
 {
 	sfe_ipv4_destroy_all_rules_for_dev(NULL);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_destroy_all_rules_for_dev(NULL);
+#endif
 	return count;
 }
 
