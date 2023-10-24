@@ -144,7 +144,7 @@ static void stmmac_init_fs(struct net_device *dev);
 static void stmmac_exit_fs(struct net_device *dev);
 #endif
 
-#define STMMAC_COAL_TIMER(x) (ns_to_ktime((x) * NSEC_PER_USEC))
+#define STMMAC_COAL_TIMER(x) (jiffies + usecs_to_jiffies(x))
 
 int stmmac_bus_clks_config(struct stmmac_priv *priv, bool enabled)
 {
@@ -2529,8 +2529,7 @@ static void stmmac_bump_dma_threshold(struct stmmac_priv *priv, u32 chan)
  * @queue: TX queue index
  * Description: it reclaims the transmit resources after transmission completes.
  */
-static int stmmac_tx_clean(struct stmmac_priv *priv, int budget, u32 queue,
-			   bool *pending_packets)
+static int stmmac_tx_clean(struct stmmac_priv *priv, int budget, u32 queue)
 {
 	struct stmmac_tx_queue *tx_q = &priv->dma_conf.tx_queue[queue];
 	unsigned int bytes_compl = 0, pkts_compl = 0;
@@ -2693,7 +2692,7 @@ static int stmmac_tx_clean(struct stmmac_priv *priv, int budget, u32 queue,
 
 	/* We still have pending packets, let's call for a new scheduling */
 	if (tx_q->dirty_tx != tx_q->cur_tx)
-		*pending_packets = true;
+		stmmac_tx_timer_arm(priv, queue);
 
 	__netif_tx_unlock_bh(netdev_get_tx_queue(priv->dev, queue));
 
@@ -2975,25 +2974,11 @@ static void stmmac_tx_timer_arm(struct stmmac_priv *priv, u32 queue)
 {
 	struct stmmac_tx_queue *tx_q = &priv->dma_conf.tx_queue[queue];
 	u32 tx_coal_timer = priv->tx_coal_timer[queue];
-	struct stmmac_channel *ch;
-	struct napi_struct *napi;
 
 	if (!tx_coal_timer)
 		return;
 
-	ch = &priv->channel[tx_q->queue_index];
-	napi = tx_q->xsk_pool ? &ch->rxtx_napi : &ch->tx_napi;
-
-	/* Arm timer only if napi is not already scheduled.
-	 * Try to cancel any timer if napi is scheduled, timer will be armed
-	 * again in the next scheduled napi.
-	 */
-	if (unlikely(!napi_is_scheduled(napi)))
-		hrtimer_start(&tx_q->txtimer,
-			      STMMAC_COAL_TIMER(tx_coal_timer),
-			      HRTIMER_MODE_REL);
-	else
-		hrtimer_try_to_cancel(&tx_q->txtimer);
+	mod_timer(&tx_q->txtimer, STMMAC_COAL_TIMER(priv->tx_coal_timer));
 }
 
 /**
@@ -3002,9 +2987,9 @@ static void stmmac_tx_timer_arm(struct stmmac_priv *priv, u32 queue)
  * Description:
  * This is the timer handler to directly invoke the stmmac_tx_clean.
  */
-static enum hrtimer_restart stmmac_tx_timer(struct hrtimer *t)
+static void stmmac_tx_timer(struct timer_list *t)
 {
-	struct stmmac_tx_queue *tx_q = container_of(t, struct stmmac_tx_queue, txtimer);
+	struct stmmac_tx_queue *tx_q = from_timer(tx_q, t, txtimer);
 	struct stmmac_priv *priv = tx_q->priv_data;
 	struct stmmac_channel *ch;
 	struct napi_struct *napi;
@@ -3020,8 +3005,6 @@ static enum hrtimer_restart stmmac_tx_timer(struct hrtimer *t)
 		spin_unlock_irqrestore(&ch->lock, flags);
 		__napi_schedule(napi);
 	}
-
-	return HRTIMER_NORESTART;
 }
 
 /**
@@ -3044,8 +3027,7 @@ static void stmmac_init_coalesce(struct stmmac_priv *priv)
 		priv->tx_coal_frames[chan] = STMMAC_TX_FRAMES;
 		priv->tx_coal_timer[chan] = STMMAC_COAL_TX_TIMER;
 
-		hrtimer_init(&tx_q->txtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-		tx_q->txtimer.function = stmmac_tx_timer;
+		timer_setup(&tx_q->txtimer, stmmac_tx_timer, 0);
 	}
 
 	for (chan = 0; chan < rx_channel_count; chan++)
@@ -3876,7 +3858,7 @@ irq_error:
 	phylink_stop(priv->phylink);
 
 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
+		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
 
 	stmmac_hw_teardown(dev);
 init_error:
@@ -3934,7 +3916,7 @@ static int stmmac_release(struct net_device *dev)
 	stmmac_disable_all_queues(priv);
 
 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
+		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
 
 	netif_tx_disable(dev);
 
@@ -5487,13 +5469,12 @@ static int stmmac_napi_poll_tx(struct napi_struct *napi, int budget)
 	struct stmmac_channel *ch =
 		container_of(napi, struct stmmac_channel, tx_napi);
 	struct stmmac_priv *priv = ch->priv_data;
-	bool pending_packets = false;
 	u32 chan = ch->index;
 	int work_done;
 
 	priv->xstats.napi_poll++;
 
-	work_done = stmmac_tx_clean(priv, budget, chan, &pending_packets);
+	work_done = stmmac_tx_clean(priv, budget, chan);
 	work_done = min(work_done, budget);
 
 	if (work_done < budget && napi_complete_done(napi, work_done)) {
@@ -5504,10 +5485,6 @@ static int stmmac_napi_poll_tx(struct napi_struct *napi, int budget)
 		spin_unlock_irqrestore(&ch->lock, flags);
 	}
 
-	/* TX still have packet to handle, check if we need to arm tx timer */
-	if (pending_packets)
-		stmmac_tx_timer_arm(priv, chan);
-
 	return work_done;
 }
 
@@ -5517,12 +5494,11 @@ static int stmmac_napi_poll_rxtx(struct napi_struct *napi, int budget)
 		container_of(napi, struct stmmac_channel, rxtx_napi);
 	struct stmmac_priv *priv = ch->priv_data;
 	int rx_done, tx_done, rxtx_done;
-	bool tx_pending_packets = false;
 	u32 chan = ch->index;
 
 	priv->xstats.napi_poll++;
 
-	tx_done = stmmac_tx_clean(priv, budget, chan, &tx_pending_packets);
+	tx_done = stmmac_tx_clean(priv, budget, chan);
 	tx_done = min(tx_done, budget);
 
 	rx_done = stmmac_rx_zc(priv, budget, chan);
@@ -5546,10 +5522,6 @@ static int stmmac_napi_poll_rxtx(struct napi_struct *napi, int budget)
 		stmmac_enable_dma_irq(priv, priv->ioaddr, chan, 1, 1);
 		spin_unlock_irqrestore(&ch->lock, flags);
 	}
-
-	/* TX still have packet to handle, check if we need to arm tx timer */
-	if (tx_pending_packets)
-		stmmac_tx_timer_arm(priv, chan);
 
 	return min(rxtx_done, budget - 1);
 }
@@ -7460,7 +7432,7 @@ int stmmac_suspend(struct device *dev)
 	stmmac_disable_all_queues(priv);
 
 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
+		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
 
 	if (priv->eee_enabled) {
 		priv->tx_path_in_lpi_mode = false;

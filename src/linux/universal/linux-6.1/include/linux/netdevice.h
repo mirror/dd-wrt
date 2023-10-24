@@ -468,11 +468,6 @@ static inline bool napi_prefer_busy_poll(struct napi_struct *n)
 	return test_bit(NAPI_STATE_PREFER_BUSY_POLL, &n->state);
 }
 
-static inline bool napi_is_scheduled(struct napi_struct *n)
-{
-	return test_bit(NAPI_STATE_SCHED, &n->state);
-}
-
 bool napi_schedule_prep(struct napi_struct *n);
 
 /**
