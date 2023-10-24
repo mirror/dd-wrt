@@ -6684,8 +6684,7 @@ int stmmac_xdp_open(struct net_device *dev)
 		stmmac_set_tx_tail_ptr(priv, priv->ioaddr,
 				       tx_q->tx_tail_addr, chan);
 
-		hrtimer_init(&tx_q->txtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-		tx_q->txtimer.function = stmmac_tx_timer;
+		timer_setup(&tx_q->txtimer, stmmac_tx_timer, 0);
 	}
 
 	/* Enable the MAC Rx/Tx */
