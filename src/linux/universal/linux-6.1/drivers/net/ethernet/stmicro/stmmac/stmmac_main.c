@@ -2978,7 +2978,7 @@ static void stmmac_tx_timer_arm(struct stmmac_priv *priv, u32 queue)
 	if (!tx_coal_timer)
 		return;
 
-	mod_timer(&tx_q->txtimer, STMMAC_COAL_TIMER(priv->tx_coal_timer));
+	mod_timer(&tx_q->txtimer, STMMAC_COAL_TIMER(tx_coal_timer));
 }
 
 /**
