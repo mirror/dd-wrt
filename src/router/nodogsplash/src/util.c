@@ -318,7 +318,7 @@ get_ext_iface(void)
 }
 
 char *
-format_duration(time_t from, time_t to, char buf[64])
+format_duration(time_t from, time_t to, char *buf)
 {
 	int days, hours, minutes, seconds;
 	long long int secs;
@@ -354,14 +354,14 @@ format_duration(time_t from, time_t to, char buf[64])
 }
 
 char *
-format_time(time_t time, char buf[64])
+format_time(time_t time, char *buf)
 {
 	strftime(buf, 64, "%a %b %d %H:%M:%S %Y", localtime(&time));
 	return buf;
 }
 
 char *
-get_uptime_string(char buf[64])
+get_uptime_string(char *buf)
 {
 	return format_duration(started_time, time(NULL), buf);
 }
@@ -598,9 +598,9 @@ ndsctl_clients(FILE *fp)
 		fprintf(fp, "added=%lld\n", (long long) client->session_start);
 		fprintf(fp, "active=%lld\n", (long long) client->counters.last_updated);
 		if (client->session_start) {
-			fprintf(fp, "duration=%lu\n", now - client->session_start);
+			fprintf(fp, "duration=%lld\n", (long long) (now - client->session_start));
 		} else {
-			fprintf(fp, "duration=%lu\n", 0ul);
+			fprintf(fp, "duration=%lld\n", 0ll);
 		}
 		fprintf(fp, "token=%s\n", client->token ? client->token : "none");
 		fprintf(fp, "state=%s\n", fw_connection_state_as_string(client->fw_connection_state));
@@ -633,9 +633,9 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now)
 	fprintf(fp, "\"added\":%lld,\n", (long long) client->session_start);
 	fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
 	if (client->session_start) {
-		fprintf(fp, "\"duration\":%lu,\n", now - client->session_start);
+		fprintf(fp, "\"duration\":%lld,\n", (long long) (now - client->session_start));
 	} else {
-		fprintf(fp, "\"duration\":%lu,\n", 0ul);
+		fprintf(fp, "\"duration\":%lld,\n", 0ll);
 	}
 	fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
 	fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));

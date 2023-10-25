@@ -14,8 +14,8 @@
  * @file http_microhttpd.c
  * @brief a httpd implementation using libmicrohttpd
  * @author Copyright (C) 2015 Alexander Couzens <lynxis@fe80.eu>
+ * @author Copyright (C) 2023 Moritz Warning <moritzwarning@web.de>
  */
-
 
 #include <microhttpd.h>
 #include <syslog.h>
@@ -27,6 +27,7 @@
 #include <linux/limits.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include "client_list.h"
 #include "conf.h"
@@ -62,12 +63,11 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int show_statuspage(struct MHD_Connection *connection, t_client *client);
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
-static int send_error(struct MHD_Connection *connection, int error);
+static enum MHD_Result send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(const char *host);
 static int is_splashpage(const char *host, const char *url);
-static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
 static const char *get_redirect_url(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
@@ -121,27 +121,33 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 	return 0;
 }
 
-struct collect_query {
-	int i;
-	char **elements;
+struct get_query_data {
+	bool error;
+	size_t capacity;
+	size_t size;
+	char *query;
 };
 
-static enum MHD_Result collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value)
+static enum MHD_Result get_query_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-	/* what happens when '?=foo' supplied? */
-	struct collect_query *collect_query = cls;
-	if (key && !value) {
-		collect_query->elements[collect_query->i] = safe_strdup(key);
-	} else if (key && value) {
-		safe_asprintf(&(collect_query->elements[collect_query->i]), "%s=%s", key, value);
-	}
-	collect_query->i++;
-	return MHD_YES;
-}
+	struct get_query_data *data = cls;
+	const char separator = data->size ? '&' : '?';
+	const char *format = value ? "%c%s=%s" : "%c%s";
+	const int left = data->capacity - data->size;
 
-/* a dump iterator required for counting all elements */
-static enum MHD_Result counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
-{
+	if (key != NULL && kind == MHD_GET_ARGUMENT_KIND) {
+		// append '?foo=bar', '&foo=bar', '?foo', '&foo'
+		int n = snprintf(&data->query[data->size], left, format, separator, key, value);
+		if (n >= left) {
+			data->query[data->size] = '\0';
+			data->error = true;
+			return MHD_NO;
+		} else {
+			data->size += n;
+		}
+	}
+
+	// continue iteration
 	return MHD_YES;
 }
 
@@ -516,54 +522,8 @@ static int authenticated(struct MHD_Connection *connection,
 		return show_statuspage(connection, client);
 	}
 
-	if (check_authdir_match(url, config->preauthdir)) {
-		return show_statuspage(connection, client);
-	}
-
 	/* user doesn't want the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
-}
-
-/**
- * @brief show_preauthpage - run preauth script and serve output.
- */
-static int show_preauthpage(struct MHD_Connection *connection, const char *query)
-{
-	char msg[HTMLMAXSIZE] = {0};
-	// Encoded querystring could be up to 3 times the size of unencoded version
-	char query_enc[QUERYMAXLEN * 3] = {0};
-	int rc;
-	struct MHD_Response *response;
-	int ret;
-	s_config *config = config_get_config();
-
-	if (query) {
-		if (uh_urlencode(query_enc, sizeof(query_enc), query, strlen(query)) == -1) {
-			debug(LOG_WARNING, "could not encode query");
-			return -1;
-		} else {
-			debug(LOG_DEBUG, "query: %s", query);
-		}
-	}
-
-	rc = execute_ret(msg, HTMLMAXSIZE - 1, "%s '%s'", config->preauth, query_enc);
-
-	if (rc != 0) {
-		debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
-		return -1;
-	}
-
-	// serve the script output (in msg)
-	response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
-
-	if (!response) {
-		return send_error(connection, 503);
-	}
-
-	MHD_add_response_header(response, "Content-Type", "text/html");
-	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-	MHD_destroy_response(response);
-	return ret;
 }
 
 /**
@@ -580,24 +540,10 @@ static int preauthenticated(struct MHD_Connection *connection,
 	const char *host = NULL;
 	const char *redirect_url;
 	char *querystr = NULL;
-	char query_str[QUERYMAXLEN] = {0};
-	char *query = query_str;
 
-	int ret;
 	s_config *config = config_get_config();
 
 	debug(LOG_DEBUG, "url: %s", url);
-
-	/* Check for preauthdir */
-	if (check_authdir_match(url, config->preauthdir)) {
-
-		debug(LOG_DEBUG, "preauthdir url detected: %s", url);
-
-		get_query(connection, &query, QUERYSEPARATOR);
-
-		ret = show_preauthpage(connection, query);
-		return ret;
-	}
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
@@ -660,7 +606,9 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 
 	if (originurl) {
 		if (uh_urlencode(encoded, sizeof(encoded), originurl, strlen(originurl)) == -1) {
-			debug(LOG_WARNING, "could not encode url");
+			debug(LOG_WARNING, "cannot encode url");
+			/* not enough memory */
+			return send_error(connection, 503);
 		} else {
 			debug(LOG_DEBUG, "originurl: %s", originurl);
 		}
@@ -687,17 +635,21 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
 	char *originurl = NULL;
-	char query_str[QUERYMAXLEN] = {0};
-	char *query = query_str;
-	int ret = 0;
-	const char *separator = "&";
+	char query[QUERYMAXLEN] = { 0 };
 	char *querystr = NULL;
 	s_config *config = config_get_config();
 
-	get_query(connection, &query, separator);
-	if (!query) {
+	struct get_query_data data = {
+		.error = false,
+		.size = 0,
+		.capacity = QUERYMAXLEN,
+		.query = query,
+	};
+
+	// collect query
+	if (MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, get_query_callback, &data) < 0 || data.error) {
 		debug(LOG_DEBUG, "Unable to get query string - error 503");
-		/* no mem */
+		/* not enough memory */
 		return send_error(connection, 503);
 	}
 
@@ -705,7 +657,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 
 	safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	safe_asprintf(&originurl, "http://%s%s%s", host, url, query);
-	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
+	int ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
 	free(originurl);
 	free(querystr);
 	return ret;
@@ -767,81 +719,6 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "redir");
 }
 
-/* save the query or empty string into **query.*/
-static int get_query(struct MHD_Connection *connection, char **query, const char *separator)
-{
-	int element_counter;
-	char **elements;
-	char query_str[QUERYMAXLEN] = {0};
-	struct collect_query collect_query;
-	int i;
-	int j;
-	int length = 0;
-
-	debug(LOG_DEBUG, " Separator is [%s].", separator);
-
-	element_counter = MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, counter_iterator, NULL);
-	if (element_counter == 0) {
-		*query = safe_strdup("");
-		return 0;
-	}
-	elements = calloc(element_counter, sizeof(char *));
-	if (elements == NULL) {
-		return 0;
-	}
-	collect_query.i = 0;
-	collect_query.elements = elements;
-
-	// Collect the arguments of the query string from MHD
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
-
-	for (i = 0; i < element_counter; i++) {
-		if (!elements[i])
-			continue;
-		length += strlen(elements[i]);
-
-		if (i > 0) /* q=foo&o=bar the '&' need also some space */
-			length++;
-	}
-
-	/* don't miss the zero terminator */
-	if (*query == NULL) {
-		for (i = 0; i < element_counter; i++) {
-			free(elements[i]);
-		}
-		free(elements);
-		return 0;
-	}
-
-	for (i = 0, j = 0; i < element_counter; i++) {
-		if (!elements[i]) {
-			continue;
-		}
-		strncpy(*query + j, elements[i], length - j);
-		if (i == 0) {
-			// query_str is empty when i = 0 so safe to copy a single char into it
-			strcpy(query_str, "?");
-		} else {
-			if (QUERYMAXLEN - strlen(query_str) > length - j + 1) {
-				strncat(query_str, separator, QUERYMAXLEN - strlen(query_str));
-			}
-		}
-
-		// note: query string will be truncated if too long
-		if (QUERYMAXLEN - strlen(query_str) > length - j) {
-			strncat(query_str, *query, QUERYMAXLEN - strlen(query_str));
-		} else {
-			debug(LOG_WARNING, " Query string exceeds the maximum of %d bytes so has been truncated.", QUERYMAXLEN);
-		}
-
-		free(elements[i]);
-	}
-
-	strncpy(*query, query_str, QUERYMAXLEN);
-	free(elements);
-	return 0;
-}
-
 static int send_refresh(struct MHD_Connection *connection)
 {
 	struct MHD_Response *response = NULL;
@@ -858,7 +735,7 @@ static int send_refresh(struct MHD_Connection *connection)
 	return ret;
 }
 
-static int send_error(struct MHD_Connection *connection, int error)
+static enum MHD_Result send_error(struct MHD_Connection *connection, int error)
 {
 	struct MHD_Response *response = NULL;
 	// cannot automate since cannot translate automagically between error number and MHD's status codes
