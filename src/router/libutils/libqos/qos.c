@@ -478,7 +478,7 @@ char *get_tcfmark(char *tcfmark, uint32 mark, int seg)
 }
 #endif
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
-static void add_tc_class(char *dev, int pref, int pref6 int handle, int classid)
+static void add_tc_class(char *dev, int pref, int pref6, int handle, int classid)
 {
 	char h[32];
 	char c[32];
