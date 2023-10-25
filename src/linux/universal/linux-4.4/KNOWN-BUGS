@@ -4,7 +4,7 @@ KNOWN BUGS
 After end of 4.4-stable maintainance, CIP project maintains 4.4 kernel
 tree. We try to fix as man bugs as possible, but sometimes backport
 from mainline is not feasible or not done by the stable team, and
-sometimes backport from 4.9-stable to 4.4-st is not feasible or not
+sometimes backport from 4.9-stable+ to 4.4-st is not feasible or not
 done for other reasons.
 
 In major cases this happens, we'll try to add notes here. Detailed
@@ -12,8 +12,9 @@ per-patch status is available at
 git@gitlab.com:cip-project/cip-kernel/lts-commit-list.git file
 v4.4.org, or can be pulled from git history.
 
-Not all speculation fixes from 4.9.306, 4.9.310 and 4.9.319 were
-merged here. These affect mostly x86 and arm64 architectures.
+Not all speculation fixes from 4.9.306, 4.9.310, 4.9.319 and subsequent
+kernel version were merged here. These affect mostly x86 and arm64
+architectures.
 
 Random rewrite from 4.9.320 was not backported. We have seen no good
 explanation why it is needed, and it is rather intrusive.
@@ -40,3 +41,5 @@ d1f0467fd | btrfs: check if root is readonly while setting security xattr
 4.14.y:
 
 35529d6b8 | nfc: pn533: Wait for out_urb's completion in pn533_usb_send_frame()
+74a10924f | x86/speculation: Add force option to GDS mitigation
+d19a80db7 | netfilter: nf_tables: incorrect error path handling with NFT_MSG_NEWRULE

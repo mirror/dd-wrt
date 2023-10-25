@@ -58,7 +58,6 @@ static inline u16 find_equiv_id(struct equiv_cpu_entry *equiv_cpu_table,
 }
 
 extern int __apply_microcode_amd(struct microcode_amd *mc_amd);
-extern int apply_microcode_amd(int cpu);
 
 #define PATCH_MAX_SIZE PAGE_SIZE
 extern u8 amd_ucode_patch[PATCH_MAX_SIZE];
@@ -68,11 +67,13 @@ extern void __init load_ucode_amd_bsp(unsigned int family);
 extern void load_ucode_amd_ap(void);
 extern int __init save_microcode_in_initrd_amd(void);
 void reload_ucode_amd(void);
+extern void amd_check_microcode(void);
 #else
 static inline void __init load_ucode_amd_bsp(unsigned int family) {}
 static inline void load_ucode_amd_ap(void) {}
 static inline int __init save_microcode_in_initrd_amd(void) { return -EINVAL; }
-void reload_ucode_amd(void) {}
+static inline void reload_ucode_amd(void) {}
+static inline void amd_check_microcode(void) {}
 #endif
 
 extern bool check_current_patch_level(u32 *rev, bool early);

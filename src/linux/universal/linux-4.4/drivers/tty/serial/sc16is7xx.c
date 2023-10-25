@@ -1155,10 +1155,18 @@ static int sc16is7xx_gpio_direction_output(struct gpio_chip *chip,
 						gpio);
 	struct uart_port *port = &s->p[0].port;
 
-	sc16is7xx_port_update(port, SC16IS7XX_IOSTATE_REG, BIT(offset),
-			      val ? BIT(offset) : 0);
+	/*
+	 * If we write IOSTATE first, and then IODIR, the output value is not
+	 * transferred to the corresponding I/O pin.
+	 * The datasheet states that each register bit will be transferred to
+	 * the corresponding I/O pin programmed as output when writing to
+	 * IOSTATE. Therefore, configure direction first with IODIR, and then
+	 * set value after with IOSTATE.
+	 */
 	sc16is7xx_port_update(port, SC16IS7XX_IODIR_REG, BIT(offset),
 			      BIT(offset));
+	sc16is7xx_port_update(port, SC16IS7XX_IOSTATE_REG, BIT(offset),
+			      val ? BIT(offset) : 0);
 
 	return 0;
 }

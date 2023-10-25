@@ -112,14 +112,10 @@ static int nft_dynset_init(const struct nft_ctx *ctx,
 	    tb[NFTA_DYNSET_SREG_KEY] == NULL)
 		return -EINVAL;
 
-	set = nf_tables_set_lookup(ctx->table, tb[NFTA_DYNSET_SET_NAME]);
-	if (IS_ERR(set)) {
-		if (tb[NFTA_DYNSET_SET_ID])
-			set = nf_tables_set_lookup_byid(ctx->net,
-							tb[NFTA_DYNSET_SET_ID]);
-		if (IS_ERR(set))
-			return PTR_ERR(set);
-	}
+	set = nft_set_lookup(ctx->net, ctx->table, tb[NFTA_DYNSET_SET_NAME],
+			     tb[NFTA_DYNSET_SET_ID]);
+	if (IS_ERR(set))
+		return PTR_ERR(set);
 
 	if (set->ops->update == NULL)
 		return -EOPNOTSUPP;
@@ -178,8 +174,7 @@ static int nft_dynset_init(const struct nft_ctx *ctx,
 		err = -EOPNOTSUPP;
 		if (!(priv->expr->ops->type->flags & NFT_EXPR_STATEFUL))
 			goto err1;
-	} else if (set->flags & NFT_SET_EVAL)
-		return -EINVAL;
+	}
 
 	nft_set_ext_prepare(&priv->tmpl);
 	nft_set_ext_add_length(&priv->tmpl, NFT_SET_EXT_KEY, set->klen);

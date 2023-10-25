@@ -802,8 +802,9 @@ static int get_matching_mc(struct microcode_intel *mc_intel, int cpu)
 	return has_newer_microcode(mc_intel, csig, cpf, crev);
 }
 
-static int apply_microcode_intel(int cpu)
+static enum ucode_state apply_microcode_intel(int cpu)
 {
+	enum ucode_state ret = UCODE_UPDATED;
 	struct microcode_intel *mc_intel;
 	struct ucode_cpu_info *uci;
 	u32 rev;
@@ -817,7 +818,7 @@ static int apply_microcode_intel(int cpu)
 	BUG_ON(cpu_num != cpu);
 
 	if (mc_intel == NULL)
-		return 0;
+		return UCODE_NFOUND;
 
 	/*
 	 * Microcode on this CPU could be updated earlier. Only apply the
@@ -825,7 +826,7 @@ static int apply_microcode_intel(int cpu)
 	 * CPU.
 	 */
 	if (get_matching_mc(mc_intel, cpu) == 0)
-		return 0;
+		return UCODE_OK;
 
 	/*
 	 * Save us the MSR write below - which is a particular expensive
@@ -833,8 +834,10 @@ static int apply_microcode_intel(int cpu)
 	 * already.
 	 */
 	rev = intel_get_microcode_revision();
-	if (rev >= mc_intel->hdr.rev)
+	if (rev >= mc_intel->hdr.rev) {
+		ret = UCODE_OK;
 		goto out;
+	}
 
 	/* write microcode via MSR 0x79 */
 	wrmsr(MSR_IA32_UCODE_WRITE,
@@ -846,7 +849,7 @@ static int apply_microcode_intel(int cpu)
 	if (rev != mc_intel->hdr.rev) {
 		pr_err("CPU%d update to revision 0x%x failed\n",
 		       cpu_num, mc_intel->hdr.rev);
-		return -1;
+		return UCODE_ERROR;
 	}
 	pr_info("CPU%d updated to revision 0x%x, date = %04x-%02x-%02x\n",
 		cpu_num, rev,
@@ -862,7 +865,7 @@ out:
 	if (c->cpu_index == boot_cpu_data.cpu_index)
 		boot_cpu_data.microcode = rev;
 
-	return 0;
+	return ret;
 }
 
 static enum ucode_state generic_load_microcode(int cpu, void *data, size_t size,

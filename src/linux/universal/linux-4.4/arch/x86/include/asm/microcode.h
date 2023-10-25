@@ -3,6 +3,7 @@
 
 #include <linux/earlycpio.h>
 #include <linux/initrd.h>
+#include <asm/microcode_amd.h>
 
 #define native_rdmsr(msr, val1, val2)			\
 do {							\
@@ -27,7 +28,12 @@ struct cpu_signature {
 
 struct device;
 
-enum ucode_state { UCODE_ERROR, UCODE_OK, UCODE_NFOUND };
+enum ucode_state {
+	UCODE_OK	= 0,
+	UCODE_UPDATED,
+	UCODE_NFOUND,
+	UCODE_ERROR,
+};
 
 struct microcode_ops {
 	enum ucode_state (*request_microcode_user) (int cpu,
@@ -44,7 +50,7 @@ struct microcode_ops {
 	 * are being called.
 	 * See also the "Synchronization" section in microcode_core.c.
 	 */
-	int (*apply_microcode) (int cpu);
+	enum ucode_state (*apply_microcode) (int cpu);
 	int (*collect_cpu_info) (int cpu, struct cpu_signature *csig);
 };
 

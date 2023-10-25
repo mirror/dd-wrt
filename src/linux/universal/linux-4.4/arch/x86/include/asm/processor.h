@@ -877,4 +877,5 @@ enum taa_mitigations {
 	TAA_MITIGATION_TSX_DISABLED,
 };
 
+void microcode_check(void);
 #endif /* _ASM_X86_PROCESSOR_H */

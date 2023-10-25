@@ -1089,34 +1089,6 @@ void igb_ptp_init(struct igb_adapter *adapter)
 
 	wrfl();
 
-	spin_lock_init(&adapter->tmreg_lock);
-	INIT_WORK(&adapter->ptp_tx_work, igb_ptp_tx_work);
-
-	/* Initialize the clock and overflow work for devices that need it. */
-	if ((hw->mac.type == e1000_i210) || (hw->mac.type == e1000_i211)) {
-		struct timespec64 ts = ktime_to_timespec64(ktime_get_real());
-
-		igb_ptp_settime_i210(&adapter->ptp_caps, &ts);
-	} else {
-		timecounter_init(&adapter->tc, &adapter->cc,
-				 ktime_to_ns(ktime_get_real()));
-
-		INIT_DELAYED_WORK(&adapter->ptp_overflow_work,
-				  igb_ptp_overflow_check);
-
-		schedule_delayed_work(&adapter->ptp_overflow_work,
-				      IGB_SYSTIM_OVERFLOW_PERIOD);
-	}
-
-	/* Initialize the time sync interrupts for devices that support it. */
-	if (hw->mac.type >= e1000_82580) {
-		wr32(E1000_TSIM, TSYNC_INTERRUPTS);
-		wr32(E1000_IMS, E1000_IMS_TS);
-	}
-
-	adapter->tstamp_config.rx_filter = HWTSTAMP_FILTER_NONE;
-	adapter->tstamp_config.tx_type = HWTSTAMP_TX_OFF;
-
 	adapter->ptp_clock = ptp_clock_register(&adapter->ptp_caps,
 						&adapter->pdev->dev);
 	if (IS_ERR(adapter->ptp_clock)) {
@@ -1126,6 +1098,34 @@ void igb_ptp_init(struct igb_adapter *adapter)
 		dev_info(&adapter->pdev->dev, "added PHC on %s\n",
 			 adapter->netdev->name);
 		adapter->flags |= IGB_FLAG_PTP;
+
+		spin_lock_init(&adapter->tmreg_lock);
+		INIT_WORK(&adapter->ptp_tx_work, igb_ptp_tx_work);
+
+		/* Initialize the clock and overflow work for devices that need it. */
+		if ((hw->mac.type == e1000_i210) || (hw->mac.type == e1000_i211)) {
+			struct timespec64 ts = ktime_to_timespec64(ktime_get_real());
+
+			igb_ptp_settime_i210(&adapter->ptp_caps, &ts);
+		} else {
+			timecounter_init(&adapter->tc, &adapter->cc,
+					 ktime_to_ns(ktime_get_real()));
+
+			INIT_DELAYED_WORK(&adapter->ptp_overflow_work,
+					  igb_ptp_overflow_check);
+
+			schedule_delayed_work(&adapter->ptp_overflow_work,
+					      IGB_SYSTIM_OVERFLOW_PERIOD);
+		}
+
+		/* Initialize the time sync interrupts for devices that support it. */
+		if (hw->mac.type >= e1000_82580) {
+			wr32(E1000_TSIM, TSYNC_INTERRUPTS);
+			wr32(E1000_IMS, E1000_IMS_TS);
+		}
+
+		adapter->tstamp_config.rx_filter = HWTSTAMP_FILTER_NONE;
+		adapter->tstamp_config.tx_type = HWTSTAMP_TX_OFF;
 	}
 }
 
