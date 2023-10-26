@@ -3157,10 +3157,10 @@ void run_wan(int status)
 			char *passwd = nvram_safe_get(wsbuf);
 			sprintf(wsbuf, "wan_apn%s", wsel);
 			if (*username && *passwd) {
-				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --username %s --password %s --keep-client-id wds\n",
+				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network --apn %s --auth-type both --username %s --password %s --keep-client-id wds\n",
 					nvram_safe_get(wsbuf), username, passwd);
 			} else {
-				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get(wsbuf));
+				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network --apn %s --auth-type both --keep-client-id wds\n", nvram_safe_get(wsbuf));
 			}
 			if (!strcmp(controldevice, "qmiraw"))
 				sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
