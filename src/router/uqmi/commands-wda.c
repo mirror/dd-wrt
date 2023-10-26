@@ -74,6 +74,7 @@ cmd_wda_get_data_format_cb(struct qmi_dev *qmi, struct qmi_request *req, struct 
 static enum qmi_cmd_result
 cmd_wda_get_data_format_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	qmi_set_wda_get_data_format_request(msg);
+	struct qmi_wda_get_data_format_request data_req = {};
+	qmi_set_wda_get_data_format_request(msg, &data_req);
 	return QMI_CMD_REQUEST;
 }

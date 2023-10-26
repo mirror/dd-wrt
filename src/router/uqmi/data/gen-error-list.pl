@@ -22,7 +22,7 @@ while ($line = <>) {
 	};
 	undef $doc_start;
 
-	$line =~ /^\s*\*\s*@(.+): (.+)\./ and push @errors, [ $1, $2 ];
+	$line =~ /^.*@([A-Z0-9_]+): ([A-z0-9 ]+)[.].*$/ and push @errors, [ $1, $2 ];
 }
 
 @errors > 0 or die "No data found\n";

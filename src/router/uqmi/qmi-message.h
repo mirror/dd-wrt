@@ -51,6 +51,9 @@
 #include "qmi-enums-wda.h"
 #include "qmi-message-wda.h"
 
+#include "qmi-enums-uim.h"
+#include "qmi-message-uim.h"
+
 #define qmi_set(_data, _field, _val) \
 	do { \
 		(_data)->set._field = 1; \

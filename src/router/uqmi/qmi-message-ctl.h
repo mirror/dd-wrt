@@ -22,7 +22,7 @@ struct qmi_ctl_get_version_info_response {
 	struct {
 		unsigned int service_list_n;
 		struct {
-			QmiService service;
+			uint8_t service;
 			uint16_t major_version;
 			uint16_t minor_version;
 		} *service_list;
@@ -34,7 +34,7 @@ struct qmi_ctl_allocate_cid_request {
 		unsigned int service : 1;
 	} set;
 	struct {
-		QmiService service;
+		uint8_t service;
 	} data;
 };
 
@@ -44,7 +44,7 @@ struct qmi_ctl_allocate_cid_response {
 	} set;
 	struct {
 		struct {
-			QmiService service;
+			uint8_t service;
 			uint8_t cid;
 		} allocation_info;
 	} data;
@@ -56,7 +56,7 @@ struct qmi_ctl_release_cid_request {
 	} set;
 	struct {
 		struct {
-			QmiService service;
+			uint8_t service;
 			uint8_t cid;
 		} release_info;
 	} data;
@@ -68,7 +68,7 @@ struct qmi_ctl_release_cid_response {
 	} set;
 	struct {
 		struct {
-			QmiService service;
+			uint8_t service;
 			uint8_t cid;
 		} release_info;
 	} data;
@@ -80,8 +80,8 @@ struct qmi_ctl_set_data_format_request {
 		unsigned int protocol : 1;
 	} set;
 	struct {
-		QmiCtlDataFormat format;
-		QmiCtlDataLinkProtocol protocol;
+		uint8_t format;
+		uint16_t protocol;
 	} data;
 };
 
@@ -90,7 +90,7 @@ struct qmi_ctl_set_data_format_response {
 		unsigned int protocol : 1;
 	} set;
 	struct {
-		QmiCtlDataLinkProtocol protocol;
+		uint16_t protocol;
 	} data;
 };
 

@@ -64,6 +64,14 @@ cmd_version_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg
 	return QMI_CMD_REQUEST;
 }
 
+#define cmd_sync_cb no_cb
+static enum qmi_cmd_result
+cmd_sync_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	qmi_set_ctl_sync_request(msg);
+	return QMI_CMD_REQUEST;
+}
+
 #define cmd_get_client_id_cb no_cb
 static enum qmi_cmd_result
 cmd_get_client_id_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
@@ -161,6 +169,7 @@ cmd_ctl_set_data_format_prepare(struct qmi_dev *qmi, struct qmi_request *req, st
 #include "commands-nas.c"
 #include "commands-wms.c"
 #include "commands-wda.c"
+#include "commands-uim.c"
 
 #define __uqmi_command(_name, _optname, _arg, _type) \
 	[__UQMI_COMMAND_##_name] = { \
@@ -184,7 +193,7 @@ void uqmi_add_command(char *arg, int cmd)
 
 	cmds = realloc(cmds, n_cmds * sizeof(*cmds));
 	cmds[idx].handler = &uqmi_cmd_handler[cmd];
-	cmds[idx].arg = optarg;
+	cmds[idx].arg = arg;
 }
 
 static void uqmi_print_result(struct blob_attr *data)
@@ -204,8 +213,8 @@ static void uqmi_print_result(struct blob_attr *data)
 
 static bool __uqmi_run_commands(struct qmi_dev *qmi, bool option)
 {
-	static char buf[2048];
 	static struct qmi_request req;
+	char *buf = qmi->buf;
 	int i;
 
 	for (i = 0; i < n_cmds; i++) {
@@ -226,7 +235,7 @@ static bool __uqmi_run_commands(struct qmi_dev *qmi, bool option)
 		}
 
 		if (res == QMI_CMD_REQUEST) {
-			qmi_request_start(qmi, &req, (void *) buf, cmds[i].handler->cb);
+			qmi_request_start(qmi, &req, cmds[i].handler->cb);
 			req.no_error_cb = true;
 			if (qmi_request_wait(qmi, &req)) {
 				uqmi_add_error(qmi_get_error_str(req.ret));

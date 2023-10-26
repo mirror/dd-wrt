@@ -20,6 +20,7 @@
  */
 
 #define __uqmi_wms_commands \
+	__uqmi_command(wms_storage, storage, required, CMD_TYPE_OPTION), \
 	__uqmi_command(wms_list_messages, list-messages, no, QMI_SERVICE_WMS), \
 	__uqmi_command(wms_delete_message, delete-message, required, QMI_SERVICE_WMS), \
 	__uqmi_command(wms_get_message, get-message, required, QMI_SERVICE_WMS), \
@@ -31,9 +32,13 @@
 
 #define wms_helptext \
 		"  --list-messages:                  List SMS messages\n" \
+		"    --storage <mem>:                Messages storage (sim (default), me)\n" \
 		"  --delete-message <id>:            Delete SMS message at index <id>\n" \
+		"    --storage <mem>:                Messages storage (sim (default), me)\n" \
 		"  --get-message <id>:               Get SMS message at index <id>\n" \
+		"    --storage <mem>:                Messages storage (sim (default), me)\n" \
 		"  --get-raw-message <id>:           Get SMS raw message contents at index <id>\n" \
+		"    --storage <mem>:                Messages storage (sim (default), me)\n" \
 		"  --send-message <data>:            Send SMS message (use options below)\n" \
 		"    --send-message-smsc <nr>:       SMSC number\n" \
 		"    --send-message-target <nr>:     Destination number (required)\n" \

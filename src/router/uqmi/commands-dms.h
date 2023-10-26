@@ -37,6 +37,7 @@
 	__uqmi_command(dms_get_imsi, get-imsi, no, QMI_SERVICE_DMS), \
 	__uqmi_command(dms_get_imei, get-imei, no, QMI_SERVICE_DMS), \
 	__uqmi_command(dms_get_msisdn, get-msisdn, no, QMI_SERVICE_DMS), \
+	__uqmi_command(dms_get_operating_mode, get-device-operating-mode, no, QMI_SERVICE_DMS), \
 	__uqmi_command(dms_set_operating_mode, set-device-operating-mode, required, QMI_SERVICE_DMS), \
 	__uqmi_command(dms_reset, reset-dms, no, QMI_SERVICE_DMS), \
 	__uqmi_command(dms_set_fcc_authentication, fcc-auth, no, QMI_SERVICE_DMS) \
@@ -67,9 +68,11 @@
 		"  --get-imei:                       Get International Mobile Equipment ID\n" \
 		"  --get-msisdn:                     Get the MSISDN (telephone number)\n" \
 		"  --reset-dms:                      Reset the DMS service\n" \
+		"  --get-device-operating-mode       Get the device operating mode\n" \
 		"  --set-device-operating-mode <m>   Set the device operating mode\n" \
 		"                                    (modes: online, low_power, factory_test, offline\n" \
 		"                                     reset, shutting_down, persistent_low_power,\n" \
 		"                                     mode_only_low_power)\n" \
 		"  --fcc-auth:                       Set FCC authentication\n" \
 
+const char *get_pin_status(int status);

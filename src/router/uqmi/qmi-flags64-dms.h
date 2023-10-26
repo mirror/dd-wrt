@@ -17,8 +17,9 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 Lanedo GmbH <aleksander@lanedo.com>
+ * Copyright (C) 2012 Lanedo GmbH.
  * Copyright (C) 2012 Google, Inc.
+ * Copyright (C) 2012-2017 Aleksander Morgado <aleksander@aleksander.es>
  */
 
 #ifndef _LIBQMI_GLIB_QMI_FLAGS64_DMS_H_
@@ -71,8 +72,10 @@
  * @QMI_DMS_BAND_CAPABILITY_WCDMA_1500: WCDMA 1500 band.
  *
  * Frequency band capabilities.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_DMS_BAND_CAPABILITY_BC_0_A_SYSTEM    = 1 << 0,
     QMI_DMS_BAND_CAPABILITY_BC_0_B_SYSTEM    = 1 << 1,
     QMI_DMS_BAND_CAPABILITY_BC_1_ALL_BLOCKS  = 1 << 2,
@@ -104,7 +107,7 @@ typedef enum {
     QMI_DMS_BAND_CAPABILITY_BC_12            = 1 << 28,
     QMI_DMS_BAND_CAPABILITY_BC_14            = 1 << 29,
     /* Bit 30 reserved */
-    QMI_DMS_BAND_CAPABILITY_BC_15            = 1 << 31,
+    QMI_DMS_BAND_CAPABILITY_BC_15            = ((uint64_t) 1) << 31,
     /* Bits 32-47 reserved */
     QMI_DMS_BAND_CAPABILITY_WCDMA_2600       = ((uint64_t) 1) << 48,
     QMI_DMS_BAND_CAPABILITY_WCDMA_900        = ((uint64_t) 1) << 49,
@@ -142,6 +145,13 @@ typedef enum {
  * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_21: LTE EUTRAN Band 21.
  * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_24: LTE EUTRAN Band 24.
  * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_25: LTE EUTRAN Band 25.
+ * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_26: LTE EUTRAN Band 26.
+ * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_27: LTE EUTRAN Band 27.
+ * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_28: LTE EUTRAN Band 28.
+ * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_29: LTE EUTRAN Band 29.
+ * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_30: LTE EUTRAN Band 30.
+ * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_31: LTE EUTRAN Band 31.
+ * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_32: LTE EUTRAN Band 32.
  * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_33: LTE EUTRAN Band 33.
  * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_34: LTE EUTRAN Band 34.
  * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_35: LTE EUTRAN Band 35.
@@ -155,8 +165,10 @@ typedef enum {
  * @QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_43: LTE EUTRAN Band 43.
  *
  * LTE-specific Frequency bands.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_1  = 1 << 0,
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_2  = 1 << 1,
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_3  = 1 << 2,
@@ -180,7 +192,13 @@ typedef enum {
     /* Bit 21-22 reserved */
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_24 = 1 << 23,
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_25 = 1 << 24,
-    /* Bit 25-31 reserved */
+    QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_26 = 1 << 25,
+    QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_27 = 1 << 26,
+    QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_28 = 1 << 27,
+    QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_29 = 1 << 28,
+    QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_30 = 1 << 29,
+    QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_31 = 1 << 30,
+    QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_32 = ((uint64_t) 1) << 31,
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_33 = ((uint64_t) 1) << 32,
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_34 = ((uint64_t) 1) << 33,
     QMI_DMS_LTE_BAND_CAPABILITY_EUTRAN_35 = ((uint64_t) 1) << 34,

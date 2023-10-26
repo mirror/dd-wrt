@@ -33,6 +33,177 @@ int qmi_parse_wds_reset_response(struct qmi_msg *msg)
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
+int qmi_set_wds_set_event_report_request(struct qmi_msg *msg, struct qmi_wds_set_event_report_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0001);
+
+	if (req->set.channel_rate) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.channel_rate, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->set.transfer_statistics) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.transfer_statistics.interval_seconds, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.transfer_statistics.indicators), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.data_bearer_technology) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.data_bearer_technology, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	if (req->set.dormancy_status) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.dormancy_status, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x13, ofs, buf);
+	}
+
+	if (req->set.mip_status) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.mip_status, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x14, ofs, buf);
+	}
+
+	if (req->set.current_data_bearer_technology) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.current_data_bearer_technology, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x15, ofs, buf);
+	}
+
+	if (req->set.data_call_status) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.data_call_status, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x17, ofs, buf);
+	}
+
+	if (req->set.preferred_data_system) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.preferred_data_system, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x18, ofs, buf);
+	}
+
+	if (req->set.evdo_pm_change) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.evdo_pm_change, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x19, ofs, buf);
+	}
+
+	if (req->set.data_systems) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.data_systems, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1A, ofs, buf);
+	}
+
+	if (req->set.uplink_flow_control) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.uplink_flow_control, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1B, ofs, buf);
+	}
+
+	if (req->set.limited_data_system_status) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.limited_data_system_status, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1C, ofs, buf);
+	}
+
+	if (req->set.pdn_filter_removals) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdn_filter_removals, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1D, ofs, buf);
+	}
+
+	if (req->set.extended_data_bearer_technology) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.extended_data_bearer_technology, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1E, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_set_event_report_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
 int qmi_set_wds_abort_request(struct qmi_msg *msg, struct qmi_wds_abort_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
@@ -58,6 +229,57 @@ int qmi_parse_wds_abort_response(struct qmi_msg *msg)
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_get_supported_messages_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x001E);
+
+	return 0;
+}
+
+int qmi_parse_wds_get_supported_messages_response(struct qmi_msg *msg, struct qmi_wds_get_supported_messages_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.list = __qmi_alloc_static(i * sizeof(res->data.list[0]));
+			while(i-- > 0) {
+				res->data.list[res->data.list_n] = *(uint8_t *) get_next(1);
+				res->data.list_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
 }
 
 int qmi_set_wds_start_network_request(struct qmi_msg *msg, struct qmi_wds_start_network_request *req)
@@ -388,6 +610,55 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
+int qmi_set_wds_get_channel_rates_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0023);
+
+	return 0;
+}
+
+int qmi_parse_wds_get_channel_rates_response(struct qmi_msg *msg, struct qmi_wds_get_channel_rates_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set.channel_rates = 1;
+			res->data.channel_rates.channel_tx_rate_bps = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.channel_rates.channel_rx_rate_bps = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.channel_rates.max_channel_tx_rate_bps = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.channel_rates.max_channel_rx_rate_bps = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_wds_get_packet_statistics_request(struct qmi_msg *msg, struct qmi_wds_get_packet_statistics_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
@@ -532,6 +803,1028 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
+int qmi_set_wds_go_dormant_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0025);
+
+	return 0;
+}
+
+int qmi_parse_wds_go_dormant_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_go_active_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0026);
+
+	return 0;
+}
+
+int qmi_parse_wds_go_active_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_create_profile_request(struct qmi_msg *msg, struct qmi_wds_create_profile_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0027);
+
+	if (req->set.profile_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	if (req->data.profile_name) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.profile_name);
+		strncpy(__qmi_alloc_static(i), req->data.profile_name, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->set.pdp_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.pdp_header_compression_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_header_compression_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	if (req->set.pdp_data_compression_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_data_compression_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x13, ofs, buf);
+	}
+
+	if (req->data.apn_name) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.apn_name);
+		strncpy(__qmi_alloc_static(i), req->data.apn_name, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x14, ofs, buf);
+	}
+
+	if (req->set.primary_ipv4_dns_address) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.primary_ipv4_dns_address), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x15, ofs, buf);
+	}
+
+	if (req->set.secondary_ipv4_dns_address) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.secondary_ipv4_dns_address), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x16, ofs, buf);
+	}
+
+	if (req->set.umts_requested_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.traffic_handling_priority), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x17, ofs, buf);
+	}
+
+	if (req->set.umts_minimum_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.traffic_handling_priority), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x18, ofs, buf);
+	}
+
+	if (req->set.gprs_requested_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.precedence_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.delay_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.reliability_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.peak_throughput_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.mean_throughput_class), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x19, ofs, buf);
+	}
+
+	if (req->set.gprs_minimum_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.precedence_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.delay_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.reliability_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.peak_throughput_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.mean_throughput_class), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1A, ofs, buf);
+	}
+
+	if (req->data.username) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.username);
+		strncpy(__qmi_alloc_static(i), req->data.username, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1B, ofs, buf);
+	}
+
+	if (req->data.password) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.password);
+		strncpy(__qmi_alloc_static(i), req->data.password, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1C, ofs, buf);
+	}
+
+	if (req->set.authentication) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.authentication, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1D, ofs, buf);
+	}
+
+	if (req->set.ipv4_address_preference) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.ipv4_address_preference), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1E, ofs, buf);
+	}
+
+	if (req->set.pcscf_address_using_pco) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pcscf_address_using_pco, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1F, ofs, buf);
+	}
+
+	if (req->set.pcscf_address_using_dhcp) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pcscf_address_using_dhcp, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x21, ofs, buf);
+	}
+
+	if (req->set.imcn_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.imcn_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x22, ofs, buf);
+	}
+
+	if (req->set.pdp_context_number) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_context_number, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x25, ofs, buf);
+	}
+
+	if (req->set.pdp_context_secondary_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_context_secondary_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x26, ofs, buf);
+	}
+
+	if (req->set.pdp_context_primary_id) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_context_primary_id, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x27, ofs, buf);
+	}
+
+	if (req->set.ipv6_address_preference) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		for (i = 0; i < 8; i++) {
+			put_tlv_var(uint16_t, cpu_to_be16(req->data.ipv6_address_preference.address[i]), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x28, ofs, buf);
+	}
+
+	if (req->set.umts_requested_qos_with_signaling_indication_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.traffic_handling_priority), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.signaling_indication, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x29, ofs, buf);
+	}
+
+	if (req->set.umts_minimum_qos_with_signaling_indication_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.traffic_handling_priority), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.signaling_indication, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2A, ofs, buf);
+	}
+
+	if (req->set.ipv6_primary_dns_address_preference) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		for (i = 0; i < 8; i++) {
+			put_tlv_var(uint16_t, cpu_to_be16(req->data.ipv6_primary_dns_address_preference[i]), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2B, ofs, buf);
+	}
+
+	if (req->set.ipv6_secondary_dns_address_preference) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		for (i = 0; i < 8; i++) {
+			put_tlv_var(uint16_t, cpu_to_be16(req->data.ipv6_secondary_dns_address_preference[i]), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2C, ofs, buf);
+	}
+
+	if (req->set.lte_qos_parameters) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.lte_qos_parameters.qos_class_identifier, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.max_uplink_bitrate), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2E, ofs, buf);
+	}
+
+	if (req->set.apn_disabled_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.apn_disabled_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2F, ofs, buf);
+	}
+
+	if (req->set.roaming_disallowed_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.roaming_disallowed_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x3E, ofs, buf);
+	}
+
+	if (req->set.apn_type_mask) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint64_t, cpu_to_le64(req->data.apn_type_mask), 8);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0xDD, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_create_profile_response(struct qmi_msg *msg, struct qmi_wds_create_profile_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set.profile_identifier = 1;
+			res->data.profile_identifier.profile_type = *(uint8_t *) get_next(1);
+			res->data.profile_identifier.profile_index = *(uint8_t *) get_next(1);
+			break;
+
+		case 0xE0:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_modify_profile_request(struct qmi_msg *msg, struct qmi_wds_modify_profile_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0028);
+
+	if (req->set.profile_identifier) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_identifier.profile_type, 1);
+		put_tlv_var(uint8_t, req->data.profile_identifier.profile_index, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	if (req->data.profile_name) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.profile_name);
+		strncpy(__qmi_alloc_static(i), req->data.profile_name, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->set.pdp_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.pdp_header_compression_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_header_compression_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	if (req->set.pdp_data_compression_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_data_compression_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x13, ofs, buf);
+	}
+
+	if (req->data.apn_name) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.apn_name);
+		strncpy(__qmi_alloc_static(i), req->data.apn_name, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x14, ofs, buf);
+	}
+
+	if (req->set.primary_ipv4_dns_address) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.primary_ipv4_dns_address), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x15, ofs, buf);
+	}
+
+	if (req->set.secondary_ipv4_dns_address) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.secondary_ipv4_dns_address), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x16, ofs, buf);
+	}
+
+	if (req->set.umts_requested_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos.traffic_handling_priority), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x17, ofs, buf);
+	}
+
+	if (req->set.umts_minimum_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos.traffic_handling_priority), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x18, ofs, buf);
+	}
+
+	if (req->set.gprs_requested_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.precedence_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.delay_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.reliability_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.peak_throughput_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_requested_qos.mean_throughput_class), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x19, ofs, buf);
+	}
+
+	if (req->set.gprs_minimum_qos) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.precedence_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.delay_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.reliability_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.peak_throughput_class), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.gprs_minimum_qos.mean_throughput_class), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1A, ofs, buf);
+	}
+
+	if (req->data.username) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.username);
+		strncpy(__qmi_alloc_static(i), req->data.username, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1B, ofs, buf);
+	}
+
+	if (req->data.password) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.password);
+		strncpy(__qmi_alloc_static(i), req->data.password, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1C, ofs, buf);
+	}
+
+	if (req->set.authentication) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.authentication, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1D, ofs, buf);
+	}
+
+	if (req->set.ipv4_address_preference) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.ipv4_address_preference), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1E, ofs, buf);
+	}
+
+	if (req->set.pcscf_address_using_pco) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pcscf_address_using_pco, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1F, ofs, buf);
+	}
+
+	if (req->set.pcscf_address_using_dhcp) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pcscf_address_using_dhcp, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x21, ofs, buf);
+	}
+
+	if (req->set.imcn_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.imcn_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x22, ofs, buf);
+	}
+
+	if (req->set.pdp_context_number) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_context_number, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x25, ofs, buf);
+	}
+
+	if (req->set.pdp_context_secondary_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_context_secondary_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x26, ofs, buf);
+	}
+
+	if (req->set.pdp_context_primary_id) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_context_primary_id, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x27, ofs, buf);
+	}
+
+	if (req->set.ipv6_address_preference) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		for (i = 0; i < 8; i++) {
+			put_tlv_var(uint16_t, cpu_to_be16(req->data.ipv6_address_preference.address[i]), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x28, ofs, buf);
+	}
+
+	if (req->set.umts_requested_qos_with_signaling_indication_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_requested_qos_with_signaling_indication_flag.traffic_handling_priority), 4);
+		put_tlv_var(uint8_t, req->data.umts_requested_qos_with_signaling_indication_flag.signaling_indication, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x29, ofs, buf);
+	}
+
+	if (req->set.umts_minimum_qos_with_signaling_indication_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.traffic_class, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.max_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.qos_delivery_order, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.maximum_sdu_size), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.sdu_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.residual_bit_error_ratio, 1);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.delivery_erroneous_sdu, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.transfer_delay), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.umts_minimum_qos_with_signaling_indication_flag.traffic_handling_priority), 4);
+		put_tlv_var(uint8_t, req->data.umts_minimum_qos_with_signaling_indication_flag.signaling_indication, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2A, ofs, buf);
+	}
+
+	if (req->set.ipv6_primary_dns_address_preference) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		for (i = 0; i < 8; i++) {
+			put_tlv_var(uint16_t, cpu_to_be16(req->data.ipv6_primary_dns_address_preference[i]), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2B, ofs, buf);
+	}
+
+	if (req->set.ipv6_secondary_dns_address_preference) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		for (i = 0; i < 8; i++) {
+			put_tlv_var(uint16_t, cpu_to_be16(req->data.ipv6_secondary_dns_address_preference[i]), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2C, ofs, buf);
+	}
+
+	if (req->set.lte_qos_parameters) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.lte_qos_parameters.qos_class_identifier, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.guaranteed_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.max_downlink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.guaranteed_uplink_bitrate), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.lte_qos_parameters.max_uplink_bitrate), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2E, ofs, buf);
+	}
+
+	if (req->set.apn_disabled_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.apn_disabled_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2F, ofs, buf);
+	}
+
+	if (req->set.roaming_disallowed_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.roaming_disallowed_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x3E, ofs, buf);
+	}
+
+	if (req->set.apn_type_mask) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint64_t, cpu_to_le64(req->data.apn_type_mask), 8);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0xDD, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_modify_profile_response(struct qmi_msg *msg, struct qmi_wds_modify_profile_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0xE0:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_delete_profile_request(struct qmi_msg *msg, struct qmi_wds_delete_profile_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0029);
+
+	if (req->set.profile_identifier) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_identifier.profile_type, 1);
+		put_tlv_var(uint8_t, req->data.profile_identifier.profile_index, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_delete_profile_response(struct qmi_msg *msg, struct qmi_wds_delete_profile_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0xE0:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_wds_get_profile_list_request(struct qmi_msg *msg, struct qmi_wds_get_profile_list_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
@@ -659,36 +1952,92 @@ int qmi_parse_wds_get_profile_settings_response(struct qmi_msg *msg, struct qmi_
 			qmi_set(res, pdp_type, *(uint8_t *) get_next(1));
 			break;
 
-		case 0x14:
+		case 0x12:
 			if (found[0] & (1 << 3))
 				break;
 
 			found[0] |= (1 << 3);
+			qmi_set(res, pdp_header_compression_type, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			qmi_set(res, pdp_data_compression_type, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
 			i = cur_tlv_len - ofs;
 			res->data.apn_name = __qmi_copy_string(get_next(i), i);
 			break;
 
 		case 0x15:
-			if (found[0] & (1 << 4))
-				break;
-
-			found[0] |= (1 << 4);
-			qmi_set(res, primary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x16:
-			if (found[0] & (1 << 5))
-				break;
-
-			found[0] |= (1 << 5);
-			qmi_set(res, secondary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x19:
 			if (found[0] & (1 << 6))
 				break;
 
 			found[0] |= (1 << 6);
+			qmi_set(res, primary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x16:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
+			qmi_set(res, secondary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x17:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			res->set.umts_requested_qos = 1;
+			res->data.umts_requested_qos.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x18:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			res->set.umts_minimum_qos = 1;
+			res->data.umts_minimum_qos.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x19:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
 			res->set.gprs_requested_qos = 1;
 			res->data.gprs_requested_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
 			res->data.gprs_requested_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
@@ -698,10 +2047,10 @@ int qmi_parse_wds_get_profile_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x1A:
-			if (found[0] & (1 << 7))
+			if (found[0] & (1 << 11))
 				break;
 
-			found[0] |= (1 << 7);
+			found[0] |= (1 << 11);
 			res->set.gprs_minimum_qos = 1;
 			res->data.gprs_minimum_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
 			res->data.gprs_minimum_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
@@ -711,79 +2060,145 @@ int qmi_parse_wds_get_profile_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x1B:
-			if (found[0] & (1 << 8))
+			if (found[0] & (1 << 12))
 				break;
 
-			found[0] |= (1 << 8);
+			found[0] |= (1 << 12);
 			i = cur_tlv_len - ofs;
 			res->data.username = __qmi_copy_string(get_next(i), i);
 			break;
 
 		case 0x1C:
-			if (found[0] & (1 << 9))
+			if (found[0] & (1 << 13))
 				break;
 
-			found[0] |= (1 << 9);
+			found[0] |= (1 << 13);
 			i = cur_tlv_len - ofs;
 			res->data.password = __qmi_copy_string(get_next(i), i);
 			break;
 
 		case 0x1D:
-			if (found[0] & (1 << 10))
-				break;
-
-			found[0] |= (1 << 10);
-			qmi_set(res, authentication, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x1E:
-			if (found[0] & (1 << 11))
-				break;
-
-			found[0] |= (1 << 11);
-			qmi_set(res, ipv4_address_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x1F:
-			if (found[0] & (1 << 12))
-				break;
-
-			found[0] |= (1 << 12);
-			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x21:
-			if (found[0] & (1 << 13))
-				break;
-
-			found[0] |= (1 << 13);
-			qmi_set(res, pcscf_address_using_dhcp, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x22:
 			if (found[0] & (1 << 14))
 				break;
 
 			found[0] |= (1 << 14);
-			qmi_set(res, imcn_flag, *(uint8_t *) get_next(1));
+			qmi_set(res, authentication, *(uint8_t *) get_next(1));
 			break;
 
-		case 0x28:
+		case 0x1E:
 			if (found[0] & (1 << 15))
 				break;
 
 			found[0] |= (1 << 15);
+			qmi_set(res, ipv4_address_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1F:
+			if (found[0] & (1 << 16))
+				break;
+
+			found[0] |= (1 << 16);
+			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x21:
+			if (found[0] & (1 << 17))
+				break;
+
+			found[0] |= (1 << 17);
+			qmi_set(res, pcscf_address_using_dhcp, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x22:
+			if (found[0] & (1 << 18))
+				break;
+
+			found[0] |= (1 << 18);
+			qmi_set(res, imcn_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x25:
+			if (found[0] & (1 << 19))
+				break;
+
+			found[0] |= (1 << 19);
+			qmi_set(res, pdp_context_number, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x26:
+			if (found[0] & (1 << 20))
+				break;
+
+			found[0] |= (1 << 20);
+			qmi_set(res, pdp_context_secondary_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x27:
+			if (found[0] & (1 << 21))
+				break;
+
+			found[0] |= (1 << 21);
+			qmi_set(res, pdp_context_primary_id, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x28:
+			if (found[0] & (1 << 22))
+				break;
+
+			found[0] |= (1 << 22);
 			res->set.ipv6_address_preference = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_address_preference.address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
 			}
 			break;
 
-		case 0x2B:
-			if (found[0] & (1 << 16))
+		case 0x29:
+			if (found[0] & (1 << 23))
 				break;
 
-			found[0] |= (1 << 16);
+			found[0] |= (1 << 23);
+			res->set.umts_requested_qos_with_signaling_indication_flag = 1;
+			res->data.umts_requested_qos_with_signaling_indication_flag.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.signaling_indication = *(int8_t *) get_next(1);
+			break;
+
+		case 0x2A:
+			if (found[0] & (1 << 24))
+				break;
+
+			found[0] |= (1 << 24);
+			res->set.umts_minimum_qos_with_signaling_indication_flag = 1;
+			res->data.umts_minimum_qos_with_signaling_indication_flag.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.signaling_indication = *(int8_t *) get_next(1);
+			break;
+
+		case 0x2B:
+			if (found[0] & (1 << 25))
+				break;
+
+			found[0] |= (1 << 25);
 			res->set.ipv6_primary_dns_address_preference = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_primary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -792,10 +2207,10 @@ int qmi_parse_wds_get_profile_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x2C:
-			if (found[0] & (1 << 17))
+			if (found[0] & (1 << 26))
 				break;
 
-			found[0] |= (1 << 17);
+			found[0] |= (1 << 26);
 			res->set.ipv6_secondary_dns_address_preference = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_secondary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -803,11 +2218,48 @@ int qmi_parse_wds_get_profile_settings_response(struct qmi_msg *msg, struct qmi_
 
 			break;
 
-		case 0xE0:
-			if (found[0] & (1 << 18))
+		case 0x2E:
+			if (found[0] & (1 << 27))
 				break;
 
-			found[0] |= (1 << 18);
+			found[0] |= (1 << 27);
+			res->set.lte_qos_parameters = 1;
+			res->data.lte_qos_parameters.qos_class_identifier = *(uint8_t *) get_next(1);
+			res->data.lte_qos_parameters.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.lte_qos_parameters.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.lte_qos_parameters.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.lte_qos_parameters.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x2F:
+			if (found[0] & (1 << 28))
+				break;
+
+			found[0] |= (1 << 28);
+			qmi_set(res, apn_disabled_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x3E:
+			if (found[0] & (1 << 29))
+				break;
+
+			found[0] |= (1 << 29);
+			qmi_set(res, roaming_disallowed_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0xDD:
+			if (found[0] & (1 << 30))
+				break;
+
+			found[0] |= (1 << 30);
+			qmi_set(res, apn_type_mask, le64_to_cpu(*(uint64_t *) get_next(8)));
+			break;
+
+		case 0xE0:
+			if (found[0] & (1 << 31))
+				break;
+
+			found[0] |= (1 << 31);
 			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
@@ -876,36 +2328,92 @@ int qmi_parse_wds_get_default_settings_response(struct qmi_msg *msg, struct qmi_
 			qmi_set(res, pdp_type, *(uint8_t *) get_next(1));
 			break;
 
-		case 0x14:
+		case 0x12:
 			if (found[0] & (1 << 3))
 				break;
 
 			found[0] |= (1 << 3);
+			qmi_set(res, pdp_header_compression_type, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			qmi_set(res, pdp_data_compression_type, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
 			i = cur_tlv_len - ofs;
 			res->data.apn_name = __qmi_copy_string(get_next(i), i);
 			break;
 
 		case 0x15:
-			if (found[0] & (1 << 4))
-				break;
-
-			found[0] |= (1 << 4);
-			qmi_set(res, primary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x16:
-			if (found[0] & (1 << 5))
-				break;
-
-			found[0] |= (1 << 5);
-			qmi_set(res, secondary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x19:
 			if (found[0] & (1 << 6))
 				break;
 
 			found[0] |= (1 << 6);
+			qmi_set(res, primary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x16:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
+			qmi_set(res, secondary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x17:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			res->set.umts_requested_qos = 1;
+			res->data.umts_requested_qos.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x18:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			res->set.umts_minimum_qos = 1;
+			res->data.umts_minimum_qos.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x19:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
 			res->set.gprs_requested_qos = 1;
 			res->data.gprs_requested_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
 			res->data.gprs_requested_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
@@ -915,10 +2423,10 @@ int qmi_parse_wds_get_default_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x1A:
-			if (found[0] & (1 << 7))
+			if (found[0] & (1 << 11))
 				break;
 
-			found[0] |= (1 << 7);
+			found[0] |= (1 << 11);
 			res->set.gprs_minimum_qos = 1;
 			res->data.gprs_minimum_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
 			res->data.gprs_minimum_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
@@ -928,79 +2436,145 @@ int qmi_parse_wds_get_default_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x1B:
-			if (found[0] & (1 << 8))
+			if (found[0] & (1 << 12))
 				break;
 
-			found[0] |= (1 << 8);
+			found[0] |= (1 << 12);
 			i = cur_tlv_len - ofs;
 			res->data.username = __qmi_copy_string(get_next(i), i);
 			break;
 
 		case 0x1C:
-			if (found[0] & (1 << 9))
+			if (found[0] & (1 << 13))
 				break;
 
-			found[0] |= (1 << 9);
+			found[0] |= (1 << 13);
 			i = cur_tlv_len - ofs;
 			res->data.password = __qmi_copy_string(get_next(i), i);
 			break;
 
 		case 0x1D:
-			if (found[0] & (1 << 10))
-				break;
-
-			found[0] |= (1 << 10);
-			qmi_set(res, authentication, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x1E:
-			if (found[0] & (1 << 11))
-				break;
-
-			found[0] |= (1 << 11);
-			qmi_set(res, ipv4_address_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x1F:
-			if (found[0] & (1 << 12))
-				break;
-
-			found[0] |= (1 << 12);
-			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x21:
-			if (found[0] & (1 << 13))
-				break;
-
-			found[0] |= (1 << 13);
-			qmi_set(res, pcscf_address_using_dhcp, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x22:
 			if (found[0] & (1 << 14))
 				break;
 
 			found[0] |= (1 << 14);
-			qmi_set(res, imcn_flag, *(uint8_t *) get_next(1));
+			qmi_set(res, authentication, *(uint8_t *) get_next(1));
 			break;
 
-		case 0x28:
+		case 0x1E:
 			if (found[0] & (1 << 15))
 				break;
 
 			found[0] |= (1 << 15);
+			qmi_set(res, ipv4_address_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1F:
+			if (found[0] & (1 << 16))
+				break;
+
+			found[0] |= (1 << 16);
+			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x21:
+			if (found[0] & (1 << 17))
+				break;
+
+			found[0] |= (1 << 17);
+			qmi_set(res, pcscf_address_using_dhcp, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x22:
+			if (found[0] & (1 << 18))
+				break;
+
+			found[0] |= (1 << 18);
+			qmi_set(res, imcn_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x25:
+			if (found[0] & (1 << 19))
+				break;
+
+			found[0] |= (1 << 19);
+			qmi_set(res, pdp_context_number, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x26:
+			if (found[0] & (1 << 20))
+				break;
+
+			found[0] |= (1 << 20);
+			qmi_set(res, pdp_context_secondary_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x27:
+			if (found[0] & (1 << 21))
+				break;
+
+			found[0] |= (1 << 21);
+			qmi_set(res, pdp_context_primary_id, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x28:
+			if (found[0] & (1 << 22))
+				break;
+
+			found[0] |= (1 << 22);
 			res->set.ipv6_address_preference = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_address_preference.address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
 			}
 			break;
 
-		case 0x2B:
-			if (found[0] & (1 << 16))
+		case 0x29:
+			if (found[0] & (1 << 23))
 				break;
 
-			found[0] |= (1 << 16);
+			found[0] |= (1 << 23);
+			res->set.umts_requested_qos_with_signaling_indication_flag = 1;
+			res->data.umts_requested_qos_with_signaling_indication_flag.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_requested_qos_with_signaling_indication_flag.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_requested_qos_with_signaling_indication_flag.signaling_indication = *(int8_t *) get_next(1);
+			break;
+
+		case 0x2A:
+			if (found[0] & (1 << 24))
+				break;
+
+			found[0] |= (1 << 24);
+			res->set.umts_minimum_qos_with_signaling_indication_flag = 1;
+			res->data.umts_minimum_qos_with_signaling_indication_flag.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_minimum_qos_with_signaling_indication_flag.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_minimum_qos_with_signaling_indication_flag.signaling_indication = *(int8_t *) get_next(1);
+			break;
+
+		case 0x2B:
+			if (found[0] & (1 << 25))
+				break;
+
+			found[0] |= (1 << 25);
 			res->set.ipv6_primary_dns_address_preference = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_primary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -1009,10 +2583,10 @@ int qmi_parse_wds_get_default_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x2C:
-			if (found[0] & (1 << 17))
+			if (found[0] & (1 << 26))
 				break;
 
-			found[0] |= (1 << 17);
+			found[0] |= (1 << 26);
 			res->set.ipv6_secondary_dns_address_preference = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_secondary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -1020,11 +2594,24 @@ int qmi_parse_wds_get_default_settings_response(struct qmi_msg *msg, struct qmi_
 
 			break;
 
-		case 0xE0:
-			if (found[0] & (1 << 18))
+		case 0x2E:
+			if (found[0] & (1 << 27))
 				break;
 
-			found[0] |= (1 << 18);
+			found[0] |= (1 << 27);
+			res->set.lte_qos_parameters = 1;
+			res->data.lte_qos_parameters.qos_class_identifier = *(uint8_t *) get_next(1);
+			res->data.lte_qos_parameters.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.lte_qos_parameters.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.lte_qos_parameters.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.lte_qos_parameters.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0xE0:
+			if (found[0] & (1 << 28))
+				break;
+
+			found[0] |= (1 << 28);
 			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
@@ -1118,11 +2705,31 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			qmi_set(res, secondary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
 			break;
 
-		case 0x19:
+		case 0x17:
 			if (found[0] & (1 << 6))
 				break;
 
 			found[0] |= (1 << 6);
+			res->set.umts_granted_qos = 1;
+			res->data.umts_granted_qos.traffic_class = *(uint8_t *) get_next(1);
+			res->data.umts_granted_qos.max_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_granted_qos.max_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_granted_qos.guaranteed_uplink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_granted_qos.guaranteed_downlink_bitrate = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_granted_qos.qos_delivery_order = *(uint8_t *) get_next(1);
+			res->data.umts_granted_qos.maximum_sdu_size = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_granted_qos.sdu_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_granted_qos.residual_bit_error_ratio = *(uint8_t *) get_next(1);
+			res->data.umts_granted_qos.delivery_erroneous_sdu = *(uint8_t *) get_next(1);
+			res->data.umts_granted_qos.transfer_delay = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.umts_granted_qos.traffic_handling_priority = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x19:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
 			res->set.gprs_granted_qos = 1;
 			res->data.gprs_granted_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
 			res->data.gprs_granted_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
@@ -1132,69 +2739,69 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x1B:
-			if (found[0] & (1 << 7))
+			if (found[0] & (1 << 8))
 				break;
 
-			found[0] |= (1 << 7);
+			found[0] |= (1 << 8);
 			i = cur_tlv_len - ofs;
 			res->data.username = __qmi_copy_string(get_next(i), i);
 			break;
 
 		case 0x1D:
-			if (found[0] & (1 << 8))
-				break;
-
-			found[0] |= (1 << 8);
-			qmi_set(res, authentication, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x1E:
 			if (found[0] & (1 << 9))
 				break;
 
 			found[0] |= (1 << 9);
-			qmi_set(res, ipv4_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			qmi_set(res, authentication, *(uint8_t *) get_next(1));
 			break;
 
-		case 0x1F:
+		case 0x1E:
 			if (found[0] & (1 << 10))
 				break;
 
 			found[0] |= (1 << 10);
+			qmi_set(res, ipv4_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1F:
+			if (found[0] & (1 << 11))
+				break;
+
+			found[0] |= (1 << 11);
 			res->set.profile_id = 1;
 			res->data.profile_id.profile_type = *(uint8_t *) get_next(1);
 			res->data.profile_id.profile_index = *(uint8_t *) get_next(1);
 			break;
 
 		case 0x20:
-			if (found[0] & (1 << 11))
-				break;
-
-			found[0] |= (1 << 11);
-			qmi_set(res, ipv4_gateway_address, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x21:
 			if (found[0] & (1 << 12))
 				break;
 
 			found[0] |= (1 << 12);
-			qmi_set(res, ipv4_gateway_subnet_mask, le32_to_cpu(*(uint32_t *) get_next(4)));
+			qmi_set(res, ipv4_gateway_address, le32_to_cpu(*(uint32_t *) get_next(4)));
 			break;
 
-		case 0x22:
+		case 0x21:
 			if (found[0] & (1 << 13))
 				break;
 
 			found[0] |= (1 << 13);
-			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
+			qmi_set(res, ipv4_gateway_subnet_mask, le32_to_cpu(*(uint32_t *) get_next(4)));
 			break;
 
-		case 0x23:
+		case 0x22:
 			if (found[0] & (1 << 14))
 				break;
 
 			found[0] |= (1 << 14);
+			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x23:
+			if (found[0] & (1 << 15))
+				break;
+
+			found[0] |= (1 << 15);
 			i = *(uint8_t *) get_next(1);
 			res->data.pcscf_server_address_list = __qmi_alloc_static(i * sizeof(res->data.pcscf_server_address_list[0]));
 			while(i-- > 0) {
@@ -1205,10 +2812,10 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x24:
-			if (found[0] & (1 << 15))
+			if (found[0] & (1 << 16))
 				break;
 
-			found[0] |= (1 << 15);
+			found[0] |= (1 << 16);
 			i = *(uint8_t *) get_next(1);
 			res->data.pcscf_domain_name_list = __qmi_alloc_static(i * sizeof(res->data.pcscf_domain_name_list[0]));
 			while(i-- > 0) {
@@ -1221,10 +2828,10 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x25:
-			if (found[0] & (1 << 16))
+			if (found[0] & (1 << 17))
 				break;
 
-			found[0] |= (1 << 16);
+			found[0] |= (1 << 17);
 			res->set.ipv6_address = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_address.address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -1233,10 +2840,10 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x26:
-			if (found[0] & (1 << 17))
+			if (found[0] & (1 << 18))
 				break;
 
-			found[0] |= (1 << 17);
+			found[0] |= (1 << 18);
 			res->set.ipv6_gateway_address = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_gateway_address.address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -1245,10 +2852,10 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x27:
-			if (found[0] & (1 << 18))
+			if (found[0] & (1 << 19))
 				break;
 
-			found[0] |= (1 << 18);
+			found[0] |= (1 << 19);
 			res->set.ipv6_primary_dns_address = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_primary_dns_address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -1257,10 +2864,10 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x28:
-			if (found[0] & (1 << 19))
+			if (found[0] & (1 << 20))
 				break;
 
-			found[0] |= (1 << 19);
+			found[0] |= (1 << 20);
 			res->set.ipv6_secondary_dns_address = 1;
 			for (i = 0; i < 8; i++) {
 				res->data.ipv6_secondary_dns_address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
@@ -1269,18 +2876,18 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x29:
-			if (found[0] & (1 << 20))
-				break;
-
-			found[0] |= (1 << 20);
-			qmi_set(res, mtu, le32_to_cpu(*(uint32_t *) get_next(4)));
-			break;
-
-		case 0x2A:
 			if (found[0] & (1 << 21))
 				break;
 
 			found[0] |= (1 << 21);
+			qmi_set(res, mtu, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x2A:
+			if (found[0] & (1 << 22))
+				break;
+
+			found[0] |= (1 << 22);
 			i = *(uint8_t *) get_next(1);
 			res->data.domain_name_list = __qmi_alloc_static(i * sizeof(res->data.domain_name_list[0]));
 			while(i-- > 0) {
@@ -1293,26 +2900,26 @@ int qmi_parse_wds_get_current_settings_response(struct qmi_msg *msg, struct qmi_
 			break;
 
 		case 0x2B:
-			if (found[0] & (1 << 22))
-				break;
-
-			found[0] |= (1 << 22);
-			qmi_set(res, ip_family, *(uint8_t *) get_next(1));
-			break;
-
-		case 0x2C:
 			if (found[0] & (1 << 23))
 				break;
 
 			found[0] |= (1 << 23);
-			qmi_set(res, imcn_flag, *(int8_t *) get_next(1));
+			qmi_set(res, ip_family, *(uint8_t *) get_next(1));
 			break;
 
-		case 0x2D:
+		case 0x2C:
 			if (found[0] & (1 << 24))
 				break;
 
 			found[0] |= (1 << 24);
+			qmi_set(res, imcn_flag, *(int8_t *) get_next(1));
+			break;
+
+		case 0x2D:
+			if (found[0] & (1 << 25))
+				break;
+
+			found[0] |= (1 << 25);
 			qmi_set(res, extended_technology_preference, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
@@ -1329,15 +2936,15 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
-int qmi_set_wds_get_autoconnect_setting_request(struct qmi_msg *msg)
+int qmi_set_wds_get_dormancy_status_request(struct qmi_msg *msg)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
-	msg->svc.message = cpu_to_le16(0x0034);
+	msg->svc.message = cpu_to_le16(0x0030);
 
 	return 0;
 }
 
-int qmi_parse_wds_get_autoconnect_setting_response(struct qmi_msg *msg, struct qmi_wds_get_autoconnect_setting_response *res)
+int qmi_parse_wds_get_dormancy_status_response(struct qmi_msg *msg, struct qmi_wds_get_dormancy_status_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
@@ -1358,7 +2965,52 @@ int qmi_parse_wds_get_autoconnect_setting_response(struct qmi_msg *msg, struct q
 				break;
 
 			found[0] |= (1 << 1);
-			qmi_set(res, setting, *(int8_t *) get_next(1));
+			qmi_set(res, dormancy_status, *(uint8_t *) get_next(1));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_get_autoconnect_settings_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0034);
+
+	return 0;
+}
+
+int qmi_parse_wds_get_autoconnect_settings_response(struct qmi_msg *msg, struct qmi_wds_get_autoconnect_settings_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, status, *(uint8_t *) get_next(1));
 			break;
 
 		case 0x10:
@@ -1366,7 +3018,7 @@ int qmi_parse_wds_get_autoconnect_setting_response(struct qmi_msg *msg, struct q
 				break;
 
 			found[0] |= (1 << 2);
-			qmi_set(res, roaming, *(int8_t *) get_next(1));
+			qmi_set(res, roaming, *(uint8_t *) get_next(1));
 			break;
 
 		default:
@@ -1494,6 +3146,129 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
+int qmi_set_wds_get_default_profile_number_request(struct qmi_msg *msg, struct qmi_wds_get_default_profile_number_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0049);
+
+	if (req->set.profile_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_type.type, 1);
+		put_tlv_var(uint8_t, req->data.profile_type.family, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_get_default_profile_number_response(struct qmi_msg *msg, struct qmi_wds_get_default_profile_number_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, index, *(uint8_t *) get_next(1));
+			break;
+
+		case 0xE0:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_set_default_profile_number_request(struct qmi_msg *msg, struct qmi_wds_set_default_profile_number_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x004A);
+
+	if (req->set.profile_identifier) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_identifier.type, 1);
+		put_tlv_var(uint8_t, req->data.profile_identifier.family, 1);
+		put_tlv_var(uint8_t, req->data.profile_identifier.index, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_set_default_profile_number_response(struct qmi_msg *msg, struct qmi_wds_set_default_profile_number_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0xE0:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_wds_set_ip_family_request(struct qmi_msg *msg, struct qmi_wds_set_ip_family_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
@@ -1521,17 +3296,17 @@ int qmi_parse_wds_set_ip_family_response(struct qmi_msg *msg)
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
-int qmi_set_wds_set_autoconnect_setting_request(struct qmi_msg *msg, struct qmi_wds_set_autoconnect_setting_request *req)
+int qmi_set_wds_set_autoconnect_settings_request(struct qmi_msg *msg, struct qmi_wds_set_autoconnect_settings_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
 	msg->svc.message = cpu_to_le16(0x0051);
 
-	if (req->set.setting) {
+	if (req->set.status) {
 		void *buf;
 		unsigned int ofs;
 
 		__qmi_alloc_reset();
-		put_tlv_var(uint8_t, req->data.setting, 1);
+		put_tlv_var(uint8_t, req->data.status, 1);
 
 		buf = __qmi_get_buf(&ofs);
 		tlv_new(msg, 0x01, ofs, buf);
@@ -1551,11 +3326,569 @@ int qmi_set_wds_set_autoconnect_setting_request(struct qmi_msg *msg, struct qmi_
 	return 0;
 }
 
-int qmi_parse_wds_set_autoconnect_setting_response(struct qmi_msg *msg)
+int qmi_parse_wds_set_autoconnect_settings_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_get_pdn_throttle_info_request(struct qmi_msg *msg, struct qmi_wds_get_pdn_throttle_info_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x006C);
+
+	if (req->set.network_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.network_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_get_pdn_throttle_info_response(struct qmi_msg *msg, struct qmi_wds_get_pdn_throttle_info_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = *(uint8_t *) get_next(1);
+			res->data.info = __qmi_alloc_static(i * sizeof(res->data.info[0]));
+			while(i-- > 0) {
+				unsigned int ii;
+				res->data.info[res->data.info_n].ipv4_throttled = *(int8_t *) get_next(1);
+				res->data.info[res->data.info_n].ipv6_throttled = *(int8_t *) get_next(1);
+				res->data.info[res->data.info_n].ipv4_throttle_time_left_ms = le32_to_cpu(*(uint32_t *) get_next(4));
+				res->data.info[res->data.info_n].ipv6_throttle_time_left_ms = le32_to_cpu(*(uint32_t *) get_next(4));
+				ii = *(uint8_t *) get_next(1);
+				res->data.info[res->data.info_n].apn = __qmi_copy_string(get_next(ii), ii);
+				res->data.info_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_get_lte_attach_parameters_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0085);
+
+	return 0;
+}
+
+int qmi_parse_wds_get_lte_attach_parameters_response(struct qmi_msg *msg, struct qmi_wds_get_lte_attach_parameters_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = cur_tlv_len - ofs;
+			res->data.apn = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, ip_support_type, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			qmi_set(res, ota_attach_performed, *(uint8_t *) get_next(1));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_bind_data_port_request(struct qmi_msg *msg, struct qmi_wds_bind_data_port_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0089);
+
+	if (req->set.data_port) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint16_t, cpu_to_le16(req->data.data_port), 2);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_bind_data_port_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_get_max_lte_attach_pdn_number_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0092);
+
+	return 0;
+}
+
+int qmi_parse_wds_get_max_lte_attach_pdn_number_response(struct qmi_msg *msg, struct qmi_wds_get_max_lte_attach_pdn_number_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, info, *(uint8_t *) get_next(1));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_set_lte_attach_pdn_list_request(struct qmi_msg *msg, struct qmi_wds_set_lte_attach_pdn_list_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0093);
+
+	if (req->data.list) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.list_n, 1);
+		for (i = 0; i < req->data.list_n; i++) {
+			put_tlv_var(uint16_t, cpu_to_le16(req->data.list[i]), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	if (req->set.action) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.action), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_set_lte_attach_pdn_list_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_get_lte_attach_pdn_list_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0094);
+
+	return 0;
+}
+
+int qmi_parse_wds_get_lte_attach_pdn_list_response(struct qmi_msg *msg, struct qmi_wds_get_lte_attach_pdn_list_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = *(uint8_t *) get_next(1);
+			res->data.current_list = __qmi_alloc_static(i * sizeof(res->data.current_list[0]));
+			while(i-- > 0) {
+				res->data.current_list[res->data.current_list_n] = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.current_list_n++;
+			}
+
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			i = *(uint8_t *) get_next(1);
+			res->data.pending_list = __qmi_alloc_static(i * sizeof(res->data.pending_list[0]));
+			while(i-- > 0) {
+				res->data.pending_list[res->data.pending_list_n] = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.pending_list_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_bind_mux_data_port_request(struct qmi_msg *msg, struct qmi_wds_bind_mux_data_port_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x00A2);
+
+	if (req->set.endpoint_info) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.endpoint_info.endpoint_type), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.endpoint_info.interface_number), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->set.mux_id) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.mux_id, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.client_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.client_type), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x13, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_bind_mux_data_port_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_swi_create_profile_indexed_request(struct qmi_msg *msg, struct qmi_wds_swi_create_profile_indexed_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x5558);
+
+	if (req->set.profile_identifier) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_identifier.profile_type, 1);
+		put_tlv_var(uint8_t, req->data.profile_identifier.profile_index, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	if (req->data.profile_name) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.profile_name);
+		strncpy(__qmi_alloc_static(i), req->data.profile_name, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->set.pdp_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->data.apn_name) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.apn_name);
+		strncpy(__qmi_alloc_static(i), req->data.apn_name, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x14, ofs, buf);
+	}
+
+	if (req->set.primary_ipv4_dns_address) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.primary_ipv4_dns_address), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x15, ofs, buf);
+	}
+
+	if (req->set.secondary_ipv4_dns_address) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.secondary_ipv4_dns_address), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x16, ofs, buf);
+	}
+
+	if (req->data.username) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.username);
+		strncpy(__qmi_alloc_static(i), req->data.username, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1B, ofs, buf);
+	}
+
+	if (req->data.password) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.password);
+		strncpy(__qmi_alloc_static(i), req->data.password, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1C, ofs, buf);
+	}
+
+	if (req->set.authentication) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.authentication, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1D, ofs, buf);
+	}
+
+	if (req->set.ipv4_address_preference) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.ipv4_address_preference), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1E, ofs, buf);
+	}
+
+	if (req->set.pdp_context_number) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.pdp_context_number, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x25, ofs, buf);
+	}
+
+	if (req->set.apn_disabled_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.apn_disabled_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x2F, ofs, buf);
+	}
+
+	if (req->set.roaming_disallowed_flag) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.roaming_disallowed_flag, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x3E, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_swi_create_profile_indexed_response(struct qmi_msg *msg, struct qmi_wds_swi_create_profile_indexed_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set.profile_identifier = 1;
+			res->data.profile_identifier.profile_type = *(uint8_t *) get_next(1);
+			res->data.profile_identifier.profile_index = *(uint8_t *) get_next(1);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
 }
 

@@ -17,6 +17,7 @@ our %tlv_types = (
 	gfloat => "float",
 	gboolean => "bool",
 );
+our %common_ref = ();
 
 $prefix eq 'ctl_' and $ctl = 1;
 
@@ -31,6 +32,7 @@ sub gen_cname($) {
 	my $name = shift;
 
 	$name =~ s/[^a-zA-Z0-9_]/_/g;
+	$name = "_${name}" if $name =~ /^\d/;
 	return lc($name);
 }
 
@@ -38,6 +40,7 @@ sub gen_has_types($) {
 	my $data = shift;
 
 	foreach my $field (@$data) {
+		$field = gen_common_ref($field);
 		my $type = $field->{"format"};
 		$type and return 1;
 	}
@@ -68,6 +71,12 @@ sub gen_tlv_parse_func($$) {
 	}
 }
 
+sub gen_common_ref($$) {
+	my $field = shift;
+	$field = $common_ref{$field->{'common-ref'}} if $field->{'common-ref'} ne '';
+	return $field;
+}
+
 sub gen_foreach_message_type($$$)
 {
 	my $data = shift;
@@ -77,6 +86,8 @@ sub gen_foreach_message_type($$$)
 	foreach my $entry (@$data) {
 		my $args = [];
 		my $fields = [];
+
+		$common_ref{$entry->{'common-ref'}} = $entry if $entry->{'common-ref'} ne '';
 
 		next if $entry->{type} ne 'Message';
 		next if not defined $entry->{input} and not defined $entry->{output};

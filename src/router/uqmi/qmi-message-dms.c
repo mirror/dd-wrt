@@ -430,6 +430,15 @@ int qmi_parse_dms_get_ids_response(struct qmi_msg *msg, struct qmi_dms_get_ids_r
 			res->data.meid = __qmi_copy_string(get_next(i), i);
 			break;
 
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			i = cur_tlv_len - ofs;
+			res->data.imei_software_version = __qmi_copy_string(get_next(i), i);
+			break;
+
 		default:
 			break;
 		}
@@ -1564,6 +1573,22 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
+int qmi_set_dms_set_firmware_id_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x003E);
+
+	return 0;
+}
+
+int qmi_parse_dms_set_firmware_id_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
 int qmi_set_dms_uim_get_ck_status_request(struct qmi_msg *msg, struct qmi_dms_uim_get_ck_status_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_DMS);
@@ -1881,6 +1906,20 @@ int qmi_parse_dms_get_band_capabilities_response(struct qmi_msg *msg, struct qmi
 
 			found[0] |= (1 << 2);
 			qmi_set(res, lte_band_capability, le64_to_cpu(*(uint64_t *) get_next(8)));
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.extended_lte_band_capability = __qmi_alloc_static(i * sizeof(res->data.extended_lte_band_capability[0]));
+			while(i-- > 0) {
+				res->data.extended_lte_band_capability[res->data.extended_lte_band_capability_n] = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.extended_lte_band_capability_n++;
+			}
+
 			break;
 
 		default:
@@ -2389,6 +2428,78 @@ int qmi_parse_dms_set_alt_net_config_response(struct qmi_msg *msg)
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
+int qmi_set_dms_get_boot_image_download_mode_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x004F);
+
+	return 0;
+}
+
+int qmi_parse_dms_get_boot_image_download_mode_response(struct qmi_msg *msg, struct qmi_dms_get_boot_image_download_mode_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, mode, *(uint8_t *) get_next(1));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_dms_set_boot_image_download_mode_request(struct qmi_msg *msg, struct qmi_dms_set_boot_image_download_mode_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x0050);
+
+	if (req->set.mode) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.mode, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_dms_set_boot_image_download_mode_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
 int qmi_set_dms_get_software_version_request(struct qmi_msg *msg)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_DMS);
@@ -2477,6 +2588,68 @@ int qmi_parse_dms_set_service_programming_code_response(struct qmi_msg *msg)
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
+int qmi_set_dms_get_mac_address_request(struct qmi_msg *msg, struct qmi_dms_get_mac_address_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x005C);
+
+	if (req->set.device) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.device), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_dms_get_mac_address_response(struct qmi_msg *msg, struct qmi_dms_get_mac_address_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = *(uint8_t *) get_next(1);
+			res->data.mac_address = __qmi_alloc_static(i * sizeof(res->data.mac_address[0]));
+			while(i-- > 0) {
+				res->data.mac_address[res->data.mac_address_n] = *(uint8_t *) get_next(1);
+				res->data.mac_address_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_dms_get_supported_messages_request(struct qmi_msg *msg)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_DMS);
@@ -2528,15 +2701,42 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
-int qmi_set_dms_get_usb_composition_request(struct qmi_msg *msg)
+int qmi_set_dms_hp_change_device_mode_request(struct qmi_msg *msg, struct qmi_dms_hp_change_device_mode_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_DMS);
-	msg->svc.message = cpu_to_le16(0x555B);
+	msg->svc.message = cpu_to_le16(0x5556);
+
+	if (req->set.mode) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.mode, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
 
 	return 0;
 }
 
-int qmi_parse_dms_get_usb_composition_response(struct qmi_msg *msg, struct qmi_dms_get_usb_composition_response *res)
+int qmi_parse_dms_hp_change_device_mode_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_dms_swi_get_current_firmware_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x5556);
+
+	return 0;
+}
+
+int qmi_parse_dms_swi_get_current_firmware_response(struct qmi_msg *msg, struct qmi_dms_swi_get_current_firmware_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
@@ -2557,7 +2757,125 @@ int qmi_parse_dms_get_usb_composition_response(struct qmi_msg *msg, struct qmi_d
 				break;
 
 			found[0] |= (1 << 1);
-			qmi_set(res, composition, *(uint8_t *) get_next(1));
+			i = cur_tlv_len - ofs;
+			res->data.model = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			i = cur_tlv_len - ofs;
+			res->data.boot_version = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			i = cur_tlv_len - ofs;
+			res->data.amss_version = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			i = cur_tlv_len - ofs;
+			res->data.sku_id = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			i = cur_tlv_len - ofs;
+			res->data.package_id = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x15:
+			if (found[0] & (1 << 6))
+				break;
+
+			found[0] |= (1 << 6);
+			i = cur_tlv_len - ofs;
+			res->data.carrier_id = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x16:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
+			i = cur_tlv_len - ofs;
+			res->data.pri_version = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x17:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			i = cur_tlv_len - ofs;
+			res->data.carrier = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x18:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			i = cur_tlv_len - ofs;
+			res->data.config_version = __qmi_copy_string(get_next(i), i);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_dms_swi_get_usb_composition_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x555B);
+
+	return 0;
+}
+
+int qmi_parse_dms_swi_get_usb_composition_response(struct qmi_msg *msg, struct qmi_dms_swi_get_usb_composition_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, current, *(uint8_t *) get_next(1));
 			break;
 
 		case 0x11:
@@ -2587,17 +2905,17 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
-int qmi_set_dms_set_usb_composition_request(struct qmi_msg *msg, struct qmi_dms_set_usb_composition_request *req)
+int qmi_set_dms_swi_set_usb_composition_request(struct qmi_msg *msg, struct qmi_dms_swi_set_usb_composition_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_DMS);
 	msg->svc.message = cpu_to_le16(0x555C);
 
-	if (req->set.composition) {
+	if (req->set.current) {
 		void *buf;
 		unsigned int ofs;
 
 		__qmi_alloc_reset();
-		put_tlv_var(uint8_t, req->data.composition, 1);
+		put_tlv_var(uint8_t, req->data.current, 1);
 
 		buf = __qmi_get_buf(&ofs);
 		tlv_new(msg, 0x01, ofs, buf);
@@ -2606,12 +2924,69 @@ int qmi_set_dms_set_usb_composition_request(struct qmi_msg *msg, struct qmi_dms_
 	return 0;
 }
 
-int qmi_parse_dms_set_usb_composition_response(struct qmi_msg *msg)
+int qmi_parse_dms_swi_set_usb_composition_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_dms_foxconn_get_firmware_version_request(struct qmi_msg *msg, struct qmi_dms_foxconn_get_firmware_version_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x555E);
+
+	if (req->set.version_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.version_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_dms_foxconn_get_firmware_version_response(struct qmi_msg *msg, struct qmi_dms_foxconn_get_firmware_version_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = cur_tlv_len - ofs;
+			res->data.version = __qmi_copy_string(get_next(i), i);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
 }
 
 int qmi_set_dms_set_fcc_authentication_request(struct qmi_msg *msg)
@@ -2623,6 +2998,60 @@ int qmi_set_dms_set_fcc_authentication_request(struct qmi_msg *msg)
 }
 
 int qmi_parse_dms_set_fcc_authentication_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_dms_foxconn_change_device_mode_request(struct qmi_msg *msg, struct qmi_dms_foxconn_change_device_mode_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x5562);
+
+	if (req->set.mode) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.mode, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_dms_foxconn_change_device_mode_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_dms_foxconn_set_fcc_authentication_request(struct qmi_msg *msg, struct qmi_dms_foxconn_set_fcc_authentication_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x5571);
+
+	if (req->set.value) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.value, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_dms_foxconn_set_fcc_authentication_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);

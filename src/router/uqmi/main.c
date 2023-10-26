@@ -44,6 +44,7 @@ static const struct option uqmi_getopt[] = {
 	{ "keep-client-id", required_argument, NULL, 'k' },
 	{ "release-client-id", required_argument, NULL, 'r' },
 	{ "mbim",  no_argument, NULL, 'm' },
+	{ "timeout", required_argument, NULL, 't' },
 	{ NULL, 0, NULL, 0 }
 };
 #undef __uqmi_command
@@ -57,6 +58,7 @@ static int usage(const char *progname)
 		"  --keep-client-id <name>:          Keep Client ID for service <name>\n"
 		"  --release-client-id <name>:       Release Client ID after exiting\n"
 		"  --mbim, -m                        NAME is an MBIM device with EXT_QMUX support\n"
+		"  --timeout, -t                     response timeout in msecs\n"
 		"\n"
 		"Services:                           dms, nas, pds, wds, wms\n"
 		"\n"
@@ -66,8 +68,10 @@ static int usage(const char *progname)
 		"                                    (implies --keep-client-id)\n"
 		"  --get-client-id <name>:           Connect and get Client ID for service <name>\n"
 		"                                    (implies --keep-client-id)\n"
+		"  --sync:                           Release all Client IDs\n"
 		wds_helptext
 		dms_helptext
+		uim_helptext
 		nas_helptext
 		wms_helptext
 		wda_helptext
@@ -101,6 +105,14 @@ static void handle_exit_signal(int signal)
 	uloop_end();
 }
 
+static void _request_timeout_handler(struct uloop_timeout *timeout)
+{
+	fprintf(stderr, "Request timed out\n");
+	handle_exit_signal(0);
+}
+
+struct uloop_timeout request_timeout = { .cb = _request_timeout_handler, };
+
 int main(int argc, char **argv)
 {
 	static struct qmi_dev dev;
@@ -110,7 +122,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, handle_exit_signal);
 	signal(SIGTERM, handle_exit_signal);
 
-	while ((ch = getopt_long(argc, argv, "d:k:sm", uqmi_getopt, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "d:k:smt:", uqmi_getopt, NULL)) != -1) {
 		int cmd_opt = CMD_OPT(ch);
 
 		if (ch < 0 && cmd_opt >= 0 && cmd_opt < __UQMI_COMMAND_LAST) {
@@ -133,6 +145,9 @@ int main(int argc, char **argv)
 			break;
 		case 'm':
 			dev.is_mbim = true;
+			break;
+		case 't':
+			uloop_timeout_set(&request_timeout, atol(optarg));
 			break;
 		default:
 			return usage(argv[0]);

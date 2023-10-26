@@ -52,7 +52,7 @@ struct qmi_pds_get_gps_service_state_response {
 	struct {
 		struct {
 			bool gps_service_state;
-			QmiPdsTrackingSessionState tracking_session_state;
+			uint8_t tracking_session_state;
 		} state;
 	} data;
 };
@@ -74,7 +74,7 @@ struct qmi_pds_get_default_tracking_session_response {
 	} set;
 	struct {
 		struct {
-			QmiPdsOperatingMode session_operation;
+			uint8_t session_operation;
 			uint8_t position_data_timeout;
 			uint32_t interval;
 			uint32_t accuracy_threshold;
@@ -88,7 +88,7 @@ struct qmi_pds_set_default_tracking_session_request {
 	} set;
 	struct {
 		struct {
-			QmiPdsOperatingMode session_operation;
+			uint8_t session_operation;
 			uint8_t position_data_timeout;
 			uint32_t interval;
 			uint32_t accuracy_threshold;
@@ -101,7 +101,7 @@ struct qmi_pds_get_agps_config_request {
 		unsigned int network_mode : 1;
 	} set;
 	struct {
-		QmiPdsNetworkMode network_mode;
+		uint8_t network_mode;
 	} data;
 };
 
@@ -131,7 +131,7 @@ struct qmi_pds_set_agps_config_request {
 		} location_server_address;
 		unsigned int location_server_url_n;
 		uint8_t *location_server_url;
-		QmiPdsNetworkMode network_mode;
+		uint8_t network_mode;
 	} data;
 };
 

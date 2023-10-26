@@ -17,6 +17,57 @@
 		copy_tlv(&__var, _size); \
 	} while(0)
 
+int qmi_set_wda_get_supported_messages_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDA);
+	msg->svc.message = cpu_to_le16(0x001E);
+
+	return 0;
+}
+
+int qmi_parse_wda_get_supported_messages_response(struct qmi_msg *msg, struct qmi_wda_get_supported_messages_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.list = __qmi_alloc_static(i * sizeof(res->data.list[0]));
+			while(i-- > 0) {
+				res->data.list[res->data.list_n] = *(uint8_t *) get_next(1);
+				res->data.list_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_wda_set_data_format_request(struct qmi_msg *msg, struct qmi_wda_set_data_format_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDA);
@@ -99,6 +150,18 @@ int qmi_set_wda_set_data_format_request(struct qmi_msg *msg, struct qmi_wda_set_
 		tlv_new(msg, 0x16, ofs, buf);
 	}
 
+	if (req->set.endpoint_info) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.endpoint_info.endpoint_type), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.endpoint_info.interface_number), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x17, ofs, buf);
+	}
+
 	return 0;
 }
 
@@ -174,6 +237,38 @@ int qmi_parse_wda_set_data_format_response(struct qmi_msg *msg, struct qmi_wda_s
 			qmi_set(res, downlink_data_aggregation_max_size, le32_to_cpu(*(uint32_t *) get_next(4)));
 			break;
 
+		case 0x17:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			qmi_set(res, uplink_data_aggregation_max_datagrams, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x18:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			qmi_set(res, uplink_data_aggregation_max_size, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1A:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
+			qmi_set(res, download_minimum_padding, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1B:
+			if (found[0] & (1 << 11))
+				break;
+
+			found[0] |= (1 << 11);
+			qmi_set(res, flow_control, *(uint8_t *) get_next(1));
+			break;
+
 		default:
 			break;
 		}
@@ -187,10 +282,22 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
-int qmi_set_wda_get_data_format_request(struct qmi_msg *msg)
+int qmi_set_wda_get_data_format_request(struct qmi_msg *msg, struct qmi_wda_get_data_format_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDA);
 	msg->svc.message = cpu_to_le16(0x0021);
+
+	if (req->set.endpoint_info) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.endpoint_info.endpoint_type), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.endpoint_info.interface_number), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
 
 	return 0;
 }
@@ -256,7 +363,7 @@ int qmi_parse_wda_get_data_format_response(struct qmi_msg *msg, struct qmi_wda_g
 				break;
 
 			found[0] |= (1 << 6);
-			qmi_set(res, uplink_data_aggregation_max_size, le32_to_cpu(*(uint32_t *) get_next(4)));
+			qmi_set(res, downlink_data_aggregation_max_datagrams, le32_to_cpu(*(uint32_t *) get_next(4)));
 			break;
 
 		case 0x16:
@@ -265,6 +372,38 @@ int qmi_parse_wda_get_data_format_response(struct qmi_msg *msg, struct qmi_wda_g
 
 			found[0] |= (1 << 7);
 			qmi_set(res, downlink_data_aggregation_max_size, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x17:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			qmi_set(res, uplink_data_aggregation_max_datagrams, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x18:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			qmi_set(res, uplink_data_aggregation_max_size, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1A:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
+			qmi_set(res, download_minimum_padding, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1B:
+			if (found[0] & (1 << 11))
+				break;
+
+			found[0] |= (1 << 11);
+			qmi_set(res, flow_control, *(uint8_t *) get_next(1));
 			break;
 
 		default:

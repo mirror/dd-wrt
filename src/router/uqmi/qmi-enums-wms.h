@@ -18,6 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2012 Google Inc.
+ * Copyright (C) 2012-2017 Aleksander Morgado <aleksander@aleksander.es>
  */
 
 #ifndef _LIBQMI_GLIB_QMI_ENUMS_WMS_H_
@@ -25,7 +26,6 @@
 
 /**
  * SECTION: qmi-enums-wms
- * @title: WMS enumerations and flags
  *
  * This section defines enumerations and flags used in the WMS service
  * interface.
@@ -40,9 +40,11 @@
  * @QMI_WMS_STORAGE_TYPE_NV: Message stored in non-volatile memory.
  * @QMI_WMS_STORAGE_TYPE_NONE: None.
  *
- * Type of messaging storage
+ * Type of messaging storage.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_STORAGE_TYPE_UIM  = 0x00,
     QMI_WMS_STORAGE_TYPE_NV   = 0x01,
     QMI_WMS_STORAGE_TYPE_NONE = 0xFF
@@ -54,8 +56,10 @@ typedef enum {
  * @QMI_WMS_ACK_INDICATOR_DO_NOT_SEND: ACK doesn't need to be sent.
  *
  * Indication of whether ACK needs to be sent or not.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_ACK_INDICATOR_SEND        = 0x00,
     QMI_WMS_ACK_INDICATOR_DO_NOT_SEND = 0x01
 } QmiWmsAckIndicator;
@@ -68,8 +72,10 @@ typedef enum {
  * @QMI_WMS_MESSAGE_FORMAT_MWI: Message Waiting Indicator.
  *
  * Type of message.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_MESSAGE_FORMAT_CDMA                     = 0x00,
     QMI_WMS_MESSAGE_FORMAT_GSM_WCDMA_POINT_TO_POINT = 0x06,
     QMI_WMS_MESSAGE_FORMAT_GSM_WCDMA_BROADCAST      = 0x07,
@@ -82,8 +88,10 @@ typedef enum {
  * @QMI_WMS_MESSAGE_MODE_GSM_WCDMA: Message sent using 3GPP technologies.
  *
  * Message mode.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_MESSAGE_MODE_CDMA      = 0x00,
     QMI_WMS_MESSAGE_MODE_GSM_WCDMA = 0x01
 } QmiWmsMessageMode;
@@ -95,8 +103,10 @@ typedef enum {
  * @QMI_WMS_NOTIFICATION_TYPE_SECONDARY_UMTS: Secondary UMTS.
  *
  * Type of notification.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_NOTIFICATION_TYPE_PRIMARY        = 0x00,
     QMI_WMS_NOTIFICATION_TYPE_SECONDARY_GSM  = 0x01,
     QMI_WMS_NOTIFICATION_TYPE_SECONDARY_UMTS = 0x02
@@ -112,8 +122,10 @@ typedef enum {
  * @QMI_WMS_CDMA_SERVICE_OPTION_14: Use service option 14.
  *
  * CDMA service option selection.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_CDMA_SERVICE_OPTION_AUTO = 0x00,
     QMI_WMS_CDMA_SERVICE_OPTION_6    = 0x06,
     QMI_WMS_CDMA_SERVICE_OPTION_14   = 0x0E
@@ -121,85 +133,94 @@ typedef enum {
 
 /**
  * QmiWmsCdmaCauseCode:
- * @QMI_WDS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_VACANT: Address is valid but not yet allocated.
- * @QMI_WDS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_TRANSLATION_FAILURE: Address is invalid.
- * @QMI_WDS_CDMA_CAUSE_CODE_NETWORK_RESOURCE_SHORTAGE: Network resource shortage.
- * @QMI_WDS_CDMA_CAUSE_CODE_NETWORK_FAILURE: Network failed.
- * @QMI_WDS_CDMA_CAUSE_CODE_NETWORK_INVALID_TELESERVICE_ID: SMS teleservice ID is invalid.
- * @QMI_WDS_CDMA_CAUSE_CODE_NETWORK_OTHER: Other network error.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_NO_PAGE_RESPONSE: No page response from destination.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_BUSY: Destination is busy.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_NO_ACK: No acknowledge from destination.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_RESOURCE_SHORTAGE: Destination resource shortage.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_SMS_DELIVERY_POSTPONED: SMS deliver postponed.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_OUT_OF_SERVICE: Destination out of service.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_NOT_AT_ADDRESS: Destination not at address.
- * @QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_OTHER: Other destination error.
- * @QMI_WDS_CDMA_CAUSE_CODE_RADIO_INTERFACE_RESOURCE_SHORTAGE: Radio interface resource shortage.
- * @QMI_WDS_CDMA_CAUSE_CODE_RADIO_INTERFACE_INCOMPATIBILITY: Radio interface incompatibility.
- * @QMI_WDS_CDMA_CAUSE_CODE_RADIO_INTERFACE_OTHER: Other radio interface error.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_ENCODING: Encoding error.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SMS_ORIGIN_DENIED: SMS origin denied.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SMS_DESTINATION_DENIED: SMS destination denied.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SUPPLEMENTARY_SERVICE_NOT_SUPPORTED: Supplementary service not supported.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SMS_NOT_SUPPORTED: SMS not supported.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_MISSING_EXPECTED_PARAMETER: Missing optional expected parameter.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_MISSING_MANDATORY_PARAMETER: Missing mandatory parameter.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_UNRECOGNIZED_PARAMETER_VALUE: Unrecognized parameter value.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_UNEXPECTED_PARAMETER_VALUE: Unexpected parameter value.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_USER_DATA_SIZE_ERROR: user data size error.
- * @QMI_WDS_CDMA_CAUSE_CODE_GENERAL_OTHER: Other general error.
+ * @QMI_WMS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_VACANT: Address is valid but not yet allocated. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_TRANSLATION_FAILURE: Address is invalid. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_NETWORK_RESOURCE_SHORTAGE: Network resource shortage. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_NETWORK_FAILURE: Network failed. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_NETWORK_INVALID_TELESERVICE_ID: SMS teleservice ID is invalid. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_NETWORK_OTHER: Other network error. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_NO_PAGE_RESPONSE: No page response from destination. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_BUSY: Destination is busy. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_NO_ACK: No acknowledge from destination. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_RESOURCE_SHORTAGE: Destination resource shortage. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_SMS_DELIVERY_POSTPONED: SMS delivery postponed. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_OUT_OF_SERVICE: Destination out of service. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_NOT_AT_ADDRESS: Destination not at address. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_OTHER: Other destination error. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_RADIO_INTERFACE_RESOURCE_SHORTAGE: Radio interface resource shortage. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_RADIO_INTERFACE_INCOMPATIBILITY: Radio interface incompatibility. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_RADIO_INTERFACE_OTHER: Other radio interface error. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_ENCODING: Encoding error. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SMS_ORIGIN_DENIED: SMS origin denied. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SMS_DESTINATION_DENIED: SMS destination denied. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SUPPLEMENTARY_SERVICE_NOT_SUPPORTED: Supplementary service not supported. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SMS_NOT_SUPPORTED: SMS not supported. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_MISSING_EXPECTED_PARAMETER: Missing optional expected parameter. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_MISSING_MANDATORY_PARAMETER: Missing mandatory parameter. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_UNRECOGNIZED_PARAMETER_VALUE: Unrecognized parameter value. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_UNEXPECTED_PARAMETER_VALUE: Unexpected parameter value. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_USER_DATA_SIZE_ERROR: User data size error. Since 1.18.
+ * @QMI_WMS_CDMA_CAUSE_CODE_GENERAL_OTHER: Other general error. Since 1.18.
  *
  * Cause codes when failed to send an SMS in CDMA.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     /* Network errors */
-    QMI_WDS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_VACANT              = 0x00,
-    QMI_WDS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_TRANSLATION_FAILURE = 0x01,
-    QMI_WDS_CDMA_CAUSE_CODE_NETWORK_RESOURCE_SHORTAGE           = 0x02,
-    QMI_WDS_CDMA_CAUSE_CODE_NETWORK_FAILURE                     = 0x03,
-    QMI_WDS_CDMA_CAUSE_CODE_NETWORK_INVALID_TELESERVICE_ID      = 0x04,
-    QMI_WDS_CDMA_CAUSE_CODE_NETWORK_OTHER                       = 0x05,
+    QMI_WMS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_VACANT              = 0x00,
+    QMI_WMS_CDMA_CAUSE_CODE_NETWORK_ADDRESS_TRANSLATION_FAILURE = 0x01,
+    QMI_WMS_CDMA_CAUSE_CODE_NETWORK_RESOURCE_SHORTAGE           = 0x02,
+    QMI_WMS_CDMA_CAUSE_CODE_NETWORK_FAILURE                     = 0x03,
+    QMI_WMS_CDMA_CAUSE_CODE_NETWORK_INVALID_TELESERVICE_ID      = 0x04,
+    QMI_WMS_CDMA_CAUSE_CODE_NETWORK_OTHER                       = 0x05,
 
     /* Destination errors */
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_NO_PAGE_RESPONSE       = 0x20,
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_BUSY                   = 0x21,
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_NO_ACK                 = 0x22,
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_RESOURCE_SHORTAGE      = 0x23,
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_SMS_DELIVERY_POSTPONED = 0x24,
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_OUT_OF_SERVICE         = 0x25,
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_NOT_AT_ADDRESS         = 0x26,
-    QMI_WDS_CDMA_CAUSE_CODE_DESTINATION_OTHER                  = 0x27,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_NO_PAGE_RESPONSE       = 0x20,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_BUSY                   = 0x21,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_NO_ACK                 = 0x22,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_RESOURCE_SHORTAGE      = 0x23,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_SMS_DELIVERY_POSTPONED = 0x24,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_OUT_OF_SERVICE         = 0x25,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_NOT_AT_ADDRESS         = 0x26,
+    QMI_WMS_CDMA_CAUSE_CODE_DESTINATION_OTHER                  = 0x27,
 
     /* Radio Interface errors */
-    QMI_WDS_CDMA_CAUSE_CODE_RADIO_INTERFACE_RESOURCE_SHORTAGE = 0x40,
-    QMI_WDS_CDMA_CAUSE_CODE_RADIO_INTERFACE_INCOMPATIBILITY   = 0x41,
-    QMI_WDS_CDMA_CAUSE_CODE_RADIO_INTERFACE_OTHER             = 0x42,
+    QMI_WMS_CDMA_CAUSE_CODE_RADIO_INTERFACE_RESOURCE_SHORTAGE = 0x40,
+    QMI_WMS_CDMA_CAUSE_CODE_RADIO_INTERFACE_INCOMPATIBILITY   = 0x41,
+    QMI_WMS_CDMA_CAUSE_CODE_RADIO_INTERFACE_OTHER             = 0x42,
 
     /* General errors */
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_ENCODING                            = 0x60,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SMS_ORIGIN_DENIED                   = 0x61,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SMS_DESTINATION_DENIED              = 0x62,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SUPPLEMENTARY_SERVICE_NOT_SUPPORTED = 0x63,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_SMS_NOT_SUPPORTED                   = 0x64,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_MISSING_EXPECTED_PARAMETER          = 0x65,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_MISSING_MANDATORY_PARAMETER         = 0x66,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_UNRECOGNIZED_PARAMETER_VALUE        = 0x67,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_UNEXPECTED_PARAMETER_VALUE          = 0x68,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_USER_DATA_SIZE_ERROR                = 0x69,
-    QMI_WDS_CDMA_CAUSE_CODE_GENERAL_OTHER                               = 0x6A
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_ENCODING                            = 0x60,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SMS_ORIGIN_DENIED                   = 0x61,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SMS_DESTINATION_DENIED              = 0x62,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SUPPLEMENTARY_SERVICE_NOT_SUPPORTED = 0x63,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_SMS_NOT_SUPPORTED                   = 0x64,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_MISSING_EXPECTED_PARAMETER          = 0x65,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_MISSING_MANDATORY_PARAMETER         = 0x66,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_UNRECOGNIZED_PARAMETER_VALUE        = 0x67,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_UNEXPECTED_PARAMETER_VALUE          = 0x68,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_USER_DATA_SIZE_ERROR                = 0x69,
+    QMI_WMS_CDMA_CAUSE_CODE_GENERAL_OTHER                               = 0x6A
 } QmiWmsCdmaCauseCode;
 
 /**
  * QmiWmsCdmaErrorClass:
- * @QMI_WMS_CDMA_ERROR_CLASS_TEMPORARY: Temporary error.
- * @QMI_WMS_CDMA_ERROR_CLASS_PERMANENT: Permanent error.
+ * @QMI_WMS_CDMA_ERROR_CLASS_TEMPORARY: Temporary error reported by network.
+ * @QMI_WMS_CDMA_ERROR_CLASS_PERMANENT: Permanent error reported by network.
+ * @QMI_WMS_CDMA_ERROR_CLASS_TEMPORARY_DEVICE: Temporary error reported by device. Since 1.28.
+ * @QMI_WMS_CDMA_ERROR_CLASS_PERMANENT_DEVICE: Permanent error reported by device. Since 1.28.
  *
- * Error class when failed to send an SMS in CDMA.
+ * Error class reported from the network when failed to send an SMS in CDMA,
+ * or reported by the device when failed to process a transfer-only CDMA message.
+ *
+ * Since: 1.0
  */
-typedef enum {
-    QMI_WMS_CDMA_ERROR_CLASS_TEMPORARY = 0x00,
-    QMI_WMS_CDMA_ERROR_CLASS_PERMANENT = 0x01
+typedef enum { /*< since=1.0 >*/
+    QMI_WMS_CDMA_ERROR_CLASS_TEMPORARY        = 0x00,
+    QMI_WMS_CDMA_ERROR_CLASS_PERMANENT        = 0x01,
+    QMI_WMS_CDMA_ERROR_CLASS_TEMPORARY_DEVICE = 0x02,
+    QMI_WMS_CDMA_ERROR_CLASS_PERMANENT_DEVICE = 0x03,
 } QmiWmsCdmaErrorClass;
 
 /**
@@ -230,8 +251,10 @@ typedef enum {
  * @QMI_WMS_GSM_UMTS_RP_CAUSE_INTERWORKING: Interworking error.
  *
  * RP cause codes when failed to send an SMS in GSM/WCDMA.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_GSM_UMTS_RP_CAUSE_UNASSIGNED_NUMBER                    = 0x01,
     QMI_WMS_GSM_UMTS_RP_CAUSE_OPERATOR_DETERMINED_BARRING          = 0x08,
     QMI_WMS_GSM_UMTS_RP_CAUSE_CALL_BARRED                          = 0x0A,
@@ -288,8 +311,10 @@ typedef enum {
  * @QMI_WMS_GSM_UMTS_TP_CAUSE_UNSPECIFIED_ERROR: Unspecified error.
  *
  * RT cause codes when failed to send an SMS in GSM/WCDMA.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_GSM_UMTS_TP_CAUSE_TELE_INTERWORKING_NOT_SUPPORTED    = 0x80,
     QMI_WMS_GSM_UMTS_TP_CAUSE_SHORT_MESSAGE_TYPE_0_NOT_SUPPORTED = 0x81,
     QMI_WMS_GSM_UMTS_TP_CAUSE_SHORT_MESSAGE_CANNOT_BE_REPLACED   = 0x82,
@@ -324,8 +349,10 @@ typedef enum {
  * @QMI_WMS_MESSAGE_DELIVERY_FAILURE_TYPE_PERMANENT: Permanent failure.
  *
  * Type of message delivery failure.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_MESSAGE_DELIVERY_FAILURE_TYPE_TEMPORARY = 0x00,
     QMI_WMS_MESSAGE_DELIVERY_FAILURE_TYPE_PERMANENT = 0x01
 } QmiWmsMessageDeliveryFailureType;
@@ -341,8 +368,10 @@ typedef enum {
  * @QMI_WMS_MESSAGE_TAG_TYPE_MO_NOT_SENT: Not yet sent SMS.
  *
  * Type of message tag.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_MESSAGE_TAG_TYPE_MT_READ     = 0x00,
     QMI_WMS_MESSAGE_TAG_TYPE_MT_NOT_READ = 0x01,
     QMI_WMS_MESSAGE_TAG_TYPE_MO_SENT     = 0x02,
@@ -355,8 +384,10 @@ typedef enum {
  * @QMI_WMS_MESSAGE_PROTOCOL_WCDMA: WCDMA.
  *
  * Type of message protocol.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_MESSAGE_PROTOCOL_CDMA  = 0x00,
     QMI_WMS_MESSAGE_PROTOCOL_WCDMA = 0x01
 } QmiWmsMessageProtocol;
@@ -369,8 +400,10 @@ typedef enum {
  * @QMI_WMS_MESSAGE_TYPE_POINT_TO_POINT: Point to point message.
  *
  * Type of message.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_MESSAGE_TYPE_POINT_TO_POINT = 0x00
 } QmiWmsMessageType;
 
@@ -384,8 +417,10 @@ typedef enum {
  * @QMI_WMS_MESSAGE_CLASS_CDMA: Class CDMA.
  *
  * Message class.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_MESSAGE_CLASS_0    = 0x00,
     QMI_WMS_MESSAGE_CLASS_1    = 0x01,
     QMI_WMS_MESSAGE_CLASS_2    = 0x02,
@@ -403,8 +438,10 @@ typedef enum {
  * @QMI_WMS_RECEIPT_ACTION_UNKNOWN: Unknown action.
  *
  * Action to perform when a message is received.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_RECEIPT_ACTION_DISCARD          = 0x00,
     QMI_WMS_RECEIPT_ACTION_STORE_AND_NOTIFY = 0x01,
     QMI_WMS_RECEIPT_ACTION_TRANSFER_ONLY    = 0x02,
@@ -417,9 +454,27 @@ typedef enum {
  * @QMI_WMS_TRANSFER_INDICATION_CLIENT: Status reports transferred to the client.
  *
  * Transfer indication actions.
+ *
+ * Since: 1.0
  */
-typedef enum {
+typedef enum { /*< since=1.0 >*/
     QMI_WMS_TRANSFER_INDICATION_CLIENT = 0x01
 } QmiWmsTransferIndication;
+
+/**
+ * QmiWmsAckFailureCause:
+ * @QMI_WMS_ACK_FAILURE_CAUSE_NO_NETWORK_RESPONSE: No network response.
+ * @QMI_WMS_ACK_FAILURE_CAUSE_NETWORK_RELEASED_LINK: Network released link.
+ * @QMI_WMS_ACK_FAILURE_CAUSE_NOT_SENT: Not sent.
+ *
+ * Ack failure cause.
+ *
+ * Since: 1.28
+ */
+typedef enum { /*< since=1.28 >*/
+    QMI_WMS_ACK_FAILURE_CAUSE_NO_NETWORK_RESPONSE   = 0x00,
+    QMI_WMS_ACK_FAILURE_CAUSE_NETWORK_RELEASED_LINK = 0x01,
+    QMI_WMS_ACK_FAILURE_CAUSE_NOT_SENT              = 0x02,
+} QmiWmsAckFailureCause;
 
 #endif /* _LIBQMI_GLIB_QMI_ENUMS_WMS_H_ */

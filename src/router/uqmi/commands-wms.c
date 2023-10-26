@@ -24,6 +24,40 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define CEILDIV(x,y) (((x) + (y) - 1) / (y))
 
+static struct qmi_wms_list_messages_request lmreq = {
+	QMI_INIT(storage_type, QMI_WMS_STORAGE_TYPE_UIM),
+	QMI_INIT(message_tag, QMI_WMS_MESSAGE_TAG_TYPE_MT_NOT_READ),
+};
+
+static struct qmi_wms_delete_request dmreq = {
+	QMI_INIT(memory_storage, QMI_WMS_STORAGE_TYPE_UIM),
+	QMI_INIT(message_mode, QMI_WMS_MESSAGE_MODE_GSM_WCDMA),
+};
+
+static struct qmi_wms_raw_read_request gmreq = {
+	QMI_INIT_SEQUENCE(message_memory_storage_id,
+		.storage_type = QMI_WMS_STORAGE_TYPE_UIM,
+	),
+	QMI_INIT(message_mode, QMI_WMS_MESSAGE_MODE_GSM_WCDMA),
+};
+
+
+#define cmd_wms_storage_cb no_cb
+static enum qmi_cmd_result
+cmd_wms_storage_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	if (strcmp(arg, "sim") == 0) {
+	} else if (strcmp(arg, "me") == 0) {
+		qmi_set_ptr(&lmreq, storage_type, QMI_WMS_STORAGE_TYPE_NV);
+		qmi_set_ptr(&dmreq, memory_storage, QMI_WMS_STORAGE_TYPE_NV);
+		qmi_set_ptr(&gmreq, message_memory_storage_id.storage_type, QMI_WMS_STORAGE_TYPE_NV);
+	} else {
+		uqmi_add_error("Invalid value (sim or me)");
+		return QMI_CMD_EXIT;
+	}
+	return QMI_CMD_DONE;
+}
+
 static void cmd_wms_list_messages_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
 	struct qmi_wms_list_messages_response res;
@@ -41,12 +75,7 @@ static void cmd_wms_list_messages_cb(struct qmi_dev *qmi, struct qmi_request *re
 static enum qmi_cmd_result
 cmd_wms_list_messages_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	static struct qmi_wms_list_messages_request mreq = {
-		QMI_INIT(storage_type, QMI_WMS_STORAGE_TYPE_UIM),
-		QMI_INIT(message_tag, QMI_WMS_MESSAGE_TAG_TYPE_MT_NOT_READ),
-	};
-
-	qmi_set_wms_list_messages_request(msg, &mreq);
+	qmi_set_wms_list_messages_request(msg, &lmreq);
 
 	return QMI_CMD_REQUEST;
 }
@@ -222,8 +251,8 @@ static int decode_udh(const unsigned char *data)
 static void decode_7bit_field(char *name, const unsigned char *data, int data_len, int bit_offset)
 {
 	char *dest = blobmsg_alloc_string_buffer(&status, name, 3 * data_len + 2);
-	pdu_decode_7bit_str(dest, data, CEILDIV(data_len * 7, 8), bit_offset);
-	dest[data_len] = 0;
+	int out_len = pdu_decode_7bit_str(dest, data, CEILDIV(data_len * 7, 8), bit_offset);
+	dest[out_len] = 0;
 	blobmsg_add_string_buffer(&status);
 }
 
@@ -292,15 +321,10 @@ cmd_wms_delete_message_prepare(struct qmi_dev *qmi, struct qmi_request *req, str
 		return QMI_CMD_EXIT;
 	}
 
-	static struct qmi_wms_delete_request mreq = {
-		QMI_INIT(memory_storage, QMI_WMS_STORAGE_TYPE_UIM),
-		QMI_INIT(message_mode, QMI_WMS_MESSAGE_MODE_GSM_WCDMA),
-	};
+	dmreq.set.memory_index = 1;
+	dmreq.data.memory_index = id;
 
-	mreq.set.memory_index = 1;
-	mreq.data.memory_index = id;
-
-	qmi_set_wms_delete_request(msg, &mreq);
+	qmi_set_wms_delete_request(msg, &dmreq);
 
 	return QMI_CMD_REQUEST;
 }
@@ -443,12 +467,6 @@ error:
 static enum qmi_cmd_result
 cmd_wms_get_message_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	static struct qmi_wms_raw_read_request mreq = {
-		QMI_INIT_SEQUENCE(message_memory_storage_id,
-			.storage_type = QMI_WMS_STORAGE_TYPE_UIM,
-		),
-		QMI_INIT(message_mode, QMI_WMS_MESSAGE_MODE_GSM_WCDMA),
-	};
 	char *err;
 	int id;
 
@@ -458,8 +476,8 @@ cmd_wms_get_message_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct
 		return QMI_CMD_EXIT;
 	}
 
-	mreq.data.message_memory_storage_id.memory_index = id;
-	qmi_set_wms_raw_read_request(msg, &mreq);
+	gmreq.data.message_memory_storage_id.memory_index = id;
+	qmi_set_wms_raw_read_request(msg, &gmreq);
 
 	return QMI_CMD_REQUEST;
 }

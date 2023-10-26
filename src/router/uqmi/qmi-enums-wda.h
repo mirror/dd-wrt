@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2014 Aleksander Morgado <aleksander@aleksander.es>
+ * Copyright (C) 2014-2017 Aleksander Morgado <aleksander@aleksander.es>
  */
 
 #ifndef _LIBQMI_GLIB_QMI_ENUMS_WDA_H_
@@ -25,7 +25,6 @@
 
 /**
  * SECTION: qmi-enums-wda
- * @title: WDA enumerations and flags
  *
  * This section defines enumerations and flags used in the WDA service
  * interface.
@@ -38,8 +37,10 @@
  * @QMI_WDA_LINK_LAYER_PROTOCOL_RAW_IP: Raw IP mode.
  *
  * Link layer protocol.
+ *
+ * Since: 1.10
  */
-typedef enum {
+typedef enum { /*< since=1.10 >*/
     QMI_WDA_LINK_LAYER_PROTOCOL_UNKNOWN = 0x00,
     QMI_WDA_LINK_LAYER_PROTOCOL_802_3   = 0x01,
     QMI_WDA_LINK_LAYER_PROTOCOL_RAW_IP  = 0x02,
@@ -53,16 +54,26 @@ typedef enum {
  * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_MBIM: MBIM enabled.
  * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_RNDIS: RNDIS enabled.
  * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAP: QMAP enabled.
+ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV2: QMAPV2 enabled. Since: 1.30.
+ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV3: QMAPV3 enabled. Since: 1.30.
+ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV4: QMAPV4 enabled. Since: 1.30.
+ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV5: QMAPV5 enabled. Since: 1.28.
  *
  * Data aggregation protocol in uplink or downlink.
+ *
+ * Since: 1.10
  */
-typedef enum {
+typedef enum { /*< since=1.10 >*/
     QMI_WDA_DATA_AGGREGATION_PROTOCOL_DISABLED = 0x00,
     QMI_WDA_DATA_AGGREGATION_PROTOCOL_TLP      = 0x01,
     QMI_WDA_DATA_AGGREGATION_PROTOCOL_QC_NCM   = 0x02,
     QMI_WDA_DATA_AGGREGATION_PROTOCOL_MBIM     = 0x03,
     QMI_WDA_DATA_AGGREGATION_PROTOCOL_RNDIS    = 0x04,
     QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAP     = 0x05,
+    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV2   = 0x06,
+    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV3   = 0x07,
+    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV4   = 0x08,
+    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV5   = 0x09,
 } QmiWdaDataAggregationProtocol;
 
 #endif /* _LIBQMI_GLIB_QMI_ENUMS_WDA_H_ */

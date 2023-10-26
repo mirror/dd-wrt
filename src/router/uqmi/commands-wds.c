@@ -24,32 +24,85 @@
 
 #include "qmi-message.h"
 
+static const struct {
+	const char *auth_name;
+	QmiWdsAuthentication auth;
+} auth_modes[] = {
+	{ "none", QMI_WDS_AUTHENTICATION_NONE },
+	{ "pap", QMI_WDS_AUTHENTICATION_PAP },
+	{ "chap", QMI_WDS_AUTHENTICATION_CHAP },
+	{ "both", QMI_WDS_AUTHENTICATION_PAP | QMI_WDS_AUTHENTICATION_CHAP },
+};
+
+static const struct {
+	const char *ipfam_name;
+	const QmiWdsIpFamily mode;
+} ipfam_modes[] = {
+	{ "ipv4", QMI_WDS_IP_FAMILY_IPV4 },
+	{ "ipv6", QMI_WDS_IP_FAMILY_IPV6 },
+	{ "unspecified", QMI_WDS_IP_FAMILY_UNSPECIFIED },
+};
+
+static const struct {
+	const char *pdp_name;
+	const QmiWdsPdpType type;
+} pdp_types[] = {
+	{ "ipv4", QMI_WDS_PDP_TYPE_IPV4 },
+	{ "ppp", QMI_WDS_PDP_TYPE_PPP },
+	{ "ipv6", QMI_WDS_PDP_TYPE_IPV6 },
+	{ "ipv4v6", QMI_WDS_PDP_TYPE_IPV4_OR_IPV6 },
+};
+
+static const struct {
+	const char *profile_name;
+	const QmiWdsProfileType profile;
+} profile_types[] = {
+	{ "3gpp", QMI_WDS_PROFILE_TYPE_3GPP },
+	{ "3gpp2", QMI_WDS_PROFILE_TYPE_3GPP2 },
+};
+
 static struct qmi_wds_start_network_request wds_sn_req = {
 	QMI_INIT(authentication_preference,
 	         QMI_WDS_AUTHENTICATION_PAP | QMI_WDS_AUTHENTICATION_CHAP),
 };
+
 static struct qmi_wds_stop_network_request wds_stn_req;
+
+static struct qmi_wds_modify_profile_request wds_mp_req = {
+	QMI_INIT_SEQUENCE(profile_identifier,
+		.profile_type = QMI_WDS_PROFILE_TYPE_3GPP,
+		.profile_index = 1,
+	),
+	QMI_INIT(apn_disabled_flag, false),
+};
+
+static struct qmi_wds_create_profile_request wds_cp_req = {
+	QMI_INIT(profile_type,QMI_WDS_PROFILE_TYPE_3GPP),
+	QMI_INIT(apn_disabled_flag, false),
+};
+
+#define cmd_wds_set_apn_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_set_apn_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	qmi_set_ptr(&wds_sn_req, apn, arg);
+	qmi_set_ptr(&wds_mp_req, apn_name, arg);
+	qmi_set_ptr(&wds_cp_req, apn_name, arg);
+	return QMI_CMD_DONE;
+}
 
 #define cmd_wds_set_auth_cb no_cb
 static enum qmi_cmd_result
 cmd_wds_set_auth_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	static const struct {
-		const char *name;
-		QmiWdsAuthentication auth;
-	} modes[] = {
-		{ "pap", QMI_WDS_AUTHENTICATION_PAP },
-		{ "chap", QMI_WDS_AUTHENTICATION_CHAP },
-		{ "both", QMI_WDS_AUTHENTICATION_PAP | QMI_WDS_AUTHENTICATION_CHAP },
-		{ "none", QMI_WDS_AUTHENTICATION_NONE },
-	};
 	int i;
-
-	for (i = 0; i < ARRAY_SIZE(modes); i++) {
-		if (strcasecmp(modes[i].name, arg) != 0)
+	for (i = 0; i < ARRAY_SIZE(auth_modes); i++) {
+		if (strcasecmp(auth_modes[i].auth_name, arg) != 0)
 			continue;
 
-		qmi_set(&wds_sn_req, authentication_preference, modes[i].auth);
+		qmi_set(&wds_sn_req, authentication_preference, auth_modes[i].auth);
+		qmi_set(&wds_mp_req, authentication, auth_modes[i].auth);
+		qmi_set(&wds_cp_req, authentication, auth_modes[i].auth);
 		return QMI_CMD_DONE;
 	}
 
@@ -62,6 +115,8 @@ static enum qmi_cmd_result
 cmd_wds_set_username_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
 	qmi_set_ptr(&wds_sn_req, username, arg);
+	qmi_set_ptr(&wds_mp_req, username, arg);
+	qmi_set_ptr(&wds_cp_req, username, arg);
 	return QMI_CMD_DONE;
 }
 
@@ -70,6 +125,8 @@ static enum qmi_cmd_result
 cmd_wds_set_password_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
 	qmi_set_ptr(&wds_sn_req, password, arg);
+	qmi_set_ptr(&wds_mp_req, password, arg);
+	qmi_set_ptr(&wds_cp_req, password, arg);
 	return QMI_CMD_DONE;
 }
 
@@ -79,6 +136,69 @@ cmd_wds_set_autoconnect_prepare(struct qmi_dev *qmi, struct qmi_request *req, st
 {
 	qmi_set(&wds_sn_req, enable_autoconnect, true);
 	qmi_set(&wds_stn_req, disable_autoconnect, true);
+	return QMI_CMD_DONE;
+}
+
+#define cmd_wds_set_ip_family_pref_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_set_ip_family_pref_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(ipfam_modes); i++) {
+		if (strcasecmp(ipfam_modes[i].ipfam_name, arg) != 0)
+			continue;
+
+		qmi_set(&wds_sn_req, ip_family_preference, ipfam_modes[i].mode);
+		return QMI_CMD_DONE;
+	}
+
+	uqmi_add_error("Invalid value (valid: ipv4, ipv6, unspecified)");
+	return QMI_CMD_EXIT;
+}
+
+#define cmd_wds_set_pdp_type_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_set_pdp_type_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(pdp_types); i++) {
+		if (strcasecmp(pdp_types[i].pdp_name, arg) != 0)
+			continue;
+
+		qmi_set(&wds_mp_req, pdp_type, pdp_types[i].type);
+		qmi_set(&wds_cp_req, pdp_type, pdp_types[i].type);
+		return QMI_CMD_DONE;
+	}
+
+	uqmi_add_error("Invalid value (valid: ipv4, ipv6, ipv4v6)");
+	return QMI_CMD_EXIT;
+}
+
+#define cmd_wds_no_roaming_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_no_roaming_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	if (strcmp(arg, "true") == 0) {
+		qmi_set(&wds_mp_req, roaming_disallowed_flag, true);
+		qmi_set(&wds_cp_req, roaming_disallowed_flag, true);
+	} else if (strcmp(arg, "false") == 0) {
+		qmi_set(&wds_mp_req, roaming_disallowed_flag, false);
+		qmi_set(&wds_cp_req, roaming_disallowed_flag, false);
+	} else {
+		uqmi_add_error("Invalid value (true or false)");
+		return QMI_CMD_EXIT;
+	}
+	return QMI_CMD_DONE;
+}
+
+#define cmd_wds_set_profile_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_set_profile_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	uint32_t idx = strtoul(arg, NULL, 10);
+
+	qmi_set(&wds_sn_req, profile_index_3gpp, idx);
 	return QMI_CMD_DONE;
 }
 
@@ -95,7 +215,6 @@ cmd_wds_start_network_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qm
 static enum qmi_cmd_result
 cmd_wds_start_network_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	qmi_set_ptr(&wds_sn_req, apn, arg);
 	qmi_set_wds_start_network_request(msg, &wds_sn_req);
 	return QMI_CMD_REQUEST;
 }
@@ -109,6 +228,84 @@ cmd_wds_stop_network_prepare(struct qmi_dev *qmi, struct qmi_request *req, struc
 	qmi_set(&wds_stn_req, packet_data_handle, pdh);
 	qmi_set_wds_stop_network_request(msg, &wds_stn_req);
 	return QMI_CMD_REQUEST;
+}
+
+static void
+cmd_wds_modify_profile_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
+{
+	struct qmi_wds_modify_profile_response res;
+	qmi_parse_wds_modify_profile_response(msg, &res);
+}
+
+static enum qmi_cmd_result
+cmd_wds_modify_profile_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	int id;
+	char *s;
+	char *p_type;
+
+	s = strchr(arg, ',');
+	if (!s) {
+		fprintf(stderr, "Invalid argument\n");
+		return QMI_CMD_EXIT;
+	}
+	*s = 0;
+	s++;
+
+	id = strtoul(s, &s, 0);
+	if (s && *s) {
+		fprintf(stderr, "Invalid argument\n");
+		return QMI_CMD_EXIT;
+	}
+
+	p_type = strtok(arg, ",");
+
+	int i;
+	for (i = 0; i < ARRAY_SIZE(profile_types); i++) {
+		if (strcasecmp(profile_types[i].profile_name, p_type) != 0)
+			continue;
+
+		qmi_set_ptr(&wds_mp_req, profile_identifier.profile_type, profile_types[i].profile);
+		qmi_set_ptr(&wds_mp_req, profile_identifier.profile_index, id);
+		qmi_set_wds_modify_profile_request(msg, &wds_mp_req);
+		return QMI_CMD_REQUEST;
+	}
+
+	uqmi_add_error("Invalid value (valid: 3gpp or 3gpp2)");
+	return QMI_CMD_EXIT;
+}
+
+static void
+cmd_wds_create_profile_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
+{
+	struct qmi_wds_create_profile_response res;
+	void *p;
+
+	qmi_parse_wds_create_profile_response(msg, &res);
+
+	if (res.set.profile_identifier) {
+		p = blobmsg_open_table(&status, NULL);
+		blobmsg_add_u32(&status, "created-profile", res.data.profile_identifier.profile_index);
+		blobmsg_close_table(&status, p);
+	}
+}
+
+static enum qmi_cmd_result
+cmd_wds_create_profile_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(profile_types); i++) {
+		if (strcasecmp(profile_types[i].profile_name, arg) != 0)
+			continue;
+
+		qmi_set_ptr(&wds_cp_req, profile_type, profile_types[i].profile);
+
+		qmi_set_wds_create_profile_request(msg, &wds_cp_req);
+		return QMI_CMD_REQUEST;
+	}
+
+	uqmi_add_error("Invalid value (valid: 3gpp or 3gpp2)");
+	return QMI_CMD_EXIT;
 }
 
 static void
@@ -139,15 +336,15 @@ cmd_wds_get_packet_service_status_prepare(struct qmi_dev *qmi, struct qmi_reques
 	return QMI_CMD_REQUEST;
 }
 
-#define cmd_wds_set_autoconnect_setting_cb no_cb
+#define cmd_wds_set_autoconnect_settings_cb no_cb
 static enum qmi_cmd_result
-cmd_wds_set_autoconnect_setting_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+cmd_wds_set_autoconnect_settings_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	struct qmi_wds_set_autoconnect_setting_request ac_req;
+	struct qmi_wds_set_autoconnect_settings_request ac_req;
 	const char *modes[] = {
-		[QMI_WDS_AUTOCONNECT_DISABLED] = "disabled",
-		[QMI_WDS_AUTOCONNECT_ENABLED] = "enabled",
-		[QMI_WDS_AUTOCONNECT_PAUSED] = "paused",
+		[QMI_WDS_AUTOCONNECT_SETTING_DISABLED] = "disabled",
+		[QMI_WDS_AUTOCONNECT_SETTING_ENABLED] = "enabled",
+		[QMI_WDS_AUTOCONNECT_SETTING_PAUSED] = "paused",
 	};
 	int i;
 
@@ -155,8 +352,8 @@ cmd_wds_set_autoconnect_setting_prepare(struct qmi_dev *qmi, struct qmi_request 
 		if (strcasecmp(modes[i], arg) != 0)
 			continue;
 
-		qmi_set(&ac_req, setting, i);
-		qmi_set_wds_set_autoconnect_setting_request(msg, &ac_req);
+		qmi_set(&ac_req, status, i);
+		qmi_set_wds_set_autoconnect_settings_request(msg, &ac_req);
 		return QMI_CMD_DONE;
 	}
 
@@ -177,21 +374,13 @@ static enum qmi_cmd_result
 cmd_wds_set_ip_family_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
 	struct qmi_wds_set_ip_family_request ipf_req;
-	const struct ip_modes {
-		const char *name;
-		const QmiWdsIpFamily mode;
-	} modes[] = {
-		{ "ipv4", QMI_WDS_IP_FAMILY_IPV4 },
-		{ "ipv6", QMI_WDS_IP_FAMILY_IPV6 },
-		{ "unspecified", QMI_WDS_IP_FAMILY_UNSPECIFIED },
-	};
-	int i;
 
-	for (i = 0; i < ARRAY_SIZE(modes); i++) {
-		if (strcasecmp(modes[i].name, arg) != 0)
+	int i;
+	for (i = 0; i < ARRAY_SIZE(ipfam_modes); i++) {
+		if (strcasecmp(ipfam_modes[i].ipfam_name, arg) != 0)
 			continue;
 
-		qmi_set(&ipf_req, preference, modes[i].mode);
+		qmi_set(&ipf_req, preference, ipfam_modes[i].mode);
 		qmi_set_wds_set_ip_family_request(msg, &ipf_req);
 		return QMI_CMD_REQUEST;
 	}
@@ -221,39 +410,90 @@ static void wds_to_ipv6(const char *name, const uint16_t *addr)
 	blobmsg_add_string(&status, name, inet_ntop(AF_INET6, &ip_addr, buf, sizeof(buf)));
 }
 
+static enum qmi_cmd_result
+cmd_wds_get_profile_settings_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	int id;
+	char *s;
+	char *p_type;
+
+	s = strchr(arg, ',');
+	if (!s) {
+		fprintf(stderr, "Invalid argument\n");
+		return QMI_CMD_EXIT;
+	}
+	*s = 0;
+	s++;
+
+	id = strtoul(s, &s, 0);
+	if (s && *s) {
+		fprintf(stderr, "Invalid argument\n");
+		return QMI_CMD_EXIT;
+	}
+
+	p_type = strtok(arg, ",");
+
+	int i;
+	for (i = 0; i < ARRAY_SIZE(profile_types); i++) {
+		if (strcasecmp(profile_types[i].profile_name, p_type) != 0)
+			continue;
+
+		struct qmi_wds_get_profile_settings_request p_num = {
+			QMI_INIT_SEQUENCE(profile_id,
+				.profile_type = profile_types[i].profile,
+				.profile_index = id,
+			)
+		};
+		qmi_set_wds_get_profile_settings_request(msg, &p_num);
+		return QMI_CMD_REQUEST;
+	}
+
+	uqmi_add_error("Invalid value (valid: 3gpp or 3gpp2)");
+	return QMI_CMD_EXIT;
+}
+
+static void
+cmd_wds_get_profile_settings_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
+{
+	struct qmi_wds_get_profile_settings_response res;
+
+	void *p;
+
+	qmi_parse_wds_get_profile_settings_response(msg, &res);
+
+	p = blobmsg_open_table(&status, NULL);
+
+	blobmsg_add_string(&status, "apn", res.data.apn_name);
+	if (res.set.pdp_type && (int) res.data.pdp_type < ARRAY_SIZE(pdp_types))
+		blobmsg_add_string(&status, "pdp-type", pdp_types[res.data.pdp_type].pdp_name);
+	blobmsg_add_string(&status, "username", res.data.username);
+	blobmsg_add_string(&status, "password", res.data.password);
+        if (res.set.authentication && (int) res.data.authentication < ARRAY_SIZE(auth_modes))
+                blobmsg_add_string(&status, "auth", auth_modes[res.data.authentication].auth_name);
+	blobmsg_add_u8(&status, "no-roaming", res.data.roaming_disallowed_flag);
+	blobmsg_add_u8(&status, "apn-disabled", res.data.apn_disabled_flag);
+	blobmsg_close_table(&status, p);
+}
+
 static void
 cmd_wds_get_current_settings_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
 	void *v4, *v6, *d, *t;
 	struct qmi_wds_get_current_settings_response res;
-	const char *pdptypes[] = {
-		[QMI_WDS_PDP_TYPE_IPV4] = "ipv4",
-		[QMI_WDS_PDP_TYPE_PPP] = "ppp",
-		[QMI_WDS_PDP_TYPE_IPV6] = "ipv6",
-		[QMI_WDS_PDP_TYPE_IPV4_OR_IPV6] = "ipv4-or-ipv6",
-	};
-	const struct ip_modes {
-		const char *name;
-		const QmiWdsIpFamily mode;
-	} modes[] = {
-		{ "ipv4", QMI_WDS_IP_FAMILY_IPV4 },
-		{ "ipv6", QMI_WDS_IP_FAMILY_IPV6 },
-		{ "unspecified", QMI_WDS_IP_FAMILY_UNSPECIFIED },
-	};
 	int i;
 
 	qmi_parse_wds_get_current_settings_response(msg, &res);
 
 	t = blobmsg_open_table(&status, NULL);
 
-	if (res.set.pdp_type && (int) res.data.pdp_type < ARRAY_SIZE(pdptypes))
-		blobmsg_add_string(&status, "pdp-type", pdptypes[res.data.pdp_type]);
+	if (res.set.pdp_type && (int) res.data.pdp_type < ARRAY_SIZE(pdp_types))
+		blobmsg_add_string(&status, "pdp-type", pdp_types[res.data.pdp_type].pdp_name);
 
 	if (res.set.ip_family) {
-		for (i = 0; i < ARRAY_SIZE(modes); i++) {
-			if (modes[i].mode != res.data.ip_family)
+		for (i = 0; i < ARRAY_SIZE(ipfam_modes); i++) {
+			if (ipfam_modes[i].mode != res.data.ip_family)
 				continue;
-			blobmsg_add_string(&status, "ip-family", modes[i].name);
+			blobmsg_add_string(&status, "ip-family", ipfam_modes[i].ipfam_name);
 			break;
 		}
 	}
@@ -319,4 +559,41 @@ cmd_wds_get_current_settings_prepare(struct qmi_dev *qmi, struct qmi_request *re
 		QMI_WDS_GET_CURRENT_SETTINGS_REQUESTED_SETTINGS_IP_FAMILY);
 	qmi_set_wds_get_current_settings_request(msg, &gcs_req);
 	return QMI_CMD_REQUEST;
+}
+
+static enum qmi_cmd_result
+cmd_wds_get_default_profile_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(profile_types); i++) {
+		if (strcasecmp(profile_types[i].profile_name, arg) != 0)
+			continue;
+
+		struct qmi_wds_get_default_profile_number_request type_family = {
+			QMI_INIT_SEQUENCE(profile_type,
+				.type = profile_types[i].profile,
+				.family = QMI_WDS_PROFILE_FAMILY_TETHERED,
+			)
+		};
+
+		qmi_set_wds_get_default_profile_number_request(msg, &type_family);
+		return QMI_CMD_REQUEST;
+	}
+
+	uqmi_add_error("Invalid value (valid: 3gpp or 3gpp2)");
+	return QMI_CMD_EXIT;
+}
+
+static void
+cmd_wds_get_default_profile_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
+{
+	struct qmi_wds_get_default_profile_number_response res;
+	void *p;
+	qmi_parse_wds_get_default_profile_number_response(msg, &res);
+
+	p = blobmsg_open_table(&status, NULL);
+
+	blobmsg_add_u32(&status, "default-profile", res.data.index);
+
+	blobmsg_close_table(&status, p);
 }

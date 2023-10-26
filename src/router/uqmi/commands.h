@@ -28,6 +28,7 @@
 #include "commands-nas.h"
 #include "commands-wms.h"
 #include "commands-wda.h"
+#include "commands-uim.h"
 
 enum qmi_cmd_result {
 	QMI_CMD_DONE,
@@ -54,6 +55,7 @@ struct uqmi_cmd {
 
 #define __uqmi_commands \
 	__uqmi_command(version, get-versions, no, QMI_SERVICE_CTL), \
+	__uqmi_command(sync, sync, no, QMI_SERVICE_CTL), \
 	__uqmi_command(set_client_id, set-client-id, required, CMD_TYPE_OPTION), \
 	__uqmi_command(get_client_id, get-client-id, required, QMI_SERVICE_CTL), \
 	__uqmi_command(ctl_set_data_format, set-data-format, required, QMI_SERVICE_CTL), \
@@ -61,7 +63,8 @@ struct uqmi_cmd {
 	__uqmi_dms_commands, \
 	__uqmi_nas_commands, \
 	__uqmi_wms_commands, \
-	__uqmi_wda_commands
+	__uqmi_wda_commands, \
+	__uqmi_uim_commands
 
 #define __uqmi_command(_name, _optname, _arg, _option) __UQMI_COMMAND_##_name
 enum uqmi_command {

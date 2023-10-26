@@ -60,6 +60,57 @@ int qmi_parse_wms_set_event_report_response(struct qmi_msg *msg)
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
+int qmi_set_wms_get_supported_messages_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WMS);
+	msg->svc.message = cpu_to_le16(0x001E);
+
+	return 0;
+}
+
+int qmi_parse_wms_get_supported_messages_response(struct qmi_msg *msg, struct qmi_wms_get_supported_messages_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.list = __qmi_alloc_static(i * sizeof(res->data.list[0]));
+			while(i-- > 0) {
+				res->data.list[res->data.list_n] = *(uint8_t *) get_next(1);
+				res->data.list_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_wms_raw_send_request(struct qmi_msg *msg, struct qmi_wms_raw_send_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WMS);
@@ -671,6 +722,99 @@ int qmi_parse_wms_get_routes_response(struct qmi_msg *msg, struct qmi_wms_get_ro
 
 			found[0] |= (1 << 2);
 			qmi_set(res, transfer_status_report, *(uint8_t *) get_next(1));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wms_send_ack_request(struct qmi_msg *msg, struct qmi_wms_send_ack_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WMS);
+	msg->svc.message = cpu_to_le16(0x0037);
+
+	if (req->set.information) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.information.transaction_id), 4);
+		put_tlv_var(uint8_t, req->data.information.message_protocol, 1);
+		put_tlv_var(uint8_t, req->data.information.success, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	if (req->set._3gpp2_failure_information) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data._3gpp2_failure_information.error_class, 1);
+		put_tlv_var(uint8_t, req->data._3gpp2_failure_information.cause_code, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->set._3gpp_failure_information) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data._3gpp_failure_information.rp_cause, 1);
+		put_tlv_var(uint8_t, req->data._3gpp_failure_information.tp_cause, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.sms_on_ims) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.sms_on_ims, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wms_send_ack_response(struct qmi_msg *msg, struct qmi_wms_send_ack_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, failure_cause, *(uint8_t *) get_next(1));
 			break;
 
 		default:

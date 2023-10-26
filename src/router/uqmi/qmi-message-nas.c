@@ -399,6 +399,18 @@ int qmi_set_nas_register_indications_request(struct qmi_msg *msg, struct qmi_nas
 		tlv_new(msg, 0x20, ofs, buf);
 	}
 
+	if (req->set.network_reject_information) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.network_reject_information.enable_network_reject_indications, 1);
+		put_tlv_var(uint8_t, req->data.network_reject_information.supress_system_info_indications, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x21, ofs, buf);
+	}
+
 	return 0;
 }
 
@@ -408,6 +420,57 @@ int qmi_parse_nas_register_indications_response(struct qmi_msg *msg)
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_nas_get_supported_messages_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x001E);
+
+	return 0;
+}
+
+int qmi_parse_nas_get_supported_messages_response(struct qmi_msg *msg, struct qmi_nas_get_supported_messages_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.list = __qmi_alloc_static(i * sizeof(res->data.list[0]));
+			while(i-- > 0) {
+				res->data.list[res->data.list_n] = *(uint8_t *) get_next(1);
+				res->data.list_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
 }
 
 int qmi_set_nas_get_signal_strength_request(struct qmi_msg *msg, struct qmi_nas_get_signal_strength_request *req)
@@ -493,7 +556,7 @@ int qmi_parse_nas_get_signal_strength_response(struct qmi_msg *msg, struct qmi_n
 			i = le16_to_cpu(*(uint16_t *) get_next(2));
 			res->data.ecio_list = __qmi_alloc_static(i * sizeof(res->data.ecio_list[0]));
 			while(i-- > 0) {
-				res->data.ecio_list[res->data.ecio_list_n].ecio = *(int8_t *) get_next(1);
+				res->data.ecio_list[res->data.ecio_list_n].ecio = *(uint8_t *) get_next(1);
 				res->data.ecio_list[res->data.ecio_list_n].radio_interface = *(int8_t *) get_next(1);
 				res->data.ecio_list_n++;
 			}
@@ -656,6 +719,14 @@ int qmi_parse_nas_network_scan_response(struct qmi_msg *msg, struct qmi_nas_netw
 
 			break;
 
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			qmi_set(res, network_scan_result, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
 		default:
 			break;
 		}
@@ -724,6 +795,33 @@ int qmi_set_nas_initiate_network_register_request(struct qmi_msg *msg, struct qm
 }
 
 int qmi_parse_nas_initiate_network_register_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_nas_attach_detach_request(struct qmi_msg *msg, struct qmi_nas_attach_detach_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x0023);
+
+	if (req->set.action) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.action, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_nas_attach_detach_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
@@ -994,6 +1092,14 @@ int qmi_parse_nas_get_serving_system_response(struct qmi_msg *msg, struct qmi_na
 			res->data.mnc_pcs_digit_include_status.includes_pcs_digit = *(uint8_t *) get_next(1);
 			break;
 
+		case 0x29:
+			if (found[0] & (1 << 25))
+				break;
+
+			found[0] |= (1 << 25);
+			qmi_set(res, network_name_source, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
 		default:
 			break;
 		}
@@ -1058,13 +1164,35 @@ int qmi_parse_nas_get_home_network_response(struct qmi_msg *msg, struct qmi_nas_
 				break;
 
 			found[0] |= (1 << 3);
-			res->set.home_network_3gpp2 = 1;
-			res->data.home_network_3gpp2.mcc = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.home_network_3gpp2.mnc = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.home_network_3gpp2.display_description = *(uint8_t *) get_next(1);
-			res->data.home_network_3gpp2.description_encoding = *(uint8_t *) get_next(1);
+			res->set.home_network_3gpp2_ext = 1;
+			res->data.home_network_3gpp2_ext.mcc = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.home_network_3gpp2_ext.mnc = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.home_network_3gpp2_ext.display_description = *(uint8_t *) get_next(1);
+			res->data.home_network_3gpp2_ext.description_encoding = *(uint8_t *) get_next(1);
 			i = *(uint8_t *) get_next(1);
-			res->data.home_network_3gpp2.description = __qmi_copy_string(get_next(i), i);
+			res->data.home_network_3gpp2_ext.description = __qmi_alloc_static(i * sizeof(res->data.home_network_3gpp2_ext.description[0]));
+			while(i-- > 0) {
+				res->data.home_network_3gpp2_ext.description[res->data.home_network_3gpp2_ext.description_n] = *(uint8_t *) get_next(1);
+				res->data.home_network_3gpp2_ext.description_n++;
+			}
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			res->set.home_network_3gpp_mnc = 1;
+			res->data.home_network_3gpp_mnc.is_3gpp = *(uint8_t *) get_next(1);
+			res->data.home_network_3gpp_mnc.includes_pcs_digit = *(uint8_t *) get_next(1);
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			qmi_set(res, network_name_source, le32_to_cpu(*(uint32_t *) get_next(4)));
 			break;
 
 		default:
@@ -1078,6 +1206,136 @@ error_len:
 	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
 	        __func__, tlv->type, le16_to_cpu(tlv->len));
 	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_nas_get_preferred_networks_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x0026);
+
+	return 0;
+}
+
+int qmi_parse_nas_get_preferred_networks_response(struct qmi_msg *msg, struct qmi_nas_get_preferred_networks_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.preferred_networks = __qmi_alloc_static(i * sizeof(res->data.preferred_networks[0]));
+			while(i-- > 0) {
+				res->data.preferred_networks[res->data.preferred_networks_n].mcc = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.preferred_networks[res->data.preferred_networks_n].mnc = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.preferred_networks[res->data.preferred_networks_n].radio_access_technology = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.preferred_networks_n++;
+			}
+
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			i = *(uint8_t *) get_next(1);
+			res->data.mnc_pcs_digit_include_status = __qmi_alloc_static(i * sizeof(res->data.mnc_pcs_digit_include_status[0]));
+			while(i-- > 0) {
+				res->data.mnc_pcs_digit_include_status[res->data.mnc_pcs_digit_include_status_n].mcc = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.mnc_pcs_digit_include_status[res->data.mnc_pcs_digit_include_status_n].mnc = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.mnc_pcs_digit_include_status[res->data.mnc_pcs_digit_include_status_n].includes_pcs_digit = *(uint8_t *) get_next(1);
+				res->data.mnc_pcs_digit_include_status_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_nas_set_preferred_networks_request(struct qmi_msg *msg, struct qmi_nas_set_preferred_networks_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x0027);
+
+	if (req->data.preferred_networks) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint16_t, cpu_to_le16(req->data.preferred_networks_n), 2);
+		for (i = 0; i < req->data.preferred_networks_n; i++) {
+			put_tlv_var(uint16_t, cpu_to_le16(req->data.preferred_networks[i].mcc), 2);
+			put_tlv_var(uint16_t, cpu_to_le16(req->data.preferred_networks[i].mnc), 2);
+			put_tlv_var(uint16_t, cpu_to_le16(req->data.preferred_networks[i].radio_access_technology), 2);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->data.mnc_pcs_digit_include_status) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.mnc_pcs_digit_include_status_n, 1);
+		for (i = 0; i < req->data.mnc_pcs_digit_include_status_n; i++) {
+			put_tlv_var(uint16_t, cpu_to_le16(req->data.mnc_pcs_digit_include_status[i].mcc), 2);
+			put_tlv_var(uint16_t, cpu_to_le16(req->data.mnc_pcs_digit_include_status[i].mnc), 2);
+			put_tlv_var(uint8_t, req->data.mnc_pcs_digit_include_status[i].includes_pcs_digit, 1);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.clear_previous_preferred_networks) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.clear_previous_preferred_networks, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_nas_set_preferred_networks_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
 int qmi_set_nas_set_technology_preference_request(struct qmi_msg *msg, struct qmi_nas_set_technology_preference_request *req)
@@ -1187,7 +1445,7 @@ int qmi_parse_nas_get_rf_band_information_response(struct qmi_msg *msg, struct q
 		unsigned int ofs = 0;
 
 		switch(tlv->type) {
-		case 0x11:
+		case 0x01:
 			if (found[0] & (1 << 1))
 				break;
 
@@ -1199,6 +1457,37 @@ int qmi_parse_nas_get_rf_band_information_response(struct qmi_msg *msg, struct q
 				res->data.list[res->data.list_n].active_band_class = le16_to_cpu(*(uint16_t *) get_next(2));
 				res->data.list[res->data.list_n].active_channel = le16_to_cpu(*(uint16_t *) get_next(2));
 				res->data.list_n++;
+			}
+
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			i = *(uint8_t *) get_next(1);
+			res->data.extended_list = __qmi_alloc_static(i * sizeof(res->data.extended_list[0]));
+			while(i-- > 0) {
+				res->data.extended_list[res->data.extended_list_n].radio_interface = *(int8_t *) get_next(1);
+				res->data.extended_list[res->data.extended_list_n].active_band_class = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.extended_list[res->data.extended_list_n].active_channel = le32_to_cpu(*(uint32_t *) get_next(4));
+				res->data.extended_list_n++;
+			}
+
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			i = *(uint8_t *) get_next(1);
+			res->data.bandwidth_list = __qmi_alloc_static(i * sizeof(res->data.bandwidth_list[0]));
+			while(i-- > 0) {
+				res->data.bandwidth_list[res->data.bandwidth_list_n].radio_interface = *(int8_t *) get_next(1);
+				res->data.bandwidth_list[res->data.bandwidth_list_n].bandwidth = le32_to_cpu(*(uint32_t *) get_next(4));
+				res->data.bandwidth_list_n++;
 			}
 
 			break;
@@ -1333,12 +1622,12 @@ int qmi_set_nas_set_system_selection_preference_request(struct qmi_msg *msg, str
 		tlv_new(msg, 0x19, ofs, buf);
 	}
 
-	if (req->set.mnc_pds_digit_include_status) {
+	if (req->set.mnc_pcs_digit_include_status) {
 		void *buf;
 		unsigned int ofs;
 
 		__qmi_alloc_reset();
-		put_tlv_var(uint8_t, req->data.mnc_pds_digit_include_status, 1);
+		put_tlv_var(uint8_t, req->data.mnc_pcs_digit_include_status, 1);
 
 		buf = __qmi_get_buf(&ofs);
 		tlv_new(msg, 0x1A, ofs, buf);
@@ -1353,6 +1642,68 @@ int qmi_set_nas_set_system_selection_preference_request(struct qmi_msg *msg, str
 
 		buf = __qmi_get_buf(&ofs);
 		tlv_new(msg, 0x1D, ofs, buf);
+	}
+
+	if (req->data.acquisition_order_preference) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.acquisition_order_preference_n, 1);
+		for (i = 0; i < req->data.acquisition_order_preference_n; i++) {
+			put_tlv_var(uint8_t, req->data.acquisition_order_preference[i], 1);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1E, ofs, buf);
+	}
+
+	if (req->set.network_selection_registration_restriction) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.network_selection_registration_restriction), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x1F, ofs, buf);
+	}
+
+	if (req->set.usage_preference) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.usage_preference), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x21, ofs, buf);
+	}
+
+	if (req->set.voice_domain_preference) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.voice_domain_preference), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x23, ofs, buf);
+	}
+
+	if (req->set.extended_lte_band_preference) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint64_t, cpu_to_le64(req->data.extended_lte_band_preference.mask_low), 8);
+		put_tlv_var(uint64_t, cpu_to_le64(req->data.extended_lte_band_preference.mask_mid_low), 8);
+		put_tlv_var(uint64_t, cpu_to_le64(req->data.extended_lte_band_preference.mask_mid_high), 8);
+		put_tlv_var(uint64_t, cpu_to_le64(req->data.extended_lte_band_preference.mask_high), 8);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x24, ofs, buf);
 	}
 
 	return 0;
@@ -1470,15 +1821,205 @@ int qmi_parse_nas_get_system_selection_preference_response(struct qmi_msg *msg, 
 			qmi_set(res, td_scdma_band_preference, le64_to_cpu(*(uint64_t *) get_next(8)));
 			break;
 
-		case 0x1B:
+		case 0x1C:
 			if (found[0] & (1 << 11))
 				break;
 
 			found[0] |= (1 << 11);
+			i = *(uint8_t *) get_next(1);
+			res->data.acquisition_order_preference = __qmi_alloc_static(i * sizeof(res->data.acquisition_order_preference[0]));
+			while(i-- > 0) {
+				res->data.acquisition_order_preference[res->data.acquisition_order_preference_n] = *(int8_t *) get_next(1);
+				res->data.acquisition_order_preference_n++;
+			}
+
+			break;
+
+		case 0x1B:
+			if (found[0] & (1 << 12))
+				break;
+
+			found[0] |= (1 << 12);
 			res->set.manual_network_selection = 1;
 			res->data.manual_network_selection.mcc = le16_to_cpu(*(uint16_t *) get_next(2));
 			res->data.manual_network_selection.mnc = le16_to_cpu(*(uint16_t *) get_next(2));
 			res->data.manual_network_selection.includes_pcs_digit = *(uint8_t *) get_next(1);
+			break;
+
+		case 0x1D:
+			if (found[0] & (1 << 13))
+				break;
+
+			found[0] |= (1 << 13);
+			qmi_set(res, network_selection_registration_restriction, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1F:
+			if (found[0] & (1 << 14))
+				break;
+
+			found[0] |= (1 << 14);
+			qmi_set(res, usage_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x20:
+			if (found[0] & (1 << 15))
+				break;
+
+			found[0] |= (1 << 15);
+			qmi_set(res, voice_domain_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x22:
+			if (found[0] & (1 << 16))
+				break;
+
+			found[0] |= (1 << 16);
+			qmi_set(res, disabled_modes, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		case 0x23:
+			if (found[0] & (1 << 17))
+				break;
+
+			found[0] |= (1 << 17);
+			res->set.extended_lte_band_preference = 1;
+			res->data.extended_lte_band_preference.mask_low = le64_to_cpu(*(uint64_t *) get_next(8));
+			res->data.extended_lte_band_preference.mask_mid_low = le64_to_cpu(*(uint64_t *) get_next(8));
+			res->data.extended_lte_band_preference.mask_mid_high = le64_to_cpu(*(uint64_t *) get_next(8));
+			res->data.extended_lte_band_preference.mask_high = le64_to_cpu(*(uint64_t *) get_next(8));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_nas_get_operator_name_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x0039);
+
+	return 0;
+}
+
+int qmi_parse_nas_get_operator_name_response(struct qmi_msg *msg, struct qmi_nas_get_operator_name_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set.service_provider_name = 1;
+			res->data.service_provider_name.name_display_condition = *(uint8_t *) get_next(1);
+			i = *(uint8_t *) get_next(1);
+			res->data.service_provider_name.name = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.operator_plmn_list = __qmi_alloc_static(i * sizeof(res->data.operator_plmn_list[0]));
+			while(i-- > 0) {
+				unsigned int ii;
+				ii = 3;
+				res->data.operator_plmn_list[res->data.operator_plmn_list_n].mcc = __qmi_copy_string(get_next(ii), ii);
+				ii = 3;
+				res->data.operator_plmn_list[res->data.operator_plmn_list_n].mnc = __qmi_copy_string(get_next(ii), ii);
+				res->data.operator_plmn_list[res->data.operator_plmn_list_n].lac1 = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.operator_plmn_list[res->data.operator_plmn_list_n].lac2 = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.operator_plmn_list[res->data.operator_plmn_list_n].plmn_name_record_identifier = *(uint8_t *) get_next(1);
+				res->data.operator_plmn_list_n++;
+			}
+
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			i = *(uint8_t *) get_next(1);
+			res->data.operator_plmn_name = __qmi_alloc_static(i * sizeof(res->data.operator_plmn_name[0]));
+			while(i-- > 0) {
+				unsigned int ii;
+				res->data.operator_plmn_name[res->data.operator_plmn_name_n].name_encoding = *(uint8_t *) get_next(1);
+				res->data.operator_plmn_name[res->data.operator_plmn_name_n].short_country_initials = *(uint8_t *) get_next(1);
+				res->data.operator_plmn_name[res->data.operator_plmn_name_n].long_name_spare_bits = *(uint8_t *) get_next(1);
+				res->data.operator_plmn_name[res->data.operator_plmn_name_n].short_name_spare_bits = *(uint8_t *) get_next(1);
+				ii = *(uint8_t *) get_next(1);
+				res->data.operator_plmn_name[res->data.operator_plmn_name_n].long_name = __qmi_alloc_static(ii * sizeof(res->data.operator_plmn_name[res->data.operator_plmn_name_n].long_name[0]));
+				while(ii-- > 0) {
+					res->data.operator_plmn_name[res->data.operator_plmn_name_n].long_name[res->data.operator_plmn_name[res->data.operator_plmn_name_n].long_name_n] = *(uint8_t *) get_next(1);
+					res->data.operator_plmn_name[res->data.operator_plmn_name_n].long_name_n++;
+				}
+				ii = *(uint8_t *) get_next(1);
+				res->data.operator_plmn_name[res->data.operator_plmn_name_n].short_name = __qmi_alloc_static(ii * sizeof(res->data.operator_plmn_name[res->data.operator_plmn_name_n].short_name[0]));
+				while(ii-- > 0) {
+					res->data.operator_plmn_name[res->data.operator_plmn_name_n].short_name[res->data.operator_plmn_name[res->data.operator_plmn_name_n].short_name_n] = *(uint8_t *) get_next(1);
+					res->data.operator_plmn_name[res->data.operator_plmn_name_n].short_name_n++;
+				}
+				res->data.operator_plmn_name_n++;
+			}
+
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			i = cur_tlv_len - ofs;
+			res->data.operator_string_name = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			res->set.nitz_information = 1;
+			res->data.nitz_information.name_encoding = *(uint8_t *) get_next(1);
+			res->data.nitz_information.short_country_initials = *(uint8_t *) get_next(1);
+			res->data.nitz_information.long_name_spare_bits = *(uint8_t *) get_next(1);
+			res->data.nitz_information.short_name_spare_bits = *(uint8_t *) get_next(1);
+			i = *(uint8_t *) get_next(1);
+			res->data.nitz_information.long_name = __qmi_alloc_static(i * sizeof(res->data.nitz_information.long_name[0]));
+			while(i-- > 0) {
+				res->data.nitz_information.long_name[res->data.nitz_information.long_name_n] = *(uint8_t *) get_next(1);
+				res->data.nitz_information.long_name_n++;
+			}
+			i = *(uint8_t *) get_next(1);
+			res->data.nitz_information.short_name = __qmi_alloc_static(i * sizeof(res->data.nitz_information.short_name[0]));
+			while(i-- > 0) {
+				res->data.nitz_information.short_name[res->data.nitz_information.short_name_n] = *(uint8_t *) get_next(1);
+				res->data.nitz_information.short_name_n++;
+			}
 			break;
 
 		default:
@@ -1523,27 +2064,29 @@ int qmi_parse_nas_get_cell_location_info_response(struct qmi_msg *msg, struct qm
 				break;
 
 			found[0] |= (1 << 1);
-			res->set.geran_info = 1;
-			res->data.geran_info.cell_id = le32_to_cpu(*(uint32_t *) get_next(4));
-			i = 3;
-			res->data.geran_info.plmn = __qmi_copy_string(get_next(i), i);
-			res->data.geran_info.lac = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.geran_info.geran_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.geran_info.base_station_identity_code = *(uint8_t *) get_next(1);
-			res->data.geran_info.timing_advance = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.geran_info.rx_level = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->set.geran_info_v2 = 1;
+			res->data.geran_info_v2.cell_id = le32_to_cpu(*(uint32_t *) get_next(4));
+			for (i = 0; i < 3; i++) {
+				res->data.geran_info_v2.plmn[i] = *(uint8_t *) get_next(1);
+			}
+			res->data.geran_info_v2.lac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.geran_info_v2.geran_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.geran_info_v2.base_station_identity_code = *(uint8_t *) get_next(1);
+			res->data.geran_info_v2.timing_advance = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.geran_info_v2.rx_level = le16_to_cpu(*(uint16_t *) get_next(2));
 			i = *(uint8_t *) get_next(1);
-			res->data.geran_info.cell = __qmi_alloc_static(i * sizeof(res->data.geran_info.cell[0]));
+			res->data.geran_info_v2.cell = __qmi_alloc_static(i * sizeof(res->data.geran_info_v2.cell[0]));
 			while(i-- > 0) {
 				unsigned int ii;
-				res->data.geran_info.cell[res->data.geran_info.cell_n].cell_id = le32_to_cpu(*(uint32_t *) get_next(4));
-				ii = 3;
-				res->data.geran_info.cell[res->data.geran_info.cell_n].plmn = __qmi_copy_string(get_next(ii), ii);
-				res->data.geran_info.cell[res->data.geran_info.cell_n].lac = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.geran_info.cell[res->data.geran_info.cell_n].geran_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.geran_info.cell[res->data.geran_info.cell_n].base_station_identity_code = *(uint8_t *) get_next(1);
-				res->data.geran_info.cell[res->data.geran_info.cell_n].rx_level = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.geran_info.cell_n++;
+				res->data.geran_info_v2.cell[res->data.geran_info_v2.cell_n].cell_id = le32_to_cpu(*(uint32_t *) get_next(4));
+				for (ii = 0; ii < 3; ii++) {
+					res->data.geran_info_v2.cell[res->data.geran_info_v2.cell_n].plmn[ii] = *(uint8_t *) get_next(1);
+				}
+				res->data.geran_info_v2.cell[res->data.geran_info_v2.cell_n].lac = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.geran_info_v2.cell[res->data.geran_info_v2.cell_n].geran_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.geran_info_v2.cell[res->data.geran_info_v2.cell_n].base_station_identity_code = *(uint8_t *) get_next(1);
+				res->data.geran_info_v2.cell[res->data.geran_info_v2.cell_n].rx_level = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.geran_info_v2.cell_n++;
 			}
 			break;
 
@@ -1552,32 +2095,33 @@ int qmi_parse_nas_get_cell_location_info_response(struct qmi_msg *msg, struct qm
 				break;
 
 			found[0] |= (1 << 2);
-			res->set.umts_info = 1;
-			res->data.umts_info.cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
-			i = 3;
-			res->data.umts_info.plmn = __qmi_copy_string(get_next(i), i);
-			res->data.umts_info.lac = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.umts_info.utra_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.umts_info.primary_scrambling_code = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.umts_info.rscp = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.umts_info.ecio = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->set.umts_info_v2 = 1;
+			res->data.umts_info_v2.cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
+			for (i = 0; i < 3; i++) {
+				res->data.umts_info_v2.plmn[i] = *(uint8_t *) get_next(1);
+			}
+			res->data.umts_info_v2.lac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.umts_info_v2.utra_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.umts_info_v2.primary_scrambling_code = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.umts_info_v2.rscp = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.umts_info_v2.ecio = le16_to_cpu(*(uint16_t *) get_next(2));
 			i = *(uint8_t *) get_next(1);
-			res->data.umts_info.cell = __qmi_alloc_static(i * sizeof(res->data.umts_info.cell[0]));
+			res->data.umts_info_v2.cell = __qmi_alloc_static(i * sizeof(res->data.umts_info_v2.cell[0]));
 			while(i-- > 0) {
-				res->data.umts_info.cell[res->data.umts_info.cell_n].utra_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.umts_info.cell[res->data.umts_info.cell_n].primary_scrambling_code = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.umts_info.cell[res->data.umts_info.cell_n].rscp = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.umts_info.cell[res->data.umts_info.cell_n].ecio = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.umts_info.cell_n++;
+				res->data.umts_info_v2.cell[res->data.umts_info_v2.cell_n].utra_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.umts_info_v2.cell[res->data.umts_info_v2.cell_n].primary_scrambling_code = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.umts_info_v2.cell[res->data.umts_info_v2.cell_n].rscp = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.umts_info_v2.cell[res->data.umts_info_v2.cell_n].ecio = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.umts_info_v2.cell_n++;
 			}
 			i = *(uint8_t *) get_next(1);
-			res->data.umts_info.neighboring_geran = __qmi_alloc_static(i * sizeof(res->data.umts_info.neighboring_geran[0]));
+			res->data.umts_info_v2.neighboring_geran = __qmi_alloc_static(i * sizeof(res->data.umts_info_v2.neighboring_geran[0]));
 			while(i-- > 0) {
-				res->data.umts_info.neighboring_geran[res->data.umts_info.neighboring_geran_n].geran_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.umts_info.neighboring_geran[res->data.umts_info.neighboring_geran_n].network_color_code = *(uint8_t *) get_next(1);
-				res->data.umts_info.neighboring_geran[res->data.umts_info.neighboring_geran_n].base_station_color_code = *(uint8_t *) get_next(1);
-				res->data.umts_info.neighboring_geran[res->data.umts_info.neighboring_geran_n].rssi = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.umts_info.neighboring_geran_n++;
+				res->data.umts_info_v2.neighboring_geran[res->data.umts_info_v2.neighboring_geran_n].geran_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.umts_info_v2.neighboring_geran[res->data.umts_info_v2.neighboring_geran_n].network_color_code = *(uint8_t *) get_next(1);
+				res->data.umts_info_v2.neighboring_geran[res->data.umts_info_v2.neighboring_geran_n].base_station_color_code = *(uint8_t *) get_next(1);
+				res->data.umts_info_v2.neighboring_geran[res->data.umts_info_v2.neighboring_geran_n].rssi = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.umts_info_v2.neighboring_geran_n++;
 			}
 			break;
 
@@ -1600,27 +2144,28 @@ int qmi_parse_nas_get_cell_location_info_response(struct qmi_msg *msg, struct qm
 				break;
 
 			found[0] |= (1 << 4);
-			res->set.intrafrequency_lte_info = 1;
-			res->data.intrafrequency_lte_info.ue_in_idle = *(uint8_t *) get_next(1);
-			i = 3;
-			res->data.intrafrequency_lte_info.plmn = __qmi_copy_string(get_next(i), i);
-			res->data.intrafrequency_lte_info.tracking_area_code = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.intrafrequency_lte_info.global_cell_id = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.intrafrequency_lte_info.eutra_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.intrafrequency_lte_info.serving_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.intrafrequency_lte_info.cell_reselection_priority = *(uint8_t *) get_next(1);
-			res->data.intrafrequency_lte_info.s_non_intra_search_threshold = *(uint8_t *) get_next(1);
-			res->data.intrafrequency_lte_info.serving_cell_low_threshold = *(uint8_t *) get_next(1);
-			res->data.intrafrequency_lte_info.s_intra_search_threshold = *(uint8_t *) get_next(1);
+			res->set.intrafrequency_lte_info_v2 = 1;
+			res->data.intrafrequency_lte_info_v2.ue_in_idle = *(uint8_t *) get_next(1);
+			for (i = 0; i < 3; i++) {
+				res->data.intrafrequency_lte_info_v2.plmn[i] = *(uint8_t *) get_next(1);
+			}
+			res->data.intrafrequency_lte_info_v2.tracking_area_code = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.intrafrequency_lte_info_v2.global_cell_id = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.intrafrequency_lte_info_v2.eutra_absolute_rf_channel_number = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.intrafrequency_lte_info_v2.serving_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.intrafrequency_lte_info_v2.cell_reselection_priority = *(uint8_t *) get_next(1);
+			res->data.intrafrequency_lte_info_v2.s_non_intra_search_threshold = *(uint8_t *) get_next(1);
+			res->data.intrafrequency_lte_info_v2.serving_cell_low_threshold = *(uint8_t *) get_next(1);
+			res->data.intrafrequency_lte_info_v2.s_intra_search_threshold = *(uint8_t *) get_next(1);
 			i = *(uint8_t *) get_next(1);
-			res->data.intrafrequency_lte_info.cell = __qmi_alloc_static(i * sizeof(res->data.intrafrequency_lte_info.cell[0]));
+			res->data.intrafrequency_lte_info_v2.cell = __qmi_alloc_static(i * sizeof(res->data.intrafrequency_lte_info_v2.cell[0]));
 			while(i-- > 0) {
-				res->data.intrafrequency_lte_info.cell[res->data.intrafrequency_lte_info.cell_n].physical_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.intrafrequency_lte_info.cell[res->data.intrafrequency_lte_info.cell_n].rsrq = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.intrafrequency_lte_info.cell[res->data.intrafrequency_lte_info.cell_n].rsrp = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.intrafrequency_lte_info.cell[res->data.intrafrequency_lte_info.cell_n].rssi = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.intrafrequency_lte_info.cell[res->data.intrafrequency_lte_info.cell_n].cell_selection_rx_level = le16_to_cpu(*(uint16_t *) get_next(2));
-				res->data.intrafrequency_lte_info.cell_n++;
+				res->data.intrafrequency_lte_info_v2.cell[res->data.intrafrequency_lte_info_v2.cell_n].physical_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.intrafrequency_lte_info_v2.cell[res->data.intrafrequency_lte_info_v2.cell_n].rsrq = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.intrafrequency_lte_info_v2.cell[res->data.intrafrequency_lte_info_v2.cell_n].rsrp = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.intrafrequency_lte_info_v2.cell[res->data.intrafrequency_lte_info_v2.cell_n].rssi = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.intrafrequency_lte_info_v2.cell[res->data.intrafrequency_lte_info_v2.cell_n].cell_selection_rx_level = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.intrafrequency_lte_info_v2.cell_n++;
 			}
 			break;
 
@@ -1739,6 +2284,267 @@ int qmi_parse_nas_get_cell_location_info_response(struct qmi_msg *msg, struct qm
 			}
 			break;
 
+		case 0x1E:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
+			qmi_set(res, lte_info_timing_advance, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x2E:
+			if (found[0] & (1 << 11))
+				break;
+
+			found[0] |= (1 << 11);
+			qmi_set(res, nr5g_arfcn, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x2F:
+			if (found[0] & (1 << 12))
+				break;
+
+			found[0] |= (1 << 12);
+			res->set.nr5g_cell_information = 1;
+			for (i = 0; i < 3; i++) {
+				res->data.nr5g_cell_information.plmn[i] = *(uint8_t *) get_next(1);
+			}
+			for (i = 0; i < 3; i++) {
+				res->data.nr5g_cell_information.tracking_area_code[i] = *(uint8_t *) get_next(1);
+			}
+			res->data.nr5g_cell_information.global_cell_id = le64_to_cpu(*(uint64_t *) get_next(8));
+			res->data.nr5g_cell_information.physical_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.nr5g_cell_information.rsrq = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.nr5g_cell_information.rsrp = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.nr5g_cell_information.snr = le16_to_cpu(*(uint16_t *) get_next(2));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_nas_get_plmn_name_request(struct qmi_msg *msg, struct qmi_nas_get_plmn_name_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x0044);
+
+	if (req->set.plmn) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint16_t, cpu_to_le16(req->data.plmn.mcc), 2);
+		put_tlv_var(uint16_t, cpu_to_le16(req->data.plmn.mnc), 2);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	if (req->set.suppress_sim_error) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.suppress_sim_error, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->set.mnc_pcs_digit_include_status) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.mnc_pcs_digit_include_status, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.always_send_plmn_name) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.always_send_plmn_name, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	if (req->set.use_static_table_only) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.use_static_table_only, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x13, ofs, buf);
+	}
+
+	if (req->set.csg_id) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.csg_id), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x14, ofs, buf);
+	}
+
+	if (req->set.radio_access_technology) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.radio_access_technology, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x15, ofs, buf);
+	}
+
+	if (req->set.send_all_information) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.send_all_information, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x16, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_nas_get_plmn_name_response(struct qmi_msg *msg, struct qmi_nas_get_plmn_name_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set._3gpp_eons_plmn_name = 1;
+			res->data._3gpp_eons_plmn_name.service_provider_name_encoding = *(uint8_t *) get_next(1);
+			i = *(uint8_t *) get_next(1);
+			res->data._3gpp_eons_plmn_name.service_provider_name = __qmi_alloc_static(i * sizeof(res->data._3gpp_eons_plmn_name.service_provider_name[0]));
+			while(i-- > 0) {
+				res->data._3gpp_eons_plmn_name.service_provider_name[res->data._3gpp_eons_plmn_name.service_provider_name_n] = *(uint8_t *) get_next(1);
+				res->data._3gpp_eons_plmn_name.service_provider_name_n++;
+			}
+			res->data._3gpp_eons_plmn_name.short_name_encoding = *(uint8_t *) get_next(1);
+			res->data._3gpp_eons_plmn_name.short_name_country_initials = *(uint8_t *) get_next(1);
+			res->data._3gpp_eons_plmn_name.short_name_spare_bits = *(uint8_t *) get_next(1);
+			i = *(uint8_t *) get_next(1);
+			res->data._3gpp_eons_plmn_name.short_name = __qmi_alloc_static(i * sizeof(res->data._3gpp_eons_plmn_name.short_name[0]));
+			while(i-- > 0) {
+				res->data._3gpp_eons_plmn_name.short_name[res->data._3gpp_eons_plmn_name.short_name_n] = *(uint8_t *) get_next(1);
+				res->data._3gpp_eons_plmn_name.short_name_n++;
+			}
+			res->data._3gpp_eons_plmn_name.long_name_encoding = *(uint8_t *) get_next(1);
+			res->data._3gpp_eons_plmn_name.long_name_country_initials = *(uint8_t *) get_next(1);
+			res->data._3gpp_eons_plmn_name.long_name_spare_bits = *(uint8_t *) get_next(1);
+			i = *(uint8_t *) get_next(1);
+			res->data._3gpp_eons_plmn_name.long_name = __qmi_alloc_static(i * sizeof(res->data._3gpp_eons_plmn_name.long_name[0]));
+			while(i-- > 0) {
+				res->data._3gpp_eons_plmn_name.long_name[res->data._3gpp_eons_plmn_name.long_name_n] = *(uint8_t *) get_next(1);
+				res->data._3gpp_eons_plmn_name.long_name_n++;
+			}
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			res->set.display_bit_information = 1;
+			res->data.display_bit_information.service_provider_name_set = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.display_bit_information.plmn_name_set = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			qmi_set(res, network_information, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			i = *(uint8_t *) get_next(1);
+			res->data.plmn_name_with_language_id = __qmi_alloc_static(i * sizeof(res->data.plmn_name_with_language_id[0]));
+			while(i-- > 0) {
+				unsigned int ii;
+				ii = *(uint8_t *) get_next(1);
+				res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].long_name = __qmi_alloc_static(ii * sizeof(res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].long_name[0]));
+				while(ii-- > 0) {
+					res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].long_name[res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].long_name_n] = le16_to_cpu(*(uint16_t *) get_next(2));
+					res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].long_name_n++;
+				}
+				ii = *(uint8_t *) get_next(1);
+				res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].short_name = __qmi_alloc_static(ii * sizeof(res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].short_name[0]));
+				while(ii-- > 0) {
+					res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].short_name[res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].short_name_n] = le16_to_cpu(*(uint16_t *) get_next(2));
+					res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].short_name_n++;
+				}
+				res->data.plmn_name_with_language_id[res->data.plmn_name_with_language_id_n].language_id = le32_to_cpu(*(uint32_t *) get_next(4));
+				res->data.plmn_name_with_language_id_n++;
+			}
+
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			i = *(uint8_t *) get_next(1);
+			res->data.additional_information = __qmi_alloc_static(i * sizeof(res->data.additional_information[0]));
+			while(i-- > 0) {
+				res->data.additional_information[res->data.additional_information_n] = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.additional_information_n++;
+			}
+
+			break;
+
+		case 0x15:
+			if (found[0] & (1 << 6))
+				break;
+
+			found[0] |= (1 << 6);
+			qmi_set(res, network_name_source, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
 		default:
 			break;
 		}
@@ -1766,7 +2572,7 @@ int qmi_parse_nas_get_system_info_response(struct qmi_msg *msg, struct qmi_nas_g
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
-	uint32_t found[1] = {};
+	uint32_t found[2] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -1897,31 +2703,31 @@ int qmi_parse_nas_get_system_info_response(struct qmi_msg *msg, struct qmi_nas_g
 				break;
 
 			found[0] |= (1 << 8);
-			res->set.gsm_system_info = 1;
-			res->data.gsm_system_info.domain_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.domain = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.service_capability_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.service_capability = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.roaming_status_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.roaming_status = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.forbidden_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.forbidden = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.lac_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.lac = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.gsm_system_info.cid_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.cid = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.gsm_system_info.registration_reject_info_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.registration_reject_domain = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.registration_reject_cause = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.network_id_valid = *(uint8_t *) get_next(1);
+			res->set.gsm_system_info_v2 = 1;
+			res->data.gsm_system_info_v2.domain_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.domain = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.service_capability_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.service_capability = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.roaming_status_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.roaming_status = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.forbidden_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.forbidden = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.lac_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.lac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.gsm_system_info_v2.cid_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.cid = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gsm_system_info_v2.registration_reject_info_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.registration_reject_domain = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.registration_reject_cause = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.network_id_valid = *(uint8_t *) get_next(1);
 			i = 3;
-			res->data.gsm_system_info.mcc = __qmi_copy_string(get_next(i), i);
+			res->data.gsm_system_info_v2.mcc = __qmi_copy_string(get_next(i), i);
 			i = 3;
-			res->data.gsm_system_info.mnc = __qmi_copy_string(get_next(i), i);
-			res->data.gsm_system_info.egprs_support_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.egprs_support = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.dtm_support_valid = *(uint8_t *) get_next(1);
-			res->data.gsm_system_info.dtm_support = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.mnc = __qmi_copy_string(get_next(i), i);
+			res->data.gsm_system_info_v2.egprs_support_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.egprs_support = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.dtm_support_valid = *(uint8_t *) get_next(1);
+			res->data.gsm_system_info_v2.dtm_support = *(uint8_t *) get_next(1);
 			break;
 
 		case 0x18:
@@ -1929,33 +2735,33 @@ int qmi_parse_nas_get_system_info_response(struct qmi_msg *msg, struct qmi_nas_g
 				break;
 
 			found[0] |= (1 << 9);
-			res->set.wcdma_system_info = 1;
-			res->data.wcdma_system_info.domain_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.domain = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.service_capability_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.service_capability = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.roaming_status_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.roaming_status = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.forbidden_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.forbidden = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.lac_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.lac = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.wcdma_system_info.cid_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.cid = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.wcdma_system_info.registration_reject_info_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.registration_reject_domain = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.registration_reject_cause = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.network_id_valid = *(uint8_t *) get_next(1);
+			res->set.wcdma_system_info_v2 = 1;
+			res->data.wcdma_system_info_v2.domain_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.domain = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.service_capability_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.service_capability = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.roaming_status_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.roaming_status = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.forbidden_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.forbidden = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.lac_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.lac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.wcdma_system_info_v2.cid_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.cid = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.wcdma_system_info_v2.registration_reject_info_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.registration_reject_domain = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.registration_reject_cause = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.network_id_valid = *(uint8_t *) get_next(1);
 			i = 3;
-			res->data.wcdma_system_info.mcc = __qmi_copy_string(get_next(i), i);
+			res->data.wcdma_system_info_v2.mcc = __qmi_copy_string(get_next(i), i);
 			i = 3;
-			res->data.wcdma_system_info.mnc = __qmi_copy_string(get_next(i), i);
-			res->data.wcdma_system_info.hs_call_status_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.hs_call_status = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.hs_service_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.hs_service = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.primary_scrambling_code_valid = *(uint8_t *) get_next(1);
-			res->data.wcdma_system_info.primary_scrambling_code = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.wcdma_system_info_v2.mnc = __qmi_copy_string(get_next(i), i);
+			res->data.wcdma_system_info_v2.hs_call_status_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.hs_call_status = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.hs_service_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.hs_service = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.primary_scrambling_code_valid = *(uint8_t *) get_next(1);
+			res->data.wcdma_system_info_v2.primary_scrambling_code = le16_to_cpu(*(uint16_t *) get_next(2));
 			break;
 
 		case 0x19:
@@ -1963,29 +2769,29 @@ int qmi_parse_nas_get_system_info_response(struct qmi_msg *msg, struct qmi_nas_g
 				break;
 
 			found[0] |= (1 << 10);
-			res->set.lte_system_info = 1;
-			res->data.lte_system_info.domain_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.domain = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.service_capability_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.service_capability = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.roaming_status_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.roaming_status = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.forbidden_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.forbidden = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.lac_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.lac = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.lte_system_info.cid_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.cid = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.lte_system_info.registration_reject_info_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.registration_reject_domain = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.registration_reject_cause = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.network_id_valid = *(uint8_t *) get_next(1);
+			res->set.lte_system_info_v2 = 1;
+			res->data.lte_system_info_v2.domain_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.domain = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.service_capability_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.service_capability = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.roaming_status_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.roaming_status = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.forbidden_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.forbidden = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.lac_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.lac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.lte_system_info_v2.cid_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.cid = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.lte_system_info_v2.registration_reject_info_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.registration_reject_domain = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.registration_reject_cause = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.network_id_valid = *(uint8_t *) get_next(1);
 			i = 3;
-			res->data.lte_system_info.mcc = __qmi_copy_string(get_next(i), i);
+			res->data.lte_system_info_v2.mcc = __qmi_copy_string(get_next(i), i);
 			i = 3;
-			res->data.lte_system_info.mnc = __qmi_copy_string(get_next(i), i);
-			res->data.lte_system_info.tac_valid = *(uint8_t *) get_next(1);
-			res->data.lte_system_info.tac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.lte_system_info_v2.mnc = __qmi_copy_string(get_next(i), i);
+			res->data.lte_system_info_v2.tac_valid = *(uint8_t *) get_next(1);
+			res->data.lte_system_info_v2.tac = le16_to_cpu(*(uint16_t *) get_next(2));
 			break;
 
 		case 0x1A:
@@ -2096,41 +2902,41 @@ int qmi_parse_nas_get_system_info_response(struct qmi_msg *msg, struct qmi_nas_g
 				break;
 
 			found[0] |= (1 << 22);
-			res->set.td_scdma_system_info = 1;
-			res->data.td_scdma_system_info.domain_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.domain = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.service_capability_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.service_capability = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.roaming_status_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.roaming_status = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.forbidden_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.forbidden = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.lac_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.lac = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.td_scdma_system_info.cid_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.cid = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.td_scdma_system_info.registration_reject_info_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.registration_reject_domain = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.registration_reject_cause = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.network_id_valid = *(uint8_t *) get_next(1);
+			res->set.td_scdma_system_info_v2 = 1;
+			res->data.td_scdma_system_info_v2.domain_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.domain = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.service_capability_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.service_capability = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.roaming_status_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.roaming_status = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.forbidden_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.forbidden = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.lac_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.lac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.td_scdma_system_info_v2.cid_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.cid = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.td_scdma_system_info_v2.registration_reject_info_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.registration_reject_domain = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.registration_reject_cause = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.network_id_valid = *(uint8_t *) get_next(1);
 			i = 3;
-			res->data.td_scdma_system_info.mcc = __qmi_copy_string(get_next(i), i);
+			res->data.td_scdma_system_info_v2.mcc = __qmi_copy_string(get_next(i), i);
 			i = 3;
-			res->data.td_scdma_system_info.mnc = __qmi_copy_string(get_next(i), i);
-			res->data.td_scdma_system_info.hs_call_status_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.hs_call_status = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.hs_service_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.hs_service = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.cell_parameter_id_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.cell_parameter_id = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.td_scdma_system_info.cell_broadcast_support_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.cell_broadcast_support = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.td_scdma_system_info.cs_call_barring_status_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.cs_call_barring_status = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.td_scdma_system_info.ps_call_barring_status_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.ps_call_barring_status = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.td_scdma_system_info.cipher_domain_valid = *(uint8_t *) get_next(1);
-			res->data.td_scdma_system_info.cipher_domain = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.mnc = __qmi_copy_string(get_next(i), i);
+			res->data.td_scdma_system_info_v2.hs_call_status_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.hs_call_status = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.hs_service_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.hs_service = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.cell_parameter_id_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.cell_parameter_id = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.td_scdma_system_info_v2.cell_broadcast_support_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.cell_broadcast_support = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.td_scdma_system_info_v2.cs_call_barring_status_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.cs_call_barring_status = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.td_scdma_system_info_v2.ps_call_barring_status_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.ps_call_barring_status = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.td_scdma_system_info_v2.cipher_domain_valid = *(uint8_t *) get_next(1);
+			res->data.td_scdma_system_info_v2.cipher_domain = *(uint8_t *) get_next(1);
 			break;
 
 		case 0x26:
@@ -2147,6 +2953,155 @@ int qmi_parse_nas_get_system_info_response(struct qmi_msg *msg, struct qmi_nas_g
 
 			found[0] |= (1 << 24);
 			qmi_set(res, sim_reject_info, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x29:
+			if (found[0] & (1 << 25))
+				break;
+
+			found[0] |= (1 << 25);
+			qmi_set(res, ims_voice_support, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x2A:
+			if (found[0] & (1 << 26))
+				break;
+
+			found[0] |= (1 << 26);
+			qmi_set(res, lte_voice_domain, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x2B:
+			if (found[0] & (1 << 27))
+				break;
+
+			found[0] |= (1 << 27);
+			qmi_set(res, cdma_registration_zone_id, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		case 0x2C:
+			if (found[0] & (1 << 28))
+				break;
+
+			found[0] |= (1 << 28);
+			qmi_set(res, gsm_routing_area_code, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x2D:
+			if (found[0] & (1 << 29))
+				break;
+
+			found[0] |= (1 << 29);
+			qmi_set(res, wcdma_routing_area_code, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x2E:
+			if (found[0] & (1 << 30))
+				break;
+
+			found[0] |= (1 << 30);
+			qmi_set(res, cdma_resolved_mcc, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		case 0x2F:
+			if (found[0] & (1 << 31))
+				break;
+
+			found[0] |= (1 << 31);
+			qmi_set(res, network_selection_registration_restriction, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x31:
+			if (found[1] & (1 << 0))
+				break;
+
+			found[1] |= (1 << 0);
+			qmi_set(res, lte_registration_domain, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x34:
+			if (found[1] & (1 << 1))
+				break;
+
+			found[1] |= (1 << 1);
+			qmi_set(res, lte_embms_coverage_info_trace_id, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		case 0x44:
+			if (found[1] & (1 << 2))
+				break;
+
+			found[1] |= (1 << 2);
+			qmi_set(res, lte_cell_access_status, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x4A:
+			if (found[1] & (1 << 3))
+				break;
+
+			found[1] |= (1 << 3);
+			res->set.nr5g_service_status_info = 1;
+			res->data.nr5g_service_status_info.service_status = *(uint8_t *) get_next(1);
+			res->data.nr5g_service_status_info.true_service_status = *(uint8_t *) get_next(1);
+			res->data.nr5g_service_status_info.preferred_data_path = *(uint8_t *) get_next(1);
+			break;
+
+		case 0x4B:
+			if (found[1] & (1 << 4))
+				break;
+
+			found[1] |= (1 << 4);
+			res->set.nr5g_system_info = 1;
+			res->data.nr5g_system_info.domain_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.domain = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.service_capability_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.service_capability = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.roaming_status_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.roaming_status = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.forbidden_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.forbidden = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.lac_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.lac = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.nr5g_system_info.cid_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.cid = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.nr5g_system_info.registration_reject_info_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.registration_reject_domain = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.registration_reject_cause = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.network_id_valid = *(uint8_t *) get_next(1);
+			i = 3;
+			res->data.nr5g_system_info.mcc = __qmi_copy_string(get_next(i), i);
+			i = 3;
+			res->data.nr5g_system_info.mnc = __qmi_copy_string(get_next(i), i);
+			res->data.nr5g_system_info.tac_valid = *(uint8_t *) get_next(1);
+			res->data.nr5g_system_info.tac = le16_to_cpu(*(uint16_t *) get_next(2));
+			break;
+
+		case 0x4E:
+			if (found[1] & (1 << 5))
+				break;
+
+			found[1] |= (1 << 5);
+			qmi_set(res, eutra_with_nr5g_availability, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x4F:
+			if (found[1] & (1 << 6))
+				break;
+
+			found[1] |= (1 << 6);
+			qmi_set(res, dcnr_restriction_info, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x50:
+			if (found[1] & (1 << 7))
+				break;
+
+			found[1] |= (1 << 7);
+			res->set.nr5g_tracking_area_code = 1;
+			for (i = 0; i < 3; i++) {
+				res->data.nr5g_tracking_area_code[i] = *(uint8_t *) get_next(1);
+			}
+
 			break;
 
 		default:
@@ -2244,6 +3199,36 @@ int qmi_parse_nas_get_signal_info_response(struct qmi_msg *msg, struct qmi_nas_g
 
 			found[0] |= (1 << 6);
 			qmi_set(res, tdma_signal_strength, *(int8_t *) get_next(1));
+			break;
+
+		case 0x16:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
+			res->set.tdma_signal_strength_extended = 1;
+			res->data.tdma_signal_strength_extended.rssi = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.tdma_signal_strength_extended.rscp = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.tdma_signal_strength_extended.ecio = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.tdma_signal_strength_extended.sinr = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x17:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			res->set._5g_signal_strength = 1;
+			res->data._5g_signal_strength.rsrp = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data._5g_signal_strength.snr = le16_to_cpu(*(uint16_t *) get_next(2));
+			break;
+
+		case 0x18:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			qmi_set(res, _5g_signal_strength_extended, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
 		default:
@@ -2480,6 +3465,34 @@ int qmi_parse_nas_get_tx_rx_info_response(struct qmi_msg *msg, struct qmi_nas_ge
 			res->data.tx_info.tx_power = le32_to_cpu(*(uint32_t *) get_next(4));
 			break;
 
+		case 0x15:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			res->set.rx_chain_2_info = 1;
+			res->data.rx_chain_2_info.is_radio_tuned = *(uint8_t *) get_next(1);
+			res->data.rx_chain_2_info.rx_power = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_2_info.ecio = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_2_info.rscp = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_2_info.rsrp = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_2_info.phase = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x16:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			res->set.rx_chain_3_info = 1;
+			res->data.rx_chain_3_info.is_radio_tuned = *(uint8_t *) get_next(1);
+			res->data.rx_chain_3_info.rx_power = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_3_info.ecio = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_3_info.rscp = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_3_info.rsrp = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.rx_chain_3_info.phase = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
 		default:
 			break;
 		}
@@ -2538,6 +3551,229 @@ int qmi_parse_nas_get_cdma_position_info_response(struct qmi_msg *msg, struct qm
 				res->data.cdma_position_info.basestations[res->data.cdma_position_info.basestations_n].gps_time_in_milliseconds = le64_to_cpu(*(uint64_t *) get_next(8));
 				res->data.cdma_position_info.basestations_n++;
 			}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_nas_force_network_search_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x0067);
+
+	return 0;
+}
+
+int qmi_parse_nas_force_network_search_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_nas_get_drx_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x0089);
+
+	return 0;
+}
+
+int qmi_parse_nas_get_drx_response(struct qmi_msg *msg, struct qmi_nas_get_drx_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, info, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_nas_get_lte_cphy_ca_info_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x00AC);
+
+	return 0;
+}
+
+int qmi_parse_nas_get_lte_cphy_ca_info_response(struct qmi_msg *msg, struct qmi_nas_get_lte_cphy_ca_info_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x11:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, dl_bandwidth, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			res->set.phy_ca_agg_scell_info = 1;
+			res->data.phy_ca_agg_scell_info.physical_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.phy_ca_agg_scell_info.rx_channel = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.phy_ca_agg_scell_info.dl_bandwidth = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.phy_ca_agg_scell_info.lte_band = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.phy_ca_agg_scell_info.state = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			res->set.phy_ca_agg_pcell_info = 1;
+			res->data.phy_ca_agg_pcell_info.physical_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.phy_ca_agg_pcell_info.rx_channel = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.phy_ca_agg_pcell_info.dl_bandwidth = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.phy_ca_agg_pcell_info.lte_band = le16_to_cpu(*(uint16_t *) get_next(2));
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			qmi_set(res, scell_index, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x15:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			i = *(uint8_t *) get_next(1);
+			res->data.phy_ca_agg_secondary_cells = __qmi_alloc_static(i * sizeof(res->data.phy_ca_agg_secondary_cells[0]));
+			while(i-- > 0) {
+				res->data.phy_ca_agg_secondary_cells[res->data.phy_ca_agg_secondary_cells_n].physical_cell_id = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.phy_ca_agg_secondary_cells[res->data.phy_ca_agg_secondary_cells_n].rx_channel = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.phy_ca_agg_secondary_cells[res->data.phy_ca_agg_secondary_cells_n].dl_bandwidth = le32_to_cpu(*(uint32_t *) get_next(4));
+				res->data.phy_ca_agg_secondary_cells[res->data.phy_ca_agg_secondary_cells_n].lte_band = le16_to_cpu(*(uint16_t *) get_next(2));
+				res->data.phy_ca_agg_secondary_cells[res->data.phy_ca_agg_secondary_cells_n].state = le32_to_cpu(*(uint32_t *) get_next(4));
+				res->data.phy_ca_agg_secondary_cells[res->data.phy_ca_agg_secondary_cells_n].cell_index = *(uint8_t *) get_next(1);
+				res->data.phy_ca_agg_secondary_cells_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_nas_swi_get_status_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_NAS);
+	msg->svc.message = cpu_to_le16(0x5556);
+
+	return 0;
+}
+
+int qmi_parse_nas_swi_get_status_response(struct qmi_msg *msg, struct qmi_nas_swi_get_status_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set.common_info_v2 = 1;
+			res->data.common_info_v2.temperature = *(int8_t *) get_next(1);
+			res->data.common_info_v2.modem_mode = *(uint8_t *) get_next(1);
+			res->data.common_info_v2.system_mode = *(uint8_t *) get_next(1);
+			res->data.common_info_v2.ims_registration_state = *(uint8_t *) get_next(1);
+			res->data.common_info_v2.packet_service_state = *(uint8_t *) get_next(1);
+			break;
+
+		case 0x10:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			res->set.lte_info = 1;
+			res->data.lte_info.band = *(uint8_t *) get_next(1);
+			res->data.lte_info.bandwidth = *(uint8_t *) get_next(1);
+			res->data.lte_info.rx_channel = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.lte_info.tx_channel = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.lte_info.emm_state = *(uint8_t *) get_next(1);
+			res->data.lte_info.emm_sub_state = *(uint8_t *) get_next(1);
+			res->data.lte_info.emm_connection_state = *(uint8_t *) get_next(1);
 			break;
 
 		default:

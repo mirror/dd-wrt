@@ -35,7 +35,7 @@ sub gen_tlv_type($$$) {
 	if ($tlv_types{$ptype}) {
 		return $indent.$tlv_types{$ptype}." $cname;";
 	} elsif ($tlv_types{$type}) {
-		return $indent."$ptype $cname;";
+		return $indent.$tlv_types{$type}." $cname;";
 	} elsif ($type eq "string") {
 		return $indent."char *$cname;", 1;
 	} elsif ($type eq "array") {
@@ -45,12 +45,14 @@ sub gen_tlv_type($$$) {
 		}
 		my ($type, $no_set_field) = gen_tlv_type("*$cname", $elem->{"array-element"}, $indent);
 		return undef if not defined $type;
+		return $indent."unsigned int ".substr($cname,1)."\_i;$type", 1 if (!rindex($cname,"*",0));
 		return $indent."unsigned int $cname\_n;$type", 1;
 	} elsif ($type eq "sequence" or $type eq "struct") {
 		my $contents = $elem->{"contents"};
 		my $data = "struct {";
 
 		foreach my $field (@$contents) {
+			$field = gen_common_ref($field);
 			my $_cname = gen_cname($field->{name});
 			my ($_data, $no_set_field) = gen_tlv_type($_cname, $field, "$indent\t");
 			$data .= $_data;
@@ -68,6 +70,7 @@ sub gen_tlv_struct($$) {
 	my $_data = "";
 
 	foreach my $field (@$data) {
+		$field = gen_common_ref($field);
 		my $cname = gen_cname($field->{name});
 		my ($data, $no_set_field) = gen_tlv_type($cname, $field, "\n\t\t");
 

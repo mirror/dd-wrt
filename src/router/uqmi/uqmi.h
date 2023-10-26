@@ -87,6 +87,7 @@ struct qmi_dev {
 	uint32_t service_release_cid;
 
 	uint8_t ctl_tid;
+	void *buf;
 
 	bool is_mbim;
 };
@@ -108,7 +109,7 @@ extern bool cancel_all_requests;
 int qmi_device_open(struct qmi_dev *qmi, const char *path);
 void qmi_device_close(struct qmi_dev *qmi);
 
-int qmi_request_start(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, request_cb cb);
+int qmi_request_start(struct qmi_dev *qmi, struct qmi_request *req, request_cb cb);
 void qmi_request_cancel(struct qmi_dev *qmi, struct qmi_request *req);
 int qmi_request_wait(struct qmi_dev *qmi, struct qmi_request *req);
 

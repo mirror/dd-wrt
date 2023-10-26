@@ -32,10 +32,10 @@ struct qmi_dms_get_capabilities_response {
 		struct {
 			uint32_t max_tx_channel_rate;
 			uint32_t max_rx_channel_rate;
-			QmiDmsDataServiceCapability data_service_capability;
-			QmiDmsSimCapability sim_capability;
+			uint8_t data_service_capability;
+			uint8_t sim_capability;
 			unsigned int radio_interface_list_n;
-			QmiDmsRadioInterface *radio_interface_list;
+			uint8_t *radio_interface_list;
 		} info;
 	} data;
 };
@@ -79,6 +79,7 @@ struct qmi_dms_get_ids_response {
 		char *esn;
 		char *imei;
 		char *meid;
+		char *imei_software_version;
 	} data;
 };
 
@@ -100,7 +101,7 @@ struct qmi_dms_uim_set_pin_protection_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimPinId pin_id;
+			uint8_t pin_id;
 			bool protection_enabled;
 			char *pin;
 		} info;
@@ -125,7 +126,7 @@ struct qmi_dms_uim_verify_pin_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimPinId pin_id;
+			uint8_t pin_id;
 			char *pin;
 		} info;
 	} data;
@@ -149,7 +150,7 @@ struct qmi_dms_uim_unblock_pin_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimPinId pin_id;
+			uint8_t pin_id;
 			char *puk;
 			char *new_pin;
 		} info;
@@ -174,7 +175,7 @@ struct qmi_dms_uim_change_pin_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimPinId pin_id;
+			uint8_t pin_id;
 			char *old_pin;
 			char *new_pin;
 		} info;
@@ -200,12 +201,12 @@ struct qmi_dms_uim_get_pin_status_response {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimPinStatus current_status;
+			uint8_t current_status;
 			uint8_t verify_retries_left;
 			uint8_t unblock_retries_left;
 		} pin1_status;
 		struct {
-			QmiDmsUimPinStatus current_status;
+			uint8_t current_status;
 			uint8_t verify_retries_left;
 			uint8_t unblock_retries_left;
 		} pin2_status;
@@ -227,8 +228,8 @@ struct qmi_dms_get_operating_mode_response {
 		unsigned int hardware_restricted_mode : 1;
 	} set;
 	struct {
-		QmiDmsOperatingMode mode;
-		QmiDmsOfflineReason offline_reason;
+		uint8_t mode;
+		uint16_t offline_reason;
 		bool hardware_restricted_mode;
 	} data;
 };
@@ -238,7 +239,7 @@ struct qmi_dms_set_operating_mode_request {
 		unsigned int mode : 1;
 	} set;
 	struct {
-		QmiDmsOperatingMode mode;
+		uint8_t mode;
 	} data;
 };
 
@@ -251,7 +252,7 @@ struct qmi_dms_get_time_response {
 	struct {
 		struct {
 			uint64_t time_count;
-			QmiDmsTimeSource time_source;
+			uint16_t time_source;
 		} device_time;
 		uint64_t system_time;
 		uint64_t user_time;
@@ -274,7 +275,7 @@ struct qmi_dms_get_activation_state_response {
 		unsigned int info : 1;
 	} set;
 	struct {
-		QmiDmsActivationState info;
+		uint16_t info;
 	} data;
 };
 
@@ -397,7 +398,7 @@ struct qmi_dms_uim_get_ck_status_request {
 		unsigned int facility : 1;
 	} set;
 	struct {
-		QmiDmsUimFacility facility;
+		uint8_t facility;
 	} data;
 };
 
@@ -408,7 +409,7 @@ struct qmi_dms_uim_get_ck_status_response {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimFacilityState facility_state;
+			uint8_t facility_state;
 			uint8_t verify_retries_left;
 			uint8_t unblock_retries_left;
 		} ck_status;
@@ -422,8 +423,8 @@ struct qmi_dms_uim_set_ck_protection_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimFacility facility;
-			QmiDmsUimFacilityState facility_state;
+			uint8_t facility;
+			uint8_t facility_state;
 			char *facility_depersonalization_control_key;
 		} facility;
 	} data;
@@ -444,7 +445,7 @@ struct qmi_dms_uim_unblock_ck_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsUimFacility facility;
+			uint8_t facility;
 			char *facility_control_key;
 		} facility;
 	} data;
@@ -472,7 +473,7 @@ struct qmi_dms_uim_get_state_response {
 		unsigned int state : 1;
 	} set;
 	struct {
-		QmiDmsUimState state;
+		uint8_t state;
 	} data;
 };
 
@@ -482,8 +483,10 @@ struct qmi_dms_get_band_capabilities_response {
 		unsigned int lte_band_capability : 1;
 	} set;
 	struct {
-		QmiDmsBandCapability band_capability;
-		QmiDmsLteBandCapability lte_band_capability;
+		uint64_t band_capability;
+		uint64_t lte_band_capability;
+		unsigned int extended_lte_band_capability_n;
+		uint16_t *extended_lte_band_capability;
 	} data;
 };
 
@@ -501,7 +504,7 @@ struct qmi_dms_get_firmware_preference_response {
 	struct {
 		unsigned int list_n;
 		struct {
-			QmiDmsFirmwareImageType type;
+			uint8_t type;
 			uint8_t unique_id[16];
 			char *build_id;
 		} *list;
@@ -516,7 +519,7 @@ struct qmi_dms_set_firmware_preference_request {
 	struct {
 		unsigned int list_n;
 		struct {
-			QmiDmsFirmwareImageType type;
+			uint8_t type;
 			uint8_t unique_id[16];
 			char *build_id;
 		} *list;
@@ -530,7 +533,7 @@ struct qmi_dms_set_firmware_preference_response {
 	} set;
 	struct {
 		unsigned int image_download_list_n;
-		QmiDmsFirmwareImageType *image_download_list;
+		uint8_t *image_download_list;
 	} data;
 };
 
@@ -540,7 +543,7 @@ struct qmi_dms_list_stored_images_response {
 	struct {
 		unsigned int list_n;
 		struct {
-			QmiDmsFirmwareImageType type;
+			uint8_t type;
 			uint8_t maximum_images;
 			uint8_t index_of_running_image;
 			unsigned int sublist_n;
@@ -560,7 +563,7 @@ struct qmi_dms_delete_stored_image_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsFirmwareImageType type;
+			uint8_t type;
 			uint8_t unique_id[16];
 			char *build_id;
 		} image;
@@ -574,7 +577,7 @@ struct qmi_dms_set_time_request {
 	} set;
 	struct {
 		uint64_t time_value;
-		QmiDmsTimeReferenceType time_reference_type;
+		uint32_t time_reference_type;
 	} data;
 };
 
@@ -584,7 +587,7 @@ struct qmi_dms_get_stored_image_info_request {
 	} set;
 	struct {
 		struct {
-			QmiDmsFirmwareImageType type;
+			uint8_t type;
 			uint8_t unique_id[16];
 			char *build_id;
 		} image;
@@ -628,6 +631,24 @@ struct qmi_dms_set_alt_net_config_request {
 	} data;
 };
 
+struct qmi_dms_get_boot_image_download_mode_response {
+	struct {
+		unsigned int mode : 1;
+	} set;
+	struct {
+		uint8_t mode;
+	} data;
+};
+
+struct qmi_dms_set_boot_image_download_mode_request {
+	struct {
+		unsigned int mode : 1;
+	} set;
+	struct {
+		uint8_t mode;
+	} data;
+};
+
 struct qmi_dms_get_software_version_response {
 	struct {
 	} set;
@@ -645,6 +666,24 @@ struct qmi_dms_set_service_programming_code_request {
 	} data;
 };
 
+struct qmi_dms_get_mac_address_request {
+	struct {
+		unsigned int device : 1;
+	} set;
+	struct {
+		uint32_t device;
+	} data;
+};
+
+struct qmi_dms_get_mac_address_response {
+	struct {
+	} set;
+	struct {
+		unsigned int mac_address_n;
+		uint8_t *mac_address;
+	} data;
+};
+
 struct qmi_dms_get_supported_messages_response {
 	struct {
 	} set;
@@ -654,23 +693,83 @@ struct qmi_dms_get_supported_messages_response {
 	} data;
 };
 
-struct qmi_dms_get_usb_composition_response {
+struct qmi_dms_hp_change_device_mode_request {
 	struct {
-		unsigned int composition : 1;
+		unsigned int mode : 1;
 	} set;
 	struct {
-		uint8_t composition;
+		uint8_t mode;
+	} data;
+};
+
+struct qmi_dms_swi_get_current_firmware_response {
+	struct {
+	} set;
+	struct {
+		char *model;
+		char *boot_version;
+		char *amss_version;
+		char *sku_id;
+		char *package_id;
+		char *carrier_id;
+		char *pri_version;
+		char *carrier;
+		char *config_version;
+	} data;
+};
+
+struct qmi_dms_swi_get_usb_composition_response {
+	struct {
+		unsigned int current : 1;
+	} set;
+	struct {
+		uint8_t current;
 		unsigned int supported_n;
 		uint8_t *supported;
 	} data;
 };
 
-struct qmi_dms_set_usb_composition_request {
+struct qmi_dms_swi_set_usb_composition_request {
 	struct {
-		unsigned int composition : 1;
+		unsigned int current : 1;
 	} set;
 	struct {
-		uint8_t composition;
+		uint8_t current;
+	} data;
+};
+
+struct qmi_dms_foxconn_get_firmware_version_request {
+	struct {
+		unsigned int version_type : 1;
+	} set;
+	struct {
+		uint8_t version_type;
+	} data;
+};
+
+struct qmi_dms_foxconn_get_firmware_version_response {
+	struct {
+	} set;
+	struct {
+		char *version;
+	} data;
+};
+
+struct qmi_dms_foxconn_change_device_mode_request {
+	struct {
+		unsigned int mode : 1;
+	} set;
+	struct {
+		uint8_t mode;
+	} data;
+};
+
+struct qmi_dms_foxconn_set_fcc_authentication_request {
+	struct {
+		unsigned int value : 1;
+	} set;
+	struct {
+		uint8_t value;
 	} data;
 };
 
@@ -767,6 +866,9 @@ int qmi_parse_dms_validate_service_programming_code_response(struct qmi_msg *msg
 int qmi_set_dms_uim_get_iccid_request(struct qmi_msg *msg);
 int qmi_parse_dms_uim_get_iccid_response(struct qmi_msg *msg, struct qmi_dms_uim_get_iccid_response *res);
 
+int qmi_set_dms_set_firmware_id_request(struct qmi_msg *msg);
+int qmi_parse_dms_set_firmware_id_response(struct qmi_msg *msg);
+
 int qmi_set_dms_uim_get_ck_status_request(struct qmi_msg *msg, struct qmi_dms_uim_get_ck_status_request *req);
 int qmi_parse_dms_uim_get_ck_status_response(struct qmi_msg *msg, struct qmi_dms_uim_get_ck_status_response *res);
 
@@ -812,21 +914,45 @@ int qmi_parse_dms_get_alt_net_config_response(struct qmi_msg *msg, struct qmi_dm
 int qmi_set_dms_set_alt_net_config_request(struct qmi_msg *msg, struct qmi_dms_set_alt_net_config_request *req);
 int qmi_parse_dms_set_alt_net_config_response(struct qmi_msg *msg);
 
+int qmi_set_dms_get_boot_image_download_mode_request(struct qmi_msg *msg);
+int qmi_parse_dms_get_boot_image_download_mode_response(struct qmi_msg *msg, struct qmi_dms_get_boot_image_download_mode_response *res);
+
+int qmi_set_dms_set_boot_image_download_mode_request(struct qmi_msg *msg, struct qmi_dms_set_boot_image_download_mode_request *req);
+int qmi_parse_dms_set_boot_image_download_mode_response(struct qmi_msg *msg);
+
 int qmi_set_dms_get_software_version_request(struct qmi_msg *msg);
 int qmi_parse_dms_get_software_version_response(struct qmi_msg *msg, struct qmi_dms_get_software_version_response *res);
 
 int qmi_set_dms_set_service_programming_code_request(struct qmi_msg *msg, struct qmi_dms_set_service_programming_code_request *req);
 int qmi_parse_dms_set_service_programming_code_response(struct qmi_msg *msg);
 
+int qmi_set_dms_get_mac_address_request(struct qmi_msg *msg, struct qmi_dms_get_mac_address_request *req);
+int qmi_parse_dms_get_mac_address_response(struct qmi_msg *msg, struct qmi_dms_get_mac_address_response *res);
+
 int qmi_set_dms_get_supported_messages_request(struct qmi_msg *msg);
 int qmi_parse_dms_get_supported_messages_response(struct qmi_msg *msg, struct qmi_dms_get_supported_messages_response *res);
 
-int qmi_set_dms_get_usb_composition_request(struct qmi_msg *msg);
-int qmi_parse_dms_get_usb_composition_response(struct qmi_msg *msg, struct qmi_dms_get_usb_composition_response *res);
+int qmi_set_dms_hp_change_device_mode_request(struct qmi_msg *msg, struct qmi_dms_hp_change_device_mode_request *req);
+int qmi_parse_dms_hp_change_device_mode_response(struct qmi_msg *msg);
 
-int qmi_set_dms_set_usb_composition_request(struct qmi_msg *msg, struct qmi_dms_set_usb_composition_request *req);
-int qmi_parse_dms_set_usb_composition_response(struct qmi_msg *msg);
+int qmi_set_dms_swi_get_current_firmware_request(struct qmi_msg *msg);
+int qmi_parse_dms_swi_get_current_firmware_response(struct qmi_msg *msg, struct qmi_dms_swi_get_current_firmware_response *res);
+
+int qmi_set_dms_swi_get_usb_composition_request(struct qmi_msg *msg);
+int qmi_parse_dms_swi_get_usb_composition_response(struct qmi_msg *msg, struct qmi_dms_swi_get_usb_composition_response *res);
+
+int qmi_set_dms_swi_set_usb_composition_request(struct qmi_msg *msg, struct qmi_dms_swi_set_usb_composition_request *req);
+int qmi_parse_dms_swi_set_usb_composition_response(struct qmi_msg *msg);
+
+int qmi_set_dms_foxconn_get_firmware_version_request(struct qmi_msg *msg, struct qmi_dms_foxconn_get_firmware_version_request *req);
+int qmi_parse_dms_foxconn_get_firmware_version_response(struct qmi_msg *msg, struct qmi_dms_foxconn_get_firmware_version_response *res);
 
 int qmi_set_dms_set_fcc_authentication_request(struct qmi_msg *msg);
 int qmi_parse_dms_set_fcc_authentication_response(struct qmi_msg *msg);
+
+int qmi_set_dms_foxconn_change_device_mode_request(struct qmi_msg *msg, struct qmi_dms_foxconn_change_device_mode_request *req);
+int qmi_parse_dms_foxconn_change_device_mode_response(struct qmi_msg *msg);
+
+int qmi_set_dms_foxconn_set_fcc_authentication_request(struct qmi_msg *msg, struct qmi_dms_foxconn_set_fcc_authentication_request *req);
+int qmi_parse_dms_foxconn_set_fcc_authentication_response(struct qmi_msg *msg);
 
