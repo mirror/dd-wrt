@@ -474,7 +474,6 @@ static u32 fc_conn_hash(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 static u32 fc_conn_hash_v6(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 			unsigned short sport, unsigned short dport)
 {
-	u32 idx;
 	u32 hash;
 
 	hash = saddr->ip6[0].addr[0] ^ daddr->ip6[0].addr[0];
