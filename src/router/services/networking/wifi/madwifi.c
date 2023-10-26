@@ -1030,7 +1030,6 @@ static void checkhostapd(char *ifname, int force)
 					char bridged[32];
 					sprintf(bridged, "%s_bridged", ifname);
 					if (nvram_matchi(bridged, 0)) {
-						nvram_set("sfe", "0");
 						eval("ifconfig", ifname, "mtu", getMTU(ifname));
 						eval("ifconfig", ifname, "txqueuelen", getTXQ(ifname));
 						eval("ifconfig", ifname, nvram_nget("%s_ipaddr", ifname), "netmask", nvram_nget("%s_netmask", ifname), "up");
@@ -1041,7 +1040,6 @@ static void checkhostapd(char *ifname, int force)
 					char bridged[32];
 					sprintf(bridged, "%s_bridged", var);
 					if (nvram_matchi(bridged, 0)) {
-						nvram_set("sfe", "0");
 						eval("ifconfig", var, "mtu", getMTU(var));
 						eval("ifconfig", var, "txqueuelen", getTXQ(var));
 						eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask", nvram_nget("%s_netmask", var), "up");
@@ -2853,7 +2851,6 @@ void start_vifs(void)
 					} else {
 						char ip[32];
 						char mask[32];
-						nvram_set("sfe", "0");
 						sprintf(ip, "%s_ipaddr", var);
 						sprintf(mask, "%s_netmask", var);
 						eval("ifconfig", var, "mtu", getMTU(var));

@@ -619,7 +619,6 @@ static void do_portsetup(char *lan, char *ifname)
 	if (nvram_default_matchi(var, 1, 1)) {
 		br_add_interface(getBridge(IFMAP(ifname), tmp), IFMAP(ifname));
 	} else {
-		nvram_set("sfe", "0");
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
 		log_eval("gratarp", ifname);
 	}
@@ -5089,8 +5088,6 @@ void start_hotplug_net(void)
 #ifdef HAVE_VLANTAGGING
 			apply_bridgeif(ifname, interface);
 #endif
-		} else {
-			nvram_set("sfe", "0");
 		}
 
 	}
