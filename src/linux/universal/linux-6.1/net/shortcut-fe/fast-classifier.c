@@ -464,14 +464,24 @@ static int sfe_connections_size;
 static DEFINE_HASHTABLE(fc_conn_ht, FC_CONN_HASH_ORDER);
 
 static u32 fc_conn_hash(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
-			unsigned short sport, unsigned short dport, bool is_v4)
+			unsigned short sport, unsigned short dport)
 {
-	u32 idx, cnt = ((is_v4 ? sizeof(saddr->ip) : sizeof(saddr->ip6))/sizeof(u32));
-	u32 hash = 0;
+	u32 hash = saddr->ip ^ daddr->ip;
 
-	for (idx = 0; idx < cnt; idx++) {
-		hash ^= ((u32 *)saddr)[idx] ^ ((u32 *)daddr)[idx];
-	}
+	return hash ^ (sport | (dport << 16));
+}
+
+static u32 fc_conn_hash_v6(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
+			unsigned short sport, unsigned short dport)
+{
+	u32 idx;
+	u32 hash;
+
+	hash = saddr->ip6[0].addr[0] ^ daddr->ip6[0].addr[0];
+	hash ^= saddr->ip6[0].addr[1] ^ daddr->ip6[0].addr[1];
+	hash ^= saddr->ip6[0].addr[2] ^ daddr->ip6[0].addr[2];
+	hash ^= saddr->ip6[0].addr[3] ^ daddr->ip6[0].addr[3];
+	
 
 	return hash ^ (sport | (dport << 16));
 }
@@ -639,7 +649,10 @@ fast_classifier_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 	struct hlist_node *node;
 #endif
 
-	key = fc_conn_hash(saddr, daddr, sport, dport, is_v4);
+	if (is_v4)
+	    key = fc_conn_hash(saddr, daddr, sport, dport);
+	else
+	    key = fc_conn_hash_v6(saddr, daddr, sport, dport);
 
 	sfe_hash_for_each_possible(fc_conn_ht, conn, node, hl, key) {
 		if (conn->is_v4 != is_v4) {
@@ -679,7 +692,10 @@ fast_classifier_sb_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 	struct hlist_node *node;
 #endif
 
-	key = fc_conn_hash(saddr, daddr, sport, dport, is_v4);
+	if (is_v4)
+	    key = fc_conn_hash(saddr, daddr, sport, dport);
+	else
+	    key = fc_conn_hash_v6(saddr, daddr, sport, dport);
 
 	sfe_hash_for_each_possible(fc_conn_ht, conn, node, hl, key) {
 		if (conn->is_v4 != is_v4) {
@@ -700,8 +716,11 @@ fast_classifier_sb_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 	/*
 	 * Reverse the tuple and try again
 	 */
-	key = fc_conn_hash(daddr, saddr, dport, sport, is_v4);
-
+	if (is_v4)
+		key = fc_conn_hash(daddr, saddr, dport, sport);
+	else
+		key = fc_conn_hash_v6(daddr, saddr, dport, sport);
+	
 	sfe_hash_for_each_possible(fc_conn_ht, conn, node, hl, key) {
 		if (conn->is_v4 != is_v4) {
 			continue;
@@ -735,15 +754,24 @@ fast_classifier_add_conn(struct sfe_connection *conn)
 	u32 key;
 
 	spin_lock_bh(&sfe_connections_lock);
-	if (fast_classifier_find_conn(&sic->src_ip, &sic->dest_ip, sic->src_port,
-					sic->dest_port, sic->protocol, conn->is_v4)) {
-		spin_unlock_bh(&sfe_connections_lock);
-		return NULL;
+	if (conn->is_v4) {
+		if (fast_classifier_find_conn(&sic->src_ip, &sic->dest_ip, sic->src_port,
+						sic->dest_port, sic->protocol, true)) {
+			spin_unlock_bh(&sfe_connections_lock);
+			return NULL;
+		}
+
+		    key = fc_conn_hash(&sic->src_ip, &sic->dest_ip,
+				   sic->src_port, sic->dest_port);
+	} else {
+		if (fast_classifier_find_conn(&sic->src_ip, &sic->dest_ip, sic->src_port,
+						sic->dest_port, sic->protocol, false)) {
+			spin_unlock_bh(&sfe_connections_lock);
+			return NULL;
+		}
+		key = fc_conn_hash_v6(&sic->src_ip, &sic->dest_ip,
+				   sic->src_port, sic->dest_port);
 	}
-
-	key = fc_conn_hash(&sic->src_ip, &sic->dest_ip,
-			   sic->src_port, sic->dest_port, conn->is_v4);
-
 	hash_add(fc_conn_ht, &conn->hl, key);
 	sfe_connections_size++;
 	spin_unlock_bh(&sfe_connections_lock);
@@ -798,12 +826,20 @@ fast_classifier_offload_genl_msg(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	spin_lock_bh(&sfe_connections_lock);
+	if (fc_msg->ethertype == AF_INET)
 	conn = fast_classifier_sb_find_conn((sfe_ip_addr_t *)&fc_msg->src_saddr,
 					 (sfe_ip_addr_t *)&fc_msg->dst_saddr,
 					 fc_msg->sport,
 					 fc_msg->dport,
 					 fc_msg->proto,
-					 (fc_msg->ethertype == AF_INET));
+					 true);
+	else
+	conn = fast_classifier_sb_find_conn((sfe_ip_addr_t *)&fc_msg->src_saddr,
+					 (sfe_ip_addr_t *)&fc_msg->dst_saddr,
+					 fc_msg->sport,
+					 fc_msg->dport,
+					 fc_msg->proto,
+					 false);
 	if (!conn) {
 		spin_unlock_bh(&sfe_connections_lock);
 		DEBUG_TRACE("REQUEST OFFLOAD NO MATCH\n");
@@ -1315,10 +1351,14 @@ static void fast_classifier_update_mark(struct sfe_connection_mark *mark, bool i
 	struct sfe_connection *conn;
 
 	spin_lock_bh(&sfe_connections_lock);
-
+	if (is_v4)
 	conn = fast_classifier_find_conn(&mark->src_ip, &mark->dest_ip,
 					 mark->src_port, mark->dest_port,
-					 mark->protocol, is_v4);
+					 mark->protocol, true);
+	else
+	conn = fast_classifier_find_conn(&mark->src_ip, &mark->dest_ip,
+					 mark->src_port, mark->dest_port,
+					 mark->protocol, false);
 	if (conn) {
 		conn->sic->mark = mark->mark;
 	}
@@ -1439,8 +1479,11 @@ static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_eve
 	}
 
 	spin_lock_bh(&sfe_connections_lock);
+	if (is_v4)
+		conn = fast_classifier_find_conn(&sid.src_ip, &sid.dest_ip, sid.src_port, sid.dest_port, sid.protocol, true);
+	else
+		conn = fast_classifier_find_conn(&sid.src_ip, &sid.dest_ip, sid.src_port, sid.dest_port, sid.protocol, false);
 
-	conn = fast_classifier_find_conn(&sid.src_ip, &sid.dest_ip, sid.src_port, sid.dest_port, sid.protocol, is_v4);
 	if (conn && conn->offloaded) {
 		if (is_v4) {
 			fc_msg.ethertype = AF_INET;
