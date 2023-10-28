@@ -1836,7 +1836,7 @@ static int vmw_cmd_tex_state(struct vmw_private *dev_priv,
 	} *cmd;
 
 	SVGA3dTextureState *last_state = (SVGA3dTextureState *)
-	  ((unsigned long) header + header->size + sizeof(header));
+	  ((unsigned long) header + header->size + sizeof(*header));
 	SVGA3dTextureState *cur_state = (SVGA3dTextureState *)
 		((unsigned long) header + sizeof(struct vmw_tex_state_cmd));
 	struct vmw_resource_val_node *ctx_node;
