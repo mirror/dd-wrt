@@ -177,6 +177,9 @@ obj-$(CONFIG_ROBOCFG) += robocfg
 obj-$(CONFIG_MULTICAST) += igmp-proxy
 obj-$(CONFIG_UDPXY) += udpxy
 obj-$(CONFIG_SKYTRON) += skytron
+ifeq ($(KERNELVERSION),6.1)
+obj-$(CONFIG_OPENVPN) += libnl
+endif
 obj-$(CONFIG_OPENVPN) += lzo openvpn speedtest-cli 
 obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_BATMANADV) += batman-adv
