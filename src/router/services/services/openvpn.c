@@ -788,6 +788,7 @@ void start_openvpn(void)
 	char wan_if_buffer[33];
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
+	eval("modprobe","ovpn-dco-v2");
 	insmod("tun");
 	dd_loginfo("openvpn", "OpenVPN daemon (Client) starting/restarting...\n");
 	mkdir("/tmp/openvpncl", 0700);
