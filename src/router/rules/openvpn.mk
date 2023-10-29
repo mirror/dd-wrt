@@ -157,6 +157,9 @@ ifeq ($(CONFIG_WOLFSSL),y)
 else
 	make -j 4 -C $(OVPN)/openssl
 endif
+ifeq ($(KERNELVERSION),6.1)
+	make -j 4 -C ovpn-dco
+endif
 
 openvpn-install:
 ifeq ($(CONFIG_WOLFSSL),y)
@@ -179,8 +182,13 @@ else
 endif
 	cp -f openvpn/config/*.sh $(INSTALLDIR)/openvpn/etc
 	install -D -m 0755 openvpn/config/userscripts/*.sh -t $(INSTALLDIR)/openvpn/usr/bin
+ifeq ($(KERNELVERSION),6.1)
+	make -j 4 -C ovpn-dco install
+endif
 
 openvpn-clean:
 	-make -C $(OVPN)/wolfssl clean
 	-make -C $(OVPN)/openssl clean
-
+ifeq ($(KERNELVERSION),6.1)
+	make -j 4 -C ovpn-dco clean
+endif
