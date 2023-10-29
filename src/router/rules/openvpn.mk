@@ -113,9 +113,9 @@ openvpn-conf: openssl wolfssl
 	-cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL)
 
 
-openvpn-configure: lzo openvpn-conf-prep openvpn-conf
+openvpn-configure: lzo openvpn-conf-prep openvpn-conf libnl
 
-openvpn: lzo $(SSL_DEP)
+openvpn: lzo $(SSL_DEP) libnl
 ifeq ($(CONFIG_AIRNET),y)
 	install -D openvpn/config-airnet/openvpncl.webvpn $(TOP)/httpd/ej_temp/openvpncl.webvpn
 	install -D openvpn/config-airnet/openvpn.webvpn $(TOP)/httpd/ej_temp/openvpn.webvpn
