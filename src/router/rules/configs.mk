@@ -64,6 +64,8 @@ endif
 else
 obj-$(CONFIG_MADWIFI) += madwifi
 endif
+else
+obj-$(CONFIG_MADWIFI) += relayd
 endif
 obj-$(CONFIG_ETC) += etc
 #obj-$(CONFIG_VLAN) += vlan
