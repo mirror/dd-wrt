@@ -15,6 +15,9 @@
 #include <uapi/linux/ovpn_dco.h>
 #include <linux/spinlock.h>
 #include <linux/workqueue.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+#include <linux/hashtable.h>
+#endif
 
 /* Our state per ovpn interface */
 struct ovpn_struct {

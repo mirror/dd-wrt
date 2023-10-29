@@ -196,4 +196,28 @@ static inline int nlmsg_parse_deprecated(const struct nlmsghdr *nlh, int hdrlen,
 #else
 #define sk_wait_event2 sk_wait_event
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+static inline void netif_tx_napi_add(struct net_device *dev,
+				     struct napi_struct *napi,
+				     int (*poll)(struct napi_struct *, int),
+				     int weight)
+{
+	netif_napi_add(dev, napi, poll, weight);
+}
+static inline void *skb_put_data(struct sk_buff *skb, const void *data,
+				 unsigned int len)
+{
+	void *tmp = skb_put(skb, len);
+
+	memcpy(tmp, data, len);
+
+	return tmp;
+}
+
+
+#endif /* < 4.5 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+#define __ro_after_init
+#endif
+
 #endif /* _NET_OVPN_DCO_OVPN_H_ */

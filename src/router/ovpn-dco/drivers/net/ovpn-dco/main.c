@@ -73,6 +73,7 @@ static int ovpn_net_stop(struct net_device *dev)
 /*******************************************
  * ovpn ethtool ops
  *******************************************/
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0)
 
 static int ovpn_get_link_ksettings(struct net_device *dev,
 				   struct ethtool_link_ksettings *cmd)
@@ -88,7 +89,23 @@ static int ovpn_get_link_ksettings(struct net_device *dev,
 
 	return 0;
 }
-
+#else
+static int ovpn_get_settings(struct net_device *netdev,
+			      struct ethtool_cmd *cmd)
+{
+//	ethtool_convert_legacy_u32_to_link_mode(cmd->link_modes.supported, 0);
+//	ethtool_convert_legacy_u32_to_link_mode(cmd->link_modes.advertising, 0);
+	cmd->supported = 0;
+	cmd->advertising = 0;
+	cmd->speed	= SPEED_1000;
+	cmd->duplex = DUPLEX_FULL;
+	cmd->port = PORT_TP;
+	cmd->phy_address = 0;
+	cmd->transceiver = XCVR_INTERNAL;
+	cmd->autoneg = AUTONEG_DISABLE;
+	return 0;
+}
+#endif
 static void ovpn_get_drvinfo(struct net_device *dev,
 			     struct ethtool_drvinfo *info)
 {
@@ -114,7 +131,11 @@ static const struct net_device_ops ovpn_netdev_ops = {
 };
 
 static const struct ethtool_ops ovpn_ethtool_ops = {
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0)
 	.get_link_ksettings	= ovpn_get_link_ksettings,
+#else
+	.get_settings	= ovpn_get_settings,
+#endif
 	.get_drvinfo		= ovpn_get_drvinfo,
 	.get_link		= ethtool_op_get_link,
 	.get_ts_info		= ethtool_op_get_ts_info,

@@ -229,9 +229,16 @@ static int ovpn_udp6_output(struct ovpn_struct *ovpn, struct ovpn_bind *bind,
 	dst_cache_set_ip6(cache, dst, &fl.saddr);
 
 transmit:
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0)
 	udp_tunnel6_xmit_skb(dst, sk, skb, skb->dev, &fl.saddr, &fl.daddr, 0,
 			     ip6_dst_hoplimit(dst), 0, fl.fl6_sport,
 			     fl.fl6_dport, udp_get_no_check6_tx(sk));
+#else
+	udp_tunnel6_xmit_skb(dst, sk, skb, skb->dev, &fl.saddr, &fl.daddr, 0,
+			     ip6_dst_hoplimit(dst), fl.fl6_sport,
+			     fl.fl6_dport, udp_get_no_check6_tx(sk));
+#endif
+
 	ret = 0;
 err:
 	local_bh_enable();
