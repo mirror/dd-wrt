@@ -131,11 +131,9 @@ static void ovpn_setup(struct net_device *dev)
 				 NETIF_F_GSO_SOFTWARE | NETIF_F_HIGHDMA;
 
 	dev->ethtool_ops = &ovpn_ethtool_ops;
-	dev->needs_free_netdev = true;
 
 	dev->netdev_ops = &ovpn_netdev_ops;
-
-	dev->priv_destructor = ovpn_struct_free;
+	netdev_set_priv_destructor(dev, ovpn_struct_free);
 
 	/* Point-to-Point TUN Device */
 	dev->hard_header_len = 0;
@@ -161,8 +159,13 @@ static const struct nla_policy ovpn_policy[IFLA_OVPN_MAX + 1] = {
 					    __OVPN_MODE_AFTER_LAST - 1),
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+static int ovpn_newlink(struct net *src_net, struct net_device *dev, struct nlattr *tb[],
+			struct nlattr *data[])
+#else
 static int ovpn_newlink(struct net *src_net, struct net_device *dev, struct nlattr *tb[],
 			struct nlattr *data[], struct netlink_ext_ack *extack)
+#endif
 {
 	struct ovpn_struct *ovpn = netdev_priv(dev);
 	int ret;
@@ -205,7 +208,9 @@ static struct rtnl_link_ops ovpn_link_ops __read_mostly = {
 	.kind			= DRV_NAME,
 	.priv_size		= sizeof(struct ovpn_struct),
 	.setup			= ovpn_setup,
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 20, 0)
 	.policy			= ovpn_policy,
+#endif
 	.maxtype		= IFLA_OVPN_MAX,
 	.newlink		= ovpn_newlink,
 	.dellink		= ovpn_dellink,

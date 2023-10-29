@@ -82,6 +82,16 @@ struct ovpn_pktid_recv {
 	spinlock_t lock;
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+#ifndef atomic64_fetch_add_unless
+static inline int atomic64_fetch_add_unless(atomic64_t *v, long long a, long long u)
+{
+	return atomic64_add_unless(v, a, u);
+}
+#endif
+#endif
+
+
 /* Get the next packet ID for xmit */
 static inline int ovpn_pktid_xmit_next(struct ovpn_pktid_xmit *pid, u32 *pktid)
 {

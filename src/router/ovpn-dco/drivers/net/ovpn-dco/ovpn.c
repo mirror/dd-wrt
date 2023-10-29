@@ -94,6 +94,7 @@ int ovpn_struct_init(struct net_device *dev)
 /* Called after decrypt to write IP packet to tun netdev.
  * This method is expected to manage/free skb.
  */
+
 static void tun_netdev_write(struct ovpn_peer *peer, struct sk_buff *skb)
 {
 	/* packet integrity was verified on the VPN layer - no need to perform
@@ -114,7 +115,11 @@ static void tun_netdev_write(struct ovpn_peer *peer, struct sk_buff *skb)
 
 	skb_reset_network_header(skb);
 	skb_reset_transport_header(skb);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+	skb_probe_transport_header(skb, 0);
+#else
 	skb_probe_transport_header(skb);
+#endif
 	skb_reset_inner_headers(skb);
 
 	/* update per-cpu RX stats with the stored size of encrypted packet */

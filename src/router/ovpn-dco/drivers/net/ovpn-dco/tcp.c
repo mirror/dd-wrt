@@ -234,7 +234,7 @@ static int ovpn_tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 
 		add_wait_queue(sk_sleep(sk), &wait);
 		sk_set_bit(SOCKWQ_ASYNC_WAITDATA, sk);
-		sk_wait_event(sk, &timeo, !ptr_ring_empty_bh(&sock->recv_ring), &wait);
+		sk_wait_event2(sk, &timeo, !ptr_ring_empty_bh(&sock->recv_ring), &wait);
 		sk_clear_bit(SOCKWQ_ASYNC_WAITDATA, sk);
 		remove_wait_queue(sk_sleep(sk), &wait);
 
@@ -472,7 +472,9 @@ int __init ovpn_tcp_init(void)
 	 */
 	ovpn_tcp_prot = tcp_prot;
 	ovpn_tcp_prot.recvmsg = ovpn_tcp_recvmsg;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(5, 14, 0)
 	ovpn_tcp_prot.sock_is_readable = ovpn_tcp_sock_is_readable;
+#endif
 
 	return 0;
 }
