@@ -16,7 +16,9 @@
 
 #include <linux/ptr_ring.h>
 #include <linux/skbuff.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/signal.h>
+#endif
 #include <net/tcp.h>
 #include <net/route.h>
 
