@@ -4,10 +4,13 @@
 #  Author:	Antonio Quartulli <antonio@openvpn.net>
 
 PWD:=$(shell pwd)
-KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
+KERNEL_SRC ?= $(LINUXDIR)
 ifeq ($(shell cd $(KERNEL_SRC) && pwd),)
 $(warning $(KERNEL_SRC) is missing, please set KERNEL_SRC)
 endif
+
+KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/net/sched
 
 export KERNEL_SRC
 RM ?= rm -f
@@ -18,16 +21,6 @@ DEPMOD := depmod -a
 REVISION= $(shell	if [ -d "$(PWD)/.git" ]; then \
 				echo $$(git --git-dir="$(PWD)/.git" describe --always --dirty --match "v*" |sed 's/^v//' 2> /dev/null || echo "[unknown]"); \
 			fi)
-
-EL8 := $(shell cat /etc/redhat-release 2>/dev/null | grep -c " 8." )
-ifeq (1, $(EL8))
-EL8FLAG := -DEL8
-endif
-
-EL9 := $(shell cat /etc/redhat-release 2>/dev/null | grep -c " 9." )
-ifeq (1, $(EL9))
-EL9FLAG := -DEL9
-endif
 
 ELFLAG := $(EL8FLAG) $(EL9FLAG)
 
@@ -52,8 +45,7 @@ BUILD_FLAGS := \
 	M=$(PWD) \
 	PWD=$(PWD) \
 	REVISION=$(REVISION) \
-	CONFIG_OVPN_DCO_V2=m \
-	INSTALL_MOD_DIR=updates/
+	CONFIG_OVPN_DCO_V2=m
 
 all: config
 	$(MAKE) -C $(KERNEL_SRC) $(BUILD_FLAGS)	modules
@@ -65,8 +57,7 @@ clean:
 	$(MAKE) -C tests clean
 
 install: config
-	$(MAKE) -C $(KERNEL_SRC) $(BUILD_FLAGS) modules_install
-	$(DEPMOD)
+	install -v -m 644 -D drivers/net/ovpn-dco/ovpn-dco-v2.ko $(IDIR)/openvpn/ovpn-dco-v2.ko
 
 config:
 	$(PWD)/gen-compat-autoconf.sh $(PWD)/compat-autoconf.h
