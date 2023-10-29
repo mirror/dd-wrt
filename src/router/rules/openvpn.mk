@@ -17,7 +17,12 @@ OPENSSL_SSL_ADDOPT=OPENSSL_LIBS="-L$(OPENSSL_SSL_LIB_PATH) -lssl -lcrypto -lpthr
 	OPENSSL_CRYPTO_CFLAGS="-I$(OPENSSL_SSLPATH)/include" \
 	OPENSSL_CRYPTO_LIBS="-L$(OPENSSL_SSL_LIB_PATH) -lcrypto -lpthread"
 
-
+DCO=--disable-dco
+ifeq ($(KERNELVERSION),6.1)
+DCO=--enable-dco
+OVPN_LIBNL_CFLAGS=-I$(TOP)/libnl/include/linux-private -I$(TOP)/libnl/include
+OVPN_LIBNL_LIBS=-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3
+endif
 
 CONFIGURE_ARGS_OVPN += \
 	--host=$(ARCH)-linux \
@@ -36,18 +41,18 @@ CONFIGURE_ARGS_OVPN += \
 	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
-	--disable-dco \
+	$(DCO) \
 	--with-crypto-library=openssl \
 	$(OPENSSL_SSL_ADDOPT) \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(OPENSSL_SSLPATH)/include  -DNEED_PRINTF -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(OPENSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -L$(TOP)/libucontext -lucontext" \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(OPENSSL_SSLPATH)/include  -DNEED_PRINTF $(OVPN_LIBNL_CFLAGS) -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(OPENSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -L$(TOP)/libucontext -lucontext $(OVPN_LIBNL_LIBS)" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
 	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	ac_cv_func_epoll_create=yes \
 	ac_cv_path_IFCONFIG=/sbin/ifconfig \
 	ac_cv_path_ROUTE=/sbin/route \
-	ac_cv_path_IPROUTE=/usr/sbin/ip 
+	ac_cv_path_IPROUTE=/usr/sbin/ip
 
 CONFIGURE_ARGS_WOLFSSL += \
 	--host=$(ARCH)-linux \
@@ -66,18 +71,18 @@ CONFIGURE_ARGS_WOLFSSL += \
 	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
-	--disable-dco \
+	$(DCO) \
 	--with-crypto-library=wolfssl \
 	$(WOLFSSL_SSL_ADDOPT) \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(WOLFSSL_SSLPATH)/include  -DNEED_PRINTF  -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(WOLFSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread" \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(WOLFSSL_SSLPATH)/include $(OVPN_LIBNL_CFLAGS)  -DNEED_PRINTF  -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(WOLFSSL_SSL_LIB_PATH) $(OVPN_LIBNL_LIBS) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
 	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	ac_cv_func_epoll_create=yes \
 	ac_cv_path_IFCONFIG=/sbin/ifconfig \
 	ac_cv_path_ROUTE=/sbin/route \
-	ac_cv_path_IPROUTE=/usr/sbin/ip 
+	ac_cv_path_IPROUTE=/usr/sbin/ip
 
 
 ifeq ($(ARCHITECTURE),broadcom)
