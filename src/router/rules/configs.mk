@@ -182,6 +182,9 @@ obj-$(CONFIG_SKYTRON) += skytron
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_OPENVPN) += libnl
 endif
+ifeq ($(KERNELVERSION),4.9)
+obj-$(CONFIG_OPENVPN) += libnl
+endif
 obj-$(CONFIG_OPENVPN) += lzo openvpn speedtest-cli 
 obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_BATMANADV) += batman-adv
