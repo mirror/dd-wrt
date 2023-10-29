@@ -124,8 +124,8 @@ openvpn-conf-prep:
 openvpn-conf: openssl wolfssl
 	mkdir -p openvpn/openssl
 	mkdir -p openvpn/wolfssl
-	$(MAKE) -j 4 -C wolfssl/minimal
-	$(MAKE) -j 4 -C wolfssl/standard
+	-$(MAKE) -j 4 -C wolfssl/minimal
+	-$(MAKE) -j 4 -C wolfssl/standard
 	-cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN)
 	-cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL)
 
