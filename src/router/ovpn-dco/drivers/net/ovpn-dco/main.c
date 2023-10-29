@@ -159,7 +159,7 @@ static const struct nla_policy ovpn_policy[IFLA_OVPN_MAX + 1] = {
 					    __OVPN_MODE_AFTER_LAST - 1),
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 static int ovpn_newlink(struct net *src_net, struct net_device *dev, struct nlattr *tb[],
 			struct nlattr *data[])
 #else

@@ -16,6 +16,7 @@
 
 #include <linux/ptr_ring.h>
 #include <linux/skbuff.h>
+#include <linux/sched/signal.h>
 #include <net/tcp.h>
 #include <net/route.h>
 

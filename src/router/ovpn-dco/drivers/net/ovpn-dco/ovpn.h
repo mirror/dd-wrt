@@ -155,7 +155,7 @@ enum nla_policy_validation {
 }
 #endif /* < 4.20 */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14, 0)
 
 
 static inline int nlmsg_parse_deprecated(const struct nlmsghdr *nlh, int hdrlen,
@@ -164,6 +164,16 @@ static inline int nlmsg_parse_deprecated(const struct nlmsghdr *nlh, int hdrlen,
 					 void *extack)
 {
 	return nlmsg_parse(nlh, hdrlen, tb, maxtype, policy);
+}
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+
+
+static inline int nlmsg_parse_deprecated(const struct nlmsghdr *nlh, int hdrlen,
+					 struct nlattr *tb[], int maxtype,
+					 const struct nla_policy *policy,
+					 void *extack)
+{
+	return nlmsg_parse(nlh, hdrlen, tb, maxtype, policy,extack);
 }
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
