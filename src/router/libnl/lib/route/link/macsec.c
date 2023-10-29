@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/macsec.c	MACsec Link Info
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2016 Sabrina Dubroca <sd@queasysnail.net>
  */
 
@@ -21,17 +15,21 @@
  *
  * @{
  */
-#include <netlink-private/netlink.h>
+
+#include "nl-default.h"
+
+#include <linux/if_macsec.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/link/macsec.h>
-#include <netlink-private/route/link/api.h>
-#include <netlink-private/utils.h>
 
-#include <linux/if_macsec.h>
+#include "nl-route.h"
+#include "link-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /** @cond SKIP */
 #define MACSEC_ATTR_SCI			(1 << 0)
@@ -47,6 +45,7 @@
 #define MACSEC_ATTR_REPLAY_PROTECT	(1 << 10)
 #define MACSEC_ATTR_VALIDATION		(1 << 11)
 #define MACSEC_ATTR_PORT		(1 << 12)
+#define MACSEC_ATTR_OFFLOAD		(1 << 13)
 
 struct macsec_info {
 	int ifindex;
@@ -58,7 +57,7 @@ struct macsec_info {
 	enum macsec_validation_type validate;
 	uint8_t encoding_sa;
 
-	uint8_t send_sci, end_station, scb, replay_protect, protect, encrypt;
+	uint8_t send_sci, end_station, scb, replay_protect, protect, encrypt, offload;
 
 	uint32_t ce_mask;
 };
@@ -80,6 +79,7 @@ static struct nla_policy macsec_policy[IFLA_MACSEC_MAX+1] = {
 	[IFLA_MACSEC_SCB] = { .type = NLA_U8 },
 	[IFLA_MACSEC_REPLAY_PROTECT] = { .type = NLA_U8 },
 	[IFLA_MACSEC_VALIDATION] = { .type = NLA_U8 },
+	[IFLA_MACSEC_OFFLOAD] = { .type = NLA_U8 },
 };
 
 /**
@@ -162,6 +162,11 @@ static int macsec_parse(struct rtnl_link *link, struct nlattr *data,
 	if (tb[IFLA_MACSEC_ENCRYPT]) {
 		info->encrypt = nla_get_u8(tb[IFLA_MACSEC_ENCRYPT]);
 		info->ce_mask |= MACSEC_ATTR_ENCRYPT;
+	}
+
+	if (tb[IFLA_MACSEC_OFFLOAD]) {
+		info->offload = nla_get_u8(tb[IFLA_MACSEC_OFFLOAD]);
+		info->ce_mask |= MACSEC_ATTR_OFFLOAD;
 	}
 
 	if (tb[IFLA_MACSEC_INC_SCI]) {
@@ -262,7 +267,8 @@ static void macsec_dump_line(struct rtnl_link *link, struct nl_dump_params *p)
 	struct macsec_info *info = link->l_info;
 	char tmp[128];
 
-	nl_dump(p, "sci %016llx <%s>", ntohll(info->sci), flags_str(tmp, sizeof(tmp), info));
+	nl_dump(p, "sci %016llx <%s>", (long long unsigned)ntohll(info->sci),
+		flags_str(tmp, sizeof(tmp), info));
 }
 
 static void macsec_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
@@ -270,12 +276,15 @@ static void macsec_dump_details(struct rtnl_link *link, struct nl_dump_params *p
 	struct macsec_info *info = link->l_info;
 	char tmp[128];
 
-	nl_dump(p, "    sci %016llx protect %s encoding_sa %d encrypt %s send_sci %s validate %s %s\n",
-		ntohll(info->sci), values_on_off[info->protect], info->encoding_sa, values_on_off[info->encrypt], values_on_off[info->send_sci],
+	nl_dump(p,
+		"    sci %016llx protect %s encoding_sa %d encrypt %s send_sci %s validate %s %s\n",
+		(long long unsigned)ntohll(info->sci),
+		values_on_off[info->protect], info->encoding_sa,
+		values_on_off[info->encrypt], values_on_off[info->send_sci],
 		VALIDATE_STR[info->validate],
 		replay_protect_str(tmp, info->replay_protect, info->window));
 	nl_dump(p, "    cipher suite: %016llx, icv_len %d\n",
-		info->cipher_suite, info->icv_len);
+		(long long unsigned)info->cipher_suite, info->icv_len);
 }
 
 static int macsec_clone(struct rtnl_link *dst, struct rtnl_link *src)
@@ -311,6 +320,9 @@ static int macsec_put_attrs(struct nl_msg *msg, struct rtnl_link *link)
 
 	if ((info->ce_mask & MACSEC_ATTR_ENCRYPT))
 		NLA_PUT_U8(msg, IFLA_MACSEC_ENCRYPT, info->encrypt);
+
+	if ((info->ce_mask & MACSEC_ATTR_OFFLOAD))
+		NLA_PUT_U8(msg, IFLA_MACSEC_OFFLOAD, info->offload);
 
 	if (info->cipher_suite != MACSEC_DEFAULT_CIPHER_ID || info->icv_len != DEFAULT_ICV_LEN) {
 		NLA_PUT_U64(msg, IFLA_MACSEC_CIPHER_SUITE, info->cipher_suite);
@@ -359,33 +371,38 @@ static int macsec_compare(struct rtnl_link *link_a, struct rtnl_link *link_b,
 	int diff = 0;
 	uint32_t attrs = flags & LOOSE_COMPARISON ? b->ce_mask : ~0;
 
-#define MACSEC_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, MACSEC_ATTR_##ATTR, a, b, EXPR)
-
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
 	if (a->ce_mask & MACSEC_ATTR_SCI && b->ce_mask & MACSEC_ATTR_SCI)
-		diff |= MACSEC_DIFF(SCI, a->sci != b->sci);
+		diff |= _DIFF(MACSEC_ATTR_SCI, a->sci != b->sci);
 	else if (a->ce_mask & MACSEC_ATTR_PORT && b->ce_mask & MACSEC_ATTR_PORT)
-		diff |= MACSEC_DIFF(PORT, a->port != b->port);
+		diff |= _DIFF(MACSEC_ATTR_PORT, a->port != b->port);
 
-	if (a->ce_mask & MACSEC_ATTR_CIPHER_SUITE && b->ce_mask & MACSEC_ATTR_CIPHER_SUITE) {
-		diff |= MACSEC_DIFF(ICV_LEN, a->icv_len != b->icv_len);
-		diff |= MACSEC_DIFF(CIPHER_SUITE, a->cipher_suite != b->cipher_suite);
+	if (a->ce_mask & MACSEC_ATTR_CIPHER_SUITE &&
+	    b->ce_mask & MACSEC_ATTR_CIPHER_SUITE) {
+		diff |= _DIFF(MACSEC_ATTR_ICV_LEN, a->icv_len != b->icv_len);
+		diff |= _DIFF(MACSEC_ATTR_CIPHER_SUITE,
+			      a->cipher_suite != b->cipher_suite);
 	}
 
-	if (a->ce_mask & MACSEC_ATTR_REPLAY_PROTECT && b->ce_mask & MACSEC_ATTR_REPLAY_PROTECT) {
-		int d = MACSEC_DIFF(REPLAY_PROTECT, a->replay_protect != b->replay_protect);
-		if (a->replay_protect && b->replay_protect)
-			d |= MACSEC_DIFF(WINDOW, a->window != b->window);
+	if (a->ce_mask & MACSEC_ATTR_REPLAY_PROTECT &&
+	    b->ce_mask & MACSEC_ATTR_REPLAY_PROTECT) {
+		int d = _DIFF(MACSEC_ATTR_REPLAY_PROTECT,
+			      a->replay_protect != b->replay_protect);
+		if (a->replay_protect && b->replay_protect) {
+			d |= _DIFF(MACSEC_ATTR_WINDOW, a->window != b->window);
+		}
 		diff |= d;
 	}
 
-	diff |= MACSEC_DIFF(ENCODING_SA, a->encoding_sa != b->encoding_sa);
-	diff |= MACSEC_DIFF(ENCRYPT, a->encrypt != b->encrypt);
-	diff |= MACSEC_DIFF(PROTECT, a->protect != b->protect);
-	diff |= MACSEC_DIFF(INC_SCI, a->send_sci != b->send_sci);
-	diff |= MACSEC_DIFF(ES, a->end_station != b->end_station);
-	diff |= MACSEC_DIFF(SCB, a->scb != b->scb);
-	diff |= MACSEC_DIFF(VALIDATION, a->validate != b->validate);
-#undef MACSEC_DIFF
+	diff |= _DIFF(MACSEC_ATTR_ENCODING_SA,
+		      a->encoding_sa != b->encoding_sa);
+	diff |= _DIFF(MACSEC_ATTR_ENCRYPT, a->encrypt != b->encrypt);
+	diff |= _DIFF(MACSEC_ATTR_PROTECT, a->protect != b->protect);
+	diff |= _DIFF(MACSEC_ATTR_INC_SCI, a->send_sci != b->send_sci);
+	diff |= _DIFF(MACSEC_ATTR_ES, a->end_station != b->end_station);
+	diff |= _DIFF(MACSEC_ATTR_SCB, a->scb != b->scb);
+	diff |= _DIFF(MACSEC_ATTR_VALIDATION, a->validate != b->validate);
+#undef _DIFF
 
 	return diff;
 }
@@ -405,12 +422,12 @@ static struct rtnl_link_info_ops macsec_info_ops = {
 	.io_compare		= macsec_compare,
 };
 
-static void __init macsec_init(void)
+static void _nl_init macsec_init(void)
 {
 	rtnl_link_register_info(&macsec_info_ops);
 }
 
-static void __exit macsec_exit(void)
+static void _nl_exit macsec_exit(void)
 {
 	rtnl_link_unregister_info(&macsec_info_ops);
 }
@@ -638,6 +655,33 @@ int rtnl_link_macsec_get_encrypt(struct rtnl_link *link, uint8_t *encrypt)
 	return 0;
 }
 
+int rtnl_link_macsec_set_offload(struct rtnl_link *link, uint8_t offload)
+{
+	struct macsec_info *info = link->l_info;
+
+	IS_MACSEC_LINK_ASSERT(link);
+
+	info->offload = offload;
+	info->ce_mask |= MACSEC_ATTR_OFFLOAD;
+
+	return 0;
+}
+
+int rtnl_link_macsec_get_offload(struct rtnl_link *link, uint8_t *offload)
+{
+	struct macsec_info *info = link->l_info;
+
+	IS_MACSEC_LINK_ASSERT(link);
+
+	if (!(info->ce_mask & MACSEC_ATTR_OFFLOAD))
+		return -NLE_NOATTR;
+
+	if (offload)
+		*offload = info->offload;
+
+	return 0;
+}
+
 int rtnl_link_macsec_set_encoding_sa(struct rtnl_link *link, uint8_t encoding_sa)
 {
 	struct macsec_info *info = link->l_info;
@@ -674,7 +718,7 @@ int rtnl_link_macsec_set_validation_type(struct rtnl_link *link, enum macsec_val
 
 	IS_MACSEC_LINK_ASSERT(link);
 
-	if (validate > 1)
+	if (validate > MACSEC_VALIDATE_MAX)
 		return -NLE_INVAL;
 
 	info->validate = validate;

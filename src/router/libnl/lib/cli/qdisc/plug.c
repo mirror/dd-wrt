@@ -1,14 +1,9 @@
-
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/lib/cli/qdisc/plug.c     	plug module for CLI lib
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2012 Shriram Rajagopalan <rshriram@cs.ubc.ca>
  */
+
+#include "nl-default.h"
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
@@ -102,12 +97,12 @@ static struct nl_cli_tc_module plug_module =
 	.tm_parse_argv		= plug_parse_argv,
 };
 
-static void __init plug_init(void)
+static void _nl_init plug_init(void)
 {
 	nl_cli_tc_register(&plug_module);
 }
 
-static void __exit plug_exit(void)
+static void _nl_exit plug_exit(void)
 {
 	nl_cli_tc_unregister(&plug_module);
 }

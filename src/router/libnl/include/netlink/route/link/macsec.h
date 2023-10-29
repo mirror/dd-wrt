@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/link/macsec.h		MACsec Link Info
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2016 Sabrina Dubroca <sd@queasysnail.net>
  */
 
@@ -42,6 +36,9 @@ int rtnl_link_macsec_get_protect(struct rtnl_link *, uint8_t *);
 
 int rtnl_link_macsec_set_encrypt(struct rtnl_link *, uint8_t);
 int rtnl_link_macsec_get_encrypt(struct rtnl_link *, uint8_t *);
+
+int rtnl_link_macsec_set_offload(struct rtnl_link *, uint8_t);
+int rtnl_link_macsec_get_offload(struct rtnl_link *, uint8_t *);
 
 int rtnl_link_macsec_set_encoding_sa(struct rtnl_link *, uint8_t);
 int rtnl_link_macsec_get_encoding_sa(struct rtnl_link *, uint8_t *);

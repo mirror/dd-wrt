@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/types.h		Definition of public types
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -13,6 +7,10 @@
 #define __NETLINK_TYPES_H_
 
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @ingroup utils
@@ -106,5 +104,9 @@ struct nl_dump_params
 
 	unsigned int		dp_line;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

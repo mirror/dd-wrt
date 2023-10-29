@@ -1,19 +1,15 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nl-monitor.c     Monitor events
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2009 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink/cli/utils.h>
-#include <netlink/cli/link.h>
+#include "nl-default.h"
 
 #include <linux/rtnetlink.h>
+
+#include <netlink/cli/utils.h>
+#include <netlink/cli/link.h>
+#include <netlink/cli/mdb.h>
 
 static const struct {
 	enum rtnetlink_groups gr_id;
@@ -36,6 +32,7 @@ static const struct {
 	{ RTNLGRP_IPV4_NETCONF, "ipv4-netconf" },
 	{ RTNLGRP_IPV6_NETCONF, "ipv6-netconf" },
 	{ RTNLGRP_MPLS_NETCONF, "mpls-netconf" },
+	{ RTNLGRP_MDB, "mdb" },
 	{ RTNLGRP_NONE, NULL }
 };
 
@@ -61,6 +58,7 @@ static void print_usage(void)
 	"Usage: nl-monitor [OPTION] [<groups>]\n"
 	"\n"
 	"Options\n"
+	" -d, --debug=LEVEL     Set libnl debug level { 0 - 7 }\n"
 	" -f, --format=TYPE     Output format { brief | details | stats }\n"
 	" -h, --help            Show this help.\n"
 	"\n"
@@ -91,15 +89,20 @@ int main(int argc, char *argv[])
 	for (;;) {
 		int c, optidx = 0;
 		static struct option long_opts[] = {
+			{ "debug",  1, 0, 'd' },
 			{ "format", 1, 0, 'f' },
+			{ "help",   0, 0, 'h' },
 			{ 0, 0, 0, 0 }
 		};
 
-		c = getopt_long(argc, argv, "f:h", long_opts, &optidx);
+		c = getopt_long(argc, argv, "d:f:h", long_opts, &optidx);
 		if (c == -1)
                         break;
 
                 switch (c) {
+		case 'd':
+			nl_debug = atoi(optarg);
+			break;
                 case 'f':
 			dp.dp_type = nl_cli_parse_dumptype(optarg);
 			break;

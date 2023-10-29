@@ -1,18 +1,14 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/ematch/container.c	Container Ematch
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2008-2013 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/route/cls/ematch.h>
+
+#include "nl-route.h"
 
 static int container_parse(struct rtnl_ematch *e, void *data, size_t len __attribute__((unused)))
 {
@@ -41,7 +37,7 @@ static struct rtnl_ematch_ops container_ops = {
 	.eo_fill	= container_fill,
 };
 
-static void __init container_init(void)
+static void _nl_init container_init(void)
 {
 	rtnl_ematch_register(&container_ops);
 }

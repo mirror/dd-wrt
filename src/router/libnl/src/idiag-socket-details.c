@@ -1,18 +1,15 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/idiag-socket-details.c     List socket details
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU General Public License as
- *	published by the Free Software Foundation version 2 of the License.
- *
  * Copyright (c) 2013 Sassano Systems LLC <joe@sassanosystems.com>
  */
+
+#include "nl-default.h"
+
+#include <linux/netlink.h>
 
 #include <netlink/cli/utils.h>
 #include <netlink/idiag/idiagnl.h>
 #include <netlink/idiag/msg.h>
-#include <linux/netlink.h>
 
 static void print_usage(void)
 {

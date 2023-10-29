@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/netem.c		Network Emulator Qdisc
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -18,15 +12,52 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/qdisc/netem.h>
 
+#include "tc-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+
 /** @cond SKIP */
+struct rtnl_netem_corr {
+	uint32_t nmc_delay;
+	uint32_t nmc_loss;
+	uint32_t nmc_duplicate;
+};
+
+struct rtnl_netem_reo {
+	uint32_t nmro_probability;
+	uint32_t nmro_correlation;
+};
+
+struct rtnl_netem_crpt {
+	uint32_t nmcr_probability;
+	uint32_t nmcr_correlation;
+};
+
+struct rtnl_netem_dist {
+	int16_t *dist_data;
+	size_t dist_size;
+};
+
+struct rtnl_netem {
+	uint32_t qnm_latency;
+	uint32_t qnm_limit;
+	uint32_t qnm_loss;
+	uint32_t qnm_gap;
+	uint32_t qnm_duplicate;
+	uint32_t qnm_jitter;
+	uint32_t qnm_mask;
+	struct rtnl_netem_corr qnm_corr;
+	struct rtnl_netem_reo qnm_ro;
+	struct rtnl_netem_crpt qnm_crpt;
+	struct rtnl_netem_dist qnm_dist;
+};
+
 #define SCH_NETEM_ATTR_LATENCY		0x0001
 #define SCH_NETEM_ATTR_LIMIT		0x0002
 #define SCH_NETEM_ATTR_LOSS		0x0004
@@ -165,39 +196,39 @@ static void netem_dump_details(struct rtnl_tc *tc, void *data,
 				nl_dump(p, " jitter %s", buf);
 
 				if (netem->qnm_mask & SCH_NETEM_ATTR_DELAY_CORR && netem->qnm_corr.nmc_delay > 0)
-					nl_dump(p, " %d%", netem->qnm_corr.nmc_delay);
+					nl_dump(p, " %d", netem->qnm_corr.nmc_delay);
 			}
 		}
 
 		if (netem->qnm_mask & SCH_NETEM_ATTR_LOSS && netem->qnm_loss > 0) {
-			nl_dump(p, " loss %d%", netem->qnm_loss);
+			nl_dump(p, " loss %d", netem->qnm_loss);
 
 			if (netem->qnm_mask & SCH_NETEM_ATTR_LOSS_CORR && netem->qnm_corr.nmc_loss > 0)
-				nl_dump(p, " %d%", netem->qnm_corr.nmc_loss);
+				nl_dump(p, " %d", netem->qnm_corr.nmc_loss);
 		}
 
 		if (netem->qnm_mask & SCH_NETEM_ATTR_DUPLICATE && netem->qnm_duplicate > 0) {
-			nl_dump(p, " duplicate %d%", netem->qnm_duplicate);
+			nl_dump(p, " duplicate %d", netem->qnm_duplicate);
 
 			if (netem->qnm_mask & SCH_NETEM_ATTR_DUP_CORR && netem->qnm_corr.nmc_duplicate > 0)
-				nl_dump(p, " %d%", netem->qnm_corr.nmc_duplicate);
+				nl_dump(p, " %d", netem->qnm_corr.nmc_duplicate);
 		}
 
 		if (netem->qnm_mask & SCH_NETEM_ATTR_RO_PROB && netem->qnm_ro.nmro_probability > 0) {
-			nl_dump(p, " reorder %d%", netem->qnm_ro.nmro_probability);
+			nl_dump(p, " reorder %d", netem->qnm_ro.nmro_probability);
 
 			if (netem->qnm_mask & SCH_NETEM_ATTR_RO_CORR && netem->qnm_ro.nmro_correlation > 0)
-				nl_dump(p, " %d%", netem->qnm_ro.nmro_correlation);
+				nl_dump(p, " %d", netem->qnm_ro.nmro_correlation);
 
 			if (netem->qnm_mask & SCH_NETEM_ATTR_GAP && netem->qnm_gap > 0)
 				nl_dump(p, " gap %d", netem->qnm_gap);
 		}
 
 		if (netem->qnm_mask & SCH_NETEM_ATTR_CORRUPT_PROB && netem->qnm_crpt.nmcr_probability > 0) {
-			nl_dump(p, " reorder %d%", netem->qnm_crpt.nmcr_probability);
+			nl_dump(p, " reorder %d", netem->qnm_crpt.nmcr_probability);
 
 			if (netem->qnm_mask & SCH_NETEM_ATTR_CORRUPT_CORR && netem->qnm_crpt.nmcr_correlation > 0)
-				nl_dump(p, " %d%", netem->qnm_crpt.nmcr_correlation);
+				nl_dump(p, " %d", netem->qnm_crpt.nmcr_correlation);
 		}
 	}
 }
@@ -690,7 +721,7 @@ int rtnl_netem_get_duplicate(struct rtnl_qdisc *qdisc)
  * Set packet duplication correlation probability of netem qdisc.
  * @arg qdisc		Netem qdisc to be modified.
  * @arg prob		New packet duplication correlation probability.
- * @return 0 on sucess or a negative error code.
+ * @return 0 on success or a negative error code.
  */
 void rtnl_netem_set_duplicate_correlation(struct rtnl_qdisc *qdisc, int prob)
 {
@@ -911,10 +942,10 @@ int rtnl_netem_set_delay_distribution(struct rtnl_qdisc *qdisc, const char *dist
 	int n = 0;
 	size_t i;
 	size_t len = 2048;
-	char *line;
+	_nl_auto_free char *line = NULL;
 	char name[NAME_MAX];
 	char dist_suffix[] = ".dist";
-	int16_t *data;
+	_nl_auto_free int16_t *data = NULL;
 	char *test_suffix;
 
 	/* Check several locations for the dist file */
@@ -940,9 +971,12 @@ int rtnl_netem_set_delay_distribution(struct rtnl_qdisc *qdisc, const char *dist
 	if (f == NULL)
 		return -nl_syserr2nlerr(errno);
 
-	data = (int16_t *) calloc (MAXDIST, sizeof(int16_t));
-
-	line = (char *) calloc (sizeof(char), len + 1);
+	data = (int16_t *) calloc(MAXDIST, sizeof(int16_t));
+	line = (char *) calloc(sizeof(char), len + 1);
+	if (!data || !line) {
+	    fclose(f);
+	    return -NLE_NOMEM;
+	}
 
 	while (getline(&line, &len, f) != -1) {
 		char *p, *endp;
@@ -955,7 +989,6 @@ int rtnl_netem_set_delay_distribution(struct rtnl_qdisc *qdisc, const char *dist
 			if (endp == p) break;
 
 			if (n >= MAXDIST) {
-				free(line);
 				fclose(f);
 				return -NLE_INVAL;
 			}
@@ -963,11 +996,8 @@ int rtnl_netem_set_delay_distribution(struct rtnl_qdisc *qdisc, const char *dist
 		}
 	}
 
-	free(line);
 	fclose(f);
-
 	i = rtnl_netem_set_delay_distribution_data(qdisc, data, n);
-	free(data);
 	return i;
 }
 
@@ -984,12 +1014,12 @@ static struct rtnl_tc_ops netem_ops = {
 	.to_msg_fill_raw	= netem_msg_fill_raw,
 };
 
-static void __init netem_init(void)
+static void _nl_init netem_init(void)
 {
 	rtnl_tc_register(&netem_ops);
 }
 
-static void __exit netem_exit(void)
+static void _nl_exit netem_exit(void)
 {
 	rtnl_tc_unregister(&netem_ops);
 }

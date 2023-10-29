@@ -1,18 +1,15 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/cli/qdisc/hfsc.c     	HFSC module for CLI lib
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2014 Cong Wang <xiyou.wangcong@gmail.com>
  */
+
+#include "nl-default.h"
+
+#include <linux/pkt_sched.h>
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
 #include <netlink/route/qdisc/hfsc.h>
-#include <linux/pkt_sched.h>
 
 static void print_qdisc_usage(void)
 {
@@ -239,13 +236,13 @@ static struct nl_cli_tc_module hfsc_class_module =
 	.tm_parse_argv		= hfsc_parse_class_argv,
 };
 
-static void __init hfsc_init(void)
+static void _nl_init hfsc_init(void)
 {
 	nl_cli_tc_register(&hfsc_qdisc_module);
 	nl_cli_tc_register(&hfsc_class_module);
 }
 
-static void __exit hfsc_exit(void)
+static void _nl_exit hfsc_exit(void)
 {
 	nl_cli_tc_unregister(&hfsc_class_module);
 	nl_cli_tc_unregister(&hfsc_qdisc_module);

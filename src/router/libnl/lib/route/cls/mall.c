@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/mall.c		match-all classifier
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2017 Volodymyr Bendiuga <volodymyr.bendiuga@gmail.com>
  */
 
@@ -16,16 +10,23 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/cls/matchall.h>
 #include <netlink/route/action.h>
 
+#include "tc-api.h"
+
+struct rtnl_mall {
+	uint32_t m_classid;
+	uint32_t m_flags;
+	struct rtnl_act *m_act;
+	int m_mask;
+};
 
 #define MALL_ATTR_CLASSID 0x01
 #define MALL_ATTR_FLAGS   0x02
@@ -108,7 +109,7 @@ int rtnl_mall_append_action(struct rtnl_cls *cls, struct rtnl_act *act)
 
 	mall->m_mask |= MALL_ATTR_ACTION;
 	err = rtnl_act_append(&mall->m_act, act);
-	if (err)
+	if (err < 0)
 	        return err;
 
 	rtnl_act_get(act);
@@ -188,7 +189,7 @@ static int mall_msg_parser(struct rtnl_tc *tc, void *data)
 	if (tb[TCA_MATCHALL_ACT]) {
 		mall->m_mask |= MALL_ATTR_ACTION;
 		err = rtnl_act_parse(&mall->m_act, tb[TCA_MATCHALL_ACT]);
-		if (err)
+		if (err < 0)
 			return err;
 	}
 
@@ -212,13 +213,13 @@ static int mall_msg_fill(struct rtnl_tc *tc, void *data, struct nl_msg *msg)
 		int err;
 
 		err = rtnl_act_fill(msg, TCA_MATCHALL_ACT, mall->m_act);
-		if (err)
+		if (err < 0)
 			return err;
 	}
 
 	return 0;
 
- nla_put_failure:
+nla_put_failure:
 	return -NLE_NOMEM;
 }
 
@@ -227,6 +228,8 @@ static int mall_clone(void *_dst, void *_src)
 	struct rtnl_mall *dst = _dst, *src = _src;
 	struct rtnl_act *next, *new;
 	int err;
+
+	dst->m_act = NULL;
 
 	if (src->m_act) {
 		if (!(dst->m_act = rtnl_act_alloc()))
@@ -292,12 +295,12 @@ static struct rtnl_tc_ops mall_ops = {
 	},
 };
 
-static void __init mall_init(void)
+static void _nl_init mall_init(void)
 {
 	rtnl_tc_register(&mall_ops);
 }
 
-static void __exit mall_exit(void)
+static void _nl_exit mall_exit(void)
 {
 	rtnl_tc_unregister(&mall_ops);
 }

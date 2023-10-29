@@ -8,23 +8,22 @@
 from __future__ import absolute_import
 
 
-__version__ = '1.0'
-__all__ = [
-    'AddressCache',
-    'Address']
+__version__ = "1.0"
+__all__ = ["AddressCache", "Address"]
 
 import datetime
 from .. import core as netlink
-from .  import capi as capi
-from .  import link as Link
+from . import capi as capi
+from . import link as Link
 from .. import util as util
+
 
 class AddressCache(netlink.Cache):
     """Cache containing network addresses"""
 
     def __init__(self, cache=None):
         if not cache:
-            cache = self._alloc_cache_name('route/addr')
+            cache = self._alloc_cache_name("route/addr")
 
         self._protocol = netlink.NETLINK_ROUTE
         self._nl_cache = cache
@@ -38,8 +37,7 @@ class AddressCache(netlink.Cache):
         if type(local) is str:
             local = netlink.AbstractAddress(local)
 
-        addr = capi.rtnl_addr_get(self._nl_cache, ifindex,
-                      local._nl_addr)
+        addr = capi.rtnl_addr_get(self._nl_cache, ifindex, local._nl_addr)
         if addr is None:
             raise KeyError()
 
@@ -53,11 +51,12 @@ class AddressCache(netlink.Cache):
     def _new_cache(cache):
         return AddressCache(cache=cache)
 
+
 class Address(netlink.Object):
     """Network address"""
 
     def __init__(self, obj=None):
-        netlink.Object.__init__(self, 'route/addr', 'address', obj)
+        netlink.Object.__init__(self, "route/addr", "address", obj)
         self._rtnl_addr = self._obj2type(self._nl_object)
 
     @classmethod
@@ -148,13 +147,13 @@ class Address(netlink.Object):
         addr.flags = [ '+xxx', '-yyy' ] # list operation
         """
         flags = capi.rtnl_addr_get_flags(self._rtnl_addr)
-        return capi.rtnl_addr_flags2str(flags, 256)[0].split(',')
+        return capi.rtnl_addr_flags2str(flags, 256)[0].split(",")
 
     def _set_flag(self, flag):
-        if flag.startswith('-'):
+        if flag.startswith("-"):
             i = capi.rtnl_addr_str2flags(flag[1:])
             capi.rtnl_addr_unset_flags(self._rtnl_addr, i)
-        elif flag.startswith('+'):
+        elif flag.startswith("+"):
             i = capi.rtnl_addr_str2flags(flag[1:])
             capi.rtnl_addr_set_flags(self._rtnl_addr, i)
         else:
@@ -249,7 +248,7 @@ class Address(netlink.Object):
         try:
             a = netlink.AbstractAddress(value)
         except ValueError as err:
-            raise AttributeError('multicast', err)
+            raise AttributeError("multicast", err)
 
         capi.rtnl_addr_set_multicast(self._rtnl_addr, a._nl_addr)
 
@@ -298,14 +297,14 @@ class Address(netlink.Object):
     def create_time(self):
         """Creation time"""
         hsec = capi.rtnl_addr_get_create_time(self._rtnl_addr)
-        return datetime.timedelta(milliseconds=10*hsec)
+        return datetime.timedelta(milliseconds=10 * hsec)
 
     @property
     @netlink.nlattr(type=int, immutable=True, fmt=util.num)
     def last_update(self):
         """Last update"""
         hsec = capi.rtnl_addr_get_last_update_time(self._rtnl_addr)
-        return datetime.timedelta(milliseconds=10*hsec)
+        return datetime.timedelta(milliseconds=10 * hsec)
 
     def add(self, socket=None, flags=None):
         if not socket:
@@ -330,38 +329,38 @@ class Address(netlink.Object):
     # Used for formatting output. USE AT OWN RISK
     @property
     def _flags(self):
-        return ','.join(self.flags)
+        return ",".join(self.flags)
 
-    def format(self, details=False, stats=False, nodev=False, indent=''):
+    def format(self, details=False, stats=False, nodev=False, indent=""):
         """Return address as formatted text"""
         fmt = util.MyFormatter(self, indent)
 
-        buf = fmt.format('{a|local!b}')
+        buf = fmt.format("{a|local!b}")
 
         if not nodev:
-            buf += fmt.format(' {a|ifindex}')
+            buf += fmt.format(" {a|ifindex}")
 
-        buf += fmt.format(' {a|scope}')
+        buf += fmt.format(" {a|scope}")
 
         if self.label:
             buf += fmt.format(' "{a|label}"')
 
-        buf += fmt.format(' <{a|_flags}>')
+        buf += fmt.format(" <{a|_flags}>")
 
         if details:
-            buf += fmt.nl('\t{t|broadcast} {t|multicast}') \
-                 + fmt.nl('\t{t|peer} {t|anycast}')
+            buf += fmt.nl("\t{t|broadcast} {t|multicast}") + fmt.nl(
+                "\t{t|peer} {t|anycast}"
+            )
 
             if self.valid_lifetime:
-                buf += fmt.nl('\t{s|valid-lifetime!k} '\
-                       '{a|valid_lifetime}')
+                buf += fmt.nl("\t{s|valid-lifetime!k} " "{a|valid_lifetime}")
 
             if self.preferred_lifetime:
-                buf += fmt.nl('\t{s|preferred-lifetime!k} '\
-                       '{a|preferred_lifetime}')
+                buf += fmt.nl("\t{s|preferred-lifetime!k} " "{a|preferred_lifetime}")
 
         if stats and (self.create_time or self.last_update):
-            buf += self.nl('\t{s|created!k} {a|create_time}'\
-                   ' {s|last-updated!k} {a|last_update}')
+            buf += self.nl(
+                "\t{s|created!k} {a|create_time}" " {s|last-updated!k} {a|last_update}"
+            )
 
         return buf

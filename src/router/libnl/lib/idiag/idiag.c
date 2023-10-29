@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- *  lib/idiag/idiag.c    Inet Diag Netlink
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Sassano Systems LLC <joe@sassanosystems.com>
  */
 
@@ -16,11 +9,15 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/inet_diag.h>
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/idiag/idiagnl.h>
-#include <linux/inet_diag.h>
+
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /**
  * @name Socket Creation

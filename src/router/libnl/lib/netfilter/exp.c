@@ -1,16 +1,9 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/exp.c	Conntrack Expectation
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
- * Copyright (c= 2008 Patrick McHardy <kaber@trash.net>
+ * Copyright (c) 2008 Patrick McHardy <kaber@trash.net>
  * Copyright (c) 2012 Rich Fought <rich.fought@watchguard.com>
  */
 
@@ -21,14 +14,19 @@
  * @{
  */
 
-#include <byteswap.h>
+#include "nl-default.h"
+
 #include <sys/types.h>
+
 #include <linux/netfilter/nfnetlink_conntrack.h>
 
-#include <netlink-private/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/exp.h>
+
+#include "nl-netfilter.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 static struct nl_cache_ops nfnl_exp_ops;
 
@@ -423,7 +421,6 @@ nla_put_failure:
 static int nfnl_exp_build_nat(struct nl_msg *msg, const struct nfnl_exp *exp)
 {
 	struct nlattr *nat;
-	int err;
 
 	nat = nla_nest_start(msg, CTA_EXPECT_NAT);
 
@@ -432,7 +429,7 @@ static int nfnl_exp_build_nat(struct nl_msg *msg, const struct nfnl_exp *exp)
 				nfnl_exp_get_nat_dir(exp));
 	}
 
-	if ((err = nfnl_exp_build_tuple(msg, exp, CTA_EXPECT_NAT)) < 0)
+	if (nfnl_exp_build_tuple(msg, exp, CTA_EXPECT_NAT) < 0)
 		goto nla_put_failure;
 
 	nla_nest_end(msg, nat);
@@ -618,12 +615,12 @@ static struct nl_cache_ops nfnl_exp_ops = {
 	.co_obj_ops		= &exp_obj_ops,
 };
 
-static void __init exp_init(void)
+static void _nl_init exp_init(void)
 {
 	nl_cache_mngt_register(&nfnl_exp_ops);
 }
 
-static void __exit exp_exit(void)
+static void _nl_exit exp_exit(void)
 {
 	nl_cache_mngt_unregister(&nfnl_exp_ops);
 }

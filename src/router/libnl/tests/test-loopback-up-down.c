@@ -1,4 +1,9 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
+
+#include "nl-default.h"
+
 #include <net/if.h>
+
 #include <netlink/route/link.h>
 
 int main(void)

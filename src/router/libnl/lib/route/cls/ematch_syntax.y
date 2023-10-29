@@ -1,17 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/ematch_syntax.y	ematch expression syntax
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2013 Thomas Graf <tgraf@suug.ch>
  */
 
 %{
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include <linux/tc_ematch/tc_em_meta.h>
+
+#include <linux/tc_ematch/tc_em_cmp.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/pktloc.h>
@@ -20,14 +16,24 @@
 #include <netlink/route/cls/ematch/nbyte.h>
 #include <netlink/route/cls/ematch/text.h>
 #include <netlink/route/cls/ematch/meta.h>
-#include <linux/tc_ematch/tc_em_meta.h>
-#include <linux/tc_ematch/tc_em_cmp.h>
+
+#include "nl-route.h"
 
 #define META_ALLOC rtnl_meta_value_alloc_id
 #define META_ID(name) TCF_META_ID_##name
 #define META_INT TCF_META_TYPE_INT
 #define META_VAR TCF_META_TYPE_VAR
 %}
+
+%code requires {
+
+struct ematch_quoted {
+	char *	data;
+	size_t	len;
+	int	index;
+};
+
+}
 
 %error-verbose
 %define api.pure
@@ -52,6 +58,7 @@
 %{
 extern int ematch_lex(YYSTYPE *, void *);
 
+#define ematch_error yyerror
 static void yyerror(void *scanner, char **errp, struct nl_list_head *root, const char *msg)
 {
 	if (msg)
@@ -411,7 +418,7 @@ pattern:
 			if (nl_addr_parse($1, AF_UNSPEC, &addr) == 0) {
 				$$.len = nl_addr_get_len(addr);
 
-				$$.index = min_t(int, $$.len, nl_addr_get_prefixlen(addr)/8);
+				$$.index = _NL_MIN($$.len, nl_addr_get_prefixlen(addr)/8);
 
 				if (!($$.data = calloc(1, $$.len))) {
 					nl_addr_put(addr);

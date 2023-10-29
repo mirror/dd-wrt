@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/genl/mngt.c		Generic Netlink Management
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -19,7 +12,8 @@
  * @{
  */
 
-#include <netlink-private/genl.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/mngt.h>
@@ -27,7 +21,7 @@
 #include <netlink/genl/ctrl.h>
 #include <netlink/utils.h>
 
-#include "netlink-private/utils.h"
+#include "nl-genl.h"
 
 /** @cond SKIP */
 
@@ -133,13 +127,13 @@ char *genl_op2name(int family, int op, char *buf, size_t len)
 			cmd = &ops->o_cmds[i];
 
 			if (cmd->c_id == op) {
-				strncpy(buf, cmd->c_name, len - 1);
+				_nl_strncpy_trunc(buf, cmd->c_name, len);
 				return buf;
 			}
 		}
 	}
 
-	strncpy(buf, "unknown", len - 1);
+	_nl_strncpy_trunc(buf, "unknown", len);
 	return NULL;
 }
 
@@ -314,6 +308,7 @@ static int __genl_ops_resolve(struct nl_cache *ctrl, struct genl_ops *ops)
 	return -NLE_OBJ_NOTFOUND;
 }
 
+/* WARNING: this symbol is wrongly exported in libnl-genl-3.sym. */
 int genl_resolve_id(struct genl_ops *ops)
 {
 	struct nl_sock *sk;

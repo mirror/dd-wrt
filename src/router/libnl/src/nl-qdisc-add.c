@@ -1,23 +1,18 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nl-qdisc-add.c     Add Queueing Discipline
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010 Thomas Graf <tgraf@suug.ch>
  */
+
+#include "nl-default.h"
+
+#include <linux/netlink.h>
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
 #include <netlink/cli/qdisc.h>
 #include <netlink/cli/link.h>
 
-#include <netlink-private/route/tc-api.h>
-
-#include <linux/netlink.h>
+#include "nl-priv-dynamic-route/nl-priv-dynamic-route.h"
 
 static int quiet = 0;
 

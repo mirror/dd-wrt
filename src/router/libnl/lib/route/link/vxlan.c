@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/vxlan.c	VXLAN Link Info
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Yasunobu Chiba <yasu@dsl.gr.jp>
  */
 
@@ -22,16 +16,19 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/if_link.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
-#include <netlink-private/route/link/api.h>
 #include <netlink/route/link/vxlan.h>
 
-#include <linux/if_link.h>
+#include "nl-route.h"
+#include "link-api.h"
 
 /** @cond SKIP */
 #define VXLAN_ATTR_ID                  (1<<0)
@@ -322,16 +319,12 @@ static void vxlan_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
 
 	if (vxi->ce_mask & VXLAN_ATTR_GROUP) {
 		nl_dump(p, "      group ");
-		if (inet_ntop(AF_INET, &vxi->vxi_group, addr, sizeof(addr)))
-			nl_dump_line(p, "%s\n", addr);
-		else
-			nl_dump_line(p, "%#x\n", ntohs(vxi->vxi_group));
+		nl_dump_line(p, "%s\n",
+			     _nl_inet_ntop(AF_INET, &vxi->vxi_group, addr));
 	} else if (vxi->ce_mask & VXLAN_ATTR_GROUP6) {
 		nl_dump(p, "      group ");
-		if (inet_ntop(AF_INET6, &vxi->vxi_group6, addr, sizeof(addr)))
-			nl_dump_line(p, "%s\n", addr);
-		else
-			nl_dump_line(p, "%#x\n", vxi->vxi_group6);
+		nl_dump_line(p, "%s\n",
+			     _nl_inet_ntop(AF_INET6, &vxi->vxi_group6, addr));
 	}
 
 	if (vxi->ce_mask & VXLAN_ATTR_LINK) {
@@ -350,18 +343,13 @@ static void vxlan_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
 
 	if (vxi->ce_mask & VXLAN_ATTR_LOCAL) {
 		nl_dump(p, "      local ");
-		if (inet_ntop(AF_INET, &vxi->vxi_local, addr, sizeof(addr)))
-			nl_dump_line(p, "%s\n", addr);
-		else
-			nl_dump_line(p, "%#x\n", ntohs(vxi->vxi_local));
+		nl_dump_line(p, "%s\n",
+			     _nl_inet_ntop(AF_INET, &vxi->vxi_local, addr));
 	} else if (vxi->ce_mask & VXLAN_ATTR_LOCAL6) {
 		nl_dump(p, "      local ");
-		if (inet_ntop(AF_INET6, &vxi->vxi_local6, addr, sizeof(addr)))
-			nl_dump_line(p, "%s\n", addr);
-		else
-			nl_dump_line(p, "%#x\n", vxi->vxi_local6);
+		nl_dump_line(p, "%s\n",
+			     _nl_inet_ntop(AF_INET6, &vxi->vxi_local6, addr));
 	}
-
 
 	if (vxi->ce_mask & VXLAN_ATTR_TTL) {
 		nl_dump(p, "      ttl ");
@@ -374,7 +362,7 @@ static void vxlan_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
 	if (vxi->ce_mask & VXLAN_ATTR_TOS) {
 		nl_dump(p, "      tos ");
 		if (vxi->vxi_tos == 1)
-			nl_dump_line(p, "inherit\n", vxi->vxi_tos);
+			nl_dump_line(p, "inherit\n");
 		else
 			nl_dump_line(p, "%#x\n", vxi->vxi_tos);
 	}
@@ -631,37 +619,41 @@ static int vxlan_compare(struct rtnl_link *link_a, struct rtnl_link *link_b,
 	int diff = 0;
 	uint32_t attrs = flags & LOOSE_COMPARISON ? b->ce_mask : ~0;
 
-#define VXLAN_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, VXLAN_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= VXLAN_DIFF(ID,    a->vxi_id    != b->vxi_id);
-	diff |= VXLAN_DIFF(GROUP, a->vxi_group != b->vxi_group);
-	diff |= VXLAN_DIFF(LINK,  a->vxi_link  != b->vxi_link);
-	diff |= VXLAN_DIFF(LOCAL, a->vxi_local != b->vxi_local);
-	diff |= VXLAN_DIFF(TOS,   a->vxi_tos   != b->vxi_tos);
-	diff |= VXLAN_DIFF(TTL,   a->vxi_ttl   != b->vxi_ttl);
-	diff |= VXLAN_DIFF(LEARNING, a->vxi_learning != b->vxi_learning);
-	diff |= VXLAN_DIFF(AGEING, a->vxi_ageing != b->vxi_ageing);
-	diff |= VXLAN_DIFF(LIMIT, a->vxi_limit != b->vxi_limit);
-	diff |= VXLAN_DIFF(PORT_RANGE,
-	                   a->vxi_port_range.low != b->vxi_port_range.low);
-	diff |= VXLAN_DIFF(PORT_RANGE,
-	                   a->vxi_port_range.high != b->vxi_port_range.high);
-	diff |= VXLAN_DIFF(PROXY, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(RSC, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(L2MISS, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(L3MISS, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(PORT, a->vxi_port != b->vxi_port);
-	diff |= VXLAN_DIFF(GROUP6, memcmp(&a->vxi_group6, &b->vxi_group6, sizeof(a->vxi_group6)) != 0);
-	diff |= VXLAN_DIFF(LOCAL6,  memcmp(&a->vxi_local6, &b->vxi_local6, sizeof(a->vxi_local6)) != 0);
-	diff |= VXLAN_DIFF(UDP_CSUM, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(UDP_ZERO_CSUM6_TX, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(UDP_ZERO_CSUM6_RX, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(REMCSUM_TX, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(REMCSUM_RX, a->vxi_proxy != b->vxi_proxy);
-	diff |= VXLAN_DIFF(COLLECT_METADATA, a->vxi_collect_metadata != b->vxi_collect_metadata);
-	diff |= VXLAN_DIFF(LABEL, a->vxi_label != b->vxi_label);
-	diff |= VXLAN_DIFF(FLAGS, a->vxi_flags != b->vxi_flags);
-#undef VXLAN_DIFF
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(VXLAN_ATTR_ID, a->vxi_id != b->vxi_id);
+	diff |= _DIFF(VXLAN_ATTR_GROUP, a->vxi_group != b->vxi_group);
+	diff |= _DIFF(VXLAN_ATTR_LINK, a->vxi_link != b->vxi_link);
+	diff |= _DIFF(VXLAN_ATTR_LOCAL, a->vxi_local != b->vxi_local);
+	diff |= _DIFF(VXLAN_ATTR_TOS, a->vxi_tos != b->vxi_tos);
+	diff |= _DIFF(VXLAN_ATTR_TTL, a->vxi_ttl != b->vxi_ttl);
+	diff |= _DIFF(VXLAN_ATTR_LEARNING, a->vxi_learning != b->vxi_learning);
+	diff |= _DIFF(VXLAN_ATTR_AGEING, a->vxi_ageing != b->vxi_ageing);
+	diff |= _DIFF(VXLAN_ATTR_LIMIT, a->vxi_limit != b->vxi_limit);
+	diff |= _DIFF(VXLAN_ATTR_PORT_RANGE,
+		      a->vxi_port_range.low != b->vxi_port_range.low);
+	diff |= _DIFF(VXLAN_ATTR_PORT_RANGE,
+		      a->vxi_port_range.high != b->vxi_port_range.high);
+	diff |= _DIFF(VXLAN_ATTR_PROXY, a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_RSC, a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_L2MISS, a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_L3MISS, a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_PORT, a->vxi_port != b->vxi_port);
+	diff |= _DIFF(VXLAN_ATTR_GROUP6, memcmp(&a->vxi_group6, &b->vxi_group6,
+						sizeof(a->vxi_group6)) != 0);
+	diff |= _DIFF(VXLAN_ATTR_LOCAL6, memcmp(&a->vxi_local6, &b->vxi_local6,
+						sizeof(a->vxi_local6)) != 0);
+	diff |= _DIFF(VXLAN_ATTR_UDP_CSUM, a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_UDP_ZERO_CSUM6_TX,
+		      a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_UDP_ZERO_CSUM6_RX,
+		      a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_REMCSUM_TX, a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_REMCSUM_RX, a->vxi_proxy != b->vxi_proxy);
+	diff |= _DIFF(VXLAN_ATTR_COLLECT_METADATA,
+		      a->vxi_collect_metadata != b->vxi_collect_metadata);
+	diff |= _DIFF(VXLAN_ATTR_LABEL, a->vxi_label != b->vxi_label);
+	diff |= _DIFF(VXLAN_ATTR_FLAGS, a->vxi_flags != b->vxi_flags);
+#undef _DIFF
 
 	return diff;
 }
@@ -701,12 +693,11 @@ static struct rtnl_link_info_ops vxlan_info_ops = {
 struct rtnl_link *rtnl_link_vxlan_alloc(void)
 {
 	struct rtnl_link *link;
-	int err;
 
 	if (!(link = rtnl_link_alloc()))
 		return NULL;
 
-	if ((err = rtnl_link_set_type(link, "vxlan")) < 0) {
+	if (rtnl_link_set_type(link, "vxlan") < 0) {
 		rtnl_link_put(link);
 		return NULL;
 	}
@@ -1783,12 +1774,12 @@ int rtnl_link_vxlan_get_flags(struct rtnl_link *link, uint32_t *out_flags)
 
 /** @} */
 
-static void __init vxlan_init(void)
+static void _nl_init vxlan_init(void)
 {
 	rtnl_link_register_info(&vxlan_info_ops);
 }
 
-static void __exit vxlan_exit(void)
+static void _nl_exit vxlan_exit(void)
 {
 	rtnl_link_unregister_info(&vxlan_info_ops);
 }

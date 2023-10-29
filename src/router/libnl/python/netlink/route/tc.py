@@ -4,18 +4,18 @@
 from __future__ import absolute_import
 
 __all__ = [
-    'TcCache',
-    'Tc',
-    'QdiscCache',
-    'Qdisc',
-    'TcClassCache',
-    'TcClass',
+    "TcCache",
+    "Tc",
+    "QdiscCache",
+    "Qdisc",
+    "TcClassCache",
+    "TcClass",
 ]
 
 from .. import core as netlink
-from .  import capi as capi
+from . import capi as capi
 from .. import util as util
-from .  import link as Link
+from . import link as Link
 
 TC_PACKETS = 0
 TC_BYTES = 1
@@ -43,7 +43,7 @@ STAT_MAX = STAT_OVERLIMITS
 
 
 class Handle(object):
-    """ Traffic control handle
+    """Traffic control handle
 
     Representation of a traffic control handle which uniquely identifies
     each traffic control object in its link namespace.
@@ -53,6 +53,7 @@ class Handle(object):
     print int(handle)
     print str(handle)
     """
+
     def __init__(self, val=None):
         if type(val) is str:
             val = capi.tc_str2handle(val)
@@ -81,11 +82,13 @@ class Handle(object):
     def isroot(self):
         return self._val == TC_H_ROOT or self._val == TC_H_INGRESS
 
+
 class TcCache(netlink.Cache):
     """Cache of traffic control object"""
 
     def __getitem__(self, key):
         raise NotImplementedError()
+
 
 class Tc(netlink.Object):
     def __cmp__(self, other):
@@ -95,8 +98,7 @@ class Tc(netlink.Object):
         return diff
 
     def _tc_module_lookup(self):
-        self._module_lookup(self._module_path + self.kind,
-                    'init_' + self._name)
+        self._module_lookup(self._module_path + self.kind, "init_" + self._name)
 
     @property
     def root(self):
@@ -189,7 +191,7 @@ class Tc(netlink.Object):
 
     @property
     def _dev(self):
-        buf = util.kw('dev') + ' '
+        buf = util.kw("dev") + " "
 
         if self.link:
             return buf + util.string(self.link.name)
@@ -197,19 +199,19 @@ class Tc(netlink.Object):
             return buf + util.num(self.ifindex)
 
     def brief(self, title, nodev=False, noparent=False):
-        ret = title + ' {a|kind} {a|handle}'
+        ret = title + " {a|kind} {a|handle}"
 
         if not nodev:
-            ret += ' {a|_dev}'
+            ret += " {a|_dev}"
 
         if not noparent:
-            ret += ' {t|parent}'
+            ret += " {t|parent}"
 
         return ret + self._module_brief()
 
     @staticmethod
     def details():
-        return '{t|mtu} {t|mpu} {t|overhead} {t|linktype}'
+        return "{t|mtu} {t|mpu} {t|overhead} {t|linktype}"
 
     @property
     def packets(self):
@@ -225,28 +227,29 @@ class Tc(netlink.Object):
 
     @staticmethod
     def stats(fmt):
-        return fmt.nl('{t|packets} {t|bytes} {t|qlen}')
+        return fmt.nl("{t|packets} {t|bytes} {t|qlen}")
+
 
 class QdiscCache(netlink.Cache):
     """Cache of qdiscs"""
 
     def __init__(self, cache=None):
         if not cache:
-            cache = self._alloc_cache_name('route/qdisc')
+            cache = self._alloc_cache_name("route/qdisc")
 
         self._protocol = netlink.NETLINK_ROUTE
         self._nl_cache = cache
 
-#	def __getitem__(self, key):
-#        	if type(key) is int:
-#                        link = capi.rtnl_link_get(self._this, key)
-#                elif type(key) is str:
-#                        link = capi.rtnl_link_get_by_name(self._this, key)
-#
-#		if qdisc is None:
-#                        raise KeyError()
-#		else:
-#                        return Qdisc._from_capi(capi.qdisc2obj(qdisc))
+    # 	def __getitem__(self, key):
+    #        	if type(key) is int:
+    #                        link = capi.rtnl_link_get(self._this, key)
+    #                elif type(key) is str:
+    #                        link = capi.rtnl_link_get_by_name(self._this, key)
+    #
+    # 		if qdisc is None:
+    #                        raise KeyError()
+    # 		else:
+    #                        return Qdisc._from_capi(capi.qdisc2obj(qdisc))
 
     @staticmethod
     def _new_object(obj):
@@ -256,12 +259,13 @@ class QdiscCache(netlink.Cache):
     def _new_cache(cache):
         return QdiscCache(cache=cache)
 
+
 class Qdisc(Tc):
     """Queueing discipline"""
 
     def __init__(self, obj=None):
-        netlink.Object.__init__(self, 'route/qdisc', 'qdisc', obj)
-        self._module_path = 'netlink.route.qdisc.'
+        netlink.Object.__init__(self, "route/qdisc", "qdisc", obj)
+        self._module_path = "netlink.route.qdisc."
         self._rtnl_qdisc = self._obj2type(self._nl_object)
         self._rtnl_tc = capi.obj2tc(self._nl_object)
 
@@ -297,105 +301,107 @@ class Qdisc(Tc):
 
         return ret
 
-#	def add(self, socket, flags=None):
-#        	if not flags:
-#                        flags = netlink.NLM_F_CREATE
-#
-#		ret = capi.rtnl_link_add(socket._sock, self._link, flags)
-#		if ret < 0:
-#			raise netlink.KernelError(ret)
-#
-#	def change(self, socket, flags=0):
-#		"""Commit changes made to the link object"""
-#		if not self._orig:
-#			raise NetlinkError('Original link not available')
-#        	ret = capi.rtnl_link_change(socket._sock, self._orig, self._link, flags)
-#                if ret < 0:
-#                        raise netlink.KernelError(ret)
-#
-#	def delete(self, socket):
-#		"""Attempt to delete this link in the kernel"""
-#        	ret = capi.rtnl_link_delete(socket._sock, self._link)
-#                if ret < 0:
-#                        raise netlink.KernelError(ret)
+    # 	def add(self, socket, flags=None):
+    #        	if not flags:
+    #                        flags = netlink.NLM_F_CREATE
+    #
+    # 		ret = capi.rtnl_link_add(socket._sock, self._link, flags)
+    # 		if ret < 0:
+    # 			raise netlink.KernelError(ret)
+    #
+    # 	def change(self, socket, flags=0):
+    # 		"""Commit changes made to the link object"""
+    # 		if not self._orig:
+    # 			raise NetlinkError('Original link not available')
+    #        	ret = capi.rtnl_link_change(socket._sock, self._orig, self._link, flags)
+    #                if ret < 0:
+    #                        raise netlink.KernelError(ret)
+    #
+    # 	def delete(self, socket):
+    # 		"""Attempt to delete this link in the kernel"""
+    #        	ret = capi.rtnl_link_delete(socket._sock, self._link)
+    #                if ret < 0:
+    #                        raise netlink.KernelError(ret)
 
-    def format(self, details=False, stats=False, nodev=False,
-           noparent=False, indent=''):
+    def format(
+        self, details=False, stats=False, nodev=False, noparent=False, indent=""
+    ):
         """Return qdisc as formatted text"""
         fmt = util.MyFormatter(self, indent)
 
-        buf = fmt.format(self.brief('qdisc', nodev, noparent))
+        buf = fmt.format(self.brief("qdisc", nodev, noparent))
 
         if details:
-            buf += fmt.nl('\t' + self.details())
+            buf += fmt.nl("\t" + self.details())
 
         if stats:
             buf += self.stats(fmt)
 
-#		if stats:
-#			l = [['Packets', RX_PACKETS, TX_PACKETS],
-#			     ['Bytes', RX_BYTES, TX_BYTES],
-#			     ['Errors', RX_ERRORS, TX_ERRORS],
-#			     ['Dropped', RX_DROPPED, TX_DROPPED],
-#			     ['Compressed', RX_COMPRESSED, TX_COMPRESSED],
-#			     ['FIFO Errors', RX_FIFO_ERR, TX_FIFO_ERR],
-#			     ['Length Errors', RX_LEN_ERR, None],
-#			     ['Over Errors', RX_OVER_ERR, None],
-#			     ['CRC Errors', RX_CRC_ERR, None],
-#			     ['Frame Errors', RX_FRAME_ERR, None],
-#			     ['Missed Errors', RX_MISSED_ERR, None],
-#			     ['Abort Errors', None, TX_ABORT_ERR],
-#			     ['Carrier Errors', None, TX_CARRIER_ERR],
-#			     ['Heartbeat Errors', None, TX_HBEAT_ERR],
-#			     ['Window Errors', None, TX_WIN_ERR],
-#			     ['Collisions', None, COLLISIONS],
-#			     ['Multicast', None, MULTICAST],
-#			     ['', None, None],
-#			     ['Ipv6:', None, None],
-#			     ['Packets', IP6_INPKTS, IP6_OUTPKTS],
-#			     ['Bytes', IP6_INOCTETS, IP6_OUTOCTETS],
-#			     ['Discards', IP6_INDISCARDS, IP6_OUTDISCARDS],
-#			     ['Multicast Packets', IP6_INMCASTPKTS, IP6_OUTMCASTPKTS],
-#			     ['Multicast Bytes', IP6_INMCASTOCTETS, IP6_OUTMCASTOCTETS],
-#			     ['Broadcast Packets', IP6_INBCASTPKTS, IP6_OUTBCASTPKTS],
-#			     ['Broadcast Bytes', IP6_INBCASTOCTETS, IP6_OUTBCASTOCTETS],
-#			     ['Delivers', IP6_INDELIVERS, None],
-#			     ['Forwarded', None, IP6_OUTFORWDATAGRAMS],
-#			     ['No Routes', IP6_INNOROUTES, IP6_OUTNOROUTES],
-#			     ['Header Errors', IP6_INHDRERRORS, None],
-#			     ['Too Big Errors', IP6_INTOOBIGERRORS, None],
-#			     ['Address Errors', IP6_INADDRERRORS, None],
-#			     ['Unknown Protocol', IP6_INUNKNOWNPROTOS, None],
-#			     ['Truncated Packets', IP6_INTRUNCATEDPKTS, None],
-#			     ['Reasm Timeouts', IP6_REASMTIMEOUT, None],
-#			     ['Reasm Requests', IP6_REASMREQDS, None],
-#			     ['Reasm Failures', IP6_REASMFAILS, None],
-#			     ['Reasm OK', IP6_REASMOKS, None],
-#			     ['Frag Created', None, IP6_FRAGCREATES],
-#			     ['Frag Failures', None, IP6_FRAGFAILS],
-#			     ['Frag OK', None, IP6_FRAGOKS],
-#			     ['', None, None],
-#			     ['ICMPv6:', None, None],
-#			     ['Messages', ICMP6_INMSGS, ICMP6_OUTMSGS],
-#			     ['Errors', ICMP6_INERRORS, ICMP6_OUTERRORS]]
-#
-#			buf += '\n\t%s%s%s%s\n' % (33 * ' ', util.title('RX'),
-#                        			   15 * ' ', util.title('TX'))
-#
-#			for row in l:
-#				row[0] = util.kw(row[0])
-#                                row[1] = self.get_stat(row[1]) if row[1] else ''
-#                                row[2] = self.get_stat(row[2]) if row[2] else ''
-#				buf += '\t{0:27} {1:>16} {2:>16}\n'.format(*row)
+        # 		if stats:
+        # 			l = [['Packets', RX_PACKETS, TX_PACKETS],
+        # 			     ['Bytes', RX_BYTES, TX_BYTES],
+        # 			     ['Errors', RX_ERRORS, TX_ERRORS],
+        # 			     ['Dropped', RX_DROPPED, TX_DROPPED],
+        # 			     ['Compressed', RX_COMPRESSED, TX_COMPRESSED],
+        # 			     ['FIFO Errors', RX_FIFO_ERR, TX_FIFO_ERR],
+        # 			     ['Length Errors', RX_LEN_ERR, None],
+        # 			     ['Over Errors', RX_OVER_ERR, None],
+        # 			     ['CRC Errors', RX_CRC_ERR, None],
+        # 			     ['Frame Errors', RX_FRAME_ERR, None],
+        # 			     ['Missed Errors', RX_MISSED_ERR, None],
+        # 			     ['Abort Errors', None, TX_ABORT_ERR],
+        # 			     ['Carrier Errors', None, TX_CARRIER_ERR],
+        # 			     ['Heartbeat Errors', None, TX_HBEAT_ERR],
+        # 			     ['Window Errors', None, TX_WIN_ERR],
+        # 			     ['Collisions', None, COLLISIONS],
+        # 			     ['Multicast', None, MULTICAST],
+        # 			     ['', None, None],
+        # 			     ['Ipv6:', None, None],
+        # 			     ['Packets', IP6_INPKTS, IP6_OUTPKTS],
+        # 			     ['Bytes', IP6_INOCTETS, IP6_OUTOCTETS],
+        # 			     ['Discards', IP6_INDISCARDS, IP6_OUTDISCARDS],
+        # 			     ['Multicast Packets', IP6_INMCASTPKTS, IP6_OUTMCASTPKTS],
+        # 			     ['Multicast Bytes', IP6_INMCASTOCTETS, IP6_OUTMCASTOCTETS],
+        # 			     ['Broadcast Packets', IP6_INBCASTPKTS, IP6_OUTBCASTPKTS],
+        # 			     ['Broadcast Bytes', IP6_INBCASTOCTETS, IP6_OUTBCASTOCTETS],
+        # 			     ['Delivers', IP6_INDELIVERS, None],
+        # 			     ['Forwarded', None, IP6_OUTFORWDATAGRAMS],
+        # 			     ['No Routes', IP6_INNOROUTES, IP6_OUTNOROUTES],
+        # 			     ['Header Errors', IP6_INHDRERRORS, None],
+        # 			     ['Too Big Errors', IP6_INTOOBIGERRORS, None],
+        # 			     ['Address Errors', IP6_INADDRERRORS, None],
+        # 			     ['Unknown Protocol', IP6_INUNKNOWNPROTOS, None],
+        # 			     ['Truncated Packets', IP6_INTRUNCATEDPKTS, None],
+        # 			     ['Reasm Timeouts', IP6_REASMTIMEOUT, None],
+        # 			     ['Reasm Requests', IP6_REASMREQDS, None],
+        # 			     ['Reasm Failures', IP6_REASMFAILS, None],
+        # 			     ['Reasm OK', IP6_REASMOKS, None],
+        # 			     ['Frag Created', None, IP6_FRAGCREATES],
+        # 			     ['Frag Failures', None, IP6_FRAGFAILS],
+        # 			     ['Frag OK', None, IP6_FRAGOKS],
+        # 			     ['', None, None],
+        # 			     ['ICMPv6:', None, None],
+        # 			     ['Messages', ICMP6_INMSGS, ICMP6_OUTMSGS],
+        # 			     ['Errors', ICMP6_INERRORS, ICMP6_OUTERRORS]]
+        #
+        # 			buf += '\n\t%s%s%s%s\n' % (33 * ' ', util.title('RX'),
+        #                        			   15 * ' ', util.title('TX'))
+        #
+        # 			for row in l:
+        # 				row[0] = util.kw(row[0])
+        #                                row[1] = self.get_stat(row[1]) if row[1] else ''
+        #                                row[2] = self.get_stat(row[2]) if row[2] else ''
+        # 				buf += '\t{0:27} {1:>16} {2:>16}\n'.format(*row)
 
         return buf
+
 
 class TcClassCache(netlink.Cache):
     """Cache of traffic classes"""
 
     def __init__(self, ifindex, cache=None):
         if not cache:
-            cache = self._alloc_cache_name('route/class')
+            cache = self._alloc_cache_name("route/class")
 
         self._protocol = netlink.NETLINK_ROUTE
         self._nl_cache = cache
@@ -408,12 +414,13 @@ class TcClassCache(netlink.Cache):
     def _new_cache(self, cache):
         return TcClassCache(self.arg1, cache=cache)
 
+
 class TcClass(Tc):
     """Traffic Class"""
 
     def __init__(self, obj=None):
-        netlink.Object.__init__(self, 'route/class', 'class', obj)
-        self._module_path = 'netlink.route.qdisc.'
+        netlink.Object.__init__(self, "route/class", "class", obj)
+        self._module_path = "netlink.route.qdisc."
         self._rtnl_class = self._obj2type(self._nl_object)
         self._rtnl_tc = capi.obj2tc(self._nl_object)
 
@@ -447,24 +454,26 @@ class TcClass(Tc):
 
         return ret
 
-    def format(self, details=False, _stats=False, nodev=False,
-           noparent=False, indent=''):
+    def format(
+        self, details=False, _stats=False, nodev=False, noparent=False, indent=""
+    ):
         """Return class as formatted text"""
         fmt = util.MyFormatter(self, indent)
 
-        buf = fmt.format(self.brief('class', nodev, noparent))
+        buf = fmt.format(self.brief("class", nodev, noparent))
 
         if details:
-            buf += fmt.nl('\t' + self.details())
+            buf += fmt.nl("\t" + self.details())
 
         return buf
+
 
 class ClassifierCache(netlink.Cache):
     """Cache of traffic classifiers objects"""
 
     def __init__(self, ifindex, parent, cache=None):
         if not cache:
-            cache = self._alloc_cache_name('route/cls')
+            cache = self._alloc_cache_name("route/cls")
 
         self._protocol = netlink.NETLINK_ROUTE
         self._nl_cache = cache
@@ -478,12 +487,13 @@ class ClassifierCache(netlink.Cache):
     def _new_cache(self, cache):
         return ClassifierCache(self.arg1, self.arg2, cache=cache)
 
+
 class Classifier(Tc):
     """Classifier"""
 
     def __init__(self, obj=None):
-        netlink.Object.__init__(self, 'route/cls', 'cls', obj)
-        self._module_path = 'netlink.route.cls.'
+        netlink.Object.__init__(self, "route/cls", "cls", obj)
+        self._module_path = "netlink.route.cls."
         self._rtnl_cls = self._obj2type(self._nl_object)
         self._rtnl_tc = capi.obj2tc(self._nl_object)
 
@@ -522,23 +532,26 @@ class Classifier(Tc):
     def childs(self):
         return []
 
-    def format(self, details=False, _stats=False, nodev=False,
-           noparent=False, indent=''):
+    def format(
+        self, details=False, _stats=False, nodev=False, noparent=False, indent=""
+    ):
         """Return class as formatted text"""
         fmt = util.MyFormatter(self, indent)
 
-        buf = fmt.format(self.brief('classifier', nodev, noparent))
-        buf += fmt.format(' {t|priority} {t|protocol}')
+        buf = fmt.format(self.brief("classifier", nodev, noparent))
+        buf += fmt.format(" {t|priority} {t|protocol}")
 
         if details:
-            buf += fmt.nl('\t' + self.details())
+            buf += fmt.nl("\t" + self.details())
 
         return buf
 
+
 _qdisc_cache = QdiscCache()
 
+
 def get_qdisc(ifindex, handle=None, parent=None):
-    l = []
+    lst = []
 
     _qdisc_cache.refill()
 
@@ -549,14 +562,16 @@ def get_qdisc(ifindex, handle=None, parent=None):
             continue
         if (parent is not None) and (qdisc.parent != parent):
             continue
-        l.append(qdisc)
+        lst.append(qdisc)
 
-    return l
+    return lst
+
 
 _class_cache = {}
 
+
 def get_class(ifindex, parent, handle=None):
-    l = []
+    lst = []
 
     try:
         cache = _class_cache[ifindex]
@@ -571,11 +586,13 @@ def get_class(ifindex, parent, handle=None):
             continue
         if (handle is not None) and (cl.handle != handle):
             continue
-        l.append(cl)
+        lst.append(cl)
 
-    return l
+    return lst
+
 
 _cls_cache = {}
+
 
 def get_cls(ifindex, parent, handle=None):
 
@@ -590,6 +607,6 @@ def get_cls(ifindex, parent, handle=None):
     cache.refill()
 
     if handle is None:
-        return [ cls for cls in cache ]
+        return [cls for cls in cache]
 
-    return [ cls for cls in cache if cls.handle == handle ]
+    return [cls for cls in cache if cls.handle == handle]

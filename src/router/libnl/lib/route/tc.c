@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/tc.c		Traffic Control
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,16 +9,20 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <linux/if_arp.h>
+#include <linux/gen_stats.h>
+
+#include <linux/atm.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/link.h>
 #include <netlink/route/tc.h>
-#include <netlink-private/route/tc-api.h>
 
-#include "netlink-private/utils.h"
+#include "tc-api.h"
 
 /** @cond SKIP */
 
@@ -112,11 +109,11 @@ int rtnl_tc_msg_parse(struct nlmsghdr *n, struct rtnl_tc *tc)
 			return err;
 
 		if (tbs[TCA_STATS_BASIC]) {
-			struct gnet_stats_basic *bs;
+			struct gnet_stats_basic bs;
 			
-			bs = nla_data(tbs[TCA_STATS_BASIC]);
-			tc->tc_stats[RTNL_TC_BYTES]	= bs->bytes;
-			tc->tc_stats[RTNL_TC_PACKETS]	= bs->packets;
+			memcpy(&bs, nla_data(tbs[TCA_STATS_BASIC]), sizeof(bs));
+			tc->tc_stats[RTNL_TC_BYTES]	= bs.bytes;
+			tc->tc_stats[RTNL_TC_PACKETS]	= bs.packets;
 		}
 
 		if (tbs[TCA_STATS_RATE_EST]) {
@@ -149,16 +146,17 @@ int rtnl_tc_msg_parse(struct nlmsghdr *n, struct rtnl_tc *tc)
 			goto compat_xstats;
 	} else {
 		if (tb[TCA_STATS]) {
-			struct tc_stats *st = nla_data(tb[TCA_STATS]);
+			struct tc_stats st;
 
-			tc->tc_stats[RTNL_TC_BYTES]	= st->bytes;
-			tc->tc_stats[RTNL_TC_PACKETS]	= st->packets;
-			tc->tc_stats[RTNL_TC_RATE_BPS]	= st->bps;
-			tc->tc_stats[RTNL_TC_RATE_PPS]	= st->pps;
-			tc->tc_stats[RTNL_TC_QLEN]	= st->qlen;
-			tc->tc_stats[RTNL_TC_BACKLOG]	= st->backlog;
-			tc->tc_stats[RTNL_TC_DROPS]	= st->drops;
-			tc->tc_stats[RTNL_TC_OVERLIMITS]= st->overlimits;
+			memcpy(&st, nla_data(tb[TCA_STATS]), sizeof(st));
+			tc->tc_stats[RTNL_TC_BYTES]	= st.bytes;
+			tc->tc_stats[RTNL_TC_PACKETS]	= st.packets;
+			tc->tc_stats[RTNL_TC_RATE_BPS]	= st.bps;
+			tc->tc_stats[RTNL_TC_RATE_PPS]	= st.pps;
+			tc->tc_stats[RTNL_TC_QLEN]	= st.qlen;
+			tc->tc_stats[RTNL_TC_BACKLOG]	= st.backlog;
+			tc->tc_stats[RTNL_TC_DROPS]	= st.drops;
+			tc->tc_stats[RTNL_TC_OVERLIMITS]= st.overlimits;
 
 			tc->ce_mask |= TCA_ATTR_STATS;
 		}
@@ -536,7 +534,7 @@ int rtnl_tc_set_kind(struct rtnl_tc *tc, const char *kind)
 	    || strlen (kind) >= sizeof (tc->tc_kind))
 		return -NLE_INVAL;
 
-	_nl_strncpy(tc->tc_kind, kind, sizeof(tc->tc_kind));
+	_nl_strncpy_assert(tc->tc_kind, kind, sizeof(tc->tc_kind));
 
 	tc->ce_mask |= TCA_ATTR_KIND;
 
@@ -815,14 +813,17 @@ int rtnl_tc_clone(struct nl_object *dstobj, struct nl_object *srcobj)
 	struct rtnl_tc *src = TC_CAST(srcobj);
 	struct rtnl_tc_ops *ops;
 
+	dst->tc_opts = NULL;
+	dst->tc_xstats = NULL;
+	dst->tc_subdata = NULL;
+	dst->tc_link = NULL;
+	dst->tc_ops = NULL;
+
 	if (src->tc_link) {
 		nl_object_get(OBJ_CAST(src->tc_link));
 		dst->tc_link = src->tc_link;
 	}
 
-	dst->tc_opts = NULL;
-	dst->tc_xstats = NULL;
-	dst->tc_subdata = NULL;
 	dst->ce_mask &= ~(TCA_ATTR_OPTS |
 	                  TCA_ATTR_XSTATS);
 
@@ -844,18 +845,19 @@ int rtnl_tc_clone(struct nl_object *dstobj, struct nl_object *srcobj)
 		if (!(dst->tc_subdata = nl_data_clone(src->tc_subdata))) {
 			return -NLE_NOMEM;
 		}
-	}
 
-	ops = rtnl_tc_get_ops(src);
-	if (ops && ops->to_clone) {
-		void *a = rtnl_tc_data(dst), *b = rtnl_tc_data(src);
+		/* Warning: if the data contains pointer, then at this point, dst->tc_subdata
+		 * will alias those pointers.
+		 *
+		 * ops->to_clone() MUST fix that.
+		 *
+		 * If the type is actually "struct rtnl_act", then to_clone() must also
+		 * fix dangling "a_next" pointer. */
 
-		if (!a)
-			return 0;
-		else if (!b)
-			return -NLE_NOMEM;
-
-		return ops->to_clone(a, b);
+		ops = rtnl_tc_get_ops(src);
+		if (ops && ops->to_clone) {
+			return ops->to_clone(rtnl_tc_data(dst), rtnl_tc_data(src));
+		}
 	}
 
 	return 0;
@@ -952,22 +954,19 @@ void rtnl_tc_dump_stats(struct nl_object *obj, struct nl_dump_params *p)
 
 	res = nl_cancel_down_bytes(tc->tc_stats[RTNL_TC_BYTES], &unit);
 
-	nl_dump_line(p,
-	             "       %10.2f %3s   %10u   %-10u %-10u %-10u %-10u\n",
-	             res, unit,
-	             tc->tc_stats[RTNL_TC_PACKETS],
-	             tc->tc_stats[RTNL_TC_DROPS],
-	             tc->tc_stats[RTNL_TC_OVERLIMITS],
-	             tc->tc_stats[RTNL_TC_QLEN],
-	             tc->tc_stats[RTNL_TC_BACKLOG]);
+	nl_dump_line(
+		p,
+		"       %10.2f %3s   %10llu   %-10llu %-10llu %-10llu %-10llu\n",
+		res, unit, (long long unsigned)tc->tc_stats[RTNL_TC_PACKETS],
+		(long long unsigned)tc->tc_stats[RTNL_TC_DROPS],
+		(long long unsigned)tc->tc_stats[RTNL_TC_OVERLIMITS],
+		(long long unsigned)tc->tc_stats[RTNL_TC_QLEN],
+		(long long unsigned)tc->tc_stats[RTNL_TC_BACKLOG]);
 
 	res = nl_cancel_down_bytes(tc->tc_stats[RTNL_TC_RATE_BPS], &unit);
 
-	nl_dump_line(p,
-	             "       %10.2f %3s/s %10u/s\n",
-	             res,
-	             unit,
-	             tc->tc_stats[RTNL_TC_RATE_PPS]);
+	nl_dump_line(p, "       %10.2f %3s/s %10llu/s\n", res, unit,
+		     (long long unsigned)tc->tc_stats[RTNL_TC_RATE_PPS]);
 }
 
 uint64_t rtnl_tc_compare(struct nl_object *aobj, struct nl_object *bobj,
@@ -977,14 +976,12 @@ uint64_t rtnl_tc_compare(struct nl_object *aobj, struct nl_object *bobj,
 	struct rtnl_tc *b = TC_CAST(bobj);
 	uint64_t diff = 0;
 
-#define TC_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, TCA_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= TC_DIFF(HANDLE,		a->tc_handle != b->tc_handle);
-	diff |= TC_DIFF(PARENT,		a->tc_parent != b->tc_parent);
-	diff |= TC_DIFF(IFINDEX,	a->tc_ifindex != b->tc_ifindex);
-	diff |= TC_DIFF(KIND,		strcmp(a->tc_kind, b->tc_kind));
-
-#undef TC_DIFF
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(TCA_ATTR_HANDLE, a->tc_handle != b->tc_handle);
+	diff |= _DIFF(TCA_ATTR_PARENT, a->tc_parent != b->tc_parent);
+	diff |= _DIFF(TCA_ATTR_IFINDEX, a->tc_ifindex != b->tc_ifindex);
+	diff |= _DIFF(TCA_ATTR_KIND, strcmp(a->tc_kind, b->tc_kind));
+#undef _DIFF
 
 	return diff;
 }
@@ -1025,7 +1022,7 @@ int rtnl_tc_register(struct rtnl_tc_ops *ops)
 	/*
 	 * Initialiation hack, make sure list is initialized when
 	 * the first tc module registers. Putting this in a
-	 * separate __init would required correct ordering of init
+	 * separate _nl_init would required correct ordering of init
 	 * functions
 	 */
 	if (!init) {

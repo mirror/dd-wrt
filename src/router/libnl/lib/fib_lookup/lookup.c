@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/fib_lookup/lookup.c	FIB Lookup
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -17,8 +10,8 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/utils.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
@@ -28,7 +21,24 @@
 #include <netlink/fib_lookup/request.h>
 #include <netlink/fib_lookup/lookup.h>
 
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+
 /** @cond SKIP */
+struct flnl_result
+{
+	NLHDR_COMMON
+
+	struct flnl_request *	fr_req;
+	uint8_t			fr_table_id;
+	uint8_t			fr_prefixlen;
+	uint8_t			fr_nh_sel;
+	uint8_t			fr_type;
+	uint8_t			fr_scope;
+	uint32_t		fr_error;
+};
+
 static struct nl_cache_ops fib_lookup_ops;
 static struct nl_object_ops result_obj_ops;
 
@@ -62,11 +72,13 @@ static int result_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct flnl_result *dst = nl_object_priv(_dst);
 	struct flnl_result *src = nl_object_priv(_src);
 
-	if (src->fr_req)
-		if (!(dst->fr_req = (struct flnl_request *)
-				nl_object_clone(OBJ_CAST(src->fr_req))))
+	dst->fr_req = NULL;
+
+	if (src->fr_req) {
+		if (!(dst->fr_req = (struct flnl_request *) nl_object_clone(OBJ_CAST(src->fr_req))))
 			return -NLE_NOMEM;
-	
+	}
+
 	return 0;
 }
 
@@ -338,12 +350,12 @@ static struct nl_cache_ops fib_lookup_ops = {
 	.co_obj_ops		= &result_obj_ops,
 };
 
-static void __init fib_lookup_init(void)
+static void _nl_init fib_lookup_init(void)
 {
 	nl_cache_mngt_register(&fib_lookup_ops);
 }
 
-static void __exit fib_lookup_exit(void)
+static void _nl_exit fib_lookup_exit(void)
 {
 	nl_cache_mngt_unregister(&fib_lookup_ops);
 }

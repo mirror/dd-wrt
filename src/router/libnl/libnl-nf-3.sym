@@ -1,3 +1,9 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
 libnl_3 {
 global:
 	# ops structure
@@ -314,3 +320,32 @@ global:
 local:
 	*;
 };
+
+libnl_3_6 {
+global:
+	nfnl_log_msg_get_ct;
+	nfnl_log_msg_get_ct_info;
+	nfnl_log_msg_get_hwheader;
+	nfnl_log_msg_get_hwlen;
+	nfnl_log_msg_get_hwtype;
+	nfnl_log_msg_get_vlan_cfi;
+	nfnl_log_msg_get_vlan_id;
+	nfnl_log_msg_get_vlan_prio;
+	nfnl_log_msg_get_vlan_proto;
+	nfnl_log_msg_get_vlan_tag;
+	nfnl_log_msg_set_ct;
+	nfnl_log_msg_set_ct_info;
+	nfnl_log_msg_set_hwheader;
+	nfnl_log_msg_set_hwlen;
+	nfnl_log_msg_set_hwtype;
+	nfnl_log_msg_set_vlan_proto;
+	nfnl_log_msg_set_vlan_tag;
+	nfnl_log_msg_test_ct;
+	nfnl_log_msg_test_ct_info;
+	nfnl_log_msg_test_hwheader;
+	nfnl_log_msg_test_hwlen;
+	nfnl_log_msg_test_hwtype;
+	nfnl_log_msg_test_vlan_proto;
+	nfnl_log_msg_test_vlan_tag;
+	nfnlmsg_ct_parse_nested;
+} libnl_3;

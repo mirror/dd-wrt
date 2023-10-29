@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/link/sit.h		SIT interface
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2014 Susant Sahani <susant@redhat.com>
  */
 
@@ -59,6 +53,9 @@ extern "C" {
 
 	int rtnl_link_sit_set_ip6rd_relay_prefixlen(struct rtnl_link *link, uint16_t prefix);
 	int rtnl_link_sit_get_ip6rd_relay_prefixlen(struct rtnl_link *link, uint16_t *prefix);
+
+	extern int rtnl_link_sit_set_fwmark(struct rtnl_link *link, uint32_t fwmark);
+	extern int rtnl_link_sit_get_fwmark(struct rtnl_link *link, uint32_t *fwmark);
 
 #ifdef __cplusplus
 }

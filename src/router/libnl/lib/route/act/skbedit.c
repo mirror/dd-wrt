@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/act/skbedit.c		skbedit action
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2015 Cong Wang <xiyou.wangcong@gmail.com>
  */
 
@@ -16,13 +10,23 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/act/skbedit.h>
+
+#include "nl-route.h"
+#include "tc-api.h"
+
+struct rtnl_skbedit {
+	struct tc_skbedit s_parm;
+	uint32_t s_flags;
+	uint32_t s_mark;
+	uint32_t s_prio;
+	uint16_t s_queue_mapping;
+};
 
 static struct nla_policy skbedit_policy[TCA_SKBEDIT_MAX + 1] = {
 	[TCA_SKBEDIT_PARMS]             = { .minlen = sizeof(struct tc_skbedit) },
@@ -65,14 +69,6 @@ static int skbedit_msg_parser(struct rtnl_tc *tc, void *data)
 
 static void skbedit_free_data(struct rtnl_tc *tc, void *data)
 {
-}
-
-static int skbedit_clone(void *_dst, void *_src)
-{
-	struct rtnl_skbedit *dst = _dst, *src = _src;
-
-	memcpy(dst, src, sizeof(*src));
-	return 0;
 }
 
 static void skbedit_dump_line(struct rtnl_tc *tc, void *data,
@@ -166,10 +162,8 @@ int rtnl_skbedit_set_action(struct rtnl_act *act, int action)
 	if (!(u = (struct rtnl_skbedit *) rtnl_tc_data(TC_CAST(act))))
 		return -NLE_NOMEM;
 
-	if (action > TC_ACT_REPEAT || action < TC_ACT_UNSPEC)
-		return -NLE_INVAL;
-
 	u->s_parm.action = action;
+
 	return 0;
 }
 
@@ -268,7 +262,7 @@ static struct rtnl_tc_ops skbedit_ops = {
 	.to_size		= sizeof(struct rtnl_skbedit),
 	.to_msg_parser		= skbedit_msg_parser,
 	.to_free_data		= skbedit_free_data,
-	.to_clone		= skbedit_clone,
+	.to_clone		= NULL,
 	.to_msg_fill		= skbedit_msg_fill,
 	.to_dump = {
 	    [NL_DUMP_LINE]	= skbedit_dump_line,
@@ -277,12 +271,12 @@ static struct rtnl_tc_ops skbedit_ops = {
 	},
 };
 
-static void __init skbedit_init(void)
+static void _nl_init skbedit_init(void)
 {
 	rtnl_tc_register(&skbedit_ops);
 }
 
-static void __exit skbedit_exit(void)
+static void _nl_exit skbedit_exit(void)
 {
 	rtnl_tc_unregister(&skbedit_ops);
 }

@@ -1,18 +1,16 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/cli/cls/basic.c    	basic classifier module for CLI lib
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2011 Thomas Graf <tgraf@suug.ch>
  */
+
+#include "nl-default.h"
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
 #include <netlink/cli/cls.h>
 #include <netlink/route/cls/basic.h>
+
+#include "base/nl-base-utils.h"
 
 static void print_usage(void)
 {
@@ -82,12 +80,12 @@ static struct nl_cli_tc_module basic_module =
 	.tm_parse_argv		= parse_argv,
 };
 
-static void __init basic_init(void)
+static void _nl_init basic_init(void)
 {
 	nl_cli_tc_register(&basic_module);
 }
 
-static void __exit basic_exit(void)
+static void _nl_exit basic_exit(void)
 {
 	nl_cli_tc_unregister(&basic_module);
 }

@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/act/gact.c		gact action
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2016 Sushma Sitaram <sushma.sitaram@intel.com>
  */
 
@@ -16,13 +10,18 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/act/gact.h>
+
+#include "tc-api.h"
+
+struct rtnl_gact {
+	struct tc_gact g_parm;
+};
 
 static struct nla_policy gact_policy[TCA_GACT_MAX + 1] = {
 	[TCA_GACT_PARMS]             = { .minlen = sizeof(struct tc_gact) },
@@ -48,14 +47,6 @@ static int gact_msg_parser(struct rtnl_tc *tc, void *data)
 
 static void gact_free_data(struct rtnl_tc *tc, void *data)
 {
-}
-
-static int gact_clone(void *_dst, void *_src)
-{
-	struct rtnl_gact *dst = _dst, *src = _src;
-
-	memcpy(&dst->g_parm, &src->g_parm, sizeof(src->g_parm));
-	return 0;
 }
 
 static void gact_dump_line(struct rtnl_tc *tc, void *data,
@@ -126,19 +117,7 @@ int rtnl_gact_set_action(struct rtnl_act *act, int action)
 	if (!(u = (struct rtnl_gact *) rtnl_tc_data(TC_CAST(act))))
 		return -NLE_NOMEM;
 
-	if (action > TC_ACT_SHOT || action < TC_ACT_UNSPEC)
-		return -NLE_INVAL;
-
-	switch (action) {
-	case TC_ACT_UNSPEC:
-	case TC_ACT_SHOT:
-		u->g_parm.action = action;
-		break;
-	case TC_ACT_OK:
-	case TC_ACT_RECLASSIFY:
-	default:
-		return NLE_OPNOTSUPP;
-	}
+	u->g_parm.action = action;
 
 	return 0;
 }
@@ -161,7 +140,7 @@ static struct rtnl_tc_ops gact_ops = {
 	.to_size		= sizeof(struct rtnl_gact),
 	.to_msg_parser		= gact_msg_parser,
 	.to_free_data		= gact_free_data,
-	.to_clone		= gact_clone,
+	.to_clone		= NULL,
 	.to_msg_fill		= gact_msg_fill,
 	.to_dump = {
 	    [NL_DUMP_LINE]	= gact_dump_line,
@@ -170,12 +149,12 @@ static struct rtnl_tc_ops gact_ops = {
 	},
 };
 
-static void __init gact_init(void)
+static void _nl_init gact_init(void)
 {
 	rtnl_tc_register(&gact_ops);
 }
 
-static void __exit gact_exit(void)
+static void _nl_exit gact_exit(void)
 {
 	rtnl_tc_unregister(&gact_ops);
 }

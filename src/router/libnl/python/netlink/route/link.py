@@ -36,18 +36,17 @@ The following public functions exist:
 
 from __future__ import absolute_import
 
-__version__ = '0.1'
+__version__ = "0.1"
 __all__ = [
-    'LinkCache',
-    'Link',
-    'get_from_kernel',
+    "LinkCache",
+    "Link",
 ]
 
 import socket
 from .. import core as netlink
 from .. import capi as core_capi
-from .  import capi as capi
-from .links  import inet as inet
+from . import capi as capi
+from .links import inet as inet
 from .. import util as util
 
 # Link statistics definitions
@@ -109,12 +108,13 @@ ICMP6_INERRORS = 54
 ICMP6_OUTMSGS = 55
 ICMP6_OUTERRORS = 56
 
+
 class LinkCache(netlink.Cache):
     """Cache of network links"""
 
     def __init__(self, family=socket.AF_UNSPEC, cache=None):
         if not cache:
-            cache = self._alloc_cache_name('route/link')
+            cache = self._alloc_cache_name("route/link")
 
         self._info_module = None
         self._protocol = netlink.NETLINK_ROUTE
@@ -139,18 +139,19 @@ class LinkCache(netlink.Cache):
     def _new_cache(self, cache):
         return LinkCache(family=self.arg1, cache=cache)
 
+
 class Link(netlink.Object):
     """Network link"""
 
     def __init__(self, obj=None):
-        netlink.Object.__init__(self, 'route/link', 'link', obj)
+        netlink.Object.__init__(self, "route/link", "link", obj)
         self._rtnl_link = self._obj2type(self._nl_object)
 
         if self.type:
-            self._module_lookup('netlink.route.links.' + self.type)
+            self._module_lookup("netlink.route.links." + self.type)
 
         self.inet = inet.InetLink(self)
-        self.af = {'inet' : self.inet }
+        self.af = {"inet": self.inet}
 
     def __enter__(self):
         return self
@@ -159,7 +160,7 @@ class Link(netlink.Object):
         if exc_type is None:
             self.change()
         else:
-            return false
+            return False
 
     @classmethod
     def from_capi(cls, obj):
@@ -223,13 +224,13 @@ class Link(netlink.Object):
         link.flags = [ '+xxx', '-yyy' ] # list operation
         """
         flags = capi.rtnl_link_get_flags(self._rtnl_link)
-        return capi.rtnl_link_flags2str(flags, 256)[0].split(',')
+        return capi.rtnl_link_flags2str(flags, 256)[0].split(",")
 
     def _set_flag(self, flag):
-        if flag.startswith('-'):
+        if flag.startswith("-"):
             i = capi.rtnl_link_str2flags(flag[1:])
             capi.rtnl_link_unset_flags(self._rtnl_link, i)
-        elif flag.startswith('+'):
+        elif flag.startswith("+"):
             i = capi.rtnl_link_str2flags(flag[1:])
             capi.rtnl_link_set_flags(self._rtnl_link, i)
         else:
@@ -319,7 +320,7 @@ class Link(netlink.Object):
         capi.rtnl_link_set_arptype(self._rtnl_link, i)
 
     @property
-    @netlink.nlattr(type=str, immutable=True, fmt=util.string, title='state')
+    @netlink.nlattr(type=str, immutable=True, fmt=util.string, title="state")
     def operstate(self):
         """Operational status"""
         operstate = capi.rtnl_link_get_operstate(self._rtnl_link)
@@ -361,16 +362,16 @@ class Link(netlink.Object):
     @type.setter
     def type(self, value):
         if capi.rtnl_link_set_type(self._rtnl_link, value) < 0:
-            raise NameError('unknown info type')
+            raise NameError("unknown info type")
 
-        self._module_lookup('netlink.route.links.' + value)
+        self._module_lookup("netlink.route.links." + value)
 
     def get_stat(self, stat):
         """Retrieve statistical information"""
         if type(stat) is str:
             stat = capi.rtnl_link_str2stat(stat)
             if stat < 0:
-                raise NameError('unknown name of statistic')
+                raise NameError("unknown name of statistic")
 
         return capi.rtnl_link_get_stat(self._rtnl_link, stat)
 
@@ -403,7 +404,7 @@ class Link(netlink.Object):
             sock = netlink.lookup_socket(netlink.NETLINK_ROUTE)
 
         if not self._orig:
-            raise netlink.NetlinkError('Original link not available')
+            raise netlink.NetlinkError("Original link not available")
         ret = capi.rtnl_link_change(sock._sock, self._orig, self._rtnl_link, flags)
         if ret < 0:
             raise netlink.KernelError(ret)
@@ -423,112 +424,120 @@ class Link(netlink.Object):
     # Used for formatting output. USE AT OWN RISK
     @property
     def _state(self):
-        if 'up' in self.flags:
-            buf = util.good('up')
-            if 'lowerup' not in self.flags:
-                buf += ' ' + util.bad('no-carrier')
+        if "up" in self.flags:
+            buf = util.good("up")
+            if "lowerup" not in self.flags:
+                buf += " " + util.bad("no-carrier")
         else:
-            buf = util.bad('down')
+            buf = util.bad("down")
         return buf
 
     @property
     def _brief(self):
-        return self._module_brief() + self._foreach_af('brief')
+        return self._module_brief() + self._foreach_af("brief")
 
     @property
     def _flags(self):
         ignore = [
-            'up',
-            'running',
-            'lowerup',
+            "up",
+            "running",
+            "lowerup",
         ]
-        return ','.join([flag for flag in self.flags if flag not in ignore])
+        return ",".join([flag for flag in self.flags if flag not in ignore])
 
     def _foreach_af(self, name, args=None):
-        buf = ''
+        buf = ""
         for af in self.af:
             try:
                 func = getattr(self.af[af], name)
                 s = str(func(args))
                 if len(s) > 0:
-                    buf += ' ' + s
+                    buf += " " + s
             except AttributeError:
                 pass
         return buf
 
-    def format(self, details=False, stats=False, indent=''):
+    def format(self, details=False, stats=False, indent=""):
         """Return link as formatted text"""
         fmt = util.MyFormatter(self, indent)
 
-        buf = fmt.format('{a|ifindex} {a|name} {a|arptype} {a|address} '\
-                 '{a|_state} <{a|_flags}> {a|_brief}')
+        buf = fmt.format(
+            "{a|ifindex} {a|name} {a|arptype} {a|address} "
+            "{a|_state} <{a|_flags}> {a|_brief}"
+        )
 
         if details:
-            buf += fmt.nl('\t{t|mtu} {t|txqlen} {t|weight} '\
-                      '{t|qdisc} {t|operstate}')
-            buf += fmt.nl('\t{t|broadcast} {t|alias}')
+            buf += fmt.nl("\t{t|mtu} {t|txqlen} {t|weight} " "{t|qdisc} {t|operstate}")
+            buf += fmt.nl("\t{t|broadcast} {t|alias}")
 
-            buf += self._foreach_af('details', fmt)
+            buf += self._foreach_af("details", fmt)
 
         if stats:
-            l = [['Packets', RX_PACKETS, TX_PACKETS],
-                 ['Bytes', RX_BYTES, TX_BYTES],
-                 ['Errors', RX_ERRORS, TX_ERRORS],
-                 ['Dropped', RX_DROPPED, TX_DROPPED],
-                 ['Compressed', RX_COMPRESSED, TX_COMPRESSED],
-                 ['FIFO Errors', RX_FIFO_ERR, TX_FIFO_ERR],
-                 ['Length Errors', RX_LEN_ERR, None],
-                 ['Over Errors', RX_OVER_ERR, None],
-                 ['CRC Errors', RX_CRC_ERR, None],
-                 ['Frame Errors', RX_FRAME_ERR, None],
-                 ['Missed Errors', RX_MISSED_ERR, None],
-                 ['Abort Errors', None, TX_ABORT_ERR],
-                 ['Carrier Errors', None, TX_CARRIER_ERR],
-                 ['Heartbeat Errors', None, TX_HBEAT_ERR],
-                 ['Window Errors', None, TX_WIN_ERR],
-                 ['Collisions', None, COLLISIONS],
-                 ['Multicast', None, MULTICAST],
-                 ['', None, None],
-                 ['Ipv6:', None, None],
-                 ['Packets', IP6_INPKTS, IP6_OUTPKTS],
-                 ['Bytes', IP6_INOCTETS, IP6_OUTOCTETS],
-                 ['Discards', IP6_INDISCARDS, IP6_OUTDISCARDS],
-                 ['Multicast Packets', IP6_INMCASTPKTS, IP6_OUTMCASTPKTS],
-                 ['Multicast Bytes', IP6_INMCASTOCTETS, IP6_OUTMCASTOCTETS],
-                 ['Broadcast Packets', IP6_INBCASTPKTS, IP6_OUTBCASTPKTS],
-                 ['Broadcast Bytes', IP6_INBCASTOCTETS, IP6_OUTBCASTOCTETS],
-                 ['Delivers', IP6_INDELIVERS, None],
-                 ['Forwarded', None, IP6_OUTFORWDATAGRAMS],
-                 ['No Routes', IP6_INNOROUTES, IP6_OUTNOROUTES],
-                 ['Header Errors', IP6_INHDRERRORS, None],
-                 ['Too Big Errors', IP6_INTOOBIGERRORS, None],
-                 ['Address Errors', IP6_INADDRERRORS, None],
-                 ['Unknown Protocol', IP6_INUNKNOWNPROTOS, None],
-                 ['Truncated Packets', IP6_INTRUNCATEDPKTS, None],
-                 ['Reasm Timeouts', IP6_REASMTIMEOUT, None],
-                 ['Reasm Requests', IP6_REASMREQDS, None],
-                 ['Reasm Failures', IP6_REASMFAILS, None],
-                 ['Reasm OK', IP6_REASMOKS, None],
-                 ['Frag Created', None, IP6_FRAGCREATES],
-                 ['Frag Failures', None, IP6_FRAGFAILS],
-                 ['Frag OK', None, IP6_FRAGOKS],
-                 ['', None, None],
-                 ['ICMPv6:', None, None],
-                 ['Messages', ICMP6_INMSGS, ICMP6_OUTMSGS],
-                 ['Errors', ICMP6_INERRORS, ICMP6_OUTERRORS]]
+            lst = [
+                ["Packets", RX_PACKETS, TX_PACKETS],
+                ["Bytes", RX_BYTES, TX_BYTES],
+                ["Errors", RX_ERRORS, TX_ERRORS],
+                ["Dropped", RX_DROPPED, TX_DROPPED],
+                ["Compressed", RX_COMPRESSED, TX_COMPRESSED],
+                ["FIFO Errors", RX_FIFO_ERR, TX_FIFO_ERR],
+                ["Length Errors", RX_LEN_ERR, None],
+                ["Over Errors", RX_OVER_ERR, None],
+                ["CRC Errors", RX_CRC_ERR, None],
+                ["Frame Errors", RX_FRAME_ERR, None],
+                ["Missed Errors", RX_MISSED_ERR, None],
+                ["Abort Errors", None, TX_ABORT_ERR],
+                ["Carrier Errors", None, TX_CARRIER_ERR],
+                ["Heartbeat Errors", None, TX_HBEAT_ERR],
+                ["Window Errors", None, TX_WIN_ERR],
+                ["Collisions", None, COLLISIONS],
+                ["Multicast", None, MULTICAST],
+                ["", None, None],
+                ["Ipv6:", None, None],
+                ["Packets", IP6_INPKTS, IP6_OUTPKTS],
+                ["Bytes", IP6_INOCTETS, IP6_OUTOCTETS],
+                ["Discards", IP6_INDISCARDS, IP6_OUTDISCARDS],
+                ["Multicast Packets", IP6_INMCASTPKTS, IP6_OUTMCASTPKTS],
+                ["Multicast Bytes", IP6_INMCASTOCTETS, IP6_OUTMCASTOCTETS],
+                ["Broadcast Packets", IP6_INBCASTPKTS, IP6_OUTBCASTPKTS],
+                ["Broadcast Bytes", IP6_INBCASTOCTETS, IP6_OUTBCASTOCTETS],
+                ["Delivers", IP6_INDELIVERS, None],
+                ["Forwarded", None, IP6_OUTFORWDATAGRAMS],
+                ["No Routes", IP6_INNOROUTES, IP6_OUTNOROUTES],
+                ["Header Errors", IP6_INHDRERRORS, None],
+                ["Too Big Errors", IP6_INTOOBIGERRORS, None],
+                ["Address Errors", IP6_INADDRERRORS, None],
+                ["Unknown Protocol", IP6_INUNKNOWNPROTOS, None],
+                ["Truncated Packets", IP6_INTRUNCATEDPKTS, None],
+                ["Reasm Timeouts", IP6_REASMTIMEOUT, None],
+                ["Reasm Requests", IP6_REASMREQDS, None],
+                ["Reasm Failures", IP6_REASMFAILS, None],
+                ["Reasm OK", IP6_REASMOKS, None],
+                ["Frag Created", None, IP6_FRAGCREATES],
+                ["Frag Failures", None, IP6_FRAGFAILS],
+                ["Frag OK", None, IP6_FRAGOKS],
+                ["", None, None],
+                ["ICMPv6:", None, None],
+                ["Messages", ICMP6_INMSGS, ICMP6_OUTMSGS],
+                ["Errors", ICMP6_INERRORS, ICMP6_OUTERRORS],
+            ]
 
-            buf += '\n\t%s%s%s%s\n' % (33 * ' ', util.title('RX'),
-                           15 * ' ', util.title('TX'))
+            buf += "\n\t%s%s%s%s\n" % (
+                33 * " ",
+                util.title("RX"),
+                15 * " ",
+                util.title("TX"),
+            )
 
-            for row in l:
+            for row in lst:
                 row[0] = util.kw(row[0])
-                row[1] = self.get_stat(row[1]) if row[1] else ''
-                row[2] = self.get_stat(row[2]) if row[2] else ''
-                buf += '\t{0[0]:27} {0[1]:>16} {0[2]:>16}\n'.format(row)
+                row[1] = self.get_stat(row[1]) if row[1] else ""
+                row[2] = self.get_stat(row[2]) if row[2] else ""
+                buf += "\t{0[0]:27} {0[1]:>16} {0[2]:>16}\n".format(row)
 
-            buf += self._foreach_af('stats')
+            buf += self._foreach_af("stats")
 
         return buf
+
 
 def get(name, sock=None):
     """Lookup Link object directly from kernel"""
@@ -544,7 +553,9 @@ def get(name, sock=None):
 
     return Link.from_capi(link)
 
+
 _link_cache = LinkCache()
+
 
 def resolve(name):
     _link_cache.refill()

@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/queue_msg.c	Netfilter Queue Messages
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2007, 2008 Patrick McHardy <kaber@trash.net>
  * Copyright (c) 2010       Karl Hiramoto <karl@hiramoto.org>
  */
@@ -18,14 +11,19 @@
  * @{
  */
 
+#include "nl-default.h"
+
 #include <sys/types.h>
+
 #include <linux/netfilter/nfnetlink_queue.h>
 
-#include <netlink-private/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/queue_msg.h>
-#include <netlink-private/utils.h>
+
+#include "nl-netfilter.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 static struct nl_cache_ops nfnl_queue_msg_ops;
 
@@ -297,12 +295,12 @@ static struct nl_cache_ops nfnl_queue_msg_ops = {
 	.co_obj_ops		= &queue_msg_obj_ops,
 };
 
-static void __init nfnl_msg_queue_init(void)
+static void _nl_init nfnl_msg_queue_init(void)
 {
 	nl_cache_mngt_register(&nfnl_queue_msg_ops);
 }
 
-static void __exit nfnl_queue_msg_exit(void)
+static void _nl_exit nfnl_queue_msg_exit(void)
 {
 	nl_cache_mngt_unregister(&nfnl_queue_msg_ops);
 }

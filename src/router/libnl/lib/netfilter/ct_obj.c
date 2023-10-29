@@ -1,25 +1,25 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/ct_obj.c	Conntrack Object
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
  */
 
+#include "nl-default.h"
+
 #include <sys/types.h>
+
 #include <linux/netfilter/nfnetlink_conntrack.h>
 #include <linux/netfilter/nf_conntrack_common.h>
+
 #include <linux/netfilter/nf_conntrack_tcp.h>
 
-#include <netlink-private/netlink.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/ct.h>
+
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-netfilter.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /** @cond SKIP */
 #define CT_ATTR_FAMILY		(1UL << 0)
@@ -74,6 +74,11 @@ static int ct_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct nfnl_ct *dst = (struct nfnl_ct *) _dst;
 	struct nfnl_ct *src = (struct nfnl_ct *) _src;
 	struct nl_addr *addr;
+
+	dst->ct_orig.src = NULL;
+	dst->ct_orig.dst = NULL;
+	dst->ct_repl.src = NULL;
+	dst->ct_repl.dst = NULL;
 
 	if (src->ct_orig.src) {
 		addr = nl_addr_clone(src->ct_orig.src);
@@ -206,7 +211,7 @@ static void ct_dump_line(struct nl_object *a, struct nl_dump_params *p)
 			delta_time /= NSEC_PER_SEC;
 		else
 			delta_time = 0;
-		nl_dump(p, "delta-time %llu ", delta_time);
+		nl_dump(p, "delta-time %llu ", (long long unsigned)delta_time);
 	}
 
 	nl_dump(p, "\n");
@@ -221,8 +226,9 @@ static void ct_dump_details(struct nl_object *a, struct nl_dump_params *p)
 	ct_dump_line(a, p);
 
 	nl_dump(p, "    id 0x%x ", ct->ct_id);
-	nl_dump_line(p, "family %s ",
-		nl_af2str(ct->ct_family, buf, sizeof(buf)));
+	if (ct->ce_mask & CT_ATTR_FAMILY)
+		nl_dump_line(p, "family %s ",
+			nl_af2str(ct->ct_family, buf, sizeof(buf)));
 
 	if (nfnl_ct_test_use(ct))
 		nl_dump(p, "refcnt %u ", nfnl_ct_get_use(ct));
@@ -305,48 +311,46 @@ static uint64_t ct_compare(struct nl_object *_a, struct nl_object *_b,
 	struct nfnl_ct *b = (struct nfnl_ct *) _b;
 	uint64_t diff = 0;
 
-#define CT_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, CT_ATTR_##ATTR, a, b, EXPR)
-#define CT_DIFF_VAL(ATTR, FIELD) CT_DIFF(ATTR, a->FIELD != b->FIELD)
-#define CT_DIFF_ADDR(ATTR, FIELD) \
-	((flags & LOOSE_COMPARISON) \
-		? CT_DIFF(ATTR, nl_addr_cmp_prefix(a->FIELD, b->FIELD)) \
-		: CT_DIFF(ATTR, nl_addr_cmp(a->FIELD, b->FIELD)))
-
-	diff |= CT_DIFF_VAL(FAMILY,		ct_family);
-	diff |= CT_DIFF_VAL(PROTO,		ct_proto);
-	diff |= CT_DIFF_VAL(TCP_STATE,		ct_protoinfo.tcp.state);
-	diff |= CT_DIFF_VAL(TIMEOUT,		ct_timeout);
-	diff |= CT_DIFF_VAL(MARK,		ct_mark);
-	diff |= CT_DIFF_VAL(USE,		ct_use);
-	diff |= CT_DIFF_VAL(ID,			ct_id);
-	diff |= CT_DIFF_ADDR(ORIG_SRC,		ct_orig.src);
-	diff |= CT_DIFF_ADDR(ORIG_DST,		ct_orig.dst);
-	diff |= CT_DIFF_VAL(ORIG_SRC_PORT,	ct_orig.proto.port.src);
-	diff |= CT_DIFF_VAL(ORIG_DST_PORT,	ct_orig.proto.port.dst);
-	diff |= CT_DIFF_VAL(ORIG_ICMP_ID,	ct_orig.proto.icmp.id);
-	diff |= CT_DIFF_VAL(ORIG_ICMP_TYPE,	ct_orig.proto.icmp.type);
-	diff |= CT_DIFF_VAL(ORIG_ICMP_CODE,	ct_orig.proto.icmp.code);
-	diff |= CT_DIFF_VAL(ORIG_PACKETS,	ct_orig.packets);
-	diff |= CT_DIFF_VAL(ORIG_BYTES,		ct_orig.bytes);
-	diff |= CT_DIFF_ADDR(REPL_SRC,		ct_repl.src);
-	diff |= CT_DIFF_ADDR(REPL_DST,		ct_repl.dst);
-	diff |= CT_DIFF_VAL(REPL_SRC_PORT,	ct_repl.proto.port.src);
-	diff |= CT_DIFF_VAL(REPL_DST_PORT,	ct_repl.proto.port.dst);
-	diff |= CT_DIFF_VAL(REPL_ICMP_ID,	ct_repl.proto.icmp.id);
-	diff |= CT_DIFF_VAL(REPL_ICMP_TYPE,	ct_repl.proto.icmp.type);
-	diff |= CT_DIFF_VAL(REPL_ICMP_CODE,	ct_repl.proto.icmp.code);
-	diff |= CT_DIFF_VAL(REPL_PACKETS,	ct_repl.packets);
-	diff |= CT_DIFF_VAL(REPL_BYTES,		ct_repl.bytes);
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+#define _DIFF_VAL(ATTR, FIELD) _DIFF(ATTR, a->FIELD != b->FIELD)
+#define _DIFF_ADDR(ATTR, FIELD)                                                \
+	((flags & LOOSE_COMPARISON) ?                                          \
+		 _DIFF(ATTR, nl_addr_cmp_prefix(a->FIELD, b->FIELD)) :         \
+		 _DIFF(ATTR, nl_addr_cmp(a->FIELD, b->FIELD)))
+	diff |= _DIFF_VAL(CT_ATTR_FAMILY, ct_family);
+	diff |= _DIFF_VAL(CT_ATTR_PROTO, ct_proto);
+	diff |= _DIFF_VAL(CT_ATTR_TCP_STATE, ct_protoinfo.tcp.state);
+	diff |= _DIFF_VAL(CT_ATTR_TIMEOUT, ct_timeout);
+	diff |= _DIFF_VAL(CT_ATTR_MARK, ct_mark);
+	diff |= _DIFF_VAL(CT_ATTR_USE, ct_use);
+	diff |= _DIFF_VAL(CT_ATTR_ID, ct_id);
+	diff |= _DIFF_ADDR(CT_ATTR_ORIG_SRC, ct_orig.src);
+	diff |= _DIFF_ADDR(CT_ATTR_ORIG_DST, ct_orig.dst);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_SRC_PORT, ct_orig.proto.port.src);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_DST_PORT, ct_orig.proto.port.dst);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_ICMP_ID, ct_orig.proto.icmp.id);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_ICMP_TYPE, ct_orig.proto.icmp.type);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_ICMP_CODE, ct_orig.proto.icmp.code);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_PACKETS, ct_orig.packets);
+	diff |= _DIFF_VAL(CT_ATTR_ORIG_BYTES, ct_orig.bytes);
+	diff |= _DIFF_ADDR(CT_ATTR_REPL_SRC, ct_repl.src);
+	diff |= _DIFF_ADDR(CT_ATTR_REPL_DST, ct_repl.dst);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_SRC_PORT, ct_repl.proto.port.src);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_DST_PORT, ct_repl.proto.port.dst);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_ICMP_ID, ct_repl.proto.icmp.id);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_ICMP_TYPE, ct_repl.proto.icmp.type);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_ICMP_CODE, ct_repl.proto.icmp.code);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_PACKETS, ct_repl.packets);
+	diff |= _DIFF_VAL(CT_ATTR_REPL_BYTES, ct_repl.bytes);
 
 	if (flags & LOOSE_COMPARISON)
-		diff |= CT_DIFF(STATUS, (a->ct_status ^ b->ct_status) &
-					b->ct_status_mask);
+		diff |= _DIFF(CT_ATTR_STATUS, (a->ct_status ^ b->ct_status) &
+						      b->ct_status_mask);
 	else
-		diff |= CT_DIFF(STATUS, a->ct_status != b->ct_status);
-
-#undef CT_DIFF
-#undef CT_DIFF_VAL
-#undef CT_DIFF_ADDR
+		diff |= _DIFF(CT_ATTR_STATUS, a->ct_status != b->ct_status);
+#undef _DIFF
+#undef _DIFF_VAL
+#undef _DIFF_ADDR
 
 	return diff;
 }

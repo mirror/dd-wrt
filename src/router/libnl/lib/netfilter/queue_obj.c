@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/queue_obj.c	Netfilter Queue
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2007, 2008 Patrick McHardy <kaber@trash.net>
  */
 
@@ -17,11 +10,24 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/queue.h>
 
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+
 /** @cond SKIP */
+struct nfnl_queue {
+	NLHDR_COMMON
+
+	uint16_t		queue_group;
+	uint32_t		queue_maxlen;
+	uint32_t		queue_copy_range;
+	uint8_t			queue_copy_mode;
+};
+
 #define QUEUE_ATTR_GROUP		(1UL << 0)
 #define QUEUE_ATTR_MAXLEN		(1UL << 1)
 #define QUEUE_ATTR_COPY_MODE		(1UL << 2)
@@ -169,18 +175,14 @@ static uint64_t nfnl_queue_compare(struct nl_object *_a, struct nl_object *_b,
 	struct nfnl_queue *b = (struct nfnl_queue *) _b;
 	uint64_t diff = 0;
 
-#define NFNL_QUEUE_DIFF(ATTR, EXPR) \
-	ATTR_DIFF(attrs, QUEUE_ATTR_##ATTR, a, b, EXPR)
-#define NFNL_QUEUE_DIFF_VAL(ATTR, FIELD) \
-	NFNL_QUEUE_DIFF(ATTR, a->FIELD != b->FIELD)
-
-	diff |= NFNL_QUEUE_DIFF_VAL(GROUP,	queue_group);
-	diff |= NFNL_QUEUE_DIFF_VAL(MAXLEN,	queue_maxlen);
-	diff |= NFNL_QUEUE_DIFF_VAL(COPY_MODE,	queue_copy_mode);
-	diff |= NFNL_QUEUE_DIFF_VAL(COPY_RANGE,	queue_copy_range);
-
-#undef NFNL_QUEUE_DIFF
-#undef NFNL_QUEUE_DIFF_VAL
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+#define _DIFF_VAL(ATTR, FIELD) _DIFF(ATTR, a->FIELD != b->FIELD)
+	diff |= _DIFF_VAL(QUEUE_ATTR_GROUP, queue_group);
+	diff |= _DIFF_VAL(QUEUE_ATTR_MAXLEN, queue_maxlen);
+	diff |= _DIFF_VAL(QUEUE_ATTR_COPY_MODE, queue_copy_mode);
+	diff |= _DIFF_VAL(QUEUE_ATTR_COPY_RANGE, queue_copy_range);
+#undef _DIFF
+#undef _DIFF_VAL
 
 	return diff;
 }

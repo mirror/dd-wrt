@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/htb.c	HTB Qdisc
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2005-2006 Petr Gotthard <petr.gotthard@siemens.com>
  * Copyright (c) 2005-2006 Siemens AG Oesterreich
@@ -18,18 +12,37 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/class.h>
 #include <netlink/route/link.h>
 #include <netlink/route/qdisc/htb.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_htb_qdisc {
+	uint32_t qh_rate2quantum;
+	uint32_t qh_defcls;
+	uint32_t qh_mask;
+	uint32_t qh_direct_pkts;
+};
+
+struct rtnl_htb_class {
+	uint32_t ch_prio;
+	struct rtnl_ratespec ch_rate;
+	struct rtnl_ratespec ch_ceil;
+	uint32_t ch_rbuffer;
+	uint32_t ch_cbuffer;
+	uint32_t ch_quantum;
+	uint32_t ch_mask;
+	uint32_t ch_level;
+};
+
 #define SCH_HTB_HAS_RATE2QUANTUM	0x01
 #define SCH_HTB_HAS_DEFCLS		0x02
 
@@ -733,13 +746,13 @@ static struct rtnl_tc_ops htb_class_ops = {
 	.to_msg_fill		= htb_class_msg_fill,
 };
 
-static void __init htb_init(void)
+static void _nl_init htb_init(void)
 {
 	rtnl_tc_register(&htb_qdisc_ops);
 	rtnl_tc_register(&htb_class_ops);
 }
 
-static void __exit htb_exit(void)
+static void _nl_exit htb_exit(void)
 {
 	rtnl_tc_unregister(&htb_qdisc_ops);
 	rtnl_tc_unregister(&htb_class_ops);

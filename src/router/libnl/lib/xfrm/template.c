@@ -47,8 +47,12 @@
  * ~~~~
  */
 
+#include "nl-default.h"
+
 #include <netlink/xfrm/template.h>
-#include <netlink-private/netlink.h>
+
+#include "nl-xfrm.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 void xfrmnl_user_tmpl_free(struct xfrmnl_user_tmpl* utmpl)
 {

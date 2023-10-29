@@ -1,6 +1,10 @@
-#include <netlink/cli/utils.h>
+/* SPDX-License-Identifier: LGPL-2.1-only */
+
+#include "nl-default.h"
 
 #include <linux/netlink.h>
+
+#include <netlink/cli/utils.h>
 
 static void change_cb(struct nl_cache *cache, struct nl_object *obj,
 		      int action, void *data)

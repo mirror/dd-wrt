@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/link/ip_gre.h		IPGRE interface
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2014 Susant Sahani <susant@redhat.com>
  */
 
@@ -56,6 +50,9 @@ extern "C" {
 
 	extern int rtnl_link_ipgre_set_pmtudisc(struct rtnl_link *link, uint8_t pmtudisc);
 	extern uint8_t rtnl_link_ipgre_get_pmtudisc(struct rtnl_link *link);
+
+	extern int rtnl_link_ipgre_set_fwmark(struct rtnl_link *link, uint32_t fwmark);
+	extern int rtnl_link_ipgre_get_fwmark(struct rtnl_link *link, uint32_t *fwmark);
 
 #ifdef __cplusplus
 }

@@ -8,13 +8,12 @@
 
 from __future__ import absolute_import
 
-__all__ = [
-    '',
-]
+__all__ = []
 
 from ... import core as netlink
-from ..  import capi as capi
+from .. import capi as capi
 from ... import util as util
+
 DEVCONF_FORWARDING = 1
 DEVCONF_MC_FORWARDING = 2
 DEVCONF_PROXY_ARP = 3
@@ -42,27 +41,27 @@ DEVCONF_SRC_VMARK = 24
 DEVCONF_PROXY_ARP_PVLAN = 25
 DEVCONF_MAX = DEVCONF_PROXY_ARP_PVLAN
 
+
 def _resolve(id):
     if type(id) is str:
         id = capi.rtnl_link_inet_str2devconf(id)[0]
         if id < 0:
-            raise NameError('unknown configuration id')
+            raise NameError("unknown configuration id")
     return id
+
 
 class InetLink(object):
     def __init__(self, link):
         self._link = link
 
     def details(self, fmt):
-        buf = fmt.nl('\n\t{0}\n\t'.format(util.title('Configuration:')))
+        buf = fmt.nl("\n\t{0}\n\t".format(util.title("Configuration:")))
 
-        for i in range(DEVCONF_FORWARDING, DEVCONF_MAX+1):
+        for i in range(DEVCONF_FORWARDING, DEVCONF_MAX + 1):
             if i & 1 and i > 1:
-                buf += fmt.nl('\t')
+                buf += fmt.nl("\t")
             txt = util.kw(capi.rtnl_link_inet_devconf2str(i, 32)[0])
-            buf += fmt.format('{0:28s} {1:12}  ', txt,
-                      self.get_conf(i))
-
+            buf += fmt.format("{0:28s} {1:12}  ", txt, self.get_conf(i))
 
         return buf
 
@@ -70,8 +69,9 @@ class InetLink(object):
         return capi.inet_get_conf(self._link._rtnl_link, _resolve(id))
 
     def set_conf(self, id, value):
-        return capi.rtnl_link_inet_set_conf(self._link._rtnl_link,
-                        _resolve(id), int(value))
+        return capi.rtnl_link_inet_set_conf(
+            self._link._rtnl_link, _resolve(id), int(value)
+        )
 
     @property
     @netlink.nlattr(type=bool, fmt=util.boolean)
@@ -82,7 +82,6 @@ class InetLink(object):
     def forwarding(self, value):
         self.set_conf(DEVCONF_FORWARDING, int(value))
 
-
     @property
     @netlink.nlattr(type=bool, fmt=util.boolean)
     def mc_forwarding(self):
@@ -91,7 +90,6 @@ class InetLink(object):
     @mc_forwarding.setter
     def mc_forwarding(self, value):
         self.set_conf(DEVCONF_MC_FORWARDING, int(value))
-
 
     @property
     @netlink.nlattr(type=bool, fmt=util.boolean)
@@ -138,21 +136,22 @@ class InetLink(object):
     def shared_media(self, value):
         self.set_conf(DEVCONF_SHARED_MEDIA, int(value))
 
-#	IPV4_DEVCONF_RP_FILTER,
-#	IPV4_DEVCONF_ACCEPT_SOURCE_ROUTE,
-#	IPV4_DEVCONF_BOOTP_RELAY,
-#	IPV4_DEVCONF_LOG_MARTIANS,
-#	IPV4_DEVCONF_TAG,
-#	IPV4_DEVCONF_ARPFILTER,
-#	IPV4_DEVCONF_MEDIUM_ID,
-#	IPV4_DEVCONF_NOXFRM,
-#	IPV4_DEVCONF_NOPOLICY,
-#	IPV4_DEVCONF_FORCE_IGMP_VERSION,
-#	IPV4_DEVCONF_ARP_ANNOUNCE,
-#	IPV4_DEVCONF_ARP_IGNORE,
-#	IPV4_DEVCONF_PROMOTE_SECONDARIES,
-#	IPV4_DEVCONF_ARP_ACCEPT,
-#	IPV4_DEVCONF_ARP_NOTIFY,
-#	IPV4_DEVCONF_ACCEPT_LOCAL,
-#	IPV4_DEVCONF_SRC_VMARK,
-#	IPV4_DEVCONF_PROXY_ARP_PVLAN,
+
+# 	IPV4_DEVCONF_RP_FILTER,
+# 	IPV4_DEVCONF_ACCEPT_SOURCE_ROUTE,
+# 	IPV4_DEVCONF_BOOTP_RELAY,
+# 	IPV4_DEVCONF_LOG_MARTIANS,
+# 	IPV4_DEVCONF_TAG,
+# 	IPV4_DEVCONF_ARPFILTER,
+# 	IPV4_DEVCONF_MEDIUM_ID,
+# 	IPV4_DEVCONF_NOXFRM,
+# 	IPV4_DEVCONF_NOPOLICY,
+# 	IPV4_DEVCONF_FORCE_IGMP_VERSION,
+# 	IPV4_DEVCONF_ARP_ANNOUNCE,
+# 	IPV4_DEVCONF_ARP_IGNORE,
+# 	IPV4_DEVCONF_PROMOTE_SECONDARIES,
+# 	IPV4_DEVCONF_ARP_ACCEPT,
+# 	IPV4_DEVCONF_ARP_NOTIFY,
+# 	IPV4_DEVCONF_ACCEPT_LOCAL,
+# 	IPV4_DEVCONF_SRC_VMARK,
+# 	IPV4_DEVCONF_PROXY_ARP_PVLAN,

@@ -1,22 +1,17 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nf-exp-delete.c     Delete an expectation
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2009 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
  * Copyright (c) 2012 Rich Fought <rich.fought@watchguard.com>
  */
 
-#include <netlink/cli/utils.h>
-#include <netlink/cli/exp.h>
+#include "nl-default.h"
 
 #include <linux/rtnetlink.h>
+
+#include <netlink/cli/utils.h>
+#include <netlink/cli/exp.h>
 
 static int quiet = 0;
 

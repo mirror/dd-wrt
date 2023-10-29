@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link.c	Links (Interfaces)
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -19,7 +12,10 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/if_arp.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
@@ -28,9 +24,13 @@
 #include <netlink/data.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/link.h>
-#include <netlink-private/route/link/api.h>
-#include <netlink-private/route/link/sriov.h>
-#include <netlink-private/utils.h>
+
+#include "nl-aux-route/nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-route.h"
+#include "link-sriov.h"
+#include "link/link-api.h"
 
 /** @cond SKIP */
 #define LINK_ATTR_MTU		(1 <<  0)
@@ -93,13 +93,12 @@ static struct rtnl_link_af_ops *af_lookup_and_alloc(struct rtnl_link *link,
 						    int family)
 {
 	struct rtnl_link_af_ops *af_ops;
-	void *data;
 
 	af_ops = rtnl_link_af_ops_lookup(family);
 	if (!af_ops)
 		return NULL;
 
-	if (!(data = rtnl_link_af_alloc(link, af_ops))) {
+	if (!rtnl_link_af_alloc(link, af_ops)) {
 		rtnl_link_af_ops_put(af_ops);
 		return NULL;
 	}
@@ -123,7 +122,7 @@ static int af_request_type(int af_type, struct rtnl_link *changes)
 	struct rtnl_link_af_ops *ops;
 
 	ops = rtnl_link_af_ops_lookup(af_type);
-	if (ops && ops->ao_override_rtm(changes))
+	if (ops && ops->ao_override_rtm && ops->ao_override_rtm(changes))
 		return RTM_SETLINK;
 
 	return RTM_NEWLINK;
@@ -223,22 +222,19 @@ static int af_dump_stats(struct rtnl_link *link, struct rtnl_link_af_ops *ops,
 
 static int do_foreach_af(struct rtnl_link *link,
 			 int (*cb)(struct rtnl_link *,
-			 	   struct rtnl_link_af_ops *, void *, void *),
+				   struct rtnl_link_af_ops *, void *, void *),
 			 void *arg)
 {
 	int i, err;
 
 	for (i = 0; i < AF_MAX; i++) {
 		if (link->l_af_data[i]) {
-			struct rtnl_link_af_ops *ops;
+			_nl_auto_rtnl_link_af_ops struct rtnl_link_af_ops *ops = NULL;
 
 			if (!(ops = rtnl_link_af_ops_lookup(i)))
 				BUG();
 
 			err = cb(link, ops, link->l_af_data[i], arg);
-
-			rtnl_link_af_ops_put(ops);
-
 			if (err < 0)
 				return err;
 		}
@@ -296,6 +292,19 @@ static int link_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct rtnl_link *src = nl_object_priv(_src);
 	int err;
 
+	dst->l_addr = NULL;
+	dst->l_bcast = NULL;
+	dst->l_info_kind = NULL;
+	dst->l_info_slave_kind = NULL;
+	dst->l_info_ops = NULL;
+	memset(dst->l_af_data, 0, sizeof (dst->l_af_data));
+	dst->l_info = NULL;
+	dst->l_ifalias = NULL;
+	dst->l_af_ops = NULL;
+	dst->l_phys_port_id = NULL;
+	dst->l_phys_switch_id = NULL;
+	dst->l_vf_list = NULL;
+
 	if (src->l_addr)
 		if (!(dst->l_addr = nl_addr_clone(src->l_addr)))
 			return -NLE_NOMEM;
@@ -316,14 +325,23 @@ static int link_clone(struct nl_object *_dst, struct nl_object *_src)
 		if (!(dst->l_info_slave_kind = strdup(src->l_info_slave_kind)))
 			return -NLE_NOMEM;
 
-	if (src->l_info_ops && src->l_info_ops->io_clone) {
-		err = src->l_info_ops->io_clone(dst, src);
-		if (err < 0)
-			return err;
+	if (src->l_info_ops) {
+
+		rtnl_link_info_ops_get(src->l_info_ops);
+		dst->l_info_ops = src->l_info_ops;
+
+		if (src->l_info_ops->io_clone) {
+			err = src->l_info_ops->io_clone(dst, src);
+			if (err < 0)
+				return err;
+		}
 	}
 
 	if ((err = do_foreach_af(src, af_clone, dst)) < 0)
 		return err;
+
+	if (src->l_af_ops)
+		dst->l_af_ops = af_lookup_and_alloc(dst, src->l_af_ops->ao_family);
 
 	if (src->l_phys_port_id)
 		if (!(dst->l_phys_port_id = nl_data_clone(src->l_phys_port_id)))
@@ -387,7 +405,7 @@ int rtnl_link_info_parse(struct rtnl_link *link, struct nlattr **tb)
 		return -NLE_MISSING_ATTR;
 
 	nla_strlcpy(link->l_name, tb[IFLA_IFNAME], IFNAMSIZ);
-
+	link->ce_mask |= LINK_ATTR_IFNAME;
 
 	if (tb[IFLA_STATS]) {
 		struct rtnl_link_stats *st = nla_data(tb[IFLA_STATS]);
@@ -580,28 +598,22 @@ int rtnl_link_info_parse(struct rtnl_link *link, struct nlattr **tb)
 static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 			   struct nlmsghdr *n, struct nl_parser_param *pp)
 {
-	struct rtnl_link *link;
+	_nl_auto_rtnl_link struct rtnl_link *link = NULL;
+	struct nla_policy real_link_policy[ARRAY_SIZE(rtln_link_policy)];
+	struct nla_policy *link_policy = rtln_link_policy;
+	struct rtnl_link_af_ops *af_ops_family;
 	struct ifinfomsg *ifi;
 	struct nlattr *tb[IFLA_MAX+1];
-	struct rtnl_link_af_ops *af_ops = NULL;
-	struct rtnl_link_af_ops *af_ops_family;
 	int err, family;
-	struct nla_policy real_link_policy[IFLA_MAX+1];
-
-	memcpy(&real_link_policy, rtln_link_policy, sizeof(rtln_link_policy));
 
 	link = rtnl_link_alloc();
-	if (link == NULL) {
-		err = -NLE_NOMEM;
-		goto errout;
-	}
+	if (link == NULL)
+		return -NLE_NOMEM;
 
 	link->ce_msgtype = n->nlmsg_type;
 
-	if (!nlmsg_valid_hdr(n, sizeof(*ifi))) {
-		err = -NLE_MSG_TOOSHORT;
-		goto errout;
-	}
+	if (!nlmsg_valid_hdr(n, sizeof(*ifi)))
+		return -NLE_MSG_TOOSHORT;
 
 	ifi = nlmsg_data(n);
 	link->l_family = family = ifi->ifi_family;
@@ -609,35 +621,37 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 	link->l_index = ifi->ifi_index;
 	link->l_flags = ifi->ifi_flags;
 	link->l_change = ifi->ifi_change;
-	link->ce_mask = (LINK_ATTR_IFNAME | LINK_ATTR_FAMILY |
+	link->ce_mask = (LINK_ATTR_FAMILY |
 			 LINK_ATTR_ARPTYPE| LINK_ATTR_IFINDEX |
 			 LINK_ATTR_FLAGS | LINK_ATTR_CHANGE);
 
-	if ((af_ops_family = af_ops = af_lookup_and_alloc(link, family))) {
-		if (af_ops->ao_protinfo_policy) {
+	if ((link->l_af_ops = af_lookup_and_alloc(link, family))) {
+		if (link->l_af_ops->ao_protinfo_policy) {
+			_NL_STATIC_ASSERT (sizeof(rtln_link_policy) == sizeof(real_link_policy));
+			memcpy(&real_link_policy, rtln_link_policy, sizeof(rtln_link_policy));
 			memcpy(&real_link_policy[IFLA_PROTINFO],
-			       af_ops->ao_protinfo_policy,
+			       link->l_af_ops->ao_protinfo_policy,
 			       sizeof(struct nla_policy));
+			link_policy = real_link_policy;
 		}
-
-		link->l_af_ops = af_ops;
 	}
 
-	err = nlmsg_parse(n, sizeof(*ifi), tb, IFLA_MAX, real_link_policy);
+	af_ops_family = link->l_af_ops;
+
+	err = nlmsg_parse(n, sizeof(*ifi), tb, IFLA_MAX, link_policy);
 	if (err < 0)
-		goto errout;
+		return err;
 
 	err = rtnl_link_info_parse(link, tb);
 	if (err < 0)
-		goto errout;
+		return err;
 
 	if (tb[IFLA_NUM_VF]) {
 		link->l_num_vf = nla_get_u32(tb[IFLA_NUM_VF]);
 		link->ce_mask |= LINK_ATTR_NUM_VF;
 		if (link->l_num_vf && tb[IFLA_VFINFO_LIST]) {
-			if ((err = rtnl_link_sriov_parse_vflist(link, tb)) < 0) {
-				goto errout;
-			}
+			if ((err = rtnl_link_sriov_parse_vflist(link, tb)) < 0)
+				return err;
 			link->ce_mask |= LINK_ATTR_VF_LIST;
 		}
 	}
@@ -648,7 +662,7 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 		err = nla_parse_nested(li, IFLA_INFO_MAX, tb[IFLA_LINKINFO],
 				       link_info_policy);
 		if (err < 0)
-			goto errout;
+			return err;
 
 		if (li[IFLA_INFO_KIND]) {
 			struct rtnl_link_info_ops *ops;
@@ -657,17 +671,18 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 
 			err = rtnl_link_set_type(link, kind);
 			if (err < 0)
-				goto errout;
+				return err;
 
-			if ((af = nl_str2af(kind)) >= 0 &&
-				!af_ops && (af_ops = af_lookup_and_alloc(link, af))) {
-
-				if (af_ops->ao_protinfo_policy) {
-					tb[IFLA_PROTINFO] = (struct nlattr *)af_ops->ao_protinfo_policy;
-				}
+			if (   (af = nl_str2af(kind)) >= 0
+			    && !link->l_af_ops
+			    && (link->l_af_ops = af_lookup_and_alloc(link, af))) {
 				link->l_family = af;
-				link->l_af_ops = af_ops;
+				if (link->l_af_ops->ao_protinfo_policy)
+					tb[IFLA_PROTINFO] = (struct nlattr *)link->l_af_ops->ao_protinfo_policy;
 			}
+
+			if (link->l_info_ops)
+				release_link_info(link);
 
 			ops = rtnl_link_info_ops_lookup(kind);
 			link->l_info_ops = ops;
@@ -678,7 +693,7 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 					err = ops->io_parse(link, li[IFLA_INFO_DATA],
 							    li[IFLA_INFO_XSTATS]);
 					if (err < 0)
-						goto errout;
+						return err;
 				} else {
 					/* XXX: Warn about unparsed info? */
 				}
@@ -692,17 +707,19 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 
 			err = rtnl_link_set_slave_type(link, kind);
 			if (err < 0)
-				goto errout;
+				return err;
 
 			link->ce_mask |= LINK_ATTR_LINKINFO_SLAVE_KIND;
 		}
 	}
 
-	if (tb[IFLA_PROTINFO] && af_ops && af_ops->ao_parse_protinfo) {
-		err = af_ops->ao_parse_protinfo(link, tb[IFLA_PROTINFO],
-						link->l_af_data[link->l_family]);
+	if (   tb[IFLA_PROTINFO]
+	    && link->l_af_ops
+	    && link->l_af_ops->ao_parse_protinfo) {
+		err = link->l_af_ops->ao_parse_protinfo(link, tb[IFLA_PROTINFO],
+		                                        link->l_af_data[link->l_family]);
 		if (err < 0)
-			goto errout;
+			return err;
 		link->ce_mask |= LINK_ATTR_PROTINFO;
 	}
 
@@ -710,25 +727,28 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 		/* parsing of IFLA_AF_SPEC is dependent on the family used
 		 * in the request message.
 		 */
-		if (af_ops_family && af_ops_family->ao_parse_af_full) {
+		if (   af_ops_family
+		    && af_ops_family->ao_parse_af_full) {
 			err = af_ops_family->ao_parse_af_full(link,
 			                                      tb[IFLA_AF_SPEC],
 			                                      link->l_af_data[af_ops_family->ao_family]);
 			if (err < 0)
-				goto errout;
+				return err;
 			link->ce_mask |= LINK_ATTR_AF_SPEC;
 		} else if (family == AF_UNSPEC) {
 			struct nlattr *af_attr;
 			int remaining;
 
 			nla_for_each_nested(af_attr, tb[IFLA_AF_SPEC], remaining) {
+				_nl_auto_rtnl_link_af_ops struct rtnl_link_af_ops *af_ops = NULL;
+
 				af_ops = af_lookup_and_alloc(link, nla_type(af_attr));
 				if (af_ops && af_ops->ao_parse_af) {
 					char *af_data = link->l_af_data[nla_type(af_attr)];
 
 					err = af_ops->ao_parse_af(link, af_attr, af_data);
 					if (err < 0)
-						goto errout;
+						return err;
 				}
 			}
 			link->ce_mask |= LINK_ATTR_AF_SPEC;
@@ -770,10 +790,8 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 
 	if (tb[IFLA_PHYS_PORT_ID]) {
 		link->l_phys_port_id = nl_data_alloc_attr(tb[IFLA_PHYS_PORT_ID]);
-		if (link->l_phys_port_id == NULL) {
-			err = -NLE_NOMEM;
-			goto errout;
-		}
+		if (link->l_phys_port_id == NULL)
+			return -NLE_NOMEM;
 		link->ce_mask |= LINK_ATTR_PHYS_PORT_ID;
 	}
 
@@ -784,26 +802,20 @@ static int link_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 
 	if (tb[IFLA_PHYS_SWITCH_ID]) {
 		link->l_phys_switch_id = nl_data_alloc_attr(tb[IFLA_PHYS_SWITCH_ID]);
-		if (link->l_phys_switch_id == NULL) {
-			err = -NLE_NOMEM;
-			goto errout;
-		}
+		if (link->l_phys_switch_id == NULL)
+			return -NLE_NOMEM;
 		link->ce_mask |= LINK_ATTR_PHYS_SWITCH_ID;
 	}
 
-	err = pp->pp_cb((struct nl_object *) link, pp);
-errout:
-	rtnl_link_af_ops_put(af_ops);
-	rtnl_link_put(link);
-	return err;
+	return pp->pp_cb((struct nl_object *) link, pp);
 }
 
 static int link_request_update(struct nl_cache *cache, struct nl_sock *sk)
 {
+	_nl_auto_nl_msg struct nl_msg *msg = NULL;
 	int family = cache->c_iarg1;
 	struct ifinfomsg hdr = { .ifi_family = family };
 	struct rtnl_link_af_ops *ops;
-	struct nl_msg *msg;
 	int err;
 	__u32 ext_filter_mask = RTEXT_FILTER_VF;
 
@@ -811,30 +823,27 @@ static int link_request_update(struct nl_cache *cache, struct nl_sock *sk)
 	if (!msg)
 		return -NLE_NOMEM;
 
-	err = -NLE_MSGSIZE;
 	if (nlmsg_append(msg, &hdr, sizeof(hdr), NLMSG_ALIGNTO) < 0)
-		goto nla_put_failure;
+		return -NLE_MSGSIZE;
 
 	ops = rtnl_link_af_ops_lookup(family);
 	if (ops && ops->ao_get_af) {
 		err = ops->ao_get_af(msg, &ext_filter_mask);
-		if (err)
-			goto nla_put_failure;
+		if (err < 0)
+			return err;
 	}
 
 	if (ext_filter_mask) {
 		err = nla_put(msg, IFLA_EXT_MASK, sizeof(ext_filter_mask), &ext_filter_mask);
-		if (err)
-			goto nla_put_failure;
+		if (err < 0)
+			return err;
 	}
 
 	err = nl_send_auto(sk, msg);
-	if (err > 0)
-		err = 0;
+	if (err < 0)
+		return 0;
 
-nla_put_failure:
-	nlmsg_free(msg);
-	return err;
+	return 0;
 }
 
 static void link_dump_line(struct nl_object *obj, struct nl_dump_params *p)
@@ -860,10 +869,9 @@ static void link_dump_line(struct nl_object *obj, struct nl_dump_params *p)
 
 	if (link->ce_mask & LINK_ATTR_MASTER) {
 		if (cache) {
-			struct rtnl_link *master = rtnl_link_get(cache, link->l_master);
+			_nl_auto_rtnl_link struct rtnl_link *master = rtnl_link_get(cache, link->l_master);
+
 			nl_dump(p, "master %s ", master ? master->l_name : "inv");
-			if (master)
-				rtnl_link_put(master);
 		} else
 			nl_dump(p, "master %d ", link->l_master);
 	}
@@ -875,10 +883,9 @@ static void link_dump_line(struct nl_object *obj, struct nl_dump_params *p)
 	if (link->ce_mask & LINK_ATTR_LINK) {
 		if (   cache
 		    && !(link->ce_mask & LINK_ATTR_LINK_NETNSID)) {
-			struct rtnl_link *ll = rtnl_link_get(cache, link->l_link);
+			_nl_auto_rtnl_link struct rtnl_link *ll = rtnl_link_get(cache, link->l_link);
+
 			nl_dump(p, "slave-of %s ", ll ? ll->l_name : "NONE");
-			if (ll)
-				rtnl_link_put(ll);
 		} else
 			nl_dump(p, "slave-of %d ", link->l_link);
 	}
@@ -1090,7 +1097,7 @@ static void link_keygen(struct nl_object *obj, uint32_t *hashkey,
 	struct link_hash_key {
 		uint32_t	l_index;
 		uint32_t	l_family;
-	} __attribute__((packed)) lkey;
+	} _nl_packed lkey;
 
 	lkey_sz = sizeof(lkey);
 	lkey.l_index = link->l_index;
@@ -1111,34 +1118,37 @@ static uint64_t link_compare(struct nl_object *_a, struct nl_object *_b,
 	struct rtnl_link *b = (struct rtnl_link *) _b;
 	uint64_t diff = 0;
 
-#define LINK_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, LINK_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= LINK_DIFF(IFINDEX,	a->l_index != b->l_index);
-	diff |= LINK_DIFF(MTU,		a->l_mtu != b->l_mtu);
-	diff |= LINK_DIFF(LINK,		a->l_link != b->l_link);
-	diff |= LINK_DIFF(LINK_NETNSID, a->l_link_netnsid != b->l_link_netnsid);
-	diff |= LINK_DIFF(TXQLEN,	a->l_txqlen != b->l_txqlen);
-	diff |= LINK_DIFF(WEIGHT,	a->l_weight != b->l_weight);
-	diff |= LINK_DIFF(MASTER,	a->l_master != b->l_master);
-	diff |= LINK_DIFF(FAMILY,	a->l_family != b->l_family);
-	diff |= LINK_DIFF(OPERSTATE,	a->l_operstate != b->l_operstate);
-	diff |= LINK_DIFF(LINKMODE,	a->l_linkmode != b->l_linkmode);
-	diff |= LINK_DIFF(QDISC,	strcmp(a->l_qdisc, b->l_qdisc));
-	diff |= LINK_DIFF(IFNAME,	strcmp(a->l_name, b->l_name));
-	diff |= LINK_DIFF(ADDR,		nl_addr_cmp(a->l_addr, b->l_addr));
-	diff |= LINK_DIFF(BRD,		nl_addr_cmp(a->l_bcast, b->l_bcast));
-	diff |= LINK_DIFF(IFALIAS,	strcmp(a->l_ifalias, b->l_ifalias));
-	diff |= LINK_DIFF(NUM_VF,	a->l_num_vf != b->l_num_vf);
-	diff |= LINK_DIFF(PROMISCUITY,	a->l_promiscuity != b->l_promiscuity);
-	diff |= LINK_DIFF(NUM_TX_QUEUES,a->l_num_tx_queues != b->l_num_tx_queues);
-	diff |= LINK_DIFF(NUM_RX_QUEUES,a->l_num_rx_queues != b->l_num_rx_queues);
-	diff |= LINK_DIFF(GROUP,	a->l_group != b->l_group);
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(LINK_ATTR_IFINDEX, a->l_index != b->l_index);
+	diff |= _DIFF(LINK_ATTR_MTU, a->l_mtu != b->l_mtu);
+	diff |= _DIFF(LINK_ATTR_LINK, a->l_link != b->l_link);
+	diff |= _DIFF(LINK_ATTR_LINK_NETNSID,
+		      a->l_link_netnsid != b->l_link_netnsid);
+	diff |= _DIFF(LINK_ATTR_TXQLEN, a->l_txqlen != b->l_txqlen);
+	diff |= _DIFF(LINK_ATTR_WEIGHT, a->l_weight != b->l_weight);
+	diff |= _DIFF(LINK_ATTR_MASTER, a->l_master != b->l_master);
+	diff |= _DIFF(LINK_ATTR_FAMILY, a->l_family != b->l_family);
+	diff |= _DIFF(LINK_ATTR_OPERSTATE, a->l_operstate != b->l_operstate);
+	diff |= _DIFF(LINK_ATTR_LINKMODE, a->l_linkmode != b->l_linkmode);
+	diff |= _DIFF(LINK_ATTR_QDISC, strcmp(a->l_qdisc, b->l_qdisc));
+	diff |= _DIFF(LINK_ATTR_IFNAME, strcmp(a->l_name, b->l_name));
+	diff |= _DIFF(LINK_ATTR_ADDR, nl_addr_cmp(a->l_addr, b->l_addr));
+	diff |= _DIFF(LINK_ATTR_BRD, nl_addr_cmp(a->l_bcast, b->l_bcast));
+	diff |= _DIFF(LINK_ATTR_IFALIAS, strcmp(a->l_ifalias, b->l_ifalias));
+	diff |= _DIFF(LINK_ATTR_NUM_VF, a->l_num_vf != b->l_num_vf);
+	diff |= _DIFF(LINK_ATTR_PROMISCUITY,
+		      a->l_promiscuity != b->l_promiscuity);
+	diff |= _DIFF(LINK_ATTR_NUM_TX_QUEUES,
+		      a->l_num_tx_queues != b->l_num_tx_queues);
+	diff |= _DIFF(LINK_ATTR_NUM_RX_QUEUES,
+		      a->l_num_rx_queues != b->l_num_rx_queues);
+	diff |= _DIFF(LINK_ATTR_GROUP, a->l_group != b->l_group);
 
 	if (flags & LOOSE_COMPARISON)
-		diff |= LINK_DIFF(FLAGS,
+		diff |= _DIFF(LINK_ATTR_FLAGS,
 				  (a->l_flags ^ b->l_flags) & b->l_flag_mask);
 	else
-		diff |= LINK_DIFF(FLAGS, a->l_flags != b->l_flags);
+		diff |= _DIFF(LINK_ATTR_FLAGS, a->l_flags != b->l_flags);
 
 	/*
 	 * Compare LINK_ATTR_PROTINFO af_data
@@ -1148,15 +1158,15 @@ static uint64_t link_compare(struct nl_object *_a, struct nl_object *_b,
 			goto protinfo_mismatch;
 	}
 
-	diff |= LINK_DIFF(LINKINFO, rtnl_link_info_data_compare(a, b, flags) != 0);
+	diff |= _DIFF(LINK_ATTR_LINKINFO, rtnl_link_info_data_compare(a, b, flags) != 0);
 out:
 	return diff;
 
 protinfo_mismatch:
-	diff |= LINK_DIFF(PROTINFO, 1);
+	diff |= _DIFF(LINK_ATTR_PROTINFO, 1);
 	goto out;
 
-#undef LINK_DIFF
+#undef _DIFF
 }
 
 static const struct trans_tbl link_attrs[] = {
@@ -1369,10 +1379,9 @@ struct rtnl_link *rtnl_link_get_by_name(struct nl_cache *cache,
 int rtnl_link_build_get_request(int ifindex, const char *name,
 				struct nl_msg **result)
 {
+	_nl_auto_nl_msg struct nl_msg *msg = NULL;
 	struct ifinfomsg ifi;
-	struct nl_msg *msg;
 	__u32 vf_mask = RTEXT_FILTER_VF;
-	int err = -NLE_MSGSIZE;
 
 	if (ifindex <= 0 && !name) {
 		APPBUG("ifindex or name must be specified");
@@ -1387,24 +1396,15 @@ int rtnl_link_build_get_request(int ifindex, const char *name,
 	if (ifindex > 0)
 		ifi.ifi_index = ifindex;
 
-	if (nlmsg_append(msg, &ifi, sizeof(ifi), NLMSG_ALIGNTO) < 0) {
-		err = -NLE_MSGSIZE;
-		goto nla_put_failure;
-	}
+	_NL_RETURN_ON_PUT_ERR(nlmsg_append(msg, &ifi, sizeof(ifi), NLMSG_ALIGNTO));
 
 	if (name)
-		NLA_PUT_STRING(msg, IFLA_IFNAME, name);
+		_NL_RETURN_ON_PUT_ERR(nla_put_string(msg, IFLA_IFNAME, name));
 
-	err = nla_put(msg, IFLA_EXT_MASK, sizeof(vf_mask), &vf_mask);
-	if (err)
-		goto nla_put_failure;
+	_NL_RETURN_ON_PUT_ERR(nla_put(msg, IFLA_EXT_MASK, sizeof(vf_mask), &vf_mask));
 
-	*result = msg;
+	*result = _nl_steal_pointer(&msg);
 	return 0;
-
-nla_put_failure:
-	nlmsg_free(msg);
-	return err;
 }
 
 /**
@@ -1431,8 +1431,8 @@ nla_put_failure:
 int rtnl_link_get_kernel(struct nl_sock *sk, int ifindex, const char *name,
 			 struct rtnl_link **result)
 {
-	struct nl_msg *msg = NULL;
-	struct nl_object *obj;
+	_nl_auto_rtnl_link struct rtnl_link *link = NULL;
+	_nl_auto_nl_msg struct nl_msg *msg = NULL;
 	int err;
 	int syserr;
 
@@ -1440,14 +1440,15 @@ int rtnl_link_get_kernel(struct nl_sock *sk, int ifindex, const char *name,
 		return err;
 
 	err = nl_send_auto(sk, msg);
-	nlmsg_free(msg);
 	if (err < 0)
 		return err;
 
-	if ((err = nl_pickup_keep_syserr(sk, link_msg_parser, &obj, &syserr)) < 0) {
-		if (syserr == -EINVAL &&
-		    ifindex <= 0 &&
-		    name && *name) {
+	err = nl_pickup_keep_syserr(sk, link_msg_parser, (struct nl_object **) &link, &syserr);
+	if (err < 0) {
+		if (   syserr == -EINVAL
+		    && ifindex <= 0
+		    && name
+		    && *name) {
 			/* Older kernels do not support lookup by ifname. This was added
 			 * by commit kernel a3d1289126e7b14307074b76bf1677015ea5036f .
 			 * Detect this error case and return NLE_OPNOTSUPP instead of
@@ -1457,13 +1458,11 @@ int rtnl_link_get_kernel(struct nl_sock *sk, int ifindex, const char *name,
 		return err;
 	}
 
-	/* We have used link_msg_parser(), object is definitely a link */
-	*result = (struct rtnl_link *) obj;
-
 	/* If an object has been returned, we also need to wait for the ACK */
-	if (err == 0 && obj)
+	if (err == 0 && link)
 		wait_for_ack(sk);
 
+	*result = _nl_steal_pointer(&link);
 	return 0;
 }
 
@@ -1484,11 +1483,11 @@ int rtnl_link_get_kernel(struct nl_sock *sk, int ifindex, const char *name,
 char * rtnl_link_i2name(struct nl_cache *cache, int ifindex, char *dst,
 			size_t len)
 {
-	struct rtnl_link *link = rtnl_link_get(cache, ifindex);
+	_nl_auto_rtnl_link struct rtnl_link *link = NULL;
 
+	link = rtnl_link_get(cache, ifindex);
 	if (link) {
-		strncpy(dst, link->l_name, len - 1);
-		rtnl_link_put(link);
+		_nl_strncpy_trunc(dst, link->l_name, len);
 		return dst;
 	}
 
@@ -1506,16 +1505,13 @@ char * rtnl_link_i2name(struct nl_cache *cache, int ifindex, char *dst,
  */
 int rtnl_link_name2i(struct nl_cache *cache, const char *name)
 {
-	int ifindex = 0;
-	struct rtnl_link *link;
+	_nl_auto_rtnl_link struct rtnl_link *link = NULL;
 
 	link = rtnl_link_get_by_name(cache, name);
-	if (link) {
-		ifindex = link->l_index;
-		rtnl_link_put(link);
-	}
+	if (link)
+		return link->l_index;
 
-	return ifindex;
+	return 0;
 }
 
 /** @} */
@@ -1582,7 +1578,7 @@ nla_put_failure:
 static int build_link_msg(int cmd, struct ifinfomsg *hdr,
 			  struct rtnl_link *link, int flags, struct nl_msg **result)
 {
-	struct nl_msg *msg;
+	_nl_auto_nl_msg struct nl_msg *msg = NULL;
 	struct nlattr *af_spec;
 
 	msg = nlmsg_alloc_simple(cmd, flags);
@@ -1637,11 +1633,10 @@ static int build_link_msg(int cmd, struct ifinfomsg *hdr,
 
 	nla_nest_end(msg, af_spec);
 
-	*result = msg;
+	*result = _nl_steal_pointer(&msg);
 	return 0;
 
 nla_put_failure:
-	nlmsg_free(msg);
 	return -NLE_MSGSIZE;
 }
 
@@ -1759,12 +1754,9 @@ int rtnl_link_build_change_request(struct rtnl_link *orig,
 	rt = af_request_type(orig->l_family, changes);
 
 	if ((err = build_link_msg(rt, &ifi, changes, flags, result)) < 0)
-		goto errout;
+		return err;
 
 	return 0;
-
-errout:
-	return err;
 }
 
 /**
@@ -1805,7 +1797,7 @@ errout:
 int rtnl_link_change(struct nl_sock *sk, struct rtnl_link *orig,
 		     struct rtnl_link *changes, int flags)
 {
-	struct nl_msg *msg;
+	_nl_auto_nl_msg struct nl_msg *msg = NULL;
 	int err;
 
 	err = rtnl_link_build_change_request(orig, changes, flags, &msg);
@@ -1816,18 +1808,20 @@ int rtnl_link_change(struct nl_sock *sk, struct rtnl_link *orig,
 retry:
 	err = nl_send_auto_complete(sk, msg);
 	if (err < 0)
-		goto errout;
+		return err;
 
 	err = wait_for_ack(sk);
-	if (err == -NLE_OPNOTSUPP && msg->nm_nlh->nlmsg_type == RTM_NEWLINK) {
+	if (   err == -NLE_OPNOTSUPP
+	    && msg->nm_nlh->nlmsg_type == RTM_NEWLINK) {
 		msg->nm_nlh->nlmsg_type = RTM_SETLINK;
 		msg->nm_nlh->nlmsg_seq = NL_AUTO_SEQ;
 		goto retry;
 	}
 
-errout:
-	nlmsg_free(msg);
-	return err;
+	if (err < 0)
+		return err;
+
+	return 0;
 }
 
 /** @} */
@@ -1853,7 +1847,7 @@ errout:
 int rtnl_link_build_delete_request(const struct rtnl_link *link,
 				   struct nl_msg **result)
 {
-	struct nl_msg *msg;
+	_nl_auto_nl_msg struct nl_msg *msg = NULL;
 	struct ifinfomsg ifi = {
 		.ifi_index = link->l_index,
 	};
@@ -1866,18 +1860,13 @@ int rtnl_link_build_delete_request(const struct rtnl_link *link,
 	if (!(msg = nlmsg_alloc_simple(RTM_DELLINK, 0)))
 		return -NLE_NOMEM;
 
-	if (nlmsg_append(msg, &ifi, sizeof(ifi), NLMSG_ALIGNTO) < 0)
-		goto nla_put_failure;
+	_NL_RETURN_ON_PUT_ERR(nlmsg_append(msg, &ifi, sizeof(ifi), NLMSG_ALIGNTO));
 
 	if (link->ce_mask & LINK_ATTR_IFNAME)
-		NLA_PUT_STRING(msg, IFLA_IFNAME, link->l_name);
+		_NL_RETURN_ON_PUT_ERR(nla_put_string(msg, IFLA_IFNAME, link->l_name));
 
-	*result = msg;
+	*result = _nl_steal_pointer(&msg);
 	return 0;
-
-nla_put_failure:
-	nlmsg_free(msg);
-	return -NLE_MSGSIZE;
 }
 
 /**
@@ -1934,7 +1923,7 @@ struct rtnl_link *rtnl_link_alloc(void)
 }
 
 /**
- * Return a link object reference
+ * Release a link object reference
  * @arg link		Link object
  */
 void rtnl_link_put(struct rtnl_link *link)
@@ -1958,7 +1947,7 @@ void rtnl_link_put(struct rtnl_link *link)
  */
 void rtnl_link_set_name(struct rtnl_link *link, const char *name)
 {
-	strncpy(link->l_name, name, sizeof(link->l_name) - 1);
+	_nl_strncpy_trunc(link->l_name, name, sizeof(link->l_name));
 	link->ce_mask |= LINK_ATTR_IFNAME;
 }
 
@@ -2125,9 +2114,10 @@ void rtnl_link_set_family(struct rtnl_link *link, int family)
 	link->ce_mask |= LINK_ATTR_FAMILY;
 
 	if (link->l_af_ops) {
-		af_free(link, link->l_af_ops,
-			link->l_af_data[link->l_af_ops->ao_family], NULL);
-		link->l_af_data[link->l_af_ops->ao_family] = NULL;
+		int ao_family = link->l_af_ops->ao_family;
+
+		af_free(link, link->l_af_ops, link->l_af_data[ao_family], NULL);
+		link->l_af_data[ao_family] = NULL;
 	}
 
 	link->l_af_ops = af_lookup_and_alloc(link, family);
@@ -2482,7 +2472,7 @@ void rtnl_link_set_ifalias(struct rtnl_link *link, const char *alias)
  */
 void rtnl_link_set_qdisc(struct rtnl_link *link, const char *name)
 {
-	strncpy(link->l_qdisc, name, sizeof(link->l_qdisc) - 1);
+	_nl_strncpy_trunc(link->l_qdisc, name, sizeof(link->l_qdisc));
 	link->ce_mask |= LINK_ATTR_QDISC;
 }
 
@@ -2568,8 +2558,8 @@ int rtnl_link_set_stat(struct rtnl_link *link, rtnl_link_stat_id_t id,
 int rtnl_link_set_type(struct rtnl_link *link, const char *type)
 {
 	struct rtnl_link_info_ops *io;
+	_nl_auto_free char *kind = NULL;
 	int err;
-	char *kind;
 
 	free(link->l_info_kind);
 	link->ce_mask &= ~LINK_ATTR_LINKINFO;
@@ -2584,20 +2574,18 @@ int rtnl_link_set_type(struct rtnl_link *link, const char *type)
 
 	io = rtnl_link_info_ops_lookup(type);
 	if (io) {
-		if (io->io_alloc && (err = io->io_alloc(link)) < 0)
-			goto errout;
+		if (io->io_alloc && (err = io->io_alloc(link)) < 0) {
+			_nl_clear_free(&kind);
+			return err;
+		}
 
 		link->l_info_ops = io;
 	}
 
-	link->l_info_kind = kind;
+	link->l_info_kind = _nl_steal_pointer(&kind);
 	link->ce_mask |= LINK_ATTR_LINKINFO;
 
 	return 0;
-
-errout:
-	free(kind);
-	return err;
 }
 
 /**
@@ -2857,7 +2845,7 @@ pid_t rtnl_link_get_ns_pid(struct rtnl_link *link)
  */
 int rtnl_link_enslave_ifindex(struct nl_sock *sock, int master, int slave)
 {
-	struct rtnl_link *link;
+	_nl_auto_rtnl_link struct rtnl_link *link = NULL;
 	int err;
 
 	if (!(link = rtnl_link_alloc()))
@@ -2867,12 +2855,12 @@ int rtnl_link_enslave_ifindex(struct nl_sock *sock, int master, int slave)
 	rtnl_link_set_master(link, master);
 
 	if ((err = rtnl_link_change(sock, link, link, 0)) < 0)
-		goto errout;
+		return err;
 
-	rtnl_link_put(link);
+	_nl_clear_pointer(&link, rtnl_link_put);
 
 	/*
-	 * Due to the kernel not signaling whether this opertion is
+	 * Due to the kernel not signaling whether this operation is
 	 * supported or not, we will retrieve the attribute to see  if the
 	 * request was successful. If the master assigned remains unchanged
 	 * we will return NLE_OPNOTSUPP to allow performing backwards
@@ -2882,12 +2870,9 @@ int rtnl_link_enslave_ifindex(struct nl_sock *sock, int master, int slave)
 		return err;
 
 	if (rtnl_link_get_master(link) != master)
-		err = -NLE_OPNOTSUPP;
+		return -NLE_OPNOTSUPP;
 
-errout:
-	rtnl_link_put(link);
-
-	return err;
+	return 0;
 }
 
 /**
@@ -3063,6 +3048,7 @@ static const struct trans_tbl link_stats[] = {
 	__ADD(RTNL_LINK_IP6_ECT0PKTS, Ip6_InECT0Pkts),
 	__ADD(RTNL_LINK_IP6_CEPKTS, Ip6_InCEPkts),
 	__ADD(RTNL_LINK_RX_NOHANDLER, rx_nohandler),
+	__ADD(RTNL_LINK_REASM_OVERLAPS, ReasmOverlaps),
 };
 
 char *rtnl_link_stat2str(int st, char *buf, size_t len)
@@ -3135,22 +3121,16 @@ int rtnl_link_has_vf_list(struct rtnl_link *link) {
 		return 0;
 }
 
-void rtnl_link_set_vf_list(struct rtnl_link *link) {
-	int err;
-
-	if (!(err = rtnl_link_has_vf_list(link)))
+void rtnl_link_set_vf_list(struct rtnl_link *link)
+{
+	if (!rtnl_link_has_vf_list(link))
 		link->ce_mask |= LINK_ATTR_VF_LIST;
-
-	return;
 }
 
-void rtnl_link_unset_vf_list(struct rtnl_link *link) {
-	int err;
-
-	if ((err = rtnl_link_has_vf_list(link)))
+void rtnl_link_unset_vf_list(struct rtnl_link *link)
+{
+	if (rtnl_link_has_vf_list(link))
 		link->ce_mask &= ~LINK_ATTR_VF_LIST;
-
-	return;
 }
 
 /** @} */
@@ -3213,6 +3193,7 @@ static struct nl_object_ops link_obj_ops = {
 static struct nl_af_group link_groups[] = {
 	{ AF_UNSPEC,	RTNLGRP_LINK },
 	{ AF_BRIDGE,    RTNLGRP_LINK },
+	{ AF_INET6,     RTNLGRP_IPV6_IFINFO },
 	{ END_OF_GROUP_LIST },
 };
 
@@ -3233,12 +3214,12 @@ static struct nl_cache_ops rtnl_link_ops = {
 	.co_obj_ops		= &link_obj_ops,
 };
 
-static void __init link_init(void)
+static void _nl_init link_init(void)
 {
 	nl_cache_mngt_register(&rtnl_link_ops);
 }
 
-static void __exit link_exit(void)
+static void _nl_exit link_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_link_ops);
 }

@@ -1,24 +1,52 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/idiag/idiagnl_msg_obj.c Inet Diag Message Object
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Sassano Systems LLC <joe@sassanosystems.com>
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/inet_diag.h>
+
 #include <netlink/hashtable.h>
 #include <netlink/idiag/msg.h>
 #include <netlink/idiag/meminfo.h>
 #include <netlink/idiag/vegasinfo.h>
-#include <linux/inet_diag.h>
+#include <netlink/idiag/idiagnl.h>
 
+#include "nl-idiag.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-aux-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 /** @cond SKIP */
+struct idiagnl_msg {
+	NLHDR_COMMON
+
+	uint8_t			    idiag_family;
+	uint8_t			    idiag_state;
+	uint8_t			    idiag_timer;
+	uint8_t			    idiag_retrans;
+	uint16_t		    idiag_sport;
+	uint16_t		    idiag_dport;
+	struct nl_addr *	    idiag_src;
+	struct nl_addr *	    idiag_dst;
+	uint32_t		    idiag_ifindex;
+	uint32_t		    idiag_expires;
+	uint32_t		    idiag_rqueue;
+	uint32_t		    idiag_wqueue;
+	uint32_t		    idiag_uid;
+	uint32_t		    idiag_inode;
+
+	uint8_t			    idiag_tos;
+	uint8_t			    idiag_tclass;
+	uint8_t			    idiag_shutdown;
+	char *			    idiag_cong;
+	struct idiagnl_meminfo *    idiag_meminfo;
+	struct idiagnl_vegasinfo *  idiag_vegasinfo;
+	struct tcp_info		    idiag_tcpinfo;
+	uint32_t		    idiag_skmeminfo[SK_MEMINFO_VARS];
+};
+
 #define IDIAGNL_ATTR_FAMILY                     (0x1 << 1)
 #define IDIAGNL_ATTR_STATE                      (0x1 << 2)
 #define IDIAGNL_ATTR_TIMER                      (0x1 << 3)
@@ -117,12 +145,12 @@ static struct nl_cache_ops idiagnl_msg_ops = {
 	.co_obj_ops		= &idiagnl_msg_obj_ops,
 };
 
-static void __init idiagnl_init(void)
+static void _nl_init idiagnl_init(void)
 {
 	nl_cache_mngt_register(&idiagnl_msg_ops);
 }
 
-static void __exit idiagnl_exit(void)
+static void _nl_exit idiagnl_exit(void)
 {
 	nl_cache_mngt_unregister(&idiagnl_msg_ops);
 }
@@ -629,9 +657,9 @@ static int idiagnl_msg_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct idiagnl_msg *dst = (struct idiagnl_msg *) _dst;
 	struct idiagnl_msg *src = (struct idiagnl_msg *) _src;
 
-	dst->idiag_cong = NULL;
 	dst->idiag_src = NULL;
 	dst->idiag_dst = NULL;
+	dst->idiag_cong = NULL;
 	dst->idiag_meminfo = NULL;
 	dst->idiag_vegasinfo = NULL;
 	dst->ce_mask &= ~(IDIAGNL_ATTR_CONG |
@@ -871,30 +899,45 @@ static uint64_t idiagnl_compare(struct nl_object *_a, struct nl_object *_b,
 	struct idiagnl_msg *b = (struct idiagnl_msg *) _b;
 	uint64_t diff = 0;
 
-#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, IDIAGNL_ATTR_##ATTR, a, b, EXPR)
-	diff |= _DIFF(FAMILY,    a->idiag_family != b->idiag_family);
-	diff |= _DIFF(STATE,     a->idiag_state != b->idiag_state);
-	diff |= _DIFF(TIMER,     a->idiag_timer != b->idiag_timer);
-	diff |= _DIFF(RETRANS,   a->idiag_retrans != b->idiag_retrans);
-	diff |= _DIFF(SPORT,     a->idiag_sport != b->idiag_sport);
-	diff |= _DIFF(DPORT,     a->idiag_dport != b->idiag_dport);
-	diff |= _DIFF(SRC,       nl_addr_cmp (a->idiag_src, b->idiag_src));
-	diff |= _DIFF(DST,       nl_addr_cmp (a->idiag_dst, b->idiag_dst));
-	diff |= _DIFF(IFINDEX,   a->idiag_ifindex != b->idiag_ifindex);
-	diff |= _DIFF(EXPIRES,   a->idiag_expires != b->idiag_expires);
-	diff |= _DIFF(RQUEUE,    a->idiag_rqueue != b->idiag_rqueue);
-	diff |= _DIFF(WQUEUE,    a->idiag_wqueue != b->idiag_wqueue);
-	diff |= _DIFF(UID,       a->idiag_uid != b->idiag_uid);
-	diff |= _DIFF(INODE,     a->idiag_inode != b->idiag_inode);
-	diff |= _DIFF(TOS,       a->idiag_tos != b->idiag_tos);
-	diff |= _DIFF(TCLASS,    a->idiag_tclass != b->idiag_tclass);
-	diff |= _DIFF(SHUTDOWN,  a->idiag_shutdown != b->idiag_shutdown);
-	diff |= _DIFF(CONG,      strcmp(a->idiag_cong, b->idiag_cong));
-	diff |= _DIFF(MEMINFO,   nl_object_diff((struct nl_object *) a->idiag_meminfo, (struct nl_object *) b->idiag_meminfo));
-	diff |= _DIFF(VEGASINFO, nl_object_diff((struct nl_object *) a->idiag_vegasinfo, (struct nl_object *) b->idiag_vegasinfo));
-	diff |= _DIFF(TCPINFO,   memcmp(&a->idiag_tcpinfo, &b->idiag_tcpinfo, sizeof(a->idiag_tcpinfo)));
-	diff |= _DIFF(SKMEMINFO, memcmp(a->idiag_skmeminfo, b->idiag_skmeminfo, sizeof(a->idiag_skmeminfo)));
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(IDIAGNL_ATTR_FAMILY, a->idiag_family != b->idiag_family);
+	diff |= _DIFF(IDIAGNL_ATTR_STATE, a->idiag_state != b->idiag_state);
+	diff |= _DIFF(IDIAGNL_ATTR_TIMER, a->idiag_timer != b->idiag_timer);
+	diff |= _DIFF(IDIAGNL_ATTR_RETRANS,
+		      a->idiag_retrans != b->idiag_retrans);
+	diff |= _DIFF(IDIAGNL_ATTR_SPORT, a->idiag_sport != b->idiag_sport);
+	diff |= _DIFF(IDIAGNL_ATTR_DPORT, a->idiag_dport != b->idiag_dport);
+	diff |= _DIFF(IDIAGNL_ATTR_SRC,
+		      nl_addr_cmp(a->idiag_src, b->idiag_src));
+	diff |= _DIFF(IDIAGNL_ATTR_DST,
+		      nl_addr_cmp(a->idiag_dst, b->idiag_dst));
+	diff |= _DIFF(IDIAGNL_ATTR_IFINDEX,
+		      a->idiag_ifindex != b->idiag_ifindex);
+	diff |= _DIFF(IDIAGNL_ATTR_EXPIRES,
+		      a->idiag_expires != b->idiag_expires);
+	diff |= _DIFF(IDIAGNL_ATTR_RQUEUE, a->idiag_rqueue != b->idiag_rqueue);
+	diff |= _DIFF(IDIAGNL_ATTR_WQUEUE, a->idiag_wqueue != b->idiag_wqueue);
+	diff |= _DIFF(IDIAGNL_ATTR_UID, a->idiag_uid != b->idiag_uid);
+	diff |= _DIFF(IDIAGNL_ATTR_INODE, a->idiag_inode != b->idiag_inode);
+	diff |= _DIFF(IDIAGNL_ATTR_TOS, a->idiag_tos != b->idiag_tos);
+	diff |= _DIFF(IDIAGNL_ATTR_TCLASS, a->idiag_tclass != b->idiag_tclass);
+	diff |= _DIFF(IDIAGNL_ATTR_SHUTDOWN,
+		      a->idiag_shutdown != b->idiag_shutdown);
+	diff |= _DIFF(IDIAGNL_ATTR_CONG, strcmp(a->idiag_cong, b->idiag_cong));
+	diff |= _DIFF(IDIAGNL_ATTR_MEMINFO,
+		      nl_object_diff((struct nl_object *)a->idiag_meminfo,
+				     (struct nl_object *)b->idiag_meminfo));
+	diff |= _DIFF(IDIAGNL_ATTR_VEGASINFO,
+		      nl_object_diff((struct nl_object *)a->idiag_vegasinfo,
+				     (struct nl_object *)b->idiag_vegasinfo));
+	diff |= _DIFF(IDIAGNL_ATTR_TCPINFO,
+		      memcmp(&a->idiag_tcpinfo, &b->idiag_tcpinfo,
+			     sizeof(a->idiag_tcpinfo)));
+	diff |= _DIFF(IDIAGNL_ATTR_SKMEMINFO,
+		      memcmp(a->idiag_skmeminfo, b->idiag_skmeminfo,
+			     sizeof(a->idiag_skmeminfo)));
 #undef _DIFF
+
 	return diff;
 }
 
@@ -909,7 +952,7 @@ static void idiagnl_keygen(struct nl_object *obj, uint32_t *hashkey,
 		uint32_t dst_hash;
 		uint16_t sport;
 		uint16_t dport;
-	} __attribute__((packed)) key;
+	} _nl_packed key;
 
 	key_sz = sizeof(key);
 	key.family = msg->idiag_family;

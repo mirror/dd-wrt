@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/ipvti.c	 IPVTI Link Info
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2014 Susant Sahani <susant@redhat.com>
  */
 
@@ -22,21 +16,26 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/if_tunnel.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/link/ipvti.h>
-#include <netlink-private/route/link/api.h>
-#include <linux/if_tunnel.h>
+
+#include "nl-route.h"
+#include "link-api.h"
 
 #define IPVTI_ATTR_LINK		 (1 << 0)
 #define IPVTI_ATTR_IKEY		 (1 << 1)
 #define IPVTI_ATTR_OKEY		 (1 << 2)
 #define IPVTI_ATTR_LOCAL	 (1 << 3)
 #define IPVTI_ATTR_REMOTE	 (1 << 4)
+#define IPVTI_ATTR_FWMARK	 (1 << 5)
 
 struct ipvti_info
 {
@@ -45,6 +44,7 @@ struct ipvti_info
 	uint32_t   okey;
 	uint32_t   local;
 	uint32_t   remote;
+	uint32_t   fwmark;
 	uint32_t   ipvti_mask;
 };
 
@@ -54,6 +54,7 @@ static	struct nla_policy ipvti_policy[IFLA_VTI_MAX + 1] = {
 	[IFLA_VTI_OKEY]     = { .type = NLA_U32 },
 	[IFLA_VTI_LOCAL]    = { .type = NLA_U32 },
 	[IFLA_VTI_REMOTE]   = { .type = NLA_U32 },
+	[IFLA_VTI_FWMARK]   = { .type = NLA_U32 },
 };
 
 static int ipvti_alloc(struct rtnl_link *link)
@@ -117,6 +118,11 @@ static int ipvti_parse(struct rtnl_link *link, struct nlattr *data,
 		ipvti->ipvti_mask |= IPVTI_ATTR_REMOTE;
 	}
 
+	if (tb[IFLA_VTI_FWMARK]) {
+		ipvti->fwmark = nla_get_u32(tb[IFLA_VTI_FWMARK]);
+		ipvti->ipvti_mask |= IPVTI_ATTR_FWMARK;
+	}
+
 	err = 0;
 
 errout:
@@ -146,6 +152,9 @@ static int ipvti_put_attrs(struct nl_msg *msg, struct rtnl_link *link)
 
 	if (ipvti->ipvti_mask & IPVTI_ATTR_REMOTE)
 		NLA_PUT_U32(msg, IFLA_VTI_REMOTE, ipvti->remote);
+
+	if (ipvti->ipvti_mask & IPVTI_ATTR_FWMARK)
+		NLA_PUT_U32(msg, IFLA_VTI_FWMARK, ipvti->fwmark);
 
 	nla_nest_end(msg, data);
 
@@ -211,6 +220,11 @@ static void ipvti_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
 			nl_dump_line(p, "%s\n", addr);
 		else
 			nl_dump_line(p, "%#x\n", ntohs(ipvti->remote));
+	}
+
+	if (ipvti->ipvti_mask & IPVTI_ATTR_FWMARK) {
+		nl_dump(p, "      fwmark ");
+		nl_dump_line(p, "%x\n", ipvti->fwmark);
 	}
 }
 
@@ -477,12 +491,52 @@ uint32_t rtnl_link_ipvti_get_remote(struct rtnl_link *link)
 	return ipvti->remote;
 }
 
-static void __init ipvti_init(void)
+/**
+ * Set IPVTI tunnel fwmark
+ * @arg link            Link object
+ * @arg fwmark          fwmark
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_ipvti_set_fwmark(struct rtnl_link *link, uint32_t fwmark)
+{
+	struct ipvti_info *ipvti = link->l_info;
+
+	IS_IPVTI_LINK_ASSERT(link);
+
+	ipvti->fwmark = fwmark;
+	ipvti->ipvti_mask |= IPVTI_ATTR_FWMARK;
+
+	return 0;
+}
+
+/**
+ * Get IPVTI tunnel fwmark
+ * @arg link            Link object
+ * @arg fwmark          addr to fill in with the fwmark
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_ipvti_get_fwmark(struct rtnl_link *link, uint32_t *fwmark)
+{
+	struct ipvti_info *ipvti = link->l_info;
+
+	IS_IPVTI_LINK_ASSERT(link);
+
+	if (!(ipvti->ipvti_mask & IPVTI_ATTR_FWMARK))
+		return -NLE_NOATTR;
+
+	*fwmark = ipvti->fwmark;
+
+	return 0;
+}
+
+static void _nl_init ipvti_init(void)
 {
 	rtnl_link_register_info(&ipvti_info_ops);
 }
 
-static void __exit ipvti_exit(void)
+static void _nl_exit ipvti_exit(void)
 {
 	rtnl_link_unregister_info(&ipvti_info_ops);
 }

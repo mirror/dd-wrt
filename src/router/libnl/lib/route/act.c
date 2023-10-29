@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/act.c       Action
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Cong Wang <xiyou.wangcong@gmail.com>
  */
 
@@ -16,14 +9,19 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <linux/gen_stats.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/link.h>
 #include <netlink/route/action.h>
 
+#include "nl-route.h"
+#include "tc-api.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 static struct nl_object_ops act_obj_ops;
 static struct nl_cache_ops rtnl_act_ops;
@@ -125,7 +123,7 @@ int rtnl_act_fill(struct nl_msg *msg, int attrtype, struct rtnl_act *act)
 
 	while (p_act) {
 		err = rtnl_act_fill_one(msg, p_act, ++order);
-		if (err)
+		if (err < 0)
 			return err;
 		p_act = p_act->a_next;
 	}
@@ -299,7 +297,7 @@ int rtnl_act_build_change_request(struct rtnl_act *act, int flags,
  * sends the request to the kernel and waits for the next ACK to be
  * received and thus blocks until the request has been processed.
  *
- * @return 0 on sucess or a negative error if an error occured.
+ * @return 0 on success or a negative error if an error occured.
  */
 int rtnl_act_change(struct nl_sock *sk, struct rtnl_act *act, int flags)
 {
@@ -393,6 +391,13 @@ void rtnl_act_put_all(struct rtnl_act **head)
 	*head = NULL;
 }
 
+static struct nla_policy tc_act_stats_policy[TCA_STATS_MAX+1] = {
+	[TCA_STATS_BASIC]    	= { .minlen = sizeof(struct gnet_stats_basic) },
+	[TCA_STATS_QUEUE]    	= { .minlen = sizeof(struct gnet_stats_queue) },
+	[TCA_STATS_RATE_EST] 	= { .minlen = sizeof(struct gnet_stats_rate_est) },
+	[TCA_STATS_RATE_EST64] 	= { .minlen = sizeof(struct gnet_stats_rate_est64) },
+};
+
 int rtnl_act_parse(struct rtnl_act **head, struct nlattr *tb)
 {
 	struct rtnl_act *act;
@@ -439,6 +444,45 @@ int rtnl_act_parse(struct rtnl_act **head, struct nlattr *tb)
 				goto err_free;
 			}
 			tc->ce_mask |= TCA_ATTR_OPTS;
+		}
+
+		if (tb2[TCA_ACT_STATS]) {
+			struct nlattr *tb3[TCA_STATS_MAX + 1];
+
+			err = nla_parse_nested(tb3, TCA_STATS_MAX, tb2[TCA_ACT_STATS],
+					       tc_act_stats_policy);
+			if (err < 0)
+				return err;
+
+			if (tb3[TCA_STATS_BASIC]) {
+				struct gnet_stats_basic bs;
+
+				memcpy(&bs, nla_data(tb3[TCA_STATS_BASIC]),
+				       sizeof(bs));
+				tc->tc_stats[RTNL_TC_BYTES] = bs.bytes;
+				tc->tc_stats[RTNL_TC_PACKETS] = bs.packets;
+			}
+			if (tb3[TCA_STATS_RATE_EST64]) {
+				struct gnet_stats_rate_est64 re;
+
+				memcpy(&re, nla_data(tb3[TCA_STATS_RATE_EST64]),
+				       sizeof(re));
+				tc->tc_stats[RTNL_TC_RATE_BPS] = re.bps;
+				tc->tc_stats[RTNL_TC_RATE_PPS] = re.pps;
+			} else if (tb3[TCA_STATS_RATE_EST]) {
+				struct gnet_stats_rate_est *re;
+
+				re = nla_data(tb3[TCA_STATS_RATE_EST]);
+				tc->tc_stats[RTNL_TC_RATE_BPS] = re->bps;
+				tc->tc_stats[RTNL_TC_RATE_PPS] = re->pps;
+			}
+			if (tb3[TCA_STATS_QUEUE]) {
+				struct gnet_stats_queue *q;
+
+				q = nla_data(tb3[TCA_STATS_QUEUE]);
+				tc->tc_stats[RTNL_TC_DROPS] = q->drops;
+				tc->tc_stats[RTNL_TC_OVERLIMITS] = q->overlimits;
+			}
 		}
 
 		ops = rtnl_tc_get_ops(tc);
@@ -519,8 +563,13 @@ static int act_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 	p_act = act;
 	while(p_act) {
 		err = pp->pp_cb(OBJ_CAST(act), pp);
-		if (err)
+		if (err) {
+			if (err > 0) {
+				_nl_assert_not_reached();
+				err = -NLE_FAILURE;
+			}
 			break;
+		}
 		p_act = p_act->a_next;
 	}
 errout:
@@ -576,13 +625,13 @@ static struct nl_object_ops act_obj_ops = {
 	.oo_id_attrs		= (TCA_ATTR_IFINDEX | TCA_ATTR_HANDLE),
 };
 
-static void __init act_init(void)
+static void _nl_init act_init(void)
 {
 	rtnl_tc_type_register(&act_ops);
 	nl_cache_mngt_register(&rtnl_act_ops);
 }
 
-static void __exit act_exit(void)
+static void _nl_exit act_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_act_ops);
 	rtnl_tc_type_unregister(&act_ops);

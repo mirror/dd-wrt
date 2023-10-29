@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/bridge.c	AF_BRIDGE link support
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -17,13 +11,18 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/if_bridge.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/link/bridge.h>
-#include <netlink-private/route/link/api.h>
-#include <linux/if_bridge.h>
+
+#include "nl-route.h"
+#include "link-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 #define VLAN_VID_MASK           0x0fff /* VLAN Identifier */
 
@@ -195,6 +194,7 @@ static int bridge_parse_af_full(struct rtnl_link *link, struct nlattr *attr_full
 		if (nla_type(attr) == IFLA_BRIDGE_MODE) {
 			bd->b_hwmode = nla_get_u16(attr);
 			bd->ce_mask |= BRIDGE_ATTR_HWMODE;
+			continue;
 		} else if (nla_type(attr) != IFLA_BRIDGE_VLAN_INFO)
 			continue;
 
@@ -436,21 +436,23 @@ static int bridge_compare(struct rtnl_link *_a, struct rtnl_link *_b,
 	struct bridge_data *b = bridge_data(_b);
 	int diff = 0;
 
-#define BRIDGE_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, BRIDGE_ATTR_##ATTR, a, b, EXPR)
-	diff |= BRIDGE_DIFF(PORT_STATE,	a->b_port_state != b->b_port_state);
-	diff |= BRIDGE_DIFF(PRIORITY, a->b_priority != b->b_priority);
-	diff |= BRIDGE_DIFF(COST, a->b_cost != b->b_cost);
-	diff |= BRIDGE_DIFF(PORT_VLAN, memcmp(&a->vlan_info, &b->vlan_info,
-					      sizeof(struct rtnl_link_bridge_vlan)));
-	diff |= BRIDGE_DIFF(HWMODE, a->b_hwmode != b->b_hwmode);
-	diff |= BRIDGE_DIFF(SELF, a->b_self != b->b_self);
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(BRIDGE_ATTR_PORT_STATE,
+		      a->b_port_state != b->b_port_state);
+	diff |= _DIFF(BRIDGE_ATTR_PRIORITY, a->b_priority != b->b_priority);
+	diff |= _DIFF(BRIDGE_ATTR_COST, a->b_cost != b->b_cost);
+	diff |= _DIFF(BRIDGE_ATTR_PORT_VLAN,
+		      memcmp(&a->vlan_info, &b->vlan_info,
+			     sizeof(struct rtnl_link_bridge_vlan)));
+	diff |= _DIFF(BRIDGE_ATTR_HWMODE, a->b_hwmode != b->b_hwmode);
+	diff |= _DIFF(BRIDGE_ATTR_SELF, a->b_self != b->b_self);
 
 	if (flags & LOOSE_COMPARISON)
-		diff |= BRIDGE_DIFF(FLAGS,
-				  (a->b_flags ^ b->b_flags) & b->b_flags_mask);
+		diff |= _DIFF(BRIDGE_ATTR_FLAGS,
+			      (a->b_flags ^ b->b_flags) & b->b_flags_mask);
 	else
-		diff |= BRIDGE_DIFF(FLAGS, a->b_flags != b->b_flags);
-#undef BRIDGE_DIFF
+		diff |= _DIFF(BRIDGE_ATTR_FLAGS, a->b_flags != b->b_flags);
+#undef _DIFF
 
 	return diff;
 }
@@ -464,12 +466,11 @@ static int bridge_compare(struct rtnl_link *_a, struct rtnl_link *_b,
 struct rtnl_link *rtnl_link_bridge_alloc(void)
 {
 	struct rtnl_link *link;
-	int err;
 
 	if (!(link = rtnl_link_alloc()))
 		return NULL;
 
-	if ((err = rtnl_link_set_type(link, "bridge")) < 0) {
+	if (rtnl_link_set_type(link, "bridge") < 0) {
 		rtnl_link_put(link);
 		return NULL;
 	}
@@ -979,12 +980,12 @@ static struct rtnl_link_af_ops bridge_ops = {
 	.ao_fill_af_no_nest	= 1,
 };
 
-static void __init bridge_init(void)
+static void _nl_init bridge_init(void)
 {
 	rtnl_link_af_register(&bridge_ops);
 }
 
-static void __exit bridge_exit(void)
+static void _nl_exit bridge_exit(void)
 {
 	rtnl_link_af_unregister(&bridge_ops);
 }

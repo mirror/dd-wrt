@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/hfsc.c	HFSC Qdisc
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2014 Cong Wang <xiyou.wangcong@gmail.com>
  */
 
@@ -16,18 +10,31 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/class.h>
 #include <netlink/route/link.h>
 #include <netlink/route/qdisc/hfsc.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_hfsc_qdisc {
+	uint32_t qh_defcls;
+	uint32_t qh_mask;
+};
+
+struct rtnl_hfsc_class {
+	struct tc_service_curve ch_rsc;
+	struct tc_service_curve ch_fsc;
+	struct tc_service_curve ch_usc;
+	uint32_t ch_mask;
+};
+
 #define SCH_HFSC_CLS_HAS_RSC		0x001
 #define SCH_HFSC_CLS_HAS_FSC		0x002
 #define SCH_HFSC_CLS_HAS_USC		0x004
@@ -336,13 +343,13 @@ static struct rtnl_tc_ops hfsc_class_ops = {
 	.to_msg_fill		= hfsc_class_msg_fill,
 };
 
-static void __init hfsc_init(void)
+static void _nl_init hfsc_init(void)
 {
 	rtnl_tc_register(&hfsc_qdisc_ops);
 	rtnl_tc_register(&hfsc_class_ops);
 }
 
-static void __exit hfsc_exit(void)
+static void _nl_exit hfsc_exit(void)
 {
 	rtnl_tc_unregister(&hfsc_qdisc_ops);
 	rtnl_tc_unregister(&hfsc_class_ops);

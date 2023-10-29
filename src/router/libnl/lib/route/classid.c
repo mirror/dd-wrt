@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/classid.c       ClassID Management
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,11 +9,17 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <sys/stat.h>
+#include <search.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/tc.h>
+
+#include "nl-route.h"
+#include "nl-aux-core/nl-core.h"
 
 struct classid_map
 {
@@ -415,7 +414,7 @@ int rtnl_classid_generate(const char *name, uint32_t *result, uint32_t parent)
 
 	fclose(fd);
 
-	if ((err = classid_map_add(classid, name)) < 0) {
+	if (classid_map_add(classid, name) < 0) {
 		/*
 		 * Error adding classid map, re-read classid file is best
 		 * option here. It is likely to fail as well but better
@@ -434,7 +433,7 @@ errout:
 
 /** @} */
 
-static void __init classid_init(void)
+static void _nl_init classid_init(void)
 {
 	int err, i;
 
@@ -451,7 +450,7 @@ static void free_map(void *map)
 	free(map);
 }
 
-static void __exit classid_exit(void)
+static void _nl_exit classid_exit(void)
 {
 	tdestroy(id_root, free_map);
 }

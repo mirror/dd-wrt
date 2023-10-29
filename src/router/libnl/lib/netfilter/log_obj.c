@@ -1,23 +1,34 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/log_obj.c	Netfilter Log Object
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
  * Copyright (c) 2008 Patrick McHardy <kaber@trash.net>
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/log.h>
 
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+
 /** @cond SKIP */
+struct nfnl_log {
+	NLHDR_COMMON
+
+	uint16_t		log_group;
+	uint8_t			log_copy_mode;
+	uint32_t		log_copy_range;
+	uint32_t		log_flush_timeout;
+	uint32_t		log_alloc_size;
+	uint32_t		log_queue_threshold;
+	uint32_t		log_flags;
+	uint32_t		log_flag_mask;
+};
+
 #define LOG_ATTR_GROUP			(1UL << 0)
 #define LOG_ATTR_COPY_MODE		(1UL << 1)
 #define LOG_ATTR_COPY_RANGE		(1UL << 3)
@@ -215,9 +226,15 @@ void nfnl_log_unset_flags(struct nfnl_log *log, unsigned int flags)
 	log->log_flag_mask |= flags;
 }
 
+unsigned int nfnl_log_get_flags(const struct nfnl_log *log)
+{
+	return log->log_flags;
+}
+
 static const struct trans_tbl log_flags[] = {
 	__ADD(NFNL_LOG_FLAG_SEQ,	seq),
 	__ADD(NFNL_LOG_FLAG_SEQ_GLOBAL,	seq_global),
+	__ADD(NFNL_LOG_FLAG_CONNTRACK,	conntrack),
 };
 
 char *nfnl_log_flags2str(unsigned int flags, char *buf, size_t len)
@@ -238,17 +255,15 @@ static uint64_t nfnl_log_compare(struct nl_object *_a, struct nl_object *_b,
 	uint64_t diff = 0;
 
 #define NFNL_LOG_DIFF(ATTR, EXPR) \
-	ATTR_DIFF(attrs, LOG_ATTR_##ATTR, a, b, EXPR)
+	ATTR_DIFF(attrs, ATTR, a, b, EXPR)
 #define NFNL_LOG_DIFF_VAL(ATTR, FIELD) \
 	NFNL_LOG_DIFF(ATTR, a->FIELD != b->FIELD)
-
-	diff |= NFNL_LOG_DIFF_VAL(GROUP,		log_group);
-	diff |= NFNL_LOG_DIFF_VAL(COPY_MODE,		log_copy_mode);
-	diff |= NFNL_LOG_DIFF_VAL(COPY_RANGE,		log_copy_range);
-	diff |= NFNL_LOG_DIFF_VAL(FLUSH_TIMEOUT,	log_flush_timeout);
-	diff |= NFNL_LOG_DIFF_VAL(ALLOC_SIZE,		log_alloc_size);
-	diff |= NFNL_LOG_DIFF_VAL(QUEUE_THRESHOLD,	log_queue_threshold);
-
+	diff |= NFNL_LOG_DIFF_VAL(LOG_ATTR_GROUP,		log_group);
+	diff |= NFNL_LOG_DIFF_VAL(LOG_ATTR_COPY_MODE,		log_copy_mode);
+	diff |= NFNL_LOG_DIFF_VAL(LOG_ATTR_COPY_RANGE,		log_copy_range);
+	diff |= NFNL_LOG_DIFF_VAL(LOG_ATTR_FLUSH_TIMEOUT,	log_flush_timeout);
+	diff |= NFNL_LOG_DIFF_VAL(LOG_ATTR_ALLOC_SIZE,		log_alloc_size);
+	diff |= NFNL_LOG_DIFF_VAL(LOG_ATTR_QUEUE_THRESHOLD,	log_queue_threshold);
 #undef NFNL_LOG_DIFF
 #undef NFNL_LOG_DIFF_VAL
 

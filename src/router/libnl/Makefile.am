@@ -8,6 +8,7 @@ check_LTLIBRARIES =
 
 check_PROGRAMS =
 check_programs =
+check_local =
 
 bin_PROGRAMS =
 sbin_PROGRAMS =
@@ -105,10 +106,12 @@ libnlinclude_netlink_route_HEADERS = \
 	include/netlink/route/class.h \
 	include/netlink/route/classifier.h \
 	include/netlink/route/link.h \
+	include/netlink/route/mdb.h \
 	include/netlink/route/neighbour.h \
 	include/netlink/route/neightbl.h \
 	include/netlink/route/netconf.h \
 	include/netlink/route/nexthop.h \
+	include/netlink/route/nh.h \
 	include/netlink/route/pktloc.h \
 	include/netlink/route/qdisc.h \
 	include/netlink/route/route.h \
@@ -121,6 +124,7 @@ libnlinclude_netlink_route_actdir = $(libnlincludedir)/netlink/route/act
 libnlinclude_netlink_route_act_HEADERS = \
 	include/netlink/route/act/gact.h \
 	include/netlink/route/act/mirred.h \
+	include/netlink/route/act/nat.h \
 	include/netlink/route/act/skbedit.h \
 	include/netlink/route/act/vlan.h \
 	$(NULL)
@@ -129,6 +133,7 @@ libnlinclude_netlink_route_cls_HEADERS = \
 	include/netlink/route/cls/basic.h \
 	include/netlink/route/cls/cgroup.h \
 	include/netlink/route/cls/ematch.h \
+	include/netlink/route/cls/flower.h \
 	include/netlink/route/cls/fw.h \
 	include/netlink/route/cls/matchall.h \
 	include/netlink/route/cls/police.h \
@@ -145,13 +150,16 @@ libnlinclude_netlink_route_linkdir = $(libnlincludedir)/netlink/route/link
 libnlinclude_netlink_route_link_HEADERS = \
 	include/netlink/route/link/api.h \
 	include/netlink/route/link/bonding.h \
+	include/netlink/route/link/bridge_info.h \
 	include/netlink/route/link/bridge.h \
 	include/netlink/route/link/can.h \
 	include/netlink/route/link/geneve.h \
 	include/netlink/route/link/inet.h \
 	include/netlink/route/link/inet6.h \
 	include/netlink/route/link/info-api.h \
+	include/netlink/route/link/ip6gre.h \
 	include/netlink/route/link/ip6tnl.h \
+	include/netlink/route/link/ip6vti.h \
 	include/netlink/route/link/ipgre.h \
 	include/netlink/route/link/ipip.h \
 	include/netlink/route/link/ipvlan.h \
@@ -162,6 +170,7 @@ libnlinclude_netlink_route_link_HEADERS = \
 	include/netlink/route/link/ppp.h \
 	include/netlink/route/link/sit.h \
 	include/netlink/route/link/sriov.h \
+	include/netlink/route/link/team.h \
 	include/netlink/route/link/veth.h \
 	include/netlink/route/link/vlan.h \
 	include/netlink/route/link/vrf.h \
@@ -203,7 +212,9 @@ libnlinclude_netlink_cli_HEADERS = \
 	include/netlink/cli/ct.h \
 	include/netlink/cli/exp.h \
 	include/netlink/cli/link.h \
+	include/netlink/cli/mdb.h \
 	include/netlink/cli/neigh.h \
+	include/netlink/cli/nh.h \
 	include/netlink/cli/qdisc.h \
 	include/netlink/cli/route.h \
 	include/netlink/cli/rule.h \
@@ -212,11 +223,38 @@ libnlinclude_netlink_cli_HEADERS = \
 	$(NULL)
 endif
 
+public_headers = \
+	$(libnlinclude_netlink_HEADERS) \
+	$(libnlinclude_netlink_fib_lookup_HEADERS) \
+	$(libnlinclude_netlink_genl_HEADERS) \
+	$(libnlinclude_netlink_idiag_HEADERS) \
+	$(libnlinclude_netlink_netfilter_HEADERS) \
+	$(libnlinclude_netlink_route_HEADERS) \
+	$(libnlinclude_netlink_route_act_HEADERS) \
+	$(libnlinclude_netlink_route_cls_HEADERS) \
+	$(libnlinclude_netlink_route_cls_ematch_HEADERS) \
+	$(libnlinclude_netlink_route_link_HEADERS) \
+	$(libnlinclude_netlink_route_qdisc_HEADERS) \
+	$(libnlinclude_netlink_xfrm_HEADERS) \
+	$(libnlinclude_netlink_cli_HEADERS) \
+	$(NULL)
+
 noinst_HEADERS = \
+	include/base/nl-base-utils.h \
+	include/linux-private/linux/atm.h \
+	include/linux-private/linux/atmapi.h \
+	include/linux-private/linux/atmioc.h \
+	include/linux-private/linux/atmsap.h \
+	include/linux-private/linux/byteorder/little_endian.h \
 	include/linux-private/linux/can/netlink.h \
+	include/linux-private/linux/const.h \
+	include/linux-private/linux/errno.h \
+	include/linux-private/linux/ethtool.h \
+	include/linux-private/linux/falloc.h \
 	include/linux-private/linux/fib_rules.h \
 	include/linux-private/linux/gen_stats.h \
 	include/linux-private/linux/genetlink.h \
+	include/linux-private/linux/hdlc/ioctl.h \
 	include/linux-private/linux/if.h \
 	include/linux-private/linux/if_addr.h \
 	include/linux-private/linux/if_arp.h \
@@ -224,53 +262,65 @@ noinst_HEADERS = \
 	include/linux-private/linux/if_ether.h \
 	include/linux-private/linux/if_link.h \
 	include/linux-private/linux/if_macsec.h \
+	include/linux-private/linux/if_packet.h \
 	include/linux-private/linux/if_tunnel.h \
 	include/linux-private/linux/if_vlan.h \
 	include/linux-private/linux/in.h \
 	include/linux-private/linux/in6.h \
+	include/linux-private/linux/in_route.h \
 	include/linux-private/linux/inet_diag.h \
+	include/linux-private/linux/ioctl.h \
 	include/linux-private/linux/ip.h \
 	include/linux-private/linux/ipv6.h \
 	include/linux-private/linux/libc-compat.h \
+	include/linux-private/linux/limits.h \
 	include/linux-private/linux/lwtunnel.h \
 	include/linux-private/linux/mpls.h \
 	include/linux-private/linux/mpls_iptunnel.h \
 	include/linux-private/linux/neighbour.h \
 	include/linux-private/linux/netconf.h \
+	include/linux-private/linux/netdevice.h \
 	include/linux-private/linux/netfilter.h \
 	include/linux-private/linux/netfilter/nf_conntrack_common.h \
+	include/linux-private/linux/netfilter/nf_conntrack_tcp.h \
 	include/linux-private/linux/netfilter/nfnetlink.h \
 	include/linux-private/linux/netfilter/nfnetlink_compat.h \
 	include/linux-private/linux/netfilter/nfnetlink_conntrack.h \
 	include/linux-private/linux/netfilter/nfnetlink_log.h \
 	include/linux-private/linux/netfilter/nfnetlink_queue.h \
 	include/linux-private/linux/netlink.h \
+	include/linux-private/linux/nexthop.h \
 	include/linux-private/linux/pkt_cls.h \
 	include/linux-private/linux/pkt_sched.h \
+	include/linux-private/linux/posix_types.h \
 	include/linux-private/linux/rtnetlink.h \
 	include/linux-private/linux/snmp.h \
 	include/linux-private/linux/sock_diag.h \
 	include/linux-private/linux/socket.h \
+	include/linux-private/linux/stddef.h \
+	include/linux-private/linux/swab.h \
+	include/linux-private/linux/taskstats.h \
 	include/linux-private/linux/tc_act/tc_gact.h \
 	include/linux-private/linux/tc_act/tc_mirred.h \
+	include/linux-private/linux/tc_act/tc_nat.h \
 	include/linux-private/linux/tc_act/tc_skbedit.h \
 	include/linux-private/linux/tc_act/tc_vlan.h \
+	include/linux-private/linux/tc_ematch/tc_em_cmp.h \
 	include/linux-private/linux/tc_ematch/tc_em_meta.h \
+	include/linux-private/linux/tc_ematch/tc_em_nbyte.h \
+	include/linux-private/linux/tc_ematch/tc_em_text.h \
+	include/linux-private/linux/types.h \
+	include/linux-private/linux/version.h \
 	include/linux-private/linux/veth.h \
 	include/linux-private/linux/xfrm.h \
-	include/netlink-private/cache-api.h \
-	include/netlink-private/genl.h \
-	include/netlink-private/netlink.h \
-	include/netlink-private/object-api.h \
-	include/netlink-private/route/link/api.h \
-	include/netlink-private/route/link/sriov.h \
-	include/netlink-private/route/mpls.h \
-	include/netlink-private/route/nexthop-encap.h \
-	include/netlink-private/route/tc-api.h \
-	include/netlink-private/socket.h \
-	include/netlink-private/tc.h \
-	include/netlink-private/types.h \
-	include/netlink-private/utils.h \
+	include/nl-aux-core/nl-core.h \
+	include/nl-aux-route/nl-route.h \
+	include/nl-default.h \
+	include/nl-priv-dynamic-core/cache-api.h \
+	include/nl-priv-dynamic-core/nl-core.h \
+	include/nl-priv-dynamic-core/object-api.h \
+	include/nl-priv-dynamic-route/nl-priv-dynamic-route.h \
+	include/nl-priv-static-route/nl-priv-static-route.h \
 	$(NULL)
 
 ###############################################################################
@@ -324,15 +374,18 @@ EXTRA_DIST += \
 
 ###############################################################################
 
+default_includes = \
+	-I$(srcdir)/include/linux-private \
+	-I$(srcdir)/include \
+	-I$(builddir)/include \
+	$(NULL)
+
 lib_cppflags = \
 	$(warn_cppflags) \
 	-D_GNU_SOURCE \
 	-DSYSCONFDIR=\"$(sysconfdir)/libnl\" \
-	-I$(srcdir)/include/linux-private \
-	-I$(srcdir)/include \
-	-I$(builddir)/include \
-	-I$(builddir)/lib/route \
-	-I$(builddir)/lib/route/cls
+	$(default_includes) \
+	$(NULL)
 
 lib_LTLIBRARIES += lib/libnl-3.la
 
@@ -348,7 +401,9 @@ lib_libnl_3_la_SOURCES = \
 	lib/hash.c \
 	lib/hashtable.c \
 	lib/mpls.c \
+	lib/mpls.h \
 	lib/msg.c \
+	lib/nl-core.h \
 	lib/nl.c \
 	lib/object.c \
 	lib/socket.c \
@@ -371,6 +426,7 @@ lib_libnl_route_3_la_SOURCES = \
 	lib/route/act.c \
 	lib/route/act/gact.c \
 	lib/route/act/mirred.c \
+	lib/route/act/nat.c \
 	lib/route/act/skbedit.c \
 	lib/route/act/vlan.c \
 	lib/route/addr.c \
@@ -385,41 +441,52 @@ lib_libnl_route_3_la_SOURCES = \
 	lib/route/cls/ematch/meta.c \
 	lib/route/cls/ematch/nbyte.c \
 	lib/route/cls/ematch/text.c \
+	lib/route/cls/flower.c \
 	lib/route/cls/fw.c \
 	lib/route/cls/mall.c \
 	lib/route/cls/police.c \
 	lib/route/cls/u32.c \
+	lib/route/link-sriov.h \
 	lib/route/link.c \
 	lib/route/link/api.c \
 	lib/route/link/bonding.c \
 	lib/route/link/bridge.c \
+	lib/route/link/bridge_info.c \
 	lib/route/link/can.c \
 	lib/route/link/dummy.c \
 	lib/route/link/geneve.c \
 	lib/route/link/ifb.c \
 	lib/route/link/inet.c \
 	lib/route/link/inet6.c \
+	lib/route/link/ip6gre.c \
 	lib/route/link/ip6tnl.c \
+	lib/route/link/ip6vti.c \
 	lib/route/link/ipgre.c \
 	lib/route/link/ipip.c \
 	lib/route/link/ipvlan.c \
 	lib/route/link/ipvti.c \
+	lib/route/link/link-api.h \
 	lib/route/link/macsec.c \
 	lib/route/link/macvlan.c \
 	lib/route/link/ppp.c \
 	lib/route/link/sit.c \
 	lib/route/link/sriov.c \
+	lib/route/link/team.c \
 	lib/route/link/veth.c \
 	lib/route/link/vlan.c \
 	lib/route/link/vrf.c \
 	lib/route/link/vxlan.c \
 	lib/route/link/xfrmi.c \
+	lib/route/mdb.c \
 	lib/route/neigh.c \
 	lib/route/neightbl.c \
 	lib/route/netconf.c \
+	lib/route/nexthop-encap.h \
 	lib/route/nexthop.c \
 	lib/route/nexthop_encap.c \
+	lib/route/nh.c \
 	lib/route/nh_encap_mpls.c \
+	lib/route/nl-route.h \
 	lib/route/pktloc.c \
 	lib/route/qdisc.c \
 	lib/route/qdisc/blackhole.c \
@@ -442,6 +509,7 @@ lib_libnl_route_3_la_SOURCES = \
 	lib/route/route_utils.c \
 	lib/route/rtnl.c \
 	lib/route/rule.c \
+	lib/route/tc-api.h \
 	lib/route/tc.c \
 	$(NULL)
 nodist_lib_libnl_route_3_la_SOURCES = \
@@ -449,7 +517,11 @@ nodist_lib_libnl_route_3_la_SOURCES = \
 EXTRA_lib_libnl_route_3_la_DEPENDENCIES = \
 	libnl-route-3.sym
 lib_libnl_route_3_la_CPPFLAGS = \
-	$(lib_cppflags)
+	$(lib_cppflags) \
+	-I$(srcdir)/lib/route \
+	-I$(builddir)/lib/route \
+	-I$(builddir)/lib/route/cls \
+	$(NULL)
 lib_libnl_route_3_la_LDFLAGS = \
 	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
 	-Wl,--version-script=$(srcdir)/libnl-route-3.sym
@@ -466,6 +538,7 @@ lib_libnl_idiag_3_la_SOURCES = \
 	lib/idiag/idiag_msg_obj.c \
 	lib/idiag/idiag_req_obj.c \
 	lib/idiag/idiag_vegasinfo_obj.c \
+	lib/idiag/nl-idiag.h \
 	$(NULL)
 EXTRA_lib_libnl_idiag_3_la_DEPENDENCIES = \
 	libnl-idiag-3.sym
@@ -484,6 +557,7 @@ lib_libnl_genl_3_la_SOURCES = \
 	lib/genl/family.c \
 	lib/genl/genl.c \
 	lib/genl/mngt.c \
+	lib/genl/nl-genl.h \
 	$(NULL)
 EXTRA_lib_libnl_genl_3_la_DEPENDENCIES = \
 	libnl-genl-3.sym
@@ -508,6 +582,7 @@ lib_libnl_nf_3_la_SOURCES = \
 	lib/netfilter/log_obj.c \
 	lib/netfilter/netfilter.c \
 	lib/netfilter/nfnl.c \
+	lib/netfilter/nl-netfilter.h \
 	lib/netfilter/queue.c \
 	lib/netfilter/queue_msg.c \
 	lib/netfilter/queue_msg_obj.c \
@@ -529,6 +604,7 @@ lib_LTLIBRARIES += lib/libnl-xfrm-3.la
 lib_libnl_xfrm_3_la_SOURCES = \
 	lib/xfrm/ae.c \
 	lib/xfrm/lifetime.c \
+	lib/xfrm/nl-xfrm.h \
 	lib/xfrm/sa.c \
 	lib/xfrm/selector.c \
 	lib/xfrm/sp.c \
@@ -613,6 +689,7 @@ src_lib_libnl_cli_3_la_SOURCES = \
 	src/lib/exp.c \
 	src/lib/link.c \
 	src/lib/neigh.c \
+	src/lib/nh.c \
 	src/lib/qdisc.c \
 	src/lib/route.c \
 	src/lib/rule.c \
@@ -626,9 +703,8 @@ src_lib_libnl_cli_3_la_CPPFLAGS = \
 	-D_GNU_SOURCE \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-I$(srcdir)/include/linux-private \
-	-I$(srcdir)/include \
-	-I$(builddir)/include
+	$(default_includes) \
+	$(NULL)
 src_lib_libnl_cli_3_la_LDFLAGS = \
 	$(src_lib_ldflags) \
 	-Wl,--version-script=$(srcdir)/libnl-cli-3.sym
@@ -646,9 +722,8 @@ src_cppflags = \
 	$(warn_cppflags) \
 	-D_GNU_SOURCE \
 	-DSYSCONFDIR=\"$(sysconfdir)/libnl\" \
-	-I$(srcdir)/include/linux-private \
-	-I$(srcdir)/include \
-	-I$(builddir)/include
+	$(default_includes) \
+	$(NULL)
 
 src_ldadd = \
 	src/lib/libnl-cli-3.la \
@@ -696,6 +771,7 @@ cli_programs = \
 	src/nl-neigh-delete \
 	src/nl-neigh-list \
 	src/nl-neightbl-list \
+	src/nl-nh-list \
 	src/nl-pktloc-lookup \
 	src/nl-qdisc-add \
 	src/nl-qdisc-delete \
@@ -795,6 +871,8 @@ src_nl_neigh_list_CPPFLAGS =        $(src_cppflags)
 src_nl_neigh_list_LDADD =           $(src_ldadd)
 src_nl_neightbl_list_CPPFLAGS =     $(src_cppflags)
 src_nl_neightbl_list_LDADD =        $(src_ldadd)
+src_nl_nh_list_CPPFLAGS =           $(src_cppflags)
+src_nl_nh_list_LDADD =              $(src_ldadd)
 src_nl_pktloc_lookup_CPPFLAGS =     $(src_cppflags)
 src_nl_pktloc_lookup_LDADD =        $(src_ldadd)
 src_nl_qdisc_add_CPPFLAGS =         $(src_cppflags)
@@ -824,15 +902,32 @@ tests_cppflags = \
 	$(warn_cppflags) \
 	-D_GNU_SOURCE \
 	-DSYSCONFDIR=\"$(sysconfdir)/libnl\" \
-	-I$(srcdir)/include/linux-private \
-	-I$(srcdir)/include \
-	-I$(builddir)/include
+	$(default_includes) \
+	$(NULL)
 
 tests_ldadd = \
 	lib/libnl-3.la \
 	lib/libnl-nf-3.la \
 	lib/libnl-genl-3.la \
-	lib/libnl-route-3.la
+	lib/libnl-route-3.la \
+	$(NULL)
+
+if WITH_CHECK
+check_LTLIBRARIES += tests/libnl-test-util.la
+endif
+
+tests_libnl_test_util_la_SOURCES = \
+	tests/nl-test-util.h \
+	tests/nl-test-util.c \
+	$(NULL)
+tests_libnl_test_util_la_CPPFLAGS = \
+	$(tests_cppflags) \
+	$(CHECK_CFLAGS) \
+	$(NULL)
+tests_libnl_test_util_la_LIBADD = \
+	$(tests_ldadd) \
+	$(CHECK_LIBS) \
+	$(NULL)
 
 check_PROGRAMS += \
 	tests/test-complex-HTB-with-hash-filters \
@@ -913,11 +1008,13 @@ tests_test_u32_filter_with_actions_LDADD          = $(tests_ldadd)
 check_PROGRAMS += \
 	tests/test-cache-mngr \
 	tests/test-genl \
-	tests/test-nf-cache-mngr
+	tests/test-nf-cache-mngr \
+	$(NULL)
 
 tests_cli_ldadd = \
 	$(tests_ldadd) \
-	src/lib/libnl-cli-3.la
+	src/lib/libnl-cli-3.la \
+	$(NULL)
 
 tests_test_cache_mngr_CPPFLAGS                    = $(tests_cppflags)
 tests_test_cache_mngr_LDADD                       = $(tests_cli_ldadd)
@@ -932,11 +1029,12 @@ check_programs += tests/check-all
 endif
 
 tests_check_all_SOURCES = \
-	tests/check-addr.c \
 	tests/check-all.c \
-	tests/check-attr.c \
-	tests/check-ematch-tree-clone.c \
-	tests/util.h \
+	tests/cksuite-all-addr.c \
+	tests/cksuite-all-attr.c \
+	tests/cksuite-all-ematch-tree-clone.c \
+	tests/cksuite-all-netns.c \
+	tests/cksuite-all.h \
 	$(NULL)
 
 tests_check_all_CPPFLAGS = \
@@ -945,7 +1043,34 @@ tests_check_all_CPPFLAGS = \
 
 tests_check_all_LDADD = \
 	$(tests_ldadd) \
-	$(CHECK_LIBS)
+	tests/libnl-test-util.la \
+	$(CHECK_LIBS) \
+	$(NULL)
+
+if WITH_CHECK
+if ENABLE_STATIC
+check_programs += tests/check-direct
+endif
+endif
+
+tests_check_direct_SOURCES = \
+	tests/check-direct.c \
+	$(NULL)
+
+tests_check_direct_CPPFLAGS = \
+	$(tests_cppflags) \
+	$(CHECK_CFLAGS) \
+	$(NULL)
+
+tests_check_direct_LDFLAGS = \
+	-static \
+	$(NULL)
+
+tests_check_direct_LDADD = \
+	$(tests_ldadd) \
+	tests/libnl-test-util.la \
+	$(CHECK_LIBS) \
+	$(NULL)
 
 ###############################################################################
 
@@ -959,6 +1084,10 @@ dist_man8_MANS = \
 	$(NULL)
 
 ###############################################################################
+
+python-build:
+	cd "$(srcdir)/python"; \
+	python setup.py build
 
 EXTRA_DIST += \
 	python/README \
@@ -974,7 +1103,6 @@ EXTRA_DIST += \
 	python/examples/wiphy.py \
 	\
 	python/netlink/capi.i \
-	python/netlink/fixes.h \
 	python/netlink/__init__.py \
 	python/netlink/core.py \
 	python/netlink/util.py \
@@ -999,6 +1127,27 @@ EXTRA_DIST += \
 
 ###############################################################################
 
+%.build-headers-test.c: %
+	mkdir -p "$(dir $@)"
+	echo -e "#include <$$(echo "$<" | sed 's|.*\<include/netlink/|netlink/|')>\nint main(int argc, char **argv) { return 0; }" > $@
+
+%.build-headers-test.o: %.build-headers-test.c
+	$(COMPILE) -Wall -Werror -Wno-error=cpp -I$(srcdir)/include -I$(builddir)/include -c -o $@ $<
+
+BUILD_HEADERS_OBJS = $(patsubst %,%.build-headers-test.o,$(public_headers))
+
+# Test whether the public headers are all self-contained and can be build.
+# This test is not hooked up as `make check`.
+check-local-build-headers: $(BUILD_HEADERS_OBJS)
+
+CLEANFILES += $(BUILD_HEADERS_OBJS)
+
+check_local += check-local-build-headers
+
+###############################################################################
+
+check-local: $(check_local)
+
 check_PROGRAMS += $(check_programs)
 TESTS += $(check_programs)
 
@@ -1021,3 +1170,11 @@ EXTRA_DIST += \
 	libnl-route-3.sym \
 	libnl-xfrm-3.sym \
 	$(NULL)
+
+###############################################################################
+
+check-progs: all $(check_PROGRAMS) $(check_LTLIBRARIES)
+
+###############################################################################
+
+.PHONY = check-progs

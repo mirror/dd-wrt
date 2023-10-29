@@ -1,18 +1,14 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nl-pktloc-lookup.c     Lookup packet location alias
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010 Thomas Graf <tgraf@suug.ch>
  */
 
+#include "nl-default.h"
+
+#include <linux/tc_ematch/tc_em_cmp.h>
+
 #include <netlink/cli/utils.h>
 #include <netlink/route/pktloc.h>
-#include <linux/tc_ematch/tc_em_cmp.h>
 
 static void print_usage(void)
 {
@@ -52,8 +48,19 @@ static const char *layer_txt[] = {
 	[TCF_LAYER_TRANSPORT] = "tcp"
 };
 
+static const char *get_align_txt(struct rtnl_pktloc *loc, char buf[static 16])
+{
+	if (loc->align < _NL_N_ELEMENTS(align_txt))
+		return align_txt[loc->align];
+
+	snprintf(buf, 16, "%u", loc->align);
+	return buf;
+}
+
 static void dump_u32_style(struct rtnl_pktloc *loc, uint32_t value)
 {
+	char buf[16];
+
 	if (loc->align > 4)
 		nl_cli_fatal(EINVAL, "u32 only supports alignments u8|u16|u32.");
 
@@ -64,37 +71,35 @@ static void dump_u32_style(struct rtnl_pktloc *loc, uint32_t value)
 	if (loc->shift > 0)
 		nl_cli_fatal(EINVAL, "u32 does not support shifting.");
 
-	printf("%s %x %x at %s%u\n",
-		align_txt[loc->align],
-		value, loc->mask ? loc->mask : align_mask[loc->align],
-		loc->layer == TCF_LAYER_TRANSPORT ? "nexthdr+" : "",
-		loc->offset);
-}
-
-static char *get_align_txt(struct rtnl_pktloc *loc)
-{
-	static char buf[16];
-
-	if (loc->align <= 4)
-		strcpy(buf, align_txt[loc->align]);
-	else
-		snprintf(buf, sizeof(buf), "%u", loc->align);
-
-	return buf;
+	printf("%s %x %x at %s%u\n", get_align_txt(loc, buf), value,
+	       loc->mask ? loc->mask :
+				 (loc->align < _NL_N_ELEMENTS(align_mask) ?
+				    align_mask[loc->align] :
+					  0),
+	       loc->layer == TCF_LAYER_TRANSPORT ? "nexthdr+" : "",
+	       loc->offset);
 }
 
 static void dump_loc(struct rtnl_pktloc *loc)
 {
-	printf("%s = %s at %s+%u & %#x >> %u\n",
-		loc->name, get_align_txt(loc), layer_txt[loc->layer],
-		loc->offset, loc->mask, loc->shift);
+	char buf[16];
+
+	printf("%s = %s at %s+%u & %#x >> %u\n", loc->name,
+	       get_align_txt(loc, buf),
+	       loc->layer < _NL_N_ELEMENTS(layer_txt) ? layer_txt[loc->layer] :
+							      "???",
+	       loc->offset, loc->mask, loc->shift);
 }
 
 static void list_cb(struct rtnl_pktloc *loc, void *arg)
 {
-	printf("%-26s %-5s %3s+%-4u %#-10x %-8u %u\n",
-		loc->name, get_align_txt(loc), layer_txt[loc->layer],
-		loc->offset, loc->mask, loc->shift, loc->refcnt);
+	char buf[16];
+
+	printf("%-26s %-5s %3s+%-4u %#-10x %-8u %u\n", loc->name,
+	       get_align_txt(loc, buf),
+	       loc->layer < _NL_N_ELEMENTS(layer_txt) ? layer_txt[loc->layer] :
+							     "???",
+	       loc->offset, loc->mask, loc->shift, loc->refcnt);
 }
 
 static void do_list(void)

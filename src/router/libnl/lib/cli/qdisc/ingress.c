@@ -1,14 +1,9 @@
-
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/lib/ingress.c     	ingress module for CLI lib
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Cong Wang <xiyou.wangcong@gmail.com>
  */
+
+#include "nl-default.h"
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
@@ -54,12 +49,12 @@ static struct nl_cli_tc_module ingress_module =
 	.tm_parse_argv		= ingress_parse_argv,
 };
 
-static void __init ingress_init(void)
+static void _nl_init ingress_init(void)
 {
 	nl_cli_tc_register(&ingress_module);
 }
 
-static void __exit ingress_exit(void)
+static void _nl_exit ingress_exit(void)
 {
 	nl_cli_tc_unregister(&ingress_module);
 }

@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/cli/exp.h	CLI Expectation Helper
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2012 Rich Fought <Rich.Fought@watchguard.com>
  * Copyright (c) 2008-2009 Thomas Graf <tgraf@suug.ch>
  */
@@ -15,6 +9,10 @@
 
 #include <netlink/netfilter/exp.h>
 #include <linux/netfilter/nf_conntrack_common.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern struct nfnl_exp *nl_cli_exp_alloc(void);
 extern struct nl_cache *nl_cli_exp_alloc_cache(struct nl_sock *);
@@ -38,5 +36,8 @@ extern void nl_cli_exp_parse_icmp_id(struct nfnl_exp *, int, char *);
 extern void nl_cli_exp_parse_icmp_type(struct nfnl_exp *, int, char *);
 extern void nl_cli_exp_parse_icmp_code(struct nfnl_exp *, int, char *);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

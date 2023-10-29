@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/fw.c		fw classifier
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2006 Petr Gotthard <petr.gotthard@siemens.com>
  * Copyright (c) 2006 Siemens AG Oesterreich
@@ -18,14 +12,24 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/cls/fw.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_fw {
+	uint32_t cf_classid;
+	struct nl_data *cf_act;
+	struct nl_data *cf_police;
+	char cf_indev[IFNAMSIZ];
+	uint32_t cf_fwmask;
+	int cf_mask;
+};
+
 #define FW_ATTR_CLASSID      0x001
 #define FW_ATTR_ACTION       0x002
 #define FW_ATTR_POLICE       0x004
@@ -94,9 +98,12 @@ static int fw_clone(void *_dst, void *_src)
 {
 	struct rtnl_fw *dst = _dst, *src = _src;
 
+	dst->cf_act = NULL;
+	dst->cf_police = NULL;
+
 	if (src->cf_act && !(dst->cf_act = nl_data_clone(src->cf_act)))
 		return -NLE_NOMEM;
-	
+
 	if (src->cf_police && !(dst->cf_police = nl_data_clone(src->cf_police)))
 		return -NLE_NOMEM;
 
@@ -206,12 +213,12 @@ static struct rtnl_tc_ops fw_ops = {
 	},
 };
 
-static void __init fw_init(void)
+static void _nl_init fw_init(void)
 {
 	rtnl_tc_register(&fw_ops);
 }
 
-static void __exit fw_exit(void)
+static void _nl_exit fw_exit(void)
 {
 	rtnl_tc_unregister(&fw_ops);
 }

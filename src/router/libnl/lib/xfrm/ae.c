@@ -120,14 +120,44 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/xfrm.h>
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/object.h>
 #include <netlink/xfrm/ae.h>
-#include <linux/xfrm.h>
+
+#include "nl-xfrm.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 /** @cond SKIP */
+
+struct xfrmnl_sa_id {
+	struct nl_addr* daddr;
+	uint32_t        spi;
+	uint16_t        family;
+	uint8_t         proto;
+};
+
+struct xfrmnl_ae {
+	NLHDR_COMMON
+
+	struct xfrmnl_sa_id             sa_id;
+	struct nl_addr*                 saddr;
+	uint32_t                        flags;
+	uint32_t                        reqid;
+	struct xfrmnl_mark              mark;
+	struct xfrmnl_lifetime_cur      lifetime_cur;
+	uint32_t                        replay_maxage;
+	uint32_t                        replay_maxdiff;
+	struct xfrmnl_replay_state      replay_state;
+	struct xfrmnl_replay_state_esn* replay_state_esn;
+};
+
 #define XFRM_AE_ATTR_DADDR          0x01
 #define XFRM_AE_ATTR_SPI            0x02
 #define XFRM_AE_ATTR_PROTO          0x04
@@ -164,17 +194,23 @@ static int xfrm_ae_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct xfrmnl_ae* dst = nl_object_priv(_dst);
 	struct xfrmnl_ae* src = nl_object_priv(_src);
 
-	if (src->sa_id.daddr)
+	dst->sa_id.daddr = NULL;
+	dst->saddr = NULL;
+	dst->replay_state_esn = NULL;
+
+	if (src->sa_id.daddr) {
 		if ((dst->sa_id.daddr = nl_addr_clone (src->sa_id.daddr)) == NULL)
 			return -NLE_NOMEM;
+	}
 
-	if (src->saddr)
+	if (src->saddr) {
 		if ((dst->saddr = nl_addr_clone (src->saddr)) == NULL)
 			return -NLE_NOMEM;
+	}
 
-	if (src->replay_state_esn)
-	{
+	if (src->replay_state_esn) {
 		uint32_t len = sizeof (struct xfrmnl_replay_state_esn) + (sizeof (uint32_t) * src->replay_state_esn->bmp_len);
+
 		if ((dst->replay_state_esn = malloc (len)) == NULL)
 			return -NLE_NOMEM;
 		memcpy (dst->replay_state_esn, src->replay_state_esn, len);
@@ -191,16 +227,20 @@ static uint64_t xfrm_ae_compare(struct nl_object *_a, struct nl_object *_b,
 	uint64_t diff = 0;
 	int found = 0;
 
-#define XFRM_AE_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, XFRM_AE_ATTR_##ATTR, a, b, EXPR)
-	diff |= XFRM_AE_DIFF(DADDR,	nl_addr_cmp(a->sa_id.daddr, b->sa_id.daddr));
-	diff |= XFRM_AE_DIFF(SPI,	a->sa_id.spi != b->sa_id.spi);
-	diff |= XFRM_AE_DIFF(PROTO,	a->sa_id.proto != b->sa_id.proto);
-	diff |= XFRM_AE_DIFF(SADDR,	nl_addr_cmp(a->saddr, b->saddr));
-	diff |= XFRM_AE_DIFF(FLAGS, a->flags != b->flags);
-	diff |= XFRM_AE_DIFF(REQID, a->reqid != b->reqid);
-	diff |= XFRM_AE_DIFF(MARK, (a->mark.v & a->mark.m) != (b->mark.v & b->mark.m));
-	diff |= XFRM_AE_DIFF(REPLAY_MAXAGE, a->replay_maxage != b->replay_maxage);
-	diff |= XFRM_AE_DIFF(REPLAY_MAXDIFF, a->replay_maxdiff != b->replay_maxdiff);
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(XFRM_AE_ATTR_DADDR,
+		      nl_addr_cmp(a->sa_id.daddr, b->sa_id.daddr));
+	diff |= _DIFF(XFRM_AE_ATTR_SPI, a->sa_id.spi != b->sa_id.spi);
+	diff |= _DIFF(XFRM_AE_ATTR_PROTO, a->sa_id.proto != b->sa_id.proto);
+	diff |= _DIFF(XFRM_AE_ATTR_SADDR, nl_addr_cmp(a->saddr, b->saddr));
+	diff |= _DIFF(XFRM_AE_ATTR_FLAGS, a->flags != b->flags);
+	diff |= _DIFF(XFRM_AE_ATTR_REQID, a->reqid != b->reqid);
+	diff |= _DIFF(XFRM_AE_ATTR_MARK,
+		      (a->mark.v & a->mark.m) != (b->mark.v & b->mark.m));
+	diff |= _DIFF(XFRM_AE_ATTR_REPLAY_MAXAGE,
+		      a->replay_maxage != b->replay_maxage);
+	diff |= _DIFF(XFRM_AE_ATTR_REPLAY_MAXDIFF,
+		      a->replay_maxdiff != b->replay_maxdiff);
 
 	/* Compare replay states */
 	found = AVAILABLE_MISMATCH (a, b, XFRM_AE_ATTR_REPLAY_STATE);
@@ -231,7 +271,7 @@ static uint64_t xfrm_ae_compare(struct nl_object *_a, struct nl_object *_b,
 			}
 		}
 	}
-#undef XFRM_AE_DIFF
+#undef _DIFF
 
 	return diff;
 }
@@ -295,6 +335,7 @@ static void xfrm_ae_dump_line(struct nl_object *a, struct nl_dump_params *p)
 	char                flags[128], buf[128];
 	time_t              add_time, use_time;
 	struct tm           *add_time_tm, *use_time_tm;
+	struct tm           tm_buf;
 
 	nl_dump_line(p, "src %s dst %s \n", nl_addr2str(ae->saddr, src, sizeof(src)),
 				nl_addr2str(ae->sa_id.daddr, dst, sizeof(dst)));
@@ -308,12 +349,13 @@ static void xfrm_ae_dump_line(struct nl_object *a, struct nl_dump_params *p)
 				ae->flags, ae->mark.m, ae->mark.v);
 
 	nl_dump_line(p, "\tlifetime current: \n");
-	nl_dump_line(p, "\t\tbytes %llu packets %llu \n", ae->lifetime_cur.bytes,
-				ae->lifetime_cur.packets);
+	nl_dump_line(p, "\t\tbytes %llu packets %llu \n",
+		     (long long unsigned)ae->lifetime_cur.bytes,
+		     (long long unsigned)ae->lifetime_cur.packets);
 	if (ae->lifetime_cur.add_time != 0)
 	{
 		add_time = ae->lifetime_cur.add_time;
-		add_time_tm = gmtime (&add_time);
+		add_time_tm = gmtime_r (&add_time, &tm_buf);
 		strftime (flags, 128, "%Y-%m-%d %H-%M-%S", add_time_tm);
 	}
 	else
@@ -324,7 +366,7 @@ static void xfrm_ae_dump_line(struct nl_object *a, struct nl_dump_params *p)
 	if (ae->lifetime_cur.use_time != 0)
 	{
 		use_time = ae->lifetime_cur.use_time;
-		use_time_tm = gmtime (&use_time);
+		use_time_tm = gmtime_r (&use_time, &tm_buf);
 		strftime (buf, 128, "%Y-%m-%d %H-%M-%S", use_time_tm);
 	}
 	else
@@ -374,6 +416,8 @@ static int build_xfrm_ae_message(struct xfrmnl_ae *tmpl, int cmd, int flags,
 		!(tmpl->ce_mask & XFRM_AE_ATTR_SPI) ||
 		!(tmpl->ce_mask & XFRM_AE_ATTR_PROTO))
 		return -NLE_MISSING_ATTR;
+
+	memset(&ae_id, 0, sizeof(ae_id));
 
 	memcpy (&ae_id.sa_id.daddr, nl_addr_get_binary_addr (tmpl->sa_id.daddr), sizeof (uint8_t) * nl_addr_get_len (tmpl->sa_id.daddr));
 	ae_id.sa_id.spi    = htonl(tmpl->sa_id.spi);

@@ -1,22 +1,17 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nf-monitor.c     Monitor netfilter events
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
  */
 
-#include <netlink/cli/utils.h>
-#include <netlink/netfilter/nfnl.h>
+#include "nl-default.h"
 
 #include <linux/netlink.h>
 #include <linux/netfilter/nfnetlink.h>
+
+#include <netlink/cli/utils.h>
+#include <netlink/netfilter/nfnl.h>
 
 static void obj_input(struct nl_object *obj, void *arg)
 {

@@ -1,3 +1,9 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
 libnl_3 {
 global:
 	xfrmnl_ae_alloc;
@@ -244,3 +250,8 @@ global:
 local:
 	*;
 };
+
+libnl_3_6 {
+	xfrmnl_sa_get_user_offload;
+	xfrmnl_sa_set_user_offload;
+} libnl_3;

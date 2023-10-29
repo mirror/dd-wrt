@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/class.c            Traffic Classes
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,14 +9,20 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/class.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/classifier.h>
 #include <netlink/utils.h>
+
+#include "nl-route.h"
+#include "tc-api.h"
+
+struct rtnl_class {
+	NL_TC_GENERIC(c);
+};
 
 static struct nl_cache_ops rtnl_class_ops;
 static struct nl_object_ops class_obj_ops;
@@ -492,13 +491,13 @@ static struct nl_cache_ops rtnl_class_ops = {
 	.co_obj_ops		= &class_obj_ops,
 };
 
-static void __init class_init(void)
+static void _nl_init class_init(void)
 {
 	rtnl_tc_type_register(&class_ops);
 	nl_cache_mngt_register(&rtnl_class_ops);
 }
 
-static void __exit class_exit(void)
+static void _nl_exit class_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_class_ops);
 	rtnl_tc_type_unregister(&class_ops);

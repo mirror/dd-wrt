@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/list.h	Netlink List Utilities
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -13,6 +7,10 @@
 #define NETLINK_LIST_H_
 
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct nl_list_head
 {
@@ -91,5 +89,9 @@ static inline int nl_list_empty(struct nl_list_head *head)
 
 #define nl_init_list_head(head) \
 	do { (head)->next = (head); (head)->prev = (head); } while (0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

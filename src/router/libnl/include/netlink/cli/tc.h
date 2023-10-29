@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/cli/tc.h     CLI Traffic Control Helpers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -13,6 +7,10 @@
 #define __NETLINK_CLI_TC_H_
 
 #include <netlink/route/tc.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct rtnl_tc_ops;
 
@@ -37,5 +35,9 @@ struct nl_cli_tc_module
 extern struct nl_cli_tc_module *nl_cli_tc_lookup(struct rtnl_tc_ops *);
 extern void nl_cli_tc_register(struct nl_cli_tc_module *);
 extern void nl_cli_tc_unregister(struct nl_cli_tc_module *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

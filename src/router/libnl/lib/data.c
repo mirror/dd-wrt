@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/data.c		Abstract Data
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -28,10 +21,16 @@
  * ~~~~
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink/netlink.h>
-#include <netlink/utils.h>
+#include "nl-default.h"
+
 #include <linux/socket.h>
+
+#include <netlink/netlink.h>
+#include <netlink/data.h>
+#include <netlink/attr.h>
+#include <netlink/utils.h>
+
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /**
  * @name General

@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/red.c		RED Qdisc
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,15 +10,27 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/qdisc/red.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_red {
+	uint32_t qr_limit;
+	uint32_t qr_qth_min;
+	uint32_t qr_qth_max;
+	uint8_t qr_flags;
+	uint8_t qr_wlog;
+	uint8_t qr_plog;
+	uint8_t qr_scell_log;
+	uint32_t qr_mask;
+};
+
 #define RED_ATTR_LIMIT		0x01
 #define RED_ATTR_QTH_MIN	0x02
 #define RED_ATTR_QTH_MAX	0x04
@@ -177,12 +183,12 @@ static struct rtnl_tc_ops red_ops = {
 	.to_msg_fill		= red_msg_fill,
 };
 
-static void __init red_init(void)
+static void _nl_init red_init(void)
 {
 	rtnl_tc_register(&red_ops);
 }
 
-static void __exit red_exit(void)
+static void _nl_exit red_exit(void)
 {
 	rtnl_tc_unregister(&red_ops);
 }

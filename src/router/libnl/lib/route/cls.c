@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/classifier.c       Classifier
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,15 +9,25 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <linux/ethtool.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/link.h>
 
+#include "nl-route.h"
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_cls {
+	NL_TC_GENERIC(c);
+	uint16_t c_prio;
+	uint16_t c_protocol;
+};
+
 #define CLS_ATTR_PRIO		(TCA_ATTR_MAX << 1)
 #define CLS_ATTR_PROTOCOL	(TCA_ATTR_MAX << 2)
 /** @endcond */
@@ -222,7 +225,7 @@ int rtnl_cls_build_change_request(struct rtnl_cls *cls, int flags,
  * sends the request to the kernel and waits for the next ACK to be
  * received and thus blocks until the request has been processed.
  *
- * @return 0 on sucess or a negative error if an error occured.
+ * @return 0 on success or a negative error if an error occured.
  */
 int rtnl_cls_change(struct nl_sock *sk, struct rtnl_cls *cls, int flags)
 {
@@ -364,6 +367,78 @@ void rtnl_cls_cache_set_tc_params(struct nl_cache *cache,
 	cache->c_iarg2 = parent;
 }
 
+/**
+ * Search classifier by interface index, parent and handle
+ * @arg cache           Classifier cache
+ * @arg ifindex         Interface index
+ * @arg parent          Parent
+ * @arg handle          Handle
+ *
+ * Searches a classifier cache previously allocated with rtnl_cls_alloc_cache()
+ * and searches for a classifier matching the interface index, parent
+ * and handle.
+ *
+ * The reference counter is incremented before returning the classifier,
+ * therefore the reference must be given back with rtnl_cls_put() after usage.
+ *
+ * @return Classifier or NULL if no match was found.
+ */
+struct rtnl_cls *rtnl_cls_find_by_handle(struct nl_cache *cache, int ifindex, uint32_t parent,
+                                         uint32_t handle)
+{
+	struct rtnl_cls *cls;
+
+	if (cache->c_ops != &rtnl_cls_ops)
+		return NULL;
+
+	nl_list_for_each_entry(cls, &cache->c_items, ce_list) {
+		if ((cls->c_parent == parent) &&
+		    (cls->c_ifindex == ifindex)&&
+		    (cls->c_handle == handle)) {
+			nl_object_get((struct nl_object *) cls);
+			return cls;
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * Search classifier by interface index, parent and priority
+ * @arg cache           Classifier cache
+ * @arg ifindex         Interface index
+ * @arg parent          Parent
+ * @arg prio            Priority
+ *
+ * Searches a classifier cache previously allocated with rtnl_cls_alloc_cache()
+ * and searches for a classifier matching the interface index, parent
+ * and prio.
+ *
+ * The reference counter is incremented before returning the classifier,
+ * therefore the reference must be given back with rtnl_cls_put() after usage.
+ *
+ * @return Classifier or NULL if no match was found.
+ */
+struct rtnl_cls *rtnl_cls_find_by_prio(struct nl_cache *cache, int ifindex,
+                                       uint32_t parent, uint16_t prio)
+{
+	struct rtnl_cls *cls;
+
+	if (cache->c_ops != &rtnl_cls_ops)
+		return NULL;
+
+	nl_list_for_each_entry(cls, &cache->c_items, ce_list) {
+		if ((cls->c_parent == parent) &&
+		    (cls->c_ifindex == ifindex) &&
+		    (cls->c_prio == prio)) {
+			nl_object_get((struct nl_object *) cls);
+			return cls;
+		}
+	}
+
+	return NULL;
+}
+
 /** @} */
 
 static void cls_dump_line(struct rtnl_tc *tc, struct nl_dump_params *p)
@@ -451,13 +526,13 @@ static struct nl_object_ops cls_obj_ops = {
 	.oo_id_attrs		= (TCA_ATTR_IFINDEX | TCA_ATTR_HANDLE),
 };
 
-static void __init cls_init(void)
+static void _nl_init cls_init(void)
 {
 	rtnl_tc_type_register(&cls_ops);
 	nl_cache_mngt_register(&rtnl_cls_ops);
 }
 
-static void __exit cls_exit(void)
+static void _nl_exit cls_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_cls_ops);
 	rtnl_tc_type_unregister(&cls_ops);

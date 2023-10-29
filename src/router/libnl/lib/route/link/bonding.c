@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/bonding.c	Bonding Link Module
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2011-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -20,10 +14,116 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/route/link/bonding.h>
-#include <netlink-private/route/link/api.h>
+
+#include "nl-route.h"
+#include "link-api.h"
+
+#define BOND_HAS_MODE		(1 << 0)
+#define BOND_HAS_ACTIVE_SLAVE	(1 << 1)
+
+struct bond_info {
+	uint8_t bn_mode;
+	uint32_t ifindex;
+	uint32_t bn_mask;
+};
+
+static int bond_info_alloc(struct rtnl_link *link)
+{
+	struct bond_info *bn;
+
+	if (link->l_info)
+		memset(link->l_info, 0, sizeof(*bn));
+	else {
+		bn = calloc(1, sizeof(*bn));
+		if (!bn)
+			return -NLE_NOMEM;
+
+		link->l_info = bn;
+	}
+
+	return 0;
+}
+
+static void bond_info_free(struct rtnl_link *link)
+{
+	_nl_clear_free(&link->l_info);
+}
+
+static int bond_put_attrs(struct nl_msg *msg, struct rtnl_link *link)
+{
+	struct bond_info *bn = link->l_info;
+	struct nlattr *data;
+
+	data = nla_nest_start(msg, IFLA_INFO_DATA);
+	if (!data)
+		return -NLE_MSGSIZE;
+	if (bn->bn_mask & BOND_HAS_MODE)
+		NLA_PUT_U8(msg, IFLA_BOND_MODE, bn->bn_mode);
+
+	if (bn->bn_mask & BOND_HAS_ACTIVE_SLAVE)
+		NLA_PUT_U32(msg, IFLA_BOND_ACTIVE_SLAVE, bn->ifindex);
+
+	nla_nest_end(msg, data);
+	return 0;
+
+nla_put_failure:
+	nla_nest_cancel(msg, data);
+	return -NLE_MSGSIZE;
+}
+
+static struct rtnl_link_info_ops bonding_info_ops = {
+	.io_name		= "bond",
+	.io_alloc		= bond_info_alloc,
+	.io_put_attrs		= bond_put_attrs,
+	.io_free		= bond_info_free,
+};
+
+#define IS_BOND_INFO_ASSERT(link)                                                    \
+	do {                                                                         \
+		if (link->l_info_ops != &bonding_info_ops) {                         \
+			APPBUG("Link is not a bond link. Set type \"bond\" first."); \
+		}                                                                    \
+	} while (0)
+
+/**
+ * Set active slave for bond
+ * @arg link            Link object of type bond
+ * @arg active          ifindex of active slave to set
+ *
+ * @return void
+ */
+void rtnl_link_bond_set_activeslave(struct rtnl_link *link, int active_slave)
+{
+	struct bond_info *bn = link->l_info;
+
+	IS_BOND_INFO_ASSERT(link);
+
+	bn->ifindex = active_slave;
+
+	bn->bn_mask |= BOND_HAS_ACTIVE_SLAVE;
+}
+
+/**
+ * Set bond mode
+ * @arg link            Link object of type bond
+ * @arg mode            bond mode to set
+ *
+ * @return void
+ */
+void rtnl_link_bond_set_mode(struct rtnl_link *link, uint8_t mode)
+{
+	struct bond_info *bn = link->l_info;
+
+	IS_BOND_INFO_ASSERT(link);
+
+	bn->bn_mode = mode;
+
+	bn->bn_mask |= BOND_HAS_MODE;
+}
 
 /**
  * Allocate link object of type bond
@@ -33,12 +133,11 @@
 struct rtnl_link *rtnl_link_bond_alloc(void)
 {
 	struct rtnl_link *link;
-	int err;
 
 	if (!(link = rtnl_link_alloc()))
 		return NULL;
 
-	if ((err = rtnl_link_set_type(link, "bond")) < 0) {
+	if (rtnl_link_set_type(link, "bond") < 0) {
 		rtnl_link_put(link);
 		return NULL;
 	}
@@ -211,16 +310,12 @@ int rtnl_link_bond_release(struct nl_sock *sock, struct rtnl_link *slave)
 				rtnl_link_get_ifindex(slave));
 }
 
-static struct rtnl_link_info_ops bonding_info_ops = {
-	.io_name		= "bond",
-};
-
-static void __init bonding_init(void)
+static void _nl_init bonding_init(void)
 {
 	rtnl_link_register_info(&bonding_info_ops);
 }
 
-static void __exit bonding_exit(void)
+static void _nl_exit bonding_exit(void)
 {
 	rtnl_link_unregister_info(&bonding_info_ops);
 }

@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/genl/family.c		Generic Netlink Family
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -19,15 +12,26 @@
  * @{
  */
 
-#include <netlink-private/genl.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
 #include <netlink/utils.h>
 
-#include "netlink-private/utils.h"
+#include "nl-genl.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /** @cond SKIP */
+struct genl_family_op
+{
+	uint32_t		o_id;
+	uint32_t		o_flags;
+
+	struct nl_list_head	o_list;
+};
+
 #define FAMILY_ATTR_ID		0x01
 #define FAMILY_ATTR_NAME	0x02
 #define FAMILY_ATTR_VERSION	0x04
@@ -73,6 +77,9 @@ static int family_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct genl_family_op *ops;
 	struct genl_family_grp *grp;
 	int err;
+
+	nl_init_list_head(&dst->gf_ops);
+	nl_init_list_head(&dst->gf_mc_grps);
 
 	nl_list_for_each_entry(ops, &src->gf_ops, o_list) {
 		err = genl_family_add_op(dst, ops->o_id, ops->o_flags);
@@ -157,15 +164,13 @@ static uint64_t family_compare(struct nl_object *_a, struct nl_object *_b,
 	struct genl_family *b = (struct genl_family *) _b;
 	uint64_t diff = 0;
 
-#define FAM_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, FAMILY_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= FAM_DIFF(ID,		a->gf_id != b->gf_id);
-	diff |= FAM_DIFF(VERSION,	a->gf_version != b->gf_version);
-	diff |= FAM_DIFF(HDRSIZE,	a->gf_hdrsize != b->gf_hdrsize);
-	diff |= FAM_DIFF(MAXATTR,	a->gf_maxattr != b->gf_maxattr);
-	diff |= FAM_DIFF(NAME,		strcmp(a->gf_name, b->gf_name));
-
-#undef FAM_DIFF
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(FAMILY_ATTR_ID, a->gf_id != b->gf_id);
+	diff |= _DIFF(FAMILY_ATTR_VERSION, a->gf_version != b->gf_version);
+	diff |= _DIFF(FAMILY_ATTR_HDRSIZE, a->gf_hdrsize != b->gf_hdrsize);
+	diff |= _DIFF(FAMILY_ATTR_MAXATTR, a->gf_maxattr != b->gf_maxattr);
+	diff |= _DIFF(FAMILY_ATTR_NAME, strcmp(a->gf_name, b->gf_name));
+#undef _DIFF
 
 	return diff;
 }
@@ -260,7 +265,7 @@ char *genl_family_get_name(struct genl_family *family)
  */
 void genl_family_set_name(struct genl_family *family, const char *name)
 {
-	strncpy(family->gf_name, name, GENL_NAMSIZ-1);
+	_nl_strncpy_trunc(family->gf_name, name, GENL_NAMSIZ);
 	family->ce_mask |= FAMILY_ATTR_NAME;
 }
 
@@ -380,7 +385,7 @@ int genl_family_add_grp(struct genl_family *family, uint32_t id,
 		return -NLE_NOMEM;
 
 	grp->id = id;
-	_nl_strncpy(grp->name, name, GENL_NAMSIZ);
+	_nl_strncpy_assert(grp->name, name, GENL_NAMSIZ);
 
 	nl_list_add_tail(&grp->list, &family->gf_mc_grps);
 

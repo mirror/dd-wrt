@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/can.c		CAN Link Info
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2012 Benedikt Spranger <b.spranger@linutronix.de>
  */
 
@@ -22,16 +16,19 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/can/netlink.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
-#include <netlink-private/route/link/api.h>
 #include <netlink/route/link/can.h>
 
-#include <linux/can/netlink.h>
+#include "nl-route.h"
+#include "link-api.h"
 
 /** @cond SKIP */
 #define CAN_HAS_BITTIMING		(1<<0)
@@ -42,6 +39,8 @@
 #define CAN_HAS_RESTART_MS		(1<<5)
 #define CAN_HAS_RESTART			(1<<6)
 #define CAN_HAS_BERR_COUNTER		(1<<7)
+#define CAN_HAS_DATA_BITTIMING		(1<<8)
+#define CAN_HAS_DATA_BITTIMING_CONST	(1<<9)
 
 struct can_info {
 	uint32_t			ci_state;
@@ -53,6 +52,8 @@ struct can_info {
 	struct can_clock		ci_clock;
 	struct can_berr_counter		ci_berr_counter;
 	uint32_t			ci_mask;
+	struct can_bittiming		ci_data_bittiming;
+	struct can_bittiming_const	ci_data_bittiming_const;
 };
 
 /** @endcond */
@@ -67,6 +68,10 @@ static struct nla_policy can_policy[IFLA_CAN_MAX + 1] = {
 				= { .minlen = sizeof(struct can_bittiming_const) },
 	[IFLA_CAN_CLOCK]	= { .minlen = sizeof(struct can_clock) },
 	[IFLA_CAN_BERR_COUNTER]	= { .minlen = sizeof(struct can_berr_counter) },
+	[IFLA_CAN_DATA_BITTIMING]
+				= { .minlen = sizeof(struct can_bittiming) },
+	[IFLA_CAN_DATA_BITTIMING_CONST]
+				= { .minlen = sizeof(struct can_bittiming_const) },
 };
 
 static int can_alloc(struct rtnl_link *link)
@@ -147,6 +152,18 @@ static int can_parse(struct rtnl_link *link, struct nlattr *data,
 		nla_memcpy(&ci->ci_berr_counter, tb[IFLA_CAN_BERR_COUNTER],
 			   sizeof(ci->ci_berr_counter));
 		ci->ci_mask |= CAN_HAS_BERR_COUNTER;
+	}
+
+	if (tb[IFLA_CAN_DATA_BITTIMING]) {
+		nla_memcpy(&ci->ci_data_bittiming, tb[IFLA_CAN_DATA_BITTIMING],
+		           sizeof(ci->ci_data_bittiming));
+		ci->ci_mask |= CAN_HAS_DATA_BITTIMING;
+	}
+
+	if (tb[IFLA_CAN_DATA_BITTIMING_CONST]) {
+		nla_memcpy(&ci->ci_data_bittiming_const, tb[IFLA_CAN_DATA_BITTIMING_CONST],
+		           sizeof(ci->ci_data_bittiming_const));
+		ci->ci_mask |= CAN_HAS_DATA_BITTIMING_CONST;
 	}
 
 	err = 0;
@@ -259,7 +276,7 @@ static void can_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
 	}
 
 	if (ci->ci_mask & CAN_HAS_CLOCK) {
-		nl_dump_line(p,"    base freq %d Hz\n", ci->ci_clock);
+		nl_dump_line(p,"    base freq %u Hz\n", ci->ci_clock.freq);
 
 	}
 
@@ -303,27 +320,35 @@ static int can_put_attrs(struct nl_msg *msg, struct rtnl_link *link)
 		return -NLE_MSGSIZE;
 
 	if (ci->ci_mask & CAN_HAS_RESTART)
-		NLA_PUT_U32(msg, CAN_HAS_RESTART, ci->ci_restart);
+		NLA_PUT_U32(msg, IFLA_CAN_RESTART, ci->ci_restart);
 
 	if (ci->ci_mask & CAN_HAS_RESTART_MS)
-		NLA_PUT_U32(msg, CAN_HAS_RESTART_MS, ci->ci_restart_ms);
+		NLA_PUT_U32(msg, IFLA_CAN_RESTART_MS, ci->ci_restart_ms);
 
 	if (ci->ci_mask & CAN_HAS_CTRLMODE)
-		NLA_PUT(msg, CAN_HAS_CTRLMODE, sizeof(ci->ci_ctrlmode),
+		NLA_PUT(msg, IFLA_CAN_CTRLMODE, sizeof(ci->ci_ctrlmode),
 			&ci->ci_ctrlmode);
 
 	if (ci->ci_mask & CAN_HAS_BITTIMING)
-		NLA_PUT(msg, CAN_HAS_BITTIMING, sizeof(ci->ci_bittiming),
+		NLA_PUT(msg, IFLA_CAN_BITTIMING, sizeof(ci->ci_bittiming),
 			&ci->ci_bittiming);
 
 	if (ci->ci_mask & CAN_HAS_BITTIMING_CONST)
-		NLA_PUT(msg, CAN_HAS_BITTIMING_CONST,
+		NLA_PUT(msg, IFLA_CAN_BITTIMING_CONST,
 			sizeof(ci->ci_bittiming_const),
 			&ci->ci_bittiming_const);
 
 	if (ci->ci_mask & CAN_HAS_CLOCK)
-		NLA_PUT(msg, CAN_HAS_CLOCK, sizeof(ci->ci_clock),
+		NLA_PUT(msg, IFLA_CAN_CLOCK, sizeof(ci->ci_clock),
 			&ci->ci_clock);
+
+	if (ci->ci_mask & CAN_HAS_DATA_BITTIMING)
+		NLA_PUT(msg, IFLA_CAN_DATA_BITTIMING, sizeof(ci->ci_data_bittiming),
+		        &ci->ci_data_bittiming);
+
+	if (ci->ci_mask & CAN_HAS_DATA_BITTIMING_CONST)
+		NLA_PUT(msg, IFLA_CAN_DATA_BITTIMING_CONST, sizeof(ci->ci_data_bittiming_const),
+		        &ci->ci_data_bittiming_const);
 
 	nla_nest_end(msg, data);
 
@@ -489,7 +514,7 @@ int rtnl_link_can_berr(struct rtnl_link *link, struct can_berr_counter *berr)
 }
 
 /**
- * Get CAN harware-dependent bit-timing constant
+ * Get CAN hardware-dependent bit-timing constant
  * @arg link            Link object
  * @arg bt_const	Bit-timing constant
  *
@@ -544,7 +569,7 @@ int rtnl_link_can_get_bittiming(struct rtnl_link *link,
  * @return 0 on success or a negative error code
  */
 int rtnl_link_can_set_bittiming(struct rtnl_link *link,
-				struct can_bittiming *bit_timing)
+                                const struct can_bittiming *bit_timing)
 {
 	struct can_info *ci = link->l_info;
 
@@ -747,6 +772,98 @@ int rtnl_link_can_unset_ctrlmode(struct rtnl_link *link, uint32_t ctrlmode)
 	return 0;
 }
 
+/**
+ * Get CAN FD hardware-dependent data bit-timing constant
+ * @arg link				Link object
+ * @arg data_bt_const	CAN FD data bit-timing constant
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_can_get_data_bittiming_const(struct rtnl_link *link,
+                                           struct can_bittiming_const *data_bt_const)
+{
+	struct can_info *ci = link->l_info;
+
+	IS_CAN_LINK_ASSERT(link);
+	if (!data_bt_const)
+		return -NLE_INVAL;
+
+	if (ci->ci_mask & CAN_HAS_DATA_BITTIMING_CONST)
+		*data_bt_const = ci->ci_data_bittiming_const;
+	else
+		return -NLE_AGAIN;
+
+	return 0;
+}
+
+/**
+ * Set CAN FD device data bit-timing-const
+ * @arg link					Link object
+ * @arg data_bit_timing		CAN FD data bit-timing
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_can_set_data_bittiming_const(struct rtnl_link *link,
+                                           const struct can_bittiming_const *data_bt_const)
+{
+	struct can_info *ci = link->l_info;
+
+	IS_CAN_LINK_ASSERT(link);
+	if (!data_bt_const)
+		return -NLE_INVAL;
+
+	ci->ci_data_bittiming_const = *data_bt_const;
+	ci->ci_mask |= CAN_HAS_DATA_BITTIMING_CONST;
+
+	return 0;
+}
+
+/**
+ * Get CAN FD device data bit-timing
+ * @arg link					Link object
+ * @arg data_bit_timing		CAN FD data bit-timing
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_can_get_data_bittiming(struct rtnl_link *link,
+                                     struct can_bittiming *data_bit_timing)
+{
+	struct can_info *ci = link->l_info;
+
+	IS_CAN_LINK_ASSERT(link);
+	if (!data_bit_timing)
+		return -NLE_INVAL;
+
+	if (ci->ci_mask & CAN_HAS_DATA_BITTIMING)
+		*data_bit_timing = ci->ci_data_bittiming;
+	else
+		return -NLE_AGAIN;
+
+	return 0;
+}
+
+/**
+ * Set CAN FD device data bit-timing
+ * @arg link					Link object
+ * @arg data_bit_timing		CAN FD data bit-timing
+ *
+ * @return 0 on success or a negative error code
+ */
+int rtnl_link_can_set_data_bittiming(struct rtnl_link *link,
+                                     const struct can_bittiming *data_bit_timing)
+{
+	struct can_info *ci = link->l_info;
+
+	IS_CAN_LINK_ASSERT(link);
+	if (!data_bit_timing)
+		return -NLE_INVAL;
+
+	ci->ci_data_bittiming = *data_bit_timing;
+	ci->ci_mask |= CAN_HAS_DATA_BITTIMING;
+
+	return 0;
+}
+
 /** @} */
 
 /**
@@ -760,6 +877,9 @@ static const struct trans_tbl can_ctrlmode[] = {
 	__ADD(CAN_CTRLMODE_3_SAMPLES, triple-sampling),
 	__ADD(CAN_CTRLMODE_ONE_SHOT, one-shot),
 	__ADD(CAN_CTRLMODE_BERR_REPORTING, berr-reporting),
+	__ADD(CAN_CTRLMODE_FD, fd),
+	__ADD(CAN_CTRLMODE_PRESUME_ACK, presume-ack),
+	__ADD(CAN_CTRLMODE_FD_NON_ISO, fd-non-iso),
 };
 
 char *rtnl_link_can_ctrlmode2str(int ctrlmode, char *buf, size_t len)
@@ -775,12 +895,12 @@ int rtnl_link_can_str2ctrlmode(const char *name)
 
 /** @} */
 
-static void __init can_init(void)
+static void _nl_init can_init(void)
 {
 	rtnl_link_register_info(&can_info_ops);
 }
 
-static void __exit can_exit(void)
+static void _nl_exit can_exit(void)
 {
 	rtnl_link_unregister_info(&can_info_ops);
 }

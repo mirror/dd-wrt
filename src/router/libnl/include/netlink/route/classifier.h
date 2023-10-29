@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/classifier.h       Classifiers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -26,6 +20,10 @@ extern void		rtnl_cls_put(struct rtnl_cls *);
 
 extern int		rtnl_cls_alloc_cache(struct nl_sock *, int, uint32_t,
 					     struct nl_cache **);
+extern struct rtnl_cls *rtnl_cls_find_by_handle(struct nl_cache *cache, int ifindex,
+                                                uint32_t parent, uint32_t handle);
+extern struct rtnl_cls *rtnl_cls_find_by_prio(struct nl_cache *cache, int ifindex,
+                                              uint32_t parent, uint16_t prio);
 
 extern void 		rtnl_cls_cache_set_tc_params(struct nl_cache *, int, uint32_t);
 

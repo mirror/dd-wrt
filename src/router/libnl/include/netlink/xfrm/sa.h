@@ -164,6 +164,9 @@ extern int                      xfrmnl_sa_set_replay_state_esn (struct xfrmnl_sa
                                                                 unsigned int, unsigned int, unsigned int,
                                                                 unsigned int, unsigned int*);
 
+extern int                      xfrmnl_sa_get_user_offload (struct xfrmnl_sa*, int*, uint8_t *);
+extern int                      xfrmnl_sa_set_user_offload (struct xfrmnl_sa*, int, uint8_t);
+
 extern int                      xfrmnl_sa_is_expiry_reached (struct xfrmnl_sa*);
 extern int                      xfrmnl_sa_is_hardexpiry_reached (struct xfrmnl_sa*);
 

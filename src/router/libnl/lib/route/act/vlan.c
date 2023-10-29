@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/act/vlan.c        vlan action
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation version 2.1
- * of the License.
- *
  * Copyright (c) 2018 Volodymyr Bendiuga <volodymyr.bendiuga@gmail.com>
  */
 
@@ -16,14 +10,25 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <linux/tc_act/tc_vlan.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/act/vlan.h>
 
+#include "tc-api.h"
+
+struct rtnl_vlan
+{
+	struct tc_vlan v_parm;
+	uint16_t       v_vid;
+	uint16_t       v_proto;
+	uint8_t        v_prio;
+	uint32_t       v_flags;
+};
 
 #define VLAN_F_VID   (1 << 0)
 #define VLAN_F_PROTO (1 << 1)
@@ -107,14 +112,6 @@ nla_put_failure:
 
 static void vlan_free_data(struct rtnl_tc *tc, void *data)
 {
-}
-
-static int vlan_clone(void *_dst, void *_src)
-{
-	struct rtnl_vlan *dst = _dst, *src = _src;
-
-	memcpy(&dst->v_parm, &src->v_parm, sizeof(src->v_parm));
-	return 0;
 }
 
 static void vlan_dump_line(struct rtnl_tc *tc, void *data,
@@ -405,7 +402,7 @@ static struct rtnl_tc_ops vlan_ops = {
 	.to_size                = sizeof(struct rtnl_vlan),
 	.to_msg_parser          = vlan_msg_parser,
 	.to_free_data           = vlan_free_data,
-	.to_clone               = vlan_clone,
+	.to_clone               = NULL,
 	.to_msg_fill            = vlan_msg_fill,
 	.to_dump = {
 	    [NL_DUMP_LINE]      = vlan_dump_line,
@@ -413,12 +410,12 @@ static struct rtnl_tc_ops vlan_ops = {
 	},
 };
 
-static void __init vlan_init(void)
+static void _nl_init vlan_init(void)
 {
 	rtnl_tc_register(&vlan_ops);
 }
 
-static void __exit vlan_exit(void)
+static void _nl_exit vlan_exit(void)
 {
 	rtnl_tc_unregister(&vlan_ops);
 }

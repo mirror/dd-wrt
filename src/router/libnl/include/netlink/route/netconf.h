@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/netconf.h		rtnetlink netconf layer
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2017 David Ahern <dsa@cumulusnetworks.com>
  */
 
@@ -16,6 +10,8 @@
 extern "C" {
 #endif
 
+struct nl_sock;
+struct nl_cache;
 struct rtnl_netconf;
 
 int rtnl_netconf_alloc_cache(struct nl_sock *sk, struct nl_cache **result);

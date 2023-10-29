@@ -1,24 +1,28 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/cbq.c	Class Based Queueing
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/class.h>
 #include <netlink/route/link.h>
 #include <netlink/route/qdisc/cbq.h>
 #include <netlink/route/cls/police.h>
+
+#include "tc-api.h"
+
+struct rtnl_cbq {
+	struct tc_cbq_lssopt cbq_lss;
+	struct tc_ratespec cbq_rate;
+	struct tc_cbq_wrropt cbq_wrr;
+	struct tc_cbq_ovl cbq_ovl;
+	struct tc_cbq_fopt cbq_fopt;
+	struct tc_cbq_police cbq_police;
+};
 
 /**
  * @ingroup qdisc
@@ -189,13 +193,13 @@ static struct rtnl_tc_ops cbq_class_ops = {
 	},
 };
 
-static void __init cbq_init(void)
+static void _nl_init cbq_init(void)
 {
 	rtnl_tc_register(&cbq_qdisc_ops);
 	rtnl_tc_register(&cbq_class_ops);
 }
 
-static void __exit cbq_exit(void)
+static void _nl_exit cbq_exit(void)
 {
 	rtnl_tc_unregister(&cbq_qdisc_ops);
 	rtnl_tc_unregister(&cbq_class_ops);

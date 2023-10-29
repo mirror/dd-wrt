@@ -1,10 +1,14 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
+
+#include "nl-default.h"
+
 #include <netinet/ether.h>
+
+#include <linux/netlink.h>
 
 #include <netlink/netlink.h>
 #include <netlink/route/link.h>
 #include <netlink/route/link/macvlan.h>
-
-#include <linux/netlink.h>
 
 int main(int argc, char *argv[])
 {

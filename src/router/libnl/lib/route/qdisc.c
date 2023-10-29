@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc.c            Queueing Disciplines
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,15 +9,16 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/class.h>
 #include <netlink/route/classifier.h>
+
+#include "tc-api.h"
 
 static struct nl_cache_ops rtnl_qdisc_ops;
 static struct nl_object_ops qdisc_obj_ops;
@@ -404,6 +398,38 @@ struct rtnl_qdisc *rtnl_qdisc_get_by_parent(struct nl_cache *cache,
 }
 
 /**
+ * Search qdisc by kind
+ * @arg cache		Qdisc cache
+ * @arg ifindex		Interface index
+ * @arg kind		Qdisc kind (tbf, htb, cbq, etc)
+ *
+ * Searches a qdisc cache previously allocated with rtnl_qdisc_alloc_cache()
+ * and searches for a qdisc matching the interface index and kind.
+ *
+ * The reference counter is incremented before returning the qdisc, therefore
+ * the reference must be given back with rtnl_qdisc_put() after usage.
+ *
+ * @return pointer to qdisc inside the cache or NULL if no match was found.
+ */
+struct rtnl_qdisc *rtnl_qdisc_get_by_kind(struct nl_cache *cache,
+					    int ifindex, char *kind)
+{
+	struct rtnl_qdisc *q;
+
+	if (cache->c_ops != &rtnl_qdisc_ops)
+		return NULL;
+
+	nl_list_for_each_entry(q, &cache->c_items, ce_list) {
+		if ((q->q_ifindex == ifindex) && (!strcmp(q->q_kind, kind))) {
+			nl_object_get((struct nl_object *) q);
+			return q;
+		}
+	}
+
+	return NULL;
+}
+
+/**
  * Search qdisc by interface index and handle
  * @arg cache		Qdisc cache
  * @arg ifindex		Interface index
@@ -562,13 +588,13 @@ static struct nl_object_ops qdisc_obj_ops = {
 	.oo_id_attrs		= (TCA_ATTR_IFINDEX | TCA_ATTR_HANDLE),
 };
 
-static void __init qdisc_init(void)
+static void _nl_init qdisc_init(void)
 {
 	rtnl_tc_type_register(&qdisc_ops);
 	nl_cache_mngt_register(&rtnl_qdisc_ops);
 }
 
-static void __exit qdisc_exit(void)
+static void _nl_exit qdisc_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_qdisc_ops);
 	rtnl_tc_type_unregister(&qdisc_ops);

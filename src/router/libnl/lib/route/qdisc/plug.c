@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/plug.c		PLUG Qdisc
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2012 Shriram Rajagopalan <rshriram@cs.ubc.ca>
  */
 
@@ -60,12 +54,18 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc/plug.h>
+
+#include "tc-api.h"
+
+struct rtnl_plug {
+	int action;
+	uint32_t limit;
+};
 
 static int plug_msg_fill(struct rtnl_tc *tc, void *data, struct nl_msg *msg)
 {
@@ -164,12 +164,12 @@ static struct rtnl_tc_ops plug_ops = {
 	.to_msg_fill		= plug_msg_fill,
 };
 
-static void __init plug_init(void)
+static void _nl_init plug_init(void)
 {
 	rtnl_tc_register(&plug_ops);
 }
 
-static void __exit plug_exit(void)
+static void _nl_exit plug_exit(void)
 {
 	rtnl_tc_unregister(&plug_ops);
 }

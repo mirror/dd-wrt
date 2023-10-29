@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/xfrmi.c	 XFRMI Link Info
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2019 Eyal Birger <eyal.birger@gmail.com>
  *
  * Based on lib/route/link/ipvti.c
@@ -24,14 +18,17 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/link/xfrmi.h>
-#include <netlink-private/route/link/api.h>
+
+#include "nl-route.h"
+#include "link-api.h"
 
 #define XFRMI_ATTR_LINK  (1 << 0)
 #define XFRMI_ATTR_IF_ID (1 << 1)
@@ -254,7 +251,7 @@ int rtnl_link_xfrmi_set_link(struct rtnl_link *link, uint32_t index)
  * @arg link            Link object
  * @arg out_link        The output value on success
  *
- * @return 0 on sucess or a negative error code
+ * @return 0 on success or a negative error code
  */
 int rtnl_link_xfrmi_get_link(struct rtnl_link *link, uint32_t *out_link)
 {
@@ -293,7 +290,7 @@ int rtnl_link_xfrmi_set_if_id(struct rtnl_link *link, uint32_t if_id)
  * @arg link            Link object
  * @arg out_if_id       The output value on success
  *
- * @return 0 on sucess or a negative error code
+ * @return 0 on success or a negative error code
  */
 int rtnl_link_xfrmi_get_if_id(struct rtnl_link *link, uint32_t *out_if_id)
 {
@@ -308,12 +305,12 @@ int rtnl_link_xfrmi_get_if_id(struct rtnl_link *link, uint32_t *out_if_id)
 	return 0;
 }
 
-static void __init xfrmi_init(void)
+static void _nl_init xfrmi_init(void)
 {
 	rtnl_link_register_info(&xfrmi_info_ops);
 }
 
-static void __exit xfrmi_exit(void)
+static void _nl_exit xfrmi_exit(void)
 {
 	rtnl_link_unregister_info(&xfrmi_info_ops);
 }

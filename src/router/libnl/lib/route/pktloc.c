@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/pktloc.c     Packet Location Aliasing
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2008-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -32,11 +25,15 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <sys/stat.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/pktloc.h>
+
+#include "nl-route.h"
 
 #include "pktloc_syntax.h"
 #include "pktloc_grammar.h"
@@ -124,7 +121,7 @@ static int read_pktlocs(void)
 		nl_init_list_head(&pktloc_name_ht[i]);
 	}
 
-	if ((err = pktloc_lex_init(&scanner)) < 0) {
+	if (pktloc_lex_init(&scanner) < 0) {
 		err = -NLE_FAILURE;
 		goto errout_close;
 	}
@@ -249,7 +246,7 @@ void rtnl_pktloc_foreach(void (*cb)(struct rtnl_pktloc *, void *), void *arg)
 			cb(loc, arg);
 }
 
-static int __init pktloc_init(void)
+static int _nl_init pktloc_init(void)
 {
 	int i;
 

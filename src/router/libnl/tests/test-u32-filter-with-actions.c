@@ -1,15 +1,17 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * test/tests-u32-with-actions.c     Add ingress qdisc, create some hash filters, and add redirect action
- *
- *      This library is free software; you can redistribute it and/or
- *      modify it under the terms of the GNU Lesser General Public
- *      License as published by the Free Software Foundation version 2.1
- *      of the License.
+ * Copyright (c) 2013 Cong Wang <xiyou.wangcong@gmail.com>
  *
  * Stolen from tests/test-complex-HTB-with-hash-filters.c
- *
- * Copyright (c) 2013 Cong Wang <xiyou.wangcong@gmail.com>
  */
+
+#include "nl-default.h"
+
+#include <stdio.h>
+
+#include <linux/if_ether.h>
+#include <linux/tc_act/tc_mirred.h>
+#include <linux/netlink.h>
 
 #include <netlink/route/link.h>
 #include <netlink/route/tc.h>
@@ -21,13 +23,6 @@
 #include <netlink/route/act/skbedit.h>
 #include <netlink/route/class.h>
 #include <netlink/attr.h>
-
-#include <stdio.h>
-#include <string.h>
-
-#include <linux/if_ether.h>
-#include <linux/tc_act/tc_mirred.h>
-#include <linux/netlink.h>
 
 #define 	TC_HANDLE(maj, min)   (TC_H_MAJ((maj) << 16) | TC_H_MIN(min))
 

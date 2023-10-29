@@ -1,16 +1,14 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/netlink-compat.h	Netlink Compatability
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
  */
 
 #ifndef NETLINK_COMPAT_H_
 #define NETLINK_COMPAT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if !defined _LINUX_SOCKET_H && !defined _BITS_SOCKADDR_H
 typedef unsigned short  sa_family_t;
@@ -49,6 +47,10 @@ typedef unsigned short  sa_family_t;
 
 #ifndef AF_MPLS
 #define AF_MPLS		28
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

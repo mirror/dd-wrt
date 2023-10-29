@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/dsmark.c	DSMARK
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,16 +10,30 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/qdisc.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/class.h>
 #include <netlink/route/qdisc/dsmark.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_dsmark_qdisc {
+	uint16_t qdm_indices;
+	uint16_t qdm_default_index;
+	uint32_t qdm_set_tc_index;
+	uint32_t qdm_mask;
+};
+
+struct rtnl_dsmark_class {
+	uint8_t cdm_bmask;
+	uint8_t cdm_value;
+	uint32_t cdm_mask;
+};
+
 #define SCH_DSMARK_ATTR_INDICES		0x1
 #define SCH_DSMARK_ATTR_DEFAULT_INDEX	0x2
 #define SCH_DSMARK_ATTR_SET_TC_INDEX	0x4
@@ -398,13 +406,13 @@ static struct rtnl_tc_ops dsmark_class_ops = {
 	.to_msg_fill		= dsmark_class_msg_fill,
 };
 
-static void __init dsmark_init(void)
+static void _nl_init dsmark_init(void)
 {
 	rtnl_tc_register(&dsmark_qdisc_ops);
 	rtnl_tc_register(&dsmark_class_ops);
 }
 
-static void __exit dsmark_exit(void)
+static void _nl_exit dsmark_exit(void)
 {
 	rtnl_tc_unregister(&dsmark_qdisc_ops);
 	rtnl_tc_unregister(&dsmark_class_ops);

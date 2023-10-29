@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/netfilter/ct.h	Conntrack
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
@@ -18,6 +12,7 @@
 #include <netlink/addr.h>
 #include <netlink/cache.h>
 #include <netlink/msg.h>
+#include <netlink/attr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +32,7 @@ extern int	nfnl_ct_alloc_cache(struct nl_sock *, struct nl_cache **);
 
 extern int	nfnlmsg_ct_group(struct nlmsghdr *);
 extern int	nfnlmsg_ct_parse(struct nlmsghdr *, struct nfnl_ct **);
+extern int	nfnlmsg_ct_parse_nested(struct nlattr *, struct nfnl_ct **);
 
 extern void	nfnl_ct_get(struct nfnl_ct *);
 extern void	nfnl_ct_put(struct nfnl_ct *);

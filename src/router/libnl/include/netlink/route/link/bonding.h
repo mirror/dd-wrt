@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/link/bonding.h		Bonding Interface
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2011-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -30,6 +24,9 @@ extern int	rtnl_link_bond_enslave(struct nl_sock *, struct rtnl_link *,
 
 extern int	rtnl_link_bond_release_ifindex(struct nl_sock *, int);
 extern int	rtnl_link_bond_release(struct nl_sock *, struct rtnl_link *);
+
+extern void	rtnl_link_bond_set_mode(struct rtnl_link *link, uint8_t mode);
+extern void	rtnl_link_bond_set_activeslave(struct rtnl_link *link, int active_slave);
 
 #ifdef __cplusplus
 }

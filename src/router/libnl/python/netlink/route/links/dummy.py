@@ -7,9 +7,9 @@
 """
 from __future__ import absolute_import
 
-__version__ = '1.0'
+__version__ = "1.0"
 __all__ = [
-    'init',
+    "init",
 ]
 
 
@@ -19,7 +19,8 @@ class DummyLink(object):
 
     @staticmethod
     def brief():
-        return 'dummy'
+        return "dummy"
+
 
 def init(link):
     link.dummy = DummyLink(link._rtnl_link)

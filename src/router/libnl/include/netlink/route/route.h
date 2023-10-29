@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/route.h	Routes
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -57,6 +51,9 @@ extern void	rtnl_route_get(struct rtnl_route *);
 
 extern int	rtnl_route_parse(struct nlmsghdr *, struct rtnl_route **);
 extern int	rtnl_route_build_msg(struct nl_msg *, struct rtnl_route *);
+
+extern int	rtnl_route_lookup(struct nl_sock *sk, struct nl_addr *dst,
+				  struct rtnl_route **result);
 
 extern int	rtnl_route_build_add_request(struct rtnl_route *, int,
 					     struct nl_msg **);

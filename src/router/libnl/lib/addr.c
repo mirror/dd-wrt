@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/addr.c		Network Address
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -28,12 +21,17 @@
  * ~~~~
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/socket.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/addr.h>
-#include <netlink-private/route/mpls.h>
-#include <linux/socket.h>
+#include <netlink/attr.h>
+
+#include "mpls.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /* All this DECnet stuff is stolen from iproute2, thanks to whoever wrote
  * this, probably Alexey. */
@@ -233,7 +231,7 @@ struct nl_addr *nl_addr_build(int family, const void *buf, size_t size)
 		addr->a_prefixlen = size*8;
 	}
 
-	if (size)
+	if (size && buf)
 		memcpy(addr->a_addr, buf, size);
 
 	return addr;
@@ -332,14 +330,17 @@ int nl_addr_parse(const char *addrstr, int hint, struct nl_addr **result)
 				 * no hint given the user wants to have a IPv4
 				 * address given back. */
 				family = AF_INET;
+				len = 4;
 				goto prefix;
 
 			case AF_INET6:
 				family = AF_INET6;
+				len = 16;
 				goto prefix;
 
 			case AF_LLC:
 				family = AF_LLC;
+				len = 6;
 				goto prefix;
 
 			default:
@@ -456,6 +457,8 @@ prefix:
 
 	if (copy)
 		nl_addr_set_binary_addr(addr, buf, len);
+	else
+		addr->a_len = len;
 
 	if (prefix) {
 		char *p;
@@ -467,7 +470,7 @@ prefix:
 		}
 		nl_addr_set_prefixlen(addr, pl);
 	} else {
-		if (!plen)
+		if (copy && !plen)
 			plen = len * 8;
 		nl_addr_set_prefixlen(addr, plen);
 	}
@@ -627,7 +630,7 @@ int nl_addr_cmp_prefix(const struct nl_addr *a, const struct nl_addr *b)
 	int d = a->a_family - b->a_family;
 
 	if (d == 0) {
-		int len = min(a->a_prefixlen, b->a_prefixlen);
+		int len = _NL_MIN(a->a_prefixlen, b->a_prefixlen);
 		int bytes = len / 8;
 
 		d = memcmp(a->a_addr, b->a_addr, bytes);

@@ -30,23 +30,22 @@ details.
 from __future__ import absolute_import
 
 
-
 from . import capi
 import sys
 import socket
 
 __all__ = [
-    'Socket',
-    'Message',
-    'Callback',
-    'DumpParams',
-    'Object',
-    'Cache',
-    'KernelError',
-    'NetlinkError',
+    "Socket",
+    "Message",
+    "Callback",
+    "DumpParams",
+    "Object",
+    "Cache",
+    "KernelError",
+    "NetlinkError",
 ]
 
-__version__ = '0.1'
+__version__ = "0.1"
 
 # netlink protocols
 NETLINK_ROUTE = 0
@@ -92,6 +91,7 @@ NLM_F_EXCL = 0x200
 NLM_F_CREATE = 0x400
 NLM_F_APPEND = 0x800
 
+
 class NetlinkError(Exception):
     def __init__(self, error):
         self._error = error
@@ -100,16 +100,19 @@ class NetlinkError(Exception):
     def __str__(self):
         return self._msg
 
+
 class KernelError(NetlinkError):
     def __str__(self):
-        return 'Kernel returned: {0}'.format(self._msg)
+        return "Kernel returned: {0}".format(self._msg)
+
 
 class ImmutableError(NetlinkError):
     def __init__(self, msg):
         self._msg = msg
 
     def __str__(self):
-        return 'Immutable attribute: {0}'.format(self._msg)
+        return "Immutable attribute: {0}".format(self._msg)
+
 
 class Message(object):
     """Netlink message"""
@@ -121,13 +124,13 @@ class Message(object):
             self._msg = capi.nlmsg_alloc_size(size)
 
         if self._msg is None:
-            raise Exception('Message allocation returned NULL')
+            raise Exception("Message allocation returned NULL")
 
     def __del__(self):
         capi.nlmsg_free(self._msg)
 
     def __len__(self):
-        return capi.nlmsg_len(nlmsg_hdr(self._msg))
+        return capi.nlmsg_len(capi.nlmsg_hdr(self._msg))
 
     @property
     def protocol(self):
@@ -156,6 +159,7 @@ class Message(object):
     def send(self, sock):
         sock.send(self)
 
+
 class Callback(object):
     """Netlink callback"""
 
@@ -180,25 +184,26 @@ class Callback(object):
     def clone(self):
         return Callback(self)
 
+
 class Socket(object):
     """Netlink socket"""
 
     def __init__(self, cb=None):
         if isinstance(cb, Callback):
             self._sock = capi.nl_socket_alloc_cb(cb._cb)
-        elif cb == None:
+        elif cb is None:
             self._sock = capi.nl_socket_alloc()
         else:
-            raise Exception('\'cb\' parameter has wrong type')
+            raise Exception("'cb' parameter has wrong type")
 
         if self._sock is None:
-            raise Exception('NULL pointer returned while allocating socket')
+            raise Exception("NULL pointer returned while allocating socket")
 
     def __del__(self):
         capi.nl_socket_free(self._sock)
 
     def __str__(self):
-        return 'nlsock<{0}>'.format(self.local_port)
+        return "nlsock<{0}>".format(self.local_port)
 
     @property
     def local_port(self):
@@ -237,26 +242,28 @@ class Socket(object):
     def sendto(self, buf):
         ret = capi.nl_sendto(self._sock, buf, len(buf))
         if ret < 0:
-            raise Exception('Failed to send')
+            raise Exception("Failed to send")
         else:
             return ret
 
     def send_auto_complete(self, msg):
         if not isinstance(msg, Message):
-            raise Exception('must provide Message instance')
+            raise Exception("must provide Message instance")
         ret = capi.nl_send_auto_complete(self._sock, msg._msg)
         if ret < 0:
-            raise Exception('send_auto_complete failed: ret=%d' % ret)
+            raise Exception("send_auto_complete failed: ret=%d" % ret)
         return ret
 
     def recvmsgs(self, recv_cb):
         if not isinstance(recv_cb, Callback):
-            raise Exception('must provide Callback instance')
+            raise Exception("must provide Callback instance")
         ret = capi.nl_recvmsgs(self._sock, recv_cb._cb)
         if ret < 0:
-            raise Exception('recvmsg failed: ret=%d' % ret)
+            raise Exception("recvmsg failed: ret=%d" % ret)
+
 
 _sockets = {}
+
 
 def lookup_socket(protocol):
     try:
@@ -268,13 +275,14 @@ def lookup_socket(protocol):
 
     return sock
 
+
 class DumpParams(object):
     """Dumping parameters"""
 
     def __init__(self, type_=NL_DUMP_LINE):
         self._dp = capi.alloc_dump_params()
         if not self._dp:
-            raise Exception('Unable to allocate struct nl_dump_params')
+            raise Exception("Unable to allocate struct nl_dump_params")
 
         self._dp.dp_type = type_
 
@@ -297,8 +305,10 @@ class DumpParams(object):
     def prefix(self, value):
         self._dp.dp_prefix = value
 
+
 # underscore this to make sure it is deleted first upon module deletion
 _defaultDumpParams = DumpParams(NL_DUMP_LINE)
+
 
 class Object(object):
     """Cacheable object (base class)"""
@@ -325,7 +335,7 @@ class Object(object):
         capi.nl_object_put(self._nl_object)
 
     def __str__(self):
-        if hasattr(self, 'format'):
+        if hasattr(self, "format"):
             return self.format()
         else:
             return capi.nl_object_dump_buf(self._nl_object, 4096).rstrip()
@@ -368,10 +378,10 @@ class Object(object):
             self._modules.append(ret)
 
     def _module_brief(self):
-        ret = ''
+        ret = ""
 
         for module in self._modules:
-            if hasattr(module, 'brief'):
+            if hasattr(module, "brief"):
                 ret += module.brief()
 
         return ret
@@ -382,7 +392,6 @@ class Object(object):
             params = _defaultDumpParams
 
         capi.nl_object_dump(self._nl_object, params._dp)
-
 
     @property
     def mark(self):
@@ -412,10 +421,10 @@ class Object(object):
     # accessing properties of subclass/subtypes (e.g. link.vlan.id)
     def _resolve(self, attr):
         obj = self
-        l = attr.split('.')
-        while len(l) > 1:
-            obj = getattr(obj, l.pop(0))
-        return (obj, l.pop(0))
+        lst = attr.split(".")
+        while len(lst) > 1:
+            obj = getattr(obj, lst.pop(0))
+        return (obj, lst.pop(0))
 
     def _setattr(self, attr, val):
         obj, attr = self._resolve(attr)
@@ -424,6 +433,7 @@ class Object(object):
     def _hasattr(self, attr):
         obj, attr = self._resolve(attr)
         return hasattr(obj, attr)
+
 
 class ObjIterator(object):
     def __init__(self, cache, obj):
@@ -480,8 +490,10 @@ class ReverseObjIterator(ObjIterator):
     def get_next(self):
         return capi.nl_cache_get_prev(self._nl_object)
 
+
 class Cache(object):
     """Collection of netlink objects"""
+
     def __init__(self):
         if self.__class__ is Cache:
             raise NotImplementedError()
@@ -597,8 +609,11 @@ class Cache(object):
         """
         capi.nl_cache_mngt_unprovide(self._nl_cache)
 
+
 # Cache Manager (Work in Progress)
 NL_AUTO_PROVIDE = 1
+
+
 class CacheManager(object):
     def __init__(self, protocol, flags=None):
 
@@ -620,6 +635,7 @@ class CacheManager(object):
     def add(self, name):
         capi.cache_mngr_add(self._mngr, name, None, None)
 
+
 class AddressFamily(object):
     """Address family representation
 
@@ -632,11 +648,12 @@ class AddressFamily(object):
     print int(af)   # => 10 (numeric representation)
     print repr(af)  # => AddressFamily('inet6')
     """
+
     def __init__(self, family=socket.AF_UNSPEC):
         if isinstance(family, str):
             family = capi.nl_str2af(family)
             if family < 0:
-                raise ValueError('Unknown family name')
+                raise ValueError("Unknown family name")
         elif not isinstance(family, int):
             raise TypeError()
 
@@ -649,7 +666,7 @@ class AddressFamily(object):
         return self._family
 
     def __repr__(self):
-        return 'AddressFamily({0!r})'.format(str(self))
+        return "AddressFamily({0!r})".format(str(self))
 
 
 class AbstractAddress(object):
@@ -667,15 +684,16 @@ class AbstractAddress(object):
 
 
     """
+
     def __init__(self, addr):
         self._nl_addr = None
 
         if isinstance(addr, str):
             # returns None on success I guess
-            # TO CORRECT 
+            # TO CORRECT
             addr = capi.addr_parse(addr, socket.AF_UNSPEC)
             if addr is None:
-                raise ValueError('Invalid address format')
+                raise ValueError("Invalid address format")
         elif addr:
             capi.nl_addr_get(addr)
 
@@ -722,7 +740,7 @@ class AbstractAddress(object):
         if self._nl_addr:
             return capi.nl_addr2str(self._nl_addr, 64)[0]
         else:
-            return 'none'
+            return "none"
 
     @property
     def shared(self):
@@ -773,6 +791,7 @@ class AbstractAddress(object):
 #   fmt = func (formatting function)
 #   title = string
 
+
 def nlattr(**kwds):
     """netlink object attribute decorator
 
@@ -790,4 +809,5 @@ def nlattr(**kwds):
     def wrap_fn(func):
         func.formatinfo = kwds
         return func
+
     return wrap_fn

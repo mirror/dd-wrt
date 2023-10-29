@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/ifb.c	IFB Interfaces
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2014 Cong Wang <xiyou.wangcong@gmail.com>
  */
 
@@ -19,20 +13,22 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/link/api.h>
+
+#include "link-api.h"
 
 static struct rtnl_link_info_ops ifb_info_ops = {
 	.io_name		= "ifb",
 };
 
-static void __init ifb_init(void)
+static void _nl_init ifb_init(void)
 {
 	rtnl_link_register_info(&ifb_info_ops);
 }
 
-static void __exit ifb_exit(void)
+static void _nl_exit ifb_exit(void)
 {
 	rtnl_link_unregister_info(&ifb_info_ops);
 }

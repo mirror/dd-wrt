@@ -1,18 +1,14 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/lib/tc.c     CLI Traffic Control Helpers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010 Thomas Graf <tgraf@suug.ch>
  */
 
+#include "nl-default.h"
+
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
-#include <netlink-private/route/tc-api.h>
+
+#include "nl-priv-dynamic-route/nl-priv-dynamic-route.h"
 
 /**
  * @ingroup cli

@@ -1,23 +1,31 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/mqprio.c             MQPRIO Qdisc/Class
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation version 2.1
- * of the License.
- *
  * Copyright (c) 2018 Volodymyr Bendiuga <volodymyr.bendiuga@westermo.se>
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/qdisc/mqprio.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_mqprio {
+	uint8_t qm_num_tc;
+	uint8_t qm_prio_map[TC_QOPT_BITMASK + 1];
+	uint8_t qm_hw;
+	uint16_t qm_count[TC_QOPT_MAX_QUEUE];
+	uint16_t qm_offset[TC_QOPT_MAX_QUEUE];
+	uint16_t qm_mode;
+	uint16_t qm_shaper;
+	uint64_t qm_min_rate[TC_QOPT_MAX_QUEUE];
+	uint64_t qm_max_rate[TC_QOPT_MAX_QUEUE];
+	uint32_t qm_mask;
+};
+
 #define SCH_MQPRIO_ATTR_NUMTC           (1 << 0)
 #define SCH_MQPRIO_ATTR_PRIOMAP         (1 << 1)
 #define SCH_MQPRIO_ATTR_HW              (1 << 2)
@@ -271,14 +279,15 @@ int rtnl_qdisc_mqprio_set_priomap(struct rtnl_qdisc *qdisc, uint8_t priomap[],
 	if (!(mqprio->qm_mask & SCH_MQPRIO_ATTR_NUMTC))
 		return -NLE_MISSING_ATTR;
 
-	if ((len / sizeof(uint8_t)) > (TC_QOPT_BITMASK+1))
+	if (len > TC_QOPT_BITMASK + 1)
 		return -NLE_RANGE;
 
-	for (i = 0; i <= TC_QOPT_BITMASK; i++) {
+	for (i = 0; i < len; i++) {
 		if (priomap[i] > mqprio->qm_num_tc)
 			return -NLE_RANGE;
 	}
 
+	memset(mqprio->qm_prio_map, 0, sizeof(mqprio->qm_prio_map));
 	memcpy(mqprio->qm_prio_map, priomap, len * sizeof(uint8_t));
 	mqprio->qm_mask |= SCH_MQPRIO_ATTR_PRIOMAP;
 
@@ -366,9 +375,11 @@ int rtnl_qdisc_mqprio_set_queue(struct rtnl_qdisc *qdisc, uint16_t count[],
 	if (!(mqprio->qm_mask & SCH_MQPRIO_ATTR_NUMTC))
 		return -NLE_MISSING_ATTR;
 
-	if ((len / sizeof(uint16_t)) > TC_QOPT_MAX_QUEUE)
+	if (len < 0 || len > TC_QOPT_MAX_QUEUE)
 		return -NLE_RANGE;
 
+	memset(mqprio->qm_count, 0, sizeof(mqprio->qm_count));
+	memset(mqprio->qm_offset, 0, sizeof(mqprio->qm_offset));
 	memcpy(mqprio->qm_count, count, len * sizeof(uint16_t));
 	memcpy(mqprio->qm_offset, offset, len * sizeof(uint16_t));
 	mqprio->qm_mask |= SCH_MQPRIO_ATTR_QUEUE;
@@ -499,9 +510,10 @@ int rtnl_qdisc_mqprio_set_min_rate(struct rtnl_qdisc *qdisc, uint64_t min[], int
 	if (mqprio->qm_shaper != TC_MQPRIO_SHAPER_BW_RATE)
 		return -NLE_INVAL;
 
-	if ((len / sizeof(uint64_t)) > TC_QOPT_MAX_QUEUE)
+	if (len < 0 || len > TC_QOPT_MAX_QUEUE)
 		return -NLE_RANGE;
 
+	memset(mqprio->qm_min_rate, 0, sizeof(mqprio->qm_min_rate));
 	memcpy(mqprio->qm_min_rate, min, len * sizeof(uint64_t));
 	mqprio->qm_mask |= SCH_MQPRIO_ATTR_MIN_RATE;
 
@@ -548,9 +560,10 @@ int rtnl_qdisc_mqprio_set_max_rate(struct rtnl_qdisc *qdisc, uint64_t max[], int
 	if (mqprio->qm_shaper != TC_MQPRIO_SHAPER_BW_RATE)
 		return -NLE_INVAL;
 
-	if ((len / sizeof(uint64_t)) > TC_QOPT_MAX_QUEUE)
+	if (len < 0 || len > TC_QOPT_MAX_QUEUE)
 		return -NLE_RANGE;
 
+	memset(mqprio->qm_max_rate, 0, sizeof(mqprio->qm_max_rate));
 	memcpy(mqprio->qm_max_rate, max, len * sizeof(uint64_t));
 	mqprio->qm_mask |= SCH_MQPRIO_ATTR_MAX_RATE;
 
@@ -592,12 +605,12 @@ static struct rtnl_tc_ops mqprio_ops = {
 	.to_msg_fill            = mqprio_msg_fill,
 };
 
-static void __init mqprio_init(void)
+static void _nl_init mqprio_init(void)
 {
 	rtnl_tc_register(&mqprio_ops);
 }
 
-static void __exit mqprio_exit(void)
+static void _nl_exit mqprio_exit(void)
 {
 	rtnl_tc_unregister(&mqprio_ops);
 }

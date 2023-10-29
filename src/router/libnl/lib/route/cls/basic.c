@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/basic.c	Basic Classifier
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2008-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -22,14 +16,15 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/action.h>
 #include <netlink/route/cls/basic.h>
 #include <netlink/route/cls/ematch.h>
+
+#include "tc-api.h"
 
 struct rtnl_basic
 {
@@ -93,7 +88,7 @@ static int basic_msg_parser(struct rtnl_tc *tc, void *data)
 	if (tb[TCA_BASIC_ACT]) {
 		b->b_mask |= BASIC_ATTR_ACTION;
 		err = rtnl_act_parse(&b->b_act, tb[TCA_BASIC_ACT]);
-		if (err)
+		if (err < 0)
 			return err;
 	}
 
@@ -288,12 +283,12 @@ static struct rtnl_tc_ops basic_ops = {
 	},
 };
 
-static void __init basic_init(void)
+static void _nl_init basic_init(void)
 {
 	rtnl_tc_register(&basic_ops);
 }
 
-static void __exit basic_exit(void)
+static void _nl_exit basic_exit(void)
 {
 	rtnl_tc_unregister(&basic_ops);
 }

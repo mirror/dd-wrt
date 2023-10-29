@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/ingress.c		ingress
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Cong Wang <xiyou.wangcong@gmail.com>
  */
 
@@ -16,12 +10,13 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/utils.h>
+
+#include "tc-api.h"
 
 struct dumb {
 	uint32_t foo;
@@ -51,12 +46,12 @@ static struct rtnl_tc_ops ingress_ops = {
 	.to_msg_fill		= dumb_msg_fill,
 };
 
-static void __init ingress_init(void)
+static void _nl_init ingress_init(void)
 {
 	rtnl_tc_register(&ingress_ops);
 }
 
-static void __exit ingress_exit(void)
+static void _nl_exit ingress_exit(void)
 {
 	rtnl_tc_unregister(&ingress_ops);
 }

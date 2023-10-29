@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/utils.c		Utilities
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2009 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -22,14 +15,14 @@
  * accordingly via nl_cli_fatal().
  */
 
-#include <netlink/cli/utils.h>
+#include "nl-default.h"
+
 #include <locale.h>
-
-#include "lib/defs.h"
-
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
+
+#include <netlink/cli/utils.h>
 
 /**
  * Parse a text based 32 bit unsigned integer argument
@@ -236,10 +229,13 @@ void nl_cli_load_module(const char *prefix, const char *name)
 	{
 		void *handle;
 
-		if (!(handle = dlopen(path, RTLD_NOW))) {
+		handle = dlopen(path, RTLD_NOW);
+		if (!handle) {
 			nl_cli_fatal(ENOENT, "Unable to load module \"%s\": %s\n",
 			             path, dlerror());
 		}
+		/* We intentionally leak the dlopen handle. */
+		/* coverity[RESOURCE_LEAK] */
 	}
 #else
 	nl_cli_fatal(ENOTSUP, "Unable to load module \"%s\": built without dynamic libraries support\n",

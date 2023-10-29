@@ -1,27 +1,20 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nf-queue.c     Monitor netfilter queue events
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2007, 2008 Patrick McHardy <kaber@trash.net>
  * Copyright (c) 2010  Karl Hiramoto <karl@hiramoto.org>
  */
 
+#include "nl-default.h"
+
+#include <linux/netfilter.h>
+#include <linux/netfilter/nfnetlink_queue.h>
+#include <linux/netlink.h>
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/link.h>
-#include <netinet/in.h>
-#include <linux/netfilter.h>
-#include <linux/netfilter/nfnetlink_queue.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/queue.h>
 #include <netlink/netfilter/queue_msg.h>
-
-#include <linux/netlink.h>
 
 static struct nl_sock *nf_sock;
 

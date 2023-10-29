@@ -1,5 +1,8 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
+
+#include "nl-default.h"
+
 #include <netlink/route/link/ip6tnl.h>
-#include <netlink-private/netlink.h>
 
 int main(int argc, char *argv[])
 {

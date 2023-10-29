@@ -1,19 +1,15 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/hashtable.c      Netlink hashtable Utilities
- *
- *      This library is free software; you can redistribute it and/or
- *      modify it under the terms of the GNU Lesser General Public
- *      License as published by the Free Software Foundation version 2.1
- *      of the License.
- *
  * Copyright (c) 2012 Cumulus Networks, Inc
  */
-#include <string.h>
-#include <netlink-private/netlink.h>
+
+#include "nl-default.h"
+
 #include <netlink/object.h>
 #include <netlink/hash.h>
 #include <netlink/hashtable.h>
+
+#include "nl-aux-core/nl-core.h"
 
 /**
  * @ingroup core_types
@@ -59,15 +55,15 @@ void nl_hash_table_free(nl_hash_table_t *ht)
 	int i;
 
 	for(i = 0; i < ht->size; i++) {
-	    nl_hash_node_t *node = ht->nodes[i];
-	    nl_hash_node_t *saved_node;
+		nl_hash_node_t *node = ht->nodes[i];
+		nl_hash_node_t *saved_node;
 
-	    while (node) {
-		   saved_node = node;
-		   node = node->next;
-		   nl_object_put(saved_node->obj);
-		   free(saved_node);
-	    }
+		while (node) {
+			saved_node = node;
+			node = node->next;
+			nl_object_put(saved_node->obj);
+			free(saved_node);
+		}
 	}
 
 	free(ht->nodes);
@@ -94,9 +90,9 @@ struct nl_object* nl_hash_table_lookup(nl_hash_table_t *ht,
 	node = ht->nodes[key_hash];
 
 	while (node) {
-	       if (nl_object_identical(node->obj, obj))
-		   return node->obj;
-	       node = node->next;
+		if (nl_object_identical(node->obj, obj))
+			return node->obj;
+		node = node->next;
 	}
 
 	return NULL;
@@ -124,11 +120,11 @@ int nl_hash_table_add(nl_hash_table_t *ht, struct nl_object *obj)
 	node = ht->nodes[key_hash];
 
 	while (node) {
-	       if (nl_object_identical(node->obj, obj)) {
-		   NL_DBG(2, "Warning: Add to hashtable found duplicate...\n");
-		   return -NLE_EXIST;
-	       }
-	       node = node->next;
+		if (nl_object_identical(node->obj, obj)) {
+			NL_DBG(2, "Warning: Add to hashtable found duplicate...\n");
+			return -NLE_EXIST;
+		}
+		node = node->next;
 	}
 
 	NL_DBG (5, "adding cache entry of obj %p in table %p, with hash 0x%x\n",
@@ -168,20 +164,20 @@ int nl_hash_table_del(nl_hash_table_t *ht, struct nl_object *obj)
 	prev = node = ht->nodes[key_hash];
 
 	while (node) {
-	       if (nl_object_identical(node->obj, obj)) {
-		   nl_object_put(obj);
+		if (nl_object_identical(node->obj, obj)) {
+			nl_object_put(obj);
 
-		   NL_DBG (5, "deleting cache entry of obj %p in table %p, with"
-			   " hash 0x%x\n", obj, ht, key_hash);
+			NL_DBG (5, "deleting cache entry of obj %p in table %p, with"
+			        " hash 0x%x\n", obj, ht, key_hash);
 
-	           if (node == ht->nodes[key_hash])
-		       ht->nodes[key_hash] = node->next;
-	           else
-		       prev->next = node->next;
+			if (node == ht->nodes[key_hash])
+				ht->nodes[key_hash] = node->next;
+			else
+				prev->next = node->next;
 
-	           free(node);
+			free(node);
 
-	           return 0;
+			return 0;
 		}
 		prev = node;
 		node = node->next;

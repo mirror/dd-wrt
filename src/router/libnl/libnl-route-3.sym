@@ -1,3 +1,9 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
 libnl_3 {
 global:
 	# these functions are in private header files and should have never
@@ -13,6 +19,10 @@ global:
 	rtnl_link_info_ops_put;
 	rtnl_link_register_info;
 	rtnl_link_unregister_info;
+
+	# these functions are in private header files and should have never
+	# been exported.
+	# declared in "lib/route/tc-api.h".
 	rtnl_tc_build_rate_table;
 	rtnl_tc_clone;
 	rtnl_tc_compare;
@@ -30,7 +40,8 @@ global:
 	rtnl_tc_unregister;
 
 	# these functions are in private header files and should have never
-	# been exported. They are used by libnl internals
+	# been exported. They are used by libnl internals.
+	# declared in "include/nl-priv-dynamic-route/nl-priv-dynamic-route.h".
 	rtnl_tc_get_ops;
 	rtnl_tc_lookup_ops;
 
@@ -1150,3 +1161,148 @@ global:
 	rtnl_vlan_set_vlan_id;
 	rtnl_vlan_set_vlan_prio;
 } libnl_3_4;
+
+libnl_3_6 {
+global:
+	rtnl_cls_find_by_handle;
+	rtnl_cls_find_by_prio;
+	rtnl_flower_append_action;
+	rtnl_flower_del_action;
+	rtnl_flower_get_action;
+	rtnl_flower_get_dst_mac;
+	rtnl_flower_get_ip_dscp;
+	rtnl_flower_get_proto;
+	rtnl_flower_get_src_mac;
+	rtnl_flower_get_vlan_id;
+	rtnl_flower_get_vlan_prio;
+	rtnl_flower_set_dst_mac;
+	rtnl_flower_set_flags;
+	rtnl_flower_set_ip_dscp;
+	rtnl_flower_set_proto;
+	rtnl_flower_set_src_mac;
+	rtnl_flower_set_vlan_ethtype;
+	rtnl_flower_set_vlan_id;
+	rtnl_flower_set_vlan_prio;
+	rtnl_link_can_get_data_bittiming;
+	rtnl_link_can_get_data_bittiming_const;
+	rtnl_link_can_set_data_bittiming;
+	rtnl_link_can_set_data_bittiming_const;
+	rtnl_link_ip6_tnl_get_fwmark;
+	rtnl_link_ip6_tnl_set_fwmark;
+	rtnl_link_ip6gre_add;
+	rtnl_link_ip6gre_alloc;
+	rtnl_link_ip6gre_get_encaplimit;
+	rtnl_link_ip6gre_get_flags;
+	rtnl_link_ip6gre_get_flowinfo;
+	rtnl_link_ip6gre_get_fwmark;
+	rtnl_link_ip6gre_get_iflags;
+	rtnl_link_ip6gre_get_ikey;
+	rtnl_link_ip6gre_get_link;
+	rtnl_link_ip6gre_get_local;
+	rtnl_link_ip6gre_get_oflags;
+	rtnl_link_ip6gre_get_okey;
+	rtnl_link_ip6gre_get_remote;
+	rtnl_link_ip6gre_get_ttl;
+	rtnl_link_ip6gre_set_encaplimit;
+	rtnl_link_ip6gre_set_flags;
+	rtnl_link_ip6gre_set_flowinfo;
+	rtnl_link_ip6gre_set_fwmark;
+	rtnl_link_ip6gre_set_iflags;
+	rtnl_link_ip6gre_set_ikey;
+	rtnl_link_ip6gre_set_link;
+	rtnl_link_ip6gre_set_local;
+	rtnl_link_ip6gre_set_oflags;
+	rtnl_link_ip6gre_set_okey;
+	rtnl_link_ip6gre_set_remote;
+	rtnl_link_ip6gre_set_ttl;
+	rtnl_link_ip6vti_add;
+	rtnl_link_ip6vti_alloc;
+	rtnl_link_ip6vti_get_fwmark;
+	rtnl_link_ip6vti_get_ikey;
+	rtnl_link_ip6vti_get_link;
+	rtnl_link_ip6vti_get_local;
+	rtnl_link_ip6vti_get_okey;
+	rtnl_link_ip6vti_get_remote;
+	rtnl_link_ip6vti_set_fwmark;
+	rtnl_link_ip6vti_set_ikey;
+	rtnl_link_ip6vti_set_link;
+	rtnl_link_ip6vti_set_local;
+	rtnl_link_ip6vti_set_okey;
+	rtnl_link_ip6vti_set_remote;
+	rtnl_link_ipgre_get_fwmark;
+	rtnl_link_ipgre_set_fwmark;
+	rtnl_link_ipip_get_fwmark;
+	rtnl_link_ipip_set_fwmark;
+	rtnl_link_ipvti_get_fwmark;
+	rtnl_link_ipvti_set_fwmark;
+	rtnl_link_is_ip6gre;
+	rtnl_link_is_ip6vti;
+	rtnl_link_macsec_get_offload;
+	rtnl_link_macsec_set_offload;
+	rtnl_link_sit_get_fwmark;
+	rtnl_link_sit_set_fwmark;
+	rtnl_link_team_add;
+	rtnl_link_team_alloc;
+	rtnl_mdb_add_entry;
+	rtnl_mdb_alloc_cache;
+	rtnl_mdb_alloc_cache_flags;
+	rtnl_mdb_entry_get_addr;
+	rtnl_mdb_entry_get_ifindex;
+	rtnl_mdb_entry_get_proto;
+	rtnl_mdb_entry_get_state;
+	rtnl_mdb_entry_get_vid;
+	rtnl_mdb_foreach_entry;
+	rtnl_mdb_get_ifindex;
+	rtnl_netconf_alloc_cache;
+	rtnl_netconf_get_ignore_routes_linkdown;
+	rtnl_netconf_get_proxy_neigh;
+	rtnl_qdisc_get_by_kind;
+	rtnl_route_lookup;
+	rtnl_route_nh_get_encap_mpls_dst;
+	rtnl_route_nh_get_encap_mpls_ttl;
+} libnl_3_5;
+
+libnl_3_7 {
+global:
+	rtnl_flower_get_ipv4_dst;
+	rtnl_flower_get_ipv4_src;
+	rtnl_flower_set_ipv4_dst;
+	rtnl_flower_set_ipv4_src;
+	rtnl_nat_get_action;
+	rtnl_nat_get_flags;
+	rtnl_nat_get_mask;
+	rtnl_nat_get_new_addr;
+	rtnl_nat_get_old_addr;
+	rtnl_nat_set_action;
+	rtnl_nat_set_flags;
+	rtnl_nat_set_mask;
+	rtnl_nat_set_new_addr;
+	rtnl_nat_set_old_addr;
+} libnl_3_6;
+
+libnl_3_8 {
+global:
+	rtnl_link_bond_set_activeslave;
+	rtnl_link_bond_set_mode;
+	rtnl_link_bridge_get_vlan_filtering;
+	rtnl_link_bridge_get_vlan_protocol;
+	rtnl_link_bridge_get_vlan_stats_enabled;
+	rtnl_link_bridge_set_vlan_filtering;
+	rtnl_link_bridge_set_vlan_protocol;
+	rtnl_link_bridge_set_vlan_stats_enabled;
+	rtnl_link_inet6_get_conf;
+	rtnl_link_info_ops_get;
+	rtnl_neigh_get_nhid;
+	rtnl_neigh_set_nhid;
+	rtnl_nh_alloc;
+	rtnl_nh_alloc_cache;
+	rtnl_nh_get;
+	rtnl_nh_get_fdb;
+	rtnl_nh_get_gateway;
+	rtnl_nh_get_group_entry;
+	rtnl_nh_get_group_size;
+	rtnl_nh_get_id;
+	rtnl_nh_put;
+	rtnl_nh_set_fdb;
+	rtnl_nh_set_gateway;
+} libnl_3_7;

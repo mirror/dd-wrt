@@ -39,7 +39,8 @@
  * @brief
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/object.h>
@@ -47,6 +48,36 @@
 #include <netlink/xfrm/lifetime.h>
 #include <netlink/xfrm/template.h>
 #include <netlink/xfrm/sp.h>
+
+#include "nl-xfrm.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+
+struct xfrmnl_userpolicy_type {
+	uint8_t                         type;
+	uint16_t                        reserved1;
+	uint16_t                        reserved2;
+};
+
+struct xfrmnl_sp {
+	NLHDR_COMMON
+
+	struct xfrmnl_sel*              sel;
+	struct xfrmnl_ltime_cfg*        lft;
+	struct xfrmnl_lifetime_cur      curlft;
+	uint32_t                        priority;
+	uint32_t                        index;
+	uint8_t                         dir;
+	uint8_t                         action;
+	uint8_t                         flags;
+	uint8_t                         share;
+	struct xfrmnl_user_sec_ctx*     sec_ctx;
+	struct xfrmnl_userpolicy_type   uptype;
+	uint32_t                        nr_user_tmpl;
+	struct nl_list_head             usertmpl_list;
+	struct xfrmnl_mark              mark;
+};
 
 /** @cond SKIP */
 #define XFRM_SP_ATTR_SEL            0x01
@@ -93,9 +124,8 @@ static void xfrm_sp_free_data(struct nl_object *c)
 	xfrmnl_sel_put (sp->sel);
 	xfrmnl_ltime_cfg_put (sp->lft);
 
-	if(sp->sec_ctx)
-	{
-		free (sp->sec_ctx);
+	if (sp->sec_ctx) {
+		free(sp->sec_ctx);
 	}
 
 	nl_list_for_each_entry_safe(utmpl, tmp, &sp->usertmpl_list, utmpl_list) {
@@ -106,33 +136,38 @@ static void xfrm_sp_free_data(struct nl_object *c)
 
 static int xfrm_sp_clone(struct nl_object *_dst, struct nl_object *_src)
 {
-	struct xfrmnl_sp*       dst = nl_object_priv(_dst);
-	struct xfrmnl_sp*       src = nl_object_priv(_src);
-	uint32_t                len = 0;
-	struct xfrmnl_user_tmpl *utmpl, *new;
+	struct xfrmnl_sp*        dst = nl_object_priv(_dst);
+	struct xfrmnl_sp*        src = nl_object_priv(_src);
+	struct xfrmnl_user_tmpl *utmpl;
+	struct xfrmnl_user_tmpl *new;
 
-	if (src->sel)
+	dst->sel = NULL;
+	dst->lft = NULL;
+	dst->sec_ctx = NULL;
+	nl_init_list_head(&dst->usertmpl_list);
+
+	if (src->sel) {
 		if ((dst->sel = xfrmnl_sel_clone (src->sel)) == NULL)
 			return -NLE_NOMEM;
-
-	if (src->lft)
-		if ((dst->lft = xfrmnl_ltime_cfg_clone (src->lft)) == NULL)
-			return -NLE_NOMEM;
-
-	if(src->sec_ctx)
-	{
-		len =   sizeof (struct xfrmnl_user_sec_ctx) + src->sec_ctx->ctx_len;
-		if ((dst->sec_ctx = calloc (1, len)) == NULL)
-			return -NLE_NOMEM;
-		memcpy ((void *)dst->sec_ctx, (void *)src->sec_ctx, len);
 	}
 
-	nl_init_list_head(&dst->usertmpl_list);
+	if (src->lft) {
+		if ((dst->lft = xfrmnl_ltime_cfg_clone (src->lft)) == NULL)
+			return -NLE_NOMEM;
+	}
+
+	if (src->sec_ctx) {
+		uint32_t len =   sizeof (struct xfrmnl_user_sec_ctx) + src->sec_ctx->ctx_len;
+
+		if ((dst->sec_ctx = malloc (len)) == NULL)
+			return -NLE_NOMEM;
+		memcpy(dst->sec_ctx, src->sec_ctx, len);
+	}
+
 	nl_list_for_each_entry(utmpl, &src->usertmpl_list, utmpl_list) {
 		new = xfrmnl_user_tmpl_clone (utmpl);
 		if (!new)
 			return -NLE_NOMEM;
-
 		xfrmnl_sp_add_usertemplate(dst, new);
 	}
 
@@ -147,31 +182,33 @@ static uint64_t xfrm_sp_compare(struct nl_object *_a, struct nl_object *_b,
 	struct xfrmnl_user_tmpl *tmpl_a, *tmpl_b;
 	uint64_t diff = 0;
 
-#define XFRM_SP_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, XFRM_SP_ATTR_##ATTR, a, b, EXPR)
-	diff |= XFRM_SP_DIFF(SEL,	xfrmnl_sel_cmp(a->sel, b->sel));
-	diff |= XFRM_SP_DIFF(LTIME_CFG,	xfrmnl_ltime_cfg_cmp(a->lft, b->lft));
-	diff |= XFRM_SP_DIFF(PRIO,	a->priority != b->priority);
-	diff |= XFRM_SP_DIFF(INDEX,	a->index != b->index);
-	diff |= XFRM_SP_DIFF(DIR,	a->dir != b->dir);
-	diff |= XFRM_SP_DIFF(ACTION,	a->action != b->action);
-	diff |= XFRM_SP_DIFF(FLAGS,	a->flags != b->flags);
-	diff |= XFRM_SP_DIFF(SHARE,	a->share != b->share);
-	diff |= XFRM_SP_DIFF(SECCTX,((a->sec_ctx->len != b->sec_ctx->len) ||
-	                            (a->sec_ctx->exttype != b->sec_ctx->exttype) ||
-	                            (a->sec_ctx->ctx_alg != b->sec_ctx->ctx_alg) ||
-	                            (a->sec_ctx->ctx_doi != b->sec_ctx->ctx_doi) ||
-	                            (a->sec_ctx->ctx_len != b->sec_ctx->ctx_len) ||
-	                            strcmp(a->sec_ctx->ctx, b->sec_ctx->ctx)));
-	diff |= XFRM_SP_DIFF(POLTYPE,(a->uptype.type != b->uptype.type));
-	diff |= XFRM_SP_DIFF(TMPL,(a->nr_user_tmpl != b->nr_user_tmpl));
-	diff |= XFRM_SP_DIFF(MARK,(a->mark.m != b->mark.m) ||
-	                          (a->mark.v != b->mark.v));
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(XFRM_SP_ATTR_SEL, xfrmnl_sel_cmp(a->sel, b->sel));
+	diff |= _DIFF(XFRM_SP_ATTR_LTIME_CFG,
+		      xfrmnl_ltime_cfg_cmp(a->lft, b->lft));
+	diff |= _DIFF(XFRM_SP_ATTR_PRIO, a->priority != b->priority);
+	diff |= _DIFF(XFRM_SP_ATTR_INDEX, a->index != b->index);
+	diff |= _DIFF(XFRM_SP_ATTR_DIR, a->dir != b->dir);
+	diff |= _DIFF(XFRM_SP_ATTR_ACTION, a->action != b->action);
+	diff |= _DIFF(XFRM_SP_ATTR_FLAGS, a->flags != b->flags);
+	diff |= _DIFF(XFRM_SP_ATTR_SHARE, a->share != b->share);
+	diff |= _DIFF(XFRM_SP_ATTR_SECCTX,
+		      ((a->sec_ctx->len != b->sec_ctx->len) ||
+		       (a->sec_ctx->exttype != b->sec_ctx->exttype) ||
+		       (a->sec_ctx->ctx_alg != b->sec_ctx->ctx_alg) ||
+		       (a->sec_ctx->ctx_doi != b->sec_ctx->ctx_doi) ||
+		       (a->sec_ctx->ctx_len != b->sec_ctx->ctx_len) ||
+		       strcmp(a->sec_ctx->ctx, b->sec_ctx->ctx)));
+	diff |= _DIFF(XFRM_SP_ATTR_POLTYPE, (a->uptype.type != b->uptype.type));
+	diff |= _DIFF(XFRM_SP_ATTR_TMPL, (a->nr_user_tmpl != b->nr_user_tmpl));
+	diff |= _DIFF(XFRM_SP_ATTR_MARK,
+		      (a->mark.m != b->mark.m) || (a->mark.v != b->mark.v));
 
 	/* Compare the templates */
 	nl_list_for_each_entry(tmpl_b, &b->usertmpl_list, utmpl_list)
 	nl_list_for_each_entry(tmpl_a, &a->usertmpl_list, utmpl_list)
 	diff |= xfrmnl_user_tmpl_cmp (tmpl_a, tmpl_b);
-#undef XFRM_SP_DIFF
+#undef _DIFF
 
 	return diff;
 }
@@ -320,6 +357,7 @@ static void xfrm_sp_dump_line(struct nl_object *a, struct nl_dump_params *p)
 	char                dst[INET6_ADDRSTRLEN+5], src[INET6_ADDRSTRLEN+5];
 	time_t              add_time, use_time;
 	struct tm           *add_time_tm, *use_time_tm;
+	struct tm           tm_buf;
 
 	nl_addr2str(xfrmnl_sel_get_saddr (sp->sel), src, sizeof(src));
 	nl_addr2str (xfrmnl_sel_get_daddr (sp->sel), dst, sizeof (dst));
@@ -357,20 +395,30 @@ static void xfrm_sp_dump_line(struct nl_object *a, struct nl_dump_params *p)
 		sprintf (share, "INF");
 	else
 		sprintf (share, "%" PRIu64, sp->lft->hard_packet_limit);
-	nl_dump_line(p, "\t\tsoft limit: %s (bytes), %s (packets) \n", dir, action);
-	nl_dump_line(p, "\t\thard limit: %s (bytes), %s (packets) \n", flags, share);
-	nl_dump_line(p, "\t\tsoft add_time: %llu (seconds), soft use_time: %llu (seconds) \n",
-	             sp->lft->soft_add_expires_seconds, sp->lft->soft_use_expires_seconds);
-	nl_dump_line(p, "\t\thard add_time: %llu (seconds), hard use_time: %llu (seconds) \n",
-	             sp->lft->hard_add_expires_seconds, sp->lft->hard_use_expires_seconds);
+	nl_dump_line(p, "\t\tsoft limit: %s (bytes), %s (packets) \n", dir,
+		     action);
+	nl_dump_line(p, "\t\thard limit: %s (bytes), %s (packets) \n", flags,
+		     share);
+	nl_dump_line(
+		p,
+		"\t\tsoft add_time: %llu (seconds), soft use_time: %llu (seconds) \n",
+		(long long unsigned)sp->lft->soft_add_expires_seconds,
+		(long long unsigned)sp->lft->soft_use_expires_seconds);
+	nl_dump_line(
+		p,
+		"\t\thard add_time: %llu (seconds), hard use_time: %llu (seconds) \n",
+		(long long unsigned)sp->lft->hard_add_expires_seconds,
+		(long long unsigned)sp->lft->hard_use_expires_seconds);
 
 	nl_dump_line(p, "\tlifetime current: \n");
-	nl_dump_line(p, "\t\t%llu bytes, %llu packets\n", sp->curlft.bytes, sp->curlft.packets);
+	nl_dump_line(p, "\t\t%llu bytes, %llu packets\n",
+		     (long long unsigned)sp->curlft.bytes,
+		     (long long unsigned)sp->curlft.packets);
 
 	if (sp->curlft.add_time != 0)
 	{
 		add_time = sp->curlft.add_time;
-		add_time_tm = gmtime (&add_time);
+		add_time_tm = gmtime_r (&add_time, &tm_buf);
 		strftime (dst, INET6_ADDRSTRLEN+5, "%Y-%m-%d %H-%M-%S", add_time_tm);
 	}
 	else
@@ -381,7 +429,7 @@ static void xfrm_sp_dump_line(struct nl_object *a, struct nl_dump_params *p)
 	if (sp->curlft.use_time != 0)
 	{
 		use_time = sp->curlft.use_time;
-		use_time_tm = gmtime (&use_time);
+		use_time_tm = gmtime_r (&use_time, &tm_buf);
 		strftime (src, INET6_ADDRSTRLEN+5, "%Y-%m-%d %H-%M-%S", use_time_tm);
 	}
 	else
@@ -508,11 +556,7 @@ static struct nla_policy xfrm_sp_policy[XFRMA_MAX+1] = {
 
 static int xfrm_sp_request_update(struct nl_cache *c, struct nl_sock *h)
 {
-	struct xfrm_userpolicy_id sp_id;
-
-	memset (&sp_id, 0, sizeof (sp_id));
-	return nl_send_simple (h, XFRM_MSG_GETPOLICY, NLM_F_DUMP,
-	                       &sp_id, sizeof (sp_id));
+	return nl_send_simple (h, XFRM_MSG_GETPOLICY, NLM_F_DUMP, NULL, 0);
 }
 
 int xfrmnl_sp_parse(struct nlmsghdr *n, struct xfrmnl_sp **result)
@@ -1090,16 +1134,16 @@ int xfrmnl_sp_set_lifetime_cfg (struct xfrmnl_sp* sp, struct xfrmnl_ltime_cfg* l
 	return 0;
 }
 
-int xfrmnl_sp_get_curlifetime (struct xfrmnl_sp* sa, unsigned long long int* curr_bytes,
+int xfrmnl_sp_get_curlifetime (struct xfrmnl_sp* sp, unsigned long long int* curr_bytes,
                                unsigned long long int* curr_packets, unsigned long long int* curr_add_time, unsigned long long int* curr_use_time)
 {
-	if (sa == NULL || curr_bytes == NULL || curr_packets == NULL || curr_add_time == NULL || curr_use_time == NULL)
+	if (sp == NULL || curr_bytes == NULL || curr_packets == NULL || curr_add_time == NULL || curr_use_time == NULL)
 		return -1;
 
-	*curr_bytes     =   sa->curlft.bytes;
-	*curr_packets   =   sa->curlft.packets;
-	*curr_add_time  =   sa->curlft.add_time;
-	*curr_use_time  =   sa->curlft.use_time;
+	*curr_bytes     =   sp->curlft.bytes;
+	*curr_packets   =   sp->curlft.packets;
+	*curr_add_time  =   sp->curlft.add_time;
+	*curr_use_time  =   sp->curlft.use_time;
 
 	return 0;
 }

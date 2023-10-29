@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/utils.h		Utility Functions
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -17,6 +11,12 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(__GNUC__) && __GNUC__ > 5
+#define _nl_attribute_printf(a, b) __attribute__((__format__(printf, a, b)))
+#else
+#define _nl_attribute_printf(a, b)
 #endif
 
 /**
@@ -76,8 +76,8 @@ extern int	nl_str2ip_proto(const char *);
 
 /* Dumping helpers */
 extern void	nl_new_line(struct nl_dump_params *);
-extern void	nl_dump(struct nl_dump_params *, const char *, ...);
-extern void	nl_dump_line(struct nl_dump_params *, const char *, ...);
+extern void	nl_dump(struct nl_dump_params *, const char *, ...) _nl_attribute_printf(2, 3);
+extern void	nl_dump_line(struct nl_dump_params *, const char *, ...) _nl_attribute_printf(2, 3);
 
 enum {
 	NL_CAPABILITY_NONE,
@@ -299,6 +299,31 @@ enum {
 	 */
 	NL_CAPABILITY_VERSION_3_5_0 = 30,
 #define NL_CAPABILITY_VERSION_3_5_0 NL_CAPABILITY_VERSION_3_5_0
+
+	/**
+	 * nl_object_identical() can consider objects identical, if they both lack the same
+	 * set of ID attributes.
+	 */
+	NL_CAPABILITY_NL_OBJECT_IDENTICAL_PARTIAL = 31,
+#define NL_CAPABILITY_NL_OBJECT_IDENTICAL_PARTIAL NL_CAPABILITY_NL_OBJECT_IDENTICAL_PARTIAL
+
+	/**
+	 * The library version is libnl3 3.6.0 or newer. This capability should never be backported.
+	 */
+	NL_CAPABILITY_VERSION_3_6_0 = 32,
+#define NL_CAPABILITY_VERSION_3_6_0 NL_CAPABILITY_VERSION_3_6_0
+
+	/**
+	 * The library version is libnl3 3.7.0 or newer. This capability should never be backported.
+	 */
+	NL_CAPABILITY_VERSION_3_7_0 = 33,
+#define NL_CAPABILITY_VERSION_3_7_0 NL_CAPABILITY_VERSION_3_7_0
+
+	/**
+	 * The library version is libnl3 3.8.0 or newer. This capability should never be backported.
+	 */
+	NL_CAPABILITY_VERSION_3_8_0 = 34,
+#define NL_CAPABILITY_VERSION_3_8_0 NL_CAPABILITY_VERSION_3_8_0
 
 	__NL_CAPABILITY_MAX,
 	NL_CAPABILITY_MAX = (__NL_CAPABILITY_MAX - 1),

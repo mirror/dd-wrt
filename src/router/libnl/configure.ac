@@ -1,18 +1,12 @@
-#
-# configure.in
-#
-# 	This library is free software; you can redistribute it and/or
-#	modify it under the terms of the GNU Lesser General Public
-#	License as published by the Free Software Foundation version 2.1
-#	of the License.
+# SPDX-License-Identifier: LGPL-2.1-only
+
 #
 # Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
 #
 
-
 # copied from glib
 m4_define([libnl_major_version], [3])
-m4_define([libnl_minor_version], [5])
+m4_define([libnl_minor_version], [8])
 m4_define([libnl_micro_version], [0])
 m4_define([libnl_git_sha], [m4_esyscmd([ ( [ -d ./.git/ ] && [ "$(readlink -f ./.git/)" = "$(readlink -f "$(git rev-parse --git-dir 2>/dev/null)" 2>/dev/null)" ] && git rev-parse --verify -q HEAD 2>/dev/null ) || true ])])
 
@@ -42,11 +36,11 @@ m4_define([libnl_lt_age],        [26])
 m4_define([libnl_version],
 	  [libnl_major_version.libnl_minor_version.libnl_micro_version])
 
-AC_INIT(libnl, [libnl_version], [], [], [http://www.infradead.org/~tgr/libnl/])
-AC_CONFIG_HEADERS([lib/defs.h])
+AC_INIT([libnl],[libnl_version],[],[],[http://www.infradead.org/~tgr/libnl/])
+AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Wno-portability foreign subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)], [])
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
@@ -70,7 +64,7 @@ AC_SUBST(LT_AGE)
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
-AM_PROG_LIBTOOL
+LT_INIT
 AC_PROG_MKDIR_P
 AC_CHECK_PROGS(FLEX, 'flex')
 AC_CHECK_PROGS(YACC, 'bison -y')
@@ -113,6 +107,8 @@ else
     AC_CHECK_LIB([pthread], [pthread_mutex_lock], [], AC_MSG_ERROR([libpthread is required]))
 fi
 
+AM_CONDITIONAL([ENABLE_STATIC], [test "$enable_static" != "no"])
+
 AC_ARG_ENABLE([debug],
 	AS_HELP_STRING([--disable-debug], [Do not include debugging statements]),
 	[enable_debug="$enableval"], [enable_debug="yes"])
@@ -123,6 +119,10 @@ fi
 AC_CONFIG_SUBDIRS([doc])
 
 AC_CHECK_FUNCS([strerror_l])
+
+AC_CHECK_DECLS([getprotobyname_r, getprotobynumber_r], [], [], [[
+    #include <netdb.h>
+]])
 
 AC_CONFIG_FILES([
 Makefile
@@ -152,26 +152,13 @@ fi
 
 AC_OUTPUT
 
-echo "-------------------------------------------------------------------------------"
-echo "                                  NOTE"
-echo ""
-echo " There have been some changes starting with 3.2 regarding where and how libnl"
-echo " is being installed on the system in order to allow multiple libnl versions"
-echo " to be installed in parallel:"
-echo ""
-echo "    - Headers will be installed in ${includedir}/libnl${MAJ_VERSION}, therefore"
-echo "      you will need to add \"-I/usr/include/libnl${MAJ_VERSION}\" to CFLAGS"
-echo ""
-echo "    - The library basename was renamed to libnl-${MAJ_VERSION}, i.e. the SO names become"
-echo "      libnl-${MAJ_VERSION}.so., libnl-route-${MAJ_VERSION}.so, etc."
-echo ""
-echo "    - libtool versioning was assumed, to ease detection of compatible library"
-echo "      versions."
-echo ""
-echo " If you are using pkg-config for detecting and linking against the library "
-echo " things will continue magically as if nothing every happened. If you are "
-echo " linking manually you need to adapt your Makefiles or switch to using "
-echo " pkg-config files."
-echo ""
-echo "-------------------------------------------------------------------------------"
-
+echo
+echo "libnl $LIBNL_VERSION configuration${LIBNL_GIT_SHA:+ (git:$LIBNL_GIT_SHA)}:"
+echo "    --enable-pthreads=$enable_pthreads"
+echo "    --enable-static=$enable_static"
+echo
+echo "    --enable-debug=$enable_debug"
+echo "    --enable-cli=$enable_cli"
+echo
+echo "    check: $has_check"
+echo

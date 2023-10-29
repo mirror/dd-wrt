@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/fifo.c		(p|b)fifo
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -29,15 +23,21 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/qdisc/fifo.h>
 #include <netlink/utils.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_fifo {
+	uint32_t qf_limit;
+	uint32_t qf_mask;
+};
+
 #define SCH_FIFO_ATTR_LIMIT 1
 /** @endcond */
 
@@ -154,13 +154,13 @@ static struct rtnl_tc_ops bfifo_ops = {
 	.to_msg_fill		= fifo_msg_fill,
 };
 
-static void __init fifo_init(void)
+static void _nl_init fifo_init(void)
 {
 	rtnl_tc_register(&pfifo_ops);
 	rtnl_tc_register(&bfifo_ops);
 }
 
-static void __exit fifo_exit(void)
+static void _nl_exit fifo_exit(void)
 {
 	rtnl_tc_unregister(&pfifo_ops);
 	rtnl_tc_unregister(&bfifo_ops);

@@ -1,21 +1,16 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nf-ct-events.c	  Listen on Conntrack Events
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2018 Avast software
  */
 
-#include <netlink/cli/utils.h>
-#include <netlink/cli/ct.h>
+#include "nl-default.h"
 
 #include <linux/netlink.h>
 #include <linux/netfilter/nfnetlink.h>
 #include <linux/netfilter/nfnetlink_conntrack.h>
+
+#include <netlink/cli/utils.h>
+#include <netlink/cli/ct.h>
 
 struct private_nl_object
 {

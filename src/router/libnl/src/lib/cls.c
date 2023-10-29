@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/lib/cls.c     	CLI Classifier Helpers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -15,6 +8,8 @@
  * @defgroup cli_cls Classifiers
  * @{
  */
+
+#include "nl-default.h"
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/cls.h>

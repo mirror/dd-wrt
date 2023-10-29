@@ -1,13 +1,9 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/cli/cls/cgroup.c    	cgroup classifier module for CLI lib
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2011 Thomas Graf <tgraf@suug.ch>
  */
+
+#include "nl-default.h"
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
@@ -64,12 +60,12 @@ static struct nl_cli_tc_module cgroup_module =
 	.tm_parse_argv		= parse_argv,
 };
 
-static void __init cgroup_init(void)
+static void _nl_init cgroup_init(void)
 {
 	nl_cli_tc_register(&cgroup_module);
 }
 
-static void __exit cgroup_exit(void)
+static void _nl_exit cgroup_exit(void)
 {
 	nl_cli_tc_unregister(&cgroup_module);
 }

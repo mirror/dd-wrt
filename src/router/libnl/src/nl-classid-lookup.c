@@ -1,17 +1,13 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nl-classid-lookup.c     Lookup classid
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink/cli/utils.h>
+#include "nl-default.h"
+
 #include <linux/pkt_sched.h>
+
+#include <netlink/cli/utils.h>
 
 static void print_usage(void)
 {

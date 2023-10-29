@@ -1,18 +1,13 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/genl-ctrl-list.c	List Generic Netlink Families
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink/cli/utils.h>
+#include "nl-default.h"
 
 #include <linux/genetlink.h>
+
+#include <netlink/cli/utils.h>
 
 static struct nl_cache *alloc_genl_family_cache(struct nl_sock *sk)
 {

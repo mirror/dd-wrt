@@ -1,11 +1,14 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/types.h>
-#include <netlink-private/route/nexthop-encap.h>
-#include <netlink/route/nexthop.h>
+#include "nl-default.h"
+
 #include <linux/mpls_iptunnel.h>
 #include <linux/lwtunnel.h>
+
+#include <netlink/route/nexthop.h>
+
+#include "nl-route.h"
+#include "nexthop-encap.h"
 
 struct mpls_iptunnel_encap {
 	struct nl_addr *dst;
@@ -34,7 +37,7 @@ static int mpls_encap_build_msg(struct nl_msg *msg, void *priv)
 	return 0;
 
 nla_put_failure:
-        return -NLE_MSGSIZE;
+	return -NLE_MSGSIZE;
 }
 
 static void mpls_encap_destructor(void *priv)
@@ -56,9 +59,8 @@ static int mpls_encap_parse_msg(struct nlattr *nla, struct rtnl_nexthop *nh)
 	uint8_t ttl = 0;
 	int err;
 
-
 	err = nla_parse_nested(tb, MPLS_IPTUNNEL_MAX, nla, mpls_encap_policy);
-	if (err)
+	if (err < 0)
 		return err;
 
 	if (!tb[MPLS_IPTUNNEL_DST])
@@ -109,10 +111,6 @@ int rtnl_route_nh_encap_mpls(struct rtnl_nexthop *nh,
 	if (!addr)
 		return -NLE_INVAL;
 
-	if (!nl_addr_valid(nl_addr_get_binary_addr(addr),
-			   nl_addr_get_len(addr)))
-		return -NLE_INVAL;
-
 	rtnh_encap = calloc(1, sizeof(*rtnh_encap));
 	if (!rtnh_encap)
 		return -NLE_NOMEM;
@@ -132,4 +130,32 @@ int rtnl_route_nh_encap_mpls(struct rtnl_nexthop *nh,
 	nh_set_encap(nh, rtnh_encap);
 
 	return 0;
+}
+
+struct nl_addr *rtnl_route_nh_get_encap_mpls_dst(struct rtnl_nexthop *nh)
+{
+	struct mpls_iptunnel_encap *mpls_encap;
+
+	if (!nh->rtnh_encap || nh->rtnh_encap->ops->encap_type != LWTUNNEL_ENCAP_MPLS)
+		return NULL;
+
+	mpls_encap = (struct mpls_iptunnel_encap *)nh->rtnh_encap->priv;
+	if (!mpls_encap)
+		return NULL;
+
+	return mpls_encap->dst;
+}
+
+uint8_t rtnl_route_nh_get_encap_mpls_ttl(struct rtnl_nexthop *nh)
+{
+	struct mpls_iptunnel_encap *mpls_encap;
+
+	if (!nh->rtnh_encap || nh->rtnh_encap->ops->encap_type != LWTUNNEL_ENCAP_MPLS)
+		return 0;
+
+	mpls_encap = (struct mpls_iptunnel_encap *)nh->rtnh_encap->priv;
+	if (!mpls_encap)
+		return 0;
+
+	return mpls_encap->ttl;
 }

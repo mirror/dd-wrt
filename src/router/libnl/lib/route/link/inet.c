@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/inet.c	AF_INET link operations
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -57,12 +51,16 @@
  */
 
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/ip.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/link/inet.h>
-#include <netlink-private/route/link/api.h>
+
+#include "link-api.h"
 
 /** @cond SKIP */
 struct inet_data
@@ -110,7 +108,7 @@ static int inet_parse_af(struct rtnl_link *link, struct nlattr *attr, void *data
 
 	if (tb[IFLA_INET_CONF]) {
 		int i;
-		int len = min_t(int, IPV4_DEVCONF_MAX, nla_len(tb[IFLA_INET_CONF]) / 4);
+		int len = _NL_MIN(IPV4_DEVCONF_MAX, nla_len(tb[IFLA_INET_CONF]) / 4);
 
 		for (i = 0; i < len; i++)
 			id->i_confset[i] = 1;
@@ -283,12 +281,12 @@ int rtnl_link_inet_set_conf(struct rtnl_link *link, const unsigned int cfgid,
 }
 
 
-static void __init inet_init(void)
+static void _nl_init inet_init(void)
 {
 	rtnl_link_af_register(&inet_ops);
 }
 
-static void __exit inet_exit(void)
+static void _nl_exit inet_exit(void)
 {
 	rtnl_link_af_unregister(&inet_ops);
 }

@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/ematch/text.c		Text Search
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,12 +10,13 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <linux/tc_ematch/tc_em_text.h>
+
 #include <netlink/netlink.h>
 #include <netlink/route/cls/ematch.h>
 #include <netlink/route/cls/ematch/text.h>
-#include <linux/tc_ematch/tc_em_text.h>
 
 struct text_data
 {
@@ -91,8 +86,7 @@ void rtnl_ematch_text_set_algo(struct rtnl_ematch *e, const char *algo)
 {
 	struct text_data *t = rtnl_ematch_data(e);
 
-	strncpy(t->cfg.algo, algo, sizeof(t->cfg.algo));
-	t->cfg.algo[sizeof(t->cfg.algo) - 1] = '\0';
+	_nl_strncpy_trunc(t->cfg.algo, algo, sizeof(t->cfg.algo));
 }
 
 char *rtnl_ematch_text_get_algo(struct rtnl_ematch *e)
@@ -177,7 +171,7 @@ static struct rtnl_ematch_ops text_ops = {
 	.eo_free	= text_free,
 };
 
-static void __init text_init(void)
+static void _nl_init text_init(void)
 {
 	rtnl_ematch_register(&text_ops);
 }

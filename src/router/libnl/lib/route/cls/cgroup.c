@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/cgroup.c	Control Groups Classifier
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2009-2013 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,17 +10,23 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/cls/cgroup.h>
 #include <netlink/route/cls/ematch.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_cgroup {
+	struct rtnl_ematch_tree *cg_ematch;
+	int cg_mask;
+};
+
 #define CGROUP_ATTR_EMATCH      0x001
 /** @endcond */
 
@@ -36,17 +36,14 @@ static struct nla_policy cgroup_policy[TCA_CGROUP_MAX+1] = {
 
 static int cgroup_clone(void *_dst, void *_src)
 {
-	struct rtnl_cgroup *dst = NULL, *src = _src;
+	struct rtnl_cgroup *dst = _dst, *src = _src;
 
-	dst = calloc(1, sizeof(*dst));
-	if (!dst)
-		return -NLE_NOMEM;
+	dst->cg_ematch = NULL;
 
-	dst->cg_mask = src->cg_mask;
-	dst->cg_ematch = rtnl_ematch_tree_clone(src->cg_ematch);
-	if (!dst) {
-		free(dst);
-		return -NLE_NOMEM;
+	if (src->cg_ematch) {
+		dst->cg_ematch = rtnl_ematch_tree_clone(src->cg_ematch);
+		if (!dst->cg_ematch)
+			return -NLE_NOMEM;
 	}
 
 	return 0;
@@ -189,12 +186,12 @@ static struct rtnl_tc_ops cgroup_ops = {
 	},
 };
 
-static void __init cgroup_init(void)
+static void _nl_init cgroup_init(void)
 {
 	rtnl_tc_register(&cgroup_ops);
 }
 
-static void __exit cgroup_exit(void)
+static void _nl_exit cgroup_exit(void)
 {
 	rtnl_tc_unregister(&cgroup_ops);
 }

@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/netconf.c		netconf
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2017 David Ahern <dsa@cumulusnetworks.com>
  */
 
@@ -18,13 +11,20 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/netconf.h>
+#include <linux/socket.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/netconf.h>
-#include <linux/netconf.h>
-#include <linux/socket.h>
 #include <netlink/hashtable.h>
+
+#include "nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-priv-dynamic-core/object-api.h"
 
 /** @cond SKIP */
 #define NETCONF_ATTR_FAMILY		0x0001
@@ -79,16 +79,6 @@ static struct nla_policy devconf_mpls_policy[NETCONFA_MAX+1] = {
 static struct rtnl_netconf *rtnl_netconf_alloc(void)
 {
 	return (struct rtnl_netconf *) nl_object_alloc(&netconf_obj_ops);
-}
-
-static int netconf_clone(struct nl_object *_dst, struct nl_object *_src)
-{
-	struct rtnl_netconf *dst = nl_object_priv(_dst);
-	struct rtnl_netconf *src = nl_object_priv(_src);
-
-	*dst = *src;
-
-	return 0;
 }
 
 static int netconf_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
@@ -287,7 +277,7 @@ static void netconf_keygen(struct nl_object *obj, uint32_t *hashkey,
 	struct nc_hash_key {
 		int        nc_family;
 		int        nc_index;
-	} __attribute__((packed)) nckey;
+	} _nl_packed nckey;
 
 	nckey_sz = sizeof(nckey);
 	nckey.nc_family = nc->family;
@@ -306,19 +296,19 @@ static uint64_t netconf_compare(struct nl_object *_a, struct nl_object *_b,
 	struct rtnl_netconf *b = (struct rtnl_netconf *) _b;
 	uint64_t diff = 0;
 
-#define NETCONF_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, NETCONF_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= NETCONF_DIFF(FAMILY,	a->family != b->family);
-	diff |= NETCONF_DIFF(IFINDEX,	a->ifindex != b->ifindex);
-	diff |= NETCONF_DIFF(RP_FILTER,	a->rp_filter != b->rp_filter);
-	diff |= NETCONF_DIFF(FWDING,	a->forwarding != b->forwarding);
-	diff |= NETCONF_DIFF(MC_FWDING,	a->mc_forwarding != b->mc_forwarding);
-	diff |= NETCONF_DIFF(PROXY_NEIGH, a->proxy_neigh != b->proxy_neigh);
-	diff |= NETCONF_DIFF(IGNORE_RT_LINKDWN,
-			a->ignore_routes_linkdown != b->ignore_routes_linkdown);
-	diff |= NETCONF_DIFF(INPUT,	a->input != b->input);
-
-#undef NETCONF_DIFF
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(NETCONF_ATTR_FAMILY, a->family != b->family);
+	diff |= _DIFF(NETCONF_ATTR_IFINDEX, a->ifindex != b->ifindex);
+	diff |= _DIFF(NETCONF_ATTR_RP_FILTER, a->rp_filter != b->rp_filter);
+	diff |= _DIFF(NETCONF_ATTR_FWDING, a->forwarding != b->forwarding);
+	diff |= _DIFF(NETCONF_ATTR_MC_FWDING,
+		      a->mc_forwarding != b->mc_forwarding);
+	diff |= _DIFF(NETCONF_ATTR_PROXY_NEIGH,
+		      a->proxy_neigh != b->proxy_neigh);
+	diff |= _DIFF(NETCONF_ATTR_IGNORE_RT_LINKDWN,
+		      a->ignore_routes_linkdown != b->ignore_routes_linkdown);
+	diff |= _DIFF(NETCONF_ATTR_INPUT, a->input != b->input);
+#undef _DIFF
 
 	return diff;
 }
@@ -535,7 +525,6 @@ int rtnl_netconf_get_input(struct rtnl_netconf *nc, int *val)
 static struct nl_object_ops netconf_obj_ops = {
 	.oo_name		= "route/netconf",
 	.oo_size		= sizeof(struct rtnl_netconf),
-	.oo_clone		= netconf_clone,
 	.oo_dump = {
 	    [NL_DUMP_LINE] 	= netconf_dump_line,
 	    [NL_DUMP_DETAILS] 	= netconf_dump_line,
@@ -571,12 +560,12 @@ static struct nl_cache_ops rtnl_netconf_ops = {
 	.co_obj_ops		= &netconf_obj_ops,
 };
 
-static void __init netconf_init(void)
+static void _nl_init netconf_init(void)
 {
 	nl_cache_mngt_register(&rtnl_netconf_ops);
 }
 
-static void __exit netconf_exit(void)
+static void _nl_exit netconf_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_netconf_ops);
 }

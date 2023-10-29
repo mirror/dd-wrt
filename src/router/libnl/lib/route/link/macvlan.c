@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/macvlan.c     MACVLAN Link Info
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation version 2.1
- * of the License.
- *
  * Copyright (c) 2013 Michael Braun <michael-dev@fami-braun.de>
  */
 
@@ -23,17 +17,22 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/if_link.h>
+
+#include <linux/ethtool.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
-#include <netlink-private/route/link/api.h>
 #include <netlink/route/link/macvlan.h>
 #include <netlink/route/link/macvtap.h>
 
-#include <linux/if_link.h>
+#include "nl-route.h"
+#include "link-api.h"
 
 /** @cond SKIP */
 #define MACVLAN_HAS_MODE        (1<<0)
@@ -123,6 +122,10 @@ static int macvlan_parse(struct rtnl_link *link, struct nlattr *data,
 
 			mvi->mvi_macaddr = calloc(mvi->mvi_maccount,
 			                          sizeof(*(mvi->mvi_macaddr)));
+			if (mvi->mvi_macaddr == NULL) {
+				err = -NLE_NOMEM;
+				goto errout;
+			}
 
 			i = 0;
 			for (; nla_ok(nla, len); nla = nla_next(nla, &len)) {
@@ -149,6 +152,8 @@ static void macvlan_free(struct rtnl_link *link)
 	uint32_t i;
 
 	mvi = link->l_info;
+	if (!mvi)
+		return;
 
 	for (i = 0; i < mvi->mvi_maccount; i++)
 		nl_addr_put(mvi->mvi_macaddr[i]);
@@ -307,12 +312,11 @@ static struct rtnl_link_info_ops macvtap_info_ops = {
 struct rtnl_link *rtnl_link_macvlan_alloc(void)
 {
 	struct rtnl_link *link;
-	int err;
 
 	if (!(link = rtnl_link_alloc()))
 		return NULL;
 
-	if ((err = rtnl_link_set_type(link, "macvlan")) < 0) {
+	if (rtnl_link_set_type(link, "macvlan") < 0) {
 		rtnl_link_put(link);
 		return NULL;
 	}
@@ -653,12 +657,11 @@ int rtnl_link_macvlan_del_macaddr(struct rtnl_link *link, struct nl_addr *addr)
 struct rtnl_link *rtnl_link_macvtap_alloc(void)
 {
 	struct rtnl_link *link;
-	int err;
 
 	if (!(link = rtnl_link_alloc()))
 		return NULL;
 
-	if ((err = rtnl_link_set_type(link, "macvtap")) < 0) {
+	if (rtnl_link_set_type(link, "macvtap") < 0) {
 		rtnl_link_put(link);
 		return NULL;
 	}
@@ -857,13 +860,13 @@ int rtnl_link_macvtap_str2mode(const char *name)
 
 /** @} */
 
-static void __init macvlan_init(void)
+static void _nl_init macvlan_init(void)
 {
 	rtnl_link_register_info(&macvlan_info_ops);
 	rtnl_link_register_info(&macvtap_info_ops);
 }
 
-static void __exit macvlan_exit(void)
+static void _nl_exit macvlan_exit(void)
 {
 	rtnl_link_unregister_info(&macvlan_info_ops);
 	rtnl_link_unregister_info(&macvtap_info_ops);

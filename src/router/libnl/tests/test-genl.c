@@ -1,7 +1,12 @@
-#include <netlink/cli/utils.h>
+/* SPDX-License-Identifier: LGPL-2.1-only */
+
+#include "nl-default.h"
+
+#include <linux/genetlink.h>
 
 #include <linux/taskstats.h>
-#include <linux/genetlink.h>
+
+#include <netlink/cli/utils.h>
 
 static struct nla_policy attr_policy[TASKSTATS_TYPE_MAX+1] = {
 	[TASKSTATS_TYPE_PID]	= { .type = NLA_U32 },
@@ -61,8 +66,6 @@ static struct genl_cmd cmds[] = {
 		.c_msg_parser	= &parse_cmd_new,
 	},
 };
-
-#define ARRAY_SIZE(X) (sizeof(X) / sizeof((X)[0]))
 
 static struct genl_ops ops = {
 	.o_name = TASKSTATS_GENL_NAME,

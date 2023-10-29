@@ -7,4 +7,5 @@ Name: libnl
 Description: Convenience library for netlink sockets
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -lnl-@MAJ_VERSION@
+Libs.private: @LIBS@
 Cflags: -I${includedir}/libnl@MAJ_VERSION@

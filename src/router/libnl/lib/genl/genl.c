@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/genl/genl.c		Generic Netlink
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,10 +9,14 @@
  * @{
  */
 
-#include <netlink-private/genl.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/utils.h>
+
+#include "nl-genl.h"
+#include "nl-aux-core/nl-core.h"
 
 /**
  * @name Generic Netlink Socket

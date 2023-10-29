@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/link/api.c		Link Info API
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -25,12 +19,12 @@
  * 	.io_free		= vlan_free,
  * };
  *
- * static void __init vlan_init(void)
+ * static void _nl_init vlan_init(void)
  * {
  * 	rtnl_link_register_info(&vlan_info_ops);
  * }
  *
- * static void __exit vlan_exit(void)
+ * static void _nl_exit vlan_exit(void)
  * {
  * 	rtnl_link_unregister_info(&vlan_info_ops);
  * }
@@ -39,11 +33,14 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
-#include <netlink-private/route/link/api.h>
+
+#include "nl-route.h"
+#include "link-api.h"
 
 static NL_LIST_HEAD(info_ops);
 
@@ -87,13 +84,32 @@ struct rtnl_link_info_ops *rtnl_link_info_ops_lookup(const char *name)
 }
 
 /**
+ * Take reference to a set of operations.
+ * @arg ops		Link info operations.
+ */
+void rtnl_link_info_ops_get(struct rtnl_link_info_ops *ops)
+{
+	if (!ops)
+		return;
+
+	nl_write_lock(&info_lock);
+	ops->io_refcnt++;
+	nl_write_unlock(&info_lock);
+}
+
+/**
  * Give back reference to a set of operations.
  * @arg ops		Link info operations.
  */
 void rtnl_link_info_ops_put(struct rtnl_link_info_ops *ops)
 {
-	if (ops)
-		ops->io_refcnt--;
+	if (!ops)
+		return;
+
+	nl_write_lock(&info_lock);
+	_nl_assert(ops->io_refcnt > 0);
+	ops->io_refcnt--;
+	nl_write_unlock(&info_lock);
 }
 
 /**
@@ -152,6 +168,7 @@ int rtnl_link_unregister_info(struct rtnl_link_info_ops *ops)
 
 	nl_list_for_each_entry(t, &info_ops, io_list) {
 		if (t == ops) {
+			_nl_assert(t->io_refcnt >= 0);
 			if (t->io_refcnt > 0) {
 				err = -NLE_BUSY;
 				goto errout;
@@ -208,8 +225,11 @@ struct rtnl_link_af_ops *rtnl_link_af_ops_lookup(const unsigned int family)
  */
 void rtnl_link_af_ops_put(struct rtnl_link_af_ops *ops)
 {
-	if (ops)
+	if (ops) {
+		nl_write_lock(&info_lock);
 		ops->ao_refcnt--;
+		nl_write_unlock(&info_lock);
+	}
 }
 
 /**

@@ -5,6 +5,7 @@
  */
 #ifndef CCAN_HASH_H
 #define CCAN_HASH_H
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <endian.h>
@@ -13,6 +14,10 @@
  *
  * http://burtleburtle.net/bob/c/lookup3.c
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef __LITTLE_ENDIAN
 #   define HAVE_LITTLE_ENDIAN 1
@@ -65,5 +70,9 @@
 
 /* Our underlying operations. */
 uint32_t nl_hash_any(const void *key, size_t length, uint32_t base);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* HASH_H */

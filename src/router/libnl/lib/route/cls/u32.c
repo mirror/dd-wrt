@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/cls/u32.c		u32 classifier
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2005-2006 Petr Gotthard <petr.gotthard@siemens.com>
  * Copyright (c) 2005-2006 Siemens AG Oesterreich
@@ -18,17 +12,33 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/cls/u32.h>
 #include <netlink/route/action.h>
 
+#include "tc-api.h"
+#include "nl-aux-route/nl-route.h"
+
 /** @cond SKIP */
+struct rtnl_u32 {
+	uint32_t cu_divisor;
+	uint32_t cu_hash;
+	uint32_t cu_classid;
+	uint32_t cu_link;
+	struct nl_data *cu_pcnt;
+	struct nl_data *cu_selector;
+	struct nl_data *cu_mark;
+	struct rtnl_act *cu_act;
+	struct nl_data *cu_police;
+	char cu_indev[IFNAMSIZ];
+	int cu_mask;
+};
+
 #define U32_ATTR_DIVISOR      0x001
 #define U32_ATTR_HASH         0x002
 #define U32_ATTR_CLASSID      0x004
@@ -121,7 +131,7 @@ static int u32_msg_parser(struct rtnl_tc *tc, void *data)
 	if (tb[TCA_U32_ACT]) {
 		u->cu_mask |= U32_ATTR_ACTION;
 		err = rtnl_act_parse(&u->cu_act, tb[TCA_U32_ACT]);
-		if (err)
+		if (err < 0)
 			return err;
 	}
 
@@ -183,27 +193,96 @@ static void u32_free_data(struct rtnl_tc *tc, void *data)
 static int u32_clone(void *_dst, void *_src)
 {
 	struct rtnl_u32 *dst = _dst, *src = _src;
+	_nl_auto_nl_data struct nl_data *selector = NULL;
+	_nl_auto_nl_data struct nl_data *mark = NULL;
+	_nl_auto_nl_data struct nl_data *police = NULL;
+	_nl_auto_nl_data struct nl_data *pcnt = NULL;
+	_nl_auto_nl_data struct nl_data *opts = NULL;
+	_nl_auto_nl_data struct nl_data *xstats = NULL;
+	_nl_auto_nl_data struct nl_data *subdata = NULL;
+	_nl_auto_rtnl_act struct rtnl_act *act = NULL;
 
-	if (src->cu_selector &&
-	    !(dst->cu_selector = nl_data_clone(src->cu_selector)))
-		return -NLE_NOMEM;
+	dst->cu_pcnt = NULL;
+	dst->cu_selector = NULL;
+	dst->cu_mark = NULL;
+	dst->cu_act = NULL;
+	dst->cu_police = NULL;
 
-	if (src->cu_mark &&
-	    !(dst->cu_mark = nl_data_clone(src->cu_mark)))
-		return -NLE_NOMEM;
-
-	if (src->cu_act) {
-		if (!(dst->cu_act = rtnl_act_alloc()))
+	if (src->cu_selector) {
+		if (!(selector = nl_data_clone(src->cu_selector)))
 			return -NLE_NOMEM;
-
-		memcpy(dst->cu_act, src->cu_act, sizeof(struct rtnl_act));
 	}
 
-	if (src->cu_police && !(dst->cu_police = nl_data_clone(src->cu_police)))
-		return -NLE_NOMEM;
+	if (src->cu_mark) {
+		if (!(mark = nl_data_clone(src->cu_mark)))
+			return -NLE_NOMEM;
+	}
 
-	if (src->cu_pcnt && !(dst->cu_pcnt = nl_data_clone(src->cu_pcnt)))
-		return -NLE_NOMEM;
+	if (src->cu_act) {
+		if (!(act = rtnl_act_alloc()))
+			return -NLE_NOMEM;
+
+		if (src->cu_act->c_opts) {
+			if (!(opts = nl_data_clone(src->cu_act->c_opts)))
+				return -NLE_NOMEM;
+		}
+
+		if (src->cu_act->c_xstats) {
+			if (!(xstats = nl_data_clone(src->cu_act->c_xstats)))
+				return -NLE_NOMEM;
+		}
+
+		if (src->cu_act->c_subdata) {
+			if (!(subdata = nl_data_clone(src->cu_act->c_subdata)))
+				return -NLE_NOMEM;
+		}
+	}
+
+	if (src->cu_police) {
+		if (!(police = nl_data_clone(src->cu_police)))
+			return -NLE_NOMEM;
+	}
+
+	if (src->cu_pcnt) {
+		if (!(pcnt = nl_data_clone(src->cu_pcnt)))
+			return -NLE_NOMEM;
+	}
+
+	/* we've passed the critical point and its safe to proceed */
+
+	if (selector)
+		dst->cu_selector = _nl_steal_pointer(&selector);
+
+	if (mark)
+		dst->cu_mark = _nl_steal_pointer(&mark);
+
+	if (police)
+		dst->cu_police = _nl_steal_pointer(&police);
+
+	if (pcnt)
+		dst->cu_pcnt = _nl_steal_pointer(&pcnt);
+
+	if (act) {
+		dst->cu_act = _nl_steal_pointer(&act);
+
+		/* action nl list next and prev pointers must be updated */
+		nl_init_list_head(&dst->cu_act->ce_list);
+
+		if (opts)
+			dst->cu_act->c_opts = _nl_steal_pointer(&opts);
+
+		if (xstats)
+			dst->cu_act->c_xstats = _nl_steal_pointer(&xstats);
+
+		if (subdata)
+			dst->cu_act->c_subdata = _nl_steal_pointer(&subdata);
+
+		if (dst->cu_act->c_link) {
+			nl_object_get(OBJ_CAST(dst->cu_act->c_link));
+		}
+
+		dst->cu_act->a_next = NULL;   /* Only clone first in chain */
+	}
 
 	return 0;
 }
@@ -278,7 +357,9 @@ static void print_selector(struct nl_dump_params *p, struct tc_u32_sel *sel,
 		if (p->dp_type == NL_DUMP_STATS &&
 		    (u->cu_mask & U32_ATTR_PCNT)) {
 			struct tc_u32_pcnt *pcnt = u->cu_pcnt->d_data;
-			nl_dump(p, " successful %" PRIu64, pcnt->kcnts[i]);
+
+			nl_dump(p, " successful %llu",
+				(long long unsigned)pcnt->kcnts[i]);
 		}
 	}
 }
@@ -292,11 +373,6 @@ static void u32_dump_details(struct rtnl_tc *tc, void *data,
 
 	if (!u)
 		return;
-
-	if (!(u->cu_mask & (U32_ATTR_SELECTOR & U32_ATTR_MARK))) {
-		nl_dump(p, "no-selector no-mark\n");
-		return;
-	}
 
 	if (!(u->cu_mask & U32_ATTR_SELECTOR)) {
 		nl_dump(p, "no-selector");
@@ -338,9 +414,11 @@ static void u32_dump_stats(struct rtnl_tc *tc, void *data,
 
 	if (u->cu_mask & U32_ATTR_PCNT) {
 		struct tc_u32_pcnt *pc = u->cu_pcnt->d_data;
+
 		nl_dump(p, "\n");
-		nl_dump_line(p, "    hit %8" PRIu64 " count %8" PRIu64 "\n",
-			     pc->rhit, pc->rcnt);
+		nl_dump_line(p, "    hit %8llu count %8llu\n",
+			     (long long unsigned)pc->rhit,
+			     (long long unsigned)pc->rcnt);
 	}
 }
 
@@ -373,7 +451,7 @@ static int u32_msg_fill(struct rtnl_tc *tc, void *data, struct nl_msg *msg)
 		int err;
 
 		err = rtnl_act_fill(msg, TCA_U32_ACT, u->cu_act);
-		if (err)
+		if (err < 0)
 			return err;
 	}
 
@@ -821,12 +899,12 @@ static struct rtnl_tc_ops u32_ops = {
 	},
 };
 
-static void __init u32_init(void)
+static void _nl_init u32_init(void)
 {
 	rtnl_tc_register(&u32_ops);
 }
 
-static void __exit u32_exit(void)
+static void _nl_exit u32_exit(void)
 {
 	rtnl_tc_unregister(&u32_ops);
 }

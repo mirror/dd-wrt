@@ -1,17 +1,13 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/idiag/idiagnl_meminfo_obj.c Inet Diag Meminfo Object
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Sassano Systems LLC <joe@sassanosystems.com>
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/idiag/meminfo.h>
+
+#include "nl-idiag.h"
 
 /**
  * @ingroup idiag

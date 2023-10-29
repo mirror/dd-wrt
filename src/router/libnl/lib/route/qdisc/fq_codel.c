@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/fq_codel.c		fq_codel
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Cong Wang <xiyou.wangcong@gmail.com>
  */
 
@@ -17,15 +11,26 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/qdisc/fq_codel.h>
 #include <netlink/utils.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_fq_codel {
+	int fq_limit;
+	uint32_t fq_target;
+	uint32_t fq_interval;
+	int fq_flows;
+	uint32_t fq_quantum;
+	int fq_ecn;
+	uint32_t fq_mask;
+};
+
 #define SCH_FQ_CODEL_ATTR_TARGET	0x1
 #define SCH_FQ_CODEL_ATTR_LIMIT		0x2
 #define SCH_FQ_CODEL_ATTR_INTERVAL	0x4
@@ -364,12 +369,12 @@ static struct rtnl_tc_ops fq_codel_ops = {
 	.to_msg_fill		= fq_codel_msg_fill,
 };
 
-static void __init fq_codel_init(void)
+static void _nl_init fq_codel_init(void)
 {
 	rtnl_tc_register(&fq_codel_ops);
 }
 
-static void __exit fq_codel_exit(void)
+static void _nl_exit fq_codel_exit(void)
 {
 	rtnl_tc_unregister(&fq_codel_ops);
 }

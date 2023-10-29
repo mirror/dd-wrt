@@ -1,19 +1,15 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nl-addr-add.c     Add addresses
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU General Public License as
- *	published by the Free Software Foundation version 2 of the License.
- *
  * Copyright (c) 2003-2009 Thomas Graf <tgraf@suug.ch>
  */
+
+#include "nl-default.h"
+
+#include <linux/netlink.h>
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/addr.h>
 #include <netlink/cli/link.h>
-
-#include <linux/netlink.h>
 
 static int quiet = 0;
 

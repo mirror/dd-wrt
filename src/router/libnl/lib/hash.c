@@ -39,6 +39,8 @@ mixing with 12*3 instructions on 3 integers than you can with 3 instructions
 on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 -------------------------------------------------------------------------------
 */
+#include "nl-default.h"
+
 #include <netlink/hash.h>
 
 #if HAVE_LITTLE_ENDIAN

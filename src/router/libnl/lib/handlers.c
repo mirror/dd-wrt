@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/handlers.c	default netlink message handlers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -26,12 +19,15 @@
  * ~~~~
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/utils.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/msg.h>
 #include <netlink/handlers.h>
+
+#include "nl-core.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 static void print_header_content(FILE *ofd, struct nlmsghdr *n)
 {

@@ -1,15 +1,8 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/addr.c		Addresses
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
- * Copyright (c) 2003-2006 Baruch Even <baruch@ev-en.org>,
- *                         Mediatrix Telecom, inc. <ericb@mediatrix.com>
+ * Copyright (c) 2003-2006 Baruch Even <baruch@ev-en.org>
+ * Copyright (c) 2003-2006 Mediatrix Telecom, inc. <ericb@mediatrix.com>
  */
 
 /**
@@ -107,7 +100,8 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/addr.h>
@@ -115,7 +109,47 @@
 #include <netlink/route/link.h>
 #include <netlink/utils.h>
 
+#include "nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+
 /** @cond SKIP */
+struct rtnl_addr_cacheinfo {
+	/* Preferred lifetime in seconds, ticking from when the message gets constructed */
+	uint32_t aci_prefered;
+
+	/* Valid lifetime in seconds, ticking from when the message gets constructed */
+	uint32_t aci_valid;
+
+	/* Timestamp of creation in 1/100s since boottime, clock_gettime(CLOCK_MONOTONIC) */
+	uint32_t aci_cstamp;
+
+	/* Timestamp of last update in 1/100s since boottime, clock_gettime(CLOCK_MONOTONIC) */
+	uint32_t aci_tstamp;
+};
+
+struct rtnl_addr {
+	NLHDR_COMMON
+
+	uint8_t a_family;
+	uint8_t a_prefixlen;
+	uint8_t a_scope;
+	uint32_t a_flags;
+	uint32_t a_ifindex;
+
+	struct nl_addr *a_peer;
+	struct nl_addr *a_local;
+	struct nl_addr *a_bcast;
+	struct nl_addr *a_anycast;
+	struct nl_addr *a_multicast;
+
+	struct rtnl_addr_cacheinfo a_cacheinfo;
+
+	char a_label[IFNAMSIZ];
+	uint32_t a_flag_mask;
+	struct rtnl_link *a_link;
+};
+
 #define ADDR_ATTR_FAMILY	0x0001
 #define ADDR_ATTR_PREFIXLEN	0x0002
 #define ADDR_ATTR_FLAGS		0x0004
@@ -160,6 +194,13 @@ static int addr_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct rtnl_addr *dst = nl_object_priv(_dst);
 	struct rtnl_addr *src = nl_object_priv(_src);
 
+	dst->a_peer = NULL;
+	dst->a_local = NULL;
+	dst->a_bcast = NULL;
+	dst->a_anycast = NULL;
+	dst->a_multicast = NULL;
+	dst->a_link = NULL;
+
 	if (src->a_link) {
 		nl_object_get(OBJ_CAST(src->a_link));
 		dst->a_link = src->a_link;
@@ -168,7 +209,7 @@ static int addr_clone(struct nl_object *_dst, struct nl_object *_src)
 	if (src->a_peer)
 		if (!(dst->a_peer = nl_addr_clone(src->a_peer)))
 			return -NLE_NOMEM;
-	
+
 	if (src->a_local)
 		if (!(dst->a_local = nl_addr_clone(src->a_local)))
 			return -NLE_NOMEM;
@@ -493,41 +534,40 @@ static uint64_t addr_compare(struct nl_object *_a, struct nl_object *_b,
 	struct rtnl_addr *b = (struct rtnl_addr *) _b;
 	uint64_t diff = 0;
 
-#define ADDR_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ADDR_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= ADDR_DIFF(IFINDEX,	a->a_ifindex != b->a_ifindex);
-	diff |= ADDR_DIFF(FAMILY,	a->a_family != b->a_family);
-	diff |= ADDR_DIFF(SCOPE,	a->a_scope != b->a_scope);
-	diff |= ADDR_DIFF(LABEL,	strcmp(a->a_label, b->a_label));
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(ADDR_ATTR_IFINDEX, a->a_ifindex != b->a_ifindex);
+	diff |= _DIFF(ADDR_ATTR_FAMILY, a->a_family != b->a_family);
+	diff |= _DIFF(ADDR_ATTR_SCOPE, a->a_scope != b->a_scope);
+	diff |= _DIFF(ADDR_ATTR_LABEL, strcmp(a->a_label, b->a_label));
 	if (attrs & ADDR_ATTR_PEER) {
-		if (   (flags & ID_COMPARISON)
-		    && a->a_family == AF_INET
-		    && b->a_family == AF_INET
-		    && a->a_peer
-		    && b->a_peer
-		    && a->a_prefixlen == b->a_prefixlen) {
+		if ((flags & ID_COMPARISON) && a->a_family == AF_INET &&
+		    b->a_family == AF_INET && a->a_peer && b->a_peer &&
+		    a->a_prefixlen == b->a_prefixlen) {
 			/* when comparing two IPv4 addresses for id-equality, the network part
 			 * of the PEER address shall be compared.
 			 */
-			diff |= ADDR_DIFF(PEER, nl_addr_cmp_prefix(a->a_peer, b->a_peer));
+			diff |= _DIFF(ADDR_ATTR_PEER,
+				      nl_addr_cmp_prefix(a->a_peer, b->a_peer));
 		} else
-			diff |= ADDR_DIFF(PEER, nl_addr_cmp(a->a_peer, b->a_peer));
+			diff |= _DIFF(ADDR_ATTR_PEER,
+				      nl_addr_cmp(a->a_peer, b->a_peer));
 	}
-	diff |= ADDR_DIFF(LOCAL,	nl_addr_cmp(a->a_local, b->a_local));
-	diff |= ADDR_DIFF(MULTICAST,	nl_addr_cmp(a->a_multicast,
-						    b->a_multicast));
-	diff |= ADDR_DIFF(BROADCAST,	nl_addr_cmp(a->a_bcast, b->a_bcast));
-	diff |= ADDR_DIFF(ANYCAST,	nl_addr_cmp(a->a_anycast, b->a_anycast));
-	diff |= ADDR_DIFF(CACHEINFO,    memcmp(&a->a_cacheinfo, &b->a_cacheinfo,
-	                                       sizeof (a->a_cacheinfo)));
+	diff |= _DIFF(ADDR_ATTR_LOCAL, nl_addr_cmp(a->a_local, b->a_local));
+	diff |= _DIFF(ADDR_ATTR_MULTICAST,
+		      nl_addr_cmp(a->a_multicast, b->a_multicast));
+	diff |= _DIFF(ADDR_ATTR_BROADCAST, nl_addr_cmp(a->a_bcast, b->a_bcast));
+	diff |= _DIFF(ADDR_ATTR_ANYCAST,
+		      nl_addr_cmp(a->a_anycast, b->a_anycast));
+	diff |= _DIFF(ADDR_ATTR_CACHEINFO,
+		      memcmp(&a->a_cacheinfo, &b->a_cacheinfo,
+			     sizeof(a->a_cacheinfo)));
 
 	if (flags & LOOSE_COMPARISON)
-		diff |= ADDR_DIFF(FLAGS,
-				  (a->a_flags ^ b->a_flags) & b->a_flag_mask);
+		diff |= _DIFF(ADDR_ATTR_FLAGS,
+			      (a->a_flags ^ b->a_flags) & b->a_flag_mask);
 	else
-		diff |= ADDR_DIFF(FLAGS, a->a_flags != b->a_flags);
-
-#undef ADDR_DIFF
+		diff |= _DIFF(ADDR_ATTR_FLAGS, a->a_flags != b->a_flags);
+#undef _DIFF
 
 	return diff;
 }
@@ -743,7 +783,7 @@ int rtnl_addr_build_add_request(struct rtnl_addr *addr, int flags,
  *
  * @see rtnl_addr_build_add_request()
  *
- * @return 0 on sucess or a negative error if an error occured.
+ * @return 0 on success or a negative error if an error occured.
  */
 int rtnl_addr_add(struct nl_sock *sk, struct rtnl_addr *addr, int flags)
 {
@@ -815,7 +855,7 @@ int rtnl_addr_build_delete_request(struct rtnl_addr *addr, int flags,
  *
  * @see rtnl_addr_build_delete_request();
  *
- * @return 0 on sucess or a negative error if an error occured.
+ * @return 0 on success or a negative error if an error occured.
  */
 int rtnl_addr_delete(struct nl_sock *sk, struct rtnl_addr *addr, int flags)
 {
@@ -1136,6 +1176,7 @@ static const struct trans_tbl addr_flags[] = {
 	__ADD(IFA_F_SECONDARY, secondary),
 	__ADD(IFA_F_NODAD, nodad),
 	__ADD(IFA_F_OPTIMISTIC, optimistic),
+	__ADD(IFA_F_DADFAILED, dadfailed),
 	__ADD(IFA_F_HOMEADDRESS, homeaddress),
 	__ADD(IFA_F_DEPRECATED, deprecated),
 	__ADD(IFA_F_TENTATIVE, tentative),
@@ -1197,12 +1238,12 @@ static struct nl_cache_ops rtnl_addr_ops = {
 	.co_obj_ops		= &addr_obj_ops,
 };
 
-static void __init addr_init(void)
+static void _nl_init addr_init(void)
 {
 	nl_cache_mngt_register(&rtnl_addr_ops);
 }
 
-static void __exit addr_exit(void)
+static void _nl_exit addr_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_addr_ops);
 }

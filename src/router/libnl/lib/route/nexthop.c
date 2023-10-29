@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/nexthop.c	Routing Nexthop
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,12 +9,16 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/route/nexthop-encap.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/route.h>
+
+#include "nexthop-encap.h"
+#include "nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
 
 /** @cond SKIP */
 #define NH_ATTR_FLAGS   0x000001
@@ -115,29 +112,26 @@ void rtnl_route_nh_free(struct rtnl_nexthop *nh)
 int rtnl_route_nh_compare(struct rtnl_nexthop *a, struct rtnl_nexthop *b,
 			  uint32_t attrs, int loose)
 {
-	int diff = 0;
+	uint32_t diff = 0;
 
-#define NH_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, NH_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= NH_DIFF(IFINDEX,	a->rtnh_ifindex != b->rtnh_ifindex);
-	diff |= NH_DIFF(WEIGHT,		a->rtnh_weight != b->rtnh_weight);
-	diff |= NH_DIFF(REALMS,		a->rtnh_realms != b->rtnh_realms);
-	diff |= NH_DIFF(GATEWAY,	nl_addr_cmp(a->rtnh_gateway,
-						    b->rtnh_gateway));
-	diff |= NH_DIFF(NEWDST,		nl_addr_cmp(a->rtnh_newdst,
-						    b->rtnh_newdst));
-	diff |= NH_DIFF(VIA,		nl_addr_cmp(a->rtnh_via,
-						    b->rtnh_via));
-	diff |= NH_DIFF(ENCAP,		nh_encap_compare(a->rtnh_encap,
-							 b->rtnh_encap));
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(NH_ATTR_IFINDEX, a->rtnh_ifindex != b->rtnh_ifindex);
+	diff |= _DIFF(NH_ATTR_WEIGHT, a->rtnh_weight != b->rtnh_weight);
+	diff |= _DIFF(NH_ATTR_REALMS, a->rtnh_realms != b->rtnh_realms);
+	diff |= _DIFF(NH_ATTR_GATEWAY,
+		      nl_addr_cmp(a->rtnh_gateway, b->rtnh_gateway));
+	diff |= _DIFF(NH_ATTR_NEWDST,
+		      nl_addr_cmp(a->rtnh_newdst, b->rtnh_newdst));
+	diff |= _DIFF(NH_ATTR_VIA, nl_addr_cmp(a->rtnh_via, b->rtnh_via));
+	diff |= _DIFF(NH_ATTR_ENCAP,
+		      nh_encap_compare(a->rtnh_encap, b->rtnh_encap));
 
 	if (loose)
-		diff |= NH_DIFF(FLAGS,
-			  (a->rtnh_flags ^ b->rtnh_flags) & b->rtnh_flag_mask);
+		diff |= _DIFF(NH_ATTR_FLAGS, (a->rtnh_flags ^ b->rtnh_flags) &
+						     b->rtnh_flag_mask);
 	else
-		diff |= NH_DIFF(FLAGS, a->rtnh_flags != b->rtnh_flags);
-	
-#undef NH_DIFF
+		diff |= _DIFF(NH_ATTR_FLAGS, a->rtnh_flags != b->rtnh_flags);
+#undef _DIFF
 
 	return diff;
 }
@@ -351,10 +345,6 @@ int rtnl_route_nh_set_newdst(struct rtnl_nexthop *nh, struct nl_addr *addr)
 {
 	struct nl_addr *old = nh->rtnh_newdst;
 
-	if (!nl_addr_valid(nl_addr_get_binary_addr(addr),
-			   nl_addr_get_len(addr)))
-		return -NLE_INVAL;
-
 	if (addr) {
 		nh->rtnh_newdst = nl_addr_get(addr);
 		nh->ce_mask |= NH_ATTR_NEWDST;
@@ -377,10 +367,6 @@ struct nl_addr *rtnl_route_nh_get_newdst(struct rtnl_nexthop *nh)
 int rtnl_route_nh_set_via(struct rtnl_nexthop *nh, struct nl_addr *addr)
 {
 	struct nl_addr *old = nh->rtnh_via;
-
-	if (!nl_addr_valid(nl_addr_get_binary_addr(addr),
-			   nl_addr_get_len(addr)))
-		return -NLE_INVAL;
 
 	if (addr) {
 		nh->rtnh_via = nl_addr_get(addr);

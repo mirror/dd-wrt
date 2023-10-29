@@ -1,13 +1,9 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/cli/qdisc/fq_codel.c     	fq_codel module for CLI lib
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Cong Wang <xiyou.wangcong@gmail.com>
  */
+
+#include "nl-default.h"
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/tc.h>
@@ -101,12 +97,12 @@ static struct nl_cli_tc_module fq_codel_module =
 	.tm_parse_argv		= fq_codel_parse_argv,
 };
 
-static void __init fq_codel_init(void)
+static void _nl_init fq_codel_init(void)
 {
 	nl_cli_tc_register(&fq_codel_module);
 }
 
-static void __exit fq_codel_exit(void)
+static void _nl_exit fq_codel_exit(void)
 {
 	nl_cli_tc_unregister(&fq_codel_module);
 }

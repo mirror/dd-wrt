@@ -1,10 +1,10 @@
 %{
- #include <netlink-private/netlink.h>
- #include <netlink-private/tc.h>
+ #include <linux/tc_ematch/tc_em_cmp.h>
+
  #include <netlink/netlink.h>
  #include <netlink/utils.h>
  #include <netlink/route/pktloc.h>
- #include <linux/tc_ematch/tc_em_cmp.h>
+
  #include "pktloc_syntax.h"
 
  int pktloc_get_column(yyscan_t);

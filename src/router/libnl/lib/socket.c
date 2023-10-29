@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/socket.c		Netlink Socket
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -28,22 +21,28 @@
  * ~~~~
  */
 
-#include "defs.h"
+#include "nl-default.h"
 
-#include "sys/socket.h"
+#include <fcntl.h>
+#include <sys/socket.h>
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/socket.h>
-#include <netlink-private/utils.h>
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/handlers.h>
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 
+#include "nl-core.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-aux-core/nl-core.h"
+
+#ifndef SOL_NETLINK
+#define SOL_NETLINK 270
+#endif
+
 static int default_cb = NL_CB_DEFAULT;
 
-static void __init init_default_cb(void)
+static void _nl_init init_default_cb(void)
 {
 	char *nlcb;
 
@@ -66,7 +65,8 @@ static NL_RW_LOCK(port_map_lock);
 
 static uint32_t generate_local_port(void)
 {
-	int i, j, n, m;
+	int i, j, m;
+	uint16_t n;
 	static uint16_t idx_state = 0;
 	uint32_t pid = getpid() & 0x3FFFFF;
 
@@ -98,7 +98,7 @@ static uint32_t generate_local_port(void)
 			continue;
 
 		for (m = 0; m < 32; m++) {
-			n = (n + 13) % 32;
+			n = (n + 13u) % 32u;
 			if (1UL & (used_ports_map[i] >> n))
 				continue;
 
@@ -111,7 +111,7 @@ static uint32_t generate_local_port(void)
 			nl_write_unlock(&port_map_lock);
 
 			/* ensure we don't return zero. */
-			pid = pid + (((uint32_t)n) << 22);
+			pid = pid + (n << 22);
 			return pid ? pid : 1024;
 		}
 	}
@@ -430,7 +430,7 @@ void nl_socket_set_local_port(struct nl_sock *sk, uint32_t port)
  * bitmask definitions for nl_join_groups() are likely to still
  * be present for backward compatibility reasons.
  *
- * @return 0 on sucess or a negative error code.
+ * @return 0 on success or a negative error code.
  */
 int nl_socket_add_memberships(struct nl_sock *sk, int group, ...)
 {
@@ -808,7 +808,7 @@ int nl_socket_modify_err_cb(struct nl_sock *sk, enum nl_cb_kind kind,
  * good default value.
  *
  * @note It is not required to call this function prior to nl_connect().
- * @return 0 on sucess or a negative error code.
+ * @return 0 on success or a negative error code.
  */
 int nl_socket_set_buffer_size(struct nl_sock *sk, int rxbuf, int txbuf)
 {

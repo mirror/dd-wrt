@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/qdisc.h         Queueing Disciplines
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -33,6 +27,8 @@ extern struct rtnl_qdisc *
 
 extern struct rtnl_qdisc *
 		rtnl_qdisc_get_by_parent(struct nl_cache *, int, uint32_t);
+extern struct rtnl_qdisc *rtnl_qdisc_get_by_kind(struct nl_cache *cache,
+						  int ifindex, char *kind);
 
 extern int	rtnl_qdisc_build_add_request(struct rtnl_qdisc *, int,
 					     struct nl_msg **);

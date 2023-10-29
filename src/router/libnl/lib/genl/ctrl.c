@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/genl/ctrl.c		Generic Netlink Controller
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -22,13 +15,18 @@
  * @{
  */
 
-#include <netlink-private/genl.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
 #include <netlink/genl/mngt.h>
 #include <netlink/genl/ctrl.h>
 #include <netlink/utils.h>
+
+#include "nl-genl.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/object-api.h"
 
 /** @cond SKIP */
 #define CTRL_VERSION		0x0001
@@ -524,6 +522,12 @@ static struct genl_ops genl_ops = {
 
 extern struct nl_object_ops genl_family_ops;
 
+#define GENL_FAMILY(id, name) \
+	{ \
+		{ id, NL_ACT_UNSPEC, name }, \
+		END_OF_MSGTYPES_LIST, \
+	}
+
 static struct nl_cache_ops genl_ctrl_ops = {
 	.co_name		= "genl/family",
 	.co_hdrsize		= GENL_HDRSIZE(0),
@@ -534,12 +538,12 @@ static struct nl_cache_ops genl_ctrl_ops = {
 	.co_obj_ops		= &genl_family_ops,
 };
 
-static void __init ctrl_init(void)
+static void _nl_init ctrl_init(void)
 {
 	genl_register(&genl_ctrl_ops);
 }
 
-static void __exit ctrl_exit(void)
+static void _nl_exit ctrl_exit(void)
 {
 	genl_unregister(&genl_ctrl_ops);
 }

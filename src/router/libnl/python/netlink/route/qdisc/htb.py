@@ -10,8 +10,9 @@ from __future__ import absolute_import
 
 from ... import core as netlink
 from ... import util as util
-from ..  import capi as capi
-from ..  import tc as tc
+from .. import capi as capi
+from .. import tc as tc
+
 
 class HTBQdisc(object):
     def __init__(self, qdisc):
@@ -27,24 +28,24 @@ class HTBQdisc(object):
         capi.rtnl_htb_set_defcls(self._qdisc._rtnl_qdisc, int(value))
 
     @property
-    @netlink.nlattr('r2q', type=int)
+    @netlink.nlattr("r2q", type=int)
     def r2q(self):
         return capi.rtnl_htb_get_rate2quantum(self._qdisc._rtnl_qdisc)
 
     @r2q.setter
     def r2q(self, value):
-        capi.rtnl_htb_get_rate2quantum(self._qdisc._rtnl_qdisc,
-                           int(value))
+        capi.rtnl_htb_get_rate2quantum(self._qdisc._rtnl_qdisc, int(value))
 
     def brief(self):
         fmt = util.MyFormatter(self)
 
-        ret = ' {s|default-class!k} {a|default_class}'
+        ret = " {s|default-class!k} {a|default_class}"
 
         if self.r2q:
-            ret += ' {s|r2q!k} {a|r2q}'
+            ret += " {s|r2q!k} {a|r2q}"
 
         return fmt.format(ret)
+
 
 class HTBClass(object):
     def __init__(self, cl):
@@ -120,26 +121,29 @@ class HTBClass(object):
     def brief(self):
         fmt = util.MyFormatter(self)
 
-        ret = ' {t|prio} {t|rate}'
+        ret = " {t|prio} {t|rate}"
 
         if self.rate != self.ceil:
-            ret += ' {s|borrow-up-to!k} {a|ceil}'
+            ret += " {s|borrow-up-to!k} {a|ceil}"
 
-        ret += ' {t|burst}'
+        ret += " {t|burst}"
 
         return fmt.format(ret)
 
     def details(self):
         fmt = util.MyFormatter(self)
 
-        return fmt.nl('\t{t|level} {t|quantum}')
+        return fmt.nl("\t{t|level} {t|quantum}")
+
 
 def init_qdisc(qdisc):
     qdisc.htb = HTBQdisc(qdisc)
     return qdisc.htb
 
+
 def init_class(cl):
     cl.htb = HTBClass(cl)
     return cl.htb
 
-#extern void rtnl_htb_set_quantum(struct rtnl_class *, uint32_t quantum);
+
+# extern void rtnl_htb_set_quantum(struct rtnl_class *, uint32_t quantum);

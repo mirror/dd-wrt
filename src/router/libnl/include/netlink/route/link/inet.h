@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/link/inet.h	INET Link Module
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2010 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -13,6 +7,7 @@
 #define NETLINK_LINK_INET_H_
 
 #include <netlink/netlink.h>
+#include <netlink/route/link.h>
 
 #ifdef __cplusplus
 extern "C" {

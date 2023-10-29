@@ -47,8 +47,26 @@
  * ~~~~
  */
 
+#include "nl-default.h"
+
 #include <netlink/xfrm/selector.h>
-#include <netlink-private/netlink.h>
+
+/* Selector, used as selector both on policy rules (SPD) and SAs. */
+struct xfrmnl_sel {
+	uint32_t        refcnt;
+	struct nl_addr* daddr;
+	struct nl_addr* saddr;
+	uint16_t        dport;
+	uint16_t        dport_mask;
+	uint16_t        sport;
+	uint16_t        sport_mask;
+	uint16_t        family;
+	uint8_t         prefixlen_d;
+	uint8_t         prefixlen_s;
+	uint8_t         proto;
+	int32_t         ifindex;
+	uint32_t        user;
+};
 
 static void sel_destroy(struct xfrmnl_sel* sel)
 {

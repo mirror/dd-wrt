@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/netfilter/log.h	Netfilter Log
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
@@ -36,6 +30,7 @@ enum nfnl_log_copy_mode {
 enum nfnl_log_flags {
 	NFNL_LOG_FLAG_SEQ		= 0x1,
 	NFNL_LOG_FLAG_SEQ_GLOBAL	= 0x2,
+	NFNL_LOG_FLAG_CONNTRACK		= 0x4,
 };
 
 /* General */

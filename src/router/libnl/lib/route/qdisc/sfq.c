@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/sfq.c		SFQ Qdisc
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -23,15 +17,25 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/qdisc/sfq.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_sfq {
+	uint32_t qs_quantum;
+	uint32_t qs_perturb;
+	uint32_t qs_limit;
+	uint32_t qs_divisor;
+	uint32_t qs_flows;
+	uint32_t qs_mask;
+};
+
 #define SCH_SFQ_ATTR_QUANTUM	0x01
 #define SCH_SFQ_ATTR_PERTURB	0x02
 #define SCH_SFQ_ATTR_LIMIT	0x04
@@ -243,12 +247,12 @@ static struct rtnl_tc_ops sfq_ops = {
 	.to_msg_fill		= sfq_msg_fill,
 };
 
-static void __init sfq_init(void)
+static void _nl_init sfq_init(void)
 {
 	rtnl_tc_register(&sfq_ops);
 }
 
-static void __exit sfq_exit(void)
+static void _nl_exit sfq_exit(void)
 {
 	rtnl_tc_unregister(&sfq_ops);
 }

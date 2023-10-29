@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/rule.c          Routing Rules
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2010 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -17,15 +10,44 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/fib_rules.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/rule.h>
-#include <inttypes.h>
-#include <linux/fib_rules.h>
+
+#include "nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 /** @cond SKIP */
+struct rtnl_rule {
+	NLHDR_COMMON
+	uint8_t r_family;
+	uint8_t r_action;
+	uint8_t r_dsfield; /* ipv4 only */
+	uint8_t r_l3mdev;
+	uint8_t r_protocol; /* protocol that installed rule */
+	uint8_t r_ip_proto; /* IP/IPv6 protocol */
+	uint32_t r_table;
+	uint32_t r_flags;
+	uint32_t r_prio;
+	uint32_t r_mark;
+	uint32_t r_mask;
+	uint32_t r_goto;
+	uint32_t r_flow; /* ipv4 only */
+	struct nl_addr *r_src;
+	struct nl_addr *r_dst;
+	char r_iifname[IFNAMSIZ];
+	char r_oifname[IFNAMSIZ];
+
+	struct fib_rule_port_range r_sport;
+	struct fib_rule_port_range r_dport;
+};
+
 #define RULE_ATTR_FAMILY	0x000001
 #define RULE_ATTR_TABLE		0x000002
 #define RULE_ATTR_ACTION	0x000004
@@ -65,6 +87,9 @@ static int rule_clone(struct nl_object *_dst, struct nl_object *_src)
 {
 	struct rtnl_rule *dst = nl_object_priv(_dst);
 	struct rtnl_rule *src = nl_object_priv(_src);
+
+	dst->r_src = NULL;
+	dst->r_dst = NULL;
 
 	if (src->r_src)
 		if (!(dst->r_src = nl_addr_clone(src->r_src)))
@@ -324,23 +349,21 @@ static uint64_t rule_compare(struct nl_object *_a, struct nl_object *_b,
 	struct rtnl_rule *b = (struct rtnl_rule *) _b;
 	uint64_t diff = 0;
 
-#define RULE_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, RULE_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= RULE_DIFF(FAMILY,	a->r_family != b->r_family);
-	diff |= RULE_DIFF(TABLE,	a->r_table != b->r_table);
-	diff |= RULE_DIFF(ACTION,	a->r_action != b->r_action);
-	diff |= RULE_DIFF(IIFNAME,	strcmp(a->r_iifname, b->r_iifname));
-	diff |= RULE_DIFF(OIFNAME,	strcmp(a->r_oifname, b->r_oifname));
-	diff |= RULE_DIFF(PRIO,		a->r_prio != b->r_prio);
-	diff |= RULE_DIFF(MARK,		a->r_mark != b->r_mark);
-	diff |= RULE_DIFF(MASK,		a->r_mask != b->r_mask);
-	diff |= RULE_DIFF(GOTO,		a->r_goto != b->r_goto);
-	diff |= RULE_DIFF(SRC,		nl_addr_cmp(a->r_src, b->r_src));
-	diff |= RULE_DIFF(DST,		nl_addr_cmp(a->r_dst, b->r_dst));
-	diff |= RULE_DIFF(DSFIELD,	a->r_dsfield != b->r_dsfield);
-	diff |= RULE_DIFF(FLOW,		a->r_flow != b->r_flow);
-	
-#undef RULE_DIFF
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(RULE_ATTR_FAMILY, a->r_family != b->r_family);
+	diff |= _DIFF(RULE_ATTR_TABLE, a->r_table != b->r_table);
+	diff |= _DIFF(RULE_ATTR_ACTION, a->r_action != b->r_action);
+	diff |= _DIFF(RULE_ATTR_IIFNAME, strcmp(a->r_iifname, b->r_iifname));
+	diff |= _DIFF(RULE_ATTR_OIFNAME, strcmp(a->r_oifname, b->r_oifname));
+	diff |= _DIFF(RULE_ATTR_PRIO, a->r_prio != b->r_prio);
+	diff |= _DIFF(RULE_ATTR_MARK, a->r_mark != b->r_mark);
+	diff |= _DIFF(RULE_ATTR_MASK, a->r_mask != b->r_mask);
+	diff |= _DIFF(RULE_ATTR_GOTO, a->r_goto != b->r_goto);
+	diff |= _DIFF(RULE_ATTR_SRC, nl_addr_cmp(a->r_src, b->r_src));
+	diff |= _DIFF(RULE_ATTR_DST, nl_addr_cmp(a->r_dst, b->r_dst));
+	diff |= _DIFF(RULE_ATTR_DSFIELD, a->r_dsfield != b->r_dsfield);
+	diff |= _DIFF(RULE_ATTR_FLOW, a->r_flow != b->r_flow);
+#undef _DIFF
 
 	return diff;
 }
@@ -542,7 +565,7 @@ int rtnl_rule_build_add_request(struct rtnl_rule *tmpl, int flags,
  * sends the request to the kernel and waits for the next ACK to be
  * received and thus blocks until the request has been fullfilled.
  *
- * @return 0 on sucess or a negative error if an error occured.
+ * @return 0 on success or a negative error if an error occured.
  */
 int rtnl_rule_add(struct nl_sock *sk, struct rtnl_rule *tmpl, int flags)
 {
@@ -597,7 +620,7 @@ int rtnl_rule_build_delete_request(struct rtnl_rule *rule, int flags,
  * sends the request to the kernel and waits for the next ACK to be
  * received and thus blocks until the request has been fullfilled.
  *
- * @return 0 on sucess or a negative error if an error occured.
+ * @return 0 on success or a negative error if an error occured.
  */
 int rtnl_rule_delete(struct nl_sock *sk, struct rtnl_rule *rule, int flags)
 {
@@ -985,12 +1008,12 @@ static struct nl_cache_ops rtnl_rule_ops = {
 	.co_groups		= rule_groups,
 };
 
-static void __init rule_init(void)
+static void _nl_init rule_init(void)
 {
 	nl_cache_mngt_register(&rtnl_rule_ops);
 }
 
-static void __exit rule_exit(void)
+static void _nl_exit rule_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_rule_ops);
 }

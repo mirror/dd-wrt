@@ -1,3 +1,9 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
 libnl_3 {
 global:
 	nl_cli_addr_alloc;
@@ -115,3 +121,9 @@ global:
 	nl_cli_link_alloc_cache_flags;
 	nl_cli_link_alloc_cache_family_flags;
 } libnl_3;
+
+libnl_3_8 {
+global:
+	nl_cli_nh_alloc;
+	nl_cli_nh_alloc_cache;
+} libnl_3_2_28;

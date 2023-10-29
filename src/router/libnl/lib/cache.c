@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/cache.c		Caching Module
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -50,12 +43,19 @@
  * ~~~~
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/object.h>
 #include <netlink/hashtable.h>
 #include <netlink/utils.h>
+
+#include "nl-core.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-aux-core/nl-core.h"
 
 /**
  * @name Access Functions
@@ -757,7 +757,10 @@ static int __nl_cache_pickup(struct nl_sock *sk, struct nl_cache *cache,
  * @arg cache		Cache to put items into.
  *
  * Waits for netlink messages to arrive, parses them and puts them into
- * the specified cache.
+ * the specified cache. If an old object with same key attributes is
+ * present in the cache, it is replaced with the new object.
+ * If the old object type supports an update operation, an update is
+ * attempted before a replace.
  *
  * @return 0 on success or a negative error code.
  */
@@ -772,10 +775,7 @@ int nl_cache_pickup_checkdup(struct nl_sock *sk, struct nl_cache *cache)
  * @arg cache		Cache to put items into.
  *
  * Waits for netlink messages to arrive, parses them and puts them into
- * the specified cache. If an old object with same key attributes is
- * present in the cache, it is replaced with the new object.
- * If the old object type supports an update operation, an update is
- * attempted before a replace.
+ * the specified cache.
  *
  * @return 0 on success or a negative error code.
  */
@@ -1208,7 +1208,7 @@ void nl_cache_dump(struct nl_cache *cache, struct nl_dump_params *params)
 /**
  * Dump all elements of a cache (filtered).
  * @arg cache		cache to dump
- * @arg params		dumping parameters (optional)
+ * @arg params		dumping parameters
  * @arg filter		filter object
  *
  * Dumps all elements of the \a cache to the file descriptor \a fd
@@ -1218,12 +1218,29 @@ void nl_cache_dump_filter(struct nl_cache *cache,
 			  struct nl_dump_params *params,
 			  struct nl_object *filter)
 {
-	int type = params ? params->dp_type : NL_DUMP_DETAILS;
+	struct nl_dump_params params_copy;
 	struct nl_object_ops *ops;
 	struct nl_object *obj;
+	int type;
 
 	NL_DBG(2, "Dumping cache %p <%s> with filter %p\n",
 	       cache, nl_cache_name(cache), filter);
+
+	if (!params) {
+		/* It doesn't really make sense that @params is an optional parameter. In the
+		 * past, nl_cache_dump() was documented that the @params would be optional, so
+		 * try to save it.
+		 *
+		 * Note that this still isn't useful, because we don't set any dump option.
+		 * It only exists not to crash applications that wrongly pass %NULL here. */
+		_nl_assert_not_reached ();
+		params_copy = (struct nl_dump_params) {
+			.dp_type = NL_DUMP_DETAILS,
+		};
+		params = &params_copy;
+	}
+
+	type = params->dp_type;
 
 	if (type > NL_DUMP_MAX || type < 0)
 		BUG();
@@ -1235,7 +1252,7 @@ void nl_cache_dump_filter(struct nl_cache *cache,
 	if (!ops->oo_dump[type])
 		return;
 
-	if (params && params->dp_buf)
+	if (params->dp_buf)
 		memset(params->dp_buf, 0, params->dp_buflen);
 
 	nl_list_for_each_entry(obj, &cache->c_items, ce_list) {

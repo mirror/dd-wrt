@@ -1,19 +1,14 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * src/nl-link-ifindex2name.c     Transform a interface index to its name
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2009 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink/cli/utils.h>
-#include <netlink/cli/link.h>
+#include "nl-default.h"
 
 #include <linux/netlink.h>
+
+#include <netlink/cli/utils.h>
+#include <netlink/cli/link.h>
 
 static void print_usage(void)
 {

@@ -1,13 +1,15 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * test/test-complex-HTB-with-hash-filters.c     Add HTB qdisc, HTB classes and creates some hash filters
- *
- *      This library is free software; you can redistribute it and/or
- *      modify it under the terms of the GNU Lesser General Public
- *      License as published by the Free Software Foundation version 2.1
- *      of the License.
- *
  * Copyright (c) 2011 Adrian Ban <adrian.ban@mantech.ro>
  */
+
+#include "nl-default.h"
+
+#include <stdio.h>
+
+#include <linux/if_ether.h>
+#include <linux/pkt_cls.h>
+#include <linux/netlink.h>
 
 #include <netlink/route/link.h>
 #include <netlink/route/tc.h>
@@ -17,17 +19,7 @@
 #include <netlink/route/cls/u32.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/class.h>
-#include <linux/if_ether.h>
-#include <linux/pkt_cls.h>
-
 #include <netlink/attr.h>
-//#include "include/rtnl_u32.h"
-
-#include <stdio.h>
-#include <string.h>
-//#include "include/rtnl_u32_addon.h"
-
-#include <linux/netlink.h>
 
 #define 	TC_HANDLE(maj, min)   (TC_H_MAJ((maj) << 16) | TC_H_MIN(min))
 

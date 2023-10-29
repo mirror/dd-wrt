@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/qdisc/blackhole.c	Blackhole Qdisc
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2011 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -15,21 +9,23 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
-#include <netlink-private/route/tc-api.h>
+
+#include "tc-api.h"
 
 static struct rtnl_tc_ops blackhole_ops = {
 	.to_kind		= "blackhole",
 	.to_type		= RTNL_TC_TYPE_QDISC,
 };
 
-static void __init blackhole_init(void)
+static void _nl_init blackhole_init(void)
 {
 	rtnl_tc_register(&blackhole_ops);
 }
 
-static void __exit blackhole_exit(void)
+static void _nl_exit blackhole_exit(void)
 {
 	rtnl_tc_unregister(&blackhole_ops);
 }

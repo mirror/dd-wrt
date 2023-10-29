@@ -1,18 +1,31 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/idiag/idiagnl_req_obj.c Inet Diag Request Object
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2013 Sassano Systems LLC <joe@sassanosystems.com>
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink/idiag/req.h>
+#include "nl-default.h"
+
 #include <linux/inet_diag.h>
+
+#include <netlink/idiag/req.h>
+#include <netlink/idiag/idiagnl.h>
+#include <netlink/data.h>
+#include <netlink/addr.h>
+#include <netlink/msg.h>
+
+#include "nl-priv-dynamic-core/object-api.h"
+
+struct idiagnl_req {
+	NLHDR_COMMON
+
+	uint8_t			idiag_family;
+	uint8_t			idiag_ext;
+	struct nl_addr *	idiag_src;
+	struct nl_addr *	idiag_dst;
+	uint32_t		idiag_ifindex;
+	uint32_t		idiag_states;
+	uint32_t		idiag_dbs;
+};
 
 /**
  * @ingroup idiag
@@ -175,6 +188,9 @@ static int idiagnl_req_clone(struct nl_object *_dst, struct nl_object *_src)
 {
 	struct idiagnl_req *dst = (struct idiagnl_req *) _dst;
 	struct idiagnl_req *src = (struct idiagnl_req *) _src;
+
+	src->idiag_src = NULL;
+	src->idiag_dst = NULL;
 
 	if (src->idiag_src)
 		if (!(dst->idiag_src = nl_addr_clone(src->idiag_src)))

@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/object.c		Generic Cacheable Object
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -28,11 +21,18 @@
  * ~~~~
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/object.h>
 #include <netlink/utils.h>
+
+#include "nl-core.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-aux-core/nl-core.h"
 
 static inline struct nl_object_ops *obj_ops(struct nl_object *obj)
 {
@@ -133,6 +133,11 @@ struct nl_object *nl_object_clone(struct nl_object *obj)
 
 	if (size)
 		memcpy((char *)new + doff, (char *)obj + doff, size);
+
+	/* Note that the base implementation already initializes @new via memcpy().
+	 * That means, simple fields don't need to be handled via oo_clone().
+	 * However, this is only a shallow-copy, so oo_clone() MUST fix all
+	 * pointer values accordingly. */
 
 	if (ops->oo_clone) {
 		if (ops->oo_clone(new, obj) < 0) {
@@ -313,38 +318,42 @@ void nl_object_dump_buf(struct nl_object *obj, char *buf, size_t len)
  */
 int nl_object_identical(struct nl_object *a, struct nl_object *b)
 {
-	struct nl_object_ops *ops = obj_ops(a);
-	uint32_t req_attrs;
+	struct nl_object_ops *ops;
+	uint64_t req_attrs_a;
+	uint64_t req_attrs_b;
+
+	if (a == b)
+		return 1;
 
 	/* Both objects must be of same type */
+	ops = obj_ops(a);
 	if (ops != obj_ops(b))
-		return 0;
-
-	if (ops->oo_id_attrs_get) {
-		int req_attrs_a = ops->oo_id_attrs_get(a);
-		int req_attrs_b = ops->oo_id_attrs_get(b);
-		if (req_attrs_a != req_attrs_b)
-			return 0;
-		req_attrs = req_attrs_a;
-	} else if (ops->oo_id_attrs) {
-		req_attrs = ops->oo_id_attrs;
-	} else {
-		req_attrs = 0xFFFFFFFF;
-	}
-	if (req_attrs == 0xFFFFFFFF)
-		req_attrs = a->ce_mask & b->ce_mask;
-
-	/* Both objects must provide all required attributes to uniquely
-	 * identify an object */
-	if ((a->ce_mask & req_attrs) != req_attrs ||
-	    (b->ce_mask & req_attrs) != req_attrs)
 		return 0;
 
 	/* Can't judge unless we can compare */
 	if (ops->oo_compare == NULL)
 		return 0;
 
-	return !(ops->oo_compare(a, b, req_attrs, ID_COMPARISON));
+	if (ops->oo_id_attrs_get) {
+		req_attrs_a = ops->oo_id_attrs_get(a);
+		req_attrs_b = ops->oo_id_attrs_get(b);
+	} else if (ops->oo_id_attrs) {
+		req_attrs_a = ops->oo_id_attrs;
+		req_attrs_b = req_attrs_a;
+	} else {
+		req_attrs_a = UINT64_MAX;
+		req_attrs_b = req_attrs_a;
+	}
+
+	req_attrs_a &= a->ce_mask;
+	req_attrs_b &= b->ce_mask;
+
+	/* Both objects must provide all required attributes to uniquely
+	 * identify an object */
+	if (req_attrs_a != req_attrs_b)
+		return 0;
+
+	return !(ops->oo_compare(a, b, req_attrs_a, ID_COMPARISON));
 }
 
 /**
@@ -366,7 +375,7 @@ uint64_t nl_object_diff64(struct nl_object *a, struct nl_object *b)
 	if (ops != obj_ops(b) || ops->oo_compare == NULL)
 		return UINT64_MAX;
 
-	return ops->oo_compare(a, b, ~0, 0);
+	return ops->oo_compare(a, b, UINT64_MAX, 0);
 }
 
 /**
