@@ -396,8 +396,9 @@ obj-$(CONFIG_CAKE) += fq_codel_fast
 endif
 obj-$(CONFIG_SISPMCTL) += comgt sispmctl
 ifneq ($(KERNELVERSION),6.1)
-obj-$(CONFIG_APFS) += apfs apfsprogs
+obj-$(CONFIG_APFS) += apfs
 endif
+obj-$(CONFIG_APFS) += apfsprogs
 obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre libucontext openssl zlib nginx
 ifneq ($(KERNELVERSION),6.1)
