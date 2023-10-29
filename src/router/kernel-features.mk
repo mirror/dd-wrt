@@ -199,6 +199,8 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_OPENVPN)" = "y" ]; then \
 		sed -i 's/\# CONFIG_TUN is not set/CONFIG_TUN=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20POLY1305 is not set/CONFIG_CRYPTO_CHACHA20POLY1305=y/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_ATH9K)" = "y" ]; then \
 		sed -i 's/\# CONFIG_RELAY is not set/CONFIG_RELAY=y/g' $(LINUXDIR)/.config; \
