@@ -817,13 +817,7 @@ if test "$enable_dco" != "no"; then
 				dnl
 				dnl Include generic netlink library used to talk to ovpn-dco
 				dnl
-				PKG_CHECK_MODULES([LIBNL_GENL],
-					  [libnl-genl-3.0 >= 3.4.0],
-					  [have_libnl="yes"],
-					  [
-					   AC_MSG_ERROR([libnl-genl-3.0 package not found or too old. Is the development package and pkg-config installed? Must be version 3.4.0 or newer for DCO])
-					  ]
-				)
+				have_libnl="yes"
 				CFLAGS="${CFLAGS} ${LIBNL_GENL_CFLAGS}"
 				LIBS="${LIBS} ${LIBNL_GENL_LIBS}"
 
