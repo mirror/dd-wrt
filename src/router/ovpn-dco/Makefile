@@ -57,7 +57,7 @@ clean:
 	$(MAKE) -C tests clean
 
 install: config
-	install -v -m 644 -D drivers/net/ovpn-dco/ovpn-dco-v2.ko $(INSTALLDIR)/openvpn/lib/modules/$(KERNEL_VERSION)/vpn-dco-v2.ko
+	install -v -m 644 -D drivers/net/ovpn-dco/ovpn-dco-v2.ko $(INSTALLDIR)/openvpn/lib/modules/$(KERNEL_VERSION)/ovpn-dco-v2.ko
 
 config:
 	$(PWD)/gen-compat-autoconf.sh $(PWD)/compat-autoconf.h
