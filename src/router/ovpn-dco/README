@@ -1,0 +1,114 @@
+== OpenVPN Data Channel Offload in the linux kernel (ovpn-dco) ==
+
+This repository contains a linux kernel module implementing the data channel of
+the OpenVPN protocol in the linux kernel.
+
+This kernel module allows OpenVPN to offload any data plane management to the
+linux kernel, thus allowing it to exploit any Linux low level API, while avoiding
+expensive and slow payload transfer between kernel space and user space.
+
+** NOTE **
+ovpn-dco is currently under heavy development, therefore neither its userspace API
+nor the code itself is considered stable and may change radically over time.
+
+** Kernel compatibility **
+ovpn-dco is developed against the latest David Miller's net-next tree.
+However, a compat layer is provided to allow people to compile ovpn-dco
+against older kernel versions.
+
+
+== License ==
+
+ovpn-dco is released under the terms of the GPLv2 license.
+
+
+== Submitting patches ==
+
+Patches for ovpn-dco can be submitted to the openvpn-devel mailing list at
+openvpn-devel@lists.sourceforge.net
+
+The patch subject *must* start with "ovpn-dco:". This way patches for this
+project can easily be dinstinguished from patches for other projects.
+At the same time it is part of the kernel guidelines to have subjects starting
+with a prefix identifying the component being modified (ovpn-dco in this case).
+
+To generate patches, please use git-format-patch and git-send-email.
+
+
+== Building ==
+
+To build the ovpn-dco kernel module, just type:
+
+$ make
+
+in the root folder.
+The Makefile will autodetect your running kernel and will try to use its
+headers to get the code compiled.
+
+If you want to build ovpn-dco against a kernel different from the one
+running on the host, run:
+
+$ make KERNEL_SRC=/path/to/the/kernel/tree
+
+The control is passed to the kernel Makefile, therefore any kernel Makefile
+argument can be specified on the command line and it will be passed
+automatically.
+
+Once done building, executing the command:
+
+$ make install
+
+will install the ovpn-dco.ko kernel module in the updates/ subfolder of
+the kernel modules directory on your system.
+It normally means `/lib/modules/$(uname -r)/updates/`.
+
+
+== Testing ==
+
+A basic pre-shared-key client (called ovpn-cli) is also provided in the
+tests/ folder.
+It can be compiled by typing:
+
+$ make tests
+
+One way to test ovpn-dco is to run multiple tun interfaces on the same hosts
+associated with different network namespaces.
+A script that takes care of setting up 2 NS and 2 interfaces is provided at
+`tests/netns-test.sh`.
+
+By running this script from the tests folder as follows:
+
+$ cd tests
+$ ./netns-test.sh
+
+the host will configure a basic tunnel using a pre-shared key (the ovpn-cli
+binary is used for this).
+
+The 2 namespaces are named `peer0` and `peer1`. Each interface is respectively
+configured with `5.5.5.1/24` and `5.5.5.2/24`.
+
+At this point it is possible to make a basic ping test by executing:
+
+$ ip netns exec peer0 ping 5.5.5.2
+
+If the command above works, it means that the 2 interfaces are exchanging
+traffic properly over the ovpn link.
+
+Note: running kernel must have network namespaces support compiled in, but it
+is fairly standard on modern Linux distros.
+
+For reference, a sample kernel config file is provided in tests/qemu/config.net-next.
+This config file is used for compiling a minimal kernel based on the net-next tree.
+
+
+To run net-next, it's better to rely on any VM, so that the developer does not need
+to worry about bugs or spurious kernel crashes. For this reason qemu is suggested
+(but any other VM is fine too). At `tests/qemu/launch_deb2.sh` a sample script
+can be found that shows how qemu can be launched for testing.
+
+
+== Limitations ==
+
+This is a list of current limitations which are planned to be removed as we move forward:
+* Only AEAD mode and 'none' (with no auth) supported
+* Only AES-GCM and CHACHA20POLY1305 ciphers supported

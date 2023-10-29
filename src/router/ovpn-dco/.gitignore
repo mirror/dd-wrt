@@ -1,0 +1,16 @@
+/.cache.mk
+/compat-autoconf.h
+/compat-autoconf.h.tmp
+/modules.order
+/Module.symvers
+/drivers/net/ovpn-dco/ovpn-dco.ko
+/drivers/net/ovpn-dco/.ovpn-dco.ko.cmd
+/drivers/net/ovpn-dco/ovpn-dco.mod.c
+/drivers/net/ovpn-dco/.ovpn-dco.mod.cmd
+/drivers/net/ovpn-dco/ovpn-dco.mod
+/drivers/net/ovpn-dco/modules.order
+/drivers/net/ovpn-dco/*.o
+/drivers/net/ovpn-dco/.*.cmd
+/.tmp_versions
+/tests/ovpn-cli
+/.*.cmd
