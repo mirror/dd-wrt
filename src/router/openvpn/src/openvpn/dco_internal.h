@@ -45,6 +45,11 @@ dco_get_cipher(const char *cipher)
     {
         return OVPN_CIPHER_ALG_AES_GCM;
     }
+    else if (strcmp(cipher, "AES-256-CCM") == 0 || strcmp(cipher, "AES-128-CCM") == 0
+        || strcmp(cipher, "AES-192-CCM") == 0)
+    {
+        return OVPN_CIPHER_ALG_AES_CCM;
+    }
     else if (strcmp(cipher, "CHACHA20-POLY1305") == 0)
     {
         return OVPN_CIPHER_ALG_CHACHA20_POLY1305;
