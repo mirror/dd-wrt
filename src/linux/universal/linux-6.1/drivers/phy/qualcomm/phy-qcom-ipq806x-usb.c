@@ -411,10 +411,10 @@ static int qcom_ipq806x_usb_ss_phy_init(struct phy *phy)
 	if (ret)
 		goto err_phy_trans;
 
-	data = 0;
-	data &= ~SSPHY_MPLL_MASK;
-	data |= SSPHY_MPLL(phy_dwc3->mpll);
-	usb_ss_write_phycreg(phy_dwc3, 0x30, data);
+//	data = 0;
+//	data &= ~SSPHY_MPLL_MASK;
+//	data |= SSPHY_MPLL(phy_dwc3->mpll);
+	usb_ss_write_phycreg(phy_dwc3, 0x30, phy_dwc3->mpll);
 
 	/*
 	 * Set the QSCRATCH PHY_PARAM_CTRL1 parameters as follows
