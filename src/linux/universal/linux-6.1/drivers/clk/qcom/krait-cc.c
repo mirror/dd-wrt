@@ -26,7 +26,7 @@ enum {
 };
 
 #define QSB_RATE	225000000
-#define AUX_RATE	384000000
+#define AUX_RATE	800000000
 #define HFPLL_RATE	600000000
 
 static unsigned int sec_mux_map[] = {
