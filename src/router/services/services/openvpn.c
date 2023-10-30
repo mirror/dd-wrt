@@ -789,6 +789,7 @@ void start_openvpn(void)
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
 	eval("modprobe","gcm");
+	eval("modprobe","ccm");
 	eval("modprobe","chacha20poly1305");
 	eval("modprobe","ovpn-dco-v2");
 	insmod("tun");
