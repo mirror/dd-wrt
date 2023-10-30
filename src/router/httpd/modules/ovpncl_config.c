@@ -66,7 +66,7 @@ static int make_ovpncl_config(char *ovnpcl_fname) {
 		dd_loginfo("openvpncl_config", "Could not open %s\n", ovnpcl_fname);
 		return -1;
 	} else {
-		fprintf(f1, "#This is beta build 0.9, use it with care\n");
+		fprintf(f1, "#This is beta build 0.91, use it with care\n");
 		fprintf(f1, "#OpenVPN client config generated, check if settings are correct see: %s, made by %s\n", "https://forum.dd-wrt.com/phpBB2/viewtopic.php?t=327398","egc");
 		fprintf(f1, "client\n#windows-driver wintun     # For Windows 10 and OpenVPN 2.5 and higher\nverb 3\nnobind\npersist-key\npersist-tun\nfloat\nremote-cert-tls server\nauth-nocache\n");
 		fprintf(f1, "tun-mtu 1400    # lowered default can be commented to let OpenVPN decide\n");
@@ -116,7 +116,7 @@ static int make_ovpncl_config(char *ovnpcl_fname) {
 				fprintf(f1, "<secret>\n%s\n</secret>\n", nvram_safe_get("openvpn_static"));
 				break;
 		}
-		if (nvram_invmatch("openvpn_tlsauth", "")) {
+		if (nvram_invmatch("openvpn_ca", "")) {
 			fprintf(f1, "<ca>\n%s\n</ca>\n", nvram_safe_get("openvpn_ca"));
 		}
 		if (nvram_invmatch("openvpn_key", "")) {
