@@ -18,6 +18,7 @@
 #include <linux/printk.h>
 
 #define AUTH_TAG_SIZE	16
+#define MAX_IV_SIZE	16
 
 static int ovpn_aead_encap_overhead(const struct ovpn_crypto_key_slot *ks)
 {
@@ -26,15 +27,60 @@ static int ovpn_aead_encap_overhead(const struct ovpn_crypto_key_slot *ks)
 		crypto_aead_authsize(ks->encrypt);	/* Auth Tag */
 }
 
+static u8 *ovpn_aead_iv_set(struct ovpn_crypto_key_slot *ks, u8 iv[MAX_IV_SIZE])
+{
+	u8 *iv_ptr;
+
+	/* In AEAD mode OpenVPN creates a nonce of 12 bytes made up of 4 bytes packet ID
+	 * concatenated with 8 bytes key material coming from userspace.
+	 *
+	 * For AES-GCM and CHACHAPOLY the IV is 12 bytes and coincides with the OpenVPN nonce.
+	 * For AES-CCM the IV is 16 bytes long and is constructed following the instructions
+	 * in RFC3610
+	 */
+
+	switch(ks->alg) {
+	case OVPN_CIPHER_ALG_AES_GCM:
+		BUILD_BUG_ON(MAX_IV_SIZE < 12);
+
+		iv_ptr = iv;
+		break;
+	case OVPN_CIPHER_ALG_CHACHA20_POLY1305:
+		BUILD_BUG_ON(MAX_IV_SIZE < 12);
+
+		iv_ptr = iv;
+		break;
+	case OVPN_CIPHER_ALG_AES_CCM:
+		BUILD_BUG_ON(MAX_IV_SIZE < 16);
+
+		/* For CCM, the API expects a 16-byte IV.
+		 *
+		 * The first octect contains L' as per RFC3610, which is the size of the length
+		 * field in octects minus 1.
+		 *
+		 * Since we have a nonce of 12bytes, we can allocate 3 octects for the length field,
+		 * that are octects 13, 14 and 15 of iv[].
+		 * In octects [1..12] we copy the OpenVPN nonce that will be used by the algorithm.
+		 */
+		iv[0] = 2;
+		iv_ptr = iv + 1;
+		break;
+	default:
+		return NULL;
+	}
+
+	return iv_ptr;
+}
+
 int ovpn_aead_encrypt(struct ovpn_crypto_key_slot *ks, struct sk_buff *skb, u32 peer_id)
 {
 	const unsigned int tag_size = crypto_aead_authsize(ks->encrypt);
 	const unsigned int head_size = ovpn_aead_encap_overhead(ks);
 	struct scatterlist sg[MAX_SKB_FRAGS + 2];
+	u8 *iv_ptr, iv[MAX_IV_SIZE] = { 0 };
 	DECLARE_CRYPTO_WAIT(wait);
 	struct aead_request *req;
 	struct sk_buff *trailer;
-	u8 iv[NONCE_SIZE];
 	int nfrags, ret;
 	u32 pktid, op;
 
@@ -86,14 +132,21 @@ int ovpn_aead_encrypt(struct ovpn_crypto_key_slot *ks, struct sk_buff *skb, u32 
 	 */
 	ret = ovpn_pktid_xmit_next(&ks->pid_xmit, &pktid);
 	if (unlikely(ret < 0))
-		goto free_req;
+		return ret;
 
-	/* concat 4 bytes packet id and 8 bytes nonce tail into 12 bytes nonce */
-	ovpn_pktid_aead_write(pktid, &ks->nonce_tail_xmit, iv);
+	/* construct the nonce by combining pkt ID and userspace data.
+	 * iv_ptr is the address where the nonce has to start.
+	 */
+	iv_ptr = ovpn_aead_iv_set(ks, iv);
+	if (unlikely(!iv_ptr)) {
+		ret = -EOPNOTSUPP;
+		goto free_req;
+	}
+	ovpn_pktid_aead_write(pktid, &ks->nonce_tail_xmit, iv_ptr);
 
 	/* make space for packet id and push it to the front */
 	__skb_push(skb, NONCE_WIRE_SIZE);
-	memcpy(skb->data, iv, NONCE_WIRE_SIZE);
+	memcpy(skb->data, iv_ptr, NONCE_WIRE_SIZE);
 
 	/* add packet op as head of additional data */
 	op = ovpn_opcode_compose(OVPN_DATA_V2, ks->key_id, peer_id);
@@ -125,9 +178,9 @@ free_req:
 int ovpn_aead_decrypt(struct ovpn_crypto_key_slot *ks, struct sk_buff *skb)
 {
 	const unsigned int tag_size = crypto_aead_authsize(ks->decrypt);
+	u8 *sg_data, *iv_ptr, iv[MAX_IV_SIZE] = { 0 };
 	struct scatterlist sg[MAX_SKB_FRAGS + 2];
 	int ret, payload_len, nfrags;
-	u8 *sg_data, iv[NONCE_SIZE];
 	unsigned int payload_offset;
 	DECLARE_CRYPTO_WAIT(wait);
 	struct aead_request *req;
@@ -182,9 +235,14 @@ int ovpn_aead_decrypt(struct ovpn_crypto_key_slot *ks, struct sk_buff *skb)
 	/* append auth_tag onto scatterlist */
 	sg_set_buf(sg + nfrags + 1, skb->data + sg_len, tag_size);
 
+	iv_ptr = ovpn_aead_iv_set(ks, iv);
+	if (unlikely(!iv_ptr)) {
+		ret = -EOPNOTSUPP;
+		goto free_req;
+	}
 	/* copy nonce into IV buffer */
-	memcpy(iv, skb->data + OVPN_OP_SIZE_V2, NONCE_WIRE_SIZE);
-	memcpy(iv + NONCE_WIRE_SIZE, ks->nonce_tail_recv.u8,
+	memcpy(iv_ptr, skb->data + OVPN_OP_SIZE_V2, NONCE_WIRE_SIZE);
+	memcpy(iv_ptr + NONCE_WIRE_SIZE, ks->nonce_tail_recv.u8,
 	       sizeof(struct ovpn_nonce_tail));
 
 	/* setup async crypto operation */
@@ -244,13 +302,6 @@ struct crypto_aead *ovpn_aead_init(const char *title, const char *alg_name,
 		goto error;
 	}
 
-	/* basic AEAD assumption */
-	if (crypto_aead_ivsize(aead) != NONCE_SIZE) {
-		pr_err("%s IV size must be %d\n", title, NONCE_SIZE);
-		ret = -EINVAL;
-		goto error;
-	}
-
 	pr_debug("********* Cipher %s (%s)\n", alg_name, title);
 	pr_debug("*** IV size=%u\n", crypto_aead_ivsize(aead));
 	pr_debug("*** req size=%u\n", crypto_aead_reqsize(aead));
@@ -293,12 +344,21 @@ ovpn_aead_crypto_key_slot_init(enum ovpn_cipher_alg alg,
 
 	/* validate crypto alg */
 	switch (alg) {
+#if IS_ENABLED(CONFIG_CRYPTO_GCM)
 	case OVPN_CIPHER_ALG_AES_GCM:
 		alg_name = "gcm(aes)";
 		break;
+#endif
+#if IS_ENABLED(CONFIG_CRYPTO_CHACHA20POLY1305)
 	case OVPN_CIPHER_ALG_CHACHA20_POLY1305:
 		alg_name = "rfc7539(chacha20,poly1305)";
 		break;
+#endif
+#if IS_ENABLED(CONFIG_CRYPTO_CCM)
+	case OVPN_CIPHER_ALG_AES_CCM:
+		alg_name = "ccm(aes)";
+		break;
+#endif
 	default:
 		return ERR_PTR(-EOPNOTSUPP);
 	}
@@ -308,6 +368,7 @@ ovpn_aead_crypto_key_slot_init(enum ovpn_cipher_alg alg,
 	if (!ks)
 		return ERR_PTR(-ENOMEM);
 
+	ks->alg = alg;
 	ks->encrypt = NULL;
 	ks->decrypt = NULL;
 	kref_init(&ks->refcount);

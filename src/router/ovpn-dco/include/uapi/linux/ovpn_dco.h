@@ -64,6 +64,7 @@ enum ovpn_cipher_alg {
 	 * @OVPN_CIPHER_ALG_CHACHA20_POLY1305: ChaCha20Poly1305 AEAD cipher
 	 */
 	OVPN_CIPHER_ALG_CHACHA20_POLY1305,
+	OVPN_CIPHER_ALG_AES_CCM,
 };
 
 enum ovpn_del_peer_reason {

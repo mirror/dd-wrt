@@ -29,7 +29,7 @@
 
 /* OpenVPN nonce size reduced by 8-byte nonce tail -- this is the
  * size of the AEAD Associated Data (AD) sent over the wire
- * and is normally the head of the IV
+ * and is normally the head of the IV (depends on the specific algorithm)
  */
 #define NONCE_WIRE_SIZE (NONCE_SIZE - sizeof(struct ovpn_nonce_tail))
 

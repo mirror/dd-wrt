@@ -189,6 +189,7 @@ static int ovpn_netlink_get_key_dir(struct genl_info *info, struct nlattr *key,
 	switch (cipher) {
 	case OVPN_CIPHER_ALG_AES_GCM:
 	case OVPN_CIPHER_ALG_CHACHA20_POLY1305:
+	case OVPN_CIPHER_ALG_AES_CCM:
 		attr = attrs[OVPN_KEY_DIR_ATTR_CIPHER_KEY];
 		if (!attr)
 			return -EINVAL;
