@@ -435,7 +435,7 @@ static int krait_cc_probe(struct platform_device *pdev)
 			snprintf(cpu_s, 5, "CPU%d", cpu);
 
 		cur_rate = clk_get_rate(clk);
-		if (cur_rate < AUX_RATE) {
+		if (cur_rate < 384000000) {
 			dev_info(dev, "%s @ Undefined rate. Forcing new rate.\n",
 				 cpu < 4 ? cpu_s : l2_s);
 			cur_rate = AUX_RATE;
