@@ -160,9 +160,19 @@ static inline void usb_phy_write_readback(struct usb_phy *phy_dwc3,
 
 static int wait_for_latch(void __iomem *addr)
 {
-	u32 val;
+	u32 retry = 10;
 
-	return readl_poll_timeout(addr, val, !val, LATCH_SLEEP, LATCH_TIMEOUT);
+	while (true) {
+		if (!readl(addr))
+			break;
+
+		if (--retry == 0)
+			return -ETIMEDOUT;
+
+		usleep_range(10, 20);
+	}
+
+	return 0;
 }
 
 /**
