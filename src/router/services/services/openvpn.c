@@ -389,6 +389,10 @@ void start_openvpnserver(void)
 	if (nvram_invmatchi("openvpn_enable", 1))
 		return;
 	insmod("tun");
+	eval("modprobe","gcm");
+	eval("modprobe","ccm");
+	eval("modprobe","chacha20poly1305");
+	eval("modprobe","ovpn-dco-v2");
 	update_timezone();
 	if (jffs_mounted())
 		jffs = 1;
