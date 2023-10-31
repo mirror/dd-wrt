@@ -541,8 +541,8 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
 
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
+		writeproc("/proc/irq/37/smp_affinity", "2");
+		writeproc("/proc/irq/44/smp_affinity", "2");	// move second wifi interface to core 2
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
@@ -557,8 +557,8 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
 
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
+		writeproc("/proc/irq/37/smp_affinity", "2");
+		writeproc("/proc/irq/44/smp_affinity", "2");	// move second wifi interface to core 2
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		
