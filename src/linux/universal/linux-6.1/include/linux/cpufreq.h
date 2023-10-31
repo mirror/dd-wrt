@@ -62,7 +62,16 @@ struct cpufreq_policy {
 						should set cpufreq */
 	unsigned int		cpu;    /* cpu managing this policy, must be online */
 
-	struct clk		*clk;
+	struct clk			*clk;
+	struct clk			*l2_clk; /* L2 clock */
+	struct regulator	*l2_regulator; /* L2 supply */
+	unsigned int		l2_rate[3]; /* L2 bus clock rate */
+	bool				l2_rate_set;
+	unsigned int		l2_cpufreq[3]; /* L2 target CPU frequency */
+	unsigned int		l2_volt[3]; /* L2 voltage array */
+	bool				l2_volt_set;
+	unsigned int		l2_volt_tol; /* L2 voltage tolerance */
+
 	struct cpufreq_cpuinfo	cpuinfo;/* see above */
 
 	unsigned int		min;    /* in kHz */

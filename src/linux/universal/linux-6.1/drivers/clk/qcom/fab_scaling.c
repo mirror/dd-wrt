@@ -26,109 +26,39 @@
 #include <linux/clk-provider.h>
 #include <linux/fab_scaling.h>
 
-#define MAX_CLK_COUNT	5
-
 #define APPS_FAB_CLK	"apps-fab-clk"
 #define DDR_FAB_CLK	"ddr-fab-clk"
 
 static u32 fab_freq_high;
 static u32 fab_freq_nominal;
+static u32 cpu_freq_threshold;
 
 static struct clk *apps_fab_clk;
 static struct clk *ddr_fab_clk;
 
-static struct fab_scaling_info arr_monitor_clk[MAX_CLK_COUNT];
-
-int scale_fabrics(void)
-{
-	int i, clk_cnt = 0, scale_down = 1;
-	unsigned long curr_freq, new_freq;
+void scale_fabrics(unsigned long max_cpu_freq)
+{	
+	unsigned long new_freq;
 
 	if (!apps_fab_clk || !ddr_fab_clk)
-		return -1;
+		return;
 
-	for (i = 0; i < MAX_CLK_COUNT; i++) {
-		if (!arr_monitor_clk[i].clk || !arr_monitor_clk[i].idle_freq)
-			continue;
+	if (max_cpu_freq > cpu_freq_threshold)
+		new_freq = fab_freq_high;
+	else
+		new_freq = fab_freq_nominal;
 
-		clk_cnt++;
-		curr_freq = clk_get_rate(arr_monitor_clk[i].clk);
-		if (curr_freq > arr_monitor_clk[i].idle_freq) {
-			scale_down = 0;
-			break;
-		}
-	}
+	clk_set_rate(apps_fab_clk, new_freq);
+	clk_set_rate(ddr_fab_clk, new_freq);
 
-	if (clk_cnt) {
-		if (scale_down)
-			new_freq = fab_freq_nominal;
-		else
-			new_freq = fab_freq_high;
-
-		clk_set_rate(apps_fab_clk, new_freq);
-		clk_set_rate(ddr_fab_clk, new_freq);
-	}
-
-	return 0;
+	return;
 }
 EXPORT_SYMBOL(scale_fabrics);
-
-int fab_scaling_register(struct fab_scaling_info *data)
-{
-	int i, ret = -1;
-
-	if (!data)
-		return ret;
-
-	if (!data->clk)
-		return ret;
-
-	for (i = 0; i < MAX_CLK_COUNT; i++) {
-		if (arr_monitor_clk[i].clk == data->clk) {
-			pr_err("Clk already registered!!!\n");
-			return -1;
-		}
-	}
-
-	for (i = 0; i < MAX_CLK_COUNT; i++) {
-		if (!arr_monitor_clk[i].clk) {
-			arr_monitor_clk[i].clk = data->clk;
-			arr_monitor_clk[i].idle_freq = data->idle_freq;
-			ret = 0;
-			break;
-		}
-	}
-
-	if (ret)
-		pr_err("FABRIC scaling registration failed.\n");
-
-	return ret;
-}
-EXPORT_SYMBOL(fab_scaling_register);
-
-int fab_scaling_unregister(struct clk *clk)
-{
-	int i;
-
-	if (!clk)
-		return -1;
-
-	for (i = 0; i < MAX_CLK_COUNT; i++) {
-		if (arr_monitor_clk[i].clk == clk) {
-			arr_monitor_clk[i].clk = 0;
-			arr_monitor_clk[i].idle_freq = 0;
-			break;
-		}
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL(fab_scaling_unregister);
-
 
 static int ipq806x_fab_scaling_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
+	int ret;
 
 	if (!np)
 		return -ENODEV;
@@ -143,31 +73,57 @@ static int ipq806x_fab_scaling_probe(struct platform_device *pdev)
 		fab_freq_nominal = 400000000;
 	}
 
-	apps_fab_clk = devm_clk_get(&pdev->dev, APPS_FAB_CLK);
-	if (IS_ERR(apps_fab_clk)) {
-		pr_err("Failed to get APPS FABRIC clock\n");
-		apps_fab_clk = 0;
-		return -ENODEV;
+	if (of_property_read_u32(np, "cpu_freq_threshold", &cpu_freq_threshold)) {
+		pr_err("FABRICS cpu freq threshold not found. Using defaults...\n");
+		cpu_freq_threshold = 1000000000;
 	}
 
-	ddr_fab_clk = devm_clk_get(&pdev->dev, DDR_FAB_CLK);
-	if (IS_ERR(ddr_fab_clk)) {
-		pr_err("Failed to get DDR FABRIC clock\n");
-		ddr_fab_clk = 0;
-		return -ENODEV;
+	apps_fab_clk = devm_clk_get(&pdev->dev, APPS_FAB_CLK);
+	ret = PTR_ERR_OR_ZERO(apps_fab_clk);
+	if (ret) {
+		/*
+		 * If apps fab clk node is present, but clock is not yet
+		 * registered, we should try defering probe.
+		 */
+		if (ret == -EPROBE_DEFER) {
+			pr_warn("APPS FABRIC clock is not ready, retry\n");
+			return ret;
+		} else {
+			pr_err("Failed to get APPS FABRIC clock: %d\n", ret);
+			apps_fab_clk = 0;
+			return -ENODEV;
+		}
 	}
+
+	clk_set_rate(apps_fab_clk, fab_freq_nominal);
+	clk_prepare_enable(apps_fab_clk);
+
+	ddr_fab_clk = devm_clk_get(&pdev->dev, DDR_FAB_CLK);
+	ret = PTR_ERR_OR_ZERO(ddr_fab_clk);
+	if (ret) {
+		/*
+		 * If ddr fab clk node is present, but clock is not yet
+		 * registered, we should try defering probe.
+		 */
+		if (ret == -EPROBE_DEFER) {
+			pr_warn("DDR FABRIC clock is not ready, retry\n");
+			return ret;
+		} else {
+			pr_err("Failed to get DDR FABRIC clock: %d\n", ret);
+			ddr_fab_clk = 0;
+			return -ENODEV;
+		}
+	}
+
+	clk_set_rate(ddr_fab_clk, fab_freq_nominal);
+	clk_prepare_enable(ddr_fab_clk);
 
 	return 0;
 }
 
 static int ipq806x_fab_scaling_remove(struct platform_device *pdev)
 {
-	int i;
-
-	for (i = 0; i < MAX_CLK_COUNT; i++) {
-		arr_monitor_clk[i].clk = 0;
-		arr_monitor_clk[i].idle_freq = 0;
-	}
+	cpu_freq_threshold = 0;
 
 	return 0;
 }

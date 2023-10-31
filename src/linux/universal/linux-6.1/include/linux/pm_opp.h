@@ -105,6 +105,7 @@ int dev_pm_opp_get_supplies(struct dev_pm_opp *opp, struct dev_pm_opp_supply *su
 unsigned long dev_pm_opp_get_power(struct dev_pm_opp *opp);
 
 unsigned long dev_pm_opp_get_freq(struct dev_pm_opp *opp);
+struct regulator *dev_pm_opp_get_regulator(struct device *dev);
 
 unsigned int dev_pm_opp_get_level(struct dev_pm_opp *opp);
 
