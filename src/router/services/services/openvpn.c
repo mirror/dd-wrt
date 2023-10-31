@@ -479,9 +479,11 @@ void start_openvpnserver(void)
 			fprintf(fp, "client-config-dir /jffs/etc/openvpn/ccd\n");
 		else
 			fprintf(fp, "client-config-dir /tmp/openvpn/ccd\n");
-		if (nvram_invmatch("openvpn_scramble", "off"))
+		if (nvram_invmatch("openvpn_scramble", "off")) {
+			fprintf(fp, "disable-dco\n");
 			fprintf(fp, "scramble %s\n",	//scramble XOR patch for reordering packet content to protect against DPI
 				nvram_safe_get("openvpn_scramble"));
+		}
 		if (nvram_invmatch("openvpn_lzo", "off")) {
 			if (nvram_match("openvpn_lzo", "compress lz4"))
 				fprintf(fp, "compress lz4\n");
@@ -920,6 +922,7 @@ void start_openvpn(void)
 		}
 	}
 	if (nvram_invmatch("openvpncl_scramble", "off")) {
+		fprintf(fp, "disable-dco\n");
 		if (nvram_match("openvpncl_scramble", "obfuscate"))
 			fprintf(fp, "scramble %s %s\n", nvram_safe_get("openvpncl_scramble"), nvram_safe_get("openvpncl_scrmblpw"));
 		else

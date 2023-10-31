@@ -3127,7 +3127,7 @@ void load_drivers(int boot)
 
 
 		if (nvram_matchi("usb_storage", 1)) {
-			insmod("insmod bsg scsi_common scsi_mod scsi_wait_scan crct10dif_common crct10dif_generic crct10dif-arm-ce crc-t10dif crc64 crc64-rocksoft crc64-rocksoft_generic crct-t10dif t10-pi sd_mod cdrom sr_mod usb-storage libata sata_mv ehci-orion ses");
+			insmod("insmod bsg scsi_common scsi_mod scsi_wait_scan crct10dif_common crct10dif_generic crct10dif-arm-ce crc-t10dif crc64 crc64-rocksoft crc64-rocksoft_generic crct-t10dif t10-pi sd_mod cdrom sr_mod usb-storage uas libata sata_mv ehci-orion ses");
 			insmod("libahci libahci_platform ahci ahci_platform ahci_platforms ahci_imx ahci_mvebu mmc_core pwrseq_emmc pwrseq_simple mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx sdhci-pxav3");
 		}
 
@@ -3179,6 +3179,7 @@ void load_drivers(int boot)
 		rmmod("phy-qcom-dwc3");
 		rmmod("usblp");
 		rmmod("printer");
+		rmmod("uas");
 		rmmod("usb-storage");
 		rmmod("sr_mod");
 		rmmod("cdrom");
