@@ -545,8 +545,6 @@ void start_sysinit(void)
 		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
 	default:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -563,8 +561,7 @@ void start_sysinit(void)
 		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
+		
 		break;
 	}
 
@@ -636,10 +633,12 @@ void start_sysinit(void)
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
 
-	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "20");
-	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
-	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "ondemand");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
