@@ -252,6 +252,7 @@ static int xhci_plat_probe(struct platform_device *pdev)
 
 	xhci->allow_single_roothub = 1;
 
+
 	/*
 	 * Not all platforms have clks so it is not an error if the
 	 * clock do not exist.
@@ -272,6 +273,7 @@ static int xhci_plat_probe(struct platform_device *pdev)
 		goto disable_reg_clk;
 	}
 
+
 	ret = clk_prepare_enable(xhci->clk);
 	if (ret)
 		goto disable_reg_clk;
@@ -286,6 +288,15 @@ static int xhci_plat_probe(struct platform_device *pdev)
 		/* Just copy data for now */
 		*priv = *priv_match;
 	}
+
+#if IS_ENABLED(CONFIG_USB_XHCI_MVEBU)	
+	if (of_device_is_compatible(pdev->dev.of_node,
+				     "marvell,armada-380-xhci")) {
+		ret = xhci_mvebu_vbus_init_quirk();
+		if (ret)
+		       goto disable_clk;
+	}
+#endif
 
 	device_set_wakeup_capable(&pdev->dev, true);
 
