@@ -633,8 +633,8 @@ void start_sysinit(void)
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
 
-	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
-	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "ondemand");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
 	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
