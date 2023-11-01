@@ -1,7 +1,7 @@
 #!/bin/sh
 # restart whole firewall to get the nat-loopback rules etc.
 REBOOT=$(nvram get wg_onfail_reboot)
-if [[ $REBOOT -eq 2 ]]; then
+if [[ $REBOOT -eq 2 ]] 2>/dev/null; then
 	restart firewall
 	logger -p user.info "WireGuard watchdog: tunnel and entire firewall restarted"
 else

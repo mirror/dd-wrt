@@ -729,6 +729,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<input class=\\\"button red_btn\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
+		websWrite(wp, "toggle_layer_ext(document.eop.oet%d_en, 'idmcast%d', 'idremoteip6%d', %s);\n", tun, tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "true" : "false");
 		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun), nvram_nget("vxlan%d_bridged", tun),
 			  nvram_nmatchi(1, "oet%d_mcast", tun));
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
@@ -737,7 +738,6 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idshowmcast%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idremoteip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idlocalip6%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
-		websWrite(wp, "toggle_layer_ext(document.eop.oet%d_en, 'idmcast%d', 'idremoteip6%d', %s);\n", tun, tun, tun, nvram_nmatchi(1, "oet%d_mcast", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idvxlansettings%d',%s);\n", tun, tun, nvram_nmatchi(3, "oet%d_proto", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showobf',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_obf", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_tunnelstate', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");

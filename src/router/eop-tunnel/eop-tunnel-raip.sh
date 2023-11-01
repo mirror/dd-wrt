@@ -30,6 +30,8 @@ waitfortime () {
 	done
 	if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
 		logger -p user.err "WireGuard ERROR: stopped waiting after $SLEEPCT seconds, trying to set routes for oet${i} anyway, is there a connection or NTP problem?"
+		# set date in future to help WG connect anyway
+		date -s 2030-01-01
 	else
 		logger -p user.info "WireGuard waited $SLEEPCT seconds to set routes for oet${i}"
 	fi
