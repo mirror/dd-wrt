@@ -109,6 +109,9 @@ static int ovpn_tcp_read_sock(read_descriptor_t *desc, struct sk_buff *in_skb,
 				/* hold reference to peer as requird by ovpn_recv() */
 				ovpn_peer_hold(peer);
 				status = ovpn_recv(peer->ovpn, peer, peer->tcp.skb);
+				if (unlikely(status < 0))
+					ovpn_peer_put(peer);
+
 			} else {
 				/* prepend skb with packet len. this way userspace can parse
 				 * the packet as if it just arrived from the remote endpoint
