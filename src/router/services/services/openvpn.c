@@ -389,9 +389,19 @@ void start_openvpnserver(void)
 	if (nvram_invmatchi("openvpn_enable", 1))
 		return;
 	insmod("tun");
+	eval("modprobe","seqiv");
+	eval("modprobe","ctr");
+	eval("modprobe","chacha20_generic");
+	eval("modprobe","chacha20_x86_64");
+	eval("modprobe","chacha20_ssse3-x86_64");
+	eval("modprobe","chacha20_avx512vl-x86_64");
+	eval("modprobe","chacha20_avx2-x86_64");
+	eval("modprobe","poly1305_generic");
+	eval("modprobe","poly1305_x86_64");
+	eval("modprobe","chacha20poly1305");
+	eval("modprobe","ghash_generic");
 	eval("modprobe","gcm");
 	eval("modprobe","ccm");
-	eval("modprobe","chacha20poly1305");
 	eval("modprobe","ovpn-dco-v2");
 	update_timezone();
 	if (jffs_mounted())
@@ -794,9 +804,19 @@ void start_openvpn(void)
 	char wan_if_buffer[33];
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
+	eval("modprobe","seqiv");
+	eval("modprobe","ctr");
+	eval("modprobe","chacha20_generic");
+	eval("modprobe","chacha20_x86_64");
+	eval("modprobe","chacha20_ssse3-x86_64");
+	eval("modprobe","chacha20_avx512vl-x86_64");
+	eval("modprobe","chacha20_avx2-x86_64");
+	eval("modprobe","poly1305_generic");
+	eval("modprobe","poly1305_x86_64");
+	eval("modprobe","chacha20poly1305");
+	eval("modprobe","ghash_generic");
 	eval("modprobe","gcm");
 	eval("modprobe","ccm");
-	eval("modprobe","chacha20poly1305");
 	eval("modprobe","ovpn-dco-v2");
 	insmod("tun");
 	dd_loginfo("openvpn", "OpenVPN daemon (Client) starting/restarting...\n");
