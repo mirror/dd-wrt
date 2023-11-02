@@ -86,13 +86,13 @@ static int ovpn_udp_encap_recv(struct sock *sk, struct sk_buff *skb)
 		peer = ovpn_peer_lookup_transp_addr(ovpn, skb);
 		if (unlikely(!peer)) {
 			if (opcode != OVPN_DATA_V2) {
-				netdev_dbg(ovpn->dev,
+				netdev_warn(ovpn->dev,
 					   "%s: control packet from unknown peer, sending to userspace",
 					   __func__);
 				return 1;
 			}
 
-			netdev_dbg(ovpn->dev,
+			netdev_warn(ovpn->dev,
 				   "%s: received data with undef peer-id from unknown source\n",
 				   __func__);
 			goto drop;
@@ -341,7 +341,7 @@ int ovpn_udp_socket_attach(struct socket *sock, struct ovpn_struct *ovpn)
 	rcu_read_unlock();
 	if (old_data) {
 		if (old_data->ovpn == ovpn) {
-			netdev_dbg(ovpn->dev,
+			netdev_warn(ovpn->dev,
 				   "%s: provided socket already owned by this interface\n",
 				   __func__);
 			return -EALREADY;

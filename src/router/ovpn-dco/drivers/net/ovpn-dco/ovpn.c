@@ -500,7 +500,7 @@ static void ovpn_xmit_special(struct ovpn_peer *peer, const void *data,
 
 	/* increase reference counter when passing peer to sending queue */
 	if (!ovpn_peer_hold(peer)) {
-		netdev_dbg(ovpn->dev, "%s: cannot hold peer reference for sending special packet\n",
+		netdev_warn(ovpn->dev, "%s: cannot hold peer reference for sending special packet\n",
 			   __func__);
 		kfree_skb(skb);
 		return;
@@ -539,7 +539,7 @@ int ovpn_send_data(struct ovpn_struct *ovpn, u32 peer_id, const u8 *data, size_t
 
 	peer = ovpn_peer_lookup_id(ovpn, peer_id);
 	if (unlikely(!peer)) {
-		netdev_dbg(ovpn->dev, "no peer to send data to\n");
+		netdev_warn(ovpn->dev, "no peer to send data to\n");
 		return -EHOSTUNREACH;
 	}
 

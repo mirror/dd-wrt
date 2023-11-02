@@ -128,7 +128,7 @@ static int ovpn_peer_reset_sockaddr(struct ovpn_peer *peer, const struct sockadd
 		} else if (ss->ss_family == AF_INET6) {
 			ip_len = sizeof(struct in6_addr);
 		} else {
-			netdev_dbg(peer->ovpn->dev, "%s: invalid family for remote endpoint\n",
+			netdev_warn(peer->ovpn->dev, "%s: invalid family for remote endpoint\n",
 				   __func__);
 			kfree(bind);
 			return -EINVAL;
