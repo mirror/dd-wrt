@@ -179,9 +179,9 @@ static int ovpn_netlink_get_key_dir(struct genl_info *info, struct nlattr *key,
 	int ret;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-	ret = nla_parse_nested(attrs, OVPN_KEY_DIR_ATTR_MAX, key, NULL);
+	ret = nla_parse_nested(attrs, OVPN_KEY_DIR_ATTR_MAX, key, ovpn_netlink_policy_key_dir);
 #else
-	ret = nla_parse_nested(attrs, OVPN_KEY_DIR_ATTR_MAX, key, NULL, info->extack);
+	ret = nla_parse_nested(attrs, OVPN_KEY_DIR_ATTR_MAX, key, ovpn_netlink_policy_key_dir, info->extack);
 #endif
 	if (ret)
 		return ret;
@@ -229,10 +229,10 @@ static int ovpn_netlink_new_key(struct sk_buff *skb, struct genl_info *info)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 	ret = nla_parse_nested(attrs, OVPN_NEW_KEY_ATTR_MAX, info->attrs[OVPN_ATTR_NEW_KEY],
-			       NULL);
+			       ovpn_netlink_policy_new_key);
 #else
 	ret = nla_parse_nested(attrs, OVPN_NEW_KEY_ATTR_MAX, info->attrs[OVPN_ATTR_NEW_KEY],
-			       NULL, info->extack);
+			       ovpn_netlink_policy_new_key, info->extack);
 #endif	
 	if (ret)
 		return ret;
@@ -296,9 +296,9 @@ static int ovpn_netlink_del_key(struct sk_buff *skb, struct genl_info *info)
 		return -EINVAL;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-	ret = nla_parse_nested(attrs, OVPN_DEL_KEY_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_KEY], NULL);
+	ret = nla_parse_nested(attrs, OVPN_DEL_KEY_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_KEY], ovpn_netlink_policy_del_key);
 #else
-	ret = nla_parse_nested(attrs, OVPN_DEL_KEY_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_KEY], NULL,
+	ret = nla_parse_nested(attrs, OVPN_DEL_KEY_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_KEY], ovpn_netlink_policy_del_key,
 			       info->extack);
 #endif
 	if (ret)
@@ -333,10 +333,10 @@ static int ovpn_netlink_swap_keys(struct sk_buff *skb, struct genl_info *info)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 	ret = nla_parse_nested(attrs, OVPN_SWAP_KEYS_ATTR_MAX, info->attrs[OVPN_ATTR_SWAP_KEYS],
-			       NULL);
+			       ovpn_netlink_policy_swap_keys);
 #else
 	ret = nla_parse_nested(attrs, OVPN_SWAP_KEYS_ATTR_MAX, info->attrs[OVPN_ATTR_SWAP_KEYS],
-			       NULL, info->extack);
+			       ovpn_netlink_policy_swap_keys, info->extack);
 #endif
 	if (ret)
 		return ret;
@@ -374,9 +374,9 @@ static int ovpn_netlink_new_peer(struct sk_buff *skb, struct genl_info *info)
 		return -EINVAL;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-	ret = nla_parse_nested(attrs, OVPN_NEW_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_NEW_PEER], NULL);
+	ret = nla_parse_nested(attrs, OVPN_NEW_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_NEW_PEER], ovpn_netlink_policy_new_peer);
 #else
-	ret = nla_parse_nested(attrs, OVPN_NEW_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_NEW_PEER], NULL,
+	ret = nla_parse_nested(attrs, OVPN_NEW_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_NEW_PEER], ovpn_netlink_policy_new_peer,
 			       info->extack);
 #endif
 	if (ret)
@@ -567,9 +567,9 @@ static int ovpn_netlink_set_peer(struct sk_buff *skb, struct genl_info *info)
 		return -EINVAL;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-	ret = nla_parse_nested(attrs, OVPN_SET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_SET_PEER], NULL);
+	ret = nla_parse_nested(attrs, OVPN_SET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_SET_PEER], ovpn_netlink_policy_set_peer);
 #else
-	ret = nla_parse_nested(attrs, OVPN_SET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_SET_PEER], NULL,
+	ret = nla_parse_nested(attrs, OVPN_SET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_SET_PEER], ovpn_netlink_policy_set_peer,
 			       info->extack);
 #endif
 	if (ret)
@@ -708,9 +708,9 @@ static int ovpn_netlink_get_peer(struct sk_buff *skb, struct genl_info *info)
 		return -EINVAL;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-	ret = nla_parse_nested(attrs, OVPN_GET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_GET_PEER], NULL);
+	ret = nla_parse_nested(attrs, OVPN_GET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_GET_PEER], ovpn_netlink_policy_get_peer);
 #else
-	ret = nla_parse_nested(attrs, OVPN_GET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_GET_PEER], NULL,
+	ret = nla_parse_nested(attrs, OVPN_GET_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_GET_PEER], ovpn_netlink_policy_get_peer,
 			       info->extack);
 #endif
 	if (ret)
@@ -810,9 +810,9 @@ static int ovpn_netlink_del_peer(struct sk_buff *skb, struct genl_info *info)
 		return -EINVAL;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-	ret = nla_parse_nested(attrs, OVPN_DEL_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_PEER], NULL);
+	ret = nla_parse_nested(attrs, OVPN_DEL_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_PEER], ovpn_netlink_policy_del_peer);
 #else
-	ret = nla_parse_nested(attrs, OVPN_DEL_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_PEER], NULL,
+	ret = nla_parse_nested(attrs, OVPN_DEL_PEER_ATTR_MAX, info->attrs[OVPN_ATTR_DEL_PEER], ovpn_netlink_policy_del_peer,
 			       info->extack);
 #endif
 	if (ret)
