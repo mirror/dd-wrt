@@ -839,7 +839,7 @@ static const struct genl_small_ops ovpn_netlink_ops[] = {
 		.cmd = OVPN_CMD_NEW_PEER,
 		.flags = GENL_ADMIN_PERM | GENL_CMD_CAP_DO,
 		.doit = ovpn_netlink_new_peer,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
 		.policy = ovpn_netlink_policy,
 #endif
 	},
@@ -847,7 +847,7 @@ static const struct genl_small_ops ovpn_netlink_ops[] = {
 		.cmd = OVPN_CMD_SET_PEER,
 		.flags = GENL_ADMIN_PERM | GENL_CMD_CAP_DO,
 		.doit = ovpn_netlink_set_peer,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
 		.policy = ovpn_netlink_policy,
 #endif
 	},
@@ -855,7 +855,7 @@ static const struct genl_small_ops ovpn_netlink_ops[] = {
 		.cmd = OVPN_CMD_DEL_PEER,
 		.flags = GENL_ADMIN_PERM | GENL_CMD_CAP_DO,
 		.doit = ovpn_netlink_del_peer,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
 		.policy = ovpn_netlink_policy,
 #endif
 	},
@@ -864,7 +864,7 @@ static const struct genl_small_ops ovpn_netlink_ops[] = {
 		.flags = GENL_ADMIN_PERM | GENL_CMD_CAP_DO | GENL_CMD_CAP_DUMP,
 		.doit = ovpn_netlink_get_peer,
 		.dumpit = ovpn_netlink_dump_peers,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
 		.policy = ovpn_netlink_policy,
 #endif
 	},
@@ -872,7 +872,7 @@ static const struct genl_small_ops ovpn_netlink_ops[] = {
 		.cmd = OVPN_CMD_NEW_KEY,
 		.flags = GENL_ADMIN_PERM | GENL_CMD_CAP_DO,
 		.doit = ovpn_netlink_new_key,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
 		.policy = ovpn_netlink_policy,
 #endif
 	},
@@ -880,7 +880,7 @@ static const struct genl_small_ops ovpn_netlink_ops[] = {
 		.cmd = OVPN_CMD_DEL_KEY,
 		.flags = GENL_ADMIN_PERM | GENL_CMD_CAP_DO,
 		.doit = ovpn_netlink_del_key,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
 		.policy = ovpn_netlink_policy,
 #endif
 	},
@@ -888,7 +888,7 @@ static const struct genl_small_ops ovpn_netlink_ops[] = {
 		.cmd = OVPN_CMD_SWAP_KEYS,
 		.flags = GENL_ADMIN_PERM | GENL_CMD_CAP_DO,
 		.doit = ovpn_netlink_swap_keys,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
 		.policy = ovpn_netlink_policy,
 #endif
 	},
@@ -899,7 +899,7 @@ static struct genl_family ovpn_netlink_family __ro_after_init = {
 	.name = OVPN_NL_NAME,
 	.version = 1,
 	.maxattr = OVPN_ATTR_MAX,
-#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 	.policy = ovpn_netlink_policy,
 #endif
 	.netnsok = true,
