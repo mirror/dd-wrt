@@ -285,7 +285,7 @@ struct crypto_aead *ovpn_aead_init(const char *title, const char *alg_name,
 	aead = crypto_alloc_aead(alg_name, 0, 0);
 	if (IS_ERR(aead)) {
 		ret = PTR_ERR(aead);
-		pr_err("%s crypto_alloc_aead failed, err=%d\n", title, ret);
+		pr_err("%s crypto_alloc_aead failed for %s, err=%d\n", title, alg_name, ret);
 		aead = NULL;
 		goto error;
 	}
