@@ -321,16 +321,20 @@ static void checkupgrade(void)
 		fseek(in, 0, SEEK_END);
 		size_t len = ftell(in);
 		fclose(in);
-		unlink("/tmp/cron.d/check_ps");	// deleting cron file to
 		// prevent double call of
 		// this
 		dd_loginfo("upgrade", "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
 	      again:;
 		sleep(30);
 		in = fopen("/tmp/firmware.bin", "rb");
+		if (!in) {
+		    nvram_set("flash_active", "0");
+		    return;
+		}
 		fseek(in, 0, SEEK_END);
 		size_t newlen = ftell(in);
 		fclose(in);
+		unlink("/tmp/cron.d/check_ps");	// deleting cron file to
 		if (newlen != len) {
 			len = newlen;
 			dd_loginfo("upgrade", "size has changed, wait 30 seconds and try again\n");
