@@ -1,4 +1,3 @@
-/*
  *	PF_INET6 socket protocol family
  *	Linux INET6 implementation
  *
@@ -552,6 +551,7 @@ const struct proto_ops inet6_stream_ops = {
 	.mmap		   = sock_no_mmap,
 	.sendpage	   = inet_sendpage,
 	.splice_read	   = tcp_splice_read,
+	.read_sock	   = tcp_read_sock,
 #ifdef CONFIG_COMPAT
 	.compat_setsockopt = compat_sock_common_setsockopt,
 	.compat_getsockopt = compat_sock_common_getsockopt,
