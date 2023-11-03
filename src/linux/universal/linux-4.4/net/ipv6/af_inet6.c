@@ -1,3 +1,4 @@
+/*
  *	PF_INET6 socket protocol family
  *	Linux INET6 implementation
  *
