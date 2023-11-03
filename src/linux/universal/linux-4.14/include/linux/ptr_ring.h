@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  *	Definitions for the 'struct ptr_ring' datastructure.
  *
@@ -5,11 +6,6 @@
  *		Michael S. Tsirkin <mst@redhat.com>
  *
  *	Copyright (C) 2016 Red Hat, Inc.
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License as published by the
- *	Free Software Foundation; either version 2 of the License, or (at your
- *	option) any later version.
  *
  *	This is a limited-size FIFO maintaining pointers in FIFO order, with
  *	one CPU producing entries and another consuming entries from a FIFO.
@@ -26,8 +22,8 @@
 #include <linux/cache.h>
 #include <linux/types.h>
 #include <linux/compiler.h>
-#include <linux/cache.h>
 #include <linux/slab.h>
+#include <linux/mm.h>
 #include <asm/errno.h>
 #endif
 
@@ -45,9 +41,10 @@ struct ptr_ring {
 };
 
 /* Note: callers invoking this in a loop must use a compiler barrier,
- * for example cpu_relax().  If ring is ever resized, callers must hold
- * producer_lock - see e.g. ptr_ring_full.  Otherwise, if callers don't hold
- * producer_lock, the next call to __ptr_ring_produce may fail.
+ * for example cpu_relax().
+ *
+ * NB: this is unlike __ptr_ring_empty in that callers must hold producer_lock:
+ * see e.g. ptr_ring_full.
  */
 static inline bool __ptr_ring_full(struct ptr_ring *r)
 {
@@ -110,10 +107,10 @@ static inline int __ptr_ring_produce(struct ptr_ring *r, void *ptr)
 		return -ENOSPC;
 
 	/* Make sure the pointer we are storing points to a valid data. */
-	/* Pairs with smp_read_barrier_depends in __ptr_ring_consume. */
+	/* Pairs with the dependency ordering in __ptr_ring_consume. */
 	smp_wmb();
 
-	r->queue[r->producer++] = ptr;
+	WRITE_ONCE(r->queue[r->producer++], ptr);
 	if (unlikely(r->producer >= r->size))
 		r->producer = 0;
 	return 0;
@@ -169,26 +166,36 @@ static inline int ptr_ring_produce_bh(struct ptr_ring *r, void *ptr)
 	return ret;
 }
 
-/* Note: callers invoking this in a loop must use a compiler barrier,
- * for example cpu_relax(). Callers must take consumer_lock
- * if they dereference the pointer - see e.g. PTR_RING_PEEK_CALL.
- * If ring is never resized, and if the pointer is merely
- * tested, there's no need to take the lock - see e.g.  __ptr_ring_empty.
- */
 static inline void *__ptr_ring_peek(struct ptr_ring *r)
 {
 	if (likely(r->size))
-		return r->queue[r->consumer_head];
+		return READ_ONCE(r->queue[r->consumer_head]);
 	return NULL;
 }
 
-/* Note: callers invoking this in a loop must use a compiler barrier,
- * for example cpu_relax(). Callers must take consumer_lock
- * if the ring is ever resized - see e.g. ptr_ring_empty.
+/*
+ * Test ring empty status without taking any locks.
+ *
+ * NB: This is only safe to call if ring is never resized.
+ *
+ * However, if some other CPU consumes ring entries at the same time, the value
+ * returned is not guaranteed to be correct.
+ *
+ * In this case - to avoid incorrectly detecting the ring
+ * as empty - the CPU consuming the ring entries is responsible
+ * for either consuming all ring entries until the ring is empty,
+ * or synchronizing with some other CPU and causing it to
+ * re-test __ptr_ring_empty and/or consume the ring enteries
+ * after the synchronization point.
+ *
+ * Note: callers invoking this in a loop must use a compiler barrier,
+ * for example cpu_relax().
  */
 static inline bool __ptr_ring_empty(struct ptr_ring *r)
 {
-	return !__ptr_ring_peek(r);
+	if (likely(r->size))
+		return !r->queue[READ_ONCE(r->consumer_head)];
+	return true;
 }
 
 static inline bool ptr_ring_empty(struct ptr_ring *r)
@@ -242,22 +249,28 @@ static inline void __ptr_ring_discard_one(struct ptr_ring *r)
 	/* Fundamentally, what we want to do is update consumer
 	 * index and zero out the entry so producer can reuse it.
 	 * Doing it naively at each consume would be as simple as:
-	 *       r->queue[r->consumer++] = NULL;
-	 *       if (unlikely(r->consumer >= r->size))
-	 *               r->consumer = 0;
+	 *       consumer = r->consumer;
+	 *       r->queue[consumer++] = NULL;
+	 *       if (unlikely(consumer >= r->size))
+	 *               consumer = 0;
+	 *       r->consumer = consumer;
 	 * but that is suboptimal when the ring is full as producer is writing
 	 * out new entries in the same cache line.  Defer these updates until a
 	 * batch of entries has been consumed.
 	 */
-	int head = r->consumer_head++;
+	/* Note: we must keep consumer_head valid at all times for __ptr_ring_empty
+	 * to work correctly.
+	 */
+	int consumer_head = r->consumer_head;
+	int head = consumer_head++;
 
 	/* Once we have processed enough entries invalidate them in
 	 * the ring all at once so producer can reuse their space in the ring.
 	 * We also do this when we reach end of the ring - not mandatory
 	 * but helps keep the implementation simple.
 	 */
-	if (unlikely(r->consumer_head - r->consumer_tail >= r->batch ||
-		     r->consumer_head >= r->size)) {
+	if (unlikely(consumer_head - r->consumer_tail >= r->batch ||
+		     consumer_head >= r->size)) {
 		/* Zero out entries in the reverse order: this way we touch the
 		 * cache line that producer might currently be reading the last;
 		 * producer won't make progress and touch other cache lines
@@ -265,25 +278,28 @@ static inline void __ptr_ring_discard_one(struct ptr_ring *r)
 		 */
 		while (likely(head >= r->consumer_tail))
 			r->queue[head--] = NULL;
-		r->consumer_tail = r->consumer_head;
+		r->consumer_tail = consumer_head;
 	}
-	if (unlikely(r->consumer_head >= r->size)) {
-		r->consumer_head = 0;
+	if (unlikely(consumer_head >= r->size)) {
+		consumer_head = 0;
 		r->consumer_tail = 0;
 	}
+	/* matching READ_ONCE in __ptr_ring_empty for lockless tests */
+	WRITE_ONCE(r->consumer_head, consumer_head);
 }
 
 static inline void *__ptr_ring_consume(struct ptr_ring *r)
 {
 	void *ptr;
 
+	/* The READ_ONCE in __ptr_ring_peek guarantees that anyone
+	 * accessing data through the pointer is up to date. Pairs
+	 * with smp_wmb in __ptr_ring_produce.
+	 */
 	ptr = __ptr_ring_peek(r);
 	if (ptr)
 		__ptr_ring_discard_one(r);
 
-	/* Make sure anyone accessing data through the pointer is up to date. */
-	/* Pairs with smp_wmb in __ptr_ring_produce. */
-	smp_read_barrier_depends();
 	return ptr;
 }
 
@@ -452,7 +468,7 @@ static inline void **__ptr_ring_init_queue_alloc(unsigned int size, gfp_t gfp)
 {
 	if (size > KMALLOC_MAX_SIZE / sizeof(void *))
 		return NULL;
-	return kvmalloc_array(size, sizeof(void *), gfp | __GFP_ZERO);
+	return kcalloc(size, sizeof(void *), gfp);
 }
 
 static inline void __ptr_ring_set_size(struct ptr_ring *r, int size)
@@ -526,7 +542,9 @@ static inline void ptr_ring_unconsume(struct ptr_ring *r, void **batch, int n,
 			goto done;
 		}
 		r->queue[head] = batch[--n];
-		r->consumer_tail = r->consumer_head = head;
+		r->consumer_tail = head;
+		/* matching READ_ONCE in __ptr_ring_empty for lockless tests */
+		WRITE_ONCE(r->consumer_head, head);
 	}
 
 done:
@@ -607,7 +625,7 @@ static inline int ptr_ring_resize_multiple(struct ptr_ring **rings,
 	void ***queues;
 	int i;
 
-	queues = kmalloc_array(nrings, sizeof(*queues), gfp);
+	queues = kcalloc(nrings, sizeof(*queues), gfp);
 	if (!queues)
 		goto noqueues;
 
