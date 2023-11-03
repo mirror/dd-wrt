@@ -220,4 +220,15 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data,
 #define __ro_after_init
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+static inline void skb_probe_transport_header_compat(struct sk_buff *skb)
+{
+	struct flow_keys keys;
+
+	if (skb_transport_header_was_set(skb))
+		return;
+	else if (skb_flow_dissect_flow_keys(skb, &keys, 0))
+		skb_set_transport_header(skb, keys.control.thoff);
+}
+#endif
 #endif /* _NET_OVPN_DCO_OVPN_H_ */

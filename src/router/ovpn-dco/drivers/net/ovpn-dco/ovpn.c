@@ -116,7 +116,7 @@ static void tun_netdev_write(struct ovpn_peer *peer, struct sk_buff *skb)
 	skb_reset_network_header(skb);
 	skb_reset_transport_header(skb);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
-	skb_probe_transport_header(skb, 0);
+	skb_probe_transport_header_compat(skb);
 #else
 	skb_probe_transport_header(skb);
 #endif
