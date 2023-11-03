@@ -12,6 +12,25 @@
 #define POLY1305_KEY_SIZE	32
 #define POLY1305_DIGEST_SIZE	16
 
+struct poly1305_key {
+	union {
+		u32 r[5];
+		u64 r64[3];
+	};
+};
+
+struct poly1305_core_key {
+	struct poly1305_key key;
+	struct poly1305_key precomputed_s;
+};
+
+struct poly1305_state {
+	union {
+		u32 h[5];
+		u64 h64[3];
+	};
+};
+
 struct poly1305_desc_ctx {
 	/* key */
 	u32 r[5];
