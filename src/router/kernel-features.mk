@@ -105,12 +105,12 @@ define kernelfeatures
 		sed -i 's/\CONFIG_CRYPTO_CCM=m/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_CRYPTO_CTR=m/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_CRYPTO_CMAC=m/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
-		echo "# CONFIG_CRYPTO_DRBG_CTR is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_CRYPTO_DRBG_CTR=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WPA3)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
-		echo "# CONFIG_CRYPTO_DRBG_CTR is not set" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_CRYPTO_DRBG_HASH is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_CRYPTO_DRBG_CTR=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_CRYPTO_DRBG_HASH=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_MPTCP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MPTCP is not set/CONFIG_MPTCP=y/g' $(LINUXDIR)/.config; \
@@ -199,9 +199,26 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_OPENVPN)" = "y" ]; then \
 		sed -i 's/\# CONFIG_TUN is not set/CONFIG_TUN=m/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=m/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_CRYPTO_CHACHA20POLY1305 is not set/CONFIG_CRYPTO_CHACHA20POLY1305=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20 is not set/CONFIG_CRYPTO_CHACHA20=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_POLY1305 is not set/CONFIG_CRYPTO_POLY1305=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTS is not set/CONFIG_CRYPTO_CTS=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTR is not set/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SEQIV is not set/CONFIG_CRYPTO_SEQIV=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GHASH is not set/CONFIG_CRYPTO_GHASH=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20POLY1305 is not set/CONFIG_CRYPTO_CHACHA20POLY1305=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CMAC=m/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20=m/CONFIG_CRYPTO_CHACHA20=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_POLY1305=m/CONFIG_CRYPTO_POLY1305=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTS=m/CONFIG_CRYPTO_CTS=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTR=m/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SEQIV=m/CONFIG_CRYPTO_SEQIV=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GHASH=m/CONFIG_CRYPTO_GHASH=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GCM=m/CONFIG_CRYPTO_GCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CCM=m/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20POLY1305=m/CONFIG_CRYPTO_CHACHA20POLY1305=y/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_ATH9K)" = "y" ]; then \
 		sed -i 's/\# CONFIG_RELAY is not set/CONFIG_RELAY=y/g' $(LINUXDIR)/.config; \
@@ -442,7 +459,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_AEAD2 is not set/CONFIG_CRYPTO_AEAD2=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_LIBCRC32C is not set/CONFIG_LIBCRC32C=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_ASN1 is not set/CONFIG_ASN1=m/g' $(LINUXDIR)/.config; \
-		echo "CONFIG_CRYPTO_DRBG_CTR=n" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_CRYPTO_DRBG_CTR=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NFS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NFS_FS is not set/CONFIG_NFS_FS=m/g' $(LINUXDIR)/.config; \
