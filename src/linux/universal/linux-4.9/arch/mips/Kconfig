@@ -3519,3 +3519,8 @@ source "crypto/Kconfig"
 source "lib/Kconfig"
 
 source "arch/mips/kvm/Kconfig"
+
+source "crypto/Kconfig"
+if CRYPTO
+source "arch/mips/crypto/Kconfig"
+endif

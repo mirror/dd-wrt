@@ -194,6 +194,7 @@ bcm947xx_timer_interrupt(int irq, void *dev_id)
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+#if 0
 static void bcm947xx_clockevent_set_mode(enum clock_event_mode mode,
 	struct clock_event_device *cd)
 {
@@ -201,6 +202,7 @@ static void bcm947xx_clockevent_set_mode(enum clock_event_mode mode,
 	/* Need to add mode switch to support both
 	periodic and one-shot operation here */
 }
+#endif
 /* This is used in one-shot operation mode */
 static int bcm947xx_clockevent_set_next(unsigned long delta,
 	struct clock_event_device *cd)
@@ -222,7 +224,7 @@ struct clock_event_device bcm947xx_clockevent = {
 	.features	= CLOCK_EVT_FEAT_ONESHOT,
 	.rating		= 300,
 	.irq		= 7,
-	.set_mode 	= bcm947xx_clockevent_set_mode,
+//	.set_mode 	= bcm947xx_clockevent_set_mode,
 	.set_next_event = bcm947xx_clockevent_set_next, 
 };
 #endif
@@ -230,7 +232,7 @@ struct clock_event_device bcm947xx_clockevent = {
 /* named initialization should work on earlier 2.6 too */
 static struct irqaction bcm947xx_timer_irqaction = {
 	.handler	= bcm947xx_timer_interrupt,
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= IRQF_TIMER,
 	.name		= "bcm947xx timer",
 	.dev_id		= &bcm947xx_clockevent,
 };

@@ -85,8 +85,8 @@ sbpci_write_config_reg(struct pci_bus *bus, unsigned int devfn, int where,
 }
 
 static struct pci_ops pcibios_ops = {
-	sbpci_read_config_reg,
-	sbpci_write_config_reg
+	.read = sbpci_read_config_reg,
+	.write = sbpci_write_config_reg
 };
 
 static u32 pci_iobase = 0x100;
@@ -144,7 +144,7 @@ int __init pcibios_init(void)
 	printk(KERN_INFO "PCI: scanning bus %x\n", 0);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 	register_pci_controller( &bcm947xxcontroller );
-	root_bus = pci_scan_bus_parented(NULL, 0, &pcibios_ops, &bcm947xxcontroller);
+	root_bus = pci_scan_bus(0, &pcibios_ops, &bcm947xxcontroller);
 	if (root_bus)
 		pci_bus_add_devices(root_bus);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
