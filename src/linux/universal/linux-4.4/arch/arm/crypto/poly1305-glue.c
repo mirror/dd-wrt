@@ -221,6 +221,7 @@ static struct shash_alg arm_poly1305_algs[] = {{
 	.base.cra_name		= "poly1305",
 	.base.cra_driver_name	= "poly1305-arm",
 	.base.cra_priority	= 150,
+	.base.cra_flags		= CRYPTO_ALG_TYPE_SHASH,
 	.base.cra_blocksize	= POLY1305_BLOCK_SIZE,
 	.base.cra_module	= THIS_MODULE,
 #ifdef CONFIG_KERNEL_MODE_NEON
@@ -234,6 +235,7 @@ static struct shash_alg arm_poly1305_algs[] = {{
 	.base.cra_name		= "poly1305",
 	.base.cra_driver_name	= "poly1305-neon",
 	.base.cra_priority	= 200,
+	.base.cra_flags		= CRYPTO_ALG_TYPE_SHASH,
 	.base.cra_blocksize	= POLY1305_BLOCK_SIZE,
 	.base.cra_module	= THIS_MODULE,
 #endif
