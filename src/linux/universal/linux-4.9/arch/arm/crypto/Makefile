@@ -56,7 +56,7 @@ poly1305-arm-y := poly1305-core.o poly1305-glue.o
 quiet_cmd_perl = PERL    $@
       cmd_perl = $(PERL) $(<) > $(@)
 
-$(obj)/%-core.S: $(src)/%-armv4.pl
+$(src)/poly1305-core.S_shipped: $(src)/poly1305-armv4.pl
 	$(call cmd,perl)
 
 $(src)/aesbs-core.S_shipped: $(src)/bsaes-armv7.pl
@@ -72,4 +72,4 @@ poly1305-aflags-$(CONFIG_CPU_V7) := -U__LINUX_ARM_ARCH__ -D__LINUX_ARM_ARCH__=5
 poly1305-aflags-$(CONFIG_KERNEL_MODE_NEON) := -U__LINUX_ARM_ARCH__ -D__LINUX_ARM_ARCH__=7
 AFLAGS_poly1305-core.o += $(poly1305-aflags-y)
 
-.PRECIOUS: $(obj)/aesbs-core.S $(obj)/sha256-core.S $(obj)/sha512-core.S
+.PRECIOUS: $(obj)/aesbs-core.S $(obj)/sha256-core.S $(obj)/sha512-core.S $(obj)/poly1305-core.S
