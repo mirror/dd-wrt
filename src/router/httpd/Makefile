@@ -1018,8 +1018,10 @@ CFLAGS += -DHAVE_NORTHSTAR
 endif
 
 ifeq ($(CONFIG_OPENVPN),y)
+ifeq ($(CONFIG_MUSL),y)
 VISOBJS += speedtest.o
 CFLAGS += -DHAVE_SPEEDTEST_CLI
+endif
 CFLAGS += -DHAVE_OPENVPN
 endif
 
