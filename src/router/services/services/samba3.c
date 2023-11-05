@@ -288,6 +288,7 @@ void start_samba3(void)
 	if (*nbname) {
 		char parm[128];
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
+		stop_process("wsdd2", "windows service discovery daemon");
 		log_eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
 	char c1[64];
@@ -299,10 +300,6 @@ void start_samba3(void)
 	return;
 }
 
-void restart_samba3(void)
-{
-	start_samba3();
-}
 
 void stop_samba3(void)
 {
@@ -320,6 +317,11 @@ void stop_samba3(void)
 #endif
 }
 #endif
+
+void restart_samba3(void)
+{
+	start_samba3();
+}
 
 #ifdef TEST
 void main(int argc, char *argv[])
