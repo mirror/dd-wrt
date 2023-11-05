@@ -48,9 +48,7 @@ AC_CANONICAL_HOST
 # Checks for tools: c compiler, ranlib (used for creating static libraries),
 # symlinks and libtool
 AC_PROG_CC
-AC_PROG_RANLIB
 AC_PROG_LN_S
-LT_INIT
 
 # Add -Wall if we are using GCC.
 if test "x$GCC" = "xyes"; then
@@ -82,6 +80,18 @@ exit 1
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
+
+AX_PTHREAD(
+[AC_DEFINE([HAVE_PTHREAD],[1],[Define if you have POSIX threads libraries and header files.])
+LIBS="$PTHREAD_LIBS $LIBS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+CC="$PTHREAD_CC"
+CXX="$PTHREAD_CXX"
+])
+
+# Atomics
+AC_CHECK_HEADERS([stdatomic.h])
 
 # Check for poll.h (it's in POSIX so everyone should have it?)
 AC_CHECK_HEADERS([poll.h])
@@ -137,7 +147,7 @@ if test "x$with_openssl" = "xno"; then
     AC_MSG_WARN( [Building without OpenSSL; disabling iperf_auth functionality.] )
 else
     # Check for OPENSSL support
-    havs_ssl=false
+    have_ssl=false
     AX_CHECK_OPENSSL(
         [ AC_DEFINE([HAVE_SSL], [1], [OpenSSL Is Available])
           have_ssl=true ],
@@ -321,3 +331,4 @@ AC_CHECK_FUNCS([clock_gettime])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/version.h examples/Makefile iperf3.spec])
 AC_OUTPUT
+
