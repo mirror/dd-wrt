@@ -10,8 +10,10 @@ quagga-install:
 	make -C quagga DESTDIR=$(INSTALLDIR)/quagga install
 	mkdir -p $(INSTALLDIR)/quagga/usr/lib
 	-cp -urv $(INSTALLDIR)/quagga/usr/tmp/* $(INSTALLDIR)/quagga/usr/lib
-	rm -rf $(INSTALLDIR)/quagga/usr/tmp 
-
+	rm -rf $(INSTALLDIR)/quagga/usr/tmp 	
+ifneq ($(CONFIG_MUSL),y)
+	rm -f $(INSTALLDIR)/quagga/usr/bin/vtysh*
+endif
 	rm -rf $(INSTALLDIR)/quagga/tmp
 	rm -rf $(INSTALLDIR)/quagga/usr/info
 	rm -rf $(INSTALLDIR)/quagga/usr/share
