@@ -12,4 +12,13 @@ config CRYPTO_POLY1305_MIPS
 
 	  Architecture: mips
 
+config CRYPTO_CHACHA20_MIPS
+	tristate "Ciphers: ChaCha20 (MIPS32r2)"
+	depends on !CPU_MIPS32_R1 
+	help
+	  Length-preserving cipher: ChaCha20
+	  stream cipher algorithms
+
+	  Architecture: MIPS32r2
+
 endmenu
