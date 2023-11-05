@@ -283,7 +283,7 @@ config CRYPTO_CHACHA20POLY1305
 	tristate "ChaCha20-Poly1305 AEAD support"
 	select CRYPTO_CHACHA20
 	select CRYPTO_POLY1305
-	select CONFIG_CRYPTO_LIB_POLY1305	
+	select CRYPTO_LIB_POLY1305	
 	select CRYPTO_AEAD
 	help
 	  ChaCha20-Poly1305 AEAD support, RFC7539.
@@ -541,7 +541,7 @@ config CRYPTO_GHASH
 config CRYPTO_POLY1305
 	tristate "Poly1305 authenticator algorithm"
 	select CRYPTO_HASH
-	select CONFIG_CRYPTO_LIB_POLY1305	
+	select CRYPTO_LIB_POLY1305	
 	help
 	  Poly1305 authenticator algorithm, RFC7539.
 
