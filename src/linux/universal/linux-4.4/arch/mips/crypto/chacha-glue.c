@@ -12,6 +12,7 @@
 #include <crypto/ablk_helper.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <asm/unaligned.h>
 
 asmlinkage void chacha_crypt_arch(u32 *state, u8 *dst, const u8 *src,
 				  unsigned int bytes, int nrounds);
@@ -20,10 +21,10 @@ asmlinkage void chacha_crypt_arch(u32 *state, u8 *dst, const u8 *src,
 static inline int chacha20_setkey(struct crypto_tfm *tfm, const u8 *key,
 				unsigned int keysize)
 {
-	struct chacha20_ctx *ctx = crypto_blkcipher_ctx(tfm);
+	struct chacha20_ctx *ctx = crypto_tfm_ctx(tfm);
 	int i;
 
-	if (keysize != CHACHA_KEY_SIZE)
+	if (keysize != CHACHA20_KEY_SIZE)
 		return -EINVAL;
 
 	for (i = 0; i < ARRAY_SIZE(ctx->key); i++)
@@ -59,35 +60,29 @@ static inline void chacha_init(u32 *state, const u32 *key, const u8 *iv)
 	state[15] = get_unaligned_le32(iv + 12);
 }
 
-static int chacha_mips_stream_xor(struct blkcipher_desc *req,
-				  const struct chacha20_ctx *ctx, const u8 *iv)
+static int chacha20_mips(struct blkcipher_desc *desc,
+			     struct scatterlist *dst,
+			     struct scatterlist *src, unsigned int nbytes)
 {
+	struct chacha20_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
 	struct blkcipher_walk walk;
 	u32 state[16];
 	int err;
-
-	err = blkcipher_walk_virt(req, &walk);
-
-	chacha_init(state, ctx->key, iv);
+	blkcipher_walk_init(&walk, dst, src, nbytes);
+	err = blkcipher_walk_virt(desc, &walk);
+	chacha_init(state, ctx->key, walk.iv);
 
 	while (walk.nbytes > 0) {
 		unsigned int nbytes = walk.nbytes;
 
 		if (nbytes < walk.total)
-			nbytes = round_down(nbytes, walk.stride);
+			nbytes = round_down(nbytes, CHACHA20_BLOCK_SIZE);
 
 		chacha_crypt_arch(state, walk.dst.virt.addr, walk.src.virt.addr, nbytes, 20);
-		err = blkcipher_walk_done(&walk, walk.nbytes - nbytes);
+		err = blkcipher_walk_done(desc, &walk, walk.nbytes - nbytes);
 	}
 
 	return err;
-}
-
-static int chacha20_mips(struct blkcipher_desc *req)
-{
-	struct chacha20_ctx *ctx = crypto_blkcipher_ctx(req->tfm);
-
-	return chacha_mips_stream_xor(req, ctx, req->iv);
 }
 
 static struct crypto_alg alg = {
@@ -114,7 +109,7 @@ static struct crypto_alg alg = {
 
 static int __init chacha_simd_mod_init(void)
 {
-	crypto_register_alg(alg) : 0;
+	return crypto_register_alg(&alg);
 }
 
 static void __exit chacha_simd_mod_fini(void)

@@ -8,7 +8,7 @@
 obj-$(CONFIG_CRYPTO_POLY1305_MIPS) += poly1305-mips.o
 poly1305-mips-y := poly1305-core.o poly1305-glue.o
 
-obj-$(CONFIG_CRYPTO_CHACHA_MIPS) += chacha-mips.o
+obj-$(CONFIG_CRYPTO_CHACHA20_MIPS) += chacha-mips.o
 chacha-mips-y := chacha-core.o chacha-glue.o
 AFLAGS_chacha-core.o += -O2 # needed to fill branch delay slots
 
