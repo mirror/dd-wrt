@@ -112,6 +112,13 @@ ifeq ($(CONFIG_ATH10K),y)
   CPTCFG_ATH10K_PCI=y
   CPTCFG_ATH10K_DEBUGFS=y
 endif
+ifeq ($(CONFIG_ATH11K),y)
+  CPTCFG_ATH11K=y
+  CPTCFG_ATH11K_DEBUGFS=y
+  CPTCFG_ATH11K_THERMAL=y
+  CPTCFG_ATH11K_SPECTRAL=y
+  CPTCFG_ATH11K_PCI=y
+endif
 ifeq ($(CONFIG_MCPHERSON),y)
   BUILDFLAGS += -DHAVE_MCPHERSON
 endif
@@ -390,6 +397,11 @@ endif
 #	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
 #	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
 endif
+ifeq ($(CONFIG_ATH11K),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k
+endif
+
 ifeq ($(CONFIG_ATH10K),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/ath10k
