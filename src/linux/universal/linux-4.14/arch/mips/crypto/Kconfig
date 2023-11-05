@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-2.0
+
+menu "Accelerated Cryptographic Algorithms for CPU (mips)"
+
+config CRYPTO_POLY1305_MIPS
+	tristate "Hash functions: Poly1305"
+	depends on MIPS
+	select CRYPTO_ARCH_HAVE_LIB_POLY1305
+	select CRYPTO_LIB_POLY1305
+	help
+	  Poly1305 authenticator algorithm (RFC7539)
+
+	  Architecture: mips
+
+config CRYPTO_CHACHA20_MIPS
+	tristate "Ciphers: ChaCha20 (MIPS32r2)"
+	depends on CPU_MIPS32_R2 
+	help
+	  Length-preserving cipher: ChaCha20
+	  stream cipher algorithms
+
+	  Architecture: MIPS32r2
+
+endmenu
