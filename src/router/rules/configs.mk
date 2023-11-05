@@ -191,7 +191,11 @@ endif
 ifeq ($(KERNELVERSION),4.4)
 obj-$(CONFIG_OPENVPN) += libnl
 endif
-obj-$(CONFIG_OPENVPN) += lzo openvpn speedtest-cli 
+ifneq ($(CONFIG_MUSL),y)
+obj-$(CONFIG_OPENVPN) += lzo openvpn
+else
+obj-$(CONFIG_OPENVPN) += lzo openvpn speedtest-cli
+endif
 obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_BATMANADV) += batman-adv
 obj-$(CONFIG_FDISK) += fdisk
