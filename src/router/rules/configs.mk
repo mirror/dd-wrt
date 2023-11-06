@@ -100,6 +100,9 @@ endif
 ifeq ($(CONFIG_UBNTM),y)
 obj-$(CONFIG_SNMP) += snmp
 endif
+ifeq ($(CONFIG_XSCALE),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
 ifeq ($(CONFIG_IPV6),y)
 obj-$(CONFIG_RADVD) += radvd aiccu
 endif
