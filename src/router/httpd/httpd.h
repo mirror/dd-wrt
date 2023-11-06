@@ -19,6 +19,7 @@
 #if defined(DEBUG) && defined(DMALLOC)
 #include <dmalloc.h>
 #endif
+#include <stdatomic.h>
 
 #ifdef HAVE_MATRIXSSL
 #define DDWRT
@@ -106,11 +107,11 @@ typedef struct {
 	char http_client_mac[sizeof("00:00:00:00:00:00\0") + 1];
 	int browser_method;
 #ifdef HAVE_REGISTER
-	int isregistered;
-	int isregistered_real;
+	atomic_int_fast8_t isregistered;
+	atomic_int_fast8_t isregistered_real;
 #endif
 #ifdef HAVE_SUPERCHANNEL
-	int issuperchannel;
+	atomic_int_fast8_t issuperchannel;
 #endif
 	persistent_vars *p;
 /* CGI hash table */
