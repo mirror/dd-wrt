@@ -849,7 +849,6 @@ int ias_sid_timeout;
 void ias_sid_set(webs_t wp);
 int ias_sid_valid(webs_t wp);
 #endif
-static int threadnum = 0;
 static persistent_vars global_vars;
 #define LINE_LEN 10000
 static void *handle_request(void *arg)
@@ -885,7 +884,6 @@ static void *handle_request(void *arg)
 #ifdef HAVE_SUPERCHANNEL
 	conn_fp->issuperchannel = superchannel;
 #endif
-	threadnum++;
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif
@@ -1370,7 +1368,6 @@ static void *handle_request(void *arg)
 #ifdef HAVE_ISSUPERCHANNEL
 	superchannel = conn_fp->issuperchannel;
 #endif
-	threadnum--;
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif	
