@@ -1,3 +1,17 @@
+ifeq ($(ARCH),i386)
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
+endif
+ifeq ($(ARCH),mips)
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
+endif
+ifeq ($(ARCH),arm)
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
+endif
+
+
 iperf-configure:
 	cd iperf && libtoolize
 	cd iperf && aclocal
@@ -8,7 +22,7 @@ iperf-configure:
 		CC="$(CC)" \
 		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
 		CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
-		LDFLAGS="$(LDLTO) -latomic -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="$(LDLTO) $(LIB_ATOMIC) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
