@@ -163,18 +163,6 @@
 	};
 };
 
-&pcie1 {
-	mwlwifi {
-		marvell,chainmask = <4 4>;
-	};
-};
-
-&pcie2 {
-	mwlwifi {
-		marvell,chainmask = <4 4>;
-	};
-};
-
 &sdhci {
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdhci_pins>;
