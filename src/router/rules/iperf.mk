@@ -6,6 +6,10 @@ ifeq ($(ARCH),mips)
 LIB_ATOMIC=-latomic
 CONFIG_LIBATOMIC=y
 endif
+ifeq ($(ARCH),mipsel)
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
+endif
 ifeq ($(ARCH),arm)
 LIB_ATOMIC=-latomic
 CONFIG_LIBATOMIC=y
