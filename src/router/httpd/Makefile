@@ -1016,6 +1016,9 @@ endif
 ifeq ($(CONFIG_NORTHSTAR),y)
 CFLAGS += -DHAVE_NORTHSTAR
 endif
+ifeq ($(CONFIG_MUSL),y)
+CFLAGS += -DHAVE_MUSL
+endif
 
 ifeq ($(CONFIG_OPENVPN),y)
 ifeq ($(CONFIG_MUSL),y)

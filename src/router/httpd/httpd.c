@@ -180,11 +180,11 @@ extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
 #ifdef HAVE_REGISTER
-static atomic_int_fast8_t registered = -1;
-static atomic_int_fast8_t registered_real = -1;
+static dd_atomic8_t registered = -1;
+static dd_atomic8_t registered_real = -1;
 #endif
 #ifdef HAVE_SUPERCHANNEL
-static atomic_int_fast8_t superchannel = -1;
+static dd_atomic8_t superchannel = -1;
 #endif
 #ifdef HAVE_REGISTER
 #define IS_REGISTERED(conn_fp) (conn_fp->isregistered)
@@ -225,6 +225,9 @@ static void *handle_request(void *conn_fp);
 static sem_t semaphore;
 #ifdef __UCLIBC__
 static pthread_mutex_t crypt_mutex;
+#endif
+#ifndef HAVE_MUSL
+static pthread_mutex_t httpd_mutex;
 #endif
 static pthread_mutex_t input_mutex;
 
@@ -846,7 +849,7 @@ int ias_sid_timeout;
 void ias_sid_set(webs_t wp);
 int ias_sid_valid(webs_t wp);
 #endif
-static atomic_int_fast8_t threadnum = 0;
+static int threadnum = 0;
 static persistent_vars global_vars;
 #define LINE_LEN 10000
 static void *handle_request(void *arg)
@@ -872,6 +875,9 @@ static void *handle_request(void *arg)
 	PTHREAD_MUTEX_LOCK(&input_mutex);	// barrier. block until input is done. otherwise global members get async
 	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
+#ifndef HAVE_MUSL
+	PTHREAD_MUTEX_LOCK(&httpd_mutex);
+#endif
 #ifdef HAVE_REGISTER
 	conn_fp->isregistered = registered;
 	conn_fp->isregistered_real = registered_real;
@@ -880,7 +886,9 @@ static void *handle_request(void *arg)
 	conn_fp->issuperchannel = superchannel;
 #endif
 	threadnum++;
-
+#ifndef HAVE_MUSL
+	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
+#endif
 	setnaggle(conn_fp, 1);
 
 	line = malloc(LINE_LEN);
@@ -1352,6 +1360,9 @@ static void *handle_request(void *arg)
 		debug_free(conn_fp->authorization);
 	if (conn_fp->post_buf)
 		debug_free(conn_fp->post_buf);
+#ifndef HAVE_MUSL
+	PTHREAD_MUTEX_LOCK(&httpd_mutex);
+#endif
 #ifdef HAVE_REGISTER
 	registered = conn_fp->isregistered;
 	registered_real = conn_fp->isregistered_real;
@@ -1360,6 +1371,9 @@ static void *handle_request(void *arg)
 	superchannel = conn_fp->issuperchannel;
 #endif
 	threadnum--;
+#ifndef HAVE_MUSL
+	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
+#endif	
 	SEM_POST(&semaphore);
 
 	wfflush(conn_fp);
@@ -1513,6 +1527,9 @@ int main(int argc, char **argv)
 
 	CRYPT_MUTEX_INIT(&crypt_mutex, NULL);
 	SEM_INIT(&semaphore, 0, HTTP_MAXCONN);
+#ifndef HAVE_MUSL
+	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
+#endif
 	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 	PTHREAD_MUTEX_INIT(&global_vars.mutex_contr, NULL);
