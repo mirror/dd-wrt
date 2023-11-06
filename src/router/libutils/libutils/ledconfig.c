@@ -150,7 +150,8 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_WRT_3200ACM:
 	case ROUTER_WRT_32X:
-//              cfg->usb_power = 0x2f;
+                cfg->usb_power = 0x2f;
+                cfg->usb_power1 = 0x2c;
 		cfg->power_gpio = 0x0;
 		cfg->diag_gpio = GPIO_LOW | 0x0;
 		cfg->connected_gpio = 0x6;
