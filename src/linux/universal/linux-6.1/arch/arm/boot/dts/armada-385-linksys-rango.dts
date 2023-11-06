@@ -75,20 +75,10 @@
 		gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		label = "rango:white:sata";
 	};
-
-	wlan_2g {
-		gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
-		label = "rango:white:wlan_2g";
-	};
-
-	wlan_5g {
-		gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
-		label = "rango:white:wlan_5g";
-	};
 };
 
 &gpio_leds_pins {
-	marvell,pins = "mpp21", "mpp45", "mpp46", "mpp56";
+	marvell,pins = "mpp21", "mpp56";
 };
 
 &nand {
@@ -200,7 +190,7 @@
 };
 
 &usb3_1_vbus_pins {
-	marvell,pins = "mpp44";
+	marvell,pins = "mpp47";
 };
 
 &pcie1 {
