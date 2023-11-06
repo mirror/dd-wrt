@@ -191,7 +191,9 @@ include rules/e2fsprogs.mk
 include rules/ncurses.mk
 include rules/iftop.mk
 include rules/iptraf.mk
+ifeq ($(CONFIG_SQUID),y)
 include rules/squid.mk
+endif
 include rules/proftpd.mk
 include rules/zabbix.mk
 include rules/ippd.mk
@@ -220,7 +222,9 @@ include rules/strace.mk
 include rules/util-linux.mk
 include rules/asterisk.mk
 include rules/zaptel.mk
+ifeq ($(CONFIG_IPERF),y)
 include rules/iperf.mk
+endif
 include rules/wavesat.mk
 include rules/libshared.mk
 include rules/upnp.mk
