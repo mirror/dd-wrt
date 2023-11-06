@@ -2846,10 +2846,8 @@ void start_sysinit(void)
 	if (!nvram_match("wan_ifname", "")) {
 		strcpy(wanifname, nvram_safe_get("wan_ifname"));
 		nvram_set("wan_ifname", wanifname);
-		nvram_set("wan_ifname2", wanifname);
 		nvram_set("wan_ifnames", wanifname);
 		nvram_set("wan_default", wanifname);
-		nvram_set("pppoe_ifname", wanifname);
 	}
 
 	strcpy(wlifname, nvram_safe_get("wl0_ifname"));
