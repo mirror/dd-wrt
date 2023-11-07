@@ -18,6 +18,10 @@ ifeq ($(ARCH),armeb)
 LIB_ATOMIC=-latomic
 CONFIG_LIBATOMIC=y
 endif
+ifeq ($(ARCH),powerpc)
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
+endif
 
 
 iperf-configure:
