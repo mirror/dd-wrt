@@ -460,7 +460,7 @@
 
 				partition@e00000 {
 					label = "rootfs";
-					reg = <0xd00000 0x2400000>;    /* 37MB */
+					reg = <0xe00000 0x2400000>;    /* 37MB */
 				};
 
 				partition@3200000 {
@@ -470,7 +470,7 @@
 
 				partition@3600000 {
 					label = "rootfs2";
-					reg = <0x3500000 0x2300000>;    /* 37MB */
+					reg = <0x3600000 0x2300000>;    /* 37MB */
 				};
 				
 				partition@5900000 {
