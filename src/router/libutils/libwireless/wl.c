@@ -3219,9 +3219,9 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 #ifdef HAVE_TMK
 	char *fakename = NULL;
 	char vname[50];
-	sprintf(vname, "%s_fakename", prefix);
+	snprintf(vname, sizeof(vname), "%s_fakename", prefix);
 	fakename = nvram_safe_get(vname);
-	if (fakename != NULL)
+	if (fakename && strlen(fakename))
 		return fakename;
 #endif
 #ifdef HAVE_ATH9K
