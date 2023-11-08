@@ -82,7 +82,9 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_SPECIALEDITION
 
-EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
+
+
+static void _ej_get_firmware_version(webs_t wp, int argc, char_t ** argv, noreg)
 {
 #if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || defined(HAVE_IDEXX) || defined(HAVE_RAYTRONIK)
 	char *p;
@@ -95,7 +97,7 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 
 #ifdef HAVE_REGISTER
-	if (wp->isregistered && !wp->isregistered_real) {
+	if (!noreg && wp->isregistered && !wp->isregistered_real) {
 		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
 	} else
 #endif
@@ -214,6 +216,16 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
+EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
+{
+	_ej_get_firmware_version(wp, argc, argc, 0);
+}
+
+EJ_VISIBLE void ej_get_firmware_version_noreg(webs_t wp, int argc, char_t ** argv)
+{
+	_ej_get_firmware_version(wp, argc, argc, 1);
+
+}
 EJ_VISIBLE void ej_get_firmware_title(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "Wireless-G Broadband Router");
