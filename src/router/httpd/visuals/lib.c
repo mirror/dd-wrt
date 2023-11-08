@@ -82,19 +82,6 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_SPECIALEDITION
 
-EJ_VISIBLE void ej_get_firmware_version_href(webs_t wp, int argc, char_t ** argv)
-{
-#ifdef HAVE_REGISTER
-	if (wp->isregistered && !wp->isregistered_real) {
-		websWrite(wp, "/register.asp");	
-	} else {
-		websWrite(wp, "javascript:openAboutWindow();");
-	}
-#else
-	websWrite(wp, "javascript:openAboutWindow();");
-#endif
-}
-
 EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
 #if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || defined(HAVE_IDEXX) || defined(HAVE_RAYTRONIK)
