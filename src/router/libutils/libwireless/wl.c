@@ -3216,6 +3216,14 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	device = getValueFromPath("/proc/sys/dev/wifi%d/dev_device", devcount, "%d", NULL);
 	subvendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
 	subdevice = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
+#ifdef HAVE_TMK
+	char *fakename = NULL;
+	char vname[50];
+	sprintf(vname, "%s_fakename", prefix);
+	fakename = nvram_safe_get(vname);
+	if (fakename != NULL)
+		return fakename;
+#endif
 #ifdef HAVE_ATH9K
 	if (!vendor || !device) {
 		devnum = get_ath9k_phy_ifname(prefix);
