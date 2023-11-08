@@ -131,7 +131,7 @@ addEvent(window, "unload", function() {
 				<div class="info"><% tran("share.firmware"); %>:&nbsp;
 					<script type="text/javascript">
 					//<![CDATA[
-					document.write("<a title=\"" + share.about + "\" href=\"<% get_firmware_version_href(); %>\"><% get_firmware_version(); %></a>");
+					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
 					//]]>
 					</script>
 				</div>
