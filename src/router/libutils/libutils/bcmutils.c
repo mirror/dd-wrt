@@ -1968,7 +1968,7 @@ int endswith(char *str, char *cmp)
 	if (!str || !cmp)
 		return 0;
 	int diff = strlen(str) - strlen(cmp);
-	return diff > 0 && 0 == strcmp(&str[diff], cmp);
+	return diff >= 0 && 0 == strcmp(&str[diff], cmp);
 }
 
 int searchfor(FILE * fp, char *str, int scansize)
