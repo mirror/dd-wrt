@@ -84,7 +84,7 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 
 
 
-static void _ej_get_firmware_version(webs_t wp, int argc, char_t ** argv, noreg)
+static void _ej_get_firmware_version(webs_t wp, int argc, char_t ** argv, int noreg)
 {
 #if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || defined(HAVE_IDEXX) || defined(HAVE_RAYTRONIK)
 	char *p;
