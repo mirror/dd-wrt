@@ -127,6 +127,7 @@ struct irq_domain_ops irq_exti_domain_ops = {
 	.xlate	= irq_domain_xlate_onetwocell,
 	.alloc  = stm32_exti_alloc,
 	.free	= stm32_exti_free,
+	.xlate	= irq_domain_xlate_twocell,
 };
 
 static int __init stm32_exti_init(struct device_node *node,
