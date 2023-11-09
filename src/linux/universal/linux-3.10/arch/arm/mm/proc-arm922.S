@@ -428,7 +428,7 @@ arm922_crval:
 
 	.align
 
-	.section ".proc.info.init", #alloc, #execinstr
+	.section ".proc.info.init", "a"
 
 	.type	__arm922_proc_info,#object
 __arm922_proc_info:

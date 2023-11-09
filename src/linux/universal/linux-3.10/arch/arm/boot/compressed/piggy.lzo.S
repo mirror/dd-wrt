@@ -1,4 +1,4 @@
-	.section .piggydata,#alloc
+	.section .piggydata,"a"
 	.globl	input_data
 input_data:
 	.incbin	"arch/arm/boot/compressed/piggy.lzo"
