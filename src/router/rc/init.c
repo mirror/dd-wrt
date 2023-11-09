@@ -387,6 +387,10 @@ void fatal_signal(int sig)
 	/* 
 	 * Halt on SIGUSR1 
 	 */
+#ifdef HAVE_NEWPORT
+	sleep(5);
+	writeproc("/proc/sysrq-trigger", "b");
+#endif
 	reboot(RB_AUTOBOOT);
 #ifndef HAVE_VENTANA
 	sleep(5);
