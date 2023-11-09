@@ -52,6 +52,9 @@ static int __ixgbe_enable_sriov(struct ixgbe_adapter *adapter)
 	int num_vf_macvlans, i;
 	struct vf_macvlans *mv_list;
 
+	/* Initialize list of VF macvlans */
+	INIT_LIST_HEAD(&adapter->vf_mvs.l);
+
 	adapter->flags |= IXGBE_FLAG_SRIOV_ENABLED;
 	e_info(probe, "SR-IOV enabled with %d VFs\n", adapter->num_vfs);
 
@@ -68,8 +71,6 @@ static int __ixgbe_enable_sriov(struct ixgbe_adapter *adapter)
 					     sizeof(struct vf_macvlans),
 					     GFP_KERNEL);
 	if (mv_list) {
-		/* Initialize list of VF macvlans */
-		INIT_LIST_HEAD(&adapter->vf_mvs.l);
 		for (i = 0; i < num_vf_macvlans; i++) {
 			mv_list->vf = -1;
 			mv_list->free = true;

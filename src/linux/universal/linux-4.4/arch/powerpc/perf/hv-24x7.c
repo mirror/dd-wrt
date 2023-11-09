@@ -1188,7 +1188,7 @@ static int h_24x7_event_init(struct perf_event *event)
 
 	/* Domains above 6 are invalid */
 	domain = event_get_domain(event);
-	if (domain > 6) {
+	if (domain == 0 || domain > 6) {
 		pr_devel("invalid domain %d\n", domain);
 		return -EINVAL;
 	}

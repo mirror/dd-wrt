@@ -34,6 +34,7 @@
 #include <linux/of.h>
 #include <linux/of_fdt.h>
 #include <linux/libfdt.h>
+#include <linux/jump_label.h>
 
 #include <asm/prom.h>
 #include <asm/rtas.h>

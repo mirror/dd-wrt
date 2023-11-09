@@ -604,7 +604,7 @@ static int amd_pinconf_get(struct pinctrl_dev *pctldev,
 }
 
 static int amd_pinconf_set(struct pinctrl_dev *pctldev, unsigned int pin,
-			   unsigned long *configs, unsigned int num_configs)
+				unsigned long *configs, unsigned num_configs)
 {
 	int i;
 	u32 arg;
@@ -692,20 +692,6 @@ static int amd_pinconf_group_set(struct pinctrl_dev *pctldev,
 			return -ENOTSUPP;
 	}
 	return 0;
-}
-
-static int amd_gpio_set_config(struct gpio_chip *gc, unsigned int pin,
-			       unsigned long config)
-{
-	struct amd_gpio *gpio_dev = gpiochip_get_data(gc);
-
-	if (pinconf_to_config_param(config) == PIN_CONFIG_INPUT_DEBOUNCE) {
-		u32 debounce = pinconf_to_config_argument(config);
-
-		return amd_gpio_set_debounce(gc, pin, debounce);
-	}
-
-	return amd_pinconf_set(gpio_dev->pctrl, pin, &config, 1);
 }
 
 static const struct pinconf_ops amd_pinconf_ops = {

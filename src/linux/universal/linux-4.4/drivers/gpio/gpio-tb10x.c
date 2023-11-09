@@ -249,7 +249,7 @@ static int tb10x_gpio_probe(struct platform_device *pdev)
 				handle_edge_irq, IRQ_NOREQUEST, IRQ_NOPROBE,
 				IRQ_GC_INIT_MASK_CACHE);
 		if (ret)
-			goto fail_irq_domain;
+			goto err_remove_domain;
 
 		gc = tb10x_gpio->domain->gc->gc[0];
 		gc->reg_base                         = tb10x_gpio->base;
@@ -264,6 +264,8 @@ static int tb10x_gpio_probe(struct platform_device *pdev)
 
 	return 0;
 
+err_remove_domain:
+	irq_domain_remove(tb10x_gpio->domain);
 fail_irq_domain:
 fail_request_irq:
 fail_get_irq:
