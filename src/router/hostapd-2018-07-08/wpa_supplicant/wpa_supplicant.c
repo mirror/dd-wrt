@@ -2207,7 +2207,7 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 {
 	enum hostapd_hw_mode hw_mode;
 	struct hostapd_hw_modes *mode = NULL;
-	int ht40plus[] = { 1, 2, 3, 4, 5, 6, 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157,
+	int ht40plus[] = { 1, 2, 3, 4, 5, 6, 7, 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157,
 			   184, 192 };
 	int vht80[] = { 36, 52, 100, 116, 132, 149 };
 	struct hostapd_channel_data *pri_chan = NULL, *sec_chan = NULL;
