@@ -107,11 +107,11 @@ static int pcie_rx_ring_init(struct mwl_priv *priv)
 			desc->prx_ring[i].rssi = 0x00;
 			desc->prx_ring[i].pkt_len =
 				cpu_to_le16(SYSADPT_MAX_AGGR_SIZE);
-			dma = pci_map_single(pcie_priv->pdev,
+			dma = dma_map_single(&(pcie_priv->pdev)->dev,
 					     rx_hndl->psk_buff->data,
 					     desc->rx_buf_size,
-					     PCI_DMA_FROMDEVICE);
-			if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
+					     DMA_FROM_DEVICE);
+			if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
 				wiphy_err(priv->hw->wiphy,
 					  "failed to map pci memory!\n");
 				return -ENOMEM;
@@ -153,15 +153,15 @@ static void pcie_rx_ring_cleanup(struct mwl_priv *priv)
 			if (!rx_hndl->psk_buff)
 				continue;
 
-			pci_unmap_single(pcie_priv->pdev,
+			dma_unmap_single(&(pcie_priv->pdev)->dev,
 					 le32_to_cpu
 					 (rx_hndl->pdesc->pphys_buff_data),
 					 desc->rx_buf_size,
-					 PCI_DMA_FROMDEVICE);
+					 DMA_FROM_DEVICE);
 
 			dev_kfree_skb_any(rx_hndl->psk_buff);
 
-			wiphy_debug(priv->hw->wiphy,
+			wiphy_dbg(priv->hw->wiphy,
 				    "unmapped+free'd %i 0x%p 0x%x %i\n",
 				    i, rx_hndl->psk_buff->data,
 				    le32_to_cpu(
@@ -335,11 +335,11 @@ static inline int pcie_rx_refill(struct mwl_priv *priv,
 	rx_hndl->pdesc->rssi = 0x00;
 	rx_hndl->pdesc->pkt_len = cpu_to_le16(desc->rx_buf_size);
 
-	dma = pci_map_single(pcie_priv->pdev,
+	dma = dma_map_single(&(pcie_priv->pdev)->dev,
 			     rx_hndl->psk_buff->data,
 			     desc->rx_buf_size,
-			     PCI_DMA_FROMDEVICE);
-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
+			     DMA_FROM_DEVICE);
+	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
 		dev_kfree_skb_any(rx_hndl->psk_buff);
 		wiphy_err(priv->hw->wiphy,
 			  "failed to map pci memory!\n");
@@ -413,10 +413,10 @@ void pcie_rx_recv(unsigned long data)
 		prx_skb = curr_hndl->psk_buff;
 		if (!prx_skb)
 			goto out;
-		pci_unmap_single(pcie_priv->pdev,
+		dma_unmap_single(&(pcie_priv->pdev)->dev,
 				 le32_to_cpu(curr_hndl->pdesc->pphys_buff_data),
 				 desc->rx_buf_size,
-				 PCI_DMA_FROMDEVICE);
+				 DMA_FROM_DEVICE);
 		pkt_len = le16_to_cpu(curr_hndl->pdesc->pkt_len);
 
 		if (skb_tailroom(prx_skb) < pkt_len) {

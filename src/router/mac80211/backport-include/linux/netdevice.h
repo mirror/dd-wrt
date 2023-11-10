@@ -426,7 +426,9 @@ static inline void dev_sw_netstats_tx_add(struct net_device *dev,
 }
 #endif
 
-#if LINUX_VERSION_IS_LESS(5,10,0)
+#if LINUX_VERSION_IS_GEQ(6,1,0)
+#define netif_rx_any_context netif_rx
+#elif LINUX_VERSION_IS_LESS(5,10,0)
 #define dev_fetch_sw_netstats LINUX_BACKPORT(dev_fetch_sw_netstats)
 void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
 			   const struct pcpu_sw_netstats __percpu *netstats);

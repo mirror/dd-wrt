@@ -86,11 +86,11 @@ static int pcie_rx_ring_init_ndp(struct mwl_priv *priv)
 			}
 			skb_reserve(psk_buff, MIN_BYTES_RX_HEADROOM);
 
-			dma = pci_map_single(pcie_priv->pdev,
+			dma = dma_map_single(&(pcie_priv->pdev)->dev,
 					     psk_buff->data,
 					     desc->rx_buf_size,
-					     PCI_DMA_FROMDEVICE);
-			if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
+					     DMA_FROM_DEVICE);
+			if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
 				wiphy_err(priv->hw->wiphy,
 					  "failed to map pci memory!\n");
 				return -ENOMEM;
@@ -120,11 +120,11 @@ static void pcie_rx_ring_cleanup_ndp(struct mwl_priv *priv)
 	if (desc->prx_ring) {
 		for (i = 0; i < MAX_NUM_RX_DESC; i++) {
 			if (desc->rx_vbuflist[i]) {
-				pci_unmap_single(pcie_priv->pdev,
+				dma_unmap_single(&(pcie_priv->pdev)->dev,
 						 le32_to_cpu(
 						 desc->prx_ring[i].data),
 						 desc->rx_buf_size,
-						 PCI_DMA_FROMDEVICE);
+						 DMA_FROM_DEVICE);
 				desc->rx_vbuflist[i] = NULL;
 			}
 		}
@@ -400,11 +400,11 @@ static inline int pcie_rx_refill_ndp(struct mwl_priv *priv, u32 buf_idx)
 		return -ENOMEM;
 	skb_reserve(psk_buff, MIN_BYTES_RX_HEADROOM);
 
-	dma = pci_map_single(pcie_priv->pdev,
+	dma = dma_map_single(&(pcie_priv->pdev)->dev,
 			     psk_buff->data,
 			     desc->rx_buf_size,
-			     PCI_DMA_FROMDEVICE);
-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
+			     DMA_FROM_DEVICE);
+	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
 		wiphy_err(priv->hw->wiphy,
 			  "refill: failed to map pci memory!\n");
 		return -ENOMEM;
@@ -509,10 +509,10 @@ recheck:
 			break;
 		}
 
-		pci_unmap_single(pcie_priv->pdev,
+		dma_unmap_single(&(pcie_priv->pdev)->dev,
 				 le32_to_cpu(prx_desc->data),
 				 desc->rx_buf_size,
-				 PCI_DMA_FROMDEVICE);
+				 DMA_FROM_DEVICE);
 
 		bad_mic = false;
 		ctrl = le32_to_cpu(prx_ring_done->ctrl);
@@ -546,7 +546,7 @@ recheck:
 		case RXRING_CASE_DROP:
 		case RXRING_CASE_SLOW_BAD_PN:
 			if (ctrl_case == RXRING_CASE_SLOW_DEL_DONE) {
-				wiphy_debug(hw->wiphy,
+				wiphy_dbg(hw->wiphy,
 					    "staid %d deleted\n",
 					    stnid);
 				utils_free_stnid(priv, stnid);

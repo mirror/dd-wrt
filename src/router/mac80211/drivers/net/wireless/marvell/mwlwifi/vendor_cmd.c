@@ -52,7 +52,7 @@ static int mwl_vendor_cmd_set_bf_type(struct wiphy *wiphy,
 	val = nla_get_u8(tb[MWL_VENDOR_ATTR_BF_TYPE]);
 	if ((val < TXBF_MODE_OFF) || (val > TXBF_MODE_BFMER_AUTO))
 		return -EINVAL;
-	wiphy_debug(wiphy, "set bf_type: 0x%x\n", val);
+	wiphy_dbg(wiphy, "set bf_type: 0x%x\n", val);
 
 	rc = mwl_fwcmd_set_bftype(hw, val);
 	if (!rc)

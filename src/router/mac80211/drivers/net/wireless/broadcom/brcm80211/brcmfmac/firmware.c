@@ -444,7 +444,7 @@ struct brcmf_fw {
 
 static void brcmf_fw_request_done(const struct firmware *fw, void *ctx);
 
-#ifdef CONFIG_EFI
+#if 0 //def CONFIG_EFI
 /* In some cases the EFI-var stored nvram contains "ccode=ALL" or "ccode=XV"
  * to specify "worldwide" compatible settings, but these 2 ccode-s do not work
  * properly. "ccode=ALL" causes channels 12 and 13 to not be available,

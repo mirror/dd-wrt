@@ -24,7 +24,7 @@ struct pnvm_sku_package {
 	u8 data[];
 } __packed;
 
-#ifdef CONFIG_EFI
+#if 0 //def CONFIG_EFI
 void *iwl_uefi_get_pnvm(struct iwl_trans *trans, size_t *len);
 void *iwl_uefi_get_reduced_power(struct iwl_trans *trans, size_t *len);
 #else /* CONFIG_EFI */

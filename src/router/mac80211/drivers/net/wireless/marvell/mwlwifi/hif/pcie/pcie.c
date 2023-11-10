@@ -35,7 +35,7 @@
 #define PCIE_DEV_NAME "Marvell 802.11ac PCIE Adapter"
 #endif
 
-#define MAX_WAIT_FW_COMPLETE_ITERATIONS 2000
+#define MAX_WAIT_FW_COMPLETE_ITERATIONS 10000
 #define CHECK_BA_TRAFFIC_TIME           300 /* msec */
 #define CHECK_TX_DONE_TIME              50  /* msec */
 
@@ -154,7 +154,7 @@ static bool pcie_chk_adapter(struct pcie_priv *pcie_priv)
 	}
 
 	if (priv->cmd_timeout)
-		wiphy_debug(priv->hw->wiphy, "MACREG_REG_INT_CODE: 0x%04x\n",
+		wiphy_dbg(priv->hw->wiphy, "MACREG_REG_INT_CODE: 0x%04x\n",
 			    regval);
 
 	return true;
@@ -389,7 +389,7 @@ static int pcie_exec_cmd(struct ieee80211_hw *hw, unsigned short cmd)
 	if (!priv->in_send_cmd && !priv->rmmod) {
 		priv->in_send_cmd = true;
 		if (priv->dump_hostcmd)
-			wiphy_debug(priv->hw->wiphy, "send cmd 0x%04x=%s\n",
+			wiphy_dbg(priv->hw->wiphy, "send cmd 0x%04x=%s\n",
 				    cmd, mwl_fwcmd_get_cmd_string(cmd));
 		pcie_send_cmd(pcie_priv);
 		if (pcie_wait_complete(priv, 0x8000 | cmd)) {
@@ -556,7 +556,7 @@ static void pcie_timer_routine(struct ieee80211_hw *hw)
 	if (ba_full && rm_stream) {
 		ieee80211_stop_tx_ba_session(rm_stream->sta,
 					     rm_stream->tid);
-		//wiphy_debug(hw->wiphy, "Stop BA %pM\n", rm_stream->sta->addr);
+//		wiphy_dbg(hw->wiphy, "Stop BA %pM\n", rm_stream->sta->addr);
 	}
 	spin_unlock_bh(&priv->stream_lock);
 }
@@ -573,7 +573,8 @@ static struct device_node *pcie_get_device_node(struct ieee80211_hw *hw)
 	struct device_node *dev_node;
 
 	dev_node = pci_bus_to_OF_node(pcie_priv->pdev->bus);
-	wiphy_info(priv->hw->wiphy, "device node: %s\n", dev_node->full_name);
+	if (dev_node)
+		wiphy_info(priv->hw->wiphy, "device node: %s\n", dev_node->full_name);
 
 	return dev_node;
 }
@@ -587,12 +588,10 @@ static void pcie_get_survey(struct ieee80211_hw *hw,
 	survey_info->filled = SURVEY_INFO_TIME |
 			      SURVEY_INFO_TIME_BUSY |
 			      SURVEY_INFO_TIME_TX |
-			      SURVEY_INFO_TIME_RX |
 			      SURVEY_INFO_NOISE_DBM;
 	survey_info->time_period += pcie_read_mac_reg(pcie_priv, MCU_LAST_READ);
 	survey_info->time_busy += pcie_read_mac_reg(pcie_priv, MCU_CCA_CNT);
 	survey_info->time_tx += pcie_read_mac_reg(pcie_priv, MCU_TXPE_CNT);
-	survey_info->time_rx += pcie_read_mac_reg(pcie_priv, MCU_RXPE_CNT);
 	survey_info->noise = priv->noise;
 }
 
@@ -1296,7 +1295,9 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
 	const char filename[] = "/tmp/BF_MIMO_Ctrl_Field_Output.txt";
 	char str_buf[256];
 	char *buf = &str_buf[0];
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
 	mm_segment_t oldfs;
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 	oldfs = get_fs();
@@ -1304,7 +1305,7 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
 	oldfs = get_fs();
 	set_fs(KERNEL_DS);
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
 	oldfs = force_uaccess_begin();
 #endif
 
@@ -1322,13 +1323,13 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
 			       &fp_data->f_pos);
 		filp_close(fp_data, current->files);
 	} else {
-		wiphy_err(priv->hw->wiphy, "Error opening %s! %x\n",
-			  filename, (unsigned int)fp_data);
+		wiphy_err(priv->hw->wiphy, "Error opening %s! %ld\n",
+			  filename, PTR_ERR(fp_data));
 	}
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
 	set_fs(oldfs);
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
 	force_uaccess_end(oldfs);
 #endif
 }
@@ -1556,7 +1557,7 @@ static int pcie_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return rc;
 	}
 
-	rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+	rc = dma_set_mask(&pdev->dev, DMA_BIT_MASK(32));
 	if (rc) {
 		pr_err("%s: 32-bit PCI DMA not supported\n",
 		       PCIE_DRV_NAME);

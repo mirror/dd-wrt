@@ -51,7 +51,6 @@ enum {
 
 #define MCU_CCA_CNT               MAC_REG_ADDR(0x06A0)
 #define MCU_TXPE_CNT              MAC_REG_ADDR(0x06A4)
-#define MCU_RXPE_CNT		  MAC_REG_ADDR(0x0860)
 #define MCU_LAST_READ             MAC_REG_ADDR(0x06A8)
 
 /* Map to 0x80000000 (Bus control) on BAR0 */
@@ -758,13 +757,15 @@ static inline void pcie_tx_add_dma_header(struct mwl_priv *priv,
 	if (hdrlen != reqd_hdrlen) {
 		needed_room = reqd_hdrlen - hdrlen;
 		if (skb_headroom(skb) < needed_room) {
-			wiphy_debug(priv->hw->wiphy, "headroom is short: %d %d",
+			wiphy_dbg(priv->hw->wiphy, "headroom is short: %d %d",
 				    skb_headroom(skb), needed_room);
 			skb_cow(skb, needed_room);
 		}
 		skb_push(skb, needed_room);
 	}
 
+	if (ieee80211_is_data_qos(wh->frame_control))
+		hdrlen -= IEEE80211_QOS_CTL_LEN;
 
 	if (priv->chip_type == MWL8997)
 		dma_data = &((struct pcie_pfu_dma_data *)skb->data)->dma_data;

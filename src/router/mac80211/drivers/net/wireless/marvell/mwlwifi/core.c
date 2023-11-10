@@ -148,7 +148,7 @@ static int mwl_prepare_cmd_buf(struct mwl_priv *priv)
 			  "cannot alloc memory for command buffer\n");
 		goto err;
 	}
-	wiphy_debug(priv->hw->wiphy,
+	wiphy_dbg(priv->hw->wiphy,
 		    "priv->pcmd_buf = %p  priv->pphys_cmd_buf = %p\n",
 		    priv->pcmd_buf,
 		    (void *)priv->pphys_cmd_buf);
@@ -186,7 +186,7 @@ static int mwl_init_firmware(struct mwl_priv *priv, const char *fw_name,
 	if (cal_name) {
 		if ((request_firmware((const struct firmware **)&priv->cal_data,
 		     cal_name, priv->dev)) < 0)
-			wiphy_debug(priv->hw->wiphy,
+			wiphy_dbg(priv->hw->wiphy,
 				    "cannot find calibtration data\n");
 	}
 
@@ -194,7 +194,7 @@ static int mwl_init_firmware(struct mwl_priv *priv, const char *fw_name,
 		if ((request_firmware(
 		     (const struct firmware **)&priv->txpwrlmt_file,
 		     txpwrlmt_name, priv->dev)) < 0)
-			wiphy_debug(priv->hw->wiphy,
+			wiphy_dbg(priv->hw->wiphy,
 				    "cannot find tx power limit data\n");
 	}
 
@@ -347,7 +347,7 @@ static void mwl_reg_notifier(struct wiphy *wiphy,
 			}
 
 			/* Dump loaded power tabel */
-			wiphy_debug(hw->wiphy, "regdomain: %s\n", prop->name);
+			wiphy_dbg(hw->wiphy, "regdomain: %s\n", prop->name);
 			for (i = 0; i < SYSADPT_MAX_NUM_CHANNELS; i++) {
 				struct mwl_tx_pwr_tbl *pwr_tbl;
 				char disp_buf[64];
@@ -356,7 +356,7 @@ static void mwl_reg_notifier(struct wiphy *wiphy,
 				pwr_tbl = &priv->tx_pwr_tbl[i];
 				if (pwr_tbl->channel == 0)
 					break;
-				wiphy_debug(hw->wiphy,
+				wiphy_dbg(hw->wiphy,
 					    "Channel: %d: 0x%x 0x%x 0x%x\n",
 					    pwr_tbl->channel,
 					    pwr_tbl->setcap,
@@ -369,7 +369,7 @@ static void mwl_reg_notifier(struct wiphy *wiphy,
 						sprintf(disp_ptr, "%x ",
 							pwr_tbl->tx_power[j]);
 				}
-				wiphy_debug(hw->wiphy, "%s\n", disp_buf);
+				wiphy_dbg(hw->wiphy, "%s\n", disp_buf);
 			}
 		}
 	}
@@ -791,11 +791,17 @@ static irqreturn_t mwl_isr(int irq, void *dev_id)
 	return mwl_hif_irq_handler(hw);
 }
 
+#ifdef timer_setup
+static void timer_routine(struct timer_list *t)
+{
+	struct mwl_priv *priv = from_timer(priv, t, period_timer);
+	struct ieee80211_hw *hw = priv->hw;
+#else
 static void timer_routine(unsigned long data)
 {
 	struct ieee80211_hw *hw = (struct ieee80211_hw *)data;
 	struct mwl_priv *priv = hw->priv;
-
+#endif
 	if (priv->heartbeat) {
 		if ((jiffies - priv->pre_jiffies) >=
 		    msecs_to_jiffies(priv->heartbeat * 1000)) {
@@ -1013,7 +1019,11 @@ static int mwl_wl_init(struct mwl_priv *priv)
 		goto err_register_irq;
 	}
 
-	setup_timer(&priv->period_timer, timer_routine, (unsigned long)hw);
+#ifdef timer_setup
+	timer_setup(&priv->period_timer, timer_routine, 0);
+#else
+ 	setup_timer(&priv->period_timer, timer_routine, (unsigned long)hw);
+#endif
 	mod_timer(&priv->period_timer, jiffies +
 		  msecs_to_jiffies(SYSADPT_TIMER_WAKEUP_TIME));
 

@@ -295,7 +295,7 @@ static int mwl_mac80211_config(struct ieee80211_hw *hw,
 	struct ieee80211_conf *conf = &hw->conf;
 	int rc;
 
-//	wiphy_debug(hw->wiphy, "change: 0x%x\n", changed);
+//	wiphy_dbg(hw->wiphy, "change: 0x%x\n", changed);
 
 	if (conf->flags & IEEE80211_CONF_IDLE)
 		rc = mwl_fwcmd_radio_disable(hw);

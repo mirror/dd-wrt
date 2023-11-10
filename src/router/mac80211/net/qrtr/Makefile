@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
-obj-$(CPTCFG_QRTR) := qrtr.o ns.o
+obj-$(CPTCFG_QRTR) += qrtr.o
+qrtr-y	:= af_qrtr.o ns.o
 
 obj-$(CPTCFG_QRTR_SMD) += qrtr-smd.o
 qrtr-smd-y	:= smd.o
