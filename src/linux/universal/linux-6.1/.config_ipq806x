@@ -5034,3 +5034,4 @@ CONFIG_ARCH_USE_MEMTEST=y
 #
 # end of Rust hacking
 # end of Kernel hacking
+# CONFIG_QCOM_QMI_HELPERS is not set
