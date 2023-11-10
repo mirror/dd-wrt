@@ -931,10 +931,10 @@ ifeq ($(CONFIG_THOM),y)
 CFLAGS_EXTRA += -DHAVE_THOM
 endif
 ifeq ($(CONFIG_ATH9K),y)
-ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+ATH9KLDFLAGS += $(LDLTO)  -L$(TOP)/libnl-tiny -lnl-tiny 
 ifneq ($(CONFIG_NOWIFI),y)
 
-ATH9KCFLAGS+= $(COPTS) -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
+ATH9KCFLAGS+= $(COPTS) $(LTO) -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 ATH9KCFLAGS+= -DHAVE_SUPERCHANNEL
 endif
