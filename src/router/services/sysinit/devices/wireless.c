@@ -132,7 +132,7 @@ static void load_mac80211(void)
 
 }
 
-#define RADIO_ALL 0xff
+#define RADIO_ALL 0xffff
 #define RADIO_ATH9K 0x1
 #define RADIO_ATH10K 0x2
 #define RADIO_LEGACY 0x4
