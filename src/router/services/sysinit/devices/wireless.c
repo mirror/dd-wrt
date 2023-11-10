@@ -141,6 +141,7 @@ static void load_mac80211(void)
 #define RADIO_RTLWIFI 0x20
 #define RADIO_MT76 0x40
 #define RADIO_IWLWIFI 0x80
+#define RADIO_ATH11K 0x100
 
 static void detect_wireless_devices(int mask)
 {
@@ -437,7 +438,20 @@ static void detect_wireless_devices(int mask)
 		}
 	}
 #endif
-#ifdef HAVE_X86
+	if ((mask & RADIO_ATH11K)) {
+		insmod("thermal_sys");
+		insmod("hwmon");
+		nvram_default_get("ath10k_encap", "0");
+		if (nvram_match("noath11k", "0")) {
+		{
+			insmod("ath11k");
+			insmod("qrtr");
+			insmod("mhi");
+			insmod("qrtr_mhi");
+			insmod("ath11k_pci");
+		}
+	}
+
 	if ((mask & RADIO_MT76)) {
 		insmod("thermal_sys");
 		insmod("hwmon");
@@ -537,7 +551,7 @@ static void detect_wireless_devices(int mask)
 		}
 
 	}
-#endif
+
 	if (!totalwifi) {
 		rmmod("mac80211");
 		rmmod("cfg80211");
