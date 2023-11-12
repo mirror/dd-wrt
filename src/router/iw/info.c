@@ -256,7 +256,7 @@ static int print_phy_handler(struct nl_msg *msg, void *arg)
 			    tb_band[NL80211_BAND_ATTR_VHT_MCS_SET])
 				print_vht_info(nla_get_u32(tb_band[NL80211_BAND_ATTR_VHT_CAPA]),
 					       nla_data(tb_band[NL80211_BAND_ATTR_VHT_MCS_SET]));
-#if 0
+#if 1
 			if (tb_band[NL80211_BAND_ATTR_IFTYPE_DATA]) {
 				struct nlattr *nl_iftype;
 				int rem_band;

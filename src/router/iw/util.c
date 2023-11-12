@@ -153,7 +153,7 @@ static const char *commands[NL80211_CMD_MAX + 1] = {
 };
 
 static char cmdbuf[100];
-#if 0
+#if 1
 const char *command_name(enum nl80211_commands cmd)
 {
 	if (cmd <= NL80211_CMD_MAX && commands[cmd])
