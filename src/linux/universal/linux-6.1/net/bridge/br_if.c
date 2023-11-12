@@ -790,10 +790,12 @@ void br_dev_update_stats(struct net_device *dev, struct rtnl_link_stats64 *nlsta
 	if (!(dev->priv_flags & IFF_EBRIDGE))
 		return;
 
+	local_bh_disable();
 	u64_stats_update_begin(&tstats->syncp);
 	u64_stats_add(&tstats->rx_bytes, nlstats->rx_bytes);
 	u64_stats_add(&tstats->rx_packets, nlstats->rx_packets);
 	u64_stats_update_end(&tstats->syncp);
 	dev_sw_netstats_tx_add(dev, nlstats->tx_packets, nlstats->tx_bytes);
+	local_bh_enable();
 }
 EXPORT_SYMBOL_GPL(br_dev_update_stats);
