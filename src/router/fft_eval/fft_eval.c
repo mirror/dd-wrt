@@ -560,7 +560,8 @@ static int read_scandata(char *fname)
 			    bins != 64 &&
 			    bins != 128 &&
 			    bins != 256 &&
-			    bins != 512) {
+			    bins != 512 &&
+			    bins != 1024) {
 				fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
