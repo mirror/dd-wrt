@@ -1396,14 +1396,6 @@ static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_eve
 		return NOTIFY_DONE;
 	}
 
-	/*
-	 * If this is an untracked connection then we can't have any state either.
-	 */
-//	if (unlikely(nf_ct_is_untracked(ct))) {
-//		DEBUG_TRACE("ignoring untracked conn\n");
-//		return NOTIFY_DONE;
-//	}
-
 	orig_tuple = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
 	sid.protocol = (s32)orig_tuple.dst.protonum;
 
@@ -1554,6 +1546,8 @@ static struct nf_hook_ops fast_classifier_ops_post_routing[] __read_mostly = {
 #endif
 };
 
+unsigned int *udp_get_timeouts(struct net *net);
+
 /*
  * fast_classifier_sync_rule()
  *	Synchronize a connection's state.
@@ -1632,7 +1626,7 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 	}
 
 	ct = nf_ct_tuplehash_to_ctrack(h);
-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+//	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
 
 	/*
 	 * Only update if this is not a fixed timeout
@@ -1701,23 +1695,16 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 		}
 		timeouts = nf_ct_timeout_lookup(ct);
 		if (!timeouts) {
-			struct nf_udp_net *tn = nf_udp_pernet(&init_net);
-			spin_lock_bh(&ct->lock);
-			if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
-				ct->timeout = nfct_time_stamp + tn->timeouts[UDP_CT_REPLIED];
-			} else {
-				ct->timeout = nfct_time_stamp + tn->timeouts[UDP_CT_UNREPLIED];
-			}
-			spin_unlock_bh(&ct->lock);
+			timeouts = udp_get_timeouts(nf_ct_net(ct));
+		} 
+
+		spin_lock_bh(&ct->lock);
+		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
+			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
 		} else {
-			spin_lock_bh(&ct->lock);
-			if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
-				ct->timeout = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
-			} else {
-				ct->timeout = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
-			}
-			spin_unlock_bh(&ct->lock);
+			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
 		}
+		spin_unlock_bh(&ct->lock);
 		}
 		break;
 #endif
