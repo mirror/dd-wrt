@@ -38,7 +38,7 @@
 
 #include <wlutils.h>
 
-int getrate(int rate, int bw, int ac)
+int getrate(int rate, int bw, int ac, int ax)
 {
 	int result = rate * 10;
 	if (bw == 4)
@@ -293,33 +293,40 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				s = narrow;
 			//fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
 			int hasac = 0;
+			int hasax = 0;
 			if (site_survey_lists[i].extcap & CAP_VHT)
 				hasac = 1;
+			if (site_survey_lists[i].extcap & CAP_AX)
+				hasax = 1;
 			switch (cbw) {
 			case 0x0:
 				if (site_survey_lists[i].extcap & CAP_SECCHANNEL)
-					speed = getrate(speed, s * 2, hasac);
+					speed = getrate(speed, s * 2, hasac, hasax);
 				else
-					speed = getrate(speed, s, hasac);
+					speed = getrate(speed, s, hasac, hasax);
 				break;
 			case 0x100:
-				speed = getrate(speed, s * 4, hasac);
+				speed = getrate(speed, s * 4, hasac, hasax);
 				break;
 			case 0x200:
 			case 0x300:
-				speed = getrate(speed, s * 8, hasac);
+				speed = getrate(speed, s * 8, hasac, hasax);
 				break;
 			default:
 				speed = speed * 10;
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (site_survey_lists[i].extcap & CAP_VHT)
+				if (site_survey_lists[i].extcap & CAP_AX)
+					sprintf(rates, "%s(b/g/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (site_survey_lists[i].extcap & CAP_VHT)
 					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
 					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			} else {
-				if (site_survey_lists[i].extcap & CAP_VHT)
+				if (site_survey_lists[i].extcap & CAP_AX)
+					sprintf(rates, "%s(a/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (site_survey_lists[i].extcap & CAP_VHT)
 					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
 					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
