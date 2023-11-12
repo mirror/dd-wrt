@@ -339,6 +339,7 @@ static int print_values()
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
 				int i, bins;
+
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
 					       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
@@ -382,8 +383,9 @@ static int print_values()
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
 				int i, bins;
-				printf("\n{ \"tsf\": %08d, \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
-				       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
+				if (!rnum)
+					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
+				    		result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
 
@@ -410,8 +412,10 @@ static int print_values()
 						data = 1;
 					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 					printf("[ %f, %f ]", freq, signal);
-					if (i < bins - 1)
+					if (i < (bins - 1) || result->next)
 						printf(", ");
+					if (i == (bins - 1))
+						printf("\n");
 
 				}
 			}
