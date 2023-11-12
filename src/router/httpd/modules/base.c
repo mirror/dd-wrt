@@ -855,7 +855,9 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	int phy = mac80211_get_phyidx_by_vifname(ifname);
 	char *path;
 
-	if (is_ath10k(ifname))
+	if (is_ath11k(ifname))
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath11k", phy);
+	else if (is_ath10k(ifname))
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath10k", phy);
 	else
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
@@ -868,7 +870,7 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	while (!feof(fp))
 		getc(fp);
 	fclose(fp);
-	if (is_ath10k(ifname)) {
+	if (is_ath10k(ifname) || is_ath11k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "256");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
