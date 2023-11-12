@@ -23,8 +23,10 @@ void pci_msi_init(struct pci_dev *dev)
 				      ctrl & ~PCI_MSI_FLAGS_ENABLE);
 	}
 
+#ifndef CONFIG_ARCH_THUNDER
 	if (!(ctrl & PCI_MSI_FLAGS_64BIT))
 		dev->no_64bit_msi = 1;
+#endif
 }
 
 void pci_msix_init(struct pci_dev *dev)
