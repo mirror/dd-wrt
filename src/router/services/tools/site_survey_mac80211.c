@@ -860,8 +860,7 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 	printf("\n");
 }
 
-static void print_he_capa(const uint8_t type, uint8_t len, const uint8_t *data,
-			  const struct print_ies_data *ie_buffer)
+static void print_he_capa(const uint8_t type, uint8_t len, const uint8_t *data)
 {
 	site_survey_lists[sscount].extcap |= CAP_AX;	// AX capable
 }
@@ -884,7 +883,7 @@ static void print_extension(unsigned char len, unsigned char *ie,
 	tag = ie[0];
 	if (tag < ARRAY_SIZE(ext_printers) && ext_printers[tag].name &&
 	    ext_printers[tag].flags & BIT(ptype)) {
-		print_ie(&ext_printers[tag], tag, len - 1, ie + 1, NULL);
+		print_ie(&ext_printers[tag], tag, len - 1, ie + 1);
 		return;
 	}
 
