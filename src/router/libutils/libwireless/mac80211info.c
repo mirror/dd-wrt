@@ -821,6 +821,8 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		data.iftype = 0;
 		if (is_ath10k(ifname + 1))
 			data.iftype = 1;
+		if (is_ath11k(ifname + 1))
+			data.iftype = 1;
 		unl_genl_request(&unl, msg, mac80211_cb_stations, &data);
 
 		char *oldhistory = history;

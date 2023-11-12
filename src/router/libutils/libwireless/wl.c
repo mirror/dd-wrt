@@ -1888,6 +1888,16 @@ void radio_on_off_ath9k(int idx, int on)
 		else
 			value |= ((1 << 5) | (1 << 6));	// disable rx and tx
 		set_ath10kreg(prefix, pcu_diag_reg, value);
+	} else if (is_ath11k(prefix)) {
+/*		unsigned int pcu_diag_reg = 0x24048;
+		if (has_wave2(prefix))
+			pcu_diag_reg = 0x311b4;
+		unsigned int value = get_ath10kreg(prefix, pcu_diag_reg);
+		if (on)
+			value &= ~((1 << 5) | (1 << 6));
+		else
+			value |= ((1 << 5) | (1 << 6));	// disable rx and tx
+		set_ath10kreg(prefix, pcu_diag_reg, value);*/
 	} else {
 		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_idx(idx));
 		fp = open(debugstring, O_WRONLY);
@@ -1909,6 +1919,8 @@ void radio_on_off_ath9k(int idx, int on)
 #else
 	if (is_ath10k(prefix))
 		sprintf(debugstring, "/sys/class/leds/ath10k-phy%d/trigger", get_ath9k_phy_idx(idx));
+	else if (is_ath11k(prefix))
+		sprintf(debugstring, "/sys/class/leds/ath11k-phy%d/trigger", get_ath9k_phy_idx(idx));
 	else
 		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_ath9k_phy_idx(idx));
 #endif
@@ -3495,6 +3507,8 @@ int has_spectralscanning(const char *prefix)
 		RETURNVALUE(0);
 	if (is_ath10k(prefix))
 		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
+	else if (is_ath11k(prefix))
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
 	else
 		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_count", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
@@ -3510,9 +3524,8 @@ int has_spectralscanning(const char *prefix)
 #ifdef HAVE_ATH9K
 int has_airtime_fairness(const char *prefix)
 {
-	return (is_ath10k(prefix) || is_ath9k(prefix) || is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix));
+	return (is_ath10k(prefix) || is_ath11k(prefix) || is_ath10k(prefix) || is_ath9k(prefix) || is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix));
 }
-
 #endif
 
 #ifdef HAVE_ATH5K
@@ -3621,6 +3634,9 @@ IS_DRIVER(mvebu, "pci:mwlwifi");
 #ifdef HAVE_ATH10K
 IS_DRIVER(ath10k, "pci:ath10k_pci");
 #endif
+#ifdef HAVE_ATH11K
+IS_DRIVER(ath11k, "pci:ath11k_pci");
+#endif
 #ifdef HAVE_BRCMFMAC
 IS_DRIVER(brcmfmac, "pci:brcmfmac");
 #endif
@@ -3643,7 +3659,7 @@ int is_mt76(const char *prefix)
 #ifdef HAVE_WPA3
 int has_airtime_policy(const char *prefix)
 {
-	if (is_ath10k(prefix) || is_ath9k(prefix) || is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix))
+	if (is_ath10k(prefix) || is_ath11k(prefix) || is_ath9k(prefix) || is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix))
 		return 1;
 	return 0;
 }
@@ -3668,6 +3684,8 @@ int getmaxvaps(const char *prefix)
 	if (is_ath9k(prefix))
 		return 8;
 	if (is_ath10k(prefix))
+		return 16;
+	if (is_ath11k(prefix))
 		return 16;
 	if (is_ath5k(prefix))
 		return 4;

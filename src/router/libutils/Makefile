@@ -183,6 +183,9 @@ endif
 ifeq ($(CONFIG_ATH10K),y)
 CFLAGS += -DHAVE_ATH10K
 endif
+ifeq ($(CONFIG_ATH11K),y)
+CFLAGS += -DHAVE_ATH11K
+endif
 ifeq ($(CONFIG_BRCMFMAC),y)
 CFLAGS += -DHAVE_BRCMFMAC
 endif
