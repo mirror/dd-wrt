@@ -378,7 +378,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				speed = 1080;
 				break;
 			default:
-				speed = getrate(rc, 20, 0);
+				speed = getrate(rc, 20, 0, 0);
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
