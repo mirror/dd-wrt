@@ -32,7 +32,7 @@ ccflags-y += -DSFE_SUPPORT_IPV6
 #endif
 
 #ifdef SFE_RFS_SUPPORTED
-ccflags-y += -DSFE_RFS_SUPPORTED
+#ccflags-y += -DSFE_RFS_SUPPORTED
 #endif
 
 #ifdef SFE_PPE_QOS_SUPPORTED
@@ -41,10 +41,10 @@ ccflags-y += -DSFE_PPE_QOS_SUPPORTED
 
 #ifdef SFE_PROCESS_LOCAL_OUT
 ccflags-y += -DSFE_PROCESS_LOCAL_OUT
-endif
+#endif
 
 #ifdef SFE_BRIDGE_VLAN_FILTERING_ENABLE
 ccflags-y += -DSFE_BRIDGE_VLAN_FILTERING_ENABLE
 #endif
 
-ccflags-y += -Werror -Wall -Iexports/
+ccflags-y += -Werror -Wall -Inet/shortcut-fe_v2/exports/

@@ -21,6 +21,10 @@
 #ifndef __SFE_H
 #define __SFE_H
 
+#ifndef IPPROTO_ETHERIP
+#define IPPROTO_ETHERIP 97
+#endif
+
 /*
  * Maximum number of accelerated IPv4 or IPv6 connections
  */

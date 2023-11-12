@@ -529,7 +529,6 @@ static inline void netdev_set_addr_lockdep_class(struct net_device *dev)
  *
  *******************************************************************************/
 
-
 /*
  *	Add a protocol ID to the list. Now that the input handler is
  *	smarter we can dispense with all the messy stuff that used to be
@@ -630,7 +629,6 @@ void dev_remove_pack(struct packet_type *pt)
 	synchronize_net();
 }
 EXPORT_SYMBOL(dev_remove_pack);
-
 
 /*******************************************************************************
  *
@@ -845,7 +843,6 @@ struct net_device *dev_get_by_index_rcu(struct net *net, int ifindex)
 	return NULL;
 }
 EXPORT_SYMBOL(dev_get_by_index_rcu);
-
 
 /**
  *	dev_get_by_index - find a device by its ifindex
@@ -1597,7 +1594,6 @@ void dev_close(struct net_device *dev)
 	}
 }
 EXPORT_SYMBOL(dev_close);
-
 
 /**
  *	dev_disable_lro - disable Large Receive Offload on a device
@@ -3183,7 +3179,6 @@ void __dev_kfree_skb_any(struct sk_buff *skb, enum skb_free_reason reason)
 }
 EXPORT_SYMBOL(__dev_kfree_skb_any);
 
-
 /**
  * netif_device_detach - mark device as removed
  * @dev: network device
@@ -3619,18 +3614,16 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	unsigned int len;
 	int rc;
 
-	if (!skb->fast_forwarded) {
+	if (unlikely(!skb->fast_forwarded)) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	if ((!list_empty(&ptype_all) || !list_empty(&dev->ptype_all)) &&
 		!(skb->imq_flags & IMQ_F_ENQUEUE))
 #else
 	if (!list_empty(&ptype_all) || !list_empty(&dev->ptype_all))
 #endif
-
-	if (dev_nit_active(dev))
-		dev_queue_xmit_nit(skb, dev);
+		if (dev_nit_active(dev))
+			dev_queue_xmit_nit(skb, dev);
 	}
-
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	if (dev->eth_mangle_tx && !(skb = dev->eth_mangle_tx(dev, skb)))
 		return NETDEV_TX_OK;
@@ -4190,6 +4183,80 @@ struct netdev_queue *netdev_core_pick_tx(struct net_device *dev,
 	skb_set_queue_mapping(skb, queue_index);
 	return netdev_get_tx_queue(dev, queue_index);
 }
+
+/**
+ *	dev_fast_xmit - fast xmit the skb
+ *	@skb:buffer to transmit
+ *	@dev: the device to be transmited to
+ *	@features: the skb features could bed used
+ *	sucessful return true
+ *	failed return false
+ */
+bool dev_fast_xmit(struct sk_buff *skb,
+		struct net_device *dev,
+		netdev_features_t features)
+{
+	struct netdev_queue *txq;
+	int cpu;
+	netdev_tx_t rc;
+
+	if (unlikely(!(dev->flags & IFF_UP))) {
+		return false;
+	}
+
+	if (unlikely(skb_needs_linearize(skb, features))) {
+		return false;
+	}
+
+	rcu_read_lock_bh();
+	cpu = smp_processor_id();
+
+	/* If device don't need the dst, release it now, otherwise make sure
+	 * the refcount increased.
+	 */
+	if (likely(dev->priv_flags & IFF_XMIT_DST_RELEASE)) {
+		skb_dst_drop(skb);
+	} else {
+		skb_dst_force(skb);
+	}
+
+	txq = netdev_core_pick_tx(dev, skb, NULL);
+
+	if (likely(txq->xmit_lock_owner != cpu)) {
+#define FAST_HARD_TX_LOCK(features, txq, cpu) {		\
+	if ((features & NETIF_F_LLTX) == 0) {		\
+		__netif_tx_lock(txq, cpu);		\
+	} else {					\
+		__netif_tx_acquire(txq);		\
+	}						\
+}
+
+#define FAST_HARD_TX_UNLOCK(features, txq) {		\
+	if ((features & NETIF_F_LLTX) == 0) {		\
+		__netif_tx_unlock(txq);			\
+	} else {					\
+		__netif_tx_release(txq);		\
+	}						\
+}
+		netdev_features_t dev_features = dev->features;
+		FAST_HARD_TX_LOCK(dev_features, txq, cpu);
+		if (likely(!netif_xmit_stopped(txq))) {
+			rc = netdev_start_xmit(skb, dev, txq, 0);
+			if (unlikely(!dev_xmit_complete(rc))) {
+				FAST_HARD_TX_UNLOCK(dev_features, txq);
+				goto fail;
+			}
+			FAST_HARD_TX_UNLOCK(dev_features, txq);
+			rcu_read_unlock_bh();
+			return true;
+		}
+		FAST_HARD_TX_UNLOCK(dev_features, txq);
+	}
+fail:
+	rcu_read_unlock_bh();
+	return false;
+}
+EXPORT_SYMBOL(dev_fast_xmit);
 
 /**
  * __dev_queue_xmit() - transmit a buffer
@@ -5375,18 +5442,18 @@ another_round:
 		}
 	}
 
-	if (eth_type_vlan(skb->protocol)) {
-		skb = skb_vlan_untag(skb);
-		if (unlikely(!skb))
-			goto out;
-	}
-
 	fast_recv = rcu_dereference(fast_nat_recv);
 	if (fast_recv) {
 		if (fast_recv(skb)) {
 			ret = NET_RX_SUCCESS;
 			goto out;
 		}
+	}
+
+	if (eth_type_vlan(skb->protocol)) {
+		skb = skb_vlan_untag(skb);
+		if (unlikely(!skb))
+			goto out;
 	}
 
 	if (skb_skip_tc_classify(skb))
@@ -8460,7 +8527,6 @@ void *netdev_lower_dev_get_private(struct net_device *dev,
 }
 EXPORT_SYMBOL(netdev_lower_dev_get_private);
 
-
 /**
  * netdev_lower_state_changed - Dispatch event about lower device state change
  * @lower_dev: device
@@ -10343,7 +10409,6 @@ int init_dummy_netdev(struct net_device *dev)
 	return 0;
 }
 EXPORT_SYMBOL_GPL(init_dummy_netdev);
-
 
 /**
  *	register_netdev	- register a network device
