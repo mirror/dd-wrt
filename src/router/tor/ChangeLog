@@ -1,3 +1,59 @@
+Changes in version 0.4.8.9 - 2023-11-09
+  This is another security release fixing a high severity bug affecting onion
+  services which is tracked by TROVE-2023-006. We are also releasing a guard
+  major bugfix as well. If you are an onion service operator, we strongly
+  recommend to update as soon as possible.
+
+  o Major bugfixes (guard usage):
+    - When Tor excluded a guard due to temporary circuit restrictions,
+      it considered *additional* primary guards for potential usage by
+      that circuit. This could result in more than the specified number
+      of guards (currently 2) being used, long-term, by the tor client.
+      This could happen when a Guard was also selected as an Exit node,
+      but it was exacerbated by the Conflux guard restrictions. Both
+      instances have been fixed. Fixes bug 40876; bugfix
+      on 0.3.0.1-alpha.
+
+  o Major bugfixes (onion service, TROVE-2023-006):
+    - Fix a possible hard assert on a NULL pointer when recording a
+      failed rendezvous circuit on the service side for the MetricsPort.
+      Fixes bug 40883; bugfix on 0.4.8.1-alpha
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on November 09, 2023.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2023/11/09.
+
+
+Changes in version 0.4.8.8 - 2023-11-03
+  We are releasing today a fix for a high security issue, TROVE-2023-004, that
+  is affecting relays. Also a few minor bugfixes detailed below. Please upgrade
+  as soon as posssible.
+
+  o Major bugfixes (TROVE-2023-004, relay):
+    - Mitigate an issue when Tor compiled with OpenSSL can crash during
+      handshake with a remote relay. Fixes bug 40874; bugfix
+      on 0.2.7.2-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on November 03, 2023.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2023/11/03.
+
+  o Minor bugfixes (directory authority):
+    - Look at the network parameter "maxunmeasuredbw" with the correct
+      spelling. Fixes bug 40869; bugfix on 0.4.6.1-alpha.
+
+  o Minor bugfixes (vanguards addon support):
+    - Count the conflux linked cell as valid when it is successfully
+      processed. This will quiet a spurious warn in the vanguards addon.
+      Fixes bug 40878; bugfix on 0.4.8.1-alpha.
+
+
 Changes in version 0.4.8.7 - 2023-09-25
   This version fixes a single major bug in the Conflux subsystem on the client
   side. See below for more information. The upcoming Tor Browser 13 stable will

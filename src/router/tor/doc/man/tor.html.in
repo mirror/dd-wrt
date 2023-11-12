@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 10.2.0" />
+<meta name="generator" content="AsciiDoc 9.1.1" />
 <title>TOR(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -3840,8 +3840,8 @@ different from other Tor clients:</p></div>
     Clients can still build circuits through you to any node.  Controllers
     can tell Tor to build circuits through any node.<br />
     <br />
-    Country codes are case-insensitive. The code "\{??}" refers to nodes whose
-    country can&#8217;t be identified. No country code, including \{??}, works if
+    Country codes are case-insensitive. The code "{??}" refers to nodes whose
+    country can&#8217;t be identified. No country code, including {??}, works if
     no GeoIPFile can be loaded. See also the <a href="#GeoIPExcludeUnknown">GeoIPExcludeUnknown</a> option below.
 </p>
 </dd>
@@ -3903,7 +3903,7 @@ different from other Tor clients:</p></div>
 <dd>
 <p>
     If this option is set to <em>auto</em>, then whenever any country code is set in
-    ExcludeNodes or ExcludeExitNodes, all nodes with unknown country (\{??} and
+    ExcludeNodes or ExcludeExitNodes, all nodes with unknown country ({??} and
     possibly {A1}) are treated as excluded as well. If this option is set to
     <em>1</em>, then all unknown countries are treated as excluded in ExcludeNodes
     and ExcludeExitNodes.  This option has no effect when a GeoIP file isn&#8217;t

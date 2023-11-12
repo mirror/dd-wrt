@@ -1781,7 +1781,7 @@ networkstatus_compute_consensus(smartlist_t *votes,
                   params, "maxunmeasuredbw", DEFAULT_MAX_UNMEASURED_BW_KB);
     } else {
       max_unmeasured_bw_kb = dirvote_get_intermediate_param_value(
-                  param_list, "maxunmeasurdbw", DEFAULT_MAX_UNMEASURED_BW_KB);
+                  param_list, "maxunmeasuredbw", DEFAULT_MAX_UNMEASURED_BW_KB);
       if (max_unmeasured_bw_kb < 1)
         max_unmeasured_bw_kb = 1;
     }

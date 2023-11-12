@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 09/25/2023
+.\"      Date: 11/09/2023
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "09/25/2023" "Tor" "Tor Manual"
+.TH "TOR" "1" "11/09/2023" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1899,7 +1899,7 @@ By default, this option is treated as a preference that Tor is allowed to overri
 Note also that if you are a relay, this (and the other node selection options below) only affects your own circuits that Tor builds for you\&. Clients can still build circuits through you to any node\&. Controllers can tell Tor to build circuits through any node\&.
 
 
-Country codes are case\-insensitive\&. The code "\e{??}" refers to nodes whose country can\(cqt be identified\&. No country code, including \e{??}, works if no GeoIPFile can be loaded\&. See also the
+Country codes are case\-insensitive\&. The code "{??}" refers to nodes whose country can\(cqt be identified\&. No country code, including {??}, works if no GeoIPFile can be loaded\&. See also the
 GeoIPExcludeUnknown
 option below\&.
 .RE
@@ -1950,7 +1950,7 @@ The \&.exit address notation, if enabled via MapAddress, overrides this option\&
 \fBGeoIPExcludeUnknown\fR \fB0\fR|\fB1\fR|\fBauto\fR
 .RS 4
 If this option is set to
-\fIauto\fR, then whenever any country code is set in ExcludeNodes or ExcludeExitNodes, all nodes with unknown country (\e{??} and possibly {A1}) are treated as excluded as well\&. If this option is set to
+\fIauto\fR, then whenever any country code is set in ExcludeNodes or ExcludeExitNodes, all nodes with unknown country ({??} and possibly {A1}) are treated as excluded as well\&. If this option is set to
 \fI1\fR, then all unknown countries are treated as excluded in ExcludeNodes and ExcludeExitNodes\&. This option has no effect when a GeoIP file isn\(cqt configured or can\(cqt be found\&. (Default: auto)
 .RE
 .PP

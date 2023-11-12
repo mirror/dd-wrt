@@ -199,7 +199,12 @@ hs_metrics_update_by_ident(const hs_metrics_key_t key,
 {
   hs_service_t *service;
 
-  tor_assert(ident_pk);
+  if (!ident_pk) {
+    /* We can end up here in case this is used from a failure/closing path for
+     * which we might not have any identity key attacehed to a circuit or
+     * connection yet. Simply don't assume we have one. */
+    return;
+  }
 
   service = hs_service_find(ident_pk);
   if (!service) {

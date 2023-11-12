@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.4.8.7])
+AC_INIT([tor],[0.4.8.9])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -18,7 +18,7 @@ AC_DEFINE_UNQUOTED([CONFIG_FLAGS], ["$configure_flags"], [Flags passed to config
 # version number changes.  Tor uses it to make sure that it
 # only shuts down for missing "required protocols" when those protocols
 # are listed as required by a consensus after this date.
-AC_DEFINE(APPROX_RELEASE_DATE, ["2023-09-25"], # for 0.4.8.7
+AC_DEFINE(APPROX_RELEASE_DATE, ["2023-11-09"], # for 0.4.8.9
           [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
@@ -2535,7 +2535,7 @@ if test "x$enable_gcc_warnings_advisory" != "xno"; then
   ], [ TOR_TRY_COMPILE_WITH_CFLAGS(warning_flag, [],
               [TOR_WARNING_FLAGS="$TOR_WARNING_FLAGS warning_flag" CFLAGS="$CFLAGS warning_flag"], true)
      ])
-     
+
   AX_CHECK_COMPILE_FLAG([-Wextra-semi], [CFLAGS="$CFLAGS -Wextra-semi"], [], [-Werror])
 
 dnl    We should re-enable this in some later version.  Clang doesn't
