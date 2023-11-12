@@ -2408,6 +2408,8 @@ void ath9k_start_supplicant(int count, char *prefix)
 		bwmax = 40;
 	} else if (isath10k)
 		driver = "ath10k";
+	else if (isath10k)
+		driver = "ath11k";
 	else if (ismt7615 || ismt7915 || ismt7921) {
 		bwmin = 5;
 		driver = "mt76";
