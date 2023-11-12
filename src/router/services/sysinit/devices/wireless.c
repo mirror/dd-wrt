@@ -382,7 +382,7 @@ static void detect_wireless_devices(int mask)
 		}
 	}
 #endif
-#ifdef HAVE_RTLWIFI
+#if 1 //def HAVE_RTLWIFI
 	if ((mask & RADIO_RTLWIFI)) {
 		fprintf(stderr, "load Realtek RTLWIFI Driver\n");
 		int total = 0;
@@ -438,20 +438,21 @@ static void detect_wireless_devices(int mask)
 		}
 	}
 #endif
+#if 1 //def HAVE_ATH11K
 	if ((mask & RADIO_ATH11K)) {
 		insmod("thermal_sys");
 		insmod("hwmon");
 		nvram_default_get("noath11k", "1");
 		if (nvram_match("noath11k", "0")) {
-		{
 			insmod("ath11k");
 			insmod("qrtr");
 			insmod("mhi");
-			insmod("qrtr_mhi");
+			insmod("qrtr-mhi");
 			insmod("ath11k_pci");
 		}
 	}
-
+#endif
+#if 1
 	if ((mask & RADIO_MT76)) {
 		insmod("thermal_sys");
 		insmod("hwmon");
@@ -536,6 +537,8 @@ static void detect_wireless_devices(int mask)
 		}
 
 	}
+#endif
+#if 1 //def HAVE_IWLWIFI
 	if ((mask & RADIO_IWLWIFI)) {
 		insmod("libipw");
 		if (!detectchange("ipw2100") && !detectchange("ipw2200"))
@@ -551,14 +554,14 @@ static void detect_wireless_devices(int mask)
 		}
 
 	}
-
-	if (!totalwifi) {
+#endif
+/*	if (!totalwifi) {
 		rmmod("mac80211");
 		rmmod("cfg80211");
 		rmmod("compat_firmware_class");
 		rmmod("compat");
 
-	}
+	}*/
 #endif
 #endif
 }
