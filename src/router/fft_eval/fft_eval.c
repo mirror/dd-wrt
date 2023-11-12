@@ -30,6 +30,8 @@
 #include <endian.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <inttypes.h>
 
@@ -159,7 +161,6 @@ struct fft_sample_ath11k {
 	u8 data[0];
 } __attribute__((packed));
 
-
 struct scanresult {
 	union {
 		struct fft_sample_tlv tlv;
@@ -240,10 +241,12 @@ static int print_values()
 						data = 1;
 					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
-					printf("[ %f, %f ]", freq, signal);
-					if (i < (SPECTRAL_HT20_NUM_BINS - 1) || result->next)
-						printf(", ");
-					if (i == (SPECTRAL_HT20_NUM_BINS - 1))
+					if (signal != INFINITY) {
+						printf("[ %f, %f ]", freq, signal);
+						if (i < (SPECTRAL_HT20_NUM_BINS - 1) || result->next)
+							printf(", ");
+					}
+					if (!result->next && i == (SPECTRAL_HT20_NUM_BINS - 1))
 						printf("\n");
 				}
 			}
@@ -326,10 +329,12 @@ static int print_values()
 						data = 1;
 					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
-					printf("[ %f, %f ]", freq, signal);
-					if (i < (SPECTRAL_HT20_40_NUM_BINS - 1) || result->next)
-						printf(", ");
-					if (i == (SPECTRAL_HT20_40_NUM_BINS - 1))
+					if (signal != INFINITY) {
+						printf("[ %f, %f ]", freq, signal);
+						if (i < (SPECTRAL_HT20_40_NUM_BINS - 1) || result->next)
+							printf(", ");
+					}
+					if (!result->next && i == (SPECTRAL_HT20_40_NUM_BINS - 1))
 						printf("\n");
 				}
 			}
@@ -368,10 +373,12 @@ static int print_values()
 					if (data == 0)
 						data = 1;
 					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-					printf("[ %f, %f ]", freq, signal);
-					if (i < (bins - 1) || result->next)
-						printf(", ");
-					if (i == (bins - 1))
+					if (signal != INFINITY) {
+						printf("[ %f, %f ]", freq, signal);
+						if (i < (bins - 1) || result->next)
+							printf(", ");
+					}
+					if (!result->next && i == (bins - 1))
 						printf("\n");
 
 				}
@@ -385,7 +392,7 @@ static int print_values()
 				int i, bins;
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
-				    		result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
+					       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
 
@@ -411,10 +418,12 @@ static int print_values()
 					if (data == 0)
 						data = 1;
 					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-					printf("[ %f, %f ]", freq, signal);
-					if (i < (bins - 1) || result->next)
-						printf(", ");
-					if (i == (bins - 1))
+					if (signal != INFINITY) {
+						printf("[ %f, %f ]", freq, signal);
+						if (i < (bins - 1) || result->next)
+							printf(", ");
+					}
+					if (!result->next && i == (bins - 1))
 						printf("\n");
 
 				}
@@ -552,20 +561,13 @@ static int read_scandata(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_ATH11K:
 			if (sample_len < sizeof(result->sample.ath11k.header)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n",
-					sample_len, sizeof(result->sample.ath11k.header));
+				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n", sample_len, sizeof(result->sample.ath11k.header));
 				break;
 			}
 
 			bins = sample_len - sizeof(result->sample.ath11k.header);
 
-			if (bins != 16 &&
-			    bins != 32 &&
-			    bins != 64 &&
-			    bins != 128 &&
-			    bins != 256 &&
-			    bins != 512 &&
-			    bins != 1024) {
+			if (bins != 16 && bins != 32 && bins != 64 && bins != 128 && bins != 256 && bins != 512 && bins != 1024) {
 				fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
