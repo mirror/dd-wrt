@@ -442,8 +442,7 @@ static void detect_wireless_devices(int mask)
 	if ((mask & RADIO_ATH11K)) {
 		insmod("thermal_sys");
 		insmod("hwmon");
-		nvram_default_get("noath11k", "1");
-		if (nvram_match("noath11k", "0")) {
+		if (!nvram_match("noath11k", "1")) {
 			insmod("ath11k");
 			insmod("qrtr");
 			insmod("mhi");
