@@ -351,7 +351,7 @@ static int print_values()
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
 				int i;
-
+				ath10k = 1;
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
 					       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
