@@ -371,7 +371,7 @@ static int print_values()
 				}
 
 				if (!b) {
-					b = malloc(sizeof(struct resultsort) * bins);
+					b = malloc(sizeof(struct resultsort) * SPECTRAL_ATH10K_MAX_NUM_BINS);
 					for (i = 0; i < bins; i++) {
 						b[i].signal = INFINITY;
 					}
@@ -406,7 +406,7 @@ static int print_values()
 					}
 					if (!result->next && i == (bins - 1))
 						printf("\n");
-					}
+					} */
 				}
 
 			}
@@ -435,7 +435,7 @@ static int print_values()
 						datamin = data;
 				}
 				if (!b) {
-					b = malloc(sizeof(struct resultsort) * bins);
+					b = malloc(sizeof(struct resultsort) * SPECTRAL_ATH11K_MAX_NUM_BINS);
 					for (i = 0; i < bins; i++) {
 						b[i].signal = INFINITY;
 					}
