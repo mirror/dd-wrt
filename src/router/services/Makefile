@@ -311,7 +311,12 @@ endif
 ifeq ($(CONFIG_MT76),y)
 CFLAGS_EXTRA += -DHAVE_MT76
 endif
-
+ifeq ($(CONFIG_MT7615),y)
+CFLAGS_EXTRA += -DHAVE_MT7615
+endif
+ifeq ($(CONFIG_IWLWIFI),y)
+CFLAGS_EXTRA += -DHAVE_IWLWIFI
+endif
 ifeq ($(CONFIG_RUT500),y)
 CFLAGS_EXTRA += -DHAVE_RUT500
 endif

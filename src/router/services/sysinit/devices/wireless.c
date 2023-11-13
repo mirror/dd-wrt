@@ -382,10 +382,11 @@ static void detect_wireless_devices(int mask)
 		}
 	}
 #endif
-#if 1 //def HAVE_RTLWIFI
+#ifdef HAVE_RTLWIFI
 	if ((mask & RADIO_RTLWIFI)) {
 		fprintf(stderr, "load Realtek RTLWIFI Driver\n");
 		int total = 0;
+		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-fsl ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd ohci-pci xhci-hcd xhci-pci xhci-plat-hcd xhci-mtk dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb extcon-core extcon ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx phy-qcom-dwc3 dwc3-of-simple dwc3 dwc3-qcom phy-qcom-hsusb phy-qcom-ssusb phy-qcom-ipq806x-usb phy-qcom-ipq806x-sata phy-qcom-ipq4019-usb");
 		insmod("rtlwifi");
 		insmod("rtl_pci");
 		insmod("rtl_usb");
@@ -451,13 +452,14 @@ static void detect_wireless_devices(int mask)
 		}
 	}
 #endif
-#if 1
+#ifdef HAVE_MT7615
 	if ((mask & RADIO_MT76)) {
 		insmod("thermal_sys");
 		insmod("hwmon");
 		fprintf(stderr, "load Medatek MT76 Driver\n");
 		int wificnt = 0;
 		int total = 0;
+		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-fsl ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd ohci-pci xhci-hcd xhci-pci xhci-plat-hcd xhci-mtk dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb extcon-core extcon ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx phy-qcom-dwc3 dwc3-of-simple dwc3 dwc3-qcom phy-qcom-hsusb phy-qcom-ssusb phy-qcom-ipq806x-usb phy-qcom-ipq806x-sata phy-qcom-ipq4019-usb");
 		insmod("mt76");
 		insmod("mt76-usb");
 		insmod("mt76-sdio");
@@ -537,7 +539,7 @@ static void detect_wireless_devices(int mask)
 
 	}
 #endif
-#if 1 //def HAVE_IWLWIFI
+#ifdef HAVE_IWLWIFI
 	if ((mask & RADIO_IWLWIFI)) {
 		insmod("libipw");
 		if (!detectchange("ipw2100") && !detectchange("ipw2200"))
