@@ -874,7 +874,7 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "256");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
-		writestr(dest, "manual");
+		writestr(dest, "background");
 		writestr(dest, "trigger");
 	} else if (is_ath10k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
@@ -886,7 +886,7 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "256");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
-		writestr(dest, "manual");
+		writestr(dest, "background");
 		writestr(dest, "trigger");
 	} else {
 		sprintf(dest, "%s/spectral_scan_ctl", path);
