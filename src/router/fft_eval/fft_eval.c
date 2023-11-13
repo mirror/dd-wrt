@@ -181,6 +181,10 @@ struct scanresult {
 struct scanresult *result_list;
 int scanresults_n = 0;
 
+struct resultsort {
+	float freq;
+	float signal;
+};
 /*
  * print_values - spit out the analyzed values in text form, JSON-like.
  */
@@ -188,9 +192,12 @@ static int print_values()
 {
 	int i, rnum;
 	struct scanresult *result;
-
+	struct resultsort *b = NULL;
+	int bins;
 	printf("[");
 	rnum = 0;
+	int ath11k = 0;
+	int ath10k = 0;
 	for (result = result_list; result; result = result->next) {
 
 		switch (result->sample.tlv.type) {
@@ -343,7 +350,7 @@ static int print_values()
 			{
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
-				int i, bins;
+				int i;
 
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
@@ -363,6 +370,13 @@ static int print_values()
 						datamin = data;
 				}
 
+				if (!b) {
+					b = malloc(sizeof(struct resultsort) * bins);
+					for (i = 0; i < bins; i++) {
+						b[i].signal = INFINITY;
+					}
+				}
+
 				for (i = 0; i < bins; i++) {
 					float freq;
 					int data;
@@ -373,6 +387,18 @@ static int print_values()
 					if (data == 0)
 						data = 1;
 					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+
+					b[i].freq = freq;
+					if (signal != INFINITY) {
+						if (b[i].signal == INFINITY) {
+							b[i].signal = signal;
+						} else {
+							b[i].signal += signal;
+							b[i].signal /= 2;
+						}
+					}
+
+					/*
 					if (signal != INFINITY) {
 						printf("[ %f, %f ]", freq, signal);
 						if (i < (bins - 1) || result->next)
@@ -380,7 +406,7 @@ static int print_values()
 					}
 					if (!result->next && i == (bins - 1))
 						printf("\n");
-
+					}
 				}
 
 			}
@@ -389,7 +415,8 @@ static int print_values()
 			{
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
-				int i, bins;
+				int i;
+				ath11k = 1;
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
 					       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
@@ -407,7 +434,12 @@ static int print_values()
 					if (data < datamin)
 						datamin = data;
 				}
-
+				if (!b) {
+					b = malloc(sizeof(struct resultsort) * bins);
+					for (i = 0; i < bins; i++) {
+						b[i].signal = INFINITY;
+					}
+				}
 				for (i = 0; i < bins; i++) {
 					float freq;
 					int data;
@@ -418,13 +450,23 @@ static int print_values()
 					if (data == 0)
 						data = 1;
 					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					b[i].freq = freq;
 					if (signal != INFINITY) {
-						printf("[ %f, %f ]", freq, signal);
-						if (i < (bins - 1) || result->next)
-							printf(", ");
+						if (b[i].signal == INFINITY) {
+							b[i].signal = signal;
+						} else {
+							b[i].signal += signal;
+							b[i].signal /= 2;
+						}
 					}
-					if (!result->next && i == (bins - 1))
-						printf("\n");
+
+					/*                                     if (signal != INFINITY) {
+					   printf("[ %f, %f ]", freq, signal);
+					   if (i < (bins - 1) || result->next)
+					   printf(", ");
+					   }
+					   if (!result->next && i == (bins - 1))
+					   printf("\n"); */
 
 				}
 			}
@@ -433,6 +475,18 @@ static int print_values()
 		}
 
 		rnum++;
+	}
+	if ((ath11k || ath10k) && b) {
+		for (i = 0; i < bins; i++) {
+			if (b[i].signal != INFINITY) {
+				printf("[ %f, %f ]", b[i].freq, b[i].signal);
+				if (i < (bins - 1))
+					printf(", ");
+			}
+		}
+		printf("\n");
+		free(b);
+
 	}
 	printf(" ] }");
 	printf("\n]\n");
