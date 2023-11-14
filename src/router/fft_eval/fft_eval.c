@@ -185,6 +185,42 @@ struct resultsort {
 	float freq;
 	float signal;
 };
+
+static struct resultsort *initbins(int bins)
+{
+	struct resultsort *b;
+	int i;
+	b = malloc(sizeof(struct resultsort) * bins);
+	for (i = 0; i < bins; i++) {
+		b[i].signal = INFINITY;
+	}
+	return b;
+
+}
+
+static void insert(struct resultsort *b, int bins, float freq, float signal)
+{
+	int i;
+	if (signal == INFINITY)
+		return;		// ignore
+/* seek for already existing frequency, in case order is incorrect */
+	for (i = 0; i < bins; i++) {
+		if (b[i].freq == freq) {
+			b[i].signal += b[i].signal;
+			b[i].signal /= 2;
+			return;
+		}
+	}
+/* insert new slot */
+	for (i = 0; i < bins; i++) {
+		if (b[i].signal == INFINITY) {
+			b[i].freq = freq;
+			b[i].signal = signal;
+			return;
+		}
+	}
+}
+
 /*
  * print_values - spit out the analyzed values in text form, JSON-like.
  */
@@ -196,8 +232,6 @@ static int print_values()
 	int bins;
 	printf("[");
 	rnum = 0;
-	int ath11k = 0;
-	int ath10k = 0;
 	for (result = result_list; result; result = result->next) {
 
 		switch (result->sample.tlv.type) {
@@ -222,7 +256,11 @@ static int print_values()
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht20.tsf, result->sample.ht20.freq,
 					       result->sample.ht20.rssi, result->sample.ht20.noise);
-				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
+				bins = SPECTRAL_HT20_NUM_BINS;
+				if (!b)
+					b = initbins(bins);
+
+				for (i = 0; i < bins; i++) {
 					float freq;
 					float signal;
 					int data;
@@ -238,7 +276,7 @@ static int print_values()
 					 * Since all these calculations map pretty much to -10/+10 MHz,
 					 * and we don't know better, use this assumption as well in 5 GHz.
 					 */
-					freq = result->sample.ht20.freq - (22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 + (22.0 * (i + 0.5) / 64.0);
+					freq = result->sample.ht20.freq - (22.0 * bins / 64.0) / 2 + (22.0 * (i + 0.5) / 64.0);
 
 					/* This is where the "magic" happens: interpret the signal
 					 * to output some kind of data which looks useful.  */
@@ -247,14 +285,7 @@ static int print_values()
 					if (data == 0)
 						data = 1;
 					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-
-					if (signal != INFINITY) {
-						printf("[ %f, %f ]", freq, signal);
-						if (i < (SPECTRAL_HT20_NUM_BINS - 1) || result->next)
-							printf(", ");
-					}
-					if (!result->next && i == (SPECTRAL_HT20_NUM_BINS - 1))
-						printf("\n");
+					insert(b, bins, freq, signal);
 				}
 			}
 			break;
@@ -269,8 +300,9 @@ static int print_values()
 				s8 noise;
 				s8 rssi;
 				//todo build average
+				bins = SPECTRAL_HT20_40_NUM_BINS;
 
-				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
+				for (i = 0; i < bins / 2; i++) {
 					int data;
 
 					data = result->sample.ht40.data[i];
@@ -284,7 +316,7 @@ static int print_values()
 						datamin = data;
 				}
 
-				for (i = SPECTRAL_HT20_40_NUM_BINS / 2; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
+				for (i = bins / 2; i < bins; i++) {
 					int data;
 
 					data = result->sample.ht40.data[i];
@@ -313,13 +345,16 @@ static int print_values()
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,
 					       result->sample.ht40.lower_noise);
 
-				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
+				if (!b)
+					b = initbins(bins);
+
+				for (i = 0; i < bins; i++) {
 					float freq;
 					int data;
 
-					freq = centerfreq - (40.0 * SPECTRAL_HT20_40_NUM_BINS / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
+					freq = centerfreq - (40.0 * bins / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
 
-					if (i < SPECTRAL_HT20_40_NUM_BINS / 2) {
+					if (i < bins / 2) {
 						noise = result->sample.ht40.lower_noise;
 						datasquaresum = datasquaresum_lower;
 						rssi = result->sample.ht40.lower_rssi;
@@ -335,14 +370,7 @@ static int print_values()
 					if (data == 0)
 						data = 1;
 					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-
-					if (signal != INFINITY) {
-						printf("[ %f, %f ]", freq, signal);
-						if (i < (SPECTRAL_HT20_40_NUM_BINS - 1) || result->next)
-							printf(", ");
-					}
-					if (!result->next && i == (SPECTRAL_HT20_40_NUM_BINS - 1))
-						printf("\n");
+					insert(b, bins, freq, signal);
 				}
 			}
 			break;
@@ -351,7 +379,6 @@ static int print_values()
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
 				int i;
-				ath10k = 1;
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
 					       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
@@ -370,12 +397,8 @@ static int print_values()
 						datamin = data;
 				}
 
-				if (!b) {
-					b = malloc(sizeof(struct resultsort) * SPECTRAL_ATH10K_MAX_NUM_BINS);
-					for (i = 0; i < bins; i++) {
-						b[i].signal = INFINITY;
-					}
-				}
+				if (!b)
+					b = initbins(bins);
 
 				for (i = 0; i < bins; i++) {
 					float freq;
@@ -388,25 +411,7 @@ static int print_values()
 						data = 1;
 					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
-					b[i].freq = freq;
-					if (signal != INFINITY) {
-						if (b[i].signal == INFINITY) {
-							b[i].signal = signal;
-						} else {
-							b[i].signal += signal;
-							b[i].signal /= 2;
-						}
-					}
-
-					/*
-					if (signal != INFINITY) {
-						printf("[ %f, %f ]", freq, signal);
-						if (i < (bins - 1) || result->next)
-							printf(", ");
-					}
-					if (!result->next && i == (bins - 1))
-						printf("\n");
-					} */
+					insert(b, bins, freq, signal);
 				}
 
 			}
@@ -416,7 +421,6 @@ static int print_values()
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
 				int i;
-				ath11k = 1;
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
 					       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
@@ -434,12 +438,9 @@ static int print_values()
 					if (data < datamin)
 						datamin = data;
 				}
-				if (!b) {
-					b = malloc(sizeof(struct resultsort) * SPECTRAL_ATH11K_MAX_NUM_BINS);
-					for (i = 0; i < bins; i++) {
-						b[i].signal = INFINITY;
-					}
-				}
+				if (!b)
+					b = initbins(bins);
+
 				for (i = 0; i < bins; i++) {
 					float freq;
 					int data;
@@ -450,24 +451,7 @@ static int print_values()
 					if (data == 0)
 						data = 1;
 					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-					b[i].freq = freq;
-					if (signal != INFINITY) {
-						if (b[i].signal == INFINITY) {
-							b[i].signal = signal;
-						} else {
-							b[i].signal += signal;
-							b[i].signal /= 2;
-						}
-					}
-
-					/*                                     if (signal != INFINITY) {
-					   printf("[ %f, %f ]", freq, signal);
-					   if (i < (bins - 1) || result->next)
-					   printf(", ");
-					   }
-					   if (!result->next && i == (bins - 1))
-					   printf("\n"); */
-
+					insert(b, bins, freq, signal);
 				}
 			}
 			break;
@@ -476,7 +460,7 @@ static int print_values()
 
 		rnum++;
 	}
-	if ((ath11k || ath10k) && b) {
+	if (b) {
 		for (i = 0; i < bins; i++) {
 			if (b[i].signal != INFINITY) {
 				printf("[ %f, %f ]", b[i].freq, b[i].signal);
