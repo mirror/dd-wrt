@@ -169,8 +169,6 @@ EJ_VISIBLE void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (is_ath11k(prefix))
-		return;
 	if (has_nolivesurvey(prefix))
 		return;
 	if (is_mac80211(prefix)) {
@@ -187,8 +185,6 @@ EJ_VISIBLE void ej_get_active(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (is_ath11k(prefix))
-		return;
 	if (has_nolivesurvey(prefix))
 		return;
 	if (is_mac80211(prefix)) {
@@ -205,8 +201,6 @@ EJ_VISIBLE void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (is_ath11k(prefix))
-		return;
 	if (has_nolivesurvey(prefix))
 		return;
 	if (is_mac80211(prefix)) {
@@ -228,8 +222,6 @@ EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (is_ath11k(prefix))
-		return;
 	if (has_nolivesurvey(prefix))
 		return;
 	if (is_mac80211(prefix)) {
