@@ -848,7 +848,7 @@ nla_put_failure:
 	return (data.mac80211_info);
 }
 
-char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc)
+char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc, int smps)
 {
 	mac80211_init();
 	struct nl_msg *msg;
@@ -887,8 +887,8 @@ char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int 
 			 , ((cap & HT_CAP_INFO_DSSS_CCK40MHZ) ? "[DSSS_CCK-40]" : "")
 			 , ((cap & HT_CAP_INFO_GREEN_FIELD && greenfield) ? "[GF]" : "")
 			 , (cap & HT_CAP_INFO_DELAYED_BA ? "[DELAYED-BA]" : "")
-			 , ((((cap >> 2) & 0x3) == 0 && !is_brcmfmac(interface)) ? "[SMPS-STATIC]" : "")
-			 , (((cap >> 2) & 0x3) == 1 ? "[SMPS-DYNAMIC]" : "")
+			 , ((((cap >> 2) & 0x3) == 0 && !is_brcmfmac(interface)) ? smps ? "[SMPS-STATIC]" : "" : "")
+			 , (((cap >> 2) & 0x3) == 1 ? smps ? "[SMPS-DYNAMIC]" : "" : "")
 			 , (cap & HT_CAP_INFO_MAX_AMSDU_SIZE ? "[MAX-AMSDU-7935]" : "")
 		    );
 	}
@@ -1020,7 +1020,7 @@ int has_greenfield(const char *interface)
 {
 
 	INITVALUECACHEi(interface);
-	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1, 0);
 	if (strstr(htcaps, "[GF]")) {
 		ret = 1;
 	} else {
@@ -1198,7 +1198,7 @@ int has_ac(const char *prefix)
 int has_ht(const char *prefix)
 {
 	INITVALUECACHE();
-	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1, 1, 0);
 	if (*htcaps) {
 		ret = 1;
 	} else {
@@ -1212,7 +1212,7 @@ int has_ht(const char *prefix)
 int has_ldpc(const char *prefix)
 {
 	INITVALUECACHE();
-	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1, 1, 0);
 	if (strstr(htcaps, "LDPC")) {
 		ret = 1;
 	} else {
@@ -1280,7 +1280,7 @@ int has_mubeamforming(const char *interface)
 int has_shortgi(const char *interface)
 {
 	INITVALUECACHEi(interface);
-	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1,0);
 	if (strstr(htcaps, "SHORT-GI")) {
 		free(htcaps);
 		RETURNVALUE(1);

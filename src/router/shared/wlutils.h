@@ -377,7 +377,7 @@ extern int getdevicecount(void);
 extern int mac80211_get_maxpower(char *interface);
 extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(char *interface);
-extern char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc);
+extern char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc, int smps);
 extern int has_greenfield(const char *interface);
 #ifdef HAVE_ATH9K
 extern int has_airtime_fairness(const char *prefix);
