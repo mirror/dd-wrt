@@ -887,8 +887,8 @@ char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int 
 			 , ((cap & HT_CAP_INFO_DSSS_CCK40MHZ) ? "[DSSS_CCK-40]" : "")
 			 , ((cap & HT_CAP_INFO_GREEN_FIELD && greenfield) ? "[GF]" : "")
 			 , (cap & HT_CAP_INFO_DELAYED_BA ? "[DELAYED-BA]" : "")
-			 , ((((cap >> 2) & 0x3) == 0 && !is_brcmfmac(interface)) ? smps ? "[SMPS-STATIC]" : "" : "")
-			 , (((cap >> 2) & 0x3) == 1 ? smps ? "[SMPS-DYNAMIC]" : "" : "")
+			 , ((((cap >> 2) & 0x3) == 0 && !is_brcmfmac(interface)) ? smps == 1 ? "[SMPS-STATIC]" : "" : "")
+			 , (((cap >> 2) & 0x3) == 1 ? smps == 2 ? "[SMPS-DYNAMIC]" : "" : "")
 			 , (cap & HT_CAP_INFO_MAX_AMSDU_SIZE ? "[MAX-AMSDU-7935]" : "")
 		    );
 	}
