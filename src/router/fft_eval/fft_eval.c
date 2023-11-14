@@ -206,7 +206,7 @@ static void insert(struct resultsort *b, int bins, float freq, float signal)
 /* seek for already existing frequency, in case order is incorrect */
 	for (i = 0; i < bins; i++) {
 		if (b[i].freq == freq) {
-			b[i].signal += b[i].signal;
+			b[i].signal += signal;
 			b[i].signal /= 2;
 			return;
 		}
