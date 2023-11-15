@@ -2066,10 +2066,14 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "Capture(wl_basic.n5)");
 		if (nvram_match(netmode, "ac-only"))
 			websWrite(wp, "Capture(wl_basic.ac)");
+		if (nvram_match(netmode, "ax-only"))
+			websWrite(wp, "Capture(wl_basic.ax)");
 		if (nvram_match(netmode, "ad-only"))
 			websWrite(wp, "Capture(wl_basic.ad)");
 		if (nvram_match(netmode, "acn-mixed"))
 			websWrite(wp, "Capture(wl_basic.acn)");
+		if (nvram_match(netmode, "xacn-mixed"))
+			websWrite(wp, "Capture(wl_basic.xacn)");
 	}
 	websWrite(wp, "</script>&nbsp;\n");
 }
