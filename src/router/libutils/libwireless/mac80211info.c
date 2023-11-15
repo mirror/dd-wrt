@@ -988,7 +988,7 @@ static char *mac80211_get_hecaps(const char *interface)
 	if (is_ath11k(interface)) {
 		asprintf(&capstring, "[HE80][HE40][HE160][HE160][HE80+80]");
 	}
-	return capstr;
+	return capstring;
 }
 
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
