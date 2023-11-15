@@ -1195,6 +1195,12 @@ int has_ac(const char *prefix)
 	return ret;
 }
 #endif
+#if defined(HAVE_ATH11K)
+int has_ax(const char *prefix)
+{
+	return is_ath11k(prefix);
+}
+#endif
 int has_ht(const char *prefix)
 {
 	INITVALUECACHE();
