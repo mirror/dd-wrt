@@ -913,6 +913,66 @@ static int cansuperchannel(char *prefix)
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
+static char *mac80211_get_hecaps(const char *interface)
+{
+	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
+	struct nlattr *tb[NL80211_BAND_IFTYPE_ATTR_MAX + 1];
+	unsigned short mac_cap[3] = { 0 };
+	unsigned short phy_cap[6] = { 0 };
+	unsigned short mcs_set[6] = { 0 };
+	mac80211_init();
+	struct nl_msg *msg;
+	struct nlattr *caps, *bands, *band;
+	size_t len;
+	char *capstring = NULL;
+	int rem;
+	int phy;
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) {
+		unlock();
+		return strdup("");
+	}
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
+		return strdup("");
+	}
+	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	if (!bands)
+		goto out;
+	nla_for_each_nested(band, bands, rem) {
+		nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(band), nla_len(band), NULL);
+
+		if (tb_band[NL80211_BAND_ATTR_IFTYPE_DATA]) {
+			struct nlattr *nl_iftype;
+			int rem_band;
+
+			nla_for_each_nested(nl_iftype, tb_band[NL80211_BAND_ATTR_IFTYPE_DATA], rem_band) {
+				nla_parse(tb, NL80211_BAND_IFTYPE_ATTR_MAX, nla_data(nl_iftype), nla_len(nl_iftype), NULL);
+				if (tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]) {
+					len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]);
+
+					if (len > sizeof(phy_cap) - 1)
+						len = sizeof(phy_cap) - 1;
+					memcpy(&((__u8 *)phy_cap)[1], nla_data(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]), len);
+				}
+
+			}
+		}
+	}
+	asprintf(&capstring, "%s%s%s%s",phy_cap[0]&4?"[HE80]":"",phy_cap[1]&4?"[HE40]":"",phy_cap[0]&8?"[HE160]":"",phy_cap[0]&16?"[HE160][HE80+80]":"");
+
+out:
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	if (!capstring)
+		return strdup("");
+	return capstring;
+}
+
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
 	mac80211_init();
@@ -1006,6 +1066,22 @@ int has_vht160(const char *interface)
 		RETURNVALUE(1);
 	}
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+	free(vhtcaps);
+	EXITVALUECACHE();
+	return ret;
+}
+#endif
+
+#if defined(HAVE_ATH11K)
+int has_he160(const char *interface)
+{
+	INITVALUECACHEi(interface);
+	char *hecaps = mac80211_get_hecaps(interface, 1, 1, 1, 1, 1, 1);
+	if (strstr(vhtcaps, "HE160")) {
 		ret = 1;
 	} else {
 		ret = 0;
@@ -1286,7 +1362,7 @@ int has_mubeamforming(const char *interface)
 int has_shortgi(const char *interface)
 {
 	INITVALUECACHEi(interface);
-	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1,0);
+	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1, 0);
 	if (strstr(htcaps, "SHORT-GI")) {
 		free(htcaps);
 		RETURNVALUE(1);

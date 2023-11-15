@@ -463,6 +463,14 @@ extern int has_acktiming(const char *prefix);
 #endif
 
 
+#if defined(HAVE_ATH11K)
+extern int has_he160(const char *interface);
+#else
+static inline int has_he160(const char *prefix)
+{
+	return 0;
+}
+#endif
 
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 extern int has_vht160(const char *interface);
