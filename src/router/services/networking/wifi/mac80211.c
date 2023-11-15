@@ -113,6 +113,8 @@ static const char *gethtmode(char *prefix)
 	     !strcmp(netmode, "n5-only") ||	//
 	     !strcmp(netmode, "ac-only") ||	//
 	     !strcmp(netmode, "acn-mixed") ||	//
+	     !strcmp(netmode, "ax-only") ||	//
+	     !strcmp(netmode, "xacn-mixed") ||	//
 	     !strcmp(netmode, "mixed"))
 	    && strcmp(akm, "wep")) {
 
@@ -705,7 +707,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
 	char *netmode = nvram_nget("%s_net_mode", prefix);
-	if (isath5k || !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only") || !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
+	if (isath5k || !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only") || !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed"))) {
 		fprintf(fp, "tx_queue_data2_burst=2.0\n");
 		fprintf(fp, "wmm_ac_be_txop_limit=64\n");
 	} else {
@@ -744,12 +746,21 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "ieee80211ac=0\n");
 		}
 	}
+	if (has_ax(prefix)) {
+		if (strcmp(netmode, "xacn-mixed") &&	//
+		    strcmp(netmode, "ax-only ") &&	//
+		    strcmp(netmode, "mixed")) {
+			fprintf(fp, "ieee80211ac=1\n");
+		}
+	}
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
 	     !strcmp(netmode, "n5-only") ||	//
 	     !strcmp(netmode, "ac-only") ||	//
+	     !strcmp(netmode, "ax-only") ||	//
 	     !strcmp(netmode, "acn-mixed") ||	//
+	     !strcmp(netmode, "xacn-mixed") ||	//
 	     !strcmp(netmode, "mixed"))
 	    && strcmp(akm, "wep")
 	    && !aoss) {
@@ -1010,7 +1021,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(ldpc, "%s_ldpc", prefix);
 		int i_ldpc = nvram_default_geti(ldpc, 1);
 		if ((!strcmp(netmode, "mixed") ||	//
-		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
+		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only"))) {
 			i_ldpc = 1;
 		}
 		int smps = nvram_ngeti("%s_smps", prefix);
@@ -1047,7 +1058,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	cur_caps = caps;
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") ||	//
-				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
+				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed"))) {
 			if (*caps) {
 				fprintf(fp, "vht_capab=%s\n", caps);
 				if (!strcmp(netmode, "ac-only")) {
@@ -1059,6 +1070,17 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					//fprintf(fp, "spectrum_mgmt_required=1\n");
 					//fprintf(fp, "local_pwr_constraint=3\n");
 				}
+					if (has_ax(prefix)) {
+				if (!strcmp(netmode, "ax-only")) {
+					fprintf(fp, "ieee80211ax=1\n");
+					fprintf(fp, "ieee80211ac=1\n");
+					fprintf(fp, "require_vht=1\n");
+					fprintf(fp, "ieee80211d=1\n");
+					fprintf(fp, "ieee80211h=1\n");
+					//might be needed for dfs
+					//fprintf(fp, "spectrum_mgmt_required=1\n");
+					//fprintf(fp, "local_pwr_constraint=3\n");
+				} }
 
 				if (!strcmp(netmode, "acn-mixed")) {
 					fprintf(fp, "ieee80211ac=1\n");
@@ -1067,7 +1089,19 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					fprintf(fp, "ieee80211h=1\n");
 				}
 
+					if (has_ax(prefix)) {
+				if (!strcmp(netmode, "xacn-mixed")) {
+					fprintf(fp, "ieee80211ax=1\n");
+					fprintf(fp, "ieee80211ac=1\n");
+					fprintf(fp, "require_ht=1\n");
+					fprintf(fp, "ieee80211d=1\n");
+					fprintf(fp, "ieee80211h=1\n");
+				}}
+
 				if (!strcmp(netmode, "mixed")) {
+					if (has_ax(prefix)) {
+						fprintf(fp, "ieee80211ax=1\n");
+					}
 					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
@@ -1836,12 +1870,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "network={\n");
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
-		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_vht=1\n");
 		}
 
 		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
-		    && strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")
+		    && strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "ax-only")
 		    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
 		    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_ht=1\n");
@@ -2044,12 +2078,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		fprintf(fp, "network={\n");
 
-		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_vht=1\n");
 		}
 
 		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
 		    && strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")
+		    && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")
 		    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
 		    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_ht=1\n");
