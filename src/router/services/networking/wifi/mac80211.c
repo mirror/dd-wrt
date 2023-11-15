@@ -526,13 +526,13 @@ void configure_single_ath9k(int count)
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 	int board = getRouterBrand();
 	if (board == ROUTER_ASROCK_G10) {
-		getMacAddr(dev, macaddr,sizeof(macaddr));
+		getMacAddr(dev, macaddr, sizeof(macaddr));
 	} else {
 		getWirelessMac(macaddr, count);
 		set_hwaddr(dev, macaddr);
 	}
 #else
-	getMacAddr(dev, macaddr,sizeof(macaddr));
+	getMacAddr(dev, macaddr, sizeof(macaddr));
 #endif
 	if (!*nvram_safe_get(athmac))
 		nvram_set(athmac, macaddr);
@@ -741,7 +741,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	MAC80211DEBUG();
 	if (has_ac(prefix)) {
 		if (strcmp(netmode, "acn-mixed") &&	//
-		    strcmp(netmode, "ac-only ") &&	//
+		    strcmp(netmode, "ac-only") &&	//
+		    strcmp(netmode, "ax-only") &&	//
+		    strcmp(netmode, "xacn-mixed") &&	//
 		    strcmp(netmode, "mixed")) {
 			fprintf(fp, "ieee80211ac=0\n");
 		}
@@ -750,7 +752,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		if (strcmp(netmode, "xacn-mixed") &&	//
 		    strcmp(netmode, "ax-only ") &&	//
 		    strcmp(netmode, "mixed")) {
-			fprintf(fp, "ieee80211ac=1\n");
+			fprintf(fp, "ieee80211ax=0\n");
 		}
 	}
 	if ((!strcmp(netmode, "ng-only") ||	//
@@ -1070,17 +1072,18 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					//fprintf(fp, "spectrum_mgmt_required=1\n");
 					//fprintf(fp, "local_pwr_constraint=3\n");
 				}
-					if (has_ax(prefix)) {
-				if (!strcmp(netmode, "ax-only")) {
-					fprintf(fp, "ieee80211ax=1\n");
-					fprintf(fp, "ieee80211ac=1\n");
-					fprintf(fp, "require_vht=1\n");
-					fprintf(fp, "ieee80211d=1\n");
-					fprintf(fp, "ieee80211h=1\n");
-					//might be needed for dfs
-					//fprintf(fp, "spectrum_mgmt_required=1\n");
-					//fprintf(fp, "local_pwr_constraint=3\n");
-				} }
+				if (has_ax(prefix)) {
+					if (!strcmp(netmode, "ax-only")) {
+						fprintf(fp, "ieee80211ax=1\n");
+						fprintf(fp, "ieee80211ac=1\n");
+						fprintf(fp, "require_vht=1\n");
+						fprintf(fp, "ieee80211d=1\n");
+						fprintf(fp, "ieee80211h=1\n");
+						//might be needed for dfs
+						//fprintf(fp, "spectrum_mgmt_required=1\n");
+						//fprintf(fp, "local_pwr_constraint=3\n");
+					}
+				}
 
 				if (!strcmp(netmode, "acn-mixed")) {
 					fprintf(fp, "ieee80211ac=1\n");
@@ -1089,14 +1092,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					fprintf(fp, "ieee80211h=1\n");
 				}
 
-					if (has_ax(prefix)) {
-				if (!strcmp(netmode, "xacn-mixed")) {
-					fprintf(fp, "ieee80211ax=1\n");
-					fprintf(fp, "ieee80211ac=1\n");
-					fprintf(fp, "require_ht=1\n");
-					fprintf(fp, "ieee80211d=1\n");
-					fprintf(fp, "ieee80211h=1\n");
-				}}
+				if (has_ax(prefix)) {
+					if (!strcmp(netmode, "xacn-mixed")) {
+						fprintf(fp, "ieee80211ax=1\n");
+						fprintf(fp, "ieee80211ac=1\n");
+						fprintf(fp, "require_ht=1\n");
+						fprintf(fp, "ieee80211d=1\n");
+						fprintf(fp, "ieee80211h=1\n");
+					}
+				}
 
 				if (!strcmp(netmode, "mixed")) {
 					if (has_ax(prefix)) {
