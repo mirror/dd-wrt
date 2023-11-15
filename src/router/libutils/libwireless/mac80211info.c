@@ -1080,13 +1080,13 @@ int has_vht160(const char *interface)
 int has_he160(const char *interface)
 {
 	INITVALUECACHEi(interface);
-	char *hecaps = mac80211_get_hecaps(interface, 1, 1, 1, 1, 1, 1);
-	if (strstr(vhtcaps, "HE160")) {
+	char *hecaps = mac80211_get_hecaps(interface);
+	if (strstr(hecaps, "HE160")) {
 		ret = 1;
 	} else {
 		ret = 0;
 	}
-	free(vhtcaps);
+	free(hecaps);
 	EXITVALUECACHE();
 	return ret;
 }
