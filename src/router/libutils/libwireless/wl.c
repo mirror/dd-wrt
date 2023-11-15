@@ -1301,6 +1301,8 @@ long long wifi_getrate(char *ifname)
 		//fprintf(stderr,"sgi %d, width %d\n",sgi, interface->width);
 		if (nvram_nmatch("mixed", "%s_net_mode", physical) ||	//
 		    nvram_nmatch("ac-only", "%s_net_mode", physical) ||	//
+		    nvram_nmatch("ax-only", "%s_net_mode", physical) ||	//
+		    nvram_nmatch("xacn-mixed", "%s_net_mode", physical) ||	//
 		    nvram_nmatch("1", "%s_turbo_qam", physical) ||	//
 		    nvram_nmatch("acn-mixed", "%s_net_mode", physical))	//
 			vhtmcs = mac80211_get_maxvhtmcs(physical);

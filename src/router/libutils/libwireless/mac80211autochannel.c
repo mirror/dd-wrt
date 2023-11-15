@@ -333,6 +333,8 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    || nvram_nmatch("na-only", "%s_net_mode", interface)
 		    || nvram_nmatch("ac-only", "%s_net_mode", interface)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", interface)
+		    || nvram_nmatch("ax-only", "%s_net_mode", interface)
+		    || nvram_nmatch("xacn-mixed", "%s_net_mode", interface)
 		    || nvram_nmatch("n5-only", "%s_net_mode", interface))) {
 			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
 			chan->freq = CHANNEL_DISABLED;
