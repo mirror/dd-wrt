@@ -56,6 +56,9 @@ struct wpas_binder_priv;
  * struct wpa_interface - Parameters for wpa_supplicant_add_iface()
  */
 struct wpa_interface {
+
+	const char *hostapd_ctrl;
+
 	/**
 	 * confname - Configuration name (file or profile) name
 	 *
@@ -699,6 +702,7 @@ struct wpa_supplicant {
 	const void *binder_object_key;
 #endif /* CONFIG_CTRL_IFACE_BINDER */
 	char bridge_ifname[16];
+	struct wpa_ctrl *hostapd;
 
 	char *confname;
 	char *confanother;
@@ -1954,5 +1958,6 @@ void wpas_pasn_auth_trigger(struct wpa_supplicant *wpa_s,
 void wpas_pasn_auth_work_done(struct wpa_supplicant *wpa_s, int status);
 
 bool wpa_is_non_eht_scs_traffic_desc_supported(struct wpa_bss *bss);
+int wpa_supplicant_daemon(const char *pid_file);
 
 #endif /* WPA_SUPPLICANT_I_H */

@@ -883,6 +883,8 @@ struct wpa_ssid {
 
 	unsigned char rates[WLAN_SUPP_RATES_MAX];
 	double mcast_rate;
+	int ht_set;
+	unsigned int htmode;
 
 #ifdef CONFIG_MACSEC
 	/**

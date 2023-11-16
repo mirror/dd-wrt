@@ -288,6 +288,10 @@ static bool eap_wsc_check(struct eap_sm *sm, void *priv,
 	return false;
 }
 
+#ifdef HAVE_AOSS
+extern int sysprintf(const char *fmt, ...);
+extern void nvram_set(const char *name, char *value);
+#endif
 
 static int eap_wsc_process_cont(struct eap_wsc_data *data,
 				const u8 *buf, size_t len, u8 op_code)
@@ -441,6 +445,11 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 		wpa_printf(MSG_DEBUG, "EAP-WSC: WPS processing completed "
 			   "successfully - report EAP failure");
 		eap_wsc_state(data, FAIL);
+#ifdef HAVE_AOSS
+		sysprintf("echo done > /tmp/.wpsdone");
+		nvram_set("wps_status", "1");
+		nvram_commit();
+#endif
 		break;
 	case WPS_CONTINUE:
 		eap_wsc_state(data, MESG);

@@ -778,6 +778,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	sta_track_claim_taxonomy_info(hapd->iface, addr,
 				      &sta->probe_ie_taxonomy);
 #endif /* CONFIG_TAXONOMY */
+	sta->sig_drop_strikes = 0;
 
 	return sta;
 }

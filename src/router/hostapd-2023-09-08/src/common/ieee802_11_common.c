@@ -1378,19 +1378,15 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			      u8 *op_class, u8 *channel)
 {
 	u8 vht_opclass;
+	int chan;
+	int fcast = freq;
 
 	/* TODO: more operating classes */
 
 	if (sec_channel > 1 || sec_channel < -1)
 		return NUM_HOSTAPD_MODES;
 
-	if (freq >= 2412 && freq <= 2472) {
-		if ((freq - 2407) % 5)
-			return NUM_HOSTAPD_MODES;
-
-		if (chanwidth)
-			return NUM_HOSTAPD_MODES;
-
+	if (fcast >= 2412 && fcast <= 2484) {
 		/* 2.407 GHz, channels 1..13 */
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -1399,25 +1395,122 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		else
 			*op_class = 81;
 
-		*channel = (freq - 2407) / 5;
+		*channel = (fcast - 2407) / 5;
 
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
-	if (freq == 2484) {
-		if (sec_channel || chanwidth)
-			return NUM_HOSTAPD_MODES;
+	if (fcast == 2484) {
 
 		*op_class = 82; /* channel 14 */
 		*channel = 14;
 
 		return HOSTAPD_MODE_IEEE80211B;
 	}
+	if (fcast == 2407) {
 
-	if (freq >= 4900 && freq < 5000) {
-		if ((freq - 4000) % 5)
-			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 4000) / 5;
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = 0;
+
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+	if (fcast < 2412) {
+		chan = (fcast - 2407) / 5 + 256;
+		*channel = (chan & 0xff);
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+	if (fcast < 2502 && fcast > 2484) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = 14;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast < 2512 && fcast > 2484) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = 15;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast > 2484 && fcast < 4000 ) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = (15 + ((fcast - 2512) / 20)) & 0xff;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast > 2484 && fcast < 4000) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = (fcast - 2414) / 5;
+
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast < 2412) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		chan = (fcast - 2407) / 5 + 256;
+		*channel = (chan & 0xff);
+
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+
+
+	if (fcast >= 4940 && fcast < 4990) {
+		*channel = (fcast - 4940) * 2 + !!((fcast % 5) == 2);
+		*op_class = 0;
+		return HOSTAPD_MODE_IEEE80211A;
+	}
+
+	if (fcast >= 4800 && fcast < 5005) {
+		*channel = (fcast - 4000) / 5;
+		*op_class = 0; /* TODO */
+		return HOSTAPD_MODE_IEEE80211A;
+	}
+
+
+	if (fcast >= 4900 && fcast < 5000) {
+		*channel = (fcast - 4000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
@@ -1438,9 +1531,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 	}
 
 	/* 5 GHz, channels 36..48 */
-	if (freq >= 5180 && freq <= 5240) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5180 && fcast <= 5240) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1457,9 +1548,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 	}
 
 	/* 5 GHz, channels 52..64 */
-	if (freq >= 5260 && freq <= 5320) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5260 && fcast <= 5320) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1470,15 +1559,13 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		else
 			*op_class = 118;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	/* 5 GHz, channels 149..177 */
-	if (freq >= 5745 && freq <= 5885) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5745 && fcast <= 5845) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1486,20 +1573,18 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			*op_class = 126;
 		else if (sec_channel == -1)
 			*op_class = 127;
-		else if (freq <= 5805)
+		else if (fcast <= 5805)
 			*op_class = 124;
 		else
 			*op_class = 125;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	/* 5 GHz, channels 100..144 */
-	if (freq >= 5500 && freq <= 5720) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5000 && fcast <= 5700) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1510,15 +1595,13 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		else
 			*op_class = 121;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
-	if (freq >= 5000 && freq < 5900) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 5000) / 5;
+	if (fcast >= 5000 && fcast < 7000) {
+		*channel = ((fcast - 5000) / 5) & 0xff;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
@@ -1559,14 +1642,12 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 	}
 
 	/* 56.16 GHz, channel 1..6 */
-	if (freq >= 56160 + 2160 * 1 && freq <= 56160 + 2160 * 6) {
-		if (sec_channel)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 56160 + 2160 * 1 && fcast <= 56160 + 2160 * 4) {
 
 		switch (chanwidth) {
 		case CONF_OPER_CHWIDTH_USE_HT:
 		case CONF_OPER_CHWIDTH_2160MHZ:
-			*channel = (freq - 56160) / 2160;
+			*channel = (fcast - 56160) / 2160;
 			*op_class = 180;
 			break;
 		case CONF_OPER_CHWIDTH_4320MHZ:
@@ -1574,7 +1655,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			if (freq > 56160 + 2160 * 5)
 				return NUM_HOSTAPD_MODES;
 
-			*channel = (freq - 56160) / 2160 + 8;
+			*channel = (fcast - 56160) / 2160 + 8;
 			*op_class = 181;
 			break;
 		case CONF_OPER_CHWIDTH_6480MHZ:
@@ -1582,7 +1663,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			if (freq > 56160 + 2160 * 4)
 				return NUM_HOSTAPD_MODES;
 
-			*channel = (freq - 56160) / 2160 + 16;
+			*channel = (fcast - 56160) / 2160 + 16;
 			*op_class = 182;
 			break;
 		case CONF_OPER_CHWIDTH_8640MHZ:
@@ -1590,7 +1671,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			if (freq > 56160 + 2160 * 3)
 				return NUM_HOSTAPD_MODES;
 
-			*channel = (freq - 56160) / 2160 + 24;
+			*channel = (fcast - 56160) / 2160 + 24;
 			*op_class = 183;
 			break;
 		default:

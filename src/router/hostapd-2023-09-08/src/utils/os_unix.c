@@ -10,6 +10,7 @@
 
 #include <time.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #ifdef ANDROID
 #include <sys/capability.h>
@@ -188,12 +189,33 @@ int os_gmtime(os_time_t t, struct os_tm *tm)
 	return 0;
 }
 
-
-#ifdef __APPLE__
-#include <fcntl.h>
-static int os_daemon(int nochdir, int noclose)
+int os_daemonize(const char *pid_file)
 {
-	int devnull;
+	int pid = 0, i, devnull;
+
+#if defined(__uClinux__) || defined(__sun__)
+	return -1;
+#else /* defined(__uClinux__) || defined(__sun__) */
+
+#ifndef __APPLE__
+	pid = fork();
+	if (pid < 0)
+		return -1;
+#endif
+
+	if (pid > 0) {
+		if (pid_file) {
+			FILE *f = fopen(pid_file, "w");
+			if (f) {
+				fprintf(f, "%u\n", pid);
+				fclose(f);
+			}
+		}
+		_exit(0);
+	}
+
+	if (setsid() < 0)
+		return -1;
 
 	if (chdir("/") < 0)
 		return -1;
@@ -202,45 +224,11 @@ static int os_daemon(int nochdir, int noclose)
 	if (devnull < 0)
 		return -1;
 
-	if (dup2(devnull, STDIN_FILENO) < 0) {
+	for (i = 0; i <= STDERR_FILENO; i++)
+		dup2(devnull, i);
+
+	if (devnull > 2)
 		close(devnull);
-		return -1;
-	}
-
-	if (dup2(devnull, STDOUT_FILENO) < 0) {
-		close(devnull);
-		return -1;
-	}
-
-	if (dup2(devnull, STDERR_FILENO) < 0) {
-		close(devnull);
-		return -1;
-	}
-
-	return 0;
-}
-#else /* __APPLE__ */
-#define os_daemon daemon
-#endif /* __APPLE__ */
-
-
-int os_daemonize(const char *pid_file)
-{
-#if defined(__uClinux__) || defined(__sun__)
-	return -1;
-#else /* defined(__uClinux__) || defined(__sun__) */
-	if (os_daemon(0, 0)) {
-		perror("daemon");
-		return -1;
-	}
-
-	if (pid_file) {
-		FILE *f = fopen(pid_file, "w");
-		if (f) {
-			fprintf(f, "%u\n", getpid());
-			fclose(f);
-		}
-	}
 
 	return -0;
 #endif /* defined(__uClinux__) || defined(__sun__) */

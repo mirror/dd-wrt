@@ -96,17 +96,18 @@ static void wpas_conf_ap_vht(struct wpa_supplicant *wpa_s,
 		hostapd_set_oper_centr_freq_seg1_idx(conf, freq_seg_idx);
 	}
 
+	conf->vht_oper_centr_freq_seg1_idx_freq = ssid->vht_center_freq2;
+
 	if (!ssid->p2p_group) {
 		if (!ssid->vht_center_freq1)
 			goto no_vht;
 		ieee80211_freq_to_chan(ssid->vht_center_freq1,
 				       &freq_seg_idx);
 		hostapd_set_oper_centr_freq_seg0_idx(conf, freq_seg_idx);
+		hostapd_set_oper_centr_freq_seg0_idx_freq(conf, ssid->vht_center_freq1);
 
-		wpa_printf(MSG_DEBUG,
-			   "VHT seg0 index %d and seg1 index %d for AP",
-			   hostapd_get_oper_centr_freq_seg0_idx(conf),
-			   hostapd_get_oper_centr_freq_seg1_idx(conf));
+		wpa_printf(MSG_DEBUG, "VHT seg0 index %d/%d for AP",
+			   hostapd_get_oper_centr_freq_seg0_idx(conf),hostapd_get_oper_centr_freq_seg0_idx_freq(conf));
 		return;
 	}
 

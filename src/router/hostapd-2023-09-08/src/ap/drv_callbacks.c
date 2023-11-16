@@ -396,6 +396,12 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
 		goto fail;
 	}
 
+	if (hostapd_signal_handle_event(hapd, 0, ASSOC_REQ, addr)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
+			   MAC2STR(addr));
+		goto fail;
+	}
+
 #ifdef CONFIG_P2P
 	if (elems.p2p) {
 		wpabuf_free(sta->p2p_ie);

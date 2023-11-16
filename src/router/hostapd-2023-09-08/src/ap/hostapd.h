@@ -744,6 +744,10 @@ int hostapd_register_probereq_cb(struct hostapd_data *hapd,
 				 void *ctx);
 void hostapd_prune_associations(struct hostapd_data *hapd, const u8 *addr,
 				int mld_assoc_link_id);
+#define PROBE_REQ 0
+#define AUTH_REQ 1
+#define ASSOC_REQ 2
+int hostapd_signal_handle_event(struct hostapd_data *hapd, int rssi, int type, const u8 *addr);
 
 /* drv_callbacks.c (TODO: move to somewhere else?) */
 void hostapd_notify_assoc_fils_finish(struct hostapd_data *hapd,

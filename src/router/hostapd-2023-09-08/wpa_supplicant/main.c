@@ -36,7 +36,7 @@ static void usage(void)
 	       "vW] [-P<pid file>] "
 	       "[-g<global ctrl>] \\\n"
 	       "        [-G<group>] \\\n"
-	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] "
+	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] [-H<hostapd path>] "
 	       "[-p<driver_param>] \\\n"
 	       "        [-b<br_ifname>] [-e<entropy file>]"
 #ifdef CONFIG_DEBUG_FILE
@@ -76,6 +76,7 @@ static void usage(void)
 	       "  -g = global ctrl_interface\n"
 	       "  -G = global ctrl_interface group\n"
 	       "  -h = show this help text\n"
+	       "  -H = connect to a hostapd instance to manage state changes\n"
 	       "  -i = interface name\n"
 	       "  -I = additional configuration file\n"
 	       "  -K = include keys (passwords, etc.) in debug output\n"
@@ -203,7 +204,7 @@ int main(int argc, char *argv[])
 
 	for (;;) {
 		c = getopt(argc, argv,
-			   "b:Bc:C:D:de:f:g:G:hi:I:KLMm:No:O:p:P:qsTtuv::W");
+			   "b:Bc:C:D:de:f:g:G:hHi:I:KLMm:No:O:p:P:qsTtuv::W");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -250,6 +251,9 @@ int main(int argc, char *argv[])
 			usage();
 			exitcode = 0;
 			goto out;
+		case 'H':
+			iface->hostapd_ctrl = optarg;
+			break;
 		case 'i':
 			iface->ifname = optarg;
 			break;
@@ -354,6 +358,11 @@ int main(int argc, char *argv[])
 		wpa_printf(MSG_INFO, "Successfully initialized "
 			   "wpa_supplicant");
 	}
+
+	if (global->params.daemonize &&
+	    (wpa_supplicant_daemon(global->params.pid_file) ||
+	     eloop_sock_requeue()))
+		return -1;
 
 	if (fst_global_init()) {
 		wpa_printf(MSG_ERROR, "Failed to initialize FST");

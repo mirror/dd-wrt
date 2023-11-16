@@ -248,6 +248,9 @@ wpa_hexdump_ascii(MSG_MSGDUMP, "RADIUS SRV: " args)
 static void radius_server_session_timeout(void *eloop_ctx, void *timeout_ctx);
 static void radius_server_session_remove_timeout(void *eloop_ctx,
 						 void *timeout_ctx);
+#ifndef CONFIG_NO_WPA_MSG
+void srv_log(struct radius_session *sess, const char *fmt, ...)
+PRINTF_FORMAT(2, 3);
 
 #ifdef CONFIG_SQLITE
 #ifdef CONFIG_HS20
@@ -286,9 +289,6 @@ static int db_table_create_sim_provisioning(sqlite3 *db)
 #endif /* CONFIG_HS20 */
 #endif /* CONFIG_SQLITE */
 
-
-void srv_log(struct radius_session *sess, const char *fmt, ...)
-PRINTF_FORMAT(2, 3);
 
 void srv_log(struct radius_session *sess, const char *fmt, ...)
 {
@@ -332,7 +332,9 @@ void srv_log(struct radius_session *sess, const char *fmt, ...)
 
 	os_free(buf);
 }
-
+#else
+#define srv_log(sess, fmt, ...) do { } while(0)
+#endif
 
 static struct radius_client *
 radius_server_get_client(struct radius_server_data *data, struct in_addr *addr,
@@ -2570,13 +2572,14 @@ static const char * radius_server_get_eap_req_id_text(void *ctx, size_t *len)
 	return data->eap_req_id_text;
 }
 
+#ifndef CONFIG_NO_WPA_MSG
 
 static void radius_server_log_msg(void *ctx, const char *msg)
 {
 	struct radius_session *sess = ctx;
 	srv_log(sess, "EAP: %s", msg);
 }
-
+#endif
 
 #ifdef CONFIG_ERP
 
@@ -2615,7 +2618,9 @@ static const struct eapol_callbacks radius_server_eapol_cb =
 {
 	.get_eap_user = radius_server_get_eap_user,
 	.get_eap_req_id_text = radius_server_get_eap_req_id_text,
+#ifndef CONFIG_NO_WPA_MSG
 	.log_msg = radius_server_log_msg,
+#endif
 #ifdef CONFIG_ERP
 	.get_erp_send_reauth_start = NULL,
 	.get_erp_domain = radius_server_get_erp_domain,

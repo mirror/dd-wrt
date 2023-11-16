@@ -143,6 +143,29 @@ static void hostapd_reload_bss(struct hostapd_data *hapd)
 #endif /* CONFIG_NO_RADIUS */
 
 	ssid = &hapd->conf->ssid;
+
+	hostapd_set_freq(hapd, hapd->iconf->hw_mode, hapd->iface->freq,
+			 hapd->iconf->channel,
+			 hapd->iconf->enable_edmg,
+			 hapd->iconf->edmg_channel,
+			 hapd->iconf->ieee80211n,
+			 hapd->iconf->ieee80211ac,
+			 hapd->iconf->ieee80211ax,
+			 hapd->iconf->ieee80211be,
+			 hapd->iconf->secondary_channel,
+			 hapd->iconf->vht_oper_chwidth,
+			 hostapd_get_oper_centr_freq_seg0_idx_freq(hapd->iconf) ? hostapd_get_oper_centr_freq_seg0_idx_freq(hapd->iconf) : hostapd_get_oper_centr_freq_seg0_idx(hapd->iconf),
+			 hostapd_get_oper_centr_freq_seg1_idx_freq(hapd->iconf) ? hostapd_get_oper_centr_freq_seg1_idx_freq(hapd->iconf) : hostapd_get_oper_centr_freq_seg1_idx(hapd->iconf));
+
+	if (hapd->iface->current_mode) {
+		if (hostapd_prepare_rates(hapd->iface, hapd->iface->current_mode)) {
+			wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
+			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
+				       HOSTAPD_LEVEL_WARNING,
+				       "Failed to prepare rates table.");
+		}
+	}
+
 	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
 	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
 		/*
@@ -274,7 +297,7 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 	struct hostapd_data *hapd = iface->bss[0];
 	struct hostapd_config *newconf, *oldconf;
 	size_t j;
-
+	int i;
 	if (iface->config_fname == NULL) {
 		/* Only in-memory config in use - assume it has been updated */
 		hostapd_clear_old(iface);
@@ -324,6 +347,19 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 	}
 	iface->conf = newconf;
 
+	for (i = 0; i < iface->num_hw_features; i++) {
+		struct hostapd_hw_modes *mode = &iface->hw_features[i];
+		if (mode->mode == iface->conf->hw_mode) {
+			iface->current_mode = mode;
+			break;
+		}
+	}
+
+	if (hapd->iconf->frequency)
+		iface->freq = iface->conf->frequency;
+	else
+		iface->freq = hostapd_hw_get_freq(hapd, iface->conf->channel);
+
 	for (j = 0; j < iface->num_bss; j++) {
 		hapd = iface->bss[j];
 		if (!hapd->conf->config_id || !newconf->bss[j]->config_id ||
@@ -331,21 +367,6 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 			      newconf->bss[j]->config_id) != 0)
 			hostapd_clear_old_bss(hapd);
 		hapd->iconf = newconf;
-		hapd->iconf->channel = oldconf->channel;
-		hapd->iconf->acs = oldconf->acs;
-		hapd->iconf->secondary_channel = oldconf->secondary_channel;
-		hapd->iconf->ieee80211n = oldconf->ieee80211n;
-		hapd->iconf->ieee80211ac = oldconf->ieee80211ac;
-		hapd->iconf->ht_capab = oldconf->ht_capab;
-		hapd->iconf->vht_capab = oldconf->vht_capab;
-		hostapd_set_oper_chwidth(hapd->iconf,
-					 hostapd_get_oper_chwidth(oldconf));
-		hostapd_set_oper_centr_freq_seg0_idx(
-			hapd->iconf,
-			hostapd_get_oper_centr_freq_seg0_idx(oldconf));
-		hostapd_set_oper_centr_freq_seg1_idx(
-			hapd->iconf,
-			hostapd_get_oper_centr_freq_seg1_idx(oldconf));
 		hapd->conf = newconf->bss[j];
 		hostapd_reload_bss(hapd);
 	}
@@ -1214,6 +1235,90 @@ static int hostapd_start_beacon(struct hostapd_data *hapd,
 }
 
 
+
+
+static void
+hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
+/* This is called by an eloop timeout.  All stations in the list are checked
+ * for signal level.  This requires calling the driver, since hostapd doesn't
+ * see packets from a station once it is fully authorized.
+ * Stations with signal level below the threshold will be dropped.
+ * Cases where the last RSSI is significantly less than the average are usually
+ * a bad reading and should not lead to a drop.
+ */
+ {   struct hostapd_data *hapd = user_ctx;
+	 struct hostap_sta_driver_data data;
+	 struct sta_info *sta, *sta_next;
+	 u8 addr[ETH_ALEN];  // Buffer the address for logging purposes, in case it is destroyed while dropping
+	 int strikes;        //    same with strike count on this station.
+	 int num_sta = 0;
+	 int num_drop = 0;
+	 int signal_inst;
+	 int signal_avg;
+	
+	 
+	 for (sta = hapd->sta_list; sta; sta = sta_next) {
+		 sta_next = sta->next;
+		 memcpy(addr, sta->addr, ETH_ALEN);
+		 if (!hostapd_drv_read_sta_data(hapd, &data, addr)) { 
+			signal_inst = data.signal;
+			signal_avg = data.last_ack_rssi;
+			num_sta++;
+			strikes = sta->sig_drop_strikes;
+			if (signal_inst > signal_avg) 
+				signal_avg = signal_inst;
+			if (signal_inst > (signal_avg - 5)) {  // ignore unusually low instantaneous signal.
+				if (signal_avg < hapd->conf->signal_stay_min) { // signal bad.
+					strikes = ++sta->sig_drop_strikes;
+				    if (strikes >= hapd->conf->signal_strikes) {  // Struck out--, drop.
+					    char *ident = NULL;
+					    if (sta->eapol_sm && sta->eapol_sm->identity && sta->eapol_sm->identity_len > 0) {
+						    ident = malloc(sta->eapol_sm->identity_len+1);
+						    strncpy(ident, sta->eapol_sm->identity, sta->eapol_sm->identity_len);
+						    ident[sta->eapol_sm->identity_len] = 0;
+					    }
+    					    hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,"kick out station due low signal %s%s",ident?"User:":"", ident?ident:"");
+    					    if (ident)
+						free(ident);
+						ap_sta_deauthenticate(hapd, sta, hapd->conf->signal_drop_reason); 
+						num_drop++;
+					}
+				}
+				else {
+					sta->sig_drop_strikes = 0;  // signal OK, reset the strike counter.
+					strikes = 0;
+					}				
+			}
+			hostapd_logger(hapd, addr, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_DEBUG, "%i %i (%i)",
+		        data.signal, data.last_ack_rssi, strikes);
+		 }
+	 }
+//	 hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_INFO, "signal poll: %i STAs, %i dropped", num_sta, num_drop); 
+	 
+	 eloop_register_timeout(hapd->conf->signal_poll_time, 0, hostapd_bss_signal_check, eloop_data, hapd); 
+ }
+
+int hostapd_signal_handle_event(struct hostapd_data *hapd, int rssi, int type, const u8 *addr)
+{
+	struct ubus_banned_client *ban;
+	const char *types[3] = {
+		[PROBE_REQ] = "probe",
+		[AUTH_REQ] = "auth",
+		[ASSOC_REQ] = "assoc",
+	};
+    
+		
+	if (type < ARRAY_SIZE(types) && rssi && type != PROBE_REQ) {  // don't clutter the log with probes.
+    		hostapd_logger(hapd, addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO, "%s request, signal %i %s", 
+            		types[type], rssi,
+            		(rssi >= hapd->conf->signal_auth_min) ? "(Accepted)" : "(DENIED) (signal too weak for authentication)");
+// reject weak signals.   
+		if (rssi < hapd->conf->signal_auth_min) 
+    			return -2;   
+	}
+	return 0;
+}
+
 /**
  * hostapd_setup_bss - Per-BSS setup (initialization)
  * @hapd: Pointer to BSS data
@@ -1540,6 +1645,10 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
 
 	if (hapd->wpa_auth && wpa_init_keys(hapd->wpa_auth) < 0)
 		return -1;
+
+	/* This should run after the config file has been read, I hope. */
+	if (hapd->conf->signal_stay_min > -128)
+	   eloop_register_timeout(3, 0, hostapd_bss_signal_check, NULL, hapd);  // Start up the poll timer.
 
 	return 0;
 }
@@ -2360,10 +2469,8 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 				     hapd->iconf->ieee80211be,
 				     hapd->iconf->secondary_channel,
 				     hostapd_get_oper_chwidth(hapd->iconf),
-				     hostapd_get_oper_centr_freq_seg0_idx(
-					     hapd->iconf),
-				     hostapd_get_oper_centr_freq_seg1_idx(
-					     hapd->iconf))) {
+				     hostapd_get_oper_centr_freq_seg0_idx_freq(hapd->iconf) ? hostapd_get_oper_centr_freq_seg0_idx_freq(hapd->iconf) : hostapd_get_oper_centr_freq_seg0_idx(hapd->iconf),
+				     hostapd_get_oper_centr_freq_seg1_idx_freq(hapd->iconf) ? hostapd_get_oper_centr_freq_seg1_idx_freq(hapd->iconf) : hostapd_get_oper_centr_freq_seg1_idx(hapd->iconf))) {
 			wpa_printf(MSG_ERROR, "Could not set channel for "
 				   "kernel driver");
 			goto fail;
@@ -3820,8 +3927,8 @@ static int hostapd_change_config_freq(struct hostapd_data *hapd,
 				    conf->ieee80211ac, conf->ieee80211ax,
 				    conf->ieee80211be, conf->secondary_channel,
 				    hostapd_get_oper_chwidth(conf),
-				    hostapd_get_oper_centr_freq_seg0_idx(conf),
-				    hostapd_get_oper_centr_freq_seg1_idx(conf),
+				    hostapd_get_oper_centr_freq_seg0_idx_freq(hapd->iconf) ? hostapd_get_oper_centr_freq_seg0_idx_freq(hapd->iconf) : hostapd_get_oper_centr_freq_seg0_idx(hapd->iconf),
+				    hostapd_get_oper_centr_freq_seg1_idx_freq(hapd->iconf) ? hostapd_get_oper_centr_freq_seg1_idx_freq(hapd->iconf) : hostapd_get_oper_centr_freq_seg1_idx(hapd->iconf),
 				    conf->vht_capab,
 				    mode ? &mode->he_capab[IEEE80211_MODE_AP] :
 				    NULL,
@@ -3878,6 +3985,8 @@ static int hostapd_change_config_freq(struct hostapd_data *hapd,
 			       &seg1);
 	hostapd_set_oper_centr_freq_seg0_idx(conf, seg0);
 	hostapd_set_oper_centr_freq_seg1_idx(conf, seg1);
+	hostapd_set_oper_centr_freq_seg0_idx_freq(conf, params->center_freq1);
+	hostapd_set_oper_centr_freq_seg1_idx_freq(conf, params->center_freq2);
 
 	/* TODO: maybe call here hostapd_config_check here? */
 
@@ -4090,6 +4199,8 @@ hostapd_switch_channel_fallback(struct hostapd_iface *iface,
 	iface->conf->secondary_channel = freq_params->sec_channel_offset;
 	hostapd_set_oper_centr_freq_seg0_idx(iface->conf, seg0_idx);
 	hostapd_set_oper_centr_freq_seg1_idx(iface->conf, seg1_idx);
+	hostapd_set_oper_centr_freq_seg0_idx_freq(iface->conf, freq_params->center_freq1);
+	hostapd_set_oper_centr_freq_seg1_idx_freq(iface->conf, freq_params->center_freq2);
 	hostapd_set_oper_chwidth(iface->conf, bw);
 	iface->conf->ieee80211n = freq_params->ht_enabled;
 	iface->conf->ieee80211ac = freq_params->vht_enabled;

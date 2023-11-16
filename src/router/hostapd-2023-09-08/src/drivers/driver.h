@@ -956,6 +956,8 @@ struct wpa_driver_associate_params {
 
 	unsigned char rates[WLAN_SUPP_RATES_MAX];
 	int mcast_rate;
+	int ht_set;
+	unsigned int htmode;
 
 	/**
 	 * bssid_hint - BSSID of a proposed AP

@@ -333,6 +333,7 @@ struct sta_info {
 	struct mld_info mld_info;
 	u8 mld_assoc_link_id;
 #endif /* CONFIG_IEEE80211BE */
+	int sig_drop_strikes;  /* Number of times signal was below threshold. */
 };
 
 

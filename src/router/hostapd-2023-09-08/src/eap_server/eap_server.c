@@ -183,6 +183,7 @@ int eap_user_get(struct eap_sm *sm, const u8 *identity, size_t identity_len,
 	return 0;
 }
 
+#ifndef CONFIG_NO_WPA_MSG
 
 void eap_log_msg(struct eap_sm *sm, const char *fmt, ...)
 {
@@ -209,7 +210,7 @@ void eap_log_msg(struct eap_sm *sm, const char *fmt, ...)
 	os_free(buf);
 }
 
-
+#endif
 SM_STATE(EAP, DISABLED)
 {
 	SM_ENTRY(EAP, DISABLED);

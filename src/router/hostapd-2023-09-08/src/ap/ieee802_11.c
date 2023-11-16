@@ -81,8 +81,7 @@ static void pasn_fils_auth_resp(struct hostapd_data *hapd,
 #endif /* CONFIG_PASN */
 
 static void handle_auth(struct hostapd_data *hapd,
-			const struct ieee80211_mgmt *mgmt, size_t len,
-			int rssi, int from_queue);
+			const struct ieee80211_mgmt *mgmt, size_t len, int rssi, int from_queue);
 static int add_associated_sta(struct hostapd_data *hapd,
 			      struct sta_info *sta, int reassoc);
 
@@ -2986,6 +2985,14 @@ static void handle_auth(struct hostapd_data *hapd,
 		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
 		goto fail;
 	}
+
+	if (hostapd_signal_handle_event(hapd, rssi ,AUTH_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " rejected by signal handler.\n",
+			MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
+
 	if (res == HOSTAPD_ACL_PENDING)
 		return;
 
@@ -5155,9 +5162,10 @@ void fils_hlp_timeout(void *eloop_ctx, void *eloop_data)
 
 static void handle_assoc(struct hostapd_data *hapd,
 			 const struct ieee80211_mgmt *mgmt, size_t len,
-			 int reassoc, int rssi)
+			 int reassoc, struct hostapd_frame_info *fi)
 {
 	u16 capab_info, listen_interval, seq_ctrl, fc;
+	int rssi = fi ? fi->ssi_signal : 0;
 	int resp = WLAN_STATUS_SUCCESS;
 	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
 	const u8 *pos;
@@ -5342,6 +5350,13 @@ static void handle_assoc(struct hostapd_data *hapd,
 		goto fail;
 	}
 #endif /* CONFIG_MBO */
+
+	if (hostapd_signal_handle_event(hapd, rssi, ASSOC_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
+		       MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
 
 	/*
 	 * sta->capability is used in check_assoc_ies() for RRM enabled
@@ -6060,7 +6075,6 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
 	u16 fc, stype;
 	int ret = 0;
 	unsigned int freq;
-	int ssi_signal = fi ? fi->ssi_signal : 0;
 
 	if (len < 24)
 		return 0;
@@ -6117,7 +6131,7 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
 	}
 
 	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
-		handle_probe_req(hapd, mgmt, len, ssi_signal);
+		handle_probe_req(hapd, mgmt, len, fi);
 		return 1;
 	}
 
@@ -6136,7 +6150,7 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
 	}
 
 	if (hapd->iconf->track_sta_max_num)
-		sta_track_add(hapd->iface, mgmt->sa, ssi_signal);
+		sta_track_add(hapd->iface, mgmt->sa, fi ? fi->ssi_signal : 0);
 
 	if (hapd->conf->notify_mgmt_frames)
 		notify_mgmt_frame(hapd, buf, len);
@@ -6144,17 +6158,17 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
 	switch (stype) {
 	case WLAN_FC_STYPE_AUTH:
 		wpa_printf(MSG_DEBUG, "mgmt::auth");
-		handle_auth(hapd, mgmt, len, ssi_signal, 0);
+		handle_auth(hapd, mgmt, len, fi->ssi_signal, 0);
 		ret = 1;
 		break;
 	case WLAN_FC_STYPE_ASSOC_REQ:
 		wpa_printf(MSG_DEBUG, "mgmt::assoc_req");
-		handle_assoc(hapd, mgmt, len, 0, ssi_signal);
+		handle_assoc(hapd, mgmt, len, 0, fi);
 		ret = 1;
 		break;
 	case WLAN_FC_STYPE_REASSOC_REQ:
 		wpa_printf(MSG_DEBUG, "mgmt::reassoc_req");
-		handle_assoc(hapd, mgmt, len, 1, ssi_signal);
+		handle_assoc(hapd, mgmt, len, 0, fi);
 		ret = 1;
 		break;
 	case WLAN_FC_STYPE_DISASSOC:

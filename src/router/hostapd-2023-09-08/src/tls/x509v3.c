@@ -2158,7 +2158,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		if (chain_trusted)
 			continue;
 
-		if (!disable_time_checks &&
+/*		if (!disable_time_checks &&
 		    ((unsigned long) now.sec <
 		     (unsigned long) cert->not_before ||
 		     (unsigned long) now.sec >
@@ -2168,7 +2168,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 				   now.sec, cert->not_before, cert->not_after);
 			*reason = X509_VALIDATE_CERTIFICATE_EXPIRED;
 			return -1;
-		}
+		}*/
 
 		if (cert->next) {
 			if (x509_name_compare(&cert->issuer,

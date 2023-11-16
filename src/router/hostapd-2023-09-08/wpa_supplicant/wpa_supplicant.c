@@ -131,6 +131,69 @@ static void wpas_update_fils_connect_params(struct wpa_supplicant *wpa_s);
 static void wpas_update_owe_connect_params(struct wpa_supplicant *wpa_s);
 #endif /* CONFIG_OWE */
 
+static int hostapd_stop(struct wpa_supplicant *wpa_s)
+{
+	const char *cmd = "STOP_AP";
+	char buf[256];
+	size_t len = sizeof(buf);
+
+	if (wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL) < 0) {
+		wpa_printf(MSG_ERROR, "\nFailed to stop hostapd AP interfaces\n");
+		return -1;
+	}
+	return 0;
+}
+
+static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
+{
+	char *cmd = NULL;
+	char buf[256];
+	size_t len = sizeof(buf);
+	enum hostapd_hw_mode hw_mode;
+	u8 channel;
+	int sec_chan = 0;
+	int ret;
+
+	if (!bss)
+		return -1;
+
+	if (bss->ht_param & HT_INFO_HT_PARAM_STA_CHNL_WIDTH) {
+		int sec = bss->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_OFF_MASK;
+		if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE)
+			sec_chan = 1;
+		else if (sec ==  HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW)
+			sec_chan = -1;
+	}
+
+	hw_mode = ieee80211_freq_to_chan(bss->freq, &channel);
+	if (bss->has_vht) {
+		if (asprintf(&cmd, "UPDATE channel=%d frequency=%d chwidth=%d sec_chan=%d sec_idx0=%d sec_idx1=%d hw_mode=%d ieee80211n=%d", 
+		    channel, 
+		    bss->freq,bss->vht_oper.vht_op_info_chwidth, 
+		    sec_chan, 
+		    bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx, 
+		    bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx, 
+		    hw_mode, !!bss->ht_capab) < 0)
+		return -1;
+	} else { 
+		if (asprintf(&cmd, "UPDATE channel=%d frequency=%d sec_chan=%d hw_mode=%d ieee80211n=%d",
+		     channel, bss->freq, sec_chan, hw_mode, !!bss->ht_capab) < 0)
+		return -1;
+	}
+	fprintf(stderr,"send command %s\n",cmd);
+//	char log[256];
+//	sprintf(log,"echo \"send command %s\n\" >> /tmp/send.log\n",cmd);
+//	system(log);
+//	wpa_printf(MSG_DEBUG, "\nsend command %s\n",cmd);
+	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
+	free(cmd);
+
+	if (ret < 0) {
+		wpa_printf(MSG_ERROR, "\nFailed to reload hostapd AP interfaces\n");
+		return -1;
+	}
+	return 0;
+}
 
 #ifdef CONFIG_WEP
 /* Configure default/group WEP keys for static WEP */
@@ -1034,8 +1097,12 @@ void wpa_supplicant_set_state(struct wpa_supplicant *wpa_s,
 		if (ssid && (ssid->key_mgmt & WPA_KEY_MGMT_OWE))
 			wpas_update_owe_connect_params(wpa_s);
 #endif /* CONFIG_OWE */
+		if (wpa_s->hostapd)
+			hostapd_reload(wpa_s, wpa_s->current_bss);
 	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
 		   state == WPA_ASSOCIATED) {
+		if (wpa_s->hostapd)
+			hostapd_stop(wpa_s);
 		wpa_s->new_connection = 1;
 		wpa_drv_set_operstate(wpa_s, 0);
 #ifndef IEEE8021X_EAPOL
@@ -2999,10 +3066,10 @@ static bool ibss_mesh_select_80_160mhz(struct wpa_supplicant *wpa_s,
 			chwidth = CONF_OPER_CHWIDTH_160MHZ;
 			vht_caps |= VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
 			seg0 = 50;
-		} else if (freq->freq == 5520) {
+		} else {
 			chwidth = CONF_OPER_CHWIDTH_160MHZ;
 			vht_caps |= VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
-			seg0 = 114;
+			seg0 = ((freq->freq / 5) - 1000) + 14;
 		}
 	}
 
@@ -5763,7 +5830,7 @@ int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s)
 }
 
 
-static int wpa_supplicant_daemon(const char *pid_file)
+int wpa_supplicant_daemon(const char *pid_file)
 {
 	wpa_printf(MSG_DEBUG, "Daemonize..");
 	return os_daemonize(pid_file);
@@ -7076,6 +7143,20 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 			   sizeof(wpa_s->bridge_ifname));
 	}
 
+	if (iface->hostapd_ctrl) {
+		char *cmd = "STOP_AP";
+		char buf[256];
+		int len = sizeof(buf);
+
+		wpa_s->hostapd = wpa_ctrl_open(iface->hostapd_ctrl);
+		if (!wpa_s->hostapd) {
+			wpa_printf(MSG_ERROR, "\nFailed to connect to hostapd\n");
+			return -1;
+		}
+		if (hostapd_stop(wpa_s) < 0)
+			return -1;
+	}
+
 	/* RSNA Supplicant Key Management - INITIALIZE */
 	eapol_sm_notify_portEnabled(wpa_s->eapol, false);
 	eapol_sm_notify_portValid(wpa_s->eapol, false);
@@ -7417,6 +7498,11 @@ static void wpa_supplicant_deinit_iface(struct wpa_supplicant *wpa_s,
 
 	if (terminate)
 		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
+
+	if (wpa_s->hostapd) {
+		wpa_ctrl_close(wpa_s->hostapd);
+		wpa_s->hostapd = NULL;
+	}
 
 	wpa_supplicant_ctrl_iface_deinit(wpa_s, wpa_s->ctrl_iface);
 	wpa_s->ctrl_iface = NULL;
@@ -7946,11 +8032,6 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 int wpa_supplicant_run(struct wpa_global *global)
 {
 	struct wpa_supplicant *wpa_s;
-
-	if (global->params.daemonize &&
-	    (wpa_supplicant_daemon(global->params.pid_file) ||
-	     eloop_sock_requeue()))
-		return -1;
 
 #ifdef CONFIG_MATCH_IFACE
 	if (wpa_supplicant_match_existing(global))

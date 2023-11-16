@@ -225,6 +225,11 @@ static int wpa_supplicant_thread(void)
 
 	RegCloseKey(ihk);
 
+	if (global->params.daemonize &&
+	    (wpa_supplicant_daemon(global->params.pid_file) ||
+	     eloop_sock_requeue()))
+		return -1;
+
 	if (exitcode == 0)
 		exitcode = wpa_supplicant_run(global);
 
