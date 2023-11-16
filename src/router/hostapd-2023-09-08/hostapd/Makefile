@@ -22,6 +22,14 @@ LIBS_s := $(LIBS)
 endif
 endif
 
+CFLAGS+ = -MMD $(MIPS16_OPT) $(COPTS) $(LTO) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += $(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+CFLAGS+=-I$(TOP)/libnl-tiny/include\
+	-DCONFIG_LIBNL20 \
+	-D_GNU_SOURCE
+LDFLAGS+=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
+
 CFLAGS += $(EXTRA_CFLAGS)
 CFLAGS += -I$(abspath ../src)
 CFLAGS += -I$(abspath ../src/utils)
@@ -1397,7 +1405,7 @@ hostapd_multi.a: $(BCHECK) $(OBJS)
 	$(Q)$(CC) -c -o hostapd_multi.o -Dmain=hostapd_main $(CFLAGS) main.c
 	@$(E) "  CC " $<
 	@rm -f $@
-	@$(AR) cr $@ hostapd_multi.o $(OBJS)
+	@$(AR) cr $@ hostapd_multi.o $(OBJS) $(LTOPLUGIN)
 
 hostapd: $(OBJS)
 	+$(Q)$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)

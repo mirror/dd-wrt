@@ -47,6 +47,14 @@ export INCDIR ?= /usr/local/include
 export BINDIR ?= /usr/local/sbin
 PKG_CONFIG ?= pkg-config
 
+CFLAGS+ = -MMD  $(MIPS16_OPT) $(COPTS) $(LTO) -Wall 
+LDFLAGS +=  $(MIPS16_OPT) $(COPTS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS+=-I$(TOP)/libnl-tiny/include\
+	-DCONFIG_LIBNL20 \
+	-D_GNU_SOURCE
+LDFLAGS+=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
+
 CFLAGS += $(EXTRA_CFLAGS)
 CFLAGS += -I$(abspath ../src)
 CFLAGS += -I$(abspath ../src/utils)
@@ -2034,7 +2042,7 @@ wpa_supplicant_multi.a: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
 	$(Q)$(CC) -c -o wpa_supplicant_multi.o -Dmain=wpa_supplicant_main $(CFLAGS) main.c
 	@$(E) "  CC " $<
 	@rm -f $@
-	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS)
+	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS) $(LTOPLUGIN)
 
 wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
 	+$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
