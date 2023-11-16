@@ -10,8 +10,8 @@
 # to override previous values of the variables.
 
 
-# Uncomment following two lines and fix the paths if you have installed OpenSSL
-# or GnuTLS in non-default location
+# Uncomment following two lines and fix the paths if you have installed TLS
+# libraries in a non-default location
 #CFLAGS += -I/usr/local/openssl/include
 #LIBS += -L/usr/local/openssl/lib
 
@@ -19,6 +19,7 @@
 # the kerberos files are not in the default include path. Following line can be
 # used to fix build issues on such systems (krb5.h not found).
 #CFLAGS += -I/usr/include/kerberos
+
 
 # Driver interface for generic Linux wireless extensions
 # Note: WEXT is deprecated in the current Linux kernel version and no new
@@ -326,6 +327,7 @@ CONFIG_BACKEND=file
 # openssl = OpenSSL (default)
 # gnutls = GnuTLS
 # internal = Internal TLSv1 implementation (experimental)
+# mbedtls = mbed TLS
 # linux = Linux kernel AF_ALG and internal TLSv1 implementation (experimental)
 # none = Empty template
 #CONFIG_TLS=openssl

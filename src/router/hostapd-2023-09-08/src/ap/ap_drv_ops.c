@@ -348,8 +348,6 @@ int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
 		return -1;
 	if (hapd->conf->wds_bridge[0])
 		bridge = hapd->conf->wds_bridge;
-	else if (hapd->conf->bridge[0])
-		bridge = hapd->conf->bridge;
 	return hapd->driver->set_wds_sta(hapd->drv_priv, addr, aid, val,
 					 bridge, ifname_wds);
 }
@@ -929,7 +927,8 @@ int hostapd_start_dfs_cac(struct hostapd_iface *iface,
 int hostapd_drv_set_qos_map(struct hostapd_data *hapd,
 			    const u8 *qos_map_set, u8 qos_map_set_len)
 {
-	if (!hapd->driver || !hapd->driver->set_qos_map || !hapd->drv_priv)
+	if (!hapd->driver || !hapd->driver->set_qos_map || !hapd->drv_priv ||
+	    !(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_QOS_MAPPING))
 		return 0;
 	return hapd->driver->set_qos_map(hapd->drv_priv, qos_map_set,
 					 qos_map_set_len);

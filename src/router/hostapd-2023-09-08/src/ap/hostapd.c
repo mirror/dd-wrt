@@ -244,6 +244,29 @@ static int hostapd_iface_conf_changed(struct hostapd_config *newconf,
 	return 0;
 }
 
+static inline int hostapd_iface_num_sta(struct hostapd_iface *iface)
+{
+	int num_sta = 0;
+	int i;
+
+	for (i = 0; i < iface->num_bss; i++)
+		num_sta += iface->bss[i]->num_sta;
+
+	return num_sta;
+}
+
+
+int hostapd_check_max_sta(struct hostapd_data *hapd)
+{
+	if (hapd->num_sta >= hapd->conf->max_num_sta)
+		return 1;
+
+	if (hapd->iconf->max_num_sta &&
+	    hostapd_iface_num_sta(hapd->iface) >= hapd->iconf->max_num_sta)
+		return 1;
+
+	return 0;
+}
 
 int hostapd_reload_config(struct hostapd_iface *iface)
 {
@@ -569,6 +592,7 @@ static void sta_track_deinit(struct hostapd_iface *iface)
 void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
 {
 	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
+	eloop_cancel_timeout(channel_list_update_timeout, iface, NULL);
 #ifdef NEED_AP_MLME
 	hostapd_stop_setup_timers(iface);
 #endif /* NEED_AP_MLME */
@@ -598,7 +622,6 @@ void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
 static void hostapd_cleanup_iface(struct hostapd_iface *iface)
 {
 	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
-	eloop_cancel_timeout(channel_list_update_timeout, iface, NULL);
 	eloop_cancel_timeout(hostapd_interface_setup_failure_handler, iface,
 			     NULL);
 
@@ -1393,6 +1416,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
 
 			os_memset(&das_conf, 0, sizeof(das_conf));
 			das_conf.port = conf->radius_das_port;
+			das_conf.nas_identifier = conf->nas_identifier;
 			das_conf.shared_secret = conf->radius_das_shared_secret;
 			das_conf.shared_secret_len =
 				conf->radius_das_shared_secret_len;
@@ -1456,6 +1480,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
 		wpa_printf(MSG_ERROR, "GAS server initialization failed");
 		return -1;
 	}
+#endif /* CONFIG_INTERWORKING */
 
 	if (conf->qos_map_set_len &&
 	    hostapd_drv_set_qos_map(hapd, conf->qos_map_set,
@@ -1463,7 +1488,6 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
 		wpa_printf(MSG_ERROR, "Failed to initialize QoS Map");
 		return -1;
 	}
-#endif /* CONFIG_INTERWORKING */
 
 	if (conf->bss_load_update_period && bss_load_update_init(hapd)) {
 		wpa_printf(MSG_ERROR, "BSS Load initialization failed");
@@ -3529,6 +3553,8 @@ int hostapd_remove_iface(struct hapd_interfaces *interfaces, char *buf)
 void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
 			   int reassoc)
 {
+	int mld_assoc_link_id = -1;
+
 	if (hapd->tkip_countermeasures) {
 		hostapd_drv_sta_deauth(hapd, sta->addr,
 				       WLAN_REASON_MICHAEL_MIC_FAILURE);
@@ -3536,10 +3562,16 @@ void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
 	}
 
 #ifdef CONFIG_IEEE80211BE
-	if (hapd->conf->mld_ap && sta->mld_info.mld_sta &&
-	    sta->mld_assoc_link_id != hapd->mld_link_id)
-		return;
+	if (hapd->conf->mld_ap && sta->mld_info.mld_sta) {
+		if (sta->mld_assoc_link_id == hapd->mld_link_id) {
+			mld_assoc_link_id = sta->mld_assoc_link_id;
+		} else {
+			return;
+		}
+	}
 #endif /* CONFIG_IEEE80211BE */
+        if (mld_assoc_link_id != -2)
+		hostapd_prune_associations(hapd, sta->addr, mld_assoc_link_id);
 
 	ap_sta_clear_disconnect_timeouts(hapd, sta);
 	sta->post_csa_sa_query = 0;
@@ -3764,7 +3796,7 @@ static int hostapd_change_config_freq(struct hostapd_data *hapd,
 				      struct hostapd_freq_params *old_params)
 {
 	int channel;
-	u8 seg0, seg1;
+	u8 seg0 = 0, seg1 = 0;
 	struct hostapd_hw_modes *mode;
 
 	if (!params->channel) {

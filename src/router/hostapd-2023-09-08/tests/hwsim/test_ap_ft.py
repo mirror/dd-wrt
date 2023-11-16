@@ -2474,11 +2474,11 @@ def test_ap_ft_ap_oom5(dev, apdev):
         # This will fail to roam
         dev[0].roam(bssid1, check_bssid=False)
 
-    with fail_test(hapd1, 1, "sha256_prf_bits;wpa_pmk_r1_to_ptk;wpa_ft_process_auth_req"):
+    with fail_test(hapd1, 1, "sha256_prf;wpa_pmk_r1_to_ptk;wpa_ft_process_auth_req"):
         # This will fail to roam
         dev[0].roam(bssid1, check_bssid=False)
 
-    with fail_test(hapd1, 3, "wpa_pmk_r1_to_ptk;wpa_ft_process_auth_req"):
+    with fail_test(hapd1, 2, "wpa_pmk_r1_to_ptk;wpa_ft_process_auth_req"):
         # This will fail to roam
         dev[0].roam(bssid1, check_bssid=False)
 

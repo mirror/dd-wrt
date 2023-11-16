@@ -949,6 +949,10 @@ static int wiphy_info_handler(struct nl_msg *msg, void *arg)
 			nla_get_u32(tb[NL80211_ATTR_MAX_SCAN_PLAN_ITERATIONS]);
 	}
 
+	if (tb[NL80211_ATTR_MAX_SCAN_IE_LEN])
+		capa->max_scan_ie_len =
+			nla_get_u16(tb[NL80211_ATTR_MAX_SCAN_IE_LEN]);
+
 	if (tb[NL80211_ATTR_MAX_MATCH_SETS])
 		capa->max_match_sets =
 			nla_get_u8(tb[NL80211_ATTR_MAX_MATCH_SETS]);

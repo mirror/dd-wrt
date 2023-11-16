@@ -121,6 +121,7 @@ struct hostapd_ssid {
 #define DYNAMIC_VLAN_OPTIONAL 1
 #define DYNAMIC_VLAN_REQUIRED 2
 	int dynamic_vlan;
+	int vlan_no_bridge;
 #define DYNAMIC_VLAN_NAMING_WITHOUT_DEVICE 0
 #define DYNAMIC_VLAN_NAMING_WITH_DEVICE 1
 #define DYNAMIC_VLAN_NAMING_END 2
@@ -282,6 +283,8 @@ struct airtime_sta_weight {
 struct hostapd_bss_config {
 	char iface[IFNAMSIZ + 1];
 	char bridge[IFNAMSIZ + 1];
+	char ft_iface[IFNAMSIZ + 1];
+	char snoop_iface[IFNAMSIZ + 1];
 	char vlan_bridge[IFNAMSIZ + 1];
 	char wds_bridge[IFNAMSIZ + 1];
 	int bridge_hairpin; /* hairpin_mode on bridge members */
@@ -307,6 +310,7 @@ struct hostapd_bss_config {
 	unsigned int eap_sim_db_timeout;
 	int eap_server_erp; /* Whether ERP is enabled on internal EAP server */
 	struct hostapd_ip_addr own_ip_addr;
+	int dynamic_own_ip_addr;
 	char *nas_identifier;
 	struct hostapd_radius_servers *radius;
 	int acct_interim_interval;
@@ -1038,6 +1042,8 @@ struct hostapd_config {
 	unsigned int track_sta_max_num;
 	unsigned int track_sta_max_age;
 
+	int max_num_sta;
+
 	char country[3]; /* first two octets: country code as described in
 			  * ISO/IEC 3166-1. Third octet:
 			  * ' ' (ascii 32): all environments
@@ -1075,6 +1081,8 @@ struct hostapd_config {
 
 	int ht_op_mode_fixed;
 	u16 ht_capab;
+	int noscan;
+	int no_ht_coex;
 	int ieee80211n;
 	int secondary_channel;
 	int no_pri_sec_switch;

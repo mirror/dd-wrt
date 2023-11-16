@@ -67,10 +67,12 @@ static struct wpabuf * https_recv(int s, int timeout_ms)
 }
 
 
+#ifdef CONFIG_TLS_INTERNAL_SERVER
 static void https_tls_log_cb(void *ctx, const char *msg)
 {
 	wpa_printf(MSG_DEBUG, "TLS: %s", msg);
 }
+#endif
 
 
 static int https_server(int s)
@@ -79,7 +81,7 @@ static int https_server(int s)
 	void *tls;
 	struct tls_connection_params params;
 	struct tls_connection *conn;
-	struct wpabuf *in, *out, *appl;
+	struct wpabuf *in = NULL, *out = NULL, *appl = NULL;
 	int res = -1;
 
 	os_memset(&conf, 0, sizeof(conf));
@@ -106,7 +108,9 @@ static int https_server(int s)
 		return -1;
 	}
 
+#ifdef CONFIG_TLS_INTERNAL_SERVER
 	tls_connection_set_log_cb(conn, https_tls_log_cb, NULL);
+#endif
 
 	for (;;) {
 		in = https_recv(s, 5000);
@@ -147,12 +151,16 @@ static int https_server(int s)
 
 	wpa_printf(MSG_INFO, "Reading HTTP request");
 	for (;;) {
-		int need_more_data;
+		int need_more_data = 0;
 
 		in = https_recv(s, 5000);
 		if (!in)
 			goto done;
+#ifdef CONFIG_TLS_INTERNAL_SERVER
 		out = tls_connection_decrypt2(tls, conn, in, &need_more_data);
+#else
+		out = tls_connection_decrypt(tls, conn, in);
+#endif
 		wpabuf_free(in);
 		in = NULL;
 		if (need_more_data) {

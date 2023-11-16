@@ -506,6 +506,8 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 			   frequency);
 		goto out_free;
 	}
+	if (conf->noscan)
+		ssid->noscan = 1;
 
 	if (ssid->mesh_basic_rates == NULL) {
 		/*
@@ -630,6 +632,7 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
 
 	params->meshid = ssid->ssid;
 	params->meshid_len = ssid->ssid_len;
+	params->mcast_rate = ssid->mcast_rate;
 	ibss_mesh_setup_freq(wpa_s, ssid, &params->freq);
 	wpa_s->mesh_ht_enabled = !!params->freq.ht_enabled;
 	wpa_s->mesh_vht_enabled = !!params->freq.vht_enabled;

@@ -31,7 +31,7 @@
 #include "config_file.h"
 #include "eap_register.h"
 #include "ctrl_iface.h"
-
+#include "build_features.h"
 
 struct hapd_global {
 	void **drv_priv;
@@ -40,6 +40,7 @@ struct hapd_global {
 
 static struct hapd_global global;
 
+extern int radius_main(int argc, char **argv);
 
 #ifndef CONFIG_NO_HOSTAPD_LOGGER
 static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
@@ -698,6 +699,11 @@ fail:
 	return -1;
 }
 
+void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
+                       union wpa_event_data *data);
+
+void hostapd_wpa_event_global(void *ctx, enum wpa_event_type event,
+ 				 union wpa_event_data *data);
 
 #ifdef CONFIG_WPS
 static int gen_uuid(const char *txt_addr)
@@ -766,6 +772,11 @@ int main(int argc, char *argv[])
 	if (os_program_init())
 		return -1;
 
+#ifdef RADIUS_SERVER
+	if (strstr(argv[0], "radius"))
+		return radius_main(argc, argv);
+#endif
+
 	os_memset(&interfaces, 0, sizeof(interfaces));
 	interfaces.reload_config = hostapd_reload_config;
 	interfaces.config_read_cb = hostapd_config_read;
@@ -791,8 +802,10 @@ int main(int argc, char *argv[])
 		return -1;
 #endif /* CONFIG_DPP */
 
+	wpa_supplicant_event = hostapd_wpa_event;
+	wpa_supplicant_event_global = hostapd_wpa_event_global;
 	for (;;) {
-		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:q");
+		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:g:G:qv::");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -829,6 +842,8 @@ int main(int argc, char *argv[])
 			break;
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
 		case 'v':
+			if (optarg)
+				exit(!has_feature(optarg));
 			show_version();
 			exit(1);
 		case 'g':

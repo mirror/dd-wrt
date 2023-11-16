@@ -1340,6 +1340,7 @@ int ecc_projective_add_point(ecc_point *P, ecc_point *Q, ecc_point *R,
 
 struct crypto_ec {
 	ecc_key key;
+	WC_RNG rng;
 	mp_int a;
 	mp_int prime;
 	mp_int order;
@@ -1394,6 +1395,8 @@ struct crypto_ec * crypto_ec_init(int group)
 		return NULL;
 
 	if (wc_ecc_init(&e->key) != 0 ||
+	    wc_InitRng(&e->rng) != 0 ||
+	    wc_ecc_set_rng(&e->key, &e->rng) != 0 ||
 	    wc_ecc_set_curve(&e->key, 0, curve_id) != 0 ||
 	    mp_init(&e->a) != MP_OKAY ||
 	    mp_init(&e->prime) != MP_OKAY ||
@@ -1425,6 +1428,7 @@ void crypto_ec_deinit(struct crypto_ec* e)
 	mp_clear(&e->order);
 	mp_clear(&e->prime);
 	mp_clear(&e->a);
+	wc_FreeRng(&e->rng);
 	wc_ecc_free(&e->key);
 	os_free(e);
 }

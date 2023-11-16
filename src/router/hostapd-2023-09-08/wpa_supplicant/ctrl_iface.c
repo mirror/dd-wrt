@@ -2326,7 +2326,7 @@ static int wpa_supplicant_ctrl_iface_status(struct wpa_supplicant *wpa_s,
 			pos += ret;
 		}
 
-#ifdef CONFIG_AP
+#if defined(CONFIG_AP) && defined(CONFIG_CTRL_IFACE_MIB)
 		if (wpa_s->ap_iface) {
 			pos += ap_ctrl_iface_wpa_get_status(wpa_s, pos,
 							    end - pos,
@@ -12087,6 +12087,7 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 			reply_len = -1;
 	} else if (os_strncmp(buf, "NOTE ", 5) == 0) {
 		wpa_printf(MSG_INFO, "NOTE: %s", buf + 5);
+#ifdef CONFIG_CTRL_IFACE_MIB
 	} else if (os_strcmp(buf, "MIB") == 0) {
 		reply_len = wpa_sm_get_mib(wpa_s->wpa, reply, reply_size);
 		if (reply_len >= 0) {
@@ -12099,6 +12100,7 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 				reply_size - reply_len);
 #endif /* CONFIG_MACSEC */
 		}
+#endif
 	} else if (os_strncmp(buf, "STATUS", 6) == 0) {
 		reply_len = wpa_supplicant_ctrl_iface_status(
 			wpa_s, buf + 6, reply, reply_size);
@@ -12587,6 +12589,7 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 		reply_len = wpa_supplicant_ctrl_iface_bss(
 			wpa_s, buf + 4, reply, reply_size);
 #ifdef CONFIG_AP
+#ifdef CONFIG_CTRL_IFACE_MIB
 	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
 		reply_len = ap_ctrl_iface_sta_first(wpa_s, reply, reply_size);
 	} else if (os_strncmp(buf, "STA ", 4) == 0) {
@@ -12595,12 +12598,15 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
 		reply_len = ap_ctrl_iface_sta_next(wpa_s, buf + 9, reply,
 						   reply_size);
+#endif
+#ifdef CONFIG_CTRL_IFACE_MIB
 	} else if (os_strncmp(buf, "DEAUTHENTICATE ", 15) == 0) {
 		if (ap_ctrl_iface_sta_deauthenticate(wpa_s, buf + 15))
 			reply_len = -1;
 	} else if (os_strncmp(buf, "DISASSOCIATE ", 13) == 0) {
 		if (ap_ctrl_iface_sta_disassociate(wpa_s, buf + 13))
 			reply_len = -1;
+#endif
 	} else if (os_strncmp(buf, "CHAN_SWITCH ", 12) == 0) {
 		if (ap_ctrl_iface_chanswitch(wpa_s, buf + 12))
 			reply_len = -1;
@@ -12757,7 +12763,7 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 		if (wpas_ctrl_iface_coloc_intf_report(wpa_s, buf + 18))
 			reply_len = -1;
 #endif /* CONFIG_WNM */
-#ifdef CONFIG_WNM_AP
+#if defined(CONFIG_AP) && defined(CONFIG_WNM_AP)
 	} else if (os_strncmp(buf, "DISASSOC_IMMINENT ", 18) == 0) {
 		if (ap_ctrl_iface_disassoc_imminent(wpa_s, buf + 18))
 			reply_len = -1;
@@ -12767,7 +12773,7 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "BSS_TM_REQ ", 11) == 0) {
 		if (ap_ctrl_iface_bss_tm_req(wpa_s, buf + 11))
 			reply_len = -1;
-#endif /* CONFIG_WNM_AP */
+#endif /* CONFIG_AP && CONFIG_WNM_AP */
 	} else if (os_strcmp(buf, "FLUSH") == 0) {
 		wpa_supplicant_ctrl_iface_flush(wpa_s);
 	} else if (os_strncmp(buf, "RADIO_WORK ", 11) == 0) {

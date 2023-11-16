@@ -1153,6 +1153,8 @@ static int hostapd_config_vht_capab(struct hostapd_config *conf,
 		conf->vht_capab |= VHT_CAP_RX_ANTENNA_PATTERN;
 	if (os_strstr(capab, "[TX-ANTENNA-PATTERN]"))
 		conf->vht_capab |= VHT_CAP_TX_ANTENNA_PATTERN;
+	if (os_strstr(capab, "[EXT-NSS-BW-SUPP]"))
+		conf->vht_capab |= VHT_CAP_EXTENDED_NSS_BW_SUPPORT;
 	return 0;
 }
 #endif /* CONFIG_IEEE80211AC */
@@ -1602,6 +1604,8 @@ static int parse_anqp_elem(struct hostapd_bss_config *bss, char *buf, int line)
 	return 0;
 }
 
+#endif /* CONFIG_INTERWORKING */
+
 
 static int parse_qos_map_set(struct hostapd_bss_config *bss,
 			     char *buf, int line)
@@ -1642,8 +1646,6 @@ static int parse_qos_map_set(struct hostapd_bss_config *bss,
 
 	return 0;
 }
-
-#endif /* CONFIG_INTERWORKING */
 
 
 #ifdef CONFIG_HS20
@@ -2316,8 +2318,12 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			   sizeof(conf->bss[0]->iface));
 	} else if (os_strcmp(buf, "bridge") == 0) {
 		os_strlcpy(bss->bridge, pos, sizeof(bss->bridge));
+		if (!bss->wds_bridge[0])
+			os_strlcpy(bss->wds_bridge, pos, sizeof(bss->wds_bridge));
 	} else if (os_strcmp(buf, "bridge_hairpin") == 0) {
 		bss->bridge_hairpin = atoi(pos);
+	} else if (os_strcmp(buf, "snoop_iface") == 0) {
+		os_strlcpy(bss->snoop_iface, pos, sizeof(bss->snoop_iface));
 	} else if (os_strcmp(buf, "vlan_bridge") == 0) {
 		os_strlcpy(bss->vlan_bridge, pos, sizeof(bss->vlan_bridge));
 	} else if (os_strcmp(buf, "wds_bridge") == 0) {
@@ -2682,6 +2688,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 	} else if (os_strcmp(buf, "iapp_interface") == 0) {
 		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
 #endif /* CONFIG_IAPP */
+	} else if (os_strcmp(buf, "dynamic_own_ip_addr") == 0) {
+		bss->dynamic_own_ip_addr = atoi(pos);
 	} else if (os_strcmp(buf, "own_ip_addr") == 0) {
 		if (hostapd_parse_ip_addr(pos, &bss->own_ip_addr)) {
 			wpa_printf(MSG_ERROR,
@@ -2844,6 +2852,14 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line, bss->max_num_sta, MAX_STA_COUNT);
 			return 1;
 		}
+	} else if (os_strcmp(buf, "iface_max_num_sta") == 0) {
+		conf->max_num_sta = atoi(pos);
+		if (conf->max_num_sta < 0 ||
+		    conf->max_num_sta > MAX_STA_COUNT) {
+			wpa_printf(MSG_ERROR, "Line %d: Invalid max_num_sta=%d; allowed range 0..%d",
+				   line, conf->max_num_sta, MAX_STA_COUNT);
+			return 1;
+		}
 	} else if (os_strcmp(buf, "wpa") == 0) {
 		bss->wpa = atoi(pos);
 	} else if (os_strcmp(buf, "extended_key_id") == 0) {
@@ -2995,6 +3011,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		wpa_printf(MSG_INFO,
 			   "Line %d: Obsolete peerkey parameter ignored", line);
 #ifdef CONFIG_IEEE80211R_AP
+	} else if (os_strcmp(buf, "ft_iface") == 0) {
+		os_strlcpy(bss->ft_iface, pos, sizeof(bss->ft_iface));
 	} else if (os_strcmp(buf, "mobility_domain") == 0) {
 		if (os_strlen(pos) != 2 * MOBILITY_DOMAIN_ID_LEN ||
 		    hexstr2bin(pos, bss->mobility_domain,
@@ -3349,6 +3367,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 #ifndef CONFIG_NO_VLAN
 	} else if (os_strcmp(buf, "dynamic_vlan") == 0) {
 		bss->ssid.dynamic_vlan = atoi(pos);
+	} else if (os_strcmp(buf, "vlan_no_bridge") == 0) {
+		bss->ssid.vlan_no_bridge = atoi(pos);
 	} else if (os_strcmp(buf, "per_sta_vif") == 0) {
 		bss->ssid.per_sta_vif = atoi(pos);
 	} else if (os_strcmp(buf, "vlan_file") == 0) {
@@ -3446,6 +3466,10 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		if (bss->ocv && !bss->ieee80211w)
 			bss->ieee80211w = 1;
 #endif /* CONFIG_OCV */
+	} else if (os_strcmp(buf, "noscan") == 0) {
+		conf->noscan = atoi(pos);
+	} else if (os_strcmp(buf, "ht_coex") == 0) {
+		conf->no_ht_coex = !atoi(pos);
 	} else if (os_strcmp(buf, "ieee80211n") == 0) {
 		conf->ieee80211n = atoi(pos);
 	} else if (os_strcmp(buf, "ht_capab") == 0) {
@@ -3494,6 +3518,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 	} else if (os_strcmp(buf, "he_bss_color") == 0) {
 		conf->he_op.he_bss_color = atoi(pos) & 0x3f;
 		conf->he_op.he_bss_color_disabled = 0;
+		if (atoi(pos) > 63)
+			conf->he_op.he_bss_color = os_random() % 63 + 1;
 	} else if (os_strcmp(buf, "he_bss_color_partial") == 0) {
 		conf->he_op.he_bss_color_partial = atoi(pos);
 	} else if (os_strcmp(buf, "he_default_pe_duration") == 0) {
@@ -4038,10 +4064,10 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		bss->gas_frag_limit = val;
 	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
 		bss->gas_comeback_delay = atoi(pos);
+#endif /* CONFIG_INTERWORKING */
 	} else if (os_strcmp(buf, "qos_map_set") == 0) {
 		if (parse_qos_map_set(bss, pos, line) < 0)
 			return 1;
-#endif /* CONFIG_INTERWORKING */
 #ifdef CONFIG_RADIUS_TEST
 	} else if (os_strcmp(buf, "dump_msk_file") == 0) {
 		os_free(bss->dump_msk_file);
@@ -4808,7 +4834,12 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 	int errors = 0;
 	size_t i;
 
-	f = fopen(fname, "r");
+	if (!strncmp(fname, "data:", 5)) {
+		f = fmemopen((void *)(fname + 5), strlen(fname + 5), "r");
+		fname = "<inline>";
+	} else {
+		f = fopen(fname, "r");
+	}
 	if (f == NULL) {
 		wpa_printf(MSG_ERROR, "Could not open configuration file '%s' "
 			   "for reading.", fname);

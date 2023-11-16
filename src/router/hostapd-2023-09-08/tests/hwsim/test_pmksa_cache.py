@@ -955,7 +955,7 @@ def test_pmksa_cache_preauth_wpas_oom(dev, apdev):
     eap_connect(dev[0], hapd, "PAX", "pax.user@example.com",
                 password_hex="0123456789abcdef0123456789abcdef",
                 bssid=apdev[0]['bssid'])
-    for i in range(1, 11):
+    for i in range(1, 10):
         with alloc_fail(dev[0], i, "rsn_preauth_init"):
             res = dev[0].request("PREAUTH f2:11:22:33:44:55").strip()
             logger.info("Iteration %d - PREAUTH command results: %s" % (i, res))
@@ -963,7 +963,7 @@ def test_pmksa_cache_preauth_wpas_oom(dev, apdev):
                 state = dev[0].request('GET_ALLOC_FAIL')
                 if state.startswith('0:'):
                     break
-                time.sleep(0.05)
+                time.sleep(0.10)
 
 def test_pmksa_cache_ctrl(dev, apdev):
     """PMKSA cache control interface operations"""

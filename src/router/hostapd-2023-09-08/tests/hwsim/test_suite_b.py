@@ -27,6 +27,8 @@ def check_suite_b_tls_lib(dev, dhe=False, level128=False):
         return
     if tls.startswith("wolfSSL"):
         return
+    if tls.startswith("mbed TLS"):
+        return
     if not tls.startswith("OpenSSL"):
         raise HwsimSkip("TLS library not supported for Suite B: " + tls)
     supported = False
@@ -520,6 +522,7 @@ def test_suite_b_192_rsa_insufficient_dh(dev, apdev):
 
     dev[0].connect("test-suite-b", key_mgmt="WPA-EAP-SUITE-B-192",
                    ieee80211w="2",
+                   openssl_ciphers="DHE-RSA-AES256-GCM-SHA384",
                    phase1="tls_suiteb=1",
                    eap="TLS", identity="tls user",
                    ca_cert="auth_serv/rsa3072-ca.pem",

@@ -19,6 +19,7 @@
 
 #define WPA_SUPPLICANT_DRIVER_VERSION 4
 
+#include "ap/sta_info.h"
 #include "common/defs.h"
 #include "common/ieee802_11_defs.h"
 #include "common/wpa_common.h"
@@ -953,6 +954,9 @@ struct wpa_driver_associate_params {
 	 * responsible for selecting with which BSS to associate. */
 	const u8 *bssid;
 
+	unsigned char rates[WLAN_SUPP_RATES_MAX];
+	int mcast_rate;
+
 	/**
 	 * bssid_hint - BSSID of a proposed AP
 	 *
@@ -1823,6 +1827,7 @@ struct wpa_driver_mesh_join_params {
 #define WPA_DRIVER_MESH_FLAG_AMPE	0x00000008
 	unsigned int flags;
 	bool handle_dfs;
+	int mcast_rate;
 };
 
 struct wpa_driver_set_key_params {
@@ -2277,6 +2282,9 @@ struct wpa_driver_capa {
 
 	/** Maximum number of iterations in a single scan plan */
 	u32 max_sched_scan_plan_iterations;
+
+	/** Maximum number of extra IE bytes for scans */
+	u16 max_scan_ie_len;
 
 	/** Whether sched_scan (offloaded scanning) is supported */
 	int sched_scan_supported;
@@ -4185,7 +4193,7 @@ struct wpa_driver_ops {
 	 * Returns: 0 on success, negative (<0) on failure
 	 */
 	int (*br_set_net_param)(void *priv, enum drv_br_net_param param,
-				unsigned int val);
+				const char *ifname, unsigned int val);
 
 	/**
 	 * get_wowlan - Get wake-on-wireless status
@@ -6667,8 +6675,8 @@ union wpa_event_data {
  * Driver wrapper code should call this function whenever an event is received
  * from the driver.
  */
-void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
-			  union wpa_event_data *data);
+extern void (*wpa_supplicant_event)(void *ctx, enum wpa_event_type event,
+				    union wpa_event_data *data);
 
 /**
  * wpa_supplicant_event_global - Report a driver event for wpa_supplicant
@@ -6680,7 +6688,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
  * Same as wpa_supplicant_event(), but we search for the interface in
  * wpa_global.
  */
-void wpa_supplicant_event_global(void *ctx, enum wpa_event_type event,
+extern void (*wpa_supplicant_event_global)(void *ctx, enum wpa_event_type event,
 				 union wpa_event_data *data);
 
 /*

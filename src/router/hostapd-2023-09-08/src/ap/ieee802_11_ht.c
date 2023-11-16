@@ -82,7 +82,9 @@ u8 * hostapd_eid_ht_capabilities(struct hostapd_data *hapd, u8 *eid)
 u8 * hostapd_eid_ht_operation(struct hostapd_data *hapd, u8 *eid)
 {
 	struct ieee80211_ht_operation *oper;
+	le32 vht_capabilities_info;
 	u8 *pos = eid;
+	u8 chwidth;
 
 	if (!hapd->iconf->ieee80211n || hapd->conf->disable_11n ||
 	    is_6ghz_op_class(hapd->iconf->op_class))
@@ -102,6 +104,13 @@ u8 * hostapd_eid_ht_operation(struct hostapd_data *hapd, u8 *eid)
 	if (hapd->iconf->secondary_channel == -1)
 		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW |
 			HT_INFO_HT_PARAM_STA_CHNL_WIDTH;
+
+	vht_capabilities_info = host_to_le32(hapd->iface->current_mode->vht_capab);
+	chwidth = hostapd_get_oper_chwidth(hapd->iconf);
+	if (vht_capabilities_info & VHT_CAP_EXTENDED_NSS_BW_SUPPORT
+		&& ((chwidth == CHANWIDTH_160MHZ) || (chwidth == CHANWIDTH_80P80MHZ))) {
+		oper->operation_mode = host_to_le16(hapd->iconf->vht_oper_centr_freq_seg0_idx << 5);
+	}
 
 	pos += sizeof(*oper);
 
@@ -229,6 +238,9 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 			   "Ignore 20/40 BSS Coexistence Management frame since 40 MHz capability is not enabled");
 		return;
 	}
+
+	if (iface->conf->noscan || iface->conf->no_ht_coex)
+		return;
 
 	if (len < IEEE80211_HDRLEN + 2 + sizeof(*bc_ie)) {
 		wpa_printf(MSG_DEBUG,
@@ -388,6 +400,9 @@ u16 copy_sta_ht_capab(struct hostapd_data *hapd, struct sta_info *sta,
 void ht40_intolerant_add(struct hostapd_iface *iface, struct sta_info *sta)
 {
 	if (iface->current_mode->mode != HOSTAPD_MODE_IEEE80211G)
+		return;
+
+	if (iface->conf->noscan || iface->conf->no_ht_coex)
 		return;
 
 	wpa_printf(MSG_INFO, "HT: Forty MHz Intolerant is set by STA " MACSTR

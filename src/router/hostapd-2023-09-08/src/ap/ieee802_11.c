@@ -3020,15 +3020,6 @@ static void handle_auth(struct hostapd_data *hapd,
 				       seq_ctrl);
 			return;
 		}
-#ifdef CONFIG_MESH
-		if ((hapd->conf->mesh & MESH_ENABLED) &&
-		    sta->plink_state == PLINK_BLOCKED) {
-			wpa_printf(MSG_DEBUG, "Mesh peer " MACSTR
-				   " is blocked - drop Authentication frame",
-				   MAC2STR(sa));
-			return;
-		}
-#endif /* CONFIG_MESH */
 #ifdef CONFIG_PASN
 		if (auth_alg == WLAN_AUTH_PASN &&
 		    (sta->flags & WLAN_STA_ASSOC)) {
@@ -4621,6 +4612,13 @@ static int add_associated_sta(struct hostapd_data *hapd,
 	 * drivers to accept the STA parameter configuration. Since this is
 	 * after a new FT-over-DS exchange, a new TK has been derived, so key
 	 * reinstallation is not a concern for this case.
+	 *
+	 * If the STA was associated and authorized earlier, but came for a new
+	 * connection (!added_unassoc + !reassoc), remove the existing STA entry
+	 * so that it can be re-added. This case is rarely seen when the AP could
+	 * not receive the deauth/disassoc frame from the STA. And the STA comes
+	 * back with new connection within a short period or before the inactive
+	 * STA entry is removed from the list.
 	 */
 	wpa_printf(MSG_DEBUG, "Add associated STA " MACSTR
 		   " (added_unassoc=%d auth_alg=%u ft_over_ds=%u reassoc=%d authorized=%d ft_tk=%d fils_tk=%d)",
@@ -4634,7 +4632,8 @@ static int add_associated_sta(struct hostapd_data *hapd,
 	    (!(sta->flags & WLAN_STA_AUTHORIZED) ||
 	     (reassoc && sta->ft_over_ds && sta->auth_alg == WLAN_AUTH_FT) ||
 	     (!wpa_auth_sta_ft_tk_already_set(sta->wpa_sm) &&
-	      !wpa_auth_sta_fils_tk_already_set(sta->wpa_sm)))) {
+	      !wpa_auth_sta_fils_tk_already_set(sta->wpa_sm)) ||
+	     (!reassoc && (sta->flags & WLAN_STA_AUTHORIZED)))) {
 		hostapd_drv_sta_remove(hapd, sta->addr);
 		wpa_auth_sm_event(sta->wpa_sm, WPA_DRV_STA_REMOVED);
 		set = 0;

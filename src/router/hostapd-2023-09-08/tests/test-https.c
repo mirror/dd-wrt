@@ -75,7 +75,7 @@ static int https_client(int s, const char *path)
 	struct tls_connection *conn;
 	struct wpabuf *in, *out, *appl;
 	int res = -1;
-	int need_more_data;
+	int need_more_data = 0;
 
 	os_memset(&conf, 0, sizeof(conf));
 	conf.event_cb = https_tls_event_cb;
@@ -93,8 +93,12 @@ static int https_client(int s, const char *path)
 
 	for (;;) {
 		appl = NULL;
+#ifdef CONFIG_TLS_INTERNAL_SERVER
 		out = tls_connection_handshake2(tls, conn, in, &appl,
 						&need_more_data);
+#else
+		out = tls_connection_handshake(tls, conn, in, &appl);
+#endif
 		wpabuf_free(in);
 		in = NULL;
 		if (out == NULL) {
@@ -152,11 +156,15 @@ static int https_client(int s, const char *path)
 
 	wpa_printf(MSG_INFO, "Reading HTTP response");
 	for (;;) {
-		int need_more_data;
+		int need_more_data = 0;
 		in = https_recv(s);
 		if (in == NULL)
 			goto done;
+#ifdef CONFIG_TLS_INTERNAL_SERVER
 		out = tls_connection_decrypt2(tls, conn, in, &need_more_data);
+#else
+		out = tls_connection_decrypt(tls, conn, in);
+#endif
 		if (need_more_data)
 			wpa_printf(MSG_DEBUG, "HTTP: Need more data");
 		wpabuf_free(in);

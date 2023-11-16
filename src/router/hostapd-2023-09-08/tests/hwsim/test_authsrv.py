@@ -156,9 +156,12 @@ def test_authsrv_oom(dev, apdev):
         if "FAIL" not in authsrv.request("ENABLE"):
             raise Exception("ENABLE succeeded during OOM")
 
-    with alloc_fail(authsrv, 1, "tls_init;authsrv_init"):
-        if "FAIL" not in authsrv.request("ENABLE"):
-            raise Exception("ENABLE succeeded during OOM")
+    # tls_mbedtls.c:tls_init() does not alloc memory (no alloc fail trigger)
+    tls = dev[0].request("GET tls_library")
+    if not tls.startswith("mbed TLS"):
+        with alloc_fail(authsrv, 1, "tls_init;authsrv_init"):
+            if "FAIL" not in authsrv.request("ENABLE"):
+                raise Exception("ENABLE succeeded during OOM")
 
     for count in range(1, 3):
         with alloc_fail(authsrv, count, "eap_sim_db_init;authsrv_init"):

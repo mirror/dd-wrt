@@ -1422,7 +1422,10 @@ def run_fils_sk_pfs(dev, apdev, group, params):
     check_erp_capa(dev[0])
 
     tls = dev[0].request("GET tls_library")
-    if not tls.startswith("wolfSSL"):
+    if tls.startswith("mbed TLS"):
+        if int(group) == 27:
+            raise HwsimSkip("Brainpool EC group 27 not supported by mbed TLS")
+    elif not tls.startswith("wolfSSL"):
         if int(group) in [25]:
             if not (tls.startswith("OpenSSL") and ("build=OpenSSL 1.0.2" in tls or "build=OpenSSL 1.1" in tls or "build=OpenSSL 3.0" in tls) and ("run=OpenSSL 1.0.2" in tls or "run=OpenSSL 1.1" in tls or "run=OpenSSL 3.0" in tls)):
                 raise HwsimSkip("EC group not supported")

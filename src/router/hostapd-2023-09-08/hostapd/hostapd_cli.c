@@ -401,7 +401,6 @@ static int hostapd_cli_cmd_disassociate(struct wpa_ctrl *ctrl, int argc,
 }
 
 
-#ifdef CONFIG_TAXONOMY
 static int hostapd_cli_cmd_signature(struct wpa_ctrl *ctrl, int argc,
 				     char *argv[])
 {
@@ -414,7 +413,6 @@ static int hostapd_cli_cmd_signature(struct wpa_ctrl *ctrl, int argc,
 	os_snprintf(buf, sizeof(buf), "SIGNATURE %s", argv[0]);
 	return wpa_ctrl_command(ctrl, buf);
 }
-#endif /* CONFIG_TAXONOMY */
 
 
 static int hostapd_cli_cmd_sa_query(struct wpa_ctrl *ctrl, int argc,
@@ -431,7 +429,6 @@ static int hostapd_cli_cmd_sa_query(struct wpa_ctrl *ctrl, int argc,
 }
 
 
-#ifdef CONFIG_WPS
 static int hostapd_cli_cmd_wps_pin(struct wpa_ctrl *ctrl, int argc,
 				   char *argv[])
 {
@@ -657,7 +654,6 @@ static int hostapd_cli_cmd_wps_config(struct wpa_ctrl *ctrl, int argc,
 			 ssid_hex, argv[1]);
 	return wpa_ctrl_command(ctrl, buf);
 }
-#endif /* CONFIG_WPS */
 
 
 static int hostapd_cli_cmd_disassoc_imminent(struct wpa_ctrl *ctrl, int argc,
@@ -757,7 +753,7 @@ static int wpa_ctrl_command_sta(struct wpa_ctrl *ctrl, const char *cmd,
 	}
 
 	buf[len] = '\0';
-	if (memcmp(buf, "FAIL", 4) == 0)
+	if (memcmp(buf, "FAIL", 4) == 0 || memcmp(buf, "UNKNOWN COMMAND", 15) == 0)
 		return -1;
 	if (print)
 		printf("%s", buf);
@@ -1610,13 +1606,10 @@ static const struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	{ "disassociate", hostapd_cli_cmd_disassociate,
 	  hostapd_complete_stations,
 	  "<addr> = disassociate a station" },
-#ifdef CONFIG_TAXONOMY
 	{ "signature", hostapd_cli_cmd_signature, hostapd_complete_stations,
 	  "<addr> = get taxonomy signature for a station" },
-#endif /* CONFIG_TAXONOMY */
 	{ "sa_query", hostapd_cli_cmd_sa_query, hostapd_complete_stations,
 	  "<addr> = send SA Query to a station" },
-#ifdef CONFIG_WPS
 	{ "wps_pin", hostapd_cli_cmd_wps_pin, NULL,
 	  "<uuid> <pin> [timeout] [addr] = add WPS Enrollee PIN" },
 	{ "wps_check_pin", hostapd_cli_cmd_wps_check_pin, NULL,
@@ -1641,7 +1634,6 @@ static const struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	  "<SSID> <auth> <encr> <key> = configure AP" },
 	{ "wps_get_status", hostapd_cli_cmd_wps_get_status, NULL,
 	  "= show current WPS status" },
-#endif /* CONFIG_WPS */
 	{ "disassoc_imminent", hostapd_cli_cmd_disassoc_imminent, NULL,
 	  "= send Disassociation Imminent notification" },
 	{ "ess_disassoc", hostapd_cli_cmd_ess_disassoc, NULL,

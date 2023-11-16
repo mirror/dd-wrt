@@ -2683,8 +2683,6 @@ void wnm_bss_keep_alive_deinit(struct wpa_supplicant *wpa_s)
 }
 
 
-#ifdef CONFIG_INTERWORKING
-
 static int wpas_qos_map_set(struct wpa_supplicant *wpa_s, const u8 *qos_map,
 			    size_t len)
 {
@@ -2716,8 +2714,6 @@ static void interworking_process_assoc_resp(struct wpa_supplicant *wpa_s,
 				 elems.qos_map_set_len);
 	}
 }
-
-#endif /* CONFIG_INTERWORKING */
 
 
 static void wpa_supplicant_set_4addr_mode(struct wpa_supplicant *wpa_s)
@@ -3098,10 +3094,8 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 		wnm_process_assoc_resp(wpa_s, data->assoc_info.resp_ies,
 				       data->assoc_info.resp_ies_len);
 #endif /* CONFIG_WNM */
-#ifdef CONFIG_INTERWORKING
 		interworking_process_assoc_resp(wpa_s, data->assoc_info.resp_ies,
 						data->assoc_info.resp_ies_len);
-#endif /* CONFIG_INTERWORKING */
 		if (wpa_s->hw_capab == CAPAB_VHT &&
 		    get_ie(data->assoc_info.resp_ies,
 			   data->assoc_info.resp_ies_len, WLAN_EID_VHT_CAP))
@@ -5353,8 +5347,8 @@ static void wpas_link_reconfig(struct wpa_supplicant *wpa_s)
 }
 
 
-void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
-			  union wpa_event_data *data)
+void supplicant_event(void *ctx, enum wpa_event_type event,
+		      union wpa_event_data *data)
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	int resched;
@@ -6272,7 +6266,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 }
 
 
-void wpa_supplicant_event_global(void *ctx, enum wpa_event_type event,
+void supplicant_event_global(void *ctx, enum wpa_event_type event,
 				 union wpa_event_data *data)
 {
 	struct wpa_supplicant *wpa_s;

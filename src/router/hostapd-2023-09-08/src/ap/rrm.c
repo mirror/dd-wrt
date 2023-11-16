@@ -269,6 +269,8 @@ static void hostapd_send_nei_report_resp(struct hostapd_data *hapd,
 		}
 	}
 
+	hapd->openwrt_stats.rrm.neighbor_report_tx++;
+
 	hostapd_drv_send_action(hapd, hapd->iface->freq, 0, addr,
 				wpabuf_head(buf), wpabuf_len(buf));
 	wpabuf_free(buf);

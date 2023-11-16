@@ -25,6 +25,7 @@ u8 * hostapd_eid_vht_capabilities(struct hostapd_data *hapd, u8 *eid, u32 nsts)
 	struct ieee80211_vht_capabilities *cap;
 	struct hostapd_hw_modes *mode = hapd->iface->current_mode;
 	u8 *pos = eid;
+	u8 chwidth;
 
 	if (!mode || is_6ghz_op_class(hapd->iconf->op_class))
 		return eid;
@@ -62,6 +63,17 @@ u8 * hostapd_eid_vht_capabilities(struct hostapd_data *hapd, u8 *eid, u32 nsts)
 			host_to_le32(nsts << VHT_CAP_BEAMFORMEE_STS_OFFSET);
 	}
 
+	chwidth = hostapd_get_oper_chwidth(hapd->iconf);
+	if (((host_to_le32(mode->vht_capab)) & VHT_CAP_EXTENDED_NSS_BW_SUPPORT)
+		&& ((chwidth == CHANWIDTH_160MHZ) || (chwidth == CHANWIDTH_80P80MHZ))) {
+		cap->vht_capabilities_info |= VHT_CAP_EXTENDED_NSS_BW_SUPPORT;
+		cap->vht_capabilities_info &= ~(host_to_le32(VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ));
+		cap->vht_capabilities_info &= ~(host_to_le32(VHT_CAP_SUPP_CHAN_WIDTH_160MHZ));
+		cap->vht_capabilities_info &= ~(host_to_le32(VHT_CAP_SUPP_CHAN_WIDTH_MASK));
+	} else {
+		cap->vht_capabilities_info &= ~VHT_CAP_EXTENDED_NSS_BW_SUPPORT_MASK;
+	}
+
 	/* Supported MCS set comes from hw */
 	os_memcpy(&cap->vht_supported_mcs_set, mode->vht_mcs_set, 8);
 
@@ -74,6 +86,7 @@ u8 * hostapd_eid_vht_capabilities(struct hostapd_data *hapd, u8 *eid, u32 nsts)
 u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 {
 	struct ieee80211_vht_operation *oper;
+	le32 vht_capabilities_info;
 	u8 *pos = eid;
 	enum oper_chan_width oper_chwidth =
 		hostapd_get_oper_chwidth(hapd->iconf);
@@ -106,6 +119,7 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 	oper->vht_op_info_chan_center_freq_seg1_idx = seg1;
 
 	oper->vht_op_info_chwidth = oper_chwidth;
+	vht_capabilities_info = host_to_le32(hapd->iface->current_mode->vht_capab);
 	if (oper_chwidth == CONF_OPER_CHWIDTH_160MHZ) {
 		/*
 		 * Convert 160 MHz channel width to new style as interop
@@ -119,6 +133,9 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 			oper->vht_op_info_chan_center_freq_seg0_idx -= 8;
 		else
 			oper->vht_op_info_chan_center_freq_seg0_idx += 8;
+
+		if (vht_capabilities_info & VHT_CAP_EXTENDED_NSS_BW_SUPPORT)
+			oper->vht_op_info_chan_center_freq_seg1_idx = 0;
 	} else if (oper_chwidth == CONF_OPER_CHWIDTH_80P80MHZ) {
 		/*
 		 * Convert 80+80 MHz channel width to new style as interop

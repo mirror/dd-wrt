@@ -249,6 +249,8 @@ int radius_client_register(struct radius_client_data *radius,
 void radius_client_set_interim_error_cb(struct radius_client_data *radius,
 					void (*cb)(const u8 *addr, void *ctx),
 					void *ctx);
+int radius_client_get_local_addr(struct radius_client_data *radius,
+				 struct hostapd_ip_addr * addr);
 int radius_client_send(struct radius_client_data *radius,
 		       struct radius_msg *msg,
 		       RadiusType msg_type, const u8 *addr);

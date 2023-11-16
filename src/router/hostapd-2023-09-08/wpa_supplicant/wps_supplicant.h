@@ -9,14 +9,13 @@
 #ifndef WPS_SUPPLICANT_H
 #define WPS_SUPPLICANT_H
 
+struct wpa_bss;
 struct wpa_scan_results;
 
 #ifdef CONFIG_WPS
 
 #include "wps/wps.h"
 #include "wps/wps_defs.h"
-
-struct wpa_bss;
 
 struct wps_new_ap_settings {
 	const char *ssid_hex;

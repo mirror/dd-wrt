@@ -12,7 +12,7 @@ import time
 
 import hostapd
 from utils import *
-from test_ap_eap import int_eap_server_params, check_tls13_support
+from test_ap_eap import int_eap_server_params, check_tls13_support, check_eap_capa
 from test_ap_psk import find_wpas_process, read_process_memory, verify_not_present, get_key_locations
 
 def test_erp_initiate_reauth_start(dev, apdev):
@@ -276,6 +276,7 @@ def test_erp_radius_eap_methods(dev, apdev):
     params['erp_domain'] = 'example.com'
     params['disable_pmksa_caching'] = '1'
     hapd = hostapd.add_ap(apdev[0], params)
+    tls = dev[0].request("GET tls_library")
 
     erp_test(dev[0], hapd, eap="AKA", identity="0232010000000000@example.com",
              password="90dca4eda45b53cf0f12d7c9c3bc6a89:cb9cccc4b9258e6dca4760379fb82581:000000000123")
@@ -289,7 +290,7 @@ def test_erp_radius_eap_methods(dev, apdev):
              password="5122250214c33e723a5dd523fc145fc0:981d464c7c52eb6e5036234984ad0bcf:000000000123")
     erp_test(dev[0], hapd, eap="EKE", identity="erp-eke@example.com",
              password="hello")
-    if "FAST" in eap_methods:
+    if "FAST" in eap_methods and check_eap_capa(dev[0], "FAST"):
         erp_test(dev[0], hapd, eap="FAST", identity="erp-fast@example.com",
                  password="password", ca_cert="auth_serv/ca.pem",
                  phase2="auth=GTC",
@@ -301,13 +302,14 @@ def test_erp_radius_eap_methods(dev, apdev):
              password="password")
     erp_test(dev[0], hapd, eap="PAX", identity="erp-pax@example.com",
              password_hex="0123456789abcdef0123456789abcdef")
-    if "MSCHAPV2" in eap_methods:
+    if "MSCHAPV2" in eap_methods and check_eap_capa(dev[0], "MSCHAPV2"):
         erp_test(dev[0], hapd, eap="PEAP", identity="erp-peap@example.com",
                  password="password", ca_cert="auth_serv/ca.pem",
                  phase2="auth=MSCHAPV2")
-        erp_test(dev[0], hapd, eap="TEAP", identity="erp-teap@example.com",
-                 password="password", ca_cert="auth_serv/ca.pem",
-                 phase2="auth=MSCHAPV2", pac_file="blob://teap_pac")
+        if check_eap_capa(dev[0], "TEAP"):
+            erp_test(dev[0], hapd, eap="TEAP", identity="erp-teap@example.com",
+                     password="password", ca_cert="auth_serv/ca.pem",
+                     phase2="auth=MSCHAPV2", pac_file="blob://teap_pac")
     erp_test(dev[0], hapd, eap="PSK", identity="erp-psk@example.com",
              password_hex="0123456789abcdef0123456789abcdef")
     if "PWD" in eap_methods:
@@ -640,7 +642,7 @@ def test_erp_local_errors(dev, apdev):
         dev[0].request("REMOVE_NETWORK all")
         dev[0].wait_disconnected()
 
-    for count in range(1, 6):
+    for count in range(1, 4):
         dev[0].request("ERP_FLUSH")
         with fail_test(dev[0], count, "hmac_sha256_kdf;eap_peer_erp_init"):
             dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="TTLS",

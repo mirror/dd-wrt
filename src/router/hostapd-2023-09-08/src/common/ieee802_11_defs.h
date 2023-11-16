@@ -1349,6 +1349,8 @@ struct ieee80211_ampe_ie {
 #define VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB     ((u32) BIT(26) | BIT(27))
 #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
 #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))
+#define VHT_CAP_EXTENDED_NSS_BW_SUPPORT		    ((u32) BIT(30))
+#define VHT_CAP_EXTENDED_NSS_BW_SUPPORT_MASK	    ((u32) BIT(30) | BIT(31))
 
 #define VHT_OPMODE_CHANNEL_WIDTH_MASK		    ((u8) BIT(0) | BIT(1))
 #define VHT_OPMODE_CHANNEL_RxNSS_MASK		    ((u8) BIT(4) | BIT(5) | \

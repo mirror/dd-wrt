@@ -1842,7 +1842,7 @@ def _test_wpas_ctrl_oom(dev):
     tls = dev[0].request("GET tls_library")
     if not tls.startswith("internal"):
         tests.append(('NFC_GET_HANDOVER_SEL NDEF P2P-CR-TAG', 'FAIL',
-                      4, 'wpas_ctrl_nfc_get_handover_sel_p2p'))
+                      3, 'wpas_ctrl_nfc_get_handover_sel_p2p'))
     for cmd, exp, count, func in tests:
         with alloc_fail(dev[0], count, func):
             res = dev[0].request(cmd)

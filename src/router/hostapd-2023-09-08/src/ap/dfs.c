@@ -17,6 +17,7 @@
 #include "ap_drv_ops.h"
 #include "drivers/driver.h"
 #include "dfs.h"
+#include "crypto/crypto.h"
 
 
 enum dfs_channel_type {
@@ -526,8 +527,13 @@ dfs_get_valid_channel(struct hostapd_iface *iface,
 	int num_available_chandefs;
 	int chan_idx, chan_idx2;
 	int sec_chan_idx_80p80 = -1;
+	bool is_mesh = false;
 	int i;
 	u32 _rand;
+
+#ifdef CONFIG_MESH
+	is_mesh = iface->mconf;
+#endif
 
 	wpa_printf(MSG_DEBUG, "DFS: Selecting random channel");
 	*secondary_channel = 0;
@@ -548,8 +554,20 @@ dfs_get_valid_channel(struct hostapd_iface *iface,
 	if (num_available_chandefs == 0)
 		return NULL;
 
-	if (os_get_random((u8 *) &_rand, sizeof(_rand)) < 0)
+	/* try to use deterministic channel in mesh, so that both sides
+	 * have a chance to switch to the same channel */
+	if (is_mesh) {
+#ifdef CONFIG_MESH
+		u64 hash[4];
+		const u8 *meshid[1] = { &iface->mconf->meshid[0] };
+		const size_t meshid_len = iface->mconf->meshid_len;
+
+		sha256_vector(1, meshid, &meshid_len, (u8 *)&hash[0]);
+		_rand = hash[0] + hash[1] + hash[2] + hash[3];
+#endif
+	} else if (os_get_random((u8 *) &_rand, sizeof(_rand)) < 0)
 		return NULL;
+
 	chan_idx = _rand % num_available_chandefs;
 	dfs_find_channel(iface, &chan, chan_idx, type);
 	if (!chan) {

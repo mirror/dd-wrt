@@ -6,8 +6,20 @@
 # just setting VARIABLE=n is not disabling that variable.
 #
 # This file is included in Makefile, so variables like CFLAGS and LIBS can also
-# be modified from here. In most cass, these lines should use += in order not
+# be modified from here. In most cases, these lines should use += in order not
 # to override previous values of the variables.
+
+
+# Uncomment following two lines and fix the paths if you have installed TLS
+# libraries in a non-default location
+#CFLAGS += -I/usr/local/openssl/include
+#LIBS += -L/usr/local/openssl/lib
+
+# Some Red Hat versions seem to include kerberos header files from OpenSSL, but
+# the kerberos files are not in the default include path. Following line can be
+# used to fix build issues on such systems (krb5.h not found).
+#CFLAGS += -I/usr/include/kerberos
+
 
 # Driver interface for Host AP driver
 CONFIG_DRIVER_HOSTAP=y
@@ -278,6 +290,7 @@ CONFIG_IPV6=y
 # openssl = OpenSSL (default)
 # gnutls = GnuTLS
 # internal = Internal TLSv1 implementation (experimental)
+# mbedtls = mbed TLS
 # linux = Linux kernel AF_ALG and internal TLSv1 implementation (experimental)
 # none = Empty template
 #CONFIG_TLS=openssl

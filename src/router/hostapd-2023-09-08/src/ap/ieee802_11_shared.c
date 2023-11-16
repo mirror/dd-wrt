@@ -1116,13 +1116,11 @@ u8 * hostapd_eid_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len)
 u16 check_ext_capab(struct hostapd_data *hapd, struct sta_info *sta,
 		    const u8 *ext_capab_ie, size_t ext_capab_ie_len)
 {
-#ifdef CONFIG_INTERWORKING
 	/* check for QoS Map support */
 	if (ext_capab_ie_len >= 5) {
 		if (ext_capab_ie[4] & 0x01)
 			sta->qos_map_enabled = 1;
 	}
-#endif /* CONFIG_INTERWORKING */
 
 	if (ext_capab_ie_len > 0) {
 		sta->ecsa_supported = !!(ext_capab_ie[0] & BIT(2));

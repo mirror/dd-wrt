@@ -141,7 +141,13 @@ def check_imsi_privacy_support(dev):
 
 def check_tls_tod(dev):
     tls = dev.request("GET tls_library")
-    if not tls.startswith("OpenSSL") and not tls.startswith("internal"):
+    if tls.startswith("OpenSSL"):
+        return
+    elif tls.startswith("internal"):
+        return
+    elif tls.startswith("mbed TLS"):
+        return
+    else:
         raise HwsimSkip("TLS TOD-TOFU/STRICT not supported with this TLS library: " + tls)
 
 def vht_supported():

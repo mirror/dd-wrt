@@ -2469,6 +2469,139 @@ static int test_hpke(void)
 }
 
 
+static int test_ecc(void)
+{
+#ifdef CONFIG_ECC
+#ifndef CONFIG_TLS_INTERNAL
+#ifndef CONFIG_TLS_GNUTLS
+#if defined(CONFIG_TLS_MBEDTLS) \
+ || defined(CONFIG_TLS_OPENSSL) \
+ || defined(CONFIG_TLS_WOLFSSL)
+	wpa_printf(MSG_INFO, "Testing ECC");
+	/* Note: some tests below are valid on supported Short Weierstrass
+	 * curves, but not on Montgomery curves (e.g. IKE groups 31 and 32)
+	 * (e.g. deriving and comparing y^2 test below not valid on Montgomery)
+	 */
+#ifdef CONFIG_TLS_MBEDTLS
+	const int grps[] = {19, 20, 21, 25, 26, 28};
+#endif
+#ifdef CONFIG_TLS_OPENSSL
+	const int grps[] = {19, 20, 21, 26};
+#endif
+#ifdef CONFIG_TLS_WOLFSSL
+	const int grps[] = {19, 20, 21, 26};
+#endif
+	uint32_t i;
+	struct crypto_ec *e = NULL;
+	struct crypto_ec_point *p = NULL, *q = NULL;
+	struct crypto_bignum *x = NULL, *y = NULL;
+#ifdef CONFIG_DPP
+	u8 bin[4096];
+#endif
+	for (i = 0; i < ARRAY_SIZE(grps); ++i) {
+		e = crypto_ec_init(grps[i]);
+		if (e == NULL
+		    || crypto_ec_prime_len(e) == 0
+		    || crypto_ec_prime_len_bits(e) == 0
+		    || crypto_ec_order_len(e) == 0
+		    || crypto_ec_get_prime(e) == NULL
+		    || crypto_ec_get_order(e) == NULL
+		    || crypto_ec_get_a(e) == NULL
+		    || crypto_ec_get_b(e) == NULL
+		    || crypto_ec_get_generator(e) == NULL) {
+			break;
+		}
+#ifdef CONFIG_DPP
+		struct crypto_ec_key *key = crypto_ec_key_gen(grps[i]);
+		if (key == NULL)
+			break;
+		p = crypto_ec_key_get_public_key(key);
+		q = crypto_ec_key_get_public_key(key);
+		crypto_ec_key_deinit(key);
+		if (p == NULL || q == NULL)
+			break;
+		if (!crypto_ec_point_is_on_curve(e, p))
+			break;
+
+		/* inverted point should not match original;
+		 * double-invert should match */
+		if (crypto_ec_point_invert(e, q) != 0
+		    || crypto_ec_point_cmp(e, p, q) == 0
+		    || crypto_ec_point_invert(e, q) != 0
+		    || crypto_ec_point_cmp(e, p, q) != 0) {
+			break;
+		}
+
+		/* crypto_ec_point_to_bin() and crypto_ec_point_from_bin()
+		 * imbalanced interfaces? */
+		size_t prime_len = crypto_ec_prime_len(e);
+		if (prime_len * 2 > sizeof(bin))
+			break;
+		if (crypto_ec_point_to_bin(e, p, bin, bin+prime_len) != 0)
+			break;
+		struct crypto_ec_point *tmp = crypto_ec_point_from_bin(e, bin);
+		if (tmp == NULL)
+			break;
+		if (crypto_ec_point_cmp(e, p, tmp) != 0) {
+			crypto_ec_point_deinit(tmp, 0);
+			break;
+		}
+		crypto_ec_point_deinit(tmp, 0);
+
+		x = crypto_bignum_init();
+		y = crypto_bignum_init_set(bin+prime_len, prime_len);
+		if (x == NULL || y == NULL || crypto_ec_point_x(e, p, x) != 0)
+			break;
+		struct crypto_bignum *y2 = crypto_ec_point_compute_y_sqr(e, x);
+		if (y2 == NULL)
+			break;
+		if (crypto_bignum_sqrmod(y, crypto_ec_get_prime(e), y) != 0
+		    || crypto_bignum_cmp(y, y2) != 0) {
+			crypto_bignum_deinit(y2, 0);
+			break;
+		}
+		crypto_bignum_deinit(y2, 0);
+		crypto_bignum_deinit(x, 0);
+		crypto_bignum_deinit(y, 0);
+		x = NULL;
+		y = NULL;
+
+		x = crypto_bignum_init();
+		if (x == NULL)
+			break;
+		if (crypto_bignum_rand(x, crypto_ec_get_prime(e)) != 0)
+			break;
+		crypto_bignum_deinit(x, 0);
+		x = NULL;
+
+		crypto_ec_point_deinit(p, 0);
+		p = NULL;
+		crypto_ec_point_deinit(q, 0);
+		q = NULL;
+#endif /* CONFIG_DPP */
+		crypto_ec_deinit(e);
+		e = NULL;
+	}
+	if (i != ARRAY_SIZE(grps)) {
+		crypto_bignum_deinit(x, 0);
+		crypto_bignum_deinit(y, 0);
+		crypto_ec_point_deinit(p, 0);
+		crypto_ec_point_deinit(q, 0);
+		crypto_ec_deinit(e);
+		wpa_printf(MSG_INFO,
+		           "ECC test case failed tls_id:%d", grps[i]);
+		return -1;
+	}
+
+	wpa_printf(MSG_INFO, "ECC test cases passed");
+#endif
+#endif /* !CONFIG_TLS_GNUTLS */
+#endif /* !CONFIG_TLS_INTERNAL */
+#endif /* CONFIG_ECC */
+	return 0;
+}
+
+
 static int test_ms_funcs(void)
 {
 #ifndef CONFIG_FIPS
@@ -2590,6 +2723,7 @@ int crypto_module_tests(void)
 	    test_fips186_2_prf() ||
 	    test_extract_expand_hkdf() ||
 	    test_hpke() ||
+	    test_ecc() ||
 	    test_ms_funcs())
 		ret = -1;
 

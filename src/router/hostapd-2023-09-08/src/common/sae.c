@@ -1278,6 +1278,13 @@ void sae_deinit_pt(struct sae_pt *pt)
 static int sae_derive_commit_element_ecc(struct sae_data *sae,
 					 struct crypto_bignum *mask)
 {
+	if (sae->tmp->pwe_ecc == NULL) {
+		wpa_printf(MSG_DEBUG,
+		           "SAE: %s sae->tmp->pwe_ecc must be initialized",
+		           __func__);
+		return -1;
+	}
+
 	/* COMMIT-ELEMENT = inverse(scalar-op(mask, PWE)) */
 	if (!sae->tmp->own_commit_element_ecc) {
 		sae->tmp->own_commit_element_ecc =

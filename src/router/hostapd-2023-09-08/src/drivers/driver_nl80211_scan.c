@@ -222,7 +222,7 @@ nl80211_scan_common(struct i802_bss *bss, u8 cmd,
 		wpa_printf(MSG_DEBUG, "nl80211: Passive scan requested");
 	}
 
-	if (params->extra_ies) {
+	if (params->extra_ies && drv->capa.max_scan_ie_len >= params->extra_ies_len) {
 		wpa_hexdump(MSG_MSGDUMP, "nl80211: Scan extra IEs",
 			    params->extra_ies, params->extra_ies_len);
 		if (nla_put(msg, NL80211_ATTR_IE, params->extra_ies_len,

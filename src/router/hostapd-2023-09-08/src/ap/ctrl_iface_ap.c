@@ -26,6 +26,26 @@
 #include "taxonomy.h"
 #include "wnm_ap.h"
 
+static const char * hw_mode_str(enum hostapd_hw_mode mode)
+{
+	switch (mode) {
+	case HOSTAPD_MODE_IEEE80211B:
+		return "b";
+	case HOSTAPD_MODE_IEEE80211G:
+		return "g";
+	case HOSTAPD_MODE_IEEE80211A:
+		return "a";
+	case HOSTAPD_MODE_IEEE80211AD:
+		return "ad";
+	case HOSTAPD_MODE_IEEE80211ANY:
+		return "any";
+	case NUM_HOSTAPD_MODES:
+		return "invalid";
+	}
+	return "unknown";
+}
+
+#ifdef CONFIG_CTRL_IFACE_MIB
 
 static size_t hostapd_write_ht_mcs_bitmask(char *buf, size_t buflen,
 					   size_t curr_len, const u8 *mcs_set)
@@ -209,26 +229,6 @@ static const char * timeout_next_str(int val)
 	default:
 		return "?";
 	}
-}
-
-
-static const char * hw_mode_str(enum hostapd_hw_mode mode)
-{
-	switch (mode) {
-	case HOSTAPD_MODE_IEEE80211B:
-		return "b";
-	case HOSTAPD_MODE_IEEE80211G:
-		return "g";
-	case HOSTAPD_MODE_IEEE80211A:
-		return "a";
-	case HOSTAPD_MODE_IEEE80211AD:
-		return "ad";
-	case HOSTAPD_MODE_IEEE80211ANY:
-		return "any";
-	case NUM_HOSTAPD_MODES:
-		return "invalid";
-	}
-	return "unknown";
 }
 
 
@@ -493,6 +493,7 @@ int hostapd_ctrl_iface_sta_next(struct hostapd_data *hapd, const char *txtaddr,
 	return hostapd_ctrl_iface_sta_mib(hapd, sta->next, buf, buflen);
 }
 
+#endif
 
 #ifdef CONFIG_P2P_MANAGER
 static int p2p_manager_disconnect(struct hostapd_data *hapd, u16 stype,
@@ -884,12 +885,12 @@ int hostapd_ctrl_iface_status(struct hostapd_data *hapd, char *buf,
 			return len;
 		len += ret;
 	}
-
+#ifdef CONFIG_CTRL_IFACE_MIB
 	if (iface->conf->ieee80211n && !hapd->conf->disable_11n && mode) {
 		len = hostapd_write_ht_mcs_bitmask(buf, buflen, len,
 						   mode->mcs_set);
 	}
-
+#endif /* CONFIG_CTRL_IFACE_MIB */
 	if (iface->current_rates && iface->num_rates) {
 		ret = os_snprintf(buf + len, buflen - len, "supported_rates=");
 		if (os_snprintf_error(buflen - len, ret))

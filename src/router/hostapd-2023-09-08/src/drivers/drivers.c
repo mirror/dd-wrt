@@ -10,6 +10,10 @@
 #include "utils/common.h"
 #include "driver.h"
 
+void (*wpa_supplicant_event)(void *ctx, enum wpa_event_type event,
+			     union wpa_event_data *data);
+void (*wpa_supplicant_event_global)(void *ctx, enum wpa_event_type event,
+			     union wpa_event_data *data);
 
 const struct wpa_driver_ops *const wpa_drivers[] =
 {

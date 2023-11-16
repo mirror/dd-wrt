@@ -546,7 +546,8 @@ static int ieee80211n_check_40mhz(struct hostapd_iface *iface)
 	int ret;
 
 	/* Check that HT40 is used and PRI / SEC switch is allowed */
-	if (!iface->conf->secondary_channel || iface->conf->no_pri_sec_switch)
+	if (!iface->conf->secondary_channel || iface->conf->no_pri_sec_switch ||
+		iface->conf->noscan)
 		return 0;
 
 	hostapd_set_state(iface, HAPD_IFACE_HT_SCAN);

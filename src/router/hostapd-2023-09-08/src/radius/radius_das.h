@@ -44,6 +44,7 @@ struct radius_das_attrs {
 struct radius_das_conf {
 	int port;
 	const u8 *shared_secret;
+	const u8 *nas_identifier;
 	size_t shared_secret_len;
 	const struct hostapd_ip_addr *client_addr;
 	unsigned int time_window;
