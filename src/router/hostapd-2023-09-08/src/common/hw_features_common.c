@@ -393,7 +393,6 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 			    struct he_capabilities *he_cap,
 			    struct eht_capabilities *eht_cap)
 {
-	fprintf(stderr, "chanwidth %d\n", oper_chwidth);
 	if (!he_cap || !he_cap->he_supported)
 		he_enabled = 0;
 	if (!eht_cap || !eht_cap->eht_supported)
