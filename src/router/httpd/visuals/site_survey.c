@@ -49,32 +49,70 @@ int getrate(int rate, int bw, int ac, int ax)
 		bw = 20;
 	switch (rate) {
 	case 150:
-		if (bw == 2)
-			result = 867 / 8;
-		if (bw == 5)
-			result = 867 / 4;
-		if (bw == 10)
-			result = 867 / 2;
-		if (bw == 20)
-			result = 867;
-		if (ac) {
+		if (ax) {
+			if (bw == 2)
+				result = 867 / 8;
+			if (bw == 5)
+				result = 867 / 4;
+			if (bw == 10)
+				result = 867 / 2;
+			if (bw == 20)
+				result = 867;
 			if (bw == 40)
 				result = 2000;
 			if (bw == 80)
 				result = 4333;
 			if (bw == 160)
 				result = 8667;
+		} else if (ac) {
+			if (bw == 2)
+				result = 1434 / 8;
+			if (bw == 5)
+				result = 1434 / 4;
+			if (bw == 10)
+				result = 1434 / 2;
+			if (bw == 20)
+				result = 1434;
+			if (bw == 40)
+				result = 2868;
+			if (bw == 80)
+				result = 6005;
+			if (bw == 160)
+				result = 12010;
 		} else {
+			if (bw == 2)
+				result = 722 / 8;
+			if (bw == 5)
+				result = 722 / 4;
+			if (bw == 10)
+				result = 722 / 2;
+			if (bw == 20)
+				result = 722;
 			if (bw == 40)
 				result = 1500;
 			if (bw == 80)
 				result = 3250;
 			if (bw == 160)
-				result = 650;
+				result = 6500;
 		}
 		break;
 	case 300:
-		if (ac) {
+		if (ax) {
+			if (bw == 2)
+				result = 2868 / 8;
+			if (bw == 5)
+				result = 2868 / 4;
+			if (bw == 10)
+				result = 2868 / 2;
+			if (bw == 20)
+				result = 2868;
+			if (bw == 40)
+				result = 5735;
+			if (bw == 80)
+				result = 12010;
+			if (bw == 160)
+				result = 24020;
+		} else if (ac) {
 			if (bw == 2)
 				result = 1733 / 8;
 			if (bw == 5)
@@ -108,7 +146,22 @@ int getrate(int rate, int bw, int ac, int ax)
 		}
 		break;
 	case 450:
-		if (ac) {
+		if (ax) {
+			if (bw == 2)
+				result = 4301 / 8;
+			if (bw == 5)
+				result = 4301 / 4;
+			if (bw == 10)
+				result = 4301 / 2;
+			if (bw == 20)
+				result = 4301;
+			if (bw == 40)
+				result = 8125;
+			if (bw == 80)
+				result = 18015;
+			if (bw == 160)
+				result = 36029;	// this rate is not specified
+		} else if (ac) {
 			if (bw == 2)
 				result = 2889 / 8;
 			if (bw == 5)
@@ -142,7 +195,22 @@ int getrate(int rate, int bw, int ac, int ax)
 		}
 		break;
 	case 600:
-		if (ac) {
+		if (ax) {
+			if (bw == 2)
+				result = 5735 / 8;
+			if (bw == 5)
+				result = 5735 / 4;
+			if (bw == 10)
+				result = 5735 / 2;
+			if (bw == 20)
+				result = 5735;
+			if (bw == 40)
+				result = 11471;
+			if (bw == 80)
+				result = 24020;
+			if (bw == 160)
+				result = 48039;
+		} else if (ac) {
 			if (bw == 2)
 				result = 3467 / 8;
 			if (bw == 5)
