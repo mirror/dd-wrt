@@ -1054,6 +1054,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	sprintf(mubf, "%s_mubf", prefix);
 	char subf[32];
 	sprintf(subf, "%s_subf", prefix);
+
 	caps =
 	    mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
 				 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
@@ -1072,18 +1073,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					//fprintf(fp, "spectrum_mgmt_required=1\n");
 					//fprintf(fp, "local_pwr_constraint=3\n");
 				}
-				if (has_ax(prefix)) {
-					if (!strcmp(netmode, "ax-only")) {
-						fprintf(fp, "ieee80211ax=1\n");
-						fprintf(fp, "ieee80211ac=1\n");
-						fprintf(fp, "require_vht=1\n");
-						fprintf(fp, "ieee80211d=1\n");
-						fprintf(fp, "ieee80211h=1\n");
-						//might be needed for dfs
-						//fprintf(fp, "spectrum_mgmt_required=1\n");
-						//fprintf(fp, "local_pwr_constraint=3\n");
-					}
-				}
 
 				if (!strcmp(netmode, "acn-mixed")) {
 					fprintf(fp, "ieee80211ac=1\n");
@@ -1093,12 +1082,23 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				}
 
 				if (has_ax(prefix)) {
-					if (!strcmp(netmode, "xacn-mixed")) {
+					if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+						if (nvram_match(mubf, "1")) {
+							fprintf(fp, "he_mu_beamformer=1\n");
+						}
+						if (nvram_match(subf, "1")) {
+							fprintf(fp, "he_su_beamformer=1\n");
+							fprintf(fp, "he_su_beamformee=1\n");
+						}
 						fprintf(fp, "ieee80211ax=1\n");
 						fprintf(fp, "ieee80211ac=1\n");
 						fprintf(fp, "require_ht=1\n");
 						fprintf(fp, "ieee80211d=1\n");
 						fprintf(fp, "ieee80211h=1\n");
+					}
+					if (!strcmp(netmode, "ax-only")) {
+						fprintf(fp, "require_vht=1\n");
+						fprintf(fp, "require_he=1\n");
 					}
 				}
 
