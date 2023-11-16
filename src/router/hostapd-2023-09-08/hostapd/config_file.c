@@ -4831,6 +4831,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->eht_oper_chwidth = atoi(pos);
 	} else if (os_strcmp(buf, "eht_oper_centr_freq_seg0_idx") == 0) {
 		conf->eht_oper_centr_freq_seg0_idx = atoi(pos);
+	} else if (os_strcmp(buf, "eht_oper_centr_freq_seg0_idx_freq") == 0) {
+		conf->eht_oper_centr_freq_seg0_idx_freq = atoi(pos);
 	} else if (os_strcmp(buf, "eht_su_beamformer") == 0) {
 		conf->eht_phy_capab.su_beamformer = atoi(pos);
 	} else if (os_strcmp(buf, "eht_su_beamformee") == 0) {

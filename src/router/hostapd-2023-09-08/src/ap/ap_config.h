@@ -1192,6 +1192,7 @@ struct hostapd_config {
 #ifdef CONFIG_IEEE80211BE
 	enum oper_chan_width eht_oper_chwidth;
 	u8 eht_oper_centr_freq_seg0_idx;
+	u8 eht_oper_centr_freq_seg0_idx_freq;
 	struct eht_phy_capabilities_info eht_phy_capab;
 	u16 punct_bitmap; /* a bitmap of disabled 20 MHz channels */
 	u8 punct_acs_threshold;
@@ -1296,7 +1297,7 @@ hostapd_set_oper_centr_freq_seg0_idx_freq(struct hostapd_config *conf,
 		conf->eht_oper_centr_freq_seg0_idx_freq = oper_centr_freq_seg0_idx;
 	if (center_idx_to_bw_6ghz(oper_centr_freq_seg0_idx) == 4)
 		oper_centr_freq_seg0_idx +=
-			conf->channel > oper_centr_freq_seg0_idx ? 16 : -16;
+			conf->frequency > oper_centr_freq_seg0_idx ? 16*5 : -16*5;
 #endif /* CONFIG_IEEE80211BE */
 #ifdef CONFIG_IEEE80211AX
 	if (conf->ieee80211ax)
