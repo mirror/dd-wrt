@@ -151,14 +151,14 @@ int genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen)
 		return 0;
 
 	ghdr = nlmsg_data(nlh);
-	if ((unsigned) genlmsg_len(ghdr) < (unsigned)NLMSG_ALIGN(hdrlen))
+	if ((unsigned) genlmsg_len(ghdr) < NLMSG_ALIGN(hdrlen))
 		return 0;
 
 	return 1;
 }
 
 int genlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
-		   struct nla_policy *policy)
+		   const struct nla_policy *policy)
 {
 	struct genlmsghdr *ghdr;
 
@@ -171,7 +171,7 @@ int genlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
 }
 
 int genlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-		  int maxtype, struct nla_policy *policy)
+		  int maxtype, const struct nla_policy *policy)
 {
 	struct genlmsghdr *ghdr;
 

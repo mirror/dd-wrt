@@ -222,7 +222,7 @@ struct nlmsghdr *nlmsg_next(struct nlmsghdr *nlh, int *remaining)
  * See nla_parse()
  */
 int nlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-		int maxtype, struct nla_policy *policy)
+		int maxtype, const struct nla_policy *policy)
 {
 	if (!nlmsg_valid_hdr(nlh, hdrlen))
 		return -NLE_MSG_TOOSHORT;
@@ -238,8 +238,8 @@ int nlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
  * @arg maxtype		maximum attribute type to be expected
  * @arg policy		validation policy
  */
-int nlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
-		   struct nla_policy *policy)
+int nlmsg_validate(const struct nlmsghdr *nlh, int hdrlen, int maxtype,
+		   const struct nla_policy *policy)
 {
 	if (!nlmsg_valid_hdr(nlh, hdrlen))
 		return -NLE_MSG_TOOSHORT;

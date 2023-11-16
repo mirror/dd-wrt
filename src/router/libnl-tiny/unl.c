@@ -1,6 +1,4 @@
-#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
@@ -13,16 +11,13 @@
 
 #include "unl.h"
 
-extern void ctrl_init(void);
-
 static int unl_init(struct unl *unl)
 {
-	ctrl_init();
 	memset(unl, 0, sizeof(*unl));
+
 	unl->sock = nl_socket_alloc();
-	if (!unl->sock) {
-		    return -1;
-	}
+	if (!unl->sock)
+		return -1;
 
 	return 0;
 }
@@ -112,13 +107,8 @@ error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 
 struct nl_msg *unl_genl_msg(struct unl *unl, int cmd, bool dump)
 {
-	struct nl_msg *msg = NULL;
+	struct nl_msg *msg;
 	int flags = 0;
-	if (!unl)
-		goto out;
-
-	if (!unl->family)
-		goto out;
 
 	msg = nlmsg_alloc();
 	if (!msg)

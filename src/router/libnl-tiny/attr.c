@@ -437,12 +437,16 @@ static uint16_t nla_attr_minlen[NLA_TYPE_MAX+1] = {
 	[NLA_U32]	= sizeof(uint32_t),
 	[NLA_U64]	= sizeof(uint64_t),
 	[NLA_STRING]	= 1,
+	[NLA_S8]	= sizeof(int8_t),
+	[NLA_S16]	= sizeof(int16_t),
+	[NLA_S32]	= sizeof(int32_t),
+	[NLA_S64]	= sizeof(int64_t),
 };
 
-static int validate_nla(struct nlattr *nla, int maxtype,
-			struct nla_policy *policy)
+static int validate_nla(const struct nlattr *nla, int maxtype,
+			const struct nla_policy *policy)
 {
-	struct nla_policy *pt;
+	const struct nla_policy *pt;
 	int minlen = 0, type = nla_type(nla);
 
 	if (type <= 0 || type > maxtype)
@@ -496,7 +500,7 @@ static int validate_nla(struct nlattr *nla, int maxtype,
  * @return 0 on success or a negative error code.
  */
 int nla_parse(struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
-	      struct nla_policy *policy)
+	      const struct nla_policy *policy)
 {
 	struct nlattr *nla;
 	int rem, err;
@@ -548,10 +552,10 @@ errout:
  *
  * @return 0 on success or a negative error code.
  */
-int nla_validate(struct nlattr *head, int len, int maxtype,
-		 struct nla_policy *policy)
+int nla_validate(const struct nlattr *head, int len, int maxtype,
+		 const struct nla_policy *policy)
 {
-	struct nlattr *nla;
+	const struct nlattr *nla;
 	int rem, err;
 
 	nla_for_each_attr(nla, head, len, rem) {
