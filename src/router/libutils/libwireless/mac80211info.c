@@ -1097,6 +1097,9 @@ int has_vht160(const char *interface)
 #if defined(HAVE_ATH11K)
 int has_he160(const char *interface)
 {
+	return 0;
+#if 0
+	//if vht caps do not support vht160, he160 will not work anyway. we dont need this function
 	INITVALUECACHEi(interface);
 	char *hecaps = mac80211_get_hecaps(interface);
 	if (strstr(hecaps, "HE160")) {
@@ -1107,6 +1110,7 @@ int has_he160(const char *interface)
 	free(hecaps);
 	EXITVALUECACHE();
 	return ret;
+#endif
 }
 #endif
 
