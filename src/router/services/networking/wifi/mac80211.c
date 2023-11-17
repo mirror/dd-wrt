@@ -1801,6 +1801,8 @@ static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, 
 
 	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
 		fprintf(fp, "\tvht=1\n");
+		if (has_ax(prefix))
+			fprintf(fp, "\the=1\n");
 	}
 	if (nvram_match(bw, "80")) {
 		fprintf(fp, "\tmax_oper_chwidth=1\n");
@@ -1902,6 +1904,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_vht=1\n");
+			fprintf(fp, "\tdisable_he=1\n");
+		}
+		
+		if (has_ax(prefix) && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")) {
+			fprintf(fp, "\tdisable_he=1\n");
 		}
 
 		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
