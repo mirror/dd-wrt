@@ -1296,7 +1296,7 @@ int has_ac(const char *prefix)
 #if defined(HAVE_ATH11K)
 int has_ax(const char *prefix)
 {
-	return is_ath11k(prefix);
+	return is_ath11k(prefix) || is_mt7915(prefix) || is_mt7921(prefix);
 }
 #endif
 int has_ht(const char *prefix)
