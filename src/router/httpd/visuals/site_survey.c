@@ -385,16 +385,18 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (site_survey_lists[i].extcap & CAP_AX)
+				if (hasax && hasac)
 					sprintf(rates, "%s(b/g/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else if (site_survey_lists[i].extcap & CAP_VHT)
+				else if (hasax)
+					sprintf(rates, "%s(b/g/n/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasac)
 					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
 					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			} else {
-				if (site_survey_lists[i].extcap & CAP_AX)
+				if (hasax)
 					sprintf(rates, "%s(a/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else if (site_survey_lists[i].extcap & CAP_VHT)
+				else if (hasac)
 					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
 					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
