@@ -1798,7 +1798,7 @@ static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, 
 	if (!is_ath5k(prefix))
 		// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 		fprintf(fp, "\thtmode=HT%s\n", ht);
-
+	/* todo. consider mode configuration */
 	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
 		fprintf(fp, "\tvht=1\n");
 		if (has_ax(prefix))
