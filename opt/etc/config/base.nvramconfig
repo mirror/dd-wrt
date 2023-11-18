@@ -244,6 +244,7 @@
  "block_multicast"  "Block Multicast Pass Through"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "arp_spoofing"  "ARP Spoofing Protection"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "filter_tos"  "Filter TOS/DSCP"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "filter_invalid"  "Do not use INVALID iptables"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "limit_http"  "Limit HTTP access"  "CHOICE" "2" "0"  "1"  "FALSE" "0" 
  "limit_ssh"  "Limit ssh access"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "limit_telnet"  "Limit telnet access"  "CHOICE" "2" "0"  "1"  "FALSE" "0"

@@ -139,6 +139,7 @@
  "block_cookie"  "Block Cookie"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "arp_spoofing"  "ARP Spoofing Protection"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "filter_tos"  "Filter TOS/DSCP"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "filter_invalid"  "Do not use INVALID iptables"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "multicast_pass"  "Multicast Pass Through"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "ipsec_pass"  "IPSec Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "pptp_pass"  "PPTP Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
