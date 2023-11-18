@@ -789,6 +789,7 @@ firewall.pptp="Limit PPTP Server Access";
 firewall.ftp="Limit FTP Server Access";
 firewall.arp_spoofing="ARP Spoofing Protection";
 firewall.filter_tos="Filter ToS / DSCP";
+firewall.filter_invalid="Filter invalid packets";
 
 filter.nat="WAN NAT Redirection";
 filter.port113="IDENT (Port 113)";

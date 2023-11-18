@@ -2025,6 +2025,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 	{ "arp_spoofing", "1" },
 	{ "filter_tos", "0" },
+	{ "filter_invalid", "1" },
 #ifdef HAVE_DDLAN
 	{ "remote_management", "1" },	/* Remote Management [1|0] */
 #elif HAVE_GGEW

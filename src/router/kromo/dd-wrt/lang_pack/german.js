@@ -782,6 +782,7 @@ firewall.pptp="PPTP Server Zugriff limitieren";
 firewall.ftp="FTP Server Zugriff limitieren";
 firewall.arp_spoofing="ARP Spoofing Schutz";
 firewall.filter_tos="Filtere ToS/DSCP";
+firewall.filter_invalid="Filtere ungültige Packete";
 
 filter.nat="WAN-NAT-Umleitung filtern";
 filter.port113="IDENT (Port 113) filtern";

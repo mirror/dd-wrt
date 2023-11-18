@@ -2299,7 +2299,9 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * most of what was here has been moved to the end 
 	 */
 	save2file_A_input("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
-	save2file_A_input("-m state --state INVALID -j %s", log_drop);
+	if (nvram_matchi("filter_invalid", 1)) {
+		save2file_A_input("-m state --state INVALID -j %s", log_drop);
+	}
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file_A_input("-i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
@@ -2640,7 +2642,9 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	 * Drop the wrong state, INVALID, packets 
 	 */
 	//save2file_A_forward("-m state --state INVALID -j %s", log_drop);
-	save2file_A_forward("! -s %s -o %s -p tcp -m state --state INVALID -j %s", nvram_safe_get("wan_ipaddr"), wanface, log_drop);
+	if (nvram_matchi("filter_invalid", 1)) {
+		save2file_A_forward("! -s %s -o %s -p tcp -m state --state INVALID -j %s", nvram_safe_get("wan_ipaddr"), wanface, log_drop);
+	}
 
 	save2file_A_forward("-j upnp");
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
@@ -3046,7 +3050,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifndef HAVE_MICRO
 		if (nvram_matchi("log_dropped", 1)) {
 			save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
-			if (has_gateway()) {
+			if (has_gateway() &&  nvram_matchi("filter_invalid", 1))  {
 				save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 			}
 		}
@@ -3166,7 +3170,9 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "OUTPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
 	/* Filter INVALID packets */
 	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
-	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
+	if (nvram_matchi("filter_invalid", 1)) {
+		eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
+	}
 
 //      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", log_accept);
 //      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "INVALID", "-j", log_drop);
@@ -3333,7 +3339,7 @@ static void run_firewall6(char *vifs)
 		 */
 		if (nvram_matchi("log_dropped", 1)) {
 			eval("ip6tables", "-A", "logdrop", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
-			if (has_gateway()) {
+			if (has_gateway() && nvram_matchi("filter_invalid", 1)) {
 				eval("ip6tables", "-A", "logdrop", "-m", "state", "--state", "INVALID", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
 			}
 		}

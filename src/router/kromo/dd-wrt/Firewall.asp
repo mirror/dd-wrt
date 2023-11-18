@@ -53,6 +53,9 @@ function submitcheck(F) {
 			F.log_enable.value = 0;
 		}
 	}
+	if (F._filter_invalid) {
+		F.filter_invalid.value = F._filter_invalid.checked ? 1 : 0;
+	}
 }
 
 function to_submit(F) {
@@ -115,6 +118,9 @@ function setFirewall(F, val) {
 		if(F._limit_ftp){
 			F._limit_ftp.checked = false;
 		}
+		if(F._filter_invalid){
+			F._filter_invalid.checked = false;
+		}
 	}
 }
 
@@ -171,6 +177,7 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="limit_telnet" />
 						<input type="hidden" name="limit_pptp" />
 						<input type="hidden" name="limit_ftp" />
+						<input type="hidden" name="filter_invalid" />
 						<h2><% tran("firewall.h2"); %></h2>
 						<fieldset>
 							<legend><% tran("firewall.legend"); %></legend>
@@ -206,6 +213,10 @@ addEvent(window, "unload", function() {
 									<div class="setting">
 										<div class="label"><% tran("firewall.arp_spoofing"); %></div>
 										<input class="spaceradio" type="checkbox" value="1" name="_arp_spoofing" <% nvc("arp_spoofing", "1"); %> />
+									</div>
+									<div class="setting">
+									<div class="label"><% tran("firewall.filter_invalid"); %></div>
+										<input class="spaceradio" type="checkbox" value="1" name="_filter_invalid" <% nvc("filter_invalid", "1"); %> />
 									</div>
 								</fieldset><br />
 								<fieldset>
