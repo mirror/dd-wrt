@@ -83,6 +83,19 @@ struct ovpn_pktid_recv {
 };
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+
+#ifndef arch_atomic64_try_cmpxchg
+static __always_inline bool atomic64_try_cmpxchg(atomic64_t *v, s64 *old, s64 new)
+{
+	s64 r, o = *old;
+	r = atomic64_cmpxchg(v, o, new);
+	if (unlikely(r != o))
+		*old = r;
+	return likely(r == o);
+}
+#endif
+
+
 #ifndef atomic64_fetch_add_unless
 /**
  * arch_atomic64_fetch_add_unless - add unless the number is already a given value
@@ -94,7 +107,7 @@ struct ovpn_pktid_recv {
  * Returns original value of @v
  */
  
-static __always_unline s64 atomic64_fetch_add_unless(atomic64_t *v, s64 a, s64 u)
+static __always_inline s64 atomic64_fetch_add_unless(atomic64_t *v, s64 a, s64 u)
 {
 	s64 c = atomic64_read(v);
 
