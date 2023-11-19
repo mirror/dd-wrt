@@ -646,7 +646,7 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_SAMBA3
 	{ "SAMBA3", NULL },
 #endif
-#ifdef HAVE_JFFS2
+#if defined(HAVE_JFFS2) || defined(HAVE_X86) || defined(HAVE_VENTANA)
 	{ "JFFS2", NULL },
 #endif
 #ifdef HAVE_GPSI
