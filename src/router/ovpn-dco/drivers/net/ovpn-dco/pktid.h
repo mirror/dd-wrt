@@ -84,9 +84,26 @@ struct ovpn_pktid_recv {
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
 #ifndef atomic64_fetch_add_unless
-static inline int atomic64_fetch_add_unless(atomic64_t *v, long long a, long long u)
+/**
+ * arch_atomic64_fetch_add_unless - add unless the number is already a given value
+ * @v: pointer of type atomic64_t
+ * @a: the amount to add to v...
+ * @u: ...unless v is equal to u.
+ *
+ * Atomically adds @a to @v, so long as @v was not already @u.
+ * Returns original value of @v
+ */
+ 
+static __always_unline s64 atomic64_fetch_add_unless(atomic64_t *v, s64 a, s64 u)
 {
-	return atomic64_add_unless(v, a, u);
+	s64 c = atomic64_read(v);
+
+	do {
+		if (unlikely(c == u))
+			break;
+	} while (!atomic64_try_cmpxchg(v, &c, c + a));
+
+	return c;
 }
 #endif
 #endif
