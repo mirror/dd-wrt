@@ -84,7 +84,7 @@ struct ovpn_pktid_recv {
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
 
-#ifndef arch_atomic64_try_cmpxchg
+#ifndef atomic_try_cmpxchg
 static __always_inline bool atomic64_try_cmpxchg(atomic64_t *v, s64 *old, s64 new)
 {
 	s64 r, o = *old;
