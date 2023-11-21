@@ -1178,6 +1178,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
 			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
 		} else if (!strcmp(netmode, "mixed")) {
+			if (has_ax(prefix)) {
+				fprintf(fp, "ieee80211ax=1\n");
+			}
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
 			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
@@ -1906,7 +1909,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tdisable_vht=1\n");
 			fprintf(fp, "\tdisable_he=1\n");
 		}
-		
+
 		if (has_ax(prefix) && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")) {
 			fprintf(fp, "\tdisable_he=1\n");
 		}
