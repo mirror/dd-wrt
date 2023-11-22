@@ -9,7 +9,7 @@
 #include "armada-385-linksys.dtsi"
 
 / {
-	model = "Linksys WRT1900AC v2";
+	model = "Linksys WRT1900ACv2";
 	compatible = "linksys,wrt1900ac-v2", "linksys,cobra",
 		     "linksys,armada385", "marvell,armada385",
 		     "marvell,armada380";
