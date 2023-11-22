@@ -18,6 +18,20 @@
 #ifndef __FAB_SCALING_H
 #define __FAB_SCALING_H
 
+struct fab_scaling_info {
+	struct clk *clk;
+	u32 idle_freq;
+};
+
+/**
+ * fab_scaling_register - Register for APPS and DDR FABRICS scaling
+ * @data: FABRIC scaling info
+ *
+ * This registers the clock source which needs to be monitored.
+ *
+ */
+int fab_scaling_register(struct fab_scaling_info *data);
+
 /**
  * scale_fabrics - Scale DDR and APPS FABRICS
  *
@@ -26,6 +40,15 @@
  * it was registered.
  *
  */
-void scale_fabrics(unsigned long max_cpu_freq);
+int scale_fabrics(void);
+
+/**
+ * fab_scaling_unregister - Unregister for APPS and DDR FABRICS scaling
+ * @clk: Clock pointer which needs to be unregistered.
+ *
+ * This unregisters the clock source and is no longer monitored.
+ *
+ */
+int fab_scaling_unregister(struct clk *clk);
 
 #endif
