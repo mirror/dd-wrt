@@ -1383,7 +1383,7 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT1200AC");
 		return ROUTER_WRT_1200AC;
 	}
-	if (!strcmp(modelstr, "WRT1900ACv2")) {
+	if (!strcmp(modelstr, "WRT1900AC v2")) {
 		setRouter("Linksys WRT1900ACv2");
 		return ROUTER_WRT_1900ACV2;	// similar
 	}
