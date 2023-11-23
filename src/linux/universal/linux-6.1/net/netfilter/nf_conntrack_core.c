@@ -2859,7 +2859,6 @@ int nf_conntrack_init_net(struct net *net)
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	ATOMIC_INIT_NOTIFIER_HEAD(&net->ct.nf_conntrack_chain);
 #endif
-
 	return 0;
 
 err_expect:

@@ -413,7 +413,7 @@ forward:
 			br_handle_local_finish) == 1) {
 			return RX_HANDLER_PASS;
 		}
-		break;
+		goto drop;
 
 	case BR_STATE_FORWARDING:
 	case BR_STATE_LEARNING:
