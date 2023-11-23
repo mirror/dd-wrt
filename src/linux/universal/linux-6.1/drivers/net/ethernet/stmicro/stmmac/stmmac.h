@@ -12,6 +12,7 @@
 #define STMMAC_RESOURCE_NAME   "stmmaceth"
 
 #include <linux/clk.h>
+#include <linux/hrtimer.h>
 #include <linux/if_vlan.h>
 #include <linux/stmmac.h>
 #include <linux/phylink.h>
@@ -58,7 +59,7 @@ struct stmmac_tx_info {
 struct stmmac_tx_queue {
 	u32 tx_count_frames;
 	int tbs;
-	struct timer_list txtimer;
+	struct hrtimer txtimer;
 	u32 queue_index;
 	struct stmmac_priv *priv_data;
 	struct dma_extended_desc *dma_etx ____cacheline_aligned_in_smp;
