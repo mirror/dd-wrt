@@ -1303,13 +1303,8 @@ char *getdisc(void)		// works only for squashfs
 		char *cache = nvram_safe_get("root_disc");
 		if (cache[0]) {
 			char tmp[32];
-#ifdef HAVE_NEWPORT
-			if (!strncmp(cache, "mmcblk", 6))
-				sprintf(tmp, "/dev/%s", cache);
-#else
 			if (!strncmp(cache, "mmcblk", 6))
 				sprintf(tmp, "/dev/%sp2", cache);
-#endif
 			else if (!strncmp(cache, "nvme", 4))
 				sprintf(tmp, "/dev/%sp2", cache);
 			else
