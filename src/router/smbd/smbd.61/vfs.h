@@ -133,7 +133,7 @@ int ksmbd_vfs_lock_parent(struct mnt_idmap *idmap, struct dentry *parent,
 			  struct dentry *child);
 int ksmbd_vfs_may_delete(struct mnt_idmap *idmap, struct dentry *dentry);
 #endif
-int ksmbd_vfs_query_maximal_access(struct mnt_idmap *idmap,
+void ksmbd_vfs_query_maximal_access(struct mnt_idmap *idmap,
 				   struct dentry *dentry, __le32 *daccess);
 #else
 int ksmbd_vfs_lock_parent(struct user_namespace *user_ns, struct dentry *parent,
@@ -165,7 +165,11 @@ int ksmbd_vfs_symlink(struct ksmbd_work *work,
 		      const char *name, const char *symname);
 int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp);
 int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+			   struct mnt_idmap *idmap,
+#else
 			   struct user_namespace *user_ns,
+#endif
 			   struct ksmbd_kstat *ksmbd_kstat,
 			   const char *de_name, int de_name_len,
 			   const char *dir_path);

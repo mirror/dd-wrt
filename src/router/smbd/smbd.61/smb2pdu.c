@@ -18,6 +18,7 @@
 #include <linux/filelock.h>
 #endif
 
+#include "compat.h"
 #include "glob.h"
 #include "smb2pdu.h"
 #include "smbfsctl.h"
@@ -2572,13 +2573,7 @@ static void smb2_new_xattrs(struct ksmbd_tree_connect *tcon, const struct path *
 	da.flags = XATTR_DOSINFO_ATTRIB | XATTR_DOSINFO_CREATE_TIME |
 		XATTR_DOSINFO_ITIME;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	rc = ksmbd_vfs_set_dos_attrib_xattr(mnt_idmap(path->mnt),
-					    path, &da);
-#else
-	rc = ksmbd_vfs_set_dos_attrib_xattr(mnt_user_ns(path->mnt),
-					    path, &da);
-#endif
+	rc = compat_ksmbd_vfs_set_dos_attrib_xattr(path, &da);
 	if (rc)
 		ksmbd_debug(SMB, "failed to store file attribute into xattr\n");
 }
@@ -2596,13 +2591,7 @@ static void smb2_update_xattrs(struct ksmbd_tree_connect *tcon,
 				    KSMBD_SHARE_FLAG_STORE_DOS_ATTRS))
 		return;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	rc = ksmbd_vfs_get_dos_attrib_xattr(mnt_idmap(path->mnt),
-					    path->dentry, &da);
-#else
-	rc = ksmbd_vfs_get_dos_attrib_xattr(mnt_user_ns(path->mnt),
-					    path->dentry, &da);
-#endif
+	rc = compat_ksmbd_vfs_get_dos_attrib_xattr(path, path->dentry, &da);
 	if (rc > 0) {
 		fp->f_ci->m_fattr = cpu_to_le32(da.attr);
 		fp->create_time = da.create_time;
@@ -3096,14 +3085,16 @@ int smb2_open(struct ksmbd_work *work)
 			daccess = cpu_to_le32(GENERIC_ALL_FLAGS);
 		} else {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			rc = ksmbd_vfs_query_maximal_access(idmap,
+			ksmbd_vfs_query_maximal_access(idmap,
+						       path.dentry,
+						       &daccess);
 #else
 			rc = ksmbd_vfs_query_maximal_access(user_ns,
-#endif
 							    path.dentry,
 							    &daccess);
 			if (rc)
 				goto err_out;
+#endif
 			already_permitted = true;
 		}
 		maximal_access = daccess;
@@ -4726,8 +4717,13 @@ static int get_file_basic_info(struct smb2_query_info_rsp *rsp,
 	basic_info = (struct smb2_file_basic_info *)rsp->Buffer;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(file_mnt_idmap(fp->filp), STATX_BASIC_STATS,
+			file_inode(fp->filp), &stat);
+#else
 	generic_fillattr(file_mnt_idmap(fp->filp), file_inode(fp->filp),
 			 &stat);
+#endif
 #else
 	generic_fillattr(file_mnt_user_ns(fp->filp), file_inode(fp->filp),
 			 &stat);
@@ -4760,7 +4756,11 @@ static void get_file_standard_info(struct smb2_query_info_rsp *rsp,
 	inode = file_inode(fp->filp);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(file_mnt_idmap(fp->filp), STATX_BASIC_STATS, inode, &stat);
+#else
 	generic_fillattr(file_mnt_idmap(fp->filp), inode, &stat);
+#endif
 #else
 	generic_fillattr(file_mnt_user_ns(fp->filp), inode, &stat);
 #endif
@@ -4818,7 +4818,11 @@ static int get_file_all_info(struct ksmbd_work *work,
 	inode = file_inode(fp->filp);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(file_mnt_idmap(fp->filp), STATX_BASIC_STATS, inode, &stat);
+#else
 	generic_fillattr(file_mnt_idmap(fp->filp), inode, &stat);
+#endif
 #else
 	generic_fillattr(file_mnt_user_ns(fp->filp), inode, &stat);
 #endif
@@ -4901,8 +4905,13 @@ static void get_file_stream_info(struct ksmbd_work *work,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(file_mnt_idmap(fp->filp), STATX_BASIC_STATS,
+			 file_inode(fp->filp), &stat);
+#else
 	generic_fillattr(file_mnt_idmap(fp->filp), file_inode(fp->filp),
 			 &stat);
+#endif
 #else
 	generic_fillattr(file_mnt_user_ns(fp->filp), file_inode(fp->filp),
 			 &stat);
@@ -5000,8 +5009,13 @@ static void get_file_internal_info(struct smb2_query_info_rsp *rsp,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(file_mnt_idmap(fp->filp), STATX_BASIC_STATS,
+			 file_inode(fp->filp), &stat);
+#else
 	generic_fillattr(file_mnt_idmap(fp->filp), file_inode(fp->filp),
 			 &stat);
+#endif
 #else
 	generic_fillattr(file_mnt_user_ns(fp->filp), file_inode(fp->filp),
 			 &stat);
@@ -5034,7 +5048,11 @@ static int get_file_network_open_info(struct smb2_query_info_rsp *rsp,
 	inode = file_inode(fp->filp);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(file_mnt_idmap(fp->filp), STATX_BASIC_STATS, inode, &stat);
+#else
 	generic_fillattr(file_mnt_idmap(fp->filp), inode, &stat);
+#endif
 #else
 	generic_fillattr(file_mnt_user_ns(fp->filp), inode, &stat);
 #endif
@@ -5099,8 +5117,13 @@ static void get_file_compression_info(struct smb2_query_info_rsp *rsp,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(file_mnt_idmap(fp->filp), STATX_BASIC_STATS,
+			 file_inode(fp->filp), &stat);
+#else
 	generic_fillattr(file_mnt_idmap(fp->filp), file_inode(fp->filp),
 			 &stat);
+#endif
 #else
 	generic_fillattr(file_mnt_user_ns(fp->filp), file_inode(fp->filp),
 			 &stat);
@@ -5167,7 +5190,11 @@ static void find_file_posix_info(struct smb2_query_info_rsp *rsp,
 	file_info->LastAccessTime = cpu_to_le64(time);
 	time = ksmbd_UnixTimeToNT(inode->i_mtime);
 	file_info->LastWriteTime = cpu_to_le64(time);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	time = ksmbd_UnixTimeToNT(inode_get_ctime(inode));
+#else
 	time = ksmbd_UnixTimeToNT(inode->i_ctime);
+#endif
 	file_info->ChangeTime = cpu_to_le64(time);
 	file_info->DosAttributes = fp->f_ci->m_fattr;
 	file_info->Inode = cpu_to_le64(inode->i_ino);
@@ -5813,7 +5840,11 @@ int smb2_close(struct ksmbd_work *work)
 		rsp->LastAccessTime = cpu_to_le64(time);
 		time = ksmbd_UnixTimeToNT(inode->i_mtime);
 		rsp->LastWriteTime = cpu_to_le64(time);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+		time = ksmbd_UnixTimeToNT(inode_get_ctime(inode));
+#else
 		time = ksmbd_UnixTimeToNT(inode->i_ctime);
+#endif
 		rsp->ChangeTime = cpu_to_le64(time);
 		ksmbd_fd_put(work, fp);
 	} else {
@@ -6196,7 +6227,11 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 	if (file_info->ChangeTime)
 		attrs.ia_ctime = ksmbd_NTtimeToUnix(file_info->ChangeTime);
 	else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+		attrs.ia_ctime = inode_get_ctime(inode);
+#else
 		attrs.ia_ctime = inode->i_ctime;
+#endif
 
 	if (file_info->LastWriteTime) {
 		attrs.ia_mtime = ksmbd_NTtimeToUnix(file_info->LastWriteTime);
@@ -6226,12 +6261,7 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 		da.flags = XATTR_DOSINFO_ATTRIB | XATTR_DOSINFO_CREATE_TIME |
 			XATTR_DOSINFO_ITIME;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		rc = ksmbd_vfs_set_dos_attrib_xattr(idmap,
-#else
-		rc = ksmbd_vfs_set_dos_attrib_xattr(user_ns,
-#endif
-						    &filp->f_path, &da);
+		rc = compat_ksmbd_vfs_set_dos_attrib_xattr(&filp->f_path, &da);
 		if (rc)
 			ksmbd_debug(SMB,
 				    "failed to restore file attribute in EA\n");
@@ -6246,7 +6276,11 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 			return -EACCES;
 
 		inode_lock(inode);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+		inode_set_ctime_to_ts(inode, attrs.ia_ctime);
+#else
 		inode->i_ctime = attrs.ia_ctime;
+#endif
 		attrs.ia_valid &= ~ATTR_CTIME;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
@@ -8162,22 +8196,12 @@ static inline int fsctl_set_sparse(struct ksmbd_work *work, u64 id,
 				   struct file_sparse *sparse)
 {
 	struct ksmbd_file *fp;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	struct mnt_idmap *idmap;
-#else
-	struct user_namespace *user_ns;
-#endif
 	int ret = 0;
 	__le32 old_fattr;
 
 	fp = ksmbd_lookup_fd_fast(work, id);
 	if (!fp)
 		return -ENOENT;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	idmap = file_mnt_idmap(fp->filp);
-#else
-	user_ns = file_mnt_user_ns(fp->filp);
-#endif
 
 	old_fattr = fp->f_ci->m_fattr;
 	if (sparse->SetSparse)
@@ -8190,22 +8214,15 @@ static inline int fsctl_set_sparse(struct ksmbd_work *work, u64 id,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
 		struct xattr_dos_attrib da;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		ret = ksmbd_vfs_get_dos_attrib_xattr(idmap,
-#else
-		ret = ksmbd_vfs_get_dos_attrib_xattr(user_ns,
-#endif
-						     fp->filp->f_path.dentry, &da);
+		ret = compat_ksmbd_vfs_get_dos_attrib_xattr(&fp->filp->f_path,
+							    fp->filp->f_path.dentry,
+							    &da);
 		if (ret <= 0)
 			goto out;
 
 		da.attr = le32_to_cpu(fp->f_ci->m_fattr);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		ret = ksmbd_vfs_set_dos_attrib_xattr(idmap,
-#else
-		ret = ksmbd_vfs_set_dos_attrib_xattr(user_ns,
-#endif
-						     &fp->filp->f_path, &da);
+		ret = compat_ksmbd_vfs_set_dos_attrib_xattr(&fp->filp->f_path,
+							    &da);
 		if (ret)
 			fp->f_ci->m_fattr = old_fattr;
 	}

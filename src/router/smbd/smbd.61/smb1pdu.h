@@ -1273,6 +1273,14 @@ struct smb_com_trans2_setfsi_rsp {
 	__le16 ByteCount;
 } __packed;
 
+struct smb_com_trans2_setfsi_req_params {
+	__u16 FileNum;
+	__le16 InformationLevel;
+	__le16 ClientUnixMajor; /* Data start. */
+	__le16 ClientUnixMinor;
+	__le64 ClientUnixCap;   /* Data end */
+} __packed;
+
 struct smb_trans2_qfi_req_params {
 	__u16   Fid;
 	__le16  InformationLevel;

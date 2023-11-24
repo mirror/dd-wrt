@@ -26,7 +26,7 @@ ksmbd-y :=	unicode.o auth.o vfs.o vfs_cache.o connection.o crypto_ctx.o \
 		transport_tcp.o transport_ipc.o
 
 ksmbd-y +=	smb2pdu.o smb2ops.o smb2misc.o ksmbd_spnego_negtokeninit.asn1.o \
-		ksmbd_spnego_negtokentarg.asn1.o asn1.o
+		ksmbd_spnego_negtokentarg.asn1.o asn1.o compat.o
 
 $(obj)/asn1.o: $(obj)/ksmbd_spnego_negtokeninit.asn1.h $(obj)/ksmbd_spnego_negtokentarg.asn1.h
 
