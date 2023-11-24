@@ -24,15 +24,15 @@ cd /tmp
 if [ x$4 = x1 ]
 then
 	echo "write first time"
-	dd if=${FIFO} of=${MTDPART}
+	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
 	sync
 	echo "write second time"
-	dd if=${FIFO} of=${MTDPART}
+	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
 	sync
 	echo "write third time"
-	dd if=${FIFO} of=${MTDPART}
+	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
 	sync
 else
