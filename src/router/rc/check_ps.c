@@ -155,9 +155,9 @@ struct mon mons[] = {
 #ifdef HAVE_TRANSMISSION
 	{ "transmission", M_LAN, "transmission_enable", "1", NULL, NULL, &check_transmission },
 #endif
-#ifdef HAVE_PLEX
-	{ "Plex Media Server", M_LAN, "plex_enable", "1", NULL, NULL, &check_plex },
-#endif
+//#ifdef HAVE_PLEX
+//	{ "plex", M_LAN, "plex_enable", "1", NULL, NULL, &check_plex },
+//#endif
 #ifdef HAVE_ERC
 #ifdef HAVE_OPENVPN
 	{ "openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL, NULL },
