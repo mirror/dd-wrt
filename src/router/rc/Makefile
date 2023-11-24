@@ -172,6 +172,9 @@ endif
 ifeq ($(CONFIG_WR1043V5),y)
 CFLAGS += -DHAVE_WR1043V5
 endif
+ifeq ($(CONFIG_PLEX),y)
+CFLAGS += -DHAVE_PLEX
+endif
 ifeq ($(CONFIG_RAMBUTAN),y)
 CFLAGS += -DHAVE_RAMBUTAN
 endif
