@@ -1986,6 +1986,7 @@ void tunnel_save(webs_t wp)
 	int tunnels = nvram_geti("oet_tunnels");
 	for (i = 1; i < tunnels + 1; i++) {
 		copytonv(wp, "oet%d_en", i);
+		copytonv(wp, "oet%d_label", i);
 		copytonv(wp, "oet%d_mit", i);
 		copytonv(wp, "oet%d_natout", i);
 		copytonv(wp, "oet%d_proto", i);
@@ -2293,6 +2294,7 @@ void add_tunnel(webs_t wp)
 #define default_vxset(name,val) if (*(nvram_nget("vxlan%d_%s",tunnels, name))==0)nvram_nset(val, "vxlan%d_%s",tunnels,name)
 #define default_vxseti(name,val) if (*(nvram_nget("vxlan%d_%s",tunnels, name))==0)nvram_nseti(val, "vxlan%d_%s",tunnels,name)
 	default_seti("en", 1);
+	default_seti("label", 1);
 	default_seti("mit", 1);
 	default_seti("natout", 1);
 	default_set("spbr_ip", "");
