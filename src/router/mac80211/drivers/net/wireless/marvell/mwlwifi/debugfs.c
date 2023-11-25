@@ -23,6 +23,7 @@
 #include "utils.h"
 #include "thermal.h"
 #include "hif/fwcmd.h"
+#include "hif/pcie/dev.h"
 #include "hif/hif-ops.h"
 #include "debugfs.h"
 
@@ -330,15 +331,53 @@ static ssize_t mwl_debugfs_info_read(struct file *file, char __user *ubuf,
 				     size_t count, loff_t *ppos)
 {
 	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
+	struct pcie_priv *pcie_priv = priv->hif.priv;
+	unsigned long flags;
 	unsigned long page = get_zeroed_page(GFP_KERNEL);
 	int tx_num = 4, rx_num = 4;
 	char *p = (char *)page;
 	int len = 0, size = PAGE_SIZE;
 	ssize_t ret;
+	const struct hostcmd_get_hw_spec *get_hw_spec;
+	int i;
 
 	if (!p)
 		return -ENOMEM;
 
+	/* get and prepare HW specifications */
+	get_hw_spec = mwl_fwcmd_get_hw_specs(priv->hw);
+	if (!get_hw_spec) {
+		wiphy_err(priv->hw->wiphy, "fail to get HW specifications\n");
+		goto err_get_hw_specs;
+	}
+	len += scnprintf(p + len, size - len,
+			 "host_if: %d\n", get_hw_spec->host_if);
+	len += scnprintf(p + len, size - len,
+			 "num_antenna: %d\n", le16_to_cpu(get_hw_spec->num_antenna));
+	len += scnprintf(p + len, size - len,
+			 "region_code: %d\n", le16_to_cpu(get_hw_spec->region_code));
+	len += scnprintf(p + len, size - len,
+			 "num_wcb: %d\n", le32_to_cpu(get_hw_spec->num_wcb));
+
+	if (priv->chip_type == MWL8864) {
+		len += scnprintf(p + len, size - len,
+			 "-----------------------=>  address| address|qlen|fw_desc_cnt\n");
+		spin_lock_irqsave(&pcie_priv->tx_desc_lock, flags);
+		len += scnprintf(p + len, size - len,
+				"wcb_base0   : %x => %8x|%8p|%4d|%d\n", get_hw_spec->wcb_base0, *((unsigned int *)le32_to_cpu(get_hw_spec->wcb_base0)),(void *)*((unsigned int *)le32_to_cpu(get_hw_spec->wcb_base0)),skb_queue_len(&pcie_priv->txq[0]),pcie_priv->fw_desc_cnt[0]);
+		for(i = 0; i < SYSADPT_TOTAL_TX_QUEUES - 1; i++)
+			len += scnprintf(p + len, size - len,
+				"wcb_base[%2d]: %x => %8x|%8p|%4d|%d\n", i, get_hw_spec->wcb_base[i], *((unsigned int *)le32_to_cpu(get_hw_spec->wcb_base[i])),(void *)*((unsigned int *)le32_to_cpu(get_hw_spec->wcb_base[i])),skb_queue_len(&pcie_priv->txq[i + 1]),pcie_priv->fw_desc_cnt[i + 1]);
+		spin_unlock_irqrestore(&pcie_priv->tx_desc_lock, flags);
+	}
+
+	len += scnprintf(p + len, size - len,
+			 "num_mcast_addr: %X\n", le16_to_cpu(get_hw_spec->num_mcast_addr));
+	len += scnprintf(p + len, size - len,
+			 "permanent mac address: %pM\n", get_hw_spec->permanent_addr);
+	len += scnprintf(p + len, size - len,
+			 "fw_awake_cookie: %d\n", le32_to_cpu(get_hw_spec->fw_awake_cookie));
+err_get_hw_specs:
 	len += scnprintf(p + len, size - len,
 			 "driver name: %s\n",
 			 mwl_hif_get_driver_name(priv->hw));
@@ -381,6 +420,10 @@ static ssize_t mwl_debugfs_info_read(struct file *file, char __user *ubuf,
 			 "macid used: %08x\n", priv->macids_used);
 	len += scnprintf(p + len, size - len,
 			 "radio: %s\n", priv->radio_on ? "enable" : "disable");
+	len += scnprintf(p + len, size - len,
+			 "radio_short_preamble: %s\n", priv->radio_short_preamble ? "enable" : "disable");
+	len += scnprintf(p + len, size - len,
+			 "use_short_preamble: %s\n", priv->use_short_preamble ? "enable" : "disable");
 	len += mwl_hif_get_info(priv->hw, p + len, size - len);
 
 	ret = simple_read_from_buffer(ubuf, count, ppos, p, len);
@@ -494,11 +537,6 @@ static ssize_t mwl_debugfs_vif_read(struct file *file, char __user *ubuf,
 		len += scnprintf(p + len, size - len, "hw_crypto_enabled: %s\n",
 				 mwl_vif->is_hw_crypto_enabled ?
 				 "true" : "false");
-		len += scnprintf(p + len, size - len,
-				 "key idx: %d\n", mwl_vif->keyidx);
-		len += scnprintf(p + len, size - len,
-				 "IV: %08x%04x\n", mwl_vif->iv32,
-				 mwl_vif->iv16);
 		beacon_info = &mwl_vif->beacon_info;
 		dump_data(p, size, &len, beacon_info->ie_wmm_ptr,
 			  beacon_info->ie_wmm_len, "WMM:");
@@ -543,56 +581,38 @@ static ssize_t mwl_debugfs_sta_read(struct file *file, char __user *ubuf,
 	if (!p)
 		return -ENOMEM;
 
+	len += scnprintf(p + len, size - len, "       macaddress|aid|ampdu|amsdu|  wds|ba_hist|amsdu_cap|  ht cap, ampdu,         rx_mask|   vht_cap|           mcs|rx bw,nss|tdls|init|wme|mfp\n");
+
 	spin_lock_bh(&priv->sta_lock);
 	list_for_each_entry(sta_info, &priv->sta_list, list) {
 		sta = container_of((void *)sta_info, struct ieee80211_sta,
 				   drv_priv);
-		len += scnprintf(p + len, size - len,
-				 "mac address: %pM\n", sta->addr);
-		len += scnprintf(p + len, size - len, "aid: %u\n", sta->aid);
-		len += scnprintf(p + len, size - len, "ampdu: %s\n",
-				 sta_info->is_ampdu_allowed ? "true" : "false");
-		len += scnprintf(p + len, size - len, "amsdu: %s\n",
-				 sta_info->is_amsdu_allowed ? "true" : "false");
-		len += scnprintf(p + len, size - len, "wds: %s\n",
-				 sta_info->wds ? "true" : "false");
-		len += scnprintf(p + len, size - len, "ba_hist: %s\n",
-				 sta_info->ba_hist.enable ?
-				 "enable" : "disable");
-		if (sta_info->is_amsdu_allowed) {
-			len += scnprintf(p + len, size - len,
-					 "amsdu cap: 0x%02x\n",
-					 sta_info->amsdu_ctrl.cap);
-		}
-		if (sta->ht_cap.ht_supported) {
-			len += scnprintf(p + len, size - len,
-					 "ht_cap: 0x%04x, ampdu: %02x, %02x\n",
-					 sta->ht_cap.cap,
-					 sta->ht_cap.ampdu_factor,
-					 sta->ht_cap.ampdu_density);
-			len += scnprintf(p + len, size - len,
-					 "rx_mask: 0x%02x, %02x, %02x, %02x\n",
-					 sta->ht_cap.mcs.rx_mask[0],
-					 sta->ht_cap.mcs.rx_mask[1],
-					 sta->ht_cap.mcs.rx_mask[2],
-					 sta->ht_cap.mcs.rx_mask[3]);
-		}
-		if (sta->vht_cap.vht_supported) {
-			len += scnprintf(p + len, size - len,
-					 "vht_cap: 0x%08x, mcs: %02x, %02x\n",
-					 sta->vht_cap.cap,
-					 sta->vht_cap.vht_mcs.rx_mcs_map,
-					 sta->vht_cap.vht_mcs.tx_mcs_map);
-		}
-		len += scnprintf(p + len, size - len, "rx_bw: %d, rx_nss: %d\n",
-				 sta->bandwidth, sta->rx_nss);
-		len += scnprintf(p + len, size - len,
-				 "tdls: %d, tdls_init: %d\n",
-				 sta->tdls, sta->tdls_initiator);
-		len += scnprintf(p + len, size - len, "wme: %d, mfp: %d\n",
-				 sta->wme, sta->mfp);
-		len += scnprintf(p + len, size - len, "IV: %08x%04x\n",
-				 sta_info->iv32, sta_info->iv16);
+
+		len += scnprintf(p + len, size - len, "%pM|%3d|%5s|%5s|%5s|%7s|     0x%02x|0x%06x, %02x-%02x,0x%02x, %02x, %02x, %02x|0x%08x|0x%04x, 0x%04x|rx %2d, %2d|%4d|%4d|%3d|%3d\n",
+			sta->addr,
+			sta->aid,
+			sta_info->is_ampdu_allowed ? "true" : "false",
+			sta_info->is_amsdu_allowed ? "true" : "false",
+			sta_info->wds ? "true" : "false",
+			sta_info->ba_hist.enable ? "enable" : "disable",
+			sta_info->is_amsdu_allowed ? sta_info->amsdu_ctrl.cap : 0 ,
+			sta->ht_cap.ht_supported ? sta->ht_cap.cap : 0,
+			sta->ht_cap.ht_supported ? sta->ht_cap.ampdu_factor : 0,
+			sta->ht_cap.ht_supported ? sta->ht_cap.ampdu_density : 0,
+			sta->ht_cap.ht_supported ? sta->ht_cap.mcs.rx_mask[0] : 0,
+			sta->ht_cap.ht_supported ? sta->ht_cap.mcs.rx_mask[1] : 0,
+			sta->ht_cap.ht_supported ? sta->ht_cap.mcs.rx_mask[2] : 0,
+			sta->ht_cap.ht_supported ? sta->ht_cap.mcs.rx_mask[3] : 0,
+			sta->vht_cap.vht_supported ? sta->vht_cap.cap : 0,
+			sta->vht_cap.vht_supported ? sta->vht_cap.vht_mcs.rx_mcs_map : 0,
+			sta->vht_cap.vht_supported ? sta->vht_cap.vht_mcs.tx_mcs_map : 0,
+			sta->bandwidth,
+			sta->rx_nss,
+			sta->tdls,
+			sta->tdls_initiator,
+			sta->wme,
+			sta->mfp
+			);
 	}
 	spin_unlock_bh(&priv->sta_lock);
 
@@ -614,25 +634,37 @@ static ssize_t mwl_debugfs_ampdu_read(struct file *file, char __user *ubuf,
 	struct mwl_sta *sta_info;
 	struct ieee80211_sta *sta;
 	ssize_t ret;
+	struct mwl_tx_info *tx_stats;
 
 	if (!p)
 		return -ENOMEM;
 
+	if (priv->chip_type == MWL8964)
+		return -EPERM;
+
+	len += scnprintf(p + len, size - len, "debug_ampdu: %d\n", priv->debug_ampdu);
+	len += scnprintf(p + len, size - len, "=================\n");
+
 	spin_lock_bh(&priv->stream_lock);
+	len += scnprintf(p + len, size - len, "stream|idx|state|       macaddress|tid|pkts|remain|start time\n");
 	for (i = 0; i < priv->ampdu_num; i++) {
 		stream = &priv->ampdu[i];
 		if (!stream->state)
 			continue;
-		len += scnprintf(p + len, size - len, "stream: %d\n", i);
-		len += scnprintf(p + len, size - len, "idx: %u\n", stream->idx);
-		len += scnprintf(p + len, size - len,
-				 "state: %u\n", stream->state);
+
 		if (stream->sta) {
-			len += scnprintf(p + len, size - len,
-					 "mac address: %pM\n",
-					 stream->sta->addr);
-			len += scnprintf(p + len, size - len,
-					 "tid: %u\n", stream->tid);
+			sta_info = mwl_dev_get_sta(stream->sta);
+			tx_stats = &sta_info->tx_stats[stream->tid];
+			len += scnprintf(p + len, size - len, "%6d|%3u|%5u|%pM|%3u|%4u|%6lu|%lu\n", i,
+			stream->idx,
+			stream->state,
+			stream->sta->addr,
+			stream->tid,
+			tx_stats->pkts,
+			(SYSADPT_TIMER_AMPDU_KEEPALIVE - (jiffies - stream->jiffies))/ HZ,
+			abs(jiffies - stream->start_time) / HZ
+			);
+
 		}
 	}
 	spin_unlock_bh(&priv->stream_lock);
@@ -655,6 +687,39 @@ static ssize_t mwl_debugfs_ampdu_read(struct file *file, char __user *ubuf,
 	ret = simple_read_from_buffer(ubuf, count, ppos, p, len);
 	free_page(page);
 
+	return ret;
+}
+
+static ssize_t mwl_debugfs_ampdu_write(struct file *file,
+					  const char __user *ubuf,
+					  size_t count, loff_t *ppos)
+{
+	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
+	unsigned long addr = get_zeroed_page(GFP_KERNEL);
+	char *buf = (char *)addr;
+	size_t buf_size = min_t(size_t, count, PAGE_SIZE - 1);
+	int value;
+	ssize_t ret;
+
+	if (!buf)
+		return -ENOMEM;
+
+	if (copy_from_user(buf, ubuf, buf_size)) {
+		ret = -EFAULT;
+		goto err;
+	}
+
+	if (kstrtoint(buf, 0, &value)) {
+		ret = -EINVAL;
+		goto err;
+	}
+
+	priv->debug_ampdu = value ? true : false;
+
+	ret = count;
+
+err:
+	free_page(addr);
 	return ret;
 }
 
@@ -843,61 +908,6 @@ static ssize_t mwl_debugfs_dump_hostcmd_write(struct file *file,
 	}
 
 	priv->dump_hostcmd = value ? true : false;
-
-	ret = count;
-
-err:
-	free_page(addr);
-	return ret;
-}
-
-static ssize_t mwl_debugfs_dump_probe_read(struct file *file,
-					   char __user *ubuf,
-					   size_t count, loff_t *ppos)
-{
-	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
-	unsigned long page = get_zeroed_page(GFP_KERNEL);
-	char *p = (char *)page;
-	int len = 0, size = PAGE_SIZE;
-	ssize_t ret;
-
-	if (!p)
-		return -ENOMEM;
-
-	len += scnprintf(p + len, size - len, "dump_probe: %s\n",
-			 priv->dump_probe ? "enable" : "disable");
-
-	ret = simple_read_from_buffer(ubuf, count, ppos, p, len);
-	free_page(page);
-
-	return ret;
-}
-
-static ssize_t mwl_debugfs_dump_probe_write(struct file *file,
-					    const char __user *ubuf,
-					    size_t count, loff_t *ppos)
-{
-	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
-	unsigned long addr = get_zeroed_page(GFP_KERNEL);
-	char *buf = (char *)addr;
-	size_t buf_size = min_t(size_t, count, PAGE_SIZE - 1);
-	int value;
-	ssize_t ret;
-
-	if (!buf)
-		return -ENOMEM;
-
-	if (copy_from_user(buf, ubuf, buf_size)) {
-		ret = -EFAULT;
-		goto err;
-	}
-
-	if (kstrtoint(buf, 0, &value)) {
-		ret = -EINVAL;
-		goto err;
-	}
-
-	priv->dump_probe = value ? true : false;
 
 	ret = count;
 
@@ -1332,7 +1342,7 @@ done:
 				 priv->reg_value);
 	else
 		len += scnprintf(p + len, size - len,
-				 "error: %d(%u 0x%08x 0x%08x)\n",
+				 "error: %zd(%u 0x%08x 0x%08x)\n",
 				 ret, priv->reg_type, priv->reg_offset,
 				 priv->reg_value);
 
@@ -1470,8 +1480,6 @@ static ssize_t mwl_debugfs_ratetable_read(struct file *file, char __user *ubuf,
 					nss = 2;
 				else if ((mcs >= 16) && (mcs < 24))
 					nss = 3;
-				else if ((mcs >= 24) && (mcs < 32))
-					nss = 4;
 			}
 		}
 
@@ -2087,55 +2095,17 @@ err:
 	return ret;
 }
 
-static ssize_t mwl_debugfs_turboqam_read(struct file *file, char __user *user_buf,
-			     size_t count, loff_t *ppos)
-{
-	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
-	char buf[32];
-	unsigned int len;
-
-	len = sprintf(buf, "0x%08x\n", priv->turboqam);
-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
-}
-void mwl_set_caps(struct mwl_priv *priv, bool qam256);
-
-static ssize_t mwl_debugfs_turboqam_write(struct file *file, const char __user *user_buf,
-			     size_t count, loff_t *ppos)
-{
-	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
-	unsigned long turboqam;
-	char buf[32];
-	ssize_t len;
-
-	len = min(count, sizeof(buf) - 1);
-	if (copy_from_user(buf, user_buf, len))
-		return -EFAULT;
-
-	buf[len] = '\0';
-	if (kstrtoul(buf, 0, &turboqam))
-		return -EINVAL;
-		
-       priv->turboqam = turboqam;
-	if (turboqam)
-		mwl_set_caps(priv, true);
-	else
-		mwl_set_caps(priv, false);
-	return count;
-}
-
-MWLWIFI_DEBUGFS_FILE_OPS(turboqam);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(info);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(tx_status);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(rx_status);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(vif);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(sta);
-MWLWIFI_DEBUGFS_FILE_READ_OPS(ampdu);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(stnid);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(device_pwrtbl);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(txpwrlmt);
+MWLWIFI_DEBUGFS_FILE_OPS(ampdu);
 MWLWIFI_DEBUGFS_FILE_OPS(tx_amsdu);
 MWLWIFI_DEBUGFS_FILE_OPS(dump_hostcmd);
-MWLWIFI_DEBUGFS_FILE_OPS(dump_probe);
 MWLWIFI_DEBUGFS_FILE_OPS(heartbeat);
 MWLWIFI_DEBUGFS_FILE_OPS(dfs_test);
 MWLWIFI_DEBUGFS_FILE_OPS(dfs_channel);
@@ -2173,7 +2143,6 @@ void mwl_debugfs_init(struct ieee80211_hw *hw)
 	MWLWIFI_DEBUGFS_ADD_FILE(txpwrlmt);
 	MWLWIFI_DEBUGFS_ADD_FILE(tx_amsdu);
 	MWLWIFI_DEBUGFS_ADD_FILE(dump_hostcmd);
-	MWLWIFI_DEBUGFS_ADD_FILE(dump_probe);
 	MWLWIFI_DEBUGFS_ADD_FILE(heartbeat);
 	MWLWIFI_DEBUGFS_ADD_FILE(dfs_test);
 	MWLWIFI_DEBUGFS_ADD_FILE(dfs_channel);
@@ -2188,7 +2157,6 @@ void mwl_debugfs_init(struct ieee80211_hw *hw)
 	MWLWIFI_DEBUGFS_ADD_FILE(core_dump);
 	MWLWIFI_DEBUGFS_ADD_FILE(mcast_cts);
 	MWLWIFI_DEBUGFS_ADD_FILE(wmmedcaap);
-	MWLWIFI_DEBUGFS_ADD_FILE(turboqam);
 }
 
 void mwl_debugfs_remove(struct ieee80211_hw *hw)

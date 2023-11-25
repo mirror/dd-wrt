@@ -33,6 +33,18 @@
 #define DHCPRELEASE     7
 #define DHCPINFORM      8
 
+static inline bool utils_is_crypted(struct ieee80211_hdr *wh)
+{
+	if (!ieee80211_has_protected(wh->frame_control))
+		return false;
+
+	if (ieee80211_is_auth(wh->frame_control))
+		return false;
+
+	return true;
+}
+
+
 static inline int utils_tid_to_ac(u8 tid)
 {
 	switch (tid) {

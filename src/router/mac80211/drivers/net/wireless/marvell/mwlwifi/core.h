@@ -186,6 +186,9 @@ struct mwl_ampdu_stream {
 	u8 tid;
 	u8 state;
 	int idx;
+	int desc_num;
+	unsigned long jiffies;
+	unsigned long start_time;
 };
 
 struct mwl_stnid {
@@ -219,7 +222,7 @@ struct mwl_priv {
 	u8 number_of_channels;
 	struct mwl_device_pwr_tbl device_pwr_tbl[SYSADPT_MAX_NUM_CHANNELS];
 	int chip_type;
-	bool turboqam;
+
 	bool use_short_slot;
 	bool use_short_preamble;
 
@@ -237,7 +240,6 @@ struct mwl_priv {
 	int antenna_rx;
 	bool tx_amsdu;
 	bool dump_hostcmd;
-	bool dump_probe;
 
 	struct mwl_tx_pwr_tbl tx_pwr_tbl[SYSADPT_MAX_NUM_CHANNELS];
 	bool cdd;
@@ -254,6 +256,7 @@ struct mwl_priv {
 	bool cmd_timeout;
 	bool rmmod;
 	int heartbeat;
+	unsigned long jiffies_ampdu;
 	u32 pre_jiffies;
 	bool heartbeating;
 	struct work_struct heartbeat_handle;
@@ -350,6 +353,13 @@ struct mwl_priv {
 	int fixed_rate;
 	bool coredump_text;
 	u32 ra_tx_attempt[2][6];
+
+	bool debug_ampdu;
+	bool decrypt_rx;
+	bool rate_adapt_mode;
+	bool dwds_stamode;
+	bool optimization_level;
+	u32 feature;
 };
 
 struct beacon_info {
@@ -402,9 +412,6 @@ struct mwl_vif {
 	bool set_beacon;
 	int basic_rate_idx;
 	u8 broadcast_ssid;
-	u16 iv16;
-	u32 iv32;
-	s8 keyidx;
 };
 
 struct mwl_tx_info {
@@ -414,8 +421,6 @@ struct mwl_tx_info {
 
 struct mwl_amsdu_frag {
 	struct sk_buff *skb;
-	u8 *cur_pos;
-	unsigned long jiffies;
 	u8 pad;
 	u8 num;
 };
@@ -423,6 +428,7 @@ struct mwl_amsdu_frag {
 struct mwl_amsdu_ctrl {
 	struct mwl_amsdu_frag frag[SYSADPT_TX_WMM_QUEUES];
 	u8 cap;
+	int amsdu_allow_size;
 };
 
 struct mwl_tx_ba_stats {
@@ -484,8 +490,6 @@ struct mwl_sta {
 	u16 rx_gi;
 	u16 rx_rate_mcs;
 	u8 rx_signal;
-	u16 iv16;
-	u32 iv32;
 };
 
 static inline struct mwl_vif *mwl_dev_get_vif(const struct ieee80211_vif *vif)
@@ -511,12 +515,12 @@ int mwl_init_hw(struct ieee80211_hw *hw, const char *fw_name,
 
 void mwl_deinit_hw(struct ieee80211_hw *hw);
 
+/* Defined in mac80211.c. */
+extern const struct ieee80211_ops mwl_mac80211_ops;
+
 void mwl_set_vht_caps(struct mwl_priv *priv,
 			     struct ieee80211_supported_band *band, bool on);
 void mwl_set_ht_caps(struct mwl_priv *priv,
 			     struct ieee80211_supported_band *band);
-
-/* Defined in mac80211.c. */
-extern const struct ieee80211_ops mwl_mac80211_ops;
 
 #endif /* _CORE_H_ */

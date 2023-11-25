@@ -213,12 +213,12 @@ static inline void mwl_hif_tx_del_pkts_via_sta(struct ieee80211_hw *hw,
 }
 
 static inline void mwl_hif_tx_del_ampdu_pkts(struct ieee80211_hw *hw,
-					     struct ieee80211_sta *sta, u8 tid)
+					     struct ieee80211_sta *sta, u8 desc_num)
 {
 	struct mwl_priv *priv = hw->priv;
 
 	if (priv->hif.ops->tx_del_ampdu_pkts)
-		priv->hif.ops->tx_del_ampdu_pkts(hw, sta, tid);
+		priv->hif.ops->tx_del_ampdu_pkts(hw, sta, desc_num);
 }
 
 static inline void mwl_hif_tx_del_sta_amsdu_pkts(struct ieee80211_hw *hw,

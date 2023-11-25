@@ -2,18 +2,8 @@
 mac80211 driver for the Marvell 88W8x64 802.11ac chip
 
 ## Building mwlwifi With OpenWrt/LEDE
-1. Modify `package/kernel/mwlwifi/Makefile`:
-    ```
-    PKG_VERSION:=10.3.0.17-20160601
-    PKG_SOURCE_VERSION:=4bb95ba1aeccce506a95499b49b9b844ecfae8a1
-    ```
+[See building for OpenWrt](docs/OPENWRT.md)
 
-2. Rename `package/kernel/mwlwifi/patches` to `package/kernel/mwlwifi/patches.tmp`.
-3. Run the following commands:
-    ```sh
-    make package/kernel/mwlwifi/clean
-    make V=s (-jx)
-    ```
 
 ### Special Considerations
 * After driver 10.3.0.17-20160603, [MAX-MPDU-7991] should be removed from vht_capab command of hostapd.
@@ -122,3 +112,21 @@ mac80211 driver for the Marvell 88W8x64 802.11ac chip
 3. You can use `make V=s` to build the whole image or `make V=s package/kernel/mwlwifi/compile` to build mwlwifi package. The generated whole image or mwlwifi package can be found under directory "bin".
 
 Due to package version being the same as previous one, you need to add option `--force-reinstall` when you use `opkg` to update mwlwifi package on your device.
+
+## Monitor interface for debug
+
+1. Create moinitor interface mon0:
+    ```sh
+    iw wlan0/wlan1 interface add mon0 type monitor
+    ifconfig mon0 up
+    ```
+
+2. Use tcpdump to dump dhcp packets:
+    ```sh
+    tcpdump -vvvi mon0 -n port 67 and port 68
+    ```
+
+3. Use tcpdump to dump icmp packets:
+    ```sh
+    tcpdump -vvvi mon0 icmp
+    ```

@@ -919,7 +919,7 @@ static u16 mwl_fwcmd_parse_txpwrlmt_cfg(const u8 *src, size_t len,
 		if (isxdigit(*ptr)) {
 			byte_str[0] = *ptr++;
 			byte_str[1] = *ptr++;
-			if (kstrtol(byte_str, 16, &res)){
+			if (kstrtol(byte_str, 16, &res)) {
 				return -EINVAL;
 			}
 			*dptr++ = res;
@@ -942,7 +942,6 @@ const struct hostcmd_get_hw_spec
 
 	mutex_lock(&priv->fwcmd_mutex);
 
-	wiphy_dbg(hw->wiphy, "pcmd = %p\n", pcmd);
 	memset(pcmd, 0x00, sizeof(*pcmd));
 	eth_broadcast_addr(pcmd->hw_spec.permanent_addr);
 	pcmd->cmd_hdr.cmd = cpu_to_le16(HOSTCMD_CMD_GET_HW_SPEC);
@@ -1550,6 +1549,7 @@ int mwl_fwcmd_set_rf_channel(struct ieee80211_hw *hw,
 	pcmd->cmd_hdr.cmd = cpu_to_le16(HOSTCMD_CMD_SET_RF_CHANNEL);
 	pcmd->action = cpu_to_le16(WL_SET);
 	pcmd->curr_chnl = channel->hw_value;
+
 	if (channel->band == NL80211_BAND_2GHZ) {
 		freq_band = FREQ_BAND_2DOT4GHZ;
 	} else if (channel->band == NL80211_BAND_5GHZ) {
@@ -2876,6 +2876,7 @@ struct mwl_ampdu_stream *mwl_fwcmd_add_stream(struct ieee80211_hw *hw,
 	struct mwl_ampdu_stream *stream;
 	struct mwl_sta *sta_info = mwl_dev_get_sta(sta);
 	int idx;
+	int ac = utils_tid_to_ac(tid);
 
 	if (priv->chip_type == MWL8964) {
 		idx = ((sta_info->stnid - 1) * SYSADPT_MAX_TID) + tid;
@@ -2889,16 +2890,35 @@ struct mwl_ampdu_stream *mwl_fwcmd_add_stream(struct ieee80211_hw *hw,
 			return stream;
 		}
 	} else {
-		for (idx = 0; idx < priv->ampdu_num; idx++) {
-			stream = &priv->ampdu[idx];
+		switch(ac) {
+			case IEEE80211_AC_VI:
+			case IEEE80211_AC_VO:
+				idx = priv->ampdu_num;
+				while (idx--) {
+					stream = &priv->ampdu[idx];
 
-			if (stream->state == AMPDU_NO_STREAM) {
-				stream->sta = sta;
-				stream->state = AMPDU_STREAM_NEW;
-				stream->tid = tid;
-				stream->idx = idx;
-				return stream;
-			}
+					if (stream->state == AMPDU_NO_STREAM) {
+						stream->sta = sta;
+						stream->state = AMPDU_STREAM_NEW;
+						stream->tid = tid;
+						stream->idx = idx;
+						return stream;
+					}
+				};
+				break;
+			default:
+				for (idx = 0; idx < priv->ampdu_num; idx++) {
+					stream = &priv->ampdu[idx];
+
+					if (stream->state == AMPDU_NO_STREAM) {
+						stream->sta = sta;
+						stream->state = AMPDU_STREAM_NEW;
+						stream->tid = tid;
+						stream->idx = idx;
+						return stream;
+					}
+				};
+			break;
 		}
 	}
 
@@ -3603,7 +3623,7 @@ int mwl_fwcmd_get_fw_core_dump(struct ieee80211_hw *hw,
 	core_dump->size_kb = pcmd->cmd_data.coredump.size_kb;
 	core_dump->flags = pcmd->cmd_data.coredump.flags;
 	memcpy(buff,
-	       (const void *)((u32)pcmd +
+	       (const void *)((uintptr_t)pcmd +
 	       sizeof(struct hostcmd_cmd_get_fw_core_dump) -
 	       sizeof(struct hostcmd_cmd_get_fw_core_dump_)),
 	       MAX_CORE_DUMP_BUFFER);
@@ -3752,7 +3772,7 @@ int mwl_fwcmd_set_txpwrlmt_cfg_data(struct ieee80211_hw *hw)
 		parsed_len = mwl_fwcmd_parse_txpwrlmt_cfg(ptr, size,
 							  data_len, pcmd->data);
 
-		if (parsed_len == -EINVAL){
+		if (parsed_len == -EINVAL) {
 			mutex_unlock(&priv->fwcmd_mutex);
 			release_firmware(priv->txpwrlmt_file);
 			priv->txpwrlmt_file = NULL;

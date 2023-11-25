@@ -99,6 +99,17 @@ static const struct ieee80211_rate mwl_rates_50[] = {
 	{ .bitrate = 540, .hw_value = 108, },
 };
 
+static const u32 cipher_suites[] = {
+		WLAN_CIPHER_SUITE_WEP40,
+		WLAN_CIPHER_SUITE_WEP104,
+		WLAN_CIPHER_SUITE_TKIP,
+		WLAN_CIPHER_SUITE_CCMP,
+		WLAN_CIPHER_SUITE_AES_CMAC,
+		WLAN_CIPHER_SUITE_BIP_CMAC_256,
+		WLAN_CIPHER_SUITE_BIP_GMAC_128,
+		WLAN_CIPHER_SUITE_BIP_GMAC_256,
+};
+
 static const struct ieee80211_iface_limit ap_if_limits[] = {
 	{ .max = SYSADPT_NUM_OF_AP, .types = BIT(NL80211_IFTYPE_AP) },
 #if defined(CPTCFG_MAC80211_MESH) || defined(CONFIG_MAC80211_MESH)
@@ -424,7 +435,6 @@ static void mwl_regd_init(struct mwl_priv *priv)
 		}
 }
 
-
 void mwl_set_ht_caps(struct mwl_priv *priv,
 			    struct ieee80211_supported_band *band)
 {
@@ -460,16 +470,14 @@ void mwl_set_ht_caps(struct mwl_priv *priv,
 	band->ht_cap.mcs.rx_mask[4] = 0x01;
 
 	band->ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
-
-	if  (priv->antenna_rx == ANTENNA_RX_1)
+	if (priv->antenna_rx == ANTENNA_RX_1)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(150);
-	if  (priv->antenna_rx == ANTENNA_RX_2)
+	if (priv->antenna_rx == ANTENNA_RX_2)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(300);
-	if  (priv->antenna_rx == ANTENNA_RX_3)
+	if (priv->antenna_tx == ANTENNA_RX_3)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(450);
-	if  (priv->antenna_rx == ANTENNA_RX_4_AUTO) {
+	if (priv->antenna_rx == ANTENNA_RX_4_AUTO)
 		band->ht_cap.mcs.rx_highest = cpu_to_le16(450);
-	}
 }
 
 void mwl_set_vht_caps(struct mwl_priv *priv,
@@ -487,6 +495,7 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 		band->vht_cap.cap = 0;
 		return;
 	} 
+
 	band->vht_cap.vht_supported = 1;
 
 	if (priv->chip_type == MWL8964) {
@@ -514,6 +523,7 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 		if (priv->antenna_tx != ANTENNA_TX_1)
 			band->vht_cap.cap |= IEEE80211_VHT_CAP_TXSTBC;
 	}
+
 	if (priv->chip_type != MWL8964) {
 		if (priv->antenna_rx == ANTENNA_RX_1) {
 			rxhighest = cpu_to_le16(433);
@@ -589,8 +599,8 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 
 	band->vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(mcsmap);
 
-	band->vht_cap.vht_mcs.rx_highest=rxhighest;
-	band->vht_cap.vht_mcs.tx_highest=txhighest;
+	band->vht_cap.vht_mcs.rx_highest = rxhighest;
+	band->vht_cap.vht_mcs.tx_highest = txhighest;
 
 	if (band->vht_cap.cap & (IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE |
 	    IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE)) {
@@ -609,7 +619,7 @@ void mwl_set_vht_caps(struct mwl_priv *priv,
 	}
 }
 
-void mwl_set_caps(struct mwl_priv *priv, bool qam256)
+static void mwl_set_caps(struct mwl_priv *priv)
 {
 	struct ieee80211_hw *hw;
 
@@ -632,7 +642,7 @@ void mwl_set_caps(struct mwl_priv *priv, bool qam256)
 		priv->band_24.n_bitrates = ARRAY_SIZE(mwl_rates_24);
 
 		mwl_set_ht_caps(priv, &priv->band_24);
-//		mwl_set_vht_caps(priv, &priv->band_24, qam256);
+//		mwl_set_vht_caps(priv, &priv->band_24, true);
 
 		hw->wiphy->bands[NL80211_BAND_2GHZ] = &priv->band_24;
 	}
@@ -827,17 +837,6 @@ static int mwl_wl_init(struct mwl_priv *priv)
 	u16 addr_num;
 	struct mac_address *mac_addr;
 	u8 last_nibble;
-	static const u32 cipher_suites[] = {
-		/* keep WEP first, it may be removed below */
-		WLAN_CIPHER_SUITE_WEP40,
-		WLAN_CIPHER_SUITE_WEP104,
-		WLAN_CIPHER_SUITE_TKIP,
-		WLAN_CIPHER_SUITE_CCMP,
-		WLAN_CIPHER_SUITE_AES_CMAC,
-		WLAN_CIPHER_SUITE_BIP_CMAC_256,
-		WLAN_CIPHER_SUITE_BIP_GMAC_128,
-		WLAN_CIPHER_SUITE_BIP_GMAC_256,
-	};
 
 	hw->extra_tx_headroom = mwl_hif_get_tx_head_room(hw);
 	hw->queues = SYSADPT_TX_WMM_QUEUES;
@@ -859,11 +858,11 @@ static int mwl_wl_init(struct mwl_priv *priv)
 	hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_TDLS;
 	hw->wiphy->flags |= WIPHY_FLAG_AP_UAPSD;
 
-	hw->vif_data_size = sizeof(struct mwl_vif);
-	hw->sta_data_size = sizeof(struct mwl_sta);
-
 	hw->wiphy->cipher_suites = cipher_suites;
 	hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
+
+	hw->vif_data_size = sizeof(struct mwl_vif);
+	hw->sta_data_size = sizeof(struct mwl_sta);
 
 	priv->ap_macids_supported = 0x0000ffff;
 	priv->sta_macids_supported = 0x00010000;
@@ -996,7 +995,7 @@ static int mwl_wl_init(struct mwl_priv *priv)
 		hw->wiphy->available_antennas_tx = 0xf;
 	}
 
-	mwl_set_caps(priv, false);
+	mwl_set_caps(priv);
 
 	priv->led_blink_enable = 1;
 	priv->led_blink_rate = LED_BLINK_RATE_MID;
@@ -1018,15 +1017,15 @@ static int mwl_wl_init(struct mwl_priv *priv)
 		wiphy_err(hw->wiphy, "fail to register IRQ handler\n");
 		goto err_register_irq;
 	}
-
 #ifdef timer_setup
 	timer_setup(&priv->period_timer, timer_routine, 0);
 #else
- 	setup_timer(&priv->period_timer, timer_routine, (unsigned long)hw);
+	setup_timer(&priv->period_timer, timer_routine, (unsigned long)hw);
 #endif
 	mod_timer(&priv->period_timer, jiffies +
 		  msecs_to_jiffies(SYSADPT_TIMER_WAKEUP_TIME));
 
+	priv->jiffies_ampdu = jiffies;
 	return rc;
 
 err_register_hw:
@@ -1097,6 +1096,7 @@ struct ieee80211_hw *mwl_alloc_hw(int bus_type,
 	priv->hif.bus = bus_type;
 	priv->hif.ops = ops;
 	priv->hif.priv = (char *)priv + ALIGN(sizeof(*priv), NETDEV_ALIGN);
+	priv->debug_ampdu = false;
 	priv->ampdu_num = mwl_hif_get_ampdu_num(hw);
 	priv->ampdu =
 		kzalloc(priv->ampdu_num * sizeof(*priv->ampdu), GFP_KERNEL);

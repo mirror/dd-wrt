@@ -992,7 +992,11 @@ int mhi_register_controller(struct mhi_controller *mhi_cntrl,
 	mhi_cntrl->major_version = FIELD_GET(SOC_HW_VERSION_MAJOR_VER_BMSK, soc_info);
 	mhi_cntrl->minor_version = FIELD_GET(SOC_HW_VERSION_MINOR_VER_BMSK, soc_info);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,2,0))
+	mhi_cntrl->index = ida_simple_get(&mhi_controller_ida, 0, 0, GFP_KERNEL);
+#else
 	mhi_cntrl->index = ida_alloc(&mhi_controller_ida, GFP_KERNEL);
+#endif
 	if (mhi_cntrl->index < 0) {
 		ret = mhi_cntrl->index;
 		goto err_destroy_wq;
@@ -1033,7 +1037,11 @@ err_release_dev:
 error_setup_irq:
 	mhi_deinit_free_irq(mhi_cntrl);
 err_ida_free:
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,2,0))
+	ida_simple_remove(&mhi_controller_ida, mhi_cntrl->index);
+#else
 	ida_free(&mhi_controller_ida, mhi_cntrl->index);
+#endif
 err_destroy_wq:
 	destroy_workqueue(mhi_cntrl->hiprio_wq);
 err_free_cmd:
@@ -1071,7 +1079,11 @@ void mhi_unregister_controller(struct mhi_controller *mhi_cntrl)
 	device_del(&mhi_dev->dev);
 	put_device(&mhi_dev->dev);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,2,0))
+	ida_simple_remove(&mhi_controller_ida, mhi_cntrl->index);
+#else
 	ida_free(&mhi_controller_ida, mhi_cntrl->index);
+#endif
 }
 EXPORT_SYMBOL_GPL(mhi_unregister_controller);
 

@@ -188,8 +188,6 @@ u32 utils_get_init_tx_rate(struct mwl_priv *priv, struct ieee80211_conf *conf,
 		nss = 2;
 		break;
 	case ANTENNA_TX_3:
-		nss = 3;
-		break;
 	case ANTENNA_TX_4_AUTO:
 		nss = 3;
 		break;
