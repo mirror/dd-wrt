@@ -365,9 +365,9 @@ endif
 #        "-p", p1, "-p", p2])
 #
 #
-#	./tools/newport/ptgen -o $(ARCH)-uclibc/newport.img -p "1:2048:28671" -p "0x83:16M:128M"
-
+#	./tools/newport/ptgen -o $(ARCH)-uclibc/newport.img -p "1:2048:28671" -p "0x83:16M:256M"
 	cp tools/newport/base4.img $(ARCH)-uclibc/newport.img
+	./tools/newport/ptgen -o $(ARCH)-uclibc/newport.img -p "1:2048:28671" -p "0x83:16M:128M" -p "0x83:144M:4096M"
 	# inject kernel.itb into FATFS
 ##	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img mkfs
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/kernel.itb /
@@ -385,6 +385,8 @@ endif
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm -b 262144
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/newport.img bs=16M seek=1
 	# compress it
+	dd if=$(ARCH)-uclibc/newport.img of=$(ARCH)-uclibc/newport.align bs=1048576 conv=sync
+	mv -f $(ARCH)-uclibc/newport.align $(ARCH)-uclibc/newport.img
 	gzip -k -f $(ARCH)-uclibc/newport.img 
 	./tools/newp $(ARCH)-uclibc/newport.img $(ARCH)-uclibc/newport-webupgrade.bin
 	
