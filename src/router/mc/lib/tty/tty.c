@@ -407,7 +407,7 @@ tty_init_xterm_support (gboolean is_xterm)
     if (xmouse_seq != NULL)
     {
         if (strcmp (xmouse_seq, ESC_STR "[<") == 0)
-            xmouse_seq = ESC_STR "[M";
+            xmouse_seq = NULL;
 
         xmouse_extended_seq = ESC_STR "[<";
     }
