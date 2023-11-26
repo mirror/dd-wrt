@@ -2714,22 +2714,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 
 #endif				// end BUFFALO
-#ifdef HAVE_WPA3
-		sprintf(ssid, "%s_wnm_sleep_mode", var);
-		showRadio(wp, "wl_basic.wnm_sleep_mode", ssid);
-		sprintf(ssid, "%s_wnm_sleep_mode_no_keys", var);
-		showRadio(wp, "wl_basic.wnm_sleep_mode_no_keys", ssid);
-		sprintf(ssid, "%s_bss_transition", var);
-		showRadio(wp, "wl_basic.bss_transition", ssid);
-		sprintf(ssid, "%s_80211k", var);
-		showRadio(wp, "wl_basic.80211k", ssid);
-//		sprintf(ssid, "%s_rrm_neighbor_report", var);
-//		showRadio(wp, "wl_basic.rrm_neighbor_report", ssid);
-//		sprintf(ssid, "%s_rrm_beacon_report", var);
-//		showRadio(wp, "wl_basic.rrm_beacon_report", ssid);
-		sprintf(ssid, "%s_mbo", var);
-		showRadio(wp, "wl_basic.mbo", ssid);
-#endif
 		sprintf(ssid, "%s_ap_isolate", var);
 		showRadio(wp, "wl_adv.label11", ssid);
 #if 0				//def HAVE_80211AC
@@ -3620,23 +3604,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 #ifdef HAVE_MADWIFI
-#ifdef HAVE_WPA3
-		char wnm[32];
-		sprintf(wnm, "%s_wnm_sleep_mode", prefix);
-		showRadio(wp, "wl_basic.wnm_sleep_mode", wnm);
-		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", prefix);
-		showRadio(wp, "wl_basic.wnm_sleep_mode_no_keys", wnm);
-		sprintf(wnm, "%s_bss_transition", prefix);
-		showRadio(wp, "wl_basic.bss_transition", wnm);
-		sprintf(wnm, "%s_80211k", prefix);
-		showRadio(wp, "wl_basic.80211k", wnm);
-//		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
-//		showRadio(wp, "wl_basic.rrm_neighbor_report", wnm);
-//		sprintf(wnm, "%s_rrm_beacon_report", prefix);
-//		showRadio(wp, "wl_basic.rrm_beacon_report", wnm);
-		sprintf(wnm, "%s_mbo", prefix);
-		showRadio(wp, "wl_basic.mbo", wnm);
-#endif
 	sprintf(wl_isolate, "%s_ap_isolate", prefix);
 	showRadio(wp, "wl_adv.label11", wl_isolate);
 	char bcn[32];
@@ -4846,23 +4813,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 // ap isolation
 #ifdef HAVE_MADWIFI
-#ifdef HAVE_WPA3
-		char wnm[32];
-		sprintf(wnm, "%s_wnm_sleep_mode", prefix);
-		showRadio(wp, "wl_basic.wnm_sleep_mode", wnm);
-		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", prefix);
-		showRadio(wp, "wl_basic.wnm_sleep_mode_no_keys", wnm);
-		sprintf(wnm, "%s_bss_transition", prefix);
-		showRadio(wp, "wl_basic.bss_transition", wnm);
-		sprintf(wnm, "%s_80211k", prefix);
-		showRadio(wp, "wl_basic.80211k", wnm);
-//		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
-//		showRadio(wp, "wl_basic.rrm_neighbor_report", wnm);
-//		sprintf(wnm, "%s_rrm_beacon_report", prefix);
-//		showRadio(wp, "wl_basic.rrm_beacon_report", wnm);
-		sprintf(wnm, "%s_mbo", prefix);
-		showRadio(wp, "wl_basic.mbo", wnm);
-#endif
 	sprintf(wl_isolate, "%s_ap_isolate", prefix);
 	showRadio(wp, "wl_adv.label11", wl_isolate);
 	char bcn[32];
