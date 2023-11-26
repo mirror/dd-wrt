@@ -1684,7 +1684,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "proxy_arp=%d\n", nvram_nmatch("1", "%s_proxy_arp", ifname) ? 1 : 0);
 		if (nvram_nmatch("1", "%s_time_advertisement", ifname)) {
 			fprintf(fp, "time_advertisement=2\n");
-			fprintf(fp, "time_zone=%s\n", nvram_nget("%s_time_zone", vvar));
+			fprintf(fp, "time_zone=%s\n", nvram_nget("%s_time_zone", ifname));
 		} else {
 			fprintf(fp, "time_advertisement=0\n");		
 		}
