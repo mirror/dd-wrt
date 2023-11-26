@@ -1708,7 +1708,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "rrm_neighbor_report=%d\n", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
 		fprintf(fp, "rrm_beacon_report=%d\n", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
 	}
-	fprintf(fp, "mbo=%d", nvram_nmatch("1", "%s_mbo", ifname) ? 1 : 0);
+	fprintf(fp, "mbo=%d\n", nvram_nmatch("1", "%s_mbo", ifname) ? 1 : 0);
+	char mbo_pref[64];
+	sprintf(mbo_pref, "%s_mbo_cell_data_conn_pref", ifname);
+	fprintf(fp, "mbo_cell_data_conn_pref=%s\n", nvram_default_get(mbo_pref, "0"));
 #endif
 	MAC80211DEBUG();
 	char *v = nvram_nget("%s_config", ifname);
