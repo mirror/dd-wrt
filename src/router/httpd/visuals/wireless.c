@@ -792,6 +792,22 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "</div>\n");
 		char wnm[64];
 		websWrite(wp, "<div id=\"%s_id80211v\">\n", vvar);
+
+		sprintf(wnm, "%s_time_advertisement", vvar);
+		showRadio(wp, "wpa.time_advertisement", wnm);
+		sprintf(wnm, "%s_time_zone", vvar);
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
+		websWrite(wp, "<select name=\"%s_time_zone\">\n", nvram_default_get(wnm, "GMT0"));
+		int i;
+		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
+			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_string, "%s_time_zone", vvar) ? "selected=\"selected\"" : "",
+				  allTimezones[i].tz_name);
+		}
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
+
 		sprintf(wnm, "%s_wnm_sleep_mode", vvar);
 		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
 		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", vvar);
