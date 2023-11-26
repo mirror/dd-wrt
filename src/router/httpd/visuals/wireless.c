@@ -780,67 +780,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_iddomain\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
-		char s80211v[64];
-		sprintf(s80211v, "%s_80211v", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  vvar, prefix, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  vvar, prefix, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
 		char wnm[64];
-		websWrite(wp, "<div id=\"%s_id80211v\">\n", vvar);
-
-		sprintf(wnm, "%s_time_advertisement", vvar);
-		showRadio(wp, "wpa.time_advertisement", wnm);
-		sprintf(wnm, "%s_time_zone", vvar);
-
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_time_zone\">\n", nvram_default_get(wnm, "GMT0"));
-		int i;
-		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_string, "%s_time_zone", vvar) ? "selected=\"selected\"" : "",
-				  allTimezones[i].tz_name);
-		}
-		websWrite(wp, "</select>\n");
-		websWrite(wp, "</div>\n");
-
-		sprintf(wnm, "%s_wnm_sleep_mode", vvar);
-		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
-		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", vvar);
-		showRadio(wp, "wpa.wnm_sleep_mode_no_keys", wnm);
-		sprintf(wnm, "%s_bss_transition", vvar);
-		showRadio(wp, "wpa.bss_transition", wnm);
-		sprintf(wnm, "%s_proxy_arp", vvar);
-		showRadio(wp, "wpa.proxy_arp", wnm);
-
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211v\", %s);\n", prefix, vvar, nvram_matchi(s80211v, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-
-		char s80211k[64];
-		sprintf(s80211k, "%s_80211k", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211k)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  vvar, prefix, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  vvar, prefix, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<div id=\"%s_id80211k\">\n", vvar);
-		sprintf(wnm, "%s_rrm_neighbor_report", vvar);
-		showRadio(wp, "wpa.rrm_neighbor_report", wnm);
-		sprintf(wnm, "%s_rrm_beacon_report", vvar);
-		showRadio(wp, "wpa.rrm_beacon_report", wnm);
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", prefix, vvar, nvram_matchi(s80211k, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
 		sprintf(wnm, "%s_mbo", vvar);
 		showRadio(wp, "wpa.mbo", wnm);
 	}
