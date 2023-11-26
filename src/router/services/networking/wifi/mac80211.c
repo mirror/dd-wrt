@@ -1677,18 +1677,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	}
 #ifdef HAVE_WPA3
-	if (nvram_nmatch("1", "%s_wnm_sleep_mode", ifname))
-		fprintf(fp, "wnm_sleep_mode=1");
-	if (nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname))
-		fprintf(fp, "wnm_sleep_mode_no_keys=1");
-	if (nvram_nmatch("1", "%s_bss_transition", ifname))
-		fprintf(fp, "bss_transition=1");
-	if (nvram_nmatch("1", "%s_rrm_neighbor_report", ifname))
-		fprintf(fp, "rrm_neighbor_report=1");
-	if (nvram_nmatch("1", "%s_rrm_beacon_report", ifname))
-		fprintf(fp, "rrm_beacon_report=1");
-	if (nvram_nmatch("1", "%s_mbo", ifname))
-		fprintf(fp, "mbo=1");
+	if (nvram_nmatch("1", "%s_80211v", ifname)) {
+		fprintf(fp, "wnm_sleep_mode=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode", ifname) ? 1 : 0);
+		fprintf(fp, "wnm_sleep_mode_no_keys=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname) ? 1 : 0);
+		fprintf(fp, "bss_transition=%d\n", nvram_nmatch("1", "%s_bss_transition", ifname) ? 1 : 0);
+	}
+	if (nvram_nmatch("1", "%s_80211k", ifname)) {
+		fprintf(fp, "rrm_neighbor_report=%d", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
+		fprintf(fp, "rrm_beacon_report=%d", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
+	}
+	fprintf(fp, "mbo=%d", nvram_nmatch("1", "%s_mbo", ifname) ? 1 : 0);
 #endif
 	MAC80211DEBUG();
 	char *v = nvram_nget("%s_config", ifname);
