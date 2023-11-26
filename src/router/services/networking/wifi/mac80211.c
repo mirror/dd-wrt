@@ -1676,6 +1676,20 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 	}
+#ifdef HAVE_WPA3
+	if (nvram_nmatch("1", "%s_wnm_sleep_mode", ifname))
+		fprintf(fp, "wnm_sleep_mode=1");
+	if (nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname))
+		fprintf(fp, "wnm_sleep_mode_no_keys=1");
+	if (nvram_nmatch("1", "%s_bss_transition", ifname))
+		fprintf(fp, "bss_transition=1");
+	if (nvram_nmatch("1", "%s_rrm_neighbor_report", ifname))
+		fprintf(fp, "rrm_neighbor_report=1");
+	if (nvram_nmatch("1", "%s_rrm_beacon_report", ifname))
+		fprintf(fp, "rrm_beacon_report=1");
+	if (nvram_nmatch("1", "%s_mbo", ifname))
+		fprintf(fp, "mbo=1");
+#endif
 	MAC80211DEBUG();
 	char *v = nvram_nget("%s_config", ifname);
 	fprintf(fp, "\n");
