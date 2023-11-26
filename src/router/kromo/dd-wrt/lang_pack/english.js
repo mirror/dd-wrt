@@ -2719,6 +2719,8 @@ wpa.80211k="802.11k Support";
 wpa.rrm_neighbor_report="Neighbor report via radio";
 wpa.rrm_beacon_report="Beacon report via radio";
 wpa.proxy_arp="Proxy ARP";
+wpa.time_advertisement="Time advertisement";
+wpa.time_zone="Time zone";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";
