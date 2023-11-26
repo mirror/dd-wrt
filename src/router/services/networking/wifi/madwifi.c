@@ -1450,7 +1450,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "sae_require_mfp=1\n");
 	} else if (nvram_default_matchi(mbo, 1, 0))
 		fprintf(fp, "ieee80211w=1\n");
-	} else if (nvram_default_matchi(mfp, 0, 0))
+	else if (nvram_default_matchi(mfp, 0, 0))
 		fprintf(fp, "ieee80211w=0\n");
 #endif
 	if (ispsk3 && !ispsk && !ispsk2 && !ispsk2sha256) {
