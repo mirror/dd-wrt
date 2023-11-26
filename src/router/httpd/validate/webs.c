@@ -1130,17 +1130,7 @@ _8021xprv
 	copytonv_prefix(wp, "ft", prefix);
 	copytonv_prefix(wp, "domain", prefix);
 	copytonv_prefix(wp, "nas", prefix);
-	copytonv_prefix(wp, "80211v", prefix);
-	copytonv_prefix(wp, "80211k", prefix);
-	copytonv_prefix(wp, "wnm_sleep_mode", prefix);
-	copytonv_prefix(wp, "wnm_sleep_mode_no_keys", prefix);
-	copytonv_prefix(wp, "bss_transition", prefix);
-	copytonv_prefix(wp, "rrm_neighbor_report", prefix);
-	copytonv_prefix(wp, "rrm_beacon_report", prefix);
 	copytonv_prefix(wp, "mbo", prefix);
-	copytonv_prefix(wp, "proxy_arp", prefix);
-	copytonv_prefix(wp, "time_advertisement", prefix);
-	copytonv_prefix(wp, "time_zone", prefix);
 #endif
 #ifdef HAVE_80211W
 	copytonv_prefix(wp, "mfp", prefix);
@@ -1639,7 +1629,6 @@ void save_wireless_advanced(webs_t wp)
 	copytonv2_wme(wp, prefix, set_prefix, "wme_txp_be", 4);
 	copytonv2_wme(wp, prefix, set_prefix, "wme_txp_vi", 4);
 	copytonv2_wme(wp, prefix, set_prefix, "wme_txp_vo", 4);
-
 	return;
 
 }
@@ -5142,6 +5131,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "doth", prefix);
 	copytonv_prefix(wp, "maxassoc", prefix);
 
+
 	snprintf(chanbw, sizeof(chanbw), "%s_channelbw", prefix);
 	char *cbw = websGetVar(wp, chanbw, NULL);
 
@@ -5155,6 +5145,21 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "cardtype", prefix);
 
 #endif
+#ifdef HAVE_80211R
+	copytonv_prefix(wp, "80211v", prefix);
+	copytonv_prefix(wp, "80211k", prefix);
+	copytonv_prefix(wp, "wnm_sleep_mode", prefix);
+	copytonv_prefix(wp, "wnm_sleep_mode_no_keys", prefix);
+	copytonv_prefix(wp, "bss_transition", prefix);
+	copytonv_prefix(wp, "rrm_neighbor_report", prefix);
+	copytonv_prefix(wp, "rrm_beacon_report", prefix);
+	copytonv_prefix(wp, "mbo", prefix);
+	copytonv_prefix(wp, "proxy_arp", prefix);
+	copytonv_prefix(wp, "time_advertisement", prefix);
+	copytonv_prefix(wp, "time_zone", prefix);
+#endif
+
+
 	copytonv_prefix(wp, "closed", prefix);
 	if (has_qam256(prefix) && has_2ghz(prefix)) {
 		copytonv_prefix(wp, "turbo_qam", prefix);
