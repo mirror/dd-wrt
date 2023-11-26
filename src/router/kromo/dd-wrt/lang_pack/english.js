@@ -2710,6 +2710,15 @@ wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistic Wireless Encryption";
 wpa.owe_ifname="OWE Transition Interface";
+wpa.wnm_sleep_mode="WNM-Sleep Mode";
+wpa.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK workaround";
+wpa.bss_transition="BSS Transition Management";
+wpa.mbo="Multiband Operation (MBO)";
+wpa.80211v="802.11v Support";
+wpa.80211k="802.11k Support";
+wpa.rrm_neighbor_report="Neighbor report via radio";
+wpa.rrm_beacon_report="Beacon report via radio";
+wpa.proxy_arp="Proxy ARP";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";
@@ -3231,15 +3240,6 @@ wl_basic.mesh_nolearn="Avoid Multi-Hop Path Discovery";
 wl_basic.mesh_connected_to_gate="Announce Connected to Gate";
 wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 wl_basic.mesh_header_cache_size="Header Cache Size";
-wl_basic.wnm_sleep_mode="WNM-Sleep Mode";
-wl_basic.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK workaround";
-wl_basic.bss_transition="BSS Transition Management";
-wl_basic.mbo="Multiband Operation (MBO)";
-wl_basic.80211v="802.11v Support";
-wl_basic.80211k="802.11k Support";
-wl_basic.rrm_neighbor_report="Neighbor report via radio";
-wl_basic.rrm_beacon_report="Beacon report via radio";
-
 //help container
 var hwl_basic=new Object();
 hwl_basic.right2="<b>Attention:</b> It is recommended that you click the <em>" + sbutton.apply + "</em> button after you change a value in order to update the fields with the corresponding parameters.";
