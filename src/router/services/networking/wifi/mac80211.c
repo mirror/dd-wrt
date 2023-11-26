@@ -1682,6 +1682,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "wnm_sleep_mode_no_keys=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname) ? 1 : 0);
 		fprintf(fp, "bss_transition=%d\n", nvram_nmatch("1", "%s_bss_transition", ifname) ? 1 : 0);
 		fprintf(fp, "proxy_arp=%d\n", nvram_nmatch("1", "%s_proxy_arp", ifname) ? 1 : 0);
+		if (nvram_nmatch("1", "%s_time_advertisement", ifname)) {
+			fprintf(fp, "time_advertisement=2\n");
+			fprintf(fp, "time_zone=%s\n", nvram_nget("%s_time_zone", vvar));
+		} else {
+			fprintf(fp, "time_advertisement=0\n");		
+		}
 	}
 	if (nvram_nmatch("1", "%s_80211k", ifname)) {
 		fprintf(fp, "rrm_neighbor_report=%d", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
