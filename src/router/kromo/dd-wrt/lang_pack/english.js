@@ -3231,6 +3231,10 @@ wl_basic.mesh_nolearn="Avoid Multi-Hop Path Discovery";
 wl_basic.mesh_connected_to_gate="Announce Connected to Gate";
 wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 wl_basic.mesh_header_cache_size="Header Cache Size";
+wl_basic.wnm_sleep_mode="WNM-Sleep Mode";
+wl_basic.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK workaround";
+wl_basic.bss_transition="BSS Transition Management";
+wl_basic.mbo="Multiband Operation (MBO)";
 
 //help container
 var hwl_basic=new Object();
