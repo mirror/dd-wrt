@@ -2769,10 +2769,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_time_zone\">\n", nvram_default_get(wnm, "GMT0"));
+		websWrite(wp, "<select name=\"%s_time_zone\">\n", var);
+		nvram_default_get(wnm, nvram_safe_get("time_zone");
 		int i;
 		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_string, "%s_time_zone", var) ? "selected=\"selected\"" : "",
+			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_name, "%s_time_zone", var) ? "selected=\"selected\"" : "",
 				  allTimezones[i].tz_name);
 		}
 		websWrite(wp, "</select>\n");
@@ -4024,10 +4025,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_time_zone\">\n", nvram_default_get(wnm, "GMT0"));
+		websWrite(wp, "<select name=\"%s_time_zone\">\n", prefix);
+		nvram_default_get(wnm, nvram_safe_get("time_zone"));
 		int i;
 		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_string, "%s_time_zone", prefix) ? "selected=\"selected\"" : "",
+			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_name, "%s_time_zone", var) ? "selected=\"selected\"" : "",
 				  allTimezones[i].tz_name);
 		}
 		websWrite(wp, "</select>\n");
@@ -5058,10 +5060,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_time_zone\">\n", nvram_default_get(wnm, "GMT0"));
+		websWrite(wp, "<select name=\"%s_time_zone\">\n", prefix);
+		nvram_default_get(wnm, nvram_safe_get("time_zone"));
 		int i;
 		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_string, "%s_time_zone", prefix) ? "selected=\"selected\"" : "",
+			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_name, "%s_time_zone", var) ? "selected=\"selected\"" : "",
 				  allTimezones[i].tz_name);
 		}
 		websWrite(wp, "</select>\n");
