@@ -107,8 +107,9 @@ service syslog stop
 service smartd stop
 service sshd stop
 service telnetd stop
-#not nice, but works.
+#ignore stopping of watchdog
 rm -f /tmp/services/watchdog.0
+#not nice, but works.
 for i in /tmp/services/* ; do echo `basename $i .0` ; done | grep -v "httpd" | while read service ; do service $service stop ; done
 killall process_monitor
 killall mstpd
