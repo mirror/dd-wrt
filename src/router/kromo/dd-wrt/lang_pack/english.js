@@ -287,6 +287,9 @@ share.actiontbl="Action";
 share.show="Show";
 share.hide="Hide";
 share.down="down";
+share.excluded="Excluded";
+share.not_prefered="Not prefered";
+share.prefered="Prefered";
 
 var sbutton=new Object();
 sbutton.save="Save";
