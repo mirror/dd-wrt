@@ -1939,11 +1939,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_vht=1\n");
+			if (has_ax(prefix))
+				fprintf(fp, "\tdisable_he=1\n");
+		}
+		if (has_ax(prefix)) {
+		if (strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")) {
 			fprintf(fp, "\tdisable_he=1\n");
 		}
-
-		if (has_ax(prefix) && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")) {
-			fprintf(fp, "\tdisable_he=1\n");
 		}
 
 		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
