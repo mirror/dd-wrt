@@ -793,11 +793,14 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		char wnm[64];
 		websWrite(wp, "<div id=\"%s_id80211v\">\n", vvar);
 		sprintf(wnm, "%s_wnm_sleep_mode", vvar);
-		showRadio(wp, "wl_basic.wnm_sleep_mode", wnm);
+		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
 		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", vvar);
-		showRadio(wp, "wl_basic.wnm_sleep_mode_no_keys", wnm);
+		showRadio(wp, "wpa.wnm_sleep_mode_no_keys", wnm);
 		sprintf(wnm, "%s_bss_transition", vvar);
-		showRadio(wp, "wl_basic.bss_transition", wnm);
+		showRadio(wp, "wpa.bss_transition", wnm);
+		sprintf(wnm, "%s_proxy_arp", vvar);
+		showRadio(wp, "wpa.proxy_arp", wnm);
+
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211v\", %s);\n", prefix, vvar, nvram_matchi(s80211v, 1) ? "true" : "false");
@@ -815,15 +818,15 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_id80211k\">\n", vvar);
 		sprintf(wnm, "%s_rrm_neighbor_report", vvar);
-		showRadio(wp, "wl_basic.rrm_neighbor_report", wnm);
+		showRadio(wp, "wpa.rrm_neighbor_report", wnm);
 		sprintf(wnm, "%s_rrm_beacon_report", vvar);
-		showRadio(wp, "wl_basic.rrm_beacon_report", wnm);
+		showRadio(wp, "wpa.rrm_beacon_report", wnm);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", prefix, vvar, nvram_matchi(s80211k, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 		sprintf(wnm, "%s_mbo", vvar);
-		showRadio(wp, "wl_basic.mbo", wnm);
+		showRadio(wp, "wpa.mbo", wnm);
 	}
 #endif
 	if (v_show_preshared || v_show_owe || v_show_wparadius) {
