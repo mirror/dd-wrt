@@ -1943,9 +1943,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tdisable_he=1\n");
 		}
 		if (has_ax(prefix)) {
-		if (strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")) {
-			fprintf(fp, "\tdisable_he=1\n");
-		}
+			if (strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")) {
+				fprintf(fp, "\tdisable_he=1\n");
+			}
 		}
 
 		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
