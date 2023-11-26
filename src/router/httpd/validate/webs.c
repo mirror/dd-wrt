@@ -1139,6 +1139,8 @@ _8021xprv
 	copytonv_prefix(wp, "rrm_beacon_report", prefix);
 	copytonv_prefix(wp, "mbo", prefix);
 	copytonv_prefix(wp, "proxy_arp", prefix);
+	copytonv_prefix(wp, "time_advertisement", prefix);
+	copytonv_prefix(wp, "time_zone", prefix);
 #endif
 #ifdef HAVE_80211W
 	copytonv_prefix(wp, "mfp", prefix);
@@ -3629,7 +3631,9 @@ static char *vapsettings[] = {
 	"rrm_neighbor_report",
 	"rrm_beacon_report",
 	"mbo",
-	"proxy_arp"
+	"proxy_arp",
+	"time_advertisement",
+	"time_zone",
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
