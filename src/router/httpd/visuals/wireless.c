@@ -780,10 +780,38 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_iddomain\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
+
+		char mbo[64];
+		sprintf(mbo, "%s_mbo", prefix);
+		nvram_default_get(mbo, has_ax(prefix) ? "1" : "0");
+
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idmbo', true);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  vvar, prefix, nvram_default_matchi(mbo, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idmbo', false);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  vvar, prefix, nvram_default_matchi(mbo, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
 		char wnm[64];
-		sprintf(wnm, "%s_mbo", vvar);
-		nvram_default_get(wnm, has_ax(prefix) ? "1" : "0");
-		showRadio(wp, "wpa.mbo", wnm);
+		sprintf(wnm, "%s_mbo_cell_data_conn_pref", prefix);
+		websWrite(wp, "<div id=\"%s_idmbo\">\n", vvar);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
+		websWrite(wp, "<select name=\"%s_mbo_cell_data_conn_pref\">\n", prefix);
+		nvram_default_get(wnm, "0");
+		websWrite(wp, "<option value=\"0\" %s><script type=\"text/javascript\">Capture(share.excluded)</script></option>\n", nvram_match(wnm, "0") ? "selected=\"selected\"" : "");
+		websWrite(wp, "<option value=\"1\" %s><script type=\"text/javascript\">Capture(share.not_prefered)</script></option>\n", nvram_match(wnm, "1") ? "selected=\"selected\"" : "");
+		websWrite(wp, "<option value=\"255\" %s><script type=\"text/javascript\">Capture(share.prefered)</script></option>\n", nvram_match(wnm, "255") ? "selected=\"selected\"" : "");
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_mbo\"), \"%s_idmbo\", %s);\n", prefix, vvar, nvram_matchi(mbo, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+
 	}
 #endif
 	if (v_show_preshared || v_show_owe || v_show_wparadius) {
