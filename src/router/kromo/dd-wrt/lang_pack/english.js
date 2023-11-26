@@ -2720,6 +2720,7 @@ wpa.rrm_neighbor_report="Neighbor report via radio";
 wpa.rrm_beacon_report="Beacon report via radio";
 wpa.proxy_arp="Proxy ARP";
 wpa.time_advertisement="Time advertisement";
+wpa.mbo_cell_data_conn_pref="Cellular Connection Preference";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";
