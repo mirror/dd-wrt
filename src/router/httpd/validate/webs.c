@@ -1138,6 +1138,7 @@ _8021xprv
 	copytonv_prefix(wp, "rrm_neighbor_report", prefix);
 	copytonv_prefix(wp, "rrm_beacon_report", prefix);
 	copytonv_prefix(wp, "mbo", prefix);
+	copytonv_prefix(wp, "proxy_arp", prefix);
 #endif
 #ifdef HAVE_80211W
 	copytonv_prefix(wp, "mfp", prefix);
@@ -3619,8 +3620,7 @@ static char *vapsettings[] = {
 	"mesh_hwmp_net_diameter_traversal_time",
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
 	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "bgscan_mode", "bgscan_short_int",
-	"bgscan_threshold",
-	"bgscan_long_int",
+	"bgscan_threshold", "bgscan_long_int",
 	"80211v",
 	"80211k",
 	"wnm_sleep_mode",
@@ -3629,6 +3629,7 @@ static char *vapsettings[] = {
 	"rrm_neighbor_report",
 	"rrm_beacon_report",
 	"mbo",
+	"proxy_arp"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
