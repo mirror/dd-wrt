@@ -1346,6 +1346,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 {
 	char akm[16];
 	char mfp[16];
+	char mbo[16];
 	char ft[16];
 	char tmp[256];
 	char rekey[32];
@@ -1357,6 +1358,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
+	sprintf(mbo, "%s_mbo", prefix);
 
 	const int _has_wpa3 = has_wpa3(prefix);
 	const int ispsk2 = nvhas(akm, "psk2");
@@ -1446,6 +1448,8 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "ieee80211w=1\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
+	} else if (nvram_default_matchi(mbo, 1, 0))
+		fprintf(fp, "ieee80211w=1\n");
 	} else if (nvram_default_matchi(mfp, 0, 0))
 		fprintf(fp, "ieee80211w=0\n");
 #endif
