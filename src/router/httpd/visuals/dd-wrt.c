@@ -2721,10 +2721,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.wnm_sleep_mode_no_keys", ssid);
 		sprintf(ssid, "%s_bss_transition", var);
 		showRadio(wp, "wl_basic.bss_transition", ssid);
-		sprintf(ssid, "%s_rrm_neighbor_report", var);
-		showRadio(wp, "wl_basic.rrm_neighbor_report", ssid);
-		sprintf(ssid, "%s_rrm_beacon_report", var);
-		showRadio(wp, "wl_basic.rrm_beacon_report", ssid);
+		sprintf(ssid, "%s_80211k", var);
+		showRadio(wp, "wl_basic.80211k", ssid);
+//		sprintf(ssid, "%s_rrm_neighbor_report", var);
+//		showRadio(wp, "wl_basic.rrm_neighbor_report", ssid);
+//		sprintf(ssid, "%s_rrm_beacon_report", var);
+//		showRadio(wp, "wl_basic.rrm_beacon_report", ssid);
 		sprintf(ssid, "%s_mbo", var);
 		showRadio(wp, "wl_basic.mbo", ssid);
 #endif
@@ -3626,10 +3628,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.wnm_sleep_mode_no_keys", wnm);
 		sprintf(wnm, "%s_bss_transition", prefix);
 		showRadio(wp, "wl_basic.bss_transition", wnm);
-		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
-		showRadio(wp, "wl_basic.rrm_neighbor_report", wnm);
-		sprintf(wnm, "%s_rrm_beacon_report", prefix);
-		showRadio(wp, "wl_basic.rrm_beacon_report", wnm);
+		sprintf(wnm, "%s_80211k", prefix);
+		showRadio(wp, "wl_basic.80211k", wnm);
+//		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
+//		showRadio(wp, "wl_basic.rrm_neighbor_report", wnm);
+//		sprintf(wnm, "%s_rrm_beacon_report", prefix);
+//		showRadio(wp, "wl_basic.rrm_beacon_report", wnm);
 		sprintf(wnm, "%s_mbo", prefix);
 		showRadio(wp, "wl_basic.mbo", wnm);
 #endif
@@ -4850,10 +4854,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.wnm_sleep_mode_no_keys", wnm);
 		sprintf(wnm, "%s_bss_transition", prefix);
 		showRadio(wp, "wl_basic.bss_transition", wnm);
-		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
-		showRadio(wp, "wl_basic.rrm_neighbor_report", wnm);
-		sprintf(wnm, "%s_rrm_beacon_report", prefix);
-		showRadio(wp, "wl_basic.rrm_beacon_report", wnm);
+		sprintf(wnm, "%s_80211k", prefix);
+		showRadio(wp, "wl_basic.80211k", wnm);
+//		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
+//		showRadio(wp, "wl_basic.rrm_neighbor_report", wnm);
+//		sprintf(wnm, "%s_rrm_beacon_report", prefix);
+//		showRadio(wp, "wl_basic.rrm_beacon_report", wnm);
 		sprintf(wnm, "%s_mbo", prefix);
 		showRadio(wp, "wl_basic.mbo", wnm);
 #endif
