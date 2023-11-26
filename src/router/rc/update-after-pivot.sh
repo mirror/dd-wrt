@@ -31,7 +31,7 @@ then
 	echo "sync"
 	busybox sync
 	echo "write second time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
+	busybox dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
 	echo "sync"
 	busybox sync
 	echo "write third time"
