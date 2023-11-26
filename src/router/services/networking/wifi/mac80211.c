@@ -1684,9 +1684,22 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "proxy_arp=%d\n", nvram_nmatch("1", "%s_proxy_arp", ifname) ? 1 : 0);
 		if (nvram_nmatch("1", "%s_time_advertisement", ifname)) {
 			fprintf(fp, "time_advertisement=2\n");
-			fprintf(fp, "time_zone=%s\n", nvram_nget("%s_time_zone", ifname));
+
+			char *tz;
+			tz = nvram_nget("%s_time_zone", ifname);
+
+			int i;
+			int found = 0;
+			const char *zone = "Europe/Berlin";
+			for (i = 0; allTimezones[i].tz_name != NULL; i++) {
+				if (!strcmp(allTimezones[i].tz_name, tz)) {
+					zone = allTimezones[i].tz_string;
+					break;
+				}
+			}
+			fprintf(fp, "time_zone=%s\n", zone);
 		} else {
-			fprintf(fp, "time_advertisement=0\n");		
+			fprintf(fp, "time_advertisement=0\n");
 		}
 	}
 	if (nvram_nmatch("1", "%s_80211k", ifname)) {
