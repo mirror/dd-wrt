@@ -504,7 +504,9 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	unsigned char *spki = NULL;
 	int drop_packet_latency_ms = 0;
 	int is_bootstrap_dns = 0;
-	int is_hostip_set = 0;
+	char host_ip[DNS_MAX_IPLEN] = {0};
+	int no_tls_host_name = 0;
+	int no_tls_host_verify = 0;
 
 	int ttl = 0;
 	/* clang-format off */
@@ -585,16 +587,6 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		}
 	}
 
-#ifdef HAVE_OPENSSL
-	if (type == DNS_SERVER_HTTPS) {
-		safe_strncpy(server->hostname, server->server, sizeof(server->hostname));
-		safe_strncpy(server->httphost, server->server, sizeof(server->httphost));
-		if (server->path[0] == 0) {
-			safe_strncpy(server->path, "/", sizeof(server->path));
-		}
-	}
-#endif
-
 	/* if port is not defined, set port to default 53 */
 	if (port == PORT_NOT_DEFINED) {
 		port = default_port;
@@ -637,6 +629,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 
 		case 'k': {
 			server->skip_check_cert = 1;
+			no_tls_host_verify = 1;
 			break;
 		}
 		case 'b': {
@@ -668,10 +661,10 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			break;
 		}
 		case 258: {
-			if (check_is_ipaddr(server->server) != 0) {
-				_conf_domain_rule_address(server->server, optarg);
-				is_hostip_set = 1;
+			if (check_is_ipaddr(optarg) != 0) {
+				goto errout;
 			}
+			safe_strncpy(host_ip, optarg, DNS_MAX_IPLEN);
 			break;
 		}
 		case 259: {
@@ -682,6 +675,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			safe_strncpy(server->hostname, optarg, DNS_MAX_CNAME_LEN);
 			if (strncmp(server->hostname, "-", 2) == 0) {
 				server->hostname[0] = '\0';
+				no_tls_host_name = 1;
 			}
 			break;
 		}
@@ -692,30 +686,49 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		}
 		case 262: {
 			safe_strncpy(server->tls_host_verify, optarg, DNS_MAX_CNAME_LEN);
+			if (strncmp(server->tls_host_verify, "-", 2) == 0) {
+				server->tls_host_verify[0] = '\0';
+				no_tls_host_verify = 1;
+			}
 			break;
 		}
 #endif
 		default:
+			tlog(TLOG_WARN, "unknown server option: %s at '%s:%d'.", argv[optind - 1], conf_get_conf_file(),
+				 conf_get_current_lineno());
 			break;
 		}
 	}
 
-	/* if server is domain name, then verify domain */
-	if (server->tls_host_verify[0] == '\0' && check_is_ipaddr(server->server) != 0) {
-		safe_strncpy(server->tls_host_verify, server->server, DNS_MAX_CNAME_LEN);
-	}
+	if (check_is_ipaddr(server->server) != 0) {
+		/* if server is domain name, then verify domain */
+#ifdef HAVE_OPENSSL
+		if (server->tls_host_verify[0] == '\0' && no_tls_host_verify == 0) {
+			safe_strncpy(server->tls_host_verify, server->server, DNS_MAX_CNAME_LEN);
+		}
+#endif
 
-	/* update address rules for host-ip */
-	if (is_hostip_set == 1) {
-		struct dns_domain_rule *rule = _config_domain_rule_get(server->server);
-		if (rule) {
-			if (rule->rules[DOMAIN_RULE_ADDRESS_IPV4] != NULL && rule->rules[DOMAIN_RULE_ADDRESS_IPV6] == NULL) {
-				_conf_domain_rule_address(server->server, "#6");
-			} else if (rule->rules[DOMAIN_RULE_ADDRESS_IPV4] == NULL && rule->rules[DOMAIN_RULE_ADDRESS_IPV6] != NULL) {
-				_conf_domain_rule_address(server->server, "#4");
-			}
+		if (server->hostname[0] == '\0' && no_tls_host_name == 0) {
+			safe_strncpy(server->hostname, server->server, DNS_MAX_CNAME_LEN);
+		}
+
+#ifdef HAVE_OPENSSL
+		if (server->httphost[0] == '\0') {
+			safe_strncpy(server->httphost, server->server, DNS_MAX_CNAME_LEN);
+		}
+#endif
+
+		if (host_ip[0] != '\0') {
+			safe_strncpy(server->server, host_ip, DNS_MAX_IPLEN);
 		}
 	}
+ 
+#ifdef HAVE_OPENSSL
+	/* if server is domain name, then verify domain */
+	if (server->tls_host_verify[0] == '\0' && server->hostname[0] != '\0' && no_tls_host_verify == 0) {
+		safe_strncpy(server->tls_host_verify, server->hostname, DNS_MAX_CNAME_LEN);
+	}
+#endif
 
 	/* add new server */
 	server->type = type;
@@ -724,6 +737,17 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	server->server_flag = server_flag;
 	server->ttl = ttl;
 	server->drop_packet_latency_ms = drop_packet_latency_ms;
+
+	if (server->type == DNS_SERVER_HTTPS) {
+		if (server->path[0] == 0) {
+			safe_strncpy(server->path, "/", sizeof(server->path));
+		}
+
+		if (server->httphost[0] == '\0') {
+			safe_strncpy(server->httphost, server->server, DNS_MAX_CNAME_LEN);
+		}
+	}
+
 	dns_conf_server_num++;
 	tlog(TLOG_DEBUG, "add server %s, flag: %X, ttl: %d", ip, result_flag, ttl);
 
@@ -808,8 +832,8 @@ static int _config_set_rule_each_from_list(const char *file, set_rule_add_func c
 
 	fp = fopen(file, "r");
 	if (fp == NULL) {
-		tlog(TLOG_WARN, "open file %s error, %s", file, strerror(errno));
-		return 0;
+		tlog(TLOG_ERROR, "open file %s error, %s", file, strerror(errno));
+		return -1;
 	}
 
 	line_no = 0;
@@ -859,7 +883,9 @@ static int _config_domain_rule_set_each(const char *domain_set, set_rule_add_fun
 	{
 		switch (set_name_item->type) {
 		case DNS_DOMAIN_SET_LIST:
-			_config_set_rule_each_from_list(set_name_item->file, callback, priv);
+			if (_config_set_rule_each_from_list(set_name_item->file, callback, priv) != 0) {
+				return -1;
+			}
 			break;
 		case DNS_DOMAIN_SET_GEOSITE:
 			break;
@@ -927,7 +953,7 @@ static int _config_setup_domain_key(const char *domain, char *domain_key, int do
 	return 0;
 }
 
-static struct dns_domain_rule *_config_domain_rule_get(const char *domain)
+static __attribute__((unused)) struct dns_domain_rule *_config_domain_rule_get(const char *domain)
 {
 	char domain_key[DNS_MAX_CONF_CNAME_LEN];
 	int len = 0;
@@ -1646,6 +1672,9 @@ static int _conf_domain_rule_address(char *domain, const char *domain_address)
 				goto errout;
 			}
 
+			if (ptr) {
+				ptr++;
+			}
 			continue;
 		} else if (*(field) == '-') {
 			if (strncmp(field, "-4", sizeof("-4")) == 0) {
@@ -1663,6 +1692,9 @@ static int _conf_domain_rule_address(char *domain, const char *domain_address)
 				goto errout;
 			}
 
+			if (ptr) {
+				ptr++;
+			}
 			continue;
 		}
 
@@ -2208,6 +2240,8 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 			break;
 		}
 		default:
+			tlog(TLOG_WARN, "unknown bind option: %s at '%s:%d'.", argv[optind - 1], conf_get_conf_file(),
+				 conf_get_current_lineno());
 			break;
 		}
 	}
@@ -2216,7 +2250,7 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 	bind_ip->flags = server_flag;
 	bind_ip->group = group;
 	dns_conf_bind_ip_num++;
-	if (bind_ip->type == DNS_BIND_TYPE_TLS) {
+	if (bind_ip->type == DNS_BIND_TYPE_TLS || bind_ip->type == DNS_BIND_TYPE_HTTPS) {
 		if (bind_ip->ssl_cert_file == NULL || bind_ip->ssl_cert_key_file == NULL) {
 			bind_ip->ssl_cert_file = dns_conf_bind_ca_file;
 			bind_ip->ssl_cert_key_file = dns_conf_bind_ca_key_file;
@@ -2245,6 +2279,11 @@ static int _config_bind_ip_tcp(void *data, int argc, char *argv[])
 static int _config_bind_ip_tls(void *data, int argc, char *argv[])
 {
 	return _config_bind_ip(argc, argv, DNS_BIND_TYPE_TLS);
+}
+
+static int _config_bind_ip_https(void *data, int argc, char *argv[])
+{
+	return _config_bind_ip(argc, argv, DNS_BIND_TYPE_HTTPS);
 }
 
 static int _config_option_parser_filepath(void *data, int argc, char *argv[])
@@ -2819,6 +2858,11 @@ static int _conf_domain_set(void *data, int argc, char *argv[])
 		goto errout;
 	}
 
+	if (access(domain_set->file, F_OK) != 0) {
+		tlog(TLOG_ERROR, "domain set file %s not readable. %s", domain_set->file, strerror(errno));
+		goto errout;
+	}
+
 	key = hash_string(set_name);
 	hash_for_each_possible(dns_domain_set_name_table.names, domain_set_name_list, node, key)
 	{
@@ -2873,7 +2917,9 @@ static int _config_ip_rule_set_each(const char *ip_set, set_rule_add_func callba
 	{
 		switch (set_name_item->type) {
 		case DNS_IP_SET_LIST:
-			_config_set_rule_each_from_list(set_name_item->file, callback, priv);
+			if (_config_set_rule_each_from_list(set_name_item->file, callback, priv) != 0) {
+				return -1;
+			}
 			break;
 		default:
 			tlog(TLOG_WARN, "ip set %s type %d not support.", set_name_list->name, set_name_item->type);
@@ -3035,10 +3081,58 @@ errout:
 	return -1;
 }
 
+static int _config_ip_rule_alias_add_ip(const char *ip, struct ip_rule_alias *ip_alias)
+{
+	struct sockaddr_storage addr;
+	socklen_t addr_len = sizeof(addr);
+	unsigned char *paddr = NULL;
+	int ret = 0;
+
+	ret = getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len);
+	if (ret != 0) {
+		tlog(TLOG_ERROR, "ip is invalid: %s", ip);
+		goto errout;
+	}
+
+	switch (addr.ss_family) {
+	case AF_INET: {
+		struct sockaddr_in *addr_in = NULL;
+		addr_in = (struct sockaddr_in *)&addr;
+		paddr = (unsigned char *)&(addr_in->sin_addr.s_addr);
+		_dns_iplist_ip_address_add(&ip_alias->ip_alias, paddr, DNS_RR_A_LEN);
+	} break;
+	case AF_INET6: {
+		struct sockaddr_in6 *addr_in6 = NULL;
+		addr_in6 = (struct sockaddr_in6 *)&addr;
+		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
+			paddr = addr_in6->sin6_addr.s6_addr + 12;
+			_dns_iplist_ip_address_add(&ip_alias->ip_alias, paddr, DNS_RR_A_LEN);
+		} else {
+			paddr = addr_in6->sin6_addr.s6_addr;
+			_dns_iplist_ip_address_add(&ip_alias->ip_alias, paddr, DNS_RR_AAAA_LEN);
+		}
+	} break;
+	default:
+		goto errout;
+		break;
+	}
+
+	return 0;
+
+errout:
+	return -1;
+}
+
+static int _config_ip_alias_add_ip_callback(const char *ip_cidr, void *priv)
+{
+	return _config_ip_rule_alias_add_ip(ip_cidr, (struct ip_rule_alias *)priv);
+}
+
 static int _config_ip_alias(const char *ip_cidr, const char *ips)
 {
 	struct ip_rule_alias *ip_alias = NULL;
 	char *target_ips = NULL;
+	int ret = 0;
 
 	if (ip_cidr == NULL || ips == NULL) {
 		goto errout;
@@ -3049,43 +3143,21 @@ static int _config_ip_alias(const char *ip_cidr, const char *ips)
 		goto errout;
 	}
 
-	target_ips = strdup(ips);
-	if (target_ips == NULL) {
-		goto errout;
-	}
-
-	for (char *tok = strtok(target_ips, ","); tok != NULL; tok = strtok(NULL, ",")) {
-		struct sockaddr_storage addr;
-		socklen_t addr_len = sizeof(addr);
-		unsigned char *paddr = NULL;
-		int ret = 0;
-
-		ret = getaddr_by_host(tok, (struct sockaddr *)&addr, &addr_len);
-		if (ret != 0) {
+	if (strncmp(ips, "ip-set:", sizeof("ip-set:") - 1) == 0) {
+		if (_config_ip_rule_set_each(ips + sizeof("ip-set:") - 1, _config_ip_alias_add_ip_callback, ip_alias) != 0) {
+			goto errout;
+		}
+	} else {
+		target_ips = strdup(ips);
+		if (target_ips == NULL) {
 			goto errout;
 		}
 
-		switch (addr.ss_family) {
-		case AF_INET: {
-			struct sockaddr_in *addr_in = NULL;
-			addr_in = (struct sockaddr_in *)&addr;
-			paddr = (unsigned char *)&(addr_in->sin_addr.s_addr);
-			_dns_iplist_ip_address_add(&ip_alias->ip_alias, paddr, DNS_RR_A_LEN);
-		} break;
-		case AF_INET6: {
-			struct sockaddr_in6 *addr_in6 = NULL;
-			addr_in6 = (struct sockaddr_in6 *)&addr;
-			if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
-				paddr = addr_in6->sin6_addr.s6_addr + 12;
-				_dns_iplist_ip_address_add(&ip_alias->ip_alias, paddr, DNS_RR_A_LEN);
-			} else {
-				paddr = addr_in6->sin6_addr.s6_addr;
-				_dns_iplist_ip_address_add(&ip_alias->ip_alias, paddr, DNS_RR_AAAA_LEN);
+		for (char *tok = strtok(target_ips, ","); tok != NULL; tok = strtok(NULL, ",")) {
+			ret = _config_ip_rule_alias_add_ip(tok, ip_alias);
+			if (ret != 0) {
+				goto errout;
 			}
-		} break;
-		default:
-			goto errout;
-			break;
 		}
 	}
 
@@ -3094,7 +3166,9 @@ static int _config_ip_alias(const char *ip_cidr, const char *ips)
 	}
 
 	_dns_ip_rule_put(&ip_alias->head);
-	free(target_ips);
+	if (target_ips) {
+		free(target_ips);
+	}
 
 	return 0;
 errout:
@@ -3216,6 +3290,8 @@ static int _conf_ip_rules(void *data, int argc, char *argv[])
 			break;
 		}
 		default:
+			tlog(TLOG_WARN, "unknown ip-rules option: %s at '%s:%d'.", argv[optind - 1], conf_get_conf_file(),
+				 conf_get_current_lineno());
 			break;
 		}
 	}
@@ -3284,6 +3360,11 @@ static int _conf_ip_set(void *data, int argc, char *argv[])
 	}
 	/* clang-format on */
 
+	if (access(ip_set->file, F_OK) != 0) {
+		tlog(TLOG_ERROR, "ip set file %s not readable. %s", ip_set->file, strerror(errno));
+		goto errout;
+	}
+
 	if (set_name[0] == 0 || ip_set->file[0] == 0) {
 		tlog(TLOG_ERROR, "invalid parameter.");
 		goto errout;
@@ -3315,6 +3396,10 @@ static int _conf_ip_set(void *data, int argc, char *argv[])
 errout:
 	if (ip_set) {
 		free(ip_set);
+	}
+
+	if (ip_set_name_list != NULL) {
+		free(ip_set_name_list);
 	}
 	return -1;
 }
@@ -3611,6 +3696,8 @@ static int _conf_domain_rules(void *data, int argc, char *argv[])
 			break;
 		}
 		default:
+			tlog(TLOG_WARN, "unknown domain-rules option: %s at '%s:%d'.", argv[optind - 1], conf_get_conf_file(),
+				 conf_get_current_lineno());
 			break;
 		}
 	}
@@ -4063,6 +4150,7 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("bind-tcp", _config_bind_ip_tcp, NULL),
 #ifdef HAVE_OPENSSL
 	CONF_CUSTOM("bind-tls", _config_bind_ip_tls, NULL),
+	CONF_CUSTOM("bind-https", _config_bind_ip_https, NULL),
 	CONF_CUSTOM("bind-cert-file", _config_option_parser_filepath, &dns_conf_bind_ca_file),
 	CONF_CUSTOM("bind-cert-key-file", _config_option_parser_filepath, &dns_conf_bind_ca_key_file),
 	CONF_STRING("bind-cert-key-pass", dns_conf_bind_ca_key_pass, DNS_MAX_PATH),
@@ -4154,8 +4242,11 @@ static int _conf_printf(const char *file, int lineno, int ret)
 	case CONF_RET_ERR:
 	case CONF_RET_WARN:
 	case CONF_RET_BADCONF:
-		tlog(TLOG_WARN, "process config file '%s' failed at line %d.", file, lineno);
-		syslog(LOG_NOTICE, "process config file '%s' failed at line %d.", file, lineno);
+		tlog(TLOG_WARN, "process config failed at '%s:%d'.", file, lineno);
+		return -1;
+		break;
+	case CONF_RET_NOENT:
+		tlog(TLOG_WARN, "unsupported config at '%s:%d'.", file, lineno);
 		return -1;
 		break;
 	default:
@@ -4193,9 +4284,8 @@ int config_additional_file(void *data, int argc, char *argv[])
 	}
 
 	if (access(file_path, R_OK) != 0) {
-		tlog(TLOG_WARN, "conf file %s is not readable.", file_path);
-		syslog(LOG_NOTICE, "conf file %s is not readable.", file_path);
-		return 0;
+		tlog(TLOG_WARN, "config file '%s' is not readable, %s", conf_file, strerror(errno));
+		return -1;
 	}
 
 	return load_conf(file_path, _config_item, _conf_printf);

@@ -93,7 +93,7 @@ struct dns_server_info {
 	/* server ping handle */
 	struct ping_host_struct *ping_host;
 
-	char ip[DNS_HOSTNAME_LEN];
+	char ip[DNS_MAX_HOSTNAME];
 	int port;
 	char proxy_name[DNS_HOSTNAME_LEN];
 	/* server type */
@@ -270,7 +270,7 @@ struct dns_query_struct {
 	/* replied hash table */
 	DECLARE_HASHTABLE(replied_map, 4);
 };
-
+static int is_client_init;
 static struct dns_client client;
 static LIST_HEAD(pending_servers);
 static pthread_mutex_t pending_server_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1819,7 +1819,7 @@ static int _dns_client_create_socket_udp_proxy(struct dns_server_info *server_in
 	}
 
 	set_fd_nonblock(fd, 1);
-	set_sock_keepalive(fd, 15, 3, 4);
+	set_sock_keepalive(fd, 30, 3, 5);
 
 	ret = proxy_conn_connect(proxy);
 	if (ret != 0) {
@@ -1970,7 +1970,7 @@ static int _DNS_client_create_socket_tcp(struct dns_server_info *server_info)
 	setsockopt(fd, IPPROTO_IP, IP_TOS, &ip_tos, sizeof(ip_tos));
 	setsockopt(fd, IPPROTO_TCP, TCP_THIN_DUPACK, &yes, sizeof(yes));
 	setsockopt(fd, IPPROTO_TCP, TCP_THIN_LINEAR_TIMEOUTS, &yes, sizeof(yes));
-	set_sock_keepalive(fd, 15, 3, 4);
+	set_sock_keepalive(fd, 30, 3, 5);
 
 	if (proxy) {
 		ret = proxy_conn_connect(proxy);
@@ -2078,7 +2078,7 @@ static int _DNS_client_create_socket_tls(struct dns_server_info *server_info, ch
 	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
 	setsockopt(fd, IPPROTO_TCP, TCP_THIN_DUPACK, &yes, sizeof(yes));
 	setsockopt(fd, IPPROTO_TCP, TCP_THIN_LINEAR_TIMEOUTS, &yes, sizeof(yes));
-	set_sock_keepalive(fd, 15, 3, 4);
+	set_sock_keepalive(fd, 30, 3, 5);
 	setsockopt(fd, SOL_SOCKET, SO_PRIORITY, &priority, sizeof(priority));
 	setsockopt(fd, IPPROTO_IP, IP_TOS, &ip_tos, sizeof(ip_tos));
 
@@ -3366,7 +3366,8 @@ static int _dns_client_send_https(struct dns_server_info *server_info, void *pac
 	http_len = snprintf((char *)inpacket, DNS_IN_PACKSIZE,
 						"POST %s HTTP/1.1\r\n"
 						"Host: %s\r\n"
-						"content-type: application/dns-message\r\n"
+						"User-Agent: smartdns\r\n"
+						"Content-Type: application/dns-message\r\n"
 						"Content-Length: %d\r\n"
 						"\r\n",
 						https_flag->path, https_flag->httphost, len);
@@ -3455,7 +3456,11 @@ static int _dns_client_setup_server_packet(struct dns_server_info *server_info, 
 	}
 
 	dns_set_OPT_payload_size(packet, DNS_IN_PACKSIZE);
-	/* dns_add_OPT_TCP_KEEPALIVE(packet, 600); */
+
+	if (server_info->type != DNS_SERVER_UDP) {
+		dns_add_OPT_TCP_KEEPALIVE(packet, 6000);
+	}
+
 	if ((query->qtype == DNS_T_A && server_info->ecs_ipv4.enable)) {
 		dns_add_OPT_ECS(packet, &server_info->ecs_ipv4.ecs);
 	} else if ((query->qtype == DNS_T_AAAA && server_info->ecs_ipv6.enable)) {
@@ -3669,7 +3674,7 @@ static int _dns_client_send_query(struct dns_query_struct *query)
 	}
 
 	dns_set_OPT_payload_size(packet, DNS_IN_PACKSIZE);
-	/* dns_add_OPT_TCP_KEEPALIVE(packet, 600); */
+	/* dns_add_OPT_TCP_KEEPALIVE(packet, 1200); */
 	if (_dns_client_dns_add_ecs(query, packet) != 0) {
 		tlog(TLOG_ERROR, "add ecs failed.");
 		return -1;
@@ -4406,11 +4411,13 @@ int dns_client_init(void)
 	int fd_wakeup = -1;
 	int ret = 0;
 
-	if (client.epoll_fd > 0) {
+	if (is_client_init == 1) {
 		return -1;
 	}
 
-	srandom(time(NULL));
+	if (client.epoll_fd > 0) {
+		return -1;
+	}
 
 	memset(&client, 0, sizeof(client));
 	pthread_attr_init(&attr);
@@ -4455,6 +4462,7 @@ int dns_client_init(void)
 	}
 
 	client.fd_wakeup = fd_wakeup;
+	is_client_init = 1;
 
 	return 0;
 errout:
@@ -4481,6 +4489,10 @@ errout:
 
 void dns_client_exit(void)
 {
+	if (is_client_init == 0) {
+		return;
+	}
+
 	if (client.tid) {
 		void *ret = NULL;
 		atomic_set(&client.run, 0);
@@ -4504,4 +4516,5 @@ void dns_client_exit(void)
 		client.ssl_ctx = NULL;
 	}
 #endif
+	is_client_init = 0;
 }
