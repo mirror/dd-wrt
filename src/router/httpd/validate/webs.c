@@ -863,19 +863,19 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		char key4[27] = "";
 
 		for (i = 0; i < 13; i++)
-			snprintf(key1 + (i << 1),sizeof(key1) - (i << 1), "%02X", key128[0][i]);
+			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1), "%02X", key128[0][i]);
 		key1[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key2 + (i << 1),sizeof(key2) - (i << 1), "%02X", key128[1][i]);
+			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1), "%02X", key128[1][i]);
 		key2[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key3 + (i << 1),sizeof(key3) - (i << 1), "%02X", key128[2][i]);
+			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1), "%02X", key128[2][i]);
 		key3[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key4 + (i << 1),sizeof(key4) - (i << 1), "%02X", key128[3][i]);
+			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key128[3][i]);
 		key4[26] = 0;
 		// cprintf("passphrase[%s]\n", passphrase);
 		// filter_name(passphrase, new_passphrase, sizeof(new_passphrase),
@@ -1130,6 +1130,14 @@ _8021xprv
 	copytonv_prefix(wp, "ft", prefix);
 	copytonv_prefix(wp, "domain", prefix);
 	copytonv_prefix(wp, "nas", prefix);
+	copytonv_prefix(wp, "80211v", prefix);
+	copytonv_prefix(wp, "80211k", prefix);
+	copytonv_prefix(wp, "wnm_sleep_mode", prefix);
+	copytonv_prefix(wp, "wnm_sleep_mode_no_keys", prefix);
+	copytonv_prefix(wp, "bss_transition", prefix);
+	copytonv_prefix(wp, "rrm_neighbor_report", prefix);
+	copytonv_prefix(wp, "rrm_beacon_report", prefix);
+	copytonv_prefix(wp, "mbo", prefix);
 #endif
 #ifdef HAVE_80211W
 	copytonv_prefix(wp, "mfp", prefix);
@@ -2050,7 +2058,7 @@ void tunnel_save(webs_t wp)
 		char temp[32];
 		char buf[32];
 		sprintf(temp, "oet%d_netmask", i);
-		nvram_set(temp, cidr_to_nm(buf, sizeof(buf),websGetVari(wp, temp, 0)));
+		nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 		sprintf(temp, "vxlan%d_netmask", i);
 		nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 		sprintf(temp, "oet%d_peers", i);
@@ -2266,6 +2274,7 @@ static void copytunvalue_prefix(char *prefix, char *valuename, int from, int to)
 	nvram_set(name, c);
 
 }
+
 static void copytunvalue(char *valuename, int from, int to)
 {
 	copytunvalue_prefix("oet", valuename, from, to);
@@ -2484,8 +2493,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("local", i, i - 1);
 		copytunvalue("ipaddr", i, i - 1);
 		copytunvalue("netmask", i, i - 1);
-		copytunvalue_prefix("vxlan","ipaddr", i, i - 1);
-		copytunvalue_prefix("vxlan","netmask", i, i - 1);
+		copytunvalue_prefix("vxlan", "ipaddr", i, i - 1);
+		copytunvalue_prefix("vxlan", "netmask", i, i - 1);
 		copytunvalue("id", i, i - 1);
 		copytunvalue("mtu", i, i - 1);
 		copytunvalue("proto", i, i - 1);
@@ -2565,8 +2574,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("local", tunnels);
 	deltunvalue("ipaddr", tunnels);
 	deltunvalue("netmask", tunnels);
-	deltunvalue_prefix("vxlan","ipaddr", tunnels);
-	deltunvalue_prefix("vxlan","netmask", tunnels);
+	deltunvalue_prefix("vxlan", "ipaddr", tunnels);
+	deltunvalue_prefix("vxlan", "netmask", tunnels);
 	deltunvalue("id", tunnels);
 	deltunvalue("mtu", tunnels);
 	deltunvalue("proto", tunnels);
@@ -2604,7 +2613,7 @@ void del_tunnel(webs_t wp)
 	remove(oldfile);
 	//egc delete interface of last tunnel, interfaces will be recreated on start
 	char oetint[6] = { 0 };
-	snprintf(oetint,sizeof(oetint), "oet%d", tunnels);
+	snprintf(oetint, sizeof(oetint), "oet%d", tunnels);
 	eval("ip", "link", "del", oetint);
 #endif
 
@@ -2812,7 +2821,7 @@ void qos_save(webs_t wp)
 			strcpy(svqos_var, tmp);
 			debug_free(tmp);
 		} else
-			snprintf(svqos_var,4096, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
+			snprintf(svqos_var, 4096, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 
 	}
 
@@ -3358,9 +3367,9 @@ void add_vifs_single(char *prefix, int device)
 	snprintf(v3, sizeof(v3), "wl%d_ssid", device);
 #endif
 	if (!*(vifs))
-		snprintf(n,slen, "%s", v);
+		snprintf(n, slen, "%s", v);
 	else
-		snprintf(n,slen, "%s %s", vifs, v);
+		snprintf(n, slen, "%s %s", vifs, v);
 	sprintf(v2, "%s_closed", v);
 	nvram_seti(v2, 0);
 	sprintf(v2, "%s_mode", v);
@@ -3611,7 +3620,15 @@ static char *vapsettings[] = {
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
 	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "bgscan_mode", "bgscan_short_int",
 	"bgscan_threshold",
-	"bgscan_long_int"
+	"bgscan_long_int",
+	"80211v",
+	"80211k",
+	"wnm_sleep_mode",
+	"wnm_sleep_mode_no_keys",
+	"bss_transition",
+	"rrm_neighbor_report",
+	"rrm_beacon_report",
+	"mbo",
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -4412,7 +4429,7 @@ void save_networking(webs_t wp)
 		char buf[32];
 		char temp[32];
 		sprintf(temp, "%s_netmask", ifname);
-		nvram_set(temp, cidr_to_nm(buf,sizeof(buf), websGetVari(wp, temp, 0)));
+		nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
@@ -5199,7 +5216,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	char buf[32];
 	char temp[32];
 	sprintf(temp, "%s_netmask", ifname);
-	nvram_set(temp, cidr_to_nm(buf,sizeof(buf), websGetVari(wp, temp, 0)));
+	nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 	copytonv_prefix(wp, "web_filter", prefix);
 
 #else
@@ -5221,7 +5238,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	char buf[32];
 	char temp[32];
 	sprintf(temp, "%s_netmask", prefix);
-	nvram_set(temp, cidr_to_nm(buf,sizeof(buf), websGetVari(wp, temp, 0)));
+	nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 
 	copytonv_prefix(wp, "duallink", prefix);
 
@@ -5961,7 +5978,7 @@ void port_vlan_table_save(webs_t wp)
 	int max = blen + 7;
 #ifdef HAVE_SWCONFIG
 	if (has_igmpsnooping())
-		max += 3; 
+		max += 3;
 #endif
 
 	vlans = malloc(sizeof(int) * max);
@@ -5989,9 +6006,9 @@ void port_vlan_table_save(webs_t wp)
 				num = 4094;
 		}
 		if (i)
-			snprintf(vlanlist, blen*5,"%s %d", vlanlist, num);
+			snprintf(vlanlist, blen * 5, "%s %d", vlanlist, num);
 		else
-			snprintf(vlanlist, blen*5, "%d", num);
+			snprintf(vlanlist, blen * 5, "%d", num);
 	}
 	nvram_set("portvlanlist", vlanlist);
 	debug_free(vlanlist);
