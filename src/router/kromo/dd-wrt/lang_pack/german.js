@@ -284,6 +284,10 @@ share.syslogdisabled="Keine Nachrichten verfügbar! Syslogd ist nicht eingeschal
 share.actiontbl="Aktion";
 share.show="Zeige";
 share.hide="Verstecke";
+share.excluded="Ausgeschlossen";
+share.not_prefered="Nicht Bevorzugt";
+share.prefered="Bevorzugt";
+
 
 
 sbutton.save="Speichern";
@@ -2375,6 +2379,17 @@ wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistische WLAN Verschlüsselung";
 wpa.owe_ifname="OWE Übergangs Interface";
+wpa.wnm_sleep_mode="WNM-Sleep Mode";
+wpa.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK abhilfe";
+wpa.bss_transition="BSS Transition Management";
+wpa.mbo="Multiband Operation (MBO)";
+wpa.s80211v="802.11v Unterstützung";
+wpa.s80211k="802.11k Unterstützung";
+wpa.rrm_neighbor_report="Neighbor report via radio";
+wpa.rrm_beacon_report="Beacon report via radio";
+wpa.proxy_arp="Proxy ARP";
+wpa.time_advertisement="Time advertisement";
+wpa.mbo_cell_data_conn_pref="Cellular Connection Preference";
 
 aoss.titl="AOSS Sicherheit";
 aoss.aoss="AOSS";
