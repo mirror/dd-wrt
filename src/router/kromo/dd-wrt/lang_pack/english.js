@@ -3235,6 +3235,8 @@ wl_basic.wnm_sleep_mode="WNM-Sleep Mode";
 wl_basic.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK workaround";
 wl_basic.bss_transition="BSS Transition Management";
 wl_basic.mbo="Multiband Operation (MBO)";
+wl_basic.rrm_neighbor_report="Neighbor report via radio";
+wl_basic.rrm_beacon_report="Beacon report via radio";
 
 //help container
 var hwl_basic=new Object();
