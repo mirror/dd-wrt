@@ -782,6 +782,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "//]]>\n</script>\n");
 		char wnm[64];
 		sprintf(wnm, "%s_mbo", vvar);
+		nvram_default_get(wnm, has_ax(prefix) ? "1" : "0");
 		showRadio(wp, "wpa.mbo", wnm);
 	}
 #endif
