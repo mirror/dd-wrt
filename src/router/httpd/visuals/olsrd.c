@@ -102,7 +102,7 @@ EJ_VISIBLE void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 			sprintf(valuename, "%s_hnavaliditytime", interface);
 			show_custominputlabel(wp, "HNA Validity Time", valuename, hnavaliditytime, 5);
 
-			sprintf(valuename, "%s_hnavaliditytime", interface);
+			sprintf(valuename, "%s_linkqualitymult", interface);
 			show_custominputlabel(wp, "Link Quality Multiplier", valuename, linkqualitymult, 5);
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"olsrd_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
