@@ -1183,8 +1183,9 @@ ifeq ($(CONFIG_VENTANA),y)
 endif
 ifeq ($(CONFIG_NEWPORT),y)
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
-	install -D update-after-pivot.sh.newport $(INSTALLDIR)/usr/sbin/update-after-pivot.sh
+	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin
 	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install writetool $(INSTALLDIR)/usr/sbin
 endif
 ifeq ($(CONFIG_OCTEON),y)
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
