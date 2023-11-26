@@ -1507,13 +1507,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
 	int iswep = nvhas(akm, "wep");
 	MAC80211DEBUG();
+	if (nvram_nmatch("1", "%s_bridged", ifname))
+		fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
 	// wep key support
 	if (iswep || aoss) {
 //              if (!isfirst || aoss)
 //                      fprintf(fp, "ieee80211n=0\n");
 
-		if (nvram_nmatch("1", "%s_bridged", ifname))
-			fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
 		if (!aoss) {
 			if (!strncmp(ifname, "wlan0", 4))
 				led_control(LED_SEC0, LED_ON);
@@ -1681,15 +1681,17 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "wnm_sleep_mode=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode", ifname) ? 1 : 0);
 		fprintf(fp, "wnm_sleep_mode_no_keys=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname) ? 1 : 0);
 		fprintf(fp, "bss_transition=%d\n", nvram_nmatch("1", "%s_bss_transition", ifname) ? 1 : 0);
-		fprintf(fp, "proxy_arp=%d\n", nvram_nmatch("1", "%s_proxy_arp", ifname) ? 1 : 0);
+		if (nvram_nmatch("1", "%s_proxy_arp", ifname) && nvram_nmatch("1", "%s_bridged", ifname)) {
+			fprintf(fp, "ap_isolate=1\n");
+			fprintf(fp, "proxy_arp=1\n");
+		} else {
+			fprintf(fp, "proxy_arp=0\n");
+		}
 		if (nvram_nmatch("1", "%s_time_advertisement", ifname)) {
 			fprintf(fp, "time_advertisement=2\n");
-
 			char *tz;
 			tz = nvram_nget("%s_time_zone", ifname);
-
 			int i;
-			int found = 0;
 			const char *zone = "Europe/Berlin";
 			for (i = 0; allTimezones[i].tz_name != NULL; i++) {
 				if (!strcmp(allTimezones[i].tz_name, tz)) {
@@ -1703,8 +1705,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	}
 	if (nvram_nmatch("1", "%s_80211k", ifname)) {
-		fprintf(fp, "rrm_neighbor_report=%d", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
-		fprintf(fp, "rrm_beacon_report=%d", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
+		fprintf(fp, "rrm_neighbor_report=%d\n", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
+		fprintf(fp, "rrm_beacon_report=%d\n", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
 	}
 	fprintf(fp, "mbo=%d", nvram_nmatch("1", "%s_mbo", ifname) ? 1 : 0);
 #endif
