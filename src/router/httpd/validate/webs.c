@@ -2456,6 +2456,7 @@ void del_tunnel(webs_t wp)
 
 	for (i = tun + 1; i < tunnels + 1; i++) {
 		copytunvalue("en", i, i - 1);
+		copytunvalue("label", i, i - 1);
 		copytunvalue("mit", i, i - 1);
 		copytunvalue("natout", i, i - 1);
 		copytunvalue("spbr_ip", i, i - 1);
@@ -2537,6 +2538,7 @@ void del_tunnel(webs_t wp)
 	}
 #endif
 	deltunvalue("en", tunnels);
+	deltunvalue("label", tunnels);
 	deltunvalue("mit", tunnels);
 	deltunvalue("natout", tunnels);
 	deltunvalue("spbr_ip", tunnels);
