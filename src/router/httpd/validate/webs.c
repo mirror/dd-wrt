@@ -1987,7 +1987,6 @@ void tunnel_save(webs_t wp)
 	int tunnels = nvram_geti("oet_tunnels");
 	for (i = 1; i < tunnels + 1; i++) {
 		copytonv(wp, "oet%d_en", i);
-		copytonv(wp, "oet%d_label", i);
 		copytonv(wp, "oet%d_mit", i);
 		copytonv(wp, "oet%d_natout", i);
 		copytonv(wp, "oet%d_proto", i);
