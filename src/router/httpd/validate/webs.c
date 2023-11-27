@@ -2295,7 +2295,7 @@ void add_tunnel(webs_t wp)
 #define default_vxset(name,val) if (*(nvram_nget("vxlan%d_%s",tunnels, name))==0)nvram_nset(val, "vxlan%d_%s",tunnels,name)
 #define default_vxseti(name,val) if (*(nvram_nget("vxlan%d_%s",tunnels, name))==0)nvram_nseti(val, "vxlan%d_%s",tunnels,name)
 	default_seti("en", 1);
-	default_seti("label", 1);
+	default_set("label", "");
 	default_seti("mit", 1);
 	default_seti("natout", 1);
 	default_set("spbr_ip", "");
