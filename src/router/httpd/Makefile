@@ -1562,7 +1562,7 @@ httpd: httpd.c $(ADDOBJ) $(OBJS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
-httpd_static: httpd.c $(ADDOBJ) $(OBJS)  validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)  dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
+httpd_static: httpd.c $(ADDOBJ) $(OBJS)  validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)  core.o dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
 
 	@echo "[LD] $@"
 ifeq ($(CONFIG_SUPERCHANNEL),y)
