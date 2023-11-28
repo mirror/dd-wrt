@@ -2131,4 +2131,6 @@ print_big_u64_addr(const uint64_t addr)
 #  include "syscall.h"
 # endif
 
+#define MIPS_ENABLED(a)
+
 #endif /* !STRACE_DEFS_H */

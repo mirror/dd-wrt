@@ -1080,7 +1080,7 @@ syscallent_files = $(filter $(syscallent_patterns),$(EXTRA_DIST))
 sen.h: $(patsubst %,$(srcdir)/%,$(syscallent_files))
 	for f in $^; do cat -- $$f; done | \
 		D="$(D)" \
-		$(srcdir)/generate_sen.sh > $@
+		sh $(srcdir)/generate_sen.sh > $@
 
 ioctlsort_CC = $(CC_FOR_BUILD)
 ioctlsort_DEFS = $(DEFS)

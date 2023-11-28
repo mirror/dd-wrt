@@ -10912,7 +10912,7 @@ sys_func.h: $(patsubst %,$(srcdir)/%,$(sys_func_h_sources))
 sen.h: $(patsubst %,$(srcdir)/%,$(syscallent_files))
 	for f in $^; do cat -- $$f; done | \
 		D="$(D)" \
-		$(srcdir)/generate_sen.sh > $@
+		sh $(srcdir)/generate_sen.sh > $@
 
 ioctl_redefs%.h: ioctlent%.h ioctlent0.h
 	sort $< > $<-t
