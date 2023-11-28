@@ -787,7 +787,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft_protocol)</script></div>\n");
 
-		sprintf(wnm, "%s_ft_over_fs", prefix);
+		sprintf(wnm, "%s_ft_over_ds", prefix);
 		showOptions_trans(wp, wnm, "0 1", (char *[]) { "wpa.ft_over_air", "wpa.ft_over_ds" }, nvram_default_get(wnm, "0"));
 		websWrite(wp, "</div>\n");
 
