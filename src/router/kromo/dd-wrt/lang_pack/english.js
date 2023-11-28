@@ -2725,7 +2725,9 @@ wpa.proxy_arp="Proxy ARP";
 wpa.time_advertisement="Time advertisement";
 wpa.mbo_cell_data_conn_pref="Cellular Connection Preference";
 wpa.reassociation_deadline="Reassociation Deadline";
-wpa.ft_over_ds="FT protocol";
+wpa.ft_protocol="FT protocol";
+wpa.ft_over_ds="FT over DS";
+wpa.ft_over_air="FT over the Air";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";
