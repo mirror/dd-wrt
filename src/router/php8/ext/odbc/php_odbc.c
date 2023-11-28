@@ -438,7 +438,7 @@ PHP_MINFO_FUNCTION(odbc)
 	char buf[32];
 
 	php_info_print_table_start();
-	php_info_print_table_header(2, "ODBC Support", "enabled");
+	php_info_print_table_row(2, "ODBC Support", "enabled");
 	snprintf(buf, sizeof(buf), ZEND_LONG_FMT, ODBCG(num_persistent));
 	php_info_print_table_row(2, "Active Persistent Links", buf);
 	snprintf(buf, sizeof(buf), ZEND_LONG_FMT, ODBCG(num_links));
@@ -2210,12 +2210,12 @@ try_and_get_another_connection:
 		/* the link is not in the persistent list */
 		if ((le = zend_hash_str_find_ptr(&EG(persistent_list), hashed_details, hashed_len)) == NULL) {
 			if (ODBCG(max_links) != -1 && ODBCG(num_links) >= ODBCG(max_links)) {
-				php_error_docref(NULL, E_WARNING, "Too many open links (%ld)", ODBCG(num_links));
+				php_error_docref(NULL, E_WARNING, "Too many open links (" ZEND_LONG_FMT ")", ODBCG(num_links));
 				efree(hashed_details);
 				RETURN_FALSE;
 			}
 			if (ODBCG(max_persistent) != -1 && ODBCG(num_persistent) >= ODBCG(max_persistent)) {
-				php_error_docref(NULL, E_WARNING,"Too many open persistent links (%ld)", ODBCG(num_persistent));
+				php_error_docref(NULL, E_WARNING,"Too many open persistent links (" ZEND_LONG_FMT ")", ODBCG(num_persistent));
 				efree(hashed_details);
 				RETURN_FALSE;
 			}
@@ -2285,7 +2285,7 @@ try_and_get_another_connection:
 		RETVAL_RES(db_conn->res);
 	} else { /* non persistent */
 		if (ODBCG(max_links) != -1 && ODBCG(num_links) >= ODBCG(max_links)) {
-			php_error_docref(NULL, E_WARNING,"Too many open connections (%ld)",ODBCG(num_links));
+			php_error_docref(NULL, E_WARNING,"Too many open connections (" ZEND_LONG_FMT ")",ODBCG(num_links));
 			RETURN_FALSE;
 		}
 
@@ -2556,8 +2556,9 @@ PHP_FUNCTION(odbc_autocommit)
 	RETCODE rc;
 	zval *pv_conn;
 	bool pv_onoff = 0;
+	bool pv_onoff_is_null = true;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r|b", &pv_conn, &pv_onoff) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r|b!", &pv_conn, &pv_onoff, &pv_onoff_is_null) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -2565,13 +2566,13 @@ PHP_FUNCTION(odbc_autocommit)
 		RETURN_THROWS();
 	}
 
-	if (ZEND_NUM_ARGS() > 1) {
+	if (!pv_onoff_is_null) {
 		rc = SQLSetConnectOption(conn->hdbc, SQL_AUTOCOMMIT, pv_onoff ? SQL_AUTOCOMMIT_ON : SQL_AUTOCOMMIT_OFF);
 		if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
 			odbc_sql_error(conn, SQL_NULL_HSTMT, "Set autocommit");
 			RETURN_FALSE;
 		}
-		RETVAL_TRUE;
+		RETURN_TRUE;
 	} else {
 		SQLINTEGER status;
 
@@ -2580,7 +2581,7 @@ PHP_FUNCTION(odbc_autocommit)
 			odbc_sql_error(conn, SQL_NULL_HSTMT, "Get commit status");
 			RETURN_FALSE;
 		}
-		RETVAL_LONG((zend_long)status);
+		RETURN_LONG((zend_long)status);
 	}
 }
 /* }}} */

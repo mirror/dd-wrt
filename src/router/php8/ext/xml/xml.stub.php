@@ -134,6 +134,12 @@ const XML_OPTION_SKIP_TAGSTART = UNKNOWN;
  */
 const XML_OPTION_SKIP_WHITE = UNKNOWN;
 
+/**
+ * @var string
+ * @cvalue PHP_XML_SAX_IMPL
+ */
+const XML_SAX_IMPL = UNKNOWN;
+
 function xml_parser_create(?string $encoding = null): XMLParser {}
 
 function xml_parser_create_ns(?string $encoding = null, string $separator = ":"): XMLParser {}
@@ -176,7 +182,7 @@ function xml_parse(XMLParser $parser, string $data, bool $is_final = false): int
  * @param array $values
  * @param array $index
  */
-function xml_parse_into_struct(XMLParser $parser, string $data, &$values, &$index = null): int {}
+function xml_parse_into_struct(XMLParser $parser, string $data, &$values, &$index = null): int|false {}
 
 function xml_get_error_code(XMLParser $parser): int {}
 
@@ -191,11 +197,11 @@ function xml_get_current_byte_index(XMLParser $parser): int {}
 
 function xml_parser_free(XMLParser $parser): bool {}
 
-/** @param string|int $value */
+/** @param string|int|bool $value */
 function xml_parser_set_option(XMLParser $parser, int $option, $value): bool {}
 
 /** @refcount 1 */
-function xml_parser_get_option(XMLParser $parser, int $option): string|int {}
+function xml_parser_get_option(XMLParser $parser, int $option): string|int|bool {}
 
 /**
  * @strict-properties

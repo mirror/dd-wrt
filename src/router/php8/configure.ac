@@ -17,7 +17,7 @@ dnl Basic autoconf initialization, generation of config.nice.
 dnl ----------------------------------------------------------------------------
 
 AC_PREREQ([2.68])
-AC_INIT([PHP],[8.2.11],[https://github.com/php/php-src/issues],[php],[https://www.php.net])
+AC_INIT([PHP],[8.3.0],[https://github.com/php/php-src/issues],[php],[https://www.php.net])
 AC_CONFIG_SRCDIR([main/php_version.h])
 AC_CONFIG_AUX_DIR([build])
 AC_PRESERVE_HELP_ORDER
@@ -64,7 +64,9 @@ IFS=$ac_IFS
 PHP_MAJOR_VERSION=[$]1
 PHP_MINOR_VERSION=[$]2
 PHP_RELEASE_VERSION=[$]3
-PHP_EXTRA_VERSION=[$]4
+dnl Allow overriding PHP_EXTRA_VERSION through the homonymous env var
+AC_ARG_VAR([PHP_EXTRA_VERSION],[Extra PHP version label suffix, e.g. '-dev', 'rc1', '-acme'])dnl
+AS_IF([test -z "$PHP_EXTRA_VERSION"],[PHP_EXTRA_VERSION=[$]4])
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr [$]PHP_MAJOR_VERSION \* 10000 + [$]PHP_MINOR_VERSION \* 100 + [$]PHP_RELEASE_VERSION`
 
@@ -164,7 +166,7 @@ PHP_RUNPATH_SWITCH
 dnl Checks for some support/generator progs.
 PHP_PROG_AWK
 PHP_PROG_BISON([3.0.0])
-PHP_PROG_RE2C([0.13.4])
+PHP_PROG_RE2C([1.0.3])
 PHP_PROG_PHP()
 
 PHP_ARG_ENABLE([re2c-cgoto],
@@ -418,6 +420,7 @@ sys/file.h \
 sys/mman.h \
 sys/mount.h \
 sys/poll.h \
+sys/procctl.h \
 sys/resource.h \
 sys/select.h \
 sys/socket.h \
@@ -509,6 +512,8 @@ dnl Check __builtin_saddl_overflow
 PHP_CHECK_BUILTIN_SADDL_OVERFLOW
 dnl Check __builtin_saddll_overflow
 PHP_CHECK_BUILTIN_SADDLL_OVERFLOW
+dnl Check __builtin_usub_overflow
+PHP_CHECK_BUILTIN_USUB_OVERFLOW
 dnl Check __builtin_ssubl_overflow
 PHP_CHECK_BUILTIN_SSUBL_OVERFLOW
 dnl Check __builtin_ssubll_overflow
@@ -517,6 +522,16 @@ dnl Check __builtin_cpu_init
 PHP_CHECK_BUILTIN_CPU_INIT
 dnl Check __builtin_cpu_supports
 PHP_CHECK_BUILTIN_CPU_SUPPORTS
+dnl Check __builtin_frame_address
+PHP_CHECK_BUILTIN_FRAME_ADDRESS
+dnl Check prctl
+PHP_CHECK_PRCTL
+dnl Check procctl
+PHP_CHECK_PROCCTL
+dnl Check AVX512
+PHP_CHECK_AVX512_SUPPORTS
+dnl Check AVX512 VBMI
+PHP_CHECK_AVX512_VBMI_SUPPORTS
 
 dnl Check for __alignof__ support in the compiler
 AC_CACHE_CHECK(whether the compiler supports __alignof__, ac_cv_alignof_exists,[
@@ -776,7 +791,7 @@ PHP_ARG_WITH([valgrind],
   [whether to enable valgrind support],
   [AS_HELP_STRING([--with-valgrind],
     [Enable valgrind support])],
-  [yes],
+  [no],
   [no])
 
 if test "$PHP_VALGRIND" != "no"; then
@@ -1091,7 +1106,7 @@ PHP_HELP_SEPARATOR([Extensions:
 
   --with-EXTENSION=[shared[,PATH]]
 
-    NOTE: Not all extensions can be build as 'shared'.
+    NOTE: Not all extensions can be built as 'shared'.
 
     Example: --with-foobar=shared,/usr/local/foobar/
 
@@ -1183,7 +1198,7 @@ if test "$ac_cv_lib_crypt_crypt" = "yes"; then
   EXTRA_LIBS="-lcrypt $EXTRA_LIBS -lcrypt"
 fi
 
-unset LIBS LDFLAGS
+unset LIBS
 
 dnl PEAR
 dnl ----------------------------------------------------------------------------
@@ -1238,13 +1253,13 @@ fi
 dnl Configuring Zend and TSRM.
 dnl ----------------------------------------------------------------------------
 
+PHP_HELP_SEPARATOR([Zend:])
+PHP_CONFIGURE_PART(Configuring Zend)
+
 AC_ARG_ENABLE([fiber-asm],
   [AS_HELP_STRING([--disable-fiber-asm],
     [Disable the use of boost fiber assembly files])],
   [fiber_asm=$enableval], [fiber_asm='yes'])
-
-PHP_HELP_SEPARATOR([Zend:])
-PHP_CONFIGURE_PART(Configuring Zend)
 
 AS_CASE([$host_cpu],
   [x86_64*|amd64*], [fiber_cpu="x86_64"],
@@ -1302,10 +1317,35 @@ else
   fiber_asm="no"
 fi
 
+dnl Check whether syscall to create shadow stack exists, should be a better way, but...
+AC_CACHE_CHECK([whether syscall to create shadow stack exists], ac_cv_syscall_shadow_stack_exists,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <unistd.h>
+#include <sys/mman.h>
+int main(void) {
+  /* test if syscall 451, i.e., map_shadow_stack is available */
+  void* base = (void *)syscall(451, 0, 0x20000, 0x1);
+  if (base != (void*)-1) {
+    munmap(base, 0x20000);
+    return 0;
+  }
+  else
+    return 1;
+}
+  ]])], [ac_cv_syscall_shadow_stack_exists=yes], [ac_cv_syscall_shadow_stack_exists=no], [ac_cv_syscall_shadow_stack_exists=no])
+])
+if test "$ac_cv_syscall_shadow_stack_exists" = yes; then
+  AC_DEFINE([SHADOW_STACK_SYSCALL], 1, [ ])
+  # asm file can't see macro from AC_DEFINE, workaround this via cflag
+  fiber_asm_cflag="-DSHADOW_STACK_SYSCALL=1"
+  # if the syscall doesn't exist, we may block the final ELF from __PROPERTY_SHSTK
+  # via redefine macro as "-D__CET__=1"
+fi
+
 if test "$fiber_asm" = 'yes'; then
   AC_MSG_CHECKING([for fiber switching context])
   AC_DEFINE([ZEND_FIBER_ASM], 1, [ ])
-  PHP_ADD_SOURCES(Zend/asm, make_${fiber_asm_file}.S jump_${fiber_asm_file}.S)
+  PHP_ADD_SOURCES(Zend/asm, make_${fiber_asm_file}.S jump_${fiber_asm_file}.S, "$fiber_asm_cflag")
   AC_MSG_RESULT([$fiber_asm_file])
 else
   if test "$fiber_os" = 'mac'; then
@@ -1331,9 +1371,8 @@ if test "$abs_srcdir" != "$abs_builddir"; then
 fi
 
 ZEND_EXTRA_LIBS="$LIBS"
-unset LIBS LDFLAGS
+unset LIBS
 
-PHP_HELP_SEPARATOR([TSRM:])
 PHP_CONFIGURE_PART(Configuring TSRM)
 if test "$PHP_THREAD_SAFETY" = "yes"; then
   TSRM_CHECK_PTHREADS
@@ -1581,6 +1620,23 @@ if test "$PHP_UNDEFINED_SANITIZER" = "yes"; then
       CFLAGS="$CFLAGS -fno-sanitize=object-size"
       CXXFLAGS="$CFLAGS -fno-sanitize=object-size"
     ])
+
+    dnl Clang 17 adds stricter function pointer compatibility checks where pointer args cannot be
+    dnl cast to void*. In that case, set -fno-sanitize=function.
+    OLD_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -fno-sanitize-recover=undefined"
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
+void foo(char *string) {}
+int main(void) {
+  void (*f)(void *) = (void (*)(void *))foo;
+  f("foo");
+}
+    ]])],,[ubsan_needs_no_function=yes],)
+    CFLAGS="$OLD_CFLAGS"
+    if test "$ubsan_needs_no_function" = yes; then
+      CFLAGS="$CFLAGS -fno-sanitize=function"
+      CXXFLAGS="$CFLAGS -fno-sanitize=function"
+    fi
   ], [AC_MSG_ERROR([UndefinedBehaviorSanitizer is not available])])
 fi
 
@@ -1682,7 +1738,7 @@ PHP_ADD_SOURCES_X(/main, internal_functions_cli.c, -DZEND_ENABLE_STATIC_TSRMLS_C
 PHP_ADD_SOURCES(Zend, \
     zend_language_parser.c zend_language_scanner.c \
     zend_ini_parser.c zend_ini_scanner.c \
-    zend_alloc.c zend_compile.c zend_constants.c zend_dtrace.c \
+    zend_alloc.c zend_call_stack.c zend_compile.c zend_constants.c zend_dtrace.c \
     zend_execute_API.c zend_highlight.c zend_llist.c \
     zend_vm_opcodes.c zend_opcode.c zend_operators.c zend_ptr_stack.c zend_stack.c \
     zend_variables.c zend.c zend_API.c zend_extensions.c zend_hash.c \
@@ -1694,6 +1750,7 @@ PHP_ADD_SOURCES(Zend, \
     zend_default_classes.c zend_inheritance.c zend_smart_str.c zend_cpuinfo.c zend_gdb.c \
     zend_observer.c zend_system_id.c zend_enum.c zend_fibers.c zend_atomic.c \
     zend_max_execution_timer.c \
+    zend_hrtime.c \
 	Optimizer/zend_optimizer.c \
 	Optimizer/pass1.c \
 	Optimizer/pass3.c \

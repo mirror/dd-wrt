@@ -85,7 +85,7 @@ static inline bool is_in_successors(zend_basic_block *block, int check) {
 	return 0;
 }
 
-static inline bool is_var_type(zend_uchar type) {
+static inline bool is_var_type(uint8_t type) {
 	return (type & (IS_CV|IS_VAR|IS_TMP_VAR)) != 0;
 }
 
@@ -170,10 +170,10 @@ void ssa_verify_integrity(zend_op_array *op_array, zend_ssa *ssa, const char *ex
 			}
 		} FOREACH_PHI_USE_END();
 
-		if ((type & MAY_BE_ARRAY_KEY_ANY) && !(type & MAY_BE_ARRAY_OF_ANY)) {
+		if ((type & (MAY_BE_ARRAY_KEY_ANY-MAY_BE_ARRAY_EMPTY)) && !(type & MAY_BE_ARRAY_OF_ANY)) {
 			FAIL("var " VARFMT " has array key type but not value type\n", VAR(i));
 		}
-		if ((type & MAY_BE_ARRAY_OF_ANY) && !(type & MAY_BE_ARRAY_KEY_ANY)) {
+		if ((type & MAY_BE_ARRAY_OF_ANY) && !(type & (MAY_BE_ARRAY_KEY_ANY-MAY_BE_ARRAY_EMPTY))) {
 			FAIL("var " VARFMT " has array value type but not key type\n", VAR(i));
 		}
 		if ((type & MAY_BE_REF) && ssa->var_info[i].ce) {

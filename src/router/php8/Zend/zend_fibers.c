@@ -65,6 +65,16 @@
 # include <sanitizer/common_interface_defs.h>
 #endif
 
+# if defined __CET__
+#  include <cet.h>
+#  define SHSTK_ENABLED (__CET__ & 0x2)
+#  define BOOST_CONTEXT_SHADOW_STACK (SHSTK_ENABLED && SHADOW_STACK_SYSCALL)
+#  define __NR_map_shadow_stack 451
+# ifndef SHADOW_STACK_SET_TOKEN
+#  define SHADOW_STACK_SET_TOKEN 0x1
+#endif
+#endif
+
 /* Encapsulates the fiber C stack with extension for debugging tools. */
 struct _zend_fiber_stack {
 	void *pointer;
@@ -82,6 +92,10 @@ struct _zend_fiber_stack {
 #ifdef ZEND_FIBER_UCONTEXT
 	/* Embedded ucontext to avoid unnecessary memory allocations. */
 	ucontext_t ucontext;
+#elif BOOST_CONTEXT_SHADOW_STACK
+	/* Shadow stack: base, size */
+	void *ss_base;
+	size_t ss_size;
 #endif
 };
 
@@ -96,6 +110,10 @@ typedef struct _zend_fiber_vm_state {
 	uint32_t jit_trace_num;
 	JMP_BUF *bailout;
 	zend_fiber *active_fiber;
+#ifdef ZEND_CHECK_STACK_LIMIT
+	void *stack_base;
+	void *stack_limit;
+#endif
 } zend_fiber_vm_state;
 
 static zend_always_inline void zend_fiber_capture_vm_state(zend_fiber_vm_state *state)
@@ -109,6 +127,10 @@ static zend_always_inline void zend_fiber_capture_vm_state(zend_fiber_vm_state *
 	state->jit_trace_num = EG(jit_trace_num);
 	state->bailout = EG(bailout);
 	state->active_fiber = EG(active_fiber);
+#ifdef ZEND_CHECK_STACK_LIMIT
+	state->stack_base = EG(stack_base);
+	state->stack_limit = EG(stack_limit);
+#endif
 }
 
 static zend_always_inline void zend_fiber_restore_vm_state(zend_fiber_vm_state *state)
@@ -122,6 +144,10 @@ static zend_always_inline void zend_fiber_restore_vm_state(zend_fiber_vm_state *
 	EG(jit_trace_num) = state->jit_trace_num;
 	EG(bailout) = state->bailout;
 	EG(active_fiber) = state->active_fiber;
+#ifdef ZEND_CHECK_STACK_LIMIT
+	EG(stack_base) = state->stack_base;
+	EG(stack_limit) = state->stack_limit;
+#endif
 }
 
 #ifdef ZEND_FIBER_UCONTEXT
@@ -234,6 +260,23 @@ static zend_fiber_stack *zend_fiber_stack_allocate(size_t size)
 	stack->pointer = (void *) ((uintptr_t) pointer + ZEND_FIBER_GUARD_PAGES * page_size);
 	stack->size = stack_size;
 
+#if !defined(ZEND_FIBER_UCONTEXT) && BOOST_CONTEXT_SHADOW_STACK
+	/* shadow stack saves ret address only, need less space */
+	stack->ss_size= stack_size >> 5;
+
+	/* align shadow stack to 8 bytes. */
+	stack->ss_size = (stack->ss_size + 7) & ~7;
+
+	/* issue syscall to create shadow stack for the new fcontext */
+	/* SHADOW_STACK_SET_TOKEN option will put "restore token" on the new shadow stack */
+	stack->ss_base = (void *)syscall(__NR_map_shadow_stack, 0, stack->ss_size, SHADOW_STACK_SET_TOKEN);
+
+	if (stack->ss_base == MAP_FAILED) {
+		zend_throw_exception_ex(NULL, 0, "Fiber shadow stack allocate failed: mmap failed: %s (%d)", strerror(errno), errno);
+		return NULL;
+	}
+#endif
+
 #ifdef VALGRIND_STACK_REGISTER
 	uintptr_t base = (uintptr_t) stack->pointer;
 	stack->valgrind_stack_id = VALGRIND_STACK_REGISTER(base, base + stack->size);
@@ -263,8 +306,37 @@ static void zend_fiber_stack_free(zend_fiber_stack *stack)
 	munmap(pointer, stack->size + ZEND_FIBER_GUARD_PAGES * page_size);
 #endif
 
+#if !defined(ZEND_FIBER_UCONTEXT) && BOOST_CONTEXT_SHADOW_STACK
+	munmap(stack->ss_base, stack->ss_size);
+#endif
+
 	efree(stack);
 }
+
+#ifdef ZEND_CHECK_STACK_LIMIT
+ZEND_API void* zend_fiber_stack_limit(zend_fiber_stack *stack)
+{
+	zend_ulong reserve = EG(reserved_stack_size);
+
+#ifdef __APPLE__
+	/* On Apple Clang, the stack probing function ___chkstk_darwin incorrectly
+	 * probes a location that is twice the entered function's stack usage away
+	 * from the stack pointer, when using an alternative stack.
+	 * https://openradar.appspot.com/radar?id=5497722702397440
+	 */
+	reserve = reserve * 2;
+#endif
+
+	/* stack->pointer is the end of the stack */
+	return (int8_t*)stack->pointer + reserve;
+}
+
+ZEND_API void* zend_fiber_stack_base(zend_fiber_stack *stack)
+{
+	return (void*)((uintptr_t)stack->pointer + stack->size);
+}
+#endif
+
 #ifdef ZEND_FIBER_UCONTEXT
 static ZEND_NORETURN void zend_fiber_trampoline(void)
 #else
@@ -322,12 +394,12 @@ ZEND_API bool zend_fiber_switch_blocked(void)
 	return zend_fiber_switch_blocking;
 }
 
-ZEND_API bool zend_fiber_init_context(zend_fiber_context *context, void *kind, zend_fiber_coroutine coroutine, size_t stack_size)
+ZEND_API zend_result zend_fiber_init_context(zend_fiber_context *context, void *kind, zend_fiber_coroutine coroutine, size_t stack_size)
 {
 	context->stack = zend_fiber_stack_allocate(stack_size);
 
 	if (UNEXPECTED(!context->stack)) {
-		return false;
+		return FAILURE;
 	}
 
 #ifdef ZEND_FIBER_UCONTEXT
@@ -347,6 +419,13 @@ ZEND_API bool zend_fiber_init_context(zend_fiber_context *context, void *kind, z
 	// Stack grows down, calculate the top of the stack. make_fcontext then shifts pointer to lower 16-byte boundary.
 	void *stack = (void *) ((uintptr_t) context->stack->pointer + context->stack->size);
 
+#if BOOST_CONTEXT_SHADOW_STACK
+	// pass the shadow stack pointer to make_fcontext
+	// i.e., link the new shadow stack with the new fcontext
+	// TODO should be a better way?
+	*((unsigned long*) (stack - 8)) = (unsigned long)context->stack->ss_base + context->stack->ss_size;
+#endif
+
 	context->handle = make_fcontext(stack, context->stack->size, zend_fiber_trampoline);
 	ZEND_ASSERT(context->handle != NULL && "make_fcontext() never returns NULL");
 #endif
@@ -359,7 +438,7 @@ ZEND_API bool zend_fiber_init_context(zend_fiber_context *context, void *kind, z
 
 	zend_observer_fiber_init_notify(context);
 
-	return true;
+	return SUCCESS;
 }
 
 ZEND_API void zend_fiber_destroy_context(zend_fiber_context *context)
@@ -499,6 +578,11 @@ static ZEND_STACK_ALIGNED void zend_fiber_execute(zend_fiber_transfer *transfer)
 		EG(jit_trace_num) = 0;
 		EG(error_reporting) = error_reporting;
 
+#ifdef ZEND_CHECK_STACK_LIMIT
+		EG(stack_base) = zend_fiber_stack_base(fiber->context.stack);
+		EG(stack_limit) = zend_fiber_stack_limit(fiber->context.stack);
+#endif
+
 		fiber->fci.retval = &fiber->result;
 
 		zend_call_function(&fiber->fci, &fiber->fci_cache);
@@ -572,6 +656,10 @@ static zend_always_inline zend_fiber_transfer zend_fiber_resume(zend_fiber *fibe
 {
 	zend_fiber *previous = EG(active_fiber);
 
+	if (previous) {
+		previous->execute_data = EG(current_execute_data);
+	}
+
 	fiber->caller = EG(current_fiber_context);
 	EG(active_fiber) = fiber;
 
@@ -589,6 +677,7 @@ static zend_always_inline zend_fiber_transfer zend_fiber_suspend(zend_fiber *fib
 	zend_fiber_context *caller = fiber->caller;
 	fiber->previous = EG(current_fiber_context);
 	fiber->caller = NULL;
+	fiber->execute_data = EG(current_execute_data);
 
 	return zend_fiber_switch_to(caller, value, false);
 }
@@ -596,12 +685,9 @@ static zend_always_inline zend_fiber_transfer zend_fiber_suspend(zend_fiber *fib
 static zend_object *zend_fiber_object_create(zend_class_entry *ce)
 {
 	zend_fiber *fiber = emalloc(sizeof(zend_fiber));
-
 	memset(fiber, 0, sizeof(zend_fiber));
 
 	zend_object_std_init(&fiber->std, ce);
-	fiber->std.handlers = &zend_fiber_handlers;
-
 	return &fiber->std;
 }
 
@@ -731,7 +817,7 @@ ZEND_METHOD(Fiber, start)
 		RETURN_THROWS();
 	}
 
-	if (!zend_fiber_init_context(&fiber->context, zend_ce_fiber, zend_fiber_execute, EG(fiber_stack_size))) {
+	if (zend_fiber_init_context(&fiber->context, zend_ce_fiber, zend_fiber_execute, EG(fiber_stack_size)) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -770,7 +856,6 @@ ZEND_METHOD(Fiber, suspend)
 
 	ZEND_ASSERT(fiber->context.status == ZEND_FIBER_STATUS_RUNNING || fiber->context.status == ZEND_FIBER_STATUS_SUSPENDED);
 
-	fiber->execute_data = EG(current_execute_data);
 	fiber->stack_bottom->prev_execute_data = NULL;
 
 	zend_fiber_transfer transfer = zend_fiber_suspend(fiber, value);
@@ -933,6 +1018,7 @@ void zend_register_fiber_ce(void)
 {
 	zend_ce_fiber = register_class_Fiber();
 	zend_ce_fiber->create_object = zend_fiber_object_create;
+	zend_ce_fiber->default_object_handlers = &zend_fiber_handlers;
 
 	zend_fiber_handlers = std_object_handlers;
 	zend_fiber_handlers.dtor_obj = zend_fiber_object_destroy;

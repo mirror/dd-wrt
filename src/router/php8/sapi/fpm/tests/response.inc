@@ -143,9 +143,20 @@ class Response
      *
      * @return Response
      */
-    public function expectHeader($name, $value): Response
+    public function expectHeader($name, $value, $useRegex = false): Response
     {
-        $this->checkHeader($name, $value);
+        $this->checkHeader($name, $value, $useRegex);
+
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @return Response
+     */
+    public function expectNoHeader($name)
+    {
+        $this->checkNoHeader($name);
 
         return $this;
     }
@@ -358,6 +369,21 @@ class Response
     }
 
     /**
+     * @param string $name
+     * @return bool
+     */
+    private function checkNoHeader(string $name)
+    {
+        $lcName = strtolower($name);
+        $headers = $this->getHeaders();
+        if (isset($headers[$lcName])) {
+            return $this->error("The header $name is present");
+        }
+
+        return true;
+    }
+
+    /**
      * Get all headers.
      *
      * @return array|null
@@ -432,5 +458,91 @@ class Response
         echo "ERROR: $message\n";
 
         return false;
+    }
+}
+
+class ValuesResponse
+{
+    /**
+     * @var array
+     */
+    private array $values;
+
+    /**
+     * @param string|array|null $values
+     */
+    public function __construct($values = null)
+    {
+        if ( ! is_array($values)) {
+            if ( ! is_null($values) ) {
+                $this->error('Invalid values supplied', true);
+            }
+            $this->values = [];
+        } else {
+            $this->values = $values;
+        }
+    }
+
+    /**
+     * Expect value.
+     *
+     * @param string $name
+     * @param mixed  $value
+     * @return ValuesResponse
+     */
+    public function expectValue(string $name, $value = null)
+    {
+        if ( ! isset($this->values[$name])) {
+            return $this->error("Value $name not found in values");
+        }
+        if ( ! is_null($value) && $value !== $this->values[$name]) {
+            return $this->error("Value $name is {$this->values[$name]} but expected $value");
+        }
+        return $this;
+    }
+
+    /**
+     * Get values.
+     *
+     * @return array
+     */
+    public function getValues()
+    {
+        return $this->values;
+    }
+
+    /**
+     * Debug output data.
+     *
+     * @return ValuesResponse
+     */
+    public function debugOutput()
+    {
+        echo ">>> ValuesResponse\n";
+        echo "----------------- Values -----------------\n";
+        var_dump($this->values);
+        echo "---------------------------------------\n\n";
+
+        return $this;
+    }
+
+    /**
+     * Emit error message
+     *
+     * @param string $message
+     * @param bool   $throw
+     *
+     * @return ValuesResponse
+     */
+    private function error(string $message, $throw = false): bool
+    {
+        $errorMessage = "ERROR: $message\n";
+        if ($throw) {
+            throw new \Exception($errorMessage);
+        }
+        $this->debugOutput();
+        echo $errorMessage;
+
+        return $this;
     }
 }

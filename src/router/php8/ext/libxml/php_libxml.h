@@ -35,6 +35,7 @@ extern zend_module_entry libxml_module_entry;
 
 #include "zend_smart_str.h"
 #include <libxml/tree.h>
+#include <libxml/parser.h>
 
 #define LIBXML_SAVE_NOEMPTYTAG 1<<2
 
@@ -42,29 +43,30 @@ ZEND_BEGIN_MODULE_GLOBALS(libxml)
 	zval stream_context;
 	smart_str error_buffer;
 	zend_llist *error_list;
-	struct _php_libxml_entity_resolver {
-		zval 					callback;
-		zend_fcall_info 		fci;
-		zend_fcall_info_cache	fcc;
-	} entity_loader;
+	zend_fcall_info_cache entity_loader_callback;
 	bool entity_loader_disabled;
 ZEND_END_MODULE_GLOBALS(libxml)
 
 typedef struct _libxml_doc_props {
-	int formatoutput;
-	int validateonparse;
-	int resolveexternals;
-	int preservewhitespace;
-	int substituteentities;
-	int stricterror;
-	int recover;
 	HashTable *classmap;
+	bool formatoutput;
+	bool validateonparse;
+	bool resolveexternals;
+	bool preservewhitespace;
+	bool substituteentities;
+	bool stricterror;
+	bool recover;
 } libxml_doc_props;
+
+typedef struct {
+	size_t modification_nr;
+} php_libxml_cache_tag;
 
 typedef struct _php_libxml_ref_obj {
 	void *ptr;
 	int   refcount;
 	libxml_doc_props *doc_props;
+	php_libxml_cache_tag cache_tag;
 } php_libxml_ref_obj;
 
 typedef struct _php_libxml_node_ptr {
@@ -83,6 +85,34 @@ typedef struct _php_libxml_node_object {
 
 static inline php_libxml_node_object *php_libxml_node_fetch_object(zend_object *obj) {
 	return (php_libxml_node_object *)((char*)(obj) - obj->handlers->offset);
+}
+
+static zend_always_inline void php_libxml_invalidate_node_list_cache(php_libxml_ref_obj *doc_ptr)
+{
+	if (!doc_ptr) {
+		return;
+	}
+#if SIZEOF_SIZE_T == 8
+	/* If one operation happens every nanosecond, then it would still require 584 years to overflow
+	 * the counter. So we'll just assume this never happens. */
+	doc_ptr->cache_tag.modification_nr++;
+#else
+	size_t new_modification_nr = doc_ptr->cache_tag.modification_nr + 1;
+	if (EXPECTED(new_modification_nr > 0)) { /* unsigned overflow; checking after addition results in one less instruction */
+		doc_ptr->cache_tag.modification_nr = new_modification_nr;
+	}
+#endif
+}
+
+static zend_always_inline void php_libxml_invalidate_node_list_cache_from_doc(xmlDocPtr docp)
+{
+	if (docp && docp->_private) { /* docp is NULL for detached nodes */
+		php_libxml_node_ptr *node_private = (php_libxml_node_ptr *) docp->_private;
+		php_libxml_node_object *object_private = (php_libxml_node_object *) node_private->_private;
+		if (object_private) {
+			php_libxml_invalidate_node_list_cache(object_private->document);
+		}
+	}
 }
 
 #define Z_LIBXML_NODE_P(zv) php_libxml_node_fetch_object(Z_OBJ_P((zv)))
@@ -107,6 +137,7 @@ PHP_LIBXML_API int php_libxml_xmlCheckUTF8(const unsigned char *s);
 PHP_LIBXML_API void php_libxml_switch_context(zval *context, zval *oldcontext);
 PHP_LIBXML_API void php_libxml_issue_error(int level, const char *msg);
 PHP_LIBXML_API bool php_libxml_disable_entity_loader(bool disable);
+PHP_LIBXML_API void php_libxml_set_old_ns(xmlDocPtr doc, xmlNsPtr ns);
 
 /* Init/shutdown functions*/
 PHP_LIBXML_API void php_libxml_initialize(void);

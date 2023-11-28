@@ -12,7 +12,7 @@
    +----------------------------------------------------------------------+
    | Authors: Marcus Boerger <helly@php.net>                              |
    +----------------------------------------------------------------------+
- */
+*/
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -185,11 +185,7 @@ static zend_object *spl_array_object_new_ex(zend_class_entry *class_type, zend_o
 	}
 
 	while (parent) {
-		if (parent == spl_ce_ArrayIterator || parent == spl_ce_RecursiveArrayIterator) {
-			intern->std.handlers = &spl_handler_ArrayIterator;
-			break;
-		} else if (parent == spl_ce_ArrayObject) {
-			intern->std.handlers = &spl_handler_ArrayObject;
+		if (parent == spl_ce_ArrayIterator || parent == spl_ce_RecursiveArrayIterator || parent == spl_ce_ArrayObject) {
 			break;
 		}
 		parent = parent->parent;
@@ -215,7 +211,8 @@ static zend_object *spl_array_object_new_ex(zend_class_entry *class_type, zend_o
 		if (intern->fptr_offset_del->common.scope == parent) {
 			intern->fptr_offset_del = NULL;
 		}
-		intern->fptr_count = zend_hash_str_find_ptr(&class_type->function_table, "count", sizeof("count") - 1);
+		/* Find count() method */
+		intern->fptr_count = zend_hash_find_ptr(&class_type->function_table, ZSTR_KNOWN(ZEND_STR_COUNT));
 		if (intern->fptr_count->common.scope == parent) {
 			intern->fptr_count = NULL;
 		}
@@ -258,6 +255,8 @@ static void spl_hash_key_release(spl_hash_key *key) {
 	}
 }
 
+/* This function does not throw any exceptions for illegal offsets, calls to
+ * zend_illegal_container_offset(); need to be made if the return value is FAILURE */
 static zend_result get_hash_key(spl_hash_key *key, spl_array_object *intern, zval *offset)
 {
 	key->release_key = false;
@@ -298,7 +297,6 @@ try_again:
 		ZVAL_DEREF(offset);
 		goto try_again;
 	default:
-		zend_type_error("Illegal offset type");
 		return FAILURE;
 	}
 
@@ -309,7 +307,8 @@ try_again:
 	return SUCCESS;
 }
 
-static zval *spl_array_get_dimension_ptr(int check_inherited, spl_array_object *intern, zval *offset, int type) /* {{{ */
+static zval *spl_array_get_dimension_ptr(bool check_inherited, spl_array_object *intern, const zend_string *ce_name,
+	zval *offset, int type) /* {{{ */
 {
 	zval *retval;
 	spl_hash_key key;
@@ -325,7 +324,7 @@ static zval *spl_array_get_dimension_ptr(int check_inherited, spl_array_object *
 	}
 
 	if (get_hash_key(&key, intern, offset) == FAILURE) {
-		zend_type_error("Illegal offset type");
+		zend_illegal_container_offset(ce_name, offset, type);
 		return (type == BP_VAR_W || type == BP_VAR_RW) ?
 			&EG(error_zval) : &EG(uninitialized_zval);
 	}
@@ -427,7 +426,7 @@ static zval *spl_array_read_dimension_ex(int check_inherited, zend_object *objec
 		}
 	}
 
-	ret = spl_array_get_dimension_ptr(check_inherited, intern, offset, type);
+	ret = spl_array_get_dimension_ptr(check_inherited, intern, object->ce->name, offset, type);
 
 	/* When in a write context,
 	 * ZE has to be fooled into thinking this is in a reference set
@@ -501,7 +500,7 @@ static void spl_array_write_dimension_ex(int check_inherited, zend_object *objec
 	}
 
 	if (get_hash_key(&key, intern, offset) == FAILURE) {
-		zend_type_error("Illegal offset type");
+		zend_illegal_container_offset(object->ce->name, offset, BP_VAR_W);
 		zval_ptr_dtor(value);
 		return;
 	}
@@ -542,7 +541,7 @@ static void spl_array_unset_dimension_ex(int check_inherited, zend_object *objec
 	}
 
 	if (get_hash_key(&key, intern, offset) == FAILURE) {
-		zend_type_error("Illegal offset type in unset");
+		zend_illegal_container_offset(object->ce->name, offset, BP_VAR_UNSET);
 		return;
 	}
 
@@ -612,7 +611,7 @@ static bool spl_array_has_dimension_ex(bool check_inherited, zend_object *object
 		spl_hash_key key;
 
 		if (get_hash_key(&key, intern, offset) == FAILURE) {
-			zend_type_error("Illegal offset type in isset or empty");
+			zend_illegal_container_offset(object->ce->name, offset, BP_VAR_IS);
 			return 0;
 		}
 
@@ -850,7 +849,7 @@ static zval *spl_array_get_property_ptr_ptr(zend_object *object, zend_string *na
 			return NULL;
 		}
 		ZVAL_STR(&member, name);
-		return spl_array_get_dimension_ptr(1, intern, &member, type);
+		return spl_array_get_dimension_ptr(1, intern, object->ce->name, &member, type);
 	}
 	return zend_std_get_property_ptr_ptr(object, name, type, cache_slot);
 } /* }}} */
@@ -1117,7 +1116,7 @@ static const zend_object_iterator_funcs spl_array_it_funcs = {
 	spl_array_it_get_gc,
 };
 
-zend_object_iterator *spl_array_get_iterator(zend_class_entry *ce, zval *object, int by_ref) /* {{{ */
+static zend_object_iterator *spl_array_get_iterator(zend_class_entry *ce, zval *object, int by_ref) /* {{{ */
 {
 	spl_array_iterator *iterator = emalloc(sizeof(spl_array_iterator));
 	zend_iterator_init(&iterator->it);
@@ -1872,6 +1871,7 @@ PHP_MINIT_FUNCTION(spl_array)
 {
 	spl_ce_ArrayObject = register_class_ArrayObject(zend_ce_aggregate, zend_ce_arrayaccess, zend_ce_serializable, zend_ce_countable);
 	spl_ce_ArrayObject->create_object = spl_array_object_new;
+	spl_ce_ArrayObject->default_object_handlers = &spl_handler_ArrayObject;
 
 	memcpy(&spl_handler_ArrayObject, &std_object_handlers, sizeof(zend_object_handlers));
 
@@ -1897,6 +1897,7 @@ PHP_MINIT_FUNCTION(spl_array)
 
 	spl_ce_ArrayIterator = register_class_ArrayIterator(spl_ce_SeekableIterator, zend_ce_arrayaccess, zend_ce_serializable, zend_ce_countable);
 	spl_ce_ArrayIterator->create_object = spl_array_object_new;
+	spl_ce_ArrayIterator->default_object_handlers = &spl_handler_ArrayIterator;
 	spl_ce_ArrayIterator->get_iterator = spl_array_get_iterator;
 
 	memcpy(&spl_handler_ArrayIterator, &spl_handler_ArrayObject, sizeof(zend_object_handlers));

@@ -1298,7 +1298,7 @@ class PharCommand extends CLICommand
      */
     public function cli_cmd_inf_meta_get()
     {
-        return "Get meta information of a PHAR entry or a PHAR package in serialized from. " .
+        return "Get meta information of a PHAR entry or a PHAR package in serialized form. " .
                "If no output file is specified for meta data then stdout is being used.\n" .
                "You can also specify a particular index using -k. In that case the metadata is " .
                "expected to be an array and the value of the given index is returned using echo " .
@@ -1578,7 +1578,7 @@ class PharCommand extends CLICommand
         $use_ext = extension_loaded('phar');
         $version = array(
             'PHP Version' => phpversion(),
-            'phar.phar version' => '$Id: fdc43654dd7eb031236df3c45ad54a6ec9454316 $',
+            'phar.phar version' => '$Id: 17c5c6051fafe1e675ff9f6b7fc98afd448b8521 $',
             'Phar EXT version' => $use_ext ? phpversion('phar') : 'Not available',
             'Phar API version' => Phar::apiVersion(),
             'Phar-based phar archives' => true,

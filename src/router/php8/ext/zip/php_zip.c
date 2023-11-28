@@ -299,7 +299,17 @@ static int php_zip_add_file(ze_zip_object *obj, const char *filename, size_t fil
 		return -1;
 	}
 
-	zs = zip_source_file(obj->za, resolved_path, offset_start, offset_len);
+	if (flags & ZIP_FL_OPEN_FILE_NOW) {
+		FILE *fd;
+		fd = fopen(resolved_path, "rb");
+		if (!fd) {
+			return -1;
+		}
+		flags ^= ZIP_FL_OPEN_FILE_NOW;
+		zs = zip_source_filep(obj->za, fd, offset_start, offset_len);
+	} else {
+		zs = zip_source_file(obj->za, resolved_path, offset_start, offset_len);
+	}
 	if (!zs) {
 		return -1;
 	}
@@ -354,7 +364,7 @@ static int php_zip_parse_options(HashTable *options, zip_options *opts)
 	if ((option = zend_hash_str_find(options, "remove_all_path", sizeof("remove_all_path") - 1)) != NULL) {
 		if (Z_TYPE_P(option) != IS_FALSE && Z_TYPE_P(option) != IS_TRUE) {
 			php_error_docref(NULL, E_WARNING, "Option \"remove_all_path\" must be of type bool, %s given",
-				zend_zval_type_name(option));
+				zend_zval_value_name(option));
 		}
 		opts->remove_all_path = zval_get_long(option);
 	}
@@ -362,14 +372,14 @@ static int php_zip_parse_options(HashTable *options, zip_options *opts)
 	if ((option = zend_hash_str_find(options, "comp_method", sizeof("comp_method") - 1)) != NULL) {
 		if (Z_TYPE_P(option) != IS_LONG) {
 			php_error_docref(NULL, E_WARNING, "Option \"comp_method\" must be of type int, %s given",
-				zend_zval_type_name(option));
+				zend_zval_value_name(option));
 		}
 		opts->comp_method = zval_get_long(option);
 
 		if ((option = zend_hash_str_find(options, "comp_flags", sizeof("comp_flags") - 1)) != NULL) {
 			if (Z_TYPE_P(option) != IS_LONG) {
 				php_error_docref(NULL, E_WARNING, "Option \"comp_flags\" must be of type int, %s given",
-					zend_zval_type_name(option));
+					zend_zval_value_name(option));
 			}
 			opts->comp_flags = zval_get_long(option);
 		}
@@ -379,14 +389,14 @@ static int php_zip_parse_options(HashTable *options, zip_options *opts)
 	if ((option = zend_hash_str_find(options, "enc_method", sizeof("enc_method") - 1)) != NULL) {
 		if (Z_TYPE_P(option) != IS_LONG) {
 			php_error_docref(NULL, E_WARNING, "Option \"enc_method\" must be of type int, %s given",
-				zend_zval_type_name(option));
+				zend_zval_value_name(option));
 		}
 		opts->enc_method = zval_get_long(option);
 
 		if ((option = zend_hash_str_find(options, "enc_password", sizeof("enc_password") - 1)) != NULL) {
 			if (Z_TYPE_P(option) != IS_STRING) {
 				zend_type_error("Option \"enc_password\" must be of type string, %s given",
-					zend_zval_type_name(option));
+					zend_zval_value_name(option));
 				return -1;
 			}
 			opts->enc_password = Z_STRVAL_P(option);
@@ -397,7 +407,7 @@ static int php_zip_parse_options(HashTable *options, zip_options *opts)
 	if ((option = zend_hash_str_find(options, "remove_path", sizeof("remove_path") - 1)) != NULL) {
 		if (Z_TYPE_P(option) != IS_STRING) {
 			zend_type_error("Option \"remove_path\" must be of type string, %s given",
-				zend_zval_type_name(option));
+				zend_zval_value_name(option));
 			return -1;
 		}
 
@@ -417,7 +427,7 @@ static int php_zip_parse_options(HashTable *options, zip_options *opts)
 	if ((option = zend_hash_str_find(options, "add_path", sizeof("add_path") - 1)) != NULL) {
 		if (Z_TYPE_P(option) != IS_STRING) {
 			zend_type_error("Option \"add_path\" must be of type string, %s given",
-				zend_zval_type_name(option));
+				zend_zval_value_name(option));
 			return -1;
 		}
 
@@ -437,7 +447,7 @@ static int php_zip_parse_options(HashTable *options, zip_options *opts)
 	if ((option = zend_hash_str_find(options, "flags", sizeof("flags") - 1)) != NULL) {
 		if (Z_TYPE_P(option) != IS_LONG) {
 			zend_type_error("Option \"flags\" must be of type int, %s given",
-				zend_zval_type_name(option));
+				zend_zval_value_name(option));
 			return -1;
 		}
 		opts->flags = Z_LVAL_P(option);
@@ -1075,7 +1085,6 @@ static zend_object *php_zip_object_new(zend_class_entry *class_type) /* {{{ */
 	intern->prop_handler = &zip_prop_handlers;
 	zend_object_std_init(&intern->zo, class_type);
 	object_properties_init(&intern->zo, class_type);
-	intern->zo.handlers = &zip_object_handlers;
 	intern->last_id = -1;
 
 	return &intern->zo;
@@ -1763,7 +1772,7 @@ static void php_zip_add_from_pattern(INTERNAL_FUNCTION_PARAMETERS, int type) /* 
 					basename = php_basename(Z_STRVAL_P(zval_file), Z_STRLEN_P(zval_file), NULL, 0);
 					file_stripped = ZSTR_VAL(basename);
 					file_stripped_len = ZSTR_LEN(basename);
-				} else if (opts.remove_path && strstr(Z_STRVAL_P(zval_file), opts.remove_path) != NULL) {
+				} else if (opts.remove_path && !memcmp(Z_STRVAL_P(zval_file), opts.remove_path, opts.remove_path_len)) {
 					if (IS_SLASH(Z_STRVAL_P(zval_file)[opts.remove_path_len])) {
 						file_stripped = Z_STRVAL_P(zval_file) + opts.remove_path_len + 1;
 						file_stripped_len = Z_STRLEN_P(zval_file) - opts.remove_path_len - 1;
@@ -2097,6 +2106,40 @@ PHP_METHOD(ZipArchive, getArchiveComment)
 	RETURN_STRINGL((char *)comment, (zend_long)comment_len);
 }
 /* }}} */
+
+PHP_METHOD(ZipArchive, setArchiveFlag)
+{
+	struct zip *intern;
+	zval *self = ZEND_THIS;
+	zend_long flag, value;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "ll", &flag, &value) == FAILURE) {
+		RETURN_THROWS();
+	}
+
+	ZIP_FROM_OBJECT(intern, self);
+
+	if (zip_set_archive_flag(intern, flag, (int)value)) {
+		RETURN_FALSE;
+	} else {
+		RETURN_TRUE;
+	}
+}
+
+PHP_METHOD(ZipArchive, getArchiveFlag)
+{
+	struct zip *intern;
+	zval *self = ZEND_THIS;
+	zend_long flag, flags = 0;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "l|l", &flag, &flags) == FAILURE) {
+		RETURN_THROWS();
+	}
+
+	ZIP_FROM_OBJECT(intern, self);
+
+	RETURN_LONG(zip_get_archive_flag(intern, flag, flags));
+}
 
 /* {{{ Set or remove (NULL/'') the comment of an entry using its Name */
 PHP_METHOD(ZipArchive, setCommentName)
@@ -3101,6 +3144,7 @@ static PHP_MINIT_FUNCTION(zip)
 
 	zip_class_entry = register_class_ZipArchive(zend_ce_countable);
 	zip_class_entry->create_object = php_zip_object_new;
+	zip_class_entry->default_object_handlers = &zip_object_handlers;
 
 	zend_hash_init(&zip_prop_handlers, 0, NULL, php_zip_free_prop_handler, 1);
 	php_zip_register_prop_handler(&zip_prop_handlers, "lastId",    php_zip_last_id, NULL, IS_LONG);

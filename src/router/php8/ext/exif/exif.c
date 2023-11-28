@@ -234,25 +234,13 @@ static ssize_t exif_read_from_stream_file_looped(php_stream *stream, char *buf, 
 	return total_read;
 }
 
-/* {{{ php_strnlen
- * get length of string if buffer if less than buffer size or buffer size */
-static size_t php_strnlen(char* str, size_t maxlen) {
-	size_t len = 0;
-
-	if (str && maxlen && *str) {
-		do {
-			len++;
-		} while (--maxlen && *(++str));
-	}
-	return len;
-}
 /* }}} */
 
 /* {{{ error messages */
-static const char * EXIF_ERROR_FILEEOF   = "Unexpected end of file reached";
-static const char * EXIF_ERROR_CORRUPT   = "File structure corrupted";
-static const char * EXIF_ERROR_THUMBEOF  = "Thumbnail goes IFD boundary or end of file reached";
-static const char * EXIF_ERROR_FSREALLOC = "Illegal reallocating of undefined file section";
+static const char *const EXIF_ERROR_FILEEOF   = "Unexpected end of file reached";
+static const char *const EXIF_ERROR_CORRUPT   = "File structure corrupted";
+static const char *const EXIF_ERROR_THUMBEOF  = "Thumbnail goes IFD boundary or end of file reached";
+static const char *const EXIF_ERROR_FSREALLOC = "Illegal reallocating of undefined file section";
 
 #define EXIF_ERRLOG_FILEEOF(ImageInfo)    exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "%s", EXIF_ERROR_FILEEOF);
 #define EXIF_ERRLOG_CORRUPT(ImageInfo)    exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "%s", EXIF_ERROR_CORRUPT);
@@ -263,7 +251,7 @@ static const char * EXIF_ERROR_FSREALLOC = "Illegal reallocating of undefined fi
 /* {{{ format description defines
    Describes format descriptor
 */
-static int php_tiff_bytes_per_format[] = {0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 1};
+static const int php_tiff_bytes_per_format[] = {0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 1};
 #define NUM_FORMATS 13
 
 #define TAG_FMT_BYTE       1
@@ -2223,7 +2211,7 @@ static void exif_iif_add_value(image_info_type *image_info, int section_index, c
 				value = NULL;
 			}
 			if (value) {
-				length = (int)php_strnlen(value, length);
+				length = (int)zend_strnlen(value, length);
 				info_value->s = estrndup(value, length);
 				info_data->length = length;
 			} else {
@@ -2254,7 +2242,7 @@ static void exif_iif_add_value(image_info_type *image_info, int section_index, c
 			}
 			if (value) {
 				if (tag == TAG_MAKER_NOTE) {
-					length = (int) php_strnlen(value, length);
+					length = (int) zend_strnlen(value, length);
 				}
 
 				/* do not recompute length here */
@@ -3034,11 +3022,11 @@ static int exif_process_string(char **result, char *value, size_t byte_count) {
 	/* we cannot use strlcpy - here the problem is that we cannot use strlen to
 	 * determine length of string and we cannot use strlcpy with len=byte_count+1
 	 * because then we might get into an EXCEPTION if we exceed an allocated
-	 * memory page...so we use php_strnlen in conjunction with memcpy and add the NUL
+	 * memory page...so we use zend_strnlen in conjunction with memcpy and add the NUL
 	 * char.
 	 * estrdup would sometimes allocate more memory and does not return length
 	 */
-	if ((byte_count=php_strnlen(value, byte_count)) > 0) {
+	if ((byte_count=zend_strnlen(value, byte_count)) > 0) {
 		return exif_process_undefined(result, value, byte_count);
 	}
 	(*result) = estrndup("", 1); /* force empty string */
@@ -3327,7 +3315,7 @@ static bool exif_process_IFD_TAG_impl(image_info_type *ImageInfo, char *dir_entr
 				 * it is faster to use a static buffer there
 				 * BUT it offers also the possibility to have
 				 * pointers read without the need to free them
-				 * explicitley before returning. */
+				 * explicitly before returning. */
 				memset(&cbuf, 0, sizeof(cbuf));
 				value_ptr = cbuf;
 			}
@@ -3412,7 +3400,7 @@ static bool exif_process_IFD_TAG_impl(image_info_type *ImageInfo, char *dir_entr
 		switch(tag) {
 			case TAG_COPYRIGHT:
 				/* check for "<photographer> NUL <editor> NUL" */
-				if (byte_count>1 && (length=php_strnlen(value_ptr, byte_count)) > 0) {
+				if (byte_count>1 && (length=zend_strnlen(value_ptr, byte_count)) > 0) {
 					if (length<byte_count-1) {
 						/* When there are any characters after the first NUL */
 						EFREE_IF(ImageInfo->CopyrightPhotographer);
@@ -3506,7 +3494,7 @@ static bool exif_process_IFD_TAG_impl(image_info_type *ImageInfo, char *dir_entr
 				switch (exif_convert_any_to_int(value_ptr, format, ImageInfo->motorola_intel)) {
 					case 1: ImageInfo->FocalplaneUnits = 25.4; break; /* inch */
 					case 2:
-						/* According to the information I was using, 2 measn meters.
+						/* According to the information I was using, 2 means meters.
 						   But looking at the Cannon powershot's files, inches is the only
 						   sensible value. */
 						ImageInfo->FocalplaneUnits = 25.4;
@@ -3708,11 +3696,6 @@ static void exif_process_TIFF_in_JPEG(image_info_type *ImageInfo, char *CharBuf,
 		return;
 	}
 
-	if (length < 2) {
-		exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "Missing TIFF alignment marker");
-		return;
-	}
-
 	/* set the thumbnail stuff to nothing so we can test to see if they get set up */
 	if (memcmp(CharBuf, "II", 2) == 0) {
 		ImageInfo->motorola_intel = 0;
@@ -3781,10 +3764,10 @@ static void exif_process_APP12(image_info_type *ImageInfo, char *buffer, size_t 
 {
 	size_t l1, l2=0;
 
-	if ((l1 = php_strnlen(buffer+2, length-2)) > 0) {
+	if ((l1 = zend_strnlen(buffer+2, length-2)) > 0) {
 		exif_iif_add_tag(ImageInfo, SECTION_APP12, "Company", TAG_NONE, TAG_FMT_STRING, l1, buffer+2, l1);
 		if (length > 2+l1+1) {
-			l2 = php_strnlen(buffer+2+l1+1, length-2-l1-1);
+			l2 = zend_strnlen(buffer+2+l1+1, length-2-l1-1);
 			exif_iif_add_tag(ImageInfo, SECTION_APP12, "Info", TAG_NONE, TAG_FMT_STRING, l2, buffer+2+l1+1, l2);
 		}
 	}
@@ -3798,14 +3781,14 @@ static void exif_process_APP12(image_info_type *ImageInfo, char *buffer, size_t 
  * Parse the marker stream until SOS or EOI is seen; */
 static bool exif_scan_JPEG_header(image_info_type *ImageInfo)
 {
-	int section, sn;
+	int sn;
 	int marker = 0, last_marker = M_PSEUDO, comment_correction=1;
 	unsigned int ll, lh;
 	uchar *Data;
 	size_t fpos, size, got, itemlen;
 	jpeg_sof_info sof_info;
 
-	for(section=0;;section++) {
+	while (true) {
 #ifdef EXIF_DEBUG
 		fpos = php_stream_tell(ImageInfo->infile);
 		exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_NOTICE, "Needing section %d @ 0x%08X", ImageInfo->file.count, fpos);
@@ -3839,11 +3822,8 @@ static bool exif_scan_JPEG_header(image_info_type *ImageInfo)
 
 		fpos = php_stream_tell(ImageInfo->infile);
 
-		if (marker == 0xff) {
-			/* 0xff is legal padding, but if we get that many, something's wrong. */
-			exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "To many padding bytes");
-			return false;
-		}
+		/* safety net in case the above algorithm change dramatically, should not trigger */
+		ZEND_ASSERT(marker != 0xff);
 
 		/* Read the length of the section. */
 		if ((lh = php_stream_getc(ImageInfo->infile)) == (unsigned int)EOF) {

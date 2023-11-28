@@ -49,7 +49,7 @@ static php_rfc1867_getword_t php_rfc1867_getword = php_ap_getword;
 static php_rfc1867_getword_conf_t php_rfc1867_getword_conf = php_ap_getword_conf;
 static php_rfc1867_basename_t php_rfc1867_basename = NULL;
 
-PHPAPI int (*php_rfc1867_callback)(unsigned int event, void *event_data, void **extra) = NULL;
+PHPAPI zend_result (*php_rfc1867_callback)(unsigned int event, void *event_data, void **extra) = NULL;
 
 static void safe_php_register_variable(char *var, char *strval, size_t val_len, zval *track_vars_array, bool override_protection);
 
@@ -58,29 +58,6 @@ static void safe_php_register_variable(char *var, char *strval, size_t val_len, 
 
 /* The longest anonymous name */
 #define MAX_SIZE_ANONNAME 33
-
-/* Errors */
-#define UPLOAD_ERROR_OK   0  /* File upload successful */
-#define UPLOAD_ERROR_A    1  /* Uploaded file exceeded upload_max_filesize */
-#define UPLOAD_ERROR_B    2  /* Uploaded file exceeded MAX_FILE_SIZE */
-#define UPLOAD_ERROR_C    3  /* Partially uploaded */
-#define UPLOAD_ERROR_D    4  /* No file uploaded */
-#define UPLOAD_ERROR_E    6  /* Missing /tmp or similar directory */
-#define UPLOAD_ERROR_F    7  /* Failed to write file to disk */
-#define UPLOAD_ERROR_X    8  /* File upload stopped by extension */
-
-void php_rfc1867_register_constants(void) /* {{{ */
-{
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_OK",         UPLOAD_ERROR_OK, CONST_CS | CONST_PERSISTENT);
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_INI_SIZE",   UPLOAD_ERROR_A,  CONST_CS | CONST_PERSISTENT);
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_FORM_SIZE",  UPLOAD_ERROR_B,  CONST_CS | CONST_PERSISTENT);
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_PARTIAL",    UPLOAD_ERROR_C,  CONST_CS | CONST_PERSISTENT);
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_NO_FILE",    UPLOAD_ERROR_D,  CONST_CS | CONST_PERSISTENT);
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_NO_TMP_DIR", UPLOAD_ERROR_E,  CONST_CS | CONST_PERSISTENT);
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_CANT_WRITE", UPLOAD_ERROR_F,  CONST_CS | CONST_PERSISTENT);
-	REGISTER_MAIN_LONG_CONSTANT("UPLOAD_ERR_EXTENSION",  UPLOAD_ERROR_X,  CONST_CS | CONST_PERSISTENT);
-}
-/* }}} */
 
 static void normalize_protected_variable(char *varname) /* {{{ */
 {
@@ -993,7 +970,7 @@ SAPI_API SAPI_POST_HANDLER_FUNC(rfc1867_post_handler) /* {{{ */
 #if DEBUG_FILE_UPLOAD
 				sapi_module.sapi_error(E_NOTICE, "No file uploaded");
 #endif
-				cancel_upload = UPLOAD_ERROR_D;
+				cancel_upload = PHP_UPLOAD_ERROR_D;
 			}
 
 			offset = 0;
@@ -1012,7 +989,7 @@ SAPI_API SAPI_POST_HANDLER_FUNC(rfc1867_post_handler) /* {{{ */
 					upload_cnt--;
 					if (fd == -1) {
 						sapi_module.sapi_error(E_WARNING, "File upload error - unable to create a temporary file");
-						cancel_upload = UPLOAD_ERROR_E;
+						cancel_upload = PHP_UPLOAD_ERROR_E;
 					}
 				}
 			}
@@ -1028,7 +1005,7 @@ SAPI_API SAPI_POST_HANDLER_FUNC(rfc1867_post_handler) /* {{{ */
 					event_file_data.length = blen;
 					event_file_data.newlength = &blen;
 					if (php_rfc1867_callback(MULTIPART_EVENT_FILE_DATA, &event_file_data, &event_extra_data) == FAILURE) {
-						cancel_upload = UPLOAD_ERROR_X;
+						cancel_upload = PHP_UPLOAD_ERROR_X;
 						continue;
 					}
 				}
@@ -1037,12 +1014,12 @@ SAPI_API SAPI_POST_HANDLER_FUNC(rfc1867_post_handler) /* {{{ */
 #if DEBUG_FILE_UPLOAD
 					sapi_module.sapi_error(E_NOTICE, "upload_max_filesize of " ZEND_LONG_FMT " bytes exceeded - file [%s=%s] not saved", PG(upload_max_filesize), param, filename);
 #endif
-					cancel_upload = UPLOAD_ERROR_A;
+					cancel_upload = PHP_UPLOAD_ERROR_A;
 				} else if (max_file_size && ((zend_long)(total_bytes+blen) > max_file_size)) {
 #if DEBUG_FILE_UPLOAD
 					sapi_module.sapi_error(E_NOTICE, "MAX_FILE_SIZE of %" PRId64 " bytes exceeded - file [%s=%s] not saved", max_file_size, param, filename);
 #endif
-					cancel_upload = UPLOAD_ERROR_B;
+					cancel_upload = PHP_UPLOAD_ERROR_B;
 				} else if (blen > 0) {
 #ifdef PHP_WIN32
 					wlen = write(fd, buff, (unsigned int)blen);
@@ -1055,12 +1032,12 @@ SAPI_API SAPI_POST_HANDLER_FUNC(rfc1867_post_handler) /* {{{ */
 #if DEBUG_FILE_UPLOAD
 						sapi_module.sapi_error(E_NOTICE, "write() failed - %s", strerror(errno));
 #endif
-						cancel_upload = UPLOAD_ERROR_F;
+						cancel_upload = PHP_UPLOAD_ERROR_F;
 					} else if (wlen < blen) {
 #if DEBUG_FILE_UPLOAD
 						sapi_module.sapi_error(E_NOTICE, "Only %zd bytes were written, expected to write %zd", wlen, blen);
 #endif
-						cancel_upload = UPLOAD_ERROR_F;
+						cancel_upload = PHP_UPLOAD_ERROR_F;
 					} else {
 						total_bytes += wlen;
 					}
@@ -1079,7 +1056,7 @@ SAPI_API SAPI_POST_HANDLER_FUNC(rfc1867_post_handler) /* {{{ */
 #if DEBUG_FILE_UPLOAD
 				sapi_module.sapi_error(E_NOTICE, "Missing mime boundary at the end of the data for file %s", filename[0] != '\0' ? filename : "");
 #endif
-				cancel_upload = UPLOAD_ERROR_C;
+				cancel_upload = PHP_UPLOAD_ERROR_C;
 			}
 #if DEBUG_FILE_UPLOAD
 			if (filename[0] != '\0' && total_bytes == 0 && !cancel_upload) {
@@ -1094,13 +1071,13 @@ SAPI_API SAPI_POST_HANDLER_FUNC(rfc1867_post_handler) /* {{{ */
 				event_file_end.temp_filename = temp_filename ? ZSTR_VAL(temp_filename) : NULL;
 				event_file_end.cancel_upload = cancel_upload;
 				if (php_rfc1867_callback(MULTIPART_EVENT_FILE_END, &event_file_end, &event_extra_data) == FAILURE) {
-					cancel_upload = UPLOAD_ERROR_X;
+					cancel_upload = PHP_UPLOAD_ERROR_X;
 				}
 			}
 
 			if (cancel_upload) {
 				if (temp_filename) {
-					if (cancel_upload != UPLOAD_ERROR_E) { /* file creation failed */
+					if (cancel_upload != PHP_UPLOAD_ERROR_E) { /* file creation failed */
 						unlink(ZSTR_VAL(temp_filename));
 					}
 					zend_string_release_ex(temp_filename, 0);

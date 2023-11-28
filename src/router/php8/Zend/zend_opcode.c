@@ -45,7 +45,7 @@ static void zend_extension_op_array_dtor_handler(zend_extension *extension, zend
 	}
 }
 
-void init_op_array(zend_op_array *op_array, zend_uchar type, int initial_ops_size)
+void init_op_array(zend_op_array *op_array, uint8_t type, int initial_ops_size)
 {
 	op_array->type = type;
 	op_array->arg_flags[0] = 0;
@@ -293,6 +293,12 @@ ZEND_API void destroy_zend_class(zval *zv)
 		return;
 	}
 
+	/* We don't increase the refcount for class aliases,
+	 * skip the destruction of aliases entirely. */
+	if (UNEXPECTED(Z_TYPE_INFO_P(zv) == IS_ALIAS_PTR)) {
+		return;
+	}
+
 	if (ce->ce_flags & ZEND_ACC_FILE_CACHED) {
 		zend_class_constant *c;
 		zval *p, *end;
@@ -314,6 +320,8 @@ ZEND_API void destroy_zend_class(zval *zv)
 		}
 		return;
 	}
+
+	ZEND_ASSERT(ce->refcount > 0);
 
 	if (--ce->refcount > 0) {
 		return;
@@ -439,6 +447,9 @@ ZEND_API void destroy_zend_class(zval *zv)
 				if (prop_info->ce == ce) {
 					zend_string_release(prop_info->name);
 					zend_type_release(prop_info->type, /* persistent */ 1);
+					if (prop_info->attributes) {
+						zend_hash_release(prop_info->attributes);
+					}
 					free(prop_info);
 				}
 			} ZEND_HASH_FOREACH_END();
@@ -508,7 +519,7 @@ void zend_class_add_ref(zval *zv)
 {
 	zend_class_entry *ce = Z_PTR_P(zv);
 
-	if (!(ce->ce_flags & ZEND_ACC_IMMUTABLE)) {
+	if (Z_TYPE_P(zv) != IS_ALIAS_PTR && !(ce->ce_flags & ZEND_ACC_IMMUTABLE)) {
 		ce->refcount++;
 	}
 }
@@ -1106,6 +1117,7 @@ ZEND_API void pass_two(zend_op_array *op_array)
 			case ZEND_FE_RESET_R:
 			case ZEND_FE_RESET_RW:
 			case ZEND_JMP_NULL:
+			case ZEND_BIND_INIT_STATIC_OR_JMP:
 				ZEND_PASS_TWO_UPDATE_JMP_TARGET(op_array, opline, opline->op2);
 				break;
 			case ZEND_ASSERT_CHECK:

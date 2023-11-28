@@ -64,6 +64,16 @@ echo "SJIS-Mobile#SoftBank:\n";
 print bin2hex(mb_substr("\x80abc\x80\xA1", 3, 2, 'SJIS-Mobile#SoftBank')) . "\n";
 print bin2hex(mb_substr("\x80abc\x80\xA1", 0, 3, 'SJIS-Mobile#SoftBank')) . "\n";
 
+echo "-- Testing MacJapanese characters which map to 3-5 codepoints each --\n";
+
+/* There are many characters in MacJapanese which map to sequences of several codepoints */
+print bin2hex(mb_substr("abc\x85\xAB\x85\xAC\x85\xAD", 0, 3, 'MacJapanese')) . "\n";
+print bin2hex(mb_substr("abc\x85\xAB\x85\xAC\x85\xAD", 3, 2, 'MacJapanese')) . "\n";
+print bin2hex(mb_substr("abc\x85\xAB\x85\xAC\x85\xAD", -2, 1, 'MacJapanese')) . "\n";
+print bin2hex(mb_substr("abc\x85\xBF\x85\xC0\x85\xC1", 0, 3, 'MacJapanese')) . "\n";
+print bin2hex(mb_substr("abc\x85\xBF\x85\xC0\x85\xC1", 3, 2, 'MacJapanese')) . "\n";
+print bin2hex(mb_substr("abc\x85\xBF\x85\xC0\x85\xC1", -2, 1, 'MacJapanese')) . "\n";
+
 echo "ISO-2022-JP:\n";
 print "1: " . bin2hex(mb_substr($iso2022jp, 0, 3, 'ISO-2022-JP')) . "\n";
 print "2: " . bin2hex(mb_substr($iso2022jp, -1, null, 'ISO-2022-JP')) . "\n";
@@ -108,6 +118,12 @@ print "3: " . mb_convert_encoding(mb_substr($utf7, -5, 3, 'UTF-7'), 'UTF-8', 'UT
 print "4: " . mb_convert_encoding(mb_substr($utf7, 1, null, 'UTF-7'), 'UTF-8', 'UTF-7') . "\n";
 print "5:" . mb_convert_encoding(mb_substr($utf7, 10, 0, 'UTF-7'), 'UTF-8', 'UTF-7') . "\n";
 
+echo "Regression:\n";
+/* During development, one >= comparison in mb_get_substr was wrongly written as >
+ * This was caught by libFuzzer */
+$str = "\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbe\xbd\xbd\xbd\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x89\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x00\x00\x00\x00\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8b\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8f\x8b\x8b\x8b\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbe\x01:O\xaa\xd3";
+echo bin2hex(mb_substr($str, 0, 128, "JIS")), "\n";
+
 ?>
 --EXPECT--
 EUC-JP:
@@ -139,6 +155,13 @@ SJIS-Mobile#KDDI:
 SJIS-Mobile#SoftBank:
 6380
 806162
+-- Testing MacJapanese characters which map to 3-5 codepoints each --
+616263
+85ab85ac
+85ac
+616263
+85bf85c0
+85c0
 ISO-2022-JP:
 1: 1b2442212121721b284241
 2: 43
@@ -177,3 +200,5 @@ UTF-7:
 3: йте
 4: reek: Σὲ γνωρίζω ἀπὸ τὴν κόψη Russian: Зарегистрируйтесь
 5:
+Regression:
+1b28493d3d3d3d3d3d3d3e3d3d3d1b28423f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f000000003f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f1b28493d3d3d3d3d3d3d3e1b2842013a4f1b28492a1b2842

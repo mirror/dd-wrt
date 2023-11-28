@@ -76,6 +76,8 @@ PHPAPI double php_combined_lcg(void);
 
 # define MT_N (624)
 
+#define PHP_RANDOM_RANGE_ATTEMPTS (50)
+
 PHPAPI void php_mt_srand(uint32_t seed);
 PHPAPI uint32_t php_mt_rand(void);
 PHPAPI zend_long php_mt_rand_range(zend_long min, zend_long max);
@@ -193,13 +195,28 @@ static inline uint64_t php_random_pcgoneseq128xslrr64_rotr64(php_random_uint128_
 }
 # endif
 
-# define php_random_bytes_throw(b, s) php_random_bytes((b), (s), 1)
-# define php_random_bytes_silent(b, s) php_random_bytes((b), (s), 0)
-# define php_random_int_throw(min, max, result) php_random_int((min), (max), (result), 1)
-# define php_random_int_silent(min, max, result) php_random_int((min), (max), (result), 0)
+PHPAPI zend_result php_random_bytes(void *bytes, size_t size, bool should_throw);
+PHPAPI zend_result php_random_int(zend_long min, zend_long max, zend_long *result, bool should_throw);
 
-PHPAPI int php_random_bytes(void *bytes, size_t size, bool should_throw);
-PHPAPI int php_random_int(zend_long min, zend_long max, zend_long *result, bool should_throw);
+static inline zend_result php_random_bytes_throw(void *bytes, size_t size)
+{
+	return php_random_bytes(bytes, size, true);
+}
+
+static inline zend_result php_random_bytes_silent(void *bytes, size_t size)
+{
+	return php_random_bytes(bytes, size, false);
+}
+
+static inline zend_result php_random_int_throw(zend_long min, zend_long max, zend_long *result)
+{
+	return php_random_int(min, max, result, true);
+}
+
+static inline zend_result php_random_int_silent(zend_long min, zend_long max, zend_long *result)
+{
+	return php_random_int(min, max, result, false);
+}
 
 typedef struct _php_random_status_ {
 	size_t last_generated_size;
@@ -270,7 +287,10 @@ extern PHPAPI zend_class_entry *random_ce_Random_Engine_PcgOneseq128XslRr64;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Mt19937;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Xoshiro256StarStar;
 extern PHPAPI zend_class_entry *random_ce_Random_Engine_Secure;
+
 extern PHPAPI zend_class_entry *random_ce_Random_Randomizer;
+
+extern PHPAPI zend_class_entry *random_ce_Random_IntervalBoundary;
 
 static inline php_random_engine *php_random_engine_from_obj(zend_object *object) {
 	return (php_random_engine *)((char *)(object) - XtOffsetOf(php_random_engine, std));
@@ -290,6 +310,8 @@ PHPAPI void php_random_status_free(php_random_status *status, const bool persist
 PHPAPI php_random_engine *php_random_engine_common_init(zend_class_entry *ce, zend_object_handlers *handlers, const php_random_algo *algo);
 PHPAPI void php_random_engine_common_free_object(zend_object *object);
 PHPAPI zend_object *php_random_engine_common_clone_object(zend_object *object);
+PHPAPI uint32_t php_random_range32(const php_random_algo *algo, php_random_status *status, uint32_t umax);
+PHPAPI uint64_t php_random_range64(const php_random_algo *algo, php_random_status *status, uint64_t umax);
 PHPAPI zend_long php_random_range(const php_random_algo *algo, php_random_status *status, zend_long min, zend_long max);
 PHPAPI const php_random_algo *php_random_default_algo(void);
 PHPAPI php_random_status *php_random_default_status(void);
@@ -305,6 +327,11 @@ PHPAPI void php_random_pcgoneseq128xslrr64_advance(php_random_status_state_pcgon
 
 PHPAPI void php_random_xoshiro256starstar_jump(php_random_status_state_xoshiro256starstar *state);
 PHPAPI void php_random_xoshiro256starstar_jump_long(php_random_status_state_xoshiro256starstar *state);
+
+PHPAPI double php_random_gammasection_closed_open(const php_random_algo *algo, php_random_status *status, double min, double max);
+PHPAPI double php_random_gammasection_closed_closed(const php_random_algo *algo, php_random_status *status, double min, double max);
+PHPAPI double php_random_gammasection_open_closed(const php_random_algo *algo, php_random_status *status, double min, double max);
+PHPAPI double php_random_gammasection_open_open(const php_random_algo *algo, php_random_status *status, double min, double max);
 
 extern zend_module_entry random_module_entry;
 # define phpext_random_ptr &random_module_entry

@@ -81,7 +81,7 @@ if test "$PHP_EXTERNAL_LIBCRYPT" != "no"; then
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+int main(void) {
 #if HAVE_CRYPT
 	char *encrypted = crypt("rasmuslerdorf","rl");
 	return !encrypted || strcmp(encrypted,"rl.3StKT.4T8M");
@@ -111,7 +111,7 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+int main(void) {
 #if HAVE_CRYPT
 	char *encrypted = crypt("rasmuslerdorf","_J9..rasm");
 	return !encrypted || strcmp(encrypted,"_J9..rasmBYk8r9AiWNc");
@@ -141,7 +141,7 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+int main(void) {
 #if HAVE_CRYPT
 	char salt[15], answer[40];
 	char *encrypted;
@@ -181,7 +181,7 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+int main(void) {
 #if HAVE_CRYPT
 	char salt[30], answer[70];
 	char *encrypted;
@@ -218,7 +218,7 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+int main(void) {
 #if HAVE_CRYPT
 	char salt[21], answer[21+86];
 	char *encrypted;
@@ -254,7 +254,7 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+int main(void) {
 #if HAVE_CRYPT
 	char salt[21], answer[21+43];
 	char *encrypted;
@@ -376,6 +376,8 @@ dnl
 
 PHP_CHECK_FUNC(res_search, resolv, bind, socket)
 
+PHP_CHECK_FUNC(posix_spawn_file_actions_addchdir_np)
+
 dnl
 dnl Check for strptime()
 dnl
@@ -397,22 +399,6 @@ int strptime(const char *s, const char *format, struct tm *tm);
 if test "$ac_cv_strptime_decl_fails" = "yes"; then
   AC_DEFINE([HAVE_STRPTIME_DECL_FAILS], 1, [whether strptime() declaration fails])
 fi
-
-dnl
-dnl Check for arc4random on BSD systems
-dnl
-AC_CHECK_DECLS([arc4random_buf])
-
-dnl
-dnl Check for CCRandomGenerateBytes
-dnl header absent in previous macOs releases
-dnl
-AC_CHECK_HEADERS([CommonCrypto/CommonRandom.h], [], [],
-[
-	#include <sys/types.h>
-	#include <Availability.h>
-	#include <CommonCrypto/CommonCryptoError.h>
-])
 
 dnl
 dnl Check for argon2

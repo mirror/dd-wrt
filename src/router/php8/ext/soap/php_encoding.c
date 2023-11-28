@@ -1561,10 +1561,12 @@ static zval *to_zval_object_ex(zval *ret, encodeTypePtr type, xmlNodePtr data, z
 					if (Z_TYPE_P(prop) != IS_ARRAY) {
 						/* Convert into array */
 						array_init(&arr);
-						Z_ADDREF_P(prop);
+						Z_TRY_ADDREF_P(prop);
 						add_next_index_zval(&arr, prop);
 						set_zval_property(ret, (char*)trav->name, &arr);
 						prop = &arr;
+					} else {
+						SEPARATE_ARRAY(prop);
 					}
 					/* Add array element */
 					add_next_index_zval(prop, &tmpVal);
@@ -2386,7 +2388,14 @@ iterator_done:
 		if (style == SOAP_ENCODED) {
 			if (soap_version == SOAP_1_1) {
 				smart_str_0(&array_type);
-				if (strcmp(ZSTR_VAL(array_type.s),"xsd:anyType") == 0) {
+#if defined(__GNUC__) && __GNUC__ >= 11
+				ZEND_DIAGNOSTIC_IGNORED_START("-Wstringop-overread")
+#endif
+				bool is_xsd_any_type = strcmp(ZSTR_VAL(array_type.s),"xsd:anyType") == 0;
+#if defined(__GNUC__) && __GNUC__ >= 11
+				ZEND_DIAGNOSTIC_IGNORED_END
+#endif
+				if (is_xsd_any_type) {
 					smart_str_free(&array_type);
 					smart_str_appendl(&array_type,"xsd:ur-type",sizeof("xsd:ur-type")-1);
 				}
@@ -3414,7 +3423,7 @@ static void set_xsi_type(xmlNodePtr node, char *type)
 	set_ns_prop(node, XSI_NAMESPACE, "type", type);
 }
 
-void encode_reset_ns()
+void encode_reset_ns(void)
 {
 	SOAP_GLOBAL(cur_uniq_ns) = 0;
 	SOAP_GLOBAL(cur_uniq_ref) = 0;
@@ -3426,7 +3435,7 @@ void encode_reset_ns()
 	zend_hash_init(SOAP_GLOBAL(ref_map), 0, NULL, NULL, 0);
 }
 
-void encode_finish()
+void encode_finish(void)
 {
 	SOAP_GLOBAL(cur_uniq_ns) = 0;
 	SOAP_GLOBAL(cur_uniq_ref) = 0;

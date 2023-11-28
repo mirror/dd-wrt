@@ -22,6 +22,7 @@
 
 #include "ext/standard/md5.h"
 #include "zend_virtual_cwd.h"
+#include "main/php_open_temporary_file.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -154,7 +155,7 @@ encodePtr get_encoder(sdlPtr sdl, const char *ns, const char *type)
 			}
 			if (sdl->encoders == NULL) {
 				sdl->encoders = pemalloc(sizeof(HashTable), sdl->is_persistent);
-				zend_hash_init(sdl->encoders, 0, NULL, delete_encoder, sdl->is_persistent);
+				zend_hash_init(sdl->encoders, 0, NULL, sdl->is_persistent ? delete_encoder_persistent : delete_encoder, sdl->is_persistent);
 			}
 			zend_hash_str_update_ptr(sdl->encoders, nscat, len, new_enc);
 			enc = new_enc;
@@ -1536,7 +1537,7 @@ static HashTable* sdl_deserialize_parameters(encodePtr *encoders, sdlTypePtr *ty
 	return ht;
 }
 
-static sdlPtr get_sdl_from_cache(const char *fn, const char *uri, time_t t, time_t *cached)
+static sdlPtr get_sdl_from_cache(const char *fn, const char *uri, size_t uri_len, time_t t, time_t *cached)
 {
 	sdlPtr sdl;
 	time_t old_t;
@@ -1583,7 +1584,7 @@ static sdlPtr get_sdl_from_cache(const char *fn, const char *uri, time_t t, time
 	*cached = old_t;
 
 	WSDL_CACHE_GET_INT(i, &in);
-	if (i == 0 && strncmp(in, uri, i) != 0) {
+	if (i != uri_len || strncmp(in, uri, i) != 0) {
 		unlink(fn);
 		efree(buf);
 		return NULL;
@@ -2119,7 +2120,10 @@ static void add_sdl_to_cache(const char *fn, const char *uri, time_t t, sdlPtr s
 	HashTable tmp_bindings;
 	HashTable tmp_functions;
 
-	f = open(fn,O_CREAT|O_WRONLY|O_EXCL|O_BINARY,S_IREAD|S_IWRITE);
+	/* To avoid race conditions, we first create a temporary file and then rename it atomically
+	 * at the end of the function. (see bug #66150) */
+	zend_string *temp_file_path;
+	f = php_open_temporary_fd_ex(SOAP_GLOBAL(cache_dir), "tmp.wsdl.", &temp_file_path, PHP_TMP_FILE_SILENT);
 
 	if (f < 0) {return;}
 
@@ -2371,13 +2375,21 @@ static void add_sdl_to_cache(const char *fn, const char *uri, time_t t, sdlPtr s
 		} ZEND_HASH_FOREACH_END();
 	}
 
-	php_ignore_value(write(f, ZSTR_VAL(buf.s), ZSTR_LEN(buf.s)));
+	bool valid_file = write(f, ZSTR_VAL(buf.s), ZSTR_LEN(buf.s)) == ZSTR_LEN(buf.s);
 	close(f);
+
+	/* Make sure that incomplete files (e.g. due to disk space issues, see bug #66150) are not utilised. */
+	if (valid_file) {
+		/* This is allowed to fail, this means that another process was raced to create the file. */
+		(void) VCWD_RENAME(ZSTR_VAL(temp_file_path), fn);
+	}
+
 	smart_str_free(&buf);
 	zend_hash_destroy(&tmp_functions);
 	zend_hash_destroy(&tmp_bindings);
 	zend_hash_destroy(&tmp_encoders);
 	zend_hash_destroy(&tmp_types);
+	zend_string_release_ex(temp_file_path, false);
 }
 
 
@@ -3232,7 +3244,7 @@ sdlPtr get_sdl(zval *this_ptr, char *uri, zend_long cache_wsdl)
 		}
 		memcpy(key+len,md5str,sizeof(md5str));
 
-		if ((sdl = get_sdl_from_cache(key, uri, t-SOAP_GLOBAL(cache_ttl), &cached)) != NULL) {
+		if ((sdl = get_sdl_from_cache(key, uri, uri_len, t-SOAP_GLOBAL(cache_ttl), &cached)) != NULL) {
 			t = cached;
 			efree(key);
 			goto cache_in_memory;
@@ -3243,6 +3255,9 @@ sdlPtr get_sdl(zval *this_ptr, char *uri, zend_long cache_wsdl)
 		tmp = Z_CLIENT_STREAM_CONTEXT_P(this_ptr);
 		if (Z_TYPE_P(tmp) == IS_RESOURCE) {
 			context = php_stream_context_from_zval(tmp, 0);
+			/* Share a reference with new_context down below.
+			 * For new contexts, the reference is only in new_context so that doesn't need extra refcounting. */
+			GC_ADDREF(context->res);
 		}
 
 		tmp = Z_CLIENT_USER_AGENT_P(this_ptr);
@@ -3309,7 +3324,7 @@ sdlPtr get_sdl(zval *this_ptr, char *uri, zend_long cache_wsdl)
 	}
 
 	if (context) {
-		php_stream_context_to_zval(context, &new_context);
+		ZVAL_RES(&new_context, context->res);
 		php_libxml_switch_context(&new_context, &orig_context);
 	}
 

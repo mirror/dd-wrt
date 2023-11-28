@@ -26,7 +26,10 @@
 # include <arm_neon.h>
 #endif
 
-#ifdef __SSE2__
+/* Prefer to use AVX2 instructions for better latency and throughput */
+#if defined(__AVX2__)
+# include <immintrin.h>
+#elif defined( __SSE2__)
 # include <mmintrin.h>
 # include <emmintrin.h>
 #endif
@@ -118,7 +121,7 @@ static zend_always_inline uint32_t zend_hash_check_size(uint32_t nSize)
 	/* size should be between HT_MIN_SIZE and HT_MAX_SIZE */
 	if (nSize <= HT_MIN_SIZE) {
 		return HT_MIN_SIZE;
-	} else if (UNEXPECTED(nSize >= HT_MAX_SIZE)) {
+	} else if (UNEXPECTED(nSize > HT_MAX_SIZE)) {
 		zend_error_noreturn(E_ERROR, "Possible integer overflow in memory allocation (%u * %zu + %zu)", nSize, sizeof(Bucket), sizeof(Bucket));
 	}
 
@@ -176,7 +179,14 @@ static zend_always_inline void zend_hash_real_init_mixed_ex(HashTable *ht)
 		HT_SET_DATA_ADDR(ht, data);
 		/* Don't overwrite iterator count. */
 		ht->u.v.flags = HASH_FLAG_STATIC_KEYS;
-#ifdef __SSE2__
+#if defined(__AVX2__)
+		do {
+			__m256i ymm0 = _mm256_setzero_si256();
+			ymm0 = _mm256_cmpeq_epi64(ymm0, ymm0);
+			_mm256_storeu_si256((__m256i*)&HT_HASH_EX(data,  0), ymm0);
+			_mm256_storeu_si256((__m256i*)&HT_HASH_EX(data,  8), ymm0);
+		} while(0);
+#elif defined (__SSE2__)
 		do {
 			__m128i xmm0 = _mm_setzero_si128();
 			xmm0 = _mm_cmpeq_epi8(xmm0, xmm0);
@@ -245,7 +255,7 @@ ZEND_API const HashTable zend_empty_array = {
 	.nNumOfElements = 0,
 	.nTableSize = HT_MIN_SIZE,
 	.nInternalPointer = 0,
-	.nNextFreeElement = 0,
+	.nNextFreeElement = ZEND_LONG_MIN,
 	.pDestructor = ZVAL_PTR_DTOR
 };
 
@@ -504,6 +514,21 @@ ZEND_API HashPosition ZEND_FASTCALL zend_hash_get_current_pos(const HashTable *h
 	return _zend_hash_get_current_pos(ht);
 }
 
+static void zend_hash_remove_iterator_copies(uint32_t idx) {
+	HashTableIterator *iterators = EG(ht_iterators);
+
+	HashTableIterator *iter = iterators + idx;
+	uint32_t next_idx = iter->next_copy;
+	while (next_idx != idx) {
+		uint32_t cur_idx = next_idx;
+		HashTableIterator *cur_iter = iterators + cur_idx;
+		next_idx = cur_iter->next_copy;
+		cur_iter->next_copy = cur_idx; // avoid recursion in zend_hash_iterator_del
+		zend_hash_iterator_del(cur_idx);
+	}
+	iter->next_copy = idx;
+}
+
 ZEND_API uint32_t ZEND_FASTCALL zend_hash_iterator_add(HashTable *ht, HashPosition pos)
 {
 	HashTableIterator *iter = EG(ht_iterators);
@@ -518,6 +543,7 @@ ZEND_API uint32_t ZEND_FASTCALL zend_hash_iterator_add(HashTable *ht, HashPositi
 			iter->ht = ht;
 			iter->pos = pos;
 			idx = iter - EG(ht_iterators);
+			iter->next_copy = idx;
 			if (idx + 1 > EG(ht_iterators_used)) {
 				EG(ht_iterators_used) = idx + 1;
 			}
@@ -537,8 +563,41 @@ ZEND_API uint32_t ZEND_FASTCALL zend_hash_iterator_add(HashTable *ht, HashPositi
 	iter->pos = pos;
 	memset(iter + 1, 0, sizeof(HashTableIterator) * 7);
 	idx = iter - EG(ht_iterators);
+	iter->next_copy = idx;
 	EG(ht_iterators_used) = idx + 1;
 	return idx;
+}
+
+// To avoid losing track of the HashTable when separating arrays, we track all copies at once.
+static zend_always_inline bool zend_hash_iterator_find_copy_pos(uint32_t idx, HashTable *ht) {
+	HashTableIterator *iter = EG(ht_iterators) + idx;
+
+	uint32_t next_idx = iter->next_copy;
+	if (EXPECTED(next_idx != idx)) {
+		HashTableIterator *copy_iter;
+		while (next_idx != idx) {
+			copy_iter = EG(ht_iterators) + next_idx;
+			if (copy_iter->ht == ht) {
+				// We have found the hashtable we are actually iterating over
+				// Now clean any intermittent copies and replace the original index by the found one
+				if (EXPECTED(iter->ht) && EXPECTED(iter->ht != HT_POISONED_PTR)
+					&& EXPECTED(!HT_ITERATORS_OVERFLOW(iter->ht))) {
+					HT_DEC_ITERATORS_COUNT(iter->ht);
+				}
+				if (EXPECTED(!HT_ITERATORS_OVERFLOW(ht))) {
+					HT_INC_ITERATORS_COUNT(ht);
+				}
+				iter->ht = copy_iter->ht;
+				iter->pos = copy_iter->pos;
+				zend_hash_remove_iterator_copies(idx);
+				return true;
+			}
+			next_idx = copy_iter->next_copy;
+		}
+		zend_hash_remove_iterator_copies(idx);
+	}
+
+	return false;
 }
 
 ZEND_API HashPosition ZEND_FASTCALL zend_hash_iterator_pos(uint32_t idx, HashTable *ht)
@@ -546,7 +605,7 @@ ZEND_API HashPosition ZEND_FASTCALL zend_hash_iterator_pos(uint32_t idx, HashTab
 	HashTableIterator *iter = EG(ht_iterators) + idx;
 
 	ZEND_ASSERT(idx != (uint32_t)-1);
-	if (UNEXPECTED(iter->ht != ht)) {
+	if (UNEXPECTED(iter->ht != ht) && !zend_hash_iterator_find_copy_pos(idx, ht)) {
 		if (EXPECTED(iter->ht) && EXPECTED(iter->ht != HT_POISONED_PTR)
 				&& EXPECTED(!HT_ITERATORS_OVERFLOW(iter->ht))) {
 			HT_DEC_ITERATORS_COUNT(iter->ht);
@@ -566,7 +625,7 @@ ZEND_API HashPosition ZEND_FASTCALL zend_hash_iterator_pos_ex(uint32_t idx, zval
 	HashTableIterator *iter = EG(ht_iterators) + idx;
 
 	ZEND_ASSERT(idx != (uint32_t)-1);
-	if (UNEXPECTED(iter->ht != ht)) {
+	if (UNEXPECTED(iter->ht != ht) && !zend_hash_iterator_find_copy_pos(idx, ht)) {
 		if (EXPECTED(iter->ht) && EXPECTED(iter->ht != HT_POISONED_PTR)
 				&& EXPECTED(!HT_ITERATORS_OVERFLOW(ht))) {
 			HT_DEC_ITERATORS_COUNT(iter->ht);
@@ -594,6 +653,10 @@ ZEND_API void ZEND_FASTCALL zend_hash_iterator_del(uint32_t idx)
 		HT_DEC_ITERATORS_COUNT(iter->ht);
 	}
 	iter->ht = NULL;
+
+	if (UNEXPECTED(iter->next_copy != idx)) {
+		zend_hash_remove_iterator_copies(idx);
+	}
 
 	if (idx == EG(ht_iterators_used) - 1) {
 		while (idx > 0 && EG(ht_iterators)[idx - 1].ht == NULL) {
@@ -2281,6 +2344,22 @@ static zend_always_inline bool zend_array_dup_element(HashTable *source, HashTab
 	return 1;
 }
 
+// We need to duplicate iterators to be able to search through all copy-on-write copies to find the actually iterated HashTable and position back
+static void zend_array_dup_ht_iterators(HashTable *source, HashTable *target) {
+	HashTableIterator *iter = EG(ht_iterators);
+	HashTableIterator *end  = iter + EG(ht_iterators_used);
+
+	while (iter != end) {
+		if (iter->ht == source) {
+			uint32_t copy_idx = zend_hash_iterator_add(target, iter->pos);
+			HashTableIterator *copy_iter = EG(ht_iterators) + copy_idx;
+			copy_iter->next_copy = iter->next_copy;
+			iter->next_copy = copy_idx;
+		}
+		iter++;
+	}
+}
+
 static zend_always_inline void zend_array_dup_packed_elements(HashTable *source, HashTable *target, bool with_holes)
 {
 	zval *p = source->arPacked;
@@ -2295,6 +2374,10 @@ static zend_always_inline void zend_array_dup_packed_elements(HashTable *source,
 		}
 		p++; q++;
 	} while (p != end);
+
+	if (UNEXPECTED(HT_HAS_ITERATORS(source))) {
+		zend_array_dup_ht_iterators(source, target);
+	}
 }
 
 static zend_always_inline uint32_t zend_array_dup_elements(HashTable *source, HashTable *target, bool static_keys, bool with_holes)
@@ -2304,19 +2387,44 @@ static zend_always_inline uint32_t zend_array_dup_elements(HashTable *source, Ha
 	Bucket *q = target->arData;
 	Bucket *end = p + source->nNumUsed;
 
+	if (UNEXPECTED(HT_HAS_ITERATORS(source))) {
+		zend_array_dup_ht_iterators(source, target);
+	}
+
 	do {
 		if (!zend_array_dup_element(source, target, idx, p, q, 0, static_keys, with_holes)) {
 			uint32_t target_idx = idx;
 
 			idx++; p++;
-			while (p != end) {
-				if (zend_array_dup_element(source, target, target_idx, p, q, 0, static_keys, with_holes)) {
-					if (source->nInternalPointer == idx) {
-						target->nInternalPointer = target_idx;
+			if (EXPECTED(!HT_HAS_ITERATORS(target))) {
+				while (p != end) {
+					if (zend_array_dup_element(source, target, target_idx, p, q, 0, static_keys, with_holes)) {
+						if (source->nInternalPointer == idx) {
+							target->nInternalPointer = target_idx;
+						}
+						target_idx++; q++;
 					}
-					target_idx++; q++;
+					idx++; p++;
 				}
-				idx++; p++;
+			} else {
+				target->nNumUsed = source->nNumOfElements;
+				uint32_t iter_pos = zend_hash_iterators_lower_pos(target, idx);
+
+				while (p != end) {
+					if (zend_array_dup_element(source, target, target_idx, p, q, 0, static_keys, with_holes)) {
+						if (source->nInternalPointer == idx) {
+							target->nInternalPointer = target_idx;
+						}
+						if (UNEXPECTED(idx >= iter_pos)) {
+							do {
+								zend_hash_iterators_update(target, iter_pos, target_idx);
+								iter_pos = zend_hash_iterators_lower_pos(target, iter_pos + 1);
+							} while (iter_pos < idx);
+						}
+						target_idx++; q++;
+					}
+					idx++; p++;
+				}
 			}
 			return target_idx;
 		}
@@ -2899,9 +3007,9 @@ ZEND_API void ZEND_FASTCALL zend_hash_sort_ex(HashTable *ht, sort_func_t sort, b
 		ht->nNumUsed = i;
 	}
 
-	if (!(HT_FLAGS(ht) & HASH_FLAG_PACKED)) {
-		/* We broke the hash colisions chains overriding Z_NEXT() by Z_EXTRA().
-		 * Reset the hash headers table as well to avoid possilbe inconsistent
+	if (!HT_IS_PACKED(ht)) {
+		/* We broke the hash collisions chains overriding Z_NEXT() by Z_EXTRA().
+		 * Reset the hash headers table as well to avoid possible inconsistent
 		 * access on recursive data structures.
 	     *
 	     * See Zend/tests/bug63882_2.phpt

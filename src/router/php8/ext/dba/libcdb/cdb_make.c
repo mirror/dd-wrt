@@ -14,7 +14,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 8144ef10fb5d90aa26072e8b56f03d5238dd0d24 $ */
+/* $Id: 570e3625b0cea5c29455cecf40fdfd491c0eb3c6 $ */
 
 /* incorporated from D.J.Bernstein's cdb-0.75 (http://cr.yp.to/cdb.html)*/
 
@@ -236,7 +236,7 @@ int cdb_make_finish(struct cdb_make *c)
 /* }}} */
 
 /* {{{ cdb_make_version */
-char *cdb_make_version()
+const char *cdb_make_version(void)
 {
-	return "0.75, $Id: 8144ef10fb5d90aa26072e8b56f03d5238dd0d24 $";
+	return "0.75, $Id: 570e3625b0cea5c29455cecf40fdfd491c0eb3c6 $";
 }

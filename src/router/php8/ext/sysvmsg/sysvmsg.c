@@ -79,7 +79,6 @@ static zend_object *sysvmsg_queue_create_object(zend_class_entry *class_type) {
 
 	zend_object_std_init(&intern->std, class_type);
 	object_properties_init(&intern->std, class_type);
-	intern->std.handlers = &sysvmsg_queue_object_handlers;
 
 	return &intern->std;
 }
@@ -102,6 +101,7 @@ PHP_MINIT_FUNCTION(sysvmsg)
 {
 	sysvmsg_queue_ce = register_class_SysvMessageQueue();
 	sysvmsg_queue_ce->create_object = sysvmsg_queue_create_object;
+	sysvmsg_queue_ce->default_object_handlers = &sysvmsg_queue_object_handlers;
 
 	memcpy(&sysvmsg_queue_object_handlers, &std_object_handlers, sizeof(zend_object_handlers));
 	sysvmsg_queue_object_handlers.offset = XtOffsetOf(sysvmsg_queue_t, std);
@@ -398,7 +398,7 @@ PHP_FUNCTION(msg_send)
 				break;
 
 			default:
-				zend_argument_type_error(3, "must be of type string|int|float|bool, %s given", zend_zval_type_name(message));
+				zend_argument_type_error(3, "must be of type string|int|float|bool, %s given", zend_zval_value_name(message));
 				RETURN_THROWS();
 		}
 

@@ -14,7 +14,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 10cc4f985215693867f001a49085c47ae65f38dd $ */
+/* $Id: e694d6a6eb12f2bbad27f8ec7ebf3788257532d9 $ */
 
 /* incorporated from D.J.Bernstein's cdb-0.75 (http://cr.yp.to/cdb.html)*/
 
@@ -185,8 +185,8 @@ int cdb_find(struct cdb *c, char *key, unsigned int len)
 /* }}} */
 
 /* {{{ cdb_version */
-char *cdb_version()
+const char *cdb_version(void)
 {
-	return "0.75, $Id: 10cc4f985215693867f001a49085c47ae65f38dd $";
+	return "0.75, $Id: e694d6a6eb12f2bbad27f8ec7ebf3788257532d9 $";
 }
 /* }}} */

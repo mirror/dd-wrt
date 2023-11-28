@@ -31,6 +31,7 @@
 #include "zend_virtual_cwd.h"
 #include "ext/standard/info.h"
 #include "ext/standard/php_filestat.h"
+#include "ext/date/php_date.h"
 #include "opcache_arginfo.h"
 
 #if HAVE_JIT
@@ -72,7 +73,7 @@ static ZEND_INI_MH(OnUpdateMemoryConsumption)
 		return FAILURE;
 	}
 	if (UNEXPECTED(memsize > ZEND_LONG_MAX / (1024 * 1024))) {
-		*p = ZEND_LONG_MAX;
+		*p = ZEND_LONG_MAX & ~(1024 * 1024 - 1);
 	} else {
 		*p = memsize * (1024 * 1024);
 	}
@@ -125,19 +126,6 @@ static ZEND_INI_MH(OnUpdateMaxWastedPercentage)
 		return FAILURE;
 	}
 	*p = (double)percentage / 100.0;
-	return SUCCESS;
-}
-
-static ZEND_INI_MH(OnUpdateConsistencyChecks)
-{
-	zend_long *p = (zend_long *) ZEND_INI_GET_ADDR();
-	zend_long consistency_checks = atoi(ZSTR_VAL(new_value));
-
-	if (consistency_checks != 0) {
-		zend_accel_error(ACCEL_LOG_WARNING, "opcache.consistency_checks is reset back to 0 because it does not work properly (see GH-8065, GH-10624).\n");
-		return FAILURE;
-	}
-	*p = 0;
 	return SUCCESS;
 }
 
@@ -257,6 +245,19 @@ static ZEND_INI_MH(OnUpdateUnrollL)
 		ZEND_JIT_TRACE_MAX_LOOPS_UNROLL);
 	return FAILURE;
 }
+
+static ZEND_INI_MH(OnUpdateMaxTraceLength)
+{
+	zend_long val = zend_ini_parse_quantity_warn(new_value, entry->name);
+	if (val > 3 && val <= ZEND_JIT_TRACE_MAX_LENGTH) {
+		zend_long *p = (zend_long *) ZEND_INI_GET_ADDR();
+		*p = val;
+		return SUCCESS;
+	}
+	zend_error(E_WARNING, "Invalid \"%s\" setting. Should be between 4 and %d", ZSTR_VAL(entry->name),
+		ZEND_JIT_TRACE_MAX_LENGTH);
+	return FAILURE;
+}
 #endif
 
 ZEND_INI_BEGIN()
@@ -275,7 +276,6 @@ ZEND_INI_BEGIN()
 	STD_PHP_INI_ENTRY("opcache.interned_strings_buffer", "8"  , PHP_INI_SYSTEM, OnUpdateInternedStringsBuffer,	 accel_directives.interned_strings_buffer,   zend_accel_globals, accel_globals)
 	STD_PHP_INI_ENTRY("opcache.max_accelerated_files" , "10000", PHP_INI_SYSTEM, OnUpdateMaxAcceleratedFiles,	 accel_directives.max_accelerated_files,     zend_accel_globals, accel_globals)
 	STD_PHP_INI_ENTRY("opcache.max_wasted_percentage" , "5"   , PHP_INI_SYSTEM, OnUpdateMaxWastedPercentage,	 accel_directives.max_wasted_percentage,     zend_accel_globals, accel_globals)
-	STD_PHP_INI_ENTRY("opcache.consistency_checks"    , "0"   , PHP_INI_ALL   , OnUpdateConsistencyChecks,	     accel_directives.consistency_checks,        zend_accel_globals, accel_globals)
 	STD_PHP_INI_ENTRY("opcache.force_restart_timeout" , "180" , PHP_INI_SYSTEM, OnUpdateLong,	             accel_directives.force_restart_timeout,     zend_accel_globals, accel_globals)
 	STD_PHP_INI_ENTRY("opcache.revalidate_freq"       , "2"   , PHP_INI_ALL   , OnUpdateLong,	             accel_directives.revalidate_freq,           zend_accel_globals, accel_globals)
 	STD_PHP_INI_ENTRY("opcache.file_update_protection", "2"   , PHP_INI_ALL   , OnUpdateLong,                accel_directives.file_update_protection,    zend_accel_globals, accel_globals)
@@ -335,6 +335,7 @@ ZEND_INI_BEGIN()
 	STD_PHP_INI_ENTRY("opcache.jit_max_recursive_calls"       , "2",                          PHP_INI_ALL,    OnUpdateUnrollC,  max_recursive_calls,   zend_jit_globals, jit_globals)
 	STD_PHP_INI_ENTRY("opcache.jit_max_recursive_returns"     , "2",                          PHP_INI_ALL,    OnUpdateUnrollR,  max_recursive_returns, zend_jit_globals, jit_globals)
 	STD_PHP_INI_ENTRY("opcache.jit_max_polymorphic_calls"     , "2",                          PHP_INI_ALL,    OnUpdateLong,     max_polymorphic_calls, zend_jit_globals, jit_globals)
+    STD_PHP_INI_ENTRY("opcache.jit_max_trace_length"          , "1024",                       PHP_INI_ALL,    OnUpdateMaxTraceLength, max_trace_length, zend_jit_globals, jit_globals)
 #endif
 ZEND_INI_END()
 
@@ -494,6 +495,9 @@ void zend_accel_info(ZEND_MODULE_INFO_FUNC_ARGS)
 			php_info_print_table_row(2, "Startup Failed", zps_api_failure_reason);
 		} else {
 			char buf[32];
+			zend_string *start_time, *restart_time, *force_restart_time;
+			zval *date_ISO8601 = zend_get_constant_str("DATE_ISO8601", sizeof("DATE_ISO8601")-1);
+
 			php_info_print_table_row(2, "Startup", "OK");
 			php_info_print_table_row(2, "Shared memory model", zend_accel_get_shared_model());
 			snprintf(buf, sizeof(buf), ZEND_ULONG_FMT, ZCSG(hits));
@@ -524,6 +528,26 @@ void zend_accel_info(ZEND_MODULE_INFO_FUNC_ARGS)
 			php_info_print_table_row(2, "Hash keys restarts", buf);
 			snprintf(buf, sizeof(buf), ZEND_ULONG_FMT, ZCSG(manual_restarts));
 			php_info_print_table_row(2, "Manual restarts", buf);
+
+			start_time = php_format_date(Z_STRVAL_P(date_ISO8601), Z_STRLEN_P(date_ISO8601), ZCSG(start_time), 1);
+			php_info_print_table_row(2, "Start time", ZSTR_VAL(start_time));
+			zend_string_release(start_time);
+
+			if (ZCSG(last_restart_time)) {
+				restart_time = php_format_date(Z_STRVAL_P(date_ISO8601), Z_STRLEN_P(date_ISO8601), ZCSG(last_restart_time), 1);
+				php_info_print_table_row(2, "Last restart time", ZSTR_VAL(restart_time));
+				zend_string_release(restart_time);
+			} else {
+				php_info_print_table_row(2, "Last restart time", "none");
+			}
+
+			if (ZCSG(force_restart_time)) {
+				force_restart_time = php_format_date(Z_STRVAL_P(date_ISO8601), Z_STRLEN_P(date_ISO8601), ZCSG(force_restart_time), 1);
+				php_info_print_table_row(2, "Last force restart time", ZSTR_VAL(force_restart_time));
+				zend_string_release(force_restart_time);
+			} else {
+				php_info_print_table_row(2, "Last force restart time", "none");
+			}
 		}
 	}
 
@@ -591,6 +615,8 @@ static int accelerator_get_scripts(zval *return_value)
 			}
 			timerclear(&exec_time);
 			timerclear(&fetch_time);
+
+			add_assoc_long(&persistent_script_report, "revalidate", (zend_long)script->dynamic_members.revalidate);
 
 			zend_hash_update(Z_ARRVAL_P(return_value), cache_entry->key, &persistent_script_report);
 		}
@@ -689,15 +715,15 @@ ZEND_FUNCTION(opcache_get_status)
 		}
 
 		if (zend_hash_num_elements(&ZCSG(preload_script)->script.class_table)) {
-			zend_class_entry *ce;
+			zval *zv;
 			zend_string *key;
 
 			array_init(&scripts);
-			ZEND_HASH_MAP_FOREACH_STR_KEY_PTR(&ZCSG(preload_script)->script.class_table, key, ce) {
-				if (ce->refcount > 1 && !zend_string_equals_ci(key, ce->name)) {
+			ZEND_HASH_MAP_FOREACH_STR_KEY_VAL(&ZCSG(preload_script)->script.class_table, key, zv) {
+				if (Z_TYPE_P(zv) == IS_ALIAS_PTR) {
 					add_next_index_str(&scripts, key);
 				} else {
-					add_next_index_str(&scripts, ce->name);
+					add_next_index_str(&scripts, Z_CE_P(zv)->name);
 				}
 			} ZEND_HASH_FOREACH_END();
 			add_assoc_zval(&statistics, "classes", &scripts);
@@ -766,7 +792,6 @@ ZEND_FUNCTION(opcache_get_configuration)
 	add_assoc_long(&directives,	 "opcache.interned_strings_buffer",ZCG(accel_directives).interned_strings_buffer);
 	add_assoc_long(&directives, 	 "opcache.max_accelerated_files",  ZCG(accel_directives).max_accelerated_files);
 	add_assoc_double(&directives, "opcache.max_wasted_percentage",  ZCG(accel_directives).max_wasted_percentage);
-	add_assoc_long(&directives, 	 "opcache.consistency_checks",     ZCG(accel_directives).consistency_checks);
 	add_assoc_long(&directives, 	 "opcache.force_restart_timeout",  ZCG(accel_directives).force_restart_timeout);
 	add_assoc_long(&directives, 	 "opcache.revalidate_freq",        ZCG(accel_directives).revalidate_freq);
 	add_assoc_string(&directives, "opcache.preferred_memory_model", STRING_NOT_NULL(ZCG(accel_directives).memory_model));
@@ -825,6 +850,7 @@ ZEND_FUNCTION(opcache_get_configuration)
 	add_assoc_long(&directives,   "opcache.jit_max_root_traces", JIT_G(max_root_traces));
 	add_assoc_long(&directives,   "opcache.jit_max_side_traces", JIT_G(max_side_traces));
 	add_assoc_long(&directives,   "opcache.jit_prof_threshold", JIT_G(prof_threshold));
+	add_assoc_long(&directives,   "opcache.jit_max_trace_length", JIT_G(max_trace_length));
 #endif
 
 	add_assoc_zval(return_value, "directives", &directives);

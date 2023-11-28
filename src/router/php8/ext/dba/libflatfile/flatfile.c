@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: a713373046dceeaaea99b2436dfa8ed5d8df0db5 $ */
+/* $Id: 7fa995b7bd21d527a78003f309ad0190b8e6fd95 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -276,8 +276,8 @@ datum flatfile_nextkey(flatfile *dba) {
 /* }}} */
 
 /* {{{ flatfile_version */
-char *flatfile_version()
+const char *flatfile_version(void)
 {
-	return "1.0, $Id: a713373046dceeaaea99b2436dfa8ed5d8df0db5 $";
+	return "1.0, $Id: 7fa995b7bd21d527a78003f309ad0190b8e6fd95 $";
 }
 /* }}} */

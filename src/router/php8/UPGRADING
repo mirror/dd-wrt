@@ -1,4 +1,4 @@
-PHP 8.2 UPGRADE NOTES
+PHP 8.3 UPGRADE NOTES
 
 1. Backward Incompatible Changes
 2. New Features
@@ -19,274 +19,443 @@ PHP 8.2 UPGRADE NOTES
 1. Backward Incompatible Changes
 ========================================
 
-- Date:
-  . DateTime::createFromImmutable() now has a tentative return type of static,
-    previously it was DateTime.
-  . DateTimeImmutable::createFromMutable() now has a tentative return type of
-    static, previously it was DateTimeImmutable.
+- Core:
+  . Programs that were very close to overflowing the call stack may now throw an
+    Error when using more than
+    `zend.max_allowed_stack_size-zend.reserved_stack_size` bytes of stack
+    (`fiber.stack_size-zend.reserved_stack_size` for fibers).
+  . Executing proc_get_status() multiple times will now always return the right
+    value on posix systems. Previously, only the first call of the function
+    returned the right value. Executing proc_close() after proc_get_status()
+    will now also return the right exit code. Previously this would return -1.
+    Internally, this works by caching the result on posix systems. If you want
+    the old behaviour, you can check the "cached" key in the array returned by
+    proc_get_status() to check whether the result was cached.
+  . Zend Max Execution Timers is now enabled by default for ZTS builds on
+    Linux.
+  . Uses of traits with static properties will now redeclare static properties
+    inherited from the parent class. This will create a separate static
+    property storage for the current class. This is analogous to adding the
+    static property to the class directly without traits.
+  . Assigning a negative index n to an empty array will now make sure that the
+    next index is n+1 instead of 0.
+  . Class constant visibility variance is now correctly checked when inherited
+    from interfaces.
+  . WeakMaps entries whose key maps to itself (possibly transitively) may now
+    be removed during cycle collection if the key is not reachable except by
+    iterating over the WeakMap (reachability via iteration is considered weak).
+    Previously, such entries would never be automatically removed.
 
-- ODBC:
-  . The ODBC extension now escapes the username and password for the case when
-    both a connection string and username/password are passed, and the string
-    must be appended to. Before, user values containing values needing escaping
-    could have created a malformed connection string, or injected values from
-    user-provided data. The escaping rules should be identical to the .NET BCL
-    DbConnectionOptions behaviour.
+- DOM:
+  . DOMChildNode::after(), DOMChildNode::before(), DOMChildNode::replaceWith()
+    on a node that has no parent is now a no-op instead of a hierarchy
+    exception, which is the behaviour spec demands.
+  . Using the DOMParentNode and DOMChildNode methods without a document now
+    works instead of throwing a HIERARCHY_REQUEST_ERR DOMException. This is in
+    line with the behaviour spec demands.
+  . createAttributeNS() without specifying a prefix would incorrectly create
+    a default namespace, placing the element inside the namespace instead of
+    the attribute. This bug is now fixed.
+  . createAttributeNS() would previously incorrectly throw a NAMESPACE_ERR
+    when the prefix was already used for a different uri. It now correctly
+    chooses a different prefix when there's a prefix name conflict.
+  . New methods and properties were added to some DOM classes. If you inherit
+    from these and you happen to have a method or property with the same name,
+    you might encounter errors if the declaration is incompatible.
+    Consult sections 2. New Features and 6. New Functions for a list of
+    newly implemented methods and properties.
 
-- PDO_ODBC:
-  . The PDO_ODBC extension also escapes the username and password when a
-    connection string is passed. See the change to the ODBC extension for
-    further details.
+- FFI:
+  . C functions that have a return type of void now return null instead of
+    returning the following object object(FFI\CData:void) { }
+
+- Opcache:
+  . The opcache.consistency_checks INI directive was removed. This feature was
+    broken with the tracing JIT, as well as with inheritance cache, and has
+    been disabled without a way to enable it since PHP 8.1.18 and PHP 8.2.5.
+    Both the tracing JIT and inheritance cache may modify shm after the script
+    has been persisted by invalidating its checksum. The attempted fix skipped
+    over the modifiable pointers but was rejected due to complexity. For this
+    reason, it was decided to remove the feature instead.
+
+- Phar:
+  . The type of Phar class constants are now declared.
 
 - Standard:
-  . glob() returns empty array if all paths are restricted by open_basedir.
-    Previously the error was returned but that behavior was not consistent and
-    did not work correctly for all patterns.
-  . strtolower() and strtoupper() are no longer locale-sensitive. They now
-    perform ASCII case conversion, as if the locale were "C". Use
-    mb_strtolower() if you want localized case conversion. Similarly, stristr,
-    stripos, strripos, lcfirst, ucfirst, ucwords, str_ireplace,
-    array_change_key_case and sorting with SORT_FLAG_CASE use ASCII case
-    conversion.
-  . str_split() returns an empty array for an empty string now. Previously it
-    returned an array with a single empty string entry. mb_str_split() is not
-    affected by this change since it was already behaving like that.
-  . ksort() and krsort() do numeric string comparison under SORT_REGULAR using
-    the standard PHP 8 rules now.
+  . The range() function has had various changes:
+    * A TypeError is now thrown when passing objects, resources, or arrays
+      as the boundary inputs
+    * A more descriptive ValueError is thrown when passing 0 for $step
+    * A ValueError is now thrown when using a negative $step for increasing ranges
+    * If $step is a float that can be interpreted as an int, it is now done so
+    * A ValueError is now thrown if any argument is infinity or NAN
+    * An E_WARNING is now emitted if $start or $end is the empty string.
+      The value continues to be cast to the value 0.
+    * An E_WARNING is now emitted if $start or $end has more than one byte,
+      only if it is a non-numeric string.
+    * An E_WARNING is now emitted if $start or $end is cast to an integer
+      because the other boundary input is a number. (e.g. range(5, 'z');)
+    * An E_WARNING is now emitted if $step is a float when trying to generate
+      a range of characters, except if both boundary inputs are numeric strings
+      (e.g. range('5', '9', 0.5); does not produce a warning)
+    * range() now produce a list of characters if one of the boundary inputs is
+      a string digit instead of casting the other input to int
+      (e.g. range('5', 'z');)
+  . The file() flags error check now catches all invalid flags. Notably
+    FILE_APPEND was previously silently accepted.
 
-- SPL:
-  . The following methods now enforce their signature:
-    * SplFileInfo::_bad_state_ex()
-    * SplFileObject::getCsvControl()
-    * SplFileObject::fflush()
-    * SplFileObject::ftell()
-    * SplFileObject::fgetc()
-    * SplFileObject::fpassthru()
-  . SplFileObject::hasChildren() now has a tentative return type of false,
-    previously it was bool
-  . SplFileObject::getChildren() now has a tentative return type of null,
-    previously it was ?RecursiveIterator
-  . GlogIterator returns empty array if all paths are restricted by
-    open_basedir. Previously the error was returned but that behavior was not
-    consistent and did not work correctly.
+- SNMP:
+  . The type of SNMP class constants are now declared.
 
 ========================================
 2. New Features
-========================================
-
-- Core:
-  . Added the #[\SensitiveParameter] attribute to redact sensitive data in
-    backtraces.
-    RFC: https://wiki.php.net/rfc/redact_parameters_in_back_traces
-  . It is now possible to use null and false as standalone types.
-    RFC: https://wiki.php.net/rfc/null-false-standalone-types
-  . Added support for readonly classes.
-    RFC: https://wiki.php.net/rfc/readonly_classes
-  . Added support for true type.
-    RFC: https://wiki.php.net/rfc/true-type
-  . Added support for Disjoint Normal Form (DNF) types.
-    RFC: https://wiki.php.net/rfc/dnf_types
-  . Added error_log_mode ini setting that allows setting of permissions for
-    error log file.
-  . Added support for fetching properties of enums in constant expressions.
-    RFC: https://wiki.php.net/rfc/fetch_property_in_const_expressions
-  . Added support for defining constants in traits.
-    RFC: https://wiki.php.net/rfc/constants_in_traits
-
-- Curl:
-  . Added CURLINFO_EFFECTIVE_METHOD option and returning the effective
-    HTTP method in curl_getinfo() return value.
-  . Exposed multiple new constants from libcurl 7.62 to 7.80.
-  . Added new function curl_upkeep() to perform any connection upkeep checks.
-
-- DBA:
-  . The LMDB Driver now accepts the DBA_LMDB_USE_SUB_DIR or DBA_LMDB_NO_SUB_DIR
-    flags to determine if it should create a sub directory or not when creating
-    a database file.
-
-- GMP:
-  . GMP::__construct() can now be used instead of gmp_init() to initialize an object (Only as of PHP 8.2.3)
-
-
-- OCI8:
-  . Added an oci8.prefetch_lob_size directive and oci_set_prefetch_lob()
-    function to tune LOB query performance by reducing the number of
-    round-trips between PHP and Oracle Database when fetching LOBS. This is
-    usable with Oracle Database 12.2 or later.
-
-- OpenSSL:
-  . Added AEAD support for chacha20-poly1305 algorithm.
-
-- ODBC:
-  . Added odbc_connection_string_is_quoted, odbc_connection_string_should_quote,
-    and odbc_connection_string_quote. These are primarily used behind the scenes
-    in the ODBC and PDO_ODBC extensions, but is exposed to userland for easier
-    unit testing, and for user applications and libraries to perform quoting
-    themselves.
-
-- PCRE:
-  . Added support for the "n" (NO_AUTO_CAPTURE) modifier, which makes simple
-    `(xyz)` groups non-capturing. Only named groups like `(?<name>xyz)` are
-    capturing. This only affects which groups are capturing, it is still
-    possible to use numbered subpattern references, and the matches array will
-    still contain numbered results.
-
-- Random:
-  . New extension that organizes and consolidates existing implementations
-    related to random number generators. New, higher quality RNGs are available
-    and scope issues are eliminated.
-    RFC: https://wiki.php.net/rfc/rng_extension
-    RFC: https://wiki.php.net/rfc/random_extension_improvement
-
-========================================
-3. Changes in SAPI modules
-========================================
-
-- FPM:
-  . If setting user by its UID without setting a group, then the group is no
-    longer set to 0 (root) but instead to the user assigned groups like it is
-    when setting user by name.
-
-========================================
-4. Deprecated Functionality
-========================================
-
-- Core:
-  . Creation of dynamic properties is deprecated, unless the class opts in by
-    using the #[AllowDynamicProperties] attribute. stdClass allows dynamic
-    properties. Usage of __get()/__set() is not affected by this change. A
-    dynamic properties deprecation warning can be addressed by:
-     - Declaring the property (preferred).
-     - Adding the #[AllowDynamicProperties] attribute to the class (which also
-       applies to all child classes).
-     - Using a WeakMap if you wish to associate additional data with an object
-       you do not own.
-
-  . Callables that are not accepted by the $callable() syntax (but are accepted
-    by call_user_func) are deprecated. In particular:
-
-        "self::method"
-        "parent::method"
-        "static::method"
-        ["self", "method"]
-        ["parent", "method"]
-        ["static", "method"]
-        ["Foo", "Bar::method"]
-        [new Foo, "Bar::method"]
-
-    This does not affect normal method callables like "A::method" or
-    ["A", "method"].
-
-    RFC: https://wiki.php.net/rfc/deprecate_partially_supported_callables
-    RFC: https://wiki.php.net/rfc/partially-supported-callables-expand-deprecation-notices
-
-  . The "${var}" and "${expr}" style string interpolations are deprecated and
-    will be removed in PHP 9. Use "$var"/"{$var}" or "{${expr}}", respectively.
-    RFC: https://wiki.php.net/rfc/deprecate_dollar_brace_string_interpolation
-
-- Mbstring:
-  . Use of QPrint, Base64, Uuencode, and HTML-ENTITIES 'text encodings' is
-    deprecated for all Mbstring functions. Unlike all the other text
-    encodings supported by Mbstring, these do not encode a sequence of
-    Unicode codepoints, but rather a sequence of raw bytes. It is not
-    clear what the correct return values for most Mbstring functions should
-    be when one of these non-encodings is specified. Further, PHP has
-    separate, built-in implementations of all of them; for example, UUencoded
-    data can be handled using convert_uuencode/convert_uudecode.
-
-- SPL:
-  . The SplFileInfo::_bad_state_ex() internal method has been deprecated.
-
-- Standard:
-  . utf8_encode() and utf8_decode() have been deprecated.
-
-========================================
-5. Changed Functions
 ========================================
 
 - Core
-  . str*cmp, str*pos, substr_compare functions, using binary safe string
-    comparison now return -1, 0 and 1.
+  . Anonymous classes may now be marked as readonly.
+  . Readonly properties can now be reinitialized during cloning.
+    RFC: https://wiki.php.net/rfc/readonly_amendments
+  . Class, interface, trait, and enum constants now support type
+    declarations. RFC: https://wiki.php.net/rfc/typed_class_constants
+  . Closures created from magic methods can now accept named arguments.
+  . The final modifier may now be used when using a method from a trait.
+  . Added the #[\Override] attribute to check that a method exists
+    in a parent class or implemented interface.
+    RFC: https://wiki.php.net/rfc/marking_overriden_methods
+  . Class constants can now be accessed dynamically using the C::{$name}
+    syntax.
+    RFC: https://wiki.php.net/rfc/dynamic_class_constant_fetch
+  . Static variable initializers can now contain arbitrary expressions.
+    RFC: https://wiki.php.net/rfc/arbitrary_static_variable_initializers
+
+- CLI
+  . It is now possible to lint multiple files.
+
+- DOM
+  . Added properties DOMElement::className and DOMElement::id.
+    These are not binary-safe at the moment because of underlying limitations of
+    libxml2. This means that the property values will be cut off at a NUL byte.
+  . Added properties DOMNode::isConnected and DOMNameSpaceNode::isConnected.
+  . Added properties DOMNode::parentElement and DOMNameSpaceNode::parentElement.
+
+- FFI
+  . It is now possible to assign CData to other CData. This means you can
+    now assign CData to structs and fields.
+
+- Opcache
+  . opcache_get_status()['scripts'][n]['revalidate'] now contains a Unix
+    timestamp of when the next revalidation of the scripts timestamp is due,
+    dictated by the opcache.revalidate_freq INI directive.
+
+- Posix
+  . posix_getrlimit() now takes an optional $res parameter to allow fetching a
+    single resource limit.
+  . posix_isatty() now raises type warnings for integers following the usual
+    ZPP semantics.
+  . posix_ttyname() now raises type warnings for integers following the usual
+    ZPP semantics and value warnings for invalid file descriptor integers.
+
+- Streams
+  . Streams can now emit the STREAM_NOTIFY_COMPLETED notification. This was
+    previously not implemented.
+
+========================================
+3. Changes in SAPI modules
+========================================
+
+- $_SERVER['SERVER_SOFTWARE'] value from the built-in CLI server changed to
+  make it compliant with RFC3875.
+
+========================================
+4. Deprecated Functionality
+========================================
+
+- Core
+  . Using the ++ operator on empty, non-numeric, or non-alphanumeric strings
+    is now deprecated. Moreover, incrementing non-numeric strings is soft
+    deprecated and the new str_increment() function should be used instead.
+    RFC: https://wiki.php.net/rfc/saner-inc-dec-operators
+  . Using the -- operator on empty or non-numeric strings is now deprecated.
+    RFC: https://wiki.php.net/rfc/saner-inc-dec-operators
+  . Calling get_class() and get_parent_class() without arguments is now
+    deprecated.
 
 - DBA
-  . dba_open() and dba_popen() now have the following enforced function signature
-    dba_open(string $path, string $mode, ?string $handler = null, int $permission = 0o644, int $map_size = 0, ?int $flags = null)
-  . dba_fetch()'s optional skip argument is now at the end in line with
-    PHP userland semantics its signature now is:
-    dba_fetch(string|array $key, $dba, int $skip = 0): string|false
-    The overloaded signature
-    dba_fetch(string|array $key, $skip, $dba): string|false
-    is still accepted, but it is recommended to use the new standard variant.
+  . Calling dba_fetch() with $dba as the 3rd argument is now deprecated.
+
+- FFI
+  . Calling FFI::cast(), FFI::new(), and FFI::type() statically is now
+    deprecated.
+
+- Intl
+  . The U_MULTIPLE_DECIMAL_SEP*E*RATORS constant had been deprecated, using
+    the U_MULTIPLE_DECIMAL_SEP*A*RATORS instead is recommended.
+  . The NumberFormatter::TYPE_CURRENCY has been deprecated.
+
+- LDAP
+  . Calling ldap_connect() with separate hostname and port is deprecated.
+    RFC: https://wiki.php.net/rfc/deprecations_php_8_3#deprecate_calling_ldap_connect_with_2_parameters
 
 - MBString
-  . mb_check_encoding() now checks input encoding more strictly for
-    certain text encodings, including ISO-2022-JP and UTF-7.
-  . mb_detect_encoding() now checks input encoding more strictly
-    when strict detection is enabled.
-  . mb_convert_encoding() checks the input encoding more strictly
-    if multiple encodings are passed to from_encoding
-    and the mbstring.strict_detection INI directive is set to 1.
-    This change only affects the encoding selection,
-    not the result of the conversion.
+  . Passing a negative $width to mb_strimwidth() is now deprecated.
+
+- Phar
+  . Calling Phar::setStub() with a resource and a length is now deprecated.
+    Such calls should be replaced by:
+    $phar->setStub(stream_get_contents($resource));
 
 - Random
-  . random_bytes() and random_int() now throw \Random\RandomException on CSPRNG failure.
-    Previously a plain \Exception was thrown.
+  . The MT_RAND_PHP Mt19937 variant is deprecated.
+    RFC: https://wiki.php.net/rfc/deprecations_php_8_3#mt_rand_php
 
-- SPL
-  . The $iterator parameter of iterator_to_array() and iterator_count() is
-    widened to iterable from Iterator, allowing arrays to be passed.
-    RFC: https://wiki.php.net/rfc/iterator_xyz_accept_array
+- Standard:
+  . The assert_options() function is now deprecated.
+  . The ASSERT_ACTIVE, ASSERT_BAIL, ASSERT_CALLBACK, ASSERT_EXCEPTION, and
+    ASSERT_WARNING constants have been deprecated.
+    RFC: https://wiki.php.net/rfc/assert-string-eval-cleanup
 
-- Standard
-  . unserialize() now performs a stricter validation of the structure of serialized
-    objects.
-  . mail() function reverts back to the mixed LF and CRLF new lines (behavior
-    before PHP 8.0) if mail.mixed_lf_and_crlf INI is on.
+- SQLite3
+  . Using exceptions is now preferred, warnings will be removed in the future.
+    Calling SQLite3::enableExceptions(false) will trigger a depreciation
+    warning in this version.
 
-- XML
-  . xml_parser_set_option() now actually returns false when attempting to set a
-    negative tag start. Previously it returned true while emitting an E_WARNING.
+- Zip:
+  . The ZipArchive::FL_RECOMPRESS constant is deprecated and will be removed
+    in a future version of libzip
+
+========================================
+5. Changed Functions
+========================================
+
+- Core:
+  . gc_status() has added the following 8 fields:
+    "running" => bool
+    "protected" => bool
+    "full" => bool
+    "buffer_size" => int
+    "application_time" => float: Total application time, in seconds (including
+    collector_time)
+    "collector_time" => float: Time spent collecting cycles, in seconds
+    (including destructor_time and free_time)
+    "destructor_time" => float: Time spent executing destructors during
+    cycle collection, in seconds
+    "free_time" => float: Time spent freeing values during cycle collection, in
+    seconds
+    See GH-9336, GH-11523
+  . class_alias() now supports creating an alias of an internal class.
+  . Setting `open_basedir` at runtime using `ini_set('open_basedir', ...);` no
+    longer accepts paths containing the parent directory (`..`). Previously,
+    only paths starting with `..` were disallowed. This could easily be
+    circumvented by prepending `./` to the path.
+  . User exception handlers now catch exceptions during shutdown.
+  . The resultant HTML of highlight_string and highlight_file has changed.
+    Whitespace between outer HTML tags is removed. Newlines and spaces
+    are no longer converted to HTML entities. The whole HTML is now wrapped in
+    <pre> tag. The outer <span> has been merged with <code>.
+
+- Calendar
+  . easter_date() now supports years from 1970 to 2,000,000,000 on 64-bit
+    systems, previously it only supported years in the range from 1970 to 2037.
+
+- Curl:
+  . curl_getinfo() now supports two new constants: CURLINFO_CAPATH and
+    CURLINFO_CAINFO. If option is null, the following two additional keys are
+    present: "capath" and "cainfo".
+
+- Dom:
+  . Changed DOMCharacterData::appendData() tentative return type to true.
+  . DOMDocument::loadHTML(), DOMDocument::loadHTMLFile(),
+    DOMDocument::loadXML() and DOMDocument::loadXMLFile() now have a tentative
+    return type of bool. Previously, this was documented as having a return
+    type of DOMDocument|bool, but DOMDocument cannot be returned since PHP 8.0
+    as it is no longer statically callable.
+
+- Gd:
+  . Changed imagerotate signature, removed the `ignore_transparent` argument
+    as it was not used internally anyway from PHP 7.x.
+
+- Intl:
+  . datefmt_set_timezone (and its alias IntlDateformatter::setTimeZone)
+    now returns true on success, previously null was returned.
+  . IntlBreakiterator::setText() now returns false on failure, previously
+    null was returned.
+    now returns true on success, previously null was returned.
+  . IntlChar::enumCharNames is now returning a boolean.
+    Previously it returned null on success and false on failure.
+  . IntlDateFormatter::construct throws an U_ILLEGAL_ARGUMENT_ERROR
+    exception when an invalid locale had been set.
+
+- MBString:
+  . mb_strtolower, mb_strtotitle, and mb_convert_case implement conditional
+    casing rules for the Greek letter sigma. For mb_convert_case, conditional
+    casing only applies to MB_CASE_LOWER and MB_CASE_TITLE modes, not to
+    MB_CASE_LOWER_SIMPLE and MB_CASE_TITLE_SIMPLE.
+  . mb_decode_mimeheader interprets underscores in QPrint-encoded MIME
+    encoded words as required by RFC 2047; they are converted to spaces.
+    Underscores must be encoded as "=5F" in such MIME encoded words.
+  . In rare cases, mb_encode_mimeheader will transfer-encode its input
+    string where it would pass it through as raw ASCII in PHP 8.2.
+  . mb_encode_mimeheader no longer drops NUL (zero) bytes when
+    QPrint-encoding the input string. This previously caused strings in
+    certain text encodings, especially UTF-16 and UTF-32, to be
+    corrupted by mb_encode_mimeheader.
+  . mb_detect_encoding's "non-strict" mode now behaves as described in the
+    documentation. Previously, it would return false if the same byte
+    (for example, the first byte) of the input string was invalid in all
+    candidate encodings. More generally, it would eliminate candidate
+    encodings from consideration when an invalid byte was seen, and if the
+    same input byte eliminated all remaining encodings still under
+    consideration, it would return false. On the other hand, if all candidate
+    encodings but one were eliminated from consideration, it would return the
+    last remaining one without regard for how many encoding errors might be
+    encountered later in the string. This is different from the behavior
+    described in the documentation, which says: "If strict is set to false,
+    the closest matching encoding will be returned."
+
+- mysqli:
+  . mysqli_fetch_object now raises a ValueError instead of an Exception when
+    the constructor_args argument is non empty with the class not having
+    constructor.
+  . mysqli_poll now raises a ValueError when the read nor error arguments are
+    passed.
+  . mysqli_field_seek and mysqli_result::field_seek now specify return type
+    as true instead of bool.
+
+- ODBC
+  . odbc_autocommit() now accepts null for the $enable parameter.
+    Passing null has the same behaviour as passing only 1 parameter,
+    namely indicating if the autocommit feature is enabled or not.
+
+- PGSQL:
+  . pg_fetch_object now raises a ValueError instead of an Exception when the
+    constructor_args argument is non empty with the class not having
+    constructor.
+  . pg_insert now raises a ValueError instead of a WARNING when the table
+    specified is invalid.
+  . pg_insert and pg_convert raises a ValueError or a TypeError instead of a
+    WARNING when the value/type of a field does not match properly with a
+    PostGreSQL's type.
+  . The $row param of pg_fetch_result(), pg_field_prtlen() and
+    pg_field_is_null() is now nullable.
+
+- Random:
+  . Changed mt_srand() and srand() to not check the number of arguments to
+    determine whether a random seed should be used. Passing null will generate
+    a random seed, 0 will use zero as the seed. The functions are now
+    consistent with Mt19937::__construct().
+
+- Reflection:
+  . Return type of ReflectionClass::getStaticProperties() is no longer nullable.
+  . Calling ReflectionProperty::setValue() with only one parameter is deprecated.
+    To set static properties, pass null as the first parameter.
+
+- Standard:
+  . E_NOTICEs emitted by unserialize() have been promoted to E_WARNING.
+    RFC: https://wiki.php.net/rfc/improve_unserialize_error_handling
+  . unserialize() now emits a new E_WARNING if the input contains unconsumed
+    bytes.
+    RFC: https://wiki.php.net/rfc/unserialize_warn_on_trailing_data
+  . array_pad() is now only limited by the maximum number of elements an array
+    can have. Before, it was only possible to add at most 1048576 elements at a
+    time.
+  . strtok() raises a warning in the case token is not provided when starting
+    tokenization.
+  . password_hash() will now chain the underlying Random\RandomException
+    as the ValueError’s $previous Exception when salt generation fails.
+  . proc_open() $command array must now have at least one non empty element.
+  . proc_open() returns false if $command array is invalid command instead of
+    resource object that produces warning later. This was already the case for
+    Windows but it is now also the case if posix_spawn implementation is in use
+    (most Linux, BSD and MacOS platforms). There are still some old platforms
+    where this behavior is not changed as posix_spawn is not supported there.
+  . array_sum() and array_product() now warn when values in the array cannot
+    be converted to int/float. Previously arrays and objects where ignored
+    whilst every other value was cast to int. Moreover, objects that define
+    a numeric cast (e.g. GMP) are now casted instead of ignored.
+    RFC: https://wiki.php.net/rfc/saner-array-sum-product
+  . number_format() $decimal parameter handles rounding to negative places. It
+    means that when $decimals is negative, $num is rounded to $decimals
+    significant digits before the decimal point. Previously negative $decimals
+    got silently ignored and the number got rounded to zero decimal places.
+  . The $before_needle argument added to strrchr() which works in the same way
+    like its counterpart in strstr() or stristr().
+  . str_getcsv() and fgetcsv() return empty string instead of a string with
+    a single zero byte for the last field which contains only unterminated
+    enclosure.
 
 ========================================
 6. New Functions
 ========================================
 
-- Curl:
-  . curl_upkeep() (libcurl >= 7.62.0)
+- Date:
+  . Added DatePeriod::createFromISO8601String() as a replacement for the
+    overloaded constructor of DatePeriod.
 
-- IMAP:
-  . imap_is_open() (Only as of PHP 8.2.1)
+- DOM:
+  . Added DOMNode::contains() and DOMNameSpaceNode::contains().
+  . Added DOMElement::getAttributeNames().
+  . Added DOMNode::getRootNode(). The $options argument does nothing at the
+    moment because it only influences the shadow DOM, which we do not support
+    yet.
+  . Added DOMParentNode::replaceChildren().
+  . Added DOMNode::isEqualNode().
+  . Added DOMElement::insertAdjacentElement() and
+    DOMElement::insertAdjacentText().
+  . Added DOMElement::toggleAttribute().
 
-- mysqli:
-  . mysqli_execute_query()
+- Intl:
+  . Added IntlCalendar::setDate() and IntlCalendar::setDateTime()
+    as partial replacements for the overloaded IntlCalendar::set() method.
+  . Added IntlGregorianCalendar::createFromDate() and
+    IntlGregorianCalendar::createFromDateTime()
+    as partial replacements for the overloaded IntlGregorianCalendar
+    constructor.
 
-- OpenSSL:
-  . openssl_cipher_key_length(): Returns a key length for the supplied
-    cipher.
+- JSON:
+  . Added json_validate(), which returns whether the json is valid for
+    the given $depth and $options.
+    RFC: https://wiki.php.net/rfc/json_validate
+
+- LDAP:
+  . Added ldap_connect_wallet().
+  . Added ldap_exop_sync().
+
+- MBString:
+  . Added mb_str_pad(), which is the mbstring equivalent of str_pad().
+    RFC: https://wiki.php.net/rfc/mb_str_pad
+
+- Posix:
+  . Added posix_sysconf call to get runtime informations.
+  . Added posix_pathconf call to get configuration value from a directory/file.
+  . Added posix_fpathconf call to get configuration value from a file
+    descriptor.
+  . Added posix_eaccess call to check the effective user id's permission for
+    a path.
+
+- PGSQL:
+  . Added pg_set_error_context_visibility to set the visibility of the context
+    in error messages (with libpq >= 9.6).
+
+- Random:
+  . Added Randomizer::getBytesFromString().
+    RFC: https://wiki.php.net/rfc/randomizer_additions
+  . Added Randomizer::nextFloat(), ::getFloat(), and IntervalBoundary.
+    RFC: https://wiki.php.net/rfc/randomizer_additions
 
 - Reflection:
-  . ReflectionFunction::isAnonymous()
-  . ReflectionMethod::hasPrototype()
+  . Added ReflectionMethod::createFromMethodName().
 
-- Sodium:
-  . sodium_crypto_stream_xchacha20_xor_ic()
+- Sockets:
+  . Added socket_atmark to checks if the socket is OOB marked.
 
 - Standard:
-  . The peak memory usage can now be reset to the current usage thanks to
-    memory_reset_peak_usage().
-  . ini_parse_quantity(): Parses "shorthand bytes" quantities returned by
-    ini_get(). The function is suitable for parsing quantities whose int value
-    is in the range [PHP_INT_MIN, PHP_INT_MAX].
-    Parsing and interpretation is consistent with ini_set() (see also the
-    "Changes to INI File Handling" section).
-    Caveats: Some ini settings may apply additional constraints to the resuling
-    int value, such as a smaller range, that will not be reflected by
-    ini_parse_quantity(). The `memory_limit` setting accepts values higher than
-    PHP_INT_MAX, than can not be parsed by ini_parse_quantity().
+  . Added the str_increment() and str_decrement() functions.
+    RFC: https://wiki.php.net/rfc/saner-inc-dec-operators
+  . Added stream_context_set_options() as a replacement for
+    stream_context_set_option() when passed an array of options.
 
-- XML:
-  . libxml_get_external_entity_loader()
+- Zip:
+  . Added ZipArchive::setArchiveFlag and ZipArchive::getArchiveFlag methods.
 
 ========================================
 7. New Classes and Interfaces
@@ -300,293 +469,216 @@ PHP 8.2 UPGRADE NOTES
 9. Other Changes to Extensions
 ========================================
 
-- Date:
-  . DatePeriod properties are now properly declared.
+- Core:
+  . WeakMaps now have ephemeron-like behavior: Entries whose key maps to itself
+    (possibly transitively) may be removed during cycle collection if the key
+    is not reachable except by iterating over the WeakMap (reachability via
+    iteration is considered weak). Previously, such entries would never be
+    automatically removed. (See GH-10932.)
+  . The ++ and -- operators now emit warnings when attempting to increment
+    values of type bool as this will change in the next major version.
+    A warning is emitted when trying to decrement values of type null, as
+    this will change in the next major version.
+    Internal objects that implement an _IS_NUMBER cast but not a do_operator
+    handler that overrides addition and subtraction now can be incremented
+    and decrement as if one would do $o += 1 or $o -= 1
 
-- Intl:
-  . IntlBreakIterator, IntlRuleBasedBreakIterator, IntlCodePointBreakIterator,
-    IntlPartsIterator, IntlCalendar, IntlCalendar, Collator, IntlIterator,
-    UConverter, IntlDateFormatter, IntlDatePatternGenerator, MessageFormatter,
-    ResourceBundle, Spoofchecker, IntlTimeZone and Transliterator instances are
-    no longer serializable. Previously, they could be serialized, but
-    unserialization yielded unusable objects or failed.
+- DOM:
+  . The DOM lifetime mechanism has been reworked such that implicitly removed
+    nodes can still be fetched. Previously this resulted in an exception.
 
-- mysqli:
-  . The support for libmysql has been removed. It's no longer possible to
-    compile mysqli with libmysql and all relevant functionality has been
-    removed.
-  . The reconnect property of mysqli_driver has been removed. It was supported
-    only by libmysql.
-  . The INI directive mysqli.reconnect has been removed.
-  . The constant MYSQLI_IS_MARIADB has been deprecated.
-
-- OCI8:
-  . The minimum Oracle Client library version required is now 11.2.
-
-- PCRE:
-  . NUL characters (\0) in pattern strings are now supported.
-
-- Session:
-  . Trying to change the SameSite cookie INI setting while the session is
-    active or output has already been sent will now fail and emit a warning.
-    This aligns the behaviour with all other session INI settings.
-
-- SQLite3:
-  . sqlite3.defensive is now PHP_INI_USER.
-
-- Standard:
-  . getimagesize() now reports the actual image dimensions, bits and channels
-    of AVIF images. Previously, the dimensions have been reported as 0x0, and
-    bits and channels have not been reported at all.
-
-- Tidy:
-  . tidy properties are now properly declared.
-  . tidyNode properties are now properly declared as readonly.
-
-- Zip:
-  . extension updated to 1.20.0 with new methods:
-    ZipArchive::clearError, getStreamName and getStreamIndex
+- SQLite3
+  . The SQLite3 class now throws \SQLite3Exception (extends \Exception) instead
+    of \Exception.
+  . The SQLite error code is now passed in the exception error code instead of
+    being included in the error message.
 
 ========================================
 10. New Global Constants
 ========================================
 
-- COM_DOTNET:
-  . DISP_E_PARAMNOTFOUND
-  . LOCALE_NEUTRAL
-
 - Curl:
-  . CURLALTSVC_H1 (libcurl >= 7.64.1)
-  . CURLALTSVC_H2 (libcurl >= 7.64.1)
-  . CURLALTSVC_H3 (libcurl >= 7.64.1)
-  . CURLALTSVC_READONLYFILE (libcurl >= 7.64.1)
-  . CURLAUTH_AWS_SIGV4 (libcurl >= 7.75.0)
-  . CURLE_PROXY (libcurl >= 7.73.0)
-  . CURLFTPMETHOD_DEFAULT
-  . CURLHSTS_ENABLE (libcurl >= 7.74.0)
-  . CURLHSTS_READONLYFILE (libcurl >= 7.74.0)
-  . CURLINFO_PROXY_ERROR (libcurl >= 7.73.0)
-  . CURLINFO_REFERER (libcurl >= 7.76.0)
-  . CURLINFO_RETRY_AFTER (libcurl >= 7.66.0)
-  . CURLMOPT_MAX_CONCURRENT_STREAMS (libcurl >= 7.67.0)
-  . CURLOPT_ALTSVC_CTRL (libcurl >= 7.64.1)
-  . CURLOPT_ALTSVC (libcurl >= 7.64.1)
-  . CURLOPT_AWS_SIGV4 (libcurl >= 7.75.0)
-  . CURLOPT_CAINFO_BLOB (libcurl >= 7.77.0)
-  . CURLOPT_DOH_SSL_VERIFYHOST (libcurl >= 7.76.0)
-  . CURLOPT_DOH_SSL_VERIFYPEER (libcurl >= 7.76.0)
-  . CURLOPT_DOH_SSL_VERIFYSTATUS (libcurl >= 7.76.0)
-  . CURLOPT_HSTS_CTRL (libcurl >= 7.74.0)
-  . CURLOPT_HSTS (libcurl >= 7.74.0)
-  . CURLOPT_MAIL_RCPT_ALLLOWFAILS (libcurl >= 7.69.0)
-  . CURLOPT_MAXAGE_CONN (libcurl >= 7.65.0)
-  . CURLOPT_MAXFILESIZE_LARGE
-  . CURLOPT_MAXLIFETIME_CONN (libcurl >= 7.80.0)
-  . CURLOPT_PROXY_CAINFO_BLOB (libcurl >= 7.77.0)
-  . CURLOPT_SASL_AUTHZID (libcurl >= 7.66.0)
-  . CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256 (libcurl >= 7.80.0)
-  . CURLOPT_SSL_EC_CURVES (libcurl >= 7.73.0)
-  . CURLOPT_UPKEEP_INTERVAL_MS (libcurl >= 7.62.0)
-  . CURLOPT_UPLOAD_BUFFERSIZE (libcurl >= 7.62.0)
-  . CURLOPT_XFERINFOFUNCTION (libcurl >= 7.32.0)
-  . CURLPROTO_MQTT (libcurl >= 7.71.0)
-  . CURLPX_BAD_ADDRESS_TYPE (libcurl >= 7.73.0)
-  . CURLPX_BAD_VERSION (libcurl >= 7.73.0)
-  . CURLPX_CLOSED (libcurl >= 7.73.0)
-  . CURLPX_GSSAPI (libcurl >= 7.73.0)
-  . CURLPX_GSSAPI_PERMSG (libcurl >= 7.73.0)
-  . CURLPX_GSSAPI_PROTECTION (libcurl >= 7.73.0)
-  . CURLPX_IDENTD_DIFFER (libcurl >= 7.73.0)
-  . CURLPX_IDENTD (libcurl >= 7.73.0)
-  . CURLPX_LONG_HOSTNAME (libcurl >= 7.73.0)
-  . CURLPX_LONG_PASSWD (libcurl >= 7.73.0)
-  . CURLPX_LONG_USER (libcurl >= 7.73.0)
-  . CURLPX_NO_AUTH (libcurl >= 7.73.0)
-  . CURLPX_OK (libcurl >= 7.73.0)
-  . CURLPX_RECV_ADDRESS (libcurl >= 7.73.0)
-  . CURLPX_RECV_AUTH (libcurl >= 7.73.0)
-  . CURLPX_RECV_CONNECT (libcurl >= 7.73.0)
-  . CURLPX_RECV_REQACK (libcurl >= 7.73.0)
-  . CURLPX_REPLY_ADDRESS_TYPE_NOT_SUPPORTED (libcurl >= 7.73.0)
-  . CURLPX_REPLY_COMMAND_NOT_SUPPORTED (libcurl >= 7.73.0)
-  . CURLPX_REPLY_CONNECTION_REFUSED (libcurl >= 7.73.0)
-  . CURLPX_REPLY_GENERAL_SERVER_FAILURE (libcurl >= 7.73.0)
-  . CURLPX_REPLY_HOST_UNREACHABLE (libcurl >= 7.73.0)
-  . CURLPX_REPLY_NETWORK_UNREACHABLE (libcurl >= 7.73.0)
-  . CURLPX_REPLY_NOT_ALLOWED (libcurl >= 7.73.0)
-  . CURLPX_REPLY_TTL_EXPIRED (libcurl >= 7.73.0)
-  . CURLPX_REPLY_UNASSIGNED (libcurl >= 7.73.0)
-  . CURLPX_REQUEST_FAILED (libcurl >= 7.73.0)
-  . CURLPX_RESOLVE_HOST (libcurl >= 7.73.0)
-  . CURLPX_SEND_AUTH (libcurl >= 7.73.0)
-  . CURLPX_SEND_CONNECT (libcurl >= 7.73.0)
-  . CURLPX_SEND_REQUEST (libcurl >= 7.73.0)
-  . CURLPX_UNKNOWN_FAIL (libcurl >= 7.73.0)
-  . CURLPX_UNKNOWN_MODE (libcurl >= 7.73.0)
-  . CURLPX_USER_REJECTED (libcurl >= 7.73.0)
-  . CURLSSLOPT_AUTO_CLIENT_CERT (libcurl >= 7.77.0)
-  . CURLSSLOPT_NATIVE_CA (libcurl >= 7.71.0)
-  . CURLSSLOPT_NO_PARTIALCHAIN (libcurl >= 7.68.0)
-  . CURLSSLOPT_REVOKE_BEST_EFFORT (libcurl >= 7.70.0)
-  . CURL_VERSION_GSASL (libcurl >= 7.76.0)
-  . CURL_VERSION_HSTS (libcurl >= 7.74.0)
-  . CURL_VERSION_HTTP3 (libcurl >= 7.66.0)
-  . CURL_VERSION_UNICODE (libcurl >= 7.72.0)
-  . CURL_VERSION_ZSTD (libcurl >= 7.72.0)
+  . CURLINFO_CAPATH
+  . CURLINFO_CAINFO
+  . CURLOPT_MIME_OPTIONS
+  . CURLMIMEOPT_FORMESCAPE
+  . CURLOPT_WS_OPTIONS
+  . CURLWS_RAW_MODE
+  . CURLOPT_SSH_HOSTKEYFUNCTION
+  . CURLOPT_PROTOCOLS_STR
+  . CURLOPT_REDIR_PROTOCOLS_STR
+  . CURLOPT_CA_CACHE_TIMEOUT
+  . CURLOPT_QUICK_EXIT
+  . CURLKHMATCH_OK
+  . CURLKHMATCH_MISMATCH
+  . CURLKHMATCH_MISSING
+  . CURLKHMATCH_LAST
 
-- DBA
-  . DBA_LMDB_USE_SUB_DIR
-  . DBA_LMDB_NO_SUB_DIR
+- Intl:
+  . MIXED_NUMBERS (Spoofchecker).
+  . HIDDEN_OVERLAY (Spoofchecker).
 
-- Filter
-  . FILTER_FLAG_GLOBAL_RANGE
+- OpenSSL:
+  . OPENSSL_CMS_OLDMIMETYPE
+  . PKCS7_NOOLDMIMETYPE
+
+- PCNTL:
+  . SIGINFO
+
+- PDO_ODBC
+  . PDO_ODBC_TYPE
+
+- PGSQL:
+  . PGSQL_TRACE_SUPPRESS_TIMESTAMPS
+  . PGSQL_TRACE_REGRESS_MODE
+  . PGSQL_ERRORS_SQLSTATE
+  . PGSQL_SHOW_CONTEXT_NEVER
+  . PGSQL_SHOW_CONTEXT_ERRORS
+  . PGSQL_SHOW_CONTEXT_ALWAYS
+
+- Posix:
+  . POSIX_SC_ARG_MAX
+  . POSIX_SC_PAGESIZE
+  . POSIX_SC_NPROCESSORS_CONF
+  . POSIX_SC_NPROCESSORS_ONLN
+  . POSIX_PC_LINK_MAX
+  . POSIX_PC_MAX_CANON
+  . POSIX_PC_MAX_INPUT
+  . POSIX_PC_NAME_MAX
+  . POSIX_PC_PATH_MAX
+  . POSIX_PC_PIPE_BUF
+  . POSIX_PC_CHOWN_RESTRICTED
+  . POSIX_PC_NO_TRUNC
+  . POSIX_PC_ALLOC_SIZE_MIN
+  . POSIX_PC_SYMLINK_MAX
 
 - Sockets:
-  . SO_INCOMING_CPU
-  . SO_MEMINFO
-  . SO_RTABLE (OpenBSD)
-  . TCP_KEEPALIVE (MacOS)
-  . TCP_KEEPCNT (Linux, others)
-  . TCP_KEEPIDLE (Linux, others)
-  . TCP_KEEPINTVL (Linux, others)
-  . TCP_NOTSENT_LOWAT
-  . LOCAL_CREDS_PERSISTENT (FreeBSD)
-  . SCM_CREDS2 (FreeBSD)
-  . LOCAL_CREDS (NetBSD)
-  . SO_BPF_EXTENSIONS
-  . SO_SETFIB
-  . TCP_CONGESTION (Linux, FreeBSD)
-  . SO_ZEROCOPY (Linux)
-  . MSG_ZEROCOPY (Linux)
+  . SO_ATTACH_REUSEPORT_CBPF (Linux only).
+  . SO_DETACH_BPF (Linux only).
+  . SO_DETACH_FILTER (Linux only).
+  . TCP_QUICKACK (Linux only).
+  . IP_DONTFRAG (FreeBSD only).
+  . IP_MTU_DISCOVER (Linux only).
+  . IP_PMTUDISC_DO (Linux only).
+  . IP_PMTUDISC_DONT (Linux only).
+  . IP_PMTUDISC_WANT (Linux only).
+  . IP_PMTUDISC_PROBE (Linux only).
+  . IP_PMTUDISC_INTERFACE (Linux only).
+  . IP_PMTUDISC_OMIT (Linux only).
+  . AF_DIVERT (FreeBSD only).
+  . SOL_UDPLITE.
+  . UDPLITE_RECV_CSCOV.
+  . UDPLITE_SEND_CSCOV.
+  . SO_RERROR (NetBSD only).
+  . SO_ZEROIZE (OpenBSD only).
+  . SO_SPLICE (OpenBSD only).
+  . TCP_REPAIR (Linux only).
+  . SO_REUSEPORT_LB (FreeBSD only).
+  . IP_BIND_ADDRESS_NO_PORT (Linux only).
+
+- Zip:
+  . ZipArchive::ER_DATA_LENGTH (libzip >= 1.10)
+  . ZipArchive::ER_NOT_ALLOWED (libzip >= 1.10)
+  . ZipArchive::AFL_RDONLY (libzip >= 1.10)
+  . ZipArchive::AFL_IS_TORRENTZIP (libzip >= 1.10)
+  . ZipArchive::AFL_WANT_TORRENTZIP (libzip >= 1.10)
+  . ZipArchive::AFL_CREATE_OR_KEEP_FILE_FOR_EMPTY_ARCHIVE (libzip >= 1.10)
+  . ZipArchive::FL_OPEN_FILE_NOW
+  . ZipArchive::LENGTH_TO_END as default value for addFile and replaceFile
+  . ZipArchive::LENGTH_UNCHECKED (libzip >= 1.10.1)
 
 ========================================
 11. Changes to INI File Handling
 ========================================
 
-- Support for binary and octal number prefixes for INI settings has been added.
-  Previously only hexadecimal prefixes and using a leading 0 for octal numbers
-  was supported.
+- assert.*
+  . The assert.* INI settings have been deprecated.
+    This comprises the following INI settings:
+     - assert.active
+     - assert.bail
+     - assert.callback
+     - assert.exception
+     - assert.warning
+    If the value of the setting is equal to the default value, no deprecation
+    notice is emitted.
+    The zend.assertions INI setting should be used instead.
 
-- Parsing of some ill-formatted values will now trigger a warning when this was
-  silently ignored before. Interpretation of these values is not changed, for
-  backwards compatibility. This affects the following settings:
-  . bcmath.scale
-  . com.code_page
-  . default_socket_timeout
-  . fiber.stack_size
-  . hard_timeout
-  . intl.error_level
-  . ldap.max_links
-  . max_input_nesting_level
-  . max_input_vars
-  . mbstring.regex_retry_limit
-  . mbstring.regex_stack_limit
-  . mysqli.allow_local_infile
-  . mysqli.allow_persistent
-  . mysqli.default_port
-  . mysqli.max_links
-  . mysqli.max_persistent
-  . mysqli.reconnect
-  . mysqli.rollback_on_cached_plink
-  . mysqlnd.log_mask
-  . mysqlnd.mempool_default_size
-  . mysqlnd.net_read_buffer_size
-  . mysqlnd.net_read_timeout
-  . oci8.default_prefetch
-  . oci8.max_persistent
-  . oci8.persistent_timeout
-  . oci8.ping_interval
-  . oci8.prefetch_lob_size
-  . oci8.privileged_connect
-  . oci8.statement_cache_size
-  . odbc.allow_persistent
-  . odbc.check_persistent
-  . odbc.defaultbinmode
-  . odbc.default_cursortype
-  . odbc.defaultlrl
-  . odbc.max_links
-  . odbc.max_persistent
-  . opcache.consistency_checks
-  . opcache.file_update_protection
-  . opcache.force_restart_timeout
-  . opcache.interned_strings_buffer
-  . opcache.jit_bisect_limit
-  . opcache.jit_blacklist_root_trace
-  . opcache.jit_blacklist_side_trace
-  . opcache.jit_debug
-  . opcache.jit_hot_func
-  . opcache.jit_hot_loop
-  . opcache.jit_hot_return
-  . opcache.jit_hot_side_exit
-  . opcache.jit_max_exit_counters
-  . opcache.jit_max_loop_unrolls
-  . opcache.jit_max_polymorphic_calls
-  . opcache.jit_max_recursive_calls
-  . opcache.jit_max_recursive_returns
-  . opcache.jit_max_root_traces
-  . opcache.jit_max_side_traces
-  . opcache.log_verbosity_level
-  . opcache.max_file_size
-  . opcache.opt_debug_level
-  . opcache.optimization_level
-  . opcache.revalidate_freq
-  . output_buffering
-  . pcre.backtrack_limit
-  . pcre.recursion_limit
-  . pgsql.max_links
-  . pgsql.max_persistent
-  . post_max_size
-  . realpath_cache_size
-  . realpath_cache_ttl
-  . session.cache_expire
-  . session.cookie_lifetime
-  . session.gc_divisor
-  . session.gc_maxlifetime
-  . session.gc_probability
-  . soap.wsdl_cache_limit
-  . soap.wsdl_cache_ttl
-  . unserialize_max_depth
-  . upload_max_filesize
-  . user_ini.cache_ttl
-  . xmlrpc_error_number
-  . zend.assertions
-  . zlib.output_compression_level
+- zend.max_allowed_stack_size
+  . New INI directive to set the maximum allowed stack size. Possible
+    values are `0` (detect the process or thread maximum stack size), `-1`
+    (no limit), or a positive number of bytes. The default is `0`. When it
+    is not possible to detect the the process or thread maximum stack size,
+    a known system default is used. Setting this value too high has the same
+    effect as disabling the stack size limit. Fibers use fiber.stack_size
+    as maximum allowed stack size. An Error is thrown when the process call
+    stack exceeds `zend.max_allowed_stack_size-zend.reserved_stack_size`
+    bytes, to prevent stack-overflow-induced segmentation faults, with
+    the goal of making debugging easier. The stack size increases during
+    uncontrolled recursions involving internal functions or the magic methods
+    __toString, __clone, __sleep, __destruct.  This is not related to stack
+    buffer overflows, and is not a security feature.
+
+- zend.reserved_stack_size
+  . New INI directive to set the reserved stack size, in bytes. This is
+    subtracted from the max allowed stack size, as a buffer, when checking the
+    stack size.
 
 ========================================
 12. Windows Support
 ========================================
 
-- Core:
-  . Windows specific error messages are no longer localized, but instead in
-    English to better match PHP error messages.
-  . Preliminary and highly experimental support for building on ARM64 has been
-    added.
-
-- OCI8:
-  . Since building against Oracle Client 10g is no longer supported anyway,
-    the configuration option --with-oci8 has been dropped. --with-oci8-11g,
-    --with-oci8-12c and --with-oci8-19 are still supported.
-
-- Zip:
-  . The Zip extension upgraded to version 1.21.0
-  . The Zip extension is now built as shared library (DLL) by default.
+- Minimum supported Windows version has been bumped to Windows 8 or
+  Windows Server 2012
 
 ========================================
 13. Other Changes
 ========================================
 
-- CLI:
-  . The STDOUT, STDERR and STDIN are no longer closed on resource destruction
-    which is mostly when the CLI finishes. It is however still possible to
-    explicitly close those streams using fclose and similar.
-
 - Core:
-  . The iterable type is now a built-in compile time alias for array|Traversable.
-    Error messages relating to iterable will therefore now use array|Traversable.
-    Type Reflection is preserved for single iterable (and ?iterable) to produce
-    a ReflectionNamedType with name iterable, however usage of iterable in
-    union types will be converted to array|Traversable
+  . An Error is now thrown when the process call stack exceeds a certain size,
+    to prevent stack-overflow-induced segmentation faults, with the goal of
+    making debugging easier. The maximum allowed stack size is controlled
+    by the INI directives zend.max_allowed_stack_size,
+    zend.reserved_stack_size and fiber.stack_size.
+
+- FFI:
+  . FFI::load() is now allowed during preloading when opcache.preload_user is
+    the current system user. Previously, calling FFI::load() was not possible
+    during preloading if the opcache.preload_user directive was set.
+
+- FPM:
+  . FPM CLI test now fails if the socket path is longer than supported by OS.
+
+- Opcache:
+  . In the cli and phpdbg SAPIs, preloading does not require the
+    opcache.preload_user directive to be set anymore when running as root. In
+    other SAPIs, this directive is required when running as root because
+    preloading is done before the SAPI switches to an unprivileged user.
+
+- Streams:
+  . Blocking fread() on socket connection returns immediately if there are
+    any buffered data instead of waiting for more data.
+  . Memory stream no longer fails if seek offset is past the end. Instead
+    the memory is increase on the next write and date between the old end and
+    offset is filled with zero bytes in the same way how it works for files.
+  . stat() access operations like file_exists() and similar will now use real
+    path instead of the actual stream path. This is consistent with stream
+    opening.
 
 ========================================
 14. Performance Improvements
 ========================================
+
+- DOM:
+  . Looping over a DOMNodeList now uses caching. Therefore requesting items no
+    longer takes quadratic time by default.
+  . Getting text content from nodes now avoids an allocation, resulting in a
+    performance gain.
+  . DOMChildNode::remove() now runs in O(1) performance.
+
+- Standard:
+  . The file() flags error check is now about 7% faster.
+
+- SPL:
+  . RecursiveDirectoryIterator now performs less I/O when looping over a
+    directory.

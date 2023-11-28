@@ -121,6 +121,7 @@ int dom_attr_value_read(dom_object *obj, zval *retval)
 		return FAILURE;
 	}
 
+	/* Can't avoid a content copy because it's an attribute node */
 	if ((content = xmlNodeGetContent((xmlNodePtr) attrp)) != NULL) {
 		ZVAL_STRING(retval, (char *) content);
 		xmlFree(content);
@@ -134,7 +135,6 @@ int dom_attr_value_read(dom_object *obj, zval *retval)
 
 int dom_attr_value_write(dom_object *obj, zval *newval)
 {
-	zend_string *str;
 	xmlAttrPtr attrp = (xmlAttrPtr) dom_object_get_node(obj);
 
 	if (attrp == NULL) {
@@ -142,18 +142,13 @@ int dom_attr_value_write(dom_object *obj, zval *newval)
 		return FAILURE;
 	}
 
-	str = zval_try_get_string(newval);
-	if (UNEXPECTED(!str)) {
-		return FAILURE;
-	}
+	/* Typed property, this is already a string */
+	ZEND_ASSERT(Z_TYPE_P(newval) == IS_STRING);
+	zend_string *str = Z_STR_P(newval);
 
-	if (attrp->children) {
-		node_list_unlink(attrp->children);
-	}
+	dom_remove_all_children((xmlNodePtr) attrp);
+	xmlNodeSetContentLen((xmlNodePtr) attrp, (xmlChar *) ZSTR_VAL(str), ZSTR_LEN(str));
 
-	xmlNodeSetContentLen((xmlNodePtr) attrp, (xmlChar *) ZSTR_VAL(str), ZSTR_LEN(str) + 1);
-
-	zend_string_release_ex(str, 0);
 	return SUCCESS;
 }
 

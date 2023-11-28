@@ -89,6 +89,9 @@
 
 #if defined(ZEND_WIN32) && !defined(__clang__)
 # define ZEND_ASSUME(c)	__assume(c)
+#elif defined(__clang__) && __has_builtin(__builtin_assume)
+# pragma clang diagnostic ignored "-Wassume"
+# define ZEND_ASSUME(c)	__builtin_assume(c)
 #elif ((defined(__GNUC__) && ZEND_GCC_VERSION >= 4005) || __has_builtin(__builtin_unreachable)) && PHP_HAVE_BUILTIN_EXPECT
 # define ZEND_ASSUME(c)	do { \
 		if (__builtin_expect(!(c), 0)) __builtin_unreachable(); \
@@ -262,7 +265,6 @@ char *alloca();
 
 #if defined(__GNUC__) && ZEND_GCC_VERSION >= 4003
 # define ZEND_COLD __attribute__((cold))
-# define ZEND_HOT __attribute__((hot))
 # ifdef __OPTIMIZE__
 #  define ZEND_OPT_SIZE  __attribute__((optimize("Os")))
 #  define ZEND_OPT_SPEED __attribute__((optimize("Ofast")))
@@ -272,7 +274,6 @@ char *alloca();
 # endif
 #else
 # define ZEND_COLD
-# define ZEND_HOT
 # define ZEND_OPT_SIZE
 # define ZEND_OPT_SPEED
 #endif
@@ -280,11 +281,9 @@ char *alloca();
 #if defined(__GNUC__) && ZEND_GCC_VERSION >= 5000
 # define ZEND_ATTRIBUTE_UNUSED_LABEL __attribute__((unused));
 # define ZEND_ATTRIBUTE_COLD_LABEL __attribute__((cold));
-# define ZEND_ATTRIBUTE_HOT_LABEL __attribute__((hot));
 #else
 # define ZEND_ATTRIBUTE_UNUSED_LABEL
 # define ZEND_ATTRIBUTE_COLD_LABEL
-# define ZEND_ATTRIBUTE_HOT_LABEL
 #endif
 
 #if defined(__GNUC__) && ZEND_GCC_VERSION >= 3004 && defined(__i386__)
@@ -652,6 +651,46 @@ extern "C++" {
 # define ZEND_INTRIN_AVX2_FUNC_DECL(func)
 #endif
 
+#if PHP_HAVE_AVX512_SUPPORTS && defined(HAVE_FUNC_ATTRIBUTE_TARGET) || defined(ZEND_WIN32)
+#define ZEND_INTRIN_AVX512_RESOLVER 1
+#endif
+
+#if defined(ZEND_INTRIN_AVX512_RESOLVER) && defined(ZEND_INTRIN_HAVE_IFUNC_TARGET)
+# define ZEND_INTRIN_AVX512_FUNC_PROTO 1
+#elif defined(ZEND_INTRIN_AVX512_RESOLVER)
+# define ZEND_INTRIN_AVX512_FUNC_PTR 1
+#endif
+
+#ifdef ZEND_INTRIN_AVX512_RESOLVER
+# ifdef HAVE_FUNC_ATTRIBUTE_TARGET
+#  define ZEND_INTRIN_AVX512_FUNC_DECL(func) ZEND_API func __attribute__((target("avx512f,avx512cd,avx512vl,avx512dq,avx512bw")))
+# else
+#  define ZEND_INTRIN_AVX512_FUNC_DECL(func) func
+# endif
+#else
+# define ZEND_INTRIN_AVX512_FUNC_DECL(func)
+#endif
+
+#if PHP_HAVE_AVX512_VBMI_SUPPORTS && defined(HAVE_FUNC_ATTRIBUTE_TARGET)
+#define ZEND_INTRIN_AVX512_VBMI_RESOLVER 1
+#endif
+
+#if defined(ZEND_INTRIN_AVX512_VBMI_RESOLVER) && defined(ZEND_INTRIN_HAVE_IFUNC_TARGET)
+# define ZEND_INTRIN_AVX512_VBMI_FUNC_PROTO 1
+#elif defined(ZEND_INTRIN_AVX512_VBMI_RESOLVER)
+# define ZEND_INTRIN_AVX512_VBMI_FUNC_PTR 1
+#endif
+
+#ifdef ZEND_INTRIN_AVX512_VBMI_RESOLVER
+# ifdef HAVE_FUNC_ATTRIBUTE_TARGET
+#  define ZEND_INTRIN_AVX512_VBMI_FUNC_DECL(func) ZEND_API func __attribute__((target("avx512f,avx512cd,avx512vl,avx512dq,avx512bw,avx512vbmi")))
+# else
+#  define ZEND_INTRIN_AVX512_VBMI_FUNC_DECL(func) func
+# endif
+#else
+# define ZEND_INTRIN_AVX512_VBMI_FUNC_DECL(func)
+#endif
+
 /* Intrinsics macros end. */
 
 #ifdef ZEND_WIN32
@@ -662,7 +701,7 @@ extern "C++" {
 # define ZEND_SET_ALIGNED(alignment, decl) decl
 #endif
 
-#define ZEND_SLIDE_TO_ALIGNED(alignment, ptr) (((zend_uintptr_t)(ptr) + ((alignment)-1)) & ~((alignment)-1))
+#define ZEND_SLIDE_TO_ALIGNED(alignment, ptr) (((uintptr_t)(ptr) + ((alignment)-1)) & ~((alignment)-1))
 #define ZEND_SLIDE_TO_ALIGNED16(ptr) ZEND_SLIDE_TO_ALIGNED(Z_UL(16), ptr)
 
 #ifdef ZEND_WIN32
@@ -696,6 +735,36 @@ extern "C++" {
 # define ZEND_INDIRECT_RETURN __attribute__((__indirect_return__))
 #else
 # define ZEND_INDIRECT_RETURN
+#endif
+
+#define __ZEND_DO_PRAGMA(x) _Pragma(#x)
+#define _ZEND_DO_PRAGMA(x) __ZEND_DO_PRAGMA(x)
+#if defined(__clang__)
+# define ZEND_DIAGNOSTIC_IGNORED_START(warning) \
+	_Pragma("clang diagnostic push") \
+	_ZEND_DO_PRAGMA(clang diagnostic ignored warning)
+# define ZEND_DIAGNOSTIC_IGNORED_END \
+	_Pragma("clang diagnostic pop")
+#elif defined(__GNUC__)
+# define ZEND_DIAGNOSTIC_IGNORED_START(warning) \
+	_Pragma("GCC diagnostic push") \
+	_ZEND_DO_PRAGMA(GCC diagnostic ignored warning)
+# define ZEND_DIAGNOSTIC_IGNORED_END \
+	_Pragma("GCC diagnostic pop")
+#else
+# define ZEND_DIAGNOSTIC_IGNORED_START(warning)
+# define ZEND_DIAGNOSTIC_IGNORED_END
+#endif
+
+/** @deprecated */
+#define ZEND_CGG_DIAGNOSTIC_IGNORED_START ZEND_DIAGNOSTIC_IGNORED_START
+/** @deprecated */
+#define ZEND_CGG_DIAGNOSTIC_IGNORED_END ZEND_DIAGNOSTIC_IGNORED_END
+
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) /* C11 */
+# define ZEND_STATIC_ASSERT(c, m) _Static_assert((c), m)
+#else
+# define ZEND_STATIC_ASSERT(c, m)
 #endif
 
 #endif /* ZEND_PORTABILITY_H */

@@ -14,7 +14,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: cdbd83769bd7c55377cff6ead21dc174eaf5c1bb $ */
+/* $Id: bb00b98fa4a14dfc9555fb285175d1c7acbaac4f $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -38,9 +38,9 @@
  */
 
 /* {{{ inifile_version */
-char *inifile_version()
+const char *inifile_version(void)
 {
-	return "1.0, $Id: cdbd83769bd7c55377cff6ead21dc174eaf5c1bb $";
+	return "1.0, $Id: bb00b98fa4a14dfc9555fb285175d1c7acbaac4f $";
 }
 /* }}} */
 

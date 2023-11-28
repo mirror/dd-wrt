@@ -141,12 +141,17 @@ static void xsl_ext_function_php(xmlXPathParserContextPtr ctxt, int nargs, int t
 		return;
 	}
 
+	if (UNEXPECTED(nargs == 0)) {
+		zend_throw_error(NULL, "Function name must be passed as the first argument");
+		return;
+	}
+
 	fci.param_count = nargs - 1;
 	if (fci.param_count > 0) {
 		args = safe_emalloc(fci.param_count, sizeof(zval), 0);
 	}
 	/* Reverse order to pop values off ctxt stack */
-	for (i = nargs - 2; i >= 0; i--) {
+	for (i = fci.param_count - 1; i >= 0; i--) {
 		obj = valuePop(ctxt);
 		if (obj == NULL) {
 			ZVAL_NULL(&args[i]);
@@ -194,7 +199,19 @@ static void xsl_ext_function_php(xmlXPathParserContextPtr ctxt, int nargs, int t
 								node->parent = nsparent;
 								node->ns = curns;
 							} else {
-								node = xmlDocCopyNode(node, domintern->document->ptr, 1);
+								/**
+								 * Upon freeing libxslt's context, every document which is not the *main* document will be freed by libxslt.
+								 * If a node of a document which is *not the main* document gets returned to userland, we'd free the node twice:
+								 * first by the cleanup of the xslt context, and then by our own refcounting mechanism.
+								 * To prevent this, we'll take a copy if the node is not from the main document.
+								 * It is important that we do not copy the node unconditionally, because that means that:
+								 *  - modifications to the node will only modify the copy, and not the original
+								 *  - accesses to the parent, path, ... will not work
+								 */
+								xsltTransformContextPtr transform_ctxt = (xsltTransformContextPtr) ctxt->context->extra;
+								if (node->doc != transform_ctxt->document->doc) {
+									node = xmlDocCopyNode(node, domintern->document->ptr, 1);
+								}
 							}
 
 							php_dom_create_object(node, &child, domintern);
@@ -221,7 +238,7 @@ static void xsl_ext_function_php(xmlXPathParserContextPtr ctxt, int nargs, int t
 		fci.params = NULL;
 	}
 
-
+	/* Last element of the stack is the function name */
 	obj = valuePop(ctxt);
 	if (obj == NULL || obj->stringval == NULL) {
 		php_error_docref(NULL, E_WARNING, "Handler name must be a string");
@@ -277,7 +294,7 @@ static void xsl_ext_function_php(xmlXPathParserContextPtr ctxt, int nargs, int t
 		zval_ptr_dtor(&retval);
 	}
 	zend_string_release_ex(callable, 0);
-	zval_ptr_dtor(&handler);
+	zval_ptr_dtor_nogc(&handler);
 	if (fci.param_count > 0) {
 		for (i = 0; i < nargs - 1; i++) {
 			zval_ptr_dtor(&args[i]);
@@ -346,7 +363,7 @@ PHP_METHOD(XSLTProcessor, importStylesheet)
 
 	intern = Z_XSL_P(id);
 
-	member = zend_string_init("cloneDocument", sizeof("cloneDocument")-1, 0);
+	member = ZSTR_INIT_LITERAL("cloneDocument", 0);
 	cloneDocu = zend_std_read_property(Z_OBJ_P(id), member, BP_VAR_IS, NULL, &rv);
 	if (Z_TYPE_P(cloneDocu) != IS_NULL) {
 		convert_to_long(cloneDocu);
@@ -447,7 +464,7 @@ static xmlDocPtr php_xsl_apply_stylesheet(zval *id, xsl_object *intern, xsltStyl
 	ctxt = xsltNewTransformContext(style, doc);
 	ctxt->_private = (void *) intern;
 
-	member = zend_string_init("doXInclude", sizeof("doXInclude")-1, 0);
+	member = ZSTR_INIT_LITERAL("doXInclude", 0);
 	doXInclude = zend_std_read_property(Z_OBJ_P(id), member, BP_VAR_IS, NULL, &rv);
 	if (Z_TYPE_P(doXInclude) != IS_NULL) {
 		convert_to_long(doXInclude);

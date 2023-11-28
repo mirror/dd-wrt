@@ -48,7 +48,8 @@ if test "$PHP_ICONV" != "no"; then
       AC_MSG_CHECKING([if using GNU libiconv])
       AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <iconv.h>
-int main() {
+#include <stdio.h>
+int main(void) {
   printf("%d", _libiconv_version);
   return 0;
 }
@@ -108,7 +109,7 @@ int main() {
 #include <iconv.h>
 #include <errno.h>
 
-int main() {
+int main(void) {
   iconv_t cd;
   cd = iconv_open( "*blahblah*", "*blahblahblah*" );
   if (cd == (iconv_t)(-1)) {
@@ -135,7 +136,7 @@ int main() {
 #include <iconv.h>
 #include <stdlib.h>
 
-int main() {
+int main(void) {
   iconv_t cd = iconv_open( "UTF-8//IGNORE", "UTF-8" );
   if(cd == (iconv_t)-1) {
     return 1;

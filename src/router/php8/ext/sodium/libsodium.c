@@ -125,12 +125,12 @@ ZEND_GET_MODULE(sodium)
 /* Remove argument information from backtrace to prevent information leaks */
 static void sodium_remove_param_values_from_backtrace(zend_object *obj) {
 	zval rv;
-	zval *trace = zend_read_property(zend_get_exception_base(obj), obj, "trace", sizeof("trace")-1, 0, &rv);
+	zval *trace = zend_read_property_ex(zend_get_exception_base(obj), obj, ZSTR_KNOWN(ZEND_STR_TRACE), /* silent */ false, &rv);
 	if (trace && Z_TYPE_P(trace) == IS_ARRAY) {
 		zval *frame;
 		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(trace), frame) {
 			if (Z_TYPE_P(frame) == IS_ARRAY) {
-				zval *args = zend_hash_str_find(Z_ARRVAL_P(frame), "args", sizeof("args")-1);
+				zval *args = zend_hash_find(Z_ARRVAL_P(frame), ZSTR_KNOWN(ZEND_STR_ARGS));
 				if (args) {
 					zval_ptr_dtor(args);
 					ZVAL_EMPTY_ARRAY(args);
@@ -184,7 +184,7 @@ PHP_MSHUTDOWN_FUNCTION(sodium)
 PHP_MINFO_FUNCTION(sodium)
 {
 	php_info_print_table_start();
-	php_info_print_table_header(2, "sodium support", "enabled");
+	php_info_print_table_row(2, "sodium support", "enabled");
 	php_info_print_table_row(2, "libsodium headers version", SODIUM_VERSION_STRING);
 	php_info_print_table_row(2, "libsodium library version", sodium_version_string());
 	php_info_print_table_end();

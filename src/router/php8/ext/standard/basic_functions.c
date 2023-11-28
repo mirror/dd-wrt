@@ -16,6 +16,8 @@
  */
 
 #include "php.h"
+#include "php_assert.h"
+#include "php_crypt.h"
 #include "php_streams.h"
 #include "php_main.h"
 #include "php_globals.h"
@@ -80,6 +82,9 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 
 #include <string.h>
 #include <locale.h>
+#ifdef HAVE_LANGINFO_H
+# include <langinfo.h>
+#endif
 
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
@@ -229,6 +234,8 @@ static void basic_globals_ctor(php_basic_globals *basic_globals_p) /* {{{ */
 
 	BG(page_uid) = -1;
 	BG(page_gid) = -1;
+
+	BG(syslog_device) = NULL;
 }
 /* }}} */
 
@@ -298,13 +305,6 @@ PHP_MINIT_FUNCTION(basic) /* {{{ */
 
 	assertion_error_ce = register_class_AssertionError(zend_ce_error);
 
-#ifdef ENABLE_TEST_CLASS
-	test_class_startup();
-#endif
-
-	register_phpinfo_constants(INIT_FUNC_ARGS_PASSTHRU);
-	register_html_constants(INIT_FUNC_ARGS_PASSTHRU);
-
 	BASIC_MINIT_SUBMODULE(var)
 	BASIC_MINIT_SUBMODULE(file)
 	BASIC_MINIT_SUBMODULE(pack)
@@ -315,10 +315,6 @@ PHP_MINIT_FUNCTION(basic) /* {{{ */
 
 #ifdef ZTS
 	BASIC_MINIT_SUBMODULE(localeconv)
-#endif
-
-#ifdef HAVE_NL_LANGINFO
-	BASIC_MINIT_SUBMODULE(nl_langinfo)
 #endif
 
 #ifdef ZEND_INTRIN_SSE4_2_FUNC_PTR
@@ -358,17 +354,12 @@ PHP_MINIT_FUNCTION(basic) /* {{{ */
 	php_register_url_stream_wrapper("http", &php_stream_http_wrapper);
 	php_register_url_stream_wrapper("ftp", &php_stream_ftp_wrapper);
 
-	BASIC_MINIT_SUBMODULE(hrtime)
-
 	return SUCCESS;
 }
 /* }}} */
 
 PHP_MSHUTDOWN_FUNCTION(basic) /* {{{ */
 {
-#ifdef HAVE_SYSLOG_H
-	PHP_MSHUTDOWN(syslog)(SHUTDOWN_FUNC_ARGS_PASSTHRU);
-#endif
 #ifdef ZTS
 	ts_free_id(basic_globals_id);
 #ifdef PHP_WIN32
@@ -425,9 +416,6 @@ PHP_RINIT_FUNCTION(basic) /* {{{ */
 	BG(user_shutdown_function_names) = NULL;
 
 	PHP_RINIT(filestat)(INIT_FUNC_ARGS_PASSTHRU);
-#ifdef HAVE_SYSLOG_H
-	BASIC_RINIT_SUBMODULE(syslog)
-#endif
 	BASIC_RINIT_SUBMODULE(dir)
 	BASIC_RINIT_SUBMODULE(url_scanner_ex)
 
@@ -477,9 +465,7 @@ PHP_RSHUTDOWN_FUNCTION(basic) /* {{{ */
 
 	PHP_RSHUTDOWN(filestat)(SHUTDOWN_FUNC_ARGS_PASSTHRU);
 #ifdef HAVE_SYSLOG_H
-#ifdef PHP_WIN32
-	BASIC_RSHUTDOWN_SUBMODULE(syslog)(SHUTDOWN_FUNC_ARGS_PASSTHRU);
-#endif
+	BASIC_RSHUTDOWN_SUBMODULE(syslog);
 #endif
 	BASIC_RSHUTDOWN_SUBMODULE(assert)
 	BASIC_RSHUTDOWN_SUBMODULE(url_scanner_ex)
@@ -1572,18 +1558,20 @@ PHP_FUNCTION(forward_static_call)
 /* {{{ Call a static method which is the first parameter with the arguments contained in array */
 PHP_FUNCTION(forward_static_call_array)
 {
-	zval *params, retval;
+	zval retval;
+	HashTable *params;
 	zend_fcall_info fci;
 	zend_fcall_info_cache fci_cache;
 	zend_class_entry *called_scope;
 
 	ZEND_PARSE_PARAMETERS_START(2, 2)
 		Z_PARAM_FUNC(fci, fci_cache)
-		Z_PARAM_ARRAY(params)
+		Z_PARAM_ARRAY_HT(params)
 	ZEND_PARSE_PARAMETERS_END();
 
-	zend_fcall_info_args(&fci, params);
 	fci.retval = &retval;
+	/* Add positional arguments */
+	fci.named_params = params;
 
 	called_scope = zend_get_called_scope(execute_data);
 	if (called_scope && fci_cache.calling_scope &&
@@ -1597,8 +1585,6 @@ PHP_FUNCTION(forward_static_call_array)
 		}
 		ZVAL_COPY_VALUE(return_value, &retval);
 	}
-
-	zend_fcall_info_args_clear(&fci, 1);
 }
 /* }}} */
 
@@ -2110,7 +2096,7 @@ PHP_FUNCTION(set_include_path)
 		RETVAL_FALSE;
 	}
 
-	key = zend_string_init("include_path", sizeof("include_path") - 1, 0);
+	key = ZSTR_INIT_LITERAL("include_path", 0);
 	if (zend_alter_ini_entry_ex(key, new_value, PHP_INI_USER, PHP_INI_STAGE_RUNTIME, 0) == FAILURE) {
 		zend_string_release_ex(key, 0);
 		zval_ptr_dtor_str(return_value);
@@ -2191,7 +2177,7 @@ PHP_FUNCTION(ignore_user_abort)
 	old_setting = (unsigned short)PG(ignore_user_abort);
 
 	if (!arg_is_null) {
-		zend_string *key = zend_string_init("ignore_user_abort", sizeof("ignore_user_abort") - 1, 0);
+		zend_string *key = ZSTR_INIT_LITERAL("ignore_user_abort", 0);
 		zend_alter_ini_entry_chars(key, arg ? "1" : "0", 1, PHP_INI_USER, PHP_INI_STAGE_RUNTIME);
 		zend_string_release_ex(key, 0);
 	}

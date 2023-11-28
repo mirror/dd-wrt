@@ -1202,7 +1202,7 @@ static int fcgi_read_request(fcgi_request *req)
 			req->keep = 0;
 			return 0;
 		}
-		return 0;
+		return 2;
 	} else {
 		return 0;
 	}
@@ -1423,6 +1423,16 @@ int fcgi_accept_request(fcgi_request *req)
 					return -1;
 				}
 
+#if defined(F_SETFD) && defined(FD_CLOEXEC)
+				int fd_attrs = fcntl(req->fd, F_GETFD);
+				if (0 > fd_attrs) {
+					fcgi_log(FCGI_WARNING, "failed to get attributes of the connection socket");
+				}
+				if (0 > fcntl(req->fd, F_SETFD, fd_attrs | FD_CLOEXEC)) {
+					fcgi_log(FCGI_WARNING, "failed to change attribute of the connection socket");
+				}
+#endif
+
 #ifdef _WIN32
 				break;
 #else
@@ -1470,7 +1480,8 @@ int fcgi_accept_request(fcgi_request *req)
 			return -1;
 		}
 		req->hook.on_read();
-		if (fcgi_read_request(req)) {
+		int read_result = fcgi_read_request(req);
+		if (read_result == 1) {
 #ifdef _WIN32
 			if (is_impersonate && !req->tcp) {
 				pipe = (HANDLE)_get_osfhandle(req->fd);
@@ -1481,7 +1492,7 @@ int fcgi_accept_request(fcgi_request *req)
 			}
 #endif
 			return req->fd;
-		} else {
+		} else if (read_result == 0) {
 			fcgi_close(req, 1, 1);
 		}
 	}

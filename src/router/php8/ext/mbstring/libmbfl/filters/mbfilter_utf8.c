@@ -226,7 +226,9 @@ static size_t mb_utf8_to_wchar(unsigned char **in, size_t *in_len, uint32_t *buf
 
 		if (c < 0x80) {
 			*out++ = c;
-		} else if (c >= 0xC2 && c <= 0xDF) { /* 2 byte character */
+		} else if (c < 0xC2) {
+			*out++ = MBFL_BAD_INPUT;
+		} else if (c <= 0xDF) { /* 2 byte character */
 			if (p < e) {
 				unsigned char c2 = *p++;
 				if ((c2 & 0xC0) != 0x80) {
@@ -238,7 +240,7 @@ static size_t mb_utf8_to_wchar(unsigned char **in, size_t *in_len, uint32_t *buf
 			} else {
 				*out++ = MBFL_BAD_INPUT;
 			}
-		} else if (c >= 0xE0 && c <= 0xEF) { /* 3 byte character */
+		} else if (c <= 0xEF) { /* 3 byte character */
 			if ((e - p) >= 2) {
 				unsigned char c2 = *p++;
 				unsigned char c3 = *p++;
@@ -250,11 +252,9 @@ static size_t mb_utf8_to_wchar(unsigned char **in, size_t *in_len, uint32_t *buf
 					p--;
 				} else {
 					uint32_t decoded = ((c & 0xF) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
-					if (decoded < 0x800 || (decoded >= 0xD800 && decoded <= 0xDFFF)) {
-						*out++ = MBFL_BAD_INPUT;
-					} else {
-						*out++ = decoded;
-					}
+					ZEND_ASSERT(decoded >= 0x800); /* Not an overlong code unit */
+					ZEND_ASSERT(decoded < 0xD800 || decoded > 0xDFFF); /* U+D800-DFFF are reserved, illegal code points */
+					*out++ = decoded;
 				}
 			} else {
 				*out++ = MBFL_BAD_INPUT;
@@ -265,7 +265,7 @@ static size_t mb_utf8_to_wchar(unsigned char **in, size_t *in_len, uint32_t *buf
 					}
 				}
 			}
-		} else if (c >= 0xF0 && c <= 0xF4) { /* 4 byte character */
+		} else if (c <= 0xF4) { /* 4 byte character */
 			if ((e - p) >= 3) {
 				unsigned char c2 = *p++;
 				unsigned char c3 = *p++;
@@ -284,7 +284,8 @@ static size_t mb_utf8_to_wchar(unsigned char **in, size_t *in_len, uint32_t *buf
 					p--;
 				} else {
 					uint32_t decoded = ((c & 0x7) << 18) | ((c2 & 0x3F) << 12) | ((c3 & 0x3F) << 6) | (c4 & 0x3F);
-					*out++ = (decoded < 0x10000) ? MBFL_BAD_INPUT : decoded;
+					ZEND_ASSERT(decoded >= 0x10000); /* Not an overlong code unit */
+					*out++ = decoded;
 				}
 			} else {
 				*out++ = MBFL_BAD_INPUT;

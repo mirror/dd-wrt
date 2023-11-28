@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: ebad728f6a02164a847b0f29d215d6aa6214488d */
+ * Stub hash: f4531ebc6817042a2729c3dd1502631656c29f05 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_hash, 0, 2, IS_STRING, 0)
 	ZEND_ARG_TYPE_INFO(0, algo, IS_STRING, 0)
@@ -180,8 +180,8 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_FE(hash_update_file, arginfo_hash_update_file)
 	ZEND_FE(hash_final, arginfo_hash_final)
 	ZEND_FE(hash_copy, arginfo_hash_copy)
-	ZEND_FE(hash_algos, arginfo_hash_algos)
-	ZEND_FE(hash_hmac_algos, arginfo_hash_hmac_algos)
+	ZEND_SUPPORTS_COMPILE_TIME_EVAL_FE(hash_algos, arginfo_hash_algos)
+	ZEND_SUPPORTS_COMPILE_TIME_EVAL_FE(hash_hmac_algos, arginfo_hash_hmac_algos)
 	ZEND_FE(hash_pbkdf2, arginfo_hash_pbkdf2)
 	ZEND_FE(hash_equals, arginfo_hash_equals)
 	ZEND_FE(hash_hkdf, arginfo_hash_hkdf)

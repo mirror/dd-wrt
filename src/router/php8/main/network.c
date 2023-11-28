@@ -835,8 +835,8 @@ php_socket_t php_network_connect_socket_to_host(const char *host, unsigned short
 			case AF_INET:
 				((struct sockaddr_in *)sa)->sin_port = htons(port);
 				socklen = sizeof(struct sockaddr_in);
-				if (bindto && strchr(bindto, ':')) {
-					/* IPV4 sock cannot bind to IPV6 address */
+				if (bindto && (strchr(bindto, ':') || !strcmp(bindto, "0"))) {
+					/* IPV4 sock can not bind to IPV6 address */
 					bindto = NULL;
 				}
 				break;
@@ -969,7 +969,7 @@ connected:
 /* }}} */
 
 /* {{{ php_any_addr
- * Fills the any (wildcard) address into php_sockaddr_storage
+ * Fills any (wildcard) address into php_sockaddr_storage
  */
 PHPAPI void php_any_addr(int family, php_sockaddr_storage *addr, unsigned short port)
 {

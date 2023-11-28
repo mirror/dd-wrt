@@ -23,6 +23,7 @@
 #include "zend_func_info.h"
 #include "zend_call_graph.h"
 #include "zend_dump.h"
+#include "ext/standard/php_string.h"
 
 void zend_dump_ht(HashTable *ht)
 {
@@ -65,8 +66,12 @@ void zend_dump_const(const zval *zv)
 		case IS_DOUBLE:
 			fprintf(stderr, " float(%g)", Z_DVAL_P(zv));
 			break;
-		case IS_STRING:
-			fprintf(stderr, " string(\"%s\")", Z_STRVAL_P(zv));
+		case IS_STRING:;
+			zend_string *escaped_string = php_addcslashes(Z_STR_P(zv), "\"\\", 2);
+
+			fprintf(stderr, " string(\"%s\")", ZSTR_VAL(escaped_string));
+
+			zend_string_release(escaped_string);
 			break;
 		case IS_ARRAY:
 			fprintf(stderr, " array(...)");
@@ -132,7 +137,7 @@ static void zend_dump_unused_op(const zend_op *opline, znode_op op, uint32_t fla
 	}
 }
 
-ZEND_API void zend_dump_var(const zend_op_array *op_array, zend_uchar var_type, int var_num)
+ZEND_API void zend_dump_var(const zend_op_array *op_array, uint8_t var_type, int var_num)
 {
 	if (var_type == IS_CV && var_num < op_array->last_var) {
 		fprintf(stderr, "CV%d($%s)", var_num, op_array->vars[var_num]->val);
@@ -239,21 +244,34 @@ static void zend_dump_type_info(uint32_t info, zend_class_entry *ce, int is_inst
 		}
 		if (info & MAY_BE_ARRAY) {
 			if (first) first = 0; else fprintf(stderr, ", ");
-			if (!(info & MAY_BE_ARRAY_KEY_STRING) || (info & MAY_BE_PACKED_GUARD)) {
-				if (MAY_BE_PACKED_ONLY(info)) {
-					if (info & MAY_BE_PACKED_GUARD) {
-						fprintf(stderr, "!");
-					}
-					fprintf(stderr, "packed ");
-				} else if (MAY_BE_HASH_ONLY(info)) {
-					if (info & MAY_BE_PACKED_GUARD) {
-						fprintf(stderr, "!");
-					}
-					fprintf(stderr, "hash ");
+			if (info & MAY_BE_PACKED_GUARD) {
+				fprintf(stderr, "!");
+			}
+			if (MAY_BE_EMPTY_ONLY(info)) {
+				fprintf(stderr, "empty ");
+			} else if (MAY_BE_PACKED_ONLY(info)) {
+				fprintf(stderr, "packed ");
+			} else if (MAY_BE_HASH_ONLY(info)) {
+				fprintf(stderr, "hash ");
+			} else if ((info & MAY_BE_ARRAY_KEY_ANY) != MAY_BE_ARRAY_KEY_ANY && (info & MAY_BE_ARRAY_KEY_ANY) != 0) {
+				bool afirst = 1;
+				fprintf(stderr, "[");
+				if (info & MAY_BE_ARRAY_EMPTY) {
+					if (afirst) afirst = 0; else fprintf(stderr, ", ");
+					fprintf(stderr, "empty");
 				}
+				if (MAY_BE_PACKED(info)) {
+					if (afirst) afirst = 0; else fprintf(stderr, ", ");
+					fprintf(stderr, "packed");
+				}
+				if (MAY_BE_HASH(info)) {
+					if (afirst) afirst = 0; else fprintf(stderr, ", ");
+					fprintf(stderr, "hash");
+				}
+				fprintf(stderr, "] ");
 			}
 			fprintf(stderr, "array");
-			if ((info & MAY_BE_ARRAY_KEY_ANY) != 0 &&
+			if ((info & (MAY_BE_ARRAY_KEY_LONG|MAY_BE_ARRAY_KEY_STRING)) != 0 &&
 			    ((info & MAY_BE_ARRAY_KEY_LONG) == 0 ||
 			     (info & MAY_BE_ARRAY_KEY_STRING) == 0)) {
 				bool afirst = 1;
@@ -348,7 +366,7 @@ static void zend_dump_ssa_var_info(const zend_ssa *ssa, int ssa_var_num, uint32_
 		dump_flags);
 }
 
-ZEND_API void zend_dump_ssa_var(const zend_op_array *op_array, const zend_ssa *ssa, int ssa_var_num, zend_uchar var_type, int var_num, uint32_t dump_flags)
+ZEND_API void zend_dump_ssa_var(const zend_op_array *op_array, const zend_ssa *ssa, int ssa_var_num, uint8_t var_type, int var_num, uint32_t dump_flags)
 {
 	if (ssa_var_num >= 0) {
 		fprintf(stderr, "#%d.", ssa_var_num);

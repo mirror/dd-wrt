@@ -94,7 +94,7 @@ static zend_object *Calendar_clone_obj(zend_object *object)
 		Calendar	*newCalendar;
 
 		newCalendar = co_orig->ucal->clone();
-		if (!newCalendar) {
+		if (UNEXPECTED(!newCalendar)) {
 			zend_string *err_msg;
 			intl_errors_set_code(CALENDAR_ERROR_P(co_orig),
 				U_MEMORY_ALLOCATION_ERROR);
@@ -256,9 +256,6 @@ static zend_object *Calendar_object_create(zend_class_entry *ce)
     object_properties_init(&intern->zo, ce);
 	calendar_object_init(intern);
 
-
-	intern->zo.handlers = &Calendar_handlers;
-
 	return &intern->zo;
 }
 /* }}} */
@@ -270,6 +267,7 @@ void calendar_register_IntlCalendar_class(void)
 {
 	/* Create and register 'IntlCalendar' class. */
 	Calendar_ce_ptr = register_class_IntlCalendar();
+	Calendar_ce_ptr->default_object_handlers = &Calendar_handlers;
 	Calendar_ce_ptr->create_object = Calendar_object_create;
 
 	memcpy( &Calendar_handlers, &std_object_handlers,

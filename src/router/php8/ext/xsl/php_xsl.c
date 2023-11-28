@@ -29,6 +29,7 @@ static zend_object_handlers xsl_object_handlers;
 
 static const zend_module_dep xsl_deps[] = {
 	ZEND_MOD_REQUIRED("libxml")
+	ZEND_MOD_REQUIRED("dom")
 	ZEND_MOD_END
 };
 
@@ -59,11 +60,15 @@ void xsl_objects_free_storage(zend_object *object)
 
 	zend_object_std_dtor(&intern->std);
 
-	zend_hash_destroy(intern->parameter);
-	FREE_HASHTABLE(intern->parameter);
+	if (intern->parameter) {
+		zend_hash_destroy(intern->parameter);
+		FREE_HASHTABLE(intern->parameter);
+	}
 
-	zend_hash_destroy(intern->registered_phpfunctions);
-	FREE_HASHTABLE(intern->registered_phpfunctions);
+	if (intern->registered_phpfunctions) {
+		zend_hash_destroy(intern->registered_phpfunctions);
+		FREE_HASHTABLE(intern->registered_phpfunctions);
+	}
 
 	if (intern->node_list) {
 		zend_hash_destroy(intern->node_list);
@@ -103,7 +108,6 @@ zend_object *xsl_objects_new(zend_class_entry *class_type)
 	intern->parameter = zend_new_array(0);
 	intern->registered_phpfunctions = zend_new_array(0);
 
-	intern->std.handlers = &xsl_object_handlers;
 	return &intern->std;
 }
 /* }}} */
@@ -118,6 +122,7 @@ PHP_MINIT_FUNCTION(xsl)
 
 	xsl_xsltprocessor_class_entry = register_class_XSLTProcessor();
 	xsl_xsltprocessor_class_entry->create_object = xsl_objects_new;
+	xsl_xsltprocessor_class_entry->default_object_handlers = &xsl_object_handlers;
 
 #ifdef HAVE_XSL_EXSLT
 	exsltRegisterAll();

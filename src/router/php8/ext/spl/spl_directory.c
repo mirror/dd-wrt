@@ -199,7 +199,6 @@ static zend_object *spl_filesystem_object_new_ex(zend_class_entry *class_type)
 
 	zend_object_std_init(&intern->std, class_type);
 	object_properties_init(&intern->std, class_type);
-	intern->std.handlers = &spl_filesystem_object_handlers;
 
 	return &intern->std;
 }
@@ -210,15 +209,6 @@ static zend_object *spl_filesystem_object_new_ex(zend_class_entry *class_type)
 static zend_object *spl_filesystem_object_new(zend_class_entry *class_type)
 {
 	return spl_filesystem_object_new_ex(class_type);
-}
-/* }}} */
-
-/* {{{ spl_filesystem_object_new_check */
-static zend_object *spl_filesystem_object_new_check(zend_class_entry *class_type)
-{
-	spl_filesystem_object *ret = spl_filesystem_from_obj(spl_filesystem_object_new_ex(class_type));
-	ret->std.handlers = &spl_filesystem_object_check_handlers;
-	return &ret->std;
 }
 /* }}} */
 
@@ -707,7 +697,7 @@ static inline HashTable *spl_filesystem_object_get_debug_info(zend_object *objec
 }
 /* }}} */
 
-zend_function *spl_filesystem_object_get_method_check(zend_object **object, zend_string *method, const zval *key) /* {{{ */
+static zend_function *spl_filesystem_object_get_method_check(zend_object **object, zend_string *method, const zval *key) /* {{{ */
 {
 	spl_filesystem_object *fsobj = spl_filesystem_from_obj(*object);
 
@@ -723,7 +713,7 @@ zend_function *spl_filesystem_object_get_method_check(zend_object **object, zend
 #define DIT_CTOR_FLAGS  0x00000001
 #define DIT_CTOR_GLOB   0x00000002
 
-void spl_filesystem_object_construct(INTERNAL_FUNCTION_PARAMETERS, zend_long ctor_flags) /* {{{ */
+static void spl_filesystem_object_construct(INTERNAL_FUNCTION_PARAMETERS, zend_long ctor_flags) /* {{{ */
 {
 	spl_filesystem_object *intern;
 	zend_string *path;
@@ -769,8 +759,6 @@ void spl_filesystem_object_construct(INTERNAL_FUNCTION_PARAMETERS, zend_long cto
 
 	}
 	zend_restore_error_handling(&error_handling);
-
-	intern->u.dir.is_recursive = instanceof_function(intern->std.ce, spl_ce_RecursiveDirectoryIterator) ? 1 : 0;
 }
 /* }}} */
 
@@ -925,7 +913,6 @@ PHP_METHOD(SplFileInfo, getFilename)
 
 	path = spl_filesystem_object_get_path(intern);
 
-	ZEND_ASSERT(path);
 	if (path && ZSTR_LEN(path) && ZSTR_LEN(path) < ZSTR_LEN(intern->file_name)) {
 		/* +1 to skip the trailing / of the path in the file name */
 		size_t path_len = ZSTR_LEN(path) + 1;
@@ -933,7 +920,9 @@ PHP_METHOD(SplFileInfo, getFilename)
 	} else {
 		RETVAL_STR_COPY(intern->file_name);
 	}
-	zend_string_release_ex(path, /* persistent */ false);
+	if (path) {
+		zend_string_release_ex(path, /* persistent */ false);
+	}
 }
 /* }}} */
 
@@ -973,14 +962,16 @@ PHP_METHOD(SplFileInfo, getExtension)
 
 	path = spl_filesystem_object_get_path(intern);
 
-	if (ZSTR_LEN(path) && ZSTR_LEN(path) < ZSTR_LEN(intern->file_name)) {
+	if (path && ZSTR_LEN(path) && ZSTR_LEN(path) < ZSTR_LEN(intern->file_name)) {
 		fname = ZSTR_VAL(intern->file_name) + ZSTR_LEN(path) + 1;
 		flen = ZSTR_LEN(intern->file_name) - (ZSTR_LEN(path) + 1);
 	} else {
 		fname = ZSTR_VAL(intern->file_name);
 		flen = ZSTR_LEN(intern->file_name);
 	}
-	zend_string_release_ex(path, /* persistent */ false);
+	if (path) {
+		zend_string_release_ex(path, /* persistent */ false);
+	}
 
 	ret = php_basename(fname, flen, NULL, 0);
 
@@ -1052,7 +1043,9 @@ PHP_METHOD(SplFileInfo, getBasename)
 		fname = ZSTR_VAL(intern->file_name);
 		flen = ZSTR_LEN(intern->file_name);
 	}
-	zend_string_release_ex(path, /* persistent */ false);
+	if (path) {
+		zend_string_release_ex(path, /* persistent */ false);
+	}
 
 	RETURN_STR(php_basename(fname, flen, suffix, slen));
 }
@@ -1497,6 +1490,11 @@ PHP_METHOD(RecursiveDirectoryIterator, hasChildren)
 	if (spl_filesystem_is_invalid_or_dot(intern->u.dir.entry.d_name)) {
 		RETURN_FALSE;
 	} else {
+		if (intern->u.dir.entry.d_type == DT_DIR) {
+			RETURN_TRUE;
+		} else if (intern->u.dir.entry.d_type == DT_REG) {
+			RETURN_FALSE;
+		}
 		if (spl_filesystem_object_get_file_name(intern) == FAILURE) {
 			RETURN_THROWS();
 		}
@@ -1649,7 +1647,7 @@ static const zend_object_iterator_funcs spl_filesystem_dir_it_funcs = {
 /* }}} */
 
 /* {{{ spl_ce_dir_get_iterator */
-zend_object_iterator *spl_filesystem_dir_get_iterator(zend_class_entry *ce, zval *object, int by_ref)
+static zend_object_iterator *spl_filesystem_dir_get_iterator(zend_class_entry *ce, zval *object, int by_ref)
 {
 	spl_filesystem_iterator *iterator;
 	spl_filesystem_object *dir_object;
@@ -1842,7 +1840,7 @@ static const zend_object_iterator_funcs spl_filesystem_tree_it_funcs = {
 /* }}} */
 
 /* {{{ spl_ce_dir_get_iterator */
-zend_object_iterator *spl_filesystem_tree_get_iterator(zend_class_entry *ce, zval *object, int by_ref)
+static zend_object_iterator *spl_filesystem_tree_get_iterator(zend_class_entry *ce, zval *object, int by_ref)
 {
 	spl_filesystem_iterator *iterator;
 	spl_filesystem_object *dir_object;
@@ -1976,7 +1974,7 @@ static zend_result spl_filesystem_file_read_line_ex(zval * this_ptr, spl_filesys
 
 		if (Z_TYPE(retval) != IS_STRING) {
 			zend_type_error("%s::getCurrentLine(): Return value must be of type string, %s returned",
-				ZSTR_VAL(Z_OBJCE_P(this_ptr)->name), zend_zval_type_name(&retval));
+				ZSTR_VAL(Z_OBJCE_P(this_ptr)->name), zend_zval_value_name(&retval));
 			zval_ptr_dtor(&retval);
 			return FAILURE;
 		}
@@ -2086,14 +2084,14 @@ PHP_METHOD(SplTempFileObject, __construct)
 	}
 
 	if (max_memory < 0) {
-		file_name = zend_string_init("php://memory", sizeof("php://memory")-1, 0);
+		file_name = ZSTR_INIT_LITERAL("php://memory", 0);
 	} else if (ZEND_NUM_ARGS()) {
 		file_name = zend_strpprintf(0, "php://temp/maxmemory:" ZEND_LONG_FMT, max_memory);
 	} else {
-		file_name = zend_string_init("php://temp", sizeof("php://temp")-1, 0);
+		file_name = ZSTR_INIT_LITERAL("php://temp", 0);
 	}
 	intern->file_name = file_name;
-	intern->u.file.open_mode = zend_string_init("wb", sizeof("wb")-1, 0);
+	intern->u.file.open_mode = ZSTR_INIT_LITERAL("wb", 0);
 
 	/* spl_filesystem_file_open() can generate E_WARNINGs which we want to promote to exceptions */
 	zend_replace_error_handling(EH_THROW, spl_ce_RuntimeException, &error_handling);
@@ -2747,6 +2745,7 @@ PHP_MINIT_FUNCTION(spl_directory)
 {
 	spl_ce_SplFileInfo = register_class_SplFileInfo(zend_ce_stringable);
 	spl_ce_SplFileInfo->create_object = spl_filesystem_object_new;
+	spl_ce_SplFileInfo->default_object_handlers = &spl_filesystem_object_handlers;
 
 	memcpy(&spl_filesystem_object_handlers, &std_object_handlers, sizeof(zend_object_handlers));
 	spl_filesystem_object_handlers.offset = XtOffsetOf(spl_filesystem_object, std);
@@ -2771,14 +2770,16 @@ PHP_MINIT_FUNCTION(spl_directory)
 
 #ifdef HAVE_GLOB
 	spl_ce_GlobIterator = register_class_GlobIterator(spl_ce_FilesystemIterator, zend_ce_countable);
-	spl_ce_GlobIterator->create_object = spl_filesystem_object_new_check;
+	spl_ce_GlobIterator->create_object = spl_filesystem_object_new;
+	spl_ce_GlobIterator->default_object_handlers = &spl_filesystem_object_check_handlers;
 #endif
 
 	spl_ce_SplFileObject = register_class_SplFileObject(spl_ce_SplFileInfo, spl_ce_RecursiveIterator, spl_ce_SeekableIterator);
-	spl_ce_SplFileObject->create_object = spl_filesystem_object_new_check;
+	spl_ce_SplFileObject->default_object_handlers = &spl_filesystem_object_check_handlers;
+	spl_ce_SplFileObject->create_object = spl_filesystem_object_new;
 
 	spl_ce_SplTempFileObject = register_class_SplTempFileObject(spl_ce_SplFileObject);
-	spl_ce_SplTempFileObject->create_object = spl_filesystem_object_new_check;
+	spl_ce_SplTempFileObject->create_object = spl_filesystem_object_new;
 
 	return SUCCESS;
 }

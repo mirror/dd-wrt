@@ -172,6 +172,7 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 					 && opline->opcode != ZEND_SWITCH_LONG
 					 && opline->opcode != ZEND_SWITCH_STRING
 					 && opline->opcode != ZEND_MATCH
+					 && opline->opcode != ZEND_MATCH_ERROR
 					 && zend_optimizer_update_op1_const(op_array, opline, &c)) {
 						VAR_SOURCE(op1) = NULL;
 						if (opline->opcode != ZEND_JMP_NULL
@@ -532,7 +533,7 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 								break;
 							case ZEND_IS_SMALLER:
 								if (opline->opcode == ZEND_BOOL_NOT) {
-									zend_uchar tmp_type;
+									uint8_t tmp_type;
 									uint32_t tmp;
 
 									src->opcode = ZEND_IS_SMALLER_OR_EQUAL;
@@ -550,7 +551,7 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 								break;
 							case ZEND_IS_SMALLER_OR_EQUAL:
 								if (opline->opcode == ZEND_BOOL_NOT) {
-									zend_uchar tmp_type;
+									uint8_t tmp_type;
 									uint32_t tmp;
 
 									src->opcode = ZEND_IS_SMALLER;
@@ -1015,6 +1016,7 @@ static void assemble_code_blocks(zend_cfg *cfg, zend_op_array *op_array, zend_op
 			case ZEND_COALESCE:
 			case ZEND_ASSERT_CHECK:
 			case ZEND_JMP_NULL:
+			case ZEND_BIND_INIT_STATIC_OR_JMP:
 				ZEND_SET_OP_JMP_ADDR(opline, opline->op2, new_opcodes + blocks[b->successors[0]].start);
 				break;
 			case ZEND_CATCH:

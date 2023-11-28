@@ -91,7 +91,7 @@ ZEND_DECLARE_MODULE_GLOBALS(snmp)
 static PHP_GINIT_FUNCTION(snmp);
 
 /* constant - can be shared among threads */
-static oid objid_mib[] = {1, 3, 6, 1, 2, 1};
+static const oid objid_mib[] = {1, 3, 6, 1, 2, 1};
 
 /* Handlers */
 static zend_object_handlers php_snmp_object_handlers;
@@ -184,8 +184,6 @@ static zend_object *php_snmp_object_new(zend_class_entry *class_type) /* {{{ */
 
 	zend_object_std_init(&intern->zo, class_type);
 	object_properties_init(&intern->zo, class_type);
-
-	intern->zo.handlers = &php_snmp_object_handlers;
 
 	return &intern->zo;
 
@@ -399,7 +397,7 @@ static void php_snmp_internal(INTERNAL_FUNCTION_PARAMETERS, int st,
 	php_snmp_error(getThis(), PHP_SNMP_ERRNO_NOERROR, "");
 
 	if (st & SNMP_CMD_WALK) { /* remember root OID */
-		memmove((char *)root, (char *)(objid_query->vars[0].name), (objid_query->vars[0].name_length) * sizeof(oid));
+		memcpy((char *)root, (char *)(objid_query->vars[0].name), (objid_query->vars[0].name_length) * sizeof(oid));
 		rootlen = objid_query->vars[0].name_length;
 		objid_query->offset = objid_query->count;
 	}
@@ -553,7 +551,7 @@ retry:
 							php_snmp_error(getThis(), PHP_SNMP_ERRNO_OID_NOT_INCREASING, "Error: OID not increasing: %s", buf2);
 							keepwalking = false;
 						} else {
-							memmove((char *)(objid_query->vars[0].name), (char *)vars->name, vars->name_length * sizeof(oid));
+							memcpy((char *)(objid_query->vars[0].name), (char *)vars->name, vars->name_length * sizeof(oid));
 							objid_query->vars[0].name_length = vars->name_length;
 							keepwalking = true;
 						}
@@ -767,7 +765,7 @@ static bool php_snmp_parse_oid(
 				return false;
 			}
 		} else {
-			memmove((char *)objid_query->vars[0].name, (char *)objid_mib, sizeof(objid_mib));
+			memmove((char *)objid_query->vars[0].name, (const char *)objid_mib, sizeof(objid_mib));
 			objid_query->vars[0].name_length = sizeof(objid_mib) / sizeof(oid);
 		}
 	} else {
@@ -2024,6 +2022,7 @@ PHP_MINIT_FUNCTION(snmp)
 	/* Register SNMP Class */
 	php_snmp_ce = register_class_SNMP();
 	php_snmp_ce->create_object = php_snmp_object_new;
+	php_snmp_ce->default_object_handlers = &php_snmp_object_handlers;
 	php_snmp_object_handlers.offset = XtOffsetOf(php_snmp_object, zo);
 	php_snmp_object_handlers.clone_obj = NULL;
 	php_snmp_object_handlers.free_obj = php_snmp_object_free_storage;
