@@ -45,8 +45,10 @@ strace-configure: libunwind
 		--host=$(ARCH)-linux \
 		$(LIBUNWIND_OPT) \
 		CC="$(CC)" \
-		CFLAGS="-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include $(COPTS) $(MIPS16_OPT) -fcommon -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -DNEED_PRINTF -I$(TOP)/libunwind/include" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libunwind/src/.libs $(LIBUNWIND_LIB)"
+		CFLAGS="-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include $(LTO) $(COPTS) $(MIPS16_OPT) -fcommon -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -DNEED_PRINTF -I$(TOP)/libunwind/include" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/openssl -L$(TOP)/libunwind/src/.libs $(LIBUNWIND_LIB)" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 strace: libunwind
 	$(MAKE) -C strace
