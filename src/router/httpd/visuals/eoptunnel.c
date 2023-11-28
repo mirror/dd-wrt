@@ -171,9 +171,14 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		char oet[32];
 		sprintf(oet, "oet%d", tun);
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<legend>");
-		show_caption_simple(wp, "eoip.tunnel");
-		websWrite(wp, " %s</legend>\n", getNetworkLabel(wp, oet));
+		//name legend
+		snprintf(temp, sizeof(temp), "oet%d_label", tun);
+		{
+			websWrite(wp, "<legend>");
+			show_caption_simple(wp, "eoip.tunnel");
+			//websWrite(wp, " %s</legend>\n", getNetworkLabel(wp, oet));
+			websWrite(wp, " %s - <input type=\"text\" size=\"14\" id=\"%s\" name=\"%s\" value=\"%s\" ></legend>\n", oet, temp, temp, nvram_safe_get(temp));
+		}
 		show_oet_radio(wp, "eoip.srv", "oet%d_en", tun, 0, "onclick=\"show_layer_ext(this, 'idoet%d', true)\"", "onclick=\"show_layer_ext(this, 'idoet%d', false)\"");
 		websWrite(wp, "<div id=\"idoet%d\">\n", tun);
 		{
