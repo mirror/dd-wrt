@@ -1504,6 +1504,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "ft_over_ds=0\n");
 		fprintf(fp, "ft_psk_generate_local=1\n");
 		fprintf(fp, "pmk_r1_push=1\n");
+		fprintf(fp, "reassociation_deadline=%s\n", nvram_nget("%s_deadline", prefix));
 		// todo. add key holders
 	}
 #endif
