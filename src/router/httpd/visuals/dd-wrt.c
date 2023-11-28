@@ -2576,7 +2576,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
@@ -3846,7 +3845,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", prefix, prefix, nvram_matchi(adv, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
@@ -4893,7 +4891,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				  allTimezones[i].tz_name);
 		}
 		websWrite(wp, "</select>\n");
-		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
