@@ -999,7 +999,7 @@ class PropertyName implements VariableLikeName {
         $this->property = $property;
     }
 
-    public function __toString()
+    public function __toString() : string
     {
         return $this->class->toString() . "::$" . $this->property;
     }
