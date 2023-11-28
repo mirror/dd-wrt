@@ -2549,12 +2549,21 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  var, var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		char wnm[64];
+		char adv[64];
 		websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
 
-		sprintf(wnm, "%s_time_advertisement", var);
-		showRadio(wp, "wpa.time_advertisement", wnm);
-		sprintf(wnm, "%s_time_zone", var);
+		sprintf(adv, "%s_time_advertisement", var);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
 
+		sprintf(wnm, "%s_time_zone", var);
+		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", var);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
 		websWrite(wp, "<select name=\"%s_time_zone\">\n", var);
@@ -2566,6 +2575,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
 
 		sprintf(wnm, "%s_wnm_sleep_mode", var);
 		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
@@ -3805,12 +3819,21 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			  prefix, prefix, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		char wnm[64];
+		char adv[64];
 		websWrite(wp, "<div id=\"%s_id80211v\">\n", prefix);
 
-		sprintf(wnm, "%s_time_advertisement", prefix);
-		showRadio(wp, "wpa.time_advertisement", wnm);
-		sprintf(wnm, "%s_time_zone", prefix);
+		sprintf(adv, "%s_time_advertisement", prefix);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  prefix, prefix, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  prefix, prefix, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
 
+		sprintf(wnm, "%s_time_zone", prefix);
+		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
 		websWrite(wp, "<select name=\"%s_time_zone\">\n", prefix);
@@ -3822,6 +3845,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", prefix, prefix, nvram_matchi(adv, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
 
 		sprintf(wnm, "%s_wnm_sleep_mode", prefix);
 		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
@@ -4840,12 +4868,21 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			  prefix, prefix, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		char wnm[64];
+		char adv[64];
 		websWrite(wp, "<div id=\"%s_id80211v\">\n", prefix);
 
-		sprintf(wnm, "%s_time_advertisement", prefix);
-		showRadio(wp, "wpa.time_advertisement", wnm);
-		sprintf(wnm, "%s_time_zone", prefix);
+		sprintf(adv, "%s_time_advertisement", prefix);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  prefix, prefix, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  prefix, prefix, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
 
+		sprintf(wnm, "%s_time_zone", prefix);
+		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
 		websWrite(wp, "<select name=\"%s_time_zone\">\n", prefix);
@@ -4857,6 +4894,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", prefix, prefix, nvram_matchi(adv, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
 
 		sprintf(wnm, "%s_wnm_sleep_mode", prefix);
 		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
