@@ -1059,7 +1059,7 @@ check-valgrind-local:
 
 bpf_attr_check.c: $(srcdir)/bpf_attr.h $(srcdir)/gen_bpf_attr_check.sh
 	D="$(D)" \
-	$(srcdir)/gen_bpf_attr_check.sh $< > $@-t && mv $@-t $@
+	sh $(srcdir)/gen_bpf_attr_check.sh $< > $@-t && mv $@-t $@
 
 strace_SOURCES_c = \
 	$(filter %.c,$(strace_SOURCES)) $(filter %.c,$(libstrace_a_SOURCES))

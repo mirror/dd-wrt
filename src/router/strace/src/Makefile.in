@@ -10902,7 +10902,7 @@ check-valgrind-local:
 
 bpf_attr_check.c: $(srcdir)/bpf_attr.h $(srcdir)/gen_bpf_attr_check.sh
 	D="$(D)" \
-	$(srcdir)/gen_bpf_attr_check.sh $< > $@-t && mv $@-t $@
+	sh $(srcdir)/gen_bpf_attr_check.sh $< > $@-t && mv $@-t $@
 
 sys_func.h: $(patsubst %,$(srcdir)/%,$(sys_func_h_sources))
 	for f in $^; do \
