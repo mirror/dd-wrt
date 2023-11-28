@@ -52,6 +52,7 @@ strace-configure:
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 strace: libunwind
+	rm -f strace/src/sen.h
 	$(MAKE) -C strace
 
 strace-clean: 
