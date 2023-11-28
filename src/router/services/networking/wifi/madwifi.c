@@ -1499,14 +1499,15 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1)
 	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa3 || iswpa2sha256 || iswpa3_128 || iswpa3_192)) {
+		char dl[32];
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
 		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
-		fprintf(fp, "ft_over_ds=0\n");
+		sprintf("%s_ft_over_ds", prefix);
+		fprintf(fp, "ft_over_ds=%s\n", nvram_default_geti(dl, 0));
 		fprintf(fp, "ft_psk_generate_local=1\n");
 		fprintf(fp, "pmk_r1_push=1\n");
-		char dl[32];
 		sprintf("%s_deadline", prefix);
-		fprintf(fp, "reassociation_deadline=%s\n", nvram_default_get(dl, "1000"));
+		fprintf(fp, "reassociation_deadline=%s\n", nvram_default_geti(dl, 1000));
 		// todo. add key holders
 	}
 #endif
