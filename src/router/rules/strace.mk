@@ -45,7 +45,7 @@ strace-configure: libunwind
 		--host=$(ARCH)-linux \
 		$(LIBUNWIND_OPT) \
 		CC="$(CC)" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -fcommon -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -DNEED_PRINTF -I$(TOP)/libunwind/include" \
+		CFLAGS="-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include $(COPTS) $(MIPS16_OPT) -fcommon -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -DNEED_PRINTF -I$(TOP)/libunwind/include" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libunwind/src/.libs $(LIBUNWIND_LIB)"
 
 strace: libunwind
