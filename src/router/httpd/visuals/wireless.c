@@ -775,6 +775,12 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		sprintf(var, "%s_domain", prefix);
 		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "0000"));
 		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.reassociation_deadline", NULL);
+		sprintf(var, "%s_deadline", prefix);
+		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "1000"));
+		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
