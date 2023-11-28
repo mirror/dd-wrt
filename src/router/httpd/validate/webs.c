@@ -1130,6 +1130,7 @@ _8021xprv
 	copytonv_prefix(wp, "ft", prefix);
 	copytonv_prefix(wp, "domain", prefix);
 	copytonv_prefix(wp, "nas", prefix);
+	copytonv_prefix(wp, "deadline", prefix);
 	copytonv_prefix(wp, "mbo", prefix);
 	copytonv_prefix(wp, "mbo_cell_data_conn_pref", prefix);
 #endif
