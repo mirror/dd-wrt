@@ -1,5 +1,0 @@
-#value_indexed
-O_RDONLY	0
-O_WRONLY	1
-O_RDWR		2
-O_ACCMODE	3

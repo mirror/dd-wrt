@@ -1,1 +1,0 @@
-#include "powerpc/syscallent.h"

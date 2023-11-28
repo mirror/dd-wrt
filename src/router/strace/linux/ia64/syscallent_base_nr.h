@@ -1,1 +1,0 @@
-#define SYSCALLENT_BASE_NR (1U << 10)

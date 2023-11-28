@@ -1,2 +1,0 @@
-TYPES_HEADER_FILES = types/btrfs.h types/cryptouser.h types/evdev.h types/io_uring.h types/loop.h types/openat2.h types/rtnl_link.h types/rtnl_mdb.h types/rtnl_neightbl.h types/rtnl_route.h types/tee.h types/v4l2.h 
-TYPES_CHECK_FILES = types/check-btrfs.c types/check-cryptouser.c types/check-evdev.c types/check-io_uring.c types/check-loop.c types/check-openat2.c types/check-rtnl_link.c types/check-rtnl_mdb.c types/check-rtnl_neightbl.c types/check-rtnl_route.c types/check-tee.c types/check-v4l2.c 
