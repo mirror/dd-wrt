@@ -779,21 +779,16 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.reassociation_deadline", NULL);
 		sprintf(var, "%s_deadline", prefix);
-		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "1000"));
+		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", prefix, prefix,
+			  nvram_default_get(var, "1000"));
 		websWrite(wp, "</div>\n");
 		char wnm[64];
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft_protocol)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_ft_over_ds\">\n", prefix);
-		nvram_default_get(wnm, "0");
-		websWrite(wp, "<option value=\"0\" %s><script type=\"text/javascript\">Capture(wpa.ft_over_air)</script></option>\n", nvram_match(wnm, "0") ? "selected=\"selected\"" : "");
-		websWrite(wp, "<option value=\"1\" %s><script type=\"text/javascript\">Capture(wpa.ft_over_ds)</script></option>\n", nvram_match(wnm, "1") ? "selected=\"selected\"" : "");
-		websWrite(wp, "</select>\n");
-		websWrite(wp, "</div>\n");
 
-
-
+		sprintf(wnm, "%s_ft_over_fs", prefix);
+		showOptions_trans(wp, wnm, "0 1", (char *[]) { "share.excluded", "wpa.ft_over_air", "ft_over_ds" }, nvram_default_get(wnm, "0"));
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
@@ -817,13 +812,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "<div id=\"%s_idmbo\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_mbo_cell_data_conn_pref\">\n", prefix);
-		nvram_default_get(wnm, "0");
-		websWrite(wp, "<option value=\"0\" %s><script type=\"text/javascript\">Capture(share.excluded)</script></option>\n", nvram_match(wnm, "0") ? "selected=\"selected\"" : "");
-		websWrite(wp, "<option value=\"1\" %s><script type=\"text/javascript\">Capture(share.not_prefered)</script></option>\n", nvram_match(wnm, "1") ? "selected=\"selected\"" : "");
-		websWrite(wp, "<option value=\"255\" %s><script type=\"text/javascript\">Capture(share.prefered)</script></option>\n", nvram_match(wnm, "255") ? "selected=\"selected\"" : "");
-		websWrite(wp, "</select>\n");
-		websWrite(wp, "</div>\n");
+		showOptions_trans(wp, wnm, "0 1 255", (char *[]) { "share.excluded", "share.not_prefered", "share.prefered" }, nvram_default_get(wnm, "0"));
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
