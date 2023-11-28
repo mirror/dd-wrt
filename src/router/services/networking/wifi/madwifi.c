@@ -1502,11 +1502,11 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		char dl[32];
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
 		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
-		sprintf("%s_ft_over_ds", prefix);
+		sprintf(dl, "%s_ft_over_ds", prefix);
 		fprintf(fp, "ft_over_ds=%s\n", nvram_default_geti(dl, 0));
 		fprintf(fp, "ft_psk_generate_local=1\n");
 		fprintf(fp, "pmk_r1_push=1\n");
-		sprintf("%s_deadline", prefix);
+		sprintf(dl, "%s_deadline", prefix);
 		fprintf(fp, "reassociation_deadline=%s\n", nvram_default_geti(dl, 1000));
 		// todo. add key holders
 	}
