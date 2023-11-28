@@ -781,6 +781,19 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		sprintf(var, "%s_deadline", prefix);
 		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "1000"));
 		websWrite(wp, "</div>\n");
+		char wnm[64];
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft_protocol)</script></div>\n");
+		websWrite(wp, "<select name=\"%s_ft_over_ds\">\n", prefix);
+		nvram_default_get(wnm, "0");
+		websWrite(wp, "<option value=\"0\" %s><script type=\"text/javascript\">Capture(wpa.ft_over_air)</script></option>\n", nvram_match(wnm, "0") ? "selected=\"selected\"" : "");
+		websWrite(wp, "<option value=\"1\" %s><script type=\"text/javascript\">Capture(wpa.ft_over_ds)</script></option>\n", nvram_match(wnm, "1") ? "selected=\"selected\"" : "");
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
+
+
+
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
@@ -800,7 +813,6 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 			  vvar, prefix, nvram_default_matchi(mbo, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
-		char wnm[64];
 		sprintf(wnm, "%s_mbo_cell_data_conn_pref", prefix);
 		websWrite(wp, "<div id=\"%s_idmbo\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
