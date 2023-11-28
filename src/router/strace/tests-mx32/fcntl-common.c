@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2020 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
-#include "flock.h"
+#include <linux/fcntl.h>
 #include "pidns.h"
 #include "scno.h"
 
@@ -21,8 +21,14 @@
 #define TEST_FLOCK_EINVAL(cmd) test_flock_einval(cmd, #cmd)
 #define TEST_FLOCK64_EINVAL(cmd) test_flock64_einval(cmd, #cmd)
 
+#ifndef NEED_TEST_FLOCK64_EINVAL
+# if defined F_OFD_GETLK && defined F_OFD_SETLK && defined F_OFD_SETLKW
+#  define NEED_TEST_FLOCK64_EINVAL
+# endif
+#endif
+
 #ifdef HAVE_TYPEOF
-# define TYPEOF_FLOCK_OFF_T typeof(((struct_kernel_flock *) NULL)->l_len)
+# define TYPEOF_FLOCK_OFF_T typeof(((struct flock *) NULL)->l_len)
 #else
 # define TYPEOF_FLOCK_OFF_T off_t
 #endif
@@ -43,7 +49,7 @@ invoke_test_syscall(const unsigned int fd, const unsigned int cmd, void *const p
 static void
 test_flock_einval(const int cmd, const char *name)
 {
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct_kernel_flock, fl);
+	TAIL_ALLOC_OBJECT_CONST_PTR(struct flock, fl);
 	memset(fl, 0, sizeof(*fl));
 	fl->l_type = F_RDLCK;
 	fl->l_start = (TYPEOF_FLOCK_OFF_T) 0xdefaced1facefeedULL;
@@ -62,14 +68,11 @@ test_flock_einval(const int cmd, const char *name)
 	       TEST_SYSCALL_STR, name, bad_addr, errstr);
 }
 
-/*
- * This function is not declared static to avoid potential
- * "defined but not used" warning when included by fcntl.c
- */
-void
+#ifdef NEED_TEST_FLOCK64_EINVAL
+static void
 test_flock64_einval(const int cmd, const char *name)
 {
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct_kernel_flock64, fl);
+	TAIL_ALLOC_OBJECT_CONST_PTR(struct flock64, fl);
 	memset(fl, 0, sizeof(*fl));
 	fl->l_type = F_RDLCK;
 	fl->l_start = (TYPEOF_FLOCK_OFF_T) 0xdefaced1facefeedULL;
@@ -87,6 +90,7 @@ test_flock64_einval(const int cmd, const char *name)
 	printf("%s(0, %s, %p) = %s\n",
 	       TEST_SYSCALL_STR, name, bad_addr, errstr);
 }
+#endif /* NEED_TEST_FLOCK64_EINVAL */
 
 static void
 test_flock(void)
@@ -94,7 +98,7 @@ test_flock(void)
 	TEST_FLOCK_EINVAL(F_SETLK);
 	TEST_FLOCK_EINVAL(F_SETLKW);
 
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct_kernel_flock, fl);
+	TAIL_ALLOC_OBJECT_CONST_PTR(struct flock, fl);
 	memset(fl, 0, sizeof(*fl));
 	fl->l_type = F_RDLCK;
 	fl->l_len = FILE_LEN;
@@ -127,7 +131,7 @@ test_flock64_ofd(void)
 	TEST_FLOCK64_EINVAL(F_OFD_SETLK);
 	TEST_FLOCK64_EINVAL(F_OFD_SETLKW);
 
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct_kernel_flock64, fl);
+	TAIL_ALLOC_OBJECT_CONST_PTR(struct flock64, fl);
 	memset(fl, 0, sizeof(*fl));
 	fl->l_type = F_RDLCK;
 	fl->l_len = FILE_LEN;
@@ -163,25 +167,12 @@ test_flock64(void)
 	test_flock64_lk64();
 }
 
-/*
- * F_[GS]ETOWN_EX had conflicting values with F_[SG]ETLK64
- * in kernel revisions v2.6.32-rc1~96..v2.6.32-rc7~23.
- */
-#undef TEST_F_OWNER_EX
-#if defined F_GETOWN_EX && defined F_SETOWN_EX \
- && (F_GETOWN_EX != F_SETLK64) && (F_SETOWN_EX != F_GETLK64)
-# define TEST_F_OWNER_EX
-#endif
-
-#ifdef TEST_F_OWNER_EX
-# include "f_owner_ex.h"
-
 static long
 test_f_owner_ex_type_pid(const int cmd, const char *const cmd_name,
 			 const int type, const char *const type_name,
 			 enum pid_type pid_type, pid_t pid)
 {
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct_kernel_f_owner_ex, fo);
+	TAIL_ALLOC_OBJECT_CONST_PTR(struct f_owner_ex, fo);
 
 	fo->type = type;
 	fo->pid = pid;
@@ -232,8 +223,6 @@ test_f_owner_ex(void)
 		test_f_owner_ex_umove_or_printaddr(a[i].type, a[i].type_name,
 			a[i].pid_type, a[i].pid);
 }
-#endif /* TEST_F_OWNER_EX */
-
 struct fcntl_cmd_check {
 	int fd;
 	int cmd;
@@ -351,13 +340,9 @@ test_fcntl_others(void)
 {
 	static const struct fcntl_cmd_check set_checks[] = {
 		{ 0, ARG_STR(F_SETFD), ARG_STR(FD_CLOEXEC) },
-#ifdef F_SETPIPE_SZ
 		{ 0, ARG_STR(F_SETPIPE_SZ), ARG_STR(4097) },
-#endif
 		{ 0, ARG_STR(F_DUPFD), ARG_STR(0) },
-#ifdef F_DUPFD_CLOEXEC
 		{ 0, ARG_STR(F_DUPFD_CLOEXEC), ARG_STR(0) },
-#endif
 		{ 0, ARG_STR(F_SETFL), ARG_STR(O_RDWR|O_LARGEFILE) },
 		{ 0, ARG_STR(F_NOTIFY), ARG_STR(DN_ACCESS) },
 		{ 1, ARG_STR(F_SETLEASE), ARG_STR(F_RDLCK) },
@@ -371,9 +356,7 @@ test_fcntl_others(void)
 	static const struct fcntl_cmd_check get_checks[] = {
 		{ 0, ARG_STR(F_GETFD), .print_flags = print_flags_getfd },
 		{ 1, ARG_STR(F_GETFD), .print_flags = print_flags_getfd },
-#ifdef F_GETPIPE_SZ
 		{ 0, ARG_STR(F_GETPIPE_SZ) },
-#endif
 		{ 1, ARG_STR(F_GETLEASE), .print_flags = print_flags_getlease },
 		{ 0, ARG_STR(F_GETSIG), .print_flags = print_flags_getsig },
 		{ 1, ARG_STR(F_GETSIG), .print_flags = print_flags_getsig }
@@ -399,9 +382,7 @@ main(void)
 	create_sample();
 	test_flock();
 	test_flock64();
-#ifdef TEST_F_OWNER_EX
 	test_f_owner_ex();
-#endif
 	test_fcntl_others();
 	test_xetown();
 

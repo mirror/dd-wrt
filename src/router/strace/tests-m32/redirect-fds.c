@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -45,8 +45,8 @@ main(int ac, char **av)
 {
 	assert(ac == 1 + N_FDS);
 
-	int rc = 0, fd;
-	for (fd = 1; fd < 1 + N_FDS; ++fd)
+	int rc = 0;
+	for (int fd = 1; fd < 1 + N_FDS; ++fd)
 		if ((rc = check_fd(fd - 1, av[fd])))
 			break;
 

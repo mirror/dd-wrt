@@ -1,8 +1,8 @@
 /*
- * This file is part of rt_sigprocmask strace test.
+ * Check decoding of rt_sigprocmask syscall.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,13 +11,11 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_rt_sigprocmask
-
-# include <assert.h>
-# include <signal.h>
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
+#include <assert.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 static long
 k_sigprocmask(const unsigned long how, void *const new_set,
@@ -33,11 +31,11 @@ iterate(const char *const text, void *set, void *old, unsigned int size)
 		if (k_sigprocmask(SIG_UNBLOCK, set, old, size)) {
 			if (size < sizeof(long))
 				tprintf("rt_sigprocmask(SIG_UNBLOCK"
-					", %p, %p, %u) = -1 EINVAL (%m)\n",
+					", %p, %p, %u)" RVAL_EINVAL,
 					set, old, size);
 			else
 				tprintf("rt_sigprocmask(SIG_UNBLOCK"
-					", %s, %p, %u) = -1 EINVAL (%m)\n",
+					", %s, %p, %u)" RVAL_EINVAL,
 					text, old, size);
 		} else {
 			tprintf("rt_sigprocmask(SIG_UNBLOCK, %s, [], %u)"
@@ -63,7 +61,7 @@ main(void)
 		if (!k_sigprocmask(SIG_SETMASK, NULL, NULL, set_size))
 			break;
 		tprintf("rt_sigprocmask(SIG_SETMASK, NULL, NULL, %u)"
-			" = -1 EINVAL (%m)\n", set_size);
+			RVAL_EINVAL, set_size);
 	}
 	if (!set_size)
 		perror_msg_and_fail("rt_sigprocmask");
@@ -85,7 +83,7 @@ main(void)
 
 	assert(k_sigprocmask(SIG_SETMASK, k_set - set_size,
 			     old_set, set_size << 1) == -1);
-	tprintf("rt_sigprocmask(SIG_SETMASK, %p, %p, %u) = -1 EINVAL (%m)\n",
+	tprintf("rt_sigprocmask(SIG_SETMASK, %p, %p, %u)" RVAL_EINVAL,
 		k_set - set_size, old_set, set_size << 1);
 
 	iterate("~[]", k_set - set_size, old_set, set_size >> 1);
@@ -135,21 +133,15 @@ main(void)
 
 	assert(k_sigprocmask(SIG_SETMASK, k_set + (set_size >> 1), NULL,
 			     set_size) == -1);
-	tprintf("rt_sigprocmask(SIG_SETMASK, %p, NULL, %u) = -1 EFAULT (%m)\n",
+	tprintf("rt_sigprocmask(SIG_SETMASK, %p, NULL, %u)" RVAL_EFAULT,
 		k_set + (set_size >> 1), set_size);
 
 	assert(k_sigprocmask(SIG_SETMASK, k_set, old_set + (set_size >> 1),
 			     set_size) == -1);
-	tprintf("rt_sigprocmask(SIG_SETMASK, %s, %p, %u) = -1 EFAULT (%m)\n",
+	tprintf("rt_sigprocmask(SIG_SETMASK, %s, %p, %u)" RVAL_EFAULT,
 		"[HUP INT QUIT ALRM TERM]",
 		old_set + (set_size >> 1), set_size);
 
 	tprintf("+++ exited with 0 +++\n");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_rt_sigprocmask")
-
-#endif

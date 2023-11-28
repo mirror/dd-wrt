@@ -1,9 +1,9 @@
 /*
  * Check decoding of pause syscall.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
  * Copyright (c) 2016 Fei Jie <feij.fnst@cn.fujitsu.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -44,7 +44,7 @@ main(void)
 
 	syscall(__NR_pause);
 	if (errno == ENOSYS)
-		printf("pause() = -1 ENOSYS (%m)\n");
+		printf("pause()" RVAL_ENOSYS);
 	else
 		printf("pause() = ? ERESTARTNOHAND"
 		       " (To be restarted if no handler)\n");

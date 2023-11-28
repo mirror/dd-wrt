@@ -1,8 +1,8 @@
 /*
  * Check bpf syscall decoding.
  *
- * Copyright (c) 2015-2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2020 The strace developers.
+ * Copyright (c) 2015-2017 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -24,17 +24,20 @@
 
 #include "bpf_attr.h"
 #include "print_fields.h"
+#include "xmalloc.h"
 
 #include "xlat.h"
+#include "xlat/bpf_attach_type.h"
 #include "xlat/bpf_commands.h"
 #include "xlat/bpf_map_types.h"
 #include "xlat/bpf_prog_types.h"
+#include "xlat/bpf_test_run_flags.h"
 
 #if defined MPERS_IS_m32 || SIZEOF_KERNEL_LONG_T > 4
 # define BIG_ADDR(addr64_, addr32_) addr64_
 # define BIG_ADDR_MAYBE(addr_)
 #elif defined __arm__ || defined __i386__ || defined __mips__ \
-   || defined __powerpc__ || defined __riscv__ || defined __s390__ \
+   || defined __powerpc__ || defined __riscv || defined __s390__ \
    || defined __sparc__ || defined __tile__
 # define BIG_ADDR(addr64_, addr32_) addr64_ " or " addr32_
 # define BIG_ADDR_MAYBE(addr_) addr_ " or "
@@ -85,16 +88,22 @@ union bpf_attr_data {
 	BPF_ATTR_DATA_FIELD(BPF_MAP_DELETE_BATCH);
 	BPF_ATTR_DATA_FIELD(BPF_LINK_CREATE);
 	BPF_ATTR_DATA_FIELD(BPF_LINK_UPDATE);
+	BPF_ATTR_DATA_FIELD(BPF_LINK_GET_FD_BY_ID);
+	BPF_ATTR_DATA_FIELD(BPF_ENABLE_STATS);
+	BPF_ATTR_DATA_FIELD(BPF_ITER_CREATE);
+	BPF_ATTR_DATA_FIELD(BPF_LINK_DETACH);
+	BPF_ATTR_DATA_FIELD(BPF_PROG_BIND_MAP);
 	char char_data[256];
 };
 
 struct bpf_attr_check {
 	union bpf_attr_data data;
 	size_t size;
+	size_t iters;
 	const char *str;
-	void (*init_fn)(struct bpf_attr_check *check);
+	void (*init_fn)(struct bpf_attr_check *check, size_t idx);
 	void (*print_fn)(const struct bpf_attr_check *check,
-			 unsigned long addr);
+			 unsigned long addr, size_t idx);
 };
 
 struct bpf_check {
@@ -106,7 +115,8 @@ struct bpf_check {
 
 static const kernel_ulong_t long_bits = (kernel_ulong_t) 0xfacefeed00000000ULL;
 static const char *errstr;
-static unsigned int sizeof_attr = sizeof(union bpf_attr_data);
+static const char *at_fdcwd_str;
+static const unsigned int sizeof_attr = sizeof(union bpf_attr_data);
 static unsigned int page_size;
 static unsigned long end_of_page;
 
@@ -134,18 +144,20 @@ sys_bpf(kernel_ulong_t cmd, kernel_ulong_t attr, kernel_ulong_t size)
 #if VERBOSE
 # define print_extra_data(addr_, offs_, size_) \
 	do { \
-		printf("/* bytes %u..%u */ ", (offs_), (size_) + (offs_) - 1); \
+		printf("extra_data="); \
 		print_quoted_hex((addr_) + (offs_), (size_)); \
+		printf(" /* bytes %u..%u */", (offs_), (size_) + (offs_) - 1); \
 	} while (0)
 #else
 # define print_extra_data(addr_, offs_, size_) printf("...")
 #endif
 
 static void
-print_bpf_attr(const struct bpf_attr_check *check, unsigned long addr)
+print_bpf_attr(const struct bpf_attr_check *check, unsigned long addr,
+	       size_t idx)
 {
 	if (check->print_fn)
-		check->print_fn(check, addr);
+		check->print_fn(check, addr, idx);
 	else
 		printf("%s", check->str);
 }
@@ -156,6 +168,7 @@ test_bpf(const struct bpf_check *cmd_check)
 	const struct bpf_attr_check *check = 0;
 	const union bpf_attr_data *data = 0;
 	unsigned int offset = 0;
+	size_t j = 0;
 
 	/* zero addr */
 	sys_bpf(cmd_check->cmd, 0, long_bits | sizeof(union bpf_attr_data));
@@ -170,25 +183,29 @@ test_bpf(const struct bpf_check *cmd_check)
 
 	for (size_t i = 0; i < cmd_check->count; i++) {
 		check = &cmd_check->checks[i];
-		if (check->init_fn)
-			check->init_fn((struct bpf_attr_check *) check);
-		data = &check->data;
-		offset = check->size;
+		for (j = 0; j < MAX(check->iters, 1); j++) {
+			if (check->init_fn)
+				check->init_fn((struct bpf_attr_check *) check, j);
+			data = &check->data;
+			offset = check->size;
 
-		addr = end_of_page - offset;
-		memcpy((void *) addr, data, offset);
+			addr = end_of_page - offset;
+			memcpy((void *) addr, data, offset);
 
-		/* starting piece of bpf_attr_data */
-		sys_bpf(cmd_check->cmd, addr, offset);
-		printf("bpf(%s, {", cmd_check->cmd_str);
-		print_bpf_attr(check, addr);
-		printf("}, %u) = %s\n", offset, errstr);
+			/* starting piece of bpf_attr_data */
+			sys_bpf(cmd_check->cmd, addr, offset);
+			printf("bpf(%s, {", cmd_check->cmd_str);
+			print_bpf_attr(check, addr, j);
+			printf("}, %u) = %s\n", offset, errstr);
 
-		/* short read of the starting piece */
-		sys_bpf(cmd_check->cmd, addr + 1, offset);
-		printf("bpf(%s, %#lx, %u) = %s\n",
-		       cmd_check->cmd_str, addr + 1, offset, errstr);
+			/* short read of the starting piece */
+			sys_bpf(cmd_check->cmd, addr + 1, offset);
+			printf("bpf(%s, %#lx, %u) = %s\n",
+			       cmd_check->cmd_str, addr + 1, offset, errstr);
+		}
 	}
+
+	j = MAX(check->iters, 1) - 1;
 
 	if (offset < sizeof_attr) {
 		/* short read of the whole bpf_attr_data */
@@ -205,7 +222,7 @@ test_bpf(const struct bpf_check *cmd_check)
 		memset((void *) addr + offset, 0, sizeof_attr - offset);
 		sys_bpf(cmd_check->cmd, addr, sizeof_attr);
 		printf("bpf(%s, {", cmd_check->cmd_str);
-		print_bpf_attr(check, addr);
+		print_bpf_attr(check, addr, j);
 		printf("}, %u) = %s\n", sizeof_attr, errstr);
 
 		/* non-zero bytes after the relevant part */
@@ -213,7 +230,7 @@ test_bpf(const struct bpf_check *cmd_check)
 			       sizeof_attr - offset, '0', 10);
 		sys_bpf(cmd_check->cmd, addr, sizeof_attr);
 		printf("bpf(%s, {", cmd_check->cmd_str);
-		print_bpf_attr(check, addr);
+		print_bpf_attr(check, addr, j);
 		printf(", ");
 		print_extra_data((char *) addr, offset,
 				 sizeof_attr - offset);
@@ -234,7 +251,7 @@ test_bpf(const struct bpf_check *cmd_check)
 	memset((void *) addr + offset, 0, page_size - offset);
 	sys_bpf(cmd_check->cmd, addr, page_size);
 	printf("bpf(%s, {", cmd_check->cmd_str);
-	print_bpf_attr(check, addr);
+	print_bpf_attr(check, addr, j);
 	printf("}, %u) = %s\n", page_size, errstr);
 
 	/* non-zero bytes after the whole bpf_attr_data */
@@ -242,7 +259,7 @@ test_bpf(const struct bpf_check *cmd_check)
 		       page_size - offset, '0', 10);
 	sys_bpf(cmd_check->cmd, addr, page_size);
 	printf("bpf(%s, {", cmd_check->cmd_str);
-	print_bpf_attr(check, addr);
+	print_bpf_attr(check, addr, j);
 	printf(", ");
 	print_extra_data((char *) addr, offset,
 			 page_size - offset);
@@ -255,13 +272,13 @@ test_bpf(const struct bpf_check *cmd_check)
 }
 
 static void
-init_BPF_MAP_CREATE_attr7(struct bpf_attr_check *check)
+init_BPF_MAP_CREATE_attr7(struct bpf_attr_check *check, size_t idx)
 {
 	struct BPF_MAP_CREATE_struct *attr = &check->data.BPF_MAP_CREATE_data;
 	attr->map_ifindex = ifindex_lo();
 }
 
-static_assert(ARRAY_SIZE(bpf_map_types_xdata) == 28,
+static_assert(ARRAY_SIZE(bpf_map_types_xdata) == 33,
 	      "The map_type for tests 1 and 2 below needs to be updated");
 static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 	{
@@ -272,7 +289,7 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 	},
 	{ /* 1 */
 		.data = { .BPF_MAP_CREATE_data = {
-			.map_type = 27,
+			.map_type = 32,
 			.key_size = 4,
 			.value_size = 8,
 			.max_entries = 256,
@@ -282,7 +299,7 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 			.map_name = "0123456789abcde",
 		} },
 		.size = offsetof(struct BPF_MAP_CREATE_struct, map_name) + 8,
-		.str = "map_type=BPF_MAP_TYPE_RINGBUF, key_size=4"
+		.str = "map_type=BPF_MAP_TYPE_CGRP_STORAGE, key_size=4"
 		       ", value_size=8, max_entries=256"
 		       ", map_flags=BPF_F_NO_PREALLOC|BPF_F_NO_COMMON_LRU"
 				   "|BPF_F_NUMA_NODE|BPF_F_RDONLY|BPF_F_WRONLY"
@@ -294,21 +311,21 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 	},
 	{ /* 2 */
 		.data = { .BPF_MAP_CREATE_data = {
-			.map_type = 28,
+			.map_type = 33,
 			.key_size = 0xface1e55,
 			.value_size = 0xbadc0ded,
 			.max_entries = 0xbeefcafe,
-			.map_flags = 0xfffff800,
+			.map_flags = 0xffffc000,
 			.inner_map_fd = 2718281828,
 			.numa_node = -1,
 			.map_name = "",
 			.map_ifindex = 3141592653,
 		} },
 		.size = offsetofend(struct BPF_MAP_CREATE_struct, map_ifindex),
-		.str = "map_type=0x1c /* BPF_MAP_TYPE_??? */"
+		.str = "map_type=0x21 /* BPF_MAP_TYPE_??? */"
 		       ", key_size=4207812181, value_size=3134983661"
 		       ", max_entries=3203386110"
-		       ", map_flags=0xfffff800 /* BPF_F_??? */"
+		       ", map_flags=0xffffc000 /* BPF_F_??? */"
 		       ", inner_map_fd=-1576685468"
 		       ", map_name=\"\", map_ifindex=3141592653",
 
@@ -319,7 +336,7 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 			.key_size = 0xface1e55,
 			.value_size = 0xbadc0ded,
 			.max_entries = 0xbeefcafe,
-			.map_flags = 0xc0dedead,
+			.map_flags = 0xc0defead,
 			.inner_map_fd = 2718281828,
 			.numa_node = -1,
 		} },
@@ -330,7 +347,8 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 		       ", map_flags=BPF_F_NO_PREALLOC|BPF_F_NUMA_NODE"
 				   "|BPF_F_RDONLY|BPF_F_STACK_BUILD_ID"
 				   "|BPF_F_RDONLY_PROG|BPF_F_CLONE"
-				   "|BPF_F_MMAPABLE|0xc0ded800",
+				   "|BPF_F_MMAPABLE|BPF_F_PRESERVE_ELEMS"
+				   "|BPF_F_INNER_MAP|BPF_F_LINK|0xc0dec000",
 	},
 	{ /* 4 */
 		.data = { .BPF_MAP_CREATE_data = {
@@ -338,7 +356,7 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 			.key_size = 0xface1e55,
 			.value_size = 0xbadc0ded,
 			.max_entries = 0xbeefcafe,
-			.map_flags = 0xc0dedead,
+			.map_flags = 0xc0defead,
 			.inner_map_fd = 2718281828,
 			.numa_node = -1,
 		} },
@@ -349,7 +367,8 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 		       ", map_flags=BPF_F_NO_PREALLOC|BPF_F_NUMA_NODE"
 				   "|BPF_F_RDONLY|BPF_F_STACK_BUILD_ID"
 				   "|BPF_F_RDONLY_PROG|BPF_F_CLONE"
-				   "|BPF_F_MMAPABLE|0xc0ded800"
+				   "|BPF_F_MMAPABLE|BPF_F_PRESERVE_ELEMS"
+				   "|BPF_F_INNER_MAP|BPF_F_LINK|0xc0dec000"
 		       ", inner_map_fd=-1576685468",
 	},
 	{ /* 5 */
@@ -358,7 +377,7 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 			.key_size = 0xface1e55,
 			.value_size = 0xbadc0ded,
 			.max_entries = 0xbeefcafe,
-			.map_flags = 0xc0dedead,
+			.map_flags = 0xc0defead,
 			.inner_map_fd = 2718281828,
 			.numa_node = -1,
 		} },
@@ -369,7 +388,8 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 		       ", map_flags=BPF_F_NO_PREALLOC|BPF_F_NUMA_NODE"
 				   "|BPF_F_RDONLY|BPF_F_STACK_BUILD_ID"
 				   "|BPF_F_RDONLY_PROG|BPF_F_CLONE"
-				   "|BPF_F_MMAPABLE|0xc0ded800"
+				   "|BPF_F_MMAPABLE|BPF_F_PRESERVE_ELEMS"
+				   "|BPF_F_INNER_MAP|BPF_F_LINK|0xc0dec000"
 		       ", inner_map_fd=-1576685468"
 		       ", numa_node=4294967295 /* NUMA_NO_NODE */",
 	},
@@ -379,7 +399,7 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 			.key_size = 0xface1e55,
 			.value_size = 0xbadc0ded,
 			.max_entries = 0xbeefcafe,
-			.map_flags = 0xc0dedead,
+			.map_flags = 0xc0defead,
 			.inner_map_fd = 2718281828,
 			.numa_node = -1,
 			.map_name = "fedcba9876543210",
@@ -391,7 +411,8 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 		       ", map_flags=BPF_F_NO_PREALLOC|BPF_F_NUMA_NODE"
 				   "|BPF_F_RDONLY|BPF_F_STACK_BUILD_ID"
 				   "|BPF_F_RDONLY_PROG|BPF_F_CLONE"
-				   "|BPF_F_MMAPABLE|0xc0ded800"
+				   "|BPF_F_MMAPABLE|BPF_F_PRESERVE_ELEMS"
+				   "|BPF_F_INNER_MAP|BPF_F_LINK|0xc0dec000"
 		       ", inner_map_fd=-1576685468"
 		       ", numa_node=4294967295 /* NUMA_NO_NODE */"
 		       ", map_name=\"fedcba987654321\"...",
@@ -402,7 +423,7 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 			.key_size = 0xface1e55,
 			.value_size = 0xbadc0ded,
 			.max_entries = 0xbeefcafe,
-			.map_flags = 0xc0dedead,
+			.map_flags = 0xc0defead,
 			.inner_map_fd = 2718281828,
 			.numa_node = -1,
 			.map_name = "0123456789abcde",
@@ -414,7 +435,8 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 		       ", map_flags=BPF_F_NO_PREALLOC|BPF_F_NUMA_NODE"
 				   "|BPF_F_RDONLY|BPF_F_STACK_BUILD_ID"
 				   "|BPF_F_RDONLY_PROG|BPF_F_CLONE"
-				   "|BPF_F_MMAPABLE|0xc0ded800"
+				   "|BPF_F_MMAPABLE|BPF_F_PRESERVE_ELEMS"
+				   "|BPF_F_INNER_MAP|BPF_F_LINK|0xc0dec000"
 		       ", inner_map_fd=-1576685468"
 		       ", numa_node=4294967295 /* NUMA_NO_NODE */"
 		       ", map_name=\"0123456789abcde\""
@@ -462,6 +484,26 @@ static struct bpf_attr_check BPF_MAP_CREATE_checks[] = {
 		       ", btf_key_type_id=4207869677"
 		       ", btf_value_type_id=3405705229"
 		       ", btf_vmlinux_value_type_id=3735929054"
+	},
+	{ /* 10 */
+		.data = { .BPF_MAP_CREATE_data = {
+			.map_type = BPF_MAP_TYPE_BLOOM_FILTER,
+			.map_extra = 4
+		} },
+		.size = offsetofend(struct BPF_MAP_CREATE_struct, map_extra),
+		.str = "map_type=BPF_MAP_TYPE_BLOOM_FILTER"
+		       ", key_size=0"
+		       ", value_size=0"
+		       ", max_entries=0"
+		       ", map_flags=0"
+		       ", inner_map_fd=0" FD0_PATH
+		       ", map_name=\"\""
+		       ", map_ifindex=0"
+		       ", btf_fd=0" FD0_PATH
+		       ", btf_key_type_id=0"
+		       ", btf_value_type_id=0"
+		       ", btf_vmlinux_value_type_id=0"
+		       ", map_extra=4"
 	},
 };
 
@@ -565,7 +607,7 @@ static char *log_buf;
  */
 #define log_buf_size 4096U
 
-static inline char *
+static char *
 get_log_buf(void)
 {
 	if (!log_buf)
@@ -573,7 +615,7 @@ get_log_buf(void)
 	return log_buf;
 }
 
-static inline char *
+static char *
 get_log_buf_tail(void)
 {
 	return get_log_buf() + log_buf_size;
@@ -590,7 +632,7 @@ get_log_buf_tail(void)
 #endif
 
 static void
-init_BPF_PROG_LOAD_attr3(struct bpf_attr_check *check)
+init_BPF_PROG_LOAD_attr3(struct bpf_attr_check *check, size_t idx)
 {
 	struct BPF_PROG_LOAD_struct *attr = &check->data.BPF_PROG_LOAD_data;
 
@@ -600,20 +642,21 @@ init_BPF_PROG_LOAD_attr3(struct bpf_attr_check *check)
 }
 
 static void
-print_BPF_PROG_LOAD_attr3(const struct bpf_attr_check *check, unsigned long addr)
+print_BPF_PROG_LOAD_attr3(const struct bpf_attr_check *check,
+			  unsigned long addr, size_t idx)
 {
 	printf("prog_type=BPF_PROG_TYPE_SOCKET_FILTER, insn_cnt=%u"
 	       ", insns=" INSNS_FMT ", license=\"%s\", log_level=2718281828"
 	       ", log_size=%u, log_buf=%p"
 	       ", kern_version=KERNEL_VERSION(51966, 240, 13)"
-	       ", prog_flags=0x10 /* BPF_F_??? */"
+	       ", prog_flags=0x20 /* BPF_F_??? */"
 	       ", prog_name=\"0123456789abcde\"..., prog_ifindex=3203399405",
 	       (unsigned int) ARRAY_SIZE(insns), INSNS_ARG, license,
 	       log_buf_size, get_log_buf_tail());
 }
 
 static void
-init_BPF_PROG_LOAD_attr4(struct bpf_attr_check *check)
+init_BPF_PROG_LOAD_attr4(struct bpf_attr_check *check, size_t idx)
 {
 	struct BPF_PROG_LOAD_struct *attr = &check->data.BPF_PROG_LOAD_data;
 
@@ -626,22 +669,23 @@ init_BPF_PROG_LOAD_attr4(struct bpf_attr_check *check)
 }
 
 static void
-print_BPF_PROG_LOAD_attr4(const struct bpf_attr_check *check, unsigned long addr)
+print_BPF_PROG_LOAD_attr4(const struct bpf_attr_check *check,
+			  unsigned long addr, size_t idx)
 {
 	printf("prog_type=BPF_PROG_TYPE_UNSPEC, insn_cnt=%u, insns=" INSNS_FMT
 	       ", license=\"%s\", log_level=2718281828, log_size=4"
 	       ", log_buf=\"log \"..."
 	       ", kern_version=KERNEL_VERSION(51966, 240, 13)"
 	       ", prog_flags=BPF_F_STRICT_ALIGNMENT|BPF_F_ANY_ALIGNMENT"
-	       "|BPF_F_TEST_RND_HI32|BPF_F_TEST_STATE_FREQ|0x10"
-	       ", prog_name=\"0123456789abcde\"..., prog_ifindex=%s"
+	       "|BPF_F_TEST_RND_HI32|BPF_F_TEST_STATE_FREQ|BPF_F_SLEEPABLE"
+	       "|0x20, prog_name=\"0123456789abcde\"..., prog_ifindex=%s"
 	       ", expected_attach_type=BPF_CGROUP_INET6_BIND",
 	       (unsigned int) ARRAY_SIZE(insns), INSNS_ARG,
 	       license, IFINDEX_LO_STR);
 }
 
-static_assert(ARRAY_SIZE(bpf_prog_types_xdata) == 31,
-	      "The prog_type for test 5 below needs to be updated");
+static_assert(ARRAY_SIZE(bpf_prog_types_xdata) == 33,
+	      "The prog_type for tests 1 and 5 below needs to be updated");
 static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 	{
 		.data = { .BPF_PROG_LOAD_data = { .prog_type = 1 } },
@@ -651,7 +695,7 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 	},
 	{ /* 1 */
 		.data = { .BPF_PROG_LOAD_data = {
-			.prog_type = 31,
+			.prog_type = 33,
 			.insn_cnt = 0xbadc0ded,
 			.insns = 0,
 			.license = 0,
@@ -662,7 +706,7 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 			.prog_flags = 0,
 		} },
 		.size = offsetofend(struct BPF_PROG_LOAD_struct, prog_flags),
-		.str = "prog_type=0x1f /* BPF_PROG_TYPE_??? */"
+		.str = "prog_type=0x21 /* BPF_PROG_TYPE_??? */"
 		       ", insn_cnt=3134983661, insns=NULL, license=NULL"
 		       ", log_level=42, log_size=3141592653, log_buf=NULL"
 		       ", kern_version=KERNEL_VERSION(51966, 240, 13)"
@@ -699,7 +743,7 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 			.log_level = 2718281828U,
 			.log_size = log_buf_size,
 			.kern_version = 0xcafef00d,
-			.prog_flags = 16,
+			.prog_flags = 32,
 			.prog_name = "0123456789abcdef",
 			.prog_ifindex = 0xbeeffeed,
 		} },
@@ -714,7 +758,7 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 			.log_level = 2718281828U,
 			.log_size = 4,
 			.kern_version = 0xcafef00d,
-			.prog_flags = 0x1f,
+			.prog_flags = 0x3f,
 			.prog_name = "0123456789abcdef",
 			.expected_attach_type = 9,
 		} },
@@ -725,7 +769,7 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 	},
 	{ /* 5 */
 		.data = { .BPF_PROG_LOAD_data = {
-			.prog_type = 30,
+			.prog_type = 32,
 			.insn_cnt = 0xbadc0ded,
 			.insns = 0xffffffff00000000,
 			.license = 0xffffffff00000000,
@@ -737,7 +781,7 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 			.prog_name = "fedcba987654321",
 		} },
 		.size = offsetofend(struct BPF_PROG_LOAD_struct, prog_name),
-		.str = "prog_type=BPF_PROG_TYPE_SK_LOOKUP"
+		.str = "prog_type=BPF_PROG_TYPE_NETFILTER"
 		       ", insn_cnt=3134983661"
 		       ", insns=" BIG_ADDR("0xffffffff00000000", "NULL")
 		       ", license=" BIG_ADDR("0xffffffff00000000", "NULL")
@@ -760,9 +804,9 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 			.line_info_cnt = 0xdad7bef8,
 			.attach_btf_id = 0xdad7befa,
 			.attach_prog_fd = 0xbadc0def,
+			.fd_array = 0xfaceb00c,
 		} },
-		.size = offsetofend(struct BPF_PROG_LOAD_struct,
-				    attach_prog_fd),
+		.size = offsetofend(struct BPF_PROG_LOAD_struct, fd_array),
 		.str = "prog_type=BPF_PROG_TYPE_UNSPEC"
 		       ", insn_cnt=0"
 		       ", insns=NULL"
@@ -784,14 +828,22 @@ static struct bpf_attr_check BPF_PROG_LOAD_checks[] = {
 		       ", line_info_cnt=3671572216"
 		       ", attach_btf_id=3671572218"
 		       ", attach_prog_fd=-1159983633"
+		       ", fd_array=0xfaceb00c"
 	},
 };
 
 static void
-init_BPF_OBJ_PIN_attr(struct bpf_attr_check *check)
+init_BPF_OBJ_PIN_attr(struct bpf_attr_check *check, size_t idx)
 {
 	struct BPF_OBJ_PIN_struct *attr = &check->data.BPF_OBJ_PIN_data;
 	attr->pathname = (uintptr_t) pathname;
+}
+
+static void
+init_BPF_OBJ_PIN_str(struct bpf_attr_check *check, size_t idx)
+{
+	check->str = xasprintf("pathname=NULL, bpf_fd=-1, file_flags=BPF_F_PATH_FD"
+			       ", path_fd=%s", at_fdcwd_str);
 }
 
 static struct bpf_attr_check BPF_OBJ_PIN_checks[] = {
@@ -823,6 +875,16 @@ static struct bpf_attr_check BPF_OBJ_PIN_checks[] = {
 		.init_fn = init_BPF_OBJ_PIN_attr,
 		.str = "pathname=\"/sys/fs/bpf/foo/bar\", bpf_fd=-1"
 		       ", file_flags=BPF_F_RDONLY|BPF_F_WRONLY"
+	},
+	{
+		.data = { .BPF_OBJ_PIN_data = {
+			.pathname = 0,
+			.bpf_fd = -1,
+			.file_flags = 0x4000,
+			.path_fd = -100
+		} },
+		.size = offsetofend(struct BPF_OBJ_PIN_struct, path_fd),
+		.init_fn = init_BPF_OBJ_PIN_str,
 	}
 };
 
@@ -853,13 +915,13 @@ static const struct bpf_attr_check BPF_PROG_ATTACH_checks[] = {
 			.target_fd = -1,
 			.attach_bpf_fd = -2,
 			.attach_type = 2,
-			.attach_flags = 0xf8,
+			.attach_flags = 0xdfc0,
 			.replace_bpf_fd = -3,
 		} },
 		.size = offsetofend(struct BPF_PROG_ATTACH_struct, replace_bpf_fd),
 		.str = "target_fd=-1, attach_bpf_fd=-2"
 		       ", attach_type=BPF_CGROUP_INET_SOCK_CREATE"
-		       ", attach_flags=0xf8 /* BPF_F_??? */"
+		       ", attach_flags=0xdfc0 /* BPF_F_??? */"
 		       ", replace_bpf_fd=-3"
 	},
 };
@@ -917,12 +979,38 @@ static const struct bpf_attr_check BPF_PROG_TEST_RUN_checks[] = {
 			.data_out = (uint64_t) 0xfacef33dbadc4dedULL,
 			.repeat = 0xfac7fed8,
 			.duration = 0xfac9feda,
+			.ctx_size_in = 0,
+			.ctx_size_out = 0xfacdfede,
+			.ctx_in = (uint64_t) 0xfacef55dbadc6dedULL,
+		} },
+		.size = offsetofend(struct BPF_PROG_TEST_RUN_struct, ctx_in),
+		.str = "test={prog_fd=-1, retval=4207017682"
+		       ", data_size_in=4207148756, data_size_out=4207279830"
+		       ", data_in=0xfacef11dbadc2ded"
+		       ", data_out=0xfacef33dbadc4ded"
+		       ", repeat=4207410904"
+		       ", duration=4207541978"
+		       ", ctx_size_in=0, ctx_size_out=4207804126"
+		       ", ctx_in=0xfacef55dbadc6ded, ctx_out=NULL}"
+	},
+	{
+		.data = { .BPF_PROG_TEST_RUN_data = {
+			.prog_fd = -1,
+			.retval = 0xfac1fed2,
+			.data_size_in = 0xfac3fed4,
+			.data_size_out = 0xfac5fed6,
+			.data_in = (uint64_t) 0xfacef11dbadc2dedULL,
+			.data_out = (uint64_t) 0xfacef33dbadc4dedULL,
+			.repeat = 0xfac7fed8,
+			.duration = 0xfac9feda,
 			.ctx_size_in = 0xfacbfedc,
 			.ctx_size_out = 0xfacdfede,
 			.ctx_in = (uint64_t) 0xfacef55dbadc6dedULL,
-			.ctx_out = (uint64_t) 0xfacef77dbadc8dedULL
+			.ctx_out = (uint64_t) 0xfacef77dbadc8dedULL,
+			.flags = BPF_F_TEST_RUN_ON_CPU|BPF_F_TEST_XDP_LIVE_FRAMES,
+			.cpu = 0,
 		} },
-		.size = offsetofend(struct BPF_PROG_TEST_RUN_struct, ctx_out),
+		.size = offsetofend(struct BPF_PROG_TEST_RUN_struct, cpu),
 		.str = "test={prog_fd=-1, retval=4207017682"
 		       ", data_size_in=4207148756, data_size_out=4207279830"
 		       ", data_in=0xfacef11dbadc2ded"
@@ -932,8 +1020,40 @@ static const struct bpf_attr_check BPF_PROG_TEST_RUN_checks[] = {
 		       ", ctx_size_in=4207673052"
 		       ", ctx_size_out=4207804126"
 		       ", ctx_in=0xfacef55dbadc6ded"
-		       ", ctx_out=0xfacef77dbadc8ded}"
-	}
+		       ", ctx_out=0xfacef77dbadc8ded"
+		       ", flags=BPF_F_TEST_RUN_ON_CPU|BPF_F_TEST_XDP_LIVE_FRAMES"
+		       ", cpu=0}"
+	},
+	{
+		.data = { .BPF_PROG_TEST_RUN_data = {
+			.prog_fd = -1,
+			.retval = 0xfac1fed2,
+			.data_size_in = 0xfac3fed4,
+			.data_size_out = 0xfac5fed6,
+			.data_in = (uint64_t) 0xfacef11dbadc2dedULL,
+			.data_out = (uint64_t) 0xfacef33dbadc4dedULL,
+			.repeat = 0xfac7fed8,
+			.duration = 0xfac9feda,
+			.ctx_size_in = 0,
+			.ctx_size_out = 0,
+			.ctx_in = 0,
+			.ctx_out = 0,
+			.flags = 0xfffffffc,
+			.cpu = 3141592653,
+			.batch_size = 2718281828,
+		} },
+		.size = offsetofend(struct BPF_PROG_TEST_RUN_struct, batch_size),
+		.str = "test={prog_fd=-1, retval=4207017682"
+		       ", data_size_in=4207148756, data_size_out=4207279830"
+		       ", data_in=0xfacef11dbadc2ded"
+		       ", data_out=0xfacef33dbadc4ded"
+		       ", repeat=4207410904"
+		       ", duration=4207541978"
+		       ", ctx_size_in=0, ctx_size_out=0"
+		       ", ctx_in=NULL, ctx_out=NULL"
+		       ", flags=0xfffffffc /* BPF_F_??? */"
+		       ", cpu=3141592653, batch_size=2718281828}"
+	},
 };
 
 static const struct bpf_attr_check BPF_PROG_GET_NEXT_ID_checks[] = {
@@ -949,13 +1069,8 @@ static const struct bpf_attr_check BPF_PROG_GET_NEXT_ID_checks[] = {
 			.start_id = 0xdeadbeef
 		} },
 		.size = 1,
-		.str = "start_id="
-#if WORDS_BIGENDIAN
-		       "3724541952"	/* 0xde000000 */
-#else
-		       "239"		/* 0x000000ef */
-#endif
-		       ", next_id=0"
+		/*                        0xde000000 0x000000ef */
+		.str = "start_id=" BE_LE("3724541952", "239") ", next_id=0"
 	},
 	{
 		.data = { .BPF_PROG_GET_NEXT_ID_data = {
@@ -979,6 +1094,7 @@ static const struct bpf_attr_check BPF_PROG_GET_NEXT_ID_checks[] = {
 
 #define BPF_MAP_GET_NEXT_ID_checks BPF_PROG_GET_NEXT_ID_checks
 #define BPF_BTF_GET_NEXT_ID_checks BPF_PROG_GET_NEXT_ID_checks
+#define BPF_LINK_GET_NEXT_ID_checks BPF_PROG_GET_NEXT_ID_checks
 
 static const struct bpf_attr_check BPF_PROG_GET_FD_BY_ID_checks[] = {
 	{
@@ -1059,7 +1175,7 @@ static uint32_t prog_load_ids[] = { 0, 1, 0xffffffff, 2718281828, };
 uint32_t *prog_load_ids_ptr;
 
 static void
-init_BPF_PROG_QUERY_attr4(struct bpf_attr_check *check)
+init_BPF_PROG_QUERY_attr4(struct bpf_attr_check *check, size_t idx)
 {
 	struct BPF_PROG_QUERY_struct *attr = &check->data.BPF_PROG_QUERY_data;
 
@@ -1072,12 +1188,14 @@ init_BPF_PROG_QUERY_attr4(struct bpf_attr_check *check)
 }
 
 static void
-print_BPF_PROG_QUERY_attr4(const struct bpf_attr_check *check, unsigned long addr)
+print_BPF_PROG_QUERY_attr4(const struct bpf_attr_check *check,
+			   unsigned long addr, size_t idx)
 {
 	printf("query={target_fd=-1153374643"
 	       ", attach_type=0xfeedface /* BPF_??? */"
 	       ", query_flags=BPF_F_QUERY_EFFECTIVE|0xdeadf00c"
-	       ", attach_flags=BPF_F_ALLOW_MULTI|BPF_F_REPLACE|0xbeefcaf8"
+	       ", attach_flags=BPF_F_ALLOW_MULTI|BPF_F_REPLACE"
+	       "|BPF_F_BEFORE|BPF_F_AFTER|BPF_F_ID|0xbeefcac0"
 #if defined(INJECT_RETVAL)
 	       ", prog_ids=[0, 1, 4294967295, 2718281828], prog_cnt=4}"
 #else
@@ -1087,7 +1205,7 @@ print_BPF_PROG_QUERY_attr4(const struct bpf_attr_check *check, unsigned long add
 }
 
 static void
-init_BPF_PROG_QUERY_attr5(struct bpf_attr_check *check)
+init_BPF_PROG_QUERY_attr5(struct bpf_attr_check *check, size_t idx)
 {
 	struct BPF_PROG_QUERY_struct *attr = &check->data.BPF_PROG_QUERY_data;
 
@@ -1100,12 +1218,14 @@ init_BPF_PROG_QUERY_attr5(struct bpf_attr_check *check)
 }
 
 static void
-print_BPF_PROG_QUERY_attr5(const struct bpf_attr_check *check, unsigned long addr)
+print_BPF_PROG_QUERY_attr5(const struct bpf_attr_check *check,
+			   unsigned long addr, size_t idx)
 {
 	printf("query={target_fd=-1153374643"
 	       ", attach_type=0xfeedface /* BPF_??? */"
 	       ", query_flags=BPF_F_QUERY_EFFECTIVE|0xdeadf00c"
-	       ", attach_flags=BPF_F_ALLOW_MULTI|BPF_F_REPLACE|0xbeefcaf8"
+	       ", attach_flags=BPF_F_ALLOW_MULTI|BPF_F_REPLACE"
+	       "|BPF_F_BEFORE|BPF_F_AFTER|BPF_F_ID|0xbeefcac0"
 #if defined(INJECT_RETVAL)
 	       ", prog_ids=[0, 1, 4294967295, 2718281828, ... /* %p */]"
 	       ", prog_cnt=5}",
@@ -1127,13 +1247,13 @@ static struct bpf_attr_check BPF_PROG_QUERY_checks[] = {
 	{ /* 1 */
 		.data = { .BPF_PROG_QUERY_data = {
 			.target_fd = 3141592653U,
-			.attach_type = 37,
+			.attach_type = 48,
 			.query_flags = 1,
 			.attach_flags = 3,
 		} },
 		.size = offsetofend(struct BPF_PROG_QUERY_struct, attach_flags),
 		.str = "query={target_fd=-1153374643"
-		       ", attach_type=BPF_XDP"
+		       ", attach_type=BPF_TRACE_UPROBE_MULTI"
 		       ", query_flags=BPF_F_QUERY_EFFECTIVE"
 		       ", attach_flags=BPF_F_ALLOW_OVERRIDE|BPF_F_ALLOW_MULTI"
 		       ", prog_ids=NULL, prog_cnt=0}",
@@ -1141,17 +1261,17 @@ static struct bpf_attr_check BPF_PROG_QUERY_checks[] = {
 	{ /* 2 */
 		.data = { .BPF_PROG_QUERY_data = {
 			.target_fd = 3141592653U,
-			.attach_type = 38,
+			.attach_type = 49,
 			.query_flags = 0xfffffffe,
-			.attach_flags = 0xfffffff8,
+			.attach_flags = 0xffffdfc0,
 			.prog_ids = 0xffffffffffffffffULL,
 			.prog_cnt = 2718281828,
 		} },
 		.size = offsetofend(struct BPF_PROG_QUERY_struct, prog_cnt),
 		.str = "query={target_fd=-1153374643"
-		       ", attach_type=0x26 /* BPF_??? */"
+		       ", attach_type=0x31 /* BPF_??? */"
 		       ", query_flags=0xfffffffe /* BPF_F_QUERY_??? */"
-		       ", attach_flags=0xfffffff8 /* BPF_F_??? */"
+		       ", attach_flags=0xffffdfc0 /* BPF_F_??? */"
 		       ", prog_ids="
 		       BIG_ADDR("0xffffffffffffffff", "0xffffffff")
 		       ", prog_cnt=2718281828}",
@@ -1161,7 +1281,7 @@ static struct bpf_attr_check BPF_PROG_QUERY_checks[] = {
 			.target_fd = 3141592653U,
 			.attach_type = 0xfeedface,
 			.query_flags = 0xdeadf00d,
-			.attach_flags = 0xbeefcafe,
+			.attach_flags = 0xbeef203f,
 			.prog_ids = 0xffffffffffffffffULL,
 			.prog_cnt = 0,
 		} },
@@ -1169,7 +1289,9 @@ static struct bpf_attr_check BPF_PROG_QUERY_checks[] = {
 		.str = "query={target_fd=-1153374643"
 		       ", attach_type=0xfeedface /* BPF_??? */"
 		       ", query_flags=BPF_F_QUERY_EFFECTIVE|0xdeadf00c"
-		       ", attach_flags=BPF_F_ALLOW_MULTI|BPF_F_REPLACE|0xbeefcaf8"
+		       ", attach_flags=BPF_F_ALLOW_OVERRIDE|BPF_F_ALLOW_MULTI"
+		       "|BPF_F_REPLACE|BPF_F_BEFORE|BPF_F_AFTER|BPF_F_ID"
+		       "|BPF_F_LINK|0xbeef0000"
 		       ", prog_ids=" BIG_ADDR_MAYBE("0xffffffffffffffff") "[]"
 		       ", prog_cnt=0}",
 	},
@@ -1199,7 +1321,7 @@ static struct bpf_attr_check BPF_PROG_QUERY_checks[] = {
 
 
 static void
-init_BPF_RAW_TRACEPOINT_attr2(struct bpf_attr_check *check)
+init_BPF_RAW_TRACEPOINT_attr2(struct bpf_attr_check *check, size_t idx)
 {
 	/* TODO: test the 128 byte limit */
 	static const char tp_name[] = "0123456789qwertyuiop0123456789qwe";
@@ -1242,7 +1364,7 @@ static struct bpf_attr_check BPF_RAW_TRACEPOINT_OPEN_checks[] = {
 };
 
 static void
-init_BPF_BTF_LOAD_attr(struct bpf_attr_check *check)
+init_BPF_BTF_LOAD_attr(struct bpf_attr_check *check, size_t idx)
 {
 	static const char sample_btf_data[] = "bPf\0daTum";
 
@@ -1390,24 +1512,314 @@ static const struct bpf_attr_check BPF_MAP_DELETE_BATCH_checks[] = {
 	}
 };
 
-static const struct bpf_attr_check BPF_LINK_CREATE_checks[] = {
-	{
-		.data = { .BPF_LINK_CREATE_data = { .prog_fd = -1, .target_fd = -2 } },
-		.size = offsetofend(struct BPF_LINK_CREATE_struct, flags),
-		.str = "link_create={prog_fd=-1, target_fd=-2"
+static void
+init_BPF_LINK_CREATE_attr1(struct bpf_attr_check *check, size_t idx)
+{
+	struct BPF_LINK_CREATE_struct *attr = &check->data.BPF_LINK_CREATE_data;
+
+	attr->attach_type = idx;
+}
+
+static void
+print_BPF_LINK_CREATE_attr1(const struct bpf_attr_check *check,
+			    unsigned long addr, size_t idx)
+{
+	printf("link_create={prog_fd=-1, target_fd=-559038737"
+	       ", attach_type=%s, flags=0x4}",
+	       sprintxval(bpf_attach_type, idx, "BPF_???"));
+}
+
+/* Keep sorted */
+static const uint8_t special_attach_types[] =
+	{ 0, BPF_TRACE_ITER, BPF_PERF_EVENT, BPF_TRACE_KPROBE_MULTI };
+
+static void
+init_BPF_LINK_CREATE_attr2(struct bpf_attr_check *check, size_t idx)
+{
+	struct BPF_LINK_CREATE_struct *attr = &check->data.BPF_LINK_CREATE_data;
+
+	/* skip special_attach_types */
+	for (size_t i = 0; i < ARRAY_SIZE(special_attach_types)
+			   && idx >= special_attach_types[i]; i++, idx++);
+
+	attr->attach_type = idx;
+
+	check->data.char_data[19] = ' ';
+	check->data.char_data[23] = 'O';
+	check->data.char_data[27] = 'H';
+	check->data.char_data[31] = ' ';
+	check->data.char_data[35] = 'H';
+	check->data.char_data[39] = 'A';
+	check->data.char_data[43] = 'I';
+	check->data.char_data[47] = '!';
+}
+
+static void
+print_BPF_LINK_CREATE_attr2(const struct bpf_attr_check *check,
+			    unsigned long addr, size_t idx)
+{
+	/* skip special_attach_types */
+	for (size_t i = 0; i < ARRAY_SIZE(special_attach_types)
+			   && idx >= special_attach_types[i]; i++, idx++);
+
+	printf("link_create={prog_fd=-1, target_fd=-559038737"
+	       ", attach_type=%s, flags=0xbadc0ded}, "
+#if VERBOSE
+	       "extra_data=\"\\x00\\x00\\x00\\x20\\x00\\x00\\x00\\x4f"
+	       "\\x00\\x00\\x00\\x48\\x00\\x00\\x00\\x20\\x00\\x00\\x00\\x48"
+	       "\\x00\\x00\\x00\\x41\\x00\\x00\\x00\\x49\\x00\\x00\\x00\\x21\""
+	       " /* bytes 16..47 */"
+#else
+	       "..."
+#endif
+	       ,
+	       sprintxval(bpf_attach_type, idx, "BPF_???"));
+}
+
+static const int iter_info_data[] = { 0, 42, 314159265, 0xbadc0ded, -1 };
+static int *iter_info_data_p;
+
+static void
+init_BPF_LINK_CREATE_attr7(struct bpf_attr_check *check, size_t idx)
+{
+	struct BPF_LINK_CREATE_struct *attr = &check->data.BPF_LINK_CREATE_data;
+
+	close(iter_info_data[1]);
+
+	if (!iter_info_data_p) {
+		iter_info_data_p = tail_memdup(iter_info_data,
+					       sizeof(iter_info_data));
+	}
+
+	attr->iter_info = (uintptr_t) iter_info_data_p;
+	attr->iter_info_len = ARRAY_SIZE(iter_info_data) + idx;
+}
+
+static void
+print_BPF_LINK_CREATE_attr7(const struct bpf_attr_check *check,
+			    unsigned long addr, size_t idx)
+{
+	printf("link_create={prog_fd=0" FD0_PATH ", target_fd=0" FD0_PATH
+	       ", attach_type=BPF_TRACE_ITER, flags=0"
+	       ", iter_info=[{map={map_fd=0" FD0_PATH "}}, {map={map_fd=42}}"
+	       ", {map={map_fd=314159265}}, {map={map_fd=-1159983635}}"
+	       ", {map={map_fd=-1}}");
+	if (idx) {
+		printf(", ... /* %p */",
+		       iter_info_data_p + ARRAY_SIZE(iter_info_data));
+	}
+	printf("], iter_info_len=%zu}", ARRAY_SIZE(iter_info_data) + idx);
+
+}
+
+static const char *syms_data[] = { "foo", NULL, "OH\0HAI",
+				   "abcdefghijklmnopqrstuvwxyz0123456789" };
+static char **syms_data_p;
+static const uint64_t addrs_data[] = { 0, 1, 0xbadc0ded,
+				       0xfacefeeddeadc0deULL };
+static uint64_t *addrs_data_p;
+
+static_assert(ARRAY_SIZE(syms_data) == ARRAY_SIZE(addrs_data),
+	      "syms_data and addrs_data have to have the same element count");
+
+static void
+init_BPF_LINK_CREATE_attr12(struct bpf_attr_check *check, size_t idx)
+{
+	struct BPF_LINK_CREATE_struct *attr = &check->data.BPF_LINK_CREATE_data;
+
+	if (!syms_data_p)
+		syms_data_p = tail_memdup(syms_data, sizeof(syms_data));
+	if (!addrs_data_p)
+		addrs_data_p = tail_memdup(addrs_data, sizeof(addrs_data));
+
+	attr->kprobe_multi.cnt = ARRAY_SIZE(syms_data) + idx;
+	attr->kprobe_multi.syms = (uintptr_t) syms_data_p;
+	attr->kprobe_multi.addrs = (uintptr_t) addrs_data_p;
+	attr->kprobe_multi.cookies = (uintptr_t) addrs_data_p;
+}
+
+static void
+print_BPF_LINK_CREATE_attr12(const struct bpf_attr_check *check,
+			     unsigned long addr, size_t idx)
+{
+	printf("link_create={prog_fd=0" FD0_PATH ", target_fd=0" FD0_PATH
+	       ", attach_type=BPF_TRACE_KPROBE_MULTI, flags=0"
+	       ", kprobe_multi={flags=BPF_F_KPROBE_MULTI_RETURN|0xfacebeee"
+	       ", cnt=%zu", ARRAY_SIZE(syms_data) + idx);
+	printf(", syms=[\"foo\", NULL, \"OH\""
+	       ", \"abcdefghijklmnopqrstuvwxyz012345\"...");
+	if (idx)
+		printf(", ... /* %p */", syms_data_p + ARRAY_SIZE(syms_data));
+	for (size_t i = 0; i < 2; i++) {
+		printf("], %s=[0, 0x1, 0xbadc0ded, 0xfacefeeddeadc0de",
+		       i ? "cookies" : "addrs");
+		if (idx) {
+			printf(", ... /* %p */",
+			       addrs_data_p + ARRAY_SIZE(addrs_data));
+		}
+	}
+	printf("]}}");
+}
+
+static struct bpf_attr_check BPF_LINK_CREATE_checks[] = {
+	{ /* 0 */
+		.data = { .BPF_LINK_CREATE_data = { .prog_fd = 0, .target_fd = 0 } },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct, target_fd),
+		.str = "link_create={prog_fd=0" FD0_PATH ", target_fd=0" FD0_PATH
 		       ", attach_type=BPF_CGROUP_INET_INGRESS, flags=0}"
 	},
-	{
+	{ /* 1 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.prog_fd = -1,
+			.target_fd = 0xdeadbeef,
+			.flags = 4
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct, flags),
+		.iters = ARRAY_SIZE(bpf_attach_type_xdata),
+		.init_fn = init_BPF_LINK_CREATE_attr1,
+		.print_fn = print_BPF_LINK_CREATE_attr1,
+	},
+	{ /* 2 - all non-special attach_types */
 		.data = { .BPF_LINK_CREATE_data = {
 			.prog_fd = -1,
 			.target_fd = 0xdeadbeef,
 			.attach_type = 5,
-			.flags = 4
+			.flags = 0xbadc0ded
 		} },
-		.size = offsetofend(struct BPF_LINK_CREATE_struct, flags),
-		.str = "link_create={prog_fd=-1, target_fd=-559038737"
-		       ", attach_type=BPF_SK_SKB_STREAM_VERDICT, flags=0x4}"
-	}
+		.size = 48,
+		.iters = ARRAY_SIZE(bpf_attach_type_xdata)
+			 - ARRAY_SIZE(special_attach_types),
+		.init_fn = init_BPF_LINK_CREATE_attr2,
+		.print_fn = print_BPF_LINK_CREATE_attr2,
+	},
+
+	{ /* 3 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 0,
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    target_btf_id),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_CGROUP_INET_INGRESS, flags=0}"
+	},
+	{ /* 4 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 0,
+			.target_btf_id = 0xfacefeed,
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    target_btf_id),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_CGROUP_INET_INGRESS, flags=0"
+		       ", target_btf_id=4207869677}"
+	},
+
+	{ /* 5 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 28,
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    iter_info_len),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_TRACE_ITER, flags=0"
+		       ", iter_info=NULL, iter_info_len=0}"
+	},
+	{ /* 6 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 28,
+			.iter_info = 0xffffffff00000000,
+			.iter_info_len = 0xdeadface,
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    iter_info_len),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_TRACE_ITER, flags=0"
+		       ", iter_info=" BIG_ADDR("0xffffffff00000000", "NULL")
+		       ", iter_info_len=3735943886}"
+	},
+	{ /* 7 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 28,
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    iter_info_len),
+		.iters = 2,
+		.init_fn = init_BPF_LINK_CREATE_attr7,
+		.print_fn = print_BPF_LINK_CREATE_attr7,
+	},
+
+	{ /* 8 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 41,
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    perf_event.bpf_cookie),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_PERF_EVENT, flags=0"
+		       ", perf_event={bpf_cookie=0}}"
+	},
+	{ /* 9 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 41,
+			.perf_event = { .bpf_cookie = 0xdeadc0defacecafeULL },
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    perf_event.bpf_cookie),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_PERF_EVENT, flags=0"
+		       ", perf_event={bpf_cookie=0xdeadc0defacecafe}}"
+	},
+
+	{ /* 10 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 42,
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    kprobe_multi.cookies),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_TRACE_KPROBE_MULTI, flags=0"
+		       ", kprobe_multi={flags=0, cnt=0, syms=NULL, addrs=NULL"
+		       ", cookies=NULL}}"
+	},
+	{ /* 11 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 42,
+			.kprobe_multi = {
+				.flags = 0xdeadc0de,
+				.cnt = 0xbadfaced,
+				.syms = 0xffffffff00000000,
+				.addrs = 0xffffffff00000000,
+				.cookies = 0xffffffff00000000,
+			},
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    kprobe_multi.cookies),
+		.str = "link_create={prog_fd=0" FD0_PATH", target_fd=0" FD0_PATH
+		       ", attach_type=BPF_TRACE_KPROBE_MULTI, flags=0"
+		       ", kprobe_multi={flags=0xdeadc0de /* BPF_F_??? */"
+		       ", cnt=3135220973"
+		       ", syms=" BIG_ADDR("0xffffffff00000000", "NULL")
+		       ", addrs=" BIG_ADDR("0xffffffff00000000", "NULL")
+		       ", cookies=" BIG_ADDR("0xffffffff00000000", "NULL") "}}"
+	},
+	/*
+	 * Note that here we rely on the fact that this attach_type has the
+	 * largest de-facto attr_size to get the additional checks performed
+	 * with the last check passed.
+	 */
+	{ /* 12 */
+		.data = { .BPF_LINK_CREATE_data = {
+			.attach_type = 42,
+			.kprobe_multi = {
+				.flags = 0xfacebeef,
+			}
+		} },
+		.size = offsetofend(struct BPF_LINK_CREATE_struct,
+				    kprobe_multi.cookies),
+		.iters = 2,
+		.init_fn = init_BPF_LINK_CREATE_attr12,
+		.print_fn = print_BPF_LINK_CREATE_attr12,
+	},
 };
 
 static const struct bpf_attr_check BPF_LINK_UPDATE_checks[] = {
@@ -1429,6 +1841,75 @@ static const struct bpf_attr_check BPF_LINK_UPDATE_checks[] = {
 		.size = offsetofend(struct BPF_LINK_UPDATE_struct, old_prog_fd),
 		.str = "link_update={link_fd=-1, new_prog_fd=-559038737"
 		       ", flags=BPF_F_REPLACE, old_prog_fd=-559026163}"
+	}
+};
+
+static const struct bpf_attr_check BPF_LINK_GET_FD_BY_ID_checks[] = {
+	{
+		.data = { .BPF_LINK_GET_FD_BY_ID_data = { .link_id = 0xdeadbeef } },
+		.size = offsetofend(struct BPF_LINK_GET_FD_BY_ID_struct, link_id),
+		.str = "link_id=3735928559"
+	}
+};
+
+static const struct bpf_attr_check BPF_ENABLE_STATS_checks[] = {
+	{
+		.data = { .BPF_ENABLE_STATS_data = { .type = 0 } },
+		.size = offsetofend(struct BPF_ENABLE_STATS_struct, type),
+		.str = "enable_stats={type=BPF_STATS_RUN_TIME}"
+	},
+	{
+		.data = { .BPF_ENABLE_STATS_data = { .type = 1 } },
+		.size = offsetofend(struct BPF_ENABLE_STATS_struct, type),
+		.str = "enable_stats={type=0x1 /* BPF_STATS_??? */}"
+	}
+};
+
+static const struct bpf_attr_check BPF_ITER_CREATE_checks[] = {
+	{
+		.data = { .BPF_ITER_CREATE_data = {
+			.link_fd = -1,
+			.flags = 0
+		} },
+		.size = offsetofend(struct BPF_ITER_CREATE_struct, flags),
+		.str = "iter_create={link_fd=-1, flags=0}"
+	},
+	{
+		.data = { .BPF_ITER_CREATE_data = {
+			.link_fd = -1,
+			.flags = -1U,
+		} },
+		.size = offsetofend(struct BPF_ITER_CREATE_struct, flags),
+		.str = "iter_create={link_fd=-1, flags=0xffffffff}"
+	}
+};
+
+static const struct bpf_attr_check BPF_LINK_DETACH_checks[] = {
+	{
+		.data = { .BPF_LINK_DETACH_data = { .link_fd = -1 } },
+		.size = offsetofend(struct BPF_LINK_DETACH_struct, link_fd),
+		.str = "link_detach={link_fd=-1}"
+	}
+};
+
+static const struct bpf_attr_check BPF_PROG_BIND_MAP_checks[] = {
+	{
+		.data = { .BPF_PROG_BIND_MAP_data = {
+			.prog_fd = -1,
+			.map_fd = -2,
+			.flags = 0
+		} },
+		.size = offsetofend(struct BPF_PROG_BIND_MAP_struct, flags),
+		.str = "prog_bind_map={prog_fd=-1, map_fd=-2, flags=0}"
+	},
+	{
+		.data = { .BPF_PROG_BIND_MAP_data = {
+			.prog_fd = -1,
+			.map_fd = -2,
+			.flags = -1U,
+		} },
+		.size = offsetofend(struct BPF_PROG_BIND_MAP_struct, flags),
+		.str = "prog_bind_map={prog_fd=-1, map_fd=-2, flags=0xffffffff}"
 	}
 };
 
@@ -1473,10 +1954,23 @@ main(void)
 		CHK(BPF_MAP_DELETE_BATCH),
 		CHK(BPF_LINK_CREATE),
 		CHK(BPF_LINK_UPDATE),
+		CHK(BPF_LINK_GET_NEXT_ID),
+		CHK(BPF_LINK_GET_FD_BY_ID),
+		CHK(BPF_ENABLE_STATS),
+		CHK(BPF_ITER_CREATE),
+		CHK(BPF_LINK_DETACH),
+		CHK(BPF_PROG_BIND_MAP),
 	};
 
 	page_size = get_page_size();
 	end_of_page = (unsigned long) tail_alloc(1) + 1;
+
+	at_fdcwd_str =
+#ifdef YFLAG
+		xasprintf("AT_FDCWD<%s>", get_fd_path(get_dir_fd(".")));
+#else
+		"AT_FDCWD";
+#endif
 
 	for (size_t i = 0; i < ARRAY_SIZE(checks); i++)
 		test_bpf(checks + i);

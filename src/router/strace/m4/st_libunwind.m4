@@ -1,11 +1,15 @@
 #!/usr/bin/m4
 #
-# Copyright (c) 2013-2018 The strace developers.
+# Copyright (c) 2013-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 AC_DEFUN([st_ARG_LIBUNWIND], [dnl
+
+libunwind_CPPFLAGS=
+libunwind_LDFLAGS=
+libunwind_LIBS=
 
 AC_ARG_WITH([libunwind],
 	    [AS_HELP_STRING([--with-libunwind],
@@ -22,10 +26,6 @@ AC_ARG_WITH([libunwind],
 ])
 
 AC_DEFUN([st_LIBUNWIND], [dnl
-
-libunwind_CPPFLAGS=
-libunwind_LDFLAGS=
-libunwind_LIBS=
 
 AS_IF([test "x$with_libunwind" != xno && test "x$use_unwinder" = x],
       [saved_CPPFLAGS="$CPPFLAGS"

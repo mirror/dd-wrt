@@ -1,8 +1,8 @@
 /*
  * Check decoding of getrlimit/ugetrlimit syscall.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,7 +17,7 @@
 #include "xlat.h"
 #include "xlat/resources.h"
 
-const char *
+static const char *
 sprint_rlim(kernel_ulong_t lim)
 {
 	static char buf[2][ /* space for 2 llu strings */
@@ -79,13 +79,18 @@ main(void)
 	kernel_ulong_t *const rlimit = tail_alloc(sizeof(*rlimit) * 2);
 	const struct xlat_data *xlat;
 	size_t i;
+	long rc;
+
+	rc = syscall(NR_GETRLIMIT, 16, 0);
+	printf("%s(0x10 /* RLIMIT_??? */, NULL) = %s\n",
+	       STR_GETRLIMIT, sprintrc(rc));
 
 	for (xlat = resources->data, i = 0; i < resources->size; ++xlat, ++i) {
 		if (!xlat->str)
 			continue;
 
 		unsigned long res = 0xfacefeed00000000ULL | xlat->val;
-		long rc = syscall(NR_GETRLIMIT, res, 0);
+		rc = syscall(NR_GETRLIMIT, res, 0);
 		if (rc && ENOSYS == errno)
 			perror_msg_and_skip(STR_GETRLIMIT);
 		printf("%s(%s, NULL) = %s\n",

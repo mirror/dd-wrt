@@ -2,7 +2,7 @@
  * Check decoding of pkey_mprotect syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,13 +11,11 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_pkey_mprotect
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/mman.h>
 
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/mman.h>
-
-const char *
+static const char *
 sprintptr(kernel_ulong_t ptr)
 {
 	static char buf[sizeof(ptr) * 2 + sizeof("0x")];
@@ -64,19 +62,17 @@ main(void)
 		(kernel_ulong_t) 0xbadc0ded00000001,
 	};
 
-	long rc;
-	unsigned int i;
-	unsigned int j;
-	unsigned int k;
-	unsigned int l;
-
-	for (i = 0; i < ARRAY_SIZE(ptrs); i++) {
-		for (j = 0; j < ARRAY_SIZE(sizes); j++) {
-			for (k = 0; k < ARRAY_SIZE(prots); k++) {
-				for (l = 0; l < ARRAY_SIZE(pkeys); l++) {
-					rc = syscall(__NR_pkey_mprotect,
-						     ptrs[i], sizes[j],
-						     prots[k].val, pkeys[l]);
+	for (unsigned int i = 0;
+	     i < ARRAY_SIZE(ptrs); ++i) {
+		for (unsigned int j = 0;
+		     j < ARRAY_SIZE(sizes); ++j) {
+			for (unsigned int k = 0;
+			     k < ARRAY_SIZE(prots); ++k) {
+				for (unsigned int l = 0;
+				     l < ARRAY_SIZE(pkeys); ++l) {
+					long rc = syscall(__NR_pkey_mprotect,
+							  ptrs[i], sizes[j],
+							  prots[k].val, pkeys[l]);
 					printf("pkey_mprotect(%s, %llu, %s, %d)"
 					       " = %s\n",
 					       sprintptr(ptrs[i]),
@@ -92,9 +88,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_pkey_mprotect");
-
-#endif

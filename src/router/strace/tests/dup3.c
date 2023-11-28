@@ -1,7 +1,7 @@
 /*
  * Check decoding of dup3 syscall.
  *
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,31 +10,19 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_dup3
+#include <stdio.h>
+#include <unistd.h>
+#include "kernel_fcntl.h"
 
-# include <fcntl.h>
-# include <stdio.h>
-# include <unistd.h>
-
-# ifndef O_CLOEXEC
-#  if defined __alpha__ || defined __hppa__
-#   define O_CLOEXEC	010000000
-#  elif defined __sparc__
-#   define O_CLOEXEC	020000000
-#  else
-#   define O_CLOEXEC	02000000
-#  endif
-# endif /* !O_CLOEXEC */
-
-# ifndef FD0_PATH
-#  define FD0_PATH ""
-# endif
-# ifndef FD7_PATH
-#  define FD7_PATH ""
-# endif
-# ifndef SKIP_IF_PROC_IS_UNAVAILABLE
-#  define SKIP_IF_PROC_IS_UNAVAILABLE
-# endif
+#ifndef FD0_PATH
+# define FD0_PATH ""
+#endif
+#ifndef FD7_PATH
+# define FD7_PATH ""
+#endif
+#ifndef SKIP_IF_PROC_IS_UNAVAILABLE
+# define SKIP_IF_PROC_IS_UNAVAILABLE
+#endif
 
 static const char *errstr;
 
@@ -60,29 +48,29 @@ main(void)
 	int fd7 = dup(7);
 
 	k_dup3(0, 0, 0);
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("dup3(0" FD0_PATH ", 0" FD0_PATH ", 0) = %s\n", errstr);
-# endif
+#endif
 
 	k_dup3(-1, -2, O_CLOEXEC);
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("dup3(-1, -2, O_CLOEXEC) = %s\n", errstr);
-# endif
+#endif
 
 	k_dup3(-2, -1, O_TRUNC);
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("dup3(-2, -1, O_TRUNC) = %s\n", errstr);
-# endif
+#endif
 
 	k_dup3(-3, 0, O_TRUNC | O_CLOEXEC);
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("dup3(-3, 0" FD0_PATH ", O_TRUNC|O_CLOEXEC) = %s\n", errstr);
-# endif
+#endif
 
 	k_dup3(0, -4, O_RDONLY);
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("dup3(0" FD0_PATH ", -4, 0) = %s\n", errstr);
-# endif
+#endif
 
 	k_dup3(-5, 7, O_WRONLY);
 	printf("dup3(-5, 7" FD7_PATH ", 0x1 /* O_??? */) = %s\n", errstr);
@@ -94,22 +82,16 @@ main(void)
 	printf("dup3(7" FD7_PATH ", 7" FD7_PATH ", O_CLOEXEC) = %s\n", errstr);
 
 	k_dup3(-7, -7, 7);
-# ifndef PATH_TRACING
-	printf("dup3(-7, -7, %s) = %s\n",
-#  ifdef __sparc__
-	       "O_NDELAY|0x3"
-#  else
-	       "0x7 /* O_??? */"
-#  endif
-	       , errstr);
-# endif
+#ifndef PATH_TRACING
+	printf("dup3(-7, -7, 0x7 /* O_??? */) = %s\n", errstr);
+#endif
 
 	if (k_dup3(0, fd0, O_CLOEXEC) != fd0)
 		perror_msg_and_skip("dup3");
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("dup3(0" FD0_PATH ", %d" FD0_PATH ", O_CLOEXEC) = %d" FD0_PATH
 	       "\n", fd0, fd0);
-# endif
+#endif
 
 	k_dup3(7, fd7, 0);
 	printf("dup3(7" FD7_PATH ", %d" FD7_PATH ", 0) = %d" FD7_PATH
@@ -127,10 +109,10 @@ main(void)
 	close(fd7);
 
 	k_dup3(0, fd0, O_CLOEXEC);
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("dup3(0" FD0_PATH ", %d, O_CLOEXEC) = %d" FD0_PATH "\n",
 	       fd0, fd0);
-# endif
+#endif
 
 	k_dup3(7, fd7, 0);
 	printf("dup3(7" FD7_PATH ", %d, 0) = %d" FD7_PATH "\n",
@@ -139,9 +121,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_dup3")
-
-#endif

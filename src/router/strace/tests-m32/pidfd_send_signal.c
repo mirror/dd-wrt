@@ -1,7 +1,7 @@
 /*
  * Check decoding of pidfd_send_signal syscall.
  *
- * Copyright (c) 2015-2020 The strace developers.
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,11 +12,9 @@
 #include "scno.h"
 #include "pidns.h"
 
-#ifdef __NR_pidfd_send_signal
-
-# include <fcntl.h>
-# include <stdio.h>
-# include <signal.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <signal.h>
 
 static const char *errstr;
 
@@ -61,7 +59,7 @@ main(void)
 	pidns_print_leader();
 	printf("pidfd_send_signal(%d, SIGUSR2, {si_signo=SIGUSR1"
 	       ", si_code=SI_QUEUE, si_errno=%u, si_pid=%d%s, si_uid=%d"
-	       ", si_value={int=%d, ptr=%p}}, %#x) = %s\n",
+	       ", si_int=%d, si_ptr=%p}, %#x) = %s\n",
 	       fd, si->si_errno, si->si_pid, pidns_pid2str(PT_TGID), si->si_uid,
 	       si->si_int, si->si_ptr, -1U, errstr);
 
@@ -69,9 +67,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_pidfd_send_signal")
-
-#endif

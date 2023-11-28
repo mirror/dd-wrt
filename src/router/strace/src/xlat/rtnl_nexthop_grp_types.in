@@ -1,0 +1,4 @@
+#unconditional
+#value_indexed
+NEXTHOP_GRP_TYPE_MPATH	0
+NEXTHOP_GRP_TYPE_RES	1

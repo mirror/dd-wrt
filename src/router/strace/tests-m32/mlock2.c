@@ -1,6 +1,8 @@
 /*
- * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Check decoding of mlock2 syscall.
+ *
+ * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,10 +11,8 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_mlock2
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -22,14 +22,8 @@ main(void)
 
 	long rc = syscall(__NR_mlock2, addr, len, -1UL);
 	printf("mlock2(%#lx, %lu, MLOCK_ONFAULT|0xfffffffe)"
-	       " = %ld %s (%m)\n", addr, len, rc, errno2name());
+	       " = %s\n", addr, len, sprintrc(rc));
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_mlock2")
-
-#endif

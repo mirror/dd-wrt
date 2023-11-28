@@ -3,22 +3,19 @@
  * mq_unlink syscalls.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
 
-#if defined __NR_mq_open && __NR_mq_timedsend && __NR_mq_timedreceive && \
-	__NR_mq_notify && __NR_mq_unlink
+#if defined __NR_mq_timedsend && defined __NR_mq_timedreceive
 
 # include <assert.h>
 # include <errno.h>
-# include <fcntl.h>
 # include <inttypes.h>
 # include <signal.h>
 # include <stdio.h>
@@ -27,6 +24,8 @@
 # include <time.h>
 # include <unistd.h>
 
+# include "xmalloc.h"
+# include "kernel_fcntl.h"
 # include "sigevent.h"
 
 # ifndef DUMPIO_READ
@@ -51,10 +50,8 @@ enum {
 static void
 printstr(unsigned char start, unsigned int count)
 {
-	unsigned int i;
-
 	printf("\"");
-	for (i = 0; i < count; i++) {
+	for (unsigned int i = 0; i < count; ++i) {
 		printf("\\%hho", (unsigned char) (start + i));
 	}
 	printf("\"");
@@ -64,10 +61,7 @@ printstr(unsigned char start, unsigned int count)
 static void
 dumpstr(unsigned char start, unsigned int count)
 {
-	unsigned int i;
-	unsigned int j;
-
-	for (i = 0; i < count; i++) {
+	for (unsigned int i = 0; i < count; ++i) {
 		if (i < count) {
 			if (!(i % 16))
 				printf(" | %05x ", i);
@@ -84,9 +78,9 @@ dumpstr(unsigned char start, unsigned int count)
 
 			printf(" ");
 
-			for (j = 0; j <= (i % 16); j++)
+			for (unsigned int j = 0; j <= (i % 16); ++j)
 				printf(".");
-			for (j = i % 16; j < 15; j++)
+			for (unsigned int j = i % 16; j < 15; ++j)
 				printf(" ");
 
 			printf(" |\n");
@@ -108,7 +102,7 @@ cleanup(void)
 }
 
 static void
-do_send(int fd, char *msg, unsigned int msg_size, struct timespec *tmout,
+do_send(int fd, char *msg, unsigned int msg_size, kernel_old_timespec_t *tmout,
 	bool cropped)
 {
 	long rc;
@@ -141,7 +135,7 @@ do_send(int fd, char *msg, unsigned int msg_size, struct timespec *tmout,
 }
 
 static void
-do_recv(int fd, char *msg, unsigned int msg_size, struct timespec *tmout,
+do_recv(int fd, char *msg, unsigned int msg_size, kernel_old_timespec_t *tmout,
 	bool cropped)
 {
 	long rc;
@@ -200,18 +194,19 @@ main(void)
 		(kernel_ulong_t) 0xbadc0dedda7a1057ULL;
 	static const kernel_ulong_t bogus_prio =
 		(kernel_ulong_t) 0xdec0ded1defaced3ULL;
-	static const struct timespec bogus_tmout_data = {
+	static const kernel_old_timespec_t bogus_tmout_data = {
 		.tv_sec = (time_t) 0xdeadfacebeeff00dLL,
 		.tv_nsec = (long) 0xfacefee1deadfeedLL,
 	};
-	static const struct timespec future_tmout_data = {
+	static const kernel_old_timespec_t future_tmout_data = {
 		.tv_sec = (time_t) 0x7ea1fade7e57faceLL,
 		.tv_nsec = 999999999,
 	};
 	struct_sigevent bogus_sev_data = {
 		.sigev_notify = 0xdefaced,
 		.sigev_signo = 0xfacefeed,
-		.sigev_value.sival_ptr = (unsigned long) 0xdeadbeefbadc0dedULL
+		.sigev_value.sival_ptr =
+			(void *) (unsigned long) 0xdeadbeefbadc0dedULL
 	};
 
 	const char *errstr;
@@ -220,9 +215,9 @@ main(void)
 		NUM_ATTRS);
 	char *msg = tail_alloc(MSG_SIZE);
 	TAIL_ALLOC_OBJECT_CONST_PTR(unsigned, bogus_prio_ptr);
-	struct timespec *bogus_tmout = tail_memdup(&bogus_tmout_data,
+	kernel_old_timespec_t *bogus_tmout = tail_memdup(&bogus_tmout_data,
 		sizeof(*bogus_tmout));
-	struct timespec *future_tmout = tail_memdup(&future_tmout_data,
+	kernel_old_timespec_t *future_tmout = tail_memdup(&future_tmout_data,
 		sizeof(*future_tmout));
 	struct_sigevent *bogus_sev = tail_memdup(&bogus_sev_data,
 		sizeof(*bogus_sev));
@@ -348,7 +343,7 @@ main(void)
 
 	/* Invalid SIGEV_* */
 	rc = syscall(__NR_mq_notify, bogus_fd, bogus_sev);
-	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%#lx}"
+	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%p}"
 	       ", sigev_signo=%u, sigev_notify=%#x /* SIGEV_??? */}) = %s\n",
 	       (int) bogus_fd, bogus_sev->sigev_value.sival_int,
 	       bogus_sev->sigev_value.sival_ptr,
@@ -358,7 +353,7 @@ main(void)
 	/* SIGEV_NONE */
 	bogus_sev->sigev_notify = SIGEV_NONE;
 	rc = syscall(__NR_mq_notify, bogus_fd, bogus_sev);
-	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%#lx}"
+	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%p}"
 	       ", sigev_signo=%u, sigev_notify=SIGEV_NONE}) = %s\n",
 	       (int) bogus_fd, bogus_sev->sigev_value.sival_int,
 	       bogus_sev->sigev_value.sival_ptr,
@@ -368,7 +363,7 @@ main(void)
 	bogus_sev->sigev_notify = SIGEV_SIGNAL;
 	bogus_sev->sigev_signo = SIGALRM;
 	rc = syscall(__NR_mq_notify, bogus_fd, bogus_sev);
-	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%#lx}"
+	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%p}"
 	       ", sigev_signo=SIGALRM, sigev_notify=SIGEV_SIGNAL}) = %s\n",
 	       (int) bogus_fd, bogus_sev->sigev_value.sival_int,
 	       bogus_sev->sigev_value.sival_ptr, sprintrc(rc));
@@ -376,13 +371,13 @@ main(void)
 	/* SIGEV_THREAD */
 	bogus_sev->sigev_notify = SIGEV_THREAD;
 	bogus_sev->sigev_un.sigev_thread.function =
-		(unsigned long) 0xdeadbeefbadc0dedULL;
+		(void *) (unsigned long) 0xdeadbeefbadc0dedULL;
 	bogus_sev->sigev_un.sigev_thread.attribute =
-		(unsigned long) 0xcafef00dfacefeedULL;
+		(void *) (unsigned long) 0xcafef00dfacefeedULL;
 	rc = syscall(__NR_mq_notify, bogus_fd, bogus_sev);
-	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%#lx}"
+	printf("mq_notify(%d, {sigev_value={sival_int=%d, sival_ptr=%p}"
 	       ", sigev_signo=SIGALRM, sigev_notify=SIGEV_THREAD"
-	       ", sigev_notify_function=%#lx, sigev_notify_attributes=%#lx})"
+	       ", sigev_notify_function=%p, sigev_notify_attributes=%p})"
 	       " = %s\n",
 	       (int) bogus_fd, bogus_sev->sigev_value.sival_int,
 	       bogus_sev->sigev_value.sival_ptr,
@@ -407,8 +402,7 @@ main(void)
 
 	/* Sending and receiving test */
 
-	if (asprintf(&mq_name, "strace-mq_sendrecv-%u.sample", getpid()) < 0)
-		perror_msg_and_fail("asprintf");
+	mq_name = xasprintf("strace-mq_sendrecv-%u.sample", getpid());
 
 # if DUMPIO_READ || DUMPIO_WRITE
 	close(0);
@@ -416,7 +410,7 @@ main(void)
 	bogus_attrs[1] = 2;
 	bogus_attrs[2] = MSG_SIZE;
 	fd = rc = syscall(__NR_mq_open, mq_name,
-			  O_CREAT|O_RDWR|O_NONBLOCK, S_IRWXU, bogus_attrs);
+			  O_CREAT|O_RDWR|O_NONBLOCK, 0700, bogus_attrs);
 	errstr = sprintrc(rc);
 	if (rc < 0)
 		perror_msg_and_skip("mq_open");
@@ -454,7 +448,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("__NR_mq_open && __NR_mq_timedsend && "
-	"__NR_mq_timedreceive && __NR_mq_notify && __NR_mq_unlink");
+SKIP_MAIN_UNDEFINED("__NR_mq_timedsend && __NR_mq_timedreceive")
 
 #endif

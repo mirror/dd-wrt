@@ -1,7 +1,7 @@
 /*
  * Check decoding of SO_LINGER socket option.
  *
- * Copyright (c) 2017-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2017-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -103,7 +103,7 @@ main(void)
 	*len = sizeof(*linger) + 1;
 	get_linger(fd, linger, len);
 	printf("getsockopt(%d, SOL_SOCKET, SO_LINGER, {l_onoff=%d, l_linger=%d}"
-	       ", [%u->%d]) = %s\n",
+	       ", [%u => %d]) = %s\n",
 	       fd, linger->l_onoff, linger->l_linger,
 	       (unsigned int) sizeof(*linger) + 1, *len, errstr);
 

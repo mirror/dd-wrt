@@ -1,0 +1,5 @@
+#unconditional
+#value_indexed
+V4L2_INPUT_TYPE_TUNER
+V4L2_INPUT_TYPE_CAMERA
+V4L2_INPUT_TYPE_TOUCH

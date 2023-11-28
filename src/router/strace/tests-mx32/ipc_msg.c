@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2020 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -21,6 +21,7 @@
 #endif
 
 #undef TEST_MSGCTL_BOGUS_ADDR
+#undef TEST_MSGCTL_BOGUS_CMD
 
 /*
  * Starting with commit glibc-2.32~83, on every 32-bit architecture
@@ -28,6 +29,17 @@
  * the data provided in the third argument of msgctl call.
  */
 #if GLIBC_PREREQ_GE(2, 32) && defined __TIMESIZE && __TIMESIZE != 64
+# define TEST_MSGCTL_BOGUS_ADDR 0
+#endif
+/*
+ * Starting with commit glibc-2.31~358, on every architecture where
+ * __ASSUME_SYSVIPC_BROKEN_MODE_T is defined, glibc tries to modify
+ * the data provided in the third argument of msgctl call.
+ */
+#if GLIBC_PREREQ_GE(2, 31) && \
+ (defined __m68k__ || defined __s390__ || \
+  (defined WORDS_BIGENDIAN && \
+   (defined __arm__ || defined __microblaze__ || defined __sh__)))
 # define TEST_MSGCTL_BOGUS_ADDR 0
 #endif
 /*
@@ -39,8 +51,25 @@
 # define TEST_MSGCTL_BOGUS_ADDR 0
 #endif
 
+/*
+ * Starting with commit glibc-2.32.9000-149-gbe9b0b9a012780a403a2,
+ * glibc skips msgctl syscall invocations and returns EINVAL
+ * for invalid msgctl commands.
+ *
+ * Apparently, this change was later backported to vendor packages, e.g.:
+ * Thu Mar 18 2021 Carlos O'Donell <carlos@redhat.com> - 2.28-153
+ * - Support SEM_STAT_ANY via semctl. Return EINVAL for unknown commands
+ *   to semctl, msgctl, and shmctl. (#1912670)
+ */
+#if GLIBC_PREREQ_GE(2, 28)
+# define TEST_MSGCTL_BOGUS_CMD 0
+#endif
+
 #ifndef TEST_MSGCTL_BOGUS_ADDR
 # define TEST_MSGCTL_BOGUS_ADDR 1
+#endif
+#ifndef TEST_MSGCTL_BOGUS_CMD
+# define TEST_MSGCTL_BOGUS_CMD 1
 #endif
 
 #if XLAT_RAW
@@ -161,12 +190,16 @@ main(void)
 	static const key_t private_key =
 		(key_t) (0xffffffff00000000ULL | IPC_PRIVATE);
 	static const key_t bogus_key = (key_t) 0xeca86420fdb9f531ULL;
+	static const int bogus_flags = 0xface1e55 & ~IPC_CREAT;
+#if TEST_MSGCTL_BOGUS_CMD || TEST_MSGCTL_BOGUS_ADDR
 	static const int bogus_msgid = 0xfdb97531;
+#endif
+#if TEST_MSGCTL_BOGUS_CMD
 	static const int bogus_cmd = 0xdeadbeef;
+#endif
 #if TEST_MSGCTL_BOGUS_ADDR
 	static void * const bogus_addr = (void *) -1L;
 #endif
-	static const int bogus_flags = 0xface1e55 & ~IPC_CREAT;
 
 	int rc;
 	union {
@@ -186,9 +219,11 @@ main(void)
 	printf("msgget\\(%s, 0600\\) = %d\n", str_ipc_private, id);
 	atexit(cleanup);
 
+#if TEST_MSGCTL_BOGUS_CMD
 	rc = msgctl(bogus_msgid, bogus_cmd, NULL);
 	printf("msgctl\\(%d, (%s\\|)?%s, NULL\\) = %s\n",
 	       bogus_msgid, str_ipc_64, str_bogus_cmd, sprintrc_grep(rc));
+#endif
 
 #if TEST_MSGCTL_BOGUS_ADDR
 	rc = msgctl(bogus_msgid, IPC_SET, bogus_addr);

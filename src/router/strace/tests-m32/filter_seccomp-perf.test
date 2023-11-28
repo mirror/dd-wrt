@@ -3,7 +3,7 @@
 # Check seccomp filter performance.
 #
 # Copyright (c) 2019 Paul Chaignon <paul.chaignon@gmail.com>
-# Copyright (c) 2018-2019 The strace developers.
+# Copyright (c) 2018-2021 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -18,7 +18,7 @@ num_seccomp="$(run_strace --seccomp-bpf $args)"
 mv "$LOG" "$LOG.seccomp"
 match_diff "$LOG.regular" "$LOG.seccomp"
 
-min_ratio=6
+min_ratio=5
 # With seccomp filter enabled, we should be able to complete
 # at least $min_ratio times more chdir system calls.
 ratio="$((num_seccomp / num_regular))"

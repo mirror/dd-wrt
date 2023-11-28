@@ -1,7 +1,7 @@
 /*
  * Check printing of file name in strace -y mode.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,6 +17,8 @@
 int
 main(void)
 {
+	skip_if_unavailable("/proc/self/fd/");
+
 	char dir[PATH_MAX + 1];
 
 	const struct {

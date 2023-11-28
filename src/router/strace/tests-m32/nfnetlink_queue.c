@@ -1,20 +1,17 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
-#ifdef HAVE_LINUX_NETFILTER_NFNETLINK_QUEUE_H
-
-# include <stdio.h>
-# include <sys/socket.h>
-# include "netlink.h"
-# include <linux/netfilter/nfnetlink.h>
-# include <linux/netfilter/nfnetlink_queue.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include "netlink.h"
+#include <linux/netfilter/nfnetlink.h>
+#include <linux/netfilter/nfnetlink_queue.h>
 
 static void
 test_nlmsg_type(const int fd)
@@ -27,17 +24,17 @@ test_nlmsg_type(const int fd)
 
 	nlh.nlmsg_type = NFNL_SUBSYS_QUEUE << 8 | NFQNL_MSG_PACKET;
 	rc = sendto(fd, &nlh, nlh.nlmsg_len, MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u"
-	       ", type=NFNL_SUBSYS_QUEUE<<8|NFQNL_MSG_PACKET"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
+	printf("sendto(%d, {nlmsg_len=%u"
+	       ", nlmsg_type=NFNL_SUBSYS_QUEUE<<8|NFQNL_MSG_PACKET"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, nlh.nlmsg_len, sprintrc(rc));
 
 	nlh.nlmsg_type = NFNL_SUBSYS_QUEUE << 8 | 0xff;
 	rc = sendto(fd, &nlh, nlh.nlmsg_len, MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u"
-	       ", type=NFNL_SUBSYS_QUEUE<<8|0xff /* NFQNL_MSG_??? */"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
+	printf("sendto(%d, {nlmsg_len=%u"
+	       ", nlmsg_type=NFNL_SUBSYS_QUEUE<<8|0xff /* NFQNL_MSG_??? */"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, nlh.nlmsg_len, sprintrc(rc));
 }
@@ -55,9 +52,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("HAVE_LINUX_NETFILTER_NFNETLINK_QUEUE_H")
-
-#endif

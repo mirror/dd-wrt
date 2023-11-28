@@ -1,0 +1,6 @@
+#unconditional
+#value_indexed
+NLMSG_NOOP
+NLMSG_ERROR
+NLMSG_DONE
+NLMSG_OVERRUN

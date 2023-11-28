@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2020 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,27 +8,12 @@
 
 #include "tests.h"
 
-#ifdef HAVE_STRUCT_BR_PORT_MSG
-
-# include <stdio.h>
-# include "test_nlattr.h"
-/* struct br_mdb_entry needs a definition of struct in6_addr.  */
-# include <netinet/in.h>
-# include <linux/if_bridge.h>
-# include <linux/rtnetlink.h>
-
-# ifndef MDBA_ROUTER
-#  define MDBA_ROUTER 2
-# endif
-# ifndef MDBA_ROUTER_PORT
-#  define MDBA_ROUTER_PORT 1
-# endif
-# ifndef MDBA_ROUTER_PATTR_TYPE
-#  define MDBA_ROUTER_PATTR_TYPE 2
-# endif
-# ifndef MDB_RTR_TYPE_DISABLED
-#  define MDB_RTR_TYPE_DISABLED 0
-# endif
+#include <math.h>
+#include <stdio.h>
+#include <unistd.h>
+#include "test_nlattr.h"
+#include <linux/if_bridge.h>
+#include <linux/rtnetlink.h>
 
 const unsigned int hdrlen = sizeof(struct br_port_msg);
 
@@ -57,10 +42,10 @@ init_br_port_msg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_br_port_msg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=RTM_GETMDB, flags=NLM_F_DUMP"
-	       ", seq=0, pid=0}, {family=AF_UNIX"
+	printf("{nlmsg_len=%u, nlmsg_type=RTM_GETMDB, nlmsg_flags=NLM_F_DUMP"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, {family=AF_UNIX"
 	       ", ifindex=" IFINDEX_LO_STR "}"
-	       ", {{nla_len=%u, nla_type=MDBA_ROUTER}",
+	       ", [{nla_len=%u, nla_type=MDBA_ROUTER}",
 	       msg_len, msg_len - NLMSG_SPACE(hdrlen));
 }
 
@@ -97,16 +82,56 @@ main(void)
 		    init_br_port_msg, print_br_port_msg,
 		    MDBA_ROUTER_PORT, sizeof(buf), buf, sizeof(buf),
 		    printf(IFINDEX_LO_STR
-			   ", {{nla_len=%u, nla_type=MDBA_ROUTER_PATTR_TYPE}"
-			   ", MDB_RTR_TYPE_DISABLED}}",
+			   ", [{nla_len=%u, nla_type=MDBA_ROUTER_PATTR_TYPE}"
+			   ", MDB_RTR_TYPE_DISABLED]]",
 			   nla.nla_len));
+
+	/* timers */
+	static const struct {
+		uint32_t val;
+		const char *str;
+	} pattrs[] = {
+		{ ARG_STR(MDBA_ROUTER_PATTR_TIMER) },
+		{ ARG_STR(MDBA_ROUTER_PATTR_INET_TIMER) },
+		{ ARG_STR(MDBA_ROUTER_PATTR_INET6_TIMER) },
+	};
+	uint32_t timer = 0xdead;
+	long clk_tck;
+	int precision = 0;
+
+	clk_tck = sysconf(_SC_CLK_TCK);
+	if (clk_tck > 0) {
+		precision = clk_tck > 1 ? MIN((int) ceil(log10(clk_tck - 1)), 9)
+					: 0;
+		timer *= clk_tck;
+	}
+
+	struct nlattr nla_timer = {
+		.nla_len = NLA_HDRLEN + sizeof(timer),
+	};
+	char buf_timer[NLMSG_ALIGN(ifindex) + NLA_HDRLEN + sizeof(timer)];
+
+	memcpy(buf_timer, &ifindex, sizeof(ifindex));
+	memcpy(buf_timer + NLMSG_ALIGN(ifindex) + NLA_HDRLEN,
+	       &timer, sizeof(timer));
+
+	for (size_t i = 0; i < ARRAY_SIZE(pattrs); i++) {
+		nla_timer.nla_type = pattrs[i].val;
+		memcpy(buf_timer + NLMSG_ALIGN(ifindex),
+		       &nla_timer, sizeof(nla_timer));
+
+		TEST_NLATTR(fd, nlh0 - NLA_HDRLEN, hdrlen + NLA_HDRLEN,
+			    init_br_port_msg, print_br_port_msg,
+			    MDBA_ROUTER_PORT,
+			    sizeof(buf_timer), buf_timer, sizeof(buf_timer),
+			    printf(IFINDEX_LO_STR
+				   ", [{nla_len=%u, nla_type=%s}, %u",
+				   nla_timer.nla_len, pattrs[i].str, timer);
+			    if (clk_tck > 0)
+				    printf(" /* 57005.%0*u s */", precision, 0);
+			    printf("]]"));
+	}
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("HAVE_STRUCT_BR_PORT_MSG")
-
-#endif

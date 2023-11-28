@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 The strace developers.
+ * Copyright (c) 2018-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,10 +13,6 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include "kernel_v4l2_types.h"
-
-#define XLAT_MACROS_ONLY
-# include "xlat/v4l2_ioctl_cmds.h"
-#undef XLAT_MACROS_ONLY
 
 static bool
 fill_fmt(struct v4l2_format *f)
@@ -37,9 +33,7 @@ fill_fmt(struct v4l2_format *f)
 		break;
 
 	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
-#if HAVE_DECL_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
-#endif
 		f->fmt.win.w.left    = 0xa0a1a2a3;
 		f->fmt.win.w.top     = 0xb0b1b2b3;
 		f->fmt.win.w.width   = 0xc0c1c2c3;
@@ -91,7 +85,6 @@ fill_fmt(struct v4l2_format *f)
 			? 0x3 : 0x1ce50d1c;
 		break;
 
-#if HAVE_DECL_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		f->fmt.pix_mp.width        = 0xdeaffade;
@@ -107,25 +100,23 @@ fill_fmt(struct v4l2_format *f)
 				f->fmt.pix_mp.plane_fmt[i].bytesperline
 					= 0xd0decad1 ^ i;
 			} else {
-# if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 				f->fmt.pix_mp.plane_fmt[i].bytesperline
 					= 0xd0de;
 				f->fmt.pix_mp.plane_fmt[i].reserved[0]
 					= 0xcad1 ^ i;
-# else
+#else
 				f->fmt.pix_mp.plane_fmt[i].bytesperline
 					= 0xcad1 ^ i;
 				f->fmt.pix_mp.plane_fmt[i].reserved[0]
 					= 0xd0de;
-# endif
+#endif
 			}
 		}
 
 		f->fmt.pix_mp.num_planes   = f->type ==
 			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ? 0xd5 : 0;
 		break;
-#endif
-#if HAVE_DECL_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE
 	case V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
 	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
 		f->fmt.sliced.service_set = 0xfeed;
@@ -137,23 +128,19 @@ fill_fmt(struct v4l2_format *f)
 		}
 		f->fmt.sliced.io_size = 0xdefaceed;
 		break;
-#endif
-#if HAVE_DECL_V4L2_BUF_TYPE_SDR_CAPTURE
 	case V4L2_BUF_TYPE_SDR_CAPTURE:
-# if HAVE_DECL_V4L2_BUF_TYPE_SDR_OUTPUT
 	case V4L2_BUF_TYPE_SDR_OUTPUT:
-# endif
 		f->fmt.sdr.pixelformat = V4L2_SDR_FMT_CU8;
-# ifdef HAVE_STRUCT_V4L2_SDR_FORMAT_BUFFERSIZE
 		if (sizeof(f->fmt.sdr.buffersize == sizeof(uint32_t)))
 			f->fmt.sdr.buffersize = 0xbadc0ded;
 		else
 			((uint32_t *) &f->fmt.sdr)[1] = 0xbadc0ded;
-# else
-		((uint32_t *) &f->fmt.sdr)[1] = 0xbadc0ded;
-# endif
 		break;
-#endif
+	case V4L2_BUF_TYPE_META_CAPTURE:
+	case V4L2_BUF_TYPE_META_OUTPUT:
+		f->fmt.meta.dataformat = V4L2_META_FMT_VSP1_HGO;
+		f->fmt.meta.buffersize  = 0xbadc0ded;
+		break;
 	default:
 		return false;
 	}
@@ -180,22 +167,20 @@ print_fmt(const char *pfx, struct v4l2_format *f)
 		break;
 
 	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
-#if HAVE_DECL_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
-#endif
-		printf("%sfmt.win={left=-1600019805, top=-1330531661"
-		       ", width=3233923779, height=3503411923, field=%s"
+		printf("%sfmt.win={w={left=-1600019805, top=-1330531661"
+		       ", width=3233923779, height=3503411923}, field=%s"
 		       ", chromakey=0xbeefface, clips=[",
 		       pfx, f->type == V4L2_BUF_TYPE_VIDEO_OVERLAY
 			? XLAT_STR(V4L2_FIELD_ANY)
 			: XLAT_UNKNOWN(0xa, "V4L2_FIELD_???"));
 		if (f->type == V4L2_BUF_TYPE_VIDEO_OVERLAY) {
-			printf("{left=-1532647769, top=-1263159625"
-			       ", width=3301295815, height=3570783959}, "
-			       "{left=-1465275733, top=-1195787589"
-			       ", width=3368667851, height=3638155995}, "
-			       "{left=-1397903697, top=-1128415553"
-			       ", width=3436039887, height=3705528031}, "
+			printf("{c={left=-1532647769, top=-1263159625"
+			       ", width=3301295815, height=3570783959}}, "
+			       "{c={left=-1465275733, top=-1195787589"
+			       ", width=3368667851, height=3638155995}}, "
+			       "{c={left=-1397903697, top=-1128415553"
+			       ", width=3436039887, height=3705528031}}, "
 			       "... /* %p */", f->fmt.win.clips + 3);
 		}
 		printf("], clipcount=%d, bitmap=",
@@ -206,21 +191,7 @@ print_fmt(const char *pfx, struct v4l2_format *f)
 		else
 			printf("%p", f->fmt.win.bitmap);
 
-#ifdef HAVE_STRUCT_V4L2_WINDOW_GLOBAL_ALPHA
 		printf(", global_alpha=%#hhx}", f->fmt.win.global_alpha);
-#else
-		struct win_ga {
-			struct v4l2_rect w;
-			uint32_t field;
-			uint32_t chromakey;
-			struct v4l2_clip *clips;
-			uint32_t clipcount;
-			void *bitmap;
-			uint8_t global_alpha;
-		};
-		printf(", global_alpha=%#hhx}",
-		       ((struct win_ga *) &f->fmt.win)->global_alpha);
-#endif
 		break;
 
 	case V4L2_BUF_TYPE_VBI_CAPTURE:
@@ -236,7 +207,6 @@ print_fmt(const char *pfx, struct v4l2_format *f)
 			: XLAT_UNKNOWN(0x1ce50d1c, "V4L2_VBI_???"));
 		break;
 
-#if HAVE_DECL_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		printf("%sfmt.pix_mp={width=3736074974, height=4208898469"
@@ -266,36 +236,39 @@ print_fmt(const char *pfx, struct v4l2_format *f)
 			printf("], num_planes=0}");
 		}
 		break;
-#endif
-#if HAVE_DECL_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE
 	case V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
 	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
 		printf("%sfmt.sliced={service_set="
-		       XLAT_UNKNOWN(0xfeed, "V4L2_SLICED_???")
-		       ", io_size=3740978925, service_lines=[[0xdead, 0xdeac"
-		       ", 0xdeaf, 0xdeae, 0xdea9, 0xdea8, 0xdeab, 0xdeaa"
-		       ", 0xdea5, 0xdea4, 0xdea7, 0xdea6, 0xdea1, 0xdea0"
-		       ", 0xdea3, 0xdea2, 0xdebd, 0xdebc, 0xdebf, 0xdebe"
-		       ", 0xdeb9, 0xdeb8, 0xdebb, 0xdeba], [0xdfad, 0xdfac"
-		       ", 0xdfaf, 0xdfae, 0xdfa9, 0xdfa8, 0xdfab, 0xdfaa"
-		       ", 0xdfa5, 0xdfa4, 0xdfa7, 0xdfa6, 0xdfa1, 0xdfa0"
-		       ", 0xdfa3, 0xdfa2, 0xdfbd, 0xdfbc, 0xdfbf, 0xdfbe"
-		       ", 0xdfb9, 0xdfb8, 0xdfbb, 0xdfba]]}",
+		       XLAT_KNOWN(0xfeed, "V4L2_SLICED_VBI_625"
+					  "|V4L2_SLICED_CAPTION_525|0xaaec")
+		       ", service_lines=[[0xdead, 0xdeac, 0xdeaf, 0xdeae"
+		       ", 0xdea9, 0xdea8, 0xdeab, 0xdeaa, 0xdea5, 0xdea4"
+		       ", 0xdea7, 0xdea6, 0xdea1, 0xdea0, 0xdea3, 0xdea2"
+		       ", 0xdebd, 0xdebc, 0xdebf, 0xdebe, 0xdeb9, 0xdeb8"
+		       ", 0xdebb, 0xdeba], [0xdfad, 0xdfac, 0xdfaf, 0xdfae"
+		       ", 0xdfa9, 0xdfa8, 0xdfab, 0xdfaa, 0xdfa5, 0xdfa4"
+		       ", 0xdfa7, 0xdfa6, 0xdfa1, 0xdfa0, 0xdfa3, 0xdfa2"
+		       ", 0xdfbd, 0xdfbc, 0xdfbf, 0xdfbe, 0xdfb9, 0xdfb8"
+		       ", 0xdfbb, 0xdfba]], io_size=3740978925}",
 		       pfx);
 		break;
-#endif
-#if HAVE_DECL_V4L2_BUF_TYPE_SDR_CAPTURE
 	case V4L2_BUF_TYPE_SDR_CAPTURE:
-# if HAVE_DECL_V4L2_BUF_TYPE_SDR_OUTPUT
 	case V4L2_BUF_TYPE_SDR_OUTPUT:
-# endif
 		printf("%sfmt.sdr={pixelformat=" RAW("0x38305543")
 		       NRAW("v4l2_fourcc('C', 'U', '0', '8')"
 			    " /* V4L2_SDR_FMT_CU8 */")
 		       ", buffersize=3134983661}",
 		       pfx);
 		break;
-#endif
+
+	case V4L2_BUF_TYPE_META_CAPTURE:
+	case V4L2_BUF_TYPE_META_OUTPUT:
+		printf("%sfmt.meta={dataformat=" RAW("0x48505356")
+		       NRAW("v4l2_fourcc('V', 'S', 'P', 'H')"
+			    " /* V4L2_META_FMT_VSP1_HGO */")
+		       ", buffersize=3134983661}",
+		       pfx);
+		break;
 	}
 }
 
@@ -343,11 +316,7 @@ main(int argc, char **argv)
 
 	fill_memory(caps, sizeof(*caps));
 	caps->capabilities = 0xdeadbeef;
-#ifdef HAVE_STRUCT_V4L2_CAPABILITY_DEVICE_CAPS
 	caps->device_caps = 0xfacefeed;
-#else
-	caps->reserved[0] = 0xfacefeed;
-#endif
 
 	ioctl(-1, VIDIOC_QUERYCAP, 0);
 	printf("ioctl(-1, %s, NULL) = %ld (INJECTED)\n",
@@ -418,11 +387,15 @@ main(int argc, char **argv)
 	static const struct strval32 fmtdesc_flags[] = {
 		{ ARG_STR(0) },
 		{ ARG_XLAT_KNOWN(0x1, "V4L2_FMT_FLAG_COMPRESSED") },
-		{ ARG_XLAT_KNOWN(0x3e, "V4L2_FMT_FLAG_EMULATED"
+		{ ARG_XLAT_KNOWN(0x3fe, "V4L2_FMT_FLAG_EMULATED"
 				       "|V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM"
 				       "|V4L2_FMT_FLAG_DYN_RESOLUTION"
 				       "|V4L2_FMT_FLAG_ENC_CAP_FRAME_INTERVAL"
-				       "|0x20") },
+				       "|V4L2_FMT_FLAG_CSC_COLORSPACE"
+				       "|V4L2_FMT_FLAG_CSC_XFER_FUNC"
+				       "|V4L2_FMT_FLAG_CSC_YCBCR_ENC"
+				       "|V4L2_FMT_FLAG_CSC_QUANTIZATION"
+				       "|0x200") },
 		{ ARG_XLAT_UNKNOWN(0xdead0000, "V4L2_FMT_FLAG_???") },
 	};
 	static const struct strval32 fmtdesc_fmts[] = {
@@ -892,6 +865,36 @@ main(int argc, char **argv)
 		{ ARG_XLAT_UNKNOWN(0xdeadc0de, "V4L2_INPUT_TYPE_???") },
 	};
 
+	static const struct strval32 input_std[] = {
+		{ V4L2_STD_PAL_I,
+		  XLAT_KNOWN(0x10, "V4L2_STD_PAL_I") },
+		{ V4L2_STD_SECAM_L,
+		  XLAT_KNOWN(0x400000, "V4L2_STD_SECAM_L") },
+		{ V4L2_STD_PAL_B | V4L2_STD_PAL_G,
+		  XLAT_KNOWN(0x5, "V4L2_STD_PAL_B|V4L2_STD_PAL_G") },
+		{ ARG_XLAT_UNKNOWN(0x80000000, "V4L2_STD_???") },
+	};
+
+	static const struct strval32 input_status[] = {
+		{ V4L2_IN_ST_NO_SIGNAL,
+		  XLAT_KNOWN(0x2, "V4L2_IN_ST_NO_SIGNAL") },
+		{ V4L2_IN_ST_NO_STD_LOCK,
+		  XLAT_KNOWN(0x800, "V4L2_IN_ST_NO_STD_LOCK") },
+		{ V4L2_IN_ST_NO_CARRIER | V4L2_IN_ST_NO_ACCESS,
+		  XLAT_KNOWN(0x2040000, "V4L2_IN_ST_NO_CARRIER|V4L2_IN_ST_NO_ACCESS") },
+		{ ARG_XLAT_UNKNOWN(0x80000000, "V4L2_IN_ST_???") },
+	};
+
+	static const struct strval32 input_caps[] = {
+		{ V4L2_IN_CAP_DV_TIMINGS,
+		  XLAT_KNOWN(0x2, "V4L2_IN_CAP_DV_TIMINGS") },
+		{ V4L2_IN_CAP_NATIVE_SIZE,
+		  XLAT_KNOWN(0x8, "V4L2_IN_CAP_NATIVE_SIZE") },
+		{ V4L2_IN_CAP_STD | V4L2_IN_CAP_NATIVE_SIZE,
+		  XLAT_KNOWN(0xc, "V4L2_IN_CAP_STD|V4L2_IN_CAP_NATIVE_SIZE") },
+		{ ARG_XLAT_UNKNOWN(0x80000000, "V4L2_IN_CAP_???") },
+	};
+
 	struct v4l2_input *input = tail_alloc(sizeof(*input));
 
 	ioctl(-1, VIDIOC_ENUMINPUT, 0);
@@ -904,19 +907,34 @@ main(int argc, char **argv)
 
 	for (size_t i = 0; i < ARRAY_SIZE(stdids); i++) {
 		for (size_t j = 0; j < ARRAY_SIZE(input_types); j++) {
-			fill_memory32(input, sizeof(*input));
-			fill_memory_ex(input->name, sizeof(input->name),
-				       i * 47 + 13, 255);
-			input->type = input_types[j].val;
-			input->std = stdids[i].val;
+			for (size_t k = 0; k < ARRAY_SIZE(input_std); k++) {
+				for (size_t l = 0; l < ARRAY_SIZE(input_status); l++) {
+					for (size_t m = 0; m < ARRAY_SIZE(input_caps); m++) {
+						fill_memory32(input, sizeof(*input));
+						fill_memory_ex(input->name, sizeof(input->name),
+							       i * 47 + 13, 255);
+						input->type = input_types[j].val;
+						input->std = stdids[i].val;
+						input->audioset = 0;
+						input->tuner = 0;
+						input->std = input_std[k].val;
+						input->status = input_status[l].val;
+						input->capabilities = input_caps[m].val;
 
-			ioctl(-1, VIDIOC_ENUMINPUT, input);
-			printf("ioctl(-1, %s, {index=2158018784, name=",
-			       XLAT_STR(VIDIOC_ENUMINPUT));
-			print_quoted_cstring((char *) input->name,
-					     sizeof(input->name));
-			printf(", type=%s}) = %ld (INJECTED)\n",
-			       input_types[j].str, inject_retval);
+						ioctl(-1, VIDIOC_ENUMINPUT, input);
+						printf("ioctl(-1, %s, {index=2158018784, name=",
+						       XLAT_STR(VIDIOC_ENUMINPUT));
+						print_quoted_cstring((char *) input->name,
+								     sizeof(input->name));
+						printf(", type=%s", input_types[j].str);
+						printf(", audioset=0, tuner=0");
+						printf(", std=%s", input_std[k].str);
+						printf(", status=%s", input_status[l].str);
+						printf(", capabilities=%s}) = %ld (INJECTED)\n",
+						       input_caps[m].str, inject_retval);
+					}
+				}
+			}
 		}
 	}
 
@@ -1071,7 +1089,7 @@ main(int argc, char **argv)
 		{ ARG_XLAT_KNOWN(0x990a64,
 				 "V4L2_CID_MPEG_VIDEO_H264_CPB_SIZE") },
 		{ ARG_XLAT_KNOWN(0xa31234, "V4L2_CTRL_CLASS_DETECT+0x1234") },
-		{ ARG_XLAT_UNKNOWN(0xa40000, "V4L2_CID_???") },
+		{ ARG_XLAT_UNKNOWN(0xa60000, "V4L2_CID_???") },
 		{ 0xdeadc0de,
 #if XLAT_RAW
 		  "0xdeadc0de"
@@ -1107,7 +1125,7 @@ main(int argc, char **argv)
 	};
 	static const struct strval32 ctrl_flags[] = {
 		{ ARG_STR(0) },
-		{ ARG_XLAT_KNOWN(0x7ff, "V4L2_CTRL_FLAG_DISABLED"
+		{ ARG_XLAT_KNOWN(0xfff, "V4L2_CTRL_FLAG_DISABLED"
 					"|V4L2_CTRL_FLAG_GRABBED"
 					"|V4L2_CTRL_FLAG_READ_ONLY"
 					"|V4L2_CTRL_FLAG_UPDATE"
@@ -1117,15 +1135,17 @@ main(int argc, char **argv)
 					"|V4L2_CTRL_FLAG_VOLATILE"
 					"|V4L2_CTRL_FLAG_HAS_PAYLOAD"
 					"|V4L2_CTRL_FLAG_EXECUTE_ON_WRITE"
-					"|V4L2_CTRL_FLAG_MODIFY_LAYOUT") },
+					"|V4L2_CTRL_FLAG_MODIFY_LAYOUT"
+					"|V4L2_CTRL_FLAG_DYNAMIC_ARRAY") },
 		{ ARG_XLAT_KNOWN(0xbeefface, "V4L2_CTRL_FLAG_GRABBED"
 					     "|V4L2_CTRL_FLAG_READ_ONLY"
 					     "|V4L2_CTRL_FLAG_UPDATE"
 					     "|V4L2_CTRL_FLAG_WRITE_ONLY"
 					     "|V4L2_CTRL_FLAG_VOLATILE"
 					     "|V4L2_CTRL_FLAG_EXECUTE_ON_WRITE"
-					     "|0xbeeff800") },
-		{ ARG_XLAT_UNKNOWN(0xfffff800, "V4L2_CTRL_FLAG_???") },
+					     "|V4L2_CTRL_FLAG_DYNAMIC_ARRAY"
+					     "|0xbeeff000") },
+		{ ARG_XLAT_UNKNOWN(0xfffff000, "V4L2_CTRL_FLAG_???") },
 	};
 	static const size_t qctrl_iters = MAX(MAX(ARRAY_SIZE(cids),
 						  ARRAY_SIZE(ctrl_types)),
@@ -1273,7 +1293,6 @@ main(int argc, char **argv)
 	}
 
 
-#ifdef VIDIOC_S_EXT_CTRLS
 	/* VIDIOC_S_EXT_CTRLS, VIDIOC_TRY_EXT_CTRLS, VIDIOC_G_EXT_CTRLS */
 	static const struct strval32 ectrl_cmds[] = {
 		{ ARG_STR(VIDIOC_S_EXT_CTRLS) },
@@ -1300,10 +1319,7 @@ main(int argc, char **argv)
 		       (char *) ectrls + 1, inject_retval);
 	}
 
-#endif /* VIDIOC_S_EXT_CTRLS */
 
-
-#ifdef HAVE_STRUCT_V4L2_FRMSIZEENUM
 	/* VIDIOC_ENUM_FRAMESIZES */
 	static const struct strval32 frmsz_simple_types[] = {
 		{ ARG_XLAT_UNKNOWN(0, "V4L2_FRMSIZE_TYPE_???") },
@@ -1362,10 +1378,8 @@ main(int argc, char **argv)
 		       frmsz_simple_types[i].str, inject_retval);
 
 	}
-#endif /* HAVE_STRUCT_V4L2_FRMSIZEENUM */
 
 
-#ifdef HAVE_STRUCT_V4L2_FRMIVALENUM
 	/* VIDIOC_ENUM_FRAMEINTERVALS */
 	static const struct strval32 frmival_simple_types[] = {
 		{ ARG_XLAT_UNKNOWN(0, "V4L2_FRMIVAL_TYPE_???") },
@@ -1431,10 +1445,8 @@ main(int argc, char **argv)
 		       frmival_simple_types[i].str, inject_retval);
 
 	}
-#endif /* HAVE_STRUCT_V4L2_FRMIVALENUM */
 
 
-#ifdef HAVE_STRUCT_V4L2_CREATE_BUFFERS
 	/* VIDIOC_CREATE_BUFS */
 	struct v4l2_create_buffers *cbuf = tail_alloc(sizeof(*cbuf));
 
@@ -1465,7 +1477,91 @@ main(int argc, char **argv)
 		printf("}}) = %ld ({index=2158018784, count=2158018785})"
 		       " (INJECTED)\n", inject_retval);
 	}
-#endif /* HAVE_STRUCT_V4L2_CREATE_BUFFERS */
+
+	/* VIDIOC_QUERY_EXT_CTRL */
+	static const struct strval32 qextc_nrdims[] = {
+		{ ARG_STR(0) },
+		{ ARG_STR(3) },
+		{ ARG_STR(4) },
+		{ ARG_STR(5) },
+		{ ARG_STR(3141592653) },
+	};
+
+	static const size_t qextc_iters = MAX(MAX(MAX(ARRAY_SIZE(cids),
+						      ARRAY_SIZE(ctrl_types)),
+						  ARRAY_SIZE(ctrl_flags)),
+					      ARRAY_SIZE(qextc_nrdims));
+
+	struct v4l2_query_ext_ctrl *qextc = tail_alloc(sizeof(*qextc));
+
+	fill_memory32(qextc, sizeof(*qextc));
+
+	ioctl(-1, VIDIOC_QUERY_EXT_CTRL, 0);
+	printf("ioctl(-1, %s, NULL) = %ld (INJECTED)\n",
+	       XLAT_STR(VIDIOC_QUERY_EXT_CTRL), inject_retval);
+
+	ioctl(-1, VIDIOC_QUERY_EXT_CTRL, (char *) qextc + 1);
+	printf("ioctl(-1, %s, %p) = %ld (INJECTED)\n",
+	       XLAT_STR(VIDIOC_QUERY_EXT_CTRL),
+	       (char *) qextc + 1, inject_retval);
+
+	for (size_t i = 0; i < qextc_iters; i++) {
+		fill_memory32(qextc, sizeof(*qextc));
+		fill_memory_ex(qextc->name, sizeof(qextc->name),
+			       i * 49 + 23, 255);
+		qextc->id    = cids[i % ARRAY_SIZE(cids)].val;
+		qextc->type  = ctrl_types[i % ARRAY_SIZE(ctrl_types)].val;
+		qextc->flags = ctrl_flags[i % ARRAY_SIZE(ctrl_flags)].val;
+		qextc->nr_of_dims =
+			qextc_nrdims[ i % ARRAY_SIZE(qextc_nrdims)].val;
+
+		qextc->minimum       = 0xbadc0deddeadfaceULL;
+		qextc->maximum       = 0xdecaffedbeeff00dULL;
+		qextc->step          = 0xbeaded1dea5a51deULL;
+		qextc->default_value = 0xca5efade1cedbeefULL;
+
+		for (size_t j = 0; j < 2; j++) {
+			ioctl(-1, VIDIOC_QUERY_EXT_CTRL, qextc);
+			printf("ioctl(-1, %s, {id=%s, type=%s, name=",
+			       XLAT_STR(VIDIOC_QUERY_EXT_CTRL),
+			       cids[i % ARRAY_SIZE(cids)].str,
+			       ctrl_types[i % ARRAY_SIZE(ctrl_types)].str);
+			print_quoted_cstring((char *) qextc->name,
+					     sizeof(qextc->name));
+#if VERBOSE
+			printf(", minimum=-4982091772484257074"
+			       ", maximum=-2392818855418269683"
+			       ", step=13739898750918873566"
+			       ", default_value=-3864375598362280209, flags=%s"
+			       ", elem_size=2158018803, elems=2158018804"
+			       ", nr_of_dims=%s, dims=[%s%s]%s",
+			       ctrl_flags[i % ARRAY_SIZE(ctrl_flags)].str,
+			       qextc_nrdims[i % ARRAY_SIZE(qextc_nrdims)].str,
+			       qextc_nrdims[i % ARRAY_SIZE(qextc_nrdims)].val
+				? "2158018806, 2158018807, 2158018808" : "",
+			       qextc_nrdims[i % ARRAY_SIZE(qextc_nrdims)].val >
+				3 ? ", 2158018809" : "",
+			       j ? "" : ", reserved=[0x80a0c0fa"
+				", 0x80a0c0fb, 0x80a0c0fc, 0x80a0c0fd"
+				", 0x80a0c0fe, 0x80a0c0ff, 0x80a0c100"
+				", 0x80a0c101, 0x80a0c102, 0x80a0c103"
+				", 0x80a0c104, 0x80a0c105, 0x80a0c106"
+				", 0x80a0c107, 0x80a0c108, 0x80a0c109"
+				", 0x80a0c10a, 0x80a0c10b, 0x80a0c10c"
+				", 0x80a0c10d, 0x80a0c10e, 0x80a0c10f"
+				", 0x80a0c110, 0x80a0c111, 0x80a0c112"
+				", 0x80a0c113, 0x80a0c114, 0x80a0c115"
+				", 0x80a0c116, 0x80a0c117, 0x80a0c118"
+				", 0x80a0c119]"
+			);
+#else
+			printf(", ...");
+#endif
+			printf("}) = %ld (INJECTED)\n", inject_retval);
+
+			memset(qextc->reserved, 0, sizeof(qextc->reserved));
+		}
+	}
 
 	puts("+++ exited with 0 +++");
 

@@ -1,7 +1,7 @@
 /*
  * Check decoding of setreuid/setregid/setreuid32/setregid32 syscalls.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2023 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -55,9 +55,7 @@ main(void)
 		PAIR(0xc0deffffU)
 	};
 
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(tests); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(tests); ++i) {
 		const unsigned int rn = ugid2int(tests[i].r);
 		const unsigned int en = ugid2int(tests[i].e);
 
@@ -66,7 +64,7 @@ main(void)
 
 		if (syscall(SYSCALL_NR, tests[i].r, tests[i].e)) {
 			if (!i && ENOSYS == errno) {
-				printf("%s(%u, %u) = -1 ENOSYS (%m)\n",
+				printf("%s(%u, %u)" RVAL_ENOSYS,
 				       SYSCALL_NAME, ugid, ugid);
 				break;
 			}

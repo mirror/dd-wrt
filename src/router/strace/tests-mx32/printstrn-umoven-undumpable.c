@@ -1,21 +1,18 @@
 /*
  * Force legacy printpath/umovestr using PR_SET_DUMPABLE.
  *
- * Copyright (c) 2017-2020 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2017-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
+#include <stdio.h>
+#include <unistd.h>
 #include <sys/prctl.h>
 
-#ifdef PR_SET_DUMPABLE
-
-# include <stdio.h>
-# include <unistd.h>
-
-# include "test_ucopy.h"
+#include "test_ucopy.h"
 
 int
 main(void)
@@ -40,9 +37,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("PR_SET_DUMPABLE")
-
-#endif

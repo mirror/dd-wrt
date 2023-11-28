@@ -2,22 +2,21 @@
  * Check decoding of delete_module syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
 
 #if defined(__NR_delete_module)
 
-# include <fcntl.h>
 # include <stdio.h>
 # include <unistd.h>
 
+# include "kernel_fcntl.h"
 # include "init_delete_module.h"
 
 int

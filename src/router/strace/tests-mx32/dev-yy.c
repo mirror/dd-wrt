@@ -1,7 +1,7 @@
 /*
  * Check printing of character/block device numbers in -yy mode.
  *
- * Copyright (c) 2018-2020 The strace developers.
+ * Copyright (c) 2018-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -18,14 +18,28 @@
 
 #include <sys/sysmacros.h>
 
+#ifndef PRINT_PATH
+# define PRINT_PATH 1
+#endif
+
 #ifndef PRINT_DEVNUM
-# define PRINT_DEVNUM 1
+# if PRINT_PATH
+#  define PRINT_DEVNUM 1
+# else
+#  define PRINT_DEVNUM 0
+# endif
+#endif
+
+#ifndef PRINT_AT_FDCWD_PATH
+# define PRINT_AT_FDCWD_PATH PRINT_DEVNUM
 #endif
 
 #if PRINT_DEVNUM
 # define DEV_FMT "<%s<%s %u:%u>>"
-#else
+#elif PRINT_PATH
 # define DEV_FMT "<%s>"
+#else
+# define DEV_FMT ""
 #endif
 
 #if defined __NR_openat && defined O_PATH
@@ -33,6 +47,11 @@
 int
 main(void)
 {
+	skip_if_unavailable("/proc/self/fd/");
+# if PRINT_AT_FDCWD_PATH
+	char *cwd = get_fd_path(get_dir_fd("."));
+# endif
+
 	static const struct {
 		const char *path;
 		unsigned int major;
@@ -54,16 +73,25 @@ main(void)
 		long fd = syscall(__NR_openat, AT_FDCWD, checks[i].path,
 				  O_RDONLY|O_PATH);
 
-		printf("openat(AT_FDCWD, \"%s\", O_RDONLY|O_PATH) = %s",
+		printf("openat(AT_FDCWD"
+# if PRINT_AT_FDCWD_PATH
+		       "<%s>"
+# endif
+		       ", \"%s\", O_RDONLY|O_PATH) = %s",
+# if PRINT_AT_FDCWD_PATH
+		       cwd,
+# endif
 		       checks[i].path, sprintrc(fd));
+# if PRINT_PATH
 		if (fd >= 0)
 			printf(DEV_FMT,
 			       checks[i].path
-# if PRINT_DEVNUM
+#  if PRINT_DEVNUM
 			       , checks[i].blk ? "block" : "char",
 			       checks[i].major, checks[i].minor
-# endif
+#  endif
 			       );
+# endif
 		puts("");
 
 		if (fd < 0) {
@@ -77,10 +105,13 @@ main(void)
 		int rc = fsync(fd);
 
 		printf("fsync(%ld" DEV_FMT ") = %s\n",
-		       fd, checks[i].path,
-# if PRINT_DEVNUM
+		       fd,
+# if PRINT_PATH
+		       checks[i].path,
+#  if PRINT_DEVNUM
 		       checks[i].blk ? "block" : "char",
 		       checks[i].major, checks[i].minor,
+#  endif
 # endif
 		       sprintrc(rc));
 

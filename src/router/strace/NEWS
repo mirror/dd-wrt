@@ -1,3 +1,344 @@
+Noteworthy changes in release 6.6 (2023-10-31)
+==============================================
+
+* Improvements
+  * Implemented --kill-on-exit option that instructs the tracer to set
+    PTRACE_O_EXITKILL option to all tracee processes and not to detach them
+    on cleanup so they will not be left running after the tracer exit.
+  * Implemented automatic activation of --kill-on-exit option when
+    --seccomp-bpf is enabled and -p/--attach option is not used.
+  * Implemented decoding of map_shadow_stack syscall.
+  * Implemented decoding of FSCONFIG_CMD_CREATE_EXCL fsconfig command.
+  * Implemented decoding of IFLA_BRPORT_BACKUP_NHID netlink attribute.
+  * Implemented decoding of SECCOMP_IOCTL_NOTIF_SET_FLAGS ioctl.
+  * Implemented decoding of UFFDIO_CONTINUE, UFFDIO_POISON, and
+    UFFDIO_WRITEPROTECT ioctls.
+  * Updated lists of ARCH_*, BPF_*, DEVCONF_*, IORING_*, KEXEC_*, MAP_*, NT_*,
+    PTRACE_*, QFMT_*, SEGV_*, UFFD_*, V4L2_*, and XDP_* constants.
+  * Updated lists of ioctl commands from Linux 6.6.
+
+Noteworthy changes in release 6.5 (2023-09-01)
+==============================================
+
+* Improvements
+  * Implemented decoding of cachestat and fchmodat2 syscalls.
+  * Implemented decoding of SO_PASSPIDFD and SO_PEERPIDFD socket options.
+  * Implemented decoding of SCM_PIDFD control messages.
+  * Implemented decoding of BPF_ENABLE_STATS, BPF_ITER_CREATE, BPF_LINK_DETACH,
+    and BPF_PROG_BIND_MAP bpf syscall commands.
+  * Updated decoding of BPF_OBJ_PIN and BPF_OBJ_GET bpf syscall commands.
+  * Updated lists of AT_*, BPF_*, IORING_*, KVM_*, MOVE_MOUNT_*, NFT_*, NT_*,
+    PR_*, and V4L2_* constants.
+  * Updated lists of ioctl commands from Linux 6.5.
+
+Noteworthy changes in release 6.4 (2023-06-26)
+==============================================
+
+* Improvements
+  * Implemented decoding of IFLA_BRPORT_NEIGH_VLAN_SUPPRESS netlink attribute.
+  * Implemented decoding of IP_PROTOCOL type control messages and socket option.
+  * Updated lists of BPF_*, IP_*, KVM_*, MDBA_*, PACKET_*, PR_*, PTRACE_*,
+    UFFD_*, and V4L2_PIX_FMT_* constants.
+  * Updated lists of ioctl commands from Linux 6.4.
+
+* Bug fixes
+  * Turn --seccomp-bpf off when --syscall-limit option is specified.
+  * Fixed --trace-fds filtering support of syscalls taking file descriptor
+    arguments that do not normally have a path associated with them.
+
+Noteworthy changes in release 6.3 (2023-05-08)
+==============================================
+
+* Improvements
+  * Implemented --trace-fds=set option for filtering only the syscalls
+    that operate on the specified set of file descriptors.
+  * Implemented --decode-fds=signalfd option for decoding of signal masks
+    associated with signalfd file descriptors.
+  * Implemented --syscall-limit option to automatically detach tracees
+    after capturing the specified number of syscalls.
+  * Implemented --argv0 option to set argv[0] of the command being executed.
+  * Implemented decoding of PR_GET_MDWE and PR_SET_MDWE operations of prctl
+    syscall.
+  * Implemented decoding of IP_LOCAL_PORT_RANGE socket option.
+  * Implemented decoding of IFLA_BRPORT_MCAST_N_GROUPS,
+    IFLA_BRPORT_MCAST_MAX_GROUPS, IFLA_GSO_IPV4_MAX_SIZE,
+    IFLA_GRO_IPV4_MAX_SIZE, and TCA_EXT_WARN_MSG netlink attributes.
+  * Updated lists of F_SEAL_*, IFLA_*, IORING_*, MFD_*, NFT_*, TCA_*,
+    and V4L2_PIX_FMT_* constants.
+  * Updated lists of ioctl commands from Linux 6.3.
+
+* Bug fixes
+  * Fixed build on hppa with uapi headers from Linux >= 6.2.
+  * Fixed --status filtering when -c option is in use.
+
+Noteworthy changes in release 6.2 (2023-02-26)
+==============================================
+
+* Improvements
+  * Implemented collision resolution for overlapping ioctl commands
+    from tty and snd subsystems.
+  * Implemented decoding of IFLA_BRPORT_MAB and IFLA_DEVLINK_PORT
+    netlink attributes.
+  * Updated lists of ALG_*, BPF_*, IFLA_*, KEY_*, KVM_*, LANDLOCK_*,
+    MEMBARRIER_*, NFT_*, NTF_*, and V4L2_* constants.
+  * Updated lists of ioctl commands from Linux 6.2.
+
+* Bug fixes
+  * Fixed build on alpha architecture.
+
+Noteworthy changes in release 6.1 (2022-12-12)
+==============================================
+
+* Improvements
+  * Enhanced decoding of terminal ioctl commands.
+  * Updated decoding of statx syscall.
+  * Updated lists of ABS_*, BPF_*, BTRFS_*, COUNTER_*, ETH_P_*, IFLA_*,
+    KVM_*, MADV_*, NLMSGERR_*, PERF_*, STATX_*, and TLS_* constants.
+  * Updated lists of ioctl commands from Linux 6.1.
+
+* Bug fixes
+  * Fixed injection tests on ia64.
+
+Noteworthy changes in release 6.0 (2022-10-29)
+==============================================
+
+* Improvements
+  * Enhanced decoding of PTP_* ioctl commands.
+  * Updated decoding of setns syscall.
+  * Updated lists of BPF_*, BTRFS_*, FAN_*, ETH_P_*, KVM_*, NDTPA_*,
+    NT_*, PERF_*, and TLS_INFO_* constants.
+  * Updated lists of ioctl commands from Linux 6.0.
+
+Noteworthy changes in release 5.19 (2022-08-12)
+===============================================
+
+* Changes in behaviour
+  * The "(deleted)" marker for unlinked paths of file descriptors is now printed
+    outside angle brackets;  the matching of unlinked paths of file descriptors
+    no longer includes the " (deleted)" part into consideration.
+
+* Improvements
+  * Implemented printing of Unix socket sun_path field's SELinux context.
+  * Implemented decoding of SO_TXREHASH socket option.
+  * Implemented decoding of IFLA_TSO_MAX_SIZE, IFLA_TSO_MAX_SEGS,
+    NDA_FDB_EXT_ATTRS, NDA_FLAGS_EXT, NDA_NDM_FLAGS_MASK,
+    and NDA_NDM_STATE_MASK netlink attributes.
+  * Improved decoding of INET_DIAG_LOCALS, INET_DIAG_MD5SIG, INET_DIAG_PEERS,
+    INET_DIAG_PROTOCOL, INET_DIAG_REQ_PROTOCOL, INET_DIAG_SHUTDOWN,
+    INET_DIAG_SK_BPF_STORAGES, INET_DIAG_SOCKOPT, and INET_DIAG_ULP_INFO
+    NETLINK_SOCK_DIAG netlink attributes.
+  * Enhanced decoding of arch_prctl and prctl syscalls.
+  * Enhanced siginfo_t decoding.
+  * Updated decoding of struct rtnl_link_stats64.
+  * Updated lists of DEVCONF_*, FAN_MARK_*, GPIO_V2_LINE_FLAG_*, IORING_*,
+    KEXEC_*, LANDLOCK_*, NET_IPV4_CONF_*, NLM_F_*, NT_*, PR_*, SECCOMP_*,
+    UFFD_FEATURE_*, V4L2_CID_*, and V4L2_PIX_FMT_* constants.
+  * Updated lists of ioctl commands from Linux 5.19.
+
+Noteworthy changes in release 5.18 (2022-06-18)
+===============================================
+
+* Improvements
+  * Added an interface of raising des Strausses awareness.
+  * Added --tips option to print strace tips, tricks, and tweaks
+    at the end of the tracing session.
+  * Enhanced decoding of bpf and io_uring_register syscalls.
+  * Implemented decoding of COUNTER_*, RTC_PARAM_GET, and RTC_PARAM_SET ioctl
+    commands.
+  * Updated lists of BPF_*, BR_*, BTRFS_*, IFA_*, IFLA_*, IORING_*, KEY_*,
+    KVM_*, MADV_*, and UFFD_* constants.
+  * Updated lists of ioctl commands from Linux 5.18.
+
+* Bug fixes
+  * Fixed printing of the updated value of union bpf_attr.next_id
+    on the exiting of bpf(BPF_*_GET_NEXT_ID) calls.
+
+Noteworthy changes in release 5.17 (2022-03-26)
+===============================================
+
+* Improvements
+  * Added 64-bit LoongArch architecture support.
+  * Extended personality designation syntax of syscall specification expressions
+    to support all@pers and %class@pers.
+  * Enhanced rejection of invalid syscall numbers in syscall specification
+    expressions.
+  * Implemented decoding of set_mempolicy_home_node syscall, introduced
+    in Linux 5.17.
+  * Implemented decoding of IFLA_GRO_MAX_SIZE and TCA_ACT_IN_HW_COUNT netlink
+    attributes.
+  * Implemented decoding of PR_SET_VMA operation of prctl syscall.
+  * Implemented decoding of siginfo_t.si_pkey field.
+  * Implemented decoding of LIRC ioctl commands.
+  * Updated lists of FAN_*, IORING_*, IOSQE_*, KEY_*, KVM_*, MODULE_INIT_*,
+    TCA_ACT_*, and *_MAGIC constants.
+  * Updated lists of ioctl commands from Linux 5.17.
+
+Noteworthy changes in release 5.16 (2022-01-10)
+===============================================
+
+* Improvements
+  * Implemented --secontext=mismatch option to find mismatches in SELinux
+    contexts.
+  * Implemented decoding of futex_waitv syscall introduced in Linux 5.16.
+  * Implemented decoding of BPF_LINK_GET_NEXT_ID and BPF_LINK_GET_FD_BY_ID bpf
+    syscall commands.
+  * Enhanced decoding of BPF_MAP_CREATE, BPF_PROG_TEST_RUN, and BPF_PROG_LOAD
+    bpf syscall commands.
+  * Enhanced decoding of BTRFS_IOC_FS_INFO ioctl command.
+  * Updated lists of AUDIT_*, BPF_*, BTRFS_*, DEVCONF_*, FAN_*, ETH_P_*,
+    IPV4_DEVCONF_*, KVM_*, NDA_*, SO_*, and V4L2_* constants.
+  * Updated lists of ioctl commands from Linux 5.16.
+
+* Bug fixes
+  * Fixed build for older Android.
+
+Noteworthy changes in release 5.15 (2021-12-01)
+===============================================
+
+* Improvements
+  * Implemented --strings-in-hex=non-ascii-chars option for using hexadecimal
+    numbers instead of octal ones in escape sequences in the output strings.
+  * Implemented --decode-pids=comm option (and its alias -Y) for printing
+    command names for PIDs.
+  * Implemented --decode-pids=pidns as an alias to --pidns-translation option.
+  * Implemented printing of current working directory when AT_FDCWD constant
+    is used with --decode-fds=path option enabled.
+  * Improved printing of syscall names in places where the associated
+    AUDIT_ARCH_* value is present (ptrace PTRACE_GET_SYSCALL_INFO request,
+    SIGSYS siginfo_t).
+  * Implemented decoding of process_mrelease syscall, introduced in Linux 5.15.
+  * Implemented decoding of SECCOMP_GET_NOTIF_SIZES operation of seccomp
+    syscall.
+  * Implemented decoding of HDIO_*, KD*, and SECCOMP_* ioctl commands.
+  * Implemented decoding of RTM_NEWCACHEREPORT, RTM_{NEW,DEL,GET}NEXTHOP,
+    and RTM_{NEW,GET}STATS NETLINK_ROUTE netlink messages.
+  * Implemented decoding of AF_ALG, AF_IEEE802154, AF_MCTP, AF_NFC, AF_QIPCRTR,
+    AF_RRPC, AF_VSOCK, and AF_XDP socket addresses.
+  * Implemented decoding of AF_BRIDGE and AF_MCTP protocols for IFLA_AF_SPEC
+    netlink attribute.
+  * Implemented decoding of IFLA_BR_MCAST_QUERIER_STATE, IFLA_BR_MULTI_BOOLOPT,
+    IFLA_INET6_RA_MTU, IFLA_INFO_SLAVE_DATA, and IFLA_VFINFO_LIST netlink
+    attributes.
+  * Enhanced decoding of io_uring_register and times syscalls.
+  * Enhanced IFLA_BR_FORWARD_DELAY, IFLA_BR_MAX_AGE, IFLA_EXT_MASK,
+    IFLA_PROTINFO, *_INTVL, and *_TIMER netlink attribute decoding.
+  * Enhanced decoding of AF_IPX and AF_NETLINK socket addresses.
+  * Updated lists o AF_*, ARPHRD_*, BTRFS_*, DEVCONF_*, DM_*, ETH_P_*,
+    FAN_REPORT_*, IORING_*, MOVE_MOUNT_*, MPOL_*, PACKET_*, RTM_*, SO_*,
+    and XFRM_MSG_* constants.
+  * Updated lists of ioctl commands from Linux 5.15.
+
+* Bug fixes
+  * Fixed printing of struct bpf_prog_info.map_ids array.
+  * Fixed behaviour of "dev", "pidfd", and "socket" arguments of the --print-fds
+    option to no longer imply the "path" argument.
+  * Fixed insufficient buffer size used for network interface name printing,
+    that previously led to assertions on attempts of printing interface names
+    that require quoting, for example, names longer than 4 characters in -xx
+    mode (addresses RHBZ bug #2028146).
+
+Noteworthy changes in release 5.14 (2021-09-02)
+===============================================
+
+* Improvements
+  * Implemented decoding of memfd_secret and quotactl_fd syscalls,
+    introduced in Linux 5.14.
+  * Enhanced prctl syscall decoding.
+  * Enhanced decoding of IFLA_* netlink attributes.
+  * Enhanced decoding of MDBA_ROUTER_PATTR_* mdb router port netlink attributes.
+  * Updated lists of BPF_*, IORING_*, MADV_*, MOUNT_ATTR_*, SCTP_*,
+    and UFFD_* constants.
+  * Updated lists of ioctl commands from Linux 5.14.
+
+* Bug fixes
+  * Fixed build using bionic libc.
+
+Noteworthy changes in release 5.13 (2021-07-18)
+===============================================
+
+* Improvements
+  * Print netlink data in a more structured way.
+  * Implemented decoding of NT_PRSTATUS and NT_FPREGSET regsets
+    of PTRACE_GETREGSET and PTRACE_SETREGSET requests.
+  * Implemented decoding of regs argument of PTRACE_GETREGS, PTRACE_GETREGS64,
+    PTRACE_SETREGS, PTRACE_SETREGS64, PTRACE_GETFPREGS, and PTRACE_SETFPREGS
+    requests.
+  * Implemented powerpc System Call Vectored ABI support.
+  * Implemented decoding of landlock_add_rule, landlock_create_ruleset,
+    and landlock_restrict_self syscalls introduced in Linux 5.13.
+  * Enhanced decoding of perf_event_open syscall.
+  * Updated lists of BPF_*, IORING_*, KEXEC_*, KEY_*, KVM_*, NT_*, PR_*,
+    PTRACE_*, RTM_*, RTPROT_*, TRAP_*, UFFD_*, UFFDIO_*, and V4L2_* constants.
+  * Updated lists of ioctl commands from Linux 5.13.
+
+* Portability
+  * On powerpc and powerpc64, linux kernel >= 2.6.23 is required.
+    Older versions without a decent PTRACE_GETREGS support will not work.
+
+Noteworthy changes in release 5.12 (2021-04-26)
+===============================================
+
+* Improvements
+  * Implemented --secontext[=full] option to display SELinux contexts.
+  * Implemented decoding of mount_setattr syscall introduced in Linux 5.12.
+  * Updated decoding of IFLA_BRPORT_* netlink attributes to match Linux 5.12.
+  * Updated lists of DEVCONF_*, IORING_*, KVM_*, MPOL_*, MTD_*, NFT_MSG_*,
+    RESOLVE_*, RTM_*, ST_*, and V4L2_* constants.
+  * Updated lists of ioctl commands from Linux 5.12.
+
+* Bug fixes
+  * Fixed build using bionic libc.
+
+* Portability
+  * Added binutils 2.36 support to --enable-mpers builds.
+
+Noteworthy changes in release 5.11 (2021-02-17)
+===============================================
+
+* Improvements
+  * Implemented poke injection (--inject=SET:poke_enter= and
+    --inject=SET:poke_exit= options).
+  * Implemented decoding of epoll_pwait2 syscall introduced in Linux 5.11.
+  * Implemented decoding of GPIO_* ioctl commands.
+  * Implemented decoding of FS_IOC_FS[GS]ETXATTR, FS_IOC_[GS]ETFLAGS,
+    and FS_IOC32_[GS]ETFLAGS ioctl commands.
+  * Implemented decoding of SIOCADDMULTI, SIOCDELMULTI, SIOCGIFENCAP,
+    SIOCOUTQNSD, SIOCSIFENCAP, and SIOCSIFHWBROADCAST ioctl commands.
+  * Implemented decoding of UBI_IOCRPEB and UBI_IOCSPEB ioctl commands.
+  * Implemented decoding of V4L2_BUF_TYPE_META_CAPTURE,
+    V4L2_BUF_TYPE_META_OUTPUT, and VIDIOC_QUERY_EXT_CTRL ioctl commands.
+  * Updated lists of BPF_*, BTRFS_*, CLOSE_RANGE_*, ETH_*, IORING_*, KVM_*,
+    PR_*, PTRACE_*, RTA_*, RTAX_*, RTM_*, RTNH_*, SCTP_*, SO_*, SYS_*, UFFD_*,
+    and V4L2_* constants.
+  * Updated lists of ioctl commands from Linux 5.11.
+
+* Bug fixes
+  * Fixed decoding of SIOCGIFINDEX, SIOCBRADDIF, and SIOCBRDELIF ioctl commands.
+  * Fixed decoding of FIO[GS]ETOWN, SIOC[GS]PGRP, and SIOCATMARK ioctl commands
+    on alpha, mips, sh, and xtensa architectures.
+  * Fixed fork--pidns-translation test on sparc and sparc64.
+  * Fixed build on hppa with uapi headers from Linux >= 5.10.
+
+Noteworthy changes in release 5.10 (2020-12-14)
+===============================================
+
+* Improvements
+  * libdw-based stack tracing is now enabled for non-native personalities.
+  * Implemented decoding of process_madvise syscall introduced in Linux 5.10.
+  * Updated decoding of pidfd_open syscall to match Linux 5.10.
+  * Updated decoding of membarrier syscall to match Linux 5.10.
+  * Updated lists of ALG_*, BPF_*, INET_DIAG_*, IORING_*, KEY_*, KVM_*, MDBA_*,
+    MEMBARRIER_CMD_*, MS_*, NLMSGERR_*, NT_*, STATX_*, SEGV_*, and V4L2_*
+    constants.
+  * Updated lists of ioctl commands from Linux 5.10.
+
+* Bug fixes
+  * Added clock_gettime64, clock_settime64, clock_adjtime64, and
+    lock_getres_time64 syscalls to %clock trace class.
+
+* Portability
+  * Implemented workarounds for -Wall regressions in Red Hat gcc 11.0.0-0.
+
 Noteworthy changes in release 5.9 (2020-09-24)
 ==============================================
 
@@ -53,7 +394,7 @@ Noteworthy changes in release 5.7 (2020-06-01)
 * Improvements
   * Implemented interval specification in "when=" subexpression of syscall
     tampering expressions.
-  * Added -e trace=%clock option for tracing syscalls reading of modifying
+  * Added -e trace=%clock option for tracing syscalls reading or modifying
     system clocks.
   * Implemented decoding of BPF_LINK_CREATE and BPF_LINK_UPDATE bpf
     syscall commands.

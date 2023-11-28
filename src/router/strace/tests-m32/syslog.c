@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016-2019 The strace developers.
+ * Check decoding of syslog syscall.
+ *
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,24 +10,22 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_syslog
+#include <stdio.h>
+#include <unistd.h>
 
-# include <stdio.h>
-# include <unistd.h>
+#ifdef RETVAL_INJECTED
+# define RET_SFX " (INJECTED)"
+#else
+# define RET_SFX ""
+#endif
 
-# ifdef RETVAL_INJECTED
-#  define RET_SFX " (INJECTED)"
-# else
-#  define RET_SFX ""
-# endif
-
-bool
+static bool
 valid_cmd(int cmd)
 {
 	return cmd >= 0 && cmd <= 10;
 }
 
-void
+static void
 printstr(const char *s, int cmd, long size)
 {
 	if (size < 0 || !valid_cmd(cmd))
@@ -49,18 +49,24 @@ main(void)
 	} no_args[] = {
 		{ 0,  "0 /* SYSLOG_ACTION_CLOSE */" },
 		{ 1,  "1 /* SYSLOG_ACTION_OPEN */" },
+#ifdef RETVAL_INJECTED
+		/* Avoid commands with side effects without syscall injection */
 		{ 5,  "5 /* SYSLOG_ACTION_CLEAR */" },
 		{ 6,  "6 /* SYSLOG_ACTION_CONSOLE_OFF */" },
 		{ 7,  "7 /* SYSLOG_ACTION_CONSOLE_ON */" },
+#endif
 		{ 9,  "9 /* SYSLOG_ACTION_SIZE_UNREAD */" },
 		{ 10, "10 /* SYSLOG_ACTION_SIZE_BUFFER */" },
 	};
 	static const struct cmd_str two_args[] = {
 		{ 0xfeedbeef, "-17973521 /* SYSLOG_ACTION_??? */" },
 		{ -1U, "-1 /* SYSLOG_ACTION_??? */" },
+#ifdef RETVAL_INJECTED
+		/* Avoid commands with side effects without syscall injection */
 		{ 2,  "2 /* SYSLOG_ACTION_READ */" },
 		{ 3,  "3 /* SYSLOG_ACTION_READ_ALL */" },
 		{ 4,  "4 /* SYSLOG_ACTION_READ_CLEAR */" },
+#endif
 		{ 11, "11 /* SYSLOG_ACTION_??? */" },
 		{ (1U << 31) - 1, "2147483647 /* SYSLOG_ACTION_??? */" },
 	};
@@ -94,10 +100,10 @@ main(void)
 		printf("syslog(%s, NULL, -1) = %s" RET_SFX "\n",
 		       two_args[i].str, sprintrc(rc));
 
-# ifdef RETVAL_INJECTED
+#ifdef RETVAL_INJECTED
 		/* Avoid valid commands with a bogus address */
 		if (!valid_cmd(two_args[i].cmd))
-# endif
+#endif
 		{
 			rc = syscall(__NR_syslog, high | two_args[i].cmd, addr,
 				     -1);
@@ -138,9 +144,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_syslog")
-
-#endif

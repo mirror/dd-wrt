@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2020 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -46,9 +46,9 @@ init_inet_diag_req(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_inet_diag_req(const unsigned int msg_len)
 {
-	printf("{len=%u, type=TCPDIAG_GETSOCK, flags=NLM_F_REQUEST"
-	       ", seq=0, pid=0}, {idiag_family=AF_INET"
-	       ", idiag_src_len=0, idiag_dst_len=0"
+	printf("{nlmsg_len=%u, nlmsg_type=TCPDIAG_GETSOCK"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
+	       ", {idiag_family=AF_INET, idiag_src_len=0, idiag_dst_len=0"
 	       ", idiag_ext=1<<(INET_DIAG_TOS-1)"
 	       ", id={idiag_sport=htons(0), idiag_dport=htons(0)"
 	       ", idiag_src=inet_addr(\"%s\")"

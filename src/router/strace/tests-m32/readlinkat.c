@@ -1,7 +1,9 @@
 /*
+ * Check decoding of readlinkat syscall.
+ *
  * Copyright (c) 2015 Gleb Fotengauer-Malinovskiy <glebfm@altlinux.org>
- * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,14 +12,12 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_readlinkat
+#include <stdio.h>
+#include <unistd.h>
 
-# include <stdio.h>
-# include <unistd.h>
-
-# define PREFIX "test.readlinkat"
-# define TARGET (PREFIX ".target")
-# define LINKPATH (PREFIX ".link")
+#define PREFIX "test.readlinkat"
+#define TARGET (PREFIX ".target")
+#define LINKPATH (PREFIX ".link")
 
 int
 main(void)
@@ -32,7 +32,7 @@ main(void)
 	(void) unlink(fname);
 
 	long rc = syscall(__NR_readlinkat, -100, fname, buf, size);
-	printf("readlinkat(AT_FDCWD, \"%s\", %p, %u) = -1 ENOENT (%m)\n",
+	printf("readlinkat(AT_FDCWD, \"%s\", %p, %u)" RVAL_ENOENT,
 	       hex_fname, buf, size);
 
 	if (symlink(TARGET, fname))
@@ -54,9 +54,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_readlink")
-
-#endif

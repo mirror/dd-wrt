@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,10 +11,7 @@
 #include <stdio.h>
 #include "netlink.h"
 #include <linux/rtnetlink.h>
-
-#ifdef RTM_GETNSID
-
-# include "test_nlattr.h"
+#include "test_nlattr.h"
 
 static void
 init_rtgenmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
@@ -34,8 +31,8 @@ init_rtgenmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_rtgenmsg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=RTM_GETNSID, flags=NLM_F_DUMP"
-	       ", seq=0, pid=0}, {rtgen_family=AF_UNIX}",
+	printf("{nlmsg_len=%u, nlmsg_type=RTM_GETNSID, nlmsg_flags=NLM_F_DUMP"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, {rtgen_family=AF_UNIX}",
 	       msg_len);
 }
 
@@ -64,9 +61,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("RTM_GETNSID")
-
-#endif

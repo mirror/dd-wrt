@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2016 JingPiao Chen <chenjingpiao@foxmail.com>
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,13 +11,10 @@
 
 #include "tests.h"
 #include "scno.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
 #include <linux/prctl.h>
-
-#if defined __NR_prctl && defined PR_GET_PDEATHSIG && defined PR_SET_PDEATHSIG
-
-# include <stdio.h>
-# include <unistd.h>
-# include <signal.h>
 
 int
 main(void)
@@ -27,6 +24,8 @@ main(void)
 
 	TAIL_ALLOC_OBJECT_CONST_PTR(int, pdeathsig);
 	long rc;
+
+	prctl_marker();
 
 	rc = syscall(__NR_prctl, PR_SET_PDEATHSIG, bogus_signal);
 	printf("prctl(PR_SET_PDEATHSIG, %llu) = %s\n",
@@ -54,9 +53,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_prctl && PR_GET_PDEATHSIG && PR_SET_PDEATHSIG")
-
-#endif

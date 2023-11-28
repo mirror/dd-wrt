@@ -1,7 +1,7 @@
 /*
  * Check decoding of tgkill syscall.
  *
- * Copyright (c) 2020 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2020-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,11 +11,9 @@
 #include "scno.h"
 #include "pidns.h"
 
-#ifdef __NR_tgkill
-
-# include <signal.h>
-# include <stdio.h>
-# include <unistd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
 
 static const char *errstr;
 
@@ -80,9 +78,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_tgkill")
-
-#endif

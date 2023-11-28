@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -36,14 +36,14 @@
 					msg_len, MSG_DONTWAIT,		\
 					NULL, 0));			\
 									\
-		printf("sendto(%d, {{len=%u, type=%s"			\
-		       ", flags=%s, seq=0, pid=0}, ",			\
+		printf("sendto(%d, [{nlmsg_len=%u, nlmsg_type=%s"	\
+		       ", nlmsg_flags=%s, nlmsg_seq=0, nlmsg_pid=0}, ",	\
 		       (fd_), msg_len, (type_str_), (flags_str_));	\
 									\
 		{ __VA_ARGS__; }					\
 									\
-		printf("}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",		\
-		       msg_len, errstr);				\
+		printf("], %u, " XLAT_FMT ", NULL, 0) = %s\n",		\
+		       msg_len, XLAT_ARGS(MSG_DONTWAIT), errstr);	\
 	} while (0)
 
 #define TEST_NETLINK(fd_, nlh0_, type_, flags_,				\

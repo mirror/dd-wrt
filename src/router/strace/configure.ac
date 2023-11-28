@@ -2,26 +2,31 @@
 #
 # Copyright (c) 1999-2001 Wichert Akkerman <wichert@deephackmode.org>
 # Copyright (c) 2002-2009 Roland McGrath <roland@redhat.com>
-# Copyright (c) 2006-2016 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2006-2016 Dmitry V. Levin <ldv@strace.io>
 # Copyright (c) 2008-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2002-2020 The strace developers.
+# Copyright (c) 2002-2023 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 AC_PREREQ(2.57)
 AC_INIT([strace],
-	st_esyscmd_s([./git-version-gen .tarball-version]),
+	st_esyscmd_s([./build-aux/git-version-gen .tarball-version]),
 	[strace-devel@lists.strace.io],
 	[strace],
 	[https://strace.io])
-m4_define([copyright_year], st_esyscmd_s([./copyright-year-gen .year]))
-m4_define([manpage_date], st_esyscmd_s([./file-date-gen strace.1.in]))
+m4_define([copyright_year], st_esyscmd_s([./build-aux/copyright-year-gen .year]))
+m4_define([strace_manpage_date],
+	  st_esyscmd_s([./build-aux/file-date-gen doc/strace.1.in]))
+m4_define([slm_manpage_date],
+	  st_esyscmd_s([./build-aux/file-date-gen doc/strace-log-merge.1.in]))
+m4_define([linux_version_code],
+	  st_esyscmd_s([sed '/^#define LINUX_VERSION_CODE /!d;s///;q' bundled/linux/include/uapi/linux/version.h]))
 AC_COPYRIGHT([Copyright (c) 1999-]copyright_year[ The strace developers.])
-AC_CONFIG_SRCDIR([strace.c])
-AC_CONFIG_AUX_DIR([.])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_SRCDIR([src/strace.c])
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_HEADERS([src/config.h])
 AM_INIT_AUTOMAKE([foreign nostdinc dist-xz silent-rules parallel-tests subdir-objects 1.13])
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
@@ -32,10 +37,10 @@ DEB_CHANGELOGTIME="$(LC_TIME=C date -u -R)"
 AC_SUBST(DEB_CHANGELOGTIME)
 
 AC_PROG_CC
-AC_PROG_CC_STDC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+AC_PROG_LN_S
 
 AC_USE_SYSTEM_EXTENSIONS
 AX_CODE_COVERAGE
@@ -43,8 +48,10 @@ AX_CODE_COVERAGE
 AC_DEFINE([COPYRIGHT_YEAR], "[copyright_year]", [Current copyright year.])
 AC_SUBST([COPYRIGHT_YEAR], [copyright_year])
 
-AC_DEFINE([MANPAGE_DATE], "[manpage_date]", [Date])
-AC_SUBST([MANPAGE_DATE], [manpage_date])
+AC_DEFINE([STRACE_MANPAGE_DATE], "[strace_manpage_date]", [Date])
+AC_SUBST([STRACE_MANPAGE_DATE], [strace_manpage_date])
+AC_DEFINE([SLM_MANPAGE_DATE], "[slm_manpage_date]", [Date])
+AC_SUBST([SLM_MANPAGE_DATE], [slm_manpage_date])
 
 AC_C_BIGENDIAN
 
@@ -56,9 +63,13 @@ arch_m32=
 arch_mx32=
 cc_flags_m32=-m32
 cc_flags_mx32=-mx32
+karch=
+karch_m32=
+karch_mx32=
 case "$host_cpu" in
 aarch64*)
 	arch=aarch64
+	karch=arm64
 	arch_m32=arm
 	cc_flags_m32=
 	AC_DEFINE([AARCH64], 1, [Define for the AArch64 architecture.])
@@ -91,15 +102,22 @@ csky*)
 	;;
 hppa*|parisc*)
 	arch=hppa
+	karch=parisc
 	AC_DEFINE([HPPA], 1, [Define for the HPPA architecture.])
 	;;
 i[[3456]]86|pentium)
 	arch=i386
+	karch=x86
 	AC_DEFINE([I386], 1, [Define for the i386 architecture.])
 	;;
 ia64)
 	arch=ia64
 	AC_DEFINE([IA64], 1, [Define for the IA64 architecture.])
+	;;
+loongarch64)
+	arch=loongarch64
+	karch=loongarch
+	AC_DEFINE([LOONGARCH64], 1, [Define for the 64-bit LoongArch architecture.])
 	;;
 m68k)
 	arch=m68k
@@ -127,11 +145,12 @@ or1k*)
 	AC_DEFINE([OR1K], 1, [Define for the OpenRISC 1000 architecture.])
 	;;
 powerpc*)
+	karch=powerpc
+	karch_m32=powerpc
 	AC_DEFINE([POWERPC], 1, [Define for the PowerPC architecture.])
-	AC_TRY_COMPILE(
-[#ifndef __LP64__
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifndef __LP64__
 # error 32 bit
-#endif], [], arch=powerpc64, arch=powerpc)
+#endif]], [[]])], [arch=powerpc64], [arch=powerpc])
 	if test "$arch" = "powerpc64"; then
 		# $ac_cv_c_bigendian is defined by AC_C_BIGENDIAN
 		case "$ac_cv_c_bigendian" in
@@ -150,6 +169,7 @@ powerpc*)
 	;;
 riscv64*)
 	arch=riscv64
+	karch=riscv
 	AC_DEFINE([RISCV64], 1, [Define for the RISC-V 64-bit architecture])
 	;;
 s390)
@@ -158,6 +178,7 @@ s390)
 	;;
 s390x)
 	arch=s390x
+	karch=s390
 	arch_m32=s390
 	cc_flags_m32=-m31
 	AC_DEFINE([S390X], 1, [Define for the S390x architecture.])
@@ -172,6 +193,7 @@ sh*)
 	;;
 sparc64*)
 	arch=sparc64
+	karch=sparc
 	arch_m32=sparc
 	AC_DEFINE([SPARC64], 1, [Define for the SPARC64 architecture.])
 	;;
@@ -184,11 +206,13 @@ tile*)
 	AC_DEFINE([TILE], 1, [Define for the Tile architecture])
 	;;
 x86?64*)
+	karch=x86
+	karch_m32=x86
+	karch_mx32=x86
 	arch_m32=i386
-	AC_TRY_COMPILE(
-[#ifndef __ILP32__
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifndef __ILP32__
 # error not x32
-#endif], [], arch=x32, arch=x86_64)
+#endif]], [[]])], [arch=x32], [arch=x86_64])
 	if test "$arch" = "x86_64"; then
 		arch_mx32=x32
 		AC_DEFINE([X86_64], 1, [Define for the 64bit AMD x86-64 architecture.])
@@ -213,12 +237,63 @@ test -n "$arch_m32" ||
 	arch_m32=$arch
 test -n "$arch_mx32" ||
 	arch_mx32=$arch
+
+test -n "$karch" ||
+	karch=$arch
+test -n "$karch_m32" ||
+	karch_m32=$arch_m32
+test -n "$karch_mx32" ||
+	karch_mx32=$arch_mx32
+
 AC_SUBST(arch)
 AC_SUBST(arch_m32)
 AC_SUBST(arch_mx32)
+AC_SUBST(karch)
+AC_SUBST(karch_m32)
+AC_SUBST(karch_mx32)
 AC_SUBST(cc_flags_m32)
 AC_SUBST(cc_flags_mx32)
 AC_SUBST(arch_native)
+
+AC_ARG_ENABLE([bundled],
+	[AS_HELP_STRING([--enable-bundled=yes|no|check],
+		[whether to use bundled linux kernel headers,
+		 default is check.])],
+	[case "$enableval" in
+		yes|no|check) enable_bundled="$enableval" ;;
+		*) AC_MSG_ERROR([bad value $enableval for enable-bundled option.
+Valid options are: yes, no, check.]
+		   )
+		;;
+	 esac],
+	[enable_bundled=check]
+)
+
+AC_CACHE_CHECK(
+	[whether to use bundled linux kernel headers],
+	[st_cv_use_bundled_headers],
+	[AS_IF([test $enable_bundled = check],
+	       [AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM([[#include <linux/version.h>
+#define USE_OS_HEADERS ((LINUX_VERSION_CODE >> 8) > (]]linux_version_code[[ >> 8) ? 1 : -1)]],
+					 [[int i[USE_OS_HEADERS];]]
+			 )
+			],
+			[st_cv_use_bundled_headers=no],
+			[st_cv_use_bundled_headers=yes]
+		)
+	       ],
+	       [st_cv_use_bundled_headers=$enable_bundled]
+	 )
+	]
+)
+
+AM_CONDITIONAL([USE_BUNDLED_HEADERS], [test $st_cv_use_bundled_headers = yes])
+AS_IF([test $st_cv_use_bundled_headers = yes],
+      [CPPFLAGS="$CPPFLAGS -I$srcdir/bundled/linux/arch/$karch/include/uapi"
+       CPPFLAGS="$CPPFLAGS -I$srcdir/bundled/linux/include/uapi"
+      ]
+)
 
 MIPS_ABI=
 if test "$arch" = mips; then
@@ -283,10 +358,12 @@ AC_CHECK_FUNCS(m4_normalize([
 	futimens
 	iconv_open
 	if_indextoname
+	mempcpy
 	open64
 	open_memstream
 	preadv
 	process_vm_readv
+	process_vm_writev
 	pwritev
 	readahead
 	signalfd
@@ -297,6 +374,13 @@ AC_CHECK_FUNCS(m4_normalize([
 ]))
 
 AC_CHECK_TYPES([sig_atomic_t, struct sigcontext],,, [#include <signal.h>])
+
+AC_CHECK_TYPES([struct sockaddr_storage],
+	       [],
+	       [mkdir -p src/linux/generic/linux
+		cp $srcdir/src/linux/generic/socket.h.in src/linux/generic/linux/socket.h
+		CPPFLAGS="-Isrc/linux/generic $CPPFLAGS"],
+	       [#include <sys/socket.h>])
 
 AC_CHECK_TYPES([struct mmsghdr],,, [#include <sys/socket.h>])
 
@@ -309,6 +393,12 @@ AC_CHECK_TYPES([struct __kernel_timespec, struct __kernel_sock_timeval],,,
 AC_CHECK_TYPES([struct stat64, struct __old_kernel_stat],,,
 [#include <sys/types.h>
 #include <asm/stat.h>])
+
+AC_CHECK_TYPES([struct termios2],,,
+[#include <linux/termios.h>])
+
+AC_CHECK_MEMBERS([struct termios.c_ispeed, struct termios.c_ospeed],,,
+[#include <linux/termios.h>])
 
 AC_CHECK_TYPES([struct user_desc],
 	       [AC_CHECK_MEMBERS([struct user_desc.lm],,,
@@ -331,60 +421,21 @@ AC_CHECK_TYPES([struct ptrace_syscall_info],,, [#include <linux/ptrace.h>])
 # For kernels that do not have v3.10-rc1~201^2~11
 AC_CHECK_TYPES([s390_compat_regs],,, [#include <asm/ptrace.h>])
 
-AC_CHECK_TYPES(m4_normalize([
-	struct flock,
-	struct flock64,
-	struct __kernel_flock,
-	struct __kernel_flock64,
-	struct f_owner_ex,
-	struct __kernel_f_owner_ex
-]),,,
-[#include <sys/types.h>
-#include <linux/fcntl.h>])
-
-AC_CHECK_TYPES(m4_normalize([
-	struct kcmp_epoll_slot
-]),,, [#include <linux/kcmp.h>])
-
-AC_CHECK_TYPES(m4_normalize([
-	struct keyctl_kdf_params,
-	struct keyctl_pkey_params,
-	struct keyctl_pkey_query
-]),,, [#include <linux/keyctl.h>])
-
 AC_CHECK_MEMBERS([struct utsname.domainname],,, [#include <sys/utsname.h>])
 
 AC_CHECK_MEMBERS(m4_normalize([
 	siginfo_t.si_syscall,
 	siginfo_t.si_timerid,
-	siginfo_t.si_overrun
+	siginfo_t.si_overrun,
+	siginfo_t.si_pkey,
+	siginfo_t.si_trapno,
+	siginfo_t.si_addr_lsb,
+	siginfo_t.si_lower,
+	siginfo_t.si_upper,
+	siginfo_t.si_perf_data,
+	siginfo_t.si_perf_type,
+	siginfo_t.si_perf_flags
 ]),,, [#include <signal.h>])
-
-AC_CHECK_MEMBERS(m4_normalize([
-	struct perf_event_attr.precise_ip,
-	struct perf_event_attr.mmap_data,
-	struct perf_event_attr.sample_id_all,
-	struct perf_event_attr.exclude_host,
-	struct perf_event_attr.exclude_guest,
-	struct perf_event_attr.exclude_callchain_kernel,
-	struct perf_event_attr.exclude_callchain_user,
-	struct perf_event_attr.mmap2,
-	struct perf_event_attr.comm_exec,
-	struct perf_event_attr.use_clockid,
-	struct perf_event_attr.context_switch,
-	struct perf_event_attr.write_backward,
-	struct perf_event_attr.namespaces,
-	struct perf_event_attr.bp_type,
-	struct perf_event_attr.config1,
-	struct perf_event_attr.config2,
-	struct perf_event_attr.branch_sample_type,
-	struct perf_event_attr.sample_regs_user,
-	struct perf_event_attr.sample_stack_user,
-	struct perf_event_attr.sample_regs_intr,
-	struct perf_event_attr.aux_watermark,
-	struct perf_event_attr.sample_max_stack,
-	struct perf_event_attr.aux_sample_size
-]),,, [#include <linux/perf_event.h>])
 
 AC_CHECK_HEADERS(m4_normalize([
 	asm/cachectl.h
@@ -393,6 +444,12 @@ AC_CHECK_HEADERS(m4_normalize([
 	elf.h
 	gcov.h
 	iconv.h
+	linux/if_alg.h
+	linux/if_xdp.h
+	linux/ipx.h
+	linux/nfc.h
+	linux/qrtr.h
+	linux/rxrpc.h
 	mqueue.h
 	netinet/sctp.h
 	netipx/ipx.h
@@ -408,61 +465,21 @@ AC_CHECK_HEADERS(m4_normalize([
 ]))
 
 AC_CHECK_HEADERS(m4_normalize([
-	linux/bsg.h
-	linux/close_range.h
-	linux/dm-ioctl.h
-	linux/dqblk_xfs.h
-	linux/falloc.h
-	linux/fib_rules.h
-	linux/fiemap.h
-	linux/hiddev.h
-	linux/ip_vs.h
 	linux/ipc.h
-	linux/kcmp.h
 	linux/kvm.h
-	linux/memfd.h
-	linux/mmtimer.h
-	linux/mount.h
-	linux/mqueue.h
-	linux/netfilter/ipset/ip_set.h
-	linux/netfilter/nf_tables.h
-	linux/netfilter/nf_tables_compat.h
-	linux/netfilter/nfnetlink.h
-	linux/netfilter/nfnetlink_acct.h
-	linux/netfilter/nfnetlink_conntrack.h
-	linux/netfilter/nfnetlink_cthelper.h
-	linux/netfilter/nfnetlink_cttimeout.h
-	linux/netfilter/nfnetlink_log.h
-	linux/netfilter/nfnetlink_queue.h
-	linux/nsfs.h
-	linux/openat2.h
-	linux/perf_event.h
-	linux/quota.h
-	linux/sched.h
-	linux/seccomp.h
-	linux/securebits.h
-	linux/tee.h
-	linux/userfaultfd.h
-	linux/utsname.h
 ]),,, [AC_INCLUDES_DEFAULT
 #include <linux/types.h>
 ])
 
 AC_CHECK_HEADERS(m4_normalize([
-	linux/if_addr.h
-	linux/if_link.h
-	linux/neighbour.h
+	linux/vm_sockets.h
 ]),,, [AC_INCLUDES_DEFAULT
 #include <sys/socket.h>
-#include <linux/types.h>
 ])
 
 AC_CHECK_HEADERS([asm/sigcontext.h],,, [#include <signal.h>])
 
 AC_CHECK_HEADERS([netinet/tcp.h netinet/udp.h],,, [#include <netinet/in.h>])
-
-AC_CHECK_HEADERS([linux/netfilter/xt_osf.h],,, [#include <linux/ip.h>
-#include <linux/tcp.h>])
 
 AC_CHECK_HEADERS(m4_normalize([
 	linux/netfilter_arp/arp_tables.h
@@ -481,15 +498,6 @@ AC_CHECK_HEADERS([linux/bpf.h], [
 	st_BPF_ATTR
 ])
 
-AC_CHECK_HEADERS([linux/io_uring.h], [
-	AC_CHECK_MEMBERS(m4_normalize([
-		struct io_cqring_offsets.flags,
-		struct io_uring_params.features,
-		struct io_uring_params.wq_fd,
-		struct io_uring_params.resv
-	]),,, [#include <linux/io_uring.h>])
-])
-
 AC_CHECK_HEADERS([bluetooth/bluetooth.h], [
 	AC_CHECK_MEMBERS([struct sockaddr_hci.hci_channel],,,
 			 [#include <bluetooth/bluetooth.h>
@@ -498,37 +506,6 @@ AC_CHECK_HEADERS([bluetooth/bluetooth.h], [
 			 [#include <bluetooth/bluetooth.h>
 			 #include <bluetooth/l2cap.h>])
 ])
-
-AC_CHECK_MEMBERS(m4_normalize([
-	struct br_mdb_entry.flags,
-	struct br_mdb_entry.vid
-]),,, [#include <netinet/in.h>
-#include <linux/if_bridge.h>])
-
-AC_CHECK_TYPES([struct dcbmsg],,, [#include <linux/dcbnl.h>])
-AC_CHECK_TYPES([struct ifaddrlblmsg],,, [#include <linux/if_addrlabel.h>])
-AC_CHECK_TYPES([struct netconfmsg],,, [#include <linux/netconf.h>])
-
-AC_CHECK_TYPES(m4_normalize([
-	struct ifla_cacheinfo
-]),,, [#include <sys/socket.h>
-#include <linux/rtnetlink.h>])
-
-AC_CHECK_TYPES(m4_normalize([
-	struct gnet_stats_basic,
-	struct gnet_stats_queue,
-	struct gnet_stats_rate_est,
-	struct gnet_stats_rate_est64
-]),,, [#include <linux/gen_stats.h>])
-
-AC_CHECK_TYPES([struct tc_sizespec],,, [#include <linux/types.h>
-#include <linux/pkt_sched.h>])
-
-AC_CHECK_TYPES(m4_normalize([
-	struct fib_rule_uid_range,
-	struct fib_rule_port_range
-]),,, [#include <sys/socket.h>
-#include <linux/fib_rules.h>])
 
 AC_CHECK_TYPES([struct statfs], [
 	AC_CHECK_MEMBERS(m4_normalize([
@@ -552,18 +529,10 @@ AC_CHECK_TYPES([struct statfs64], [
 ],, [#include <linux/types.h>
 #include <asm/statfs.h>])
 
-AC_CHECK_TYPES([struct statx],,, [#include <linux/types.h>
-#include <linux/stat.h>])
-
-AC_CHECK_TYPES([struct blk_user_trace_setup],,, [#include <linux/blktrace_api.h>])
-
-AC_CHECK_TYPES([struct mtd_write_req],,, [#include <mtd/mtd-abi.h>])
-
-AC_CHECK_MEMBERS([struct ubi_attach_req.max_beb_per1024],,, [#include <mtd/ubi-user.h>])
-
 AC_CHECK_TYPES(m4_normalize([
-	struct ptp_sys_offset
-]),,, [#include <linux/ptp_clock.h>])
+	struct kbdiacruc,
+	struct kbdiacrsuc
+]),,, [#include <linux/kd.h>])
 
 AC_CHECK_TYPES(m4_normalize([
 	struct kvm_cpuid2,
@@ -572,19 +541,41 @@ AC_CHECK_TYPES(m4_normalize([
 	struct kvm_userspace_memory_region
 ]),,, [#include <linux/kvm.h>])
 
+AC_CHECK_TYPES(m4_normalize([
+	struct sockaddr_alg_new
+]),,, [#include <netinet/in.h>
+#include <linux/if_alg.h>])
+
+AC_CHECK_TYPES(m4_normalize([
+	struct sockaddr_xdp
+]),,, [#include <netinet/in.h>
+#include <linux/if_xdp.h>])
+
+AC_CHECK_TYPES(m4_normalize([
+	struct tcp_diag_md5sig
+]),,, [#include <netinet/tcp.h>])
+
+AC_CHECK_TYPES(m4_normalize([struct sockaddr_vm]),[
+	AC_CHECK_MEMBERS(m4_normalize([
+		struct sockaddr_vm.svm_flags
+	]),,, [#include <netinet/in.h>
+#include <linux/vm_sockets.h>])
+],, [#include <netinet/in.h>
+#include <linux/vm_sockets.h>])
+
 saved_CPPFLAGS="$CPPFLAGS"
 
 AC_CACHE_CHECK([whether <linux/signal.h> can be used along with <signal.h>],
 	       [st_cv_linux_signal],
-	       [AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	       [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <signal.h>
 #include <linux/signal.h>]],[])],
 				  [st_cv_linux_signal=yes],
 				  [st_cv_linux_signal=no])])
 if test "x$st_cv_linux_signal" = xno; then
-	mkdir -p linux/linux
-	cp $srcdir/linux/signal.h.in linux/linux/signal.h
-	CPPFLAGS="$CPPFLAGS -Ilinux"
+	mkdir -p src/linux/generic/linux
+	cp $srcdir/src/linux/generic/signal.h.in src/linux/generic/linux/signal.h
+	CPPFLAGS="-Isrc/linux/generic $CPPFLAGS"
 fi
 
 AC_CHECK_TYPES([struct __aio_sigset],,, [#include <linux/aio_abi.h>])
@@ -594,19 +585,8 @@ AC_CHECK_MEMBERS(m4_normalize([
 		struct iocb.aio_rw_flags
 		]),,, [#include <linux/aio_abi.h>])
 
-AC_CHECK_MEMBERS([struct clone_args.cgroup],,, [#include <linux/sched.h>])
-
 CPPFLAGS="$saved_CPPFLAGS"
 
-AC_CHECK_HEADERS([linux/btrfs.h], [
-	AC_CHECK_MEMBERS(m4_normalize([
-		struct btrfs_ioctl_feature_flags.compat_flags,
-		struct btrfs_ioctl_fs_info_args.nodesize,
-		struct btrfs_ioctl_defrag_range_args.start
-		]),,, [ #include <stdio.h>
-#include <linux/btrfs.h>])])
-
-st_CHECK_TYPES
 st_CHECK_ENUMS
 
 AC_CHECK_DECLS([sys_errlist])
@@ -615,38 +595,12 @@ AC_CHECK_DECLS(m4_normalize([
 	PTRACE_POKEUSER
 ]),,, [#include <sys/ptrace.h>])
 
-AC_CHECK_TYPES(m4_normalize([
-	struct v4l2_create_buffers,
-	struct v4l2_frmsizeenum,
-	struct v4l2_frmivalenum,
-	struct v4l2_meta_format,
-	struct v4l2_pix_format_mplane,
-	struct v4l2_plane_pix_format,
-	struct v4l2_sdr_format
-]),,, [#include <sys/time.h>
-#include <linux/ioctl.h>
-#include <linux/types.h>
-#include <linux/videodev2.h>])
-
-AC_CHECK_MEMBERS(m4_normalize([
-	struct v4l2_capability.device_caps,
-	struct v4l2_ext_control.string,
-	struct v4l2_format.fmt.pix_mp,
-	struct v4l2_format.fmt.sdr,
-	struct v4l2_format.fmt.sliced,
-	struct v4l2_window.global_alpha,
-	struct v4l2_sdr_format.buffersize
-]),,, [#include <sys/time.h>
-#include <linux/ioctl.h>
-#include <linux/types.h>
-#include <linux/videodev2.h>])
-
 AC_CHECK_SIZEOF([long])
 SIZEOF_LONG="$ac_cv_sizeof_long"
 AC_SUBST(SIZEOF_LONG)
 AC_CHECK_SIZEOF([long long])
 AC_CHECK_SIZEOF([off_t],,[#include <sys/types.h>])
-AC_CHECK_SIZEOF([kernel_long_t],,[#include "$srcdir/kernel_types.h"])
+AC_CHECK_SIZEOF([kernel_long_t],,[#include "$srcdir/src/kernel_types.h"])
 SIZEOF_KERNEL_LONG_T="$ac_cv_sizeof_kernel_long_t"
 AC_SUBST(SIZEOF_KERNEL_LONG_T)
 AC_CHECK_SIZEOF([struct i64_i32],,[struct i64_i32 {long long i64; int i32;};])
@@ -752,6 +706,16 @@ esac
 AC_SUBST(clock_LIBS)
 
 saved_LIBS="$LIBS"
+AC_SEARCH_LIBS([log10], [m])
+LIBS="$saved_LIBS"
+case "$ac_cv_search_log10" in
+	no) AC_MSG_FAILURE([failed to find log10]) ;;
+	-l*) m_LIBS="$ac_cv_search_log10" ;;
+	*) m_LIBS= ;;
+esac
+AC_SUBST(m_LIBS)
+
+saved_LIBS="$LIBS"
 AC_SEARCH_LIBS([mq_open], [rt])
 LIBS="$saved_LIBS"
 case "$ac_cv_search_mq_open" in
@@ -764,12 +728,16 @@ AC_CHECK_TOOL([READELF], [readelf])
 
 st_STACKTRACE
 
+st_SELINUX
+
 if test "$arch" = mips && test "$no_create" != yes; then
-	mkdir -p linux/mips
-	if $srcdir/linux/mips/genstub.sh \
-	   $srcdir/linux/mips linux/mips n32 n64 o32 &&
-	   $srcdir/linux/mips/genstub.sh \
-	   $srcdir/linux linux/mips common common-32; then
+	mkdir -p src/linux/mips
+	if $srcdir/src/linux/mips/genstub.sh \
+	   $srcdir/src/linux/mips src/linux/mips n32 n64 o32 &&
+	   $srcdir/src/linux/mips/genstub.sh \
+	   $srcdir/src/linux/32 src/linux/mips common-32 &&
+	   $srcdir/src/linux/mips/genstub.sh \
+	   $srcdir/src/linux/generic src/linux/mips common; then
 		AC_MSG_RESULT([Generated MIPS syscallent stubs])
 	else
 		AC_MSG_ERROR([Failed to generate syscallent stubs])
@@ -785,7 +753,7 @@ AC_ARG_ENABLE([mpers],
 	[case "$enableval" in
 		yes|no|check|m32|mx32) enable_mpers="$enableval" ;;
 		*) AC_MSG_ERROR([bad value $enableval for enable-mpers option.
-				 Valid options are: yes, no, check, m32, mx32.])
+Valid options are: yes, no, check, m32, mx32.])
 		;;
 	 esac],
 	[enable_mpers=yes])
@@ -826,15 +794,30 @@ m4_foreach([pers], [M32, MX32], dnl
 st_MPERS([m32], [aarch64|powerpc64|s390x|sparc64|tile|x32|x86_64])
 st_MPERS([mx32], [x86_64])
 
+AC_ARG_ENABLE([install-tests],
+	[AS_HELP_STRING([--enable-install-tests=yes|no],
+		[whether to install tests into libexec/strace,
+		 default is no.])],
+	[case "$enableval" in
+		yes|no) enable_install_tests="$enableval" ;;
+		*) AC_MSG_ERROR([bad value $enableval for enable-install-tests option.
+Valid options are: yes, no.])
+		;;
+	 esac],
+	[enable_install_tests=no])
+AM_CONDITIONAL([ENABLE_INSTALL_TESTS], [test x$enable_install_tests = xyes])
+
 AX_VALGRIND_DFLT([sgcheck], [off])
 AX_VALGRIND_CHECK
 
 AC_CONFIG_FILES([Makefile
+		 bundled/Makefile
+		 debian/changelog
+		 doc/strace.1
+		 doc/strace-log-merge.1
+		 src/Makefile
+		 strace.spec
 		 tests/Makefile
 		 tests-m32/Makefile
-		 tests-mx32/Makefile
-		 strace.1
-		 strace-log-merge.1
-		 strace.spec
-		 debian/changelog])
+		 tests-mx32/Makefile])
 AC_OUTPUT

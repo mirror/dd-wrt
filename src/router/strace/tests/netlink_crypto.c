@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,13 +8,15 @@
 
 #include "tests.h"
 
-#ifdef HAVE_LINUX_CRYPTOUSER_H
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <linux/cryptouser.h>
+#include "test_netlink.h"
 
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/socket.h>
-# include <linux/cryptouser.h>
-# include "test_netlink.h"
+#define XLAT_MACROS_ONLY
+# include "xlat/netlink_protocols.h"
+#undef XLAT_MACROS_ONLY
 
 static void
 test_nlmsg_type(const int fd)
@@ -27,8 +29,8 @@ test_nlmsg_type(const int fd)
 	};
 
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=CRYPTO_MSG_NEWALG"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=CRYPTO_MSG_NEWALG"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 }
@@ -44,32 +46,32 @@ test_nlmsg_flags(const int fd)
 	nlh.nlmsg_type = CRYPTO_MSG_GETALG;
 	nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=CRYPTO_MSG_GETALG"
-	       ", flags=NLM_F_REQUEST|NLM_F_DUMP, seq=0, pid=0}"
-	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=CRYPTO_MSG_GETALG"
+	       ", nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=0"
+	       ", nlmsg_pid=0}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 
 	nlh.nlmsg_type = CRYPTO_MSG_NEWALG;
 	nlh.nlmsg_flags = NLM_F_ECHO | NLM_F_REPLACE;
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=CRYPTO_MSG_NEWALG"
-	       ", flags=NLM_F_ECHO|NLM_F_REPLACE, seq=0, pid=0}"
-	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=CRYPTO_MSG_NEWALG"
+	       ", nlmsg_flags=NLM_F_ECHO|NLM_F_REPLACE, nlmsg_seq=0"
+	       ", nlmsg_pid=0}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 
 	nlh.nlmsg_type = CRYPTO_MSG_DELALG;
 	nlh.nlmsg_flags = NLM_F_ECHO | NLM_F_NONREC;
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=CRYPTO_MSG_DELALG"
-	       ", flags=NLM_F_ECHO|NLM_F_NONREC, seq=0, pid=0}"
-	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=CRYPTO_MSG_DELALG"
+	       ", nlmsg_flags=NLM_F_ECHO|NLM_F_NONREC, nlmsg_seq=0"
+	       ", nlmsg_pid=0}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 
 	nlh.nlmsg_type = CRYPTO_MSG_UPDATEALG;
 	nlh.nlmsg_flags = NLM_F_REPLACE;
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=CRYPTO_MSG_UPDATEALG"
-	       ", flags=%#x /* NLM_F_??? */, seq=0, pid=0}"
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=CRYPTO_MSG_UPDATEALG"
+	       ", nlmsg_flags=%#x /* NLM_F_??? */, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, NLM_F_REPLACE,
 	       (unsigned) sizeof(nlh), sprintrc(rc));
@@ -95,10 +97,14 @@ test_crypto_msg_newalg(const int fd)
 			       printf("{cru_name=\"abcd\""
 				      ", cru_driver_name=\"efgh\""
 				      ", cru_module_name=\"dcba\"");
-			       PRINT_FIELD_X(", ", alg, cru_type);
-			       PRINT_FIELD_X(", ", alg, cru_mask);
-			       PRINT_FIELD_U(", ", alg, cru_refcnt);
-			       PRINT_FIELD_X(", ", alg, cru_flags);
+			       printf(", ");
+			       PRINT_FIELD_X(alg, cru_type);
+			       printf(", ");
+			       PRINT_FIELD_X(alg, cru_mask);
+			       printf(", ");
+			       PRINT_FIELD_U(alg, cru_refcnt);
+			       printf(", ");
+			       PRINT_FIELD_X(alg, cru_flags);
 			       printf("}"));
 
 	fill_memory_ex(alg.cru_name, sizeof(alg.cru_name), '0', 10);
@@ -119,10 +125,14 @@ test_crypto_msg_newalg(const int fd)
 			       printf("..., cru_module_name=");
 			       print_quoted_memory(alg.cru_module_name,
 				       sizeof(alg.cru_module_name) - 1);
-			       PRINT_FIELD_X("..., ", alg, cru_type);
-			       PRINT_FIELD_X(", ", alg, cru_mask);
-			       PRINT_FIELD_U(", ", alg, cru_refcnt);
-			       PRINT_FIELD_X(", ", alg, cru_flags);
+			       printf("..., ");
+			       PRINT_FIELD_X(alg, cru_type);
+			       printf(", ");
+			       PRINT_FIELD_X(alg, cru_mask);
+			       printf(", ");
+			       PRINT_FIELD_U(alg, cru_refcnt);
+			       printf(", ");
+			       PRINT_FIELD_X(alg, cru_flags);
 			       printf("}"));
 }
 
@@ -153,9 +163,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("HAVE_LINUX_CRYPTOUSER_H")
-
-#endif

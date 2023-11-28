@@ -2,13 +2,16 @@
 #
 # Check strace options syntax.
 #
-# Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2016-2020 The strace developers.
+# Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+# Copyright (c) 2016-2023 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 . "${srcdir=.}/syntax.sh"
+
+compiled_with_secontext=$(get_config_option ENABLE_SECONTEXT "y")
+compiled_with_stacktrace="$(get_config_option ENABLE_STACKTRACE 1)"
 
 check_e "Invalid process id: '0'" -p 0
 check_e "Invalid process id: '0'" --attach=0
@@ -46,6 +49,56 @@ check_e '-t and --absolute-timestamps cannot be provided simultaneously' -t --ti
 check_e '-t and --absolute-timestamps cannot be provided simultaneously' --absolute-timestamps -ttt -p $$
 check_e '-t and --absolute-timestamps cannot be provided simultaneously' -t --timestamps=ns -t -p $$
 check_e '-t and --absolute-timestamps cannot be provided simultaneously' --timestamps=ns -t --absolute-timestamps=unix -p $$
+if [ -n "$compiled_with_secontext" ]; then
+	for opt in '--secontext' '-e secontext'; do
+		check_e "invalid secontext ''" $opt=
+		check_e "invalid secontext 'ss'" $opt=ss
+		check_e "invalid secontext 'ss'" $opt=ss,full,mismatch
+		check_e "invalid secontext 'ss'" $opt=full,ss,mismatch
+		check_e "invalid secontext 'ss'" $opt=full,ss
+		check_e "invalid secontext 'ss'" $opt=full,mismatch,ss
+		check_e "invalid secontext 'ss'" $opt=!full,ss
+		check_e "invalid secontext 'ss'" $opt=!full,mismatch,ss
+	done
+else
+	for opt in '--secontext' '--secontext=full' '-e secontext=mismatch'; do
+		check_e "SELinux context printing (--secontext option) is not supported by this build of strace" $opt
+	done
+fi
+
+for opt in 'id' \
+	   'id:' \
+	   '-1' \
+	   '2147483648' \
+	   'id:rand' \
+	   'id:randomm' \
+	   '2,3,radomm,4' \
+	   'format' \
+	   'format:' \
+	   'id:format' \
+	   'id:format:full' \
+	   'format:id:0'
+do
+	check_h "invalid --tips argument: '$opt'" --tips="$opt"
+done
+for opt in '--tips' \
+	   '--tips=' \
+	   '--tips=0' \
+	   '--tips=id:0 --tips' \
+	   '--tips=1,id:42' \
+	   '--tips=1 --tips=id:42' \
+	   '--tips=random' \
+	   '--tips --tips=random' \
+	   '--tips=id:random,23' \
+	   '--tips=id:random,23 --tips=random,2,3,id:4,5' \
+	   '--tips=format:none' \
+	   '--tips=format:compact --tips' \
+	   '--tips --tips=format:full,3,none,id:42,compact'
+do
+	check_h "invalid -a argument: '-42'" $opt -a -42
+done
+
+check_h 'PROG [ARGS] must be specified with --argv0' --argv0=sample -p $$
 check_h 'PROG [ARGS] must be specified with -D/--daemonize' -D -p $$
 check_h 'PROG [ARGS] must be specified with -D/--daemonize' -DD -p $$
 check_h 'PROG [ARGS] must be specified with -D/--daemonize' -DDD -p $$
@@ -134,6 +187,10 @@ check_h "must have PROG [ARGS] or -p PID" --strings-in-hex=non-ascii
 check_h "invalid --strings-in-hex argument: 'al'" --strings-in-hex=al
 check_h "invalid --strings-in-hex argument: 'alll'" --strings-in-hex=alll
 check_h "invalid --strings-in-hex argument: 'ascii'" --strings-in-hex=ascii
+check_h "invalid --syscall-limit argument: '-5'" --syscall-limit -5
+check_h "invalid --syscall-limit argument: '0'" --syscall-limit=0
+check_h "must have PROG [ARGS] or -p PID" --syscall-limit=2
+check_h "must have PROG [ARGS] or -p PID" --syscall-limit 5
 check_h "must have PROG [ARGS] or -p PID" --quiet=all
 check_h "must have PROG [ARGS] or -p PID" --quiet=none
 check_h "must have PROG [ARGS] or -p PID" --quiet=\!attach
@@ -144,6 +201,8 @@ check_e "invalid quiet 'detach'" --quiet=detach -p $$
 check_e '-q and -e quiet/--quiet cannot be provided simultaneously' -q --quiet -p $$
 check_e '-q and -e quiet/--quiet cannot be provided simultaneously' -q -e q=none -p $$
 check_e '-q and -e quiet/--quiet cannot be provided simultaneously' -q -e silent=attach,personality -p $$
+check_e '--kill-on-exit and -p/--attach are mutually exclusive options' --kill-on-exit -p $$
+check_e '--kill-on-exit and -p/--attach are mutually exclusive options' --kill-on-exit -p $$ true
 
 check_h 'must have PROG [ARGS] or -p PID' -P .
 check_h 'must have PROG [ARGS] or -p PID' -P . -P..
@@ -201,6 +260,8 @@ check_h "incorrect personality designator '' in qualification 'getcwd@'" -e trac
 check_h "incorrect personality designator '42' in qualification 'getcwd@42'" -e trace=getcwd@42
 check_h "incorrect personality designator '42' in qualification 'getcwd@42'" -e trace=gettid,getcwd@42
 check_h "incorrect personality designator '42' in qualification '23@42'" -e trace=23@42,123
+check_h "incorrect personality designator 'ohmy' in qualification '/getcwd@ohmy'" \
+	-e trace=/getcwd@ohmy
 
 check_h '--seccomp-bpf cannot be used without -f/--follow-forks, disabling
 -w/--summary-wall-clock must be given with (-c/--summary-only or -C/--summary)' --seccomp-bpf -w /
@@ -214,9 +275,30 @@ check_h 'option -F is deprecated, please use -f/--follow-forks instead
 check_h 'deprecated option -F ignored
 -w/--summary-wall-clock must be given with (-c/--summary-only or -C/--summary)' -fF -w /
 
-check_e "invalid system call '/getcwd@ohmy'" -e trace=/getcwd@ohmy
 check_e "invalid -e kvm= argument: 'chdir'" -e kvm=chdir
 check_e "invalid -e kvm= argument: 'chdir'" --kvm=chdir
+
+check_h "must have PROG [ARGS] or -p PID" -e decode-pid=all
+check_h "must have PROG [ARGS] or -p PID" --decode-pid=none
+check_h "must have PROG [ARGS] or -p PID" -e decode-pids=comm
+check_h "must have PROG [ARGS] or -p PID" --decode-pid=pidns,comm
+check_h "must have PROG [ARGS] or -p PID" -e decode-pid=\!pidns
+check_h "must have PROG [ARGS] or -p PID" --decode-pids=\!comm,pidns
+check_h "must have PROG [ARGS] or -p PID" -Y -e decode-pids=\!comm,pidns
+check_h "must have PROG [ARGS] or -p PID" --decode-pids=\!comm,pidns -Y
+check_h "must have PROG [ARGS] or -p PID" --pidns-translation -e decode-pids=\!comm,pidns -Y
+check_h "must have PROG [ARGS] or -p PID" --decode-pids=\!comm,pidns --pidns-translation
+check_e "invalid decode-pids ''" --decode-pids=
+check_e "invalid decode-pids ''" -e decode-pids=
+check_e "invalid decode-pids 'chdir'" --decode-pids=chdir
+check_e "invalid decode-pids 'gettid'" -e decode-pid=comm,gettid
+
+check_h "must have PROG [ARGS] or -p PID" -e trace-fds=0
+check_h "must have PROG [ARGS] or -p PID" -e trace-fd=1,2,3
+check_h "must have PROG [ARGS] or -p PID" -e fd='!1'
+check_h "must have PROG [ARGS] or -p PID" -e fds='!0,2147483647'
+check_e "invalid descriptor '-1'" --trace-fds=-1
+check_e "invalid descriptor '2147483648'" --trace-fd=2147483648
 
 case "$STRACE_NATIVE_ARCH" in
 x86_64)
@@ -263,6 +345,13 @@ if [ "$uid" -ge 0 ]; then
 	if [ "$uid" -eq 0 ]; then
 		umsg="Cannot find user ':nosuchuser:'"
 	else
+		if [ "$(fakeroot ../block_reset_run 15 id -u 2>&1)" = 0 ]; then
+			saved_STRACE=$STRACE
+			STRACE="fakeroot -- $STRACE"
+			umsg="Cannot find user ':nosuchuser:'"
+			check_e "$umsg" -u :nosuchuser: true
+			STRACE=$saved_STRACE
+		fi
 		umsg='You must be root to use the -u/--username option'
 	fi
 
@@ -281,6 +370,18 @@ $STRACE_EXE: -T/--syscall-times has no effect with -c/--summary-only
 $STRACE_EXE: -y/--decode-fds has no effect with -c/--summary-only
 $STRACE_EXE: Only the last of -z/--successful-only/-Z/--failed-only options will take effect. See status qualifier for more complex filters.
 $STRACE_EXE: $umsg" -u :nosuchuser: -cinrtTyzZ true
+
+	if [ -n "$compiled_with_secontext" ]; then
+		check_e "--secontext has no effect with -c/--summary-only
+$STRACE_EXE: $umsg" -u :nosuchuser: -c --secontext true
+	else
+		check_e "SELinux context printing (--secontext option) is not supported by this build of strace" -c --secontext true
+	fi
+
+	if [ -n "$compiled_with_stacktrace" ]; then
+		check_e "-k/--stack-traces has no effect with -c/--summary-only
+$STRACE_EXE: $umsg" -u :nosuchuser: -c -k true
+	fi
 
 	for c in --output-separately -A/--output-append-mode; do
 		check_e "$c has no effect without -o/--output
@@ -314,7 +415,7 @@ fi
 check_e_using_grep 'ptrace_setoptions = 0x[[:xdigit:]]+' -d /
 check_e_using_grep 'ptrace_setoptions = 0x[[:xdigit:]]+' --debug /
 
-if [ -z "$(get_config_option ENABLE_STACKTRACE 1)" ]; then
+if [ -z "$compiled_with_stacktrace" ]; then
 	check_e "Stack traces (-k/--stack-traces option) are not supported by this build of strace" -k
 	check_e "Stack traces (-k/--stack-traces option) are not supported by this build of strace" --stack-traces
 fi

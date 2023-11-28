@@ -1,8 +1,8 @@
 /*
  * Check decoding of chown/chown32/lchown/lchown32/fchown/fchown32 syscalls.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -108,10 +108,9 @@ main(void)
 
 	CLEANUP_CMD;
 
-	unsigned int i;
 	long expected = 0;
 
-	for (i = 0; i < ARRAY_SIZE(tests); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(tests); ++i) {
 		const unsigned int unum = ugid2int(tests[i].uid);
 		const unsigned int gnum = ugid2int(tests[i].gid);
 

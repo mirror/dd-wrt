@@ -1,8 +1,8 @@
 /*
  * Check decoding of setuid/setgid/setuid32/setgid32 syscalls.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-void
+static void
 printuid(unsigned UGID_TYPE id)
 {
 	if (id == (unsigned UGID_TYPE) -1U)
@@ -36,9 +36,7 @@ main(void)
 		-1L
 	};
 
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(tests); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(tests); ++i) {
 		const unsigned int num = (unsigned UGID_TYPE) tests[i];
 		long expected;
 

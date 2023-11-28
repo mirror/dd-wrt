@@ -1,8 +1,8 @@
 /*
  * Check decoding of pread64 and pwrite64 syscalls.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -19,9 +19,8 @@ static void
 dump_str(const char *str, const unsigned int len)
 {
 	static const char dots[16] = "................";
-	unsigned int i;
 
-	for (i = 0; i < len; i += 16) {
+	for (unsigned int i = 0; i < len; i += 16) {
 		unsigned int n = len - i > 16 ? 16 : len - i;
 		const char *dump = hexdump_memdup(str + i, n);
 
@@ -36,9 +35,8 @@ static void
 print_hex(const char *str, const unsigned int len)
 {
 	const unsigned char *ustr = (const unsigned char *) str;
-	unsigned int i;
 
-	for (i = 0; i < len; ++i) {
+	for (unsigned int i = 0; i < len; ++i) {
 		unsigned int c = ustr[i];
 
 		switch (c) {
@@ -81,8 +79,7 @@ test_dump(const unsigned int len)
 	tprintf("\", %d, %lld) = %ld\n", len, (long long) offset, rc);
 	dump_str(buf, len);
 
-	unsigned int i;
-	for (i = 0; i < len; ++i)
+	for (unsigned int i = 0; i < len; ++i)
 		buf[i] = i;
 
 	rc = pwrite(1, buf, len, offset);
@@ -143,12 +140,12 @@ main(void)
 	if (rc != -1)
 		perror_msg_and_fail("pwrite64: expected -1 EFAULT"
 				    ", returned %ld", rc);
-	tprintf("pwrite64(1, %p, 1, 0) = -1 EFAULT (%m)\n", efault);
+	tprintf("pwrite64(1, %p, 1, 0)" RVAL_EFAULT, efault);
 
 	rc = pwrite(1, nil, 1, -3);
 	if (rc != -1)
 		perror_msg_and_fail("pwrite64: expected -1, returned %ld", rc);
-	tprintf("pwrite64(1, \"\\0\", 1, -3) = -1 EINVAL (%m)\n");
+	tprintf("pwrite64(1, \"\\0\", 1, -3)" RVAL_EINVAL);
 	dump_str(nil, 1);
 
 	rc = pwrite(1, w, w_len, 0);
@@ -168,12 +165,12 @@ main(void)
 	rc = pread(0, efault, 1, 0);
 	if (rc != -1)
 		perror_msg_and_fail("pread64: expected -1, returned %ld", rc);
-	tprintf("pread64(0, %p, 1, 0) = -1 EFAULT (%m)\n", efault);
+	tprintf("pread64(0, %p, 1, 0)" RVAL_EFAULT, efault);
 
 	rc = pread(0, efault, 2, -7);
 	if (rc != -1)
 		perror_msg_and_fail("pread64: expected -1, returned %ld", rc);
-	tprintf("pread64(0, %p, 2, -7) = -1 EINVAL (%m)\n", efault);
+	tprintf("pread64(0, %p, 2, -7)" RVAL_EINVAL, efault);
 
 	rc = pread(0, r0, r0_len, 0);
 	if (rc != (int) r0_len)
@@ -198,8 +195,7 @@ main(void)
 	if (open("/dev/null", O_WRONLY) != 1)
 		perror_msg_and_fail("open");
 
-	unsigned int i;
-	for (i = 0; i <= 32; ++i)
+	for (unsigned int i = 0; i <= 32; ++i)
 		test_dump(i);
 
 	tprintf("+++ exited with 0 +++\n");

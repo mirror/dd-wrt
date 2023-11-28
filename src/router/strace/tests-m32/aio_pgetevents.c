@@ -1,8 +1,8 @@
 /*
  * Check decoding of io_pgetevents syscall.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include "scno.h"
 
-#if defined __NR_io_setup && defined __NR_io_pgetevents
+#ifdef __NR_io_pgetevents
 
 # include <fcntl.h>
 # include <inttypes.h>
@@ -23,7 +23,7 @@
 
 # include <linux/aio_abi.h>
 
-# if !HAVE_STRUCT___AIO_SIGSET
+# ifndef HAVE_STRUCT___AIO_SIGSET
 struct __aio_sigset {
 	sigset_t *sigmask;
 	size_t sigsetsize;
@@ -92,7 +92,7 @@ main(void)
 	const unsigned int nr = ARRAY_SIZE(proto_cb);
 
 	const struct io_event *ev = tail_alloc(nr * sizeof(struct io_event));
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct timespec, ts);
+	TAIL_ALLOC_OBJECT_CONST_PTR(kernel_old_timespec_t, ts);
 	TAIL_ALLOC_OBJECT_CONST_PTR(struct __aio_sigset, ss);
 	TAIL_ALLOC_OBJECT_CONST_PTR(sigset_t, sigs);
 
@@ -148,7 +148,7 @@ main(void)
 	sigemptyset(sigs);
 	sigaddset(sigs, SIGSYS);
 
-	ts->tv_sec = (time_t) 0xcafef00ddeadbeefLL;
+	ts->tv_sec = (typeof(ts->tv_sec)) 0xcafef00ddeadbeefLL;
 	ts->tv_nsec = (long) 0xbadc0dedfacefeedLL;
 	sys_io_pgetevents(bogus_ctx, 0, 0, 0, (uintptr_t) ts, (uintptr_t) ss);
 	printf("io_pgetevents(%#jx, 0, 0, NULL"
@@ -164,6 +164,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("__NR_io_setup && __NR_io_pgetevents")
+SKIP_MAIN_UNDEFINED("__NR_io_pgetevents")
 
 #endif

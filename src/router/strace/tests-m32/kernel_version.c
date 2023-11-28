@@ -1,7 +1,7 @@
 /*
  * Check kernel version decoding.
  *
- * Copyright (c) 2015-2020 The strace developers.
+ * Copyright (c) 2015-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -34,9 +34,9 @@ static void
 print_bpf_attr(void)
 {
 #if XLAT_RAW
-	printf("{prog_type=0x1f"
+	printf("{prog_type=0x21"
 #else
-	printf("{prog_type=0x1f /* BPF_PROG_TYPE_??? */"
+	printf("{prog_type=0x21 /* BPF_PROG_TYPE_??? */"
 #endif
 		", insn_cnt=3134983661"
 		", insns=NULL"
@@ -71,7 +71,8 @@ print_bpf_attr(void)
 		", line_info=NULL"
 		", line_info_cnt=0"
 		", attach_btf_id=0"
-		", attach_prog_fd=0}");
+		", attach_prog_fd=0"
+		", fd_array=NULL}");
 }
 
 int
@@ -79,7 +80,7 @@ main(void)
 {
 	long ret;
 	struct BPF_PROG_LOAD_struct prog = {
-		.prog_type = 31,
+		.prog_type = 33,
 		.insn_cnt = 0xbadc0ded,
 		.insns = 0,
 		.license = 0,

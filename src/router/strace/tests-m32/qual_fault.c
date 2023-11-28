@@ -1,8 +1,8 @@
 /*
  * Check that fault injection works properly.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -29,12 +29,13 @@ static int out_fd;
 #define DEFAULT_ERRNO ENOSYS
 
 static const char *errstr;
-static int is_raw, err, first, last, step, iter, try;
+static int is_raw, err;
 
 static void
-invoke(int fail)
+invoke(int iter, int fail)
 {
 	static char buf[sizeof(int) * 3 + 3];
+	static int try;
 	const struct iovec io = {
 		.iov_base = buf,
 		.iov_len = sprintf(buf, "%d.", ++try)
@@ -44,7 +45,7 @@ invoke(int fail)
 	if (!fail) {
 		rc = write(exp_fd, io.iov_base, io.iov_len);
 		if (rc != (int) io.iov_len)
-			perror_msg_and_fail("write");
+			perror_msg_and_fail("iter %d: write", iter);
 	}
 
 	errno = 0;
@@ -52,9 +53,9 @@ invoke(int fail)
 
 	if (fail) {
 		if (!(rc == -1 && errno == err))
-			perror_msg_and_fail("expected errno %d"
+			perror_msg_and_fail("iter %d: expected errno %d"
 					    ", got rc == %d, errno == %d",
-					    err, rc, errno);
+					    iter, err, rc, errno);
 
 		if (is_raw)
 			tprintf("writev(%#x, %p, 0x1)"
@@ -66,9 +67,9 @@ invoke(int fail)
 				got_fd, buf, (int) io.iov_len, errstr);
 	} else {
 		if (rc != (int) io.iov_len)
-			perror_msg_and_fail("expected %d"
+			perror_msg_and_fail("iter %d: expected %d"
 					    ", got rc == %d, errno == %d",
-					    (int) io.iov_len, rc, errno);
+					    iter, (int) io.iov_len, rc, errno);
 
 		if (is_raw)
 			tprintf("writev(%#x, %p, 0x1) = %#x\n",
@@ -119,10 +120,10 @@ main(int argc, char *argv[])
 	errno = err;
 	errstr = errno2name();
 
-	first = atoi(argv[3]);
-	last = atoi(argv[4]);
-	step = atoi(argv[5]);
-	iter = atoi(argv[6]);
+	int first = atoi(argv[3]);
+	int last = atoi(argv[4]);
+	int step = atoi(argv[5]);
+	int iter = atoi(argv[6]);
 	int num_procs = atoi(argv[7]);
 	char *exp_prefix = argv[8];
 	char *got_prefix = argv[9];
@@ -133,8 +134,7 @@ main(int argc, char *argv[])
 	assert(step >= 0);
 	assert(num_procs > 0);
 
-	int proc;
-	for (proc = 0; proc < num_procs; ++proc) {
+	for (int proc = 0; proc < num_procs; ++proc) {
 		int ret = fork();
 
 		if (ret < 0)
@@ -162,8 +162,7 @@ main(int argc, char *argv[])
 		/* This magic forces tprintf to write where we want it. */
 		dup2(out_fd, 3);
 
-		int i;
-		for (i = 1; i <= iter; ++i) {
+		for (int i = 1; i <= iter; ++i) {
 			int fail = 0;
 			if (last != 0) {
 				--first;
@@ -174,14 +173,14 @@ main(int argc, char *argv[])
 					first = step;
 				}
 			}
-			invoke(fail);
+			invoke(i, fail);
 		}
 
 		tprintf("%s\n", "+++ exited with 0 +++");
 		return 0;
 	}
 
-	for (proc = 0; proc < num_procs; ++proc) {
+	for (int proc = 0; proc < num_procs; ++proc) {
 		int status;
 		int ret = wait(&status);
 		if (ret <= 0)

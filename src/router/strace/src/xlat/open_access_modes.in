@@ -1,0 +1,6 @@
+#unconditional
+#value_indexed
+O_RDONLY
+O_WRONLY
+O_RDWR
+O_ACCMODE

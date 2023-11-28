@@ -2,8 +2,8 @@
  * This file is part of sysinfo strace test.
  *
  * Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,7 +17,7 @@ int
 main(void)
 {
 	sysinfo(NULL);
-	printf("sysinfo(NULL) = -1 EFAULT (%m)\n");
+	printf("sysinfo(NULL)" RVAL_EFAULT);
 
 	TAIL_ALLOC_OBJECT_CONST_PTR(struct sysinfo, si);
 

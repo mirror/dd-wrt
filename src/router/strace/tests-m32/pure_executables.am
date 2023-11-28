@@ -10,40 +10,58 @@ PURE_EXECUTABLES = \
   aio \
   aio_pgetevents \
   alarm \
+  arch_prctl \
+  arch_prctl-Xabbrev \
+  arch_prctl-Xraw \
+  arch_prctl-Xverbose \
+  at_fdcwd-pathmax \
   bpf \
   bpf-v \
   brk \
   btrfs \
+  cachestat \
+  cachestat-P \
+  cachestat-fd \
+  cachestat-success \
   caps \
+  chdir \
   chmod \
   chown \
   chown32 \
   chroot \
   clock_adjtime \
+  clock_adjtime64 \
   clock_nanosleep \
   clock_xettime \
+  clock_xettime64 \
   clone-flags \
   clone3 \
   clone3-Xabbrev \
   clone3-Xraw \
   clone3-Xverbose \
-  close_range \
-  close_range-P \
-  close_range-y \
-  close_range-yy \
   copy_file_range \
   creat \
   delete_module \
+  dev--decode-fds-all \
   dev--decode-fds-dev \
+  dev--decode-fds-none \
   dev--decode-fds-path \
   dev--decode-fds-socket \
   dev-yy \
   dup \
   dup-P \
+  dup-trace-fds-0 \
+  dup-trace-fds-0-9 \
+  dup-trace-fds-0-P \
+  dup-trace-fds-not-9 \
   dup-y \
   dup-yy \
   dup2 \
   dup2-P \
+  dup2-e-fd-0 \
+  dup2-e-fd-0-9 \
+  dup2-e-fd-0-P \
+  dup2-e-fd-not-9 \
   dup2-y \
   dup2-yy \
   dup3 \
@@ -54,6 +72,9 @@ PURE_EXECUTABLES = \
   epoll_create1 \
   epoll_ctl \
   epoll_pwait \
+  epoll_pwait2 \
+  epoll_pwait2-P \
+  epoll_pwait2-y \
   epoll_wait \
   erestartsys \
   eventfd \
@@ -77,7 +98,9 @@ PURE_EXECUTABLES = \
   fanotify_mark-Xverbose \
   fchdir \
   fchmod \
+  fchmod-y \
   fchmodat \
+  fchmodat2 \
   fchown \
   fchown32 \
   fchownat \
@@ -86,7 +109,6 @@ PURE_EXECUTABLES = \
   fdatasync \
   fflush \
   file_handle \
-  file_ioctl \
   finit_module \
   flock \
   fsconfig \
@@ -110,6 +132,7 @@ PURE_EXECUTABLES = \
   ftruncate \
   ftruncate64 \
   futex \
+  futex_waitv \
   futimesat \
   get_mempolicy \
   getcpu \
@@ -154,9 +177,16 @@ PURE_EXECUTABLES = \
   inotify_init1-y \
   io_uring_enter \
   io_uring_register \
+  io_uring_register-Xabbrev \
+  io_uring_register-Xraw \
+  io_uring_register-Xverbose \
   io_uring_setup \
   ioctl \
   ioctl_block \
+  ioctl_counter \
+  ioctl_counter-Xabbrev \
+  ioctl_counter-Xraw \
+  ioctl_counter-Xverbose \
   ioctl_dm \
   ioctl_evdev \
   ioctl_evdev-Xabbrev \
@@ -166,6 +196,26 @@ PURE_EXECUTABLES = \
   ioctl_evdev-v-Xabbrev \
   ioctl_evdev-v-Xraw \
   ioctl_evdev-v-Xverbose \
+  ioctl_fiemap \
+  ioctl_fiemap-Xabbrev \
+  ioctl_fiemap-Xraw \
+  ioctl_fiemap-Xverbose \
+  ioctl_fs_f \
+  ioctl_fs_f-Xabbrev \
+  ioctl_fs_f-Xraw \
+  ioctl_fs_f-Xverbose \
+  ioctl_fs_x \
+  ioctl_fs_x-Xabbrev \
+  ioctl_fs_x-Xraw \
+  ioctl_fs_x-Xverbose \
+  ioctl_gpio \
+  ioctl_gpio-Xabbrev \
+  ioctl_gpio-Xraw \
+  ioctl_gpio-Xverbose \
+  ioctl_gpio-v \
+  ioctl_gpio-v-Xabbrev \
+  ioctl_gpio-v-Xraw \
+  ioctl_gpio-v-Xverbose \
   ioctl_hdio \
   ioctl_hdio-Xabbrev \
   ioctl_hdio-Xraw \
@@ -175,21 +225,34 @@ PURE_EXECUTABLES = \
   ioctl_hdio-v-Xraw \
   ioctl_hdio-v-Xverbose \
   ioctl_inotify \
+  ioctl_kd \
+  ioctl_kd-Xabbrev \
+  ioctl_kd-Xraw \
+  ioctl_kd-Xverbose \
   ioctl_kvm_run \
   ioctl_kvm_run-v \
   ioctl_kvm_run_auxstr_vcpu \
+  ioctl_lirc \
   ioctl_loop \
   ioctl_mtd \
   ioctl_nbd \
   ioctl_perf \
   ioctl_ptp \
+  ioctl_ptp-Xabbrev \
+  ioctl_ptp-Xraw \
+  ioctl_ptp-Xverbose \
   ioctl_random \
   ioctl_rtc \
   ioctl_scsi \
   ioctl_sg_io_v3 \
   ioctl_sg_io_v4 \
+  ioctl_sock \
   ioctl_sock_gifconf \
   ioctl_tee \
+  ioctl_termios \
+  ioctl_termios-v \
+  ioctl_tiocm \
+  ioctl_ubi \
   ioctl_uffdio \
   ioctl_v4l2 \
   ioctl_v4l2-Xabbrev \
@@ -200,13 +263,22 @@ PURE_EXECUTABLES = \
   ioctl_v4l2-v-Xraw \
   ioctl_v4l2-v-Xverbose \
   ioctl_watchdog \
+  ioctl_winsize \
   ioperm \
   iopl \
   ioprio \
   ioprio-Xabbrev \
   ioprio-Xraw \
   ioprio-Xverbose \
+  ip_local_port_range \
+  ip_local_port_range-Xabbrev \
+  ip_local_port_range-Xraw \
+  ip_local_port_range-Xverbose \
   ip_mreq \
+  ip_protocol \
+  ip_protocol-Xabbrev \
+  ip_protocol-Xraw \
+  ip_protocol-Xverbose \
   ipc \
   ipc_msg \
   ipc_msg-Xabbrev \
@@ -238,6 +310,12 @@ PURE_EXECUTABLES = \
   keyctl-Xraw \
   keyctl-Xverbose \
   kill \
+  landlock_add_rule \
+  landlock_add_rule-y \
+  landlock_create_ruleset \
+  landlock_create_ruleset-y \
+  landlock_restrict_self \
+  landlock_restrict_self-y \
   lchown \
   lchown32 \
   link \
@@ -248,6 +326,13 @@ PURE_EXECUTABLES = \
   lstat \
   lstat64 \
   madvise \
+  madvise-Xabbrev \
+  madvise-Xraw \
+  madvise-Xverbose \
+  map_shadow_stack \
+  map_shadow_stack-Xabbrev \
+  map_shadow_stack-Xraw \
+  map_shadow_stack-Xverbose \
   maybe_switch_current_tcp \
   maybe_switch_current_tcp--quiet-thread-execve \
   mbind \
@@ -259,6 +344,7 @@ PURE_EXECUTABLES = \
   memfd_create-Xabbrev \
   memfd_create-Xraw \
   memfd_create-Xverbose \
+  memfd_secret \
   migrate_pages \
   mincore \
   mkdir \
@@ -283,6 +369,8 @@ PURE_EXECUTABLES = \
   mount-Xabbrev \
   mount-Xraw \
   mount-Xverbose \
+  mount_setattr \
+  mount_setattr-P \
   move_mount \
   move_mount-P \
   move_pages \
@@ -297,6 +385,7 @@ PURE_EXECUTABLES = \
   msg_name \
   munlockall \
   nanosleep \
+  net--decode-fds-all-netlink \
   net--decode-fds-dev-netlink \
   net--decode-fds-none-netlink \
   net--decode-fds-path-netlink \
@@ -338,6 +427,10 @@ PURE_EXECUTABLES = \
   nfnetlink_ulog \
   nlattr \
   nlattr_br_port_msg \
+  nlattr_cachereport \
+  nlattr_cachereport-Xabbrev \
+  nlattr_cachereport-Xraw \
+  nlattr_cachereport-Xverbose \
   nlattr_crypto_user_alg \
   nlattr_dcbmsg \
   nlattr_fib_rule_hdr \
@@ -346,9 +439,25 @@ PURE_EXECUTABLES = \
   nlattr_ifinfomsg \
   nlattr_ifla_af_spec \
   nlattr_ifla_brport \
+  nlattr_ifla_brport-Xabbrev \
+  nlattr_ifla_brport-Xraw \
+  nlattr_ifla_brport-Xverbose \
   nlattr_ifla_linkinfo \
   nlattr_ifla_port \
+  nlattr_ifla_protinfo \
+  nlattr_ifla_protinfo-Xabbrev \
+  nlattr_ifla_protinfo-Xraw \
+  nlattr_ifla_protinfo-Xverbose \
+  nlattr_ifla_proto_down_reason \
+  nlattr_ifla_vfinfo \
+  nlattr_ifla_vfinfo-Xabbrev \
+  nlattr_ifla_vfinfo-Xraw \
+  nlattr_ifla_vfinfo-Xverbose \
   nlattr_ifla_xdp \
+  nlattr_ifstats \
+  nlattr_ifstats-Xabbrev \
+  nlattr_ifstats-Xraw \
+  nlattr_ifstats-Xverbose \
   nlattr_inet_diag_msg \
   nlattr_inet_diag_req_compat \
   nlattr_inet_diag_req_v2 \
@@ -358,6 +467,10 @@ PURE_EXECUTABLES = \
   nlattr_ndtmsg \
   nlattr_netconfmsg \
   nlattr_netlink_diag_msg \
+  nlattr_nhmsg \
+  nlattr_nhmsg-Xabbrev \
+  nlattr_nhmsg-Xraw \
+  nlattr_nhmsg-Xverbose \
   nlattr_nlmsgerr \
   nlattr_packet_diag_msg \
   nlattr_rtgenmsg \
@@ -366,6 +479,9 @@ PURE_EXECUTABLES = \
   nlattr_tc_stats \
   nlattr_tca_stab \
   nlattr_tcamsg \
+  nlattr_tcamsg-Xabbrev \
+  nlattr_tcamsg-Xraw \
+  nlattr_tcamsg-Xverbose \
   nlattr_tcmsg \
   nlattr_unix_diag_msg \
   old_mmap \
@@ -404,6 +520,8 @@ PURE_EXECUTABLES = \
   pidfd_getfd-y \
   pidfd_getfd-yy \
   pidfd_open \
+  pidfd_open--decode-fd-all \
+  pidfd_open--decode-fd-none \
   pidfd_open--decode-fd-path \
   pidfd_open--decode-fd-pidfd \
   pidfd_open--decode-fd-socket \
@@ -416,16 +534,45 @@ PURE_EXECUTABLES = \
   pkey_alloc \
   pkey_free \
   pkey_mprotect \
+  poke \
+  poke-sendfile \
   poll \
   ppoll \
   prctl-arg2-intptr \
+  prctl-cap-ambient \
+  prctl-capbset \
   prctl-dumpable \
+  prctl-mce-kill \
   prctl-name \
   prctl-no-args \
+  prctl-pac-enabled-keys \
+  prctl-pac-enabled-keys-Xabbrev \
+  prctl-pac-enabled-keys-Xraw \
+  prctl-pac-enabled-keys-Xverbose \
+  prctl-pac-reset-keys \
   prctl-pdeathsig \
+  prctl-sched-core \
+  prctl-sched-core-Xabbrev \
+  prctl-sched-core-Xraw \
+  prctl-sched-core-Xverbose \
   prctl-securebits \
+  prctl-set_vma \
+  prctl-sme \
+  prctl-sme-Xabbrev \
+  prctl-sme-Xraw \
+  prctl-sme-Xverbose \
+  prctl-sve \
+  prctl-sve-Xabbrev \
+  prctl-sve-Xraw \
+  prctl-sve-Xverbose \
+  prctl-syscall-user-dispatch \
+  prctl-tagged-addr \
+  prctl-tagged-addr-Xabbrev \
+  prctl-tagged-addr-Xraw \
+  prctl-tagged-addr-Xverbose \
   prctl-tid_address \
   prctl-tsc \
+  prctl-unalign \
   pread64-pwrite64 \
   preadv \
   preadv-pwritev \
@@ -441,17 +588,36 @@ PURE_EXECUTABLES = \
   printstrn-umoven-peekdata \
   printstrn-umoven-undumpable \
   prlimit64 \
+  process_madvise \
+  process_madvise-y \
+  process_madvise-yy \
+  process_mrelease \
+  process_mrelease-y \
   process_vm_readv \
   process_vm_writev \
   pselect6 \
+  pselect6_time64 \
   ptrace \
+  ptrace-Xabbrev \
+  ptrace-Xraw \
+  ptrace-Xverbose \
+  ptrace-y \
+  ptrace-y-Xabbrev \
+  ptrace-y-Xraw \
+  ptrace-y-Xverbose \
   ptrace_syscall_info \
+  ptrace_syscall_info-Xabbrev \
+  ptrace_syscall_info-Xraw \
+  ptrace_syscall_info-Xverbose \
   pwritev \
   quotactl \
   quotactl-Xabbrev \
   quotactl-Xraw \
   quotactl-Xverbose \
   quotactl-xfs \
+  quotactl_fd \
+  quotactl_fd-P \
+  quotactl_fd-y \
   read-write \
   readahead \
   readdir \
@@ -495,18 +661,25 @@ PURE_EXECUTABLES = \
   sched_xetparam \
   sched_xetscheduler \
   sched_yield \
+  scm_credentials \
+  scm_pidfd \
+  scm_pidfd-success \
   seccomp-filter \
   seccomp_get_action_avail \
+  seccomp_get_notif_sizes \
   select \
   semop \
   semop-indirect \
   semtimedop \
+  semtimedop-ipc \
+  semtimedop_time64 \
   sendfile \
   sendfile64 \
   set_mempolicy \
   set_mempolicy-Xabbrev \
   set_mempolicy-Xraw \
   set_mempolicy-Xverbose \
+  set_mempolicy_home_node \
   setdomainname \
   setfsgid \
   setfsgid32 \
@@ -539,6 +712,7 @@ PURE_EXECUTABLES = \
   siginfo \
   signal \
   signalfd4 \
+  signalfd4-yy \
   sigpending \
   sigprocmask \
   sigreturn \
@@ -549,15 +723,23 @@ PURE_EXECUTABLES = \
   so_peercred-Xabbrev \
   so_peercred-Xraw \
   so_peercred-Xverbose \
+  so_peerpidfd \
   sock_filter-v \
   sock_filter-v-Xabbrev \
   sock_filter-v-Xraw \
   sock_filter-v-Xverbose \
   sockaddr_xlat-Xabbrev \
+  sockaddr_xlat-Xabbrev-y \
   sockaddr_xlat-Xraw \
+  sockaddr_xlat-Xraw-y \
   sockaddr_xlat-Xverbose \
+  sockaddr_xlat-Xverbose-y \
   socketcall \
   sockopt-sol_netlink \
+  sockopt-sol_socket \
+  sockopt-sol_socket-Xabbrev \
+  sockopt-sol_socket-Xraw \
+  sockopt-sol_socket-Xverbose \
   sockopt-timestamp \
   splice \
   stat \
@@ -578,7 +760,10 @@ PURE_EXECUTABLES = \
   strace--strings-in-hex \
   strace--strings-in-hex-all \
   strace--strings-in-hex-non-ascii \
+  strace--strings-in-hex-non-ascii-chars \
+  strace--strings-in-hex-none \
   strace-n \
+  strace-no-x \
   strace-x \
   strace-xx \
   swap \
@@ -588,8 +773,10 @@ PURE_EXECUTABLES = \
   sync \
   sync_file_range \
   sync_file_range2 \
+  sysctl \
   sysinfo \
   syslog \
+  tampering-notes \
   tee \
   tgkill \
   time \
@@ -597,6 +784,9 @@ PURE_EXECUTABLES = \
   timer_xettime \
   timerfd_xettime \
   times \
+  times-Xabbrev \
+  times-Xraw \
+  times-Xverbose \
   times-fail \
   tkill \
   truncate \

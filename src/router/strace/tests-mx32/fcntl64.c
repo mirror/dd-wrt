@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2020 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,6 +13,7 @@
 
 # define TEST_SYSCALL_NR __NR_fcntl64
 # define TEST_SYSCALL_STR "fcntl64"
+# define NEED_TEST_FLOCK64_EINVAL
 # include "fcntl-common.c"
 
 static void
@@ -21,7 +22,7 @@ test_flock64_lk64(void)
 	TEST_FLOCK64_EINVAL(F_SETLK64);
 	TEST_FLOCK64_EINVAL(F_SETLKW64);
 
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct_kernel_flock64, fl);
+	TAIL_ALLOC_OBJECT_CONST_PTR(struct flock64, fl);
 	memset(fl, 0, sizeof(*fl));
 	fl->l_type = F_RDLCK;
 	fl->l_len = FILE_LEN;

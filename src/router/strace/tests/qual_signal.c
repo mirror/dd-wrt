@@ -1,7 +1,7 @@
 /*
  * Check how strace -e signal=set works.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -53,8 +53,7 @@ main(int ac, const char **av)
 	pid = getpid();
 	uid = geteuid();
 
-	int i;
-	for (i = 1; i < ac; i += 2)
+	for (int i = 1; i < ac; i += 2)
 		test_sig(atoi(av[i]), av[i + 1]);
 
 	puts("+++ exited with 0 +++");

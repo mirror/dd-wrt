@@ -1,0 +1,1595 @@
+/* src/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define for the AArch64 architecture. */
+#undef AARCH64
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* Define for the Alpha architecture. */
+#undef ALPHA
+
+/* Define for the ARC architecture. */
+#undef ARC
+
+/* Define for the ARM architecture. */
+#undef ARM
+
+/* SA_RESTORER defined in <asm/signal.h> */
+#undef ASM_SA_RESTORER
+
+/* SIGRTMIN defined in <asm/signal.h> */
+#undef ASM_SIGRTMIN
+
+/* Define for the AVR32 architecture. */
+#undef AVR32
+
+/* Define for the Blackfin architecture. */
+#undef BFIN
+
+/* Current copyright year. */
+#undef COPYRIGHT_YEAR
+
+/* Define for the C-SKY architecture */
+#undef CSKY
+
+/* Define to 1 if you want OABI support on ARM EABI. */
+#undef ENABLE_ARM_OABI
+
+/* Define to enable SELinux security contexts support */
+#undef ENABLE_SECONTEXT
+
+/* Define to enable stack tracing support */
+#undef ENABLE_STACKTRACE
+
+/* Define to 1 if you have the `accept4' function. */
+#undef HAVE_ACCEPT4
+
+/* Define to 1 if you have the <asm/cachectl.h> header file. */
+#undef HAVE_ASM_CACHECTL_H
+
+/* Define to 1 if you have the <asm/guarded_storage.h> header file. */
+#undef HAVE_ASM_GUARDED_STORAGE_H
+
+/* Define to 1 if you have the <asm/sigcontext.h> header file. */
+#undef HAVE_ASM_SIGCONTEXT_H
+
+/* Define to 1 if you have the <asm/sysmips.h> header file. */
+#undef HAVE_ASM_SYSMIPS_H
+
+/* Define to 1 if you have the `be64toh' function. */
+#undef HAVE_BE64TOH
+
+/* Define to 1 if you have the <bluetooth/bluetooth.h> header file. */
+#undef HAVE_BLUETOOTH_BLUETOOTH_H
+
+/* Define to 1 if you have the declaration of `IEEE802154_ADDR_LONG', and to 0
+   if you don't. */
+#undef HAVE_DECL_IEEE802154_ADDR_LONG
+
+/* Define to 1 if you have the declaration of `IEEE802154_ADDR_NONE', and to 0
+   if you don't. */
+#undef HAVE_DECL_IEEE802154_ADDR_NONE
+
+/* Define to 1 if you have the declaration of `IEEE802154_ADDR_SHORT', and to
+   0 if you don't. */
+#undef HAVE_DECL_IEEE802154_ADDR_SHORT
+
+/* Define to 1 if you have the declaration of `LO_FLAGS_AUTOCLEAR', and to 0
+   if you don't. */
+#undef HAVE_DECL_LO_FLAGS_AUTOCLEAR
+
+/* Define to 1 if you have the declaration of `LO_FLAGS_DIRECT_IO', and to 0
+   if you don't. */
+#undef HAVE_DECL_LO_FLAGS_DIRECT_IO
+
+/* Define to 1 if you have the declaration of `LO_FLAGS_PARTSCAN', and to 0 if
+   you don't. */
+#undef HAVE_DECL_LO_FLAGS_PARTSCAN
+
+/* Define to 1 if you have the declaration of `LO_FLAGS_READ_ONLY', and to 0
+   if you don't. */
+#undef HAVE_DECL_LO_FLAGS_READ_ONLY
+
+/* Define to 1 if you have the declaration of `LO_FLAGS_USE_AOPS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_LO_FLAGS_USE_AOPS
+
+/* Define to 1 if you have the declaration of `NFEA_ACTIVITY_NOTIFY', and to 0
+   if you don't. */
+#undef HAVE_DECL_NFEA_ACTIVITY_NOTIFY
+
+/* Define to 1 if you have the declaration of `NFEA_DONT_REFRESH', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NFEA_DONT_REFRESH
+
+/* Define to 1 if you have the declaration of `NFEA_UNSPEC', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NFEA_UNSPEC
+
+/* Define to 1 if you have the declaration of `PTP_PF_EXTTS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_PTP_PF_EXTTS
+
+/* Define to 1 if you have the declaration of `PTP_PF_NONE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_PTP_PF_NONE
+
+/* Define to 1 if you have the declaration of `PTP_PF_PEROUT', and to 0 if you
+   don't. */
+#undef HAVE_DECL_PTP_PF_PEROUT
+
+/* Define to 1 if you have the declaration of `PTP_PF_PHYSYNC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_PTP_PF_PHYSYNC
+
+/* Define to 1 if you have the declaration of `PTRACE_PEEKUSER', and to 0 if
+   you don't. */
+#undef HAVE_DECL_PTRACE_PEEKUSER
+
+/* Define to 1 if you have the declaration of `PTRACE_POKEUSER', and to 0 if
+   you don't. */
+#undef HAVE_DECL_PTRACE_POKEUSER
+
+/* Define to 1 if you have the declaration of `P_ALL', and to 0 if you don't.
+   */
+#undef HAVE_DECL_P_ALL
+
+/* Define to 1 if you have the declaration of `P_PGID', and to 0 if you don't.
+   */
+#undef HAVE_DECL_P_PGID
+
+/* Define to 1 if you have the declaration of `P_PID', and to 0 if you don't.
+   */
+#undef HAVE_DECL_P_PID
+
+/* Define to 1 if you have the declaration of `P_PIDFD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_P_PIDFD
+
+/* Define to 1 if you have the declaration of `sys_errlist', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SYS_ERRLIST
+
+/* Define to 1 if you have the declaration of `TCA_ACT_COOKIE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_ACT_COOKIE
+
+/* Define to 1 if you have the declaration of `TCA_ACT_FLAGS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_FLAGS
+
+/* Define to 1 if you have the declaration of `TCA_ACT_HW_STATS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_ACT_HW_STATS
+
+/* Define to 1 if you have the declaration of `TCA_ACT_INDEX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_INDEX
+
+/* Define to 1 if you have the declaration of `TCA_ACT_IN_HW_COUNT', and to 0
+   if you don't. */
+#undef HAVE_DECL_TCA_ACT_IN_HW_COUNT
+
+/* Define to 1 if you have the declaration of `TCA_ACT_KIND', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_KIND
+
+/* Define to 1 if you have the declaration of `TCA_ACT_OPTIONS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_ACT_OPTIONS
+
+/* Define to 1 if you have the declaration of `TCA_ACT_PAD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_PAD
+
+/* Define to 1 if you have the declaration of `TCA_ACT_STATS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_STATS
+
+/* Define to 1 if you have the declaration of `TCA_ACT_UNSPEC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_ACT_UNSPEC
+
+/* Define to 1 if you have the declaration of `TCA_ACT_USED_HW_STATS', and to
+   0 if you don't. */
+#undef HAVE_DECL_TCA_ACT_USED_HW_STATS
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_ACQUIRE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_ACQUIRE
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_ALLOCSPI', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_ALLOCSPI
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_DELPOLICY', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_DELPOLICY
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_DELSA', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_DELSA
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_EXPIRE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_EXPIRE
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_FLUSHPOLICY', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_FLUSHPOLICY
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_FLUSHSA', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_FLUSHSA
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_GETAE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_GETAE
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_GETDEFAULT', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_GETDEFAULT
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_GETPOLICY', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_GETPOLICY
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_GETSA', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_GETSA
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_GETSADINFO', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_GETSADINFO
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_GETSPDINFO', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_GETSPDINFO
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_MAPPING', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_MAPPING
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_MIGRATE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_MIGRATE
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_NEWAE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_NEWAE
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_NEWPOLICY', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_NEWPOLICY
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_NEWSA', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_NEWSA
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_NEWSADINFO', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_NEWSADINFO
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_NEWSPDINFO', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_NEWSPDINFO
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_POLEXPIRE', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_POLEXPIRE
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_REPORT', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_REPORT
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_SETDEFAULT', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_SETDEFAULT
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_UPDPOLICY', and to 0
+   if you don't. */
+#undef HAVE_DECL_XFRM_MSG_UPDPOLICY
+
+/* Define to 1 if you have the declaration of `XFRM_MSG_UPDSA', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XFRM_MSG_UPDSA
+
+/* Define to 1 if you have the <demangle.h> header file. */
+#undef HAVE_DEMANGLE_H
+
+/* Define to 1 if the system provides dladdr */
+#undef HAVE_DLADDR
+
+/* Define to 1 if you have the <elfutils/libdwfl.h> header file. */
+#undef HAVE_ELFUTILS_LIBDWFL_H
+
+/* Define to 1 if you have the <elf.h> header file. */
+#undef HAVE_ELF_H
+
+/* Define to 1 if you have the `fallocate' function. */
+#undef HAVE_FALLOCATE
+
+/* Define to 1 if you have the `fanotify_mark' function. */
+#undef HAVE_FANOTIFY_MARK
+
+/* Define to 1 if you have the `fcntl64' function. */
+#undef HAVE_FCNTL64
+
+/* Define to 1 if you have the `fopen64' function. */
+#undef HAVE_FOPEN64
+
+/* Define to 1 if you have the `fork' function. */
+#undef HAVE_FORK
+
+/* Define to 1 if you have the `fputs_unlocked' function. */
+#undef HAVE_FPUTS_UNLOCKED
+
+/* Define to 1 if you have the `fstatat' function. */
+#undef HAVE_FSTATAT
+
+/* Define to 1 if you have the `ftruncate' function. */
+#undef HAVE_FTRUNCATE
+
+/* Define to 1 if you have the `futimens' function. */
+#undef HAVE_FUTIMENS
+
+/* Define to 1 if you have the <gcov.h> header file. */
+#undef HAVE_GCOV_H
+
+/* Define to 1 if you have the <gnu/stubs-32.h> header file. */
+#undef HAVE_GNU_STUBS_32_H
+
+/* Define to 1 if you have the <gnu/stubs-x32.h> header file. */
+#undef HAVE_GNU_STUBS_X32_H
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#undef HAVE_ICONV_H
+
+/* Define to 1 if you have the `iconv_open' function. */
+#undef HAVE_ICONV_OPEN
+
+/* Define to 1 if you have the `if_indextoname' function. */
+#undef HAVE_IF_INDEXTONAME
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <libiberty/demangle.h> header file. */
+#undef HAVE_LIBIBERTY_DEMANGLE_H
+
+/* Define to 1 if you have the <libunwind-ptrace.h> header file. */
+#undef HAVE_LIBUNWIND_PTRACE_H
+
+/* Define to 1 if you have the <linux/bpf.h> header file. */
+#undef HAVE_LINUX_BPF_H
+
+/* Define to 1 if you have the <linux/if_alg.h> header file. */
+#undef HAVE_LINUX_IF_ALG_H
+
+/* Define to 1 if you have the <linux/if_xdp.h> header file. */
+#undef HAVE_LINUX_IF_XDP_H
+
+/* Define to 1 if you have the <linux/ipc.h> header file. */
+#undef HAVE_LINUX_IPC_H
+
+/* Define to 1 if you have the <linux/ipx.h> header file. */
+#undef HAVE_LINUX_IPX_H
+
+/* Define to 1 if you have the <linux/kvm.h> header file. */
+#undef HAVE_LINUX_KVM_H
+
+/* Define to 1 if you have the <linux/netfilter_arp/arp_tables.h> header file.
+   */
+#undef HAVE_LINUX_NETFILTER_ARP_ARP_TABLES_H
+
+/* Define to 1 if you have the <linux/netfilter_bridge/ebtables.h> header
+   file. */
+#undef HAVE_LINUX_NETFILTER_BRIDGE_EBTABLES_H
+
+/* Define to 1 if you have the <linux/netfilter_ipv4/ip_tables.h> header file.
+   */
+#undef HAVE_LINUX_NETFILTER_IPV4_IP_TABLES_H
+
+/* Define to 1 if you have the <linux/netfilter_ipv6/ip6_tables.h> header
+   file. */
+#undef HAVE_LINUX_NETFILTER_IPV6_IP6_TABLES_H
+
+/* Define to 1 if you have the <linux/nfc.h> header file. */
+#undef HAVE_LINUX_NFC_H
+
+/* Define to 1 if you have the <linux/qrtr.h> header file. */
+#undef HAVE_LINUX_QRTR_H
+
+/* Define to 1 if you have the <linux/rxrpc.h> header file. */
+#undef HAVE_LINUX_RXRPC_H
+
+/* Define to 1 if you have the <linux/vm_sockets.h> header file. */
+#undef HAVE_LINUX_VM_SOCKETS_H
+
+/* Define to 1 if you have m32 mpers support */
+#undef HAVE_M32_MPERS
+
+/* Define to enable SELinux security contexts testing for m32 personality */
+#undef HAVE_M32_SELINUX_RUNTIME
+
+/* Define to 1 if m32 has the type 'struct stat'. */
+#undef HAVE_M32_STRUCT_STAT
+
+/* Define to 1 if m32 has the type 'struct stat64'. */
+#undef HAVE_M32_STRUCT_STAT64
+
+/* Define to 1 if 'st_mtime_nsec' is a member of m32 'struct stat64'. */
+#undef HAVE_M32_STRUCT_STAT64_ST_MTIME_NSEC
+
+/* Define to 1 if 'st_mtime_nsec' is a member of m32 'struct stat'. */
+#undef HAVE_M32_STRUCT_STAT_ST_MTIME_NSEC
+
+/* Define to 1 if you have the `mempcpy' function. */
+#undef HAVE_MEMPCPY
+
+/* Define to 1 if you have the <minix/config.h> header file. */
+#undef HAVE_MINIX_CONFIG_H
+
+/* Define to 1 if you have the <mqueue.h> header file. */
+#undef HAVE_MQUEUE_H
+
+/* Define to 1 if you have mx32 mpers support */
+#undef HAVE_MX32_MPERS
+
+/* Define to enable SELinux security contexts testing for mx32 personality */
+#undef HAVE_MX32_SELINUX_RUNTIME
+
+/* Define to 1 if mx32 has the type 'struct stat'. */
+#undef HAVE_MX32_STRUCT_STAT
+
+/* Define to 1 if mx32 has the type 'struct stat64'. */
+#undef HAVE_MX32_STRUCT_STAT64
+
+/* Define to 1 if 'st_mtime_nsec' is a member of mx32 'struct stat64'. */
+#undef HAVE_MX32_STRUCT_STAT64_ST_MTIME_NSEC
+
+/* Define to 1 if 'st_mtime_nsec' is a member of mx32 'struct stat'. */
+#undef HAVE_MX32_STRUCT_STAT_ST_MTIME_NSEC
+
+/* Define to 1 if you have the <netinet/sctp.h> header file. */
+#undef HAVE_NETINET_SCTP_H
+
+/* Define to 1 if you have the <netinet/tcp.h> header file. */
+#undef HAVE_NETINET_TCP_H
+
+/* Define to 1 if you have the <netinet/udp.h> header file. */
+#undef HAVE_NETINET_UDP_H
+
+/* Define to 1 if you have the <netipx/ipx.h> header file. */
+#undef HAVE_NETIPX_IPX_H
+
+/* Define to 1 if you have the `open64' function. */
+#undef HAVE_OPEN64
+
+/* Define to 1 if you have the `open_memstream' function. */
+#undef HAVE_OPEN_MEMSTREAM
+
+/* Define to 1 if you have the <paths.h> header file. */
+#undef HAVE_PATHS_H
+
+/* Define to 1 if you have the `preadv' function. */
+#undef HAVE_PREADV
+
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
+
+/* Define to 1 if you have the `process_vm_writev' function. */
+#undef HAVE_PROCESS_VM_WRITEV
+
+/* Define to 1 if the system provides program_invocation_name variable */
+#undef HAVE_PROGRAM_INVOCATION_NAME
+
+/* Define to 1 if you have the `pwritev' function. */
+#undef HAVE_PWRITEV
+
+/* Define to 1 if you have the `readahead' function. */
+#undef HAVE_READAHEAD
+
+/* Define to 1 if the system has the type `s390_compat_regs'. */
+#undef HAVE_S390_COMPAT_REGS
+
+/* Define to 1 if you have the <scsi/sg.h> header file. */
+#undef HAVE_SCSI_SG_H
+
+/* Define to enable SELinux security contexts testing */
+#undef HAVE_SELINUX_RUNTIME
+
+/* Define to 1 if you have the <selinux/selinux.h> header file. */
+#undef HAVE_SELINUX_SELINUX_H
+
+/* Define to 1 if `si_addr_lsb' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_ADDR_LSB
+
+/* Define to 1 if `si_lower' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_LOWER
+
+/* Define to 1 if `si_overrun' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_OVERRUN
+
+/* Define to 1 if `si_perf_data' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_PERF_DATA
+
+/* Define to 1 if `si_perf_flags' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_PERF_FLAGS
+
+/* Define to 1 if `si_perf_type' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_PERF_TYPE
+
+/* Define to 1 if `si_pkey' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_PKEY
+
+/* Define to 1 if `si_syscall' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_SYSCALL
+
+/* Define to 1 if `si_timerid' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_TIMERID
+
+/* Define to 1 if `si_trapno' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_TRAPNO
+
+/* Define to 1 if `si_upper' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_UPPER
+
+/* Define to 1 if you have the `signalfd' function. */
+#undef HAVE_SIGNALFD
+
+/* Define to 1 if the system has the type `sig_atomic_t'. */
+#undef HAVE_SIG_ATOMIC_T
+
+/* Define to 1 if the system provides static_assert */
+#undef HAVE_STATIC_ASSERT
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `stpcpy' function. */
+#undef HAVE_STPCPY
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strndup' function. */
+#undef HAVE_STRNDUP
+
+/* Define to 1 if the system has the type `struct bpf_insn'. */
+#undef HAVE_STRUCT_BPF_INSN
+
+/* Define to 1 if the system has the type `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO
+
+/* Define to 1 if `btf_id' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_ID
+
+/* Define to 1 if `btf_key_type_id' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_KEY_TYPE_ID
+
+/* Define to 1 if `btf_value_type_id' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_VALUE_TYPE_ID
+
+/* Define to 1 if `btf_vmlinux_value_type_id' is a member of `struct
+   bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_VMLINUX_VALUE_TYPE_ID
+
+/* Define to 1 if `id' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_ID
+
+/* Define to 1 if `ifindex' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_IFINDEX
+
+/* Define to 1 if `key_size' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_KEY_SIZE
+
+/* Define to 1 if `map_extra' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_MAP_EXTRA
+
+/* Define to 1 if `map_flags' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_MAP_FLAGS
+
+/* Define to 1 if `max_entries' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_MAX_ENTRIES
+
+/* Define to 1 if `name' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_NAME
+
+/* Define to 1 if `pad' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_PAD
+
+/* Define to 1 if `type' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_TYPE
+
+/* Define to 1 if `value_size' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_VALUE_SIZE
+
+/* Define to 1 if the system has the type `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO
+
+/* Define to 1 if `btf_id' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_BTF_ID
+
+/* Define to 1 if `created_by_uid' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_CREATED_BY_UID
+
+/* Define to 1 if `func_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_FUNC_INFO
+
+/* Define to 1 if `func_info_rec_size' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_FUNC_INFO_REC_SIZE
+
+/* Define to 1 if `id' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_ID
+
+/* Define to 1 if `ifindex' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_IFINDEX
+
+/* Define to 1 if `jited_func_lens' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_FUNC_LENS
+
+/* Define to 1 if `jited_ksyms' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_KSYMS
+
+/* Define to 1 if `jited_line_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_LINE_INFO
+
+/* Define to 1 if `jited_line_info_rec_size' is a member of `struct
+   bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_LINE_INFO_REC_SIZE
+
+/* Define to 1 if `jited_prog_insns' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_PROG_INSNS
+
+/* Define to 1 if `jited_prog_len' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_PROG_LEN
+
+/* Define to 1 if `line_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_LINE_INFO
+
+/* Define to 1 if `line_info_rec_size' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_LINE_INFO_REC_SIZE
+
+/* Define to 1 if `load_time' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_LOAD_TIME
+
+/* Define to 1 if `map_ids' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_MAP_IDS
+
+/* Define to 1 if `name' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NAME
+
+/* Define to 1 if `nr_func_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_FUNC_INFO
+
+/* Define to 1 if `nr_jited_func_lens' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_JITED_FUNC_LENS
+
+/* Define to 1 if `nr_jited_ksyms' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_JITED_KSYMS
+
+/* Define to 1 if `nr_jited_line_info' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_JITED_LINE_INFO
+
+/* Define to 1 if `nr_line_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_LINE_INFO
+
+/* Define to 1 if `nr_map_ids' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_MAP_IDS
+
+/* Define to 1 if `nr_prog_tags' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_PROG_TAGS
+
+/* Define to 1 if `prog_tags' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_PROG_TAGS
+
+/* Define to 1 if `recursion_misses' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_RECURSION_MISSES
+
+/* Define to 1 if `run_cnt' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_RUN_CNT
+
+/* Define to 1 if `run_time_ns' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_RUN_TIME_NS
+
+/* Define to 1 if `tag' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_TAG
+
+/* Define to 1 if `type' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_TYPE
+
+/* Define to 1 if `verified_insns' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_VERIFIED_INSNS
+
+/* Define to 1 if `xlated_prog_insns' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_XLATED_PROG_INSNS
+
+/* Define to 1 if `xlated_prog_len' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_XLATED_PROG_LEN
+
+/* Define to 1 if the system has the type `struct ia64_fpreg'. */
+#undef HAVE_STRUCT_IA64_FPREG
+
+/* Define to 1 if `aio_flags' is a member of `struct iocb'. */
+#undef HAVE_STRUCT_IOCB_AIO_FLAGS
+
+/* Define to 1 if `aio_rw_flags' is a member of `struct iocb'. */
+#undef HAVE_STRUCT_IOCB_AIO_RW_FLAGS
+
+/* Define to 1 if the system has the type `struct kbdiacrsuc'. */
+#undef HAVE_STRUCT_KBDIACRSUC
+
+/* Define to 1 if the system has the type `struct kbdiacruc'. */
+#undef HAVE_STRUCT_KBDIACRUC
+
+/* Define to 1 if the system has the type `struct kvm_cpuid2'. */
+#undef HAVE_STRUCT_KVM_CPUID2
+
+/* Define to 1 if the system has the type `struct kvm_regs'. */
+#undef HAVE_STRUCT_KVM_REGS
+
+/* Define to 1 if the system has the type `struct kvm_sregs'. */
+#undef HAVE_STRUCT_KVM_SREGS
+
+/* Define to 1 if the system has the type `struct
+   kvm_userspace_memory_region'. */
+#undef HAVE_STRUCT_KVM_USERSPACE_MEMORY_REGION
+
+/* Define to 1 if the system has the type `struct mmsghdr'. */
+#undef HAVE_STRUCT_MMSGHDR
+
+/* Define to 1 if the system has the type `struct ptrace_peeksiginfo_args'. */
+#undef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
+
+/* Define to 1 if the system has the type `struct ptrace_syscall_info'. */
+#undef HAVE_STRUCT_PTRACE_SYSCALL_INFO
+
+/* Define to 1 if the system has the type `struct pt_all_user_regs'. */
+#undef HAVE_STRUCT_PT_ALL_USER_REGS
+
+/* Define to 1 if the system has the type `struct sigcontext'. */
+#undef HAVE_STRUCT_SIGCONTEXT
+
+/* Define to 1 if the system has the type `struct sockaddr_alg_new'. */
+#undef HAVE_STRUCT_SOCKADDR_ALG_NEW
+
+/* Define to 1 if `hci_channel' is a member of `struct sockaddr_hci'. */
+#undef HAVE_STRUCT_SOCKADDR_HCI_HCI_CHANNEL
+
+/* Define to 1 if `l2_bdaddr_type' is a member of `struct sockaddr_l2'. */
+#undef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
+
+/* Define to 1 if the system has the type `struct sockaddr_storage'. */
+#undef HAVE_STRUCT_SOCKADDR_STORAGE
+
+/* Define to 1 if the system has the type `struct sockaddr_vm'. */
+#undef HAVE_STRUCT_SOCKADDR_VM
+
+/* Define to 1 if `svm_flags' is a member of `struct sockaddr_vm'. */
+#undef HAVE_STRUCT_SOCKADDR_VM_SVM_FLAGS
+
+/* Define to 1 if the system has the type `struct sockaddr_xdp'. */
+#undef HAVE_STRUCT_SOCKADDR_XDP
+
+/* Define to 1 if the system has the type `struct stat64'. */
+#undef HAVE_STRUCT_STAT64
+
+/* Define to 1 if `st_mtime_nsec' is a member of `struct stat64'. */
+#undef HAVE_STRUCT_STAT64_ST_MTIME_NSEC
+
+/* Define to 1 if the system has the type `struct statfs'. */
+#undef HAVE_STRUCT_STATFS
+
+/* Define to 1 if the system has the type `struct statfs64'. */
+#undef HAVE_STRUCT_STATFS64
+
+/* Define to 1 if `f_flags' is a member of `struct statfs64'. */
+#undef HAVE_STRUCT_STATFS64_F_FLAGS
+
+/* Define to 1 if `f_frsize' is a member of `struct statfs64'. */
+#undef HAVE_STRUCT_STATFS64_F_FRSIZE
+
+/* Define to 1 if `f_fsid.val' is a member of `struct statfs64'. */
+#undef HAVE_STRUCT_STATFS64_F_FSID_VAL
+
+/* Define to 1 if `f_fsid.__val' is a member of `struct statfs64'. */
+#undef HAVE_STRUCT_STATFS64_F_FSID___VAL
+
+/* Define to 1 if `f_flags' is a member of `struct statfs'. */
+#undef HAVE_STRUCT_STATFS_F_FLAGS
+
+/* Define to 1 if `f_frsize' is a member of `struct statfs'. */
+#undef HAVE_STRUCT_STATFS_F_FRSIZE
+
+/* Define to 1 if `f_fsid.val' is a member of `struct statfs'. */
+#undef HAVE_STRUCT_STATFS_F_FSID_VAL
+
+/* Define to 1 if `f_fsid.__val' is a member of `struct statfs'. */
+#undef HAVE_STRUCT_STATFS_F_FSID___VAL
+
+/* Define to 1 if `st_mtime_nsec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_MTIME_NSEC
+
+/* Define to 1 if the system has the type `struct tcp_diag_md5sig'. */
+#undef HAVE_STRUCT_TCP_DIAG_MD5SIG
+
+/* Define to 1 if the system has the type `struct termios2'. */
+#undef HAVE_STRUCT_TERMIOS2
+
+/* Define to 1 if `c_ispeed' is a member of `struct termios'. */
+#undef HAVE_STRUCT_TERMIOS_C_ISPEED
+
+/* Define to 1 if `c_ospeed' is a member of `struct termios'. */
+#undef HAVE_STRUCT_TERMIOS_C_OSPEED
+
+/* Define to 1 if the system has the type `struct user_desc'. */
+#undef HAVE_STRUCT_USER_DESC
+
+/* Define to 1 if `lm' is a member of `struct user_desc'. */
+#undef HAVE_STRUCT_USER_DESC_LM
+
+/* Define to 1 if `domainname' is a member of `struct utsname'. */
+#undef HAVE_STRUCT_UTSNAME_DOMAINNAME
+
+/* Define to 1 if the system has the type `struct __aio_sigset'. */
+#undef HAVE_STRUCT___AIO_SIGSET
+
+/* Define to 1 if the system has the type `struct __kernel_sock_timeval'. */
+#undef HAVE_STRUCT___KERNEL_SOCK_TIMEVAL
+
+/* Define to 1 if the system has the type `struct __kernel_timespec'. */
+#undef HAVE_STRUCT___KERNEL_TIMESPEC
+
+/* Define to 1 if the system has the type `struct __old_kernel_stat'. */
+#undef HAVE_STRUCT___OLD_KERNEL_STAT
+
+/* Define to 1 if the system has the type `struct __ptrace_syscall_info'. */
+#undef HAVE_STRUCT___PTRACE_SYSCALL_INFO
+
+/* Define to 1 if you have the `sync_file_range' function. */
+#undef HAVE_SYNC_FILE_RANGE
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
+
+/* Define to 1 if you have the <sys/fanotify.h> header file. */
+#undef HAVE_SYS_FANOTIFY_H
+
+/* Define to 1 if you have the <sys/ipc.h> header file. */
+#undef HAVE_SYS_IPC_H
+
+/* Define to 1 if you have the <sys/quota.h> header file. */
+#undef HAVE_SYS_QUOTA_H
+
+/* Define to 1 if you have the <sys/signalfd.h> header file. */
+#undef HAVE_SYS_SIGNALFD_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/xattr.h> header file. */
+#undef HAVE_SYS_XATTR_H
+
+/* Define to 1 if typeof works with your compiler. */
+#undef HAVE_TYPEOF
+
+/* Define to 1 if `attach_bpf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ATTACH_BPF_FD
+
+/* Define to 1 if `attach_btf_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ATTACH_BTF_ID
+
+/* Define to 1 if `attach_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ATTACH_FLAGS
+
+/* Define to 1 if `attach_prog_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ATTACH_PROG_FD
+
+/* Define to 1 if `attach_type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ATTACH_TYPE
+
+/* Define to 1 if `batch.count' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_COUNT
+
+/* Define to 1 if `batch.elem_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_ELEM_FLAGS
+
+/* Define to 1 if `batch.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_FLAGS
+
+/* Define to 1 if `batch.in_batch' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_IN_BATCH
+
+/* Define to 1 if `batch.keys' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_KEYS
+
+/* Define to 1 if `batch.map_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_MAP_FD
+
+/* Define to 1 if `batch.out_batch' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_OUT_BATCH
+
+/* Define to 1 if `batch.values' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_VALUES
+
+/* Define to 1 if `bpf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BPF_FD
+
+/* Define to 1 if `btf' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF
+
+/* Define to 1 if `btf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_FD
+
+/* Define to 1 if `btf_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_ID
+
+/* Define to 1 if `btf_key_type_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_KEY_TYPE_ID
+
+/* Define to 1 if `btf_log_buf' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_LOG_BUF
+
+/* Define to 1 if `btf_log_level' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_LOG_LEVEL
+
+/* Define to 1 if `btf_log_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_LOG_SIZE
+
+/* Define to 1 if `btf_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_SIZE
+
+/* Define to 1 if `btf_value_type_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_VALUE_TYPE_ID
+
+/* Define to 1 if `btf_vmlinux_value_type_id' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_BTF_VMLINUX_VALUE_TYPE_ID
+
+/* Define to 1 if `dummy' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_DUMMY
+
+/* Define to 1 if `enable_stats.type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ENABLE_STATS_TYPE
+
+/* Define to 1 if `expected_attach_type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_EXPECTED_ATTACH_TYPE
+
+/* Define to 1 if `fd_array' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FD_ARRAY
+
+/* Define to 1 if `file_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FILE_FLAGS
+
+/* Define to 1 if `flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FLAGS
+
+/* Define to 1 if `func_info' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FUNC_INFO
+
+/* Define to 1 if `func_info_cnt' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FUNC_INFO_CNT
+
+/* Define to 1 if `func_info_rec_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FUNC_INFO_REC_SIZE
+
+/* Define to 1 if `info.bpf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_INFO_BPF_FD
+
+/* Define to 1 if `info.info' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_INFO_INFO
+
+/* Define to 1 if `info.info_len' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_INFO_INFO_LEN
+
+/* Define to 1 if `inner_map_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_INNER_MAP_FD
+
+/* Define to 1 if `insns' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_INSNS
+
+/* Define to 1 if `insn_cnt' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_INSN_CNT
+
+/* Define to 1 if `iter_create.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ITER_CREATE_FLAGS
+
+/* Define to 1 if `iter_create.link_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_ITER_CREATE_LINK_FD
+
+/* Define to 1 if `kern_version' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_KERN_VERSION
+
+/* Define to 1 if `key' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_KEY
+
+/* Define to 1 if `key_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_KEY_SIZE
+
+/* Define to 1 if `license' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LICENSE
+
+/* Define to 1 if `line_info' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINE_INFO
+
+/* Define to 1 if `line_info_cnt' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINE_INFO_CNT
+
+/* Define to 1 if `line_info_rec_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINE_INFO_REC_SIZE
+
+/* Define to 1 if `link_create.addrs' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_ADDRS
+
+/* Define to 1 if `link_create.attach_type' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_ATTACH_TYPE
+
+/* Define to 1 if `link_create.bpf_cookie' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_BPF_COOKIE
+
+/* Define to 1 if `link_create.cnt' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_CNT
+
+/* Define to 1 if `link_create.cookies' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_COOKIES
+
+/* Define to 1 if `link_create.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_FLAGS
+
+/* Define to 1 if `link_create.iter_info' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_ITER_INFO
+
+/* Define to 1 if `link_create.iter_info_len' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_ITER_INFO_LEN
+
+/* Define to 1 if `link_create.kprobe_multi' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_KPROBE_MULTI
+
+/* Define to 1 if `link_create.perf_event' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_PERF_EVENT
+
+/* Define to 1 if `link_create.prog_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_PROG_FD
+
+/* Define to 1 if `link_create.syms' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_SYMS
+
+/* Define to 1 if `link_create.target_btf_id' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_TARGET_BTF_ID
+
+/* Define to 1 if `link_create.target_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_TARGET_FD
+
+/* Define to 1 if `link_detach.link_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_DETACH_LINK_FD
+
+/* Define to 1 if `link_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_ID
+
+/* Define to 1 if `link_update.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_FLAGS
+
+/* Define to 1 if `link_update.link_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_LINK_FD
+
+/* Define to 1 if `link_update.new_prog_fd' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_NEW_PROG_FD
+
+/* Define to 1 if `link_update.old_prog_fd' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_OLD_PROG_FD
+
+/* Define to 1 if `log_buf' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LOG_BUF
+
+/* Define to 1 if `log_level' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LOG_LEVEL
+
+/* Define to 1 if `log_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LOG_SIZE
+
+/* Define to 1 if `map_extra' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAP_EXTRA
+
+/* Define to 1 if `map_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAP_FD
+
+/* Define to 1 if `map_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAP_FLAGS
+
+/* Define to 1 if `map_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAP_ID
+
+/* Define to 1 if `map_ifindex' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAP_IFINDEX
+
+/* Define to 1 if `map_name' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAP_NAME
+
+/* Define to 1 if `map_type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAP_TYPE
+
+/* Define to 1 if `max_entries' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_MAX_ENTRIES
+
+/* Define to 1 if `next_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_NEXT_ID
+
+/* Define to 1 if `next_key' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_NEXT_KEY
+
+/* Define to 1 if `numa_node' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_NUMA_NODE
+
+/* Define to 1 if `open_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_OPEN_FLAGS
+
+/* Define to 1 if `pad' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PAD
+
+/* Define to 1 if `pathname' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PATHNAME
+
+/* Define to 1 if `path_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PATH_FD
+
+/* Define to 1 if `prog_bind_map.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_BIND_MAP_FLAGS
+
+/* Define to 1 if `prog_bind_map.map_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_BIND_MAP_MAP_FD
+
+/* Define to 1 if `prog_bind_map.prog_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_BIND_MAP_PROG_FD
+
+/* Define to 1 if `prog_btf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_BTF_FD
+
+/* Define to 1 if `prog_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_FLAGS
+
+/* Define to 1 if `prog_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_ID
+
+/* Define to 1 if `prog_ifindex' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_IFINDEX
+
+/* Define to 1 if `prog_name' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_NAME
+
+/* Define to 1 if `prog_type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_TYPE
+
+/* Define to 1 if `query.attach_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_QUERY_ATTACH_FLAGS
+
+/* Define to 1 if `query.attach_type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_QUERY_ATTACH_TYPE
+
+/* Define to 1 if `query.prog_cnt' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_QUERY_PROG_CNT
+
+/* Define to 1 if `query.prog_ids' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_QUERY_PROG_IDS
+
+/* Define to 1 if `query.query_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_QUERY_QUERY_FLAGS
+
+/* Define to 1 if `query.target_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_QUERY_TARGET_FD
+
+/* Define to 1 if `raw_tracepoint.name' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_RAW_TRACEPOINT_NAME
+
+/* Define to 1 if `raw_tracepoint.prog_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_RAW_TRACEPOINT_PROG_FD
+
+/* Define to 1 if `replace_bpf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_REPLACE_BPF_FD
+
+/* Define to 1 if `start_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_START_ID
+
+/* Define to 1 if `target_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TARGET_FD
+
+/* Define to 1 if `task_fd_query.buf' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_BUF
+
+/* Define to 1 if `task_fd_query.buf_len' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_BUF_LEN
+
+/* Define to 1 if `task_fd_query.fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_FD
+
+/* Define to 1 if `task_fd_query.fd_type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_FD_TYPE
+
+/* Define to 1 if `task_fd_query.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_FLAGS
+
+/* Define to 1 if `task_fd_query.pid' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PID
+
+/* Define to 1 if `task_fd_query.probe_addr' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PROBE_ADDR
+
+/* Define to 1 if `task_fd_query.probe_offset' is a member of `union
+   bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PROBE_OFFSET
+
+/* Define to 1 if `task_fd_query.prog_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PROG_ID
+
+/* Define to 1 if `test.batch_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_BATCH_SIZE
+
+/* Define to 1 if `test.cpu' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CPU
+
+/* Define to 1 if `test.ctx_in' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_IN
+
+/* Define to 1 if `test.ctx_out' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_OUT
+
+/* Define to 1 if `test.ctx_size_in' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_IN
+
+/* Define to 1 if `test.ctx_size_out' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_OUT
+
+/* Define to 1 if `test.data_in' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_DATA_IN
+
+/* Define to 1 if `test.data_out' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_DATA_OUT
+
+/* Define to 1 if `test.data_size_in' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_DATA_SIZE_IN
+
+/* Define to 1 if `test.data_size_out' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_DATA_SIZE_OUT
+
+/* Define to 1 if `test.duration' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_DURATION
+
+/* Define to 1 if `test.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_FLAGS
+
+/* Define to 1 if `test.prog_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_PROG_FD
+
+/* Define to 1 if `test.repeat' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_REPEAT
+
+/* Define to 1 if `test.retval' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_RETVAL
+
+/* Define to 1 if `value' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_VALUE
+
+/* Define to 1 if `value_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_VALUE_SIZE
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <ustat.h> header file. */
+#undef HAVE_USTAT_H
+
+/* Define to 1 if you have the <wchar.h> header file. */
+#undef HAVE_WCHAR_H
+
+/* Define to 1 if the system provides _Static_assert */
+#undef HAVE__STATIC_ASSERT
+
+/* Define to 1 if the system provides __builtin_popcount function */
+#undef HAVE___BUILTIN_POPCOUNT
+
+/* Define to 1 if the system has the type `__kernel_long_t'. */
+#undef HAVE___KERNEL_LONG_T
+
+/* Define to 1 if the system has the type `__kernel_ulong_t'. */
+#undef HAVE___KERNEL_ULONG_T
+
+/* Define for the HPPA architecture. */
+#undef HPPA
+
+/* Define for the i386 architecture. */
+#undef I386
+
+/* Define for the IA64 architecture. */
+#undef IA64
+
+/* Define for _ABIN32. */
+#undef LINUX_MIPSN32
+
+/* Define for _ABI64. */
+#undef LINUX_MIPSN64
+
+/* Define for _ABIO32. */
+#undef LINUX_MIPSO32
+
+/* Define for the 64-bit LoongArch architecture. */
+#undef LOONGARCH64
+
+/* The size of `kernel_long_t', as computed by sizeof. */
+#undef M32_SIZEOF_KERNEL_LONG_T
+
+/* The size of `long', as computed by sizeof. */
+#undef M32_SIZEOF_LONG
+
+/* The size of `struct msqid64_ds', as computed by sizeof. */
+#undef M32_SIZEOF_STRUCT_MSQID64_DS
+
+/* Define for the m68k architecture. */
+#undef M68K
+
+/* Define for the Meta architecture. */
+#undef METAG
+
+/* Define for the MicroBlaze architecture. */
+#undef MICROBLAZE
+
+/* Define for the MIPS architecture. */
+#undef MIPS
+
+/* The size of `kernel_long_t', as computed by sizeof. */
+#undef MX32_SIZEOF_KERNEL_LONG_T
+
+/* The size of `long', as computed by sizeof. */
+#undef MX32_SIZEOF_LONG
+
+/* The size of `struct msqid64_ds', as computed by sizeof. */
+#undef MX32_SIZEOF_STRUCT_MSQID64_DS
+
+/* Define for the Nios-II architecture. */
+#undef NIOS2
+
+/* Define for the OpenRISC 1000 architecture. */
+#undef OR1K
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define for the PowerPC architecture. */
+#undef POWERPC
+
+/* Define for the big endian PowerPC64 architecture. */
+#undef POWERPC64
+
+/* Define for the little endian PowerPC64 architecture. */
+#undef POWERPC64LE
+
+/* Define for the RISC-V 64-bit architecture */
+#undef RISCV64
+
+/* Define for the S390 architecture. */
+#undef S390
+
+/* Define for the S390x architecture. */
+#undef S390X
+
+/* Define for the SH architecture. */
+#undef SH
+
+/* Define for the SH64 architecture. */
+#undef SH64
+
+/* The size of `kernel_long_t', as computed by sizeof. */
+#undef SIZEOF_KERNEL_LONG_T
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of `long long', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG
+
+/* The size of `off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
+
+/* The size of `struct i64_i32', as computed by sizeof. */
+#undef SIZEOF_STRUCT_I64_I32
+
+/* The size of `struct msqid64_ds', as computed by sizeof. */
+#undef SIZEOF_STRUCT_MSQID64_DS
+
+/* Date */
+#undef SLM_MANPAGE_DATE
+
+/* Define for the SPARC architecture. */
+#undef SPARC
+
+/* Define for the SPARC64 architecture. */
+#undef SPARC64
+
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
+#undef STDC_HEADERS
+
+/* Date */
+#undef STRACE_MANPAGE_DATE
+
+/* Define for the Tile architecture */
+#undef TILE
+
+/* Do symbols demangling in stack trace */
+#undef USE_DEMANGLE
+
+/* Whether to use libdw for stack tracing */
+#undef USE_LIBDW
+
+/* Whether to use libunwind for stack tracing */
+#undef USE_LIBUNWIND
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable general extensions on macOS.  */
+#ifndef _DARWIN_C_SOURCE
+# undef _DARWIN_C_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable X/Open compliant socket functions that do not require linking
+   with -lxnet on HP-UX 11.11.  */
+#ifndef _HPUX_ALT_XOPEN_SOCKET_API
+# undef _HPUX_ALT_XOPEN_SOCKET_API
+#endif
+/* Identify the host operating system as Minix.
+   This macro does not affect the system headers' behavior.
+   A future release of Autoconf may stop defining this macro.  */
+#ifndef _MINIX
+# undef _MINIX
+#endif
+/* Enable general extensions on NetBSD.
+   Enable NetBSD compatibility extensions on Minix.  */
+#ifndef _NETBSD_SOURCE
+# undef _NETBSD_SOURCE
+#endif
+/* Enable OpenBSD compatibility extensions on NetBSD.
+   Oddly enough, this does nothing on OpenBSD.  */
+#ifndef _OPENBSD_SOURCE
+# undef _OPENBSD_SOURCE
+#endif
+/* Define to 1 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_SOURCE
+# undef _POSIX_SOURCE
+#endif
+/* Define to 2 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_1_SOURCE
+# undef _POSIX_1_SOURCE
+#endif
+/* Enable POSIX-compatible threading on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-5:2014.  */
+#ifndef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+# undef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-1:2014.  */
+#ifndef __STDC_WANT_IEC_60559_BFP_EXT__
+# undef __STDC_WANT_IEC_60559_BFP_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-2:2015.  */
+#ifndef __STDC_WANT_IEC_60559_DFP_EXT__
+# undef __STDC_WANT_IEC_60559_DFP_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
+#ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+# undef __STDC_WANT_IEC_60559_FUNCS_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+#ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
+# undef __STDC_WANT_IEC_60559_TYPES_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TR 24731-2:2010.  */
+#ifndef __STDC_WANT_LIB_EXT2__
+# undef __STDC_WANT_LIB_EXT2__
+#endif
+/* Enable extensions specified by ISO/IEC 24747:2009.  */
+#ifndef __STDC_WANT_MATH_SPEC_FUNCS__
+# undef __STDC_WANT_MATH_SPEC_FUNCS__
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable X/Open extensions.  Define to 500 only if necessary
+   to make mbstate_t available.  */
+#ifndef _XOPEN_SOURCE
+# undef _XOPEN_SOURCE
+#endif
+
+
+/* The unwinder to use for stack tracing support */
+#undef USE_UNWINDER
+
+/* Version number of package */
+#undef VERSION
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
+
+/* Define for the 32bit AMD x86-64 architecture. */
+#undef X32
+
+/* Define for the 64bit AMD x86-64 architecture. */
+#undef X86_64
+
+/* Define for the Xtensa architecture */
+#undef XTENSA
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef gid_t
+
+/* Define to __typeof__ if your compiler spells it that way. */
+#undef typeof
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef uid_t

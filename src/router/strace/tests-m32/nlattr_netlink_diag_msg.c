@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -36,12 +36,12 @@ init_netlink_diag_msg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_netlink_diag_msg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=SOCK_DIAG_BY_FAMILY"
-	       ", flags=NLM_F_DUMP, seq=0, pid=0}, {ndiag_family=AF_NETLINK"
-	       ", ndiag_type=SOCK_RAW, ndiag_protocol=NETLINK_ROUTE"
-	       ", ndiag_state=NETLINK_CONNECTED, ndiag_portid=0"
-	       ", ndiag_dst_portid=0, ndiag_dst_group=0, ndiag_ino=0"
-	       ", ndiag_cookie=[0, 0]}",
+	printf("{nlmsg_len=%u, nlmsg_type=SOCK_DIAG_BY_FAMILY"
+	       ", nlmsg_flags=NLM_F_DUMP, nlmsg_seq=0, nlmsg_pid=0}"
+	       ", {ndiag_family=AF_NETLINK, ndiag_type=SOCK_RAW"
+	       ", ndiag_protocol=NETLINK_ROUTE, ndiag_state=NETLINK_CONNECTED"
+	       ", ndiag_portid=0, ndiag_dst_portid=0, ndiag_dst_group=0"
+	       ", ndiag_ino=0, ndiag_cookie=[0, 0]}",
 	       msg_len);
 }
 
@@ -85,10 +85,14 @@ main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_netlink_diag_msg, print_netlink_diag_msg,
 			   NETLINK_DIAG_RX_RING, pattern, ndr,
-			   PRINT_FIELD_U("{", ndr, ndr_block_size);
-			   PRINT_FIELD_U(", ", ndr, ndr_block_nr);
-			   PRINT_FIELD_U(", ", ndr, ndr_frame_size);
-			   PRINT_FIELD_U(", ", ndr, ndr_frame_nr);
+			   printf("{");
+			   PRINT_FIELD_U(ndr, ndr_block_size);
+			   printf(", ");
+			   PRINT_FIELD_U(ndr, ndr_block_nr);
+			   printf(", ");
+			   PRINT_FIELD_U(ndr, ndr_frame_size);
+			   printf(", ");
+			   PRINT_FIELD_U(ndr, ndr_frame_nr);
 			   printf("}"));
 
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,

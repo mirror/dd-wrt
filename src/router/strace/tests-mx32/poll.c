@@ -1,8 +1,8 @@
 /*
  * Check decoding of poll syscall.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -71,8 +71,7 @@ print_pollfd_array_entering(const struct pollfd *const pfd,
 			    const unsigned int abbrev)
 {
 	tprintf("[");
-	unsigned int i;
-	for (i = 0; i < size; ++i) {
+	for (unsigned int i = 0; i < size; ++i) {
 		if (i)
 			tprintf(", ");
 		if (i >= valid) {
@@ -135,8 +134,7 @@ print_pollfd_array_exiting(const struct pollfd *const pfd,
 {
 	tprintf("[");
 	unsigned int seen = 0;
-	unsigned int i;
-	for (i = 0; i < size; ++i)
+	for (unsigned int i = 0; i < size; ++i)
 		print_pollfd_exiting(&pfd[i], &seen, abbrev);
 	tprintf("]");
 }
@@ -155,7 +153,7 @@ main(int ac, char **av)
 		perror_msg_and_skip("poll");
 
 # ifndef PATH_TRACING_FD
-	tprintf("poll(NULL, 42, 0) = -1 EFAULT (%m)\n");
+	tprintf("poll(NULL, 42, 0)" RVAL_EFAULT);
 # endif
 
 	int fds[2];
@@ -244,7 +242,7 @@ main(int ac, char **av)
 	assert(rc == -1);
 
 # ifndef PATH_TRACING_FD
-	tprintf("poll(%p, 1, 0) = -1 EFAULT (%m)\n", efault);
+	tprintf("poll(%p, 1, 0)" RVAL_EFAULT, efault);
 # endif
 
 	const unsigned int valid = 1;
@@ -256,7 +254,7 @@ main(int ac, char **av)
 	tprintf("poll(");
 	print_pollfd_array_entering(epfds, valid + 1, valid, abbrev);
 	errno = EFAULT;
-	tprintf(", %u, 0) = -1 EFAULT (%m)\n", valid + 1);
+	tprintf(", %u, 0)" RVAL_EFAULT, valid + 1);
 # endif /* !PATH_TRACING_FD */
 
 # ifdef PATH_TRACING_FD
@@ -281,7 +279,7 @@ main(int ac, char **av)
 	tprintf("poll(");
 	print_pollfd_array_entering(epfds, valid + 1, valid, abbrev);
 	errno = EFAULT;
-	tprintf(", %u, 0) = -1 EFAULT (%m)\n", valid + 1);
+	tprintf(", %u, 0)" RVAL_EFAULT, valid + 1);
 # endif /* PATH_TRACING_FD */
 
 	tprintf("+++ exited with 0 +++\n");

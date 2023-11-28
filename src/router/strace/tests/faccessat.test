@@ -2,7 +2,7 @@
 #
 # Check decoding of faccessat syscall.
 #
-# Copyright (c) 2020 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2020 Dmitry V. Levin <ldv@strace.io>
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,5 +15,5 @@ run_prog > /dev/null
 run_strace -a23 --trace=faccessat "$@" $args > "$EXP"
 
 # Filter out faccessat() calls made by ld.so and libc.
-sed -n '/^faccessat(-1, NULL,/,$p' < "$LOG" > "$OUT"
+sed -n '/faccessat(-1, NULL,/,$p' < "$LOG" > "$OUT"
 match_diff "$OUT" "$EXP"

@@ -2,7 +2,7 @@
  * Check decoding of perf_event_open syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,22 +11,20 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined(__NR_perf_event_open) && defined(HAVE_LINUX_PERF_EVENT_H)
+#include <limits.h>
+#include <stdio.h>
+#include <unistd.h>
 
-# include <limits.h>
-# include <stdio.h>
-# include <unistd.h>
+#include <linux/perf_event.h>
 
-# include <linux/perf_event.h>
+#include "xlat.h"
+#include "xlat/perf_event_open_flags.h"
 
-# include "xlat.h"
-# include "xlat/perf_event_open_flags.h"
-
-# if ULONG_MAX > UINT_MAX
-#  define LONG_STR_PREFIX "ffffffff"
-# else
-#  define LONG_STR_PREFIX ""
-# endif
+#if ULONG_MAX > UINT_MAX
+# define LONG_STR_PREFIX "ffffffff"
+#else
+# define LONG_STR_PREFIX ""
+#endif
 
 static const char *printaddr(void *ptr)
 {
@@ -72,10 +70,9 @@ main(void)
 			"PERF_FLAG_FD_NO_GROUP|PERF_FLAG_FD_OUTPUT|"
 			"PERF_FLAG_PID_CGROUP|PERF_FLAG_FD_CLOEXEC" },
 	};
-	size_t i;
 	int rc;
 
-	for (i = 0; i < ARRAY_SIZE(args); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(args); ++i) {
 		rc = syscall(__NR_perf_event_open, args[i].attr, args[i].pid,
 			args[i].cpu, args[i].group_fd, args[i].flags);
 		printf("perf_event_open(%s, %d, %d, %d, %s) = %s\n",
@@ -86,9 +83,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_perf_event_open && HAVE_LINUX_PERF_EVENT_H");
-
-#endif

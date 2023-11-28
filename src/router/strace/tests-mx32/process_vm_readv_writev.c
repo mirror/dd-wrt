@@ -2,7 +2,7 @@
  * Check decoding of process_vm_readv/process_vm_writev syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -45,7 +45,6 @@ static void
 print_iov(const struct iovec *iov, const void *arg_ptr, long rc)
 {
 	const struct print_iov_arg *arg = arg_ptr;
-	uint32_t i;
 	uint32_t num_segm = 0;
 	uint64_t segm_offs = 0;
 
@@ -60,7 +59,7 @@ print_iov(const struct iovec *iov, const void *arg_ptr, long rc)
 
 	printf("[");
 
-	for (i = 0; i < arg->count; i++) {
+	for (uint32_t i = 0; i < arg->count; ++i) {
 		if (i)
 			printf(", ");
 
@@ -157,7 +156,7 @@ do_call(kernel_ulong_t pid, enum pid_type pid_type,
 		(unsigned long) flags, errstr);
 }
 
-kernel_ulong_t
+static kernel_ulong_t
 ptr_cast(void *ptr)
 {
 	return (kernel_ulong_t) (uintptr_t) ptr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 The strace developers.
+ * Copyright (c) 2020-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -7,30 +7,29 @@
 
 #include "tests.h"
 
-#ifdef HAVE_LINUX_TEE_H
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
 
-# include <fcntl.h>
-# include <stdio.h>
-# include <string.h>
+#include <linux/tee.h>
 
-# include <linux/tee.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-# include <sys/ioctl.h>
-# include <sys/stat.h>
-# include <sys/types.h>
+#include "xlat.h"
 
-# include "xlat.h"
+#define NUM_PARAMS 8
+#define UUID_SIZE 16
 
-# define NUM_PARAMS 8
-# define RVAL_EBADF " = -1 EBADF (%m)\n"
+#ifndef TEE_IOCTL_SHM_MAPPED
+# define TEE_IOCTL_SHM_MAPPED 0x1
+#endif
+#ifndef TEE_IOCTL_SHM_DMA_BUF
+# define TEE_IOCTL_SHM_DMA_BUF 0x2
+#endif
 
-# define UUID_SIZE 16
-
-# ifndef TEE_IOCTL_PARAM_ATTR_META
-#  define TEE_IOCTL_PARAM_ATTR_META 0x100
-# endif
-
-# ifndef HAVE_STRUCT_TEE_IOCTL_SHM_REGISTER_FD_DATA
+/* Not in mainline.  */
 struct tee_ioctl_shm_register_fd_data {
 	__s64 fd;
 	__u64 size;
@@ -39,46 +38,28 @@ struct tee_ioctl_shm_register_fd_data {
 	__u32 id;
 	__u8  _pad2[4];
 } ATTRIBUTE_ALIGNED(8);
-# endif
 
-# ifndef HAVE_STRUCT_TEE_IOCTL_SHM_REGISTER_DATA
-struct tee_ioctl_shm_register_data {
-	__u64 addr;
-	__u64 length;
-	__u32 flags;
-	__s32 id;
-};
-# endif
-
-# ifndef TEE_IOC_SHM_REGISTER_FD
-#  define TEE_IOC_SHM_REGISTER_FD _IOWR(TEE_IOC_MAGIC, TEE_IOC_BASE + 8, \
+#define TEE_IOC_SHM_REGISTER_FD _IOWR(TEE_IOC_MAGIC, TEE_IOC_BASE + 8, \
 					struct tee_ioctl_shm_register_fd_data)
-# endif
-
-# ifndef TEE_IOC_SHM_REGISTER
-#  define TEE_IOC_SHM_REGISTER    _IOWR(TEE_IOC_MAGIC, TEE_IOC_BASE + 9, \
-					struct tee_ioctl_shm_register_data)
-# endif
-
 
 typedef struct {
 	uint8_t b[UUID_SIZE];
 } uuid_t;
 
-# define UUID_INIT(a_, b_, c_, d0, d1, d2, d3, d4, d5, d6, d7)		\
+#define UUID_INIT(a_, b_, c_, d0, d1, d2, d3, d4, d5, d6, d7)		\
 { .b = {((a_) >> 24) & 0xff, ((a_) >> 16) & 0xff,			\
         ((a_) >> 8) & 0xff, (a_) & 0xff,				\
         ((b_) >> 8) & 0xff, (b_) & 0xff,				\
         ((c_) >> 8) & 0xff, (c_) & 0xff,				\
         (d0), (d1), (d2), (d3), (d4), (d5), (d6), (d7)} }
 
-# define CHK_NULL(ioctl_)						\
+#define CHK_NULL(ioctl_)						\
 	do {								\
 		ioctl(-1, ioctl_, NULL);				\
 		printf("ioctl(-1, " #ioctl_ ", NULL)" RVAL_EBADF);	\
 	} while (0)
 
-# define CHK_BUF(ioctl_)						\
+#define CHK_BUF(ioctl_)						\
 	do {								\
 		ioctl(-1, ioctl_, &buf_data);				\
 		printf("ioctl(-1, " #ioctl_				\
@@ -87,12 +68,13 @@ typedef struct {
 		       (unsigned long long) buf_data.buf_ptr);		\
 	} while (0)
 
-# define DEFINE_BUF_W_PARAMS(type_, shorthand_)				\
-	const size_t shorthand_ ## _size = sizeof(type_) +		\
-		NUM_PARAMS * sizeof(struct tee_ioctl_param);		\
+#define DEFINE_BUF_W_PARAMS(type_, shorthand_)				\
 	union {								\
 		type_ shorthand_;					\
-		uint8_t data[shorthand_ ## _size];			\
+		struct {						\
+			uint8_t type_buf[sizeof(type_)];		\
+			struct tee_ioctl_param params[NUM_PARAMS];	\
+		} data;							\
 	} shorthand_ ## _buf
 
 static const unsigned long one_beef = (unsigned long) 0xcafef00ddeadbeefULL;
@@ -160,7 +142,6 @@ main(void)
 	struct tee_ioctl_shm_register_fd_data shm_register_fd;
 
 	struct tee_ioctl_buf_data buf_data;
-	struct tee_ioctl_param *params = NULL;
 
 	DEFINE_BUF_W_PARAMS(struct tee_ioctl_invoke_arg, invoke);
 	DEFINE_BUF_W_PARAMS(struct tee_iocl_supp_recv_arg, supp_recv);
@@ -236,10 +217,9 @@ main(void)
 	invoke_buf.invoke.session = (uint32_t) two_beef;
 	invoke_buf.invoke.cancel_id = (uint32_t) red_beef;
 	invoke_buf.invoke.num_params = NUM_PARAMS;
-	params = (struct tee_ioctl_param *)(&invoke_buf.invoke + 1);
-	fill_params(params);
+	fill_params(invoke_buf.data.params);
 	buf_data.buf_ptr = (uintptr_t) &invoke_buf;
-	buf_data.buf_len = invoke_size;
+	buf_data.buf_len = sizeof(invoke_buf);
 	ioctl(-1, TEE_IOC_INVOKE, &buf_data);
 	printf("ioctl(-1, TEE_IOC_INVOKE, {buf_len=%llu, "
 	       "buf_ptr={func=%u, session=%#x, cancel_id=%u, "
@@ -247,7 +227,7 @@ main(void)
 	       (unsigned long long) buf_data.buf_len,
 	       (uint32_t) one_beef, (uint32_t) two_beef,
 	       (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(invoke_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	open_session_buf.open_session.clnt_login = TEE_IOCTL_LOGIN_PUBLIC;
@@ -256,10 +236,9 @@ main(void)
 	memcpy(&open_session_buf.open_session.uuid, &uuid_beef, UUID_SIZE);
 	open_session_buf.open_session.cancel_id = (uint32_t) red_beef;
 	open_session_buf.open_session.num_params = NUM_PARAMS;
-	params = (struct tee_ioctl_param *)(&open_session_buf.open_session + 1);
-	fill_params(params);
+	fill_params(open_session_buf.data.params);
 	buf_data.buf_ptr = (uintptr_t) &open_session_buf;
-	buf_data.buf_len = open_session_size;
+	buf_data.buf_len = sizeof(open_session_buf);
 	ioctl(-1, TEE_IOC_OPEN_SESSION, &buf_data);
 	printf("ioctl(-1, TEE_IOC_OPEN_SESSION, {buf_len=%llu, "
 	       "buf_ptr={uuid=deadbeef-cafe-c0de-badc-0dedfacefeed, "
@@ -268,7 +247,7 @@ main(void)
 	       "num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(open_session_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	/* All the login types */
@@ -281,7 +260,7 @@ main(void)
 	       "num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(open_session_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	open_session_buf.open_session.clnt_login = TEE_IOCTL_LOGIN_GROUP;
@@ -293,7 +272,7 @@ main(void)
 	       "num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       gid, (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(open_session_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	open_session_buf.open_session.clnt_login = TEE_IOCTL_LOGIN_APPLICATION;
@@ -305,7 +284,7 @@ main(void)
 	       "num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(open_session_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	open_session_buf.open_session.clnt_login = TEE_IOCTL_LOGIN_USER_APPLICATION;
@@ -317,7 +296,7 @@ main(void)
 	       "num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(open_session_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	open_session_buf.open_session.clnt_login = TEE_IOCTL_LOGIN_GROUP_APPLICATION;
@@ -329,7 +308,7 @@ main(void)
 	       "num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       gid, (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(open_session_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	open_session_buf.open_session.clnt_login = 0xff;
@@ -347,35 +326,33 @@ main(void)
 	printf("], cancel_id=%u, "
 	       "num_params=%u, params=[",
 	       (uint32_t) red_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(open_session_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	supp_recv_buf.supp_recv.func = (uint32_t) blu_beef;
 	supp_recv_buf.supp_recv.num_params = NUM_PARAMS;
-	params = (struct tee_ioctl_param *)(&supp_recv_buf.supp_recv + 1);
-	fill_params(params);
+	fill_params(supp_recv_buf.data.params);
 	buf_data.buf_ptr = (uintptr_t) &supp_recv_buf;
-	buf_data.buf_len = supp_recv_size;
+	buf_data.buf_len = sizeof(supp_recv_buf);
 	ioctl(-1, TEE_IOC_SUPPL_RECV, &buf_data);
 	printf("ioctl(-1, TEE_IOC_SUPPL_RECV, {buf_len=%llu, "
 	       "buf_ptr={func=%u, "
 	       "num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       (uint32_t) blu_beef, NUM_PARAMS);
-	print_params(params);
+	print_params(supp_recv_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	supp_send_buf.supp_send.num_params = NUM_PARAMS;
-	params = (struct tee_ioctl_param *)(&supp_send_buf.supp_send + 1);
-	fill_params(params);
+	fill_params(supp_send_buf.data.params);
 	buf_data.buf_ptr = (uintptr_t) &supp_send_buf;
-	buf_data.buf_len = supp_send_size;
+	buf_data.buf_len = sizeof(supp_send_buf);
 	ioctl(-1, TEE_IOC_SUPPL_SEND, &buf_data);
 	printf("ioctl(-1, TEE_IOC_SUPPL_SEND, {buf_len=%llu, "
 	       "buf_ptr={num_params=%u, params=[",
 	       (unsigned long long) buf_data.buf_len,
 	       NUM_PARAMS);
-	print_params(params);
+	print_params(supp_send_buf.data.params);
 	printf("]}})" RVAL_EBADF);
 
 	/* Valid buf, but unmatching num_params */
@@ -385,16 +362,16 @@ main(void)
 	open_session_buf.open_session.num_params = 0;
 
 	buf_data.buf_ptr = (uintptr_t) &invoke_buf;
-	buf_data.buf_len = invoke_size;
+	buf_data.buf_len = sizeof(invoke_buf);
 	CHK_BUF(TEE_IOC_INVOKE);
 	buf_data.buf_ptr = (uintptr_t) &open_session_buf;
-	buf_data.buf_len = open_session_size;
+	buf_data.buf_len = sizeof(open_session_buf);
 	CHK_BUF(TEE_IOC_OPEN_SESSION);
 	buf_data.buf_ptr = (uintptr_t) &supp_recv_buf;
-	buf_data.buf_len = supp_recv_size;
+	buf_data.buf_len = sizeof(supp_recv_buf);
 	CHK_BUF(TEE_IOC_SUPPL_RECV);
 	buf_data.buf_ptr = (uintptr_t) &supp_send_buf;
-	buf_data.buf_len = supp_send_size;
+	buf_data.buf_len = sizeof(supp_send_buf);
 	CHK_BUF(TEE_IOC_SUPPL_SEND);
 
 	invoke_buf.invoke.num_params = NUM_PARAMS;
@@ -417,21 +394,15 @@ main(void)
 
 	/* Valid buf_len, invalid buf_ptr */
 	buf_data.buf_ptr = one_beef;
-	buf_data.buf_len = invoke_size;
+	buf_data.buf_len = sizeof(invoke_buf);
 	CHK_BUF(TEE_IOC_INVOKE);
-	buf_data.buf_len = open_session_size;
+	buf_data.buf_len = sizeof(open_session_buf);
 	CHK_BUF(TEE_IOC_OPEN_SESSION);
-	buf_data.buf_len = supp_recv_size;
+	buf_data.buf_len = sizeof(supp_recv_buf);
 	CHK_BUF(TEE_IOC_SUPPL_RECV);
-	buf_data.buf_len = supp_send_size;
+	buf_data.buf_len = sizeof(supp_send_buf);
 	CHK_BUF(TEE_IOC_SUPPL_SEND);
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else /* !HAVE_LINUX_TEE_H */
-
-SKIP_MAIN_UNDEFINED("HAVE_LINUX_TEE_H")
-
-#endif /* HAVE_LINUX_TEE_H */

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -35,8 +35,9 @@
 # include "xlat/futexwakeops.h"
 # include "xlat/futexwakecmps.h"
 
-void futex_error(int *uaddr, int op, unsigned long val, unsigned long timeout,
-	int *uaddr2, unsigned long val3, int rc, const char *func, int line)
+static void
+futex_error(int *uaddr, int op, unsigned long val, unsigned long timeout,
+	    int *uaddr2, unsigned long val3, int rc, const char *func, int line)
 {
 	perror_msg_and_fail("%s:%d: futex(%p, %#x, %#x, %#lx, %p, %#x) = %d",
 		func, line, uaddr, op, (unsigned) val, timeout, uaddr,
@@ -73,7 +74,8 @@ enum argmask {
 	ARG6 = 1 << 3,
 };
 
-void invalid_op(int *val, int op, uint32_t argmask, ...)
+static void
+invalid_op(int *val, int op, uint32_t argmask, ...)
 {
 	static const unsigned long args[] = {
 		(unsigned long) 0xface1e55deadbee1ULL,
@@ -84,15 +86,15 @@ void invalid_op(int *val, int op, uint32_t argmask, ...)
 	/* Since timeout value is copied before full op check, we should provide
 	 * some valid timeout address or NULL */
 	int cmd = op & FUTEX_CMD_MASK;
-	bool valid_timeout = (cmd == FUTEX_WAIT) || (cmd == FUTEX_LOCK_PI) ||
-		(cmd == FUTEX_WAIT_BITSET) || (cmd == FUTEX_WAIT_REQUEUE_PI);
+	bool valid_timeout = (cmd == FUTEX_WAIT) || (cmd == FUTEX_LOCK_PI) || \
+		(cmd == FUTEX_LOCK_PI2) || (cmd == FUTEX_WAIT_BITSET) || \
+		(cmd == FUTEX_WAIT_REQUEUE_PI);
 	bool timeout_is_val2 = (cmd == FUTEX_REQUEUE) ||
 		(cmd == FUTEX_CMP_REQUEUE) || (cmd == FUTEX_WAKE_OP) ||
 		(cmd == FUTEX_CMP_REQUEUE_PI);
 	const char *fmt;
 	int saved_errno;
 	int rc;
-	int i;
 	va_list ap;
 
 
@@ -103,7 +105,7 @@ void invalid_op(int *val, int op, uint32_t argmask, ...)
 
 	va_start(ap, argmask);
 
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; ++i) {
 		if (argmask & (1 << i)) {
 			fmt = va_arg(ap, const char *);
 
@@ -120,7 +122,7 @@ void invalid_op(int *val, int op, uint32_t argmask, ...)
 	va_end(ap);
 
 	errno = saved_errno;
-	printf(") = -1 ENOSYS (%m)\n");
+	printf(")" RVAL_ENOSYS);
 }
 
 # define CHECK_INVALID_CLOCKRT(op, ...) \
@@ -155,13 +157,11 @@ main(int argc, char *argv[])
 	TAIL_ALLOC_OBJECT_CONST_PTR(int, uaddr);
 	TAIL_ALLOC_OBJECT_CONST_PTR(int, uaddr2);
 	int rc;
-	unsigned i;
-	unsigned j;
 
 	uaddr[0] = 0x1deadead;
 	uaddr2[0] = 0xbadf00d;
 
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct timespec, tmout);
+	TAIL_ALLOC_OBJECT_CONST_PTR(kernel_old_timespec_t, tmout);
 	tmout->tv_sec = 123;
 	tmout->tv_nsec = 0xbadc0de;
 
@@ -205,7 +205,7 @@ main(int argc, char *argv[])
 	       uaddr, VAL_PR, (long long) tmout->tv_sec,
 	       zero_extend_signed_to_ull(tmout->tv_nsec), sprintrc(rc));
 
-	tmout->tv_sec = (time_t) 0xcafef00ddeadbeefLL;
+	tmout->tv_sec = (typeof(tmout->tv_sec)) 0xcafef00ddeadbeefLL;
 	tmout->tv_nsec = (long) 0xbadc0dedfacefeedLL;
 
 	CHECK_FUTEX(uaddr, FUTEX_WAIT, VAL, tmout, uaddr2, VAL3,
@@ -579,8 +579,8 @@ main(int argc, char *argv[])
 			ENOSYS, EINVAL },
 	};
 
-	for (i = 0; i < ARRAY_SIZE(wake_ops); i++) {
-		for (j = 0; j < 2; j++) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(wake_ops); ++i) {
+		for (unsigned int j = 0; j < 2; ++j) {
 			CHECK_FUTEX_ENOSYS(uaddr,
 				j ? FUTEX_WAKE_OP_PRIVATE : FUTEX_WAKE_OP,
 				VAL, i, uaddr2, wake_ops[i].val,
@@ -767,13 +767,40 @@ main(int argc, char *argv[])
 	CHECK_INVALID_CLOCKRT(FUTEX_CMP_REQUEUE_PI, ARG3 | ARG4 | ARG5 | ARG6,
 		"%u", "%u", "%#lx", "%u");
 
+	/* FUTEX_LOCK_PI2 - same as FUTEX_LOCK_PI, but with CLOCK_MONOTONIC
+	 *                  instead of CLOCK_REALTIME.
+	 * Possible flags: PRIVATE
+	 * 1. uaddr   - futex address
+	 * 2. op      - FUTEX_LOCK_PI2
+	 * 3. val     - not used
+	 * 4. timeout - timeout
+	 * 5. uaddr2  - not used
+	 * 6. val3    - not used
+	 */
+
+	*uaddr = getpid();
+
+	CHECK_FUTEX_ENOSYS(uaddr + 1, FUTEX_LOCK_PI2, VAL, tmout, uaddr2 + 1,
+		VAL3, (rc == -1) && (errno == EFAULT));
+	printf("futex(%p, FUTEX_LOCK_PI2, {tv_sec=%lld, tv_nsec=%llu}) = %s\n",
+	       uaddr + 1, (long long) tmout->tv_sec,
+	       zero_extend_signed_to_ull(tmout->tv_nsec), sprintrc(rc));
+
+	CHECK_FUTEX_ENOSYS(uaddr + 1, FUTEX_PRIVATE_FLAG | FUTEX_LOCK_PI2, VAL,
+		tmout, uaddr2 + 1, VAL3, (rc == -1) && (errno == EFAULT));
+	printf("futex(%p, FUTEX_LOCK_PI2_PRIVATE, {tv_sec=%lld, tv_nsec=%llu})"
+	       " = %s\n",
+	       uaddr + 1, (long long) tmout->tv_sec,
+	       zero_extend_signed_to_ull(tmout->tv_nsec), sprintrc(rc));
+
+
 	/*
 	 * Unknown commands
 	 */
 
-	CHECK_FUTEX(uaddr, 0xd, VAL, tmout + 1, uaddr2 + 1, VAL3,
+	CHECK_FUTEX(uaddr, 0xe, VAL, tmout + 1, uaddr2 + 1, VAL3,
 		(rc == -1) && (errno == ENOSYS));
-	printf("futex(%p, 0xd /* FUTEX_??? */, %u, %p, %p, %#x) = %s\n",
+	printf("futex(%p, 0xe /* FUTEX_??? */, %u, %p, %p, %#x) = %s\n",
 		uaddr, VAL_PR, tmout + 1, uaddr2 + 1, VAL3_PR, sprintrc(rc));
 
 	CHECK_FUTEX(uaddr, 0xbefeeded, VAL, tmout + 1, uaddr2, VAL3,

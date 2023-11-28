@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2018-2022 The strace developers.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ */
+
+#define ARCH_NEEDS_NON_SHUFFLED_SCNO_CHECK 1
+#define ARCH_MX32_SIZEOF_STRUCT_MSQID64_DS 120
+#define HAVE_ARCH_OLD_MMAP 1
+#define HAVE_ARCH_OLD_SELECT 1
+#define HAVE_ARCH_UID16_SYSCALLS 1
+#define SUPPORTED_PERSONALITIES 3
+#define PERSONALITY_DESIGNATORS { "64", "32", "x32" }
+#define PERSONALITY_NAMES { "64 bit", "32 bit", "x32" }
+#define PERSONALITY0_AUDIT_ARCH { AUDIT_ARCH_X86_64, 0 }
+#define PERSONALITY1_AUDIT_ARCH { AUDIT_ARCH_I386,   0 }
+#define PERSONALITY2_AUDIT_ARCH { AUDIT_ARCH_X86_64, __X32_SYSCALL_BIT }
+#ifndef __X32_SYSCALL_BIT
+# define __X32_SYSCALL_BIT 0x40000000UL
+#endif

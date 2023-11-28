@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -50,9 +50,8 @@ print_opts(const char *name, const struct cmsghdr *c)
 	printf("%s", name);
 	if (len) {
 		printf(", cmsg_data=[");
-		size_t i;
-		for (i = 0; i < len; ++i)
-			printf("%s0x%02x", i ? ", " : "", opts[i]);
+		for (size_t i = 0; i < len; ++i)
+			printf("%s%#x", i ? ", " : "", opts[i]);
 		printf("]");
 	}
 }
@@ -134,8 +133,8 @@ main(void)
 	       ntohs(addr.sin_port), (unsigned) mh.msg_namelen,
 	       data, (unsigned) size);
 
-	struct cmsghdr *c;
-	for (c = CMSG_FIRSTHDR(&mh); c; c = CMSG_NXTHDR(&mh, c)) {
+	for (struct cmsghdr *c = CMSG_FIRSTHDR(&mh);
+	     c; c = CMSG_NXTHDR(&mh, c)) {
 		if (IPPROTO_IP != c->cmsg_level)
 			continue;
 		if (c != control)

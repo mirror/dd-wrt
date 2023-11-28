@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -81,8 +81,8 @@ test_nlmsg_type(const int fd)
 	};
 
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=SOCK_DIAG_BY_FAMILY"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=SOCK_DIAG_BY_FAMILY"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 }
@@ -98,9 +98,9 @@ test_nlmsg_flags(const int fd)
 	};
 
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=SOCK_DIAG_BY_FAMILY"
-	       ", flags=NLM_F_REQUEST|NLM_F_DUMP, seq=0, pid=0}"
-	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=SOCK_DIAG_BY_FAMILY"
+	       ", nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=0"
+	       ", nlmsg_pid=0}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 }
 
@@ -141,7 +141,7 @@ test_odd_family_req(const int fd)
 		     SOCK_DIAG_BY_FAMILY,
 		     NLM_F_REQUEST,
 		     sizeof(buf), buf, sizeof(buf),
-		     printf("{family=AF_UNSPEC, \"\\x31\\x32\\x33\\x34\"}"));
+		     printf("{family=AF_UNSPEC, data=\"\\x31\\x32\\x33\\x34\"}"));
 
 	/* unknown family and string */
 	family = 0xfd;
@@ -151,7 +151,7 @@ test_odd_family_req(const int fd)
 		     NLM_F_REQUEST,
 		     sizeof(buf), buf, sizeof(buf),
 		     printf("{family=%#x /* AF_??? */"
-			    ", \"\\x31\\x32\\x33\\x34\"}", family));
+			    ", data=\"\\x31\\x32\\x33\\x34\"}", family));
 }
 
 static void
@@ -187,7 +187,7 @@ test_odd_family_msg(const int fd)
 	TEST_NETLINK(fd, nlh0,
 		     SOCK_DIAG_BY_FAMILY, NLM_F_DUMP,
 		     sizeof(buf), buf, sizeof(buf),
-		     printf("{family=AF_UNSPEC, \"\\x31\\x32\\x33\\x34\"}"));
+		     printf("{family=AF_UNSPEC, data=\"\\x31\\x32\\x33\\x34\"}"));
 
 	/* unknown family and string */
 	family = 0xfd;
@@ -196,7 +196,7 @@ test_odd_family_msg(const int fd)
 		     SOCK_DIAG_BY_FAMILY, NLM_F_DUMP,
 		     sizeof(buf), buf, sizeof(buf),
 		     printf("{family=%#x /* AF_??? */"
-			    ", \"\\x31\\x32\\x33\\x34\"}", family));
+			    ", data=\"\\x31\\x32\\x33\\x34\"}", family));
 }
 
 static void
@@ -214,11 +214,14 @@ test_unix_diag_req(const int fd)
 	TEST_SOCK_DIAG(fd, nlh0, AF_UNIX,
 		       SOCK_DIAG_BY_FAMILY, NLM_F_REQUEST, req,
 		       printf("{sdiag_family=AF_UNIX"),
-		       PRINT_FIELD_U(", ", req, sdiag_protocol);
+		       printf(", ");
+		       PRINT_FIELD_U(req, sdiag_protocol);
 		       printf(", udiag_states=1<<TCP_ESTABLISHED|1<<TCP_LISTEN");
-		       PRINT_FIELD_U(", ", req, udiag_ino);
+		       printf(", ");
+		       PRINT_FIELD_U(req, udiag_ino);
 		       printf(", udiag_show=UDIAG_SHOW_NAME");
-		       PRINT_FIELD_COOKIE(", ", req, udiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(req, udiag_cookie);
 		       printf("}"));
 }
 
@@ -238,8 +241,10 @@ test_unix_diag_msg(const int fd)
 		       printf("{udiag_family=AF_UNIX"),
 		       printf(", udiag_type=SOCK_STREAM"
 			      ", udiag_state=TCP_FIN_WAIT1");
-		       PRINT_FIELD_U(", ", msg, udiag_ino);
-		       PRINT_FIELD_COOKIE(", ", msg, udiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, udiag_ino);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(msg, udiag_cookie);
 		       printf("}"));
 }
 
@@ -258,9 +263,11 @@ test_netlink_diag_req(const int fd)
 		       SOCK_DIAG_BY_FAMILY, NLM_F_REQUEST, req,
 		       printf("{sdiag_family=AF_NETLINK"),
 		       printf(", sdiag_protocol=NDIAG_PROTO_ALL");
-		       PRINT_FIELD_U(", ", req, ndiag_ino);
+		       printf(", ");
+		       PRINT_FIELD_U(req, ndiag_ino);
 		       printf(", ndiag_show=NDIAG_SHOW_MEMINFO");
-		       PRINT_FIELD_COOKIE(", ", req, ndiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(req, ndiag_cookie);
 		       printf("}"));
 
 	req.sdiag_protocol = NETLINK_ROUTE;
@@ -269,9 +276,11 @@ test_netlink_diag_req(const int fd)
 		       SOCK_DIAG_BY_FAMILY, NLM_F_REQUEST, req,
 		       printf("{sdiag_family=AF_NETLINK"),
 		       printf(", sdiag_protocol=NETLINK_ROUTE");
-		       PRINT_FIELD_U(", ", req, ndiag_ino);
+		       printf(", ");
+		       PRINT_FIELD_U(req, ndiag_ino);
 		       printf(", ndiag_show=NDIAG_SHOW_GROUPS");
-		       PRINT_FIELD_COOKIE(", ", req, ndiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(req, ndiag_cookie);
 		       printf("}"));
 }
 
@@ -296,11 +305,16 @@ test_netlink_diag_msg(const int fd)
 		       printf(", ndiag_type=SOCK_RAW"
 			      ", ndiag_protocol=NETLINK_ROUTE"
 			      ", ndiag_state=NETLINK_CONNECTED");
-		       PRINT_FIELD_U(", ", msg, ndiag_portid);
-		       PRINT_FIELD_U(", ", msg, ndiag_dst_portid);
-		       PRINT_FIELD_U(", ", msg, ndiag_dst_group);
-		       PRINT_FIELD_U(", ", msg, ndiag_ino);
-		       PRINT_FIELD_COOKIE(", ", msg, ndiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, ndiag_portid);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, ndiag_dst_portid);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, ndiag_dst_group);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, ndiag_ino);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(msg, ndiag_cookie);
 		       printf("}"));
 }
 
@@ -319,9 +333,11 @@ test_packet_diag_req(const int fd)
 		       SOCK_DIAG_BY_FAMILY, NLM_F_REQUEST, req,
 		       printf("{sdiag_family=AF_PACKET"),
 		       printf(", sdiag_protocol=%#x", req.sdiag_protocol);
-		       PRINT_FIELD_U(", ", req, pdiag_ino);
+		       printf(", ");
+		       PRINT_FIELD_U(req, pdiag_ino);
 		       printf(", pdiag_show=PACKET_SHOW_INFO");
-		       PRINT_FIELD_COOKIE(", ", req, pdiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(req, pdiag_cookie);
 		       printf("}"));
 }
 
@@ -341,8 +357,10 @@ test_packet_diag_msg(const int fd)
 		       printf("{pdiag_family=AF_PACKET"),
 		       printf(", pdiag_type=SOCK_STREAM");
 		       printf(", pdiag_num=ETH_P_QINQ1");
-		       PRINT_FIELD_U(", ", msg, pdiag_ino);
-		       PRINT_FIELD_COOKIE(", ", msg, pdiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, pdiag_ino);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(msg, pdiag_cookie);
 		       printf("}"));
 }
 
@@ -384,7 +402,8 @@ test_inet_diag_sockid(const int fd)
 			    ntohs(req.id.idiag_dport),
 			    address, address);
 		     printf(", idiag_if=" IFINDEX_LO_STR);
-		     PRINT_FIELD_COOKIE(", ", req.id, idiag_cookie);
+		     printf(", ");
+		     PRINT_FIELD_COOKIE(req.id, idiag_cookie);
 		     printf("}}"));
 
 	req.sdiag_family = AF_INET6;
@@ -407,7 +426,8 @@ test_inet_diag_sockid(const int fd)
 			    ntohs(req.id.idiag_dport),
 			    address6, address6);
 		     printf(", idiag_if=" IFINDEX_LO_STR);
-		     PRINT_FIELD_COOKIE(", ", req.id, idiag_cookie);
+		     printf(", ");
+		     PRINT_FIELD_COOKIE(req.id, idiag_cookie);
 		     printf("}}"));
 }
 
@@ -438,8 +458,10 @@ test_inet_diag_req(const int fd)
 	TEST_SOCK_DIAG(fd, nlh0, AF_INET,
 		       TCPDIAG_GETSOCK, NLM_F_REQUEST, req,
 		       printf("{idiag_family=AF_INET"),
-		       PRINT_FIELD_U(", ", req, idiag_src_len);
-		       PRINT_FIELD_U(", ", req, idiag_dst_len);
+		       printf(", ");
+		       PRINT_FIELD_U(req, idiag_src_len);
+		       printf(", ");
+		       PRINT_FIELD_U(req, idiag_dst_len);
 		       printf(", idiag_ext=1<<(INET_DIAG_TOS-1)");
 		       printf(", id={idiag_sport=htons(%u)"
 			      ", idiag_dport=htons(%u)"
@@ -449,9 +471,11 @@ test_inet_diag_req(const int fd)
 			      ntohs(req.id.idiag_dport),
 			      address, address);
 		       printf(", idiag_if=" IFINDEX_LO_STR);
-		       PRINT_FIELD_COOKIE(", ", req.id, idiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(req.id, idiag_cookie);
 		       printf("}, idiag_states=1<<TCP_LAST_ACK");
-		       PRINT_FIELD_U(", ", req, idiag_dbs);
+		       printf(", ");
+		       PRINT_FIELD_U(req, idiag_dbs);
 		       printf("}"));
 }
 
@@ -491,7 +515,8 @@ test_inet_diag_req_v2(const int fd)
 			      ntohs(req.id.idiag_dport),
 			      address, address);
 		       printf(", idiag_if=" IFINDEX_LO_STR);
-		       PRINT_FIELD_COOKIE(", ", req.id, idiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(req.id, idiag_cookie);
 		       printf("}}"));
 }
 
@@ -526,8 +551,10 @@ test_inet_diag_msg(const int fd)
 		       SOCK_DIAG_BY_FAMILY, NLM_F_DUMP, msg,
 		       printf("{idiag_family=AF_INET"),
 		       printf(", idiag_state=TCP_LISTEN");
-		       PRINT_FIELD_U(", ", msg, idiag_timer);
-		       PRINT_FIELD_U(", ", msg, idiag_retrans);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, idiag_timer);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, idiag_retrans);
 		       printf(", id={idiag_sport=htons(%u)"
 			      ", idiag_dport=htons(%u)"
 			      ", idiag_src=inet_addr(\"%s\")"
@@ -536,12 +563,18 @@ test_inet_diag_msg(const int fd)
 			      ntohs(msg.id.idiag_dport),
 			      address, address);
 		       printf(", idiag_if=" IFINDEX_LO_STR);
-		       PRINT_FIELD_COOKIE(", ", msg.id, idiag_cookie);
-		       PRINT_FIELD_U("}, ", msg, idiag_expires);
-		       PRINT_FIELD_U(", ", msg, idiag_rqueue);
-		       PRINT_FIELD_U(", ", msg, idiag_wqueue);
-		       PRINT_FIELD_U(", ", msg, idiag_uid);
-		       PRINT_FIELD_U(", ", msg, idiag_inode);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(msg.id, idiag_cookie);
+		       printf("}, ");
+		       PRINT_FIELD_U(msg, idiag_expires);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, idiag_rqueue);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, idiag_wqueue);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, idiag_uid);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, idiag_inode);
 		       printf("}"));
 }
 
@@ -578,7 +611,8 @@ test_smc_diag_req(const int fd)
 			      ntohs(req.id.idiag_dport),
 			      address, address);
 		       printf(", idiag_if=" IFINDEX_LO_STR);
-		       PRINT_FIELD_COOKIE(", ", req.id, idiag_cookie);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(req.id, idiag_cookie);
 		       printf("}}"));
 }
 
@@ -611,7 +645,8 @@ test_smc_diag_msg(const int fd)
 		       printf("{diag_family=AF_SMC"),
 		       printf(", diag_state=SMC_ACTIVE");
 		       printf(", diag_fallback=SMC_DIAG_MODE_FALLBACK_TCP");
-		       PRINT_FIELD_U(", ", msg, diag_shutdown);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, diag_shutdown);
 		       printf(", id={idiag_sport=htons(%u)"
 			      ", idiag_dport=htons(%u)"
 			      ", idiag_src=inet_addr(\"%s\")"
@@ -620,9 +655,12 @@ test_smc_diag_msg(const int fd)
 			      ntohs(msg.id.idiag_dport),
 			      address, address);
 		       printf(", idiag_if=" IFINDEX_LO_STR);
-		       PRINT_FIELD_COOKIE(", ", msg.id, idiag_cookie);
-		       PRINT_FIELD_U("}, ", msg, diag_uid);
-		       PRINT_FIELD_U(", ", msg, diag_inode);
+		       printf(", ");
+		       PRINT_FIELD_COOKIE(msg.id, idiag_cookie);
+		       printf("}, ");
+		       PRINT_FIELD_U(msg, diag_uid);
+		       printf(", ");
+		       PRINT_FIELD_U(msg, diag_inode);
 		       printf("}"));
 }
 #endif

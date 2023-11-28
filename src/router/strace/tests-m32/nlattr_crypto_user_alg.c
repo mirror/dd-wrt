@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,14 +8,16 @@
 
 #include "tests.h"
 
-#ifdef HAVE_LINUX_CRYPTOUSER_H
+#include <stdio.h>
+#include <stdint.h>
+#include "test_nlattr.h"
+#include <linux/cryptouser.h>
 
-# include <stdio.h>
-# include <stdint.h>
-# include "test_nlattr.h"
-# include <linux/cryptouser.h>
+#define XLAT_MACROS_ONLY
+# include "xlat/netlink_protocols.h"
+#undef XLAT_MACROS_ONLY
 
-# define CRYPTOCFGA_REPORT_LARVAL 2
+#define CRYPTOCFGA_REPORT_LARVAL 2
 
 static void
 init_crypto_user_alg(struct nlmsghdr *const nlh, const unsigned int msg_len)
@@ -37,8 +39,8 @@ init_crypto_user_alg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_crypto_user_alg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=CRYPTO_MSG_GETALG"
-	       ", flags=NLM_F_DUMP, seq=0, pid=0}"
+	printf("{nlmsg_len=%u, nlmsg_type=CRYPTO_MSG_GETALG"
+	       ", nlmsg_flags=NLM_F_DUMP, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", {cru_name=\"abcd\", cru_driver_name=\"efgh\""
 	       ", cru_module_name=\"ijkl\", cru_type=0"
 	       ", cru_mask=0, cru_refcnt=0, cru_flags=0}",
@@ -76,7 +78,6 @@ main(void)
 		    DEFAULT_STRLEN, str, DEFAULT_STRLEN,
 		    printf("{type=\"%s\"}", str));
 
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_HASH
 	static const struct crypto_report_hash rhash = {
 		.type = "efgh",
 		.blocksize = 0xabcdefdc,
@@ -88,12 +89,12 @@ main(void)
 			      pattern, rhash, sizeof(rhash),
 			      print_quoted_memory,
 			      printf("{type=\"efgh\"");
-			      PRINT_FIELD_U(", ", rhash, blocksize);
-			      PRINT_FIELD_U(", ", rhash, digestsize);
+			      printf(", ");
+			      PRINT_FIELD_U(rhash, blocksize);
+			      printf(", ");
+			      PRINT_FIELD_U(rhash, digestsize);
 			      printf("}"));
-# endif
 
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_BLKCIPHER
 	static const struct crypto_report_blkcipher rblkcipher = {
 		.type = "abcd",
 		.geniv = "efgh",
@@ -108,14 +109,16 @@ main(void)
 			      pattern, rblkcipher, sizeof(rblkcipher),
 			      print_quoted_memory,
 			      printf("{type=\"abcd\", geniv=\"efgh\"");
-			      PRINT_FIELD_U(", ", rblkcipher, blocksize);
-			      PRINT_FIELD_U(", ", rblkcipher, min_keysize);
-			      PRINT_FIELD_U(", ", rblkcipher, max_keysize);
-			      PRINT_FIELD_U(", ", rblkcipher, ivsize);
+			      printf(", ");
+			      PRINT_FIELD_U(rblkcipher, blocksize);
+			      printf(", ");
+			      PRINT_FIELD_U(rblkcipher, min_keysize);
+			      printf(", ");
+			      PRINT_FIELD_U(rblkcipher, max_keysize);
+			      printf(", ");
+			      PRINT_FIELD_U(rblkcipher, ivsize);
 			      printf("}"));
-# endif
 
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_AEAD
 	static const struct crypto_report_aead raead = {
 		.type = "abcd",
 		.geniv = "efgh",
@@ -129,13 +132,14 @@ main(void)
 			      pattern, raead, sizeof(raead),
 			      print_quoted_memory,
 			      printf("{type=\"abcd\", geniv=\"efgh\"");
-			      PRINT_FIELD_U(", ", raead, blocksize);
-			      PRINT_FIELD_U(", ", raead, maxauthsize);
-			      PRINT_FIELD_U(", ", raead, ivsize);
+			      printf(", ");
+			      PRINT_FIELD_U(raead, blocksize);
+			      printf(", ");
+			      PRINT_FIELD_U(raead, maxauthsize);
+			      printf(", ");
+			      PRINT_FIELD_U(raead, ivsize);
 			      printf("}"));
-# endif
 
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_RNG
 	static const struct crypto_report_rng rrng = {
 		.type = "abcd",
 		.seedsize = 0xabcdefac
@@ -145,11 +149,10 @@ main(void)
 			      CRYPTOCFGA_REPORT_RNG,
 			      pattern, rrng, sizeof(rrng), print_quoted_memory,
 			      printf("{type=\"abcd\"");
-			      PRINT_FIELD_U(", ", rrng, seedsize);
+			      printf(", ");
+			      PRINT_FIELD_U(rrng, seedsize);
 			      printf("}"));
-# endif
 
-# ifdef HAVE_STRUCT_CRYPTO_REPORT_CIPHER
 	static const struct crypto_report_cipher rcipher = {
 		.type = "abcd",
 		.blocksize = 0xabcdefac,
@@ -162,18 +165,14 @@ main(void)
 			      pattern, rcipher, sizeof(rcipher),
 			      print_quoted_memory,
 			      printf("{type=\"abcd\"");
-			      PRINT_FIELD_U(", ", rcipher, blocksize);
-			      PRINT_FIELD_U(", ", rcipher, min_keysize);
-			      PRINT_FIELD_U(", ", rcipher, max_keysize);
+			      printf(", ");
+			      PRINT_FIELD_U(rcipher, blocksize);
+			      printf(", ");
+			      PRINT_FIELD_U(rcipher, min_keysize);
+			      printf(", ");
+			      PRINT_FIELD_U(rcipher, max_keysize);
 			      printf("}"));
-# endif
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("HAVE_LINUX_CRYPTOUSER_H");
-
-#endif

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -37,9 +37,10 @@ init_unix_diag_msg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_unix_diag_msg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=SOCK_DIAG_BY_FAMILY"
-	       ", flags=NLM_F_DUMP, seq=0, pid=0}, {udiag_family=AF_UNIX"
-	       ", udiag_type=SOCK_STREAM, udiag_state=TCP_ESTABLISHED"
+	printf("{nlmsg_len=%u, nlmsg_type=SOCK_DIAG_BY_FAMILY"
+	       ", nlmsg_flags=NLM_F_DUMP, nlmsg_seq=0, nlmsg_pid=0}"
+	       ", {udiag_family=AF_UNIX, udiag_type=SOCK_STREAM"
+	       ", udiag_state=TCP_ESTABLISHED"
 	       ", udiag_ino=0, udiag_cookie=[0, 0]}",
 	       msg_len);
 }
@@ -79,14 +80,17 @@ main(void)
 			   printf("{udiag_vfs_dev=makedev(%#x, %#x)",
 				  major(uv.udiag_vfs_dev),
 				  minor(uv.udiag_vfs_dev));
-			   PRINT_FIELD_U(", ", uv, udiag_vfs_ino);
+			   printf(", ");
+			   PRINT_FIELD_U(uv, udiag_vfs_ino);
 			   printf("}"));
 
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_unix_diag_msg, print_unix_diag_msg,
 			   UNIX_DIAG_RQLEN, pattern, rql,
-			   PRINT_FIELD_U("{", rql, udiag_rqueue);
-			   PRINT_FIELD_U(", ", rql, udiag_wqueue);
+			   printf("{");
+			   PRINT_FIELD_U(rql, udiag_rqueue);
+			   printf(", ");
+			   PRINT_FIELD_U(rql, udiag_wqueue);
 			   printf("}"));
 
 	TEST_NLATTR_ARRAY(fd, nlh0, hdrlen,

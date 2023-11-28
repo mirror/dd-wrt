@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2014-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -20,11 +20,10 @@
 static void
 print_iov(const struct iovec *iov)
 {
-	unsigned int i;
 	unsigned char *buf = iov->iov_base;
 
 	fputs("{iov_base=\"", stdout);
-	for (i = 0; i < iov->iov_len; ++i)
+	for (unsigned int i = 0; i < iov->iov_len; ++i)
 		printf("\\%d", (int) buf[i]);
 	printf("\", iov_len=%u}", (unsigned) iov->iov_len);
 }
@@ -32,15 +31,17 @@ print_iov(const struct iovec *iov)
 static void
 print_iovec(const struct iovec *iov, unsigned int cnt)
 {
-	unsigned int i;
 	putchar('[');
-	for (i = 0; i < cnt; ++i) {
+	for (unsigned int i = 0; i < cnt; ++i) {
 		if (i)
 			fputs(", ", stdout);
 		print_iov(&iov[i]);
 	}
 	putchar(']');
 }
+
+/* for preadv(0, NULL, 1, -2) */
+DIAG_PUSH_IGNORE_NONNULL
 
 int
 main(void)
@@ -63,16 +64,16 @@ main(void)
 
 	if (preadv(0, iov, 1, -1) != -1)
 		perror_msg_and_fail("preadv");
-	printf("preadv(0, [{iov_base=%p, iov_len=%zu}], 1, -1) = "
-	       "-1 EINVAL (%m)\n", iov->iov_base, iov->iov_len);
+	printf("preadv(0, [{iov_base=%p, iov_len=%zu}], 1, -1)"
+	       RVAL_EINVAL, iov->iov_base, iov->iov_len);
 
 	if (preadv(0, NULL, 1, -2) != -1)
 		perror_msg_and_fail("preadv");
-	printf("preadv(0, NULL, 1, -2) = -1 EINVAL (%m)\n");
+	printf("preadv(0, NULL, 1, -2)" RVAL_EINVAL);
 
 	if (preadv(0, iov, 0, -3) != -1)
 		perror_msg_and_fail("preadv");
-	printf("preadv(0, [], 0, -3) = -1 EINVAL (%m)\n");
+	printf("preadv(0, [], 0, -3)" RVAL_EINVAL);
 
 	int fd = create_tmpfile(O_RDWR);
 
@@ -129,6 +130,8 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
+
+DIAG_POP_IGNORE_NONNULL
 
 #else
 

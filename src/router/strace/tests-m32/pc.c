@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2015-2020 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2015-2020 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
+#include "scno.h"
 #include <assert.h>
 #include <dlfcn.h>
 #include <fcntl.h>
@@ -13,6 +15,7 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/sendfile.h>
+#include <sys/prctl.h>
 
 int main(void)
 {
@@ -27,7 +30,7 @@ int main(void)
 #endif
 
 	/* write instruction pointer length to the log */
-	assert(write(-1, (void *) 8UL, 2 * sizeof(void *)) < 0);
+	assert(syscall(__NR_write, -1, (void *) 8UL, 2 * sizeof(void *)) < 0);
 
 	/* just a noticeable line in the log */
 	assert(munmap(&main, 0) < 0);
@@ -56,6 +59,9 @@ int main(void)
 			addr -= size;
 			size <<= 1;
 		}
+
+		/* Avoid creating core dumps */
+		(void) prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
 
 		/* SIGSEGV is expected */
 		(void) munmap((void *) addr, size);

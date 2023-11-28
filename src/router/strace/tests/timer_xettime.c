@@ -1,8 +1,8 @@
 /*
  * This file is part of timer_xettime strace test.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,8 +11,7 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined __NR_timer_create \
- && defined __NR_timer_gettime \
+#if defined __NR_timer_gettime \
  && defined __NR_timer_settime
 
 # include <stdio.h>
@@ -26,7 +25,7 @@ main(void)
 {
 	syscall(__NR_timer_settime, 0xdefaced, TIMER_ABSTIME, NULL, NULL);
 	printf("timer_settime(%d, TIMER_ABSTIME, NULL, NULL)"
-	       " = -1 EINVAL (%m)\n", 0xdefaced);
+	       RVAL_EINVAL, 0xdefaced);
 
 	long rc;
 	int tid;
@@ -42,7 +41,8 @@ main(void)
 
 	its_new->it_interval.tv_sec = 0xdeadbeefU;
 	its_new->it_interval.tv_nsec = 0xfacefeedU;
-	its_new->it_value.tv_sec = (time_t) 0xcafef00ddeadbeefLL;
+	its_new->it_value.tv_sec =
+		(typeof(its_new->it_value.tv_sec)) 0xcafef00ddeadbeefLL;
 	its_new->it_value.tv_nsec = (long) 0xbadc0dedfacefeedLL;
 
 	rc = syscall(__NR_timer_settime, tid, 0, its_new, its_old);
@@ -99,6 +99,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("__NR_timer_create && __NR_timer_gettime && __NR_timer_settime")
+SKIP_MAIN_UNDEFINED("__NR_timer_gettime && __NR_timer_settime")
 
 #endif

@@ -1,13 +1,14 @@
 /*
  * Check decoding of clone flags.
  *
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
+#include "xmalloc.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -17,10 +18,7 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#define XLAT_MACROS_ONLY
-#include "xlat/clone_flags.h"
-#undef XLAT_MACROS_ONLY
+#include <linux/sched.h>
 
 static const int child_exit_status = 42;
 static pid_t pid;
@@ -134,9 +132,7 @@ main(void)
 		*ptid = 0;
 		pid = do_clone(child, child_stack, child_stack_size,
 			       CLONE_PIDFD|SIGCHLD, 0, ptid);
-		char *fname = 0;
-		if (asprintf(&fname, "/proc/self/fd/%d", *ptid) < 0)
-			perror_msg_and_fail("asprintf");
+		char *fname = xasprintf("/proc/self/fd/%d", *ptid);
 		int rc = readlink(fname, buf, sizeof(buf) - 1);
 		if ((unsigned int) rc >= sizeof(buf))
 			perror_msg_and_fail("readlink");

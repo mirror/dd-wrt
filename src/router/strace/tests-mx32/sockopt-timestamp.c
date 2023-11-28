@@ -1,30 +1,72 @@
 /*
  * Check decoding of timestamp control messages.
  *
- * Copyright (c) 2019 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2019-2020 The strace developers.
+ * Copyright (c) 2019 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2019-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
+#include "scno.h"
 
-#if defined HAVE_STRUCT___KERNEL_SOCK_TIMEVAL	\
- || defined HAVE_STRUCT___KERNEL_TIMESPEC
-# include <linux/time_types.h>
-#endif
+#ifdef __NR_recvmsg
 
-#include "kernel_timeval.h"
-#include "kernel_old_timespec.h"
+# include <errno.h>
+# include <stdio.h>
+# include <string.h>
+# include <unistd.h>
+# include <sys/socket.h>
 
-#define XLAT_MACROS_ONLY
-#include "xlat/sock_options.h"
-#undef XLAT_MACROS_ONLY
+# include "kernel_time_types.h"
+# include "kernel_timeval.h"
+# include "kernel_old_timespec.h"
+
+# define XLAT_MACROS_ONLY
+#  include "xlat/sock_options.h"
+# undef XLAT_MACROS_ONLY
+
+static const char *errstr;
+
+static long
+k_recvmsg(const unsigned int fd, const void *const ptr, const unsigned int flags)
+{
+	const kernel_ulong_t fill = (kernel_ulong_t) 0xdefaced00000000ULL;
+	const kernel_ulong_t bad = (kernel_ulong_t) 0xbadc0dedbadc0dedULL;
+	const kernel_ulong_t arg1 = fill | fd;
+	const kernel_ulong_t arg2 = (uintptr_t) ptr;
+	const kernel_ulong_t arg3 = fill | flags;
+	const long rc = syscall(__NR_recvmsg, arg1, arg2, arg3, bad, bad, bad);
+	if (rc && errno == ENOSYS)
+		perror_msg_and_skip("recvmsg");
+	errstr = sprintrc(rc);
+	return rc;
+}
+
+# define SC_setsockopt 14
+static long
+k_setsockopt(const unsigned int fd, const unsigned int level,
+	     const unsigned int optname, const void *const optval,
+	     const unsigned int len)
+{
+	const kernel_ulong_t fill = (kernel_ulong_t) 0xdefaced00000000ULL;
+# ifdef __NR_setsockopt
+	const kernel_ulong_t bad = (kernel_ulong_t) 0xbadc0dedbadc0dedULL;
+# endif
+
+	return syscall(
+# ifdef __NR_setsockopt
+		__NR_setsockopt,
+# else /* socketcall */
+		__NR_socketcall, SC_setsockopt,
+# endif
+		fill | fd , fill | level, fill | optname, optval, fill | len
+# ifdef __NR_setsockopt
+		, bad
+# endif
+		);
+}
 
 static void
 print_timestamp_old(const struct cmsghdr *c)
@@ -64,7 +106,6 @@ print_timestampns_old(const struct cmsghdr *c)
 	       (long long) ts.tv_sec, (long long) ts.tv_nsec);
 }
 
-#ifdef HAVE_STRUCT___KERNEL_SOCK_TIMEVAL
 static void
 print_timestamp_new(const struct cmsghdr *c)
 {
@@ -83,9 +124,7 @@ print_timestamp_new(const struct cmsghdr *c)
 	printf("{tv_sec=%lld, tv_usec=%lld}",
 	       (long long) tv.tv_sec, (long long) tv.tv_usec);
 }
-#endif /* HAVE_STRUCT___KERNEL_SOCK_TIMEVAL */
 
-#ifdef HAVE_STRUCT___KERNEL_TIMESPEC
 static void
 print_timestampns_new(const struct cmsghdr *c)
 {
@@ -104,7 +143,6 @@ print_timestampns_new(const struct cmsghdr *c)
 	printf("{tv_sec=%lld, tv_nsec=%lld}",
 	       (long long) ts.tv_sec, (long long) ts.tv_nsec);
 }
-#endif /* HAVE_STRUCT___KERNEL_TIMESPEC */
 
 static unsigned int
 test_sockopt(int so_val, const char *str, void (*fun)(const struct cmsghdr *))
@@ -117,7 +155,12 @@ test_sockopt(int so_val, const char *str, void (*fun)(const struct cmsghdr *))
 		perror_msg_and_skip(data);
 
 	const int opt_1 = 1;
-	if (setsockopt(sv[0], SOL_SOCKET, so_val, &opt_1, sizeof(opt_1))) {
+	/*
+	 * glibc-2.34~294 adds a fallback for SO_TIMESTAMP{,NS}_NEW that calls
+	 * SO_TIMESTAMP{,NS}_OLD, so we have to call the setsockopt directly
+	 * in order to avoid unexpected recvmsg msg types.
+	 */
+	if (k_setsockopt(sv[0], SOL_SOCKET, so_val, &opt_1, sizeof(opt_1))) {
 		perror(str);
 		return 0;
 	}
@@ -140,7 +183,7 @@ test_sockopt(int so_val, const char *str, void (*fun)(const struct cmsghdr *))
 		.msg_controllen = sizeof(control)
 	};
 
-	if (recvmsg(sv[0], &mh, 0) != (int) size)
+	if (k_recvmsg(sv[0], &mh, 0) != (int) size)
 		perror_msg_and_fail("recvmsg");
 	if (close(sv[0]))
 		perror_msg_and_fail("close recv");
@@ -160,7 +203,8 @@ test_sockopt(int so_val, const char *str, void (*fun)(const struct cmsghdr *))
 			if (c->cmsg_level == SOL_SOCKET) {
 				printf("SOL_SOCKET");
 			} else {
-				printf("%d", c->cmsg_level);
+				printf("%d /* expected SOL_SOCKET == %d */",
+				       c->cmsg_level, (int) SOL_SOCKET);
 			}
 			printf(", cmsg_type=");
 			if (c->cmsg_type == so_val) {
@@ -168,7 +212,8 @@ test_sockopt(int so_val, const char *str, void (*fun)(const struct cmsghdr *))
 				fun(c);
 				tested = 1;
 			} else {
-				printf("%d", c->cmsg_type);
+				printf("%d /* expected %d */",
+				       c->cmsg_type, so_val);
 			}
 			printf("}");
 		}
@@ -190,12 +235,8 @@ main(void)
 	} tests[] = {
 		{ SO_TIMESTAMP_OLD, "SO_TIMESTAMP_OLD", print_timestamp_old },
 		{ SO_TIMESTAMPNS_OLD, "SO_TIMESTAMPNS_OLD", print_timestampns_old },
-#ifdef HAVE_STRUCT___KERNEL_SOCK_TIMEVAL
 		{ SO_TIMESTAMP_NEW, "SO_TIMESTAMP_NEW", print_timestamp_new },
-#endif
-#ifdef HAVE_STRUCT___KERNEL_TIMESPEC
 		{ SO_TIMESTAMPNS_NEW, "SO_TIMESTAMPNS_NEW", print_timestampns_new },
-#endif
 	};
 	unsigned int tested = 0;
 	for (unsigned int i = 0; i < ARRAY_SIZE(tests); ++i)
@@ -208,3 +249,9 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
+
+#else
+
+SKIP_MAIN_UNDEFINED("__NR_recvmsg")
+
+#endif

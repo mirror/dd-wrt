@@ -1,8 +1,8 @@
 /*
  * Check decoding of preadv2 and pwritev2 syscalls.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,13 +11,11 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined __NR_preadv2 && defined __NR_pwritev2
-
-# include <errno.h>
-# include <fcntl.h>
-# include <stdio.h>
-# include <sys/uio.h>
-# include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 static int
 pr(const int fd, const struct iovec *const vec,
@@ -84,9 +82,9 @@ dumpio(void)
 
 	rc = pw(1, w_iov + ARRAY_SIZE(w_iov_) - 1, 2, 0);
 	tprintf("pwritev2(1, [{iov_base=\"%s\", iov_len=%u}, ... /* %p */], 2, 0, 0)"
-		" = %ld %s (%m)\n",
+		" = %s\n",
 		w2_c, LENGTH_OF(w2_c), w_iov + ARRAY_SIZE(w_iov_),
-		rc, errno2name());
+		sprintrc(rc));
 
 	const unsigned int w_len =
 		LENGTH_OF(w0_c) + LENGTH_OF(w1_c) + LENGTH_OF(w2_c);
@@ -169,19 +167,19 @@ main(void)
 
 	tprintf("%s", "");
 
-# if defined __x86_64__ && defined __ILP32__
+#if defined __x86_64__ && defined __ILP32__
 	/*
 	 * x32 is the only architecture where preadv2 takes 5 arguments,
 	 * see preadv64v2 in kernel sources.
 	 */
 	rc = syscall(__NR_preadv2, -1, NULL, vlen, pos_l, 1);
-# else
+#else
 	const kernel_ulong_t pos_h =
 		(sizeof(pos_l) == sizeof(pos)) ?
 		(kernel_ulong_t) 0xbadc0deddeadbeefULL :
 		(kernel_ulong_t) (pos >> 32);
 	rc = syscall(__NR_preadv2, -1, NULL, vlen, pos_l, pos_h, 1);
-# endif
+#endif
 	if (rc != -1)
 		error_msg_and_fail("preadv2: expected -1, returned %ld", rc);
 	switch (errno) {
@@ -196,15 +194,15 @@ main(void)
 	tprintf("preadv2(-1, NULL, %lu, %lld, RWF_HIPRI) = %s\n",
 		(unsigned long) vlen, pos, sprintrc(rc));
 
-# if defined __x86_64__ && defined __ILP32__
+#if defined __x86_64__ && defined __ILP32__
 	/*
 	 * x32 is the only architecture where pwritev2 takes 5 arguments,
 	 * see pwritev64v2 in kernel sources.
 	 */
 	rc = syscall(__NR_pwritev2, -1, NULL, vlen, pos_l, 1);
-# else
+#else
 	rc = syscall(__NR_pwritev2, -1, NULL, vlen, pos_l, pos_h, 1);
-# endif
+#endif
 	if (rc != -1)
 		error_msg_and_fail("pwritev2: expected -1, returned %ld", rc);
 	switch (errno) {
@@ -225,9 +223,3 @@ main(void)
 	tprintf("%s\n", "+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_preadv2 && __NR_pwritev2")
-
-#endif

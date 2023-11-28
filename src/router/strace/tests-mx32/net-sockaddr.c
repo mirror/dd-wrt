@@ -1,8 +1,8 @@
 /*
  * Check decoding of sockaddr structures
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -24,7 +24,11 @@
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/x25.h>
-#include <linux/ipx.h>
+#if defined HAVE_LINUX_IPX_H
+# include <linux/ipx.h>
+#elif defined HAVE_NETIPX_IPX_H
+# include <netipx/ipx.h>
+#endif
 #ifdef HAVE_BLUETOOTH_BLUETOOTH_H
 # include <bluetooth/bluetooth.h>
 # include <bluetooth/hci.h>
@@ -40,80 +44,80 @@ check_un(void)
 	un->sun_family = AF_UNIX;
 	memset(un->sun_path, '0', sizeof(un->sun_path));
 	unsigned int len = sizeof(*un);
-	int ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path), 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path), 0, len);
 
 	un->sun_path[1] = 0;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=\"%u\"}, %u)"
-	       " = %d EBADF (%m)\n", 0, len, ret);
+	       RVAL_EBADF, 0, len);
 
 	un->sun_path[0] = 0;
 	un->sun_path[2] = 1;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=@\"\\0\\001%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path) - 3, 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path) - 3, 0, len);
 
 	un = ((void *) un) - 2;
 	un->sun_family = AF_UNIX;
 	memset(un->sun_path, '0', sizeof(un->sun_path));
 	len = sizeof(*un) + 2;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path), 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path), 0, len);
 
 	un->sun_path[0] = 0;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=@\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path) - 1, 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path) - 1, 0, len);
 
 	un = ((void *) un) + 4;
 	un->sun_family = AF_UNIX;
 	len = sizeof(*un) - 2;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path) - 2, 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path) - 2, 0, len);
 
 	un->sun_path[0] = 0;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=@\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path) - 3, 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path) - 3, 0, len);
 
 	len = sizeof(*un);
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
-	printf("connect(-1, %p, %u) = %d EBADF (%m)\n", un, len, ret);
+	printf("connect(-1, %p, %u)" RVAL_EBADF, un, len);
 
 	un = tail_alloc(sizeof(struct sockaddr_storage));
 	un->sun_family = AF_UNIX;
 	memset(un->sun_path, '0', sizeof(un->sun_path));
 	len = sizeof(struct sockaddr_storage) + 1;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path), 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path), 0, len);
 
 	un->sun_path[0] = 0;
-	ret = connect(-1, (void *) un, len);
+	connect(-1, (void *) un, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNIX, sun_path=@\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n",
-	       (int) sizeof(un->sun_path) - 1, 0, len, ret);
+	       ", %u)" RVAL_EBADF,
+	       (int) sizeof(un->sun_path) - 1, 0, len);
 }
 
 static void
@@ -127,39 +131,39 @@ check_in(void)
 	in->sin_port = htons(h_port);
 	in->sin_addr.s_addr = inet_addr(h_addr);
 	unsigned int len = sizeof(*in);
-	int ret = connect(-1, (void *) in, len);
+	connect(-1, (void *) in, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET, sin_port=htons(%hu)"
-	       ", sin_addr=inet_addr(\"%s\")}, %u) = %d EBADF (%m)\n",
-	       h_port, h_addr, len, ret);
+	       ", sin_addr=inet_addr(\"%s\")}, %u)" RVAL_EBADF,
+	       h_port, h_addr, len);
 
 	in = ((void *) in) - 4;
 	in->sin_family = AF_INET;
 	in->sin_port = htons(h_port);
 	in->sin_addr.s_addr = inet_addr(h_addr);
 	len = sizeof(*in) + 4;
-	ret = connect(-1, (void *) in, len);
+	connect(-1, (void *) in, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET, sin_port=htons(%hu)"
-	       ", sin_addr=inet_addr(\"%s\")}, %u) = %d EBADF (%m)\n",
-	       h_port, h_addr, len, ret);
+	       ", sin_addr=inet_addr(\"%s\")}, %u)" RVAL_EBADF,
+	       h_port, h_addr, len);
 
 	in = ((void *) in) + 8;
 	in->sin_family = AF_INET;
 	in->sin_port = 0;
 	in->sin_addr.s_addr = 0;
 	len = sizeof(*in) - 4;
-	ret = connect(-1, (void *) in, len);
+	connect(-1, (void *) in, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET, sa_data=\"%s\"}, %u)"
-	       " = %d EBADF (%m)\n",
+	       RVAL_EBADF,
 	       "\\0\\0\\0\\0\\0\\0\\377\\377\\377\\377",
-	       len, ret);
+	       len);
 
 	len = sizeof(*in);
-	ret = connect(-1, (void *) in, len);
+	connect(-1, (void *) in, len);
 	pidns_print_leader();
-	printf("connect(-1, %p, %u) = %d EBADF (%m)\n", in, len, ret);
+	printf("connect(-1, %p, %u)" RVAL_EBADF, in, len);
 }
 
 static void
@@ -169,27 +173,27 @@ check_in6_linklocal(struct sockaddr_in6 *const in6, const char *const h_addr)
 
 	in6->sin6_scope_id = 0xfacefeed;
 	unsigned int len = sizeof(*in6);
-	int ret = connect(-1, (void *) in6, len);
+	connect(-1, (void *) in6, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
 	       ", sin6_flowinfo=htonl(%u)"
 	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 	       ", sin6_scope_id=%u}, %u)"
-	       " = %d EBADF (%m)\n",
+	       RVAL_EBADF,
 	       ntohs(in6->sin6_port), ntohl(in6->sin6_flowinfo),
-	       h_addr, in6->sin6_scope_id, len, ret);
+	       h_addr, in6->sin6_scope_id, len);
 
 	in6->sin6_scope_id = ifindex_lo();
 	if (in6->sin6_scope_id) {
-		ret = connect(-1, (void *) in6, len);
+		connect(-1, (void *) in6, len);
 		pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
 		       ", sin6_flowinfo=htonl(%u)"
 		       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 		       ", sin6_scope_id=%s}, %u)"
-		       " = %d EBADF (%m)\n",
+		       RVAL_EBADF,
 		       ntohs(in6->sin6_port), ntohl(in6->sin6_flowinfo), h_addr,
-		       IFINDEX_LO_STR, len, ret);
+		       IFINDEX_LO_STR, len);
 	}
 }
 
@@ -207,14 +211,14 @@ check_in6(void)
 	inet_pton(AF_INET6, h_addr, &in6->sin6_addr);
 	in6->sin6_scope_id = 0xfacefeed;
 	unsigned int len = sizeof(*in6);
-	int ret = connect(-1, (void *) in6, len);
+	connect(-1, (void *) in6, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
 	       ", sin6_flowinfo=htonl(%u)"
 	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 	       ", sin6_scope_id=%u}, %u)"
-	       " = %d EBADF (%m)\n",
-	       h_port, h_flowinfo, h_addr, in6->sin6_scope_id, len, ret);
+	       RVAL_EBADF,
+	       h_port, h_flowinfo, h_addr, in6->sin6_scope_id, len);
 
 	check_in6_linklocal(in6, "fe80::");
 	check_in6_linklocal(in6, "ff42::");
@@ -226,14 +230,14 @@ check_in6(void)
 	inet_pton(AF_INET6, h_addr, &in6->sin6_addr);
 	in6->sin6_scope_id = 0xfacefeed;
 	len = sizeof(*in6) + 4;
-	ret = connect(-1, (void *) in6, len);
+	connect(-1, (void *) in6, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
 	       ", sin6_flowinfo=htonl(%u)"
 	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 	       ", sin6_scope_id=%u}, %u)"
-	       " = %d EBADF (%m)\n",
-	       h_port, h_flowinfo, h_addr, in6->sin6_scope_id, len, ret);
+	       RVAL_EBADF,
+	       h_port, h_flowinfo, h_addr, in6->sin6_scope_id, len);
 
 	in6 = ((void *) in6) + 4 + sizeof(in6->sin6_scope_id);
 	in6->sin6_family = AF_INET6;
@@ -241,13 +245,13 @@ check_in6(void)
 	in6->sin6_flowinfo = htonl(h_flowinfo);
 	inet_pton(AF_INET6, h_addr, &in6->sin6_addr);
 	len = sizeof(*in6) - sizeof(in6->sin6_scope_id);
-	ret = connect(-1, (void *) in6, len);
+	connect(-1, (void *) in6, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
 	       ", sin6_flowinfo=htonl(%u)"
 	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)}, %u)"
-	       " = %d EBADF (%m)\n",
-	       h_port, h_flowinfo, h_addr, len, ret);
+	       RVAL_EBADF,
+	       h_port, h_flowinfo, h_addr, len);
 
 	in6 = ((void *) in6) + 4;
 	in6->sin6_family = AF_INET6;
@@ -255,20 +259,21 @@ check_in6(void)
 	in6->sin6_flowinfo = 0;
 	memset(&in6->sin6_addr, '0', sizeof(in6->sin6_addr) - 4);
 	len = sizeof(*in6) - sizeof(in6->sin6_scope_id) - 4;
-	ret = connect(-1, (void *) in6, len);
+	connect(-1, (void *) in6, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_INET6"
 	       ", sa_data=\"\\0\\0\\0\\0\\0\\000%.*u\"}, %u)"
-	       " = %d EBADF (%m)\n",
+	       RVAL_EBADF,
 	       (int) (len - offsetof(struct sockaddr_in6, sin6_addr)), 0,
-	       len, ret);
+	       len);
 
 	len = sizeof(*in6) - sizeof(in6->sin6_scope_id);
-	ret = connect(-1, (void *) in6, len);
+	connect(-1, (void *) in6, len);
 	pidns_print_leader();
-	printf("connect(-1, %p, %u) = %d EBADF (%m)\n", in6, len, ret);
+	printf("connect(-1, %p, %u)" RVAL_EBADF, in6, len);
 }
 
+#if defined HAVE_LINUX_IPX_H || defined HAVE_NETIPX_IPX_H
 static void
 check_ipx(void)
 {
@@ -281,20 +286,26 @@ check_ipx(void)
 		.sipx_node = "ABCDEF",
 		.sipx_type = -1
 	};
-	void *ipx = tail_memdup(&c_ipx, sizeof(c_ipx));
+	struct sockaddr_ipx *ipx = tail_memdup(&c_ipx, sizeof(c_ipx));
 	unsigned int len = sizeof(c_ipx);
-	int ret = connect(-1, ipx, len);
-	pidns_print_leader();
-	printf("connect(-1, {sa_family=AF_IPX, sipx_port=htons(%u)"
-	       ", sipx_network=htonl(%#x)"
-	       ", sipx_node=[%#02x, %#02x, %#02x, %#02x, %#02x, %#02x]"
-	       ", sipx_type=%#02x}, %u) = %d EBADF (%m)\n",
-	       h_port, h_network,
-	       c_ipx.sipx_node[0], c_ipx.sipx_node[1],
-	       c_ipx.sipx_node[2], c_ipx.sipx_node[3],
-	       c_ipx.sipx_node[4], c_ipx.sipx_node[5],
-	       c_ipx.sipx_type, len, ret);
+
+	for (size_t i = 0; i < 2; i++) {
+		ipx->sipx_zero = i ? 0x42 : 0;
+		connect(-1, (void *) ipx, len);
+		pidns_print_leader();
+		printf("connect(-1, {sa_family=AF_IPX, sipx_port=htons(%u)"
+		       ", sipx_network=htonl(%#x)"
+		       ", sipx_node=[%#02x, %#02x, %#02x, %#02x, %#02x, %#02x]"
+		       ", sipx_type=%#02x%s}, %u)" RVAL_EBADF,
+		       h_port, h_network,
+		       c_ipx.sipx_node[0], c_ipx.sipx_node[1],
+		       c_ipx.sipx_node[2], c_ipx.sipx_node[3],
+		       c_ipx.sipx_node[4], c_ipx.sipx_node[5],
+		       c_ipx.sipx_type, i ? ", sipx_zero=0x42" : "",
+		       len);
+	}
 }
+#endif /* HAVE_LINUX_IPX_H || defined HAVE_NETIPX_IPX_H */
 
 /* for a bit more compact AX.25 address definitions */
 #define AX25_ADDR(c_, s_) \
@@ -348,7 +359,7 @@ check_ax25(void)
 	rc = connect(-1, sax_void, sizeof(struct sockaddr_ax25));
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_AX25, fsa_ax25={sax25_call=VALID-13"
-	       ", sax25_ndigis=8}, fsa_digipeater=[/* ??? */]}, %zu) = %s\n",
+	       ", sax25_ndigis=8}, fsa_digipeater=[...]}, %zu) = %s\n",
 	       sizeof(struct sockaddr_ax25), sprintrc(rc));
 
 	sax->fsa_ax25.sax25_ndigis = 0;
@@ -369,7 +380,7 @@ check_ax25(void)
 	       ", {ax25_call=\"\\xa6\\xa6\\x92\\x88\\x40\\x40\\x20\""
 	           "} /* SSID-0 */"
 	       ", *"
-	       ", /* ??? */], ...}, %zu) = %s\n",
+	       ", ...], ...}, %zu) = %s\n",
 	       size, sprintrc(rc));
 
 	sax->fsa_digipeater[2].ax25_call[6] = 0x4;
@@ -384,7 +395,7 @@ check_ax25(void)
 	           "} /* SSID-0 */"
 	       ", {ax25_call=\"\\x40\\x40\\x40\\x40\\x40\\x40\\x04\"} /* -2 */"
 	       ", {ax25_call=\"\\x9c\\xaa\\x98\\x98\\x00\\x00\\x06\"}"
-	       ", /* ??? */]}, %zu) = %s\n",
+	       ", ...]}, %zu) = %s\n",
 	       size, sprintrc(rc));
 
 	memcpy(sax->fsa_digipeater, aux_addrs, sizeof(aux_addrs));
@@ -488,22 +499,39 @@ check_nl(void)
 	nl->nl_pid = 1234567890;
 	nl->nl_groups = 0xfacefeed;
 	unsigned int len = sizeof(*nl);
-	int ret = connect(-1, (void *) nl, len);
+
+	connect(-1, (void *) nl, len - 1);
+	pidns_print_leader();
+	printf("connect(-1, {sa_family=AF_NETLINK, sa_data=\"\\377\\377"
+	       BE_LE("I\\226\\2\\322", "\\322\\2\\226I")
+	       BE_LE("\\372\\316\\376", "\\355\\376\\316")
+	       "\"}, %u)" RVAL_EBADF,
+	       len - 1);
+
+	connect(-1, (void *) nl, len);
+	pidns_print_leader();
+	printf("connect(-1, {sa_family=AF_NETLINK, nl_pad=%#x, nl_pid=%d"
+	       ", nl_groups=%#08x}, %u)" RVAL_EBADF,
+	       nl->nl_pad, nl->nl_pid, nl->nl_groups, len);
+
+	nl->nl_pad = 0;
+	connect(-1, (void *) nl, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_NETLINK, nl_pid=%d"
-	       ", nl_groups=%#08x}, %u) = %d EBADF (%m)\n",
-	       nl->nl_pid, nl->nl_groups, len, ret);
+	       ", nl_groups=%#08x}, %u)" RVAL_EBADF,
+	       nl->nl_pid, nl->nl_groups, len);
 
 	nl = ((void *) nl) - 4;
 	nl->nl_family = AF_NETLINK;
+	nl->nl_pad = 0;
 	nl->nl_pid = getpid();
 	nl->nl_groups = 0xfacefeed;
 	len = sizeof(*nl) + 4;
-	ret = connect(-1, (void *) nl, len);
+	connect(-1, (void *) nl, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_NETLINK, nl_pid=%d%s"
-	       ", nl_groups=%#08x}, %u) = %d EBADF (%m)\n",
-	       nl->nl_pid, pidns_pid2str(PT_TGID), nl->nl_groups, len, ret);
+	       ", nl_groups=%#08x}, %u)" RVAL_EBADF,
+	       nl->nl_pid, pidns_pid2str(PT_TGID), nl->nl_groups, len);
 }
 
 static void
@@ -520,56 +548,56 @@ check_ll(void)
 	};
 	void *ll = tail_memdup(&c_ll, sizeof(c_ll));
 	unsigned int len = sizeof(c_ll);
-	int ret = connect(-1, ll, len);
+	connect(-1, ll, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_PACKET"
 	       ", sll_protocol=htons(ETH_P_ALL)"
 	       ", sll_ifindex=%u, sll_hatype=ARPHRD_ETHER"
 	       ", sll_pkttype=PACKET_HOST, sll_halen=%u, sll_addr="
 	       "[%#02x, %#02x, %#02x, %#02x, %#02x, %#02x, %#02x, %#02x]"
-	       "}, %u) = %d EBADF (%m)\n",
+	       "}, %u)" RVAL_EBADF,
 	       c_ll.sll_ifindex, c_ll.sll_halen,
 	       c_ll.sll_addr[0], c_ll.sll_addr[1],
 	       c_ll.sll_addr[2], c_ll.sll_addr[3],
 	       c_ll.sll_addr[4], c_ll.sll_addr[5],
 	       c_ll.sll_addr[6], c_ll.sll_addr[7],
-	       len, ret);
+	       len);
 
 	((struct sockaddr_ll *) ll)->sll_halen++;
-	ret = connect(-1, ll, len);
+	connect(-1, ll, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_PACKET"
 	       ", sll_protocol=htons(ETH_P_ALL)"
 	       ", sll_ifindex=%u, sll_hatype=ARPHRD_ETHER"
 	       ", sll_pkttype=PACKET_HOST, sll_halen=%u, sll_addr="
 	       "[%#02x, %#02x, %#02x, %#02x, %#02x, %#02x, %#02x, %#02x, ...]"
-	       "}, %u) = %d EBADF (%m)\n",
+	       "}, %u)" RVAL_EBADF,
 	       c_ll.sll_ifindex, c_ll.sll_halen + 1,
 	       c_ll.sll_addr[0], c_ll.sll_addr[1],
 	       c_ll.sll_addr[2], c_ll.sll_addr[3],
 	       c_ll.sll_addr[4], c_ll.sll_addr[5],
 	       c_ll.sll_addr[6], c_ll.sll_addr[7],
-	       len, ret);
+	       len);
 
 	((struct sockaddr_ll *) ll)->sll_halen = 0;
-	ret = connect(-1, ll, len);
+	connect(-1, ll, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_PACKET"
 	       ", sll_protocol=htons(ETH_P_ALL)"
 	       ", sll_ifindex=%u, sll_hatype=ARPHRD_ETHER"
 	       ", sll_pkttype=PACKET_HOST, sll_halen=0}, %u)"
-	       " = %d EBADF (%m)\n", c_ll.sll_ifindex, len, ret);
+	       RVAL_EBADF, c_ll.sll_ifindex, len);
 
 	((struct sockaddr_ll *) ll)->sll_ifindex = ifindex_lo();
 	if (((struct sockaddr_ll *) ll)->sll_ifindex) {
-		ret = connect(-1, ll, len);
+		connect(-1, ll, len);
 	pidns_print_leader();
 		printf("connect(-1, {sa_family=AF_PACKET"
 		       ", sll_protocol=htons(ETH_P_ALL)"
 		       ", sll_ifindex=%s"
 		       ", sll_hatype=ARPHRD_ETHER"
 		       ", sll_pkttype=PACKET_HOST, sll_halen=0}, %u)"
-		       " = %d EBADF (%m)\n", IFINDEX_LO_STR, len, ret);
+		       RVAL_EBADF, IFINDEX_LO_STR, len);
 	}
 }
 
@@ -586,20 +614,20 @@ check_hci(void)
 # endif
 	unsigned int len = sizeof(*hci);
 
-	int ret = connect(-1, (void *) hci, 4);
+	connect(-1, (void *) hci, 4);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH, hci_dev=htobs(%hu)"
-	       "}, 4) = %d EBADF (%m)\n",
-	       h_port, ret);
+	       "}, 4)" RVAL_EBADF,
+	       h_port);
 
-	ret = connect(-1, (void *) hci, len);
+	connect(-1, (void *) hci, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH, hci_dev=htobs(%hu)"
 # ifdef HAVE_STRUCT_SOCKADDR_HCI_HCI_CHANNEL
 	       ", hci_channel=HCI_CHANNEL_RAW"
 # endif
-	       "}, %u) = %d EBADF (%m)\n",
-	       h_port, len, ret);
+	       "}, %u)" RVAL_EBADF,
+	       h_port, len);
 }
 
 static void
@@ -611,15 +639,15 @@ check_sco(void)
 	};
 	void *sco = tail_memdup(&c_sco, sizeof(c_sco));
 	unsigned int len = sizeof(c_sco);
-	int ret = connect(-1, sco, len);
+	connect(-1, sco, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
 	       ", sco_bdaddr=%02x:%02x:%02x:%02x:%02x:%02x"
-	       "}, %u) = %d EBADF (%m)\n",
+	       "}, %u)" RVAL_EBADF,
 	       c_sco.sco_bdaddr.b[0], c_sco.sco_bdaddr.b[1],
 	       c_sco.sco_bdaddr.b[2], c_sco.sco_bdaddr.b[3],
 	       c_sco.sco_bdaddr.b[4], c_sco.sco_bdaddr.b[5],
-	       len, ret);
+	       len);
 }
 
 static void
@@ -632,15 +660,15 @@ check_rc(void)
 	};
 	void *rc = tail_memdup(&c_rc, sizeof(c_rc));
 	unsigned int len = sizeof(c_rc);
-	int ret = connect(-1, rc, len);
+	connect(-1, rc, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
 	       ", rc_bdaddr=%02x:%02x:%02x:%02x:%02x:%02x"
-	       ", rc_channel=%u}, %u) = %d EBADF (%m)\n",
+	       ", rc_channel=%u}, %u)" RVAL_EBADF,
 	       c_rc.rc_bdaddr.b[0], c_rc.rc_bdaddr.b[1],
 	       c_rc.rc_bdaddr.b[2], c_rc.rc_bdaddr.b[3],
 	       c_rc.rc_bdaddr.b[4], c_rc.rc_bdaddr.b[5],
-	       c_rc.rc_channel, len, ret);
+	       c_rc.rc_channel, len);
 }
 
 static void
@@ -660,21 +688,21 @@ check_l2(void)
 	void *l2 = tail_memdup(&c_l2, sizeof(c_l2));
 	unsigned int len = sizeof(c_l2);
 
-	int ret = connect(-1, l2, len);
+	connect(-1, l2, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
-	       ", l2_psm=htobs(L2CAP_PSM_DYN_START + %hu)"
+	       ", l2_psm=htobs(L2CAP_PSM_DYN_START+%hu)"
 	       ", l2_bdaddr=%02x:%02x:%02x:%02x:%02x:%02x"
-	       ", l2_cid=htobs(L2CAP_CID_DYN_START + %hu)"
+	       ", l2_cid=htobs(L2CAP_CID_DYN_START+%hu)"
 # ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	       ", l2_bdaddr_type=0xce /* BDADDR_??? */"
 # endif
-	       "}, %u) = %d EBADF (%m)\n",
+	       "}, %u)" RVAL_EBADF,
 	       (short) (h_psm - 0x1001),
 	       c_l2.l2_bdaddr.b[0], c_l2.l2_bdaddr.b[1],
 	       c_l2.l2_bdaddr.b[2], c_l2.l2_bdaddr.b[3],
 	       c_l2.l2_bdaddr.b[4], c_l2.l2_bdaddr.b[5],
-	       (short) (h_cid - 0x40), len, ret);
+	       (short) (h_cid - 0x40), len);
 
 	c_l2.l2_psm = htobs(1);
 	c_l2.l2_cid = htobs(1);
@@ -682,7 +710,7 @@ check_l2(void)
 	c_l2.l2_bdaddr_type = BDADDR_LE_RANDOM;
 # endif
 	memcpy(l2, &c_l2, sizeof(c_l2));
-	ret = connect(-1, l2, len);
+	connect(-1, l2, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
 	       ", l2_psm=htobs(L2CAP_PSM_SDP)"
@@ -691,11 +719,11 @@ check_l2(void)
 # ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	       ", l2_bdaddr_type=BDADDR_LE_RANDOM"
 # endif
-	       "}, %u) = %d EBADF (%m)\n",
+	       "}, %u)" RVAL_EBADF,
 	       c_l2.l2_bdaddr.b[0], c_l2.l2_bdaddr.b[1],
 	       c_l2.l2_bdaddr.b[2], c_l2.l2_bdaddr.b[3],
 	       c_l2.l2_bdaddr.b[4], c_l2.l2_bdaddr.b[5],
-	       len, ret);
+	       len);
 
 	c_l2.l2_psm = htobs(0xbad);
 	c_l2.l2_cid = htobs(8);
@@ -703,7 +731,7 @@ check_l2(void)
 	c_l2.l2_bdaddr_type = 3;
 # endif
 	memcpy(l2, &c_l2, sizeof(c_l2));
-	ret = connect(-1, l2, len);
+	connect(-1, l2, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
 	       ", l2_psm=htobs(0xbad /* L2CAP_PSM_??? */)"
@@ -712,26 +740,25 @@ check_l2(void)
 # ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	       ", l2_bdaddr_type=0x3 /* BDADDR_??? */"
 # endif
-	       "}, %u) = %d EBADF (%m)\n",
+	       "}, %u)" RVAL_EBADF,
 	       c_l2.l2_bdaddr.b[0], c_l2.l2_bdaddr.b[1],
 	       c_l2.l2_bdaddr.b[2], c_l2.l2_bdaddr.b[3],
 	       c_l2.l2_bdaddr.b[4], c_l2.l2_bdaddr.b[5],
-	       len, ret);
+	       len);
 
 	c_l2.l2_psm = htobs(0x10ff);
 	c_l2.l2_cid = htobs(0xffff);
 	memcpy(l2, &c_l2, 12);
-	ret = connect(-1, l2, 12);
+	connect(-1, l2, 12);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
 	       ", l2_psm=htobs(L2CAP_PSM_AUTO_END)"
 	       ", l2_bdaddr=%02x:%02x:%02x:%02x:%02x:%02x"
 	       ", l2_cid=htobs(L2CAP_CID_DYN_END)"
-	       "}, 12) = %d EBADF (%m)\n",
+	       "}, 12)" RVAL_EBADF,
 	       c_l2.l2_bdaddr.b[0], c_l2.l2_bdaddr.b[1],
 	       c_l2.l2_bdaddr.b[2], c_l2.l2_bdaddr.b[3],
-	       c_l2.l2_bdaddr.b[4], c_l2.l2_bdaddr.b[5],
-	       ret);
+	       c_l2.l2_bdaddr.b[4], c_l2.l2_bdaddr.b[5]);
 }
 #endif
 
@@ -745,24 +772,24 @@ check_raw(void)
 	memset(u.st, '0', sizeof(*u.st));
 	u.sa->sa_family = 0xff;
 	unsigned int len = sizeof(*u.st) + 8;
-	int ret = connect(-1, (void *) u.st, len);
+	connect(-1, (void *) u.st, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=%#x /* AF_??? */, sa_data=\"%.*u\"}"
-	       ", %u) = %d EBADF (%m)\n", u.sa->sa_family,
-	       (int) (sizeof(*u.st) - sizeof(u.sa->sa_family)), 0, len, ret);
+	       ", %u)" RVAL_EBADF, u.sa->sa_family,
+	       (int) (sizeof(*u.st) - sizeof(u.sa->sa_family)), 0, len);
 
 	u.sa->sa_family = 0;
 	len = sizeof(u.sa->sa_family) + 1;
-	ret = connect(-1, (void *) u.st, len);
+	connect(-1, (void *) u.st, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_UNSPEC, sa_data=\"0\"}, %u)"
-	       " = %d EBADF (%m)\n", len, ret);
+	       RVAL_EBADF, len);
 
 	u.sa->sa_family = AF_BLUETOOTH;
-	ret = connect(-1, (void *) u.st, len);
+	connect(-1, (void *) u.st, len);
 	pidns_print_leader();
 	printf("connect(-1, {sa_family=AF_BLUETOOTH, sa_data=\"0\"}, %u)"
-	       " = %d EBADF (%m)\n", len, ret);
+	       RVAL_EBADF, len);
 }
 
 int
@@ -773,7 +800,9 @@ main(void)
 	check_un();
 	check_in();
 	check_in6();
+#if defined HAVE_LINUX_IPX_H || defined HAVE_NETIPX_IPX_H
 	check_ipx();
+#endif
 	check_ax25();
 	check_x25();
 	check_nl();

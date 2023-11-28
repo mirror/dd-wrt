@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -25,8 +25,8 @@ test_nlmsg_type(const int fd)
 	};
 
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=SELNL_MSG_SETENFORCE"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=SELNL_MSG_SETENFORCE"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 }
@@ -53,7 +53,8 @@ test_selnl_msg_setenforce(const int fd)
 
 	TEST_NETLINK_OBJECT(fd, nlh0,
 			    SELNL_MSG_SETENFORCE, NLM_F_REQUEST, msg,
-			    PRINT_FIELD_D("{", msg, val);
+			    printf("{");
+			    PRINT_FIELD_D(msg, val);
 			    printf("}"));
 }
 
@@ -67,7 +68,8 @@ test_selnl_msg_policyload(const int fd)
 
 	TEST_NETLINK_OBJECT(fd, nlh0,
 			    SELNL_MSG_POLICYLOAD, NLM_F_REQUEST, msg,
-			    PRINT_FIELD_U("{", msg, seqno);
+			    printf("{");
+			    PRINT_FIELD_U(msg, seqno);
 			    printf("}"));
 }
 

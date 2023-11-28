@@ -1,8 +1,8 @@
 /*
- * This file is part of copy_file_range strace test.
+ * Check decoding of copy_file_range syscall.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,10 +11,8 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined __NR_copy_file_range
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -30,17 +28,10 @@ main(void)
 
 	long rc = syscall(__NR_copy_file_range,
 			  fd_in, off_in, fd_out, off_out, len, flags);
-	printf("copy_file_range(%d, [%lld], %d, [%lld], %zu, %u)"
-	       " = %ld %s (%m)\n",
+	printf("copy_file_range(%d, [%lld], %d, [%lld], %zu, %u) = %s\n",
 	       (int) fd_in, *off_in, (int) fd_out, *off_out, len, flags,
-	       rc, errno2name());
+	       sprintrc(rc));
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_copy_file_range")
-
-#endif

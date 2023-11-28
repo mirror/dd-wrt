@@ -1,8 +1,8 @@
 /*
  * Check decoding of "old mmap" edition of mmap syscall.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -27,6 +27,7 @@
 # include <string.h>
 # include <sys/mman.h>
 # include <unistd.h>
+# include "xmalloc.h"
 
 # ifndef TEST_FD
 #  define TEST_FD -2LU
@@ -82,9 +83,7 @@ main(void)
 # ifndef PATH_TRACING
 	const char *errstr;
 	if (implemented) {
-		char *str;
-		if (asprintf(&str, "%#lx", rc) < 0)
-			perror_msg_and_fail("asprintf");
+		char *str = xasprintf("%#lx", rc);
 		errstr = str;
 	} else {
 		errstr = sprintrc(rc);

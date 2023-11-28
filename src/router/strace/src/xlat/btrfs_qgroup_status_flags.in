@@ -1,0 +1,4 @@
+#unconditional
+#val_type uint64_t
+BTRFS_QGROUP_STATUS_FLAG_ON
+BTRFS_QGROUP_STATUS_FLAG_RESCAN

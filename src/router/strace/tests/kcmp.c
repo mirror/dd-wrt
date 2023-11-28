@@ -2,7 +2,7 @@
  * Check decoding of kcmp syscall.
  *
  * Copyright (c) 2016-2017 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,61 +12,36 @@
 #include "scno.h"
 #include "pidns.h"
 
-#ifdef __NR_kcmp
+#include <fcntl.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <linux/kcmp.h>
 
-# include <fcntl.h>
-# include <stdarg.h>
-# include <stdint.h>
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
+#ifndef SKIP_IF_PROC_IS_UNAVAILABLE
+# define SKIP_IF_PROC_IS_UNAVAILABLE
+#endif
 
-# ifndef VERBOSE_FD
-#  define VERBOSE_FD 0
-# endif
-
-/*
- * We prefer to use system headers in order to catch some possible deviations in
- * system's headers from our perception of reality, but happy to include our own
- * definitions as well.
- */
-# ifdef HAVE_LINUX_KCMP_H
-#  include <linux/kcmp.h>
-# else
-#  define KCMP_FILE	0
-#  define KCMP_VM	1
-#  define KCMP_FILES	2
-#  define KCMP_FS	3
-#  define KCMP_SIGHAND	4
-#  define KCMP_IO	5
-#  define KCMP_SYSVSEM	6
-# endif
-
-/* All other kcmp types have been added atomically */
-# define KCMP_EPOLL_TFD	7
-
-# ifndef HAVE_STRUCT_KCMP_EPOLL_SLOT
-struct kcmp_epoll_slot {
-	uint32_t efd;
-	uint32_t tfd;
-	uint32_t toff;
-};
-# endif
+#ifndef VERBOSE_FD
+# define VERBOSE_FD 0
+#endif
 
 static const kernel_ulong_t kcmp_max_type = KCMP_EPOLL_TFD;
 
 static const char null_path[] = "/dev/null";
 static const char zero_path[] = "/dev/zero";
 
-# define NULL_FD 23
-# define ZERO_FD 42
+#define NULL_FD 23
+#define ZERO_FD 42
 
 static void
 printpidfd(const char *prefix, pid_t pid, unsigned fd)
 {
 	const char *path = NULL;
 
-# if VERBOSE_FD
+#if VERBOSE_FD
 	if (pid == getpid()) {
 		switch (fd)
 		{
@@ -78,7 +53,7 @@ printpidfd(const char *prefix, pid_t pid, unsigned fd)
 			break;
 		}
 	}
-# endif
+#endif
 
 	if (path)
 		printf("%s%d<%s>", prefix, fd, path);
@@ -150,6 +125,7 @@ do_kcmp(kernel_ulong_t pid1, kernel_ulong_t pid2, kernel_ulong_t type,
 int
 main(void)
 {
+	SKIP_IF_PROC_IS_UNAVAILABLE;
 	PIDNS_TEST_INIT;
 
 	static const kernel_ulong_t bogus_pid1 =
@@ -171,7 +147,6 @@ main(void)
 		F8ILL_KULONG_SUPPORTED ? F8ILL_KULONG_MASK : 0;
 
 	int fd;
-	unsigned i;
 	TAIL_ALLOC_OBJECT_CONST_PTR(struct kcmp_epoll_slot, slot);
 
 	/* Open some files to test printpidfd */
@@ -220,7 +195,7 @@ main(void)
 	do_kcmp(-1, -1, ARG_STR(KCMP_EPOLL_TFD),
 		3141592653U, (uintptr_t) slot + 1, 0);
 
-	for (i = 0; i < ARRAY_SIZE(slot_data); i++) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(slot_data); ++i) {
 		memcpy(slot, slot_data + i, sizeof(*slot));
 
 		do_kcmp(getpid(), -1, ARG_STR(KCMP_EPOLL_TFD), NULL_FD,
@@ -232,9 +207,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_kcmp");
-
-#endif

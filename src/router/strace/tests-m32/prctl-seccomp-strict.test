@@ -2,7 +2,7 @@
 #
 # Check how prctl PR_SET_SECCOMP SECCOMP_MODE_STRICT is decoded.
 #
-# Copyright (c) 2016-2018 The strace developers.
+# Copyright (c) 2016-2021 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -19,5 +19,5 @@ set -- "../$NAME"
 	esac
 }
 run_strace -eprctl "$@" > "$EXP"
-grep -v '^prctl(PR_GET_' < "$LOG" > "$OUT"
+sed '0,/^prctl(0xffffffff \/\* PR_??? \*\/, 0xfffffffe, 0xfffffffd, 0xfffffffc, 0xfffffffb) = -1 /d' < "$LOG" > "$OUT"
 match_diff "$OUT" "$EXP"

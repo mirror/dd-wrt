@@ -1,0 +1,6 @@
+#unconditional
+F_RDLCK
+F_WRLCK
+F_UNLCK
+F_EXLCK
+F_SHLCK

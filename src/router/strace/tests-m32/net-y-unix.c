@@ -1,8 +1,8 @@
 /*
  * This file is part of net-y-unix strace test.
  *
- * Copyright (c) 2013-2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2013-2017 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,6 +10,7 @@
 
 #include "tests.h"
 #include <assert.h>
+#include <fcntl.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,8 +18,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-
-#include "accept_compat.h"
 
 #define TEST_SOCKET "net-y-unix.socket"
 
@@ -69,7 +68,7 @@ main(void)
 	if (getsockname(listen_fd, listen_sa, len))
 		perror_msg_and_fail("getsockname");
 	printf("getsockname(%d<socket:[%lu]>, {sa_family=AF_UNIX"
-	       ", sun_path=\"%s\"}, [%d->%d]) = 0\n", listen_fd, listen_inode,
+	       ", sun_path=\"%s\"}, [%d => %d]) = 0\n", listen_fd, listen_inode,
 	       TEST_SOCKET, (int) sizeof(addr), (int) *len);
 
 	int connect_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -88,12 +87,12 @@ main(void)
 	struct sockaddr * const accept_sa = tail_alloc(sizeof(addr));
 	memset(accept_sa, 0, sizeof(addr));
 	*len = sizeof(addr);
-	int accept_fd = do_accept(listen_fd, accept_sa, len);
+	int accept_fd = accept4(listen_fd, accept_sa, len, O_CLOEXEC);
 	if (accept_fd < 0)
 		perror_msg_and_fail("accept");
 	unsigned long accept_inode = inode_of_sockfd(accept_fd);
-	printf("accept(%d<socket:[%lu]>, {sa_family=AF_UNIX}"
-	       ", [%d->%d]) = %d<socket:[%lu]>\n",
+	printf("accept4(%d<socket:[%lu]>, {sa_family=AF_UNIX}"
+	       ", [%d => %d], SOCK_CLOEXEC) = %d<socket:[%lu]>\n",
 	       listen_fd, listen_inode,
 	       (int) sizeof(addr), (int) *len,
 	       accept_fd, accept_inode);
@@ -103,7 +102,8 @@ main(void)
 	if (getpeername(connect_fd, listen_sa, len))
 		perror_msg_and_fail("getpeername");
 	printf("getpeername(%d<socket:[%lu]>, {sa_family=AF_UNIX"
-	       ", sun_path=\"%s\"}, [%d->%d]) = 0\n", connect_fd, connect_inode,
+	       ", sun_path=\"%s\"}, [%d => %d]) = 0\n",
+	       connect_fd, connect_inode,
 	       TEST_SOCKET, (int) sizeof(addr), (int) *len);
 
 	char text[] = "text";
@@ -147,7 +147,7 @@ main(void)
 	if (getsockname(listen_fd, listen_sa, len))
 		perror_msg_and_fail("getsockname");
 	printf("getsockname(%d<socket:[%lu]>, {sa_family=AF_UNIX"
-	       ", sun_path=\"%s\"}, [%d->%d]) = 0\n",
+	       ", sun_path=\"%s\"}, [%d => %d]) = 0\n",
 	       listen_fd, listen_inode, TEST_SOCKET,
 	       (int) sizeof(addr), (int) *len);
 
@@ -159,14 +159,15 @@ main(void)
 
 	memset(accept_sa, 0, sizeof(addr));
 	*len = sizeof(addr);
-	accept_fd = do_accept(listen_fd, accept_sa, len);
+	accept_fd = accept4(listen_fd, accept_sa, len, O_CLOEXEC);
 	if (accept_fd < 0)
 		perror_msg_and_fail("accept");
 	accept_inode = inode_of_sockfd(accept_fd);
 	const char * const sun_path1 =
 		((struct sockaddr_un *) accept_sa)->sun_path + 1;
-	printf("accept(%d<socket:[%lu]>, {sa_family=AF_UNIX"
-	       ", sun_path=@\"%s\"}, [%d->%d]) = %d<socket:[%lu]>\n",
+	printf("accept4(%d<socket:[%lu]>, {sa_family=AF_UNIX"
+	       ", sun_path=@\"%s\"}, [%d => %d], SOCK_CLOEXEC)"
+	       " = %d<socket:[%lu]>\n",
 	       listen_fd, listen_inode, sun_path1,
 	       (int) sizeof(addr), (int) *len,
 	       accept_fd, accept_inode);
@@ -176,7 +177,7 @@ main(void)
 	if (getpeername(connect_fd, listen_sa, len))
 		perror_msg_and_fail("getpeername");
 	printf("getpeername(%d<socket:[%lu]>, {sa_family=AF_UNIX"
-	       ", sun_path=\"%s\"}, [%d->%d]) = 0\n",
+	       ", sun_path=\"%s\"}, [%d => %d]) = 0\n",
 	       connect_fd, connect_inode, TEST_SOCKET,
 	       (int) sizeof(addr), (int) *len);
 
@@ -185,7 +186,7 @@ main(void)
 	if (getsockname(connect_fd, accept_sa, len))
 		perror_msg_and_fail("getsockname");
 	printf("getsockname(%d<socket:[%lu]>, {sa_family=AF_UNIX"
-	       ", sun_path=@\"%s\"}, [%d->%d]) = 0\n",
+	       ", sun_path=@\"%s\"}, [%d => %d]) = 0\n",
 	       connect_fd, connect_inode, sun_path1,
 	       (int) sizeof(addr), (int) *len);
 

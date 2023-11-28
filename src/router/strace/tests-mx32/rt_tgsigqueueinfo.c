@@ -1,8 +1,8 @@
 /*
- * This file is part of rt_tgsigqueueinfo strace test.
+ * Check decoding of rt_tgsigqueueinfo syscall.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,13 +12,11 @@
 #include "scno.h"
 #include "pidns.h"
 
-#if defined __NR_rt_tgsigqueueinfo && defined __NR_gettid
-
-# include <errno.h>
-# include <signal.h>
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 static long
 k_tgsigqueueinfo(const pid_t tgid, const int tid, const int sig, const void *const info)
@@ -58,7 +56,7 @@ main(void)
 	pidns_print_leader();
 	printf("rt_tgsigqueueinfo(%d%s, %d%s, %s, {si_signo=%s"
 		", si_code=SI_QUEUE, si_errno=ENOENT, si_pid=%d%s"
-		", si_uid=%d, si_value={int=%d, ptr=%p}}) = 0\n",
+		", si_uid=%d, si_int=%d, si_ptr=%p}) = 0\n",
 		info->si_pid, pidns_pid2str(PT_TGID),
 		info->si_pid, pidns_pid2str(PT_TID),
 		"SIGUSR1", "SIGUSR1",
@@ -70,9 +68,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_rt_tgsigqueueinfo")
-
-#endif

@@ -1,7 +1,7 @@
 /*
  * Check decoding of open_tree syscall.
  *
- * Copyright (c) 2019 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2019-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,13 +10,12 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_open_tree
-
-# include <fcntl.h>
-# include <limits.h>
-# include <stdio.h>
-# include <stdint.h>
-# include <unistd.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
+#include "kernel_fcntl.h"
 
 static const char *errstr;
 
@@ -40,6 +39,9 @@ main(void)
 {
 	skip_if_unavailable("/proc/self/fd/");
 
+#ifndef PATH_TRACING
+	char *cwd = get_fd_path(get_dir_fd("."));
+#endif
 	static const char path_full[] = "/dev/full";
 	const char *const path = tail_memdup(path_full, sizeof(path_full));
 	char *const fname = tail_alloc(PATH_MAX);
@@ -52,38 +54,36 @@ main(void)
                 perror_msg_and_fail("open: %s", path);
 
 	k_open_tree(-1, 0, 1);
-# ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("open_tree(-1, NULL, %s) = %s\n", "OPEN_TREE_CLONE", errstr);
-# endif
+#endif
 
 	k_open_tree(-100, fname, 0);
-# ifndef PATH_TRACING
-	printf("open_tree(%s, \"%.*s\"..., 0) = %s\n",
-	       "AT_FDCWD", (int) PATH_MAX - 1, fname, errstr);
-# endif
+#ifndef PATH_TRACING
+	printf("open_tree(AT_FDCWD<%s>, \"%.*s\"..., 0) = %s\n",
+	       cwd, (int) PATH_MAX - 1, fname, errstr);
+#endif
 
 	fname[PATH_MAX - 1] = '\0';
 	k_open_tree(dfd, fname, 0x8000);
 	printf("open_tree(%d<%s>, \"%s\", %s) = %s\n",
 	       dfd, path, fname, "AT_RECURSIVE", errstr);
 
-# ifdef O_CLOEXEC
 	k_open_tree(-1, efault, O_CLOEXEC | 1);
-#  ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("open_tree(-1, %p, %s) = %s\n",
 	       efault, "OPEN_TREE_CLONE|OPEN_TREE_CLOEXEC", errstr);
-#  endif
+#endif
 
 	k_open_tree(-1, empty, -1);
-#  ifndef PATH_TRACING
+#ifndef PATH_TRACING
 	printf("open_tree(-1, \"\", %s|%#x) = %s\n",
 	       "OPEN_TREE_CLONE|OPEN_TREE_CLOEXEC"
 	       "|AT_SYMLINK_NOFOLLOW|AT_REMOVEDIR|AT_SYMLINK_FOLLOW"
 	       "|AT_NO_AUTOMOUNT|AT_EMPTY_PATH|AT_RECURSIVE",
 	       -1U & ~0x9f01 & ~O_CLOEXEC,
 	       errstr);
-#  endif
-# endif /* O_CLOEXEC */
+#endif
 
 	if (k_open_tree(-1, path, 0) < 0)
 		printf("open_tree(-1, \"%s\", 0) = %s\n",
@@ -102,9 +102,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_open_tree")
-
-#endif

@@ -1,8 +1,8 @@
 /*
  * Check decoding of ptrace PTRACE_GET_SYSCALL_INFO request.
  *
- * Copyright (c) 2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2018-2020 The strace developers.
+ * Copyright (c) 2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2018-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -97,6 +97,14 @@ static const unsigned long args[][7] = {
 	}
 };
 
+#if !XLAT_RAW
+static const char *sc_names[] = {
+	"chdir",
+	"gettid",
+	"exit_group"
+};
+#endif
+
 static const unsigned int expected_none_size =
 	offsetof(struct_ptrace_syscall_info, entry);
 static const unsigned int expected_entry_size =
@@ -111,12 +119,12 @@ static bool
 test_none(void)
 {
 	do_ptrace(PTRACE_GET_SYSCALL_INFO, pid, 1, 0);
-	printf("ptrace(PTRACE_GET_SYSCALL_INFO, %d, 1, NULL) = %s\n",
-	       pid, errstr);
+	printf("ptrace(" XLAT_FMT ", %d, 1, NULL) = %s\n",
+	       XLAT_ARGS(PTRACE_GET_SYSCALL_INFO), pid, errstr);
 
 	do_ptrace(PTRACE_GET_SYSCALL_INFO, pid, 1, end_of_page);
-	printf("ptrace(PTRACE_GET_SYSCALL_INFO, %d, 1, %#lx) = %s\n",
-	       pid, end_of_page, errstr);
+	printf("ptrace(" XLAT_FMT ", %d, 1, %#lx) = %s\n",
+	       XLAT_ARGS(PTRACE_GET_SYSCALL_INFO), pid, end_of_page, errstr);
 
 	for (unsigned int size = 0;
 	     size <= sizeof(struct_ptrace_syscall_info); ++size) {
@@ -124,52 +132,48 @@ test_none(void)
 		memset((void *) buf, -1, size);
 
 		long rc = do_ptrace(PTRACE_GET_SYSCALL_INFO, pid, size, buf);
-		if (rc < 0) {
-			printf("ptrace(PTRACE_GET_SYSCALL_INFO, %d, %u, %#lx)"
-			       " = %s\n",
-			       pid, (unsigned int) size, buf, errstr);
+		printf("ptrace(" XLAT_FMT ", %d, %u, ",
+		       XLAT_ARGS(PTRACE_GET_SYSCALL_INFO), pid, size);
+		if (rc < (long) expected_none_size || size == 0)
+			printf("%#lx) = %s\n", buf, errstr);
+
+		if (rc < 0)
 			return false;
-		}
 		if (rc < (long) expected_none_size)
 			FAIL("signal stop mismatch");
-
-		printf("ptrace(PTRACE_GET_SYSCALL_INFO, %d, %u, ",
-		       pid, size);
-		if (!size) {
-			printf("%#lx) = %s\n", buf, errstr);
+		if (size == 0)
 			continue;
-		}
 
 		/* copy to a local structure to avoid unaligned access */
 		struct_ptrace_syscall_info info;
 		memcpy(&info, (void *) buf,  MIN(size, expected_none_size));
 
+		printf("{op=" XLAT_FMT, XLAT_ARGS(PTRACE_SYSCALL_INFO_NONE));
 		if (info.op != PTRACE_SYSCALL_INFO_NONE)
 			FAIL("signal stop mismatch");
-		printf("{op=PTRACE_SYSCALL_INFO_NONE");
 
 		if (size < offsetofend(struct_ptrace_syscall_info, arch))
 			goto printed_none;
-		if (!info.arch)
-			FAIL("signal stop mismatch");
 		printf(", arch=");
 		printxval(audit_arch, info.arch, "AUDIT_ARCH_???");
+		if (!info.arch)
+			FAIL("signal stop mismatch");
 
 		if (size < offsetofend(struct_ptrace_syscall_info,
 				       instruction_pointer))
 			goto printed_none;
-		if (!info.instruction_pointer)
-			FAIL("signal stop mismatch");
 		printf(", instruction_pointer=%#llx",
 		       (unsigned long long) info.instruction_pointer);
+		if (!info.instruction_pointer)
+			FAIL("signal stop mismatch");
 
 		if (size < offsetofend(struct_ptrace_syscall_info,
 				       stack_pointer))
 			goto printed_none;
-		if (!info.stack_pointer)
-			FAIL("signal stop mismatch");
 		printf(", stack_pointer=%#llx",
 		       (unsigned long long) info.stack_pointer);
+		if (!info.stack_pointer)
+			FAIL("signal stop mismatch");
 
 printed_none:
 		printf("}) = %s\n", errstr);
@@ -187,56 +191,58 @@ test_entry(void)
 		memset((void *) buf, -1, size);
 
 		long rc = do_ptrace(PTRACE_GET_SYSCALL_INFO, pid, size, buf);
-		if (rc < 0)
-			PFAIL("PTRACE_GET_SYSCALL_INFO");
+		printf("ptrace(" XLAT_FMT ", %d, %u, ",
+		       XLAT_ARGS(PTRACE_GET_SYSCALL_INFO), pid, size);
+		if (rc < (long) expected_entry_size || size == 0)
+			printf("%#lx) = %s\n", buf, errstr);
 
+		if (rc < 0)
+			FAIL("PTRACE_GET_SYSCALL_INFO");
 		if (rc < (long) expected_entry_size)
 			FAIL("#%d: entry stop mismatch", ptrace_stop);
-
-		printf("ptrace(PTRACE_GET_SYSCALL_INFO, %d, %u, ",
-		       pid, size);
-		if (!size) {
-			printf("%#lx) = %s\n", buf, errstr);
+		if (size == 0)
 			continue;
-		}
 
 		/* copy to a local structure to avoid unaligned access */
 		struct_ptrace_syscall_info info;
 		memcpy(&info, (void *) buf,  MIN(size, expected_entry_size));
 
+		printf("{op=" XLAT_FMT, XLAT_ARGS(PTRACE_SYSCALL_INFO_ENTRY));
 		if (info.op != PTRACE_SYSCALL_INFO_ENTRY)
 			FAIL("#%d: entry stop mismatch", ptrace_stop);
-		printf("{op=PTRACE_SYSCALL_INFO_ENTRY");
 
 		if (size < offsetofend(struct_ptrace_syscall_info, arch))
 			goto printed_entry_common;
-		if (!info.arch)
-			FAIL("#%d: entry stop mismatch", ptrace_stop);
 		printf(", arch=");
 		printxval(audit_arch, info.arch, "AUDIT_ARCH_???");
+		if (!info.arch)
+			FAIL("#%d: entry stop mismatch", ptrace_stop);
 
 		if (size < offsetofend(struct_ptrace_syscall_info,
 				       instruction_pointer))
 			goto printed_entry_common;
-		if (!info.instruction_pointer)
-			FAIL("#%d: entry stop mismatch", ptrace_stop);
 		printf(", instruction_pointer=%#llx",
 		       (unsigned long long) info.instruction_pointer);
+		if (!info.instruction_pointer)
+			FAIL("#%d: entry stop mismatch", ptrace_stop);
 
 		if (size < offsetofend(struct_ptrace_syscall_info,
 				       stack_pointer))
 			goto printed_entry_common;
-		if (!info.stack_pointer)
-			FAIL("#%d: entry stop mismatch", ptrace_stop);
 		printf(", stack_pointer=%#llx",
 		       (unsigned long long) info.stack_pointer);
+		if (!info.stack_pointer)
+			FAIL("#%d: entry stop mismatch", ptrace_stop);
 
 		if (size < offsetofend(struct_ptrace_syscall_info, entry.nr))
 			goto printed_entry_common;
+		printf(", entry={nr="
+		       NABBR("%llu") VERB(" /* ") NRAW("__NR_%s") VERB(" */"),
+		       XLAT_SEL((unsigned long long) info.entry.nr,
+				sc_names[ptrace_stop / 2]));
 		const unsigned long *exp_args = args[ptrace_stop / 2];
 		if (info.entry.nr != exp_args[0])
 			FAIL("#%d: entry stop mismatch", ptrace_stop);
-		printf(", entry={nr=%llu", (unsigned long long) info.entry.nr);
 
 		for (unsigned int i = 0; i < ARRAY_SIZE(info.entry.args); ++i) {
 			const unsigned int i_size =
@@ -252,10 +258,10 @@ test_entry(void)
 #else
 # define CAST
 #endif
+			printf("%s%#llx", (i ? ", " : ", args=["),
+			       (unsigned long long) info.entry.args[i]);
 			if (CAST info.entry.args[i] != exp_args[i + 1])
 				FAIL("#%d: entry stop mismatch", ptrace_stop);
-			printf("%s%#llx", (i ? ", " : ", arg=["),
-			       (unsigned long long) info.entry.args[i]);
 		}
 		printf("]");
 
@@ -276,49 +282,48 @@ test_exit(void)
 		memset((void *) buf, -1, size);
 
 		long rc = do_ptrace(PTRACE_GET_SYSCALL_INFO, pid, size, buf);
-		if (rc < 0)
-			PFAIL("PTRACE_GET_SYSCALL_INFO");
+		printf("ptrace(" XLAT_FMT ", %d, %u, ",
+		       XLAT_ARGS(PTRACE_GET_SYSCALL_INFO), pid, size);
+		if (rc < (long) expected_exit_size || size == 0)
+			printf("%#lx) = %s\n", buf, errstr);
 
+		if (rc < 0)
+			FAIL("PTRACE_GET_SYSCALL_INFO");
 		if (rc < (long) expected_exit_size)
 			FAIL("#%d: exit stop mismatch", ptrace_stop);
-
-		printf("ptrace(PTRACE_GET_SYSCALL_INFO, %d, %u, ",
-		       pid, size);
-		if (!size) {
-			printf("%#lx) = %s\n", buf, errstr);
+		if (size == 0)
 			continue;
-		}
 
 		/* copy to a local structure to avoid unaligned access */
 		struct_ptrace_syscall_info info;
 		memcpy(&info, (void *) buf,  MIN(size, expected_exit_size));
 
+		printf("{op=" XLAT_FMT, XLAT_ARGS(PTRACE_SYSCALL_INFO_EXIT));
 		if (info.op != PTRACE_SYSCALL_INFO_EXIT)
 			FAIL("#%d: exit stop mismatch", ptrace_stop);
-		printf("{op=PTRACE_SYSCALL_INFO_EXIT");
 
 		if (size < offsetofend(struct_ptrace_syscall_info, arch))
 			goto printed_exit_common;
-		if (!info.arch)
-			FAIL("#%d: exit stop mismatch", ptrace_stop);
 		printf(", arch=");
 		printxval(audit_arch, info.arch, "AUDIT_ARCH_???");
+		if (!info.arch)
+			FAIL("#%d: exit stop mismatch", ptrace_stop);
 
 		if (size < offsetofend(struct_ptrace_syscall_info,
 				       instruction_pointer))
 			goto printed_exit_common;
-		if (!info.instruction_pointer)
-			FAIL("#%d: exit stop mismatch", ptrace_stop);
 		printf(", instruction_pointer=%#llx",
 		       (unsigned long long) info.instruction_pointer);
+		if (!info.instruction_pointer)
+			FAIL("#%d: exit stop mismatch", ptrace_stop);
 
 		if (size < offsetofend(struct_ptrace_syscall_info,
 				       stack_pointer))
 			goto printed_exit_common;
-		if (!info.stack_pointer)
-			FAIL("#%d: exit stop mismatch", ptrace_stop);
 		printf(", stack_pointer=%#llx",
 		       (unsigned long long) info.stack_pointer);
+		if (!info.stack_pointer)
+			FAIL("#%d: exit stop mismatch", ptrace_stop);
 
 		const struct {
 			unsigned int is_error;
@@ -331,19 +336,20 @@ test_exit(void)
 
 		if (size < offsetofend(struct_ptrace_syscall_info, exit.rval))
 			goto printed_exit_common;
-		if (info.exit.rval != exp_param->rval)
-			FAIL("#%d: exit stop mismatch", ptrace_stop);
 		if (size >= expected_exit_size && info.exit.is_error) {
-			printf(", exit={rval=%s", exp_param->str);
+			printf(", exit={rval=" XLAT_FMT_D,
+			       XLAT_SEL(exp_param->rval, exp_param->str));
 		} else {
 			printf(", exit={rval=%lld", (long long) info.exit.rval);
 		}
+		if (info.exit.rval != exp_param->rval)
+			FAIL("#%d: exit stop mismatch", ptrace_stop);
 
 		if (size >= expected_exit_size) {
-			if (info.exit.is_error != exp_param->is_error)
-				FAIL("#%d: exit stop mismatch", ptrace_stop);
 			printf(", is_error=%u",
 			       (unsigned int) info.exit.is_error);
+			if (info.exit.is_error != exp_param->is_error)
+				FAIL("#%d: exit stop mismatch", ptrace_stop);
 		}
 
 		printf("}");
@@ -360,8 +366,8 @@ main(void)
 
 	pid = getpid();
 	do_ptrace(PTRACE_GET_SYSCALL_INFO, pid, 0, 0);
-	printf("ptrace(PTRACE_GET_SYSCALL_INFO, %d, 0, NULL) = %s\n",
-	       pid, errstr);
+	printf("ptrace(" XLAT_FMT ", %d, 0, NULL) = %s\n",
+	       XLAT_ARGS(PTRACE_GET_SYSCALL_INFO), pid, errstr);
 
 	pid = fork();
 	if (pid < 0)
@@ -422,8 +428,10 @@ main(void)
 				/* cannot happen */
 				PFAIL("PTRACE_SETOPTIONS");
 			}
-			printf("ptrace(PTRACE_SETOPTIONS, %d, NULL"
-			       ", PTRACE_O_TRACESYSGOOD) = 0\n", pid);
+			printf("ptrace(" XLAT_FMT ", %d, NULL, " XLAT_FMT
+			       ") = 0\n",
+			       XLAT_ARGS(PTRACE_SETOPTIONS), pid,
+			       XLAT_ARGS(PTRACE_O_TRACESYSGOOD));
 
 			if (!test_none())
 				goto done;
@@ -455,7 +463,8 @@ main(void)
 			/* cannot happen */
 			PFAIL("PTRACE_SYSCALL");
 		}
-		printf("ptrace(PTRACE_SYSCALL, %d, NULL, 0) = 0\n", pid);
+		printf("ptrace(" XLAT_FMT ", %d, NULL, 0) = 0\n",
+		       XLAT_ARGS(PTRACE_SYSCALL), pid);
 	}
 
 done:

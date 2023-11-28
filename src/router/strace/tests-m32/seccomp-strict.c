@@ -1,8 +1,8 @@
 /*
  * Check how seccomp SECCOMP_SET_MODE_STRICT is decoded.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,10 +11,8 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined __NR_seccomp && defined __NR_exit
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -26,7 +24,7 @@ main(void)
 	long rc;
 
 	rc = syscall(__NR_seccomp, -1L, -1L, addr);
-	printf("seccomp(%#x /* SECCOMP_SET_MODE_??? */, %u, %#llx)"
+	printf("seccomp(%#x /* SECCOMP_SET_MODE_??? */, %#x, %#llx)"
 	       " = %s\n", -1, -1, (unsigned long long) addr, sprintrc(rc));
 	fflush(stdout);
 
@@ -47,9 +45,3 @@ main(void)
 	rc += write(1, text2, LENGTH_OF(text2)) != LENGTH_OF(text2);
 	return !!syscall(__NR_exit, rc);
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_seccomp && __NR_exit")
-
-#endif

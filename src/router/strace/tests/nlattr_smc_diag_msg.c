@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -54,8 +54,8 @@ init_smc_diag_msg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_smc_diag_msg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=SOCK_DIAG_BY_FAMILY"
-	       ", flags=NLM_F_DUMP, seq=0, pid=0}"
+	printf("{nlmsg_len=%u, nlmsg_type=SOCK_DIAG_BY_FAMILY"
+	       ", nlmsg_flags=NLM_F_DUMP, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", {diag_family=AF_SMC, diag_state=SMC_ACTIVE"
 	       ", diag_fallback=SMC_DIAG_MODE_SMCR, diag_shutdown=0"
 	       ", id={idiag_sport=htons(0), idiag_dport=htons(0)"
@@ -66,13 +66,16 @@ print_smc_diag_msg(const unsigned int msg_len)
 	       msg_len, address, address);
 }
 
-#define PRINT_FIELD_SMC_DIAG_CURSOR(prefix_, where_, field_)		\
-	do {								\
-		printf("%s%s=", (prefix_), #field_);			\
-		PRINT_FIELD_U("{", (where_).field_, reserved);		\
-		PRINT_FIELD_U(", ", (where_).field_, wrap);		\
-		PRINT_FIELD_U(", ", (where_).field_, count);		\
-		printf("}");						\
+#define PRINT_FIELD_SMC_DIAG_CURSOR(where_, field_)		\
+	do {							\
+		printf("%s=", #field_);				\
+		printf("{");					\
+		PRINT_FIELD_U((where_).field_, reserved);	\
+		printf(", ");					\
+		PRINT_FIELD_U((where_).field_, wrap);		\
+		printf(", ");					\
+		PRINT_FIELD_U((where_).field_, count);		\
+		printf("}");					\
 	} while (0)
 
 int main(void)
@@ -174,41 +177,59 @@ int main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_smc_diag_msg, print_smc_diag_msg,
 			   SMC_DIAG_CONNINFO, pattern, cinfo,
-			   PRINT_FIELD_U("{", cinfo, token);
-			   PRINT_FIELD_U(", ", cinfo, sndbuf_size);
-			   PRINT_FIELD_U(", ", cinfo, rmbe_size);
-			   PRINT_FIELD_U(", ", cinfo, peer_rmbe_size);
-			   PRINT_FIELD_SMC_DIAG_CURSOR(", ", cinfo, rx_prod);
-			   PRINT_FIELD_SMC_DIAG_CURSOR(", ", cinfo, rx_cons);
-			   PRINT_FIELD_SMC_DIAG_CURSOR(", ", cinfo, tx_prod);
-			   PRINT_FIELD_SMC_DIAG_CURSOR(", ", cinfo, tx_cons);
+			   printf("{");
+			   PRINT_FIELD_U(cinfo, token);
+			   printf(", ");
+			   PRINT_FIELD_U(cinfo, sndbuf_size);
+			   printf(", ");
+			   PRINT_FIELD_U(cinfo, rmbe_size);
+			   printf(", ");
+			   PRINT_FIELD_U(cinfo, peer_rmbe_size);
+			   printf(", ");
+			   PRINT_FIELD_SMC_DIAG_CURSOR(cinfo, rx_prod);
+			   printf(", ");
+			   PRINT_FIELD_SMC_DIAG_CURSOR(cinfo, rx_cons);
+			   printf(", ");
+			   PRINT_FIELD_SMC_DIAG_CURSOR(cinfo, tx_prod);
+			   printf(", ");
+			   PRINT_FIELD_SMC_DIAG_CURSOR(cinfo, tx_cons);
 			   printf(", rx_prod_flags=0xff");
 			   printf(", rx_conn_state_flags=0xff");
 			   printf(", tx_prod_flags=0xff");
 			   printf(", tx_conn_state_flags=0xff");
-			   PRINT_FIELD_SMC_DIAG_CURSOR(", ", cinfo, tx_prep);
-			   PRINT_FIELD_SMC_DIAG_CURSOR(", ", cinfo, tx_sent);
-			   PRINT_FIELD_SMC_DIAG_CURSOR(", ", cinfo, tx_fin);
+			   printf(", ");
+			   PRINT_FIELD_SMC_DIAG_CURSOR(cinfo, tx_prep);
+			   printf(", ");
+			   PRINT_FIELD_SMC_DIAG_CURSOR(cinfo, tx_sent);
+			   printf(", ");
+			   PRINT_FIELD_SMC_DIAG_CURSOR(cinfo, tx_fin);
 			   printf("}"));
 
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_smc_diag_msg, print_smc_diag_msg,
 			   SMC_DIAG_LGRINFO, pattern, linfo,
-			   PRINT_FIELD_U("{lnk[0]={", linfo.lnk[0], link_id);
+			   printf("{lnk=[{");
+			   PRINT_FIELD_U(linfo.lnk[0], link_id);
 			   printf(", ibname=\"%s\"", linfo.lnk[0].ibname);
-			   PRINT_FIELD_U(", ", linfo.lnk[0], ibport);
+			   printf(", ");
+			   PRINT_FIELD_U(linfo.lnk[0], ibport);
 			   printf(", gid=\"%s\"", linfo.lnk[0].gid);
-			   printf(", peer_gid=\"%s\"}", linfo.lnk[0].peer_gid);
+			   printf(", peer_gid=\"%s\"}]", linfo.lnk[0].peer_gid);
 			   printf(", role=SMC_CLNT}"));
 
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_smc_diag_msg, print_smc_diag_msg,
 			   SMC_DIAG_DMBINFO, pattern, dinfo,
-			   PRINT_FIELD_U("{", dinfo, linkid);
-			   PRINT_FIELD_X(", ", dinfo, peer_gid);
-			   PRINT_FIELD_X(", ", dinfo, my_gid);
-			   PRINT_FIELD_X(", ", dinfo, token);
-			   PRINT_FIELD_X(", ", dinfo, peer_token);
+			   printf("{");
+			   PRINT_FIELD_U(dinfo, linkid);
+			   printf(", ");
+			   PRINT_FIELD_X(dinfo, peer_gid);
+			   printf(", ");
+			   PRINT_FIELD_X(dinfo, my_gid);
+			   printf(", ");
+			   PRINT_FIELD_X(dinfo, token);
+			   printf(", ");
+			   PRINT_FIELD_X(dinfo, peer_token);
 			   printf("}"));
 
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,

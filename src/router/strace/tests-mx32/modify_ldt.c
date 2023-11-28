@@ -1,7 +1,7 @@
 /*
  * Check decoding of modify_ldt syscall.
  *
- * Copyright (c) 2018-2020 The strace developers.
+ * Copyright (c) 2018-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -19,7 +19,7 @@
 
 # include "print_user_desc.c"
 
-void
+static void
 printrc(long rc)
 {
 # ifdef __x86_64__

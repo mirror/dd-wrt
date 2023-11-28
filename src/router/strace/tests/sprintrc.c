@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -26,7 +26,7 @@ enum sprintrc_fmt {
  *            representation of return code and errno/error message in case @rc
  *            is equal to -1.
  */
-static inline const char *
+static const char *
 sprintrc_ex(long rc, enum sprintrc_fmt fmt)
 {
 	static const char *formats[] = {

@@ -1,7 +1,7 @@
 /*
  * Check decoding of faccessat2 syscall.
  *
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,22 +10,23 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_faccessat2
+#include "xmalloc.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
 
-# include <fcntl.h>
-# include <stdio.h>
-# include <unistd.h>
+#define XLAT_MACROS_ONLY
+# include "xlat/faccessat_flags.h"
+#undef XLAT_MACROS_ONLY
 
-# define XLAT_MACROS_ONLY
-#  include "xlat/faccessat_flags.h"
-# undef XLAT_MACROS_ONLY
-
-# ifndef FD_PATH
-#  define FD_PATH ""
-# endif
-# ifndef SKIP_IF_PROC_IS_UNAVAILABLE
-#  define SKIP_IF_PROC_IS_UNAVAILABLE
-# endif
+#ifndef FD_PATH
+# define FD_PATH ""
+#else
+# define YFLAG
+#endif
+#ifndef SKIP_IF_PROC_IS_UNAVAILABLE
+# define SKIP_IF_PROC_IS_UNAVAILABLE
+#endif
 
 static const char *errstr;
 
@@ -54,13 +55,9 @@ main(void)
 	SKIP_IF_PROC_IS_UNAVAILABLE;
 
 	TAIL_ALLOC_OBJECT_CONST_PTR(const char, unterminated);
-	char *unterminated_str;
-	if (asprintf(&unterminated_str, "%p", unterminated) < 0)
-                perror_msg_and_fail("asprintf");
+	char *unterminated_str = xasprintf("%p", unterminated);
 	const void *const efault = unterminated + 1;
-	char *efault_str;
-	if (asprintf(&efault_str, "%p", efault) < 0)
-                perror_msg_and_fail("asprintf");
+	char *efault_str = xasprintf("%p", efault);
 
 	typedef struct {
 		char sym;
@@ -81,19 +78,22 @@ main(void)
         int fd = open(path, O_WRONLY);
         if (fd < 0)
                 perror_msg_and_fail("open: %s", path);
-	char *fd_str;
-	if (asprintf(&fd_str, "%d%s", fd, FD_PATH) < 0)
-                perror_msg_and_fail("asprintf");
-	char *path_quoted;
-	if (asprintf(&path_quoted, "\"%s\"", path) < 0)
-                perror_msg_and_fail("asprintf");
+	char *fd_str = xasprintf("%d%s", fd, FD_PATH);
+	const char *at_fdcwd_str =
+#ifdef YFLAG
+		xasprintf("AT_FDCWD<%s>", get_fd_path(get_dir_fd(".")));
+#else
+		"AT_FDCWD";
+#endif
+
+	char *path_quoted = xasprintf("\"%s\"", path);
 
 	struct {
 		int val;
 		const char *str;
 	} dirfds[] = {
 		{ ARG_STR(-1) },
-		{ -100, "AT_FDCWD" },
+		{ -100, at_fdcwd_str },
 		{ fd, fd_str },
 	}, modes[] = {
 		{ ARG_STR(F_OK) },
@@ -148,10 +148,10 @@ main(void)
 						    paths[path_i].val,
 						    modes[mode_i].val,
 						    flags[flag_i].val);
-# ifdef PATH_TRACING
+#ifdef PATH_TRACING
 					if (dirfds[dirfd_i].val == fd ||
 					    paths[path_i].val == fd_path)
-# endif
+#endif
 					printf("faccessat2(%s, %s, %s, %s) = %s\n",
 					       dirfds[dirfd_i].str,
 					       paths[path_i].str,
@@ -166,9 +166,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_faccessat2")
-
-#endif

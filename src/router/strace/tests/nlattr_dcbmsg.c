@@ -1,19 +1,16 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
-#ifdef HAVE_STRUCT_DCBMSG
-
-# include <stdio.h>
-# include "test_nlattr.h"
-# include <linux/dcbnl.h>
-# include <linux/rtnetlink.h>
+#include <stdio.h>
+#include "test_nlattr.h"
+#include <linux/dcbnl.h>
+#include <linux/rtnetlink.h>
 
 static void
 init_dcbmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
@@ -34,8 +31,8 @@ init_dcbmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_dcbmsg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=RTM_GETDCB, flags=NLM_F_DUMP"
-	       ", seq=0, pid=0}, {dcb_family=AF_UNIX"
+	printf("{nlmsg_len=%u, nlmsg_type=RTM_GETDCB, nlmsg_flags=NLM_F_DUMP"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, {dcb_family=AF_UNIX"
 	       ", cmd=DCB_CMD_UNDEFINED}",
 	       msg_len);
 }
@@ -64,9 +61,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("HAVE_STRUCT_DCBMSG")
-
-#endif

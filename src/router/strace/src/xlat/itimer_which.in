@@ -1,0 +1,4 @@
+#value_indexed
+ITIMER_REAL	0
+ITIMER_VIRTUAL	1
+ITIMER_PROF	2

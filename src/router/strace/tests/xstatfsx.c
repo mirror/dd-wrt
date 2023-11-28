@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -66,8 +66,9 @@ print_statfs(const char *const sample, const char *magic_str)
 	PRINT_NUM(f_files);
 	PRINT_NUM(f_ffree);
 #ifdef PRINT_F_FSID
-	printf(", f_fsid={val=[%u, %u]}",
-	       (unsigned) b->PRINT_F_FSID[0], (unsigned) b->PRINT_F_FSID[1]);
+	printf(", f_fsid={val=[%#llx, %#llx]}",
+	       zero_extend_signed_to_ull(b->PRINT_F_FSID[0]),
+	       zero_extend_signed_to_ull(b->PRINT_F_FSID[1]));
 #endif
 	PRINT_NUM(f_namelen);
 #ifdef PRINT_F_FRSIZE

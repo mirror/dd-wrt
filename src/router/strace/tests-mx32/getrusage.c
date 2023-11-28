@@ -1,7 +1,9 @@
 /*
+ * Check decoding of getrusage syscall.
+ *
  * Copyright (c) 2016 Fei Jie <feij.fnst@cn.fujitsu.com>
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,19 +12,17 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_getrusage
+#include <stdio.h>
+#include <stdint.h>
+#include <sys/resource.h>
+#include <unistd.h>
+#include <errno.h>
 
-# include <stdio.h>
-# include <stdint.h>
-# include <sys/resource.h>
-# include <unistd.h>
-# include <errno.h>
+#include "kernel_rusage.h"
+#include "xlat.h"
+#include "xlat/usagewho.h"
 
-# include "kernel_rusage.h"
-# include "xlat.h"
-# include "xlat/usagewho.h"
-
-int
+static int
 invoke_print(int who, const char *who_str, kernel_rusage_t *usage)
 {
 	int rc = syscall(__NR_getrusage, who, usage);
@@ -71,9 +71,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_getrusage")
-
-#endif

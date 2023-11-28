@@ -1,17 +1,18 @@
 /*
- * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Check decoding of eventfd2 syscall.
+ *
+ * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <fcntl.h>
-#include <unistd.h>
 #include "scno.h"
 
-#if defined __NR_eventfd2 && defined O_CLOEXEC
+#include <unistd.h>
+#include "kernel_fcntl.h"
 
 int
 main(void)
@@ -21,9 +22,3 @@ main(void)
 		perror_msg_and_skip("eventfd2");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_eventfd2 && O_CLOEXEC")
-
-#endif

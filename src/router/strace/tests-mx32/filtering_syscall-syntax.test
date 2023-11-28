@@ -2,9 +2,9 @@
 #
 # Check syscall set parsing syntax.
 #
-# Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2016-2018 Dmitry V. Levin <ldv@strace.io>
 # Copyright (c) 2017 Nikolay Marchuk <marchuk.nikolay.a@gmail.com>
-# Copyright (c) 2018-2020 The strace developers.
+# Copyright (c) 2018-2022 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -65,10 +65,26 @@ check_syscall()
 	check_e "invalid system call '$1'" -e fault="$2:when=4"
 }
 
+pers=$(print_current_personality_designator)
+
 for arg in '' , ,, ,,, ; do
 	check_syscall "$arg" "$arg"
 	check_syscall "!$arg" "!$arg"
 done
+
+case "$STRACE_ARCH" in
+	alpha)	invalid_scno1=299
+		invalid_scno2=404
+		;;
+	*)	invalid_scno1=415
+		invalid_scno2=501
+		;;
+esac
+
+case "$STRACE_ARCH" in
+	ia64)	valid_scno=1025 ;;
+	*)	valid_scno=1 ;;
+esac
 
 for arg in -1 -2 -3 -4 -5 \
 	   invalid_syscall_name \
@@ -78,16 +94,19 @@ for arg in -1 -2 -3 -4 -5 \
 	   2147483648 \
 	   4294967295 \
 	   4294967296 \
+	   $invalid_scno1 \
+	   $invalid_scno2 \
 	   /non_syscall \
 	   % %not_a_class \
 	   ; do
 	check_syscall "$arg" "$arg"
 	check_syscall "$arg" "!$arg"
-	check_syscall "$arg" "1,$arg"
+	check_syscall "$arg" "$valid_scno,$arg"
+	check_syscall "$arg@$pers" "$arg@$pers"
 done
 
-for arg in '!chdir' none all; do
-	check_syscall "$arg" "1,$arg"
+for arg in '!chdir' none; do
+	check_syscall "$arg" "$valid_scno,$arg"
 done
 
 # invalid syscall, multiple syscalls
@@ -97,16 +116,19 @@ for arg in %desc \
 	   %process \
 	   %network \
 	   chdir \
-	   1 \
+	   $valid_scno \
+	   all \
 	   ?32767 \
 	   ?invalid \
 	   ?%not_a_class \
 	   ?/non_syscall \
 	   ; do
-	check_syscall nonsense "$arg,nonsense"
-	check_syscall nonsense "!$arg,nonsense"
-	check_syscall nonsense "nonsense,$arg"
-	check_syscall nonsense "!nonsense,$arg"
+	for pfx in '' '!'; do
+		for token in "$arg" "$arg@$pers"; do
+			check_syscall nonsense "${pfx}$token,nonsense"
+			check_syscall nonsense "${pfx}nonsense,$token"
+		done
+	done
 done
 
 check_e_using_grep 'regcomp: \+id: [[:alpha:]].+' -e trace='/+id'

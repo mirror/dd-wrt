@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -28,7 +28,6 @@ main(void)
 {
 	TAIL_ALLOC_OBJECT_CONST_PTR(struct ip_mreq, m4);
 	TAIL_ALLOC_OBJECT_CONST_PTR(struct ipv6_mreq, m6);
-	unsigned int i;
 	int rc;
 
 	inet_pton(AF_INET, multi4addr, &m4->imr_multiaddr);
@@ -94,7 +93,7 @@ main(void)
 		}
 	};
 
-	for (i = 0; i < ARRAY_SIZE(opts); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(opts); ++i) {
 		/* optlen < 0, EINVAL */
 		rc = setsockopt(0, opts[i].level, opts[i].name,
 				opts[i].val, -1);

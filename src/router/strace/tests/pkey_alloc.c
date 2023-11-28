@@ -2,7 +2,7 @@
  * Check decoding of pkey_alloc syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,10 +11,8 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_pkey_alloc
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -41,13 +39,10 @@ main(void)
 		{ 0xbadc0de8, "0xbadc0de8 /* PKEY_??? */" },
 	};
 
-	long rc;
-	unsigned int i;
-	unsigned int j;
-
-	for (i = 0; i < ARRAY_SIZE(flags); i++) {
-		for (j = 0; j < ARRAY_SIZE(rights); j++) {
-			rc = syscall(__NR_pkey_alloc, flags[i], rights[j].val);
+	for (unsigned int i = 0; i < ARRAY_SIZE(flags); ++i) {
+		for (unsigned int j = 0; j < ARRAY_SIZE(rights); ++j) {
+			long rc = syscall(__NR_pkey_alloc,
+					  flags[i], rights[j].val);
 			printf("pkey_alloc(%#llx, %s) = %s\n",
 			       (unsigned long long) flags[i], rights[j].str,
 			       sprintrc(rc));
@@ -58,9 +53,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_pkey_alloc");
-
-#endif

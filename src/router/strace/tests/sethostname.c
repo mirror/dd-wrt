@@ -2,8 +2,8 @@
  * Check decoding of sethostname syscall.
  *
  * Copyright (c) 2016 Fei Jie <feij.fnst@cn.fujitsu.com>
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,18 +12,9 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_sethostname
-
-# include <stdio.h>
-# include <unistd.h>
-
-# ifdef HAVE_LINUX_UTSNAME_H
-#  include <linux/utsname.h>
-# endif
-
-# ifndef __NEW_UTS_LEN
-#  define __NEW_UTS_LEN 64
-# endif
+#include <stdio.h>
+#include <unistd.h>
+#include <linux/utsname.h>
 
 int
 main(void)
@@ -52,9 +43,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_sethostname")
-
-#endif

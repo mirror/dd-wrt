@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -53,7 +53,7 @@ cleanup(void)
 	return 0;
 }
 
-int
+static int
 sys_msgrcv(int msqid, void *msgp, size_t sz, kernel_long_t msgtyp,
 	   int msgflg)
 {
@@ -85,16 +85,16 @@ main(void)
 	typedef void (*atexit_func)(void);
 	atexit((atexit_func) cleanup);
 
-	printf("msgsnd\\(%d, \\{%lld, \"" text_string "\\\\0\"\\}, 14, 0\\)"
-	       " = 0\n",
+	printf("msgsnd\\(%d, \\{mtype=%lld, mtext=\"" text_string
+	       "\\\\0\"\\}, 14, 0\\) = 0\n",
 	       msqid, (long long) mtype);
 	if (msgsnd(msqid, &msg, msgsz, 0) == -1)
 		perror_msg_and_skip("msgsnd");
 
 	if (sys_msgrcv(msqid, &msg, msgsz, -mtype, 0) != msgsz)
 		perror_msg_and_skip("msgrcv");
-	printf("msgrcv\\(%d, \\{%lld, \"" text_string "\\\\0\"\\}, 14, %lld"
-	       ", 0\\) = 14\n",
+	printf("msgrcv\\(%d, \\{mtype=%lld, mtext=\"" text_string
+	       "\\\\0\"\\}, 14, %lld, 0\\) = 14\n",
 	       msqid, (long long) mtype, -(long long) mtype);
 
 	return cleanup();

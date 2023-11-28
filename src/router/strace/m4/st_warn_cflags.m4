@@ -1,6 +1,6 @@
 #!/usr/bin/m4
 #
-# Copyright (c) 2016-2020 The strace developers.
+# Copyright (c) 2016-2021 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -34,20 +34,21 @@ AC_CACHE_CHECK([whether to try $[]_AC_CC[] with -Werror by default],
 		  st_cv_enable_Werror=yes
 		fi])
 gl_WARN_ADD([-Wall])
-gl_WARN_ADD([-Wempty-body])
+gl_WARN_ADD([-Wextra])
+gl_WARN_ADD([-Wno-missing-field-initializers])
+gl_WARN_ADD([-Wno-unused-parameter])
+
+gl_WARN_ADD([-Wdate-time])
 gl_WARN_ADD([-Wformat-security])
-gl_WARN_ADD([-Wignored-qualifiers])
 gl_WARN_ADD([-Wimplicit-fallthrough=5])
 gl_WARN_ADD([-Winit-self])
 gl_WARN_ADD([-Winitializer-overrides])
 gl_WARN_ADD([-Wlogical-op])
-gl_WARN_ADD([-Wmissing-parameter-type])
+gl_WARN_ADD([-Wmissing-prototypes])
 gl_WARN_ADD([-Wnested-externs])
-gl_WARN_ADD([-Wold-style-declaration])
 gl_WARN_ADD([-Wold-style-definition])
-gl_WARN_ADD([-Woverride-init])
-gl_WARN_ADD([-Wsign-compare])
-gl_WARN_ADD([-Wtype-limits])
+gl_WARN_ADD([-Wtrampolines])
+gl_WARN_ADD([-Wundef])
 gl_WARN_ADD([-Wwrite-strings])
 AC_ARG_ENABLE([gcc-Werror],
 	      [AS_HELP_STRING([--enable-gcc-Werror],

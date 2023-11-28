@@ -1,7 +1,8 @@
 /*
  * Check decoding of move_mount syscall.
  *
- * Copyright (c) 2019 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2019-2021 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2019-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,13 +11,11 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_move_mount
-
-# include <fcntl.h>
-# include <limits.h>
-# include <stdio.h>
-# include <stdint.h>
-# include <unistd.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
 
 static const char *errstr;
 
@@ -43,6 +42,7 @@ main(void)
 {
 	skip_if_unavailable("/proc/self/fd/");
 
+	char *cwd = get_fd_path(get_dir_fd("."));
 	static const char path_full[] = "/dev/full";
 	const char *const path = tail_memdup(path_full, sizeof(path_full));
 	const void *const efault = path + sizeof(path_full);
@@ -55,48 +55,66 @@ main(void)
                 perror_msg_and_fail("open: %s", path);
 
 	k_move_mount(-1, 0, -100, efault, 0);
-# ifndef PATH_TRACING
-	printf("move_mount(-1, NULL, AT_FDCWD, %p, 0) = %s\n", efault, errstr);
-# endif
+#ifndef PATH_TRACING
+	printf("move_mount(-1, NULL, AT_FDCWD<%s>, %p, 0) = %s\n",
+	       cwd, efault, errstr);
+#endif
 
 	k_move_mount(-100, efault, -1, 0, 0);
-# ifndef PATH_TRACING
-	printf("move_mount(AT_FDCWD, %p, -1, NULL, 0) = %s\n", efault, errstr);
-# endif
+#ifndef PATH_TRACING
+	printf("move_mount(AT_FDCWD<%s>, %p, -1, NULL, 0) = %s\n",
+	       cwd, efault, errstr);
+#endif
 
 	k_move_mount(dfd, fname, -100, empty, 1);
-	printf("move_mount(%d<%s>, \"%.*s\"..., AT_FDCWD, \"\", %s) = %s\n",
-	       dfd, path, (int) PATH_MAX - 1, fname, "MOVE_MOUNT_F_SYMLINKS", errstr);
+	printf("move_mount(%d<%s>, \"%.*s\"..., AT_FDCWD<%s>, \"\", %s) = %s\n",
+	       dfd, path, (int) PATH_MAX - 1, fname, cwd,
+	       "MOVE_MOUNT_F_SYMLINKS", errstr);
 
 	k_move_mount(-100, empty, dfd, fname, 0x10);
-	printf("move_mount(AT_FDCWD, \"\", %d<%s>, \"%.*s\"..., %s) = %s\n",
-	       dfd, path, (int) PATH_MAX - 1, fname, "MOVE_MOUNT_T_SYMLINKS", errstr);
+	printf("move_mount(AT_FDCWD<%s>, \"\", %d<%s>, \"%.*s\"..., %s) = %s\n",
+	       cwd, dfd, path, (int) PATH_MAX - 1, fname,
+	       "MOVE_MOUNT_T_SYMLINKS", errstr);
 
-# define f_flags_str "MOVE_MOUNT_F_SYMLINKS|MOVE_MOUNT_F_AUTOMOUNTS|MOVE_MOUNT_F_EMPTY_PATH"
+	k_move_mount(-100, empty, dfd, fname, 0x100);
+	printf("move_mount(AT_FDCWD<%s>, \"\", %d<%s>, \"%.*s\"..., %s) = %s\n",
+	       cwd, dfd, path, (int) PATH_MAX - 1, fname,
+	       "MOVE_MOUNT_SET_GROUP", errstr);
+
+#define f_flags_str "MOVE_MOUNT_F_SYMLINKS|MOVE_MOUNT_F_AUTOMOUNTS|MOVE_MOUNT_F_EMPTY_PATH"
 	fname[PATH_MAX - 1] = '\0';
 	k_move_mount(dfd, fname, -100, empty, 7);
-	printf("move_mount(%d<%s>, \"%s\", AT_FDCWD, \"\", %s) = %s\n",
-	       dfd, path, fname, f_flags_str, errstr);
+	printf("move_mount(%d<%s>, \"%s\", AT_FDCWD<%s>, \"\", %s) = %s\n",
+	       dfd, path, fname, cwd, f_flags_str, errstr);
 
-# define t_flags_str "MOVE_MOUNT_T_SYMLINKS|MOVE_MOUNT_T_AUTOMOUNTS|MOVE_MOUNT_T_EMPTY_PATH"
+#define t_flags_str "MOVE_MOUNT_T_SYMLINKS|MOVE_MOUNT_T_AUTOMOUNTS|MOVE_MOUNT_T_EMPTY_PATH"
 	k_move_mount(-100, empty, dfd, fname, 0x70);
-	printf("move_mount(AT_FDCWD, \"\", %d<%s>, \"%s\", %s) = %s\n",
-	       dfd, path, fname, t_flags_str, errstr);
+	printf("move_mount(AT_FDCWD<%s>, \"\", %d<%s>, \"%s\", %s) = %s\n",
+	       cwd, dfd, path, fname, t_flags_str, errstr);
 
-	k_move_mount(-1, path, -100, empty, 0x77);
-	printf("move_mount(-1, \"%s\", AT_FDCWD, \"\", %s) = %s\n",
-	       path, f_flags_str "|" t_flags_str, errstr);
+#define set_group_str "MOVE_MOUNT_SET_GROUP"
+	k_move_mount(-100, empty, dfd, fname, 0x100);
+	printf("move_mount(AT_FDCWD<%s>, \"\", %d<%s>, \"%s\", %s) = %s\n",
+	       cwd, dfd, path, fname, set_group_str, errstr);
+
+#define beneath_str "MOVE_MOUNT_BENEATH"
+	k_move_mount(-100, empty, dfd, fname, 0x200);
+	printf("move_mount(AT_FDCWD<%s>, \"\", %d<%s>, \"%s\", %s) = %s\n",
+	       cwd, dfd, path, fname, beneath_str, errstr);
+
+	k_move_mount(-1, path, -100, empty, 0x377);
+	printf("move_mount(-1, \"%s\", AT_FDCWD<%s>, \"\", %s) = %s\n",
+	       path, cwd,
+	       f_flags_str "|" t_flags_str "|" set_group_str "|" beneath_str,
+	       errstr);
 
 	k_move_mount(-100, empty, -1, path, -1);
-	printf("move_mount(AT_FDCWD, \"\", -1, \"%s\", %s) = %s\n",
-	       path, f_flags_str "|" t_flags_str "|0xffffff88", errstr);
+	printf("move_mount(AT_FDCWD<%s>, \"\", -1, \"%s\", %s) = %s\n",
+	       cwd, path,
+	       f_flags_str "|" t_flags_str "|" set_group_str "|" beneath_str
+	       "|0xfffffc88",
+	       errstr);
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_move_mount")
-
-#endif

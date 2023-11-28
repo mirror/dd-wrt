@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,12 +11,8 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include "test_nlattr.h"
-#ifdef HAVE_LINUX_IF_ADDR_H
-# include <linux/if_addr.h>
-#endif
+#include <linux/if_addr.h>
 #include <linux/rtnetlink.h>
-
-#define IFA_FLAGS 8
 
 #define SET_IFA_FAMILY(af)		\
 	do {				\
@@ -49,8 +45,8 @@ init_ifaddrmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_ifaddrmsg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=RTM_GETADDR, flags=NLM_F_DUMP"
-	       ", seq=0, pid=0}, {ifa_family=%s"
+	printf("{nlmsg_len=%u, nlmsg_type=RTM_GETADDR, nlmsg_flags=NLM_F_DUMP"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, {ifa_family=%s"
 	       ", ifa_prefixlen=0"
 	       ", ifa_flags=IFA_F_SECONDARY"
 	       ", ifa_scope=RT_SCOPE_UNIVERSE"
@@ -122,10 +118,14 @@ main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_ifaddrmsg, print_ifaddrmsg,
 			   IFA_CACHEINFO, pattern, ci,
-			   PRINT_FIELD_U("{", ci, ifa_prefered);
-			   PRINT_FIELD_U(", ", ci, ifa_valid);
-			   PRINT_FIELD_U(", ", ci, cstamp);
-			   PRINT_FIELD_U(", ", ci, tstamp);
+			   printf("{");
+			   PRINT_FIELD_U(ci, ifa_prefered);
+			   printf(", ");
+			   PRINT_FIELD_U(ci, ifa_valid);
+			   printf(", ");
+			   PRINT_FIELD_U(ci, cstamp);
+			   printf(", ");
+			   PRINT_FIELD_U(ci, tstamp);
 			   printf("}"));
 
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,

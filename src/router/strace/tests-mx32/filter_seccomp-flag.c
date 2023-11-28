@@ -2,7 +2,7 @@
  * Check that syscall numbers do not conflict with seccomp filter flags.
  *
  * Copyright (c) 2019 Paul Chaignon <paul.chaignon@gmail.com>
- * Copyright (c) 2018-2020 The strace developers.
+ * Copyright (c) 2018-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -14,13 +14,11 @@
 #include "scno.h"
 
 /* PERSONALITY*_AUDIT_ARCH definitions depend on AUDIT_ARCH_* constants.  */
-#ifdef PERSONALITY0_AUDIT_ARCH
-# include <linux/audit.h>
-# define XLAT_MACROS_ONLY
-#  include "xlat/elf_em.h"
-#  include "xlat/audit_arch.h"
-# undef XLAT_MACROS_ONLY
-#endif
+#include <linux/audit.h>
+#define XLAT_MACROS_ONLY
+# include "xlat/elf_em.h"
+# include "xlat/audit_arch.h"
+#undef XLAT_MACROS_ONLY
 
 /* Define these shorthand notations to simplify the syscallent files. */
 #include "sysent_shorthand_defs.h"

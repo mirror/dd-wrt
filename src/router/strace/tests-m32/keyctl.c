@@ -2,109 +2,57 @@
  * Check decoding of keyctl syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2022 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
+#include "xmalloc.h"
 
-#ifdef __NR_keyctl
+#include <assert.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/uio.h>
+#include <sys/wait.h>
+#include <linux/keyctl.h>
 
-# include <linux/types.h>
-# include <linux/keyctl.h>
-
-# include <assert.h>
-# include <errno.h>
-# include <inttypes.h>
-# include <stdarg.h>
-# include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
-# include <unistd.h>
-# include <sys/uio.h>
-
-/* This check should be before #include "xlat/keyctl_commands.h" */
-# ifndef KEYCTL_DH_COMPUTE
-struct keyctl_dh_params {
-	int32_t private;
-	int32_t prime;
-	int32_t base;
-};
-# endif
-
-# ifndef HAVE_STRUCT_KEYCTL_KDF_PARAMS
-struct keyctl_kdf_params {
-	char *hashname;
-	char *otherinfo;
-	uint32_t otherinfolen;
-	uint32_t __spare[8];
-};
-# endif
-
-# ifndef HAVE_STRUCT_KEYCTL_PKEY_QUERY
-struct keyctl_pkey_query {
-	uint32_t supported_ops;
-	uint32_t key_size;
-	uint16_t max_data_size;
-	uint16_t max_sig_size;
-	uint16_t max_enc_size;
-	uint16_t max_dec_size;
-	uint32_t __spare[10];
-};
-# endif
-
-# ifndef HAVE_STRUCT_KEYCTL_PKEY_PARAMS
-struct keyctl_pkey_params {
-	int32_t  key_id;
-	uint32_t in_len;
-	union {
-		uint32_t out_len;
-		uint32_t in2_len;
-	};
-	uint32_t __spare[7];
-};
-# endif
-
-# include "xlat.h"
-# include "xlat/keyctl_caps0.h"
-# include "xlat/keyctl_caps1.h"
-# include "xlat/keyctl_commands.h"
-
-# ifndef KEY_SPEC_REQKEY_AUTH_KEY
-#  define KEY_SPEC_REQKEY_AUTH_KEY   -7
-# endif
-
-# ifndef KEY_SPEC_REQUESTOR_KEYRING
-#  define KEY_SPEC_REQUESTOR_KEYRING -8
-# endif
+#include "xlat.h"
+#include "xlat/keyctl_caps0.h"
+#include "xlat/keyctl_caps1.h"
 
 static const size_t limit = 10;
+
+static pid_t pid;
 
 /*
  * Well, this is true for DESCRIBE and GET_SECURITY, and false for READ and
  * DH_COMPUTE and I see no ability to pass this information without
  * significantly breaking interface.
  */
-bool nul_terminated_buf = true;
-bool buf_in_arg;
+static bool nul_terminated_buf = true;
+static bool buf_in_arg;
 
 /* From ioctl_dm.c */
-# define STR32 "AbCdEfGhIjKlMnOpQrStUvWxYz012345"
+#define STR32 "AbCdEfGhIjKlMnOpQrStUvWxYz012345"
 
-# if XLAT_RAW
-#  define XARG_STR(v_) (v_), STRINGIFY(v_)
-#  define XSTR(v_, s_) STRINGIFY(v_)
-# elif XLAT_VERBOSE
-#  define XARG_STR(v_) (v_), STRINGIFY(v_) " /* " #v_ " */"
-#  define XSTR(v_, s_) STRINGIFY(v_) " /* " s_ " */"
-# else
-#  define XARG_STR ARG_STR
-#  define XSTR(v_, s_) s_
-# endif
+#if XLAT_RAW
+# define XARG_STR(v_) (v_), STRINGIFY(v_)
+# define XSTR(v_, s_) STRINGIFY(v_)
+#elif XLAT_VERBOSE
+# define XARG_STR(v_) (v_), STRINGIFY(v_) " /* " #v_ " */"
+# define XSTR(v_, s_) STRINGIFY(v_) " /* " s_ " */"
+#else
+# define XARG_STR ARG_STR
+# define XSTR(v_, s_) s_
+#endif
 
 /*
  * When this is called with positive size, the buffer provided is an "out"
@@ -112,7 +60,7 @@ bool buf_in_arg;
  * controls whether it is nul-terminated or not). If size is negative,
  * it contains "in" argument.
  */
-void
+static void
 print_quoted_string_limit(const char *str, size_t size, long rc)
 {
 	size_t print_size = ((rc >= 0) && (size > 0)) ?
@@ -154,19 +102,19 @@ print_arg(kernel_ulong_t arg, const char *str, const char *fmt, size_t size,
 	}
 }
 
-void
+static void
 print_flags(const struct xlat *xlat, unsigned long long flags,
 	    const char *const dflt)
 {
-# if XLAT_RAW
+#if XLAT_RAW
 	printf("%#llx", flags);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	printf("%#llx /* ", flags);
 	printflags(xlat, flags, dflt);
 	printf(" */");
-# else
+#else
 	printflags(xlat, flags, dflt);
-# endif
+#endif
 }
 
 /*
@@ -177,7 +125,7 @@ print_flags(const struct xlat *xlat, unsigned long long flags,
  *   used for argument printing. If sz is negative, in argument is assumed, out
  *   otherwise.
  */
-void
+static void
 do_keyctl(kernel_ulong_t cmd, const char *cmd_str, ...)
 {
 	kernel_ulong_t args[4] = {
@@ -194,7 +142,6 @@ do_keyctl(kernel_ulong_t cmd, const char *cmd_str, ...)
 		sizeof(kernel_ulong_t),
 		sizeof(kernel_ulong_t),
 	};
-	unsigned i;
 	unsigned cnt = 0;
 
 	va_list ap;
@@ -219,21 +166,21 @@ do_keyctl(kernel_ulong_t cmd, const char *cmd_str, ...)
 
 	long rc = syscall(__NR_keyctl, cmd, args[0], args[1], args[2], args[3]);
 	const char *errstr = sprintrc(rc);
-# if XLAT_RAW
-	printf("keyctl(%#x", (unsigned) cmd);
-# elif XLAT_VERBOSE
-	printf("keyctl(%#x /* %s */", (unsigned) cmd, cmd_str);
-# else
-	printf("keyctl(%s", cmd_str);
-# endif
-	for (i = 0; i < cnt; i++) {
+#if XLAT_RAW
+	printf("%-5u keyctl(%#x", pid, (unsigned) cmd);
+#elif XLAT_VERBOSE
+	printf("%-5u keyctl(%#x /* %s */", pid, (unsigned) cmd, cmd_str);
+#else
+	printf("%-5u keyctl(%s", pid, cmd_str);
+#endif
+	for (unsigned int i = 0; i < cnt; ++i) {
 		printf(", ");
 		print_arg(args[i], arg_str[i], arg_fmt[i], arg_sz[i], rc);
 	}
 	printf(") = %s\n", errstr);
 }
 
-int
+static int ATTRIBUTE_FORMAT((__printf__, 3, 4))
 append_str(char **buf, size_t *left, const char *fmt, ...)
 {
 	int ret;
@@ -251,7 +198,7 @@ append_str(char **buf, size_t *left, const char *fmt, ...)
 	return ret;
 }
 
-const char *
+static const char *
 kckdfp_to_str(struct keyctl_kdf_params *kdf, bool deref_hash, bool deref_oi,
 	       bool print_spare, const char *hash_str, const char *oi_str)
 {
@@ -267,7 +214,7 @@ kckdfp_to_str(struct keyctl_kdf_params *kdf, bool deref_hash, bool deref_oi,
 	} else if (!kdf->hashname) {
 		append_str(&pos, &left, "NULL");
 	} else if (deref_hash) {
-		append_str(&pos, &left, "\"%.*s\"", limit, kdf->hashname);
+		append_str(&pos, &left, "\"%.*s\"", (int) limit, kdf->hashname);
 
 		if (strnlen(kdf->hashname, limit + 1) > limit)
 			append_str(&pos, &left, "...");
@@ -282,7 +229,7 @@ kckdfp_to_str(struct keyctl_kdf_params *kdf, bool deref_hash, bool deref_oi,
 	} else if (!kdf->otherinfo) {
 		append_str(&pos, &left, "NULL");
 	} else if (deref_oi) {
-		append_str(&pos, &left, "\"%.*s\"", limit, kdf->otherinfo);
+		append_str(&pos, &left, "\"%.*s\"", (int) limit, kdf->otherinfo);
 
 		if (strnlen(kdf->otherinfo, limit + 1) > limit)
 			append_str(&pos, &left, "...");
@@ -293,11 +240,9 @@ kckdfp_to_str(struct keyctl_kdf_params *kdf, bool deref_hash, bool deref_oi,
 	append_str(&pos, &left, ", otherinfolen=%u", kdf->otherinfolen);
 
 	if (print_spare) {
-		size_t i;
-
 		append_str(&pos, &left, ", __spare=[");
 
-		for (i = 0; i < ARRAY_SIZE(kdf->__spare); i++) {
+		for (size_t i = 0; i < ARRAY_SIZE(kdf->__spare); ++i) {
 			if  (i)
 				append_str(&pos, &left, ", ");
 
@@ -312,7 +257,7 @@ kckdfp_to_str(struct keyctl_kdf_params *kdf, bool deref_hash, bool deref_oi,
 	return buf;
 }
 
-const char *
+static const char *
 kcpp_to_str(struct keyctl_pkey_params *params, bool out, const char *key_str,
 	    bool print_spare)
 {
@@ -323,19 +268,19 @@ kcpp_to_str(struct keyctl_pkey_params *params, bool out, const char *key_str,
 
 	append_str(&pos, &left, "{key_id=");
 
-# if XLAT_RAW
+#if XLAT_RAW
 	append_str(&pos, &left, "%d", params->key_id);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	if (key_str)
 		append_str(&pos, &left, "%d /* %s */", params->key_id, key_str);
 	else
 		append_str(&pos, &left, "%d", params->key_id);
-# else
+#else
 	if (key_str)
 		append_str(&pos, &left, "%s", key_str);
 	else
 		append_str(&pos, &left, "%d", params->key_id);
-# endif
+#endif
 
 	append_str(&pos, &left, ", in_len=%u, %s=%u",
 		   params->in_len,
@@ -360,6 +305,23 @@ kcpp_to_str(struct keyctl_pkey_params *params, bool out, const char *key_str,
 int
 main(void)
 {
+	pid = fork();
+	if (pid < 0)
+		perror_msg_and_fail("fork");
+	if (pid) {
+		int s;
+		pid_t rc;
+		while ((rc = waitpid(pid, &s, 0)) != pid) {
+			if (rc < 0 && errno == EINTR)
+				continue;
+			perror_msg_and_fail("waitpid: %d", pid);
+		}
+		printf("%-5u +++ exited with 0 +++\n", getpid());
+		return WIFEXITED(s) ? WEXITSTATUS(s)
+				    : (WIFSIGNALED(s) ? 128 + WTERMSIG(s) : 9);
+	}
+	pid = getpid();
+
 	enum { PR_LIMIT = 10, IOV_SIZE = 11, IOV_STR_SIZE = 4096 };
 
 	static const char *kulong_fmt =
@@ -381,23 +343,23 @@ main(void)
 	static const char *bogus_key3_str = "-557785390";
 
 	static const struct keyctl_dh_params kcdhp_data = {
-		.private = KEY_SPEC_GROUP_KEYRING,
+		{ .private = KEY_SPEC_GROUP_KEYRING },
 		.prime = 1234567890,
 		.base = 3141592653U
 	};
 	static const char *kcdhp_str = "{private="
-# if XLAT_RAW || XLAT_VERBOSE
+#if XLAT_RAW || XLAT_VERBOSE
 		"-6"
-# endif
-# if XLAT_VERBOSE
+#endif
+#if XLAT_VERBOSE
 		" /* "
-# endif
-# if !XLAT_RAW
+#endif
+#if !XLAT_RAW
 		"KEY_SPEC_GROUP_KEYRING"
-# endif
-# if XLAT_VERBOSE
+#endif
+#if XLAT_VERBOSE
 		" */"
-# endif
+#endif
 		", prime=1234567890, base=-1153374643}";
 
 	/*
@@ -445,13 +407,11 @@ main(void)
 	struct iovec *key_iov = tail_alloc(sizeof(*key_iov) * IOV_SIZE);
 	char *bogus_buf1 = tail_alloc(9);
 	char *bogus_buf2 = tail_alloc(256);
-	char *key_iov_str1;
 	char *key_iov_str2 = tail_alloc(4096);
 	const char *errstr;
 	ssize_t ret;
 	ssize_t kis_size = 0;
 	long rc;
-	size_t i;
 
 	key_iov[0].iov_base = short_type;
 	key_iov[0].iov_len = sizeof(short_type_str);
@@ -464,7 +424,7 @@ main(void)
 	key_iov[4].iov_base = bogus_str;
 	key_iov[4].iov_len = 32;
 
-	for (i = 5; i < IOV_SIZE; i++) {
+	for (size_t i = 5; i < IOV_SIZE; ++i) {
 		key_iov[i].iov_base =
 			(void *) (uintptr_t) (0xfffffacefffff00dULL +
 			0x100000001ULL * i);
@@ -472,21 +432,18 @@ main(void)
 			0x100000001ULL * i);
 	}
 
-	ret = asprintf(&key_iov_str1, "[{iov_base=%p, iov_len=%zu}, "
-		       "{iov_base=%p, iov_len=%zu}, "
-		       "{iov_base=%p, iov_len=%zu}, "
-		       "{iov_base=%p, iov_len=%zu}]",
-		       key_iov[IOV_SIZE - 4].iov_base,
-		       key_iov[IOV_SIZE - 4].iov_len,
-		       key_iov[IOV_SIZE - 3].iov_base,
-		       key_iov[IOV_SIZE - 3].iov_len,
-		       key_iov[IOV_SIZE - 2].iov_base,
-		       key_iov[IOV_SIZE - 2].iov_len,
-		       key_iov[IOV_SIZE - 1].iov_base,
-		       key_iov[IOV_SIZE - 1].iov_len);
-
-	if (ret < 0)
-		error_msg_and_fail("asprintf");
+	char *key_iov_str1 = xasprintf("[{iov_base=%p, iov_len=%zu}, "
+				       "{iov_base=%p, iov_len=%zu}, "
+				       "{iov_base=%p, iov_len=%zu}, "
+				       "{iov_base=%p, iov_len=%zu}]",
+				       key_iov[IOV_SIZE - 4].iov_base,
+				       key_iov[IOV_SIZE - 4].iov_len,
+				       key_iov[IOV_SIZE - 3].iov_base,
+				       key_iov[IOV_SIZE - 3].iov_len,
+				       key_iov[IOV_SIZE - 2].iov_base,
+				       key_iov[IOV_SIZE - 2].iov_len,
+				       key_iov[IOV_SIZE - 1].iov_base,
+				       key_iov[IOV_SIZE - 1].iov_len);
 
 	ret = snprintf(key_iov_str2, IOV_STR_SIZE,
 		       "[{iov_base=\"%s\\0\", iov_len=%zu}, "
@@ -501,7 +458,7 @@ main(void)
 	if ((ret < 0) || (ret >= IOV_STR_SIZE))
 		error_msg_and_fail("snprintf");
 
-	for (i = 4; i < PR_LIMIT; i++) {
+	for (size_t i = 4; i < PR_LIMIT; ++i) {
 		kis_size += ret;
 
 		ret = snprintf(key_iov_str2 + kis_size, IOV_STR_SIZE - kis_size,
@@ -518,14 +475,14 @@ main(void)
 
 	/* Invalid command */
 	do_keyctl((kernel_ulong_t) 0xbadc0dedfacefeedULL,
-# if XLAT_VERBOSE
+#if XLAT_VERBOSE
 		  "KEYCTL_???"
-# else
+#else
 		  "0xfacefeed"
-#  if !XLAT_RAW
+# if !XLAT_RAW
 		  " /* KEYCTL_??? */"
-#  endif
 # endif
+#endif
 		  ,
 		  sizeof(kernel_ulong_t),
 			(kernel_ulong_t) 0xdeadfee1badc0de5ULL, NULL,
@@ -636,13 +593,13 @@ main(void)
 	do_keyctl(ARG_STR(KEYCTL_SETPERM),
 		  sizeof(int32_t), XARG_STR(KEY_SPEC_REQKEY_AUTH_KEY), NULL,
 		  sizeof(uint32_t), 0xffffffffU,
-# if XLAT_RAW || XLAT_VERBOSE
+#if XLAT_RAW || XLAT_VERBOSE
 			"0xffffffff"
-# endif
-# if XLAT_VERBOSE
+#endif
+#if XLAT_VERBOSE
 			" /* "
-# endif
-# if !XLAT_RAW
+#endif
+#if !XLAT_RAW
 			"KEY_POS_VIEW|KEY_POS_READ|KEY_POS_WRITE|"
 			"KEY_POS_SEARCH|KEY_POS_LINK|KEY_POS_SETATTR|"
 			"KEY_USR_VIEW|KEY_USR_READ|KEY_USR_WRITE|"
@@ -652,10 +609,10 @@ main(void)
 			"KEY_OTH_VIEW|KEY_OTH_READ|KEY_OTH_WRITE|"
 			"KEY_OTH_SEARCH|KEY_OTH_LINK|KEY_OTH_SETATTR|"
 			"0xc0c0c0c0"
-# endif
-# if XLAT_VERBOSE
+#endif
+#if XLAT_VERBOSE
 			" */"
-# endif
+#endif
 			, NULL,
 		  0UL);
 	do_keyctl(ARG_STR(KEYCTL_SETPERM),
@@ -666,9 +623,9 @@ main(void)
 		  sizeof(kernel_ulong_t), bogus_key3, bogus_key3_str, NULL,
 		  sizeof(uint32_t), 0xc0c0c0c0,
 			  "0xc0c0c0c0"
-# if !XLAT_RAW
+#if !XLAT_RAW
 			  " /* KEY_??? */"
-# endif
+#endif
 			  ,
 			  NULL,
 		  0UL);
@@ -926,9 +883,9 @@ main(void)
 		  sizeof(kernel_ulong_t),
 		  (kernel_ulong_t) 0xfeedf157badc0dedLLU,
 		  "-1159983635"
-# if !XLAT_RAW
+#if !XLAT_RAW
 		  " /* KEY_REQKEY_DEFL_??? */"
-# endif
+#endif
 		  , NULL, 0UL);
 
 
@@ -1126,7 +1083,7 @@ main(void)
 
 	/* KEYCTL_DH_COMPUTE + KDF */
 
-	for (i = 0; i < ARRAY_SIZE(kckdfp_data); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(kckdfp_data); ++i) {
 		struct keyctl_kdf_params *kckdfp =
 			(struct keyctl_kdf_params *) kckdfp_char;
 		bool deref_hash = true;
@@ -1241,7 +1198,7 @@ main(void)
 	struct keyctl_pkey_params *pkey_params =
 		tail_alloc(sizeof(*pkey_params));
 
-	for (i = 0; i < ARRAY_SIZE(pkey_ops); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(pkey_ops); ++i) {
 		do_keyctl(pkey_ops[i].op, pkey_ops[i].str,
 			  sizeof(char *), ARG_STR(NULL), ptr_fmt,
 			  sizeof(char *), ARG_STR(NULL), ptr_fmt,
@@ -1292,17 +1249,18 @@ main(void)
 		{ (kernel_ulong_t) 0xbadc0ded00000001ULL,
 		  XSTR(0x1, "KEYCTL_MOVE_EXCL") },
 		{ (kernel_ulong_t) 0xfffffffffffffffeULL,
-# if !XLAT_RAW
+#if !XLAT_RAW
 		  "0xfffffffe /* KEYCTL_MOVE_??? */"
-# else
+#else
 		  "0xfffffffe"
-# endif
+#endif
 		 },
 		{ (kernel_ulong_t) 0xffffffffffffffffULL,
 		  XSTR(0xffffffff, "KEYCTL_MOVE_EXCL|0xfffffffe") },
 	};
 
-	for (i = 0; i < ARRAY_SIZE(move_keys) * ARRAY_SIZE(move_flags); i++) {
+	for (size_t i = 0;
+	     i < ARRAY_SIZE(move_keys) * ARRAY_SIZE(move_flags); ++i) {
 		do_keyctl(ARG_STR(KEYCTL_MOVE),
 			  sizeof(kernel_ulong_t),
 				move_keys[i % ARRAY_SIZE(move_keys)].key,
@@ -1337,7 +1295,7 @@ main(void)
 	const kernel_ulong_t bad_len = (kernel_ulong_t) 0xbadc0ded00000001LLU;
 	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps1, bad_len);
 	errstr = sprintrc(rc);
-	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	printf("%-5u keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ", pid);
 	if (rc >= 0) {
 		printf("[");
 		if (rc >= 1)
@@ -1350,7 +1308,7 @@ main(void)
 
 	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps1, 2);
 	errstr = sprintrc(rc);
-	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	printf("%-5u keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ", pid);
 	if (rc >= 0) {
 		printf("[");
 		if (rc == 1)
@@ -1363,7 +1321,7 @@ main(void)
 
 	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps2, 2);
 	errstr = sprintrc(rc);
-	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	printf("%-5u keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ", pid);
 	if (rc >= 0) {
 		printf("[");
 		if (rc >= 1)
@@ -1380,7 +1338,7 @@ main(void)
 
 	rc = syscall(__NR_keyctl, KEYCTL_CAPABILITIES, caps4, 4);
 	errstr = sprintrc(rc);
-	printf("keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ");
+	printf("%-5u keyctl(" XSTR(0x1f, "KEYCTL_CAPABILITIES") ", ", pid);
 	if (rc >= 0) {
 		printf("[");
 		if (rc >= 1)
@@ -1399,13 +1357,7 @@ main(void)
 	}
 	printf(", 4) = %s\n", errstr);
 
-	puts("+++ exited with 0 +++");
+	printf("%-5u +++ exited with 0 +++\n", pid);
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_keyctl");
-
-#endif

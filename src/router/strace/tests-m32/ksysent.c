@@ -1,8 +1,8 @@
 /*
  * Validate syscallent.h file.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2022 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -22,18 +22,19 @@ static const struct_sysent syscallent[] = {
 
 #include "sysent_shorthand_undefs.h"
 
+DIAG_PUSH_IGNORE_OVERRIDE_INIT
 typedef const char *pstr_t;
 static const pstr_t ksyslist[] = {
 #include "ksysent.h"
 };
+DIAG_POP_IGNORE_OVERRIDE_INIT
 
 int
 main(void)
 {
 	int rc = 0;
-	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(ksyslist); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(ksyslist); ++i) {
 		if (!ksyslist[i])
 			continue;
 		if (i >= ARRAY_SIZE(syscallent) || !syscallent[i].sys_name) {
@@ -71,7 +72,7 @@ main(void)
 		}
 	}
 
-	for (i = 0; i < ARRAY_SIZE(syscallent); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(syscallent); ++i) {
 		if (!syscallent[i].sys_name
 #ifdef SYS_socket_nsubcalls
 		    || (i >= SYS_socket_subcall &&

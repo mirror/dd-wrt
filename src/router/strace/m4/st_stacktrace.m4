@@ -1,6 +1,6 @@
 #!/usr/bin/m4
 #
-# Copyright (c) 2018 The strace developers.
+# Copyright (c) 2018-2021 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -13,7 +13,7 @@ AC_ARG_ENABLE([stacktrace],
 	[case "$enableval" in
 		yes|no|check) enable_stacktrace="$enableval" ;;
 		*) AC_MSG_ERROR([bad value $enableval for enable-stacktrace option.
-				 Valid options are: yes, no, check.])
+Valid options are: yes, no, check.])
 		;;
 	 esac],
 	[enable_stacktrace=check])

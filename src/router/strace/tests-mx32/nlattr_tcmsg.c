@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -34,8 +34,8 @@ init_tcmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_tcmsg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=RTM_GETQDISC, flags=NLM_F_DUMP"
-	       ", seq=0, pid=0}, {tcm_family=AF_UNIX"
+	printf("{nlmsg_len=%u, nlmsg_type=RTM_GETQDISC, nlmsg_flags=NLM_F_DUMP"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, {tcm_family=AF_UNIX"
 	       ", tcm_ifindex=" IFINDEX_LO_STR
 	       ", tcm_handle=0, tcm_parent=0, tcm_info=0}",
 	       msg_len);
@@ -78,14 +78,22 @@ main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_tcmsg, print_tcmsg,
 			   TCA_STATS, pattern, buf,
-			   PRINT_FIELD_U("{", st, bytes);
-			   PRINT_FIELD_U(", ", st, packets);
-			   PRINT_FIELD_U(", ", st, drops);
-			   PRINT_FIELD_U(", ", st, overlimits);
-			   PRINT_FIELD_U(", ", st, bps);
-			   PRINT_FIELD_U(", ", st, pps);
-			   PRINT_FIELD_U(", ", st, qlen);
-			   PRINT_FIELD_U(", ", st, backlog);
+			   printf("{");
+			   PRINT_FIELD_U(st, bytes);
+			   printf(", ");
+			   PRINT_FIELD_U(st, packets);
+			   printf(", ");
+			   PRINT_FIELD_U(st, drops);
+			   printf(", ");
+			   PRINT_FIELD_U(st, overlimits);
+			   printf(", ");
+			   PRINT_FIELD_U(st, bps);
+			   printf(", ");
+			   PRINT_FIELD_U(st, pps);
+			   printf(", ");
+			   PRINT_FIELD_U(st, qlen);
+			   printf(", ");
+			   PRINT_FIELD_U(st, backlog);
 			   printf("}"));
 
 	static const struct tc_estimator est = {
@@ -95,8 +103,10 @@ main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_tcmsg, print_tcmsg,
 			   TCA_RATE, pattern, est,
-			   PRINT_FIELD_D("{", est, interval);
-			   PRINT_FIELD_U(", ", est, ewma_log);
+			   printf("{");
+			   PRINT_FIELD_D(est, interval);
+			   printf(", ");
+			   PRINT_FIELD_U(est, ewma_log);
 			   printf("}"));
 
 	puts("+++ exited with 0 +++");

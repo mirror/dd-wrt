@@ -1,22 +1,21 @@
 /*
  * Check decoding of io_uring_enter syscall.
  *
- * Copyright (c) 2019 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2019-2021 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2019-2022 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <unistd.h>
 #include "scno.h"
 
-#ifdef __NR_io_uring_enter
-
-# include <fcntl.h>
-# include <signal.h>
-# include <stdio.h>
-# include <string.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 static const char *errstr;
 
@@ -66,17 +65,12 @@ main(void)
 
 	sys_io_uring_enter(fd, to_submit, min_complete, -1U, sigmask, size);
 	printf("io_uring_enter(%u<%s>, %u, %u"
-	       ", IORING_ENTER_GETEVENTS|IORING_ENTER_SQ_WAKEUP|%#x"
-	       ", %s, %u) = %s\n",
-	       fd, path, to_submit, min_complete, -1U - 3,
+	       ", IORING_ENTER_GETEVENTS|IORING_ENTER_SQ_WAKEUP"
+	       "|IORING_ENTER_SQ_WAIT|IORING_ENTER_EXT_ARG"
+	       "|IORING_ENTER_REGISTERED_RING|%#x, %s, %u) = %s\n",
+	       fd, path, to_submit, min_complete, -1U - 31U,
 	       "~[HUP KILL STOP]", size, errstr);
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_io_uring_enter")
-
-#endif

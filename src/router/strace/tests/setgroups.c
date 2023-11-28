@@ -1,8 +1,8 @@
 /*
  * Check decoding of setgroups/setgroups32 syscalls.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -14,31 +14,25 @@
 # define SYSCALL_NAME	"setgroups32"
 # define GID_TYPE	unsigned int
 
-#else
+#else /* __NR_setgroups */
 
 # include "tests.h"
 # include "scno.h"
 
-# ifdef __NR_setgroups
-
-#  define SYSCALL_NR	__NR_setgroups
-#  define SYSCALL_NAME	"setgroups"
-#  if defined __NR_setgroups32 && __NR_setgroups != __NR_setgroups32
-#   define GID_TYPE	unsigned short
-#  else
-#   define GID_TYPE	unsigned int
-#  endif
-
+# define SYSCALL_NR	__NR_setgroups
+# define SYSCALL_NAME	"setgroups"
+# if defined __NR_setgroups32 && __NR_setgroups != __NR_setgroups32
+#  define GID_TYPE	unsigned short
+# else
+#  define GID_TYPE	unsigned int
 # endif
 
 #endif
 
-#ifdef GID_TYPE
+#include <stdio.h>
+#include <unistd.h>
 
-# include <stdio.h>
-# include <unistd.h>
-
-void
+static void
 printuid(GID_TYPE id)
 {
 	if (id == (GID_TYPE) -1U)
@@ -161,9 +155,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_setgroups")
-
-#endif

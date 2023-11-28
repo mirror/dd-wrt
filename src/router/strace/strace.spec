@@ -1,9 +1,99 @@
 Summary: Tracks and displays system calls associated with a running process
 Name: strace
-Version: 5.9
+Version: 6.6
 Release: 1%{?dist}
-# The test suite is GPLv2+, all the rest is LGPLv2.1+.
+# The test suite is GPLv2+, the bundled headers are GPLv2 with Linux syscall
+# exception, all the rest is LGPLv2.1+.
+%if 0%{?fedora} >= 35 || 0%{?centos} >= 9 || 0%{?rhel} >= 9
+# https://docs.fedoraproject.org/en-US/legal/license-field/#_no_effective_license_analysis
+# BSD-2-Clause:
+#   bundled/linux/include/uapi/linux/tee.h
+# BSD-3-Clause:
+#   bundled/linux/include/uapi/linux/quota.h
+# GPL-1.0-or-later WITH Linux-syscall-note:
+#   bundled/linux/include/uapi/linux/if_bonding.h
+#   bundled/linux/include/uapi/linux/loop.h
+# GPL-2.0-or-later WITH Linux-syscall-note:
+#   bundled/linux/include/uapi/linux/dm-ioctl.h
+#   bundled/linux/include/uapi/linux/hiddev.h
+#   bundled/linux/include/uapi/linux/if_alg.h
+#   bundled/linux/include/uapi/linux/if_bridge.h
+#   bundled/linux/include/uapi/linux/in6.h
+#   bundled/linux/include/uapi/linux/in.h
+#   bundled/linux/include/uapi/linux/keyctl.h
+#   bundled/linux/include/uapi/linux/mptcp.h
+#   bundled/linux/include/uapi/linux/ptp_clock.h
+#   bundled/linux/include/uapi/linux/tcp.h
+#   bundled/linux/include/uapi/mtd/mtd-abi.h
+#   bundled/linux/include/uapi/mtd/ubi-user.h
+# LGPL-2.0-or-later WITH Linux-syscall-note:
+#   bundled/linux/include/uapi/linux/dm-ioctl.h
+# LGPL-2.1-or-later WITH Linux-syscall-note:
+#   bundled/linux/include/uapi/linux/dqblk_xfs.h
+#   bundled/linux/include/uapi/linux/mqueue.h
+# (GPL-2.0-only WITH Linux-syscall-note) OR Linux-OpenIB:
+#   bundled/linux/include/uapi/linux/tls.h
+#   bundled/linux/include/uapi/rdma/ib_user_verbs.h
+# (GPL-2.0-only WITH Linux-syscall-note) OR MIT:
+#   bundled/linux/include/uapi/linux/io_uring.h
+# (GPL-2.0-or-later WITH Linux-syscall-note) OR BSD-3-Clause:
+#   bundled/linux/include/uapi/linux/v4l2-common.h
+#   bundled/linux/include/uapi/linux/v4l2-controls.h
+#   bundled/linux/include/uapi/linux/videodev2.h
+# GPL-2.0-only WITH Linux-syscall-note:
+#   bundled/linux/include/uapi/asm-generic/hugetlb_encode.h (no explicit license in the file)
+#   bundled/linux/include/uapi/linux/mount.h (no explicit license in the file)
+#   bundled/linux/include/uapi/linux/netfilter/nfnetlink_osf.h (no explicit license in the file)
+#   bundled/linux/include/uapi/linux/version.h (no explicit license in the file)
+#   bundled/linux/include/uapi/asm/hugetlb_encode.h (no explicit license in the file)
+#   the rest of bundled/linux
+# ISC:
+#   bundled/linux/include/uapi/linux/nfc.h
+# X11:
+#   build-aux/install-sh (dist only)
+# LGPL-2.1-or-later:
+#   build-aux/copyright-year-gen
+#   build-aux/file-date-gen
+#   m4/ax_code_coverage.m4
+#   m4/mpers.m4
+#   m4/st_demangle.m4
+#   m4/st_esyscmd_s.m4
+#   m4/st_libdw.m4
+#   m4/st_libunwind.m4
+#   m4/st_save_restore_var.m4
+#   m4/st_selinux.m4
+#   m4/st_stacktrace.m4
+#   m4/st_warn_cflags.m4
+# GPL-2.0-or-later:
+#   build-aux/ar-lib (dist only)
+#   build-aux/compile (dist only)
+#   build-aux/depcomp (dist only)
+#   build-aux/missing (dist only)
+#   build-aux/test-driver (dist only)
+# GPL-3.0-or-later:
+#   build-aux/config.guess (dist only)
+#   build-aux/config.sub (dist only)
+#   build-aux/git-version-gen
+# FSFAP:
+#   README-configure
+#   m4/ax_prog_cc_for_build.m4
+#   m4/ax_valgrind_check.m4
+# FSFUL:
+#   configure (dist only)
+# FSFULLR:
+#   m4/warnings.m4
+# FSFULLRWD:
+#   aclocal.m4 (dist only)
+#   Makefile.in (dist only)
+#   bundled/Makefile.in (dist only)
+#   src/Makefile.in (dist only)
+#   tests/Makefile.in (dist only)
+#   tests-m32/Makefile.in (dist only)
+#   tests-mx32/Makefile.in (dist only)
+License: LGPL-2.1-or-later AND GPL-2.0-or-later AND GPL-3.0-or-later AND BSD-2-Clause AND BSD-3-Clause AND (GPL-1.0-or-later WITH Linux-syscall-note) AND (GPL-2.0-or-later WITH Linux-syscall-note) AND (GPL-2.0-only WITH Linux-syscall-note) AND (LGPL-2.0-or-later WITH Linux-syscall-note) AND (LGPL-2.1-or-later WITH Linux-syscall-note) AND ((GPL-2.0-only WITH Linux-syscall-note) OR Linux-OpenIB) AND ((GPL-2.0-only WITH Linux-syscall-note) OR MIT) AND ((GPL-2.0-or-later WITH Linux-syscall-note) OR BSD-3-Clause) AND ISC AND X11 AND FSFAP AND FSFUL AND FSFULLR AND FSFULLRWD
+%else
 License: LGPL-2.1+ and GPL-2.0+
+%endif
 # Some distros require Group tag to be present,
 # some require Group tag to be absent,
 # some do not care about Group tag at all,
@@ -18,7 +108,7 @@ BuildRequires: xz
 %else
 Source: strace-%{version}.tar.gz
 %endif
-BuildRequires: gcc gzip
+BuildRequires: gcc gzip make
 
 # Install Bluetooth headers for AF_BLUETOOTH sockets decoding.
 %if 0%{?fedora} >= 18 || 0%{?centos} >= 6 || 0%{?rhel} >= 8 || 0%{?suse_version} >= 1200
@@ -29,11 +119,14 @@ BuildRequires: pkgconfig(bluez)
 # Install binutils-devel to enable symbol demangling.
 %if 0%{?fedora} >= 20 || 0%{?centos} >= 6 || 0%{?rhel} >= 6
 %define buildrequires_stacktrace BuildRequires: elfutils-devel binutils-devel
+%define buildrequires_selinux BuildRequires: libselinux-devel
 %endif
 %if 0%{?suse_version} >= 1100
 %define buildrequires_stacktrace BuildRequires: libdw-devel binutils-devel
+%define buildrequires_selinux BuildRequires: libselinux-devel
 %endif
 %{?buildrequires_stacktrace}
+%{?buildrequires_selinux}
 
 # OBS compatibility
 %{?!buildroot:BuildRoot: %_tmppath/buildroot-%name-%version-%release}
@@ -58,8 +151,9 @@ received by a process.
 %prep
 %setup -q
 echo -n %version-%release > .tarball-version
-echo -n 2020 > .year
-echo -n 2020-09-23 > .strace.1.in.date
+echo -n 2023 > .year
+echo -n 2023-10-13 > doc/.strace.1.in.date
+echo -n 2022-01-01 > doc/.strace-log-merge.1.in.date
 
 %build
 echo 'BEGIN OF BUILD ENVIRONMENT INFORMATION'
@@ -70,18 +164,15 @@ file -L /bin/sh
 gcc --version |head -1
 ld --version |head -1
 kver="$(printf '%%s\n%%s\n' '#include <linux/version.h>' 'LINUX_VERSION_CODE' | gcc -E -P -)"
-printf 'kernel-headers %%s.%%s.%%s\n' $(($kver/65536)) $(($kver/256%%256)) $(($kver%%256))
+printf 'kernel-headers %%s.%%s.%%s\n' $((kver/65536)) $((kver/256%%256)) $((kver%%256))
 echo 'END OF BUILD ENVIRONMENT INFORMATION'
 
 CFLAGS_FOR_BUILD="$RPM_OPT_FLAGS"; export CFLAGS_FOR_BUILD
-%configure --enable-mpers=check
+%configure --enable-mpers=check --enable-bundled=yes
 %make_build
 
 %install
 %make_install
-
-# remove unpackaged files from the buildroot
-rm -f %{buildroot}%{_bindir}/strace-graph
 
 # some say uncompressed changelog files are too big
 for f in ChangeLog ChangeLog-CVS; do
@@ -90,13 +181,21 @@ done
 wait
 
 %check
-%{buildroot}%{_bindir}/strace -V
-%make_build -k check VERBOSE=1
-echo 'BEGIN OF TEST SUITE INFORMATION'
-tail -n 99999 -- tests*/test-suite.log tests*/ksysent.gen.log
-find tests* -type f -name '*.log' -print0 |
-	xargs -r0 grep -H '^KERNEL BUG:' -- ||:
-echo 'END OF TEST SUITE INFORMATION'
+width=$(echo __LONG_WIDTH__ |%__cc -E -P -)
+skip_32bit=0
+%if 0%{?fedora} >= 35 || 0%{?rhel} > 9
+skip_32bit=1
+%endif
+
+if [ "${width}" != 32 ] || [ "${skip_32bit}" != 1 ]; then
+	%{buildroot}%{_bindir}/strace -V
+	%make_build -k check VERBOSE=1
+	echo 'BEGIN OF TEST SUITE INFORMATION'
+	tail -n 99999 -- tests*/test-suite.log tests*/ksysent.gen.log
+	find tests* -type f -name '*.log' -print0 |
+		xargs -r0 grep -H '^KERNEL BUG:' -- ||:
+	echo 'END OF TEST SUITE INFORMATION'
+fi
 
 %files
 %maybe_use_defattr
@@ -106,100 +205,152 @@ echo 'END OF TEST SUITE INFORMATION'
 %{_mandir}/man1/*
 
 %changelog
-* Thu Sep 24 2020 strace-devel@lists.strace.io - 5.9-1
-- strace 5.9 snapshot.
+* Tue Oct 31 2023 strace-devel@lists.strace.io - 6.6-1
+- strace 6.6 snapshot.
 
-* Thu Aug 06 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.8-1
+* Fri Sep 01 2023 Dmitry V. Levin <ldv@strace.io> - 6.5-1
+- v6.4 -> v6.5.
+- Updated the SPDX license expression (by Eugene Syromyatnikov).
+
+* Mon Jun 26 2023 Dmitry V. Levin <ldv@strace.io> - 6.4-1
+- v6.3 -> v6.4.
+
+* Mon May 08 2023 Dmitry V. Levin <ldv@strace.io> - 6.3-1
+- v6.2 -> v6.3.
+
+* Sun Feb 26 2023 Dmitry V. Levin <ldv@strace.io> - 6.2-1
+- v6.1 -> v6.2.
+
+* Mon Dec 12 2022 Dmitry V. Levin <ldv@strace.io> - 6.1-1
+- v6.0 -> v6.1.
+
+* Sat Oct 29 2022 Dmitry V. Levin <ldv@strace.io> - 6.0-1
+- v5.19 -> v6.0.
+
+* Fri Aug 12 2022 Dmitry V. Levin <ldv@strace.io> - 5.19-1
+- v5.18 -> v5.19.
+
+* Sat Jun 18 2022 Dmitry V. Levin <ldv@strace.io> - 5.18-1
+- v5.17 -> v5.18.
+
+* Sat Mar 26 2022 Dmitry V. Levin <ldv@strace.io> - 5.17-1
+- v5.16 -> v5.17 (resolves: #2047030).
+
+* Mon Jan 10 2022 Dmitry V. Levin <ldv@strace.io> - 5.16-1
+- v5.15 -> v5.16.
+
+* Wed Dec 01 2021 Dmitry V. Levin <ldv@strace.io> - 5.15-1
+- v5.14 -> v5.15.
+
+* Thu Sep 02 2021 Dmitry V. Levin <ldv@strace.io> - 5.14-1
+- v5.13 -> v5.14.
+
+* Sun Jul 18 2021 Dmitry V. Levin <ldv@strace.io> - 5.13-1
+- v5.12 -> v5.13.
+
+* Mon Apr 26 2021 Dmitry V. Levin <ldv@strace.io> - 5.12-1
+- v5.11 -> v5.12.
+
+* Wed Feb 17 2021 Dmitry V. Levin <ldv@strace.io> - 5.11-1
+- v5.10 -> v5.11.
+
+* Mon Dec 14 2020 Dmitry V. Levin <ldv@strace.io> - 5.10-1
+- v5.9 -> v5.10.
+
+* Thu Sep 24 2020 Dmitry V. Levin <ldv@strace.io> - 5.9-1
+- v5.8 -> v5.9.
+
+* Thu Aug 06 2020 Dmitry V. Levin <ldv@strace.io> - 5.8-1
 - v5.7 -> v5.8.
 
-* Mon Jun 01 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.7-1
+* Mon Jun 01 2020 Dmitry V. Levin <ldv@strace.io> - 5.7-1
 - v5.6 -> v5.7.
 
-* Tue Apr 07 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.6-1
+* Tue Apr 07 2020 Dmitry V. Levin <ldv@strace.io> - 5.6-1
 - v5.5 -> v5.6.
 
-* Thu Feb 06 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.5-1
+* Thu Feb 06 2020 Dmitry V. Levin <ldv@strace.io> - 5.5-1
 - v5.4 -> v5.5.
 
-* Thu Nov 28 2019 Dmitry V. Levin <ldv@altlinux.org> - 5.4-1
+* Thu Nov 28 2019 Dmitry V. Levin <ldv@strace.io> - 5.4-1
 - v5.3 -> v5.4.
 
-* Wed Sep 25 2019 Dmitry V. Levin <ldv@altlinux.org> - 5.3-1
+* Wed Sep 25 2019 Dmitry V. Levin <ldv@strace.io> - 5.3-1
 - v5.2 -> v5.3.
 
-* Fri Jul 12 2019 Dmitry V. Levin <ldv@altlinux.org> - 5.2-1
+* Fri Jul 12 2019 Dmitry V. Levin <ldv@strace.io> - 5.2-1
 - v5.1 -> v5.2.
 
-* Wed May 22 2019 Dmitry V. Levin <ldv@altlinux.org> - 5.1-1
+* Wed May 22 2019 Dmitry V. Levin <ldv@strace.io> - 5.1-1
 - v5.0 -> v5.1.
 
-* Tue Mar 19 2019 Dmitry V. Levin <ldv@altlinux.org> - 5.0-1
+* Tue Mar 19 2019 Dmitry V. Levin <ldv@strace.io> - 5.0-1
 - v4.26 -> v5.0 (resolves: #478419, #526740, #851457, #1609318,
   #1610774, #1662936, #1676045).
 
-* Wed Dec 26 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.26-1
+* Wed Dec 26 2018 Dmitry V. Levin <ldv@strace.io> - 4.26-1
 - v4.25 -> v4.26.
 
-* Tue Oct 30 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.25-1
+* Tue Oct 30 2018 Dmitry V. Levin <ldv@strace.io> - 4.25-1
 - v4.24 -> v4.25.
 
-* Tue Aug 14 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.24-1
+* Tue Aug 14 2018 Dmitry V. Levin <ldv@strace.io> - 4.24-1
 - v4.23 -> v4.24.
 
-* Thu Jun 14 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.23-1
+* Thu Jun 14 2018 Dmitry V. Levin <ldv@strace.io> - 4.23-1
 - v4.22 -> v4.23.
 - Enabled libdw backend for -k option (#1568647).
 
-* Thu Apr 05 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.22-1
+* Thu Apr 05 2018 Dmitry V. Levin <ldv@strace.io> - 4.22-1
 - v4.21 -> v4.22.
 
-* Tue Feb 13 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.21-1
+* Tue Feb 13 2018 Dmitry V. Levin <ldv@strace.io> - 4.21-1
 - v4.20 -> v4.21.
 
-* Mon Nov 13 2017 Dmitry V. Levin <ldv@altlinux.org> - 4.20-1
+* Mon Nov 13 2017 Dmitry V. Levin <ldv@strace.io> - 4.20-1
 - v4.19 -> v4.20.
 
-* Tue Sep 05 2017 Dmitry V. Levin <ldv@altlinux.org> - 4.19-1
+* Tue Sep 05 2017 Dmitry V. Levin <ldv@strace.io> - 4.19-1
 - v4.18 -> v4.19.
 
-* Wed Jul 05 2017 Dmitry V. Levin <ldv@altlinux.org> - 4.18-1
+* Wed Jul 05 2017 Dmitry V. Levin <ldv@strace.io> - 4.18-1
 - v4.17 -> v4.18.
 
-* Wed May 24 2017 Dmitry V. Levin <ldv@altlinux.org> - 4.17-1
+* Wed May 24 2017 Dmitry V. Levin <ldv@strace.io> - 4.17-1
 - v4.16 -> v4.17.
 
-* Tue Feb 14 2017 Dmitry V. Levin <ldv@altlinux.org> - 4.16-1
+* Tue Feb 14 2017 Dmitry V. Levin <ldv@strace.io> - 4.16-1
 - v4.15 -> v4.16.
 
-* Wed Dec 14 2016 Dmitry V. Levin <ldv@altlinux.org> - 4.15-1
+* Wed Dec 14 2016 Dmitry V. Levin <ldv@strace.io> - 4.15-1
 - v4.14-100-g622af42 -> v4.15.
 
-* Wed Nov 16 2016 Dmitry V. Levin <ldv@altlinux.org> - 4.14.0.100.622a-1
+* Wed Nov 16 2016 Dmitry V. Levin <ldv@strace.io> - 4.14.0.100.622a-1
 - v4.14 -> v4.14-100-g622af42:
   + implemented syscall fault injection.
 
-* Tue Oct 04 2016 Dmitry V. Levin <ldv@altlinux.org> - 4.14-1
+* Tue Oct 04 2016 Dmitry V. Levin <ldv@strace.io> - 4.14-1
 - v4.13 -> v4.14:
   + added printing of the mode argument of open and openat syscalls
     when O_TMPFILE flag is set (#1377846).
 
-* Tue Jul 26 2016 Dmitry V. Levin <ldv@altlinux.org> - 4.13-1
+* Tue Jul 26 2016 Dmitry V. Levin <ldv@strace.io> - 4.13-1
 - v4.12 -> v4.13.
 
-* Tue May 31 2016 Dmitry V. Levin <ldv@altlinux.org> - 4.12-1
+* Tue May 31 2016 Dmitry V. Levin <ldv@strace.io> - 4.12-1
 - v4.11-163-g972018f -> v4.12.
 
 * Fri Feb 05 2016 Fedora Release Engineering <releng@fedoraproject.org> - 4.11.0.163.9720-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
 
-* Fri Jan 15 2016 Dmitry V. Levin <ldv@altlinux.org> - 4.11.0.163.9720-1
+* Fri Jan 15 2016 Dmitry V. Levin <ldv@strace.io> - 4.11.0.163.9720-1
 - New upstream snapshot v4.11-163-g972018f:
   + fixed decoding of syscalls unknown to the kernel on s390/s390x (#1298294).
 
-* Wed Dec 23 2015 Dmitry V. Levin <ldv@altlinux.org> - 4.11-2
+* Wed Dec 23 2015 Dmitry V. Levin <ldv@strace.io> - 4.11-2
 - Enabled experimental -k option on x86_64 (#1170296).
 
-* Mon Dec 21 2015 Dmitry V. Levin <ldv@altlinux.org> - 4.11-1
+* Mon Dec 21 2015 Dmitry V. Levin <ldv@strace.io> - 4.11-1
 - New upstream release:
   + print nanoseconds along with seconds in stat family syscalls (#1251176).
 
@@ -209,7 +360,7 @@ echo 'END OF TEST SUITE INFORMATION'
 * Mon May 11 2015 Marcin Juszkiewicz <mjuszkiewicz@redhat.com> - 4.10-2
 - Backport set of upstream patches to get it buildable on AArch64
 
-* Fri Mar 06 2015 Dmitry V. Levin <ldv@altlinux.org> - 4.10-1
+* Fri Mar 06 2015 Dmitry V. Levin <ldv@strace.io> - 4.10-1
 - New upstream release:
   + enhanced ioctl decoding (#902788).
 
@@ -219,7 +370,7 @@ echo 'END OF TEST SUITE INFORMATION'
 * Mon Aug 18 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 4.9-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
 
-* Fri Aug 15 2014 Dmitry V. Levin <ldv@altlinux.org> - 4.9-1
+* Fri Aug 15 2014 Dmitry V. Levin <ldv@strace.io> - 4.9-1
 - New upstream release:
   + fixed build when <sys/ptrace.h> and <linux/ptrace.h> conflict (#993384);
   + updated CLOCK_* constants (#1088455);
@@ -238,7 +389,7 @@ echo 'END OF TEST SUITE INFORMATION'
 * Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 4.8-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
-* Mon Jun 03 2013 Dmitry V. Levin <ldv@altlinux.org> - 4.8-1
+* Mon Jun 03 2013 Dmitry V. Levin <ldv@strace.io> - 4.8-1
 - New upstream release:
   + fixed ERESTARTNOINTR leaking to userspace on ancient kernels (#659382);
   + fixed decoding of *xattr syscalls (#885233);
@@ -251,14 +402,14 @@ echo 'END OF TEST SUITE INFORMATION'
 * Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 4.7-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
-* Wed May 02 2012 Dmitry V. Levin <ldv@altlinux.org> 4.7-1
+* Wed May 02 2012 Dmitry V. Levin <ldv@strace.io> 4.7-1
 - New upstream release.
   + implemented proper handling of real SIGTRAPs (#162774).
 
 * Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 4.6-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
 
-* Mon Mar 14 2011 Dmitry V. Levin <ldv@altlinux.org> - 4.6-1
+* Mon Mar 14 2011 Dmitry V. Levin <ldv@strace.io> - 4.6-1
 - New upstream release.
   + fixed a corner case in waitpid handling (#663547).
 
@@ -271,7 +422,7 @@ echo 'END OF TEST SUITE INFORMATION'
   + fixed FTBFS (#539044).
 
 * Wed Oct 21 2009 Roland McGrath <roland@redhat.com> - 4.5.19-1
-- New upstream release, work mostly by Dmitry V. Levin <ldv@altlinux.org>
+- New upstream release, work mostly by Dmitry V. Levin <ldv@strace.io>
   + exit/kill strace with traced process exitcode/signal (#105371);
   + fixed build on ARM EABI (#507576);
   + fixed display of 32-bit argv array on 64-bit architectures (#519480);

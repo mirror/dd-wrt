@@ -1,7 +1,7 @@
 /*
  * Make a hexdump copy of C string
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -25,8 +25,7 @@ hexdump_memdup(const char *src, size_t len)
 
 	char *p = dst;
 	const unsigned char *usrc = (const unsigned char *) src;
-	size_t i;
-	for (i = 0; i < len; ++i) {
+	for (size_t i = 0; i < len; ++i) {
 		unsigned int c = usrc[i];
 		*(p++) = ' ';
 		if (i == 8)

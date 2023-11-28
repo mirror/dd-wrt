@@ -2,7 +2,7 @@
  * Check seccomp filter performance.
  *
  * Copyright (c) 2019 Paul Chaignon <paul.chaignon@gmail.com>
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -29,7 +29,7 @@ main(void)
 	int rc = 0;
 
 	signal(SIGALRM, handler);
-	alarm(1);
+	alarm(3);
 
 	for (i = 0; !stop; i++) {
 		rc |= chdir(".");

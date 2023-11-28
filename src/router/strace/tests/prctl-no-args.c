@@ -5,7 +5,7 @@
  * PR_GET_TAGGED_ADDR_CTRL.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -14,11 +14,9 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined __NR_prctl
-
-# include <stdio.h>
-# include <unistd.h>
-# include <linux/prctl.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <linux/prctl.h>
 
 int
 main(void)
@@ -37,13 +35,13 @@ main(void)
 		{ 30, "PR_GET_TIMERSLACK" },
 		{ 31, "PR_TASK_PERF_EVENTS_DISABLE" },
 		{ 32, "PR_TASK_PERF_EVENTS_ENABLE" },
-		{ 56, "PR_GET_TAGGED_ADDR_CTRL" },
 	};
 
 	TAIL_ALLOC_OBJECT_CONST_PTR(unsigned int, ptr);
-	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(options); i++) {
+	prctl_marker();
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(options); i++) {
 		long rc = syscall(__NR_prctl, options[i].val | bogus_op_bits,
 				  bogus_arg);
 		printf("prctl(%s) = %s\n", options[i].str, sprintrc(rc));
@@ -52,9 +50,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_prctl")
-
-#endif

@@ -2,7 +2,7 @@
  * Check decoding of pkey_free syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,10 +11,8 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_pkey_free
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -27,11 +25,8 @@ main(void)
 		(kernel_ulong_t) 0x123456789abcdef0ULL,
 	};
 
-	long rc;
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(keys); i++) {
-		rc = syscall(__NR_pkey_free, keys[i]);
+	for (unsigned int i = 0; i < ARRAY_SIZE(keys); ++i) {
+		long rc = syscall(__NR_pkey_free, keys[i]);
 		printf("pkey_free(%d) = %s\n", (int) keys[i], sprintrc(rc));
 	}
 
@@ -39,9 +34,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_pkey_free");
-
-#endif

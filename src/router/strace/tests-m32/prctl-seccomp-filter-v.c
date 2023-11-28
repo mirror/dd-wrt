@@ -1,8 +1,8 @@
 /*
  * Check verbose decoding of prctl PR_SET_SECCOMP SECCOMP_MODE_FILTER.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -14,18 +14,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/prctl.h>
-#ifdef HAVE_LINUX_SECCOMP_H
-# include <linux/seccomp.h>
-#endif
+#include <linux/seccomp.h>
 #include <linux/filter.h>
 #include "scno.h"
 
-#if defined PR_SET_NO_NEW_PRIVS \
- && defined PR_SET_SECCOMP \
- && defined SECCOMP_MODE_FILTER \
- && defined SECCOMP_RET_ERRNO \
- && defined BPF_JUMP \
- && defined BPF_STMT
+#if defined BPF_JUMP && defined BPF_STMT
 
 # define SOCK_FILTER_ALLOW_SYSCALL(nr) \
 		BPF_JUMP(BPF_JMP|BPF_K|BPF_JEQ, __NR_ ## nr, 0, 1), \
@@ -75,6 +68,8 @@ main(void)
 {
 	int fds[2];
 
+	prctl_marker();
+
 	puts("prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)  = 0");
 
 	printf("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, {len=%u, filter=[",
@@ -113,8 +108,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("PR_SET_NO_NEW_PRIVS && PR_SET_SECCOMP"
-		    " && SECCOMP_MODE_FILTER && SECCOMP_RET_ERRNO"
-		    " && BPF_JUMP && BPF_STMT")
+SKIP_MAIN_UNDEFINED("BPF_JUMP && BPF_STMT")
 
 #endif

@@ -1,35 +1,21 @@
 /*
  * Copyright (c) 2017, 2018 Chen Jingpiao <chenjingpiao@gmail.com>
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
-#ifdef HAVE_LINUX_NETFILTER_NFNETLINK_H
-
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
-# include <netinet/in.h>
-# include <arpa/inet.h>
-# include <sys/socket.h>
-# include "test_netlink.h"
-# include <linux/netfilter/nfnetlink.h>
-# ifdef HAVE_LINUX_NETFILTER_NF_TABLES_H
-#  include <linux/netfilter/nf_tables.h>
-# endif
-
-# ifndef NFNETLINK_V0
-#  define NFNETLINK_V0 0
-# endif
-# ifndef NFNL_SUBSYS_NFTABLES
-#  define NFNL_SUBSYS_NFTABLES 10
-# endif
-# ifndef NFT_MSG_NEWTABLE
-#  define NFT_MSG_NEWTABLE 0
-# endif
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include "test_netlink.h"
+#include <linux/netfilter/nfnetlink.h>
+#include <linux/netfilter/nf_tables.h>
 
 static void
 test_nlmsg_type(const int fd)
@@ -40,28 +26,26 @@ test_nlmsg_type(const int fd)
 		.nlmsg_flags = NLM_F_REQUEST,
 	};
 
-# ifdef NFNL_MSG_BATCH_BEGIN
 	nlh.nlmsg_type = NFNL_MSG_BATCH_BEGIN;
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=NFNL_MSG_BATCH_BEGIN"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=NFNL_MSG_BATCH_BEGIN"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
-# endif
 
 	nlh.nlmsg_type = NFNL_SUBSYS_CTNETLINK << 8 | 0xff;
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u"
-	       ", type=NFNL_SUBSYS_CTNETLINK<<8|0xff /* IPCTNL_MSG_CT_??? */"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
-	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
+	printf("sendto(%d, {nlmsg_len=%u"
+	       ", nlmsg_type=NFNL_SUBSYS_CTNETLINK<<8|0xff"
+	       " /* IPCTNL_MSG_CT_??? */, nlmsg_flags=NLM_F_REQUEST"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 
 	nlh.nlmsg_type = 0xffff;
 	rc = sendto(fd, &nlh, sizeof(nlh), MSG_DONTWAIT, NULL, 0);
-	printf("sendto(%d, {len=%u, type=0xff /* NFNL_SUBSYS_??? */<<8|0xff"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
-	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
+	printf("sendto(%d, {nlmsg_len=%u, nlmsg_type=0xff"
+	       " /* NFNL_SUBSYS_??? */<<8|0xff, nlmsg_flags=NLM_F_REQUEST"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh.nlmsg_len, (unsigned) sizeof(nlh), sprintrc(rc));
 }
 
@@ -107,6 +91,7 @@ test_nfgenmsg(const int fd)
 					printf("htons(NFNL_SUBSYS_NFTABLES)");
 				else
 					printf("NFNL_SUBSYS_NFTABLES");
+				printf("}");
 				);
 
 	msg.res_id = htons(NFNL_SUBSYS_NFTABLES);
@@ -117,7 +102,7 @@ test_nfgenmsg(const int fd)
 		      sizeof(msg), &msg, sizeof(msg),
 		      printf("{nfgen_family=AF_UNIX");
 		      printf(", version=NFNETLINK_V0");
-		      printf(", res_id=htons(NFNL_SUBSYS_NFTABLES)"));
+		      printf(", res_id=htons(NFNL_SUBSYS_NFTABLES)}"));
 
 	msg.res_id = htons(0xabcd);
 	TEST_NETLINK_(fd, nlh0,
@@ -127,16 +112,15 @@ test_nfgenmsg(const int fd)
 		      sizeof(msg), &msg, sizeof(msg),
 		      printf("{nfgen_family=AF_UNIX");
 		      printf(", version=NFNETLINK_V0");
-		      printf(", res_id=htons(%d)", 0xabcd));
+		      printf(", res_id=htons(%d)}", 0xabcd));
 
-# ifdef NFNL_MSG_BATCH_BEGIN
 	msg.res_id = htons(NFNL_SUBSYS_NFTABLES);
 	TEST_NETLINK(fd, nlh0,
 		     NFNL_MSG_BATCH_BEGIN, NLM_F_REQUEST,
 		     sizeof(msg), &msg, sizeof(msg),
 		     printf("{nfgen_family=AF_UNIX");
 		     printf(", version=NFNETLINK_V0");
-		     printf(", res_id=htons(%d)", NFNL_SUBSYS_NFTABLES));
+		     printf(", res_id=htons(%d)}", NFNL_SUBSYS_NFTABLES));
 
 	msg.res_id = htons(0xabcd);
 	memcpy(str_buf, &msg, sizeof(msg));
@@ -147,9 +131,8 @@ test_nfgenmsg(const int fd)
 		     sizeof(str_buf), str_buf, sizeof(str_buf),
 		     printf("{nfgen_family=AF_UNIX");
 		     printf(", version=NFNETLINK_V0");
-		     printf(", res_id=htons(%d)"
+		     printf(", res_id=htons(%d)}"
 			    ", \"\\x31\\x32\\x33\\x34\"", 0xabcd));
-# endif /* NFNL_MSG_BATCH_BEGIN */
 
 	msg.res_id = htons(NFNL_SUBSYS_NFTABLES);
 	memcpy(nla_buf, &msg, sizeof(msg));
@@ -162,7 +145,7 @@ test_nfgenmsg(const int fd)
 		      sizeof(nla_buf), nla_buf, sizeof(nla_buf),
 		      printf("{nfgen_family=AF_UNIX");
 		      printf(", version=NFNETLINK_V0");
-		      printf(", res_id=htons(NFNL_SUBSYS_NFTABLES)"
+		      printf(", res_id=htons(NFNL_SUBSYS_NFTABLES)}"
 			     ", {nla_len=%d, nla_type=%#x}",
 			     nla.nla_len, nla.nla_type));
 }
@@ -181,9 +164,3 @@ int main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("HAVE_LINUX_NETFILTER_NFNETLINK_H")
-
-#endif

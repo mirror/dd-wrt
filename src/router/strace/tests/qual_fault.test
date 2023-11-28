@@ -2,8 +2,8 @@
 #
 # Check that fault injection works properly.
 #
-# Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2016-2020 The strace developers.
+# Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+# Copyright (c) 2016-2022 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -83,19 +83,24 @@ check_fault_injection()
 	done
 }
 
+case "$STRACE_ARCH" in
+	ia64)	valid_scno=1068 ;;
+	*)	valid_scno=51 ;;
+esac
+
 for err in '' ENOSYS 22 einval; do
-	for fault in writev desc,51; do
+	for fault in writev desc,$valid_scno; do
 		check_fault_injection \
 			writev $fault "$err" '' '' '' 1 -efault=chdir
 		check_fault_injection \
 			writev $fault "$err" '' '' '' 1 -efault=chdir -efault=none
-		for F in 1 2 3 5 7 11; do
+		for F in 1 2 3 7; do
 			check_fault_injection \
 				writev $fault "$err" $F '' '' 1
 			check_fault_injection \
 				writev $fault "$err" $F '' + 1
 
-			for L in 1 2 3 5 7 11; do
+			for L in 1 2 5 11; do
 				[ "$L" -ge "$F" ] ||
 					continue
 				check_fault_injection \
@@ -104,12 +109,12 @@ for err in '' ENOSYS 22 einval; do
 					writev $fault "$err" $F $L + 1
 			done
 
-			for S in 1 2 3 5 7 11; do
+			for S in 1 2 3 7; do
 				check_fault_injection \
 					writev $fault "$err" $F '' $S 1
 				check_fault_injection \
 					writev $fault "$err" $F '' $S 4
-				for L in 1 2 3 5 7 11; do
+				for L in 1 2 7 11; do
 					[ "$L" -ge "$F" ] ||
 						continue
 					check_fault_injection \

@@ -2,13 +2,14 @@
  * Testing framework for PID namespace translation
  *
  * Copyright (c) 2020 Ákos Uzonyi <uzonyi.akos@gmail.com>
+ * Copyright (c) 2020-2022 The strace developers.
  * All rights reserved.
  *
- * SPDX-License-Identifier: LGPL-2.1-or-later
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "tests.h"
 #include "pidns.h"
-#include "nsfs.h"
+#include <linux/nsfs.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -22,14 +23,6 @@
 #include <linux/sched.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-
-#ifndef CLONE_NEWUSER
-# define CLONE_NEWUSER 0x10000000
-#endif
-
-#ifndef CLONE_NEWPID
-# define CLONE_NEWPID 0x20000000
-#endif
 
 static bool pidns_translation = false;
 static bool pidns_unshared = false;
@@ -72,7 +65,7 @@ pidns_pid2str(enum pid_type type)
  *                 to be a PID of a zombie process (will be reaped). If
  *                 negative, leave the child in the process group of the parent.
  *                 If 0, move the process to its own process group.
- * @param new_sid  Wheather child should be moved to a new session.
+ * @param new_sid  Whether child should be moved to a new session.
  */
 static pid_t
 pidns_fork(pid_t pgid, bool new_sid)
@@ -147,8 +140,15 @@ pidns_fork(pid_t pgid, bool new_sid)
 	siginfo_t siginfo;
 	if (waitid(P_PID, pid, &siginfo, WEXITED | WNOWAIT) < 0)
 		perror_msg_and_fail("wait");
-	if (siginfo.si_code != CLD_EXITED || siginfo.si_status)
-		error_msg_and_fail("child terminated with nonzero exit status");
+	if (siginfo.si_code != CLD_EXITED || siginfo.si_status) {
+		if (siginfo.si_code == CLD_EXITED && siginfo.si_status == 77) {
+			error_msg_and_skip("child terminated with skip exit"
+					   " status");
+		} else {
+			error_msg_and_fail("child terminated with nonzero exit"
+					   " status");
+		}
+	}
 
 	return pid;
 }
@@ -187,11 +187,18 @@ check_ns_ioctl(void)
 
 	int userns_fd = ioctl(fd, NS_GET_USERNS);
 	if (userns_fd < 0) {
-		if (errno == ENOTTY)
+		switch (errno) {
+		case ENOTTY:
 			error_msg_and_skip("NS_* ioctl commands are not "
 			                   "supported by the kernel");
-		else
+			break;
+		case EPERM:
+			error_msg_and_skip("NS_* ioctl commands are not "
+			                   "permitted by the kernel");
+			break;
+		default:
 			perror_msg_and_fail("ioctl(NS_GET_USERNS)");
+		}
 	}
 
 	close(userns_fd);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-void
+static void
 test_umask(const mode_t mode)
 {
 	mode_t rc = umask(0xffff0000 | mode);

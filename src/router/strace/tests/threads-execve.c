@@ -1,8 +1,8 @@
 /*
  * Check decoding of threads when a non-leader thread invokes execve.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -119,8 +119,8 @@ thread(void *arg)
 	if (read(fds[0], fds, sizeof(fds[0])))
 		perror_msg_and_fail("execve");
 
-	struct timespec ts = { .tv_nsec = 100000000 };
-	(void) clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
+	kernel_old_timespec_t ts = { .tv_nsec = 100000000 };
+	(void) syscall(__NR_clock_nanosleep, CLOCK_REALTIME, 0, &ts, NULL);
 
 	kernel_old_timespec_t ots = { .tv_nsec = 12345 };
 	printf("%-5d nanosleep({tv_sec=0, tv_nsec=%u}, NULL) = 0\n",
@@ -169,8 +169,8 @@ main(int ac, char **av)
 	leader = getpid();
 
 	if (ac < 3) {
-		struct timespec ts = { .tv_nsec = 1 };
-		if (clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL))
+		kernel_old_timespec_t ts = { .tv_nsec = 1 };
+		if (syscall(__NR_clock_nanosleep, CLOCK_REALTIME, 0, &ts, NULL))
 			perror_msg_and_skip("clock_nanosleep CLOCK_REALTIME");
 
 		get_sigsetsize();

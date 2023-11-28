@@ -2,66 +2,35 @@
  * Check decoding of quotactl syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
 
-#if defined(__NR_quotactl) && \
-	(defined(HAVE_LINUX_QUOTA_H) || defined(HAVE_SYS_QUOTA_H))
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-# include <inttypes.h>
-# include <stdint.h>
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
+#include "quotactl.h"
 
-# include "quotactl.h"
+#include "xlat.h"
+#include "xlat/quota_formats.h"
+#include "xlat/if_dqblk_valid.h"
+#include "xlat/if_dqinfo_flags.h"
+#include "xlat/if_dqinfo_valid.h"
 
-# ifndef HAVE_LINUX_QUOTA_H
-/* Some dirty hacks in order to make sys/quota.h usable as a backup */
+#define QUOTA_STR(_arg) (_arg), gen_quotacmd(#_arg, _arg)
+#define QUOTA_ID_STR(_arg) (_arg), gen_quotaid(#_arg, _arg)
+#define QUOTA_STR_INVALID(_arg, str) (_arg), gen_quotacmd(str, _arg)
 
-#  define if_dqblk dqblk
-#  define if_nextdqblk nextdqblk
-#  define if_dqinfo dqinfo
-
-# endif /* !HAVE_LINUX_QUOTA_H */
-
-# ifndef Q_GETNEXTQUOTA
-
-#  define Q_GETNEXTQUOTA 0x800009
-
-struct if_nextdqblk {
-	uint64_t dqb_bhardlimit;
-	uint64_t dqb_bsoftlimit;
-	uint64_t dqb_curspace;
-	uint64_t dqb_ihardlimit;
-	uint64_t dqb_isoftlimit;
-	uint64_t dqb_curinodes;
-	uint64_t dqb_btime;
-	uint64_t dqb_itime;
-	uint32_t dqb_valid;
-	uint32_t dqb_id;
-};
-# endif /* !Q_GETNEXTQUOTA */
-
-# include "xlat.h"
-# include "xlat/quota_formats.h"
-# include "xlat/if_dqblk_valid.h"
-# include "xlat/if_dqinfo_flags.h"
-# include "xlat/if_dqinfo_valid.h"
-
-# define QUOTA_STR(_arg) (_arg), gen_quotacmd(#_arg, _arg)
-# define QUOTA_ID_STR(_arg) (_arg), gen_quotaid(#_arg, _arg)
-# define QUOTA_STR_INVALID(_arg, str) (_arg), gen_quotacmd(str, _arg)
-
-void
+static void
 print_dqblk(long rc, void *ptr, void *arg)
 {
 	struct if_dqblk *db = ptr;
@@ -72,26 +41,34 @@ print_dqblk(long rc, void *ptr, void *arg)
 		return;
 	}
 
-	PRINT_FIELD_U("{", *db, dqb_bhardlimit);
-	PRINT_FIELD_U(", ", *db, dqb_bsoftlimit);
-	PRINT_FIELD_U(", ", *db, dqb_curspace);
-	PRINT_FIELD_U(", ", *db, dqb_ihardlimit);
-	PRINT_FIELD_U(", ", *db, dqb_isoftlimit);
-	PRINT_FIELD_U(", ", *db, dqb_curinodes);
+	printf("{");
+	PRINT_FIELD_U(*db, dqb_bhardlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_bsoftlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_curspace);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_ihardlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_isoftlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_curinodes);
 
-# if VERBOSE
-	PRINT_FIELD_U(", ", *db, dqb_btime);
-	PRINT_FIELD_U(", ", *db, dqb_itime);
+#if VERBOSE
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_btime);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_itime);
 
 	printf(", dqb_valid=");
 	printflags(if_dqblk_valid, db->dqb_valid, "QIF_???");
-# else
+#else
 	printf(", ...");
-# endif /* !VERBOSE */
+#endif /* !VERBOSE */
 	printf("}");
 }
 
-void
+static void
 print_nextdqblk(long rc, void *ptr, void *arg)
 {
 	struct if_nextdqblk *db = ptr;
@@ -102,29 +79,39 @@ print_nextdqblk(long rc, void *ptr, void *arg)
 		return;
 	}
 
-	PRINT_FIELD_U("{", *db, dqb_bhardlimit);
-	PRINT_FIELD_U(", ", *db, dqb_bsoftlimit);
-	PRINT_FIELD_U(", ", *db, dqb_curspace);
-	PRINT_FIELD_U(", ", *db, dqb_ihardlimit);
-	PRINT_FIELD_U(", ", *db, dqb_isoftlimit);
-	PRINT_FIELD_U(", ", *db, dqb_curinodes);
+	printf("{");
+	PRINT_FIELD_U(*db, dqb_bhardlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_bsoftlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_curspace);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_ihardlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_isoftlimit);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_curinodes);
 
-# if VERBOSE
-	PRINT_FIELD_U(", ", *db, dqb_btime);
-	PRINT_FIELD_U(", ", *db, dqb_itime);
+#if VERBOSE
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_btime);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_itime);
 
 	printf(", dqb_valid=");
 	printflags(if_dqblk_valid, db->dqb_valid, "QIF_???");
 
-	PRINT_FIELD_U(", ", *db, dqb_id);
-# else
-	PRINT_FIELD_U(", ", *db, dqb_id);
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_id);
+#else
+	printf(", ");
+	PRINT_FIELD_U(*db, dqb_id);
 	printf(", ...");
-# endif /* !VERBOSE */
+#endif /* !VERBOSE */
 	printf("}");
 }
 
-void
+static void
 print_dqinfo(long rc, void *ptr, void *arg)
 {
 	struct if_dqinfo *di = ptr;
@@ -135,33 +122,35 @@ print_dqinfo(long rc, void *ptr, void *arg)
 		return;
 	}
 
-	PRINT_FIELD_U("{", *di, dqi_bgrace);
-	PRINT_FIELD_U(", ", *di, dqi_igrace);
+	printf("{");
+	PRINT_FIELD_U(*di, dqi_bgrace);
+	printf(", ");
+	PRINT_FIELD_U(*di, dqi_igrace);
 
 	printf(", dqi_flags=");
-# if XLAT_RAW
+#if XLAT_RAW
 	printf("%#x", di->dqi_flags);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	printf("%#x /* ", di->dqi_flags);
 	printflags(if_dqinfo_flags, di->dqi_flags, "DQF_???");
 	printf(" */");
-# else /* XLAT_ABBREV */
+#else /* XLAT_ABBREV */
 	printflags(if_dqinfo_flags, di->dqi_flags, "DQF_???");
-# endif
+#endif
 	printf(", dqi_valid=");
-# if XLAT_RAW
+#if XLAT_RAW
 	printf("%#x", di->dqi_valid);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	printf("%#x /* ", di->dqi_valid);
 	printflags(if_dqinfo_valid, di->dqi_valid, "IIF_???");
 	printf(" */");
-# else /* XLAT_ABBREV */
+#else /* XLAT_ABBREV */
 	printflags(if_dqinfo_valid, di->dqi_valid, "IIF_???");
-# endif
+#endif
 	printf("}");
 }
 
-void
+static void
 print_dqfmt(long rc, void *ptr, void *arg)
 {
 	uint32_t *fmtval = ptr;
@@ -173,10 +162,10 @@ print_dqfmt(long rc, void *ptr, void *arg)
 		return;
 	}
 	printf("[");
-# if XLAT_RAW
+#if XLAT_RAW
 	printf("%#x]", *fmtval);
 	return;
-# else
+#else
 	switch (*fmtval) {
 	case 1:
 		fmtstr = "QFMT_VFS_OLD";
@@ -190,45 +179,48 @@ print_dqfmt(long rc, void *ptr, void *arg)
 	case 4:
 		fmtstr = "QFMT_VFS_V1";
 		break;
+	case 5:
+		fmtstr = "QFMT_SHMEM";
+		break;
 	default:
 		printf("%#x /* QFMT_VFS_??? */]", *fmtval);
 		return;
 	}
-# endif
-# if XLAT_VERBOSE
+#endif
+#if XLAT_VERBOSE
 	printf("%#x /* %s */]", *fmtval, fmtstr);
-# else
+#else
 	printf("%s]", fmtstr);
-# endif
+#endif
 }
 
-const char *
+static const char *
 gen_quotacmd(const char *abbrev_str, const uint32_t cmd)
 {
 	static char quotacmd_str[2048];
 
-# if XLAT_RAW
+#if XLAT_RAW
 	snprintf(quotacmd_str, sizeof(quotacmd_str), "%u", cmd);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	snprintf(quotacmd_str, sizeof(quotacmd_str), "%u /* %s */", cmd, abbrev_str);
-# else
+#else
 	return abbrev_str;
-# endif
+#endif
 	return quotacmd_str;
 }
 
-const char *
+static const char *
 gen_quotaid(const char *abbrev_str, const uint32_t id)
 {
 	static char quotaid_str[1024];
 
-# if XLAT_RAW
+#if XLAT_RAW
 	snprintf(quotaid_str, sizeof(quotaid_str), "%#x", id);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	snprintf(quotaid_str, sizeof(quotaid_str), "%#x /* %s */", id, abbrev_str);
-# else
+#else
 	return abbrev_str;
-# endif
+#endif
 	return quotaid_str;
 }
 
@@ -279,13 +271,13 @@ main(void)
 	snprintf(invalid_cmd_str, sizeof(invalid_cmd_str),
 		 "QCMD(Q_QUOTAON, %#x /* ???QUOTA */)",
 		 QCMD_TYPE(QCMD(Q_QUOTAON, 0xfacefeed)));
-# if XLAT_RAW
+#if XLAT_RAW
 	snprintf(invalid_id_str, sizeof(invalid_id_str),
 		 "%#x", bogus_id);
-# else
+#else
 	snprintf(invalid_id_str, sizeof(invalid_id_str),
 		 "%#x /* QFMT_VFS_??? */", bogus_id);
-# endif
+#endif
 	check_quota(CQF_ID_STR, QCMD(Q_QUOTAON, 0xfacefeed),
 		    gen_quotacmd(invalid_cmd_str, QCMD(Q_QUOTAON, 0xfacefeed)),
 		    bogus_dev, bogus_dev_str,
@@ -396,10 +388,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_quotactl && "
-	"(HAVE_LINUX_QUOTA_H || HAVE_SYS_QUOTA_H)");
-
-#endif

@@ -1,8 +1,8 @@
 /*
  * Check decoding of move_pages syscall.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,13 +12,11 @@
 #include "scno.h"
 #include "pidns.h"
 
-#ifdef __NR_move_pages
+#include <errno.h>
+#include <stdio.h>
+#include <unistd.h>
 
-# include <errno.h>
-# include <stdio.h>
-# include <unistd.h>
-
-# define MAX_STRLEN 3
+#define MAX_STRLEN 3
 
 static void
 print_page_array(const void **const pages,
@@ -34,8 +32,7 @@ print_page_array(const void **const pages,
 		return;
 	}
 	printf("[");
-	unsigned long i;
-	for (i = 0; i < count; ++i) {
+	for (unsigned long i = 0; i < count; ++i) {
 		if (i)
 			printf(", ");
 		if (i + offset < count) {
@@ -70,8 +67,7 @@ print_node_array(const int *const nodes,
 		return;
 	}
 	printf("[");
-	unsigned long i;
-	for (i = 0; i < count; ++i) {
+	for (unsigned long i = 0; i < count; ++i) {
 		if (i)
 			printf(", ");
 		if (i + offset < count) {
@@ -96,8 +92,7 @@ print_status_array(const int *const status, const unsigned long count)
 		return;
 	}
 	printf("[");
-	unsigned long i;
-	for (i = 0; i < count; ++i) {
+	for (unsigned long i = 0; i < count; ++i) {
 		if (i)
 			printf(", ");
 		if (i >= MAX_STRLEN) {
@@ -107,16 +102,16 @@ print_status_array(const int *const status, const unsigned long count)
 		if (status[i] >= 0) {
 			printf("%d", status[i]);
 		} else {
-# if !XLAT_RAW
+#if !XLAT_RAW
 			errno = -status[i];
-# endif
-# if XLAT_RAW
+#endif
+#if XLAT_RAW
 			printf("%d", status[i]);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 			printf("%d /* -%s */", status[i], errno2name());
-# else
+#else
 			printf("-%s", errno2name());
-# endif
+#endif
 		}
 	}
 	printf("]");
@@ -147,13 +142,13 @@ print_stat_pages(const unsigned long pid,
 	} else {
 		print_status_array(status, count);
 	}
-# if XLAT_RAW
+#if XLAT_RAW
 	printf(", 0x2) = %s\n", errstr);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	printf(", 0x2 /* MPOL_MF_MOVE */) = %s\n", errstr);
-# else /* XLAT_ABBREV */
+#else /* XLAT_ABBREV */
 	printf(", MPOL_MF_MOVE) = %s\n", errstr);
-# endif
+#endif
 }
 
 static void
@@ -182,13 +177,13 @@ print_move_pages(const unsigned long pid,
 		printf("%p", status);
 	else
 		printf("[]");
-# if XLAT_RAW
+#if XLAT_RAW
 	printf(", 0x4) = %s\n", errstr);
-# elif XLAT_VERBOSE
+#elif XLAT_VERBOSE
 	printf(", 0x4 /* MPOL_MF_MOVE_ALL */) = %s\n", errstr);
-# else /* XLAT_ABBREV */
+#else /* XLAT_ABBREV */
 	printf(", MPOL_MF_MOVE_ALL) = %s\n", errstr);
-# endif
+#endif
 }
 
 int
@@ -245,9 +240,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_move_pages")
-
-#endif

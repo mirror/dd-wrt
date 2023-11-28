@@ -1,8 +1,8 @@
 /*
  * Check decoding and dumping of read and write syscalls.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -28,9 +28,8 @@ dump_str_ex(const char *str, const unsigned int len, const int idx_w)
 		"................................"
 		"................................"
 		"................................";
-	unsigned int i;
 
-	for (i = 0; i < len; i += 16) {
+	for (unsigned int i = 0; i < len; i += 16) {
 		unsigned int n = len - i > 16 ? 16 : len - i;
 		const char *dump = hexdump_memdup(str + i, n);
 
@@ -41,7 +40,7 @@ dump_str_ex(const char *str, const unsigned int len, const int idx_w)
 	}
 }
 
-static inline void
+static void
 dump_str(const char *str, const unsigned int len)
 {
 	dump_str_ex(str, len, 5);
@@ -51,11 +50,10 @@ static void
 print_hex(const char *str, const unsigned int len)
 {
 	const unsigned char *ustr = (const unsigned char *) str;
-	unsigned int i;
 
 	tprintf("\"");
 
-	for (i = 0; i < len; ++i) {
+	for (unsigned int i = 0; i < len; ++i) {
 		unsigned int c = ustr[i];
 
 		if (i >= DEFAULT_STRLEN) {
@@ -126,8 +124,7 @@ test_dump(const unsigned int len, bool err_desc)
 	if (!err_desc)
 		dump_str(buf, len);
 
-	unsigned int i;
-	for (i = 0; i < len; ++i)
+	for (unsigned int i = 0; i < len; ++i)
 		buf[i] = i;
 
 	rc = k_write(out_fd, buf, len);
@@ -192,7 +189,7 @@ main(void)
 	if (rc != -1)
 		perror_msg_and_fail("write: expected -1 EFAULT"
 				    ", returned %ld", rc);
-	tprintf("write(1, %p, 1) = -1 EFAULT (%m)\n", efault);
+	tprintf("write(1, %p, 1)" RVAL_EFAULT, efault);
 
 	rc = k_write(1, w, w_len);
 	if (rc != (int) w_len)
@@ -210,7 +207,7 @@ main(void)
 	rc = k_read(0, efault, 1);
 	if (rc != -1)
 		perror_msg_and_fail("read: expected -1, returned %ld", rc);
-	tprintf("read(0, %p, 1) = -1 EFAULT (%m)\n", efault);
+	tprintf("read(0, %p, 1)" RVAL_EFAULT, efault);
 
 	rc = k_read(0, r0, r0_len);
 	if (rc != (int) r0_len)
@@ -284,8 +281,7 @@ main(void)
 	if (open("/dev/null", O_WRONLY) != 5)
 		perror_msg_and_fail("open");
 
-	unsigned int i;
-	for (i = 0; i <= DEFAULT_STRLEN; ++i)
+	for (unsigned int i = 0; i <= DEFAULT_STRLEN; ++i)
 		test_dump(i, false);
 
 	test_dump(256, true);

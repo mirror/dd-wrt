@@ -1,7 +1,7 @@
 /*
  * Check decoding of s390_pci_mmio_read and s390_pci_mmio_write syscalls.
  *
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -97,13 +97,16 @@ main(void)
 		(kernel_ulong_t) 0xfacefeedac0ffeedULL,
 	};
 
-	unsigned int i, j, k, l;
 	unsigned int ctr = 0;
 
-	for (i = 0; i < ARRAY_SIZE(addrs); i++) {
-		for (j = 0; j < ARRAY_SIZE(bufs); j++) {
-			for (k = 0; k < ARRAY_SIZE(sizes); k++) {
-				for (l = 0; l < ARRAY_SIZE(bools); l++) {
+	for (unsigned int i = 0;
+	     i < ARRAY_SIZE(addrs); ++i) {
+		for (unsigned int j = 0;
+		     j < ARRAY_SIZE(bufs); ++j) {
+			for (unsigned int k = 0;
+			     k < ARRAY_SIZE(sizes); ++k) {
+				for (unsigned int l = 0;
+				     l < ARRAY_SIZE(bools); ++l) {
 					bool valid = bufs[j].buf &&
 						bufs[j].size >=
 						MIN(sizes[k],

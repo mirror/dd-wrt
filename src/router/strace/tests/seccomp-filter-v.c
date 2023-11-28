@@ -1,8 +1,8 @@
 /*
  * Check verbose decoding of seccomp SECCOMP_SET_MODE_FILTER.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,16 +15,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/prctl.h>
-#ifdef HAVE_LINUX_SECCOMP_H
-# include <linux/seccomp.h>
-#endif
+#include <linux/seccomp.h>
 #include <linux/filter.h>
 #include "scno.h"
 
-#if defined __NR_seccomp \
- && defined PR_SET_NO_NEW_PRIVS \
- && defined SECCOMP_SET_MODE_FILTER \
- && defined SECCOMP_RET_ERRNO \
+#if defined PR_SET_NO_NEW_PRIVS \
  && defined BPF_JUMP \
  && defined BPF_STMT
 
@@ -89,22 +84,21 @@ main(void)
 	prog->len = 1;
 	syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER, 0, prog);
 	tprintf("seccomp(SECCOMP_SET_MODE_FILTER, 0, {len=1, filter=%p})"
-		" = -1 EFAULT (%m)\n", prog->filter);
+		RVAL_EFAULT, prog->filter);
 
 	prog->filter = filter +  ARRAY_SIZE(filter_c) - 1;
 	prog->len = 3;
 	syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER, 0, prog);
 	tprintf("seccomp(SECCOMP_SET_MODE_FILTER, 0, {len=%u"
-		", filter=[%s, ... /* %p */]}) = -1 EFAULT (%m)\n",
+		", filter=[%s, ... /* %p */]})" RVAL_EFAULT,
 		prog->len, kill_stmt_txt, filter +  ARRAY_SIZE(filter_c));
 
 	prog->len = 0;
 	syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER, 0, prog);
 	tprintf("seccomp(SECCOMP_SET_MODE_FILTER, 0, {len=0, filter=[]})"
-		" = -1 EINVAL (%m)\n");
+		RVAL_EINVAL);
 
-	unsigned int i;
-	for (i = 0; i <= BPF_MAXINSNS; ++i) {
+	for (unsigned int i = 0; i <= BPF_MAXINSNS; ++i) {
 		const struct sock_filter stmt =
 			BPF_STMT(BPF_CLASS(i), i << 16);
 		big_filter[i] = stmt;
@@ -116,9 +110,11 @@ main(void)
 		"SECCOMP_FILTER_FLAG_TSYNC|SECCOMP_FILTER_FLAG_LOG|"
 		"SECCOMP_FILTER_FLAG_SPEC_ALLOW|"
 		"SECCOMP_FILTER_FLAG_NEW_LISTENER|"
-		"SECCOMP_FILTER_FLAG_TSYNC_ESRCH|0xffffffe0",
+		"SECCOMP_FILTER_FLAG_TSYNC_ESRCH|"
+		"SECCOMP_FILTER_FLAG_WAIT_KILLABLE_RECV|"
+		"0xffffffc0",
 		prog->len);
-	for (i = 0; i < BPF_MAXINSNS; ++i) {
+	for (unsigned int i = 0; i < BPF_MAXINSNS; ++i) {
 		if (i)
 			tprintf(", ");
 		switch (BPF_CLASS(i)) {
@@ -151,7 +147,7 @@ main(void)
 	}
 	tprintf(", ...]})");
 	syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER, -1, prog);
-	tprintf(" = -1 EINVAL (%m)\n");
+	tprintf(RVAL_EINVAL);
 
 	prog->filter = filter;
 	prog->len = ARRAY_SIZE(filter_c);
@@ -182,8 +178,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("__NR_seccomp && PR_SET_NO_NEW_PRIVS"
-		    " && SECCOMP_SET_MODE_FILTER && SECCOMP_RET_ERRNO"
-		    " && BPF_JUMP && BPF_STMT")
+SKIP_MAIN_UNDEFINED("PR_SET_NO_NEW_PRIVS && BPF_JUMP && BPF_STMT")
 
 #endif

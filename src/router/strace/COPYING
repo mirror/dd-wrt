@@ -4,7 +4,7 @@ Copyright (c) 1993 Ulrich Pegelow <pegelow@moorea.uni-muenster.de>
 Copyright (c) 1995, 1996 Michael Elizabeth Chastain <mec@duracef.shout.net>
 Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
 Copyright (c) 1998-2001 Wichert Akkerman <wakkerma@deephackmode.org>
-Copyright (c) 2001-2020 The strace developers.
+Copyright (c) 2001-2023 The strace developers.
 All rights reserved.
 
 strace is free software; you can redistribute it and/or modify it
@@ -18,3 +18,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See LGPL-2.1-or-later for more details.
 
 strace test suite is provided under the terms of the GNU General Public License
 version 2 or later, see tests/COPYING for more details.
+
+The `bundled/linux' directory contains some of Linux kernel UAPI header files
+copied verbatim from the Linux kernel for compatibility purposes.
+These header files are provided by the Linux kernel under the terms of the
+GNU General Public License version 2 only with an explicit syscall exception,
+see bundled/linux/COPYING for more details.

@@ -1,8 +1,8 @@
 /*
  * Check decoding of getdents64 syscall.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2020 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,15 +11,13 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_getdents64
+#define kernel_dirent_type kernel_dirent64_t
+#define NR_getdents	__NR_getdents64
+#define STR_getdents	"getdents64"
 
-# define kernel_dirent_type kernel_dirent64_t
-# define NR_getdents	__NR_getdents64
-# define STR_getdents	"getdents64"
+#include "xgetdents.c"
 
-# include "xgetdents.c"
-
-# if VERBOSE
+#if VERBOSE
 static void
 print_dirent(const kernel_dirent_type *d)
 {
@@ -28,17 +26,14 @@ print_dirent(const kernel_dirent_type *d)
 	if (d_name_len <= 0)
 		error_msg_and_fail("d_name_len = %d", d_name_len);
 
-	PRINT_FIELD_U("{", *d, d_ino);
-	PRINT_FIELD_U(", ", *d, d_off);
-	PRINT_FIELD_U(", ", *d, d_reclen);
+	printf("{");
+	PRINT_FIELD_U(*d, d_ino);
+	printf(", ");
+	PRINT_FIELD_U(*d, d_off);
+	printf(", ");
+	PRINT_FIELD_U(*d, d_reclen);
 	printf(", d_type=%s, d_name=", str_d_type(d->d_type));
 	print_quoted_cstring(d->d_name, d_name_len);
 	printf("}");
 }
-# endif
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_getdents64")
-
 #endif

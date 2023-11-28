@@ -2,23 +2,20 @@
  * Check decoding of request_key syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
 
-#ifdef __NR_request_key
+#include <inttypes.h>
+#include <stdio.h>
+#include <unistd.h>
 
-# include <inttypes.h>
-# include <stdio.h>
-# include <unistd.h>
-
-void
+static void
 print_val_str(const void *ptr, const char *str)
 {
 	if (str)
@@ -27,7 +24,7 @@ print_val_str(const void *ptr, const char *str)
 		printf("%p, ", ptr);
 }
 
-void
+static void
 do_request_key(const char *type, const char *type_str, const char *desc,
 	const char *desc_str, const char *info, const char *info_str,
 	int32_t keyring, const char *keyring_str)
@@ -55,11 +52,6 @@ main(void)
 	char *bogus_type = tail_memdup(unterminated1, sizeof(unterminated1));
 	char *bogus_desc = tail_memdup(unterminated2, sizeof(unterminated2));
 	char *bogus_info = tail_memdup(unterminated3, sizeof(unterminated3));
-
-	unsigned i;
-	unsigned j;
-	unsigned k;
-	unsigned l;
 
 	struct {
 		const char *type;
@@ -106,10 +98,14 @@ main(void)
 		{ -1, "KEY_SPEC_THREAD_KEYRING" },
 	};
 
-	for (i = 0; i < ARRAY_SIZE(types); i++)
-		for (j = 0; j < ARRAY_SIZE(descs); j++)
-			for (k = 0; k < ARRAY_SIZE(infos); k++)
-				for (l = 0; l < ARRAY_SIZE(keyrings); l++)
+	for (unsigned int i = 0;
+	     i < ARRAY_SIZE(types); ++i)
+		for (unsigned int j = 0;
+		     j < ARRAY_SIZE(descs); ++j)
+			for (unsigned int k = 0;
+			     k < ARRAY_SIZE(infos); ++k)
+				for (unsigned int l = 0;
+				     l < ARRAY_SIZE(keyrings); ++l)
 					do_request_key(
 						types[i].type, types[i].str,
 						descs[j].desc, descs[j].str,
@@ -121,9 +117,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_request_key");
-
-#endif

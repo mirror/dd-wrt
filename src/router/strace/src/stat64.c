@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2005-2015 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ */
+
+#include "defs.h"
+#include "stat.h"
+
+static void
+decode_struct_stat64(struct tcb *const tcp, const kernel_ulong_t addr)
+{
+	struct strace_stat st;
+
+	if (fetch_struct_stat64(tcp, addr, &st))
+		print_struct_stat(tcp, &st);
+}
+
+SYS_FUNC(stat64)
+{
+	if (entering(tcp)) {
+		/* pathname */
+		printpath(tcp, tcp->u_arg[0]);
+		tprint_arg_next();
+	} else {
+		/* statbuf */
+		decode_struct_stat64(tcp, tcp->u_arg[1]);
+	}
+	return 0;
+}
+
+SYS_FUNC(fstat64)
+{
+	if (entering(tcp)) {
+		/* fd */
+		printfd(tcp, tcp->u_arg[0]);
+		tprint_arg_next();
+	} else {
+		/* statbuf */
+		decode_struct_stat64(tcp, tcp->u_arg[1]);
+	}
+	return 0;
+}
+
+SYS_FUNC(fstatat64)
+{
+	if (entering(tcp)) {
+		/* dirfd */
+		print_dirfd(tcp, tcp->u_arg[0]);
+		tprint_arg_next();
+
+		/* pathname */
+		printpath(tcp, tcp->u_arg[1]);
+		tprint_arg_next();
+	} else {
+		/* statbuf */
+		decode_struct_stat64(tcp, tcp->u_arg[2]);
+		tprint_arg_next();
+
+		/* flags */
+		printflags(at_flags, tcp->u_arg[3], "AT_???");
+	}
+	return 0;
+}

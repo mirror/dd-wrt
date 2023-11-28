@@ -2,7 +2,7 @@
  * Check success injection.
  *
  * Copyright (c) 2017 Elvira Khabirova <lineprinter0@gmail.com>
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,13 +11,11 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_chdir
-
-# include <assert.h>
-# include <stdio.h>
-# include <stdlib.h>
-# include <unistd.h>
-# include <sys/stat.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 int
 main(int argc, char *argv[])
@@ -46,9 +44,3 @@ main(int argc, char *argv[])
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_chdir")
-
-#endif

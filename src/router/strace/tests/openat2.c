@@ -1,7 +1,7 @@
 /*
  * Check decoding of openat2 syscall.
  *
- * Copyright (c) 2020 The strace developers.
+ * Copyright (c) 2020-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,62 +10,44 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_openat2
+#include <errno.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <linux/fcntl.h>
 
-# include <errno.h>
-# include <stdint.h>
-# include <inttypes.h>
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
-# include <asm/fcntl.h>
+#ifndef VERBOSE
+# define VERBOSE 0
+#endif
+#ifndef FD0_PATH
+# define FD0_PATH ""
+#else
+# define YFLAG
+#endif
+#ifndef SKIP_IF_PROC_IS_UNAVAILABLE
+# define SKIP_IF_PROC_IS_UNAVAILABLE
+#endif
 
-# ifdef HAVE_LINUX_OPENAT2
-#  include <linux/openat2.h>
-# endif
-
-# ifndef HAVE_LINUX_OPENAT2
-struct open_how {
-	uint64_t flags;
-	uint64_t mode;
-	uint64_t resolve;
-};
-# endif
-
-# ifndef AT_FDCWD
-#  define AT_FDCWD -100
-# endif
-# ifndef RESOLVE_NO_XDEV
-#  define RESOLVE_NO_XDEV 0x01
-# endif
-# ifndef RESOLVE_IN_ROOT
-#  define RESOLVE_IN_ROOT 0x10
-# endif
-
-# ifndef O_TMPFILE
-#  if defined __hppa__
-#   define __O_TMPFILE     040000000
-#  elif defined __alpha__
-#   define __O_TMPFILE     0100000000
-#  elif defined __sparc__
-#   define __O_TMPFILE     0200000000
-#  else
-#   define __O_TMPFILE     020000000
-#  endif
-# endif
-
-# ifndef VERBOSE
-#  define VERBOSE 0
-# endif
-# ifndef FD0_PATH
-#  define FD0_PATH ""
-# endif
+#ifdef YFLAG
+# define AT_FDCWD_FMT "<%s>"
+# define AT_FDCWD_ARG(arg) arg,
+#else
+# define AT_FDCWD_FMT
+# define AT_FDCWD_ARG(arg)
+#endif
 
 static const char sample[] = "openat2.sample";
 
 int
 main(void)
 {
+	SKIP_IF_PROC_IS_UNAVAILABLE;
+
+#ifdef YFLAG
+	char *cwd = get_fd_path(get_dir_fd("."));
+#endif
 	long rc;
 	const char *rcstr;
 	struct open_how *how = tail_alloc(sizeof(*how));
@@ -78,8 +60,10 @@ main(void)
 	       sprintrc(rc));
 
 	rc = syscall(__NR_openat2, -100, "", how + 1, sizeof(*how));
-	printf("openat2(%s, \"\", %p, %zu) = %s\n",
-	       XLAT_KNOWN(-100, "AT_FDCWD"), how + 1, sizeof(*how),
+	printf("openat2(%s" AT_FDCWD_FMT ", \"\", %p, %zu) = %s\n",
+	       XLAT_KNOWN(-100, "AT_FDCWD"),
+	       AT_FDCWD_ARG(cwd)
+	       how + 1, sizeof(*how),
 	       sprintrc(rc));
 
 	rc = syscall(__NR_openat2, -1, sample, how, 11);
@@ -89,19 +73,15 @@ main(void)
 		{ ARG_STR(O_RDONLY|O_EXCL) },
 		{ ARG_STR(O_WRONLY|O_CREAT) },
 		{ ARG_STR(O_RDWR|O_LARGEFILE) },
-# ifdef O_TMPFILE
 		{ ARG_STR(O_ACCMODE|O_TMPFILE) },
-# else
-		{ ARG_STR(O_ACCMODE|__O_TMPFILE) },
-# endif
 		{ ARG_ULL_STR(O_RDONLY|0xdeadface80000000) },
 	};
 	static uint64_t modes[] = { 0, 0777, 0xbadc0dedfacebeefULL };
 	static struct strval64 resolve[] = {
 		{ 0, NULL },
 		{ ARG_STR(RESOLVE_NO_XDEV) },
-		{ ARG_ULL_STR(RESOLVE_NO_XDEV|RESOLVE_IN_ROOT|0xfeedfacedcaffee0) },
-		{ 0xdec0dedbeefface0, NULL },
+		{ ARG_ULL_STR(RESOLVE_NO_XDEV|RESOLVE_IN_ROOT|RESOLVE_CACHED|0xfeedfacedcaffec0) },
+		{ 0xdec0dedbeeffffc0, NULL },
 	};
 	const size_t iters = MAX(MAX(ARRAY_SIZE(flags), ARRAY_SIZE(modes)),
 				 ARRAY_SIZE(resolve));
@@ -156,17 +136,13 @@ main(void)
 	how->mode = 0;
 	how->resolve = 0;
 	rc = syscall(__NR_openat2, -100, "/dev/full", how, sizeof(*how));
-	printf("openat2(%s, \"/dev/full\", {flags=%s, resolve=0}, %zu)"
-	       " = %s%s\n",
-	       XLAT_KNOWN(-100, "AT_FDCWD"), XLAT_STR(O_RDONLY|O_NOCTTY),
+	printf("openat2(%s" AT_FDCWD_FMT ", \"/dev/full\""
+	       ", {flags=%s, resolve=0}, %zu) = %s%s\n",
+	       XLAT_KNOWN(-100, "AT_FDCWD"),
+	       AT_FDCWD_ARG(cwd)
+	       XLAT_STR(O_RDONLY|O_NOCTTY),
 	       sizeof(*how), sprintrc(rc), rc >= 0 ? FD0_PATH : "");
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_openat2");
-
-#endif

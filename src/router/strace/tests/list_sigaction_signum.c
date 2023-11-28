@@ -1,7 +1,7 @@
 /*
  * List signal numbers that are valid arguments for sigaction syscall.
  *
- * Copyright (c) 2017-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2017-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,9 +15,7 @@
 int
 main(void)
 {
-	unsigned int i;
-
-	for (i = 1; i < 32; ++i) {
+	for (unsigned int i = 1; i < 32; ++i) {
 		static const struct sigaction ign = { .sa_handler = SIG_IGN };
 		static const struct sigaction dfl = { .sa_handler = SIG_DFL };
 		struct sigaction act;

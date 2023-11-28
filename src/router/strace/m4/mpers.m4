@@ -1,8 +1,8 @@
 #!/usr/bin/m4
 #
-# Copyright (c) 2015-2017 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2015-2017 Dmitry V. Levin <ldv@strace.io>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2015-2020 The strace developers.
+# Copyright (c) 2015-2021 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -63,9 +63,11 @@ pushdef([mpers_name], [$1])
 pushdef([MPERS_NAME], translit([$1], [a-z], [A-Z]))
 pushdef([HAVE_MPERS], [HAVE_]MPERS_NAME[_MPERS])
 pushdef([HAVE_RUNTIME], [HAVE_]MPERS_NAME[_RUNTIME])
+pushdef([HAVE_SELINUX_RUNTIME], [HAVE_]MPERS_NAME[_SELINUX_RUNTIME])
 pushdef([MPERS_CFLAGS], [$cc_flags_$1])
 pushdef([st_cv_cc], [st_cv_$1_cc])
 pushdef([st_cv_runtime], [st_cv_$1_runtime])
+pushdef([st_cv_selinux_runtime], [st_cv_$1_selinux_runtime])
 pushdef([st_cv_mpers], [st_cv_$1_mpers])
 
 pushdef([EXEEXT], MPERS_NAME[_EXEEXT])dnl
@@ -94,10 +96,10 @@ case "$arch" in
 		    [Define to 1 if you have the <gnu/stubs-x32.h> header file.])
 	pushdef([gnu_stubs], [gnu/stubs-][m4_substr([$1], 1)][.h])
 	AC_CHECK_HEADERS([gnu_stubs], [IFLAG=],
-			 [mkdir -p gnu
-			  : > gnu_stubs
+			 [mkdir -p src/gnu
+			  : > src/gnu_stubs
 			  AC_MSG_NOTICE([Created empty gnu_stubs])
-			  IFLAG=-I.])
+			  IFLAG=-Isrc])
 	popdef([gnu_stubs])
 	saved_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS${IFLAG:+ }$IFLAG"
@@ -105,14 +107,16 @@ case "$arch" in
 	CFLAGS="$CFLAGS MPERS_CFLAGS"
 	AC_CACHE_CHECK([for mpers_name personality compile support (using $CC $CPPFLAGS $CFLAGS)],
 		[st_cv_cc],
-		[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]],
+		[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>
+#include <errno.h>]],
 						    [[return 0]])],
 				   [st_cv_cc=yes],
 				   [st_cv_cc=no])])
 	if test $st_cv_cc = yes; then
 		AC_CACHE_CHECK([for mpers_name personality runtime support],
 			[st_cv_runtime],
-			[AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]],
+			[AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>
+#include <errno.h>]],
 							[[return 0]])],
 				       [st_cv_runtime=yes],
 				       [st_cv_runtime=no],
@@ -121,14 +125,34 @@ case "$arch" in
 			[st_cv_mpers],
 			[if READELF="$READELF" \
 			    CC="$CC" CPP="$CPP" CPPFLAGS="$CPPFLAGS" \
-			    $srcdir/mpers_test.sh [$1] "MPERS_CFLAGS"; then
+			    $srcdir/src/mpers_test.sh [$1] "MPERS_CFLAGS"; then
 				st_cv_mpers=yes
 			 else
 				st_cv_mpers=no
 			 fi])
+		AS_IF([test "x$enable_secontext$st_cv_mpers$st_cv_runtime" = xyesyesyes],
+			[AC_CACHE_CHECK([whether selinux runtime works with mpers_name personality],
+				[st_cv_selinux_runtime],
+				[saved_CPPFLAGS="$CPPFLAGS"
+				 saved_LDFLAGS="$LDFLAGS"
+				 saved_LIBS="$LIBS"
+				 CPPFLAGS="$CPPFLAGS $libselinux_CPPFLAGS"
+				 LDFLAGS="$LDFLAGS $libselinux_LDFLAGS"
+				 LIBS="$LIBS $libselinux_LIBS"
+				 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <selinux/selinux.h>]],
+								 [[return 0]])],
+						[st_cv_selinux_runtime=yes],
+						[st_cv_selinux_runtime=no],
+						[st_cv_selinux_runtime=no])
+				 LIBS="$saved_LIBS"
+				 LDFLAGS="$saved_LDFLAGS"
+				 CPPFLAGS="$saved_CPPFLAGS"
+				])
+			],
+			[st_cv_selinux_runtime=no])
 		if test $st_cv_mpers = yes; then
 			AC_DEFINE(HAVE_MPERS, [1],
-				  [Define to 1 if you have mpers_name mpers support])
+				  [Define to 1 if you have ]mpers_name[ mpers support])
 			st_MPERS_STRUCT_STAT([])
 			st_MPERS_STRUCT_STAT([64])
 
@@ -144,7 +168,7 @@ case "$arch" in
 					MPERS_NAME[_SIZEOF_KERNEL_LONG_T])
 				st_MPERS_LOAD_AC_CV([sizeof_kernel_long_t])
 				AC_CHECK_SIZEOF([kernel_long_t],,
-						[#include "$srcdir/kernel_types.h"])
+						[#include "$srcdir/src/kernel_types.h"])
 				st_MPERS_SAVE_AC_CV([sizeof_kernel_long_t])
 				popdef([SIZEOF_KERNEL_LONG_T])
 
@@ -157,6 +181,10 @@ case "$arch" in
 				popdef([SIZEOF_STRUCT_MSQID64_DS])
 			fi
 		fi
+		if test "x$st_cv_selinux_runtime" = xyes; then
+			AC_DEFINE([HAVE_SELINUX_RUNTIME], [1],
+				  [Define to enable SELinux security contexts testing for ]mpers_name[ personality])
+		fi
 	fi
 	CPPFLAGS="$saved_CPPFLAGS"
 	CFLAGS="$saved_CFLAGS"
@@ -165,6 +193,7 @@ case "$arch" in
 	*) # case "$enable_mpers"
 	st_cv_runtime=no
 	st_cv_mpers=no
+	st_cv_selinux_runtime=no
 	;;
 	esac
 
@@ -187,6 +216,7 @@ case "$arch" in
 esac
 
 AM_CONDITIONAL(HAVE_RUNTIME, [test "$st_cv_mpers$st_cv_runtime" = yesyes])
+AM_CONDITIONAL(HAVE_SELINUX_RUNTIME, [test "$st_cv_mpers$st_cv_selinux_runtime" = yesyes])
 AM_CONDITIONAL(HAVE_MPERS, [test "$st_cv_mpers" = yes])
 
 st_RESTORE_VAR([CC])
@@ -201,9 +231,11 @@ popdef([EXEEXT])dnl
 
 popdef([st_cv_mpers])
 popdef([st_cv_runtime])
+popdef([st_cv_selinux_runtime])
 popdef([st_cv_cc])
 popdef([MPERS_CFLAGS])
 popdef([HAVE_RUNTIME])
+popdef([HAVE_SELINUX_RUNTIME])
 popdef([HAVE_MPERS])
 popdef([MPERS_NAME])
 popdef([mpers_name])

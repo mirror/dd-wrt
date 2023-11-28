@@ -1,8 +1,8 @@
 /*
- * This file is part of sched_xetaffinity strace test.
+ * Check decoding of sched_getaffinity and sched_setaffinity syscalls.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,8 +13,7 @@
 #include "pidns.h"
 #include <sched.h>
 
-#if defined __NR_sched_getaffinity && defined __NR_sched_setaffinity \
- && defined CPU_ISSET_S && defined CPU_ZERO_S && defined CPU_SET_S
+#if defined CPU_ISSET_S && defined CPU_ZERO_S && defined CPU_SET_S
 
 # include <assert.h>
 # include <errno.h>
@@ -80,14 +79,44 @@ main(void)
 	printf("sched_getaffinity(%d%s, %u, [", pid, pid_str, cpuset_size);
 	const char *sep;
 	unsigned int i, cpu;
+	unsigned int first_cpu = -1U;
+	unsigned int first_crop_cpu = -1U;
 	for (i = 0, cpu = 0, sep = ""; i < (unsigned) ret_size * 8; ++i) {
 		if (CPU_ISSET_S(i, (unsigned) ret_size, cpuset)) {
 			printf("%s%u", sep, i);
-			sep = ", ";
+			sep = " ";
 			cpu = i;
+			if (first_cpu == -1U)
+				first_cpu = i;
+			if (first_crop_cpu == -1U && i >= 8)
+				first_crop_cpu = i;
 		}
 	}
 	printf("]) = %s\n", errstr);
+
+	long rc = setaffinity(pid, 0, ((char *) cpuset) + cpuset_size);
+	pidns_print_leader();
+	printf("sched_setaffinity(%d%s, 0, []) = %s\n",
+	       pid, pid_str, sprintrc(rc));
+
+	rc = setaffinity(pid, 1, ((char *) cpuset) + cpuset_size);
+	pidns_print_leader();
+	printf("sched_setaffinity(%d%s, 1, %p) = %s\n",
+	       pid, pid_str, ((char *) cpuset) + cpuset_size, sprintrc(rc));
+
+	static const uint8_t first_oob = BE_LE(SIZEOF_LONG == 4 ? 39 : 7, 56);
+	const unsigned int crop_size = 8;
+	cpu_set_t *crop_cpuset = tail_alloc(crop_size);
+	if (first_crop_cpu != -1U && first_crop_cpu < 56) {
+		CPU_ZERO_S(crop_size, crop_cpuset);
+		CPU_SET_S(first_crop_cpu, crop_size, crop_cpuset);
+		CPU_SET_S(first_oob, crop_size, crop_cpuset);
+		if (setaffinity(pid, crop_size - 1, crop_cpuset))
+			perror_msg_and_skip("sched_setaffinity()");
+		pidns_print_leader();
+		printf("sched_setaffinity(%d%s, 7, [%u]) = 0\n",
+		       pid, pid_str, first_crop_cpu);
+	}
 
 	CPU_ZERO_S(cpuset_size, cpuset);
 	CPU_SET_S(cpu, cpuset_size, cpuset);
@@ -109,7 +138,7 @@ main(void)
 	for (i = 0, sep = ""; i < (unsigned) ret_size * 8; ++i) {
 		if (CPU_ISSET_S(i, (unsigned) ret_size, cpuset)) {
 			printf("%s%u", sep, i);
-			sep = ", ";
+			sep = " ";
 		}
 	}
 	printf("]) = %s\n", errstr);
@@ -121,7 +150,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("__NR_sched_getaffinity && __NR_sched_setaffinity"
-		    " && CPU_ISSET_S && CPU_ZERO_S && CPU_SET_S")
+SKIP_MAIN_UNDEFINED("CPU_ISSET_S && CPU_ZERO_S && CPU_SET_S")
 
 #endif

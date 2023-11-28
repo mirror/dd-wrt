@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -39,8 +39,8 @@ init_packet_diag_msg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_packet_diag_msg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=SOCK_DIAG_BY_FAMILY"
-	       ", flags=NLM_F_DUMP, seq=0, pid=0}"
+	printf("{nlmsg_len=%u, nlmsg_type=SOCK_DIAG_BY_FAMILY"
+	       ", nlmsg_flags=NLM_F_DUMP, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", {pdiag_family=AF_PACKET"
 	       ", pdiag_type=SOCK_STREAM, pdiag_num=ETH_P_ALL"
 	       ", pdiag_ino=0, pdiag_cookie=[0, 0]}",
@@ -51,9 +51,12 @@ static void
 print_packet_diag_mclist(const struct packet_diag_mclist *const dml, size_t i)
 {
 	printf("{pdmc_index=" IFINDEX_LO_STR);
-	PRINT_FIELD_U(", ", *dml, pdmc_count);
-	PRINT_FIELD_U(", ", *dml, pdmc_type);
-	PRINT_FIELD_U(", ", *dml, pdmc_alen);
+	printf(", ");
+	PRINT_FIELD_U(*dml, pdmc_count);
+	printf(", ");
+	PRINT_FIELD_U(*dml, pdmc_type);
+	printf(", ");
+	PRINT_FIELD_U(*dml, pdmc_alen);
 	printf(", pdmc_addr=");
 	print_quoted_hex(dml->pdmc_addr, dml->pdmc_alen);
 	printf("}");
@@ -126,9 +129,12 @@ main(void)
 			   PACKET_DIAG_INFO, pattern, pinfo,
 			   printf("{pdi_index=%s", IFINDEX_LO_STR);
 			   printf(", pdi_version=TPACKET_V3");
-			   PRINT_FIELD_U(", ", pinfo, pdi_reserve);
-			   PRINT_FIELD_U(", ", pinfo, pdi_copy_thresh);
-			   PRINT_FIELD_U(", ", pinfo, pdi_tstamp);
+			   printf(", ");
+			   PRINT_FIELD_U(pinfo, pdi_reserve);
+			   printf(", ");
+			   PRINT_FIELD_U(pinfo, pdi_copy_thresh);
+			   printf(", ");
+			   PRINT_FIELD_U(pinfo, pdi_tstamp);
 			   printf(", pdi_flags=PDI_RUNNING}"));
 
 	TEST_NLATTR_ARRAY(fd, nlh0, hdrlen,
@@ -139,13 +145,20 @@ main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_packet_diag_msg, print_packet_diag_msg,
 			   PACKET_DIAG_RX_RING, pattern, pdr,
-			   PRINT_FIELD_U("{", pdr, pdr_block_size);
-			   PRINT_FIELD_U(", ", pdr, pdr_block_nr);
-			   PRINT_FIELD_U(", ", pdr, pdr_frame_size);
-			   PRINT_FIELD_U(", ", pdr, pdr_frame_nr);
-			   PRINT_FIELD_U(", ", pdr, pdr_retire_tmo);
-			   PRINT_FIELD_U(", ", pdr, pdr_sizeof_priv);
-			   PRINT_FIELD_U(", ", pdr, pdr_features);
+			   printf("{");
+			   PRINT_FIELD_U(pdr, pdr_block_size);
+			   printf(", ");
+			   PRINT_FIELD_U(pdr, pdr_block_nr);
+			   printf(", ");
+			   PRINT_FIELD_U(pdr, pdr_frame_size);
+			   printf(", ");
+			   PRINT_FIELD_U(pdr, pdr_frame_nr);
+			   printf(", ");
+			   PRINT_FIELD_U(pdr, pdr_retire_tmo);
+			   printf(", ");
+			   PRINT_FIELD_U(pdr, pdr_sizeof_priv);
+			   printf(", ");
+			   PRINT_FIELD_U(pdr, pdr_features);
 			   printf("}"));
 
 	TEST_NLATTR_ARRAY(fd, nlh0, hdrlen,

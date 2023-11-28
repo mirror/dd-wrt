@@ -2,7 +2,7 @@
 #
 # Check execve syscall decoding.
 #
-# Copyright (c) 2015-2018 The strace developers.
+# Copyright (c) 2015-2021 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,7 +11,7 @@
 
 check_prog grep
 run_prog > /dev/null
-run_strace -eexecve $args > "$EXP"
+run_strace -eexecve "$@" $args > "$EXP"
 
 # Filter out execve() call made by strace.
 grep -F test.execve < "$LOG" > "$OUT"

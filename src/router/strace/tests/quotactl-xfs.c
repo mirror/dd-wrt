@@ -2,71 +2,32 @@
  * Check decoding of quotactl xfs subcommands.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
 
-#if defined(__NR_quotactl) && \
-	(defined(HAVE_LINUX_QUOTA_H) || defined(HAVE_SYS_QUOTA_H)) && \
-	defined(HAVE_LINUX_DQBLK_XFS_H)
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
+#include <linux/dqblk_xfs.h>
 
-# include <linux/dqblk_xfs.h>
+#include "quotactl.h"
 
-# include "quotactl.h"
-
-# ifndef Q_GETNEXTQUOTA
-#  define Q_XGETNEXTQUOTA	XQM_CMD(0x9)
-# endif /* !Q_GETNEXTQUOTA */
-
-# ifndef Q_XGETQSTATV
-
-#  define Q_XGETQSTATV		XQM_CMD(8)
-#  define FS_QSTATV_VERSION1	1
-
-struct fs_qfilestatv {
-	uint64_t	qfs_ino;	/* inode number */
-	uint64_t	qfs_nblks;	/* number of BBs 512-byte-blks */
-	uint32_t	qfs_nextents;	/* number of extents */
-	uint32_t	qfs_pad;	/* pad for 8-byte alignment */
-};
-
-struct fs_quota_statv {
-	int8_t		qs_version;		/* version for future changes */
-	uint8_t		qs_pad1;		/* pad for 16bit alignment */
-	uint16_t	qs_flags;		/* XFS_QUOTA_.* flags */
-	uint32_t	qs_incoredqs;		/* number of dquots incore */
-	struct fs_qfilestatv	qs_uquota;	/* user quota information */
-	struct fs_qfilestatv	qs_gquota;	/* group quota information */
-	struct fs_qfilestatv	qs_pquota;	/* project quota information */
-	int32_t		qs_btimelimit;		/* limit for blks timer */
-	int32_t		qs_itimelimit;		/* limit for inodes timer */
-	int32_t		qs_rtbtimelimit;	/* limit for rt blks timer */
-	uint16_t	qs_bwarnlimit;		/* limit for num warnings */
-	uint16_t	qs_iwarnlimit;		/* limit for num warnings */
-	uint64_t	qs_pad2[8];		/* for future proofing */
-};
-
-# endif /* !Q_XGETQSTATV */
-
-# include "xlat.h"
-# include "xlat/xfs_dqblk_flags.h"
-# if VERBOSE
-#  include "xlat/xfs_quota_flags.h"
-# endif
+#include "xlat.h"
+#include "xlat/xfs_dqblk_flags.h"
+#if VERBOSE
+# include "xlat/xfs_quota_flags.h"
+#endif
 
 
-void
+static void
 print_xdisk_quota(int rc, void *ptr, void *arg)
 {
 	struct fs_disk_quota *dq = ptr;
@@ -77,36 +38,54 @@ print_xdisk_quota(int rc, void *ptr, void *arg)
 		return;
 	}
 
-	PRINT_FIELD_D("{", *dq, d_version);
+	printf("{");
+	PRINT_FIELD_D(*dq, d_version);
 	printf(", d_flags=");
-	printflags(xfs_dqblk_flags, (uint8_t) dq->d_flags, "XFS_???_QUOTA");
+	printflags(xfs_dqblk_flags, (uint8_t) dq->d_flags, "FS_???_QUOTA");
 
-	PRINT_FIELD_X(", ", *dq, d_fieldmask);
-	PRINT_FIELD_U(", ", *dq, d_id);
-	PRINT_FIELD_U(", ", *dq, d_blk_hardlimit);
-	PRINT_FIELD_U(", ", *dq, d_blk_softlimit);
-	PRINT_FIELD_U(", ", *dq, d_ino_hardlimit);
-	PRINT_FIELD_U(", ", *dq, d_ino_softlimit);
-	PRINT_FIELD_U(", ", *dq, d_bcount);
-	PRINT_FIELD_U(", ", *dq, d_icount);
+	printf(", ");
+	PRINT_FIELD_X(*dq, d_fieldmask);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_id);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_blk_hardlimit);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_blk_softlimit);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_ino_hardlimit);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_ino_softlimit);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_bcount);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_icount);
 
-# if VERBOSE
-	PRINT_FIELD_D(", ", *dq, d_itimer);
-	PRINT_FIELD_D(", ", *dq, d_btimer);
-	PRINT_FIELD_U(", ", *dq, d_iwarns);
-	PRINT_FIELD_U(", ", *dq, d_bwarns);
-	PRINT_FIELD_U(", ", *dq, d_rtb_hardlimit);
-	PRINT_FIELD_U(", ", *dq, d_rtb_softlimit);
-	PRINT_FIELD_U(", ", *dq, d_rtbcount);
-	PRINT_FIELD_D(", ", *dq, d_rtbtimer);
-	PRINT_FIELD_U(", ", *dq, d_rtbwarns);
-# else
+#if VERBOSE
+	printf(", ");
+	PRINT_FIELD_D(*dq, d_itimer);
+	printf(", ");
+	PRINT_FIELD_D(*dq, d_btimer);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_iwarns);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_bwarns);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_rtb_hardlimit);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_rtb_softlimit);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_rtbcount);
+	printf(", ");
+	PRINT_FIELD_D(*dq, d_rtbtimer);
+	printf(", ");
+	PRINT_FIELD_U(*dq, d_rtbwarns);
+#else
 	printf(", ...");
-# endif /* !VERBOSE */
+#endif /* !VERBOSE */
 	printf("}");
 }
 
-void
+static void
 print_xquota_stat(int rc, void *ptr, void *arg)
 {
 	struct fs_quota_stat *qs = ptr;
@@ -117,30 +96,43 @@ print_xquota_stat(int rc, void *ptr, void *arg)
 		return;
 	}
 
-	PRINT_FIELD_D("{", *qs, qs_version);
+	printf("{");
+	PRINT_FIELD_D(*qs, qs_version);
 
-# if VERBOSE
+#if VERBOSE
 	printf(", qs_flags=");
-	printflags(xfs_quota_flags, qs->qs_flags, "XFS_QUOTA_???");
-	PRINT_FIELD_U(", qs_uquota={", qs->qs_uquota, qfs_ino);
-	PRINT_FIELD_U(", ", qs->qs_uquota, qfs_nblks);
-	PRINT_FIELD_U(", ", qs->qs_uquota, qfs_nextents);
-	PRINT_FIELD_U("}, qs_gquota={", qs->qs_gquota, qfs_ino);
-	PRINT_FIELD_U(", ", qs->qs_gquota, qfs_nblks);
-	PRINT_FIELD_U(", ", qs->qs_gquota, qfs_nextents);
-	PRINT_FIELD_U("}, ", *qs, qs_incoredqs);
-	PRINT_FIELD_D(", ", *qs, qs_btimelimit);
-	PRINT_FIELD_D(", ", *qs, qs_itimelimit);
-	PRINT_FIELD_D(", ", *qs, qs_rtbtimelimit);
-	PRINT_FIELD_U(", ", *qs, qs_bwarnlimit);
-	PRINT_FIELD_U(", ", *qs, qs_iwarnlimit);
-# else
+	printflags(xfs_quota_flags, qs->qs_flags, "FS_QUOTA_???");
+	printf(", qs_uquota={");
+	PRINT_FIELD_U(qs->qs_uquota, qfs_ino);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_uquota, qfs_nblks);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_uquota, qfs_nextents);
+	printf("}, qs_gquota={");
+	PRINT_FIELD_U(qs->qs_gquota, qfs_ino);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_gquota, qfs_nblks);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_gquota, qfs_nextents);
+	printf("}, ");
+	PRINT_FIELD_U(*qs, qs_incoredqs);
+	printf(", ");
+	PRINT_FIELD_D(*qs, qs_btimelimit);
+	printf(", ");
+	PRINT_FIELD_D(*qs, qs_itimelimit);
+	printf(", ");
+	PRINT_FIELD_D(*qs, qs_rtbtimelimit);
+	printf(", ");
+	PRINT_FIELD_U(*qs, qs_bwarnlimit);
+	printf(", ");
+	PRINT_FIELD_U(*qs, qs_iwarnlimit);
+#else
 	printf(", ...");
-# endif /* !VERBOSE */
+#endif /* !VERBOSE */
 	printf("}");
 }
 
-void
+static void
 print_xquota_statv(int rc, void *ptr, void *arg)
 {
 	struct fs_quota_statv *qs = ptr;
@@ -151,29 +143,45 @@ print_xquota_statv(int rc, void *ptr, void *arg)
 		return;
 	}
 
-	PRINT_FIELD_D("{", *qs, qs_version);
+	printf("{");
+	PRINT_FIELD_D(*qs, qs_version);
 
-# if VERBOSE
+#if VERBOSE
 	printf(", qs_flags=");
-	printflags(xfs_quota_flags, qs->qs_flags, "XFS_QUOTA_???");
-	PRINT_FIELD_U(", ", *qs, qs_incoredqs);
-	PRINT_FIELD_U(", qs_uquota={", qs->qs_uquota, qfs_ino);
-	PRINT_FIELD_U(", ", qs->qs_uquota, qfs_nblks);
-	PRINT_FIELD_U(", ", qs->qs_uquota, qfs_nextents);
-	PRINT_FIELD_U("}, qs_gquota={", qs->qs_gquota, qfs_ino);
-	PRINT_FIELD_U(", ", qs->qs_gquota, qfs_nblks);
-	PRINT_FIELD_U(", ", qs->qs_gquota, qfs_nextents);
-	PRINT_FIELD_U("}, qs_pquota={", qs->qs_pquota, qfs_ino);
-	PRINT_FIELD_U(", ", qs->qs_pquota, qfs_nblks);
-	PRINT_FIELD_U(", ", qs->qs_pquota, qfs_nextents);
-	PRINT_FIELD_D("}, ", *qs, qs_btimelimit);
-	PRINT_FIELD_D(", ", *qs, qs_itimelimit);
-	PRINT_FIELD_D(", ", *qs, qs_rtbtimelimit);
-	PRINT_FIELD_U(", ", *qs, qs_bwarnlimit);
-	PRINT_FIELD_U(", ", *qs, qs_iwarnlimit);
-# else
+	printflags(xfs_quota_flags, qs->qs_flags, "FS_QUOTA_???");
+	printf(", ");
+	PRINT_FIELD_U(*qs, qs_incoredqs);
+	printf(", qs_uquota={");
+	PRINT_FIELD_U(qs->qs_uquota, qfs_ino);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_uquota, qfs_nblks);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_uquota, qfs_nextents);
+	printf("}, qs_gquota={");
+	PRINT_FIELD_U(qs->qs_gquota, qfs_ino);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_gquota, qfs_nblks);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_gquota, qfs_nextents);
+	printf("}, qs_pquota={");
+	PRINT_FIELD_U(qs->qs_pquota, qfs_ino);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_pquota, qfs_nblks);
+	printf(", ");
+	PRINT_FIELD_U(qs->qs_pquota, qfs_nextents);
+	printf("}, ");
+	PRINT_FIELD_D(*qs, qs_btimelimit);
+	printf(", ");
+	PRINT_FIELD_D(*qs, qs_itimelimit);
+	printf(", ");
+	PRINT_FIELD_D(*qs, qs_rtbtimelimit);
+	printf(", ");
+	PRINT_FIELD_U(*qs, qs_bwarnlimit);
+	printf(", ");
+	PRINT_FIELD_U(*qs, qs_iwarnlimit);
+#else
 	printf(", ...");
-# endif /* !VERBOSE */
+#endif /* !VERBOSE */
 	printf("}");
 }
 
@@ -210,9 +218,9 @@ main(void)
 	check_quota(CQF_ID_SKIP | CQF_ADDR_STR,
 		    ARG_STR(QCMD(Q_XQUOTAON, USRQUOTA)),
 		    ARG_STR("/dev/bogus/"), flags,
-		    "[XFS_QUOTA_UDQ_ACCT|XFS_QUOTA_UDQ_ENFD"
-		    "|XFS_QUOTA_GDQ_ACCT|XFS_QUOTA_GDQ_ENFD"
-		    "|XFS_QUOTA_PDQ_ENFD|0xdeadbec0]");
+		    "[FS_QUOTA_UDQ_ACCT|FS_QUOTA_UDQ_ENFD"
+		    "|FS_QUOTA_GDQ_ACCT|FS_QUOTA_GDQ_ENFD"
+		    "|FS_QUOTA_PDQ_ENFD|0xdeadbec0]");
 
 	snprintf(invalid_cmd_str, sizeof(invalid_cmd_str),
 		 "QCMD(Q_XQUOTAON, %#x /* ???QUOTA */)",
@@ -236,9 +244,9 @@ main(void)
 		    QCMD(Q_XQUOTAOFF, 3),
 		    "QCMD(Q_XQUOTAOFF, 0x3 /* ???QUOTA */)",
 		    ARG_STR("/dev/bogus/"), flags,
-		    "[XFS_QUOTA_UDQ_ACCT|XFS_QUOTA_UDQ_ENFD"
-		    "|XFS_QUOTA_GDQ_ACCT|XFS_QUOTA_GDQ_ENFD"
-		    "|XFS_QUOTA_PDQ_ENFD|0xdeadbec0]");
+		    "[FS_QUOTA_UDQ_ACCT|FS_QUOTA_UDQ_ENFD"
+		    "|FS_QUOTA_GDQ_ACCT|FS_QUOTA_GDQ_ENFD"
+		    "|FS_QUOTA_PDQ_ENFD|0xdeadbec0]");
 
 
 	/* Q_XGETQUOTA */
@@ -316,8 +324,8 @@ main(void)
 	check_quota(CQF_ID_SKIP | CQF_ADDR_STR,
 		    ARG_STR(QCMD(Q_XQUOTARM, GRPQUOTA)),
 		    ARG_STR(NULL), flags,
-		    "[XFS_USER_QUOTA|XFS_PROJ_QUOTA"
-		    "|XFS_GROUP_QUOTA|0xdeadbee8]");
+		    "[FS_USER_QUOTA|FS_PROJ_QUOTA"
+		    "|FS_GROUP_QUOTA|0xdeadbee8]");
 
 
 	/* Q_XQUOTASYNC */
@@ -334,11 +342,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_quotactl && "
-	"(HAVE_LINUX_QUOTA_H || HAVE_SYS_QUOTA_H) && "
-	"HAVE_LINUX_DQBLK_XFS_H");
-
-#endif

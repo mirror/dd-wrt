@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,13 +10,8 @@
 
 #include <stdio.h>
 #include "test_nlattr.h"
-#ifdef HAVE_LINUX_NEIGHBOUR_H
-# include <linux/neighbour.h>
-#endif
+#include <linux/neighbour.h>
 #include <linux/rtnetlink.h>
-
-#define NDTA_PARMS 6
-#define NDTPA_IFINDEX 1
 
 static void
 init_ndtmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
@@ -36,8 +31,9 @@ init_ndtmsg(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_ndtmsg(const unsigned int msg_len)
 {
-	printf("{len=%u, type=RTM_GETNEIGHTBL, flags=NLM_F_DUMP"
-	       ", seq=0, pid=0}, {ndtm_family=AF_NETLINK}",
+	printf("{nlmsg_len=%u, nlmsg_type=RTM_GETNEIGHTBL"
+	       ", nlmsg_flags=NLM_F_DUMP, nlmsg_seq=0, nlmsg_pid=0}"
+	       ", {ndtm_family=AF_NETLINK}",
 	       msg_len);
 }
 
@@ -62,7 +58,6 @@ main(void)
 		     4, pattern, 4,
 		     print_quoted_hex(pattern, 4));
 
-#ifdef HAVE_STRUCT_NDT_CONFIG
 	static const struct ndt_config ndtc = {
 		.ndtc_key_len = 0xabcd,
 		.ndtc_entry_size = 0xbcda,
@@ -77,17 +72,25 @@ main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_ndtmsg, print_ndtmsg,
 			   NDTA_CONFIG, pattern, ndtc,
-			   PRINT_FIELD_U("{", ndtc, ndtc_key_len);
-			   PRINT_FIELD_U(", ", ndtc, ndtc_entry_size);
-			   PRINT_FIELD_U(", ", ndtc, ndtc_entries);
-			   PRINT_FIELD_U(", ", ndtc, ndtc_last_flush);
-			   PRINT_FIELD_U(", ", ndtc, ndtc_last_rand);
-			   PRINT_FIELD_U(", ", ndtc, ndtc_hash_rnd);
-			   PRINT_FIELD_0X(", ", ndtc, ndtc_hash_mask);
-			   PRINT_FIELD_U(", ", ndtc, ndtc_hash_chain_gc);
-			   PRINT_FIELD_U(", ", ndtc, ndtc_proxy_qlen);
+			   printf("{");
+			   PRINT_FIELD_U(ndtc, ndtc_key_len);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtc, ndtc_entry_size);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtc, ndtc_entries);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtc, ndtc_last_flush);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtc, ndtc_last_rand);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtc, ndtc_hash_rnd);
+			   printf(", ");
+			   PRINT_FIELD_0X(ndtc, ndtc_hash_mask);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtc, ndtc_hash_chain_gc);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtc, ndtc_proxy_qlen);
 			   printf("}"));
-#endif /* HAVE_STRUCT_NDT_CONFIG */
 
 	static const struct nlattr nla = {
 		.nla_len = sizeof(nla),
@@ -96,10 +99,10 @@ main(void)
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_ndtmsg, print_ndtmsg,
 			   NDTA_PARMS, pattern, nla,
-			   PRINT_FIELD_U("{", nla, nla_len);
+			   printf("{");
+			   PRINT_FIELD_U(nla, nla_len);
 			   printf(", nla_type=NDTPA_IFINDEX}"));
 
-#ifdef HAVE_STRUCT_NDT_STATS
 	static const struct ndt_stats ndtst = {
 		.ndts_allocs		= 0xabcdedabedadedfa,
 		.ndts_destroys		= 0xbcdefabefacdbaad,
@@ -111,28 +114,34 @@ main(void)
 		.ndts_rcv_probes_ucast	= 0xbcdefeacdadecdfe,
 		.ndts_periodic_gc_runs	= 0xedffeadedeffbecc,
 		.ndts_forced_gc_runs	= 0xfeefefeabedeedcd,
-# ifdef HAVE_STRUCT_NDT_STATS_NDTS_TABLE_FULLS
 		.ndts_table_fulls	= 0xadebfefaecdfeade
-# endif /* HAVE_STRUCT_NDT_STATS_NDTS_TABLE_FULLS */
 	};
 	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
 			   init_ndtmsg, print_ndtmsg,
 			   NDTA_STATS, pattern, ndtst,
-			   PRINT_FIELD_U("{", ndtst, ndts_allocs);
-			   PRINT_FIELD_U(", ", ndtst, ndts_destroys);
-			   PRINT_FIELD_U(", ", ndtst, ndts_hash_grows);
-			   PRINT_FIELD_U(", ", ndtst, ndts_res_failed);
-			   PRINT_FIELD_U(", ", ndtst, ndts_lookups);
-			   PRINT_FIELD_U(", ", ndtst, ndts_hits);
-			   PRINT_FIELD_U(", ", ndtst, ndts_rcv_probes_mcast);
-			   PRINT_FIELD_U(", ", ndtst, ndts_rcv_probes_ucast);
-			   PRINT_FIELD_U(", ", ndtst, ndts_periodic_gc_runs);
-			   PRINT_FIELD_U(", ", ndtst, ndts_forced_gc_runs);
-# ifdef HAVE_STRUCT_NDT_STATS_NDTS_TABLE_FULLS
-			   PRINT_FIELD_U(", ", ndtst, ndts_table_fulls);
-# endif /* HAVE_STRUCT_NDT_STATS_NDTS_TABLE_FULLS */
+			   printf("{");
+			   PRINT_FIELD_U(ndtst, ndts_allocs);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_destroys);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_hash_grows);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_res_failed);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_lookups);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_hits);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_rcv_probes_mcast);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_rcv_probes_ucast);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_periodic_gc_runs);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_forced_gc_runs);
+			   printf(", ");
+			   PRINT_FIELD_U(ndtst, ndts_table_fulls);
 			   printf("}"));
-#endif /* HAVE_STRUCT_NDT_STATS */
 
 	puts("+++ exited with 0 +++");
 	return 0;

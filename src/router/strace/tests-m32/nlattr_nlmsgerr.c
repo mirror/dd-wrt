@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -36,11 +36,11 @@ init_nlmsgerr(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_nlmsgerr(const unsigned int msg_len)
 {
-	printf("{len=%u, type=NLMSG_ERROR"
-	       ", flags=NLM_F_REQUEST|NLM_F_CAPPED"
-	       ", seq=0, pid=0}, {error=-EACCES"
-	       ", msg={len=%u, type=NLMSG_NOOP"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}",
+	printf("{nlmsg_len=%u, nlmsg_type=NLMSG_ERROR"
+	       ", nlmsg_flags=NLM_F_REQUEST|NLM_F_CAPPED"
+	       ", nlmsg_seq=0, nlmsg_pid=0}, [{error=-EACCES"
+	       ", msg={nlmsg_len=%u, nlmsg_type=NLMSG_NOOP"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}}",
 	       msg_len, NLMSG_HDRLEN + 4);
 }
 
@@ -61,7 +61,7 @@ main(void)
 		    NLMSGERR_ATTR_COOKIE,
 		    sizeof(cookie), cookie, sizeof(cookie),
 		    printf("[%u, %u]", cookie[0], cookie[1]);
-		    printf("}"));
+		    printf("]"));
 
 	printf("+++ exited with 0 +++\n");
 	return 0;

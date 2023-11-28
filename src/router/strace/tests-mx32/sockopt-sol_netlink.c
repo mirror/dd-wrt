@@ -1,7 +1,7 @@
 /*
  * Check decoding of getsockopt and setsockopt for SOL_NETLINK level.
  *
- * Copyright (c) 2017-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2017-2023 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -82,9 +82,8 @@ main(void)
         int fd = socket(AF_NETLINK, SOCK_RAW, 0);
         if (fd < 0)
                 perror_msg_and_skip("socket AF_NETLINK SOCK_RAW");
-	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(names); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(names); ++i) {
 		/* getsockopt */
 
 		/* classic */
@@ -95,7 +94,10 @@ main(void)
 			printf("%p", val);
 		else
 			printf("[%d]", *val);
-		printf(", [%d]) = %s\n", *len, errstr);
+		printf(", [%d", (int) sizeof(*val));
+		if ((int) sizeof(*val) != *len)
+			printf(" => %d", *len);
+		printf("]) = %s\n", errstr);
 
 		/* optlen larger than necessary - shortened */
 		*len = sizeof(*val) + 1;
@@ -107,7 +109,7 @@ main(void)
 			printf("[%d]", *val);
 		printf(", [%d", (int) sizeof(*val) + 1);
 		if ((int) sizeof(*val) + 1 != *len)
-			printf("->%d", *len);
+			printf(" => %d", *len);
 		printf("]) = %s\n", errstr);
 
 		/* zero optlen - print returned optlen */
@@ -116,7 +118,7 @@ main(void)
 		printf("getsockopt(%d, SOL_NETLINK, %s, NULL, [0",
 		       fd, names[i].str);
 		if (*len)
-			printf("->%d", *len);
+			printf(" => %d", *len);
 		printf("]) = %s\n", errstr);
 
 #ifdef NETLINK_LIST_MEMBERSHIPS
@@ -128,7 +130,7 @@ main(void)
 			printf("getsockopt(%d, SOL_NETLINK, %s, %p, [%d",
 			       fd, names[i].str, val, (int) sizeof(*val) - 1);
 			if ((int) sizeof(*val) - 1 != *len)
-				printf("->%d", *len);
+				printf(" => %d", *len);
 			printf("]) = %s\n", errstr);
 #ifdef NETLINK_LIST_MEMBERSHIPS
 		} else {
@@ -143,7 +145,7 @@ main(void)
 				printf("[]");
 			printf(", [%d", (int) sizeof(*val) - 1);
 			if ((int) sizeof(*val) - 1 != *len)
-				printf("->%d", *len);
+				printf(" => %d", *len);
 			printf("]) = %s\n", errstr);
 		}
 #endif
@@ -151,8 +153,12 @@ main(void)
 		/* optval EFAULT - print address */
 		*len = sizeof(*val);
 		get_sockopt(fd, names[i].val, efault, len);
-		printf("getsockopt(%d, SOL_NETLINK, %s, %p, [%d]) = %s\n",
-		       fd, names[i].str, efault, *len, errstr);
+		printf("getsockopt(%d, SOL_NETLINK, %s, %p",
+		       fd, names[i].str, efault);
+		printf(", [%d", (int) sizeof(*val));
+		if ((int) sizeof(*val) != *len)
+			printf(" => %d", *len);
+		printf("]) = %s\n", errstr);
 
 		/* optlen EFAULT - print address */
 		get_sockopt(fd, names[i].val, val, len + 1);

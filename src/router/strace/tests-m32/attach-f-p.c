@@ -1,8 +1,8 @@
 /*
  * This file is part of attach-f-p strace test.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -38,10 +38,13 @@ static void *
 thread(void *a)
 {
 	unsigned int no = (long) a;
-	int i;
+	int i, rc;
 
-	if (read(pipes[no][0], &i, sizeof(i)) != (int) sizeof(i))
+	while ((rc = read(pipes[no][0], &i, sizeof(i))) != (int) sizeof(i)) {
+		if (rc < 0 && errno == EINTR)
+			continue;
 		perror_msg_and_fail("read[%u]", no);
+	}
 	assert(chdir(child[no]) == -1);
 	retval_t retval = { .pid = syscall(__NR_gettid) };
 	return retval.ptr;
@@ -51,12 +54,11 @@ int
 main(void)
 {
 	pthread_t t[N];
-	unsigned int i;
 
 	if (write(1, "", 0) != 0)
 		perror_msg_and_fail("write");
 
-	for (i = 0; i < N; ++i) {
+	for (unsigned int i = 0; i < N; ++i) {
 		if (pipe(pipes[i]))
 			perror_msg_and_fail("pipe");
 
@@ -69,15 +71,16 @@ main(void)
 		perror_msg_and_fail("write");
 
 	/* wait for the peer to write to stdout */
-	struct stat st;
 	for (;;) {
+		struct stat st;
+
 		if (fstat(1, &st))
 			perror_msg_and_fail("fstat");
 		if (st.st_size >= 103)
 			break;
 	}
 
-	for (i = 0; i < N; ++i) {
+	for (unsigned int i = 0; i < N; ++i) {
 		/* sleep a bit to let the tracer catch up */
 		sleep(1);
 		if (write(pipes[i][1], &i, sizeof(i)) != (int) sizeof(i))
@@ -98,7 +101,7 @@ main(void)
 	pid_t pid = getpid();
 	assert(chdir(text_parent) == -1);
 
-	printf("%-5d chdir(\"%s\") = -1 ENOENT (%m)\n"
+	printf("%-5d chdir(\"%s\")" RVAL_ENOENT
 	       "%-5d +++ exited with 0 +++\n", pid, text_parent, pid);
 
 	return 0;

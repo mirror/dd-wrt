@@ -2,9 +2,10 @@
  * Test PID namespace translation
  *
  * Copyright (c) 2020 Ákos Uzonyi <uzonyi.akos@gmail.com>
+ * Copyright (c) 2020-2022 The strace developers.
  * All rights reserved.
  *
- * SPDX-License-Identifier: LGPL-2.1-or-later
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
@@ -22,15 +23,7 @@
 # include <sys/wait.h>
 # include <unistd.h>
 # include <linux/sched.h>
-# include "nsfs.h"
-
-# ifndef CLONE_NEWUSER
-#  define CLONE_NEWUSER 0x10000000
-# endif
-
-# ifndef CLONE_NEWPID
-#  define CLONE_NEWPID 0x20000000
-# endif
+# include <linux/nsfs.h>
 
 static int
 fork_chain(int depth)
@@ -46,8 +39,11 @@ fork_chain(int depth)
 		_exit(fork_chain(depth - 1));
 
 	int status;
-	if (wait(&status) < 0)
+	if (waitpid(pid, &status, 0) < 0) {
+		if (errno == ECHILD)
+			_exit(fork_chain(depth - 1));
 		return errno;
+	}
 
 	if (!WIFEXITED(status))
 		return -1;
@@ -68,7 +64,8 @@ int main(void)
 
 	errno = fork_chain(2);
 	if (errno)
-		perror("fork_chain");
+		perror_msg_and_fail("fork_chain");
+	return 0;
 }
 
 #else

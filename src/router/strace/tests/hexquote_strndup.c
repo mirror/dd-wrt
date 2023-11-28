@@ -1,7 +1,7 @@
 /*
  * Make a hexquoted copy of a string
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2021 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -24,8 +24,7 @@ hexquote_strndup(const char *src, const size_t src_len)
 		perror_msg_and_fail("malloc(%zu)", dst_size);
 
 	char *p = dst;
-	size_t i;
-	for (i = 0; i < src_len; ++i) {
+	for (size_t i = 0; i < src_len; ++i) {
 		unsigned int c = ((const unsigned char *) src)[i];
 		*(p++) = '\\';
 		*(p++) = 'x';

@@ -1,0 +1,5 @@
+#unconditional
+#value_indexed
+NFNL_MSG_CTHELPER_NEW
+NFNL_MSG_CTHELPER_GET
+NFNL_MSG_CTHELPER_DEL

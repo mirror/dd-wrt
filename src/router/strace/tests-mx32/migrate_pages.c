@@ -1,8 +1,8 @@
 /*
  * Check decoding of migrate_pages syscall.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,10 +12,8 @@
 #include "scno.h"
 #include "pidns.h"
 
-#ifdef __NR_migrate_pages
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -26,21 +24,10 @@ main(void)
 	long rc = syscall(__NR_migrate_pages, pid, 0, 0, 0);
 
 	pidns_print_leader();
-	printf("migrate_pages(%d%s, 0, NULL, NULL) = %ld",
-		(int) pid, pidns_pid2str(PT_TGID), rc);
-
-	if (rc < 0)
-		printf(" %s (%m)\n", errno2name());
-	else
-		printf("\n");
+	printf("migrate_pages(%d%s, 0, NULL, NULL) = %s\n",
+		(int) pid, pidns_pid2str(PT_TGID), sprintrc(rc));
 
 	pidns_print_leader();
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_migrate_pages")
-
-#endif

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2022 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -50,8 +50,8 @@ init_inet_diag_req_v2(struct nlmsghdr *const nlh, const unsigned int msg_len)
 static void
 print_inet_diag_req_v2(const unsigned int msg_len)
 {
-	printf("{len=%u, type=SOCK_DIAG_BY_FAMILY"
-	       ", flags=NLM_F_REQUEST, seq=0, pid=0}"
+	printf("{nlmsg_len=%u, nlmsg_type=SOCK_DIAG_BY_FAMILY"
+	       ", nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}"
 	       ", {sdiag_family=AF_INET, sdiag_protocol=IPPROTO_TCP"
 	       ", idiag_ext=1<<(INET_DIAG_CONG-1)"
 	       ", idiag_states=1<<TCP_CLOSE"
@@ -61,6 +61,26 @@ print_inet_diag_req_v2(const unsigned int msg_len)
 	       ", idiag_if=" IFINDEX_LO_STR
 	       ", idiag_cookie=[0, 0]}}",
 	       msg_len, address, address);
+}
+
+static void
+test_unk_attrs(const int fd)
+{
+	static const struct strval16 unk_attrs[] = {
+		{ ENUM_KNOWN(0, INET_DIAG_REQ_NONE) },
+		{ ENUM_KNOWN(0x2, INET_DIAG_REQ_SK_BPF_STORAGES) },
+		{ ARG_XLAT_UNKNOWN(0x4, "INET_DIAG_REQ_???") },
+		{ ARG_XLAT_UNKNOWN(0x1ace, "INET_DIAG_REQ_???") },
+	};
+	static const char buf[4] = { 0xde, 0xad, 0xfa, 0xce };
+
+	for (size_t i = 0; i < ARRAY_SIZE(unk_attrs); i++) {
+		TEST_NLATTR_(fd, nlh0, hdrlen,
+			     init_inet_diag_req_v2, print_inet_diag_req_v2,
+			     unk_attrs[i].val, unk_attrs[i].str,
+			     sizeof(buf), buf, sizeof(buf),
+			     print_quoted_hex(buf, sizeof(buf)));
+	}
 }
 
 static void
@@ -75,15 +95,17 @@ test_inet_diag_bc_op(const int fd)
 			   init_inet_diag_req_v2, print_inet_diag_req_v2,
 			   INET_DIAG_REQ_BYTECODE, pattern, op,
 			   printf("{code=INET_DIAG_BC_S_COND");
-			   PRINT_FIELD_U(", ", op, yes);
-			   PRINT_FIELD_U(", ", op, no);
+			   printf(", ");
+			   PRINT_FIELD_U(op, yes);
+			   printf(", ");
+			   PRINT_FIELD_U(op, no);
 			   printf("}"));
 }
 
 static void
 print_inet_diag_bc_op(const char *const code)
 {
-	printf("{{code=%s, yes=0, no=0}, ", code);
+	printf("{code=%s, yes=0, no=0}, ", code);
 }
 
 static void
@@ -108,15 +130,14 @@ test_inet_diag_bc_s_cond(const int fd)
 		    INET_DIAG_REQ_BYTECODE,
 		    plen, buf, plen,
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_COND");
-		    print_quoted_hex(buf + sizeof(op), plen - sizeof(op));
-		    printf("}"));
+		    print_quoted_hex(buf + sizeof(op), plen - sizeof(op)));
 
 	TEST_NLATTR(fd, nlh0, hdrlen,
 		    init_inet_diag_req_v2, print_inet_diag_req_v2,
 		    INET_DIAG_REQ_BYTECODE,
 		    sizeof(buf), buf, sizeof(buf) - 1,
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_COND");
-		    printf("%p}", RTA_DATA(TEST_NLATTR_nla) + sizeof(op)));
+		    printf("%p", RTA_DATA(TEST_NLATTR_nla) + sizeof(op)));
 
 	memcpy(buf + sizeof(op), &cond, sizeof(cond));
 	TEST_NLATTR(fd, nlh0, hdrlen,
@@ -125,9 +146,11 @@ test_inet_diag_bc_s_cond(const int fd)
 		    sizeof(buf), buf, sizeof(buf),
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_COND");
 		    printf("{family=AF_UNSPEC");
-		    PRINT_FIELD_U(", ", cond, prefix_len);
-		    PRINT_FIELD_U(", ", cond, port);
-		    printf("}}"));
+		    printf(", ");
+		    PRINT_FIELD_U(cond, prefix_len);
+		    printf(", ");
+		    PRINT_FIELD_U(cond, port);
+		    printf("}"));
 }
 
 static void
@@ -164,7 +187,7 @@ test_in_addr(const int fd)
 		    print_inet_diag_hostcond("AF_INET");
 		    printf("addr=");
 		    print_quoted_hex(pattern, plen - sizeof(op) - sizeof(cond));
-		    printf("}}"));
+		    printf("}"));
 
 	TEST_NLATTR(fd, nlh0, hdrlen,
 		    init_inet_diag_req_v2, print_inet_diag_req_v2,
@@ -172,7 +195,7 @@ test_in_addr(const int fd)
 		    sizeof(buf), buf, sizeof(buf) - 1,
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_COND");
 		    print_inet_diag_hostcond("AF_INET");
-		    printf("addr=%p}}",
+		    printf("addr=%p}",
 			   RTA_DATA(TEST_NLATTR_nla)
 			   + sizeof(op) + sizeof(cond)));
 
@@ -183,7 +206,7 @@ test_in_addr(const int fd)
 		    sizeof(buf), buf, sizeof(buf),
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_COND");
 		    print_inet_diag_hostcond("AF_INET");
-		    printf("addr=inet_addr(\"%s\")}}", address));
+		    printf("addr=inet_addr(\"%s\")}", address));
 }
 
 static void
@@ -215,7 +238,7 @@ test_in6_addr(const int fd)
 		    print_inet_diag_hostcond("AF_INET6");
 		    printf("addr=");
 		    print_quoted_hex(pattern, plen - sizeof(op) - sizeof(cond));
-		    printf("}}"));
+		    printf("}"));
 
 	TEST_NLATTR(fd, nlh0, hdrlen,
 		    init_inet_diag_req_v2, print_inet_diag_req_v2,
@@ -223,7 +246,7 @@ test_in6_addr(const int fd)
 		    sizeof(buf), buf, sizeof(buf) - 1,
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_COND");
 		    print_inet_diag_hostcond("AF_INET6");
-		    printf("addr=%p}}",
+		    printf("addr=%p}",
 			   RTA_DATA(TEST_NLATTR_nla)
 			   + sizeof(op) + sizeof(cond)));
 
@@ -234,7 +257,7 @@ test_in6_addr(const int fd)
 		    sizeof(buf), buf, sizeof(buf),
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_COND");
 		    print_inet_diag_hostcond("AF_INET6");
-		    printf("inet_pton(AF_INET6, \"%s\", &addr)}}", address6));
+		    printf("inet_pton(AF_INET6, \"%s\", &addr)}", address6));
 }
 
 static void
@@ -253,15 +276,14 @@ test_inet_diag_bc_dev_cond(const int fd)
 		    INET_DIAG_REQ_BYTECODE,
 		    sizeof(buf) - 1, buf, sizeof(buf) - 1,
 		    print_inet_diag_bc_op("INET_DIAG_BC_DEV_COND");
-		    print_quoted_hex(pattern, sizeof(ifindex) - 1);
-		    printf("}"));
+		    print_quoted_hex(pattern, sizeof(ifindex) - 1));
 
 	TEST_NLATTR(fd, nlh0, hdrlen,
 		    init_inet_diag_req_v2, print_inet_diag_req_v2,
 		    INET_DIAG_REQ_BYTECODE,
 		    sizeof(buf), buf, sizeof(buf) - 1,
 		    print_inet_diag_bc_op("INET_DIAG_BC_DEV_COND");
-		    printf("%p}", RTA_DATA(TEST_NLATTR_nla) + sizeof(op)));
+		    printf("%p", RTA_DATA(TEST_NLATTR_nla) + sizeof(op)));
 
 	memcpy(buf + sizeof(op), &ifindex, sizeof(ifindex));
 	TEST_NLATTR(fd, nlh0, hdrlen,
@@ -269,7 +291,7 @@ test_inet_diag_bc_dev_cond(const int fd)
 		    INET_DIAG_REQ_BYTECODE,
 		    sizeof(buf), buf, sizeof(buf),
 		    print_inet_diag_bc_op("INET_DIAG_BC_DEV_COND");
-		    printf(IFINDEX_LO_STR "}"));
+		    printf(IFINDEX_LO_STR));
 }
 
 static void
@@ -297,15 +319,14 @@ test_inet_diag_bc_s_le(const int fd)
 		    INET_DIAG_REQ_BYTECODE,
 		    plen, buf, plen,
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_LE");
-		    print_quoted_hex(buf + sizeof(op[0]), plen - sizeof(op[0]));
-		    printf("}"));
+		    print_quoted_hex(buf + sizeof(op[0]), plen - sizeof(op[0])));
 
 	TEST_NLATTR(fd, nlh0, hdrlen,
 		    init_inet_diag_req_v2, print_inet_diag_req_v2,
 		    INET_DIAG_REQ_BYTECODE,
 		    sizeof(buf), buf, sizeof(buf) - 1,
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_LE");
-		    printf("%p}", RTA_DATA(TEST_NLATTR_nla) + sizeof(op[0])));
+		    printf("%p", RTA_DATA(TEST_NLATTR_nla) + sizeof(op[0])));
 
 	memcpy(buf + sizeof(op[0]), &op[1], sizeof(op[1]));
 	TEST_NLATTR(fd, nlh0, hdrlen,
@@ -314,9 +335,11 @@ test_inet_diag_bc_s_le(const int fd)
 		    sizeof(buf), buf, sizeof(buf),
 		    print_inet_diag_bc_op("INET_DIAG_BC_S_LE");
 		    printf("{code=INET_DIAG_BC_DEV_COND");
-		    PRINT_FIELD_U(", ", op[1], yes);
-		    PRINT_FIELD_U(", ", op[1], no);
-		    printf("}}"));
+		    printf(", ");
+		    PRINT_FIELD_U(op[1], yes);
+		    printf(", ");
+		    PRINT_FIELD_U(op[1], no);
+		    printf("}"));
 };
 
 static void
@@ -340,15 +363,14 @@ test_inet_diag_bc_mark_cond(const int fd)
 		    INET_DIAG_REQ_BYTECODE,
 		    plen, buf, plen,
 		    print_inet_diag_bc_op("INET_DIAG_BC_MARK_COND");
-		    print_quoted_hex(buf + sizeof(op), plen - sizeof(op));
-		    printf("}"));
+		    print_quoted_hex(buf + sizeof(op), plen - sizeof(op)));
 
 	TEST_NLATTR(fd, nlh0, hdrlen,
 		    init_inet_diag_req_v2, print_inet_diag_req_v2,
 		    INET_DIAG_REQ_BYTECODE,
 		    sizeof(buf), buf, sizeof(buf) - 1,
 		    print_inet_diag_bc_op("INET_DIAG_BC_MARK_COND");
-		    printf("%p}", RTA_DATA(TEST_NLATTR_nla) + sizeof(op)));
+		    printf("%p", RTA_DATA(TEST_NLATTR_nla) + sizeof(op)));
 
 	memcpy(buf + sizeof(op), &markcond, sizeof(markcond));
 	TEST_NLATTR(fd, nlh0, hdrlen,
@@ -356,9 +378,11 @@ test_inet_diag_bc_mark_cond(const int fd)
 		    INET_DIAG_REQ_BYTECODE,
 		    sizeof(buf), buf, sizeof(buf),
 		    print_inet_diag_bc_op("INET_DIAG_BC_MARK_COND");
-		    PRINT_FIELD_U("{", markcond, mark);
-		    PRINT_FIELD_U(", ", markcond, mask);
-		    printf("}}"));
+		    printf("{");
+		    PRINT_FIELD_U(markcond, mark);
+		    printf(", ");
+		    PRINT_FIELD_U(markcond, mask);
+		    printf("}"));
 }
 
 static void
@@ -377,8 +401,29 @@ test_inet_diag_bc_nop(const int fd)
 		    sizeof(buf), buf, sizeof(buf),
 		    print_inet_diag_bc_op("INET_DIAG_BC_AUTO");
 		    print_quoted_hex(buf + sizeof(op),
-				     sizeof(buf) - sizeof(op));
-		    printf("}"));
+				     sizeof(buf) - sizeof(op)));
+}
+
+static void
+test_inet_diag_proto(const int fd)
+{
+	static const struct strval32 protos[] = {
+		{ 0, "IPPROTO_IP" },
+		{ 3, "0x3 /* IPPROTO_??? */" },
+		{ 6, "IPPROTO_TCP" },
+		{ 255, "IPPROTO_RAW" },
+		{ 256, "0x100 /* IPPROTO_??? */" },
+		{ 262, "IPPROTO_MPTCP" },
+		{ 0xcafeface, "0xcafeface /* IPPROTO_??? */" },
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(protos); i++) {
+		TEST_NLATTR(fd, nlh0, hdrlen,
+			    init_inet_diag_req_v2, print_inet_diag_req_v2,
+			    INET_DIAG_REQ_PROTOCOL,
+			    sizeof(uint32_t), &protos[i].val, sizeof(uint32_t),
+			    printf("%s", protos[i].str));
+	}
 }
 
 int
@@ -393,6 +438,7 @@ main(void)
 				sizeof(struct in6_addr) + DEFAULT_STRLEN);
 	fill_memory_ex(pattern, sizeof(pattern), 'a', 'z' - 'a' + 1);
 
+	test_unk_attrs(fd);
 	test_inet_diag_bc_op(fd);
 	test_inet_diag_bc_s_cond(fd);
 	test_in_addr(fd);
@@ -401,6 +447,7 @@ main(void)
 	test_inet_diag_bc_s_le(fd);
 	test_inet_diag_bc_mark_cond(fd);
 	test_inet_diag_bc_nop(fd);
+	test_inet_diag_proto(fd);
 
 	printf("+++ exited with 0 +++\n");
 	return 0;

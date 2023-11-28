@@ -1,9 +1,9 @@
 /*
  * Check decoding of oldfstat syscall.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined __NR_oldfstat && HAVE_STRUCT___OLD_KERNEL_STAT
+#if defined __NR_oldfstat && defined HAVE_STRUCT___OLD_KERNEL_STAT
 
 # define OLD_STAT 1
 # define TEST_SYSCALL_NR __NR_oldfstat

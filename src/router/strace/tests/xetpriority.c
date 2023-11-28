@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016-2020 The strace developers.
+ * Check decoding of getpriority and setpriority syscalls.
+ *
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,11 +11,9 @@
 #include "scno.h"
 #include "pidns.h"
 
-#if defined __NR_getpriority && defined __NR_setpriority
-
-# include <stdio.h>
-# include <sys/resource.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <sys/resource.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -45,9 +45,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_getpriority && _NR_setpriority")
-
-#endif

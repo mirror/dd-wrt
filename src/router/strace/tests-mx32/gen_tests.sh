@@ -1,7 +1,7 @@
 #!/bin/sh -efu
 #
-# Copyright (c) 2017 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2017-2018 The strace developers.
+# Copyright (c) 2017 Dmitry V. Levin <ldv@strace.io>
+# Copyright (c) 2017-2021 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -54,6 +54,17 @@ while read -r name arg0 args; do {
 		$hdr
 		set -- $args
 		. "\${srcdir=.}/${arg0#+}"
+		EOF
+		;;
+
+		# Tests that rely on syscall tampering require additional checks
+		# implemented in the scno_tamperng.sh.
+		-einject=*|--inject=*)
+		cat <<-EOF
+		$hdr
+		. "\${srcdir=.}/scno_tampering.sh"
+		run_strace $arg0 $args "../$name" > "\$EXP"
+		match_diff "\$LOG" "\$EXP"
 		EOF
 		;;
 

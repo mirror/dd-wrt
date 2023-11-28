@@ -2,8 +2,8 @@
  * Common definitions for Linux and XFS quota tests.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,15 +17,7 @@
 # include <stdio.h>
 # include "print_fields.h"
 
-# ifdef HAVE_LINUX_QUOTA_H
-/* Broken in CentOS 5: has extern spinlock_t dq_data_lock; declaration */
-#  include <linux/quota.h>
-# else
-#  include <linux/types.h>
-/* Broken in some new glibc versions: have Q_GETNEXTQUOTA definition but no
- * struct nextdqblk defined. Fixed in glibc-2.24-106-g4d72808. */
-#  include <sys/quota.h>
-# endif
+# include <linux/quota.h>
 
 # ifndef QCMD_CMD
 #  define QCMD_CMD(_val) ((unsigned) (_val) >> SUBCMDSHIFT)
@@ -34,10 +26,6 @@
 # ifndef QCMD_TYPE
 #  define QCMD_TYPE(_val) ((unsigned) (_val) & SUBCMDMASK)
 # endif /* !QCMD_TYPE */
-
-# ifndef PRJQUOTA
-#  define PRJQUOTA 2
-# endif
 
 typedef void (*print_cb)(long rc, void *addr, void *arg);
 

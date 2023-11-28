@@ -1,146 +1,248 @@
-strace (5.9-1) experimental; urgency=low
+strace (6.6-1) experimental; urgency=low
 
-  * strace 5.9 snapshot.
+  * strace 6.6 snapshot.
 
- -- Strace <strace-devel@lists.strace.io>  Thu, 24 Sep 2020 09:19:03 +0000
+ -- Strace <strace-devel@lists.strace.io>  Tue, 31 Oct 2023 09:29:47 +0000
+
+strace (6.5-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Fri, 01 Sep 2023 08:00:00 +0000
+
+strace (6.4-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 26 Jun 2023 12:00:00 +0000
+
+strace (6.3-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 08 May 2023 08:00:00 +0000
+
+strace (6.2-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Sun, 26 Feb 2023 08:00:00 +0000
+
+strace (6.1-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 12 Dec 2022 12:12:12 +0000
+
+strace (6.0-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Sat, 29 Oct 2022 08:00:00 +0000
+
+strace (5.19-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Fri, 12 Aug 2022 08:00:00 +0000
+
+strace (5.18-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Sat, 18 Jun 2022 18:00:00 +0000
+
+strace (5.17-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Sat, 26 Mar 2022 08:00:00 +0000
+
+strace (5.16-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 10 Jan 2022 08:00:00 +0000
+
+strace (5.15-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 01 Dec 2021 17:00:00 +0000
+
+strace (5.14-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Thu, 02 Sep 2021 08:00:00 +0000
+
+strace (5.13-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Sun, 18 Jul 2021 18:00:00 +0000
+
+strace (5.12-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 26 Apr 2021 08:00:00 +0000
+
+strace (5.11-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 17 Feb 2021 08:00:00 +0000
+
+strace (5.10-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 14 Dec 2020 08:00:00 +0000
+
+strace (5.9-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Dmitry V. Levin <ldv@strace.io>  Thu, 24 Sep 2020 08:00:00 +0000
 
 strace (5.8-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Thu, 06 Aug 2020 08:00:00 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Thu, 06 Aug 2020 08:00:00 +0000
 
 strace (5.7-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Mon, 01 Jun 2020 14:15:16 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 01 Jun 2020 14:15:16 +0000
 
 strace (5.6-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 07 Apr 2020 10:11:12 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 07 Apr 2020 10:11:12 +0000
 
 strace (5.5-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Thu, 06 Feb 2020 15:16:17 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Thu, 06 Feb 2020 15:16:17 +0000
 
 strace (5.4-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Thu, 28 Nov 2019 20:21:22 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Thu, 28 Nov 2019 20:21:22 +0000
 
 strace (5.3-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 25 Sep 2019 01:02:03 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 25 Sep 2019 01:02:03 +0000
 
 strace (5.2-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Fri, 12 Jul 2019 12:13:14 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Fri, 12 Jul 2019 12:13:14 +0000
 
 strace (5.1-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 22 May 2019 11:12:13 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 22 May 2019 11:12:13 +0000
 
 strace (5.0-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 19 Mar 2019 03:04:05 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 19 Mar 2019 03:04:05 +0000
 
 strace (4.26-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 26 Dec 2018 18:25:10 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 26 Dec 2018 18:25:10 +0000
 
 strace (4.25-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 30 Oct 2018 08:09:10 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 30 Oct 2018 08:09:10 +0000
 
 strace (4.24-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 14 Aug 2018 00:01:02 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 14 Aug 2018 00:01:02 +0000
 
 strace (4.23-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Thu, 14 Jun 2018 11:00:00 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Thu, 14 Jun 2018 11:00:00 +0000
 
 strace (4.22-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Thu, 05 Apr 2018 04:05:06 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Thu, 05 Apr 2018 04:05:06 +0000
 
 strace (4.21-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 13 Feb 2018 23:24:25 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 13 Feb 2018 23:24:25 +0000
 
 strace (4.20-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Mon, 13 Nov 2017 20:21:22 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 13 Nov 2017 20:21:22 +0000
 
 strace (4.19-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 05 Sep 2017 12:13:14 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 05 Sep 2017 12:13:14 +0000
 
 strace (4.18-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 05 Jul 2017 07:08:09 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 05 Jul 2017 07:08:09 +0000
 
 strace (4.17-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 24 May 2017 16:17:18 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 24 May 2017 16:17:18 +0000
 
 strace (4.16-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 14 Feb 2017 10:11:12 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 14 Feb 2017 10:11:12 +0000
 
 strace (4.15-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Wed, 14 Dec 2016 08:09:10 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Wed, 14 Dec 2016 08:09:10 +0000
 
 strace (4.14-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 04 Oct 2016 18:19:20 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 04 Oct 2016 18:19:20 +0000
 
 strace (4.13-1) unstable; urgency=medium
 
   * New upstream version.
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 26 Jul 2016 16:17:18 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 26 Jul 2016 16:17:18 +0000
 
 strace (4.12-3) unstable; urgency=medium
 
@@ -164,7 +266,7 @@ strace (4.12-1) unstable; urgency=low
     + fixed decoding of syscalls unknown to the kernel on s390/s390x,
       closes: #485979
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Tue, 31 May 2016 11:12:13 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Tue, 31 May 2016 11:12:13 +0000
 
 strace (4.11-1) unstable; urgency=low
 
@@ -256,7 +358,7 @@ strace (4.8-1) experimental; urgency=low
     + Added aarch64 support, closes: #693074
     + Fixed kernel release string parsing, closes: #702309
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Mon, 03 Jun 2013 15:16:17 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 03 Jun 2013 15:16:17 +0000
 
 strace (4.7-1) experimental; urgency=low
 
@@ -275,7 +377,7 @@ strace (4.6-1) unstable; urgency=low
     + Fixed stat64 decoding on mips, closes: #599028
     + Fixed misleading italics in the manual page, closes: #589323
 
- -- Dmitry V. Levin <ldv@altlinux.org>  Mon, 14 Mar 2011 15:16:17 +0000
+ -- Dmitry V. Levin <ldv@strace.io>  Mon, 14 Mar 2011 15:16:17 +0000
 
 strace (4.5.20-2.3) unstable; urgency=low
 
@@ -951,7 +1053,7 @@ strace (3.1-14) unstable; urgency=low
 
 strace (3.1-13) unstable; urgency=low
 
-  * Corrected error on PowerPC patch that broke other archictectures
+  * Corrected error on PowerPC patch that broke other architectures
     (Bug# 13837)
 
  -- Wichert Akkerman <wakkerma@debian.org>  Tue, 14 Oct 1997 15:41:29 +0200

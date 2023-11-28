@@ -2,20 +2,17 @@
  * Check decoding of unshare syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
 
-#ifdef __NR_unshare
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -36,14 +33,11 @@ main(void)
 		{ ARG_STR(0x81f8f07f) " /* CLONE_??? */" },
 	};
 
-	long rc;
-	unsigned int i;
-
-	rc = syscall(__NR_unshare, bogus_flags);
+	long rc = syscall(__NR_unshare, bogus_flags);
 	printf("unshare(%#llx /* CLONE_??? */) = %s\n",
 	       (unsigned long long) bogus_flags, sprintrc(rc));
 
-	for (i = 0; i < ARRAY_SIZE(unshare_flags); i++) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(unshare_flags); ++i) {
 		rc = syscall(__NR_unshare, unshare_flags[i].val);
 		printf("unshare(%s) = %s\n",
 		       unshare_flags[i].str, sprintrc(rc));
@@ -53,9 +47,3 @@ main(void)
 
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_unshare");
-
-#endif

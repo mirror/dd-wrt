@@ -1,8 +1,8 @@
 /*
  * Check decoding and dumping of sendto and recvfrom syscalls.
  *
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -18,9 +18,7 @@
 static void
 transpose(char *str, int len)
 {
-	int i;
-
-	for (i = 0; i < len / 2; ++i) {
+	for (int i = 0; i < len / 2; ++i) {
 		char c = str[i];
 		str[i] = str[len - 1 - i];
 		str[len - 1 - i] = c;

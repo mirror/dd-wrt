@@ -1,11 +1,15 @@
 #!/usr/bin/m4
 #
-# Copyright (c) 2017-2019 The strace developers.
+# Copyright (c) 2017-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 AC_DEFUN([st_DEMANGLE], [dnl
+
+libiberty_CPPFLAGS=
+libiberty_LDFLAGS=
+libiberty_LIBS=
 
 AC_ARG_WITH([libiberty],
 	    [AS_HELP_STRING([--with-libiberty],
@@ -19,9 +23,6 @@ AC_ARG_WITH([libiberty],
 	    [with_libiberty=check]
 )
 
-libiberty_CPPFLAGS=
-libiberty_LDFLAGS=
-libiberty_LIBS=
 use_libiberty=no
 
 AS_IF([test "x$with_libiberty" != xno],

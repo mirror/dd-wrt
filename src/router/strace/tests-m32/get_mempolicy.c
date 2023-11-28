@@ -1,7 +1,7 @@
 /*
  * Check decoding of get_mempolicy syscall.
  *
- * Copyright (c) 2016-2019 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2023 Dmitry V. Levin <ldv@strace.io>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,17 +10,15 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_get_mempolicy
+#include <stdio.h>
+#include <unistd.h>
 
-# include <stdio.h>
-# include <unistd.h>
+#include "xlat.h"
+#include "xlat/mpol_modes.h"
 
-# include "xlat.h"
-# include "xlat/mpol_modes.h"
-
-# define MAX_STRLEN 3
-# define NLONGS(n) ((n + 8 * sizeof(long) - 2) \
-		      / (8 * sizeof(long)))
+#define MAX_STRLEN 3
+#define NLONGS(n) ((n + 8 * sizeof(long) - 2) \
+		     / (8 * sizeof(long)))
 
 static void
 print_nodes(unsigned long maxnode)
@@ -29,23 +27,22 @@ print_nodes(unsigned long maxnode)
 		tail_alloc(sizeof(*nodemask) * NLONGS(maxnode));
 
 	if (syscall(__NR_get_mempolicy, 0, nodemask, maxnode, 0, 0)) {
-		printf("get_mempolicy(NULL, %p, %lu, NULL, 0) = -1 %s (%m)\n",
-		       nodemask, maxnode, errno2name());
+		printf("get_mempolicy(NULL, %p, %lu, NULL, 0) = %s\n",
+		       nodemask, maxnode, sprintrc(-1));
 		return;
 	}
 
 	printf("get_mempolicy(NULL, [");
 
 	unsigned int nlongs = NLONGS(maxnode);
-	unsigned int i;
-	for (i = 0; i < nlongs; ++i) {
+	for (unsigned int i = 0; i < nlongs; ++i) {
 		if (i)
 			fputs(", ", stdout);
 		if (i >= MAX_STRLEN) {
 			fputs("...", stdout);
 			break;
 		}
-		printf("%#0*lx", (int) sizeof(*nodemask) * 2 + 2, nodemask[i]);
+		printf("%#0*lx", (int) sizeof(*nodemask) * 2, nodemask[i]);
 	}
 
 	printf("], %lu, NULL, 0) = 0\n", maxnode);
@@ -66,10 +63,10 @@ main(void)
 	const unsigned long addr = (unsigned long) 0xfacefeeddeadbeefULL;
 	const unsigned long flags = -1U;
 	rc = syscall(__NR_get_mempolicy, mode, nodemask, maxnode, addr, flags);
-	printf("get_mempolicy(%p, %p, %lu, %#lx, %s|%#lx) = %ld %s (%m)\n",
+	printf("get_mempolicy(%p, %p, %lu, %#lx, %s|%#lx) = %s\n",
 	       mode, nodemask, maxnode, addr,
 	       "MPOL_F_NODE|MPOL_F_ADDR|MPOL_F_MEMS_ALLOWED",
-	       flags & ~7, rc, errno2name());
+	       flags & ~7, sprintrc(rc));
 
 	mode = tail_alloc(sizeof(*mode));
 
@@ -107,9 +104,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_get_mempolicy")
-
-#endif

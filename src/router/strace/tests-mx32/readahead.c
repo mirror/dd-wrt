@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2020 The strace developers.
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -62,14 +62,11 @@ static const unsigned long counts[] = {
 int
 main(void)
 {
-	unsigned i;
-	unsigned j;
-	unsigned k;
 	ssize_t rc;
 
-	for (i = 0; i < ARRAY_SIZE(fds); i++)
-		for (j = 0; j < ARRAY_SIZE(offsets); j++)
-			for (k = 0; k < ARRAY_SIZE(counts); k++) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(fds); ++i)
+		for (unsigned int j = 0; j < ARRAY_SIZE(offsets); ++j)
+			for (unsigned int k = 0; k < ARRAY_SIZE(counts); ++k) {
 				rc = readahead(fds[i], offsets[j], counts[k]);
 
 				printf("readahead(%d, %lld, %lu) = %s\n",

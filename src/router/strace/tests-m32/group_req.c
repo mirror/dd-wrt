@@ -1,8 +1,8 @@
 /*
  * Check decoding of MCAST_JOIN_GROUP/MCAST_LEAVE_GROUP.
  *
- * Copyright (c) 2015-2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2015-2017 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2017-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -39,7 +39,6 @@ main(void)
 {
 	TAIL_ALLOC_OBJECT_CONST_PTR(struct group_req, greq4);
 	TAIL_ALLOC_OBJECT_CONST_PTR(struct group_req, greq6);
-	unsigned int i;
 
 	greq6->gr_interface = greq4->gr_interface = ifindex_lo();
 	if (!greq4->gr_interface)
@@ -89,7 +88,7 @@ main(void)
 		}
 	};
 
-	for (i = 0; i < ARRAY_SIZE(opts); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(opts); ++i) {
 		/* optlen < 0, EINVAL */
 		set_opt(0, opts[i].level, opts[i].name, opts[i].val, -1U);
 		printf("setsockopt(0, %s, %s, %p, -1) = %s\n",

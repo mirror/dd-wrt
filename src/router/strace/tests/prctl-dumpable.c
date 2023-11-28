@@ -2,8 +2,8 @@
  * Check decoding of prctl PR_GET_DUMPABLE/PR_SET_DUMPABLE operations.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,8 +13,7 @@
 #include "scno.h"
 #include <linux/prctl.h>
 
-#if defined __NR_prctl && defined PR_GET_DUMPABLE && defined PR_SET_DUMPABLE \
- && !defined __ia64__
+#if !defined __ia64__
 
 # include <stdio.h>
 # include <unistd.h>
@@ -45,7 +44,7 @@ main(void)
 		"SUID_DUMP_ROOT",
 	};
 
-	unsigned int i;
+	prctl_marker();
 
 	prctl(PR_SET_DUMPABLE, 3);
 	printf("prctl(PR_SET_DUMPABLE, 0x3 /* SUID_DUMP_??? */) = %s\n",
@@ -64,7 +63,7 @@ main(void)
 	printf("prctl(PR_SET_DUMPABLE, %#llx /* SUID_DUMP_??? */) = %s\n",
 	       (unsigned long long) bogus_dumpable2, errstr);
 
-	for (i = 0; i < ARRAY_SIZE(args); ++i) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(args); ++i) {
 		prctl(PR_SET_DUMPABLE, i);
 		printf("prctl(PR_SET_DUMPABLE, %s) = %s\n", args[i], errstr);
 
@@ -83,7 +82,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("__NR_prctl && PR_GET_DUMPABLE && PR_SET_DUMPABLE"
-		    " && !__ia64__")
+SKIP_MAIN_UNDEFINED("!__ia64__")
 
 #endif

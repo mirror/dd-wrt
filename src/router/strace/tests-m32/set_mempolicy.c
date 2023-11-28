@@ -1,8 +1,8 @@
 /*
  * Check decoding of set_mempolicy syscall.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2022 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,14 +11,12 @@
 #include "tests.h"
 #include "scno.h"
 
-#ifdef __NR_set_mempolicy
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-# include <stdio.h>
-# include <string.h>
-# include <unistd.h>
-
-# define MAX_STRLEN 3
-# define NLONGS(n) ((n + 8 * sizeof(long) - 2) \
+#define MAX_STRLEN 3
+#define NLONGS(n) ((n + 8 * sizeof(long) - 2) \
 		      / (8 * sizeof(long)))
 
 static const char *errstr;
@@ -39,13 +37,13 @@ k_set_mempolicy(const unsigned int mode,
 	return rc;
 }
 
-# if XLAT_RAW
-#  define out_str	raw
-# elif XLAT_VERBOSE
-#  define out_str	verbose
-# else
-#  define out_str	abbrev
-# endif
+#if XLAT_RAW
+# define out_str	raw
+#elif XLAT_VERBOSE
+# define out_str	verbose
+#else
+# define out_str	abbrev
+#endif
 
 static struct {
 	unsigned int val;
@@ -68,24 +66,33 @@ static struct {
 	{ ARG_STR(0x4),
 	  "0x4 /* MPOL_LOCAL */",
 	  "MPOL_LOCAL" },
+	{ ARG_STR(0x5),
+	  "0x5 /* MPOL_PREFERRED_MANY */",
+	  "MPOL_PREFERRED_MANY" },
 	{ ARG_STR(0x8000),
 	  "0x8000 /* MPOL_DEFAULT|MPOL_F_STATIC_NODES */",
 	  "MPOL_DEFAULT|MPOL_F_STATIC_NODES" },
 	{ ARG_STR(0x4001),
 	  "0x4001 /* MPOL_PREFERRED|MPOL_F_RELATIVE_NODES */",
 	  "MPOL_PREFERRED|MPOL_F_RELATIVE_NODES" },
-	{ ARG_STR(0xc002),
-	  "0xc002 /* MPOL_BIND|MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES */",
-	  "MPOL_BIND|MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES" },
-	{ ARG_STR(0x5),
-	  "0x5 /* MPOL_??? */",
-	  "0x5 /* MPOL_??? */" },
-	{ ARG_STR(0xffff3fff),
-	  "0xffff3fff /* MPOL_??? */",
-	  "0xffff3fff /* MPOL_??? */" },
+	{ ARG_STR(0x2002),
+	  "0x2002 /* MPOL_BIND|MPOL_F_NUMA_BALANCING */",
+	  "MPOL_BIND|MPOL_F_NUMA_BALANCING" },
+	{ ARG_STR(0xe003),
+	  "0xe003 /* MPOL_INTERLEAVE|MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES"
+		"|MPOL_F_NUMA_BALANCING */",
+	  "MPOL_INTERLEAVE|MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES"
+		"|MPOL_F_NUMA_BALANCING" },
+	{ ARG_STR(0x6),
+	  "0x6 /* MPOL_??? */",
+	  "0x6 /* MPOL_??? */" },
+	{ ARG_STR(0xffff1fff),
+	  "0xffff1fff /* MPOL_??? */",
+	  "0xffff1fff /* MPOL_??? */" },
 	{ ARG_STR(0xffffffff),
-	  "0xffffffff /* MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES|0xffff3fff */",
-	  "MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES|0xffff3fff" }
+	  "0xffffffff /* MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES"
+		"|MPOL_F_NUMA_BALANCING|0xffff1fff */",
+	  "MPOL_F_STATIC_NODES|MPOL_F_RELATIVE_NODES|MPOL_F_NUMA_BALANCING|0xffff1fff" }
 };
 
 static void
@@ -107,8 +114,7 @@ print_nodes(const unsigned long maxnode, unsigned int offset)
 
 	if (nlongs) {
 		putc('[', stdout);
-		unsigned int i;
-		for (i = 0; i < nlongs + offset; ++i) {
+		for (unsigned int i = 0; i < nlongs + offset; ++i) {
 			if (i)
 				fputs(", ", stdout);
 			if (i < nlongs) {
@@ -116,7 +122,7 @@ print_nodes(const unsigned long maxnode, unsigned int offset)
 					fputs("...", stdout);
 					break;
 				}
-				printf("%#0*lx", (int) sizeof(long) * 2 + 2,
+				printf("%#0*lx", (int) sizeof(long) * 2,
 				       nodemask[i]);
 			} else {
 				printf("... /* %p */", nodemask + i);
@@ -190,9 +196,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_set_mempolicy")
-
-#endif

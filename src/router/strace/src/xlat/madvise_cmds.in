@@ -1,0 +1,32 @@
+#sorted
+MADV_NORMAL		0
+MADV_RANDOM		1
+MADV_SEQUENTIAL		2
+MADV_WILLNEED		3
+
+#if defined __alpha__
+MADV_DONTNEED		6
+#else
+MADV_DONTNEED		4
+#endif
+
+MADV_FREE		8
+MADV_REMOVE		9
+MADV_DONTFORK		10
+MADV_DOFORK		11
+/* MADV_MERGEABLE	12 - see madvise_hppa_generic_cmds */
+/* MADV_UNMERGEABLE	13 - see madvise_hppa_generic_cmds */
+/* MADV_HUGEPAGE	14 - see madvise_hppa_generic_cmds */
+/* MADV_NOHUGEPAGE	15 - see madvise_hppa_generic_cmds */
+/* MADV_DONTDUMP	16 - see madvise_hppa_generic_cmds */
+/* MADV_DODUMP		17 - see madvise_hppa_generic_cmds */
+/* MADV_WIPEONFORK	18 - see madvise_hppa_generic_cmds */
+/* MADV_KEEPONFORK	19 - see madvise_hppa_generic_cmds */
+MADV_COLD		20
+MADV_PAGEOUT		21
+MADV_POPULATE_READ	22
+MADV_POPULATE_WRITE	23
+MADV_DONTNEED_LOCKED	24
+/* MADV_COLLAPSE	25 - see madvise_hppa_generic_cmds */
+MADV_HWPOISON		100
+MADV_SOFT_OFFLINE	101

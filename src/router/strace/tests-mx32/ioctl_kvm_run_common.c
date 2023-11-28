@@ -4,7 +4,7 @@
  *
  * kvmtest.c author: Josh Triplett <josh@joshtriplett.org>
  * Copyright (c) 2015 Intel Corporation
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2023 The strace developers.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -48,6 +48,7 @@
 #  define KVM_MAX_CPUID_ENTRIES 80
 # endif
 
+# include "xmalloc.h"
 # include "xlat.h"
 # include "xlat/kvm_cpuid_flags.h"
 
@@ -254,16 +255,13 @@ static int
 vcpu_dev_should_have_cpuid(int fd)
 {
 	int r = 0;
-	char *filename = NULL;
+	char *proc = xasprintf("/proc/self/fd/%u", fd);
 	char buf[sizeof(vcpu_dev)];
 
-	if (asprintf(&filename, "/proc/%d/fd/%d", getpid(), fd) < 0)
-		error_msg_and_fail("asprintf");
-
-	if (readlink(filename, buf, sizeof(buf)) == sizeof(buf) - 1
+	if (readlink(proc, buf, sizeof(buf)) == sizeof(buf) - 1
 	    && (memcmp(buf, vcpu_dev, sizeof(buf) - 1) == 0))
 		r = 1;
-	free(filename);
+	free(proc);
 	return r;
 }
 
@@ -378,7 +376,7 @@ main(void)
 
 	cpuid->nent = 0;
 	ioctl(kvm, KVM_GET_SUPPORTED_CPUID, cpuid);
-	printf("ioctl(%d<%s>, KVM_GET_SUPPORTED_CPUID, %p) = -1 E2BIG (%m)\n",
+	printf("ioctl(%d<%s>, KVM_GET_SUPPORTED_CPUID, %p)" RVAL_E2BIG,
 	       kvm, dev, cpuid);
 
 	cpuid->nent = cpuid_nent;
@@ -395,7 +393,7 @@ main(void)
 	print_cpuid_ioctl(vcpu_fd, vcpu_dev, "KVM_SET_CPUID2", cpuid);
 
 	ioctl(vcpu_fd, KVM_SET_CPUID2, NULL);
-	printf("ioctl(%d<%s>, KVM_SET_CPUID2, NULL) = -1 EFAULT (%m)\n",
+	printf("ioctl(%d<%s>, KVM_SET_CPUID2, NULL)" RVAL_EFAULT,
 	       vcpu_fd, vcpu_dev);
 
 	run_kvm(vcpu_fd, run, mmap_size, mem);

@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016-2019 The strace developers.
+ * Check decoding of swapon and swapoff tests.
+ *
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,11 +10,9 @@
 #include "tests.h"
 #include "scno.h"
 
-#if defined __NR_swapon && defined __NR_swapoff
-
-# include <stdio.h>
-# include <sys/swap.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <sys/swap.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -21,38 +21,32 @@ main(void)
 	long rc;
 
 	rc = syscall(__NR_swapon, sample, 0);
-	printf("swapon(\"%s\", %s) = %ld %s (%m)\n",
-	       sample, "0", rc, errno2name());
+	printf("swapon(\"%s\", %s) = %s\n",
+	       sample, "0", sprintrc(rc));
 
 	rc = syscall(__NR_swapon, sample, 42);
-	printf("swapon(\"%s\", %s) = %ld %s (%m)\n",
-	       sample, "42", rc, errno2name());
+	printf("swapon(\"%s\", %s) = %s\n",
+	       sample, "42", sprintrc(rc));
 
 	rc = syscall(__NR_swapon, sample, SWAP_FLAG_PREFER);
-	printf("swapon(\"%s\", %s) = %ld %s (%m)\n",
-	       sample, "SWAP_FLAG_PREFER|0", rc, errno2name());
+	printf("swapon(\"%s\", %s) = %s\n",
+	       sample, "SWAP_FLAG_PREFER|0", sprintrc(rc));
 
 	rc = syscall(__NR_swapon, sample, SWAP_FLAG_PREFER | 42);
-	printf("swapon(\"%s\", %s) = %ld %s (%m)\n",
-	       sample, "SWAP_FLAG_PREFER|42", rc, errno2name());
+	printf("swapon(\"%s\", %s) = %s\n",
+	       sample, "SWAP_FLAG_PREFER|42", sprintrc(rc));
 
 	rc = syscall(__NR_swapon, sample, -1L);
-	printf("swapon(\"%s\", %s) = %ld %s (%m)\n",
+	printf("swapon(\"%s\", %s) = %s\n",
 	       sample,
 	       "SWAP_FLAG_PREFER|SWAP_FLAG_DISCARD|SWAP_FLAG_DISCARD_ONCE"
 	       "|SWAP_FLAG_DISCARD_PAGES|0xfff80000|32767",
-	       rc, errno2name());
+	       sprintrc(rc));
 
 	rc = syscall(__NR_swapoff, sample);
-	printf("swapoff(\"%s\") = %ld %s (%m)\n",
-	       sample, rc, errno2name());
+	printf("swapoff(\"%s\") = %s\n",
+	       sample, sprintrc(rc));
 
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_swapon && __NR_swapoff")
-
-#endif

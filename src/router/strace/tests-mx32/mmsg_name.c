@@ -2,8 +2,8 @@
  * Check decoding of msg_name* fields of struct msghdr array argument
  * of sendmmsg and recvmmsg syscalls.
  *
- * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2016-2023 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -52,7 +52,7 @@ print_msghdr(const struct msghdr *const msg, const int user_msg_namelen)
 	}
 	printf(", msg_namelen=");
 	if (user_msg_namelen != (int) msg->msg_namelen) {
-		printf("%d->", user_msg_namelen);
+		printf("%d => ", user_msg_namelen);
 	}
 	printf("%d, msg_iov=[{iov_base=\"%c\", iov_len=1}]"
 	       ", msg_iovlen=1, msg_controllen=0, msg_flags=0}",
@@ -68,9 +68,9 @@ test_mmsg_name(const int send_fd, const int recv_fd)
 	struct iovec *const send_iov = tail_alloc(sizeof(*send_iov) * IOV_MAX1);
 	struct mmsghdr *const send_mh = tail_alloc(sizeof(*send_mh) * IOV_MAX1);
 
-	int i, rc;
+	int rc;
 
-	for (i = 0; i < IOV_MAX1; ++i) {
+	for (int i = 0; i < IOV_MAX1; ++i) {
 		int sun_len = i + 1 > (int) sizeof(send_addr[i].sun_path)
 				    ? (int) sizeof(send_addr[i].sun_path)
 				    : i + 1;
@@ -96,7 +96,7 @@ test_mmsg_name(const int send_fd, const int recv_fd)
 	int saved_errno = errno;
 
 	printf("sendmmsg(%d, [", send_fd);
-	for (i = 0; i < IOV_MAX1; ++i) {
+	for (int i = 0; i < IOV_MAX1; ++i) {
 		if (i)
 			printf(", ");
 		if (i >= IOV_MAX
@@ -112,10 +112,10 @@ test_mmsg_name(const int send_fd, const int recv_fd)
 		printf("}");
 	}
 	errno = saved_errno;
-	printf("], %u, MSG_DONTWAIT) = %d %s (%m)\n",
-	       IOV_MAX1, rc, errno2name());
+	printf("], %u, MSG_DONTWAIT) = %s\n",
+	       IOV_MAX1, sprintrc(rc));
 
-	for (i = 0; i < IOV_MAX1; ++i) {
+	for (int i = 0; i < IOV_MAX1; ++i) {
 		send_mh[i].msg_hdr.msg_name = 0;
 		send_mh[i].msg_hdr.msg_namelen = 0;
 	}
@@ -132,15 +132,15 @@ test_mmsg_name(const int send_fd, const int recv_fd)
 	printf("sendmmsg(-1, [{msg_hdr=");
 	print_msghdr(&send_mh[IOV_MAX].msg_hdr, 0);
 	errno = saved_errno;
-	printf("}, ... /* %p */], %u, MSG_DONTWAIT) = %d %s (%m)\n",
-	       &send_mh[IOV_MAX1], 2, rc, errno2name());
+	printf("}, ... /* %p */], %u, MSG_DONTWAIT) = %s\n",
+	       &send_mh[IOV_MAX1], 2, sprintrc(rc));
 
 	rc = send_mmsg(send_fd, send_mh, IOV_MAX1, MSG_DONTWAIT);
 	if (rc < 0)
 		perror_msg_and_skip("sendmmsg");
 
 	printf("sendmmsg(%d, [", send_fd);
-	for (i = 0; i < IOV_MAX1; ++i) {
+	for (int i = 0; i < IOV_MAX1; ++i) {
 		if (i)
 			printf(", ");
 		if (i >= IOV_MAX
@@ -163,7 +163,7 @@ test_mmsg_name(const int send_fd, const int recv_fd)
 	struct iovec *const recv_iov = tail_alloc(sizeof(*recv_iov) * IOV_MAX1);
 	struct mmsghdr *const recv_mh = tail_alloc(sizeof(*recv_mh) * IOV_MAX1);
 
-	for (i = 0; i < IOV_MAX1; ++i) {
+	for (int i = 0; i < IOV_MAX1; ++i) {
 		recv_iov[i].iov_base = &recv_buf[i];
 		recv_iov[i].iov_len = sizeof(*recv_buf);
 
@@ -181,7 +181,7 @@ test_mmsg_name(const int send_fd, const int recv_fd)
 		perror_msg_and_skip("recvmmsg");
 
 	printf("recvmmsg(%d, [", recv_fd);
-	for (i = 0; i < rc; ++i) {
+	for (int i = 0; i < rc; ++i) {
 		if (i)
 			printf(", ");
 #if !VERBOSE

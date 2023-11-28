@@ -2,9 +2,10 @@
  * Test PID namespace translation
  *
  * Copyright (c) 2020 Ákos Uzonyi <uzonyi.akos@gmail.com>
+ * Copyright (c) 2020-2022 The strace developers.
  * All rights reserved.
  *
- * SPDX-License-Identifier: LGPL-2.1-or-later
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef STRACE_PIDNS_H
 # define STRACE_PIDNS_H
@@ -49,7 +50,7 @@ void check_ns_ioctl(void);
  * processes. These child processes are in a new PID namespace with different
  * PID configurations (group leader, session leader, ...). If any child
  * terminates with nonzero exit status the test is failed. Otherwise the test is
- * succesful, and the parent process exits with 0.
+ * successful, and the parent process exits with 0.
  */
 void pidns_test_init(void);
 

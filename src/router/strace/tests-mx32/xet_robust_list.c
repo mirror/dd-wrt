@@ -1,6 +1,8 @@
 /*
- * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2020 The strace developers.
+ * Check decoding of get_robust_list and set_robust_list syscalls.
+ *
+ * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@strace.io>
+ * Copyright (c) 2015-2021 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,10 +12,8 @@
 #include "scno.h"
 #include "pidns.h"
 
-#if defined __NR_get_robust_list && defined __NR_set_robust_list
-
-# include <stdio.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <unistd.h>
 
 static const char *
 sprintaddr(void *addr)
@@ -38,6 +38,11 @@ main(void)
 	const long long_pid = (unsigned long) (0xdeadbeef00000000LL | pid);
 	TAIL_ALLOC_OBJECT_CONST_PTR(void *, p_head);
 	TAIL_ALLOC_OBJECT_CONST_PTR(size_t, p_len);
+
+	/* It has dual-use as a marker of the beginning of the test output */
+	long rc = syscall(__NR_get_robust_list, 0, 0, 0);
+	pidns_print_leader();
+	printf("get_robust_list(0, NULL, NULL) = %s\n", sprintrc(rc));
 
 	if (syscall(__NR_get_robust_list, long_pid, p_head, p_len))
 		perror_msg_and_skip("get_robust_list");
@@ -64,9 +69,3 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
-
-#else
-
-SKIP_MAIN_UNDEFINED("__NR_get_robust_list && __NR_set_robust_list")
-
-#endif
