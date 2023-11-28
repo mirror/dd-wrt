@@ -35,7 +35,8 @@ export LIBUNWIND_LIB = -lunwind-aarch64
 endif
 
 
-strace-configure: libunwind
+strace-configure:
+	make -C $(TOP)/libunwind
 	cd strace && ./configure \
 		--prefix=/usr \
 		--disable-gcc-Werror \
