@@ -87,7 +87,6 @@
 #include "array.h"
 #include "buffer.h"
 #include "chunk.h"
-#include "fdevent.h"
 #include "http_header.h"
 #include "log.h"
 
@@ -823,7 +822,7 @@ static int create_response_rfc_6455(handler_ctx *hctx) {
     buffer_append_base64_encode(value, sha_digest, SHA_DIGEST_LENGTH, BASE64_STANDARD);
   }
 
-    if (hctx->frame.type == MOD_WEBSOCKET_FRAME_TYPE_BIN)
+    if (1 == hctx->subproto)
         http_header_response_set(r, HTTP_HEADER_OTHER,
                                  CONST_STR_LEN("Sec-WebSocket-Protocol"),
                                  CONST_STR_LEN("binary"));

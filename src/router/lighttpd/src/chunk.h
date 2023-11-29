@@ -49,7 +49,6 @@ typedef struct chunkqueue {
 
 	off_t bytes_in, bytes_out;
 
-	const array *tempdirs;
 	off_t upload_temp_file_size;
 	unsigned int tempdir_idx;
 } chunkqueue;
@@ -81,7 +80,10 @@ void chunkqueue_set_tempdirs_default_reset (void);
 __attribute_cold__
 void chunkqueue_set_tempdirs_default (const array *tempdirs, off_t upload_temp_file_size);
 
-void chunkqueue_set_tempdirs(chunkqueue * restrict cq, const array * restrict tempdirs, off_t upload_temp_file_size);
+void chunkqueue_set_tempdirs(chunkqueue * restrict cq, off_t upload_temp_file_size);
+
+__attribute_cold__
+const char *chunkqueue_env_tmpdir(void);
 
 void chunkqueue_append_file(chunkqueue * restrict cq, const buffer * restrict fn, off_t offset, off_t len); /* copies "fn" */
 void chunkqueue_append_file_fd(chunkqueue * restrict cq, const buffer * restrict fn, int fd, off_t offset, off_t len); /* copies "fn" */
@@ -162,7 +164,7 @@ ssize_t chunkqueue_write_chunk_to_pipe (int fd, chunkqueue * restrict cq, log_er
 int chunkqueue_peek_data (chunkqueue *cq, char **data, uint32_t *dlen, log_error_st * restrict errh);
 int chunkqueue_read_data (chunkqueue *cq, char *data, uint32_t dlen, log_error_st * restrict errh);
 
-buffer * chunkqueue_read_squash (chunkqueue * restrict cq, log_error_st * restrict errh);
+chunk * chunkqueue_read_squash (chunkqueue * restrict cq, log_error_st * restrict errh);
 
 __attribute_pure__
 __attribute_nonnull__()

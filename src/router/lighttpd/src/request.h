@@ -43,6 +43,8 @@ typedef struct request_config {
     unsigned int error_intercept:1;
 
     unsigned int h2proto:2; /*(global setting copied for convenient access)*/
+    unsigned int http_pathinfo:1;
+    unsigned int http_dummy:2; /*(padding)*/
 
     /* debug */
     unsigned int log_request_handling:1;
@@ -222,6 +224,22 @@ request_set_state_error(request_st * const r, const request_state_t state)
 {
     request_set_state(r, state);
 }
+
+/* internal developer use; inlined in macro to log file and line of call site */
+#ifdef LIGHTTPD_DEBUG_REQUEST_SET_STATE
+#undef request_set_state
+#define request_set_state(r, n) do { \
+    (r)->state = (n); \
+    if ((r)->conf.log_state_handling) { \
+        buffer * const tb = (r)->tmp_buf; \
+        buffer_clear(tb); \
+        http_request_state_append(tb, (r)->state); \
+        log_error((r)->conf.errh, __FILE__, __LINE__, \
+          "fd:%d id:%d state:%s", (r)->con->fd, (r)->x.h2.id, tb->ptr); \
+    } \
+} while (0)
+#define request_set_state_error(r, n) request_set_state((r),(n))
+#endif
 
 
 typedef struct http_header_parse_ctx {

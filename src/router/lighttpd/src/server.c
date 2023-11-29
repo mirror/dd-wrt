@@ -913,10 +913,18 @@ static void show_features (void) {
 #else
       "\t- PAM support\n"
 #endif
+#if !defined(HAVE_SYS_INOTIFY_H) && !defined(HAVE_KQUEUE)
 #ifdef HAVE_FAM_H
       "\t+ FAM support\n"
 #else
       "\t- FAM support\n"
+#endif
+#endif
+#ifdef HAVE_SYS_INOTIFY_H
+      "\t+ inotify support\n"
+#endif
+#ifdef HAVE_KQUEUE
+      "\t+ kqueue support\n"
 #endif
 #ifdef HAVE_LUA_H
       "\t+ LUA support\n"
@@ -1397,6 +1405,7 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 	int i_am_root = 0;
 #ifdef HAVE_FORK
 	int parent_pipe_fd = -1;
+	const char *conffile = NULL;
 #endif
 
 #ifdef HAVE_GETUID
@@ -1430,6 +1439,9 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 			if (config_read(srv, optarg)) {
 				return -1;
 			}
+#ifdef HAVE_FORK
+			conffile = optarg;
+#endif
 			break;
 		case 'm':
 			srv->srvconf.modules_dir = optarg;
@@ -1868,6 +1880,18 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 #ifdef HAVE_FORK
 	/* network is up, let's daemonize ourself */
 	if (0 == srv->srvconf.dont_daemonize && 0 == graceful_restart) {
+		if (conffile && *conffile != '/'
+		    && (conffile[0] != '-' || conffile[1] != '\0')/*(special-case "-")*/
+		   #if defined(_WIN32)
+                    && *conffile != '\\'
+                    && conffile[0] && conffile[1] != ':'
+		   #endif
+		    /*(might perform similar checks on srv->srvconf.modules_dir)*/
+		    ) {
+			log_error(srv->errh, __FILE__, __LINE__,
+			  "(warning) daemonizing without absolute path command line args"
+			  " (graceful restart may fail)");
+		}
 		parent_pipe_fd = daemonize();
 	}
 #endif

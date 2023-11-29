@@ -52,26 +52,27 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define compare(i,j) ((i)-(j))
+#define compare(i,j) ((int)(((unsigned int)i)-((unsigned int)j)))
 /* This is the comparison.                                       */
 /* Returns <0 if i<j, =0 if i=j, and >0 if i>j                   */
+/* (cast to unsigned int for underflow/overflow defined behavior)*/
 
 /* Splay using the key i (which may or may not be in the tree.)
  * The starting root is t, and the tree used is defined by rat
  */
-splay_tree * splaytree_splay (splay_tree *t, int i) {
+__attribute_noinline__
+__attribute_nonnull__()
+__attribute_returns_nonnull__
+splay_tree * splaytree_splay_nonnull (splay_tree *t, int i) {
     splay_tree N, *l, *r, *y;
-    int comp;
 
-    if (t == NULL) return t;
     N.left = N.right = NULL;
     l = r = &N;
 
     for (;;) {
-        comp = compare(i, t->key);
-        if (comp < 0) {
+        if (i < t->key) {
             if (t->left == NULL) break;
-            if (compare(i, t->left->key) < 0) {
+            if (i < t->left->key) {
                 y = t->left;                           /* rotate right */
                 t->left = y->right;
                 y->right = t;
@@ -81,9 +82,9 @@ splay_tree * splaytree_splay (splay_tree *t, int i) {
             r->left = t;                               /* link right */
             r = t;
             t = t->left;
-        } else if (comp > 0) {
+        } else if (i > t->key) {
             if (t->right == NULL) break;
-            if (compare(i, t->right->key) > 0) {
+            if (i > t->right->key) {
                 y = t->right;                          /* rotate left */
                 t->right = y->left;
                 y->left = t;
@@ -106,22 +107,14 @@ splay_tree * splaytree_splay (splay_tree *t, int i) {
     return t;
 }
 
-splay_tree * splaytree_insert(splay_tree * t, int i, void *data) {
-/* Insert key i into the tree t, if it is not already there. */
+splay_tree * splaytree_insert_splayed(splay_tree * t, int i, void *data) {
+/* Insert key i into (already) splayed tree t.               */
 /* Return a pointer to the resulting tree.                   */
-    splay_tree * new;
-
-    if (t != NULL) {
-	t = splaytree_splay(t, i);
-	if (compare(i, t->key)==0) {
-	    return t;  /* it's already there */
-	}
-    }
-    new = (splay_tree *) malloc (sizeof (splay_tree));
+    splay_tree * const new = (splay_tree *) malloc (sizeof (splay_tree));
     assert(new);
     if (t == NULL) {
 	new->left = new->right = NULL;
-    } else if (compare(i, t->key) < 0) {
+    } else if (i < t->key) {
 	new->left = t->left;
 	new->right = t;
 	t->left = NULL;
@@ -135,22 +128,32 @@ splay_tree * splaytree_insert(splay_tree * t, int i, void *data) {
     return new;
 }
 
+splay_tree * splaytree_insert(splay_tree * t, int i, void *data) {
+/* Insert key i into the tree t, if it is not already there. */
+/* Return a pointer to the resulting tree.                   */
+    return (t != NULL && (t = splaytree_splay_nonnull(t, i))->key == i)
+      ? t
+      : splaytree_insert_splayed(t, i, data);
+}
+
+__attribute_noinline__
+__attribute_nonnull__()
+splay_tree * splaytree_delete_splayed_node(splay_tree *t) {
+/* Deletes (already) splayed node at the root of tree.  */
+/* Return a pointer to the resulting tree.              */
+    splay_tree * x = t->right;
+    if (t->left != NULL) {
+        x = splaytree_splay_nonnull(t->left, t->key);
+	x->right = t->right;
+    }
+    free(t);
+    return x;
+}
+
 splay_tree * splaytree_delete(splay_tree *t, int i) {
 /* Deletes i from the tree if it's there.               */
 /* Return a pointer to the resulting tree.              */
-    splay_tree * x;
-    if (t==NULL) return NULL;
-    t = splaytree_splay(t, i);
-    if (compare(i, t->key) == 0) {               /* found it */
-	if (t->left == NULL) {
-	    x = t->right;
-	} else {
-	    x = splaytree_splay(t->left, i);
-	    x->right = t->right;
-	}
-	free(t);
-	return x;
-    } else {
-	return t;                         /* It wasn't there */
-    }
+    return (t != NULL && (t = splaytree_splay_nonnull(t, i))->key == i)
+      ? splaytree_delete_splayed_node(t)
+      : t;
 }

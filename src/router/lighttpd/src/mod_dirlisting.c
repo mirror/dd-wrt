@@ -19,6 +19,7 @@
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "chunk.h"
 #include "fdevent.h"
 #include "http_chunk.h"
 #include "http_etag.h"
@@ -142,6 +143,7 @@ typedef struct {
 static int dirlist_max_in_progress;
 
 
+__attribute_returns_nonnull__
 static handler_ctx * mod_dirlisting_handler_ctx_init (plugin_data * const p) {
     handler_ctx *hctx = ck_calloc(1, sizeof(*hctx));
   #ifdef _WIN32
@@ -633,8 +635,10 @@ static void http_list_directory_include_file(request_st * const r, const handler
         buffer_clear(out);
         const int fd = sce->fd;
         ssize_t rd;
+        off_t off = 0;
         char buf[8192];
-        while ((rd = read(fd, buf, sizeof(buf))) > 0) {
+        while ((rd = chunk_file_pread(fd, buf, sizeof(buf), off)) > 0) {
+            off += rd;
             buffer_append_string_encoded(out, buf, (size_t)rd, ENCODING_MINIMAL_XML);
             if (out == tb) {
                 if (0 != chunkqueue_append_mem_to_tempfile(cq,
@@ -652,6 +656,25 @@ static void http_list_directory_include_file(request_st * const r, const handler
     else {
         (void)http_chunk_append_file_ref(r, sce);
     }
+}
+
+static void http_dirlist_link (request_st * const r, const buffer *b, const char *params, size_t plen) {
+    /*(params must be at least ">" to close Link url-reference)*/
+    buffer * const tb = r->tmp_buf;
+    buffer_clear(tb);
+    buffer_append_str3(tb, CONST_STR_LEN("<"), BUF_PTR_LEN(b), params, plen);
+    http_header_response_insert(r, HTTP_HEADER_LINK,
+                                CONST_STR_LEN("Link"),
+                                BUF_PTR_LEN(tb));
+}
+
+static void http_dirlist_auto_layout_early_hints (request_st * const r, const plugin_data * const p) {
+    if (p->conf.external_css)
+        http_dirlist_link(r, p->conf.external_css,
+          CONST_STR_LEN(">; rel=\"preload\"; as=\"style\""));
+    if (p->conf.external_js)
+        http_dirlist_link(r, p->conf.external_js,
+          CONST_STR_LEN(">; rel=\"preload\"; as=\"script\""));
 }
 
 /* portions copied from mod_status
@@ -1450,11 +1473,29 @@ URIHANDLER_FUNC(mod_dirlisting_subrequest_start) {
 	}
   #endif
 
-	/* TODO: add option/mechanism to enable json output */
   #if 0 /* XXX: ??? might this be enabled accidentally by clients ??? */
+	/* XXX: would have to add "Vary: Accept" response header, too */
 	const buffer * const vb =
 	  http_header_request_get(r, HTTP_HEADER_ACCEPT, CONST_STR_LEN("Accept"));
 	p->conf.json = (vb && strstr(vb->ptr, "application/json")); /*(coarse)*/
+	if (p->conf.json) p->conf.auto_layout = 0;
+  #else
+	/* check URL for /<path>/?json to enable json output */
+	if (buffer_clen(&r->uri.query) == sizeof("json")-1
+	    && 0 == memcmp(r->uri.query.ptr, CONST_STR_LEN("json")-1)) {
+	  #if 0
+		/* streaming response not set here for mod_deflate (which
+		 * currently does not compress incomlete streaming responses),
+		 * since json response is generally highly compressible.
+		 * Admin should enable streaming response in lighttpd.conf,
+		 * if desired. */
+		if (!(r->conf.stream_response_body
+		      & (FDEVENT_STREAM_RESPONSE|FDEVENT_STREAM_RESPONSE_BUFMIN)))
+			r->conf.stream_response_body |= FDEVENT_STREAM_RESPONSE;
+	  #endif
+		p->conf.json = 1;
+		p->conf.auto_layout = 0;
+	}
   #endif
 
 	if (p->conf.cache) {
@@ -1510,10 +1551,25 @@ URIHANDLER_FUNC(mod_dirlisting_subrequest_start) {
 		r->http_status = 200;
 		r->resp_body_started = 1;
 	}
+	else if (p->conf.auto_layout)
+		http_dirlist_auto_layout_early_hints(r, p);
 
 	r->plugin_ctx[p->id] = hctx;
 	r->handler_module = p->self;
-	return mod_dirlisting_subrequest(r, p);
+	handler_t rc = mod_dirlisting_subrequest(r, p);
+
+	if (rc == HANDLER_WAIT_FOR_EVENT && p->conf.auto_layout
+	    && (p->conf.external_js || p->conf.external_css)
+	      /* (paranoia: do not send 103 for HTTP/1.x; only for HTTP/2 +)
+	       *  https://www.rfc-editor.org/rfc/rfc8297.html#section-3 */
+	    && r->http_version >= HTTP_VERSION_2) {
+		/* send 103 Early Hints intermediate response (send once only)*/
+		r->http_status = 103; /* 103 Early Hints */
+		if (!http_response_send_1xx(r))
+			rc = HANDLER_ERROR;
+	}
+
+	return rc;
 }
 
 
@@ -1573,6 +1629,20 @@ static void mod_dirlisting_cache_control (request_st * const r, unix_time64_t ma
 }
 
 
+static void mod_dirlisting_cache_etag (request_st * const r, int fd)
+{
+    if (0 != r->conf.etag_flags) {
+        struct stat st;
+        if (0 == fstat(fd, &st)) {
+            buffer * const vb =
+              http_header_response_set_ptr(r, HTTP_HEADER_ETAG,
+                                           CONST_STR_LEN("ETag"));
+            http_etag_create(vb, &st, r->conf.etag_flags);
+        }
+    }
+}
+
+
 static handler_t mod_dirlisting_cache_check (request_st * const r, plugin_data * const p) {
     /* optional: an external process can trigger a refresh by deleting the cache
      * entry when the external process detects (or initiates) changes to dir */
@@ -1627,6 +1697,8 @@ static handler_t mod_dirlisting_cache_check (request_st * const r, plugin_data *
                                      CONST_STR_LEN("ETag"),
                                      BUF_PTR_LEN(etag));
     }
+    if (p->conf.auto_layout)
+        http_dirlist_auto_layout_early_hints(r, p);
 
     r->resp_body_finished = 1;
     return HANDLER_FINISHED;
@@ -1701,33 +1773,15 @@ static void mod_dirlisting_cache_add (request_st * const r, handler_ctx * const 
     const int fd = fdevent_mkostemp(oldpath, 0);
     if (fd < 0) return;
     int rc = mod_dirlisting_write_cq(fd, &r->write_queue, r->conf.errh);
-  #ifdef _WIN32
-    close(fd); /*(rename fails if file is open; MS filesystem limitation)*/
-  #endif
+    if (rc)
+        mod_dirlisting_cache_etag(r, fd);
+    close(fd); /*(_WIN32 rename fails if file open; MS filesystem limitation)*/
     if (rc && 0 == fdevent_rename(oldpath, newpath)) {
         stat_cache_invalidate_entry(newpath, len);
-        /* Cache-Control and ETag (also done in mod_dirlisting_cache_check())*/
         mod_dirlisting_cache_control(r, hctx->conf.cache->max_age);
-        if (0 != r->conf.etag_flags) {
-            struct stat st;
-          #ifdef _WIN32
-            if (0 == stat(newpath, &st))
-          #else
-            if (0 == fstat(fd, &st))
-          #endif
-            {
-                buffer * const vb =
-                  http_header_response_set_ptr(r, HTTP_HEADER_ETAG,
-                                               CONST_STR_LEN("ETag"));
-                http_etag_create(vb, &st, r->conf.etag_flags);
-            }
-        }
     }
     else
         unlink(oldpath);
-  #ifndef _WIN32
-    close(fd);
-  #endif
 }
 
 
@@ -1763,10 +1817,15 @@ static void mod_dirlisting_cache_json (request_st * const r, handler_ctx * const
     force_assert(len < PATH_MAX);
     memcpy(newpath, hctx->jfn, len);
     newpath[len] = '\0';
-    close(hctx->jfd);
+    if (0 == r->resp_header_len) /*(response headers not yet sent)*/
+        mod_dirlisting_cache_etag(r, hctx->jfd);
+    close(hctx->jfd); /*(_WIN32 rename fails if file open; MS fs limitation)*/
     hctx->jfd = -1;
-    if (0 == fdevent_rename(hctx->jfn, newpath))
+    if (0 == fdevent_rename(hctx->jfn, newpath)) {
         stat_cache_invalidate_entry(newpath, len);
+        if (0 == r->resp_header_len) /*(response headers not yet sent)*/
+            mod_dirlisting_cache_control(r, hctx->conf.cache->max_age);
+    }
     else
         unlink(hctx->jfn);
     free(hctx->jfn);

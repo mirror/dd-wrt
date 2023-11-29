@@ -430,6 +430,15 @@ int fdevent_set_stdin_stdout_stderr(int fdin, int fdout, int fderr) {
 }
 
 
+/* iOS does not allow subprocess creation; avoid compiling advanced interfaces*/
+#if defined(__APPLE__) && defined(__MACH__)
+#include <TargetConditionals.h> /* TARGET_OS_IPHONE, TARGET_OS_MAC */
+#if TARGET_OS_IPHONE            /* iOS, tvOS, or watchOS device */
+#undef HAVE_POSIX_SPAWN
+#endif
+#endif
+
+
 #include <stdio.h>      /* perror() rename() */
 #include <signal.h>     /* signal() kill() */
 #ifdef HAVE_POSIX_SPAWN
@@ -442,6 +451,7 @@ int fdevent_rename(const char *oldpath, const char *newpath) {
 }
 
 
+#ifdef HAVE_POSIX_SPAWN
 #if !defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP) \
  && defined(POSIX_SPAWN_CLOEXEC_DEFAULT) /* Mac OS */
 __attribute_noinline__
@@ -457,6 +467,7 @@ static int fdevent_cloexec_default_prep (posix_spawn_file_actions_t *file_action
     rc = posix_spawn_file_actions_addclose(file_actions, 3+stdfd);
     return rc;
 }
+#endif
 #endif
 
 
@@ -516,12 +527,12 @@ pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin
        #endif
         && 0 == (rc = sigemptyset(&sigs))
         && 0 == (rc = posix_spawnattr_setsigmask(&attr, &sigs))
-      #ifdef __linux__
-        /* linux appears to walk all signals and to query and preserve some
+      #if defined(__GLIBC__) \
+       && (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 24 && __GLIBC_MINOR__ <= 37)
+        /* glibc appears to walk all signals and to query and preserve some
          * sigaction flags even if setting to SIG_DFL, though if specified
          * in posix_spawnattr_setsigdefault(), resets to SIG_DFL without query.
-         * Therefore, resetting all signals results in about 1/2 the syscalls.
-         * (FreeBSD appears more efficient.  Unverified on other platforms.) */
+         * Therefore, resetting all signals results in about 1/2 the syscalls.*/
         && 0 == (rc = sigfillset(&sigs))
       #else
         /*(force reset signals to SIG_DFL if server.c set to SIG_IGN)*/
@@ -663,6 +674,56 @@ pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin
     return (pid_t)-1;
 
  #endif
+}
+
+
+/* Check if cmd string can bypass shell expansion
+ *
+ * Commands in lighttpd.conf are trusted; lighttpd.conf is controlled by admin.
+ * As an optimization, skip running command via "/bin/sh -c ..." if the command
+ * begins with '/' and does not contain shell metacharacters which might need
+ * to be interpretted by the shell.  Assume that IFS is set to shell defaults.
+ * Allows 8-bit UTF-8, but does not validate UTF-8.  Does not flag CTL
+ * characters besides IFS defaults.  cmd must be '\0'-terminated.
+ *
+ * An alternative approach could pass cmd through wordexp() using WRDE_NOCMD
+ * and compare input cmd to match wordexp() output, if single word returned.
+ * Another alternative would be to prepend <cmd> with "exec <cmd>" on stack
+ * to try to have the shell 'exec' the result of shell expansion (if cmd did
+ * not already begin with "exec ").
+ *
+ * For portability with older systems without wordexp(), instead use strcspn()
+ * on list of known characters which might be processed during shell expansion.
+ * With the goal of correctness, err on side of continuing to call the shell
+ * rather than potentially incorrectly skipping shell expansion.
+ *
+ * Allow %+,-./:=_~^@ and alphanumeric, as well as 8-bit for UTF-8.
+ * Tilde '~' allowed since not first char, as first char is checked to be '/'.
+ * Equal '=' allowed since string is checked to contain no whitespace, so no
+ * variable assignment preceding command.
+ */
+#define fdevent_cmd_might_bypass_shell_expansion(cmd) \
+  (*cmd == '/' && (cmd)[strcspn((cmd), "\t\n !\"#$&'()*;<>?[\\]`{|}")] == '\0')
+
+__attribute_cold__
+pid_t fdevent_sh_exec(const char *cmdstr, char *envp[], int fdin, int fdout, int fderr) {
+    char *args[4];
+    if (fdevent_cmd_might_bypass_shell_expansion(cmdstr)) {
+        *(const char **)&args[0] = cmdstr;
+        args[1] = NULL;
+    }
+    else {
+        const char *shell = getenv("SHELL");
+        if (shell && (0 == strcmp(shell, "/usr/bin/false")
+                      || 0 == strcmp(shell, "/bin/false")))
+            shell = NULL;
+        *(const char **)&args[0] = shell ? shell : "/bin/sh";
+        *(const char **)&args[1] = "-c";
+        *(const char **)&args[2] = cmdstr;
+        args[3] = NULL;
+    }
+
+    return fdevent_fork_execve(args[0], args, envp, fdin, fdout, fderr, -1);
 }
 
 
@@ -810,7 +871,9 @@ fdevent_load_file (const char * const fn, off_t *lim, log_error_st *errh, void *
            ? atoi(fn + sizeof("/proc/self/fd/")-1)
            : fdevent_open_cloexec(fn, 1, O_RDONLY, 0); /*(1: follows symlinks)*/
       #else
-        fd = fdevent_open_cloexec(fn, 1, O_RDONLY, 0); /*(1: follows symlinks)*/
+        fd = (0 != strcmp(fn, "/dev/stdin"))
+           ? fdevent_open_cloexec(fn, 1, O_RDONLY, 0)  /*(1: follows symlinks)*/
+           : STDIN_FILENO;
       #endif
         if (fd < 0) break;
 

@@ -76,7 +76,7 @@ struct h2con {
     uint32_t rused;
 
     uint32_t h2_cid;
-    uint32_t h2_sid;
+    uint32_t h2_sid;  /* unused; server push (not implemented) */
      int32_t sent_goaway;
     unix_time64_t sent_settings;
     uint32_t s_header_table_size;      /* SETTINGS_HEADER_TABLE_SIZE      */
@@ -88,6 +88,9 @@ struct h2con {
     struct lshpack_dec decoder;
     struct lshpack_enc encoder;
     unix_time64_t half_closed_ts;
+    uint8_t n_refused_stream;
+    uint8_t n_discarded_headers;
+    uint8_t n_recv_rst_stream;
 };
 typedef struct h2con h2con;
 

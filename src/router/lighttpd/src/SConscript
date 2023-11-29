@@ -75,10 +75,8 @@ common_src = Split("base64.c buffer.c burl.c log.c \
 	ck.c \
 ")
 
-src = Split("server.c response.c connections.c h1.c h2.c \
+src = Split("server.c response.c connections.c h1.c \
 	sock_addr_cache.c \
-	ls-hpack/lshpack.c \
-	algo_xxhash.c \
 	fdevent_impl.c \
 	http_range.c \
 	network.c \
@@ -189,8 +187,6 @@ staticsrc += builtin_mods
 for module in builtin_mods:
 	staticinit += "PLUGIN_INIT(%s)\n"%module[0:-2]
 for module in modules.keys():
-	if module == "mod_h2":
-		continue
 	staticsrc += modules[module]['src']
 	staticinit += "PLUGIN_INIT(%s)\n"%module
 	if 'lib' in modules[module]:

@@ -35,6 +35,7 @@
 
 
 __attribute_cold__
+__attribute_returns_nonnull__
 static connection *connection_init(server *srv);
 
 __attribute_noinline__
@@ -83,6 +84,7 @@ static void connection_close(connection *con) {
 	chunkqueue_reset(con->read_queue);
 	con->request_count = 0;
 	con->is_ssl_sock = 0;
+	con->traffic_limit_reached = 0;
 	con->revents_err = 0;
 
 	fdevent_fdnode_event_del(srv->ev, con->fdn);
@@ -91,11 +93,6 @@ static void connection_close(connection *con) {
 	if (0 != fdio_close_socket(con->fd))
 		log_serror(r->conf.errh, __FILE__, __LINE__,
 		  "(warning) close: %d", con->fd);
-
-	if (r->conf.log_state_handling) {
-		log_error(r->conf.errh, __FILE__, __LINE__,
-		  "connection closed for fd %d", con->fd);
-	}
 	con->fd = -1;
 
 	--srv->cur_fds;
@@ -154,13 +151,8 @@ static void connection_handle_shutdown(connection *con) {
 	if (con->fd >= 0
 	    && (con->is_ssl_sock || 0 == shutdown(con->fd, SHUT_WR))) {
 		con->close_timeout_ts = log_monotonic_secs;
-
 		request_st * const r = &con->request;
 		connection_set_state(r, CON_STATE_CLOSE);
-		if (r->conf.log_state_handling) {
-			log_error(r->conf.errh, __FILE__, __LINE__,
-			  "shutdown for fd %d", con->fd);
-		}
 	} else {
 		connection_close(con);
 	}
@@ -227,10 +219,12 @@ static void connection_handle_response_end_state(request_st * const r, connectio
 
 __attribute_pure__
 static off_t
-connection_write_throttled (const connection * const con, off_t max_bytes)
+connection_write_throttle (const connection * const con, off_t max_bytes)
 {
+    /*assert(max_bytes > 0);*/
     const request_config * const restrict rconf = &con->request.conf;
-    if (0 == rconf->global_bytes_per_second && 0 == rconf->bytes_per_second)
+    if (__builtin_expect(
+          (0 == (rconf->global_bytes_per_second | rconf->bytes_per_second)), 1))
         return max_bytes;
 
     if (rconf->global_bytes_per_second) {
@@ -251,16 +245,6 @@ connection_write_throttled (const connection * const con, off_t max_bytes)
 }
 
 
-static off_t
-connection_write_throttle (connection * const con, off_t max_bytes)
-{
-    /*assert(max_bytes > 0);*/
-    max_bytes = connection_write_throttled(con, max_bytes);
-    if (0 == max_bytes) con->traffic_limit_reached = 1;
-    return max_bytes;
-}
-
-
 static int
 connection_write_chunkqueue (connection * const con, chunkqueue * const restrict cq, off_t max_bytes)
 {
@@ -269,7 +253,8 @@ connection_write_chunkqueue (connection * const con, chunkqueue * const restrict
     con->write_request_ts = log_monotonic_secs;
 
     max_bytes = connection_write_throttle(con, max_bytes);
-    if (0 == max_bytes) return 1;
+    if (__builtin_expect( (0 == max_bytes), 0))
+        return (con->traffic_limit_reached = 1);
 
     off_t written = cq->bytes_out;
     int ret;
@@ -306,9 +291,6 @@ connection_write_chunkqueue (connection * const con, chunkqueue * const restrict
     }
 
     ret = con->network_write(con, cq, max_bytes);
-    if (ret >= 0) {
-        ret = chunkqueue_is_empty(cq) ? 0 : 1;
-    }
 
   #ifdef TCP_CORK
     if (corked) {
@@ -324,7 +306,10 @@ connection_write_chunkqueue (connection * const con, chunkqueue * const restrict
     if (r->conf.global_bytes_per_second_cnt_ptr)
         *(r->conf.global_bytes_per_second_cnt_ptr) += written;
 
-    return ret;
+    /* return 1 for caller to set con->is_writable = 0 when cq not empty *and*
+     * bytes have been sent from cq in order to not spin trying to send HTTP/2
+     * server Connection Preface while waiting for TLS negotiation to complete*/
+    return (ret >= 0) ? !chunkqueue_is_empty(cq) && cq->bytes_out : ret;
 }
 
 
@@ -335,10 +320,6 @@ static int connection_handle_write(request_st * const r, connection * const con)
 	int rc = connection_write_chunkqueue(con, con->write_queue, MAX_WRITE_LIMIT);
 	switch (rc) {
 	case 0:
-		if (r->resp_body_finished) {
-			connection_set_state(r, CON_STATE_RESPONSE_END);
-			return CON_STATE_RESPONSE_END;
-		}
 		break;
 	case -1: /* error on our side */
 		log_error(r->conf.errh, __FILE__, __LINE__,
@@ -348,12 +329,7 @@ static int connection_handle_write(request_st * const r, connection * const con)
 		connection_set_state_error(r, CON_STATE_ERROR);
 		return CON_STATE_ERROR;
 	case 1:
-		/* do not spin trying to send HTTP/2 server Connection Preface
-		 * while waiting for TLS negotiation to complete */
-		if (con->write_queue->bytes_out)
-			con->is_writable = 0;
-
-		/* not finished yet -> WRITE */
+		con->is_writable = 0;
 		break;
 	}
 
@@ -361,6 +337,7 @@ static int connection_handle_write(request_st * const r, connection * const con)
 }
 
 static int connection_handle_write_state(request_st * const r, connection * const con) {
+    int loop_once = 0;
     do {
         /* only try to write if we have something in the queue */
         if (!chunkqueue_is_empty(&r->write_queue)) {
@@ -374,28 +351,28 @@ static int connection_handle_write_state(request_st * const r, connection * cons
 
         if (r->handler_module && !r->resp_body_finished) {
             const plugin * const p = r->handler_module;
-            int rc = p->handle_subrequest(r, p->data);
-            switch(rc) {
-            case HANDLER_WAIT_FOR_EVENT:
-            case HANDLER_FINISHED:
-            case HANDLER_GO_ON:
-                break;
-            /*case HANDLER_COMEBACK:*/
-            /*case HANDLER_ERROR:*/
-            default:
+            if (p->handle_subrequest(r, p->data) > HANDLER_WAIT_FOR_EVENT) {
                 connection_set_state_error(r, CON_STATE_ERROR);
                 return CON_STATE_ERROR;
             }
         }
+
     } while (!chunkqueue_is_empty(&r->write_queue)
              ? con->is_writable > 0 && 0 == con->traffic_limit_reached
+               && 1 == ++loop_once
              : r->resp_body_finished);
+
+    /* yield to handle other connections or else TLS on a slow, embedded device
+     * might loop here and monopolize resources */
+    if (2 == loop_once)
+        joblist_append(con);
 
     return CON_STATE_WRITE;
 }
 
 
 __attribute_cold__
+__attribute_returns_nonnull__
 static connection *connection_init(server *srv) {
 	connection * const con = ck_calloc(1, sizeof(*con));
 
@@ -466,6 +443,11 @@ connection_transition_h2 (request_st * const h2r, connection * const con)
     buffer_copy_string_len(&h2r->target_orig, CONST_STR_LEN("*"));
     buffer_copy_string_len(&h2r->uri.path,    CONST_STR_LEN("*"));
     h2r->http_method = HTTP_METHOD_PRI;
+    /*(setting all bits might break existing lighttpd.conf,
+     * which e.g. might make assumptions in configs for "OPTIONS *",
+     * so probably better to leave other conditions unset)*/
+    /*h2r->conditional_is_valid = ~0u;*/
+    h2r->conditional_is_valid |= (1 << COMP_HTTP_REQUEST_METHOD);
     h2r->reqbody_length = -1; /*(unnecessary for h2r?)*/
     h2r->conf.stream_request_body |= FDEVENT_STREAM_REQUEST_POLLIN;
 
@@ -606,11 +588,6 @@ connection *connection_accepted(server *srv, const server_socket *srv_socket, so
 
 		srv->cur_fds++;
 
-		/* ok, we have the connection, register it */
-#if 0
-		log_error(srv->errh, __FILE__, __LINE__, "accepted() %d", cnt);
-#endif
-
 		con = connections_get_new_connection(srv);
 
 		con->fd = cnt;
@@ -627,6 +604,10 @@ connection *connection_accepted(server *srv, const server_socket *srv_socket, so
 		sock_addr_cache_inet_ntop_copy_buffer(&con->dst_addr_buf,
 		                                      &con->dst_addr);
 		con->srv_socket = srv_socket;
+		/* recv() immediately after accept() fails (on default Linux for TCP);
+		 * so skip optimistic read.  (might revisit with HTTP/3 UDP) */
+		/*con->is_readable = 1;*/
+		con->is_writable = 1;
 		con->is_ssl_sock = srv_socket->is_ssl;
 		con->proto_default_port = 80; /* "http" */
 
@@ -644,28 +625,11 @@ connection *connection_accepted(server *srv, const server_socket *srv_socket, so
 }
 
 
-__attribute_cold__
-__attribute_noinline__
-__attribute_nonnull__()
-static void
-connection_log_state (const request_st * const r, const char * const tag)
-{
-    buffer * const tb = r->tmp_buf;
-    buffer_clear(tb);
-    http_request_state_append(tb, r->state);
-    log_error(r->conf.errh, __FILE__, __LINE__,
-      "fd:%d id:%d state:%s%s", r->con->fd, r->x.h2.id, tb->ptr, tag);
-}
-
-
 static void
 connection_state_machine_loop (request_st * const r, connection * const con)
 {
 	request_state_t ostate;
 	do {
-		if (r->conf.log_state_handling)
-			connection_log_state(r, "");
-
 		switch ((ostate = r->state)) {
 		case CON_STATE_REQUEST_START: /* transient */
 			/*(should not be reached by HTTP/2 streams)*/
@@ -698,8 +662,7 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 			  case HANDLER_FINISHED:
 				break;
 			  case HANDLER_WAIT_FOR_EVENT:
-				ostate = r->state;
-				continue; /*(end outer loop)*/
+				return;
 			  /*case HANDLER_COMEBACK:*//*(not expected)*/
 			  /*case HANDLER_ERROR:*/
 			  default:
@@ -713,7 +676,7 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 			__attribute_fallthrough__
 		case CON_STATE_WRITE:
 			if (connection_handle_write_state(r, con) == CON_STATE_WRITE)
-				continue; /*(end outer loop)*/
+				return;
 			__attribute_fallthrough__
 		case CON_STATE_RESPONSE_END: /* transient */
 		case CON_STATE_ERROR:        /* transient */
@@ -724,17 +687,13 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 		case CON_STATE_CLOSE:
 			/*(should not be reached by HTTP/2 streams)*/
 			connection_handle_close_state(con);
-			break;
+			return;
 		case CON_STATE_CONNECT:
-			break;
+			return;
 		default:/*(should not happen)*/
-			/*connection_log_state(r, "");*/ /*(unknown state)*/
-			break;
+			return;
 		}
 	} while (ostate != r->state);
-
-        if (r->conf.log_state_handling)
-            connection_log_state(r, " at loop exit");
 }
 
 

@@ -242,14 +242,14 @@ int fdevent_socketpair_nb_cloexec (int domain, int typ, int protocol, int sv[2])
 
 int fdevent_socket_set_cloexec (int fd)
 {
-    return SetHandleInformation((HANDLE)(uint64_t)fd,
+    return SetHandleInformation((HANDLE)(uintptr_t)fd,
                                 HANDLE_FLAG_INHERIT, 0) ? 0 : -1;
 }
 
 
 int fdevent_socket_clr_cloexec (int fd)
 {
-    return SetHandleInformation((HANDLE)(uint64_t)fd,
+    return SetHandleInformation((HANDLE)(uintptr_t)fd,
                                 HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)
       ? 0
       : -1;
@@ -265,7 +265,7 @@ int fdevent_socket_set_nb (int fd)
 
 int fdevent_socket_set_nb_cloexec (int fd)
 {
-    return SetHandleInformation((HANDLE)(uint64_t)fd, HANDLE_FLAG_INHERIT, 0)
+    return SetHandleInformation((HANDLE)(uintptr_t)fd, HANDLE_FLAG_INHERIT, 0)
       ? fdevent_socket_set_nb(fd)
       : -1;
 }
@@ -645,7 +645,7 @@ pid_t fdevent_createprocess (char *argv[], char *envp[], intptr_t fdin, intptr_t
      * Programmatically controlling which handles are inherited by new processes
      * in Win32: https://devblogs.microsoft.com/oldnewthing/20111216-00/?p=8873
      */
-    size_t sz = 0;
+    SIZE_T sz = 0;
     InitializeProcThreadAttributeList(NULL, 1, 0, &sz);
     /* GetLastError() == ERROR_INSUFFICIENT_BUFFER */
     LPPROC_THREAD_ATTRIBUTE_LIST attrlist = info.lpAttributeList = malloc(sz);
@@ -764,6 +764,18 @@ pid_t fdevent_createprocess (char *argv[], char *envp[], intptr_t fdin, intptr_t
     free(dirp);
 
     return pid;
+}
+
+
+pid_t fdevent_sh_exec (const char *cmdstr, char *envp[], intptr_t fdin, intptr_t fdout, int fderr)
+{
+    char *args[4];
+    const char *shell = getenv("SHELL");
+    *(const char **)&args[0] = shell ? shell : "/bin/sh";
+    *(const char **)&args[1] = "-c";
+    *(const char **)&args[2] = cmdstr;
+    args[3] = NULL;
+    return fdevent_createprocess(args, envp, fdin, fdout, fderr, -1);
 }
 
 

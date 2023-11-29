@@ -42,23 +42,28 @@ request_config_reset (request_st * const r)
 }
 
 
+static void
+request_set_con (request_st * const r, connection * const con)
+{
+    r->con = con;
+    r->dst_addr = &con->dst_addr;
+    r->dst_addr_buf = &con->dst_addr_buf;
+    /*r->tmp_buf = con->srv->tmp_buf;*/
+}
+
+
 void
 request_init_data (request_st * const r, connection * const con, server * const srv)
 {
-    chunkqueue_init(&r->write_queue);
-    chunkqueue_init(&r->read_queue);
-    chunkqueue_init(&r->reqbody_queue);
+    request_set_con(r, con);
 
     r->http_method = HTTP_METHOD_UNSET;
     r->http_version = HTTP_VERSION_UNSET;
     r->resp_header_len = 0;
     r->loops_per_request = 0;
-    r->con = con;
     r->tmp_buf = srv->tmp_buf;
     r->resp_body_scratchpad = -1;
     r->server_name = &r->uri.authority;
-    r->dst_addr = &con->dst_addr;
-    r->dst_addr_buf = &con->dst_addr_buf;
 
     /* init plugin-specific per-request structures */
     r->plugin_ctx = ck_calloc(srv->plugins.used + 1, sizeof(void *));
@@ -73,7 +78,23 @@ request_init_data (request_st * const r, connection * const con, server * const 
     }
   #endif
 
+    chunkqueue_init(&r->write_queue);
+    chunkqueue_init(&r->read_queue);
+    chunkqueue_init(&r->reqbody_queue);
+
     request_config_reset(r);
+}
+
+
+__attribute_cold__
+__attribute_noinline__
+__attribute_returns_nonnull__
+static request_st *
+request_init (connection * const con)
+{
+    request_st * const r = ck_calloc(1, sizeof(request_st));
+    request_init_data(r, con, con->srv);
+    return r;
 }
 
 
@@ -270,6 +291,24 @@ request_pool_free (void)
 }
 
 
+static void
+request_pool_push (request_st * const r)
+{
+    r->con = (connection *)reqpool; /*(reuse r->con as next ptr)*/
+    reqpool = r;
+}
+
+
+static request_st *
+request_pool_pop (void)
+{
+    /*assert(reqpool);*//*(caller should check non-NULL)*/
+    request_st * const r = reqpool;
+    reqpool = (request_st *)r->con; /*(reuse r->con as next ptr)*/
+    return r;
+}
+
+
 void
 request_release (request_st * const r)
 {
@@ -287,24 +326,17 @@ request_release (request_st * const r)
     request_reset_ex(r);
     r->state = CON_STATE_CONNECT;
 
-    r->con = (connection *)reqpool; /*(reuse r->con as next ptr)*/
-    reqpool = r;
+    request_pool_push(r);
 }
 
 
 request_st *
 request_acquire (connection * const con)
 {
-    request_st *r = reqpool;
-    if (r) {
-        reqpool = (request_st *)r->con; /*(reuse r->con as next ptr)*/
-    }
-    else {
-        r = ck_calloc(1, sizeof(request_st));
-        request_init_data(r, con, con->srv);
-    }
+    if (!reqpool)
+        return request_init(con);
 
-    r->con = con;
-    r->tmp_buf = con->srv->tmp_buf;
+    request_st * const r = request_pool_pop();
+    request_set_con(r, con);
     return r;
 }

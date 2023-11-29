@@ -20,10 +20,88 @@
 #include "sys-stat.h"
 #include "sys-time.h"
 
-#include <limits.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <string.h>
+
+
+static stat_cache_entry *
+http_response_physical_pathinfo (request_st * const r)
+{
+    /* Caller must already have checked full path does not exist in filesystem*/
+
+    char *pathinfo = r->physical.path.ptr
+                   + buffer_clen(&r->physical.basedir)
+                   - (buffer_has_pathsep_suffix(&r->physical.basedir));
+    if ('/' != *pathinfo)
+        pathinfo = NULL;
+    else if (pathinfo == r->physical.path.ptr) /*(basedir is "/")*/
+        pathinfo = strchr(pathinfo+1, '/');
+    /* Note: basedir might be "/" (containers) and basedir should not be empty.
+     * basedir in config is allowed to end with '/', especially for basedir "/".
+     * Current implmentation below requires that pathinfo follow a regular file
+     * (S_ISREG()) which is why if pathinfo matches beginning of path, pathinfo
+     * is stepped to next path component.
+     *   https://redmine.lighttpd.net/issues/2911
+     */
+
+    stat_cache_entry *sce = NULL;
+    const uint32_t pathused = r->physical.path.used;
+    for (char *pprev = pathinfo;
+         pathinfo;
+         pprev = pathinfo, pathinfo = strchr(pathinfo+1, '/')) {
+        /*(temporarily modify r->physical.path in-place)*/
+        r->physical.path.used = pathinfo - r->physical.path.ptr + 1;
+        *pathinfo = '\0';
+        stat_cache_entry * const nsce = stat_cache_get_entry(&r->physical.path);
+        *pathinfo = '/';
+        r->physical.path.used = pathused;
+        if (NULL == nsce) {
+            pathinfo = pathinfo != pprev ? pprev : NULL;
+            break;
+        }
+        sce = nsce;
+        if (!S_ISDIR(sce->st.st_mode)) break;
+    }
+
+    /* Note: historical lighttpd behavior checks S_ISREG(), permitting
+     * pathinfo only on regular files, not dirs or special files.
+     *
+     * Were this code to be extended to permit pathinfo following a dir, the
+     * trailing slash indicating dir would have to be duplicated to start
+     * pathinfo and would need to be special-cased in the two calls to
+     * buffer_truncate() below.  Additionally, basedir "/" and entire rest of
+     * path as pathinfo would have to be special-cased here before returning,
+     * including sce = stat_cache_get_entry() "/".  However, supporting pathinfo
+     * on dirs -- at this point in lighttpd request processing -- would have the
+     * effect of every request for a non-existent file being pathinfo on a dir
+     * (assuming "/" exists), instead of returning the traditional 404 Not Found
+     * in such cases.  Fully virtual paths are handled elsewhere,
+     * e.g. with gw_backend "check-local" => "disable" in lighttpd.conf */
+
+    if (NULL == pathinfo || !S_ISREG(sce->st.st_mode))
+        return NULL;
+
+    /* pathinfo */
+    size_t len = r->physical.path.ptr+pathused-1-pathinfo, reqlen;
+    const char * const ptr =
+       (r->conf.force_lowercase_filenames
+        && len <= (reqlen = buffer_clen(&r->target))
+        && buffer_eq_icase_ssn(r->target.ptr + reqlen - len, pathinfo, len))
+        /* attempt to preserve case-insensitive PATH_INFO
+         * (works in common case where mod_alias, mod_magnet, and other modules
+         *  have not modified the PATH_INFO portion of request URI, or did so
+         *  with exactly the PATH_INFO desired) */
+      ? r->target.ptr + reqlen - len
+      : pathinfo;
+    buffer_copy_string_len(&r->pathinfo, ptr, len);
+
+    /* remove pathinfo from paths */
+    buffer_truncate(&r->uri.path, buffer_clen(&r->uri.path) - len);
+    buffer_truncate(&r->physical.path,
+                    (uint32_t)(pathinfo - r->physical.path.ptr));
+
+    return sce;
+}
 
 
 __attribute_cold__
@@ -72,6 +150,12 @@ static handler_t http_response_physical_path_check(request_st * const r) {
 		  #endif
 		case ENAMETOOLONG:
 			/* file name to be read was too long. return 404 */
+			/* Note: URIs can be very long and this initial check on the
+			 * entire path imposes limits use of pathinfo in URIs to
+			 * (typically) 255 byte path segments and (typically) 4k total len,
+			 * though these limits can be avoided by configuring some modules
+			 * to use virtual paths and to skip the filesystem check,
+			 * e.g. w/ gw_backend "check-local" => "disable" in lighttpd.conf */
 			return http_response_physical_path_error(r, 404, NULL);
 		default:
 			/* we have no idea what happened. let's tell the user so. */
@@ -80,65 +164,9 @@ static handler_t http_response_physical_path_check(request_st * const r) {
 
 		/* not found, perhaps PATHINFO */
 
-		char *pathinfo;
-		{
-			/*(might check at startup that s->document_root does not end in '/')*/
-			size_t len = buffer_clen(&r->physical.basedir)
-			           - (buffer_has_pathsep_suffix(&r->physical.basedir));
-			pathinfo = r->physical.path.ptr + len;
-			if ('/' != *pathinfo) {
-				pathinfo = NULL;
-			}
-			else if (pathinfo == r->physical.path.ptr) { /*(basedir is "/")*/
-				pathinfo = strchr(pathinfo+1, '/');
-			}
-		}
-
-		const uint32_t pathused = r->physical.path.used;
-		for (char *pprev = pathinfo; pathinfo; pprev = pathinfo, pathinfo = strchr(pathinfo+1, '/')) {
-			/*(temporarily modify r->physical.path in-place)*/
-			r->physical.path.used = pathinfo - r->physical.path.ptr + 1;
-			*pathinfo = '\0';
-			stat_cache_entry * const nsce = stat_cache_get_entry(&r->physical.path);
-			*pathinfo = '/';
-			r->physical.path.used = pathused;
-			if (NULL == nsce) {
-				pathinfo = pathinfo != pprev ? pprev : NULL;
-				break;
-			}
-			sce = nsce;
-			if (!S_ISDIR(sce->st.st_mode)) break;
-		}
-
-		if (NULL == pathinfo || !S_ISREG(sce->st.st_mode)) {
-			/* no it really doesn't exists */
+		if (!r->conf.http_pathinfo
+		    || NULL == (sce = http_response_physical_pathinfo(r)))
 			return http_response_physical_path_error(r, 404, "-- file not found");
-		}
-		/* note: historical behavior checks S_ISREG() above, permitting
-		 * path-info only on regular files, not dirs or special files */
-
-		/* we have a PATHINFO */
-		if (pathinfo) {
-			size_t len = r->physical.path.ptr+pathused-1-pathinfo, reqlen;
-			if (r->conf.force_lowercase_filenames
-			    && len <= (reqlen = buffer_clen(&r->target))
-			    && buffer_eq_icase_ssn(r->target.ptr + reqlen - len, pathinfo, len)) {
-				/* attempt to preserve case-insensitive PATH_INFO
-				 * (works in common case where mod_alias, mod_magnet, and other modules
-				 *  have not modified the PATH_INFO portion of request URI, or did so
-				 *  with exactly the PATH_INFO desired) */
-				buffer_copy_string_len(&r->pathinfo, r->target.ptr + reqlen - len, len);
-			} else {
-				buffer_copy_string_len(&r->pathinfo, pathinfo, len);
-			}
-
-			/*
-			 * shorten uri.path
-			 */
-
-			buffer_truncate(&r->uri.path, buffer_clen(&r->uri.path) - len);
-			buffer_truncate(&r->physical.path, (size_t)(pathinfo - r->physical.path.ptr));
-		}
 	}
 
 	if (!r->conf.follow_symlink
@@ -230,31 +258,38 @@ http_response_prepare (request_st * const r)
 {
     handler_t rc;
 
-	/* looks like someone has already made a decision */
+	/* abort processing if error status, e.g. while parsing request hdrs */
 	if (__builtin_expect( (r->http_status > 200), 0)) { /* yes, > 200 */
+		/*(since this func no longer runs subrequest_handler,
+		 * status code check could be >= 400 for idiom where
+		 * r->http_status is set and r->handler_module is set NULL
+		 * to set up for error doc handler)*/
 		if (0 == r->resp_body_finished)
 			http_response_body_clear(r, 0);
 		return HANDLER_FINISHED;
 	}
 
-	/* no decision yet, build conf->filename */
-	if (buffer_is_unset(&r->physical.path)) {
+	/* initial request processing and following HANDLER_COMEBACK generally
+	 * should reprocess the request, including resetting config, but this
+	 * might be skipped after plugins have been run and path is set,
+	 * e.g. for gw_backend authorizer mode where gw_backend docroot is set
+	 * and plugin sets up handling in subrequest_handler and then returns
+	 * HANDLER_COMEBACK after auth.
+	 * (elide reprocessing request following gw_backend authorizer when
+	 *  gw_backend sets physical.path to gw_backend docroot (if set) in
+	 *  gw_authorizer_ok() before calling http_response_reset()) */
+	if (__builtin_expect( (buffer_is_unset(&r->physical.path)), 1)) {
 
+		#if 0 /*(r->async_callback currently unused)*/
 		if (__builtin_expect( (!r->async_callback), 1)) {
+		#endif
 			rc = http_response_config(r);
 			if (HANDLER_GO_ON != rc) return rc;
+		#if 0 /*(r->async_callback currently unused)*/
 		}
 		else
 			r->async_callback = 0; /* reset */
-
-		/* we only come here when we have the parse the full request again
-		 *
-		 * a HANDLER_COMEBACK from mod_rewrite and mod_fastcgi might be a
-		 * problem here as mod_setenv might get called multiple times
-		 *
-		 * fastcgi-auth might lead to a COMEBACK too
-		 * fastcgi again dead server too
-		 */
+		#endif
 
 		if (r->conf.log_request_handling) {
 			log_error(r->conf.errh, __FILE__, __LINE__,
@@ -299,7 +334,12 @@ http_response_prepare (request_st * const r)
 
 
 		/* transform r->uri.path to r->physical.rel_path (relative file path) */
-		buffer_copy_buffer(&r->physical.rel_path, &r->uri.path);
+		/* (MacOS X and Windows (typically) have case-insensitive filesystems)*/
+		__builtin_expect( (!r->conf.force_lowercase_filenames), 1)
+		  ? buffer_copy_buffer(&r->physical.rel_path, &r->uri.path)
+		  : buffer_copy_string_len_lc(&r->physical.rel_path,
+		                              BUF_PTR_LEN(&r->uri.path));
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 		/* strip dots from the end and spaces
 		 *
@@ -328,11 +368,6 @@ http_response_prepare (request_st * const r)
 			buffer_truncate(b, len);
 		}
 #endif
-		/* MacOS X and Windows (typically) case-insensitive filesystems */
-		if (r->conf.force_lowercase_filenames) {
-			buffer_to_lower(&r->physical.rel_path);
-		}
-
 
 		/* compose physical filename: physical.path = doc_root + rel_path */
 		if (buffer_is_unset(&r->physical.doc_root))
@@ -361,16 +396,9 @@ http_response_prepare (request_st * const r)
 
 	if (NULL != r->handler_module) return HANDLER_GO_ON;
 
-	/*
-	 * No module grabbed the request yet (like mod_access)
-	 *
-	 * Go on and check if the file exists at all
-	 */
-
+		/* check if r->physical.path exists in the filesystem */
 		rc = http_response_physical_path_check(r);
 		if (HANDLER_GO_ON != rc) return rc;
-
-		/* r->physical.path is non-empty and exists in the filesystem */
 
 		if (r->conf.log_request_handling) {
 			log_error(r->conf.errh, __FILE__, __LINE__,
@@ -384,11 +412,12 @@ http_response_prepare (request_st * const r)
 			  BUFFER_INTLEN_PTR(&r->pathinfo));
 		}
 
-		/* call the handlers */
+		/* request handler selection */
 		rc = plugins_call_handle_subrequest_start(r);
 		if (HANDLER_GO_ON != rc) return rc;
 
-		if (__builtin_expect( (NULL == r->handler_module), 0)) {
+		if (NULL != r->handler_module) return HANDLER_GO_ON;
+
 			/* no handler; finish request */
 			if (__builtin_expect( (0 == r->http_status), 0)) {
 				if (r->http_method == HTTP_METHOD_OPTIONS) {
@@ -405,9 +434,6 @@ http_response_prepare (request_st * const r)
 					r->http_status = 403;
 			}
 			return HANDLER_FINISHED;
-		}
-
-		return HANDLER_GO_ON;
 }
 
 
@@ -581,12 +607,17 @@ http_response_write_prepare(request_st * const r)
         break;
       case 204: /* class: header only */
       case 205:
-      case 304:
-        /* disable chunked encoding again as we have no body */
-        http_response_body_clear(r, 1);
-        /* no Content-Body, no Content-Length */
+        /* RFC9110
+         * https://www.rfc-editor.org/rfc/rfc9110#name-content-length
+         *  A server MUST NOT send a Content-Length header field in any response
+         *  with a status code of 1xx (Informational) or 204 (No Content)
+         * (done for 205, too, only as sanity check; 205 has no content.
+         *  Content-Length: 0 will subsequently be set for 205 further below) */
         http_header_response_unset(r, HTTP_HEADER_CONTENT_LENGTH,
                                    CONST_STR_LEN("Content-Length"));
+        __attribute_fallthrough__
+      case 304: /* cooperate with http_response_304() */
+        http_response_body_clear(r, 1);
         r->resp_body_finished = 1;
         break;
       default: /* class: header + body */
@@ -605,9 +636,7 @@ http_response_write_prepare(request_st * const r)
       case HANDLER_FINISHED:
         break;
       default:
-        log_error(r->conf.errh, __FILE__, __LINE__,
-          "response_start plugin failed");
-        return HANDLER_ERROR;
+        return HANDLER_ERROR; /*(unexpected; plugin mis-coded)*/
     }
 
     if (r->resp_body_finished) {
@@ -656,7 +685,7 @@ http_response_write_prepare(request_st * const r)
          * response is not yet finished, but we have all headers
          *
          * keep-alive requires one of:
-         * - Content-Length: ... (HTTP/1.0 and HTTP/1.0)
+         * - Content-Length: ... (HTTP/1.1 and HTTP/1.0)
          * - Transfer-Encoding: chunked (HTTP/1.1)
          * - Upgrade: ... (lighttpd then acts as transparent proxy)
          */
@@ -744,7 +773,6 @@ http_response_call_error_handler (request_st * const r, const buffer * const err
             chunkqueue_reset(&r->reqbody_queue);
         }
 
-        r->con->is_writable = 1;
         r->error_handler_saved_status = r->http_status;
         r->error_handler_saved_method = r->http_method;
         r->http_method = HTTP_METHOD_GET;
@@ -760,6 +788,11 @@ http_response_call_error_handler (request_st * const r, const buffer * const err
     buffer_copy_buffer(&r->target, error_handler);
     http_response_errdoc_init(r);
     r->http_status = 0; /*(after http_response_errdoc_init())*/
+    /* paranoia; mistake if error handler does not ignore "upgrade" */
+    if (light_btst(r->rqst_htags, HTTP_HEADER_UPGRADE))
+        http_header_request_unset(r, HTTP_HEADER_UPGRADE,
+                                  CONST_STR_LEN("upgrade"));
+    r->h2_connect_ext = 0;
     return 1;
 }
 

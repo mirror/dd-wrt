@@ -22,6 +22,12 @@
 #include "sock_addr.h"
 #include "stat_cache.h"
 
+#ifdef _WIN32
+#include "fs_win32.h"   /* readlink() */
+#else
+#include "sys-unistd.h" /* readlink() */
+#endif
+
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
@@ -346,6 +352,19 @@ __attribute_cold__
 static int magnet_newindex_readonly(lua_State *L) {
     lua_pushliteral(L, "lua table is read-only");
     return lua_error(L);
+}
+
+static void magnet_push_cq(lua_State *L, chunkqueue * const cq, log_error_st * const errh) {
+    const off_t cqlen = chunkqueue_length(cq);
+    if (cqlen) {
+        const chunk * const c = chunkqueue_read_squash(cq, errh);
+        if (c)
+            lua_pushlstring(L, c->mem->ptr+c->offset, cqlen);
+        else
+            lua_pushnil(L);
+    }
+    else
+        lua_pushlstring(L, "", 0);
 }
 
 static void magnet_push_buffer(lua_State *L, const buffer *b) {
@@ -1567,6 +1586,18 @@ static int magnet_header_tokens(lua_State *L) {
     return 1;
 }
 
+static int magnet_readlink(lua_State *L) {
+    const char * const path = luaL_checkstring(L, 1);
+    buffer * const b = magnet_tmpbuf_acquire(L);
+    ssize_t rd = readlink(path, b->ptr, buffer_string_space(b));
+    if (rd > 0 && (size_t)rd < buffer_string_space(b))
+        lua_pushlstring(L, b->ptr, (size_t)rd);
+    else
+        lua_pushnil(L);
+    magnet_tmpbuf_release(b);
+    return 1;
+}
+
 static int magnet_reqhdr_get(lua_State *L) {
     size_t klen;
     const char * const k = luaL_checklstring(L, 2, &klen);
@@ -2307,13 +2338,8 @@ static int magnet_respbody(lua_State *L) {
      #endif
       case 'g': /* get; r.resp_body.get */
         if (k[1] == 'e' && k[2] == 't' && k[3] == '\0') {
-            if (r->resp_body_finished) {
-                chunkqueue * const cq = &r->write_queue;
-                chunkqueue_length(cq)
-                  ? magnet_push_buffer(L,
-                                       chunkqueue_read_squash(cq,r->conf.errh))
-                  : (void)lua_pushlstring(L, "", 0);
-            }
+            if (r->resp_body_finished)
+                magnet_push_cq(L, &r->write_queue, r->conf.errh);
             else
                 lua_pushnil(L); /*(?maybe return -1 instead if len unknown?)*/
             return 1;
@@ -2447,10 +2473,7 @@ static int magnet_reqbody(lua_State *L) {
         if (k[1] == 'e' && k[2] == 't' && k[3] == '\0') {
             chunkqueue * const cq = &r->reqbody_queue;
             if (cq->bytes_in == (off_t)r->reqbody_length)
-                chunkqueue_length(cq)
-                  ? magnet_push_buffer(L,
-                                       chunkqueue_read_squash(cq, r->conf.errh))
-                  : (void)lua_pushlstring(L, "", 0);
+                magnet_push_cq(L, cq, r->conf.errh);
             else
                 lua_pushnil(L); /*(?maybe return -1 instead if len unknown?)*/
             return 1;
@@ -3090,6 +3113,7 @@ magnet_init_lighty_table (lua_State * const L, request_st **rr,
      ,{ "cookie_tokens",    magnet_cookie_tokens } /* parse cookie tokens */
      ,{ "header_tokens",    magnet_header_tokens } /* parse header tokens seq */
      ,{ "readdir",          magnet_readdir } /* dir walk */
+     ,{ "readlink",         magnet_readlink } /* symlink target */
      ,{ "quoteddec",        magnet_quoteddec } /* quoted-string decode */
      ,{ "quotedenc",        magnet_quotedenc } /* quoted-string encode */
      ,{ "bsdec",            magnet_bsdec } /* backspace-escape decode */

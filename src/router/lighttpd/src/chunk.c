@@ -69,6 +69,7 @@ static chunk *chunk_buffers;
 static int chunks_oversized_n;
 static const array *chunkqueue_default_tempdirs = NULL;
 static off_t chunkqueue_default_tempfile_size = DEFAULT_TEMPFILE_SIZE;
+static const char *env_tmpdir = NULL;
 
 void chunkqueue_set_chunk_size (size_t sz)
 {
@@ -100,7 +101,6 @@ chunkqueue *chunkqueue_init(chunkqueue *cq) {
 	cq->last = NULL;
       #endif
 
-	cq->tempdirs              = chunkqueue_default_tempdirs;
 	cq->upload_temp_file_size = chunkqueue_default_tempfile_size;
 
 	return cq;
@@ -669,14 +669,24 @@ void chunkqueue_set_tempdirs_default (const array *tempdirs, off_t upload_temp_f
         upload_temp_file_size = DEFAULT_TEMPFILE_SIZE;
     chunkqueue_default_tempdirs = tempdirs;
     chunkqueue_default_tempfile_size = upload_temp_file_size;
+
+    env_tmpdir = getenv("TMPDIR");
+    #ifdef _WIN32
+    if (NULL == env_tmpdir) env_tmpdir = getenv("TEMP");
+    #endif
+    if (NULL == env_tmpdir) env_tmpdir = "/var/tmp";
 }
 
-void chunkqueue_set_tempdirs(chunkqueue * const restrict cq, const array * const restrict tempdirs, off_t upload_temp_file_size) {
+void chunkqueue_set_tempdirs(chunkqueue * const restrict cq, off_t upload_temp_file_size) {
     if (upload_temp_file_size == 0)
         upload_temp_file_size = chunkqueue_default_tempfile_size;
-    cq->tempdirs = tempdirs;
     cq->upload_temp_file_size = upload_temp_file_size;
     cq->tempdir_idx = 0;
+}
+
+const char *chunkqueue_env_tmpdir(void) {
+    /*(chunkqueue_set_tempdirs_default() must have been called at startup)*/
+    return env_tmpdir;
 }
 
 __attribute_noinline__
@@ -762,21 +772,23 @@ static chunk *chunkqueue_get_append_newtempfile(chunkqueue * const restrict cq, 
     static const buffer emptyb = { "", 0, 0 };
     chunk * const restrict last = cq->last;
     chunk * const restrict c = chunkqueue_append_file_chunk(cq, &emptyb, 0, 0);
+    const array * const restrict tempdirs = chunkqueue_default_tempdirs;
     buffer * const restrict template = c->mem;
     c->file.is_temp = 1;
 
-    if (cq->tempdirs && cq->tempdirs->used) {
+    if (tempdirs && tempdirs->used) {
         /* we have several tempdirs, only if all of them fail we jump out */
-        for (errno = EIO; cq->tempdir_idx < cq->tempdirs->used; ++cq->tempdir_idx) {
-            data_string *ds = (data_string *)cq->tempdirs->data[cq->tempdir_idx];
+        for (errno = EIO; cq->tempdir_idx < tempdirs->used; ++cq->tempdir_idx) {
+            data_string *ds = (data_string *)tempdirs->data[cq->tempdir_idx];
             c->file.fd =
               chunkqueue_get_append_mkstemp(template, BUF_PTR_LEN(&ds->value));
             if (-1 != c->file.fd) return c;
         }
     }
     else {
+        const char *tmpdir = chunkqueue_env_tmpdir();
         c->file.fd =
-          chunkqueue_get_append_mkstemp(template, CONST_STR_LEN("/var/tmp"));
+          chunkqueue_get_append_mkstemp(template, tmpdir, strlen(tmpdir));
         if (-1 != c->file.fd) return c;
     }
 
@@ -805,7 +817,10 @@ static chunk *chunkqueue_get_append_tempfile(chunkqueue * const restrict cq, log
     chunk * const c = cq->last;
     if (NULL != c && c->file.is_temp && c->file.fd >= 0) {
 
-        if (c->file.length < (off_t)cq->upload_temp_file_size)
+        off_t upload_temp_file_size = cq->upload_temp_file_size
+                                    ? cq->upload_temp_file_size
+                                    : chunkqueue_default_tempfile_size;
+        if (c->file.length < upload_temp_file_size)
             return c; /* ok, take the last chunk for our job */
 
         /* the chunk is too large now, close it */
@@ -826,8 +841,9 @@ static int chunkqueue_append_tempfile_err(chunkqueue * const cq, log_error_st * 
     const int errnum = errno;
     if (errnum == EINTR) return 1; /* retry */
 
-    int retry = (errnum == ENOSPC && cq->tempdirs
-                 && ++cq->tempdir_idx < cq->tempdirs->used);
+    const array * const tempdirs = chunkqueue_default_tempdirs;
+    int retry = (errnum == ENOSPC && tempdirs
+                 && ++cq->tempdir_idx < tempdirs->used);
     if (!retry)
         log_perror(errh, __FILE__, __LINE__,
           "write() temp-file %s failed", c->mem->ptr);
@@ -893,6 +909,9 @@ int chunkqueue_append_mem_to_tempfile(chunkqueue * const restrict dest, const ch
 	      #ifdef __COVERITY__
 		if (dst_c->file.fd < 0) return -1;
 	      #endif
+		/* (0 == len) for creation of empty tempfile, but caller should
+		 * take pains to avoid leaving 0-length chunk in chunkqueue */
+		if (0 == len) return 0;
 	      #ifdef HAVE_PWRITE
 		/* coverity[negative_returns : FALSE] */
 		const ssize_t written =pwrite(dst_c->file.fd, mem, len, dst_c->file.length);
@@ -1390,7 +1409,7 @@ chunkqueue_write_chunk_file_intermed (const int fd, chunk * const restrict c, lo
     char *data = buf;
     const off_t len = c->file.length - c->offset;
     uint32_t dlen = len < (off_t)sizeof(buf) ? (uint32_t)len : sizeof(buf);
-    chunkqueue cq = {c,c,0,0,0,0,0}; /*(fake cq for chunkqueue_peek_data())*/
+    chunkqueue cq = {c,c,0,0,0,0}; /*(fake cq for chunkqueue_peek_data())*/
     if (0 != chunkqueue_peek_data(&cq, &data, &dlen, errh) && 0 == dlen)
         return -1;
     return chunkqueue_write_data(fd, data, dlen);
@@ -1677,7 +1696,7 @@ chunkqueue_read_data (chunkqueue * const cq,
 }
 
 
-buffer *
+chunk *
 chunkqueue_read_squash (chunkqueue * const restrict cq, log_error_st * const restrict errh)
 {
     /* read and replace chunkqueue contents with single MEM_CHUNK.
@@ -1687,7 +1706,7 @@ chunkqueue_read_squash (chunkqueue * const restrict cq, log_error_st * const res
     if (cqlen >= UINT32_MAX) return NULL;
 
     if (cq->first && NULL == cq->first->next && cq->first->type == MEM_CHUNK)
-        return cq->first->mem;
+        return cq->first;
 
     chunk * const c = chunk_acquire((uint32_t)cqlen+1);
     char *data = c->mem->ptr;
@@ -1701,7 +1720,7 @@ chunkqueue_read_squash (chunkqueue * const restrict cq, log_error_st * const res
 
     chunkqueue_release_chunks(cq);
     chunkqueue_append_chunk(cq, c);
-    return c->mem;
+    return c;
 }
 
 

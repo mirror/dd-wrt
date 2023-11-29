@@ -208,7 +208,7 @@ int http_request_host_normalize(buffer * const b, const int scheme_port) {
             if (colon[1] != '\0') {
                 char *e;
                 port = strtol(colon+1, &e, 0); /*(allow decimal, octal, hex)*/
-                if (0 < port && port <= USHRT_MAX && *e == '\0') {
+                if (0 < port && port <= (long)USHRT_MAX && *e == '\0') {
                     /* valid port */
                 } else {
                     return -1;
@@ -250,7 +250,7 @@ int http_request_host_normalize(buffer * const b, const int scheme_port) {
             if (bracket[2] != '\0') { /*(ignore stray colon at string end)*/
                 char *e;
                 port = strtol(bracket+2, &e, 0); /*(allow decimal, octal, hex)*/
-                if (0 < port && port <= USHRT_MAX && *e == '\0') {
+                if (0 < port && port <= (long)USHRT_MAX && *e == '\0') {
                     /* valid port */
                 } else {
                     return -1;
@@ -445,6 +445,9 @@ static int http_request_parse_single_header(request_st * const restrict r, const
             return http_request_parse_duplicate(r, id, k, klen, v, vlen);
         break;
       case HTTP_HEADER_CONNECTION:
+        if (HTTP_VERSION_1_1 < r->http_version)
+            return http_request_header_line_invalid(r, 400,
+              "invalid Connection header with HTTP/2 or later -> 400");
         /* "Connection: close" is common case if header is present */
         if ((vlen == 5 && buffer_eq_icase_ssn(v, CONST_STR_LEN("close")))
             || http_header_str_contains_token(v,vlen,CONST_STR_LEN("close"))) {
@@ -464,7 +467,8 @@ static int http_request_parse_single_header(request_st * const restrict r, const
             off_t clen = (off_t)li_restricted_strtoint64(v, vlen, &err);
             if (err == v+vlen) {
                 /* (set only if not set to -1 by Transfer-Encoding: chunked) */
-                if (0 == r->reqbody_length) r->reqbody_length = clen;
+                if (r->http_version > HTTP_VERSION_1_1 || 0==r->reqbody_length)
+                    r->reqbody_length = clen;
             }
             else {
                 return http_request_header_line_invalid(r, 400, "invalid Content-Length header -> 400");
@@ -476,6 +480,13 @@ static int http_request_parse_single_header(request_st * const restrict r, const
         break;
       case HTTP_HEADER_TRANSFER_ENCODING:
         if (HTTP_VERSION_1_1 != r->http_version) {
+            /* RFC9112 HTTP/1.1 Section 6.1. Transfer-Encoding
+             * https://httpwg.org/specs/rfc9112.html#rfc.section.6.1.p.16
+             * A server or client that receives an HTTP/1.0 message containing a
+             * Transfer-Encoding header field MUST treat the message as if the
+             * framing is faulty, even if a Content-Length is present, and close
+             * the connection after processing the message. */
+            r->keep_alive = 0;
             return http_request_header_line_invalid(r, 400,
               HTTP_VERSION_1_0 == r->http_version
                 ? "HTTP/1.0 with Transfer-Encoding (bad HTTP/1.0 proxy?) -> 400"
@@ -499,6 +510,7 @@ static int http_request_parse_single_header(request_st * const restrict r, const
 }
 
 __attribute_cold__
+__attribute_noinline__
 static int http_request_parse_proto_loose(request_st * const restrict r, const char * const restrict ptr, const size_t len, const unsigned int http_parseopts) {
     const char * proto = memchr(ptr, ' ', len);
     if (NULL == proto)
@@ -529,6 +541,7 @@ static int http_request_parse_proto_loose(request_st * const restrict r, const c
 }
 
 __attribute_cold__
+__attribute_noinline__
 static const char * http_request_parse_reqline_uri(request_st * const restrict r, const char * const restrict uri, const size_t len, const unsigned int http_parseopts) {
     const char *nuri;
     if ((len > 7 && buffer_eq_icase_ssn(uri, "http://", 7)
@@ -574,6 +587,8 @@ http_request_validate_pseudohdrs (request_st * const restrict r, const int schem
         return http_request_header_line_invalid(r, 400,
           "missing pseudo-header method -> 400");
 
+    /* ignore :protocol unless :method is CONNECT
+     * (:protocol may have been received prior to :method, so check here) */
     if (HTTP_METHOD_CONNECT != r->http_method)
         r->h2_connect_ext = 0;
 
@@ -673,7 +688,6 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
              *  below indicates any method, not only "GET") */
             if (__builtin_expect( (hpctx->id == HTTP_HEADER_H2_UNKNOWN), 0)) {
                 switch (klen-1) {
-                 #if 0
                   case 4:
                     if (0 == memcmp(k+1, "path", 4))
                         hpctx->id = HTTP_HEADER_H2_PATH;
@@ -684,17 +698,14 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
                     else if (0 == memcmp(k+1, "scheme", 6))
                         hpctx->id = HTTP_HEADER_H2_SCHEME;
                     break;
-                 #endif
                   case 8:
                     if (0 == memcmp(k+1, "protocol", 8))
                         hpctx->id = HTTP_HEADER_H2_PROTOCOL;
                     break;
-                 #if 0
                   case 9:
                     if (0 == memcmp(k+1, "authority", 9))
                         hpctx->id = HTTP_HEADER_H2_AUTHORITY;
                     break;
-                 #endif
                   default:
                     break;
                 }
@@ -796,15 +807,14 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
 
             if (__builtin_expect( (hpctx->id == HTTP_HEADER_H2_UNKNOWN), 0)) {
                 uint32_t j = 0;
-                while (j < klen && (light_islower(k[j]) || k[j] == '-'))
-                    ++j;
-
+                while ((light_islower(k[j]) || k[j] == '-') && ++j < klen) ;
                 if (__builtin_expect( (j != klen), 0)) {
-                    if (light_isupper(k[j]))
-                        return 400;
                     if (0 != http_request_parse_header_other(r, k+j, klen-j,
                                                             http_header_strict))
                         return 400;
+                    do {
+                        if (light_isupper(k[j])) return 400;
+                    } while (++j < klen);
                 }
 
                 hpctx->id = http_header_hkey_get_lc(k, klen);
@@ -1192,8 +1202,11 @@ static int http_request_parse_headers(request_st * const restrict r, char * cons
         do { --end; } while (end[-1] == ' ' || end[-1] == '\t');
 
         const int vlen = (int)(end - v);
-        /* empty header-fields are not allowed by HTTP-RFC, we just ignore them */
-        if (vlen <= 0) continue; /* ignore header */
+        if (__builtin_expect( (vlen <= 0), 0)) {
+            if (id == HTTP_HEADER_CONTENT_LENGTH)
+                return http_request_header_line_invalid(r, 400, "invalid Content-Length header -> 400");
+            continue; /* ignore empty header */
+        }
 
         if (http_header_strict) {
             const char * const x = http_request_check_line_strict(v, vlen);
@@ -1252,6 +1265,14 @@ http_request_parse (request_st * const restrict r, const int scheme_port)
         /* (-1 == r->reqbody_length when Transfer-Encoding: chunked)*/
         if (-1 == r->reqbody_length
             && light_btst(r->rqst_htags, HTTP_HEADER_CONTENT_LENGTH)) {
+            /* RFC9112 HTTP/1.1 Section 6.1. Transfer-Encoding
+             * https://httpwg.org/specs/rfc9112.html#rfc.section.6.1.p.15
+             * A server MAY reject a request that contains both Content-Length
+             * and Transfer-Encoding or process such a request in accordance
+             * with the Transfer-Encoding alone. Regardless, the server MUST
+             * close the connection after responding to such a request to
+             * avoid the potential attacks. */
+            r->keep_alive = 0;
             /* RFC7230 Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
              * 3.3.3.  Message Body Length
              * [...]
@@ -1355,12 +1376,6 @@ http_request_headers_process_h2 (request_st * const restrict r, const int scheme
     if (0 == r->http_status)
         r->http_status = http_request_parse(r, scheme_port);
 
-    if (0 == r->http_status) {
-        if (light_btst(r->rqst_htags, HTTP_HEADER_CONNECTION))
-            r->http_status = http_request_header_line_invalid(r, 400,
-              "invalid Connection header with HTTP/2 -> 400");
-    }
-
     http_request_headers_fin(r);
 
     /* limited; headers not collected into a single buf for HTTP/2 */
@@ -1374,9 +1389,11 @@ http_request_headers_process_h2 (request_st * const restrict r, const int scheme
         }
     }
 
+  #if 0 /*(redundant; Upgrade rejected in http_request_parse() if present)*/
     /* ignore Upgrade if using HTTP/2 */
     if (light_btst(r->rqst_htags, HTTP_HEADER_UPGRADE))
         http_header_request_unset(r, HTTP_HEADER_UPGRADE,
                                   CONST_STR_LEN("upgrade"));
+  #endif
     /* XXX: should filter out other hop-by-hop connection headers, too */
 }

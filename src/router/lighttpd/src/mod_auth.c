@@ -97,7 +97,7 @@ http_auth_cache_free (http_auth_cache *ac)
     splay_tree *sptree = ac->sptree;
     while (sptree) {
         http_auth_cache_entry_free(sptree->data);
-        sptree = splaytree_delete(sptree, sptree->key);
+        sptree = splaytree_delete_splayed_node(sptree);
     }
     free(ac);
 }
@@ -117,14 +117,15 @@ http_auth_cache_init (const array *opts)
     return ac;
 }
 
+__attribute_pure__
 static int
 http_auth_cache_hash (const struct http_auth_require_t * const require, const char *username, const uint32_t ulen)
 {
+    /* (similar to splaytree_djbhash(), but with two strings hashed) */
     uint32_t h = /*(hash pointer value, which includes realm and permissions)*/
       djbhash((char *)(intptr_t)require, sizeof(intptr_t), DJBHASH_INIT);
     h = djbhash(username, ulen, h);
-    /* strip highest bit of hash value for splaytree (see splaytree_djbhash())*/
-    return (int32_t)(h & ~(((uint32_t)1) << 31));
+    return (int32_t)h;
 }
 
 static http_auth_cache_entry *
@@ -141,7 +142,7 @@ http_auth_cache_insert (splay_tree ** const sptree, const int ndx, void * const 
      * and splaytree has not been modified since http_auth_cache_query())*/
     /* *sptree = splaytree_splay(*sptree, ndx); */
     if (NULL == *sptree || (*sptree)->key != ndx)
-        *sptree = splaytree_insert(*sptree, ndx, data);
+        *sptree = splaytree_insert_splayed(*sptree, ndx, data);
     else { /* collision; replace old entry */
         data_free_fn((*sptree)->data);
         (*sptree)->data = data;
@@ -176,12 +177,9 @@ mod_auth_periodic_cleanup(splay_tree **sptree_ptr, const time_t max_age, const u
         max_ndx = 0;
         mod_auth_tag_old_entries(sptree, keys, &max_ndx, max_age, cur_ts);
         for (i = 0; i < max_ndx; ++i) {
-            int ndx = keys[i];
-            sptree = splaytree_splay(sptree, ndx);
-            if (sptree && sptree->key == ndx) {
-                http_auth_cache_entry_free(sptree->data);
-                sptree = splaytree_delete(sptree, ndx);
-            }
+            sptree = splaytree_splay_nonnull(sptree, keys[i]);
+            http_auth_cache_entry_free(sptree->data);
+            sptree = splaytree_delete_splayed_node(sptree);
         }
     } while (max_ndx == sizeof(keys)/sizeof(int));
     *sptree_ptr = sptree;
@@ -273,6 +271,7 @@ static void data_auth_free(data_unset *d)
     free(dauth);
 }
 
+__attribute_returns_nonnull__
 static data_auth *data_auth_init(void)
 {
     static const struct data_methods fn = {

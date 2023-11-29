@@ -463,6 +463,10 @@ static void config_compat_module_load (server *srv) {
                                          sizeof("mod_wstunnel")-1)) {
             if (NULL == dyn_name)
                 dyn_name = m->ptr;
+            if (!append_mod_staticfile)
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "Warning: %s should be listed in server.modules"
+                  " before mod_staticfile", m->ptr);
         }
     }
 
@@ -540,59 +544,18 @@ static void config_compat_module_load (server *srv) {
 }
 
 static void config_deprecate_module_compress (server *srv) {
-    int mod_compress_idx = -1;
-    int mod_deflate_idx = -1;
+    /* replace "mod_compress" value with "mod_deflate" value */
     for (uint32_t i = 0; i < srv->srvconf.modules->used; ++i) {
         buffer *m = &((data_string *)srv->srvconf.modules->data[i])->value;
         if (buffer_eq_slen(m, CONST_STR_LEN("mod_compress")))
-            mod_compress_idx = (int)i;
-        else if (buffer_eq_slen(m, CONST_STR_LEN("mod_deflate")))
-            mod_deflate_idx = (int)i;
-    }
-    if (mod_compress_idx < 0) return;
-
-    int has_compress_directive = 0;
-    for (uint32_t i = 0; i < srv->config_context->used; ++i) {
-        const data_config *config =
-          (data_config const *)srv->config_context->data[i];
-        for (uint32_t j = 0; j < config->value->used; ++j) {
-            buffer *k = &config->value->data[j]->key;
-            if (0 == strncmp(k->ptr, "compress.", sizeof("compress.")-1)) {
-                has_compress_directive = 1;
-                break;
-            }
-        }
-        if (has_compress_directive) {
-            log_error(srv->errh, __FILE__, __LINE__,
-              "Warning: \"mod_compress\" is DEPRECATED and has been replaced "
-              "with \"mod_deflate\".  A future release of lighttpd 1.4.x will "
-              "not contain mod_compress and lighttpd may fail to start up");
-            break;
-        }
-    }
-
-    if (mod_deflate_idx >= 0 || !has_compress_directive) {
-        /* create new modules value list without mod_compress */
-        array *a = array_init(srv->srvconf.modules->used-1);
-        for (uint32_t i = 0; i < srv->srvconf.modules->used; ++i) {
-            buffer *m = &((data_string *)srv->srvconf.modules->data[i])->value;
-            if (buffer_eq_slen(m, CONST_STR_LEN("mod_compress")))
-                continue;
-            array_insert_value(a, BUF_PTR_LEN(m));
-        }
-        array_free(srv->srvconf.modules);
-        srv->srvconf.modules = a;
-    }
-    else {
-        /* replace "mod_compress" value with "mod_deflate" value */
-        buffer *m = &((data_string *)srv->srvconf.modules->data[mod_compress_idx])->value;
-        buffer_copy_string_len(m, CONST_STR_LEN("mod_deflate"));
+            buffer_copy_string_len(m, CONST_STR_LEN("mod_deflate"));
     }
 }
 
 static int config_http_parseopts (server *srv, const array *a) {
     unsigned short int opts = srv->srvconf.http_url_normalize;
-    unsigned short int decode_2f = 1;
+    uint8_t decode_2f = 1;
+    uint8_t url_normalize = 1;
     int rc = 1;
     for (size_t i = 0; i < a->used; ++i) {
         const data_string * const ds = (const data_string *)a->data[i];
@@ -654,14 +617,15 @@ static int config_http_parseopts (server *srv, const array *a) {
         else {
             opts &= ~opt;
             if (opt == HTTP_PARSEOPT_URL_NORMALIZE) {
-                opts = 0;
-                break;
+                url_normalize = 0;
             }
             if (opt == HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE) {
                 decode_2f = 0;
             }
         }
     }
+    if (!url_normalize)
+        opts = 0;
     if (opts != 0) {
         opts |= HTTP_PARSEOPT_URL_NORMALIZE;
         if ((opts & (HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE
@@ -962,12 +926,11 @@ static int config_insert_srvconf(server *srv) {
     if (config_feature_bool(srv, "server.h2proto", 1))
         array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_h2"));
 
+    config_deprecate_module_compress(srv);
     config_check_module_duplicates(srv);
 
     if (srv->srvconf.compat_module_load)
         config_compat_module_load(srv);
-
-    config_deprecate_module_compress(srv);
 
     if (srv->srvconf.http_url_normalize)
         config_burl_normalize_cond(srv);
@@ -977,6 +940,140 @@ static int config_insert_srvconf(server *srv) {
 
     free(srvplug.cvlist);
     return rc;
+}
+
+/* common media types for the web
+ *
+ * references:
+ *
+ * lighttpd doc/scripts/create-mime.pl
+ * https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+ * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
+ * https://docs.w3cub.com/http/basics_of_http/mime_types
+ * http://www.iana.org/assignments/media-types/media-types.xhtml
+ * https://salsa.debian.org/debian/media-types/-/blob/master/mime.types
+ * https://src.fedoraproject.org/rpms/mailcap/tree/rawhide
+ *   https://pagure.io/mailcap/blob/master/f/mime.types
+ *
+ */
+__attribute_cold__
+static void config_mimetypes_default(array * const a) {
+    static const char * const mimetypes_default[] = {
+        /*(order not important)*/
+
+        ".html",  "text/html"
+       ,".htm",   "text/html"
+       ,".txt",   "text/plain;charset=utf-8"
+       ,".text",  "text/plain;charset=utf-8"
+       ,".css",   "text/css;charset=utf-8"
+       ,".js",    "text/javascript"
+       ,".mjs",   "text/javascript"
+       ,".xml",   "text/xml"
+
+       ,".aac",   "audio/aac"
+       ,".flac",  "audio/flac" /* alt: "audio/x-flac" */
+       ,".m4a",   "audio/mp4"
+       ,".mp3",   "audio/mpeg"
+       ,".oga",   "audio/ogg"
+       ,".ogg",   "audio/ogg"
+       ,".opus",  "audio/opus"
+       ,".wav",   "audio/x-wav"
+       ,".weba",  "audio/webm"
+       ,".ogx",   "application/ogg"
+
+       ,".apng",  "image/apng" /* alt: "image/vnd.mozilla.apng" */
+       ,".avif",  "image/avif"
+       ,".bmp",   "image/bmp"
+       ,".gif",   "image/gif"
+       ,".jpeg",  "image/jpeg"
+       ,".jpg",   "image/jpeg"
+       ,".png",   "image/png"
+       ,".svg",   "image/svg+xml"
+       ,".svgz",  "image/svg+xml"
+       ,".tiff",  "image/tiff"
+       ,".webp",  "image/webp"
+
+       ,".avi",   "video/x-msvideo"
+       ,".mkv",   "video/x-matroska"
+       ,".m4v",   "video/mp4"
+       ,".mp4",   "video/mp4"
+       ,".mpeg",  "video/mpeg"
+       ,".mpg",   "video/mpeg"
+       ,".ogv",   "video/ogg"
+       ,".mov",   "video/quicktime"
+       ,".qt",    "video/quicktime"
+       ,".webm",  "video/webm"
+
+       ,".json",  "application/json"
+       ,".dtd",   "application/xml-dtd"
+       ,".pdf",   "application/pdf"
+       ,".xhtml", "application/xhtml+xml"
+
+       ,".eot",   "application/vnd.ms-fontobject"
+       ,".otf",   "font/otf"
+       ,".sfnt",  "font/sfnt"
+       ,".ttc",   "font/collection"
+       ,".ttf",   "font/ttf"
+       ,".woff",  "font/woff"
+       ,".woff2", "font/woff2"
+
+       ,".conf",  "text/plain"
+       ,".log",   "text/plain"
+       ,".csv",   "text/csv"
+       ,".rtf",   "text/rtf"
+       ,".ics",   "text/calendar"
+       ,".md",    "text/markdown;charset=utf-8"
+       ,".ico",   "image/vnd.microsoft.icon" /* alt: "image/x-icon" */
+
+        /* "application/octet-stream" okay to trigger download for archives,
+         * but providing type (even if explicit "application/octet-stream")
+         * allows http_response_send_file() to send ETag and Last-Modified.
+         * (implicit "application/octet-stream" skips sending caching headers
+         *  when type is not found in mimetype.assign (or xattr, if enabled)) */
+
+       ,".7z",    "application/x-7z-compressed"
+       ,".bz2",   "application/x-bzip2"
+       ,".gz",    "application/gzip" /* alt: "application/x-gzip" */
+       ,".rar",   "application/vnd.rar"
+       ,".tar",   "application/x-tar"
+       ,".tar.gz","application/x-gtar-compressed"
+       ,".tgz",   "application/x-gtar-compressed"
+       ,".xz",    "application/x-xz"
+       ,".zip",   "application/zip"
+       ,".zst",   "application/zstd"
+
+       ,".bin",   "application/octet-stream"
+       ,".class", "application/java-vm"
+       ,".dll",   "application/x-msdos-program"
+       ,".exe",   "application/x-msdos-program"
+       ,".img",   "application/octet-stream"
+       ,".iso",   "application/x-iso9660-image"
+       ,".jar",   "application/java-archive"
+       ,".lha",   "application/x-lha"
+       ,".lhz",   "application/x-lzh"
+       ,".so",    "application/octet-stream"
+
+       ,".deb",   "application/vnd.debian.binary-package"
+       ,".dmg",   "application/x-apple-diskimage"
+       ,".rpm","application/x-redhat-package-manager"/*alt:"application/x-rpm"*/
+       ,".sig",   "application/pgp-signature"
+
+       ,"README", "text/plain;charset=utf-8"
+
+      #if 0
+        /* intentionally omit catch-all to signal elsewhere internally
+         * to omit sending caching headers such as ETag, Last-Modified */
+       ,"",       "application/octet-stream"
+      #endif
+    };
+
+    uint32_t i = 0;
+    do {
+        array_set_key_value(a, mimetypes_default[i],
+                               strlen(mimetypes_default[i]),
+                               mimetypes_default[i+1],
+                               strlen(mimetypes_default[i+1]));
+    } while ((i+=2) < sizeof(mimetypes_default)/sizeof(*mimetypes_default));
 }
 
 static int config_insert(server *srv) {
@@ -1235,8 +1332,10 @@ static int config_insert(server *srv) {
       | (srv->srvconf.http_host_normalize  ?  HTTP_PARSEOPT_HOST_NORMALIZE  :0)
       | (srv->srvconf.http_method_get_body ?  HTTP_PARSEOPT_METHOD_GET_BODY :0);
     p->defaults.http_parseopts |= srv->srvconf.http_url_normalize;
-    p->defaults.mimetypes = &srv->srvconf.empty_array; /*(must not be NULL)*/
+    p->defaults.mimetypes = &srv->srvconf.mimetypes_default;/*must not be NULL*/
     p->defaults.h2proto = srv->srvconf.h2proto;
+    p->defaults.http_pathinfo =
+      config_feature_bool(srv, "server.http-pathinfo", 1);
 
     /* initialize p->defaults from global config context */
     if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
@@ -1244,6 +1343,9 @@ static int config_insert(server *srv) {
         if (-1 != cpv->k_id)
             config_merge_config(&p->defaults, cpv);
     }
+
+    if (p->defaults.mimetypes == &srv->srvconf.mimetypes_default)
+        config_mimetypes_default(&srv->srvconf.mimetypes_default);
 
     /* (after processing config defaults) */
     p->defaults.max_request_field_size = srv->srvconf.max_request_field_size;
@@ -1267,6 +1369,9 @@ int config_finalize(server *srv, const buffer *default_server_tag) {
       srv->srvconf.high_precision_timestamps =
         config_feature_bool(srv, "server.metrics-high-precision",
                             srv->srvconf.high_precision_timestamps);
+
+    /* disable h2proto if mod_h2 was not found during plugin load */
+    p->defaults.h2proto = srv->srvconf.h2proto;
 
     /* configure default server_tag if not set
      * (if configured to blank, unset server_tag)*/
@@ -1567,6 +1672,7 @@ void config_free(server *srv) {
     array_free(srv->srvconf.config_touched);
     array_free(srv->srvconf.modules);
     array_free(srv->srvconf.upload_tempdirs);
+    array_free_data(&srv->srvconf.mimetypes_default);
   #ifdef HAVE_PCRE2_H
     if (NULL == srv->match_data) pcre2_match_data_free(srv->match_data);
   #endif
@@ -2194,35 +2300,28 @@ static int config_parse(server *srv, config_t *context, const char *source, cons
 
 __attribute_cold__
 static int config_parse_stdin(server *srv, config_t *context) {
-    buffer * const b = chunk_buffer_acquire();
-    size_t dlen;
-    ssize_t n = -1;
-    do {
-        if (n > 0)
-            buffer_commit(b, n);
-        size_t avail = buffer_string_space(b);
-        dlen = buffer_clen(b);
-        if (__builtin_expect( (avail < 1024), 0)) {
-            /*(arbitrary limit: 32 MB file; expect < 1 MB)*/
-            if (dlen >= 32*1024*1024) {
-                log_error(srv->errh, __FILE__, __LINE__,
-                  "config read from stdin is way too large");
-                break;
-            }
-            avail = chunk_buffer_prepare_append(b, b->size+avail);
+    /* config_mem is preserved across graceful restart
+     * and will leak mem at program exit (no big deal).
+     * Preserving config_mem allows graceful restart in order
+     * to trigger re-read of config files such as TLS certificates. */
+    static char *config_mem;
+    static off_t lim;
+    if (NULL == config_mem) {
+        lim = 32*1024*1024; /*(arbitrary limit: 32 MB file; expect < 1 MB)*/
+        config_mem = fdevent_load_file("/dev/stdin",&lim,srv->errh,malloc,free);
+        if (!config_mem) {
+            log_perror(srv->errh, __FILE__, __LINE__, "config read from stdin");
+            return -1;
         }
-        n = read(STDIN_FILENO, b->ptr+dlen, avail);
-    } while (n > 0 || (n == -1 && errno == EINTR));
-    int rc = -1;
-    if (0 == n)
-        rc = dlen ? config_parse(srv, context, "-", b->ptr, (int)dlen) : 0;
-    else
-        log_perror(srv->errh, __FILE__, __LINE__, "config read from stdin");
-
-    if (dlen)
-        ck_memzero(b->ptr, dlen);
-    chunk_buffer_release(b);
-    return rc;
+        int fd = fdevent_open_devnull();
+      #ifdef __COVERITY__/*(ignore leak; intentionally want open STDIN_FILENO)*/
+        if (fd >= 0)
+      #else
+        if (fd > STDIN_FILENO) /*(STDIN_FILENO closed by fdevent_load_file()*/
+      #endif
+            close(fd);
+    }
+    return lim ? config_parse(srv, context, "-", config_mem, (int)lim) : 0;
 }
 
 static int config_parse_file_stream(server *srv, config_t *context, const char *fn) {
@@ -2434,18 +2533,7 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 		ret = -1;
 	}
 	else {
-		char *shell = getenv("SHELL");
-		char *args[4];
-		pid_t pid;
-		if (shell && (0 == strcmp(shell, "/usr/bin/false")
-		              || 0 == strcmp(shell, "/bin/false")))
-			shell = NULL;
-		*(const char **)&args[0] = shell ? shell : "/bin/sh";
-		*(const char **)&args[1] = "-c";
-		*(const char **)&args[2] = cmd;
-		args[3] = NULL;
-
-		pid = fdevent_fork_execve(args[0], args, NULL, -1, fds[1], -1, -1);
+		pid_t pid = fdevent_sh_exec(cmd, NULL, -1, fds[1], -1);
 		if (-1 == pid) {
 			log_perror(srv->errh, __FILE__, __LINE__, "fork/exec(%s)", cmd);
 			ret = -1;
@@ -2656,112 +2744,96 @@ int config_read(server *srv, const char *fn) {
 	return 0;
 }
 
-int config_set_defaults(server *srv) {
-	size_t i;
-	request_config *s = &((config_data_base *)srv->config_data_base)->defaults;
-	struct stat st1, st2;
+/* stat_cache_path_isdir() not used since if srv->srvconf.changeroot is set,
+ * then the stat cache entries would be invalid after the chroot occurs */
+__attribute_noinline__
+static int
+config_stat_isdir (const char * const path, struct stat * const st)
+{
+    return
+      !(-1 == stat(path, st) || (S_ISDIR(st->st_mode) ? 0 : (errno = ENOTDIR)));
+}
 
-	if (fdevent_config(&srv->srvconf.event_handler, srv->errh) <= 0)
-		return -1;
+int
+config_set_defaults (server * const srv)
+{
+    struct stat st;
 
-	if (srv->srvconf.changeroot) {
-		if (-1 == stat(srv->srvconf.changeroot->ptr, &st1)) {
-			log_error(srv->errh, __FILE__, __LINE__,
-			  "server.chroot doesn't exist: %s",
-			  srv->srvconf.changeroot->ptr);
-			return -1;
-		}
-		if (!S_ISDIR(st1.st_mode)) {
-			log_error(srv->errh, __FILE__, __LINE__,
-			  "server.chroot isn't a directory: %s",
-			  srv->srvconf.changeroot->ptr);
-			return -1;
-		}
-	}
+    if (fdevent_config(&srv->srvconf.event_handler, srv->errh) <= 0)
+        return -1;
 
-	if (!srv->srvconf.upload_tempdirs->used) {
-		const char *tmpdir = getenv("TMPDIR");
-	  #ifdef _WIN32
-		if (NULL == tmpdir) tmpdir = getenv("TEMP");
-	  #endif
-		if (NULL == tmpdir) tmpdir = "/var/tmp";
-		array_insert_value(srv->srvconf.upload_tempdirs, tmpdir, strlen(tmpdir));
-	}
+    chunkqueue_set_tempdirs_default(
+        srv->srvconf.upload_tempdirs,
+        srv->srvconf.upload_temp_file_size);
 
-	if (srv->srvconf.upload_tempdirs->used) {
-		buffer * const tb = srv->tmp_buf;
-		buffer_clear(tb);
-		if (srv->srvconf.changeroot) {
-			buffer_copy_buffer(tb, srv->srvconf.changeroot);
-		}
-		const size_t len = buffer_clen(tb);
+    if (!srv->srvconf.upload_tempdirs->used) {
+        const char *tmpdir = chunkqueue_env_tmpdir();
+        array_insert_value(srv->srvconf.upload_tempdirs,tmpdir,strlen(tmpdir));
+    }
 
-		for (i = 0; i < srv->srvconf.upload_tempdirs->used; ++i) {
-			const data_string * const ds = (data_string *)srv->srvconf.upload_tempdirs->data[i];
-			if (len) {
-				buffer_truncate(tb, len);
-				buffer_append_path_len(tb, BUF_PTR_LEN(&ds->value));
-			} else {
-				buffer_copy_buffer(tb, &ds->value);
-			}
-			if (-1 == stat(tb->ptr, &st1)) {
-				log_error(srv->errh, __FILE__, __LINE__,
-				  "server.upload-dirs doesn't exist: %s", tb->ptr);
-			} else if (!S_ISDIR(st1.st_mode)) {
-				log_error(srv->errh, __FILE__, __LINE__,
-				  "server.upload-dirs isn't a directory: %s", tb->ptr);
-			}
-		}
-	}
+    {
+        buffer * const tb = srv->tmp_buf;
+        buffer_clear(tb);
+        if (srv->srvconf.changeroot) {
+            buffer_copy_buffer(tb, srv->srvconf.changeroot);
+            if (!config_stat_isdir(tb->ptr, &st)) {
+                log_perror(srv->errh, __FILE__, __LINE__,
+                  "server.chroot %s", tb->ptr);
+                return -1;
+            }
+        }
+        const uint_fast32_t len = buffer_clen(tb);
 
-	chunkqueue_set_tempdirs_default(
-		srv->srvconf.upload_tempdirs,
-		srv->srvconf.upload_temp_file_size);
+        for (uint_fast32_t i = 0; i < srv->srvconf.upload_tempdirs->used; ++i) {
+            const buffer *value =
+              &((data_string *)srv->srvconf.upload_tempdirs->data[i])->value;
+            if (len) { /* (srv->srvconf.changeroot) */
+                buffer_truncate(tb, len);
+                buffer_append_path_len(tb, BUF_PTR_LEN(value));
+                value = tb;
+            }
+            if (!config_stat_isdir(value->ptr, &st))
+                log_perror(srv->errh, __FILE__, __LINE__,
+                  "server.upload-dirs %s", value->ptr);
+        }
+    }
 
-	if (!s->document_root || buffer_is_blank(s->document_root)) {
-		log_error(srv->errh, __FILE__, __LINE__, "server.document-root is not set");
-		return -1;
-	}
+    request_config * const s =
+      &((config_data_base *)srv->config_data_base)->defaults;
 
-	if (2 == s->force_lowercase_filenames) { /* user didn't configure it in global section? */
-		s->force_lowercase_filenames = 0; /* default to 0 */
+    if (!s->document_root || buffer_is_blank(s->document_root)) {
+        log_error(srv->errh, __FILE__, __LINE__,
+          "server.document-root is not set");
+        return -1;
+    }
 
-		buffer * const tb = srv->tmp_buf;
-		buffer_copy_string_len_lc(tb, BUF_PTR_LEN(s->document_root));
+    if (2 == s->force_lowercase_filenames) { /*(not configured in global conf)*/
+        s->force_lowercase_filenames = 0; /* default to case-sensitive */
 
-		if (0 == stat(tb->ptr, &st1)) {
-			int is_lower = 0;
+        /* simplistic test on global s->document_root
+         * (stat() uppercase/lowercase of *entire* path)
+         * (ignores srv->srvconf.changeroot; no chroot on _WIN32)*/
+        buffer * const tb = srv->tmp_buf;
+        buffer_copy_buffer(tb, s->document_root);
+        buffer_to_upper(tb);
+        if (0 == stat(tb->ptr, &st)) {
+            /* uppercase exists; check lowercase */
+            const ino_t st_ino = st.st_ino;
+            const int is_upper_eq = buffer_is_equal(tb, s->document_root);
+            buffer_to_lower(tb);
+            if (is_upper_eq && buffer_is_equal(tb, s->document_root)) {
+                /* uppercasing and lowercasing did not result in different
+                 * filenames (e.g. "/" or "/12345/"), so unable to determine
+                 * case sensitivity here; assume case-sensitive filesystem. */
+                s->force_lowercase_filenames = 0;
+            }
+            else if (0 == stat(tb->ptr, &st)) {
+                /* uppercase exists, too;
+                 * case-insensitive if upper and lower stat have same inode */
+                s->force_lowercase_filenames = (st_ino == st.st_ino);
+            }
+        }
+    }
 
-			is_lower = buffer_is_equal(tb, s->document_root);
-
-			/* lower-case existed, check upper-case */
-			buffer_copy_buffer(tb, s->document_root);
-
-			buffer_to_upper(tb);
-
-			/* we have to handle the special case that upper and lower-casing results in the same filename
-			 * as in server.document-root = "/" or "/12345/" */
-
-			if (is_lower && buffer_is_equal(tb, s->document_root)) {
-				/* lower-casing and upper-casing didn't result in
-				 * another filename, no need to stat(),
-				 * just assume it is case-sensitive. */
-
-				s->force_lowercase_filenames = 0;
-			} else if (0 == stat(tb->ptr, &st2)) {
-
-				/* upper case exists too, doesn't the FS handle this ? */
-
-				/* upper and lower have the same inode -> case-insensitive FS */
-
-				if (st1.st_ino == st2.st_ino) {
-					/* upper and lower have the same inode -> case-insensitive FS */
-
-					s->force_lowercase_filenames = 1;
-				}
-			}
-		}
-	}
-
-	return 0;
+    return 0;
 }

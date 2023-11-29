@@ -106,6 +106,7 @@ typedef struct cgi_pid_t {
 	struct cgi_pid_t *prev;
 } cgi_pid_t;
 
+__attribute_returns_nonnull__
 static handler_ctx * cgi_handler_ctx_init(void) {
 	handler_ctx *hctx = ck_calloc(1, sizeof(*hctx));
 	hctx->response = chunk_buffer_acquire();
@@ -485,8 +486,7 @@ static void cgi_connection_close(handler_ctx *hctx) {
 	/* (r->reqbody_queue.upload_temp_file_size might have been changed even
 	 *  with 0 == r->reqbody_length, if hctx->conf.upgrade is set) */
 	if (p->tempfile_accum) /*(and if not streaming)*/
-		chunkqueue_set_tempdirs(&r->reqbody_queue, /* reset sz */
-		                        r->reqbody_queue.tempdirs, 0);
+		chunkqueue_set_tempdirs(&r->reqbody_queue, 0); /* reset sz */
 
 	/* finish response (if not already r->resp_body_started, r->resp_body_finished) */
 	if (r->handler_module == p->self) {

@@ -128,7 +128,7 @@ sbin_PROGRAMS = lighttpd$(EXEEXT) lighttpd-angel$(EXEEXT)
 @LIGHTTPD_STATIC_FALSE@	mod_wstunnel.la
 @BUILD_WITH_MAXMINDDB_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_28 = mod_maxminddb.c
 @BUILD_WITH_MAXMINDDB_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_29 = $(MAXMINDDB_LIB)
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_30 = mod_magnet.c mod_magnet_cache.c
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_30 = mod_magnet.c mod_magnet_cache.c algo_hmac.c
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_31 = $(LUA_CFLAGS)
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_32 = $(LUA_LIBS) -lm
 @BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__append_33 = mod_authn_gssapi.c
@@ -636,28 +636,28 @@ mod_wstunnel_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	-o $@
 @LIGHTTPD_STATIC_FALSE@am_mod_wstunnel_la_rpath = -rpath $(libdir)
 am__lighttpd_SOURCES_DIST = server.c response.c connections.c h1.c \
-	h2.c sock_addr_cache.c network.c network_write.c \
-	ls-hpack/lshpack.c algo_xxhash.c fdevent_impl.c http_range.c \
-	data_config.c configfile.c configparser.c mod_rewrite.c \
-	mod_redirect.c mod_access.c mod_alias.c mod_indexfile.c \
-	mod_staticfile.c mod_setenv.c mod_expire.c mod_simple_vhost.c \
-	mod_evhost.c mod_fastcgi.c mod_scgi.c base64.c buffer.c burl.c \
-	log.c http_header.c http_kv.c keyvalue.c chunk.c http_chunk.c \
-	fdevent.c fdevent_fdnode.c gw_backend.c stat_cache.c \
-	http_etag.c array.c algo_md5.c algo_sha1.c algo_splaytree.c \
-	configfile-glue.c http-header-glue.c http_cgi.c http_date.c \
-	plugin.c reqpool.c request.c sock_addr.c rand.c fdlog_maint.c \
-	fdlog.c sys-setjmp.c ck.c fdevent_win32.c fs_win32.c \
-	mod_auth_api.c mod_vhostdb_api.c mod_accesslog.c mod_ajp13.c \
-	mod_auth.c mod_authn_file.c mod_cgi.c mod_deflate.c \
-	mod_dirlisting.c mod_extforward.c mod_proxy.c mod_rrdtool.c \
-	mod_sockproxy.c mod_ssi.c mod_status.c mod_userdir.c \
-	mod_vhostdb.c mod_webdav.c mod_maxminddb.c mod_magnet.c \
-	mod_magnet_cache.c mod_authn_gssapi.c mod_authn_ldap.c \
-	mod_vhostdb_ldap.c mod_authn_pam.c mod_vhostdb_mysql.c \
-	mod_vhostdb_pgsql.c mod_authn_dbi.c mod_vhostdb_dbi.c \
-	mod_openssl.c mod_mbedtls.c mod_gnutls.c mod_nss.c \
-	mod_wolfssl.c
+	sock_addr_cache.c network.c network_write.c fdevent_impl.c \
+	http_range.c data_config.c configfile.c configparser.c \
+	mod_rewrite.c mod_redirect.c mod_access.c mod_alias.c \
+	mod_indexfile.c mod_staticfile.c mod_setenv.c mod_expire.c \
+	mod_simple_vhost.c mod_evhost.c mod_fastcgi.c mod_scgi.c \
+	base64.c buffer.c burl.c log.c http_header.c http_kv.c \
+	keyvalue.c chunk.c http_chunk.c fdevent.c fdevent_fdnode.c \
+	gw_backend.c stat_cache.c http_etag.c array.c algo_md5.c \
+	algo_sha1.c algo_splaytree.c configfile-glue.c \
+	http-header-glue.c http_cgi.c http_date.c plugin.c reqpool.c \
+	request.c sock_addr.c rand.c fdlog_maint.c fdlog.c \
+	sys-setjmp.c ck.c fdevent_win32.c fs_win32.c mod_auth_api.c \
+	mod_vhostdb_api.c mod_accesslog.c mod_ajp13.c mod_auth.c \
+	mod_authn_file.c mod_cgi.c mod_deflate.c mod_dirlisting.c \
+	mod_extforward.c mod_proxy.c mod_rrdtool.c mod_sockproxy.c \
+	mod_ssi.c mod_status.c mod_userdir.c mod_vhostdb.c \
+	mod_webdav.c h2.c ls-hpack/lshpack.c algo_xxhash.c \
+	mod_maxminddb.c mod_magnet.c mod_magnet_cache.c algo_hmac.c \
+	mod_authn_gssapi.c mod_authn_ldap.c mod_vhostdb_ldap.c \
+	mod_authn_pam.c mod_vhostdb_mysql.c mod_vhostdb_pgsql.c \
+	mod_authn_dbi.c mod_vhostdb_dbi.c mod_openssl.c mod_mbedtls.c \
+	mod_gnutls.c mod_nss.c mod_wolfssl.c
 am__objects_5 = lighttpd-mod_rewrite.$(OBJEXT) \
 	lighttpd-mod_redirect.$(OBJEXT) lighttpd-mod_access.$(OBJEXT) \
 	lighttpd-mod_alias.$(OBJEXT) lighttpd-mod_indexfile.$(OBJEXT) \
@@ -691,16 +691,16 @@ am__objects_8 = lighttpd-base64.$(OBJEXT) lighttpd-buffer.$(OBJEXT) \
 @NO_RDYNAMIC_FALSE@am__objects_9 = $(am__objects_8)
 am__objects_10 = lighttpd-server.$(OBJEXT) lighttpd-response.$(OBJEXT) \
 	lighttpd-connections.$(OBJEXT) lighttpd-h1.$(OBJEXT) \
-	lighttpd-h2.$(OBJEXT) lighttpd-sock_addr_cache.$(OBJEXT) \
-	lighttpd-network.$(OBJEXT) lighttpd-network_write.$(OBJEXT) \
-	ls-hpack/lighttpd-lshpack.$(OBJEXT) \
-	lighttpd-algo_xxhash.$(OBJEXT) lighttpd-fdevent_impl.$(OBJEXT) \
-	lighttpd-http_range.$(OBJEXT) lighttpd-data_config.$(OBJEXT) \
-	lighttpd-configfile.$(OBJEXT) lighttpd-configparser.$(OBJEXT) \
-	$(am__objects_6) $(am__objects_9)
+	lighttpd-sock_addr_cache.$(OBJEXT) lighttpd-network.$(OBJEXT) \
+	lighttpd-network_write.$(OBJEXT) \
+	lighttpd-fdevent_impl.$(OBJEXT) lighttpd-http_range.$(OBJEXT) \
+	lighttpd-data_config.$(OBJEXT) lighttpd-configfile.$(OBJEXT) \
+	lighttpd-configparser.$(OBJEXT) $(am__objects_6) \
+	$(am__objects_9)
 @BUILD_WITH_MAXMINDDB_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_11 = lighttpd-mod_maxminddb.$(OBJEXT)
 @BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_12 = lighttpd-mod_magnet.$(OBJEXT) \
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_magnet_cache.$(OBJEXT)
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_magnet_cache.$(OBJEXT) \
+@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-algo_hmac.$(OBJEXT)
 @BUILD_WITH_KRB5_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_13 = lighttpd-mod_authn_gssapi.$(OBJEXT)
 @BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@am__objects_14 = lighttpd-mod_authn_ldap.$(OBJEXT) \
 @BUILD_WITH_LDAP_TRUE@@LIGHTTPD_STATIC_TRUE@	lighttpd-mod_vhostdb_ldap.$(OBJEXT)
@@ -746,6 +746,9 @@ am__objects_10 = lighttpd-server.$(OBJEXT) lighttpd-response.$(OBJEXT) \
 @LIGHTTPD_STATIC_TRUE@	lighttpd-mod_vhostdb.$(OBJEXT) \
 @LIGHTTPD_STATIC_TRUE@	lighttpd-mod_vhostdb_api.$(OBJEXT) \
 @LIGHTTPD_STATIC_TRUE@	lighttpd-mod_webdav.$(OBJEXT) \
+@LIGHTTPD_STATIC_TRUE@	lighttpd-h2.$(OBJEXT) \
+@LIGHTTPD_STATIC_TRUE@	ls-hpack/lighttpd-lshpack.$(OBJEXT) \
+@LIGHTTPD_STATIC_TRUE@	lighttpd-algo_xxhash.$(OBJEXT) \
 @LIGHTTPD_STATIC_TRUE@	$(am__objects_11) $(am__objects_12) \
 @LIGHTTPD_STATIC_TRUE@	$(am__objects_13) $(am__objects_14) \
 @LIGHTTPD_STATIC_TRUE@	$(am__objects_15) $(am__objects_16) \
@@ -797,6 +800,7 @@ lighttpd_OBJECTS = $(am_lighttpd_OBJECTS)
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
+@LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_1) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_3) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_4) \
 @LIGHTTPD_STATIC_TRUE@	$(am__DEPENDENCIES_5) \
@@ -820,8 +824,9 @@ am_t_test_common_OBJECTS = t/test_common.$(OBJEXT) \
 	t/test_array.$(OBJEXT) t/test_base64.$(OBJEXT) \
 	t/test_buffer.$(OBJEXT) t/test_burl.$(OBJEXT) \
 	t/test_http_header.$(OBJEXT) t/test_http_kv.$(OBJEXT) \
-	t/test_keyvalue.$(OBJEXT) t/test_request.$(OBJEXT) \
-	log.$(OBJEXT) fdlog.$(OBJEXT) sock_addr.$(OBJEXT) ck.$(OBJEXT)
+	t/test_http_range.$(OBJEXT) t/test_keyvalue.$(OBJEXT) \
+	t/test_request.$(OBJEXT) log.$(OBJEXT) fdlog.$(OBJEXT) \
+	sock_addr.$(OBJEXT) ck.$(OBJEXT)
 t_test_common_OBJECTS = $(am_t_test_common_OBJECTS)
 t_test_common_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -939,6 +944,7 @@ am__depfiles_remade = ./$(DEPDIR)/algo_xxhash.Plo ./$(DEPDIR)/array.Po \
 	./$(DEPDIR)/liblightcomp_la-sock_addr.Plo \
 	./$(DEPDIR)/liblightcomp_la-stat_cache.Plo \
 	./$(DEPDIR)/liblightcomp_la-sys-setjmp.Plo \
+	./$(DEPDIR)/lighttpd-algo_hmac.Po \
 	./$(DEPDIR)/lighttpd-algo_md5.Po \
 	./$(DEPDIR)/lighttpd-algo_sha1.Po \
 	./$(DEPDIR)/lighttpd-algo_splaytree.Po \
@@ -1093,8 +1099,8 @@ am__depfiles_remade = ./$(DEPDIR)/algo_xxhash.Plo ./$(DEPDIR)/array.Po \
 	t/$(DEPDIR)/test_base64.Po t/$(DEPDIR)/test_buffer.Po \
 	t/$(DEPDIR)/test_burl.Po t/$(DEPDIR)/test_common.Po \
 	t/$(DEPDIR)/test_configfile.Po t/$(DEPDIR)/test_http_header.Po \
-	t/$(DEPDIR)/test_http_kv.Po t/$(DEPDIR)/test_keyvalue.Po \
-	t/$(DEPDIR)/test_mod-test_mod.Po \
+	t/$(DEPDIR)/test_http_kv.Po t/$(DEPDIR)/test_http_range.Po \
+	t/$(DEPDIR)/test_keyvalue.Po t/$(DEPDIR)/test_mod-test_mod.Po \
 	t/$(DEPDIR)/test_mod-test_mod_access.Po \
 	t/$(DEPDIR)/test_mod-test_mod_alias.Po \
 	t/$(DEPDIR)/test_mod-test_mod_evhost.Po \
@@ -1435,10 +1441,10 @@ common_src = base64.c buffer.c burl.c log.c http_header.c http_kv.c \
 	http-header-glue.c http_cgi.c http_date.c plugin.c reqpool.c \
 	request.c sock_addr.c rand.c fdlog_maint.c fdlog.c \
 	sys-setjmp.c ck.c fdevent_win32.c fs_win32.c $(am__append_3)
-src = server.c response.c connections.c h1.c h2.c sock_addr_cache.c \
-	network.c network_write.c ls-hpack/lshpack.c algo_xxhash.c \
-	fdevent_impl.c http_range.c data_config.c configfile.c \
-	configparser.c $(am__append_1) $(am__append_4)
+src = server.c response.c connections.c h1.c sock_addr_cache.c \
+	network.c network_write.c fdevent_impl.c http_range.c \
+	data_config.c configfile.c configparser.c $(am__append_1) \
+	$(am__append_4)
 builtin_mods = \
   mod_rewrite.c \
   mod_redirect.c \
@@ -1618,9 +1624,6 @@ hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 	ls-hpack/huff-tables.h \
 	compat/fastcgi.h
 
-#(until switch to mod_h2)
-#lighttpd_SOURCES += h2.c ls-hpack/lshpack.c algo_xxhash.c
-#lighttpd_LDADD += $(XXHASH_LIBS)
 @LIGHTTPD_STATIC_FALSE@lighttpd_SOURCES = $(src)
 @LIGHTTPD_STATIC_TRUE@lighttpd_SOURCES = $(src) mod_access.c \
 @LIGHTTPD_STATIC_TRUE@	mod_accesslog.c mod_ajp13.c mod_alias.c \
@@ -1634,7 +1637,8 @@ hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 @LIGHTTPD_STATIC_TRUE@	mod_simple_vhost.c mod_sockproxy.c \
 @LIGHTTPD_STATIC_TRUE@	mod_ssi.c mod_staticfile.c mod_status.c \
 @LIGHTTPD_STATIC_TRUE@	mod_userdir.c mod_vhostdb.c \
-@LIGHTTPD_STATIC_TRUE@	mod_vhostdb_api.c mod_webdav.c \
+@LIGHTTPD_STATIC_TRUE@	mod_vhostdb_api.c mod_webdav.c h2.c \
+@LIGHTTPD_STATIC_TRUE@	ls-hpack/lshpack.c algo_xxhash.c \
 @LIGHTTPD_STATIC_TRUE@	$(am__append_28) $(am__append_30) \
 @LIGHTTPD_STATIC_TRUE@	$(am__append_33) $(am__append_35) \
 @LIGHTTPD_STATIC_TRUE@	$(am__append_37) $(am__append_39) \
@@ -1659,13 +1663,14 @@ hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 @LIGHTTPD_STATIC_TRUE@	$(BZ_LIB) $(BROTLI_LIBS) $(DEFLATE_LIBS) \
 @LIGHTTPD_STATIC_TRUE@	$(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) \
 @LIGHTTPD_STATIC_TRUE@	$(FAM_LIBS) $(LIBEV_LIBS) \
-@LIGHTTPD_STATIC_TRUE@	$(LIBUNWIND_LIBS) $(am__append_29) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_32) $(am__append_34) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_36) $(am__append_38) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_41) $(am__append_44) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_47) $(am__append_50) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_52) $(am__append_55) \
-@LIGHTTPD_STATIC_TRUE@	$(am__append_58) $(am__append_61)
+@LIGHTTPD_STATIC_TRUE@	$(LIBUNWIND_LIBS) $(XXHASH_LIBS) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_29) $(am__append_32) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_34) $(am__append_36) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_38) $(am__append_41) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_44) $(am__append_47) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_50) $(am__append_52) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_55) $(am__append_58) \
+@LIGHTTPD_STATIC_TRUE@	$(am__append_61)
 @LIGHTTPD_STATIC_FALSE@lighttpd_LDFLAGS = -export-dynamic
 @LIGHTTPD_STATIC_TRUE@lighttpd_LDFLAGS = -export-dynamic
 t_test_common_SOURCES = t/test_common.c \
@@ -1675,6 +1680,7 @@ t_test_common_SOURCES = t/test_common.c \
                         t/test_burl.c \
                         t/test_http_header.c \
                         t/test_http_kv.c \
+                        t/test_http_range.c \
                         t/test_keyvalue.c \
                         t/test_request.c \
                         log.c \
@@ -1973,6 +1979,8 @@ t/test_http_header.$(OBJEXT): t/$(am__dirstamp) \
 	t/$(DEPDIR)/$(am__dirstamp)
 t/test_http_kv.$(OBJEXT): t/$(am__dirstamp) \
 	t/$(DEPDIR)/$(am__dirstamp)
+t/test_http_range.$(OBJEXT): t/$(am__dirstamp) \
+	t/$(DEPDIR)/$(am__dirstamp)
 t/test_keyvalue.$(OBJEXT): t/$(am__dirstamp) \
 	t/$(DEPDIR)/$(am__dirstamp)
 t/test_request.$(OBJEXT): t/$(am__dirstamp) \
@@ -2063,6 +2071,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblightcomp_la-sock_addr.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblightcomp_la-stat_cache.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblightcomp_la-sys-setjmp.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-algo_hmac.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-algo_md5.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-algo_sha1.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lighttpd-algo_splaytree.Po@am__quote@ # am--include-marker
@@ -2241,6 +2250,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_configfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_http_header.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_http_kv.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_http_range.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_keyvalue.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@t/$(DEPDIR)/test_mod-test_mod_access.Po@am__quote@ # am--include-marker
@@ -2675,20 +2685,6 @@ lighttpd-h1.obj: h1.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-h1.obj `if test -f 'h1.c'; then $(CYGPATH_W) 'h1.c'; else $(CYGPATH_W) '$(srcdir)/h1.c'; fi`
 
-lighttpd-h2.o: h2.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-h2.o -MD -MP -MF $(DEPDIR)/lighttpd-h2.Tpo -c -o lighttpd-h2.o `test -f 'h2.c' || echo '$(srcdir)/'`h2.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-h2.Tpo $(DEPDIR)/lighttpd-h2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='h2.c' object='lighttpd-h2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-h2.o `test -f 'h2.c' || echo '$(srcdir)/'`h2.c
-
-lighttpd-h2.obj: h2.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-h2.obj -MD -MP -MF $(DEPDIR)/lighttpd-h2.Tpo -c -o lighttpd-h2.obj `if test -f 'h2.c'; then $(CYGPATH_W) 'h2.c'; else $(CYGPATH_W) '$(srcdir)/h2.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-h2.Tpo $(DEPDIR)/lighttpd-h2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='h2.c' object='lighttpd-h2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-h2.obj `if test -f 'h2.c'; then $(CYGPATH_W) 'h2.c'; else $(CYGPATH_W) '$(srcdir)/h2.c'; fi`
-
 lighttpd-sock_addr_cache.o: sock_addr_cache.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-sock_addr_cache.o -MD -MP -MF $(DEPDIR)/lighttpd-sock_addr_cache.Tpo -c -o lighttpd-sock_addr_cache.o `test -f 'sock_addr_cache.c' || echo '$(srcdir)/'`sock_addr_cache.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-sock_addr_cache.Tpo $(DEPDIR)/lighttpd-sock_addr_cache.Po
@@ -2730,34 +2726,6 @@ lighttpd-network_write.obj: network_write.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='network_write.c' object='lighttpd-network_write.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-network_write.obj `if test -f 'network_write.c'; then $(CYGPATH_W) 'network_write.c'; else $(CYGPATH_W) '$(srcdir)/network_write.c'; fi`
-
-ls-hpack/lighttpd-lshpack.o: ls-hpack/lshpack.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ls-hpack/lighttpd-lshpack.o -MD -MP -MF ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo -c -o ls-hpack/lighttpd-lshpack.o `test -f 'ls-hpack/lshpack.c' || echo '$(srcdir)/'`ls-hpack/lshpack.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo ls-hpack/$(DEPDIR)/lighttpd-lshpack.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ls-hpack/lshpack.c' object='ls-hpack/lighttpd-lshpack.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ls-hpack/lighttpd-lshpack.o `test -f 'ls-hpack/lshpack.c' || echo '$(srcdir)/'`ls-hpack/lshpack.c
-
-ls-hpack/lighttpd-lshpack.obj: ls-hpack/lshpack.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ls-hpack/lighttpd-lshpack.obj -MD -MP -MF ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo -c -o ls-hpack/lighttpd-lshpack.obj `if test -f 'ls-hpack/lshpack.c'; then $(CYGPATH_W) 'ls-hpack/lshpack.c'; else $(CYGPATH_W) '$(srcdir)/ls-hpack/lshpack.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo ls-hpack/$(DEPDIR)/lighttpd-lshpack.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ls-hpack/lshpack.c' object='ls-hpack/lighttpd-lshpack.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ls-hpack/lighttpd-lshpack.obj `if test -f 'ls-hpack/lshpack.c'; then $(CYGPATH_W) 'ls-hpack/lshpack.c'; else $(CYGPATH_W) '$(srcdir)/ls-hpack/lshpack.c'; fi`
-
-lighttpd-algo_xxhash.o: algo_xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-algo_xxhash.o -MD -MP -MF $(DEPDIR)/lighttpd-algo_xxhash.Tpo -c -o lighttpd-algo_xxhash.o `test -f 'algo_xxhash.c' || echo '$(srcdir)/'`algo_xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-algo_xxhash.Tpo $(DEPDIR)/lighttpd-algo_xxhash.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='algo_xxhash.c' object='lighttpd-algo_xxhash.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-algo_xxhash.o `test -f 'algo_xxhash.c' || echo '$(srcdir)/'`algo_xxhash.c
-
-lighttpd-algo_xxhash.obj: algo_xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-algo_xxhash.obj -MD -MP -MF $(DEPDIR)/lighttpd-algo_xxhash.Tpo -c -o lighttpd-algo_xxhash.obj `if test -f 'algo_xxhash.c'; then $(CYGPATH_W) 'algo_xxhash.c'; else $(CYGPATH_W) '$(srcdir)/algo_xxhash.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-algo_xxhash.Tpo $(DEPDIR)/lighttpd-algo_xxhash.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='algo_xxhash.c' object='lighttpd-algo_xxhash.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-algo_xxhash.obj `if test -f 'algo_xxhash.c'; then $(CYGPATH_W) 'algo_xxhash.c'; else $(CYGPATH_W) '$(srcdir)/algo_xxhash.c'; fi`
 
 lighttpd-fdevent_impl.o: fdevent_impl.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-fdevent_impl.o -MD -MP -MF $(DEPDIR)/lighttpd-fdevent_impl.Tpo -c -o lighttpd-fdevent_impl.o `test -f 'fdevent_impl.c' || echo '$(srcdir)/'`fdevent_impl.c
@@ -3711,6 +3679,48 @@ lighttpd-mod_webdav.obj: mod_webdav.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-mod_webdav.obj `if test -f 'mod_webdav.c'; then $(CYGPATH_W) 'mod_webdav.c'; else $(CYGPATH_W) '$(srcdir)/mod_webdav.c'; fi`
 
+lighttpd-h2.o: h2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-h2.o -MD -MP -MF $(DEPDIR)/lighttpd-h2.Tpo -c -o lighttpd-h2.o `test -f 'h2.c' || echo '$(srcdir)/'`h2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-h2.Tpo $(DEPDIR)/lighttpd-h2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='h2.c' object='lighttpd-h2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-h2.o `test -f 'h2.c' || echo '$(srcdir)/'`h2.c
+
+lighttpd-h2.obj: h2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-h2.obj -MD -MP -MF $(DEPDIR)/lighttpd-h2.Tpo -c -o lighttpd-h2.obj `if test -f 'h2.c'; then $(CYGPATH_W) 'h2.c'; else $(CYGPATH_W) '$(srcdir)/h2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-h2.Tpo $(DEPDIR)/lighttpd-h2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='h2.c' object='lighttpd-h2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-h2.obj `if test -f 'h2.c'; then $(CYGPATH_W) 'h2.c'; else $(CYGPATH_W) '$(srcdir)/h2.c'; fi`
+
+ls-hpack/lighttpd-lshpack.o: ls-hpack/lshpack.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ls-hpack/lighttpd-lshpack.o -MD -MP -MF ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo -c -o ls-hpack/lighttpd-lshpack.o `test -f 'ls-hpack/lshpack.c' || echo '$(srcdir)/'`ls-hpack/lshpack.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo ls-hpack/$(DEPDIR)/lighttpd-lshpack.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ls-hpack/lshpack.c' object='ls-hpack/lighttpd-lshpack.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ls-hpack/lighttpd-lshpack.o `test -f 'ls-hpack/lshpack.c' || echo '$(srcdir)/'`ls-hpack/lshpack.c
+
+ls-hpack/lighttpd-lshpack.obj: ls-hpack/lshpack.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ls-hpack/lighttpd-lshpack.obj -MD -MP -MF ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo -c -o ls-hpack/lighttpd-lshpack.obj `if test -f 'ls-hpack/lshpack.c'; then $(CYGPATH_W) 'ls-hpack/lshpack.c'; else $(CYGPATH_W) '$(srcdir)/ls-hpack/lshpack.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ls-hpack/$(DEPDIR)/lighttpd-lshpack.Tpo ls-hpack/$(DEPDIR)/lighttpd-lshpack.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ls-hpack/lshpack.c' object='ls-hpack/lighttpd-lshpack.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ls-hpack/lighttpd-lshpack.obj `if test -f 'ls-hpack/lshpack.c'; then $(CYGPATH_W) 'ls-hpack/lshpack.c'; else $(CYGPATH_W) '$(srcdir)/ls-hpack/lshpack.c'; fi`
+
+lighttpd-algo_xxhash.o: algo_xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-algo_xxhash.o -MD -MP -MF $(DEPDIR)/lighttpd-algo_xxhash.Tpo -c -o lighttpd-algo_xxhash.o `test -f 'algo_xxhash.c' || echo '$(srcdir)/'`algo_xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-algo_xxhash.Tpo $(DEPDIR)/lighttpd-algo_xxhash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='algo_xxhash.c' object='lighttpd-algo_xxhash.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-algo_xxhash.o `test -f 'algo_xxhash.c' || echo '$(srcdir)/'`algo_xxhash.c
+
+lighttpd-algo_xxhash.obj: algo_xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-algo_xxhash.obj -MD -MP -MF $(DEPDIR)/lighttpd-algo_xxhash.Tpo -c -o lighttpd-algo_xxhash.obj `if test -f 'algo_xxhash.c'; then $(CYGPATH_W) 'algo_xxhash.c'; else $(CYGPATH_W) '$(srcdir)/algo_xxhash.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-algo_xxhash.Tpo $(DEPDIR)/lighttpd-algo_xxhash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='algo_xxhash.c' object='lighttpd-algo_xxhash.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-algo_xxhash.obj `if test -f 'algo_xxhash.c'; then $(CYGPATH_W) 'algo_xxhash.c'; else $(CYGPATH_W) '$(srcdir)/algo_xxhash.c'; fi`
+
 lighttpd-mod_maxminddb.o: mod_maxminddb.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-mod_maxminddb.o -MD -MP -MF $(DEPDIR)/lighttpd-mod_maxminddb.Tpo -c -o lighttpd-mod_maxminddb.o `test -f 'mod_maxminddb.c' || echo '$(srcdir)/'`mod_maxminddb.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-mod_maxminddb.Tpo $(DEPDIR)/lighttpd-mod_maxminddb.Po
@@ -3752,6 +3762,20 @@ lighttpd-mod_magnet_cache.obj: mod_magnet_cache.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mod_magnet_cache.c' object='lighttpd-mod_magnet_cache.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-mod_magnet_cache.obj `if test -f 'mod_magnet_cache.c'; then $(CYGPATH_W) 'mod_magnet_cache.c'; else $(CYGPATH_W) '$(srcdir)/mod_magnet_cache.c'; fi`
+
+lighttpd-algo_hmac.o: algo_hmac.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-algo_hmac.o -MD -MP -MF $(DEPDIR)/lighttpd-algo_hmac.Tpo -c -o lighttpd-algo_hmac.o `test -f 'algo_hmac.c' || echo '$(srcdir)/'`algo_hmac.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-algo_hmac.Tpo $(DEPDIR)/lighttpd-algo_hmac.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='algo_hmac.c' object='lighttpd-algo_hmac.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-algo_hmac.o `test -f 'algo_hmac.c' || echo '$(srcdir)/'`algo_hmac.c
+
+lighttpd-algo_hmac.obj: algo_hmac.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-algo_hmac.obj -MD -MP -MF $(DEPDIR)/lighttpd-algo_hmac.Tpo -c -o lighttpd-algo_hmac.obj `if test -f 'algo_hmac.c'; then $(CYGPATH_W) 'algo_hmac.c'; else $(CYGPATH_W) '$(srcdir)/algo_hmac.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lighttpd-algo_hmac.Tpo $(DEPDIR)/lighttpd-algo_hmac.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='algo_hmac.c' object='lighttpd-algo_hmac.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lighttpd-algo_hmac.obj `if test -f 'algo_hmac.c'; then $(CYGPATH_W) 'algo_hmac.c'; else $(CYGPATH_W) '$(srcdir)/algo_hmac.c'; fi`
 
 lighttpd-mod_authn_gssapi.o: mod_authn_gssapi.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lighttpd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lighttpd-mod_authn_gssapi.o -MD -MP -MF $(DEPDIR)/lighttpd-mod_authn_gssapi.Tpo -c -o lighttpd-mod_authn_gssapi.o `test -f 'mod_authn_gssapi.c' || echo '$(srcdir)/'`mod_authn_gssapi.c
@@ -4836,6 +4860,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/liblightcomp_la-sock_addr.Plo
 	-rm -f ./$(DEPDIR)/liblightcomp_la-stat_cache.Plo
 	-rm -f ./$(DEPDIR)/liblightcomp_la-sys-setjmp.Plo
+	-rm -f ./$(DEPDIR)/lighttpd-algo_hmac.Po
 	-rm -f ./$(DEPDIR)/lighttpd-algo_md5.Po
 	-rm -f ./$(DEPDIR)/lighttpd-algo_sha1.Po
 	-rm -f ./$(DEPDIR)/lighttpd-algo_splaytree.Po
@@ -5014,6 +5039,7 @@ distclean: distclean-am
 	-rm -f t/$(DEPDIR)/test_configfile.Po
 	-rm -f t/$(DEPDIR)/test_http_header.Po
 	-rm -f t/$(DEPDIR)/test_http_kv.Po
+	-rm -f t/$(DEPDIR)/test_http_range.Po
 	-rm -f t/$(DEPDIR)/test_keyvalue.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_access.Po
@@ -5114,6 +5140,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/liblightcomp_la-sock_addr.Plo
 	-rm -f ./$(DEPDIR)/liblightcomp_la-stat_cache.Plo
 	-rm -f ./$(DEPDIR)/liblightcomp_la-sys-setjmp.Plo
+	-rm -f ./$(DEPDIR)/lighttpd-algo_hmac.Po
 	-rm -f ./$(DEPDIR)/lighttpd-algo_md5.Po
 	-rm -f ./$(DEPDIR)/lighttpd-algo_sha1.Po
 	-rm -f ./$(DEPDIR)/lighttpd-algo_splaytree.Po
@@ -5292,6 +5319,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f t/$(DEPDIR)/test_configfile.Po
 	-rm -f t/$(DEPDIR)/test_http_header.Po
 	-rm -f t/$(DEPDIR)/test_http_kv.Po
+	-rm -f t/$(DEPDIR)/test_http_range.Po
 	-rm -f t/$(DEPDIR)/test_keyvalue.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod.Po
 	-rm -f t/$(DEPDIR)/test_mod-test_mod_access.Po
@@ -5373,7 +5401,6 @@ configparser.c: $(srcdir)/configparser.y $(srcdir)/lempar.c lemon$(BUILD_EXEEXT)
 	$(LEMON) -q -T$(srcdir)/lempar.c $(srcdir)/configparser.y
 
 parsers: configparser.c
-@BUILD_WITH_LUA_TRUE@@LIGHTTPD_STATIC_TRUE@                    #algo_hmac.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

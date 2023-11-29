@@ -381,7 +381,7 @@ if get_option('with_gnutls')
 	# function: gnutls_check_version (-lgnutls)
 	libgnutls = [ dependency('gnutls') ]
 	conf_data.set('HAVE_GNUTLS_CRYPTO_H', true)
-	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(getoption('with_nettle'))
+	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(get_option('with_nettle'))
 	  libcrypto = [ dependency('gnutls') ]
 	endif
 endif
@@ -402,7 +402,7 @@ if get_option('with_nss')
 	#libnss3 = [ compiler.find_library('nss3') ]
 	#libnssutil3 = [ compiler.find_library('nssutil3') ]
 	conf_data.set('HAVE_NSS3_NSS_H', true)
-	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(getoption('with_nettle')) and not(getoption('with_gnutls'))
+	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(get_option('with_nettle')) and not(get_option('with_gnutls'))
 	  libcrypto = [ dependency('nss') ]
 	endif
 endif
@@ -560,10 +560,7 @@ main_src = files(
 	'connections.c',
 	'data_config.c',
 	'h1.c',
-	'h2.c',
 	'sock_addr_cache.c',
-	'ls-hpack/lshpack.c',
-	'algo_xxhash.c',
 	'fdevent_impl.c',
 	'http_range.c',
 	'network_write.c',
@@ -703,6 +700,7 @@ test('test_common', executable('test_common',
 		't/test_burl.c',
 		't/test_http_header.c',
 		't/test_http_kv.c',
+		't/test_http_range.c',
 		't/test_keyvalue.c',
 		't/test_request.c',
 		'log.c',

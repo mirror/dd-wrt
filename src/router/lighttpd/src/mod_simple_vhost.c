@@ -2,12 +2,12 @@
 
 #include "log.h"
 #include "buffer.h"
+#include "burl.h"       /* HTTP_PARSEOPT_HOST_STRICT */
 #include "request.h"
 #include "stat_cache.h"
 
 #include "plugin.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -31,7 +31,7 @@ INIT_FUNC(mod_simple_vhost_init) {
 
 FREE_FUNC(mod_simple_vhost_free) {
     plugin_data *p = p_d;
-    free(p->last_root.ptr);
+    buffer_free_ptr(&p->last_root);
 }
 
 static void mod_simple_vhost_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
@@ -133,15 +133,9 @@ static void build_doc_root_path(buffer *out, const buffer *sroot, const buffer *
 	buffer_copy_buffer(out, sroot);
 
 	if (host) {
-		/* a hostname has to start with a alpha-numerical character
-		 * and must not contain a slash "/"
-		 */
-		char *dp;
-		if (NULL == (dp = strchr(host->ptr, ':'))) {
-			buffer_append_string_buffer(out, host);
-		} else {
-			buffer_append_string_len(out, host->ptr, dp - host->ptr);
-		}
+		const char * const colon = strchr(host->ptr, ':');
+		buffer_append_string_len(out, host->ptr,
+		                         colon ? (size_t)(colon - host->ptr) : buffer_clen(host));
 	}
 
 	if (droot) {
@@ -183,7 +177,11 @@ static handler_t mod_simple_vhost_docroot(request_st * const r, void *p_data) {
     /* build document-root */
     buffer * const b = r->tmp_buf;/*(tmp_buf cleared before use in call below)*/
     const buffer *host = &r->uri.authority;
-    if ((!buffer_is_blank(host) && build_doc_root(r, p, b, host))
+    if ((!buffer_is_blank(host)
+         && (__builtin_expect(
+              (r->conf.http_parseopts & HTTP_PARSEOPT_HOST_STRICT), 1)
+             || (*host->ptr != '.' && NULL == strchr(host->ptr, '/')))
+         && build_doc_root(r, p, b, host))
         || build_doc_root(r, p, b, (host = p->conf.default_host))) {
         if (host) {
             r->server_name = &r->server_name_buf;

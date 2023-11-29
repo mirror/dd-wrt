@@ -3743,7 +3743,8 @@ webdav_propfind_dir (webdav_propfind_bufs * const restrict pb)
     const int dfd = -1;
     DIR * const dir = opendir(dst->path.ptr);
   #else
-    const int dfd = fdevent_open_dirname(dst->path.ptr, 0);
+    const int dfd = fdevent_open_dirname(dst->path.ptr,
+                                         (pb->atflags != AT_SYMLINK_NOFOLLOW));
     DIR * const dir = (dfd >= 0) ? fdopendir(dfd) : NULL;
   #endif
     if (NULL == dir) {
@@ -6057,15 +6058,31 @@ PHYSICALPATH_FUNC(mod_webdav_physical_handler)
         return HANDLER_FINISHED;
     }
 
-    if (reject_reqbody && r->reqbody_length) {
-        /* [RFC4918] 8.4 Required Bodies in Requests
-         *   Servers MUST examine all requests for a body, even when a
-         *   body was not expected. In cases where a request body is
-         *   present but would be ignored by a server, the server MUST
-         *   reject the request with 415 (Unsupported Media Type).
-         */
-        http_status_set_error(r, 415); /* Unsupported Media Type */
-        return HANDLER_FINISHED;
+    if (r->reqbody_length) {
+        if (reject_reqbody) {
+            /* [RFC4918] 8.4 Required Bodies in Requests
+             *   Servers MUST examine all requests for a body, even when a
+             *   body was not expected. In cases where a request body is
+             *   present but would be ignored by a server, the server MUST
+             *   reject the request with 415 (Unsupported Media Type).
+             */
+            http_status_set_error(r, 415); /* Unsupported Media Type */
+            return HANDLER_FINISHED;
+        }
+        /* [RFC7694]
+         * Hypertext Transfer Protocol (HTTP) Client-Initiated Content-Encoding
+         * (future: might add support for gzip or other content-encodings used
+         *          by client on request body) */
+        const buffer * const vb =
+          http_header_request_get(r, HTTP_HEADER_CONTENT_ENCODING,
+                                  CONST_STR_LEN("Content-Encoding"));
+        if (vb != NULL) { /*("identity" not expected; should not be listed)*/
+            http_header_response_set(r, HTTP_HEADER_ACCEPT_ENCODING,
+                                     CONST_STR_LEN("Accept-Encoding"),
+                                     CONST_STR_LEN("identity"));
+            http_status_set_error(r, 415); /* Unsupported Media Type */
+            return HANDLER_FINISHED;
+        }
     }
 
     if (check_lock_src && !webdav_has_lock(r, &pconf, &r->physical.rel_path))
@@ -6103,8 +6120,7 @@ REQUEST_FUNC(mod_webdav_handle_reset) {
     if (*dptr) {
         free(*dptr);
         *dptr = NULL;
-        chunkqueue_set_tempdirs(&r->reqbody_queue, /* reset sz */
-                                r->reqbody_queue.tempdirs, 0);
+        chunkqueue_set_tempdirs(&r->reqbody_queue, 0); /* reset sz */
     }
     return HANDLER_GO_ON;
 }

@@ -121,6 +121,8 @@ typedef struct {
 } handler_ctx;
 
 
+__attribute_malloc__
+__attribute_returns_nonnull__
 static handler_rctx * handler_rctx_init(void) {
     return ck_calloc(1, sizeof(handler_rctx));
 }
@@ -130,6 +132,8 @@ static void handler_rctx_free(handler_rctx *rctx) {
     free(rctx);
 }
 
+__attribute_malloc__
+__attribute_returns_nonnull__
 static handler_ctx * handler_ctx_init(void) {
     return ck_calloc(1, sizeof(handler_ctx));
 }
@@ -380,6 +384,7 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
                 cpv->v.u = mod_extforward_parse_opts(srv, cpv->v.a);
                 if (UINT_MAX == cpv->v.u)
                     return HANDLER_ERROR;
+                cpv->vtype = T_CONFIG_LOCAL;
                 break;
               case 3: /* extforward.hap-PROXY */
                 if (cpv->v.u) hap_PROXY = 1;

@@ -68,6 +68,7 @@ typedef struct {
 	plugin_config conf;
 } handler_ctx;
 
+__attribute_returns_nonnull__
 static handler_ctx * handler_ctx_init(plugin_data *p, log_error_st *errh) {
 	handler_ctx *hctx = ck_calloc(1, sizeof(*hctx));
 	hctx->errh = errh;
@@ -75,6 +76,7 @@ static handler_ctx * handler_ctx_init(plugin_data *p, log_error_st *errh) {
 	hctx->stat_fn = &p->stat_fn;
 	hctx->ssi_vars = p->ssi_vars;
 	hctx->ssi_cgi_env = p->ssi_cgi_env;
+	chunkqueue_init(&hctx->wq);
 	memcpy(&hctx->conf, &p->conf, sizeof(plugin_config));
 	return hctx;
 }
@@ -1132,7 +1134,6 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 		const char *cmd = NULL;
 		pid_t pid;
 		chunk *c;
-		char *args[4];
 		log_error_st *errh = p->errh;
 
 		if (!p->conf.ssi_exec) { /* <!--#exec ... --> disabled by config */
@@ -1160,17 +1161,12 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 		if (0 != chunkqueue_append_mem_to_tempfile(cq, "", 0, errh)) break;
 		c = cq->last;
 
-		*(const char **)&args[0] = "/bin/sh";
-		*(const char **)&args[1] = "-c";
-		*(const char **)&args[2] = cmd;
-		args[3] = NULL;
-
 		int status = 0;
 		struct stat stb;
 		stb.st_size = 0;
 		/*(expects STDIN_FILENO open to /dev/null)*/
 		int serrh_fd = r->conf.serrh ? r->conf.serrh->fd : -1;
-		pid = fdevent_fork_execve(args[0], args, NULL, -1, c->file.fd, serrh_fd, -1);
+		pid = fdevent_sh_exec(cmd, NULL, -1, c->file.fd, serrh_fd);
 		if (-1 == pid) {
 			log_perror(errh, __FILE__, __LINE__, "spawning exec failed: %s", cmd);
 		} else if (fdevent_waitpid(pid, &status, 0) < 0) {
@@ -1606,12 +1602,7 @@ static int mod_ssi_handle_request(request_st * const r, handler_ctx * const p) {
 		http_header_response_set(r, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), BUF_PTR_LEN(r->tmp_buf));
 
 		const buffer * const mtime = http_response_set_last_modified(r, st.st_mtime);
-		if (HANDLER_FINISHED == http_response_handle_cachable(r, mtime, st.st_mtime)) {
-			/* ok, the client already has our content,
-			 * no need to send it again */
-
-			chunkqueue_reset(&r->write_queue);
-		}
+		http_response_handle_cachable(r, mtime, st.st_mtime);
 	}
 
 	/* Reset the modified time of included files */

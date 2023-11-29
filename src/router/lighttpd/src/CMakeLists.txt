@@ -922,10 +922,7 @@ set(SERVER_SRC
 	response.c
 	connections.c
 	h1.c
-	h2.c
 	sock_addr_cache.c
-	ls-hpack/lshpack.c
-	algo_xxhash.c
 	fdevent_impl.c
 	http_range.c
 	network.c
@@ -1008,6 +1005,7 @@ add_executable(test_common
 	t/test_burl.c
 	t/test_http_header.c
 	t/test_http_kv.c
+	t/test_http_range.c
 	t/test_keyvalue.c
 	t/test_request.c
 	log.c
