@@ -2290,6 +2290,86 @@ static void show_chanshift(webs_t wp, char *prefix)
 	}
 }
 #endif
+
+static void show_roaming(webs_t wp, char *var)
+{
+		char s80211v[64];
+		sprintf(s80211v, "%s_80211v", var);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+		char wnm[64];
+		char adv[64];
+		websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
+
+		sprintf(adv, "%s_time_advertisement", var);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
+		sprintf(wnm, "%s_time_zone", var);
+		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", var);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
+		websWrite(wp, "<select name=\"%s_time_zone\">\n", var);
+		char *tz = nvram_default_get(wnm, nvram_safe_get("time_zone"));
+		int i;
+		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
+			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, !strcmp(allTimezones[i].tz_name, tz) ? "selected=\"selected\"" : "",
+				  allTimezones[i].tz_name);
+		}
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+
+		sprintf(wnm, "%s_wnm_sleep_mode", var);
+		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
+		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", var);
+		showRadio(wp, "wpa.wnm_sleep_mode_no_keys", wnm);
+		sprintf(wnm, "%s_bss_transition", var);
+		showRadio(wp, "wpa.bss_transition", wnm);
+		sprintf(wnm, "%s_proxy_arp", var);
+		showRadio(wp, "wpa.proxy_arp", wnm);
+
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211v\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+
+		char s80211k[64];
+		sprintf(s80211k, "%s_80211k", var);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211k)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
+		sprintf(wnm, "%s_rrm_neighbor_report", var);
+		showRadio(wp, "wpa.rrm_neighbor_report", wnm);
+		sprintf(wnm, "%s_rrm_beacon_report", var);
+		showRadio(wp, "wpa.rrm_beacon_report", wnm);
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+
+}
 static int show_virtualssid(webs_t wp, char *prefix)
 {
 	char *next;
@@ -2538,81 +2618,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (is_mac80211(var)) {
 			if (is_ap(var)) {
 #ifdef HAVE_WPA3
-		char s80211v[64];
-		sprintf(s80211v, "%s_80211v", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-		char wnm[64];
-		char adv[64];
-		websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
-
-		sprintf(adv, "%s_time_advertisement", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-
-		sprintf(wnm, "%s_time_zone", var);
-		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", var);
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_time_zone\">\n", var);
-		nvram_default_get(wnm, nvram_safe_get("time_zone"));
-		int i;
-		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_name, "%s_time_zone", var) ? "selected=\"selected\"" : "",
-				  allTimezones[i].tz_name);
-		}
-		websWrite(wp, "</select>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-
-		sprintf(wnm, "%s_wnm_sleep_mode", var);
-		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
-		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", var);
-		showRadio(wp, "wpa.wnm_sleep_mode_no_keys", wnm);
-		sprintf(wnm, "%s_bss_transition", var);
-		showRadio(wp, "wpa.bss_transition", wnm);
-		sprintf(wnm, "%s_proxy_arp", var);
-		showRadio(wp, "wpa.proxy_arp", wnm);
-
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211v\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-
-		char s80211k[64];
-		sprintf(s80211k, "%s_80211k", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211k)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
-		sprintf(wnm, "%s_rrm_neighbor_report", var);
-		showRadio(wp, "wpa.rrm_neighbor_report", wnm);
-		sprintf(wnm, "%s_rrm_beacon_report", var);
-		showRadio(wp, "wpa.rrm_beacon_report", wnm);
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
+		show_roaming(wp, var);
 #endif
 
 
@@ -3807,81 +3813,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (is_mac80211(prefix)) {
 		if (is_ap(prefix)) {
 #ifdef HAVE_WPA3
-		char s80211v[64];
-		sprintf(s80211v, "%s_80211v", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-		char wnm[64];
-		char adv[64];
-		websWrite(wp, "<div id=\"%s_id80211v\">\n", prefix);
-
-		sprintf(adv, "%s_time_advertisement", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-
-		sprintf(wnm, "%s_time_zone", prefix);
-		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_time_zone\">\n", prefix);
-		nvram_default_get(wnm, nvram_safe_get("time_zone"));
-		int i;
-		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_name, "%s_time_zone", prefix) ? "selected=\"selected\"" : "",
-				  allTimezones[i].tz_name);
-		}
-		websWrite(wp, "</select>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", prefix, prefix, nvram_matchi(adv, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-
-		sprintf(wnm, "%s_wnm_sleep_mode", prefix);
-		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
-		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", prefix);
-		showRadio(wp, "wpa.wnm_sleep_mode_no_keys", wnm);
-		sprintf(wnm, "%s_bss_transition", prefix);
-		showRadio(wp, "wpa.bss_transition", wnm);
-		sprintf(wnm, "%s_proxy_arp", prefix);
-		showRadio(wp, "wpa.proxy_arp", wnm);
-
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211v\", %s);\n", prefix, prefix, nvram_matchi(s80211v, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-
-		char s80211k[64];
-		sprintf(s80211k, "%s_80211k", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211k)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<div id=\"%s_id80211k\">\n", prefix);
-		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
-		showRadio(wp, "wpa.rrm_neighbor_report", wnm);
-		sprintf(wnm, "%s_rrm_beacon_report", prefix);
-		showRadio(wp, "wpa.rrm_beacon_report", wnm);
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", prefix, prefix, nvram_matchi(s80211k, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
+		show_roaming(wp, prefix);
 #endif
 			char signal[32];
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
@@ -4855,81 +4787,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (is_mac80211(prefix)) {
 		if (is_ap(prefix)) {
 #ifdef HAVE_WPA3
-		char s80211v[64];
-		sprintf(s80211v, "%s_80211v", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-		char wnm[64];
-		char adv[64];
-		websWrite(wp, "<div id=\"%s_id80211v\">\n", prefix);
-
-		sprintf(adv, "%s_time_advertisement", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-
-		sprintf(wnm, "%s_time_zone", prefix);
-		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-		websWrite(wp, "<select name=\"%s_time_zone\">\n", prefix);
-		nvram_default_get(wnm, nvram_safe_get("time_zone"));
-		int i;
-		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_nmatch(allTimezones[i].tz_name, "%s_time_zone", prefix) ? "selected=\"selected\"" : "",
-				  allTimezones[i].tz_name);
-		}
-		websWrite(wp, "</select>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", prefix, prefix, nvram_matchi(adv, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-
-		sprintf(wnm, "%s_wnm_sleep_mode", prefix);
-		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
-		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", prefix);
-		showRadio(wp, "wpa.wnm_sleep_mode_no_keys", wnm);
-		sprintf(wnm, "%s_bss_transition", prefix);
-		showRadio(wp, "wpa.bss_transition", wnm);
-		sprintf(wnm, "%s_proxy_arp", prefix);
-		showRadio(wp, "wpa.proxy_arp", wnm);
-
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211v\", %s);\n", prefix, prefix, nvram_matchi(s80211v, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
-
-		char s80211k[64];
-		sprintf(s80211k, "%s_80211k", prefix);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211k)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  prefix, prefix, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<div id=\"%s_id80211k\">\n", prefix);
-		sprintf(wnm, "%s_rrm_neighbor_report", prefix);
-		showRadio(wp, "wpa.rrm_neighbor_report", wnm);
-		sprintf(wnm, "%s_rrm_beacon_report", prefix);
-		showRadio(wp, "wpa.rrm_beacon_report", wnm);
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", prefix, prefix, nvram_matchi(s80211k, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
+		show_roaming(wp, prefix);
 #endif
 
 
