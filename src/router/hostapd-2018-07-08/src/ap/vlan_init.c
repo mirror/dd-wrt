@@ -33,7 +33,7 @@ static int vlan_if_add(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
 		return -1;
 	}
 
-	if (!iface_exists(vlan->ifname))
+	if (!vlan_exists)
 		ret = hostapd_vlan_if_add(hapd, vlan->ifname);
 	else if (!existsok)
 		return -1;
@@ -47,6 +47,9 @@ static int vlan_if_add(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
 
 	if (hapd->wpa_auth)
 		ret = wpa_auth_ensure_group(hapd->wpa_auth, vlan->vlan_id);
+
+	if (!ret && !vlan_exists)
+		hostapd_ubus_add_vlan(hapd, vlan);
 
 	if (ret == 0)
 		return ret;
@@ -66,6 +69,7 @@ static int vlan_if_add(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
 
 int vlan_if_remove(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
 {
+	bool vlan_exists = iface_exists(vlan->ifname);
 	int ret;
 
 	ret = wpa_auth_release_group(hapd->wpa_auth, vlan->vlan_id);
@@ -73,6 +77,8 @@ int vlan_if_remove(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
 		wpa_printf(MSG_ERROR,
 			   "WPA deinitialization for VLAN %d failed (%d)",
 			   vlan->vlan_id, ret);
+
+	hostapd_ubus_remove_vlan(hapd, vlan);
 
 	return hostapd_vlan_if_remove(hapd, vlan->ifname);
 }

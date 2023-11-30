@@ -277,6 +277,7 @@ struct sta_info {
 #endif /* CONFIG_TESTING_OPTIONS */
 #ifdef CONFIG_AIRTIME_POLICY
 	unsigned int airtime_weight;
+	unsigned int dyn_airtime_weight;
 	struct os_reltime backlogged_until;
 #endif /* CONFIG_AIRTIME_POLICY */
 

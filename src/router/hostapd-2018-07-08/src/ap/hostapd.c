@@ -398,6 +398,7 @@ static void hostapd_free_hapd_data(struct hostapd_data *hapd)
 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
 	iapp_deinit(hapd->iapp);
 	hapd->iapp = NULL;
+	hostapd_ubus_free_bss(hapd);
 	accounting_deinit(hapd);
 	hostapd_deinit_wpa(hapd);
 	vlan_deinit(hapd);
@@ -1524,6 +1525,8 @@ static int start_ctrl_iface_bss(struct hostapd_data *hapd)
 		return -1;
 	}
 
+	hostapd_ubus_add_bss(hapd);
+
 	return 0;
 }
 
@@ -1939,6 +1942,7 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 	if (err)
 		goto fail;
 
+	hostapd_ubus_add_iface(iface);
 	wpa_printf(MSG_DEBUG, "Completing interface initialization");
 	if (iface->conf->channel) {
 #ifdef NEED_AP_MLME
@@ -2136,6 +2140,7 @@ dfs_offload:
 
 fail:
 	wpa_printf(MSG_ERROR, "Interface initialization failed");
+	hostapd_ubus_free_iface(iface);
 	hostapd_set_state(iface, HAPD_IFACE_DISABLED);
 	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_EVENT_DISABLED);
 #ifdef CONFIG_FST
@@ -2605,6 +2610,7 @@ void hostapd_interface_deinit_free(struct hostapd_iface *iface)
 		   (unsigned int) iface->conf->num_bss);
 	driver = iface->bss[0]->driver;
 	drv_priv = iface->bss[0]->drv_priv;
+	hostapd_ubus_free_iface(iface);
 	hostapd_interface_deinit(iface);
 	wpa_printf(MSG_DEBUG, "%s: driver=%p drv_priv=%p -> hapd_deinit",
 		   __func__, driver, drv_priv);

@@ -750,6 +750,12 @@ void handle_probe_req(struct hostapd_data *hapd,
 	struct hostapd_sta_wpa_psk_short *psk = NULL;
 	char *identity = NULL;
 	char *radius_cui = NULL;
+	struct hostapd_ubus_request req = {
+		.type = HOSTAPD_UBUS_PROBE_REQ,
+		.mgmt_frame = mgmt,
+		.ssi_signal = ssi_signal,
+		.elems = &elems,
+	};
 
 	if (len < IEEE80211_HDRLEN)
 		return;
@@ -929,6 +935,12 @@ void handle_probe_req(struct hostapd_data *hapd,
 
 	if (hostapd_signal_handle_event(hapd, ssi_signal, PROBE_REQ, mgmt->sa)) {
 		wpa_printf(MSG_DEBUG, "Probe request for " MACSTR " rejected by signal handler.\n",
+		       MAC2STR(mgmt->sa));
+		return;
+	}
+
+	if (hostapd_ubus_handle_event(hapd, &req)) {
+		wpa_printf(MSG_DEBUG, "Probe request for " MACSTR " rejected by ubus handler.\n",
 		       MAC2STR(mgmt->sa));
 		return;
 	}

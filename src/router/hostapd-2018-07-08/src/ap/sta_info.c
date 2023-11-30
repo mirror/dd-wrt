@@ -422,6 +422,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
 			       "local deauth request");
+		hostapd_ubus_notify(hapd, "local-deauth", sta->addr);
 		ap_free_sta(hapd, sta);
 		return;
 	}
@@ -576,6 +577,7 @@ skip_poll:
 		mlme_deauthenticate_indication(
 			hapd, sta,
 			WLAN_REASON_PREV_AUTH_NOT_VALID);
+		hostapd_ubus_notify(hapd, "inactive-deauth", sta->addr);
 		ap_free_sta(hapd, sta);
 		break;
 	}
@@ -1242,12 +1244,24 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 					sta->addr, authorized, dev_addr);
 
 	if (authorized) {
+		static const char * const auth_algs[] = {
+			[WLAN_AUTH_OPEN] = "open",
+			[WLAN_AUTH_SHARED_KEY] = "shared",
+			[WLAN_AUTH_FT] = "ft",
+			[WLAN_AUTH_SAE] = "sae",
+			[WLAN_AUTH_FILS_SK] = "fils-sk",
+			[WLAN_AUTH_FILS_SK_PFS] = "fils-sk-pfs",
+			[WLAN_AUTH_FILS_PK] = "fils-pk",
+		};
+		const char *auth_alg = NULL;
 		const char *keyid;
 		char keyid_buf[100];
 		char ip_addr[100];
+		char alg_buf[100];
 
 		keyid_buf[0] = '\0';
 		ip_addr[0] = '\0';
+		alg_buf[0] = '\0';
 #ifdef CONFIG_P2P
 		if (wpa_auth_get_ip_addr(sta->wpa_sm, ip_addr_buf) == 0) {
 			os_snprintf(ip_addr, sizeof(ip_addr),
@@ -1257,14 +1271,22 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 		}
 #endif /* CONFIG_P2P */
 
+		if (sta->auth_alg < ARRAY_SIZE(auth_algs))
+			auth_alg = auth_algs[sta->auth_alg];
+
+		if (auth_alg)
+			os_snprintf(alg_buf, sizeof(alg_buf),
+				" auth_alg=%s", auth_alg);
+
 		keyid = ap_sta_wpa_get_keyid(hapd, sta);
 		if (keyid) {
 			os_snprintf(keyid_buf, sizeof(keyid_buf),
 				    " keyid=%s", keyid);
 		}
 
-		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_CONNECTED "%s%s%s",
-			buf, ip_addr, keyid_buf);
+		hostapd_ubus_notify_authorized(hapd, sta, auth_alg);
+		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_CONNECTED "%s%s%s%s",
+			buf, ip_addr, keyid_buf, alg_buf);
 
 		if (hapd->msg_ctx_parent &&
 		    hapd->msg_ctx_parent != hapd->msg_ctx)
@@ -1273,6 +1295,7 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 					  buf, ip_addr, keyid_buf);
 	} else {
 		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
+		hostapd_ubus_notify(hapd, "disassoc", sta->addr);
 
 		if (hapd->msg_ctx_parent &&
 		    hapd->msg_ctx_parent != hapd->msg_ctx)
