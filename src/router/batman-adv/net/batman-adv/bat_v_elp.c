@@ -66,7 +66,11 @@ static void batadv_v_elp_start_timer(struct batadv_hard_iface *hard_iface)
 static u32 batadv_v_elp_get_throughput(struct batadv_hardif_neigh_node *neigh)
 {
 	struct batadv_hard_iface *hard_iface = neigh->if_incoming;
+#if LINUX_VERSION_IS_LESS(4,9,0)
+	struct ethtool_cmd link_settings;
+#else
 	struct ethtool_link_ksettings link_settings;
+#endif
 	struct net_device *real_netdev;
 	struct station_info sinfo;
 	u32 throughput;
@@ -125,16 +129,28 @@ static u32 batadv_v_elp_get_throughput(struct batadv_hardif_neigh_node *neigh)
 	 * ethtool (e.g. an Ethernet adapter)
 	 */
 	rtnl_lock();
+#if LINUX_VERSION_IS_LESS(4,9,0)
+	ret = __ethtool_get_settings(hard_iface->net_dev, &link_settings);
+#else
 	ret = __ethtool_get_link_ksettings(hard_iface->net_dev, &link_settings);
+#endif
 	rtnl_unlock();
 	if (ret == 0) {
 		/* link characteristics might change over time */
+#if LINUX_VERSION_IS_LESS(4,9,0)
+		if (link_settings.duplex == DUPLEX_FULL)
+#else
 		if (link_settings.base.duplex == DUPLEX_FULL)
+#endif
 			hard_iface->bat_v.flags |= BATADV_FULL_DUPLEX;
 		else
 			hard_iface->bat_v.flags &= ~BATADV_FULL_DUPLEX;
 
+#if LINUX_VERSION_IS_LESS(4,9,0)
+		throughput = link_settings.speed;
+#else
 		throughput = link_settings.base.speed;
+#endif		
 		if (throughput && throughput != SPEED_UNKNOWN)
 			return throughput * 10;
 	}

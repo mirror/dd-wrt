@@ -88,6 +88,7 @@ out:
  *
  * Return: result of rtnl_link_ops->get_link_net or @fallback_net
  */
+#if !LINUX_VERSION_IS_LESS(4,9,0)
 static struct net *batadv_getlink_net(const struct net_device *netdev,
 				      struct net *fallback_net)
 {
@@ -132,7 +133,7 @@ static bool batadv_mutual_parents(const struct net_device *dev1,
 	       net_eq(dev1_parent_net, net2) &&
 	       net_eq(dev2_parent_net, net1);
 }
-
+#endif
 /**
  * batadv_is_on_batman_iface() - check if a device is a batman iface descendant
  * @net_dev: the device to check
@@ -158,11 +159,13 @@ static bool batadv_is_on_batman_iface(const struct net_device *net_dev)
 	if (batadv_softif_is_valid(net_dev))
 		return true;
 
+#if !LINUX_VERSION_IS_LESS(4,9,0)
 	iflink = dev_get_iflink(net_dev);
 	if (iflink == 0)
 		return false;
 
 	parent_net = batadv_getlink_net(net_dev, net);
+#endif
 
 	/* iflink to itself, most likely physical device */
 	if (net == parent_net && iflink == net_dev->ifindex)
@@ -176,8 +179,10 @@ static bool batadv_is_on_batman_iface(const struct net_device *net_dev)
 		return false;
 	}
 
+#if !LINUX_VERSION_IS_LESS(4,9,0)
 	if (batadv_mutual_parents(net_dev, net, parent_dev, parent_net))
 		return false;
+#endif
 
 	ret = batadv_is_on_batman_iface(parent_dev);
 
@@ -226,17 +231,20 @@ static struct net_device *batadv_get_real_netdevice(struct net_device *netdev)
 	if (!netdev)
 		return NULL;
 
+#if !LINUX_VERSION_IS_LESS(4,9,0)
 	iflink = dev_get_iflink(netdev);
 	if (iflink == 0) {
 		dev_hold(netdev);
 		return netdev;
 	}
+#endif
 
 	hard_iface = batadv_hardif_get_by_netdev(netdev);
 	if (!hard_iface || !hard_iface->soft_iface)
 		goto out;
 
 	net = dev_net(hard_iface->soft_iface);
+#if !LINUX_VERSION_IS_LESS(4,9,0)
 	real_net = batadv_getlink_net(netdev, net);
 
 	/* iflink to itself, most likely physical device */
@@ -245,7 +253,14 @@ static struct net_device *batadv_get_real_netdevice(struct net_device *netdev)
 		dev_hold(real_netdev);
 		goto out;
 	}
+#else
+	if (netdev->ifindex == iflink) {
+		real_netdev = netdev;
+		dev_hold(real_netdev);
+		goto out;
+	}
 
+#endif
 	real_netdev = dev_get_by_index(real_net, iflink);
 
 out:
