@@ -262,22 +262,6 @@ static void mkdir_sockdir()
 
 #include <libubox/ulog.h>
 
-#define FORK(func) \
-{ \
-    switch ( fork(  ) ) \
-    { \
-	case -1: \
-	    break; \
-	case 0: \
-	    ( void )setsid(  ); \
-	    func; \
-	    exit(0); \
-	    break; \
-	default: \
-	break; \
-    } \
-}
-
 int main(int argc, char **argv)
 {
 	const char *ubus_socket = UBUS_UNIX_SOCKET;
@@ -316,7 +300,7 @@ int main(int argc, char **argv)
 	uloop_fd_add(&server_fd, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 	ubusd_acl_load();
 
-	FORK(uloop_run());
+	uloop_run();
 	unlink(ubus_socket);
 
 out:
