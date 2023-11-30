@@ -3271,6 +3271,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 	reset_hwaddr(nvram_safe_get("lan_ifname"));
 	eval("startservice", "resetleds", "-f");
+#ifdef HAVE_USTEER
+	stop_usteer();
+	start_usteer();
+#endif
 }
 
 void start_deconfigurewifi(void)

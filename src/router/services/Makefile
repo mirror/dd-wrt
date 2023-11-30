@@ -143,6 +143,10 @@ ifeq ($(CONFIG_RSTATS),y)
 CFLAGS_EXTRA += -DHAVE_RSTATS
 OBJS += rstats.o
 endif
+ifeq ($(KERNELVERSION),6.1)
+CFLAGS_EXTRA += -DHAVE_USTEER
+OBJS += usteer.o
+endif
 ifeq ($(CONFIG_ALLNETWRT),y)
   CFLAGS_EXTRA += -DHAVE_ALLNETWRT
 endif

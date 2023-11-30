@@ -33,6 +33,9 @@ extern void stop_vpn_modules(void);
 extern void start_tftpd(void);
 extern void stop_tftpd(void);
 
+extern void start_usteer(void);
+extern void stop_usteer(void);
+
 extern void load_drivers(int boot);
 extern void start_drivers_net(void);
 
