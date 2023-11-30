@@ -28,4 +28,3 @@ usteer-install:
 
 usteer-clean:
 	if [ -e "$(USTEER_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C usteer clean ; fi
-	$(call CMakeClean,$(USTEER_PKG_BUILD_DIR))
