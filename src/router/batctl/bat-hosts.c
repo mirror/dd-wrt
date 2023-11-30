@@ -1,35 +1,22 @@
-/*
- * Copyright (C) 2007-2011 B.A.T.M.A.N. contributors:
+// SPDX-License-Identifier: GPL-2.0
+/* Copyright (C) B.A.T.M.A.N. contributors:
  *
- * Andreas Langer <an.langer@gmx.de>, Marek Lindner <lindner_marek@yahoo.de>
+ * Andreas Langer <an.langer@gmx.de>, Marek Lindner <mareklindner@neomailbox.ch>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of version 2 of the GNU General Public
- * License as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA
- *
+ * License-Filename: LICENSES/preferred/GPL-2.0
  */
 
 
 
-#define _GNU_SOURCE
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <stddef.h>
+#include <netinet/ether.h>
 
-#include "main.h"
 #include "bat-hosts.h"
 #include "hash.h"
 #include "functions.h"
@@ -108,7 +95,8 @@ static void parse_hosts_file(struct hashtable_t **hash, const char path[], int r
 			if (read_opt & USE_BAT_HOSTS)
 				fprintf(stderr, "Warning - mac already known (changing name from '%s' to '%s'): %s\n",
 					bat_host->name, name, mac_str);
-			strncpy(bat_host->name, name, HOST_NAME_MAX_LEN - 1);
+			strncpy(bat_host->name, name, HOST_NAME_MAX_LEN);
+			bat_host->name[HOST_NAME_MAX_LEN - 1] = '\0';
 			continue;
 		}
 
@@ -127,12 +115,13 @@ static void parse_hosts_file(struct hashtable_t **hash, const char path[], int r
 
 		if (!bat_host) {
 			if (read_opt & USE_BAT_HOSTS)
-				fprintf(stderr, "Error - could not allocate memory: %s\n", strerror(errno));
+				perror("Error - could not allocate memory");
 			goto out;
 		}
 
 		memcpy(&bat_host->mac_addr, mac_addr, sizeof(struct ether_addr));
-		strncpy(bat_host->name, name, HOST_NAME_MAX_LEN - 1);
+		strncpy(bat_host->name, name, HOST_NAME_MAX_LEN);
+		bat_host->name[HOST_NAME_MAX_LEN - 1] = '\0';
 
 		hash_add(*hash, bat_host);
 
@@ -179,7 +168,7 @@ void bat_hosts_init(int read_opt)
 	if (!host_hash) {
 		if (read_opt & USE_BAT_HOSTS)
 			printf("Warning - could not create bat hosts hash table\n");
-		return;
+		goto out;
 	}
 
 	homedir = getenv("HOME");
@@ -192,9 +181,7 @@ void bat_hosts_init(int read_opt)
 			if (!homedir)
 				continue;
 
-			strncpy(confdir, homedir, CONF_DIR_LEN);
-			confdir[CONF_DIR_LEN - 1] = '\0';
-			strncat(confdir, &bat_hosts_path[i][1], CONF_DIR_LEN - strlen(confdir));
+			snprintf(confdir, CONF_DIR_LEN, "%s%s", homedir, &bat_hosts_path[i][1]);
 		} else {
 			strncpy(confdir, bat_hosts_path[i], CONF_DIR_LEN);
 			confdir[CONF_DIR_LEN - 1] = '\0';
@@ -216,6 +203,7 @@ void bat_hosts_init(int read_opt)
 			parse_hosts_file(&host_hash, normalized + (i * PATH_MAX), read_opt);
 	}
 
+out:
 	free(normalized);
 }
 

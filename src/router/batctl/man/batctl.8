@@ -1,8 +1,10 @@
+.\" SPDX-License-Identifier: GPL-2.0
+.\" License-Filename: LICENSES/preferred/GPL-2.0
 .\"                                      Hey, EMACS: -*- nroff -*-
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "BATCTL" "8" "Jan 04, 2010" "Linux" "B.A.T.M.A.N. Advanced Control Tool"
+.TH "BATCTL" "8" "July 17, 2015" "Linux" "B.A.T.M.A.N. Advanced Control Tool"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -18,67 +20,225 @@
 .\" --------------------------------------------------------------------------
 .\" Process this file with
 .\" groff -man batctl.8 -Tutf8
+.\" Retrieve format warnings with
+.\" man --warnings batctl.8 > /dev/null
 .\" --------------------------------------------------------------------------
 .ad l
 .SH NAME
 batctl \- B.A.T.M.A.N. advanced control and management tool
 .SH SYNOPSIS
-.B batctl
-.I [\fIbatctl\-options\fP]\ \fIcommand\fP\ [\fIcommand\-options\fP]
+.B batctl [\fIoptions\fP]\ \fIcommand\fP|\fIdebug\ table\fP|\fIdebug\ JSON\fP\ [\fIparameters\fP]
 .br
 .SH DESCRIPTION
-batctl offers a convenient way to configure the batman\-adv kernel
-module as well as displaying debug information such as originator
-tables, translation tables and the debug log. In combination with a
-bat\-hosts file batctl allows the use of host names instead of MAC
-addresses.
+batctl offers a convenient way to configure the batman\-adv kernel module as well as displaying debug information
+such as originator tables and translation tables. In combination with a bat\-hosts file batctl allows
+the use of host names instead of MAC addresses.
 .PP
-B.A.T.M.A.N. advanced operates on layer 2. Thus all hosts
-participating in the virtual switched network are transparently
-connected together for all protocols above layer 2. Therefore the
-common diagnosis tools do not work as expected. To overcome these
-problems batctl contains the commands \fBping\fP, \fBtraceroute\fP,
-\fBtcpdump\fP which provide similar functionality to the normal
-\fBping\fP(1), \fBtraceroute\fP(1), \fBtcpdump\fP(1) commands, but
-modified to layer 2 behaviour or using the B.A.T.M.A.N. advanced
-protocol.
-.PP
-.PP
+B.A.T.M.A.N. advanced operates on layer 2. Thus all hosts participating in the virtual switched network are transparently
+connected together for all protocols above layer 2. Therefore the common diagnosis tools do not work as expected. To
+overcome these problems batctl contains the commands \fBping\fP, \fBtraceroute\fP, \fBtcpdump\fP which provide similar
+functionality to the normal \fBping\fP(1), \fBtraceroute\fP(1), \fBtcpdump\fP(1) commands, but modified to layer 2
+behaviour or using the B.A.T.M.A.N. advanced protocol. For similar reasons, \fBthroughputmeter\fP, a command to test network
+performances, is also included.
+
 .SH OPTIONS
+
 .TP
-.I \fBbatctl\-options:
-\-m     specify mesh interface (default 'bat0')
-.br
-\-h     print general batctl help
-.br
-\-v     print batctl version
-.br
+\fB\-m\fP
+specify mesh interface (default 'bat0')
 .TP
-.I \fBcommands:
-.IP "\fBinterface\fP|\fBif\fP     [\fBadd\fP|\fBdel iface(s)\fP]"
-If no parameter is given or the first parameter is neither "add" nor "del" the current interface settings are displayed. In order to add or delete interfaces specify "add" or "del" as first argument and append the interface names you wish to add or delete.
+\fB\-h\fP
+print general batctl help
+.TP
+\fB-v\fP
+print batctl version and batman-adv version (if the module is loaded)
+
+.SH COMMANDS
+
+.TP
+\fBbisect_iv\fP [\fB\-l MAC\fP][\fB\-t\fP \fIMAC\fP][\fB\-r\fP \fIMAC\fP][\fB\-s\fP \fImin\fP [\- \fImax\fP]][\fB\-o\fP \fIMAC\fP][\fB\-n\fP] \fIlogfile1\fP ...
+Analyses the B.A.T.M.A.N. IV logfiles to build a small internal database of all sent sequence numbers and routing table
+changes. This database can then be analyzed in a number of different ways. With "\-l" the database can be used to search
+for routing loops. Use "\-t" to trace OGMs of a host throughout the network. Use "\-r" to display routing tables of the
+nodes. The option "\-s" can be used to limit the output to a range of sequence numbers, between min and max, or to one
+specific sequence number, min. Furthermore using "\-o" you can filter the output to a specified originator. If "\-n" is
+given batctl will not replace the MAC addresses with bat\-host names in the output.
+.RE
+.TP
+\fBevent\fP|\fBe\fP [\fB\-t\fP|\fB\-r\fP]
+batctl will monitor for events from the netlink kernel interface of batman-adv. The local timestamp of the event will be printed
+when parameter \fB\-t\fP is specified. Parameter \fB\-r\fP will do the same but with relative timestamps.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBinterface\fP|\fBif\fP
+.TQ
+[\fBmeshif\fP \fInetdev\fP] \fBinterface\fP|\fBif\fP [\fB-M\fP] \fBadd\fP|\fBdel\fP \fIiface\fP ...
+If no parameter is given or the first parameter is neither "add" nor "del" the current interface settings are displayed.
+In order to add or delete interfaces specify "add" or "del" as first argument and append the interface names you wish to
+add or delete. Multiple interfaces can be specified.
+The "\-M" option tells batctl to not automatically create the batman-adv interface on "add". It can also be used to
+suppress the warning about the manual destruction when "del" removed all interfaces which belonged to it.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBinterface\fP|\fBif\fP \fBcreate\fP [\fBrouting_algo\fP|\fBra\fP \fIRA_NAME\fP]
+A batman-adv interface without attached interfaces can be created using "create". The parameter routing_algo
+can be used to overwrite the (default) routing algorithm.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBinterface\fP|\fBif\fP \fBdestroy\fP
+Remove all attached interfaces and destroy the batman-adv interface.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBping\fP|\fBp\fP [\fB\-c\fP \fIcount\fP][\fB\-i\fP \fIinterval\fP][\fB\-t\fP \fItime\fP][\fB\-R\fP][\fB\-T\fP] \fIMAC_address\fP|\fIbat\-host_name\fP|\fIhost_name\fP|\fIIP_address\fP
+Layer 2 ping of a MAC address or bat\-host name.  batctl will try to find the bat\-host name if the given parameter was
+not a MAC address. It can also try to guess the MAC address using an IPv4/IPv6 address or a hostname when
+the IPv4/IPv6 address was configured on top of the batman-adv interface of the destination device and both source and
+destination devices are in the same IP subnet.
+The "\-c" option tells batctl how man pings should be sent before the program exits. Without the "\-c"
+option batctl will continue pinging without end. Use CTRL + C to stop it.  With "\-i" and "\-t" you can set the default
+interval between pings and the timeout time for replies, both in seconds. When run with "\-R", the route taken by the ping
+messages will be recorded. With "\-T" you can disable the automatic translation of a client MAC address to the originator
+address which is responsible for this client.
+.TP
+\fBrouting_algo\fP|\fBra\fP [\fIalgorithm\fP]
+If no parameter is given the current routing algorithm configuration as well as
+supported routing algorithms are displayed.
+Otherwise the parameter is used to select the routing algorithm for the following
+batX interface to be created.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBstatistics\fP|\fBs\fP
+Retrieve traffic counters from batman-adv kernel module. The output may vary depending on which features have been compiled
+into the kernel module.
 .br
-.IP "\fBoriginators\fP|\fBo\fP    [\fB\-w\fP [\fI\interval\fP]][\fB\-n\fP][\fB\-t\fP]"
-Once started batctl will display the list of announced gateways in the network. Use the "\-w" option to let batctl refresh the list every second or add a number to let it refresh at a custom interval in seconds (with optional decimal places). If "\-n" is given batctl will not replace the MAC addresses with bat\-host names in the output. The "\-t" option filters all originators that have not been seen for the specified amount of seconds (with optional decimal places) from the output.
-.br
-.IP "\fBinterval\fP|\fBit\fP      [\fBorig_interval\fP]"
-If no parameter is given the current originator interval setting is displayed otherwise the parameter is used to set the originator interval. The interval is in units of milliseconds.
-.br
-.IP "\fBloglevel\fP|\fBll\fP      [\fBlevel\fP]"
-If no parameter is given the current log level settings are displayed otherwise the parameter is used to set the log level. Level 0 disables all verbose logging. Level 1 enables messages related to routing / flooding / broadcasting. Level 2 enables messages related to route or hna added / changed / deleted. Level 3 enables all messages. The messages are sent to the batman-adv debug log. Use \fBbatctl log\fP to see them. Make sure to have debugging output enabled when compiling the module otherwise the output as well as the loglevel options won't be available.
-.br
-.IP "\fBlog\fP|\fBl\fP            [\fB\-n\fP]\fP"
-batctl will read the batman-adv debug log which has to be compiled into the kernel module. If "\-n" is given batctl will not replace the MAC addresses with bat\-host names in the output.
-.br
-.IP "\fBgw_mode|gw\fP       [\fBoff\fP|\fBclient\fP|\fBserver\fP] [\fBsel_class|bandwidth\fP]\fP"
-If no parameter is given the current gateway mode is displayed otherwise the parameter is used to set the gateway mode. The second (optional) argument specifies the selection class (if 'client' was the first argument) or the gateway bandwidth (if 'server' was the first argument). If the node is a server this parameter is used to inform other nodes in the network about this node's internet connection bandwidth. Just enter any number (optionally followed by "kbit" or "mbit") and the batman-adv module will guess your appropriate gateway class. Use "/" to separate the down\(hy and upload rates. You can omit the upload rate and the module will assume an upload of download / 5.
+Each module subsystem has its own counters which are indicated by their prefixes:
+.TS
+tab (@);
+r lx.
+mgmt@T{
+mesh protocol counters
+T}
+tt@T{
+translation table counters
+T}
+.TE
+All counters without a prefix concern payload (pure user data) traffic.
+.TP
+\fBtcpdump\fP|\fBtd\fP [\fB\-c\fP][\fB\-n\fP][\fB\-p\fP \fIfilter\fP][\fB\-x\fP \fIfilter\fP] \fBinterface ...\fP
+batctl will display all packets that are seen on the given interface(s). A variety of options to filter the output
+are available: To only print packets that match the compatibility number of batctl specify the "\-c" (compat filter)
+option. If "\-n" is given batctl will not replace the MAC addresses with bat\-host names in the output. To filter
+the shown packet types you can either use "\-p" (dump only specified packet types) or "\-x" (dump all packet types
+except specified). The following packet types are available:
+
+.TS
+tab (@);
+r lx.
+1@T{
+batman ogm packets
+T}
+2@T{
+batman icmp packets
+T}
+4@T{
+batman unicast packets
+T}
+8@T{
+batman broadcast packets
+T}
+16@T{
+batman unicast tvlv packets
+T}
+32@T{
+batman fragmented packets
+T}
+64@T{
+batman tt / roaming packets
+T}
+128@T{
+non batman packets
+T}
+.TE
+Example: batctl td <interface> \-p 129 \-> only display batman ogm packets and non batman packets
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBthroughputmeter\fP|\fBtp\fP \fIMAC\fP
+This command starts a throughput test entirely controlled by batman module in
+kernel space: the computational resources needed to align memory and copy data
+between user and kernel space that are required by other user space tools may
+represent a bottleneck on some low profile device.
+
+The test consist of the transfer of 14 MB of data between the two nodes. The
+protocol used to transfer the data is somehow similar to TCP, but simpler: some
+TCP features are still missing, thus protocol performances could be worst. Since
+a fixed amount of data is transferred the experiment duration depends on the
+network conditions. The experiment can be interrupted with CTRL + C. At the end
+of a successful experiment the throughput in KBytes per second is returned,
+together with the experiment duration in millisecond and the amount of bytes
+transferred. If too many packets are lost or the specified MAC address is not
+reachable, a message notifying the error is returned instead of the result.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBtraceroute\fP|\fBtr\fP [\fB\-n\fP][\fB\-T\fP] \fIMAC_address\fP|\fIbat\-host_name\fP|\fIhost_name\fP|\fIIP_address\fP
+Layer 2 traceroute to a MAC address or bat\-host name. batctl will try to find the bat\-host name if the given parameter
+was not a MAC address. It can also try to guess the MAC address using an IPv4/IPv6 address or a hostname when
+the IPv4/IPv6 address was configured on top of the batman-adv interface of the destination device and both source and
+destination devices are in the same IP subnet.
+batctl will send 3 packets to each host and display the response time. If "\-n" is given batctl will
+not replace the MAC addresses with bat\-host names in the output. With "\-T" you can disable the automatic translation
+of a client MAC address to the originator address which is responsible for this client.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBtranslate\fP|\fBt\fP \fIMAC_address\fP|\fIbat\-host_name\fP|\fIhost_name\fP|\fIIP_address\fP
+Translates a destination (hostname, IP, MAC, bat_host-name) to the originator
+mac address responsible for it.
+
+.SH SETTINGS
+
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBaggregation\fP|\fBag\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current aggregation setting is displayed. Otherwise the parameter is used to enable or disable
+OGM packet aggregation.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBap_isolation\fP|\fBap\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current ap isolation setting is displayed. Otherwise the parameter is used to enable or
+disable ap isolation.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBap_isolation\fP|\fBap\fP [\fI0\fP|\fI1\fP]
+.TQ
+[\fBmeshif\fP \fInetdev\fP] \fBvid <vid>\fP \fBap_isolation\fP|\fBap\fP [\fI0\fP|\fI1\fP]
+.TQ
+\fBvlan\fP \fIvdev\fP \fBap_isolation\fP|\fBap\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current ap isolation setting for the specified VLAN is displayed. Otherwise the parameter is used to enable or
+disable ap isolation for the specified VLAN.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBbonding\fP|\fBb\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current bonding mode setting is displayed. Otherwise the parameter is used to enable or disable
+the bonding mode.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBbridge_loop_avoidance\fP|\fBbl\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current bridge loop avoidance setting is displayed. Otherwise the parameter is used to enable
+or disable the bridge loop avoidance. Bridge loop avoidance support has to be enabled when compiling the module otherwise
+this option won't be available.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBdistributed_arp_table\fP|\fBdat\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current distributed arp table setting is displayed. Otherwise the parameter is used to
+enable or disable the distributed arp table.
+.TP
+\fBhardif\fP \fIhardif\fP \fBelp_interval\fP|\fBet\fP [\fIinterval\fP]
+If no parameter is given the current ELP interval setting of the hard interface is displayed otherwise the parameter is used to set the
+ELP interval. The interval is in units of milliseconds.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBfragmentation\fP|\fBf\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current fragmentation mode setting is displayed. Otherwise the parameter is used to enable or
+disable fragmentation.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBgw_mode|gw\fP [\fBoff\fP|\fBclient\fP|\fBserver\fP] [\fIsel_class\fP|\fIbandwidth\fP]
+If no parameter is given the current gateway mode is displayed otherwise the parameter is used to set the gateway mode. The
+second (optional) argument specifies the selection class (if 'client' was the first argument) or the gateway bandwidth (if 'server'
+was the first argument). If the node is a server this parameter is used to inform other nodes in the network about
+this node's internet connection bandwidth. Just enter any number (optionally followed by "kbit" or "mbit") and the batman-adv
+module will propagate the entered value in the mesh. Use "/" to separate the down\(hy and upload rates. You can omit the upload
+rate and the module will assume an upload of download / 5.
 .RS 17
-default: 2000 \-> gateway class 20
+default: 10000 \-> 10.0/2.0 MBit
 .RE
 .RS 16
-examples: 5000 \-> gateway class 49
+examples:  5000 \->  5.0/1.0 MBit
 .RE
-.RS 25
+.RS 26
  5000kbit
  5mbit
  5mbit/1024
@@ -86,7 +246,11 @@ examples: 5000 \-> gateway class 49
  5mbit/1mbit
 .RE
 .RS 7
-If the node is a gateway client the parameter will decide which criterias to consider when the batman-adv module has to choose between different internet connections announced by the aforementioned servers.
+If the node is a gateway client the parameter will decide which criteria to consider when the batman-adv module has to choose
+between different internet connections announced by the aforementioned servers.
+.RE
+.RS 7
+B.A.T.M.A.N. IV:
 .RE
 .RS 17
 default: 20 \-> late switch (TQ 20)
@@ -94,122 +258,264 @@ default: 20 \-> late switch (TQ 20)
 .RS 16
 examples:  1 -> fast connection
 .RS 16
-consider the gateway's advertised throughput as well as the link quality towards the gateway
+consider the gateway's advertised throughput as well as the link quality towards the gateway and stick with the selection until the gateway disappears
 .RE
 .RE
 .RS 25
- 2  \-> stable connection
+  2 \-> stable connection
 .RS 7
-chooses the gateway with the best link quality and stick with it (ignore the advertised throughput)
+chooses the gateway with the best link quality and sticks with it (ignore the advertised throughput)
 .RE
- 3  \-> fast switch connection
+  3 \-> fast switch connection
 .RS 7
 chooses the gateway with the best link quality but switches to another gateway as soon as a better one is found
 .RE
  XX \-> late switch connection
 .RS 7
-chooses the gateway with the best link quality but switches to another gateway as soon as a better one is found which is at least XX TQ better than the currently selected gateway (XX has to be a number between 3 and 256).
+chooses the gateway with the best link quality but switches to another gateway as soon as a better one is found which is at
+least XX TQ better than the currently selected gateway (XX has to be a number between 3 and 256).
+.RE
+.RE
+.RS 7
+B.A.T.M.A.N. V:
+.RE
+.RS 17
+default: 5000 \-> late switch (5000 kbit/s throughput)
+.br
+example: 1500 \-> fast switch connection
+.RS 17
+switches to another gateway as soon as a better one is found which is at least 
+1500 kbit/s faster throughput than the currently selected gateway. Throughput is
+determined by evaluating which is lower: the advertised throughput by the
+gateway or the maximum bandwidth across the entire path.
 .RE
 .RE
 .br
-.IP "\fBgateways|gwl\fP     [\fB\-w\fP [\fI\interval\fP]][\fB\-n\fP]"
-Once started batctl will display the list of announced gateways in the network. Use the "\-w" option to let batctl refresh the list every second or add a number to let it refresh at a custom interval in seconds (with optional decimal places). If "\-n" was given batctl will not replace the mac addresses with bat\-host names in the output.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBhop_penalty\fP|\fBhp\fP [\fIpenalty\fP]
+If no parameter is given the current hop penalty setting is displayed. Otherwise the parameter is used to set the
+hop penalty. The penalty is can be 0-255 (255 sets originator message's TQ to zero when forwarded by this hop).
+.TP
+[\fBhardif\fP \fIhardif\fP] \fBhop_penalty\fP|\fBhp\fP [\fIpenalty\fP]
+If no parameter is given the current hop penalty setting of the hard interface is displayed. Otherwise the parameter is used to set the
+hop penalty. The penalty can be 0-255 (255 sets originator message's TQ to zero when forwarded over this interface).
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBisolation_mark\fP|\fBmark\fP [\fIvalue\fP[/\fImask\fP]]
+If no parameter is given the current isolation mark value is displayed.
+Otherwise the parameter is used to set or unset the isolation mark used by the
+Extended Isolation feature.
 .br
-.IP "\fBtranslocal\fP|\fBtl\fP    [\fB\-w\fP [\fI\interval\fP]][\fB\-n\fP]"
-Display the local translation table. batctl will refresh the list every second if the "\-w" option was given or add a number to let it refresh at a custom interval in seconds (with optional decimal places). Use "\-n" to let batctl not replace the MAC addresses with bat\-host names in the output.
+The input is supposed to be of the form $value/$mask, where $value can be any
+32bit long integer (expressed in decimal or hex base) and $mask is a generic
+bitmask (expressed in hex base) that selects the bits to take into consideration
+from $value. It is also possible to enter the input using only $value and in
+this case the full bitmask is used by default.
+
 .br
-.IP "\fBtransglobal\fP|\fBtg\fP   [\fB\-w\fP [\fI\interval\fP]][\fB\-n\fP]"
-Display the global translation table. batctl will refresh the list every second if the "\-w" option was given or add a number to let it refresh at a custom interval in seconds (with optional decimal places). Use "\-n" to let batctl not replace the MAC addresses with bat\-host names in the output.
 .br
-.IP "\fBsoftif_neigh\fP|\fBsn\fP   [\fB\-w\fP [\fI\interval\fP]][\fB\-n\fP]"
-Display the soft\-interface neighbor table. batctl will refresh the list every second if the "\-w" option was given or add a number to let it refresh at a custom interval in seconds (with optional decimal places). Use "\-n" to let batctl not replace the MAC addresses with bat\-host names in the output.
+Example 1: 0x00000001/0xffffffff
 .br
-.IP "\fBvis_mode|vm\fP	  [\fBmode\fP]\fP"
-If no parameter is given the current vis mode is displayed otherwise the parameter is used to set the vis mode.
+Example 2: 0x00040000/0xffff0000
 .br
-.IP "\fBvis_data|vd dot\fP  [\fB\-n\fP|\fB\-\-numbers\fP][\fB\-H\fP|\fB\-\-no-HNA\fP][\fB\-2\fP|\fB\-\-no-2nd\fP]"
-Display the visualisation data in graphviz \fBdot\fP(1) format. If
-"\-\-numbers" or "\-n" is given batctl will not replace the MAC
-addresses with bat-host names in the output. With "\-\-no-HNA" or
-"\-H" the HNA entries are not displayed, so the pure mesh topology can
-be seen. With "\-\-no-2nd" or "\-2" a dot cluster is not formed around
-primary and secondary addresses from the same device.
+Example 3: 16 or 0x0F
 .br
-.IP "\fBvis_data|vd json\fP [\fB\-n\fP|\fB\-\-numbers\fP][\fB\-H\fP|\fB\-\-no-HNA\fP][\fB\-2\fP|\fB\-\-no-2nd\fP]"
-Display the visualisation data in JSON format. If "\-\-numbers" or
-"\-n" is given batctl will not replace the MAC addresses with bat-host
-names in the output. With "\-\-no-HNA" or "\-H" the HNA entries are
-not displayed, so the pure mesh topology can be seen. With
-"\-\-no-2nd" or "\-2" a dot cluster is not formed around primary and
-secondary addresses from the same device.
-.br
-.IP "\fBaggregation\fP|\fBag\fP   [\fB1\fP|\fB0\fP]"
-If no parameter is given the current aggregation setting is displayed. Otherwise the parameter is used to enable or disable packet aggregation.
-.br
-.IP "\fBbonding\fP|\fBb\fP        [\fB1\fP|\fB0\fP]"
-If no parameter is given the current bonding mode setting is displayed. Otherwise the parameter is used to enable or disable the bonding mode.
-.br
-.IP "\fBfragmentation\fP|\fBf\fP   [\fB1\fP|\fB0\fP]"
-If no parameter is given the current fragmentation mode setting is displayed. Otherwise the parameter is used to enable or disable fragmentation.
-.br
-.IP "\fBping\fP|\fBp\fP           [\fB\-c count\fP][\fB\-i interval\fP][\fB\-t time\fP][\fB\-R\fP] \fBMAC_address\fP|\fBbat\-host_name\fP"
-Layer 2 ping of a MAC address or bat\-host name.  batctl will try to
-find the bat\-host name if the given parameter was not a MAC
-address. The "\-c" option tells batctl how man pings should be sent
-before the program exits. Without the "\-c" option batctl will continue
-pinging without end. Use CTRL + C to stop it.  With "\-i" and "\-t"
-you can set the default interval between pings and the timeout time
-for replies, both in seconds. When run with "\-R", the route taken by
-the ping messages will be recorded.
-.br
-.IP "\fBtraceroute\fP|\fBtr\fP    [\fB\-n\fP] \fBMAC_address\fP|\fBbat\-host_name\fP"
-Layer 2 traceroute to a MAC address or bat\-host name. batctl will try
-to find the bat\-host name if the given parameter was not a MAC
-address. batctl will send 3 packets to each host and display the
-response time. If "\-n" is given batctl will not replace the MAC
-addresses with bat\-host names in the output.
-.br
-.IP "\fBtcpdump\fP|\fBtd\fP       [\fB\-p filter\fP][\fB\-n\fP] \fBinterface ...\fP"
-batctl will display all packets that are seen on the given
-interface(s). The "\-p" options allows the filtering of certain packet
-types: 1 - batman ogm packets, 2 - batman icmp packets, 4 - unicast
-packets, 8 - broadcast packets, 16 - vis packets, and 32 - none batman
-packets. These numbers can be added to filter more than one packet
-type, e.g. use "\-p 3" to display batman ogm packets and batman icmp
-packets only. If "\-n" is given batctl will not replace the MAC
-addresses with bat\-host names in the output.
-.br
-.IP "\fBbisect\fP           [\fB\-l MAC\fP][\fB\-t MAC\fP][\fB\-r MAC\fP][\fB\-s min\fP [\fB\- max\fP]][\fB\-o MAC\fP][\fB\-n\fP] \fBlogfile1\fP [\fBlogfile2\fP ... \fBlogfileN\fP]"
-Analyses the logfiles to build a small internal database of all sent
-sequence numbers and routing table changes. This database can then be
-analyzed in a number of different ways. With "\-l" the database can be
-used to search for routing loops. Use "\-t" to trace OGMs of a host
-throughout the network. Use "\-r" to display routing tables of the
-nodes. The option "\-s" can be used to limit the output to a range of
-sequence numbers, between min and max, or to one specific sequence
-number, min. Furthermore using "\-o" you can filter the output to a
-specified originator. If "\-n" is given batctl will not replace the
-MAC addresses with bat\-host names in the output.
-.br
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBloglevel\fP|\fBll\fP [\fIlevel\fP ...]
+If no parameter is given the current log level settings are displayed otherwise the parameter(s) is/are used to set the log
+level. Level 'none' disables all verbose logging. Level 'batman' enables messages related to routing / flooding / broadcasting.
+Level 'routes' enables messages related to routes being added / changed / deleted. Level 'tt' enables messages related to
+translation table operations. Level 'bla' enables messages related to the bridge loop avoidance. Level 'dat' enables
+messages related to ARP snooping and the Distributed Arp Table. Level 'nc' enables messages related to network coding.
+Level 'mcast' enables messages related to multicast optimizations. Level 'tp' enables messages related to throughput meter.
+Level 'all' enables all messages. The messages are sent to the kernels trace buffers. Use \fBtrace-cmd stream -e batadv:batadv_dbg\fP
+to receive the system wide log messages.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBmulticast_fanout\fP|\fBmo\fP [\fIfanout\fP]
+If no parameter is given the current multicast fanout setting is displayed. Otherwise the parameter is used to set
+the multicast fanout. The multicast fanout defines the maximum number of packet copies that may be generated for a
+multicast-to-unicast conversion. Once this limit is exceeded distribution will fall back to broadcast.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBmulticast_forceflood\fP|\fBmff\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current multicast forceflood setting is displayed. Otherwise the parameter is used to enable or
+disable multicast forceflood. This setting defines whether multicast optimizations should be replaced by simple broadcast-like
+flooding of multicast packets. If set to non-zero then all nodes in the mesh are going to use classic flooding for any
+multicast packet with no optimizations.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBnetwork_coding\fP|\fBnc\fP [\fI0\fP|\fI1\fP]
+If no parameter is given the current network coding mode setting is displayed. Otherwise the parameter is used to enable or
+disable network coding.
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBorig_interval\fP|\fBit\fP [\fIinterval\fP]
+If no parameter is given the current originator interval setting is displayed otherwise the parameter is used to set the
+originator interval. The interval is in units of milliseconds.
+.TP
+\fBhardif\fP \fIhardif\fP \fBthroughput_override|to\fP [\fIbandwidth\fP]
+If no parameter is given the current througput override is displayed otherwise
+the parameter is used to set the throughput override for the specified hard
+interface.
+Just enter any number (optionally followed by "kbit" or "mbit").
+
+.SH DEBUG TABLES
+
+The batman-adv kernel module comes with a variety of debug tables containing various information about the state of the mesh
+seen by each individual node.
+
+All of the debug tables support the following options:
+.TP
+\fB-w\fP
+refresh the list every second or add a number to let it refresh at a custom interval in seconds (with optional decimal places)
+.TP
+\fB-n\fP
+do not replace the MAC addresses with bat\-host names in the output
+.TP
+\fB-H\fP
+do not show the header of the debug table
+
+.PP
+The originator table also supports the "\-t" filter option to remove all originators from the output that have not been seen
+for the specified amount of seconds (with optional decimal places). It furthermore supports the "\-i" parameter to specify an
+interface for which the originator table should be printed. If this parameter is not supplied, the default originator table
+is printed.
+
+The local and global translation tables also support the "\-u" and "\-m" option to only display unicast or multicast translation table announcements respectively.
+
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBbackbonetable\fP|\fBbbt\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP]
+(compile time option)
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBclaimtable\fP|\fBcl\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP]
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBdat_cache\fP|\fBdc\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP]
+(compile time option)
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBgateways\fP|\fBgwl\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP]
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBmcast_flags\fP|\fBmf\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP]
+(compile time option)
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBneighbors\fP|\fBn\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP]
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBoriginators\fP|\fBo\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP] [\fB-t\fP \fItimeout_interval\fP] [\fB-i\fP \fIinterface\fP]
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBtransglobal\fP|\fBtg\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP] [\fB-u\fP] [\fB-m\fP]
+(compile time option)
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBtranslocal\fP|\fBtl\fP [\fB-n\fP] [\fB-H\fP] [\fB-w\fP \fIinterval\fP] [\fB-u\fP] [\fB-m\fP]
+
+.SH JSON QUERIES
+
+The generic netlink family provided by the batman-adv kernel module can be
+queried (read-only) by batctl and automatically translated to JSON. This
+can be used to monitor the state of the system without the need of parsing
+the freeform debug tables or the native netlink messages.
+
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBbla_backbone_json\fP|\fBbbj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBbla_claim_json\fP|\fBclj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBdat_cache_json\fP|\fBdcj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBgateways_json\fP|\fBgwj\fP
+.TP
+\fBhardif\fP \fIhardif\fP \fBhardif_json\fP|\fBhj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBhardifs_json\fP|\fBhj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBmcast_flags_json\fP|\fBmfj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBmesh_json\fP|\fBmj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBneighbors_json\fP|\fBnj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBoriginators_json\fP|\fBoj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBtranstable_global_json\fP|\fBtgj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBtranstable_local_json\fP|\fBtlj\fP
+.TP
+[\fBmeshif\fP \fInetdev\fP] \fBvid <vid>\fP \fBvlan_json\fP|\fBvj\fP
+.TQ
+\fBvlan\fP \fIvdev\fP \fBvlan_json\fP|\fBvj\fP
+
+.SH EXAMPLES
+The setup of a batadv interface usually consists of creation of the the main
+interface, attaching of the (lower) hard-interface, adjusting of settings
+and bringup of the interface:
+.PP
+.in +4n
+.EX
+# create batadv (mesh) interface bat0 with routing algorithm B.A.T.M.A.N. IV
+.RB "$" " batctl meshif bat0 interface create routing_algo BATMAN_IV"
+# add the (already up and running) mesh0 interface as lower (hard) interface to bat0
+.RB "$" " batctl meshif bat0 interface -M add mesh0"
+# change some settings to better match the requirements of the user
+.RB "$" " batctl meshif bat0 orig_interval 5000"
+.RB "$" " batctl meshif bat0 distributed_arp_table disable"
+.RB "..."
+# set the batadv (mesh) interface up before it is possible to use it
+.RB "$" " ip link set up dev bat0"
+.EE
+.in
+
+This only makes sure that the layer 2 functionality of bat0 is started up. It
+is the responsibility of the user to make sure that the bat0 device itself
+gets attached to a bridge, configured with an IP address (manually/DHCP client/...)
+or integrated in other parts of the system before it gets used.
+.PP
+Also the attached (lower) hard-interfaces attached to the batadv interface must
+be configured by the user to support transportation of ethernet unicast and
+broadcast packets between its linked peers. The most common reason for a not
+working batman-adv mesh are incorrect configurations of the hard-interfaces,
+hardware, firmware or driver bugs which prevent that some of the packet types
+are correctly exchanged.
+.PP
+The current status of interface can be checked using the debug tables. It is
+often relevant to check from which direct neighbors discovery packets were
+received.
+The next step is to check the (preferred) routes to originators. These will
+only be established when the metric has detected bidirectional connections
+between neighbors and might have forwarded discovery packets from not directly
+reachable nodes/originators.
+.PP
+.in +4n
+.EX
+# get list of neighbors from which the current node was able to receive discovery packets
+.RB "$" " batctl meshif bat0 neighbors"
+# get (preferred) routes the routing algorithm found
+.RB "$" " batctl meshif bat0 originators"
+.EE
+.in
+.PP
+If the bat0 interface should no longer used by the system, it can be destroyed
+again:
+.PP
+.in +4n
+.EX
+# destroy the interface and let the system remove its state
+.RB "$" " batctl meshif bat0 interface destroy"
+.EE
+.in
+
 .SH FILES
 .TP
-.I "\fBbat-hosts\fP"
-This file is similar to the /etc/hosts file. You can write one MAC
-address and one host name per line. batctl will search for bat-hosts
-in /etc, your home directory and the current directory. The found data
-is used to match MAC address to your provided host name or replace MAC
-addresses in debug output and logs. Host names are much easier to
-remember than MAC addresses.
+\fBbat-hosts\fP
+This file is similar to the /etc/hosts file. You can write one MAC address and one host name per line. batctl will search
+for bat-hosts in /etc, your home directory and the current directory. The found data is used to match MAC address to your
+provided host name or replace MAC addresses in debug output and logs. Host names are much easier to remember than MAC
+addresses.
+
 .SH SEE ALSO
-.BR ping (1),
-.BR traceroute (1),
-.BR tcpdump (1),
+.BR bridge (8),
 .BR dmesg (1),
-.BR dot (1)
+.BR ip (8),
+.BR ip-link (8),
+.BR ping (8),
+.BR tcpdump (8),
+.BR traceroute (1),
+.BR trace-cmd (1)
 .SH AUTHOR
-batctl was written by Andreas Langer <an.langer@gmx.de> and Marek
-Lindner <lindner_marek@yahoo.de>.
+batctl was written by Andreas Langer <an.langer@gmx.de> and Marek Lindner <mareklindner@neomailbox.ch>.
 .PP
-This manual page was written by Simon Wunderlich
-<siwu@hrz.tu-chemnitz.de>, Marek Lindner <lindner_marek@yahoo.de> and
+This manual page was written by Simon Wunderlich <sw@simonwunderlich.de>, Marek Lindner <mareklindner@neomailbox.ch> and
 Andrew Lunn <andrew@lunn.ch>
