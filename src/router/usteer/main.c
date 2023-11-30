@@ -226,6 +226,7 @@ int main(int argc, char **argv)
 		usteer_ubus_init(ubus_ctx);
 		usteer_local_nodes_init(ubus_ctx);
 	}
+	usteer_interface_init();
 	uloop_run();
 
 	uloop_done();
