@@ -26,6 +26,10 @@ endif
 endif
 
 ifeq ($(KERNELVERSION),6.1)
+HOSTAPDVERSION=2023-09-08
+endif
+
+ifeq ($(KERNELVERSION),6.1)
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
 else
