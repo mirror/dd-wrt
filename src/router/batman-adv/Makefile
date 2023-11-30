@@ -52,6 +52,7 @@ export batman-adv-y
 
 BUILD_FLAGS := \
 	M=$(PWD) \
+	 CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" \
 	PWD=$(PWD) \
 	REVISION=$(REVISION) \
 	CONFIG_BATMAN_ADV=m \
