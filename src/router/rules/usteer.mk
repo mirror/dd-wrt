@@ -22,7 +22,7 @@ usteer: json-c libubox ubus
 #	-cp usteer/libusteer.h $(STAGING_DIR)/usr/include/
 
 usteer-install:
-	install -D usteer/ap-monitor $(INSTALLDIR)/usteer/usr/lib/ap-monitor
+	install -D usteer/ap-monitor $(INSTALLDIR)/usteer/usr/sbin/ap-monitor
 	install -D usteer/fakeap $(INSTALLDIR)/usteer/usr/sbin/fakeap
 	install -D usteer/usteerd $(INSTALLDIR)/usteer/usr/sbin/usteerd
 
