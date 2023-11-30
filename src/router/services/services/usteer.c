@@ -34,14 +34,14 @@ void start_usteer(void)
 	if (!nvram_invmatchi("usteer_enable", 0))
 		return;
 
-	log_eval("usteer","-i", "br0", "-s", "&");
+	log_eval("usteerd","-i", "br0", "-s", "&");
 	cprintf("done\n");
 	return;
 }
 
 void stop_usteer(void)
 {
-	stop_process("usteer", "daemon");
+	stop_process("usteerd", "daemon");
 	return;
 }
 #endif
