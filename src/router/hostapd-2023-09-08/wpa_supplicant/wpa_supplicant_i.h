@@ -22,7 +22,6 @@
 #include "wmm_ac.h"
 #include "pasn/pasn_common.h"
 #include "ubus.h"
-#include "ucode.h"
 
 extern const char *const wpa_supplicant_version;
 extern const char *const wpa_supplicant_license;
@@ -693,7 +692,6 @@ struct wpa_supplicant {
 	unsigned char perm_addr[ETH_ALEN];
 	char ifname[100];
 	struct wpas_ubus_bss ubus;
-	struct wpas_ucode_bss ucode;
 #ifdef CONFIG_MATCH_IFACE
 	int matched;
 #endif /* CONFIG_MATCH_IFACE */

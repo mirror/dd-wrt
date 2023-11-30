@@ -5383,7 +5383,6 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 		event_to_string(event), event);
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
-	wpas_ucode_event(wpa_s, event, data);
 	switch (event) {
 	case EVENT_AUTH:
 #ifdef CONFIG_FST
