@@ -147,6 +147,10 @@ ifeq ($(KERNELVERSION),6.1)
 CFLAGS_EXTRA += -DHAVE_USTEER
 OBJS += usteer.o
 endif
+ifeq ($(CONFIG_USTEER),y)
+CFLAGS_EXTRA += -DHAVE_USTEER
+OBJS += usteer.o
+endif
 ifeq ($(CONFIG_ALLNETWRT),y)
   CFLAGS_EXTRA += -DHAVE_ALLNETWRT
 endif
