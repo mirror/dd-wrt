@@ -288,7 +288,7 @@ obj-$(CONFIG_WOLFSSL) += wolfssl
 ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 else
-obj-$(CONFIG_HOSTAPD2) += hostapd2 libubox ubus usteer
+obj-$(CONFIG_HOSTAPD2) += hostapd2 libubox ubus usteer json-c
 endif
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
