@@ -83,7 +83,7 @@ void start_syslog(void)
 		if (*(nvram_safe_get("syslogd_rem_ip")))
 			log_eval("syslogd", "-Z", "-b", "5", "-L", "-R", nvram_safe_get("syslogd_rem_ip"), "-O", "/jffs/log/messages");
 		else
-			log_eval("syslogd", "-Z", "-L", "-O", "/jffs/log/messages");
+			log_eval("syslogd", "-Z", "-b", "5", "-L", "-O", "/jffs/log/messages");
 	} else {
 		fallback:;
 		if (*(nvram_safe_get("syslogd_rem_ip")))
