@@ -9,12 +9,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
-#include <linux/if_link.h>
-#include <linux/rtnetlink.h>
 #include <netinet/if_ether.h>
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+#include <linux/if_link.h>
+#include <linux/rtnetlink.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
