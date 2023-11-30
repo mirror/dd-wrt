@@ -33,8 +33,7 @@ void start_usteer(void)
 	// Only start if enabled
 	if (!nvram_invmatchi("usteer_enable", 0))
 		return;
-
-	eval("usteerd","-i","br0","-s", "-v", "1");
+	sysprintf("usteerd -i br0 -s -v 1&");
 	cprintf("done\n");
 	return;
 }
