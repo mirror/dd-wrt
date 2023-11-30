@@ -20,7 +20,6 @@ struct wpa_global;
 struct wpas_ubus_bss {
 	struct ubus_object obj;
 };
-
 void wpas_ubus_add_bss(struct wpa_supplicant *wpa_s);
 void wpas_ubus_free_bss(struct wpa_supplicant *wpa_s);
 

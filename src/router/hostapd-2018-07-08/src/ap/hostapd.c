@@ -1423,6 +1423,8 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 	if (hapd->driver && hapd->driver->set_operstate)
 		hapd->driver->set_operstate(hapd->drv_priv, 1);
 
+	hostapd_ubus_add_bss(hapd);
+
 	/* This should run after the config file has been read, I hope. */
 	if (hapd->conf->signal_stay_min > -128)
 	   eloop_register_timeout(3, 0, hostapd_bss_signal_check, NULL, hapd);  // Start up the poll timer.
