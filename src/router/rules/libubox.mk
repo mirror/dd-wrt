@@ -28,4 +28,3 @@ libubox-install:
 
 libubox-clean:
 	if [ -e "$(UBOX_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libubox clean ; fi
-	$(call CMakeClean,$(UBOX_PKG_BUILD_DIR))

@@ -27,5 +27,4 @@ ubus-install:
 	install -D ubus/ubusd $(INSTALLDIR)/ubus/usr/sbin/ubusd
 
 ubus-clean:
-	if [ -e "$(PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C ubus clean ; fi
-	$(call CMakeClean,$(PKG_BUILD_DIR))
+	if [ -e "$(UBUS_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C ubus clean ; fi
