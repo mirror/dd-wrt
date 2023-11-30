@@ -827,8 +827,8 @@ free_bat_counters:
  * Return: 0 if successful or error otherwise.
  */
 static int batadv_softif_slave_add(struct net_device *dev,
-				   struct net_device *slave_dev,
-				   struct netlink_ext_ack *extack)
+				   struct net_device *slave_dev
+				   ,struct netlink_ext_ack *extack)
 {
 	struct batadv_hard_iface *hard_iface;
 	int ret = -EINVAL;
@@ -993,6 +993,19 @@ static void batadv_softif_free(struct net_device *dev)
 	rcu_barrier();
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+#define netdev_set_priv_destructor(_dev, _destructor) \
+	(_dev)->destructor = _destructor
+#define netdev_set_def_destructor(_dev) \
+	(_dev)->destructor = free_netdev
+#else
+#define netdev_set_priv_destructor(_dev, _destructor) \
+	(_dev)->needs_free_netdev = true; \
+	(_dev)->priv_destructor = (_destructor);
+#define netdev_set_def_destructor(_dev) \
+	(_dev)->needs_free_netdev = true;
+#endif
+
 /**
  * batadv_softif_init_early() - early stage initialization of soft interface
  * @dev: registered network device to modify
@@ -1002,8 +1015,7 @@ static void batadv_softif_init_early(struct net_device *dev)
 	ether_setup(dev);
 
 	dev->netdev_ops = &batadv_netdev_ops;
-	dev->needs_free_netdev = true;
-	dev->priv_destructor = batadv_softif_free;
+	netdev_set_priv_destructor(dev, batadv_softif_free);
 	dev->features |= NETIF_F_HW_VLAN_CTAG_FILTER | NETIF_F_NETNS_LOCAL;
 	dev->features |= NETIF_F_LLTX;
 	dev->priv_flags |= IFF_NO_QUEUE;
@@ -1027,8 +1039,12 @@ static void batadv_softif_init_early(struct net_device *dev)
  *
  * Return: 0 if successful or error otherwise.
  */
-static int batadv_softif_validate(struct nlattr *tb[], struct nlattr *data[],
-				  struct netlink_ext_ack *extack)
+static int batadv_softif_validate(struct nlattr *tb[], struct nlattr *data[]
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+				    )
+#else
+				   ,struct netlink_ext_ack *extack)
+#endif
 {
 	struct batadv_algo_ops *algo_ops;
 
@@ -1055,8 +1071,12 @@ static int batadv_softif_validate(struct nlattr *tb[], struct nlattr *data[],
  * Return: 0 if successful or error otherwise.
  */
 static int batadv_softif_newlink(struct net *src_net, struct net_device *dev,
-				 struct nlattr *tb[], struct nlattr *data[],
-				 struct netlink_ext_ack *extack)
+				 struct nlattr *tb[], struct nlattr *data[]
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+				    )
+#else
+				   ,struct netlink_ext_ack *extack)
+#endif
 {
 	struct batadv_priv *bat_priv = netdev_priv(dev);
 	const char *algo_name;
