@@ -285,7 +285,11 @@ ifneq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_WPA3) += wolfssl
 endif
 obj-$(CONFIG_WOLFSSL) += wolfssl
+ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_HOSTAPD2) += hostapd2
+else
+obj-$(CONFIG_HOSTAPD2) += hostapd2 libubox ubus
+endif
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
 obj-$(CONFIG_TOR) += xz zstd zlib libucontext openssl libevent tor
