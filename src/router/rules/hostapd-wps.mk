@@ -40,7 +40,7 @@ ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
 endif
 
-hostapd2: $(TINY) nvram
+hostapd2: $(TINY) nvram ubus
 	cp shared/nl80211.h hostapd-$(HOSTAPDVERSION)/src/drivers/nl80211_copy.h
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant clean
