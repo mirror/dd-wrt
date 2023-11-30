@@ -377,7 +377,7 @@ void start_devinit(void)
 #ifdef HAVE_OPENRISC
 	install_sdcard();
 #endif
-	eval("ubusd");
+	sysprintf("ubusd&")
 	start_devinit_arch();
 	fprintf(stderr, "done\n");
 }
