@@ -2,8 +2,8 @@ UBUS_PKG_BUILD_DIR=$(TOP)/ubus
 UBUS_STAGING_DIR=$(TOP)/_staging
 UBUS_PKG_INSTALL:=1
 UBUS_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF
-UBUS_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF
-UBUS_EXTRA_LDFLAGS=-L$(TOP)/libubox/
+UBUS_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
+UBUS_EXTRA_LDFLAGS=-L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ubus-configure: 
 	$(call CMakeClean,$(UBUS_PKG_BUILD_DIR))
