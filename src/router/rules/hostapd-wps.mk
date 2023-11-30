@@ -35,6 +35,10 @@ ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sect
 else
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifeq ($(CONFIG_USTEER),y)
+ATH9K_CFLAGS += -I$(TOP)/_staging/usr/include 
+ATH9K_LDFLAGS += -L$(TOP)/_staging/usr/lib -lubox -lubus
+endif
 endif
 ifeq ($(CONFIG_WPA3),y)
 ifeq ($(CONFIG_OPENSSL),y)
