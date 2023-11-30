@@ -200,7 +200,15 @@ else
 obj-$(CONFIG_OPENVPN) += lzo openvpn speedtest-cli
 endif
 obj-$(CONFIG_OLSRD) += olsrd
+ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_BATMANADV) += batman-adv
+endif
+ifeq ($(KERNELVERSION),4.14)
+obj-$(CONFIG_BATMANADV) += batman-adv
+endif
+ifeq ($(KERNELVERSION),4.9)
+obj-$(CONFIG_BATMANADV) += batman-adv
+endif
 obj-$(CONFIG_FDISK) += fdisk
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
