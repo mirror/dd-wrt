@@ -11,6 +11,10 @@
 
 #include "wpabuf.h"
 
+extern void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
+extern void (*wpa_hexdump_hook)(int level, const char *title,
+				const void *buf, size_t len);
+extern void (*wpa_netlink_hook)(int tx, const void *data, size_t len);
 extern int wpa_debug_level;
 extern int wpa_debug_show_keys;
 extern int wpa_debug_timestamp;

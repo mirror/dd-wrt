@@ -201,6 +201,25 @@ ifdef CONFIG_EAPOL_TEST
 CFLAGS += -Werror -DEAPOL_TEST
 endif
 
+ifdef CONFIG_UBUS
+CFLAGS += -DUBUS_SUPPORT
+OBJS += ubus.o
+LIBS += -lubus
+NEED_ULOOP:=y
+endif
+
+ifdef CONFIG_UCODE
+CFLAGS += -DUCODE_SUPPORT
+OBJS += ../src/utils/ucode.o
+OBJS += ucode.o
+NEED_ULOOP:=y
+endif
+
+ifdef NEED_ULOOP
+OBJS += ../src/utils/uloop.o
+LIBS += -lubox
+endif
+
 ifdef CONFIG_CODE_COVERAGE
 CFLAGS += -O0 -fprofile-arcs -ftest-coverage
 LIBS += -lgcov
@@ -996,6 +1015,12 @@ ifdef CONFIG_CTRL_IFACE_MIB
 CFLAGS += -DCONFIG_CTRL_IFACE_MIB
 endif
 OBJS += ../src/ap/ctrl_iface_ap.o
+ifdef CONFIG_UBUS
+OBJS += ../src/ap/ubus.o
+endif
+ifdef CONFIG_UCODE
+OBJS += ../src/ap/ucode.o
+endif
 endif
 
 CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY

@@ -112,8 +112,14 @@ static void set_sta_weights(struct hostapd_data *hapd, unsigned int weight)
 {
 	struct sta_info *sta;
 
-	for (sta = hapd->sta_list; sta; sta = sta->next)
-		sta_set_airtime_weight(hapd, sta, weight);
+	for (sta = hapd->sta_list; sta; sta = sta->next) {
+		unsigned int sta_weight = weight;
+
+		if (sta->dyn_airtime_weight)
+			sta_weight = (weight * sta->dyn_airtime_weight) / 256;
+
+		sta_set_airtime_weight(hapd, sta, sta_weight);
+	}
 }
 
 
@@ -244,7 +250,10 @@ int airtime_policy_new_sta(struct hostapd_data *hapd, struct sta_info *sta)
 	unsigned int weight;
 
 	if (hapd->iconf->airtime_mode == AIRTIME_MODE_STATIC) {
-		weight = get_weight_for_sta(hapd, sta->addr);
+		if (sta->dyn_airtime_weight)
+			weight = sta->dyn_airtime_weight;
+		else
+			weight = get_weight_for_sta(hapd, sta->addr);
 		if (weight)
 			return sta_set_airtime_weight(hapd, sta, weight);
 	}

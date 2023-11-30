@@ -178,6 +178,24 @@ OBJS += ../src/common/hw_features_common.o
 
 OBJS += ../src/eapol_auth/eapol_auth_sm.o
 
+ifdef CONFIG_UBUS
+CFLAGS += -DUBUS_SUPPORT
+OBJS += ../src/ap/ubus.o
+LIBS += -lubus
+NEED_ULOOP:=y
+endif
+
+ifdef CONFIG_UCODE
+CFLAGS += -DUCODE_SUPPORT
+OBJS += ../src/utils/ucode.o
+OBJS += ../src/ap/ucode.o
+NEED_ULOOP:=y
+endif
+
+ifdef NEED_ULOOP
+OBJS += ../src/utils/uloop.o
+LIBS += -lubox
+endif
 
 ifdef CONFIG_CODE_COVERAGE
 CFLAGS += -O0 -fprofile-arcs -ftest-coverage

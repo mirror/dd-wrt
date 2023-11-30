@@ -21,6 +21,8 @@
 #include "config_ssid.h"
 #include "wmm_ac.h"
 #include "pasn/pasn_common.h"
+#include "ubus.h"
+#include "ucode.h"
 
 extern const char *const wpa_supplicant_version;
 extern const char *const wpa_supplicant_license;
@@ -322,6 +324,8 @@ struct wpa_global {
 #endif /* CONFIG_WIFI_DISPLAY */
 
 	struct psk_list_entry *add_psk; /* From group formation */
+
+	struct ubus_object ubus_global;
 };
 
 
@@ -688,6 +692,8 @@ struct wpa_supplicant {
 	unsigned char own_addr[ETH_ALEN];
 	unsigned char perm_addr[ETH_ALEN];
 	char ifname[100];
+	struct wpas_ubus_bss ubus;
+	struct wpas_ucode_bss ucode;
 #ifdef CONFIG_MATCH_IFACE
 	int matched;
 #endif /* CONFIG_MATCH_IFACE */

@@ -3792,6 +3792,25 @@ struct wpa_driver_ops {
 			 const char *ifname);
 
 	/**
+	 * if_rename - Rename a virtual interface
+	 * @priv: Private driver interface data
+	 * @type: Interface type
+	 * @ifname: Interface name of the virtual interface to be renamed
+	 *	    (NULL when renaming the AP BSS interface)
+	 * @new_name: New interface name of the virtual interface
+	 * Returns: 0 on success, -1 on failure
+	 */
+	int (*if_rename)(void *priv, enum wpa_driver_if_type type,
+			 const char *ifname, const char *new_name);
+
+	/**
+	 * set_first_bss - Make a virtual interface the first (primary) bss
+	 * @priv: Private driver interface data
+	 * Returns: 0 on success, -1 on failure
+	 */
+	int (*set_first_bss)(void *priv);
+
+	/**
 	 * set_sta_vlan - Bind a station into a specific interface (AP only)
 	 * @priv: Private driver interface data
 	 * @ifname: Interface (main or virtual BSS or VLAN)
@@ -6445,6 +6464,7 @@ union wpa_event_data {
 
 	/**
 	 * struct ch_switch
+	 * @count: Count until channel switch activates
 	 * @freq: Frequency of new channel in MHz
 	 * @ht_enabled: Whether this is an HT channel
 	 * @ch_offset: Secondary channel offset
@@ -6455,6 +6475,7 @@ union wpa_event_data {
 	 * @punct_bitmap: Puncturing bitmap
 	 */
 	struct ch_switch {
+		int count;
 		int freq;
 		int ht_enabled;
 		int ch_offset;

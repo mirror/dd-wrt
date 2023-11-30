@@ -393,6 +393,23 @@ static inline int hostapd_drv_stop_ap(struct hostapd_data *hapd)
 	return hapd->driver->stop_ap(hapd->drv_priv);
 }
 
+static inline int hostapd_drv_if_rename(struct hostapd_data *hapd,
+					enum wpa_driver_if_type type,
+					const char *ifname,
+					const char *new_name)
+{
+	if (!hapd->driver || !hapd->driver->if_rename || !hapd->drv_priv)
+		return -1;
+	return hapd->driver->if_rename(hapd->drv_priv, type, ifname, new_name);
+}
+
+static inline int hostapd_drv_set_first_bss(struct hostapd_data *hapd)
+{
+	if (!hapd->driver || !hapd->driver->set_first_bss || !hapd->drv_priv)
+		return 0;
+	return hapd->driver->set_first_bss(hapd->drv_priv);
+}
+
 static inline int hostapd_drv_channel_info(struct hostapd_data *hapd,
 					   struct wpa_channel_info *ci)
 {

@@ -26,6 +26,10 @@ static FILE *wpa_debug_tracing_file = NULL;
 #define WPAS_TRACE_PFX "wpas <%d>: "
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
 
+void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
+void (*wpa_hexdump_hook)(int level, const char *title, const void *buf,
+			 size_t len);
+void (*wpa_netlink_hook)(int tx, const void *data, size_t len);
 
 int wpa_debug_level = MSG_INFO;
 int wpa_debug_show_keys = 0;
@@ -210,6 +214,12 @@ void _wpa_printf(int level, const char *fmt, ...)
 {
 	va_list ap;
 
+	if (wpa_printf_hook) {
+		va_start(ap, fmt);
+		wpa_printf_hook(level, fmt, ap);
+		va_end(ap);
+	}
+
 	if (level >= wpa_debug_level) {
 #ifdef CONFIG_ANDROID_LOG
 		va_start(ap, fmt);
@@ -259,6 +269,9 @@ void _wpa_hexdump(int level, const char *title, const u8 *buf,
 			 size_t len, int show, int only_syslog)
 {
 	size_t i;
+
+	if (wpa_hexdump_hook)
+		wpa_hexdump_hook(level, title, buf, len);
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 	if (wpa_debug_tracing_file != NULL) {

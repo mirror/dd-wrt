@@ -298,6 +298,9 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 	struct hostapd_config *newconf, *oldconf;
 	size_t j;
 	int i;
+
+	hostapd_ucode_reload_bss(hapd);
+
 	if (iface->config_fname == NULL) {
 		/* Only in-memory config in use - assume it has been updated */
 		hostapd_clear_old(iface);
@@ -479,6 +482,8 @@ void hostapd_free_hapd_data(struct hostapd_data *hapd)
 	hapd->beacon_set_done = 0;
 
 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
+	hostapd_ucode_free_bss(hapd);
+	hostapd_ubus_free_bss(hapd);
 	accounting_deinit(hapd);
 	hostapd_deinit_wpa(hapd);
 	vlan_deinit(hapd);
@@ -643,6 +648,7 @@ void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
 static void hostapd_cleanup_iface(struct hostapd_iface *iface)
 {
 	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
+	hostapd_ucode_free_iface(iface);
 	eloop_cancel_timeout(hostapd_interface_setup_failure_handler, iface,
 			     NULL);
 
@@ -1231,6 +1237,9 @@ static int hostapd_start_beacon(struct hostapd_data *hapd,
 	if (hapd->driver && hapd->driver->set_operstate)
 		hapd->driver->set_operstate(hapd->drv_priv, 1);
 
+	hostapd_ubus_add_bss(hapd);
+	hostapd_ucode_add_bss(hapd);
+
 	return 0;
 }
 
@@ -1336,8 +1345,7 @@ int hostapd_signal_handle_event(struct hostapd_data *hapd, int rssi, int type, c
  * initialized. Most of the modules that are initialized here will be
  * deinitialized in hostapd_cleanup().
  */
-static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
-			     bool start_beacon)
+int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon)
 {
 	struct hostapd_bss_config *conf = hapd->conf;
 	u8 ssid[SSID_MAX_LEN + 1];
@@ -2408,6 +2416,7 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 	if (err)
 		goto fail;
 
+	hostapd_ubus_add_iface(iface);
 	wpa_printf(MSG_DEBUG, "Completing interface initialization");
 	if (iface->freq) {
 #ifdef NEED_AP_MLME
@@ -2625,6 +2634,7 @@ dfs_offload:
 
 fail:
 	wpa_printf(MSG_ERROR, "Interface initialization failed");
+	hostapd_ubus_free_iface(iface);
 
 	if (iface->is_no_ir) {
 		hostapd_set_state(iface, HAPD_IFACE_NO_IR);
@@ -2824,7 +2834,7 @@ hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 }
 
 
-static void hostapd_bss_deinit(struct hostapd_data *hapd)
+void hostapd_bss_deinit(struct hostapd_data *hapd)
 {
 	if (!hapd)
 		return;
@@ -3115,6 +3125,7 @@ void hostapd_interface_deinit_free(struct hostapd_iface *iface)
 		   (unsigned int) iface->conf->num_bss);
 	driver = iface->bss[0]->driver;
 	drv_priv = iface->bss[0]->drv_priv;
+	hostapd_ubus_free_iface(iface);
 	hostapd_interface_deinit(iface);
 	wpa_printf(MSG_DEBUG, "%s: driver=%p drv_priv=%p -> hapd_deinit",
 		   __func__, driver, drv_priv);
@@ -3616,7 +3627,8 @@ int hostapd_remove_iface(struct hapd_interfaces *interfaces, char *buf)
 		hapd_iface = interfaces->iface[i];
 		if (hapd_iface == NULL)
 			return -1;
-		if (!os_strcmp(hapd_iface->conf->bss[0]->iface, buf)) {
+		if (!os_strcmp(hapd_iface->phy, buf) ||
+		    !os_strcmp(hapd_iface->conf->bss[0]->iface, buf)) {
 			wpa_printf(MSG_INFO, "Remove interface '%s'", buf);
 			hapd_iface->driver_ap_teardown =
 				!!(hapd_iface->drv_flags &

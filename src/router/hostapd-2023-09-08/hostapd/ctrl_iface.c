@@ -4962,6 +4962,7 @@ try_again:
 		return -1;
 	}
 
+	interface->ctrl_iface_recv = hostapd_ctrl_iface_receive_process;
 	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
 
 	return 0;
@@ -5063,6 +5064,7 @@ fail:
 	os_free(fname);
 
 	interface->global_ctrl_sock = s;
+	interface->ctrl_iface_recv = hostapd_ctrl_iface_receive_process;
 	eloop_register_read_sock(s, hostapd_global_ctrl_iface_receive,
 				 interface, NULL);
 

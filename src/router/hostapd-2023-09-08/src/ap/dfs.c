@@ -1216,6 +1216,8 @@ int hostapd_dfs_pre_cac_expired(struct hostapd_iface *iface, int freq,
 		"freq=%d ht_enabled=%d chan_offset=%d chan_width=%d cf1=%d cf2=%d",
 		freq, ht_enabled, chan_offset, chan_width, cf1, cf2);
 
+	hostapd_ubus_notify_radar_detected(iface, freq, chan_width, cf1, cf2);
+
 	/* Proceed only if DFS is not offloaded to the driver */
 	if (iface->drv_flags & WPA_DRIVER_FLAGS_DFS_OFFLOAD)
 		return 0;

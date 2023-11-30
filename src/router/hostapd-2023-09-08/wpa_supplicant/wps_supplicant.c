@@ -33,6 +33,7 @@
 #include "p2p/p2p.h"
 #include "p2p_supplicant.h"
 #include "wps_supplicant.h"
+#include "ubus.h"
 
 
 #ifndef WPS_PIN_SCAN_IGNORE_SEL_REG
@@ -401,6 +402,8 @@ static int wpa_supplicant_wps_cred(void *ctx,
 
 	wpa_hexdump_key(MSG_DEBUG, "WPS: Received Credential attribute",
 			cred->cred_attr, cred->cred_attr_len);
+
+	wpas_ubus_notify(wpa_s, cred);
 
 	if (wpa_s->conf->wps_cred_processing == 1)
 		return 0;

@@ -65,6 +65,9 @@ typedef void (*eloop_timeout_handler)(void *eloop_ctx, void *user_ctx);
  */
 typedef void (*eloop_signal_handler)(int sig, void *signal_ctx);
 
+typedef bool (*eloop_timeout_poll_handler)(struct os_reltime *tv, bool tv_set);
+typedef void (*eloop_poll_handler)(void);
+
 /**
  * eloop_init() - Initialize global event loop data
  * Returns: 0 on success, -1 on failure
@@ -72,6 +75,9 @@ typedef void (*eloop_signal_handler)(int sig, void *signal_ctx);
  * This function must be called before any other eloop_* function.
  */
 int eloop_init(void);
+
+int eloop_register_cb(eloop_poll_handler poll_cb,
+		      eloop_timeout_poll_handler timeout_cb);
 
 /**
  * eloop_register_read_sock - Register handler for read events
@@ -319,6 +325,8 @@ int eloop_register_signal_reconfig(eloop_signal_handler handler,
  * such as epoll and kqueue.
  */
 int eloop_sock_requeue(void);
+
+void eloop_add_uloop(void);
 
 /**
  * eloop_run - Start the event loop

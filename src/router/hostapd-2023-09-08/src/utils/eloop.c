@@ -77,6 +77,9 @@ struct eloop_sock_table {
 struct eloop_data {
 	int max_sock;
 
+	eloop_timeout_poll_handler timeout_poll_cb;
+	eloop_poll_handler poll_cb;
+
 	size_t count; /* sum of all table counts */
 #ifdef CONFIG_ELOOP_POLL
 	size_t max_pollfd_map; /* number of pollfds_map currently allocated */
@@ -1121,6 +1124,12 @@ void eloop_run(void)
 				os_reltime_sub(&timeout->time, &now, &tv);
 			else
 				tv.sec = tv.usec = 0;
+		}
+
+		if (eloop.timeout_poll_cb && eloop.timeout_poll_cb(&tv, !!timeout))
+			timeout = (void *)1;
+
+		if (timeout) {
 #if defined(CONFIG_ELOOP_POLL) || defined(CONFIG_ELOOP_EPOLL)
 			timeout_ms = tv.sec * 1000 + tv.usec / 1000;
 #endif /* defined(CONFIG_ELOOP_POLL) || defined(CONFIG_ELOOP_EPOLL) */
@@ -1190,7 +1199,8 @@ void eloop_run(void)
 		eloop.exceptions.changed = 0;
 
 		eloop_process_pending_signals();
-
+		if (eloop.poll_cb)
+			eloop.poll_cb();
 
 		/* check if some registered timeouts have occurred */
 		timeout = dl_list_first(&eloop.timeout, struct eloop_timeout,
@@ -1252,6 +1262,14 @@ out:
 	return;
 }
 
+int eloop_register_cb(eloop_poll_handler poll_cb,
+		      eloop_timeout_poll_handler timeout_cb)
+{
+	eloop.poll_cb = poll_cb;
+	eloop.timeout_poll_cb = timeout_cb;
+
+	return 0;
+}
 
 void eloop_terminate(void)
 {

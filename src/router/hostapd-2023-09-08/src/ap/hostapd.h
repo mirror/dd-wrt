@@ -18,6 +18,8 @@
 #include "utils/list.h"
 #include "ap_config.h"
 #include "drivers/driver.h"
+#include "ubus.h"
+#include "ucode.h"
 
 #define OCE_STA_CFON_ENABLED(hapd) \
 	((hapd->conf->oce & OCE_STA_CFON) && \
@@ -50,6 +52,10 @@ struct hapd_interfaces {
 	struct hostapd_config * (*config_read_cb)(const char *config_fname);
 	int (*ctrl_iface_init)(struct hostapd_data *hapd);
 	void (*ctrl_iface_deinit)(struct hostapd_data *hapd);
+	int (*ctrl_iface_recv)(struct hostapd_data *hapd,
+			       char *buf, char *reply, int reply_size,
+			       struct sockaddr_storage *from,
+			       socklen_t fromlen);
 	int (*for_each_interface)(struct hapd_interfaces *interfaces,
 				  int (*cb)(struct hostapd_iface *iface,
 					    void *ctx), void *ctx);
@@ -184,6 +190,8 @@ struct hostapd_data {
 	struct hostapd_iface *iface;
 	struct hostapd_config *iconf;
 	struct hostapd_bss_config *conf;
+	struct hostapd_ubus_bss ubus;
+	struct hostapd_ucode_bss ucode;
 	int interface_added; /* virtual interface added for this BSS */
 	unsigned int started:1;
 	unsigned int disabled:1;
@@ -504,6 +512,7 @@ struct hostapd_sta_info {
  */
 struct hostapd_iface {
 	struct hapd_interfaces *interfaces;
+	struct hostapd_ucode_iface ucode;
 	void *owner;
 	char *config_fname;
 	struct hostapd_config *conf;
@@ -695,6 +704,7 @@ hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 		       struct hostapd_bss_config *bss);
 int hostapd_setup_interface(struct hostapd_iface *iface);
 int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err);
+void hostapd_set_own_neighbor_report(struct hostapd_data *hapd);
 void hostapd_interface_deinit(struct hostapd_iface *iface);
 void hostapd_interface_free(struct hostapd_iface *iface);
 struct hostapd_iface * hostapd_alloc_iface(void);
@@ -703,6 +713,8 @@ struct hostapd_iface * hostapd_init(struct hapd_interfaces *interfaces,
 struct hostapd_iface *
 hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
 			   const char *config_fname, int debug);
+int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon);
+void hostapd_bss_deinit(struct hostapd_data *hapd);
 void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
 			   int reassoc);
 void hostapd_interface_deinit_free(struct hostapd_iface *iface);
