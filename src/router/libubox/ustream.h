@@ -150,8 +150,10 @@ void ustream_consume(struct ustream *s, int len);
 int ustream_read(struct ustream *s, char *buf, int buflen);
 /* ustream_write: add data to the write buffer */
 int ustream_write(struct ustream *s, const char *buf, int len, bool more);
-int ustream_printf(struct ustream *s, const char *format, ...);
-int ustream_vprintf(struct ustream *s, const char *format, va_list arg);
+int ustream_printf(struct ustream *s, const char *format, ...)
+	__attribute__ ((format (printf, 2, 3)));
+int ustream_vprintf(struct ustream *s, const char *format, va_list arg)
+	__attribute__ ((format (printf, 2, 0)));
 
 /* ustream_get_read_buf: get a pointer to the next read buffer data */
 char *ustream_get_read_buf(struct ustream *s, int *buflen);

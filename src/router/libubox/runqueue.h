@@ -19,7 +19,7 @@
 #ifndef __LIBUBOX_RUNQUEUE_H
 #define __LIBUBOX_RUNQUEUE_H
 
-#include "ubox_list.h"
+#include "list.h"
 #include "safe_list.h"
 #include "uloop.h"
 
@@ -56,14 +56,14 @@ struct runqueue_task_type {
 	 * called to request cancelling a task
 	 *
 	 * int type is used as an optional hint for the method to be used when
-	 * cancelling the task, e.g. a signal number for processes. Calls
-	 * runqueue_task_complete when done.
+	 * cancelling the task, e.g. a signal number for processes. The cancel
+	 * callback should call runqueue_task_complete when done.
 	 */
 	void (*cancel)(struct runqueue *q, struct runqueue_task *t, int type);
 
 	/*
 	 * called to kill a task. must not make any calls to runqueue_task_complete,
-	 * it has already been removed from the list.
+	 * which will be called after this returns.
 	 */
 	void (*kill)(struct runqueue *q, struct runqueue_task *t);
 };

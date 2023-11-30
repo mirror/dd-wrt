@@ -65,7 +65,7 @@ struct json_script_ctx {
 	 * added to the tree.
 	 */
 	struct json_script_file *(*handle_file)(struct json_script_ctx *ctx,
-						char *name);
+						const char *name);
 
 	/*
 	 * handle_error - handle a processing error in a command or expression
@@ -95,7 +95,7 @@ void json_script_free(struct json_script_ctx *ctx);
  * @filename: initial filename to run
  * @vars: blobmsg container of the current runtime variables
  */
-void json_script_run(struct json_script_ctx *ctx, char *filename,
+void json_script_run(struct json_script_ctx *ctx, const char *filename,
 		     struct blob_attr *vars);
 
 void json_script_run_file(struct json_script_ctx *ctx, struct json_script_file *file,

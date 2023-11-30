@@ -31,10 +31,11 @@ enum blobmsg_type {
 	BLOBMSG_TYPE_INT32,
 	BLOBMSG_TYPE_INT16,
 	BLOBMSG_TYPE_INT8,
+	BLOBMSG_TYPE_BOOL = BLOBMSG_TYPE_INT8,
 	BLOBMSG_TYPE_DOUBLE,
 	__BLOBMSG_TYPE_LAST,
 	BLOBMSG_TYPE_LAST = __BLOBMSG_TYPE_LAST - 1,
-	BLOBMSG_TYPE_BOOL = BLOBMSG_TYPE_INT8,
+	BLOBMSG_CAST_INT64 = __BLOBMSG_TYPE_LAST,
 };
 
 struct blobmsg_hdr {
@@ -61,7 +62,7 @@ static inline void blobmsg_clear_name(struct blob_attr *attr)
 static inline const char *blobmsg_name(const struct blob_attr *attr)
 {
 	struct blobmsg_hdr *hdr = (struct blobmsg_hdr *) blob_data(attr);
-	return (const char *) hdr->name;
+	return (const char *)(hdr + 1);
 }
 
 static inline int blobmsg_type(const struct blob_attr *attr)
@@ -69,20 +70,34 @@ static inline int blobmsg_type(const struct blob_attr *attr)
 	return blob_id(attr);
 }
 
+static uint16_t blobmsg_namelen(const struct blobmsg_hdr *hdr)
+{
+	return be16_to_cpu(hdr->namelen);
+}
+
 static inline void *blobmsg_data(const struct blob_attr *attr)
 {
-	struct blobmsg_hdr *hdr = (struct blobmsg_hdr *) blob_data(attr);
-	char *data = (char *) blob_data(attr);
+	struct blobmsg_hdr *hdr;
+	char *data;
+
+	if (!attr)
+		return NULL;
+
+	hdr = (struct blobmsg_hdr *) blob_data(attr);
+	data = (char *) blob_data(attr);
 
 	if (blob_is_extended(attr))
-		data += blobmsg_hdrlen(be16_to_cpu(hdr->namelen));
+		data += blobmsg_hdrlen(blobmsg_namelen(hdr));
 
 	return data;
 }
 
-static inline int blobmsg_data_len(const struct blob_attr *attr)
+static inline size_t blobmsg_data_len(const struct blob_attr *attr)
 {
 	uint8_t *start, *end;
+
+	if (!attr)
+		return 0;
 
 	start = (uint8_t *) blob_data(attr);
 	end = (uint8_t *) blobmsg_data(attr);
@@ -90,21 +105,70 @@ static inline int blobmsg_data_len(const struct blob_attr *attr)
 	return blob_len(attr) - (end - start);
 }
 
-static inline int blobmsg_len(const struct blob_attr *attr)
+static inline size_t blobmsg_len(const struct blob_attr *attr)
 {
 	return blobmsg_data_len(attr);
 }
 
+/*
+ * blobmsg_check_attr: validate a list of attributes
+ *
+ * This method may be used with trusted data only. Providing
+ * malformed blobs will cause out of bounds memory access.
+ */
 bool blobmsg_check_attr(const struct blob_attr *attr, bool name);
+
+/*
+ * blobmsg_check_attr_len: validate a list of attributes
+ *
+ * This method should be safer implementation of blobmsg_check_attr.
+ * It will limit all memory access performed on the blob to the
+ * range [attr, attr + len] (upper bound non inclusive) and is
+ * thus suited for checking of untrusted blob attributes.
+ */
+bool blobmsg_check_attr_len(const struct blob_attr *attr, bool name, size_t len);
+
+/*
+ * blobmsg_check_attr_list: validate a list of attributes
+ *
+ * This method may be used with trusted data only. Providing
+ * malformed blobs will cause out of bounds memory access.
+ */
 bool blobmsg_check_attr_list(const struct blob_attr *attr, int type);
+
+/*
+ * blobmsg_check_attr_list_len: validate a list of untrusted attributes
+ *
+ * This method should be safer implementation of blobmsg_check_attr_list.
+ * It will limit all memory access performed on the blob to the
+ * range [attr, attr + len] (upper bound non inclusive) and is
+ * thus suited for checking of untrusted blob attributes.
+ */
+bool blobmsg_check_attr_list_len(const struct blob_attr *attr, int type, size_t len);
 
 /*
  * blobmsg_check_array: validate array/table and return size
  *
  * Checks if all elements of an array or table are valid and have
  * the specified type. Returns the number of elements in the array
+ *
+ * This method may be used with trusted data only. Providing
+ * malformed blobs will cause out of bounds memory access.
  */
 int blobmsg_check_array(const struct blob_attr *attr, int type);
+
+/*
+ * blobmsg_check_array_len: validate untrusted array/table and return size
+ *
+ * Checks if all elements of an array or table are valid and have
+ * the specified type. Returns the number of elements in the array.
+ *
+ * This method should be safer implementation of blobmsg_check_array.
+ * It will limit all memory access performed on the blob to the
+ * range [attr, attr + len] (upper bound non inclusive) and is
+ * thus suited for checking of untrusted blob attributes.
+ */
+int blobmsg_check_array_len(const struct blob_attr *attr, int type, size_t len);
 
 int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
                   struct blob_attr **tb, void *data, unsigned int len);
@@ -113,6 +177,20 @@ int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
 
 int blobmsg_add_field(struct blob_buf *buf, int type, const char *name,
                       const void *data, unsigned int len);
+
+static inline int
+blobmsg_parse_attr(const struct blobmsg_policy *policy, int policy_len,
+		   struct blob_attr **tb, struct blob_attr *data)
+{
+	return blobmsg_parse(policy, policy_len, tb, blobmsg_data(data), blobmsg_len(data));
+}
+
+static inline int
+blobmsg_parse_array_attr(const struct blobmsg_policy *policy, int policy_len,
+			 struct blob_attr **tb, struct blob_attr *data)
+{
+	return blobmsg_parse_array(policy, policy_len, tb, blobmsg_data(data), blobmsg_len(data));
+}
 
 static inline int
 blobmsg_add_double(struct blob_buf *buf, const char *name, double val)
@@ -225,6 +303,38 @@ static inline uint64_t blobmsg_get_u64(struct blob_attr *attr)
 	return tmp;
 }
 
+static inline uint64_t blobmsg_cast_u64(struct blob_attr *attr)
+{
+	uint64_t tmp = 0;
+
+	if (blobmsg_type(attr) == BLOBMSG_TYPE_INT64)
+		tmp = blobmsg_get_u64(attr);
+	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT32)
+		tmp = blobmsg_get_u32(attr);
+	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT16)
+		tmp = blobmsg_get_u16(attr);
+	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT8)
+		tmp = blobmsg_get_u8(attr);
+
+	return tmp;
+}
+
+static inline int64_t blobmsg_cast_s64(struct blob_attr *attr)
+{
+	int64_t tmp = 0;
+
+	if (blobmsg_type(attr) == BLOBMSG_TYPE_INT64)
+		tmp = blobmsg_get_u64(attr);
+	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT32)
+		tmp = (int32_t)blobmsg_get_u32(attr);
+	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT16)
+		tmp = (int16_t)blobmsg_get_u16(attr);
+	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT8)
+		tmp = (int8_t)blobmsg_get_u8(attr);
+
+	return tmp;
+}
+
 static inline double blobmsg_get_double(struct blob_attr *attr)
 {
 	union {
@@ -251,13 +361,16 @@ int blobmsg_vprintf(struct blob_buf *buf, const char *name, const char *format, 
 int blobmsg_printf(struct blob_buf *buf, const char *name, const char *format, ...)
      __attribute__((format(printf, 3, 4)));
 
-
-/* blobmsg to json formatting */
-
 #define blobmsg_for_each_attr(pos, attr, rem) \
 	for (rem = attr ? blobmsg_data_len(attr) : 0, \
 	     pos = (struct blob_attr *) (attr ? blobmsg_data(attr) : NULL); \
-	     rem > 0 && (blob_pad_len(pos) <= rem) && \
+	     rem >= sizeof(struct blob_attr) && (blob_pad_len(pos) <= rem) && \
+	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
+	     rem -= blob_pad_len(pos), pos = blob_next(pos))
+
+#define __blobmsg_for_each_attr(pos, attr, rem) \
+	for (pos = (struct blob_attr *) (attr ? blobmsg_data(attr) : NULL); \
+	     rem >= sizeof(struct blob_attr) && (blob_pad_len(pos) <= rem) && \
 	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
 	     rem -= blob_pad_len(pos), pos = blob_next(pos))
 

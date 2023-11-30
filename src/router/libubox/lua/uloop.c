@@ -41,6 +41,16 @@ struct lua_uloop_process {
 	int r;
 };
 
+struct lua_uloop_interval {
+	struct uloop_interval i;
+	int r;
+};
+
+struct lua_uloop_signal {
+	struct uloop_signal s;
+	int r;
+};
+
 static lua_State *state;
 
 static void *
@@ -99,7 +109,7 @@ static int ul_timer_remaining(lua_State *L)
 	struct lua_uloop_timeout *tout;
 
 	tout = lua_touserdata(L, 1);
-	lua_pushnumber(L, uloop_timeout_remaining(&tout->t));
+	lua_pushnumber(L, uloop_timeout_remaining64(&tout->t));
 	return 1;
 }
 
@@ -188,7 +198,8 @@ static int get_sock_fd(lua_State* L, int idx) {
 		lua_getfield(L, idx, "getfd");
 		if(lua_isnil(L, -1))
 			return luaL_error(L, "socket type missing 'getfd' method");
-		lua_pushvalue(L, idx - 1);
+		/* if we have absolute, no need to adjust for getfield() call */
+		lua_pushvalue(L, idx > 0 ? idx: idx - 1);
 		lua_call(L, 1, 1);
 		fd = lua_tointeger(L, -1);
 		lua_pop(L, 1);
@@ -232,27 +243,23 @@ static int ul_ufd_add(lua_State *L)
 	int ref;
 	int fd_ref;
 
-	if (lua_isnumber(L, -1)) {
-		flags = lua_tointeger(L, -1);
-		lua_pop(L, 1);
-	}
-
-	if (!lua_isfunction(L, -1)) {
-		lua_pushstring(L, "invalid arg list");
+	flags = luaL_checkinteger(L, 3);
+	if (!flags) {
+		lua_pushstring(L, "flags cannot be zero");
 		lua_error(L);
-
-		return 0;
 	}
 
-	fd = get_sock_fd(L, -2);
+	luaL_checktype(L, 2, LUA_TFUNCTION);
+
+	fd = get_sock_fd(L, 1);
 
 	lua_getglobal(L, "__uloop_cb");
-	lua_pushvalue(L, -2);
+	lua_pushvalue(L, 2);
 	ref = luaL_ref(L, -2);
 	lua_pop(L, 1);
 
 	lua_getglobal(L, "__uloop_fds");
-	lua_pushvalue(L, -3);
+	lua_pushvalue(L, 1);
 	fd_ref = luaL_ref(L, -2);
 	lua_pop(L, 1);
 
@@ -261,8 +268,7 @@ static int ul_ufd_add(lua_State *L)
 	ufd->fd.fd = fd;
 	ufd->fd_r = fd_ref;
 	ufd->fd.cb = ul_ufd_cb;
-	if (flags)
-		uloop_fd_add(&ufd->fd, flags);
+	uloop_fd_add(&ufd->fd, flags);
 
 	return 1;
 }
@@ -386,6 +392,189 @@ static int ul_process(lua_State *L)
 	return 1;
 }
 
+static void ul_interval_cb(struct uloop_interval *i)
+{
+	struct lua_uloop_interval *intv = container_of(i, struct lua_uloop_interval, i);
+
+	lua_getglobal(state, "__uloop_cb");
+	lua_rawgeti(state, -1, intv->r);
+	lua_remove(state, -2);
+
+	lua_call(state, 0, 0);
+}
+
+static int ul_interval_set(lua_State *L)
+{
+	struct lua_uloop_interval *intv;
+	double set;
+
+	if (!lua_isnumber(L, -1)) {
+		lua_pushstring(L, "invalid arg list");
+		lua_error(L);
+
+		return 0;
+	}
+
+	set = lua_tointeger(L, -1);
+	intv = lua_touserdata(L, 1);
+	uloop_interval_set(&intv->i, set);
+
+	return 1;
+}
+
+static int ul_interval_expirations(lua_State *L)
+{
+	struct lua_uloop_interval *intv;
+
+	intv = lua_touserdata(L, 1);
+	lua_pushinteger(L, intv->i.expirations);
+	return 1;
+}
+
+static int ul_interval_remaining(lua_State *L)
+{
+	struct lua_uloop_interval *intv;
+
+	intv = lua_touserdata(L, 1);
+	lua_pushnumber(L, uloop_interval_remaining(&intv->i));
+	return 1;
+}
+
+static int ul_interval_free(lua_State *L)
+{
+	struct lua_uloop_interval *intv = lua_touserdata(L, 1);
+
+	uloop_interval_cancel(&intv->i);
+
+	/* obj.__index.__gc = nil , make sure executing only once*/
+	lua_getfield(L, -1, "__index");
+	lua_pushstring(L, "__gc");
+	lua_pushnil(L);
+	lua_settable(L, -3);
+
+	lua_getglobal(state, "__uloop_cb");
+	luaL_unref(state, -1, intv->r);
+
+	return 1;
+}
+
+static const luaL_Reg interval_m[] = {
+	{ "set", ul_interval_set },
+	{ "expirations", ul_interval_expirations },
+	{ "remaining", ul_interval_remaining },
+	{ "cancel", ul_interval_free },
+	{ NULL, NULL }
+};
+
+static int ul_interval(lua_State *L)
+{
+	struct lua_uloop_interval *intv;
+	unsigned int set = 0;
+	int ref;
+
+	if (lua_isnumber(L, -1)) {
+		set = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+	}
+
+	if (!lua_isfunction(L, -1)) {
+		lua_pushstring(L, "invalid arg list");
+		lua_error(L);
+
+		return 0;
+	}
+
+	lua_getglobal(L, "__uloop_cb");
+	lua_pushvalue(L, -2);
+	ref = luaL_ref(L, -2);
+
+	intv = ul_create_userdata(L, sizeof(*intv), interval_m, ul_interval_free);
+	intv->r = ref;
+	intv->i.cb = ul_interval_cb;
+
+	if (set)
+		uloop_interval_set(&intv->i, set);
+
+	return 1;
+}
+
+static void ul_signal_cb(struct uloop_signal *s)
+{
+	struct lua_uloop_signal *sig = container_of(s, struct lua_uloop_signal, s);
+
+	lua_getglobal(state, "__uloop_cb");
+	lua_rawgeti(state, -1, sig->r);
+	lua_remove(state, -2);
+	lua_pushinteger(state, sig->s.signo);
+
+	lua_call(state, 1, 0);
+}
+
+static int ul_signal_signo(lua_State *L)
+{
+	struct lua_uloop_signal *sig = lua_touserdata(L, 1);
+
+	lua_pushinteger(L, sig->s.signo);
+
+	return 1;
+}
+
+static int ul_signal_free(lua_State *L)
+{
+	struct lua_uloop_signal *sig = lua_touserdata(L, 1);
+
+	uloop_signal_delete(&sig->s);
+
+	/* obj.__index.__gc = nil , make sure executing only once*/
+	lua_getfield(L, -1, "__index");
+	lua_pushstring(L, "__gc");
+	lua_pushnil(L);
+	lua_settable(L, -3);
+
+	lua_getglobal(state, "__uloop_cb");
+	luaL_unref(state, -1, sig->r);
+
+	return 1;
+}
+
+static const luaL_Reg signal_m[] = {
+	{ "signo", ul_signal_signo },
+	{ "delete", ul_signal_free },
+	{ NULL, NULL }
+};
+
+static int ul_signal(lua_State *L)
+{
+	struct lua_uloop_signal *sig;
+	int signo = -1;
+	int ref;
+
+	if (lua_isnumber(L, -1)) {
+		signo = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+	}
+
+	if (!lua_isfunction(L, -1) || signo <= 0 || signo > NSIG) {
+		lua_pushstring(L, "invalid arg list");
+		lua_error(L);
+
+		return 0;
+	}
+
+	lua_getglobal(L, "__uloop_cb");
+	lua_pushvalue(L, -2);
+	ref = luaL_ref(L, -2);
+
+	sig = ul_create_userdata(L, sizeof(*sig), signal_m, ul_signal_free);
+	sig->r = ref;
+	sig->s.cb = ul_signal_cb;
+	sig->s.signo = signo;
+
+	uloop_signal_add(&sig->s);
+
+	return 1;
+}
+
 static int ul_init(lua_State *L)
 {
 	uloop_init();
@@ -414,6 +603,8 @@ static luaL_reg uloop_func[] = {
 	{"timer", ul_timer},
 	{"process", ul_process},
 	{"fd_add", ul_ufd_add},
+	{"interval", ul_interval},
+	{"signal", ul_signal},
 	{"cancel", ul_end},
 	{NULL, NULL},
 };
@@ -452,6 +643,103 @@ int luaopen_uloop(lua_State *L)
 	lua_pushstring(L, "ULOOP_BLOCKING");
 	lua_pushinteger(L, ULOOP_BLOCKING);
 	lua_rawset(L, -3);
+
+#define SIGNAME_CONST(signame) do { \
+	lua_pushstring(L, #signame);    \
+	lua_pushinteger(L, signame);    \
+	lua_rawset(L, -3);	            \
+} while(0)
+
+#if defined(SIGINT)
+	SIGNAME_CONST(SIGINT);
+#endif
+#if defined(SIGILL)
+	SIGNAME_CONST(SIGILL);
+#endif
+#if defined(SIGABRT)
+	SIGNAME_CONST(SIGABRT);
+#endif
+#if defined(SIGFPE)
+	SIGNAME_CONST(SIGFPE);
+#endif
+#if defined(SIGSEGV)
+	SIGNAME_CONST(SIGSEGV);
+#endif
+#if defined(SIGTERM)
+	SIGNAME_CONST(SIGTERM);
+#endif
+#if defined(SIGHUP)
+	SIGNAME_CONST(SIGHUP);
+#endif
+#if defined(SIGQUIT)
+	SIGNAME_CONST(SIGQUIT);
+#endif
+#if defined(SIGTRAP)
+	SIGNAME_CONST(SIGTRAP);
+#endif
+#if defined(SIGKILL)
+	SIGNAME_CONST(SIGKILL);
+#endif
+#if defined(SIGPIPE)
+	SIGNAME_CONST(SIGPIPE);
+#endif
+#if defined(SIGALRM)
+	SIGNAME_CONST(SIGALRM);
+#endif
+#if defined(SIGSTKFLT)
+	SIGNAME_CONST(SIGSTKFLT);
+#endif
+#if defined(SIGPWR)
+	SIGNAME_CONST(SIGPWR);
+#endif
+#if defined(SIGBUS)
+	SIGNAME_CONST(SIGBUS);
+#endif
+#if defined(SIGSYS)
+	SIGNAME_CONST(SIGSYS);
+#endif
+#if defined(SIGURG)
+	SIGNAME_CONST(SIGURG);
+#endif
+#if defined(SIGSTOP)
+	SIGNAME_CONST(SIGSTOP);
+#endif
+#if defined(SIGTSTP)
+	SIGNAME_CONST(SIGTSTP);
+#endif
+#if defined(SIGCONT)
+	SIGNAME_CONST(SIGCONT);
+#endif
+#if defined(SIGCHLD)
+	SIGNAME_CONST(SIGCHLD);
+#endif
+#if defined(SIGTTIN)
+	SIGNAME_CONST(SIGTTIN);
+#endif
+#if defined(SIGTTOU)
+	SIGNAME_CONST(SIGTTOU);
+#endif
+#if defined(SIGPOLL)
+	SIGNAME_CONST(SIGPOLL);
+#endif
+#if defined(SIGXFSZ)
+	SIGNAME_CONST(SIGXFSZ);
+#endif
+#if defined(SIGXCPU)
+	SIGNAME_CONST(SIGXCPU);
+#endif
+#if defined(SIGVTALRM)
+	SIGNAME_CONST(SIGVTALRM);
+#endif
+#if defined(SIGPROF)
+	SIGNAME_CONST(SIGPROF);
+#endif
+#if defined(SIGUSR1)
+	SIGNAME_CONST(SIGUSR1);
+#endif
+#if defined(SIGUSR2)
+	SIGNAME_CONST(SIGUSR2);
+#endif
 
 	return 1;
 }

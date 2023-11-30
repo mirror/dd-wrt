@@ -25,50 +25,83 @@ static const int blob_type[__BLOBMSG_TYPE_LAST] = {
 	[BLOBMSG_TYPE_UNSPEC] = BLOB_ATTR_BINARY,
 };
 
-static uint16_t
-blobmsg_namelen(const struct blobmsg_hdr *hdr)
-{
-	return be16_to_cpu(hdr->namelen);
-}
-
 bool blobmsg_check_attr(const struct blob_attr *attr, bool name)
 {
+	return blobmsg_check_attr_len(attr, name, blob_raw_len(attr));
+}
+
+static bool blobmsg_check_name(const struct blob_attr *attr, bool name)
+{
 	const struct blobmsg_hdr *hdr;
-	const char *data;
-	int id, len;
+	uint16_t namelen;
+
+	if (!blob_is_extended(attr))
+		return !name;
 
 	if (blob_len(attr) < sizeof(struct blobmsg_hdr))
 		return false;
 
-	hdr = (void *) attr->data;
-	if (!hdr->namelen && name)
+	hdr = (const struct blobmsg_hdr *)blob_data(attr);
+	if (name && !hdr->namelen)
 		return false;
 
-	if (blobmsg_namelen(hdr) > blob_len(attr) - sizeof(struct blobmsg_hdr))
+	namelen = blobmsg_namelen(hdr);
+	if (blob_len(attr) < (size_t)blobmsg_hdrlen(namelen))
 		return false;
 
-	if (hdr->name[blobmsg_namelen(hdr)] != 0)
+	if (hdr->name[namelen] != 0)
+		return false;
+
+	return true;
+}
+
+bool blobmsg_check_attr_len(const struct blob_attr *attr, bool name, size_t len)
+{
+	const char *data;
+	size_t data_len;
+	int id;
+
+	if (len < sizeof(struct blob_attr))
+		return false;
+
+	data_len = blob_raw_len(attr);
+	if (data_len < sizeof(struct blob_attr) || data_len > len)
+		return false;
+
+	if (!blobmsg_check_name(attr, name))
 		return false;
 
 	id = blob_id(attr);
-	len = blobmsg_data_len(attr);
-	data = blobmsg_data(attr);
-
 	if (id > BLOBMSG_TYPE_LAST)
 		return false;
 
 	if (!blob_type[id])
 		return true;
 
-	return blob_check_type(data, len, blob_type[id]);
+	data = blobmsg_data(attr);
+	data_len = blobmsg_data_len(attr);
+
+	return blob_check_type(data, data_len, blob_type[id]);
 }
 
 int blobmsg_check_array(const struct blob_attr *attr, int type)
 {
+	return blobmsg_check_array_len(attr, type, blob_raw_len(attr));
+}
+
+int blobmsg_check_array_len(const struct blob_attr *attr, int type,
+			    size_t blob_len)
+{
 	struct blob_attr *cur;
+	size_t rem;
 	bool name;
-	int rem;
 	int size = 0;
+
+	if (type > BLOBMSG_TYPE_LAST)
+		return -1;
+
+	if (!blobmsg_check_attr_len(attr, false, blob_len))
+		return -1;
 
 	switch (blobmsg_type(attr)) {
 	case BLOBMSG_TYPE_TABLE:
@@ -85,7 +118,7 @@ int blobmsg_check_array(const struct blob_attr *attr, int type)
 		if (type != BLOBMSG_TYPE_UNSPEC && blobmsg_type(cur) != type)
 			return -1;
 
-		if (!blobmsg_check_attr(cur, name))
+		if (!blobmsg_check_attr_len(cur, name, rem))
 			return -1;
 
 		size++;
@@ -97,6 +130,11 @@ int blobmsg_check_array(const struct blob_attr *attr, int type)
 bool blobmsg_check_attr_list(const struct blob_attr *attr, int type)
 {
 	return blobmsg_check_array(attr, type) >= 0;
+}
+
+bool blobmsg_check_attr_list_len(const struct blob_attr *attr, int type, size_t len)
+{
+	return blobmsg_check_array_len(attr, type, len) >= 0;
 }
 
 int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
@@ -111,7 +149,7 @@ int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
 		    blob_id(attr) != policy[i].type)
 			continue;
 
-		if (!blobmsg_check_attr(attr, false))
+		if (!blobmsg_check_attr_len(attr, false, len))
 			return -1;
 
 		if (tb[i])
@@ -125,16 +163,17 @@ int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
 	return 0;
 }
 
-
 int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
                   struct blob_attr **tb, void *data, unsigned int len)
 {
-	struct blobmsg_hdr *hdr;
+	const struct blobmsg_hdr *hdr;
 	struct blob_attr *attr;
 	uint8_t *pslen;
 	int i;
 
 	memset(tb, 0, policy_len * sizeof(*tb));
+	if (!data || !len)
+		return -EINVAL;
 	pslen = alloca(policy_len);
 	for (i = 0; i < policy_len; i++) {
 		if (!policy[i].name)
@@ -144,20 +183,31 @@ int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
 	}
 
 	__blob_for_each_attr(attr, data, len) {
+		if (!blobmsg_check_attr_len(attr, false, len))
+			return -1;
+
+		if (!blob_is_extended(attr))
+			continue;
+
 		hdr = blob_data(attr);
 		for (i = 0; i < policy_len; i++) {
 			if (!policy[i].name)
 				continue;
 
 			if (policy[i].type != BLOBMSG_TYPE_UNSPEC &&
+			    policy[i].type != BLOBMSG_CAST_INT64 &&
 			    blob_id(attr) != policy[i].type)
+				continue;
+
+			if (policy[i].type == BLOBMSG_CAST_INT64 &&
+			    (blob_id(attr) != BLOBMSG_TYPE_INT64 &&
+			     blob_id(attr) != BLOBMSG_TYPE_INT32 &&
+			     blob_id(attr) != BLOBMSG_TYPE_INT16 &&
+			     blob_id(attr) != BLOBMSG_TYPE_INT8))
 				continue;
 
 			if (blobmsg_namelen(hdr) != pslen[i])
 				continue;
-
-			if (!blobmsg_check_attr(attr, true))
-				return -1;
 
 			if (tb[i])
 				continue;
@@ -193,7 +243,10 @@ blobmsg_new(struct blob_buf *buf, int type, const char *name, int payload_len, v
 	attr->id_len |= be32_to_cpu(BLOB_ATTR_EXTENDED);
 	hdr = blob_data(attr);
 	hdr->namelen = cpu_to_be16(namelen);
-	strcpy((char *) hdr->name, (const char *)name);
+
+	memcpy(hdr->name, name, namelen);
+	hdr->name[namelen] = '\0';
+
 	pad_end = *data = blobmsg_data(attr);
 	pad_start = (char *) &hdr->name[namelen];
 	if (pad_start < pad_end)
@@ -228,8 +281,8 @@ blobmsg_open_nested(struct blob_buf *buf, const char *name, bool array)
 	return (void *)offset;
 }
 
-int
-blobmsg_vprintf(struct blob_buf *buf, const char *name, const char *format, va_list arg)
+__attribute__((format(printf, 3, 0)))
+int blobmsg_vprintf(struct blob_buf *buf, const char *name, const char *format, va_list arg)
 {
 	va_list arg2;
 	char cbuf;
@@ -240,17 +293,24 @@ blobmsg_vprintf(struct blob_buf *buf, const char *name, const char *format, va_l
 	len = vsnprintf(&cbuf, sizeof(cbuf), format, arg2);
 	va_end(arg2);
 
-	sbuf = blobmsg_alloc_string_buffer(buf, name, len + 1);
+	if (len < 0)
+		return -1;
+
+	sbuf = blobmsg_alloc_string_buffer(buf, name, len);
 	if (!sbuf)
 		return -1;
-	ret = vsprintf(sbuf, format, arg);
+
+	ret = vsnprintf(sbuf, len + 1, format, arg);
+	if (ret < 0)
+		return -1;
+
 	blobmsg_add_string_buffer(buf);
 
 	return ret;
 }
 
-int
-blobmsg_printf(struct blob_buf *buf, const char *name, const char *format, ...)
+__attribute__((format(printf, 3, 4)))
+int blobmsg_printf(struct blob_buf *buf, const char *name, const char *format, ...)
 {
 	va_list ap;
 	int ret;
@@ -268,6 +328,7 @@ blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, unsigned int
 	struct blob_attr *attr;
 	void *data_dest;
 
+	maxlen++;
 	attr = blobmsg_new(buf, BLOBMSG_TYPE_STRING, name, maxlen, &data_dest);
 	if (!attr)
 		return NULL;
@@ -283,7 +344,7 @@ blobmsg_realloc_string_buffer(struct blob_buf *buf, unsigned int maxlen)
 {
 	struct blob_attr *attr = blob_next(buf->head);
 	int offset = attr_to_offset(buf, blob_next(buf->head)) + blob_pad_len(attr) - BLOB_COOKIE;
-	int required = maxlen - (buf->buflen - offset);
+	int required = maxlen + 1 - (buf->buflen - offset);
 
 	if (required <= 0)
 		goto out;

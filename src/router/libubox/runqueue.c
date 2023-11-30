@@ -196,11 +196,10 @@ void runqueue_task_kill(struct runqueue_task *t)
 	if (!t->queued)
 		return;
 
-	runqueue_task_complete(t);
 	if (running && t->type->kill)
 		t->type->kill(q, t);
 
-	runqueue_start_next(q);
+	runqueue_task_complete(t);
 }
 
 void runqueue_stop(struct runqueue *q)
@@ -232,7 +231,7 @@ void runqueue_task_complete(struct runqueue_task *t)
 	t->cancelled = false;
 	if (t->complete)
 		t->complete(q, t);
-	runqueue_start_next(t->q);
+	runqueue_start_next(q);
 }
 
 static void

@@ -17,9 +17,11 @@
  */
 
 #include <sys/mman.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "utils.h"
 
 #define foreach_arg(_arg, _addr, _len, _first_addr, _first_len) \
@@ -47,8 +49,11 @@ void *__calloc_a(size_t len, ...)
 	va_end(ap1);
 
 	ptr = calloc(1, alloc_len);
-	if (!ptr)
+	if (!ptr) {
+		va_end(ap);
 		return NULL;
+	}
+
 	alloc_len = 0;
 	foreach_arg(ap, cur_addr, cur_len, &ret, len) {
 		*cur_addr = &ptr[alloc_len];
@@ -151,4 +156,34 @@ close:
 void cbuf_free(void *ptr, unsigned int order)
 {
 	munmap(ptr, cbuf_size(order) * 2);
+}
+
+int mkdir_p(char *dir, mode_t mask)
+{
+	char *l;
+	int ret;
+
+	ret = mkdir(dir, mask);
+	if (!ret || errno == EEXIST)
+		return 0;
+
+	if (ret && (errno != ENOENT))
+		return -1;
+
+	l = strrchr(dir, '/');
+	if (!l || l == dir)
+		return -1;
+
+	*l = '\0';
+
+	if (mkdir_p(dir, mask))
+		return -1;
+
+	*l = '/';
+
+	ret = mkdir(dir, mask);
+	if (!ret || errno == EEXIST)
+		return 0;
+	else
+		return -1;
 }

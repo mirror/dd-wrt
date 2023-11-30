@@ -9,7 +9,7 @@ local udp = socket.udp()
 udp:settimeout(0)
 udp:setsockname('*', 8080)
 
--- timer example 1
+-- timer example 1 (will run repeatedly)
 local timer
 function t()
 	print("1000 ms timer run");
@@ -18,11 +18,28 @@ end
 timer = uloop.timer(t)
 timer:set(1000)
 
--- timer example 2
+-- timer example 2 (will run once)
 uloop.timer(function() print("2000 ms timer run"); end, 2000)
 
--- timer example 3
+-- timer example 3 (will never run)
 uloop.timer(function() print("3000 ms timer run"); end, 3000):cancel()
+
+-- periodic interval timer
+local intv
+intv = uloop.interval(function()
+	print(string.format("Interval expiration #%d - %dms until next expiration",
+		intv:expirations(), intv:remaining()))
+
+	-- after 5 expirations, lower interval to 500ms
+	if intv:expirations() >= 5 then
+		intv:set(500)
+	end
+
+	-- cancel after 10 expirations
+	if intv:expirations() >= 10 then
+		intv:cancel()
+	end
+end, 1000)
 
 -- process
 function p1(r)
@@ -46,6 +63,24 @@ uloop.timer(
 	end, 2000
 )
 
+-- SIGINT handler
+uloop.signal(function(signo)
+	print(string.format("Terminating on SIGINT (#%d)!", signo))
+
+	-- end uloop to terminate program
+	uloop.cancel()
+end, uloop.SIGINT)
+
+local sig
+sig = uloop.signal(function(signo)
+	print(string.format("Got SIGUSR2 (#%d)!", signo))
+
+	-- remove signal handler, next SIGUSR2 will terminate program
+	sig:delete()
+end, uloop.SIGUSR2)
+
+-- Keep udp_ev reference, events will be gc'd, even if the callback is still referenced
+-- .delete will manually untrack.
 udp_ev = uloop.fd_add(udp, function(ufd, events)
 	local words, msg_or_ip, port_or_nil = ufd:receivefrom()
 	print('Recv UDP packet from '..msg_or_ip..':'..port_or_nil..' : '..words)

@@ -26,6 +26,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #include "uloop.h"
 #include "utils.h"
@@ -35,6 +36,7 @@
 #endif
 #ifdef USE_EPOLL
 #include <sys/epoll.h>
+#include <sys/timerfd.h>
 #endif
 #include <sys/wait.h>
 
@@ -55,15 +57,19 @@ static struct uloop_fd_stack *fd_stack = NULL;
 
 static struct list_head timeouts = LIST_HEAD_INIT(timeouts);
 static struct list_head processes = LIST_HEAD_INIT(processes);
+static struct list_head signals = LIST_HEAD_INIT(signals);
 
 static int poll_fd = -1;
 bool uloop_cancelled = false;
+bool uloop_handle_sigchld = true;
 static int uloop_status = 0;
 static bool do_sigchld = false;
 
 static struct uloop_fd_event cur_fds[ULOOP_MAX_EVENTS];
 static int cur_fd, cur_nfds;
 static int uloop_run_depth = 0;
+
+uloop_fd_handler uloop_fd_set_cb = NULL;
 
 int uloop_fd_add(struct uloop_fd *sock, unsigned int flags);
 
@@ -75,18 +81,41 @@ int uloop_fd_add(struct uloop_fd *sock, unsigned int flags);
 #include "uloop-epoll.c"
 #endif
 
-static void waker_consume(struct uloop_fd *fd, unsigned int events)
+static void set_signo(uint64_t *signums, int signo)
 {
-	char buf[4];
+	if (signo >= 1 && signo <= 64)
+		*signums |= (1u << (signo - 1));
+}
 
-	while (read(fd->fd, buf, 4) > 0)
-		;
+static bool get_signo(uint64_t signums, int signo)
+{
+	return (signo >= 1) && (signo <= 64) && (signums & (1u << (signo - 1)));
+}
+
+static void signal_consume(struct uloop_fd *fd, unsigned int events)
+{
+	struct uloop_signal *usig, *usig_next;
+	uint64_t signums = 0;
+	uint8_t buf[32];
+	ssize_t nsigs;
+
+	do {
+		nsigs = read(fd->fd, buf, sizeof(buf));
+
+		for (ssize_t i = 0; i < nsigs; i++)
+			set_signo(&signums, buf[i]);
+	}
+	while (nsigs > 0);
+
+	list_for_each_entry_safe(usig, usig_next, &signals, list)
+		if (get_signo(signums, usig->signo))
+			usig->cb(usig);
 }
 
 static int waker_pipe = -1;
 static struct uloop_fd waker_fd = {
 	.fd = -1,
-	.cb = waker_consume,
+	.cb = signal_consume,
 };
 
 static void waker_init_fd(int fd)
@@ -110,11 +139,13 @@ static int waker_init(void)
 	waker_pipe = fds[1];
 
 	waker_fd.fd = fds[0];
-	waker_fd.cb = waker_consume;
+	waker_fd.cb = signal_consume;
 	uloop_fd_add(&waker_fd, ULOOP_READ);
 
 	return 0;
 }
+
+static void uloop_setup_signals(bool add);
 
 int uloop_init(void)
 {
@@ -125,6 +156,8 @@ int uloop_init(void)
 		uloop_done();
 		return -1;
 	}
+
+	uloop_setup_signals(true);
 
 	return 0;
 }
@@ -155,7 +188,7 @@ static bool uloop_fd_stack_event(struct uloop_fd *fd, int events)
 	return false;
 }
 
-static void uloop_run_events(int timeout)
+static void uloop_run_events(int64_t timeout)
 {
 	struct uloop_fd_event *cur;
 	struct uloop_fd *fd;
@@ -217,6 +250,10 @@ int uloop_fd_add(struct uloop_fd *sock, unsigned int flags)
 	if (ret < 0)
 		goto out;
 
+	if (uloop_fd_set_cb)
+		uloop_fd_set_cb(sock, flags);
+
+	sock->flags = flags;
 	sock->registered = true;
 	sock->eof = false;
 	sock->error = false;
@@ -227,6 +264,7 @@ out:
 
 int uloop_fd_delete(struct uloop_fd *fd)
 {
+	int ret;
 	int i;
 
 	for (i = 0; i < cur_nfds; i++) {
@@ -239,12 +277,18 @@ int uloop_fd_delete(struct uloop_fd *fd)
 	if (!fd->registered)
 		return 0;
 
+	if (uloop_fd_set_cb)
+		uloop_fd_set_cb(fd, 0);
+
 	fd->registered = false;
 	uloop_fd_stack_event(fd, -1);
-	return __uloop_fd_delete(fd);
+	ret = __uloop_fd_delete(fd);
+	fd->flags = 0;
+
+	return ret;
 }
 
-static int tv_diff(struct timeval *t1, struct timeval *t2)
+static int64_t tv_diff(struct timeval *t1, struct timeval *t2)
 {
 	return
 		(t1->tv_sec - t2->tv_sec) * 1000 +
@@ -313,6 +357,26 @@ int uloop_timeout_cancel(struct uloop_timeout *timeout)
 }
 
 int uloop_timeout_remaining(struct uloop_timeout *timeout)
+{
+	int64_t td;
+	struct timeval now;
+
+	if (!timeout->pending)
+		return -1;
+
+	uloop_gettime(&now);
+
+	td = tv_diff(&timeout->time, &now);
+
+	if (td > INT_MAX)
+		return INT_MAX;
+	else if (td < INT_MIN)
+		return INT_MIN;
+	else
+		return (int)td;
+}
+
+int64_t uloop_timeout_remaining64(struct uloop_timeout *timeout)
 {
 	struct timeval now;
 
@@ -386,10 +450,30 @@ static void uloop_handle_processes(void)
 
 }
 
-static void uloop_signal_wake(void)
+int uloop_interval_set(struct uloop_interval *timer, unsigned int msecs)
 {
+	return timer_register(timer, msecs);
+}
+
+int uloop_interval_cancel(struct uloop_interval *timer)
+{
+	return timer_remove(timer);
+}
+
+int64_t uloop_interval_remaining(struct uloop_interval *timer)
+{
+	return timer_next(timer);
+}
+
+static void uloop_signal_wake(int signo)
+{
+	uint8_t sigbyte = signo;
+
+	if (signo == SIGCHLD)
+		do_sigchld = true;
+
 	do {
-		if (write(waker_pipe, "w", 1) < 0) {
+		if (write(waker_pipe, &sigbyte, 1) < 0) {
 			if (errno == EINTR)
 				continue;
 		}
@@ -401,13 +485,7 @@ static void uloop_handle_sigint(int signo)
 {
 	uloop_status = signo;
 	uloop_cancelled = true;
-	uloop_signal_wake();
-}
-
-static void uloop_sigchld(int signo)
-{
-	do_sigchld = true;
-	uloop_signal_wake();
+	uloop_signal_wake(signo);
 }
 
 static void uloop_install_handler(int signum, void (*handler)(int), struct sigaction* old, bool add)
@@ -462,35 +540,92 @@ static void uloop_setup_signals(bool add)
 
 	uloop_install_handler(SIGINT, uloop_handle_sigint, &old_sigint, add);
 	uloop_install_handler(SIGTERM, uloop_handle_sigint, &old_sigterm, add);
-	uloop_install_handler(SIGCHLD, uloop_sigchld, &old_sigchld, add);
+
+	if (uloop_handle_sigchld)
+		uloop_install_handler(SIGCHLD, uloop_signal_wake, &old_sigchld, add);
 
 	uloop_ignore_signal(SIGPIPE, add);
 }
 
-static int uloop_get_next_timeout(struct timeval *tv)
+int uloop_signal_add(struct uloop_signal *s)
+{
+	struct list_head *h = &signals;
+	struct uloop_signal *tmp;
+	struct sigaction sa;
+
+	if (s->pending)
+		return -1;
+
+	list_for_each_entry(tmp, &signals, list) {
+		if (tmp->signo > s->signo) {
+			h = &tmp->list;
+			break;
+		}
+	}
+
+	list_add_tail(&s->list, h);
+	s->pending = true;
+
+	sigaction(s->signo, NULL, &s->orig);
+
+	if (s->orig.sa_handler != uloop_signal_wake) {
+		sa.sa_handler = uloop_signal_wake;
+		sa.sa_flags = 0;
+		sigemptyset(&sa.sa_mask);
+		sigaction(s->signo, &sa, NULL);
+	}
+
+	return 0;
+}
+
+int uloop_signal_delete(struct uloop_signal *s)
+{
+	if (!s->pending)
+		return -1;
+
+	list_del(&s->list);
+	s->pending = false;
+
+	if (s->orig.sa_handler != uloop_signal_wake)
+		sigaction(s->signo, &s->orig, NULL);
+
+	return 0;
+}
+
+int uloop_get_next_timeout(void)
 {
 	struct uloop_timeout *timeout;
-	int diff;
+	struct timeval tv;
+	int64_t diff;
 
 	if (list_empty(&timeouts))
 		return -1;
 
+	uloop_gettime(&tv);
+
 	timeout = list_first_entry(&timeouts, struct uloop_timeout, list);
-	diff = tv_diff(&timeout->time, tv);
+	diff = tv_diff(&timeout->time, &tv);
 	if (diff < 0)
 		return 0;
+	if (diff > INT_MAX)
+		return INT_MAX;
 
 	return diff;
 }
 
-static void uloop_process_timeouts(struct timeval *tv)
+static void uloop_process_timeouts(void)
 {
 	struct uloop_timeout *t;
+	struct timeval tv;
 
+	if (list_empty(&timeouts))
+		return;
+
+	uloop_gettime(&tv);
 	while (!list_empty(&timeouts)) {
 		t = list_first_entry(&timeouts, struct uloop_timeout, list);
 
-		if (tv_diff(&t->time, tv) > 0)
+		if (tv_diff(&t->time, &tv) > 0)
 			break;
 
 		uloop_timeout_cancel(t);
@@ -520,23 +655,16 @@ bool uloop_cancelling(void)
 	return uloop_run_depth > 0 && uloop_cancelled;
 }
 
-int uloop_run(void)
+int uloop_run_timeout(int timeout)
 {
-	struct timeval tv;
+	int next_time = 0;
 
-	/*
-	 * Handlers are only updated for the first call to uloop_run() (and restored
-	 * when this call is done).
-	 */
-	if (!uloop_run_depth++)
-		uloop_setup_signals(true);
+	uloop_run_depth++;
 
 	uloop_status = 0;
 	uloop_cancelled = false;
-	while (!uloop_cancelled)
-	{
-		uloop_gettime(&tv);
-		uloop_process_timeouts(&tv);
+	do {
+		uloop_process_timeouts();
 
 		if (do_sigchld)
 			uloop_handle_processes();
@@ -544,18 +672,21 @@ int uloop_run(void)
 		if (uloop_cancelled)
 			break;
 
-		uloop_gettime(&tv);
-		uloop_run_events(uloop_get_next_timeout(&tv));
-	}
+		next_time = uloop_get_next_timeout();
+		if (timeout >= 0 && (next_time < 0 || timeout < next_time))
+				next_time = timeout;
+		uloop_run_events(next_time);
+	} while (!uloop_cancelled && timeout < 0);
 
-	if (!--uloop_run_depth)
-		uloop_setup_signals(false);
+	--uloop_run_depth;
 
 	return uloop_status;
 }
 
 void uloop_done(void)
 {
+	uloop_setup_signals(false);
+
 	if (poll_fd >= 0) {
 		close(poll_fd);
 		poll_fd = -1;

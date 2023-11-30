@@ -96,7 +96,7 @@ blob_is_extended(const struct blob_attr *attr)
 /*
  * blob_len: returns the length of the attribute's payload
  */
-static inline unsigned int
+static inline size_t
 blob_len(const struct blob_attr *attr)
 {
 	return (be32_to_cpu(attr->id_len) & BLOB_ATTR_LEN_MASK) - sizeof(struct blob_attr);
@@ -105,7 +105,7 @@ blob_len(const struct blob_attr *attr)
 /*
  * blob_raw_len: returns the complete length of an attribute (including the header)
  */
-static inline unsigned int
+static inline size_t
 blob_raw_len(const struct blob_attr *attr)
 {
 	return blob_len(attr) + sizeof(struct blob_attr);
@@ -114,7 +114,7 @@ blob_raw_len(const struct blob_attr *attr)
 /*
  * blob_pad_len: returns the padded length of an attribute (including the header)
  */
-static inline unsigned int
+static inline size_t
 blob_pad_len(const struct blob_attr *attr)
 {
 	unsigned int len = blob_raw_len(attr);
@@ -199,6 +199,7 @@ extern void blob_nest_end(struct blob_buf *buf, void *cookie);
 extern struct blob_attr *blob_put(struct blob_buf *buf, int id, const void *ptr, unsigned int len);
 extern bool blob_check_type(const void *ptr, unsigned int len, int type);
 extern int blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max);
+extern int blob_parse_untrusted(struct blob_attr *attr, size_t attr_len, struct blob_attr **data, const struct blob_attr_info *info, int max);
 extern struct blob_attr *blob_memdup(struct blob_attr *attr);
 extern struct blob_attr *blob_put_raw(struct blob_buf *buf, const void *ptr, unsigned int len);
 
@@ -242,7 +243,7 @@ blob_put_u64(struct blob_buf *buf, int id, uint64_t val)
 
 #define __blob_for_each_attr(pos, attr, rem) \
 	for (pos = (struct blob_attr *) attr; \
-	     rem > 0 && (blob_pad_len(pos) <= rem) && \
+	     rem >= sizeof(struct blob_attr) && (blob_pad_len(pos) <= rem) && \
 	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
 	     rem -= blob_pad_len(pos), pos = blob_next(pos))
 
@@ -250,9 +251,15 @@ blob_put_u64(struct blob_buf *buf, int id, uint64_t val)
 #define blob_for_each_attr(pos, attr, rem) \
 	for (rem = attr ? blob_len(attr) : 0, \
 	     pos = (struct blob_attr *) (attr ? blob_data(attr) : NULL); \
-	     rem > 0 && (blob_pad_len(pos) <= rem) && \
+	     rem >= sizeof(struct blob_attr) && (blob_pad_len(pos) <= rem) && \
 	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
 	     rem -= blob_pad_len(pos), pos = blob_next(pos))
 
+#define blob_for_each_attr_len(pos, attr, attr_len, rem) \
+	for (rem = attr ? blob_len(attr) : 0, \
+	     pos = (struct blob_attr *) (attr ? blob_data(attr) : NULL); \
+	     rem >= sizeof(struct blob_attr) && rem < attr_len && (blob_pad_len(pos) <= rem) && \
+	     (blob_pad_len(pos) >= sizeof(struct blob_attr)); \
+	     rem -= blob_pad_len(pos), pos = blob_next(pos))
 
 #endif

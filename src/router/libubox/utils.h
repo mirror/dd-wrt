@@ -19,6 +19,7 @@
 #ifndef __LIBUBOX_UTILS_H
 #define __LIBUBOX_UTILS_H
 
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -81,16 +82,10 @@ int clock_gettime(int type, struct timespec *tv);
 #elif defined(__APPLE__)
 #include <machine/endian.h>
 #include <machine/byte_order.h>
-#define bswap_32(x) OSSwapInt32(x)
-#define bswap_64(x) OSSwapInt64(x)
 #elif defined(__FreeBSD__)
 #include <sys/endian.h>
-#define bswap_32(x) bswap32(x)
-#define bswap_64(x) bswap64(x)
 #else
 #include <machine/endian.h>
-#define bswap_32(x) swap32(x)
-#define bswap_64(x) swap64(x)
 #endif
 
 #ifndef __BYTE_ORDER
@@ -103,28 +98,74 @@ int clock_gettime(int type, struct timespec *tv);
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
 #endif
 
-static inline uint16_t __u_bswap16(uint16_t val)
-{
-	return ((val >> 8) & 0xffu) | ((val & 0xffu) << 8);
-}
+#define __constant_swap16(x) ((uint16_t)(				\
+	(((uint16_t)(x) & (uint16_t)0x00ffU) << 8) |			\
+	(((uint16_t)(x) & (uint16_t)0xff00U) >> 8)))
 
-#if _GNUC_MIN_VER(4, 2)
-#define __u_bswap32(x) __builtin_bswap32(x)
-#define __u_bswap64(x) __builtin_bswap64(x)
+#define __constant_swap32(x) ((uint32_t)(				\
+	(((uint32_t)(x) & (uint32_t)0x000000ffUL) << 24) |		\
+	(((uint32_t)(x) & (uint32_t)0x0000ff00UL) <<  8) |		\
+	(((uint32_t)(x) & (uint32_t)0x00ff0000UL) >>  8) |		\
+	(((uint32_t)(x) & (uint32_t)0xff000000UL) >> 24)))
+
+#define __constant_swap64(x) ((uint64_t)(				\
+	(((uint64_t)(x) & (uint64_t)0x00000000000000ffULL) << 56) |	\
+	(((uint64_t)(x) & (uint64_t)0x000000000000ff00ULL) << 40) |	\
+	(((uint64_t)(x) & (uint64_t)0x0000000000ff0000ULL) << 24) |	\
+	(((uint64_t)(x) & (uint64_t)0x00000000ff000000ULL) <<  8) |	\
+	(((uint64_t)(x) & (uint64_t)0x000000ff00000000ULL) >>  8) |	\
+	(((uint64_t)(x) & (uint64_t)0x0000ff0000000000ULL) >> 24) |	\
+	(((uint64_t)(x) & (uint64_t)0x00ff000000000000ULL) >> 40) |	\
+	(((uint64_t)(x) & (uint64_t)0xff00000000000000ULL) >> 56)))
+
+/*
+ * This returns a constant expression while determining if an argument is
+ * a constant expression, most importantly without evaluating the argument.
+ */
+#define __is_constant(x)						\
+	(sizeof(int) == sizeof(*(1 ? ((void*)((long)(x) * 0l)) : (int*)1)))
+
+#define __eval_once(func, x)						\
+	({ __typeof__(x) __x = x; func(__x); })
+
+#ifdef __cplusplus
+/*
+ * g++ does not support __builtin_choose_expr, so always use __eval_once.
+ * Unfortunately this means that the byte order functions can't be used
+ * as a constant expression anymore
+ */
+#define __eval_safe(func, x) __eval_once(func, x)
 #else
-#define __u_bswap32(x) bswap_32(x)
-#define __u_bswap64(x) bswap_64(x)
+#define __eval_safe(func, x)						\
+	__builtin_choose_expr(__is_constant(x),				\
+			      func(x), __eval_once(func, x))
 #endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 
-#define cpu_to_be64(x) __u_bswap64(x)
-#define cpu_to_be32(x) __u_bswap32(x)
-#define cpu_to_be16(x) __u_bswap16((uint16_t) (x))
+#define const_cpu_to_be64(x) __constant_swap64(x)
+#define const_cpu_to_be32(x) __constant_swap32(x)
+#define const_cpu_to_be16(x) __constant_swap16(x)
 
-#define be64_to_cpu(x) __u_bswap64(x)
-#define be32_to_cpu(x) __u_bswap32(x)
-#define be16_to_cpu(x) __u_bswap16((uint16_t) (x))
+#define const_be64_to_cpu(x) __constant_swap64(x)
+#define const_be32_to_cpu(x) __constant_swap32(x)
+#define const_be16_to_cpu(x) __constant_swap16(x)
+
+#define const_cpu_to_le64(x) (x)
+#define const_cpu_to_le32(x) (x)
+#define const_cpu_to_le16(x) (x)
+
+#define const_le64_to_cpu(x) (x)
+#define const_le32_to_cpu(x) (x)
+#define const_le16_to_cpu(x) (x)
+
+#define cpu_to_be64(x) __eval_safe(__constant_swap64, x)
+#define cpu_to_be32(x) __eval_safe(__constant_swap32, x)
+#define cpu_to_be16(x) __eval_safe(__constant_swap16, x)
+
+#define be64_to_cpu(x) __eval_safe(__constant_swap64, x)
+#define be32_to_cpu(x) __eval_safe(__constant_swap32, x)
+#define be16_to_cpu(x) __eval_safe(__constant_swap16, x)
 
 #define cpu_to_le64(x) (x)
 #define cpu_to_le32(x) (x)
@@ -136,13 +177,29 @@ static inline uint16_t __u_bswap16(uint16_t val)
 
 #else /* __BYTE_ORDER == __LITTLE_ENDIAN */
 
-#define cpu_to_le64(x) __u_bswap64(x)
-#define cpu_to_le32(x) __u_bswap32(x)
-#define cpu_to_le16(x) __u_bswap16((uint16_t) (x))
+#define const_cpu_to_le64(x) __constant_swap64(x)
+#define const_cpu_to_le32(x) __constant_swap32(x)
+#define const_cpu_to_le16(x) __constant_swap16(x)
 
-#define le64_to_cpu(x) __u_bswap64(x)
-#define le32_to_cpu(x) __u_bswap32(x)
-#define le16_to_cpu(x) __u_bswap16((uint16_t) (x))
+#define const_le64_to_cpu(x) __constant_swap64(x)
+#define const_le32_to_cpu(x) __constant_swap32(x)
+#define const_le16_to_cpu(x) __constant_swap16(x)
+
+#define const_cpu_to_be64(x) (x)
+#define const_cpu_to_be32(x) (x)
+#define const_cpu_to_be16(x) (x)
+
+#define const_be64_to_cpu(x) (x)
+#define const_be32_to_cpu(x) (x)
+#define const_be16_to_cpu(x) (x)
+
+#define cpu_to_le64(x) __eval_safe(__constant_swap64, x)
+#define cpu_to_le32(x) __eval_safe(__constant_swap32, x)
+#define cpu_to_le16(x) __eval_safe(__constant_swap16, x)
+
+#define le64_to_cpu(x) __eval_safe(__constant_swap64, x)
+#define le32_to_cpu(x) __eval_safe(__constant_swap32, x)
+#define le16_to_cpu(x) __eval_safe(__constant_swap16, x)
 
 #define cpu_to_be64(x) (x)
 #define cpu_to_be32(x) (x)
@@ -170,21 +227,17 @@ static inline uint16_t __u_bswap16(uint16_t val)
 #define __hidden __attribute__((visibility("hidden")))
 #endif
 
-#ifndef BITS_PER_LONG
-#define BITS_PER_LONG (8 * sizeof(unsigned long))
+#ifndef __has_attribute
+# define __has_attribute(x) 0
 #endif
 
-#define BITFIELD_SIZE(_n) (((_n) + (BITS_PER_LONG - 1)) / BITS_PER_LONG)
-
-static inline void bitfield_set(unsigned long *bits, int bit)
-{
-	bits[bit / BITS_PER_LONG] |= (1UL << (bit % BITS_PER_LONG));
-}
-
-static inline bool bitfield_test(unsigned long *bits, int bit)
-{
-	return !!(bits[bit / BITS_PER_LONG] & (1UL << (bit % BITS_PER_LONG)));
-}
+#ifndef fallthrough
+# if __has_attribute(__fallthrough__)
+#  define fallthrough __attribute__((__fallthrough__))
+# else
+#  define fallthrough do {} while (0)  /* fallthrough */
+# endif
+#endif
 
 int b64_encode(const void *src, size_t src_len,
 	       void *dest, size_t dest_len);
@@ -212,5 +265,6 @@ static inline unsigned long cbuf_size(int order)
 
 void *cbuf_alloc(unsigned int order);
 void cbuf_free(void *ptr, unsigned int order);
+int mkdir_p(char *dir, mode_t mask);
 
 #endif

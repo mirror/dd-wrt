@@ -56,7 +56,7 @@ json_script_file_from_blobmsg(const char *name, void *data, int len)
 }
 
 static struct json_script_file *
-json_script_get_file(struct json_script_ctx *ctx, char *filename)
+json_script_get_file(struct json_script_ctx *ctx, const char *filename)
 {
 	struct json_script_file *f;
 
@@ -95,7 +95,7 @@ const char *json_script_find_var(struct json_script_ctx *ctx, struct blob_attr *
 				 const char *name)
 {
 	struct blob_attr *cur;
-	int rem;
+	size_t rem;
 
 	blobmsg_for_each_attr(cur, vars, rem) {
 		if (blobmsg_type(cur) != BLOBMSG_TYPE_STRING)
@@ -164,7 +164,7 @@ static int handle_case(struct json_call *call, struct blob_attr *expr)
 {
 	struct blob_attr *tb[3], *cur;
 	const char *var;
-	int rem;
+	size_t rem;
 
 	json_get_tuple(expr, tb, BLOBMSG_TYPE_STRING, BLOBMSG_TYPE_TABLE);
 	if (!tb[1] || !tb[2])
@@ -233,7 +233,7 @@ static int expr_eq_regex(struct json_call *call, struct blob_attr *expr, bool re
 	struct json_script_ctx *ctx = call->ctx;
 	struct blob_attr *tb[3], *cur;
 	const char *var;
-	int rem;
+	size_t rem;
 
 	json_get_tuple(expr, tb, BLOBMSG_TYPE_STRING, 0);
 	if (!tb[1] || !tb[2])
@@ -277,7 +277,7 @@ static int handle_expr_has(struct json_call *call, struct blob_attr *expr)
 {
 	struct json_script_ctx *ctx = call->ctx;
 	struct blob_attr *tb[3], *cur;
-	int rem;
+	size_t rem;
 
 	json_get_tuple(expr, tb, 0, 0);
 	if (!tb[1])
@@ -306,7 +306,8 @@ static int handle_expr_has(struct json_call *call, struct blob_attr *expr)
 static int expr_and_or(struct json_call *call, struct blob_attr *expr, bool and)
 {
 	struct blob_attr *cur;
-	int ret, rem;
+	int ret;
+	size_t rem;
 	int i = 0;
 
 	blobmsg_for_each_attr(cur, expr, rem) {
@@ -415,8 +416,10 @@ static int json_process_expr(struct json_call *call, struct blob_attr *cur)
 	}
 
 	ret = __json_process_type(call, cur, expr, ARRAY_SIZE(expr), &found);
-	if (!found)
-		ctx->handle_error(ctx, "Unknown expression type", cur);
+	if (!found) {
+		const char *name = blobmsg_data(blobmsg_data(cur));
+		ctx->handle_expr(ctx, name, cur, call->vars);
+	}
 
 	return ret;
 }
@@ -428,7 +431,7 @@ static int eval_string(struct json_call *call, struct blob_buf *buf, const char 
 	bool var = false;
 	char c = '%';
 
-	dest = blobmsg_alloc_string_buffer(buf, name, 1);
+	dest = blobmsg_alloc_string_buffer(buf, name, 0);
 	if (!dest)
 		return -1;
 
@@ -470,7 +473,7 @@ static int eval_string(struct json_call *call, struct blob_buf *buf, const char 
 			cur_len = end - str;
 		}
 
-		new_buf = blobmsg_realloc_string_buffer(buf, len + cur_len + 1);
+		new_buf = blobmsg_realloc_string_buffer(buf, len + cur_len);
 		if (!new_buf) {
 			/* Make eval_string return -1 */
 			var = true;
@@ -513,7 +516,8 @@ static int cmd_process_strings(struct json_call *call, struct blob_attr *attr)
 	struct json_script_ctx *ctx = call->ctx;
 	struct blob_attr *cur;
 	int args = -1;
-	int rem, ret;
+	int ret;
+	size_t rem;
 	void *c;
 
 	blob_buf_init(&ctx->buf, 0);
@@ -570,7 +574,7 @@ static int json_process_cmd(struct json_call *call, struct blob_attr *block)
 {
 	struct json_script_ctx *ctx = call->ctx;
 	struct blob_attr *cur;
-	int rem;
+	size_t rem;
 	int ret;
 	int i = 0;
 
@@ -587,6 +591,7 @@ static int json_process_cmd(struct json_call *call, struct blob_attr *block)
 		case BLOBMSG_TYPE_STRING:
 			if (!i)
 				return __json_process_cmd(call, block);
+			fallthrough;
 		default:
 			ret = json_process_cmd(call, cur);
 			if (ret < -1)
@@ -618,7 +623,7 @@ void json_script_run_file(struct json_script_ctx *ctx, struct json_script_file *
 	__json_script_run(&call, file, NULL);
 }
 
-void json_script_run(struct json_script_ctx *ctx, char *name,
+void json_script_run(struct json_script_ctx *ctx, const char *name,
 		     struct blob_attr *vars)
 {
 	struct json_script_file *file;
@@ -671,11 +676,12 @@ static int
 __default_handle_expr(struct json_script_ctx *ctx, const char *name,
 		      struct blob_attr *expr, struct blob_attr *vars)
 {
+	ctx->handle_error(ctx, "Unknown expression type", expr);
 	return -1;
 }
 
 static struct json_script_file *
-__default_handle_file(struct json_script_ctx *ctx, char *name)
+__default_handle_file(struct json_script_ctx *ctx, const char *name)
 {
 	return NULL;
 }

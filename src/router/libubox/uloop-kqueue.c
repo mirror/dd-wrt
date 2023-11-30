@@ -66,6 +66,9 @@ static int register_kevent(struct uloop_fd *fd, unsigned int flags)
 	if (changed & ULOOP_EDGE_TRIGGER)
 		changed |= flags;
 
+	if (!changed)
+		return 0;
+
 	if (changed & ULOOP_READ) {
 		kflags = get_flags(flags, ULOOP_READ);
 		EV_SET(&ev[nev++], fd->fd, EVFILT_READ, kflags, 0, 0, fd);
@@ -79,7 +82,6 @@ static int register_kevent(struct uloop_fd *fd, unsigned int flags)
 	if (!flags)
 		fl |= EV_DELETE;
 
-	fd->flags = flags;
 	if (kevent(poll_fd, ev, nev, NULL, fl, &timeout) == -1)
 		return -1;
 
@@ -101,6 +103,23 @@ static int __uloop_fd_delete(struct uloop_fd *fd)
 	return register_poll(fd, 0);
 }
 
+static int64_t get_timestamp_us(void)
+{
+#ifdef CLOCK_MONOTONIC
+	struct timespec ts = { 0, 0 };
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+
+	return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+#else
+	struct timeval tv = { 0, 0 };
+
+	gettimeofday(&tv, NULL);
+
+	return tv.tv_sec * 1000000 + tv.tv_usec;
+#endif
+}
+
 static int uloop_fetch_events(int timeout)
 {
 	struct timespec ts;
@@ -113,6 +132,16 @@ static int uloop_fetch_events(int timeout)
 
 	nfds = kevent(poll_fd, NULL, 0, events, ARRAY_SIZE(events), timeout >= 0 ? &ts : NULL);
 	for (n = 0; n < nfds; n++) {
+		if (events[n].filter == EVFILT_TIMER) {
+			struct uloop_interval *tm = events[n].udata;
+
+			tm->priv.time.fired = get_timestamp_us();
+			tm->expirations += events[n].data;
+			tm->cb(tm);
+
+			continue;
+		}
+
 		struct uloop_fd_event *cur = &cur_fds[n];
 		struct uloop_fd *u = events[n].udata;
 		unsigned int ev = 0;
@@ -145,4 +174,36 @@ static int uloop_fetch_events(int timeout)
 		}
 	}
 	return nfds;
+}
+
+static int timer_register(struct uloop_interval *tm, unsigned int msecs)
+{
+	struct kevent ev;
+
+	tm->priv.time.msecs = msecs;
+	tm->priv.time.fired = get_timestamp_us();
+
+	EV_SET(&ev, (uintptr_t)tm, EVFILT_TIMER, EV_ADD, NOTE_USECONDS, msecs * 1000, tm);
+
+	return kevent(poll_fd, &ev, 1, NULL, 0, NULL);
+}
+
+static int timer_remove(struct uloop_interval *tm)
+{
+	struct kevent ev;
+
+	EV_SET(&ev, (uintptr_t)tm, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+
+	return kevent(poll_fd, &ev, 1, NULL, 0, NULL);
+}
+
+static int64_t timer_next(struct uloop_interval *tm)
+{
+	int64_t t1 = tm->priv.time.fired;
+	int64_t t2 = get_timestamp_us();
+
+	while (t1 < t2)
+		t1 += tm->priv.time.msecs * 1000;
+
+	return (t1 - t2) / 1000;
 }

@@ -72,4 +72,22 @@ void vlist_flush_all(struct vlist_tree *tree);
 #define vlist_for_each_element(tree, element, node_member) \
 	avl_for_each_element(&(tree)->avl, element, node_member.avl)
 
+#define vlist_for_each_element_safe(tree, element, node_member, ptr) \
+	avl_for_each_element_safe(&(tree)->avl, element, node_member.avl, ptr)
+
+#define vlist_for_each_element_reverse(tree, element, node_member) \
+	avl_for_each_element_reverse(&(tree)->avl, element, node_member.avl)
+
+#define vlist_for_first_to_element(tree, last, element, node_member) \
+	avl_for_element_range(avl_first_element(&(tree)->avl, element, node_member.avl), last, element, node_member.avl)
+
+#define vlist_for_first_to_element_reverse(tree, last, element, node_member) \
+	avl_for_element_range_reverse(avl_first_element(&(tree)->avl, element, node_member.avl), last, element, node_member.avl)
+
+#define vlist_for_element_to_last(tree, first, element, node_member) \
+	avl_for_element_range(first, avl_last_element(&(tree)->avl, element, node_member.avl), element, node_member.avl)
+
+#define vlist_for_element_to_last_reverse(tree, first, element, node_member) \
+	avl_for_element_range_reverse(first, avl_last_element(&(tree)->avl, element, node_member.avl), element, node_member.avl)
+
 #endif

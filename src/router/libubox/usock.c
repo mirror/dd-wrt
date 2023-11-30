@@ -120,10 +120,7 @@ static int poll_restart(struct pollfd *fds, int nfds, int timeout)
 
 	while (1) {
 		ret = poll(fds, nfds, timeout);
-		if (ret == EAGAIN)
-			continue;
-
-		if (ret != EINTR)
+		if (ret >= 0 || (errno != EINTR && errno != EAGAIN))
 			return ret;
 
 		clock_gettime(CLOCK_MONOTONIC, &cur);

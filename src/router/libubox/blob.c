@@ -58,6 +58,8 @@ blob_buf_grow(struct blob_buf *buf, int required)
 {
 	int offset_head = attr_to_offset(buf, buf->head);
 
+	if ((buf->buflen + required) > BLOB_ATTR_LEN_MASK)
+		return false;
 	if (!buf->grow || !buf->grow(buf, required))
 		return false;
 
@@ -103,6 +105,7 @@ blob_buf_free(struct blob_buf *buf)
 {
 	free(buf->buf);
 	buf->buf = NULL;
+	buf->head = NULL;
 	buf->buflen = 0;
 }
 
@@ -186,7 +189,7 @@ blob_nest_end(struct blob_buf *buf, void *cookie)
 	buf->head = attr;
 }
 
-static const int blob_type_minlen[BLOB_ATTR_LAST] = {
+static const size_t blob_type_minlen[BLOB_ATTR_LAST] = {
 	[BLOB_ATTR_STRING] = 1,
 	[BLOB_ATTR_INT8] = sizeof(uint8_t),
 	[BLOB_ATTR_INT16] = sizeof(uint16_t),
@@ -217,44 +220,90 @@ blob_check_type(const void *ptr, unsigned int len, int type)
 	return true;
 }
 
+static int
+blob_parse_attr(struct blob_attr *attr, size_t attr_len, struct blob_attr **data, const struct blob_attr_info *info, int max)
+{
+	int id;
+	size_t len;
+	int found = 0;
+	size_t data_len;
+
+	if (!attr || attr_len < sizeof(struct blob_attr))
+		return 0;
+
+	id = blob_id(attr);
+	if (id >= max)
+		return 0;
+
+	len = blob_raw_len(attr);
+	if (len > attr_len || len < sizeof(struct blob_attr))
+		return 0;
+
+	data_len = blob_len(attr);
+	if (data_len > len)
+		return 0;
+
+	if (info) {
+		int type = info[id].type;
+
+		if (type < BLOB_ATTR_LAST) {
+			if (!blob_check_type(blob_data(attr), data_len, type))
+				return 0;
+		}
+
+		if (info[id].minlen && len < info[id].minlen)
+			return 0;
+
+		if (info[id].maxlen && len > info[id].maxlen)
+			return 0;
+
+		if (info[id].validate && !info[id].validate(&info[id], attr))
+			return 0;
+	}
+
+	if (!data[id])
+		found++;
+
+	data[id] = attr;
+	return found;
+}
+
+int
+blob_parse_untrusted(struct blob_attr *attr, size_t attr_len, struct blob_attr **data, const struct blob_attr_info *info, int max)
+{
+	struct blob_attr *pos;
+	size_t len = 0;
+	int found = 0;
+	size_t rem;
+
+	if (!attr || attr_len < sizeof(struct blob_attr))
+		return 0;
+
+	len = blob_raw_len(attr);
+	if (attr_len < len)
+		return 0;
+
+	memset(data, 0, sizeof(struct blob_attr *) * max);
+	blob_for_each_attr_len(pos, attr, len, rem) {
+		found += blob_parse_attr(pos, rem, data, info, max);
+	}
+
+	return found;
+}
+
+/* use only on trusted input, otherwise consider blob_parse_untrusted */
 int
 blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max)
 {
 	struct blob_attr *pos;
 	int found = 0;
-	int rem;
+	size_t rem;
 
 	memset(data, 0, sizeof(struct blob_attr *) * max);
 	blob_for_each_attr(pos, attr, rem) {
-		int id = blob_id(pos);
-		int len = blob_len(pos);
-
-		if (id >= max)
-			continue;
-
-		if (info) {
-			int type = info[id].type;
-
-			if (type < BLOB_ATTR_LAST) {
-				if (!blob_check_type(blob_data(pos), len, type))
-					continue;
-			}
-
-			if (info[id].minlen && len < info[id].minlen)
-				continue;
-
-			if (info[id].maxlen && len > info[id].maxlen)
-				continue;
-
-			if (info[id].validate && !info[id].validate(&info[id], pos))
-				continue;
-		}
-
-		if (!data[id])
-			found++;
-
-		data[id] = pos;
+		found += blob_parse_attr(pos, rem, data, info, max);
 	}
+
 	return found;
 }
 

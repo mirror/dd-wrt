@@ -44,8 +44,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "ubox_list.h"
-#include "list_compat.h"
+#include "list.h"
 
 /* Support for OLSR.org linker symbol export */
 #define EXPORT(sym) sym
@@ -239,7 +238,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    NULL if no element was found
  */
 #define avl_find_element(tree, key, element, node_element) \
-  ((typeof(*(element)) *)__avl_find_element(tree, key, offsetof(typeof(*(element)), node_element), AVL_FIND_EQUAL))
+  ((__typeof__(*(element)) *)__avl_find_element(tree, key, offsetof(typeof(*(element)), node_element), AVL_FIND_EQUAL))
 
 /**
  * @param tree pointer to avl-tree
@@ -252,7 +251,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    NULL if no element was found
  */
 #define avl_find_le_element(tree, key, element, node_element) \
-  ((typeof(*(element)) *)__avl_find_element(tree, key, offsetof(typeof(*(element)), node_element), AVL_FIND_LESSEQUAL))
+  ((__typeof__(*(element)) *)__avl_find_element(tree, key, offsetof(typeof(*(element)), node_element), AVL_FIND_LESSEQUAL))
 
 /**
  * @param tree pointer to avl-tree
@@ -265,7 +264,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    NULL if no element was found
  */
 #define avl_find_ge_element(tree, key, element, node_element) \
-  ((typeof(*(element)) *)__avl_find_element(tree, key, offsetof(typeof(*(element)), node_element), AVL_FIND_GREATEREQUAL))
+  ((__typeof__(*(element)) *)__avl_find_element(tree, key, offsetof(typeof(*(element)), node_element), AVL_FIND_GREATEREQUAL))
 
 /**
  * This function must not be called for an empty tree
@@ -279,7 +278,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_first_element(tree, element, node_member) \
-  container_of((tree)->list_head.next, typeof(*(element)), node_member.list)
+  container_of((tree)->list_head.next, __typeof__(*(element)), node_member.list)
 
 /**
  * @param tree pointer to tree
@@ -291,7 +290,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_last_element(tree, element, node_member) \
-  container_of((tree)->list_head.prev, typeof(*(element)), node_member.list)
+  container_of((tree)->list_head.prev, __typeof__(*(element)), node_member.list)
 
 /**
  * This function must not be called for the last element of
@@ -304,7 +303,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_next_element(element, node_member) \
-  container_of((&(element)->node_member.list)->next, typeof(*(element)), node_member.list)
+  container_of((&(element)->node_member.list)->next, __typeof__(*(element)), node_member.list)
 
 /**
  * This function must not be called for the first element of
@@ -317,7 +316,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_prev_element(element, node_member) \
-  container_of((&(element)->node_member.list)->prev, typeof(*(element)), node_member.list)
+  container_of((&(element)->node_member.list)->prev, __typeof__(*(element)), node_member.list)
 
 /**
  * Loop over a block of elements of a tree, used similar to a for() command.
