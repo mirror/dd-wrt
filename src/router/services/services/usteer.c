@@ -43,4 +43,15 @@ void stop_usteer(void)
 	stop_process("usteerd", "daemon");
 	return;
 }
+
+void start_ubus(void)
+{
+	sysprintf("ubusd&");
+}
+
+void stop_ubus(void)
+{
+	stop_process("ubusd", "daemon");
+}
+
 #endif

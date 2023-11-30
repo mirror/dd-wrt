@@ -307,6 +307,7 @@ void start_init_stop(void)
 	stop_service(bridgesif);
 	stop_service(vlantagging);
 #endif
+	stop_service(ubus);
 	stop_service(lan);
 #ifndef HAVE_RB500
 	stop_service(resetbutton);
@@ -352,6 +353,7 @@ void start_init_start(void)
 #ifdef HAVE_VLANTAGGING
 	start_service(bridging);
 #endif
+	start_service(ubus);
 	start_service(lan);
 	/* we need todo it a second time since the bridge did not exist before */
 	start_service(setup_vlans);
