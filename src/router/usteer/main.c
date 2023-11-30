@@ -180,22 +180,6 @@ usteer_dump_timeout(struct uloop_timeout *t)
 	uloop_end();
 }
 
-#define FORK(func) \
-{ \
-    switch ( fork(  ) ) \
-    { \
-	case -1: \
-	    break; \
-	case 0: \
-	    ( void )setsid(  ); \
-	    func; \
-	    exit(0); \
-	    break; \
-	default: \
-	break; \
-    } \
-}
-
 int main(int argc, char **argv)
 {
 	struct uloop_timeout dump_timer;
@@ -243,7 +227,7 @@ int main(int argc, char **argv)
 		usteer_local_nodes_init(ubus_ctx);
 	}
 	usteer_interface_init();
-	FORK(uloop_run());
+	uloop_run();
 
 	uloop_done();
 	return 0;
