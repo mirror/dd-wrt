@@ -13,11 +13,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#ifdef JSONC
         #include <json.h>
-#else
-        #include <json/json.h>
-#endif
 
 #include <string.h>
 #include <stdlib.h>

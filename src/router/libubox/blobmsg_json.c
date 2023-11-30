@@ -17,11 +17,7 @@
 #include "blobmsg.h"
 #include "blobmsg_json.h"
 
-#ifdef JSONC
 	#include <json.h>
-#else
-	#include <json/json.h>
-#endif
 
 bool blobmsg_add_object(struct blob_buf *b, json_object *obj)
 {
