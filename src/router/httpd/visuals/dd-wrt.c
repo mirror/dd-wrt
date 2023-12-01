@@ -2295,7 +2295,7 @@ static void show_roaming(webs_t wp, char *var)
 {
 		char s80211v[64];
 		sprintf(s80211v, "%s_80211v", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211v)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 			  var, var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
@@ -2308,7 +2308,7 @@ static void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
 
 		sprintf(adv, "%s_time_advertisement", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211v)</script></div>\n");
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.time_advertisement)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 			  var, var, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
@@ -2335,10 +2335,10 @@ static void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 
-		showRadioPrefix(wp, "wpa.wnm_sleep_mode", "wnm_sleep_mode", var);
-		showRadioPrefix(wp, "wpa.wnm_sleep_mode_no_keys","wnm_sleep_mode_no_keys",var);
-		showRadioPrefix(wp, "wpa.bss_transition", "bss_transition",var);
-		showRadioPrefix(wp, "wpa.proxy_arp", "proxy_arp",var);
+		showRadioPrefix(wp, "wl_basic.wnm_sleep_mode", "wnm_sleep_mode", var);
+		showRadioPrefix(wp, "wl_basic.wnm_sleep_mode_no_keys","wnm_sleep_mode_no_keys",var);
+		showRadioPrefix(wp, "wl_basic.bss_transition", "bss_transition",var);
+		showRadioPrefix(wp, "wl_basic.proxy_arp", "proxy_arp",var);
 
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
@@ -2347,7 +2347,7 @@ static void show_roaming(webs_t wp, char *var)
 
 		char s80211k[64];
 		sprintf(s80211k, "%s_80211k", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.s80211k)</script></div>\n");
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211k)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 			  var, var, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
@@ -2356,12 +2356,18 @@ static void show_roaming(webs_t wp, char *var)
 			  var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
-		showRadioPredix(wp, "wpa.rrm_neighbor_report","rrm_neighbor_report",var);
-		showRadioPrefix(wp, "wpa.rrm_beacon_report", "rrm_beacon_report",var);
+		showRadioPredix(wp, "wl_basic.rrm_neighbor_report","rrm_neighbor_report",var);
+		showRadioPrefix(wp, "wl_basic.rrm_beacon_report", "rrm_beacon_report",var);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
+
+		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
+		websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
+		showRadioPrefix(wp, "wl_basic.usteer", "usteer",var);		
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
 
 }
 static int show_virtualssid(webs_t wp, char *prefix)
