@@ -42,6 +42,7 @@ config usteer
 	#option seen_policy_timeout 30000
 
 	# Minimum number of stations delta between APs before load balancing policy is active
+	# No effect unless load_balancing_threshold is above 0
 	#option load_balancing_threshold 0
 
 	# Minimum number of stations delta between bands before band steering policy is active
@@ -60,9 +61,11 @@ config usteer
 	#option probe_steering 0
 
 	# Minimum signal-to-noise ratio or signal level (dBm) to allow connections
+	# Related: should be equal to or higher than `min_snr` and `band_steering_min_snr`
 	#option min_connect_snr 0
 
 	# Minimum signal-to-noise ratio or signal level (dBm) to remain connected
+	# Related: should be equal to or lower than `min_connect_snr` and lower than `band_steering_min_snr`
 	#option min_snr 0
 
 	# Timeout after which a station with snr < min_snr will be kicked
@@ -75,8 +78,9 @@ config usteer
 	# as a roam
 	#option roam_process_timeout 5000
 
-	# Minimum signal-to-noise ratio or signal level (dBm) before attempting to trigger
+	# Maximum signal-to-noise ratio or signal level (dBm) before attempting to trigger
 	# client scans for roaming
+	# Related: should be higher than `roam_tigger_snr`
 	#option roam_scan_snr 0
 
 	# Maximum number of client roaming scan trigger attempts
@@ -89,8 +93,9 @@ config usteer
 	# Minimum time (ms) between client roaming scan trigger attempts
 	#option roam_scan_interval 10000
 
-	# Minimum signal-to-noise ratio or signal level (dBm) before attempting to trigger
+	# Maximum signal-to-noise ratio or signal level (dBm) before attempting to trigger
 	# forced client roaming
+	# Related: should be lower than `roam_scan_snr`
 	#option roam_trigger_snr 0
 
 	# Minimum time (ms) between client roaming trigger attempts
@@ -126,6 +131,7 @@ config usteer
 
 	# Minimal SNR or absolute signal a device has to maintain over band_steering_interval to be
 	# steered to a higher frequency band
+	# Related: should be above `min_connect_snr` and `min_snr`
 	#option band_steering_min_snr -60
 
 	# Interval (ms) the device is sent a link-measurement request to help assess
