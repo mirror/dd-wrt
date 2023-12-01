@@ -39,6 +39,10 @@ ifeq ($(CONFIG_USTEER),y)
 ATH9K_CFLAGS += -I$(TOP)/_staging/usr/include 
 ATH9K_LDFLAGS += -L$(TOP)/_staging/usr/lib -lubox -lubus
 endif
+ifeq ($(CONFIG_WPA3),y)
+ATH9K_CFLAGS += -I$(TOP)/_staging/usr/include 
+ATH9K_LDFLAGS += -L$(TOP)/_staging/usr/lib -lubox -lubus
+endif
 endif
 ifeq ($(CONFIG_WPA3),y)
 ifeq ($(CONFIG_OPENSSL),y)
