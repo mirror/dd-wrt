@@ -311,6 +311,9 @@ void start_init_stop(void)
 	stop_service(ubus);
 #endif
 	stop_service(lan);
+#ifdef HAVE_USTEER
+	stop_service(usteer);
+#endif
 #ifndef HAVE_RB500
 	stop_service(resetbutton);
 #endif
@@ -359,6 +362,9 @@ void start_init_start(void)
 	start_service(ubus);
 #endif
 	start_service(lan);
+#ifdef HAVE_USTEER
+	start_service(usteer);
+#endif
 	/* we need todo it a second time since the bridge did not exist before */
 	start_service(setup_vlans);
 #ifdef HAVE_IPVS
