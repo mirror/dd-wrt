@@ -289,7 +289,6 @@ static int pcibios_enable_resources(struct pci_dev *dev, int mask)
 		if (r->flags & IORESOURCE_MEM)
 			cmd |= PCI_COMMAND_MEMORY;
 	}
-	printk(KERN_EMERG "%X vs %X\n",cmd,old_cmd);
 	if (cmd != old_cmd) {
 		printk("PCI: Enabling device %s (%04x -> %04x)\n",
 		       pci_name(dev), old_cmd, cmd);

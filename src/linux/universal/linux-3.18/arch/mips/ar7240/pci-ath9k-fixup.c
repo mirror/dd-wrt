@@ -62,7 +62,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	}
 
 	if (*cal_data == 0x5aa5) {
-		printk(KERN_EMERG "detected swapped eeprom data\n");
+		printk(KERN_INFO "detected swapped eeprom data\n");
 		swap = 1;
 	}
 #endif
@@ -130,12 +130,12 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
 
-	printk(KERN_EMERG "bootstrap returns device %X:%X\n", dev->vendor, dev->device);
+	printk(KERN_INFO "bootstrap returns device %X:%X\n", dev->vendor, dev->device);
 #if !defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR2543)
 	if (dev->device == 0x0030)	//AR9300 Hack
 	{
 		is_ar9300 = 1;
-		printk(KERN_EMERG "move calibration data offset %d\n", sizeof(wmac_data.eeprom_data));
+		printk(KERN_INFO "move calibration data offset %d\n", sizeof(wmac_data.eeprom_data));
 		memmove(calcopy, calcopy + 0x1000, sizeof(wmac_data.eeprom_data) - 0x1000);
 		wmac_data.led_pin = 15;
 	}

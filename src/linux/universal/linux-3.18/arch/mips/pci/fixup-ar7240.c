@@ -7,8 +7,6 @@
  */
 int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
-    //printk(KERN_EMERG "fixing irq for slot %d pin %d\n", slot, pin);
-
 #if 1
     printk("Returning IRQ %d\n", AR7240_PCI_IRQ_DEV0);
     return AR7240_PCI_IRQ_DEV0;

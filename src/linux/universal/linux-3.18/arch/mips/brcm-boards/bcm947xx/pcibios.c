@@ -264,7 +264,7 @@ pcibios_enable_resources(struct pci_dev *dev)
 	}
 	if (dev->resource[PCI_ROM_RESOURCE].start)
 		cmd |= PCI_COMMAND_MEMORY;
-	printk(KERN_EMERG "Old cmd %X new cmd %X\n",cmd, old_cmd);
+	printk(KERN_INFO "Old cmd %X new cmd %X\n",cmd, old_cmd);
 	if (cmd != old_cmd) {
 		printk("PCI: Enabling device %s (%04x -> %04x)\n", pci_name(dev), old_cmd, cmd);
 		pci_write_config_word(dev, PCI_COMMAND, cmd);

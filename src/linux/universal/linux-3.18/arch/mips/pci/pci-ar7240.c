@@ -129,7 +129,7 @@ ar7240_pci_irq_init(int irq_base)
 	t = ar7240_reg_rd(AR7240_RESET);
 	if (t & (AR724X_RESET_PCIE | AR724X_RESET_PCIE_PHY |
 		 AR724X_RESET_PCIE_PHY_SERIAL)) {
-		 printk(KERN_EMERG "can't init irq, device still not up\n");
+		 printk(KERN_INFO "can't init irq, device still not up\n");
 		return;
 	}
 
@@ -282,7 +282,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 		val = *cal_data++;
 		val |= (*cal_data++) << 16;
 
-//		printk(KERN_EMERG "bootstraping %X->%X\n",reg,val);
+//		printk(KERN_INFO "bootstraping %X->%X\n",reg,val);
 		__raw_writel(val, mem + reg);
 		udelay(100);
 	}
@@ -290,7 +290,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
-	printk(KERN_EMERG "bootstrap returns device %X:%X\n",dev->vendor,dev->device);
+	printk(KERN_INFO "bootstrap returns device %X:%X\n",dev->vendor,dev->device);
 	#ifndef CONFIG_WDR2543
 	if (dev->device==0x0030) //AR9300 Hack
  	    {
@@ -402,18 +402,18 @@ void ar71xx_device_start(u32 mask)
 
 static void __init ar7242_pci_reset(void)
 {
-//	printk(KERN_EMERG "reset register before %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
+//	printk(KERN_INFO "reset register before %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
 /*	ar71xx_device_stop(AR724X_RESET_PCIE);
 	ar71xx_device_stop(AR724X_RESET_PCIE_PHY);
 	ar71xx_device_stop(AR724X_RESET_PCIE_PHY_SERIAL);
 	udelay(100);
-	printk(KERN_EMERG "reset register middle %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
+	printk(KERN_INFO "reset register middle %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
 */
 	ar71xx_device_start(AR724X_RESET_PCIE_PHY_SERIAL);
 	udelay(100);
 	ar71xx_device_start(AR724X_RESET_PCIE_PHY);
 	ar71xx_device_start(AR724X_RESET_PCIE);
-//	printk(KERN_EMERG "reset register after %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
+//	printk(KERN_INFO "reset register after %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
 
 /*	ar7240_reg_wr_nf(AR7240_PCI_LCL_RESET, 0);
 	udelay(100000);
@@ -454,9 +454,9 @@ static int __init ar7242_pci_setup(void)
 
 
 	t = __raw_readl(base + AR724X_PCI_REG_RESET);
-	printk(KERN_EMERG "reset reg %X\n", t);
+	printk(KERN_INFO "reset reg %X\n", t);
 	if (t != 0x7) {
-		printk(KERN_EMERG "reset PCIE Bus and PLL\n");
+		printk(KERN_INFO "reset PCIE Bus and PLL\n");
 		udelay(100000);
 		__raw_writel(0, base + AR724X_PCI_REG_RESET);
 		udelay(100);
@@ -465,7 +465,7 @@ static int __init ar7242_pci_setup(void)
 	}
 
 	t = __raw_readl(base + AR724X_PCI_REG_RESET);
-	printk(KERN_EMERG "reset reg after %X\n", t);
+	printk(KERN_INFO "reset reg after %X\n", t);
 
 	if (arnew)
 		t = 0x1ffc1;
@@ -504,7 +504,7 @@ int __init ar7240_pcibios_init(void)
 #endif
 	if (is_ar7241() || is_ar7242())
 	    {
-	    printk(KERN_EMERG "ar7241/ar7242 detected\n");
+	    printk(KERN_INFO "ar7241/ar7242 detected\n");
 	    arnew=1;
 	    }else
 	    arnew=0;
