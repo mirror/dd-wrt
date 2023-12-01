@@ -18,12 +18,6 @@ IF("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" AND NOT NL_CFLAGS)
   ENDIF()
 ENDIF()
 
-CHECK_INCLUDE_FILES(pcap/pcap.h HAVE_PCAP_H)
-IF(NOT HAVE_PCAP_H)
-	UNSET(HAVE_PCAP_H CACHE)
-	MESSAGE(FATAL_ERROR "pcap/pcap.h is not found")
-ENDIF()
-
 SET(SOURCES main.c local_node.c node.c sta.c policy.c ubus.c remote.c parse.c netifd.c timeout.c event.c measurement.c band_steering.c)
 
 IF(NL_CFLAGS)
@@ -40,9 +34,6 @@ ADD_EXECUTABLE(fakeap fakeap.c timeout.c)
 TARGET_LINK_LIBRARIES(usteerd ubox ubus blobmsg_json
 			${LIBS_EXTRA} ${libjson} ${NL_LIBS})
 TARGET_LINK_LIBRARIES(fakeap ubox ubus)
-
-ADD_EXECUTABLE(ap-monitor monitor.c parse.c)
-TARGET_LINK_LIBRARIES(ap-monitor ubox pcap blobmsg_json)
 
 SET(CMAKE_INSTALL_PREFIX /usr)
 
