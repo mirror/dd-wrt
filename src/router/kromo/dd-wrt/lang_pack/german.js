@@ -2379,17 +2379,12 @@ wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistische WLAN Verschlüsselung";
 wpa.owe_ifname="OWE Übergangs Interface";
-wpa.wnm_sleep_mode="WNM-Sleep Mode";
-wpa.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK abhilfe";
-wpa.bss_transition="BSS Transition Management";
 wpa.mbo="Multiband Operation (MBO)";
-wpa.s80211v="802.11v Unterstützung";
-wpa.s80211k="802.11k Unterstützung";
-wpa.rrm_neighbor_report="Neighbor report via radio";
-wpa.rrm_beacon_report="Beacon report via radio";
-wpa.proxy_arp="Proxy ARP";
-wpa.time_advertisement="Time advertisement";
 wpa.mbo_cell_data_conn_pref="Cellular Connection Preference";
+wpa.reassociation_deadline="Reassociation Deadline";
+wpa.ft_protocol="FT protocol";
+wpa.ft_over_ds="FT over DS";
+wpa.ft_over_air="FT over the Air";
 
 aoss.titl="AOSS Sicherheit";
 aoss.aoss="AOSS";
@@ -2816,7 +2811,16 @@ wl_basic.mesh_active="Aktiv";
 wl_basic.mesh_deep="Tiefschlaf";
 wl_basic.mesh_light="Leichter Schlaf";
 wl_basic.fw_type="Firmware Typ";
-
+wl_basic.s80211v="802.11v Unterstützung";
+wl_basic.s80211k="802.11k Unterstützung";
+wl_basic.wnm_sleep_mode="WNM-Sleep Mode";
+wl_basic.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK abhilfe";
+wl_basic.bss_transition="BSS Transition Management";
+wl_basic.rrm_neighbor_report="Neighbor report via radio";
+wl_basic.rrm_beacon_report="Beacon report via radio";
+wl_basic.proxy_arp="Proxy ARP";
+wl_basic.time_advertisement="Time advertisement";
+wl_basic.usteer="Band-Steuerung";
 
 //help container
 
