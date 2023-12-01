@@ -2341,9 +2341,6 @@ static void show_roaming(webs_t wp, char *var)
 		showRadioPrefix(wp, "wl_basic.proxy_arp", "proxy_arp",var);
 
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211v\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
 
 		char s80211k[64];
 		sprintf(s80211k, "%s_80211k", var);
@@ -2359,15 +2356,16 @@ static void show_roaming(webs_t wp, char *var)
 		showRadioPrefix(wp, "wl_basic.rrm_neighbor_report","rrm_neighbor_report",var);
 		showRadioPrefix(wp, "wl_basic.rrm_beacon_report", "rrm_beacon_report",var);
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
 
 		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
 		websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
 		showRadioPrefix(wp, "wl_basic.usteer", "usteer",var);		
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
 
 }
 static int show_virtualssid(webs_t wp, char *prefix)
