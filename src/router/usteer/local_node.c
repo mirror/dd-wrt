@@ -959,8 +959,9 @@ void config_get_node_up_script(struct blob_buf *buf)
 void config_set_ssid_list(struct blob_attr *data)
 {
 	struct usteer_local_node *ln;
-
-	free(config.ssid_list);
+	
+	if (config.ssid_list)
+		free(config.ssid_list);
 
 	if (data && blobmsg_len(data))
 		config.ssid_list = blob_memdup(data);
