@@ -834,7 +834,7 @@ usteer_check_node_enabled(struct usteer_local_node *ln)
 	ln->node.disabled = ssid_disabled;
 
 	if (ssid_disabled) {
-		MSG(INFO, "Disconnecting %s from local node %s\n", ln->node.ssid, usteer_node_name(&ln->node));
+		MSG(INFO, "Disconnecting from local node %s\n", usteer_node_name(&ln->node));
 		usteer_local_node_state_reset(ln);
 		usteer_sta_node_cleanup(&ln->node);
 		usteer_measurement_report_node_cleanup(&ln->node);
