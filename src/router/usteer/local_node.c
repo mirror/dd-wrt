@@ -822,10 +822,8 @@ usteer_check_node_enabled(struct usteer_local_node *ln)
 	blobmsg_for_each_attr(cur, config.ssid_list, rem) {
 		char *config_ssid = blobmsg_get_string(cur);
 		char *ssid = ln->node.ssid;
-		MSG(INFO, "compare config ssid %s with node ssid %s\n", config_ssid, ssid);
 		if (strcmp(config_ssid, ssid) != 0)
 			continue;
-		MSG(INFO, "node enabled"); 
 		ssid_disabled = false;
 		break;
 	}
