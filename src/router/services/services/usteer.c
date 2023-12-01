@@ -39,11 +39,15 @@ void start_usteer(void)
 	char *ssid_list = NULL;
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "wlan%d", i);
+		char busname[64];
+
 		if (nvram_nmatch("disabled", "%s_net_mode", dev))
 			continue;
 		if (nvram_nmatch("disabled", "%s_mode", dev))
 			continue;
 		if (nvram_nmatch("1", "%s_usteer", dev)) {
+			sprintf(busname, "hostapd.%s",dev);
+			eval("ubus", "-t", "10", "wait_for", busname);
 			if (!ssid_list) {
 				asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", dev));
 			} else {
@@ -64,6 +68,8 @@ void start_usteer(void)
 				continue;
 
 			if (nvram_nmatch("1", "%s_usteer", var)) {
+				sprintf(busname, "hostapd.%s",var);
+				eval("ubus", "-t", "10", "wait_for", busname);
 				if (!ssid_list) {
 					asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", var));
 				} else {
