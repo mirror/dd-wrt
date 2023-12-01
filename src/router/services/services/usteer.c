@@ -160,8 +160,8 @@ void start_usteer(void)
 	sysprintf("usteerd -i br0 -s -v 1&");
 	// wait until usteer started
 	eval("ubus", "-t", "10", "wait_for", "usteer");
-	system(cmdline);
 	sleep(2);
+	system(cmdline);
 	FILE *fp = fopen("/tmp/usteer.json", "wb");
 	fprintf(fp, config);
 	fclose(fp);
