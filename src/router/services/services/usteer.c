@@ -127,12 +127,25 @@ void start_usteer(void)
 		 "] "		//
 		 "} ", ssid_list);
 	char *cmdline;
-	asprintf(&cmdline, "ubus call usteer set_config \"%s\"", config);
+	int len = strlen(config);
+	char *newconfig = malloc(len * 2);
+	int cnt = 0;
+	for (i = 0; i < len; i++) {
+		if (config[i] == '\"') {
+			newconfig[cnt++] = '\\';
+			newconfig[cnt++] = config[i];
+		} else {
+			newconfig[cnt++] = config[i];
+		}
+	}
+	newconfig[cnt++] = 0;
+	asprintf(&cmdline, "ubus call usteer set_config \"%s\"", newconfig);
+	free(newconfig);
 	sysprintf("usteerd -i br0 -s -v 1&");
 	// wait until usteer started
 	eval("ubus", "-t", "10", "wait_for", "usteer");
 	system(cmdline);
-	FILE *fp = fopen("/tmp/usteer.json","wb");
+	FILE *fp = fopen("/tmp/usteer.json", "wb");
 	fprintf(fp, config);
 	fclose(fp);
 	free(cmdline);
