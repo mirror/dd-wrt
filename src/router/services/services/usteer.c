@@ -47,8 +47,12 @@ void start_usteer(void)
 			if (!ssid_list) {
 				asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", dev));
 			} else {
+				char *newssid;
 				char *tmp = ssid_list;
-				asprintf(&ssid_list, "%s,\"%s\"", tmp, nvram_nget("%s_ssid", dev));
+				asprintf(&newssid, "\"%s\"", nvram_nget("%s_ssid", dev));
+				if (!strstr(ssid_list, newssid))
+					asprintf(&ssid_list, "%s,%s", tmp, newssid);
+				free(newssid);
 				free(tmp);
 			}
 		}
@@ -59,12 +63,18 @@ void start_usteer(void)
 			if (nvram_nmatch("disabled", "%s_mode", var))
 				continue;
 
-			if (!ssid_list) {
-				asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", var));
-			} else {
-				char *tmp = ssid_list;
-				asprintf(&ssid_list, "%s,\"%s\"", tmp, nvram_nget("%s_ssid", var));
-				free(tmp);
+			if (nvram_nmatch("1", "%s_usteer", var)) {
+				if (!ssid_list) {
+					asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", var));
+				} else {
+					char *newssid;
+					char *tmp = ssid_list;
+					asprintf(&newssid, "\"%s\"", nvram_nget("%s_ssid", var));
+					if (!strstr(ssid_list, newssid))
+						asprintf(&ssid_list, "%s,%s", tmp, newssid);
+					free(newssid);
+					free(tmp);
+				}
 			}
 
 		}
