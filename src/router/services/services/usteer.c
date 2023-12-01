@@ -46,7 +46,7 @@ void start_usteer(void)
 		if (nvram_nmatch("disabled", "%s_mode", dev))
 			continue;
 		if (nvram_nmatch("1", "%s_usteer", dev)) {
-			sprintf(busname, "hostapd.%s",dev);
+			sprintf(busname, "hostapd.%s", dev);
 			eval("ubus", "-t", "10", "wait_for", busname);
 			if (!ssid_list) {
 				asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", dev));
@@ -54,10 +54,11 @@ void start_usteer(void)
 				char *newssid;
 				char *tmp = ssid_list;
 				asprintf(&newssid, "\"%s\"", nvram_nget("%s_ssid", dev));
-				if (!strstr(ssid_list, newssid))
+				if (!strstr(ssid_list, newssid)) {
 					asprintf(&ssid_list, "%s,%s", tmp, newssid);
+					free(tmp);
+				}
 				free(newssid);
-				free(tmp);
 			}
 		}
 		char vifs[32];
@@ -68,7 +69,7 @@ void start_usteer(void)
 				continue;
 
 			if (nvram_nmatch("1", "%s_usteer", var)) {
-				sprintf(busname, "hostapd.%s",var);
+				sprintf(busname, "hostapd.%s", var);
 				eval("ubus", "-t", "10", "wait_for", busname);
 				if (!ssid_list) {
 					asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", var));
@@ -76,10 +77,11 @@ void start_usteer(void)
 					char *newssid;
 					char *tmp = ssid_list;
 					asprintf(&newssid, "\"%s\"", nvram_nget("%s_ssid", var));
-					if (!strstr(ssid_list, newssid))
+					if (!strstr(ssid_list, newssid)) {
 						asprintf(&ssid_list, "%s,%s", tmp, newssid);
+						free(tmp);
+					}
 					free(newssid);
-					free(tmp);
 				}
 			}
 
