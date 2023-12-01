@@ -7,8 +7,8 @@ USTEER_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF \
 		    -DCMAKE_RANLIB=${shell which $(ARCH)-linux-gcc-ranlib}
 
 
-USTEER_EXTRA_CFLAGS=-I$(TOP) -I$(TOP)/libpcap -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -flto=auto -fno-fat-lto-objects
-USTEER_EXTRA_LDFLAGS=-L$(TOP)/libpcap -ljson-c -L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections -fuse-ld=bfd -flto=auto -fuse-linker-plugin
+USTEER_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -flto=auto -fno-fat-lto-objects
+USTEER_EXTRA_LDFLAGS=-ljson-c -L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections -fuse-ld=bfd -flto=auto -fuse-linker-plugin
 
 usteer-configure: libubox ubus
 	$(call CMakeClean,$(USTEER_PKG_BUILD_DIR))
@@ -22,8 +22,8 @@ usteer: json-c libubox ubus
 #	-cp usteer/libusteer.h $(STAGING_DIR)/usr/include/
 
 usteer-install:
-	install -D usteer/ap-monitor $(INSTALLDIR)/usteer/usr/sbin/ap-monitor
-	install -D usteer/fakeap $(INSTALLDIR)/usteer/usr/sbin/fakeap
+#	install -D usteer/ap-monitor $(INSTALLDIR)/usteer/usr/sbin/ap-monitor
+#	install -D usteer/fakeap $(INSTALLDIR)/usteer/usr/sbin/fakeap
 	install -D usteer/usteerd $(INSTALLDIR)/usteer/usr/sbin/usteerd
 
 usteer-clean:
