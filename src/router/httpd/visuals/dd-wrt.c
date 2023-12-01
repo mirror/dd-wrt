@@ -2298,10 +2298,10 @@ static void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211v)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);show_layer_ext(this, '%s_id80211v2', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
+			  var, var,var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);show_layer_ext(this, '%s_id80211v2', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
+			  var, var,var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		char wnm[64];
 		char adv[64];
@@ -2347,10 +2347,10 @@ static void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211k)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);show_layer_ext(this, '%s_id80211k2', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
+			  var, var,var, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);show_layer_ext(this, '%s_id80211k2', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
+			  var, var,var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
 		showRadioPrefix(wp, "wl_basic.rrm_neighbor_report","rrm_neighbor_report",var);
