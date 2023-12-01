@@ -2356,7 +2356,7 @@ static void show_roaming(webs_t wp, char *var)
 			  var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
-		showRadioPredix(wp, "wl_basic.rrm_neighbor_report","rrm_neighbor_report",var);
+		showRadioPrefix(wp, "wl_basic.rrm_neighbor_report","rrm_neighbor_report",var);
 		showRadioPrefix(wp, "wl_basic.rrm_beacon_report", "rrm_beacon_report",var);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
