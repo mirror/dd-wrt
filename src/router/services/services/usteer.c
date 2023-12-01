@@ -31,7 +31,46 @@
 void start_usteer(void)
 {
 	// Only start if enabled
-	if (!nvram_invmatchi("usteer_enable", 0))
+
+	int c = getdevicecount();
+	char dev[32];
+	char var[32], *next;
+	int i;
+	char *ssid_list = NULL;
+	for (i = 0; i < c; i++) {
+		sprintf(dev, "wlan%d", i);
+		if (nvram_nmatch("disabled", "%s_net_mode", dev))
+			continue;
+		if (nvram_nmatch("disabled", "%s_mode", dev))
+			continue;
+		if (nvram_nmatch("1", "%s_usteer", dev)) {
+			if (!ssid_list) {
+				asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", dev));
+			} else {
+				char *tmp = ssid_list;
+				asprintf(&ssid_list, "%s,\"%s\"", tmp, nvram_nget("%s_ssid", dev));
+				free(tmp);
+			}
+		}
+		char vifs[32];
+		sprintf(vifs, "wlan%d_vifs", i);
+		char *vaps = nvram_safe_get(vifs);
+		foreach(var, vaps, next) {
+			if (nvram_nmatch("disabled", "%s_mode", var))
+				continue;
+
+			if (!ssid_list) {
+				asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", var));
+			} else {
+				char *tmp = ssid_list;
+				asprintf(&ssid_list, "%s,\"%s\"", tmp, nvram_nget("%s_ssid", var));
+				free(tmp);
+			}
+
+		}
+
+	}
+	if (!ssid_list)
 		return;
 	char *config;
 
@@ -77,21 +116,28 @@ void start_usteer(void)
 		 "\"interfaces\": [ "	//
 		 "\"br0\" "	//
 		 "],"		//
+		 "\"ssid_list\": [ "	//
+		 "%s"		//
+		 "],"		//
 		 "\"event_log_types\": ["	//
 		 "\"auth_req_deny\","	//
 		 "\"assoc_req_deny\","	//
 		 "\"load_kick_client\","	//
 		 "\"signal_kick\" "	//
 		 "] "		//
-		 "} ");
+		 "} ", ssid_list);
 	char *cmdline;
 	asprintf(&cmdline, "ubus call usteer set_config \"%s\"", config);
 	sysprintf("usteerd -i br0 -s -v 1&");
 	// wait until usteer started
 	eval("ubus", "-t", "10", "wait_for", "usteer");
 	system(cmdline);
+	FILE *fp = fopen("/tmp/usteer.json","wb");
+	fprintf(fp, config);
+	fclose(fp);
 	free(cmdline);
 	free(config);
+	free(ssid_list);
 
 	cprintf("done\n");
 	return;
