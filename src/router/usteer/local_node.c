@@ -527,6 +527,8 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		MSG_CHANNEL,
 		MSG_OP_CLASS,
 		MSG_BEACON_INTERVAL,
+		MSG_SSID,
+		MSG_BSSID,
 		__MSG_MAX,
 	};
 	static struct blobmsg_policy policy[__MSG_MAX] = {
@@ -534,6 +536,8 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		[MSG_CHANNEL] = { "channel", BLOBMSG_TYPE_INT32 },
 		[MSG_OP_CLASS] = { "op_class", BLOBMSG_TYPE_INT32 },
 		[MSG_BEACON_INTERVAL] = { "beacon_interval", BLOBMSG_TYPE_INT32 },
+		[MSG_SSID] = { "ssid", BLOBMSG_TYPE_STRING },
+		[MSG_BSSID] = { "bssid", BLOBMSG_TYPE_STRING },
 	};
 	struct blob_attr *tb[__MSG_MAX];
 	struct usteer_local_node *ln;
@@ -549,7 +553,14 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		node->channel = blobmsg_get_u32(tb[MSG_CHANNEL]);
 	if (tb[MSG_OP_CLASS])
 		node->op_class = blobmsg_get_u32(tb[MSG_OP_CLASS]);	
-
+	if (tb[MSG_BSSID]) {
+		uint8_t *addr = (uint8_t *) ether_aton(blobmsg_get_string(tb[MSG_BSSID]));
+		memcpy(node->bssid, addr, 6);	
+	}
+	if (tb[MSG_SSID]) {
+		char *ssid = blobmsg_get_string(tb[MSG_SSID]);
+		strcpy(node->ssid, ssid);
+	}
 	/* Local-Node */
 	if (tb[MSG_BEACON_INTERVAL])
 		ln->beacon_interval = blobmsg_get_u32(tb[MSG_BEACON_INTERVAL]);
