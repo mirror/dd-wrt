@@ -151,6 +151,10 @@ ifeq ($(CONFIG_USTEER),y)
 CFLAGS_EXTRA += -DHAVE_USTEER
 OBJS += usteer.o
 endif
+ifeq ($(CONFIG_WPA3),y)
+CFLAGS_EXTRA += -DHAVE_USTEER
+OBJS += usteer.o
+endif
 ifeq ($(CONFIG_ALLNETWRT),y)
   CFLAGS_EXTRA += -DHAVE_ALLNETWRT
 endif
