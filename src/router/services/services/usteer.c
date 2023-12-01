@@ -164,9 +164,11 @@ void start_usteer(void)
 	eval("ubus", "-t", "10", "wait_for", "usteer");
 	sleep(2);
 	system(cmdline);
-	FILE *fp = fopen("/tmp/usteer.json", "wb");
-	fprintf(fp, config);
-	fclose(fp);
+	if (nvram_match("usteer_debug", "1")) {
+		FILE *fp = fopen("/tmp/usteer.json", "wb");
+		fprintf(fp, config);
+		fclose(fp);
+	}
 	free(cmdline);
 	free(config);
 	free(ssid_list);
