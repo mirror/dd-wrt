@@ -2297,10 +2297,10 @@ static void show_roaming(webs_t wp, char *var)
 		sprintf(s80211v, "%s_80211v", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211v)</script></div>\n");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);show_layer_ext(this, '%s_id80211v2', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 			  var, var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);show_layer_ext(this, '%s_id80211v2', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  var, var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		char wnm[64];
@@ -2346,10 +2346,10 @@ static void show_roaming(webs_t wp, char *var)
 		sprintf(s80211k, "%s_80211k", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211k)</script></div>\n");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211k', true);show_layer_ext(this, '%s_id80211k2', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 			  var, var, nvram_default_matchi(s80211k, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211k', false);show_layer_ext(this, '%s_id80211k2', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
@@ -2357,14 +2357,16 @@ static void show_roaming(webs_t wp, char *var)
 		showRadioPrefix(wp, "wl_basic.rrm_beacon_report", "rrm_beacon_report",var);
 		websWrite(wp, "</div>\n");
 
-		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
-		websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
+		websWrite(wp, "<div id=\"%s_id80211k2\">\n", var);
+		websWrite(wp, "<div id=\"%s_id80211v2\">\n", var);
 		showRadioPrefix(wp, "wl_basic.usteer", "usteer",var);		
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v2\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k2\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 
 }
