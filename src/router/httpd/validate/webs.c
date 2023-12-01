@@ -3629,6 +3629,7 @@ static char *vapsettings[] = {
 	"proxy_arp",
 	"time_advertisement",
 	"time_zone",
+	"usteer",
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -5137,7 +5138,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "doth", prefix);
 	copytonv_prefix(wp, "maxassoc", prefix);
 
-
 	snprintf(chanbw, sizeof(chanbw), "%s_channelbw", prefix);
 	char *cbw = websGetVar(wp, chanbw, NULL);
 
@@ -5162,8 +5162,8 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "proxy_arp", prefix);
 	copytonv_prefix(wp, "time_advertisement", prefix);
 	copytonv_prefix(wp, "time_zone", prefix);
+	copytonv_prefix(wp, "usteer", prefix);
 #endif
-
 
 	copytonv_prefix(wp, "closed", prefix);
 	if (has_qam256(prefix) && has_2ghz(prefix)) {
