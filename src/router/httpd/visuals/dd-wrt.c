@@ -2335,14 +2335,10 @@ static void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 
-		sprintf(wnm, "%s_wnm_sleep_mode", var);
-		showRadio(wp, "wpa.wnm_sleep_mode", wnm);
-		sprintf(wnm, "%s_wnm_sleep_mode_no_keys", var);
-		showRadio(wp, "wpa.wnm_sleep_mode_no_keys", wnm);
-		sprintf(wnm, "%s_bss_transition", var);
-		showRadio(wp, "wpa.bss_transition", wnm);
-		sprintf(wnm, "%s_proxy_arp", var);
-		showRadio(wp, "wpa.proxy_arp", wnm);
+		showRadioPrefix(wp, "wpa.wnm_sleep_mode", "wnm_sleep_mode", var);
+		showRadioPrefix(wp, "wpa.wnm_sleep_mode_no_keys","wnm_sleep_mode_no_keys",var);
+		showRadioPrefix(wp, "wpa.bss_transition", "bss_transition",var);
+		showRadioPrefix(wp, "wpa.proxy_arp", "proxy_arp",var);
 
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
@@ -2360,10 +2356,8 @@ static void show_roaming(webs_t wp, char *var)
 			  var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
-		sprintf(wnm, "%s_rrm_neighbor_report", var);
-		showRadio(wp, "wpa.rrm_neighbor_report", wnm);
-		sprintf(wnm, "%s_rrm_beacon_report", var);
-		showRadio(wp, "wpa.rrm_beacon_report", wnm);
+		showRadioPredix(wp, "wpa.rrm_neighbor_report","rrm_neighbor_report",var);
+		showRadioPrefix(wp, "wpa.rrm_beacon_report", "rrm_beacon_report",var);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
