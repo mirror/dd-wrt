@@ -445,6 +445,7 @@ static void handle_index(void)
 	stop_service_f("bonding");	//
 #endif
 
+	stop_service_f("usteer");	//
 	stop_service_f("ubus");	//
 	stop_service_f("lan");	//
 #ifdef HAVE_IPVS
@@ -493,6 +494,7 @@ static void handle_index(void)
 	start_service("vlantagging");
 	start_service("bridgesif");
 #endif
+	start_service_force("usteer");
 #ifdef HAVE_EMF
 	start_service("emf");	//
 #endif
@@ -574,6 +576,7 @@ static void handle_hotspot(void)
 	stop_service_f("ipvs");
 #endif
 	stop_service_f("lan");
+	stop_service_f("usteer");
 	stop_service_f("ubus");
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridging");
@@ -616,6 +619,7 @@ static void handle_hotspot(void)
 	start_service("vlantagging");
 	start_service("bridgesif");
 #endif
+	start_service("usteer");
 #ifdef HAVE_EMF
 	start_service("emf");	//
 #endif
@@ -934,6 +938,7 @@ static void handle_pppoe(void)
 	stop_service_f("ipvs");
 #endif
 	stop_service_f("lan");
+	stop_service_f("usteer");
 	stop_service_f("ubus");
 #ifdef HAVE_BONDING
 	stop_service_f("bonding");
@@ -967,6 +972,7 @@ static void handle_pppoe(void)
 	start_service("vlantagging");
 	start_service("bridgesif");
 #endif
+	start_service("usteer");
 #ifdef HAVE_EMF
 	start_service("emf");	//
 #endif
@@ -1255,6 +1261,7 @@ static void handle_wireless(void)
 #endif
 	stop_running_main(0, NULL);
 	stop_service("lan");
+	stop_service("usteer");
 	stop_service("ubus");
 #ifdef HAVE_VLANTAGGING
 	start_service("bridging");
@@ -1278,6 +1285,7 @@ static void handle_wireless(void)
 	start_service("vlantagging");
 	start_service("bridgesif");
 #endif
+	start_service_force("usteer");
 #ifdef HAVE_EMF
 	start_service("emf");	//
 #endif
@@ -1372,6 +1380,7 @@ static void handle_wireless_2(void)
 	stop_service_f("ipvs");
 #endif
 	stop_service("lan");
+	stop_service("usteer");
 	stop_service("ubus");
 #ifdef HAVE_VLANTAGGING
 	stop_service("bridging");
@@ -1399,6 +1408,7 @@ static void handle_wireless_2(void)
 	start_service("vlantagging");
 	start_service("bridgesif");
 #endif
+	start_service_force("usteer");
 #ifdef HAVE_EMF
 	start_service("emf");	//
 #endif
