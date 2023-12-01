@@ -89,24 +89,24 @@ void start_usteer(void)
 		 "\"load_balancing_threshold\": 0,"	//
 		 "\"band_steering_threshold\": 5,"	//
 		 "\"remote_update_interval\": 1000,"	//
-		 "\"remote_node_timeout\": 10,"	//
+		 "\"remote_node_timeout\": 50,"	//
 		 "\"assoc_steering\": false,"	//
 		 "\"min_connect_snr\": 0,"	//
-		 "\"min_snr\": 0,"	//
+		 "\"min_snr\": -82,"	// todo: config
 		 "\"min_snr_kick_delay\": 5000,"	//
 		 "\"steer_reject_timeout\": 60000,"	//
 		 "\"roam_process_timeout\": 5000,"	//
-		 "\"roam_scan_snr\": 0,"	//
-		 "\"roam_scan_tries\": 3,"	//
+		 "\"roam_scan_snr\": -70,"	// modded
+		 "\"roam_scan_tries\": 5,"	// modded
 		 "\"roam_scan_timeout\": 0,"	//
-		 "\"roam_scan_interval\": 10000,"	//
-		 "\"roam_trigger_snr\": 0,"	//
-		 "\"roam_trigger_interval\": 60000,"	//
-		 "\"roam_kick_delay\": 10000,"	//
-		 "\"signal_diff_threshold\": 0,"	//
+		 "\"roam_scan_interval\": 15000,"	//
+		 "\"roam_trigger_snr\": -75,"	// modded
+		 "\"roam_trigger_interval\": 180000,"	//
+		 "\"roam_kick_delay\": 100,"	// modded
+		 "\"signal_diff_threshold\": 12,"	// modded
 		 "\"initial_connect_delay\": 0,"	//
 		 "\"load_kick_enabled\": false,"	//
-		 "\"load_kick_threshold\": 75,"	//
+		 "\"load_kick_threshold\": 75,"	// 
 		 "\"load_kick_delay\": 10000,"	//
 		 "\"load_kick_min_clients\": 10,"	//
 		 "\"load_kick_reason_code\": 5,"	//
