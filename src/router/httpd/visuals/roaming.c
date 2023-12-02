@@ -267,7 +267,7 @@ void show_roaming(webs_t wp, char *var)
 				showInputNumPrefix(wp, "roaming.initial_connect_delay", "initial_connect_delay", var, 6, 6, 0);
 
 				showInputNumPrefix(wp, "roaming.band_steering_interval", "band_steering_interval", var, 6, 6, 120000);
-				showInputNumPrefix(wp, "roaming.band_steering_min_snr", "band_steering_min_snr", var, 2, 2, -60);
+				showInputNumPrefix(wp, "roaming.band_steering_min_snr", "band_steering_min_snr", var, 4, 4, -60);
 				showInputNumPrefix(wp, "roaming.link_measurement_interval", "link_measurement_interval", var, 6, 6, 30000);
 
 				websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.load_kick_enabled)</script></div>\n");
