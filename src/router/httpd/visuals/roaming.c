@@ -65,11 +65,10 @@ void show_roaming(webs_t wp, char *var)
 	if (strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128"))
 		v_show_wparadius = 1;
 
-	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.roaming)</script></legend>");
+	char vvar[32];
+	strcpy(vvar, var);
+	rep(vvar, '.', 'X');
 	if (v_show_preshared || v_show_owe || v_show_wparadius) {
-		char vvar[32];
-		strcpy(vvar, var);
-		rep(vvar, '.', 'X');
 		char bssft[64];
 		sprintf(bssft, "%s_ft", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
@@ -143,10 +142,10 @@ void show_roaming(webs_t wp, char *var)
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211v)</script></div>\n");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);show_layer_ext(this, '%s_id80211v2', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  var, var, var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
+		  vvar, var, var, nvram_default_matchi(s80211v, 1, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id80211v', false);show_layer_ext(this, '%s_id80211v2', false);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  var, var, var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
+		  vvar, var, var, nvram_default_matchi(s80211v, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 	char wnm[64];
 	char adv[64];
@@ -212,6 +211,62 @@ void show_roaming(webs_t wp, char *var)
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v2\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k2\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</fieldset><br/>\n");
 
+}
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
+#define IFMAP(a) getRADev(a)
+#else
+#define IFMAP(a) (a)
+#endif
+
+static void ej_show_roaming_single(webs_t wp, int argc, char_t ** argv, char *prefix)
+{
+	char *next;
+	char var[80];
+	char ssid[80];
+	char mac[18];
+
+	sprintf(mac, "%s_hwaddr", prefix);
+	char *vifs = nvram_nget("%s_vifs", prefix);
+
+	if (vifs == NULL)
+		return;
+	sprintf(ssid, "%s_ssid", prefix);
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.roaming)</script> %s</h2>\n", prefix);
+	websWrite(wp, "<fieldset>\n");
+	// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
+	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [", getNetworkLabel(wp, IFMAP(prefix)));
+	tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
+	// contains html tag
+	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
+	show_roaming(wp, prefix);
+	websWrite(wp, "</fieldset>\n<br />\n");
+	foreach(var, vifs, next) {
+		sprintf(ssid, "%s_ssid", var);
+		websWrite(wp, "<fieldset>\n");
+		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp, IFMAP(var)));
+		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
+		// contains html tag
+		sprintf(mac, "%s_hwaddr", var);
+		if (nvram_exists(mac))
+			websWrite(wp, "] HWAddr [%s", nvram_safe_get(mac));
+
+		websWrite(wp, "]</legend>\n");
+		show_roaming(wp, var);
+		websWrite(wp, "</fieldset>\n<br />\n");
+	}
+}
+
+EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
+{
+	int c = getdevicecount();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		char buf[16];
+		sprintf(buf, WIFINAME "%d", i);
+		ej_show_roaming_single(wp, argc, argv, buf);
+	}
+	return;
 }
