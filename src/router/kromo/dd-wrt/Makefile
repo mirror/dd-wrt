@@ -40,6 +40,9 @@ endif
 ifneq ($(CONFIG_IPV6),y)
 	rm -f $(INSTALLDIR)/www/IPV6.asp
 endif
+ifneq ($(CONFIG_WPA3),y)
+	rm -f $(INSTALLDIR)/www/Roaming.asp
+endif
 
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/favicon.ico
@@ -774,18 +777,6 @@ ifneq ($(CONFIG_REGISTER),y)
 	rm -f $(INSTALLDIR)/www/style/logo-cpe.png
 endif
 
-#ifneq ($(CONFIG_MADWIFI),y)
-#	cp Wireless_WDS.v23 $(INSTALLDIR)/www/Wireless_WDS.asp
-#endif
-ifneq ($(CONFIG_MSSID),y)
-	cp WEP.v23 $(INSTALLDIR)/www/WEP.asp
-	cp WL_WPATable.v23 $(INSTALLDIR)/www/WL_WPATable.asp
-#	cp WPA.v23 $(INSTALLDIR)/www/WPA.asp
-	cp WPA_Preshared.v23 $(INSTALLDIR)/www/WPA_Preshared.asp
-	cp WPA_Radius.v23 $(INSTALLDIR)/www/WPA_Radius.asp	
-	cp Wireless_Basic.v23 $(INSTALLDIR)/www/Wireless_Basic.asp
-	cp Wireless_Advanced.v23 $(INSTALLDIR)/www/Wireless_Advanced.asp
-endif
 ifeq ($(CONFIG_TXPWRFIXED),y)
 	cp buffalo/Wireless_Advanced.asp $(INSTALLDIR)/www
 endif
