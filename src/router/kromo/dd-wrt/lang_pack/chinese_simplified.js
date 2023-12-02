@@ -1914,6 +1914,9 @@ wanmac.wlan="克隆无线MAC";
 //help container
 hwanmac.right2="某些ISP可能要求您注册您的MAC地址。如果您不想重新注册您的MAC地址，您可以将路由器的MAC地址克隆为您在ISP注册的MAC地址。";
 
+roaming.ft="802.11r 支持 (FT)";
+roaming.nas="NAS识别";
+roaming.domain="移动域";
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 wpa.titl="无线安全";
@@ -1932,9 +1935,6 @@ wpa.algorithms="WPA算法";
 wpa.shared_key="WPA共享秘钥";
 wpa.sae_key="SAE Passphrase";
 wpa.eapol_key_retries="禁用EAPOL密钥重试";
-wpa.ft="802.11r 支持 (FT)";
-wpa.nas="NAS识别";
-wpa.domain="移动域";
 wpa.ccmp="CCMP-128 (AES)";
 wpa.tkip_ccmp="TKIP+CCMP (AES)";
 wpa.ccmp_256="CCMP-256";

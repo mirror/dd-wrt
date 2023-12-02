@@ -2436,6 +2436,11 @@ hwanmac.right2="Niektórzy dostawcy usług internetowych wymagają zarejestrowan
 hwanmac.page1="<dd>Adres MAC routera to 12-cyfrowy kod przypisany do unikalnego elementu sprzętu w celu identyfikacji. Niektórzy dostawcy usług internetowych wymagają zarejestrowania adresu MAC karty sieciowej/adaptera, który został podłączony do modemu kablowego lub DSL podczas instalacji.</dd>";
 hwanmac.page2="<dd>To clone your network adapter's MAC address onto the router, select <i>Enable</i> and enter your adapter's MAC address in the <i>Clone WAN MAC</i> field or click <i>Get Current PC MAC Address</i> to fill in the MAC address of your PC you are using. Then save your changes by clicking on the <i>Save Settings</i> button.<br /><br />To disable MAC address cloning, keep the default setting, <i>Disable</i>.</dd><dd>Find your adapter's MAC address by following the instructions for your PC's operating system.<br /><br /><b>Windows 98 and Millennium:</b><ol class=\"wide\"><li>Click the Start button, and select <i>Run</i>.</li><li>Type <tt>winipcfg</tt> in the field provided, and press the OK key.</li><li>Select the Ethernet adapter you are using.</li><li>Click More Info.</li><li>Write down your adapter's MAC address.</li></ol><br /><b>Windows 2000 and XP:</b><ol class=\"wide\"><li>Click the Start button, and select Run.</li><li>Type <tt>cmd</tt> in the field provided, and press the OK key.</li><li>At the command prompt, run <tt>ipconfig /all</tt>, and look at your adapter's physical address.</li><li>Write down your adapter's MAC address.</li></ol></dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click </i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
+
+roaming.ft="802.11r support (FT)";
+roaming.nas="NAS Identifier";
+roaming.domain="Mobility Domain";
+
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 
 wpa.titl="Zabezpieczenia sieci bezprzewodowej";
@@ -2455,9 +2460,6 @@ wpa.algorithms="Algorytmy WPA";
 wpa.shared_key="Klucz współdzielony WPA";
 wpa.sae_key="SAE Passphrase";
 wpa.eapol_key_retries="Disable EAPOL Key Retries";
-wpa.ft="802.11r support (FT)";
-wpa.nas="NAS Identifier";
-wpa.domain="Mobility Domain";
 wpa.ccmp="CCMP-128 (AES)";
 wpa.tkip_ccmp="TKIP+CCMP (AES)";
 wpa.ccmp_256="CCMP-256";

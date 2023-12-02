@@ -2701,6 +2701,26 @@ roaming.load_kick_reason_code="Load Kick Reason Code";
 roaming.band_steering_interval="Band Steering Interval";
 roaming.band_steering_min_snr="Band Steering Min SNR";
 roaming.link_measurement_interval="Link Measurement Interval";
+roaming.s80211v="802.11v Support";
+roaming.s80211k="802.11k Support";
+roaming.wnm_sleep_mode="WNM-Sleep Mode";
+roaming.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK workaround";
+roaming.bss_transition="BSS Transition Management";
+roaming.rrm_neighbor_report="Neighbor report via radio";
+roaming.rrm_beacon_report="Beacon report via radio";
+roaming.proxy_arp="Proxy ARP";
+roaming.time_advertisement="Time advertisement";
+roaming.usteer="Band-Steering";
+roaming.roaming="Roaming Options";
+roaming.ft="802.11r Support (FT)";
+roaming.nas="NAS Identifier";
+roaming.domain="Mobility Domain";
+roaming.mbo="Multiband Operation (MBO)";
+roaming.mbo_cell_data_conn_pref="Cellular Connection Preference";
+roaming.reassociation_deadline="Reassociation Deadline";
+roaming.ft_protocol="FT protocol";
+roaming.ft_over_ds="FT over DS";
+roaming.ft_over_air="FT over the Air";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
@@ -2727,9 +2747,6 @@ wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
 wpa.sae_key="SAE Passphrase";
 wpa.eapol_key_retries="Disable EAPOL Key Retries";
-wpa.ft="802.11r Support (FT)";
-wpa.nas="NAS Identifier";
-wpa.domain="Mobility Domain";
 wpa.ccmp="CCMP-128 (AES)";
 wpa.tkip_ccmp="TKIP+CCMP (AES)";
 wpa.ccmp_256="CCMP-256";
@@ -2753,12 +2770,6 @@ wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistic Wireless Encryption";
 wpa.owe_ifname="OWE Transition Interface";
-wpa.mbo="Multiband Operation (MBO)";
-wpa.mbo_cell_data_conn_pref="Cellular Connection Preference";
-wpa.reassociation_deadline="Reassociation Deadline";
-wpa.ft_protocol="FT protocol";
-wpa.ft_over_ds="FT over DS";
-wpa.ft_over_air="FT over the Air";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";
@@ -3280,17 +3291,6 @@ wl_basic.mesh_nolearn="Avoid Multi-Hop Path Discovery";
 wl_basic.mesh_connected_to_gate="Announce Connected to Gate";
 wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 wl_basic.mesh_header_cache_size="Header Cache Size";
-wl_basic.s80211v="802.11v Support";
-wl_basic.s80211k="802.11k Support";
-wl_basic.wnm_sleep_mode="WNM-Sleep Mode";
-wl_basic.wnm_sleep_mode_no_keys="WNM-Sleep Mode GTK/IGTK workaround";
-wl_basic.bss_transition="BSS Transition Management";
-wl_basic.rrm_neighbor_report="Neighbor report via radio";
-wl_basic.rrm_beacon_report="Beacon report via radio";
-wl_basic.proxy_arp="Proxy ARP";
-wl_basic.time_advertisement="Time advertisement";
-wl_basic.usteer="Band-Steering";
-wl_basic.roaming="Roaming Options";
 
 //help container
 var hwl_basic=new Object();

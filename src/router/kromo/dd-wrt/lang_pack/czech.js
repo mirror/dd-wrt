@@ -2401,6 +2401,13 @@ hwanmac.right2="Někreří ISP poskytovatlé požadují registraci vaší MAC Ad
 //help page
 hwanmac.page1="<dd>MAC Adresa routeru je 12místný kód přiřazený jedinečnému hardwaru pro identifikaci. Někteří ISP vyžadují registraci MAC Adresy vaší síťové karty/adaptéru, která byla připojena k vašemu kabelu nebo DSL modemu během instalace.</dd>";
 hwanmac.page2="<dd>Chcete-li klonovat MAC Adresu síťového adaptéru do Routeru, vyberte <i>Povolit</i> a do pole <i>Clone WAN MAC</i> zadejte MAC Adresu svého adaptéru nebo klikněte na <i>Získat aktuální MAC Adresu</i> a MAC Adresa vašeho počítače se vyplní. Poté uložte změny kliknutím na tlačítko <i>Uložit nastavení</i>.<br /><br />Chcete-li zakázat klonování MAC Adresy, ponechte výchozí nastavení <i>Zakázáno</i>.</dd><dd>Najděte MAC Adresu svého adaptéru podle pokynů pro operační systém vašeho počítače.<br /><br /><b>Windows 98 a Millennium:</b><ol class=\"wide\"><li>Klikněte na tlačítko Start a vyberte <i>Spustit</i>.</li><li>Typ <tt>winipcfg</tt> v zadaném poli a stiskněte klávesu OK.</li><li>Vyberte ethernetový adaptér, který používáte.</li><li>Klikněte na Další informace.</li><li>Napište MAC Adresu vašeho adaptéru.</li></ol><br /><b>Windows 2000, XP, 7, 8, 10:</b><ol class=\"wide\"><li>Klikněte na tlačítko Start a vyberte Spustit.</li><li>Do zadaného pole zadejte <tt>cmd</tt> a stiskněte Enter.</li><li>Na příkazovém řádku spusťte <tt>ipconfig /all</tt> a podívejte se na fyzickou adresu vašeho adaptéru.</li><li>Zapište MAC Adresu vašeho adaptéru.</li></ol></dd><dd>Zkontrolujte všechny hodnoty a uložte nastavení kliknutím na <i>Uložit nastavení</i>. Kliknutím na </i>Zrušit změny</i> zrušíte neuložené změny.</dd>";
+
+
+roaming.ft="802.11r podpora (FT)";
+roaming.nas="NAS Identifikátor";
+roaming.domain="Mobilní doména";
+
+
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 //
 wpa.titl="Zabezpečení bezdrátu";
@@ -2420,9 +2427,6 @@ wpa.algorithms="WPA Algoritmus";
 wpa.shared_key="WPA Sdílený klíč";
 wpa.sae_key="SAE Přístupové heslo";
 wpa.eapol_key_retries="Vypnout opakované pokusy klíče EAPOL";
-wpa.ft="802.11r podpora (FT)";
-wpa.nas="NAS Identifikátor";
-wpa.domain="Mobilní doména";
 wpa.ccmp="CCMP-128 (AES)";
 wpa.tkip_ccmp="TKIP+CCMP (AES)";
 wpa.ccmp_256="CCMP-256";
