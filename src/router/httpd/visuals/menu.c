@@ -77,7 +77,7 @@ static struct menucontext *init_menu(webs_t wp)
 
 	static char *menu_t[8][13] = {
 		{ "index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", "" },	//
-		{ "Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "Roaming.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", "" },	//
+		{ "Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "Roaming.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", "" },	//
 		{ "Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", "", "" },	//
 		{ "Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
@@ -90,17 +90,7 @@ static struct menucontext *init_menu(webs_t wp)
 	 */
 	static char *menuname_t[8][14] = {
 		{ "setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", "" },	//
-		{ "wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity", "wirelessRoaming",	//
-#if defined(HAVE_AOSS) && defined(HAVE_WPS)
-		 "wirelessAossWPS",
-#elif defined(HAVE_AOSS) && !defined(HAVE_WPS)
-		 "wirelessAoss",
-#elif !defined(HAVE_AOSS) && defined(HAVE_WPS)
-		 "wirelessWPS",
-#else
-		 "",		// place holder
-#endif
-		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
+		{ "wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity", "wirelessRoaming", "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
 		{ "services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesSpeedchecker", "", "" },	//
 		{ "security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "" },	//
@@ -372,16 +362,6 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!wimaxwifi && !strcmp_pnt(m->menu[i][j], "WiMAX.asp"))	// jump
 					// over
 					// WiMAX
-					goto skip;
-#endif
-#if !defined(HAVE_AOSS) && !defined(HAVE_WPS)
-				if (!strcmp_pnt(m->menu[i][j], "AOSS.asp"))	// jump over
-					// AOSS
-					goto skip;
-#endif
-#if defined(HAVE_WPS) && !defined(HAVE_IDEXX)
-				if (!strcmp_pnt(m->menu[i][j], "AOSS.asp"))	// jump over
-					// AOSS
 					goto skip;
 #endif
 #ifdef HAVE_MADWIFI
