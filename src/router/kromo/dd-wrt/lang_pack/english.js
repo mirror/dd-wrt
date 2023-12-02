@@ -3250,6 +3250,7 @@ wl_basic.rrm_beacon_report="Beacon report via radio";
 wl_basic.proxy_arp="Proxy ARP";
 wl_basic.time_advertisement="Time advertisement";
 wl_basic.usteer="Band-Steering";
+wl_basic.roaming="Roaming Options";
 
 //help container
 var hwl_basic=new Object();
