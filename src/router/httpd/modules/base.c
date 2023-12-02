@@ -1189,7 +1189,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "WL_WPATable", "save", "wireless_2", REFRESH, "security_save" },
 	{ "WL_WPATable", "keysize", "wireless_2", REFRESH, "security_save" },
 #ifdef HAVE_80211R
-	{ "Roaming", "save", "roaming", REFRESH, "roaming_save" },
+	{ "Roaming", "save", "wireless_2", REFRESH, "roaming_save" },
 #endif
 	{ "WL_ActiveTable", "add_mac", "", REFRESH, "add_active_mac" },
 	/*
