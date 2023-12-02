@@ -505,7 +505,7 @@ bmenu.wirelessWds3="wlan3-WDS";
 bmenu.wirelessWdswl0="wl0-WDS";
 bmenu.wirelessWdswl1="wl1-WDS";
 bmenu.wirelessWdswl2="wl2-WDS";
-
+bmenu.wirelessRoaming="Roaming";
 bmenu.security="Security";
 bmenu.firwall="Firewall";
 bmenu.vpn="VPN Passthrough";
