@@ -1,2 +1,2 @@
 #!/bin/sh
-exec autoreconf
+autoreconf -i

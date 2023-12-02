@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -197,6 +197,7 @@ struct term term[T_N] =
   { "F1", T_STR  }, KMAPDEF("\033[23~")
   { "F2", T_STR  }, KMAPDEF("\033[24~")
   /* extra keys for vt220 (David.Leonard@it.uq.edu.au) */
+/* define T_FEXTRA */
   { "F3", T_STR  },
   { "F4", T_STR  },
   { "F5", T_STR  },

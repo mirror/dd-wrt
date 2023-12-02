@@ -1,10 +1,7 @@
 .\" vi:set wm=5
-.TH SCREEN 1 "Oct 2019"
-.if n .ds Q \&"
-.if n .ds U \&"
-.if t .ds Q ``
-.if t .ds U ''
-.UC 4
+.TH SCREEN 1 "2023 Aug 20" "GNU Screen 4.9.1"
+.
+.
 .SH NAME
 screen \- screen manager with VT100/ANSI terminal emulation
 
@@ -80,14 +77,14 @@ command or the \fI-e\fP option.
 .I Screen
 will also print out control characters in caret notation.
 .PP
-The standard way to create a new window is to type \*QC-a c\*U.
+The standard way to create a new window is to type \fBC-a c\fP.
 This creates a new window running a shell and switches to that
 window immediately, regardless of the state of the process running
 in the current window.
 Similarly, you can create a new window with a custom command in it by
 first binding the command to a keystroke (in your .screenrc file or at the
-\*QC-a :\*U command line) and
-then using it just like the \*QC-a c\*U command.
+\fBC-a :\fP command line) and
+then using it just like the \fBC-a c\fP command.
 In addition, new windows can be created by running a command like:
 .IP
 screen emacs prog.c
@@ -121,11 +118,11 @@ Before you begin to use
 you'll need to make sure you have correctly selected your terminal type,
 just as you would for any other termcap/terminfo program.
 (You can do this by using
-.IR tset
+.IR test
 for example.)
 .PP
 If you're impatient and want to get started without doing a lot more reading,
-you should remember this one command:  \*QC-a ?\*U.
+you should remember this one command:  \fBC-a ?\fP.
 Typing these two characters will display a list of the available
 .I screen
 commands and their bindings. Each keystroke is discussed in
@@ -372,7 +369,8 @@ See also there.
 When creating a new session, this option can be used to specify a
 meaningful name for the session. This name identifies the session for
 \*Qscreen \-list\*U and \*Qscreen \-r\*U actions. It substitutes the
-default [\fItty.host\fP] suffix.
+default [\fItty.host\fP] suffix. This name should not be longer
+then 80 symbols.
 .TP 5
 .BI "\-t " name
 sets the title (a.\|k.\|a.) for the default shell or specified program.
@@ -924,14 +922,16 @@ the number of the window in which activity has occurred,
 and each occurrence of `^G' is replaced by the definition for bell
 in your termcap (usually an audible bell).
 The default message is
-.sp
+.PP
+.nf
 	'Activity in window %n'
-.sp
+.fi
+.PP
 Note that monitoring is off for all windows by default, but can be altered
 by use of the \*Qmonitor\*U command (C-a M).
 .RE
 .TP
-.BR "allpartial on" | off
+.BR "allpartial [ on | off ]"
 .RS 0
 .PP
 If set to on, only the current cursor line is refreshed on window change.
@@ -942,7 +942,7 @@ on all windows overriding the \*Qpartial\*U settings. It does not change the
 default redraw behavior of newly created windows.
 .RE
 .TP
-.BR "altscreen on" | off
+.BR "altscreen [ on | off ]"
 .RS 0
 .PP
 If set to on, "alternate screen" support is enabled in virtual terminals,
@@ -1015,7 +1015,7 @@ attrcolor i "+b"
 Make bright colored text also bold.
 .RE
 .TP
-.BR "autodetach on" | off
+.BR "autodetach [ on | off ]"
 .RS 0
 .PP
 Sets whether 
@@ -1029,7 +1029,7 @@ When turned off, a hangup signal will terminate
 and all the processes it contains. Autodetach is on by default.
 .RE
 .TP
-.BR "autonuke on" | off
+.BR "autonuke [ on | off ]"
 .RS 0
 .PP
 Sets whether a clear screen sequence should nuke all the output
@@ -1063,7 +1063,7 @@ The second form of the command deletes the backtick command
 with the numerical id \fIid\fP.
 .RE
 .TP
-.BR "bce " [ on | off ]
+.BR "bce [ on | off ]"
 .RS 0
 .PP
 Change background-color-erase setting. If \*Qbce\*U is set to on, all
@@ -1084,11 +1084,11 @@ the number of the window to which a bell has been sent,
 and each occurrence of `^G' is replaced by the definition for bell
 in your termcap (usually an audible bell).
 The default message is
-.sp
-.RS
+.PP
+.nf
 	'Bell in window %n'
-.RE
-.sp
+.fi
+.PP
 An empty message can be supplied to the \*Qbell_msg\*U command to suppress
 output of a message line (bell_msg "").
 Without parameter, the current message is shown.
@@ -1242,7 +1242,7 @@ Make the F11 (not F1!) key an alternative screen
 escape (besides ^A).
 .RE
 .TP
-.BR break [ \fIduration\fR ]
+.BR "break " [ \fIduration\fR ]
 .RS 0
 .PP
 Send a break signal for \fIduration\fP*0.25 seconds to this window.
@@ -1312,10 +1312,10 @@ Swaps window with previous one on window list.
 Swaps window with next one on window list.
 .RE
 .TP
-.BR "c1 " [ on | off ]
+.BR "c1 [ on | off ]"
 .RS 0
 .PP
-Change c1 code processing. \*QC1 on\*U tells screen to treat
+Change c1 code processing. \fBC1 on\fP tells screen to treat
 the input characters between 128 and 159 as control functions.
 Such an 8-bit code is normally the same as ESC followed by the
 corresponding 7-bit code. The default setting is to process c1
@@ -1420,7 +1420,7 @@ If you consider this as the `Ex command mode' of
 you may regard \*QC-a esc\*U (copy mode) as its `Vi command mode'.
 .RE
 .TP
-.BR "command " [ \-c " \fIclass\fP" ]
+.BR "command [ \-c " \fIclass\fP" ]"
 .RS 0
 .PP
 This command has the same effect as typing the screen escape
@@ -1429,14 +1429,14 @@ If the \*Q\-c\*U option is given, select the specified command
 class.  See also \*Qbind\*U and \*Qbindkey\*U.
 .RE
 .TP
-.BR "compacthist " [ on | off ]
+.BR "compacthist [ on | off ]"
 .RS 0
 .PP
 This tells screen whether to suppress trailing blank lines when
 scrolling up text into the history buffer.
 .RE
 .TP
-.BR "console " [ on | off ]
+.BR "console [ on | off ]"
 .RS 0
 .PP
 Grabs or un-grabs the machines console output to a window.
@@ -1511,7 +1511,7 @@ _
 \fBB\fP, \fBE\fP@move the cursor WORD by WORD (as in vi).
 _
 \fBf/F\fP, \fBt/T\fP@T{
-move the cursor forward/backward to the next occurence of the
+move the cursor forward/backward to the next occurrence of the
 target. (eg, '3fy' will move the cursor to the 3rd 'y' to the right.)
 T}
 _
@@ -1533,7 +1533,7 @@ _
 _
 .TE
 .\"\fBf\fP,\fBt\fP, \fBF\fP, \fBT\fP@T{
-.\"move the cursor forward/backward to the next occurence of the target.
+.\"move the cursor forward/backward to the next occurrence of the target.
 .\"T}
 
 .PP
@@ -1565,7 +1565,7 @@ is taken as a repeat count.
 Example: \*QC-a C-[ H 10 j 5 Y\*U will copy lines
 11 to 15 into the paste buffer.
 .PP
-The folllowing search keys are defined:
+The following search keys are defined:
 .IP
 \fB/\fP \fIVi\fP-like search forward.
 .IP
@@ -1646,7 +1646,7 @@ All keys not described here exit copy mode.
 No longer exists, use \*Qreadreg\*U instead.
 .RE
 .TP
-.BR "crlf " [ on | off ]
+.BR "crlf [ on | off ]"
 .RS 0
 .PP
 This affects the copying of text regions with the `C-a [' command. If it is set
@@ -1655,7 +1655,7 @@ Otherwise (default) only `LF' is used.
 When no parameter is given, the state is toggled.
 .RE
 .TP
-.BR "debug on" | off
+.BR "debug [ on | off ]"
 .RS 0
 .PP
 Turns runtime debugging on or off. If 
@@ -1666,14 +1666,14 @@ default. Note that this command only affects debugging output from the main
 be turned off once and forever.
 .RE
 .TP
-.BR "defc1 on" | off
+.BR "defc1 [ on | off ]"
 .RS 0
 .PP
 Same as the \fBc1\fP command except that the default setting for new
 windows is changed. Initial setting is `on'.
 .RE
 .TP
-.BR "defautonuke on" | off
+.BR "defautonuke [ on | off ]"
 .RS 0
 .PP
 Same as the \fBautonuke\fP command except that the default setting for new displays is changed. Initial setting is `off'.
@@ -1681,7 +1681,7 @@ Note that you can use the special `AN' terminal capability if you
 want to have a dependency on the terminal type.
 .RE
 .TP
-.BR "defbce on" | off
+.BR "defbce [ on | off ]"
 .RS 0
 .PP
 Same as the \fBbce\fP command except that the default setting for new
@@ -1715,7 +1715,7 @@ new windows is changed. Shows current default if called without
 argument.
 .RE
 .TP
-.BR "defdynamictitle on" | off
+.BR "defdynamictitle [ on | off ]"
 .RS 0
 .PP
 Set default behaviour for new windows regarding if screen should change window
@@ -1733,18 +1733,18 @@ calling user, where \*Qdefescape\*U changes the default command
 characters for users that will be added later.
 .RE
 .TP
-.BR "defflow " on | off | "auto " [ interrupt ]
+.BR "defflow [ on | off | auto [ interrupt ]]
 .RS 0
 .PP
 Same as the \fBflow\fP command except that the default setting for new windows 
 is changed. Initial setting is `auto'.
-Specifying \*Qdefflow auto interrupt\*U is the same as the command-line options
+Specifying \fBdefflow auto interrupt\fP is the same as the command-line options
 .B \-fa
 and
 .BR \-i . 
 .RE
 .TP
-.BR "defgr on" | off
+.BR "defgr [ on | off ]"
 .RS 0
 .PP
 Same as the \fBgr\fP command except that the default setting for new
@@ -1777,14 +1777,14 @@ windows is changed. Initial setting is the encoding taken from the
 terminal.
 .RE
 .TP
-.BR "deflog on" | off
+.BR "deflog [ on | off ]"
 .RS 0
 .PP
 Same as the \fBlog\fP command except that the default setting for new windows 
 is changed. Initial setting is `off'.
 .RE
 .TP
-.BR "deflogin on" | off
+.BR "deflogin [ on | off ]"
 .RS 0
 .PP
 Same as the \fBlogin\fP command except that the default setting for new windows 
@@ -1799,21 +1799,21 @@ The mode of each newly allocated pseudo-tty is set to \fImode\fP.
 When no \*Qdefmode\*U command is given, mode 0622 is used.
 .RE
 .TP
-.BR "defmonitor on" | off
+.BR "defmonitor [ on | off]"
 .RS 0
 .PP
 Same as the \fBmonitor\fP command except that the default setting for new 
 windows is changed. Initial setting is `off'.
 .RE
 .TP
-.BR "defmousetrack on" | off
+.BR "defmousetrack [ on | off ]"
 .RS 0
 .PP
 Same as the \fBmousetrack\fP command except that the default setting for new
 windows is changed. Initial setting is `off'.
 .RE
 .TP
-.BR "defnonblock on" | off | \fInumsecs\fP
+.BR "defnonblock [ on | off | \fInumsecs\fP]
 .RS 0
 .PP
 Same as the \fBnonblock\fP command except that the default setting for
@@ -1841,7 +1841,7 @@ windows is changed. Initial setting is 100.
 Synonym to the \fBshell\fP .screenrc command. See there.
 .RE
 .TP
-.BR "defsilence on" | off
+.BR "defsilence [ on | off ]"
 .RS 0
 .PP
 Same as the \fBsilence\fP command except that the default setting for new
@@ -1855,7 +1855,7 @@ Same as the \fBslowpaste\fP command except that the default setting for new
 windows is changed. Initial setting is 0 milliseconds, meaning `off'.
 .RE
 .TP
-.BR "defutf8 on" | off
+.BR "defutf8 [ on | off ]"
 .RS 0
 .PP
 Same as the \fButf8\fP command except that the default setting for new
@@ -1863,7 +1863,7 @@ windows is changed. Initial setting is `on' if screen was started with
 \*Q\-U\*U, otherwise `off'.
 .RE
 .TP
-.BR "defwrap on" | off
+.BR "defwrap [ on | off ]"
 .RS 0
 .PP
 Same as the \fBwrap\fP command except that the default setting for new 
@@ -1871,7 +1871,7 @@ windows is changed. Initially line-wrap is on and can be toggled with the
 \*Qwrap\*U command (\*QC-a r\*U) or by means of "C-a : wrap on|off".
 .RE
 .TP
-.BR "defwritelock on" | off | auto
+.BR "defwritelock [ on | off | auto ]"
 .RS 0
 .PP
 Same as the \fBwritelock\fP command except that the default setting for new 
@@ -2037,7 +2037,7 @@ and then compile the entry with
 .IR tic .
 .RE
 .TP
-.BR "dynamictitle on" | off
+.BR "dynamictitle [ on | off ]"
 .RS 0
 .PP
 Change behaviour for windows regarding if screen should change window title
@@ -2195,8 +2195,7 @@ command is needed because screen doesn't adapt the window size
 automatically if the window is displayed more than once.
 .RE
 .TP
-.B flow
-.RB [ on | off | "auto\fR]\fP"
+.BR "flow [ on | off | auto]"
 .RS 0
 .PP
 Sets the flow-control mode for this window.
@@ -2207,7 +2206,7 @@ details and note, that this is subject to change in future releases.
 Default is set by `defflow'.
 .RE
 .TP
-.BR "focus " [ next|prev|up|down|left|right|top|bottom ]
+.BR "focus [ next | prev | up | down | left | right | top | bottom ]"
 .RS 0
 .PP
 Move the input focus to the next region. This is done in a cyclic
@@ -2258,7 +2257,7 @@ Note that \fBk\fP is traditionally bound to the \fIkill\fP command.
 This forces any currently selected region to be automatically
 resized at least a certain \fIwidth\fP and \fIheight\fP. All
 other surrounding regions will be resized in order to accommodate.
-This constraint follows everytime the \*Qfocus\*U command is
+This constraint follows every time the \*Qfocus\*U command is
 used. The \*Qresize\*U command can be used to increase either
 dimension of a region, but never below what is set with
 \*Qfocusminsize\*U. The underscore `_' is a synonym for
@@ -2267,7 +2266,7 @@ dimension of a region, but never below what is set with
 Without any parameters, the minimum width and height is shown.
 .RE
 .TP
-.BR "gr " [ on | off ]
+.BR "gr [ on | off ]"
 .RS 0
 .PP
 Turn GR charset switching on/off. Whenever screen sees an input
@@ -2297,7 +2296,7 @@ If the option \fB\-h\fP is specified, dump also the contents of the
 scrollback buffer.
 .RE
 .TP
-.BR "hardcopy_append on" | off
+.BR "hardcopy_append [ on | off ]"
 .RS 0
 .PP
 If set to "on", 
@@ -2316,11 +2315,11 @@ are dumped in
 current working directory.
 .RE
 .TP
-.BR "hardstatus " [ on | off ]
+.BR "hardstatus [ on | off ]"
 .TP
-.BR "hardstatus \fR[\fBalways\fR]\fBfirstline" | lastline | message | ignore [ \fIstring\fR ]
+.BR "hardstatus [ always ] firstline | lastline | message | ignore [ string ]"
 .TP
-.BR "hardstatus string" [ \fIstring\fR ]
+.BR "hardstatus string [ string ]"
 .RS 0
 .PP
 This command configures the use and emulation of the terminal's
@@ -2380,8 +2379,7 @@ vice versa.
 .BR help [ \fIclass\fP ]
 .RS 0
 .PP
-Not really a online help, but 
-displays a help 
+Not really a online help, but displays a help
 .I screen 
 showing you all the key bindings.
 The first pages list all the internal commands followed by their current
@@ -2426,7 +2424,7 @@ zero (or the special timeout \fBoff\fP) disables the timer.
 If no arguments are given, the current settings are displayed.
 .RE
 .TP
-.BR "ignorecase " [ on | off ]
+.BR "ignorecase [ on | off ]"
 .RS 0
 .PP
 Tell screen to ignore the case of characters in searches. Default is
@@ -2486,8 +2484,7 @@ If there is an `exec' command running then it is killed. Otherwise the process
 (shell) running in the window receives a HANGUP condition, 
 the window structure is removed and 
 .I screen 
-(your display) switches to another
-window.  When the last window is destroyed, 
+(your display) switches to another window.  When the last window is destroyed,
 .I screen
 exits.
 After a kill 
@@ -2598,7 +2595,7 @@ regions. This arrangement is restored when a \fIscreen\fP session
 is reattached or switched back from a different layout. If the
 session ends or the \fIscreen\fP process dies, the layout
 arrangements are lost. The \fBlayout dump\fP command should help
-in this siutation. If a number
+in this situation. If a number
 or title is supplied, \fIscreen\fP will remember the arrangement of
 that particular layout. Without any options, \fIscreen\fP will
 remember the current layout.
@@ -2607,10 +2604,10 @@ Saving your regions can be done automatically by using the
 \fBlayout autosave\fP command.
 .RE
 .TP
-.BR "layout autosave " [\fBon|off\fP]
+.BR "layout autosave [ on | off]"
 .RS 0
 .PP
-Change or display the status of automatcally saving layouts. The
+Change or display the status of automatically saving layouts. The
 default is \fBon\fP, meaning when \fIscreen\fP is detached or
 changed to a different layout, the arrangement of regions and windows
 will be remembered at the time of change and restored upon return.
@@ -2646,15 +2643,15 @@ will save or append the layout to the user's \fI.screenrc\fP file.
 Display the disclaimer page. This is done whenever
 .I screen
 is started without options, which should be often enough. See also 
-the \*Qstartup_message\*U command.
+the \fBstartup_message\fP command.
 .RE
 .TP
 .B lockscreen
 .RS 0
 .PP
 Lock this display.
-Call a screenlock program (/local/bin/lck or /usr/bin/lock or a builtin if no
-other is available). Screen does not accept any command keys until this program
+Call a screenlock program.
+Screen does not accept any command keys until this program
 terminates. Meanwhile processes in the windows may continue, as the windows 
 are in the `detached' state. The screenlock program may be changed through the
 environment variable $LOCKPRG (which must be set in the shell from which 
@@ -2668,7 +2665,7 @@ the lock is void: One could easily re-attach from an unlocked
 shell. This feature should rather be called `lockterminal'.
 .RE
 .TP
-.BR "log " [ on | off ]
+.BR "log [ on | off ]"
 .RS 0
 .PP
 Start/stop writing output of the current window to a file 
@@ -2693,7 +2690,7 @@ will wait before flushing the logfile buffer to the file-system. The
 default value is 10 seconds.
 .RE
 .TP
-.BR "login " [ on | off ]
+.BR "login [ on | off ]"
 .RS 0
 .PP
 Adds or removes the entry in the utmp database file for the current window.
@@ -2792,7 +2789,7 @@ existing windows.
 Insert the command character (C-a) in the current window's input stream.
 .RE
 .TP
-.BR "monitor " [ on | off ]
+.BR "monitor [ on | off ]"
 .RS 0
 .PP
 Toggles activity monitoring of windows.
@@ -2803,7 +2800,7 @@ with an `@' in the window-status display.
 Monitoring is initially off for all windows.
 .RE
 .TP
-.BR "mousetrack " [ on | off ]
+.BR "mousetrack [ on | off ]"
 .RS 0
 .PP
 This command determines whether
@@ -2813,7 +2810,7 @@ mouse clicks. When this command is enabled, regions that have
 been split in various ways can be selected by pointing to them
 with a mouse and left-clicking them. Without specifying \fBon\fP
 or \fBoff\fP, the current state is displayed. The default state
-is determined by the \*Qdefmousetrack\*U command.
+is determined by the \fBdefmousetrack\fP command.
 .RE
 .TP
 .BI "msgminwait " sec
@@ -2833,7 +2830,7 @@ Defines the time a message is displayed if
 is not disturbed by other activity. The default is 5 seconds.
 .RE
 .TP
-.BR "multiuser on" | off
+.BR "multiuser [ on | off ]"
 .RS 0
 .PP
 Switch between singleuser and multiuser mode. Standard
@@ -2845,7 +2842,7 @@ can be used to enable (and disable) other users accessing this
 session. 
 .RE
 .TP
-.BR "nethack on" | off
+.BR "nethack [ on | off ]"
 .RS 0
 .PP
 Changes the kind of error messages used by
@@ -2855,8 +2852,7 @@ nethack-style messages which will often blur the facts a little, but are
 much funnier to read. Anyway, standard messages often tend to be unclear as
 well.
 .br
-This option is only 
-available if
+This option is only available if
 .I screen
 was compiled with the NETHACK flag defined. The
 default setting is then determined by the presence of the environment 
@@ -2871,8 +2867,7 @@ Switch to the next window.
 This command can be used repeatedly to cycle through the list of windows.
 .RE
 .PP
-.B nonblock 
-.RB [ on | off | \fInumsecs ]
+.BR "nonblock [ on | off | numsecs ]"
 .RS 0
 .PP
 Tell screen how to deal with user interfaces (displays) that cease to
@@ -2919,7 +2914,7 @@ Switch to the window displayed previously. If this window does no longer exist,
 \fIother\fP has the same effect as \fInext\fP.
 .RE
 .TP
-.BR "partial on" | off
+.BR "partial [ on | off ]"
 .RS 0
 .PP
 Defines whether the display should be refreshed (as with \fIredisplay\fP) after
@@ -2934,9 +2929,8 @@ Default is `off', of course.  This default is fixed, as there is currently no
 .PP
 Present a crypted password in your \*Q.screenrc\*U file and
 .I screen
-will ask
-for it, whenever someone attempts to resume a detached. This is useful
-if you have privileged programs running under
+will ask for it, whenever someone attempts to resume a detached.
+This is useful if you have privileged programs running under
 .I screen
 and you want to protect your session from reattach attempts by another user
 masquerading as your uid (i.e. any superuser.)
@@ -2954,22 +2948,22 @@ Write the (concatenated) contents of the specified registers to the stdin queue
 of the current window. The register '.' is treated as the
 paste buffer. If no parameter is given the user is prompted for a single 
 register to paste.
-The paste buffer can be filled with the \fIcopy\fP, \fIhistory\fP and 
-\fIreadbuf\fP commands. 
-Other registers can be filled with the \fIregister\fP, \fIreadreg\fP and 
-\fIpaste\fP commands.
-If \fIpaste\fP is called with a second argument, the contents of the specified
-registers is pasted into the named destination register rather than 
+The paste buffer can be filled with the \fBcopy\fP, \fBhistory\fP and
+\fBreadbuf\fP commands.
+Other registers can be filled with the \fBregister\fP, \fBreadreg\fP and
+\fBpaste\fP commands.
+If \fBpaste\fP is called with a second argument, the contents of the specified
+registers is pasted into the named destination register rather than
 the window. If '.' is used as the second argument, the displays paste buffer is
 the destination.
-Note, that \*Qpaste\*U uses a wide variety of resources: Whenever a second 
+Note, that \fBpaste\fP uses a wide variety of resources: Whenever a second
 argument is specified no current window is needed. When the source specification
-only contains registers (not the paste buffer) then there need not be a current 
-display (terminal attached), as the registers are a global resource. The 
+only contains registers (not the paste buffer) then there need not be a current
+display (terminal attached), as the registers are a global resource. The
 paste buffer exists once for every user.
 .RE
 .TP
-.BR "pastefont " [ on | off ]
+.BR "pastefont [ on | off ]"
 .RS 0
 .PP
 Tell 
@@ -3030,7 +3024,7 @@ This should normally be a command like \*Qlpr\*U or
 .B printcmd
 without a command displays the current setting.
 The ansi sequence
-.B "ESC \e"
+.BR "ESC [ 4 i"
 ends printing and closes the pipe.
 .PP
 Warning: Be careful with this command! If other user have write
@@ -3064,7 +3058,7 @@ Use the empty bind command (as in \*Qbind '^\e'\*U) to remove a key binding.
 Reads the contents of the specified file into the paste buffer.
 You can tell screen the encoding of the file via the \fB\-e\fP option.
 If no file is specified, the screen-exchange filename is used.
-See also \*Qbufferfile\*U command.
+See also \fBbufferfile\fP command.
 .RE
 .TP
 .IR "\fBreadreg\fP " [ encoding "] [" register " [" filename ]]
@@ -3111,17 +3105,21 @@ Kill the current region. This is a no-op if there is only one region.
 .B "removebuf"
 .RS 0
 .PP
-Unlinks the screen-exchange file used by the commands \*Qwritebuf\*U and 
-\*Qreadbuf\*U. 
+Unlinks the screen-exchange file used by the commands
+\fBwritebuf\fP and \fBreadbuf\fP.
 .RE
 .TP
-.B "rendition bell" | monitor | silence | so " \fIattr\fR " \fR[\fP \fIcolor\fP \fR]\fP
+.B "rendition [ bell | monitor | silence | so ] attr [ color ]"
 .RS 0
 .PP
 Change the way
 .I screen
-renders the titles of windows that have monitor or bell flags set in caption or hardstatus or windowlist. See the \*QSTRING ESCAPES\*U chapter for the syntax of the modifiers.
-The default for monitor is currently \*Q=b \*U (bold, active colors), for bell \*Q=ub \*U (underline, bold and active colors), and \*Q=u \*U for silence.
+renders the titles of windows that have monitor or bell flags set in
+caption or hardstatus or windowlist. See the \*QSTRING ESCAPES\*U
+chapter for the syntax of the modifiers.
+The default for monitor is currently \*Q=b \*U (bold, active colors),
+for bell \*Q=ub \*U (underline, bold and active colors), and \*Q=u \*U
+for silence.
 .RE
 .TP
 .B "reset"
@@ -3191,7 +3189,7 @@ Without any arguments,
 .I screen
 will prompt for how you would like to resize the current region.
 
-See \*Qfocusminsize\*U if you want to restrict the minimun size a region
+See \*Qfocusminsize\*U if you want to restrict the minimum size a region
 can have.
 .RE
 .RE
@@ -3259,8 +3257,9 @@ The parameter is optional and if omitted, you get prompted for an identifier.
 When a new window is established, the first available number
 is assigned to this window.
 Thus, the first window can be activated by \*Qselect 0\*U.
-The number of windows is limited at compile-time by the MAXWIN
-configuration parameter (which defaults to 40).
+The number of windows is set by the MAXWIN
+configuration parameter (which defaults to 100),
+but it can be changed by using `maxwin' command.
 There are two special WindowIDs, \*Q\-\*U selects the
 internal blank window and \*Q.\*U selects the current window. The
 latter is useful if used with screen's \*Q\-X\*U option.
@@ -3288,7 +3287,7 @@ If no parameters are specified, the user will be prompted for both variable
 and value. The environment is inherited by all subsequently forked shells.
 .RE
 .TP
-.BR "setsid " [ on | off ]
+.BR "setsid [ on | off ]"
 .RS 0
 .PP
 Normally screen uses different sessions and process groups for
@@ -3308,7 +3307,7 @@ This is useful if you'd like to run a tty-enhancer which is expecting to
 execute the program specified in $SHELL. 
 If the command begins with a '\-' character, the shell will be started as a
 login-shell. Typical shells do only minimal initialization when not started as a login-shell.
-E.g. Bash will not read your \*Q~/.bashrc\*U unless it is a login-shell.
+E.g. Bash will not read your \*Q~/.bash_profile\*U unless it is a login-shell.
 .RE
 .TP
 .B "shelltitle \fItitle\fP"
@@ -3320,7 +3319,7 @@ For details about what a title is, see the discussion
 entitled \*QTITLES (naming windows)\*U.
 .RE
 .TP
-.BR "silence " [ on | off "|\fIsec\fP]"
+.BR "silence [ on | off | sec ]"
 .RS 0
 .PP
 Toggles silence monitoring of windows.
@@ -3408,18 +3407,17 @@ some commands (\*Qfocus\*U and \*Qresize\*U) behave.
 With this current implementation of screen, scrolling data
 will appear much slower in a vertically split region than one
 that is not. This should be taken into consideration if you need
-to use system commands such as \*Qcat\*U or \*Qtail -f\*U.
+to use system commands such as \fBcat\fP or \fBtail -f\fP.
 .RE
 .TP
-.B "startup_message on\fP|\fBoff"
+.B "startup_message [ on | off ]"
 .RS 0
 .PP
 Select whether you want to see the copyright notice during startup.
 Default is `on', as you probably noticed.
 .RE
 .PP
-.BR "status " [ top | up | down | bottom ]
-.RB [ left | right ]
+.BR "status [ top | up | down | bottom ] [ left | right ]"
 .RS 0
 .PP
 The status window by default is in bottom-left corner. This command can move
@@ -3624,7 +3622,7 @@ it is necessary to bind commands after this, use 'screen \-X'.
 Unset an environment variable.
 .RE
 .TP
-.BR "utf8 " [ on | off [ on | off ]]
+.BR "utf8 [ on | off [ on | off ]]"
 .RS 0
 .PP
 Change the encoding used in the current window. If utf8 is enabled, the
@@ -3636,7 +3634,7 @@ See also \*Qdefutf8\*U, which changes the default setting of a new
 window.
 .RE
 .TP
-.BR "vbell " [ on | off ]
+.BR "vbell [ on | off ]"
 .RS 0
 .PP
 Sets the visual bell setting for this window. Omitting the parameter
@@ -3668,7 +3666,7 @@ Define a delay in seconds after each display of
 visual bell message. The default is 1 second.
 .RE
 .TP
-.BR "verbose " [ on | off ]
+.BR "verbose [ on | off ]"
 .RS 0
 .PP
 If verbose is switched on, the command name is echoed, whenever a window
@@ -3705,7 +3703,7 @@ the window size,
 vice versa.
 .RE
 .TP
-.BR "windowlist " [ \-b "] [" \-m "] [" \-g ]
+.BR "windowlist [ \-b ] [ \-m ] [ \-g ]"
 .TP
 .IR "\fBwindowlist string\fR " [ string ]
 .TP
@@ -3813,7 +3811,7 @@ If string parameter is passed, the output size is unlimited.
 The default command without any parameter is limited to a size of 1024 bytes.
 .RE
 .TP
-.BR "wrap " [ on | off ]
+.BR "wrap [ on | off ]"
 .RS 0
 .PP
 Sets the line-wrap setting for the current window.
@@ -3836,7 +3834,7 @@ The filename can be set with the \fIbufferfile\fP
 command and defaults to \*Q/tmp/screen\-exchange\*U.
 .RE
 .TP
-.BR "writelock " [ on | "off\fR|\fBauto\fR]"
+.BR "writelock [ on | off | auto]"
 .RS 0
 .PP
 In addition to access control lists, not all users may be able to write to
@@ -3858,7 +3856,7 @@ Insert a CTRL-s / CTRL-q character to the stdin queue of the
 current window.
 .RE
 .TP
-.BR "zmodem " [ off\fR|\fPauto\fR|\fPcatch\fR|\fPpass ]
+.BR "zmodem [ off | auto | catch | pass ]"
 .TP
 .IR "\fBzmodem sendcmd\fR " [ string ]
 .TP
@@ -3973,6 +3971,12 @@ in the notation used by stty(1):
 Usually 300, 1200, 9600 or 19200. This affects transmission as well as receive speed.
 .IP "cs8 or cs7"
 Specify the transmission of eight (or seven) bits per byte.
+.IP "cstopb or \-cstopb"
+Specify two stop bits per character (one with '-')
+.IP "parenb or \-parenb"
+Generate parity bit in output and expect parity bit in input
+.IP "parodd or \-parodd"
+Set odd parity (or even parity with '-')
 .IP "ixon or \-ixon"
 Enables (or disables) software flow-control (CTRL-S/CTRL-Q) for sending data.
 .IP "ixoff or \-ixoff"
@@ -4062,6 +4066,8 @@ Here is the full list of supported escapes:
 the escape character itself
 .IP E
 sets %? to true if the escape character has been pressed.
+.IP e
+encoding
 .IP f
 flags of the window, see \*Qwindows\*U for meanings of the various flags
 .IP F
@@ -4157,7 +4163,7 @@ bold
 .IP r
 reverse
 .IP s
-standout
+/standout
 .IP B
 blinking
 .PD
@@ -4341,9 +4347,11 @@ This helps csh users get better command names when using job control or
 history recall commands.
 .PP
 Here's some .screenrc examples:
-.IP
-screen \-t top 2 nice top
-.PP
+.sp
+.nf
+	screen \-t top 2 nice top
+.fi
+.sp
 Adding this line to your .screenrc would start a nice-d version of the
 \*Qtop\*U command in window 2 named \*Qtop\*U rather than \*Qnice\*U.
 .sp
@@ -4355,15 +4363,19 @@ Adding this line to your .screenrc would start a nice-d version of the
 These commands would start a shell with the given shelltitle.
 The title specified is an auto-title that would expect the prompt and
 the typed command to look something like the following:
-.IP
-/usr/joe/src/dir> trn
-.PP
+.sp
+.nf
+	/usr/joe/src/dir> trn
+.fi
+.sp
 (it looks after the '> ' for the command name).
 The window status would show the name \*Qtrn\*U while the command was
 running, and revert to \*Qcsh\*U upon completion.
-.IP
-bind R screen \-t '% |root:' su
-.PP
+.sp
+.nf
+	bind R screen \-t '% |root:' su
+.fi
+.sp
 Having this command in your .screenrc would bind the key
 sequence \*QC-a R\*U to the \*Qsu\*U command and give it an
 auto-title name of \*Qroot:\*U.
@@ -4398,17 +4410,21 @@ characters as part of the prompt's length.
 If these invisible characters aren't a multiple of 8 then backspacing over
 a tab will result in an incorrect display.
 One way to get around this is to use a prompt like this:
-.IP
-set prompt='^[[0000m^[k^[\e% '
-.PP
+.sp
+.nf
+	set prompt='^[[0000m^[k^[\e% '
+.fi
+.sp
 The escape-sequence \*Q<esc>[0000m\*U not only normalizes the character
 attributes, but all the zeros round the length of the invisible characters
 up to 8.
 Bash users will probably want to echo the escape sequence in the
 PROMPT_COMMAND:
-.IP
-PROMPT_COMMAND='printf "\e033k\e033\e134"'
-.PP
+.sp
+.nf
+	PROMPT_COMMAND='printf "\e033k\e033\e134"'
+.fi
+.sp
 (I used \*Q\e134\*U to output a `\e' because of a bug in bash v1.04).
 
 
@@ -5227,11 +5243,6 @@ Login records
 .IP $LOCKPRG
 Program that locks a terminal.
 
-
-.SH "SEE ALSO"
-termcap(5), utmp(5), vi(1), captoinfo(1), tic(1)
-
-
 .SH AUTHORS
 Originally created by Oliver Laumann. For a long time maintained
 and developed by Juergen Weigert, Michael Schroeder, Micah Cowan
@@ -5241,7 +5252,7 @@ and Alexander Naumov <alexander_naumov@opensuse.org>.
 
 .SH COPYLEFT
 .nf
-Copyright (c) 2018-2019
+Copyright (c) 2018-2023
 	Alexander Naumov <alexander_naumov@opensuse.org>
 	Amadeusz Slawinski <amade@asmblr.net>
 Copyright (c) 2015-2017
@@ -5261,6 +5272,7 @@ Copyright (C) 1993-2003
 	Michael Schroeder <mlschroe@immd4.informatik.uni\-erlangen.de>
 Copyright (C) 1987 Oliver Laumann
 .fi
+
 .PP
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -5279,6 +5291,8 @@ Free Software Foundation, Inc.,
 
 .SH CONTRIBUTORS
 .nf
+Vincent Lefevre <vincent@vinc17.net>,
+Carl Drougge <bearded@longhaired.org>,
 Maarten ter Huurne <maarten@treewalker.org>,
 Jussi Kukkonen <jussi.kukkonen@intel.com>,
 Eric S. Raymond <esr@thyrsus.com>,
@@ -5318,10 +5332,12 @@ The latest official release of
 .I screen
 available via anonymous ftp from ftp.gnu.org/gnu/screen/ or any other 
 .I GNU 
-distribution site. The home site of
+distribution site. The home page of
 .I screen
-is savannah.gnu.org/projects/screen/. If you want to help, send a note to
-screen-devel@gnu.org.
+is https://savannah.gnu.org/projects/screen/ and the git repo
+is https://git.savannah.gnu.org/cgit/screen.git.
+If you want to help, send a note to
+.BR screen-devel@gnu.org.
 
 .SH BUGS
 .PD
@@ -5381,7 +5397,15 @@ sourced. Each user's personal settings have to be included in the .screenrc
 file from which the session is booted, or have to be changed manually.
 .IP \(bu
 A weird imagination is most useful to gain full advantage of all the features.
-.IP \(bu
+.PP
 Send bug-reports, fixes, enhancements, t-shirts, money, beer & pizza to
 .BR screen-devel@gnu.org .
 
+.SH "SEE ALSO"
+.BR termcap(5),
+.BR utmp(5),
+.BR vi(1),
+.BR captoinfo(1),
+.BR tic(1),
+.BR tty(4),
+.BR pty(7)

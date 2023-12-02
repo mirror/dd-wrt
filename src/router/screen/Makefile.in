@@ -1,7 +1,7 @@
 #
 # Makefile template for screen 
 #
-# See machine dependant config.h for more configuration options.
+# See machine dependent config.h for more configuration options.
 #
 
 srcdir = @srcdir@

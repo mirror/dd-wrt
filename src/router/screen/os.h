@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -507,7 +507,7 @@ typedef struct fd_set { int fds_bits[1]; } fd_set;
  */
 
 #ifndef TERMCAP_BUFSIZE
-# define TERMCAP_BUFSIZE 2048
+# define TERMCAP_BUFSIZE 1023
 #endif
 
 #ifndef MAXPATHLEN

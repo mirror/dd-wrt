@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -515,7 +515,7 @@ display_windows(int onblank, int order, struct win *group)
 
   if (onblank)
     {
-      debug3("flayer %x %d %x\n", flayer, flayer->l_width, flayer->l_height);
+      debug3("flayer %lx %d %x\n", (long)flayer, flayer->l_width, flayer->l_height);
       if (!display)
 	{
 	  LMsg(0, "windowlist -b: display required");
@@ -671,14 +671,12 @@ struct canvas *cv;
 struct win *p;
 {
   struct ListData *ldata;
-  struct gl_Window_Data *wdata;
 
   if (cv->c_layer->l_layfn != &ListLf)
     return;
   ldata = cv->c_layer->l_data;
   if (ldata->name != ListID)
     return;
-  wdata = ldata->data;
   CV_CALL(cv, WListUpdate(p, ldata));
 }
 

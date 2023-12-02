@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -1285,11 +1285,16 @@ ReceiveMsg()
           else
             queryflag = -1;
 
-          Kill(m.m.command.apid,
+          if (CheckPid(m.m.command.apid)) {
+            Msg(0, "Query attempt with bad pid(%d)!", m.m.command.apid);
+          }
+          else {
+            Kill(m.m.command.apid,
                (queryflag >= 0)
                    ? SIGCONT
                    : SIG_BYE); /* Send SIG_BYE if an error happened */
-          queryflag = -1;
+            queryflag = -1;
+          }
         }
         break;
       case MSG_COMMAND:
@@ -1876,7 +1881,7 @@ struct msg *mp;
     {
       char *oldrcname = rc_name;
       rc_name = "-X";
-      debug3("Running command on display %x window %x (%d)\n", display, fore, fore ? fore->w_number : -1);
+      debug3("Running command on display %lx window %lx (%d)\n", (long)display, (long)fore, fore ? fore->w_number : -1);
       flayer = fore ? &fore->w_layer : 0;
       if (fore && fore->w_savelayer && (fore->w_blocked || fore->w_savelayer->l_cvlist == 0))
 	flayer = fore->w_savelayer;

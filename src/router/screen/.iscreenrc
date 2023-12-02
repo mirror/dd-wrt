@@ -17,7 +17,7 @@ markkeys "h=^B:l=^F:\$=^E"  # some missing emacs style bindings in copymode
 echo -n "booting screen"
 
 # let it flash, not horn!
-#vbell on                          # "vbell" don't work any longer, sorry.
+#vbell on                          # "vbell" doesn't work any longer, sorry.
 #vbell_msg "  Wuff,  Wuff!!  "     # this is the default message
 #bell "Bimmmel No. %"		   # sounds the bell and shows a message
 
@@ -45,11 +45,11 @@ echo -n "."
 # Printing in the leftmost column is not save. We express that fact as :LP@:
 #
 # Emacs tends to smear it's highlighted status bar across the screen, producing
-# ugly areas of bright background, if termcap is'nt perfectly sober.
+# ugly areas of bright background, if termcap isn't perfectly sober.
 # Give a little :ms@: in the termcap, this may help.
 #
 # And who invented the initialisation for facit terminals? We tell him that 
-# we non't like smooth scroll, by specifying :ti=\E[?l:.
+# we don't like smooth scroll, by specifying :ti=\E[?l:.
 # \E[?3l   80 Zeichen
 # \E[?3h   132 Zeichen
 # LP       Last column Printable
@@ -92,11 +92,11 @@ termcap xterm* WS=\E[8;%d;%dt
 # ICL 6402 testing:
 termcap icl* G0:S0=\E$[start]:E0=\E%[end]:C0=j9k<l6m3n?q\:t7u=v;w>x5 GS=\E(0^O:GE=\E(B^O:G1=k:G2=l:G3=m:G4=j:GV=x:GH=q:GR=u:GL=t:GU=w:GD=v:GC=n
 
-# Flowcontrol produces trouble. ^S und ^Q will never reach screen, as our
+# Flow control produces trouble. ^S und ^Q will never reach screen, as our
 # terminals catch them locally. Who can explain that to me?:
 #flow on|off|auto [interrupt]
 
-# Long Lines get wrapped around (the back of your terminal). This is the 
+# Long lines get wrapped around (the back of your terminal). This is the
 # default for vt100. But now programs make different asumptions about your
 # terminal. You may find two linefeeds where you'd expect one, or you may
 # be confronted with a truncated line. Currently there is no fix, but pressing
@@ -106,10 +106,10 @@ termcap icl* G0:S0=\E$[start]:E0=\E%[end]:C0=j9k<l6m3n?q\:t7u=v;w>x5 GS=\E(0^O:G
 # the autoaka allows you to see the currently executing shell command in the
 # window name field. To use that, your shell prompt must contain ^[k^[\ or
 # you will see the string "(init)" as a name.
-# in my .cshrc I may use this for a wonderfull tcsh-prompt:
+# in my .cshrc I may use this for a wonderful tcsh-prompt:
 #	set prompt="%{^[k^[\\%}%h %c2(%m)%# "
 #
-# defining a shellaka that contains a pipe-symbol (|) activites the
+# defining a shellaka that contains a pipe-symbol (|) activates the
 # autoaka feature. To the left of that | you specify a constant part of
 # your prompt as a trigger, to the right you may place a default string
 # as in
@@ -121,8 +121,8 @@ shellaka '> |tc'
 # ... now a little bit of key bindings
 # In case we don't have write permission for /etc/utmp (no s-bit)
 # we create even local windows via rlogin. -> Et voila: a utmp-slot
-# utmp-slots are strongly recomended to keep sccs and talk happy.
-# (thus we have ^A# or. ^Ac for windowcreation with or without utmp-slot.)
+# utmp-slots are strongly recommended to keep sccs and talk happy.
+# (thus we have ^A# or. ^Ac for window creation with or without utmp-slot.)
 # but if we run suid-root, we produce all the rlogins with -ln, 
 # as nobody shall refer to these pty's.
 bind '!' screen -ln -k faui41 rlogin faui41
@@ -151,7 +151,7 @@ bind 'L'
 # What happens, when you 'think emacs' and want to erase a whole
 # line? You type ^A^K right? Under screen it should be ^Aa^K. But...
 # killing the window would be a real punishment for a little mistyping.
-bind k		#wow! I even amange to type ^Ak by accident.
+bind k		#wow! I even mange to type ^Ak by accident.
 #bind ^k
 #bind K kill
 

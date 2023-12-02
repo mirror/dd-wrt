@@ -23,7 +23,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -237,7 +237,7 @@ struct win
   char	 w_vbwait;
   char	 w_norefresh;		/* dont redisplay when switching to that win */
 #ifdef RXVT_OSC
-  char	 w_xtermosc[4][MAXSTR];	/* special xterm/rxvt escapes */
+  char	 w_xtermosc[5][2560];	/* special xterm/rxvt escapes */
 #endif
   int    w_mouse;		/* mouse mode 0,9,1000 */
   int    w_extmouse;		/* extended mouse mode 0,1006 */

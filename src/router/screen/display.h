@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -61,7 +61,7 @@ struct win;			/* forward declaration */
 struct mouse_parse
 {
   char sgrmode;                 /* non-zero if parsing an SGR sequence */
-  char state;                   /* current state of parsing */
+  int state;                    /* current state of parsing */
   int params[3];                /* parsed params: button, x, y */
 };
 
@@ -112,7 +112,7 @@ struct display
   int	d_mousetrack;		/* set when user wants to use mouse even when the window
 				   does not */
 #ifdef RXVT_OSC
-  int   d_xtermosc[4];		/* osc used */
+  int   d_xtermosc[5];		/* osc used */
 #endif
   struct mchar d_lpchar;	/* missing char */
   struct timeval d_status_time;	/* time of status display */

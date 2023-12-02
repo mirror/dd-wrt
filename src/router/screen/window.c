@@ -23,7 +23,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -494,7 +494,7 @@ WinRestore()
 {
   struct canvas *cv;
   fore = (struct win *)flayer->l_data;
-  debug1("WinRestore: win %p\n", fore);
+  debug1("WinRestore: win %lx\n", (long)fore);
   for (cv = flayer->l_cvlist; cv; cv = cv->c_next)
     {
       display = cv->c_display;
@@ -1818,7 +1818,7 @@ struct event *ev;
 	  return 1;
 	}
       debug2("muchpending %s %d: ", D_usertty, D_blocked);
-      debug3("%d %d %d\n", D_obufp - D_obuf, D_obufmax, D_blocked_fuzz);
+      debug3("%ld %d %d\n", (long)(D_obufp - D_obuf), D_obufmax, D_blocked_fuzz);
       if (D_blocked)
 	continue;
       if (D_obufp - D_obuf > D_obufmax + D_blocked_fuzz)

@@ -8,7 +8,7 @@
 @finalout
 @setchapternewpage odd
 @c %**end of header
-@set version 4.7.0
+@set version 4.9.1
 
 @direntry
 * Screen: (screen).             Full-screen window manager.
@@ -25,7 +25,7 @@
 @ifinfo
 This file documents the @code{Screen} virtual terminal manager.
 
-Copyright (c) 1993-2018 Free Software Foundation, Inc.
+Copyright (c) 1993-2023 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -53,11 +53,11 @@ by the Foundation.
 @title Screen
 @subtitle The virtual terminal manager
 @subtitle for Version @value{version}
-@subtitle Oct 2019
+@subtitle Aug 2023
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1993-2018 Free Software Foundation, Inc.
+Copyright @copyright{} 1993-2023 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -504,7 +504,7 @@ variable @code{$SYSSCREENRC} (this override feature may be disabled at
 compile-time).  The user specific screenrc file is
 searched for in @code{$SCREENRC}, then 
 @file{@code{$HOME}/.screenrc}.  The command line option @samp{-c}
-specifies which file to use (@pxref{Invoking Screen}.  Commands in these
+specifies which file to use (@pxref{Invoking Screen}).  Commands in these
 files are used to set options, bind commands to keys, and to
 automatically establish one or more windows at the beginning of
 your @code{screen} session.  Commands are listed one per line, with
@@ -1179,7 +1179,7 @@ Name this session.  @xref{Session Name}.
 @item setenv [@var{var} [@var{string}]]
 Set an environment variable for new windows.  @xref{Setenv}.
 @item setsid @var{state}
-Controll process group creation for windows.  @xref{Setsid}.
+Control process group creation for windows.  @xref{Setsid}.
 @item shell @var{command}
 Set the default program for new windows.  @xref{Shell}.
 @item shelltitle @var{title}
@@ -1264,8 +1264,9 @@ Keep dead windows.  @xref{Zombie}.
 This section describes the commands for creating a new window for
 running programs.  When a new window is created, the first available
 number is assigned to it.
-The number of windows is limited at compile-time by the MAXWIN
-configuration parameter (which defaults to 40).
+The number of windows is set by the MAXWIN configuration parameter
+(which defaults to 100), but it can be changed by using @code{maxwin}
+command.
 
 @menu
 * Chdir::                       Change the working directory for new windows.
@@ -1365,7 +1366,7 @@ you'd like to run a tty-enhancer which is expecting to execute the
 program specified in @code{$SHELL}.  
 If the command begins with a @samp{-} character, the shell will be started as a
 login-shell. Typical shells do only minimal initialization when not started as a login-shell.
-E.g. Bash will not read your @file{~/.bashrc} unless it is a login-shell.
+E.g. Bash will not read your @file{~/.bash_profile} unless it is a login-shell.
 
 @code{defshell} is currently a synonym to the @code{shell} .screenrc command.
 @end deffn
@@ -1424,6 +1425,12 @@ Usually 300, 1200, 9600 or 19200. This affects transmission as well as
 receive speed.
 @item cs8 or cs7
 Specify the transmission of eight (or seven) bits per byte.
+@item cstopb or -cstopb
+Specify two (or one) stop bits per character
+@item parenb or -parenb
+Generate parity bit in output and expect parity bit in input
+@item parodd or -parodd
+Set odd (or even) parity
 @item ixon or -ixon
 Enables (or disables) software flow-control (CTRL-S/CTRL-Q) for sending
 data.
@@ -1763,8 +1770,7 @@ Without a parameter, the current message is shown.
 @kindex C-x
 @deffn Command lockscreen
 (@kbd{C-a x}, @kbd{C-a C-x})@*
-Call a screenlock program (@file{/local/bin/lck} or @file{/usr/bin/lock}
-or a builtin, if no other is available). Screen does not accept any
+Call a screenlock program. Screen does not accept any
 command keys until this program terminates. Meanwhile processes in the
 windows may continue, as the windows are in the detached state.
 The screenlock program may be changed through the environment variable
@@ -2212,7 +2218,7 @@ resize min      minimize current region
 Without any arguments, @code{screen} will prompt for how you would
 like to resize the current region.
 
-See @code{focusminsize} if you want to restrict the minimun size a region can have.
+See @code{focusminsize} if you want to restrict the minimum size a region can have.
 
 @end deffn
 
@@ -2754,7 +2760,7 @@ Per default the hardstatus line of new windows is empty.
 Changes the current window's hardstatus line to @var{status}.
 @end deffn
 
-@node Mousetrack, , Hardstatus, Miscellaneous
+@node Mousetrack, , Hardstatus, Window Settings
 @section Mousetrack
 
 @deffn Command mousetrack [ @code{on|off} ]
@@ -3540,7 +3546,7 @@ with @samp{-U}, otherwise @code{off}.
 
 @deffn Command cjkwidth [state]
 (none)@*
-Toggle how ambiguoous characters are treated. If cjkwidth is on screen
+Toggle how ambiguous characters are treated. If cjkwidth is on screen
 interprets them as double (full) width characters. If off then they are seen
 as one cell (half) width characters.
 @end deffn
@@ -3689,7 +3695,7 @@ or last non-whitespace character on the line.
 
 @noindent
 @kbd{f}/@kbd{F}, @kbd{t}/@kbd{T} move the cursor forward/backward to the 
-next occurence of the target. (eg, '3fy' will move the cursor to the 3rd 
+next occurrence of the target. (eg, '3fy' will move the cursor to the 3rd
 'y' to the right.)
 
 @noindent
@@ -3870,7 +3876,7 @@ paste buffer exists once for every user.
 (none)@*
 Stuff the string @var{string} in the input buffer of the current window.
 This is like the @code{paste} command, but with much less overhead.
-Without a paramter, @code{screen} will prompt for a string to stuff.
+Without a parameter, @code{screen} will prompt for a string to stuff.
 You cannot paste large buffers with the @code{stuff} command. It is most
 useful for key bindings. @xref{Bindkey}.
 @end deffn
@@ -5321,7 +5327,8 @@ Uses the message line to display the time of day, the host name, and the
 load averages over 1, 5, and 15 minutes (if this is available on your
 system).  For window-specific information use @code{info} (@pxref{Info}).
 If a @var{string} is specified, it changes the format of the time report
-like it is described in the string escapes chapter (@pxref{String Escapes}). Screen uses a default of @samp{%c:%s %M %d %H%? %l%?}.
+like it is described in the string escapes chapter (@pxref{String Escapes}).
+Screen uses a default of @samp{%c:%s %M %d %H%? %l%?}.
 @end deffn
 
 @node Verbose, Version, Time, Miscellaneous
@@ -5380,7 +5387,7 @@ sequence @code{ESC [ 5 i}, but pipe the output into @var{cmd}.
 This should normally be a command like @samp{lpr} or
 @samp{cat > /tmp/scrprint}.
 @code{Printcmd} without an argument displays the current setting.
-The ansi sequence @code{ESC \} ends printing and closes the pipe.
+The ansi sequence @code{ESC [ 4 i} ends printing and closes the pipe.
 
 Warning: Be careful with this command! If other user have write
 access to your terminal, they will be able to fire off print commands.
@@ -5571,6 +5578,8 @@ day number
 weekday name
 @item E
 sets %? to true if the escape character has been pressed.
+@item e
+encoding
 @item f
 flags of the window. @xref{Windows}, for meanings of the various flags.
 @item F
@@ -5988,7 +5997,7 @@ features.
 @section Reporting Bugs
 @cindex bug report
 
-If you find a bug in @code{Screen}, please send electronic mail to
+If you find a bug in @code{Screen}, please send mail to
 @w{@samp{screen-devel@@gnu.org}}.  Include the version number
 of @code{Screen} which you are using.  Also include in your message the
 hardware and operating system, the compiler used to compile, a

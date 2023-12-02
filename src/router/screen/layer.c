@@ -22,7 +22,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -892,7 +892,7 @@ VA_DECL
     buf[sizeof(buf) - 1] = 0;
   }
 
-  debug2("LMsg('%s') (%#x);\n", buf, (unsigned int)flayer);
+  debug2("LMsg('%s') (%#lx);\n", buf, (long)flayer);
   for (display = displays; display; display = display->d_next) {
     for (cv = D_cvlist; cv; cv = cv->c_next)
       if (cv->c_layer == flayer)
@@ -935,11 +935,11 @@ void KillLayerChain(struct layer *lay)
   struct layer *l, *oldflayer;
 
   oldflayer = flayer;
-  debug1("KillLayerChain %#x\n", lay);
+  debug1("KillLayerChain %#lx\n", (long)lay);
   for (l = lay; l; l = l->l_next) {
     if (l->l_layfn == &WinLf || l->l_layfn == &BlankLf)
       break;
-    debug1("- killing %#x\n", l);
+    debug1("- killing %#lx\n", (long)l);
     if (oldflayer == l)
       oldflayer = 0;
     for (cv = l->l_cvlist; cv; cv = ncv) {
@@ -973,7 +973,7 @@ int InitOverlayPage(int datasize, struct LayFuncs *lf, int block)
     Msg(0, "No memory for layer struct");
       return -1;
   }
-  debug2("Entering new layer on top of %#x: %#x\n", (unsigned int)flayer, newlay);
+  debug2("Entering new layer on top of %#lx: %#lx\n", (long)flayer, (long)newlay);
   data = 0;
   if (datasize) {
     if ((data = calloc(1, datasize)) == 0) {
@@ -1049,7 +1049,7 @@ void ExitOverlayPage()
   struct layout *lay;
 
   ASSERT(flayer);
-  debug1("Exiting layer %#x\n", (unsigned int)flayer);
+  debug1("Exiting layer %#lx\n", (long)flayer);
   oldlay = flayer;
   if (oldlay->l_data) {
     if (oldlay->l_layfn->lf_LayFree)

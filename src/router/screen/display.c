@@ -20,13 +20,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
  */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
 #ifndef sun
@@ -1022,7 +1023,7 @@ int x2, y2;
 
   /* Calculate the cost to move the cursor to the right x position */
   costx = EXPENSIVE;
-  if (x1 >= 0)	/* relativ x positioning only if we know where we are */
+  if (x1 >= 0)	/* relative x positioning only if we know where we are */
     {
       if (dx > 0)
 	{
@@ -2308,14 +2309,14 @@ char *str;
 
 
 /*
- *  Refreshes the harstatus of the fore window. Shouldn't be here...
+ *  Refreshes the hardstatus of the fore window. Shouldn't be here...
  */
 void
 RefreshHStatus()
 {
   char *buf;
 #ifdef UTF8
-  int extrabytes = strlen(hstatusstring) - strlen_onscreen(hstatusstring, NULL);
+  int extrabytes = strlen(hstatusstring) - strlen_onscreen((unsigned char *)hstatusstring, NULL);
 #else
   int extrabytes = 0;
 #endif
@@ -2418,7 +2419,7 @@ int y, from, to, isblank;
 	  if (y == cv->c_ye + 1 && from >= cv->c_xs && from <= cv->c_xe)
 	    {
 #ifdef UTF8
-	      int extrabytes = strlen(captionstring) - strlen_onscreen(captionstring, NULL);
+	      int extrabytes = strlen(captionstring) - strlen_onscreen((unsigned char *)captionstring, NULL);
 #else
 	      int extrabytes = 0;
 #endif
@@ -3405,7 +3406,7 @@ char *data;
    */
   int size;
   char bufspace[MAX_MOUSE_SEQUENCE + IOSIZE];
-  unsigned char *buf = bufspace + MAX_MOUSE_SEQUENCE;
+  unsigned char *buf = (unsigned char*)bufspace + MAX_MOUSE_SEQUENCE;
 
   struct canvas *cv;
 
@@ -3480,7 +3481,7 @@ char *data;
 	if (p->w_zdisplay == display)
 	  {
 	    flayer = &p->w_layer;
-	    bufp = buf;
+	    bufp = (char *)buf;
 	    while (size > 0)
 	      LayProcess(&bufp, &size);
 	    return;
@@ -3763,7 +3764,7 @@ disp_processinput(display, buf, size)
       return;
     }
 #endif
-  (*D_processinput)(buf, size);
+  (*D_processinput)((char *)buf, size);
 }
 
 static void
@@ -3772,7 +3773,7 @@ struct event *ev;
 char *data;
 {
   display = (struct display *)data;
-  debug1("disp_status_fn for display %x\n", (int)display);
+  debug1("disp_status_fn for display %lx\n", (long)display);
   if (D_status)
     RemoveStatus();
 }

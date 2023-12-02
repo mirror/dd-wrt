@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -77,20 +77,21 @@ struct plop
  */
 typedef struct acluser
 {
-  struct acluser *u_next;		/* continue the main user list */
-  char u_name[MAXLOGINLEN + 1];		/* login name how he showed up */
-  char *u_password;		/* his password (may be NullStr). */
-  int  u_checkpassword;		/* nonzero if this u_password is valid */
-  int  u_detachwin;		/* the window where he last detached */
-  int  u_detachotherwin;	/* window that was "other" when he detached */
-  int  u_Esc, u_MetaEsc;	/* the users screen escape character */
+  struct   acluser *u_next;		/* continue the main user list */
+  char     u_name[MAXLOGINLEN + 1];	/* login name how he showed up */
+  char    *u_password;			/* his password (may be NullStr). */
+  int      u_checkpassword;		/* nonzero if this u_password is valid */
+  int      u_detachwin;			/* the window where he last detached */
+  int      u_detachotherwin;		/* window that was "other" when he detached */
+  int      u_Esc, u_MetaEsc;		/* the users screen escape character */
 #ifdef COPY_PASTE
   struct plop u_plop;
 #endif
+
 #ifdef MULTIUSER
-  int u_id;			/* a uniq index in the bitfields. */
+  int u_id;					/* a uniq index in the bitfields. */
   AclBits u_umask_w_bits[ACL_BITS_PER_WIN];	/* his window create umask */
-  struct aclusergroup *u_group;	/* linked list of pointers to other users */
+  struct aclusergroup *u_group;			/* linked list of pointers to other users */
 #endif
 } User;
 

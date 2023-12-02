@@ -20,12 +20,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
  */
 
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/stat.h>	/* mkdir() declaration */
 #include <signal.h>
@@ -51,143 +52,128 @@ static int close_func __P((void *, int));
 #endif
 
 char *
-SaveStr(str)
-register const char *str;
+SaveStr(register const char *str)
 {
-  register char *cp;
+	register char *cp;
 
-  if ((cp = malloc(strlen(str) + 1)) == NULL)
-    Panic(0, "%s", strnomem);
-  else
-    strcpy(cp, str);
-  return cp;
+	if (str == NULL)
+		Panic(0, "SaveStr() received NULL - possibly failed crypt()");
+	if ((cp = malloc(strlen(str) + 1)) == NULL)
+		Panic(0, "%s", strnomem);
+	else
+		strcpy(cp, str);
+	return cp;
 }
 
 char *
-SaveStrn(str, n)
-register const char *str;
-int n;
+SaveStrn(register const char *str, int n)
 {
-  register char *cp;
+	register char *cp;
 
-  if ((cp = malloc(n + 1)) == NULL)
-    Panic(0, "%s", strnomem);
-  else
-    {
-      bcopy((char *)str, cp, n);
-      cp[n] = 0;
-    }
-  return cp;
+	if ((cp = malloc(n + 1)) == NULL)
+		Panic(0, "%s", strnomem);
+	else {
+		bcopy((char *)str, cp, n);
+		cp[n] = 0;
+	}
+	return cp;
 }
 
 /* cheap strstr replacement */
 char *
-InStr(str, pat)
-char *str;
-const char *pat;
+InStr(char *str, const char *pat)
 {
-  int npat = strlen(pat);
-  for (;*str; str++)
-    if (!strncmp(str, pat, npat))
-      return str;
-  return 0;
+	int npat = strlen(pat);
+	for (; *str; str++)
+		if (!strncmp(str, pat, npat))
+			return str;
+	return 0;
 }
 
 #ifndef HAVE_STRERROR
 char *
-strerror(err)
-int err;
+strerror(int err)
 {
-  extern int sys_nerr;
-  extern char *sys_errlist[];
+	extern int sys_nerr;
+	extern char *sys_errlist[];
 
-  static char er[20];
-  if (err > 0 && err < sys_nerr)
-    return sys_errlist[err];
-  sprintf(er, "Error %d", err);
-  return er;
+	static char er[20];
+	if (err > 0 && err < sys_nerr)
+		return sys_errlist[err];
+	sprintf(er, "Error %d", err);
+	return er;
 }
 #endif
 
 void
-centerline(str, y)
-char *str;
-int y;
+centerline(char *str, int y)
 {
-  int l, n;
+	int l, n;
 
-  ASSERT(flayer);
-  n = strlen(str);
-  if (n > flayer->l_width - 1)
-    n = flayer->l_width - 1;
-  l = (flayer->l_width - 1 - n) / 2;
-  LPutStr(flayer, str, n, &mchar_blank, l, y);
+	ASSERT(flayer);
+	n = strlen(str);
+	if (n > flayer->l_width - 1)
+		n = flayer->l_width - 1;
+	l = (flayer->l_width - 1 - n) / 2;
+	LPutStr(flayer, str, n, &mchar_blank, l, y);
 }
 
 void
-leftline(str, y, rend)
-char *str;
-int y;
-struct mchar *rend;
+leftline(char *str, int y, struct mchar *rend)
 {
-  int l, n;
-  struct mchar mchar_dol;
+	int l, n;
+	struct mchar mchar_dol;
 
-  mchar_dol = mchar_blank;
-  mchar_dol.image = '$';
+	mchar_dol = mchar_blank;
+	mchar_dol.image = '$';
 
-  ASSERT(flayer);
-  l = n = strlen(str);
-  if (n > flayer->l_width - 1)
-    n = flayer->l_width - 1;
-  LPutStr(flayer, str, n, rend ? rend : &mchar_blank, 0, y);
-  if (n != l)
-    LPutChar(flayer, &mchar_dol, n, y);
-}
-
-
-char *
-Filename(s)
-char *s;
-{
-  register char *p = s;
-
-  if (p)
-    while (*p)
-      if (*p++ == '/')
-        s = p;
-  return s;
+	ASSERT(flayer);
+	l = n = strlen(str);
+	if (n > flayer->l_width - 1)
+		n = flayer->l_width - 1;
+	LPutStr(flayer, str, n, rend ? rend : &mchar_blank, 0, y);
+	if (n != l)
+		LPutChar(flayer, &mchar_dol, n, y);
 }
 
 char *
-stripdev(nam)
-char *nam;
+Filename(char *s)
+{
+	register char *p = s;
+
+	if (p)
+		while (*p)
+			if (*p++ == '/')
+				s = p;
+	return s;
+}
+
+char *
+stripdev(char *nam)
 {
 #ifdef apollo
-  char *p;
-  
-  if (nam == NULL)
-    return NULL;
+	char *p;
+
+	if (nam == NULL)
+		return NULL;
 # ifdef SVR4
   /* unixware has /dev/pts012 as synonym for /dev/pts/12 */
-  if (!strncmp(nam, "/dev/pts", 8) && nam[8] >= '0' && nam[8] <= '9')
-    {
-      static char b[13];
-      sprintf(b, "pts/%d", atoi(nam + 8));
-      return b;
-    }
+	if (!strncmp(nam, "/dev/pts", 8) && nam[8] >= '0' && nam[8] <= '9') {
+		static char b[13];
+		sprintf(b, "pts/%d", atoi(nam + 8));
+		return b;
+	}
 # endif /* SVR4 */
-  if (p = strstr(nam,"/dev/"))
-    return p + 5;
+	if (p = strstr(nam, "/dev/"))
+		return p + 5;
 #else /* apollo */
-  if (nam == NULL)
-    return NULL;
-  if (strncmp(nam, "/dev/", 5) == 0)
-    return nam + 5;
+	if (nam == NULL)
+		return NULL;
+	if (strncmp(nam, "/dev/", 5) == 0)
+		return nam + 5;
 #endif /* apollo */
-  return nam;
+	return nam;
 }
-
 
 /*
  *    Signal handling
@@ -238,7 +224,6 @@ void (*func) __P(SIGPROTOARG);
 # endif	/* hpux */
 #endif	/* POSIX */
 
-
 /*
  *    uid/gid handling
  */
@@ -246,97 +231,83 @@ void (*func) __P(SIGPROTOARG);
 #ifdef HAVE_SETEUID
 
 void
-xseteuid(euid)
-int euid;
+xseteuid(int euid)
 {
-  if (seteuid(euid) == 0)
-    return;
-  seteuid(0);
-  if (seteuid(euid))
-    Panic(errno, "seteuid");
+	if (seteuid(euid) == 0)
+		return;
+	seteuid(0);
+	if (seteuid(euid))
+		Panic(errno, "seteuid");
 }
 
 void
-xsetegid(egid)
-int egid;
+xsetegid(int egid)
 {
-  if (setegid(egid))
-    Panic(errno, "setegid");
+	if (setegid(egid))
+		Panic(errno, "setegid");
 }
 
 #else /* HAVE_SETEUID */
 # ifdef HAVE_SETREUID
 
 void
-xseteuid(euid)
-int euid;
+xseteuid(int euid)
 {
-  int oeuid;
+	int oeuid;
 
-  oeuid = geteuid();
-  if (oeuid == euid)
-    return;
-  if ((int)getuid() != euid)
-    oeuid = getuid();
-  if (setreuid(oeuid, euid))
-    Panic(errno, "setreuid");
+	oeuid = geteuid();
+	if (oeuid == euid)
+		return;
+	if ((int)getuid() != euid)
+		oeuid = getuid();
+	if (setreuid(oeuid, euid))
+		Panic(errno, "setreuid");
 }
 
 void
-xsetegid(egid)
-int egid;
+xsetegid(int egid)
 {
-  int oegid;
+	int oegid;
 
-  oegid = getegid();
-  if (oegid == egid)
-    return;
-  if ((int)getgid() != egid)
-    oegid = getgid();
-  if (setregid(oegid, egid))
-    Panic(errno, "setregid");
+	oegid = getegid();
+	if (oegid == egid)
+		return;
+	if ((int)getgid() != egid)
+		oegid = getgid();
+	if (setregid(oegid, egid))
+		Panic(errno, "setregid");
 }
 
 # endif /* HAVE_SETREUID */
 #endif /* HAVE_SETEUID */
 
-
-
 #ifdef NEED_OWN_BCOPY
 void
-xbcopy(s1, s2, len)
-register char *s1, *s2;
-register int len;
+xbcopy(register char *s1, register char *s2, register int len)
 {
-  if (s1 < s2 && s2 < s1 + len)
-    {
-      s1 += len;
-      s2 += len;
-      while (len-- > 0)
-	*--s2 = *--s1;
-    }
-  else
-    while (len-- > 0)
-      *s2++ = *s1++;
+	if (s1 < s2 && s2 < s1 + len) {
+		s1 += len;
+		s2 += len;
+		while (len-- > 0)
+			*--s2 = *--s1;
+	} else
+		while (len-- > 0)
+			*s2++ = *s1++;
 }
 #endif	/* NEED_OWN_BCOPY */
 
 void
-bclear(p, n)
-char *p;
-int n;
+bclear(char *p, int n)
 {
-  bcopy((char *)blank, p, n);
+	bcopy((char *)blank, p, n);
 }
 
-
 void
-Kill(pid, sig)
-int pid, sig;
+Kill(int pid, int sig)
 {
-  if (pid < 2)
-    return;
-  (void) kill(pid, sig);
+	if (pid < 2)
+		return;
+	(void)kill(pid, sig);
 }
 
 #ifdef HAVE_FDWALK
@@ -346,49 +317,71 @@ int pid, sig;
  * the default file descriptor limit has risen to 65k.
  */
 static int
-close_func(cb_data, fd)
-void *cb_data;
-int fd;
+close_func(void *cb_data, int fd)
 {
-  int except = *(int *)cb_data;
-  if (fd > 2 && fd != except)
-    (void)close(fd);
-  return (0);
+	int except = *(int *)cb_data;
+	if (fd > 2 && fd != except)
+		(void)close(fd);
+	return (0);
 }
 
 void
-closeallfiles(except)
-int except;
+closeallfiles(int except)
 {
-  (void)fdwalk(close_func, &except);
+	(void)fdwalk(close_func, &except);
 }
 
 #else /* HAVE_FDWALK */
 
 void
-closeallfiles(except)
-int except;
+closeallfiles(int except)
 {
-  int f;
+	int f;
 #ifdef SVR4
-  struct rlimit rl;
-  
-  if ((getrlimit(RLIMIT_NOFILE, &rl) == 0) && rl.rlim_max != RLIM_INFINITY)
-    f = rl.rlim_max;
-  else
+	struct rlimit rl;
+
+	if ((getrlimit(RLIMIT_NOFILE, &rl) == 0) &&
+	    rl.rlim_max != RLIM_INFINITY)
+		f = rl.rlim_max;
+	else
 #endif /* SVR4 */
 #if defined(SYSV) && defined(NOFILE) && !defined(ISC)
-  f = NOFILE;
+		f = NOFILE;
+	while (--f > 2)
+		if (f != except)
+			close(f);
 #else /* SYSV && !ISC */
-  f = getdtablesize();
+	{
+		struct pollfd pfd[1024];
+		int maxfd, i, ret, z;
+
+		i = 3; /* skip stdin, stdout and stderr */
+		maxfd = getdtablesize();
+
+		while (i < maxfd) {
+			memset(pfd, 0, sizeof(pfd));
+
+			z = 0;
+			for (f = i; f < maxfd && f < i + 1024; f++)
+				pfd[z++].fd = f;
+
+			ret = poll(pfd, f - i, 0);
+			if (ret < 0)
+				Panic(errno, "poll");
+
+			z = 0;
+			for (f = i; f < maxfd && f < i + 1024; f++)
+				if (!(pfd[z++].revents & POLLNVAL) &&
+				    f != except)
+					close(f);
+
+			i = f;
+		}
+	}
 #endif /* SYSV && !ISC */
-  while (--f > 2)
-    if (f != except)
-      close(f);
 }
 
 #endif /* HAVE_FDWALK */
-
 
 /*
  *  Security - switch to real uid
@@ -396,7 +389,7 @@ int except;
 
 #ifndef USE_SETEUID
 static int UserPID;
-static sigret_t (*Usersigcld)__P(SIGPROTOARG);
+static sigret_t (*Usersigcld) __P(SIGPROTOARG);
 #endif
 static int UserSTAT;
 
@@ -404,50 +397,48 @@ int
 UserContext()
 {
 #ifndef USE_SETEUID
-  if (eff_uid == real_uid && eff_gid == real_gid)
-    return 1;
-  Usersigcld = signal(SIGCHLD, SIG_DFL);
-  debug("UserContext: forking.\n");
-  switch (UserPID = fork())
-    {
-    case -1:
-      Msg(errno, "fork");
-      return -1;
-    case 0:
-      signal(SIGHUP, SIG_DFL);
-      signal(SIGINT, SIG_IGN);
-      signal(SIGQUIT, SIG_DFL);
-      signal(SIGTERM, SIG_DFL);
+	if (eff_uid == real_uid && eff_gid == real_gid)
+		return 1;
+	Usersigcld = signal(SIGCHLD, SIG_DFL);
+	debug("UserContext: forking.\n");
+	switch (UserPID = fork()) {
+	case -1:
+		Msg(errno, "fork");
+		return -1;
+	case 0:
+		signal(SIGHUP, SIG_DFL);
+		signal(SIGINT, SIG_IGN);
+		signal(SIGQUIT, SIG_DFL);
+		signal(SIGTERM, SIG_DFL);
 # ifdef BSDJOBS
-      signal(SIGTTIN, SIG_DFL);
-      signal(SIGTTOU, SIG_DFL);
+		signal(SIGTTIN, SIG_DFL);
+		signal(SIGTTOU, SIG_DFL);
 # endif
-      setuid(real_uid);
-      setgid(real_gid);
-      return 1;
-    default:
-      return 0;
-    }
+		setuid(real_uid);
+		setgid(real_gid);
+		return 1;
+	default:
+		return 0;
+	}
 #else
-  xseteuid(real_uid);
-  xsetegid(real_gid);
-  return 1;
+	xseteuid(real_uid);
+	xsetegid(real_gid);
+	return 1;
 #endif
 }
 
 void
-UserReturn(val)
-int val;
+UserReturn(int val)
 {
 #ifndef USE_SETEUID
-  if (eff_uid == real_uid && eff_gid == real_gid)
-    UserSTAT = val;
-  else
-    _exit(val);
+	if (eff_uid == real_uid && eff_gid == real_gid)
+		UserSTAT = val;
+	else
+		_exit(val);
 #else
-  xseteuid(eff_uid);
-  xsetegid(eff_gid);
-  UserSTAT = val;
+	    xseteuid(eff_uid);
+	xsetegid(eff_gid);
+	UserSTAT = val;
 #endif
 }
 
@@ -455,160 +446,140 @@ int
 UserStatus()
 {
 #ifndef USE_SETEUID
-  int i;
+	int i;
 # ifdef BSDWAIT
-  union wait wstat;
+	union wait wstat;
 # else
-  int wstat;
+	int wstat;
 # endif
 
-  if (eff_uid == real_uid && eff_gid == real_gid)
-    return UserSTAT;
-  if (UserPID < 0)
-    return -1;
-  while ((errno = 0, i = wait(&wstat)) != UserPID)
-    if (i < 0 && errno != EINTR)
-      break;
-  (void) signal(SIGCHLD, Usersigcld);
-  if (i == -1)
-    return -1;
-  return WEXITSTATUS(wstat);
+	if (eff_uid == real_uid && eff_gid == real_gid)
+		return UserSTAT;
+	if (UserPID < 0)
+		return -1;
+	while ((errno = 0, i = wait(&wstat)) != UserPID)
+		if (i < 0 && errno != EINTR)
+			break;
+	(void)signal(SIGCHLD, Usersigcld);
+	if (i == -1)
+		return -1;
+	return WEXITSTATUS(wstat);
 #else
-  return UserSTAT;
+	return UserSTAT;
 #endif
 }
 
 #ifndef HAVE_RENAME
 int
-rename (old, new)
-char *old;
-char *new;
+rename(char *old, char *new)
 {
-  if (link(old, new) < 0)
-    return -1;
-  return unlink(old);
+	if (link(old, new) < 0)
+		return -1;
+	return unlink(old);
 }
 #endif
 
-
 int
-AddXChar(buf, ch)
-char *buf;
-int ch;
+AddXChar(char *buf, int ch)
 {
-  char *p = buf;
+	char *p = buf;
 
-  if (ch < ' ' || ch == 0x7f)
-    {
-      *p++ = '^';
-      *p++ = ch ^ 0x40;
-    }
-  else if (ch >= 0x80)
-    {
-      *p++ = '\\';
-      *p++ = (ch >> 6 & 7) + '0';
-      *p++ = (ch >> 3 & 7) + '0';
-      *p++ = (ch >> 0 & 7) + '0';
-    }
-  else
-    *p++ = ch;
-  return p - buf;
+	if (ch < ' ' || ch == 0x7f) {
+		*p++ = '^';
+		*p++ = ch ^ 0x40;
+	} else if (ch >= 0x80) {
+		*p++ = '\\';
+		*p++ = (ch >> 6 & 7) + '0';
+		*p++ = (ch >> 3 & 7) + '0';
+		*p++ = (ch >> 0 & 7) + '0';
+	} else
+		*p++ = ch;
+	return p - buf;
 }
 
 int
-AddXChars(buf, len, str)
-char *buf, *str;
-int len;
+AddXChars(char *buf, int len, char *str)
 {
-  char *p;
+	char *p;
 
-  if (str == 0)
-    {
-      *buf = 0;
-      return 0;
-    }
-  len -= 4;     /* longest sequence produced by AddXChar() */
-  for (p = buf; p < buf + len && *str; str++)
-    {
-      if (*str == ' ')
-        *p++ = *str;
-      else
-        p += AddXChar(p, *str);
-    }
-  *p = 0;
-  return p - buf;
+	if (str == 0) {
+		*buf = 0;
+		return 0;
+	}
+	len -= 4;     /* longest sequence produced by AddXChar() */
+	for (p = buf; p < buf + len && *str; str++) {
+		if (*str == ' ')
+			*p++ = *str;
+		else
+			p += AddXChar(p, *str);
+	}
+	*p = 0;
+	return p - buf;
 }
-
 
 #ifdef DEBUG
 void
-opendebug(new, shout)
-int new, shout;
+opendebug(int new, int shout)
 {
-  char buf[256];
+	char buf[256];
 
 #ifdef _MODE_T
-  mode_t oumask = umask(0);
+	mode_t oumask = umask(0);
 #else
-  int oumask = umask(0);
+	int oumask = umask(0);
 #endif
 
-  ASSERT(!dfp);
+	ASSERT(!dfp);
 
-  (void) mkdir(DEBUGDIR, 0777);
-  sprintf(buf, shout ? "%s/SCREEN.%d" : "%s/screen.%d", DEBUGDIR, getpid());
-  if (!(dfp = fopen(buf, new ? "w" : "a")))
-    dfp = stderr;
-  else
-    (void)chmod(buf, 0666);
+	(void)mkdir(DEBUGDIR, 0777);
+	sprintf(buf, shout ?
+	    "%s/SCREEN.%d" : "%s/screen.%d", DEBUGDIR, getpid());
+	if (!(dfp = fopen(buf, new ? "w" : "a")))
+		dfp = stderr;
+	else
+		(void)chmod(buf, 0666);
 
-  (void)umask(oumask);
-  debug("opendebug: done.\n");
+	(void)umask(oumask);
+	debug("opendebug: done.\n");
 }
 #endif /* DEBUG */
 
 void
-sleep1000(msec)
-int msec;
-
+sleep1000(int msec)
 {
-  struct timeval t;
+	struct timeval t;
 
-  t.tv_sec = (long) (msec / 1000);
-  t.tv_usec = (long) ((msec % 1000) * 1000);
-  select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
+	t.tv_sec = (long)(msec / 1000);
+	t.tv_usec = (long)((msec % 1000) * 1000);
+	select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
 }
-
 
 /*
  * This uses either setenv() or putenv(). If it is putenv() we cannot dare
  * to free the buffer after putenv(), unless it it the one found in putenv.c
  */
 void
-xsetenv(var, value)
-char *var;
-char *value;
+xsetenv(char *var, char *value)
 {
 #ifndef USESETENV
-  char *buf;
-  int l;
+	char *buf;
+	int l;
 
-  if ((buf = (char *)malloc((l = strlen(var)) +
-			    strlen(value) + 2)) == NULL)
-    {
-      Msg(0, strnomem);
-      return;
-    }
-  strcpy(buf, var);
-  buf[l] = '=';
-  strcpy(buf + l + 1, value);
-  putenv(buf);
+	if ((buf = (char *)malloc((l = strlen(var)) +
+	    strlen(value) + 2)) == NULL) {
+		Msg(0, strnomem);
+		return;
+	}
+	strcpy(buf, var);
+	buf[l] = '=';
+	strcpy(buf + l + 1, value);
+	putenv(buf);
 # ifdef NEEDPUTENV
   /*
    * we use our own putenv(), knowing that it does a malloc()
    * the string space, we can free our buf now.
    */
-  free(buf);
+	free(buf);
 # else /* NEEDPUTENV */
   /*
    * For all sysv-ish systems that link a standard putenv()
@@ -620,9 +591,9 @@ char *value;
 # endif /* NEEDPUTENV */
 #else /* USESETENV */
 # if HAVE_SETENV_3
-  setenv(var, value, 1);
+	setenv(var, value, 1);
 # else
-  setenv(var, value);
+	setenv(var, value);
 # endif /* HAVE_SETENV_3 */
 #endif /* USESETENV */
 }
@@ -633,9 +604,7 @@ char *value;
  * emulation of libcurses, which ignores ospeed.
  */
 int
-_delay(delay, outc)
-register int delay;
-int (*outc) __P((int));
+_delay(register int delay, int (*outc) __P((int)))
 {
   int pad;
   extern short ospeed;
@@ -654,28 +623,19 @@ int (*outc) __P((int));
 
 #endif /* TERMINFO */
 
-
-
 #ifndef USEVARARGS
 
 # define xva_arg(s, t, tn) (*(t *)(s += xsnoff(tn, 0, 0), s - xsnoff(tn, 0, 0)))
 # define xva_list char *
 
 static int
-xsnoff(a, b, c)
-int a;
-char *b;
-int c;
+xsnoff(int a, char *b, int c)
 {
   return a ? (char *)&c  - (char *)&b : (char *)&b - (char *)&a;
 }
 
 int
-xsnprintf(s, n, fmt, p1, p2, p3, p4, p5, p6)
-char *s;
-int n;
-char *fmt;
-unsigned long p1, p2, p3, p4, p5, p6;
+xsnprintf(char *s, int n, char *fmt, unsigned long p1, p2, p3, p4, p5, p6)
 {
   int xvsnprintf __P((char *, int, char *, xva_list));
   return xvsnprintf(s, n, fmt, (char *)&fmt + xsnoff(1, 0, 0));
@@ -688,84 +648,75 @@ unsigned long p1, p2, p3, p4, p5, p6;
 
 #endif
 
-
 #if !defined(USEVARARGS) || !defined(HAVE_VSNPRINTF)
 
 int
-xvsnprintf(s, n, fmt, stack)
-char *s;
-int n;
-char *fmt;
-xva_list stack;
+xvsnprintf(char *s, int n, char *fmt, xva_list stack)
 {
-  char *f, *sf = 0;
-  int i, on, argl = 0;
-  char myf[10], buf[20];
-  char *arg, *myfp;
+	char *f, *sf = 0;
+	int i, on, argl = 0;
+	char myf[10], buf[20];
+	char *arg, *myfp;
 
-  on = n;
-  f = fmt;
-  arg = 0;
-  while(arg || (sf = index(f, '%')) || (sf = f + strlen(f)))
-    {
-      if (arg == 0)
-	{
-	  arg = f;
-	  argl = sf - f;
+	on = n;
+	f = fmt;
+	arg = 0;
+	while (arg || (sf = index(f, '%')) || (sf = f + strlen(f))) {
+		if (arg == 0) {
+			arg = f;
+			argl = sf - f;
+		}
+		if (argl) {
+			i = argl > n - 1 ? n - 1 : argl;
+			strncpy(s, arg, i);
+			s += i;
+			n -= i;
+			if (i < argl) {
+				*s = 0;
+				return on;
+			}
+		}
+		arg = 0;
+		if (sf == 0)
+			continue;
+		f = sf;
+		sf = 0;
+		if (!*f)
+			break;
+		myfp = myf;
+		*myfp++ = *f++;
+		while (((*f >= '0' && *f <= '9') || *f == '#') &&
+		    myfp - myf < 8)
+			*myfp++ = *f++;
+		*myfp++ = *f;
+		*myfp = 0;
+		if (!*f++)
+			break;
+		switch (f[-1]) {
+		case '%':
+			arg = "%";
+			break;
+		case 'c':
+		case 'o':
+		case 'd':
+		case 'x':
+			i = xva_arg(stack, int, 0);
+			sprintf(buf, myf, i);
+			arg = buf;
+			break;
+		case 's':
+			arg = xva_arg(stack, char *, 1);
+			if (arg == 0)
+				arg = "NULL";
+			break;
+		default:
+			arg = "";
+			break;
+		}
+		argl = strlen(arg);
 	}
-      if (argl)
-	{
-	  i = argl > n - 1 ? n - 1 : argl;
-	  strncpy(s, arg, i);
-          s += i;
-	  n -= i;
-	  if (i < argl)
-	    {
-	      *s = 0;
-	      return on;
-	    }
-	}
-      arg = 0;
-      if (sf == 0)
-	continue;
-      f = sf;
-      sf = 0;
-      if (!*f)
-	break;
-      myfp = myf;
-      *myfp++ = *f++;
-      while (((*f >= '0' && *f <='9') || *f == '#') && myfp - myf < 8)
-        *myfp++ = *f++;
-      *myfp++ = *f;
-      *myfp = 0;
-      if (!*f++)
-	break;
-      switch(f[-1])
-	{
-	case '%':
-	  arg = "%";
-	  break;
-	case 'c':
-	case 'o':
-	case 'd':
-	case 'x':
-	  i = xva_arg(stack, int, 0);
-	  sprintf(buf, myf, i);
-	  arg = buf;
-	  break;
-	case 's':
-	  arg = xva_arg(stack, char *, 1);
-	  if (arg == 0)
-	    arg = "NULL";
-	  break;
-	default:
-	  arg = "";
-	  break;
-	}
-      argl = strlen(arg);
-    }
-  *s = 0;
-  return on - n;
+	*s = 0;
+	return on - n;
 }
 
 #endif

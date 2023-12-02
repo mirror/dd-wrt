@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -113,7 +113,7 @@ QueryResultFail SIGDEFARG
  *               MSG_CONT, MSG_WINCH and nothing else!
  *
  *  if type == MSG_ATTACH and sockets are used, attaches
- *  tty filedescriptor.
+ *  tty file descriptor.
  */
 
 static int

@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -30,6 +30,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+
+#if defined(__OpenBSD__)
+#include <utils.h>  /* for openpty() */
+#endif
 
 #include "config.h"
 #include "screen.h"

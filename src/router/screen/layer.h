@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -106,7 +106,7 @@ struct layer
 	  debug("LayCallUp\n");				\
 	  flayer = flayer->l_next;			\
 	  oldcvlist = flayer->l_cvlist;			\
-	  debug1("oldcvlist: %x\n", oldcvlist);		\
+	  debug1("oldcvlist: %lx\n", (long)oldcvlist);  \
 	  flayer->l_cvlist = oldlay->l_cvlist;		\
 	  for (cv = flayer->l_cvlist; cv; cv = cv->c_lnext)	\
 		cv->c_layer = flayer;			\

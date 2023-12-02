@@ -23,7 +23,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -770,14 +770,14 @@ int ilen;
 	}
       for (;;)
 	{
-	  debug3("cmp %c %c[%d]\n", ch, *D_seqp, D_seqp - D_kmaps);
+	  debug3("cmp %c %c[%ld]\n", ch, *D_seqp, (long)(D_seqp - D_kmaps));
 	  if (*D_seqp != ch)
 	    {
 	      l = D_seqp[D_seqp[-D_seql-1] + 1];
 	      if (l)
 		{
 		  D_seqp += l * 2 + 4;
-		  debug1("miss %d\n", D_seqp - D_kmaps);
+		  debug1("miss %ld\n", (long)(D_seqp - D_kmaps));
 		  continue;
 		}
 	      debug("complete miss\n");

@@ -40,7 +40,7 @@ sysadmins discuss the location of SOCKDIR, whether it should be in /tmp or
 not. At least it must be on a filesystem that supports sockets/fifos.
 SOCKDIR must not point into an AFS (Andrew File System) mounted directory. 
 If you are uncertain about your NFS implementation, use a UFS directory for 
-SOCKDIR. Personally, I favour a users home directory and recommend the the 
+SOCKDIR. Personally, I favour a user's home directory and recommend the the
 /tmp/ area. 
 The path for ETCSCREENRC may also need to be adapted.
 
@@ -58,7 +58,7 @@ You can then try 'make install' (if you dare).
 --------------------
 You may well run screen from your private binary directory and with a 
 private socket directory like $HOME/.screen. But to have a full featured
-screen and (from a users point of view) more secure pty's you should
+screen and (from a user's point of view) more secure pty's you should
 consult a system administrator and discuss installing screen setuid-root
 in some globally accessible directory like /usr/local/bin.
 
@@ -94,7 +94,7 @@ If so, mail me.
 The files screenrc and etc/etcscreenrc are instructive samples that
 demonstrate what can/should be done from your private .screenrc and from
 $ETCSCREENRC -- do not just copy them. Read them.  Look through the 
-etcscreenrc file for system wide defaults that you like to set. e.g. 
+etcscreenrc file for system wide defaults that you like to set, e.g.
 autodetach off, startup_message off, vbell on, ...
 Since version 3.2.15 the screenrc file syntax changed slightly. All rc files
 from previous versions should be run through the 'newsyntax' script that comes 

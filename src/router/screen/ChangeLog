@@ -1,10 +1,41 @@
-Version 4.7.0 (02/10/2019)
+Version 4.9.1 (20/08/2023):
+  * Support stop/parity bits on serial port (#23952)
+  * Add needed system headers in checks and return values
+    for implicit function declarations
+  * Fixes:
+    - Avoid zombies after shell exit (#25089)
+    - Missed signal sending permission check on failed
+      query messages (CVE-2023-24626)
+    - manpage fixes
+    - source code fixes during cleanup
+    - UTF-8 encoding can emit invalid UTF-8 sequences
+      for out of range unicode values (#62097)
+
+Version 4.9.0 (30/01/2022):
+  * Hardstatus option for used encoding (escape string '%e')
+  * OpenBSD uses native openpty() from its utils.h
+  * Fixes:
+    - fix combining char handling that could lead to a segfault
+    - CVE-2021-26937: possible denial of service via a crafted UTF-8 character sequence (bug #60030)
+    - make screen exit code be 0 when checking --help
+    - session names limit is 80 symbols (bug #61534)
+    - option -X ignores specified user in multiuser env (bug #37437)
+    - a lot of reformations/fixes/cleanups (man page and source code)
+
+Version 4.8.0 (05/02/2020):
+  * Improve startup time by only polling for files to close
+  * Fixes:
+	- Fix for segfault if termcap doesn't have Km entry
+	- Make screen exit code be 0 when checking --version
+	- Fix potential memory corruption when using OSC 49
+
+Version 4.7.0 (02/10/2019):
   * Add support for SGR (1006) mouse mode
   * Add support for OSC 11
   * Update Unicode ambiguous and wide tables to 12.1.0
   * Fixes:
-  - cross-compilation support (bug #43223)
-  - a lot of manpage fixes and cleanups
+	- cross-compilation support (bug #43223)
+	- a lot of manpage fixes and cleanups
 
 Version 4.6.2 (23/10/2017):
   * Fixes:
@@ -54,12 +85,11 @@ Version 4.3.0 (13/06/2015):
   * Introduce Xx string escape showing the executed command of a window
   * Implement dead/zombie window polling, allowing for auto reconnecting
   * Allow setting hardstatus on first line
-
-  New Commands:
-  * 'sort' command sorting windows by title
-  * 'bumpleft', 'bumpright' - manually move windows on window list
-  * 'collapse' removing numbering 'gaps' between windows, by renumbering
-  * 'windows' command now accepts arguments for use with querying
+  * New Commands:
+	- 'sort' command sorting windows by title
+	- 'bumpleft', 'bumpright' - manually move windows on window list
+	- 'collapse' removing numbering 'gaps' between windows, by renumbering
+	- 'windows' command now accepts arguments for use with querying
 
 Version 4.2.1 (28/04/2014):
   * allow for terminal with long $TERM (up to 32 characters)
@@ -71,8 +101,7 @@ Version 4.2.0 (17/04/2014):
   New Commands:
   * 'unbindall' to unbind all commands
   * 'up', 'down', 'left', 'right' sub-commands for 'focus'
-  * 'rendition' to specify rendition to use in caption/hardstatus for
-    window-names that have bell/monitor/silence/so turned on.
+  * 'rendition' to specify rendition to use in caption/hardstatus for window-names that have bell/monitor/silence/so turned on.
   * 'layout', with the following sub-commands
 	- 'title'
 	- 'number'
@@ -364,8 +393,8 @@ screen 3.0 Patchlevel 6
 =======================
 
 .screenrc:
-  screen now only opens the windows you explicitly ask for. if you 
-  specify none, you still get one window, of course.
+  screen now only opens the windows you explicitly ask for.
+  If you specify none, you still get one window, of course.
 
 screen 3.0. Patchlevel 5
 ========================
@@ -383,7 +412,7 @@ markkeys "string"
   by a colon. Oldchar and newchar are either single ascii characters, 
   or the two character sequence ^x, where x is an ascii character, or
   a 3 digit octal value prepended with '\'. the string "\040=.:^M=q"
-  rebinds '.' to set marks, and the return rey will abort copy mode.
+  rebinds '.' to set marks, and the return key will abort copy mode.
 
 set scrollback 100
   resizes the scrollback history buffer to 100 lines. a default of 50
@@ -418,7 +447,7 @@ screen -wipe
 
 ^A : set vbell_msg "Wuff Wuff"
 
-Thousand enhancements: help resizible, copy'n'paste in main
+Thousand enhancements: help resizable, copy'n'paste in main
   socket loop, and no more '\0' hackin'. :WS=\E8;%d;%dt:
 
 screen can now resize windows under sunview.
@@ -446,12 +475,12 @@ pow_detach_msg "text string"
   bind 'O' set login off
   is valid in your .screenrc as well as typed at the ':' prompt.
   a bonus is ":set all" which is synonym to ":help".
-  At the Colon prompt also KeyNames can be entered, alothough that makes
+  At the Colon prompt also KeyNames can be entered, although that makes
   not always sense.
 
 ^A x uses a builtin lockprg, if 
   a) we don't find our lockprg, or
-  b) user supplies us with the environmet variable LOCKPRG set to "builtin"
+  b) user supplies us with the environment variable LOCKPRG set to "builtin"
   the builtin locks until your login password is typed. on systems using
   "shadow password files" you are prompted for a password.
 
@@ -472,7 +501,7 @@ bug in SetForeWindow fixed.
 
 rare markroutine bug fixed.
 
-we dont open every file the attacher tells us.
+we don't open every file the attacher tells us.
 
 we have now our wonderful "Wuff, Wuff" visual_bell
 

@@ -4,7 +4,7 @@
 
 * unicode combining character support
 
-* new encoding: chinese GBK
+* new encoding: Chinese GBK
 
 * new 'backtick' command and string escape to embed command
   output into e.g. the hardstatus line
@@ -32,9 +32,9 @@
     'register', 'readreg', 'readbuf', 'writebuf' now understand
     an extra encoding parameter
 
-* support for double utf-8 characters
+* support for double UTF-8 characters
 
-* lots of new string escapes and extensions to existsing ones:
+* lots of new string escapes and extensions to existing ones:
     %LD, %LM, %Lw, %W, %-w, %+w, %H, %f, %F, %l, %=, %<, %>
 
 * new commands: 'source', 'eval', 'deflog', 'ignorecase', 'setsid'
@@ -129,8 +129,8 @@
       hardstatus [always]message
       hardstatus [always]ignore
 
-* configurable window seperator and hardstatus strings
-    The window (region) seperator and the hardstatus can be set to an
+* configurable window separator and hardstatus strings
+    The window (region) separator and the hardstatus can be set to an
     arbitrary string containing screen's % escape sequences.
     The window's hardstatus is just another escape sequence, '%h'.
     New commands:
@@ -138,8 +138,8 @@
       caption string [string]
     The default strings are "%h" (hardstatus) and "%3n %t" (caption).
 
-* permanent window seperator
-    The window seperator can be set to stay on screen even if
+* permanent window separator
+    The window separator can be set to stay on screen even if
     the display contains only one region
     New commands:
       caption always
@@ -195,7 +195,7 @@
 
 * support for history compaction
     You can tell screen to suppress trailing blank lines when
-    scolling up text into the history buffer. (Wayne Davison)
+    scrolling up text into the history buffer. (Wayne Davison)
     New command:
       compacthist
 

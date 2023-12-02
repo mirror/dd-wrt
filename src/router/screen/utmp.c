@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -354,7 +354,7 @@ RemoveLoginSlot()
 	}
       UT_CLOSE;
     }
-  debug1(" slot %d zapped\n", (int)D_loginslot);
+  debug1(" slot %ld zapped\n", (long)D_loginslot);
   if (D_loginslot == (slot_t)0)
     {
       /* couldn't remove slot, do a 'mesg n' at least. */
@@ -382,7 +382,7 @@ RestoreLoginSlot()
   ASSERT(display);
   if (utmpok && D_loginslot != (slot_t)0 && D_loginslot != (slot_t)-1)
     {
-      debug1(" logging you in again (slot %#x)\n", (int)D_loginslot);
+      debug1(" logging you in again (slot %#lx)\n", (long)D_loginslot);
       if (pututslot(D_loginslot, &D_utmp_logintty, D_loginhost, (struct win *)0) == 0)
         Msg(errno,"Could not write %s", UtmpName);
     }
@@ -425,7 +425,7 @@ struct win *wi;
       debug1("SetUtmp failed (tty %s).\n",wi->w_tty);
       return -1;
     }
-  debug2("SetUtmp %d will get slot %d...\n", wi->w_number, (int)slot);
+  debug2("SetUtmp %d will get slot %ld...\n", wi->w_number, (long)slot);
 
   bzero((char *)&u, sizeof(u));
   if ((saved_ut = bcmp((char *) &wi->w_savut, (char *)&u, sizeof(u))))
@@ -506,7 +506,7 @@ struct win *wi;
   slot_t slot;
 
   slot = wi->w_slot;
-  debug1("RemoveUtmp slot=%#x\n", slot);
+  debug1("RemoveUtmp slot=%#lx\n", (long)slot);
   if (!utmpok)
     return -1;
   if (slot == (slot_t)0 || slot == (slot_t)-1)
@@ -583,6 +583,15 @@ struct win *wi;
 	addToUtmp(wi->w_tty, host, wi->w_ptyfd);
       else
 	removeLineFromUtmp(wi->w_tty, wi->w_ptyfd);
+      /*
+       * As documented in libutempter: "During execution of the privileged
+       * process spawned by these functions, SIGCHLD signal handler will be
+       * temporarily set to the default action."
+       * Thus in case a SIGCHLD has been lost, we send a SIGCHLD to oneself
+       * in order to avoid zombies: https://savannah.gnu.org/bugs/?25089
+       */
+      kill(getpid(), SIGCHLD);
+
       return 1;	/* pray for success */
     }
 #endif

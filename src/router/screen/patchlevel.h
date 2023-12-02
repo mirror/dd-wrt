@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -532,7 +532,7 @@
 
 #define ORIGIN "GNU"
 #define REV 4
-#define VERS 7
-#define PATCHLEVEL 0
-#define DATE "02-Oct-19"
+#define VERS 9
+#define PATCHLEVEL 1
+#define DATE "20-Aug-23"
 #define STATE ""

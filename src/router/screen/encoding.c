@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -43,7 +43,7 @@ static int  encmatch __P((char *, char *));
 # ifdef UTF8
 static int   recode_char __P((int, int, int));
 static int   recode_char_to_encoding __P((int, int));
-static void  comb_tofront __P((int, int));
+static void  comb_tofront __P((int));
 #  ifdef DW_CHARS
 static int   recode_char_dw __P((int, int *, int, int));
 static int   recode_char_dw_to_encoding __P((int, int *, int));
@@ -675,14 +675,14 @@ int c;
       AddUtf8(combchars[c - 0xd800]->c1);
       c = combchars[c - 0xd800]->c2;
     }
+
+  /* replace out of range values with U+FFFD "replacement character" */
+  if (c < 0 || c > 0x10ffff)
+    c = 0xfffd;
+
   if (c >= 0x10000)
     {
-      if (c >= 0x200000)
-	{
-	  AddChar((c & 0x3000000) >> 12 ^ 0xf8);
-	  c = (c & 0xffffff) ^ ((0xf0 ^ 0x80) << 18);
-	}
-      AddChar((c & 0x1fc0000) >> 18 ^ 0xf0);
+      AddChar((c & 0x1c0000) >> 18 ^ 0xf0);
       c = (c & 0x3ffff) ^ ((0xe0 ^ 0x80) << 12);
     }
   if (c >= 0x800)
@@ -719,17 +719,14 @@ char *p;
 int c;
 {
   int l = 1;
+  /* replace out of range values with U+FFFD "replacement character" */
+  if (c < 0 || c > 0x10ffff)
+    c = 0xfffd;
+
   if (c >= 0x10000)
     {
-      if (c >= 0x200000)
-	{
-	  if (p)
-	    *p++ = (c & 0x3000000) >> 12 ^ 0xf8;
-	  l++;
-	  c = (c & 0xffffff) ^ ((0xf0 ^ 0x80) << 18);
-	}
       if (p)
-        *p++ = (c & 0x1fc0000) >> 18 ^ 0xf0;
+        *p++ = (c & 0x1c0000) >> 18 ^ 0xf0;
       l++;
       c = (c & 0x3ffff) ^ ((0xe0 ^ 0x80) << 12);
     }
@@ -1263,6 +1260,8 @@ int c;
     {0x30000, 0x3FFFD},
   };
 
+  if (c >= 0xdf00 && c <= 0xdfff)
+    return 1;			/* dw combining sequence */
   return ((bisearch(c, wide, sizeof(wide) / sizeof(struct interval) - 1)) ||
           (cjkwidth &&
            bisearch(c, ambiguous,
@@ -1330,11 +1329,12 @@ int c;
 }
 
 static void
-comb_tofront(root, i)
-int root, i;
+comb_tofront(i)
+int i;
 {
   for (;;)
     {
+      int root = i >= 0x700 ? 0x801 : 0x800;
       debug1("bring to front: %x\n", i);
       combchars[combchars[i]->prev]->next = combchars[i]->next;
       combchars[combchars[i]->next]->prev = combchars[i]->prev;
@@ -1396,9 +1396,9 @@ struct mchar *mc;
     {
       /* full, recycle old entry */
       if (c1 >= 0xd800 && c1 < 0xe000)
-        comb_tofront(root, c1 - 0xd800);
+        comb_tofront(c1 - 0xd800);
       i = combchars[root]->prev;
-      if (c1 == i + 0xd800)
+      if (i == 0x800 || i == 0x801 || c1 == i + 0xd800)
 	{
 	  /* completely full, can't recycle */
 	  debug("utf8_handle_comp: completely full!\n");
@@ -1422,7 +1422,7 @@ struct mchar *mc;
   mc->font  = (i >> 8) + 0xd8;
   mc->fontx = 0;
   debug3("combinig char %x %x -> %x\n", c1, c, i + 0xd800);
-  comb_tofront(root, i);
+  comb_tofront(i);
 }
 
 #else /* !UTF8 */

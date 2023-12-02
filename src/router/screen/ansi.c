@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -692,10 +692,6 @@ register int len;
 		    }
 		  curr->w_rend.font = 0;
 		}
-#  ifdef DW_CHARS
-	      if (curr->w_encoding == UTF8 && utf8_isdouble(c))
-		curr->w_mbcs = 0xff;
-#  endif
 	      if (curr->w_encoding == UTF8 && c >= 0x0300 && utf8_iscomb(c))
 		{
 		  int ox, oy;
@@ -730,6 +726,10 @@ register int len;
 		    }
 		  break;
 		}
+#  ifdef DW_CHARS
+		if (curr->w_encoding == UTF8 && utf8_isdouble(c))
+		  curr->w_mbcs = 0xff;
+#  endif
 	      font = curr->w_rend.font;
 # endif
 # ifdef DW_CHARS
@@ -1649,7 +1649,7 @@ PrintStart()
 {
   curr->w_pdisplay = 0;
 
-  /* find us a nice display to print on, fore prefered */
+  /* find us a nice display to print on, fore preferred */
   display = curr->w_lastdisp;
   if (!(display && curr == D_fore && (printcmd || D_PO)))
     for (display = displays; display; display = display->d_next)
@@ -2340,7 +2340,7 @@ char *fmt;
 int n1, n2;
 {
   register int len;
-  char rbuf[40];	/* enough room for all replys */
+  char rbuf[40];	/* enough room for all replies */
 
   sprintf(rbuf, fmt, n1, n2);
   len = strlen(rbuf);

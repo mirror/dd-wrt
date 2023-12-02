@@ -113,7 +113,7 @@ extern int   setsid __P((void));
 extern int   setpgid __P((int, int));
 extern int   tcsetpgrp __P((int, int));
 #endif
-extern int   ioctl __P((int, int, char *));
+extern int   ioctl __P((int, unsigned long, char *));
 
 extern int   kill __P((int, int));
 

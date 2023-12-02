@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -235,6 +235,7 @@ extern int   StuffKey __P((int));
 /* termcap.c */
 extern int   InitTermcap __P((int, int));
 extern char *MakeTermcap __P((int));
+extern void  DumpTermcap __P((int, FILE *));
 extern char *gettermcapstring __P((char *));
 #ifdef MAPKEYS
 extern int   remap __P((int, int));

@@ -46,7 +46,7 @@ exit 0
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, see
- * http://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
+ * https://www.gnu.org/licenses/, or contact Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  *
  ****************************************************************
@@ -142,9 +142,7 @@ SigAlrmDummy SIGDEFARG
  *  The second parameter is parsed for a few stty style options.
  */
 
-int
-OpenTTY(line, opt)
-char *line, *opt;
+int OpenTTY(char *line, char *opt)
 {
   int f;
   struct mode Mode;
@@ -154,24 +152,25 @@ char *line, *opt;
   alarm(2);
 
   /* this open only succeeds, if real uid is allowed */
-  if ((f = secopen(line, O_RDWR | O_NONBLOCK | O_NOCTTY, 0)) == -1)
-    {
-      if (errno == EINTR)
-        Msg(0, "Cannot open line '%s' for R/W: open() blocked, aborted.", line);
-      else
-        Msg(errno, "Cannot open line '%s' for R/W", line);
-      alarm(0);
-      signal(SIGALRM, sigalrm);
-      return -1;
-    }
-  if (!isatty(f))
-    {
-      Msg(0, "'%s' is not a tty", line);
-      alarm(0);
-      signal(SIGALRM, sigalrm);
-      close(f);
-      return -1;
-    }
+  if ((f = secopen(line, O_RDWR | O_NONBLOCK | O_NOCTTY, 0)) == -1) {
+    if (errno == EINTR)
+      Msg(0, "Cannot open line '%s' for R/W: open() blocked, aborted.", line);
+    else
+      Msg(errno, "Cannot open line '%s' for R/W", line);
+
+    alarm(0);
+    signal(SIGALRM, sigalrm);
+    return -1;
+  }
+
+  if (!isatty(f)) {
+    Msg(0, "'%s' is not a tty", line);
+    alarm(0);
+    signal(SIGALRM, sigalrm);
+    close(f);
+    return -1;
+  }
+
 #if defined(I_POP) && defined(POP_TTYMODULES)
   debug("OpenTTY I_POP\n");
   while (ioctl(f, I_POP, (char *)0) >= 0)
@@ -193,11 +192,10 @@ char *line, *opt;
    * We create a sane tty mode. We do not copy things from the display tty
    */
 #if WE_REALLY_WANT_TO_COPY_THE_TTY_MODE
-  if (display)
-    {
-      debug1("OpenTTY: using mode of display for %s\n", line);
-      Mode = D_NewMode;
-    }
+  if (display) {
+    debug1("OpenTTY: using mode of display for %s\n", line);
+    Mode = D_NewMode;
+  }
   else
 #endif
     InitTTY(&Mode, W_TYPE_PLAIN);
@@ -229,10 +227,7 @@ char *line, *opt;
  *  Tty mode handling
  */
 
-void
-InitTTY(m, ttyflag)
-struct mode *m;
-int ttyflag;
+void InitTTY(struct mode *m, int ttyflag)
 {
   bzero((char *)m, sizeof(*m));
 #ifdef POSIX
@@ -368,11 +363,10 @@ XIF{VEOL}	m->tio.c_cc[VEOL]   = VDISABLE;
 XIF{VEOL2}	m->tio.c_cc[VEOL2]  = VDISABLE;
 XIF{VSWTCH}	m->tio.c_cc[VSWTCH] = VDISABLE;
 
-  if (ttyflag)
-   {
-      m->tio.c_cc[VMIN] = TTYVMIN;
-      m->tio.c_cc[VTIME] = TTYVTIME;
-    } 
+  if (ttyflag) {
+    m->tio.c_cc[VMIN] = TTYVMIN;
+    m->tio.c_cc[VTIME] = TTYVTIME;
+  }
 
 # else /* TERMIO */
   debug1("InitTTY: BSD: defaults a la SunOS 4.1.3 (%d)\n", ttyflag);
@@ -423,10 +417,7 @@ IF{LCRTBS}	| LCRTBS
 #endif
 }
 
-void 
-SetTTY(fd, mp)
-int fd;
-struct mode *mp;
+void SetTTY(int fd, struct mode *mp)
 {
   errno = 0;
 #ifdef POSIX
@@ -437,13 +428,12 @@ struct mode *mp;
 #else
 # ifdef TERMIO
   ioctl(fd, TCSETAW, (char *)&mp->tio);
-#  ifdef CYTERMIO
-  if (mp->tio.c_line == 3)
-    {
-      ioctl(fd, LDSETMAPKEY, (char *)&mp->m_mapkey);
-      ioctl(fd, LDSETMAPSCREEN, (char *)&mp->m_mapscreen);
-      ioctl(fd, LDSETBACKSPACE, (char *)&mp->m_backspace);
-    }
+# ifdef CYTERMIO
+  if (mp->tio.c_line == 3) {
+    ioctl(fd, LDSETMAPKEY, (char *)&mp->m_mapkey);
+    ioctl(fd, LDSETMAPSCREEN, (char *)&mp->m_mapscreen);
+    ioctl(fd, LDSETBACKSPACE, (char *)&mp->m_backspace);
+  }
 #  endif
 # else
   /* ioctl(fd, TIOCSETP, (char *)&mp->m_ttyb); */
@@ -462,10 +452,7 @@ struct mode *mp;
     Msg(errno, "SetTTY (fd %d): ioctl failed", fd);
 }
 
-void
-GetTTY(fd, mp)
-int fd;
-struct mode *mp;
+void GetTTY(int fd, struct mode *mp)
 {
   errno = 0;
 #ifdef POSIX
@@ -477,18 +464,16 @@ struct mode *mp;
 # ifdef TERMIO
   ioctl(fd, TCGETA, (char *)&mp->tio);
 #  ifdef CYTERMIO
-  if (mp->tio.c_line == 3)
-    {
-      ioctl(fd, LDGETMAPKEY, (char *)&mp->m_mapkey);
-      ioctl(fd, LDGETMAPSCREEN, (char *)&mp->m_mapscreen);
-      ioctl(fd, LDGETBACKSPACE, (char *)&mp->m_backspace);
-    }
-  else
-    {
-      mp->m_mapkey = NOMAPKEY;
-      mp->m_mapscreen = NOMAPSCREEN;
-      mp->m_backspace = '\b';
-    }
+  if (mp->tio.c_line == 3) {
+    ioctl(fd, LDGETMAPKEY, (char *)&mp->m_mapkey);
+    ioctl(fd, LDGETMAPSCREEN, (char *)&mp->m_mapscreen);
+    ioctl(fd, LDGETBACKSPACE, (char *)&mp->m_backspace);
+  }
+  else {
+    mp->m_mapkey = NOMAPKEY;
+    mp->m_mapscreen = NOMAPSCREEN;
+    mp->m_backspace = '\b';
+  }
 #  endif
 # else
   ioctl(fd, TIOCGETP, (char *)&mp->m_ttyb);
@@ -509,10 +494,7 @@ struct mode *mp;
 /*
  * needs interrupt = iflag and flow = d->d_flow
  */
-void
-SetMode(op, np, flow, interrupt)
-struct mode *op, *np;
-int flow, interrupt;
+void SetMode(struct mode *op, struct mode *np, int flow, int interrupt)
 {
   *np = *op;
 
@@ -608,9 +590,7 @@ XIF{VWERASE}	np->tio.c_cc[VWERASE] = VDISABLE;
 }
 
 /* operates on display */
-void
-SetFlow(on)
-int on;
+void SetFlow(int on)
 {
   ASSERT(display);
   if (D_flow == on)
@@ -641,18 +621,17 @@ XIF{VSTOP}	D_NewMode.tio.c_cc[VSTOP] = VDISABLE;
 # endif
     debug1("SetFlow: ioctl errno %d\n", errno);
 #else /* POSIX || TERMIO */
-  if (on)
-    {
-      D_NewMode.m_tchars.t_intrc = iflag ? D_OldMode.m_tchars.t_intrc : -1;
-      D_NewMode.m_tchars.t_startc = D_OldMode.m_tchars.t_startc;
-      D_NewMode.m_tchars.t_stopc = D_OldMode.m_tchars.t_stopc;
-    }
-  else
-    {
-      D_NewMode.m_tchars.t_intrc = -1;
-      D_NewMode.m_tchars.t_startc = -1;
-      D_NewMode.m_tchars.t_stopc = -1;
-    }
+  if (on) {
+    D_NewMode.m_tchars.t_intrc = iflag ? D_OldMode.m_tchars.t_intrc : -1;
+    D_NewMode.m_tchars.t_startc = D_OldMode.m_tchars.t_startc;
+    D_NewMode.m_tchars.t_stopc = D_OldMode.m_tchars.t_stopc;
+  }
+  else {
+    D_NewMode.m_tchars.t_intrc = -1;
+    D_NewMode.m_tchars.t_startc = -1;
+    D_NewMode.m_tchars.t_stopc = -1;
+  }
+
   if (ioctl(D_userfd, TIOCSETC, (char *)&D_NewMode.m_tchars) != 0)
     debug1("SetFlow: ioctl errno %d\n", errno);
 #endif /* POSIX || TERMIO */
@@ -660,104 +639,149 @@ XIF{VSTOP}	D_NewMode.tio.c_cc[VSTOP] = VDISABLE;
 }
 
 /* parse commands from opt and modify m */
-int
-SttyMode(m, opt)
-struct mode *m;
-char *opt;
+int SttyMode(struct mode *m, char *opt)
 {
   static const char sep[] = " \t:;,";
 
   if (!opt)
     return 0;
 
-  while (*opt)
-    {
-      while (index(sep, *opt)) opt++;
-      if (*opt >= '0' && *opt <= '9')
-        {
-	  if (SetBaud(m, atoi(opt), atoi(opt)))
-	    return -1;
-	}
-      else if (!strncmp("cs7", opt, 3))
-        {
+  while (*opt) {
+    while (index(sep, *opt)) opt++;
+      if (*opt >= '0' && *opt <= '9') {
+        if (SetBaud(m, atoi(opt), atoi(opt)))
+	      return -1;
+      }
+
+      else if (!strncmp("cs7", opt, 3)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_cflag &= ~CSIZE;
 	  m->tio.c_cflag |= CS7;
 #else
 	  m->m_lmode &= ~LPASS8;
 #endif
-	}
-      else if (!strncmp("cs8", opt, 3))
-	{
+      }
+
+      else if (!strncmp("cs8", opt, 3)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_cflag &= ~CSIZE;
 	  m->tio.c_cflag |= CS8;
 #else
 	  m->m_lmode |= LPASS8;
 #endif
-	}
-      else if (!strncmp("istrip", opt, 6))
-	{
+      }
+
+      else if (!strncmp("parenb", opt, 6)) {
+#if defined(POSIX) || defined(TERMIO)
+     m->tio.c_cflag |= PARENB;
+#else
+     debug("SttyMode: no parenb in old bsd land.\n");
+#endif
+      }
+
+      else if (!strncmp("-parenb", opt, 6)) {
+#if defined(POSIX) || defined(TERMIO)
+     m->tio.c_cflag &= ~PARENB;
+#else
+     debug("SttyMode: no -parenb in old bsd land.\n");
+#endif
+      }
+
+      else if (!strncmp("parodd", opt, 6)) {
+#if defined(POSIX) || defined(TERMIO)
+     m->tio.c_cflag |= PARODD;
+#else
+     debug("SttyMode: no parodd in old bsd land.\n");
+#endif
+      }
+
+      else if (!strncmp("-parodd", opt, 6)) {
+#if defined(POSIX) || defined(TERMIO)
+     m->tio.c_cflag &= ~PARODD;
+#else
+     debug("SttyMode: no -parodd in old bsd land.\n");
+#endif
+      }
+
+      else if (!strncmp("cstopb", opt, 6)) {
+#if defined(POSIX) || defined(TERMIO)
+     m->tio.c_cflag |= CSTOPB;
+#else
+     debug("SttyMode: no cstopb in old bsd land.\n");
+#endif
+      }
+
+      else if (!strncmp("-cstopb", opt, 7)) {
+#if defined(POSIX) || defined(TERMIO)
+     m->tio.c_cflag &= ~CSTOPB;
+#else
+     debug("SttyMode: no -cstopb in old bsd land.\n");
+#endif
+      }
+
+      else if (!strncmp("istrip", opt, 6)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_iflag |= ISTRIP;
 #else
 	  m->m_lmode &= ~LPASS8;
 #endif
-        }
-      else if (!strncmp("-istrip", opt, 7))
-	{
+      }
+
+      else if (!strncmp("-istrip", opt, 7)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_iflag &= ~ISTRIP;
 #else
 	  m->m_lmode |= LPASS8;
 #endif
-        }
-      else if (!strncmp("ixon", opt, 4))
-	{
+      }
+
+      else if (!strncmp("ixon", opt, 4)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_iflag |= IXON;
 #else
 	  debug("SttyMode: no ixon in old bsd land.\n");
 #endif
-        }
-      else if (!strncmp("-ixon", opt, 5))
-	{
+      }
+
+      else if (!strncmp("-ixon", opt, 5)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_iflag &= ~IXON;
 #else
 	  debug("SttyMode: no -ixon in old bsd land.\n");
 #endif
-        }
-      else if (!strncmp("ixoff", opt, 5))
-	{
+      }
+
+      else if (!strncmp("ixoff", opt, 5)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_iflag |= IXOFF;
 #else
 	  m->m_ttyb.sg_flags |= TANDEM;
 #endif
-        }
-      else if (!strncmp("-ixoff", opt, 6))
-	{
+      }
+
+      else if (!strncmp("-ixoff", opt, 6)) {
 #if defined(POSIX) || defined(TERMIO)
 	  m->tio.c_iflag &= ~IXOFF;
 #else
 	  m->m_ttyb.sg_flags &= ~TANDEM;
 #endif
-        }
-      else if (!strncmp("crtscts", opt, 7))
-	{
+      }
+
+      else if (!strncmp("crtscts", opt, 7)) {
 #if (defined(POSIX) || defined(TERMIO)) && defined(CRTSCTS)
 	  m->tio.c_cflag |= CRTSCTS;
 #endif
-	}
-      else if (!strncmp("-crtscts", opt, 8))
-        {
+      }
+
+      else if (!strncmp("-crtscts", opt, 8)) {
 #if (defined(POSIX) || defined(TERMIO)) && defined(CRTSCTS)
 	  m->tio.c_cflag &= ~CRTSCTS;
 #endif
-	}
+      }
+
       else
         return -1;
+
       while (*opt && !index(sep, *opt)) opt++;
     }
   return 0;
@@ -771,9 +795,7 @@ char *opt;
  */
 
 /*ARGSUSED*/
-void
-brktty(fd)
-int fd;
+void brktty(int fd)
 {
 #if defined(POSIX) && !defined(ultrix)
   if (separate_sids)
@@ -801,29 +823,26 @@ int fd;
 #endif /* POSIX */
 }
 
-int
-fgtty(fd)
-int fd;
+int fgtty(int fd)
 {
 #ifdef BSDJOBS
   int mypid;
-
   mypid = getpid();
 
   /*
    * Under BSD we have to set the controlling terminal again explicitly.
    */
-# if (defined(__FreeBSD_kernel__) || defined(__DragonFly__) || defined(__GNU__)) && defined(TIOCSCTTY)
+# if (defined(__FreeBSD_kernel__) || defined(__DragonFly__) || defined(__GNU__) || defined(__OpenBSD__)) && defined(TIOCSCTTY)
   ioctl(fd, TIOCSCTTY, (char *)0);
 # endif
 
 # ifdef POSIX
   if (separate_sids)
-    if (tcsetpgrp(fd, mypid))
-      {
-        debug1("fgtty: tcsetpgrp: %d\n", errno);
-        return -1;
-      }
+    if (tcsetpgrp(fd, mypid)) {
+      debug1("fgtty: tcsetpgrp: %d\n", errno);
+      return -1;
+    }
+
 # else /* POSIX */
   if (ioctl(fd, TIOCSPGRP, (char *)&mypid) != 0)
     debug1("fgtty: TIOSETPGRP: %d\n", errno);
@@ -863,12 +882,9 @@ int breaktype = 0;
  *  2:	tcsendbreak()
  * n: approximate duration in 1/4 seconds.
  */
-static void
-DoSendBreak(fd, n, type)
-int fd, n, type;
+static void DoSendBreak(int fd, int n, int type)
 {
-  switch (type)
-    {
+  switch (type) {
     case 2:	/* tcsendbreak() =============================== */
 #ifdef POSIX
 # ifdef HAVE_SUPER_TCSENDBREAK
@@ -893,18 +909,17 @@ int fd, n, type;
        * - aix: duration in milliseconds, but 0 is 25 milliseconds.
        */
       debug2("%d * tcsendbreak(fd=%d, 0)\n", n, fd);
-	{
-	  int i;
+	  {
+	    int i;
 
-	  if (!n)
-	    n++;
-	  for (i = 0; i < n; i++)
-	    if (tcsendbreak(fd, 0) < 0)
-	      {
-		Msg(errno, "cannot send BREAK (tcsendbreak SVR4)");
-		return;
+	    if (!n)
+	      n++;
+	    for (i = 0; i < n; i++)
+	      if (tcsendbreak(fd, 0) < 0) {
+		    Msg(errno, "cannot send BREAK (tcsendbreak SVR4)");
+		    return;
 	      }
-	}
+	  }
 # endif
 #else /* POSIX */
       Msg(0, "tcsendbreak() not available, change breaktype");
@@ -920,16 +935,15 @@ int fd, n, type;
        * perform long breaks. But for SOLARIS, this is not true, of course.
        */
       debug2("%d * TCSBRK fd=%d\n", n, fd);
-	{
-	  int i;
+	  {
+	    int i;
 
-	  for (i = 0; i < n; i++)
-	    if (ioctl(fd, TCSBRK, (char *)0) < 0)
-	      {
-		Msg(errno, "Cannot send BREAK (TCSBRK)");
-		return;
+	    for (i = 0; i < n; i++)
+	      if (ioctl(fd, TCSBRK, (char *)0) < 0) {
+		    Msg(errno, "Cannot send BREAK (TCSBRK)");
+		    return;
 	      }
-	}
+	  }
 #else /* TCSBRK */
       Msg(0, "TCSBRK not available, change breaktype");
 #endif /* TCSBRK */
@@ -942,17 +956,15 @@ int fd, n, type;
        * But it may be the only save way to issue long breaks.
        */
       debug("TIOCSBRK TIOCCBRK\n");
-      if (ioctl(fd, TIOCSBRK, (char *)0) < 0)
-        {
-	  Msg(errno, "Can't send BREAK (TIOCSBRK)");
-	  return;
-	}
+      if (ioctl(fd, TIOCSBRK, (char *)0) < 0) {
+	    Msg(errno, "Can't send BREAK (TIOCSBRK)");
+	    return;
+	  }
       sleep1000(n ? n * 250 : 250);
-      if (ioctl(fd, TIOCCBRK, (char *)0) < 0)
-        {
-	  Msg(errno, "BREAK stuck!!! -- HELP! (TIOCCBRK)");
-	  return;
-	}
+      if (ioctl(fd, TIOCCBRK, (char *)0) < 0) {
+	    Msg(errno, "BREAK stuck!!! -- HELP! (TIOCCBRK)");
+	    return;
+	  }
 #else /* TIOCSBRK && TIOCCBRK */
       Msg(0, "TIOCSBRK/CBRK not available, change breaktype");
 #endif /* TIOCSBRK && TIOCCBRK */
@@ -968,19 +980,15 @@ int fd, n, type;
  * The longest possible break allowed here is 15 seconds.
  */
 
-void 
-SendBreak(wp, n, closeopen)
-struct win *wp;
-int n, closeopen;
+void SendBreak(struct win *wp, int n, int closeopen)
 {
   sigret_t (*sigalrm)__P(SIGPROTOARG);
 
 #ifdef BUILTIN_TELNET
-  if (wp->w_type == W_TYPE_TELNET)
-    {
-      TelBreak(wp);
-      return;
-    }
+  if (wp->w_type == W_TYPE_TELNET) {
+    TelBreak(wp);
+    return;
+  }
 #endif
   if (wp->w_type != W_TYPE_PLAIN)
     return;
@@ -995,27 +1003,24 @@ int n, closeopen;
 # endif /* TIOCFLUSH */
 #endif /* POSIX */
 
-  if (closeopen)
-    {
-      close(wp->w_ptyfd);
-      sleep1000(n ? n * 250 : 250);
-      if ((wp->w_ptyfd = OpenTTY(wp->w_tty, wp->w_cmdargs[1])) < 1)
-	{
+  if (closeopen) {
+    close(wp->w_ptyfd);
+    sleep1000(n ? n * 250 : 250);
+    if ((wp->w_ptyfd = OpenTTY(wp->w_tty, wp->w_cmdargs[1])) < 1) {
 	  Msg(0, "Ouch, cannot reopen line %s, please try harder", wp->w_tty);
 	  return;
 	}
-      (void) fcntl(wp->w_ptyfd, F_SETFL, FNBLOCK);
-    }
-  else
-    {
-      sigalrm = signal(SIGALRM, SigAlrmDummy);
-      alarm(15);
+    (void) fcntl(wp->w_ptyfd, F_SETFL, FNBLOCK);
+  }
+  else {
+    sigalrm = signal(SIGALRM, SigAlrmDummy);
+    alarm(15);
 
-      DoSendBreak(wp->w_ptyfd, n, breaktype);
+    DoSendBreak(wp->w_ptyfd, n, breaktype);
 
-      alarm(0);
-      signal(SIGALRM, sigalrm);
-    }
+    alarm(0);
+    signal(SIGALRM, sigalrm);
+  }
   debug("            broken.\n");
 }
 
@@ -1028,30 +1033,27 @@ int n, closeopen;
 static struct event consredir_ev;
 static int consredirfd[2] = {-1, -1};
 
-static void
-consredir_readev_fn(ev, data)
-struct event *ev;
-char *data;
+static void consredir_readev_fn(struct event *ev, char *data)
 {
   char *p, *n, buf[256];
   int l;
 
-  if (!console_window || (l = read(consredirfd[0], buf, sizeof(buf))) <= 0)
-    {
-      close(consredirfd[0]);
-      close(consredirfd[1]);
-      consredirfd[0] = consredirfd[1] = -1;
-      evdeq(ev);
-      return;
-    }
+  if (!console_window || (l = read(consredirfd[0], buf, sizeof(buf))) <= 0) {
+    close(consredirfd[0]);
+    close(consredirfd[1]);
+    consredirfd[0] = consredirfd[1] = -1;
+    evdeq(ev);
+    return;
+  }
+
   for (p = n = buf; l > 0; n++, l--)
-    if (*n == '\n')
-      {
-        if (n > p)
-	  WriteString(console_window, p, n - p);
-        WriteString(console_window, "\r\n", 2);
-        p = n + 1;
-      }
+    if (*n == '\n') {
+      if (n > p)
+        WriteString(console_window, p, n - p);
+      WriteString(console_window, "\r\n", 2);
+      p = n + 1;
+    }
+
   if (n > p)
     WriteString(console_window, p, n - p);
 }
@@ -1059,10 +1061,7 @@ char *data;
 #endif
 
 /*ARGSUSED*/
-int
-TtyGrabConsole(fd, on, rc_name)
-int fd, on;
-char *rc_name;
+int TtyGrabConsole(int fd, int on, char *rc_name)
 {
 #if defined(TIOCCONS) && !defined(linux)
   struct display *d;
@@ -1071,48 +1070,46 @@ char *rc_name;
 
   if (on < 0)
     return 0;		/* pty close will ungrab */
-  if (on)
-    {
-      if (displays == 0)
-	{
-	  Msg(0, "I need a display");
-	  return -1;
+
+  if (on) {
+    if (displays == 0) {
+      Msg(0, "I need a display");
+      return -1;
 	}
-      for (d = displays; d; d = d->d_next)
-	if (strcmp(d->d_usertty, "/dev/console") == 0)
-	  break;
-      if (d)
-	{
+    for (d = displays; d; d = d->d_next)
+	  if (strcmp(d->d_usertty, "/dev/console") == 0)
+	    break;
+
+    if (d) {
 	  Msg(0, "too dangerous - screen is running on /dev/console");
 	  return -1;
 	}
-    }
+  }
 
-  if (!on)
-    {
-      char *slave;
-      if ((fd = OpenPTY(&slave)) < 0)
-	{
-	  Msg(errno, "%s: could not open detach pty master", rc_name);
-	  return -1;
+  if (!on) {
+    char *slave;
+    if ((fd = OpenPTY(&slave)) < 0) {
+      Msg(errno, "%s: could not open detach pty master", rc_name);
+      return -1;
 	}
-      if ((sfd = open(slave, O_RDWR | O_NOCTTY)) < 0)
-	{
-	  Msg(errno, "%s: could not open detach pty slave", rc_name);
-	  close(fd);
-	  return -1;
+
+    if ((sfd = open(slave, O_RDWR | O_NOCTTY)) < 0) {
+      Msg(errno, "%s: could not open detach pty slave", rc_name);
+      close(fd);
+      return -1;
 	}
-    }
+  }
+
   if (UserContext() == 1)
     UserReturn(ioctl(fd, TIOCCONS, (char *)&on));
+
   ret = UserStatus();
   if (ret)
     Msg(errno, "%s: ioctl TIOCCONS failed", rc_name);
-  if (!on)
-    {
-      close(sfd);
-      close(fd);
-    }
+  if (!on) {
+    close(sfd);
+    close(fd);
+  }
   return ret;
 
 #else
@@ -1125,85 +1122,85 @@ char *rc_name;
   char *slave;
 #  endif
 
-  if (on > 0)
-    {
-      if (displays == 0)
-	{
-	  Msg(0, "I need a display");
-	  return -1;
-	}
-      for (d = displays; d; d = d->d_next)
-	if (strcmp(d->d_usertty, "/dev/console") == 0)
-	  break;
-      if (d)
-	{
+  if (on > 0) {
+    if (displays == 0) {
+      Msg(0, "I need a display");
+      return -1;
+    }
+
+    for (d = displays; d; d = d->d_next)
+	  if (strcmp(d->d_usertty, "/dev/console") == 0)
+	    break;
+
+    if (d) {
 	  Msg(0, "too dangerous - screen is running on /dev/console");
 	  return -1;
 	}
-    }
-  if (consredirfd[0] >= 0)
-    {
-      evdeq(&consredir_ev);
-      close(consredirfd[0]);
-      close(consredirfd[1]);
-      consredirfd[0] = consredirfd[1] = -1;
-    }
+  }
+
+  if (consredirfd[0] >= 0) {
+    evdeq(&consredir_ev);
+    close(consredirfd[0]);
+    close(consredirfd[1]);
+    consredirfd[0] = consredirfd[1] = -1;
+  }
   if (on <= 0)
     return 0;
+
 #  ifdef SRIOCSREDIR
-  if ((cfd = secopen("/dev/console", O_RDWR|O_NOCTTY, 0)) == -1)
-    {
-      Msg(errno, "/dev/console");
-      return -1;
-    }
-  if (pipe(consredirfd))
-    {
-      Msg(errno, "pipe");
-      close(cfd);
-      consredirfd[0] = consredirfd[1] = -1;
-      return -1;
-    }
-  if (ioctl(cfd, SRIOCSREDIR, consredirfd[1]))
-    {
-      Msg(errno, "SRIOCSREDIR ioctl");
-      close(cfd);
-      close(consredirfd[0]);
-      close(consredirfd[1]);
-      consredirfd[0] = consredirfd[1] = -1;
-      return -1;
-    }
+  if ((cfd = secopen("/dev/console", O_RDWR|O_NOCTTY, 0)) == -1) {
+    Msg(errno, "/dev/console");
+    return -1;
+  }
+
+  if (pipe(consredirfd)) {
+    Msg(errno, "pipe");
+    close(cfd);
+    consredirfd[0] = consredirfd[1] = -1;
+    return -1;
+  }
+ 
+  if (ioctl(cfd, SRIOCSREDIR, consredirfd[1])) {
+    Msg(errno, "SRIOCSREDIR ioctl");
+    close(cfd);
+    close(consredirfd[0]);
+    close(consredirfd[1]);
+    consredirfd[0] = consredirfd[1] = -1;
+    return -1;
+  }
+
   close(cfd);
 #  else
   /* special linux workaround for a too restrictive kernel */
-  if ((consredirfd[0] = OpenPTY(&slave)) < 0)
-    {
-      Msg(errno, "%s: could not open detach pty master", rc_name);
-      return -1;
-    }
-  if ((consredirfd[1] = open(slave, O_RDWR | O_NOCTTY)) < 0)
-    {
-      Msg(errno, "%s: could not open detach pty slave", rc_name);
-      close(consredirfd[0]);
-      return -1;
-    }
+  if ((consredirfd[0] = OpenPTY(&slave)) < 0) {
+    Msg(errno, "%s: could not open detach pty master", rc_name);
+    return -1;
+  }
+  if ((consredirfd[1] = open(slave, O_RDWR | O_NOCTTY)) < 0) {
+    Msg(errno, "%s: could not open detach pty slave", rc_name);
+    close(consredirfd[0]);
+    return -1;
+  }
   InitTTY(&new1, 0);
   SetMode(&new1, &new2, 0, 0);
   SetTTY(consredirfd[1], &new2);
+
   if (UserContext() == 1)
     UserReturn(ioctl(consredirfd[1], TIOCCONS, (char *)&on));
-  if (UserStatus())
-    {
-      Msg(errno, "%s: ioctl TIOCCONS failed", rc_name);
-      close(consredirfd[0]);
-      close(consredirfd[1]);
-      return -1;
-    }
+  if (UserStatus()) {
+    Msg(errno, "%s: ioctl TIOCCONS failed", rc_name);
+    close(consredirfd[0]);
+    close(consredirfd[1]);
+    return -1;
+  }
 #  endif
+
   consredir_ev.fd = consredirfd[0];
   consredir_ev.type = EV_READ;
   consredir_ev.handler = consredir_readev_fn;
   evenq(&consredir_ev);
   return 0;
+
 # else
   if (on > 0)
     Msg(0, "%s: don't know how to grab the console", rc_name);
@@ -1218,10 +1215,7 @@ char *rc_name;
  * Will not write more than 256 characters to buf.
  * Returns buf;
  */
-char *
-TtyGetModemStatus(fd, buf)
-int fd;
-char *buf;
+char * TtyGetModemStatus(int fd, char *buf)
 {
   char *p = buf;
 #ifdef TIOCGSOFTCAR
@@ -1241,9 +1235,11 @@ IF{MRI}#  define TIOCM_RNG MRI
 IF{MCTS}#  define TIOCM_CTS MCTS
 # endif
 #endif
+
 #if defined(CLOCAL) || defined(CRTSCTS)
   struct mode mtio;	/* screen.h */
 #endif
+
 #if defined(CRTSCTS) || defined(TIOCM_CTS)
   int rtscts;
 #endif
@@ -1254,11 +1250,10 @@ IF{MCTS}#  define TIOCM_CTS MCTS
 #endif
   clocal = 0;
 #ifdef CLOCAL
-  if (mtio.tio.c_cflag & CLOCAL)
-    {
-      clocal = 1;
-      *p++ = '{';
-    }
+  if (mtio.tio.c_cflag & CLOCAL) {
+    clocal = 1;
+    *p++ = '{';
+  }
 #endif
 
 #ifdef TIOCM_CTS
@@ -1304,66 +1299,87 @@ IF{MCTS}#  define TIOCM_CTS MCTS
 # endif /* FANCY_MODEM */
 
 # ifdef TIOCM_RTS
-      s = "!RTS "; if (mflags & TIOCM_RTS) s++;
+      s = "!RTS ";
+      if (mflags & TIOCM_RTS)
+        s++;
       while (*s) *p++ = *s++;
 # endif
+
 # ifdef TIOCM_CTS
       s = "!CTS "; 
-      if (!rtscts)
-        {
-          *p++ = '(';
-          s = "!CTS) "; 
-	}
-      if (mflags & TIOCM_CTS) s++;
+      if (!rtscts) {
+        *p++ = '(';
+        s = "!CTS) "; 
+      }
+      if (mflags & TIOCM_CTS)
+        s++;
       while (*s) *p++ = *s++;
 # endif
 
 # ifdef TIOCM_DTR
-      s = "!DTR "; if (mflags & TIOCM_DTR) s++;
+      s = "!DTR ";
+      if (mflags & TIOCM_DTR)
+        s++;
       while (*s) *p++ = *s++;
 # endif
+
 # ifdef TIOCM_DSR
-      s = "!DSR "; if (mflags & TIOCM_DSR) s++;
+      s = "!DSR ";
+      if (mflags & TIOCM_DSR)
+        s++;
       while (*s) *p++ = *s++;
 # endif
+
 # if defined(TIOCM_CD) || defined(TIOCM_CAR)
       s = "!CD "; 
 #  ifdef TIOCGSOFTCAR
-      if (softcar)
-	 {
-	  *p++ = '(';
-	  s = "!CD) ";
-	 }
+      if (softcar) {
+        *p++ = '(';
+        s = "!CD) ";
+      }
 #  endif
+
 #  ifdef TIOCM_CD
-      if (mflags & TIOCM_CD) s++;
+      if (mflags & TIOCM_CD)
+        s++;
 #  else
-      if (mflags & TIOCM_CAR) s++;
+      if (mflags & TIOCM_CAR)
+        s++;
 #  endif
       while (*s) *p++ = *s++;
 # endif
+
+
 # if defined(TIOCM_RI) || defined(TIOCM_RNG)
 #  ifdef TIOCM_RI
       if (mflags & TIOCM_RI)
 #  else
       if (mflags & TIOCM_RNG)
 #  endif
-	for (s = "RI "; *s; *p++ = *s++);
+        for (s = "RI "; *s; *p++ = *s++);
 # endif
+
+
 # ifdef FANCY_MODEM
 #  ifdef TIOCM_ST
-      s = "!ST "; if (mflags & TIOCM_ST) s++;
+      s = "!ST ";
+      if (mflags & TIOCM_ST)
+        s++;
       while (*s) *p++ = *s++;
 #  endif
+
 #  ifdef TIOCM_SR
-      s = "!SR "; if (mflags & TIOCM_SR) s++;
+      s = "!SR ";
+      if (mflags & TIOCM_SR)
+        s++;
       while (*s) *p++ = *s++;
 #  endif
+
 # endif /* FANCY_MODEM */
       if (p > buf && p[-1] == ' ')
         p--;
       *p = '\0';
-    }
+  }
 #else
 # ifdef TIOCGSOFTCAR
   sprintf(p, " %s", softcar ? "(CD)", "CD");
@@ -1455,9 +1471,7 @@ IF{B0}   	{	0,	0,		B0	},
  * baud may either be a bits-per-second value or a symbolic
  * value as returned by cfget?speed() 
  */
-struct baud_values *
-lookup_baud(baud)
-int baud;
+struct baud_values *lookup_baud(int baud)
 {
   struct baud_values *p;
 
@@ -1471,51 +1485,49 @@ int baud;
  * change the baud rate in a mode structure.
  * ibaud and obaud are given in bit/second, or at your option as
  * termio B... symbols as defined in e.g. suns sys/ttydev.h
- * -1 means don't change.
+ * -1 means do not change.
  */
-int
-SetBaud(m, ibaud, obaud)
-struct mode *m;
-int ibaud, obaud;
+int SetBaud(struct mode *m, int ibaud, int obaud)
 {
   struct baud_values *ip, *op;
 
-  if ((!(ip = lookup_baud(ibaud)) && ibaud != -1) ||
-      (!(op = lookup_baud(obaud)) && obaud != -1))
+  if ((!(ip = lookup_baud(ibaud)) && ibaud != -1) || (!(op = lookup_baud(obaud)) && obaud != -1))
     return -1;
 
 #ifdef POSIX
-  if (ip) cfsetispeed(&m->tio, ip->sym);
-  if (op) cfsetospeed(&m->tio, op->sym);
-#else /* POSIX */
-# ifdef TERMIO
   if (ip)
-    {
-#  ifdef IBSHIFT
-      m->tio.c_cflag &= ~(CBAUD << IBSHIFT);
-      m->tio.c_cflag |= (ip->sym & CBAUD) << IBSHIFT;
-#  else /* IBSHIFT */
-      if (ibaud != obaud)
-        return -1;
-#  endif /* IBSHIFT */
-    }
+    cfsetispeed(&m->tio, ip->sym);
   if (op)
-    {
-      m->tio.c_cflag &= ~CBAUD;
-      m->tio.c_cflag |= op->sym & CBAUD;
-    }
+    cfsetospeed(&m->tio, op->sym);
+#else /* POSIX */
+
+# ifdef TERMIO
+  if (ip) {
+#  ifdef IBSHIFT
+    m->tio.c_cflag &= ~(CBAUD << IBSHIFT);
+    m->tio.c_cflag |= (ip->sym & CBAUD) << IBSHIFT;
+#  else /* IBSHIFT */
+    if (ibaud != obaud)
+      return -1;
+#  endif /* IBSHIFT */
+  }
+
+  if (op) {
+    m->tio.c_cflag &= ~CBAUD;
+    m->tio.c_cflag |= op->sym & CBAUD;
+  }
 # else /* TERMIO */
-  if (ip) m->m_ttyb.sg_ispeed = ip->idx;
-  if (op) m->m_ttyb.sg_ospeed = op->idx;
+  if (ip)
+    m->m_ttyb.sg_ispeed = ip->idx;
+  if (op)
+    m->m_ttyb.sg_ospeed = op->idx;
 # endif /* TERMIO */
 #endif /* POSIX */
   return 0;
 }
 
 
-int
-CheckTtyname (tty)
-char *tty;
+int CheckTtyname (char *tty)
 {
   struct stat st;
   char realbuf[PATH_MAX];
@@ -1527,8 +1539,7 @@ char *tty;
     return -1;
   realbuf[sizeof(realbuf)-1]='\0';
 
-  if (lstat(real, &st) || !S_ISCHR(st.st_mode) ||
-    (st.st_nlink > 1 && strncmp(real, "/dev", 4)))
+  if (lstat(real, &st) || !S_ISCHR(st.st_mode) || (st.st_nlink > 1 && strncmp(real, "/dev", 4)))
     rc = -1;
   else
     rc = 0;
@@ -1541,9 +1552,7 @@ char *tty;
  */
 
 #ifdef DEBUG
-void
-DebugTTY(m)
-struct mode *m;
+void DebugTTY(struct mode *m)
 {
   int i;
 
@@ -1555,10 +1564,11 @@ struct mode *m;
   debug1("c_lflag = %#x\n", (unsigned int)m->tio.c_lflag);
   debug1("cfgetospeed() = %d\n", (int)cfgetospeed(&m->tio));
   debug1("cfgetispeed() = %d\n", (int)cfgetispeed(&m->tio));
-  for (i = 0; i < sizeof(m->tio.c_cc)/sizeof(*m->tio.c_cc); i++)
-    {
-      debug2("c_cc[%d] = %#x\n", i, m->tio.c_cc[i]);
-    }
+
+  for (i = 0; i < sizeof(m->tio.c_cc)/sizeof(*m->tio.c_cc); i++) {
+    debug2("c_cc[%d] = %#x\n", i, m->tio.c_cc[i]);
+  }
+
 # ifdef HPUX_LTCHARS_HACK
   debug1("suspc     = %#02x\n", m->m_ltchars.t_suspc);
   debug1("dsuspc    = %#02x\n", m->m_ltchars.t_dsuspc);
@@ -1567,17 +1577,20 @@ struct mode *m;
   debug1("werasc    = %#02x\n", m->m_ltchars.t_werasc);
   debug1("lnextc    = %#02x\n", m->m_ltchars.t_lnextc);
 # endif /* HPUX_LTCHARS_HACK */
+
 #else /* POSIX */
+
 # ifdef TERMIO
   debug("struct termio tio:\n");
   debug1("c_iflag = %04o\n", m->tio.c_iflag);
   debug1("c_oflag = %04o\n", m->tio.c_oflag);
   debug1("c_cflag = %04o\n", m->tio.c_cflag);
   debug1("c_lflag = %04o\n", m->tio.c_lflag);
-  for (i = 0; i < sizeof(m->tio.c_cc)/sizeof(*m->tio.c_cc); i++)
-    {
-      debug2("c_cc[%d] = %04o\n", i, m->tio.c_cc[i]);
-    }
+
+  for (i = 0; i < sizeof(m->tio.c_cc)/sizeof(*m->tio.c_cc); i++) {
+    debug2("c_cc[%d] = %04o\n", i, m->tio.c_cc[i]);
+  }
+
 # else /* TERMIO */
   debug1("sg_ispeed = %d\n",    m->m_ttyb.sg_ispeed);
   debug1("sg_ospeed = %d\n",    m->m_ttyb.sg_ospeed);
