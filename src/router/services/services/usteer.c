@@ -94,43 +94,43 @@ void start_usteer(void)
 
 	asprintf(&config, "{"	//
 		 "\"syslog\": true,"	//
-		 "\"debug_level\": 1,"	//
-		 "\"ipv6\": false,"	//
-		 "\"local_mode\": false,"	//
-		 "\"sta_block_timeout\": 30000,"	//
-		 "\"local_sta_timeout\": 120000,"	//
-		 "\"local_sta_update\": 1000,"	//
-		 "\"max_neighbor_reports\": 8,"	//
-		 "\"max_retry_band\": 5,"	//
-		 "\"seen_policy_timeout\": 30000,"	//
-		 "\"measurement_report_timeout\": 120000,"	//
-		 "\"load_balancing_threshold\": 0,"	//
-		 "\"band_steering_threshold\": 5,"	//
-		 "\"remote_update_interval\": 1000,"	//
-		 "\"remote_node_timeout\": 50,"	//
-		 "\"assoc_steering\": false,"	//
-		 "\"min_connect_snr\": 0,"	//
-		 "\"min_snr\": -82,"	// todo: config
-		 "\"min_snr_kick_delay\": 5000,"	//
-		 "\"steer_reject_timeout\": 60000,"	//
-		 "\"roam_process_timeout\": 5000,"	//
-		 "\"roam_scan_snr\": -70,"	// modded
-		 "\"roam_scan_tries\": 5,"	// modded
-		 "\"roam_scan_timeout\": 0,"	//
-		 "\"roam_scan_interval\": 15000,"	//
-		 "\"roam_trigger_snr\": -75,"	// modded
-		 "\"roam_trigger_interval\": 180000,"	//
-		 "\"roam_kick_delay\": 100,"	// modded
-		 "\"signal_diff_threshold\": 12,"	// modded
-		 "\"initial_connect_delay\": 0,"	//
-		 "\"load_kick_enabled\": false,"	//
-		 "\"load_kick_threshold\": 75,"	// 
-		 "\"load_kick_delay\": 10000,"	//
-		 "\"load_kick_min_clients\": 10,"	//
-		 "\"load_kick_reason_code\": 5,"	//
-		 "\"band_steering_interval\": 120000,"	//
-		 "\"band_steering_min_snr\": -60,"	//
-		 "\"link_measurement_interval\": 30000,"	//
+		 "\"debug_level\": %d,"	//
+		 "\"ipv6\": %s,"	//
+		 "\"local_mode\": %s,"	//
+		 "\"sta_block_timeout\": %d,"	//
+		 "\"local_sta_timeout\": %d,"	//
+		 "\"local_sta_update\": %d,"	//
+		 "\"max_neighbor_reports\": %d,"	//
+		 "\"max_retry_band\": %d,"	//
+		 "\"seen_policy_timeout\": %d,"	//
+		 "\"measurement_report_timeout\": %d,"	//
+		 "\"load_balancing_threshold\": %d,"	//
+		 "\"band_steering_threshold\": %d,"	//
+		 "\"remote_update_interval\": %d,"	//
+		 "\"remote_node_timeout\": %d,"	//
+		 "\"assoc_steering\": %s,"	//
+		 "\"min_connect_snr\": %d,"	//
+		 "\"min_snr\": %d,"	// todo: config
+		 "\"min_snr_kick_delay\": %d,"	//
+		 "\"steer_reject_timeout\": %d,"	//
+		 "\"roam_process_timeout\": %d,"	//
+		 "\"roam_scan_snr\": %d,"	// modded
+		 "\"roam_scan_tries\": %d,"	// modded
+		 "\"roam_scan_timeout\": %d,"	//
+		 "\"roam_scan_interval\": %d,"	//
+		 "\"roam_trigger_snr\": %d,"	// modded
+		 "\"roam_trigger_interval\": %d,"	//
+		 "\"roam_kick_delay\": %d,"	// modded
+		 "\"signal_diff_threshold\": %d,"	// modded
+		 "\"initial_connect_delay\": %d,"	//
+		 "\"load_kick_enabled\": %s,"	//
+		 "\"load_kick_threshold\": %d,"	// 
+		 "\"load_kick_delay\": %d,"	//
+		 "\"load_kick_min_clients\": %d,"	//
+		 "\"load_kick_reason_code\": %d,"	//
+		 "\"band_steering_interval\": %d,"	//
+		 "\"band_steering_min_snr\": %d,"	//
+		 "\"link_measurement_interval\": %d,"	//
 		 "\"interfaces\": [ "	//
 		 "\"br0\" "	//
 		 "],"		//
@@ -143,7 +143,44 @@ void start_usteer(void)
 		 "\"load_kick_client\","	//
 		 "\"signal_kick\" "	//
 		 "] "		//
-		 "} ", ssid_list);
+		 "} ", nvram_default_geti("debug_level", 1), //
+		 nvram_default_geti("uipv6", 0) ? "true" : "false", //
+		 nvram_default_geti("local_mode", 0) ? "true" : "false", //
+		 nvram_default_geti("sta_block_timeout", 30000), //
+		 nvram_default_geti("local_sta_timeout", 120000), //
+		 nvram_default_geti("local_sta_update", 1000), //
+		 nvram_default_geti("max_neighbor_reports", 6), //
+		 nvram_default_geti("max_retry_band", 6), //
+		 nvram_default_geti("seen_policy_timeout", 30000), //
+		 nvram_default_geti("measurement_report_timeout", 120000), //
+		 nvram_default_geti("load_balancing_threshold", 0), //
+		 nvram_default_geti("band_steering_threshold", 0), //
+		 nvram_default_geti("remote_update_interval", 1000), //
+		 nvram_default_geti("remote_node_timeout", 50), //
+		 nvram_default_geti("assoc_steering", 0) ? "true" : "false", //
+		 nvram_default_geti("min_connect_snr", 0), //
+		 nvram_default_geti("min_snr", -82), //
+		 nvram_default_geti("min_snr_kick_delay", 5000), //
+		 nvram_default_geti("steer_reject_timeout", 60000), //
+		 nvram_default_geti("roam_process_timeout", 5000), //
+		 nvram_default_geti("roam_scan_snr", -70), //
+		 nvram_default_geti("roam_scan_tries", 6), //
+		 nvram_default_geti("roam_scan_timeout", 60000), //
+		 nvram_default_geti("roam_scan_interval", 15000), //
+		 nvram_default_geti("roam_trigger_snr", -75), //
+		 nvram_default_geti("roam_trigger_interval", 180000), //
+		 nvram_default_geti("roam_kick_delay", 100), //
+		 nvram_default_geti("signal_diff_threshold", 12), //
+		 nvram_default_geti("initial_connect_delay", 0), //
+		 nvram_default_geti("load_kick_enabled", 0) ? "true" : "false", //
+		 nvram_default_geti("load_kick_threshold", 75), //
+		 nvram_default_geti("load_kick_delay", 10000), //
+		 nvram_default_geti("load_kick_min_clients", 10), //
+		 nvram_default_geti("load_kick_reason_code", 5), //
+		 nvram_default_geti("band_steering_interval", 120000), //
+		 nvram_default_geti("band_steering_min_snr", -60), //
+		 nvram_default_geti("link_measurement_interval", 30000), //
+		 ssid_list);
 	char *cmdline;
 	int len = strlen(config);
 	char *newconfig = malloc(len * 2);
