@@ -101,6 +101,22 @@ void showOption(webs_t wp, char *propname, char *nvname)
 }
 #endif
 
+
+void showInputNum(webs_t wp, char *propname, char *nvname, int size, int maxsize, int def)
+{
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", propname, NULL);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%d\" />\n", nvname, maxsize, size,nvram_default_geti(nvname, def));
+		websWrite(wp, "</div>\n");	
+}
+
+void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize, char *def)
+{
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", propname, NULL);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%s\" />\n", nvname, maxsize, size,nvram_default_get(nvname, def));
+		websWrite(wp, "</div>\n");	
+}
 void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val)
 {
 	websWrite(wp, "<div class=\"setting\">\n");

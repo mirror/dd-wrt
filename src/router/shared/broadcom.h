@@ -202,6 +202,8 @@ EJ_VISIBLE void wps_forcerelease(webs_t wp);
 EJ_VISIBLE void wps_configure(webs_t wp);
 
 void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
+void showInputNum(webs_t wp, char *propname, char *nvname, int size, int maxsize, int def);
+void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize, char *def);
 
 #define showRadioDefaultOn(wp, propname, nvname) \
 	do { \
@@ -239,12 +241,30 @@ static void showRadioInv(webs_t wp, char *propname, char *nvname)
 
 static void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix)
 {
-	showRadioDefaultOffPrefix(wp, propname, nv, prefix);
+	char nvname[32];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0));
+}
+
+static void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, int def)
+{
+	char nvname[32];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showInputNum(wp, propname, nvname, size, maxsize, def);
+
+}
+static void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, char *def)
+{
+	char nvname[32];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showInput(wp, propname, nvname, size, maxsize, def);
 }
 
 static void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix)
 {
-	showRadioDefaultOnPrefix(wp, propname, nv, prefix);
+	char nvname[32];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,1));
 }
 
 #define service_restart() kill(1, SIGUSR1)
