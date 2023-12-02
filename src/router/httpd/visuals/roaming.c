@@ -151,39 +151,39 @@ void show_roaming(webs_t wp, char *var)
 	char wnm[64];
 	char adv[64];
 	websWrite(wp, "<div id=\"%s_id80211v\">\n", var);
+	{
+		sprintf(adv, "%s_time_advertisement", var);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.time_advertisement)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  var, var, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
 
-	sprintf(adv, "%s_time_advertisement", var);
-	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.time_advertisement)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_time_zone', true);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  var, var, nvram_default_matchi(adv, 1, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_time_zone', false);\" name=\"%s_time_advertisement\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  var, var, nvram_default_matchi(adv, 0, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
+		sprintf(wnm, "%s_time_zone", var);
+		websWrite(wp, "<div id=\"%s_id_time_zone\">\n", var);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
+		websWrite(wp, "<select name=\"%s_time_zone\">\n", var);
+		char *tz = nvram_default_get(wnm, nvram_safe_get("time_zone"));
+		int i;
+		for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
+			websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, !strcmp(allTimezones[i].tz_name, tz) ? "selected=\"selected\"" : "", allTimezones[i].tz_name);
+		}
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
 
-	sprintf(wnm, "%s_time_zone", var);
-	websWrite(wp, "<div id=\"%s_id_time_zone\">\n", var);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.timeset)</script></div>\n");
-	websWrite(wp, "<select name=\"%s_time_zone\">\n", var);
-	char *tz = nvram_default_get(wnm, nvram_safe_get("time_zone"));
-	int i;
-	for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
-		websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, !strcmp(allTimezones[i].tz_name, tz) ? "selected=\"selected\"" : "", allTimezones[i].tz_name);
+		showRadioPrefix(wp, "wl_basic.wnm_sleep_mode", "wnm_sleep_mode", var);
+		showRadioPrefix(wp, "wl_basic.wnm_sleep_mode_no_keys", "wnm_sleep_mode_no_keys", var);
+		showRadioPrefix(wp, "wl_basic.bss_transition", "bss_transition", var);
+		showRadioPrefix(wp, "wl_basic.proxy_arp", "proxy_arp", var);
 	}
-	websWrite(wp, "</select>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<script>\n//<![CDATA[\n ");
-	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_time_advertisement\"), \"%s_id_time_zone\", %s);\n", var, var, nvram_matchi(adv, 1) ? "true" : "false");
-	websWrite(wp, "//]]>\n</script>\n");
-
-	showRadioPrefix(wp, "wl_basic.wnm_sleep_mode", "wnm_sleep_mode", var);
-	showRadioPrefix(wp, "wl_basic.wnm_sleep_mode_no_keys", "wnm_sleep_mode_no_keys", var);
-	showRadioPrefix(wp, "wl_basic.bss_transition", "bss_transition", var);
-	showRadioPrefix(wp, "wl_basic.proxy_arp", "proxy_arp", var);
-
 	websWrite(wp, "</div>\n");
 
 	char s80211k[64];
@@ -197,30 +197,82 @@ void show_roaming(webs_t wp, char *var)
 		  var, var, var, nvram_default_matchi(s80211k, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div id=\"%s_id80211k\">\n", var);
-	showRadioPrefix(wp, "wl_basic.rrm_neighbor_report", "rrm_neighbor_report", var);
-	showRadioPrefix(wp, "wl_basic.rrm_beacon_report", "rrm_beacon_report", var);
+	{
+		showRadioPrefix(wp, "wl_basic.rrm_neighbor_report", "rrm_neighbor_report", var);
+		showRadioPrefix(wp, "wl_basic.rrm_beacon_report", "rrm_beacon_report", var);
+	}
 	websWrite(wp, "</div>\n");
+	char usteer[64];
+	sprintf(usteer, "%s_usteer", var);
 
 	websWrite(wp, "<div id=\"%s_id80211k2\">\n", var);
-	websWrite(wp, "<div id=\"%s_id80211v2\">\n", var);
-	showRadioPrefix(wp, "wl_basic.usteer", "usteer", var);
+	{
+		websWrite(wp, "<div id=\"%s_id80211v2\">\n", var);
+		{
+			showRadioPrefix(wp, "wl_basic.usteer", "usteer", var);
+			websWrite(wp, "<div id=\"%s_idusteer\">\n", var);
+			{
+				showInputNumPrefix(wp, "roaming.debug_level", "debug_level", var, 2, 1, 1);
+				showRadioPrefix(wp, "bmenu.setupipv6", "ipv6", var);
+				showRadioPrefix(wp, "roaming.local_mode", "local_mode", var);
+				showInputNumPrefix(wp, "roaming.sta_block_timeout", "sta_block_timeout", var, 7, 6, 30000);
+				showInputNumPrefix(wp, "roaming.local_sta_timeout", "local_sta_timeout", var, 7, 6, 120000);
+				showInputNumPrefix(wp, "roaming.local_sta_update", "local_sta_update", var, 7, 6, 1000);
+				showInputNumPrefix(wp, "roaming.max_neighbor_reports", "max_neighbor_reports", var, 3, 2, 6);
+				showInputNumPrefix(wp, "roaming.max_retry_band", "max_retry_band", var, 3, 2, 6);
+				showInputNumPrefix(wp, "roaming.seen_policy_timeout", "seen_policy_timeout", var, 7, 6, 30000);
+				showInputNumPrefix(wp, "roaming.measurement_report_timeout", "measurement_report_timeout", var, 7, 6, 120000);
+				showInputNumPrefix(wp, "roaming.load_balancing_threshold", "load_balancing_threshold", var, 4, 3, 0);
+				showInputNumPrefix(wp, "roaming.band_steering_threshold", "band_steering_threshold", var, 4, 3, 0);
+				showInputNumPrefix(wp, "roaming.remote_update_interval", "remote_update_interval", var, 7, 6, 1000);
+				showInputNumPrefix(wp, "roaming.remote_node_timeout", "remote_node_timeout", var, 7, 6, 50);
+				showRadioPrefix(wp, "roaming.assoc_steering", "assoc_steering", var);
+				showInputNumPrefix(wp, "roaming.min_connect_snr", "min_connect_snr", var, 4, 3, 0);
+				showInputNumPrefix(wp, "roaming.min_snr", "min_snr", var, 4, 3, -82);
+				showInputNumPrefix(wp, "roaming.min_snr_kick_delay", "min_snr_kick_delay", var, 7, 6, 5000);
+				showInputNumPrefix(wp, "roaming.steer_reject_timeout", "steer_reject_timeout", var, 7, 6, 60000);
+				showInputNumPrefix(wp, "roaming.roam_process_timeout", "roam_process_timeout", var, 7, 6, 5000);
+				showInputNumPrefix(wp, "roaming.roam_scan_snr", "roam_scan_snr", var, 4, 3, -70);
+				showInputNumPrefix(wp, "roaming.roam_scan_tries", "roam_scan_tries", var, 3, 2, 6);
+				showInputNumPrefix(wp, "roaming.roam_scan_timeout", "roam_scan_timeout", var, 7, 6, 60000);
+				showInputNumPrefix(wp, "roaming.roam_scan_interval", "roam_scan_interval", var, 7, 6, 15000);
+				showInputNumPrefix(wp, "roaming.roam_trigger_snr", "roam_trigger_snr", var, 4, 3, -75);
+				showInputNumPrefix(wp, "roaming.roam_trigger_interval", "roam_trigger_interval", var, 7, 6, 180000);
+				showInputNumPrefix(wp, "roaming.roam_kick_delay", "roam_kick_delay", var, 7, 6, 100);
+				showInputNumPrefix(wp, "roaming.signal_diff_threshold", "signal_diff_threshold", var, 4, 3, 12);
+				showInputNumPrefix(wp, "roaming.initial_connect_delay", "initial_connect_delay", var, 7, 6, 0);
+				showRadioPrefix(wp, "roaming.load_kick_enabled", "load_kick_enabled", var);
+				showInputNumPrefix(wp, "roaming.load_kick_threshold", "load_kick_threshold", var, 4, 3, 75);
+				showInputNumPrefix(wp, "roaming.load_kick_delay", "load_kick_delay", var, 7, 6, 10000);
+				showInputNumPrefix(wp, "roaming.load_kick_min_clients", "load_kick_min_clients", var, 4, 3, 10);
+				showInputNumPrefix(wp, "roaming.load_kick_reason_code", "load_kick_reason_code", var, 3, 2, 5);
+				showInputNumPrefix(wp, "roaming.band_steering_interval", "band_steering_interval", var, 7, 6, 120000);
+				showInputNumPrefix(wp, "roaming.band_steering_min_snr", "band_steering_min_snr", var, 3, 2, -60);
+				showInputNumPrefix(wp, "roaming.link_measurement_interval", "link_measurement_interval", var, 7, 6, 30000);
+			}
+			websWrite(wp, "</div>\n");
+		}
+		websWrite(wp, "</div>\n");
+	}
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
+
 	websWrite(wp, "<script>\n//<![CDATA[\n ");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v2\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k2\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_usteer\"), \"%s_idusteer\", %s);\n", var, var, nvram_matchi(usteer, 1) ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 
 }
+
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #define IFMAP(a) getRADev(a)
 #else
 #define IFMAP(a) (a)
 #endif
 
-static void ej_show_roaming_single(webs_t wp, int argc, char_t ** argv, char *prefix)
+static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *prefix)
 {
 	char *next;
 	char var[80];
@@ -259,7 +311,7 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t ** argv, char *pr
 	}
 }
 
-EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 {
 	int c = getdevicecount();
 	int i;
