@@ -1126,15 +1126,6 @@ _8021xprv
 	copytonv_prefix(wp, "sae_key", prefix);
 #endif
 	copytonv_prefix(wp, "disable_eapol_key_retries", prefix);
-#ifdef HAVE_80211R
-	copytonv_prefix(wp, "ft", prefix);
-	copytonv_prefix(wp, "domain", prefix);
-	copytonv_prefix(wp, "nas", prefix);
-	copytonv_prefix(wp, "deadline", prefix);
-	copytonv_prefix(wp, "ft_over_ds", prefix);
-	copytonv_prefix(wp, "mbo", prefix);
-	copytonv_prefix(wp, "mbo_cell_data_conn_pref", prefix);
-#endif
 #ifdef HAVE_80211W
 	copytonv_prefix(wp, "mfp", prefix);
 #endif
@@ -5152,6 +5143,14 @@ static void save_prefix(webs_t wp, char *prefix)
 
 #endif
 #ifdef HAVE_80211R
+	copytonv_prefix(wp, "ft", prefix);
+	copytonv_prefix(wp, "domain", prefix);
+	copytonv_prefix(wp, "nas", prefix);
+	copytonv_prefix(wp, "deadline", prefix);
+	copytonv_prefix(wp, "ft_over_ds", prefix);
+	copytonv_prefix(wp, "mbo", prefix);
+	copytonv_prefix(wp, "mbo_cell_data_conn_pref", prefix);
+
 	copytonv_prefix(wp, "80211v", prefix);
 	copytonv_prefix(wp, "80211k", prefix);
 	copytonv_prefix(wp, "wnm_sleep_mode", prefix);
