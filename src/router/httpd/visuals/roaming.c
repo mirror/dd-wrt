@@ -215,39 +215,39 @@ void show_roaming(webs_t wp, char *var)
 			showRadioPrefix(wp, "wl_basic.usteer", "usteer", var);
 			websWrite(wp, "<div id=\"%s_idusteer\">\n", var);
 			{
-				showInputNumPrefix(wp, "roaming.debug_level", "debug_level", var, 2, 1, 1);
+				showInputNumPrefix(wp, "roaming.debug_level", "debug_level", var, 1, 1, 1);
 				showRadioPrefix(wp, "bmenu.setupipv6", "ipv6", var);
 				showRadioPrefix(wp, "roaming.local_mode", "local_mode", var);
-				showInputNumPrefix(wp, "roaming.sta_block_timeout", "sta_block_timeout", var, 7, 6, 30000);
-				showInputNumPrefix(wp, "roaming.local_sta_timeout", "local_sta_timeout", var, 7, 6, 120000);
-				showInputNumPrefix(wp, "roaming.local_sta_update", "local_sta_update", var, 7, 6, 1000);
-				showInputNumPrefix(wp, "roaming.max_neighbor_reports", "max_neighbor_reports", var, 3, 2, 6);
-				showInputNumPrefix(wp, "roaming.max_retry_band", "max_retry_band", var, 3, 2, 6);
-				showInputNumPrefix(wp, "roaming.seen_policy_timeout", "seen_policy_timeout", var, 7, 6, 30000);
-				showInputNumPrefix(wp, "roaming.measurement_report_timeout", "measurement_report_timeout", var, 7, 6, 120000);
-				showInputNumPrefix(wp, "roaming.load_balancing_threshold", "load_balancing_threshold", var, 4, 3, 0);
-				showInputNumPrefix(wp, "roaming.band_steering_threshold", "band_steering_threshold", var, 4, 3, 0);
-				showInputNumPrefix(wp, "roaming.remote_update_interval", "remote_update_interval", var, 7, 6, 1000);
-				showInputNumPrefix(wp, "roaming.remote_node_timeout", "remote_node_timeout", var, 7, 6, 50);
+				showInputNumPrefix(wp, "roaming.sta_block_timeout", "sta_block_timeout", var, 6, 6, 30000);
+				showInputNumPrefix(wp, "roaming.local_sta_timeout", "local_sta_timeout", var, 6, 6, 120000);
+				showInputNumPrefix(wp, "roaming.local_sta_update", "local_sta_update", var, 6, 6, 1000);
+				showInputNumPrefix(wp, "roaming.max_neighbor_reports", "max_neighbor_reports", var, 2, 2, 6);
+				showInputNumPrefix(wp, "roaming.max_retry_band", "max_retry_band", var, 2, 2, 6);
+				showInputNumPrefix(wp, "roaming.seen_policy_timeout", "seen_policy_timeout", var, 6, 6, 30000);
+				showInputNumPrefix(wp, "roaming.measurement_report_timeout", "measurement_report_timeout", var, 6, 6, 120000);
+				showInputNumPrefix(wp, "roaming.load_balancing_threshold", "load_balancing_threshold", var, 3, 3, 0);
+				showInputNumPrefix(wp, "roaming.band_steering_threshold", "band_steering_threshold", var, 3, 3, 0);
+				showInputNumPrefix(wp, "roaming.remote_update_interval", "remote_update_interval", var, 6, 6, 1000);
+				showInputNumPrefix(wp, "roaming.remote_node_timeout", "remote_node_timeout", var, 6, 6, 50);
 				showRadioPrefix(wp, "roaming.assoc_steering", "assoc_steering", var);
-				showInputNumPrefix(wp, "roaming.min_connect_snr", "min_connect_snr", var, 4, 3, 0);
-				showInputNumPrefix(wp, "roaming.min_snr", "min_snr", var, 4, 3, -82);
-				showInputNumPrefix(wp, "roaming.min_snr_kick_delay", "min_snr_kick_delay", var, 7, 6, 5000);
-				showInputNumPrefix(wp, "roaming.steer_reject_timeout", "steer_reject_timeout", var, 7, 6, 60000);
-				showInputNumPrefix(wp, "roaming.roam_process_timeout", "roam_process_timeout", var, 7, 6, 5000);
-				showInputNumPrefix(wp, "roaming.roam_scan_snr", "roam_scan_snr", var, 4, 3, -70);
-				showInputNumPrefix(wp, "roaming.roam_scan_tries", "roam_scan_tries", var, 3, 2, 6);
-				showInputNumPrefix(wp, "roaming.roam_scan_timeout", "roam_scan_timeout", var, 7, 6, 60000);
-				showInputNumPrefix(wp, "roaming.roam_scan_interval", "roam_scan_interval", var, 7, 6, 15000);
-				showInputNumPrefix(wp, "roaming.roam_trigger_snr", "roam_trigger_snr", var, 4, 3, -75);
-				showInputNumPrefix(wp, "roaming.roam_trigger_interval", "roam_trigger_interval", var, 7, 6, 180000);
-				showInputNumPrefix(wp, "roaming.roam_kick_delay", "roam_kick_delay", var, 7, 6, 100);
-				showInputNumPrefix(wp, "roaming.signal_diff_threshold", "signal_diff_threshold", var, 4, 3, 12);
-				showInputNumPrefix(wp, "roaming.initial_connect_delay", "initial_connect_delay", var, 7, 6, 0);
+				showInputNumPrefix(wp, "roaming.min_connect_snr", "min_connect_snr", var, 3, 3, 0);
+				showInputNumPrefix(wp, "roaming.min_snr", "min_snr", var, 3, 3, -82);
+				showInputNumPrefix(wp, "roaming.min_snr_kick_delay", "min_snr_kick_delay", var, 6, 6, 5000);
+				showInputNumPrefix(wp, "roaming.steer_reject_timeout", "steer_reject_timeout", var, 6, 6, 60000);
+				showInputNumPrefix(wp, "roaming.roam_process_timeout", "roam_process_timeout", var, 6, 6, 5000);
+				showInputNumPrefix(wp, "roaming.roam_scan_snr", "roam_scan_snr", var, 3, 3, -70);
+				showInputNumPrefix(wp, "roaming.roam_scan_tries", "roam_scan_tries", var, 2, 2, 6);
+				showInputNumPrefix(wp, "roaming.roam_scan_timeout", "roam_scan_timeout", var, 6, 6, 60000);
+				showInputNumPrefix(wp, "roaming.roam_scan_interval", "roam_scan_interval", var, 6, 6, 15000);
+				showInputNumPrefix(wp, "roaming.roam_trigger_snr", "roam_trigger_snr", var, 3, 3, -75);
+				showInputNumPrefix(wp, "roaming.roam_trigger_interval", "roam_trigger_interval", var, 6, 6, 180000);
+				showInputNumPrefix(wp, "roaming.roam_kick_delay", "roam_kick_delay", var, 6, 6, 100);
+				showInputNumPrefix(wp, "roaming.signal_diff_threshold", "signal_diff_threshold", var, 3, 3, 12);
+				showInputNumPrefix(wp, "roaming.initial_connect_delay", "initial_connect_delay", var, 6, 6, 0);
 
-				showInputNumPrefix(wp, "roaming.band_steering_interval", "band_steering_interval", var, 7, 6, 120000);
-				showInputNumPrefix(wp, "roaming.band_steering_min_snr", "band_steering_min_snr", var, 3, 2, -60);
-				showInputNumPrefix(wp, "roaming.link_measurement_interval", "link_measurement_interval", var, 7, 6, 30000);
+				showInputNumPrefix(wp, "roaming.band_steering_interval", "band_steering_interval", var, 6, 6, 120000);
+				showInputNumPrefix(wp, "roaming.band_steering_min_snr", "band_steering_min_snr", var, 2, 2, -60);
+				showInputNumPrefix(wp, "roaming.link_measurement_interval", "link_measurement_interval", var, 6, 6, 30000);
 
 				websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.load_kick_enabled)</script></div>\n");
 				websWrite(wp,
@@ -260,10 +260,10 @@ void show_roaming(webs_t wp, char *var)
 
 				websWrite(wp, "<div id=\"%s_id_load_kick\">\n", var);
 				{
-					showInputNumPrefix(wp, "roaming.load_kick_threshold", "load_kick_threshold", var, 4, 3, 75);
+					showInputNumPrefix(wp, "roaming.load_kick_threshold", "load_kick_threshold", var, 3, 3, 75);
 					showInputNumPrefix(wp, "roaming.load_kick_delay", "load_kick_delay", var, 7, 6, 10000);
-					showInputNumPrefix(wp, "roaming.load_kick_min_clients", "load_kick_min_clients", var, 4, 3, 10);
-					showInputNumPrefix(wp, "roaming.load_kick_reason_code", "load_kick_reason_code", var, 3, 2, 5);
+					showInputNumPrefix(wp, "roaming.load_kick_min_clients", "load_kick_min_clients", var, 3, 3, 10);
+					showInputNumPrefix(wp, "roaming.load_kick_reason_code", "load_kick_reason_code", var, 2, 2, 5);
 				}
 				websWrite(wp, "</div>\n");
 			}
