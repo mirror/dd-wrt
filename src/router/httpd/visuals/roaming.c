@@ -68,6 +68,10 @@ void show_roaming(webs_t wp, char *var)
 	char vvar[32];
 	strcpy(vvar, var);
 	rep(vvar, '.', 'X');
+
+	char mbo[64];
+	sprintf(mbo, "%s_mbo", var);
+
 	if (v_show_preshared || v_show_owe || v_show_wparadius) {
 		char bssft[64];
 		char temp[64];
@@ -112,8 +116,6 @@ void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_iddomain\", %s);\n", var, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 
-		char mbo[64];
-		sprintf(mbo, "%s_mbo", var);
 		nvram_default_get(mbo, has_ax(var) ? "1" : "0");
 
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo)</script></div>\n");
@@ -127,14 +129,13 @@ void show_roaming(webs_t wp, char *var)
 
 		sprintf(wnm, "%s_mbo_cell_data_conn_pref", var);
 		websWrite(wp, "<div id=\"%s_idmbo\">\n", vvar);
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
-		showOptions_trans(wp, wnm, "0 1 255", (char *[]) { "share.excluded", "share.not_prefered", "share.prefered" }, nvram_default_get(wnm, "0"));
+		{
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
+			showOptions_trans(wp, wnm, "0 1 255", (char *[]) { "share.excluded", "share.not_prefered", "share.prefered" }, nvram_default_get(wnm, "0"));
+			websWrite(wp, "</div>\n");
+		}
 		websWrite(wp, "</div>\n");
-
-		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_mbo\"), \"%s_idmbo\", %s);\n", var, vvar, nvram_matchi(mbo, 1) ? "true" : "false");
-		websWrite(wp, "//]]>\n</script>\n");
 
 	}
 
@@ -279,6 +280,7 @@ void show_roaming(webs_t wp, char *var)
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k2\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_usteer\"), \"%s_idusteer\", %s);\n", var, var, nvram_matchi(usteer, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_load_kick_enabled\"), \"%s_id_load_kick\", %s);\n", var, var, nvram_matchi(load_kick, 1) ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_mbo\"), \"%s_idmbo\", %s);\n", var, vvar, nvram_matchi(mbo, 1) ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 
 }
