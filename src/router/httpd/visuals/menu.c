@@ -77,7 +77,7 @@ static struct menucontext *init_menu(webs_t wp)
 
 	static char *menu_t[8][13] = {
 		{ "index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", "" },	//
-		{ "Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", "", "" },	//
+		{ "Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "Roaming.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", "" },	//
 		{ "Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", "", "" },	//
 		{ "Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
@@ -90,7 +90,7 @@ static struct menucontext *init_menu(webs_t wp)
 	 */
 	static char *menuname_t[8][14] = {
 		{ "setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", "" },	//
-		{ "wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
+		{ "wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity", "wirelessRoaming",	//
 #if defined(HAVE_AOSS) && defined(HAVE_WPS)
 		 "wirelessAossWPS",
 #elif defined(HAVE_AOSS) && !defined(HAVE_WPS)
@@ -100,7 +100,7 @@ static struct menucontext *init_menu(webs_t wp)
 #else
 		 "",		// place holder
 #endif
-		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", "" },	//
+		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
 		{ "services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesSpeedchecker", "", "" },	//
 		{ "security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "" },	//
@@ -392,6 +392,23 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// micro
 					// build
 					goto skip;
+#ifndef HAVE_WPA3
+				if (!strcmp_pnt(m->menu[i][j], "Roaming.asp"))	// jump
+					// over
+					// PPTP
+					// in
+					// micro
+					// build
+					goto skip;
+#else
+				if (!wifi && !strcmp_pnt(m->menu[i][j], "Roaming.asp"))	// jump
+					// over
+					// PPTP
+					// in
+					// micro
+					// build
+					goto skip;
+#endif
 				if (!strcmp_pnt(m->menu[i][j], "Wireless_radauth.asp"))
 					goto skip;
 				if (!wifi && !strncmp(m->menu[i][j], "Wireless_MAC.asp", 8))
