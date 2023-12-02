@@ -2293,6 +2293,93 @@ static void show_chanshift(webs_t wp, char *prefix)
 
 static void show_roaming(webs_t wp, char *var)
 {
+
+	char *akm = nvram_safe_get(vakm);
+
+	int v_show_preshared = 0;
+	int v_show_owe = 0;
+	int v_show_wparadius = 0;
+	if (strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
+		v_show_preshared = 1;
+	if (strstr(akm, "owe"))
+		v_show_owe = 1;
+	if (strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128"))
+		v_show_wparadius = 1;
+
+
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.roaming)</script></legend>");
+	if (v_show_preshared || v_show_owe || v_show_wparadius) {
+		char vvar[32];
+		strcpy(vvar, prefix);
+		rep(vvar, '.', 'X');
+		char bssft[64];
+		sprintf(bssft, "%s_ft", prefix);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_iddomain', true);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  vvar, prefix, nvram_default_matchi(bssft, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_iddomain', false);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  vvar, prefix, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div id=\"%s_iddomain\">\n", vvar);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.nas", NULL);
+		sprintf(var, "%s_nas", prefix);
+		websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "ap.example.com"));
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.domain", NULL);
+		sprintf(var, "%s_domain", prefix);
+		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", prefix, prefix, nvram_default_get(var, "0000"));
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.reassociation_deadline", NULL);
+		sprintf(var, "%s_deadline", prefix);
+		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", prefix, prefix,
+			  nvram_default_get(var, "1000"));
+		websWrite(wp, "</div>\n");
+		char wnm[64];
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft_protocol)</script></div>\n");
+
+		sprintf(wnm, "%s_ft_over_ds", prefix);
+		showOptions_trans(wp, wnm, "0 1", (char *[]) { "wpa.ft_over_air", "wpa.ft_over_ds" }, nvram_default_get(wnm, "0"));
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_iddomain\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+
+		char mbo[64];
+		sprintf(mbo, "%s_mbo", prefix);
+		nvram_default_get(mbo, has_ax(prefix) ? "1" : "0");
+
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idmbo', true);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  vvar, prefix, nvram_default_matchi(mbo, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idmbo', false);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  vvar, prefix, nvram_default_matchi(mbo, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
+		sprintf(wnm, "%s_mbo_cell_data_conn_pref", prefix);
+		websWrite(wp, "<div id=\"%s_idmbo\">\n", vvar);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
+		showOptions_trans(wp, wnm, "0 1 255", (char *[]) { "share.excluded", "share.not_prefered", "share.prefered" }, nvram_default_get(wnm, "0"));
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_mbo\"), \"%s_idmbo\", %s);\n", prefix, vvar, nvram_matchi(mbo, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+
+	}
+
 		char s80211v[64];
 		sprintf(s80211v, "%s_80211v", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211v)</script></div>\n");
@@ -2368,6 +2455,7 @@ static void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v2\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k2\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</fieldset><br/>\n");
 
 }
 static int show_virtualssid(webs_t wp, char *prefix)
