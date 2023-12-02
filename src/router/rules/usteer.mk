@@ -3,12 +3,12 @@ USTEER_STAGING_DIR=$(TOP)/_staging
 USTEER_PKG_INSTALL:=1
 USTEER_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF \
 		    -DCMAKE_BUILD_TYPE=release \
-		    -DCMAKE_AR=${shell which $(ARCH)-linux-gcc-ar} \
-		    -DCMAKE_RANLIB=${shell which $(ARCH)-linux-gcc-ranlib}
+		    -DCMAKE_AR=${GCCAR} \
+		    -DCMAKE_RANLIB=${GCCRANLIB}
 
 
-USTEER_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -flto=auto -fno-fat-lto-objects
-USTEER_EXTRA_LDFLAGS=-ljson-c -L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections -fuse-ld=bfd -flto=auto -fuse-linker-plugin
+USTEER_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
+USTEER_EXTRA_LDFLAGS=-ljson-c -L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)
 
 usteer-configure: libubox ubus
 	$(call CMakeClean,$(USTEER_PKG_BUILD_DIR))

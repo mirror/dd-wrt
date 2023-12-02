@@ -3,12 +3,12 @@ UBUS_STAGING_DIR=$(TOP)/_staging
 UBUS_PKG_INSTALL:=1
 UBUS_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF \
 		    -DCMAKE_BUILD_TYPE=release \
-		    -DCMAKE_AR=${shell which $(ARCH)-linux-gcc-ar} \
-		    -DCMAKE_RANLIB=${shell which $(ARCH)-linux-gcc-ranlib}
+		    -DCMAKE_AR=$(GCCAR) \
+		    -DCMAKE_RANLIB=$(GCCRANLIB)
 
 
-UBUS_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -flto=auto -fno-fat-lto-objects
-UBUS_EXTRA_LDFLAGS=-L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections -fuse-ld=bfd -flto=auto -fuse-linker-plugin
+UBUS_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTOAUTO)
+UBUS_EXTRA_LDFLAGS=-L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections -fuse-ld=bfd -flto=auto -fuse-linker-plugin $(LDLTOAUTO)
 
 ubus-configure: 
 	$(call CMakeClean,$(UBUS_PKG_BUILD_DIR))
