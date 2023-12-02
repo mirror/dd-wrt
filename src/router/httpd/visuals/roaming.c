@@ -86,30 +86,34 @@ void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div id=\"%s_iddomain\">\n", vvar);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.nas", NULL);
-		sprintf(temp, "%s_nas", var);
-		websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "ap.example.com"));
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.domain", NULL);
-		sprintf(temp, "%s_domain", var);
-		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "0000"));
-		websWrite(wp, "</div>\n");
+		{
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wpa.nas", NULL);
+			sprintf(temp, "%s_nas", var);
+			websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "ap.example.com"));
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wpa.domain", NULL);
+			sprintf(temp, "%s_domain", var);
+			websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "0000"));
+			websWrite(wp, "</div>\n");
 
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.reassociation_deadline", NULL);
-		sprintf(temp, "%s_deadline", var);
-		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", var, var,
-			  nvram_default_get(temp, "1000"));
-		websWrite(wp, "</div>\n");
-		char wnm[64];
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wpa.reassociation_deadline", NULL);
+			sprintf(temp, "%s_deadline", var);
+			websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", var, var,
+				  nvram_default_get(temp, "1000"));
+			websWrite(wp, "</div>\n");
+			char wnm[64];
 
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft_protocol)</script></div>\n");
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft_protocol)</script></div>\n");
 
-		sprintf(wnm, "%s_ft_over_ds", var);
-		showOptions_trans(wp, wnm, "0 1", (char *[]) { "wpa.ft_over_air", "wpa.ft_over_ds" }, nvram_default_get(wnm, "0"));
+			sprintf(wnm, "%s_ft_over_ds", var);
+			showOptions_trans(wp, wnm, "0 1", (char *[]) {
+					  "wpa.ft_over_air", "wpa.ft_over_ds"}, nvram_default_get(wnm, "0"));
+			websWrite(wp, "</div>\n");
+		}
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
@@ -132,7 +136,8 @@ void show_roaming(webs_t wp, char *var)
 		{
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
-			showOptions_trans(wp, wnm, "0 1 255", (char *[]) { "share.excluded", "share.not_prefered", "share.prefered" }, nvram_default_get(wnm, "0"));
+			showOptions_trans(wp, wnm, "0 1 255", (char *[]) {
+					  "share.excluded", "share.not_prefered", "share.prefered"}, nvram_default_get(wnm, "0"));
 			websWrite(wp, "</div>\n");
 		}
 		websWrite(wp, "</div>\n");
@@ -299,7 +304,7 @@ void show_roaming(webs_t wp, char *var)
 #define IFMAP(a) (a)
 #endif
 
-static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *prefix)
+static void ej_show_roaming_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 {
 	char *next;
 	char var[80];
@@ -338,7 +343,7 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pre
 	}
 }
 
-EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
 {
 	int c = getdevicecount();
 	int i;

@@ -247,7 +247,7 @@ static struct callmap gozila_map[] = {
 	{ "set_security", &set_security },
 	{ "security_save", &security_save },
 #ifdef HAVE_80211R
-	{ "roaming_save", &security_save },
+	{ "roaming_save", &roaming_save },
 #endif
 	{ "add_active_mac", &add_active_mac },
 	{ "ping_wol", &ping_wol },

@@ -1447,7 +1447,7 @@ static void save_roamprefix(webs_t wp, char *prefix)
 static int roaming_save_prefix(webs_t wp, char *prefix)
 {
 
-	save_secprefix(wp, prefix);
+	save_roamprefix(wp, prefix);
 	char *next;
 	char var[80];
 	char *vifs = nvram_nget("%s_vifs", prefix);
