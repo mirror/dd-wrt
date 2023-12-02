@@ -212,7 +212,15 @@ void show_roaming(webs_t wp, char *var)
 	{
 		websWrite(wp, "<div id=\"%s_id80211v2\">\n", var);
 		{
-			showRadioPrefix(wp, "wl_basic.usteer", "usteer", var);
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.usteer)</script></div>\n");
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idusteer', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+				  var, var, nvram_default_matchi(usteer, 1, 0) ? "checked=\"checked\"" : "");
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idusteer', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+				  var, var, nvram_default_matchi(usteer, 0, 0) ? "checked=\"checked\"" : "");
+			websWrite(wp, "</div>\n");
+
 			websWrite(wp, "<div id=\"%s_idusteer\">\n", var);
 			{
 				showInputNumPrefix(wp, "roaming.debug_level", "debug_level", var, 1, 1, 1);
