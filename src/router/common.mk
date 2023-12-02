@@ -1,7 +1,13 @@
 export LTO := -flto -fwhole-program -flto-partition=none
+export LTOAUTO := -flto=auto -fno-fat-lto-objects
+export LDLTOAUTO := -fuse-ld=bfd -flto=auto -fuse-linker-plugin
 export LTOMIN := -flto
 export LDLTO := -flto=$(shell getconf _NPROCESSORS_ONLN) -fuse-linker-plugin
 export LTOPLUGIN := --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
+export GCCAR := ${shell which $(ARCH)-linux-gcc-ar}
+export GCCRANLIB := ${shell which $(ARCH)-linux-gcc-ranlib}
+
+
 COPTS+= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-builtin-strlen -funsigned-char -fno-builtin-printf
 #COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-builtin-strlen -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
 

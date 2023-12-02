@@ -1,5 +1,8 @@
 COPTS+= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-builtin-strlen -funsigned-char -fno-builtin-printf
 
+export GCCAR := ${shell which $(ARCH)-linux-ar}
+export GCCRANLIB := ${shell which $(ARCH)-linux-ranlib}
+
 ifeq ($(ARCH),arm)
 MUSL_LD:=ld-musl-armhf.so.1
 KERNEL_HEADER_ARCH:=arm
