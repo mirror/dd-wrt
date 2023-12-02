@@ -1221,6 +1221,7 @@ endif
 ifeq ($(CONFIG_WPA3),y)
 ifeq ($(HOSTAPDVERSION),)
 CFLAGS += -DHAVE_WPA3 -DHAVE_80211R -DHAVE_80211W
+VISOBJS += roaming.o
 endif
 endif
 ifeq ($(CONFIG_RS),y)
