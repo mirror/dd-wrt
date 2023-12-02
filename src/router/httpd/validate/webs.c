@@ -1382,6 +1382,64 @@ void security_save(webs_t wp)
 	applytake(value);
 }
 
+#ifdef HAVE_80211R
+static void save_roamprefix(webs_t wp, char *prefix)
+{
+	copytonv_prefix(wp, "ft", prefix);
+	copytonv_prefix(wp, "domain", prefix);
+	copytonv_prefix(wp, "nas", prefix);
+	copytonv_prefix(wp, "deadline", prefix);
+	copytonv_prefix(wp, "ft_over_ds", prefix);
+	copytonv_prefix(wp, "mbo", prefix);
+	copytonv_prefix(wp, "mbo_cell_data_conn_pref", prefix);
+	copytonv_prefix(wp, "80211v", prefix);
+	copytonv_prefix(wp, "80211k", prefix);
+	copytonv_prefix(wp, "wnm_sleep_mode", prefix);
+	copytonv_prefix(wp, "wnm_sleep_mode_no_keys", prefix);
+	copytonv_prefix(wp, "bss_transition", prefix);
+	copytonv_prefix(wp, "rrm_neighbor_report", prefix);
+	copytonv_prefix(wp, "rrm_beacon_report", prefix);
+	copytonv_prefix(wp, "proxy_arp", prefix);
+	copytonv_prefix(wp, "time_advertisement", prefix);
+	copytonv_prefix(wp, "time_zone", prefix);
+	copytonv_prefix(wp, "usteer", prefix);
+
+}
+
+static int roaming_save_prefix(webs_t wp, char *prefix)
+{
+
+	save_secprefix(wp, prefix);
+	char *next;
+	char var[80];
+	char *vifs = nvram_nget("%s_vifs", prefix);
+
+	if (vifs == NULL)
+		return 0;
+	foreach(var, vifs, next) {
+		save_roamprefix(wp, var);
+	}
+	// nvram_async_commit ();
+	return 0;
+}
+void roaming_save(webs_t wp)
+{
+	char *value = websGetVar(wp, "action", "");
+
+	int dc = getdevicecount();
+	int i;
+
+	for (i = 0; i < dc; i++) {
+		char b[16];
+
+		sprintf(b, "wlan%d", i);
+		roaming_save_prefix(wp, b);
+	}
+	applytake(value);
+}
+
+#endif
+
 void add_active_mac(webs_t wp)
 {
 	int i, count = 0;
@@ -5141,27 +5199,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "xr", prefix);
 	copytonv_prefix(wp, "cardtype", prefix);
 
-#endif
-#ifdef HAVE_80211R
-	copytonv_prefix(wp, "ft", prefix);
-	copytonv_prefix(wp, "domain", prefix);
-	copytonv_prefix(wp, "nas", prefix);
-	copytonv_prefix(wp, "deadline", prefix);
-	copytonv_prefix(wp, "ft_over_ds", prefix);
-	copytonv_prefix(wp, "mbo", prefix);
-	copytonv_prefix(wp, "mbo_cell_data_conn_pref", prefix);
-
-	copytonv_prefix(wp, "80211v", prefix);
-	copytonv_prefix(wp, "80211k", prefix);
-	copytonv_prefix(wp, "wnm_sleep_mode", prefix);
-	copytonv_prefix(wp, "wnm_sleep_mode_no_keys", prefix);
-	copytonv_prefix(wp, "bss_transition", prefix);
-	copytonv_prefix(wp, "rrm_neighbor_report", prefix);
-	copytonv_prefix(wp, "rrm_beacon_report", prefix);
-	copytonv_prefix(wp, "proxy_arp", prefix);
-	copytonv_prefix(wp, "time_advertisement", prefix);
-	copytonv_prefix(wp, "time_zone", prefix);
-	copytonv_prefix(wp, "usteer", prefix);
 #endif
 
 	copytonv_prefix(wp, "closed", prefix);
