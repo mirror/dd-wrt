@@ -2663,6 +2663,46 @@ hwanmac.right2="Some ISPs will require you to register your MAC address. If you 
 hwanmac.page1="<dd>The router's MAC address is a 12-digit code assigned to a unique piece of hardware for identification. Some ISPs require that you register the MAC address of your network card/adapter, which was connected to your cable or DSL modem during installation.</dd>";
 hwanmac.page2="<dd>To clone your network adapter's MAC address onto the router, select <em>" + share.enable + "</em> and enter your adapter's MAC address in the <i>Clone WAN MAC</i> field or click the <em>" + sbutton.wanmac + "</em> button to automatically fill in the MAC address of the device you are using. Then save your changes by clicking on the <em>" + sbutton.save + "</em> button.<br /><br />To disable MAC address cloning, keep the default setting, <em>" + share.disable + "</em>.</dd><dd>Find your adapter's MAC address by following the instructions for your computers operating system.<br /><br /><b>Microsoft Windows:</b><ol class=\"wide\"><li>Click the Start button, and select Run or the<em>Windows key</em>+<em>R</em> shortcut.</li><li>Type <tt>cmd</tt> in the field provided, and press the OK button.</li><li>At the command prompt, run <tt>ipconfig /all</tt>, and look at your adapter's physical address.</li><li>Write down your adapter's MAC address.</li></ol><br /><b>Linux:</b><ol class=\"wide\"><li>Click <em>CTRL</em>+<em>ALT</em>+<em>T</em>, to open a terminal.</li><li>Type <tt>ifconfig -a</tt>, and press Enter</li><li>Look for the Ethernet adapter you are using, the MAC address is in this format <b>xx:xx:xx:xx:xx:xx</b>.</li><li>Write down your adapter's MAC address.</li></ol><br /></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
+var roaming=new Object();
+
+roaming.debug_level="Debug Level";
+roaming.local_mode="Disable Network Communication";
+roaming.sta_block_timeout="Station Block Timeout";
+roaming.local_sta_timeout="Local Station Timeout";
+roaming.local_sta_update="Station Update Interval";
+roaming.max_neighbor_reports="Maximum Neighbors";
+roaming.max_retry_band="Max Retry Band";
+roaming.seen_policy_timeout="Seen Policy Timeout";
+roaming.measurement_report_timeout="Measurement Report Timeout";
+roaming.load_balancing_threshold="Load Balancing Threshold";
+roaming.band_steering_threshold="Band Steering Threshold";
+roaming.remote_update_interval="Remote Update Interval";
+roaming.remote_node_timeout="Renote Node Timeout";
+roaming.assoc_steering="Assoc Steering";
+roaming.min_connect_snr="Min Connect SNR";
+roaming.min_snr="Min SNR";
+roaming.min_snr_kick_delay="Min SNR Kick Delay";
+roaming.steer_reject_timeout="Steer Reject Timeout";
+roaming.roam_process_timeout="Roam Process Timeout";
+roaming.roam_scan_snr="Roam Scan SNR";
+roaming.roam_scan_tries="Roam Scan Tries";
+roaming.roam_scan_timeout="Roam Scan Timeout";
+roaming.roam_scan_interval="Roam Scan Interval";
+roaming.roam_trigger_snr="Roam Trigger SNR";
+roaming.roam_trigger_interval="Roam Trigger Interval";
+roaming.roam_kick_delay="Roam Kick Delay";
+roaming.signal_diff_threshold="Signal Diff Threshold";
+roaming.initial_connect_delay="Initial Connect Delay";
+roaming.load_kick_enabled="Load Kick Enabled";
+roaming.load_kick_threshold="Load Kick Threshold";
+roaming.load_kick_delay="Load Kick Delay";
+roaming.load_kick_min_clients="Load Kick Min Clients";
+roaming.load_kick_reason_code="Load Kick Reason Code";
+roaming.band_steering_interval="Band Steering Interval";
+roaming.band_steering_min_snr="Band Steering Min SNR";
+roaming.link_measurement_interval="Link Measurement Interval";
+
+
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 var wpa=new Object();
 wpa.titl="Wireless Security";
