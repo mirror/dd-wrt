@@ -1404,6 +1404,44 @@ static void save_roamprefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "time_zone", prefix);
 	copytonv_prefix(wp, "usteer", prefix);
 
+	copytonv_prefix(wp, "debug_level", prefix);
+	copytonv_prefix(wp, "ipv6", prefix);
+	copytonv_prefix(wp, "local_mode", prefix);
+	copytonv_prefix(wp, "sta_block_timeout", prefix);
+	copytonv_prefix(wp, "local_sta_timeout", prefix);
+	copytonv_prefix(wp, "local_sta_update", prefix);
+	copytonv_prefix(wp, "max_neighbor_reports", prefix);
+	copytonv_prefix(wp, "max_retry_band", prefix);
+	copytonv_prefix(wp, "seen_policy_timeout", prefix);
+	copytonv_prefix(wp, "measurement_report_timeout", prefix);
+	copytonv_prefix(wp, "load_balancing_threshold", prefix);
+	copytonv_prefix(wp, "band_steering_threshold", prefix);
+	copytonv_prefix(wp, "remote_update_interval", prefix);
+	copytonv_prefix(wp, "remote_node_timeout", prefix);
+	copytonv_prefix(wp, "assoc_steering", prefix);
+	copytonv_prefix(wp, "min_connect_snr", prefix);
+	copytonv_prefix(wp, "min_snr", prefix);
+	copytonv_prefix(wp, "min_snr_kick_delay", prefix);
+	copytonv_prefix(wp, "steer_reject_timeout", prefix);
+	copytonv_prefix(wp, "roam_process_timeout", prefix);
+	copytonv_prefix(wp, "roam_scan_snr", prefix);
+	copytonv_prefix(wp, "roam_scan_tries", prefix);
+	copytonv_prefix(wp, "roam_scan_timeout", prefix);
+	copytonv_prefix(wp, "roam_scan_interval", prefix);
+	copytonv_prefix(wp, "roam_trigger_snr", prefix);
+	copytonv_prefix(wp, "roam_trigger_interval", prefix);
+	copytonv_prefix(wp, "roam_kick_delay", prefix);
+	copytonv_prefix(wp, "signal_diff_threshold", prefix);
+	copytonv_prefix(wp, "initial_connect_delay", prefix);
+	copytonv_prefix(wp, "load_kick_enabled", prefix);
+	copytonv_prefix(wp, "load_kick_threshold", prefix);
+	copytonv_prefix(wp, "load_kick_delay", prefix);
+	copytonv_prefix(wp, "load_kick_min_clients", prefix);
+	copytonv_prefix(wp, "load_kick_reason_code", prefix);
+	copytonv_prefix(wp, "band_steering_interval", prefix);
+	copytonv_prefix(wp, "band_steering_min_snr", prefix);
+	copytonv_prefix(wp, "link_measurement_interval", prefix);
+
 }
 
 static int roaming_save_prefix(webs_t wp, char *prefix)
@@ -1422,6 +1460,7 @@ static int roaming_save_prefix(webs_t wp, char *prefix)
 	// nvram_async_commit ();
 	return 0;
 }
+
 void roaming_save(webs_t wp)
 {
 	char *value = websGetVar(wp, "action", "");
