@@ -157,6 +157,8 @@ int udebug_entry_printf(struct udebug_buf *buf, const char *fmt, ...)
 	__attribute__ ((format (printf, 2, 3)));
 int udebug_entry_vprintf(struct udebug_buf *buf, const char *fmt, va_list ap)
 	__attribute__ ((format (printf, 2, 0)));
+uint16_t udebug_entry_trim(struct udebug_buf *buf, uint16_t len);
+void udebug_entry_set_length(struct udebug_buf *buf, uint16_t len);
 void udebug_entry_add(struct udebug_buf *buf);
 
 int udebug_buf_init(struct udebug_buf *buf, size_t entries, size_t size);
@@ -164,6 +166,10 @@ int udebug_buf_add(struct udebug *ctx, struct udebug_buf *buf,
 		   const struct udebug_buf_meta *meta);
 uint64_t udebug_buf_flags(struct udebug_buf *buf);
 void udebug_buf_free(struct udebug_buf *buf);
+static inline bool udebug_buf_valid(struct udebug_buf *buf)
+{
+	return buf->hdr;
+}
 
 struct udebug_remote_buf *udebug_remote_buf_get(struct udebug *ctx, uint32_t id);
 int udebug_remote_buf_map(struct udebug *ctx, struct udebug_remote_buf *rb, uint32_t id);

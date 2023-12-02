@@ -25,9 +25,8 @@
 #define UDEBUG_TIMEOUT	1000
 
 __hidden int udebug_buf_open(struct udebug_buf *buf, int fd, uint32_t ring_size, uint32_t data_size);
-__hidden struct udebug_client_msg *__udebug_poll(struct udebug *ctx, int *fd, bool wait);
-__hidden void udebug_send_msg(struct udebug *ctx, struct udebug_client_msg *msg,
-		     struct blob_attr *meta, int fd);
+__hidden struct udebug_client_msg *
+udebug_send_and_wait(struct udebug *ctx, struct udebug_client_msg *msg, int *rfd);
 
 static inline int32_t u32_sub(uint32_t a, uint32_t b)
 {

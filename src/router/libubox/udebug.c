@@ -290,8 +290,9 @@ recv_retry(int fd, struct iovec *iov, bool wait, int *recv_fd)
 	return total;
 }
 
-void udebug_send_msg(struct udebug *ctx, struct udebug_client_msg *msg,
-		     struct blob_attr *meta, int fd)
+static void
+udebug_send_msg(struct udebug *ctx, struct udebug_client_msg *msg,
+		struct blob_attr *meta, int fd)
 {
 	struct iovec iov[2] = {
 		{ .iov_base = msg, .iov_len = sizeof(*msg) },
@@ -308,6 +309,79 @@ void udebug_send_msg(struct udebug *ctx, struct udebug_client_msg *msg,
 	writev_retry(ctx->fd.fd, iov, ARRAY_SIZE(iov), fd);
 }
 
+static bool
+udebug_recv_msg(struct udebug *ctx, struct udebug_client_msg *msg, int *fd,
+		bool wait)
+{
+	struct iovec iov = {
+		.iov_base = msg,
+		.iov_len = sizeof(*msg)
+	};
+	int ret;
+
+	ret = recv_retry(ctx->fd.fd, &iov, wait, fd);
+	if (ret == -2)
+		__udebug_disconnect(ctx, true);
+
+	return ret == sizeof(*msg);
+}
+
+static struct udebug_client_msg *
+__udebug_poll(struct udebug *ctx, int *fd, bool wait)
+{
+	static struct udebug_client_msg msg = {};
+
+	while (udebug_recv_msg(ctx, &msg, fd, wait)) {
+		struct udebug_remote_buf *rb;
+		void *key;
+
+		if (msg.type != CL_MSG_RING_NOTIFY)
+			return &msg;
+
+		if (fd && *fd >= 0)
+			close(*fd);
+
+		if (!ctx->notify_cb)
+			continue;
+
+		key = (void *)(uintptr_t)msg.id;
+		rb = avl_find_element(&ctx->remote_rings, key, rb, node);
+		if (!rb || !rb->poll)
+			continue;
+
+		if (ctx->poll_handle >= 0)
+			__atomic_fetch_or(&rb->buf.hdr->notify,
+					  1UL << ctx->poll_handle,
+					  __ATOMIC_RELAXED);
+		ctx->notify_cb(ctx, rb);
+	}
+
+	return NULL;
+}
+
+static struct udebug_client_msg *
+udebug_wait_for_response(struct udebug *ctx, struct udebug_client_msg *msg, int *rfd)
+{
+	int type = msg->type;
+	int fd = -1;
+
+	do {
+		if (fd >= 0)
+			close(fd);
+		fd = -1;
+		msg = __udebug_poll(ctx, &fd, true);
+	} while (msg && msg->type != type);
+	if (!msg)
+		return NULL;
+
+	if (rfd)
+		*rfd = fd;
+	else if (fd >= 0)
+		close(fd);
+
+	return msg;
+}
+
 static void
 udebug_buf_msg(struct udebug_buf *buf, enum udebug_client_msg_type type)
 {
@@ -317,6 +391,7 @@ udebug_buf_msg(struct udebug_buf *buf, enum udebug_client_msg_type type)
 	};
 
 	udebug_send_msg(buf->ctx, &msg, NULL, -1);
+	udebug_wait_for_response(buf->ctx, &msg, NULL);
 }
 
 static size_t __udebug_headsize(unsigned int ring_size, unsigned int page_size)
@@ -467,6 +542,25 @@ void *udebug_entry_append(struct udebug_buf *buf, const void *data, uint32_t len
 	return ret;
 }
 
+uint16_t udebug_entry_trim(struct udebug_buf *buf, uint16_t len)
+{
+	struct udebug_hdr *hdr = buf->hdr;
+	struct udebug_ptr *ptr = udebug_ring_ptr(hdr, hdr->head);
+
+	if (len)
+		ptr->len -= len;
+
+	return ptr->len;
+}
+
+void udebug_entry_set_length(struct udebug_buf *buf, uint16_t len)
+{
+	struct udebug_hdr *hdr = buf->hdr;
+	struct udebug_ptr *ptr = udebug_ring_ptr(hdr, hdr->head);
+
+	ptr->len = len;
+}
+
 int udebug_entry_printf(struct udebug_buf *buf, const char *fmt, ...)
 {
 	va_list ap;
@@ -585,6 +679,7 @@ __udebug_buf_add(struct udebug *ctx, struct udebug_buf *buf)
 	blobmsg_close_array(&b, c);
 
 	udebug_send_msg(ctx, &msg, b.head, buf->fd);
+	udebug_wait_for_response(ctx, &msg, NULL);
 }
 
 int udebug_buf_add(struct udebug *ctx, struct udebug_buf *buf,
@@ -664,58 +759,17 @@ int udebug_connect(struct udebug *ctx, const char *path)
 	return 0;
 }
 
-static bool
-udebug_recv_msg(struct udebug *ctx, struct udebug_client_msg *msg, int *fd,
-		bool wait)
-{
-	struct iovec iov = {
-		.iov_base = msg,
-		.iov_len = sizeof(*msg)
-	};
-	int ret;
-
-	ret = recv_retry(ctx->fd.fd, &iov, wait, fd);
-	if (ret == -2)
-		__udebug_disconnect(ctx, true);
-
-	return ret == sizeof(*msg);
-}
-
-struct udebug_client_msg *__udebug_poll(struct udebug *ctx, int *fd, bool wait)
-{
-	static struct udebug_client_msg msg = {};
-
-	while (udebug_recv_msg(ctx, &msg, fd, wait)) {
-		struct udebug_remote_buf *rb;
-		void *key;
-
-		if (msg.type != CL_MSG_RING_NOTIFY)
-			return &msg;
-
-		if (fd && *fd >= 0)
-			close(*fd);
-
-		if (!ctx->notify_cb)
-			continue;
-
-		key = (void *)(uintptr_t)msg.id;
-		rb = avl_find_element(&ctx->remote_rings, key, rb, node);
-		if (!rb || !rb->poll)
-			continue;
-
-		if (ctx->poll_handle >= 0)
-			__atomic_fetch_or(&rb->buf.hdr->notify,
-					  1UL << ctx->poll_handle,
-					  __ATOMIC_RELAXED);
-		ctx->notify_cb(ctx, rb);
-	}
-
-	return NULL;
-}
-
 void udebug_poll(struct udebug *ctx)
 {
 	while (__udebug_poll(ctx, NULL, false));
+}
+
+struct udebug_client_msg *
+udebug_send_and_wait(struct udebug *ctx, struct udebug_client_msg *msg, int *rfd)
+{
+	udebug_send_msg(ctx, msg, NULL, -1);
+
+	return udebug_wait_for_response(ctx, msg, rfd);
 }
 
 static void udebug_fd_cb(struct uloop_fd *fd, unsigned int events)

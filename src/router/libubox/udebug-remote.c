@@ -17,31 +17,6 @@
  */
 #include "udebug-priv.h"
 
-static struct udebug_client_msg *
-send_and_wait(struct udebug *ctx, struct udebug_client_msg *msg, int *rfd)
-{
-	int type = msg->type;
-	int fd = -1;
-
-	udebug_send_msg(ctx, msg, NULL, -1);
-
-	do {
-		if (fd >= 0)
-			close(fd);
-		fd = -1;
-		msg = __udebug_poll(ctx, &fd, true);
-	} while (msg && msg->type != type);
-	if (!msg)
-		return NULL;
-
-	if (rfd)
-		*rfd = fd;
-	else if (fd >= 0)
-		close(fd);
-
-	return msg;
-}
-
 static int
 udebug_remote_get_handle(struct udebug *ctx)
 {
@@ -53,7 +28,7 @@ udebug_remote_get_handle(struct udebug *ctx)
 	if (ctx->poll_handle >= 0 || !udebug_is_connected(ctx))
 		return 0;
 
-	msg = send_and_wait(ctx, &send_msg, NULL);
+	msg = udebug_send_and_wait(ctx, &send_msg, NULL);
 	if (!msg)
 		return -1;
 
@@ -82,7 +57,7 @@ int udebug_remote_buf_map(struct udebug *ctx, struct udebug_remote_buf *rb, uint
 	if (rb->buf.data || !udebug_is_connected(ctx))
 		return -1;
 
-	msg = send_and_wait(ctx, &send_msg, &fd);
+	msg = udebug_send_and_wait(ctx, &send_msg, &fd);
 	if (!msg || fd < 0)
 		return -1;
 
