@@ -204,6 +204,8 @@ void show_roaming(webs_t wp, char *var)
 	websWrite(wp, "</div>\n");
 	char usteer[64];
 	sprintf(usteer, "%s_usteer", var);
+	char load_kick[64];
+	sprintf(load_kick, "%s_load_kick_enabled", var);
 
 	websWrite(wp, "<div id=\"%s_id80211k2\">\n", var);
 	{
@@ -241,14 +243,28 @@ void show_roaming(webs_t wp, char *var)
 				showInputNumPrefix(wp, "roaming.roam_kick_delay", "roam_kick_delay", var, 7, 6, 100);
 				showInputNumPrefix(wp, "roaming.signal_diff_threshold", "signal_diff_threshold", var, 4, 3, 12);
 				showInputNumPrefix(wp, "roaming.initial_connect_delay", "initial_connect_delay", var, 7, 6, 0);
-				showRadioPrefix(wp, "roaming.load_kick_enabled", "load_kick_enabled", var);
-				showInputNumPrefix(wp, "roaming.load_kick_threshold", "load_kick_threshold", var, 4, 3, 75);
-				showInputNumPrefix(wp, "roaming.load_kick_delay", "load_kick_delay", var, 7, 6, 10000);
-				showInputNumPrefix(wp, "roaming.load_kick_min_clients", "load_kick_min_clients", var, 4, 3, 10);
-				showInputNumPrefix(wp, "roaming.load_kick_reason_code", "load_kick_reason_code", var, 3, 2, 5);
+
 				showInputNumPrefix(wp, "roaming.band_steering_interval", "band_steering_interval", var, 7, 6, 120000);
 				showInputNumPrefix(wp, "roaming.band_steering_min_snr", "band_steering_min_snr", var, 3, 2, -60);
 				showInputNumPrefix(wp, "roaming.link_measurement_interval", "link_measurement_interval", var, 7, 6, 30000);
+
+				websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.load_kick_enabled)</script></div>\n");
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id_load_kick', true);\" name=\"%s_load_kick_enabled\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+					  var, var, nvram_default_matchi(load_kick, 1, 0) ? "checked=\"checked\"" : "");
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_id_load_kick', false);\" name=\"%s_load_kick_enabled\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+					  var, var, nvram_default_matchi(load_kick, 0, 0) ? "checked=\"checked\"" : "");
+				websWrite(wp, "</div>\n");
+
+				websWrite(wp, "<div id=\"%s_id_load_kick\">\n", var);
+				{
+					showInputNumPrefix(wp, "roaming.load_kick_threshold", "load_kick_threshold", var, 4, 3, 75);
+					showInputNumPrefix(wp, "roaming.load_kick_delay", "load_kick_delay", var, 7, 6, 10000);
+					showInputNumPrefix(wp, "roaming.load_kick_min_clients", "load_kick_min_clients", var, 4, 3, 10);
+					showInputNumPrefix(wp, "roaming.load_kick_reason_code", "load_kick_reason_code", var, 3, 2, 5);
+				}
+				websWrite(wp, "</div>\n");
 			}
 			websWrite(wp, "</div>\n");
 		}
@@ -262,6 +278,7 @@ void show_roaming(webs_t wp, char *var)
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v2\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k2\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_usteer\"), \"%s_idusteer\", %s);\n", var, var, nvram_matchi(usteer, 1) ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_load_kick_enabled\"), \"%s_id_load_kick\", %s);\n", var, var, nvram_matchi(load_kick, 1) ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 
 }
