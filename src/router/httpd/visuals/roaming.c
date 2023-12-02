@@ -75,6 +75,7 @@ void show_roaming(webs_t wp, char *var)
 	if (v_show_preshared || v_show_owe || v_show_wparadius) {
 		char bssft[64];
 		char temp[64];
+		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wpa.ft)</script></legend>");
 		sprintf(bssft, "%s_ft", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
 		websWrite(wp,
@@ -84,6 +85,7 @@ void show_roaming(webs_t wp, char *var)
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_iddomain', false);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  vvar, var, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
+		char wnm[64];
 
 		websWrite(wp, "<div id=\"%s_iddomain\">\n", vvar);
 		{
@@ -104,7 +106,6 @@ void show_roaming(webs_t wp, char *var)
 			websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,wpa.reassociation_deadline)\" value=\"%s\" />\n", var, var,
 				  nvram_default_get(temp, "1000"));
 			websWrite(wp, "</div>\n");
-			char wnm[64];
 
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft_protocol)</script></div>\n");
@@ -115,37 +116,16 @@ void show_roaming(webs_t wp, char *var)
 			websWrite(wp, "</div>\n");
 		}
 		websWrite(wp, "</div>\n");
-
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_iddomain\", %s);\n", var, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
-
-		nvram_default_get(mbo, has_ax(var) ? "1" : "0");
-
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo)</script></div>\n");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idmbo', true);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  vvar, var, nvram_default_matchi(mbo, 1, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idmbo', false);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  vvar, var, nvram_default_matchi(mbo, 0, 0) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-
-		sprintf(wnm, "%s_mbo_cell_data_conn_pref", var);
-		websWrite(wp, "<div id=\"%s_idmbo\">\n", vvar);
-		{
-			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
-			showOptions_trans(wp, wnm, "0 1 255", (char *[]) {
-					  "share.excluded", "share.not_prefered", "share.prefered"}, nvram_default_get(wnm, "0"));
-			websWrite(wp, "</div>\n");
-		}
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</fieldset> <br />\n");
 
 	}
 
 	char s80211v[64];
 	sprintf(s80211v, "%s_80211v", var);
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.s80211v)</script></legend>");
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.s80211v)</script></div>\n");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_id80211v', true);show_layer_ext(this, '%s_id80211v2', true);\" name=\"%s_80211v\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
@@ -191,6 +171,8 @@ void show_roaming(webs_t wp, char *var)
 		showRadioPrefix(wp, "wl_basic.proxy_arp", "proxy_arp", var);
 	}
 	websWrite(wp, "</div>\n");
+	websWrite(wp, "</fieldset> </br>\n");
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.s80211k)</script></legend>");
 
 	char s80211k[64];
 	sprintf(s80211k, "%s_80211k", var);
@@ -208,6 +190,31 @@ void show_roaming(webs_t wp, char *var)
 		showRadioPrefix(wp, "wl_basic.rrm_beacon_report", "rrm_beacon_report", var);
 	}
 	websWrite(wp, "</div>\n");
+	websWrite(wp, "</fieldset> <br />\n");
+
+	if (v_show_preshared || v_show_owe || v_show_wparadius) {
+		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wpa.mbo)</script></legend>");
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idmbo', true);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  vvar, var, nvram_default_matchi(mbo, 1, has_ax(var) ? 1 : 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idmbo', false);\" name=\"%s_mbo\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  vvar, var, nvram_default_matchi(mbo, 0, has_ax(var) ? 1 : 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+		sprintf(wnm, "%s_mbo_cell_data_conn_pref", var);
+		websWrite(wp, "<div id=\"%s_idmbo\">\n", vvar);
+		{
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.mbo_cell_data_conn_pref)</script></div>\n");
+			showOptions_trans(wp, wnm, "0 1 255", (char *[]) {
+					  "share.excluded", "share.not_prefered", "share.prefered"}, nvram_default_get(wnm, "0"));
+			websWrite(wp, "</div>\n");
+		}
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</fieldset> <br />\n");
+	}
+
 	char usteer[64];
 	sprintf(usteer, "%s_usteer", var);
 	char load_kick[64];
@@ -217,12 +224,13 @@ void show_roaming(webs_t wp, char *var)
 	{
 		websWrite(wp, "<div id=\"%s_id80211v2\">\n", var);
 		{
+			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.usteer)</script></legend>");
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.usteer)</script></div>\n");
 			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idusteer', true);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idusteer', true);\" name=\"%s_usteer\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 				  var, var, nvram_default_matchi(usteer, 1, 0) ? "checked=\"checked\"" : "");
 			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idusteer', false);\" name=\"%s_80211k\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idusteer', false);\" name=\"%s_usteer\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 				  var, var, nvram_default_matchi(usteer, 0, 0) ? "checked=\"checked\"" : "");
 			websWrite(wp, "</div>\n");
 
@@ -281,6 +289,7 @@ void show_roaming(webs_t wp, char *var)
 				websWrite(wp, "</div>\n");
 			}
 			websWrite(wp, "</div>\n");
+			websWrite(wp, "</fieldset> <br />\n");
 		}
 		websWrite(wp, "</div>\n");
 	}
