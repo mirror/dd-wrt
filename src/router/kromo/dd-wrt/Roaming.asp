@@ -4,7 +4,6 @@
 
 
 function to_submit(F) {
-	if (!check_form(F)) return false;
 	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
@@ -12,7 +11,6 @@ function to_submit(F) {
 }
 
 function to_apply(F) {
-	if (!check_form(F)) return false;
 	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
