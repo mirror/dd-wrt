@@ -259,3 +259,42 @@ void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char 
 	websWrite(wp, "</div>\n");
 }
 
+void showRadio(webs_t wp, char *propname, char *nvname)
+{
+	showRadioDefaultOff(wp, propname, nvname);
+}
+
+void showRadioInv(webs_t wp, char *propname, char *nvname)
+{
+	showRadioDefaultOn(wp, propname, nvname);
+}
+
+
+void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix)
+{
+	char nvname[32];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0));
+}
+
+void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, int def)
+{
+	char nvname[64];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showInputNum(wp, propname, nvname, size, maxsize, def);
+
+}
+void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, char *def)
+{
+	char nvname[64];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showInput(wp, propname, nvname, size, maxsize, def);
+}
+
+void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix)
+{
+	char nvname[64];
+	sprintf(nvname,"%s_%s",prefix,nv);
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,1));
+}
+
