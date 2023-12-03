@@ -336,11 +336,11 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.load_kick_enabled)</script></div>\n");
 	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, 'id_load_kick', true);\" name=\"load_kick_enabled\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  nvram_default_matchi(load_kick, 1, 0) ? "checked=\"checked\"" : "");
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, 'id_load_kick', true);\" name=\"usteer_load_kick_enabled\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  nvram_default_matchi("usteer_load_kick_enabled", 1, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, 'id_load_kick', false);\" name=\"load_kick_enabled\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  nvram_default_matchi(load_kick, 0, 0) ? "checked=\"checked\"" : "");
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, 'id_load_kick', false);\" name=\"usteer_load_kick_enabled\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		  nvram_default_matchi("usteer_load_kick_enabled", 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div id=\"id_load_kick\">\n");
