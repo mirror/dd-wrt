@@ -54,6 +54,7 @@ enum {
 	APMSG_NODE_N,
 	APMSG_NODE_VHT,
 	APMSG_NODE_HE,
+	APMSG_NODE_CW,
 	__APMSG_NODE_MAX
 };
 
@@ -71,6 +72,7 @@ struct apmsg_node {
 	int n;
 	int he;
 	int vht;
+	int cw;
 	struct blob_attr *stations;
 	struct blob_attr *rrm_nr;
 	struct blob_attr *node_info;

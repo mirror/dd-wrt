@@ -577,6 +577,7 @@ static void usteer_send_node(struct usteer_node *node, struct sta_info *sta)
 	blob_put_int32(&buf, APMSG_NODE_N, node->n);
 	blob_put_int32(&buf, APMSG_NODE_VHT, node->vht);
 	blob_put_int32(&buf, APMSG_NODE_HE, node->he);
+	blob_put_int32(&buf, APMSG_NODE_CW, node->cw);
 	blob_put(&buf, APMSG_NODE_BSSID, node->bssid, sizeof(node->bssid));
 	if (node->rrm_nr) {
 		r = blob_nest_start(&buf, APMSG_NODE_RRM_NR);

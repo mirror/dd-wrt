@@ -532,6 +532,7 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		MSG_N,
 		MSG_VHT,
 		MSG_HE,
+		MSG_CW,
 		__MSG_MAX,
 	};
 	static struct blobmsg_policy policy[__MSG_MAX] = {
@@ -544,6 +545,7 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		[MSG_N] = { "n", BLOBMSG_TYPE_INT32 },
 		[MSG_VHT] = { "vht", BLOBMSG_TYPE_INT32 },
 		[MSG_HE] = { "he", BLOBMSG_TYPE_INT32 },
+		[MSG_CW] = { "cw", BLOBMSG_TYPE_INT32 },
 	};
 	struct blob_attr *tb[__MSG_MAX];
 	struct usteer_local_node *ln;
@@ -557,6 +559,8 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		node->freq = blobmsg_get_u32(tb[MSG_FREQ]);
 	if (tb[MSG_N])
 		node->n = blobmsg_get_u32(tb[MSG_N]);
+	if (tb[MSG_CW])
+		node->cw = blobmsg_get_u32(tb[MSG_CW]);
 	if (tb[MSG_VHT])
 		node->vht = blobmsg_get_u32(tb[MSG_VHT]);
 	if (tb[MSG_HE])

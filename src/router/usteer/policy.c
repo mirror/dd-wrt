@@ -71,6 +71,12 @@ below_load_threshold(struct usteer_node *node)
 			load_ewma_total = load_ewma_total * 0.5;
 		}
 		node->load = load_ewma_total;
+		if (node->cw == 160) // since 160 mhz often operates just with 2 chains we treat it like 80 mhz
+			node->load >>=2;;
+		if (node->cw == 80)
+			node->load >>=2;
+		if (node->cw == 40)
+			node->load >>=1;;
 	}
 	return node->n_assoc >= config.load_kick_min_clients &&
 	       node->load > config.load_kick_threshold;

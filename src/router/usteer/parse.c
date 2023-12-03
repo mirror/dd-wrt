@@ -100,6 +100,8 @@ bool parse_apmsg_node(struct apmsg_node *msg, struct blob_attr *data)
 	    msg->vht = get_int32(tb[APMSG_NODE_VHT]);
 	if (tb[APMSG_NODE_HE])
 	    msg->he = get_int32(tb[APMSG_NODE_HE]);
+	if (tb[APMSG_NODE_CW])
+	    msg->cw = get_int32(tb[APMSG_NODE_CW]);
 	msg->rrm_nr = NULL;
 
 	if (tb[APMSG_NODE_CHANNEL] && tb[APMSG_NODE_OP_CLASS]) {
