@@ -145,9 +145,23 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 			ln->load_ewma = cur;
 		else
 			ln->load_ewma = 0.85 * ln->load_ewma + 0.15 * cur;
-
-		ln->node.load = ln->load_ewma;
 	}
+	if (in->load_ewma <= 0.0)
+		in->load_ewma = 100.0;
+	else
+		in->load_ewma_total = ln->load_ewma;
+	in->load_ewma_total = ln->load_ewma_total * 286.0;
+	// to make better loda decisions we should also consider the performance of the ap
+
+	if (ln->node.he == 1)
+		ln->load_ewma_total = ln->load_ewma_total / 286.0;
+	else if (ln->node.vht == 1)
+		ln->load_ewma_total = ln->load_ewma_total / 200.0;
+	else if (ln->node.n == 1)
+		ln->load_ewma_total = ln->load_ewma_total / 150.0;
+	else
+		ln->load_ewma_total = ln->load_ewma_total / 108.0;
+	ln->node.load = ln->load_ewma_total;
 }
 
 static void nl80211_update_node(struct uloop_timeout *t)

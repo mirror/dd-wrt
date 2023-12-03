@@ -51,6 +51,9 @@ enum {
 	APMSG_NODE_BSSID,
 	APMSG_NODE_CHANNEL,
 	APMSG_NODE_OP_CLASS,
+	APMSG_NODE_N,
+	APMSG_NODE_VHT,
+	APMSG_NODE_HE,
 	__APMSG_NODE_MAX
 };
 
@@ -65,6 +68,9 @@ struct apmsg_node {
 	int max_assoc;
 	int noise;
 	int load;
+	int n;
+	int he;
+	int vht;
 	struct blob_attr *stations;
 	struct blob_attr *rrm_nr;
 	struct blob_attr *node_info;

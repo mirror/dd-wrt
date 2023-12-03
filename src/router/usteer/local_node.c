@@ -529,6 +529,9 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		MSG_BEACON_INTERVAL,
 		MSG_SSID,
 		MSG_BSSID,
+		MSG_N,
+		MSG_VHT,
+		MSG_HE,
 		__MSG_MAX,
 	};
 	static struct blobmsg_policy policy[__MSG_MAX] = {
@@ -538,6 +541,9 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		[MSG_BEACON_INTERVAL] = { "beacon_interval", BLOBMSG_TYPE_INT32 },
 		[MSG_SSID] = { "ssid", BLOBMSG_TYPE_STRING },
 		[MSG_BSSID] = { "bssid", BLOBMSG_TYPE_STRING },
+		[MSG_N] = { "n", BLOBMSG_TYPE_INT32 },
+		[MSG_VHT] = { "vht", BLOBMSG_TYPE_INT32 },
+		[MSG_HE] = { "he", BLOBMSG_TYPE_INT32 },
 	};
 	struct blob_attr *tb[__MSG_MAX];
 	struct usteer_local_node *ln;
@@ -549,6 +555,12 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 	blobmsg_parse(policy, __MSG_MAX, tb, blob_data(msg), blob_len(msg));
 	if (tb[MSG_FREQ])
 		node->freq = blobmsg_get_u32(tb[MSG_FREQ]);
+	if (tb[MSG_N])
+		node->n = blobmsg_get_u32(tb[MSG_N]);
+	if (tb[MSG_VHT])
+		node->vht = blobmsg_get_u32(tb[MSG_VHT]);
+	if (tb[MSG_HE])
+		node->he = blobmsg_get_u32(tb[MSG_HE]);
 	if (tb[MSG_CHANNEL])
 		node->channel = blobmsg_get_u32(tb[MSG_CHANNEL]);
 	if (tb[MSG_OP_CLASS])

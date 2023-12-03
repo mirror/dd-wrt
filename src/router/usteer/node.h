@@ -48,6 +48,7 @@ struct usteer_local_node {
 	uint32_t obj_id;
 
 	float load_ewma;
+	float load_ewma_total;
 	int load_thr_count;
 
 	uint64_t time, time_busy;

@@ -90,7 +90,9 @@ struct usteer_node {
 	int n_assoc;
 	int max_assoc;
 	int load;
-
+	int vht;
+	int he;
+	int n;
 	struct {
 		int source;
 		int target;
