@@ -1404,43 +1404,6 @@ static void save_roamprefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "time_zone", prefix);
 	copytonv_prefix(wp, "usteer", prefix);
 
-	copytonv_prefix(wp, "usteer_debug_level", prefix);
-	copytonv_prefix(wp, "usteer_ipv6", prefix);
-	copytonv_prefix(wp, "usteer_local_mode", prefix);
-	copytonv_prefix(wp, "usteer_sta_block_timeout", prefix);
-	copytonv_prefix(wp, "usteer_local_sta_timeout", prefix);
-	copytonv_prefix(wp, "usteer_local_sta_update", prefix);
-	copytonv_prefix(wp, "usteer_max_neighbor_reports", prefix);
-	copytonv_prefix(wp, "usteer_max_retry_band", prefix);
-	copytonv_prefix(wp, "usteer_seen_policy_timeout", prefix);
-	copytonv_prefix(wp, "usteer_measurement_report_timeout", prefix);
-	copytonv_prefix(wp, "usteer_load_balancing_threshold", prefix);
-	copytonv_prefix(wp, "usteer_band_steering_threshold", prefix);
-	copytonv_prefix(wp, "usteer_remote_update_interval", prefix);
-	copytonv_prefix(wp, "usteer_remote_node_timeout", prefix);
-	copytonv_prefix(wp, "usteer_assoc_steering", prefix);
-	copytonv_prefix(wp, "usteer_min_connect_snr", prefix);
-	copytonv_prefix(wp, "usteer_min_snr", prefix);
-	copytonv_prefix(wp, "usteer_min_snr_kick_delay", prefix);
-	copytonv_prefix(wp, "usteer_steer_reject_timeout", prefix);
-	copytonv_prefix(wp, "usteer_roam_process_timeout", prefix);
-	copytonv_prefix(wp, "usteer_roam_scan_snr", prefix);
-	copytonv_prefix(wp, "usteer_roam_scan_tries", prefix);
-	copytonv_prefix(wp, "usteer_roam_scan_timeout", prefix);
-	copytonv_prefix(wp, "usteer_roam_scan_interval", prefix);
-	copytonv_prefix(wp, "usteer_roam_trigger_snr", prefix);
-	copytonv_prefix(wp, "usteer_roam_trigger_interval", prefix);
-	copytonv_prefix(wp, "usteer_roam_kick_delay", prefix);
-	copytonv_prefix(wp, "usteer_signal_diff_threshold", prefix);
-	copytonv_prefix(wp, "usteer_initial_connect_delay", prefix);
-	copytonv_prefix(wp, "usteer_load_kick_enabled", prefix);
-	copytonv_prefix(wp, "usteer_load_kick_threshold", prefix);
-	copytonv_prefix(wp, "usteer_load_kick_delay", prefix);
-	copytonv_prefix(wp, "usteer_load_kick_min_clients", prefix);
-	copytonv_prefix(wp, "usteer_load_kick_reason_code", prefix);
-	copytonv_prefix(wp, "usteer_band_steering_interval", prefix);
-	copytonv_prefix(wp, "usteer_band_steering_min_snr", prefix);
-	copytonv_prefix(wp, "usteer_link_measurement_interval", prefix);
 
 }
 
@@ -1474,6 +1437,45 @@ void roaming_save(webs_t wp)
 		sprintf(b, "wlan%d", i);
 		roaming_save_prefix(wp, b);
 	}
+	copytonv(wp, "usteer_debug_level");
+	copytonv(wp, "usteer_ipv6");
+	copytonv(wp, "usteer_local_mode");
+	copytonv(wp, "usteer_sta_block_timeout");
+	copytonv(wp, "usteer_local_sta_timeout");
+	copytonv(wp, "usteer_local_sta_update");
+	copytonv(wp, "usteer_max_neighbor_reports");
+	copytonv(wp, "usteer_max_retry_band");
+	copytonv(wp, "usteer_seen_policy_timeout");
+	copytonv(wp, "usteer_measurement_report_timeout");
+	copytonv(wp, "usteer_load_balancing_threshold");
+	copytonv(wp, "usteer_band_steering_threshold");
+	copytonv(wp, "usteer_remote_update_interval");
+	copytonv(wp, "usteer_remote_node_timeout");
+	copytonv(wp, "usteer_assoc_steering");
+	copytonv(wp, "usteer_min_connect_snr");
+	copytonv(wp, "usteer_min_snr");
+	copytonv(wp, "usteer_min_snr_kick_delay");
+	copytonv(wp, "usteer_steer_reject_timeout");
+	copytonv(wp, "usteer_roam_process_timeout");
+	copytonv(wp, "usteer_roam_scan_snr");
+	copytonv(wp, "usteer_roam_scan_tries");
+	copytonv(wp, "usteer_roam_scan_timeout");
+	copytonv(wp, "usteer_roam_scan_interval");
+	copytonv(wp, "usteer_roam_trigger_snr");
+	copytonv(wp, "usteer_roam_trigger_interval");
+	copytonv(wp, "usteer_roam_kick_delay");
+	copytonv(wp, "usteer_signal_diff_threshold");
+	copytonv(wp, "usteer_initial_connect_delay");
+	copytonv(wp, "usteer_load_kick_enabled");
+	copytonv(wp, "usteer_load_kick_threshold");
+	copytonv(wp, "usteer_load_kick_delay");
+	copytonv(wp, "usteer_load_kick_min_clients");
+	copytonv(wp, "usteer_load_kick_reason_code");
+	copytonv(wp, "usteer_band_steering_interval");
+	copytonv(wp, "usteer_band_steering_min_snr");
+	copytonv(wp, "usteer_link_measurement_interval");
+
+
 	applytake(value);
 }
 
