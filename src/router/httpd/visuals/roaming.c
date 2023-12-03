@@ -299,7 +299,8 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 		sprintf(buf, WIFINAME "%d", i);
 		ej_show_roaming_single(wp, argc, argv, buf);
 	}
-	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.usteer_options)</script></legend>");
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(roaming.usteer_options)</script> %s</h2>\n", prefix);
+	websWrite(wp, "<fieldset>");
 	showInputNum(wp, "roaming.debug_level", "usteer_debug_level", 1, 1, 1);
 	showRadio(wp, "bmenu.setupipv6", "usteer_ipv6");
 	showRadio(wp, "roaming.local_mode", "usteer_local_mode");
