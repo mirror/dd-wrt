@@ -42,6 +42,7 @@ static struct nlattr *tb[NL80211_ATTR_MAX + 1];
 struct nl80211_survey_req {
 	void (*cb)(void *priv, struct usteer_survey_data *d);
 	void *priv;
+	int nosurvey;
 };
 
 struct nl80211_scan_req {
@@ -92,9 +93,7 @@ static int nl80211_survey_result(struct nl_msg *msg, void *arg)
 		data.time = nla_get_u64(tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME]);
 		data.time_busy = nla_get_u64(tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
 	}
-
 	req->cb(req->priv, &data);
-
 	return NL_SKIP;
 }
 
@@ -146,11 +145,10 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 		else
 			ln->load_ewma = 0.85 * ln->load_ewma + 0.15 * cur;
 	}
-	if (in->load_ewma <= 0.0)
-		in->load_ewma = 100.0;
+	if (ln->load_ewma <= 0.0)
+		ln->load_ewma_total = 100.0  * 286.0;
 	else
-		in->load_ewma_total = ln->load_ewma;
-	in->load_ewma_total = ln->load_ewma_total * 286.0;
+		ln->load_ewma_total = ln->load_ewma;
 	// to make better loda decisions we should also consider the performance of the ap
 
 	if (ln->node.he == 1)
@@ -162,8 +160,9 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 	else
 		ln->load_ewma_total = ln->load_ewma_total / 108.0;
 	if (ln->node.freq > 4000)
-		ln->load_ewma_total = * 0.5;
+		ln->load_ewma_total = ln->load_ewma_total * 0.5;
 	ln->node.load = ln->load_ewma_total;
+	ln->node.nosurvey = 0;
 }
 
 static void nl80211_update_node(struct uloop_timeout *t)
@@ -172,6 +171,7 @@ static void nl80211_update_node(struct uloop_timeout *t)
 
 	uloop_timeout_set(t, 1000);
 	ln->ifindex = if_nametoindex(ln->iface);
+	ln->node.nosurvey = 1;
 	nl80211_get_survey(&ln->node, ln, nl80211_update_node_result);
 }
 

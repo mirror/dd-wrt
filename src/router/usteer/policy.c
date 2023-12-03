@@ -57,6 +57,21 @@ better_signal_strength(int signal_cur, int signal_new)
 static bool
 below_load_threshold(struct usteer_node *node)
 {
+	if (node->nosurvey) {
+		float load_ewma_total = 100.0 * 286.0;
+		if (node->he == 1)
+			load_ewma_total = load_ewma_total / 286.0;
+		else if (node->vht == 1)
+			load_ewma_total = load_ewma_total / 200.0;
+		else if (node->n == 1)
+			load_ewma_total = load_ewma_total / 150.0;
+		else
+			load_ewma_total = load_ewma_total / 108.0;
+		if (node->freq > 4000) {
+			load_ewma_total = load_ewma_total * 0.5;
+		}
+		node->load = load_ewma_total;
+	}
 	return node->n_assoc >= config.load_kick_min_clients &&
 	       node->load > config.load_kick_threshold;
 }

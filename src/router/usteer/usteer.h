@@ -93,6 +93,7 @@ struct usteer_node {
 	int vht;
 	int he;
 	int n;
+	int nosurvey;
 	struct {
 		int source;
 		int target;
