@@ -398,19 +398,19 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 #endif
 
 
-	switch (hostapd_get_oper_chwidth(hapd->iconf)) {
-	case CONF_OPER_CHWIDTH_USE_HT:
+	switch (hapd->iconf->vht_oper_chwidth) {
+	case VHT_CHANWIDTH_USE_HT:
 		if (hapd->iconf->secondary_channel == 0) {
 			cw = 20;
 		} else {
 			cw = 40;
 		}
 		break;
-	case CONF_OPER_CHWIDTH_80MHZ:
+	case VHT_CHANWIDTH_80MHZ:
 		cw = 80;
 		break;
-	case CONF_OPER_CHWIDTH_80P80MHZ:
-	case CONF_OPER_CHWIDTH_160MHZ:
+	case VHT_CHANWIDTH_80P80MHZ:
+	case VHT_CHANWIDTH_160MHZ:
 		cw = 160;
 		break;
 	default:
