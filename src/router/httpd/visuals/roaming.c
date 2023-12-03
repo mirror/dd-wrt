@@ -301,8 +301,8 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 	}
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.usteer_options)</script></legend>");
 	showInputNum(wp, "roaming.debug_level", "usteer_debug_level", 1, 1, 1);
-	showRadio(wp, "bmenu.setupipv6", "usteer_ipv6", var);
-	showRadio(wp, "roaming.local_mode", "usteer_local_mode", var);
+	showRadio(wp, "bmenu.setupipv6", "usteer_ipv6");
+	showRadio(wp, "roaming.local_mode", "usteer_local_mode");
 	showInputNum(wp, "roaming.sta_block_timeout", "usteer_sta_block_timeout", 6, 6, 30000);
 	showInputNum(wp, "roaming.local_sta_timeout", "usteer_local_sta_timeout", 6, 6, 120000);
 	showInputNum(wp, "roaming.local_sta_update", "usteer_local_sta_update", 6, 6, 1000);
@@ -314,7 +314,7 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 	showInputNum(wp, "roaming.band_steering_threshold", "usteer_band_steering_threshold", 4, 4, 0);
 	showInputNum(wp, "roaming.remote_update_interval", "usteer_remote_update_interval", 6, 6, 1000);
 	showInputNum(wp, "roaming.remote_node_timeout", "usteer_remote_node_timeout", 6, 6, 50);
-	showRadio(wp, "roaming.assoc_steering", "usteer_assoc_steering", var);
+	showRadio(wp, "roaming.assoc_steering", "usteer_assoc_steering");
 	showInputNum(wp, "roaming.min_connect_snr", "usteer_min_connect_snr", 4, 4, 0);
 	showInputNum(wp, "roaming.min_snr", "usteer_min_snr", 4, 4, -82);
 	showInputNum(wp, "roaming.min_snr_kick_delay", "usteer_min_snr_kick_delay", 6, 6, 5000);
@@ -343,7 +343,7 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 		  nvram_default_matchi(load_kick, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
-	websWrite(wp, "<div id=\"%s_id_load_kick\">\n", var);
+	websWrite(wp, "<div id=\"id_load_kick\">\n");
 	{
 		showInputNum(wp, "roaming.load_kick_threshold", "usteer_load_kick_threshold", 4, 4, 75);
 		showInputNum(wp, "roaming.load_kick_delay", "usteer_load_kick_delay", 7, 6, 10000);
