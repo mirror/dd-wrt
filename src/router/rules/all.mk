@@ -275,6 +275,7 @@ include rules/picocom.mk
 include rules/json-c.mk
 include rules/ubus.mk
 include rules/usteer.mk
+include rules/dawn.mk
 include rules/uqmi.mk
 include rules/ipeth.mk
 include rules/dns_responder.mk
