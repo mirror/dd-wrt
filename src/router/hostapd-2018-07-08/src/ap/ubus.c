@@ -387,13 +387,13 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 #endif
 
 #ifdef CONFIG_IEEE80211AX
-	blobmsg_add_u32(&b, "he", hapd->iface-conf->ieee80211ax);
+	blobmsg_add_u32(&b, "he", hapd->iface->conf->ieee80211ax);
 #endif
 #ifdef CONFIG_IEEE80211AC
-	blobmsg_add_u32(&b, "vht", hapd->iface-conf->ieee80211ac);
+	blobmsg_add_u32(&b, "vht", hapd->iface->conf->ieee80211ac);
 #endif
 #ifdef CONFIG_IEEE80211N
-	blobmsg_add_u32(&b, "n", hapd->iface-conf->ieee80211n);
+	blobmsg_add_u32(&b, "n", hapd->iface->conf->ieee80211n);
 #endif
 
 	snprintf(phy_name, 17, "%s", hapd->iface->phy);
