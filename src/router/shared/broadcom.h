@@ -220,7 +220,7 @@ void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix);
 void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, int def);
 void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, char *def);
 
-void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix)
+void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix);
 
 #define service_restart() kill(1, SIGUSR1)
 /*
