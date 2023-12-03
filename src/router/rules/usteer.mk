@@ -7,8 +7,8 @@ USTEER_CMAKE_OPTIONS+=VERBOSE=0 -DBUILD_LUA=OFF \
 		    -DCMAKE_RANLIB=${GCCRANLIB}
 
 
-USTEER_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
-USTEER_EXTRA_LDFLAGS=-ljson-c -L$(TOP)/libubox/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)
+USTEER_EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -I$(TOP)/shared -L$(STAGING_DIR)/usr/lib -I$(TOP)/libnl-tiny/include  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)
+USTEER_EXTRA_LDFLAGS=-ljson-c -L$(TOP)/libubox/ -L$(TOP)/libnl-tiny -lnl-tiny  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)
 
 usteer-configure: libubox ubus
 	$(call CMakeClean,$(USTEER_PKG_BUILD_DIR))

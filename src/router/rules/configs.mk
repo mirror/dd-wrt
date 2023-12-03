@@ -296,11 +296,11 @@ obj-$(CONFIG_WOLFSSL) += wolfssl
 ifneq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 else
-obj-$(CONFIG_HOSTAPD2) += hostapd2 json-c libubox ubus usteer
+obj-$(CONFIG_HOSTAPD2) += hostapd2 json-c libubox ubus libnl-tiny usteer
 endif
-obj-$(CONFIG_USTEER) += json-c libubox ubus usteer
-obj-$(CONFIG_DAWN) += json-c libubox ubus dawn
-obj-$(CONFIG_WPA3) += json-c libubox ubus usteer
+obj-$(CONFIG_USTEER) += json-c libubox ubus libnl-tiny usteer
+obj-$(CONFIG_DAWN) += json-c libubox ubus libnl-tiny dawn
+obj-$(CONFIG_WPA3) += json-c libubox ubus libnl-tiny usteer
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
 obj-$(CONFIG_TOR) += xz zstd zlib libucontext openssl libevent tor
