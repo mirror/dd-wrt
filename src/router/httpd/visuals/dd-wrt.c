@@ -2538,11 +2538,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 		if (is_mac80211(var)) {
 			if (is_ap(var)) {
-#ifdef HAVE_WPA3
-		show_roaming(wp, var);
-#endif
-
-
 				websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 				char signal[32];
 				sprintf(signal, "%s_connect", var);
@@ -3733,9 +3728,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (is_mac80211(prefix)) {
 		if (is_ap(prefix)) {
-#ifdef HAVE_WPA3
-		show_roaming(wp, prefix);
-#endif
 			char signal[32];
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 			sprintf(signal, "%s_connect", prefix);
@@ -4707,11 +4699,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (is_mac80211(prefix)) {
 		if (is_ap(prefix)) {
-#ifdef HAVE_WPA3
-		show_roaming(wp, prefix);
-#endif
-
-
 			char signal[32];
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 			sprintf(signal, "%s_connect", prefix);

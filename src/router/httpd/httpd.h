@@ -210,5 +210,10 @@ void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, c
 void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength);
 void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char *property, int propertysize);
 void show_bgscan_options(webs_t wp, char *prefix);
+#ifdef HAVE_ATH9K
+#define ATH9K_ENABLED() 1
+#else
+#define ATH9K_ENABLED() 0
+#endif
 
 #endif				/* _httpd_h_ */
