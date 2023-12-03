@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include <linux/nl80211.h>
+#include <nl80211.h>
 #include <unl.h>
 
 #include "usteer.h"
@@ -146,9 +146,9 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 			ln->load_ewma = 0.85 * ln->load_ewma + 0.15 * cur;
 	}
 	if (ln->load_ewma <= 0.0)
-		ln->load_ewma_total = 100.0  * 286.0;
+		ln->load_ewma_total = 100.0 * 286.0;
 	else
-		ln->load_ewma_total = ln->load_ewma;
+		ln->load_ewma_total = ln->load_ewma * 286.0;
 	// to make better loda decisions we should also consider the performance of the ap
 
 	if (ln->node.he == 1)
@@ -168,8 +168,9 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 		ln->load_ewma_total = ln->load_ewma_total * 0.25;
 	if (ln->node.cw == 40)
 		ln->load_ewma_total = ln->load_ewma_total * 0.5;
-
+	
 	ln->node.load = ln->load_ewma_total;
+	MSG(DEBUG, "load %d\n", ln->node.load);
 	ln->node.nosurvey = 0;
 }
 
@@ -192,7 +193,7 @@ static void nl80211_init_node(struct usteer_node *node)
 
 	if (node->type != NODE_TYPE_LOCAL)
 		return;
-
+    
 	ln->nl80211.present = false;
 	ln->wiphy = -1;
 
@@ -398,7 +399,6 @@ static int nl80211_scan(struct usteer_node *node, struct usteer_scan_request *re
 
 	if (!ln->nl80211.present)
 		return -ENODEV;
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_TRIGGER_SCAN, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ln->ifindex);
 
