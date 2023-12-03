@@ -1,0 +1,5 @@
+# Basic test of array entry handling
+client_add_auto 10 20
+client_show
+client_del_auto 10 20
+client_show

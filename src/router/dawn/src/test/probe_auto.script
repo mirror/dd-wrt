@@ -1,0 +1,7 @@
+# Basic test of array entry handling
+probe_add_auto 10 20
+probe_add_auto 50 40
+probe_show
+probe_del_auto 10 20
+probe_del_auto 41 49
+probe_show

@@ -1,0 +1,420 @@
+elapsed
+
+# DAWN mertics to help testing output review
+dawn default
+dawn ht_support=8
+dawn vht_support=16
+dawn max_chan_util=0
+dawn ap_weight=4
+dawn rssi=32
+dawn low_rssi=0
+dawn min_number_to_kick=1
+
+
+#AP
+ap bssid=0A:7B:AA:00:01:00 ht_sup=1 vht_sup=1 util=156 stations=13 ssid=aTestSSID weight=10 neighbors=0A7BAA000100
+ap bssid=02:67:AA:00:02:00 ht_sup=1 vht_sup=1 util=195 stations=13 ssid=aTestSSID weight=10 neighbors=0267AA000200
+ap bssid=14:02:AA:00:03:00 ht_sup=1 vht_sup=1 util=126 stations=9 ssid=aTestSSID weight=10 neighbors=1402AA000300
+ap bssid=1F:36:AA:00:04:00 ht_sup=0 vht_sup=0 util=120 stations=8 ssid=aTestSSID weight=10 neighbors=1F36AA000400
+ap bssid=69:E9:AA:00:05:00 ht_sup=0 vht_sup=0 util=44 stations=4 ssid=aTestSSID weight=10 neighbors=69E9AA000500
+ap bssid=6A:97:AA:00:06:00 ht_sup=0 vht_sup=0 util=110 stations=11 ssid=aTestSSID weight=10 neighbors=6A97AA000600
+ap bssid=45:63:AA:00:07:00 ht_sup=0 vht_sup=0 util=55 stations=5 ssid=aTestSSID weight=10 neighbors=4563AA000700
+ap bssid=07:1E:AA:00:08:00 ht_sup=1 vht_sup=1 util=88 stations=8 ssid=aTestSSID weight=10 neighbors=071EAA000800
+ap bssid=45:A2:AA:00:09:00 ht_sup=0 vht_sup=0 util=120 stations=12 ssid=aTestSSID weight=10 neighbors=45A2AA000900
+ap bssid=4C:4D:AA:00:0A:00 ht_sup=1 vht_sup=1 util=195 stations=13 ssid=aTestSSID weight=10 neighbors=4C4DAA000A00
+
+#Client
+client client=50:7B:DD:00:01:00 bssid=45:A2:AA:00:09:00 freq=2500 ht_cap=1 vht_cap=1
+client client=22:87:DD:00:02:00 bssid=4C:4D:AA:00:0A:00 freq=5500 ht_cap=0 vht_cap=0
+client client=54:1A:DD:00:03:00 bssid=14:02:AA:00:03:00 freq=5500 ht_cap=1 vht_cap=0
+client client=60:79:DD:00:04:00 bssid=0A:7B:AA:00:01:00 freq=5500 ht_cap=1 vht_cap=0
+client client=20:EE:DD:00:05:00 bssid=07:1E:AA:00:08:00 freq=2500 ht_cap=0 vht_cap=0
+client client=33:D2:DD:00:06:00 bssid=45:63:AA:00:07:00 freq=5500 ht_cap=1 vht_cap=1
+client client=44:B6:DD:00:07:00 bssid=69:E9:AA:00:05:00 freq=2500 ht_cap=1 vht_cap=1
+client client=3A:D6:DD:00:08:00 bssid=1F:36:AA:00:04:00 freq=2500 ht_cap=0 vht_cap=0
+client client=3C:BB:DD:00:09:00 bssid=69:E9:AA:00:05:00 freq=5500 ht_cap=1 vht_cap=0
+client client=2D:3F:DD:00:0A:00 bssid=14:02:AA:00:03:00 freq=5500 ht_cap=1 vht_cap=1
+client client=00:08:DD:00:0B:00 bssid=45:A2:AA:00:09:00 freq=5500 ht_cap=0 vht_cap=0
+client client=64:5A:DD:00:0C:00 bssid=45:A2:AA:00:09:00 freq=2500 ht_cap=0 vht_cap=0
+client client=13:ED:DD:00:0D:00 bssid=14:02:AA:00:03:00 freq=2500 ht_cap=1 vht_cap=0
+client client=3B:43:DD:00:0E:00 bssid=1F:36:AA:00:04:00 freq=2500 ht_cap=0 vht_cap=0
+client client=10:6A:DD:00:0F:00 bssid=14:02:AA:00:03:00 freq=2500 ht_cap=0 vht_cap=0
+client client=0D:BE:DD:00:10:00 bssid=6A:97:AA:00:06:00 freq=5500 ht_cap=1 vht_cap=0
+client client=3E:B5:DD:00:11:00 bssid=07:1E:AA:00:08:00 freq=2500 ht_cap=0 vht_cap=0
+client client=41:C2:DD:00:12:00 bssid=0A:7B:AA:00:01:00 freq=5500 ht_cap=0 vht_cap=0
+client client=2A:75:DD:00:13:00 bssid=6A:97:AA:00:06:00 freq=5500 ht_cap=0 vht_cap=0
+client client=31:FB:DD:00:14:00 bssid=02:67:AA:00:02:00 freq=2500 ht_cap=1 vht_cap=0
+client client=2E:B8:DD:00:15:00 bssid=14:02:AA:00:03:00 freq=5500 ht_cap=0 vht_cap=0
+client client=40:50:DD:00:16:00 bssid=69:E9:AA:00:05:00 freq=5500 ht_cap=0 vht_cap=0
+client client=0D:7F:DD:00:17:00 bssid=1F:36:AA:00:04:00 freq=5500 ht_cap=1 vht_cap=0
+client client=40:C7:DD:00:18:00 bssid=1F:36:AA:00:04:00 freq=5500 ht_cap=1 vht_cap=1
+client client=31:F5:DD:00:19:00 bssid=14:02:AA:00:03:00 freq=5500 ht_cap=1 vht_cap=0
+client client=56:C7:DD:00:1A:00 bssid=07:1E:AA:00:08:00 freq=2500 ht_cap=0 vht_cap=0
+client client=09:77:DD:00:1B:00 bssid=69:E9:AA:00:05:00 freq=5500 ht_cap=0 vht_cap=0
+client client=53:C7:DD:00:1C:00 bssid=14:02:AA:00:03:00 freq=5500 ht_cap=0 vht_cap=0
+client client=07:CC:DD:00:1D:00 bssid=02:67:AA:00:02:00 freq=2500 ht_cap=1 vht_cap=1
+client client=37:13:DD:00:1E:00 bssid=45:63:AA:00:07:00 freq=2500 ht_cap=1 vht_cap=0
+client client=1A:ED:DD:00:1F:00 bssid=4C:4D:AA:00:0A:00 freq=2500 ht_cap=0 vht_cap=0
+client client=78:22:DD:00:20:00 bssid=0A:7B:AA:00:01:00 freq=5500 ht_cap=0 vht_cap=0
+client client=7D:52:DD:00:21:00 bssid=45:A2:AA:00:09:00 freq=2500 ht_cap=0 vht_cap=0
+client client=75:45:DD:00:22:00 bssid=07:1E:AA:00:08:00 freq=2500 ht_cap=0 vht_cap=0
+
+#Probe
+probe bssid=0A:7B:AA:00:01:00 client=50:7B:DD:00:01:00 signal=-65 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=0A:7B:AA:00:01:00 client=22:87:DD:00:02:00 signal=-71 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=54:1A:DD:00:03:00 signal=-76 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=60:79:DD:00:04:00 signal=-84 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=20:EE:DD:00:05:00 signal=-65 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=33:D2:DD:00:06:00 signal=-77 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=0A:7B:AA:00:01:00 client=44:B6:DD:00:07:00 signal=-79 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=0A:7B:AA:00:01:00 client=3A:D6:DD:00:08:00 signal=-82 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=3C:BB:DD:00:09:00 signal=-91 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=2D:3F:DD:00:0A:00 signal=-82 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=0A:7B:AA:00:01:00 client=00:08:DD:00:0B:00 signal=-85 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=64:5A:DD:00:0C:00 signal=-80 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=13:ED:DD:00:0D:00 signal=-78 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=3B:43:DD:00:0E:00 signal=-69 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=10:6A:DD:00:0F:00 signal=-83 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=0D:BE:DD:00:10:00 signal=-81 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=3E:B5:DD:00:11:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=41:C2:DD:00:12:00 signal=-78 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=2A:75:DD:00:13:00 signal=-91 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=31:FB:DD:00:14:00 signal=-69 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=2E:B8:DD:00:15:00 signal=-78 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=40:50:DD:00:16:00 signal=-81 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=0D:7F:DD:00:17:00 signal=-86 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=40:C7:DD:00:18:00 signal=-91 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=0A:7B:AA:00:01:00 client=31:F5:DD:00:19:00 signal=-84 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=56:C7:DD:00:1A:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=09:77:DD:00:1B:00 signal=-87 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=53:C7:DD:00:1C:00 signal=-75 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=07:CC:DD:00:1D:00 signal=-88 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=0A:7B:AA:00:01:00 client=37:13:DD:00:1E:00 signal=-79 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=1A:ED:DD:00:1F:00 signal=-81 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=78:22:DD:00:20:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=7D:52:DD:00:21:00 signal=-89 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=0A:7B:AA:00:01:00 client=75:45:DD:00:22:00 signal=-79 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=50:7B:DD:00:01:00 signal=-82 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=02:67:AA:00:02:00 client=22:87:DD:00:02:00 signal=-81 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=54:1A:DD:00:03:00 signal=-86 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=60:79:DD:00:04:00 signal=-72 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=20:EE:DD:00:05:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=33:D2:DD:00:06:00 signal=-84 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=02:67:AA:00:02:00 client=44:B6:DD:00:07:00 signal=-73 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=02:67:AA:00:02:00 client=3A:D6:DD:00:08:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=3C:BB:DD:00:09:00 signal=-88 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=2D:3F:DD:00:0A:00 signal=-83 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=02:67:AA:00:02:00 client=00:08:DD:00:0B:00 signal=-76 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=64:5A:DD:00:0C:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=13:ED:DD:00:0D:00 signal=-84 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=3B:43:DD:00:0E:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=10:6A:DD:00:0F:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=0D:BE:DD:00:10:00 signal=-76 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=3E:B5:DD:00:11:00 signal=-74 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=41:C2:DD:00:12:00 signal=-84 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=2A:75:DD:00:13:00 signal=-88 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=31:FB:DD:00:14:00 signal=-80 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=2E:B8:DD:00:15:00 signal=-84 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=40:50:DD:00:16:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=0D:7F:DD:00:17:00 signal=-71 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=40:C7:DD:00:18:00 signal=-86 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=02:67:AA:00:02:00 client=31:F5:DD:00:19:00 signal=-62 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=56:C7:DD:00:1A:00 signal=-78 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=09:77:DD:00:1B:00 signal=-79 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=53:C7:DD:00:1C:00 signal=-83 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=07:CC:DD:00:1D:00 signal=-89 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=02:67:AA:00:02:00 client=37:13:DD:00:1E:00 signal=-78 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=1A:ED:DD:00:1F:00 signal=-74 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=78:22:DD:00:20:00 signal=-87 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=7D:52:DD:00:21:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=02:67:AA:00:02:00 client=75:45:DD:00:22:00 signal=-71 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=50:7B:DD:00:01:00 signal=-65 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=14:02:AA:00:03:00 client=22:87:DD:00:02:00 signal=-83 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=54:1A:DD:00:03:00 signal=-84 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=60:79:DD:00:04:00 signal=-90 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=20:EE:DD:00:05:00 signal=-62 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=33:D2:DD:00:06:00 signal=-86 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=14:02:AA:00:03:00 client=44:B6:DD:00:07:00 signal=-87 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=14:02:AA:00:03:00 client=3A:D6:DD:00:08:00 signal=-89 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=3C:BB:DD:00:09:00 signal=-95 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=2D:3F:DD:00:0A:00 signal=-89 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=14:02:AA:00:03:00 client=00:08:DD:00:0B:00 signal=-86 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=64:5A:DD:00:0C:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=13:ED:DD:00:0D:00 signal=-71 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=3B:43:DD:00:0E:00 signal=-60 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=10:6A:DD:00:0F:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=0D:BE:DD:00:10:00 signal=-89 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=3E:B5:DD:00:11:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=41:C2:DD:00:12:00 signal=-69 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=2A:75:DD:00:13:00 signal=-95 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=31:FB:DD:00:14:00 signal=-70 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=2E:B8:DD:00:15:00 signal=-86 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=40:50:DD:00:16:00 signal=-67 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=0D:7F:DD:00:17:00 signal=-89 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=40:C7:DD:00:18:00 signal=-95 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=14:02:AA:00:03:00 client=31:F5:DD:00:19:00 signal=-88 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=56:C7:DD:00:1A:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=09:77:DD:00:1B:00 signal=-92 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=53:C7:DD:00:1C:00 signal=-68 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=07:CC:DD:00:1D:00 signal=-92 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=14:02:AA:00:03:00 client=37:13:DD:00:1E:00 signal=-78 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=1A:ED:DD:00:1F:00 signal=-88 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=78:22:DD:00:20:00 signal=-94 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=7D:52:DD:00:21:00 signal=-94 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=14:02:AA:00:03:00 client=75:45:DD:00:22:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=50:7B:DD:00:01:00 signal=-80 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=1F:36:AA:00:04:00 client=22:87:DD:00:02:00 signal=-87 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=54:1A:DD:00:03:00 signal=-90 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=60:79:DD:00:04:00 signal=-86 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=20:EE:DD:00:05:00 signal=-83 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=33:D2:DD:00:06:00 signal=-89 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=1F:36:AA:00:04:00 client=44:B6:DD:00:07:00 signal=-86 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=1F:36:AA:00:04:00 client=3A:D6:DD:00:08:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=3C:BB:DD:00:09:00 signal=-95 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=2D:3F:DD:00:0A:00 signal=-91 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=1F:36:AA:00:04:00 client=00:08:DD:00:0B:00 signal=-67 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=64:5A:DD:00:0C:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=13:ED:DD:00:0D:00 signal=-75 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=3B:43:DD:00:0E:00 signal=-81 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=10:6A:DD:00:0F:00 signal=-94 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=0D:BE:DD:00:10:00 signal=-88 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=3E:B5:DD:00:11:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=41:C2:DD:00:12:00 signal=-76 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=2A:75:DD:00:13:00 signal=-94 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=31:FB:DD:00:14:00 signal=-77 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=2E:B8:DD:00:15:00 signal=-90 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=40:50:DD:00:16:00 signal=-84 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=0D:7F:DD:00:17:00 signal=-77 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=40:C7:DD:00:18:00 signal=-93 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=1F:36:AA:00:04:00 client=31:F5:DD:00:19:00 signal=-77 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=56:C7:DD:00:1A:00 signal=-50 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=09:77:DD:00:1B:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=53:C7:DD:00:1C:00 signal=-76 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=07:CC:DD:00:1D:00 signal=-94 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=1F:36:AA:00:04:00 client=37:13:DD:00:1E:00 signal=-64 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=1A:ED:DD:00:1F:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=78:22:DD:00:20:00 signal=-93 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=7D:52:DD:00:21:00 signal=-93 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=1F:36:AA:00:04:00 client=75:45:DD:00:22:00 signal=-85 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=50:7B:DD:00:01:00 signal=-69 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=69:E9:AA:00:05:00 client=22:87:DD:00:02:00 signal=-74 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=54:1A:DD:00:03:00 signal=-75 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=60:79:DD:00:04:00 signal=-87 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=20:EE:DD:00:05:00 signal=-64 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=33:D2:DD:00:06:00 signal=-78 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=69:E9:AA:00:05:00 client=44:B6:DD:00:07:00 signal=-83 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=69:E9:AA:00:05:00 client=3A:D6:DD:00:08:00 signal=-83 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=3C:BB:DD:00:09:00 signal=-92 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=2D:3F:DD:00:0A:00 signal=-84 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=69:E9:AA:00:05:00 client=00:08:DD:00:0B:00 signal=-88 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=64:5A:DD:00:0C:00 signal=-80 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=13:ED:DD:00:0D:00 signal=-79 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=3B:43:DD:00:0E:00 signal=-69 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=10:6A:DD:00:0F:00 signal=-81 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=0D:BE:DD:00:10:00 signal=-84 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=3E:B5:DD:00:11:00 signal=-89 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=41:C2:DD:00:12:00 signal=-79 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=2A:75:DD:00:13:00 signal=-92 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=31:FB:DD:00:14:00 signal=-74 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=2E:B8:DD:00:15:00 signal=-79 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=40:50:DD:00:16:00 signal=-80 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=0D:7F:DD:00:17:00 signal=-89 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=40:C7:DD:00:18:00 signal=-92 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=69:E9:AA:00:05:00 client=31:F5:DD:00:19:00 signal=-87 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=56:C7:DD:00:1A:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=09:77:DD:00:1B:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=53:C7:DD:00:1C:00 signal=-77 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=07:CC:DD:00:1D:00 signal=-88 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=69:E9:AA:00:05:00 client=37:13:DD:00:1E:00 signal=-82 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=1A:ED:DD:00:1F:00 signal=-85 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=78:22:DD:00:20:00 signal=-90 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=7D:52:DD:00:21:00 signal=-90 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=69:E9:AA:00:05:00 client=75:45:DD:00:22:00 signal=-83 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=50:7B:DD:00:01:00 signal=-70 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=6A:97:AA:00:06:00 client=22:87:DD:00:02:00 signal=-79 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=54:1A:DD:00:03:00 signal=-79 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=60:79:DD:00:04:00 signal=-89 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=20:EE:DD:00:05:00 signal=-64 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=33:D2:DD:00:06:00 signal=-82 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=6A:97:AA:00:06:00 client=44:B6:DD:00:07:00 signal=-86 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=6A:97:AA:00:06:00 client=3A:D6:DD:00:08:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=3C:BB:DD:00:09:00 signal=-94 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=2D:3F:DD:00:0A:00 signal=-87 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=6A:97:AA:00:06:00 client=00:08:DD:00:0B:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=64:5A:DD:00:0C:00 signal=-83 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=13:ED:DD:00:0D:00 signal=-79 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=3B:43:DD:00:0E:00 signal=-69 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=10:6A:DD:00:0F:00 signal=-82 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=0D:BE:DD:00:10:00 signal=-87 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=3E:B5:DD:00:11:00 signal=-90 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=41:C2:DD:00:12:00 signal=-79 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=2A:75:DD:00:13:00 signal=-94 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=31:FB:DD:00:14:00 signal=-75 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=2E:B8:DD:00:15:00 signal=-82 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=40:50:DD:00:16:00 signal=-78 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=0D:7F:DD:00:17:00 signal=-90 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=40:C7:DD:00:18:00 signal=-94 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=6A:97:AA:00:06:00 client=31:F5:DD:00:19:00 signal=-89 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=56:C7:DD:00:1A:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=09:77:DD:00:1B:00 signal=-91 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=53:C7:DD:00:1C:00 signal=-77 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=07:CC:DD:00:1D:00 signal=-90 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=6A:97:AA:00:06:00 client=37:13:DD:00:1E:00 signal=-83 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=1A:ED:DD:00:1F:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=78:22:DD:00:20:00 signal=-92 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=7D:52:DD:00:21:00 signal=-92 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=6A:97:AA:00:06:00 client=75:45:DD:00:22:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=50:7B:DD:00:01:00 signal=-69 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=45:63:AA:00:07:00 client=22:87:DD:00:02:00 signal=-83 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=54:1A:DD:00:03:00 signal=-86 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=60:79:DD:00:04:00 signal=-86 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=20:EE:DD:00:05:00 signal=-74 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=33:D2:DD:00:06:00 signal=-86 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=45:63:AA:00:07:00 client=44:B6:DD:00:07:00 signal=-84 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=45:63:AA:00:07:00 client=3A:D6:DD:00:08:00 signal=-89 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=3C:BB:DD:00:09:00 signal=-94 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=2D:3F:DD:00:0A:00 signal=-88 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=45:63:AA:00:07:00 client=00:08:DD:00:0B:00 signal=-78 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=64:5A:DD:00:0C:00 signal=-88 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=13:ED:DD:00:0D:00 signal=-60 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=3B:43:DD:00:0E:00 signal=-70 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=10:6A:DD:00:0F:00 signal=-90 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=0D:BE:DD:00:10:00 signal=-86 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=3E:B5:DD:00:11:00 signal=-88 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=41:C2:DD:00:12:00 signal=-64 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=2A:75:DD:00:13:00 signal=-94 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=31:FB:DD:00:14:00 signal=-62 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=2E:B8:DD:00:15:00 signal=-87 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=40:50:DD:00:16:00 signal=-77 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=0D:7F:DD:00:17:00 signal=-82 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=40:C7:DD:00:18:00 signal=-93 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=45:63:AA:00:07:00 client=31:F5:DD:00:19:00 signal=-81 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=56:C7:DD:00:1A:00 signal=-74 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=09:77:DD:00:1B:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=53:C7:DD:00:1C:00 signal=-58 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=07:CC:DD:00:1D:00 signal=-93 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=45:63:AA:00:07:00 client=37:13:DD:00:1E:00 signal=-60 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=1A:ED:DD:00:1F:00 signal=-85 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=78:22:DD:00:20:00 signal=-92 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=7D:52:DD:00:21:00 signal=-92 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:63:AA:00:07:00 client=75:45:DD:00:22:00 signal=-83 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=50:7B:DD:00:01:00 signal=-76 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=07:1E:AA:00:08:00 client=22:87:DD:00:02:00 signal=-83 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=54:1A:DD:00:03:00 signal=-87 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=60:79:DD:00:04:00 signal=-82 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=20:EE:DD:00:05:00 signal=-79 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=33:D2:DD:00:06:00 signal=-86 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=07:1E:AA:00:08:00 client=44:B6:DD:00:07:00 signal=-80 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=07:1E:AA:00:08:00 client=3A:D6:DD:00:08:00 signal=-88 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=3C:BB:DD:00:09:00 signal=-92 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=2D:3F:DD:00:0A:00 signal=-87 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=07:1E:AA:00:08:00 client=00:08:DD:00:0B:00 signal=-71 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=64:5A:DD:00:0C:00 signal=-88 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=13:ED:DD:00:0D:00 signal=-75 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=3B:43:DD:00:0E:00 signal=-78 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=10:6A:DD:00:0F:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=0D:BE:DD:00:10:00 signal=-83 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=3E:B5:DD:00:11:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=41:C2:DD:00:12:00 signal=-76 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=2A:75:DD:00:13:00 signal=-92 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=31:FB:DD:00:14:00 signal=-72 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=2E:B8:DD:00:15:00 signal=-86 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=40:50:DD:00:16:00 signal=-83 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=0D:7F:DD:00:17:00 signal=-76 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=40:C7:DD:00:18:00 signal=-91 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=07:1E:AA:00:08:00 client=31:F5:DD:00:19:00 signal=-74 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=56:C7:DD:00:1A:00 signal=-69 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=09:77:DD:00:1B:00 signal=-86 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=53:C7:DD:00:1C:00 signal=-74 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=07:CC:DD:00:1D:00 signal=-92 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=07:1E:AA:00:08:00 client=37:13:DD:00:1E:00 signal=-60 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=1A:ED:DD:00:1F:00 signal=-82 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=78:22:DD:00:20:00 signal=-91 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=7D:52:DD:00:21:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=07:1E:AA:00:08:00 client=75:45:DD:00:22:00 signal=-79 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=50:7B:DD:00:01:00 signal=-84 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=45:A2:AA:00:09:00 client=22:87:DD:00:02:00 signal=-86 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=54:1A:DD:00:03:00 signal=-90 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=60:79:DD:00:04:00 signal=-80 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=20:EE:DD:00:05:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=33:D2:DD:00:06:00 signal=-88 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=45:A2:AA:00:09:00 client=44:B6:DD:00:07:00 signal=-81 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=45:A2:AA:00:09:00 client=3A:D6:DD:00:08:00 signal=-90 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=3C:BB:DD:00:09:00 signal=-92 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=2D:3F:DD:00:0A:00 signal=-88 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=45:A2:AA:00:09:00 client=00:08:DD:00:0B:00 signal=-62 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=64:5A:DD:00:0C:00 signal=-90 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=13:ED:DD:00:0D:00 signal=-83 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=3B:43:DD:00:0E:00 signal=-85 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=10:6A:DD:00:0F:00 signal=-94 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=0D:BE:DD:00:10:00 signal=-84 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=3E:B5:DD:00:11:00 signal=-81 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=41:C2:DD:00:12:00 signal=-84 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=2A:75:DD:00:13:00 signal=-91 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=31:FB:DD:00:14:00 signal=-82 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=2E:B8:DD:00:15:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=40:50:DD:00:16:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=0D:7F:DD:00:17:00 signal=-56 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=40:C7:DD:00:18:00 signal=-89 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=45:A2:AA:00:09:00 client=31:F5:DD:00:19:00 signal=-58 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=56:C7:DD:00:1A:00 signal=-72 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=09:77:DD:00:1B:00 signal=-84 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=53:C7:DD:00:1C:00 signal=-83 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=07:CC:DD:00:1D:00 signal=-93 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=45:A2:AA:00:09:00 client=37:13:DD:00:1E:00 signal=-76 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=1A:ED:DD:00:1F:00 signal=-81 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=78:22:DD:00:20:00 signal=-91 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=7D:52:DD:00:21:00 signal=-90 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=45:A2:AA:00:09:00 client=75:45:DD:00:22:00 signal=-80 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=50:7B:DD:00:01:00 signal=-81 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=4C:4D:AA:00:0A:00 client=22:87:DD:00:02:00 signal=-87 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=54:1A:DD:00:03:00 signal=-90 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=60:79:DD:00:04:00 signal=-86 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=20:EE:DD:00:05:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=33:D2:DD:00:06:00 signal=-90 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=4C:4D:AA:00:0A:00 client=44:B6:DD:00:07:00 signal=-85 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=4C:4D:AA:00:0A:00 client=3A:D6:DD:00:08:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=3C:BB:DD:00:09:00 signal=-94 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=2D:3F:DD:00:0A:00 signal=-90 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=4C:4D:AA:00:0A:00 client=00:08:DD:00:0B:00 signal=-60 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=64:5A:DD:00:0C:00 signal=-91 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=13:ED:DD:00:0D:00 signal=-78 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=3B:43:DD:00:0E:00 signal=-82 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=10:6A:DD:00:0F:00 signal=-94 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=0D:BE:DD:00:10:00 signal=-87 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=3E:B5:DD:00:11:00 signal=-87 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=41:C2:DD:00:12:00 signal=-79 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=2A:75:DD:00:13:00 signal=-94 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=31:FB:DD:00:14:00 signal=-79 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=2E:B8:DD:00:15:00 signal=-90 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=40:50:DD:00:16:00 signal=-85 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=0D:7F:DD:00:17:00 signal=-74 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=40:C7:DD:00:18:00 signal=-93 freq=5500 ht_cap=1 vht_cap=1
+probe bssid=4C:4D:AA:00:0A:00 client=31:F5:DD:00:19:00 signal=-75 freq=5500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=56:C7:DD:00:1A:00 signal=-39 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=09:77:DD:00:1B:00 signal=-89 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=53:C7:DD:00:1C:00 signal=-78 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=07:CC:DD:00:1D:00 signal=-94 freq=2500 ht_cap=1 vht_cap=1
+probe bssid=4C:4D:AA:00:0A:00 client=37:13:DD:00:1E:00 signal=-68 freq=2500 ht_cap=1 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=1A:ED:DD:00:1F:00 signal=-86 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=78:22:DD:00:20:00 signal=-93 freq=5500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=7D:52:DD:00:21:00 signal=-93 freq=2500 ht_cap=0 vht_cap=0
+probe bssid=4C:4D:AA:00:0A:00 client=75:45:DD:00:22:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+
+
+client_show
+
+kick 0A:7B:AA:00:01:00 0
+kick 02:67:AA:00:02:00 0
+kick 14:02:AA:00:03:00 0
+kick 1F:36:AA:00:04:00 0
+kick 69:E9:AA:00:05:00 0
+kick 6A:97:AA:00:06:00 0
+kick 45:63:AA:00:07:00 0
+kick 07:1E:AA:00:08:00 0
+kick 45:A2:AA:00:09:00 0
+kick 4C:4D:AA:00:0A:00 0
+
+client_show
+
+elapsed

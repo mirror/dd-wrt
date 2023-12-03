@@ -1,0 +1,3 @@
+client_show
+client bssid=00:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa freq=1 ht_sup=2 vht_sup=3 ht_cap=4 vht_cap=5 kick=6
+client_show

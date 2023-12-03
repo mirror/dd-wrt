@@ -1,0 +1,31 @@
+faketime set 100
+ap_show
+remove_old_ap_entries 50
+
+faketime show
+ap bssid=00:11:22:33:44:55 freq=1 ht_sup=2 vht_sup=3 util=4 stations=6 ssid=helloWorld col_d=7 bandwidth=8 neighbors=
+
+faketime add 25
+faketime show
+ap bssid=01:11:22:33:44:55 freq=1 ht_sup=2 vht_sup=3 util=4 stations=6 ssid=helloWorld col_d=7 bandwidth=8 neighbors=
+
+faketime add 25
+faketime show
+ap bssid=02:11:22:33:44:55 freq=1 ht_sup=2 vht_sup=3 util=4 stations=6 ssid=helloWorld col_d=7 bandwidth=8 neighbors=
+
+faketime add 25
+faketime show
+ap bssid=03:11:22:33:44:55 freq=1 ht_sup=2 vht_sup=3 util=4 stations=6 ssid=helloWorld col_d=7 bandwidth=8 neighbors=
+
+faketime add 25
+faketime show
+ap bssid=04:11:22:33:44:55 freq=1 ht_sup=2 vht_sup=3 util=4 stations=6 ssid=helloWorld col_d=7 bandwidth=8 neighbors=
+
+ap_show
+
+remove_old_ap_entries 50
+ap_show
+
+faketime add 25
+remove_old_ap_entries 0
+ap_show

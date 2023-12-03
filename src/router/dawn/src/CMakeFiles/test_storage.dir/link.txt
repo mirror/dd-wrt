@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/test_storage.dir/test/test_storage.c.o CMakeFiles/test_storage.dir/utils/utils.c.o CMakeFiles/test_storage.dir/utils/mac_utils.c.o CMakeFiles/test_storage.dir/utils/memory_utils.c.o CMakeFiles/test_storage.dir/storage/datastorage.c.o CMakeFiles/test_storage.dir/utils/ieee80211_utils.c.o -o test_storage 

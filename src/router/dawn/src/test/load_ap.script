@@ -1,0 +1,3 @@
+ap_show
+ap bssid=00:11:22:33:44:55 freq=1 ht_sup=2 vht_sup=3 util=4 time=5 stations=6 ssid=helloWorld col_d=7 bandwidth=8 neighbors=
+ap_show

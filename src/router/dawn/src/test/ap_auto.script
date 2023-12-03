@@ -1,0 +1,5 @@
+# Basic test of array entry handling
+ap_add_auto 10 20
+ap_show
+ap_del_auto 10 20
+ap_show

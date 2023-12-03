@@ -1,0 +1,30 @@
+faketime set 100
+auth_entry_show
+remove_old_auth_entries 50
+
+faketime show
+auth_entry bssid=00:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+auth_entry bssid=01:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+auth_entry bssid=02:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+auth_entry bssid=03:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+auth_entry bssid=04:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+auth_entry_show
+
+remove_old_auth_entries 50
+auth_entry_show
+
+remove_old_auth_entries 0
+auth_entry_show

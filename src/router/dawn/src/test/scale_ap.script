@@ -1,0 +1,13 @@
+#AP
+ap bssid=0A:7B:AA:00:01:00 ht_sup=1 vht_sup=0 util=156 stations=13 ssid=aTestSSID weight=10 neighbors=0A:7B:AA:00:01:00
+ap bssid=02:67:AA:00:02:00 ht_sup=1 vht_sup=0 util=98 stations=7 ssid=aTestSSID weight=10 neighbors=02:67:AA:00:02:00
+ap bssid=14:02:AA:00:03:00 ht_sup=0 vht_sup=0 util=210 stations=15 ssid=aTestSSID weight=10 neighbors=14:02:AA:00:03:00
+ap bssid=1F:36:AA:00:04:00 ht_sup=0 vht_sup=0 util=39 stations=3 ssid=aTestSSID weight=10 neighbors=1F:36:AA:00:04:00
+ap bssid=69:E9:AA:00:05:00 ht_sup=1 vht_sup=0 util=80 stations=8 ssid=aTestSSID weight=10 neighbors=69:E9:AA:00:05:00
+ap bssid=6A:97:AA:00:06:00 ht_sup=0 vht_sup=0 util=84 stations=7 ssid=aTestSSID weight=10 neighbors=6A:97:AA:00:06:00
+ap bssid=45:63:AA:00:07:00 ht_sup=0 vht_sup=0 util=36 stations=3 ssid=aTestSSID weight=10 neighbors=45:63:AA:00:07:00
+ap bssid=07:1E:AA:00:08:00 ht_sup=1 vht_sup=1 util=88 stations=8 ssid=aTestSSID weight=10 neighbors=07:1E:AA:00:08:00
+ap bssid=45:A2:AA:00:09:00 ht_sup=1 vht_sup=0 util=156 stations=12 ssid=aTestSSID weight=10 neighbors=45:A2:AA:00:09:00
+ap bssid=4C:4D:AA:00:0A:00 ht_sup=0 vht_sup=0 util=12 stations=1 ssid=aTestSSID weight=10 neighbors=4C:4D:AA:00:0A:00
+
+ap_show

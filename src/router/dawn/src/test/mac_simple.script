@@ -1,0 +1,4 @@
+macadd aa:bb:cc:dd:ee:ff
+macadd 11:22:33:44:55:66
+macget aa:bb:cc:dd:ee:ff
+macget 99:aa:bb:cc:dd:ee

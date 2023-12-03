@@ -1,0 +1,3 @@
+probe_stress 10
+#probe_show
+memaudit

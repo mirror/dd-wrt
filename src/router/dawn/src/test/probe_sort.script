@@ -1,0 +1,27 @@
+client client=00:0A:DD:05:CD:00 bssid=6A:1B:AA:00:12:00 freq=2500 ht_cap=0 vht_cap=0
+probe client=00:0A:DD:05:CD:00 bssid=6A:1B:AA:00:12:00 signal=-101 freq=2500 ht_cap=0 vht_cap=0
+probe client=00:0A:DD:05:CD:00 bssid=2C:B9:AA:00:05:00 signal=-107 freq=2500 ht_cap=0 vht_cap=0
+probe client=00:0A:DD:05:CD:00 bssid=77:C0:AA:00:08:00 signal=-108 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=27:B9:AA:00:0C:00 signal=-84 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=59:D5:AA:00:0D:00 signal=-110 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=7C:37:AA:00:0E:00 signal=-106 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=61:D6:AA:00:13:00 signal=-109 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=21:01:AA:00:18:00 signal=-112 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=28:6D:AA:00:1C:00 signal=-108 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=01:39:AA:00:1D:00 signal=-111 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=06:08:AA:00:23:00 signal=-98 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=05:18:AA:00:2B:00 signal=-107 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=6D:3B:AA:00:32:00 signal=-85 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=10:24:AA:00:38:00 signal=-114 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=66:09:AA:00:48:00 signal=-92 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=59:46:AA:00:4B:00 signal=-105 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=15:E2:AA:00:4D:00 signal=-110 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=3A:78:AA:00:50:00 signal=-110 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=33:D6:AA:00:57:00 signal=-110 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=3C:D0:AA:00:58:00 signal=-105 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=0F:EE:AA:00:5D:00 signal=-112 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=69:40:AA:00:60:00 signal=-112 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=32:98:AA:00:63:00 signal=-113 freq=2500 ht_cap=0 vht_cap=0
+#probe client=00:0A:DD:05:CD:00 bssid=0F:FC:AA:00:64:00 signal=-112 freq=2500 ht_cap=0 vht_cap=0
+
+probe_show

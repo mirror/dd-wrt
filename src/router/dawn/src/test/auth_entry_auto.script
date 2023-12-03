@@ -1,0 +1,5 @@
+# Basic test of array entry handling
+auth_entry_add_auto 10 20
+auth_entry_show
+auth_entry_del_auto 10 20
+auth_entry_show

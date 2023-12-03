@@ -1,0 +1,5 @@
+elapsed
+probe_show
+probe bssid=00:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa signal=1 freq=2 counter=3 vht_cap=4 min_rate=5 max_rate=6
+probe_show
+elapsed

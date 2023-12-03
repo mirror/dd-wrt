@@ -1,0 +1,44 @@
+faketime set 100
+probe_show
+remove_old_probe_entries 50
+
+faketime show
+probe bssid=00:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+probe bssid=01:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+probe bssid=02:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+probe bssid=03:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+faketime add 25
+faketime show
+probe bssid=04:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+
+probe_show
+
+remove_old_probe_entries 50
+probe_show
+
+faketime add 25
+remove_old_probe_entries 0
+probe_show
+
+# Test that a still connected client is not removed
+faketime set 500
+
+faketime show
+client bssid=00:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+probe bssid=00:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+probe bssid=01:11:22:33:44:55 client=ff:ee:dd:cc:bb:aa
+probe_show
+
+faketime add 25
+remove_old_probe_entries 0
+probe_show

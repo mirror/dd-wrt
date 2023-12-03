@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/test_header.dir/test/test_header.c.o -o test_header 
