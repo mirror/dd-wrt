@@ -2383,6 +2383,7 @@ roaming.rrm_beacon_report="Beacon report via radio";
 roaming.proxy_arp="Proxy ARP";
 roaming.time_advertisement="Time advertisement";
 roaming.usteer="Band-Steering";
+roaming.usteer_options="Band-Steering Optionen";
 roaming.roaming="Roaming Options";
 roaming.s80211v="802.11v Unterstützung";
 roaming.s80211k="802.11k Unterstützung";

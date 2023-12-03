@@ -2711,6 +2711,7 @@ roaming.rrm_beacon_report="Beacon report via radio";
 roaming.proxy_arp="Proxy ARP";
 roaming.time_advertisement="Time advertisement";
 roaming.usteer="Band-Steering";
+roaming.usteer_options="Band-Steering Options";
 roaming.roaming="Roaming Options";
 roaming.ft="802.11r Support (FT)";
 roaming.nas="NAS Identifier";
