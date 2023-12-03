@@ -161,6 +161,8 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 		ln->load_ewma_total = ln->load_ewma_total / 150.0;
 	else
 		ln->load_ewma_total = ln->load_ewma_total / 108.0;
+	if (ln->node.freq > 4000)
+		ln->load_ewma_total = * 0.5;
 	ln->node.load = ln->load_ewma_total;
 }
 
