@@ -214,43 +214,16 @@ void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize, c
 	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0)); \
 	} while(0)
 
-static void showRadio(webs_t wp, char *propname, char *nvname)
-{
-	showRadioDefaultOff(wp, propname, nvname);
-}
+void showRadio(webs_t wp, char *propname, char *nvname);
 
-static void showRadioInv(webs_t wp, char *propname, char *nvname)
-{
-	showRadioDefaultOn(wp, propname, nvname);
-}
+void showRadioInv(webs_t wp, char *propname, char *nvname);
 
-static void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix)
-{
-	char nvname[32];
-	sprintf(nvname,"%s_%s",prefix,nv);
-	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0));
-}
+void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix);
 
-static void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, int def)
-{
-	char nvname[64];
-	sprintf(nvname,"%s_%s",prefix,nv);
-	showInputNum(wp, propname, nvname, size, maxsize, def);
+void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, int def);
+void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, char *def);
 
-}
-static void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, char *def)
-{
-	char nvname[64];
-	sprintf(nvname,"%s_%s",prefix,nv);
-	showInput(wp, propname, nvname, size, maxsize, def);
-}
-
-static void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix)
-{
-	char nvname[64];
-	sprintf(nvname,"%s_%s",prefix,nv);
-	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,1));
-}
+void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix)
 
 #define service_restart() kill(1, SIGUSR1)
 /*
