@@ -215,11 +215,8 @@ void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize, c
 	} while(0)
 
 void showRadio(webs_t wp, char *propname, char *nvname);
-
 void showRadioInv(webs_t wp, char *propname, char *nvname);
-
 void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix);
-
 void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, int def);
 void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, char *def);
 
