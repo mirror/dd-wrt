@@ -170,7 +170,6 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 		ln->load_ewma_total = ln->load_ewma_total * 0.5;
 	
 	ln->node.load = ln->load_ewma_total;
-	MSG(DEBUG, "load %d\n", ln->node.load);
 	ln->node.nosurvey = 0;
 }
 
