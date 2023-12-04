@@ -1,7 +1,6 @@
 batman-adv:
 	$(MAKE) -C batman-adv KERNELPATH="$(LINUXDIR)" all
 	$(MAKE) -C batctl all CC="$(CC)" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/libnl-tiny/include -D_GNU_SOURCE -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(LDLTO) -L$(TOP)/libnl-tiny -lnl-tiny -ffunction-sections -fdata-sections -Wl,--gc-sections -lm"
-
 batman-adv-clean:
 	$(MAKE) -C batman-adv KERNELPATH="$(LINUXDIR)" clean
 	$(MAKE) -C batctl CC="$(CC)" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -I$(TOP)/libnl-tiny/include -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(LDLTO) -L$(TOP)/libnl-tiny -lnl-tiny -ffunction-sections -fdata-sections -Wl,--gc-sections -lm" clean
