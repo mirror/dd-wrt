@@ -144,7 +144,7 @@ void start_usteer(void)
 		 "\"signal_kick\" "	//
 		 "] "		//
 		 "} ", nvram_default_geti("usteer_debug_level", 1), //
-		 nvram_default_geti("usteer_ipv6", 0) ? "true" : "false", //
+		 nvram_default_geti("usteer_ipv6", 0) ? (nvram_match("ipv6_enable","1") ? "true" : "false") : "false", //
 		 nvram_default_geti("usteer_local_mode", 0) ? "true" : "false", //
 		 nvram_default_geti("usteer_sta_block_timeout", 30000), //
 		 nvram_default_geti("usteer_local_sta_timeout", 120000), //
