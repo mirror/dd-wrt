@@ -237,7 +237,7 @@ void show_roaming(webs_t wp, char *var)
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211v\"), \"%s_id80211v2\", %s);\n", var, var, nvram_matchi(s80211v, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_80211k\"), \"%s_id80211k2\", %s);\n", var, var, nvram_matchi(s80211k, 1) ? "true" : "false");
 	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_usteer\"), \"%s_idusteer\", %s);\n", var, var, nvram_matchi(usteer, 1) ? "true" : "false");
-	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_mbo\"), \"%s_idmbo\", %s);\n", var, vvar, nvram_matchi(mbo, 1) ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_mbo\"), \"%s_idmbo\", %s);\n", var, var, nvram_matchi(mbo, 1) ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 
 }
