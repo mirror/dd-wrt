@@ -162,6 +162,7 @@ struct usteer_config {
 	uint32_t max_retry_band;
 	uint32_t seen_policy_timeout;
 	uint32_t measurement_report_timeout;
+	int32_t budged_5ghz;
 
 	bool assoc_steering;
 	bool probe_steering;

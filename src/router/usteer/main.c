@@ -91,6 +91,7 @@ void usteer_init_defaults(void)
 	config.max_retry_band = 5;
 	config.max_neighbor_reports = 8;
 	config.seen_policy_timeout = 30 * 1000;
+	config.budged_5ghz = 5;
 	config.band_steering_threshold = 5;
 	config.load_balancing_threshold = 0;
 	config.remote_update_interval = 1000;
