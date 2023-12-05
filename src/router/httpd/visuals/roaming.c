@@ -327,18 +327,18 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
 	showInputNum(wp, "roaming.min_snr_kick_delay", "usteer_min_snr_kick_delay", 6, 6, 5000);
 	showInputNum(wp, "roaming.steer_reject_timeout", "usteer_steer_reject_timeout", 6, 6, 60000);
 	showInputNum(wp, "roaming.roam_process_timeout", "usteer_roam_process_timeout", 6, 6, 5000);
-	showInputNum(wp, "roaming.roam_scan_snr", "usteer_roam_scan_snr", 4, 4, 25);
+	showInputNum(wp, "roaming.roam_scan_snr", "usteer_roam_scan_snr", 4, 4, 20);
 	showInputNum(wp, "roaming.roam_scan_tries", "usteer_roam_scan_tries", 2, 2, 6);
 	showInputNum(wp, "roaming.roam_scan_timeout", "usteer_roam_scan_timeout", 6, 6, 60000);
 	showInputNum(wp, "roaming.roam_scan_interval", "usteer_roam_scan_interval", 6, 6, 15000);
-	showInputNum(wp, "roaming.roam_trigger_snr", "usteer_roam_trigger_snr", 4, 4, 20);
+	showInputNum(wp, "roaming.roam_trigger_snr", "usteer_roam_trigger_snr", 4, 4, 15);
 	showInputNum(wp, "roaming.roam_trigger_interval", "usteer_roam_trigger_interval", 6, 6, 180000);
 	showInputNum(wp, "roaming.roam_kick_delay", "usteer_roam_kick_delay", 6, 6, 100);
 	showInputNum(wp, "roaming.signal_diff_threshold", "usteer_signal_diff_threshold", 4, 4, 12);
 	showInputNum(wp, "roaming.initial_connect_delay", "usteer_initial_connect_delay", 6, 6, 0);
 
 	showInputNum(wp, "roaming.band_steering_interval", "usteer_band_steering_interval", 6, 6, 120000);
-	showInputNum(wp, "roaming.band_steering_min_snr", "usteer_band_steering_min_snr", 4, 4, 25);
+	showInputNum(wp, "roaming.band_steering_min_snr", "usteer_band_steering_min_snr", 4, 4, 20);
 	showInputNum(wp, "roaming.link_measurement_interval", "usteer_link_measurement_interval", 6, 6, 30000);
 
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.load_kick_enabled)</script></div>\n");
