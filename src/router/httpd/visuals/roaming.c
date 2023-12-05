@@ -308,7 +308,8 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(roaming.usteer_options)</script></h2>\n");
 	websWrite(wp, "<fieldset>");
 	showInputNum(wp, "roaming.debug_level", "usteer_debug_level", 1, 1, 1);
-	showRadio(wp, "bmenu.setupipv6", "usteer_ipv6");
+	if (nvram_match("ipv6_enable","1"))
+		showRadio(wp, "bmenu.setupipv6", "usteer_ipv6");
 	showRadio(wp, "roaming.local_mode", "usteer_local_mode");
 	showInputNum(wp, "roaming.sta_block_timeout", "usteer_sta_block_timeout", 6, 6, 30000);
 	showInputNum(wp, "roaming.local_sta_timeout", "usteer_local_sta_timeout", 6, 6, 120000);
