@@ -20,6 +20,33 @@
 #include "usteer.h"
 #include "node.h"
 #include "event.h"
+int
+usteer_snr_to_signal(struct usteer_node *node, int snr)
+{
+	int noise = -95;
+
+	if (snr < 0)
+		return snr;
+
+	if (node->noise)
+		noise = node->noise;
+
+	return noise + snr;
+}
+
+int
+usteer_signal_to_snr(struct usteer_node *node, int signal)
+{
+	int noise = -95;
+
+	if (signal > 0)
+		return signal;
+
+	if (node->noise)
+		noise = node->noise;
+
+	return signal - noise;;
+}
 
 static bool
 below_assoc_threshold(struct usteer_node *node_cur, struct usteer_node *node_new)
@@ -120,12 +147,12 @@ is_better_candidate(struct sta_info *si_cur, struct sta_info *si_new)
 
 	if (!over_min_signal(new_node, new_signal))
 		return 0;
-
+	
 	if (below_assoc_threshold(current_node, new_node) &&
 	    !below_assoc_threshold(new_node, current_node))
 		reasons |= (1 << UEV_SELECT_REASON_NUM_ASSOC);
 
-	if (better_signal_strength(current_signal, new_signal))
+	if (better_signal_strength(usteer_signal_to_snr(current_node, current_signal), usteer_signal_to_snr(new_node, new_signal)))
 		reasons |= (1 << UEV_SELECT_REASON_SIGNAL);
 
 	if (has_better_load(current_node, new_node) &&
@@ -166,27 +193,26 @@ find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t requi
 			ev->si_other = si;
 			ev->select_reasons = reasons;
 		}
-
-		if (!candidate || si->signal > candidate->signal)
-			candidate = si;
+		if (candidate) {
+			if (si->node->freq < 4000) {
+				if (usteer_signal_to_snr(si->node, si->signal - 5) > usteer_signal_to_snr(candidate->node,candidate->signal)) {
+					candidate = si;
+				}
+			} else {
+				candidate = si;
+			}
+		    
+		} else {
+			if (!candidate || usteer_signal_to_snr(si->node, si->signal) > usteer_signal_to_snr(candidate->node,candidate->signal)) {
+				candidate = si;
+			}
+		}
 	}
 
 	return candidate;
 }
 
-int
-usteer_snr_to_signal(struct usteer_node *node, int snr)
-{
-	int noise = -95;
 
-	if (snr < 0)
-		return snr;
-
-	if (node->noise)
-		noise = node->noise;
-
-	return noise + snr;
-}
 
 bool
 usteer_check_request(struct sta_info *si, enum usteer_event_type type)
@@ -278,7 +304,7 @@ is_more_kickable(struct sta_info *si_cur, struct sta_info *si_new)
 	if (si_new->kick_count > si_cur->kick_count)
 		return false;
 
-	return si_cur->signal > si_new->signal;
+	return usteer_signal_to_snr(si_cur->node, si_cur->signal) > usteer_signal_to_snr(si_new->node, si_new->signal);
 }
 
 static void
