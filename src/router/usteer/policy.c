@@ -529,7 +529,7 @@ usteer_local_node_snr_kick(struct usteer_local_node *ln)
 		ev.threshold.cur = si->signal;
 		ev.count = si->kick_count;
 		usteer_event(&ev);
-		MSG(INFO, "kick client " MAC_ADDR_FMT " by snr (signal %d)\n", MAC_ADDR_DATA(si->sta->addr), si->signal);
+		MSG(INFO, "kick client " MAC_ADDR_FMT " by snr (signal %d)\n", MAC_ADDR_DATA(si->sta->addr), usteer_signal_to_snr(si->node, si->signal));
 		usteer_ubus_kick_client(si);
 		return;
 	}
@@ -614,7 +614,7 @@ usteer_local_node_load_kick(struct usteer_local_node *ln)
 	ev.si_other = candidate;
 	ev.count = kick1->kick_count;
 
-	MSG(INFO, "kick client " MAC_ADDR_FMT " by load (signal %d)\n", MAC_ADDR_DATA(kick1->sta->addr), kick1->signal);
+	MSG(INFO, "kick client " MAC_ADDR_FMT " by load (signal %d)\n", MAC_ADDR_DATA(kick1->sta->addr), usteer_signal_to_snr(kick1->node, kick1->signal));
 	usteer_ubus_kick_client(kick1);
 
 out:
