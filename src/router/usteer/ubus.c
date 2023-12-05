@@ -55,6 +55,8 @@ usteer_ubus_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 			_cur_n = blobmsg_open_table(&b, usteer_node_name(si->node));
 			blobmsg_add_u8(&b, "connected", si->connected);
 			blobmsg_add_u32(&b, "signal", si->signal);
+			blobmsg_add_u32(&b, "noise", si->node->noise);
+			blobmsg_add_u32(&b, "snr", usteer_signal_to_snr(si->node, si->signal));
 			blobmsg_close_table(&b, _cur_n);
 		}
 		blobmsg_close_table(&b, _s);
@@ -111,6 +113,8 @@ usteer_ubus_get_client_info(struct ubus_context *ctx, struct ubus_object *obj,
 		_cur_n = blobmsg_open_table(&b, usteer_node_name(si->node));
 		blobmsg_add_u8(&b, "connected", si->connected);
 		blobmsg_add_u32(&b, "signal", si->signal);
+		blobmsg_add_u32(&b, "noise", si->node->noise);
+		blobmsg_add_u32(&b, "snr", usteer_signal_to_snr(si->node, si->signal));
 		_s = blobmsg_open_table(&b, "stats");
 		for (i = 0; i < __EVENT_TYPE_MAX; i++)
 			usteer_ubus_add_stats(&si->stats[EVENT_TYPE_PROBE], event_types[i]);
@@ -415,6 +419,8 @@ usteer_ubus_get_connected_clients(struct ubus_context *ctx, struct ubus_object *
 
 			s = blobmsg_open_table_mac(&b, si->sta->addr);
 			blobmsg_add_u32(&b, "signal", si->signal);
+			blobmsg_add_u32(&b, "noise", si->node->noise);
+			blobmsg_add_u32(&b, "snr", (int32_t)usteer_signal_to_snr(si->node, si->signal));
 			blobmsg_add_u64(&b, "created", current_time - si->created);
 			blobmsg_add_u64(&b, "connected", current_time - si->connected_since);
 

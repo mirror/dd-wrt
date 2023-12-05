@@ -75,9 +75,11 @@ usteer_event_send_ubus(struct uevent *ev)
 	if (ev->sta)
 		blobmsg_printf(&b, "sta", MAC_ADDR_FMT, MAC_ADDR_DATA(ev->sta->addr));
 
-	if (ev->si_cur)
+	if (ev->si_cur) {
 		blobmsg_add_u32(&b, "signal", (int32_t)ev->si_cur->signal);
-
+		blobmsg_add_u32(&b, "noise", (int32_t)ev->si_cur->node->noise);
+		blobmsg_add_u32(&b, "snr", (int32_t)usteer_signal_to_snr(ev->si_cur->node, ev->si_cur->signal));
+	}
 	if (ev->reason)
 		blobmsg_add_string(&b, "reason", uev_reason[ev->reason]);
 
@@ -109,8 +111,11 @@ usteer_event_send_ubus(struct uevent *ev)
 	if (ev->node_other) {
 		c = blobmsg_open_table(&b, "remote");
 		blobmsg_add_string(&b, "name", usteer_node_name(ev->node_other));
-		if (ev->si_other)
+		if (ev->si_other) {
 			blobmsg_add_u32(&b, "signal", (int32_t)ev->si_other->signal);
+			blobmsg_add_u32(&b, "noise", (int32_t)ev->si_cur->node->noise);
+			blobmsg_add_u32(&b, "snr", (int32_t)usteer_signal_to_snr(ev->si_other->node, ev->si_other->signal));
+		}
 		usteer_event_add_node_status(ev->node_other);
 		blobmsg_close_table(&b, c);
 	}
