@@ -165,10 +165,10 @@ is_better_candidate(struct sta_info *si_cur, struct sta_info *si_new)
 static struct sta_info *
 find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t required_criteria, uint64_t max_age)
 {
-	struct sta_info *si, *candidate = NULL;
+	struct sta_info *si, *candidate = NULL, *candidate_5ghz = NULL;
 	struct sta *sta = si_ref->sta;
 	uint32_t reasons;
-
+	
 	list_for_each_entry(si, &sta->nodes, list) {
 		if (si == si_ref)
 			continue;
@@ -207,7 +207,15 @@ find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t requi
 		} else {
 			candidate = si;
 		}
+		
+		if (si->node->freq > 4000) {
+			if (!candidate_5ghz || (usteer_signal_to_snr(si->node, si->signal) > usteer_signal_to_snr(candidate_5ghz->node,candidate_5ghz->signal))) {
+				candidate_5ghz = si;
+			}
+		}
 	}
+	if (config.prefer_5ghz)
+	    return candidate_5ghz ? candidate_5ghz : candidate;
 
 	return candidate;
 }
