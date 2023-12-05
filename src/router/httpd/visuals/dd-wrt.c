@@ -929,8 +929,8 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 	websWrite(wp, "</fieldset>\n<br />\n");
 	}
 	foreach(var, vifs, next) {
-	if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
-		    continue;
+		if (nvram_nmatch("disabled", "%s_mode", var))
+			continue;
 
 
 		sprintf(ssid, "%s_ssid", var);

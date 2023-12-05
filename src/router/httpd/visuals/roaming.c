@@ -280,8 +280,6 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pre
 	websWrite(wp, "</fieldset>\n<br />\n");
 	}
 	foreach(var, vifs, next) {
-		if (nvram_nmatch("disabled", "%s_net_mode", var))
-			continue;
 		if (nvram_nmatch("disabled", "%s_mode", var))
 			continue;
 		sprintf(ssid, "%s_ssid", var);
