@@ -830,8 +830,8 @@ endif
 
 	mv mipsel-uclibc/aligned-mt7621_dir882-r1.uimage.new mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
 	mv mipsel-uclibc/aligned-mt7621_dir878-r1.uimage.new mipsel-uclibc/aligned-mt7621_dir878-r1.uimage
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir882-r1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir878-r1-webflash.bin mipsel-uclibc/aligned-mt7621_dir878-r1.uimage
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/dir882-r1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/dir878-r1-webflash.bin mipsel-uclibc/aligned-mt7621_dir878-r1.uimage
 
 
 ifeq ($(CONFIG_MT7620),y)
@@ -1041,13 +1041,13 @@ ifeq ($(CONFIG_R6800),y)
 	mv $(ARCH)-uclibc/r6220-webflash.img.tmp $(ARCH)-uclibc/r6220-webflash.img
 	mv $(ARCH)-uclibc/wac124-webflash.img.tmp $(ARCH)-uclibc/wac124-webflash.img
 	mv $(ARCH)-uclibc/3700-webflash.img.tmp $(ARCH)-uclibc/3700-webflash.img
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6800-webflash.bin mipsel-uclibc/r6800-webflash.img
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6850-webflash.bin mipsel-uclibc/r6850-webflash.img
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6260-webflash.bin mipsel-uclibc/r6260-webflash.img
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6350-webflash.bin mipsel-uclibc/r6350-webflash.img
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6220-webflash.bin mipsel-uclibc/r6220-webflash.img 	
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/wac124-webflash.bin mipsel-uclibc/wac124-webflash.img 	
-	./tools/trx_n -m 40000000 -o mipsel-uclibc/3700-webflash.bin mipsel-uclibc/3700-webflash.img
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/r6800-webflash.bin mipsel-uclibc/r6800-webflash.img
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/r6850-webflash.bin mipsel-uclibc/r6850-webflash.img
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/r6260-webflash.bin mipsel-uclibc/r6260-webflash.img
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/r6350-webflash.bin mipsel-uclibc/r6350-webflash.img
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/r6220-webflash.bin mipsel-uclibc/r6220-webflash.img 	
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/wac124-webflash.bin mipsel-uclibc/wac124-webflash.img 	
+	./tools/trx_n -m 50000000 -o mipsel-uclibc/3700-webflash.bin mipsel-uclibc/3700-webflash.img
 endif
 
 ifeq ($(CONFIG_DIR860),y)
