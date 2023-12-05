@@ -89,31 +89,34 @@ void show_roaming(webs_t wp, char *var)
 
 		websWrite(wp, "<div id=\"%s_iddomain\">\n", vvar);
 		{
-			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "roaming.nas", NULL);
-			sprintf(temp, "%s_nas", var);
-			websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "ap.example.com"));
-			websWrite(wp, "</div>\n");
-			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "roaming.domain", NULL);
-			sprintf(temp, "%s_domain", var);
-			websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "0000"));
-			websWrite(wp, "</div>\n");
+			if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var)) {
+				websWrite(wp, "<div class=\"setting\">\n");
+				show_caption(wp, "label", "roaming.nas", NULL);
+				sprintf(temp, "%s_nas", var);
+				websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "ap.example.com"));
+				websWrite(wp, "</div>\n");
+				websWrite(wp, "<div class=\"setting\">\n");
+				show_caption(wp, "label", "roaming.domain", NULL);
+				sprintf(temp, "%s_domain", var);
+				websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", var, var, nvram_default_get(temp, "0000"));
+				websWrite(wp, "</div>\n");
 
-			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "roaming.reassociation_deadline", NULL);
-			sprintf(temp, "%s_deadline", var);
-			websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,roaming.reassociation_deadline)\" value=\"%s\" />\n", var, var,
-				  nvram_default_get(temp, "1000"));
-			websWrite(wp, "</div>\n");
+				websWrite(wp, "<div class=\"setting\">\n");
+				show_caption(wp, "label", "roaming.reassociation_deadline", NULL);
+				sprintf(temp, "%s_deadline", var);
+				websWrite(wp, "<input id=\"%s_domain\" name=\"%s_deadline\" maxlength=\"6\" size=\"6\" onblur=\"valid_range(this,1000,65535,roaming.reassociation_deadline)\" value=\"%s\" />\n", var, var,
+					  nvram_default_get(temp, "1000"));
+				websWrite(wp, "</div>\n");
 
-			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.ft_protocol)</script></div>\n");
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.ft_protocol)</script></div>\n");
 
-			sprintf(wnm, "%s_ft_over_ds", var);
-			showOptions_trans(wp, wnm, "0 1", (char *[]) {
-					  "roaming.ft_over_air", "roaming.ft_over_ds"}, nvram_default_get(wnm, "0"));
-			websWrite(wp, "</div>\n");
+				sprintf(wnm, "%s_ft_over_ds", var);
+				showOptions_trans(wp, wnm, "0 1", (char *[]) {
+						  "roaming.ft_over_air", "roaming.ft_over_ds"
+						  }, nvram_default_get(wnm, "0"));
+				websWrite(wp, "</div>\n");
+			}
 		}
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
@@ -122,7 +125,8 @@ void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "</fieldset> <br />\n");
 
 	}
-
+	if (!nvram_nmatch("ap", "%s_mode", var) && !nvram_nmatch("wdsap", "%s_mode", var))
+		return;
 	char s80211v[64];
 	sprintf(s80211v, "%s_80211v", var);
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.s80211v)</script></legend>");
@@ -208,7 +212,8 @@ void show_roaming(webs_t wp, char *var)
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.mbo_cell_data_conn_pref)</script></div>\n");
 			showOptions_trans(wp, wnm, "0 1 255", (char *[]) {
-					  "share.excluded", "share.not_prefered", "share.prefered"}, nvram_default_get(wnm, "0"));
+					  "share.excluded", "share.not_prefered", "share.prefered"
+					  }, nvram_default_get(wnm, "0"));
 			websWrite(wp, "</div>\n");
 		}
 		websWrite(wp, "</div>\n");
@@ -248,7 +253,7 @@ void show_roaming(webs_t wp, char *var)
 #define IFMAP(a) (a)
 #endif
 
-static void ej_show_roaming_single(webs_t wp, int argc, char_t ** argv, char *prefix)
+static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *prefix)
 {
 	char *next;
 	char var[80];
@@ -291,7 +296,7 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t ** argv, char *pr
 	}
 }
 
-EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 {
 	int c = getdevicecount();
 	int i;
@@ -308,7 +313,7 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(roaming.usteer_options)</script></h2>\n");
 	websWrite(wp, "<fieldset>");
 	showInputNum(wp, "roaming.debug_level", "usteer_debug_level", 1, 1, 1);
-	if (nvram_match("ipv6_enable","1"))
+	if (nvram_match("ipv6_enable", "1"))
 		showRadio(wp, "bmenu.setupipv6", "usteer_ipv6");
 	showRadio(wp, "roaming.local_mode", "usteer_local_mode");
 	showInputNum(wp, "roaming.sta_block_timeout", "usteer_sta_block_timeout", 6, 6, 30000);
