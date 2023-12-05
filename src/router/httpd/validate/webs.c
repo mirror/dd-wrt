@@ -1382,7 +1382,7 @@ void security_save(webs_t wp)
 	applytake(value);
 }
 
-#ifdef HAVE_80211R
+#ifdef HAVE_USTEER
 static void save_roamprefix(webs_t wp, char *prefix)
 {
 	copytonv_prefix(wp, "ft", prefix);
@@ -1474,6 +1474,7 @@ void roaming_save(webs_t wp)
 	copytonv(wp, "usteer_band_steering_interval");
 	copytonv(wp, "usteer_band_steering_min_snr");
 	copytonv(wp, "usteer_link_measurement_interval");
+	copytonv(wp, "usteer_usteer_budged_5ghz"");
 
 
 	applytake(value);
