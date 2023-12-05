@@ -199,7 +199,9 @@ find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t requi
 					candidate = si;
 				}
 			} else {
-				candidate = si;
+				if (usteer_signal_to_snr(si->node, si->signal) > usteer_signal_to_snr(candidate->node,candidate->signal)) {
+					candidate = si;
+			       }
 			}
 		    
 		} else {
