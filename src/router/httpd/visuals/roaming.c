@@ -72,7 +72,7 @@ void show_roaming(webs_t wp, char *var)
 	char mbo[64];
 	sprintf(mbo, "%s_mbo", var);
 
-	if (v_show_preshared || v_show_owe || v_show_wparadius) {
+	if ((v_show_preshared || v_show_owe || v_show_wparadius) && !is_brcmfmac(var)) {
 		char bssft[64];
 		char temp[64];
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.ft)</script></legend>");
