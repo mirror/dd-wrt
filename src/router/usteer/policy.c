@@ -194,7 +194,7 @@ find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t requi
 			ev->select_reasons = reasons;
 		}
 		if (candidate) {
-			if (si->node->freq < 4000) {
+			if (si->node->freq < 4000 && candidate->node->freq > 4000) {
 				if (usteer_signal_to_snr(si->node, si->signal - config.budged_5ghz) > usteer_signal_to_snr(candidate->node,candidate->signal)) {
 					candidate = si;
 				}
