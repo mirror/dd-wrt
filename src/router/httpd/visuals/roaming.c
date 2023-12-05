@@ -112,8 +112,7 @@ void show_roaming(webs_t wp, char *var)
 
 			sprintf(wnm, "%s_ft_over_ds", var);
 			showOptions_trans(wp, wnm, "0 1", (char *[]) {
-					  "roaming.ft_over_air", "roaming.ft_over_ds"
-					  }, nvram_default_get(wnm, "0"));
+					  "roaming.ft_over_air", "roaming.ft_over_ds"}, nvram_default_get(wnm, "0"));
 			websWrite(wp, "</div>\n");
 		}
 		websWrite(wp, "</div>\n");
@@ -209,8 +208,7 @@ void show_roaming(webs_t wp, char *var)
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(roaming.mbo_cell_data_conn_pref)</script></div>\n");
 			showOptions_trans(wp, wnm, "0 1 255", (char *[]) {
-					  "share.excluded", "share.not_prefered", "share.prefered"
-					  }, nvram_default_get(wnm, "0"));
+					  "share.excluded", "share.not_prefered", "share.prefered"}, nvram_default_get(wnm, "0"));
 			websWrite(wp, "</div>\n");
 		}
 		websWrite(wp, "</div>\n");
@@ -250,7 +248,7 @@ void show_roaming(webs_t wp, char *var)
 #define IFMAP(a) (a)
 #endif
 
-static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *prefix)
+static void ej_show_roaming_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 {
 	char *next;
 	char var[80];
@@ -293,7 +291,7 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pre
 	}
 }
 
-EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t ** argv)
 {
 	int c = getdevicecount();
 	int i;

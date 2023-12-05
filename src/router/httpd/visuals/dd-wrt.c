@@ -931,6 +931,12 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 		if (nvram_match(guestport, var))
 			continue;
 #endif
+	if (nvram_nmatch("disabled", "%s_net_mode", var))
+		return;
+	if (nvram_nmatch("disabled", "%s_mode", var))
+		return;
+
+
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
 		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
@@ -977,6 +983,11 @@ EJ_VISIBLE void ej_show_security(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 		sprintf(buf, WIFINAME "%d", i);
+	if (nvram_nmatch("disabled", "%s_net_mode", buf))
+		return;
+	if (nvram_nmatch("disabled", "%s_mode", buf))
+		return;
+
 		ej_show_security_single(wp, argc, argv, buf);
 	}
 	return;
