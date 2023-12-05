@@ -486,9 +486,9 @@ endif
 	#beware max image size is 29MB
 	./tools/r7500/mkdniimg -B R7800 -v 1.0.2.05 -r "" -H "29764958+0+128+512+4x4+4x4+cascade" -i $(ARCH)-uclibc/ddwrt-R7800.bin -o $(ARCH)-uclibc/R7800-factory-to-ddwrt.img
 	#beware max image size is 29MB
-	./tools/r7500/mkdniimg -B XR500 -v 2.3.2.40 -r "" -H "29764958+0+256+512+4x4+4x4+cascade" -i $(ARCH)-uclibc/ddwrt-XR500.bin -o $(ARCH)-uclibc/XR500-factory-to-ddwrt.img
+	./tools/r7500/mkdniimg -B XR500 -v 2.3.2.500 -r "" -H "29764958+0+256+512+4x4+4x4+cascade" -i $(ARCH)-uclibc/ddwrt-XR500.bin -o $(ARCH)-uclibc/XR500-factory-to-ddwrt.img
 	#beware max image size is 29MB
-	./tools/r7500/mkdniimg -B XR450 -v 2.3.2.40 -r "" -H "29764958+0+256+512+4x4+4x4+cascade" -i $(ARCH)-uclibc/ddwrt-XR500.bin -o $(ARCH)-uclibc/XR450-factory-to-ddwrt.img
+	./tools/r7500/mkdniimg -B XR450 -v 2.3.2.500 -r "" -H "29764958+0+256+512+4x4+4x4+cascade" -i $(ARCH)-uclibc/ddwrt-XR500.bin -o $(ARCH)-uclibc/XR450-factory-to-ddwrt.img
 
 	./tools/ubi/ubinize-image.sh --kernel $(ARCH)-uclibc/vmlinux-TEW827.uImage.final \
 		$(ARCH)-uclibc/root.squashfs.new \
