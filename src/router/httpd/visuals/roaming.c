@@ -317,7 +317,7 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 	showInputNum(wp, "roaming.sta_block_timeout", "usteer_sta_block_timeout", 6, 6, 30000);
 	showInputNum(wp, "roaming.local_sta_timeout", "usteer_local_sta_timeout", 6, 6, 120000);
 	showInputNum(wp, "roaming.local_sta_update", "usteer_local_sta_update", 6, 6, 1000);
-	showInputNum(wp, "roaming.max_neighbor_reports", "usteer_max_neighbor_reports", 2, 2, 6);
+	showInputNum(wp, "roaming.max_neighbor_reports", "usteer_max_neighbor_reports", 4, 4, 6);
 	showInputNum(wp, "roaming.max_retry_band", "usteer_max_retry_band", 2, 2, 6);
 	showInputNum(wp, "roaming.seen_policy_timeout", "usteer_seen_policy_timeout", 6, 6, 30000);
 	showInputNum(wp, "roaming.measurement_report_timeout", "usteer_measurement_report_timeout", 6, 6, 120000);
