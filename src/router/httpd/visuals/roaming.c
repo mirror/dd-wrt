@@ -273,6 +273,10 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pre
 	show_roaming(wp, prefix);
 	websWrite(wp, "</fieldset>\n<br />\n");
 	foreach(var, vifs, next) {
+		if (nvram_nmatch("disabled", "%s_net_mode", var))
+			continue;
+		if (nvram_nmatch("disabled", "%s_mode", var))
+			continue;
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
 		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
@@ -297,6 +301,10 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 		sprintf(buf, WIFINAME "%d", i);
+		if (nvram_nmatch("disabled", "%s_net_mode", buf))
+			continue;
+		if (nvram_nmatch("disabled", "%s_mode", buf))
+			continue;
 		ej_show_roaming_single(wp, argc, argv, buf);
 	}
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(roaming.usteer_options)</script></h2>\n");
