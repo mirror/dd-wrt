@@ -131,7 +131,7 @@ void start_usteer(void)
 		 "\"band_steering_interval\": %d,"	//
 		 "\"band_steering_min_snr\": %d,"	//
 		 "\"link_measurement_interval\": %d,"	//
-		 "\"budged_5ghz\": %d,"	//
+		 "\"budget_5ghz\": %d,"	//
 		 "\"prefer_5ghz\": %s,"	//
 		 "\"interfaces\": [ "	//
 		 "\"br0\" "	//
