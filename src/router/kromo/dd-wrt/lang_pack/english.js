@@ -2722,7 +2722,7 @@ roaming.reassociation_deadline="Reassociation Deadline";
 roaming.ft_protocol="FT protocol";
 roaming.ft_over_ds="FT over DS";
 roaming.ft_over_air="FT over the Air";
-
+roaming.budged_5ghz="5 GHz Budged in DBm";
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 var wpa=new Object();
