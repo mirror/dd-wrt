@@ -328,7 +328,8 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 	showInputNum(wp, "roaming.remote_update_interval", "usteer_remote_update_interval", 6, 6, 1000);
 	showInputNum(wp, "roaming.remote_node_timeout", "usteer_remote_node_timeout", 6, 6, 50);
 	showRadio(wp, "roaming.assoc_steering", "usteer_assoc_steering");
-	showInputNum(wp, "roaming.budged_5ghz", "usteer_budged_5ghz", 2, 2, 5);
+	showInputNum(wp, "roaming.budget_5ghz", "usteer_budget_5ghz", 2, 2, 5);
+	showRadio(wp, "roaming.prefer_5ghz", "usteer_prefer_5ghz");
 	showInputNum(wp, "roaming.min_connect_snr", "usteer_min_connect_snr", 4, 4, 0);
 	showInputNum(wp, "roaming.min_snr", "usteer_min_snr", 4, 4, 15);
 	showInputNum(wp, "roaming.min_snr_kick_delay", "usteer_min_snr_kick_delay", 6, 6, 5000);
