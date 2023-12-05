@@ -1717,7 +1717,7 @@ void start_restore_defaults(void)
 #elif HAVE_WA901V5
 	struct nvram_param generic[] = {
 		{ "lan_ifname", "br0" },
-		{ "lan_ifnames", "eth0 wlan0" },
+		{ "lan_ifnames", "eth1 wlan0" },
 		{ "wan_ifname", "" },
 		{ "wan_ifname2", "" },
 		{ "wan_ifnames", "" },
