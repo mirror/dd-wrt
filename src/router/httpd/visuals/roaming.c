@@ -266,6 +266,9 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pre
 	if (vifs == NULL)
 		return;
 	sprintf(ssid, "%s_ssid", prefix);
+
+	if (!nvram_nmatch("disabled", "%s_net_mode", prefix) && !nvram_nmatch("disabled", "%s_mode", prefix)) {
+
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(roaming.roaming)</script> %s</h2>\n", prefix);
 	websWrite(wp, "<fieldset>\n");
 	// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
@@ -275,6 +278,7 @@ static void ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pre
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
 	show_roaming(wp, prefix);
 	websWrite(wp, "</fieldset>\n<br />\n");
+	}
 	foreach(var, vifs, next) {
 		if (nvram_nmatch("disabled", "%s_net_mode", var))
 			continue;
@@ -304,10 +308,6 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 		sprintf(buf, WIFINAME "%d", i);
-		if (nvram_nmatch("disabled", "%s_net_mode", buf))
-			continue;
-		if (nvram_nmatch("disabled", "%s_mode", buf))
-			continue;
 		ej_show_roaming_single(wp, argc, argv, buf);
 	}
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(roaming.usteer_options)</script></h2>\n");
