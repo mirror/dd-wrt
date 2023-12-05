@@ -182,7 +182,7 @@ void start_usteer(void)
 		 nvram_default_geti("usteer_band_steering_interval", 120000), //
 		 nvram_default_geti("usteer_band_steering_min_snr", 20), //
 		 nvram_default_geti("usteer_link_measurement_interval", 30000), //
-		 nvram_default_geti("usteer_budged_5ghz", 5), //
+		 nvram_default_geti("usteer_budget_5ghz", 5), //
 		 nvram_default_geti("usteer_prefer_5ghz", 0) ? "true" : "false", //
 		 ssid_list);
 	char *cmdline;
