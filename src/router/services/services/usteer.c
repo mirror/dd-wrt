@@ -163,11 +163,11 @@ void start_usteer(void)
 		 nvram_default_geti("usteer_min_snr_kick_delay", 5000), //
 		 nvram_default_geti("usteer_steer_reject_timeout", 60000), //
 		 nvram_default_geti("usteer_roam_process_timeout", 5000), //
-		 nvram_default_geti("usteer_roam_scan_snr", 25), //
+		 nvram_default_geti("usteer_roam_scan_snr", 20), //
 		 nvram_default_geti("usteer_roam_scan_tries", 6), //
 		 nvram_default_geti("usteer_roam_scan_timeout", 60000), //
 		 nvram_default_geti("usteer_roam_scan_interval", 15000), //
-		 nvram_default_geti("usteer_roam_trigger_snr", 20), //
+		 nvram_default_geti("usteer_roam_trigger_snr", 15), //
 		 nvram_default_geti("usteer_roam_trigger_interval", 180000), //
 		 nvram_default_geti("usteer_roam_kick_delay", 100), //
 		 nvram_default_geti("usteer_signal_diff_threshold", 12), //
@@ -178,7 +178,7 @@ void start_usteer(void)
 		 nvram_default_geti("usteer_load_kick_min_clients", 10), //
 		 nvram_default_geti("usteer_load_kick_reason_code", 5), //
 		 nvram_default_geti("usteer_band_steering_interval", 120000), //
-		 nvram_default_geti("usteer_band_steering_min_snr", 25), //
+		 nvram_default_geti("usteer_band_steering_min_snr", 20), //
 		 nvram_default_geti("usteer_link_measurement_interval", 30000), //
 		 ssid_list);
 	char *cmdline;
