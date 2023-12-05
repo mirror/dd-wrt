@@ -630,7 +630,7 @@ usteer_local_node_perform_kick(struct usteer_local_node *ln)
 		if (!si->kick_time || si->kick_time > current_time)
 			continue;
 
-		MSG(INFO, "kick client " MAC_ADDR_FMT " kick time %d reached\n", MAC_ADDR_DATA(si->sta->addr), si->kick_time);
+		MSG(INFO, "kick client " MAC_ADDR_FMT " kick time %lld reached\n", MAC_ADDR_DATA(si->sta->addr), si->kick_time);
 		usteer_ubus_kick_client(si);
 	}
 }
