@@ -60,8 +60,6 @@ extern zidmap_t *zfs_get_init_idmap(void);
 #define	SGID_TO_KGID(x)		(x)
 #define	KGIDP_TO_SGIDP(x)	(x)
 
-extern zidmap_t *zfs_get_init_idmap(void);
-
 #endif /* HAVE_KUIDGID_T */
 
 /* Check if the user ns is the initial one */

@@ -459,6 +459,7 @@ ZFS_OBJS_OS := \
 	trace.o \
 	vdev_disk.o \
 	vdev_file.o \
+	vdev_label_os.o \
 	zfs_acl.o \
 	zfs_ctldir.o \
 	zfs_debug.o \
@@ -503,6 +504,10 @@ ifeq ($(CONFIG_ALTIVEC),y)
 zfs-$(CONFIG_PPC)   += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
 zfs-$(CONFIG_PPC64) += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
 endif
+
+UBSAN_SANITIZE_zap_leaf.o := n
+UBSAN_SANITIZE_zap_micro.o := n
+UBSAN_SANITIZE_sa.o := n
 
 # Suppress incorrect warnings from versions of objtool which are not
 # aware of x86 EVEX prefix instructions used for AVX512.

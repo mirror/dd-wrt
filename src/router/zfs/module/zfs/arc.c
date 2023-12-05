@@ -776,8 +776,8 @@ uint64_t zfs_crc64_table[256];
  * Level 2 ARC
  */
 
-#define	L2ARC_WRITE_SIZE	(8 * 1024 * 1024)	/* initial write max */
-#define	L2ARC_HEADROOM		2			/* num of writes */
+#define	L2ARC_WRITE_SIZE	(32 * 1024 * 1024)	/* initial write max */
+#define	L2ARC_HEADROOM		8			/* num of writes */
 
 /*
  * If we discover during ARC scan any buffers to be compressed, we boost
@@ -885,6 +885,8 @@ static void l2arc_read_done(zio_t *);
 static void l2arc_do_free_on_write(void);
 static void l2arc_hdr_arcstats_update(arc_buf_hdr_t *hdr, boolean_t incr,
     boolean_t state_only);
+
+static void arc_prune_async(uint64_t adjust);
 
 #define	l2arc_hdr_arcstats_increment(hdr) \
 	l2arc_hdr_arcstats_update((hdr), B_TRUE, B_FALSE)
@@ -1364,7 +1366,7 @@ arc_buf_is_shared(arc_buf_t *buf)
 	    abd_is_linear(buf->b_hdr->b_l1hdr.b_pabd) &&
 	    buf->b_data == abd_to_buf(buf->b_hdr->b_l1hdr.b_pabd));
 	IMPLY(shared, HDR_SHARED_DATA(buf->b_hdr));
-	IMPLY(shared, ARC_BUF_SHARED(buf));
+	EQUIV(shared, ARC_BUF_SHARED(buf));
 	IMPLY(shared, ARC_BUF_COMPRESSED(buf) || ARC_BUF_LAST(buf));
 
 	/*
@@ -1998,7 +2000,7 @@ arc_buf_fill(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
 	IMPLY(encrypted, HDR_ENCRYPTED(hdr));
 	IMPLY(encrypted, ARC_BUF_ENCRYPTED(buf));
 	IMPLY(encrypted, ARC_BUF_COMPRESSED(buf));
-	IMPLY(encrypted, !ARC_BUF_SHARED(buf));
+	IMPLY(encrypted, !arc_buf_is_shared(buf));
 
 	/*
 	 * If the caller wanted encrypted data we just need to copy it from
@@ -2066,7 +2068,9 @@ arc_buf_fill(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
 	}
 
 	if (hdr_compressed == compressed) {
-		if (!arc_buf_is_shared(buf)) {
+		if (ARC_BUF_SHARED(buf)) {
+			ASSERT(arc_buf_is_shared(buf));
+		} else {
 			abd_copy_to_buf(buf->b_data, hdr->b_l1hdr.b_pabd,
 			    arc_buf_size(buf));
 		}
@@ -2078,7 +2082,7 @@ arc_buf_fill(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
 		 * If the buf is sharing its data with the hdr, unlink it and
 		 * allocate a new data buffer for the buf.
 		 */
-		if (arc_buf_is_shared(buf)) {
+		if (ARC_BUF_SHARED(buf)) {
 			ASSERT(ARC_BUF_COMPRESSED(buf));
 
 			/* We need to give the buf its own b_data */
@@ -2090,6 +2094,8 @@ arc_buf_fill(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
 			/* Previously overhead was 0; just add new overhead */
 			ARCSTAT_INCR(arcstat_overhead_size, HDR_GET_LSIZE(hdr));
 		} else if (ARC_BUF_COMPRESSED(buf)) {
+			ASSERT(!arc_buf_is_shared(buf));
+
 			/* We need to reallocate the buf's b_data */
 			arc_free_data_buf(hdr, buf->b_data, HDR_GET_PSIZE(hdr),
 			    buf);
@@ -2217,7 +2223,7 @@ arc_evictable_space_increment(arc_buf_hdr_t *hdr, arc_state_t *state)
 
 	for (arc_buf_t *buf = hdr->b_l1hdr.b_buf; buf != NULL;
 	    buf = buf->b_next) {
-		if (arc_buf_is_shared(buf))
+		if (ARC_BUF_SHARED(buf))
 			continue;
 		(void) zfs_refcount_add_many(&state->arcs_esize[type],
 		    arc_buf_size(buf), buf);
@@ -2256,7 +2262,7 @@ arc_evictable_space_decrement(arc_buf_hdr_t *hdr, arc_state_t *state)
 
 	for (arc_buf_t *buf = hdr->b_l1hdr.b_buf; buf != NULL;
 	    buf = buf->b_next) {
-		if (arc_buf_is_shared(buf))
+		if (ARC_BUF_SHARED(buf))
 			continue;
 		(void) zfs_refcount_remove_many(&state->arcs_esize[type],
 		    arc_buf_size(buf), buf);
@@ -2481,7 +2487,7 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr)
 				 * add to the refcount if the arc_buf_t is
 				 * not shared.
 				 */
-				if (arc_buf_is_shared(buf))
+				if (ARC_BUF_SHARED(buf))
 					continue;
 
 				(void) zfs_refcount_add_many(
@@ -2537,7 +2543,7 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr)
 				 * add to the refcount if the arc_buf_t is
 				 * not shared.
 				 */
-				if (arc_buf_is_shared(buf))
+				if (ARC_BUF_SHARED(buf))
 					continue;
 
 				(void) zfs_refcount_remove_many(
@@ -3061,9 +3067,10 @@ arc_buf_destroy_impl(arc_buf_t *buf)
 		arc_cksum_verify(buf);
 		arc_buf_unwatch(buf);
 
-		if (arc_buf_is_shared(buf)) {
+		if (ARC_BUF_SHARED(buf)) {
 			arc_hdr_clear_flags(hdr, ARC_FLAG_SHARED_DATA);
 		} else {
+			ASSERT(!arc_buf_is_shared(buf));
 			uint64_t size = arc_buf_size(buf);
 			arc_free_data_buf(hdr, buf->b_data, size, buf);
 			ARCSTAT_INCR(arcstat_overhead_size, -size);
@@ -3104,9 +3111,9 @@ arc_buf_destroy_impl(arc_buf_t *buf)
 		 */
 		if (lastbuf != NULL && !ARC_BUF_ENCRYPTED(lastbuf)) {
 			/* Only one buf can be shared at once */
-			VERIFY(!arc_buf_is_shared(lastbuf));
+			ASSERT(!arc_buf_is_shared(lastbuf));
 			/* hdr is uncompressed so can't have compressed buf */
-			VERIFY(!ARC_BUF_COMPRESSED(lastbuf));
+			ASSERT(!ARC_BUF_COMPRESSED(lastbuf));
 
 			ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
 			arc_hdr_free_abd(hdr, B_FALSE);
@@ -4511,7 +4518,7 @@ arc_evict_cb_check(void *arg, zthr_t *zthr)
 static void
 arc_evict_cb(void *arg, zthr_t *zthr)
 {
-	(void) arg, (void) zthr;
+	(void) arg;
 
 	uint64_t evicted = 0;
 	fstrans_cookie_t cookie = spl_fstrans_mark();
@@ -4535,9 +4542,13 @@ arc_evict_cb(void *arg, zthr_t *zthr)
 	 * infinite loop.  Additionally, zthr_iscancelled() is
 	 * checked here so that if the arc is shutting down, the
 	 * broadcast will wake any remaining arc evict waiters.
+	 *
+	 * Note we cancel using zthr instead of arc_evict_zthr
+	 * because the latter may not yet be initializd when the
+	 * callback is first invoked.
 	 */
 	mutex_enter(&arc_evict_lock);
-	arc_evict_needed = !zthr_iscancelled(arc_evict_zthr) &&
+	arc_evict_needed = !zthr_iscancelled(zthr) &&
 	    evicted > 0 && aggsum_compare(&arc_sums.arcstat_size, arc_c) > 0;
 	if (!arc_evict_needed) {
 		/*
@@ -5863,12 +5874,9 @@ top:
 			 * 3. This buffer isn't currently writing to the L2ARC.
 			 * 4. The L2ARC entry wasn't evicted, which may
 			 *    also have invalidated the vdev.
-			 * 5. This isn't prefetch or l2arc_noprefetch is 0.
 			 */
 			if (HDR_HAS_L2HDR(hdr) &&
-			    !HDR_L2_WRITING(hdr) && !HDR_L2_EVICTED(hdr) &&
-			    !(l2arc_noprefetch &&
-			    (*arc_flags & ARC_FLAG_PREFETCH))) {
+			    !HDR_L2_WRITING(hdr) && !HDR_L2_EVICTED(hdr)) {
 				l2arc_read_callback_t *cb;
 				abd_t *abd;
 				uint64_t asize;
@@ -6049,6 +6057,56 @@ arc_remove_prune_callback(arc_prune_t *p)
 }
 
 /*
+ * Helper function for arc_prune_async() it is responsible for safely
+ * handling the execution of a registered arc_prune_func_t.
+ */
+static void
+arc_prune_task(void *ptr)
+{
+	arc_prune_t *ap = (arc_prune_t *)ptr;
+	arc_prune_func_t *func = ap->p_pfunc;
+
+	if (func != NULL)
+		func(ap->p_adjust, ap->p_private);
+
+	zfs_refcount_remove(&ap->p_refcnt, func);
+}
+
+/*
+ * Notify registered consumers they must drop holds on a portion of the ARC
+ * buffers they reference.  This provides a mechanism to ensure the ARC can
+ * honor the metadata limit and reclaim otherwise pinned ARC buffers.
+ *
+ * This operation is performed asynchronously so it may be safely called
+ * in the context of the arc_reclaim_thread().  A reference is taken here
+ * for each registered arc_prune_t and the arc_prune_task() is responsible
+ * for releasing it once the registered arc_prune_func_t has completed.
+ */
+static void
+arc_prune_async(uint64_t adjust)
+{
+	arc_prune_t *ap;
+
+	mutex_enter(&arc_prune_mtx);
+	for (ap = list_head(&arc_prune_list); ap != NULL;
+	    ap = list_next(&arc_prune_list, ap)) {
+
+		if (zfs_refcount_count(&ap->p_refcnt) >= 2)
+			continue;
+
+		zfs_refcount_add(&ap->p_refcnt, ap->p_pfunc);
+		ap->p_adjust = adjust;
+		if (taskq_dispatch(arc_prune_taskq, arc_prune_task,
+		    ap, TQ_SLEEP) == TASKQID_INVALID) {
+			zfs_refcount_remove(&ap->p_refcnt, ap->p_pfunc);
+			continue;
+		}
+		ARCSTAT_BUMP(arcstat_prune);
+	}
+	mutex_exit(&arc_prune_mtx);
+}
+
+/*
  * Notify the arc that a block was freed, and thus will never be used again.
  */
 void
@@ -6189,7 +6247,7 @@ arc_release(arc_buf_t *buf, const void *tag)
 		ASSERT(hdr->b_l1hdr.b_buf != buf || buf->b_next != NULL);
 		VERIFY3S(remove_reference(hdr, tag), >, 0);
 
-		if (arc_buf_is_shared(buf) && !ARC_BUF_COMPRESSED(buf)) {
+		if (ARC_BUF_SHARED(buf) && !ARC_BUF_COMPRESSED(buf)) {
 			ASSERT3P(hdr->b_l1hdr.b_buf, !=, buf);
 			ASSERT(ARC_BUF_LAST(buf));
 		}
@@ -6206,9 +6264,9 @@ arc_release(arc_buf_t *buf, const void *tag)
 		 * If the current arc_buf_t and the hdr are sharing their data
 		 * buffer, then we must stop sharing that block.
 		 */
-		if (arc_buf_is_shared(buf)) {
+		if (ARC_BUF_SHARED(buf)) {
 			ASSERT3P(hdr->b_l1hdr.b_buf, !=, buf);
-			VERIFY(!arc_buf_is_shared(lastbuf));
+			ASSERT(!arc_buf_is_shared(lastbuf));
 
 			/*
 			 * First, sever the block sharing relationship between
@@ -6241,7 +6299,7 @@ arc_release(arc_buf_t *buf, const void *tag)
 			 */
 			ASSERT(arc_buf_is_shared(lastbuf) ||
 			    arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF);
-			ASSERT(!ARC_BUF_SHARED(buf));
+			ASSERT(!arc_buf_is_shared(buf));
 		}
 
 		ASSERT(hdr->b_l1hdr.b_pabd != NULL || HDR_HAS_RABD(hdr));
@@ -6335,9 +6393,10 @@ arc_write_ready(zio_t *zio)
 		arc_cksum_free(hdr);
 		arc_buf_unwatch(buf);
 		if (hdr->b_l1hdr.b_pabd != NULL) {
-			if (arc_buf_is_shared(buf)) {
+			if (ARC_BUF_SHARED(buf)) {
 				arc_unshare_buf(hdr, buf);
 			} else {
+				ASSERT(!arc_buf_is_shared(buf));
 				arc_hdr_free_abd(hdr, B_FALSE);
 			}
 		}
@@ -6636,9 +6695,10 @@ arc_write(zio_t *pio, spa_t *spa, uint64_t txg,
 		 * The hdr will remain with a NULL data pointer and the
 		 * buf will take sole ownership of the block.
 		 */
-		if (arc_buf_is_shared(buf)) {
+		if (ARC_BUF_SHARED(buf)) {
 			arc_unshare_buf(hdr, buf);
 		} else {
+			ASSERT(!arc_buf_is_shared(buf));
 			arc_hdr_free_abd(hdr, B_FALSE);
 		}
 		VERIFY3P(buf->b_data, !=, NULL);
@@ -7975,9 +8035,8 @@ l2arc_write_size(l2arc_dev_t *dev)
 	 */
 	size = l2arc_write_max;
 	if (size == 0) {
-		cmn_err(CE_NOTE, "Bad value for l2arc_write_max, value must "
-		    "be greater than zero, resetting it to the default (%d)",
-		    L2ARC_WRITE_SIZE);
+		cmn_err(CE_NOTE, "l2arc_write_max must be greater than zero, "
+		    "resetting it to the default (%d)", L2ARC_WRITE_SIZE);
 		size = l2arc_write_max = L2ARC_WRITE_SIZE;
 	}
 
@@ -8000,30 +8059,9 @@ l2arc_write_size(l2arc_dev_t *dev)
 	 * device. This is important in l2arc_evict(), otherwise infinite
 	 * iteration can occur.
 	 */
-	if (size > dev->l2ad_end - dev->l2ad_start) {
-		cmn_err(CE_NOTE, "l2arc_write_max or l2arc_write_boost "
-		    "plus the overhead of log blocks (persistent L2ARC, "
-		    "%llu bytes) exceeds the size of the cache device "
-		    "(guid %llu), resetting them to the default (%d)",
-		    (u_longlong_t)l2arc_log_blk_overhead(size, dev),
-		    (u_longlong_t)dev->l2ad_vdev->vdev_guid, L2ARC_WRITE_SIZE);
+	size = MIN(size, (dev->l2ad_end - dev->l2ad_start) / 4);
 
-		size = l2arc_write_max = l2arc_write_boost = L2ARC_WRITE_SIZE;
-
-		if (l2arc_trim_ahead > 1) {
-			cmn_err(CE_NOTE, "l2arc_trim_ahead set to 1");
-			l2arc_trim_ahead = 1;
-		}
-
-		if (arc_warm == B_FALSE)
-			size += l2arc_write_boost;
-
-		size += l2arc_log_blk_overhead(size, dev);
-		if (dev->l2ad_vdev->vdev_has_trim && l2arc_trim_ahead > 0) {
-			size += MAX(64 * 1024 * 1024,
-			    (size * l2arc_trim_ahead) / 100);
-		}
-	}
+	size = P2ROUNDUP(size, 1ULL << dev->l2ad_vdev->vdev_ashift);
 
 	return (size);
 
