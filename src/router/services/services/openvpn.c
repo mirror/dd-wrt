@@ -805,6 +805,7 @@ void start_openvpn(void)
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
 	eval("modprobe","seqiv");
+	eval("modprobe","ghash_generic");
 	eval("modprobe","ctr");
 	eval("modprobe","chacha20_generic");
 	eval("modprobe","chacha20_x86_64");
@@ -814,7 +815,6 @@ void start_openvpn(void)
 	eval("modprobe","poly1305_generic");
 	eval("modprobe","poly1305_x86_64");
 	eval("modprobe","chacha20poly1305");
-	eval("modprobe","ghash_generic");
 	eval("modprobe","gcm");
 	eval("modprobe","ccm");
 	eval("modprobe","ovpn-dco-v2");
