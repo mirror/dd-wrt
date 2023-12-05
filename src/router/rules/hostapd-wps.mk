@@ -28,6 +28,11 @@ endif
 ifeq ($(KERNELVERSION),6.1)
 HOSTAPDVERSION=2023-09-08
 endif
+ifeq ($(CONFIG_BRCMFMAC),y)
+ifndef $(HOSTAPDVERSION)
+HOSTAPDVERSION=2023-09-08
+endif
+endif
 
 ifeq ($(KERNELVERSION),6.1)
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
