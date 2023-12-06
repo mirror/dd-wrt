@@ -446,7 +446,7 @@ void start_sysinit(void)
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
 			}
-			sscanf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+			sscanf(mac1, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
 			for (i = 0; i < 6; i++) {
 				smem[i + 6 + 0x4000] = newmac[i];
 			}
