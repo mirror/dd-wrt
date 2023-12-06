@@ -435,6 +435,15 @@ void start_sysinit(void)
 		if (board == ROUTER_NETGEAR_R7800) {
 			char mac1[64];
 			char mac2[64];
+
+			char macaddr[32];
+			eval("ifconfig", "eth1", "up");
+			eval("ifconfig", "eth0", "up");
+			if (get_hwaddr("eth1", macaddr)) {
+				nvram_set("et0macaddr", macaddr);
+				nvram_set("et0macaddr_safe", macaddr);
+			}
+
 			getWirelessMac(mac1, 0);
 			getWirelessMac(mac2, 1);
 			if (*nvram_safe_get("wlan0_hwaddr"))
@@ -450,6 +459,8 @@ void start_sysinit(void)
 			for (i = 0; i < 6; i++) {
 				smem[i + 6 + 0x4000] = newmac[i];
 			}
+			eval("ifconfig", "eth1", "down");
+			eval("ifconfig", "eth0", "down");
 		}
 		calcchecksum(smem);
 		calcchecksum(&smem[0x4000]);
