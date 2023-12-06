@@ -401,6 +401,14 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!wifi && !strcmp_pnt(m->menu[i][j], "Status_Wireless.asp"))
 					goto skip;
 
+#else
+				if (!strcmp_pnt(m->menu[i][j], "Roaming.asp"))	// jump
+					// over
+					// PPTP
+					// in
+					// micro
+					// build
+					goto skip;
 #endif
 				if ((!vlan_supp) && !strcmp_pnt(m->menu[i][j], "Vlan.asp"))	// jump
 					// over
