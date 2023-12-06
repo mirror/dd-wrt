@@ -372,7 +372,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// micro
 					// build
 					goto skip;
-#ifndef HAVE_WPA3
+#ifndef HAVE_USTEER
 				if (!strcmp_pnt(m->menu[i][j], "Roaming.asp"))	// jump
 					// over
 					// PPTP
