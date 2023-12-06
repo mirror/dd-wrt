@@ -121,6 +121,9 @@ void getWirelessMac(char *newmac, int instance)
 	MAC_ADD(newmac);
 	if (instance)
 		MAC_ADD(newmac);
+	if (*nvram_nget("wlan%d_hwaddr", instance))
+		strcpy(newmac, nvram_nget("wlan%d_hwaddr", instance));
+
 #endif
 	return;
 }

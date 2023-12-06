@@ -432,6 +432,25 @@ void start_sysinit(void)
 				smem[i + 6 + 0x4000] = newmac[i];
 			}
 		}
+		if (board == ROUTER_NETGEAR_R7800) {
+			char mac1[64];
+			char mac2[64];
+			getWirelessMac(mac1, 0);
+			getWirelessMac(mac2, 1);
+			if (*nvram_safe_get("wlan0_hwaddr"))
+			    strcpy(mac1, nvram_safe_get("wlan0_hwaddr"));
+			if (*nvram_safe_get("wlan1_hwaddr"))
+			    strcpy(mac1, nvram_safe_get("wlan1_hwaddr"));
+			sscanf(mac1, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+			int i;
+			for (i = 0; i < 6; i++) {
+				smem[i + 6] = newmac[i];
+			}
+			sscanf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+			for (i = 0; i < 6; i++) {
+				smem[i + 6 + 0x4000] = newmac[i];
+			}
+		}
 		calcchecksum(smem);
 		calcchecksum(&smem[0x4000]);
 
