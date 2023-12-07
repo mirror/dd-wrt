@@ -1,16 +1,21 @@
 #!/bin/sh
+[[ ! -z $(nvram get wg_debug) ]] && { DEBUG=1; set -x; }
+{
+
 nv=/usr/sbin/nvram
 tunnels=$($nv get oet_tunnels)
 fset=$1
 ipv6_en=$($nv get ipv6_enable)
 WAN_IF=$(get_wanface)
 GATEWAY="$($nv get wan_gateway)"
+# Needs checking
+[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 GATEWAY6="$(ip -6 route show table main | awk '/default via/ { print $3;exit; }')"
 MINTIME=$($nv get wg_mintime)
 [[ -z $MINTIME ]] && MINTIME=1
 MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
 [[ -z $MAXTIME ]] && MAXTIME=105
-LOCK="/tmp/oet.lock"
+LOCK="/tmp/oet-raip.lock"
 acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for $$"; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$"; }
 release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for $$"; }
 trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
@@ -21,7 +26,7 @@ waitfortime () {
 	#logger -p user.info "WireGuard debug st start of time check: ntp_success: $($nv get ntp_success); ntp_done:$($nv get ntp_done)"
 	SLEEPCT=$MINTIME
 	#while [[ $($nv get ntp_done) -ne 1 ]]; do
-	while [[ $(date +%Y) -lt 2021 ]]; do
+	while [[ $(date +%Y) -lt 2023 ]]; do
 		sleep 2
 		SLEEPCT=$((SLEEPCT+2))
 		if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
@@ -284,9 +289,9 @@ for i in $(seq 1 $tunnels); do
 			if [[ $($nv get oet${i}_failstate) -eq 2 || $($nv get oet${i}_wdog) -eq 1 ]]; then
 				# only start if not already running
 				if ! ps | grep -q "[w]ireguard-fwatchdog\.sh $i"; then
-					logger -p user.info "WireGuard: wireguard-fwatchdog $i not running yet"
+					logger -p user.info "WireGuard wireguard-fwatchdog $i not running yet"
 				else
-					logger -p user.info "WireGuard: wireguard-fwatchdog $i already running will be killed first"
+					logger -p user.info "WireGuard wireguard-fwatchdog $i already running will be killed first"
 					ps | grep "[w]ireguard-fwatchdog\.sh $i" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
 				fi
 				# send tunnelnumber, sleeptime (sec), ping address, reset (1=Yes)
@@ -306,3 +311,7 @@ for i in $(seq 1 $tunnels); do
 	fi
 done
 release_lock
+( /usr/bin/eop-tunnel-firewall.sh & ) >/dev/null 2>&1
+} 2>&1 | logger $([ ${DEBUG+x} ] && echo '-p user.debug') \
+    -t $(echo $(basename $0) | grep -Eo '^.{0,23}')[$$] &
+

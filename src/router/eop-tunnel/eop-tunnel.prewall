@@ -1,4 +1,6 @@
 #!/bin/sh
+[[ ! -z $(nvram get wg_debug) ]] && { DEBUG=1; set -x; }
+{
 nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
@@ -13,9 +15,15 @@ if [[ $ipv6_en -eq 1 ]]; then
     IP6="ip -6"
 fi
 GATEWAY="$($nv get wan_gateway)"
+# Needs checking
+[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 GATEWAY6="$($IP6 route show table main | awk '/default via/ { print $3;exit; }')"
 [[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 # set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
+LOCK="/tmp/oet-prewall.lock"
+acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for firewall $$ "; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$ "; }
+release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for firewall $$ "; }
+#acquire_lock
 if [[ $tunnels -gt 0 ]]; then
 	fset=0
 	for i in $(seq 1 $tunnels); do
@@ -125,7 +133,7 @@ for i in $(seq 1 $tunnels); do
 					$nv set oet${i}_mtu=$((1500 - $overhead))
 				fi
 			fi
-			$IP link add oet${i} type wireguard
+			$IP link add oet${i} type wireguard >/dev/null 2>&1
 			wg set oet${i} listen-port $($nv get oet${i}_port)
 			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
@@ -133,9 +141,10 @@ for i in $(seq 1 $tunnels); do
 			if [[ ! -z "$($nv get oet${i}_fwmark)" ]]; then
 				wg set oet${i} fwmark $($nv get oet${i}_fwmark)
 			fi
-			peers=$(($($nv get oet${i}_peers) - 1))
 			$nv set oet${i}_bridged=0
 			$nv set oet${i}_nat=0
+			# consider moving this peers section to eop-tunnel-raip
+			peers=$(($($nv get oet${i}_peers) - 1))
 			for p in $(seq 0 $peers); do
 				PSKARG1=
 				PSKARG2=
@@ -160,7 +169,7 @@ for i in $(seq 1 $tunnels); do
 						ipv6=$endp
 						logger -p user.info "WireGuard experimental endpoint routing for oet${i} to endpoint $endp:$($nv get oet${i}_peerport${p}) is IPv6: [$endp]"
 					else
-						nsl=$(nslookup "$endp")
+						nsl=$(nslookup "$endp") >/dev/null 2>&1
 						ipv4=$(echo "$nsl" | awk '/^Name:/,0 {if (/^Addr[^:]*: [0-9]{1,3}\./) print $3}' | head -n 1)
 						[[ $ipv6_en -eq 1 ]] && { ipv6=$(echo "$nsl" | awk '/^Name:/,0 {if (/^Addr[^:]*: [23]...:/) print $3}' | head -n 1); }
 						logger -p user.info "WireGuard experimental endpoint routing for oet${i} to endpoint $endp:$($nv get oet${i}_peerport${p}) is Domain Name resolving to IPv4:[$ipv4]; IPv6:[$ipv6]"
@@ -177,6 +186,7 @@ for i in $(seq 1 $tunnels); do
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 			done
+			# end peer section
 			ifconfig oet${i} promisc up >/dev/null 2>&1
 			$IP link set mtu $($nv get oet${i}_mtu) up dev oet${i} >/dev/null 2>&1
 			echo enable > ${i}.pid
@@ -373,12 +383,15 @@ for i in $(seq 1 $tunnels); do
 		fi
 	fi
 done
+#release_lock
 service set_routes start
 # start route setting only if active tunnels
 for i in $(seq 1 $tunnels); do
 	if [[ $($nv get oet${i}_en) -eq 1 ]]; then
-		/usr/bin/eop-tunnel-raip.sh $fset &
+		( /usr/bin/eop-tunnel-raip.sh $fset & ) >/dev/null 2>&1
 		break
 	fi
 done
+} 2>&1 | logger $([ ${DEBUG+x} ] && echo '-p user.debug') \
+    -t $(echo $(basename $0) | grep -Eo '^.{0,23}')[$$] &
 
