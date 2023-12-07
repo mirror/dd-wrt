@@ -446,10 +446,6 @@ void start_sysinit(void)
 
 			getWirelessMac(mac1, 0);
 			getWirelessMac(mac2, 1);
-			if (*nvram_safe_get("wlan0_hwaddr"))
-			    strcpy(mac1, nvram_safe_get("wlan0_hwaddr"));
-			if (*nvram_safe_get("wlan1_hwaddr"))
-			    strcpy(mac2, nvram_safe_get("wlan1_hwaddr"));
 			sscanf(mac1, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
 			int i;
 			for (i = 0; i < 6; i++) {
