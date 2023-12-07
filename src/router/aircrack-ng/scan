@@ -15,6 +15,6 @@ if test -e "/proc/sys/dev/wifi${1}/mimo"; then
 	/usr/sbin/80211n_wlanconfig mon${1} create wlandev wifi${1} wlanmode monitor
 else
 	/usr/sbin/wlanconfig mon${1} create wlandev wifi${1} wlanmode monitor
-	iw phy phy$(expr ${1} - `cat /proc/net/dev|grep wlan|wc -l`) interface add mon${1} type monitor
+	iw phy phy${1} interface add mon${1} type monitor
 fi
 /usr/sbin/airodump-ng mon${1} ${2} ${3}
