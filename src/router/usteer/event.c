@@ -160,6 +160,8 @@ usteer_event_log(struct uevent *ev)
 		cur += snprintf(cur, end - cur, " reason=%s", uev_reason[ev->reason]);
 	if (ev->si_cur)
 		cur += snprintf(cur, end - cur, " signal=%d", ev->si_cur->signal);
+	if (ev->si_cur)
+		cur += snprintf(cur, end - cur, " snr=%d", usteer_signal_to_snr(ev->si_cur->node, ev->si_cur->signal));
 	if (ev->threshold.ref)
 		cur += snprintf(cur, end - cur, " thr=%d/%d", ev->threshold.cur, ev->threshold.ref);
 	if (ev->count)
