@@ -656,7 +656,7 @@ void configure_single_ath9k(int count)
 
 void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
 
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
+void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 {
 	MAC80211DEBUG();
 	int freq = 0;
@@ -1229,7 +1229,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "\n");
 }
 
-static void setMacFilter(FILE * fp, char *iface)
+static void setMacFilter(FILE *fp, char *iface)
 {
 	ENTER;
 	char *next;
@@ -1805,7 +1805,7 @@ static char *makescanlist(char *prefix, char *value)
 	return new;
 }
 
-static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, int isadhoc, int ismesh)
+static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, int isadhoc, int ismesh)
 {
 	MAC80211DEBUG();
 	char nfreq[32];
@@ -1973,8 +1973,18 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
 		} else {
 			char *bssid = nvram_nget("%s_bssid", prefix);
-			if (strlen(bssid) == 17 && strcmp(bssid, "00:00:00:00:00:00"))
-				fprintf(fp, "\tbssid=%s\n", bssid);
+			char c_bssid[32] strncpy(c_bssid, bssid, 31);
+			int i;
+			int cnt = 0;
+			for (i = 0; i < strlen(c_bssid); i++) {
+				if (c_bssid[i] == ' ') {
+					continue;
+				}
+				c_bssid[cnt++] = c_bssid[i];
+			}
+			c_bssid[cnt] = 0;
+			if (strlen(c_bssid) == 17 && strcmp(c_bssid, "00:00:00:00:00:00"))
+				fprintf(fp, "\tbssid=%s\n", c_bssid);
 			fprintf(fp, "\tscan_ssid=1\n");
 		}
 		char scanlist[32];
