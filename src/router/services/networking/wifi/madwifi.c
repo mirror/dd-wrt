@@ -275,7 +275,7 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, in
 	}
 }
 
-void eap_sta_key_mgmt(FILE * fp, char *prefix)
+void eap_sta_key_mgmt(FILE *fp, char *prefix)
 {
 	char ft[16];
 	char mfp[16];
@@ -348,7 +348,7 @@ static int cansuperchannel(char *prefix)
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
-void addvhtcaps(char *prefix, FILE * fp)
+void addvhtcaps(char *prefix, FILE *fp)
 {
 
 /* must use integer mask */
@@ -370,7 +370,9 @@ void addvhtcaps(char *prefix, FILE * fp)
 	unsigned int mask;
 	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath11k(prefix) || is_brcmfmac(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || strcmp(netmode, "ax-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed") || (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
+		if (has_ac(prefix)
+		    && (!strcmp(netmode, "ac-only") || strcmp(netmode, "ax-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed")
+			|| (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			char mubf[32];
@@ -422,7 +424,25 @@ void addvhtcaps(char *prefix, FILE * fp)
 #endif
 }
 
-void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
+void addbssid(FILE *fp, char *prefix)
+{
+	char *bssid = nvram_nget("%s_bssid", prefix);
+	char c_bssid[32] strncpy(c_bssid, bssid, 31);
+	int i;
+	int cnt = 0;
+	for (i = 0; i < strlen(c_bssid); i++) {
+		if (c_bssid[i] == ' ') {
+			continue;
+		}
+		c_bssid[cnt++] = c_bssid[i];
+	}
+	c_bssid[cnt] = 0;
+	if (strlen(c_bssid) == 17 && strcmp(c_bssid, "00:00:00:00:00:00"))
+		fprintf(fp, "\tbssid=%s\n", c_bssid);
+
+}
+
+void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 {
 	char ath[64];
 	char psk[64];
@@ -442,6 +462,7 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		eap_sta_key_mgmt(fp, prefix);
 
@@ -488,6 +509,7 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		eap_sta_key_mgmt(fp, prefix);
 		fprintf(fp, "\teap=PEAP\n");
@@ -533,6 +555,7 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		eap_sta_key_mgmt(fp, prefix);
 		fprintf(fp, "\teap=TTLS\n");
@@ -571,6 +594,7 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		eap_sta_key_mgmt(fp, prefix);
 		fprintf(fp, "\teap=LEAP\n");
@@ -693,6 +717,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
 		// fprintf (fp, "\tmode=0\n");
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=");
 		if (ispsk2 || ispsk)
@@ -869,6 +894,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
 		// fprintf (fp, "\tmode=0\n");
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=NONE\n");
 		if (nvram_match(akm, "wep")) {
@@ -1139,7 +1165,7 @@ void get_uuid(char *uuid_str)
 #endif
 
 #ifdef HAVE_HOTSPOT20
-void setupHS20(FILE * fp, char *prefix)
+void setupHS20(FILE *fp, char *prefix)
 {
 	if (nvram_nmatch("1", "%s_hs20", prefix)) {
 		fprintf(fp, "hs20=1\n");
@@ -1212,7 +1238,7 @@ void setupHS20(FILE * fp, char *prefix)
 }
 #endif
 
-void addWPS(FILE * fp, char *prefix, int configured)
+void addWPS(FILE *fp, char *prefix, int configured)
 {
 #ifdef HAVE_WPS
 	char *config_methods;
@@ -1342,7 +1368,7 @@ void start_ses_led_control(void)
 
 extern char *hostapd_eap_get_types(void);
 
-void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
+void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 {
 	char akm[16];
 	char mfp[16];
@@ -2137,7 +2163,7 @@ static void configure_single(int count)
 			sprintf(vathmac, "%s_hwaddr", var);
 			char vmacaddr[32];
 
-			getMacAddr(var, vmacaddr,sizeof(vmacaddr));
+			getMacAddr(var, vmacaddr, sizeof(vmacaddr));
 			nvram_set(vathmac, vmacaddr);
 
 		}
@@ -2216,7 +2242,7 @@ static void configure_single(int count)
 
 	char macaddr[32];
 
-	getMacAddr(dev, macaddr,sizeof(macaddr));
+	getMacAddr(dev, macaddr, sizeof(macaddr));
 	nvram_set(athmac, macaddr);
 
 	cprintf("adjust sensitivity\n");

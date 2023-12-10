@@ -23,6 +23,23 @@
 #include <bcmnvram.h>
 #include <utils.h>
 #include <shutils.h>
+void addbssid(FILE *fp, char *prefix)
+{
+	char *bssid = nvram_nget("%s_bssid", prefix);
+	char c_bssid[32] strncpy(c_bssid, bssid, 31);
+	int i;
+	int cnt = 0;
+	for (i = 0; i < strlen(c_bssid); i++) {
+		if (c_bssid[i] == ' ') {
+			continue;
+		}
+		c_bssid[cnt++] = c_bssid[i];
+	}
+	c_bssid[cnt] = 0;
+	if (strlen(c_bssid) == 17 && strcmp(c_bssid, "00:00:00:00:00:00"))
+		fprintf(fp, "\tbssid=%s\n", c_bssid);
+
+}
 
 void setupSupplicant(char *prefix)
 {
@@ -79,6 +96,7 @@ void setupSupplicant(char *prefix)
 		sprintf(psk, "%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", nvram_safe_get(psk));
 		// fprintf (fp, "\tmode=0\n");
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=WPA-PSK\n");
 
@@ -140,6 +158,7 @@ void setupSupplicant(char *prefix)
 		fprintf(fp, "network={\n");
 		sprintf(psk, "%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", nvram_safe_get(psk));
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		if (nvram_prefix_match("8021xtype", prefix, "tls")) {
 // -> added habeIchVergessen

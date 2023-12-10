@@ -1877,6 +1877,7 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 
 }
 
+void addbssid(FILE * fp, char *prefix);
 void eap_sta_key_mgmt(FILE * fp, char *prefix);
 void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht);
 
@@ -1972,19 +1973,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		if (isadhoc || ismesh) {
 			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
 		} else {
-			char *bssid = nvram_nget("%s_bssid", prefix);
-			char c_bssid[32] strncpy(c_bssid, bssid, 31);
-			int i;
-			int cnt = 0;
-			for (i = 0; i < strlen(c_bssid); i++) {
-				if (c_bssid[i] == ' ') {
-					continue;
-				}
-				c_bssid[cnt++] = c_bssid[i];
-			}
-			c_bssid[cnt] = 0;
-			if (strlen(c_bssid) == 17 && strcmp(c_bssid, "00:00:00:00:00:00"))
-				fprintf(fp, "\tbssid=%s\n", c_bssid);
+			addbssid(fp, prefix);
 			fprintf(fp, "\tscan_ssid=1\n");
 		}
 		char scanlist[32];
@@ -2193,9 +2182,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #endif
 		if (ismesh || isadhoc) {
 			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
-		} else
+		} else {
+			addbssid(fp, prefix);
 			fprintf(fp, "\tscan_ssid=1\n");
-
+		}
 		fprintf(fp, "\tkey_mgmt=NONE\n");
 		if (nvram_match(akm, "wep")) {
 			int cnt = 0;

@@ -62,6 +62,23 @@ extern int br_add_interface(const char *br, const char *dev);
 // returns the number of installed atheros devices/cards
 
 static int need_commit = 0;
+void addbssid(FILE *fp, char *prefix)
+{
+	char *bssid = nvram_nget("%s_bssid", prefix);
+	char c_bssid[32] strncpy(c_bssid, bssid, 31);
+	int i;
+	int cnt = 0;
+	for (i = 0; i < strlen(c_bssid); i++) {
+		if (c_bssid[i] == ' ') {
+			continue;
+		}
+		c_bssid[cnt++] = c_bssid[i];
+	}
+	c_bssid[cnt] = 0;
+	if (strlen(c_bssid) == 17 && strcmp(c_bssid, "00:00:00:00:00:00"))
+		fprintf(fp, "\tbssid=%s\n", c_bssid);
+
+}
 
 void setupSupplicant(char *prefix)
 {
@@ -87,6 +104,7 @@ void setupSupplicant(char *prefix)
 		fprintf(fp, "network={\n");
 		sprintf(psk, "%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", nvram_safe_get(psk));
+		addbssid(fp, prefix);
 		fprintf(fp, "\tscan_ssid=1\n");
 		if (nvram_prefix_match("8021xtype", prefix, "tls")) {
 // -> added habeIchVergessen
@@ -1214,7 +1232,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		sprintf(vathmac, "wl%d_hwaddr", idx);
 		char vmacaddr[32];
 
-		getMacAddr(raif, vmacaddr,sizeof(vmacaddr));
+		getMacAddr(raif, vmacaddr, sizeof(vmacaddr));
 		nvram_set(vathmac, vmacaddr);
 		setupSupplicant(dev);
 	} else {
@@ -1306,7 +1324,7 @@ void init_network(int idx)
 		sprintf(vathmac, "wl%d_hwaddr", idx);
 		char vmacaddr[32];
 
-		getMacAddr(raif, vmacaddr,sizeof(vmacaddr));
+		getMacAddr(raif, vmacaddr, sizeof(vmacaddr));
 		nvram_set(vathmac, vmacaddr);
 
 		vifs = nvram_nget("wl%d_vifs", idx);
@@ -1337,7 +1355,7 @@ void init_network(int idx)
 				}
 
 				sprintf(vathmac, "%s_hwaddr", var);
-				getMacAddr(getRADev(var), vmacaddr,sizeof(vmacaddr));
+				getMacAddr(getRADev(var), vmacaddr, sizeof(vmacaddr));
 				nvram_set(vathmac, vmacaddr);
 
 				count++;
