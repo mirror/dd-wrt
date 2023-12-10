@@ -26,7 +26,8 @@
 void addbssid(FILE *fp, char *prefix)
 {
 	char *bssid = nvram_nget("%s_bssid", prefix);
-	char c_bssid[32] strncpy(c_bssid, bssid, 31);
+	char c_bssid[32];
+	strncpy(c_bssid, bssid, 31);
 	int i;
 	int cnt = 0;
 	for (i = 0; i < strlen(c_bssid); i++) {
