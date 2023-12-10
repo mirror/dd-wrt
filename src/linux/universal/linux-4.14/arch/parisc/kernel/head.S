@@ -69,9 +69,8 @@ $bss_loop:
 	stw,ma          %arg2,4(%r1)
 	stw,ma          %arg3,4(%r1)
 
-#if !defined(CONFIG_64BIT) && defined(CONFIG_PA20)
-	/* This 32-bit kernel was compiled for PA2.0 CPUs. Check current CPU
-	 * and halt kernel if we detect a PA1.x CPU. */
+#if defined(CONFIG_PA20)
+	/* check for 64-bit capable CPU as required by current kernel */
 	ldi		32,%r10
 	mtctl		%r10,%cr11
 	.level 2.0
@@ -84,7 +83,7 @@ $bss_loop:
 $iodc_panic:
 	copy		%arg0, %r10
 	copy		%arg1, %r11
-	load32		PA(init_stack),%sp
+	load32		PA(__bss_stop),%sp
 #define MEM_CONS 0x3A0
 	ldw		MEM_CONS+32(%r0),%arg0	// HPA
 	ldi		ENTRY_IO_COUT,%arg1
