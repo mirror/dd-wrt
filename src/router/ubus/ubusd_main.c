@@ -268,12 +268,6 @@ int main(int argc, char **argv)
 	int ret = 0;
 	int ch;
 
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP, sighup_handler);
-
-	ulog_open(ULOG_KMSG | ULOG_SYSLOG, LOG_DAEMON, "ubusd");
-	openlog("ubusd", LOG_PID, LOG_DAEMON);
-	uloop_init();
 
 	while ((ch = getopt(argc, argv, "A:s:")) != -1) {
 		switch (ch) {
@@ -288,6 +282,32 @@ int main(int argc, char **argv)
 		}
 	}
 
+	uloop_handle_sigchld = false;
+	switch (fork()) {
+	case -1:
+		// can't fork
+		exit(0);
+		break;
+	case 0:
+		/* 
+		 * child process 
+		 */
+		// fork ok
+		(void)setsid();
+		break;
+	default:
+		/* 
+		 * parent process should just die 
+		 */
+		_exit(0);
+	}
+
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGHUP, sighup_handler);
+
+	ulog_open(ULOG_KMSG | ULOG_SYSLOG, LOG_DAEMON, "ubusd");
+	openlog("ubusd", LOG_PID, LOG_DAEMON);
+	uloop_init();
 	mkdir_sockdir();
 	unlink(ubus_socket);
 	umask(0111);
