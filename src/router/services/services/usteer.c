@@ -200,10 +200,9 @@ void start_usteer(void)
 	newconfig[cnt++] = 0;
 	asprintf(&cmdline, "ubus call usteer set_config \"%s\"", newconfig);
 	free(newconfig);
-	sysprintf("usteerd -i br0 -s -v 1&");
+	eval("usteerd","-i","br0","-s", "-v","1");
 	// wait until usteer started
 	eval("ubus", "-t", "10", "wait_for", "usteer");
-	sleep(2);
 	system(cmdline);
 	if (nvram_match("usteer_debug", "1")) {
 		FILE *fp = fopen("/tmp/usteer.json", "wb");
@@ -226,7 +225,7 @@ void stop_usteer(void)
 
 void start_ubus(void)
 {
-	sysprintf("ubusd&");
+	eval("ubusd");
 }
 
 void stop_ubus(void)
