@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 {
 	struct uloop_timeout dump_timer;
 	int ch;
-
+	uloop_handle_sigchld = false;
 	usteer_init_defaults();
 
 	while ((ch = getopt(argc, argv, "D:i:sv")) != -1) {
@@ -229,7 +229,29 @@ int main(int argc, char **argv)
 		usteer_local_nodes_init(ubus_ctx);
 	}
 	usteer_interface_init();
-	uloop_run();
+	if (!dump_time) {
+		switch (fork()) {
+		case -1:
+			// can't fork
+			exit(0);
+			break;
+		case 0:
+			/* 
+			 * child process 
+			 */
+			// fork ok
+			(void)setsid();
+			break;
+		default:
+			/* 
+			 * parent process should just die 
+			 */
+			_exit(0);
+		}
+		uloop_run();
+	} else {
+		uloop_run();
+	}
 
 	uloop_done();
 	return 0;
