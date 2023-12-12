@@ -51,8 +51,12 @@ CURLcode Curl_trc_init(void);
 CURLcode Curl_trc_opt(const char *config);
 
 /* the function used to output verbose information */
+#if !defined(CURL_DISABLE_VERBOSE_STRINGS)
 void Curl_debug(struct Curl_easy *data, curl_infotype type,
                 char *ptr, size_t size);
+#else
+#define Curl_debug(...) do { } while(0)
+#endif
 
 /**
  * Output a failure message on registered callbacks for transfer.
