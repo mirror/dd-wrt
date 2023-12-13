@@ -16,6 +16,7 @@ nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent sqlite
 		--disable-nfsdcltrack \
 		--disable-nfsdcld \
 		--with-krb5=yes \
+		TIRPC_CFLAGS="-I$(TOP)/libtirpc  -I$(TOP)/libtirpc/tirpc" \
 		KRBCFLAGS="-I$(TOP)/krb5/src/include" \
 		KRBLDFLAGS="-L$(TOP)/krb5/src/lib" \
 		KRBLIBS="-lkrb5 -lk5crypto -lkrb5support -lcom_err" \
