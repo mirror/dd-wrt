@@ -15,8 +15,8 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library.  If not, see
    <https://www.gnu.org/licenses/>.  */
+#include "sysdep.h"
 
-#include <sysdep.h>
 
 /* strncmp
 
@@ -125,4 +125,3 @@ L(st1):
        mfcr    r3
        blr
 END (strncmp)
-libc_hidden_builtin_def (strncmp)

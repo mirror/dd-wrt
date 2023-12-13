@@ -15,8 +15,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library.  If not, see
    <https://www.gnu.org/licenses/>.  */
-
-#include <sysdep.h>
+#include "sysdep.h"
 
 /* memcmp
 
@@ -124,7 +123,3 @@ L(st2):
        addi    r3,r0,-1
        blr
 END (memcmp)
-libc_hidden_builtin_def (memcmp)
-weak_alias (memcmp,bcmp)
-strong_alias (memcmp, __memcmpeq)
-libc_hidden_def (__memcmpeq)

@@ -15,8 +15,8 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library.  If not, see
    <https://www.gnu.org/licenses/>.  */
+#include "sysdep.h"
 
-#include <sysdep.h>
 
 /* strcpy
 
@@ -104,4 +104,3 @@ L(last_bytes_copy_loop2):
 L(end_strcpy):
        blr
 END (strcpy)
-libc_hidden_builtin_def (strcpy)

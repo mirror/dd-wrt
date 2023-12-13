@@ -15,8 +15,8 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library.  If not, see
    <https://www.gnu.org/licenses/>.  */
+#include "sysdep.h"
 
-#include <sysdep.h>
 
 /* memcpy
 
@@ -127,4 +127,3 @@ L(end_memcpy):
        mr       r3,r0
        blr
 END (memcpy)
-libc_hidden_builtin_def (memcpy)

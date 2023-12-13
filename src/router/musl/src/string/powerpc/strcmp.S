@@ -15,8 +15,8 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library.  If not, see
    <https://www.gnu.org/licenses/>.  */
+#include "sysdep.h"
 
-#include <sysdep.h>
 
 /* strcmp
 
@@ -131,4 +131,3 @@ L(byte_loop):
        beq     L(end_strcmp)
        b       L(byte_loop)
 END (strcmp)
-libc_hidden_builtin_def (strcmp)
