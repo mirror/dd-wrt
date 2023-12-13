@@ -7,9 +7,9 @@ dnscrypt-configure: libsodium-configure zlib
 	cd dnscrypt && ./autogen.sh && \
 	./configure --host=$(ARCH)-linux --prefix=/usr \
 	$(DNSCRYPT_CONFIGURE_ARGS) \
-	CFLAGS="-fPIC -DNEED_PRINTF  $(LTOFIXUP) $(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include/ -I$(TOP)/gmp -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(LTOFIXUP) -I$(TOP)/libsodium/src/libsodium/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-L$(TOP)/libsodium/src/libsodium/.libs $(LTOFIXUP) $(LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="-fPIC -DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include/ -I$(TOP)/gmp -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/libsodium/src/libsodium/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-L$(TOP)/libsodium/src/libsodium/.libs $(LDLTO) $(LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
