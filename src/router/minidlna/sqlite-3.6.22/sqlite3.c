@@ -18448,9 +18448,6 @@ SQLITE_PRIVATE int sqlite3IsNaN(double x){
   **      involving NaN. For example, x != x evaluates to true if x is NaN 
   **      ...
   */
-#ifdef __FAST_MATH__
-# error SQLite will not work correctly with the -ffast-math option of GCC.
-#endif
   volatile double y = x;
   volatile double z = y;
   rc = (y!=z);
