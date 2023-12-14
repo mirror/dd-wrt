@@ -1,5 +1,8 @@
-COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
-#COPTS+= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-builtin-strlen -funsigned-char -fno-builtin-printf
+COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables 
+
+ifeq ($(AGGRESSIVE_SIZE),y)
+COPTS+= -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
+endif
 
 export GCCAR := ${shell which $(ARCH)-linux-ar}
 export GCCRANLIB := ${shell which $(ARCH)-linux-ranlib}
