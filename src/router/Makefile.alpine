@@ -79,7 +79,7 @@ export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 #ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fhonour-copts -msoft-float
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic -fno-caller-saves 
-export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves -fcommon
+export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
 #endif
 
 

@@ -119,6 +119,7 @@ ifeq ($(ARCH),i386)
 export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
 endif
 
+AGGRESSIVE_SIZE:=y
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar

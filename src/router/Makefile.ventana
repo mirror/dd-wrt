@@ -97,7 +97,8 @@ export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mn
 endif
 ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
-export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloat-abi=hard -fno-caller-saves -fno-plt
+export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon-fp16 -mfloat-abi=hard -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
+
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
