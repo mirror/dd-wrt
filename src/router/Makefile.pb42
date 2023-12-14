@@ -92,8 +92,12 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #ifeq ($(CONFIG_BCMWPA2),y)
 #export CFLAGS += -DBCMWPA2 
 #endif
+#cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
+#             > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
+#GCC_OPT:=$(call cc-option,-Oz,-Os)
 
-export BASEOPT:=-Oz -fno-unwind-tables -fno-asynchronous-unwind-tables
+export BASEOPT:= -Oz -fno-unwind-tables -fno-asynchronous-unwind-tables
+
 
 #export ARCH:= mipsel
 
@@ -117,11 +121,11 @@ endif
 AGGRESSIVE_SIZE:=y
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
-export AR := $(CROSS_COMPILE)ar
+export AR := $(CROSS_COMPILE)gcc-ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
-export NM := $(CROSS_COMPILE)nm
-export RANLIB := $(CROSS_COMPILE)ranlib
+export NM := $(CROSS_COMPILE)gcc-nm
+export RANLIB := $(CROSS_COMPILE)gcc-ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 export CFLAGS := $(COPTS)
@@ -1954,6 +1958,10 @@ ifeq ($(CONFIG_WDR4300),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WDR3500 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500_US-firmware.bin mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WR941NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941Nv6-cn-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941Nv6-cn-firmware.bin mips-uclibc/tplink-WR941Nv6-cn-firmware.bin
+
 endif
 ifeq ($(CONFIG_ARCHERC25),y)
 	-./tools/safeloader/tplink-safeloader -B ARCHER-C25-V1 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C25-firmware.bin
@@ -2103,7 +2111,9 @@ ifeq ($(CONFIG_DW02_412H),y)
 			dd of=$(ARCH)-uclibc/aligned.uimage.tmp bs=4 count=1 seek=1 conv=notrunc \
 	)
 	dd if=$(ARCH)-uclibc/aligned.uimage.tmp of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	dd if=/dev/zero of=$(ARCH)-uclibc/dummy bs=65536 count=2 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	cat $(ARCH)-uclibc/dummy >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/dw02_412h-firmware.trx $(ARCH)-uclibc/aligned.uimage
 	rm -rf $(ARCH)-uclibc/tftp
 	mkdir -p $(ARCH)-uclibc/tftp

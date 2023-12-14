@@ -82,12 +82,12 @@ endif
 
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
-export AR := $(CROSS_COMPILE)ar
+export AR := $(CROSS_COMPILE)gcc-ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
-export NM := $(CROSS_COMPILE)nm
-export RANLIB := $(CROSS_COMPILE)ranlib
-export STRIP := @true
+export NM := $(CROSS_COMPILE)gcc-nm
+export RANLIB := $(CROSS_COMPILE)gcc-ranlib
+export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 ifneq ($(CONFIG_MIPS32R1),y)
 export MIPS16_OPT:= -minterlink-mips16 -mips16
