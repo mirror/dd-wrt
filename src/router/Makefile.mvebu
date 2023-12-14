@@ -66,8 +66,11 @@ export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 
 #ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic
+ifeq ($(ARMADAXP),y)
+export COPTS:=$(BASEOPT) -pipe  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
+else
 export COPTS:=$(BASEOPT) -pipe  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=neon-vfpv3 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
-#endif
+endif
 
 
 export CC := ccache $(CROSS_COMPILE)gcc
@@ -274,7 +277,6 @@ endif
 #	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export STRIP="sstrip" && \
-	export NO_RENAME=1 && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	#mkdir $(TARGETDIR)/boot
