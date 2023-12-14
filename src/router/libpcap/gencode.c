@@ -65,6 +65,7 @@
 #include "arcnet.h"
 #include "diag-control.h"
 
+#include "grammar.h"
 #include "scanner.h"
 
 #if defined(linux)
