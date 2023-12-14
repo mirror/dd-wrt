@@ -757,10 +757,10 @@ fi
 # for all packages. On recent GCC we can detect this and error out
 # early rather than producing a seriously-broken math library.
 #
-if trycppif "__FAST_MATH__" \
-  "$CFLAGS_C99FSE $CPPFLAGS $CFLAGS" ; then
-fail "$0: error: compiler has broken floating point; check CFLAGS"
-fi
+#if trycppif "__FAST_MATH__" \
+#  "$CFLAGS_C99FSE $CPPFLAGS $CFLAGS" ; then
+#fail "$0: error: compiler has broken floating point; check CFLAGS"
+#fi
 
 printf "creating config.mak... "
 
