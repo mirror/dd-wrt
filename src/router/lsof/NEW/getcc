@@ -1,9 +1,0 @@
-#!/bin/sh
-D=/etc/ftpd/access
-R=ftp.dom
-rm -f $R
-for i in $D/9*.gz
-do
-  gunzip -c $i | sed '1,/^Domains/d' | sed '/^$/d' | sed '/^  --  /,$d' >> $R
-  echo $i
-done

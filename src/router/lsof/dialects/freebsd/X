@@ -1,7 +1,0 @@
-#undef	bcmp		/* avoid _KERNEL conflict */
-#undef	bcopy		/* avoid _KERNEL conflict */
-#undef	bzero		/* avoid _KERNEL conflict */
-#undef	memcmp		/* avoid _KERNEL conflict */
-#undef	memcpy		/* avoid _KERNEL conflict */
-#undef	memmove		/* avoid _KERNEL conflict */
-#undef	memset		/* avoid _KERNEL conflict */

@@ -1,5 +1,0 @@
-This patch adds support for cross-compilation by adding the notion of an 
-LSOF_HOSTCC and by auto-detecting the C library and Linux kernel version 
-from project-local sources and opposed to those from the build machine.
-
-Grant Erickson [erick205@umn.edu]

@@ -1,8 +1,0 @@
-
-		    pub/tools/unix/lsof/contrib
-
-This subdirectory contains user-contributed patches, sources, and
-subdirectories for porting lsof to other Unix dialects.
-
-Vic Abell
-February 20, 1997

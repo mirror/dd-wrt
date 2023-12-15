@@ -1,5 +1,0 @@
-#!/bin/ksh
-#
-# mentor - rdist Sun sources to mentor.cc
-
-$HOME/src/lsof4/support/GenericRdist mentor sun ssh
