@@ -37,13 +37,11 @@
 	    Apple Darwin
 	    Auspex LFS (no longer maintained)
 	    BSDI BSD/OS
-	    DEC OSF/1, Digital UNIX, Tru64 UNIX
 	    FreeBSD
 	    HP-UX
 	    IPv6
 	    Linux
 	    NetBSD
-	    NEXTSTEP and OPENSTEP
 	    OpenBSD
 	    Pyramid DC/OSx and Reliant UNIX (no longer available)
 	    Caldera OpenUNIX
@@ -176,9 +174,6 @@ the ``osr'' or the ``sco'' abbreviation:
     aix			IBM AIX 5.[23] and 5.3-ML1 using IBM's C Compiler
     aixgcc		IBM AIX 5.[12] and 5.3-ML1 using gcc
     darwin		Apple Darwin 7.x and 8.x for Power Macintosh systems
-    decosf		DEC OSF/1, Digital UNIX, Tru64 UNIX 4.0 and 5.1
-    digital_unix	Digital UNIX, DEC OSF/1, Tru64 UNIX 4.0 and 5.1
-    du			Digital UNIX, DEC OSF/1, Tru64 UNIX 4.0 and 5.1
     freebsd		FreeBSD 4.x, 4.1x, 5.x and [67].x
     hpux		HP-UX 11.00, 11.11 and 11.23, using HP's C
 			Compiler, both /dev/kmem-based and PSTAT-based
@@ -186,13 +181,7 @@ the ``osr'' or the ``sco'' abbreviation:
 			/dev/kmem-based and PSTAT-based
     linux		Linux 2.1.72 and above for x86-based systems
     netbsd		NetBSD 1.[456], 2.x and 3.x
-    next		NEXTSTEP 3.[13]
-    nextstep		NEXTSTEP 3.[13]
-    ns			NEXTSTEP 3.[13]
-    nxt			NEXTSTEP 3.[13]
     openbsd		OpenBSD 2.[89] and 3.[0-9]
-    openstep		OPENSTEP 4.x
-    os			OPENSTEP 4.x
     osr			SCO OpenServer Release 5.0.6, using the C compiler
 			from the SCO developer's kit
     osrgcc		SCO OpenServer Release 5.0.6, using gcc
@@ -202,7 +191,6 @@ the ``osr'' or the ``sco'' abbreviation:
     scogcc		SCO OpenServer Release 5.0.6, using gcc
     solaris		Solaris 2.x, 7, 8, 9 and 10 using gcc
     solariscc		Solaris 2.x, 7, 8, 9 and 10 using Sun's cc
-    tru64		Tru64 UNIX, DEC OSF/1, Digital UNIX 4.0 and 5.1
     unixware		SCO|Caldera UnixWare 7.1.4
     uw			SCO|Caldera UnixWare 7.1.4
 
@@ -859,7 +847,6 @@ dialect and AFS versions:
 
 	AIX 4.1.4 (AFS 3.4a)
 	Linux 1.2.13 (AFS 3.3)
-	NEXTSTEP 3.2 (AFS 3.3) (untested on recent lsof revisions)
 	Solaris 2.6 (AFS 3.4a)
 	Ultrix 4.2 RISC (AFS 3.2b) (no longer available)
 
@@ -981,31 +968,6 @@ discontinued.  Lsof revision 4.76 with BSDI BSD/OS support may be found
 on lsof.itap.purdue.edu in pub/tools/unix/lsof/src.
 
 
-DEC OSF/1, Digital UNIX, Tru64 UNIX
-===================================
-
-Robert Benites, Dean Brock, Angel Li, Dwight McKay, Berkley Shands,
-Ron Young and Steve Wilson have kindly provided test systems.
-Jeffrey Mogul has provided technical assistance.  Dave Morrison
-and Lawrence MacIntyre did Digital UNIX V3.2 testing.
-
-Lsof supports the ADVFS/MSFS layered file system product.  Lsof
-can locate all the open files of an ADVFS/MSFS file system when
-its path is specified, provided the file system is listed in
-/etc/fstab with an ``advfs'' type.  (This /etc/fstab caveat applies
-only to Digital UNIX 2.0.)  At Digital UNIX 4.0 and Tru64 UNIX,
-using code provided by David Brock, lsof 4.20 and above can locate
-ADVFS file paths.
-
-Testing of lsof on DEC OSF/1 and Digital UNIX 4.0 ended with lsof
-revision 4.74.  Hence, the lsof documentation has dropped the claim
-that it works there.  For a distribution of lsof 4.74 that was tested
-on DEC OSF/1 and Digital UNIX 4.0, check pub/tools/unix/lsof/OLD/src
-on the lsof ftp home, lsof.itap.purdue.edu.
-
-Lsof revisions past 4.74 have only been tested on Tru64 UNIX 5.1.
-
-
 FreeBSD
 =======
 
@@ -1107,21 +1069,7 @@ Paul has provided test systems.  Ray Phillips provided a NetBSA
 Alpha test system.  Andrew Brown also provided a test system.
 
 The NetBSD dialect version of lsof is compiled using the dialect
-sources it shares with OpenBSD in the n+obsd dialect sub-directory.
-
-
-NEXTSTEP and OPENSTEP
-=====================
-
-Virtual memory header files that allow lsof to display text references
-were derived from the contents of /usr/include/vm of NEXTSTEP 2.0.
-NeXT did not ship the virtual memory header files with other NEXTSTEP
-or OPENSTEP versions.
-
-You may use the RC_FLAGS environment variable to declare compiler
-options outside the Makefile.  A common use of this variable is to
-define the architecture types to be included in a "fat" executable.
-See the comments in dialects/next/Makefile for an example.
+sources in the netbsd dialect sub-directory.
 
 
 OpenBSD
@@ -1129,7 +1077,7 @@ OpenBSD
 
 David Mazieres has provided OpenBSD test systems.  The OpenBSD
 dialect version of lsof is compiled using the dialect sources it
-shares with NetBSD in the n+obsd dialect sub-directory.
+shares with NetBSD in the openbsd dialect sub-directory.
 
 Kenneth Stailey has provided OpenBSD testing and advice.
 
@@ -1455,12 +1403,9 @@ grant read permission to the kernel memory devices.
 
 	AIX 4.1.[45], 4.2[.1], and 4.3[.123]
 	Apple Darwin 7.x for Power Macintosh systems
-	DEC OSF/1, Digital UNIX, Tru64 UNIX 2.0, 3.2, 4.0, and 5.[01]
 	FreeBSD 2.1.6, 2.2[.x], 3.x, 4.x, 5.x, [6789].x and 1[012].x
 	NetBSD 1.[456], 2.x and 3.x
-	NEXTSTEP 3.[13]
 	OpenBSD 2.[89] and 3.[0-9]
-	OPENSTEP 4.x
 	Caldera OpenUNIX 8
 	SCO OpenServer 5.0.[46]
 	SCO UnixWare 7.0 and 7.1.[0134]

@@ -302,12 +302,6 @@ Abbreviation*	  Prefix	 Number       LSOF_VERS
 				  6.x		    600
 				  7.x		    700
 				  8.x		    800
-	  du	      DU	  2.0		  20000
-				  3.0		  30000
-				  3.2		  30200
-				  4.0		  40000
-				  5.0		  50000
-				  5.1		  50100
      freebsd	 FREEBSD	  1.x		   1000
 				  2.x		   2000
 				  2.0.5		   2005
@@ -341,7 +335,6 @@ Abbreviation*	  Prefix	 Number       LSOF_VERS
 				  2.0		2000000
 				  2.99.9        2099009
 				  2.99.10       2099010
-	 ns     NEXTSTEP	  3.1		     31
     openbsd	 OPENBSD	  1.2		   1020
 				  2.0		   2000
 				  2.1		   2010
@@ -360,7 +353,6 @@ Abbreviation*	  Prefix	 Number       LSOF_VERS
 				  3.4		   3040
 				  3.5		   3050
 				  3.6		   3060
-         os     OPENSTEP	  4.x		     4x
 	osr	     OSR	  3.2v2.0	     20
 				  3.2v2.1	     21
 				  3.2v4.0	     40
@@ -385,9 +377,6 @@ Abbreviation*	  Prefix	 Number       LSOF_VERS
 	 	       		  7.1.1		  70101
 	 	       		  7.1.3		  70103
 
-* -- The optional Configure abbreviations -- e.g., the ``decosf''
-     and ``digital_unix'' alternatives to ``du'' -- aren't listed
-     here.
 
 
 Dialect-Specific Environment Variables
@@ -442,29 +431,6 @@ DARWIN_XNU_HEADERS	If this environment variable has a value, the value is
 
 			default: none
 
-DU_ADVFSV		specifies the DEC OSF/1, Digital UNIX, or Tru64 UNIX
-			ADVFS file system version -- e.g., 200 for 2.0, 400
-			for 4.0, etc.
-
-			default: determined via /usr/sbin/setld
-
-DU_CDIR			specifies the name of the DEC OSF/1, Digital UNIX, or
-			Tru64 UNIX system configuration directory.
-
-			default: first host name component, converted to upper
-				 case
-
-DU_SHLIB		specifies the DEC OSF/1, Digital UNIX, or Tru64 UNIX
-			shared library directory path.
-
-			default: /usr/shlib
-
-DU_SYSDIR		DEC OSF/1, Digital UNIX, or Tru64 UNIX system
-			directory path.
-
-			2.x and 3.x default: /sys
-			4.x default: /usr/sys
-
 FREEBSD_KERNEL		specifies the path to the FreeBSD kernel for FreeBSD
 			version less than 2.0.
 
@@ -516,7 +482,7 @@ HPUX_IPC_S_PATCH	If this environment variable has a value of "1", the
 			"N", ipc_s lacks ipc_ipis; any other non-NULL value is
 			considered an error; a NULL value, HPUX_IPC_S_PATCH is
 			determined by testing.
-			
+
 			default: determined with q4 and grep
 
 HPUX_KERNBITS		specifies the number of bits (32 or 64) in the HP-UX

@@ -8,7 +8,6 @@
  * Purdue University
  */
 
-
 /*
  * Copyright 2002 Purdue Research Foundation, West Lafayette, Indiana
  * 47907.  All rights reserved.
@@ -35,411 +34,383 @@
  * 4. This notice may not be removed or altered.
  */
 
-#ifndef lint
-static char copyright[] =
-"@(#) Copyright 2002 Purdue Research Foundation.\nAll rights reserved.\n";
-#endif
-
 #include "LsofTest.h"
 #include "lsof_fields.h"
-
 
 /*
  * Local definitions
  */
 
-
 /*
  * Globals
  */
 
-char *Pn = (char *)NULL;	/* program name */
-
+char *Pn = (char *)NULL; /* program name */
 
 /*
  * Local function prototypes
  */
 
-_PROTOTYPE(static void cleanup,(void));
-_PROTOTYPE(static char *tstlsof,(char **texec, char **tkmem, char **tproc));
-
+static void cleanup(void);
+static char *tstlsof(char **texec, char **tkmem, char **tproc);
 
 /*
  * Main program for dialects that support locking tests.
  */
 
-int
-main(argc, argv)
-    int argc;				/* argument count */
-    char *argv[];			/* arguments */
+int main(int argc,     /* argument count */
+         char *argv[]) /* arguments */
 {
-    char buf[2048];			/* temporary buffer */
-    char *em;				/* error message pointer */
-    char *texec = (char *)NULL;		/* lsof executable test result */
-    char *tkmem = (char *)NULL;		/* /dev/kmem test result */
-    char *tproc = (char *)NULL;		/* lsof process test result */
-    int xv = 0;				/* exit value */
-/*
- * Get program name and PID, issue start message, and build space prefix.
- */
+    char buf[2048];             /* temporary buffer */
+    char *em;                   /* error message pointer */
+    char *texec = (char *)NULL; /* lsof executable test result */
+    char *tkmem = (char *)NULL; /* /dev/kmem test result */
+    char *tproc = (char *)NULL; /* lsof process test result */
+    int xv = 0;                 /* exit value */
+                                /*
+                                 * Get program name and PID, issue start message, and build space prefix.
+                                 */
     if ((Pn = strrchr(argv[0], '/')))
-	Pn++;
+        Pn++;
     else
-	Pn = argv[0];
-    (void) printf("%s ... ", Pn);
-    (void) fflush(stdout);
+        Pn = argv[0];
+    (void)printf("%s ... ", Pn);
+    (void)fflush(stdout);
     PrtMsg((char *)NULL, Pn);
-/*
- * Process arguments.
- */
+    /*
+     * Process arguments.
+     */
     if (ScanArg(argc, argv, "h", Pn))
-	xv = 1;
+        xv = 1;
     if (xv || LTopt_h) {
-	(void) PrtMsg("usage: [-h]", Pn);
-	PrtMsgX      ("       -h       print help (this panel)", Pn, cleanup,
-		      xv);
+        (void)PrtMsg("usage: [-h]", Pn);
+        PrtMsgX("       -h       print help (this panel)", Pn, cleanup, xv);
     }
-/*
- * See if lsof can be executed and can access kernel memory.
- */
+    /*
+     * See if lsof can be executed and can access kernel memory.
+     */
     if ((em = IsLsofExec()))
-	(void) PrtMsgX(em, Pn, cleanup, 1);
+        (void)PrtMsgX(em, Pn, cleanup, 1);
     if ((em = CanRdKmem()))
-	(void) PrtMsgX(em, Pn, cleanup, 1);
-/*
- * Test lsof.
- */
+        (void)PrtMsgX(em, Pn, cleanup, 1);
+    /*
+     * Test lsof.
+     */
     if ((em = tstlsof(&texec, &tkmem, &tproc)))
-	PrtMsg(em, Pn);
+        PrtMsg(em, Pn);
     if (texec)
-	PrtMsg(texec, Pn);
+        PrtMsg(texec, Pn);
     if (tkmem)
-	PrtMsg(tkmem, Pn);
+        PrtMsg(tkmem, Pn);
     if (tproc)
-	PrtMsg(tproc, Pn);
-/*
- * Compute exit value and exit.
- */
+        PrtMsg(tproc, Pn);
+    /*
+     * Compute exit value and exit.
+     */
     if (em || texec || tkmem || tproc) {
-	if (strcmp(LT_DEF_LSOF_PATH, LsofPath)) {
-	    PrtMsg (" ", Pn);
-	    PrtMsg ("Hint: you used the LT_LSOF_PATH environment variable to",
-		Pn);
-	    PrtMsg ("  specify this path to the lsof executable:\n", Pn);
-	    (void) snprintf(buf, sizeof(buf) - 1, "      %s\n", LsofPath);
-	    buf[sizeof(buf) - 1] = '\0';
-	    PrtMsg (buf, Pn);
-	    PrtMsgX("  Make sure its revision is 4.63 or higher.",
-		Pn, cleanup, 1);
-	} else
-	    PrtMsgX("", Pn, cleanup, 1);
+        if (strcmp(LT_DEF_LSOF_PATH, LsofPath)) {
+            PrtMsg(" ", Pn);
+            PrtMsg("Hint: you used the LT_LSOF_PATH environment variable to",
+                   Pn);
+            PrtMsg("  specify this path to the lsof executable:\n", Pn);
+            (void)snprintf(buf, sizeof(buf) - 1, "      %s\n", LsofPath);
+            buf[sizeof(buf) - 1] = '\0';
+            PrtMsg(buf, Pn);
+            PrtMsgX("  Make sure its revision is 4.63 or higher.", Pn, cleanup,
+                    1);
+        } else
+            PrtMsgX("", Pn, cleanup, 1);
     }
-    (void) PrtMsgX("OK", Pn, cleanup, 0);
-    return(0);
+    (void)PrtMsgX("OK", Pn, cleanup, 0);
+    return (0);
 }
-
 
 /*
  * cleanup() -- release resources
  */
 
-static void
-cleanup()
-{
-}
-
+static void cleanup() {}
 
 /*
  * tstlsof() -- test for the lsof process
  */
 
-static char *
-tstlsof(texec, tkmem, tproc)
-    char **texec;			/* result of the executable test */
-    char **tkmem;			/* result of the /dev/kmem test */
-    char **tproc;			/* result of the lsof process test */
+static char *tstlsof(char **texec, /* result of the executable test */
+                     char **tkmem, /* result of the /dev/kmem test */
+                     char **tproc) /* result of the lsof process test */
 {
-    char buf[2048];			/* temporary buffer */
-    char *cem;				/* current error message pointer */
-    LTfldo_t *cmdp;			/* command pointer */
-    LTdev_t cwddc;			/* CWD device components */
-    struct stat cwdsb;			/* CWD stat(2) buffer */
-    LTfldo_t *devp;			/* device pointer */
-    int execs = 0;			/* executable status */
-    int fdn;				/* FD is a number */
-    LTfldo_t *fdp;			/* file descriptor pointer */
-    LTfldo_t *fop;			/* field output pointer */
-    char ibuf[64];			/* inode string buffer */
-    LTfldo_t *inop;			/* inode number pointer */
-    LTdev_t kmemdc;			/* /dev/kmem device components */
-    int kmems = 0;			/* kmem status */
-    struct stat kmemsb;			/* /dev/kmem stat(2) buffer */
-    LTdev_t lsofdc;			/* lsof device components */
-    struct stat lsofsb;			/* lsof stat(2) buffer */
-    int nf;				/* number of fields */
-    char *opv[4];			/* option vector for ExecLsof() */
-    char *pem = (char *)NULL;		/* previous error message */
-    pid_t pid;				/* PID */
-    int pids = 0;			/* PID found status */
-    int procs = 0;			/* process status */
-    LTfldo_t *rdevp;			/* raw device pointer */
-    char *tcp;				/* temporary character pointer */
-    int ti;				/* temporary integer */
-    LTdev_t tmpdc;			/* temporary device components */
-    LTfldo_t *typ;			/* file type pointer */
-    int xwhile;				/* exit while() flag */
+    char buf[2048];           /* temporary buffer */
+    char buf2[2048] = {};     /* temporary buffer */
+    char *cem;                /* current error message pointer */
+    LTfldo_t *cmdp;           /* command pointer */
+    LTdev_t cwddc;            /* CWD device components */
+    struct stat cwdsb;        /* CWD stat(2) buffer */
+    LTfldo_t *devp;           /* device pointer */
+    int execs = 0;            /* executable status */
+    int fdn;                  /* FD is a number */
+    LTfldo_t *fdp;            /* file descriptor pointer */
+    LTfldo_t *fop;            /* field output pointer */
+    char ibuf[64];            /* inode string buffer */
+    LTfldo_t *inop;           /* inode number pointer */
+    LTdev_t kmemdc;           /* /dev/kmem device components */
+    int kmems = 0;            /* kmem status */
+    struct stat kmemsb;       /* /dev/kmem stat(2) buffer */
+    LTdev_t lsofdc;           /* lsof device components */
+    struct stat lsofsb;       /* lsof stat(2) buffer */
+    int nf;                   /* number of fields */
+    char *opv[4];             /* option vector for ExecLsof() */
+    char *pem = (char *)NULL; /* previous error message */
+    pid_t pid;                /* PID */
+    int pids = 0;             /* PID found status */
+    int procs = 0;            /* process status */
+    LTfldo_t *rdevp;          /* raw device pointer */
+    char *tcp;                /* temporary character pointer */
+    int ti;                   /* temporary integer */
+    LTdev_t tmpdc;            /* temporary device components */
+    LTfldo_t *typ;            /* file type pointer */
+    int xwhile;               /* exit while() flag */
 
-/*
- * Get lsof executable's stat(2) information.
- */
-    if (stat(LsofPath, &lsofsb)) {
-	(void) snprintf(buf, sizeof(buf) - 1, "ERROR!!!  stat(%s): %s",
-	    LsofPath, strerror(errno));
-	buf[sizeof(buf) - 1] = '\0';
-	cem = MkStrCpy(buf, &ti);
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	pem = cem;
-	execs = 1;
+    /*
+     * Get lsof executable's stat(2) information.
+     */
+    /* lsof could be a wrapper script when building with libtool, try
+     * ./.libs/lsof first */
+    (void)snprintf(buf, sizeof(buf) - 1, "%s", LsofPath);
+    if (strlen(buf) >= 4) {
+        /* strip lsof suffix */
+        buf[strlen(buf) - 4] = '\0';
+        (void)snprintf(buf2, sizeof(buf2) - 1, "%s.libs/lsof", buf);
+    }
+    if ((buf2[0] && stat(buf2, &lsofsb)) && stat(LsofPath, &lsofsb)) {
+        (void)snprintf(buf, sizeof(buf) - 1, "ERROR!!!  stat(%s): %s", LsofPath,
+                       strerror(errno));
+        buf[sizeof(buf) - 1] = '\0';
+        cem = MkStrCpy(buf, &ti);
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        pem = cem;
+        execs = 1;
     } else if ((cem = ConvStatDev(&lsofsb.st_dev, &lsofdc))) {
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	pem = cem;
-	execs = 1;
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        pem = cem;
+        execs = 1;
     }
 
-#if	defined(LT_KMEM)
-/*
- * Get /dev/kmem's stat(2) information.
- */
+#if defined(LT_KMEM)
+    /*
+     * Get /dev/kmem's stat(2) information.
+     */
     if (stat("/dev/kmem", &kmemsb)) {
-	(void) snprintf(buf, sizeof(buf) - 1,
-	    "ERROR!!!  can't stat(2) /dev/kmem: %s", strerror(errno));
-	buf[sizeof(buf) - 1] = '\0';
-	cem = MkStrCpy(buf, &ti);
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	pem = cem;
-	kmems = 1;
+        (void)snprintf(buf, sizeof(buf) - 1,
+                       "ERROR!!!  can't stat(2) /dev/kmem: %s",
+                       strerror(errno));
+        buf[sizeof(buf) - 1] = '\0';
+        cem = MkStrCpy(buf, &ti);
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        pem = cem;
+        kmems = 1;
     } else if ((cem = ConvStatDev(&kmemsb.st_rdev, &kmemdc))) {
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	pem = cem;
-	kmems = 1;
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        pem = cem;
+        kmems = 1;
     }
-#else	/* !defined(LT_KMEM) */
+#else  /* !defined(LT_KMEM) */
     kmems = 1;
-#endif	/* defined(LT_KMEM) */
+#endif /* defined(LT_KMEM) */
 
-/*
- * Get CWD's stat(2) information.
- */
+    /*
+     * Get CWD's stat(2) information.
+     */
     if (stat(".", &cwdsb)) {
-	(void) snprintf(buf, sizeof(buf) - 1, "ERROR!!!  stat(.): %s",
-	    strerror(errno));
-	buf[sizeof(buf) - 1] = '\0';
-	cem = MkStrCpy(buf, &ti);
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	pem = cem;
-	procs = 1;
+        (void)snprintf(buf, sizeof(buf) - 1, "ERROR!!!  stat(.): %s",
+                       strerror(errno));
+        buf[sizeof(buf) - 1] = '\0';
+        cem = MkStrCpy(buf, &ti);
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        pem = cem;
+        procs = 1;
     } else if ((cem = ConvStatDev(&cwdsb.st_dev, &cwddc))) {
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	pem = cem;
-	procs = 1;
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        pem = cem;
+        procs = 1;
     }
 
-/*
- * Complete the option vector and start lsof execution.
- */
+    /*
+     * Complete the option vector and start lsof execution.
+     */
     ti = 0;
 
-#if	defined(USE_LSOF_C_OPT)
+#if defined(USE_LSOF_C_OPT)
     opv[ti++] = "-C";
-#endif	/* defined(USE_LSOF_C_OPT) */
+#endif /* defined(USE_LSOF_C_OPT) */
 
-#if	defined(USE_LSOF_X_OPT)
+#if defined(USE_LSOF_X_OPT)
     opv[ti++] = "-X";
-#endif	/* defined(USE_LSOF_X_OPT) */
+#endif /* defined(USE_LSOF_X_OPT) */
 
     opv[ti++] = "-clsof";
     opv[ti] = (char *)NULL;
     if ((cem = ExecLsof(opv))) {
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	return(cem);
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        return (cem);
     }
-/*
- * Read lsof output.
- */
+    /*
+     * Read lsof output.
+     */
     xwhile = execs + kmems + procs;
     while ((xwhile < 3) && (fop = RdFrLsof(&nf, &cem))) {
-	if (pem)
-	    (void) PrtMsg(pem, Pn);
-	pem = cem;
-	switch (fop->ft) {
-	case LSOF_FID_PID:
+        if (pem)
+            (void)PrtMsg(pem, Pn);
+        pem = cem;
+        switch (fop->ft) {
+        case LSOF_FID_PID:
 
-	/*
-	 * This is a process information line.
-	 */
-	    pid = (pid_t)atoi(fop->v);
-	    pids = 1;
-	    cmdp = (LTfldo_t *)NULL;
-	    for (fop++, ti = 1; ti < nf; fop++, ti++) {
-		switch (fop->ft) {
-		case LSOF_FID_CMD:
-		    cmdp = fop;
-		    break;
-		}
-	    }
-	    if (!cmdp || (pid != LsofPid))
-		pids = 0;
-	    break;
-	case LSOF_FID_FD:
+            /*
+             * This is a process information line.
+             */
+            pid = (pid_t)atoi(fop->v);
+            pids = 1;
+            cmdp = (LTfldo_t *)NULL;
+            for (fop++, ti = 1; ti < nf; fop++, ti++) {
+                switch (fop->ft) {
+                case LSOF_FID_CMD:
+                    cmdp = fop;
+                    break;
+                }
+            }
+            if (!cmdp || (pid != LsofPid))
+                pids = 0;
+            break;
+        case LSOF_FID_FD:
 
-	/*
-	 * This is a file descriptor line.  Scan its fields.
-	 */
-	    if (!pids)
-		break;
-	    devp = inop = rdevp = typ = (LTfldo_t *)NULL;
-	    fdp = fop;
-	    for (fop++, ti = 1; ti < nf; fop++, ti++) {
-		switch(fop->ft) {
-		case LSOF_FID_DEVN:
-		    devp = fop;
-		    break;
-		case LSOF_FID_INODE:
-		    inop = fop;
-		    break;
-		case LSOF_FID_RDEV:
-		    rdevp = fop;
-		    break;
-		case LSOF_FID_TYPE:
-		    typ = fop;
-		    break;
-		}
-	    }
-	/*
-	 * A file descriptor line has been processes.
-	 *
-	 * Set the descriptor's numeric status.
-	 *
-	 * Check descriptor by FD type.
-	 */
+            /*
+             * This is a file descriptor line.  Scan its fields.
+             */
+            if (!pids)
+                break;
+            devp = inop = rdevp = typ = (LTfldo_t *)NULL;
+            fdp = fop;
+            for (fop++, ti = 1; ti < nf; fop++, ti++) {
+                switch (fop->ft) {
+                case LSOF_FID_DEVN:
+                    devp = fop;
+                    break;
+                case LSOF_FID_INODE:
+                    inop = fop;
+                    break;
+                case LSOF_FID_RDEV:
+                    rdevp = fop;
+                    break;
+                case LSOF_FID_TYPE:
+                    typ = fop;
+                    break;
+                }
+            }
+            /*
+             * A file descriptor line has been processes.
+             *
+             * Set the descriptor's numeric status.
+             *
+             * Check descriptor by FD type.
+             */
 
-	    for (fdn = 0, tcp = fdp->v; *tcp; tcp++) {
-		if (!isdigit((unsigned char)*tcp)) {
-		    fdn = -1;
-		    break;
-		}
-		fdn = (fdn * 10) + (int)(*tcp - '0');
-	    }
-	    if (!procs
-	    &&  (fdn == -1)
-	    &&  !strcasecmp(fdp->v, "cwd")
-	    &&  typ
-	    &&  (!strcasecmp(typ->v, "DIR") || !strcasecmp(typ->v, "VDIR"))
-	    ) {
+            for (fdn = 0, tcp = fdp->v; *tcp; tcp++) {
+                if (!isdigit((unsigned char)*tcp)) {
+                    fdn = -1;
+                    break;
+                }
+                fdn = (fdn * 10) + (int)(*tcp - '0');
+            }
+            if (!procs && (fdn == -1) && !strcasecmp(fdp->v, "cwd") && typ &&
+                (!strcasecmp(typ->v, "DIR") || !strcasecmp(typ->v, "VDIR"))) {
 
-	    /*
-	     * This is the CWD for the process.  Make sure its information
-	     * matches what stat(2) said about the CWD.
-	     */
-		if (!devp || !inop)
-		    break;
-		if ((cem = ConvLsofDev(devp->v, &tmpdc))) {
-		    if (pem)
-			(void) PrtMsg(pem, Pn);
-		    pem = cem;
-		    break;
-		}
-		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
-		    (uint64_t)cwdsb.st_ino);
-		ibuf[sizeof(ibuf) - 1] = '\0';
-		if ((tmpdc.maj == cwddc.maj)
-		&&  (tmpdc.min == cwddc.min)
-		&&  (tmpdc.unit == cwddc.unit)
-		&&  !strcmp(inop->v, ibuf)
-		) {
-		    procs = 1;
-		    xwhile++;
-		}
-		break;
-	    }
-	    if (!kmems
-	    &&  (fdn >= 0)
-	    &&  typ
-	    &&  (!strcasecmp(typ->v, "CHR") || !strcasecmp(typ->v, "VCHR"))
-	    ) {
+                /*
+                 * This is the CWD for the process.  Make sure its information
+                 * matches what stat(2) said about the CWD.
+                 */
+                if (!devp || !inop)
+                    break;
+                if ((cem = ConvLsofDev(devp->v, &tmpdc))) {
+                    if (pem)
+                        (void)PrtMsg(pem, Pn);
+                    pem = cem;
+                    break;
+                }
+                (void)snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
+                               (uint64_t)cwdsb.st_ino);
+                ibuf[sizeof(ibuf) - 1] = '\0';
+                if ((tmpdc.maj == cwddc.maj) && (tmpdc.min == cwddc.min) &&
+                    (tmpdc.unit == cwddc.unit) && !strcmp(inop->v, ibuf)) {
+                    procs = 1;
+                    xwhile++;
+                }
+                break;
+            }
+            if (!kmems && (fdn >= 0) && typ &&
+                (!strcasecmp(typ->v, "CHR") || !strcasecmp(typ->v, "VCHR"))) {
 
-	    /*
-	     * /dev/kmem hasn't been found and this is an open character device
-	     * file with a numeric descriptor.
-	     *
-	     * See if it is /dev/kmem.
-	     */
-		if (!inop || !rdevp)
-		    break;
-		if ((cem = ConvLsofDev(rdevp->v, &tmpdc))) {
-		    if (pem)
-			(void) PrtMsg(pem, Pn);
-		    pem = cem;
-		    break;
-		}
-		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
-		    (uint64_t)kmemsb.st_ino);
-		ibuf[sizeof(ibuf) - 1] = '\0';
-		if ((tmpdc.maj == kmemdc.maj)
-		&&  (tmpdc.min == kmemdc.min)
-		&&  (tmpdc.unit == kmemdc.unit)
-		&&  !strcmp(inop->v, ibuf)
-		) {
-		    kmems = 1;
-		    xwhile++;
-		}
-		break;
-	    }
-	    if (!execs
-	    &&  (fdn == -1)
-	    &&  typ
-	    &&  (!strcasecmp(typ->v, "REG") || !strcasecmp(typ->v, "VREG"))
-	    ) {
+                /*
+                 * /dev/kmem hasn't been found and this is an open character
+                 * device file with a numeric descriptor.
+                 *
+                 * See if it is /dev/kmem.
+                 */
+                if (!inop || !rdevp)
+                    break;
+                if ((cem = ConvLsofDev(rdevp->v, &tmpdc))) {
+                    if (pem)
+                        (void)PrtMsg(pem, Pn);
+                    pem = cem;
+                    break;
+                }
+                (void)snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
+                               (uint64_t)kmemsb.st_ino);
+                ibuf[sizeof(ibuf) - 1] = '\0';
+                if ((tmpdc.maj == kmemdc.maj) && (tmpdc.min == kmemdc.min) &&
+                    (tmpdc.unit == kmemdc.unit) && !strcmp(inop->v, ibuf)) {
+                    kmems = 1;
+                    xwhile++;
+                }
+                break;
+            }
+            if (!execs && (fdn == -1) && typ &&
+                (!strcasecmp(typ->v, "REG") || !strcasecmp(typ->v, "VREG"))) {
 
-	    /*
-	     * If this is a regular file with a non-numeric FD, it may be the
-	     * executable.
-	     */
-		if (!devp || !inop)
-		    break;
-	        if ((cem = ConvLsofDev(devp->v, &lsofdc))) {
-		    if (pem)
-			(void) PrtMsg(pem, Pn);
-		    pem = cem;
-		    break;
-		}
-		(void) snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
-		    (uint64_t)lsofsb.st_ino);
-		ibuf[sizeof(ibuf) - 1] = '\0';
-		if ((tmpdc.maj == lsofdc.maj)
-		&&  (tmpdc.min == lsofdc.min)
-		&&  (tmpdc.unit == lsofdc.unit)
-		&&  !strcmp(inop->v, ibuf)
-		) {
-		    execs = 1;
-		    xwhile++;
-		}
-	    }
-	}
+                /*
+                 * If this is a regular file with a non-numeric FD, it may be
+                 * the executable.
+                 */
+                if (!devp || !inop)
+                    break;
+                if ((cem = ConvLsofDev(devp->v, &tmpdc))) {
+                    if (pem)
+                        (void)PrtMsg(pem, Pn);
+                    pem = cem;
+                    break;
+                }
+                (void)snprintf(ibuf, sizeof(ibuf) - 1, "%" PRIu64,
+                               (uint64_t)lsofsb.st_ino);
+                ibuf[sizeof(ibuf) - 1] = '\0';
+                if ((tmpdc.maj == lsofdc.maj) && (tmpdc.min == lsofdc.min) &&
+                    (tmpdc.unit == lsofdc.unit) && !strcmp(inop->v, ibuf)) {
+                    execs = 1;
+                    xwhile++;
+                }
+            }
+        }
     }
-    (void) StopLsof();
+    (void)StopLsof();
     if (!execs)
-	*texec = "ERROR!!!  open lsof executable wasn't found.";
+        *texec = "ERROR!!!  open lsof executable wasn't found.";
     if (!kmems)
-	*tkmem = "ERROR!!!  open lsof /dev/kmem usage wasn't found.";
+        *tkmem = "ERROR!!!  open lsof /dev/kmem usage wasn't found.";
     if (!procs)
-	*tproc = "ERROR!!!  lsof process wasn't found.";
-    return(pem);
+        *tproc = "ERROR!!!  lsof process wasn't found.";
+    return (pem);
 }

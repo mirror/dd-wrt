@@ -17,7 +17,7 @@
 		D. Displaying the Default Path
 		Appendix A, Unix Dialects Without a Device Cache
 		Appendix B, Lsof Dialects and Their Permissions
-		    1.	Setuid-root Lsof Dialects 
+		    1.	Setuid-root Lsof Dialects
 		    2.	Setgid Lsof Dialects That Surrender Setgid
 		   	Permission
 
@@ -238,7 +238,7 @@ surround its use.  The options are:
 	* This is a default option of the lsof distribution.	*
 	*							*
 	* This option is enabled when the lsof dialect is able	*
-	* to surrender setgid permission (See Appendix B.), and	* 
+	* to surrender setgid permission (See Appendix B.), and	*
 	* the lsof process is not setuid-root.			*
 	*							*
 	* The environment variable path is read-only if the	*
@@ -475,9 +475,9 @@ cache file.  It assumes:
     1.  The Unix dialect's kernel supports the interpreter script
 	execution option -- i.e., a script whose first line has
 	the form ``#!<path_to_interpreter>''.
-    
+
     2.	The chmod, echo, rm, sh, and test programs are located
-	in ``/bin''. 
+	in ``/bin''.
 
     3.	The string value of the HASSYSDC definition in the dialect's
 	machine.h header file is the path ``/your/choice/of/path''.
@@ -552,7 +552,7 @@ make lsof include the entire host name in the path.)
 *								   *
 *	``%l''	causes the full name returned by gethostname(2) to *
 *		appear in the path.				   *
-*								   * 
+*								   *
 *	``%L''	causes the first component of the name returned by *
 *		gethostname(2) to appear in the path.  The first   *
 *		component is defined to be what appears to the	   *
@@ -708,7 +708,7 @@ Appendix B, Lsof Dialects and Their Permissions
 These are the permissions recommended in the lsof distribution.
 
 
-Appendix B.1 Setuid-root Lsof Dialects 
+Appendix B.1 Setuid-root Lsof Dialects
 ======================================
 
 These dialect versions of lsof need root permission.  For general
@@ -732,13 +732,10 @@ machine.h header files.
     HP-UX 11.00
     NetBSD 1.[456], 2.x and 3.x for Alpha, x86, and SPARC-based
 	systems
-    NEXTSTEP 3.[13]
     OpenBSD 2.[89] and 3.[0-9] for x86-based systems
-    OPENSTEP 4.x
     SCO OpenServer Release 5.0.4 for x86-based systems
     SCO|Caldera UnixWare 7.1.4 for x86-based systems
     Solaris 2.6, 8, 9 and 10
-    Tru64 UNIX 5.1
 
 
 Vic Abell <abe@purdue.edu>

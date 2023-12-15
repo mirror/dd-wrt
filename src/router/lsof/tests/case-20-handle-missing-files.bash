@@ -1,7 +1,7 @@
+#!/usr/bin/env bash
 # See https://github.com/lsof-org/lsof/issues/90
-name=$(basename $0 .bash)
-lsof=$1
-report=$2
+source tests/common.bash
+
 msg=$(${lsof} /NO-SUCH-FILE 2>&1)
 
 if [[ "${msg}" == \

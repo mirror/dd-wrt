@@ -8,6 +8,10 @@ base=$(pwd)
     cd tests
     make > $f 2>&1
 
+    cat $f >> $report
+
+    echo "------------------------------------" >> $report
+
     if ! grep -q "LTbasic \.\.\. OK" $f; then
 	echo '"LTbasic ... OK" is not found in the output' >> $report
 	s=1

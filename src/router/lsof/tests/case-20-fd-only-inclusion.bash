@@ -1,6 +1,5 @@
-name=$(basename $0 .bash)
-lsof=$1
-report=$2
+#!/usr/bin/env bash
+source tests/common.bash
 
 echo "inclusion test" >> $report
 while read line; do

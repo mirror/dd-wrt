@@ -33,9 +33,9 @@ fi
 # Form a data base line.
 
 new=""
-for i in `LC_ALL=C sort < config.cflags`
+for i in $(LC_ALL=C sort < config.cflags)
 do
-  w=`echo $i | sed 's/^-D//'`
+  w=$(echo $i | sed 's/^-D//')
   if test "X$new" = "X"
   then
     new=$w
@@ -85,7 +85,7 @@ fi
 
 # Establish echo type -- Berkeley or SYSV.
 
-j=`echo -n ""`
+j=$(echo -n "")
 if test "X$j" = "X-n "
 then
   EC="\c"

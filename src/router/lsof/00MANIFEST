@@ -21,7 +21,7 @@ arg.c
 dialects/
 lib/
 lsof.8
-lsof.h
+common.h
 lsof.man
 lsof_fields.h
 main.c
@@ -30,7 +30,6 @@ node.c
 print.c
 proc.c
 proto.h
-regex.h
 scripts/
 store.c
 tests/
@@ -45,8 +44,9 @@ du/
 freebsd/
 hpux/
 linux/
-n+obsd/
+netbsd/
 n+os/
+openbsd/
 osr/
 sun/
 uw/
@@ -77,26 +77,6 @@ j2_lock.h
 private_j2_snapshot.h
 
 ./dialects/darwin:
-get-hdr-loc.sh*
-kmem/
-libproc/
-
-./dialects/darwin/kmem:
-Makefile
-Mksrc*
-ddev.c
-dfile.c
-dlsof.h
-dmnt.c
-dnode.c
-dnode1.c
-dproc.c
-dproto.h
-dsock.c
-dstore.c
-machine.h
-
-./dialects/darwin/libproc:
 Makefile
 Mksrc*
 ddev.c
@@ -202,7 +182,7 @@ dsock.c
 dstore.c
 machine.h
 
-./dialects/n+obsd:
+./dialects/netbsd:
 Makefile
 Mksrc*
 dlsof.h
@@ -321,7 +301,6 @@ pdvn.c
 prfp.c
 ptti.c
 rdev.c
-regex.c
 rmnt.c
 rnam.c
 rnch.c

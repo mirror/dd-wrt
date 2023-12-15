@@ -1,6 +1,6 @@
-name=$(basename $0 .bash)
-lsof=$1
-report=$2
+#!/usr/bin/env bash
+source tests/common.bash
+
 base=$(pwd)
 
 t=/tmp/lsof-test-reg-file-$$

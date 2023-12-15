@@ -23,7 +23,7 @@ base=$(pwd)
 	s=1
     fi
 
-    if [ -n "$CI" ] && [ "$dialect" = "darwin" ]; then
+    if [ -n "$CI" ] && { [ "$dialect" = "darwin" ] || [ "$dialect" = "openbsd" ]; }; then
 	:			# TODO: temporary skip this
     elif ! grep -q "LTlock \.\.\. OK" $f; then
 	echo '"LTlock ... OK" is not found in the output' >> $report

@@ -1,7 +1,7 @@
 .so ./version
 .TH LSOF 8 Revision-\*(VN
-\" Register )P is used neither by this file nor any groff macro.  However,
-\" some versions of nroff require it.
+.\" Register )P is used neither by this file nor any groff macro.  However,
+.\" some versions of nroff require it.
 .if !\n(.g \{\
 .   if !\n()P .nr )P 1v
 .\}
@@ -10,9 +10,9 @@ lsof \- list open files
 .SH SYNOPSIS
 .B lsof
 [
-.B \-?abChlnNOPRtUvVX
+.B \-?abChHlnNOPQRtUvVX
 ] [
-.BI -A " A"
+.BI \-A " A"
 ] [
 .BI \-c " c"
 ] [
@@ -24,7 +24,7 @@ lsof \- list open files
 ] [
 .BI +|\-e " s"
 ] [
-.B +|-E
+.B +|\-E
 ] [
 .B +|\-f [cfgGn]
 ] [
@@ -66,7 +66,7 @@ lsof \- list open files
 ] [
 .BI \-Z " [Z]"
 ] [
-.B --
+.B \-\-
 ] [\fInames\fP]
 .SH DESCRIPTION
 .I Lsof
@@ -125,7 +125,7 @@ won't be listed unless the
 .B \-U
 option is also specified.
 .PP
-Normally list options that are specifically stated are ORed \- i.e.,
+Normally, list options that are specifically stated are ORed \- i.e.,
 specifying the
 .B \-i
 option without an address and the \fB\-u\fPfoo option produces a
@@ -220,19 +220,19 @@ options, or it might represent the
 field identifier character following the
 .B \-F
 option.
-When ambiguity is possible, start a new option with a `-'
+When ambiguity is possible, start a new option with a `\-'
 character \- e.g., ``\fB\-F \-n\fP''.
 If the next option is a file name, follow the possibly ambiguous
-option with ``--'' \- e.g., ``\fB\-F -- \fIname\fR''.
+option with ``\-\-'' \- e.g., ``\fB\-F \-\- \fIname\fR''.
 .PP
 Either the `+' or the `\-' prefix may be applied to a group of options.
 Options that don't take on separate meanings for each
 prefix \- e.g., \fB\-i\fP \- may be grouped under either prefix.
-Thus, for example, ``+M -i'' may be stated as ``+Mi'' and the group
+Thus, for example, ``+M \-i'' may be stated as ``+Mi'' and the group
 means the same as the separate options.
 Be careful of prefix grouping when one or more options in the group
 does take on separate meanings under different prefixes \-
-e.g., \fB+|\-M\fP; ``-iM'' is not the same request as ``\-i +M''.
+e.g., \fB+|\-M\fP; ``\-iM'' is not the same request as ``\-i +M''.
 When in doubt, use separate options with appropriate prefixes.
 .TP \w'names'u+4
 .B \-? \-h
@@ -413,9 +413,9 @@ Mixed lists are not permitted.
 .IP
 A file descriptor number range may be in the set as long as
 neither member is empty, both members are numbers, and the ending
-member is larger than the starting one \- e.g., ``0-7'' or ``3-10''.
+member is larger than the starting one \- e.g., ``0\-7'' or ``3\-10''.
 Ranges may be specified for exclusion if they have the `^' prefix \-
-e.g., ``^0-7'' excludes all file descriptors 0 through 7.
+e.g., ``^0\-7'' excludes all file descriptors 0 through 7.
 .IP
 Multiple file descriptor numbers are joined in a single ORed set before
 participating in AND option selection.
@@ -486,7 +486,7 @@ See the
 section and the sections that follow it for more information on this
 option.
 .IP
-.B -D
+.B \-D
 must be followed by a function letter; the function letter may optionally
 be followed by a path name.
 .I Lsof
@@ -643,17 +643,17 @@ is added in parentheses to the end of the NAME column.
 .BI +|\-m " m"
 option.)
 .TP \w'names'u+4
-.B +|-E
+.B +|\-E
 .B +E
 specifies that Linux pipe, Linux UNIX socket, Linux INET(6) socket closed in a local host, Linux pseudoterminal files,
 POSIX Message Queueue implementation in Linux, and Linux eventfd
 should be displayed with endpoint information and the files of the endpoints should also be displayed.
 .IP
 Note 1: UNIX socket file endpoint information is only available when the
-compile flags line of
+features enabled line of
 .B \-v
-output contains HASUXSOCKEPT, and psudoterminal endpoint information is only
-available when the compile flags line contains HASPTYEPT.
+output contains uxsockept, and psudoterminal endpoint information is only
+available when the features enabled line contains ptyept.
 .IP
 Note 2: POSIX Message Queue file endpoint information is only available when mqueue
 file system is mounted.
@@ -671,7 +671,7 @@ is the endpoint file's access mode.
 .IP
 Pseudoterminal
 endpoint information is displayed in the NAME column as
-``->/dev/pts\fImin\fP\ \fIPID,cmd,FDmode\fP'' or ``\fIPID,cmd,FDmode\fP''.
+``\->/dev/pts\fImin\fP\ \fIPID,cmd,FDmode\fP'' or ``\fIPID,cmd,FDmode\fP''.
 The first form is for a master device; the second, for a slave device.
 .I min
 is a slave device's minor device number; and
@@ -679,15 +679,15 @@ is a slave device's minor device number; and
 and
 .I mode
 are the same as with pipe endpoint information.
-Note: psudoterminal endpoint information is only available when the compile
-flags line of
-.B \-V
-output contains HASPTYEPT. In addition, this feature works on Linux kernels above 4.13.0.
+Note: psudoterminal endpoint information is only available when the features
+enabled line of
+.B \-v
+output contains ptyept. In addition, this feature works on Linux kernels above 4.13.0.
 .IP
 UNIX socket file endpoint information is displayed in the NAME column
 in the form
 .br
-``type=\fITYPE\fP\ ->INO=\fIINODE\fP\ \fIPID,cmd,FDmode\fP'', where
+``type=\fITYPE\fP\ \->INO=\fIINODE\fP\ \fIPID,cmd,FDmode\fP'', where
 .I TYPE
 is the socket type;
 .I INODE
@@ -698,14 +698,14 @@ and
 .I mode
 are the same as with pipe endpoint information.
 Note: UNIX socket file endpoint information is available only when the
-compile flags line of
+features enabled line of
 .B \-v
-output contains HASUXSOCKEPT.
+output contains uxsockept.
 .IP
 INET socket file endpoint information is inserted to the value at the
-NAME column in th form
+NAME column in the form
 .br
-...`` -> \fIPID,cmd,FDmode\fP'' ..., where
+`` \-> \fIPID,cmd,FDmode\fP'', where
 .I "PID, cmd, FD"
 and
 .I mode
@@ -723,8 +723,8 @@ above 5.2.0.
 Multiple occurrences of this information can appear in a file's
 NAME column.
 .IP
-.B -E
-specfies that endpoint supported files should be displayed
+.B \-E
+specifies that endpoint supported files should be displayed
 with endpoint information, but not the files of the endpoints.
 .TP \w'names'u+4
 .B +|\-f [cfgGn]
@@ -761,7 +761,7 @@ When
 .B \-f
 is specified by itself, all path name arguments will be taken to be
 simple files.
-Thus, for example, the ``\fB\-f\fP\ -- /'' arguments direct lsof to search
+Thus, for example, the ``\fB\-f\fP\ \-\- /'' arguments direct lsof to search
 for open files with a `/' path name, not all open files in the `/'
 (root) file system.
 .IP
@@ -771,15 +771,15 @@ and
 .B \-f
 are properly terminated and aren't followed by a character (e.g., of
 the file or file system name) that might be taken as a parameter.
-For example, use ``--'' after
+For example, use ``\-\-'' after
 .B +f
 and
 .B \-f
 as in these examples.
 .IP
 .nf
-	$ lsof +f -- /file/system/name
-	$ lsof -f -- /file/name
+	$ lsof +f \-\- /file/system/name
+	$ lsof \-f \-\- /file/name
 .fi
 .IP
 The listing of information from kernel file structures, requested with the
@@ -897,6 +897,9 @@ The
 option also enables the output display of PGID numbers.
 When specified without a PGID set that's all it does.
 .TP \w'names'u+4
+.B \-H
+directs lsof to print human readable sizes, e.g. 123.4K 456.7M.
+.TP \w'names'u+4
 .BI \-i " [i]"
 selects the listing of files any of whose Internet address
 matches the address specified in \fIi\fP.
@@ -967,8 +970,8 @@ where:
 .br
 		applies to all IP versions.
 .br
-	\fIprotocol\fP is a protocol name \- \fBTCP\fP, \fBUDP\fP
-.br		or \fBUDPLITE\fP.
+	\fIprotocol\fP is a protocol name \- \fBTCP\fP, \fBUDP\fP or \fBUDPLITE\fP.
+.br
 .br
 	\fIhostname\fP is an Internet host name.  Unless a
 .br
@@ -1062,7 +1065,7 @@ Here are some sample addresses:
 .nf
 
 .br
-	-i6 \- IPv6 only
+	\-i6 \- IPv6 only
 .br
 	TCP:25 \- TCP and port 25
 .br
@@ -1075,10 +1078,10 @@ Here are some sample addresses:
 .br
 	TCP@lsof.itap:513 \- TCP, port 513 and host name lsof.itap
 .br
-	tcp@foo:1-10,smtp,99 \- TCP, ports 1 through 10,
+	tcp@foo:1\-10,smtp,99 \- TCP, ports 1 through 10,
 		service name \fIsmtp\fP, port 99, host name foo
 .br
-	tcp@bar:1-smtp \- TCP, ports 1 through \fIsmtp\fP, host bar
+	tcp@bar:1\-smtp \- TCP, ports 1 through \fIsmtp\fP, host bar
 .br
 	:time \- either TCP, UDP or UDPLITE time service port
 .fi
@@ -1133,7 +1136,7 @@ inhibits the conversion of user ID numbers to login names.
 It is also useful when login name lookup is working improperly or slowly.
 .TP \w'names'u+4
 .BI +|\-L " [l]"
-enables (`+') or disables (`-') the listing of file link
+enables (`+') or disables (`\-') the listing of file link
 counts, where they are available \- e.g., they aren't available
 for sockets, or most FIFOs and pipes.
 .IP
@@ -1347,9 +1350,9 @@ Thus, for example, to direct
 to display offset at all times with a decimal digit count of 10, use:
 .IP
 .nf
-	-o -o 10
+	\-o \-o 10
 or
-	-oo10
+	\-oo10
 .fi
 .IP
 The default number of digits allowed after ``0t'' is normally 8,
@@ -1403,6 +1406,21 @@ Inhibiting the conversion may make
 .I lsof
 run a little faster.
 It is also useful when port name lookup is not working properly.
+.TP \w'names'u+4
+.B \-Q
+ignore failed search terms. When
+.I lsof
+is told to search for users of a file, or for users of a device,
+or for a specific PID, or for certain protocols in use by that PID,
+and so on,
+.I lsof
+will return an error if any of the search results are empty. The
+.B \-Q
+option will change this behavior so that
+.I lsof
+will instead return a successful exit code (0) even if any of the
+search results are empty. In addition, missing search terms will not
+be reported to stderr.
 .TP \w'names'u+4
 .BI +|\-r " [t[c<N>][m<fmt>]]"
 puts
@@ -1548,7 +1566,7 @@ Or, for example, to list network files with all UDP states except
 Idle, use:
 .IP
 .nf
-	\-iUDP -sUDP:^Idle
+	\-iUDP \-sUDP:^Idle
 .fi
 .IP
 State names vary with UNIX dialects, so it's not possible to
@@ -1572,11 +1590,11 @@ option (without a following protocol and state name list)
 are mutually exclusive; they can't both be specified.
 When neither is specified,
 .I lsof
-displays whatever value \- size or offset \- is appropriate and
+displays whatever value - size or offset - is appropriate and
 available for the type of file.
 .IP
-Since some types of files don't have true sizes \- sockets, FIFOs,
-pipes, etc.\& \- lsof displays for their sizes the content amounts in
+Since some types of files don't have true sizes - sockets, FIFOs,
+pipes, etc.\& - lsof displays for their sizes the content amounts in
 their associated kernel buffers, if possible.
 .TP \w'names'u+4
 .BI \-S " [t]"
@@ -1655,7 +1673,7 @@ selection characters \- the displaying of state is disabled by default,
 and it must be explicitly selected again in the characters following
 .BR \-T .
 (In effect, then, the default is equivalent to
-.BR -Ts .)
+.BR \-Ts .)
 For example, if queue lengths and state are desired, use
 .BR \-Tqs .
 .IP
@@ -1704,14 +1722,14 @@ header), so that it is easy to use programmatically. e.g.
 .nf
 
 	# reload anything using old SSL
-	lsof -t /lib/*/libssl.so.* | xargs -r kill -HUP
+	lsof \-t /lib/*/libssl.so.* | xargs \-r kill \-HUP
 
 	# get list of processes and then iterate over them (Bash only)
-	mapfile -t pids < <(
-	    lsof -wt /var/log/your.log
+	mapfile \-t pids < <(
+	    lsof \-wt /var/log/your.log
 	)
 	for pid in "${pids[@]}" ; do
-	    your_command -p "$pid"
+	    your_command \-p "$pid"
 	done
 
 .fi
@@ -1779,14 +1797,14 @@ may not report that it failed to find a search item when an ANDed
 option or compile\-time option prevents the listing of the open file
 containing the located search item.
 .IP
-For example, ``lsof -V -iTCP@foobar -a -d 999'' may not report a
+For example, ``lsof \-V \-iTCP@foobar \-a \-d 999'' may not report a
 failure to locate open files at ``TCP@foobar'' and may not list
 any, if none have a file descriptor number of 999.
 A similar situation arises when HASSECURITY and HASNOSOCKSECURITY are
 defined at compile time and they prevent the listing of open files.
 .TP \w'names'u+4
 .B +|\-w
-Enables (\fB+\fP) or disables (\fB-\fP) the suppression of warning messages.
+Enables (\fB+\fP) or disables (\fB\-\fP) the suppression of warning messages.
 .IP
 The
 .I lsof
@@ -1816,13 +1834,13 @@ links and|or file system mount points encountered when
 scanning the directory (\fB+d\fP) or directory tree (\fB+D\fP).
 .IP
 If
-.B -x
+.B \-x
 is specified by itself without a following parameter, cross\-over
 processing of both symbolic links and file system mount points is
 enabled.
 Note that when
 .B \-x
-is specified without a parameter, the next argument must begin with '-'
+is specified without a parameter, the next argument must begin with '\-'
 or '+'.
 .IP
 The optional 'f' parameter enables file system mount point cross\-over
@@ -2012,7 +2030,7 @@ option and before the start of the file names.
 These are path names of specific files to list.
 Symbolic links are resolved before use.
 The first name may be separated from the preceding options with
-the ``--'' option.
+the ``\-\-'' option.
 .IP
 If a
 .I name
@@ -2334,8 +2352,8 @@ or hexadecimal leading ``\\x'' form (e.g., ``\\xab'').
 Space is non\-printable in the COMMAND column (``\\x20'')
 and printable elsewhere.
 .PP
-For some dialects \- if HASSETLOCALE is defined in the dialect's
-machine.h header file \-
+For some dialects - if HASSETLOCALE is defined in the dialect's
+machine.h header file -
 .I lsof
 will print the extended 8 bit characters of a language locale.
 The
@@ -2346,16 +2364,16 @@ in which the extended characters are considered printable by
 .IR isprint (3).
 Otherwise
 .I lsof
-considers the extended characters non\-printable and prints them according
-to its rules for non\-printable characters, stated above.
+considers the extended characters non-printable and prints them according
+to its rules for non-printable characters, stated above.
 Consult your dialect's
 .IR setlocale (3)
 man page for the names of other environment variables that may
-be used in place of LANG \- e.g., LC_ALL, LC_CTYPE, etc.
+be used in place of LANG - e.g., LC_ALL, LC_CTYPE, etc.
 .PP
 .I Lsof's
-language locale support for a dialect also covers wide characters \- e.g.,
-UTF-8 \- when HASSETLOCALE and HASWIDECHAR are defined in the dialect's
+language locale support for a dialect also covers wide characters - e.g.,
+UTF-8 - when HASSETLOCALE and HASWIDECHAR are defined in the dialect's
 machine.h header file, and when a suitable language locale has been defined
 in the appropriate environment variable for the
 .I lsof
@@ -2454,10 +2472,10 @@ option.
 SECURITY\-CONTEXT
 is the SELinux security context.
 This column must be selected with the
-.B -Z
+.B \-Z
 option.
 Note that the
-.B -Z
+.B \-Z
 option is inhibited when SELinux is disabled in the running Linux
 kernel.
 .TP
@@ -2498,13 +2516,19 @@ is the File Descriptor number of the file or:
 .br
 	\fBL\fInn\fR	library references (AIX);
 .br
+	\fBctty\fR	character tty;
+.br
+	\fBDEL\fR	deleted file;
+.br
 	\fBerr\fR	FD information error (see NAME column);
+.br
+	\fBfp.\fR	Fileport (Darwin);
 .br
 	\fBjld\fR	jail directory (FreeBSD);
 .br
 	\fBltx\fP	shared library text (code and data);
 .br
-	\fBMxx\fP	hex memory\-mapped type number xx.
+	\fBM\fIxx\fR	hex memory\-mapped type number xx.
 .br
 	\fBm86\fP	DOS Merge mapped file;
 .br
@@ -2512,11 +2536,17 @@ is the File Descriptor number of the file or:
 .br
 	\fBmmap\fP	memory\-mapped device;
 .br
+	\fBNOFD\fP	for a Linux /proc/<PID>/fd directory that can't be opened --
+		the directory path appears in the NAME column, followed by an error
+		message;
+.br
 	\fBpd\fP	parent directory;
+.br
+	\fBR\fInn\fR	unknown pregion number (HP-UX);
 .br
 	\fBrtd\fP	root directory;
 .br
-	\fBtr\fR	kernel trace file (OpenBSD);
+	\fBtwd\fP	per task current working directory;
 .br
 	\fBtxt\fP	program text (code and data);
 .br
@@ -2557,8 +2587,7 @@ the type of lock applied to the file:
 .br
 	\fBU\fP for a lock of unknown type;
 .br
-	\fBx\fP for an SCO OpenServer Xenix lock on part
-	of the file;
+	\fBx\fP for an SCO OpenServer Xenix lock on part of the file;
 .br
 	\fBX\fP for an SCO OpenServer Xenix lock on the entire file;
 .br
@@ -2569,30 +2598,50 @@ See the
 section for more information on the lock information character.
 .IP
 The FD column contents constitutes a single field for parsing in
-post\-processing scripts.
+post\-processing scripts. FD numbers larger than 9999 are abbreviated
+to a ``*'' followed by the last three digits. E.g., 10001 appears as
+``*001''
 .TP
 TYPE
-is the type of the node associated with the file \- e.g., GDIR, GREG,
-VDIR, VREG, etc.
-.IP
-or ``IPv4'' for an IPv4 socket;
-.IP
-or ``IPv6'' for an open IPv6 network file \- even if its address is
-IPv4, mapped in an IPv6 address;
+is the type of the node associated with the file \- e.g., VDIR, VREG, etc.
 .IP
 or ``ax25'' for a Linux AX.25 socket;
 .IP
+or ``a_inode'' for anonymous inode;
+.IP
+or ``icmp'' for an ICMP socket;
+.IP
 or ``inet'' for an Internet domain socket;
 .IP
+or ``ipx'' for an IPX socket;
+.IP
+or ``key'' for an internal key management socket;
+.IP
 or ``lla'' for a HP\-UX link level access file;
+.IP
+or ``ndrv'' for a net driver socket;
+.IP
+or ``netlink'' for a netlink socket;
+.IP
+or ``pack'' for a packet socket;
+.IP
+or ``ppp'' for a PPP socket;
+.IP
+or ``raw'' for a raw socket;
+.IP
+or ``raw6'' for a raw IPv6 socket;
 .IP
 or ``rte'' for an AF_ROUTE socket;
 .IP
 or ``sock'' for a socket of unknown domain;
 .IP
+or ``systm'' for a system socket;
+.IP
 or ``unix'' for a UNIX domain socket;
 .IP
 or ``x.25'' for an HP\-UX x.25 socket;
+.IP
+or ``ATALK'' for an AppleTalk socket;
 .IP
 or ``BLK'' for a block special file;
 .IP
@@ -2604,7 +2653,16 @@ or ``DIR'' for a directory;
 .IP
 or ``DOOR'' for a VDOOR file;
 .IP
+or ``EVENTFD'' for an eventfd;
+.IP
 or ``FIFO'' for a FIFO special file;
+.IP
+or ``FSEVENTS'' for fsevents;
+.IP
+or ``IPv4'' for an IPv4 socket;
+.IP
+or ``IPv6'' for an open IPv6 network file \- even if its address is
+IPv4, mapped in an IPv6 address;
 .IP
 or ``KQUEUE'' for a BSD style kernel event queue file;
 .IP
@@ -2613,10 +2671,6 @@ or ``LINK'' for a symbolic link file;
 or ``MPB'' for a multiplexed block file;
 .IP
 or ``MPC'' for a multiplexed character file;
-.IP
-or ``NOFD'' for a Linux /proc/<PID>/fd directory that can't be opened \--
-the directory path appears in the NAME column, followed by an error
-message;
 .IP
 or ``PAS'' for a
 .I /proc/as
@@ -2724,6 +2778,10 @@ or ``PMAP'' for a
 .I /proc
 map file (\fImap\fP);
 .IP
+or ``PMPS'' for a
+.I /proc/maps
+file;
+.IP
 or ``PMEM'' for a
 .I /proc
 memory image file;
@@ -2761,6 +2819,8 @@ register file;
 or ``PRMP'' for a
 .I /proc/rmap
 file;
+.IP
+or ``PROCDSC'' for a processor descriptor;
 .IP
 or ``PRTD'' for a
 .I /proc
@@ -2802,9 +2862,27 @@ file;
 .IP
 or ``REG'' for a regular file;
 .IP
+or ``SHM'' for a shared memory file;
+.IP
 or ``SMT'' for a shared memory transport file;
 .IP
+or ``STR'' for streams;
+.IP
 or ``STSO'' for a stream socket;
+.IP
+or ``UNKN'' for an unknown file;
+.IP
+or ``UNKNcwd'' for unknown current working directory;
+.IP
+or ``UNKNdel'' for unknown deleted file;
+.IP
+or ``UNKNfd'' for unknown file descriptor;
+.IP
+or ``UNKNmem'' for unknown memory-mapped file;
+.IP
+or ``UNKNrtd'' for unknown root directory;
+.IP
+or ``UNKNtxt'' for unknown program text;
 .IP
 or ``UNNM'' for an unnamed type file;
 .IP
@@ -2813,6 +2891,8 @@ or ``XNAM'' for an OpenServer Xenix special file of unknown type;
 or ``XSEM'' for an OpenServer Xenix semaphore file;
 .IP
 or ``XSD'' for an OpenServer Xenix shared data file;
+.IP
+or ``UNSP'' for an unsupported file;
 .IP
 or the four type number octets if the corresponding name isn't known.
 .TP
@@ -2836,7 +2916,7 @@ or
 has been specified to
 .BR +f ,
 this field contains the contents of the f_flag[s] member of the kernel
-file structure and the kernel's per\-process open file flags (if available);
+file structure and the kernel's per-process open file flags (if available);
 \&`G' causes them to be displayed in hexadecimal;
 \&`g', as short\-hand names;
 two lists may be displayed with entries separated by commas, the
@@ -2863,7 +2943,7 @@ the following table:
 	DIR		direct
 	DLY		delay
 	DOCL		do clone
-	DSYN		data\-only integrity
+	DSYN		data-only integrity
 	DTY		must be a directory
 	EVO		event only
 	EX		open for exec
@@ -2874,7 +2954,7 @@ the following table:
 	GTTY		accessed via /dev/tty
 	HUP		HUP in progress
 	KERN		kernel
-	KIOC		kernel\-issued ioctl
+	KIOC		kernel-issued ioctl
 	LCK		has lock
 	LG		large file
 	MBLK		stream message block
@@ -2929,11 +3009,11 @@ the following table:
 .IP
 this list of names was derived from F* #define's in dialect header files
 <fcntl.h>, <linux</fs.h>, <sys/fcntl.c>, <sys/fcntlcom.h>, and <sys/file.h>;
-see the lsof.h header file for a list showing the correspondence
-between the above short\-hand names and the header file definitions;
+see the common.h header file for a list showing the correspondence
+between the above short-hand names and the header file definitions;
 .IP
-the second list (after the semicolon) may contain short\-hand names
-for kernel per\-process open file flags from this table:
+the second list (after the semicolon) may contain short-hand names
+for kernel per-process open file flags from this table:
 .IP
 .nf
 	ALLC		allocated
@@ -2941,13 +3021,13 @@ for kernel per\-process open file flags from this table:
 	BHUP		activity stopped by SIGHUP
 	BW		the file has been written
 	CLSG		closing
-	CX		close\-on-exec (see fcntl(F_SETFD))
+	CX		close-on-exec (see fcntl(F_SETFD))
 	LCK		lock was applied
-	MP		memory\-mapped
-	OPIP		open pending \- in progress
+	MP		memory-mapped
+	OPIP		open pending - in progress
 	RSVW		reserved wait
 	SHMT		UF_FSHMAT set (AIX)
-	USE		in use (multi\-threaded)
+	USE		in use (multi-threaded)
 .fi
 .TP
 NODE\-ID
@@ -3040,6 +3120,12 @@ and
 .B \-s
 options are mutually exclusive; they can't both be specified.
 .IP
+If the
+.B \-H
+option is specified,
+.I lsof
+displays file size in human readable form.
+.IP
 For files that don't have a fixed size \- e.g., don't reside
 on a disk device \-
 .I lsof
@@ -3076,7 +3162,7 @@ or the name of a character special or block special device;
 .IP
 or the local and remote Internet addresses of a network file;
 the local host name or IP number is followed by a colon (':'), the
-port, ``->'', and the two\-part remote address;
+port, ``\->'', and the two\-part remote address;
 IP addresses may be reported as numbers or names, depending on the
 .BR +|\-M ,
 .BR \-n ,
@@ -3109,13 +3195,13 @@ or the local and remote mount point names of an NFS file;
 .IP
 or ``STR'', followed by the stream name;
 .IP
-or a stream character device name, followed by ``->'' and the stream name
-or a list of stream module names, separated by ``->'';
+or a stream character device name, followed by ``\->'' and the stream name
+or a list of stream module names, separated by ``\->'';
 .IP
 or ``STR:'' followed by the SCO OpenServer stream device and module
-names, separated by ``->'';
+names, separated by ``\->'';
 .IP
-or system directory name, `` -- '', and as many components of the path
+or system directory name, `` \-\- '', and as many components of the path
 name as
 .I lsof
 can find in the kernel's name cache for selected dialects
@@ -3123,7 +3209,7 @@ can find in the kernel's name cache for selected dialects
 .B "KERNEL NAME CACHE"
 section for more information.);
 .IP
-or ``PIPE->'', followed by a Solaris kernel pipe destination address;
+or ``PIPE\->'', followed by a Solaris kernel pipe destination address;
 .IP
 or ``COMMON:'', followed by the vnode device information structure's
 device name, for a Solaris common vnode;
@@ -3164,7 +3250,7 @@ by the transmit and receive queue sizes, and the connection state;
 .IP
 or ``dgram'' or ``stream'' for the type UnixWare 7.1.1 and above in\-kernel
 UNIX domain sockets, followed by a colon (':') and the local path name
-when available, followed by ``->'' and the remote path name or kernel
+when available, followed by ``\->'' and the remote path name or kernel
 socket address in hexadecimal when available;
 .IP
 or the association value, association index, endpoint value, local address,
@@ -3178,9 +3264,9 @@ file to be attached to another with
 .I lsof
 will add ``(FA:<address1><direction><address2>)'' to the NAME column.
 <address1> and <address2> are hexadecimal vnode addresses.
-<direction> will be ``<-'' if <address2> has been fattach'ed to
+<direction> will be ``<\-'' if <address2> has been fattach'ed to
 this vnode whose address is <address1>;
-and ``->'' if <address1>, the vnode address of this vnode, has been
+and ``\->'' if <address1>, the vnode address of this vnode, has been
 fattach'ed to <address2>.
 <address1> may be omitted if it already appears in the DEVICE column.
 .PP
@@ -3671,7 +3757,7 @@ for file systems from its mount table, use this
 incantation to see if it reports any alternate device numbers:
 .PP
 .IP
-lsof -b
+lsof \-b
 .PP
 Look for standard error file warning messages that
 begin ``assuming "dev=xxxx" from ...''.
@@ -3690,7 +3776,7 @@ reports the complete paths it finds in the NAME column.
 If
 .I lsof
 can't report all components in a path, it reports in the NAME column
-the file system name, followed by a space, two `-' characters, another
+the file system name, followed by a space, two `\-' characters, another
 space, and the name components it has located, separated by
 the `/' character.
 .PP
@@ -3726,9 +3812,6 @@ can report path name components for these dialects:
 	HP\-UX
 	Linux
 	NetBSD
-	NEXTSTEP
-	OpenBSD
-	OPENSTEP
 	SCO OpenServer
 	SCO|Caldera UnixWare
 	Solaris
@@ -3740,6 +3823,7 @@ can't report path name components for these dialects:
 .PP
 .nf
 	AIX
+	OpenBSD
 .fi
 .PP
 If you want to know why
@@ -3851,7 +3935,7 @@ The permissions are set by the local system administrator when
 .I lsof
 is installed.
 .PP
-The first and rarer permission is setuid\-root.
+The first and rarer permission is setuid-root.
 It comes into effect when
 .I lsof
 is executed; its effective UID is then
@@ -3893,9 +3977,7 @@ and be allowed to surrender setgid permission.
 	HP\-UX 11.00
 	NetBSD 1.[456], 2.x and 3.x for Alpha, x86, and SPARC-based
 	    systems
-	NEXTSTEP 3.[13] for NEXTSTEP architectures
 	OpenBSD 2.[89] and 3.[0\-9] for x86-based systems
-	OPENSTEP 4.x
 	SCO OpenServer Release 5.0.6 for x86-based systems
 	SCO|Caldera UnixWare 7.1.4 for x86-based systems
 	Solaris 2.6, 8, 9 and 10
@@ -4205,9 +4287,17 @@ If the
 option is specified,
 .I lsof
 will indicate the search items it failed to list.
+If the
+.B \-Q
+option is specified,
+.I lsof
+will ignore any search item failures and only return an error if
+something unusual and unrecoverable happened.
 .PP
-It returns a zero (0) if no errors were detected and if it was able to
-list some information about all the specified search arguments.
+It returns a zero (0) if no errors were detected and if either the
+.B \-Q
+option was specified or it was able to list some information about
+all the specified search arguments.
 .PP
 .PP
 When
@@ -4263,44 +4353,56 @@ lsof
 .PP
 To list all open Internet, x.25 (HP\-UX), and UNIX domain files, use:
 .IP
-lsof -i -U
+lsof \-i \-U
 .PP
 To list all open IPv4 network files in use by the process whose PID is
 1234, use:
 .IP
-lsof -i 4 -a -p 1234
+lsof \-i 4 \-a \-p 1234
+.PP
+If it's okay for PID 1234 to not exist, or for PID 1234 to not have any
+open IPv4 network files, add
+.B \-Q
+:
+.IP
+lsof \-Q \-i 4 \-a \-p 1234
 .PP
 Presuming the UNIX dialect supports IPv6, to list only open IPv6
 network files, use:
 .IP
-lsof -i 6
+lsof \-i 6
 .PP
 To list all files using any protocol on ports 513, 514, or 515 of host
 wonderland.cc.purdue.edu, use:
 .IP
-lsof -i @wonderland.cc.purdue.edu:513-515
+lsof \-i @wonderland.cc.purdue.edu:513\-515
 .PP
 To list all files using any protocol on any port of mace.cc.purdue.edu
 (cc.purdue.edu is the default domain), use:
 .IP
-lsof -i @mace
+lsof \-i @mace
 .PP
 To list all open files for login name ``abe'', or user ID 1234, or
 process 456, or process 123, or process 789, use:
 .IP
-lsof -p 456,123,789 -u 1234,abe
+lsof \-p 456,123,789 \-u 1234,abe
 .PP
 To list all open files on device /dev/hd4, use:
 .IP
 lsof /dev/hd4
 .PP
-To find the process that has /u/abe/foo open, use:
+To find the process that has /u/abe/foo open without worrying if
+there are none, use:
 .IP
-lsof /u/abe/foo
+lsof \-Q /u/abe/foo
+.PP
+To take action only if a process has /u/abe/foo open, use:
+.IP
+lsof /u/abe/foo \&\& echo "still in use"
 .PP
 To send a SIGHUP to the processes that have /u/abe/bar open, use:
 .IP
-kill -HUP `lsof -t /u/abe/bar`
+kill \-HUP `lsof \-t /u/abe/bar`
 .PP
 To find any open file, including an open UNIX domain socket file,
 with the name
@@ -4316,27 +4418,27 @@ the device number for
 .IR /nfs/mount/point ,
 use:
 .IP
-lsof -b /nfs/mount/point
+lsof \-b /nfs/mount/point
 .PP
 To do the preceding search with warning messages suppressed, use:
 .IP
-lsof -bw /nfs/mount/point
+lsof \-bw /nfs/mount/point
 .PP
 To ignore the device cache file, use:
 .IP
-lsof -Di
+lsof \-Di
 .PP
 To obtain PID and command name field output for each process, file
 descriptor, file device number, and file inode number for each file
 of each process, use:
 .IP
-lsof -FpcfDi
+lsof \-FpcfDi
 .PP
 To list the files at descriptors 1 and 3 of every process running the
 .I lsof
 command for login ID ``abe'' every 10 seconds, use:
 .IP
-lsof -c lsof -a -d 1 -d 3 -u abe -r10
+lsof \-c lsof \-a \-d 1 \-d 3 \-u abe \-r10
 .PP
 To list the current working directory of processes running a command that
 is exactly four characters long and has an 'o' or 'O' in character three,
@@ -4344,31 +4446,31 @@ use this regular expression form of the
 .BI \-c " c"
 option:
 .IP
-lsof -c /^..o.$/i -a -d cwd
+lsof \-c /^..o.$/i \-a \-d cwd
 .PP
 To find an IP version 4 socket file by its associated numeric dot\-form
 address, use:
 .IP
-lsof -i@128.210.15.17
+lsof \-i@128.210.15.17
 .PP
 To find an IP version 6 socket file (when the UNIX dialect supports
 IPv6) by its associated numeric colon\-form address, use:
 .IP
-lsof -i@[0:1:2:3:4:5:6:7]
+lsof \-i@[0:1:2:3:4:5:6:7]
 .PP
 To find an IP version 6 socket file (when the UNIX dialect supports
 IPv6) by an associated numeric colon\-form address that has a run of
 zeroes in it \- e.g., the loop\-back address \- use:
 .IP
-lsof -i@[::1]
+lsof \-i@[::1]
 .PP
 To obtain a repeat mode marker line that contains the current time, use:
 .IP
-lsof -rm====%T====
+lsof \-rm====%T====
 .PP
 To add spaces to the previous marker line, use:
 .IP
-lsof -r "m==== %T ===="
+lsof \-r "m==== %T ===="
 .SH BUGS
 Since
 .I lsof
@@ -4383,7 +4485,7 @@ locks that might be described by multiple lock structures.
 .I Lsof
 can't search for files with restrictive access permissions by
 .I name
-unless it is installed with root set\-UID permission.
+unless it is installed with root set-UID permission.
 Otherwise it is limited to searching for files to which its user
 or its set-GID group (if any) has access permission.
 .PP
@@ -4489,7 +4591,7 @@ distribution.
 .PP
 That latest version of the file is found at:
 .IP
-https://github.com/lsof-org/lsof/blob/master/00FAQ
+https://github.com/lsof\-org/lsof/blob/master/00FAQ
 .SH FILES
 .TP \w'.lsof_hostname'u+4
 .I /dev/kmem
@@ -4511,7 +4613,7 @@ is the first component of the host's name returned by
 .SH AUTHORS
 .I Lsof
 was written by Victor A.\&Abell <abe@purdue.edu> of Purdue University.
-Since version 4.93.0, the lsof-org team at GitHub maintains lsof.
+Since version 4.93.0, the lsof\-org team at GitHub maintains lsof.
 Many others have contributed to
 .IR lsof .
 They're listed in the
@@ -4524,7 +4626,7 @@ The latest distribution of
 .I lsof
 is available at
 .IP
-https://github.com/lsof-org/lsof/releases
+https://github.com/lsof\-org/lsof/releases
 .SH SEE ALSO
 .PP
 Not all the following manual pages may exist in every UNIX

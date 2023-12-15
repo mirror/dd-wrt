@@ -1,0 +1,277 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Set visibility to default for exported API functions. */
+#undef API_EXPORT
+
+/* Define if fs/tmpfs/tmpfs.h is found */
+#undef HAS_TMPFS
+
+/* Define to 1 if you have the declaration of `AF_INET6', and to 0 if you
+   don't. */
+#undef HAVE_DECL_AF_INET6
+
+/* Define to 1 if you have the declaration of `closefrom', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CLOSEFROM
+
+/* Define to 1 if you have the declaration of `doadump', and to 0 if you
+   don't. */
+#undef HAVE_DECL_DOADUMP
+
+/* Define to 1 if you have the declaration of `dup2', and to 0 if you don't.
+   */
+#undef HAVE_DECL_DUP2
+
+/* Define to 1 if you have the declaration of `getbootfile()', and to 0 if you
+   don't. */
+#undef HAVE_DECL_GETBOOTFILE
+
+/* Define to 1 if you have the declaration of `kvm_getproc2', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KVM_GETPROC2
+
+/* Define to 1 if you have the declaration of `pc_direntpersec((struct pcfs
+   *)NULL)', and to 0 if you don't. */
+#undef HAVE_DECL_PC_DIRENTPERSEC
+
+/* Define to 1 if you have the declaration of `PFSroot', and to 0 if you
+   don't. */
+#undef HAVE_DECL_PFSROOT
+
+/* Define to 1 if you have the declaration of `SBS_CANTSENDMORE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_SBS_CANTSENDMORE
+
+/* Define to 1 if you have the declaration of `SS_CONNECTED', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SS_CONNECTED
+
+/* Define to 1 if you have the declaration of `TCP_ESTABLISHED', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCP_ESTABLISHED
+
+/* Define to 1 if you have the declaration of `TTYAUX_MAJOR', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TTYAUX_MAJOR
+
+/* Define to 1 if you have the declaration of `VSOCK', and to 0 if you don't.
+   */
+#undef HAVE_DECL_VSOCK
+
+/* Define to 1 if you have the declaration of `__GLIBC__', and to 0 if you
+   don't. */
+#undef HAVE_DECL___GLIBC__
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <fs/fdescfs/fdesc.h> header file. */
+#undef HAVE_FS_FDESCFS_FDESC_H
+
+/* Define to 1 if you have the <fs/nullfs/null.h> header file. */
+#undef HAVE_FS_NULLFS_NULL_H
+
+/* Define to 1 if you have the <fs/ptyfs/ptyfs.h> header file. */
+#undef HAVE_FS_PTYFS_PTYFS_H
+
+/* Define to 1 if you have the <fs/tmpfs/tmpfs.h> header file. */
+#undef HAVE_FS_TMPFS_TMPFS_H
+
+/* Define to 1 if you have the <inet/ipclassifier.h> header file. */
+#undef HAVE_INET_IPCLASSIFIER_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* "Define to 1 if struct vnode exists" */
+#undef HAVE_KVM_VNODE
+
+/* Define to 1 if you have the <libctf.h> header file. */
+#undef HAVE_LIBCTF_H
+
+/* Enable libtirpc support */
+#undef HAVE_LIBTIRPC
+
+/* Define to 1 if you have the <linux/sock_diag.h> header file. */
+#undef HAVE_LINUX_SOCK_DIAG_H
+
+/* Define to 1 if you have the <linux/unix_diag.h> header file. */
+#undef HAVE_LINUX_UNIX_DIAG_H
+
+/* Define to 1 if you have the <miscfs/fdesc/fdesc.h> header file. */
+#undef HAVE_MISCFS_FDESC_FDESC_H
+
+/* Define to 1 if you have the <miscfs/nullfs/null.h> header file. */
+#undef HAVE_MISCFS_NULLFS_NULL_H
+
+/* Define to 1 if you have the <miscfs/procfs/procfs.h> header file. */
+#undef HAVE_MISCFS_PROCFS_PROCFS_H
+
+/* Define to 1 if you have the <netinet6/in6.h> header file. */
+#undef HAVE_NETINET6_IN6_H
+
+/* Define to 1 if you have the <netinet/in6.h> header file. */
+#undef HAVE_NETINET_IN6_H
+
+/* Define to 1 if you have the <netinet/ip6.h> header file. */
+#undef HAVE_NETINET_IP6_H
+
+/* Define to 1 if you have the <nfs/nfsproto.h> header file. */
+#undef HAVE_NFS_NFSPROTO_H
+
+/* Define to 1 if the system has the type `pad_mutex_t'. */
+#undef HAVE_PAD_MUTEX_T
+
+/* Define to 1 if you have the <rpc/rpc.h> header file. */
+#undef HAVE_RPC_RPC_H
+
+/* Define to 1 if you have the <rpc/rpc_tags.h> header file. */
+#undef HAVE_RPC_RPC_TAGS_H
+
+/* Define to 1 if you have the <selinux/selinux.h> header file. */
+#undef HAVE_SELINUX_SELINUX_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strftime' function. */
+#undef HAVE_STRFTIME
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if the system has the type `struct aio_req'. */
+#undef HAVE_STRUCT_AIO_REQ
+
+/* Define to 1 if `conn_ixa' is a member of `struct conn_s'. */
+#undef HAVE_STRUCT_CONN_S_CONN_IXA
+
+/* Define to 1 if `fd_link' is a member of `struct fdescnode'. */
+#undef HAVE_STRUCT_FDESCNODE_FD_LINK
+
+/* Define to 1 if the system has the type `struct filedescent'. */
+#undef HAVE_STRUCT_FILEDESCENT
+
+/* Define to 1 if `f_vnode' is a member of `struct file'. */
+#undef HAVE_STRUCT_FILE_F_VNODE
+
+/* Define to 1 if `i_din2' is a member of `struct inode'. */
+#undef HAVE_STRUCT_INODE_I_DIN2
+
+/* Define to 1 if `i_effnlink' is a member of `struct inode'. */
+#undef HAVE_STRUCT_INODE_I_EFFNLINK
+
+/* Define to 1 if `i_ffs1_size' is a member of `struct inode'. */
+#undef HAVE_STRUCT_INODE_I_FFS1_SIZE
+
+/* Define to 1 if `kf_un.kf_file.kf_file_nlink' is a member of `struct
+   kinfo_file'. */
+#undef HAVE_STRUCT_KINFO_FILE_KF_UN_KF_FILE_KF_FILE_NLINK
+
+/* Define to 1 if `kf_un.kf_sock.kf_sock_sendq' is a member of `struct
+   kinfo_file'. */
+#undef HAVE_STRUCT_KINFO_FILE_KF_UN_KF_SOCK_KF_SOCK_SENDQ
+
+/* Define to 1 if `ki_numthreads' is a member of `struct kinfo_proc'. */
+#undef HAVE_STRUCT_KINFO_PROC_KI_NUMTHREADS
+
+/* Define to 1 if the system has the type `struct lockf_entry'. */
+#undef HAVE_STRUCT_LOCKF_ENTRY
+
+/* Define to 1 if the system has the type `struct statvfs'. */
+#undef HAVE_STRUCT_STATVFS
+
+/* Define to 1 if `v_lockf' is a member of `struct vnode'. */
+#undef HAVE_STRUCT_VNODE_V_LOCKF
+
+/* Define to 1 if `v_path' is a member of `struct vnode'. */
+#undef HAVE_STRUCT_VNODE_V_PATH
+
+/* Define to 1 if `t_maxseg' is a member of `struct xtcpcb'. */
+#undef HAVE_STRUCT_XTCPCB_T_MAXSEG
+
+/* Define to 1 if you have the <sys/cred_impl.h> header file. */
+#undef HAVE_SYS_CRED_IMPL_H
+
+/* Define to 1 if you have the <sys/fs/zfs.h> header file. */
+#undef HAVE_SYS_FS_ZFS_H
+
+/* Define to 1 if you have the <sys/pipe.h> header file. */
+#undef HAVE_SYS_PIPE_H
+
+/* Define to 1 if you have the <sys/rgm.h> header file. */
+#undef HAVE_SYS_RGM_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/zone.h> header file. */
+#undef HAVE_SYS_ZONE_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <utmpx.h> header file. */
+#undef HAVE_UTMPX_H
+
+/* Define to 1 if you have the <uvm/uvm.h> header file. */
+#undef HAVE_UVM_UVM_H
+
+/* Define to 1 if the system has the type `vm_memattr_t'. */
+#undef HAVE_VM_MEMATTR_T
+
+/* Define to 1 if you have the <wctype.h> header file. */
+#undef HAVE_WCTYPE_H
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of `dev_t', as computed by sizeof. */
+#undef SIZEOF_DEV_T
+
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES

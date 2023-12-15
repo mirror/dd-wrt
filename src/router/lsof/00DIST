@@ -126,6 +126,18 @@
 		4.93.0 May 7, 2019
 		4.93.1 May 7, 2019
 		4.93.2 May 8, 2019
+		4.94.0 November 11, 2020
+		4.95.0 April 28, 2022
+		4.96.0 September 16, 2022
+		4.96.1 September 16, 2022
+		4.96.2 September 16, 2022
+		4.96.3 September 16, 2022
+		4.96.4 October 18, 2022
+		4.96.5 December 26, 2022
+		4.97.0 January 17, 2023
+		4.98.0 January 22, 2023
+		4.99.0 November 10, 2023
+
 
 
 Dialects Supported
@@ -144,8 +156,8 @@ been tested on:
 contains information on other ports.)
 
 If your favorite Unix dialect is not in the list, or if your version
-of it is more recent than the ones listed, please contact me at
-<abe@purdue.edu>.
+of it is more recent than the ones listed, please file a new issue at
+https://github.com/lsof-org/lsof.
 
 Version 3 of lsof was tested on:
 
@@ -442,8 +454,7 @@ VENDOR.
 At worst such a bug report will confuse the vendor; at best, the
 vendor will forward the bug report to me.
 
-Please send all bug reports, requests, etc. to me via email at
-<abe@purdue.edu>.
+Please send all bug reports, requests, etc. to https://github.com/lsof-org/lsof.
 
 
 The lsof-l Mailing List
@@ -4900,9 +4911,6 @@ Supplement	Regenerated the 4.04 distribution to correct a non-
 		Released lsof to GitHub with Purdue releases documented in
 		support/GitHub-release.
 
-Vic Abell <abe@purdue.edu>
-July 14, 2018
-
 
 4.92.1		May 6, 2019
 
@@ -5075,6 +5083,7 @@ July 14, 2018
 		Provided in github pull request #93 by @T4cC0re.
 
 
+
 		[freebsd] update for r363214
 		- no user visible changes
 
@@ -5207,6 +5216,364 @@ July 14, 2018
 		[linux]: implement "make check"
 		The target runs check.bash.
 
+4.95.0		April 28, 2022
+
+		[n+obsd] fix syntax error
+		Corrected end of comment.
+		This change closes #138.
+		@albert-github reported this issue in #138,
+		and provided the fix in #140
+
+
+		Don't ignore failures in test/Makefile
+		Tobias Geerinckx-Rice <me@tobias.gr> provides the fix.
+
+
+		Update perl scripts for the past few decades of progress
+		Generally, perl is available on base systems - people who are manually
+		installing perl into /usr/local/bin are the exception rather than the
+		rule. In addition, Perl 5 was release in 1994, so Perl 4 isn't relevant
+		any more. We've also standardized on the .pl extension, rather than
+		.perl5 or whatever.
+		Provided by @dilinger (Andres Salomon) in #149.
+		A commit in the pull request includes work of Nicholas Bamber.
+
+
+		Drop LSOF_CCDATE across all dialects to ensure reproducible builds
+		Simplify things for reproducible builds by just getting rid of
+		the embedded date/time string. With LSOF_CCDATE gone, keeping
+		SOURCE_DATE_EPOCH around doesn't make much sense, so drop that as
+		well. Folks doing reproducible builds should still override the
+		LSOF_HOST, LSOF_LOGNAME, LSOF_SYSINFO, and LSOF_USER variables (as
+		they were previously doing before SOURCE_DATE_EPOCH).
+		Provided by @dilinger (Andres Salomon) in #150.
+
+
+		[FreeBSD] get the ISO9660 filesystem working again
+		The ISO9660 filesystem broke starting with FreeBSD 7 due to the header
+		location changing. Fix the header search path to get it to be detected
+		again. Fix the header inclusion order. Also add the new way of finding
+		dev_t on more recent FreeBSD versions.
+		Provided by Damjan Jovanovic in #151.
+
+
+		[FreeBSD] add support for msdosfs on FreeBSD
+		Provided by Damjan Jovanovic in #151.
+
+
+		Fix FD field description.
+		In 811dc78 the output format was changed to not printf the `f`
+		field by default, however the field description in `lsof_fields.h`,
+		as seen in `-F?` output still included the `(always selected)` text.
+		Provided by @algorythmic (Grisha Levit) in #158.
+
+
+		Adjust alignment of buffer passed to stat().
+		The original code passes char[] buffer to stat(). This can be cause
+		a SIGBUS. #160 reported an actual crash on armv7a + glibc-2.33 platform.
+		See also https://sourceware.org/bugzilla/show_bug.cgi?id=27993.
+		Reported by @10ne1 in #160.
+
+
+		Clean up source code and documentats.
+		- remove trailing whitespace,
+		- fix some issues in scripts found through shellcheck, and
+		- fix spelling
+		Provided by @a1346054 in #163.
+
+
+		man page: fix hyphen issues
+		Properly use '-' and '\-' in the man page, ensuring that users
+		can cut & paste commandline options without issue. Original
+		patch from Raoul Gunnar Borenius <borenius@dfn.de>, and
+		submitted/expanded by @dilinger (Andres Salomon) in #168.
+
+
+
+		[FreeBSD] update for FreeBSD 13 & 14, and various internal changes
+		submitted by @DmitryAndric & @emaste.
+
+
+		[FreeBSD] remove various old FreeBSD versions from support
+		submitted by @emaste
+
+
+		[FreeBSD] configure: suggest variable to set if FreeBSD sys not
+		found
+		submitted by @emaste
+
+		[FreeBSD] Use user mode APIs on FreeBSD
+		Extensively changes the FreeBSD dialect to use user mode APIs
+		(sysctls and libutil's kinfo_getfile()), only falling back to kvm
+		access when it's available and required for certain features. lsof can
+		now run as an ordinary user, though not all processes may be visible
+		and some features will be absent without kvm access (file lock state,
+		kqueue info, some pipe details, nullfs details).
+		This also fixes numerous long standing issues: file lock state is now
+		visible on all filesystems, the cwd, root dir, jail dir, text file and
+		controlling TTY are now visible, filenames are shown for all
+		filesystems, procfs is working again and supports file searches even
+		when there are multiple procfs mountpoints, the code is shorter,
+		cleaner and should need much less future maintenance.
+		It builds and works from FreeBSD 9.0 to 14-CURRENT, though older
+		versions have less features (eg. 12 doesn't provide socket buffer
+		usage, 11 also lacks TCP flags and state).
+		Provided by @DamjanJovanovic in #184.
+
+
+		Fix broken LSOF_CFLAGS_OVERRIDE.
+		Provided by Fabrice Fontaine in #172.
+
+
+		[linux] Remove sysvlegacy function.
+		Provided by Fabrice Fontaine in #195.
+
+
+		[linux] use close_range instead of calling close repeatedly
+		At the starting up, lsof closes its file descriptors greater
+		than 2 by calling close(2) repeatedly. As reported in #186,
+		it can take long time. Linux 5.9 introduced close_range(2).
+		The new system call can close multiple file descriptors faster.
+		@qianzhangyl reported the original issue (#186).
+
+
+		Add -Q option for adjusting exit status when failed to find a
+		search item (#129)
+		In the original code, lsof returned 1 when it failed to find a
+		search item. With the new option, lsof returns 0 in the case.
+
+
+		Document -Q option in manpage/00QUICKSTART, and adjust -h
+		output by @dilinger (Andres Salomon) in #129.
+
+
+		Improve readability of complex adverbial clause by adding a
+		comma.
+		Provided by Danny Fowler in #156.
+
+4.96.0		September 16, 2022
+
+		[linux] fix hash functions used for finding local tcp/udp IPCs
+		There were typos in the code calculating hash values. The typos might
+		break the flatness of hashtables where the endpoint information about
+		locally used tcp/udp was stored. Theoretically, this fix may improve
+		the performance of lsof with [+|-]E option.
+		Inspired by the issue #206 reported by Tomasz Kłoczko (@kloczek).
+
+
+		Show copyright notice in --version output.
+
+
+		[linux] compile with -Wall option
+
+
+		[linux] Avoid some easy collissions for udp/udp6 sockets when hashing
+		
+		
+		[linux] Changing the number of ipcbuckets to 4096
+
+
+		[darwin] fix build with -fno-common (Cfp redefinition)
+		gcc-10 and llvm-11 changed the default from -fcommon to -fno-common:
+		https://gcc.gnu.org/PR85678
+		As a result build fails as:
+
+			duplicate symbol '_Cfp' in: ddev.o dfile.o
+
+		Cfp is already explicitly defined in dstore.c. The change turns
+		header definition into declaration.
+		Provided by Sergei Trofimovich (@trofi) in #221. The same fix is
+		applied to libproc backend by Jiajie Chen (@jiegec) in #226.
+
+
+		[linux] Make build reproducible by checking SOURCE_DATE_EPOCH
+		and considering LSOF_{HOST,LOGNAME,SYSINFO,USER} as "none" when
+		it is set.
+		Provided by Danilo Spinella in #217
+
+
+		[darwin] remove /usr/include prefix from include for Darwin 19+
+		The /usr/include path is missing since macOS Catalina.
+		Fixes issue #234.
+		Provided by Jiajie Chen in #235
+
+
+		[linux] obtain correct information of memory-mapped file.
+		Provided by Teng Hu in #239
+
+
+		[FreeBSD] configure: suggest variable to set if FreeBSD sys not 
+        	found
+        	Submitted by @emaste
+
+
+		Updated 00FAQ with lookup to open files via mountpoint
+		Provided by Jacob Chapman in #240
+
+
+                [FreeBSD] modernize API usage and remove legacy FreeBSD releases
+                Contributor DamjanJovanovic (#184) Ed Maste (#250, #251, #252),
+                Warner Losh (#253)
+
+4.96.1		September 16, 2022
+
+                [FreeBSD] Unconditionally define HASKQUEUE (mjguzik) 
+
+4.96.2		September 16, 2022
+
+                [FreeBSD] fix FreeBSD < 14
+
+4.96.3		September 16, 2022
+
+                [FreeBSD] Fix kqueue compat for releases < 14
+
+4.96.4		October 18, 2022
+
+		[FreeBSD] sys/files.h no longer needs _KERNEL defined to 
+                include it (bsdimp #256)
+
+
+		docs: Describe fd number truncation in output (#261)
+
+4.96.5		December 26, 2022
+
+		[linux] Use correct scanf/printf format for uint64_t (#266)
+
+
+		Avoid C89-only constructs in Configure (#265)
+
+
+		[freebsd] add <sys/callout.h> for recent changes
+
+4.97.0		January 17, 2023
+
+		[decof/du/tru64] Remove support because the os is no longer
+		updated for more than 10 years
+
+
+		[openstep/nextstep] Remove support because the os is no longer
+		updated for more than 20 years
+
+
+		Add experimental build system based on Autotools (#270)
+
+
+		Fixed LTsock testing on darwin (#272)
+
+
+		Remove NEW and OLD folders (#6)
+
+
+		Fix FreeBSD testcases (#271)
+
+
+		Rewrite documentation and publish at https://lsof.readthedocs.io/
+
+4.98.0		January 22, 2023
+
+		Fix two potential null pointer access bug when gethostbyname2()
+		returns an empty address list
+
+
+		Add support for older automake versions (on e.g. CentOS 7)
+
+
+		Migrate testing scripts and programs to autotools
+
+
+		Extend CI to build on more Linux distros
+
+
+		[linux] Fix handling of empty command name, closing #246.
+		Add test from #246, where lsof returns stale command name when the
+		command name is empty. If getting command name failed, return
+		NULL instead of empty string
+
+
+		Add --with/without-libtirpc option to autotools-based build
+		system and automatically detect libtirpc by default
+
+
+		Add -H switch to print human readable size, e.g. 123.4K (#260)
+
+
+		[linux] Fix implicit declaration error when HASPTYEPT is undefined
+
+
+		Add support for musl libc-based Linux distros
+
+
+		Add --enable-security argument to configure to allow only the
+		root user to list all open files
+
+
+		Add --enable-no-sock-security argument to configure to allow
+		anyone to list anyone else's socket files when combined with
+		--enable-security
+
+
+		[linux] Always enable 64 bit off_t in configure.ac
+
+
+		[netbsd] Import patches from pkgsrc and port autotools-based build system to NetBSD
+
+
+		[netbsd] Fix lock status reading
+
+4.99.0		November 10, 2023
+
+		[netbsd] Get device numer of tmpfs instead of reporting zero
+
+
+		[openbsd] Rewrite OpenBSD support because OpenBSD disallows
+		kernel memory access and lsof has to switch to user mode API.
+		Currently, most features are working, but file path reporting
+		and lock status are not working for lack of kernel support.
+		As a consequence, OpenBSD dialect is separated in a new folder.
+
+
+		[darwin] Remove /dev/kmem backend because it no longer exists on
+		current macOS releases. Use libproc backend instead.
+
+		
+		[linux] Do not hard-code fd numbers in epoll test, fixing tests
+		on Void Linux
+
+
+		[freebsd] Use kf_file_nlink if provided by kernel instead of
+		stat(). This commit requires kernel with
+		https://reviews.freebsd.org/D38169. It brings back the ability
+		to list deleted files via `lsof +L1`. Closes #264.
+
+
+		[linux] Add --with-selinux configure option.
+
+
+		[solaris] Re-introduce support for recent Solaris & OpenIndiana
+		releases.
+
+
+		[darwin] Display kern ctl info, learned from apple lsof version.
+
+
+		[linux] Improve performance by using closefrom(). Closes #281.
+
+
+		[aix] Fix compilation on AIX 7.2 and add autotools build system
+		support for AIX.
+
+		[aix] Suppress warnings properly on AIX version greater than
+		5.0. Closes #187.
+		
+		Introduce alpha version of liblsof which allows users to use
+		lsof functionality via C functions instead of spawning a
+		subprocess and parsing the output. This version may contain BUGs
+		and memory leaks, and the API may change before it stablizes.
+
+4.9?.?		????????? ??, ????
+
+Vic Abell <abe@purdue.edu>
+July 14, 2018
 
 The lsof-org team at GitHub
-November 11, 2020
+December 28, 2022

@@ -913,7 +913,6 @@ base, footprints, and the scripts that support them.
 		 10.0 Amd64, clang
 		 11.0 Amd64, clang
 		 12.0 Amd64, clang
-    DEC OSF/1	  4.0, cc
     HP-UX	  10.20, cc			LTbigf
 		  10.20, gcc (1)		LTbigf
 		  11.00-32, ANSI-C		LTbigf, LTnfs
@@ -957,7 +956,6 @@ base, footprints, and the scripts that support them.
 		  3.10.08
 		  4.14.14
 		  3.10.0-229.1.2.el7
-    NEXTSTEP      3.1, gcc                   	LTnfs
     NetBSD        1.4.1, Alpha, gcc          	LTnfs
 		  1.5x, x86, gcc           	LTnfs
 		  1.6x, Alpha, gcc		LTnfs
@@ -979,7 +977,6 @@ base, footprints, and the scripts that support them.
 		  3.6, gcc
 		  3.7, gcc
 		  3.9, gcc
-    OPENSTEP	  4.2, gcc			LTnfs
     OSR           5.04, cc              	LTnfs
 		  5.06, cc              	LTnfs
     Solaris       2.6, cc			LTnfs
@@ -999,9 +996,6 @@ base, footprints, and the scripts that support them.
 		  10-64, Sparc, cc
 		  10-64, Sparc, gcc
 		  11-64, Amd64, cc
-    Tru64 UNIX    5.0, cc
-    Tru64 UNIX    5.0, cc
-		  5.1, cc
     UnixWare      7.1.1, NSC, cc            	LTnfs
 		  7.1.3, cc
 		  7.1.4, cc

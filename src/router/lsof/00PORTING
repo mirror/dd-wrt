@@ -135,12 +135,17 @@ project has so far generated only two kernel modification:
     *  An experimental modification to /usr/src/linux/fs/stat.c
        allows lstat(2) to return file position information for
        /proc/<PID>/fd/<FD> files.
-       
+
        Contact me for this modification.
 
 
 One final note about the /proc-based Linux lsof: it doesn't need
 any functions from the lsof library in the lib/ subdirectory.
+
+FreeBSD is now also using a similar approach. Sysctls are used
+to retrieve processes, files, socket PCBs etc. Access to kernel
+memory is optional and only used as a last resort when data is
+not provided by the kernel.
 
 
 General Guidelines
@@ -259,11 +264,6 @@ different source files -- e.g., dnode[123].c -- to eliminate node
 header file structure element name conflicts.  The source modules
 in a few subdirectories are organized that way.
 
-Unusual situations occur for NetBSD and OpenBSD, and for NEXTSTEP
-and OPENSTEP.  Each pair of dialects is so close in design that
-the same dialect sources from the n+obsd subdirectory serves NetBSD
-and OpenBSD; from n+os, NEXTSTEP and OPENSTEP.
-
 These are common files in lsof4/:
 
     Configure	the configuration script
@@ -282,7 +282,7 @@ These are the common function source files in lsof4/:
 
     arg.c	common argument processing functions
 
-    lsof.h	common header file that #include's the dialect-specific
+    common.h	common header file that #include's the dialect-specific
 		header files
 
     main.c	common main function for lsof 4
@@ -444,10 +444,6 @@ to be compiled and archived to liblsof.a.
 			NCACHE_VP, X_NCACHE, and X_NCSIZE, customize
 			them.
 
-    snpf.c		Source for the snprintf() family of functions
-
-			USE_LIB_SNPF selects it.
-
 
 The comments and the source code in these library files give more
 information on customization.
@@ -462,15 +458,15 @@ A few basic philosophies govern the coding of lsof 4 functions:
        the cost of nearly-duplicate code.
 
        When #if/#else/#endif constructs are necessary:
-       
+
        o  Use the form
 
 		#if	defined(s<symbol>)
-	
+
 	  in preference to
-	
+
 		#ifdef	<symbol>
-	
+
 	  to allow easier addition of tests to the #if.
 
        o  Indent them to signify their level -- e.g.,
@@ -486,7 +482,7 @@ A few basic philosophies govern the coding of lsof 4 functions:
     *  Document copiously.
 
     *  Aim for ANSI-C compatibility:
-    
+
        o  Use function prototypes for all functions, hiding them
 	  from compilers that cannot handle them with the _PROTOTYPE()
 	  macro.
@@ -677,7 +673,7 @@ possibilities
 
     FSV_DEFAULT		defines the default file structure values to
 			list.  It may be composed of or'd FSV_*
-			(See lsof.h) values.  The default is none (0).
+			(See common.h) values.  The default is none (0).
 
     GET_MAJ_DEV         is a macro to get major portion from device
 			number instead of via the standard major()
@@ -703,18 +699,8 @@ possibilities
     HAS_AIO_REQ_STRUCT	is defined for Solaris 10 and above systems that
 			have the aio_req structure definition.
 
-    HAS_ATOMIC_T	indicates the Linux version has an
-			<asm/atomic.h> header file and it contains
-			"typedef struct .* atomic_t;"
-
     HASAOPT		indicates the dialect supports the AFS -A
 			option when HAS_AFS is also defined.
-
-    HAS_ASM_TERMIOBITS  indicates for Linux Alpha that the
-			<asm/termiobits.h> header file exists.
-
-    HASAX25CBPTR	indicates that the Linux sock struct has an
-			ax25_db pointer.
 
     HASBLKDEV		indicates the dialect has block device support.
 
@@ -722,9 +708,6 @@ possibilities
 			header file.
 
     HASCACHEFS		enables cache file system support for the
-			dialect.
-
-    HAS_CDFS		enables CDFS file system support for the
 			dialect.
 
     HASCDRNODE		enables/disables readcdrnode() in node.c.
@@ -757,12 +740,6 @@ possibilities
 			call.  See the 00DCACHE file of the lsof
 			distribution for more information on this
 			feature.
-
-    HASDENTRY		indicates the Linux version has a dentry
-			struct defined in <linux/dcache.h>.
-
-    HASDEVKNC           indicates the Linux version has a kernel
-			name cached keyed on device number.
 
     HAS_DINODE_U	indicates the OpenBSD version has a dinode_u
 			union in its inode structure.
@@ -798,9 +775,6 @@ possibilities
     HASF_VNODE		indicates the dialect's file structure has an
 			f_vnode member in it.
 
-    HAS_FDESCENTTBL	indicates the FreeBSD system has the fdescenttbl
-			structure.
-
     HAS_FILEDESCENT	indicates the FreeBSD system has the filedescent
 			definition in the <sys/filedesc.h> header file.
 
@@ -814,20 +788,11 @@ possibilities
 
     HASFIFONODE		enables/disables readfifonode() in node.c.
 
-    HAS_FL_FD		indicates the Linux version has an fl_fd
-			element in the lock structure of <linux/fs.h>.
-
-    HAS_FL_FILE		indicates the Linux version has an fl_file
-			element in the lock structure of <linux/fs.h>.
-
-    HAS_FL_WHENCE	indicates the Linux version has an fl_whence
-			element in the lock structure of <linux/fs.h>.
-
     HAS_F_OPEN		indicates the UnixWare 7.x dialect has the
 			f_open member in its file struct.
 
     HASFSINO            enables the inclusion of the fs_ino element
-			in the lfile structure definition in lsof.h.
+			in the lfile structure definition in common.h.
 			This contains the file system's inode number
 			and may be needed when searching the kernel
 			name cache.  See dialects/osr/dproc.c for
@@ -848,17 +813,10 @@ possibilities
 			See also the RMNT_EXPDEV and RMNT_FSTYPE
 			documentation in lib/rmnt.c
 
-    HASFUSEFS		is defined when the FreeBSD system has FUSE file system
-			support.
-
     HASGETBOOTFILE	indicates the NetBSD or OpenBSD dialect has
 			a getbootfile() function.
 
     HASGNODE		enables/disables readgnode() in node.c.
-
-    HASHASHPID		is defined when the Linux version (probably
-			above 2.1.35) has a pidhash_next member in
-			its task structure.
 
     HASHSNODE		enables/disables readhsnode() in node.c.
 
@@ -877,12 +835,6 @@ possibilities
 			<netinet/tcp_var.h>.
 
     HASINODE		enables/disables readinode() in node.c.
-
-    HASINOKNC		indicates the Linux version has a kernel
-			name cache keyed on inode address.
-
-    HASINADDRSTR	is defined when the inp_[fl]addr members
-			of the inpcb structure are structures.
 
     HASINRIAIPv6	is defined if the dialect has the INRIA IPv6
 			support.  (HASIPv6 will also be defined.)
@@ -912,9 +864,6 @@ possibilities
 
     HAS_JFS2		The AIX >= 5.0 dialect has jfs2 support.
 
-    HASKERNELKEYT       indicates the Linux version has a
-			__kernel_key_t typedef in <linux/types.h>.
-
     HASKERNFS           is defined for BSD dialects for which
 			/kern file system support can be provided.
 
@@ -924,9 +873,6 @@ possibilities
     HASKOPT		enables/disables the ability to read the
 			kernel's name list from a file -- e.g., from
 			a crash dump file.
-
-    HAS_PAUSE_SBT	indicates the FreeBSD system's systm.h has the
-			pause to pause_sbt definition.
 
     HASKQUEUE           indicates the dialect supports the kqueue
 			file type.
@@ -938,7 +884,8 @@ possibilities
 			"defined(_KVM_VNODE)" in <sys/vnode.h>.
 
     HASLFILEADD		defines additional, dialect-specific elements
-    SETLFILEADD		in the lfile structure (defined in lsof.h).
+
+    SETLFILEADD		in the lfile structure (defined in common.h).
 			HASLFILEADD is a macro. The accompanying SETFILEADD
 			macro is used in the alloc_lfile() function of
 			proc.c to preset the additional elements.
@@ -950,7 +897,7 @@ possibilities
 			file system support.
 
     HAS_LGRP_ROOT_CONFLICT
-			indicates the Solaris 9 or Solaris 10 system has 
+			indicates the Solaris 9 or Solaris 10 system has
 			a conflict over the lgrp_root symbol in the
 			<sys/lgrp.h> and <sys/lgrp_user.h> header files.
 
@@ -988,13 +935,7 @@ possibilities
     HASNCVPID           The *BSD dialect namecache struct has an
 			nc_vpid member.
 
-    HASNETDEVICE_H	indicates the Linux version has a netdevice.h
-			header file.
-
     HAS_NFS		enables NFS support for the dialect.
-
-    HASNFSKNC		indicates the LINUX version has a separate
-			NFS name cache.
 
     HASNFSPROTO         indicates the NetBSD or OpenBSD version
 			has the nfsproto.h header file.
@@ -1023,21 +964,12 @@ possibilities
     HAS_NO_6PPCB	is defined if the FreeBSD in_pcb.h has no in6p_ppcb
 			definition.
 
-    HAS_NO_IDEV		indicates the FreeBSD system's inode has no i_dev
-			member.
-
-    HAS_NO_ISO_DEV	indicates the FreeBSD 6 and higher system has
-			no i_dev member in its iso_node structure.
-
     HAS_NO_LONG_LONG	indicates the dialect has no support for the C
 			long long type.  This definition is used by
 			the built-in snprintf() support of lib/snpf.c.
 
     HASNORPC_H		indicates the dialect has no /usr/include/rpc/rpc.h
 			header file.
-
-    HAS_NO_SI_UDEV	indicates the FreeBSD 6 and higher system has
-			no si_udev member in its cdev structure.
 
     HASNOSOCKSECURITY   enables the listing of open socket files,
 			even when HASSECURITY restricts listing of
@@ -1114,23 +1046,6 @@ possibilities
     HASPRINTNM          this value names a private function for
 			printing the dialect's file name.  Used by
 			print.c/print_file().  Takes one argument:
-
-			void HASPRINTNM(struct lfile *)
-
-    HASPRINTOFF         this value names a private function for
-			printing the dialect's file offset.  Used
-			by print.c/print_file().  Takes two arguments:
-
-			char *HASPRINTOFF(struct lfile *, int ty)
-
-			Where ty == 0 if the offset is to be printed
-			in 0t<decimal> format; 1, 0x<hexadecimal>.
-
-    HASPRINTSZ		this value names a private function for
-			printing the dialect's file size.  Used
-			by print.c/print_file(). Takes one argument:
-
-			char *HASPRINTSZ(struct lfile *)
 
 			void HASPRINTNM(struct lfile *)
 
@@ -1218,14 +1133,7 @@ possibilities
 			that processes the results of a successful
 			stat(2) of a file in that directory.
 
-    HASSPECNODE         indicates the DEC OSF/1, or Digital UNIX,
-			or Tru64 UNIX <sys/specdev.h> has a spec_node
-			structure definition.
-
     HASSNODE		indicates the dialect has snode support.
-
-    HAS_SOCKET_SK	indicates that the Linux socket structure
-			has the ``struct sock *sk'' member.
 
     HASSOOPT            indicates the dialect has socket option
 			information (e.g., SO_* symbols) available.
@@ -1268,10 +1176,6 @@ possibilities
     HAS_SYS_SX_H	indicates the FreeBSD 7.0 and higher system has
 			a <sys/sx.h> header file.
 
-    HASTAGTOPATH        indicates the DEC OSF/1, Digital UNIX, or
-			Tru64 UNIX dialect has a libmsfs.so,
-			containing tag_to_path().
-
     HAS_TMPFS		indicates the FreeBSD system has the <fs/tmpfs.h>
 			header file.
 
@@ -1301,11 +1205,6 @@ possibilities
 
     HAS_UM_UFS		indicates the OpenBSD version has UM_UFS[12]
 			definitions.
-
-    HASUNMINSOCK	indicates the Linux version has a user name
-			element in the socket structure; a value of
-			0 says there is no unix_address member; 1,
-			there is.
 
     HASUINT16TYPE	is defined when the dialect has a typedef
 			for u_int16 that may conflict with some other
@@ -1395,6 +1294,10 @@ possibilities
 
     HASXOPT_VALUE	defines the default binary value for the X option
 			in store.c.
+
+    HAS_XTCPCB_TMAXSEG	indicates that <netinet/tcp_var.h> in this FreeBSD
+			version exists and its struct xtcpcb has a
+			t_magseg field.
 
     HAS_ZFS		indicates the dialect has support for the ZFS file
 			system.

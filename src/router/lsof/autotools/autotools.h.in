@@ -1,0 +1,257 @@
+/*
+ *  autotools.h: header shim for autotools
+ */
+
+/*
+ * Copyright 1998 Purdue Research Foundation, West Lafayette, Indiana
+ * 47907.  All rights reserved.
+ *
+ * Written by Victor A. Abell
+ *
+ * This software is not subject to any license of the American Telephone
+ * and Telegraph Company or the Regents of the University of California.
+ *
+ * Permission is granted to anyone to use this software for any purpose on
+ * any computer system, and to alter it and redistribute it freely, subject
+ * to the following restrictions:
+ *
+ * 1. Neither the authors nor Purdue University are responsible for any
+ *    consequences of the use of this software.
+ *
+ * 2. The origin of this software must not be misrepresented, either by
+ *    explicit claim or by omission.  Credit to the authors and Purdue
+ *    University must appear in documentation and sources.
+ *
+ * 3. Altered versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ *
+ * 4. This notice may not be removed or altered.
+ */
+
+#if	!defined(LSOF_AUTOTOOLS_H)
+#define	LSOF_AUTOTOOLS_H	1
+
+#ifndef AUTOTOOLS
+#error "This file should only be included when built using autotools"
+#endif
+
+#include "config.h"
+
+#if !HAVE_RPC_RPC_H && !HAVE_LIBTIRPC
+#define HASNORPC_H
+#endif
+
+#if HAVE_DECL___GLIBC__
+#define GLIBCV
+#endif
+
+#if HAVE_DECL_AF_INET6 || HAVE_NETINET6_IN6_H || HAVE_NETINET_IN6_H || HAVE_NETINET_IP6_H
+#define HASIPv6
+#endif
+
+#if HAVE_DECL_TCP_ESTABLISHED
+#define NEEDS_NETINET_TCPH
+#endif
+
+#if HAVE_LINUX_SOCK_DIAG_H && HAVE_LINUX_UNIX_DIAG_H
+#define HASUXSOCKEPT
+#endif
+
+#if HAVE_DECL_TTYAUX_MAJOR
+#define HASPTYEPT
+#endif
+
+#if HAVE_DECL_SS_CONNECTED
+#define HASSOSTATE
+#define HASSOOPT
+#endif
+
+#if HAVE_STRFTIME
+#define HAS_STRFTIME
+#endif
+
+#if HAVE_SELINUX_SELINUX_H
+#define HASSELINUX
+#endif
+
+#if HAVE_UTMPX_H
+#define HASUTMPX
+#endif
+
+#if HAVE_VM_MEMATTR_T
+#define HAS_VM_MEMATTR_T
+#endif
+
+#if HAVE_DECL_DOADUMP
+#define NEEDS_BOOLEAN_T
+#endif
+
+#if HAVE_KVM_VNODE
+#define HAS_KVM_VNODE
+#endif
+
+#if HAVE_DECL_SBS_CANTSENDMORE
+#define HASSBSTATE
+#endif
+
+#if HAVE_STRUCT_KINFO_PROC_KI_NUMTHREADS
+#define HASTASKS
+#endif
+
+#if HAVE_STRUCT_FILE_F_VNODE
+#define HASF_VNODE
+#endif
+
+#if HAVE_STRUCT_FILEDESCENT
+#define HAS_FILEDESCENT
+#endif
+
+/* Do not include wctype.h in AIX to avoid duplicate time error */
+#if HAVE_WCTYPE_H && !defined(AIXV)
+#define HASWCTYPE_H
+#endif
+
+#if HAVE_STRUCT_INODE_I_DIN2
+#define HAS_UFS1_2
+#endif
+
+#if HAVE_STRUCT_VNODE_V_LOCKF
+#define HAS_V_LOCKF
+#endif
+
+/* Check fdescfs v1 on FreeBSD if needed later */
+#if HAVE_FS_FDESCFS_FDESC_H
+#define HASFDESCFS 2
+#endif
+
+/* Check fdescfs v2 on NetBSD if needed later */
+#if HAVE_MISCFS_FDESC_FDESC_H
+#define HASFDESCFS 1
+#endif
+
+#if HAVE_FS_NULLFS_NULL_H || HAVE_MISCFS_NULLFS_NULL_H
+#define HASNULLFS
+#endif
+
+#if HAVE_STRUCT_XTCPCB_T_MAXSEG
+#define HAS_XTCPCB_TMAXSEG
+#endif
+
+#if HAVE_STRUCT_KINFO_FILE_KF_UN_KF_SOCK_KF_SOCK_SENDQ
+#define HAS_KF_SOCK_SENDQ
+#endif
+
+#if HAVE_STRUCT_KINFO_FILE_KF_UN_KF_FILE_KF_FILE_NLINK
+#define HAS_KF_FILE_NLINK
+#endif
+
+#if HAVE_NFS_NFSPROTO_H
+#define HASNFSPROTO
+#endif
+
+#if HAVE_UVM_UVM_H
+#define UVM
+#define HAS_UVM_INCL
+#endif
+
+#if HAVE_STRUCT_STATVFS
+#define HASSTATVFS
+#endif
+
+#if HAVE_STRUCT_INODE_I_FFS1_SIZE
+#define HASI_FFS1
+#endif
+
+#if HAVE_DECL_GETBOOTFILE
+#define HASGETBOOTFILE
+#endif
+
+#if HAVE_DECL_KVM_GETPROC2
+#define HASKVMGETPROC2
+#endif
+
+#if HAVE_FS_PTYFS_PTYFS_H
+#define HASPTYFS
+#endif
+
+#if HAVE_MISCFS_PROCFS_PROCFS_H
+#define HASPROCFS
+#endif
+
+#if HAVE_DECL_PFSROOT
+#define HASPROCFS_PFSROOT
+#endif
+
+#if HAVE_FS_TMPFS_TMPFS_H
+#define HASTMPFS
+#endif
+
+#if HAVE_SYS_PIPE_H
+#define HAS_SYS_PIPEH
+#endif
+
+#if HAVE_STRUCT_FDESCNODE_FD_LINK
+#define HASFDLINK
+#endif
+
+#if HAVE_INET_IPCLASSIFIER_H
+#define HAS_IPCLASSIFIER_H
+#endif
+
+#if HAVE_SYS_ZONE_H
+#define HASZONES
+#endif
+
+#if HAVE_PAD_MUTEX_T
+#define HAS_PAD_MUTEX
+#endif
+
+#if HAVE_LIBCTF_H
+#define HAS_LIBCTF
+#endif
+
+#if HAVE_DECL_PC_DIRENTPERSEC
+#define HAS_PC_DIRENTPERSEC
+#endif
+
+#if HAVE_SYS_FS_ZFS_H
+#define HAS_ZFS
+#endif
+
+#if HAVE_SYS_CRED_IMPL_H
+#define HAS_CRED_IMPL_H
+#endif
+
+#if HAVE_STRUCT_CONN_S_CONN_IXA
+#define HAS_CONN_NEW
+#endif
+
+#if HAVE_STRUCT_VNODE_V_PATH
+#define HAS_V_PATH
+#endif
+
+#if HAVE_DECL_VSOCK
+#define HAS_VSOCK
+#endif
+
+#if HAVE_STRUCT_AIO_REQ
+#define HAS_AIO_REQ_STRUCT
+#endif
+
+#if HAVE_SYS_RGM_H
+#define HAS_SYS_RGM_H
+#endif
+
+#if HAVE_RPC_RPC_TAGS_H
+#define HAS_RPC_RPC_TAGS_H
+#endif
+
+#if HAVE_DECL_DUP2
+#define HAS_DUP2
+#endif
+
+#if HAVE_DECL_CLOSEFROM
+#define HAS_CLOSEFROM
+#endif
+
+#endif
