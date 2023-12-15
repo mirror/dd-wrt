@@ -71,18 +71,16 @@ endif
 arch-$(CONFIG_CPU_32v7M)	=-D__LINUX_ARM_ARCH__=7 -march=armv7-m
 
 ifeq ($(CONFIG_ARCH_ALPINE),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mcpu=cortex-a15 -mtune=cortex-a15
 else
 ifeq ($(CONFIG_ARCH_QCOM),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon-vfpv4
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mcpu=cortex-a15 -mtune=cortex-a15
 else
 ifeq ($(CONFIG_ARCH_MVEBU),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16
-#arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=
-#CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfpv3-d16
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9
+CFLAGS_ABI	:=-mabi=aapcs-linux
 else
 ifeq ($(CONFIG_ARM_VIRT_EXT),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve
