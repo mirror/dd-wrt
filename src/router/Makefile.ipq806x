@@ -125,6 +125,9 @@ endif
 ifeq ($(CONFIG_R7800),y)
 	sed -i 's/\CONFIG_ARM_ATAG_DTB_COMPAT=y/# CONFIG_ARM_ATAG_DTB_COMPAT is not set/g' $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_HABANERO),y)
+	sed -i 's/\# CONFIG_MTD_ROOTFS_SPLIT is not set/CONFIG_MTD_ROOTFS_SPLIT=y/g' $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EA8500),y)
 	sed -i 's/\# CONFIG_ARM_ATAG_DTB_COMPAT is not set/CONFIG_ARM_ATAG_DTB_COMPAT=y/g' $(LINUXDIR)/.config
 	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER is not set" >> $(LINUXDIR)/.config
