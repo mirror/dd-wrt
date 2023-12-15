@@ -24,6 +24,8 @@ define CMakeConfigure
 			-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=BOTH \
 			-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
 			-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+			-DCMAKE_RANLIB="$(shell realpath $(shell $(ARCH)-linux-gcc -print-file-name=)../../../../bin/)/$(ARCH)-linux-uclibc-gcc-ranlib" \
+			-DCMAKE_AR="$(shell realpath $(shell $(ARCH)-linux-gcc -print-file-name=)../../../../bin/)/$(ARCH)-linux-uclibc-gcc-ar" \
 			-DDL_LIBRARY=$(2) \
             		-DCMAKE_PREFIX_PATH=$(2) \
 			-DCMAKE_STRIP=: \
