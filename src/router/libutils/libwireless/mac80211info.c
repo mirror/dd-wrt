@@ -774,7 +774,12 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
 				mac80211_info->wci->rx_is_vht = 1;
 			}
+
+			if (rinfo[NL80211_RATE_INFO_HE_MCS]) {
+				mac80211_info->wci->rx_is_he = 1;
+			}
 #endif
+
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
 				mac80211_info->wci->rx_is_short_gi = 1;
 			}
