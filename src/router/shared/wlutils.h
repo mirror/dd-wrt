@@ -144,7 +144,7 @@ struct wifi_client_info {
 	int8_t mcs;
 	int8_t rx_mcs;
 	unsigned int is_40mhz:1, is_80mhz:1, is_160mhz:1, is_80p80mhz:1, is_ht:1, is_vht:1, is_short_gi:1, rx_is_40mhz:1, rx_is_80mhz:1, rx_is_160mhz:1, rx_is_80p80mhz:1, rx_is_ht:1, rx_is_vht:1, rx_is_short_gi:1,
-	    ht40intol:1, islzo:1, ps:1;
+	    ht40intol:1, islzo:1, ps:1, rs_is_he:1;
 	uint32_t inactive_time;
 	uint32_t rx_packets;
 	uint32_t tx_packets;
