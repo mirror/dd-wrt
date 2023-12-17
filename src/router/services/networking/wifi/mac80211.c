@@ -1111,7 +1111,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
 				}
-				if (hax_ax(prefix)) {
+				if (has_ax(prefix)) {
 					if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
 						fprintf(fp, "he_default_pe_duration=4\n");
 						fprintf(fp, "he_rts_threshold=1023\n");
