@@ -3136,7 +3136,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		show_rates(wp, prefix, 0);
 		show_rates(wp, prefix, 1);
 	}
-	showRadio(wp, "wl_basic.preamble", wl_preamble);
+	
+	showRadioDefaultOn(wp, "wl_basic.preamble", wl_preamble);
 	if (!is_mac80211(prefix)) {
 		showRadio(wp, "wl_basic.extrange", wl_xr);
 		showRadio(wp, "wl_basic.supergff", wl_ff);
@@ -4475,7 +4476,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		show_rates(wp, prefix, 0);
 		show_rates(wp, prefix, 1);
 	}
-	showRadio(wp, "wl_basic.preamble", wl_preamble);
+	showRadioDefaultOn(wp, "wl_basic.preamble", wl_preamble);
 	if (!is_mac80211(prefix)) {
 		showRadio(wp, "wl_basic.extrange", wl_xr);
 		showRadio(wp, "wl_basic.supergff", wl_ff);
