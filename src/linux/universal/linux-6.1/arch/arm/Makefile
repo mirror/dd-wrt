@@ -57,7 +57,7 @@ endif
 # char struct members incorrectly. So disable it.
 # (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65932)
 #
-KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-sra)
+#KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-sra)
 ifeq ($(CONFIG_AEABI),y)
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
 else
@@ -71,16 +71,16 @@ endif
 arch-$(CONFIG_CPU_32v7M)	=-D__LINUX_ARM_ARCH__=7 -march=armv7-m
 
 ifeq ($(CONFIG_ARCH_ALPINE),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
-CFLAGS_ABI	:=-mabi=aapcs-linux  -mcpu=cortex-a15 -mtune=cortex-a15
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4
 else
 ifeq ($(CONFIG_ARCH_QCOM),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15
-CFLAGS_ABI	:=-mabi=aapcs-linux  -mcpu=cortex-a15 -mtune=cortex-a15
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=softfp
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=softfp
 else
 ifeq ($(CONFIG_ARCH_MVEBU),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9
-CFLAGS_ABI	:=-mabi=aapcs-linux
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=neon
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon -mfloat-abi=softfp
 else
 ifeq ($(CONFIG_ARM_VIRT_EXT),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve

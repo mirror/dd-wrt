@@ -57,4 +57,4 @@ clean-files += poly1305-core.S sha256-core.S sha512-core.S
 poly1305-aflags-$(CONFIG_CPU_V7) := -U__LINUX_ARM_ARCH__ -D__LINUX_ARM_ARCH__=5
 poly1305-aflags-$(CONFIG_KERNEL_MODE_NEON) := -U__LINUX_ARM_ARCH__ -D__LINUX_ARM_ARCH__=7
 AFLAGS_poly1305-core.o += $(poly1305-aflags-y)
-EXTRA_CFLAGS += -O2 $(DISABLE_LTO_GCC)
+EXTRA_CFLAGS += $(DISABLE_LTO_GCC)
