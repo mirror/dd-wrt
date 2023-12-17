@@ -2605,7 +2605,7 @@ static void configure_single(int count)
 	char preamble[32];
 
 	sprintf(preamble, "%s_preamble", dev);
-	if (nvram_default_matchi(preamble, 1, 0)) {
+	if (nvram_default_matchi(preamble, 1, 1)) {
 		eval("iwpriv", dev, "shpreamble", "1");
 	} else
 		eval("iwpriv", dev, "shpreamble", "0");

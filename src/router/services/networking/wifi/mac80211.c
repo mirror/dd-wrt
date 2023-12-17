@@ -1405,7 +1405,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 	MAC80211DEBUG();
 	if (!vapid)
-		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
+		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "1"));
 #ifdef HAVE_MVEBU
 	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack, "0"));
 #else
