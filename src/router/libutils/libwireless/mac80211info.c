@@ -1043,7 +1043,7 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 			sodimension &= 2;
 #endif
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
-			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has5ghz && vht80) ? "[SHORT-GI-80]" : "")
+			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has5ghz && (vht80 || vht160)) ? "[SHORT-GI-80]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has5ghz && vht160) ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
 			 , (((cap >> 8) & 0x7) == 1 ? "[RX-STBC-1]" : "")
