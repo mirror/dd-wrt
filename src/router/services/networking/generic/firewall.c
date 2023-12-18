@@ -331,17 +331,12 @@ static int ip2cclass(char *ipaddr, char *new, int count)
 	return snprintf(new, count, "%d.%d.%d.", ip[0], ip[1], ip[2]);
 }
 
-static void parse_port_forward(char *wanaddr, char *lan_cclass, char *wordlist, int dmzenable)
+static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass, char *wordlist, int dmzenable)
 {
 	char var[256], *next;
 	char buff[256], ip2[16];
 	int flag_dis = 0;
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 	char *wan_proto = nvram_safe_get("wan_proto");
-	char *wan_iface = nvram_safe_get("wan_ifname");
-	if (!*wan_iface)
-		wan_iface = nvram_safe_get("wan_ifname2");
-#endif
 
 	/*
 	 * name:enable:proto:port>ip name:enable:proto:port>ip 
@@ -382,11 +377,9 @@ static void parse_port_forward(char *wanaddr, char *lan_cclass, char *wordlist, 
 
 			if (flag_dis == 0) {
 				save2file_A_prerouting("-p tcp -d %s --dport %s:%s -j DNAT --to-destination %s", wanaddr, from, to, ip);
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 				    )
 					save2file_A_prerouting("-i %s -p tcp --dport %s:%s -j DNAT --to-destination %s", wan_iface, from, to, ip);
-#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p tcp -m tcp -d %s --dport %s:%s -j %s\n", wan_iface, ip, from, to, log_accept);
 			} else {
 				if ((!dmzenable)
@@ -404,11 +397,9 @@ static void parse_port_forward(char *wanaddr, char *lan_cclass, char *wordlist, 
 			bzero(buff, sizeof(buff));
 			if (flag_dis == 0) {
 				save2file_A_prerouting("-p udp -d %s --dport %s:%s -j DNAT --to-destination %s", wanaddr, from, to, ip);
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 				    )
 					save2file_A_prerouting("-i %s -p udp -m udp --dport %s:%s -j DNAT --to-destination %s", wan_iface, from, to, ip);
-#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p udp -m udp -d %s --dport %s:%s -j %s\n", wan_iface, ip, from, to, log_accept);
 			} else {
 				if ((!dmzenable)
@@ -551,22 +542,15 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 	}
 }
 #endif
-static void create_spec_forward(char *proto, char *src, char *wanaddr, char *from, char *ip, char *to)
+static void create_spec_forward(char *wan_iface, char *proto, char *src, char *wanaddr, char *from, char *ip, char *to)
 {
 	char buff[256];
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 	char *wan_proto = nvram_safe_get("wan_proto");
-	char *wan_iface = nvram_safe_get("wan_ifname");
-	if (!*wan_iface)
-		wan_iface = nvram_safe_get("wan_ifname2");
-#endif
 	if (src && *src) {
 		save2file_A_prerouting("-p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, src, wanaddr, from, ip, to);
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 		    )
 			save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
-#endif
 		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
 		} else {
@@ -574,11 +558,9 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 		}
 	} else {
 		save2file_A_prerouting("-p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, wanaddr, from, ip, to);
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 		    )
 			save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
-#endif
 		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
 		} else {
@@ -881,8 +863,8 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 #ifdef HAVE_UPNP
 		parse_upnp_forward(wanface, wanaddr, lan_cclass);
 #endif
-		parse_spec_forward(wanaddr, nvram_safe_get("forward_spec"));
-		parse_port_forward(wanaddr, lan_cclass, nvram_safe_get("forward_port"), dmzenable);
+		parse_spec_forward(wanface, wanaddr, nvram_safe_get("forward_spec"));
+		parse_port_forward(wanface, wanaddr, lan_cclass, nvram_safe_get("forward_port"), dmzenable);
 		/*
 		 * DD-WRT addition by Eric Sauvageau 
 		 */
