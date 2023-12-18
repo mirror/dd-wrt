@@ -573,7 +573,7 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 
 }
 
-static void parse_spec_forward(char *wanaddr, char *wordlist)
+static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 {
 	char var[256], *next;
 	char buff[256];
@@ -606,10 +606,10 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 		 */
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			create_spec_forward("tcp", src, wanaddr, from, ip, to);
+			create_spec_forward(wan_iface, "tcp", src, wanaddr, from, ip, to);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-			create_spec_forward("udp", src, wanaddr, from, ip, to);
+			create_spec_forward(wan_iface, "udp", src, wanaddr, from, ip, to);
 		}
 	}
 }
