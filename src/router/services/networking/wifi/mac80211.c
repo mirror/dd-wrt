@@ -1982,7 +1982,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tdisable_he=1\n");
 		}
 		if (has_ax(prefix)) {
-			if (strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")) {
+			if (strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
 				fprintf(fp, "\tdisable_he=1\n");
 			}
 		}
