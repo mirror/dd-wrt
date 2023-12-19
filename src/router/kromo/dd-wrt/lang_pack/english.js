@@ -3293,6 +3293,7 @@ wl_basic.mesh_nolearn="Avoid Multi-Hop Path Discovery";
 wl_basic.mesh_connected_to_gate="Announce Connected to Gate";
 wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 wl_basic.mesh_header_cache_size="Header Cache Size";
+wl_basic.he_bss_color="BSS Color";
 
 //help container
 var hwl_basic=new Object();
