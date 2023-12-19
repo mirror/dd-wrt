@@ -2964,6 +2964,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
+	if (has_ax(prefix) {
+		char *netmode = nvram_nget("%s_net_mode", prefix);
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+			char color[32];
+			sprintf(color, "%s_he_bss_color", prefix);
+			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
+		}
+	}
 
 #ifdef HAVE_MADWIFI
 	// if (!strcmp (prefix, "wlan0"))
@@ -4404,6 +4412,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
+	if (has_ax(prefix) {
+		char *netmode = nvram_nget("%s_net_mode", prefix);
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+			char color[32];
+			sprintf(color, "%s_he_bss_color", prefix);
+			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
+		}
+	}
 	if (has_ldpc(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((strcmp(netmode, "mixed") &&	//
