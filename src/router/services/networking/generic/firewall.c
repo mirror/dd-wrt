@@ -562,9 +562,9 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 		    )
 			save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
 		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
-			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
+			snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_accept);
 		} else {
-			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
+			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_accept);
 		}
 	}
 	count += strlen(buff) + 1;
