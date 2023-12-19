@@ -1113,6 +1113,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				}
 				if (has_ax(prefix)) {
 					if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+						char color[32];
+						sprintf(color, "%s_he_bss_color", prefix);
+						int c = nvram_default_geti(color, 0);
 						fprintf(fp, "he_default_pe_duration=4\n");
 						fprintf(fp, "he_rts_threshold=1023\n");
 						fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
@@ -1139,6 +1142,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 						fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
+						if (color > 0 && color < 64) {
+							fprintf(fp, "he_bss_color=\n", color);
+						}
 					}
 				}
 				fprintf(fp, "no_country_ie=1\n");
