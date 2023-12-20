@@ -2964,7 +2964,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (has_ax(prefix) {
+	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
 			char color[32];
@@ -4412,7 +4412,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (has_ax(prefix) {
+	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
 			char color[32];
