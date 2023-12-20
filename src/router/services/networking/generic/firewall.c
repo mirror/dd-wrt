@@ -384,7 +384,7 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 			} else {
 				if ((!dmzenable)
 				    || (dmzenable && strcmp(ip, nvram_safe_get("dmz_ipaddr")))) {
-					snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p tcp -m tcp -d %s --sport %s:%s -j %s\n", wan_iface, ip, from, to, log_drop);
+					snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p tcp -m tcp -d %s --dport %s:%s -j %s\n", wan_iface, ip, from, to, log_drop);
 				}
 			}
 
