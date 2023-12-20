@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7477 | brainslayer | 2023-12-20 12:01:22 +0600 (Wed, 20 Dec 2023) | 1 line
+
+add missing msdu assignment
+------------------------------------------------------------------------
 r7476 | brainslayer | 2023-12-20 11:30:39 +0600 (Wed, 20 Dec 2023) | 1 line
 
 replace idr code in ath10k with faster variant. still needs to be tested
