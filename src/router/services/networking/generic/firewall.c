@@ -542,29 +542,48 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 	}
 }
 #endif
-static void create_spec_forward(char *wan_iface, char *proto, char *src, char *wanaddr, char *from, char *ip, char *to)
+static void create_spec_forward(char *wan_iface, char *proto, char *src, char *wanaddr, char *from, char *ip, char *to, int disabled)
 {
 	char buff[256];
 	char *wan_proto = nvram_safe_get("wan_proto");
 	if (src && *src) {
-		save2file_A_prerouting("-p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, src, wanaddr, from, ip, to);
-		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
-		    )
-			save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
-		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
-			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
+		if (disabled == 0) {
+			save2file_A_prerouting("-p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, src, wanaddr, from, ip, to);
+			if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
+			    )
+				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
+
+			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+				snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
+			} else {
+				snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
+			}
 		} else {
-			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
+			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+				snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_drop);
+			} else {
+				snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_drop);
+			}
+
 		}
 	} else {
-		save2file_A_prerouting("-p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, wanaddr, from, ip, to);
-		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
-		    )
-			save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
-		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
-			snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_accept);
+		if (disabled == 0) {
+			save2file_A_prerouting("-p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, wanaddr, from, ip, to);
+			if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
+			    )
+				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
+			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+				snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_accept);
+			} else {
+				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_accept);
+			}
 		} else {
-			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_accept);
+			if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+				snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_drop);
+			} else {
+				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto, ip, to, log_drop);
+			}
+
 		}
 	}
 	count += strlen(buff) + 1;
@@ -577,6 +596,7 @@ static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 {
 	char var[256], *next;
 	char buff[256];
+	int flag_dis = 0;
 
 	/*
 	 * name:enable:proto:ext_port>ip:int_port
@@ -598,7 +618,9 @@ static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 		 * skip if it's disabled 
 		 */
 		if (strcmp(enable, "off") == 0)
-			continue;
+			flag_dis = 1;
+		else
+			flag_dis = 0;
 
 		/*
 		 * -A PREROUTING -i eth1 -p tcp -d 192.168.88.11 --dport 823
@@ -606,10 +628,10 @@ static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 		 */
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			create_spec_forward(wan_iface, "tcp", src, wanaddr, from, ip, to);
+			create_spec_forward(wan_iface, "tcp", src, wanaddr, from, ip, to, flag_dis);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-			create_spec_forward(wan_iface, "udp", src, wanaddr, from, ip, to);
+			create_spec_forward(wan_iface, "udp", src, wanaddr, from, ip, to, flag_dis);
 		}
 	}
 }
@@ -617,23 +639,32 @@ static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 #define ANT_IPF_PREROUTING  0
 #define ANT_IPF_POSTROUTING 1
 
-static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *dest_ip, int cnt)
+static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *dest_ip, int cnt, int disabled)
 {
 	char buff[256];
 
-	if (mode == ANT_IPF_PREROUTING) {
-		snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
-		eval("ifconfig", buff, src_ip, "netmask", "255.255.255.255", "up");
+	if (disabled == 0) {
+		if (mode == ANT_IPF_PREROUTING) {
+			snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
+			eval("ifconfig", buff, src_ip, "netmask", "255.255.255.255", "up");
 
-		save2file_A_prerouting("-i %s -d %s -j DNAT --to-destination %s", wan_iface, src_ip, dest_ip);
+			save2file_A_prerouting("-i %s -d %s -j DNAT --to-destination %s", wan_iface, src_ip, dest_ip);
 
-		snprintf(buff, sizeof(buff), "-A FORWARD -i %s -d %s -j %s\n", wan_iface, dest_ip, log_accept);
-		count += strlen(buff) + 1;
-		suspense = realloc(suspense, count);
-		strcat(suspense, buff);
-	}
-	if (mode == ANT_IPF_POSTROUTING) {
-		save2file_A_postrouting("-o %s -s %s -j SNAT --to-source %s", wan_iface, dest_ip, src_ip);
+			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -d %s -j %s\n", wan_iface, dest_ip, log_accept);
+			count += strlen(buff) + 1;
+			suspense = realloc(suspense, count);
+			strcat(suspense, buff);
+		}
+		if (mode == ANT_IPF_POSTROUTING) {
+			save2file_A_postrouting("-o %s -s %s -j SNAT --to-source %s", wan_iface, dest_ip, src_ip);
+		}
+	} else {
+		if (mode == ANT_IPF_PREROUTING) {
+			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -d %s -j %s\n", wan_iface, dest_ip, log_drop);
+			count += strlen(buff) + 1;
+			suspense = realloc(suspense, count);
+			strcat(suspense, buff);
+		}
 	}
 }
 
@@ -641,7 +672,7 @@ static void parse_ip_forward(int mode, char *wanface)
 {
 	char *wordlist = nvram_safe_get("forward_ip");
 	char var[256], *next;
-
+	int flag_dis = 0;
 	/*
 	 * name:enale:src:dest
 	 * name:enale:src:dest
@@ -657,9 +688,11 @@ static void parse_ip_forward(int mode, char *wanface)
 			continue;
 
 		if (strcmp(enable, "off") == 0)
-			continue;
+			flag_dis = 0;
+		else
+			flag_dis = 1;
 
-		create_ip_forward(mode, wanface, src, dest, cnt++);
+		create_ip_forward(mode, wanface, src, dest, cnt++, flag_dis);
 	}
 }
 
@@ -1117,7 +1150,7 @@ static int match_hrmin(int hr_st, int mi_st, int hr_end, int mi_end)
  * RETURN - 0 : Data error or be disabled until in scheduled time.
  *                      1 : Enabled.
  */
-static int schedule_by_tod(FILE * cfd, int seq)
+static int schedule_by_tod(FILE *cfd, int seq)
 {
 	char *todvalue;
 	int sched = 0, allday = 0;
@@ -2350,11 +2383,11 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (nvram_matchi("openvpn_enable", 1)) {
 		//char proto[16];
 		if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4") || nvram_match("openvpn_proto", "udp6")) {
-		//if (nvhas("openvpn_proto", "udp")) {
+			//if (nvhas("openvpn_proto", "udp")) {
 			save2file_A_input("-i %s -p udp --dport %s -j %s", wanface, nvram_safe_get("openvpn_port"), log_accept);
 		}
 		if (nvram_match("openvpn_proto", "tcp-server") || nvram_match("openvpn_proto", "tcp4-server") || nvram_match("openvpn_proto", "tcp6-server")) {
-		//if (nvhas("openvpn_proto", "tcp")) {
+			//if (nvhas("openvpn_proto", "tcp")) {
 			save2file_A_input("-i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("openvpn_port"), log_accept);
 		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
@@ -3032,7 +3065,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifndef HAVE_MICRO
 		if (nvram_matchi("log_dropped", 1)) {
 			save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
-			if (has_gateway() &&  nvram_matchi("filter_invalid", 1))  {
+			if (has_gateway() && nvram_matchi("filter_invalid", 1)) {
 				save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 			}
 		}
@@ -3156,7 +3189,7 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 	}
 
-//      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", log_accept);
+	//      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", log_accept);
 //      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "INVALID", "-j", log_drop);
 //      eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "INVALID", "-j", log_drop);
 //      eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", log_accept);
