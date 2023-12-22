@@ -46,9 +46,6 @@ typedef struct DES_ks {
          */
         DES_LONG deslong[2];
     } ks[16];
-#ifdef OCTEON_OPENSSL
-    uint64_t cvmkey;
-#endif
 } DES_key_schedule;
 
 # define DES_KEY_SZ      (sizeof(DES_cblock))
