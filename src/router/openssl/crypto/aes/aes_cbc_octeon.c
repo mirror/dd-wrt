@@ -192,7 +192,7 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
 
   /* Initialise the keys */
   uint64_t *rdkey;
-  rdkey = &key->rdkey[0];
+  rdkey = &key->rd_key[0];
   CVMX_MT_AES_KEY (rdkey[0], 0);
   CVMX_MT_AES_KEY (rdkey[1], 1);
   CVMX_MT_AES_KEY (rdkey[2], 2);

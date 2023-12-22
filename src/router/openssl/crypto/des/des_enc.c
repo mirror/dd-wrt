@@ -27,9 +27,9 @@ DES_ede3_encrypt (const unsigned char *input, unsigned char *output,
   DES_key_schedule * ks2, DES_key_schedule * ks3, int enc)
 {
   uint64_t in64 = 0;
-  uint64_t *rdkey1 = &ks1->cblock[0];
-  uint64_t *rdkey2 = &ks2->cblock[0];
-  uint64_t *rdkey3 = &ks3->cblock[0];
+  uint64_t *rdkey1 = &ks1->ks->cblock[0];
+  uint64_t *rdkey2 = &ks2->ks->cblock[0];
+  uint64_t *rdkey3 = &ks3->ks->cblock[0];
 
   CVMX_MT_3DES_KEY (*rdkey1, 0);
   CVMX_MT_3DES_KEY (*rdkey2, 1);
@@ -360,9 +360,9 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
   outp = (uint64_t *) output;
   i0 = inp[0];
   /* Initialise the keys */
-  uint64_t *rdkey1 = &ks1->cblock[0];
-  uint64_t *rdkey2 = &ks2->cblock[0];
-  uint64_t *rdkey3 = &ks3->cblock[0];
+  uint64_t *rdkey1 = &ks1->ks->cblock[0];
+  uint64_t *rdkey2 = &ks2->ks->cblock[0];
+  uint64_t *rdkey3 = &ks3->ks->cblock[0];
 
   CVMX_MT_3DES_KEY (*rdkey1, 0);
   CVMX_MT_3DES_KEY (*rdkey2, 1);

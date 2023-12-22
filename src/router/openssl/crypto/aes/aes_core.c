@@ -1280,9 +1280,9 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 #ifdef OCTEON_OPENSSL
   int keylen;
   keylen = bits / 64;
-  memset (&(key->rdkey[0]), 0, sizeof (uint64_t) * 4);
-  memcpy (&(key->rskey[0]), userKey, sizeof (uint64_t) * keylen);
-  key->rd_rounds = 6 + bits / 32;
+  memset (&(key->rd_key[0]), 0, sizeof (uint64_t) * 4);
+  memcpy (&(key->rd_key[0]), userKey, sizeof (uint64_t) * keylen);
+  key->rounds = 6 + bits / 32;
   return 0;
 #endif
 
@@ -1435,7 +1435,7 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
                  const AES_KEY *key) {
 #ifdef OCTEON_OPENSSL
   uint64_t *in64,*out64, *rdkey;
-  rdkey = &key->rdkey[0];
+  rdkey = &key->rd_key[0];
   CVMX_MT_AES_KEY (rdkey[0], 0);
   CVMX_MT_AES_KEY (rdkey[1], 1);
   CVMX_MT_AES_KEY (rdkey[2], 2);
@@ -1643,7 +1643,7 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
 {
 #ifdef OCTEON_OPENSSL
   uint64_t *in64,*out64, *rdkey;
-  rdkey = &key->rdkey[0];
+  rdkey = &key->rd_key[0];
   CVMX_MT_AES_KEY (rdkey[0], 0);
   CVMX_MT_AES_KEY (rdkey[1], 1);
   CVMX_MT_AES_KEY (rdkey[2], 2);

@@ -14,9 +14,9 @@ void DES_ecb3_encrypt(const_DES_cblock *input, DES_cblock *output,
                       DES_key_schedule *ks3, int enc)
 {
 #ifdef OCTEON_OPENSSL
-  uint64_t *rdkey1 = &ks1->cblock[0];
-  uint64_t *rdkey2 = &ks2->cblock[0];
-  uint64_t *rdkey3 = &ks3->cblock[0];
+  uint64_t *rdkey1 = &ks1->ks->cblock[0];
+  uint64_t *rdkey2 = &ks2->ks->cblock[0];
+  uint64_t *rdkey3 = &ks3->ks->cblock[0];
 
   CVMX_MT_3DES_KEY (*rdkey1, 0);
   CVMX_MT_3DES_KEY (*rdkey2, 1);
