@@ -48,7 +48,7 @@
 #include "cvmx-key.h"
 #endif
 
-#if defined(OPENSSL_AES_CONST_TIME) && !defined(AES_ASM)
+#if defined(OPENSSL_AES_CONST_TIME) && !defined(AES_ASM) && !defined(OCTEON_OPENSSL)
 typedef union {
     unsigned char b[8];
     u32 w[2];
