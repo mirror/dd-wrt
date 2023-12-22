@@ -315,7 +315,7 @@ void DES_set_key_unchecked(const_DES_cblock *key, DES_key_schedule *schedule)
     schedule->session = NULL;
 #endif
 #ifdef OCTEON_OPENSSL
-	memcpy(&(schedule->cvmkey),key,sizeof(schedule->cvmkey));
+	memcpy(&(schedule->cblock),key,sizeof(schedule->cblock));
 	/* schedule->cvmkey = *(uint64_t *)key[0]; */
 #endif
 #ifndef OCTEON_OPENSSL

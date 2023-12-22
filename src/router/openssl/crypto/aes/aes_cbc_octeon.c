@@ -191,11 +191,14 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
   CVMX_MT_AES_IV (iv[1], 1);
 
   /* Initialise the keys */
-  CVMX_MT_AES_KEY (key->cvmkey[0], 0);
-  CVMX_MT_AES_KEY (key->cvmkey[1], 1);
-  CVMX_MT_AES_KEY (key->cvmkey[2], 2);
-  CVMX_MT_AES_KEY (key->cvmkey[3], 3);
-  CVMX_MT_AES_KEYLENGTH (key->cvm_keylen / 64 - 1);
+  uint64_t *rdkey;
+  rdkey = &key->rdkey[0];
+  CVMX_MT_AES_KEY (rdkey[0], 0);
+  CVMX_MT_AES_KEY (rdkey[1], 1);
+  CVMX_MT_AES_KEY (rdkey[2], 2);
+  CVMX_MT_AES_KEY (rdkey[3], 3);
+  CVMX_MT_AES_KEYLENGTH ((key->rounds - 6) * 2 - 1);
+
   i0 = inp[0];
   i1 = inp[1];
   if (AES_ENCRYPT == enc) {

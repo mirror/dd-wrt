@@ -1280,9 +1280,10 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 #ifdef OCTEON_OPENSSL
   int keylen;
   keylen = bits / 64;
-  memset (&(key->cvmkey[0]), 0, sizeof (uint64_t) * 4);
-  memcpy (&(key->cvmkey[0]), userKey, sizeof (uint64_t) * keylen);
-  key->cvm_keylen = bits;
+  memset (&(key->rdkey[0]), 0, sizeof (uint64_t) * 4);
+  memcpy (&(key->rskey[0]), userKey, sizeof (uint64_t) * keylen);
+  key->rd_rounds = 6 + bits / 32;
+  return 0;
 #endif
 
     rk = key->rd_key;
@@ -1384,6 +1385,9 @@ int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
 
     /* first, start with an encryption schedule */
     status = AES_set_encrypt_key(userKey, bits, key);
+#ifdef OCTEON_OPENSSL
+    return 0;
+#endif
     if (status < 0)
         return status;
 
@@ -1430,12 +1434,13 @@ int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
 void AES_encrypt(const unsigned char *in, unsigned char *out,
                  const AES_KEY *key) {
 #ifdef OCTEON_OPENSSL
-  uint64_t *in64,*out64;
-  CVMX_MT_AES_KEY (key->cvmkey[0], 0);
-  CVMX_MT_AES_KEY (key->cvmkey[1], 1);
-  CVMX_MT_AES_KEY (key->cvmkey[2], 2);
-  CVMX_MT_AES_KEY (key->cvmkey[3], 3);
-  CVMX_MT_AES_KEYLENGTH (key->cvm_keylen/64 - 1);
+  uint64_t *in64,*out64, *rdkey;
+  rdkey = &key->rdkey[0];
+  CVMX_MT_AES_KEY (rdkey[0], 0);
+  CVMX_MT_AES_KEY (rdkey[1], 1);
+  CVMX_MT_AES_KEY (rdkey[2], 2);
+  CVMX_MT_AES_KEY (rdkey[3], 3);
+  CVMX_MT_AES_KEYLENGTH ((key->rounds - 6) * 2 - 1);
   in64 = (uint64_t*)in;
   out64 = (uint64_t*)out;	
   CVMX_MT_AES_ENC0(in64[0]);
@@ -1637,12 +1642,13 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
                  const AES_KEY *key)
 {
 #ifdef OCTEON_OPENSSL
-  uint64_t *in64,*out64;
-  CVMX_MT_AES_KEY (key->cvmkey[0], 0);
-  CVMX_MT_AES_KEY (key->cvmkey[1], 1);
-  CVMX_MT_AES_KEY (key->cvmkey[2], 2);
-  CVMX_MT_AES_KEY (key->cvmkey[3], 3);
-  CVMX_MT_AES_KEYLENGTH (key->cvm_keylen/64 - 1);
+  uint64_t *in64,*out64, *rdkey;
+  rdkey = &key->rdkey[0];
+  CVMX_MT_AES_KEY (rdkey[0], 0);
+  CVMX_MT_AES_KEY (rdkey[1], 1);
+  CVMX_MT_AES_KEY (rdkey[2], 2);
+  CVMX_MT_AES_KEY (rdkey[3], 3);
+  CVMX_MT_AES_KEYLENGTH ((key->rounds - 6) * 2 - 1);
   in64 = (uint64_t*)in;
   out64 = (uint64_t*)out;
   CVMX_MT_AES_DEC0(in64[0]);
