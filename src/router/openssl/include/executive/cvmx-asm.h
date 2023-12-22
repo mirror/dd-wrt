@@ -164,6 +164,7 @@ extern "C" {
 #endif /* CVMX_CAVIUM_OCTEON2 */
 
 #ifdef __OCTEON__
+#error "octeon"
 #define CVMX_SYNCIOBDMA asm volatile ("synciobdma" : : :"memory")
 	/* We actually use two syncw instructions in a row when we need a write
 	   memory barrier. This is because the CN3XXX series of Octeons have
@@ -200,9 +201,11 @@ extern "C" {
 #define CVMX_SYNCWS_OCTEON2 asm volatile ("syncws\n" : : :"memory")
 #define CVMX_SYNCWS_STR_OCTEON2 "syncws\n"
 #ifdef CVMX_CAVIUM_OCTEON2
+#error "2"
 #define CVMX_SYNCWS CVMX_SYNCWS_OCTEON2
 #define CVMX_SYNCWS_STR CVMX_SYNCWS_STR_OCTEON2
 #else
+#error "1"
 #define CVMX_SYNCWS asm volatile ("syncws\nsyncws\n" : : :"memory")
 #define CVMX_SYNCWS_STR "syncws\nsyncws\n"
 #endif /* CVMX_CAVIUM_OCTEON2 */
