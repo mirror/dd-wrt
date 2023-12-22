@@ -695,9 +695,9 @@ static void parse_ip_forward(int mode, char *wanface)
 			continue;
 
 		if (strcmp(enable, "off") == 0)
-			flag_dis = 0;
-		else
 			flag_dis = 1;
+		else
+			flag_dis = 0;
 
 		create_ip_forward(mode, wanface, src, dest, cnt++, flag_dis);
 	}
