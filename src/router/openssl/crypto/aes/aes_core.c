@@ -1441,7 +1441,7 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
   CVMX_MT_AES_KEY (rdkey[1], 1);
   CVMX_MT_AES_KEY (rdkey[2], 2);
   CVMX_MT_AES_KEY (rdkey[3], 3);
-  CVMX_MT_AES_KEYLENGTH ((key->rounds - 6) * 2 - 1);
+  CVMX_MT_AES_KEYLENGTH ((key->rounds - 6) / 2 - 1);
   in64 = (uint64_t*)in;
   out64 = (uint64_t*)out;	
   CVMX_MT_AES_ENC0(in64[0]);
@@ -1651,7 +1651,7 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
   CVMX_MT_AES_KEY (rdkey[1], 1);
   CVMX_MT_AES_KEY (rdkey[2], 2);
   CVMX_MT_AES_KEY (rdkey[3], 3);
-  CVMX_MT_AES_KEYLENGTH ((key->rounds - 6) * 2 - 1);
+  CVMX_MT_AES_KEYLENGTH ((key->rounds - 6) / 2 - 1);
   in64 = (uint64_t*)in;
   out64 = (uint64_t*)out;
   CVMX_MT_AES_DEC0(in64[0]);
