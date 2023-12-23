@@ -47,10 +47,10 @@ static void octeon_sha256_read_hash(struct sha256_state *sctx)
 {
 	u64 *hash = (u64 *)sctx->state;
 
-	hash[0] = read_octeon_64bit_hash_dword(0);
-	hash[1] = read_octeon_64bit_hash_dword(1);
-	hash[2] = read_octeon_64bit_hash_dword(2);
-	hash[3] = read_octeon_64bit_hash_dword(3);
+	hash[0] = be64_to_cpu(read_octeon_64bit_hash_dword(0));
+	hash[1] = be64_to_cpu(read_octeon_64bit_hash_dword(1));
+	hash[2] = be64_to_cpu(read_octeon_64bit_hash_dword(2));
+	hash[3] = be64_to_cpu(read_octeon_64bit_hash_dword(3));
 }
 
 static void octeon_sha256_transform(const void *_block)
@@ -71,14 +71,14 @@ static int octeon_sha224_init(struct shash_desc *desc)
 {
 	struct sha256_state *sctx = shash_desc_ctx(desc);
 
-	sctx->state[0] = SHA224_H0;
-	sctx->state[1] = SHA224_H1;
-	sctx->state[2] = SHA224_H2;
-	sctx->state[3] = SHA224_H3;
-	sctx->state[4] = SHA224_H4;
-	sctx->state[5] = SHA224_H5;
-	sctx->state[6] = SHA224_H6;
-	sctx->state[7] = SHA224_H7;
+	sctx->state[0] = cpu_to_be32(SHA224_H0);
+	sctx->state[1] = cpu_to_be32(SHA224_H1);
+	sctx->state[2] = cpu_to_be32(SHA224_H2);
+	sctx->state[3] = cpu_to_be32(SHA224_H3);
+	sctx->state[4] = cpu_to_be32(SHA224_H4);
+	sctx->state[5] = cpu_to_be32(SHA224_H5);
+	sctx->state[6] = cpu_to_be32(SHA224_H6);
+	sctx->state[7] = cpu_to_be32(SHA224_H7);
 	sctx->count = 0;
 
 	return 0;
@@ -88,14 +88,14 @@ static int octeon_sha256_init(struct shash_desc *desc)
 {
 	struct sha256_state *sctx = shash_desc_ctx(desc);
 
-	sctx->state[0] = SHA256_H0;
-	sctx->state[1] = SHA256_H1;
-	sctx->state[2] = SHA256_H2;
-	sctx->state[3] = SHA256_H3;
-	sctx->state[4] = SHA256_H4;
-	sctx->state[5] = SHA256_H5;
-	sctx->state[6] = SHA256_H6;
-	sctx->state[7] = SHA256_H7;
+	sctx->state[0] = cpu_to_be32(SHA256_H0);
+	sctx->state[1] = cpu_to_be32(SHA256_H1);
+	sctx->state[2] = cpu_to_be32(SHA256_H2);
+	sctx->state[3] = cpu_to_be32(SHA256_H3);
+	sctx->state[4] = cpu_to_be32(SHA256_H4);
+	sctx->state[5] = cpu_to_be32(SHA256_H5);
+	sctx->state[6] = cpu_to_be32(SHA256_H6);
+	sctx->state[7] = cpu_to_be32(SHA256_H7);
 	sctx->count = 0;
 
 	return 0;
@@ -168,7 +168,6 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 	unsigned long flags;
 	unsigned int index;
 	__be64 bits;
-	int i;
 
 	/* Save number of bits. */
 	bits = cpu_to_be64(sctx->count << 3);
@@ -189,8 +188,7 @@ static int octeon_sha256_final(struct shash_desc *desc, u8 *out)
 	octeon_crypto_disable(&state, flags);
 
 	/* Store state in digest */
-	for (i = 0; i < 8; i++)
-		dst[i] = cpu_to_be32(sctx->state[i]);
+	memcpy(dst, sctx->state, sizeof(__be32) * 8);
 
 	/* Zeroize sensitive information. */
 	memset(sctx, 0, sizeof(*sctx));
@@ -260,7 +258,7 @@ static struct shash_alg octeon_sha256_algs[2] = { {
 
 static int __init octeon_sha256_mod_init(void)
 {
-	if (!octeon_has_crypto())
+	if (!octeon_has_feature(OCTEON_FEATURE_CRYPTO))
 		return -ENOTSUPP;
 	return crypto_register_shashes(octeon_sha256_algs,
 				       ARRAY_SIZE(octeon_sha256_algs));

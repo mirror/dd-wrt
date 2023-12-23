@@ -47,8 +47,8 @@ static void octeon_md5_read_hash(struct md5_state *ctx)
 {
 	u64 *hash = (u64 *)ctx->hash;
 
-	hash[0] = read_octeon_64bit_hash_dword(0);
-	hash[1] = read_octeon_64bit_hash_dword(1);
+	hash[0] = be64_to_cpu(read_octeon_64bit_hash_dword(0));
+	hash[1] = be64_to_cpu(read_octeon_64bit_hash_dword(1));
 }
 
 static void octeon_md5_transform(const void *_block)
@@ -190,7 +190,7 @@ static struct shash_alg alg = {
 
 static int __init md5_mod_init(void)
 {
-	if (!octeon_has_crypto())
+	if (!octeon_has_feature(OCTEON_FEATURE_CRYPTO))
 		return -ENOTSUPP;
 	return crypto_register_shash(&alg);
 }

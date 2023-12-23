@@ -46,14 +46,16 @@ static void octeon_sha512_store_hash(struct sha512_state *sctx)
 
 static void octeon_sha512_read_hash(struct sha512_state *sctx)
 {
-	sctx->state[0] = read_octeon_64bit_hash_sha512(0);
-	sctx->state[1] = read_octeon_64bit_hash_sha512(1);
-	sctx->state[2] = read_octeon_64bit_hash_sha512(2);
-	sctx->state[3] = read_octeon_64bit_hash_sha512(3);
-	sctx->state[4] = read_octeon_64bit_hash_sha512(4);
-	sctx->state[5] = read_octeon_64bit_hash_sha512(5);
-	sctx->state[6] = read_octeon_64bit_hash_sha512(6);
-	sctx->state[7] = read_octeon_64bit_hash_sha512(7);
+	u64 *hash = (u64 *)sctx->state;
+
+	hash[0] = be64_to_cpu(read_octeon_64bit_hash_sha512(0));
+	hash[1] = be64_to_cpu(read_octeon_64bit_hash_sha512(1));
+	hash[2] = be64_to_cpu(read_octeon_64bit_hash_sha512(2));
+	hash[3] = be64_to_cpu(read_octeon_64bit_hash_sha512(3));
+	hash[4] = be64_to_cpu(read_octeon_64bit_hash_sha512(4));
+	hash[5] = be64_to_cpu(read_octeon_64bit_hash_sha512(5));
+	hash[6] = be64_to_cpu(read_octeon_64bit_hash_sha512(6));
+	hash[7] = be64_to_cpu(read_octeon_64bit_hash_sha512(7));
 }
 
 static void octeon_sha512_transform(const void *_block)
@@ -82,14 +84,14 @@ static int octeon_sha512_init(struct shash_desc *desc)
 {
 	struct sha512_state *sctx = shash_desc_ctx(desc);
 
-	sctx->state[0] = SHA512_H0;
-	sctx->state[1] = SHA512_H1;
-	sctx->state[2] = SHA512_H2;
-	sctx->state[3] = SHA512_H3;
-	sctx->state[4] = SHA512_H4;
-	sctx->state[5] = SHA512_H5;
-	sctx->state[6] = SHA512_H6;
-	sctx->state[7] = SHA512_H7;
+	sctx->state[0] = cpu_to_be64(SHA512_H0);
+	sctx->state[1] = cpu_to_be64(SHA512_H1);
+	sctx->state[2] = cpu_to_be64(SHA512_H2);
+	sctx->state[3] = cpu_to_be64(SHA512_H3);
+	sctx->state[4] = cpu_to_be64(SHA512_H4);
+	sctx->state[5] = cpu_to_be64(SHA512_H5);
+	sctx->state[6] = cpu_to_be64(SHA512_H6);
+	sctx->state[7] = cpu_to_be64(SHA512_H7);
 	sctx->count[0] = sctx->count[1] = 0;
 
 	return 0;
@@ -99,14 +101,14 @@ static int octeon_sha384_init(struct shash_desc *desc)
 {
 	struct sha512_state *sctx = shash_desc_ctx(desc);
 
-	sctx->state[0] = SHA384_H0;
-	sctx->state[1] = SHA384_H1;
-	sctx->state[2] = SHA384_H2;
-	sctx->state[3] = SHA384_H3;
-	sctx->state[4] = SHA384_H4;
-	sctx->state[5] = SHA384_H5;
-	sctx->state[6] = SHA384_H6;
-	sctx->state[7] = SHA384_H7;
+	sctx->state[0] = cpu_to_be64(SHA384_H0);
+	sctx->state[1] = cpu_to_be64(SHA384_H1);
+	sctx->state[2] = cpu_to_be64(SHA384_H2);
+	sctx->state[3] = cpu_to_be64(SHA384_H3);
+	sctx->state[4] = cpu_to_be64(SHA384_H4);
+	sctx->state[5] = cpu_to_be64(SHA384_H5);
+	sctx->state[6] = cpu_to_be64(SHA384_H6);
+	sctx->state[7] = cpu_to_be64(SHA384_H7);
 	sctx->count[0] = sctx->count[1] = 0;
 
 	return 0;
@@ -182,7 +184,6 @@ static int octeon_sha512_final(struct shash_desc *desc, u8 *hash)
 	unsigned long flags;
 	unsigned int index;
 	__be64 bits[2];
-	int i;
 
 	/* Save number of bits. */
 	bits[1] = cpu_to_be64(sctx->count[0] << 3);
@@ -204,8 +205,7 @@ static int octeon_sha512_final(struct shash_desc *desc, u8 *hash)
 	octeon_crypto_disable(&state, flags);
 
 	/* Store state in digest. */
-	for (i = 0; i < 8; i++)
-		dst[i] = cpu_to_be64(sctx->state[i]);
+	memcpy(dst, sctx->state, sizeof(__be64) * 8);
 
 	/* Zeroize sensitive information. */
 	memset(sctx, 0, sizeof(struct sha512_state));
@@ -257,7 +257,7 @@ static struct shash_alg octeon_sha512_algs[2] = { {
 
 static int __init octeon_sha512_mod_init(void)
 {
-	if (!octeon_has_crypto())
+	if (!octeon_has_feature(OCTEON_FEATURE_CRYPTO))
 		return -ENOTSUPP;
 	return crypto_register_shashes(octeon_sha512_algs,
 				       ARRAY_SIZE(octeon_sha512_algs));

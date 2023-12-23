@@ -38,11 +38,12 @@ static void octeon_sha1_store_hash(struct sha1_state *sctx)
 	union {
 		u32 word[2];
 		u64 dword;
-	} hash_tail = { { sctx->state[4], } };
+	} hash_tail = { { sctx->state[4], 0} };
 
 	write_octeon_64bit_hash_dword(hash[0], 0);
 	write_octeon_64bit_hash_dword(hash[1], 1);
 	write_octeon_64bit_hash_dword(hash_tail.dword, 2);
+
 	memzero_explicit(&hash_tail.word[0], sizeof(hash_tail.word[0]));
 }
 
@@ -57,8 +58,15 @@ static void octeon_sha1_read_hash(struct sha1_state *sctx)
 	hash[0]		= read_octeon_64bit_hash_dword(0);
 	hash[1]		= read_octeon_64bit_hash_dword(1);
 	hash_tail.dword	= read_octeon_64bit_hash_dword(2);
+#ifndef __BIG_ENDIAN
+	sctx->state[4]	= hash_tail.word[1];
+#else
 	sctx->state[4]	= hash_tail.word[0];
+#endif
 	memzero_explicit(&hash_tail.dword, sizeof(hash_tail.dword));
+	((uint64_t*)hash)[0] = be64_to_cpu(((uint64_t*)sctx->state)[0]);
+	((uint64_t*)hash)[1] = be64_to_cpu(((uint64_t*)sctx->state)[1]);
+	((uint32_t*)hash)[4] = be32_to_cpu(sctx->state[4]);
 }
 
 static void octeon_sha1_transform(const void *_block)
@@ -79,11 +87,11 @@ static int octeon_sha1_init(struct shash_desc *desc)
 {
 	struct sha1_state *sctx = shash_desc_ctx(desc);
 
-	sctx->state[0] = SHA1_H0;
-	sctx->state[1] = SHA1_H1;
-	sctx->state[2] = SHA1_H2;
-	sctx->state[3] = SHA1_H3;
-	sctx->state[4] = SHA1_H4;
+	sctx->state[0] = cpu_to_be32(SHA1_H0);
+	sctx->state[1] = cpu_to_be32(SHA1_H1);
+	sctx->state[2] = cpu_to_be32(SHA1_H2);
+	sctx->state[3] = cpu_to_be32(SHA1_H3);
+	sctx->state[4] = cpu_to_be32(SHA1_H4);
 	sctx->count = 0;
 
 	return 0;
@@ -156,7 +164,6 @@ static int octeon_sha1_final(struct shash_desc *desc, u8 *out)
 	unsigned long flags;
 	unsigned int index;
 	__be64 bits;
-	int i;
 
 	/* Save number of bits. */
 	bits = cpu_to_be64(sctx->count << 3);
@@ -177,8 +184,7 @@ static int octeon_sha1_final(struct shash_desc *desc, u8 *out)
 	octeon_crypto_disable(&state, flags);
 
 	/* Store state in digest */
-	for (i = 0; i < 5; i++)
-		dst[i] = cpu_to_be32(sctx->state[i]);
+	memcpy(dst, sctx->state, sizeof(__be32) * 5);
 
 	/* Zeroize sensitive information. */
 	memset(sctx, 0, sizeof(*sctx));
@@ -223,7 +229,7 @@ static struct shash_alg octeon_sha1_alg = {
 
 static int __init octeon_sha1_mod_init(void)
 {
-	if (!octeon_has_crypto())
+	if (!octeon_has_feature(OCTEON_FEATURE_CRYPTO))
 		return -ENOTSUPP;
 	return crypto_register_shash(&octeon_sha1_alg);
 }
