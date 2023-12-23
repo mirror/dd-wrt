@@ -124,6 +124,7 @@
 #include "cvmx-address.h"
 #include "cvmx-asm.h"
 #include "cvmx-key.h"
+#include "swap.h"
 #ifdef OCTEON_OPENSSL
 static inline uint64_t
 swap64 (uint64_t v)

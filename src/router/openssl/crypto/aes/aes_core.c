@@ -46,6 +46,7 @@
 #include "cvmx-address.h"
 #include "cvmx-asm.h"
 #include "cvmx-key.h"
+#include "swap.h"
 #endif
 
 #if defined(OPENSSL_AES_CONST_TIME) && !defined(AES_ASM) && !defined(OCTEON_OPENSSL)
