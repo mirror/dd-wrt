@@ -26,11 +26,13 @@ void DES_ecb3_encrypt(const_DES_cblock *input, DES_cblock *output,
       register uint64_t inp = *(uint64_t *)input;
       CVMX_MT_3DES_ENC (inp);
       CVMX_MF_3DES_RESULT (inp);
+      inp = cvmx_be64_to_cpu(inp);
       *(uint64_t *)output = inp;
   } else {
       register uint64_t inp = *(uint64_t *)input;
       CVMX_MT_3DES_DEC (inp);
       CVMX_MF_3DES_RESULT (inp);
+      inp = cvmx_be64_to_cpu(inp);
       *(uint64_t *)output = inp;
   }
 #else
