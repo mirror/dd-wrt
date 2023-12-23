@@ -48,6 +48,49 @@ extern void octeon_crypto_disable(struct octeon_cop2_state *state,
 #define CVMX_MF_AES_DAT0(val)       asm volatile ("dmfc2 %[rt],0x0111"                   : [rt] "=d" ((val)) :               )	/* first piece of input data */
 #endif
 
+#define write_octeon_64bit_aes_iv(value, index)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0102+" STR(index)		\
+	:						\
+	: [rt] "d" (value));				\
+} while (0)
+
+
+#define write_octeon_64bit_aes_enc_cbc0(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0108"		\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_aes_enc_cbc1(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x3109"		\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_aes_dec_cbc0(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x010c"		\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_aes_dec_cbc1(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x310d"		\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+
+
 #define read_octeon_64bit_aes_result(index)		\
 ({							\
 	u64 __value;					\
@@ -59,8 +102,6 @@ extern void octeon_crypto_disable(struct octeon_cop2_state *state,
 							\
 	be64_to_cpu(__value);				\
 })
-
-
 
 #define write_octeon_64bit_aes_enc0(value)	\
 do {							\
