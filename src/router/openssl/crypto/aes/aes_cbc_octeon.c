@@ -215,6 +215,9 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
         i1 = inp[1];
         CVMX_MF_AES_RESULT (r0, 0);
         CVMX_MF_AES_RESULT (r1, 1);
+	r0 = cvmx_be64_to_cpu(r0);
+	r1 = cvmx_be64_to_cpu(r1);
+
         CVMX_MT_AES_ENC_CBC0 (i0);
         CVMX_MT_AES_ENC_CBC1 (i1);
 
@@ -232,6 +235,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
 
           CVMX_MF_AES_RESULT (r0, 0);
           CVMX_MF_AES_RESULT (r1, 1);
+	  r0 = cvmx_be64_to_cpu(r0);
+	  r1 = cvmx_be64_to_cpu(r1);
           CVMX_MT_AES_ENC_CBC0 (i0);
           CVMX_MT_AES_ENC_CBC1 (i1);
         }
@@ -250,6 +255,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
         CVMX_MT_AES_ENC_CBC1 (in64[1]);
         CVMX_MF_AES_RESULT (*(outp), 0);
         CVMX_MF_AES_RESULT (*(outp + 1), 1);
+	*(outp) = cvmx_be64_to_cpu(*(outp));
+	*(outp + 1) = cvmx_be64_to_cpu(*(outp + 1));
         memcpy (iv, outp, 16);
       }
       else {
@@ -258,6 +265,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
         CVMX_MT_AES_ENC_CBC1 (i1);
         CVMX_MF_AES_RESULT (*(outp), 0);
         CVMX_MF_AES_RESULT (*(outp + 1), 1);
+	*(outp) = cvmx_be64_to_cpu(*(outp));
+	*(outp + 1) = cvmx_be64_to_cpu(*(outp + 1));
         inp += 2;
         outp += 2;
         len -= 16;
@@ -266,6 +275,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
         CVMX_MT_AES_ENC_CBC1 (in64[1]);
         CVMX_MF_AES_RESULT (*(outp), 0);
         CVMX_MF_AES_RESULT (*(outp + 1), 1);
+	*(outp) = cvmx_be64_to_cpu(*(outp));
+	*(outp + 1) = cvmx_be64_to_cpu(*(outp + 1));
         memcpy (iv, outp, 16);
       }
     } else {
@@ -287,6 +298,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
         i1 = inp[1];
         CVMX_MF_AES_RESULT (r0, 0);
         CVMX_MF_AES_RESULT (r1, 1);
+	r0 = cvmx_be64_to_cpu(r0);
+	r1 = cvmx_be64_to_cpu(r1);
 
         CVMX_MT_AES_DEC_CBC0 (i0);
         CVMX_MT_AES_DEC_CBC1 (i1);
@@ -303,6 +316,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
           CVMX_PREFETCH (inp, 64);
           CVMX_MF_AES_RESULT (r0, 0);
           CVMX_MF_AES_RESULT (r1, 1);
+	  r0 = cvmx_be64_to_cpu(r0);
+	  r1 = cvmx_be64_to_cpu(r1);
           CVMX_MT_AES_DEC_CBC0 (i0);
           CVMX_MT_AES_DEC_CBC1 (i1);
         }
@@ -310,6 +325,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
       /* Fetch the result of the last 16B in the 16B stuff */
       CVMX_MF_AES_RESULT (r0, 0);
       CVMX_MF_AES_RESULT (r1, 1);
+      r0 = cvmx_be64_to_cpu(r0);
+      r1 = cvmx_be64_to_cpu(r1);
       memcpy (iv, (inp - 2), 16);
       outp[-2] = r0;
       outp[-1] = r1;
@@ -325,6 +342,8 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
         CVMX_MT_AES_DEC_CBC1 (in64[1]);
         CVMX_MF_AES_RESULT (*outp, 0);
         CVMX_MF_AES_RESULT (*(outp + 1), 1);
+	*(outp) = cvmx_be64_to_cpu(*(outp));
+	*(outp + 1) = cvmx_be64_to_cpu(*(outp + 1));
       }
     }
   }

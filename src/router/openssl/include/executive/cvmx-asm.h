@@ -42,7 +42,7 @@
  *
  * This is file defines ASM primitives for the executive.
 
- * <hr>$Revision: 100250 $<hr>
+ * <hr>$Revision: 142870 $<hr>
  *
  *
  */
@@ -164,7 +164,6 @@ extern "C" {
 #endif /* CVMX_CAVIUM_OCTEON2 */
 
 #ifdef __OCTEON__
-#error "octeon"
 #define CVMX_SYNCIOBDMA asm volatile ("synciobdma" : : :"memory")
 	/* We actually use two syncw instructions in a row when we need a write
 	   memory barrier. This is because the CN3XXX series of Octeons have
@@ -201,11 +200,9 @@ extern "C" {
 #define CVMX_SYNCWS_OCTEON2 asm volatile ("syncws\n" : : :"memory")
 #define CVMX_SYNCWS_STR_OCTEON2 "syncws\n"
 #ifdef CVMX_CAVIUM_OCTEON2
-#error "2"
 #define CVMX_SYNCWS CVMX_SYNCWS_OCTEON2
 #define CVMX_SYNCWS_STR CVMX_SYNCWS_STR_OCTEON2
 #else
-#error "1"
 #define CVMX_SYNCWS asm volatile ("syncws\nsyncws\n" : : :"memory")
 #define CVMX_SYNCWS_STR "syncws\nsyncws\n"
 #endif /* CVMX_CAVIUM_OCTEON2 */
@@ -446,79 +443,79 @@ extern "C" {
 
 /* CRC */
 
-#define CVMX_MT_CRC_POLYNOMIAL(val)         asm volatile ("dmtc2 %[rt],0x4200" : : [rt] "d" (val))
-#define CVMX_MT_CRC_IV(val)                 asm volatile ("dmtc2 %[rt],0x0201" : : [rt] "d" (val))
-#define CVMX_MT_CRC_LEN(val)                asm volatile ("dmtc2 %[rt],0x1202" : : [rt] "d" (val))
-#define CVMX_MT_CRC_BYTE(val)               asm volatile ("dmtc2 %[rt],0x0204" : : [rt] "d" (val))
-#define CVMX_MT_CRC_HALF(val)               asm volatile ("dmtc2 %[rt],0x0205" : : [rt] "d" (val))
-#define CVMX_MT_CRC_WORD(val)               asm volatile ("dmtc2 %[rt],0x0206" : : [rt] "d" (val))
-#define CVMX_MT_CRC_DWORD(val)              asm volatile ("dmtc2 %[rt],0x1207" : : [rt] "d" (val))
-#define CVMX_MT_CRC_VAR(val)                asm volatile ("dmtc2 %[rt],0x1208" : : [rt] "d" (val))
-#define CVMX_MT_CRC_POLYNOMIAL_REFLECT(val) asm volatile ("dmtc2 %[rt],0x4210" : : [rt] "d" (val))
-#define CVMX_MT_CRC_IV_REFLECT(val)         asm volatile ("dmtc2 %[rt],0x0211" : : [rt] "d" (val))
-#define CVMX_MT_CRC_BYTE_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0214" : : [rt] "d" (val))
-#define CVMX_MT_CRC_HALF_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0215" : : [rt] "d" (val))
-#define CVMX_MT_CRC_WORD_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0216" : : [rt] "d" (val))
-#define CVMX_MT_CRC_DWORD_REFLECT(val)      asm volatile ("dmtc2 %[rt],0x1217" : : [rt] "d" (val))
-#define CVMX_MT_CRC_VAR_REFLECT(val)        asm volatile ("dmtc2 %[rt],0x1218" : : [rt] "d" (val))
+#define CVMX_MT_CRC_POLYNOMIAL(val)         asm volatile ("dmtc2 %[rt],0x4200" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_IV(val)                 asm volatile ("dmtc2 %[rt],0x0201" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_LEN(val)                asm volatile ("dmtc2 %[rt],0x1202" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_BYTE(val)               asm volatile ("dmtc2 %[rt],0x0204" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_HALF(val)               asm volatile ("dmtc2 %[rt],0x0205" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_WORD(val)               asm volatile ("dmtc2 %[rt],0x0206" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_DWORD(val)              asm volatile ("dmtc2 %[rt],0x1207" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_VAR(val)                asm volatile ("dmtc2 %[rt],0x1208" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_POLYNOMIAL_REFLECT(val) asm volatile ("dmtc2 %[rt],0x4210" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_IV_REFLECT(val)         asm volatile ("dmtc2 %[rt],0x0211" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_BYTE_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0214" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_HALF_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0215" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_WORD_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0216" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_DWORD_REFLECT(val)      asm volatile ("dmtc2 %[rt],0x1217" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_VAR_REFLECT(val)        asm volatile ("dmtc2 %[rt],0x1218" : : [rt] "d" (cvmx_cpu_to_be64(val)))
 
-#define CVMX_MF_CRC_POLYNOMIAL(val)         asm volatile ("dmfc2 %[rt],0x0200" : [rt] "=d" (val) : )
-#define CVMX_MF_CRC_IV(val)                 asm volatile ("dmfc2 %[rt],0x0201" : [rt] "=d" (val) : )
-#define CVMX_MF_CRC_IV_REFLECT(val)         asm volatile ("dmfc2 %[rt],0x0203" : [rt] "=d" (val) : )
-#define CVMX_MF_CRC_LEN(val)                asm volatile ("dmfc2 %[rt],0x0202" : [rt] "=d" (val) : )
+#define CVMX_MF_CRC_POLYNOMIAL(val)         asm volatile ("dmfc2 %[rt],0x0200" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+#define CVMX_MF_CRC_IV(val)                 asm volatile ("dmfc2 %[rt],0x0201" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+#define CVMX_MF_CRC_IV_REFLECT(val)         asm volatile ("dmfc2 %[rt],0x0203" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+#define CVMX_MF_CRC_LEN(val)                asm volatile ("dmfc2 %[rt],0x0202" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
 
 /* MD5 and SHA-1 */
 
 /* pos can be 0-6 */
-#define CVMX_MT_HSH_DAT(val,pos)    asm volatile ("dmtc2 %[rt],0x0040+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
+#define CVMX_MT_HSH_DAT(val,pos)    asm volatile ("dmtc2 %[rt],0x0040+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_HSH_DATZ(pos)       asm volatile ("dmtc2    $0,0x0040+" CVMX_TMP_STR(pos) :                 :               )
 /* pos can be 0-14 */
-#define CVMX_MT_HSH_DATW(val,pos)   asm volatile ("dmtc2 %[rt],0x0240+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
+#define CVMX_MT_HSH_DATW(val,pos)   asm volatile ("dmtc2 %[rt],0x0240+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_HSH_DATWZ(pos)      asm volatile ("dmtc2    $0,0x0240+" CVMX_TMP_STR(pos) :                 :               )
 #define CVMX_MT_HSH_STARTMD5(val)   asm volatile ("dmfc2 $0,0x0250 \n"     \
-                                                  "dmtc2 %[rt],0x4047 \n"                   :                 : [rt] "d" (val))
+                                                  "dmtc2 %[rt],0x4047 \n"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_HSH_STARTSHA(val)   asm volatile ("dmfc2 $0,0x0250 \n"     \
-                                                  "dmtc2 %[rt],0x4057 \n"                   :                 : [rt] "d" (val))
+                                                  "dmtc2 %[rt],0x4057 \n"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_HSH_STARTSHA256(val)   asm volatile ("dmfc2 $0,0x0250 \n"     \
-                                                     "dmtc2 %[rt],0x404f \n"                :                 : [rt] "d" (val))
+                                                     "dmtc2 %[rt],0x404f \n"                :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_HSH_STARTSHA512(val)   asm volatile ("dmfc2 $0,0x0250 \n"     \
-                                                     "dmtc2 %[rt],0x424f \n"                :                 : [rt] "d" (val))
+                                                     "dmtc2 %[rt],0x424f \n"                :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-3 */
-#define CVMX_MT_HSH_IV(val,pos)     asm volatile ("dmtc2 %[rt],0x0048+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
+#define CVMX_MT_HSH_IV(val,pos)     asm volatile ("dmtc2 %[rt],0x0048+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-7 */
-#define CVMX_MT_HSH_IVW(val,pos)     asm volatile ("dmtc2 %[rt],0x0250+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
+#define CVMX_MT_HSH_IVW(val,pos)     asm volatile ("dmtc2 %[rt],0x0250+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* pos can be 0-6 */
-#define CVMX_MF_HSH_DAT(val,pos)    asm volatile ("dmfc2 %[rt],0x0040+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_HSH_DAT(val,pos)    asm volatile ("dmfc2 %[rt],0x0040+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-14 */
-#define CVMX_MF_HSH_DATW(val,pos)   asm volatile ("dmfc2 %[rt],0x0240+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_HSH_DATW(val,pos)   asm volatile ("dmfc2 %[rt],0x0240+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-3 */
-#define CVMX_MF_HSH_IV(val,pos)     asm volatile ("dmfc2 %[rt],0x0048+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_HSH_IV(val,pos)     asm volatile ("dmfc2 %[rt],0x0048+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-7 */
-#define CVMX_MF_HSH_IVW(val,pos)     asm volatile ("dmfc2 %[rt],0x0250+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_HSH_IVW(val,pos)     asm volatile ("dmfc2 %[rt],0x0250+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 
 /* 3DES */
 
 /* pos can be 0-2 */
-#define CVMX_MT_3DES_KEY(val,pos)   asm volatile ("dmtc2 %[rt],0x0080+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
-#define CVMX_MT_3DES_IV(val)        asm volatile ("dmtc2 %[rt],0x0084"                   :                 : [rt] "d" (val))
-#define CVMX_MT_3DES_ENC_CBC(val)   asm volatile ("dmtc2 %[rt],0x4088"                   :                 : [rt] "d" (val))
-#define CVMX_MT_3DES_ENC(val)       asm volatile ("dmtc2 %[rt],0x408a"                   :                 : [rt] "d" (val))
-#define CVMX_MT_3DES_DEC_CBC(val)   asm volatile ("dmtc2 %[rt],0x408c"                   :                 : [rt] "d" (val))
-#define CVMX_MT_3DES_DEC(val)       asm volatile ("dmtc2 %[rt],0x408e"                   :                 : [rt] "d" (val))
-#define CVMX_MT_3DES_RESULT(val)    asm volatile ("dmtc2 %[rt],0x0098"                   :                 : [rt] "d" (val))
+#define CVMX_MT_3DES_KEY(val,pos)   asm volatile ("dmtc2 %[rt],0x0080+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_3DES_IV(val)        asm volatile ("dmtc2 %[rt],0x0084"                   :                 : [rt] "d" ((val)))
+#define CVMX_MT_3DES_ENC_CBC(val)   asm volatile ("dmtc2 %[rt],0x4088"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_3DES_ENC(val)       asm volatile ("dmtc2 %[rt],0x408a"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_3DES_DEC_CBC(val)   asm volatile ("dmtc2 %[rt],0x408c"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_3DES_DEC(val)       asm volatile ("dmtc2 %[rt],0x408e"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_3DES_RESULT(val)    asm volatile ("dmtc2 %[rt],0x0098"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* pos can be 0-2 */
-#define CVMX_MF_3DES_KEY(val,pos)   asm volatile ("dmfc2 %[rt],0x0080+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
-#define CVMX_MF_3DES_IV(val)        asm volatile ("dmfc2 %[rt],0x0084"                   : [rt] "=d" (val) :               )
-#define CVMX_MF_3DES_RESULT(val)    asm volatile ("dmfc2 %[rt],0x0088"                   : [rt] "=d" (val) :               )
+#define CVMX_MF_3DES_KEY(val,pos)   asm volatile ("dmfc2 %[rt],0x0080+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
+#define CVMX_MF_3DES_IV(val)        asm volatile ("dmfc2 %[rt],0x0084"                   : [rt] "=d" ((val)) :               )
+#define CVMX_MF_3DES_RESULT(val)    asm volatile ("dmfc2 %[rt],0x0088"                   : [rt] "=d" ((val)) :               )
 
 /* KASUMI */
 
 /* pos can be 0-1 */
 #define CVMX_MT_KAS_KEY(val,pos)    CVMX_MT_3DES_KEY(val,pos)
-#define CVMX_MT_KAS_ENC_CBC(val)    asm volatile ("dmtc2 %[rt],0x4089"                   :                 : [rt] "d" (val))
-#define CVMX_MT_KAS_ENC(val)        asm volatile ("dmtc2 %[rt],0x408b"                   :                 : [rt] "d" (val))
+#define CVMX_MT_KAS_ENC_CBC(val)    asm volatile ("dmtc2 %[rt],0x4089"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_KAS_ENC(val)        asm volatile ("dmtc2 %[rt],0x408b"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_KAS_RESULT(val)     CVMX_MT_3DES_RESULT(val)
 
 /* pos can be 0-1 */
@@ -527,99 +524,99 @@ extern "C" {
 
 /* AES */
 
-#define CVMX_MT_AES_ENC_CBC0(val)   asm volatile ("dmtc2 %[rt],0x0108"                   :                 : [rt] "d" (val))
-#define CVMX_MT_AES_ENC_CBC1(val)   asm volatile ("dmtc2 %[rt],0x3109"                   :                 : [rt] "d" (val))
-#define CVMX_MT_AES_ENC0(val)       asm volatile ("dmtc2 %[rt],0x010a"                   :                 : [rt] "d" (val))
-#define CVMX_MT_AES_ENC1(val)       asm volatile ("dmtc2 %[rt],0x310b"                   :                 : [rt] "d" (val))
-#define CVMX_MT_AES_DEC_CBC0(val)   asm volatile ("dmtc2 %[rt],0x010c"                   :                 : [rt] "d" (val))
-#define CVMX_MT_AES_DEC_CBC1(val)   asm volatile ("dmtc2 %[rt],0x310d"                   :                 : [rt] "d" (val))
-#define CVMX_MT_AES_DEC0(val)       asm volatile ("dmtc2 %[rt],0x010e"                   :                 : [rt] "d" (val))
-#define CVMX_MT_AES_DEC1(val)       asm volatile ("dmtc2 %[rt],0x310f"                   :                 : [rt] "d" (val))
+#define CVMX_MT_AES_ENC_CBC0(val)   asm volatile ("dmtc2 %[rt],0x0108"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_AES_ENC_CBC1(val)   asm volatile ("dmtc2 %[rt],0x3109"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_AES_ENC0(val)       asm volatile ("dmtc2 %[rt],0x010a"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_AES_ENC1(val)       asm volatile ("dmtc2 %[rt],0x310b"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_AES_DEC_CBC0(val)   asm volatile ("dmtc2 %[rt],0x010c"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_AES_DEC_CBC1(val)   asm volatile ("dmtc2 %[rt],0x310d"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_AES_DEC0(val)       asm volatile ("dmtc2 %[rt],0x010e"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_AES_DEC1(val)       asm volatile ("dmtc2 %[rt],0x310f"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-3 */
-#define CVMX_MT_AES_KEY(val,pos)    asm volatile ("dmtc2 %[rt],0x0104+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
+#define CVMX_MT_AES_KEY(val,pos)    asm volatile ("dmtc2 %[rt],0x0104+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-1 */
-#define CVMX_MT_AES_IV(val,pos)     asm volatile ("dmtc2 %[rt],0x0102+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
-#define CVMX_MT_AES_KEYLENGTH(val)  asm volatile ("dmtc2 %[rt],0x0110"                   :                 : [rt] "d" (val))	/* write the keylen */
+#define CVMX_MT_AES_IV(val,pos)     asm volatile ("dmtc2 %[rt],0x0102+" CVMX_TMP_STR(pos) :                 : [rt] "d" ((val)))
+#define CVMX_MT_AES_KEYLENGTH(val)  asm volatile ("dmtc2 %[rt],0x0110"                   :                 : [rt] "d" ((val)))	/* write the keylen */
 /* pos can be 0-1 */
-#define CVMX_MT_AES_RESULT(val,pos) asm volatile ("dmtc2 %[rt],0x0100+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
+#define CVMX_MT_AES_RESULT(val,pos) asm volatile ("dmtc2 %[rt],0x0100+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* pos can be 0-1 */
-#define CVMX_MF_AES_RESULT(val,pos) asm volatile ("dmfc2 %[rt],0x0100+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_AES_RESULT(val,pos) asm volatile ("dmfc2 %[rt],0x0100+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-1 */
-#define CVMX_MF_AES_IV(val,pos)     asm volatile ("dmfc2 %[rt],0x0102+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_AES_IV(val,pos)     asm volatile ("dmfc2 %[rt],0x0102+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-3 */
-#define CVMX_MF_AES_KEY(val,pos)    asm volatile ("dmfc2 %[rt],0x0104+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
-#define CVMX_MF_AES_KEYLENGTH(val)  asm volatile ("dmfc2 %[rt],0x0110"                   : [rt] "=d" (val) :               )	/* read the keylen */
-#define CVMX_MF_AES_DAT0(val)       asm volatile ("dmfc2 %[rt],0x0111"                   : [rt] "=d" (val) :               )	/* first piece of input data */
+#define CVMX_MF_AES_KEY(val,pos)    asm volatile ("dmfc2 %[rt],0x0104+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
+#define CVMX_MF_AES_KEYLENGTH(val)  asm volatile ("dmfc2 %[rt],0x0110"                   : [rt] "=d" ((val)) :               )	/* read the keylen */
+#define CVMX_MF_AES_DAT0(val)       asm volatile ("dmfc2 %[rt],0x0111"                   : [rt] "=d" ((val)) :               )	/* first piece of input data */
 
 /* GFM */
 
 /* pos can be 0-1 */
-#define CVMX_MF_GFM_MUL(val,pos)             asm volatile ("dmfc2 %[rt],0x0258+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
-#define CVMX_MF_GFM_POLY(val)                asm volatile ("dmfc2 %[rt],0x025e"                    : [rt] "=d" (val) :               )
+#define CVMX_MF_GFM_MUL(val,pos)             asm volatile ("dmfc2 %[rt],0x0258+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
+#define CVMX_MF_GFM_POLY(val)                asm volatile ("dmfc2 %[rt],0x025e"                    : [rt] "=d" ((val)) :               )
 /* pos can be 0-1 */
-#define CVMX_MF_GFM_RESINP(val,pos)          asm volatile ("dmfc2 %[rt],0x025a+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_GFM_RESINP(val,pos)          asm volatile ("dmfc2 %[rt],0x025a+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-1 */
-#define CVMX_MF_GFM_RESINP_REFLECT(val,pos)  asm volatile ("dmfc2 %[rt],0x005a+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_GFM_RESINP_REFLECT(val,pos)  asm volatile ("dmfc2 %[rt],0x005a+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 
 /* pos can be 0-1 */
-#define CVMX_MT_GFM_MUL(val,pos)             asm volatile ("dmtc2 %[rt],0x0258+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
-#define CVMX_MT_GFM_POLY(val)                asm volatile ("dmtc2 %[rt],0x025e"                    :                 : [rt] "d" (val))
+#define CVMX_MT_GFM_MUL(val,pos)             asm volatile ("dmtc2 %[rt],0x0258+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_POLY(val)                asm volatile ("dmtc2 %[rt],0x025e"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-1 */
-#define CVMX_MT_GFM_RESINP(val,pos)          asm volatile ("dmtc2 %[rt],0x025a+" CVMX_TMP_STR(pos) :                 : [rt] "d" (val))
-#define CVMX_MT_GFM_XOR0(val)                asm volatile ("dmtc2 %[rt],0x025c"                    :                 : [rt] "d" (val))
-#define CVMX_MT_GFM_XORMUL1(val)             asm volatile ("dmtc2 %[rt],0x425d"                    :                 : [rt] "d" (val))
+#define CVMX_MT_GFM_RESINP(val,pos)          asm volatile ("dmtc2 %[rt],0x025a+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_XOR0(val)                asm volatile ("dmtc2 %[rt],0x025c"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_XORMUL1(val)             asm volatile ("dmtc2 %[rt],0x425d"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-1 */
 #define CVMX_MT_GFM_MUL_REFLECT(val,pos)     asm volatile ("dmtc2 %[rt],0x0058+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
-#define CVMX_MT_GFM_XOR0_REFLECT(val)        asm volatile ("dmtc2 %[rt],0x005c"                    :                 : [rt] "d" (val))
-#define CVMX_MT_GFM_XORMUL1_REFLECT(val)     asm volatile ("dmtc2 %[rt],0x405d"                    :                 : [rt] "d" (val))
+#define CVMX_MT_GFM_XOR0_REFLECT(val)        asm volatile ("dmtc2 %[rt],0x005c"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_XORMUL1_REFLECT(val)     asm volatile ("dmtc2 %[rt],0x405d"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* SNOW 3G */
 
 /* pos can be 0-7 */
-#define CVMX_MF_SNOW3G_LFSR(val,pos)    asm volatile ("dmfc2 %[rt],0x0240+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_SNOW3G_LFSR(val,pos)    asm volatile ("dmfc2 %[rt],0x0240+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-2 */
-#define CVMX_MF_SNOW3G_FSM(val,pos)     asm volatile ("dmfc2 %[rt],0x0251+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
-#define CVMX_MF_SNOW3G_RESULT(val)      asm volatile ("dmfc2 %[rt],0x0250"                    : [rt] "=d" (val) :               )
+#define CVMX_MF_SNOW3G_FSM(val,pos)     asm volatile ("dmfc2 %[rt],0x0251+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
+#define CVMX_MF_SNOW3G_RESULT(val)      asm volatile ("dmfc2 %[rt],0x0250"                    : [rt] "=d" ((val)) :               )
 
 /* pos can be 0-7 */
-#define CVMX_MT_SNOW3G_LFSR(val,pos)    asm volatile ("dmtc2 %[rt],0x0240+" CVMX_TMP_STR(pos) : : [rt] "d" (val))
+#define CVMX_MT_SNOW3G_LFSR(val,pos)    asm volatile ("dmtc2 %[rt],0x0240+" CVMX_TMP_STR(pos) : : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-2 */
-#define CVMX_MT_SNOW3G_FSM(val,pos)     asm volatile ("dmtc2 %[rt],0x0251+" CVMX_TMP_STR(pos) : : [rt] "d" (val))
-#define CVMX_MT_SNOW3G_RESULT(val)      asm volatile ("dmtc2 %[rt],0x0250"                    : : [rt] "d" (val))
-#define CVMX_MT_SNOW3G_START(val)       asm volatile ("dmtc2 %[rt],0x404d"                    : : [rt] "d" (val))
-#define CVMX_MT_SNOW3G_MORE(val)        asm volatile ("dmtc2 %[rt],0x404e"                    : : [rt] "d" (val))
+#define CVMX_MT_SNOW3G_FSM(val,pos)     asm volatile ("dmtc2 %[rt],0x0251+" CVMX_TMP_STR(pos) : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SNOW3G_RESULT(val)      asm volatile ("dmtc2 %[rt],0x0250"                    : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SNOW3G_START(val)       asm volatile ("dmtc2 %[rt],0x404d"                    : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SNOW3G_MORE(val)        asm volatile ("dmtc2 %[rt],0x404e"                    : : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* SMS4 */
 
 /* pos can be 0-1 */
-#define CVMX_MF_SMS4_IV(val,pos)	asm volatile ("dmfc2 %[rt],0x0102+"CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_SMS4_IV(val,pos)	asm volatile ("dmfc2 %[rt],0x0102+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-1 */
-#define CVMX_MF_SMS4_KEY(val,pos)	asm volatile ("dmfc2 %[rt],0x0104+"CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MF_SMS4_KEY(val,pos)	asm volatile ("dmfc2 %[rt],0x0104+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-1 */
-#define CVMX_MF_SMS4_RESINP(val,pos)	asm volatile ("dmfc2 %[rt],0x0100+"CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
-#define CVMX_MT_SMS4_DEC_CBC0(val)	asm volatile ("dmtc2 %[rt],0x010c"                   : : [rt] "d" (val))
-#define CVMX_MT_SMS4_DEC_CBC1(val)	asm volatile ("dmtc2 %[rt],0x311d"      : : [rt] "d" (val))
-#define CVMX_MT_SMS4_DEC0(val)		asm volatile ("dmtc2 %[rt],0x010e"      : : [rt] "d" (val))
-#define CVMX_MT_SMS4_DEC1(val)		asm volatile ("dmtc2 %[rt],0x311f"      : : [rt] "d" (val))
-#define CVMX_MT_SMS4_ENC_CBC0(val)	asm volatile ("dmtc2 %[rt],0x0108"      : : [rt] "d" (val))
-#define CVMX_MT_SMS4_ENC_CBC1(val)	asm volatile ("dmtc2 %[rt],0x3119"      : : [rt] "d" (val))
-#define CVMX_MT_SMS4_ENC0(val)		asm volatile ("dmtc2 %[rt],0x010a"      : : [rt] "d" (val))
-#define CVMX_MT_SMS4_ENC1(val)		asm volatile ("dmtc2 %[rt],0x311b"      : : [rt] "d" (val))
+#define CVMX_MF_SMS4_RESINP(val,pos)	asm volatile ("dmfc2 %[rt],0x0100+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
+#define CVMX_MT_SMS4_DEC_CBC0(val)	asm volatile ("dmtc2 %[rt],0x010c"                   : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SMS4_DEC_CBC1(val)	asm volatile ("dmtc2 %[rt],0x311d"      : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SMS4_DEC0(val)		asm volatile ("dmtc2 %[rt],0x010e"      : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SMS4_DEC1(val)		asm volatile ("dmtc2 %[rt],0x311f"      : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SMS4_ENC_CBC0(val)	asm volatile ("dmtc2 %[rt],0x0108"      : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SMS4_ENC_CBC1(val)	asm volatile ("dmtc2 %[rt],0x3119"      : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SMS4_ENC0(val)		asm volatile ("dmtc2 %[rt],0x010a"      : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_SMS4_ENC1(val)		asm volatile ("dmtc2 %[rt],0x311b"      : : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-1 */
-#define CVMX_MT_SMS4_IV(val,pos)	asm volatile ("dmtc2 %[rt],0x0102+"CVMX_TMP_STR(pos) : : [rt] "d" (val))
+#define CVMX_MT_SMS4_IV(val,pos)	asm volatile ("dmtc2 %[rt],0x0102+" CVMX_TMP_STR(pos) : : [rt] "d" ((val)))
 /* pos can be 0-1 */
-#define CVMX_MT_SMS4_KEY(val,pos)	asm volatile ("dmtc2 %[rt],0x0104+"CVMX_TMP_STR(pos) : : [rt] "d" (val))
+#define CVMX_MT_SMS4_KEY(val,pos)	asm volatile ("dmtc2 %[rt],0x0104+" CVMX_TMP_STR(pos) : : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-1 */
-#define CVMX_MT_SMS4_RESINP(val,pos)	asm volatile ("dmtc2 %[rt],0x0100+"CVMX_TMP_STR(pos) : : [rt] "d" (val))
+#define CVMX_MT_SMS4_RESINP(val,pos)	asm volatile ("dmtc2 %[rt],0x0100+" CVMX_TMP_STR(pos) : : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* CAMELLIA */
 
 /* pos can be 0-1 */
 #define CVMX_MT_CAMELLIA_RESINP(val,pos) CVMX_MT_AES_RESULT(val,pos)
-#define CVMX_MT_CAMELLIA_ROUND(val)      asm volatile ("dmtc2 %[rt],0x3114" : : [rt] "d" (val))
-#define CVMX_MT_CAMELLIA_FL(val)         asm volatile ("dmtc2 %[rt],0x115" : : [rt] "d" (val))
-#define CVMX_MT_CAMELLIA_FLINV(val)      asm volatile ("dmtc2 %[rt],0x116" : : [rt] "d" (val))
+#define CVMX_MT_CAMELLIA_ROUND(val)      asm volatile ("dmtc2 %[rt],0x3114" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CAMELLIA_FL(val)         asm volatile ("dmtc2 %[rt],0x115" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CAMELLIA_FLINV(val)      asm volatile ("dmtc2 %[rt],0x116" : : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* pos can be 0-1 */
 #define CVMX_MF_CAMELLIA_RESINP(val,pos) CVMX_MF_AES_RESULT(val,pos)
@@ -632,9 +629,9 @@ extern "C" {
 /* pos can be 0-1  (not normally used) pos=0 has F_R1 in lsbs, pos=1 has F_R2 in lsbs */
 #define CVMX_MT_ZUC_FSM(val,pos)  CVMX_MT_HSH_IVW(val,(pos)+1)
 #define CVMX_MT_ZUC_RESULT(val)   CVMX_MT_HSH_IVW(val,0)
-#define CVMX_MT_ZUC_START(val)    asm volatile ("dmtc2 %[rt],0x4055" : : [rt] "d" (val))
+#define CVMX_MT_ZUC_START(val)    asm volatile ("dmtc2 %[rt],0x4055" : : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_ZUC_MORE_NO_T     asm volatile ("dmtc2    $0,0x4056" : :)
-#define CVMX_MT_ZUC_MORE(val)     asm volatile ("dmtc2 %[rt],0x4056" : : [rt] "d" (val))
+#define CVMX_MT_ZUC_MORE(val)     asm volatile ("dmtc2 %[rt],0x4056" : : [rt] "d" (cvmx_cpu_to_be64(val)))
 
 /* pos can be 0-7  (not normally used) pos=i has LFSR_s(2*i) in msbs, */
 /* LFSR_s(2*i + 1) in lsbs, <63> and <31> are unpredictable after ops */
@@ -652,11 +649,11 @@ extern "C" {
     if(pos <= 14)                                                           \
         CVMX_MT_HSH_DATW(val,pos);                                           \
     else if(pos == 15)                                                      \
-        asm volatile ("dmtc2 %[rt],0x51" : : [rt] "d" (val));               \
+        asm volatile ("dmtc2 %[rt],0x51" : : [rt] "d" (cvmx_cpu_to_be64(val)));               \
     else if(pos <= 23)                                                      \
         CVMX_MT_HSH_IVW(val,pos-16);                                         \
     else                                                                    \
-        asm volatile ("dmtc2 %[rt],0x50" : : [rt] "d" (val));               \
+        asm volatile ("dmtc2 %[rt],0x50" : : [rt] "d" (cvmx_cpu_to_be64(val)));               \
     }
 
 /* pos can be 0-17 (use 0-8 for SHA3-512, 0-12 for SHA3-384, 0-16 for */
@@ -670,11 +667,11 @@ extern "C" {
     if(pos <= 14)                                                           \
         CVMX_MF_HSH_DATW(val,pos);                                           \
     else if(pos == 15)                                                      \
-        asm volatile ("dmfc2 %[rt],0x24F" : [rt] "=d" (val) :);             \
+        asm volatile ("dmfc2 %[rt],0x24F" : [rt] "=d" ((val)) :);             \
     else if(pos <= 23)                                                      \
         CVMX_MF_HSH_IVW(val,pos-16);                                         \
     else                                                                    \
-        asm volatile ("dmfc2 %[rt],0x50" : [rt] "=d" (val) : );             \
+        asm volatile ("dmfc2 %[rt],0x50" : [rt] "=d" ((val)) : );             \
     }
 
 /* check_ordering stuff */
@@ -737,8 +734,8 @@ extern "C" {
 #define TLB_GLOBAL  (0x1ULL<<0)
 
 /* Macros to PUSH and POP Octeon2 ISA. */
-#define CVMX_PUSH_OCTEON2    asm volatile (".set push\n.set arch=octeon2")
-#define CVMX_POP_OCTEON2     asm volatile (".set pop")
+#define CVMX_PUSH_OCTEON2_STR    "\n.set push\n.set arch=octeon2\n"
+#define CVMX_POP_OCTEON2_STR     "\n.set pop\n"
 
 /* assembler macros to guarantee byte loads/stores are used */
 /* for an unaligned 16-bit access (these use AT register) */
@@ -774,6 +771,10 @@ extern "C" {
 	       "=m"(__a[offset + 0]), "=m"(__a[offset + 1]), "=m"(__a[offset + 2]), "=m"(__a[offset + 3]), \
 	       "=m"(__a[offset + 4]), "=m"(__a[offset + 5]), "=m"(__a[offset + 6]), "=m"(__a[offset + 7]) : \
 	       [rsrc] "d" (data), [rbase] "d" (__a)); }
+
+/* IOBDMA/LMTDMA IO addresses */
+#define CVMX_LMTDMA_ORDERED_IO_ADDR 0xffffffffffffa400ull
+#define CVMX_IOBDMA_ORDERED_IO_ADDR 0xffffffffffffa200ull
 
 #ifdef	__cplusplus
 /* *INDENT-OFF* */

@@ -212,7 +212,7 @@ MD5_Final (unsigned char *md, MD5_CTX * c)
   const uint64_t *ptr;
 
   len = c->num % 64;
-  bits = swap64 (c->num * 8);
+  bits = cvmx_cpu_to_le64(c->num * 8);
   /* The rest of the data will need to be copied into a chunk */
   if (len > 0)
     memcpy (chunk, c->data, len);
@@ -256,7 +256,8 @@ MD5_Final (unsigned char *md, MD5_CTX * c)
   }
   CVMX_MF_HSH_IV (c->E, 0);
   CVMX_MF_HSH_IV (c->F, 1);
-
+  c->E = cvmx_be64_to_cpu(c->E);
+  c->F = cvmx_be64_to_cpu(c->F);
   memcpy (md, (void *) &c->E, 8);
   memcpy (md + 8, (void *) &c->F, 8);
   c->num = 0;
@@ -276,8 +277,8 @@ MD5_Init (MD5_CTX * c)
   c->Nh = 0;
 #else
   /* Set the IV to the MD5 magic start value */
-  c->E = 0x0123456789abcdefull;
-  c->F = 0xfedcba9876543210ull;
+  c->E = cvmx_cpu_to_be64(0x0123456789abcdefull);
+  c->F = cvmx_cpu_to_be64(0xfedcba9876543210ull);
 #endif
   c->num = 0;
   return 1;

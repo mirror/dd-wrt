@@ -1447,6 +1447,8 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
   CVMX_MT_AES_ENC1(in64[1]);
   CVMX_MF_AES_RESULT(out64[0],0);
   CVMX_MF_AES_RESULT(out64[1],1);
+  out64[0] = cvmx_be64_to_cpu(out64[0]);
+  out64[1] = cvmx_be64_to_cpu(out64[1]);
 #else
 
     const u32 *rk;
@@ -1655,6 +1657,8 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
   CVMX_MT_AES_DEC1(in64[1]);
   CVMX_MF_AES_RESULT(out64[0],0);
   CVMX_MF_AES_RESULT(out64[1],1);
+  out64[0] = cvmx_be64_to_cpu(out64[0]);
+  out64[1] = cvmx_be64_to_cpu(out64[1]);
 #else
 
     const u32 *rk;
