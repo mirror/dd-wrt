@@ -886,6 +886,8 @@ config CRYPTO_AES
 config CRYPTO_AES_OCTEON
 	tristate "AES cipher algorithms (Octeon)"
 	select CRYPTO_ALGAPI
+	select CRYPTO_BLKCIPHER
+	select CRYPTO_ABLK_HELPER
 	help
 	  AES cipher algorithms (FIPS-197). AES uses the Rijndael
 	  algorithm.
