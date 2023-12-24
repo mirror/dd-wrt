@@ -175,6 +175,8 @@ static struct crypto_alg octeon_algs[] = {
 
 static int __init octeon_mod_init(void)
 {
+	if (!octeon_has_crypto())
+		return -ENOTSUPP;
 	return crypto_register_algs(octeon_algs, ARRAY_SIZE(octeon_algs));
 }
 

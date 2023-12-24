@@ -258,6 +258,8 @@ static struct shash_alg octeon_sha256_algs[2] = { {
 
 static int __init octeon_sha256_mod_init(void)
 {
+	if (!octeon_has_crypto())
+		return -ENOTSUPP;
 	return crypto_register_shashes(octeon_sha256_algs,
 				       ARRAY_SIZE(octeon_sha256_algs));
 }

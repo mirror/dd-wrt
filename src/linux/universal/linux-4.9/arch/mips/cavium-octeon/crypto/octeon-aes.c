@@ -122,6 +122,8 @@ static struct crypto_alg aes_alg = {
 
 static int __init aes_init(void)
 {
+	if (!octeon_has_crypto())
+		return -ENOTSUPP;
 	return crypto_register_alg(&aes_alg);
 }
 
