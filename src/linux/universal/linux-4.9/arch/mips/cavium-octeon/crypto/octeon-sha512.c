@@ -257,8 +257,6 @@ static struct shash_alg octeon_sha512_algs[2] = { {
 
 static int __init octeon_sha512_mod_init(void)
 {
-	if (!octeon_has_feature(OCTEON_FEATURE_CRYPTO))
-		return -ENOTSUPP;
 	return crypto_register_shashes(octeon_sha512_algs,
 				       ARRAY_SIZE(octeon_sha512_algs));
 }
