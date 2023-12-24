@@ -15,7 +15,7 @@
 #include "cvmx-address.h"
 #include "cvmx-asm.h"
 #include "cvmx-key.h"
-#include "swap.h"
+#include "cvmx-swap.h"
 
 #endif
 
