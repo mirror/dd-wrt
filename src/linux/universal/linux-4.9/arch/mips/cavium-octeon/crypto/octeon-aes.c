@@ -28,6 +28,7 @@
 #include <linux/errno.h>
 #include <linux/crypto.h>
 #include <asm/byteorder.h>
+#include <asm/octeon/octeon.h>
 #include "octeon-crypto.h"
 
 
