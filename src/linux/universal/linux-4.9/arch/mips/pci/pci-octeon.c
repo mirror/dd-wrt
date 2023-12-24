@@ -59,7 +59,7 @@ union octeon_pci_address {
 	} s;
 };
 
-int __initconst (*octeon_pcibios_map_irq)(const struct pci_dev *dev,
+int (*octeon_pcibios_map_irq)(const struct pci_dev *dev,
 					 u8 slot, u8 pin);
 enum octeon_dma_bar_type octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_INVALID;
 
