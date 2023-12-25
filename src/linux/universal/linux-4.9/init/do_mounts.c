@@ -377,8 +377,11 @@ root_fs_names = str;
 #endif
 	return 1;
 }
-
+#ifdef CONFIG_CAVIUM_OCTEON_SOC
+static unsigned int __initdata root_delay=10;
+#else
 static unsigned int __initdata root_delay;
+#endif
 static int __init root_delay_setup(char *str)
 {
 	root_delay = simple_strtoul(str, NULL, 0);
