@@ -707,6 +707,7 @@ int mactelnet_main (int argc, char **argv) {
 		/* security */
 		memset(tmp, 0, strlen(tmp));
 //#ifdef __linux__
+//  glibc violates posix standard here. on musl this line will crash
 //		free(tmp);
 //#endif
 	}
