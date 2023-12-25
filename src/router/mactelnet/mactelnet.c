@@ -706,9 +706,9 @@ int mactelnet_main (int argc, char **argv) {
 		password[sizeof(password) - 1] = '\0';
 		/* security */
 		memset(tmp, 0, strlen(tmp));
-#ifdef __linux__
-		free(tmp);
-#endif
+//#ifdef __linux__
+//		free(tmp);
+//#endif
 	}
 
 
