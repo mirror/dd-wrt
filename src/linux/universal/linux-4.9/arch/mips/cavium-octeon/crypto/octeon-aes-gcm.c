@@ -42,7 +42,6 @@
 
 static void octeon_ghash_restore(uint16_t poly, uint64_t *h)
 {
-    uint64_t *bigH = (uint64_t*)h;
     write_octeon_64bit_gfm_poly((uint64_t)poly);
     write_octeon_64bit_gfm_mul(h[0], 0);
     write_octeon_64bit_gfm_mul(h[1], 1);
@@ -57,15 +56,15 @@ static void octeon_ghash_Init(uint16_t poly, uint64_t *h)
 }
 
 
-static void octeon_ghash_update(u8 *in)
+static void octeon_ghash_update(const u8 *in)
 {
-    uint64_t *bigin = (uint64_t*)in;
+    const uint64_t *bigin = (const uint64_t*)in;
     write_octeon_64bit_gfm_xor0(bigin[0]);
     write_octeon_64bit_gfm_xormul1(bigin[1]);
 }
 
 
-static void octeon_ghash_final(u *out, uint64_t authInSz, uint64_t inSz)
+static void octeon_ghash_final(u8 *out, uint64_t authInSz, uint64_t inSz)
 {
     uint64_t* bigOut = (uint64_t*)out;
 
@@ -86,10 +85,10 @@ struct crypto_aes_gcm_ctx {
 
 /* Sets the Octeon key with the key found in the Aes record. */
 
-static int _octeon_aesgcm_set_key(struct crypto_tfm *tfm)
+static int _octeon_aesgcm_set_key(struct crypto_aead *tfm)
 
 {
-	struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+	struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
         uint64_t* key = (uint64_t*)ctx->key;
 
 	write_octeon_64bit_aes_key(key[0],0);
@@ -109,11 +108,11 @@ static int _octeon_aesgcm_set_key(struct crypto_tfm *tfm)
     return 0;
 }
 
-static int octeon_aesgcm_set_key(struct crypto_tfm *tfm, const u8 *in_key,
+static int octeon_aesgcm_set_key(struct crypto_aead *tfm, const u8 *in_key,
 			     unsigned int key_len)
 
 {
-	struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+	struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
 	memset(ctx->key, 0, sizeof(ctx->key));
 	memcpy(ctx->key, in_key, key_len);
 	ctx->key_length = key_len;
@@ -121,9 +120,9 @@ static int octeon_aesgcm_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 }
 
 
-static int octeon_aesgcm_setiv(struct crypto_tfm *tfm, const u8 *iv, uint64_t ivSz)
+static int octeon_aesgcm_setiv(struct crypto_aead *tfm, const u8 *iv, uint64_t ivSz)
 {
-    struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+    struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
 
     int ret = 0;
 
@@ -149,24 +148,24 @@ static int octeon_aesgcm_setiv(struct crypto_tfm *tfm, const u8 *iv, uint64_t iv
             memset(aesBlock, 0, sizeof(aesBlock));
             for (i = 0; i < remainder; i++)
                 aesBlock[i] = iv[i];
-            Octeon_ghash_update(aesBlock);
+            octeon_ghash_update(aesBlock);
 
-            Octeon_ghash_final((byte*)aes->reg, 0, ivSz);
+            octeon_ghash_final((u8*)ctx->reg, 0, ivSz);
         }
 
         ctx->y0 = ctx->reg[3];
         ctx->reg[3]++;
 
-        Octeon_ghash_Init(0xe100, ctx->h);
+        octeon_ghash_Init(0xe100, ctx->h);
     }
 
     return ret;
 }
 
 
-static int octeon_aesgcm_setaad(struct crypto_tfm *tfm, u8* aad, uint64_t aadSz)
+static int octeon_aesgcm_setaad(struct crypto_aead *tfm, u8* aad, uint64_t aadSz)
 {
-    struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+    struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
     uint64_t *p;
     u8 aesBlock[16];
     int blocks, remainder, i;
@@ -203,10 +202,10 @@ static int octeon_aesgcm_setaad(struct crypto_tfm *tfm, u8* aad, uint64_t aadSz)
 }
 
 
-static int octeon_aesgcm_setencrypt(struct crypto_tfm *tfm, u8* in, u8* out, uint32_t inSz,
+static int octeon_aesgcm_setencrypt(struct crypto_aead *tfm, u8* in, u8* out, uint32_t inSz,
         int encrypt)
 {
-    struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+    struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
     uint32_t i, blocks, remainder;
     u8 aesBlockIn[AES_BLOCK_SIZE];
     u8 aesBlockOut[AES_BLOCK_SIZE];
@@ -242,12 +241,12 @@ static int octeon_aesgcm_setencrypt(struct crypto_tfm *tfm, u8* in, u8* out, uin
         if (encrypt) {
             pOut[0] ^= pIn[0];
             pOut[1] ^= pIn[1];
-            octeon_write_64bit_gfm_xor0(pOut[0]);
-            octeon_write_64bit_gfm_xor0mul1(pOut[1]);
+            write_octeon_64bit_gfm_xor0(pOut[0]);
+            write_octeon_64bit_gfm_xormul1(pOut[1]);
         }
         else {
-            octeon_write_64bit_gfm_xor0(pIn[0]);
-    	    octeon_write_64bit_gfm_xor0mul1(pIn[1]);
+            write_octeon_64bit_gfm_xor0(pIn[0]);
+    	    write_octeon_64bit_gfm_xormul1(pIn[1]);
             pOut[0] ^= pIn[0];
             pOut[1] ^= pIn[1];
         }
@@ -267,8 +266,8 @@ static int octeon_aesgcm_setencrypt(struct crypto_tfm *tfm, u8* in, u8* out, uin
         }
 
         if (encrypt) {
-    	    pOut[0] = octeon_read_64bit_aes_result(0);
-    	    pOut[1] = octeon_read_64bit_aes_result(1);
+    	    pOut[0] = read_octeon_64bit_aes_result(0);
+    	    pOut[1] = read_octeon_64bit_aes_result(1);
 
             pOut[0] ^= pIn[0];
             pOut[1] ^= pIn[1];
@@ -276,15 +275,15 @@ static int octeon_aesgcm_setencrypt(struct crypto_tfm *tfm, u8* in, u8* out, uin
             pOut[0] &= pMask[0];
             pOut[1] &= pMask[1];
 
-            octeon_write_64bit_gfm_xor0(pOut[0]);
-    	    octeon_write_64bit_gfm_xor0mul1(pOut[1]);
+            write_octeon_64bit_gfm_xor0(pOut[0]);
+    	    write_octeon_64bit_gfm_xormul1(pOut[1]);
         }
         else {
-            octeon_write_64bit_gfm_xor0(pIn[0]);
-    	    octeon_write_64bit_gfm_xor0mul1(pIn[1]);
+            write_octeon_64bit_gfm_xor0(pIn[0]);
+    	    write_octeon_64bit_gfm_xormul1(pIn[1]);
 
-    	    pOut[0] = octeon_read_64bit_aes_result(0);
-    	    pOut[1] = octeon_read_64bit_aes_result(1);
+    	    pOut[0] = read_octeon_64bit_aes_result(0);
+    	    pOut[1] = read_octeon_64bit_aes_result(1);
 
 
             pOut[0] ^= pIn[0];
@@ -302,10 +301,10 @@ static int octeon_aesgcm_setencrypt(struct crypto_tfm *tfm, u8* in, u8* out, uin
 }
 
 
-static int octeon_aesgcm_finalize(struct crypto_tfm *tfm, uint32_t inSz, uint32_t aadSz,
+static int octeon_aesgcm_finalize(struct crypto_aead *tfm, uint32_t inSz, uint32_t aadSz,
         u8* tag)
 {
-    struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+    struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
     uint64_t bigSz;
     uint64_t* pIv;
     uint64_t* pIn;
@@ -318,19 +317,19 @@ static int octeon_aesgcm_finalize(struct crypto_tfm *tfm, uint32_t inSz, uint32_
     ctx->reg[3] = ctx->y0;
 
     pIv = (uint64_t*)ctx->reg;
-    octeon_write_64bit_aes_enc0(pIv[0]);
-    octeon_write_64bit_aes_enc1(pIv[1]);
+    write_octeon_64bit_aes_enc0(pIv[0]);
+    write_octeon_64bit_aes_enc1(pIv[1]);
 
     bigSz = (uint64_t)aadSz * 8;
-    octeon_write_64bit_gfm_xor0(bigSz);
+    write_octeon_64bit_gfm_xor0(bigSz);
     bigSz = (uint64_t)inSz * 8;
-    octeon_write_64bit_gfm_xor0mul1(bigSz);
+    write_octeon_64bit_gfm_xormul1(bigSz);
 
     ctx->reg[3] = countSave;
 
     pIn = (uint64_t*)aesBlockIn;
-    pIn[0] = octeon_read_64bit_aes_result(0);
-    pIn[1] = octeon_read_64bit_aes_result(1);
+    pIn[0] = read_octeon_64bit_aes_result(0);
+    pIn[1] = read_octeon_64bit_aes_result(1);
 
     pOut = (uint64_t*)aesBlockOut;
     pOut[0] = read_octeon_64bit_gfm_resinp(0);
@@ -346,61 +345,66 @@ static int octeon_aesgcm_finalize(struct crypto_tfm *tfm, uint32_t inSz, uint32_
 }
 
 
-static int _octeon_aesgcm_encrypt(struct crypto_tfm *tfm, u8* in, u8* out, uint32_t inSz,
+static int _octeon_aesgcm_encrypt(struct crypto_aead *tfm, u8* in, u8* out, uint32_t inSz,
         u8* iv, uint32_t ivSz, u8* aad, uint32_t aadSz, u8* tag)
 {
-    struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+    struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
     int ret = 0;
 
     if (ctx == NULL)
 	ret = -1;
 
     if (ret == 0)
-        ret = _octeon_aesgcm_setkey(ctx);
+        ret = _octeon_aesgcm_set_key(tfm);
 
     if (ret == 0)
-        ret = octeon_aesgcm_setiv(ctx, iv, ivSz);
+        ret = octeon_aesgcm_setiv(tfm, iv, ivSz);
 
     if (ret == 0)
-        ret = octeon_aesgcm_setaad(ctx, aad, aadSz);
+        ret = octeon_aesgcm_setaad(tfm, aad, aadSz);
 
     if (ret == 0)
-        ret = octeon_aesgcm_setencrypt(ctx, in, out, inSz, 1);
+        ret = octeon_aesgcm_setencrypt(tfm, in, out, inSz, 1);
 
     if (ret == 0)
-        ret = octeon_aesgcm_finalize(aes, inSz, aadSz, tag);
+        ret = octeon_aesgcm_finalize(tfm, inSz, aadSz, tag);
 
     return ret;
 }
 
 
-static int _octeon_aesgcm_decrypt(struct crypto_tfm *tfm, u8* in, u8* out, uint32_t inSz,
+static int _octeon_aesgcm_decrypt(struct crypto_aead *tfm, u8* in, u8* out, uint32_t inSz,
         u8* iv, uint32_t ivSz, u8* aad, uint32_t aadSz, u8* tag)
 {
-    struct crypto_aes_gcm_ctx *ctx = crypto_tfm_ctx(tfm);
+    struct crypto_aes_gcm_ctx *ctx = crypto_aead_ctx(tfm);
     int ret = 0;
 
     if (ctx == NULL)
         ret = -1;
 
     if (ret == 0)
-        ret = _octeon_aesgcm_setkey(ctx);
+        ret = _octeon_aesgcm_set_key(tfm);
 
     if (ret == 0)
-        ret = octeon_aesgcm_setiv(ctx, iv, ivSz);
+        ret = octeon_aesgcm_setiv(tfm, iv, ivSz);
 
     if (ret == 0)
-        ret = octeon_aesgcm_setaad(ctx, aad, aadSz);
+        ret = octeon_aesgcm_setaad(tfm, aad, aadSz);
 
     if (ret == 0)
-        ret = octeon_aesgcm_setencrypt(ctx, in, out, inSz, 0);
+        ret = octeon_aesgcm_setencrypt(tfm, in, out, inSz, 0);
 
     if (ret == 0)
-        ret = octeon_aesgcm_finalize(ctx, inSz, aadSz, tag);
+        ret = octeon_aesgcm_finalize(tfm, inSz, aadSz, tag);
 
     return ret;
 }
 
+typedef struct {
+	__be64 a, b;
+} be128;
+
+static int octeon_aesgcm_decrypt(struct aead_request *req)
 static int octeon_aesgcm_decrypt(struct blkcipher_desc *desc,
 		       struct scatterlist *dst, struct scatterlist *src,
 		       unsigned int nbytes)
@@ -415,7 +419,7 @@ static int octeon_aesgcm_decrypt(struct blkcipher_desc *desc,
 	__be64 *key	= (__be64*)ctx->key_enc;
 	__be64 *dataout;
 	__be64 *data;
-	u8 *aad
+	u8 *aad;
 
 	blkcipher_walk_init(&walk, dst, src, nbytes);
 	err = blkcipher_walk_virt(desc, &walk);
@@ -454,7 +458,7 @@ static int octeon_aesgcm_encrypt(struct blkcipher_desc *desc,
 	__be64 *key	= (__be64*)ctx->key_enc;
 	__be64 *dataout;
 	__be64 *data;
-	u8 *aad
+	u8 *aad;
 
 	blkcipher_walk_init(&walk, dst, src, nbytes);
 	err = blkcipher_walk_virt(desc, &walk);
@@ -477,50 +481,22 @@ static int octeon_aesgcm_encrypt(struct blkcipher_desc *desc,
 	return 0;
 }
 
-
-
-
-static struct crypto_alg octeon_algs[] = {
-{
-	.cra_name		= "__octeon-gcm-aes",
-	.cra_driver_name	= "__driver-octeon-gcm-aes",
-	.cra_priority		= 0,
-	.cra_flags		= CRYPTO_ALG_TYPE_BLKCIPHER |
-				  CRYPTO_ALG_INTERNAL,
-	.cra_blocksize		= AES_BLOCK_SIZE,
-	.cra_ctxsize		= sizeof(struct crypto_aes_ctx),
-	.cra_alignmask		= 7,
-	.cra_type		= &crypto_blkcipher_type,
-	.cra_module		= THIS_MODULE,
-	.cra_blkcipher = {
-		.min_keysize	= AES_MIN_KEY_SIZE,
-		.max_keysize	= AES_MAX_KEY_SIZE,
-		.ivsize		= AES_BLOCK_SIZE,
-		.setkey		= octeon_aesgcm_set_key,
-		.encrypt	= octeon_aesgcm_encrypt,
-		.decrypt	= octeon_aesgcm_decrypt,
+static struct aead_alg ccm_aes_alg = {
+	.base = {
+		.cra_name		= "gcm(aes)",
+		.cra_driver_name	= "octeon-gcm-aes",
+		.cra_priority		= 300,
+		.cra_blocksize		= 1,
+		.cra_ctxsize		= sizeof(struct crypto_aes_gcm_ctx),
+		.cra_alignmask		= 7,
+		.cra_module		= THIS_MODULE,
 	},
-},{
-	.cra_name		= "gcm(aes)",
-	.cra_driver_name	= "octeon-gcm-aes",
-	.cra_priority		= 250,
-	.cra_flags		= CRYPTO_ALG_TYPE_ABLKCIPHER|CRYPTO_ALG_ASYNC,
-	.cra_blocksize		= AES_BLOCK_SIZE,
-	.cra_ctxsize		= sizeof(struct async_helper_ctx),
-	.cra_alignmask		= 7,
-	.cra_type		= &crypto_ablkcipher_type,
-	.cra_module		= THIS_MODULE,
-	.cra_init		= ablk_init,
-	.cra_exit		= ablk_exit,
-	.cra_ablkcipher = {
-		.min_keysize	= AES_MIN_KEY_SIZE,
-		.max_keysize	= AES_MAX_KEY_SIZE,
-		.ivsize		= AES_BLOCK_SIZE,
-		.setkey		= ablk_set_key,
-		.encrypt	= __ablk_encrypt,
-		.decrypt	= ablk_decrypt,
-	}
-}
+	.ivsize		= AES_BLOCK_SIZE,
+	.maxauthsize	= AES_BLOCK_SIZE,
+	.setkey		= octeon_aesgcm_set_key,
+	.setauthsize	= octeon_aesgcm_setauthsize,
+	.encrypt	= octeon_aesgcm_encrypt,
+	.decrypt	= octeon_aesgcm_decrypt,
 };
 
 static int __init octeon_mod_init(void)
