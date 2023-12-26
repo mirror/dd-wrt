@@ -20,33 +20,149 @@
 extern unsigned long octeon_crypto_enable(struct octeon_cop2_state *state);
 extern void octeon_crypto_disable(struct octeon_cop2_state *state,
 				  unsigned long flags);
-
-#if 0
-#define CVMX_MT_AES_ENC_CBC0(val)   asm volatile ("dmtc2 %[rt],0x0108"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-#define CVMX_MT_AES_ENC_CBC1(val)   asm volatile ("dmtc2 %[rt],0x3109"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-#define CVMX_MT_AES_ENC0(val)       asm volatile ("dmtc2 %[rt],0x010a"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-#define CVMX_MT_AES_ENC1(val)       asm volatile ("dmtc2 %[rt],0x310b"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-#define CVMX_MT_AES_DEC_CBC0(val)   asm volatile ("dmtc2 %[rt],0x010c"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-#define CVMX_MT_AES_DEC_CBC1(val)   asm volatile ("dmtc2 %[rt],0x310d"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-#define CVMX_MT_AES_DEC0(val)       asm volatile ("dmtc2 %[rt],0x010e"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-#define CVMX_MT_AES_DEC1(val)       asm volatile ("dmtc2 %[rt],0x310f"                   :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
-/* pos can be 0-3 */
-#define CVMX_MT_AES_KEY(val,pos)    asm volatile ("dmtc2 %[rt],0x0104+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MF_GFM_MUL(val,pos)             asm volatile ("dmfc2 %[rt],0x0258+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
+#define CVMX_MF_GFM_POLY(val)                asm volatile ("dmfc2 %[rt],0x025e"                    : [rt] "=d" ((val)) :               )
 /* pos can be 0-1 */
-#define CVMX_MT_AES_IV(val,pos)     asm volatile ("dmtc2 %[rt],0x0102+" CVMX_TMP_STR(pos) :                 : [rt] "d" ((val)))
-#define CVMX_MT_AES_KEYLENGTH(val)  asm volatile ("dmtc2 %[rt],0x0110"                   :                 : [rt] "d" ((val)))	/* write the keylen */
+#define CVMX_MF_GFM_RESINP(val,pos)          asm volatile ("dmfc2 %[rt],0x025a+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 /* pos can be 0-1 */
-#define CVMX_MT_AES_RESULT(val,pos) asm volatile ("dmtc2 %[rt],0x0100+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MF_GFM_RESINP_REFLECT(val,pos)  asm volatile ("dmfc2 %[rt],0x005a+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
 
 /* pos can be 0-1 */
-#define CVMX_MF_AES_RESULT(val,pos) asm volatile ("dmfc2 %[rt],0x0100+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
+#define CVMX_MT_GFM_MUL(val,pos)             asm volatile ("dmtc2 %[rt],0x0258+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_POLY(val)                asm volatile ("dmtc2 %[rt],0x025e"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
 /* pos can be 0-1 */
-#define CVMX_MF_AES_IV(val,pos)     asm volatile ("dmfc2 %[rt],0x0102+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
-/* pos can be 0-3 */
-#define CVMX_MF_AES_KEY(val,pos)    asm volatile ("dmfc2 %[rt],0x0104+" CVMX_TMP_STR(pos) : [rt] "=d" ((val)) :               )
-#define CVMX_MF_AES_KEYLENGTH(val)  asm volatile ("dmfc2 %[rt],0x0110"                   : [rt] "=d" ((val)) :               )	/* read the keylen */
-#define CVMX_MF_AES_DAT0(val)       asm volatile ("dmfc2 %[rt],0x0111"                   : [rt] "=d" ((val)) :               )	/* first piece of input data */
-#endif
+#define CVMX_MT_GFM_RESINP(val,pos)          asm volatile ("dmtc2 %[rt],0x025a+" CVMX_TMP_STR(pos) :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_XOR0(val)                asm volatile ("dmtc2 %[rt],0x025c"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_XORMUL1(val)             asm volatile ("dmtc2 %[rt],0x425d"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+/* pos can be 0-1 */
+#define CVMX_MT_GFM_MUL_REFLECT(val,pos)     asm volatile ("dmtc2 %[rt],0x0058+" CVMX_TMP_STR(pos) : [rt] "=d" (val) :               )
+#define CVMX_MT_GFM_XOR0_REFLECT(val)        asm volatile ("dmtc2 %[rt],0x005c"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_GFM_XORMUL1_REFLECT(val)     asm volatile ("dmtc2 %[rt],0x405d"                    :                 : [rt] "d" (cvmx_cpu_to_be64(val)))
+
+#define CVM_AES_RD_RESULT_WR_DATA(in1, in2, out1, out2) \
+    asm volatile(\
+            ".set noreorder    \n" \
+            "dmfc2 %[r1],0x0100\n" \
+            "dmfc2 %[r2],0x0101\n" \
+            "dmtc2 %[r3],0x010a\n" \
+            "dmtc2 %[r4],0x310b\n" \
+            ".set reorder      \n" \
+            : [r1] "=&d"(in1) , [r2] "=&d"(in2) \
+            : [r3] "d"(out1),  [r4] "d"(out2))
+
+#define octeon_prefetch_prefx(X, address, offset) asm volatile ("pref %[type], %[off](%[rbase])" : : [rbase] "d" (address), [off] "I" (offset), [type] "n" (X))
+#define octeon_prefetch_pref0(address, offset) octeon_prefetch_prefx(0, address, offset)
+#define octeon_prefetch_pref1(address, offset) octeon_prefetch_prefx(1, address, offset)
+#define octeon_prefetch_pref6(address, offset) octeon_prefetch_prefx(6, address, offset)
+#define octeon_prefetch_pref7(address, offset) octeon_prefetch_prefx(7, address, offset)
+
+#define octeon_prefetch(address, offset) octeon_prefetch_pref0(address, offset)
+#define CVMX_SYNCI(address, offset) asm volatile ("synci " CVMX_TMP_STR(offset) "(%[rbase])" : : [rbase] "d" (address) )
+#define octeon_prefetch0(address) octeon_prefetch(address, 0)
+#define octeon_prefetch128(address) octeon_prefetch(address, 128)
+
+#define octeon_storeuna_int64(data, address, offset) \
+	{ char *__a = (char *)(address); \
+	  asm ("usd %[rsrc], " CVMX_TMP_STR(offset) "(%[rbase])" : \
+	       "=m"(__a[offset + 0]), "=m"(__a[offset + 1]), "=m"(__a[offset + 2]), "=m"(__a[offset + 3]), \
+	       "=m"(__a[offset + 4]), "=m"(__a[offset + 5]), "=m"(__a[offset + 6]), "=m"(__a[offset + 7]) : \
+	       [rsrc] "d" (data), [rbase] "d" (__a)); }
+
+
+#define octeon_loaduna_int64(result, address, offset) \
+	{ char *__a = (char *)(address); \
+	  asm ("uld %[rdest], " CVMX_TMP_STR(offset) "(%[rbase])" : [rdest] "=d" (result) : \
+	       [rbase] "d" (__a), "m"(__a[offset + 0]), "m"(__a[offset + 1]), "m"(__a[offset + 2]), "m"(__a[offset + 3]), \
+	       "m"(__a[offset + 4]), "m"(__a[offset + 5]), "m"(__a[offset + 6]), "m"(__a[offset + 7])); }
+
+
+#define write_octeon_64bit_aes_result_wr_data(in1, in2, out1, out2)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x405d"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+
+	__asm__ __volatile__ (		\
+            ".set noreorder    \n" \
+            "dmfc2 %[r1],0x0100\n" \
+            "dmfc2 %[r2],0x0101\n" \
+            "dmtc2 %[r3],0x010a\n" \
+            "dmtc2 %[r4],0x310b\n" \
+            ".set reorder      \n" \
+            : [r1] "=&d"(in1) , [r2] "=&d"(in2) \
+            : [r3] "d"(out1),  [r4] "d"(out2)); \
+} while (0)
+
+
+#define write_octeon_64bit_gfm_xormul1_reflect(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x405d"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_gfm_xor0_reflect(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x005c"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+
+#define write_octeon_64bit_gfm_mul_reflect(value, index)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0058+" STR(index)		\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+
+#define write_octeon_64bit_gfm_xormul1(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x425d"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+
+#define write_octeon_64bit_gfm_xor0(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x025c"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+
+#define write_octeon_64bit_gfm_resinp(value, index)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x025a+" STR(index)		\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_gfm_mul(value, index)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0258+" STR(index)		\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_gfm_poly(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x025e"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
 
 #define write_octeon_64bit_aes_iv(value, index)	\
 do {							\
