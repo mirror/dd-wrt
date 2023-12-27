@@ -45,12 +45,16 @@ typedef __u32 clus_t;
 #define EXFAT_SET_VOLUME_LABEL		0x02
 #define EXFAT_GET_VOLUME_SERIAL		0x03
 #define EXFAT_SET_VOLUME_SERIAL		0x04
+#define EXFAT_GET_VOLUME_GUID		0x05
+#define EXFAT_SET_VOLUME_GUID		0x06
 
 #define EXFAT_MAX_SECTOR_SIZE		4096
 
 #define EXFAT_CLUSTER_SIZE(pbr) (1 << ((pbr)->bsx.sect_size_bits +	\
 					(pbr)->bsx.sect_per_clus_bits))
 #define EXFAT_SECTOR_SIZE(pbr) (1 << (pbr)->bsx.sect_size_bits)
+
+#define EXFAT_MAX_HASH_COUNT		(UINT16_MAX + 1)
 
 enum {
 	BOOT_SEC_IDX = 0,
@@ -84,6 +88,7 @@ struct exfat_user_input {
 	__u16 volume_label[VOLUME_LABEL_MAX_LEN];
 	int volume_label_len;
 	unsigned int volume_serial;
+	const char *guid;
 };
 
 struct exfat;
@@ -102,18 +107,24 @@ typedef __u32	bitmap_t;
 #define EXFAT_BITMAP_SIZE(__c_count)	\
 	(DIV_ROUND_UP(__c_count, BITS_PER) * sizeof(bitmap_t))
 
+#define BITMAP_GET(bmap, bit)	\
+	(((bitmap_t *)(bmap))[BIT_ENTRY(bit)] & BIT_MASK(bit))
+
+#define BITMAP_SET(bmap, bit)	\
+	(((bitmap_t *)(bmap))[BIT_ENTRY(bit)] |= BIT_MASK(bit))
+
 static inline bool exfat_bitmap_get(char *bmap, clus_t c)
 {
 	clus_t cc = c - EXFAT_FIRST_CLUSTER;
 
-	return ((bitmap_t *)(bmap))[BIT_ENTRY(cc)] & BIT_MASK(cc);
+	return BITMAP_GET(bmap, cc);
 }
 
 static inline void exfat_bitmap_set(char *bmap, clus_t c)
 {
 	clus_t cc = c - EXFAT_FIRST_CLUSTER;
 
-	(((bitmap_t *)(bmap))[BIT_ENTRY(cc)] |= BIT_MASK(cc));
+	BITMAP_SET(bmap, cc);
 }
 
 static inline void exfat_bitmap_clear(char *bmap, clus_t c)
@@ -147,6 +158,9 @@ ssize_t exfat_utf16_dec(const __u16 *in_str, size_t in_len,
 off_t exfat_get_root_entry_offset(struct exfat_blk_dev *bd);
 int exfat_read_volume_label(struct exfat *exfat);
 int exfat_set_volume_label(struct exfat *exfat, char *label_input);
+int __exfat_set_volume_guid(struct exfat_dentry *dentry, const char *guid);
+int exfat_read_volume_guid(struct exfat *exfat);
+int exfat_set_volume_guid(struct exfat *exfat, const char *guid);
 int exfat_read_sector(struct exfat_blk_dev *bd, void *buf,
 		unsigned int sec_off);
 int exfat_write_sector(struct exfat_blk_dev *bd, void *buf,

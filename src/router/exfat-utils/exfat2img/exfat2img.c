@@ -319,7 +319,7 @@ static int read_file_dentry_set(struct exfat_de_iter *iter,
 	if (!node)
 		return -ENOMEM;
 
-	for (i = 2; i <= file_de->file_num_ext; i++) {
+	for (i = 2; i <= MIN(file_de->file_num_ext, 1 + MAX_NAME_DENTRIES); i++) {
 		ret = exfat_de_iter_get(iter, i, &dentry);
 		if (ret || dentry->type != EXFAT_NAME)
 			break;
@@ -754,7 +754,7 @@ static ssize_t read_stream(int fd, void *buf, size_t len)
 		} else if (ret == 0) {
 			return 0;
 		}
-		buf += (size_t)ret;
+		buf = (char *)buf + (size_t)ret;
 		read_len += (size_t)ret;
 	}
 	return read_len;

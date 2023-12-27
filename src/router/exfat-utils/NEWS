@@ -1,3 +1,27 @@
+exfatprogs 1.2.2 - released 2023-10-26
+======================================
+
+CHANGES :
+ * exfat2img: Allow dumps for read-only devices.
+ * fsck.exfat: Revert Repairing zero size directory.
+
+NEW FEATURES :
+ * fsck.exfat: Repair duplicated filename.
+ * mkfs.exfat: Add the option "q" to print only error messages.
+ * mkfs.exfat: Add the option "U" to set volume GUID.
+ * tune.exfat: Add the option "U" / "-u" to set or print volume GUID.
+
+BUG FIXES:
+ * fsck.exfat: Fix some out-of-bounds memory accesses.
+ * fsck.exfat: Change not to delete volume GUID directory entry.
+
+exfatprogs 1.2.1 - released 2023-05-17
+======================================
+
+CHANGES :
+ * fsck.exfat: Repair zero size directory.
+ * fsck.exfat: Four small clean-ups.
+
 exfatprogs 1.2.0 - released 2022-10-28
 ======================================
 

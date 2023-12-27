@@ -6,12 +6,12 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "exfat_ondisk.h"
 #include "libexfat.h"
 #include "repair.h"
 #include "exfat_fs.h"
-#include "exfat_dir.h"
 #include "fsck.h"
 
 struct exfat_repair_problem {
@@ -54,6 +54,7 @@ static struct exfat_repair_problem problems[] = {
 	{ER_DE_NAME_HASH, ERF_PREEN_YES, ERP_FIX, 0, 0, 0},
 	{ER_DE_NAME_LEN, ERF_PREEN_YES, ERP_FIX, 0, 0, 0},
 	{ER_DE_DOT_NAME, ERF_PREEN_YES, ERP_RENAME, 2, 3, 4},
+	{ER_DE_DUPLICATED_NAME, ERF_PREEN_YES, ERP_RENAME, 2, 3, 4},
 	{ER_FILE_VALID_SIZE, ERF_PREEN_YES, ERP_FIX, 0, 0, 0},
 	{ER_FILE_INVALID_CLUS, ERF_PREEN_YES, ERP_TRUNCATE, 0, 0, 0},
 	{ER_FILE_FIRST_CLUS, ERF_PREEN_YES, ERP_TRUNCATE, 0, 0, 0},
@@ -156,4 +157,139 @@ int exfat_repair_ask(struct exfat_fsck *fsck, er_problem_code_t prcode,
 		fsck->dirty = true;
 	}
 	return repair;
+}
+
+static int check_bad_char(char w)
+{
+	return (w < 0x0020) || (w == '*') || (w == '?') || (w == '<') ||
+		(w == '>') || (w == '|') || (w == '"') || (w == ':') ||
+		(w == '/') || (w == '\\');
+}
+
+static char *get_rename_from_user(struct exfat_de_iter *iter)
+{
+	char *rename = malloc(ENTRY_NAME_MAX + 2);
+
+	if (!rename)
+		return NULL;
+
+retry:
+	/* +2 means LF(Line Feed) and NULL terminator */
+	memset(rename, 0x1, ENTRY_NAME_MAX + 2);
+	printf("New name: ");
+	if (fgets(rename, ENTRY_NAME_MAX + 2, stdin)) {
+		int i, len, err;
+		struct exfat_lookup_filter filter;
+
+		len = strlen(rename);
+		/* Remove LF in filename */
+		rename[len - 1] = '\0';
+		for (i = 0; i < len - 1; i++) {
+			if (check_bad_char(rename[i])) {
+				printf("filename contain invalid character(%c)\n", rename[i]);
+				goto retry;
+			}
+		}
+
+		exfat_de_iter_flush(iter);
+		err = exfat_lookup_file(iter->exfat, iter->parent, rename, &filter);
+		if (!err) {
+			printf("file(%s) already exists, retry to insert name\n", rename);
+			goto retry;
+		}
+	}
+
+	return rename;
+}
+
+static char *generate_rename(struct exfat_de_iter *iter)
+{
+	char *rename;
+
+	if (iter->invalid_name_num > INVALID_NAME_NUM_MAX)
+		return NULL;
+
+	rename = malloc(ENTRY_NAME_MAX + 1);
+	if (!rename)
+		return NULL;
+
+	while (1) {
+		struct exfat_lookup_filter filter;
+		int err;
+
+		snprintf(rename, ENTRY_NAME_MAX + 1, "FILE%07d.CHK",
+			 iter->invalid_name_num++);
+		err = exfat_lookup_file(iter->exfat, iter->parent, rename,
+					&filter);
+		if (!err)
+			continue;
+		break;
+	}
+
+	return rename;
+}
+
+int exfat_repair_rename_ask(struct exfat_fsck *fsck, struct exfat_de_iter *iter,
+		char *old_name, er_problem_code_t prcode, char *error_msg)
+{
+	int num;
+
+ask_again:
+	num = exfat_repair_ask(fsck, prcode, "ERROR: '%s' %s.\n%s",
+			old_name, error_msg,
+			" [1] Insert the name you want to rename.\n"
+			" [2] Automatically renames filename.\n"
+			" [3] Bypass this check(No repair)\n");
+	if (num) {
+		__le16 utf16_name[ENTRY_NAME_MAX];
+		char *rename = NULL;
+		__u16 hash;
+		struct exfat_dentry *dentry;
+		int ret, i;
+
+		switch (num) {
+		case 1:
+			rename = get_rename_from_user(iter);
+			break;
+		case 2:
+			rename = generate_rename(iter);
+			break;
+		case 3:
+			break;
+		default:
+			exfat_info("select 1 or 2 number instead of %d\n", num);
+			goto ask_again;
+		}
+
+		if (!rename)
+			return -EINVAL;
+
+		exfat_info("%s filename is renamed to %s\n", old_name, rename);
+
+		exfat_de_iter_get_dirty(iter, 2, &dentry);
+
+		memset(utf16_name, 0, sizeof(utf16_name));
+		ret = exfat_utf16_enc(rename, utf16_name, sizeof(utf16_name));
+		free(rename);
+		if (ret < 0)
+			return ret;
+
+		ret >>= 1;
+		memcpy(dentry->name_unicode, utf16_name, ENTRY_NAME_MAX * 2);
+		hash = exfat_calc_name_hash(iter->exfat, utf16_name, ret);
+		exfat_de_iter_get_dirty(iter, 1, &dentry);
+		dentry->stream_name_len = (__u8)ret;
+		dentry->stream_name_hash = cpu_to_le16(hash);
+
+		exfat_de_iter_get_dirty(iter, 0, &dentry);
+		i = dentry->file_num_ext;
+		dentry->file_num_ext = 2;
+
+		for (; i > 2; i--) {
+			exfat_de_iter_get_dirty(iter, i, &dentry);
+			dentry->type &= EXFAT_DELETE;
+		}
+	}
+
+	return 0;
 }

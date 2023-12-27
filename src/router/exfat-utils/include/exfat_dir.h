@@ -25,13 +25,16 @@ struct exfat_de_iter {
 	off_t			de_file_offset;
 	off_t			next_read_offset;
 	int			max_skip_dentries;
-#define DOT_NAME_NUM_MAX	9999999
-	unsigned int		dot_name_num;
+#define INVALID_NAME_NUM_MAX	9999999
+	unsigned int		invalid_name_num;
+
+	char *name_hash_bitmap;		/* bitmap of children's name hashes */
 };
 
 struct exfat_lookup_filter {
 	struct {
 		uint8_t		type;
+		int		dentry_count;
 		/* return 0 if matched, return 1 if not matched,
 		 * otherwise return errno
 		 */
@@ -43,8 +46,15 @@ struct exfat_lookup_filter {
 		struct exfat_dentry	*dentry_set;
 		int			dentry_count;
 		off_t			file_offset;
-		/* device offset where the dentry_set locates, or
-		 * the empty slot locates or EOF if not found.
+		/*
+		 * If the dentry_set found:
+		 *   - device offset where the dentry_set locates.
+		 * If the dentry_set not found:
+		 *   - device offset where the first empty dentry_set locates
+		 *     if in.dentry_count > 0 and there are enough empty dentry.
+		 *   - device offset where the last empty dentry_set locates
+		 *     if in.dentry_count = 0 or no enough empty dentry.
+		 *   - EOF if no empty dentry_set.
 		 */
 		off_t			dev_offset;
 	} out;
@@ -65,6 +75,10 @@ int exfat_lookup_dentry_set(struct exfat *exfat, struct exfat_inode *parent,
 			    struct exfat_lookup_filter *filter);
 int exfat_lookup_file(struct exfat *exfat, struct exfat_inode *parent,
 		      const char *name, struct exfat_lookup_filter *filter_out);
+int exfat_lookup_file_by_utf16name(struct exfat *exfat,
+				 struct exfat_inode *parent,
+				 __le16 *utf16_name,
+				 struct exfat_lookup_filter *filter_out);
 
 int exfat_create_file(struct exfat *exfat, struct exfat_inode *parent,
 		      const char *name, unsigned short attr);

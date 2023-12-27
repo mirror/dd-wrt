@@ -223,6 +223,7 @@ int main(int argc, char *argv[])
 	bool version_only = false;
 
 	init_user_input(&ui);
+	ui.writeable = false;
 
 	if (!setlocale(LC_CTYPE, ""))
 		exfat_err("failed to init locale/codeset\n");

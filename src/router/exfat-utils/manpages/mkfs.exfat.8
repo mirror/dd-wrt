@@ -17,6 +17,9 @@ mkfs.exfat \- create an exFAT filesystem
 .B \-L
 .I volume_label
 ] [
+.B \-U
+.I volume_guid
+] [
 .B \-\-pack\-bitmap
 ] [
 .B \-v
@@ -67,12 +70,23 @@ _
 >128 GiB	\[<=]512 GiB	256 KiB	32 MiB
 >512 GiB	\[<=]2 TiB	512 KiB	64 MiB
 .TE
+The default is always 1 MiB.
 .TP
 .BR \-c ", " \-\-cluster\-size =\fIsize\fR
 Specifies the cluster size of the exFAT file system.
 The \fIsize\fR argument is specified in bytes or may be specified with
 \fBm\fR/\fBM\fR suffix for mebibytes or \fBk\fR/\fBK\fR suffix for kibibytes
 and must be a power of two.
+The default value is described in the following table:
+.TS
+center;
+cb1s6cb,nnn.
+Card Capacity Range	Cluster Size
+_
+	\[<=]256 MiB	4 KiB
+>256 MiB	\[<=]32 GiB	32 KiB
+>32 GiB		128 KiB
+.TE
 .TP
 .BR \-f ", " \-\-full\-format
 Performs a full format.
@@ -83,6 +97,9 @@ Prints the help and exit.
 .TP
 .BR \-L ", " \-\-volume\-label =\fIlabel\fR
 Specifies the volume label to be associated with the exFAT filesystem.
+.TP
+.BR \-U ", " \-\-volume\-guid =\fIguid\fR
+Specifies the volume GUID to be associated with the exFAT filesystem.
 .TP
 .B \-\-pack\-bitmap
 Attempts to relocate the exFAT allocation bitmap so that it ends at the
@@ -100,6 +117,9 @@ associated with issuing many small writes to the bitmap by making it share an
 allocation unit with the FAT.
 If there is insufficient space for the bitmap there, then this option will have
 no effect, and the bitmap will be aligned at the boundary as by default.
+.TP
+.BR \-q ", " \-\-quiet
+Prints only error messages while creating the exFAT filesystem.
 .TP
 .BR \-v ", " \-\-verbose
 Prints verbose debugging information while creating the exFAT filesystem.

@@ -635,6 +635,35 @@ static int check_inode(struct exfat_de_iter *iter, struct exfat_inode *node)
 	return valid ? ret : -EINVAL;
 }
 
+static int handle_duplicated_filename(struct exfat_de_iter *iter,
+		struct exfat_inode *inode)
+{
+	int ret;
+	struct exfat_lookup_filter filter;
+	char filename[PATH_MAX + 1] = {0};
+
+	ret = exfat_lookup_file_by_utf16name(iter->exfat, iter->parent,
+			inode->name, &filter);
+	if (ret)
+		return ret;
+
+	free(filter.out.dentry_set);
+
+	/* Hash is same, but filename is not same */
+	if (exfat_de_iter_device_offset(iter) == filter.out.dev_offset)
+		return 0;
+
+	ret = exfat_utf16_dec(inode->name, NAME_BUFFER_SIZE, filename,
+			PATH_MAX);
+	if (ret < 0) {
+		exfat_err("failed to decode filename\n");
+		return ret;
+	}
+
+	return exfat_repair_rename_ask(&exfat_fsck, iter, filename,
+			ER_DE_DUPLICATED_NAME, "filename is duplicated");
+}
+
 static int check_name_dentry_set(struct exfat_de_iter *iter,
 				 struct exfat_inode *inode)
 {
@@ -665,77 +694,16 @@ static int check_name_dentry_set(struct exfat_de_iter *iter,
 			return -EINVAL;
 		}
 	}
+
+	if (BITMAP_GET(iter->name_hash_bitmap, hash)) {
+		int ret = handle_duplicated_filename(iter, inode);
+
+		if (ret)
+			return ret;
+	} else
+		BITMAP_SET(iter->name_hash_bitmap, hash);
+
 	return 0;
-}
-
-static int check_bad_char(char w)
-{
-	return (w < 0x0020) || (w == '*') || (w == '?') || (w == '<') ||
-		(w == '>') || (w == '|') || (w == '"') || (w == ':') ||
-		(w == '/') || (w == '\\');
-}
-
-static char *get_rename_from_user(struct exfat_de_iter *iter)
-{
-	char *rename = malloc(ENTRY_NAME_MAX + 2);
-
-	if (!rename)
-		return NULL;
-
-retry:
-	/* +2 means LF(Line Feed) and NULL terminator */
-	memset(rename, 0x1, ENTRY_NAME_MAX + 2);
-	printf("New name: ");
-	if (fgets(rename, ENTRY_NAME_MAX + 2, stdin)) {
-		int i, len, err;
-		struct exfat_lookup_filter filter;
-
-		len = strlen(rename);
-		/* Remove LF in filename */
-		rename[len - 1] = '\0';
-		for (i = 0; i < len - 1; i++) {
-			if (check_bad_char(rename[i])) {
-				printf("filename contain invalid character(%c)\n", rename[i]);
-				goto retry;
-			}
-		}
-
-		exfat_de_iter_flush(iter);
-		err = exfat_lookup_file(iter->exfat, iter->parent, rename, &filter);
-		if (!err) {
-			printf("file(%s) already exists, retry to insert name\n", rename);
-			goto retry;
-		}
-	}
-
-	return rename;
-}
-
-static char *generate_rename(struct exfat_de_iter *iter)
-{
-	char *rename;
-
-	if (iter->dot_name_num > DOT_NAME_NUM_MAX)
-		return NULL;
-
-	rename = malloc(ENTRY_NAME_MAX + 1);
-	if (!rename)
-		return NULL;
-
-	while (1) {
-		struct exfat_lookup_filter filter;
-		int err;
-
-		snprintf(rename, ENTRY_NAME_MAX + 1, "FILE%07d.CHK",
-			 iter->dot_name_num++);
-		err = exfat_lookup_file(iter->exfat, iter->parent, rename,
-					&filter);
-		if (!err)
-			continue;
-		break;
-	}
-
-	return rename;
 }
 
 const __le16 MSDOS_DOT[ENTRY_NAME_MAX] = {cpu_to_le16(46), 0, };
@@ -746,8 +714,6 @@ static int handle_dot_dotdot_filename(struct exfat_de_iter *iter,
 				      int strm_name_len)
 {
 	char *filename;
-	char error_msg[150];
-	int num;
 
 	if (!memcmp(dentry->name_unicode, MSDOS_DOT, strm_name_len * 2))
 		filename = ".";
@@ -757,56 +723,8 @@ static int handle_dot_dotdot_filename(struct exfat_de_iter *iter,
 	else
 		return 0;
 
-	sprintf(error_msg, "ERROR: '%s' filename is not allowed.\n"
-			" [1] Insert the name you want to rename.\n"
-			" [2] Automatically renames filename.\n"
-			" [3] Bypass this check(No repair)\n", filename);
-ask_again:
-	num = exfat_repair_ask(&exfat_fsck, ER_DE_DOT_NAME,
-			       error_msg);
-	if (num) {
-		__le16 utf16_name[ENTRY_NAME_MAX];
-		char *rename = NULL;
-		__u16 hash;
-		struct exfat_dentry *stream_de;
-		int name_len, ret;
-
-		switch (num) {
-		case 1:
-			rename = get_rename_from_user(iter);
-			break;
-		case 2:
-			rename = generate_rename(iter);
-			break;
-		case 3:
-			break;
-		default:
-			exfat_info("select 1 or 2 number instead of %d\n", num);
-			goto ask_again;
-		}
-
-		if (!rename)
-			return -EINVAL;
-
-		exfat_info("%s filename is renamed to %s\n", filename, rename);
-
-		exfat_de_iter_get_dirty(iter, 2, &dentry);
-
-		memset(utf16_name, 0, sizeof(utf16_name));
-		ret = exfat_utf16_enc(rename, utf16_name, sizeof(utf16_name));
-		free(rename);
-		if (ret < 0)
-			return ret;
-
-		memcpy(dentry->name_unicode, utf16_name, ENTRY_NAME_MAX * 2);
-		name_len = exfat_utf16_len(utf16_name, ENTRY_NAME_MAX * 2);
-		hash = exfat_calc_name_hash(iter->exfat, utf16_name, (int)name_len);
-		exfat_de_iter_get_dirty(iter, 1, &stream_de);
-		stream_de->stream_name_len = (__u8)name_len;
-		stream_de->stream_name_hash = cpu_to_le16(hash);
-	}
-
-	return 0;
+	return exfat_repair_rename_ask(&exfat_fsck, iter, filename,
+			ER_DE_DOT_NAME, "filename is not allowed");
 }
 
 static int read_file_dentry_set(struct exfat_de_iter *iter,
@@ -856,7 +774,7 @@ static int read_file_dentry_set(struct exfat_de_iter *iter,
 	if (!node)
 		return -ENOMEM;
 
-	for (i = 2; i <= file_de->file_num_ext; i++) {
+	for (i = 2; i <= MIN(file_de->file_num_ext, 1 + MAX_NAME_DENTRIES); i++) {
 		ret = exfat_de_iter_get(iter, i, &dentry);
 		if (ret || dentry->type != EXFAT_NAME) {
 			if (i > 2 && repair_file_ask(iter, NULL, ER_DE_NAME,
@@ -962,6 +880,7 @@ static int read_bitmap(struct exfat *exfat)
 {
 	struct exfat_lookup_filter filter = {
 		.in.type	= EXFAT_BITMAP,
+		.in.dentry_count = 0,
 		.in.filter	= NULL,
 		.in.param	= NULL,
 	};
@@ -1036,6 +955,7 @@ static int read_upcase_table(struct exfat *exfat)
 {
 	struct exfat_lookup_filter filter = {
 		.in.type	= EXFAT_UPCASE,
+		.in.dentry_count = 0,
 		.in.filter	= NULL,
 		.in.param	= NULL,
 	};
@@ -1129,6 +1049,10 @@ static int read_children(struct exfat_fsck *fsck, struct exfat_inode *dir)
 	else if (ret)
 		return ret;
 
+	de_iter->name_hash_bitmap = fsck->name_hash_bitmap;
+	memset(fsck->name_hash_bitmap, 0,
+			EXFAT_BITMAP_SIZE(EXFAT_MAX_HASH_COUNT));
+
 	while (1) {
 		ret = exfat_de_iter_get(de_iter, 0, &dentry);
 		if (ret == EOF) {
@@ -1169,6 +1093,7 @@ static int read_children(struct exfat_fsck *fsck, struct exfat_inode *dir)
 		case EXFAT_VOLUME:
 		case EXFAT_BITMAP:
 		case EXFAT_UPCASE:
+		case EXFAT_GUID:
 			if (dir == exfat->root)
 				break;
 			/* fallthrough */
@@ -1258,6 +1183,12 @@ static int exfat_filesystem_check(struct exfat_fsck *fsck)
 		return -ENOENT;
 	}
 
+	fsck->name_hash_bitmap = malloc(EXFAT_BITMAP_SIZE(EXFAT_MAX_HASH_COUNT));
+	if (!fsck->name_hash_bitmap) {
+		exfat_err("failed to allocate name hash bitmap\n");
+		return -ENOMEM;
+	}
+
 	list_add(&exfat->root->list, &exfat->dir_list);
 
 	while (!list_empty(&exfat->dir_list)) {
@@ -1286,6 +1217,7 @@ static int exfat_filesystem_check(struct exfat_fsck *fsck)
 	}
 out:
 	exfat_free_dir_list(exfat);
+	free(fsck->name_hash_bitmap);
 	return ret;
 }
 
@@ -1385,8 +1317,39 @@ static int rescue_orphan_clusters(struct exfat_fsck *fsck)
 	struct exfat_dentry_loc loc;
 	struct exfat_lookup_filter lf = {
 		.in.type = EXFAT_INVAL,
+		.in.dentry_count = 0,
 		.in.filter = NULL,
 	};
+
+	clu_count = le32_to_cpu(exfat->bs->bsx.clu_count);
+
+	/* find clusters which are not marked as free, but not allocated to
+	 * any files.
+	 */
+	disk_b = (bitmap_t *)exfat->disk_bitmap;
+	alloc_b = (bitmap_t *)exfat->alloc_bitmap;
+	ohead_b = (bitmap_t *)exfat->ohead_bitmap;
+	for (i = 0; i < EXFAT_BITMAP_SIZE(clu_count) / sizeof(bitmap_t); i++)
+		ohead_b[i] = disk_b[i] & ~alloc_b[i];
+
+	/* no orphan clusters */
+	if (exfat_bitmap_find_one(exfat, exfat->ohead_bitmap,
+				EXFAT_FIRST_CLUSTER, &s_clu))
+		return 0;
+
+	err = exfat_create_file(exfat_fsck.exfat,
+				exfat_fsck.exfat->root,
+				"LOST+FOUND",
+				ATTR_SUBDIR);
+	if (err) {
+		exfat_err("failed to create LOST+FOUND directory\n");
+		return err;
+	}
+
+	if (fsync(exfat_fsck.exfat->blk_dev->dev_fd) != 0) {
+		exfat_err("failed to sync()\n");
+		return -EIO;
+	}
 
 	err = read_lostfound(exfat, &lostfound);
 	if (err) {
@@ -1412,17 +1375,6 @@ static int rescue_orphan_clusters(struct exfat_fsck *fsck)
 		goto out;
 	}
 	dset[1].dentry.stream.flags |= EXFAT_SF_CONTIGUOUS;
-
-	clu_count = le32_to_cpu(exfat->bs->bsx.clu_count);
-
-	/* find clusters which are not marked as free, but not allocated to
-	 * any files.
-	 */
-	disk_b = (bitmap_t *)exfat->disk_bitmap;
-	alloc_b = (bitmap_t *)exfat->alloc_bitmap;
-	ohead_b = (bitmap_t *)exfat->ohead_bitmap;
-	for (i = 0; i < EXFAT_BITMAP_SIZE(clu_count) / sizeof(bitmap_t); i++)
-		ohead_b[i] = disk_b[i] & ~alloc_b[i];
 
 	/* create temporary files and allocate contiguous orphan clusters
 	 * to each file.
@@ -1613,23 +1565,6 @@ int main(int argc, char * const argv[])
 	if (ret) {
 		exfat_err("failed to verify root directory.\n");
 		goto out;
-	}
-
-	if (exfat_fsck.options & FSCK_OPTS_RESCUE_CLUS) {
-		ret = exfat_create_file(exfat_fsck.exfat,
-					exfat_fsck.exfat->root,
-					"LOST+FOUND",
-					ATTR_SUBDIR);
-		if (ret) {
-			exfat_err("failed to create lost+found directory\n");
-			goto out;
-		}
-
-		if (fsync(exfat_fsck.exfat->blk_dev->dev_fd) != 0) {
-			ret = -EIO;
-			exfat_err("failed to sync()\n");
-			goto out;
-		}
 	}
 
 	exfat_debug("verifying directory entries...\n");

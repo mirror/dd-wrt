@@ -10,6 +10,12 @@ tune.exfat \- adjust tunable filesystem parameters on an exFAT filesystem
 .B \-L
 .I set-label
 ] [
+.B \-u
+.I print-guid
+] [
+.B \-U
+.I set-guid
+] [
 .B \-i
 .I print-serial
 ] [
@@ -32,6 +38,12 @@ Print the volume label of the exFAT filesystem.
 .TP
 .BI \-L " set-label"
 Set the volume label of the filesystem to the provided argument.
+.TP
+.BI \-u " print-guid"
+Print the volume GUID of the exFAT filesystem.
+.TP
+.BI \-U " set-guid"
+Set the volume GUID of the filesystem to the provided argument.
 .TP
 .BI \-i " print-serial"
 Print the volume serial of the exFAT filesystem.

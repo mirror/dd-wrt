@@ -20,6 +20,8 @@ static void usage(void)
 	fprintf(stderr, "Usage: tune.exfat\n");
 	fprintf(stderr, "\t-l | --print-label                    Print volume label\n");
 	fprintf(stderr, "\t-L | --set-label=label                Set volume label\n");
+	fprintf(stderr, "\t-u | --print-guid                     Print volume GUID\n");
+	fprintf(stderr, "\t-U | --set-guid=guid                  Set volume GUID\n");
 	fprintf(stderr, "\t-i | --print-serial                   Print volume serial\n");
 	fprintf(stderr, "\t-I | --set-serial=value               Set volume serial\n");
 	fprintf(stderr, "\t-V | --version                        Show version\n");
@@ -32,6 +34,8 @@ static void usage(void)
 static struct option opts[] = {
 	{"print-label",		no_argument,		NULL,	'l' },
 	{"set-label",		required_argument,	NULL,	'L' },
+	{"print-guid",		no_argument,		NULL,	'u' },
+	{"set-guid",		required_argument,	NULL,	'U' },
 	{"print-serial",	no_argument,		NULL,	'i' },
 	{"set-serial",		required_argument,	NULL,	'I' },
 	{"version",		no_argument,		NULL,	'V' },
@@ -59,7 +63,7 @@ int main(int argc, char *argv[])
 		exfat_err("failed to init locale/codeset\n");
 
 	opterr = 0;
-	while ((c = getopt_long(argc, argv, "I:iL:lVvh", opts, NULL)) != EOF)
+	while ((c = getopt_long(argc, argv, "I:iL:lU:uVvh", opts, NULL)) != EOF)
 		switch (c) {
 		case 'l':
 			flags = EXFAT_GET_VOLUME_LABEL;
@@ -68,6 +72,14 @@ int main(int argc, char *argv[])
 			snprintf(label_input, sizeof(label_input), "%s",
 					optarg);
 			flags = EXFAT_SET_VOLUME_LABEL;
+			break;
+		case 'u':
+			flags = EXFAT_GET_VOLUME_GUID;
+			break;
+		case 'U':
+			if (*optarg != '\0' && *optarg != '\r')
+				ui.guid = optarg;
+			flags = EXFAT_SET_VOLUME_GUID;
 			break;
 		case 'i':
 			flags = EXFAT_GET_VOLUME_SERIAL;
@@ -140,6 +152,11 @@ int main(int argc, char *argv[])
 		ret = exfat_read_volume_label(exfat);
 	else if (flags == EXFAT_SET_VOLUME_LABEL)
 		ret = exfat_set_volume_label(exfat, label_input);
+	else if (flags == EXFAT_GET_VOLUME_GUID)
+		ret = exfat_read_volume_guid(exfat);
+	else if (flags == EXFAT_SET_VOLUME_GUID)
+		ret = exfat_set_volume_guid(exfat, ui.guid);
+
 close_fd_out:
 	close(bd.dev_fd);
 	if (exfat)

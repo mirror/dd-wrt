@@ -28,6 +28,8 @@ struct exfat_fsck {
 	enum fsck_ui_options	options;
 	bool			dirty:1;
 	bool			dirty_fat:1;
+
+	char *name_hash_bitmap;
 };
 
 off_t exfat_c2o(struct exfat *exfat, unsigned int clus);
