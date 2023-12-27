@@ -120,15 +120,4 @@ config CRYPTO_GHASH_ARM_CE
 	  that uses the 64x64 to 128 bit polynomial multiplication (vmull.p64)
 	  that is part of the ARMv8 Crypto Extensions
 
-config CRYPTO_POLY1305_ARM
-	tristate "Hash functions: Poly1305 (NEON)"
-	select CRYPTO_HASH
-	select CRYPTO_ARCH_HAVE_LIB_POLY1305
-	select CRYPTO_LIB_POLY1305
-	help
-	  Poly1305 authenticator algorithm (RFC7539)
-
-	  Architecture: arm optionally using
-	  - NEON (Advanced SIMD) extensions
-
 endif
