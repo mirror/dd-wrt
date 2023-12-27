@@ -161,9 +161,10 @@ static int ghash_setkey(struct crypto_shash *tfm,
 static struct shash_alg ghash_alg = {
 	.base.cra_name		= "ghash",
 	.base.cra_driver_name	= "octeon-ghash",
-	.base.cra_priority	= 150,
+	.base.cra_priority	= 200,
+	.base.cra_flags		= CRYPTO_ALG_TYPE_SHASH,
 	.base.cra_blocksize	= GHASH_BLOCK_SIZE,
-	.base.cra_ctxsize	= sizeof(struct ghash_key) + sizeof(u64[2]),
+	.base.cra_ctxsize	= sizeof(struct ghash_key),
 	.base.cra_module	= THIS_MODULE,
 
 	.digestsize		= GHASH_DIGEST_SIZE,
