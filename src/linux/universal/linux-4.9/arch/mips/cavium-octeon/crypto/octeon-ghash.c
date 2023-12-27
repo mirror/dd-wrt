@@ -1,5 +1,5 @@
 /*
- * octeon-aes-cbc.c
+ * octeon-ghash.c
  *
  * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
