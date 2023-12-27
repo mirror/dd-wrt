@@ -404,12 +404,10 @@ static int octeon_aesgcm_decrypt(struct aead_request *req)
 	u32 len = req->cryptlen - authsize;
 	int err;
 	be128 lengths;
-	u8 *iv;
-	u8 *dataout;
-	u8 *data;
-	u8 *aad;
 	u8 *tag;
-	u32 tail;
+	lengths.a = cpu_to_be64(req->assoclen * 8);
+	lengths.b = cpu_to_be64(req->cryptlen * 8);
+	tag = (u8 *)&lengths;
 	
 	src = scatterwalk_ffwd(srcbuf, req->src, req->assoclen);
 	dst = src;
@@ -419,19 +417,22 @@ static int octeon_aesgcm_decrypt(struct aead_request *req)
 	err = blkcipher_aead_walk_virt_block(&desc, &walk, aead,
 					     AES_BLOCK_SIZE);
 
-	iv = (u8*)walk.iv;
-	lengths.a = cpu_to_be64(req->assoclen * 8);
-	lengths.b = cpu_to_be64(req->cryptlen * 8);
-	tag = (u8 *)&lengths;
-	tail = walk.nbytes % AES_BLOCK_SIZE;
-	dataout = (u8*)walk.dst.virt.addr;
-	data = (u8*)walk.src.virt.addr;
-	aad = (u8*)data;
-	aad += walk.nbytes - tail;;
-	flags = octeon_crypto_enable(&state);
-	_octeon_aesgcm_decrypt(ctx, data, dataout, walk.nbytes - tail, iv, 12, aad, req->assoclen, tag);
-	octeon_crypto_disable(&state, flags);
-	err = blkcipher_walk_done(&desc, &walk, tail);
+
+	while (walk.nbytes) {
+		u32 tail = walk.nbytes % AES_BLOCK_SIZE;
+
+		if (walk.nbytes == len)
+			tail = 0;
+
+		printk(KERN_EMERG "walk %d len %d tail %d\n", walk.nbytes, len, tail);
+		flags = octeon_crypto_enable(&state);
+		_octeon_aesgcm_decrypt(ctx, walk.src.virt.addr, walk.dst.virt.addr, walk.nbytes - tail, walk.iv, 12, walk.src.virt.addr + walk.nbytes - tail, req->assoclen, tag);
+		octeon_crypto_disable(&state, flags);
+
+		len -= walk.nbytes - tail;
+		err = blkcipher_walk_done(&desc, &walk, tail);
+	}
+
 	return 0;
 }
 
@@ -452,13 +453,10 @@ static int octeon_aesgcm_encrypt(struct aead_request *req)
 	u32 len = req->cryptlen - authsize;
 	int err;
 	be128 lengths;
-	u8 *iv;
-	u8 *dataout;
-	u8 *data;
-	u8 *aad;
-	u8 *tag;
-	u32 tail;
-	
+	u8 *tag;	
+	lengths.a = cpu_to_be64(req->assoclen * 8);
+	lengths.b = cpu_to_be64(req->cryptlen * 8);
+	tag = (u8 *)&lengths;
 	src = scatterwalk_ffwd(srcbuf, req->src, req->assoclen);
 	dst = src;
 	if (req->src != req->dst)
@@ -467,19 +465,22 @@ static int octeon_aesgcm_encrypt(struct aead_request *req)
 	err = blkcipher_aead_walk_virt_block(&desc, &walk, aead,
 					     AES_BLOCK_SIZE);
 
-	iv = (u8*)walk.iv;
-	lengths.a = cpu_to_be64(req->assoclen * 8);
-	lengths.b = cpu_to_be64(req->cryptlen * 8);
-	tag = (u8 *)&lengths;
-	tail = walk.nbytes % AES_BLOCK_SIZE;
-	dataout = (u8*)walk.dst.virt.addr;
-	data = (u8*)walk.src.virt.addr;
-	aad = (u8*)data;
-	aad += walk.nbytes - tail;;
-	flags = octeon_crypto_enable(&state);
-	_octeon_aesgcm_encrypt(ctx, data, dataout, walk.nbytes - tail, iv, 12, aad, req->assoclen, tag);
-	octeon_crypto_disable(&state, flags);
-	err = blkcipher_walk_done(&desc, &walk, tail);
+
+	while (walk.nbytes) {
+		u32 tail = walk.nbytes % AES_BLOCK_SIZE;
+
+		if (walk.nbytes == len)
+			tail = 0;
+
+		printk(KERN_EMERG "walk %d len %d tail %d\n", walk.nbytes, len, tail);
+		flags = octeon_crypto_enable(&state);
+		_octeon_aesgcm_encrypt(ctx, walk.src.virt.addr, walk.dst.virt.addr, walk.nbytes - tail, walk.iv, 12, walk.src.virt.addr + walk.nbytes - tail, req->assoclen, tag);
+		octeon_crypto_disable(&state, flags);
+
+		len -= walk.nbytes - tail;
+		err = blkcipher_walk_done(&desc, &walk, tail);
+	}
+
 	return 0;
 }
 
