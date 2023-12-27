@@ -178,6 +178,8 @@ define kernelfeatures
 		sed -i 's/\CONFIG_KALLSYMS=y/# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
 	else \
 		echo "# CONFIG_LTO_MENU is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LTO_GCC is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_LTO_NONE=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_KERNELLTO_CP_CLONE)" = "y" ]; then \
 		sed -i 's/\# CONFIG_LTO_CP_CLONE is not set/CONFIG_LTO_CP_CLONE=y/g' $(LINUXDIR)/.config; \
@@ -700,15 +702,6 @@ define kernelfeatures
 		sed -i 's/\CONFIG_MD=y/# CONFIG_MD is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_RAID6_PQ=m/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_RAID6_PQ=y/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
-	fi
-	if [ "$(CONFIG_BATMANADV)" = "y" ] && [ "$(KERNELVERSION)" = "6.1" ]; then \
-		sed -i 's/\# CONFIG_BATMAN_ADV is not set/CONFIG_BATMAN_ADV=m/g' $(LINUXDIR)/.config; \
-		echo "CONFIG_BATMAN_ADV_BATMAN_V=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_BATMAN_ADV_BLA=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_BATMAN_ADV_DAT=y" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_BATMAN_ADV_NC is not set" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_BATMAN_ADV_MCAST=y" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_BATMAN_ADV_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.1" ]; then \
 		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
