@@ -122,7 +122,7 @@ do {							\
 	: [rt] "=d" (__value)				\
 	: );						\
 							\
-	__value;					\
+	be64_to_cpu(__value);				\
 })
 
 
@@ -139,7 +139,7 @@ do {							\
 	__asm__ __volatile__ (				\
 	"dmtc2 %[rt],0x025e"				\
 	:						\
-	: [rt] "d" (cpu_to_be64(value)));		\
+	: [rt] "d" (value));		\
 } while (0)
 
 
