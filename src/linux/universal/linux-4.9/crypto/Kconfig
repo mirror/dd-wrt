@@ -505,6 +505,13 @@ config CRYPTO_GHASH
 	help
 	  GHASH is message digest algorithm for GCM (Galois/Counter Mode).
 
+config CRYPTO_GHASH_OCTEON
+	tristate "GHASH digest algorithm (OCTEON)"
+	depends on CPU_CAVIUM_OCTEON
+	select CRYPTO_GHASH
+	help
+	  GHASH is message digest algorithm for GCM (Galois/Counter Mode). (octeon hw crypto)
+
 config CRYPTO_POLY1305
 	tristate "Poly1305 authenticator algorithm"
 	select CRYPTO_LIB_POLY1305	
