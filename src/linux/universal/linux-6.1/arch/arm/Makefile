@@ -80,7 +80,11 @@ CFLAGS_ABI	:=-mabi=aapcs-linux  -mfpu=neon-vfpv4
 else
 ifeq ($(CONFIG_ARCH_MVEBU),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7  -mcpu=cortex-a9 -mtune=cortex-a9
+ifeq ($(CONFIG_ARMADAXP),y)
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfpv3-d16
+else
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon
+endif
 else
 ifeq ($(CONFIG_ARM_VIRT_EXT),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve
