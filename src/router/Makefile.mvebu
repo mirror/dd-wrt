@@ -66,7 +66,7 @@ export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 
 #ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic
-ifeq ($(ARMADAXP),y)
+ifeq ($(CONFIG_ARMADAXP),y)
 export COPTS:=$(BASEOPT) -pipe  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
 else
 export COPTS:=$(BASEOPT) -pipe  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=neon-vfpv3 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
@@ -117,6 +117,12 @@ include kernel-features.mk
 
 kernel:
 	cp $(LINUXDIR)/.config_mvebu $(LINUXDIR)/.config
+ifeq ($(CONFIG_ARMADAXP),y)
+	echo "CONFIG_ARMADAXP=y" >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_ARMADAXP is not set" >> $(LINUXDIR)/.config
+endif
+	
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
