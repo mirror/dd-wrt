@@ -890,6 +890,7 @@ pim_addr pim_find_primary_addr(struct interface *ifp)
 #else
 	int v4_addrs = 0;
 	int v6_addrs = 0;
+	struct connected *promote_ifc = NULL;
 
 	for (ALL_LIST_ELEMENTS_RO(ifp->connected, node, ifc)) {
 		switch (ifc->address->family) {
@@ -903,13 +904,22 @@ pim_addr pim_find_primary_addr(struct interface *ifp)
 			continue;
 		}
 
-		if (CHECK_FLAG(ifc->flags, ZEBRA_IFA_SECONDARY))
-			continue;
-
 		if (ifc->address->family != PIM_AF)
 			continue;
 
+		if (CHECK_FLAG(ifc->flags, ZEBRA_IFA_SECONDARY)) {
+			promote_ifc = ifc;
+			continue;
+		}
+
 		return pim_addr_from_prefix(ifc->address);
+	}
+
+
+	/* Promote the new primary address. */
+	if (v4_addrs && promote_ifc) {
+		UNSET_FLAG(promote_ifc->flags, ZEBRA_IFA_SECONDARY);
+		return pim_addr_from_prefix(promote_ifc->address);
 	}
 
 	/*
@@ -1490,9 +1500,16 @@ void pim_if_create_pimreg(struct pim_instance *pim)
 					       pim->vrf->name);
 		pim->regiface->ifindex = PIM_OIF_PIM_REGISTER_VIF;
 
-		if (!pim->regiface->info)
-			pim_if_new(pim->regiface, false, false, true,
-				   false /*vxlan_term*/);
+		/*
+		 * The pimreg interface might has been removed from
+		 * kerenl with the VRF's deletion.  It must be
+		 * recreated, so delete the old one first.
+		 */
+		if (pim->regiface->info)
+			pim_if_delete(pim->regiface);
+
+		pim_if_new(pim->regiface, false, false, true,
+			   false /*vxlan_term*/);
 
 		/*
 		 * On vrf moves we delete the interface if there
@@ -1756,4 +1773,62 @@ void pim_iface_init(void)
 
 	if_zapi_callbacks(pim_ifp_create, pim_ifp_up, pim_ifp_down,
 			  pim_ifp_destroy);
+}
+
+static void pim_if_membership_clear(struct interface *ifp)
+{
+	struct pim_interface *pim_ifp;
+
+	pim_ifp = ifp->info;
+	assert(pim_ifp);
+
+	if (pim_ifp->pim_enable && pim_ifp->gm_enable)
+		return;
+
+	pim_ifchannel_membership_clear(ifp);
+}
+
+void pim_pim_interface_delete(struct interface *ifp)
+{
+	struct pim_interface *pim_ifp = ifp->info;
+
+	if (!pim_ifp)
+		return;
+
+	pim_ifp->pim_enable = false;
+
+	pim_if_membership_clear(ifp);
+
+	/*
+	 * pim_sock_delete() removes all neighbors from
+	 * pim_ifp->pim_neighbor_list.
+	 */
+	pim_sock_delete(ifp, "pim unconfigured on interface");
+	pim_upstream_nh_if_update(pim_ifp->pim, ifp);
+
+	if (!pim_ifp->gm_enable) {
+		pim_if_addr_del_all(ifp);
+		pim_if_delete(ifp);
+	}
+}
+
+void pim_gm_interface_delete(struct interface *ifp)
+{
+	struct pim_interface *pim_ifp = ifp->info;
+
+	if (!pim_ifp)
+		return;
+
+	pim_ifp->gm_enable = false;
+
+	pim_if_membership_clear(ifp);
+
+#if PIM_IPV == 4
+	igmp_sock_delete_all(ifp);
+#else
+	gm_ifp_teardown(ifp);
+#endif
+
+	if (!pim_ifp->pim_enable)
+		pim_if_delete(ifp);
 }

@@ -60,7 +60,10 @@ struct ospf_master *om;
 unsigned short ospf_instance;
 
 extern struct zclient *zclient;
+extern struct zclient *zclient_sync;
 
+/* OSPF config processing timer thread */
+struct event *t_ospf_cfg;
 
 static void ospf_remove_vls_through_area(struct ospf *, struct ospf_area *);
 static void ospf_network_free(struct ospf *, struct ospf_network *);
@@ -681,6 +684,8 @@ void ospf_terminate(void)
 	 */
 	zclient_stop(zclient);
 	zclient_free(zclient);
+	zclient_stop(zclient_sync);
+	zclient_free(zclient_sync);
 
 done:
 	frr_fini();
@@ -801,25 +806,6 @@ static void ospf_finish_final(struct ospf *ospf)
 		ospf_area_free(area);
 	}
 
-	/* Cancel all timers. */
-	EVENT_OFF(ospf->t_read);
-	EVENT_OFF(ospf->t_write);
-	EVENT_OFF(ospf->t_spf_calc);
-	EVENT_OFF(ospf->t_ase_calc);
-	EVENT_OFF(ospf->t_maxage);
-	EVENT_OFF(ospf->t_maxage_walker);
-	EVENT_OFF(ospf->t_abr_task);
-	EVENT_OFF(ospf->t_abr_fr);
-	EVENT_OFF(ospf->t_asbr_check);
-	EVENT_OFF(ospf->t_asbr_nssa_redist_update);
-	EVENT_OFF(ospf->t_distribute_update);
-	EVENT_OFF(ospf->t_lsa_refresher);
-	EVENT_OFF(ospf->t_opaque_lsa_self);
-	EVENT_OFF(ospf->t_sr_update);
-	EVENT_OFF(ospf->t_default_routemap_timer);
-	EVENT_OFF(ospf->t_external_aggr);
-	EVENT_OFF(ospf->gr_info.t_grace_period);
-
 	LSDB_LOOP (OPAQUE_AS_LSDB(ospf), rn, lsa)
 		ospf_discard_from_db(ospf, ospf->lsdb, lsa);
 	LSDB_LOOP (EXTERNAL_LSDB(ospf), rn, lsa)
@@ -907,8 +893,26 @@ static void ospf_finish_final(struct ospf *ospf)
 		}
 	}
 
-	route_table_finish(ospf->rt_aggr_tbl);
+	/* Cancel all timers. */
+	EVENT_OFF(ospf->t_read);
+	EVENT_OFF(ospf->t_write);
+	EVENT_OFF(ospf->t_spf_calc);
+	EVENT_OFF(ospf->t_ase_calc);
+	EVENT_OFF(ospf->t_maxage);
+	EVENT_OFF(ospf->t_maxage_walker);
+	EVENT_OFF(ospf->t_abr_task);
+	EVENT_OFF(ospf->t_abr_fr);
+	EVENT_OFF(ospf->t_asbr_check);
+	EVENT_OFF(ospf->t_asbr_redist_update);
+	EVENT_OFF(ospf->t_distribute_update);
+	EVENT_OFF(ospf->t_lsa_refresher);
+	EVENT_OFF(ospf->t_opaque_lsa_self);
+	EVENT_OFF(ospf->t_sr_update);
+	EVENT_OFF(ospf->t_default_routemap_timer);
+	EVENT_OFF(ospf->t_external_aggr);
+	EVENT_OFF(ospf->gr_info.t_grace_period);
 
+	route_table_finish(ospf->rt_aggr_tbl);
 
 	ospf_free_refresh_queue(ospf);
 
@@ -931,6 +935,15 @@ static void ospf_finish_final(struct ospf *ospf)
 	XFREE(MTYPE_OSPF_TOP, ospf);
 }
 
+static void ospf_range_table_node_destroy(route_table_delegate_t *delegate,
+			struct route_table *table, struct route_node *node)
+{
+	XFREE(MTYPE_OSPF_AREA_RANGE, node->info);
+	XFREE(MTYPE_ROUTE_NODE, node);
+}
+
+route_table_delegate_t ospf_range_table_delegate = {.create_node = route_node_create,
+						 .destroy_node = ospf_range_table_node_destroy};
 
 /* allocate new OSPF Area object */
 struct ospf_area *ospf_area_new(struct ospf *ospf, struct in_addr area_id)
@@ -967,8 +980,8 @@ struct ospf_area *ospf_area_new(struct ospf *ospf, struct in_addr area_id)
 	ospf_opaque_type10_lsa_init(new);
 
 	new->oiflist = list_new();
-	new->ranges = route_table_init();
-	new->nssa_ranges = route_table_init();
+	new->ranges = route_table_init_with_delegate(&ospf_range_table_delegate);
+	new->nssa_ranges = route_table_init_with_delegate(&ospf_range_table_delegate);
 
 	if (area_id.s_addr == OSPF_AREA_BACKBONE)
 		ospf->backbone = new;
@@ -1244,8 +1257,9 @@ int ospf_network_unset(struct ospf *ospf, struct prefix_ipv4 *p,
 {
 	struct route_node *rn;
 	struct ospf_network *network;
-	struct listnode *node, *nnode;
+	struct listnode *node;
 	struct ospf_interface *oi;
+	struct list *ospf_oiflist = NULL;
 
 	rn = route_node_lookup(ospf->networks, (struct prefix *)p);
 	if (rn == NULL)
@@ -1260,8 +1274,9 @@ int ospf_network_unset(struct ospf *ospf, struct prefix_ipv4 *p,
 	rn->info = NULL;
 	route_unlock_node(rn); /* initial reference */
 
-	/* Find interfaces that are not configured already.  */
-	for (ALL_LIST_ELEMENTS(ospf->oiflist, node, nnode, oi)) {
+	ospf_oiflist = list_dup(ospf->oiflist);
+	/* Find interfaces that are not configured already. */
+	for (ALL_LIST_ELEMENTS_RO(ospf_oiflist, node, oi)) {
 
 		if (oi->type == OSPF_IFTYPE_VIRTUALLINK)
 			continue;
@@ -1269,12 +1284,15 @@ int ospf_network_unset(struct ospf *ospf, struct prefix_ipv4 *p,
 		ospf_network_run_subnet(ospf, oi->connected, NULL, NULL);
 	}
 
+	list_delete(&ospf_oiflist);
+
 	/* Update connected redistribute. */
 	update_redistributed(ospf, 0); /* interfaces possibly removed */
 	ospf_area_check_free(ospf, area_id);
 
 	return 1;
 }
+
 
 /* Ensure there's an OSPF instance, as "ip ospf area" enabled OSPF means
  * there might not be any 'router ospf' config.
@@ -2282,20 +2300,20 @@ static void ospf_set_redist_vrf_bitmaps(struct ospf *ospf, bool set)
 				"%s: setting redist vrf %d bitmap for type %d",
 				__func__, ospf->vrf_id, type);
 		if (set)
-			vrf_bitmap_set(zclient->redist[AFI_IP][type],
+			vrf_bitmap_set(&zclient->redist[AFI_IP][type],
 				       ospf->vrf_id);
 		else
-			vrf_bitmap_unset(zclient->redist[AFI_IP][type],
+			vrf_bitmap_unset(&zclient->redist[AFI_IP][type],
 					 ospf->vrf_id);
 	}
 
 	red_list = ospf->redist[DEFAULT_ROUTE];
 	if (red_list) {
 		if (set)
-			vrf_bitmap_set(zclient->default_information[AFI_IP],
+			vrf_bitmap_set(&zclient->default_information[AFI_IP],
 				       ospf->vrf_id);
 		else
-			vrf_bitmap_unset(zclient->default_information[AFI_IP],
+			vrf_bitmap_unset(&zclient->default_information[AFI_IP],
 					 ospf->vrf_id);
 	}
 }

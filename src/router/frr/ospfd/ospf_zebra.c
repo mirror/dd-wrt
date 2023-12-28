@@ -47,7 +47,7 @@ DEFINE_MTYPE_STATIC(OSPFD, OSPF_REDISTRIBUTE, "OSPF Redistriute");
 /* Zebra structure to hold current status. */
 struct zclient *zclient = NULL;
 /* and for the Synchronous connection to the Label Manager */
-static struct zclient *zclient_sync;
+struct zclient *zclient_sync;
 
 /* For registering threads. */
 extern struct event_loop *master;
@@ -158,29 +158,6 @@ static int ospf_interface_link_params(ZAPI_CALLBACK_ARGS)
 
 	/* Update TE TLV */
 	ospf_mpls_te_update_if(ifp);
-
-	return 0;
-}
-
-/* VRF update for an interface. */
-static int ospf_interface_vrf_update(ZAPI_CALLBACK_ARGS)
-{
-	struct interface *ifp = NULL;
-	vrf_id_t new_vrf_id;
-
-	ifp = zebra_interface_vrf_update_read(zclient->ibuf, vrf_id,
-					      &new_vrf_id);
-	if (!ifp)
-		return 0;
-
-	if (IS_DEBUG_OSPF_EVENT)
-		zlog_debug(
-			"%s: Rx Interface %s VRF change vrf_id %u New vrf %s id %u",
-			__func__, ifp->name, vrf_id,
-			ospf_vrf_id_to_name(new_vrf_id), new_vrf_id);
-
-	/*if_update(ifp, ifp->name, strlen(ifp->name), new_vrf_id);*/
-	if_update_to_new_vrf(ifp, new_vrf_id);
 
 	return 0;
 }
@@ -814,16 +791,16 @@ int ospf_is_type_redistributed(struct ospf *ospf, int type,
 			       unsigned short instance)
 {
 	return (DEFAULT_ROUTE_TYPE(type)
-			? vrf_bitmap_check(zclient->default_information[AFI_IP],
-					   ospf->vrf_id)
-			: ((instance
-			    && redist_check_instance(
+			? vrf_bitmap_check(
+				  &zclient->default_information[AFI_IP],
+				  ospf->vrf_id)
+			: ((instance &&
+			    redist_check_instance(
 				    &zclient->mi_redist[AFI_IP][type],
-				    instance))
-			   || (!instance
-			       && vrf_bitmap_check(
-				       zclient->redist[AFI_IP][type],
-				       ospf->vrf_id))));
+				    instance)) ||
+			   (!instance &&
+			    vrf_bitmap_check(&zclient->redist[AFI_IP][type],
+					     ospf->vrf_id))));
 }
 
 int ospf_redistribute_update(struct ospf *ospf, struct ospf_redist *red,
@@ -2161,9 +2138,9 @@ static int ospf_opaque_msg_handler(ZAPI_CALLBACK_ARGS)
 
 	switch (info.type) {
 	case LINK_STATE_SYNC:
-		STREAM_GETC(s, dst.proto);
-		STREAM_GETW(s, dst.instance);
-		STREAM_GETL(s, dst.session_id);
+		dst.proto = info.src_proto;
+		dst.instance = info.src_instance;
+		dst.session_id = info.src_session_id;
 		dst.type = LINK_STATE_SYNC;
 		ret = ospf_te_sync_ted(dst);
 		break;
@@ -2203,7 +2180,6 @@ static zclient_handler *const ospf_handlers[] = {
 	[ZEBRA_INTERFACE_ADDRESS_ADD] = ospf_interface_address_add,
 	[ZEBRA_INTERFACE_ADDRESS_DELETE] = ospf_interface_address_delete,
 	[ZEBRA_INTERFACE_LINK_PARAMS] = ospf_interface_link_params,
-	[ZEBRA_INTERFACE_VRF_UPDATE] = ospf_interface_vrf_update,
 
 	[ZEBRA_REDISTRIBUTE_ROUTE_ADD] = ospf_zebra_read_route,
 	[ZEBRA_REDISTRIBUTE_ROUTE_DEL] = ospf_zebra_read_route,

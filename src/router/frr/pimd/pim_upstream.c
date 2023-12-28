@@ -181,7 +181,7 @@ struct pim_upstream *pim_upstream_del(struct pim_instance *pim,
 
 	if (PIM_DEBUG_PIM_TRACE)
 		zlog_debug(
-			"%s(%s): Delete %s[%s] ref count: %d , flags: %d c_oil ref count %d (Pre decrement)",
+			"%s(%s): Delete %s[%s] ref count: %d, flags: %d c_oil ref count %d (Pre decrement)",
 			__func__, name, up->sg_str, pim->vrf->name,
 			up->ref_count, up->flags,
 			up->channel_oil->oil_ref_count);
@@ -662,10 +662,9 @@ void pim_upstream_update_use_rpt(struct pim_upstream *up,
 	new_use_rpt = !!PIM_UPSTREAM_FLAG_TEST_USE_RPT(up->flags);
 	if (old_use_rpt != new_use_rpt) {
 		if (PIM_DEBUG_PIM_EVENTS)
-			zlog_debug("%s switched from %s to %s",
-					up->sg_str,
-					old_use_rpt?"RPT":"SPT",
-					new_use_rpt?"RPT":"SPT");
+			zlog_debug("%s switched from %s to %s", up->sg_str,
+				   old_use_rpt ? "RPT" : "SPT",
+				   new_use_rpt ? "RPT" : "SPT");
 		if (update_mroute)
 			pim_upstream_mroute_add(up->channel_oil, __func__);
 	}
@@ -904,14 +903,21 @@ static struct pim_upstream *pim_upstream_new(struct pim_instance *pim,
 				false /*update_mroute*/);
 		pim_upstream_mroute_iif_update(up->channel_oil, __func__);
 
-		if (PIM_UPSTREAM_FLAG_TEST_SRC_NOCACHE(up->flags))
+		if (PIM_UPSTREAM_FLAG_TEST_SRC_NOCACHE(up->flags)) {
+			/*
+			 * Set the right RPF so that future changes will
+			 * be right
+			 */
+			rpf_result = pim_rpf_update(pim, up, NULL, __func__);
 			pim_upstream_keep_alive_timer_start(
 				up, pim->keep_alive_time);
+		}
 	} else if (!pim_addr_is_any(up->upstream_addr)) {
 		pim_upstream_update_use_rpt(up,
 				false /*update_mroute*/);
 		rpf_result = pim_rpf_update(pim, up, NULL, __func__);
 		if (rpf_result == PIM_RPF_FAILURE) {
+			up->channel_oil->oil_inherited_rescan = 1;
 			if (PIM_DEBUG_PIM_TRACE)
 				zlog_debug(
 					"%s: Attempting to create upstream(%s), Unable to RPF for source",
@@ -1713,6 +1719,7 @@ static void pim_upstream_register_stop_timer(struct event *t)
 				zlog_debug("%s: up %s RPF is not present",
 					   __func__, up->sg_str);
 			up->reg_state = PIM_REG_NOINFO;
+			PIM_UPSTREAM_FLAG_UNSET_FHR(up->flags);
 			return;
 		}
 
@@ -1964,6 +1971,7 @@ static bool pim_upstream_kat_start_ok(struct pim_upstream *up)
 	struct channel_oil *c_oil = up->channel_oil;
 	struct interface *ifp = up->rpf.source_nexthop.interface;
 	struct pim_interface *pim_ifp;
+	struct pim_instance *pim = up->channel_oil->pim;
 
 	/* "iif == RPF_interface(S)" check is not easy to do as the info
 	 * we get from the kernel/ASIC is really a "lookup/key hit".
@@ -1974,7 +1982,7 @@ static bool pim_upstream_kat_start_ok(struct pim_upstream *up)
 		return false;
 
 	pim_ifp = ifp->info;
-	if (pim_ifp->mroute_vif_index != *oil_parent(c_oil))
+	if (pim_ifp->mroute_vif_index != *oil_incoming_vif(c_oil))
 		return false;
 
 	if (pim_if_connected_to_source(up->rpf.source_nexthop.interface,
@@ -1983,8 +1991,9 @@ static bool pim_upstream_kat_start_ok(struct pim_upstream *up)
 	}
 
 	if ((up->join_state == PIM_UPSTREAM_JOINED)
-			&& !pim_upstream_empty_inherited_olist(up)) {
-		return true;
+	    && !pim_upstream_empty_inherited_olist(up)) {
+		if (I_am_RP(pim, up->sg.grp))
+			return true;
 	}
 
 	return false;
@@ -2056,7 +2065,7 @@ static void pim_upstream_sg_running(void *arg)
 	// No packet can have arrived here if this is the case
 	if (!up->channel_oil->installed) {
 		if (PIM_DEBUG_TRACE)
-			zlog_debug("%s: %s%s is not installed in mroute",
+			zlog_debug("%s: %s[%s] is not installed in mroute",
 				   __func__, up->sg_str, pim->vrf->name);
 		return;
 	}

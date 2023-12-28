@@ -28,6 +28,8 @@
 #include "zebra/zapi_msg.h"
 #include "zebra/debug.h"
 
+#include "zebra/label_manager_clippy.c"
+
 #define CONNECTION_DELAY 5
 
 struct label_manager lbl_mgr;
@@ -96,7 +98,7 @@ void delete_label_chunk(void *val)
  */
 int release_daemon_label_chunks(struct zserv *client)
 {
-	struct listnode *node;
+	struct listnode *node, *nnode;
 	struct label_manager_chunk *lmc;
 	int count = 0;
 	int ret;
@@ -106,7 +108,7 @@ int release_daemon_label_chunks(struct zserv *client)
 			   __func__, zebra_route_string(client->proto),
 			   client->instance, client->session_id);
 
-	for (ALL_LIST_ELEMENTS_RO(lbl_mgr.lc_list, node, lmc)) {
+	for (ALL_LIST_ELEMENTS(lbl_mgr.lc_list, node, nnode, lmc)) {
 		if (lmc->proto == client->proto &&
 		    lmc->instance == client->instance &&
 		    lmc->session_id == client->session_id && lmc->keep == 0) {
@@ -145,6 +147,22 @@ void lm_hooks_unregister(void)
 	hook_unregister(lm_release_chunk, label_manager_release_label_chunk);
 }
 
+DEFPY(show_label_table, show_label_table_cmd, "show debugging label-table",
+      SHOW_STR
+      DEBUG_STR
+      "Display allocated label chunks\n")
+{
+	struct label_manager_chunk *lmc;
+	struct listnode *node;
+
+	for (ALL_LIST_ELEMENTS_RO(lbl_mgr.lc_list, node, lmc)) {
+		vty_out(vty, "Proto %s: [%u/%u]\n",
+			zebra_route_string(lmc->proto), lmc->start, lmc->end);
+	}
+
+	return CMD_SUCCESS;
+}
+
 /**
  * Init label manager (or proxy to an external one)
  */
@@ -159,6 +177,8 @@ void label_manager_init(void)
 
 	/* notify any external module that we are done */
 	hook_call(lm_cbs_inited);
+
+	install_element(VIEW_NODE, &show_label_table_cmd);
 }
 
 /* alloc and fill a label chunk */
@@ -399,13 +419,14 @@ int release_label_chunk(uint8_t proto, unsigned short instance,
 				 "%s: Daemon mismatch!!", __func__);
 			continue;
 		}
-		lmc->proto = NO_PROTO;
-		lmc->instance = 0;
-		lmc->session_id = 0;
-		lmc->keep = 0;
 		ret = 0;
 		break;
 	}
+	if (lmc) {
+		list_delete_node(lbl_mgr.lc_list, node);
+		delete_label_chunk(lmc);
+	}
+
 	if (ret != 0)
 		flog_err(EC_ZEBRA_LM_UNRELEASED_CHUNK,
 			 "%s: Label chunk not released!!", __func__);
@@ -435,7 +456,25 @@ static int label_manager_get_chunk(struct label_manager_chunk **lmc,
 {
 	*lmc = assign_label_chunk(client->proto, client->instance,
 				  client->session_id, keep, size, base);
-	return lm_get_chunk_response(*lmc, client, vrf_id);
+	/* Respond to a get_chunk request */
+	if (!*lmc) {
+		if (base == MPLS_LABEL_BASE_ANY)
+			flog_err(EC_ZEBRA_LM_CANNOT_ASSIGN_CHUNK,
+				 "Unable to assign Label Chunk size %u to %s instance %u",
+				 size, zebra_route_string(client->proto),
+				 client->instance);
+		else
+			flog_err(EC_ZEBRA_LM_CANNOT_ASSIGN_CHUNK,
+				 "Unable to assign Label Chunk %u - %u to %s instance %u",
+				 base, base + size - 1,
+				 zebra_route_string(client->proto),
+				 client->instance);
+	} else if (IS_ZEBRA_DEBUG_PACKET)
+		zlog_debug("Assigned Label Chunk %u - %u to %s instance %u",
+			   (*lmc)->start, (*lmc)->end,
+			   zebra_route_string(client->proto), client->instance);
+
+	return zsend_assign_label_chunk_response(client, vrf_id, *lmc);
 }
 
 /* Respond to a connect request */
@@ -452,22 +491,6 @@ int lm_client_connect_response(uint8_t proto, uint16_t instance,
 		return 1;
 	}
 	return zsend_label_manager_connect_response(client, vrf_id, result);
-}
-
-/* Respond to a get_chunk request */
-int lm_get_chunk_response(struct label_manager_chunk *lmc, struct zserv *client,
-			  vrf_id_t vrf_id)
-{
-	if (!lmc)
-		flog_err(EC_ZEBRA_LM_CANNOT_ASSIGN_CHUNK,
-			 "Unable to assign Label Chunk to %s instance %u",
-			 zebra_route_string(client->proto), client->instance);
-	else if (IS_ZEBRA_DEBUG_PACKET)
-		zlog_debug("Assigned Label Chunk %u - %u to %s instance %u",
-			   lmc->start, lmc->end,
-			   zebra_route_string(client->proto), client->instance);
-
-	return zsend_assign_label_chunk_response(client, vrf_id, lmc);
 }
 
 void label_manager_close(void)

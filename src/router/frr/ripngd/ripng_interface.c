@@ -136,8 +136,8 @@ static int ripng_if_ipv6_lladdress_check(struct interface *ifp)
 		struct prefix *p;
 		p = connected->address;
 
-		if ((p->family == AF_INET6)
-		    && IN6_IS_ADDR_LINKLOCAL(&p->u.prefix6))
+		if ((p->family == AF_INET6) &&
+		    IN6_IS_ADDR_LINKLOCAL(&p->u.prefix6))
 			count++;
 	}
 
@@ -260,31 +260,6 @@ static int ripng_ifp_destroy(struct interface *ifp)
 			ifp->name, ifp->vrf->name, ifp->vrf->vrf_id,
 			ifp->ifindex, (unsigned long long)ifp->flags,
 			ifp->metric, ifp->mtu6);
-
-	return 0;
-}
-
-/* VRF update for an interface. */
-int ripng_interface_vrf_update(ZAPI_CALLBACK_ARGS)
-{
-	struct interface *ifp;
-	vrf_id_t new_vrf_id;
-
-	ifp = zebra_interface_vrf_update_read(zclient->ibuf, vrf_id,
-					      &new_vrf_id);
-	if (!ifp)
-		return 0;
-
-	if (IS_RIPNG_DEBUG_ZEBRA) {
-		struct vrf *nvrf = vrf_lookup_by_id(new_vrf_id);
-
-		zlog_debug("interface %s VRF change vrf %s(%u) new vrf %s(%u)",
-			   ifp->name, ifp->vrf->name, vrf_id, VRF_LOGNAME(nvrf),
-			   new_vrf_id);
-	}
-
-	if_update_to_new_vrf(ifp, new_vrf_id);
-	ripng_interface_sync(ifp);
 
 	return 0;
 }
@@ -634,9 +609,9 @@ static void ripng_connect_set(struct interface *ifp, int set)
 		if (set) {
 			/* Check once more whether this prefix is within a
 			 * "network IF_OR_PREF" one */
-			if ((ripng_enable_if_lookup(ripng, connected->ifp->name)
-			     >= 0)
-			    || (ripng_enable_network_lookup2(connected) >= 0))
+			if ((ripng_enable_if_lookup(
+				     ripng, connected->ifp->name) >= 0) ||
+			    (ripng_enable_network_lookup2(connected) >= 0))
 				ripng_redistribute_add(
 					ripng, ZEBRA_ROUTE_CONNECT,
 					RIPNG_ROUTE_INTERFACE, &address,

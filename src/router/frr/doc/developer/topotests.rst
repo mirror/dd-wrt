@@ -443,7 +443,7 @@ as shown in the examples below.
 
 For each capture a window is opened displaying a live summary of the captured
 packets. Additionally, the entire packet stream is captured in a pcap file in
-the tests log directory e.g.,::
+the tests log directory e.g.,:
 
 .. code:: console
 
@@ -453,7 +453,7 @@ the tests log directory e.g.,::
    -rw------- 1 root root 45172 Apr 19 05:30 capture-r2-r2-eth0.pcap
    -rw------- 1 root root 48412 Apr 19 05:30 capture-sw1.pcap
    ...
--
+
 Viewing Live Daemon Logs
 """"""""""""""""""""""""
 
@@ -470,10 +470,10 @@ One can live view daemon or the frr logs in separate windows using the
 
 For each capture a window is opened displaying a live summary of the captured
 packets. Additionally, the entire packet stream is captured in a pcap file in
-the tests log directory e.g.,::
+the tests log directory e.g.,
 
-When using a unified log file `frr.log` one substitutes `frr` for the daemon
-name in the ``--logd`` CLI option, e.g.,
+When using a unified log file ``frr.log`` one substitutes ``frr`` for the
+daemon name in the ``--logd`` CLI option, e.g.,
 
 .. code:: shell
 
@@ -616,6 +616,8 @@ When running with ``--memleaks``, FRR processes report unfreed memory
 allocations upon exit. To enable also reporting of memory leaks to a specific
 location, define an environment variable ``TOPOTESTS_CHECK_MEMLEAK`` with the
 file prefix, i.e.:
+
+::
 
    export TOPOTESTS_CHECK_MEMLEAK="/home/mydir/memleak_"
 

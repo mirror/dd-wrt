@@ -962,8 +962,12 @@ static void do_show_route_helper(struct vty *vty, struct zebra_vrf *zvrf,
 		}
 	}
 
+	/*
+	 * This is an extremely expensive operation at scale
+	 * and non-pretty reduces memory footprint significantly.
+	 */
 	if (use_json)
-		vty_json(vty, json);
+		vty_json_no_pretty(vty, json);
 }
 
 static void do_show_ip_route_all(struct vty *vty, struct zebra_vrf *zvrf,
@@ -1063,16 +1067,22 @@ DEFPY (show_ip_nht,
 	json_object *json = NULL;
 	json_object *json_vrf = NULL;
 	json_object *json_nexthop = NULL;
+	struct zebra_vrf *zvrf;
+	bool resolve_via_default = false;
 
 	if (uj)
 		json = json_object_new_object();
 
 	if (vrf_all) {
 		struct vrf *vrf;
-		struct zebra_vrf *zvrf;
 
 		RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name) {
 			if ((zvrf = vrf->info) != NULL) {
+				resolve_via_default =
+					(afi == AFI_IP)
+						? zvrf->zebra_rnh_ip_default_route
+						: zvrf->zebra_rnh_ipv6_default_route;
+
 				if (uj) {
 					json_vrf = json_object_new_object();
 					json_nexthop = json_object_new_object();
@@ -1084,9 +1094,16 @@ DEFPY (show_ip_nht,
 								       ? "ipv4"
 								       : "ipv6",
 							       json_nexthop);
+					json_object_boolean_add(json_nexthop,
+								"resolveViaDefault",
+								resolve_via_default);
 				} else {
 					vty_out(vty, "\nVRF %s:\n",
 						zvrf_name(zvrf));
+					vty_out(vty,
+						" Resolve via default: %s\n",
+						resolve_via_default ? "on"
+								    : "off");
 				}
 				zebra_print_rnh_table(zvrf_id(zvrf), afi, safi,
 						      vty, NULL, json_nexthop);
@@ -1111,6 +1128,11 @@ DEFPY (show_ip_nht,
 		}
 	}
 
+	zvrf = zebra_vrf_lookup_by_id(vrf_id);
+	resolve_via_default = (afi == AFI_IP)
+				      ? zvrf->zebra_rnh_ip_default_route
+				      : zvrf->zebra_rnh_ipv6_default_route;
+
 	if (uj) {
 		json_vrf = json_object_new_object();
 		json_nexthop = json_object_new_object();
@@ -1122,6 +1144,13 @@ DEFPY (show_ip_nht,
 		json_object_object_add(json_vrf,
 				       (afi == AFI_IP) ? "ipv4" : "ipv6",
 				       json_nexthop);
+
+		json_object_boolean_add(json_nexthop, "resolveViaDefault",
+					resolve_via_default);
+	} else {
+		vty_out(vty, "VRF %s:\n", zvrf_name(zvrf));
+		vty_out(vty, " Resolve via default: %s\n",
+			resolve_via_default ? "on" : "off");
 	}
 
 	zebra_print_rnh_table(vrf_id, afi, safi, vty, p, json_nexthop);
@@ -2703,12 +2732,7 @@ DEFUN (default_vrf_vni_mapping,
        "Prefix routes only \n")
 {
 	char xpath[XPATH_MAXLEN];
-	struct zebra_vrf *zvrf = NULL;
 	int filter = 0;
-
-	zvrf = zebra_vrf_lookup_by_id(VRF_DEFAULT);
-	if (!zvrf)
-		return CMD_WARNING;
 
 	if (argc == 3)
 		filter = 1;
@@ -2746,8 +2770,6 @@ DEFUN (no_default_vrf_vni_mapping,
 	struct zebra_vrf *zvrf = NULL;
 
 	zvrf = zebra_vrf_lookup_by_id(VRF_DEFAULT);
-	if (!zvrf)
-		return CMD_WARNING;
 
 	if (argc == 4)
 		filter = 1;
@@ -4035,6 +4057,9 @@ DEFUN (show_zebra,
 #else
 	ttable_add_row(table, "VRF|Not Available");
 #endif
+
+	ttable_add_row(table, "v6 with v4 nexthop|%s",
+		       zrouter.v6_with_v4_nexthop ? "Used" : "Unavaliable");
 
 	ttable_add_row(table, "ASIC offload|%s",
 		       zrouter.asic_offloaded ? "Used" : "Unavailable");

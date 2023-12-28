@@ -140,20 +140,20 @@ static void ospf6_set_redist_vrf_bitmaps(struct ospf6 *ospf6, bool set)
 				"%s: setting redist vrf %d bitmap for type %d",
 				__func__, ospf6->vrf_id, type);
 		if (set)
-			vrf_bitmap_set(zclient->redist[AFI_IP6][type],
+			vrf_bitmap_set(&zclient->redist[AFI_IP6][type],
 				       ospf6->vrf_id);
 		else
-			vrf_bitmap_unset(zclient->redist[AFI_IP6][type],
+			vrf_bitmap_unset(&zclient->redist[AFI_IP6][type],
 					 ospf6->vrf_id);
 	}
 
 	red_list = ospf6->redist[DEFAULT_ROUTE];
 	if (red_list) {
 		if (set)
-			vrf_bitmap_set(zclient->default_information[AFI_IP6],
+			vrf_bitmap_set(&zclient->default_information[AFI_IP6],
 				       ospf6->vrf_id);
 		else
-			vrf_bitmap_unset(zclient->default_information[AFI_IP6],
+			vrf_bitmap_unset(&zclient->default_information[AFI_IP6],
 					 ospf6->vrf_id);
 	}
 }
@@ -2015,7 +2015,7 @@ ospf6_show_summary_address(struct vty *vty, struct ospf6 *ospf6,
 
 	if (!uj) {
 		ospf6_show_vrf_name(vty, ospf6, json_vrf);
-		vty_out(vty, "aggregation delay interval :%u(in seconds)\n\n",
+		vty_out(vty, "aggregation delay interval: %u(in seconds)\n\n",
 			ospf6->aggr_delay_interval);
 		vty_out(vty, "%s\n", header);
 	} else {

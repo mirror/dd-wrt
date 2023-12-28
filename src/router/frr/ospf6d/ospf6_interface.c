@@ -131,6 +131,7 @@ static uint32_t ospf6_interface_get_cost(struct ospf6_interface *oi)
 	uint32_t cost;
 	uint32_t bw, refbw;
 	struct ospf6 *ospf6;
+
 	/* interface speed and bw can be 0 in some platforms,
 	 * use ospf default bw. If bw is configured then it would
 	 * be used.
@@ -152,6 +153,15 @@ static uint32_t ospf6_interface_get_cost(struct ospf6_interface *oi)
 		cost = (uint32_t)((double)refbw / (double)bw + (double)0.5);
 		if (cost < 1)
 			cost = 1;
+
+		/* If the interface type is point-to-multipoint or the interface
+		 * is in the state Loopback, the global scope IPv6 addresses
+		 * associated with the interface (if any) are copied into the
+		 * intra-area-prefix-LSA with the PrefixOptions LA-bit set, the
+		 * PrefixLength set to 128, and the metric set to 0.
+		 */
+		if (if_is_loopback(oi->interface))
+			cost = 0;
 	}
 
 	return cost;
@@ -309,7 +319,7 @@ void ospf6_interface_disable(struct ospf6_interface *oi)
 {
 	SET_FLAG(oi->flag, OSPF6_INTERFACE_DISABLE);
 
-	event_execute(master, interface_down, oi, 0);
+	event_execute(master, interface_down, oi, 0, NULL);
 
 	ospf6_lsdb_remove_all(oi->lsdb);
 	ospf6_lsdb_remove_all(oi->lsdb_self);
@@ -387,9 +397,9 @@ void ospf6_interface_state_update(struct interface *ifp)
 	if (if_is_operative(ifp)
 	    && (ospf6_interface_get_linklocal_address(oi->interface)
 		|| if_is_loopback(oi->interface)))
-		event_execute(master, interface_up, oi, 0);
+		event_execute(master, interface_up, oi, 0, NULL);
 	else
-		event_execute(master, interface_down, oi, 0);
+		event_execute(master, interface_down, oi, 0, NULL);
 
 	return;
 }
@@ -2584,8 +2594,8 @@ DEFUN (ipv6_ospf6_network,
 	}
 
 	/* Reset the interface */
-	event_execute(master, interface_down, oi, 0);
-	event_execute(master, interface_up, oi, 0);
+	event_execute(master, interface_down, oi, 0, NULL);
+	event_execute(master, interface_up, oi, 0, NULL);
 
 	return CMD_SUCCESS;
 }
@@ -2620,8 +2630,8 @@ DEFUN (no_ipv6_ospf6_network,
 	oi->type = type;
 
 	/* Reset the interface */
-	event_execute(master, interface_down, oi, 0);
-	event_execute(master, interface_up, oi, 0);
+	event_execute(master, interface_down, oi, 0, NULL);
+	event_execute(master, interface_up, oi, 0, NULL);
 
 	return CMD_SUCCESS;
 }
@@ -2844,8 +2854,8 @@ void ospf6_interface_clear(struct interface *ifp)
 		zlog_debug("Interface %s: clear by reset", ifp->name);
 
 	/* Reset the interface */
-	event_execute(master, interface_down, oi, 0);
-	event_execute(master, interface_up, oi, 0);
+	event_execute(master, interface_down, oi, 0, NULL);
+	event_execute(master, interface_up, oi, 0, NULL);
 }
 
 /* Clear interface */

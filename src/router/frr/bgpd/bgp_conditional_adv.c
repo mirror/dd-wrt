@@ -90,6 +90,7 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 
 	addpath_capable = bgp_addpath_encode_tx(peer, afi, safi);
 
+	SET_FLAG(subgrp->sflags, SUBGRP_STATUS_FORCE_UPDATES);
 	for (dest = bgp_table_top(table); dest; dest = bgp_route_next(dest)) {
 		dest_p = bgp_dest_get_prefix(dest);
 		assert(dest_p);
@@ -140,8 +141,9 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 					bgp_addpath_id_for_peer(
 						peer, afi, safi,
 						&pi->tx_addpath));
+
+				bgp_attr_flush(&advmap_attr);
 			}
-			bgp_attr_flush(&advmap_attr);
 		}
 	}
 	UNSET_FLAG(subgrp->sflags, SUBGRP_STATUS_TABLE_REPARSING);
@@ -194,7 +196,7 @@ static void bgp_conditional_adv_timer(struct event *t)
 		if (!CHECK_FLAG(peer->flags, PEER_FLAG_CONFIG_NODE))
 			continue;
 
-		if (!peer_established(peer))
+		if (!peer_established(peer->connection))
 			continue;
 
 		FOREACH_AFI_SAFI (afi, safi) {
