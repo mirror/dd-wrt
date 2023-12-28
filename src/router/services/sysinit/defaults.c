@@ -2427,6 +2427,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 	{ "sshd_forwarding", "0" },
 	{ "sshd_port", "22" },
+	{ "sshd_rw", "24576" },
 	{ "sshd_passwd_auth", "1" },
 	{ "sshd_rsa_host_key", "" },
 	{ "sshd_dss_host_key", "" },

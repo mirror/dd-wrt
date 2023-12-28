@@ -93,7 +93,7 @@ void start_sshd(void)
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	stop_sshd();
 	int a = 0;
-	char *sshd_argv[10];
+	char *sshd_argv[12];
 	sshd_argv[a++] = "dropbear";
 #ifndef HAVE_MAKSAT
 	sshd_argv[a++] = "-b";
@@ -103,6 +103,8 @@ void start_sshd(void)
 	sshd_argv[a++] = ED25519_HOST_KEY_FILE;
 	sshd_argv[a++] = "-p";
 	sshd_argv[a++] = nvram_safe_get("sshd_port");
+	sshd_argv[a++] = "-W";
+	sshd_argv[a++] = nvram_safe_get("sshd_rw");
 	if (!nvram_matchi("sshd_passwd_auth", 1))
 		sshd_argv[a++] = "-s";
 	if (nvram_matchi("sshd_forwarding", 1))
