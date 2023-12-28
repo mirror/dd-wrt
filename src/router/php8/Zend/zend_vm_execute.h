@@ -3504,6 +3504,9 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_CALL_TRAMPOLINE_SPEC_HANDLER(Z
 		EG(current_execute_data) = call->prev_execute_data;
 
 		zend_vm_stack_free_args(call);
+		if (UNEXPECTED(call_info & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+			zend_free_extra_named_params(call->extra_named_params);
+		}
 		if (ret == &retval) {
 			zval_ptr_dtor(ret);
 		}
@@ -3645,6 +3648,9 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_CALL_TRAMPOLINE_SPEC_OBSERVER_
 		EG(current_execute_data) = call->prev_execute_data;
 
 		zend_vm_stack_free_args(call);
+		if (UNEXPECTED(call_info & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+			zend_free_extra_named_params(call->extra_named_params);
+		}
 		if (ret == &retval) {
 			zval_ptr_dtor(ret);
 		}
@@ -11037,6 +11043,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FUNC_GET_ARGS_SPEC_CONST_UNUSE
 	}
 
 	if (result_size) {
+		SAVE_OPLINE();
 		uint32_t first_extra_arg = EX(func)->op_array.num_args;
 
 		ht = zend_new_array(result_size);
@@ -37143,6 +37150,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FUNC_GET_ARGS_SPEC_UNUSED_UNUS
 	}
 
 	if (result_size) {
+		SAVE_OPLINE();
 		uint32_t first_extra_arg = EX(func)->op_array.num_args;
 
 		ht = zend_new_array(result_size);
@@ -40498,6 +40506,8 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_BIND_STATIC_SPEC_CV_HANDLER(ZE
 
 	variable_ptr = EX_VAR(opline->op1.var);
 
+	SAVE_OPLINE();
+
 	ht = ZEND_MAP_PTR_GET(EX(func)->op_array.static_variables_ptr);
 	if (!ht) {
 		ht = zend_array_dup(EX(func)->op_array.static_variables);
@@ -40507,7 +40517,6 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_BIND_STATIC_SPEC_CV_HANDLER(ZE
 
 	value = (zval*)((char*)ht->arData + (opline->extended_value & ~(ZEND_BIND_REF|ZEND_BIND_IMPLICIT|ZEND_BIND_EXPLICIT)));
 
-	SAVE_OPLINE();
 	if (opline->extended_value & ZEND_BIND_REF) {
 		i_zval_ptr_dtor(variable_ptr);
 		if (UNEXPECTED(!Z_ISREF_P(value))) {

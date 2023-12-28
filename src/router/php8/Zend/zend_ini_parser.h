@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.7.5.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,6 +31,10 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
+
 #ifndef YY_INI_ZEND_ZEND_INI_PARSER_H_INCLUDED
 # define YY_INI_ZEND_ZEND_INI_PARSER_H_INCLUDED
 /* Debug traces.  */
@@ -48,29 +53,33 @@
 extern int ini_debug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef INI_TOKENTYPE
 # define INI_TOKENTYPE
   enum ini_tokentype
   {
-    END = 0,
-    TC_SECTION = 258,
-    TC_RAW = 259,
-    TC_CONSTANT = 260,
-    TC_NUMBER = 261,
-    TC_STRING = 262,
-    TC_WHITESPACE = 263,
-    TC_LABEL = 264,
-    TC_OFFSET = 265,
-    TC_DOLLAR_CURLY = 266,
-    TC_VARNAME = 267,
-    TC_QUOTED_STRING = 268,
-    TC_FALLBACK = 269,
-    BOOL_TRUE = 270,
-    BOOL_FALSE = 271,
-    NULL_NULL = 272,
-    END_OF_LINE = 273
+    INI_EMPTY = -2,
+    END = 0,                       /* "end of file"  */
+    INI_error = 256,               /* error  */
+    INI_UNDEF = 257,               /* "invalid token"  */
+    TC_SECTION = 258,              /* TC_SECTION  */
+    TC_RAW = 259,                  /* TC_RAW  */
+    TC_CONSTANT = 260,             /* TC_CONSTANT  */
+    TC_NUMBER = 261,               /* TC_NUMBER  */
+    TC_STRING = 262,               /* TC_STRING  */
+    TC_WHITESPACE = 263,           /* TC_WHITESPACE  */
+    TC_LABEL = 264,                /* TC_LABEL  */
+    TC_OFFSET = 265,               /* TC_OFFSET  */
+    TC_DOLLAR_CURLY = 266,         /* TC_DOLLAR_CURLY  */
+    TC_VARNAME = 267,              /* TC_VARNAME  */
+    TC_QUOTED_STRING = 268,        /* TC_QUOTED_STRING  */
+    TC_FALLBACK = 269,             /* TC_FALLBACK  */
+    BOOL_TRUE = 270,               /* BOOL_TRUE  */
+    BOOL_FALSE = 271,              /* BOOL_FALSE  */
+    NULL_NULL = 272,               /* NULL_NULL  */
+    END_OF_LINE = 273              /* END_OF_LINE  */
   };
+  typedef enum ini_tokentype ini_token_kind_t;
 #endif
 
 /* Value type.  */

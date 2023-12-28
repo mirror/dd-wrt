@@ -1,5 +1,47 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+21 Dec 2023, PHP 8.3.1
+
+- Core:
+  . Fixed bug GH-12758 / GH-12768 (Invalid opline in OOM handlers within
+    ZEND_FUNC_GET_ARGS and ZEND_BIND_STATIC). (Florian Engelhardt)
+  . Fix various missing NULL checks. (nielsdos, dstogov)
+  . Fixed bug GH-12835 (Leak of call->extra_named_params on internal __call).
+    (ilutov)
+  . Fixed bug GH-12826 (Weird pointers issue in nested loops). (nielsdos)
+
+- FPM:
+  . Fixed bug GH-12705 (Segmentation fault in fpm_status_export_to_zval).
+    (Patrick Prasse)
+
+- FTP:
+  . Fixed bug GH-9348 (FTP & SSL session reuse). (nielsdos)
+
+- LibXML:
+  . Fixed test failures for libxml2 2.12.0. (nielsdos)
+
+- MySQLnd:
+  . Avoid using uninitialised struct. (mikhainin)
+  . Fixed bug GH-12791 (Possible dereference of NULL in MySQLnd debug code).
+    (nielsdos)
+
+- Opcache:
+  . Fixed JIT bug (Function JIT emits "Uninitialized string offset" warning
+    at the same time as invalid offset Error). (Girgias)
+  . Fixed JIT bug (JIT emits "Attempt to assign property of non-object"
+    warning at the same time as Error is being thrown). (Girgias)
+
+- PDO PGSQL:
+  . Fixed the default value of $fetchMode in PDO::pgsqlGetNotify() (kocsismate)
+
+- SOAP:
+  . Fixed bug GH-12838 ([SOAP] Temporary WSDL cache files not being deleted).
+    (nielsdos)
+
+- Standard
+  . Fixed GH-12745 (http_build_query() default null argument for $arg_separator
+    is implicitly coerced to string). (Girgias)
+
 23 Nov 2023, PHP 8.3.0
 
 - Bcmath
