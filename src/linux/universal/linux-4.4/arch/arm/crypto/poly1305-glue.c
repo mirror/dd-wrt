@@ -28,9 +28,7 @@ void __weak poly1305_blocks_neon(void *state, const u8 *src, u32 len, u32 hibit)
 {
 }
 
-#if IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
 static DEFINE_STATIC_KEY_FALSE(have_neon);
-#endif
 
 void poly1305_init_arch(struct poly1305_desc_ctx *dctx, const u8 key[POLY1305_KEY_SIZE])
 {
@@ -79,11 +77,9 @@ static void arm_poly1305_blocks(struct poly1305_desc_ctx *dctx, const u8 *src,
 
 	len &= ~(POLY1305_BLOCK_SIZE - 1);
 
-#if IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
 	if (static_branch_likely(&have_neon) && likely(do_neon))
 		poly1305_blocks_neon(&dctx->h, src, len, hibit);
 	else
-#endif
 		poly1305_blocks_arm(&dctx->h, src, len, hibit);
 }
 
@@ -125,7 +121,7 @@ static int arm_poly1305_update(struct shash_desc *desc,
 	arm_poly1305_do_update(dctx, src, srclen, false);
 	return 0;
 }
-#if IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
+
 static int __maybe_unused arm_poly1305_update_neon(struct shash_desc *desc,
 						   const u8 *src,
 						   unsigned int srclen)
@@ -140,7 +136,6 @@ static int __maybe_unused arm_poly1305_update_neon(struct shash_desc *desc,
 		kernel_neon_end();
 	return 0;
 }
-#endif
 
 void poly1305_update_arch(struct poly1305_desc_ctx *dctx, const u8 *src,
 			  unsigned int nbytes)
@@ -166,7 +161,6 @@ void poly1305_update_arch(struct poly1305_desc_ctx *dctx, const u8 *src,
 	if (likely(nbytes >= POLY1305_BLOCK_SIZE)) {
 		unsigned int len = round_down(nbytes, POLY1305_BLOCK_SIZE);
 
-#if IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
 		if (static_branch_likely(&have_neon) && do_neon) {
 			do {
 				unsigned int todo = min_t(unsigned int, len, SZ_4K);
@@ -179,7 +173,6 @@ void poly1305_update_arch(struct poly1305_desc_ctx *dctx, const u8 *src,
 				src += todo;
 			} while (len);
 		} else 
-#endif
 		{
 			poly1305_blocks_arm(&dctx->h, src, len, 1);
 			src += len;
@@ -251,12 +244,10 @@ static struct shash_alg arm_poly1305_algs[] = {{
 
 static int __init arm_poly1305_mod_init(void)
 {
-#ifdef CONFIG_KERNEL_MODE_NEON
 	if (IS_ENABLED(CONFIG_KERNEL_MODE_NEON) &&
 	    (elf_hwcap & HWCAP_NEON))
 		static_branch_enable(&have_neon);
 	else 
-#endif
 	if (IS_REACHABLE(CONFIG_CRYPTO_HASH))
 		/* register only the first entry */
 		return crypto_register_shash(&arm_poly1305_algs[0]);
