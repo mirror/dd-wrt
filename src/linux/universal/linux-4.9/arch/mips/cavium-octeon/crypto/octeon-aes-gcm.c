@@ -504,7 +504,7 @@ static struct aead_alg octeon_alg = {
 		.cra_priority		= 300,
 		.cra_blocksize		= 1,
 		.cra_ctxsize		= sizeof(struct crypto_aes_gcm_ctx),
-		.cra_alignmask		= 7,
+		.cra_alignmask		= 0,
 		.cra_module		= THIS_MODULE,
 	},
 	.ivsize		= GCM_IV_SIZE,
