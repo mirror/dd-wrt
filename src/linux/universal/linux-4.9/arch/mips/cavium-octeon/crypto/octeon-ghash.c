@@ -112,7 +112,7 @@ static int ghash_update(struct shash_desc *desc, const u8 *src,
 		ghash_do_update(blocks, ctx->digest, src, key,
 				     partial ? ctx->buf : NULL);
 
-		src += blocks;
+		src += blocks * GHASH_BLOCK_SIZE;
 		partial = 0;
 	}
 	if (len)

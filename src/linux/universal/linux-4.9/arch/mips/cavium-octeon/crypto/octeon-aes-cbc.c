@@ -139,13 +139,15 @@ static struct crypto_alg octeon_alg = {
 	.cra_alignmask		= 0,
 	.cra_type		= &crypto_blkcipher_type,
 	.cra_module		= THIS_MODULE,
-	.cra_ablkcipher = {
-		.min_keysize	= AES_MIN_KEY_SIZE,
-		.max_keysize	= AES_MAX_KEY_SIZE,
-		.ivsize		= AES_BLOCK_SIZE,
-		.setkey		= octeon_cbc_set_key,
-		.encrypt	= octeon_cbc_encrypt,
-		.decrypt	= octeon_cbc_decrypt,
+	.cra_u = {
+		.blkcipher = {
+			.min_keysize	= AES_MIN_KEY_SIZE,
+			.max_keysize	= AES_MAX_KEY_SIZE,
+			.ivsize		= AES_BLOCK_SIZE,
+			.setkey		= octeon_cbc_set_key,
+			.encrypt	= octeon_cbc_encrypt,
+			.decrypt	= octeon_cbc_decrypt,
+		}
 	}
 
 };
