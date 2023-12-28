@@ -107,6 +107,7 @@
  "sshd_enable"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_forwarding"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_port"  "SSHD"  "RANGE"  "1"  "65535"  "FALSE" "0"
+ "sshd_rw"  "SSHD"  "NULL"  "FALSE" "0"
  "sshd_passwd_auth"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_rsa_host_key"  "SSHD"  "NULL"  "TRUE" "0"
  "sshd_authorized_keys"  "SSHD"  "NULL"  "TRUE"  "0"
