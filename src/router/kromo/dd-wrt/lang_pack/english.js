@@ -2029,6 +2029,7 @@ service.ssh_legend="Secure Shell (SSH)";
 service.ssh_srv="Enable Daemon";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
+service.ssh_receive_window="Receive Window Buffer";
 service.ssh_forwarding="SSH TCP Forwarding";
 service.ssh_keylegend="Key Handling";
 service.ssh_keygenerate="Generate Key";
