@@ -27,6 +27,16 @@
 			//]]>
 			</script></span>
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.ssh_receive_window"); %></div>
+			<input class="num" maxlength="8" size="8" name="sshd_rw" onblur="valid_range(this,1,10485760,service.ssh_receive_window)" value="<% nvg("sshd_rw"); %>" />
+			<span class="default">
+			<script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 24576)");
+			//]]>
+			</script></span>
+		</div>
 		<fieldset>
 		<legend><% tran("service.ssh_keylegend"); %></legend>
 			<div class="setting">
