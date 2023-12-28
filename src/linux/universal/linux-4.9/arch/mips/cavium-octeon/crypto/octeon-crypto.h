@@ -148,7 +148,7 @@ do {							\
 	__asm__ __volatile__ (				\
 	"dmtc2 %[rt],0x0102+" STR(index)		\
 	:						\
-	: [rt] "d" (value));				\
+	: [rt] "d" (cpu_to_be64(value)));				\
 } while (0)
 
 
@@ -237,14 +237,6 @@ do {							\
 	"dmtc2 %[rt],0x0104+" STR(index)		\
 	:						\
 	: [rt] "d" (cpu_to_be64(value)));		\
-} while (0)
-
-#define write_octeon_64bit_aes_iv(value, index)	\
-do {							\
-	__asm__ __volatile__ (				\
-	"dmtc2 %[rt],0x0102+" STR(index)		\
-	:						\
-	: [rt] "d" (value));		\
 } while (0)
 
 #define write_octeon_64bit_aes_keylength(value)	\
