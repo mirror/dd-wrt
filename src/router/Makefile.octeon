@@ -104,7 +104,7 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -funit-at-a-time 
 endif
 ifeq ($(ARCH),mips64)
-export COPTS:=$(BASEOPT) -pipe -march=octeon+ -mabi=64 -msoft-float  -fno-caller-saves  -mno-branch-likely -fno-plt
+export COPTS:=$(BASEOPT) -pipe -march=octeon2 -mabi=64 -msoft-float  -fno-caller-saves  -mno-branch-likely -fno-plt
 endif
 ifeq ($(ARCH),powerpc)
 export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align 
@@ -512,12 +512,12 @@ endif
 	md5sum $(ARCH)-uclibc/vfat/vmlinux.64 > $(ARCH)-uclibc/vfat/vmlinux.64.md5
 ifeq ($(CONFIG_E200),y)
 ifeq ($(CONFIG_USBBOOT),y)
-	./gen_image_lite.sh $(ARCH)-uclibc/erouter.image.src 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
+	./gen_image_lite.sh $(ARCH)-uclibc/erouter.image.src 16 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
 else
-	./gen_image_pro.sh $(ARCH)-uclibc/erouter.image.src 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
+	./gen_image_pro.sh $(ARCH)-uclibc/erouter.image.src 16 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
 endif
 else
-	./gen_image_lite.sh $(ARCH)-uclibc/erouter.image.src 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
+	./gen_image_lite.sh $(ARCH)-uclibc/erouter.image.src 16 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
 endif
 	dd if=$(ARCH)-uclibc/erouter.image.src of=$(ARCH)-uclibc/erouter.image bs=1048576 conv=sync
 	./tools/wrap $(ARCH)-uclibc/erouter.image $(ARCH)-uclibc/erouter.bin
