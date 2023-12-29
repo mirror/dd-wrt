@@ -76,6 +76,9 @@ l7filters filters_list[] = {
 	{ "battlefield2", L7_ONLY, 0, NULL },
 	{ "battlefield2142", L7_ONLY, 0, NULL },
 	{ "bearshare", PDPI_ONLY, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "beckhoff_ads", NDPI_ONLY, 0, NULL },
+#endif
 	{ "bgp", DPI, 0, NULL },
 	{ "biff", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -87,6 +90,7 @@ l7filters filters_list[] = {
 	{ "bjnp", NDPI_ONLY, 0, NULL },
 	{ "bloomberg", NDPI_ONLY, 0, NULL },
 	{ "cachefly", NDPI_ONLY, 0, NULL },
+	{ "can", NDPI_ONLY, 0, NULL },
 	{ "capwap", NDPI_ONLY, 0, NULL },
 	{ "cassandra", NDPI_ONLY, 0, NULL },
 	{ "checkmk", NDPI_ONLY, 0, NULL },
@@ -132,6 +136,7 @@ l7filters filters_list[] = {
 	{ "dazhihui", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "dazn", NDPI_ONLY, 0, NULL },
+	{ "dcerpc", NDPI_ONLY, 0, NULL },
 	{ "deezer", NDPI_ONLY, 0, NULL },
 	{ "desktop/file sharing", NDPI_RISK, 30, "vnc,rdp,teamviewer" },
 #endif
@@ -170,7 +175,10 @@ l7filters filters_list[] = {
 	{ "egp", NDPI_ONLY, 0, NULL },
 	{ "elasticsearch", NDPI_ONLY, 0, NULL },
 	{ "epicgames", NDPI_ONLY, 0, NULL },
+	{ "ethereum", NDPI_ONLY, 0, NULL },
 	{ "ethernetip", NDPI_ONLY, 0, NULL },
+	{ "ethersbus", NDPI_ONLY, 0, NULL },
+	{ "ethersio", NDPI_ONLY, 0, NULL },
 	{ "error code", NDPI_RISK, 43, "dns,snmp,http" },
 #endif
 	{ "exe", L7_ONLY, 0, NULL },
@@ -185,6 +193,7 @@ l7filters filters_list[] = {
 	{ "filetopia", L7_ONLY, 0, NULL },
 	{ "finger", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "fins", NDPI_ONLY, 0, NULL },
 	{ "fix", NDPI_ONLY, 0, NULL },
 #endif
 	{ "flash", L7_ONLY, 0, NULL },
@@ -228,7 +237,6 @@ l7filters filters_list[] = {
 	{ "googledrive", NDPI_ONLY, 0, NULL },
 	{ "googlehangoutduo", NDPI_ONLY, 0, NULL },
 	{ "googlemaps", NDPI_ONLY, 0, NULL },
-	{ "googleplus", NDPI_ONLY, 0, NULL },
 	{ "googleservices", NDPI_ONLY, 0, NULL },
 #endif
 	{ "gopher", L7_ONLY, 0, NULL },
@@ -257,14 +265,14 @@ l7filters filters_list[] = {
 	{ "hamachi1", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "haproxy", NDPI_ONLY, 0, NULL },
+	{ "hart_ip", NDPI_ONLY, 0, NULL },
 	{ "hbo", NDPI_ONLY, 0, NULL },
 #endif
 	{ "hddtemp", L7_ONLY, 0, NULL },
 	{ "hotline", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "heroes_of_the_storm", NDPI_ONLY, 0, NULL },
-#endif
-#ifdef HAVE_OPENDPI
+	{ "hislip", NDPI_ONLY, 0, NULL },
 	{ "hotspotshield", NDPI_ONLY, 0, NULL },
 	{ "hp_virtgrp", NDPI_ONLY, 0, NULL },
 	{ "hsrp", NDPI_ONLY, 0, NULL },
@@ -309,6 +317,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "idn domain name", NDPI_RISK, 42, "dns,http,quic,fastcgi,tls,smtp" },
 	{ "iec60870", NDPI_ONLY, 0, NULL },
+	{ "ieee_c37118", NDPI_ONLY, 0, NULL },
 	{ "iflix", NDPI_ONLY, 0, NULL },
 	{ "igmp", NDPI_ONLY, 0, NULL },
 	{ "iheartradio", NDPI_ONLY, 0, NULL },
@@ -329,6 +338,9 @@ l7filters filters_list[] = {
 	{ "ipsec", NDPI_ONLY, 0, NULL },
 #endif
 	{ "irc", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "iso9506_1_mms", NDPI_ONLY, 0, NULL },
+#endif
 	{ "jabber", DPI, 0, NULL },
 	{ "jpeg", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -380,6 +392,7 @@ l7filters filters_list[] = {
 #endif
 	{ "mohaa", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "monero", NDPI_ONLY, 0, NULL },
 	{ "mongodb", NDPI_ONLY, 0, NULL },
 	{ "mullvad", NDPI_ONLY, 0, NULL },
 	{ "munin", NDPI_ONLY, 0, NULL },
@@ -435,9 +448,8 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "oicq", NDPI_ONLY, 0, NULL },
 	{ "ookla", NDPI_ONLY, 0, NULL },
+	{ "opc_ua", NDPI_ONLY, 0, NULL },
 	{ "opendns", NDPI_ONLY, 0, NULL },
-#endif
-#ifdef HAVE_OPENDPI
 	{ "openvpn", NDPI_ONLY, 0, NULL },
 	{ "opera_vpn", NDPI_ONLY, 0, NULL },
 	{ "oracle", NDPI_ONLY, 0, NULL },
@@ -472,6 +484,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "ppstream", NDPI_ONLY, 0, NULL },
 	{ "pptp", NDPI_ONLY, 0, NULL },
+	{ "ptpv2", NDPI_ONLY, 0, NULL },
 #endif
 	{ "pre_icq_login", L7_ONLY, 0, NULL },
 	{ "pre_msn_login", L7_ONLY, 0, NULL },
@@ -479,6 +492,8 @@ l7filters filters_list[] = {
 	{ "pre_yahoo_login", L7_ONLY, 0, NULL },
 	{ "pressplay", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "profinet_io", NDPI_ONLY, 0, NULL },
+	{ "protobuf", NDPI_ONLY, 0, NULL },
 	{ "protonvpn", NDPI_ONLY, 0, NULL },
 	{ "psiphon", NDPI_ONLY, 0, NULL },
 #endif
@@ -525,6 +540,7 @@ l7filters filters_list[] = {
 #endif
 	{ "rlogin", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "rmcp", NDPI_ONLY, 0, NULL },
 	{ "roblox", NDPI_ONLY, 0, NULL },
 	{ "rpc", NDPI_ONLY, 0, NULL },
 #endif
@@ -537,11 +553,15 @@ l7filters filters_list[] = {
 	{ "rtf", L7_ONLY, 0, NULL },
 	{ "rtmp", DPI, 0, NULL },
 	{ "rtp", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "rtps", NDPI_ONLY, 0, NULL },
+#endif
 	{ "rtsp", DPI, 0, NULL },
 	{ "runesofmagic", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "rx", NDPI_ONLY, 0, NULL },
 	{ "s7comm", NDPI_ONLY, 0, NULL },
+	{ "s7comm_plus", NDPI_ONLY, 0, NULL },
 	{ "salesforce", NDPI_ONLY, 0, NULL },
 	{ "sap", NDPI_ONLY, 0, NULL },
 	{ "sctp", NDPI_ONLY, 0, NULL },
@@ -553,7 +573,8 @@ l7filters filters_list[] = {
 	{ "showtime", NDPI_ONLY, 0, NULL },
 	{ "signal", NDPI_ONLY, 0, NULL },
 	{ "signalvoip", NDPI_ONLY, 0, NULL },
-	{ "sina(weibo)", NDPI_ONLY, 0, NULL },
+	{ "sina", NDPI_ONLY, 0, NULL },
+	{ "sina_weibo", NDPI_ONLY, 0, NULL },
 #endif
 	{ "sip", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -634,6 +655,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "tencentvideo", NDPI_ONLY, 0, NULL },
 	{ "telegram", NDPI_ONLY, 0, NULL },
+	{ "telegram_voip", NDPI_ONLY, 0, NULL },
 #endif
 	{ "telnet", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -642,6 +664,7 @@ l7filters filters_list[] = {
 #endif
 	{ "tesla", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "tesla_services", NDPI_ONLY, 0, NULL },
 	{ "text with non-printable chars", NDPI_RISK, 39, "tls,fastcgi,quic,http,dns" },
 #endif
 	{ "tftp", DPI, 0, NULL },
@@ -693,6 +716,7 @@ l7filters filters_list[] = {
 	{ "ubntac2", NDPI_ONLY, 0, NULL },
 	{ "ubuntuone", NDPI_ONLY, 0, NULL },
 	{ "ultrasurf", NDPI_ONLY, 0, NULL },
+	{ "umas", NDPI_ONLY, 0, NULL},
 	{ "uncommon tls alpn", NDPI_RISK, 31, "tls" },
 	{ "unidirectional traffic", NDPI_RISK, 46, "all" },
 	{ "unsafe protocol", NDPI_RISK, 22, "all" },
