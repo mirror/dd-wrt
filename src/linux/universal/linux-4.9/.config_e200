@@ -2748,7 +2748,7 @@ CONFIG_HAVE_ARCH_KGDB=y
 # CONFIG_UBSAN is not set
 CONFIG_EARLY_PRINTK=y
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyS0,115200 root=/dev/mmcblk0p2 rootfstype=squashfs rootdelay=10 mtdparts=phys_mapped_flash:640k(boot0),640k(boot1),64k(eeprom),64k(nvram),64k@8128k(env),8192k(fullflash) noinitrd init=/sbin/init"
+CONFIG_CMDLINE="console=ttyS0,115200 root=/dev/mmcblk0p2 rootfstype=squashfs rootdelay=10 mtdparts=phys_mapped_flash:640k(boot0),640k(boot1),64k(eeprom),128k(nvram),64k@8128k(env),8192k(fullflash) noinitrd init=/sbin/init"
 CONFIG_CMDLINE_OVERRIDE=y
 # CONFIG_SPINLOCK_TEST is not set
 # CONFIG_SCACHE_DEBUGFS is not set
