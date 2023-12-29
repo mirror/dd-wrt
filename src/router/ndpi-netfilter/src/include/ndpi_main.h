@@ -38,6 +38,7 @@
 
 #include "ndpi_typedefs.h"
 #include "ndpi_api.h"
+#include "ndpi_protocols.h"
 
 
 #ifdef __cplusplus
