@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_bloomberg_protocol_list[] = {
  { 0x3F580300 /* 63.88.3.0/24 */, 24, NDPI_PROTOCOL_BLOOMBERG },
  { 0x4173E200 /* 65.115.226.0/24 */, 24, NDPI_PROTOCOL_BLOOMBERG },
@@ -55,7 +54,7 @@ static ndpi_network ndpi_protocol_bloomberg_protocol_list[] = {
  { 0x45BFE500 /* 69.191.229.0/24 */, 24, NDPI_PROTOCOL_BLOOMBERG },
  { 0x45BFE600 /* 69.191.230.0/23 */, 23, NDPI_PROTOCOL_BLOOMBERG },
  { 0x45BFE900 /* 69.191.233.0/24 */, 24, NDPI_PROTOCOL_BLOOMBERG },
- { 0x45BFEA00 /* 69.191.234.0/24 */, 24, NDPI_PROTOCOL_BLOOMBERG },
+ { 0x45BFEA00 /* 69.191.234.0/23 */, 23, NDPI_PROTOCOL_BLOOMBERG },
  { 0x45BFED00 /* 69.191.237.0/24 */, 24, NDPI_PROTOCOL_BLOOMBERG },
  { 0x45BFEE00 /* 69.191.238.0/23 */, 23, NDPI_PROTOCOL_BLOOMBERG },
  { 0x45BFF000 /* 69.191.240.0/20 */, 20, NDPI_PROTOCOL_BLOOMBERG },
@@ -72,4 +71,8 @@ static ndpi_network ndpi_protocol_bloomberg_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_bloomberg_protocol_list_6[] = {
+ /* End */
+ { NULL, 0, 0 }
+};

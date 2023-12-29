@@ -130,7 +130,7 @@ typedef struct
   AC_MATCH_t match;
   AC_ALPHABET_t * astring;    /* String of alphabets */
   unsigned short int  length, /* Length of string */
-	                  option; /* AC_FEATURE_LC | AC_FEATURE_DEBUG */
+	              option; /* AC_FEATURE_LC | AC_FEATURE_DEBUG | AC_FEATURE_EXACT */
 } AC_TEXT_t;
 
 
@@ -253,30 +253,32 @@ typedef AC_ERROR_t (*NODE_CALLBACK_f)(AC_AUTOMATA_t *, AC_NODE_t *,int idx, void
 typedef void (*ALPHA_CALLBACK_f)(AC_AUTOMATA_t *, AC_NODE_t *,AC_NODE_t *,int ,void *);
 
 #define AC_FEATURE_DEBUG 1 
-#define AC_FEATURE_LC 2
-#define AC_FEATURE_NO_ROOT_RANGE 4
+#define AC_FEATURE_NO_ROOT_RANGE 2 
+#define AC_FEATURE_LC 0x4000
+/* match exactly */
+#define AC_FEATURE_EXACT 0x8000
 
-NDPI_STATIC AC_AUTOMATA_t * ac_automata_init     (MATCH_CALLBACK_f mc);
-NDPI_STATIC AC_ERROR_t      ac_automata_feature  (AC_AUTOMATA_t * thiz, unsigned int feature);
-NDPI_STATIC AC_ERROR_t      ac_automata_name     (AC_AUTOMATA_t * thiz, char *name, int debug);
-NDPI_STATIC AC_ERROR_t      ac_automata_add      (AC_AUTOMATA_t * thiz, AC_PATTERN_t * str);
-NDPI_STATIC AC_ERROR_t      ac_automata_finalize (AC_AUTOMATA_t * thiz);
-NDPI_STATIC AC_ERROR_t      ac_automata_walk     (AC_AUTOMATA_t * thiz, NODE_CALLBACK_f node_cb,
+AC_AUTOMATA_t * ac_automata_init     (MATCH_CALLBACK_f mc);
+AC_ERROR_t      ac_automata_feature  (AC_AUTOMATA_t * thiz, unsigned int feature);
+AC_ERROR_t      ac_automata_name     (AC_AUTOMATA_t * thiz, char *name, int debug);
+AC_ERROR_t      ac_automata_add      (AC_AUTOMATA_t * thiz, AC_PATTERN_t * str);
+AC_ERROR_t      ac_automata_finalize (AC_AUTOMATA_t * thiz);
+AC_ERROR_t      ac_automata_walk     (AC_AUTOMATA_t * thiz, NODE_CALLBACK_f node_cb,
 						ALPHA_CALLBACK_f alpha_cb, void *);
 
-NDPI_STATIC int             ac_automata_search   (AC_AUTOMATA_t * thiz,
+int             ac_automata_search   (AC_AUTOMATA_t * thiz,
 						AC_TEXT_t * str, 
 						AC_REP_t * param);
-NDPI_STATIC int             ac_automata_exact_match(AC_PATTERNS_t *mp,int pos, AC_TEXT_t *);
-NDPI_STATIC void            ac_automata_clean    (AC_AUTOMATA_t * thiz);
-NDPI_STATIC void            ac_automata_release  (AC_AUTOMATA_t * thiz, uint8_t free_pattern);
+int             ac_automata_exact_match(AC_PATTERNS_t *mp,int pos, AC_TEXT_t *);
+void            ac_automata_clean    (AC_AUTOMATA_t * thiz);
+void            ac_automata_release  (AC_AUTOMATA_t * thiz, uint8_t free_pattern);
 #ifndef __KERNEL__
 /* Global debug control. */
-NDPI_STATIC void            ac_automata_enable_debug (int debug);
+void            ac_automata_enable_debug (int debug);
 /* See man open_memstream() for get result as string */
-NDPI_STATIC void            ac_automata_dump     (AC_AUTOMATA_t * thiz, FILE *);
+void            ac_automata_dump     (AC_AUTOMATA_t * thiz, FILE *);
 #endif
-NDPI_STATIC void            ac_automata_get_stats(AC_AUTOMATA_t * thiz, struct ac_stats *stats);
+void            ac_automata_get_stats(AC_AUTOMATA_t * thiz, struct ac_stats *stats);
 #endif
 
 #ifdef __cplusplus

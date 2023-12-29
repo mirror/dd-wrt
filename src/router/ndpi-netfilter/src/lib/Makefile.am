@@ -1,11 +1,11 @@
-bin_PROGRAMS = ndpi_network_list_compile
+#bin_PROGRAMS = ndpi_network_list_compile
 AM_CPPFLAGS = -I$(top_srcdir)/src/include/  -I$(top_srcdir)/src/lib/third_party/include/
 
 CFLAGS += -fPIC -DPIC -DNDPI_LIB_COMPILATION # --coverage
 
 libndpi_a_includedir = $(includedir)/libndpi-@VERSION@/libndpi
 
-BUILT_SOURCES = ndpi_network_list.c.inc
+#BUILT_SOURCES = ndpi_network_list.c.inc
 
 libndpi_a_include_HEADERS = ../include/ndpi_api.h \
 			     ../include/ndpi_define.h \
@@ -13,7 +13,6 @@ libndpi_a_include_HEADERS = ../include/ndpi_api.h \
 			     ../include/ndpi_includes.h \
 			     ../include/ndpi_config.h       \
 			     ../include/ndpi_protocol_ids.h \
-			     ../include/ndpi_protocols.h    \
 			     ../include/ndpi_typedefs.h     \
 			     third_party/include/ndpi_md5.h \
 			     third_party/include/ndpi_sha1.h \
@@ -22,7 +21,6 @@ libndpi_a_include_HEADERS = ../include/ndpi_api.h \
 			     third_party/include/libcache.h
 
 libndpi_a_SOURCES = ndpi_content_match.c.inc \
-		     ndpi_network_list.c.inc \
 		     ndpi_main.c \
 		     ndpi_utils.c \
 		     ndpi_bitmap.c \
@@ -50,10 +48,12 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/avast_securedns.c \
 		     protocols/amqp.c \
 		     protocols/bacnet.c \
+		     protocols/beckhoff_ads.c \
 		     protocols/bgp.c \
 		     protocols/bitcoin.c \
 		     protocols/bittorrent.c \
 		     protocols/bjnp.c \
+		     protocols/can.c \
 		     protocols/capwap.c \
 		     protocols/cassandra.c \
 		     protocols/checkmk.c \
@@ -81,8 +81,11 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/edonkey.c \
 		     protocols/elastic_search.c \
 		     protocols/epicgames.c \
+		     protocols/ethereum.c \
+		     protocols/ethersio.c \
 		     protocols/ethernet_ip.c \
 		     protocols/fastcgi.c \
+		     protocols/fins.c \
 		     protocols/fix.c \
 		     protocols/ftp_control.c \
 		     protocols/ftp_data.c \
@@ -94,6 +97,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/h323.c \
 		     protocols/halflife2_and_mods.c \
 		     protocols/haproxy.c \
+		     protocols/hart-ip.c \
+		     protocols/hislip.c \
 		     protocols/hots.c \
 		     protocols/hpvirtgrp.c \
 		     protocols/hsrp.c \
@@ -103,10 +108,13 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/icecast.c \
 		     protocols/i3d.c \
 		     protocols/imo.c \
+		     protocols/ieee-c37118.c \
 		     protocols/iec60870-5-104.c \
 		     protocols/ipsec.c \
 		     protocols/ipp.c \
 		     protocols/irc.c \
+		     protocols/iso9506-1-mms.c \
+		     protocols/ethersbus.c \
 		     protocols/jabber.c \
 		     protocols/kakaotalk_voice.c \
 		     protocols/kerberos.c \
@@ -126,6 +134,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mining.c \
 		     protocols/mgcp.c \
 		     protocols/modbus.c \
+		     protocols/monero.c \
 		     protocols/mongodb.c \
 		     protocols/mpegts.c \
 		     protocols/mpegdash.c \
@@ -144,23 +153,29 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/non_tcp_udp.c \
 		     protocols/ntp.c \
 		     protocols/oicq.c \
+		     protocols/opc-ua.c \
 		     protocols/openvpn.c \
 		     protocols/ookla.c \
 		     protocols/oracle.c \
 		     protocols/postgres.c \
 		     protocols/ppstream.c \
 		     protocols/pptp.c \
+		     protocols/profinet_io.c \
+		     protocols/protobuf.c \
+		     protocols/ptpv2.c \
 		     protocols/qq.c \
 		     protocols/quic.c \
 		     protocols/radius.c \
 		     protocols/raknet.c \
 		     protocols/rdp.c \
 		     protocols/redis_net.c \
+		     protocols/rmcp.c \
 		     protocols/rsh.c \
 		     protocols/rsync.c \
 		     protocols/rtcp.c \
 		     protocols/rtmp.c \
 		     protocols/rtp.c \
+		     protocols/rtps.c \
 		     protocols/rtsp.c \
 		     protocols/rx.c \
 		     protocols/s7comm.c \
@@ -250,8 +265,8 @@ libndpi_a_CPPFLAGS = -I$(top_srcdir)/src/include/  -I$(top_srcdir)/src/lib/third
 
 #EXTRA_DIST = third_party/src/ndpi_patricia.c
 
-PROTO_CFG_FILES = $(wildcard ndpi_network_list_*.yaml)
-
-ndpi_network_list.c.inc: $(PROTO_CFG_FILES) ndpi_network_list_compile
-		./ndpi_network_list_compile -o $@ $(PROTO_CFG_FILES)
+#PROTO_CFG_FILES = $(wildcard ndpi_network_list_*.yaml)
+#
+#ndpi_network_list.c.inc: $(PROTO_CFG_FILES) ndpi_network_list_compile
+#		./ndpi_network_list_compile -o $@ $(PROTO_CFG_FILES)
 

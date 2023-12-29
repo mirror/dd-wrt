@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_twitch_protocol_list[] = {
  { 0x17A00000 /* 23.160.0.0/24 */, 24, NDPI_PROTOCOL_TWITCH },
  { 0x2D718000 /* 45.113.128.0/22 */, 22, NDPI_PROTOCOL_TWITCH },
@@ -37,4 +36,9 @@ static ndpi_network ndpi_protocol_twitch_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_twitch_protocol_list_6[] = {
+ { "2402:2a80::", 32, NDPI_PROTOCOL_TWITCH },
+ /* End */
+ { NULL, 0, 0 }
+};

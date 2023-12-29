@@ -8,6 +8,8 @@
 
 nDPI® is an open source LGPLv3 library for deep-packet inspection. Based on OpenDPI it includes ntop extensions. We have tried to push them into the OpenDPI source tree but nobody answered emails so we have decided to create our own source tree
 
+A generic FAQ about nDPI® is available [here](https://github.com/ntop/nDPI/blob/dev/doc/FAQ.md)
+
 ### How To Compile nDPI
 
 In order to compile this project do
@@ -51,7 +53,7 @@ On Windows:
 There are three supported ways to build nDPI:
 
 1. MSYS2 (assuming [MSYS2](https://www.msys2.org/) already installed):
-  - msys2 -c "pacman --noconfirm -S --needed --overwrite '\*' git mingw-w64-x86\_64-toolchain automake1.16 automake-wrapper autoconf libtool make mingw-w64-x86\_64-json-c mingw-w64-x86\_64-crt-git mingw-w64-x86\_64-pcre mingw-w64-x86\_64-libpcap"
+  - msys2 -c "pacman --noconfirm -S --needed --overwrite '\*' git mingw-w64-x86\_64-toolchain automake1.16 automake-wrapper autoconf libtool make mingw-w64-x86\_64-json-c mingw-w64-x86\_64-crt-git mingw-w64-x86\_64-pcre2 mingw-w64-x86\_64-libpcap"
 
 2. Mingw-w64
 
@@ -79,7 +81,7 @@ The entire procedure of adding new protocols in detail:
 5. Choose (do not change anything) a selection bitmask from: `src/include/ndpi_define.h`
 6. Set protocol default ports in `ndpi_init_protocol_defaults` in: `src/lib/ndpi_main.c`
 7. Be sure to have nBPF support, cloning `PF_RING` in the same directory where you cloned `nDPI`: `git clone https://github.com/ntop/PF_RING/ && cd PF_RING/userland/nbpf && ./configure && make`
-8. From the `nDPI` root directory, `./autogen.sh --with-pcre` (nBPF and PCRE are usually optional, but they are needed to run/update *all* the unit tests)
+8. From the `nDPI` root directory, `./autogen.sh --with-pcre2` (nBPF and PCRE2 are usually optional, but they are needed to run/update *all* the unit tests)
 9. `make`
 10. `make check`
 11. Update the documentation, adding this new protocol to `doc/protocols.rst`

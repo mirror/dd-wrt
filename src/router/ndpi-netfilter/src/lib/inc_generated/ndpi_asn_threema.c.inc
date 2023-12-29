@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_threema_protocol_list[] = {
  { 0x0594A000 /* 5.148.160.0/19 */, 19, NDPI_PROTOCOL_THREEMA },
  { 0x2D09A000 /* 45.9.160.0/23 */, 23, NDPI_PROTOCOL_THREEMA },
@@ -34,4 +33,11 @@ static ndpi_network ndpi_protocol_threema_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_threema_protocol_list_6[] = {
+ { "2001:67c:2f98::", 48, NDPI_PROTOCOL_THREEMA },
+ { "2a02:418::", 29, NDPI_PROTOCOL_THREEMA },
+ { "2a05:9a80::", 29, NDPI_PROTOCOL_THREEMA },
+ /* End */
+ { NULL, 0, 0 }
+};

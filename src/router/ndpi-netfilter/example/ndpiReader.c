@@ -95,8 +95,6 @@ static u_int8_t ignore_vlanid = 0;
 /** User preferences **/
 u_int8_t enable_protocol_guess = 1, enable_payload_analyzer = 0, num_bin_clusters = 0, extcap_exit = 0;
 u_int8_t verbose = 0, enable_flow_stats = 0;
-int stun_monitoring_pkts_to_process = -1; /* Default */
-int stun_monitoring_flags = -1; /* Default */
 int nDPI_LogLevel = 0;
 char *_debug_protocols = NULL;
 char *_disabled_protocols = NULL;
@@ -125,7 +123,6 @@ static struct bpf_program *bpf_cfilter = NULL;
 static time_t capture_for = 0;
 static time_t capture_until = 0;
 static u_int32_t num_flows;
-static struct ndpi_detection_module_struct *ndpi_info_mod = NULL;
 
 extern u_int8_t enable_doh_dot_detection;
 extern u_int32_t max_num_packets_per_flow, max_packet_payload_dissection, max_num_reported_top_payloads;
@@ -524,7 +521,7 @@ static void help(u_int long_help) {
          "[-f <filter>][-s <duration>][-m <duration>][-b <num bin clusters>]\n"
          "          [-p <protos>][-l <loops> [-q][-d][-h][-H][-D][-e <len>][-E][-t][-v <level>]\n"
          "          [-n <threads>][-w <file>][-c <file>][-C <file>][-j <file>][-x <file>]\n"
-         "          [-r <file>][-j <file>][-S <file>][-T <num>][-U <num>] [-x <domain>][-z]\n"
+         "          [-r <file>][-j <file>][-S <file>][-T <num>][-U <num>] [-x <domain>]\n"
          "          [-a <mode>][-B proto_list]\n\n"
          "Usage:\n"
          "  -i <file.pcap|device>     | Specify a pcap file/playlist to read packets from or a\n"
@@ -587,14 +584,11 @@ static void help(u_int long_help) {
          "  -D                        | Enable DoH traffic analysis based on content (no DPI)\n"
          "  -x <domain>               | Check domain name [Test only]\n"
          "  -I                        | Ignore VLAN id for flow hash calculation\n"
-         "  -z                        | Enable JA3+\n"
          "  -A                        | Dump internal statistics (LRU caches / Patricia trees / Ahocarasick automas / ...\n"
          "  -M                        | Memory allocation stats on data-path (only by the library). It works only on single-thread configuration\n"
          "  -Z proto:value            | Set this value of aggressiveness for this protocol (0 to disable it). This flag can be used multiple times\n"
          "  --lru-cache-size=NAME:size       | Specify the size for this LRU cache (0 to disable it). This flag can be used multiple times\n"
          "  --lru-cache-ttl=NAME:size        | Specify the TTL [in seconds] for this LRU cache (0 to disable it). This flag can be used multiple times\n"
-         "  --stun-monitoring=<pkts>:<flags> | Configure STUN monitoring: keep monitoring STUN session for <pkts> more pkts looking for RTP\n"
-         "                                   | (0:0 to disable the feature); set the specified features in <flags>\n"
          ,
          human_readeable_string_len,
          min_pattern_len, max_pattern_len, max_num_packets_per_flow, max_packet_payload_dissection,
@@ -623,8 +617,7 @@ static void help(u_int long_help) {
            sizeof(((struct ndpi_flow_struct *)0)->protos));
 
     NDPI_PROTOCOL_BITMASK all;
-
-    ndpi_info_mod = ndpi_init_detection_module(init_prefs);
+    struct ndpi_detection_module_struct *ndpi_info_mod = ndpi_init_detection_module(init_prefs);
     printf("\n\nnDPI supported protocols:\n");
     printf("%3s %-22s %-10s %-8s %-12s %s\n",
 	   "Id", "Protocol", "Layer_4", "Nw_Proto", "Breed", "Category");
@@ -647,8 +640,6 @@ static void help(u_int long_help) {
 
 #define OPTLONG_VALUE_LRU_CACHE_SIZE	1000
 #define OPTLONG_VALUE_LRU_CACHE_TTL	1001
-
-#define OPTLONG_VALUE_STUN_MONITORING	2000
 
 static struct option longopts[] = {
   /* mandatory extcap options */
@@ -693,7 +684,6 @@ static struct option longopts[] = {
 
   { "lru-cache-size", required_argument, NULL, OPTLONG_VALUE_LRU_CACHE_SIZE},
   { "lru-cache-ttl", required_argument, NULL, OPTLONG_VALUE_LRU_CACHE_TTL},
-  { "stun-monitoring", required_argument, NULL, OPTLONG_VALUE_STUN_MONITORING},
 
   {0, 0, 0, 0}
 };
@@ -765,7 +755,7 @@ void extcap_config() {
   ndpi_proto_defaults_t *proto_defaults;
 #endif
 
-  ndpi_info_mod = ndpi_init_detection_module(init_prefs);
+  struct ndpi_detection_module_struct *ndpi_info_mod = ndpi_init_detection_module(init_prefs);
 #if 0
   ndpi_num_supported_protocols = ndpi_get_ndpi_num_supported_protocols(ndpi_info_mod);
   proto_defaults = ndpi_get_proto_defaults(ndpi_info_mod);
@@ -968,7 +958,6 @@ static void parseOptions(int argc, char **argv) {
 #endif
 #endif
   int cache_idx, cache_size, cache_ttl;
-  u_int32_t num_pkts, flags;
 
 #ifdef USE_DPDK
   {
@@ -990,7 +979,7 @@ static void parseOptions(int argc, char **argv) {
   }
 
   while((opt = getopt_long(argc, argv,
-			   "a:Ab:B:e:Ec:C:dDFf:g:G:i:Ij:k:K:S:hHp:pP:l:r:s:tu:v:V:n:rp:x:X:w:zZ:q0123:456:7:89:m:MT:U:",
+			   "a:Ab:B:e:Ec:C:dDFf:g:G:i:Ij:k:K:S:hHp:pP:l:r:s:tu:v:V:n:rp:x:X:w:Z:q0123:456:7:89:m:MT:U:",
                            longopts, &option_idx)) != EOF) {
 #ifdef DEBUG_TRACE
     if(trace) fprintf(trace, " #### Handling option -%c [%s] #### \n", opt, optarg ? optarg : "");
@@ -1266,9 +1255,13 @@ static void parseOptions(int argc, char **argv) {
       break;
 
     case '9':
+    {
+      struct ndpi_detection_module_struct *ndpi_info_mod = ndpi_init_detection_module(init_prefs);
       extcap_packet_filter = ndpi_get_proto_by_name(ndpi_info_mod, optarg);
       if(extcap_packet_filter == NDPI_PROTOCOL_UNKNOWN) extcap_packet_filter = atoi(optarg);
+      ndpi_exit_detection_module(ndpi_info_mod);
       break;
+    }
 
     case 'T':
       max_num_tcp_dissected_pkts = atoi(optarg);
@@ -1288,10 +1281,6 @@ static void parseOptions(int argc, char **argv) {
       if(max_num_udp_dissected_pkts < 3) max_num_udp_dissected_pkts = 3;
       break;
 
-    case 'z':
-      init_prefs |= ndpi_enable_ja3_plus;
-      break;
-
     case OPTLONG_VALUE_LRU_CACHE_SIZE:
       if(parse_cache_param(optarg, &cache_idx, &cache_size) == -1) {
         printf("Invalid parameter [%s]\n", optarg);
@@ -1306,15 +1295,6 @@ static void parseOptions(int argc, char **argv) {
         exit(1);
       }
       lru_cache_ttls[cache_idx] = cache_ttl;
-      break;
-
-    case OPTLONG_VALUE_STUN_MONITORING:
-      if(parse_two_unsigned_integer(optarg, &num_pkts, &flags) == -1) {
-        printf("Invalid parameter [%s]\n", optarg);
-        exit(1);
-      }
-      stun_monitoring_pkts_to_process = num_pkts;
-      stun_monitoring_flags = flags;
       break;
 
     default:
@@ -1537,17 +1517,22 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
             100.0*((float)flow->dst2src_goodput_bytes / (float)(flow->dst2src_bytes+1)));
 
     /* IAT (Inter Arrival Time) */
-    fprintf(csv_fp, "%u,%.1f,%u,%.1f,",
-            ndpi_data_min(flow->iat_flow), ndpi_data_average(flow->iat_flow), ndpi_data_max(flow->iat_flow), ndpi_data_stddev(flow->iat_flow));
+    fprintf(csv_fp, "%llu,%.1f,%llu,%.1f,",
+            (unsigned long long int)ndpi_data_min(flow->iat_flow), ndpi_data_average(flow->iat_flow),
+            (unsigned long long int)ndpi_data_max(flow->iat_flow), ndpi_data_stddev(flow->iat_flow));
 
-    fprintf(csv_fp, "%u,%.1f,%u,%.1f,%u,%.1f,%u,%.1f,",
-	    ndpi_data_min(flow->iat_c_to_s), ndpi_data_average(flow->iat_c_to_s), ndpi_data_max(flow->iat_c_to_s), ndpi_data_stddev(flow->iat_c_to_s),
-	    ndpi_data_min(flow->iat_s_to_c), ndpi_data_average(flow->iat_s_to_c), ndpi_data_max(flow->iat_s_to_c), ndpi_data_stddev(flow->iat_s_to_c));
+    fprintf(csv_fp, "%llu,%.1f,%llu,%.1f,%llu,%.1f,%llu,%.1f,",
+	    (unsigned long long int)ndpi_data_min(flow->iat_c_to_s), ndpi_data_average(flow->iat_c_to_s),
+        (unsigned long long int)ndpi_data_max(flow->iat_c_to_s), ndpi_data_stddev(flow->iat_c_to_s),
+	    (unsigned long long int)ndpi_data_min(flow->iat_s_to_c), ndpi_data_average(flow->iat_s_to_c),
+        (unsigned long long int)ndpi_data_max(flow->iat_s_to_c), ndpi_data_stddev(flow->iat_s_to_c));
 
     /* Packet Length */
-    fprintf(csv_fp, "%u,%.1f,%u,%.1f,%u,%.1f,%u,%.1f,",
-	    ndpi_data_min(flow->pktlen_c_to_s), ndpi_data_average(flow->pktlen_c_to_s), ndpi_data_max(flow->pktlen_c_to_s), ndpi_data_stddev(flow->pktlen_c_to_s),
-	    ndpi_data_min(flow->pktlen_s_to_c), ndpi_data_average(flow->pktlen_s_to_c), ndpi_data_max(flow->pktlen_s_to_c), ndpi_data_stddev(flow->pktlen_s_to_c));
+    fprintf(csv_fp, "%llu,%.1f,%llu,%.1f,%llu,%.1f,%llu,%.1f,",
+	    (unsigned long long int)ndpi_data_min(flow->pktlen_c_to_s), ndpi_data_average(flow->pktlen_c_to_s),
+        (unsigned long long int)ndpi_data_max(flow->pktlen_c_to_s), ndpi_data_stddev(flow->pktlen_c_to_s),
+	    (unsigned long long int)ndpi_data_min(flow->pktlen_s_to_c), ndpi_data_average(flow->pktlen_s_to_c),
+        (unsigned long long int)ndpi_data_max(flow->pktlen_s_to_c), ndpi_data_stddev(flow->pktlen_s_to_c));
 
     /* TCP flags */
     fprintf(csv_fp, "%d,%d,%d,%d,%d,%d,%d,%d,", flow->cwr_count, flow->ece_count, flow->urg_count, flow->ack_count, flow->psh_count, flow->rst_count, flow->syn_count, flow->fin_count);
@@ -1820,17 +1805,21 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 	fprintf(out, "[bytes ratio: %.3f (%s)]", data_ratio, ndpi_data_ratio2str(data_ratio));
 
 	/* IAT (Inter Arrival Time) */
-	fprintf(out, "[IAT c2s/s2c min/avg/max/stddev: %u/%u %.0f/%.0f %u/%u %.0f/%.0f]",
-		ndpi_data_min(flow->iat_c_to_s),     ndpi_data_min(flow->iat_s_to_c),
+	fprintf(out, "[IAT c2s/s2c min/avg/max/stddev: %llu/%llu %.0f/%.0f %llu/%llu %.0f/%.0f]",
+		(unsigned long long int)ndpi_data_min(flow->iat_c_to_s),
+        (unsigned long long int)ndpi_data_min(flow->iat_s_to_c),
 		(float)ndpi_data_average(flow->iat_c_to_s), (float)ndpi_data_average(flow->iat_s_to_c),
-		ndpi_data_max(flow->iat_c_to_s),     ndpi_data_max(flow->iat_s_to_c),
+		(unsigned long long int)ndpi_data_max(flow->iat_c_to_s),
+        (unsigned long long int)ndpi_data_max(flow->iat_s_to_c),
 		(float)ndpi_data_stddev(flow->iat_c_to_s),  (float)ndpi_data_stddev(flow->iat_s_to_c));
 
 	/* Packet Length */
-	fprintf(out, "[Pkt Len c2s/s2c min/avg/max/stddev: %u/%u %.0f/%.0f %u/%u %.0f/%.0f]",
-		ndpi_data_min(flow->pktlen_c_to_s), ndpi_data_min(flow->pktlen_s_to_c),
+	fprintf(out, "[Pkt Len c2s/s2c min/avg/max/stddev: %llu/%llu %.0f/%.0f %llu/%llu %.0f/%.0f]",
+		(unsigned long long int)ndpi_data_min(flow->pktlen_c_to_s),
+        (unsigned long long int)ndpi_data_min(flow->pktlen_s_to_c),
 		ndpi_data_average(flow->pktlen_c_to_s), ndpi_data_average(flow->pktlen_s_to_c),
-		ndpi_data_max(flow->pktlen_c_to_s), ndpi_data_max(flow->pktlen_s_to_c),
+		(unsigned long long int)ndpi_data_max(flow->pktlen_c_to_s),
+        (unsigned long long int)ndpi_data_max(flow->pktlen_s_to_c),
 		ndpi_data_stddev(flow->pktlen_c_to_s),  ndpi_data_stddev(flow->pktlen_s_to_c));
       }
     }
@@ -2165,7 +2154,7 @@ static void node_proto_guess_walker(const void *node, ndpi_VISIT which, int dept
                                                       flow->ndpi_flow, enable_protocol_guess, &proto_guessed);
       malloc_size_stats = 0;
 
-      if(enable_protocol_guess) ndpi_thread_info[thread_id].workflow->stats.guessed_flow_protocols++;
+      if(proto_guessed) ndpi_thread_info[thread_id].workflow->stats.guessed_flow_protocols++;
     }
 
     process_ndpi_collected_info(ndpi_thread_info[thread_id].workflow, flow);
@@ -2682,8 +2671,13 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle) {
       exit(-1);
   }
 
-  if(_categoriesDirPath)
-    ndpi_load_categories_dir(ndpi_thread_info[thread_id].workflow->ndpi_struct, _categoriesDirPath);
+  if(_categoriesDirPath) {
+    int failed_files = ndpi_load_categories_dir(ndpi_thread_info[thread_id].workflow->ndpi_struct, _categoriesDirPath);
+    if (failed_files < 0) {
+      fprintf(stderr, "Failed to parse all *.list files in: %s\n", _categoriesDirPath);
+      exit(-1);
+    }
+  }
   
   if(_riskyDomainFilePath)
     ndpi_load_risk_domain_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _riskyDomainFilePath);
@@ -2702,7 +2696,11 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle) {
     else
       label = _customCategoryFilePath;
 
-    ndpi_load_categories_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _customCategoryFilePath, label);
+    int failed_lines = ndpi_load_categories_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _customCategoryFilePath, label);
+    if (failed_lines < 0) {
+      fprintf(stderr, "Failed to parse custom categories file: %s\n", _customCategoryFilePath);
+      exit(-1);
+    }
   }
 
   /* Make sure to load lists before finalizing the initialization */
@@ -2739,16 +2737,11 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle) {
 			     i, lru_cache_ttls[i]);
   }
 
-  /* Set aggressiviness here */
+  /* Set aggressiveness here */
   for(i = 0; i < NDPI_MAX_SUPPORTED_PROTOCOLS; i++) {
     if(aggressiveness[i] != -1)
       ndpi_set_protocol_aggressiveness(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, aggressiveness[i]);
   }
-
-  if(stun_monitoring_pkts_to_process != -1 &&
-     stun_monitoring_flags != -1)
-    ndpi_set_monitoring_state(ndpi_thread_info[thread_id].workflow->ndpi_struct, NDPI_PROTOCOL_STUN,
-                              stun_monitoring_pkts_to_process, stun_monitoring_flags);
 
   ndpi_finalize_initialization(ndpi_thread_info[thread_id].workflow->ndpi_struct);
 
@@ -3819,7 +3812,7 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
       printf("\tTraffic duration:      %.3f sec\n", traffic_duration/1000000);
     }
 
-    if(enable_protocol_guess)
+    if(cumulative_stats.guessed_flow_protocols)
       printf("\tGuessed flow protos:   %-13u\n", cumulative_stats.guessed_flow_protocols);
 
     if(cumulative_stats.flow_count[0])
@@ -3901,12 +3894,21 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
       printf("\tPatricia risk mask:   %llu/%llu (search/found)\n",
 	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_search,
 	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_found);
+      printf("\tPatricia risk mask IPv6: %llu/%llu (search/found)\n",
+	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK6].n_search,
+	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK6].n_found);
       printf("\tPatricia risk:        %llu/%llu (search/found)\n",
 	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_search,
 	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_found);
+      printf("\tPatricia risk IPv6:   %llu/%llu (search/found)\n",
+	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK6].n_search,
+	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK6].n_found);
       printf("\tPatricia protocols:   %llu/%llu (search/found)\n",
 	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_search,
 	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_found);
+      printf("\tPatricia protocols IPv6: %llu/%llu (search/found)\n",
+	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS6].n_search,
+	     (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS6].n_found);
 
       if(enable_malloc_bins)
 	printf("\tData-path malloc histogram: %s\n", ndpi_print_bin(&malloc_bins, 0, buf, sizeof(buf)));
@@ -3914,7 +3916,7 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
   }
 
   if(results_file) {
-    if(enable_protocol_guess)
+    if(cumulative_stats.guessed_flow_protocols)
       fprintf(results_file, "Guessed flow protos:\t%u\n\n", cumulative_stats.guessed_flow_protocols);
 
     if(cumulative_stats.flow_count[0])
@@ -4011,12 +4013,21 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
       fprintf(results_file, "Patricia risk mask:   %llu/%llu (search/found)\n",
 	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_search,
 	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_found);
+      fprintf(results_file, "Patricia risk mask IPv6: %llu/%llu (search/found)\n",
+	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK6].n_search,
+	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK6].n_found);
       fprintf(results_file, "Patricia risk:        %llu/%llu (search/found)\n",
 	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_search,
 	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_found);
+      fprintf(results_file, "Patricia risk IPv6:   %llu/%llu (search/found)\n",
+	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK6].n_search,
+	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK6].n_found);
       fprintf(results_file, "Patricia protocols:   %llu/%llu (search/found)\n",
 	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_search,
 	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_found);
+      fprintf(results_file, "Patricia protocols IPv6: %llu/%llu (search/found)\n",
+	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS6].n_search,
+	      (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS6].n_found);
 
       if(enable_malloc_bins)
 	fprintf(results_file, "Data-path malloc histogram: %s\n", ndpi_print_bin(&malloc_bins, 0, buf, sizeof(buf)));
@@ -4903,7 +4914,9 @@ void analysisUnitTest() {
     printf("Average: [all: %f][window: %f]\n", ndpi_data_average(s), ndpi_data_window_average(s));
     printf("Entropy: %f\n", ndpi_data_entropy(s));
     printf("StdDev:  %f\n", ndpi_data_stddev(s));
-    printf("Min/Max: %u/%u\n", ndpi_data_min(s), ndpi_data_max(s));
+    printf("Min/Max: %llu/%llu\n",
+        (unsigned long long int)ndpi_data_min(s),
+        (unsigned long long int)ndpi_data_max(s));
   }
 
   ndpi_free_data_analysis(s, 1);
@@ -5507,18 +5520,6 @@ void domainSearchUnitTest() {
   assert(ndpi_domain_classify_contains(sc, &class_id, "123vc.club"));
   assert(class_id == NDPI_PROTOCOL_CATEGORY_GAMBLING);
 
-#if 0
-  {
-    const char *fname = NDPI_BASE_DIR "/lists/gambling.list";
-    u_int32_t num_domains;
-    
-    num_domains = ndpi_domain_classify_add_domains(sc, NDPI_PROTOCOL_GAMBLING, (char*)fname);
-    assert(num_domains == 35370);
-
-    assert(ndpi_domain_classify_contains(sc, "0grand-casino.com") == NDPI_PROTOCOL_GAMBLING);
-  }
-#endif
-  
   /* Subdomain check */
   assert(ndpi_domain_classify_contains(sc, &class_id, "blog.ntop.org"));
   assert(class_id == NDPI_PROTOCOL_NTOP);
@@ -5626,10 +5627,6 @@ int main(int argc, char **argv) {
     ac_automata_enable_debug(1);
   parseOptions(argc, argv);
 
-  ndpi_info_mod = ndpi_init_detection_module(init_prefs);
-
-  if(ndpi_info_mod == NULL) return -1;
-
   if(domain_to_check) {
     ndpiCheckHostStringMatch(domain_to_check);
     exit(0);
@@ -5671,7 +5668,6 @@ int main(int argc, char **argv) {
   if(results_file)  fclose(results_file);
   if(extcap_dumper) pcap_dump_close(extcap_dumper);
   if(extcap_fifo_h) pcap_close(extcap_fifo_h);
-  if(ndpi_info_mod) ndpi_exit_detection_module(ndpi_info_mod);
   if(enable_malloc_bins) ndpi_free_bin(&malloc_bins);
   if(csv_fp)        fclose(csv_fp);
   

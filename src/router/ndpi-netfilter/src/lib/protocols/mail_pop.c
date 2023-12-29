@@ -28,6 +28,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_MAIL_POP
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 
 #define POP_BIT_AUTH		0x0001
@@ -42,9 +43,6 @@
 #define POP_BIT_DELE		0x0200
 #define POP_BIT_STLS		0x0400
 
-
-NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
-					   struct ndpi_flow_struct *flow);
 
 static void ndpi_int_mail_pop_add_connection(struct ndpi_detection_module_struct
 					     *ndpi_struct, struct ndpi_flow_struct *flow,
@@ -240,7 +238,7 @@ static void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
 
 /* **************************************** */
 
-NDPI_STATIC int ndpi_extra_search_mail_pop_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+int ndpi_extra_search_mail_pop_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow) {
   int rc;
   

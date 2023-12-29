@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_zoom_protocol_list[] = {
  { 0x03072300 /* 3.7.35.0/25 */, 25, NDPI_PROTOCOL_ZOOM },
  { 0x03158980 /* 3.21.137.128/25 */, 25, NDPI_PROTOCOL_ZOOM },
@@ -330,4 +329,11 @@ static ndpi_network ndpi_protocol_zoom_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_zoom_protocol_list_6[] = {
+ { "2407:30c0::", 32, NDPI_PROTOCOL_ZOOM },
+ { "2600:9000:2600::", 48, NDPI_PROTOCOL_ZOOM },
+ { "2620:123:2000::", 40, NDPI_PROTOCOL_ZOOM },
+ /* End */
+ { NULL, 0, 0 }
+};

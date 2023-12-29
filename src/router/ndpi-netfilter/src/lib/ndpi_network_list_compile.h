@@ -72,7 +72,7 @@ _P(NDPI_PROTOCOL_NATS),
 _P(NDPI_PROTOCOL_AMONG_US),
 _P(NDPI_PROTOCOL_YAHOO),
 _P(NDPI_PROTOCOL_DISNEYPLUS),
-_P(NDPI_PROTOCOL_GOOGLE_PLUS),
+_P(NDPI_PROTOCOL_HART_IP),
 _P(NDPI_PROTOCOL_IP_VRRP),
 _P(NDPI_PROTOCOL_STEAM),
 _P(NDPI_PROTOCOL_HALFLIFE2),
@@ -350,6 +350,269 @@ _P(NDPI_PROTOCOL_ROBLOX),
 _P(NDPI_PROTOCOL_SERVICE_LOCATION),
 _P(NDPI_PROTOCOL_MULLVAD),
 _P(NDPI_PROTOCOL_HTTP2),
-_P(NDPI_PROTOCOL_HAPROXY)
+_P(NDPI_PROTOCOL_HAPROXY),
+_P(NDPI_PROTOCOL_RMCP),
+_P(NDPI_PROTOCOL_CAN),
+_P(NDPI_PROTOCOL_PROTOBUF),
+_P(NDPI_PROTOCOL_ETHEREUM)
 
+};
+#include "inc_generated/ndpi_amazon_aws_match.c.inc"
+#include "inc_generated/ndpi_asn_alibaba.c.inc"
+#include "inc_generated/ndpi_asn_apple.c.inc"
+#include "inc_generated/ndpi_asn_avast.c.inc"
+#include "inc_generated/ndpi_asn_bloomberg.c.inc"
+#include "inc_generated/ndpi_asn_citrix.c.inc"
+#include "inc_generated/ndpi_asn_discord.c.inc"
+#include "inc_generated/ndpi_asn_disney_plus.c.inc"
+#include "inc_generated/ndpi_asn_dropbox.c.inc"
+#include "inc_generated/ndpi_asn_edgecast.c.inc"
+#include "inc_generated/ndpi_asn_epicgames.c.inc"
+#include "inc_generated/ndpi_asn_facebook.c.inc"
+#include "inc_generated/ndpi_asn_github.c.inc"
+#include "inc_generated/ndpi_asn_goto.c.inc"
+#include "inc_generated/ndpi_asn_hotspotshield.c.inc"
+#include "inc_generated/ndpi_asn_hulu.c.inc"
+#include "inc_generated/ndpi_asn_line.c.inc"
+#include "inc_generated/ndpi_asn_netflix.c.inc"
+#include "inc_generated/ndpi_asn_nvidia.c.inc"
+#include "inc_generated/ndpi_asn_opendns.c.inc"
+#include "inc_generated/ndpi_asn_riotgames.c.inc"
+#include "inc_generated/ndpi_asn_roblox.c.inc"
+#include "inc_generated/ndpi_asn_starcraft.c.inc"
+#include "inc_generated/ndpi_asn_steam.c.inc"
+#include "inc_generated/ndpi_asn_teamviewer.c.inc"
+#include "inc_generated/ndpi_asn_telegram.c.inc"
+#include "inc_generated/ndpi_asn_tencent.c.inc"
+#include "inc_generated/ndpi_asn_threema.c.inc"
+#include "inc_generated/ndpi_asn_twitch.c.inc"
+#include "inc_generated/ndpi_asn_twitter.c.inc"
+#include "inc_generated/ndpi_asn_ubuntuone.c.inc"
+#include "inc_generated/ndpi_asn_vk.c.inc"
+#include "inc_generated/ndpi_asn_webex.c.inc"
+#include "inc_generated/ndpi_asn_yandex.c.inc"
+#include "inc_generated/ndpi_asn_yandex_cloud.c.inc"
+#include "inc_generated/ndpi_azure_match.c.inc"
+#include "inc_generated/ndpi_cachefly_match.c.inc"
+#include "inc_generated/ndpi_cloudflare_match.c.inc"
+#include "inc_generated/ndpi_ethereum_match.c.inc"
+#include "inc_generated/ndpi_google_cloud_match.c.inc"
+#include "inc_generated/ndpi_google_match.c.inc"
+#include "inc_generated/ndpi_ms_office365_match.c.inc"
+#include "inc_generated/ndpi_ms_onedrive_match.c.inc"
+#include "inc_generated/ndpi_ms_outlook_match.c.inc"
+#include "inc_generated/ndpi_ms_skype_teams_match.c.inc"
+#include "inc_generated/ndpi_mullvad_match.c.inc"
+#include "inc_generated/ndpi_protonvpn_in_match.c.inc"
+#include "inc_generated/ndpi_tor_match.c.inc"
+#include "inc_generated/ndpi_whatsapp_match.c.inc"
+#include "inc_generated/ndpi_zoom_match.c.inc"
+
+static ndpi_network * ip4list[] = {
+ &ndpi_protocol_amazon_aws_protocol_list[0],
+ &ndpi_protocol_alibaba_protocol_list[0],
+ &ndpi_protocol_apple_protocol_list[0],
+ &ndpi_protocol_avast_protocol_list[0],
+ &ndpi_protocol_bloomberg_protocol_list[0],
+ &ndpi_protocol_citrix_protocol_list[0],
+ &ndpi_protocol_discord_protocol_list[0],
+ &ndpi_protocol_disneyplus_protocol_list[0],
+ &ndpi_protocol_dropbox_protocol_list[0],
+ &ndpi_protocol_edgecast_protocol_list[0],
+ &ndpi_protocol_epicgames_protocol_list[0],
+ &ndpi_protocol_facebook_protocol_list[0],
+ &ndpi_protocol_github_protocol_list[0],
+ &ndpi_protocol_goto_protocol_list[0],
+ &ndpi_protocol_hotspot_shield_protocol_list[0],
+ &ndpi_protocol_hulu_protocol_list[0],
+ &ndpi_protocol_line_protocol_list[0],
+ &ndpi_protocol_netflix_protocol_list[0],
+ &ndpi_protocol_nvidia_protocol_list[0],
+ &ndpi_protocol_opendns_protocol_list[0],
+ &ndpi_protocol_riotgames_protocol_list[0],
+ &ndpi_protocol_roblox_protocol_list[0],
+ &ndpi_protocol_starcraft_protocol_list[0],
+ &ndpi_protocol_steam_protocol_list[0],
+ &ndpi_protocol_teamviewer_protocol_list[0],
+ &ndpi_protocol_telegram_protocol_list[0],
+ &ndpi_protocol_tencent_protocol_list[0],
+ &ndpi_protocol_threema_protocol_list[0],
+ &ndpi_protocol_twitch_protocol_list[0],
+ &ndpi_protocol_twitter_protocol_list[0],
+ &ndpi_protocol_ubuntuone_protocol_list[0],
+ &ndpi_protocol_vk_protocol_list[0],
+ &ndpi_protocol_webex_protocol_list[0],
+ &ndpi_protocol_yandex_protocol_list[0],
+ &ndpi_protocol_yandex_cloud_protocol_list[0],
+ &ndpi_protocol_microsoft_azure_protocol_list[0],
+ &ndpi_protocol_cachefly_protocol_list[0],
+ &ndpi_protocol_cloudflare_protocol_list[0],
+ &ndpi_protocol_ethereum_protocol_list[0],
+ &ndpi_protocol_google_cloud_protocol_list[0],
+ &ndpi_protocol_google_protocol_list[0],
+ &ndpi_protocol_microsoft_365_protocol_list[0],
+ &ndpi_protocol_ms_one_drive_protocol_list[0],
+ &ndpi_protocol_ms_outlook_protocol_list[0],
+ &ndpi_protocol_skype_teams_protocol_list[0],
+ &ndpi_protocol_mullvad_protocol_list[0],
+ &ndpi_protocol_protonvpn_protocol_list[0],
+ &ndpi_protocol_tor_protocol_list[0],
+ &ndpi_protocol_whatsapp_protocol_list[0],
+ &ndpi_protocol_zoom_protocol_list[0]
+};
+static char * ip4list_file[] = {
+ "inc_generated/ndpi_amazon_aws_match.c.inc",
+ "inc_generated/ndpi_asn_alibaba.c.inc",
+ "inc_generated/ndpi_asn_apple.c.inc",
+ "inc_generated/ndpi_asn_avast.c.inc",
+ "inc_generated/ndpi_asn_bloomberg.c.inc",
+ "inc_generated/ndpi_asn_citrix.c.inc",
+ "inc_generated/ndpi_asn_discord.c.inc",
+ "inc_generated/ndpi_asn_disney_plus.c.inc",
+ "inc_generated/ndpi_asn_dropbox.c.inc",
+ "inc_generated/ndpi_asn_edgecast.c.inc",
+ "inc_generated/ndpi_asn_epicgames.c.inc",
+ "inc_generated/ndpi_asn_facebook.c.inc",
+ "inc_generated/ndpi_asn_github.c.inc",
+ "inc_generated/ndpi_asn_goto.c.inc",
+ "inc_generated/ndpi_asn_hotspotshield.c.inc",
+ "inc_generated/ndpi_asn_hulu.c.inc",
+ "inc_generated/ndpi_asn_line.c.inc",
+ "inc_generated/ndpi_asn_netflix.c.inc",
+ "inc_generated/ndpi_asn_nvidia.c.inc",
+ "inc_generated/ndpi_asn_opendns.c.inc",
+ "inc_generated/ndpi_asn_riotgames.c.inc",
+ "inc_generated/ndpi_asn_roblox.c.inc",
+ "inc_generated/ndpi_asn_starcraft.c.inc",
+ "inc_generated/ndpi_asn_steam.c.inc",
+ "inc_generated/ndpi_asn_teamviewer.c.inc",
+ "inc_generated/ndpi_asn_telegram.c.inc",
+ "inc_generated/ndpi_asn_tencent.c.inc",
+ "inc_generated/ndpi_asn_threema.c.inc",
+ "inc_generated/ndpi_asn_twitch.c.inc",
+ "inc_generated/ndpi_asn_twitter.c.inc",
+ "inc_generated/ndpi_asn_ubuntuone.c.inc",
+ "inc_generated/ndpi_asn_vk.c.inc",
+ "inc_generated/ndpi_asn_webex.c.inc",
+ "inc_generated/ndpi_asn_yandex.c.inc",
+ "inc_generated/ndpi_asn_yandex_cloud.c.inc",
+ "inc_generated/ndpi_azure_match.c.inc",
+ "inc_generated/ndpi_cachefly_match.c.inc",
+ "inc_generated/ndpi_cloudflare_match.c.inc",
+ "inc_generated/ndpi_ethereum_match.c.inc",
+ "inc_generated/ndpi_google_cloud_match.c.inc",
+ "inc_generated/ndpi_google_match.c.inc",
+ "inc_generated/ndpi_ms_office365_match.c.inc",
+ "inc_generated/ndpi_ms_onedrive_match.c.inc",
+ "inc_generated/ndpi_ms_outlook_match.c.inc",
+ "inc_generated/ndpi_ms_skype_teams_match.c.inc",
+ "inc_generated/ndpi_mullvad_match.c.inc",
+ "inc_generated/ndpi_protonvpn_in_match.c.inc",
+ "inc_generated/ndpi_tor_match.c.inc",
+ "inc_generated/ndpi_whatsapp_match.c.inc",
+ "inc_generated/ndpi_zoom_match.c.inc"
+};
+static ndpi_network6 * ip6list[] = {
+ &ndpi_protocol_amazon_aws_protocol_list_6[0],
+ &ndpi_protocol_alibaba_protocol_list_6[0],
+ &ndpi_protocol_apple_protocol_list_6[0],
+ &ndpi_protocol_avast_protocol_list_6[0],
+ &ndpi_protocol_bloomberg_protocol_list_6[0],
+ &ndpi_protocol_citrix_protocol_list_6[0],
+ &ndpi_protocol_discord_protocol_list_6[0],
+ &ndpi_protocol_disneyplus_protocol_list_6[0],
+ &ndpi_protocol_dropbox_protocol_list_6[0],
+ &ndpi_protocol_edgecast_protocol_list_6[0],
+ &ndpi_protocol_epicgames_protocol_list_6[0],
+ &ndpi_protocol_facebook_protocol_list_6[0],
+ &ndpi_protocol_github_protocol_list_6[0],
+ &ndpi_protocol_goto_protocol_list_6[0],
+ &ndpi_protocol_hotspot_shield_protocol_list_6[0],
+ &ndpi_protocol_hulu_protocol_list_6[0],
+ &ndpi_protocol_line_protocol_list_6[0],
+ &ndpi_protocol_netflix_protocol_list_6[0],
+ &ndpi_protocol_nvidia_protocol_list_6[0],
+ &ndpi_protocol_opendns_protocol_list_6[0],
+ &ndpi_protocol_riotgames_protocol_list_6[0],
+ &ndpi_protocol_roblox_protocol_list_6[0],
+ &ndpi_protocol_starcraft_protocol_list_6[0],
+ &ndpi_protocol_steam_protocol_list_6[0],
+ &ndpi_protocol_teamviewer_protocol_list_6[0],
+ &ndpi_protocol_telegram_protocol_list_6[0],
+ &ndpi_protocol_tencent_protocol_list_6[0],
+ &ndpi_protocol_threema_protocol_list_6[0],
+ &ndpi_protocol_twitch_protocol_list_6[0],
+ &ndpi_protocol_twitter_protocol_list_6[0],
+ &ndpi_protocol_ubuntuone_protocol_list_6[0],
+ &ndpi_protocol_vk_protocol_list_6[0],
+ &ndpi_protocol_webex_protocol_list_6[0],
+ &ndpi_protocol_yandex_protocol_list_6[0],
+ &ndpi_protocol_yandex_cloud_protocol_list_6[0],
+ &ndpi_protocol_microsoft_azure_protocol_list_6[0],
+ &ndpi_protocol_cachefly_protocol_list_6[0],
+ &ndpi_protocol_cloudflare_protocol_list_6[0],
+ &ndpi_protocol_ethereum_protocol_list_6[0],
+ &ndpi_protocol_google_cloud_protocol_list_6[0],
+ &ndpi_protocol_google_protocol_list_6[0],
+ &ndpi_protocol_microsoft_365_protocol_list_6[0],
+ &ndpi_protocol_ms_one_drive_protocol_list_6[0],
+ &ndpi_protocol_ms_outlook_protocol_list_6[0],
+ &ndpi_protocol_skype_teams_protocol_list_6[0],
+ &ndpi_protocol_mullvad_protocol_list_6[0],
+ &ndpi_protocol_protonvpn_protocol_list_6[0],
+ &ndpi_protocol_tor_protocol_list_6[0],
+ &ndpi_protocol_whatsapp_protocol_list_6[0],
+ &ndpi_protocol_zoom_protocol_list_6[0]
+};
+static char * ip6list_file[] = {
+ "inc_generated/ndpi_amazon_aws_match.c.inc",
+ "inc_generated/ndpi_asn_alibaba.c.inc",
+ "inc_generated/ndpi_asn_apple.c.inc",
+ "inc_generated/ndpi_asn_avast.c.inc",
+ "inc_generated/ndpi_asn_bloomberg.c.inc",
+ "inc_generated/ndpi_asn_citrix.c.inc",
+ "inc_generated/ndpi_asn_discord.c.inc",
+ "inc_generated/ndpi_asn_disney_plus.c.inc",
+ "inc_generated/ndpi_asn_dropbox.c.inc",
+ "inc_generated/ndpi_asn_edgecast.c.inc",
+ "inc_generated/ndpi_asn_epicgames.c.inc",
+ "inc_generated/ndpi_asn_facebook.c.inc",
+ "inc_generated/ndpi_asn_github.c.inc",
+ "inc_generated/ndpi_asn_goto.c.inc",
+ "inc_generated/ndpi_asn_hotspotshield.c.inc",
+ "inc_generated/ndpi_asn_hulu.c.inc",
+ "inc_generated/ndpi_asn_line.c.inc",
+ "inc_generated/ndpi_asn_netflix.c.inc",
+ "inc_generated/ndpi_asn_nvidia.c.inc",
+ "inc_generated/ndpi_asn_opendns.c.inc",
+ "inc_generated/ndpi_asn_riotgames.c.inc",
+ "inc_generated/ndpi_asn_roblox.c.inc",
+ "inc_generated/ndpi_asn_starcraft.c.inc",
+ "inc_generated/ndpi_asn_steam.c.inc",
+ "inc_generated/ndpi_asn_teamviewer.c.inc",
+ "inc_generated/ndpi_asn_telegram.c.inc",
+ "inc_generated/ndpi_asn_tencent.c.inc",
+ "inc_generated/ndpi_asn_threema.c.inc",
+ "inc_generated/ndpi_asn_twitch.c.inc",
+ "inc_generated/ndpi_asn_twitter.c.inc",
+ "inc_generated/ndpi_asn_ubuntuone.c.inc",
+ "inc_generated/ndpi_asn_vk.c.inc",
+ "inc_generated/ndpi_asn_webex.c.inc",
+ "inc_generated/ndpi_asn_yandex.c.inc",
+ "inc_generated/ndpi_asn_yandex_cloud.c.inc",
+ "inc_generated/ndpi_azure_match.c.inc",
+ "inc_generated/ndpi_cachefly_match.c.inc",
+ "inc_generated/ndpi_cloudflare_match.c.inc",
+ "inc_generated/ndpi_ethereum_match.c.inc",
+ "inc_generated/ndpi_google_cloud_match.c.inc",
+ "inc_generated/ndpi_google_match.c.inc",
+ "inc_generated/ndpi_ms_office365_match.c.inc",
+ "inc_generated/ndpi_ms_onedrive_match.c.inc",
+ "inc_generated/ndpi_ms_outlook_match.c.inc",
+ "inc_generated/ndpi_ms_skype_teams_match.c.inc",
+ "inc_generated/ndpi_mullvad_match.c.inc",
+ "inc_generated/ndpi_protonvpn_in_match.c.inc",
+ "inc_generated/ndpi_tor_match.c.inc",
+ "inc_generated/ndpi_whatsapp_match.c.inc",
+ "inc_generated/ndpi_zoom_match.c.inc"
 };

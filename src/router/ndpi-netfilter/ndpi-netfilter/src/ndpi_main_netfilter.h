@@ -31,6 +31,12 @@ typedef enum write_buf_id {
 	W_BUF_LAST
 } write_buf_id_t;
 
+#define ACC_READ_NORMAL 0
+#define ACC_READ_CLOSED 1
+#define ACC_READ_MONITOR 2
+#define ACC_READ_MASK 0x3
+#define ACC_READ_BIN 0x4
+
 struct write_proc_cmd {
 	uint32_t  cpos,max;
 	char      cmd[0];
@@ -97,9 +103,9 @@ struct ndpi_net {
 	time64_t		acc_open_time;	// time of reading from pos 0
 	int			acc_end;	// EOF for read process
 	int			acc_limit;	// if acc_work > acc_limit then drop flow info
-	int			acc_read_mode;	// 0 - read all connections info,
-						// 1 - read closed connections info
-						// 2 - read connections info w/o reset counter
+	int			acc_read_mode;	// ACC_READ_NORMAL - read all connections info,
+						// ACC_READ_CLOSED - read closed connections info
+						// ACC_READ_MONITOR - read connections info w/o reset counter
 						// +4 - binary mode
 	int			acc_last_op;	// 0 - open
 						// 1 - read
@@ -223,6 +229,10 @@ NDPI_STATIC int str_coll_to_automata(struct ndpi_detection_module_struct *ndpi_s
 		void *host_ac,hosts_str_t *hosts);
 
 NDPI_STATIC void set_debug_trace( struct ndpi_net *n);
+
+static inline int get_acc_mode(struct ndpi_net *n) {
+	return n->acc_read_mode & ACC_READ_MASK;
+}
 
 
 #endif

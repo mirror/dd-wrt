@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_whatsapp_protocol_list[] = {
  { 0x0321DD30 /* 3.33.221.48/32 */, 32, NDPI_PROTOCOL_WHATSAPP },
  { 0x0321FC3D /* 3.33.252.61/32 */, 32, NDPI_PROTOCOL_WHATSAPP },
@@ -254,4 +253,8 @@ static ndpi_network ndpi_protocol_whatsapp_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_whatsapp_protocol_list_6[] = {
+ /* End */
+ { NULL, 0, 0 }
+};

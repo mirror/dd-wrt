@@ -11,6 +11,7 @@
 #include "ndpi_config.h"
 #undef HAVE_HYPERSCAN
 #include "ndpi_main.h"
+#include "ndpi_private.h"
 
 #include "ndpi_main_common.h"
 #include "ndpi_strcol.h"
@@ -44,6 +45,9 @@ do {
 		n->hosts_tmp = NULL;
 		ret = ENOMEM; break;
 	}
+	ac_automata_feature(n->host_ac,AC_FEATURE_LC);
+	ac_automata_name(n->host_ac,"host",AC_FEATURE_DEBUG);
+
 	if(_DBG_TRACE_SPROC_H)
 		pr_info("host_open:%s %px new\n",n->ns_name,n->host_ac);
 

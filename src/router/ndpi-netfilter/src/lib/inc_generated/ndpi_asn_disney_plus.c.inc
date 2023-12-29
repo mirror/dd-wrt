@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_disneyplus_protocol_list[] = {
  { 0x08050500 /* 8.5.5.0/24 */, 24, NDPI_PROTOCOL_DISNEYPLUS },
  { 0x8B686000 /* 139.104.96.0/24 */, 24, NDPI_PROTOCOL_DISNEYPLUS },
@@ -44,4 +43,20 @@ static ndpi_network ndpi_protocol_disneyplus_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_disneyplus_protocol_list_6[] = {
+ { "2405:dc0:8001::", 48, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2405:dc0:8008::", 46, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2620:138:3000::", 46, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2620:138:3006::", 48, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2620:138:3008::", 45, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2620:138:3018::", 46, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2620:138:301c::", 47, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2620:138:3020::", 48, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2620:138:30fe::", 47, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2a0e:bbc0:8000::", 46, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2a0e:bbc0:8004::", 47, NDPI_PROTOCOL_DISNEYPLUS },
+ { "2a0e:bbc0:8006::", 48, NDPI_PROTOCOL_DISNEYPLUS },
+ /* End */
+ { NULL, 0, 0 }
+};

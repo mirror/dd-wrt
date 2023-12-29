@@ -22,10 +22,11 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_OOKLA
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 /* #define DEBUG_OOKLA_LRU */
 
-static const u_int16_t ookla_port = 8080;
+const u_int16_t ookla_port = 8080;
 
 /* ************************************************************* */
 
@@ -39,7 +40,7 @@ static u_int32_t get_ookla_key(struct ndpi_flow_struct *flow)
 
 /* ************************************************************* */
 
-static int ookla_search_into_cache(struct ndpi_detection_module_struct *ndpi_struct,
+int ookla_search_into_cache(struct ndpi_detection_module_struct *ndpi_struct,
                             struct ndpi_flow_struct *flow)
 {
   u_int32_t key;
@@ -65,7 +66,7 @@ static int ookla_search_into_cache(struct ndpi_detection_module_struct *ndpi_str
 
 /* ************************************************************* */
 
-static void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
+void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
                         struct ndpi_flow_struct *flow)
 {
   u_int32_t key;
@@ -83,7 +84,7 @@ static void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ************************************************************* */
 
-static void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct ndpi_flow_struct* flow) {
+void ndpi_search_ookla(struct ndpi_detection_module_struct* ndpi_struct, struct ndpi_flow_struct* flow) {
   struct ndpi_packet_struct* packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "Ookla detection\n");

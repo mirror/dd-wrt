@@ -27,6 +27,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_KERBEROS
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 /* #define KERBEROS_DEBUG 1 */
 
@@ -44,9 +45,9 @@ static int krb_decode_asn1_length(struct ndpi_detection_module_struct *ndpi_stru
   int64_t length;
   u_int16_t value_len;
 
-  length = ndpi_asn1_ber_decode_length(&packet->payload[*kasn1_offset],
-				       packet->payload_packet_len - *kasn1_offset,
-				       &value_len);
+  length = asn1_ber_decode_length(&packet->payload[*kasn1_offset],
+				  packet->payload_packet_len - *kasn1_offset,
+				  &value_len);
 
   if (length == -1 ||
       packet->payload_packet_len < *kasn1_offset + value_len + length)
@@ -56,7 +57,7 @@ static int krb_decode_asn1_length(struct ndpi_detection_module_struct *ndpi_stru
 
   *kasn1_offset += value_len;
 
-  return length;
+  return (int)length;
 }
 
 /* Reference: https://en.wikipedia.org/wiki/X.690#Identifier_octets */
@@ -173,7 +174,7 @@ static int krb_decode_asn1_blocks_skip(struct ndpi_detection_module_struct *ndpi
 static void krb_strncpy_lower(char * const dst, size_t dst_siz,
                               char const * const src, size_t src_siz)
 {
-  int i, dst_len = ndpi_min(src_siz, dst_siz - 1);
+  int i, dst_len = (int)ndpi_min(src_siz, dst_siz - 1);
 
    dst[dst_len] = '\0';
 

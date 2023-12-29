@@ -28,6 +28,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_RX
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
@@ -81,7 +82,7 @@ struct ndpi_rx_header {
 
 
 static void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
-                   struct ndpi_flow_struct *flow)
+                          struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   struct ndpi_rx_header *header;

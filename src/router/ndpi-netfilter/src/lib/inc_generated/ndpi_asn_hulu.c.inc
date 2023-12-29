@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_hulu_protocol_list[] = {
  { 0x081C7C00 /* 8.28.124.0/23 */, 23, NDPI_PROTOCOL_HULU },
  { 0xC73C7400 /* 199.60.116.0/24 */, 24, NDPI_PROTOCOL_HULU },
@@ -30,4 +29,8 @@ static ndpi_network ndpi_protocol_hulu_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_hulu_protocol_list_6[] = {
+ /* End */
+ { NULL, 0, 0 }
+};

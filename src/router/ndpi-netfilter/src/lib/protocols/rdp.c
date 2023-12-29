@@ -30,6 +30,7 @@
 #define RDP_PORT 3389
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 static void ndpi_int_rdp_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow) {
@@ -40,21 +41,35 @@ static void ndpi_int_rdp_add_connection(struct ndpi_detection_module_struct *ndp
 
 static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
 		     struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  const struct ndpi_packet_struct * const packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search RDP\n");
 
   if (packet->tcp != NULL) {
-    if (packet->payload_packet_len > 10
-	&& get_u_int8_t(packet->payload, 0) > 0
-	&& get_u_int8_t(packet->payload, 0) < 4 && get_u_int16_t(packet->payload, 2) == ntohs(packet->payload_packet_len)
-	&& get_u_int8_t(packet->payload, 4) == packet->payload_packet_len - 5
-	&& get_u_int8_t(packet->payload, 5) == 0xe0
-	&& get_u_int16_t(packet->payload, 6) == 0 && get_u_int16_t(packet->payload, 8) == 0 && get_u_int8_t(packet->payload, 10) == 0) {
-      ndpi_int_rdp_add_connection(ndpi_struct, flow);
-      return;
-    }
+    if(packet->payload_packet_len > 13 &&
+       tpkt_verify_hdr(packet) &&
+       /* COTP */
+       packet->payload[4] == packet->payload_packet_len - 5) {
 
+      if(current_pkt_from_client_to_server(ndpi_struct, flow)) {
+        if(packet->payload[5] == 0xE0 && /* COTP CR */
+	   ((packet->payload[11] == 0x01 && /* RDP Negotiation Request */
+             packet->payload[13] == 0x08 /* RDP Length */) ||
+	    (packet->payload_packet_len > 17 &&
+	     memcmp(&packet->payload[11], "Cookie:", 7) == 0))) /* RDP Cookie */ {
+          ndpi_int_rdp_add_connection(ndpi_struct, flow);
+          return;
+	}
+      } else {
+        /* Asymmetric detection via RDP Negotiation Response */
+        if(packet->payload[5] == 0xD0 && /* COTP CC */
+	   packet->payload[11] == 0x02 && /* RDP Negotiation Response */
+           packet->payload[13] == 0x08 /* RDP Length */) {
+          ndpi_int_rdp_add_connection(ndpi_struct, flow);
+          return;
+	}
+      }
+    }
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
   } else if(packet->udp != NULL) {
     u_int16_t s_port = ntohs(packet->udp->source);

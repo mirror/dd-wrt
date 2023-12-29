@@ -37,6 +37,7 @@
 #endif
 
 #if defined(MBEDTLS_HAVE_X86_64)
+
 #if defined(linux) || defined(__linux__)
 #include <cpuid.h>
 #endif
@@ -56,23 +57,45 @@ int force_no_aesni = 0;
 /*
  * AES-NI support detection routine
  */
-static int mbedtls_aesni_has_support( unsigned int what )
+int mbedtls_aesni_has_support( unsigned int what )
 {
 #if defined(__has_feature)
 #  if __has_feature(memory_sanitizer)
      return 0;
 #  endif
 #endif
-
+     
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
   if(force_no_aesni == 1)
     return 0;
 #endif
 
+#if defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
+  /* In FreeBSD we don't have a reliable way to check AES-NI so better disable it */
+  return(0);
+#endif
+
 #if defined(linux) || defined(__linux__)
+ #ifdef __KERNEL__
   unsigned int eax, ebx, ecx, edx;
 
-#ifndef __KERNEL__
+  volatile unsigned int c = 0;
+
+  asm( "movl  $1, %%eax   \n\t"
+       "cpuid             \n\t"
+       : "=c" (c)
+       :
+       : "eax", "ebx", "edx" );
+
+  return( ( c & what ) != 0 );
+
+ #elif defined(WIN32) || defined(WIN64)
+  int cpuInfo[4];
+
+  __cpuid(cpuInfo, 1);
+
+  return ( (cpuInfo[2] & what) != 0 );
+ #else
   if(what == MBEDTLS_AESNI_AES) {
     /*
       NOTE
@@ -107,23 +130,7 @@ static int mbedtls_aesni_has_support( unsigned int what )
     }
   return(cached_has_aesni);
   }
-#endif /* ! __KERNEL__ */
-#elif defined(WIN32) || defined(WIN64)
-  int cpuInfo[4];
-
-  __cpuid(cpuInfo, 1);
-
-  return ( (cpuInfo[2] & what) != 0 );
-#else
-  volatile unsigned int c = 0;
-
-  asm( "movl  $1, %%eax   \n\t"
-       "cpuid             \n\t"
-       : "=c" (c)
-       :
-       : "eax", "ebx", "edx" );
-
-  return( ( c & what ) != 0 );
+ #endif
 #endif
   return 0; // fix gcc warning
 }

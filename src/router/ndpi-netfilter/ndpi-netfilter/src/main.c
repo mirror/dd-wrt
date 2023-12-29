@@ -69,7 +69,8 @@
 
 #include "ndpi_config.h"
 #undef HAVE_HYPERSCAN
-#include "ndpi_main.h"
+#include "ndpi_api.h"
+#include "ndpi_private.h"
 
 #include "xt_ndpi.h"
 
@@ -2452,7 +2453,7 @@ static int ninfo_proc_close(struct inode *inode, struct file *file)
  */
 
 int ndpi_delete_acct(struct ndpi_net *n,int all) {
-	struct nf_ct_ext_ndpi *ct_ndpi,*next,*prev,*flow_h;
+	struct nf_ct_ext_ndpi *ct_ndpi,*next,*prev;
 	int i2 = 0, del,skip_del;
 
 	if(!ndpi_enable_flow) return 0;
@@ -2466,21 +2467,20 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 	if(flow_read_debug) pr_info("%s:%s all=%d rem %d skip_del %d\n",
 			__func__,n->ns_name,all,atomic_read(&n->acc_rem),skip_del);
 
-  restart:
 	next = prev = NULL;
-	smp_rmb();
+
 	ct_ndpi = READ_ONCE(n->flow_h);
-	flow_h = ct_ndpi;
+
 	while(ct_ndpi) {
-		barrier();
-		next = READ_ONCE(ct_ndpi->next);
+
 		if(!spin_trylock_bh(&ct_ndpi->lock)) {
+			// skip locked flow
 			prev = ct_ndpi;
-			ct_ndpi = next;
-//			pr_info("%s: skip busy ct %px\n",__func__,prev);
+			ct_ndpi = READ_ONCE(ct_ndpi->next);
 			continue;
 		}
-		barrier();
+
+		next = READ_ONCE(ct_ndpi->next);
 		del = 0;
 		switch(all) {
 		case 1: del = test_for_delete(ct_ndpi);
@@ -2493,28 +2493,26 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 		case 3: del = 1;
 		}
 
+		if(del) {
+			if(!prev) { // first element
+				prev = cmpxchg(&n->flow_h, ct_ndpi, next);
+				if(prev == ct_ndpi) {  // n->flow_h == ct_ndpi
+					prev = NULL;
+				} else { // prev is n->flow_h
+					while(prev && prev->next != ct_ndpi) prev = prev->next;
+					if(!prev) BUG();
+				}
+			}
+			if(prev && cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) BUG();
+		}
 		spin_unlock_bh(&ct_ndpi->lock);
 
 		if(del) {
-			if(prev) {
-				if(cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) {
-					pr_err("%s: BUG! prev->next %px != ct_ndpi %px\n",__func__,
-							prev->next,ct_ndpi);
-					break;
-				}
-			} else {
-				if(cmpxchg(&n->flow_h,flow_h,next) == flow_h)
-					flow_h = next;
-			  	else {
-					pr_info("%s: restart\n",__func__);
-					goto restart;
-				}
-			}
-			if(n->flow_l == ct_ndpi) n->flow_l = next;
+			// if nflow_read() is active
+			if(n->flow_l == ct_ndpi) n->flow_l = prev;
 
-			if(all == 3) {
-				__ndpi_free_ct_flow(ct_ndpi);
-			}
+			__ndpi_free_ct_flow(ct_ndpi);
+
 			__ndpi_free_ct_proto(ct_ndpi);
 			if(all == 2 && test_flow_info(ct_ndpi)) {
 				// count lost info
@@ -2532,11 +2530,10 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 			kmem_cache_free (ct_info_cache, ct_ndpi);
 			i2++;
 			if(all < 3 && (atomic_read(&n->acc_rem) <= 0)) break;
-		} else {
+		} else 
 			prev = ct_ndpi;
-		}
-		ct_ndpi=next;
 
+		ct_ndpi=next;
 	}
 
 	mutex_unlock(&n->rem_lock);
@@ -2599,7 +2596,7 @@ static int nflow_put_str(struct ndpi_net *n, char __user *buf,
 ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
                               size_t count, loff_t *ppos)
 {
-	struct nf_ct_ext_ndpi *ct_ndpi,*next,*prev,*flow_h;
+	struct nf_ct_ext_ndpi *ct_ndpi,*next,*prev;
 	int p,del,r;
 	ssize_t sl=0;
 	loff_t st_pos;
@@ -2621,7 +2618,7 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 		if(flow_read_debug)
 		  pr_info("%s:%s Start dump: CT total %d deleted %d\n",
 			__func__, n->ns_name, atomic_read(&n->acc_work),atomic_read(&n->acc_rem));
-		sl = n->acc_read_mode > 3 ?
+		sl = n->acc_read_mode >= ACC_READ_BIN ?
 			ndpi_dump_start_rec(n->str_buf,NF_STR_LBUF,n->acc_open_time):
 			snprintf(n->str_buf,NF_STR_LBUF-1,"TIME %llu\n",n->acc_open_time);
 
@@ -2638,7 +2635,7 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 			uint32_t cpo = atomic_xchg(&n->acc_o_packets_lost,0);
 			uint64_t cbi = atomic64_xchg(&n->acc_i_bytes_lost,0);
 			uint64_t cbo = atomic64_xchg(&n->acc_o_bytes_lost,0);
-			sl = n->acc_read_mode > 3 ?
+			sl = n->acc_read_mode >= ACC_READ_BIN ?
 				ndpi_dump_lost_rec(n->str_buf,NF_STR_LBUF,cpi,cpo,cbi,cbo) :
 				snprintf(n->str_buf,NF_STR_LBUF-1,
 					"LOST_TRAFFIC %llu %llu %u %u\n",cbi,cbo,cpi,cpo);
@@ -2654,63 +2651,53 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 	st_pos = *ppos;
 	prev = NULL;
 
-    restart:
-	if(!n->flow_l) {
+	if(!n->flow_l) { // start read list
 		ct_ndpi = READ_ONCE(n->flow_h);
-	} else {
+	} else { // continue read list
 		prev = n->flow_l;
 		ct_ndpi = prev->next;
 	}
-	flow_h = ct_ndpi;
 	while(ct_ndpi) {
 
-		spin_lock_bh(&ct_ndpi->lock);
 		n->cnt_view++;
-		next = ct_ndpi->next;
+		spin_lock_bh(&ct_ndpi->lock);
+
+		next = READ_ONCE(ct_ndpi->next);
+
 		del  = test_for_delete(ct_ndpi);
 
 		n->str_buf_len = 0; n->str_buf_offs = 0;
 
-		switch(n->acc_read_mode & 0x3) {
-		case 0:
+		switch(get_acc_mode(n)) {
+		case ACC_READ_NORMAL:
 			sl = flow_have_info(ct_ndpi) ?
 				ndpi_dump_acct_info(n,ct_ndpi) : 0;
 			break;
-		case 1:
+		case ACC_READ_CLOSED:
 			sl = del && flow_have_info(ct_ndpi) ?
 				ndpi_dump_acct_info(n,ct_ndpi) : 0;
 			break;
-		case 2:
+		case ACC_READ_MONITOR:
 			sl = !del && test_flow_yes(ct_ndpi) ?
 				ndpi_dump_acct_info(n,ct_ndpi) : 0;
 			break;
 		default:
 			sl = 0;
 		}
-		if(sl && (n->acc_read_mode & 0x3) != 2) {
-				ndpi_ct_counter_save(ct_ndpi);
-		}
+		if(sl && get_acc_mode(n) != ACC_READ_MONITOR)
+			ndpi_ct_counter_save(ct_ndpi);
+
 		if(del) {
-			if(prev) {
-			    if(cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) {
-					pr_err("%s: BUG! prev->next %px != ct_ndpi %px\n",__func__,
-							prev->next,ct_ndpi);
-				spin_unlock_bh(&ct_ndpi->lock);
-				n->flow_l = NULL;
-				n->acc_end = 1;
-				n->str_buf_len = 0;
-				n->str_buf_offs = 0;
-				return -EINVAL;
-			    }
-			} else {
-			    if(cmpxchg(&n->flow_h,flow_h,next) == flow_h)
-					flow_h = next;
-			    	else {
-					spin_unlock_bh(&ct_ndpi->lock);
-					pr_info("%s: reread!\n",__func__);
-					goto restart;
+			if(!prev) { // first element
+				prev = cmpxchg(&n->flow_h, ct_ndpi, next);
+				if(prev == ct_ndpi) { // n->flow_h == ct_ndpi
+					prev = NULL;
+				} else { // prev is n->flow_h
+					while(prev && prev->next != ct_ndpi) prev = prev->next;
+					if(!prev) BUG();
 				}
 			}
+			if(prev && cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) BUG();
 		}
 		spin_unlock_bh(&ct_ndpi->lock);
 
@@ -2725,6 +2712,7 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 			n->flow_l = prev;
 		}
 		ct_ndpi=next;
+
 		if(sl) {
 			r = nflow_put_str(n,buf,&p,&count,ppos);
 			if(r != 0) {
@@ -2946,9 +2934,8 @@ static void __net_exit ndpi_net_exit(struct net *net)
 	}
 }
 
-NDPI_STATIC ndpi_debug_function_ptr ndpi_debug_print_init = NULL;
 
-static int ndpi_stun_cache_enable=
+int ndpi_stun_cache_enable=
 #ifndef __KERNEL__
 	1;
 #else
@@ -3137,6 +3124,8 @@ static int __net_init ndpi_net_init(struct net *net)
 			pr_err("xt_ndpi: cant alloc host_ac\n");
 			break;
 		}
+		ac_automata_feature(n->host_ac,AC_FEATURE_LC);
+		ac_automata_name(n->host_ac,"host",AC_FEATURE_DEBUG);
 		for(hm = host_match; hm->string_to_match ; hm++) {
 			size_t sml;
 			ndpi_protocol_match_result s_ret;
@@ -3428,7 +3417,7 @@ static int __init ndpi_mt_init(void)
 	pr_info("xt_ndpi: MAX_PROTOCOLS %d LAST_PROTOCOL %d\n",
 		NDPI_NUM_BITS,
 		NDPI_LAST_IMPLEMENTED_PROTOCOL);
-	pr_info("xt_ndpi: flow acctounting %s\n",ndpi_enable_flow ? "ON":"OFF");
+	pr_info("xt_ndpi: flow accounting %s\n",ndpi_enable_flow ? "ON":"OFF");
 #if defined(USE_LIVEPATCH)
 	rcu_assign_pointer(nf_conntrack_destroy_cb,nf_ndpi_free_flow);
 	return klp_enable_patch(&ndpi_patch);

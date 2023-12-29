@@ -76,7 +76,7 @@
 #define MBEDTLS_ERR_AES_MISSING_KEY 0x50f8
 #define MBEDTLS_ERR_NOT_SUPPORT 0x50f9
 
-NDPI_STATIC const char *gcry_errstr(gcry_error_t err) {
+const char *gcry_errstr(gcry_error_t err) {
     switch(err) {
         case MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED: return "Corruption detected";
         case MBEDTLS_ERR_MD_ALLOC_FAILED: return "MD:Alloc failed";

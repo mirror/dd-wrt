@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_netflix_protocol_list[] = {
  { 0x17F60000 /* 23.246.0.0/18 */, 18, NDPI_PROTOCOL_NETFLIX },
  { 0x254DB800 /* 37.77.184.0/21 */, 21, NDPI_PROTOCOL_NETFLIX },
@@ -39,4 +38,12 @@ static ndpi_network ndpi_protocol_netflix_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_netflix_protocol_list_6[] = {
+ { "2607:fb10::", 32, NDPI_PROTOCOL_NETFLIX },
+ { "2620:10c:7000::", 44, NDPI_PROTOCOL_NETFLIX },
+ { "2a00:86c0::", 32, NDPI_PROTOCOL_NETFLIX },
+ { "2a03:5640::", 32, NDPI_PROTOCOL_NETFLIX },
+ /* End */
+ { NULL, 0, 0 }
+};

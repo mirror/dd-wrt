@@ -27,6 +27,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_RTP
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 #define RTP_MIN_HEADER	12
 #define RTCP_MIN_HEADER	8
@@ -39,7 +40,7 @@ int is_valid_rtp_payload_type(uint8_t type)
   return 1;
 }
 
-NDPI_STATIC u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type)
+u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type)
 {
   switch(payloadType) {
   case 0: /* G.711 u-Law */
@@ -167,7 +168,7 @@ static u_int8_t isZoom(struct ndpi_flow_struct *flow,
   return(0);
 }
 
-NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
+int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
 		   struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
@@ -238,7 +239,8 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
   NDPI_LOG_DBG(ndpi_struct, "search RTP\n");
 
   if(d_port == 5355 || /* LLMNR_PORT */
-     d_port == 5353    /* MDNS_PORT */) {
+     d_port == 5353 || /* MDNS_PORT */
+     d_port == 9600    /* FINS_PORT */) {
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
   }
@@ -282,19 +284,10 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
       } else {
         rtp_get_stream_type(payload[1] & 0x7F, &flow->flow_multimedia_type);
 
-	/* Previous pkts were STUN */
-        if(flow->stun.num_binding_requests > 0 ||
-           flow->stun.num_processed_pkts > 0) {
-          NDPI_LOG_INFO(ndpi_struct, "Found RTP (previous traffic was STUN)\n");
-          ndpi_set_detected_protocol(ndpi_struct, flow,
-                                     NDPI_PROTOCOL_RTP, NDPI_PROTOCOL_STUN,
-                                     NDPI_CONFIDENCE_DPI);
-        } else {
-          NDPI_LOG_INFO(ndpi_struct, "Found RTP\n");
-          ndpi_set_detected_protocol(ndpi_struct, flow,
-                                     NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_RTP,
-                                     NDPI_CONFIDENCE_DPI);
-	}
+        NDPI_LOG_INFO(ndpi_struct, "Found RTP\n");
+        ndpi_set_detected_protocol(ndpi_struct, flow,
+                                   NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_RTP,
+                                   NDPI_CONFIDENCE_DPI);
       }
       return;
     }

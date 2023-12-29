@@ -24,6 +24,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_STARCRAFT
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 
 /* Sender or receiver are one of the known login portals? */
@@ -35,11 +36,11 @@ static u_int8_t sc2_match_logon_ip(struct ndpi_packet_struct* packet)
 
   source_ip = ntohl(packet->iph->saddr);
   dest_ip = ntohl(packet->iph->daddr);
-  return (ndpi_ips_match(source_ip, dest_ip, 0xD5F87F82, 32)		// EU 213.248.127.130
-	  || ndpi_ips_match(source_ip, dest_ip, 0x0C81CE82, 32)		// US 12.129.206.130
-	  || ndpi_ips_match(source_ip, dest_ip, 0x79FEC882, 32)		// KR 121.254.200.130
-	  || ndpi_ips_match(source_ip, dest_ip, 0xCA09424C, 32)		// SG 202.9.66.76
-	  || ndpi_ips_match(source_ip, dest_ip, 0x0C81ECFE, 32));		// BETA 12.129.236.254
+  return (ips_match(source_ip, dest_ip, 0xD5F87F82, 32)		// EU 213.248.127.130
+	  || ips_match(source_ip, dest_ip, 0x0C81CE82, 32)		// US 12.129.206.130
+	  || ips_match(source_ip, dest_ip, 0x79FEC882, 32)		// KR 121.254.200.130
+	  || ips_match(source_ip, dest_ip, 0xCA09424C, 32)		// SG 202.9.66.76
+	  || ips_match(source_ip, dest_ip, 0x0C81ECFE, 32));		// BETA 12.129.236.254
 }
 
 /*

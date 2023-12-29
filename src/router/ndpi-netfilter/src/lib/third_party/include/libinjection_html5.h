@@ -45,8 +45,8 @@ typedef struct h5_state {
 } h5_state_t;
 
 
-NDPI_STATIC void libinjection_h5_init(h5_state_t* hs, const char* s, size_t len, enum html5_flags);
-NDPI_STATIC int libinjection_h5_next(h5_state_t* hs);
+void libinjection_h5_init(h5_state_t* hs, const char* s, size_t len, enum html5_flags);
+int libinjection_h5_next(h5_state_t* hs);
 
 #ifdef __cplusplus
 }

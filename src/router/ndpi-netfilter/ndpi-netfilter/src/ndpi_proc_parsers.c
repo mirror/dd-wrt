@@ -9,7 +9,10 @@
 
 #include "ndpi_config.h"
 #undef HAVE_HYPERSCAN
+
 #include "ndpi_main.h"
+#include "ndpi_private.h"
+#include "../lib/third_party/include/ndpi_patricia.h"
 
 #include "ndpi_main_common.h"
 #include "ndpi_strcol.h"
@@ -757,7 +760,7 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 			}
 			v--;
 			*v = '@';
-			id = ndpi_handle_rule(n->ndpi_struct, v , 1);
+			id = ndpi_handle_rule(n->ndpi_struct, v);
 			if(id < 0) {
 				pr_err("NDPI: ndpi_handle_rule error %d\n",id);
 				return 1;

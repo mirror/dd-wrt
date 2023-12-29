@@ -10,6 +10,7 @@
 #include "ndpi_config.h"
 #undef HAVE_HYPERSCAN
 #include "ndpi_main.h"
+#include "ndpi_private.h"
 
 #include "ndpi_strcol.h"
 #include "ndpi_main_common.h"

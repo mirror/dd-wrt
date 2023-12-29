@@ -21,8 +21,8 @@
  */
 
 
-NDPI_STATIC int    hll_init(struct ndpi_hll *hll, u_int8_t bits);
-NDPI_STATIC void   hll_destroy(struct ndpi_hll *hll);
-NDPI_STATIC int    hll_add(struct ndpi_hll *hll, const void *buf, size_t size);
-NDPI_STATIC double hll_count(const struct ndpi_hll *hll);
-NDPI_STATIC void   hll_reset(struct ndpi_hll *hll);
+extern int    hll_init(struct ndpi_hll *hll, u_int8_t bits);
+extern void   hll_destroy(struct ndpi_hll *hll);
+extern int    hll_add(struct ndpi_hll *hll, const void *buf, size_t size);
+extern double hll_count(const struct ndpi_hll *hll);
+extern void   hll_reset(struct ndpi_hll *hll);

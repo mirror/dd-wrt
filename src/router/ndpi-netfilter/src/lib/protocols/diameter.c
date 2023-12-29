@@ -27,6 +27,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_DIAMETER
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 
 // Header Flags possibile values
@@ -87,7 +88,7 @@ static int is_diameter(struct ndpi_packet_struct *packet)
 
 
 static void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struct,
-			  struct ndpi_flow_struct *flow)
+				 struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -104,7 +105,7 @@ static void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struc
 }
 
 
-NDPI_STATIC void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
+void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id)
 {
   ndpi_set_bitmask_protocol_detection("Diameter", ndpi_struct, *id,
 				      NDPI_PROTOCOL_DIAMETER, ndpi_search_diameter,

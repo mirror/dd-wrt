@@ -50,7 +50,7 @@
 #define s0(x) (ROTR32(x, 7) ^ ROTR32(x,18) ^ (x >> 3))
 #define s1(x) (ROTR32(x,17) ^ ROTR32(x,19) ^ (x >> 10))
 
-#define digest_blk0(i) (W[i] = data[i])
+#define blk0(i) (W[i] = data[i])
 #define blk2(i) (W[i&15] += s1(W[(i-2)&15]) + W[(i-7)&15] + s0(W[(i-15)&15]))
 
 #define Ch(x,y,z) (z^(x&(y^z)))
@@ -68,7 +68,7 @@
 
 #ifdef _SHA256_UNROLL2
 
-#define R(a,b,c,d,e,f,g,h, i) h += S1(e) + Ch(e,f,g) + K[i+j] + (j?blk2(i):digest_blk0(i));\
+#define R(a,b,c,d,e,f,g,h, i) h += S1(e) + Ch(e,f,g) + K[i+j] + (j?blk2(i):blk0(i));\
   d += h; h += S0(a) + Maj(a, b, c)
 
 #define RX_8(i) \
@@ -83,7 +83,7 @@
 
 #else
 
-#define R(i) h(i) += S1(e(i)) + Ch(e(i),f(i),g(i)) + K[i+j] + (j?blk2(i):digest_blk0(i));\
+#define R(i) h(i) += S1(e(i)) + Ch(e(i),f(i),g(i)) + K[i+j] + (j?blk2(i):blk0(i));\
   d(i) += h(i); h(i) += S0(a(i)) + Maj(a(i), b(i), c(i))
 
 #ifdef _SHA256_UNROLL
@@ -214,7 +214,7 @@ sha256_update(sha256_t *p, const unsigned char *data, size_t size)
 }
 
 
-NDPI_STATIC void
+void
 sha256_final(sha256_t *p, unsigned char *digest)
 {
   uint64_t lenInBits = (p->count << 3);

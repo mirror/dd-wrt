@@ -62,7 +62,7 @@ typedef uint32_t (*cache_item_hash)(const void *item, size_t item_size);
  * @return a new cache_t, or NULL if an error occurred
  *
  */
-NDPI_STATIC cache_t cache_new(uint32_t cache_max_size, uint32_t cache_hash_size);
+cache_t cache_new(uint32_t cache_max_size, uint32_t cache_hash_size);
 
 
 /**
@@ -74,7 +74,7 @@ NDPI_STATIC cache_t cache_new(uint32_t cache_max_size, uint32_t cache_hash_size)
  * @return a code representing the result of the function
  *
  */
-NDPI_STATIC cache_result cache_add(cache_t cache, void *item, size_t item_size);
+cache_result cache_add(cache_t cache, void *item, size_t item_size);
 
 
 /**
@@ -86,7 +86,7 @@ NDPI_STATIC cache_result cache_add(cache_t cache, void *item, size_t item_size);
  * @return a pointer to found item
  *
  */
-NDPI_STATIC void *cache_contains(cache_t cache, void *item, size_t item_size);
+void *cache_contains(cache_t cache, void *item, size_t item_size);
 
 
 /**
@@ -98,7 +98,7 @@ NDPI_STATIC void *cache_contains(cache_t cache, void *item, size_t item_size);
  * @return a code representing the result of the function
  *
  */
-NDPI_STATIC cache_result cache_remove(cache_t cache, void *item, size_t item_size);
+cache_result cache_remove(cache_t cache, void *item, size_t item_size);
 
 /**
  * @brief Free the specified cache_t
@@ -106,7 +106,7 @@ NDPI_STATIC cache_result cache_remove(cache_t cache, void *item, size_t item_siz
  * @par alist  = the cache
  *
  */
-NDPI_STATIC void cache_free(cache_t cache);
+void cache_free(cache_t cache);
 
 #ifndef __KERNEL__
 void cache_dump(cache_t cache);

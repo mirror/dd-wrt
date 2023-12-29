@@ -103,19 +103,19 @@ typedef void (*void_fn_t)(void *data);
 typedef void (*void_fn2_t)(ndpi_prefix_t *prefix, void *data);
 
 /* renamed to ndpi_Patricia to avoid name conflicts */
-NDPI_STATIC ndpi_patricia_node_t *ndpi_patricia_search_exact (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
-NDPI_STATIC ndpi_patricia_node_t *ndpi_patricia_search_best (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
-NDPI_STATIC ndpi_patricia_node_t * ndpi_patricia_search_best2 (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix,
+ndpi_patricia_node_t *ndpi_patricia_search_exact (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
+ndpi_patricia_node_t *ndpi_patricia_search_best (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
+ndpi_patricia_node_t * ndpi_patricia_search_best2 (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix,
 					      int inclusive);
-NDPI_STATIC ndpi_patricia_node_t *ndpi_patricia_lookup (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
-NDPI_STATIC void ndpi_patricia_remove (ndpi_patricia_tree_t *patricia, ndpi_patricia_node_t *node);
+ndpi_patricia_node_t *ndpi_patricia_lookup (ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
+void ndpi_patricia_remove (ndpi_patricia_tree_t *patricia, ndpi_patricia_node_t *node);
 // ndpi_patricia_tree_t *ndpi_New_Patricia (u_int16_t maxbits);
-NDPI_STATIC void ndpi_Clear_Patricia (ndpi_patricia_tree_t *patricia, void_fn_t func);
-NDPI_STATIC void ndpi_Destroy_Patricia (ndpi_patricia_tree_t *patricia, void_fn_t func);
-NDPI_STATIC void ndpi_patricia_process (ndpi_patricia_tree_t *patricia, void_fn2_t func);
-NDPI_STATIC ndpi_prefix_t *ndpi_ascii2prefix (int family, char *string);
-NDPI_STATIC ndpi_prefix_t *ndpi_Ref_Prefix (ndpi_prefix_t * prefix);
-NDPI_STATIC void ndpi_Deref_Prefix (ndpi_prefix_t * prefix);
+void ndpi_Clear_Patricia (ndpi_patricia_tree_t *patricia, void_fn_t func);
+void ndpi_Destroy_Patricia (ndpi_patricia_tree_t *patricia, void_fn_t func);
+void ndpi_patricia_process (ndpi_patricia_tree_t *patricia, void_fn2_t func);
+ndpi_prefix_t *ndpi_ascii2prefix (int family, char *string);
+ndpi_prefix_t *ndpi_Ref_Prefix (ndpi_prefix_t * prefix);
+void ndpi_Deref_Prefix (ndpi_prefix_t * prefix);
 
 #ifdef WIN32
 #define PATRICIA_MAXBITS	128

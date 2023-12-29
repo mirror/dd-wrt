@@ -27,6 +27,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_BITTORRENT
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 #include "btlib.h"
 
@@ -40,7 +41,7 @@
 
 #ifdef __KERNEL__
 
-//extern struct kmem_cache *bt_port_cache;
+extern struct kmem_cache *bt_port_cache;
 #define BT_MALLOC(a) ndpi_malloc(a)
 #define BT_N_MALLOC(a)         kmem_cache_zalloc (bt_port_cache, GFP_ATOMIC)
 #define BT_FREE(a) ndpi_free(a)
@@ -54,7 +55,7 @@
 
 #endif
 
-static time_t ndpi_bt_node_expire = 1200; /* time in seconds */
+time_t ndpi_bt_node_expire = 1200; /* time in seconds */
 
 #ifndef __KERNEL__
 
@@ -63,7 +64,7 @@ static time_t ndpi_bt_node_expire = 1200; /* time in seconds */
 #define false 0
 
 #else
-/*extern unsigned long 
+extern unsigned long 
 	ndpi_pto,
 	ndpi_ptss,ndpi_ptsd,
 	ndpi_ptds,ndpi_ptdd;
@@ -76,8 +77,8 @@ extern unsigned long
 	ndpi_ptudsf, ndpi_ptuddr,
 	ndpi_ptudsr, ndpi_ptuddf;
 extern unsigned long
-	ndpi_btp_tm[20];
-*/
+	ndpi_btp_tm[20]; /* 3600/ 3m */
+
 static void diagram(unsigned long *d,size_t n,int var) {
 int i = 3600/n;
 if(var < 0) var = 0;
@@ -97,8 +98,6 @@ struct ndpi_utp_hdr {
   u_int16_t sequence_nr, ack_nr;
 };
 
-NDPI_STATIC int ndpi_search_into_bittorrent_cache(struct ndpi_detection_module_struct *ndpi_struct,
-                                             struct ndpi_flow_struct *flow);
 
 /* Forward declaration */
 static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_struct,
@@ -139,7 +138,7 @@ int ndpi_search_dht_again(struct ndpi_detection_module_struct *ndpi_struct, stru
 #define NDPI_STATICSTRING_LEN( s ) ( sizeof( s ) - 1 )
 #define NDPI_STATICSTRING( s )  s , ( sizeof( s ) - 1 )
 
-NDPI_STATIC int memcmp_packet_hdr(struct ndpi_packet_struct *packet,
+int memcmp_packet_hdr(struct ndpi_packet_struct *packet,
 		      size_t l,const char *str,size_t len, int offs) {
 
 if(!packet->hdr_line) return 1;
@@ -156,7 +155,7 @@ if(packet->hdr_line[l].ptr+offs+len > packet->payload + packet->l3_packet_len) r
 return memcmp(packet->hdr_line[l].ptr+offs,str,len);
 }
 
-NDPI_STATIC int memcmp_packet_line(struct ndpi_packet_struct *packet,
+int memcmp_packet_line(struct ndpi_packet_struct *packet,
 		      size_t l,const char *str,size_t len, int offs) {
 
 if(l >= packet->parsed_lines ) return 1;
@@ -295,18 +294,20 @@ spin_lock(&ht->tbl[key].lock);
     n = ht->tbl[key].top;
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
     if(ht->ipv6) {
-	while(n) {
-	    if(!memcmp(&n->ip,ip->ipv6.u6_addr.u6_addr8,16) && n->port == port) {
-		    n->lchg = lchg;
-		    n->flag |= flag;
-		    move_up(&ht->tbl[key],n);
+	struct hash_ip6p_node *n6 = (struct hash_ip6p_node *)n;
+	while(n6) {
+	    if(!memcmp(&n6->ip,ip->ipv6.u6_addr.u6_addr8,16) && n6->port == port) {
+		    n6->lchg = lchg;
+		    n6->flag |= flag;
+		    move_up(&ht->tbl[key],(struct hash_ip4p_node *)n6);
 		    goto unlock;
 	    }
-	    n = n->next;
+	    n6 = n6->next;
 	}
-	n = BT_N_MALLOC(sizeof(struct hash_ip4p_node)+12);
-	if(!n) goto unlock;
-	memcpy(&n->ip,ip->ipv6.u6_addr.u6_addr8,16);
+	n6 = BT_N_MALLOC(sizeof(struct hash_ip6p_node));
+	if(!n6) goto unlock;
+	memcpy(&n6->ip,ip->ipv6.u6_addr.u6_addr8,16);
+	n = (struct hash_ip4p_node *)n6;
     } else {
 #endif
 	while(n) {
@@ -409,10 +410,10 @@ return ret;
 
 
 /* copy from https://secure.wand.net.nz/trac/libprotoident/browser/lib/udp/lpi_dht_dict.cc */
-#define BT_ANY -1
+#define ANY_BT -1
 
 #define MASKOCTET(x) \
-        ((x) == BT_ANY ? 0U : 255U)
+        ((x) == ANY_BT ? 0U : 255U)
 
 #define FORMUP(a,b,c,d) \
         (unsigned)((((a)&0xFF)<<24)|(((b)&0xFF)<<16)|(((c)&0xFF)<<8)|((d)&0xFF))
@@ -432,21 +433,21 @@ return ret;
 
 static inline bool match_utp_query(uint32_t payload, uint32_t len) {
 
-	//if(MATCH(payload, 0x01, 0x00, BT_ANY, BT_ANY))
+	//if(MATCH(payload, 0x01, 0x00, ANY_BT, ANY_BT))
         //        return true;
-        if(MATCH(payload, 0x11, 0x00, BT_ANY, BT_ANY) && len == 20)
+        if(MATCH(payload, 0x11, 0x00, ANY_BT, ANY_BT) && len == 20)
                 return true;
-	if(MATCH(payload, 0x21, 0x02, BT_ANY, BT_ANY) && len == 30)
+	if(MATCH(payload, 0x21, 0x02, ANY_BT, ANY_BT) && len == 30)
                 return true;
-        if(MATCH(payload, 0x21, 0x00, BT_ANY, BT_ANY) && len == 20)
+        if(MATCH(payload, 0x21, 0x00, ANY_BT, ANY_BT) && len == 20)
                 return true;
-	if(MATCH(payload, 0x31, 0x02, BT_ANY, BT_ANY) && len == 30)
+	if(MATCH(payload, 0x31, 0x02, ANY_BT, ANY_BT) && len == 30)
                 return true;
-        if(MATCH(payload, 0x31, 0x00, BT_ANY, BT_ANY) && len == 20)
+        if(MATCH(payload, 0x31, 0x00, ANY_BT, ANY_BT) && len == 20)
                 return true;
-	if(MATCH(payload, 0x41, 0x02, BT_ANY, BT_ANY) && len == 30)
+	if(MATCH(payload, 0x41, 0x02, ANY_BT, ANY_BT) && len == 30)
                 return true;
-        if(MATCH(payload, 0x41, 0x00, BT_ANY, BT_ANY) && len == 20)
+        if(MATCH(payload, 0x41, 0x00, ANY_BT, ANY_BT) && len == 20)
                 return true;
         return false;	
 
@@ -456,19 +457,19 @@ static inline bool match_utp_reply(uint32_t payload, uint32_t len) {
 
 	if(len == 0)
 		return true;
-        if(MATCH(payload, 0x11, 0x00, BT_ANY, BT_ANY) && len == 20)
+        if(MATCH(payload, 0x11, 0x00, ANY_BT, ANY_BT) && len == 20)
                 return true;
-	if(MATCH(payload, 0x21, 0x02, BT_ANY, BT_ANY) && (len == 30 || len == 33))
+	if(MATCH(payload, 0x21, 0x02, ANY_BT, ANY_BT) && (len == 30 || len == 33))
                 return true;
-        if(MATCH(payload, 0x21, 0x01, BT_ANY, BT_ANY) && (len == 26 || len == 23))
+        if(MATCH(payload, 0x21, 0x01, ANY_BT, ANY_BT) && (len == 26 || len == 23))
                 return true;
-        if(MATCH(payload, 0x21, 0x00, BT_ANY, BT_ANY) && len == 20)
+        if(MATCH(payload, 0x21, 0x00, ANY_BT, ANY_BT) && len == 20)
                 return true;
-	if(MATCH(payload, 0x31, 0x02, BT_ANY, BT_ANY) && len == 30)
+	if(MATCH(payload, 0x31, 0x02, ANY_BT, ANY_BT) && len == 30)
                 return true;
-        if(MATCH(payload, 0x31, 0x00, BT_ANY, BT_ANY) && len == 20)
+        if(MATCH(payload, 0x31, 0x00, ANY_BT, ANY_BT) && len == 20)
                 return true;
-	if(MATCH(payload, 0x41, 0x02, BT_ANY, BT_ANY) && (len == 33 || len == 30))
+	if(MATCH(payload, 0x41, 0x02, ANY_BT, ANY_BT) && (len == 33 || len == 30))
                 return true;
 
 	return false;
@@ -494,7 +495,7 @@ static inline bool match_utp_query_reply(uint32_t *ppayload, uint32_t *bt_seq,
 
 	payload = htonl(*ppayload);
 	if(match_utp_query(payload,len)) {
-                if (MATCH(payload, 0x01, 0x00, BT_ANY, BT_ANY)) {
+                if (MATCH(payload, 0x01, 0x00, ANY_BT, ANY_BT)) {
                         if (len <= 20 ||
                             (payload == 0x1000004ul && 
                              (htonl(ppayload[3]) & 0xffff0000ul) == 0x1030000ul)) {
@@ -952,20 +953,20 @@ static void ndpi_search_bittorrent_hash(struct ndpi_detection_module_struct *ndp
 
 /* *********************************************** */
 
-NDPI_STATIC u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset) {
+u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset) {
   u_int32_t key;
 
   /* network byte order */
   if(flow->is_ipv6) {
     if(client)
-      key = ndpi_ip_port_hash_funct(ndpi_quick_hash(flow->c_address.v6, 16), htons(ntohs(flow->c_port) + offset));
+      key = ip_port_hash_funct(ndpi_quick_hash(flow->c_address.v6, 16), htons(ntohs(flow->c_port) + offset));
     else
-      key = ndpi_ip_port_hash_funct(ndpi_quick_hash(flow->s_address.v6, 16), flow->s_port);
+      key = ip_port_hash_funct(ndpi_quick_hash(flow->s_address.v6, 16), flow->s_port);
   } else {
     if(client)
-      key = ndpi_ip_port_hash_funct(flow->c_address.v4, htons(ntohs(flow->c_port) + offset));
+      key = ip_port_hash_funct(flow->c_address.v4, htons(ntohs(flow->c_port) + offset));
     else
-      key = ndpi_ip_port_hash_funct(flow->s_address.v4, flow->s_port);
+      key = ip_port_hash_funct(flow->s_address.v4, flow->s_port);
   }
 
   return key;
@@ -973,7 +974,7 @@ NDPI_STATIC u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, in
 
 /* *********************************************** */
 
-NDPI_STATIC u_int32_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow) {
+u_int32_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow) {
   u_int32_t key;
 
   /* network byte order */
@@ -1347,7 +1348,7 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
 					       0x00, 0x00
     };
 
-    /* did not see this pattern anywhere */
+    /* did not see this pattern ANY_BTwhere */
     if((memcmp(&packet->payload[0], pattern_20_bytes, 20) == 0)
        && (memcmp(&packet->payload[52], pattern_12_bytes, 12) == 0)) {
       NDPI_LOG_INFO(ndpi_struct, "found BT: Warez - Plain\n");
@@ -1360,7 +1361,7 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
     if(memcmp(packet->payload, "GET", 3) == 0) {
 
       ndpi_parse_packet_line_info(ndpi_struct, flow);
-      /* haven't fount this pattern anywhere */
+      /* haven't fount this pattern ANY_BTwhere */
       if( memcmp_packet_hdr(packet,host_line_idx, NDPI_STATICSTRING("ip2p.com:"),0) == 0) {
 	NDPI_LOG_INFO(ndpi_struct, "found BT: Warez - Plain Host: ip2p.com: pattern\n");
 	ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 1, NDPI_CONFIDENCE_DPI);
@@ -1411,7 +1412,7 @@ static u_int8_t is_port(u_int16_t a, u_int16_t b, u_int16_t what) {
 static void ndpi_skip_bittorrent(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
 				 struct ndpi_packet_struct *packet) {
-  if(ndpi_search_into_bittorrent_cache(ndpi_struct, flow))
+  if(search_into_bittorrent_cache(ndpi_struct, flow))
     ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 0, NDPI_CONFIDENCE_DPI_CACHE);
   else
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
@@ -1460,7 +1461,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 #endif
 
 #ifndef __KERNEL__
-  if(packet->detected_protocol_stack[0] == NDPI_PROTOCOL_BITTORRENT) {
+  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_BITTORRENT) {
 	if(packet->udp != NULL &&  packet->payload_packet_len > 28 ) {
 	    if(bt_utp2(packet->payload, packet->payload_packet_len,ndpi_struct,flow,&utp_type))
 		    return;

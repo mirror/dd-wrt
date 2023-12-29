@@ -27,6 +27,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_JABBER
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 struct jabber_string {
   char *string;
@@ -46,7 +47,7 @@ static void ndpi_int_jabber_add_connection(struct ndpi_detection_module_struct *
   ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN, confidence);
 }
 
-static void jab_check_content_type_and_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_content_type_and_change_protocol_jabber(struct ndpi_detection_module_struct *ndpi_struct,
 						   struct ndpi_flow_struct *flow, u_int16_t x)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
@@ -130,10 +131,11 @@ static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_str
       ndpi_int_jabber_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_JABBER, NDPI_CONFIDENCE_DPI);
 
       /* search for subprotocols */
-      jab_check_content_type_and_change_protocol(ndpi_struct, flow, 13);
+      check_content_type_and_change_protocol_jabber(ndpi_struct, flow, 13);
     }
     return;
   }
+
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
   return;
 }
@@ -144,7 +146,7 @@ void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_i
   ndpi_set_bitmask_protocol_detection("Jabber", ndpi_struct, *id,
 				      NDPI_PROTOCOL_JABBER,
 				      ndpi_search_jabber_tcp,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 

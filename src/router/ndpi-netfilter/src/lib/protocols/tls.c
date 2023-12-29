@@ -26,21 +26,11 @@
 #include "ndpi_md5.h"
 #include "ndpi_sha1.h"
 #include "ndpi_encryption.h"
+#include "ndpi_private.h"
+#include "ahocorasick.h"
 
-extern char *strptime(const char *s, const char *format, struct tm *tm);
-static int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
-				    struct ndpi_flow_struct *flow, uint32_t quic_version);
 static void ndpi_search_tls_wrapper(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow);
-NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
-                                   struct ndpi_flow_struct *flow,
-                                   const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
-extern int ookla_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
-                                   struct ndpi_flow_struct* flow);
-/* QUIC/GQUIC stuff */
-extern int quic_len(const uint8_t *buf, uint64_t *value);
-extern int quic_len_buffer_still_required(uint8_t value);
-extern int is_version_with_var_int_transport_params(uint32_t version);
 
 // #define DEBUG_TLS_MEMORY       1
 // #define DEBUG_TLS              1
@@ -87,11 +77,11 @@ typedef union ja3_info ja3_info_t;
 /* **************************************** */
 
 extern char *strptime(const char *s, const char *format, struct tm *tm);
-static int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow, uint32_t quic_version);
-NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+/*extern int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
-                                   const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
+                                   const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);*/
 /* QUIC/GQUIC stuff */
 extern int quic_len(const uint8_t *buf, uint64_t *value);
 extern int quic_len_buffer_still_required(uint8_t value);
@@ -408,7 +398,7 @@ static void checkTLSSubprotocol(struct ndpi_detection_module_struct *ndpi_struct
 /* **************************************** */
 
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
-NDPI_STATIC void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct,
+void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct,
 				struct ndpi_flow_struct *flow,
 				u_int16_t p_offset, u_int16_t certificate_len) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
@@ -822,7 +812,7 @@ NDPI_STATIC void processCertificateElements(struct ndpi_detection_module_struct 
 /* **************************************** */
 
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
-NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
+int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int is_dtls = packet->udp ? 1 : 0;
@@ -944,9 +934,8 @@ NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_str
 	strncpy(&risk_sha1_str[len],sha1_str,sha1_siz*2);
 	len += sha1_siz*2;
 	risk_sha1_str[len] = '\0';
-
         rc1 = ndpi_match_string_value(ndpi_struct->host_automa.ac_automa,
-			risk_sha1_str, len, &val) == -1;
+			risk_sha1_str, len | AC_FEATURE_EXACT, &val) == -1;
       }
 #endif
       if(rc1 == 0)
@@ -1270,7 +1259,7 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
-NDPI_STATIC int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len) {
+int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len) {
   if(buf_len <= 13)
     return 0;
 
@@ -1323,18 +1312,6 @@ static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
     const u_int8_t *block = (const u_int8_t *)&p[processed];
 
     if(!is_dtls(block, p_len, &block_len)) {
-      if(processed == 0 && /* First block */
-         flow->stun.maybe_dtls == 1) {
-	/* Sometimes STUN packets are interleaved with TLS ones. Ignore STUN ones
-	   since we already are after STUN dissection and we are interested only on
-	   TLS stuff right now */
-#ifdef DEBUG_TLS
-        printf("Probably a stun packet. Keep going with TLS on next packets\n");
-#endif
-        /* Note that we can immediately "return" because, being the first block,
-	   we don't need to restore packet->payload and packet->payload_packet_len */
-        return(1); /* Keep working */
-      }
       no_dtls = 1;
       break;
     }
@@ -1424,6 +1401,7 @@ static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
 #endif
       change_cipher_found = 1;
       processed += block_len + 13;
+      flow->tls_quic.certificate_processed = 1; /* Fake, to avoid extra dissection */
       break;
     } else {
 #ifdef DEBUG_TLS
@@ -1432,6 +1410,10 @@ static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
       processed += block_len + 13;
       /* DTLS mid session: no need to further inspect the flow */
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_DTLS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+#ifndef __KERNEL__
+      ndpi_protocol ret = { __get_master(ndpi_struct, flow), NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_UNKNOWN /* unused */, NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL};
+      flow->category = ndpi_get_proto_category(ndpi_struct, ret);
+#endif
       flow->tls_quic.certificate_processed = 1; /* Fake, to avoid extra dissection */
       break;
     }
@@ -1451,7 +1433,6 @@ static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
 
   if(no_dtls || change_cipher_found || flow->tls_quic.certificate_processed) {
     NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_DTLS);
-    flow->extra_packets_func = NULL;
     return(0); /* That's all */
   } else {
     return(1); /* Keep working */
@@ -1492,20 +1473,22 @@ void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_st
 
 /* **************************************** */
 
-NDPI_STATIC void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
-		   struct ndpi_flow_struct *flow)
+void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+		   struct ndpi_flow_struct *flow, int first_time)
 {
 #ifdef DEBUG_TLS
   printf("Switching to TLS\n");
 #endif
 
-  /* Reset reassemblers */
-  if(flow->tls_quic.message[0].buffer)
-    ndpi_free(flow->tls_quic.message[0].buffer);
-  memset(&flow->tls_quic.message[0], '\0', sizeof(flow->tls_quic.message[0]));
-  if(flow->tls_quic.message[1].buffer)
-    ndpi_free(flow->tls_quic.message[1].buffer);
-  memset(&flow->tls_quic.message[1], '\0', sizeof(flow->tls_quic.message[1]));
+  if(first_time) {
+    /* Reset reassemblers */
+    if(flow->tls_quic.message[0].buffer)
+      ndpi_free(flow->tls_quic.message[0].buffer);
+    memset(&flow->tls_quic.message[0], '\0', sizeof(flow->tls_quic.message[0]));
+    if(flow->tls_quic.message[1].buffer)
+      ndpi_free(flow->tls_quic.message[1].buffer);
+    memset(&flow->tls_quic.message[1], '\0', sizeof(flow->tls_quic.message[1]));
+  }
 
   ndpi_search_tls_wrapper(ndpi_struct, flow);
 }
@@ -1515,9 +1498,6 @@ NDPI_STATIC void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 static void tls_subclassify_by_alpn(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow) {
   /* Right now we have only one rule so we can keep it trivial */
-
-  if (!flow->protos.tls_quic.advertised_alpns)
-    return;
 
   if(strlen(flow->protos.tls_quic.advertised_alpns) > NDPI_STATICSTRING_LEN("anydesk/") &&
      strncmp(flow->protos.tls_quic.advertised_alpns, "anydesk/", NDPI_STATICSTRING_LEN("anydesk/")) == 0) {
@@ -1589,8 +1569,9 @@ static void ndpi_int_tls_add_connection(struct ndpi_detection_module_struct *ndp
   protocol = __get_master(ndpi_struct, flow);
 
   ndpi_set_detected_protocol(ndpi_struct, flow, protocol, protocol, NDPI_CONFIDENCE_DPI);
-
-  tlsInitExtraPacketProcessing(ndpi_struct, flow);
+  /* We don't want to ovewrite STUN extra dissection, if enabled */
+  if(!flow->extra_packets_func)
+    tlsInitExtraPacketProcessing(ndpi_struct, flow);
 }
 
 /* **************************************** */
@@ -1950,26 +1931,9 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 	if(len <= 0) break; else ja3_str_len += len;
       }
 
-      if(ndpi_struct->enable_ja3_plus) {
-	for(i=0; (i<ja3->server.num_elliptic_curve_point_format) && (JA3_STR_LEN > ja3_str_len); i++) {
-	  rc = ndpi_snprintf(&ja3_str[ja3_str_len], JA3_STR_LEN-ja3_str_len, "%s%u",
-			     (i > 0) ? "-" : "", ja3->server.elliptic_curve_point_format[i]);
-	  if((rc > 0) && (ja3_str_len + rc < JA3_STR_LEN)) ja3_str_len += rc; else break;
-	}
-
-	if((ja3->server.alpn[0] != '\0') && (JA3_STR_LEN > ja3_str_len)) {
-	  rc = ndpi_snprintf(&ja3_str[ja3_str_len], JA3_STR_LEN-ja3_str_len, ",%s", ja3->server.alpn);
-	  if((rc > 0) && (ja3_str_len + rc < JA3_STR_LEN)) ja3_str_len += rc;
-	}
-
 #ifdef DEBUG_TLS
-	printf("[JA3+] Server: %s \n", ja3_str);
+      printf("[JA3] Server: %s \n", ja3_str);
 #endif
-      } else {
-#ifdef DEBUG_TLS
-	printf("[JA3] Server: %s \n", ja3_str);
-#endif
-      }
 
       ndpi_MD5Init(&ctx);
       ndpi_MD5Update(&ctx, (const unsigned char *)ja3_str, strlen(ja3_str));
@@ -2735,16 +2699,6 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		if((rc > 0) && (ja3_str_len + rc < JA3_STR_LEN)) ja3_str_len += rc; else break;
 	      }
 
-	      if(ndpi_struct->enable_ja3_plus) {
-		rc = ndpi_snprintf(&ja3_str[ja3_str_len], JA3_STR_LEN-ja3_str_len,
-				   ",%s,%s,%s", ja3->client.signature_algorithms, ja3->client.supported_versions, ja3->client.alpn);
-		if((rc > 0) && (ja3_str_len + rc < JA3_STR_LEN)) ja3_str_len += rc;
-	      }
-
-#ifdef DEBUG_JA3C
-	      printf("[JA3+] Client: %s \n", ja3_str);
-#endif
-
 	      ndpi_MD5Init(&ctx);
 	      ndpi_MD5Update(&ctx, (const unsigned char *)ja3_str, strlen(ja3_str));
 	      ndpi_MD5Final(md5_hash, &ctx);
@@ -2778,7 +2732,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		risk_ja3_str[len] = '\0';
 
 		rc = ndpi_match_string_value(ndpi_struct->host_automa.ac_automa,
-				risk_ja3_str, len, &val) == -1;
+				risk_ja3_str, len | AC_FEATURE_EXACT, &val) == -1;
 	      }
 #endif
 	      if(rc == 0)
@@ -2846,7 +2800,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
   return(0); /* Not found */
 }
 
-static int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow, uint32_t quic_version) {
     ja3_info_t *ja3 = ndpi_calloc(1,sizeof(ja3_info_t));
     if(ja3) {

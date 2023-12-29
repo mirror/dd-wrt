@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_epicgames_protocol_list[] = {
  { 0x944E7000 /* 148.78.112.0/23 */, 23, NDPI_PROTOCOL_EPICGAMES },
  { 0x944E7200 /* 148.78.114.0/24 */, 24, NDPI_PROTOCOL_EPICGAMES },
@@ -30,4 +29,8 @@ static ndpi_network ndpi_protocol_epicgames_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_epicgames_protocol_list_6[] = {
+ /* End */
+ { NULL, 0, 0 }
+};

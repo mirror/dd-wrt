@@ -26,6 +26,7 @@
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_HTTP
 
 #include "ndpi_api.h"
+#include "ndpi_private.h"
 
 static const char* binary_file_mimes_e[] = { "exe", NULL };
 static const char* binary_file_mimes_j[] = { "java-vm", NULL };
@@ -44,9 +45,6 @@ static const char* binary_file_ext[] = {
 					NULL
 };
 
-static void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
-                               struct ndpi_flow_struct *flow);
-
 static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow);
 static void ndpi_check_http_header(struct ndpi_detection_module_struct *ndpi_struct,
@@ -60,7 +58,7 @@ static void ndpi_set_binary_application_transfer(struct ndpi_detection_module_st
   /*
     Check known exceptions
   */
-  if(ndpi_ends_with(ndpi_struct, (char*)flow->host_server_name, ".windowsupdate.com"))
+  if(ends_with(ndpi_struct, (char*)flow->host_server_name, ".windowsupdate.com"))
     ;
   else
     ndpi_set_risk(ndpi_struct, flow, NDPI_BINARY_APPLICATION_TRANSFER, msg);
@@ -623,7 +621,7 @@ static void ndpi_check_user_agent(struct ndpi_detection_module_struct *ndpi_stru
 
 /* ************************************************************* */
 
-NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+void http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow,
 			     const u_int8_t *ua_ptr, u_int16_t ua_ptr_len) {
   /**
@@ -694,7 +692,6 @@ NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndp
 
   NDPI_LOG_DBG2(ndpi_struct, "User Agent Type line found %.*s\n",
 		ua_ptr_len, ua_ptr);
-    return 0;
 }
 
 /* ************************************************************* */
@@ -1417,6 +1414,8 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	   requests. The easiest (but costly) idea is to reset the state and
 	   process it (i.e. we keep the metadata of the last request that we
 	   have processed) */
+        if(flow->l4.tcp.http_asymmetric_stage < 2)
+          flow->l4.tcp.http_asymmetric_stage++;
         reset(ndpi_struct, flow);
         process_request(ndpi_struct, flow, filename_start);
 	return;
@@ -1443,6 +1442,8 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
       NDPI_LOG_DBG2(ndpi_struct, "Another piece of response\n");
       if(is_response(ndpi_struct, flow)) {
         /* See the comment above about how we handle consecutive requests/responses */
+        if(flow->l4.tcp.http_asymmetric_stage < 2)
+          flow->l4.tcp.http_asymmetric_stage++;
         reset(ndpi_struct, flow);
         process_response(ndpi_struct, flow);
 	return;
@@ -1473,8 +1474,16 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
   NDPI_LOG_DBG(ndpi_struct, "search HTTP\n");
   ndpi_check_http_tcp(ndpi_struct, flow);
 
-  if(flow->host_server_name[0] != '\0'&&
-     flow->http.response_status_code != 0) {
+  if((flow->host_server_name[0] != '\0'&&
+      flow->http.response_status_code != 0) ||
+    /* We have found 3 consecutive requests (without the reply) or 3
+       consecutive replies (without the request). If the traffic is really
+       asymmetric, stop here, because we will never find the metadata from
+       both the request and the reply. We wait for 3 events (instead of 2)
+       to avoid false positives triggered by missing/dropped packets */
+    (flow->l4.tcp.http_asymmetric_stage == 2 &&
+     (flow->packet_direction_complete_counter[0] == 0 ||
+      flow->packet_direction_complete_counter[1] == 0))) {
     flow->extra_packets_func = NULL; /* We're good now */
 
     if(flow->initial_binary_bytes_len) ndpi_analyze_content_signature(ndpi_struct, flow);

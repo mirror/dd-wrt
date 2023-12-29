@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_vk_protocol_list[] = {
  { 0x4F898B00 /* 79.137.139.0/24 */, 24, NDPI_PROTOCOL_VK },
  { 0x4F89A400 /* 79.137.164.0/24 */, 24, NDPI_PROTOCOL_VK },
@@ -34,4 +33,9 @@ static ndpi_network ndpi_protocol_vk_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_vk_protocol_list_6[] = {
+ { "2a00:bdc0::", 35, NDPI_PROTOCOL_VK },
+ /* End */
+ { NULL, 0, 0 }
+};

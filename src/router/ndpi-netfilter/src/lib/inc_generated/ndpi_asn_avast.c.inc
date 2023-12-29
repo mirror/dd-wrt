@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_avast_protocol_list[] = {
  { 0x052D3800 /* 5.45.56.0/21 */, 21, NDPI_PROTOCOL_AVAST },
  { 0x053E1000 /* 5.62.16.0/22 */, 22, NDPI_PROTOCOL_AVAST },
@@ -60,4 +59,13 @@ static ndpi_network ndpi_protocol_avast_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_avast_protocol_list_6[] = {
+ { "2001:67c:284::", 48, NDPI_PROTOCOL_AVAST },
+ { "2a0b:e181::", 40, NDPI_PROTOCOL_AVAST },
+ { "2a0b:e181:400::", 39, NDPI_PROTOCOL_AVAST },
+ { "2a0b:e181:600::", 40, NDPI_PROTOCOL_AVAST },
+ { "2a0b:e182:100::", 40, NDPI_PROTOCOL_AVAST },
+ /* End */
+ { NULL, 0, 0 }
+};

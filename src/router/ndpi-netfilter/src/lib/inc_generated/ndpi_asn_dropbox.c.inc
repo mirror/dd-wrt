@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_dropbox_protocol_list[] = {
  { 0x2D3A4000 /* 45.58.64.0/20 */, 20, NDPI_PROTOCOL_DROPBOX },
  { 0x40700D00 /* 64.112.13.0/24 */, 24, NDPI_PROTOCOL_DROPBOX },
@@ -32,4 +31,9 @@ static ndpi_network ndpi_protocol_dropbox_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_dropbox_protocol_list_6[] = {
+ { "2620:100:6000::", 40, NDPI_PROTOCOL_DROPBOX },
+ /* End */
+ { NULL, 0, 0 }
+};

@@ -36,7 +36,7 @@ LIBINJECTION_BEGIN_DECLS
  * See python's normalized version
  * http://www.python.org/dev/peps/pep-0386/#normalizedversion
  */
-NDPI_STATIC const char* libinjection_version(void);
+const char* libinjection_version(void);
 
 /**
  * Simple API for SQLi detection - returns a SQLi fingerprint or NULL
@@ -47,7 +47,7 @@ NDPI_STATIC const char* libinjection_version(void);
  * \param[out] fingerprint buffer of 8+ characters.  c-string,
  * \return 1 if SQLi, 0 if benign.  fingerprint will be set or set to empty string.
  */
-NDPI_STATIC int libinjection_sqli(const char* s, size_t slen, char fingerprint[]);
+int libinjection_sqli(const char* s, size_t slen, char fingerprint[]);
 
 /** ALPHA version of xss detector.
  *
@@ -58,7 +58,7 @@ NDPI_STATIC int libinjection_sqli(const char* s, size_t slen, char fingerprint[]
  * \return 1 if XSS found, 0 if benign
  *
  */
-NDPI_STATIC int libinjection_xss(const char* s, size_t slen);
+int libinjection_xss(const char* s, size_t slen);
 
 LIBINJECTION_END_DECLS
 

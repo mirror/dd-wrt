@@ -174,7 +174,7 @@ struct libinjection_sqli_state {
 
 typedef struct libinjection_sqli_state sfilter;
 
-NDPI_STATIC struct libinjection_sqli_token* libinjection_sqli_get_token(
+struct libinjection_sqli_token* libinjection_sqli_get_token(
     struct libinjection_sqli_state* sql_state, int i);
 
 /*
@@ -188,12 +188,12 @@ NDPI_STATIC struct libinjection_sqli_token* libinjection_sqli_get_token(
  * See python's normalized version
  * http://www.python.org/dev/peps/pep-0386/#normalizedversion
  */
-NDPI_STATIC const char* libinjection_version(void);
+const char* libinjection_version(void);
 
 /**
  *
  */
-NDPI_STATIC void libinjection_sqli_init(struct libinjection_sqli_state *sf,
+void libinjection_sqli_init(struct libinjection_sqli_state *sf,
                             const char* s, size_t len,
                             int flags);
 
@@ -205,12 +205,12 @@ NDPI_STATIC void libinjection_sqli_init(struct libinjection_sqli_state *sf,
  *
  * \return 1 (true) if SQLi, 0 (false) if benign
  */
-NDPI_STATIC int libinjection_is_sqli(struct libinjection_sqli_state* sql_state);
+int libinjection_is_sqli(struct libinjection_sqli_state* sql_state);
 
 /*  FOR HACKERS ONLY
  *   provides deep hooks into the decision making process
  */
-NDPI_STATIC void libinjection_sqli_callback(struct libinjection_sqli_state *sf,
+void libinjection_sqli_callback(struct libinjection_sqli_state *sf,
                                 ptr_lookup_fn fn,
                                 void* userdata);
 
@@ -218,7 +218,7 @@ NDPI_STATIC void libinjection_sqli_callback(struct libinjection_sqli_state *sf,
 /*
  * Resets state, but keeps initial string and callbacks
  */
-NDPI_STATIC void libinjection_sqli_reset(struct libinjection_sqli_state *sf,
+void libinjection_sqli_reset(struct libinjection_sqli_state *sf,
                              int flags);
 
 /**
@@ -236,14 +236,14 @@ NDPI_STATIC void libinjection_sqli_reset(struct libinjection_sqli_state *sf,
  *          do not free!
  *
  */
-NDPI_STATIC const char* libinjection_sqli_fingerprint(struct libinjection_sqli_state *sql_state,
+const char* libinjection_sqli_fingerprint(struct libinjection_sqli_state *sql_state,
                                           int flags);
 
 /**
  * The default "word" to token-type or fingerprint function.  This
  * uses a ASCII case-insensitive binary tree.
  */
-NDPI_STATIC char libinjection_sqli_lookup_word(struct libinjection_sqli_state *sql_state,
+char libinjection_sqli_lookup_word(struct libinjection_sqli_state *sql_state,
                                    int lookup_type,
                                    const char* str,
                                    size_t len);
@@ -255,13 +255,13 @@ NDPI_STATIC char libinjection_sqli_lookup_word(struct libinjection_sqli_state *s
  * \returns 1, has a token, keep going, or 0 no tokens
  *
  */
-NDPI_STATIC int  libinjection_sqli_tokenize(struct libinjection_sqli_state *sf);
+int  libinjection_sqli_tokenize(struct libinjection_sqli_state *sf);
 
 /**
  * parses and folds input, up to 5 tokens
  *
  */
-NDPI_STATIC int libinjection_sqli_fold(struct libinjection_sqli_state *sf);
+int libinjection_sqli_fold(struct libinjection_sqli_state *sf);
 
 /** The built-in default function to match fingerprints
  *  and do false negative/positive analysis.  This calls the following
@@ -272,20 +272,20 @@ NDPI_STATIC int libinjection_sqli_fold(struct libinjection_sqli_state *sf);
  *
  * \param sql_state should be filled out after libinjection_sqli_fingerprint is called
  */
-NDPI_STATIC int libinjection_sqli_check_fingerprint(struct libinjection_sqli_state * sql_state);
+int libinjection_sqli_check_fingerprint(struct libinjection_sqli_state * sql_state);
 
 /* Given a pattern determine if it's a SQLi pattern.
  *
  * \return TRUE if sqli, false otherwise
  */
-NDPI_STATIC int libinjection_sqli_blacklist(struct libinjection_sqli_state* sql_state);
+int libinjection_sqli_blacklist(struct libinjection_sqli_state* sql_state);
 
 /* Given a positive match for a pattern (i.e. pattern is SQLi), this function
  * does additional analysis to reduce false positives.
  *
  * \return TRUE if SQLi, false otherwise
  */
-NDPI_STATIC int libinjection_sqli_not_whitelist(struct libinjection_sqli_state * sql_state);
+int libinjection_sqli_not_whitelist(struct libinjection_sqli_state * sql_state);
 
 #ifdef __cplusplus
 }

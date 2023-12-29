@@ -143,8 +143,8 @@ typedef struct bt_parse_data_cb {
 
 #ifndef __KERNEL__
 extern int bt_parse_debug;
-NDPI_STATIC void dump_bt_proto_struct(struct bt_parse_protocol *p);
+void dump_bt_proto_struct(struct bt_parse_protocol *p);
 #endif
-NDPI_STATIC const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd);
+const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd);
 
 #endif

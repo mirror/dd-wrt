@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_goto_protocol_list[] = {
  { 0x17EFE300 /* 23.239.227.0/24 */, 24, NDPI_PROTOCOL_GOTO },
  { 0x43D94400 /* 67.217.68.0/24 */, 24, NDPI_PROTOCOL_GOTO },
@@ -49,7 +48,8 @@ static ndpi_network ndpi_protocol_goto_protocol_list[] = {
  { 0x44401B00 /* 68.64.27.0/24 */, 24, NDPI_PROTOCOL_GOTO },
  { 0x44401C00 /* 68.64.28.0/23 */, 23, NDPI_PROTOCOL_GOTO },
  { 0x44401E00 /* 68.64.30.0/24 */, 24, NDPI_PROTOCOL_GOTO },
- { 0x4E6C7400 /* 78.108.116.0/22 */, 22, NDPI_PROTOCOL_GOTO },
+ { 0x4E6C7400 /* 78.108.116.0/24 */, 24, NDPI_PROTOCOL_GOTO },
+ { 0x4E6C7700 /* 78.108.119.0/24 */, 24, NDPI_PROTOCOL_GOTO },
  { 0x4E6C7800 /* 78.108.120.0/23 */, 23, NDPI_PROTOCOL_GOTO },
  { 0x4E6C7E00 /* 78.108.126.0/23 */, 23, NDPI_PROTOCOL_GOTO },
  { 0xADC70000 /* 173.199.0.0/22 */, 22, NDPI_PROTOCOL_GOTO },
@@ -83,4 +83,8 @@ static ndpi_network ndpi_protocol_goto_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_goto_protocol_list_6[] = {
+ /* End */
+ { NULL, 0, 0 }
+};

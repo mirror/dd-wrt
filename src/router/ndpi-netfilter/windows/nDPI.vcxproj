@@ -63,7 +63,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)src\lib\;$(ProjectDir)..\src\lib\protocols\;$(ProjectDir)..\src\include\;$(ProjectDir)..\;$(ProjectDir)..\src\lib\third_party\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)src\lib\;$(ProjectDir)..\src\lib\;$(ProjectDir)..\src\include\;$(ProjectDir)..\;$(ProjectDir)..\src\lib\third_party\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDPI_LIB_COMPILATION;WIN32;_WIN64;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -91,7 +91,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-ndpiReader|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)src\lib\;$(ProjectDir)..\src\lib\protocols\;$(ProjectDir)..\src\include\;$(ProjectDir)..\;$(ProjectDir)..\src\lib\third_party\include\;$(ProjectDir)..\windows\WpdPack\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\;$(ProjectDir)src\lib\;$(ProjectDir)..\src\lib\;$(ProjectDir)..\src\include\;$(ProjectDir)..\;$(ProjectDir)..\src\lib\third_party\include\;$(ProjectDir)..\windows\WpdPack\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PTW32_STATIC_LIB;STATIC_GETOPT;NDPI_LIB_COMPILATION;HAVE_STRUCT_TIMESPEC;WIN32;_WIN64;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -149,6 +149,7 @@
     <ClCompile Include="..\src\lib\protocols\bacnet.c" />
     <ClCompile Include="..\src\lib\protocols\bitcoin.c" />
     <ClCompile Include="..\src\lib\protocols\bjnp.c" />
+    <ClCompile Include="..\src\lib\protocols\can.c" />
     <ClCompile Include="..\src\lib\protocols\capwap.c" />
     <ClCompile Include="..\src\lib\protocols\cassandra.c" />
     <ClCompile Include="..\src\lib\protocols\checkmk.c" />
@@ -161,6 +162,7 @@
     <ClCompile Include="..\src\lib\protocols\dnp3.c" />
     <ClCompile Include="..\src\lib\protocols\dnscrypt.c" />
     <ClCompile Include="..\src\lib\protocols\elastic_search.c" />
+    <ClCompile Include="..\src\lib\protocols\ethereum.c" />
     <ClCompile Include="..\src\lib\protocols\ethernet_ip.c" />
     <ClCompile Include="..\src\lib\protocols\epicgames.c" />
     <ClCompile Include="..\src\lib\protocols\fastcgi.c" />
@@ -217,7 +219,6 @@
     <ClCompile Include="..\src\lib\protocols\armagetron.c" />
     <ClCompile Include="..\src\lib\protocols\bgp.c" />
     <ClCompile Include="..\src\lib\protocols\bittorrent.c" />
-    <ClCompile Include="..\src\lib\protocols\btlib.c" />
     <ClCompile Include="..\src\lib\protocols\ciscovpn.c" />
     <ClCompile Include="..\src\lib\protocols\citrix.c" />
     <ClCompile Include="..\src\lib\protocols\coap.c" />
@@ -259,6 +260,7 @@
     <ClCompile Include="..\src\lib\protocols\maplestory.c" />
     <ClCompile Include="..\src\lib\protocols\megaco.c" />
     <ClCompile Include="..\src\lib\protocols\mgcp.c" />
+    <ClCompile Include="..\src\lib\protocols\monero.c" />
     <ClCompile Include="..\src\lib\protocols\mpegts.c" />
     <ClCompile Include="..\src\lib\protocols\mqtt.c" />
     <ClCompile Include="..\src\lib\protocols\mssql_tds.c" />
@@ -276,11 +278,13 @@
     <ClCompile Include="..\src\lib\protocols\postgres.c" />
     <ClCompile Include="..\src\lib\protocols\ppstream.c" />
     <ClCompile Include="..\src\lib\protocols\pptp.c" />
+    <ClCompile Include="..\src\lib\protocols\protobuf.c" />
     <ClCompile Include="..\src\lib\protocols\qq.c" />
     <ClCompile Include="..\src\lib\protocols\quic.c" />
     <ClCompile Include="..\src\lib\protocols\radius.c" />
     <ClCompile Include="..\src\lib\protocols\rdp.c" />
     <ClCompile Include="..\src\lib\protocols\redis_net.c" />
+    <ClCompile Include="..\src\lib\protocols\rmcp.c" />
     <ClCompile Include="..\src\lib\protocols\rsync.c" />
     <ClCompile Include="..\src\lib\protocols\rtcp.c" />
     <ClCompile Include="..\src\lib\protocols\rtmp.c" />
@@ -328,6 +332,18 @@
     <ClCompile Include="..\src\lib\protocols\xdmcp.c" />
     <ClCompile Include="..\src\lib\protocols\zattoo.c" />
     <ClCompile Include="..\src\lib\protocols\zeromq.c" />
+    <ClCompile Include="..\src\lib\protocols\ptpv2.c" />
+    <ClCompile Include="..\src\lib\protocols\hart-ip.c" />
+    <ClCompile Include="..\src\lib\protocols\rtps.c" />
+    <ClCompile Include="..\src\lib\protocols\opc-ua.c" />
+    <ClCompile Include="..\src\lib\protocols\fins.c" />
+    <ClCompile Include="..\src\lib\protocols\ethersio.c" />
+    <ClCompile Include="..\src\lib\protocols\beckhoff_ads.c" />
+    <ClCompile Include="..\src\lib\protocols\iso9506-1-mms.c" />
+    <ClCompile Include="..\src\lib\protocols\ieee-c37118.c" />
+    <ClCompile Include="..\src\lib\protocols\ethersbus.c" />
+    <ClCompile Include="..\src\lib\protocols\profinet_io.c" />
+    <ClCompile Include="..\src\lib\protocols\hislip.c" />
     <ClCompile Include="..\src\lib\third_party\src\gcrypt_light.c" />
     <ClCompile Include="..\src\lib\third_party\src\libcache.c" />
     <ClCompile Include="..\src\lib\third_party\src\libinjection_html5.c" />
@@ -352,9 +368,7 @@
     <ClInclude Include="..\src\include\ndpi_encryption.h" />
     <ClInclude Include="..\src\include\ndpi_main.h" />
     <ClInclude Include="..\src\include\ndpi_patricia_typedefs.h" />
-    <ClInclude Include="..\src\include\ndpi_utils.h" />
     <ClInclude Include="..\src\lib\ndpi_replace_printf.h" />
-    <ClInclude Include="..\src\lib\protocols\btlib.h" />
     <ClInclude Include="..\src\lib\third_party\include\ahocorasick.h" />
     <ClInclude Include="..\src\include\ndpi_includes.h" />
     <ClInclude Include="..\src\lib\third_party\include\gcrypt_light.h" />
@@ -369,7 +383,6 @@
     <ClInclude Include="..\src\lib\third_party\include\ndpi_md5.h" />
     <ClInclude Include="..\src\lib\third_party\include\ndpi_patricia.h" />
     <ClInclude Include="..\src\include\ndpi_protocol_ids.h" />
-    <ClInclude Include="..\src\include\ndpi_protocols.h" />
     <ClInclude Include="..\src\include\ndpi_typedefs.h" />
     <ClInclude Include="..\src\include\ndpi_unix.h" />
     <ClInclude Include="..\src\include\ndpi_win32.h" />
@@ -377,6 +390,7 @@
     <ClInclude Include="..\src\lib\third_party\include\rce_injection.h" />
     <ClInclude Include="..\src\lib\third_party\include\roaring.h" />
     <ClInclude Include="..\src\lib\third_party\include\uthash.h" />
+    <ClInclude Include="..\src\lib\ndpi_private.h" />
     <ClInclude Include="arpa\inet.h" />
     <ClInclude Include="src\getopt.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

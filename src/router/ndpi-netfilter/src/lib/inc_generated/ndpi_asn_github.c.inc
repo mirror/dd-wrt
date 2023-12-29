@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_github_protocol_list[] = {
  { 0x8C527000 /* 140.82.112.0/20 */, 20, NDPI_PROTOCOL_GITHUB },
  { 0x8F374000 /* 143.55.64.0/20 */, 20, NDPI_PROTOCOL_GITHUB },
@@ -28,4 +27,10 @@ static ndpi_network ndpi_protocol_github_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_github_protocol_list_6[] = {
+ { "2620:112:3000::", 44, NDPI_PROTOCOL_GITHUB },
+ { "2a0a:a440::", 29, NDPI_PROTOCOL_GITHUB },
+ /* End */
+ { NULL, 0, 0 }
+};

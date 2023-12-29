@@ -1,8 +1,11 @@
 
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <getopt.h>
 #include <errno.h>
 #include "ndpi_config.h"
 #include "ndpi_protocol_ids.h"
@@ -15,16 +18,26 @@
 
 #include "ndpi_network_list_compile.h"
 
+union in_addr_any {
+	struct in_addr v4;
+	struct in6_addr v6;
+};
+
 struct net_cidr {
-	struct in_addr a;
+	union in_addr_any a;
+	uint16_t pad;
 	uint16_t masklen;
 };
 
 struct net_cidr_list {
-	size_t		alloc,use;
-	char		comments[512];
+	size_t		alloc,use,max_use;
 	struct net_cidr addr[0];
-} *net_cidr_list[NDPI_LAST_IMPLEMENTED_PROTOCOL+1];
+} *net_cidr_list[NDPI_LAST_IMPLEMENTED_PROTOCOL+1], 
+  *net6_cidr_list[NDPI_LAST_IMPLEMENTED_PROTOCOL+1];
+
+
+int ip4r = 0, ip4ra = 0;
+int ip6r = 0, ip6ra = 0;
 
 const char *get_proto_by_id(uint16_t proto) {
 const char *s;
@@ -62,47 +75,154 @@ void ndpi_free(void *buf) {
 	free(buf);
 }
 
+int valid_cidr(int af,const union in_addr_any *ip,int masklen);
+static char *prefix_str(const ndpi_prefix_t *px, int proto,char *lbuf,size_t bufsize);
 
-void add_net_cidr_proto(struct in_addr *addr,uint16_t masklen, uint16_t proto) {
-struct net_cidr_list *nl;
-
-if(proto > NDPI_LAST_IMPLEMENTED_PROTOCOL) abort();
-nl = net_cidr_list[proto];
-if(!nl) {
-	size_t l = sizeof(struct net_cidr_list) + 32 * sizeof(struct net_cidr);
-	nl = malloc(l);
-	if(!nl) abort();
-	net_cidr_list[proto] = nl;
-	bzero((char *)nl,l);
-	nl->alloc = 32;
-}
-if(nl->use == nl->alloc) {
-	size_t n = nl->alloc + 32;
-	nl = realloc(nl,sizeof(struct net_cidr_list) + n * sizeof(struct net_cidr));
-	if(!nl) abort();
-	net_cidr_list[proto] = nl;
-	nl->alloc = n;
-}
-if(addr) {
-	nl->addr[nl->use].a = *addr;
-	nl->addr[nl->use].masklen = masklen;
-	nl->use++;
-}
-}
-
-static void free_ptree_data(void *data) { ; };
-
-ndpi_prefix_t *fill_ipv4_prefix(ndpi_prefix_t *prefix,struct in_addr *pin, int masklen ) {
+ndpi_prefix_t *fill_prefix(int af, ndpi_prefix_t *prefix, const union in_addr_any *pin, int masklen ) {
 	memset((char *)prefix, 0, sizeof(ndpi_prefix_t));
-	prefix->add.sin.s_addr = pin->s_addr;
-	prefix->family = AF_INET;
+	if(af == AF_INET)
+		prefix->add.sin.s_addr = pin->v4.s_addr;
+	    else
+		prefix->add.sin6 = pin->v6;
+	prefix->family = af;
 	prefix->bitlen = masklen;
 	prefix->ref_count = 0;
+	if(masklen == 0 || !valid_cidr(af,pin,masklen)) {
+	        char lbuf[128];
+        	fprintf(stderr,"BAD addr %s\n",
+	                prefix_str(prefix, -1, lbuf, sizeof lbuf));
+		abort();
+	}
 	return prefix;
 }
 
+int valid_cidr(int af,const union in_addr_any *ip,int masklen) {
+	const uint8_t *addr = (uint8_t *)ip;
+	int offs = masklen >> 3;
+	int i,l;
+	uint8_t m;
+	if(af == AF_INET) {
+		l = 4;
+		if(masklen > 32) return 0;
+		if(masklen == 32) return 1;
+	} else {
+		l = 16;
+		if(masklen > 128) return 0;
+		if(masklen == 128) return 1;
+	}
+	for(i=l-1; i > offs; i--) if(addr[i]) {
+		//fprintf(stderr,"masklen %d ip[%d] %02x\n",masklen,i,addr[i]);
+		return 0;
+	}
+	m = (0xff << (8 - (masklen & 7))) & 0xff;
+	if(addr[offs] & ~m ) {
+		//fprintf(stderr,"masklen %d offs %d m %x ip[%d] %x\n",masklen,offs,m,offs,addr[offs]);
+		return 0;
+	}
+	return 1;
+}
 
-static char *prefix_str(ndpi_prefix_t *px, int proto,char *lbuf,size_t bufsize) {
+int is_next_cidr(int af,const union in_addr_any *ip_next,const union in_addr_any *ip_start,int masklen) {
+	union in_addr_any ip_tmp;
+	uint8_t *addr = &(ip_tmp.v6.s6_addr[0]);
+	uint16_t m,m2;
+	int offs =  masklen >> 3;
+	int i,l;
+
+	if(af == AF_INET) {
+		l = 4;
+		if(!masklen || masklen > 32) abort();
+	} else {
+		l = 16;
+		if(!masklen || masklen > 128) abort();
+	}
+
+	ip_tmp = *ip_start;
+	if(masklen & 7) {
+		m = 0x1 << (8-(masklen & 7));
+	} else {
+		offs--;
+		m=1;
+	}
+	m2 = m;
+
+	for( i=offs; i >= 0; i--) {
+		uint16_t t = m + addr[i];
+		if(t > 0xff) {
+			addr[i] = 0;
+			m = 1;
+		} else {
+		   addr[i] = (uint8_t)(t & 0xff);
+		   break;
+		}
+	}
+	if(0 && af == AF_INET6){
+	ndpi_prefix_t prefix,prefix1,prefix2;
+	char lbuf[128],lbuf2[128],lbuf3[128];
+	fill_prefix(af,&prefix, ip_start,masklen);
+	fill_prefix(af,&prefix1,ip_next,masklen);
+	fill_prefix(af,&prefix2,&ip_tmp,masklen);
+	fprintf(stderr,"Next addr o %d m %u %s + %s = %s\n", offs, m2,
+		prefix_str(&prefix, -1,lbuf,sizeof lbuf),
+		prefix_str(&prefix1,-1,lbuf2,sizeof lbuf2),
+		prefix_str(&prefix2,-1,lbuf3,sizeof lbuf3)
+		);
+	}
+
+	return memcmp(addr,(char *)ip_next,l) == 0;
+}
+
+void add_net_cidr_proto(ndpi_prefix_t *prefix,uint16_t proto) {
+int af;
+union in_addr_addr *addr;
+uint16_t masklen;
+struct net_cidr_list *nl;
+
+	if(proto > NDPI_LAST_IMPLEMENTED_PROTOCOL) abort();
+	af = prefix->family;
+	addr = (union in_addr_addr *)&prefix->add;
+	masklen = prefix->bitlen;
+	nl = af == AF_INET ? net_cidr_list[proto]: net6_cidr_list[proto];
+	if(0){
+	        char lbuf[128];
+        	printf("add addr %s\n",prefix_str(prefix, proto, lbuf, sizeof lbuf));
+	}
+	if(!nl) {
+		size_t l = sizeof(struct net_cidr_list) + 32 * sizeof(struct net_cidr);
+		nl = malloc(l);
+		if(!nl) abort();
+		if(af == AF_INET)
+			net_cidr_list[proto] = nl;
+		    else
+			net6_cidr_list[proto] = nl;
+		bzero((char *)nl,l);
+		nl->alloc = 32;
+	}
+	if(nl->use == nl->alloc) {
+		size_t n = nl->alloc + 32;
+		nl = realloc(nl,sizeof(struct net_cidr_list) + n * sizeof(struct net_cidr));
+		if(!nl) abort();
+		if(af == AF_INET)
+			net_cidr_list[proto] = nl;
+		    else
+			net6_cidr_list[proto] = nl;
+		nl->alloc = n;
+	}
+	memcpy((char *)&nl->addr[nl->use].a,(char *)addr,af == AF_INET ? 4:16);
+	nl->addr[nl->use].masklen = masklen;
+	nl->use++;
+
+	if(af == AF_INET)
+		ip4r++;
+	    else
+		ip6r++;
+}
+
+
+static void free_ptree_data(void *data __attribute__((unused))) { ; };
+
+
+static char *prefix_str(const ndpi_prefix_t *px, int proto,char *lbuf,size_t bufsize) {
 char ibuf[64];
 int k;
 	lbuf[0] = 0;
@@ -128,7 +248,7 @@ static void list_ptree(ndpi_patricia_tree_t *pt)
 	node = pt->head;
 	while (node) {
 	    if (node->prefix)
-		add_net_cidr_proto(&node->prefix->add.sin,node->prefix->bitlen,node->value.u.uv32.user_value);
+		add_net_cidr_proto(node->prefix,node->value.u.uv32.user_value);
 
 	    if (node->l) {
 		if (node->r) {
@@ -144,50 +264,6 @@ static void list_ptree(ndpi_patricia_tree_t *pt)
 	    node = Xsp != Xstack ? *(--Xsp): NULL;
 	}
 }
-
-/*
- * Return:
- *	0: bad format
- *	1: comment
- *	2: word
- *	3: list
- */
-
-int parse_line(char *l,int *sp, char *word,size_t wlen,char **optarg) {
-
-char *s = l,*sw,*dlm;
-
-  *sp = 0;
-  *word = '\0';
-  *optarg = NULL;
-
-  dlm = strchr(s,'\r');
-  if(dlm) *dlm = '\0';
-  dlm = strchr(s,'\n');
-  if(dlm) *dlm = '\0';
-
-  while(*s && (*s == ' ' || *s == '\t')) { (*sp) += *s == ' ' ? 1:8; s++; }
-  if(!*s) return 1;
-  if(*s == '#') return 1;
-  sw = s;
-  bzero(word,wlen);
-  if(*s == '-') { // element of list
-	s++;
-	while(*s && (*s == ' ' || *s == '\t')) s++;
-	if(!*s) return 1;
-	strncpy(word,s,wlen);
-	return 3;
-  }
-  dlm = strchr(sw,':');
-  if(!dlm) return 0;
-  strncpy(word,s,wlen < (size_t)(dlm - sw) ? wlen : (size_t)(dlm - sw));
-  if(strchr(word,' ') || strchr(word,'\t')) return 0;
-  dlm++;
-  while(*dlm && (*dlm == ' ' || *dlm == '\t')) dlm++;
-  *optarg = *dlm ? dlm : NULL;
-  return 2;
-}
-
 
 int is_protocol(char *line,uint16_t *protocol) {
 
@@ -208,29 +284,52 @@ do {
 }
 
 void usage(void) {
-	fprintf(stderr,"ndpi_network_list_compile [-a] [-v] [-o outputfile] [-y output.yaml] [infile]\n");
+	fprintf(stderr,"ndpi_network_list_compile [-a] [-v] [-o outputfile] [infile]\n");
 	fprintf(stderr,"\t-a - do not aggregate ip network\n");
 	fprintf(stderr,"\t-v - Verbose output\n");
 	exit(1);
 }
+#if 0
+void testing(void) {
+  char lbuf[128];
+  int i;
+  union in_addr_any pin,pin2;
+  ndpi_prefix_t prefix,prefix2;
+  pin.v4.s_addr  = 0x80010101;
+  pin2.v4.s_addr = 0x00020101;
+  fill_prefix(AF_INET,&prefix,&pin,25);
+  fill_prefix(AF_INET,&prefix2,&pin2,25);
+  printf("%s\n",prefix_str(&prefix2,-1,lbuf,sizeof lbuf));
+  for(i=32; i > 1; i--) {
+   pin.v4.s_addr = htonl(0x1ul << (32 - i));
+   pin2.v4.s_addr = htonl(0x1ul << (32 - i));
+   fill_prefix(AF_INET,&prefix,&pin,i);
+   fill_prefix(AF_INET,&prefix2,&pin2,i);
+   printf("%s\n",prefix_str(&prefix,-1,lbuf,sizeof lbuf));
+   is_next_cidr(AF_INET,&pin2,&pin,i);
+  }
+  exit(0);
+}
+#endif
 
 int main(int argc,char **argv) {
 
-  struct in_addr pin;
+  union in_addr_any pin;
   ndpi_patricia_node_t *node;
   ndpi_patricia_tree_t *ptree;
+  ndpi_patricia_tree_t *ptree6;
   ndpi_prefix_t prefix,prefix1;
-  int i,line=0,code,nsp,psp;
+  int i;
+  size_t ip6len = 0,ip6cnt = 0;
   uint16_t protocol;
   char lbuf[128],lbuf2[128];
-  char word[128],lastword[128],*wordarg;
   int verbose = 0,netaggr = 1,opt;
-  FILE *fd = NULL,*ifd = NULL,*ofd = NULL,*yfd = NULL;
-  char *youtfile = NULL;
+  FILE *fd = NULL,*ofd = NULL;
   char *outfile = NULL;
   char *infile = NULL;
-  struct net_cidr_list *pnl = NULL;
-  char *protocol_name = NULL;
+  const char *protocol_name = NULL;
+
+//  testing();
 
   while ((opt = getopt(argc, argv, "ahvo:y:")) != EOF) {
 	switch(opt) {
@@ -238,182 +337,95 @@ int main(int argc,char **argv) {
 	  case 'v': verbose++; break;
 	  case 'a': netaggr = 0; break;
 	  case 'o': outfile = strdup(optarg); break;
-	  case 'y': youtfile = strdup(optarg); break;
 	  default: usage();
 	}
   }
 
   ptree = ndpi_patricia_new(32);
-  if(!ptree) {
+  ptree6 = ndpi_patricia_new(128);
+  if(!ptree || !ptree6) {
 	fprintf(stderr,"Out of memory\n");
 	exit(1);
   }
+  for(size_t h=0; h < sizeof(ip4list)/sizeof(ip4list[0]); h++) {
+      ndpi_network *ip4l = ip4list[h];
+      int ml;
+      for(;ip4l->network;ip4l++) {
+	pin.v4.s_addr  = htonl(ip4l->network);
+	ml = ip4l->cidr;
+	protocol = ip4l->value;
+	protocol_name = ( protocol < NDPI_LAST_IMPLEMENTED_PROTOCOL) ?
+		proto_def[protocol] : proto_def[0];
 
-  if (optind < argc) {
-    infile = strdup(argv[optind++]);
-    fd = fopen(infile,"r");
-    if(!fd) {
-	fprintf(stderr,"Error: can't oprn file '%s' : %s\n",
-				infile,strerror(errno));
-	exit(1);
-    }
-    ifd = fd;
-  } else {
-    ifd = stdin;
+	if(!protocol_name) { fprintf(stderr,"Bad proto %d\n",protocol); abort(); }
+	fill_prefix(AF_INET,&prefix,&pin,ml);
+	if(protocol == NDPI_PROTOCOL_MODBUS) {
+		prefix_str(&prefix,protocol,lbuf2,sizeof lbuf2),
+		fprintf(stderr,"Bad proto %s %s\n %s\n",protocol_name, lbuf2, ip4list_file[h]); abort();
+	}
+
+	node = ndpi_patricia_search_best(ptree, &prefix);
+	if(verbose) {
+	  if(node && node->prefix && protocol != node->value.u.uv32.user_value &&
+                ml <= node->prefix->bitlen) {
+
+	    fprintf(stderr,"%-40s != %s\n",
+		prefix_str(&prefix,protocol,lbuf2,sizeof lbuf2),
+		prefix_str(node->prefix,node->value.u.uv32.user_value,lbuf,sizeof lbuf)
+		);
+	  }
+	}
+	node = ndpi_patricia_lookup(ptree, &prefix);
+	if(node) 
+	  node->value.u.uv32.user_value = protocol;
+      }
   }
 
-  while(ifd) {
-    line = 0;
-    psp = 0;
-    while(!feof(ifd)) {
-	char lbuf[256],*s;
-	if(!(s = fgets(lbuf,sizeof(lbuf),ifd)))
-		break;
+  for(size_t h=0; h < sizeof(ip6list)/sizeof(ip6list[0]); h++) {
+      ndpi_network6 *ip6l = ip6list[h];
+      int ml;
+      for(;ip6l->network;ip6l++) {
+	ip6len += strlen(ip6l->network);
+	ip6cnt ++;
+	if(inet_pton(AF_INET6,ip6l->network,&pin.v6) != 1) abort();
+	ml = ip6l->cidr;
+	protocol = ip6l->value;
 
-	line++;
+	protocol_name = ( protocol < NDPI_LAST_IMPLEMENTED_PROTOCOL) ?
+		proto_def[protocol] : proto_def[0];
 
-	code = parse_line(s,&nsp,word,sizeof(word)-1,&wordarg);
+	if(!protocol_name) { fprintf(stderr,"Bad proto %d\n",protocol); abort(); }
 
-	if(code == 0) {
-		fprintf(stderr,"Error: Invalid line %d: '%s'\n",line,s);
-		exit(1);
+	fill_prefix(AF_INET6,&prefix,&pin,ml);
+	if(protocol == NDPI_PROTOCOL_MODBUS) {
+		prefix_str(&prefix,protocol,lbuf2,sizeof lbuf2),
+		fprintf(stderr,"Bad proto %s %s %s\n",protocol_name, lbuf2, ip6list_file[h]); abort();
 	}
-	if(code == 1) continue;
 
-	/*
-	 * Line is:
-	 * protocol:
-	 *   ip:
-	 *   source:
-	 */
-	if(code == 2) {
-		if(!nsp) {
-			if(!is_protocol(word,&protocol)) {
-				fprintf(stderr,"Error: unknown protocol '%s' line %d: '%s'\n",
-						word,line,s);
-				exit(1);
-			}
-			if(protocol_name) free(protocol_name);
-			protocol_name = strdup(word);
-			add_net_cidr_proto(NULL,0,protocol);
-			pnl = net_cidr_list[protocol];
-			lastword[0] = '\0';
-			psp = 0;
-			continue;
-		}
-		if(psp && psp != nsp) {
-			fprintf(stderr,"Invalid line %d: '%s'\n",line,s);
-			exit(1);
-		}
-		psp = nsp;
+	node = ndpi_patricia_search_best(ptree6, &prefix);
+	if(verbose) {
+	  if(node && node->prefix && protocol != node->value.u.uv32.user_value &&
+		ml <= node->prefix->bitlen) {
 
-		if(!strcmp(word,"source")) {
-			strncpy(lastword,word,sizeof(lastword)-1);
-			if(wordarg)
-				strncat(pnl->comments,wordarg,sizeof(pnl->comments)-1);
-			continue;
-		}
-		if(!strcmp(word,"ip")) {
-			if(wordarg) {
-				fprintf(stderr,"Invalid line %d: '%s'\n",line,s);
-				exit(1);
-			}
-			strncpy(lastword,word,sizeof(lastword));
-			continue;
-		}
-		fprintf(stderr,"Invalid line %d: '%s'\n",line,s);
-		exit(1);
+	    fprintf(stderr,"%-40s != %s\n",
+		prefix_str(&prefix,protocol,lbuf2,sizeof lbuf2),
+		prefix_str(node->prefix,node->value.u.uv32.user_value,lbuf,sizeof lbuf)
+		);
+	  }
 	}
-	/*
-	 * Line is element of list ip/source
-	 */
-	if( code == 3 ) {
-		if(!psp || nsp <= psp) {
-			fprintf(stderr,"Invalid list line %d: '%s'\n",line,s);
-			exit(1);
-		}
-		if(!strcmp(lastword,"ip")) {
-			char *nm = strchr(word,'/');
-			int ml = nm ? atoi(nm+1) : 32;
-			if(nm) *nm = 0;
-			if(!inet_aton(word,&pin)) {
-				fprintf(stderr,"Invalid ip in line %d: '%s'\n",line,s);
-				exit(1);
-			}
-			if(nm) *nm = '/';
-			if((pin.s_addr & htonl(~(0xfffffffful << (32 - ml)))) != 0)
-				fprintf(stderr,"Warning: line %4d: '%s' is not network (%s)\n",line,word,
-						protocol_name ? protocol_name : "unknown");
-			if((pin.s_addr & htonl(0xf0000000ul)) == htonl(0xe0000000ul))
-				fprintf(stderr,"Warning: line %4d: '%s' is multicast address!\n",line,word);
-			if((pin.s_addr & htonl(0x7f000000ul)) == htonl(0x7f000000ul))
-				fprintf(stderr,"Warning: line %4d: '%s' is loopback network!\n",line,word);
-
-			pin.s_addr &= htonl(0xfffffffful << (32 - ml));
-			fill_ipv4_prefix(&prefix,&pin,ml);
-
-			node = ndpi_patricia_search_best(ptree, &prefix);
-			if(verbose) {
-			  if(node && node->prefix && protocol != node->value.u.uv32.user_value) {
-
-			    fprintf(stderr,"%-32s subnet %s\n",
-				prefix_str(&prefix,protocol,lbuf2,sizeof lbuf2),
-				prefix_str(node->prefix,node->value.u.uv32.user_value,lbuf,sizeof lbuf)
-				);
-			  }
-			}
-			node = ndpi_patricia_lookup(ptree, &prefix);
-			if(node) 
-			  node->value.u.uv32.user_value = protocol;
-
-			continue;
-		}
-		if(!strcmp(lastword,"source")) {
-			if(pnl->comments[0]) {
-				strncat(pnl->comments,"\n",sizeof(pnl->comments));
-			}
-			strncat(pnl->comments,word,sizeof(pnl->comments)-1);
-			continue;
-		}
-		fprintf(stderr,"Invalid list word '%s'\n",lastword);
-		exit(1);
-	}
-	printf("code = %d\n",code);
-	abort();
-      }
-      ifd = NULL;
-      if(fd) {
-	fclose(fd);
-
-	if (optind < argc) {
-		if(infile) free(infile);
-		infile = strdup(argv[optind++]);
-		fd = fopen(infile,"r");
-		if(!fd) {
-			fprintf(stderr,"Error: can't oprn file '%s' : %s\n",
-					infile,strerror(errno));
-			exit(1);
-      		}
-		ifd = fd;
-	}
+	node = ndpi_patricia_lookup(ptree6, &prefix);
+	if(node) 
+	  node->value.u.uv32.user_value = protocol;
       }
   }
 
   fd = NULL;
 
-  if(!line) exit(0);
   list_ptree(ptree);
+  list_ptree(ptree6);
 
-  ndpi_patricia_destroy(ptree, free_ptree_data);
-
-  if(youtfile) {
-	yfd = fopen(youtfile,"w");
-	if(!yfd) {
-		fprintf(stderr,"Error: can't create file '%s' : %s\n",
-				youtfile,strerror(errno));
-		exit(1);
-	}
-  }
+  ndpi_patricia_destroy(ptree,  free_ptree_data);
+  ndpi_patricia_destroy(ptree6, free_ptree_data);
   if(outfile) {
 	fd = fopen(outfile,"w");
 	if(!fd) {
@@ -424,78 +436,88 @@ int main(int argc,char **argv) {
   }
   ofd = fd ? fd:stdout;
 
-  fprintf(ofd,"/*\n\n\tDon't edit this file!\n\n\tchange *.yaml files\n\n */\n\n");
-  fprintf(ofd,"NDPI_STATIC ndpi_network host_protocol_list[] = {\n");
+  fprintf(ofd,"/*\n\n\tDon't edit this file!\n\n */\n\n");
 
-  for(i=0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
-	struct net_cidr_list *nl = net_cidr_list[i];
+  for(int ii = 0; ii < 2; ii++) {
+     struct net_cidr_list **net_list = (ii == 0) ? &net_cidr_list[0]:&net6_cidr_list[0];
+     int af = ii == 0 ? AF_INET:AF_INET6;
+     if(af == AF_INET)
+     fprintf(ofd,af == AF_INET ? 
+		     "ndpi_network host_protocol_list[] = {\n":
+		     "ndpi_network6 host_protocol_list_6[] = {\n"
+		     );
+
+     for(i=0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
+	struct net_cidr_list *nl = net_list[i];
 	size_t l;
-	int mg;
+	int mg,cnt;
 	if(!nl) continue;
         
 	const  char *pname = get_proto_by_id(i);
+	if(verbose) fprintf(stderr,"Proto  %s\n",pname);
 
-	if(nl->comments[0]) {
-		fprintf(ofd,"  /*\n");
-		 print_comments(ofd,nl->comments,"    ");
-		fprintf(ofd,"   */\n");
-	} else 
-		fprintf(ofd,"  /*\n    %s\n   */\n",pname);
-	if(yfd) {
-		fprintf(yfd,"%s:\n",pname);
-		if(nl->comments[0]) {
-			fprintf(yfd,"\tsource:\n");
-			print_comments(yfd,nl->comments,"\t  - ");
-		}
-	}
+	nl->max_use = nl->use;
 	mg = 1;
+	cnt = 0;
 	while(mg && netaggr) {
 	    mg = 0;
-	    for(l=0; l < nl->use; l++) {
-		if(l+1 < nl->use) {
-			if(nl->addr[l].masklen > 0 &&
-			   nl->addr[l].masklen == nl->addr[l+1].masklen) {
-				uint32_t a = htonl(nl->addr[l].a.s_addr);
-				uint32_t m = 0xfffffffful << (32 - nl->addr[l].masklen);
-				if( (a & ~(m << 1)) == 0 &&
-				     a + (~m + 1) == htonl(nl->addr[l+1].a.s_addr)) {
-					size_t l2;
-					if(verbose) {
-						fill_ipv4_prefix(&prefix, &nl->addr[l].a,nl->addr[l].masklen);
-						fill_ipv4_prefix(&prefix1,&nl->addr[l+1].a,nl->addr[l+1].masklen);
-						fprintf(stderr,"Aggregate %s + %s\n",
-							prefix_str(&prefix, -1,lbuf2,sizeof lbuf2),
-							prefix_str(&prefix1,-1,lbuf,sizeof lbuf));
-					}
-					nl->addr[l].masklen--;
-					for(l2 = l+1; l2+1 < nl->use; l2++)
-						nl->addr[l2] = nl->addr[l2+1];
-					nl->use--;
-					mg++;
-				}
-			}
-		}
+	    if(verbose) fprintf(stderr,"Pass %d\n",++cnt);
+	    for(l=0; l < nl->use-1; l++) {
+
+		if(nl->addr[l].masklen == nl->addr[l+1].masklen) {
+		    if(valid_cidr(af,&nl->addr[l].a,nl->addr[l].masklen-1) &&
+		       is_next_cidr(af,&nl->addr[l+1].a,&nl->addr[l].a,nl->addr[l].masklen)) {
+			    size_t l2;
+			    if(verbose) {
+				fill_prefix(af,&prefix, &nl->addr[l].a,nl->addr[l].masklen);
+				fill_prefix(af,&prefix1,&nl->addr[l+1].a,nl->addr[l+1].masklen);
+				fprintf(stderr,"Aggregate %s + %s\n",
+					prefix_str(&prefix, -1,lbuf2,sizeof lbuf2),
+					prefix_str(&prefix1,-1,lbuf,sizeof lbuf));
+			    }
+			    nl->addr[l].masklen--;
+			    for(l2 = l+1; l2+1 < nl->use; l2++)
+					nl->addr[l2] = nl->addr[l2+1];
+			    nl->use--;
+			    if(af == AF_INET)
+				    ip4ra++;
+			        else
+				    ip6ra++;
+			    mg++;
+		    }
+	        }
 	    }
 	}
 
-	for(l=0; l < nl->use; l++) {
-		if(!l && yfd) fprintf(yfd,"\tip:\n");
-		fill_ipv4_prefix(&prefix1,&nl->addr[l].a,nl->addr[l].masklen);
-		prefix_str(&prefix1,-1,lbuf,sizeof lbuf);
-
-		if(yfd) fprintf(yfd,"\t  - %s\n",lbuf);
-
-		fprintf(ofd,"  { 0x%08X, %d , %s /* %-18s */  },\n",
-				htonl(prefix1.add.sin.s_addr), nl->addr[l].masklen,
-				proto_def[i], lbuf);
+	fprintf(ofd,"  /*\n    %s\n   */\n",pname);
+	if(nl->max_use > nl->use) {
+		fprintf(ofd,"  /* %u -> %u aggregated */\n",(unsigned int)nl->max_use,(unsigned int)nl->use);
 	}
+	for(l=0; l < nl->use; l++) {
+		fill_prefix(af,&prefix1,&nl->addr[l].a,nl->addr[l].masklen);
+		prefix_str(&prefix1,-1,lbuf,sizeof lbuf);
+		if(af == AF_INET)
+			fprintf(ofd,"  { 0x%08X, %d , %s /* %-18s */  },\n",
+					htonl(prefix1.add.sin.s_addr), nl->addr[l].masklen,
+					proto_def[i], lbuf);
+		    else
+			fprintf(ofd,"  { \"%s\", %d , %s  },\n",
+					lbuf, nl->addr[l].masklen,
+					proto_def[i]);
+	}
+    }
+    if(af == AF_INET)
+	fprintf(ofd,"  { 0x0, 0, 0 }\n};\n");
+    else
+	fprintf(ofd,"  { NULL, 0, 0 }\n};\n");
   }
-  fprintf(ofd,"  { 0x0, 0, 0 }\n};\n");
-
+if(verbose) {
+	fprintf(stderr," IPv4 record %d, aggregated %d\n",ip4r,ip4r-ip4ra);
+	fprintf(stderr," IPv6 record %d, aggregated %d, sum length %lu %lu\n",
+			ip6r,ip6r-ip6ra,ip6len,ip6cnt*16);
+}
   if(fd) fclose(fd);
-  if(yfd) fclose(yfd);
   if(outfile) free(outfile);
   if(infile) free(infile);
-  if(protocol_name) free(protocol_name);
   return(0);
 }

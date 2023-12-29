@@ -211,7 +211,7 @@ static void print_safe_str(char *msg,bt_parse_data_cb_t *cbd) {
 #define STREQ(a,b) !strcmp(a,b)
 
 
-NDPI_STATIC void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
+void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
   struct bt_parse_protocol *p = &(cbd->p);
   const u_int8_t *s;
   const char *ss;

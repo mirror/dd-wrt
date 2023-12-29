@@ -20,7 +20,6 @@
 /* ****************************************************** */
 
 
-#if 0
 static ndpi_network ndpi_protocol_riotgames_protocol_list[] = {
  { 0x2BE54000 /* 43.229.64.0/22 */, 22, NDPI_PROTOCOL_RIOTGAMES },
  { 0x2D072400 /* 45.7.36.0/23 */, 23, NDPI_PROTOCOL_RIOTGAMES },
@@ -40,4 +39,8 @@ static ndpi_network ndpi_protocol_riotgames_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
-#endif
+
+static ndpi_network6 ndpi_protocol_riotgames_protocol_list_6[] = {
+ /* End */
+ { NULL, 0, 0 }
+};

@@ -15,7 +15,7 @@ typedef struct ndpi_MD5Context {
 
 /* **************************************** */
 
-NDPI_STATIC void ndpi_MD5Init(ndpi_MD5_CTX *ctx);
-NDPI_STATIC void ndpi_MD5Update(ndpi_MD5_CTX *ctx, unsigned char const *buf, unsigned len);
-NDPI_STATIC void ndpi_MD5Final(unsigned char digest[16], ndpi_MD5_CTX *ctx);
+void ndpi_MD5Init(ndpi_MD5_CTX *ctx);
+void ndpi_MD5Update(ndpi_MD5_CTX *ctx, unsigned char const *buf, unsigned len);
+void ndpi_MD5Final(unsigned char digest[16], ndpi_MD5_CTX *ctx);
 #endif

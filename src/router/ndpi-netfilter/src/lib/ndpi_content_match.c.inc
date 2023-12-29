@@ -20,7 +20,6 @@
 
 /* ****************************************************** */
 
-#if 0
 static ndpi_network host_protocol_list[] = {
   /*
     OCS GO (Orange Cinéma Séries)
@@ -303,7 +302,6 @@ static ndpi_network host_protocol_list[] = {
   /* End */
   { 0x0, 0, 0 }
 };
-#endif
 
 /* ****************************************************** */
 
@@ -618,9 +616,6 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { ".googletagservices.com",   "GoogleServices",   NDPI_PROTOCOL_GOOGLE_SERVICES, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "mtalk.google.com",               "GoogleServices",   NDPI_PROTOCOL_GOOGLE_SERVICES, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
-   { "plus.google.com",                 "GooglePlus",       NDPI_PROTOCOL_GOOGLE_PLUS, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "plus.url.google.com",       "GooglePlus",       NDPI_PROTOCOL_GOOGLE_PLUS, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
-
    { "googleusercontent.com",       "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "1e100.net",                               "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
@@ -751,8 +746,8 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { ".qq.com",                                   "QQ",               NDPI_PROTOCOL_QQ, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".gtimg.com",                                "QQ",               NDPI_PROTOCOL_QQ, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
-   { ".weibo.com",                               "Sina(Weibo)",      NDPI_PROTOCOL_SINA, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { ".weibo.cn",                                "Sina(Weibo)",      NDPI_PROTOCOL_SINA, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { ".weibo.com",                               "SinaWeibo",      NDPI_PROTOCOL_SINA_WEIBO, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { ".weibo.cn",                                "SinaWeibo",      NDPI_PROTOCOL_SINA_WEIBO, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".sinaimg.cn",                              "Sina",             NDPI_PROTOCOL_SINA, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".sinajs.cn",                               "Sina",             NDPI_PROTOCOL_SINA, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".sina.cn",                                 "Sina",             NDPI_PROTOCOL_SINA, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1039,6 +1034,8 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "tiktokcdn.liveplay.myqcloud.com",       "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "musemuse.cn",                           "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "tiktokv.com",                           "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { ".tiktokv.us",                           "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { ".tiktokv.eu",                           "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "bytecdn.cn",                            "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "muscdn.com",                            "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "tiktok.com",                            "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1047,6 +1044,7 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "v19.byteicdn.com",                      "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "v16m.byteicdn.com",                     "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".tiktokcdn-us.com",                     "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { ".tiktokcdn-eu.com",                     "TikTok",           NDPI_PROTOCOL_TIKTOK, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "brasilbandalarga.com.br",     "EAQ",              NDPI_PROTOCOL_EAQ, NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".eaqbr.com.br",                       "EAQ",              NDPI_PROTOCOL_EAQ, NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1543,6 +1541,9 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { ".afcdn.net",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { ".ktkjmp.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
+   { ".tesla.services",                  "TeslaServices", NDPI_PROTOCOL_TESLA_SERVICES, NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "digitalassets.tesla.com",          "TeslaServices", NDPI_PROTOCOL_TESLA_SERVICES, NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_content_match_host_match.c.inc"
 #endif
@@ -1587,7 +1588,6 @@ static ndpi_tls_cert_name_match tls_certificate_match [] = {
 */
 
 #ifndef __KERNEL__
-#ifndef __KERNEL__
 static ndpi_category_match category_match[] = {
    { ".edgecastcdn.net",                 NDPI_PROTOCOL_CATEGORY_MEDIA },
    { ".hwcdn.net",                       NDPI_PROTOCOL_CATEGORY_MEDIA },
@@ -1620,5 +1620,4 @@ static ndpi_category_match category_match[] = {
 
    { NULL, 0 }
 };
-#endif
 #endif
