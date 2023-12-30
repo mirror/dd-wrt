@@ -110,8 +110,8 @@ export NM := $(CROSS_COMPILE)gcc-nm
 export RANLIB := $(CROSS_COMPILE)gcc-ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
-
 export CFLAGS := $(COPTS)
+export MIPS16_OPT:= -minterlink-mips16 -mips16
 
 #
 # Install and target directories
