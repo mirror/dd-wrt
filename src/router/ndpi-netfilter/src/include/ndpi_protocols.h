@@ -271,6 +271,8 @@ NDPI_STATIC void ndpi_search_syncthing(struct ndpi_detection_module_struct *ndpi
 NDPI_STATIC void ndpi_search_tivoconnect(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_kismet(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_fastcgi(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_hots(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_http2(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 
 

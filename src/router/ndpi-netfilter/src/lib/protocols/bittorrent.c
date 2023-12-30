@@ -55,7 +55,7 @@ extern struct kmem_cache *bt_port_cache;
 
 #endif
 
-time_t ndpi_bt_node_expire = 1200; /* time in seconds */
+NDPI_STATIC time_t ndpi_bt_node_expire = 1200; /* time in seconds */
 
 #ifndef __KERNEL__
 
@@ -138,7 +138,7 @@ int ndpi_search_dht_again(struct ndpi_detection_module_struct *ndpi_struct, stru
 #define NDPI_STATICSTRING_LEN( s ) ( sizeof( s ) - 1 )
 #define NDPI_STATICSTRING( s )  s , ( sizeof( s ) - 1 )
 
-int memcmp_packet_hdr(struct ndpi_packet_struct *packet,
+static int memcmp_packet_hdr(struct ndpi_packet_struct *packet,
 		      size_t l,const char *str,size_t len, int offs) {
 
 if(!packet->hdr_line) return 1;
@@ -155,7 +155,7 @@ if(packet->hdr_line[l].ptr+offs+len > packet->payload + packet->l3_packet_len) r
 return memcmp(packet->hdr_line[l].ptr+offs,str,len);
 }
 
-int memcmp_packet_line(struct ndpi_packet_struct *packet,
+static int memcmp_packet_line(struct ndpi_packet_struct *packet,
 		      size_t l,const char *str,size_t len, int offs) {
 
 if(l >= packet->parsed_lines ) return 1;

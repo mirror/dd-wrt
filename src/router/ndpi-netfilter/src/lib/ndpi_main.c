@@ -141,7 +141,7 @@
 
 /* #define MATCH_DEBUG 1 */
 
-int ndpi_debug_print_level = 0;
+NDPI_STATIC int ndpi_debug_print_level = 0;
 #ifdef HAVE_NBPF
 #include "nbpf.h"
 #endif
@@ -155,9 +155,6 @@ static void (*_ndpi_flow_free)(void *ptr);
 
 static void *(*_ndpi_malloc)(size_t size);
 static void (*_ndpi_free)(void *ptr);
-
-ndpi_debug_function_ptr ndpi_debug_print_init = NULL;
-ndpi_log_level_t ndpi_debug_level_init = NDPI_LOG_ERROR;
 
 static u_int32_t _ticks_per_second = 1000;
 
@@ -250,7 +247,7 @@ static void ndpi_enabled_callbacks_init(struct ndpi_detection_module_struct *ndp
 
 /* ****************************************** */
 
-ndpi_custom_dga_predict_fctn ndpi_dga_function = NULL;
+static ndpi_custom_dga_predict_fctn ndpi_dga_function = NULL;
 
 /* ****************************************** */
 
@@ -421,7 +418,7 @@ u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_str, 
 /* ************************************************************************************* */
 /* ************************************************************************************* */
 
-void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
 				      u_int16_t ndpi_proto_id, u_int16_t user_proto_id) {
   if(ndpi_proto_id < NDPI_MAX_SUPPORTED_PROTOCOLS)
     return; /* Nothing to map */
@@ -2393,7 +2390,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 #endif
 
 /* No static because it is used by fuzzer, too */
-int ac_domain_match_handler(AC_MATCH_t *m, AC_TEXT_t *txt, AC_REP_t *match) {
+static int ac_domain_match_handler(AC_MATCH_t *m, AC_TEXT_t *txt, AC_REP_t *match) {
   AC_PATTERN_t *pattern = m->patterns;
   int i,start,end = m->position;
 
@@ -2579,7 +2576,7 @@ u_int64_t ndpi_patricia_get_node_u64(ndpi_patricia_node_t *node) {
 
 /* ******************************************* */
 
-u_int8_t ndpi_is_public_ipv4(u_int32_t a /* host byte order */) {
+NDPI_STATIC u_int8_t ndpi_is_public_ipv4(u_int32_t a /* host byte order */) {
   if(   ((a & 0xFF000000) == 0x0A000000 /* 10.0.0.0/8 */)
 	|| ((a & 0xFFF00000) == 0xAC100000 /* 172.16.0.0/12 */)
 	|| ((a & 0xFFFF0000) == 0xC0A80000 /* 192.168.0.0/16 */)
@@ -2725,7 +2722,7 @@ u_int16_t ndpi_network_port_ptree6_match(struct ndpi_detection_module_struct *nd
 
 /* ******************************************* */
 
-ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
 					     struct in_addr *pin /* network byte order */) {
   ndpi_prefix_t prefix;
   ndpi_patricia_node_t *node;
@@ -2742,7 +2739,7 @@ ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct
 
 /* ******************************************* */
 
-ndpi_risk_enum ndpi_network_risk_ptree_match6(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC ndpi_risk_enum ndpi_network_risk_ptree_match6(struct ndpi_detection_module_struct *ndpi_str,
 					      struct in6_addr *pin) {
   ndpi_prefix_t prefix;
   ndpi_patricia_node_t *node;
@@ -4231,7 +4228,7 @@ static default_ports_tree_node_t *ndpi_get_guessed_protocol_id(struct ndpi_detec
   and thus that if have NOT been detected they cannot be guessed
   as they have been excluded
 */
-u_int8_t is_udp_not_guessable_protocol(u_int16_t l7_guessed_proto) {
+NDPI_STATIC u_int8_t is_udp_not_guessable_protocol(u_int16_t l7_guessed_proto) {
   switch(l7_guessed_proto) {
   case NDPI_PROTOCOL_SNMP:
   case NDPI_PROTOCOL_NETFLOW:
@@ -5152,7 +5149,7 @@ int load_malicious_sha1_file_fd(struct ndpi_detection_module_struct *ndpi_str, F
   udp:139@NETBIOS
 
 */
-int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_str, const char* path) {
+NDPI_STATIC int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_str, const char* path) {
 #ifdef __KERNEL__
   return -1;
 #else
@@ -6639,7 +6636,7 @@ static int tcp_ack_padding(struct ndpi_packet_struct *packet) {
   return 0;
 }
 
-void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_str,
 			      struct ndpi_flow_struct *flow) {
   if(!flow) {
     return;
@@ -6992,7 +6989,7 @@ static u_int32_t check_ndpi_detection_func(struct ndpi_detection_module_struct *
 
 /* ************************************************ */
 
-u_int32_t check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC u_int32_t check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_str,
 				     struct ndpi_flow_struct *flow,
 				     NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet)
 {
@@ -8984,7 +8981,7 @@ void change_category(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_
 
 /* ********************************************************************************* */
 
-void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t *ip) {
+NDPI_STATIC void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t *ip) {
   memset(ip, 0, sizeof(ndpi_ip_addr_t));
 }
 
@@ -9863,13 +9860,13 @@ int ndpi_match_bigram(const char *str) {
   return ndpi_match_xgram(bigrams_bitmap, 2, str);
 }
 
-int ndpi_match_impossible_bigram(const char *str) {
+NDPI_STATIC int ndpi_match_impossible_bigram(const char *str) {
   return ndpi_match_xgram(impossible_bigrams_bitmap, 2, str);
 }
 
 /* ****************************************************** */
 
-int ndpi_match_trigram(const char *str) {
+NDPI_STATIC int ndpi_match_trigram(const char *str) {
   return ndpi_match_xgram(trigrams_bitmap, 3, str);
 }
 
@@ -10388,7 +10385,7 @@ int ndpi_ptree_match_addr(ndpi_ptree_t *tree,
 
 /* ******************************************************************** */
 
-void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]) {
+NDPI_STATIC void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]) {
   ndpi_MD5_CTX ctx;
 
   ndpi_MD5Init(&ctx);

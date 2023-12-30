@@ -191,7 +191,7 @@ int is_version_with_var_int_transport_params(uint32_t version)
   return (is_version_quic(version) && is_quic_ver_greater_than(version, 27)) ||
     (version == V_T051);
 }
-int is_version_with_ietf_long_header(uint32_t version)
+static int is_version_with_ietf_long_header(uint32_t version)
 {
   /* At least draft-ietf-quic-invariants-06, or newer*/
   return is_version_quic(version) ||

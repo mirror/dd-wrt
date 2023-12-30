@@ -56,35 +56,35 @@ struct gcry_cipher_hd {
 
 typedef struct gcry_cipher_hd * gcry_cipher_hd_t;
 
-int          gcry_control (int, int);
-const char   *gcry_check_version(void *);
-char         *gpg_strerror_r(gcry_error_t, char *, size_t);
+NDPI_STATIC int          gcry_control (int, int);
+NDPI_STATIC const char   *gcry_check_version(void *);
+NDPI_STATIC char         *gpg_strerror_r(gcry_error_t, char *, size_t);
 
-gcry_error_t gcry_md_open  (gcry_md_hd_t *h, int algo, int flags);
-void         gcry_md_close (gcry_md_hd_t h);
-void         gcry_md_reset (gcry_md_hd_t h);
+NDPI_STATIC gcry_error_t gcry_md_open  (gcry_md_hd_t *h, int algo, int flags);
+NDPI_STATIC void         gcry_md_close (gcry_md_hd_t h);
+NDPI_STATIC void         gcry_md_reset (gcry_md_hd_t h);
 
-gcry_error_t gcry_md_setkey (gcry_md_hd_t h, const uint8_t *key, size_t key_len);
-gcry_error_t gcry_md_write  (gcry_md_hd_t h, const uint8_t *data, size_t data_len);
-uint8_t      *gcry_md_read  (gcry_md_hd_t h, int flag);
+NDPI_STATIC gcry_error_t gcry_md_setkey (gcry_md_hd_t h, const uint8_t *key, size_t key_len);
+NDPI_STATIC gcry_error_t gcry_md_write  (gcry_md_hd_t h, const uint8_t *data, size_t data_len);
+NDPI_STATIC uint8_t      *gcry_md_read  (gcry_md_hd_t h, int flag);
 
-size_t       gcry_md_get_algo_dlen (int algo);
-int          gcry_md_get_algo (gcry_md_hd_t h);
+NDPI_STATIC size_t       gcry_md_get_algo_dlen (int algo);
+NDPI_STATIC int          gcry_md_get_algo (gcry_md_hd_t h);
 
-gcry_error_t gcry_cipher_open  (gcry_cipher_hd_t *handle, int algo, int mode, unsigned int flags);
-void         gcry_cipher_close (gcry_cipher_hd_t h);
-gcry_error_t gcry_cipher_ctl    (gcry_cipher_hd_t h, int cmd, void *data, size_t len);
-gcry_error_t gcry_cipher_reset (gcry_cipher_hd_t h);
-gcry_error_t gcry_cipher_setiv (gcry_cipher_hd_t h, const void *iv, size_t ivlen);
-gcry_error_t gcry_cipher_setkey (gcry_cipher_hd_t h, const void *key, size_t keylen);
-gcry_error_t gcry_cipher_checktag (gcry_cipher_hd_t h, const void *intag, size_t taglen);
-gcry_error_t gcry_cipher_authenticate (gcry_cipher_hd_t h, const void *abuf, size_t abuflen);
-gcry_error_t gcry_cipher_encrypt (gcry_cipher_hd_t h, void *out, size_t outsize,
+NDPI_STATIC gcry_error_t gcry_cipher_open  (gcry_cipher_hd_t *handle, int algo, int mode, unsigned int flags);
+NDPI_STATIC void         gcry_cipher_close (gcry_cipher_hd_t h);
+NDPI_STATIC gcry_error_t gcry_cipher_ctl    (gcry_cipher_hd_t h, int cmd, void *data, size_t len);
+NDPI_STATIC gcry_error_t gcry_cipher_reset (gcry_cipher_hd_t h);
+NDPI_STATIC gcry_error_t gcry_cipher_setiv (gcry_cipher_hd_t h, const void *iv, size_t ivlen);
+NDPI_STATIC gcry_error_t gcry_cipher_setkey (gcry_cipher_hd_t h, const void *key, size_t keylen);
+NDPI_STATIC gcry_error_t gcry_cipher_checktag (gcry_cipher_hd_t h, const void *intag, size_t taglen);
+NDPI_STATIC gcry_error_t gcry_cipher_authenticate (gcry_cipher_hd_t h, const void *abuf, size_t abuflen);
+NDPI_STATIC gcry_error_t gcry_cipher_encrypt (gcry_cipher_hd_t h, void *out, size_t outsize,
                                   const void *in, size_t inlen);
-gcry_error_t gcry_cipher_decrypt (gcry_cipher_hd_t h, void *out, size_t outsize,
+NDPI_STATIC gcry_error_t gcry_cipher_decrypt (gcry_cipher_hd_t h, void *out, size_t outsize,
                                   const void *in, size_t inlen);
 
-size_t       gcry_cipher_get_algo_keylen (int algo);
+NDPI_STATIC size_t       gcry_cipher_get_algo_keylen (int algo);
 
 #endif /* GCRY_LIGHT_H */
 

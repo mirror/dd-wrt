@@ -3,6 +3,6 @@
 
 #include "ndpi_includes.h"
 
-uint32_t MurmurHash(const void * key, uint32_t len, uint32_t seed);
+NDPI_STATIC uint32_t MurmurHash(const void * key, uint32_t len, uint32_t seed);
 
 #endif

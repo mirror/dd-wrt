@@ -28,7 +28,7 @@
 
 /* ************************************************************************** */
 
-u_int32_t make_mining_key(struct ndpi_flow_struct *flow) {
+static u_int32_t make_mining_key(struct ndpi_flow_struct *flow) {
   u_int32_t key;
 
   /* network byte order */

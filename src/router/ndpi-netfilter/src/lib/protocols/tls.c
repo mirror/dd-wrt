@@ -812,7 +812,7 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 /* **************************************** */
 
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
-int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int is_dtls = packet->udp ? 1 : 0;

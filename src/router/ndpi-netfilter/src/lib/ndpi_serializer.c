@@ -260,7 +260,7 @@ int ndpi_init_serializer_ll(ndpi_serializer *_serializer,
 
 /* ********************************** */
 
-int ndpi_init_serializer(ndpi_serializer *_serializer,
+NDPI_STATIC int ndpi_init_serializer(ndpi_serializer *_serializer,
 			 ndpi_serialization_format fmt) {
   return(ndpi_init_serializer_ll(_serializer, fmt, NDPI_SERIALIZER_DEFAULT_BUFFER_SIZE));
 }
@@ -3130,24 +3130,24 @@ int ndpi_deserialize_clone_all(ndpi_deserializer *deserializer, ndpi_serializer 
   return(0);
 }
 #else
-int ndpi_serialize_string_string(ndpi_serializer *_serializer,
+NDPI_STATIC int ndpi_serialize_string_string(ndpi_serializer *_serializer,
 				 const char *key, const char *_value) {
   return 0;
 }
 
-int ndpi_serialize_string_uint32(ndpi_serializer *_serializer,
+NDPI_STATIC int ndpi_serialize_string_uint32(ndpi_serializer *_serializer,
 				 const char *key, u_int32_t value) {
   return 0;
 }
 
-int ndpi_init_serializer(ndpi_serializer *_serializer,
+NDPI_STATIC int ndpi_init_serializer(ndpi_serializer *_serializer,
 			 ndpi_serialization_format fmt) {
   return 0;
 }
-int ndpi_serialize_end_of_block(ndpi_serializer *_serializer) {
+NDPI_STATIC int ndpi_serialize_end_of_block(ndpi_serializer *_serializer) {
   return 0;
 }
-int ndpi_serialize_start_of_block(ndpi_serializer *_serializer,
+NDPI_STATIC int ndpi_serialize_start_of_block(ndpi_serializer *_serializer,
 				  const char *key) {
   return 0;
 }

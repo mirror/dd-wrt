@@ -77,6 +77,8 @@
 #include "../lib/third_party/include/ndpi_patricia.h"
 
 NDPI_STATIC ndpi_protocol_match host_match[];
+NDPI_STATIC ndpi_debug_function_ptr ndpi_debug_print_init = NULL;
+NDPI_STATIC ndpi_log_level_t ndpi_debug_level_init = NDPI_LOG_ERROR;
 
 /* Only for debug! */
 //#define NDPI_IPPORT_DEBUG
@@ -2935,7 +2937,7 @@ static void __net_exit ndpi_net_exit(struct net *net)
 }
 
 
-int ndpi_stun_cache_enable=
+NDPI_STATIC int ndpi_stun_cache_enable=
 #ifndef __KERNEL__
 	1;
 #else

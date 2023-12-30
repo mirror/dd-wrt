@@ -268,7 +268,7 @@ void ndpi_tdestroy(void *vrootp, void (*freefct)(void *))
 
 /* ****************************************** */
 
-u_int8_t ndpi_net_match(u_int32_t ip_to_check,
+NDPI_STATIC u_int8_t ndpi_net_match(u_int32_t ip_to_check,
 			u_int32_t net,
 			u_int32_t num_bits) {
   u_int32_t mask = 0;
@@ -319,7 +319,7 @@ u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher) {
 
 /* ***************************************************** */
 
-const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]) {
+NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]) {
   switch(cipher) {
   case TLS_NULL_WITH_NULL_NULL:	return("TLS_NULL_WITH_NULL_NULL");
   case TLS_RSA_EXPORT_WITH_RC4_40_MD5:	return("TLS_RSA_EXPORT_WITH_RC4_40_MD5");
@@ -955,7 +955,7 @@ static const unsigned char base64_table[65] =
  *
  * Caller is responsible for freeing the returned buffer.
  */
-u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *out_len) {
+NDPI_STATIC u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *out_len) {
   u_char dtable[256], *out, *pos, block[4], tmp;
   size_t i, count, olen;
   int pad = 0;
@@ -1895,7 +1895,7 @@ ndpi_risk_enum ndpi_validate_url(char *url) {
 #endif
 /* ******************************************************************** */
 
-u_int8_t ndpi_is_protocol_detected(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC u_int8_t ndpi_is_protocol_detected(struct ndpi_detection_module_struct *ndpi_str,
 				   ndpi_protocol proto) {
   if((proto.master_protocol != NDPI_PROTOCOL_UNKNOWN)
      || (proto.app_protocol != NDPI_PROTOCOL_UNKNOWN)
@@ -3032,7 +3032,7 @@ char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen) {
 /* ******************************************* */
 
 /* Find the nearest (>=) value of x */
-u_int32_t ndpi_nearest_power_of_two(u_int32_t x) {
+NDPI_STATIC u_int32_t ndpi_nearest_power_of_two(u_int32_t x) {
   x--;
 
   x |= x >> 1;

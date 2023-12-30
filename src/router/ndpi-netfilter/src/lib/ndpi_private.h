@@ -349,353 +349,353 @@ struct ndpi_detection_module_struct {
 
 /* Generic */
 
-char *strptime(const char *s, const char *format, struct tm *tm);
+NDPI_STATIC char *strptime(const char *s, const char *format, struct tm *tm);
 
-u_int8_t iph_is_valid_and_not_fragmented(const struct ndpi_iphdr *iph, const u_int16_t ipsize);
+NDPI_STATIC u_int8_t iph_is_valid_and_not_fragmented(const struct ndpi_iphdr *iph, const u_int16_t ipsize);
 
-int current_pkt_from_client_to_server(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_struct *flow);
+NDPI_STATIC int current_pkt_from_client_to_server(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_struct *flow);
 //int current_pkt_from_server_to_client(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_struct *flow);
 
-int ndpi_seen_flow_beginning(const struct ndpi_flow_struct *flow);
+NDPI_STATIC int ndpi_seen_flow_beginning(const struct ndpi_flow_struct *flow);
 
-void ndpi_set_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void ndpi_set_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 				struct ndpi_flow_struct *flow,
 				u_int16_t upper_detected_protocol,
 				u_int16_t lower_detected_protocol,
 				ndpi_confidence_t confidence);
 
-void reset_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void reset_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow);
 
-void ndpi_set_detected_protocol_keeping_master(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_set_detected_protocol_keeping_master(struct ndpi_detection_module_struct *ndpi_str,
 					       struct ndpi_flow_struct *flow,
 					       u_int16_t detected_protocol,
 					       ndpi_confidence_t confidence);
 
-void change_category(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void change_category(struct ndpi_detection_module_struct *ndpi_struct,
 		     struct ndpi_flow_struct *flow,
 		     ndpi_protocol_category_t protocol_category);
 
 
-char *ndpi_hostname_sni_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len);
-char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len);
+NDPI_STATIC char *ndpi_hostname_sni_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len);
+NDPI_STATIC char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len);
 
-void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow);
-void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct,
 					      struct ndpi_flow_struct *flow);
 
-void load_common_alpns(struct ndpi_detection_module_struct *ndpi_str);
-u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void load_common_alpns(struct ndpi_detection_module_struct *ndpi_str);
+NDPI_STATIC u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi_str,
 			    const char *alpn_to_check, u_int alpn_to_check_len);
 
-int64_t asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len);
+NDPI_STATIC int64_t asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len);
 
-u_int8_t ips_match(u_int32_t src, u_int32_t dst,
+NDPI_STATIC u_int8_t ips_match(u_int32_t src, u_int32_t dst,
 		   u_int32_t net, u_int32_t num_bits);
 
-u_int8_t ends_with(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC u_int8_t ends_with(struct ndpi_detection_module_struct *ndpi_struct,
                    char *str, char *ends);
 
-u_int16_t check_for_email_address(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC u_int16_t check_for_email_address(struct ndpi_detection_module_struct *ndpi_struct,
                                   u_int16_t counter);
 
-u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
 				 u_int8_t protocol,
 				 u_int32_t saddr, u_int32_t daddr);
 
-u_int32_t ip_port_hash_funct(u_int32_t ip, u_int16_t port);
+NDPI_STATIC u_int32_t ip_port_hash_funct(u_int32_t ip, u_int16_t port);
 
-char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen);
+NDPI_STATIC char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen);
 
-u_int16_t icmp4_checksum(u_int8_t const * const buf, size_t len);
+NDPI_STATIC u_int16_t icmp4_checksum(u_int8_t const * const buf, size_t len);
 
 #ifndef __KERNEL__
-int load_protocols_file_fd(struct ndpi_detection_module_struct *ndpi_mod, FILE *fd);
-int load_categories_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd, void *user_data);
-int load_malicious_sha1_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
-int load_malicious_ja3_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
-int load_risk_domain_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
+NDPI_STATIC int load_protocols_file_fd(struct ndpi_detection_module_struct *ndpi_mod, FILE *fd);
+NDPI_STATIC int load_categories_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd, void *user_data);
+NDPI_STATIC int load_malicious_sha1_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
+NDPI_STATIC int load_malicious_ja3_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
+NDPI_STATIC int load_risk_domain_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
 #endif
 
 /* TLS */
-int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow, uint32_t quic_version);
-void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct,
                                 struct ndpi_flow_struct *flow,
                                 u_int16_t p_offset, u_int16_t certificate_len);
-void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 			  struct ndpi_flow_struct *flow, int first_dtls_pkt);
-int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len);
-void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len);
+NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow);
 
 /* HTTP */
-void http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow,
                              const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
 
 /* OOKLA */
-int ookla_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
+NDPI_STATIC int ookla_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
                             struct ndpi_flow_struct* flow);
-void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
                         struct ndpi_flow_struct *flow);
 
 /* QUIC */
-int quic_len(const uint8_t *buf, uint64_t *value);
-int quic_len_buffer_still_required(uint8_t value);
-int is_version_with_var_int_transport_params(uint32_t version);
-int is_version_with_tls(uint32_t version);
-void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int quic_len(const uint8_t *buf, uint64_t *value);
+NDPI_STATIC int quic_len_buffer_still_required(uint8_t value);
+NDPI_STATIC int is_version_with_var_int_transport_params(uint32_t version);
+NDPI_STATIC int is_version_with_tls(uint32_t version);
+NDPI_STATIC void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
                   struct ndpi_flow_struct *flow,
                   const u_int8_t *crypto_data, uint32_t crypto_data_len);
-void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
                  struct ndpi_flow_struct *flow,
                  const u_int8_t *crypto_data, uint32_t crypto_data_len);
-const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *ndpi_struct,
                                struct ndpi_flow_struct *flow,
                                u_int8_t *clear_payload, uint32_t clear_payload_len,
                                uint64_t *crypto_data_len);
 
 /* RTP */
-int is_valid_rtp_payload_type(uint8_t type);
-int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
+NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
                           struct ndpi_flow_struct *flow);
-u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type);
+NDPI_STATIC u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type);
 
 /* Bittorrent */
-u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset);
-u_int32_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow);
-int search_into_bittorrent_cache(struct ndpi_detection_module_struct *ndpi_struct,
-                                 struct ndpi_flow_struct *flow);
-void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC u_int32_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset);
+NDPI_STATIC u_int32_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow);
+NDPI_STATIC int search_into_bittorrent_cache(struct ndpi_detection_module_struct *ndpi_struct,
+                                  struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
 		u_int32_t size,u_int32_t size6,u_int32_t tmo,int logsize);
-void ndpi_bittorrent_done(struct ndpi_detection_module_struct *ndpi_struct);
-int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now);
+NDPI_STATIC void ndpi_bittorrent_done(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now);
 
 /* Stun */
-int stun_search_into_zoom_cache(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC int stun_search_into_zoom_cache(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 /* TPKT */
-int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet);
+NDPI_STATIC int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet);
 
 /* Mining Protocols (Ethereum, Monero, ...) */
-u_int32_t mining_make_lru_cache_key(struct ndpi_flow_struct *flow);
+NDPI_STATIC u_int32_t mining_make_lru_cache_key(struct ndpi_flow_struct *flow);
 
 
 /* Protocols init */
-void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_afp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_armagetron_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_amqp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_bgp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_lisp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_teredo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ciscovpn_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_citrix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_corba_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_crossfire_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dcerpc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dhcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dhcpv6_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dns_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dofus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dropbox_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_eaq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_edonkey_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ftp_control_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ftp_data_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_gnutella_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_gtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_hsrp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_guildwars_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_h323_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_halflife2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_hots_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_http_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_iax_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_icecast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ipp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_irc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_kakaotalk_voice_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_kerberos_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_kontiki_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ldap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_lotus_notes_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mail_imap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mail_pop_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mail_smtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_maplestory_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_megaco_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mgcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mining_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mms_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_monero_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_nats_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mpegts_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mssql_tds_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mysql_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_netbios_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_netflow_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_nfs_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_noe_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_non_tcp_udp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ntp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_openvpn_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_oracle_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_postgres_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ppstream_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_pptp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_qq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_quake_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_quic_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_radius_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_redis_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rsync_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rtcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rtmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rtsp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_sflow_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_shoutcast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_sip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_imo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_skinny_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_skype_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_smb_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_snmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_socrates_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_socks_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_spotify_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ssh_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_starcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_steam_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_stun_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_syslog_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ssdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_teamspeak_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_teamviewer_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_telegram_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_telnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tftp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tvuplayer_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_usenet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_wsd_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_veohtv_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_vhua_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_viber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_vmware_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_vnc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_vxlan_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_warcraft3_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_whois_das_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_world_of_warcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_world_of_kung_fu_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_xbox_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_xdmcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_zattoo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_zmq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_stracraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ubntac2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_coap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mqtt_dissector (struct ndpi_detection_module_struct *ndpi_struct,u_int32_t *id);
-void init_someip_dissector (struct ndpi_detection_module_struct *ndpi_struct,u_int32_t *id);
-void init_rx_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_git_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_drda_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_bjnp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_smpp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tinc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_fix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_nintendo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_csgo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_checkmk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_cpha_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_apple_push_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_amazon_video_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_whatsapp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ajp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_memcached_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_nest_log_sink_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ookla_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_modbus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_capwap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_zabbix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_wireguard_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dnp3_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_104_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_s7comm_dissector(struct ndpi_detection_module_struct *ndpi_struct,u_int32_t *id);
-void init_websocket_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_soap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_dnscrypt_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mongodb_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_among_us_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_hpvirtgrp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_genshin_impact_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_z3950_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_avast_securedns_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_cassandra_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ethernet_ip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_toca_boca_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_sd_rtn_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_raknet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_xiaomi_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_mpegdash_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rsh_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ipsec_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_collectd_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_i3d_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_riotgames_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ultrasurf_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_threema_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_alicloud_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_avast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_softether_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_activision_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_discord_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tivoconnect_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_kismet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_fastcgi_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_natpmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_syncthing_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_crynet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_line_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_munin_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_elasticsearch_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tuya_lp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tplink_shp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_merakicloud_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_tailscale_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_source_engine_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_bacnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_oicq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_epicgames_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_bitcoin_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_apache_thrift_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_slp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_http2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_haproxy_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rmcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_can_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_protobuf_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ethereum_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ptpv2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_hart_ip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_rtps_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_opc_ua_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_fins_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ethersio_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_beckhoff_ads_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_iso9506_1_mms_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ieee_c37118_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_ethersbus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_profinet_io_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-void init_hislip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_afp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_armagetron_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_amqp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bgp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_lisp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_teredo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ciscovpn_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_citrix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_corba_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_crossfire_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dcerpc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dhcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dhcpv6_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dns_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dofus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dropbox_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_eaq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_edonkey_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ftp_control_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ftp_data_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_gnutella_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_gtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_hsrp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_guildwars_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_h323_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_halflife2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_hots_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_http_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_iax_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_icecast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ipp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_irc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_kakaotalk_voice_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_kerberos_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_kontiki_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ldap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_lotus_notes_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mail_imap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mail_pop_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mail_smtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_maplestory_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_megaco_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mgcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mining_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mms_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_monero_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_nats_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mpegts_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mssql_tds_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mysql_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_netbios_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_netflow_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_nfs_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_noe_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_non_tcp_udp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ntp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_openvpn_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_oracle_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_postgres_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ppstream_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_pptp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_qq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_quake_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_quic_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_radius_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_redis_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rsync_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rtcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rtmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rtsp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_sflow_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_shoutcast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_sip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_imo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_skinny_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_skype_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_smb_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_snmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_socrates_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_socks_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_spotify_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ssh_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_starcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_steam_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_stun_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_syslog_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ssdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_teamspeak_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_teamviewer_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_telegram_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_telnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tftp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tvuplayer_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_usenet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_wsd_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_veohtv_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_vhua_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_viber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_vmware_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_vnc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_vxlan_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_warcraft3_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_whois_das_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_world_of_warcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_world_of_kung_fu_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_xbox_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_xdmcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_zattoo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_zmq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_stracraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ubntac2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_coap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mqtt_dissector (struct ndpi_detection_module_struct *ndpi_struct,u_int32_t *id);
+NDPI_STATIC void init_someip_dissector (struct ndpi_detection_module_struct *ndpi_struct,u_int32_t *id);
+NDPI_STATIC void init_rx_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_git_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_drda_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bjnp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_smpp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tinc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_fix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_nintendo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_csgo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_checkmk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_cpha_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_apple_push_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_amazon_video_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_whatsapp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ajp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_memcached_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_nest_log_sink_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ookla_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_modbus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_capwap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_zabbix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_wireguard_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dnp3_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_104_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_s7comm_dissector(struct ndpi_detection_module_struct *ndpi_struct,u_int32_t *id);
+NDPI_STATIC void init_websocket_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_soap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dnscrypt_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mongodb_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_among_us_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_hpvirtgrp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_genshin_impact_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_z3950_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_avast_securedns_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_cassandra_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ethernet_ip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_toca_boca_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_sd_rtn_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_raknet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_xiaomi_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mpegdash_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rsh_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ipsec_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_collectd_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_i3d_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_riotgames_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ultrasurf_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_threema_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_alicloud_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_avast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_softether_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_activision_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_discord_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tivoconnect_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_kismet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_fastcgi_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_natpmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_syncthing_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_crynet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_line_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_munin_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_elasticsearch_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tuya_lp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tplink_shp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_merakicloud_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_tailscale_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_source_engine_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bacnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_oicq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_epicgames_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bitcoin_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_apache_thrift_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_slp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_http2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_haproxy_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rmcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_can_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_protobuf_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ethereum_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ptpv2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_hart_ip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_rtps_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_opc_ua_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_fins_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ethersio_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_beckhoff_ads_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_iso9506_1_mms_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ieee_c37118_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ethersbus_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_profinet_io_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_hislip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 #endif
 

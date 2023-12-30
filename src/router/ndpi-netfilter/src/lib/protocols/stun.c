@@ -516,7 +516,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ************************************************************ */
 
-extern int ndpi_stun_cache_enable;
+//extern int ndpi_stun_cache_enable;
 
 /* ************************************************************ */
 

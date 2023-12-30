@@ -214,7 +214,7 @@ sha256_update(sha256_t *p, const unsigned char *data, size_t size)
 }
 
 
-void
+NDPI_STATIC void
 sha256_final(sha256_t *p, unsigned char *digest)
 {
   uint64_t lenInBits = (p->count << 3);
