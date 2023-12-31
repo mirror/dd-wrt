@@ -57,8 +57,7 @@ static int crypto_pcbc_encrypt_segment(struct blkcipher_desc *desc,
 	do {
 		crypto_xor(iv, src, bsize);
 		fn(crypto_cipher_tfm(tfm), dst, iv);
-		memcpy(iv, dst, bsize);
-		crypto_xor(iv, src, bsize);
+		crypto_xor_cpy(iv, dst, src, bsize);
 
 		src += bsize;
 		dst += bsize;
@@ -83,8 +82,7 @@ static int crypto_pcbc_encrypt_inplace(struct blkcipher_desc *desc,
 		memcpy(tmpbuf, src, bsize);
 		crypto_xor(iv, src, bsize);
 		fn(crypto_cipher_tfm(tfm), src, iv);
-		memcpy(iv, tmpbuf, bsize);
-		crypto_xor(iv, src, bsize);
+		crypto_xor_cpy(iv, tmpbuf, src, bsize);
 
 		src += bsize;
 	} while ((nbytes -= bsize) >= bsize);
@@ -133,8 +131,7 @@ static int crypto_pcbc_decrypt_segment(struct blkcipher_desc *desc,
 	do {
 		fn(crypto_cipher_tfm(tfm), dst, src);
 		crypto_xor(dst, iv, bsize);
-		memcpy(iv, src, bsize);
-		crypto_xor(iv, dst, bsize);
+		crypto_xor_cpy(iv, dst, src, bsize);
 
 		src += bsize;
 		dst += bsize;
@@ -159,8 +156,7 @@ static int crypto_pcbc_decrypt_inplace(struct blkcipher_desc *desc,
 		memcpy(tmpbuf, src, bsize);
 		fn(crypto_cipher_tfm(tfm), src, src);
 		crypto_xor(src, iv, bsize);
-		memcpy(iv, tmpbuf, bsize);
-		crypto_xor(iv, src, bsize);
+		crypto_xor_cpy(iv, src, tmpbuf, bsize);
 
 		src += bsize;
 	} while ((nbytes -= bsize) >= bsize);
@@ -239,9 +235,6 @@ static struct crypto_instance *crypto_pcbc_alloc(struct rtattr **tb)
 	inst->alg.cra_blocksize = alg->cra_blocksize;
 	inst->alg.cra_alignmask = alg->cra_alignmask;
 	inst->alg.cra_type = &crypto_blkcipher_type;
-
-	/* We access the data as u32s when xoring. */
-	inst->alg.cra_alignmask |= __alignof__(u32) - 1;
 
 	inst->alg.cra_blkcipher.ivsize = alg->cra_blocksize;
 	inst->alg.cra_blkcipher.min_keysize = alg->cra_cipher.cia_min_keysize;
