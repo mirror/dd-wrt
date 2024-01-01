@@ -502,6 +502,8 @@ config CRYPTO_GHASH
 	tristate "GHASH digest algorithm"
 	select CRYPTO_GF128MUL
 	select CRYPTO_HASH
+	select CRYPTO_GCM
+	select CRYPTO_AES
 	help
 	  GHASH is message digest algorithm for GCM (Galois/Counter Mode).
 
