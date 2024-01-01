@@ -57,6 +57,7 @@ busybox hdparm -f ${MTDPART}
 hdparm -F ${MTDPART}
 busybox hdparm -F ${MTDPART}
 busybox echo 1 > /proc/sys/vm/drop_caches
+busybox killall -9 watchdog
 if [ x$3 = x1 ]
 then
 	busybox sleep 10
