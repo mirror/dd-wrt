@@ -51,9 +51,10 @@ static u8 *ovpn_aead_iv_set(struct ovpn_crypto_key_slot *ks, u8 iv[MAX_IV_SIZE])
 		iv_ptr = iv;
 		break;
 	case OVPN_CIPHER_ALG_AES_CCM:
+	case OVPN_CIPHER_ALG_AES_CBC:
 		BUILD_BUG_ON(MAX_IV_SIZE < 16);
 
-		/* For CCM, the API expects a 16-byte IV.
+		/* For CCM and CBC, the API expects a 16-byte IV.
 		 *
 		 * The first octect contains L' as per RFC3610, which is the size of the length
 		 * field in octects minus 1.
@@ -357,6 +358,11 @@ ovpn_aead_crypto_key_slot_init(enum ovpn_cipher_alg alg,
 #if IS_ENABLED(CONFIG_CRYPTO_CCM)
 	case OVPN_CIPHER_ALG_AES_CCM:
 		alg_name = "ccm(aes)";
+		break;
+#endif
+#if IS_ENABLED(CONFIG_CRYPTO_CBC)
+	case OVPN_CIPHER_ALG_AES_CBC:
+		alg_name = "cbc(aes)";
 		break;
 #endif
 	default:
