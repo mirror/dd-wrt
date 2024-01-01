@@ -328,8 +328,10 @@ static int gcm_encrypt(struct aead_request *req)
 		int remaining = blocks;
 		do {
 			printk(KERN_EMERG "src %llX\n", *(__be64*)src);
+			printk(KERN_EMERG "key_enc %llX\n", *(__be64*)ctx->aes_key.key_enc);
 			__octeon_aes_encrypt(ctx->aes_key.key_enc, ks, iv, ctx->aes_key.key_length);
 			crypto_xor_cpy(dst, src, ks, AES_BLOCK_SIZE);
+			printk(KERN_EMERG "ks %llX\n", *(__be64*)ks);
 			printk(KERN_EMERG "src2 %llX\n", *(__be64*)src);
 			printk(KERN_EMERG "dst %llX\n", *(__be64*)dst);
 			printk(KERN_EMERG "iv_bef %llX\n", *(__be64*)iv);
