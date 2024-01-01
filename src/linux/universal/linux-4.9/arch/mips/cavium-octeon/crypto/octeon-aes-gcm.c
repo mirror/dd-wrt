@@ -20,6 +20,7 @@
 #include <linux/cpufeature.h>
 #include <linux/crypto.h>
 #include <linux/module.h>
+#include <asm/octeon/octeon.h>
 #include "octeon-crypto.h"
 
 MODULE_DESCRIPTION("GHASH & AES-GCM using Octeon HW Crypto");
@@ -494,6 +495,8 @@ static struct aead_alg gcm_aes_alg = {
 static int __init ghash_ce_mod_init(void)
 {
 	int ret;
+	if (!octeon_has_crypto())
+		return -ENOTSUPP;
 
 	ret = crypto_register_shash(&ghash_alg);
 	if (ret)
@@ -507,8 +510,6 @@ static int __init ghash_ce_mod_init(void)
 
 static void __exit ghash_ce_mod_exit(void)
 {
-	if (!octeon_has_crypto())
-		return -ENOTSUPP;
 	crypto_unregister_shash(&ghash_alg);
 	crypto_unregister_aead(&gcm_aes_alg);
 }
