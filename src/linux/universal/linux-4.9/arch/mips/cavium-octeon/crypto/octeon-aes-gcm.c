@@ -192,7 +192,7 @@ static int gcm_setkey(struct crypto_aead *tfm, const u8 *inkey, unsigned int key
 	struct gcm_aes_ctx *ctx = crypto_aead_ctx(tfm);
 	u8 key[GHASH_BLOCK_SIZE];
 	int ret;
-	
+	printk(KERN_EMERG "keylength %d\n", keylen);
 	ret = crypto_aes_expand_key(&ctx->aes_key, inkey, keylen);
 	if (ret) {
 		tfm->base.crt_flags |= CRYPTO_TFM_RES_BAD_KEY_LEN;
@@ -287,7 +287,6 @@ static void gcm_final(struct aead_request *req, struct gcm_aes_ctx *ctx, u64 dg[
 {
 	u8 mac[AES_BLOCK_SIZE];
 	u128 lengths;
-
 	lengths.a = cpu_to_be64(req->assoclen * 8);
 	lengths.b = cpu_to_be64(cryptlen * 8);
 
@@ -314,7 +313,7 @@ static int gcm_encrypt(struct aead_request *req)
 	if (req->assoclen)
 		gcm_calculate_auth_mac(req, dg);
 
-	memcpy(iv, req->iv, GCM_IV_SIZE);
+ 	memcpy(iv, req->iv, GCM_IV_SIZE);
 	put_unaligned_be32(1, iv + GCM_IV_SIZE);
 
 	err = skcipher_walk_aead_encrypt(&walk, req, false);
@@ -327,11 +326,15 @@ static int gcm_encrypt(struct aead_request *req)
 		u8 *dst = walk.dst.virt.addr;
 		u8 *src = walk.src.virt.addr;
 		int remaining = blocks;
-
 		do {
+			printk(KERN_EMERG "src %llX\n", *(__be64*)src);
 			__octeon_aes_encrypt(ctx->aes_key.key_enc, ks, iv, ctx->aes_key.key_length);
 			crypto_xor_cpy(dst, src, ks, AES_BLOCK_SIZE);
+			printk(KERN_EMERG "src2 %llX\n", *(__be64*)src);
+			printk(KERN_EMERG "dst %llX\n", *(__be64*)dst);
+			printk(KERN_EMERG "iv_bef %llX\n", *(__be64*)iv);
 			crypto_inc(iv, AES_BLOCK_SIZE);
+			printk(KERN_EMERG "iv_af %llX\n", *(__be64*)iv);
 
 			dst += AES_BLOCK_SIZE;
 			src += AES_BLOCK_SIZE;
@@ -341,20 +344,17 @@ static int gcm_encrypt(struct aead_request *req)
 
 		err = skcipher_walk_done(&walk, walk.nbytes % (2 * AES_BLOCK_SIZE));
 	}
-	if (walk.nbytes) {
-		__octeon_aes_encrypt(ctx->aes_key.key_enc, ks, iv, ctx->aes_key.key_length);
-		if (walk.nbytes > AES_BLOCK_SIZE) {
-			crypto_inc(iv, AES_BLOCK_SIZE);
-			__octeon_aes_encrypt(ctx->aes_key.key_enc, ks + AES_BLOCK_SIZE, iv, ctx->aes_key.key_length);
-		}
-	}
 
-	/* handle the tail */
 	if (walk.nbytes) {
 		u8 buf[GHASH_BLOCK_SIZE];
 		unsigned int nbytes = walk.nbytes;
 		u8 *dst = walk.dst.virt.addr;
 		u8 *head = NULL;
+		__octeon_aes_encrypt(ctx->aes_key.key_enc, ks, iv, ctx->aes_key.key_length);
+		if (walk.nbytes > AES_BLOCK_SIZE) {
+			crypto_inc(iv, AES_BLOCK_SIZE);
+			__octeon_aes_encrypt(ctx->aes_key.key_enc, ks + AES_BLOCK_SIZE, iv, ctx->aes_key.key_length);
+		}
 
 		crypto_xor_cpy(walk.dst.virt.addr, walk.src.virt.addr, ks, walk.nbytes);
 
@@ -428,6 +428,9 @@ static int gcm_decrypt(struct aead_request *req)
 		err = skcipher_walk_done(&walk, walk.nbytes % (2 * AES_BLOCK_SIZE));
 	}
 	if (walk.nbytes) {
+		const u8 *src = walk.src.virt.addr;
+		const u8 *head = NULL;
+		unsigned int nbytes = walk.nbytes;
 		if (walk.nbytes > AES_BLOCK_SIZE) {
 			u8 *iv2 = iv + AES_BLOCK_SIZE;
 
@@ -437,13 +440,6 @@ static int gcm_decrypt(struct aead_request *req)
 			__octeon_aes_encrypt(ctx->aes_key.key_enc, iv2, iv2, ctx->aes_key.key_length);
 		}
 		__octeon_aes_encrypt(ctx->aes_key.key_enc, iv, iv, ctx->aes_key.key_length);
-	}
-
-	/* handle the tail */
-	if (walk.nbytes) {
-		const u8 *src = walk.src.virt.addr;
-		const u8 *head = NULL;
-		unsigned int nbytes = walk.nbytes;
 
 		if (walk.nbytes > GHASH_BLOCK_SIZE) {
 			head = src;
