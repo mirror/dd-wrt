@@ -479,6 +479,19 @@ config CRYPTO_CRC32_PCLMUL
 	  which will enable any routine to use the CRC-32-IEEE 802.3 checksum
 	  and gain better performance as compared with the table implementation.
 
+config CRYPTO_CRC32_OCTEON
+	tristate "CRC32 Octeon hardware acceleration"
+	depends on CPU_CAVIUM_OCTEON
+	select CRYPTO_HASH
+	select CRC32
+	help
+	  From Intel Westmere and AMD Bulldozer processor with SSE4.2
+	  and PCLMULQDQ supported, the processor will support
+	  CRC32 PCLMULQDQ implementation using hardware accelerated PCLMULQDQ
+	  instruction. This option will create 'crc32-plcmul' module,
+	  which will enable any routine to use the CRC-32-IEEE 802.3 checksum
+	  and gain better performance as compared with the table implementation.
+
 config CRYPTO_CRCT10DIF
 	tristate "CRCT10DIF algorithm"
 	select CRYPTO_HASH
@@ -502,14 +515,14 @@ config CRYPTO_GHASH
 	tristate "GHASH digest algorithm"
 	select CRYPTO_GF128MUL
 	select CRYPTO_HASH
-	select CRYPTO_GCM
-	select CRYPTO_AES
 	help
 	  GHASH is message digest algorithm for GCM (Galois/Counter Mode).
 
 config CRYPTO_GHASH_OCTEON
 	tristate "GHASH digest algorithm (OCTEON)"
 	depends on CPU_CAVIUM_OCTEON
+	select CRYPTO_GCM
+	select CRYPTO_AES
 	select CRYPTO_GHASH
 	help
 	  GHASH is message digest algorithm for GCM (Galois/Counter Mode). (octeon hw crypto)
