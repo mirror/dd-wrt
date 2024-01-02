@@ -24,21 +24,22 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len, u32 iv)
 	write_octeon_64bit_crc_iv(iv);
 
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword(crc, get_unaligned_le64(p));
+		write_octeon_64bit_crc_dword(get_unaligned_le64(p));
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word(crc, get_unaligned_le32(p));
+		write_octeon_64bit_crc_word(get_unaligned_le32(p));
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half(crc, get_unaligned_le16(p));
+		write_octeon_64bit_crc_half(get_unaligned_le16(p));
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
-		write_octeon_64bit_crc_byte(crc, *p);
+		write_octeon_64bit_crc_byte(*p);
+	ctx->crc = read_octeon_64bit_crc_iv();
 	octeon_crypto_disable(&state, flags);
 
 	return crc;
@@ -54,21 +55,22 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len, u32 iv)
 	write_octeon_64bit_crc_iv(iv);
 
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword(crc, get_unaligned_le64(p));
+		write_octeon_64bit_crc_dword(get_unaligned_le64(p));
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word(crc, get_unaligned_le32(p));
+		write_octeon_64bit_crc_word(get_unaligned_le32(p));
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half(crc, get_unaligned_le16(p));
+		write_octeon_64bit_crc_half(get_unaligned_le16(p));
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
-		write_octeon_64bit_crc_byte(crc, *p);
+		write_octeon_64bit_crc_byte(*p);
+	ctx->crc = read_octeon_64bit_crc_iv();
 	octeon_crypto_disable(&state, flags);
 
 	return crc;

@@ -148,12 +148,12 @@ do {							\
 	: [rt] "d" (value));		\
 } while (0)
 
-#define read_octeon_64bit_crc_iv(index)		\
+#define read_octeon_64bit_crc_iv()		\
 ({							\
 	u64 __value;					\
 							\
 	__asm__ __volatile__ (				\
-	"dmfc2 %[rt],0x0201+" STR(index)		\
+	"dmfc2 %[rt],0x0201"		\
 	: [rt] "=d" (__value)				\
 	: );						\
 							\
