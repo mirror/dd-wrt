@@ -80,6 +80,10 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	s32 length = len;
+
+	if (len < 64)
+		return crc32_le(crc, p, len);
+
 	flags = octeon_crypto_crc_enable(&state);
 	crc = read_octeon_64bit_es32(crc);
 	write_octeon_64bit_crc_polynominal(0x04c11db7);
@@ -115,6 +119,10 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	s32 length = len;
+
+	if (len < 64)
+		return __crc32c_le(crc, p, len);
+
 	flags = octeon_crypto_crc_enable(&state);
 	crc = read_octeon_64bit_es32(crc);
 	write_octeon_64bit_crc_polynominal(0x1edc6f41);
