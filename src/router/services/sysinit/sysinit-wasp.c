@@ -591,7 +591,7 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 	fclose(out);
-	FILE *out = fopen("/tmp/board1.bin", "wb");
+	out = fopen("/tmp/board1.bin", "wb");
 	fseek(fp, 0x10000 + 0x5000, SEEK_SET);
 	char *smem = malloc(12064);
 	fread(smem, 12064, 1, fp);
