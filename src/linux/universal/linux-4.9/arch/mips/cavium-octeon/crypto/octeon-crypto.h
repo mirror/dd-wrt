@@ -32,6 +32,9 @@ extern void octeon_crypto_disable(struct octeon_cop2_state *state,
 #define octeon_prefetch0(address) octeon_prefetch(address, 0)
 #define octeon_prefetch128(address) octeon_prefetch(address, 128)
 
+
+
+
 #define octeon_storeuna_int64(data, address, offset) \
 	{ char *__a = (char *)(address); \
 	  asm ("usd %[rsrc], " STR(offset) "(%[rbase])" : \
@@ -59,6 +62,103 @@ do {							\
             : [r1] "=&d"(in1) , [r2] "=&d"(in2) \
             : [r3] "d"(out1),  [r4] "d"(out2)); \
 } while (0)
+
+#define CVMX_MT_CRC_POLYNOMIAL(val)         asm volatile ("dmtc2 %[rt],0x4200" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_IV(val)                 asm volatile ("dmtc2 %[rt],0x0201" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_LEN(val)                asm volatile ("dmtc2 %[rt],0x1202" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_BYTE(val)               asm volatile ("dmtc2 %[rt],0x0204" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_HALF(val)               asm volatile ("dmtc2 %[rt],0x0205" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_WORD(val)               asm volatile ("dmtc2 %[rt],0x0206" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_DWORD(val)              asm volatile ("dmtc2 %[rt],0x1207" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_VAR(val)                asm volatile ("dmtc2 %[rt],0x1208" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_POLYNOMIAL_REFLECT(val) asm volatile ("dmtc2 %[rt],0x4210" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_IV_REFLECT(val)         asm volatile ("dmtc2 %[rt],0x0211" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_BYTE_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0214" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_HALF_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0215" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_WORD_REFLECT(val)       asm volatile ("dmtc2 %[rt],0x0216" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_DWORD_REFLECT(val)      asm volatile ("dmtc2 %[rt],0x1217" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+#define CVMX_MT_CRC_VAR_REFLECT(val)        asm volatile ("dmtc2 %[rt],0x1218" : : [rt] "d" (cvmx_cpu_to_be64(val)))
+
+#define CVMX_MF_CRC_POLYNOMIAL(val)         asm volatile ("dmfc2 %[rt],0x0200" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+#define CVMX_MF_CRC_IV(val)                 asm volatile ("dmfc2 %[rt],0x0201" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+#define CVMX_MF_CRC_IV_REFLECT(val)         asm volatile ("dmfc2 %[rt],0x0203" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+#define CVMX_MF_CRC_LEN(val)                asm volatile ("dmfc2 %[rt],0x0202" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+
+#define write_octeon_64bit_crc_polynominal(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x4200"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define write_octeon_64bit_crc_iv(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0201"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define write_octeon_64bit_crc_len(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x1202"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define write_octeon_64bit_crc_byte(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0204"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define write_octeon_64bit_crc_half(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0205"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define write_octeon_64bit_crc_word(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0206"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define write_octeon_64bit_crc_dword(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x1207"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define write_octeon_64bit_crc_var(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x1208"				\
+	:						\
+	: [rt] "d" (value));		\
+} while (0)
+
+#define read_octeon_64bit_crc_iv(index)		\
+({							\
+	u64 __value;					\
+							\
+	__asm__ __volatile__ (				\
+	"dmfc2 %[rt],0x0201+" STR(index)		\
+	: [rt] "=d" (__value)				\
+	: );						\
+							\
+	__value;					\
+})
 
 
 #define write_octeon_64bit_gfm_xormul1_reflect(value)	\
