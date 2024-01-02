@@ -14,63 +14,63 @@ MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com");
 MODULE_DESCRIPTION("CRC32 and CRC32C using Octeon HW Crypto");
 MODULE_LICENSE("GPL v2");
 
-static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len, u32 iv)
+static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	s64 length = len;
 	flags = octeon_crypto_enable(&state);
 	write_octeon_64bit_crc_polynominal(0x04c11db7);
-	write_octeon_64bit_crc_iv(iv);
+	write_octeon_64bit_crc_iv(crc);
 
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword(get_unaligned_le64(p));
+		write_octeon_64bit_crc_dword(get_unaligned_be64(p));
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word(get_unaligned_le32(p));
+		write_octeon_64bit_crc_word(get_unaligned_be32(p));
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half(get_unaligned_le16(p));
+		write_octeon_64bit_crc_half(get_unaligned_be16(p));
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
 		write_octeon_64bit_crc_byte(*p);
-	ctx->crc = read_octeon_64bit_crc_iv();
+	crc = read_octeon_64bit_crc_iv();
 	octeon_crypto_disable(&state, flags);
 
 	return crc;
 }
 
-static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len, u32 iv)
+static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	s64 length = len;
 	flags = octeon_crypto_enable(&state);
 	write_octeon_64bit_crc_polynominal(0x1edc6f41);
-	write_octeon_64bit_crc_iv(iv);
+	write_octeon_64bit_crc_iv(crc);
 
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword(get_unaligned_le64(p));
+		write_octeon_64bit_crc_dword(get_unaligned_be64(p));
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word(get_unaligned_le32(p));
+		write_octeon_64bit_crc_word(get_unaligned_be32(p));
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half(get_unaligned_le16(p));
+		write_octeon_64bit_crc_half(get_unaligned_be16(p));
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
 		write_octeon_64bit_crc_byte(*p);
-	ctx->crc = read_octeon_64bit_crc_iv();
+	crc = read_octeon_64bit_crc_iv();
 	octeon_crypto_disable(&state, flags);
 
 	return crc;
@@ -111,7 +111,7 @@ static int chksum_setkey(struct crypto_shash *tfm, const u8 *key,
 		crypto_shash_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EINVAL;
 	}
-	mctx->key = get_unaligned_le32(key);
+	mctx->key = get_unaligned_be32(key);
 	return 0;
 }
 
@@ -119,9 +119,8 @@ static int chksum_update(struct shash_desc *desc, const u8 *data,
 			 unsigned int length)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
-	struct chksum_ctx *mctx = crypto_shash_ctx(desc->tfm);
 
-	ctx->crc = crc32_octeon_le_hw(ctx->crc, data, length, mctx->key);
+	ctx->crc = crc32_octeon_le_hw(ctx->crc, data, length);
 	return 0;
 }
 
@@ -129,9 +128,8 @@ static int chksumc_update(struct shash_desc *desc, const u8 *data,
 			 unsigned int length)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
-	struct chksum_ctx *mctx = crypto_shash_ctx(desc->tfm);
 
-	ctx->crc = crc32c_octeon_le_hw(ctx->crc, data, length, mctx->key);
+	ctx->crc = crc32c_octeon_le_hw(ctx->crc, data, length);
 	return 0;
 }
 
@@ -139,7 +137,7 @@ static int chksum_final(struct shash_desc *desc, u8 *out)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 
-	put_unaligned_le32(ctx->crc, out);
+	put_unaligned_be32(ctx->crc, out);
 	return 0;
 }
 
@@ -147,19 +145,19 @@ static int chksumc_final(struct shash_desc *desc, u8 *out)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 
-	put_unaligned_le32(~ctx->crc, out);
+	put_unaligned_be32(~ctx->crc, out);
 	return 0;
 }
 
 static int __chksum_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 {
-	put_unaligned_le32(crc32_octeon_le_hw(crc, data, len), out);
+	put_unaligned_be32(crc32_octeon_le_hw(crc, data, len), out);
 	return 0;
 }
 
 static int __chksumc_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 {
-	put_unaligned_le32(~crc32c_octeon_le_hw(crc, data, len), out);
+	put_unaligned_be32(~crc32c_octeon_le_hw(crc, data, len), out);
 	return 0;
 }
 
@@ -280,5 +278,5 @@ static void __exit crc32_mod_exit(void)
 	crypto_unregister_shash(&crc32c_alg);
 }
 
-module_cpu_feature_match(CRC32, crc32_mod_init);
+module_init(crc32_mod_init);
 module_exit(crc32_mod_exit);

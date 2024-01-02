@@ -10,4 +10,4 @@ obj-$(CONFIG_CRYPTO_SHA256_OCTEON)	+= octeon-sha256.o
 obj-$(CONFIG_CRYPTO_SHA512_OCTEON)	+= octeon-sha512.o
 obj-$(CONFIG_CRYPTO_AES_OCTEON)		+= octeon-aes.o octeon-aes-cbc.o
 obj-$(CONFIG_CRYPTO_GHASH_OCTEON)	+= octeon-aes-gcm.o
-obj-m					+= octeon-crc.o
+obj-m					+= octeon-crc32.o

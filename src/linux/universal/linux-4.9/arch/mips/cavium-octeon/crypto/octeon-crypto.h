@@ -63,6 +63,7 @@ do {							\
             : [r3] "d"(out1),  [r4] "d"(out2)); \
 } while (0)
 
+/*
 #define CVMX_MT_CRC_POLYNOMIAL(val)         asm volatile ("dmtc2 %[rt],0x4200" : : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_CRC_IV(val)                 asm volatile ("dmtc2 %[rt],0x0201" : : [rt] "d" (cvmx_cpu_to_be64(val)))
 #define CVMX_MT_CRC_LEN(val)                asm volatile ("dmtc2 %[rt],0x1202" : : [rt] "d" (cvmx_cpu_to_be64(val)))
@@ -83,6 +84,7 @@ do {							\
 #define CVMX_MF_CRC_IV(val)                 asm volatile ("dmfc2 %[rt],0x0201" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
 #define CVMX_MF_CRC_IV_REFLECT(val)         asm volatile ("dmfc2 %[rt],0x0203" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
 #define CVMX_MF_CRC_LEN(val)                asm volatile ("dmfc2 %[rt],0x0202" : [rt] "=d" (cvmx_be64_to_cpu(val)) : )
+*/
 
 #define write_octeon_64bit_crc_polynominal(value)	\
 do {							\
