@@ -24,17 +24,17 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	write_octeon_64bit_crc_iv(crc);
 
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword(get_unaligned_be64(p));
+		write_octeon_64bit_crc_dword(*(u64*)p);
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word(get_unaligned_be32(p));
+		write_octeon_64bit_crc_word(*(u32*)p);
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half(get_unaligned_be16(p));
+		write_octeon_64bit_crc_half(*(u16*)p);
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
@@ -55,21 +55,22 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	write_octeon_64bit_crc_iv(crc);
 
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword(get_unaligned_be64(p));
+		write_octeon_64bit_crc_dword(*(u64*)p);
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word(get_unaligned_be32(p));
+		write_octeon_64bit_crc_word(*(u32*)p);
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half(get_unaligned_be16(p));
+		write_octeon_64bit_crc_half(*(u16*)p);
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
 		write_octeon_64bit_crc_byte(*p);
+
 	crc = read_octeon_64bit_crc_iv();
 	octeon_crypto_disable(&state, flags);
 
@@ -111,7 +112,7 @@ static int chksum_setkey(struct crypto_shash *tfm, const u8 *key,
 		crypto_shash_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EINVAL;
 	}
-	mctx->key = get_unaligned_be32(key);
+	mctx->key = *(u32*)key;
 	return 0;
 }
 
@@ -136,8 +137,8 @@ static int chksumc_update(struct shash_desc *desc, const u8 *data,
 static int chksum_final(struct shash_desc *desc, u8 *out)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
-
-	put_unaligned_be32(ctx->crc, out);
+	
+	*(u32*)out = ctx->crc;
 	return 0;
 }
 
@@ -145,19 +146,19 @@ static int chksumc_final(struct shash_desc *desc, u8 *out)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 
-	put_unaligned_be32(~ctx->crc, out);
+	*(u32*)out = ctx->crc;
 	return 0;
 }
 
 static int __chksum_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 {
-	put_unaligned_be32(crc32_octeon_le_hw(crc, data, len), out);
+	*(u32*)out = crc32_octeon_le_hw(crc, data, len);
 	return 0;
 }
 
 static int __chksumc_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 {
-	put_unaligned_be32(~crc32c_octeon_le_hw(crc, data, len), out);
+	*(u32*)out = crc32_octeon_le_hw(crc, data, len);
 	return 0;
 }
 
