@@ -36,12 +36,51 @@ MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com");
 MODULE_DESCRIPTION("CRC32 and CRC32C using Octeon HW Crypto");
 MODULE_LICENSE("GPL v2");
 
+extern void octeon_cop2_crc_save(struct octeon_cop2_state *);
+extern void octeon_cop2_crc_restore(struct octeon_cop2_state *);
+
+
+static unsigned long octeon_crypto_crc_enable(struct octeon_cop2_state *state)
+{
+	int status;
+	unsigned long flags;
+
+	preempt_disable();
+	local_irq_save(flags);
+	status = read_c0_status();
+	write_c0_status(status | ST0_CU2);
+	if (KSTK_STATUS(current) & ST0_CU2) {
+		octeon_cop2_crc_save(&(current->thread.cp2));
+		KSTK_STATUS(current) &= ~ST0_CU2;
+		status &= ~ST0_CU2;
+	} else if (status & ST0_CU2) {
+		octeon_cop2_crc_save(state);
+	}
+	local_irq_restore(flags);
+	return status & ST0_CU2;
+}
+
+static void octeon_crypto_crc_disable(struct octeon_cop2_state *state,
+			   unsigned long crypto_flags)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	if (crypto_flags & ST0_CU2)
+		octeon_cop2_crc_restore(state);
+	else
+		write_c0_status(read_c0_status() & ~ST0_CU2);
+	local_irq_restore(flags);
+	preempt_enable();
+}
+
+
 static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	s32 length = len;
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_crc_enable(&state);
 	crc = read_octeon_64bit_es32(crc);
 	write_octeon_64bit_crc_polynominal(0x04c11db7);
 	write_octeon_64bit_crc_iv_reflect(crc);
@@ -65,7 +104,7 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 
 	crc = read_octeon_64bit_crc_iv_reflect();
 
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_crc_disable(&state, flags);
 
 	return crc;
 }
@@ -76,7 +115,7 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	s32 length = len;
-	flags = octeon_crypto_enable(&state);
+	flags = octeon_crypto_crc_enable(&state);
 	crc = read_octeon_64bit_es32(crc);
 	write_octeon_64bit_crc_polynominal(0x1edc6f41);
 	write_octeon_64bit_crc_iv_reflect(crc);
@@ -100,7 +139,7 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 
 	crc = read_octeon_64bit_crc_iv_reflect();
 
-	octeon_crypto_disable(&state, flags);
+	octeon_crypto_crc_disable(&state, flags);
 
 	return crc;
 }

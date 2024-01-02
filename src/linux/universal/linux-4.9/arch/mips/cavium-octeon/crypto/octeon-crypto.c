@@ -66,3 +66,4 @@ void octeon_crypto_disable(struct octeon_cop2_state *state,
 	preempt_enable();
 }
 EXPORT_SYMBOL_GPL(octeon_crypto_disable);
+
