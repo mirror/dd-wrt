@@ -40,26 +40,28 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
-	volatile u64 *ptr64;
-	volatile u8 *ptr = (void *)p;;
+	s32 length = len;
 	flags = octeon_crypto_enable(&state);
 	crc = read_octeon_64bit_es32(crc);
 	write_octeon_64bit_crc_polynominal(0x04c11db7);
 	write_octeon_64bit_crc_iv_reflect(crc);
 
-	while ((((u64)ptr) & 0x7) && len) {
-		write_octeon_64bit_crc_byte_reflect(*ptr++);
-		len--;
+	while ((length -= sizeof(u64)) >= 0) {
+		write_octeon_64bit_crc_dword_reflect(*(u64*)p);
+		p += sizeof(u64);
 	}
-	ptr64 = (void *)ptr;
-	while (len >= 8) {
-		write_octeon_64bit_crc_dword_reflect(*ptr64++);
-		len -= 8;
+
+	/* The following is more efficient than the straight loop */
+	if (length & sizeof(u32)) {
+		write_octeon_64bit_crc_word_reflect(*(u32*)p);
+		p += sizeof(u32);
 	}
-	ptr = (void *)ptr64;
-	while (len--) {
-		write_octeon_64bit_crc_byte_reflect(*ptr++);
+	if (length & sizeof(u16)) {
+		write_octeon_64bit_crc_half_reflect(*(u16*)p);
+		p += sizeof(u16);
 	}
+	if (length & sizeof(u8))
+		write_octeon_64bit_crc_byte_reflect(*p);
 
 	crc = read_octeon_64bit_crc_iv_reflect();
 
@@ -73,26 +75,28 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
-	volatile u64 *ptr64;
-	volatile u8 *ptr = (void *)p;;
+	s32 length = len;
 	flags = octeon_crypto_enable(&state);
 	crc = read_octeon_64bit_es32(crc);
 	write_octeon_64bit_crc_polynominal(0x1edc6f41);
 	write_octeon_64bit_crc_iv_reflect(crc);
 
-	while ((((u64)ptr) & 0x7) && len) {
-		write_octeon_64bit_crc_byte_reflect(*ptr++);
-		len--;
+	while ((length -= sizeof(u64)) >= 0) {
+		write_octeon_64bit_crc_dword_reflect(*(u64*)p);
+		p += sizeof(u64);
 	}
-	ptr64 = (void *)ptr;
-	while (len >= 8) {
-		write_octeon_64bit_crc_dword_reflect(*ptr64++);
-		len -= 8;
+
+	/* The following is more efficient than the straight loop */
+	if (length & sizeof(u32)) {
+		write_octeon_64bit_crc_word_reflect(*(u32*)p);
+		p += sizeof(u32);
 	}
-	ptr = (void *)ptr64;
-	while (len--) {
-		write_octeon_64bit_crc_byte_reflect(*ptr++);
+	if (length & sizeof(u16)) {
+		write_octeon_64bit_crc_half_reflect(*(u16*)p);
+		p += sizeof(u16);
 	}
+	if (length & sizeof(u8))
+		write_octeon_64bit_crc_byte_reflect(*p);
 
 	crc = read_octeon_64bit_crc_iv_reflect();
 
