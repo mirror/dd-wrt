@@ -43,10 +43,7 @@ extern void octeon_cop2_crc_restore(struct octeon_cop2_state *);
 static unsigned long octeon_crypto_crc_enable(struct octeon_cop2_state *state)
 {
 	int status;
-	unsigned long flags;
-
 	preempt_disable();
-	local_irq_save(flags);
 	status = read_c0_status();
 	write_c0_status(status | ST0_CU2);
 	if (KSTK_STATUS(current) & ST0_CU2) {
@@ -56,21 +53,16 @@ static unsigned long octeon_crypto_crc_enable(struct octeon_cop2_state *state)
 	} else if (status & ST0_CU2) {
 		octeon_cop2_crc_save(state);
 	}
-	local_irq_restore(flags);
 	return status & ST0_CU2;
 }
 
 static void octeon_crypto_crc_disable(struct octeon_cop2_state *state,
 			   unsigned long crypto_flags)
 {
-	unsigned long flags;
-
-	local_irq_save(flags);
 	if (crypto_flags & ST0_CU2)
 		octeon_cop2_crc_restore(state);
 	else
 		write_c0_status(read_c0_status() & ~ST0_CU2);
-	local_irq_restore(flags);
 	preempt_enable();
 }
 
@@ -81,7 +73,7 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	unsigned long flags;
 	s32 length = len;
 
-	if (len < 64)
+	if (in_interrupt())
 		return crc32_le(crc, p, len);
 
 	flags = octeon_crypto_crc_enable(&state);
@@ -120,7 +112,7 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	unsigned long flags;
 	s32 length = len;
 
-	if (len < 64)
+	if (in_interrupt())
 		return __crc32c_le(crc, p, len);
 
 	flags = octeon_crypto_crc_enable(&state);
