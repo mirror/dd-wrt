@@ -158,7 +158,7 @@ static int __chksum_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 
 static int __chksumc_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 {
-	*(u32*)out = crc32_octeon_le_hw(crc, data, len);
+	*(u32*)out = crc32c_octeon_le_hw(crc, data, len);
 	return 0;
 }
 
