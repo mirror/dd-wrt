@@ -578,7 +578,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-#if defined(HAVE_E355ACV2)
+#if defined(HAVE_E355AC)
 	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
@@ -590,28 +590,15 @@ void start_sysinit(void)
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+	fclose(out);
+	FILE *out = fopen("/tmp/board1.bin", "wb");
 	fseek(fp, 0x10000 + 0x5000, SEEK_SET);
 	char *smem = malloc(12064);
 	fread(smem, 12064, 1, fp);
-	fp = fopen("/tmp/board1.bin", "wb");
-	fwrite(smem, 12064, 1, fp);
-	fclose(fp);
+	fwrite(smem, 12064, 1, out);
 	free(smem);
-
 	fclose(out);
-#elif defined(HAVE_E355AC)
-	fp = fopen("/dev/mtdblock/0", "rb");
-	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
-	if (fp) {
-		fseek(fp, 0x10000 + 0x5000, SEEK_SET);
-		int i;
-		for (i = 0; i < 2116; i++)
-			putc(getc(fp), out);
-		fclose(fp);
-		eval("rm", "-f", "/tmp/ath10k-board.bin");
-		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
-	}
-	fclose(out);
+	fclose(fp);
 #elif defined(HAVE_ARCHERC25)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
