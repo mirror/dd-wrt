@@ -242,15 +242,15 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "3", "untagged");	// wan port
 	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "2");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x50", "0xc737c737", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x54", "0x00000000", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x58", "0x00000000", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x5c", "0x0030c300", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x50", "0xcc35cc35", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x54", "0xca35cc35", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x58", "0xc935c935", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x5c", "0x03ffff00", "4");
 
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x50", "0xc737c737", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x54", "0x00000000", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x58", "0x00000000", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x5c", "0x0030c300", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x50", "0xcc35cc35", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x54", "0xca35cc35", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x58", "0xc935c935", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x5c", "0x03ffff00", "4");
 
 	nvram_unset("sw_cpuport");	// this is a dummy. for the r9000 we need to write complete new code
 	nvram_seti("sw_wan", -1);	// switch 0 (3) note: we cannot allow wan for now
