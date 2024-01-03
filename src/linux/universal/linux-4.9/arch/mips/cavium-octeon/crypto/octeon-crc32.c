@@ -39,7 +39,6 @@ MODULE_LICENSE("GPL v2");
 extern void octeon_cop2_crc_save(struct octeon_cop2_state *);
 extern void octeon_cop2_crc_restore(struct octeon_cop2_state *);
 
-
 static unsigned long octeon_crypto_crc_enable(struct octeon_cop2_state *state)
 {
 	int status;
@@ -56,8 +55,7 @@ static unsigned long octeon_crypto_crc_enable(struct octeon_cop2_state *state)
 	return status & ST0_CU2;
 }
 
-static void octeon_crypto_crc_disable(struct octeon_cop2_state *state,
-			   unsigned long crypto_flags)
+static void octeon_crypto_crc_disable(struct octeon_cop2_state *state, unsigned long crypto_flags)
 {
 	if (crypto_flags & ST0_CU2)
 		octeon_cop2_crc_restore(state);
@@ -65,7 +63,6 @@ static void octeon_crypto_crc_disable(struct octeon_cop2_state *state,
 		write_c0_status(read_c0_status() & ~ST0_CU2);
 	preempt_enable();
 }
-
 
 static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 {
@@ -81,18 +78,31 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	write_octeon_64bit_crc_polynominal(0x04c11db7);
 	write_octeon_64bit_crc_iv_reflect(crc);
 
+	while (length >= 64) {
+		u64 *p64 = (void *)p;
+		write_octeon_64bit_crc_dword_reflect(p64[0]);
+		write_octeon_64bit_crc_dword_reflect(p64[1]);
+		write_octeon_64bit_crc_dword_reflect(p64[2]);
+		write_octeon_64bit_crc_dword_reflect(p64[3]);
+		write_octeon_64bit_crc_dword_reflect(p64[4]);
+		write_octeon_64bit_crc_dword_reflect(p64[5]);
+		write_octeon_64bit_crc_dword_reflect(p64[6]);
+		write_octeon_64bit_crc_dword_reflect(p64[7]);
+		p += 64;
+		length -= 64;
+	}
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword_reflect(*(u64*)p);
+		write_octeon_64bit_crc_dword_reflect(*(u64 *)p);
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word_reflect(*(u32*)p);
+		write_octeon_64bit_crc_word_reflect(*(u32 *)p);
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half_reflect(*(u16*)p);
+		write_octeon_64bit_crc_half_reflect(*(u16 *)p);
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
@@ -104,7 +114,6 @@ static u32 crc32_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 
 	return crc;
 }
-
 
 static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 {
@@ -120,18 +129,32 @@ static u32 crc32c_octeon_le_hw(u32 crc, const u8 *p, unsigned int len)
 	write_octeon_64bit_crc_polynominal(0x1edc6f41);
 	write_octeon_64bit_crc_iv_reflect(crc);
 
+	while (length >= 64) {
+		u64 *p64 = (void *)p;
+		write_octeon_64bit_crc_dword_reflect(p64[0]);
+		write_octeon_64bit_crc_dword_reflect(p64[1]);
+		write_octeon_64bit_crc_dword_reflect(p64[2]);
+		write_octeon_64bit_crc_dword_reflect(p64[3]);
+		write_octeon_64bit_crc_dword_reflect(p64[4]);
+		write_octeon_64bit_crc_dword_reflect(p64[5]);
+		write_octeon_64bit_crc_dword_reflect(p64[6]);
+		write_octeon_64bit_crc_dword_reflect(p64[7]);
+		p += 64;
+		length -= 64;
+	}
+
 	while ((length -= sizeof(u64)) >= 0) {
-		write_octeon_64bit_crc_dword_reflect(*(u64*)p);
+		write_octeon_64bit_crc_dword_reflect(*(u64 *)p);
 		p += sizeof(u64);
 	}
 
 	/* The following is more efficient than the straight loop */
 	if (length & sizeof(u32)) {
-		write_octeon_64bit_crc_word_reflect(*(u32*)p);
+		write_octeon_64bit_crc_word_reflect(*(u32 *)p);
 		p += sizeof(u32);
 	}
 	if (length & sizeof(u16)) {
-		write_octeon_64bit_crc_half_reflect(*(u16*)p);
+		write_octeon_64bit_crc_half_reflect(*(u16 *)p);
 		p += sizeof(u16);
 	}
 	if (length & sizeof(u8))
@@ -190,7 +213,6 @@ static int chksum_update(struct shash_desc *desc, const u8 *data, unsigned int l
 	return 0;
 }
 
-
 static int chksum_final(struct shash_desc *desc, u8 *out)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
@@ -198,7 +220,6 @@ static int chksum_final(struct shash_desc *desc, u8 *out)
 	*(__le32 *)out = cpu_to_le32p(&ctx->crc);
 	return 0;
 }
-
 
 static int __chksum_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 {
@@ -220,7 +241,6 @@ static int chksum_digest(struct shash_desc *desc, const u8 *data, unsigned int l
 	return __chksum_finup(mctx->key, data, length, out);
 }
 
-
 static int chksumc_update(struct shash_desc *desc, const u8 *data, unsigned int length)
 {
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
@@ -236,13 +256,11 @@ static int chksumc_final(struct shash_desc *desc, u8 *out)
 	return 0;
 }
 
-
 static int __chksumc_finup(u32 crc, const u8 *data, unsigned int len, u8 *out)
 {
 	*(__le32 *)out = ~cpu_to_le32(crc32c_octeon_le_hw(crc, data, len));
 	return 0;
 }
-
 
 static int chksumc_finup(struct shash_desc *desc, const u8 *data, unsigned int len, u8 *out)
 {
@@ -250,7 +268,6 @@ static int chksumc_finup(struct shash_desc *desc, const u8 *data, unsigned int l
 
 	return __chksumc_finup(ctx->crc, data, len, out);
 }
-
 
 static int chksumc_digest(struct shash_desc *desc, const u8 *data, unsigned int length, u8 *out)
 {
@@ -294,7 +311,7 @@ static struct shash_alg crc32_alg = {
 		 .cra_ctxsize = sizeof(struct chksum_ctx),
 		 .cra_module = THIS_MODULE,
 		 .cra_init = crc32_cra_init,
-		 }
+		  }
 };
 
 static struct shash_alg crc32c_alg = {
@@ -316,7 +333,7 @@ static struct shash_alg crc32c_alg = {
 		 .cra_ctxsize = sizeof(struct chksum_ctx),
 		 .cra_module = THIS_MODULE,
 		 .cra_init = crc32c_cra_init,
-		 }
+		  }
 };
 
 static int __init crc32_mod_init(void)
