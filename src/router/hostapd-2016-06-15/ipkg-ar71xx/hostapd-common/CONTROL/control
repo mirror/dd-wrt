@@ -1,9 +1,0 @@
-Package: hostapd-common
-Version: 2014-04-24-1
-Depends: libc
-Source: package/network/services/hostapd
-Section: net
-Maintainer: Felix Fietkau <nbd@openwrt.org>
-Architecture: ar71xx
-Installed-Size: 4227
-Description:  hostapd/wpa_supplicant common support files

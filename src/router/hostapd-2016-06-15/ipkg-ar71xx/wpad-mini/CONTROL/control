@@ -1,9 +1,0 @@
-Package: wpad-mini
-Version: 2014-04-24-1
-Depends: libc, libnl-tiny, libubus
-Source: package/network/services/hostapd
-Section: net
-Maintainer: Felix Fietkau <nbd@openwrt.org>
-Architecture: ar71xx
-Installed-Size: 189234
-Description:  This package contains a minimal IEEE 802.1x/WPA Authenticator and Supplicant (WPA-PSK only).
