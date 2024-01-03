@@ -60,21 +60,11 @@ void start_sysinit(void)
 {
 	time_t tm = 0;
 
-	if (!insmod("da9052_wdt")) {
-	} else if (!insmod("da9062_wdt")) {
-	} else if (!insmod("it8712f_wdt")) {
-	} else if (!insmod("max63xx_wdt")) {
+	if (!insmod("it8712f_wdt")) {
 	} else if (!insmod("scx200_wdt")) {
-	} else if (!insmod("via_wdt")) {
 	} else if (!insmod("w83877f_wdt")) {
-	} else if (!insmod("da9055_wdt")) {
-	} else if (!insmod("da9063_wdt")) {
-	} else if (!insmod("iTCO_wdt")) {
-	} else if (!insmod("iTCO_vendor_support")) {
 	} else if (!insmod("it87_wdt")) {
-	} else if (!insmod("max77620_wdt")) {
-	} else if (!insmod("w83627hf_wdt")) {
-	} else if (!insmod("w83977f_wdt")) {
+	} else if (!insmod("mei_wdt")) {
 	} else
 		insmod("softdog");
 
