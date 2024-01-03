@@ -801,16 +801,16 @@ int al_crypto_alg_init(struct al_crypto_device *device)
 		if (IS_ERR(t_alg)) {
 			err = PTR_ERR(t_alg);
 			dev_warn(&device->pdev->dev,
-					"%s alg allocation failed\n",
-					driver_algs[i].driver_name);
+					"%s:%s alg allocation failed %d\n",__func__,
+					driver_algs[i].driver_name, t_alg);
 			continue;
 		}
 
 		err = crypto_register_alg(&t_alg->crypto_alg);
 		if (err) {
 			dev_warn(&device->pdev->dev,
-					"%s alg registration failed\n",
-					t_alg->crypto_alg.cra_driver_name);
+					"%s:%s alg registration failed %d\n",__func__,
+					t_alg->crypto_alg.cra_driver_name, err);
 			kfree(t_alg);
 		} else
 			list_add_tail(&t_alg->entry, &device->alg_list);

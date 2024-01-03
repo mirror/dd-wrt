@@ -94,6 +94,7 @@ static struct al_crc_template driver_crc[] = {
 			.setkey = crc_setkey,
 			.halg = {
 				.digestsize = CHKSUM_DIGEST_SIZE,
+				.statesize = sizeof(struct al_crc_ctx),
 				},
 			},
 		.crcsum_type = AL_CRC_CHECKSUM_CRC32C,
@@ -623,8 +624,8 @@ int al_crypto_crc_init(struct al_crypto_device *device)
 		err = crypto_register_ahash(&t_alg->ahash_alg);
 		if (err) {
 			dev_warn(&device->pdev->dev,
-				"%s alg registration failed\n",
-				t_alg->ahash_alg.halg.base.cra_driver_name);
+				"%s:%s alg registration failed %d\n",__func__,
+				t_alg->ahash_alg.halg.base.cra_driver_name, err);
 			kfree(t_alg);
 		} else
 			list_add_tail(&t_alg->entry, &device->crc_list);

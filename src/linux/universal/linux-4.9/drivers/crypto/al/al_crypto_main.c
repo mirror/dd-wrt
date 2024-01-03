@@ -183,7 +183,7 @@ static int al_crypto_pci_probe(
 		goto err_sysfs_init;
 	}
 
-	if (device->crc_channels < device->max_channels) {
+	if (device->crc_channels <= device->max_channels) {
 		status = al_crypto_alg_init(device);
 		if (status) {
 			dev_err(dev, "%s: al_crypto_alg_init failed\n",
