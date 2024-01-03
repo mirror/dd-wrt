@@ -1,6 +1,6 @@
 MAKEFILE_DIR:=$(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
-KBUILD_CPPFLAGS += -Iarch/arm/mach-alpine/include/al_hal/
+KBUILD_CPPFLAGS += -Iarch/arm/mach-alpine/include/al_hal/ -g
 
 obj-$(CONFIG_CRYPTO_DEV_AL_CRYPTO) += al_crypto.o
 
