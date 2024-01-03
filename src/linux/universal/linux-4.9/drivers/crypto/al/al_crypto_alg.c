@@ -134,7 +134,7 @@ static struct al_crypto_alg_template driver_algs[] = {
 		.enc_type = AL_CRYPT_AES_ECB,
 		.sa_op = AL_CRYPT_ENC_ONLY,
 	},
-/*	{
+		{
 		.name = "ctr(aes)",
 		.driver_name = "ctr-aes-al",
 		.blocksize = AES_BLOCK_SIZE,
@@ -150,7 +150,7 @@ static struct al_crypto_alg_template driver_algs[] = {
 		},
 		.enc_type = AL_CRYPT_AES_CTR,
 		.sa_op = AL_CRYPT_ENC_ONLY,
-	},*/
+	},
 	{
 		.name = "cbc(des)",
 		.driver_name = "cbc-des-al",
