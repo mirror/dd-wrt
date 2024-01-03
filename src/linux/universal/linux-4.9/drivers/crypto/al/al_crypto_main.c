@@ -183,13 +183,14 @@ static int al_crypto_pci_probe(
 		goto err_sysfs_init;
 	}
 
-	if (device->crc_channels <= device->max_channels) {
+	if (device->crc_channels < device->max_channels) {
 		status = al_crypto_alg_init(device);
 		if (status) {
 			dev_err(dev, "%s: al_crypto_alg_init failed\n",
 				__func__);
 			goto err_alg_init;
 		}
+#if 0
 
 		status = al_crypto_hash_init(device);
 		if (status) {
@@ -197,10 +198,13 @@ static int al_crypto_pci_probe(
 				__func__);
 			goto err_hash_init;
 		}
+#endif
+
 	} else
 		dev_info(dev, "%s: Skipping alg/hash initialization, " \
 				"no allocated channels\n", __func__);
 
+#if 0
 	if (device->crc_channels > 0) {
 		status = al_crypto_crc_init(device);
 		if (status) {
@@ -211,7 +215,7 @@ static int al_crypto_pci_probe(
 	} else
 		dev_info(dev, "%s: Skipping crc initialization, " \
 				"no allocated channels\n", __func__);
-
+#endif
 	goto done;
 
 

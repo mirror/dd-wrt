@@ -556,7 +556,7 @@ static struct al_crc *al_crc_alloc(
 	alg->cra_blocksize = template->blocksize;
 	alg->cra_alignmask = 0;
 	alg->cra_ctxsize = sizeof(struct al_crc_ctx);
-	alg->cra_flags = CRYPTO_ALG_ASYNC | CRYPTO_ALG_TYPE_AHASH;
+	alg->cra_flags = CRYPTO_ALG_ASYNC | CRYPTO_ALG_TYPE_AHASH | CRYPTO_ALG_OPTIONAL_KEY;
 
 	t_alg->crcsum_type = template->crcsum_type;
 	t_alg->device = device;

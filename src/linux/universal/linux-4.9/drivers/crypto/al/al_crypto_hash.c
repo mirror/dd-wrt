@@ -98,7 +98,7 @@ struct al_crypto_hash_template {
 	struct ahash_alg template_ahash;
 	enum al_crypto_sa_auth_type auth_type;
 	enum al_crypto_sa_sha2_mode sha2_mode;
-	enum al_crypto_sa_op sa_op;
+	unsigned int sa_op;
 	char sw_hash_name[CRYPTO_MAX_ALG_NAME];
 	unsigned int sw_hash_interm_offset;
 	unsigned int sw_hash_interm_size;
@@ -279,7 +279,7 @@ struct al_crypto_hash {
 	struct al_crypto_device *device;
 	enum al_crypto_sa_auth_type auth_type;
 	enum al_crypto_sa_sha2_mode sha2_mode;
-	enum al_crypto_sa_op sa_op;
+	unsigned int sa_op;
 	struct ahash_alg ahash_alg;
 	char sw_hash_name[CRYPTO_MAX_ALG_NAME];
 	unsigned int sw_hash_interm_offset;
