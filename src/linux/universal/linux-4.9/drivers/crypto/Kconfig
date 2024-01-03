@@ -585,6 +585,6 @@ config CRYPTO_DEV_ROCKCHIP
 
 source "drivers/crypto/chelsio/Kconfig"
 
-#source "drivers/crypto/al/Kconfig"
+source "drivers/crypto/al/Kconfig"
 
 endif # CRYPTO_HW
