@@ -60,6 +60,65 @@ do {							\
             : [r3] "d"(out1),  [r4] "d"(out2)); \
 } while (0)
 
+#define write_octeon_64bit_3des_key(value, index)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0080+" STR(index)				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_3des_iv(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x0084"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_3des_enc_cbc(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x4088"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_3des_enc(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x408a"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_3des_dec_cbc(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x408c"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define write_octeon_64bit_3des_dec(value)	\
+do {							\
+	__asm__ __volatile__ (				\
+	"dmtc2 %[rt],0x408e"				\
+	:						\
+	: [rt] "d" (cpu_to_be64(value)));		\
+} while (0)
+
+#define read_octeon_64bit_3des_result()		\
+({							\
+	u64 __value;					\
+							\
+	__asm__ __volatile__ (				\
+	"dmfc2 %[rt],0x0088"		\
+	: [rt] "=d" (__value)				\
+	: );						\
+							\
+	be64_to_cpu(__value);				\
+})
 
 #define read_octeon_64bit_es32(input)		\
 ({							\
