@@ -130,12 +130,17 @@ static int octeon_cbc_encrypt(struct blkcipher_desc *desc,
 	return 0;
 }
 
-static struct crypto_alg octeon_alg = {
+static int ablk_cbc_init(struct crypto_tfm *tfm)
+{
+	return ablk_init_common(tfm, "__driver-cbc-aes-octeon");
+}
 
-	.cra_name		= "cbc(aes)",
-	.cra_driver_name	= "octeon-cbc-aes",
-	.cra_priority		= 300,
-	.cra_flags		= CRYPTO_ALG_TYPE_BLKCIPHER,
+static struct crypto_alg octeon_algs[] = { {
+	.cra_name		= "__cbc-aes-octeon",
+	.cra_driver_name	= "__driver-cbc-aes-octeon",
+	.cra_priority		= 0,
+	.cra_flags		= CRYPTO_ALG_TYPE_BLKCIPHER |
+				  CRYPTO_ALG_INTERNAL,
 	.cra_blocksize		= AES_BLOCK_SIZE,
 	.cra_ctxsize		= sizeof(struct crypto_aes_ctx),
 	.cra_alignmask		= 0,
@@ -151,19 +156,41 @@ static struct crypto_alg octeon_alg = {
 			.decrypt	= octeon_cbc_decrypt,
 		}
 	}
-
+} , {
+	.cra_name		= "cbc(aes)",
+	.cra_driver_name	= "octeon-cbc-aes",
+	.cra_priority		= 400,
+	.cra_flags		= CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_ASYNC,
+	.cra_blocksize		= AES_BLOCK_SIZE,
+	.cra_ctxsize		= sizeof(struct async_helper_ctx),
+	.cra_alignmask		= 0,
+	.cra_type		= &crypto_ablkcipher_type,
+	.cra_module		= THIS_MODULE,
+	.cra_init		= ablk_cbc_init,
+	.cra_exit		= ablk_exit,
+	.cra_u = {
+		.ablkcipher = {
+			.min_keysize	= AES_MIN_KEY_SIZE,
+			.max_keysize	= AES_MAX_KEY_SIZE,
+			.ivsize		= AES_BLOCK_SIZE,
+			.setkey		= ablk_set_key,
+			.encrypt	= ablk_encrypt,
+			.decrypt	= ablk_decrypt,
+		},
+	},
+ }
 };
 
 static int __init octeon_mod_init(void)
 {
 	if (!octeon_has_crypto())
 		return -ENOTSUPP;
-	return crypto_register_alg(&octeon_alg);
+	return crypto_register_algs(octeon_algs, ARRAY_SIZE(octeon_algs));
 }
 
 static void __exit octeon_mod_exit(void)
 {
-	crypto_unregister_alg(&octeon_alg);
+	crypto_unregister_algs(octeon_algs, ARRAY_SIZE(octeon_algs));
 }
 
 module_init(octeon_mod_init);
