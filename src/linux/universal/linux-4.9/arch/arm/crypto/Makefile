@@ -38,6 +38,7 @@ CFLAGS_sha256-ce-glue.o += $(DISABLE_LTO)
 CFLAGS_sha2-ce-glue.o += $(DISABLE_LTO)
 CFLAGS_aes-ce-glue.o += $(DISABLE_LTO)
 CFLAGS_ghash-ce-glue.o += $(DISABLE_LTO)
+CFLAGS_poly1305-glue.o += $(DISABLE_LTO)
 
 aes-arm-y	:= aes-armv4.o aes_glue.o
 aes-arm-bs-y	:= aesbs-core.o aesbs-glue.o
