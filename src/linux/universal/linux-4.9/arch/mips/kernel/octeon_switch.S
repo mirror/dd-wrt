@@ -88,9 +88,6 @@
 	jr	ra
 	END(resume)
 
-/*
- * void octeon_cop2_save(struct octeon_cop2_state *a0)
- */
 	.align	7
 	.set push
 	.set noreorder

@@ -1267,6 +1267,14 @@ config CRYPTO_DES
 	help
 	  DES cipher algorithm (FIPS 46-2), and Triple DES EDE (FIPS 46-3).
 
+config CRYPTO_DES_OCTEON
+	tristate "Triple DES EDE cipher algorithms"
+	select CRYPTO_ALGAPI
+	select CRYPTO_DES
+	select CRYPTO_ABLK_HELPER
+	help
+	  DES cipher algorithm (FIPS 46-2), and Triple DES EDE (FIPS 46-3). using Octeon HW Crypto
+
 config CRYPTO_DES_SPARC64
 	tristate "DES and Triple DES EDE cipher algorithms (SPARC64)"
 	depends on SPARC64
