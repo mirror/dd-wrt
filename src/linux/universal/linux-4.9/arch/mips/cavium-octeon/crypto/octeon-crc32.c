@@ -1,5 +1,5 @@
 /*
- * octeon-crc.c
+ * octeon-crc.c Accelerated CRC32 and CRC32C implementation with Octeon HW Crypto.
  *
  * Copyright (C) 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *

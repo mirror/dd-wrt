@@ -1,5 +1,5 @@
 /*
- * octeon-aes-cbc.c
+ * octeon-aes-cbc.c Accelerated AES-CBC implementation with Octeon HW Crypto. (based on arm64 aes-glue.c)
  *
  * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *

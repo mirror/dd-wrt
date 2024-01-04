@@ -1,5 +1,5 @@
 /*
- * octeon-aes.c
+ * octeon-aes.c Accelerated AES implementation with Octeon HW Crypto. (based on arm64 aes-glue.c)
  *
  * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
