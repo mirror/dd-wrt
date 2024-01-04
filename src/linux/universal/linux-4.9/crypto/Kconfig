@@ -1269,6 +1269,7 @@ config CRYPTO_DES
 
 config CRYPTO_DES_OCTEON
 	tristate "Triple DES EDE cipher algorithms"
+	depends on CPU_CAVIUM_OCTEON
 	select CRYPTO_ALGAPI
 	select CRYPTO_DES
 	select CRYPTO_ABLK_HELPER
