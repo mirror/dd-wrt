@@ -66,6 +66,7 @@ void start_sysinit(void)
 	} else if (!insmod("it87_wdt")) {
 	} else if (!insmod("mei_wdt")) {
 	} else if (!insmod("sp5100_tco")) {
+	} else if (!insmod("sc1200_wdt")) {
 	} else
 		insmod("softdog");
 
