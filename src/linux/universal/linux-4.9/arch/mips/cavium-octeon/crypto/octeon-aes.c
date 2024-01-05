@@ -1,5 +1,5 @@
 /*
- * octeon-aes.c Accelerated AES implementation with Octeon HW Crypto. (based on arm64 aes-glue.c)
+ * octeon-aes-cbc.c Accelerated AES-CBC implementation with Octeon HW Crypto. (based on arm64 aes-glue.c)
  *
  * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
@@ -20,29 +20,15 @@
  * $Id:
  */
 
-
 #include <crypto/aes.h>
+#include <crypto/ablk_helper.h>
+#include <crypto/algapi.h>
 #include <linux/module.h>
-#include <linux/init.h>
-#include <linux/types.h>
-#include <linux/errno.h>
-#include <linux/crypto.h>
-#include <asm/byteorder.h>
 #include <asm/octeon/octeon.h>
 #include "octeon-crypto.h"
 
+#define AES_BLOCK_MASK	(~(AES_BLOCK_SIZE - 1))
 
-/**
- * crypto_aes_set_key - Set the AES key.
- * @tfm:	The %crypto_tfm that is used in the context.
- * @in_key:	The input key.
- * @key_len:	The size of the key.
- *
- * Returns 0 on success, on failure the %CRYPTO_TFM_RES_BAD_KEY_LEN flag in tfm
- * is set. The function uses crypto_aes_expand_key() to expand the key.
- * &crypto_aes_ctx _must_ be the private data embedded in @tfm which is
- * retrieved with crypto_tfm_ctx().
- */
 static int octeon_crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 		unsigned int key_len)
 {
@@ -53,7 +39,99 @@ static int octeon_crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 	return 0;
 }
 
-static void octeon_aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
+
+
+static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
+			     struct scatterlist *dst,
+			     struct scatterlist *src, unsigned int nbytes)
+{
+	struct crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+	struct blkcipher_walk walk;
+	struct octeon_cop2_state state;
+	unsigned long flags;
+	int err, i, todo;
+	__be64 *iv;
+	__be64 *key	= (__be64*)ctx->key_enc;
+	__be64 *dataout;
+	__be64 *data;
+
+	blkcipher_walk_init(&walk, dst, src, nbytes);
+	err = blkcipher_walk_virt(desc, &walk);
+	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
+	flags = octeon_crypto_enable(&state);
+	write_octeon_64bit_aes_key(key[0],0);
+	write_octeon_64bit_aes_key(key[1],1);
+	write_octeon_64bit_aes_key(key[2],2);
+	write_octeon_64bit_aes_key(key[3],3);
+	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
+	iv = (__be64*)walk.iv;
+	write_octeon_64bit_aes_iv(iv[0],0);
+	write_octeon_64bit_aes_iv(iv[1],1);
+
+	while ((nbytes = walk.nbytes)) {
+		todo = nbytes & AES_BLOCK_MASK;
+		dataout = (__be64*)walk.dst.virt.addr;
+		data = (__be64*)walk.src.virt.addr;
+		for (i=0;i<todo/AES_BLOCK_SIZE;i++) {
+	    		write_octeon_64bit_aes_dec_cbc0(*data++);
+    			write_octeon_64bit_aes_dec_cbc1(*data++);
+    			*dataout++ = read_octeon_64bit_aes_result(0);
+    			*dataout++ = read_octeon_64bit_aes_result(1);
+    		}
+		nbytes &= AES_BLOCK_SIZE - 1;
+		err = blkcipher_walk_done(desc, &walk, nbytes);
+	}
+	octeon_crypto_disable(&state, flags);
+	return 0;
+}
+
+
+static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
+			     struct scatterlist *dst,
+			     struct scatterlist *src, unsigned int nbytes)
+{
+	struct crypto_aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+	struct blkcipher_walk walk;
+	struct octeon_cop2_state state;
+	unsigned long flags;
+	int err, i, todo;
+	__be64 *iv;
+	__be64 *key	= (__be64*)ctx->key_enc;
+	__be64 *dataout;
+	__be64 *data;
+
+	blkcipher_walk_init(&walk, dst, src, nbytes);
+	err = blkcipher_walk_virt(desc, &walk);
+	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
+	flags = octeon_crypto_enable(&state);
+	write_octeon_64bit_aes_key(key[0],0);
+	write_octeon_64bit_aes_key(key[1],1);
+	write_octeon_64bit_aes_key(key[2],2);
+	write_octeon_64bit_aes_key(key[3],3);
+	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
+	iv = (__be64*)walk.iv;
+	write_octeon_64bit_aes_iv(iv[0],0);
+	write_octeon_64bit_aes_iv(iv[1],1);
+
+	while ((nbytes = walk.nbytes)) {
+		todo = nbytes & AES_BLOCK_MASK;
+		dataout = (__be64*)walk.dst.virt.addr;
+		data = (__be64*)walk.src.virt.addr;
+		for (i=0;i<todo/AES_BLOCK_SIZE;i++) {
+	    		write_octeon_64bit_aes_enc_cbc0(*data++);
+    			write_octeon_64bit_aes_enc_cbc1(*data++);
+    			*dataout++ = read_octeon_64bit_aes_result(0);
+    			*dataout++ = read_octeon_64bit_aes_result(1);
+    		}
+		nbytes &= AES_BLOCK_SIZE - 1;
+		err = blkcipher_walk_done(desc, &walk, nbytes);
+	}
+	octeon_crypto_disable(&state, flags);
+	return 0;
+}
+
+
+static void octeon_crypto_aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
@@ -75,7 +153,6 @@ static void octeon_aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 
 	octeon_crypto_disable(&state, flags);
 }
-
 
 static void octeon_aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 {
@@ -101,7 +178,56 @@ static void octeon_aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 	octeon_crypto_disable(&state, flags);
 }
 
-static struct crypto_alg aes_alg = {
+
+static int ablk_cbc_init(struct crypto_tfm *tfm)
+{
+	return ablk_init_common(tfm, "__driver-cbc-aes-octeon");
+}
+
+static struct crypto_alg octeon_algs[] = { {
+	.cra_name		= "__cbc-aes-octeon",
+	.cra_driver_name	= "__driver-cbc-aes-octeon",
+	.cra_priority		= 0,
+	.cra_flags		= CRYPTO_ALG_TYPE_BLKCIPHER |
+				  CRYPTO_ALG_INTERNAL,
+	.cra_blocksize		= AES_BLOCK_SIZE,
+	.cra_ctxsize		= sizeof(struct crypto_aes_ctx),
+	.cra_alignmask		= 0,
+	.cra_type		= &crypto_blkcipher_type,
+	.cra_module		= THIS_MODULE,
+	.cra_u = {
+		.blkcipher = {
+			.min_keysize	= AES_MIN_KEY_SIZE,
+			.max_keysize	= AES_MAX_KEY_SIZE,
+			.ivsize		= AES_BLOCK_SIZE,
+			.setkey		= octeon_crypto_aes_set_key,
+			.encrypt	= octeon_crypto_aes_cbc_encrypt,
+			.decrypt	= octeon_crypto_aes_cbc_decrypt,
+		}
+	}
+} , {
+	.cra_name		= "cbc(aes)",
+	.cra_driver_name	= "octeon-cbc-aes",
+	.cra_priority		= 400,
+	.cra_flags		= CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_ASYNC,
+	.cra_blocksize		= AES_BLOCK_SIZE,
+	.cra_ctxsize		= sizeof(struct async_helper_ctx),
+	.cra_alignmask		= 0,
+	.cra_type		= &crypto_ablkcipher_type,
+	.cra_module		= THIS_MODULE,
+	.cra_init		= ablk_cbc_init,
+	.cra_exit		= ablk_exit,
+	.cra_u = {
+		.ablkcipher = {
+			.min_keysize	= AES_MIN_KEY_SIZE,
+			.max_keysize	= AES_MAX_KEY_SIZE,
+			.ivsize		= AES_BLOCK_SIZE,
+			.setkey		= ablk_set_key,
+			.encrypt	= ablk_encrypt,
+			.decrypt	= ablk_decrypt,
+		},
+	},
+ } , {
 	.cra_name		=	"aes",
 	.cra_driver_name	=	"octeon-aes",
 	.cra_priority		=	300,
@@ -115,26 +241,28 @@ static struct crypto_alg aes_alg = {
 			.cia_min_keysize	=	AES_MIN_KEY_SIZE,
 			.cia_max_keysize	=	AES_MAX_KEY_SIZE,
 			.cia_setkey		=	octeon_crypto_aes_set_key,
-			.cia_encrypt		=	octeon_aes_encrypt,
-			.cia_decrypt		=	octeon_aes_decrypt
+			.cia_encrypt		=	octeon_crypto_aes_encrypt,
+			.cia_decrypt		=	octeon_crypto_aes_decrypt
 		}
 	}
+
+ }
 };
 
-static int __init aes_init(void)
+static int __init octeon_mod_init(void)
 {
 	if (!octeon_has_crypto())
 		return -ENOTSUPP;
-	return crypto_register_alg(&aes_alg);
+	return crypto_register_algs(octeon_algs, ARRAY_SIZE(octeon_algs));
 }
 
-static void __exit aes_fini(void)
+static void __exit octeon_mod_exit(void)
 {
-	crypto_unregister_alg(&aes_alg);
+	crypto_unregister_algs(octeon_algs, ARRAY_SIZE(octeon_algs));
 }
 
-module_init(aes_init);
-module_exit(aes_fini);
+module_init(octeon_mod_init);
+module_exit(octeon_mod_exit);
 
-MODULE_DESCRIPTION("Rijndael (AES) Cipher Algorithm");
+MODULE_DESCRIPTION("Rijndael (AES-CBC) Cipher Algorithm");
 MODULE_LICENSE("Dual BSD/GPL");
