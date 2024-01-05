@@ -1,5 +1,5 @@
 /*
- * octeon-aes-cbc.c Accelerated AES-CBC implementation with Octeon HW Crypto. (based on arm64 aes-glue.c)
+ * octeon-aes-cbc.c Accelerated AES & AES-CBC implementation with Octeon HW Crypto. (based on arm64 aes-glue.c)
  *
  * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
@@ -251,5 +251,6 @@ static void __exit octeon_mod_exit(void)
 module_init(octeon_mod_init);
 module_exit(octeon_mod_exit);
 
-MODULE_DESCRIPTION("Rijndael (AES-CBC) Cipher Algorithm");
-MODULE_LICENSE("Dual BSD/GPL");
+MODULE_DESCRIPTION("Rijndael (AES, AES-CBC) Cipher Algorithm");
+MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com>");
+MODULE_LICENSE("GPL v2");

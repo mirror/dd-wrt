@@ -23,9 +23,6 @@
 #include <asm/octeon/octeon.h>
 #include "octeon-crypto.h"
 
-MODULE_DESCRIPTION("GHASH & AES-GCM using Octeon HW Crypto");
-MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com>");
-MODULE_LICENSE("GPL v2");
 
 #define GHASH_BLOCK_SIZE	16
 #define GHASH_DIGEST_SIZE	16
@@ -509,3 +506,7 @@ static void __exit ghash_ce_mod_exit(void)
 
 module_init(ghash_ce_mod_init);
 module_exit(ghash_ce_mod_exit);
+
+MODULE_DESCRIPTION("GHASH & AES-GCM using Octeon HW Crypto");
+MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com>");
+MODULE_LICENSE("GPL v2");

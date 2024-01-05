@@ -257,4 +257,5 @@ module_init(octeon_mod_init);
 module_exit(octeon_mod_exit);
 
 MODULE_DESCRIPTION("(3DES-CBC) Cipher Algorithm");
-MODULE_LICENSE("Dual BSD/GPL");
+MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com>");
+MODULE_LICENSE("GPL v2");

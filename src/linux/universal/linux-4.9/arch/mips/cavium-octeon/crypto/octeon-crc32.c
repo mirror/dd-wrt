@@ -32,9 +32,6 @@
 #include <asm/octeon/octeon.h>
 #include "octeon-crypto.h"
 
-MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com");
-MODULE_DESCRIPTION("CRC32 and CRC32C using Octeon HW Crypto");
-MODULE_LICENSE("GPL v2");
 
 extern void octeon_cop2_crc_save(struct octeon_cop2_state *);
 extern void octeon_cop2_crc_restore(struct octeon_cop2_state *);
@@ -363,3 +360,7 @@ static void __exit crc32_mod_exit(void)
 
 module_init(crc32_mod_init);
 module_exit(crc32_mod_exit);
+
+MODULE_AUTHOR("Sebastian Gottschall <s.gottschall@dd-wrt.com");
+MODULE_DESCRIPTION("CRC32 and CRC32C using Octeon HW Crypto");
+MODULE_LICENSE("GPL v2");
