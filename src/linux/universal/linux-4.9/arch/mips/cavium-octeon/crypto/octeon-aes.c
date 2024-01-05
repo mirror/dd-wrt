@@ -39,7 +39,15 @@ static int octeon_crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 	return 0;
 }
 
-
+static __always_inline void octeon_crypto_aes_write_key(crypto_aes_ctx *ctx)
+{
+	__be64 *key	= (__be64*)ctx->key_enc;
+	write_octeon_64bit_aes_key(key[0],0);
+	write_octeon_64bit_aes_key(key[1],1);
+	write_octeon_64bit_aes_key(key[2],2);
+	write_octeon_64bit_aes_key(key[3],3);
+	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
+}
 
 static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 			     struct scatterlist *dst,
@@ -51,7 +59,6 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 	unsigned long flags;
 	int err, i, todo;
 	__be64 *iv;
-	__be64 *key	= (__be64*)ctx->key_enc;
 	__be64 *dataout;
 	__be64 *data;
 
@@ -59,11 +66,7 @@ static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
 	err = blkcipher_walk_virt(desc, &walk);
 	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_aes_key(key[0],0);
-	write_octeon_64bit_aes_key(key[1],1);
-	write_octeon_64bit_aes_key(key[2],2);
-	write_octeon_64bit_aes_key(key[3],3);
-	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
+	octeon_crypto_aes_write_key(ctx);
 	iv = (__be64*)walk.iv;
 	write_octeon_64bit_aes_iv(iv[0],0);
 	write_octeon_64bit_aes_iv(iv[1],1);
@@ -104,11 +107,7 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 	err = blkcipher_walk_virt(desc, &walk);
 	desc->flags &= ~CRYPTO_TFM_REQ_MAY_SLEEP;
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_aes_key(key[0],0);
-	write_octeon_64bit_aes_key(key[1],1);
-	write_octeon_64bit_aes_key(key[2],2);
-	write_octeon_64bit_aes_key(key[3],3);
-	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
+	octeon_crypto_aes_write_key(ctx);
 	iv = (__be64*)walk.iv;
 	write_octeon_64bit_aes_iv(iv[0],0);
 	write_octeon_64bit_aes_iv(iv[1],1);
@@ -140,12 +139,7 @@ static void octeon_crypto_aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 
 	__be64 *dataout = (__be64*)out;
 	__be64 *key	= (__be64*)ctx->key_enc;
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_aes_key(key[0],0);
-	write_octeon_64bit_aes_key(key[1],1);
-	write_octeon_64bit_aes_key(key[2],2);
-	write_octeon_64bit_aes_key(key[3],3);
-	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
-
+	octeon_crypto_aes_write_key(ctx);
         write_octeon_64bit_aes_enc0(*data++);
         write_octeon_64bit_aes_enc1(*data);
         *dataout++ = read_octeon_64bit_aes_result(0);
@@ -165,11 +159,7 @@ static void octeon_aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 
 
 	flags = octeon_crypto_enable(&state);
-	write_octeon_64bit_aes_key(key[0],0);
-	write_octeon_64bit_aes_key(key[1],1);
-	write_octeon_64bit_aes_key(key[2],2);
-	write_octeon_64bit_aes_key(key[3],3);
-	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
+	octeon_crypto_aes_write_key(ctx);
 
         write_octeon_64bit_aes_dec0(*data++);
         write_octeon_64bit_aes_dec1(*data);

@@ -53,7 +53,7 @@ static int ghash_init(struct shash_desc *desc)
 	return 0;
 }
 
-static void ghash_do_update(int blocks, u64 dg[], const char *src, struct ghash_key *key, const char *head)
+static __always_inline void ghash_do_update(int blocks, u64 dg[], const char *src, struct ghash_key *key, const char *head)
 {
 	write_octeon_64bit_gfm_poly((uint64_t) 0xe100);
 	write_octeon_64bit_gfm_resinp(dg[0], 0);
@@ -169,7 +169,7 @@ static struct shash_alg ghash_alg = {
 	.descsize = sizeof(struct ghash_desc_ctx),
 };
 
-static void __octeon_aes_encrypt(u32 *rk, u8 *out, u8 *in, u32 keylen)
+static __always_inline void __octeon_aes_encrypt(u32 *rk, u8 *out, u8 *in, u32 keylen)
 {
 	__be64 *dataout = (__be64 *)out;
 	__be64 *data = (__be64 *)in;
