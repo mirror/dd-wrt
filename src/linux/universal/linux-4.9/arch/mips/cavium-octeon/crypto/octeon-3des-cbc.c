@@ -1,7 +1,7 @@
 /*
  * octeon-3des-cbc.c Accelerated 3DES amd 3DES-CBC implementation with Octeon HW Crypto. (based on s390 des_s390.c)
  *
- * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
