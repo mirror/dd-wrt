@@ -178,7 +178,7 @@ static __always_inline void __octeon_aes_encrypt(u32 *rk, u8 *out, u8 *in, u32 k
 	write_octeon_64bit_aes_key(key[1], 1);
 	write_octeon_64bit_aes_key(key[2], 2);
 	write_octeon_64bit_aes_key(key[3], 3);
-	write_octeon_64bit_aes_keylength(keylen / 8 - 1);
+	write_octeon_64bit_aes_keylength(keylen);
 	write_octeon_64bit_aes_enc0(*data++);
 	write_octeon_64bit_aes_enc1(*data);
 	*dataout++ = read_octeon_64bit_aes_result(0);
@@ -199,7 +199,7 @@ static int gcm_setkey(struct crypto_aead *tfm, const u8 *inkey, unsigned int key
 	}
 	for (i=0;i<ctx->aes_key.key_length / 4;i++)
 	        ctx->aes_key.key_enc[i] = cpu_to_le32(ctx->aes_key.key_enc[i]);
-
+	ctx->aes_key.key_length = ctx->aes_key.key_length / 8 - 1;
 	flags = octeon_crypto_enable(&state);
 	__octeon_aes_encrypt(ctx->aes_key.key_enc, key, (u8[AES_BLOCK_SIZE]) { },
 			     ctx->aes_key.key_length);

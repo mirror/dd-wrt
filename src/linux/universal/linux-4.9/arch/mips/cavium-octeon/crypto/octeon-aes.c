@@ -35,7 +35,7 @@ static int octeon_crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 	struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
 	memset(ctx->key_enc, 0, sizeof(ctx->key_enc));
 	memcpy(ctx->key_enc, in_key, key_len);
-	ctx->key_length = key_len;
+	ctx->key_length = key_len / 8 - 1;
 	return 0;
 }
 
@@ -46,7 +46,7 @@ static __always_inline void octeon_crypto_aes_write_key(struct crypto_aes_ctx *c
 	write_octeon_64bit_aes_key(key[1],1);
 	write_octeon_64bit_aes_key(key[2],2);
 	write_octeon_64bit_aes_key(key[3],3);
-	write_octeon_64bit_aes_keylength(ctx->key_length/8 - 1);
+	write_octeon_64bit_aes_keylength(ctx->key_length);
 }
 
 static int octeon_crypto_aes_cbc_decrypt(struct blkcipher_desc *desc,
