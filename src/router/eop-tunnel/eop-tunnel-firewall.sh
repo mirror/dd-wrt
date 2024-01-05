@@ -26,7 +26,21 @@ ipv6_en=$($nv get ipv6_enable)
 wan_ipaddr=$($nv get wan_ipaddr)
 [[ $($nv get wan_proto) = "disabled" ]] && { IN_IF="-i br0"; logger -p user.info "WireGuard Killswitch for WAP on br0 only!, oet${i}"; } || IN_IF=""
 LOCK="/tmp/oet-fw.lock"
-acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for firewall $$ "; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$ "; }
+#acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for firewall $$ "; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for firewall $$ "; }
+acquire_lock() { 
+	logger -p user.info "WireGuard acquiring $LOCK for firewall $$ "
+	local SLEEPCT=0
+	local MAXTIME=30
+	while ! mkdir $LOCK >/dev/null 2>&1; do
+		sleep 2
+		SLEEPCT=$((SLEEPCT+2))
+		if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
+			logger -p user.err "WireGuard ERROR max. waiting $SLEEPCT sec. for locking firewall $$!"
+			break
+		fi
+	done 
+	logger -p user.info "WireGuard $LOCK acquired for $$ " 
+}
 release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for firewall $$ "; }
 trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
 acquire_lock

@@ -16,7 +16,21 @@ MINTIME=$($nv get wg_mintime)
 MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
 [[ -z $MAXTIME ]] && MAXTIME=105
 LOCK="/tmp/oet-raip.lock"
-acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for $$"; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$"; }
+#acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for raip $$"; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for raip $$"; }
+acquire_lock() { 
+	logger -p user.info "WireGuard acquiring $LOCK for raip $$ "
+	local SLEEPCT=0
+	local MAXTIME=60
+	while ! mkdir $LOCK >/dev/null 2>&1; do
+		sleep 2
+		SLEEPCT=$((SLEEPCT+2))
+		if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
+			logger -p user.err "WireGuard ERROR max. waiting $SLEEPCT sec. for locking raip $$!"
+			break
+		fi
+	done 
+	logger -p user.info "WireGuard $LOCK acquired for raip $$ " 
+}
 release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for $$"; }
 trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
 waitfortime () {

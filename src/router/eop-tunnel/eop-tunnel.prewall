@@ -21,8 +21,23 @@ GATEWAY6="$($IP6 route show table main | awk '/default via/ { print $3;exit; }')
 [[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 # set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
 LOCK="/tmp/oet-prewall.lock"
-acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for firewall $$ "; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$ "; }
-release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for firewall $$ "; }
+#acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for prewall $$ "; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$ "; }
+acquire_lock() { 
+	logger -p user.info "WireGuard acquiring $LOCK for prewall $$ "
+	local SLEEPCT=0
+	local MAXTIME=30
+	while ! mkdir $LOCK >/dev/null 2>&1; do
+		sleep 2
+		SLEEPCT=$((SLEEPCT+2))
+		if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
+			logger -p user.err "WireGuard ERROR max. waiting $SLEEPCT sec. for locking prewall $$!"
+			break
+		fi
+	done 
+	logger -p user.info "WireGuard $LOCK acquired for prewall $$ " 
+}
+release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for prewall $$ "; }
+trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
 #acquire_lock
 if [[ $tunnels -gt 0 ]]; then
 	fset=0
