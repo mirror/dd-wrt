@@ -39,7 +39,7 @@ static int octeon_crypto_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 	return 0;
 }
 
-static __always_inline void octeon_crypto_aes_write_key(crypto_aes_ctx *ctx)
+static __always_inline void octeon_crypto_aes_write_key(struct crypto_aes_ctx *ctx)
 {
 	__be64 *key	= (__be64*)ctx->key_enc;
 	write_octeon_64bit_aes_key(key[0],0);
@@ -99,7 +99,6 @@ static int octeon_crypto_aes_cbc_encrypt(struct blkcipher_desc *desc,
 	unsigned long flags;
 	int err, i, todo;
 	__be64 *iv;
-	__be64 *key	= (__be64*)ctx->key_enc;
 	__be64 *dataout;
 	__be64 *data;
 
@@ -137,7 +136,6 @@ static void octeon_crypto_aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 
 	struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
 	__be64 *data = (__be64*)in;
 	__be64 *dataout = (__be64*)out;
-	__be64 *key	= (__be64*)ctx->key_enc;
 	flags = octeon_crypto_enable(&state);
 	octeon_crypto_aes_write_key(ctx);
         write_octeon_64bit_aes_enc0(*data++);
@@ -148,14 +146,13 @@ static void octeon_crypto_aes_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 
 	octeon_crypto_disable(&state, flags);
 }
 
-static void octeon_aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
+static void octeon_crypto_aes_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 {
 	struct octeon_cop2_state state;
 	unsigned long flags;
 	struct crypto_aes_ctx *ctx = crypto_tfm_ctx(tfm);
 	__be64 *data = (__be64*)in;
 	__be64 *dataout = (__be64*)out;
-	__be64 *key	= (__be64*)ctx->key_enc;
 
 
 	flags = octeon_crypto_enable(&state);
