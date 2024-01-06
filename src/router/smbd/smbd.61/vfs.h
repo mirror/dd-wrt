@@ -218,9 +218,11 @@ int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
 #endif
 		       const struct path *path, const char *attr_name,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
-		       void *attr_value, size_t attr_size, int flags);
+		       void *attr_value, size_t attr_size, int flags,
+		       bool get_write);
 #else
-		       const void *attr_value, size_t attr_size, int flags);
+		       const void *attr_value, size_t attr_size, int flags,
+		       bool get_write);
 #endif
 int ksmbd_vfs_fsetxattr(struct ksmbd_work *work, const char *filename,
 			const char *attr_name, const void *attr_value,
@@ -237,6 +239,7 @@ int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
 int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *name,
 			       unsigned int flags, struct path *parent_path,
 			       struct path *path, bool caseless);
+void ksmbd_vfs_kern_path_unlock(struct path *parent_path, struct path *path);
 #else
 int ksmbd_vfs_kern_path(struct ksmbd_work *work,
 			char *name, unsigned int flags, struct path *path,
@@ -300,7 +303,8 @@ int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
 			   struct user_namespace *user_ns,
 #endif
 			   const struct path *path,
-			   struct smb_ntsd *pntsd, int len);
+			   struct smb_ntsd *pntsd, int len,
+			   bool get_write);
 int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 			   struct mnt_idmap *idmap,
@@ -312,14 +316,16 @@ int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 int ksmbd_vfs_set_dos_attrib_xattr(struct mnt_idmap *idmap,
 				   const struct path *path,
-				   struct xattr_dos_attrib *da);
+				   struct xattr_dos_attrib *da,
+				   bool get_write);
 int ksmbd_vfs_get_dos_attrib_xattr(struct mnt_idmap *idmap,
 				   struct dentry *dentry,
 				   struct xattr_dos_attrib *da);
 #else
 int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
 				   const struct path *path,
-				   struct xattr_dos_attrib *da);
+				   struct xattr_dos_attrib *da,
+				   bool get_write);
 int ksmbd_vfs_get_dos_attrib_xattr(struct user_namespace *user_ns,
 				   struct dentry *dentry,
 				   struct xattr_dos_attrib *da);

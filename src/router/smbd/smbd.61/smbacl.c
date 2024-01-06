@@ -1324,7 +1324,7 @@ pass:
 #else
 		ksmbd_vfs_set_sd_xattr(conn, user_ns,
 #endif
-				       path, pntsd, pntsd_size);
+				       path, pntsd, pntsd_size, false);
 		kfree(pntsd);
 	}
 
@@ -1536,7 +1536,7 @@ err_out:
 
 int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon,
 		 const struct path *path, struct smb_ntsd *pntsd, int ntsd_len,
-		 bool type_check)
+		 bool type_check, bool get_write)
 {
 	int rc;
 	struct smb_fattr fattr = {{0}};
@@ -1649,7 +1649,7 @@ int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon,
 		ksmbd_vfs_remove_sd_xattrs(user_ns, path);
 		ksmbd_vfs_set_sd_xattr(conn, user_ns,
 #endif
-				       path, pntsd, ntsd_len);
+				       path, pntsd, ntsd_len, get_write);
 	}
 
 out:

@@ -127,6 +127,13 @@ static int ksmbd_vfs_path_lookup_locked(struct ksmbd_share_config *share_conf,
 		return -ENOENT;
 	}
 
+	err = mnt_want_write(parent_path->mnt);
+	if (err) {
+		path_put(parent_path);
+		putname(filename);
+		return -ENOENT;
+	}
+
 	inode_lock_nested(parent_path->dentry->d_inode, I_MUTEX_PARENT);
 	d = lookup_one_qstr_excl(&last, parent_path->dentry, 0);
 	if (IS_ERR(d))
@@ -153,6 +160,7 @@ static int ksmbd_vfs_path_lookup_locked(struct ksmbd_share_config *share_conf,
 
 err_out:
 	inode_unlock(d_inode(parent_path->dentry));
+	mnt_drop_write(parent_path->mnt);
 	path_put(parent_path);
 	putname(filename);
 	return -ENOENT;
@@ -709,7 +717,8 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 				 fp->stream.name,
 				 (void *)stream_buf,
 				 size,
-				 0);
+				 0,
+				 true);
 	if (err < 0)
 		goto out;
 
@@ -765,6 +774,9 @@ int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 			goto out;
 		}
 	}
+
+	/* Reserve lease break for parent dir at closing time */
+	fp->reserve_lease_break = true;
 
 	/* Do we need to break any of a levelII oplock? */
 	smb_break_all_levII_oplock(work, fp, 1);
@@ -859,8 +871,11 @@ int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name, u64 fid,
 	bool update_size = false;
 	int err = 0;
 	struct ksmbd_file *fp = NULL;
-	struct user_namespace *user_ns;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 	struct mnt_idmap *idmap;
+#else
+	struct user_namespace *user_ns;
+#endif
 
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
@@ -1071,7 +1086,11 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 			   const char *dir_path)
 #endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 	struct path path, parent_path;
+#else
+	struct path path;
+#endif
 	int rc, file_pathlen, dir_pathlen;
 	char *name;
 
@@ -1108,9 +1127,7 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 				    path.dentry,
 				    ksmbd_kstat);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	inode_unlock(d_inode(parent_path.dentry));
-	path_put(&path);
-	path_put(&parent_path);
+	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
 #else
 	path_put(&path);
 #endif
@@ -1164,10 +1181,6 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, const struct path *path)
 		goto out_err;
 	}
 
-	err = mnt_want_write(path->mnt);
-	if (err)
-		goto out_err;
-
 	idmap = mnt_idmap(path->mnt);
 	if (S_ISDIR(d_inode(path->dentry)->i_mode)) {
 		err = vfs_rmdir(idmap, d_inode(parent), path->dentry);
@@ -1178,7 +1191,6 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, const struct path *path)
 		if (err)
 			ksmbd_debug(VFS, "unlink failed, err %d\n", err);
 	}
-	mnt_drop_write(path->mnt);
 
 out_err:
 	ksmbd_revert_fsids(work);
@@ -1389,7 +1401,7 @@ retry:
 		goto out3;
 	}
 
-	parent_fp = ksmbd_lookup_fd_inode(d_inode(old_child->d_parent));
+	parent_fp = ksmbd_lookup_fd_inode(old_child->d_parent);
 	if (parent_fp) {
 		if (parent_fp->daccess & FILE_DELETE_LE) {
 			pr_err("parent dir is opened with delete access\n");
@@ -1471,7 +1483,7 @@ static int ksmbd_validate_entry_in_use(struct dentry *src_dent)
 		if (d_really_is_negative(dst_dent))
 			continue;
 
-		child_fp = ksmbd_lookup_fd_inode(d_inode(dst_dent));
+		child_fp = ksmbd_lookup_fd_inode(dst_dent);
 		if (child_fp) {
 			spin_unlock(&src_dent->d_lock);
 			ksmbd_debug(VFS, "Forbid rename, sub file/dir is in use\n");
@@ -1839,6 +1851,7 @@ ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
  * @attr_value:	xattr value to set
  * @attr_size:	size of xattr value
  * @flags:	destination buffer length
+ * @get_write:	get write access to a mount
  *
  * Return:	0 on success, otherwise error
  */
@@ -1849,16 +1862,20 @@ int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
 #endif
 		       const struct path *path, const char *attr_name,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
-		       void *attr_value, size_t attr_size, int flags)
+		       void *attr_value, size_t attr_size, int flags,
+		       bool get_write)
 #else
-		       const void *attr_value, size_t attr_size, int flags)
+		       const void *attr_value, size_t attr_size, int flags,
+		       bool get_write)
 #endif
 {
 	int err;
 
-	err = mnt_want_write(path->mnt);
-	if (err)
-		return err;
+	if (get_write == true) {
+		err = mnt_want_write(path->mnt);
+		if (err)
+			return err;
+	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
@@ -1876,7 +1893,8 @@ int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
 			   flags);
 	if (err)
 		ksmbd_debug(VFS, "setxattr failed, err %d\n", err);
-	mnt_drop_write(path->mnt);
+	if (get_write == true)
+		mnt_drop_write(path->mnt);
 	return err;
 }
 
@@ -2115,7 +2133,8 @@ int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
 			   struct user_namespace *user_ns,
 #endif
 			   const struct path *path,
-			   struct smb_ntsd *pntsd, int len)
+			   struct smb_ntsd *pntsd, int len,
+			   bool get_write)
 {
 	int rc;
 	struct ndr sd_ndr = {0}, acl_ndr = {0};
@@ -2191,7 +2210,7 @@ int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn,
 	rc = ksmbd_vfs_setxattr(user_ns, path,
 #endif
 				XATTR_NAME_SD, sd_ndr.data,
-				sd_ndr.offset, 0);
+				sd_ndr.offset, 0, get_write);
 	if (rc < 0)
 		pr_err("Failed to store XATTR ntacl :%d\n", rc);
 
@@ -2304,7 +2323,8 @@ int ksmbd_vfs_set_dos_attrib_xattr(struct mnt_idmap *idmap,
 int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
 #endif
 				   const struct path *path,
-				   struct xattr_dos_attrib *da)
+				   struct xattr_dos_attrib *da,
+				   bool get_write)
 {
 	struct ndr n;
 	int err;
@@ -2318,7 +2338,7 @@ int ksmbd_vfs_set_dos_attrib_xattr(struct user_namespace *user_ns,
 #else
 	err = ksmbd_vfs_setxattr(user_ns, path, XATTR_NAME_DOS_ATTRIBUTE,
 #endif
-				 (void *)n.data, n.offset, 0);
+				 (void *)n.data, n.offset, 0, get_write);
 	if (err)
 		ksmbd_debug(SMB, "failed to store dos attribute in xattr\n");
 	kfree(n.data);
@@ -2816,14 +2836,31 @@ out1:
 	}
 
 	if (!err) {
-		err = ksmbd_vfs_lock_parent(parent_path->dentry, path->dentry);
+		err = mnt_want_write(parent_path->mnt);
 		if (err) {
 			path_put(path);
 			path_put(parent_path);
+			return err;
+		}
+
+		err = ksmbd_vfs_lock_parent(parent_path->dentry, path->dentry);
+		if (err) {
+			mnt_drop_write(parent_path->mnt);
+			path_put(parent_path);
+			path_put(path);
 		}
 	}
 	return err;
 }
+
+void ksmbd_vfs_kern_path_unlock(struct path *parent_path, struct path *path)
+{
+	inode_unlock(d_inode(parent_path->dentry));
+	mnt_drop_write(parent_path->mnt);
+	path_put(path);
+	path_put(parent_path);
+}
+
 #else
 /**
  * ksmbd_vfs_kern_path() - lookup a file and get path info
@@ -3275,10 +3312,6 @@ int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
 	}
 	posix_state_to_acl(&acl_state, acls->a_entries);
 
-	rc = mnt_want_write(path->mnt);
-	if (rc)
-		goto out_err;
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
@@ -3314,9 +3347,7 @@ int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
 			ksmbd_debug(SMB, "Set posix acl(ACL_TYPE_DEFAULT) failed, rc : %d\n",
 				    rc);
 	}
-	mnt_drop_write(path->mnt);
 
-out_err:
 	free_acl_state(&acl_state);
 	posix_acl_release(acls);
 	return rc;
@@ -3355,10 +3386,6 @@ int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
 		}
 	}
 
-	rc = mnt_want_write(path->mnt);
-	if (rc)
-		goto out_err;
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
@@ -3396,9 +3423,7 @@ int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
 			ksmbd_debug(SMB, "Set posix acl(ACL_TYPE_DEFAULT) failed, rc : %d\n",
 				    rc);
 	}
-	mnt_drop_write(path->mnt);
 
-out_err:
 	posix_acl_release(acls);
 	return rc;
 }

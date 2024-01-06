@@ -25,9 +25,11 @@ int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 }
 
 int compat_ksmbd_vfs_set_dos_attrib_xattr(const struct path *path,
-					  struct xattr_dos_attrib *da)
+					  struct xattr_dos_attrib *da,
+					  bool get_write)
 {
-	return ksmbd_vfs_set_dos_attrib_xattr(mnt_idmap(path->mnt), path, da);
+	return ksmbd_vfs_set_dos_attrib_xattr(mnt_idmap(path->mnt), path, da,
+			get_write);
 }
 
 ssize_t compat_ksmbd_vfs_getxattr(struct path *path, struct dentry *dentry,
@@ -60,9 +62,11 @@ int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 }
 
 int compat_ksmbd_vfs_set_dos_attrib_xattr(const struct path *path,
-					  struct xattr_dos_attrib *da)
+					  struct xattr_dos_attrib *da,
+					  bool get_write)
 {
-	return ksmbd_vfs_set_dos_attrib_xattr(mnt_idmap(path->mnt), path, da);
+	return ksmbd_vfs_set_dos_attrib_xattr(mnt_idmap(path->mnt), path, da,
+			get_write);
 }
 
 ssize_t compat_ksmbd_vfs_getxattr(struct path *path, struct dentry *dentry,
@@ -94,9 +98,11 @@ int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 }
 
 int compat_ksmbd_vfs_set_dos_attrib_xattr(const struct path *path,
-					  struct xattr_dos_attrib *da)
+					  struct xattr_dos_attrib *da,
+					  bool get_write)
 {
-	return ksmbd_vfs_set_dos_attrib_xattr(mnt_user_ns(path->mnt), path, da);
+	return ksmbd_vfs_set_dos_attrib_xattr(mnt_user_ns(path->mnt), path, da,
+			get_write);
 }
 
 ssize_t compat_ksmbd_vfs_getxattr(struct path *path, struct dentry *dentry,
@@ -126,10 +132,11 @@ int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 }
 
 int compat_ksmbd_vfs_set_dos_attrib_xattr(const struct path *path,
-					  struct xattr_dos_attrib *da)
+					  struct xattr_dos_attrib *da,
+					  bool get_write)
 {
 	return ksmbd_vfs_set_dos_attrib_xattr(mnt_user_ns(path->mnt), path,
-					      da);
+					      da, get_write);
 }
 ssize_t compat_ksmbd_vfs_getxattr(struct path *path, struct dentry *dentry,
 				  char *xattr_name, char **xattr_buf)

@@ -20,6 +20,7 @@ int compat_ksmbd_vfs_get_dos_attrib_xattr(const struct path *path,
 					  struct xattr_dos_attrib *da);
 
 int compat_ksmbd_vfs_set_dos_attrib_xattr(const struct path *path,
-					  struct xattr_dos_attrib *da);
+					  struct xattr_dos_attrib *da,
+					  bool get_write);
 
 #endif
