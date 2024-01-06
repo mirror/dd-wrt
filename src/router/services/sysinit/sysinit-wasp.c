@@ -586,19 +586,18 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 2116; i++)
 			putc(getc(fp), out);
-		fclose(fp);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+		fclose(out);
+		out = fopen("/tmp/board1.bin", "wb");
+		fseek(fp, 0x10000 + 0x5000, SEEK_SET);
+		char *smem = malloc(12064);
+		fread(smem, 12064, 1, fp);
+		fwrite(smem, 12064, 1, out);
+		free(smem);
+		fclose(out);
+		fclose(fp);
 	}
-	fclose(out);
-	out = fopen("/tmp/board1.bin", "wb");
-	fseek(fp, 0x10000 + 0x5000, SEEK_SET);
-	char *smem = malloc(12064);
-	fread(smem, 12064, 1, fp);
-	fwrite(smem, 12064, 1, out);
-	free(smem);
-	fclose(out);
-	fclose(fp);
 #elif defined(HAVE_ARCHERC25)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
