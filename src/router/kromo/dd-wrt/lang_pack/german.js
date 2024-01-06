@@ -2287,6 +2287,7 @@ vlan.titl="Virtuelles LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN Konfiguration";
 vlan.bridge="Der Brücke zuweisen";
+vlan.switch_leds="Switch LED's abschaltem";
 vlan.tagged="Tagged";
 vlan.negociate="Automatisches Aushandeln";
 vlan.aggregation="Schnittstellenbündelung<br />auf Port 3 & 4";

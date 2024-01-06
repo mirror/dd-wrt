@@ -179,6 +179,11 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" name="vlans" value="1" <% nvc("vlans", "1"); %> onclick="show_layer_ext(this, 'idvlans', true)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="vlans" value="0" <% nvc("vlans", "0"); %> onclick="show_layer_ext(this, 'idvlans', false)" /><% tran("share.disable"); %>
 								</div>
+								<div class="setting">
+									<div class="label"><% tran("vlan.switch_leds"); %></div>
+									<input class="spaceradio" type="radio" name="switch_leds" value="0" <% nvc("switch_leds", "0"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="switch_leds" value="1" <% nvc("switch_leds", "1"); %> /><% tran("share.disable"); %>
+								</div>
 								<div id="idvlans">
 								<table class="table vlan" summary="virtual lan table">
 									<tbody>

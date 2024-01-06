@@ -2595,6 +2595,7 @@ vlan.titl="Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN Configuration";
 vlan.vlans_label="Vlans";
+vlan.switch_leds="Turn Off Switch LED's";
 vlan.bridge="Assigned To<br />Bridge";
 vlan.tagged="Tagged";
 vlan.negociate="Autonegotiation";
