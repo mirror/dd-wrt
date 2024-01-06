@@ -987,6 +987,46 @@ ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
 			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN);
 }
 
+int
+ar8327_sw_set_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	if (priv->ledstate == -1) {
+	    priv->ledregs[0] = ar8xxx_read(priv, AR8327_REG_LED_CTRL0);
+	    priv->ledregs[1] = ar8xxx_read(priv, AR8327_REG_LED_CTRL1);
+	    priv->ledregs[2] = ar8xxx_read(priv, AR8327_REG_LED_CTRL2);
+	    priv->ledregs[3] = ar8xxx_read(priv, AR8327_REG_LED_CTRL3);
+	    priv->ledstate = 1;
+	}
+	if (!!val->value.i) {
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, priv->ledregs[0]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, priv->ledregs[1]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, priv->ledregs[2]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, priv->ledregs[3]);
+		priv->ledstate = 1;
+	} else {
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, 0);
+		priv->ledstate = 0;
+	}
+	return 0;
+}
+
+int
+ar8327_sw_get_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	if (!priv->ledstate)
+		val->value.i = 0;
+	else
+		val->value.i = 1;
+	return 0;
+}
+
 static int
 ar8327_sw_set_eee(struct switch_dev *dev,
 		  const struct switch_attr *attr,
@@ -1074,7 +1114,10 @@ ar8327_sw_get_disable(struct switch_dev *dev,
 		return -EOPNOTSUPP;
 
 	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+
 	if (!(t & AR8216_PORT_STATUS_LINK_AUTO))
+		val->value.i = 1;
+	else	if (!(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
 		val->value.i = 1;
 	else
 		val->value.i = 0;
@@ -1234,6 +1277,14 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.set = ar8xxx_sw_set_vlan,
 		.get = ar8xxx_sw_get_vlan,
 		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "leds",
+		.description = "turn leds on or off",
+		.set = ar8327_sw_set_leds,
+		.get = ar8327_sw_get_leds,
+		.max = 1,
 	},
 	{
 		.type = SWITCH_TYPE_NOVAL,

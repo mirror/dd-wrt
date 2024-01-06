@@ -2493,7 +2493,7 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 	int ret;
 
 	chip = priv->chip;
-
+	
 	swdev = &priv->dev;
 	swdev->cpu_port = AR8216_PORT_CPU;
 	swdev->name = chip->name;
