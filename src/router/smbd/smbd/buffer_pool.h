@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
+ *   Copyright (C) 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  */
 
 #ifndef __KSMBD_BUFFER_POOL_H__
