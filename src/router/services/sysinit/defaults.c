@@ -3758,6 +3758,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "no_bootfails", "0" },
 	{ "boot_fail_open", "0" },
 	{ "boot_fail_keepip", "0" },
+	{ "switch_leds", "1" },
 	{ 0, 0 }
 };
 #else
