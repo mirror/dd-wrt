@@ -524,6 +524,8 @@ struct ar8xxx_priv {
 	);
 	u32 state[8];
 	u32 disabled[8];
+	s32 ledstate;
+	u32 ledregs[4];
 };
 
 u32

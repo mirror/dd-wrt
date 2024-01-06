@@ -471,6 +471,8 @@ struct ar8xxx_priv {
 	u8 port_vlan_prio[AR8X16_MAX_PORTS];
 	u32 state[8];
 	u32 disabled[8];
+	s32 ledstate;
+	u32 ledregs[4];
 };
 
 u32
