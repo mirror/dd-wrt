@@ -6066,6 +6066,8 @@ void port_vlan_table_save(webs_t wp)
 	int portval;
 	char *vlans_enable = websGetVar(wp, "vlans", NULL);
 	nvram_set("vlans", vlans_enable);
+	char *leds_disable = websGetVar(wp, "switch_leds", NULL);
+	nvram_set("switch_leds", leds_disable);
 	if (nvram_match("vlans", "0"))
 		return;
 
