@@ -84,7 +84,7 @@ static inline void __free(void *addr)
 
 #endif
 
-static struct wm *wm_alloc(size_t sz)
+struct wm *wm_alloc(size_t sz)
 {
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
@@ -103,7 +103,7 @@ static struct wm *wm_alloc(size_t sz)
 	return wm;
 }
 
-static int register_wm_size_class(size_t sz)
+int register_wm_size_class(size_t sz)
 {
 	struct wm_list *l, *nl;
 
@@ -142,7 +142,7 @@ static int register_wm_size_class(size_t sz)
 	return 0;
 }
 
-static struct wm_list *match_wm_list(size_t size)
+struct wm_list *match_wm_list(size_t size)
 {
 	struct wm_list *l, *rl = NULL;
 
@@ -157,7 +157,7 @@ static struct wm_list *match_wm_list(size_t size)
 	return rl;
 }
 
-static struct wm_list *search_wm_list(size_t size, size_t *realsize)
+struct wm_list *search_wm_list(size_t size, size_t *realsize)
 {
 	struct wm_list *l, *rl = NULL;
 	size_t last_size = (size_t)-1;
@@ -179,7 +179,7 @@ static struct wm_list *search_wm_list(size_t size, size_t *realsize)
 	return rl;
 }
 
-static struct wm *find_wm(size_t size)
+struct wm *find_wm(size_t size, char *name)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
@@ -208,9 +208,11 @@ static struct wm *find_wm(size_t size)
 		}
 
 		if (wm_list->avail_wm > threads) {
+			printk(KERN_INFO "wait1 for release on %s\n", name);
 			spin_unlock(&wm_list->wm_lock);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
+			printk(KERN_INFO "wait1 for release on %s finished\n", name);
 			continue;
 		}
 
@@ -222,8 +224,10 @@ static struct wm *find_wm(size_t size)
 			spin_lock(&wm_list->wm_lock);
 			wm_list->avail_wm--;
 			spin_unlock(&wm_list->wm_lock);
+			printk(KERN_INFO "wait for release on %s\n", name);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
+			printk(KERN_INFO "wait for release on %s finished\n", name);
 			continue;
 		}
 		break;
@@ -332,7 +336,7 @@ void *_ksmbd_find_buffer(size_t size, const char *func, int line)
 {
 	struct wm *wm;
 
-	wm = find_wm(size);
+	wm = find_wm(size, func);
 
 	WARN_ON(!wm);
 	if (wm)
@@ -388,7 +392,7 @@ void ksmbd_destroy_buffer_pools(void)
 
 int ksmbd_init_buffer_pools(void)
 {
-	threads = num_online_cpus() * 2;
+	threads = num_online_cpus() * 16;
 	if (ksmbd_work_pool_init())
 		goto out;
 	
