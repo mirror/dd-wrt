@@ -13,7 +13,6 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 #include <linux/filelock.h>
 #endif
-
 #include "compat.h"
 #include "glob.h"
 #include "oplock.h"
@@ -260,7 +259,7 @@ int smb_allocate_rsp_buf(struct ksmbd_work *work)
 			sz = large_sz;
 	}
 
-	work->response_buf = kvmalloc(sz, GFP_KERNEL | __GFP_ZERO);
+	work->response_buf = ksmbd_find_buffer(sz);
 	work->response_sz = sz;
 
 	if (!work->response_buf) {
@@ -3042,7 +3041,8 @@ int smb_read_andx(struct ksmbd_work *work)
 	ksmbd_debug(SMB, "filename %pd, offset %lld, count %zu\n",
 		    fp->filp->f_path.dentry, pos, count);
 
-	work->aux_payload_buf = kvmalloc(count, GFP_KERNEL | __GFP_ZERO);
+	work->aux_payload_buf = ksmbd_find_buffer(count);
+	memset(work->aux_payload_buf, 0, count);
 	if (!work->aux_payload_buf) {
 		err = -ENOMEM;
 		goto out;
@@ -3899,7 +3899,7 @@ out:
 	kfree(fname);
 	return rc;
 }
-
+#if 0
 static void *ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz)
 {
 	size_t sz = min(old_sz, new_sz);
@@ -3912,7 +3912,7 @@ static void *ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz)
 	kvfree(ptr);
 	return nptr;
 }
-
+#endif
 /**
  * smb_readlink() - handler for reading symlink source path
  * @work:	smb work containing query link information

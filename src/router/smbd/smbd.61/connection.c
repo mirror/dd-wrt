@@ -40,7 +40,7 @@ void ksmbd_conn_free(struct ksmbd_conn *conn)
 	up_write(&conn_list_lock);
 
 	xa_destroy(&conn->sessions);
-	kvfree(conn->request_buf);
+	ksmbd_free_request(conn->request_buf);
 	kfree(conn->preauth_info);
 	kfree(conn);
 }
@@ -340,7 +340,7 @@ int ksmbd_conn_handler_loop(void *p)
 		if (try_to_freeze())
 			continue;
 
-		kvfree(conn->request_buf);
+		ksmbd_free_request(conn->request_buf);
 		conn->request_buf = NULL;
 
 		size = t->ops->read(t, hdr_buf, sizeof(hdr_buf), -1);
@@ -375,7 +375,7 @@ int ksmbd_conn_handler_loop(void *p)
 		/* 4 for rfc1002 length field */
 		/* 1 for implied bcc[0] */
 		size = pdu_size + 4 + 1;
-		conn->request_buf = kvmalloc(size, GFP_KERNEL);
+		conn->request_buf = ksmbd_alloc_request(size);
 		if (!conn->request_buf)
 			break;
 

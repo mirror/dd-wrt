@@ -45,9 +45,9 @@ void ksmbd_free_work_struct(struct ksmbd_work *work)
 
 	WARN_ON(work->saved_cred != NULL);
 
-	kvfree(work->response_buf);
+	ksmbd_release_buffer(work->response_buf);
 #ifdef CONFIG_SMB_INSECURE_SERVER
-	kvfree(work->aux_payload_buf);
+	ksmbd_release_buffer(work->aux_payload_buf);
 #endif
 
 	list_for_each_entry_safe(ar, tmp, &work->aux_read_list, entry) {
@@ -56,8 +56,8 @@ void ksmbd_free_work_struct(struct ksmbd_work *work)
 		kfree(ar);
 	}
 
-	kfree(work->tr_buf);
-	kvfree(work->request_buf);
+	ksmbd_free_response(work->tr_buf);
+	ksmbd_free_request(work->request_buf);
 	kfree(work->iov);
 	if (!list_empty(&work->interim_entry))
 		list_del(&work->interim_entry);
@@ -172,7 +172,7 @@ int ksmbd_iov_pin_rsp_read(struct ksmbd_work *work, void *ib, int len,
 
 int allocate_interim_rsp_buf(struct ksmbd_work *work)
 {
-	work->response_buf = kzalloc(MAX_CIFS_SMALL_BUFFER_SIZE, GFP_KERNEL);
+	work->response_buf = ksmbd_find_buffer(MAX_CIFS_SMALL_BUFFER_SIZE);
 	if (!work->response_buf)
 		return -ENOMEM;
 	work->response_sz = MAX_CIFS_SMALL_BUFFER_SIZE;

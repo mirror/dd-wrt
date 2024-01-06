@@ -553,7 +553,7 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 	if (le32_to_cpu(hdr->NextCommand) > 0)
 		sz = large_sz;
 
-	work->response_buf = kvzalloc(sz, GFP_KERNEL);
+	work->response_buf = ksmbd_find_buffer(sz);
 	if (!work->response_buf)
 		return -ENOMEM;
 
@@ -6807,7 +6807,7 @@ static noinline int smb2_read_pipe(struct ksmbd_work *work)
 		}
 
 		aux_payload_buf =
-			kvmalloc(rpc_resp->payload_sz, GFP_KERNEL);
+			ksmbd_find_buffer(rpc_resp->payload_sz);
 		if (!aux_payload_buf) {
 			err = -ENOMEM;
 			goto out;
@@ -6984,7 +6984,8 @@ int smb2_read(struct ksmbd_work *work)
 	ksmbd_debug(SMB, "filename %pD, offset %lld, len %zu\n",
 		    fp->filp, offset, length);
 
-	aux_payload_buf = kvzalloc(length, GFP_KERNEL);
+	aux_payload_buf =
+		ksmbd_find_buffer(length);
 	if (!aux_payload_buf) {
 		err = -ENOMEM;
 		goto out;
@@ -6997,7 +6998,7 @@ int smb2_read(struct ksmbd_work *work)
 	}
 
 	if ((nbytes == 0 && length != 0) || nbytes < mincount) {
-		kvfree(aux_payload_buf);
+		ksmbd_release_buffer(aux_payload_buf);
 		rsp->hdr.Status = STATUS_END_OF_FILE;
 		smb2_set_err_rsp(work);
 		ksmbd_fd_put(work, fp);
@@ -7012,7 +7013,7 @@ int smb2_read(struct ksmbd_work *work)
 		remain_bytes = smb2_read_rdma_channel(work, req,
 						      aux_payload_buf,
 						      nbytes);
-		kvfree(aux_payload_buf);
+		ksmbd_release_buffer(aux_payload_buf);
 		aux_payload_buf = NULL;
 		nbytes = 0;
 		if (remain_bytes < 0) {
@@ -7134,7 +7135,7 @@ static ssize_t smb2_write_rdma_channel(struct ksmbd_work *work,
 	int ret;
 	ssize_t nbytes;
 
-	data_buf = kvzalloc(length, GFP_KERNEL);
+	data_buf = ksmbd_alloc_response(length);
 	if (!data_buf)
 		return -ENOMEM;
 
@@ -7143,12 +7144,12 @@ static ssize_t smb2_write_rdma_channel(struct ksmbd_work *work,
 				   ((char *)req + le16_to_cpu(req->WriteChannelInfoOffset)),
 				   le16_to_cpu(req->WriteChannelInfoLength));
 	if (ret < 0) {
-		kvfree(data_buf);
+		ksmbd_free_response(data_buf);
 		return ret;
 	}
 
 	ret = ksmbd_vfs_write(work, fp, data_buf, length, &offset, sync, &nbytes);
-	kvfree(data_buf);
+	ksmbd_free_response(data_buf);
 	if (ret < 0)
 		return ret;
 
@@ -9222,7 +9223,7 @@ int smb3_encrypt_resp(struct ksmbd_work *work)
 	int rc = -ENOMEM;
 	void *tr_buf;
 
-	tr_buf = kzalloc(sizeof(struct smb2_transform_hdr) + 4, GFP_KERNEL);
+	tr_buf = ksmbd_alloc_response(sizeof(struct smb2_transform_hdr) + 4);
 	if (!tr_buf)
 		return rc;
 

@@ -32,7 +32,6 @@ static DEFINE_RWLOCK(inode_hash_lock);
 
 static struct ksmbd_file_table global_ft;
 static atomic_long_t fd_limit;
-static struct kmem_cache *filp_cache;
 
 void ksmbd_set_fd_limit(unsigned long limit)
 {
@@ -353,7 +352,7 @@ static void __ksmbd_close_fd(struct ksmbd_file_table *ft, struct ksmbd_file *fp)
 #endif
 	if (ksmbd_stream_fd(fp))
 		kfree(fp->stream.name);
-	kmem_cache_free(filp_cache, fp);
+	ksmbd_free_file_struct(fp);
 }
 
 static struct ksmbd_file *ksmbd_fp_get(struct ksmbd_file *fp)
@@ -625,7 +624,7 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 	struct ksmbd_file *fp;
 	int ret;
 
-	fp = kmem_cache_zalloc(filp_cache, GFP_KERNEL);
+	fp = ksmbd_alloc_file_struct();
 	if (!fp) {
 		pr_err("Failed to allocate memory\n");
 		return ERR_PTR(-ENOMEM);
@@ -660,7 +659,7 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 	return fp;
 
 err_out:
-	kmem_cache_free(filp_cache, fp);
+	ksmbd_free_file_struct(fp);
 	return ERR_PTR(ret);
 }
 
@@ -741,7 +740,7 @@ void ksmbd_free_global_file_table(void)
 
 	idr_for_each_entry(global_ft.idr, fp, id) {
 		__ksmbd_remove_durable_fd(fp);
-		kmem_cache_free(filp_cache, fp);
+		ksmbd_free_file_struct(fp);
 	}
 
 	ksmbd_destroy_file_table(&global_ft);
@@ -783,24 +782,4 @@ void ksmbd_destroy_file_table(struct ksmbd_file_table *ft)
 	idr_destroy(ft->idr);
 	kfree(ft->idr);
 	ft->idr = NULL;
-}
-
-int ksmbd_init_file_cache(void)
-{
-	filp_cache = kmem_cache_create("ksmbd_file_cache",
-				       sizeof(struct ksmbd_file), 0,
-				       SLAB_HWCACHE_ALIGN, NULL);
-	if (!filp_cache)
-		goto out;
-
-	return 0;
-
-out:
-	pr_err("failed to allocate file cache\n");
-	return -ENOMEM;
-}
-
-void ksmbd_exit_file_cache(void)
-{
-	kmem_cache_destroy(filp_cache);
 }

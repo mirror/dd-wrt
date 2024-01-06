@@ -394,8 +394,7 @@ static int smb1_check_user_session(struct ksmbd_work *work)
  */
 static int smb1_allocate_rsp_buf(struct ksmbd_work *work)
 {
-	work->response_buf = kzalloc(MAX_CIFS_SMALL_BUFFER_SIZE,
-			GFP_KERNEL);
+	work->response_buf = ksmbd_find_buffer(MAX_CIFS_SMALL_BUFFER_SIZE);
 	work->response_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 
 	if (!work->response_buf) {
