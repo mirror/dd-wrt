@@ -980,11 +980,10 @@ int ksmbd_vfs_symlink(struct ksmbd_work *work, const char *name,
 int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 {
 	struct inode *inode;
-	int err;
+	int err, len;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
 	const char *link;
 	DEFINE_DELAYED_CALL(done);
-	int len;
 #else
 	mm_segment_t old_fs;
 #endif
@@ -1011,16 +1010,19 @@ int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 	memcpy(buf, link, len);
 	do_delayed_call(&done);
 
-	return 0;
+	return len;
 #else
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 	err = inode->i_op->readlink(path->dentry, (char __user *)buf, lenp);
 	set_fs(old_fs);
-	if (err < 0)
+	if (err < 0) {
 		pr_err("readlink failed, err = %d\n", err);
+		return err;
+	}
+	len = lenp;
 
-	return err;
+	return len;
 #endif
 }
 
