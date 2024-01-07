@@ -210,7 +210,7 @@ void start_devinit(void)
 #if defined(HAVE_ATH10K)
 	eval("rm", "-f", "/tmp/ath10k-board.bin");
 	eval("ln", "-s", "/lib/ath10k/board.bin", "/tmp/ath10k-board.bin");
-#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN) && !defined(HAVE_NEWPORT)
+#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN) && !defined(HAVE_NEWPORT) && !defined(QCA9888)
 	eval("ln", "-s", "/lib/ath10k/board_9984.bin", "/tmp/board1.bin");
 #endif
 #endif

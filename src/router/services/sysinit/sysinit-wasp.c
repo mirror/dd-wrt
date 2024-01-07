@@ -589,6 +589,7 @@ void start_sysinit(void)
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 		fclose(out);
+		eval("rm","-f","/tmp/board1.bin");
 		out = fopen("/tmp/board1.bin", "wb");
 		fseek(fp, 0x10000 + 0x5000, SEEK_SET);
 		char *smem = malloc(12064);
