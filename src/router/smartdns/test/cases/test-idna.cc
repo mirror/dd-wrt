@@ -24,60 +24,51 @@
 #include "gtest/gtest.h"
 #include <fstream>
 
-class DomainSet : public ::testing::Test
+class IDNA : public ::testing::Test
 {
   protected:
 	virtual void SetUp() {}
 	virtual void TearDown() {}
 };
 
-TEST_F(DomainSet, set_add)
+TEST_F(IDNA, match)
 {
 	smartdns::MockServer server_upstream;
 	smartdns::Server server;
-	smartdns::TempFile file_set;
-	std::vector<std::string> domain_list;
-	int count = 16;
-	std::string config = "domain-set -name test-set -file " + file_set.GetPath() + "\n";
-	config += R"""(bind [::]:60053
-server 127.0.0.1:61053
-domain-rules /domain-set:test-set/ -c none --dualstack-ip-selection no -a 9.9.9.9
-)""";
 
 	server_upstream.Start("udp://0.0.0.0:61053", [&](struct smartdns::ServerRequestContext *request) {
 		if (request->qtype == DNS_T_A) {
-			smartdns::MockServer::AddIP(request, request->domain.c_str(), "1.2.3.4");
+			smartdns::MockServer::AddIP(request, request->domain.c_str(), "1.2.3.4", 700);
+			return smartdns::SERVER_REQUEST_OK;
+		} else if (request->qtype == DNS_T_AAAA) {
+			smartdns::MockServer::AddIP(request, request->domain.c_str(), "64:ff9b::102:304", 700);
 			return smartdns::SERVER_REQUEST_OK;
 		}
 		return smartdns::SERVER_REQUEST_SOA;
 	});
 
-	for (int i = 0; i < count; i++) {
-		auto domain = smartdns::GenerateRandomString(10) + "." + smartdns::GenerateRandomString(3);
-		file_set.Write(domain);
-		file_set.Write("\n");
-		domain_list.emplace_back(domain);
-	}
-
-	std::cout << config << std::endl;
-	server.Start(config);
+	server.Start(R"""(bind [::]:60053
+server 127.0.0.1:61053
+speed-check-mode none
+address /中国.com/10.10.10.10
+address /中国.com/64:ff9b::1010:1010
+)""");
 	smartdns::Client client;
-
-	for (auto &domain : domain_list) {
-		ASSERT_TRUE(client.Query(domain, 60053));
-		ASSERT_EQ(client.GetAnswerNum(), 1);
-		EXPECT_EQ(client.GetStatus(), "NOERROR");
-		EXPECT_EQ(client.GetAnswer()[0].GetName(), domain);
-		EXPECT_EQ(client.GetAnswer()[0].GetTTL(), 600);
-		EXPECT_EQ(client.GetAnswer()[0].GetType(), "A");
-		EXPECT_EQ(client.GetAnswer()[0].GetData(), "9.9.9.9");
-	}
-
-	ASSERT_TRUE(client.Query("a.com", 60053));
+	ASSERT_TRUE(client.Query("xn--fiqs8s.com A", 60053));
+	std::cout << client.GetResult() << std::endl;
 	ASSERT_EQ(client.GetAnswerNum(), 1);
 	EXPECT_EQ(client.GetStatus(), "NOERROR");
-	EXPECT_EQ(client.GetAnswer()[0].GetName(), "a.com");
-	EXPECT_EQ(client.GetAnswer()[0].GetTTL(), 3);
+	EXPECT_EQ(client.GetAnswer()[0].GetName(), "xn--fiqs8s.com");
+	EXPECT_EQ(client.GetAnswer()[0].GetTTL(), 600);
 	EXPECT_EQ(client.GetAnswer()[0].GetType(), "A");
-	EXPECT_EQ(client.GetAnswer()[0].GetData(), "1.2.3.4");
+	EXPECT_EQ(client.GetAnswer()[0].GetData(), "10.10.10.10");
+
+	ASSERT_TRUE(client.Query("xn--fiqs8s.com AAAA", 60053));
+	std::cout << client.GetResult() << std::endl;
+	ASSERT_EQ(client.GetAnswerNum(), 1);
+	EXPECT_EQ(client.GetStatus(), "NOERROR");
+	EXPECT_EQ(client.GetAnswer()[0].GetName(), "xn--fiqs8s.com");
+	EXPECT_EQ(client.GetAnswer()[0].GetTTL(), 600);
+	EXPECT_EQ(client.GetAnswer()[0].GetType(), "AAAA");
+	EXPECT_EQ(client.GetAnswer()[0].GetData(), "64:ff9b::1010:1010");
 }

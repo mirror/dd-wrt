@@ -68,15 +68,12 @@ TEST_F(SamePending, pending)
 	server.Start(R"""(bind [::]:60053
 server 127.0.0.1:61053
 cache-size 0
-log-num 0
-log-console yes
 speed-check-mode none
 log-level error
-cache-persist no)""");
+)""");
 
 	std::vector<std::thread> threads;
-	uint64_t tick = get_tick_count();
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 5; i++) {
 		auto t = std::thread([&]() {
 			for (int j = 0; j < 10; j++) {
 				smartdns::Client client;
@@ -93,4 +90,6 @@ cache-persist no)""");
 	for (auto &t : threads) {
 		t.join();
 	}
+
+	EXPECT_LT(qid_map.size(), 80);
 }
