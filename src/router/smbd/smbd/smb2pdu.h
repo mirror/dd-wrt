@@ -213,7 +213,7 @@ struct smb2_negotiate_req {
 	__le32 NegotiateContextOffset; /* SMB3.1.1 only. MBZ earlier */
 	__le16 NegotiateContextCount;  /* SMB3.1.1 only. MBZ earlier */
 	__le16 Reserved2;
-	__le16 Dialects[1]; /* One dialect (vers=) at a time for now */
+	__le16 Dialects[]; /* One dialect (vers=) at a time for now */
 } __packed;
 
 /* SecurityMode flags */
@@ -365,7 +365,7 @@ struct smb2_negotiate_rsp {
 	__le16 SecurityBufferOffset;
 	__le16 SecurityBufferLength;
 	__le32 NegotiateContextOffset;	/* Pre:SMB3.1.1 was reserved/ignored */
-	__u8   Buffer[1];	/* variable length GSS security buffer */
+	__u8   Buffer[];	/* variable length GSS security buffer */
 } __packed;
 
 /* Flags */
@@ -902,7 +902,7 @@ struct smb2_ioctl_req {
 	__le32 MaxOutputResponse;
 	__le32 Flags;
 	__le32 Reserved2;
-	__u8   Buffer[1];
+	__u8   Buffer[];
 } __packed;
 
 struct smb2_ioctl_rsp {
@@ -918,7 +918,7 @@ struct smb2_ioctl_rsp {
 	__le32 OutputCount;
 	__le32 Flags;
 	__le32 Reserved2;
-	__u8   Buffer[1];
+	__u8   Buffer[];
 } __packed;
 
 struct validate_negotiate_info_req {
