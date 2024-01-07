@@ -10,6 +10,7 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/rwlock.h>
+#include <linux/atomic.h>
 
 #include "glob.h"
 #include "buffer_pool.h"
@@ -30,7 +31,7 @@ struct wm_list {
 	size_t			sz;
 
 	spinlock_t		wm_lock;
-	int			avail_wm;
+	atomic_t		avail_wm;
 	struct list_head	idle_wm;
 	wait_queue_head_t	wm_wait;
 };
@@ -122,7 +123,7 @@ int register_wm_size_class(size_t sz)
 	INIT_LIST_HEAD(&nl->idle_wm);
 	INIT_LIST_HEAD(&nl->list);
 	init_waitqueue_head(&nl->wm_wait);
-	nl->avail_wm = 0;
+	atomic_set(&nl->avail_wm , 0);
 
 	write_lock(&wm_lists_lock);
 	list_for_each_entry(l, &wm_lists, list) {
@@ -179,7 +180,7 @@ struct wm_list *search_wm_list(size_t size, size_t *realsize)
 	return rl;
 }
 
-struct wm *find_wm(size_t size, char *name)
+struct wm *find_wm(size_t size, const char *name)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
@@ -196,8 +197,8 @@ struct wm *find_wm(size_t size, char *name)
 		return NULL;
 
 	while (1) {
-		spin_lock(&wm_list->wm_lock);
 		if (!list_empty(&wm_list->idle_wm)) {
+			spin_lock(&wm_list->wm_lock);
 			wm = list_entry(wm_list->idle_wm.next,
 					struct wm,
 					list);
@@ -207,23 +208,19 @@ struct wm *find_wm(size_t size, char *name)
 			return wm;
 		}
 
-		if (wm_list->avail_wm > threads) {
+		if (atomic_read(&wm_list->avail_wm) > threads) {
 			printk(KERN_INFO "wait1 for release on %s\n", name);
-			spin_unlock(&wm_list->wm_lock);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
 			printk(KERN_INFO "wait1 for release on %s finished\n", name);
 			continue;
 		}
 
-		wm_list->avail_wm++;
-		spin_unlock(&wm_list->wm_lock);
+		atomic_inc(&wm_list->avail_wm);
 
 		wm = wm_alloc(realsize);
 		if (!wm) {
-			spin_lock(&wm_list->wm_lock);
-			wm_list->avail_wm--;
-			spin_unlock(&wm_list->wm_lock);
+			atomic_dec(&wm_list->avail_wm);
 			printk(KERN_INFO "wait for release on %s\n", name);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
@@ -242,16 +239,15 @@ static void release_wm(struct wm *wm, struct wm_list *wm_list)
 	if (!wm)
 		return;
 
-	spin_lock(&wm_list->wm_lock);
-	if (wm_list->avail_wm <= threads) {
+	if (atomic_read(&wm_list->avail_wm) <= threads) {
+		spin_lock(&wm_list->wm_lock);
 		list_add(&wm->list, &wm_list->idle_wm);
 		spin_unlock(&wm_list->wm_lock);
 		wake_up(&wm_list->wm_wait);
 		return;
 	}
 
-	wm_list->avail_wm--;
-	spin_unlock(&wm_list->wm_lock);
+	atomic_dec(&wm_list->avail_wm);
 	kvfree(wm);
 }
 
