@@ -215,7 +215,11 @@ static int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon
 static void id_to_sid(unsigned int cid, uint sidtype, struct smb_sid *ssid);
 static void ksmbd_init_domain(u32 *sub_auth);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+static inline uid_t posix_acl_uid_translate(struct mnt_idmap *idmap,
+#else
 static inline uid_t posix_acl_uid_translate(struct user_namespace *mnt_userns,
+#endif
 					    struct posix_acl_entry *pace)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
@@ -235,7 +239,11 @@ static inline uid_t posix_acl_uid_translate(struct user_namespace *mnt_userns,
 #endif
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+static inline gid_t posix_acl_gid_translate(struct mnt_idmap *idmap,
+#else
 static inline gid_t posix_acl_gid_translate(struct user_namespace *mnt_userns,
+#endif
 					    struct posix_acl_entry *pace)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)

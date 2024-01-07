@@ -337,7 +337,11 @@ static int ndr_encode_posix_acl_entry(struct ndr *n, struct xattr_smb_acl *acl)
 }
 
 int ndr_encode_posix_acl(struct ndr *n,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+			 struct mnt_idmap *idmap,
+#else
 			 struct user_namespace *user_ns,
+#endif
 			 struct inode *inode,
 			 struct xattr_smb_acl *acl,
 			 struct xattr_smb_acl *def_acl)
@@ -377,7 +381,11 @@ int ndr_encode_posix_acl(struct ndr *n,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+	vfsuid = i_uid_into_vfsuid(idmap, inode);
+#else
 	vfsuid = i_uid_into_vfsuid(user_ns, inode);
+#endif
 	ret = ndr_write_int64(n, from_kuid(&init_user_ns, vfsuid_into_kuid(vfsuid)));
 #else
 	ret = ndr_write_int64(n, from_kuid(&init_user_ns, i_uid_into_mnt(user_ns, inode)));
@@ -386,7 +394,11 @@ int ndr_encode_posix_acl(struct ndr *n,
 		return ret;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+	vfsgid = i_gid_into_vfsgid(idmap, inode);
+#else
 	vfsgid = i_gid_into_vfsgid(user_ns, inode);
+#endif
 	ret = ndr_write_int64(n, from_kgid(&init_user_ns, vfsgid_into_kgid(vfsgid)));
 #else
 	ret = ndr_write_int64(n, from_kgid(&init_user_ns, i_gid_into_mnt(user_ns, inode)));

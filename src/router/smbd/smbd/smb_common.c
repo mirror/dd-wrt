@@ -446,7 +446,11 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
 {
 	int i, rc = 0;
 	struct ksmbd_conn *conn = work->conn;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+	struct mnt_idmap *idmap = file_mnt_idmap(dir->filp);
+#else
 	struct user_namespace *user_ns = file_mnt_user_ns(dir->filp);
+#endif
 
 	for (i = 0; i < 2; i++) {
 		struct kstat kstat;
@@ -472,7 +476,11 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
 
 			ksmbd_kstat.kstat = &kstat;
 			ksmbd_vfs_fill_dentry_attrs(work,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+						    idmap,
+#else
 						    user_ns,
+#endif
 						    dentry,
 						    &ksmbd_kstat);
 			rc = fn(conn, info_level, d_info, &ksmbd_kstat);
