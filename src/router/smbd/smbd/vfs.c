@@ -564,12 +564,11 @@ out:
  * Return:	number of read bytes on success, otherwise error
  */
 int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp, size_t count,
-		   loff_t *pos)
+		   loff_t *pos, char *rbuf)
 {
 	struct file *filp = fp->filp;
 	ssize_t nbytes = 0;
 	char *name;
-	char *rbuf = work->aux_payload_buf;
 	struct inode *inode = d_inode(filp->f_path.dentry);
 	char namebuf[NAME_MAX];
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
