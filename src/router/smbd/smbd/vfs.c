@@ -1511,7 +1511,11 @@ int ksmbd_vfs_remove_acl_xattrs(struct user_namespace *user_ns,
 			     sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1) ||
 		    !strncmp(name, XATTR_NAME_POSIX_ACL_DEFAULT,
 			     sizeof(XATTR_NAME_POSIX_ACL_DEFAULT) - 1)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
+			err = vfs_remove_acl(user_ns, dentry, name);
+#else
 			err = ksmbd_vfs_remove_xattr(user_ns, dentry, name);
+#endif
 			if (err)
 				ksmbd_debug(SMB,
 					    "remove acl xattr failed : %s\n", name);
@@ -2125,7 +2129,13 @@ static int __dir_empty(struct dir_context *ctx,
 #endif
 	buf->dirent_count++;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
 	return buf->dirent_count <= 2;
+#else
+	if (buf->dirent_count > 2)
+		return -ENOTEMPTY;
+	return 0;
+#endif
 }
 
 /**

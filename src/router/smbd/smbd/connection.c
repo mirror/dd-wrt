@@ -298,7 +298,7 @@ int ksmbd_conn_handler_loop(void *p)
 {
 	struct ksmbd_conn *conn = (struct ksmbd_conn *)p;
 	struct ksmbd_transport *t = conn->transport;
-	unsigned int pdu_size;
+	unsigned int pdu_size, max_allowed_pdu_size;
 	char hdr_buf[4] = {0,};
 	int size;
 
@@ -327,11 +327,24 @@ int ksmbd_conn_handler_loop(void *p)
 		if (!ksmbd_pdu_size_has_room(pdu_size)) {
 			ksmbd_debug(CONN, "SMB request too short (%u bytes)\n",
 				    pdu_size);
-			continue;
+			break;
+		}
+
+		if (conn->status == KSMBD_SESS_GOOD)
+			max_allowed_pdu_size =
+				SMB3_MAX_MSGSIZE + conn->vals->max_write_size;
+		else
+			max_allowed_pdu_size = SMB3_MAX_MSGSIZE;
+
+		if (pdu_size > max_allowed_pdu_size) {
+			pr_err_ratelimited("PDU length(%u) excceed maximum allowed pdu size(%u) on connection(%d)\n",
+					pdu_size, max_allowed_pdu_size,
+					conn->status);
+			break;
 		}
 
 		if (pdu_size > MAX_STREAM_PROT_LEN)
-                        continue;
+			break;
 
 		/* 4 for rfc1002 length field */
 		size = pdu_size + 4;

@@ -686,7 +686,7 @@ int ksmbd_override_fsids(struct ksmbd_work *work)
 	if (share->force_gid != KSMBD_SHARE_INVALID_GID)
 		gid = share->force_gid;
 
-	cred = prepare_kernel_cred(NULL);
+	cred = prepare_kernel_cred(&init_task);
 	if (!cred) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
