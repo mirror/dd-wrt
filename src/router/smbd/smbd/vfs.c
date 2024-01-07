@@ -1248,11 +1248,9 @@ static int ksmbd_validate_entry_in_use(struct dentry *src_dent)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-int ksmbd_vfs_query_maximal_access(struct mnt_idmap *idmap,
+void ksmbd_vfs_query_maximal_access(struct mnt_idmap *idmap,
 				   struct dentry *dentry, __le32 *daccess)
 {
-	int ret = 0;
-
 	*daccess = cpu_to_le32(FILE_READ_ATTRIBUTES | READ_CONTROL);
 
 	if (!inode_permission(idmap, d_inode(dentry), MAY_OPEN | MAY_WRITE))
@@ -1269,8 +1267,6 @@ int ksmbd_vfs_query_maximal_access(struct mnt_idmap *idmap,
 
 	if (!inode_permission(idmap, d_inode(dentry->d_parent), MAY_EXEC | MAY_WRITE))
 		*daccess |= FILE_DELETE_LE;
-
-	return ret;
 }
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
