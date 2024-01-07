@@ -187,35 +187,16 @@ static struct ksmbd_session *__session_lookup(unsigned long long id)
 	struct ksmbd_session *sess;
 
 	hash_for_each_possible(sessions_table, sess, hlist, id) {
-		if (id == sess->id) {
-			sess->last_active = jiffies;
+		if (id == sess->id)
 			return sess;
-		}
 	}
 	return NULL;
-}
-
-static void ksmbd_expire_session(struct ksmbd_conn *conn)
-{
-	unsigned long id;
-	struct ksmbd_session *sess;
-
-	xa_for_each(&conn->sessions, id, sess) {
-		if (sess->state != SMB2_SESSION_VALID ||
-		    time_after(jiffies,
-			       sess->last_active + SMB2_SESSION_TIMEOUT)) {
-			xa_erase(&conn->sessions, sess->id);
-			ksmbd_session_destroy(sess);
-			continue;
-		}
-	}
 }
 
 void ksmbd_session_register(struct ksmbd_conn *conn,
 			    struct ksmbd_session *sess)
 {
 	sess->conn = conn;
-	ksmbd_expire_session(conn);
 	list_add(&sess->sessions_entry, &conn->sessions);
 }
 
@@ -356,8 +337,6 @@ static struct ksmbd_session *__session_create(int protocol)
 	if (ksmbd_init_file_table(&sess->file_table))
 		goto error;
 
-	sess->last_active = jiffies;
-	sess->state = SMB2_SESSION_IN_PROGRESS;
 	set_session_flag(sess, protocol);
 	INIT_LIST_HEAD(&sess->sessions_entry);
 	INIT_LIST_HEAD(&sess->tree_conn_list);
