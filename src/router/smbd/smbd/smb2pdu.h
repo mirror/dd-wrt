@@ -271,6 +271,15 @@ struct smb2_neg_context {
 	/* Followed by array of data */
 } __packed;
 
+/*
+ * SaltLength that the server send can be zero, so the only three required
+ * fields (all __le16) end up six bytes total, so the minimum context data len
+ * in the response is six bytes which accounts for
+ *
+ *      HashAlgorithmCount, SaltLength, and 1 HashAlgorithm.
+ */
+#define MIN_PREAUTH_CTXT_DATA_LEN 6
+
 struct smb2_preauth_neg_context {
 	__le16	ContextType; /* 1 */
 	__le16	DataLength;
