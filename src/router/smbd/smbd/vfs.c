@@ -6,10 +6,13 @@
 
 #include <linux/kernel.h>
 #include <linux/fs.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#include <linux/filelock.h>
+#endif
 #include <linux/uaccess.h>
 #include <linux/backing-dev.h>
 #include <linux/writeback.h>
-#include <linux/version.h>
 #include <linux/xattr.h>
 #include <linux/falloc.h>
 #include <linux/genhd.h>
@@ -415,7 +418,11 @@ static int check_lock_range(struct file *filp, loff_t start, loff_t end,
 		unsigned char type)
 {
 	struct file_lock *flock;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
+	struct file_lock_context *ctx = locks_inode_context(file_inode(filp));
+#else
 	struct file_lock_context *ctx = file_inode(filp)->i_flctx;
+#endif
 	int error = 0;
 
 	if (!ctx || list_empty_careful(&ctx->flc_posix))

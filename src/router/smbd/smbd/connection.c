@@ -120,19 +120,15 @@ void ksmbd_conn_enqueue_request(struct ksmbd_work *work)
 	struct smb2_hdr *hdr = work->request_buf;
 
 	if (hdr->ProtocolId == SMB2_PROTO_NUMBER) {
-		if (conn->ops->get_cmd_val(work) != SMB2_CANCEL_HE) {
+		if (conn->ops->get_cmd_val(work) != SMB2_CANCEL_HE)
 			requests_queue = &conn->requests;
-			work->synchronous = true;
-		}
 	} else {
 		if (conn->ops->get_cmd_val(work) != SMB_COM_NT_CANCEL)
 			requests_queue = &conn->requests;
 	}
 #else
-	if (conn->ops->get_cmd_val(work) != SMB2_CANCEL_HE) {
+	if (conn->ops->get_cmd_val(work) != SMB2_CANCEL_HE)
 		requests_queue = &conn->requests;
-		work->synchronous = true;
-	}
 #endif
 
 	if (requests_queue) {
@@ -154,14 +150,14 @@ int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work)
 
 	if (!work->multiRsp)
 		atomic_dec(&conn->req_running);
-	spin_lock(&conn->request_lock);
 	if (!work->multiRsp) {
+		spin_lock(&conn->request_lock);
 		list_del_init(&work->request_entry);
-		if (!work->synchronous)
-			list_del_init(&work->async_request_entry);
+		spin_unlock(&conn->request_lock);
+		if (work->asynchronous)
+			release_async_work(work);
 		ret = 0;
 	}
-	spin_unlock(&conn->request_lock);
 
 	wake_up_all(&conn->req_running_q);
 	return ret;
@@ -316,19 +312,12 @@ int ksmbd_conn_handler_loop(void *p)
 		ksmbd_free_request(conn->request_buf);
 		conn->request_buf = NULL;
 
-		size = t->ops->read(t, hdr_buf, sizeof(hdr_buf));
+		size = t->ops->read(t, hdr_buf, sizeof(hdr_buf), -1);
 		if (size != sizeof(hdr_buf))
 			break;
 
 		pdu_size = get_rfc1002_len(hdr_buf);
 		ksmbd_debug(CONN, "RFC1002 header %u bytes\n", pdu_size);
-
-		/* make sure we have enough to get to SMB header end */
-		if (!ksmbd_pdu_size_has_room(pdu_size)) {
-			ksmbd_debug(CONN, "SMB request too short (%u bytes)\n",
-				    pdu_size);
-			break;
-		}
 
 		if (conn->status == KSMBD_SESS_GOOD)
 			max_allowed_pdu_size =
@@ -343,6 +332,9 @@ int ksmbd_conn_handler_loop(void *p)
 			break;
 		}
 
+		/*
+		 * Check maximum pdu size(0x00FFFFFF).
+		 */
 		if (pdu_size > MAX_STREAM_PROT_LEN)
 			break;
 
@@ -362,7 +354,7 @@ int ksmbd_conn_handler_loop(void *p)
 		 * We already read 4 bytes to find out PDU size, now
 		 * read in PDU
 		 */
-		size = t->ops->read(t, conn->request_buf + 4, pdu_size);
+		size = t->ops->read(t, conn->request_buf + 4, pdu_size, 2);
 		if (size < 0) {
 			pr_err("sock_read failed: %d\n", size);
 			break;

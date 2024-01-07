@@ -328,9 +328,6 @@ int smb_session_disconnect(struct ksmbd_work *work)
 	/* setting CifsExiting here may race with start_tcp_sess */
 	ksmbd_conn_set_need_reconnect(work);
 
-	ksmbd_free_user(sess->user);
-	sess->user = NULL;
-
 	ksmbd_conn_wait_idle(conn);
 
 	ksmbd_tree_conn_session_logoff(sess);
@@ -5971,7 +5968,11 @@ static int ksmbd_fill_dirent(struct dir_context *ctx,
 
 	reclen = ALIGN(sizeof(struct ksmbd_dirent) + namlen, sizeof(u64));
 	if (buf->used + reclen > PAGE_SIZE)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+		return false;
+#else
 		return -EINVAL;
+#endif
 
 	de->namelen = namlen;
 	de->offset = offset;
@@ -5980,7 +5981,11 @@ static int ksmbd_fill_dirent(struct dir_context *ctx,
 	memcpy(de->name, name, namlen);
 	buf->used += reclen;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+	return true;
+#else
 	return 0;
+#endif
 }
 
 /**
