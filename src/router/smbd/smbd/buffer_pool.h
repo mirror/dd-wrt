@@ -11,6 +11,12 @@ void *_ksmbd_find_buffer(size_t size, const char *func, int line);
 
 void ksmbd_release_buffer(void *buffer);
 
+static void *_ksmbd_alloc(size_t size, const char *func, int line);
+#define ksmbd_alloc(size) _ksmbd_alloc(size, __func__, __LINE__)
+static void *_ksmbd_zalloc(size_t size, const char *func, int line);
+#define ksmbd_zalloc(size) _ksmbd_zalloc(size, __func__, __LINE__)
+static void ksmbd_free(void *ptr);
+
 void ksmbd_free_request(void *addr);
 
 void *_ksmbd_alloc_request(size_t size, const char *func, int line);

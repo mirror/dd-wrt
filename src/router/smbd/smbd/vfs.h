@@ -335,9 +335,9 @@ static struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type);
 static int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
 		struct posix_acl *acl);
 static int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
-				 struct inode *inode);
+				 struct dentry *dentry);
 static int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
-				struct inode *inode,
+				struct dentry *dentry,
 		struct inode *parent_inode);
 static void ksmbd_vfs_sector_size(struct inode *inode,
 			   struct ksmbd_fs_sector_size *fs_ss);

@@ -85,6 +85,40 @@ static inline void __free(void *addr)
 
 #endif
 
+void *_ksmbd_alloc(size_t size, const char *func, int line)
+{
+	void *p;
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+ 	p = __alloc(size, GFP_KERNEL);
+#else
+	p = kvmalloc(size, GFP_KERNEL);
+#endif
+	if (!p) {
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
+	}
+	return p;
+}
+
+void *_ksmbd_zalloc(size_t size, const char *func, int line)
+{
+	void *p;
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+ 	p = __alloc(size, GFP_KERNEL | __GFP_ZERO);
+#else
+	p = kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
+#endif
+	if (!p) {
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
+	}
+	return p;
+}
+
+void ksmbd_free(void *ptr)
+{
+	__free(ptr);
+}
+
+
 struct wm *wm_alloc(size_t sz)
 {
 	struct wm *wm;
