@@ -450,6 +450,7 @@ ifeq ($(CONFIG_R9000),y)
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:01:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0001:03:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:04:00.0.bin 
 else
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:00:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0000:01:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:01:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0000:01:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:01:00.0.bin 
 endif
