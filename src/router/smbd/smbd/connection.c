@@ -282,6 +282,9 @@ bool ksmbd_conn_alive(struct ksmbd_conn *conn)
 	return true;
 }
 
+#define SMB1_MIN_SUPPORTED_HEADER_SIZE (sizeof(struct smb_hdr))
+#define SMB2_MIN_SUPPORTED_HEADER_SIZE (sizeof(struct smb2_hdr) + 4)
+
 /**
  * ksmbd_conn_handler_loop() - session thread to listen on new smb requests
  * @p:		connection instance
@@ -338,6 +341,9 @@ int ksmbd_conn_handler_loop(void *p)
 		if (pdu_size > MAX_STREAM_PROT_LEN)
 			break;
 
+		if (pdu_size < SMB1_MIN_SUPPORTED_HEADER_SIZE)
+			break;
+
 		/* 4 for rfc1002 length field */
 		/* 1 for implied bcc[0] */
 		size = pdu_size + 4 + 1;
@@ -347,9 +353,6 @@ int ksmbd_conn_handler_loop(void *p)
 		}
 
 		memcpy(conn->request_buf, hdr_buf, sizeof(hdr_buf));
-		if (!ksmbd_smb_request(conn)) {
-			break;
-		}
 
 		/*
 		 * We already read 4 bytes to find out PDU size, now
@@ -365,6 +368,15 @@ int ksmbd_conn_handler_loop(void *p)
 			pr_err("PDU error. Read: %d, Expected: %d\n",
 			       size, pdu_size);
 			continue;
+		}
+
+		if (!ksmbd_smb_request(conn))
+			break;
+
+		if (((struct smb2_hdr *)smb2_get_msg(conn->request_buf))->ProtocolId ==
+		    SMB2_PROTO_NUMBER) {
+			if (pdu_size < SMB2_MIN_SUPPORTED_HEADER_SIZE)
+				break;
 		}
 
 		if (!default_conn_ops.process_fn) {
