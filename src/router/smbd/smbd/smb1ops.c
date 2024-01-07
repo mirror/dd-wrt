@@ -67,6 +67,7 @@ static struct smb_version_cmds smb1_server_cmds[256] = {
 	[SMB_COM_SESSION_SETUP_ANDX]	= { .proc = smb_session_setup_andx, },
 	[SMB_COM_LOGOFF_ANDX]           = { .proc = smb_session_disconnect, },
 	[SMB_COM_TREE_CONNECT_ANDX]	= { .proc = smb_tree_connect_andx, },
+	[SMB_COM_QUERY_INFORMATION_DISK] = { .proc = smb_query_information_disk, },
 	[SMB_COM_NT_CREATE_ANDX]	= { .proc = smb_nt_create_andx, },
 	[SMB_COM_NT_CANCEL]		= { .proc = smb_nt_cancel, },
 	[SMB_COM_NT_RENAME]		= { .proc = smb_nt_rename, },

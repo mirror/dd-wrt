@@ -279,6 +279,14 @@ struct filesystem_info {
 	__le32 BytesPerSector;
 } __packed;     /* size info, level 0x103 */
 
+struct filesystem_full_info {
+	__le64 TotalAllocationUnits;
+	__le64 FreeAllocationUnits;
+	__le64 ActualAvailableUnits;
+	__le32 SectorsPerAllocationUnit;
+	__le32 BytesPerSector;
+} __packed;     /* size info, level 0x3ef */
+
 #define EXTENDED_INFO_MAGIC 0x43667364	/* Cfsd */
 #define STRING_LENGTH 28
 

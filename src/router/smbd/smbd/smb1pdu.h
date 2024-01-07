@@ -139,6 +139,7 @@
 #define SMB_COM_SESSION_SETUP_ANDX    0x73
 #define SMB_COM_LOGOFF_ANDX           0x74 /* trivial response */
 #define SMB_COM_TREE_CONNECT_ANDX     0x75
+#define SMB_COM_QUERY_INFORMATION_DISK 0x80
 #define SMB_COM_NT_TRANSACT           0xA0
 #define SMB_COM_NT_TRANSACT_SECONDARY 0xA1
 #define SMB_COM_NT_CREATE_ANDX        0xA2
@@ -467,6 +468,16 @@ struct smb_com_lock_rsp {
 	__u8 AndXCommand;
 	__u8 AndXReserved;
 	__le16 AndXOffset;
+	__le16 ByteCount;
+} __packed;
+
+struct smb_com_query_information_disk_rsp {
+	struct smb_hdr hdr;     /* wct = 5 */
+	__le16 TotalUnits;
+	__le16 BlocksPerUnit;
+	__le16 BlockSize;
+	__le16 FreeUnits;
+	__le16 Pad;
 	__le16 ByteCount;
 } __packed;
 
@@ -1626,6 +1637,7 @@ static int smb_closedir(struct ksmbd_work *work);
 static int smb_open_andx(struct ksmbd_work *work);
 static int smb_write(struct ksmbd_work *work);
 static int smb_setattr(struct ksmbd_work *work);
+static int smb_query_information_disk(struct ksmbd_work *work);
 static int smb_checkdir(struct ksmbd_work *work);
 static int smb_process_exit(struct ksmbd_work *work);
 #endif /* __SMB1PDU_H */

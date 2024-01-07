@@ -54,6 +54,7 @@ static int smb1_req_struct_size(struct smb_hdr *hdr)
 	case SMB_COM_NT_CANCEL:
 	case SMB_COM_CHECK_DIRECTORY:
 	case SMB_COM_PROCESS_EXIT:
+	case SMB_COM_QUERY_INFORMATION_DISK:
 		if (wc != 0x0)
 			return -EINVAL;
 		break;
