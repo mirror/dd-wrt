@@ -70,6 +70,9 @@ struct tlog_time {
 /* enable output to screen with color */
 #define TLOG_SCREEN_COLOR (1 << 6)
 
+/* Not output prefix  */
+#define TLOG_FORMAT_NO_PREFIX (1 << 7)
+
 struct tlog_loginfo {
     tlog_level level;
     const char *file;
@@ -117,7 +120,7 @@ extern int tlog_write_log(char *buff, int bufflen);
 static inline void tlog_setlogscreen(int enable) {}
 
 /* enalbe early log to screen */
-extern void tlog_set_early_printf(int enable);
+#define tlog_set_early_printf(enable, no_prefix, color)  do { } while(0)
 
 /* set early log callback */
 typedef void (*tlog_early_print_func)(struct tlog_loginfo *loginfo, const char *format, va_list ap);
@@ -154,6 +157,17 @@ extern int tlog_reg_format_func(tlog_format_func func);
  */
 typedef int (*tlog_log_output_func)(struct tlog_loginfo *info, const char *buff, int bufflen, void *private_data);
 extern int tlog_reg_log_output_func(tlog_log_output_func output, void *private_data);
+
+/* enable early log to screen */
+#define tlog_set_early_printf(enable, no_prefix, color)  do { } while(0)
+
+/* set early log callback */
+typedef void (*tlog_early_print_func)(struct tlog_loginfo *loginfo, const char *format, va_list ap);
+extern void tlog_reg_early_printf_callback(tlog_early_print_func callback);
+
+/* set early log output callback */
+
+#define tlog_reg_early_printf_output_callback(callback, log_screen, private_data)  do { } while(0)
 
 struct tlog_log;
 typedef struct tlog_log tlog_log;
@@ -227,6 +241,7 @@ static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archiv
 #define tlog_warn(...) {if (tlog_getlevel() <= TLOG_WARN) syslog(LOG_WARNING, ##__VA_ARGS__);}
 #define tlog_error(...) {if (tlog_getlevel() <= TLOG_ERROR) syslog(LOG_ERR, ##__VA_ARGS__);}
 #define tlog_fatal(...) {if (tlog_getlevel() <= TLOG_FATAL) syslog(LOG_EMERG, ##__VA_ARGS__);}
+#define tlog_reg_log_output_func(output, data) do { } while(0)
 
 #ifdef DEBUG
 #define tlog(level, format, ...) do {	\
@@ -301,7 +316,7 @@ static inline void tlog_setlogscreen(int enable) {}
 static inline void tlog_reg_early_printf_callback(tlog_early_print_func callback) {}
 
 /* enalbe early log to screen */
-extern void tlog_set_early_printf(int enable);
+extern void tlog_set_early_printf(int enable, int no_prefix, int color);
 
 /* Get log level in string */
 extern const char *tlog_get_level_string(tlog_level level);
@@ -333,7 +348,7 @@ extern int tlog_reg_format_func(tlog_format_func func);
  Note: info is invalid when flag TLOG_SEGMENT is not set.
  */
 typedef int (*tlog_log_output_func)(struct tlog_loginfo *info, const char *buff, int bufflen, void *private_data);
-extern int tlog_reg_log_output_func(tlog_log_output_func output, void *private_data);
+#define tlog_reg_log_output_func(output, data) do { } while(0)
 
 struct tlog_log;
 typedef struct tlog_log tlog_log;
@@ -406,6 +421,7 @@ static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archiv
 #define tlog_warn(...)  do { } while(0)
 #define tlog_error(...)  do { } while(0)
 #define tlog_fatal(...)  do { } while(0)
+#define tlog_reg_early_printf_output_callback(callback, log_screen, private_data)  do { } while(0)
 
 #endif
 
