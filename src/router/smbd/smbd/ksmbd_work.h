@@ -141,6 +141,6 @@ static bool ksmbd_queue_work(struct ksmbd_work *work);
 static int ksmbd_iov_pin_rsp_read(struct ksmbd_work *work, void *ib, int len,
 			   void *aux_buf, unsigned int aux_size);
 static int ksmbd_iov_pin_rsp(struct ksmbd_work *work, void *ib, int len);
-static void ksmbd_iov_reset(struct ksmbd_work *work);
+static int allocate_interim_rsp_buf(struct ksmbd_work *work);
 
 #endif /* __KSMBD_WORK_H__ */

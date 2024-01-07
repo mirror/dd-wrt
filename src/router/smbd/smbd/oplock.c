@@ -710,18 +710,6 @@ static int oplock_break_pending(struct oplock_info *opinfo, int req_op_level)
 	return 0;
 }
 
-
-static inline int allocate_oplock_break_buf(struct ksmbd_work *work)
-{
-	work->response_buf = ksmbd_find_buffer(MAX_CIFS_SMALL_BUFFER_SIZE);
-	if (!work->response_buf) {
-		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-		return -ENOMEM;
-	}
-	work->response_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
-	return 0;
-}
-
 #ifdef CONFIG_SMB_INSECURE_SERVER
 /**
  * smb1_oplock_break_noti() - send smb1 oplock break cmd from conn
@@ -741,7 +729,7 @@ static void __smb1_oplock_break_noti(struct work_struct *wk)
 	struct smb_com_lock_req *req;
 	struct oplock_info *opinfo = work->request_buf;
 
-	if (allocate_oplock_break_buf(work)) {
+	if (allocate_interim_rsp_buf(work)) {
 		pr_err("smb_allocate_rsp_buf failed! ");
 		ksmbd_free_work_struct(work);
 		return;
@@ -857,7 +845,7 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 	if (!fp)
 		goto out;
 
-	if (allocate_oplock_break_buf(work)) {
+	if (allocate_interim_rsp_buf(work)) {
 		pr_err("smb2_allocate_rsp_buf failed! ");
 		ksmbd_fd_put(work, fp);
 		goto out;
@@ -973,7 +961,7 @@ static void __smb2_lease_break_noti(struct work_struct *wk)
 	struct lease_break_info *br_info = work->request_buf;
 	struct smb2_hdr *rsp_hdr;
 
-	if (allocate_oplock_break_buf(work)) {
+	if (allocate_interim_rsp_buf(work)) {
 		ksmbd_debug(OPLOCK, "smb2_allocate_rsp_buf failed! ");
 		goto out;
 	}
@@ -1075,7 +1063,6 @@ static int smb2_lease_break_noti(struct oplock_info *opinfo)
 			setup_async_work(in_work, NULL, NULL);
 			smb2_send_interim_resp(in_work, STATUS_PENDING);
 			list_del(&in_work->interim_entry);
-			ksmbd_iov_reset(in_work);
 		}
 		INIT_WORK(&work->work, __smb2_lease_break_noti);
 		ksmbd_queue_work(work);
