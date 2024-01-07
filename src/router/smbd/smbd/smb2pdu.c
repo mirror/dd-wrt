@@ -6819,6 +6819,7 @@ int smb2_read(struct ksmbd_work *work)
 		remain_bytes = smb2_read_rdma_channel(work, req,
 						work->aux_payload_buf, nbytes);
 		ksmbd_release_buffer(aux_payload_buf);
+		aux_payload_buf = NULL;
 
 		nbytes = 0;
 		if (remain_bytes < 0) {

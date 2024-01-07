@@ -1597,10 +1597,10 @@ ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
 #else
  * @user_ns:	user namespace
 #endif
- * @dentry:	dentry to set XATTR at
- * @name:	xattr name for setxattr
- * @value:	xattr value to set
- * @size:	size of xattr value
+ * @path:	path of dentry to set XATTR at
+ * @attr_name:	xattr name for setxattr
+ * @attr_value:	xattr value to set
+ * @attr_size:	size of xattr value
  * @flags:	destination buffer length
  *
  * Return:	0 on success, otherwise error

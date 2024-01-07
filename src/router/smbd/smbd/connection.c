@@ -218,6 +218,9 @@ int ksmbd_conn_write(struct ksmbd_work *work)
 		ksmbd_conn_unlock(conn);
 	}
 #else
+	if (!work->iov_idx)
+		return -EINVAL;
+
 	ksmbd_conn_lock(conn);
 	sent = conn->transport->ops->writev(conn->transport, work->iov,
 			work->iov_cnt,
