@@ -632,7 +632,8 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 #else
 	struct user_namespace *user_ns = file_mnt_user_ns(fp->filp);
 #endif
-	size_t size, v_len;
+	size_t size;
+	ssize_t v_len;
 	int err = 0;
 
 	ksmbd_debug(VFS, "write stream data pos : %llu, count : %zd\n",
@@ -653,9 +654,9 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 				       fp->stream.name,
 				       fp->stream.size,
 				       &stream_buf);
-	if ((int)v_len < 0) {
+	if (v_len < 0) {
 		pr_err("not found stream in xattr : %zd\n", v_len);
-		err = (int)v_len;
+		err = v_len;
 		goto out;
 	}
 
@@ -2850,7 +2851,12 @@ int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	generic_fillattr(idmap, STATX_BASIC_STATS, d_inode(dentry),
+			 ksmbd_kstat->kstat);
+#else
 	generic_fillattr(idmap, d_inode(dentry), ksmbd_kstat->kstat);
+#endif
 #else
 	generic_fillattr(user_ns, d_inode(dentry), ksmbd_kstat->kstat);
 #endif
