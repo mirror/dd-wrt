@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r7496 | brainslayer | 2024-01-08 03:16:44 +0600 (Mon, 08 Jan 2024) | 1 line
+
+small hack for qca9886 to make it 160mhz capable
+------------------------------------------------------------------------
+r7495 | brainslayer | 2024-01-08 03:00:43 +0600 (Mon, 08 Jan 2024) | 1 line
+
+small hack for qca9886 to make it 160mhz capable
+------------------------------------------------------------------------
 r7494 | brainslayer | 2024-01-05 11:20:13 +0600 (Fri, 05 Jan 2024) | 1 line
 
 mac80211: fix race condition on enabling fast-xmit
