@@ -129,7 +129,7 @@ static void create_durable_v2_rsp_buf(char *cc, struct ksmbd_file *fp);
 static void create_mxac_rsp_buf(char *cc, int maximal_access);
 static void create_disk_id_rsp_buf(char *cc, __u64 file_id, __u64 vol_id);
 static void create_posix_rsp_buf(char *cc, struct ksmbd_file *fp);
-static struct create_context *smb2_find_context_vals(void *open_req, const char *str);
+static struct create_context *smb2_find_context_vals(void *open_req, const char *tag, int tag_len);
 static int ksmbd_durable_verify_and_del_oplock(struct ksmbd_session *curr_sess,
 		struct ksmbd_session *prev_sess, int fid, struct file **filp,
 		u64 sess_id);

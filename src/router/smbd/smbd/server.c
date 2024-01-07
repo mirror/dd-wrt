@@ -526,7 +526,9 @@ ATTRIBUTE_GROUPS(ksmbd_control_class);
 
 static struct class ksmbd_control_class = {
 	.name		= "ksmbd-control",
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 	.owner		= THIS_MODULE,
+#endif
 	.class_groups	= ksmbd_control_class_groups,
 };
 #else
@@ -623,6 +625,7 @@ err_unregister:
 static void __exit ksmbd_server_exit(void)
 {
 	ksmbd_server_shutdown();
+	rcu_barrier();
 	ksmbd_release_inode_hash();
 }
 
