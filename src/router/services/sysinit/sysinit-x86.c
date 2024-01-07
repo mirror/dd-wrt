@@ -59,14 +59,13 @@
 void start_sysinit(void)
 {
 	time_t tm = 0;
-
+	insmod("mei_wdt");
 	if (!insmod("it8712f_wdt")) {
 	} else if (!insmod("scx200_wdt")) {
-	} else if (!insmod("w83877f_wdt")) {
 	} else if (!insmod("it87_wdt")) {
-	} else if (!insmod("mei_wdt")) {
 	} else if (!insmod("sp5100_tco")) {
 	} else if (!insmod("sc1200_wdt")) {
+	} else if (!insmod("w83877f_wdt")) {
 	} else
 		insmod("softdog");
 
