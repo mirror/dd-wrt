@@ -2702,6 +2702,7 @@ out:
 out1:
 	switch (err) {
 	case 0:
+		ksmbd_update_fstate(&work->sess->file_table, fp, FP_INITED);
 		break;
 	case -ENOSPC:
 		rsp->hdr.Status.CifsError = STATUS_DISK_FULL;
@@ -6076,6 +6077,7 @@ static int find_first(struct ksmbd_work *work)
 	dir_fp->dirent_offset = 0;
 	dir_fp->readdir_data.file_attr =
 		le16_to_cpu(req_params->SearchAttributes);
+	ksmbd_update_fstate(&work->sess->file_table, dir_fp, FP_INITED);
 
 	if (params_count % 4)
 		data_alignment_offset = 4 - params_count % 4;
@@ -8443,10 +8445,10 @@ out:
 			rsp->hdr.Status.CifsError = STATUS_UNEXPECTED_IO_ERROR;
 		if (fp)
 			ksmbd_close_fd(work, fp->volatile_id);
-		else
-			kfree(name);
-	}
+	} else
+		ksmbd_update_fstate(&work->sess->file_table, fp, FP_INITED);
 
+	kfree(name);
 	if (!rsp->hdr.WordCount)
 		return err;
 
