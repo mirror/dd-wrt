@@ -10,6 +10,7 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/rwlock.h>
+#include <linux/atomic.h>
 
 #include "glob.h"
 #include "buffer_pool.h"
@@ -30,7 +31,7 @@ struct wm_list {
 	size_t			sz;
 
 	spinlock_t		wm_lock;
-	int			avail_wm;
+	atomic_t		avail_wm;
 	struct list_head	idle_wm;
 	wait_queue_head_t	wm_wait;
 };
@@ -84,40 +85,7 @@ static inline void __free(void *addr)
 
 #endif
 
-void *_ksmbd_alloc(size_t size, const char *func, int line)
-{
-	void *p;
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
- 	p = __alloc(size, GFP_KERNEL);
-#else
-	p = kvmalloc(size, GFP_KERNEL);
-#endif
-	if (!p) {
-		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
-	}
-	return p;
-}
-
-void *_ksmbd_zalloc(size_t size, const char *func, int line)
-{
-	void *p;
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
- 	p = __alloc(size, GFP_KERNEL | __GFP_ZERO);
-#else
-	p = kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
-#endif
-	if (!p) {
-		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
-	}
-	return p;
-}
-
-void ksmbd_free(void *ptr)
-{
-	__free(ptr);
-}
-
-static struct wm *wm_alloc(size_t sz)
+struct wm *wm_alloc(size_t sz)
 {
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
@@ -136,7 +104,7 @@ static struct wm *wm_alloc(size_t sz)
 	return wm;
 }
 
-static int register_wm_size_class(size_t sz)
+int register_wm_size_class(size_t sz)
 {
 	struct wm_list *l, *nl;
 
@@ -155,7 +123,7 @@ static int register_wm_size_class(size_t sz)
 	INIT_LIST_HEAD(&nl->idle_wm);
 	INIT_LIST_HEAD(&nl->list);
 	init_waitqueue_head(&nl->wm_wait);
-	nl->avail_wm = 0;
+	atomic_set(&nl->avail_wm , 0);
 
 	write_lock(&wm_lists_lock);
 	list_for_each_entry(l, &wm_lists, list) {
@@ -175,7 +143,7 @@ static int register_wm_size_class(size_t sz)
 	return 0;
 }
 
-static struct wm_list *match_wm_list(size_t size)
+struct wm_list *match_wm_list(size_t size)
 {
 	struct wm_list *l, *rl = NULL;
 
@@ -190,7 +158,7 @@ static struct wm_list *match_wm_list(size_t size)
 	return rl;
 }
 
-static struct wm_list *search_wm_list(size_t size, size_t *realsize)
+struct wm_list *search_wm_list(size_t size, size_t *realsize)
 {
 	struct wm_list *l, *rl = NULL;
 	size_t last_size = (size_t)-1;
@@ -212,7 +180,7 @@ static struct wm_list *search_wm_list(size_t size, size_t *realsize)
 	return rl;
 }
 
-static struct wm *find_wm(size_t size)
+struct wm *find_wm(size_t size, const char *name)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
@@ -229,8 +197,8 @@ static struct wm *find_wm(size_t size)
 		return NULL;
 
 	while (1) {
-		spin_lock(&wm_list->wm_lock);
 		if (!list_empty(&wm_list->idle_wm)) {
+			spin_lock(&wm_list->wm_lock);
 			wm = list_entry(wm_list->idle_wm.next,
 					struct wm,
 					list);
@@ -240,23 +208,23 @@ static struct wm *find_wm(size_t size)
 			return wm;
 		}
 
-		if (wm_list->avail_wm > threads) {
-			spin_unlock(&wm_list->wm_lock);
+		if (atomic_read(&wm_list->avail_wm) > threads) {
+			printk(KERN_INFO "wait1 for release on %s\n", name);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
+			printk(KERN_INFO "wait1 for release on %s finished\n", name);
 			continue;
 		}
 
-		wm_list->avail_wm++;
-		spin_unlock(&wm_list->wm_lock);
+		atomic_inc(&wm_list->avail_wm);
 
 		wm = wm_alloc(realsize);
 		if (!wm) {
-			spin_lock(&wm_list->wm_lock);
-			wm_list->avail_wm--;
-			spin_unlock(&wm_list->wm_lock);
+			atomic_dec(&wm_list->avail_wm);
+			printk(KERN_INFO "wait for release on %s\n", name);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
+			printk(KERN_INFO "wait for release on %s finished\n", name);
 			continue;
 		}
 		break;
@@ -271,17 +239,16 @@ static void release_wm(struct wm *wm, struct wm_list *wm_list)
 	if (!wm)
 		return;
 
-	spin_lock(&wm_list->wm_lock);
-	if (wm_list->avail_wm <= threads) {
+	if (atomic_read(&wm_list->avail_wm) <= threads) {
+		spin_lock(&wm_list->wm_lock);
 		list_add(&wm->list, &wm_list->idle_wm);
 		spin_unlock(&wm_list->wm_lock);
 		wake_up(&wm_list->wm_wait);
 		return;
 	}
 
-	wm_list->avail_wm--;
-	spin_unlock(&wm_list->wm_lock);
-	ksmbd_free(wm);
+	atomic_dec(&wm_list->avail_wm);
+	kvfree(wm);
 }
 
 static void wm_list_free(struct wm_list *l)
@@ -365,7 +332,7 @@ void *_ksmbd_find_buffer(size_t size, const char *func, int line)
 {
 	struct wm *wm;
 
-	wm = find_wm(size);
+	wm = find_wm(size, func);
 
 	WARN_ON(!wm);
 	if (wm)
