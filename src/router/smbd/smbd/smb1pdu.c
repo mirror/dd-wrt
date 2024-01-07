@@ -1249,6 +1249,7 @@ int smb_session_setup_andx(struct ksmbd_work *work)
 		return 0;
 	}
 
+	ksmbd_conn_lock(conn);
 	uid = le16_to_cpu(pSMB->req.hdr.Uid);
 	if (uid != 0) {
 		sess = ksmbd_session_lookup(conn, uid);
@@ -1287,6 +1288,7 @@ int smb_session_setup_andx(struct ksmbd_work *work)
 
 	work->sess = sess;
 	ksmbd_conn_set_good(work);
+	ksmbd_conn_unlock(conn);
 	return 0;
 
 out_err:
@@ -1297,6 +1299,7 @@ out_err:
 		ksmbd_session_destroy(sess);
 		work->sess = NULL;
 	}
+	ksmbd_conn_unlock(conn);
 	return rc;
 }
 
@@ -4621,8 +4624,7 @@ static int query_fs_info(struct ksmbd_work *work)
 
 	info_level = le16_to_cpu(req_params->InformationLevel);
 
-	tree_conn =
-		ksmbd_tree_conn_lookup(work->sess, le16_to_cpu(req_hdr->Tid));
+	tree_conn = work->tcon;
 	if (!tree_conn)
 		return -ENOENT;
 	share = tree_conn->share_conf;
@@ -8560,7 +8562,7 @@ int smb_query_information_disk(struct ksmbd_work *work)
 		goto out;
 	}
 
-	tree_conn = ksmbd_tree_conn_lookup(work->sess, le16_to_cpu(req->Tid));
+	tree_conn = work->tcon;
 	if (!tree_conn) {
 		err = -ENOENT;
 		goto out;

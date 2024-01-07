@@ -2261,7 +2261,6 @@ bool ksmbd_rdma_capable_netdev(struct net_device *netdev)
 		for (i = 0; i < smb_dev->ib_dev->phys_port_cnt; i++) {
 			struct net_device *ndev;
 
-			/* RoCE and iWRAP ib_dev is backed by a netdev */
 			if (smb_dev->ib_dev->ops.get_netdev) {
 				ndev = smb_dev->ib_dev->ops.get_netdev(
 					smb_dev->ib_dev, i + 1);
@@ -2274,7 +2273,9 @@ bool ksmbd_rdma_capable_netdev(struct net_device *netdev)
 					goto out;
 				}
 				dev_put(ndev);
-			/* match physical ib_dev with IPoIB netdev by GUID */
+			/* if ib_dev does not implement ops.get_netdev
+			 * check for matching infiniband GUID in hw_addr
+			 */
 			} else if (netdev->type == ARPHRD_INFINIBAND) {
 				struct netdev_hw_addr *ha;
 				union ib_gid gid;
