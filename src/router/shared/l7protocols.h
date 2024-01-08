@@ -2,16 +2,15 @@
 /*
  * L7-filter Supported Protocols 
  */
-    /*
+/*
      * 2009-05-28 
      */
 
 typedef struct _l7filters {
-
 	char *name;
-	unsigned short protocol:2;	// 1=p2p, 0=l7, 2=opendpi
-	unsigned short level:14;
-	char *matchdep;		// for risk only
+	unsigned short protocol : 2; // 1=p2p, 0=l7, 2=opendpi
+	unsigned short level : 14;
+	char *matchdep; // for risk only
 } l7filters;
 #define L7_ONLY 0
 #define PDPI_ONLY 1
@@ -19,11 +18,11 @@ typedef struct _l7filters {
 #define NDPI_RISK 3
 
 #ifdef HAVE_OPENDPI
-#define DPI 2			//open dpi based
-#define PDPI 2			//open dpi based
+#define DPI 2 //open dpi based
+#define PDPI 2 //open dpi based
 #else
-#define DPI 0			//default l7
-#define PDPI 1			//default p2p
+#define DPI 0 //default l7
+#define PDPI 1 //default p2p
 #endif
 //Added ,  (in extra), dazhihui, .
 
@@ -212,7 +211,7 @@ l7filters filters_list[] = {
 	{ "genshinimpact", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
-//	{ "gambling", NDPI_ONLY, 0, NULL },
+	//	{ "gambling", NDPI_ONLY, 0, NULL },
 	{ "geforcenow", NDPI_ONLY, 0, NULL },
 #endif
 	{ "gif", L7_ONLY, 0, NULL },
@@ -535,7 +534,7 @@ l7filters filters_list[] = {
 	{ "replaytv-ivs", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "riotgames", NDPI_ONLY, 0, NULL },
-//      { "risky asn", NDPI_RISK, 26, NULL },
+	//      { "risky asn", NDPI_RISK, 26, NULL },
 	{ "risky domain name", NDPI_RISK, 27, "dns" },
 #endif
 	{ "rlogin", L7_ONLY, 0, NULL },
@@ -618,7 +617,7 @@ l7filters filters_list[] = {
 	{ "source_engine", NDPI_ONLY, 0, NULL },
 	{ "spotify", NDPI_ONLY, 0, NULL },
 	{ "sql injection", NDPI_RISK, 2, "http,http_connect,http_proxy" },
-	{ "srtp", NDPI_ONLY, 0},
+	{ "srtp", NDPI_ONLY, 0 },
 #endif
 	{ "ssdp", DPI, 0, NULL },
 	{ "ssh", DPI, 0, NULL },
@@ -716,7 +715,7 @@ l7filters filters_list[] = {
 	{ "ubntac2", NDPI_ONLY, 0, NULL },
 	{ "ubuntuone", NDPI_ONLY, 0, NULL },
 	{ "ultrasurf", NDPI_ONLY, 0, NULL },
-	{ "umas", NDPI_ONLY, 0, NULL},
+	{ "umas", NDPI_ONLY, 0, NULL },
 	{ "uncommon tls alpn", NDPI_RISK, 31, "tls" },
 	{ "unidirectional traffic", NDPI_RISK, 46, "all" },
 	{ "unsafe protocol", NDPI_RISK, 22, "all" },

@@ -48,7 +48,6 @@ static void addcache(const char *ifname, const char *country, struct wifi_channe
 
 static struct wifi_channels *getcache(const char *ifname, const char *country)
 {
-
 	if (cache) {
 		int cnt = 0;
 		for (cnt = 0; cnt < cachecount; cnt++) {
@@ -65,61 +64,60 @@ static void _invalidate_channelcache(void)
 	if (cache) {
 		struct channellist_cache *tmpcache = cache;
 		int c = cachecount;
-		cachecount=0;
-		cache=NULL;
+		cachecount = 0;
+		cache = NULL;
 		int cnt = 0;
 		for (cnt = 0; cnt < c; cnt++) {
-				free(tmpcache[cnt].list);
-				free(tmpcache[cnt].ifname);
-				free(tmpcache[cnt].country);
+			free(tmpcache[cnt].list);
+			free(tmpcache[cnt].ifname);
+			free(tmpcache[cnt].country);
 		}
 		free(tmpcache);
 	}
 }
 #ifdef HAVE_WIL6210
 
-#define INITVALUECACHEi(prefix) \
+#define INITVALUECACHEi(prefix)                                  \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0; \
-	if (!strncmp(prefix,"giwifi", 6)) \
-		dn = 2; \
-	else \
-		sscanf(prefix, "wlan%d", &dn); \
+	int dn, ret = 0;                                         \
+	if (!strncmp(prefix, "giwifi", 6))                       \
+		dn = 2;                                          \
+	else                                                     \
+		sscanf(prefix, "wlan%d", &dn);                   \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
-
-#define INITVALUECACHE() \
+#define INITVALUECACHE()                                         \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0; \
-	if (!strncmp(prefix,"giwifi", 6)) \
-		dn = 2; \
-	else \
-		sscanf(prefix, "wlan%d", &dn); \
+	int dn, ret = 0;                                         \
+	if (!strncmp(prefix, "giwifi", 6))                       \
+		dn = 2;                                          \
+	else                                                     \
+		sscanf(prefix, "wlan%d", &dn);                   \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
 #else
 
-#define INITVALUECACHEi(prefix) \
+#define INITVALUECACHEi(prefix)                                  \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0; \
-	sscanf(prefix, "wlan%d", &dn); \
+	int dn, ret = 0;                                         \
+	sscanf(prefix, "wlan%d", &dn);                           \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
-
-#define INITVALUECACHE() \
+#define INITVALUECACHE()                                         \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0; \
-	sscanf(prefix, "wlan%d", &dn); \
+	int dn, ret = 0;                                         \
+	sscanf(prefix, "wlan%d", &dn);                           \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
-
 #endif
-#define EXITVALUECACHE() \
-	} else { \
+#define EXITVALUECACHE()         \
+	}                        \
+	else                     \
+	{                        \
 		return devs[dn]; \
-	} \
-      out_cache:; \
-	if (dn < 8 && dn > -1) \
+	}                        \
+out_cache:;                      \
+	if (dn < 8 && dn > -1)   \
 		devs[dn] = ret;
 
-#define RETURNVALUE(val) \
-	{ \
-	ret = val; \
-	goto out_cache; \
+#define RETURNVALUE(val)        \
+	{                       \
+		ret = val;      \
+		goto out_cache; \
 	}

@@ -77,6 +77,6 @@ typedef struct md5_ctx_t {
 	uint32_t buflen;
 	char buffer[128];
 } md5_ctx_t;
-void dd_md5_begin(md5_ctx_t * ctx);
-void dd_md5_hash(const void *data, uint32_t length, md5_ctx_t * ctx);
-void *dd_md5_end(void *resbuf, md5_ctx_t * ctx);
+void dd_md5_begin(md5_ctx_t *ctx);
+void dd_md5_hash(const void *data, uint32_t length, md5_ctx_t *ctx);
+void *dd_md5_end(void *resbuf, md5_ctx_t *ctx);

@@ -23,11 +23,12 @@
 #include <wlioctl.h>
 #endif
 #ifndef WLC_IOCTL_SMLEN
-#define	WLC_IOCTL_SMLEN		256	/* "small" length ioctl buffer
+#define WLC_IOCTL_SMLEN \
+	256 /* "small" length ioctl buffer
 					 * required */
 #endif
 #ifndef BCME_BUFTOOSHORT
-#define BCME_BUFTOOSHORT		-14	/* Buffer too short */
+#define BCME_BUFTOOSHORT -14 /* Buffer too short */
 #endif
 
 #ifdef HAVE_MADWIFI
@@ -121,10 +122,11 @@ struct wifi_channels {
 	int max_eirp;
 	int hw_eirp;
 	int band; // band number/index
-	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, //
-		lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1, //
-		ht40:1, vht80:1, vht160:1, //
-		dfs:1;
+	unsigned int no_outdoor : 1, no_indoor : 1, no_ofdm : 1, no_cck : 1, ptp_only : 1, ptmp_only : 1, passive_scan : 1,
+		no_ibss : 1, //
+		lll : 1, llu : 1, lul : 1, luu : 1, ull : 1, ulu : 1, uul : 1, uuu : 1, //
+		ht40 : 1, vht80 : 1, vht160 : 1, //
+		dfs : 1;
 };
 
 struct wifi_client_info {
@@ -143,8 +145,9 @@ struct wifi_client_info {
 	int8_t chaininfo_avg[4];
 	int8_t mcs;
 	int8_t rx_mcs;
-	unsigned int is_40mhz:1, is_80mhz:1, is_160mhz:1, is_80p80mhz:1, is_ht:1, is_vht:1, is_short_gi:1, rx_is_40mhz:1, rx_is_80mhz:1, rx_is_160mhz:1, rx_is_80p80mhz:1, rx_is_ht:1, rx_is_vht:1, rx_is_short_gi:1,
-	    ht40intol:1, islzo:1, ps:1, rx_is_he:1, is_he:1;
+	unsigned int is_40mhz : 1, is_80mhz : 1, is_160mhz : 1, is_80p80mhz : 1, is_ht : 1, is_vht : 1, is_short_gi : 1,
+		rx_is_40mhz : 1, rx_is_80mhz : 1, rx_is_160mhz : 1, rx_is_80p80mhz : 1, rx_is_ht : 1, rx_is_vht : 1,
+		rx_is_short_gi : 1, ht40intol : 1, islzo : 1, ps : 1, rx_is_he : 1, is_he : 1;
 	uint32_t inactive_time;
 	uint32_t rx_packets;
 	uint32_t tx_packets;
@@ -169,7 +172,8 @@ struct mac80211_info {
 void mac80211_lock(void);
 void mac80211_unlock(void);
 struct mac80211_info *getcurrentsurvey_mac80211(const char *interface, struct mac80211_info *mac80211_info);
-int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, const char *interface, char *freq_range, int scans, int bw);
+int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, const char *interface, char *freq_range,
+		   int scans, int bw);
 
 int getassoclist(char *name, unsigned char *list);
 
@@ -179,7 +183,7 @@ int getassoclist(char *name, unsigned char *list);
 #define INFO_RXRATE 3
 #define INFO_TXRATE 4
 
-int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field);	// only used internal
+int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field); // only used internal
 int getWifiInfo(char *ifname, unsigned char *mac, int field);
 
 #define getNoise(ifname, mac) getWifiInfo(ifname, mac, INFO_NOISE)
@@ -187,7 +191,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field);
 #define getTxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_TXRATE)
 #define getRxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_RXRATE)
 #define getUptime(ifname, mac) getWifiInfo(ifname, mac, INFO_UPTIME)
-int getValueFromPath(char *path, int dev, char *fmt, int *err);	// internal
+int getValueFromPath(char *path, int dev, char *fmt, int *err); // internal
 
 int getassoclist_11n(char *name, unsigned char *list);
 int getNoise_11n(char *ifname, unsigned char *mac);
@@ -323,12 +327,11 @@ extern int has_beamforming(const char *prefix);
 extern int has_mumimo(const char *prefix);
 #endif
 
-#define SITE_SURVEY_DB  "/tmp/site_survey"
+#define SITE_SURVEY_DB "/tmp/site_survey"
 #define SITE_SURVEY_NUM 256
 #define SCAN_HT20 1
 #define SCAN_HT40 2
 #define SCAN_VHT80 4
-
 
 #define CAP_MESH 0x1
 #define CAP_HT 0x2
@@ -341,18 +344,18 @@ extern int has_mumimo(const char *prefix);
 struct site_survey_list {
 	char SSID[33];
 	char BSSID[18];
-	uint16 channel;		/* Channel no. */
-	uint16 frequency;	/* Frequency i.e. for superchannel */
-	int16 RSSI;		/* receive signal strength (in dBm) */
-	int16 phy_noise;	/* noise (in dBm) */
-	uint16 beacon_period;	/* units are Kusec */
-	uint16 capability;	/* Capability information */
-	uint16 extcap;		/* anything else custom for internal use */
-	char ENCINFO[128];	/* encryption info */
-	uint rate_count;	/* # rates in this set */
-	uint8 dtim_period;	/* DTIM period */
-	unsigned long long active;	/* channel active time */
-	unsigned long long busy;	/* channel busy time */
+	uint16 channel; /* Channel no. */
+	uint16 frequency; /* Frequency i.e. for superchannel */
+	int16 RSSI; /* receive signal strength (in dBm) */
+	int16 phy_noise; /* noise (in dBm) */
+	uint16 beacon_period; /* units are Kusec */
+	uint16 capability; /* Capability information */
+	uint16 extcap; /* anything else custom for internal use */
+	char ENCINFO[128]; /* encryption info */
+	uint rate_count; /* # rates in this set */
+	uint8 dtim_period; /* DTIM period */
+	unsigned long long active; /* channel active time */
+	unsigned long long busy; /* channel busy time */
 	int16 numsta;
 	char radioname[16]; /* in dd-wrt typically the router name from setup page */
 };
@@ -461,7 +464,7 @@ static inline int has_acktiming(const char *prefix)
 	return 1;
 }
 #endif
-#elif  defined(HAVE_RT2880) || defined(HAVE_RT61)
+#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 static inline int has_acktiming(const char *prefix)
 {
 	return 0;
@@ -469,8 +472,6 @@ static inline int has_acktiming(const char *prefix)
 #else
 extern int has_acktiming(const char *prefix);
 #endif
-
-
 
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 extern int has_vht160(const char *interface);
@@ -511,8 +512,10 @@ static inline int has_vht80plus80(const char *prefix)
 
 struct unl;
 extern int mac80211_check_band(const char *interface, int checkband);
-struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband, int nocache);
-struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
+struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country,
+					    int max_bandwidth_khz, unsigned char checkband, int nocache);
+struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz,
+						   unsigned char checkband);
 #define AUTO_FORCEHT40 1
 #define AUTO_FORCEVHT80 2
 #define AUTO_FORCEVHT160 4
@@ -535,7 +538,7 @@ struct mac80211_ac {
 	int8_t noise;
 	int quality;
 	int clear;
-	unsigned int lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1;
+	unsigned int lll : 1, llu : 1, lul : 1, luu : 1, ull : 1, ulu : 1, uul : 1, uuu : 1;
 	struct mac80211_ac *next;
 };
 
@@ -610,7 +613,7 @@ extern int wl_get_int(char *name, char *var, int *val);
  * @param       len     length of buf
  * @return      >= 0 if successful or < 0 otherwise
  */
-#define DEV_TYPE_LEN 3		/* Length for dev type 'et'/'wl' */
+#define DEV_TYPE_LEN 3 /* Length for dev type 'et'/'wl' */
 extern int wl_get_dev_type(char *name, void *buf, int len);
 
 /*
@@ -649,4 +652,4 @@ typedef struct bcm_tlv {
 } bcm_tlv_t;
 #endif
 
-#endif				/* _wlutils_h_ */
+#endif /* _wlutils_h_ */

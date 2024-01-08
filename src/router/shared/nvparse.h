@@ -38,10 +38,10 @@
  * parameters of the netconf_nat_t should also be added to the INPUT
  * and FORWARD tables to ACCEPT the forwarded connection.
  */
-extern bool valid_forward_port(const netconf_nat_t * nat);
-extern bool get_forward_port(int which, netconf_nat_t * nat);
-extern bool set_forward_port(const netconf_nat_t * nat);
-extern bool del_forward_port(const netconf_nat_t * nat);
+extern bool valid_forward_port(const netconf_nat_t *nat);
+extern bool get_forward_port(int which, netconf_nat_t *nat);
+extern bool set_forward_port(const netconf_nat_t *nat);
+extern bool del_forward_port(const netconf_nat_t *nat);
 
 /*
  * Client filters are described by two netconf_filter_t structures that
@@ -73,4 +73,4 @@ extern bool del_wds_wsec(int unit, int which);
  */
 // extern void convert_deprecated (void);
 
-#endif				/* _nvparse_h_ */
+#endif /* _nvparse_h_ */

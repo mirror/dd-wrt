@@ -28,7 +28,7 @@
 
 extern void dd_debug(int target, const char *fmt, ...);
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 extern int debug_ready(void);
 #else
 #define debug_ready() (1)
@@ -69,10 +69,10 @@ extern int eval_va_space(const char *cmd, ...);
 extern int eval_va_silence(const char *cmd, ...);
 extern int eval_va_silence_space(const char *cmd, ...);
 
-#define eval(cmd, args...) eval_va(cmd, ## args, NULL)
-#define log_eval(cmd, args...) log_eval_va(cmd, ## args, NULL)
-#define eval_space(cmd, args...) eval_va_space(cmd, ## args, NULL)
-#define eval_silence(cmd, args...) eval_va_silence(cmd, ## args, NULL)
+#define eval(cmd, args...) eval_va(cmd, ##args, NULL)
+#define log_eval(cmd, args...) log_eval_va(cmd, ##args, NULL)
+#define eval_space(cmd, args...) eval_va_space(cmd, ##args, NULL)
+#define eval_silence(cmd, args...) eval_va_silence(cmd, ##args, NULL)
 
 int check_pid(int pid, char *name);
 int check_pidfromfile(char *pidfile, char *name);
@@ -92,7 +92,7 @@ extern int kill_pidfile(char *pidfile);
  * @param       stream  file stream
  * @return      number of items successfully read
  */
-extern int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream);
+extern int safe_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 
 /*
  * fwrite() with automatic retry on syscall interrupt
@@ -102,7 +102,7 @@ extern int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream);
  * @param       stream  file stream
  * @return      number of items successfully written
  */
-extern int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE * stream);
+extern int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 
 /*
  * Convert Ethernet address string representation to binary data
@@ -138,20 +138,19 @@ extern char *strspcattach(char *src, char *attach);
 
 extern int dd_system(const char *command);
 extern int sysprintf(const char *fmt, ...);
-extern int f_exists(const char *path);	// note: anything but a directory
+extern int f_exists(const char *path); // note: anything but a directory
 
 extern char *get_filter_services(void);
 
-typedef struct filters		// l7 and p2p filters
+typedef struct filters // l7 and p2p filters
 {
-
 	char *name;
 	unsigned short portfrom;
 	unsigned short portto;
-	unsigned char proto;	// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
+	unsigned char proto; // 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
 } filters;
 
-extern void free_filters(filters * filter);
+extern void free_filters(filters *filter);
 
 extern filters *get_filters_list(void);
 extern int get_risk_by_name(char *name);
@@ -173,7 +172,7 @@ char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 char *dd_strncat(char *dst, size_t len, const char *src);
 
 #define strcat_r(s1, s2, buf) (sizeof(buf) == sizeof(void *) ? strcat_r(s1, s2, buf) : strlcat_r(s1, s2, buf, sizeof(buf)))
-#define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : dd_strncat(buf,sizeof(buf), s1)
+#define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : dd_strncat(buf, sizeof(buf), s1)
 
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
@@ -181,9 +180,11 @@ extern int dd_snprintf(char *str, int len, const char *fmt, ...);
 extern void *dd_malloc(size_t len);
 
 #define malloc(len) dd_malloc(len)
-#define strcpy(dst,src) (sizeof(dst) == sizeof(void *) ? strcpy(dst,src) : strncpy(dst,src,sizeof(dst)-1))
-#define sprintf(output,format,args...) (sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ## args) : dd_snprintf(output, sizeof(output), format, ## args))
-#define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
+#define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strncpy(dst, src, sizeof(dst) - 1))
+#define sprintf(output, format, args...)                                         \
+	(sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ##args) : \
+					    dd_snprintf(output, sizeof(output), format, ##args))
+#define snprintf(output, len, format, args...) dd_snprintf(output, len, format, ##args)
 #define system(cmd) dd_system(cmd)
 #endif
 
@@ -193,29 +194,29 @@ void *mymalloc(int size, char *func, int line);
 void myfree(void *mem, char *func, int line);
 void showmemdebugstat();
 
-#define safe_malloc(size) mymalloc(size,__func__,__LINE__)
-#define safe_free(mem) myfree(mem,__func__,__LINE__)
-#define free(mem) myfree(mem,__func__,__LINE__)
+#define safe_malloc(size) mymalloc(size, __func__, __LINE__)
+#define safe_free(mem) myfree(mem, __func__, __LINE__)
+#define free(mem) myfree(mem, __func__, __LINE__)
 
-#define memdebug_enter()  \
+#define memdebug_enter()             \
 	struct sysinfo memdebuginfo; \
-	sysinfo(&memdebuginfo); \
+	sysinfo(&memdebuginfo);      \
 	long before = memdebuginfo.freeram;
 
-#define memdebug_leave()  \
-	sysinfo(&memdebuginfo); \
-	long after = memdebuginfo.freeram; \
-	if ((before-after)>0) \
-	    { \
-	    fprintf(stderr,"function %s->%s:%d leaks %ld bytes memory (before: %ld, after: %ld\n",__FILE__,__func__,__LINE__,(before-after),before,after); \
-	    }
-#define memdebug_leave_info(a)  \
-	sysinfo(&memdebuginfo); \
-	long after = memdebuginfo.freeram; \
-	if ((before-after)>0) \
-	    { \
-	    fprintf(stderr,"function %s->%s:%d (%s) leaks %ld bytes memory (before: %ld, after: %ld\n",__FILE__,__func__,__LINE__,a,(before-after),before,after); \
-	    }
+#define memdebug_leave()                                                                                                    \
+	sysinfo(&memdebuginfo);                                                                                             \
+	long after = memdebuginfo.freeram;                                                                                  \
+	if ((before - after) > 0) {                                                                                         \
+		fprintf(stderr, "function %s->%s:%d leaks %ld bytes memory (before: %ld, after: %ld\n", __FILE__, __func__, \
+			__LINE__, (before - after), before, after);                                                         \
+	}
+#define memdebug_leave_info(a)                                                                                                   \
+	sysinfo(&memdebuginfo);                                                                                                  \
+	long after = memdebuginfo.freeram;                                                                                       \
+	if ((before - after) > 0) {                                                                                              \
+		fprintf(stderr, "function %s->%s:%d (%s) leaks %ld bytes memory (before: %ld, after: %ld\n", __FILE__, __func__, \
+			__LINE__, a, (before - after), before, after);                                                           \
+	}
 #else
 #define safe_malloc malloc
 #define safe_free free
@@ -238,14 +239,15 @@ char *chomp(char *s);
 /*
  * Simple version of _backtick() 
  */
-#define backtick(cmd, args...) ({ \
-	char *argv[] = { cmd, ## args, NULL }; \
-	_backtick(argv); \
-})
+#define backtick(cmd, args...)                        \
+	({                                            \
+		char *argv[] = { cmd, ##args, NULL }; \
+		_backtick(argv);                      \
+	})
 /*
  * Return NUL instead of NULL if undefined 
  */
-#define safe_getenv(s) (getenv(s) ? : "")
+#define safe_getenv(s) (getenv(s) ?: "")
 
 #define HAVE_SILENCE 1
 /*
@@ -253,10 +255,11 @@ char *chomp(char *s);
  */
 #ifndef HAVE_SILENCE
 
-#define cprintf(fmt, args...) do { \
-		fprintf(stderr, fmt, ## args); \
-		fflush(stderr); \
-} while (0)
+#define cprintf(fmt, args...)                 \
+	do {                                  \
+		fprintf(stderr, fmt, ##args); \
+		fflush(stderr);               \
+	} while (0)
 #else
 #define cprintf(fmt, args...)
 #endif
@@ -269,43 +272,38 @@ char *getentrybyidx(char *buf, char *list, int idx);
 char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, char *delimiters);
 
 #define GETENTRYBYIDX(name, list, idx) \
-	char name## _priv[128]; \
-	char *name = getentrybyidx(name## _priv, list, idx);
+	char name##_priv[128];         \
+	char *name = getentrybyidx(name##_priv, list, idx);
 
 #define GETENTRYBYIDX_DEL(name, list, idx, delim) \
-	char name## _priv[128]; \
-	char *name = getentrybyidx_d(name## _priv, list, idx, "><:,", delim);
+	char name##_priv[128];                    \
+	char *name = getentrybyidx_d(name##_priv, list, idx, "><:,", delim);
 
 /*
  * Copy each token in wordlist delimited by space into word 
  */
 
-#define foreach_delim(word, foreachwordlist, next, delim) \
-	for (next = foreach_first(foreachwordlist, word, delim, sizeof(word)); \
-	     word[0]; \
+#define foreach_delim(word, foreachwordlist, next, delim)                               \
+	for (next = foreach_first(foreachwordlist, word, delim, sizeof(word)); word[0]; \
 	     next = foreach_last(next, word, delim, sizeof(word)))
 
-#define foreach(word, foreachwordlist, next) \
-	foreach_delim(word, foreachwordlist, next, " ")
+#define foreach(word, foreachwordlist, next) foreach_delim(word, foreachwordlist, next, " ")
 
 #define foreach_delimln(word, len, foreachwordlist, next, delim) \
-	for (next = foreach_first(foreachwordlist, word, delim, len); \
-	     word[0]; \
-	     next = foreach_last(next, word, delim, len))
+	for (next = foreach_first(foreachwordlist, word, delim, len); word[0]; next = foreach_last(next, word, delim, len))
 
-#define foreachln(word, len, foreachwordlist, next) \
-	foreach_delim(word, foreachwordlist, next, " ")
+#define foreachln(word, len, foreachwordlist, next) foreach_delim(word, foreachwordlist, next, " ")
 
 /*
  * Return NUL instead of NULL if undefined 
  */
-#define safe_getenv(s) (getenv(s) ? : "")
+#define safe_getenv(s) (getenv(s) ?: "")
 
 /*
  * Debug print 
  */
 #ifdef DEBUG
-#define dprintf(fmt, args...) cprintf("%s: " fmt, __FUNCTION__, ## args)
+#define dprintf(fmt, args...) cprintf("%s: " fmt, __FUNCTION__, ##args)
 #else
 #define dprintf(fmt, args...)
 #endif
@@ -313,44 +311,42 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #ifdef HAVE_MICRO
 #define FORK(a) a;
 #else
-#define FORK(func) \
-{ \
-    switch ( fork(  ) ) \
-    { \
-	case -1: \
-	    break; \
-	case 0: \
-	    ( void )setsid(  ); \
-	    func; \
-	    exit(0); \
-	    break; \
-	default: \
-	break; \
-    } \
-}
+#define FORK(func)                      \
+	{                               \
+		switch (fork()) {       \
+		case -1:                \
+			break;          \
+		case 0:                 \
+			(void)setsid(); \
+			func;           \
+			exit(0);        \
+			break;          \
+		default:                \
+			break;          \
+		}                       \
+	}
 #endif
 
 #ifdef HAVE_MICRO
 #define FORKWAIT(a) a;
 #else
-#define FORKWAIT(func) \
-{ \
-    int forkpid; \
-    int forkstatus; \
-    switch ( forkpid = fork(  ) ) \
-    { \
-	case -1: \
-	    break; \
-	case 0: \
-	    ( void )setsid(  ); \
-	    func; \
-	    exit(0); \
-	    break; \
-	default: \
-	waitpid(forkpid, &forkstatus, 0); \
-	break; \
-    } \
-}
+#define FORKWAIT(func)                                    \
+	{                                                 \
+		int forkpid;                              \
+		int forkstatus;                           \
+		switch (forkpid = fork()) {               \
+		case -1:                                  \
+			break;                            \
+		case 0:                                   \
+			(void)setsid();                   \
+			func;                             \
+			exit(0);                          \
+			break;                            \
+		default:                                  \
+			waitpid(forkpid, &forkstatus, 0); \
+			break;                            \
+		}                                         \
+	}
 #endif
 #include <sys/time.h>
 void add_blocklist(const char *service, char *ip);
@@ -362,7 +358,9 @@ char *get_ipfromsock(int socket, char *ip);
 void airbag_setpostinfo(const char *string);
 #else
 #undef airbag_setpostinfo
-#define airbag_setpostinfo(string) do { } while(0)
+#define airbag_setpostinfo(string) \
+	do {                       \
+	} while (0)
 #endif
 /*
 #define debug_free(ptr) { \
@@ -370,8 +368,9 @@ void airbag_setpostinfo(const char *string);
 	free(ptr); \
 	}
 */
-#define debug_free(ptr) { \
-	free(ptr); \
+#define debug_free(ptr)    \
+	{                  \
+		free(ptr); \
 	}
 
-#endif				/* _shutils_h_ */
+#endif /* _shutils_h_ */

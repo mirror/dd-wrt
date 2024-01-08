@@ -23,9 +23,9 @@
 struct nvram_header {
 	uint32_t magic;
 	uint32_t len;
-	uint32_t crc_ver_init;	/* 0:7 crc, 8:15 ver, 16:27 init, mem. test 28, 29-31 reserved */
-	uint32_t config_refresh;	/* 0:15 config, 16:31 refresh */
-	uint32_t config_ncdl;	/* ncdl values for memc */
+	uint32_t crc_ver_init; /* 0:7 crc, 8:15 ver, 16:27 init, mem. test 28, 29-31 reserved */
+	uint32_t config_refresh; /* 0:15 config, 16:31 refresh */
+	uint32_t config_ncdl; /* ncdl values for memc */
 };
 
 struct nvram_tuple {
@@ -189,28 +189,30 @@ extern int nvram_size(void);
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 
-extern void fwritenvram(const char *var, FILE * fp);
+extern void fwritenvram(const char *var, FILE *fp);
 extern void writenvram(const char *var, char *file);
 extern int write_nvram(char *name, char *nv);
 
-#endif				/* _LANGUAGE_ASSEMBLY */
+#endif /* _LANGUAGE_ASSEMBLY */
 
-#define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
-#define NVRAM_VERSION		1
-#define NVRAM_HEADER_SIZE	20
-#if defined(HAVE_WZRG300NH) || defined(HAVE_ALPINE)  || defined(HAVE_WDR4900)
-#define NVRAM_SPACE		0x20000
-#elif defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA) || defined(HAVE_AR531X) || defined(HAVE_RT2880) || defined(HAVE_RT3052) || defined(HAVE_XSCALE) || defined(HAVE_STORM) || defined(HAVE_LSX) || defined(HAVE_LAGUNA) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_EROUTER)
-#define NVRAM_SPACE		0x10000
-#elif defined(HAVE_NVRAM_64K)	//some new Netgear models
-#define NVRAM_SPACE		0x10000
-#elif defined(HAVE_NVRAM_60K)	//some new Linksys models
-#define NVRAM_SPACE		0xf000
+#define NVRAM_MAGIC 0x48534C46 /* 'FLSH' */
+#define NVRAM_VERSION 1
+#define NVRAM_HEADER_SIZE 20
+#if defined(HAVE_WZRG300NH) || defined(HAVE_ALPINE) || defined(HAVE_WDR4900)
+#define NVRAM_SPACE 0x20000
+#elif defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA) || defined(HAVE_AR531X) || defined(HAVE_RT2880) || \
+	defined(HAVE_RT3052) || defined(HAVE_XSCALE) || defined(HAVE_STORM) || defined(HAVE_LSX) || defined(HAVE_LAGUNA) ||  \
+	defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_EROUTER)
+#define NVRAM_SPACE 0x10000
+#elif defined(HAVE_NVRAM_64K) //some new Netgear models
+#define NVRAM_SPACE 0x10000
+#elif defined(HAVE_NVRAM_60K) //some new Linksys models
+#define NVRAM_SPACE 0xf000
 #else
-#define NVRAM_SPACE		0x8000
+#define NVRAM_SPACE 0x8000
 #endif
 
 #define NVRAM_MAX_VALUE_LEN 255
 #define NVRAM_MAX_PARAM_LEN 64
 
-#endif				/* _bcmnvram_h_ */
+#endif /* _bcmnvram_h_ */

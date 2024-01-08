@@ -48,22 +48,22 @@
 
 #define TYPEDEF_BOOL
 #ifndef FALSE
-#define FALSE	false
+#define FALSE false
 #endif
 #ifndef TRUE
-#define TRUE	true
+#define TRUE true
 #endif
 
-#else				/* ! __cplusplus */
+#else /* ! __cplusplus */
 
 #if defined(_WIN32)
 
 #define TYPEDEF_BOOL
-typedef unsigned char bool;	/* consistent w/BOOL */
+typedef unsigned char bool; /* consistent w/BOOL */
 
-#endif				/* _WIN32 */
+#endif /* _WIN32 */
 
-#endif				/* ! __cplusplus */
+#endif /* ! __cplusplus */
 
 #if defined(_WIN64) && !defined(EFI)
 /* use the Windows ULONG_PTR type when compiling for 64 bit */
@@ -91,13 +91,13 @@ typedef unsigned long long int uintptr;
 ** math.h header file. Don't re-typedef them here.
 */
 #define TYPEDEF_FLOAT_T
-#endif				/* TARGETOS_nucleus */
+#endif /* TARGETOS_nucleus */
 
 #if defined(_NEED_SIZE_T_)
 typedef long unsigned int size_t;
 #endif
 
-#ifdef _MSC_VER			/* Microsoft C */
+#ifdef _MSC_VER /* Microsoft C */
 #define TYPEDEF_INT64
 #define TYPEDEF_UINT64
 typedef signed __int64 int64;
@@ -116,13 +116,13 @@ typedef unsigned __int64 uint64;
 #define TYPEDEF_UINT
 #define TYPEDEF_USHORT
 #define TYPEDEF_ULONG
-#endif				/* defined(__NetBSD__) */
+#endif /* defined(__NetBSD__) */
 
 #if defined(__sparc__)
 #define TYPEDEF_ULONG
 #endif
 
-#ifdef	linux
+#ifdef linux
 /*
  * If this is either a Linux hybrid build or the per-port code of a hybrid build
  * then use the Linux header files to get some of the typedefs.  Otherwise, define
@@ -135,22 +135,22 @@ typedef unsigned __int64 uint64;
 #ifndef TARGETENV_android
 #define TYPEDEF_USHORT
 #define TYPEDEF_ULONG
-#endif				/* TARGETENV_android */
+#endif /* TARGETENV_android */
 #ifdef __KERNEL__
 #include <linux/version.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19))
 #define TYPEDEF_BOOL
-#endif				/* >= 2.6.19 */
+#endif /* >= 2.6.19 */
 /* special detection for 2.6.18-128.7.1.0.1.el5 */
 #if (LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18))
 #include <linux/compiler.h>
 #ifdef noinline_for_stack
 #define TYPEDEF_BOOL
 #endif
-#endif				/* == 2.6.18 */
-#endif				/* __KERNEL__ */
-#endif				/* !defined(LINUX_HYBRID) || defined(LINUX_PORT) */
-#endif				/* linux */
+#endif /* == 2.6.18 */
+#endif /* __KERNEL__ */
+#endif /* !defined(LINUX_HYBRID) || defined(LINUX_PORT) */
+#endif /* linux */
 
 #if defined(__ECOS)
 #define TYPEDEF_UCHAR
@@ -160,9 +160,8 @@ typedef unsigned __int64 uint64;
 #define TYPEDEF_BOOL
 #endif
 
-#if !defined(linux) && !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && \
-	!defined(__DJGPP__) && !defined(__ECOS) && !defined(__BOB__) && \
-	!defined(TARGETOS_nucleus) && !defined(EFI) && !defined(__FreeBSD__)
+#if !defined(linux) && !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && !defined(__DJGPP__) && !defined(__ECOS) && \
+	!defined(__BOB__) && !defined(TARGETOS_nucleus) && !defined(EFI) && !defined(__FreeBSD__)
 #define TYPEDEF_UINT
 #define TYPEDEF_USHORT
 #endif
@@ -184,10 +183,10 @@ typedef unsigned __int64 uint64;
 #define TYPEDEF_UINT64
 #endif
 
-#endif				/* __ICL */
+#endif /* __ICL */
 
-#if !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && !defined(__DJGPP__) && \
-	!defined(__BOB__) && !defined(TARGETOS_nucleus) && !defined(EFI)
+#if !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && !defined(__DJGPP__) && !defined(__BOB__) && \
+	!defined(TARGETOS_nucleus) && !defined(EFI)
 
 /* pick up ushort & uint from standard types.h */
 #if defined(linux) && defined(__KERNEL__)
@@ -197,9 +196,9 @@ typedef unsigned __int64 uint64;
 #ifdef USER_MODE
 #include <sys/types.h>
 #else
-#include <linux/types.h>	/* sys/types.h and linux/types.h are oil and water */
-#endif				/* USER_MODE */
-#endif				/* !defined(LINUX_HYBRID) || defined(LINUX_PORT) */
+#include <linux/types.h> /* sys/types.h and linux/types.h are oil and water */
+#endif /* USER_MODE */
+#endif /* !defined(LINUX_HYBRID) || defined(LINUX_PORT) */
 
 #else
 
@@ -211,7 +210,7 @@ typedef unsigned __int64 uint64;
 
 #include <sys/types.h>
 
-#endif				/* linux && __KERNEL__ */
+#endif /* linux && __KERNEL__ */
 
 #endif
 
@@ -223,7 +222,7 @@ typedef unsigned __int64 uint64;
 #ifdef IL_BIGENDIAN
 #error "IL_BIGENDIAN was defined for a little-endian compile"
 #endif
-#endif				/* __BIG_ENDIAN__ */
+#endif /* __BIG_ENDIAN__ */
 
 #if !defined(__cplusplus)
 
@@ -233,23 +232,20 @@ typedef unsigned char bool;
 typedef unsigned int bool;
 #endif
 #define TYPE_BOOL 1
-enum {
-	false = 0,
-	true = 1
-};
+enum { false = 0, true = 1 };
 
 #if defined(KERNEL)
 #include <IOKit/IOTypes.h>
-#endif				/* KERNEL */
+#endif /* KERNEL */
 
-#endif				/* __cplusplus */
+#endif /* __cplusplus */
 
-#endif				/* MACOSX */
+#endif /* MACOSX */
 
 /* use the default typedefs in the next section of this file */
 #define USE_TYPEDEF_DEFAULTS
 
-#endif				/* SITE_TYPEDEFS */
+#endif /* SITE_TYPEDEFS */
 
 /*
  * Default Typedefs
@@ -338,40 +334,40 @@ typedef double float64;
 
 #if defined(FLOAT32)
 typedef float32 float_t;
-#else				/* default to double precision floating point */
+#else /* default to double precision floating point */
 typedef float64 float_t;
 #endif
 
-#endif				/* TYPEDEF_FLOAT_T */
+#endif /* TYPEDEF_FLOAT_T */
 
 /* define macro values */
 
 #ifndef FALSE
-#define FALSE	0
+#define FALSE 0
 #endif
 
 #ifndef TRUE
-#define TRUE	1		/* TRUE */
+#define TRUE 1 /* TRUE */
 #endif
 
 #ifndef NULL
-#define	NULL	0
+#define NULL 0
 #endif
 
 #ifndef OFF
-#define	OFF	0
+#define OFF 0
 #endif
 
 #ifndef ON
-#define	ON	1		/* ON = 1 */
+#define ON 1 /* ON = 1 */
 #endif
 
-#define	AUTO	(-1)		/* Auto = -1 */
+#define AUTO (-1) /* Auto = -1 */
 
 /* define PTRSZ, INLINE */
 
 #ifndef PTRSZ
-#define	PTRSZ	sizeof(char*)
+#define PTRSZ sizeof(char *)
 #endif
 
 /* Detect compiler type. */
@@ -383,7 +379,7 @@ typedef float64 float_t;
 #define BWL_COMPILER_ARMCC
 #else
 #error "Unknown compiler!"
-#endif				/* _MSC_VER */
+#endif /* _MSC_VER */
 
 #ifndef INLINE
 #if defined(BWL_COMPILER_MICROSOFT)
@@ -391,11 +387,11 @@ typedef float64 float_t;
 #elif defined(BWL_COMPILER_GNU)
 #define INLINE __inline__
 #elif defined(BWL_COMPILER_ARMCC)
-#define INLINE	__inline
+#define INLINE __inline
 #else
 #define INLINE
-#endif				/* _MSC_VER */
-#endif				/* INLINE */
+#endif /* _MSC_VER */
+#endif /* INLINE */
 
 #undef TYPEDEF_BOOL
 #undef TYPEDEF_UCHAR
@@ -415,7 +411,7 @@ typedef float64 float_t;
 #undef TYPEDEF_FLOAT64
 #undef TYPEDEF_FLOAT_T
 
-#endif				/* USE_TYPEDEF_DEFAULTS */
+#endif /* USE_TYPEDEF_DEFAULTS */
 
 /* Suppress unused parameter warning */
 #define UNUSED_PARAMETER(x) (void)(x)
@@ -428,4 +424,4 @@ typedef float64 float_t;
  * gets this automatically
 */
 #include <bcmdefs.h>
-#endif				/* _TYPEDEFS_H_ */
+#endif /* _TYPEDEFS_H_ */

@@ -17,6 +17,6 @@
  * @b. If @a and @b are equivalent, and their original relative
  * ordering is to be preserved, @cmp must return 0.
  */
-void dd_list_sort(void *priv, struct dd_list_head *head, int (*cmp)(void *priv, struct dd_list_head * a, struct dd_list_head * b));
+void dd_list_sort(void *priv, struct dd_list_head *head, int (*cmp)(void *priv, struct dd_list_head *a, struct dd_list_head *b));
 
 #endif

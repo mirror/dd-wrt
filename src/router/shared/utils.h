@@ -15,7 +15,7 @@
 #include <typedefs.h>
 
 #ifndef sys_reboot
-#define sys_reboot() eval("event","3","1","15")
+#define sys_reboot() eval("event", "3", "1", "15")
 #endif
 /*
  * 2 byte router ID number; Eko 4.jul.06
@@ -44,10 +44,10 @@
 #define ROUTER_WRT54G1X 0x0316
 
 // Linksys WRTSL54GS (BCM4704 cpu, BCM5325E switch, fccid: Linksys
-// Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
+// Q87-WTSLGS, same without USB: Q87-WRTH54GS)
 #define ROUTER_WRTSL54GS 0x0416
 
-// Linksys WRT55AG v1 (BCM4702 cpu, dual minipci (Broadcom + Atheros), fccid: 
+// Linksys WRT55AG v1 (BCM4702 cpu, dual minipci (Broadcom + Atheros), fccid:
 // Linksys PKW-WRT55AG)
 #define ROUTER_LINKSYS_WRT55AG 0x0516
 
@@ -73,11 +73,11 @@
 #define ROUTER_BUFFALO_WHRG54S 0x0a04
 
 // Buffalo WZR-RS-G54 (BCM4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid:
-// Buffalo FDI-09101457-0), 
+// Buffalo FDI-09101457-0),
 // Buffalo WHR3-AG54, WVR-G54-NF, WHR2-A54G54
 #define ROUTER_BUFFALO_WZRRSG54 0x0b04
 
-// Motorola WR850G v1 (BCM4702 cpu, fccid: Motorola ACQWR850G) 
+// Motorola WR850G v1 (BCM4702 cpu, fccid: Motorola ACQWR850G)
 #define ROUTER_MOTOROLA_V1 0x0c10
 
 // Motorola WR850G v2/v3, WR850GP (BCM4712 cpu, ADM6996 switch, fccid:
@@ -141,7 +141,7 @@
 // NMN A/B/G Router Protoype (266 Mhz Xscale, four minipci)
 #define ROUTER_BOARD_GATEWORX 0x1d04
 
-// Motorola WE800G v1 (BCM4702 cpu, no switch, minipci radio, fccid: Motorola 
+// Motorola WE800G v1 (BCM4702 cpu, no switch, minipci radio, fccid: Motorola
 // ACQWE800G, F2NWE800G)
 #define ROUTER_MOTOROLA_WE800G 0x1e10
 
@@ -183,7 +183,7 @@
 // FDI-09101540-0)
 #define ROUTER_BOARD_WHRAG108 0x2801
 
-// swapped phy definition 
+// swapped phy definition
 #define ROUTER_BOARD_GATEWORX_SWAP 0x290f
 
 // Netgear WNR834Bv1 (BCM4704 cpu, BCM5325 switch, cardbus radio, fccid:
@@ -210,7 +210,7 @@
 // ?
 #define ROUTER_BOARD_LS2 0x2f01
 
-// Buffalo WAPM-HP-AM54G54 (only available on japanese market, dual radio 2.4 
+// Buffalo WAPM-HP-AM54G54 (only available on japanese market, dual radio 2.4
 // and 5 GHz Broadcom)
 #define ROUTER_BUFFALO_WAPM_HP_AM54G54 0x3005
 
@@ -278,7 +278,7 @@
 // Belkin F5D7231-4 v1212UK (BCM5352E cpu, fccid: Askey H8NRT2406W)
 #define ROUTER_BELKIN_F5D7231 0x410f
 
-// Linksys WAP54G v3, WAP54G v3.1 (BCM5352E cpu, fccid: Linksys Q87-WAP54GV3, 
+// Linksys WAP54G v3, WAP54G v3.1 (BCM5352E cpu, fccid: Linksys Q87-WAP54GV3,
 // Q87-WAP54GV31)
 #define ROUTER_WAP54G_V3 0x4210
 
@@ -325,7 +325,7 @@
 // D-Link DIR330 (BCM5836 cpu, fccid: D Link KA2DIR330A1)
 #define ROUTER_DLINK_DIR330 0x4f13
 
-// Netgear WNDR3300 (BCM4704 cpu, BCM5325F switch, dual radio 2.4-N and 5 GHz 
+// Netgear WNDR3300 (BCM4704 cpu, BCM5325F switch, dual radio 2.4-N and 5 GHz
 // Broadcom, fccid: Netgear PY307300072)
 #define ROUTER_NETGEAR_WNDR3300 0x5016
 
@@ -382,13 +382,13 @@
 #ifdef HAVE_WMBR_G300NH
 #define ROUTER_BOARD_DANUBE 0x6101
 #elif HAVE_VF803
-#define ROUTER_BOARD_DANUBE 0x6101	//dummy. gpio 28
+#define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
 #elif HAVE_SX763
-#define ROUTER_BOARD_DANUBE 0x6101	//dummy. gpio 28
+#define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
 #else
 #define ROUTER_BOARD_DANUBE 0x610f
 #endif
-#define ROUTER_BOARD_STORM 0x6201	// value 1 is a fake to enable reset button code. real gpio is 60
+#define ROUTER_BOARD_STORM 0x6201 // value 1 is a fake to enable reset button code. real gpio is 60
 
 #define ROUTER_BOARD_ADM5120 0x630f
 
@@ -420,7 +420,7 @@
 
 // Netgear WNR3500L (BCM4718A cpu, 8MB serial flash, USB, Gigabit switch, fccid: Netgear PY308400093)
 // Netgear WNR3500v2 - same - half flash
-#define ROUTER_NETGEAR_WNR3500L 0x7414	//(18)
+#define ROUTER_NETGEAR_WNR3500L 0x7414 //(18)
 // Netgear WNR3500L V2 (BCM47186B0 cpu, 128MB ram,  128MB nand flash, int. antennae can be replaced with ext)
 #define ROUTER_NETGEAR_WNR3500LV2 0x7416
 
@@ -446,12 +446,12 @@
 // Linksys E1000 v1 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-E1000)
 #define ROUTER_WRT160NV3 0x8216
 
-#define ROUTER_BOARD_BS2M 0x831c	//bullet 2m
-#define ROUTER_BOARD_BS5M 0x841c	//bullet 5m
-#define ROUTER_BOARD_R2M 0x851c	//rocket 2m
-#define ROUTER_BOARD_R5M 0x861c	//rocket 5m
-#define ROUTER_BOARD_NS2M 0x871c	//nanostation 2m
-#define ROUTER_BOARD_NS5M 0x881c	//nanostation 5m
+#define ROUTER_BOARD_BS2M 0x831c //bullet 2m
+#define ROUTER_BOARD_BS5M 0x841c //bullet 5m
+#define ROUTER_BOARD_R2M 0x851c //rocket 2m
+#define ROUTER_BOARD_R5M 0x861c //rocket 5m
+#define ROUTER_BOARD_NS2M 0x871c //nanostation 2m
+#define ROUTER_BOARD_NS5M 0x881c //nanostation 5m
 
 // Asus RT-N10 (BCM5356 cpu, 4MB serial flash / 16MB ram, fccid: Asus MSQ-RTN10)
 #define ROUTER_ASUS_RTN10 0x8913
@@ -465,19 +465,19 @@
 #define ROUTER_BOARD_BR6574N 0x8c1a
 
 #ifdef HAVE_HORNET
-#define ROUTER_BOARD_WHRHPGN 0x8d1c	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d1c //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_CARAMBOLA
-#define ROUTER_BOARD_WHRHPGN 0x8d1b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d1b //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_DIR825C1
-#define ROUTER_BOARD_WHRHPGN 0x8d111	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d111 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_WASP
-#define ROUTER_BOARD_WHRHPGN 0x8d110	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d110 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_WNR2200
-#define ROUTER_BOARD_WHRHPGN 0x8d126	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d126 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_WNR2000
-#define ROUTER_BOARD_WHRHPGN 0x8d128	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d128 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #else
-#define ROUTER_BOARD_WHRHPGN 0x8d1b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d1b //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #endif
 // Dynex DX-NRUTER (BCM4703 cpu, 4MB flash / 32MB ram, BCM5325E switch, fccid: Belkin K7SDXNRUTER)
 #define ROUTER_DYNEX_DX_NRUTER 0x8e12
@@ -488,7 +488,7 @@
 
 // Linksys WRT160NL (Atheros 9130, 8MB flash / 32MB ram, fccid: Linksys Q87-WRT160NL)
 // Linksys E2100L (Atheros 9130, 8MB flash / 32MB ram, fccid: Linksys Q87-E2100L)
-#define ROUTER_BOARD_WRT160NL 0x9101	// fake id, reset button is gpio 21
+#define ROUTER_BOARD_WRT160NL 0x9101 // fake id, reset button is gpio 21
 
 // NetCore NW618 / Rosewill RNX-GX4 (BCM5354 cpu, 4MB serial flash / 16MB ram, fccid: Rosewill W6RRNX-GX4)
 #define ROUTER_NETCORE_NW618 0x9216
@@ -523,7 +523,7 @@
 #define ROUTER_BELKIN_F7D4301 0x9d16
 
 // Belkin Play F7D4302v1 (dual radio, BCM5325 switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D4302V1)
-// Belkin Play N600 F7D8302v1 - same 
+// Belkin Play N600 F7D8302v1 - same
 #define ROUTER_BELKIN_F7D4302 0x9e16
 
 // Asus RT-N10+
@@ -553,7 +553,7 @@
 // Linksys E4200 (dual radio, BCM53115 giga switch, BCM4718 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E4200) >_60K nvram_<
 #define ROUTER_LINKSYS_E4200 0xa816
 
-#define ROUTER_BOARD_RT3352 0xa91a	// concept
+#define ROUTER_BOARD_RT3352 0xa91a // concept
 
 // Asus RT-N10U (BCM5358 cpu, 8MB serial flash / 32MB ram, USB 2.0)
 #define ROUTER_ASUS_RTN10U 0xaa115
@@ -567,12 +567,12 @@
 
 #define ROUTER_NETCORE_NW715P 0xad0f
 
-#define ROUTER_BOARD_UNIFI 0xae1c	//bullet 2m
+#define ROUTER_BOARD_UNIFI 0xae1c //bullet 2m
 
 // Asus RT-N66U (BCM4706 @ 600MHz cpu, 32MB flash / 256MB ram, fccid: Asus MSQ-RTN66U)
 #define ROUTER_ASUS_RTN66 0xaf19
 
-// Asus RT-N53              
+// Asus RT-N53
 #define ROUTER_ASUS_RTN53 0xb013
 
 // Netgear WNDR3400 (dual radio, BCM5325E switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Netgear PY309300116) >_64K nvram_<
@@ -610,21 +610,21 @@
 
 #define ROUTER_ASUS_AC66U 0xbd19
 
-#define ROUTER_ASUS_AC56U 0xbe1b	// BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
+#define ROUTER_ASUS_AC56U 0xbe1b // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
 
 #define ROUTER_BOARD_NORTHSTAR 0xbf0f
 
-#define ROUTER_ASUS_AC67U 0xc01b	// BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
+#define ROUTER_ASUS_AC67U 0xc01b // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
 
 #define ROUTER_ASUS_RTN10PLUSD1 0xc1115
 
 #define ROUTER_BOARD_WDR4900 0xc215
 
-#define ROUTER_BUFFALO_WZR1750 0xc31b	// BCM4708 SMP 800 Mhz 128 MB Nand Flash, 512 MB Ram
+#define ROUTER_BUFFALO_WZR1750 0xc31b // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 512 MB Ram
 
-#define ROUTER_BUFFALO_WZR900DHP 0xc41b	// BCM4707 Single Core 800 Mhz 128 MB Nand Flash, 256 MB Ram
+#define ROUTER_BUFFALO_WZR900DHP 0xc41b // BCM4707 Single Core 800 Mhz 128 MB Nand Flash, 256 MB Ram
 
-#define ROUTER_BUFFALO_WZR600DHP2 0xc51b	// BCM4707 Single Core 800 Mhz 128 MB Nand Flash, 256 MB Ram
+#define ROUTER_BUFFALO_WZR600DHP2 0xc51b // BCM4707 Single Core 800 Mhz 128 MB Nand Flash, 256 MB Ram
 
 #define ROUTER_LINKSYS_E800 0xc61a
 
@@ -664,16 +664,16 @@
 
 #define ROUTER_NETGEAR_AC1450 0xd716
 
-#define ROUTER_ASUS_RTN18U 0xd817	// BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
+#define ROUTER_ASUS_RTN18U 0xd817 // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
 
-#define ROUTER_NETGEAR_EX6200 0xd916	// BCM4708 SMP 800 Mhz 8MB SPI Flash, 128 MB Ram
+#define ROUTER_NETGEAR_EX6200 0xd916 // BCM4708 SMP 800 Mhz 8MB SPI Flash, 128 MB Ram
 
-#define ROUTER_BUFFALO_WXR1900DHP 0xda10f	// BCM4709 SMP 1000 Mhz 128 MB Nand Flash, 512 MB Ram
+#define ROUTER_BUFFALO_WXR1900DHP 0xda10f // BCM4709 SMP 1000 Mhz 128 MB Nand Flash, 512 MB Ram
 
-#define ROUTER_ASUS_AC87U 0xdb1b	// BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
+#define ROUTER_ASUS_AC87U 0xdb1b // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
 
-#define ROUTER_UBNT_EROUTERLITE 0xdc1b	// Edgerouter Lite  (e100) Cavium Octeon SMP
-#define ROUTER_UBNT_EROUTERPRO 0xdd10	// Edgerouter Lite  (e200) Cavium Octeon SMP
+#define ROUTER_UBNT_EROUTERLITE 0xdc1b // Edgerouter Lite  (e100) Cavium Octeon SMP
+#define ROUTER_UBNT_EROUTERPRO 0xdd10 // Edgerouter Lite  (e200) Cavium Octeon SMP
 
 #define ROUTER_NETGEAR_R8000 0xde16
 
@@ -751,9 +751,9 @@
 
 #define ROUTER_WRT_3200ACM 0x101101
 
-#define ROUTER_DIR882 0x10210f	// 15 reset button, 7 outer button 18. mid button
+#define ROUTER_DIR882 0x10210f // 15 reset button, 7 outer button 18. mid button
 
-#define ROUTER_BOARD_NS5MXW 0x10310c	//nanostation 5mxw
+#define ROUTER_BOARD_NS5MXW 0x10310c //nanostation 5mxw
 
 #define ROUTER_LINKSYS_EA9500 0x10410f
 
@@ -827,7 +827,7 @@ extern char *find_in_list(const char *haystack, const char *needle);
 extern int startswith(char *source, char *cmp);
 extern int count_occurences(char *source, int cmp);
 extern int pos_nthoccurence(char *source, int cmp, int which);
-extern char *substring(int start, int stop, const char *src, char *dst,size_t len);
+extern char *substring(int start, int stop, const char *src, char *dst, size_t len);
 extern void strtrim_right(char *p, int c);
 extern unsigned int daysformonth(unsigned int month, unsigned int year);
 const char *getifaddr(char *buf, char *ifname, int family, int linklocal);
@@ -841,7 +841,7 @@ extern int get_single_ip(char *ipaddr, int which);
 extern char *get_mac_from_ip(char *mac, char *ip);
 extern int dns_to_resolv(void);
 extern char *safe_get_wan_face(char *buffer);
-	
+
 extern int getBridgeSTP(char *br, char *word);
 extern char *getBridgeSTPType(char *br, char *word);
 
@@ -885,7 +885,8 @@ extern void getLANMac(char *newmac);
 extern void getWirelessMac(char *newmac, int instance);
 extern void getWANMac(char *newmac);
 extern char *cpustring(void);
-extern int find_pattern(const char *data, size_t dlen, const char *pattern, size_t plen, char term, unsigned int *numoff, unsigned int *numlen);
+extern int find_pattern(const char *data, size_t dlen, const char *pattern, size_t plen, char term, unsigned int *numoff,
+			unsigned int *numlen);
 extern int find_match_pattern(char *name, size_t mlen, const char *data, const char *pattern, char *def);
 
 struct ledconfig {
@@ -898,16 +899,16 @@ struct ledconfig {
 	unsigned short disconnected_gpio;
 	unsigned short bridge_gpio;
 	unsigned short vpn_gpio;
-	unsigned short ses_gpio;		// use for SES1 (Linksys), AOSS (Buffalo)
+	unsigned short ses_gpio; // use for SES1 (Linksys), AOSS (Buffalo)
 	unsigned short ses2_gpio;
-	unsigned short wlan_gpio;		// wlan button led R7000
-	unsigned short wlan0_gpio;		// use this only if wlan led is not controlled by hardware!
+	unsigned short wlan_gpio; // wlan button led R7000
+	unsigned short wlan0_gpio; // use this only if wlan led is not controlled by hardware!
 	unsigned short wlan1_gpio;
 	unsigned short wlan2_gpio;
 	unsigned short usb_gpio;
 	unsigned short usb_gpio1;
-	unsigned short sec_gpio;		// generic
-	unsigned short sec0_gpio;		// security leds, wrt600n
+	unsigned short sec_gpio; // generic
+	unsigned short sec0_gpio; // security leds, wrt600n
 	unsigned short sec1_gpio;
 	unsigned short usb_power;
 	unsigned short usb_power1;
@@ -917,8 +918,31 @@ struct ledconfig {
 };
 
 extern int led_control(int type, int act);
-enum { LED_POWER, LED_DIAG, LED_DIAG_DISABLED, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
-	LED_SES, LED_SES2, LED_WLAN, LED_WLAN0, LED_WLAN1, LED_WLAN2, LED_USB, LED_USB1, LED_SEC, LED_SEC0, LED_SEC1, USB_POWER, USB_POWER1, BEEPER, POE_GPIO, GPIO_CHECK
+enum {
+	LED_POWER,
+	LED_DIAG,
+	LED_DIAG_DISABLED,
+	LED_DMZ,
+	LED_CONNECTED,
+	LED_DISCONNECTED,
+	LED_BRIDGE,
+	LED_VPN,
+	LED_SES,
+	LED_SES2,
+	LED_WLAN,
+	LED_WLAN0,
+	LED_WLAN1,
+	LED_WLAN2,
+	LED_USB,
+	LED_USB1,
+	LED_SEC,
+	LED_SEC0,
+	LED_SEC1,
+	USB_POWER,
+	USB_POWER1,
+	BEEPER,
+	POE_GPIO,
+	GPIO_CHECK
 };
 enum { LED_ON, LED_OFF, LED_FLASH };
 
@@ -949,7 +973,8 @@ struct wl_assoc_mac *get_wl_assoc_mac(char *prefix, int *c);
 
 extern struct detect_wans *detect_protocol(char *wan_face, char *lan_face, char *type);
 
-enum { WL = 0,
+enum {
+	WL = 0,
 	DIAG = 1,
 	// SES_LED1 = 2,
 	// SES_LED2 = 3,
@@ -959,8 +984,9 @@ enum { WL = 0,
 
 enum { START_LED, STOP_LED, MALFUNCTION_LED };
 
-typedef enum { ACT_IDLE,
-//      ACT_TFTP_UPGRADE,
+typedef enum {
+	ACT_IDLE,
+	//      ACT_TFTP_UPGRADE,
 	ACT_WEB_UPGRADE,
 	ACT_WEBS_UPGRADE,
 	ACT_SW_RESTORE,
@@ -972,20 +998,29 @@ typedef enum { ACT_IDLE,
 
 enum { UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
 
-enum { BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM5350_CHIP, BCM5365_CHIP,
+enum {
+	BCM4702_CHIP,
+	BCM4712_CHIP,
+	BCM5325E_CHIP,
+	BCM5350_CHIP,
+	BCM5365_CHIP,
 	BCM4704_BCM5325F_CHIP,
-	BCM5352E_CHIP, BCM4712_BCM5325E_CHIP, BCM4704_BCM5325F_EWC_CHIP,
-	BCM4705_BCM5397_EWC_CHIP, BCM5354G_CHIP, BCM4705L_BCM5325E_EWC_CHIP,
+	BCM5352E_CHIP,
+	BCM4712_BCM5325E_CHIP,
+	BCM4704_BCM5325F_EWC_CHIP,
+	BCM4705_BCM5397_EWC_CHIP,
+	BCM5354G_CHIP,
+	BCM4705L_BCM5325E_EWC_CHIP,
 	BCM4705G_BCM5395S_EWC_CHIP,
 	NO_DEFINE_CHIP
 };
 
 enum { FIRST, SECOND };
 
-#define ACTION(cmd)	buf_to_file(ACTION_FILE, cmd)
+#define ACTION(cmd) buf_to_file(ACTION_FILE, cmd)
 struct dns_entry {
-	int type;		//0 = isp, 1 = user defined
-	int ipv6;		// 0 = ipv4, 1 = ipv6
+	int type; //0 = isp, 1 = user defined
+	int ipv6; // 0 = ipv4, 1 = ipv6
 	char *ip;
 };
 
@@ -998,17 +1033,17 @@ extern struct dns_entry *get_dns_entry(struct dns_lists *dns_list, int idx);
 extern struct dns_lists *get_dns_list(int ipv6);
 extern void free_dns_list(struct dns_lists *list);
 
-#define NOT_USING	0
-#define USING		1
+#define NOT_USING 0
+#define USING 1
 
 struct wl_assoc_mac {
 	char mac[18];
 };
 
 struct mtu_lists {
-	char *proto;		/* protocol */
-	char *min;		/* min mtu */
-	char *max;		/* max mtu */
+	char *proto; /* protocol */
+	char *min; /* min mtu */
+	char *max; /* max mtu */
 };
 
 struct detect_wans {
@@ -1018,64 +1053,67 @@ struct detect_wans {
 	char desc[1024];
 };
 
-#define GIF_LINKLOCAL  0x0001	/* return link-local addr */
-#define GIF_PREFIXLEN  0x0002	/* return addr & prefix */
+#define GIF_LINKLOCAL 0x0001 /* return link-local addr */
+#define GIF_PREFIXLEN 0x0002 /* return addr & prefix */
 
-#define	PROTO_DHCP	0
-#define	PROTO_STATIC	1
-#define	PROTO_PPPOE	2
-#define	PROTO_PPTP	3
-#define	PROTO_L2TP	4
-#define	PROTO_HB	5
-#define	PROTO_ERROR	-1
+#define PROTO_DHCP 0
+#define PROTO_STATIC 1
+#define PROTO_PPPOE 2
+#define PROTO_PPTP 3
+#define PROTO_L2TP 4
+#define PROTO_HB 5
+#define PROTO_ERROR -1
 
-#define PPP_PSEUDO_IP	"10.64.64.64"
-#define PPP_PSEUDO_NM	"255.255.255.255"
-#define PPP_PSEUDO_GW	"10.112.112.112"
+#define PPP_PSEUDO_IP "10.64.64.64"
+#define PPP_PSEUDO_NM "255.255.255.255"
+#define PPP_PSEUDO_GW "10.112.112.112"
 
-#define PING_TMP	"/tmp/ping.log"
+#define PING_TMP "/tmp/ping.log"
 // #define TRACEROUTE_TMP "/tmp/traceroute.log"
 
-#define RESOLV_FILE	"/tmp/resolv.conf"
-#define RESOLV_FORW	"/tmp/resolv.dnsmasq"
-#define HOSTS_FILE	"/tmp/hosts"
+#define RESOLV_FILE "/tmp/resolv.conf"
+#define RESOLV_FORW "/tmp/resolv.dnsmasq"
+#define HOSTS_FILE "/tmp/hosts"
 
-#define LOG_FILE	"/var/log/mess"
+#define LOG_FILE "/var/log/mess"
 
-#define ACTION_FILE	"/tmp/action"
+#define ACTION_FILE "/tmp/action"
 
-#define split(word, wordlist, next, delim) \
-	for (next = wordlist, \
-	     strncpy(word, next, sizeof(word)), \
-	     word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
-	     next = next ? next + sizeof(delim) - 1 : NULL ; \
-	     word[0]; \
-	     next = next ? : "", \
-	     strncpy(word, next, sizeof(word)), \
-	     word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
-	     next = next ? next + sizeof(delim) - 1 : NULL)
+#define split(word, wordlist, next, delim)                                                             \
+	for (next = wordlist, strncpy(word, next, sizeof(word)),                                       \
+	    word[(next = strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
+	    next = next ? next + sizeof(delim) - 1 : NULL;                                             \
+	     word[0]; next = next ?: "", strncpy(word, next, sizeof(word)),                            \
+	    word[(next = strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
+	    next = next ? next + sizeof(delim) - 1 : NULL)
 
-#define STRUCT_LEN(name)    sizeof(name)/sizeof(name[0])
+#define STRUCT_LEN(name) sizeof(name) / sizeof(name[0])
 
-#define printHEX(str,len) { \
-	int i; \
-	for (i=0 ; i<len ; i++) { \
-		printf("%02X ", (unsigned char)*(str+i)); \
-		if(((i+1)%16) == 0) printf("- "); \
-		if(((i+1)%32) == 0) printf("\n"); \
-	} \
-	printf("\n\n"); \
-}
+#define printHEX(str, len)                                          \
+	{                                                           \
+		int i;                                              \
+		for (i = 0; i < len; i++) {                         \
+			printf("%02X ", (unsigned char)*(str + i)); \
+			if (((i + 1) % 16) == 0)                    \
+				printf("- ");                       \
+			if (((i + 1) % 32) == 0)                    \
+				printf("\n");                       \
+		}                                                   \
+		printf("\n\n");                                     \
+	}
 
-#define printASC(str,len) { \
-	int i; \
-	for (i=0 ; i<len ; i++) { \
-		printf("%c", (unsigned char)*(str+i)); \
-		if(((i+1)%16) == 0) printf("- "); \
-		if(((i+1)%32) == 0) printf("\n"); \
-	} \
-	printf("\n\n"); \
-}
+#define printASC(str, len)                                       \
+	{                                                        \
+		int i;                                           \
+		for (i = 0; i < len; i++) {                      \
+			printf("%c", (unsigned char)*(str + i)); \
+			if (((i + 1) % 16) == 0)                 \
+				printf("- ");                    \
+			if (((i + 1) % 32) == 0)                 \
+				printf("\n");                    \
+		}                                                \
+		printf("\n\n");                                  \
+	}
 
 void set_gpio(int gpio, int value);
 
@@ -1088,7 +1126,7 @@ void lcdmessaged(char *dual, char *message);
 #else
 #define initlcd()
 #define lcdmessage(a)
-#define lcdmessaged(a,b)
+#define lcdmessaged(a, b)
 #endif
 
 extern char *getBridgeMTU(const char *, char *word);
@@ -1107,11 +1145,13 @@ extern void add_client_dev_srvfilter(char *name, char *type, char *data, int lev
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
 void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan);
-void init_qos(const char *type, int up, int down, const char *wandev, int mtu, const char *imq_wan, const char *aqd, const char *imq_lan);
+void init_qos(const char *type, int up, int down, const char *wandev, int mtu, const char *imq_wan, const char *aqd,
+	      const char *imq_lan);
 void init_ackprio(const char *wandev);
 extern void add_usermac(char *mac, int idx, int upstream, int downstream, int lanstream);
 extern void add_userip(char *ip, int idx, int upstream, int downstream, int lanstream);
-extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level);
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate,
+			       unsigned int level);
 
 void getHostName(char *buf, char *ip);
 int ishexit(char c);
@@ -1141,9 +1181,9 @@ extern void getIfLists(char *eths, int size);
 extern int ifexists(const char *ifname);
 extern void getinterfacelist(const char *ifprefix, char *buffer);
 extern int count_processes(char *pidName);
-char *hash_file_string(char *filename, char *hashbuf,size_t len);
+char *hash_file_string(char *filename, char *hashbuf, size_t len);
 char *hash_file(char *filename, char *hashbuf);
-char *hash_string(char *str, char *hashbuf,size_t len);
+char *hash_string(char *str, char *hashbuf, size_t len);
 
 #ifdef HAVE_ATH5K
 extern int is_ath5k(const char *prefix);
@@ -1204,7 +1244,6 @@ static inline int is_ap8x(char *prefix)
 {
 	return 0;
 }
-
 
 static inline int has_spectralscanning(char *prefix)
 {
@@ -1402,7 +1441,7 @@ int softkill(char *name);
 int getmask(char *netmask);
 int doMultiCast(void);
 int getMTD(char *name);
-void getIPFromName(char *name, char *ip,size_t len);
+void getIPFromName(char *name, char *ip, size_t len);
 int jffs_mounted(void);
 
 #define DEFAULT_USER "$1$gHo0JRUz$DhmErZyHtCmTxxKPPb13o."
@@ -1410,7 +1449,7 @@ int jffs_mounted(void);
 
 #define MAX_WDS_DEVS 10
 
-#define OLD_NAME_IP	"/tmp/.old_name_ip"
+#define OLD_NAME_IP "/tmp/.old_name_ip"
 
 #ifndef MAX_LEASES
 #define MAX_LEASES 254
@@ -1420,13 +1459,13 @@ struct wl_client_mac {
 	char hostname[32];
 	char ipaddr[20];
 	char hwaddr[20];
-	int status;		// 0:offline 1:online
+	int status; // 0:offline 1:online
 	int check;
 };
 #include <time.h>
 
 extern int dd_timer_delete(timer_t timer);
-extern int dd_timer_create(clockid_t clock_id, struct sigevent *evp, timer_t * pTimer);
+extern int dd_timer_create(clockid_t clock_id, struct sigevent *evp, timer_t *pTimer);
 extern int dd_timer_connect(timer_t timerid, void (*routine)(timer_t, int), int arg);
 extern int dd_timer_settime(timer_t timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue);
 
@@ -1434,7 +1473,7 @@ int endswith(char *str, char *cmp);
 char *getdisc(void);
 int isListed(char *listname, char *value);
 void addList(char *listname, char *value);
-int searchfor(FILE * fp, char *str, int scansize);
+int searchfor(FILE *fp, char *str, int scansize);
 int insmod(char *module);
 int modprobe(char *module);
 void rmmod(char *module);
@@ -1478,19 +1517,29 @@ void getPortMapping(int *vlanmap);
 u_int64_t freediskSpace(char *path);
 
 const char *getIsoName(char *country);
-int has_gateway(void);		// return 1 if nat/gateway mode is enabled for wan
+int has_gateway(void); // return 1 if nat/gateway mode is enabled for wan
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(char *prefix);
 #endif
 
 #ifndef HAVE_SYSLOG
-#define dd_syslog(a, args...) do { } while(0)
-#define dd_loginfo(a, fmt, args...) do { } while(0)
-#define dd_logdebug(a, fmt, args...) do { } while(0)
-#define dd_logerror(a, fmt, args...) do { } while(0)
-#define dd_logstart(a, ret) do { } while(0)
+#define dd_syslog(a, args...) \
+	do {                  \
+	} while (0)
+#define dd_loginfo(a, fmt, args...) \
+	do {                        \
+	} while (0)
+#define dd_logdebug(a, fmt, args...) \
+	do {                         \
+	} while (0)
+#define dd_logerror(a, fmt, args...) \
+	do {                         \
+	} while (0)
+#define dd_logstart(a, ret) \
+	do {                \
+	} while (0)
 #else
-#define dd_syslog(a, args...) syslog( a,## args);
+#define dd_syslog(a, args...) syslog(a, ##args);
 void dd_loginfo(const char *servicename, const char *fmt, ...);
 void dd_logdebug(const char *servicename, const char *fmt, ...);
 void dd_logerror(const char *servicename, const char *fmt, ...);
@@ -1503,10 +1552,10 @@ void *getUEnv(char *name);
 /* gartarp */
 
 #ifndef unlikely
-#define unlikely(x)     __builtin_expect((x), 0)
+#define unlikely(x) __builtin_expect((x), 0)
 #endif
 
-#define IP_ALEN		4
+#define IP_ALEN 4
 
 /*
 struct arph {
@@ -1527,8 +1576,8 @@ struct arph {
 } __attribute__((packed));
 */
 
-#define ARP_HLEN	sizeof(struct arph) + ETH_HLEN
-#define BCAST		"\xff\xff\xff\xff\xff\xff"
+#define ARP_HLEN sizeof(struct arph) + ETH_HLEN
+#define BCAST "\xff\xff\xff\xff\xff\xff"
 
 int writeproc(char *path, char *value);
 int writeprocsysnet(char *path, char *value);
@@ -1551,31 +1600,31 @@ char *getMountedDrives(void);
 char *getAllDrives(void);
 char *strstrtok(char *str, char del);
 
-#define ETHER_ADDR_STR_LEN	18	/* 18-bytes of Ethernet address buffer length */
+#define ETHER_ADDR_STR_LEN 18 /* 18-bytes of Ethernet address buffer length */
 #ifndef ETHER_ADDR_LEN
-#define ETHER_ADDR_LEN	6	/* 18-bytes of Ethernet address buffer length */
+#define ETHER_ADDR_LEN 6 /* 18-bytes of Ethernet address buffer length */
 
 #ifndef ABS
-#define	ABS(a)			(((a) < 0) ? -(a) : (a))
-#endif				/* ABS */
+#define ABS(a) (((a) < 0) ? -(a) : (a))
+#endif /* ABS */
 
 #ifndef MIN
-#define	MIN(a, b)		(((a) < (b)) ? (a) : (b))
-#endif				/* MIN */
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif /* MIN */
 
 #ifndef MAX
-#define	MAX(a, b)		(((a) > (b)) ? (a) : (b))
-#endif				/* MAX */
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#endif /* MAX */
 
 #ifndef OFFSETOF
-#define	OFFSETOF(type, member)	((uint)(uintptr)&((type *)0)->member)
+#define OFFSETOF(type, member) ((uint)(uintptr) & ((type *)0)->member)
 #endif
 
 #ifndef ROUNDUP
-#define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
+#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 #endif
 
-#define NR_RULES		20
+#define NR_RULES 20
 
 #ifdef HAVE_SWCONFIG
 
@@ -1584,26 +1633,11 @@ int has_igmpsnooping(void);
 
 #endif
 
-#define SYSCTL_BLACKLIST \
-	"base_reachable_time", \
-	"retrans_time", \
-	"nf_conntrack_max", \
-	"nf_conntrack_helper", \
-	"bridge-nf-call-arptables", \
-	"bridge-nf-call-ip6tables", \
-	"bridge-nf-call-iptables", \
-	"drop_caches", \
-	"ledpin", \
-	"softled", \
-	"default_qdisc", \
-	"tcp_bic", \
-	"tcp_westwood", \
-	"tcp_vegas_cong_avoid", \
-	"osf", \
-	"tcp_tw_recycle", \
-	"scan_unevictable_pages", \
-	"ctf0", \
-	"teql0"
+#define SYSCTL_BLACKLIST                                                                                                      \
+	"base_reachable_time", "retrans_time", "nf_conntrack_max", "nf_conntrack_helper", "bridge-nf-call-arptables",         \
+		"bridge-nf-call-ip6tables", "bridge-nf-call-iptables", "drop_caches", "ledpin", "softled", "default_qdisc",   \
+		"tcp_bic", "tcp_westwood", "tcp_vegas_cong_avoid", "osf", "tcp_tw_recycle", "scan_unevictable_pages", "ctf0", \
+		"teql0"
 
 void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv));
 

@@ -14,17 +14,17 @@
 #ifndef _ezc_h_
 #define _ezc_h_
 
-#define EZC_VERSION_STR		"2"
+#define EZC_VERSION_STR "2"
 
-#define EZC_FLAGS_READ		0x0001
-#define EZC_FLAGS_WRITE		0x0002
+#define EZC_FLAGS_READ 0x0001
+#define EZC_FLAGS_WRITE 0x0002
 
-#define EZC_SUCCESS	 	0
-#define EZC_ERR_NOT_ENABLED 	1
-#define EZC_ERR_INVALID_STATE 	2
-#define EZC_ERR_INVALID_DATA 	3
+#define EZC_SUCCESS 0
+#define EZC_ERR_NOT_ENABLED 1
+#define EZC_ERR_INVALID_STATE 2
+#define EZC_ERR_INVALID_DATA 3
 
-void do_apply_ezconfig_post(char *url, FILE * stream, int len, char *boundary);
-void do_ezconfig_asp(char *url, FILE * stream);
+void do_apply_ezconfig_post(char *url, FILE *stream, int len, char *boundary);
+void do_ezconfig_asp(char *url, FILE *stream);
 
-#endif				/* _ezc_h_ */
+#endif /* _ezc_h_ */

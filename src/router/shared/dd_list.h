@@ -16,8 +16,7 @@ struct dd_list_head {
  *
  */
 #ifndef container_of
-#define container_of(ptr, type, member) (			\
-	(type *)( (char *)ptr - offsetof(type,member) ))
+#define container_of(ptr, type, member) ((type *)((char *)ptr - offsetof(type, member)))
 #endif
 
 /*
@@ -30,10 +29,12 @@ struct dd_list_head {
  * using the generic single-entry routines.
  */
 
-#define DD_LIST_HEAD_INIT(name) { &(name), &(name) }
+#define DD_LIST_HEAD_INIT(name)  \
+	{                        \
+		&(name), &(name) \
+	}
 
-#define DD_LIST_HEAD(name) \
-	struct dd_list_head name = DD_LIST_HEAD_INIT(name)
+#define DD_LIST_HEAD(name) struct dd_list_head name = DD_LIST_HEAD_INIT(name)
 
 void INIT_DD_LIST_HEAD(struct dd_list_head *list);
 
@@ -165,8 +166,7 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  */
-#define dd_list_entry(ptr, type, member) \
-	container_of(ptr, type, member)
+#define dd_list_entry(ptr, type, member) container_of(ptr, type, member)
 
 /**
  * list_first_entry - get the first element from a list
@@ -176,17 +176,14 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  *
  * Note, that list is expected to be not empty.
  */
-#define dd_list_first_entry(ptr, type, member) \
-	dd_list_entry((ptr)->next, type, member)
+#define dd_list_first_entry(ptr, type, member) dd_list_entry((ptr)->next, type, member)
 
 /**
  * list_for_each	-	iterate over a list
  * @pos:	the &struct dd_list_head to use as a loop cursor.
  * @head:	the head for your list.
  */
-#define dd_list_for_each(pos, head) \
-	for (pos = (head)->next; pos != (head); \
-        	pos = pos->next)
+#define dd_list_for_each(pos, head) for (pos = (head)->next; pos != (head); pos = pos->next)
 
 /**
  * __list_for_each	-	iterate over a list
@@ -198,17 +195,14 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * Use this for code that knows the list to be very short (empty
  * or 1 entry) most of the time.
  */
-#define __dd_list_for_each(pos, head) \
-	for (pos = (head)->next; pos != (head); pos = pos->next)
+#define __dd_list_for_each(pos, head) for (pos = (head)->next; pos != (head); pos = pos->next)
 
 /**
  * list_for_each_prev	-	iterate over a list backwards
  * @pos:	the &struct dd_list_head to use as a loop cursor.
  * @head:	the head for your list.
  */
-#define dd_list_for_each_prev(pos, head) \
-	for (pos = (head)->prev; pos != (head); \
-        	pos = pos->prev)
+#define dd_list_for_each_prev(pos, head) for (pos = (head)->prev; pos != (head); pos = pos->prev)
 
 /**
  * list_for_each_safe - iterate over a list safe against removal of list entry
@@ -216,9 +210,7 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * @n:		another &struct dd_list_head to use as temporary storage
  * @head:	the head for your list.
  */
-#define dd_list_for_each_safe(pos, n, head) \
-	for (pos = (head)->next, n = pos->next; pos != (head); \
-		pos = n, n = pos->next)
+#define dd_list_for_each_safe(pos, n, head) for (pos = (head)->next, n = pos->next; pos != (head); pos = n, n = pos->next)
 
 /**
  * list_for_each_prev_safe - iterate over a list backwards safe against removal of list entry
@@ -226,10 +218,7 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * @n:		another &struct dd_list_head to use as temporary storage
  * @head:	the head for your list.
  */
-#define dd_list_for_each_prev_safe(pos, n, head) \
-	for (pos = (head)->prev, n = pos->prev; \
-	     pos != (head); \
-	     pos = n, n = pos->prev)
+#define dd_list_for_each_prev_safe(pos, n, head) for (pos = (head)->prev, n = pos->prev; pos != (head); pos = n, n = pos->prev)
 
 /**
  * list_for_each_entry	-	iterate over list of given type
@@ -237,9 +226,8 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
-#define dd_list_for_each_entry(pos, head, member)				\
-	for (pos = dd_list_entry((head)->next, typeof(*pos), member);	\
-	     &pos->member != (head); 	\
+#define dd_list_for_each_entry(pos, head, member)                                             \
+	for (pos = dd_list_entry((head)->next, typeof(*pos), member); &pos->member != (head); \
 	     pos = dd_list_entry(pos->member.next, typeof(*pos), member))
 
 /**
@@ -248,9 +236,8 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
-#define dd_list_for_each_entry_reverse(pos, head, member)			\
-	for (pos = dd_list_entry((head)->prev, typeof(*pos), member);	\
-	     &pos->member != (head); 	\
+#define dd_list_for_each_entry_reverse(pos, head, member)                                     \
+	for (pos = dd_list_entry((head)->prev, typeof(*pos), member); &pos->member != (head); \
 	     pos = dd_list_entry(pos->member.prev, typeof(*pos), member))
 
 /**
@@ -261,8 +248,7 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  *
  * Prepares a pos entry for use as a start point in list_for_each_entry_continue().
  */
-#define dd_list_prepare_entry(pos, head, member) \
-	((pos) ? : dd_list_entry(head, typeof(*pos), member))
+#define dd_list_prepare_entry(pos, head, member) ((pos) ?: dd_list_entry(head, typeof(*pos), member))
 
 /**
  * list_for_each_entry_continue - continue iteration over list of given type
@@ -273,9 +259,8 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * Continue to iterate over list of given type, continuing after
  * the current position.
  */
-#define dd_list_for_each_entry_continue(pos, head, member) 		\
-	for (pos = dd_list_entry(pos->member.next, typeof(*pos), member);	\
-	     &pos->member != (head);	\
+#define dd_list_for_each_entry_continue(pos, head, member)                                        \
+	for (pos = dd_list_entry(pos->member.next, typeof(*pos), member); &pos->member != (head); \
 	     pos = dd_list_entry(pos->member.next, typeof(*pos), member))
 
 /**
@@ -287,9 +272,8 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * Start to iterate over list of given type backwards, continuing after
  * the current position.
  */
-#define dd_list_for_each_entry_continue_reverse(pos, head, member)		\
-	for (pos = dd_list_entry(pos->member.prev, typeof(*pos), member);	\
-	     &pos->member != (head);	\
+#define dd_list_for_each_entry_continue_reverse(pos, head, member)                                \
+	for (pos = dd_list_entry(pos->member.prev, typeof(*pos), member); &pos->member != (head); \
 	     pos = dd_list_entry(pos->member.prev, typeof(*pos), member))
 
 /**
@@ -300,9 +284,8 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  *
  * Iterate over list of given type, continuing from current position.
  */
-#define dd_list_for_each_entry_from(pos, head, member) 			\
-	for (; &pos->member != (head);	\
-	     pos = dd_list_entry(pos->member.next, typeof(*pos), member))
+#define dd_list_for_each_entry_from(pos, head, member) \
+	for (; &pos->member != (head); pos = dd_list_entry(pos->member.next, typeof(*pos), member))
 
 /**
  * list_for_each_entry_safe - iterate over list of given type safe against removal of list entry
@@ -311,11 +294,9 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
-#define dd_list_for_each_entry_safe(pos, n, head, member)			\
-	for (pos = dd_list_entry((head)->next, typeof(*pos), member),	\
-		n = dd_list_entry(pos->member.next, typeof(*pos), member);	\
-	     &pos->member != (head); 					\
-	     pos = n, n = dd_list_entry(n->member.next, typeof(*n), member))
+#define dd_list_for_each_entry_safe(pos, n, head, member)                                                                        \
+	for (pos = dd_list_entry((head)->next, typeof(*pos), member), n = dd_list_entry(pos->member.next, typeof(*pos), member); \
+	     &pos->member != (head); pos = n, n = dd_list_entry(n->member.next, typeof(*n), member))
 
 /**
  * list_for_each_entry_safe_continue
@@ -327,11 +308,10 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * Iterate over list of given type, continuing after current point,
  * safe against removal of list entry.
  */
-#define dd_list_for_each_entry_safe_continue(pos, n, head, member) 		\
-	for (pos = dd_list_entry(pos->member.next, typeof(*pos), member), 		\
-		n = dd_list_entry(pos->member.next, typeof(*pos), member);		\
-	     &pos->member != (head);						\
-	     pos = n, n = dd_list_entry(n->member.next, typeof(*n), member))
+#define dd_list_for_each_entry_safe_continue(pos, n, head, member)        \
+	for (pos = dd_list_entry(pos->member.next, typeof(*pos), member), \
+	    n = dd_list_entry(pos->member.next, typeof(*pos), member);    \
+	     &pos->member != (head); pos = n, n = dd_list_entry(n->member.next, typeof(*n), member))
 
 /**
  * list_for_each_entry_safe_from
@@ -343,9 +323,8 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * Iterate over list of given type from current point, safe against
  * removal of list entry.
  */
-#define dd_list_for_each_entry_safe_from(pos, n, head, member) 			\
-	for (n = dd_list_entry(pos->member.next, typeof(*pos), member);		\
-	     &pos->member != (head);						\
+#define dd_list_for_each_entry_safe_from(pos, n, head, member)                                  \
+	for (n = dd_list_entry(pos->member.next, typeof(*pos), member); &pos->member != (head); \
 	     pos = n, n = dd_list_entry(n->member.next, typeof(*n), member))
 
 /**
@@ -358,10 +337,8 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
  * Iterate backwards over list of given type, safe against removal
  * of list entry.
  */
-#define dd_list_for_each_entry_safe_reverse(pos, n, head, member)		\
-	for (pos = dd_list_entry((head)->prev, typeof(*pos), member),	\
-		n = dd_list_entry(pos->member.prev, typeof(*pos), member);	\
-	     &pos->member != (head); 					\
-	     pos = n, n = dd_list_entry(n->member.prev, typeof(*n), member))
+#define dd_list_for_each_entry_safe_reverse(pos, n, head, member)                                                                \
+	for (pos = dd_list_entry((head)->prev, typeof(*pos), member), n = dd_list_entry(pos->member.prev, typeof(*pos), member); \
+	     &pos->member != (head); pos = n, n = dd_list_entry(n->member.prev, typeof(*n), member))
 
 #endif

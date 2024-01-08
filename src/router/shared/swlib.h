@@ -168,11 +168,11 @@ struct switch_portmap {
 };
 
 struct switch_port_link {
-	int link:1;
-	int duplex:1;
-	int aneg:1;
-	int tx_flow:1;
-	int rx_flow:1;
+	int link : 1;
+	int duplex : 1;
+	int aneg : 1;
+	int tx_flow : 1;
+	int rx_flow : 1;
 	int speed;
 	/* in ethtool adv_t format */
 	uint32_t eee;
@@ -224,8 +224,7 @@ int swlib_scan(struct switch_dev *dev);
  * @type: global, port or vlan
  * @name: name of the attribute
  */
-struct switch_attr *swlib_lookup_attr(struct switch_dev *dev,
-		enum swlib_attr_group atype, const char *name);
+struct switch_attr *swlib_lookup_attr(struct switch_dev *dev, enum swlib_attr_group atype, const char *name);
 
 /**
  * swlib_set_attr: set the value for an attribute
@@ -234,8 +233,7 @@ struct switch_attr *swlib_lookup_attr(struct switch_dev *dev,
  * @val: attribute value pointer
  * returns 0 on success
  */
-int swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr,
-		struct switch_val *val);
+int swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val);
 
 /**
  * swlib_set_attr_string: set the value for an attribute with type conversion
@@ -245,8 +243,7 @@ int swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr,
  * @str: string value
  * returns 0 on success
  */
-int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *attr,
-		int port_vlan, const char *str);
+int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *attr, int port_vlan, const char *str);
 
 /**
  * swlib_get_attr: get the value for an attribute
@@ -256,8 +253,7 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *attr,
  * returns 0 on success
  * for string attributes, the result string must be freed by the caller
  */
-int swlib_get_attr(struct switch_dev *dev, struct switch_attr *attr,
-		struct switch_val *val);
+int swlib_get_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val);
 
 /**
  * swlib_apply_from_uci: set up the switch from a uci configuration

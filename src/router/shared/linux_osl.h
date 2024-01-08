@@ -22,7 +22,7 @@
  * damn - the unix and vxworks version of inet_aton return different error
  * codes. 
  */
-#define UPNP_INET_ATON(a,b)   (inet_aton(a,b)!=0)
+#define UPNP_INET_ATON(a, b) (inet_aton(a, b) != 0)
 
 #define OSL_NULL_FILE "/dev/null"
 
@@ -30,6 +30,6 @@
 #include <time.h>
 #include <stdarg.h>
 
-int osl_join_multicast(struct iface *pif, int fd, unsigned int ipaddr, ushort port);	// added 
-										// - 
-										// tofu
+int osl_join_multicast(struct iface *pif, int fd, unsigned int ipaddr, ushort port); // added
+	// -
+	// tofu

@@ -45,17 +45,17 @@ extern "C" {
 
 /** Optional user callback, to print additional state at time of crash (build #, uptime, etc).
  */
-	typedef void (*airbag_user_callback)(int fd);
+typedef void (*airbag_user_callback)(int fd);
 
 /** Registers crash handlers to output to the file descriptor.
  * @return 0 iff registered; else errno is set.
  */
-	int airbag_init(void);
+int airbag_init(void);
 
 /** Names the current thread.
  * @return 0 iff name is set; else errno is set.
  */
-	int airbag_name_thread(const char *name);
+int airbag_name_thread(const char *name);
 
 /** Extremely simple printf-replacement, which is asynchronous-signal safe.
  * May be used from callback function during crash.  Only supports:
@@ -64,24 +64,32 @@ extern "C" {
  * - %%u for unsigned integers
  * @return Number of characters written
  */
-	int airbag_printf(int fd, const char *fmt, ...);
+int airbag_printf(int fd, const char *fmt, ...);
 
 /** Looks up the file name, function name, and offset corresponding to pc.
  * Writes text representation to fd.
  */
-	void airbag_symbol(int fd, void *pc);
+void airbag_symbol(int fd, void *pc);
 
 /** Deregisters the crash handlers.
  */
-	void airbag_deinit();
+void airbag_deinit();
 
-	void airbag_setpostinfo(const char *string);
+void airbag_setpostinfo(const char *string);
 #else
 #undef airbag_setpostinfo
-#define airbag_setpostinfo(string) do { } while(0)
-#define airbag_init(string) do { } while(0)
-#define airbag_init_delegate(string) do { } while(0)
-#define airbag_init_deinit(string) do { } while(0)
+#define airbag_setpostinfo(string) \
+	do {                       \
+	} while (0)
+#define airbag_init(string) \
+	do {                \
+	} while (0)
+#define airbag_init_delegate(string) \
+	do {                         \
+	} while (0)
+#define airbag_init_deinit(string) \
+	do {                       \
+	} while (0)
 #endif
 
 #ifdef __cplusplus

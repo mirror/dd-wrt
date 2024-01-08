@@ -66,10 +66,10 @@ typedef struct source {
 	int blocksize;
 	struct source *foundation;
 
-	int (*analyze)(struct source * s, int level);
-	u8 (*read_bytes)(struct source * s, u8 pos, u8 len, void *buf);
-	int (*read_block)(struct source * s, u8 pos, void *buf);
-	void (*close)(struct source * s);
+	int (*analyze)(struct source *s, int level);
+	u8 (*read_bytes)(struct source *s, u8 pos, u8 len, void *buf);
+	int (*read_block)(struct source *s, u8 pos, void *buf);
+	void (*close)(struct source *s);
 
 	/* private data may follow */
 } SOURCE;
@@ -80,26 +80,26 @@ typedef struct section {
 	SOURCE *source;
 } SECTION;
 
-typedef int (*DETECTOR)(SECTION * section, int level);
+typedef int (*DETECTOR)(SECTION *section, int level);
 
 /* detection dispatching functions */
 
-void analyze_source(SOURCE * s, int level);
-void analyze_source_special(SOURCE * s, int level, u8 pos, u8 size);
-void analyze_recursive(SECTION * section, int level, u8 rel_pos, u8 size, int flags);
+void analyze_source(SOURCE *s, int level);
+void analyze_source_special(SOURCE *s, int level, u8 pos, u8 size);
+void analyze_recursive(SECTION *section, int level, u8 rel_pos, u8 size, int flags);
 void stop_detect(void);
 
 /* file source functions */
 
 SOURCE *init_file_source(int fd, int filekind);
 
-int analyze_cdaccess(int fd, SOURCE * s, int level);
+int analyze_cdaccess(int fd, SOURCE *s, int level);
 
 /* buffer functions */
 
-u8 get_buffer(SECTION * section, u8 pos, u8 len, void **buf);
-u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf);
-void close_source(SOURCE * s);
+u8 get_buffer(SECTION *section, u8 pos, u8 len, void **buf);
+u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf);
+void close_source(SOURCE *s);
 
 /* output functions */
 

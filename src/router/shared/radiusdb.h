@@ -11,7 +11,7 @@ struct radiususer {
 	unsigned int upstream;
 	unsigned int expiration;
 	unsigned int enabled;
-//more fields can be added in future
+	//more fields can be added in future
 } __attribute__((packed));
 
 struct radiusdb {
@@ -25,7 +25,7 @@ struct radiusclient {
 	char *client;
 	unsigned int passwordsize;
 	char *passwd;
-//more fields can be added in future
+	//more fields can be added in future
 } __attribute__((packed));
 
 struct radiusclientdb {
