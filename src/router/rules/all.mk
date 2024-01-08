@@ -363,6 +363,7 @@ include rules/musl.mk
 include rules/microhttpd.mk
 include rules/nodogsplash.mk
 include rules/opennds.mk
+include rules/btop.mk
 
 #
 # Generic rules

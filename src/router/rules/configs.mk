@@ -457,6 +457,7 @@ obj-$(CONFIG_ANTAIRA_AGENT) += curl zlib openssl json-c antaira-agent
 obj-$(CONFIG_BOINC) += zlib openssl curl boinc
 obj-$(CONFIG_MUSL) += musl
 obj-$(CONFIG_X86) += cpupower
+obj-$(CONFIG_BTOP) += btop
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
 endif
