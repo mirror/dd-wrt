@@ -27,12 +27,15 @@ static char *UPTIME(int uptime, char *str, size_t len)
 	bzero(str2, 64);
 	days = uptime / (60 * 60 * 24);
 	if (days)
-		snprintf(str2, sizeof(str2), "%d day%s, ", days, (days == 1 ? "" : "s"));
+		snprintf(str2, sizeof(str2), "%d day%s, ", days,
+			 (days == 1 ? "" : "s"));
 	minutes = uptime / 60;
 	if (*(str2))
-		snprintf(str, len, "%s %d:%02d:%02d", str2, (minutes / 60) % 24, minutes % 60, uptime % 60);
+		snprintf(str, len, "%s %d:%02d:%02d", str2, (minutes / 60) % 24,
+			 minutes % 60, uptime % 60);
 	else
-		snprintf(str, len, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60, uptime % 60);
+		snprintf(str, len, "%d:%02d:%02d", (minutes / 60) % 24,
+			 minutes % 60, uptime % 60);
 	return str;
 }
 
@@ -68,7 +71,8 @@ static void assoc_count_prefix(webs_t wp, char *prefix)
 			goto done;
 		idx++;
 		char *names = nvram_nget("%s%d_vifs", prefix, i);
-		foreach(var, names, next) {
+		foreach(var, names, next)
+		{
 			if (!strcmp(var, s))
 				goto done;
 			idx++;
@@ -76,20 +80,20 @@ static void assoc_count_prefix(webs_t wp, char *prefix)
 	}
 	websWrite(wp, "0");
 	return;
-      done:;
+done:;
 	websWrite(wp, "%d", assoc_count[idx]);
 }
 
 #ifndef HAVE_ATH9K
-EJ_VISIBLE void ej_get_busy(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_busy(webs_t wp, int argc, char_t **argv)
 {
 }
 
-EJ_VISIBLE void ej_get_active(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_active(webs_t wp, int argc, char_t **argv)
 {
 }
 
-EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t **argv)
 {
 }
 #endif

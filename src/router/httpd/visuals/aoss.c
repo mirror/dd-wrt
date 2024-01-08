@@ -61,16 +61,17 @@ void start_aoss(void)
 	}
 }
 
-EJ_VISIBLE void ej_isChecked(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_isChecked(webs_t wp, int argc, char_t **argv)
 {
-	fprintf(stderr, "[%s] %s %s\n", argv[0], argv[1], nvram_selget(wp, argv[0]));
+	fprintf(stderr, "[%s] %s %s\n", argv[0], argv[1],
+		nvram_selget(wp, argv[0]));
 	if (!strcmp(nvram_selget(wp, argv[0]), argv[1])) {
 		websWrite(wp, " checked");
 	}
 	return;
 }
 
-EJ_VISIBLE void ej_ifnvram_match(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifnvram_match(webs_t wp, int argc, char_t **argv)
 {
 	if (!strcmp(nvram_selget(wp, argv[0]), argv[1])) {
 		websWrite(wp, "%s", argv[2]);
@@ -78,7 +79,7 @@ EJ_VISIBLE void ej_ifnvram_match(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_ifnvram_nmatch(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifnvram_nmatch(webs_t wp, int argc, char_t **argv)
 {
 	if (strcmp(nvram_selget(wp, argv[0]), argv[1])) {
 		websWrite(wp, "%s", argv[2]);
@@ -86,33 +87,33 @@ EJ_VISIBLE void ej_ifnvram_nmatch(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_ifaoss_possible(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifaoss_possible(webs_t wp, int argc, char_t **argv)
 {
 #ifdef HAVE_WZRHPAG300NH
 	if (!strcmp(argv[0], "yes")) {
-		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
-		    || !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")
-		    || !strcmp(nvram_selget(wp, "wlan1_mode"), "ap")
-		    || !strcmp(nvram_selget(wp, "wlan1_mode"), "wdsap")) {
+		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap") ||
+		    !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap") ||
+		    !strcmp(nvram_selget(wp, "wlan1_mode"), "ap") ||
+		    !strcmp(nvram_selget(wp, "wlan1_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	} else if (!strcmp(argv[0], "no")) {
-		if (strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
-		    && strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")
-		    && strcmp(nvram_selget(wp, "wlan1_mode"), "ap")
-		    && strcmp(nvram_selget(wp, "wlan1_mode"), "wdsap")) {
+		if (strcmp(nvram_selget(wp, "wlan0_mode"), "ap") &&
+		    strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap") &&
+		    strcmp(nvram_selget(wp, "wlan1_mode"), "ap") &&
+		    strcmp(nvram_selget(wp, "wlan1_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	}
 #else
 	if (!strcmp(argv[0], "yes")) {
-		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
-		    || !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")) {
+		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap") ||
+		    !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	} else if (!strcmp(argv[0], "no")) {
-		if (strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
-		    && strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")) {
+		if (strcmp(nvram_selget(wp, "wlan0_mode"), "ap") &&
+		    strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	}

@@ -36,7 +36,7 @@
 #include <cy_conf.h>
 #include <revision.h>
 
-EJ_VISIBLE void ej_compile_date(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_compile_date(webs_t wp, int argc, char_t **argv)
 {
 	char year[8], mon[4], day[4];
 	char string[20];
@@ -47,16 +47,18 @@ EJ_VISIBLE void ej_compile_date(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", string);
 }
 
-EJ_VISIBLE void ej_compile_time(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_compile_time(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "%s", __TIME__);
 }
 
-EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t **argv)
 {
 	char *name = nvram_safe_get("router_name");
 	char *printname;
-	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
+	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION,
+		 *name ? "_" : "", *name ? name : "",
+		 nvram_safe_get("DD_BOARD"));
 	if (!printname)
 		return;
 	int len = strlen(printname);
@@ -82,23 +84,25 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_SPECIALEDITION
 
-
-
-static void _ej_get_firmware_version(webs_t wp, int argc, char_t ** argv, int noreg)
+static void _ej_get_firmware_version(webs_t wp, int argc, char_t **argv,
+				     int noreg)
 {
-#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || defined(HAVE_IDEXX) || defined(HAVE_RAYTRONIK)
+#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || \
+	defined(HAVE_HDWIFI) || defined(HAVE_IDEXX) || defined(HAVE_RAYTRONIK)
 	char *p;
 	char string[32], date[16];
 	sprintf(string, CYBERTAN_VERSION);
 	sprintf(date, "%s", BUILD_DATE);
 #endif
 #ifdef HAVE_BUFFALO
-	websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+	websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION,
+		  nvram_safe_get("dist_type"), DIST_OPT);
 #else
 
 #ifdef HAVE_REGISTER
 	if (!noreg && wp->isregistered && !wp->isregistered_real) {
-		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
+		websWrite(wp, "Click here to ACTIVATE %d Hour Trial",
+			  getTrialCount());
 	} else
 #endif
 	{
@@ -125,9 +129,13 @@ static void _ej_get_firmware_version(webs_t wp, int argc, char_t ** argv, int no
 #define V "MIMO"
 #endif
 		if (argc == 2) {
-			websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
+			websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series",
+				  date, V);
 		} else {
-			websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
+			websWrite(
+				wp,
+				"ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>",
+				date, V);
 		}
 #undef V
 #elif HAVE_CARLSONWIRELESS
@@ -182,72 +190,84 @@ static void _ej_get_firmware_version(webs_t wp, int argc, char_t ** argv, int no
 		} else if (nvram_match("DD_BOARD", "Yuncore CPE880")) {
 			websWrite(wp, "OTAi-9334 (%s)", date);
 		} else {
-			websWrite(wp, "OTAi %s (%s)", nvram_safe_get("DD_BOARD"), date);
+			websWrite(wp, "OTAi %s (%s)",
+				  nvram_safe_get("DD_BOARD"), date);
 		}
 #elif HAVE_RAYTRONIK
-		websWrite(wp, "RN-150M %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "RN-150M %s %s%s", MINOR_VERSION,
+			  nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_KORENRON
-		websWrite(wp, "KORENRON %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "KORENRON %s %s%s", MINOR_VERSION,
+			  nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_TESTEM
-		websWrite(wp, "TESTEM %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "TESTEM %s %s%s", MINOR_VERSION,
+			  nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_ANTAIRA
 		websWrite(wp, "Antaira r%s (" BUILD_DATE ")", SVN_REVISION);
 #elif HAVE_SANSFIL
-		websWrite(wp, "SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "SANSFIL %s %s%s", MINOR_VERSION,
+			  nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_HOBBIT
-		websWrite(wp, "HQ-NDS %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "HQ-NDS %s %s%s", MINOR_VERSION,
+			  nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_ERC
-		websWrite(wp, "RemoteEngineer FW 1.1 r%s (" BUILD_DATE ")", SVN_REVISION);
+		websWrite(wp, "RemoteEngineer FW 1.1 r%s (" BUILD_DATE ")",
+			  SVN_REVISION);
 #elif HAVE_IDEXX
 #ifdef HAVE_IDEXX_WORLD
-		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") WW", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") WW",
+			  SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
-		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") US", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") US",
+			  SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 #elif HAVE_TMK
-		websWrite(wp, "KMT-WAS 3.0 r%s (" BUILD_DATE ") std", SVN_REVISION);
+		websWrite(wp, "KMT-WAS 3.0 r%s (" BUILD_DATE ") std",
+			  SVN_REVISION);
 #elif HAVE_NDTRADE
-		websWrite(wp, "ND TRADE v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "ND TRADE v3.0-r%s %s%s (" BUILD_DATE ")",
+			  SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
-		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")",
+			  SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 	}
 #endif
 }
 #endif
 
-EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t **argv)
 {
 	_ej_get_firmware_version(wp, argc, argc, 0);
 }
 
-EJ_VISIBLE void ej_get_firmware_version_noreg(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_firmware_version_noreg(webs_t wp, int argc,
+					      char_t **argv)
 {
 	_ej_get_firmware_version(wp, argc, argc, 1);
-
 }
-EJ_VISIBLE void ej_get_firmware_title(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_firmware_title(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "Wireless-G Broadband Router");
 }
 
-EJ_VISIBLE void ej_get_firmware_svnrev(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_firmware_svnrev(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "%s", SVN_REVISION);
 }
 
-EJ_VISIBLE void ej_get_web_page_name(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_web_page_name(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "%s.asp", websGetVar(wp, "submit_button", "index"));
 }
 
-EJ_VISIBLE void ej_get_model_name(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_model_name(webs_t wp, int argc, char_t **argv)
 {
 	// return websWrite(wp,"%s",MODEL_NAME);
 	websWrite(wp, "%s", nvram_safe_get("router_name"));
 }
 
-EJ_VISIBLE void ej_show_logo(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_logo(webs_t wp, int argc, char_t **argv)
 {
 	return;
 }

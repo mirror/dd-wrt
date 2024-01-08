@@ -32,22 +32,26 @@
 #include <broadcom.h>
 
 #ifdef HAVE_UNIWIP
-EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t **argv)
 {
 	int antennastate = get_gpio(242);
 	if (!antennastate)
-		websWrite(wp, "<script type=\"text/javascript\">Capture(status_gpsi.ant_conn)</script>");
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">Capture(status_gpsi.ant_conn)</script>");
 	else
-		websWrite(wp, "<script type=\"text/javascript\">Capture(status_gpsi.ant_disc)</script>");
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">Capture(status_gpsi.ant_disc)</script>");
 }
 #else
-EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "%s", nvram_safe_get("gps_status_text"));
 }
 #endif
 
-EJ_VISIBLE void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getlongitude(webs_t wp, int argc, char_t **argv)
 {
 	char *lon = nvram_safe_get("gps_lon");
 	char lon_deg[4];
@@ -55,7 +59,9 @@ EJ_VISIBLE void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
 	char lon_min2[32];
 	char lon_min3[32];
 	if (*(lon) == 0) {
-		websWrite(wp, "<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
 		return;
 	}
 	strncpy(lon_deg, lon, 3);
@@ -74,7 +80,7 @@ EJ_VISIBLE void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getlatidude(webs_t wp, int argc, char_t **argv)
 {
 	char *lat = nvram_safe_get("gps_lat");
 	char lat_deg[4];
@@ -82,7 +88,9 @@ EJ_VISIBLE void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
 	char lat_min2[32];
 	char lat_min3[32];
 	if (*(lat) == 0) {
-		websWrite(wp, "<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
 		return;
 	}
 	strncpy(lat_deg, lat, 2);
@@ -100,7 +108,7 @@ EJ_VISIBLE void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getgpslink(webs_t wp, int argc, char_t **argv)
 {
 	char *lon = nvram_safe_get("gps_lon");
 	char lon_deg[4];
@@ -108,7 +116,9 @@ EJ_VISIBLE void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
 	char lon_min2[32];
 	char lon_min3[32];
 	if (*(lon) == 0) {
-		websWrite(wp, "<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
 		return;
 	}
 	strncpy(lon_deg, lon, 3);
@@ -128,7 +138,9 @@ EJ_VISIBLE void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
 	char lat_min2[32];
 	char lat_min3[32];
 	if (*(lat) == 0) {
-		websWrite(wp, "<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">Capture(status_gpsi.na)</script>");
 		return;
 	}
 	strncpy(lat_deg, lat, 2);
@@ -142,7 +154,10 @@ EJ_VISIBLE void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
 	if (nvram_invmatch("gps_lat_e", "N"))
 		lat_val *= -1;
 
-	websWrite(wp, "<a href=\"https://maps.google.com/maps?q=%f,%f\" target=\"_blank\">Google Maps</a>", lat_val, lon_val);
+	websWrite(
+		wp,
+		"<a href=\"https://maps.google.com/maps?q=%f,%f\" target=\"_blank\">Google Maps</a>",
+		lat_val, lon_val);
 }
 
 #endif

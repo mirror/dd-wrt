@@ -5,7 +5,7 @@
 #include <webs.h>
 #include <uemf.h>
 #include <ej.h>
-#else				/* !WEBS */
+#else /* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif				/* WEBS */
+#endif /* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -55,9 +55,8 @@ void aoss_save(webs_t wp)
 		nvram_set("pincode", pin);
 #endif
 	// check if at least one value was set
-	if (nvram_matchi("aoss_aes", 0)
-	    && nvram_matchi("aoss_tkip", 0)
-	    && nvram_matchi("aoss_wep", 0)) {
+	if (nvram_matchi("aoss_aes", 0) && nvram_matchi("aoss_tkip", 0) &&
+	    nvram_matchi("aoss_wep", 0)) {
 		nvram_seti("aoss_aes", 1);
 	}
 	if (*(nvram_safe_get("aoss_vifs"))) {

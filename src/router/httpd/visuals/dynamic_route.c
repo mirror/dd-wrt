@@ -31,24 +31,24 @@
 #include <shutils.h>
 #include <broadcom.h>
 
-#define GETFIELD(name) \
-	if (d_##name) { \
+#define GETFIELD(name)              \
+	if (d_##name) {             \
 		strcpy(name, word); \
-		d_##name = 0; \
-		field++; \
-		continue; \
-	} \
-	if (!strcmp(word, #name )) {\
-		d_##name = 1; \
-		field++; \
-		continue; \
+		d_##name = 0;       \
+		field++;            \
+		continue;           \
+	}                           \
+	if (!strcmp(word, #name)) { \
+		d_##name = 1;       \
+		field++;            \
+		continue;           \
 	}
 
 /*
  * Dump route in <tr><td>IP</td><td>MASK</td><td>GW</td><td>Hop
  * Count</td><td>interface</td></tr> format 
  */
-EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t **argv)
 {
 	int count = 0;
 	FILE *fp;
@@ -72,9 +72,9 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * Read the route cache entries. 
 	 */
-	// Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT 
-	// 
-	// vmnet1 004410AC 00000000 0001 0 0 0 00FFFFFF 40 0 0 
+	// Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT
+	//
+	// vmnet1 004410AC 00000000 0001 0 0 0 00FFFFFF 40 0 0
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		char *next;
@@ -95,7 +95,8 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 		int d_src = 0;
 		int d_via = 0;
 		int d_metric = 0;
-		foreach(word, line, next) {
+		foreach(word, line, next)
+		{
 			if (!field && !strcmp(word, "broadcast"))
 				goto nextline;
 			if (!field && !strcmp(word, "local"))
@@ -126,16 +127,18 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 			strcpy(dev, "LAN");
 		if (!strcmp(dev, nvram_safe_get("wan_ifname")))
 			strcpy(dev, "WAN");
-		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', net, via, table, scope, metric, getNetworkLabel(wp, dev), src);
+		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s'\n",
+			  blank ? ' ' : ',', net, via, table, scope, metric,
+			  getNetworkLabel(wp, dev), src);
 		blank = 0;
-	      nextline:;
+nextline:;
 	}
 	pclose(fp);
 	return;
 }
 
 #ifndef HAVE_MICRO
-EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t **argv)
 {
 	int count = 0;
 	FILE *fp;
@@ -159,9 +162,9 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * Read the route cache entries. 
 	 */
-	// Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT 
-	// 
-	// vmnet1 004410AC 00000000 0001 0 0 0 00FFFFFF 40 0 0 
+	// Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT
+	//
+	// vmnet1 004410AC 00000000 0001 0 0 0 00FFFFFF 40 0 0
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		char *next;
@@ -193,7 +196,8 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 		int d_oif = 0;
 		int d_lookup = 0;
 		int d_nat = 0;
-		foreach_delim(word, line, next, " \t") {
+		foreach_delim(word, line, next, " \t")
+		{
 			if (!field) {
 				strcpy(priority, word);
 				field++;
@@ -227,10 +231,15 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 			strcpy(oif, "LAN");
 		if (oif[0] && !strcmp(oif, nvram_safe_get("wan_ifname")))
 			strcpy(oif, "WAN");
-		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', priority, not ? "!" : "", from, to, tos, fwmark, ipproto, sport, dport, getNetworkLabel(wp, iif),
-			  getNetworkLabel(wp, oif), lookup, nat);
+		websWrite(
+			wp,
+			"%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n",
+			blank ? ' ' : ',', priority, not ? "!" : "", from, to,
+			tos, fwmark, ipproto, sport, dport,
+			getNetworkLabel(wp, iif), getNetworkLabel(wp, oif),
+			lookup, nat);
 		blank = 0;
-	      nextline:;
+nextline:;
 	}
 	pclose(fp);
 	return;

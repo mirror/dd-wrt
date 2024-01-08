@@ -44,7 +44,7 @@
 
 // #include "libbb.h"
 
-EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t **argv)
 {
 	char *enable = GOZILA_GET(wp, "ddns_enable");
 	if (argc == 0 || !enable || !strcmp(enable, "0"))
@@ -56,7 +56,7 @@ EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t **argv)
 {
 	char *enable = GOZILA_GET(wp, "ddns_enable");
 	char var[32];
@@ -74,20 +74,20 @@ EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_ddns_status(webs_t wp, int argc, char_t **argv)
 {
 	char buff[512];
 	FILE *fp;
 	char *enable = websGetVar(wp, "ddns_enable", NULL);
 
 	if (!enable)
-		enable = nvram_safe_get("ddns_enable");	// for first time
+		enable = nvram_safe_get("ddns_enable"); // for first time
 
-	if (strcmp(nvram_safe_get("ddns_enable"), enable))	// change
+	if (strcmp(nvram_safe_get("ddns_enable"), enable)) // change
 		// service
 		websWrite(wp, " ");
 
-	if (nvram_matchi("ddns_enable", 0))	// only for no hidden page
+	if (nvram_matchi("ddns_enable", 0)) // only for no hidden page
 	{
 		websWrite(wp, "%s", live_translate(wp, "ddnsm.all_disabled"));
 		return;

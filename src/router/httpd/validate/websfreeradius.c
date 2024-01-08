@@ -26,7 +26,7 @@
 #include <webs.h>
 #include <uemf.h>
 #include <ej.h>
-#else				/* !WEBS */
+#else /* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif				/* WEBS */
+#endif /* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -66,13 +66,16 @@ void radius_generate_certificate(webs_t wp)
 	nvram_set("radius_country", websGetVar(wp, "radius_country", ""));
 	nvram_set("radius_state", websGetVar(wp, "radius_state", ""));
 	nvram_set("radius_locality", websGetVar(wp, "radius_locality", ""));
-	nvram_set("radius_expiration", websGetVar(wp, "radius_expiration", "365"));
-	nvram_set("radius_passphrase", websGetVar(wp, "radius_passphrase", "whatever"));
-	nvram_set("radius_organisation", websGetVar(wp, "radius_organisation", ""));
+	nvram_set("radius_expiration",
+		  websGetVar(wp, "radius_expiration", "365"));
+	nvram_set("radius_passphrase",
+		  websGetVar(wp, "radius_passphrase", "whatever"));
+	nvram_set("radius_organisation",
+		  websGetVar(wp, "radius_organisation", ""));
 	nvram_set("radius_email", websGetVar(wp, "radius_email", ""));
 	nvram_set("radius_common", websGetVar(wp, "radius_common", ""));
 
-//system("rm /jffs/etc/freeradius/certs/dh");
+	//system("rm /jffs/etc/freeradius/certs/dh");
 	unlink("/jffs/etc/freeradius/certs/server.csr");
 	unlink("/jffs/etc/freeradius/certs/server.key");
 	unlink("/jffs/etc/freeradius/certs/ca.pem");
@@ -83,7 +86,7 @@ void radius_generate_certificate(webs_t wp)
 	unlink("/jffs/etc/freeradius/certs/ca.der");
 	unlink("/jffs/etc/freeradius/certs/index.txt");
 	unlink("/jffs/etc/freeradius/certs/serial");
-	unlink("/jffs/etc/freeradius/certs/clients");	//delete client certificates since they will become invalid
+	unlink("/jffs/etc/freeradius/certs/clients"); //delete client certificates since they will become invalid
 	eval("startservice", "gen_radius_cert", "-f");
 }
 
@@ -113,7 +116,8 @@ void add_radius_user(webs_t wp)
 		db->usercount = 0;
 		db->users = safe_malloc(sizeof(struct radiususer));
 	} else {
-		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiususer) *
+						       (db->usercount + 1));
 	}
 	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - 8;
 	db->users[db->usercount].usersize = 0;
@@ -142,10 +146,13 @@ void del_radius_user(webs_t wp)
 	if (db->usercount == 0)
 		return;
 	if (db->usercount > 1)
-		memcpy(&db->users[todel], &db->users[todel + 1], sizeof(struct radiususer) * ((db->usercount - 1) - todel));
+		memcpy(&db->users[todel], &db->users[todel + 1],
+		       sizeof(struct radiususer) *
+			       ((db->usercount - 1) - todel));
 	db->usercount--;
 	if (db->usercount > 0)
-		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount));
+		db->users = realloc(db->users, sizeof(struct radiususer) *
+						       (db->usercount));
 	else {
 		debug_free(db->users);
 		db->users = NULL;
@@ -163,10 +170,12 @@ void add_radius_client(webs_t wp)
 		db->users = malloc(sizeof(struct radiusclient));
 		db->usercount = 0;
 	} else {
-		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiusclient) *
+						       (db->usercount + 1));
 	}
 	bzero(&db->users[db->usercount], sizeof(struct radiusclient));
-	db->users[db->usercount].fieldlen = sizeof(struct radiusclient) - (sizeof(char *) * 2);
+	db->users[db->usercount].fieldlen =
+		sizeof(struct radiusclient) - (sizeof(char *) * 2);
 	db->usercount++;
 	writeradiusclientdb(db);
 	freeradiusclientdb(db);
@@ -185,10 +194,13 @@ void del_radius_client(webs_t wp)
 	if (db->usercount == 0)
 		return;
 	if (db->usercount > 1)
-		memcpy(&db->users[todel], &db->users[todel + 1], sizeof(struct radiusclient) * ((db->usercount - 1) - todel));
+		memcpy(&db->users[todel], &db->users[todel + 1],
+		       sizeof(struct radiusclient) *
+			       ((db->usercount - 1) - todel));
 	db->usercount--;
 	if (db->usercount > 0)
-		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount));
+		db->users = realloc(db->users, sizeof(struct radiusclient) *
+						       (db->usercount));
 	else {
 		debug_free(db->users);
 		db->users = NULL;
@@ -214,7 +226,8 @@ static void save_radius_clients(webs_t wp)
 		if (!p)
 			break;
 
-		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiusclient) *
+						       (db->usercount + 1));
 
 		db->users[db->usercount].client = strdup(u);
 		db->users[db->usercount].clientsize = strlen(u) + 1;
@@ -224,7 +237,6 @@ static void save_radius_clients(webs_t wp)
 	}
 	writeradiusclientdb(db);
 	freeradiusclientdb(db);
-
 }
 
 static void save_radius_users(webs_t wp)
@@ -251,7 +263,8 @@ static void save_radius_users(webs_t wp)
 		char *u = websGetVar(wp, user, NULL);
 		if (!u)
 			break;
-		sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem", u);
+		sprintf(filename,
+			"/jffs/etc/freeradius/certs/clients/%s-cert.pem", u);
 		unlink(filename);
 		char *p = websGetVar(wp, passwd, NULL);
 		if (!p)
@@ -269,10 +282,12 @@ static void save_radius_users(webs_t wp)
 		if (!e)
 			break;
 
-		char *en = websGetVar(wp, enabled, "0");	// returns NULL if not set
+		char *en =
+			websGetVar(wp, enabled, "0"); // returns NULL if not set
 		if (!en)
 			break;
-		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiususer) *
+						       (db->usercount + 1));
 
 		db->users[db->usercount].user = strdup(u);
 		db->users[db->usercount].usersize = strlen(u) + 1;
@@ -282,7 +297,7 @@ static void save_radius_users(webs_t wp)
 		db->users[db->usercount].upstream = atoi(up);
 		long expiration = atol(e);
 		if (expiration) {
-			long curtime = ((tm / 60) / 60) / 24;	//in days
+			long curtime = ((tm / 60) / 60) / 24; //in days
 			expiration = expiration + curtime;
 		}
 		db->users[db->usercount].expiration = expiration;
@@ -291,7 +306,6 @@ static void save_radius_users(webs_t wp)
 	}
 	writeradiusdb(db);
 	freeradiusdb(db);
-
 }
 
 void save_radius_user(webs_t wp)

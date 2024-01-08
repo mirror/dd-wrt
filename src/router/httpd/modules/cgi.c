@@ -25,7 +25,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <shutils.h>		//Added by Dainel(2004-07-26)
+#include <shutils.h> //Added by Dainel(2004-07-26)
 #include <features.h>
 #define assert(a)
 
@@ -41,7 +41,8 @@ static void unescape(char *s)
 			if (*(s + 1) == 0 || *(s + 2) == 0) {
 				/* something's wrong - skip... */
 				strlcpy(s, "", strlen(s) + 1);
-				dd_logerror("httpd", "malformed substring (skipped)!");
+				dd_logerror("httpd",
+					    "malformed substring (skipped)!");
 			} else {
 				sscanf(s + 1, "%02x", &c);
 				*s++ = (char)c;
@@ -125,7 +126,8 @@ static void init_cgi(webs_t wp, char *query)
 		unescape(name = value = q);
 
 		/* Skip to next assignment */
-		for (q += strlen(q); q < (query + len) && !*q; q++) ;
+		for (q += strlen(q); q < (query + len) && !*q; q++)
+			;
 
 		/* Assign variable */
 		name = strsep(&value, "=");

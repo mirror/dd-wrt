@@ -34,12 +34,11 @@
 
 static struct fsentry *parsefsentry(char line[256])
 {
-
 	struct fsentry *entry = calloc(1, sizeof(struct fsentry));
 	char *token, *perm;
 	int tokcount = 0;
 
-	line[strlen(line) - 1] = '\0';	// replace new line with null
+	line[strlen(line) - 1] = '\0'; // replace new line with null
 	token = strtok(line, " ");
 	while (token != NULL) {
 		// check for values
@@ -48,13 +47,14 @@ static struct fsentry *parsefsentry(char line[256])
 		} else if (tokcount == 2) {
 			if (!strncmp(token, "/tmp/proftpd", 12)) {
 				debug_free(entry);
-				return NULL;	//skip it
+				return NULL; //skip it
 			}
 			if (!strncmp(token, "/tmp/mnt/", 9)) {
 				char newpath[64];
 				strcpy(newpath, token);
 				char *slash = strrchr(newpath, '/') + 1;
-				sprintf(entry->mp, "/mnt/%s", slash);	// convert symbolic link to absolute path
+				sprintf(entry->mp, "/mnt/%s",
+					slash); // convert symbolic link to absolute path
 			} else {
 				strcpy(entry->mp, token);
 			}
@@ -73,7 +73,6 @@ static struct fsentry *parsefsentry(char line[256])
 
 struct fsentry *getfsentries(void)
 {
-
 	char line[512];
 	FILE *fp;
 	struct fsentry *list = NULL, *tmplist, *current = NULL;

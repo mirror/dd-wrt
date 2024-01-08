@@ -68,7 +68,8 @@ static char *unqstrstr(char *haystack, char *needle)
 	int needlelen = strlen(needle);
 	int haylen = strlen(haystack);
 	char *target = &haystack[haylen];
-	for (cur = haystack, q = 0; cur < target && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
+	for (cur = haystack, q = 0;
+	     cur < target && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
 		if (*cur == '"')
 			q ? q-- : q++;
 	}
@@ -87,16 +88,19 @@ static char *get_arg(char *args, char **next)
 		*next = end + 1;
 
 	/* Skip whitespace and quotation marks on either end of arg */
-	for (arg = args; isspace((int)*arg) || *arg == '"'; arg++) ;
+	for (arg = args; isspace((int)*arg) || *arg == '"'; arg++)
+		;
 	for (*end-- = '\0'; isspace((int)*end) || *end == '"'; end--)
 		*end = '\0';
 
 	return arg;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv);
+static void *call_ej(char *name, void *handle, webs_t wp, int argc,
+		     char_t **argv);
 
-static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2003
+static void *call(void *handle, char *func,
+		  webs_t stream) //jimmy, https, 8/4/2003
 {
 	char *args, *end, *next;
 	int argc;
@@ -127,24 +131,24 @@ static inline int decompress(webs_t stream, char *pattern, int len, int last)
 	};
 
 	struct DECODE decode[] = {
-		{ 'i', "<input type=" },	//
-		{ 'c', "<input class=\"spaceradio\"" },	//
-		{ 't', "<input class=\"text\"" },	//
-		{ 'p', "<input class=\"num\"" },	//
-		{ 'h', "<input class=\"button\"" },	//
-		{ 'g', "<input class=\\\"button\\\"" },	//
-		{ 'd', "<input id=" },	//
-		{ 'f', "<div class=\"setting\"" },	//
-		{ 'e', "<div class=" },	//
-		{ 'n', "<div id=" },	//
-		{ 'j', "<a href=\"" },	//
-		{ 'o', "<option value=" },	//
-		{ 's', "<select name=" },	//
-		{ 'u', "<span class=" },	//
-		{ 'z', "<input name=" },	//
-		{ 'x', "document.write(\"" },	//
-		{ 'y', "<document." },	//
-		{ 'm', "<script type=\"text/javascript\">" },	//
+		{ 'i', "<input type=" }, //
+		{ 'c', "<input class=\"spaceradio\"" }, //
+		{ 't', "<input class=\"text\"" }, //
+		{ 'p', "<input class=\"num\"" }, //
+		{ 'h', "<input class=\"button\"" }, //
+		{ 'g', "<input class=\\\"button\\\"" }, //
+		{ 'd', "<input id=" }, //
+		{ 'f', "<div class=\"setting\"" }, //
+		{ 'e', "<div class=" }, //
+		{ 'n', "<div id=" }, //
+		{ 'j', "<a href=\"" }, //
+		{ 'o', "<option value=" }, //
+		{ 's', "<select name=" }, //
+		{ 'u', "<span class=" }, //
+		{ 'z', "<input name=" }, //
+		{ 'x', "document.write(\"" }, //
+		{ 'y', "<document." }, //
+		{ 'm', "<script type=\"text/javascript\">" }, //
 	};
 	int i;
 	int l = sizeof(decode) / sizeof(struct DECODE);
@@ -197,7 +201,8 @@ static int file_get(webs_t wp)
 int wfputs(char *buf, webs_t fp);
 
 static void *global_handle = NULL;
-static void do_ej_s(int (*get)(webs_t wp), webs_t stream)	// jimmy, https, 8/4/2003
+static void do_ej_s(int (*get)(webs_t wp),
+		    webs_t stream) // jimmy, https, 8/4/2003
 {
 	int c = 0, ret = 0;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
@@ -234,23 +239,27 @@ static void do_ej_s(int (*get)(webs_t wp), webs_t stream)	// jimmy, https, 8/4/2
 			pat = pattern[len - 1];
 			if (pat == '{' || pat == 0x3c) {
 				pattern[len - 1] = '\0';
-				wfputs(pattern, stream);	//jimmy, https, 8/4/2003
+				wfputs(pattern,
+				       stream); //jimmy, https, 8/4/2003
 				pattern[0] = pat;
 				len = 1;
 			}
 			continue;
 		} else {
 			if (unqstrstr(asp, "%>")) {
-				for (func = asp; func < &pattern[len]; func = end) {
+				for (func = asp; func < &pattern[len];
+				     func = end) {
 					/* Skip initial whitespace */
-					for (; isspace((int)*func); func++) ;
+					for (; isspace((int)*func); func++)
+						;
 					if (!(end = uqstrchr(func, ';')))
 						break;
 					*end++ = '\0';
 					/* Call function */
 					webs clone;
 					memcpy(&clone, stream, sizeof(webs));
-					global_handle = call(global_handle, func, &clone);
+					global_handle = call(global_handle,
+							     func, &clone);
 					// restore pointers
 				}
 				asp = NULL;
@@ -259,13 +268,13 @@ static void do_ej_s(int (*get)(webs_t wp), webs_t stream)	// jimmy, https, 8/4/2
 			continue;
 		}
 
-	      release:
+release:
 		/* Release pattern space */
-		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
+		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 		len = 0;
 	}
 	if (len)
-		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
+		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 
 #ifndef MEMLEAK_OVERRIDE
 	if (global_handle)
@@ -284,7 +293,7 @@ static void do_ej_buffer(char *buffer, webs_t stream)
 	do_ej_s(&buffer_get, stream);
 }
 
-static void do_ej_file(FILE * fp, int len, webs_t stream)
+static void do_ej_file(FILE *fp, int len, webs_t stream)
 {
 #ifndef HAVE_MICRO
 	stream->s_filebuffer = (unsigned char *)malloc(len);
@@ -313,7 +322,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	char *query = strchr(path, '?');
 	if (query)
 		*query++ = 0;
-//      fprintf(stderr, "open %s\n", path);
+	//      fprintf(stderr, "open %s\n", path);
 	cprintf("opening %s\n", path);
 	int i = 0;
 	size_t curoffset = 0;
@@ -325,7 +334,9 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	int found2 = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
-		if (!found && (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))) {
+		if (!found &&
+		    (endswith(path, ".asp") || endswith(path, ".htm") ||
+		     endswith(path, ".html"))) {
 			found = !strcasecmp(websRomPageIndex[i].path, path);
 			if (found) {
 				insensitive_len = *len;
@@ -388,9 +399,12 @@ size_t getWebsFileLen(webs_t wp, char *path2)
 	return len;
 }
 
-static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
+static void send_headers(webs_t conn_fp, int status, char *title,
+			 char *extra_header, char *mime_type, int length,
+			 char *attach_file, int nocache);
 
-int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
+int do_ej(unsigned char method, struct mime_handler *handler, char *path,
+	  webs_t stream) // jimmy, https, 8/4/2003
 {
 	FILE *fp = NULL;
 	size_t len;
@@ -401,7 +415,8 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t
 	fp = _getWebsFile(stream, path, &len);
 	if (fp) {
 		if (handler && !handler->send_headers)
-			send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+			send_headers(stream, 200, "OK", handler->extra_header,
+				     handler->mime_type, -1, NULL, 1);
 		stream->path = path;
 		do_ej_file(fp, len, stream);
 		fclose(fp);
@@ -410,5 +425,4 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t
 		return -1;
 
 	memdebug_leave_info(path);
-
 }

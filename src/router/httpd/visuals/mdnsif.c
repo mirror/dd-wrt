@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <ctype.h>		//for isdigit and isalpha
+#include <ctype.h> //for isdigit and isalpha
 #include <errno.h>
 #include <stdarg.h>
 
@@ -43,7 +43,7 @@
 
 // */
 
-EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t **argv)
 {
 	char bufferif[256];
 	int count = 1;
@@ -62,11 +62,21 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", "service.mdns_label", NULL);
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" onclick=\"show_layer_ext(this, 'idmdns', true)\" value=\"1\" name=\"%s\" %s />", temp,
-			  (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" onclick=\"show_layer_ext(this, 'idmdns', true)\" value=\"1\" name=\"%s\" %s />",
+			temp,
+			(nvram_default_matchi(temp, 1, 1) ?
+				 "checked=\"checked\"" :
+				 ""));
 		show_caption(wp, NULL, "share.enable", "&nbsp;");
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" onclick=\"show_layer_ext(this, 'idmdns', false)\" value=\"0\" name=\"%s\" %s />", temp,
-			  (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" onclick=\"show_layer_ext(this, 'idmdns', false)\" value=\"0\" name=\"%s\" %s />",
+			temp,
+			(nvram_default_matchi(temp, 0, 1) ?
+				 "checked=\"checked\"" :
+				 ""));
 		show_caption_simple(wp, "share.disable");
 	}
 	websWrite(wp, "</div>\n");
@@ -76,16 +86,31 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", "service.mdns_domain", NULL);
-		websWrite(wp, "<input size=\"15\" maxlength=\"24\" class=\"text\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+		websWrite(
+			wp,
+			"<input size=\"15\" maxlength=\"24\" class=\"text\" name=\"%s\" value=\"%s\" />\n",
+			temp, nvram_safe_get(temp));
 	}
 	websWrite(wp, "</div>\n");
 	snprintf(temp, sizeof(temp), "mdns_reflector");
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
 		show_caption(wp, "label", "service.mdns_reflector", NULL);
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />",
+			temp,
+			(nvram_default_matchi(temp, 1, 1) ?
+				 "checked=\"checked\"" :
+				 ""));
 		show_caption(wp, NULL, "share.enable", "&nbsp;");
-		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />",
+			temp,
+			(nvram_default_matchi(temp, 0, 1) ?
+				 "checked=\"checked\"" :
+				 ""));
 		show_caption_simple(wp, "share.disable");
 	}
 	websWrite(wp, "</div>\n");
@@ -102,23 +127,31 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	//show_caption(wp, "label", "service.mdns_interfaces", NULL);
 	websWrite(wp, "<table>\n");
 	websWrite(wp, "<tr>\n");
-	foreach(word, bufferif, next) {
+	foreach(word, bufferif, next)
+	{
 		if (!strchr(word, ':')) {
 			snprintf(temp, sizeof(temp), "mdnsif_%s", word);
 			{
 				websWrite(wp, "<td align=\"right\">\n");
-				websWrite(wp, "<label for=\"%s\">%s</label>", temp, word);
+				websWrite(wp, "<label for=\"%s\">%s</label>",
+					  temp, word);
 				websWrite(wp, "</td>\n");
 				websWrite(wp, "<td>\n");
-				char *wordlist = nvram_safe_get("mdns_interfaces");
+				char *wordlist =
+					nvram_safe_get("mdns_interfaces");
 				char ifname[32];
 				char *next2;
 				int found = 0;
-				foreach(ifname, wordlist, next2) {
+				foreach(ifname, wordlist, next2)
+				{
 					if (!strcmp(ifname, word))
 						found = 1;
 				}
-				websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, found ? "checked=\"checked\"" : "");
+				websWrite(
+					wp,
+					"<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n",
+					temp,
+					found ? "checked=\"checked\"" : "");
 				websWrite(wp, "</td>\n");
 				if (count++ > maxcount) {
 					websWrite(wp, "</tr>\n");
@@ -132,7 +165,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</table>\n");
 	websWrite(wp, "</fieldset>\n");
 	//end interfaces
-	websWrite(wp, "</div>\n");	//end hide show
+	websWrite(wp, "</div>\n"); //end hide show
 	websWrite(wp, "</fieldset><br />\n");
 	return;
 }

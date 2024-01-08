@@ -20,9 +20,9 @@
  * $Id:
  */
 
-#if defined(HAVE_MICRO)		// || defined(HAVE_80211AC)
+#if defined(HAVE_MICRO) // || defined(HAVE_80211AC)
 
-EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t **argv)
 {
 	FILE *f;
 	FILE *host;
@@ -40,19 +40,21 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 
 	if ((f = fopen("/proc/net/arp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), f)) {
-			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
+			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac,
+				   landev) != 3)
 				continue;
-			if ((strlen(mac) != 17)
-			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
+			if ((strlen(mac) != 17) ||
+			    (strcmp(mac, "00:00:00:00:00:00") == 0))
 				continue;
-//                      if (strcmp(landev, nvram_safe_get("wan_iface")) == 0)
-//                              continue;       // skip all but LAN arp entries
-			strcpy(hostname, "*");	// set name to *
+			//                      if (strcmp(landev, nvram_safe_get("wan_iface")) == 0)
+			//                              continue;       // skip all but LAN arp entries
+			strcpy(hostname, "*"); // set name to *
 
 			/*
 			 * count open connections per IP
 			 */
-			if ((conn = fopen("/proc/net/ip_conntrack", "r")) || (conn = fopen("/proc/net/nf_conntrack", "r"))) {
+			if ((conn = fopen("/proc/net/ip_conntrack", "r")) ||
+			    (conn = fopen("/proc/net/nf_conntrack", "r"))) {
 				strcpy(ip2, ip);
 				strcat(ip2, " ");
 
@@ -66,12 +68,14 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			/*
 			 * look into hosts file for hostnames (static leases)
 			 */
-			if ((host = fopen("/tmp/hosts", "r")) != NULL && !strcmp(hostname, "*")) {
+			if ((host = fopen("/tmp/hosts", "r")) != NULL &&
+			    !strcmp(hostname, "*")) {
 				while (fgets(buf, sizeof(buf), host)) {
 					sscanf(buf, "%15s %*s", fullip);
 
 					if (!strcmp(ip, fullip)) {
-						sscanf(buf, "%*15s %s", hostname);
+						sscanf(buf, "%*15s %s",
+						       hostname);
 					}
 				}
 				fclose(host);
@@ -85,27 +89,31 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			 * hostname is still unknown
 			 */
 
-			if (!strcmp(hostname, "*")
-			    && nvram_matchi("dhcpd_usenvram", 0)) {
+			if (!strcmp(hostname, "*") &&
+			    nvram_matchi("dhcpd_usenvram", 0)) {
 				if (!(host = fopen("/tmp/dnsmasq.leases", "r")))
-					host = fopen("/jffs/dnsmasq.leases", "r");
+					host = fopen("/jffs/dnsmasq.leases",
+						     "r");
 
 				if (host) {
-
 					while (fgets(buf, sizeof(buf), host)) {
-						sscanf(buf, "%*s %*s %15s %*s", fullip);
+						sscanf(buf, "%*s %*s %15s %*s",
+						       fullip);
 
 						if (strcmp(ip, fullip) == 0) {
-							sscanf(buf, "%*s %*s %*s %s", hostname);
+							sscanf(buf,
+							       "%*s %*s %*s %s",
+							       hostname);
 						}
 					}
 					fclose(host);
 				}
 			}
 
-			if (!strcmp(hostname, "*")
-			    && nvram_matchi("dhcpd_usenvram", 1)) {
-				sscanf(nvram_nget("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
+			if (!strcmp(hostname, "*") &&
+			    nvram_matchi("dhcpd_usenvram", 1)) {
+				sscanf(nvram_nget("dnsmasq_lease_%s", ip),
+				       "%*s %*s %*s %s", hostname);
 			}
 			/*
 			 * end nvram check
@@ -113,7 +121,9 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			len = strlen(mac);
 			for (i = 0; i < len; i++)
 				mac[i] = toupper(mac[i]);
-			websWrite(wp, "%c'%s','%s','%s','%d', '%s','0','0','0'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev);
+			websWrite(wp, "%c'%s','%s','%s','%d', '%s','0','0','0'",
+				  (count ? ',' : ' '), hostname, ip, mac,
+				  conn_count, landev);
 			++count;
 			conn_count = 0;
 		}
@@ -136,13 +146,15 @@ struct arptable {
 	int mark;
 };
 
-static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, long long in, long long out, long long total, int *tablelen)
+static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname,
+		    long long in, long long out, long long total, int *tablelen)
 {
 	struct arptable *table = *tbl;
 	int len = *tablelen;
 	int i;
 	for (i = 0; i < len; i++) {
-		if (!strcmp(mac, table[i].mac) && !strcmp(ifname, table[i].ifname)) {
+		if (!strcmp(mac, table[i].mac) &&
+		    !strcmp(ifname, table[i].ifname)) {
 			table[i].in += in;
 			table[i].out += out;
 			table[i].total += total;
@@ -214,18 +226,19 @@ static void readhosts(struct arptable *tbl, int tablelen)
 
 		if (host) {
 			while (fgets(buf, sizeof(buf), host)) {
-				sscanf(buf, "%*s %*s %15s %s", fullip, r_hostname);
+				sscanf(buf, "%*s %*s %15s %s", fullip,
+				       r_hostname);
 				unsigned int v4;
 				inet_aton(fullip, (struct in_addr *)&v4);
 				for (i = 0; i < tablelen; i++) {
 					if (!tbl[i].hostname) {
 						if (tbl[i].v4 == v4) {
-							tbl[i].hostname = strdup(r_hostname);
+							tbl[i].hostname = strdup(
+								r_hostname);
 							break;
 						}
 					}
 				}
-
 			}
 			fclose(host);
 		}
@@ -233,9 +246,11 @@ static void readhosts(struct arptable *tbl, int tablelen)
 	if (nvram_matchi("dhcpd_usenvram", 1)) {
 		for (i = 0; i < tablelen; i++) {
 			if (!tbl[i].hostname) {
-				char *nv = nvram_nget("dnsmasq_lease_%s", tbl[i].ip);
+				char *nv = nvram_nget("dnsmasq_lease_%s",
+						      tbl[i].ip);
 				if (*nv) {
-					sscanf(nv, "%*s %*s %*s %s", r_hostname);
+					sscanf(nv, "%*s %*s %*s %s",
+					       r_hostname);
 					tbl[i].hostname = strdup(r_hostname);
 				}
 			}
@@ -245,7 +260,6 @@ static void readhosts(struct arptable *tbl, int tablelen)
 		if (!tbl[i].hostname)
 			tbl[i].hostname = strdup("*");
 	}
-
 }
 
 static void filterarp(struct arptable *table, int tablelen)
@@ -262,21 +276,21 @@ static void filterarp(struct arptable *table, int tablelen)
 
 	if ((arp = fopen("/proc/net/arp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), arp)) {
-			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
+			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac,
+				   landev) != 3)
 				continue;
-			if ((strlen(mac) != 17)
-			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
+			if ((strlen(mac) != 17) ||
+			    (strcmp(mac, "00:00:00:00:00:00") == 0))
 				continue;
 			for (i = 0; i < tablelen; i++) {
-				if (!strcasecmp(mac, table[i].mac) && !strcmp(landev, table[i].ifname)) {
+				if (!strcasecmp(mac, table[i].mac) &&
+				    !strcmp(landev, table[i].ifname)) {
 					table[i].mark = 0;
 				}
 			}
-
 		}
 		fclose(arp);
 	}
-
 }
 
 static void readconntrack(struct arptable *tbl, int tablelen)
@@ -298,10 +312,12 @@ static void readconntrack(struct arptable *tbl, int tablelen)
 			char state[32];
 			char src[64];
 			if (nf)
-				sscanf(buf, "%s %*s %s %*s %*s %s %s", l3proto, proto, state, src);
+				sscanf(buf, "%s %*s %s %*s %*s %s %s", l3proto,
+				       proto, state, src);
 			else {
 				strcpy(l3proto, "ipv4");
-				sscanf(buf, "%s %*s %*s %s %s", proto, state, src);
+				sscanf(buf, "%s %*s %*s %s %s", proto, state,
+				       src);
 			}
 			unsigned int v4;
 			struct in6_addr v6;
@@ -314,16 +330,21 @@ static void readconntrack(struct arptable *tbl, int tablelen)
 					inet_pton(AF_INET6, &state[4], &v6);
 			} else {
 				if (!strcmp(proto, "tcp"))
-					inet_aton(&src[4], (struct in_addr *)&v4);
+					inet_aton(&src[4],
+						  (struct in_addr *)&v4);
 				else
-					inet_aton(&state[4], (struct in_addr *)&v4);
+					inet_aton(&state[4],
+						  (struct in_addr *)&v4);
 			}
-			if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
+			if (!strcmp(proto, "tcp") &&
+			    strcmp(state, "ESTABLISHED"))
 				continue;
 			for (i = 0; i < tablelen; i++) {
-				if (!connv6 && (tbl[i].proto & 1) && v4 == tbl[i].v4)
+				if (!connv6 && (tbl[i].proto & 1) &&
+				    v4 == tbl[i].v4)
 					tbl[i].conncount++;
-				else if (connv6 && (tbl[i].proto & 2) && !memcmp(&v6, &tbl[i].v6, sizeof(v6))) {
+				else if (connv6 && (tbl[i].proto & 2) &&
+					 !memcmp(&v6, &tbl[i].v6, sizeof(v6))) {
 					tbl[i].conncount++;
 				}
 			}
@@ -332,7 +353,7 @@ static void readconntrack(struct arptable *tbl, int tablelen)
 	}
 }
 
-EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t **argv)
 {
 	FILE *f = fopen("/tmp/bw.db", "rb");
 	if (!f) {
@@ -361,16 +382,19 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 
 	if ((f = fopen("/tmp/report.tmp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), f)) {
-			if (sscanf(buf, "%s %s %s %s %s %s", mac, ip, landev, peakin, peakout, total) != 6)
+			if (sscanf(buf, "%s %s %s %s %s %s", mac, ip, landev,
+				   peakin, peakout, total) != 6)
 				continue;
-			if ((strlen(mac) != 17)
-			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
+			if ((strlen(mac) != 17) ||
+			    (strcmp(mac, "00:00:00:00:00:00") == 0))
 				continue;
 
 			len = strlen(mac);
 			for (i = 0; i < len; i++)
 				mac[i] = toupper(mac[i]);
-			tablelen = addtable(&table, mac, ip, landev, atoll(peakin), atoll(peakout), atoll(total), &tablelen);
+			tablelen = addtable(&table, mac, ip, landev,
+					    atoll(peakin), atoll(peakout),
+					    atoll(total), &tablelen);
 			conn_count = 0;
 		}
 		fclose(f);
@@ -381,8 +405,14 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 
 		for (i = 0; i < tablelen; i++) {
 			if (!table[i].mark) {
-				websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname,
-					  table[i].in, table[i].out, table[i].total);
+				websWrite(
+					wp,
+					"%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'",
+					(count ? ',' : ' '), table[i].hostname,
+					table[i].ip, table[i].mac,
+					table[i].conncount, table[i].ifname,
+					table[i].in, table[i].out,
+					table[i].total);
 				++count;
 			}
 		}

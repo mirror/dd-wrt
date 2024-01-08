@@ -26,7 +26,7 @@
 #include <webs.h>
 #include <uemf.h>
 #include <ej.h>
-#else				/* !WEBS */
+#else /* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif				/* WEBS */
+#endif /* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -123,7 +123,8 @@ void format_drive(webs_t wp)
 			eval("mkfs.fat", "-F", "32", fs);
 	} else if (!strncmp(format, "ext", 3)) {
 		if (*(label))
-			eval(name, "-F", "-L", label, "-E", "lazy_itable_init=1", fs);
+			eval(name, "-F", "-L", label, "-E",
+			     "lazy_itable_init=1", fs);
 		else
 			eval(name, "-F", "-E", "lazy_itable_init=1", fs);
 	} else {
@@ -162,7 +163,8 @@ void del_raid(webs_t wp)
 	char drive[64];
 	char dev[32];
 	int drives = 0;
-	foreach(drive, raid, next) {
+	foreach(drive, raid, next)
+	{
 		drives++;
 		eval("umount", drive);
 	}
@@ -200,11 +202,14 @@ void del_raid(webs_t wp)
 		nvram_nset(nvram_nget("raid%d", i), "raid%d", i + 1);
 		nvram_nset(nvram_nget("raidfs%d", i), "raidfs%d", i + 1);
 		if (nvram_nmatch("zfs", "raidtype%d", i + 1)) {
-			nvram_nset(nvram_nget("raidlz%d", i), "raidlz%d", i + 1);
-			nvram_nset(nvram_nget("raiddedup%d", i), "raiddedup%d", i + 1);
-			if (nvram_nmatch("gzip", "raidlzlevel%d", i) || nvram_nmatch("zstd", "raidlzlevel%d", i))
-				nvram_nset(nvram_nget("raidlzlevel%d", i), "raidlzlevel%d", i + 1);
-
+			nvram_nset(nvram_nget("raidlz%d", i), "raidlz%d",
+				   i + 1);
+			nvram_nset(nvram_nget("raiddedup%d", i), "raiddedup%d",
+				   i + 1);
+			if (nvram_nmatch("gzip", "raidlzlevel%d", i) ||
+			    nvram_nmatch("zstd", "raidlzlevel%d", i))
+				nvram_nset(nvram_nget("raidlzlevel%d", i),
+					   "raidlzlevel%d", i + 1);
 		}
 	}
 	nvram_nset(NULL, "raidtype%d", i);
@@ -248,8 +253,10 @@ void del_raid_member(webs_t wp)
 	char drive[128];
 	char *a = NULL;
 	int cnt = 0;
-	foreach(drive, raid, next) {
-		a = realloc(a, cnt ? strlen(a) + strlen(drive) + 2 : strlen(drive) + 1);
+	foreach(drive, raid, next)
+	{
+		a = realloc(a, cnt ? strlen(a) + strlen(drive) + 2 :
+				     strlen(drive) + 1);
 		if (cnt != didx) {
 			if (!cnt)
 				a[0] = 0;
@@ -325,7 +332,8 @@ void raid_save(webs_t wp)
 			char *mb = websGetVar(wp, member, NULL);
 			if (!mb)
 				break;
-			a = realloc(a, a ? strlen(a) + strlen(mb) + 2 : strlen(mb) + 1);
+			a = realloc(a, a ? strlen(a) + strlen(mb) + 2 :
+					   strlen(mb) + 1);
 			if (!midx)
 				a[0] = 0;
 			else
@@ -337,7 +345,6 @@ void raid_save(webs_t wp)
 		if (a)
 			debug_free(a);
 		idx++;
-
 	}
 	idx = 0;
 	while (1) {

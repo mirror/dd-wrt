@@ -1,5 +1,6 @@
 #include <libiptc/libip4tc.c>
-void getpacketcounts(char *table, char *chain, unsigned long long *counts, int len)
+void getpacketcounts(char *table, char *chain, unsigned long long *counts,
+		     int len)
 {
 	int c = 0;
 	const char *this;
@@ -7,7 +8,8 @@ void getpacketcounts(char *table, char *chain, unsigned long long *counts, int l
 		return;
 	iptc_handle_t handle = iptc_init(table);
 
-	for (this = iptc_first_chain(&handle); this; this = iptc_next_chain(&handle)) {
+	for (this = iptc_first_chain(&handle); this;
+	     this = iptc_next_chain(&handle)) {
 		const struct ipt_entry *i;
 		if (strcmp(chain, this))
 			continue;
@@ -21,7 +23,7 @@ void getpacketcounts(char *table, char *chain, unsigned long long *counts, int l
 				iptc_free(&handle);
 				return;
 			}
-		      skip:;
+skip:;
 			i = iptc_next_rule(i, &handle);
 		}
 	}
@@ -35,7 +37,8 @@ unsigned long long getpackettotal(char *table, char *chain)
 	const char *this;
 	iptc_handle_t handle = iptc_init(table);
 
-	for (this = iptc_first_chain(&handle); this; this = iptc_next_chain(&handle)) {
+	for (this = iptc_first_chain(&handle); this;
+	     this = iptc_next_chain(&handle)) {
 		const struct ipt_entry *i;
 		if (strcmp(chain, this))
 			continue;
@@ -45,7 +48,7 @@ unsigned long long getpackettotal(char *table, char *chain)
 			if (target && !strcmp(target, "RETURN"))
 				goto skip;
 			count += i->counters.pcnt;
-		      skip:;
+skip:;
 			i = iptc_next_rule(i, &handle);
 		}
 	}

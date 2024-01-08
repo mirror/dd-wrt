@@ -33,14 +33,14 @@
 
 static void show_chaps_table(webs_t wp, char *type, int which)
 {
-
 	char word[256];
 	char *next, *wordlist;
 	char new_user[200], new_pass[200];
 
 	wordlist = nvram_safe_get("pppoeserver_chaps");
 
-	foreach(word, wordlist, next) {
+	foreach(word, wordlist, next)
+	{
 		if (which-- == 0) {
 			GETENTRYBYIDX(user, word, 0);
 			GETENTRYBYIDX(pass, word, 1);
@@ -50,10 +50,12 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 				continue;
 
 			if (!strcmp(type, "user")) {
-				httpd_filter_name(user, new_user, sizeof(new_user), GET);
+				httpd_filter_name(user, new_user,
+						  sizeof(new_user), GET);
 				websWrite(wp, "%s", new_user);
 			} else if (!strcmp(type, "pass")) {
-				httpd_filter_name(pass, new_pass, sizeof(new_pass), GET);
+				httpd_filter_name(pass, new_pass,
+						  sizeof(new_pass), GET);
 				websWrite(wp, "%s", new_pass);
 			} else if (!strcmp(type, "ip"))
 				websWrite(wp, "%s", ip);
@@ -66,10 +68,9 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 	}
 	if (!strcmp(type, "ip"))
 		websWrite(wp, "0.0.0.0");
-
 }
 
-EJ_VISIBLE void ej_show_chaps(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_chaps(webs_t wp, int argc, char_t **argv)
 {
 	int i;
 	char *count;
@@ -77,20 +78,36 @@ EJ_VISIBLE void ej_show_chaps(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("pppoeserver_chapsnum");
 	if (count == NULL || *(count) == 0) {
-		websWrite(wp, "<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(
+			wp,
+			"<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	c = atoi(count);
 	if (c <= 0) {
-		websWrite(wp, "<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+		websWrite(
+			wp,
+			"<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "<tr><td>\n<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(
+			wp,
+			"<tr><td>\n<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+			i);
 		show_chaps_table(wp, "user", i);
-		websWrite(wp, "\" /></td>\n<td>\n<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(
+			wp,
+			"\" /></td>\n<td>\n<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+			i);
 		show_chaps_table(wp, "pass", i);
-		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"", i);
+		websWrite(
+			wp,
+			"\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"",
+			i);
 		show_chaps_table(wp, "ip", i);
-		websWrite(wp, "\" /></td>\n<td class=\"center\">\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+		websWrite(
+			wp,
+			"\" /></td>\n<td class=\"center\">\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
+			i);
 		show_chaps_table(wp, "enable", i);
 		websWrite(wp, " /></td>\n</tr>\n");
 	}

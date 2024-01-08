@@ -17,7 +17,7 @@
 #define PROC_DEV "/proc/net/dev"
 
 #if 1
-#define dprintf(fmt, args...) cprintf("%s: " fmt, __FUNCTION__, ## args)
+#define dprintf(fmt, args...) cprintf("%s: " fmt, __FUNCTION__, ##args)
 #else
 #define dprintf(fmt, args...)
 #endif
@@ -30,7 +30,7 @@ static int mysystem(char *cmd)
 	return 0;
 }
 
-void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
+void ej_wl_packet_get(webs_t wp, int argc, char_t **argv)
 {
 	char line[256];
 	FILE *fp;
@@ -77,7 +77,7 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 				continue;
 			while (line[ifl] != ':')
 				ifl++;
-			line[ifl] = 0;	/* interface */
+			line[ifl] = 0; /* interface */
 #ifdef HAVE_MADWIFI
 			if (strstr(line, "wifi0"))
 #else
@@ -89,9 +89,12 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 				       &info.rx_bytes, &info.rx_pks,
 				       &info.rx_errs, &info.rx_drops,
 				       &info.rx_fifo, &info.rx_frame,
-				       &info.rx_com, &info.rx_mcast, &info.tx_bytes, &info.tx_pks, &info.tx_errs, &info.tx_drops, &info.tx_fifo, &info.tx_colls, &info.tx_carr, &info.tx_com);
+				       &info.rx_com, &info.rx_mcast,
+				       &info.tx_bytes, &info.tx_pks,
+				       &info.tx_errs, &info.tx_drops,
+				       &info.tx_fifo, &info.tx_colls,
+				       &info.tx_carr, &info.tx_com);
 			}
-
 		}
 		fclose(fp);
 	}
@@ -100,7 +103,8 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "SWRXerrorPacket=%ld;", info.rx_errs + info.rx_drops);
 
 	websWrite(wp, "SWTXgoodPacket=%ld;", info.tx_pks);
-	websWrite(wp, "SWTXerrorPacket=%ld;", info.tx_errs + info.tx_drops + info.tx_colls);
+	websWrite(wp, "SWTXerrorPacket=%ld;",
+		  info.tx_errs + info.tx_drops + info.tx_colls);
 
 	return;
 }
@@ -113,11 +117,11 @@ int StartContinueTx(webs_t wp, char *value)
 	int rate;
 	float rates;
 	int gmode;
-	int txant;		// barry add 1117
+	int txant; // barry add 1117
 	char *tx_gmode;
 	char *tx_channel;
 	char *tx_rate;
-	char *tx_ant;		// barry add 1117
+	char *tx_ant; // barry add 1117
 	FILE *fp;
 
 	dprintf("init, StartContinueTx=[%s]\n", value);
@@ -140,10 +144,12 @@ int StartContinueTx(webs_t wp, char *value)
 	if (tx_ant)
 		txant = atoi(tx_ant);
 
-	dprintf
-	    ("gmode=[%s](%d), channel=[%s](%d), rate=[%s](%d), rates=(%f), txant=[%s](%d)\n",
-	     tx_gmode ? tx_gmode : "NULL", tx_gmode ? gmode : -1,
-	     tx_channel ? tx_channel : "NULL", tx_channel ? channel : -1, tx_rate ? tx_rate : "NULL", tx_rate ? rate : -1, tx_rate ? rates : -1, tx_ant ? tx_ant : "NULL", tx_ant ? txant : -1);
+	dprintf("gmode=[%s](%d), channel=[%s](%d), rate=[%s](%d), rates=(%f), txant=[%s](%d)\n",
+		tx_gmode ? tx_gmode : "NULL", tx_gmode ? gmode : -1,
+		tx_channel ? tx_channel : "NULL", tx_channel ? channel : -1,
+		tx_rate ? tx_rate : "NULL", tx_rate ? rate : -1,
+		tx_rate ? rates : -1, tx_ant ? tx_ant : "NULL",
+		tx_ant ? txant : -1);
 
 	printf("value=[%d]\n", atoi(value));
 	switch (atoi(value)) {
@@ -159,9 +165,9 @@ int StartContinueTx(webs_t wp, char *value)
 		// mysystem("wl gmode 0");
 		mysystem("nvram set wl_bcn=1");
 		mysystem("nvram set wl0_bcn=1");
-		if (check_hw_type() == BCM4702_CHIP)	/* barry add for 4712 
+		if (check_hw_type() == BCM4702_CHIP) /* barry add for 4712 
 							 * or 4702 RF test */
-			mysystem("wlconf eth2 up");	// For 4702
+			mysystem("wlconf eth2 up"); // For 4702
 		else
 			mysystem("wlconf eth1 up");
 
@@ -179,11 +185,11 @@ int StartContinueTx(webs_t wp, char *value)
 
 		mysystem("wl rateset 11b 54");
 		mysystem("wl rate 54");
-		mysystem("wl txpwr1 -d -o 16.5");	// 2005-03-04, Set tx power
+		mysystem("wl txpwr1 -d -o 16.5"); // 2005-03-04, Set tx power
 		// to 16 dbm
 		mysystem("wl curpower > /tmp/curpower");
 
-		if ((fp = fopen("/tmp/curpower", "r"))) {	// Get real value
+		if ((fp = fopen("/tmp/curpower", "r"))) { // Get real value
 			char line[254];
 			char string[254];
 			char value[254];
@@ -193,16 +199,18 @@ int StartContinueTx(webs_t wp, char *value)
 			bzero(line, sizeof(line));
 
 			while (fgets(line, sizeof(line), fp) != NULL) {
-
 				bzero(string, sizeof(string));
 				bzero(value, sizeof(value));
 
 				sscanf(line, "%27c%s", string, value);
 				if (!memcmp(string, patt1, strlen(patt1))) {
-					cprintf("Set [%s] to \"wl_cck_result\"\n", value);
+					cprintf("Set [%s] to \"wl_cck_result\"\n",
+						value);
 					nvram_set("wl_cck_result", value);
-				} else if (!memcmp(string, patt2, strlen(patt2))) {
-					cprintf("Set [%s] to \"wl_ofdm_result\"\n", value);
+				} else if (!memcmp(string, patt2,
+						   strlen(patt2))) {
+					cprintf("Set [%s] to \"wl_ofdm_result\"\n",
+						value);
 					nvram_set("wl_ofdm_result", value);
 				}
 			}
@@ -211,7 +219,7 @@ int StartContinueTx(webs_t wp, char *value)
 		mysystem("wl out");
 		// mysystem("wl clk");
 		// sprintf(buf,"wl fqacurcy %d",channel);
-		// mysystem(buf); 
+		// mysystem(buf);
 
 		sprintf(buf, "wl evm %d %f &", channel, rates);
 		mysystem(buf);
@@ -244,7 +252,7 @@ int StopContinueTx(webs_t wp, char *value)
 
 	type = websGetVar(wp, "StopContinueTx", "");
 	if (!strcmp(type, "0")) {
-		// 
+		//
 	} else if (!strcmp(type, "1")) {
 		/*
 		 * Stop Continue TX, EVM 
@@ -253,12 +261,12 @@ int StopContinueTx(webs_t wp, char *value)
 		mysystem("wl up");
 		mysystem("nvram set wl_bcn=100");
 		mysystem("nvram set wl0_bcn=100");
-		if (check_hw_type() == BCM4702_CHIP)	/* barry add for 4712 or 4702 
+		if (check_hw_type() ==
+		    BCM4702_CHIP) /* barry add for 4712 or 4702 
 							 * RF test */
-			mysystem("wlconf eth2 up");	// For 4702
+			mysystem("wlconf eth2 up"); // For 4702
 		else
 			mysystem("wlconf eth1 up");
-
 	}
 
 	dprintf("done\n");
@@ -306,7 +314,8 @@ int Check_TSSI(webs_t wp, char *value)
 	idelay = nvram_geti("wl_delay");
 	// tssi_check=nvram_geti("wl_tssi_check"));
 
-	dprintf("wl_atten_bb=[%s], wl_atten_radio=[%s], wl_atten_ctl=[%s]\n", wl_atten_bb, wl_atten_radio, wl_atten_ctl);
+	dprintf("wl_atten_bb=[%s], wl_atten_radio=[%s], wl_atten_ctl=[%s]\n",
+		wl_atten_bb, wl_atten_radio, wl_atten_ctl);
 
 	bzero(buf, sizeof(buf));
 	sprintf(buf, "wl atten %s %s %s", value, wl_atten_radio, wl_atten_ctl);
@@ -372,7 +381,6 @@ int Check_TSSI(webs_t wp, char *value)
 	dprintf("done\n");
 
 	return 1;
-
 }
 
 int Get_TSSI(char *value)
@@ -400,7 +408,7 @@ int Enable_TSSI(char *value)
 
 	dprintf("\ninit, value=[%s]\n", value);
 
-	ret = mysystem("wl txpwr1 -d -o 16.5");	// 2005-03-08
+	ret = mysystem("wl txpwr1 -d -o 16.5"); // 2005-03-08
 
 	dprintf("done\n");
 	/*
@@ -420,7 +428,6 @@ int Enable_TSSI(char *value)
 
 int Change_Ant(char *value)
 {
-
 	dprintf("init, Change_Ant=[%s]\n", value);
 
 	switch (atoi(value)) {
@@ -463,7 +470,8 @@ int StartContinueTx_4702(webs_t wp, char *value)
 	tx_channel = websGetVar(wp, "wl_channel", NULL);
 	tx_rate = websGetVar(wp, "wl_rate", NULL);
 
-	printf("\ngmode=%s,channel=%s,rate=%s\n", tx_gmode, tx_channel, tx_rate);
+	printf("\ngmode=%s,channel=%s,rate=%s\n", tx_gmode, tx_channel,
+	       tx_rate);
 	channel = atoi(tx_channel);
 	rate = atoi(tx_rate);
 	gmode = atoi(tx_gmode);
@@ -472,7 +480,7 @@ int StartContinueTx_4702(webs_t wp, char *value)
 	printf("\ngmode=%d,channel=%d,rate=%d\n", gmode, channel, rate);
 
 	if (!strcmp(type, "0")) {
-		// 
+		//
 	} else if (!strcmp(type, "1")) {
 		/*
 		 * Start Continue TX, EVM 
@@ -488,7 +496,7 @@ int StartContinueTx_4702(webs_t wp, char *value)
 		mysystem("wl out");
 		mysystem("wl clk");
 		// sprintf(buf,"wl fqacurcy %d",channel);
-		// mysystem(buf); 
+		// mysystem(buf);
 
 		// channel=nvram_geti("wl_channel"));
 		// rate=nvram_geti("wl_rate"));
@@ -499,7 +507,6 @@ int StartContinueTx_4702(webs_t wp, char *value)
 		sprintf(buf, "wl evm %d %f &", channel, rates);
 		mysystem(buf);
 		printf("\nStartContinueTx, exec:%s\n", buf);
-
 	}
 	return ret;
 }
@@ -511,7 +518,7 @@ int StopContinueTx_4702(webs_t wp, char *value)
 
 	type = websGetVar(wp, "StopContinueTx", "");
 	if (!strcmp(type, "0")) {
-		// 
+		//
 	} else if (!strcmp(type, "1")) {
 		/*
 		 * Stop Continue TX, EVM 
@@ -522,9 +529,7 @@ int StopContinueTx_4702(webs_t wp, char *value)
 		mysystem("nvram set wl0_bcn=100");
 		mysystem("wlconf eth2 up");
 		printf("\nStopContinueTx\n");
-
 	}
 
 	return ret;
-
 }

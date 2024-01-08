@@ -52,11 +52,12 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 int wfflush(webs_t fp);
-static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
+static int do_file_attach(struct mime_handler *handler, char *path,
+			  webs_t stream, char *attachment);
 
-static int download_ssh_key(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+static int download_ssh_key(unsigned char method, struct mime_handler *handler,
+			    char *path, webs_t wp)
 {
-
 	char fname[128];
 	snprintf(fname, sizeof(fname), "%s", path);
 	char dname[128];
@@ -76,9 +77,12 @@ static int download_ssh_key(unsigned char method, struct mime_handler *handler, 
 
 	FILE *f1 = fopen(location, "r");
 	if (!f1) {
-		dd_loginfo("ssh_key_export", "ERROR: No generated private key is found at %s \n", location);
+		dd_loginfo("ssh_key_export",
+			   "ERROR: No generated private key is found at %s \n",
+			   location);
 	} else {
-		dd_loginfo("ssh_key_export", "SSHD private key downloaded from %s \n", location);
+		dd_loginfo("ssh_key_export",
+			   "SSHD private key downloaded from %s \n", location);
 		nvram_unset("sshd_keyready");
 		return do_file_attach(handler, location, wp, fname);
 	}

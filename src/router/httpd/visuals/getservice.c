@@ -65,26 +65,27 @@
 #include <arpa/inet.h>
 #include <shutils.h>
 
-#define	MAXALIASES	35
+#define MAXALIASES 35
 
 #ifndef _PATH_SERVICES
-#define	_PATH_SERVICES		"/etc/services"
+#define _PATH_SERVICES "/etc/services"
 #endif
 
-#define my_setservent(f) \
-{ \
-	servf = fopen(_PATH_SERVICES, "r"); \
-}
+#define my_setservent(f)                            \
+	{                                           \
+		servf = fopen(_PATH_SERVICES, "r"); \
+	}
 
-#define my_endservent() \
-{ \
-	if (servf) { \
-		fclose(servf); \
-		servf = NULL; \
-	} \
-}
+#define my_endservent()                \
+	{                              \
+		if (servf) {           \
+			fclose(servf); \
+			servf = NULL;  \
+		}                      \
+	}
 
-static struct servent *my_getservent(FILE * servf, struct servent *serv, char *serv_aliases, char *line)
+static struct servent *my_getservent(FILE *servf, struct servent *serv,
+				     char *serv_aliases, char *line)
 {
 	char *p;
 	register char *cp, **q;
@@ -112,7 +113,7 @@ again:
 	if (cp == NULL)
 		goto again;
 	*cp++ = '\0';
-	serv->s_port = htons((u_short) atoi(p));
+	serv->s_port = htons((u_short)atoi(p));
 	serv->s_proto = cp;
 	q = serv->s_aliases = serv_aliases;
 	cp = strpbrk(cp, " \t");

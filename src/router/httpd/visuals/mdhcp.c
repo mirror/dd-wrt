@@ -20,7 +20,7 @@
  * $Id:
  */
 
-EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t **argv)
 {
 	char buffer[256];
 	char buf[128];
@@ -28,24 +28,31 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 	char *next, *wordlist;
 
-	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", tran_string(buf, sizeof(buf), "networking.h5"));
-	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "networking.legend5"));
+	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n",
+		  tran_string(buf, sizeof(buf), "networking.h5"));
+	websWrite(wp, "<legend>%s</legend>\n",
+		  tran_string(buf, sizeof(buf), "networking.legend5"));
 
-	websWrite(wp, "<table id=\"mdhcp_table\" class=\"table\" summary=\"mdhcp\" cellspacing=\"7\"><thead><tr>\n");
+	websWrite(
+		wp,
+		"<table id=\"mdhcp_table\" class=\"table\" summary=\"mdhcp\" cellspacing=\"7\"><thead><tr>\n");
 	show_caption_pp(wp, NULL, "share.ip", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.enable", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.start", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.max", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.leasetime", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl",
+			"<th class=\"center\" width=\"10%%\">",
+			"</th></thead><tbody>\n");
 	bzero(buffer, 256);
 	getIfListNoPorts(buffer, NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("mdhcpd_count", 0);
 
 	wordlist = nvram_safe_get("mdhcpd");
-	foreach(word, wordlist, next) {
+	foreach(word, wordlist, next)
+	{
 		GETENTRYBYIDX(interface, word, 0);
 		GETENTRYBYIDX(dhcpon, word, 1);
 		GETENTRYBYIDX(start, word, 2);
@@ -67,7 +74,8 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%s/%d\n", ipaddr, getmask(netmask));
 		} else {
 			char buf[128];
-			websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.none"));
+			websWrite(wp, "%s",
+				  tran_string(buf, sizeof(buf), "share.none"));
 		}
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
@@ -77,26 +85,41 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		// on off
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpon%d", count);
-		showOptions_trans(wp, vlan_name, "On fwd Off", (char *[]) { "share.on", "share.forwarding", "share.off" }, dhcpon);
+		showOptions_trans(wp, vlan_name, "On fwd Off",
+				  (char *[]){ "share.on", "share.forwarding",
+					      "share.off" },
+				  dhcpon);
 		websWrite(wp, "</td>\n");
 		// start
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpstart%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, start);
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+			vlan_name, start);
 		websWrite(wp, "</td>\n");
 		// max
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpmax%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, max);
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+			vlan_name, max);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpleasetime%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, leasetime);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.minutes)</script></td>\n");
-		// 
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
-			  count);
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
+			vlan_name, leasetime);
+		websWrite(
+			wp,
+			"&nbsp;<script type=\"text/javascript\">Capture(share.minutes)</script></td>\n");
+		//
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
+			count);
 		websWrite(wp, "</tr>\n");
 		count++;
 	}
@@ -109,7 +132,8 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>\n");
 		{
 			char buf[128];
-			websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.none"));
+			websWrite(wp, "%s",
+				  tran_string(buf, sizeof(buf), "share.none"));
 		}
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
@@ -119,25 +143,40 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		// on off
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpon%d", totalcount);
-		showOptions_trans(wp, vlan_name, "On fwd Off", (char *[]) { "share.on", "share.forwarding", "share.off" }, "");
+		showOptions_trans(wp, vlan_name, "On fwd Off",
+				  (char *[]){ "share.on", "share.forwarding",
+					      "share.off" },
+				  "");
 		websWrite(wp, "</td>\n");
 		// start
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpstart%d", totalcount);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, "100");
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+			vlan_name, "100");
 		websWrite(wp, "</td>\n");
 		// max
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpmax%d", totalcount);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, "50");
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+			vlan_name, "50");
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpleasetime%d", totalcount);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, "1440");
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.minutes)</script></td>\n");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
-			  i);
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
+			vlan_name, "1440");
+		websWrite(
+			wp,
+			"&nbsp;<script type=\"text/javascript\">Capture(share.minutes)</script></td>\n");
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script>\n",
+			i);
 		websWrite(wp, "</tr>\n");
 		totalcount++;
 	}
@@ -148,11 +187,11 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td colspan=\"6\">&nbsp;</td>\n");
 	websWrite(wp, "<td class=\"center\">\n");
-	websWrite(wp,
-		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"mdhcp_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+	websWrite(
+		wp,
+		"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"mdhcp_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "</tbody></table>\n");
 	websWrite(wp, "</fieldset><br />\n");
-
 }

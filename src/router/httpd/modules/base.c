@@ -22,7 +22,7 @@
 #ifdef WEBS
 #include <uemf.h>
 #include <ej.h>
-#else				/* !WEBS */
+#else /* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif				/* WEBS */
+#endif /* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -63,16 +63,24 @@
 #define sys_stats(url) eval("stats", (url))
 
 // tofu
-int do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
-static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
-static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
-static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
-static int start_validator(char *name, webs_t wp, char *value, struct variable *v);
+int do_file(unsigned char method, struct mime_handler *handler, char *path,
+	    webs_t stream);
+static void send_headers(webs_t conn_fp, int status, char *title,
+			 char *extra_header, char *mime_type, int length,
+			 char *attach_file, int nocache);
+static int do_file_attach(struct mime_handler *handler, char *path,
+			  webs_t stream, char *attachment);
+static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler,
+			  char *url, webs_t stream);
+static int start_validator(char *name, webs_t wp, char *value,
+			   struct variable *v);
 char *websGetVar(webs_t wp, char *var, char *d);
 int websGetVari(webs_t wp, char *var, int d);
 static void start_gozila(char *name, webs_t wp);
-static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
-static int do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary);
+static void *start_validator_nofree(char *name, void *handle, webs_t wp,
+				    char *value, struct variable *v);
+static int do_upgrade_post(char *url, webs_t stream, size_t len,
+			   char *boundary);
 int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 char *wfgets(char *buf, int len, webs_t fp, int *eof);
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
@@ -86,7 +94,8 @@ static void send_authenticate(webs_t conn_fp);
 
 char *live_translate(webs_t wp, const char *tran);
 #ifdef HAVE_BUFFALO
-int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
+int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url,
+		webs_t stream);
 #endif
 /*
  * Deal with side effects before committing
@@ -94,13 +103,12 @@ int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, w
 static int _sys_commit(int noasync)
 {
 	if (nvram_matchi("dhcpnvram", 1)) {
-		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
+		killall("dnsmasq", SIGUSR2); // update lease -- tofu
 	}
 	if (noasync)
 		return _nvram_commit();
 	else
 		return nvram_async_commit();
-
 }
 
 /*
@@ -122,7 +130,7 @@ static int _sys_commit(int noasync)
 #include <dirent.h>
 #include <stdlib.h>
 
-static void StringStart(FILE * in)
+static void StringStart(FILE *in)
 {
 	while (getc(in) != '"') {
 		if (feof(in))
@@ -130,7 +138,7 @@ static void StringStart(FILE * in)
 	}
 }
 
-static char *getFileString(FILE * in)
+static char *getFileString(FILE *in)
 {
 	char *buf;
 	int i, b;
@@ -155,7 +163,7 @@ static char *getFileString(FILE * in)
 	return buf;
 }
 
-static void skipFileString(FILE * in)
+static void skipFileString(FILE *in)
 {
 	int i, b;
 
@@ -171,11 +179,8 @@ static void skipFileString(FILE * in)
 	return;
 }
 
-static char *directories[] = {
-	"/etc/config",
-	"/jffs/etc/config",
-	"/mmc/etc/config"
-};
+static char *directories[] = { "/etc/config", "/jffs/etc/config",
+			       "/mmc/etc/config" };
 
 struct SIMPLEVAL {
 	char *name;
@@ -183,7 +188,7 @@ struct SIMPLEVAL {
 	int args;
 };
 
-static void checkError(FILE * in, char *name, int line)
+static void checkError(FILE *in, char *name, int line)
 {
 	int showonce = 0;
 	while (!feof(in)) {
@@ -194,7 +199,10 @@ static void checkError(FILE * in, char *name, int line)
 			continue;
 		if (!showonce) {
 			showonce = 1;
-			dd_syslog(LOG_ERR, "Error in FILE %s on line %d, this may lead to strange effects like non working save actions\n", name, line + 1);
+			dd_syslog(
+				LOG_ERR,
+				"Error in FILE %s on line %d, this may lead to strange effects like non working save actions\n",
+				name, line + 1);
 		}
 	}
 }
@@ -304,7 +312,8 @@ void Initnvramtab()
 		// list all files in this directory
 		while ((entry = readdir(directory)) != NULL) {
 			if (endswith(entry->d_name, ".nvramconfig")) {
-				asprintf(&buf, "%s/%s", directories[idx], entry->d_name);
+				asprintf(&buf, "%s/%s", directories[idx],
+					 entry->d_name);
 				in = fopen(buf, "rb");
 				line = 0;
 				if (in == NULL) {
@@ -312,14 +321,14 @@ void Initnvramtab()
 					return;
 				}
 				while (1) {
-					tmp = (struct variable *)
-					    calloc(sizeof(struct variable), 1);
+					tmp = (struct variable *)calloc(
+						sizeof(struct variable), 1);
 					if (!tmp)
 						break;
 					tmp->name = getFileString(in);
 					if (tmp->name == NULL)
 						break;
-					skipFileString(in);	// long string
+					skipFileString(in); // long string
 					tmpstr = getFileString(in);
 					if (!tmpstr)
 						break;
@@ -328,15 +337,18 @@ void Initnvramtab()
 					}
 #ifdef HAVE_SPUTNIK_APD
 					if (!strcasecmp(tmpstr, "MJIDTYPE")) {
-						tmp->validatename = "validate_choice";
+						tmp->validatename =
+							"validate_choice";
 						debug_free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
+						tmp->argv = (char **)safe_malloc(
+							sizeof(char **) *
+							(len + 1));
 						for (i = 0; i < len; i++) {
-							tmp->argv[i] = getFileString(in);
+							tmp->argv[i] =
+								getFileString(
+									in);
 						}
 						tmp->argv[i] = NULL;
 						nvram_seti("sputnik_rereg", 1);
@@ -344,37 +356,60 @@ void Initnvramtab()
 #endif
 					if (tmp->validatename == NULL) {
 						int scount = 0;
-						while (simpleval[scount].name != NULL) {	//
-							if (!strcasecmp(tmpstr, simpleval[scount].name)) {	//
-//                                                              fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
-								tmp->validatename = simpleval[scount].validator;	//
+						while (simpleval[scount].name !=
+						       NULL) { //
+							if (!strcasecmp(
+								    tmpstr,
+								    simpleval[scount]
+									    .name)) { //
+								//                                                              fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
+								tmp->validatename =
+									simpleval[scount]
+										.validator; //
 								int arglen = 0;
-								if (simpleval[scount].args == -1) {	//
-									debug_free(tmpstr);
-									tmpstr = getFileString(in);	//
-									arglen = atoi(tmpstr);	//
+								if (simpleval[scount]
+									    .args ==
+								    -1) { //
+									debug_free(
+										tmpstr);
+									tmpstr = getFileString(
+										in); //
+									arglen = atoi(
+										tmpstr); //
 								}
-								if (simpleval[scount].args > 0) {	//
-									arglen = simpleval[scount].args;	//
+								if (simpleval[scount]
+									    .args >
+								    0) { //
+									arglen =
+										simpleval[scount]
+											.args; //
 								}
-								if (arglen) {	//
-									tmp->argv = (char **)safe_malloc(sizeof(char **) * (arglen + 1));	//
-									for (i = 0; i < arglen; i++) {	//
-										tmp->argv[i] = getFileString(in);	//
+								if (arglen) { //
+									tmp->argv = (char **)safe_malloc(
+										sizeof(char **) *
+										(arglen +
+										 1)); //
+									for (i = 0;
+									     i <
+									     arglen;
+									     i++) { //
+										tmp->argv
+											[i] = getFileString(
+											in); //
 									}
-									tmp->argv[arglen] = NULL;	//
-
+									tmp->argv[arglen] =
+										NULL; //
 								}
 								break;
 							}
 							scount++;
 						}
-//                                              if (simpleval[scount].name ==
-//                                                  NULL) {
-//                                                      fprintf(stderr,
-//                                                              "danger %s is missing\n",
-//                                                              tmpstr);
-//                                              }
+						//                                              if (simpleval[scount].name ==
+						//                                                  NULL) {
+						//                                                      fprintf(stderr,
+						//                                                              "danger %s is missing\n",
+						//                                                              tmpstr);
+						//                                              }
 					}
 					debug_free(tmpstr);
 					tmpstr = getFileString(in);
@@ -384,13 +419,15 @@ void Initnvramtab()
 						tmp->nullok = FALSE;
 					}
 					debug_free(tmpstr);
-					skipFileString(in);	// todo: remove it
+					skipFileString(in); // todo: remove it
 					checkError(in, buf, line++);
 					// tmpstr = getFileString (in);
 					// tmp->ezc_flags = atoi (tmpstr);
 					// free (tmpstr);
-					variables = (struct variable **)
-					    realloc(variables, sizeof(struct variable **) * (varcount + 2));
+					variables = (struct variable **)realloc(
+						variables,
+						sizeof(struct variable **) *
+							(varcount + 2));
 					variables[varcount++] = tmp;
 					variables[varcount] = NULL;
 				}
@@ -437,7 +474,7 @@ static int calclength(char *webfile, char *ifname)
 			}
 			if (webfile[i + 1] == 's') {
 				len += iflen;
-				len -= 2;	// substract size for %s
+				len -= 2; // substract size for %s
 			}
 		}
 		len++;
@@ -457,7 +494,8 @@ static void filteralphanum(char *str)
 
 static char *_tran_string(char *buf, size_t len, char *str)
 {
-	snprintf(buf, len - 1, "<script type=\"text/javascript\">Capture(%s)</script>", str);
+	snprintf(buf, len - 1,
+		 "<script type=\"text/javascript\">Capture(%s)</script>", str);
 	return buf;
 }
 
@@ -518,7 +556,8 @@ static char *insert(webs_t wp, char *ifname, char *index, char *filename)
 }
 
 /* bigfile.bin download method used for benchmarking. use http://x.x.x.x/bigfile.bin?size=FILESIZE to request any filesize you want */
-static int do_bigfile(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_bigfile(unsigned char method, struct mime_handler *handler,
+		      char *path, webs_t stream)
 {
 	char fs[128];
 	char *parameter = "s=";
@@ -535,9 +574,9 @@ static int do_bigfile(unsigned char method, struct mime_handler *handler, char *
 	}
 	char *size = strstr(fs, parameter);
 	if (!size)
-		return -1;	// size = NULL if parameter hasnt been found
+		return -1; // size = NULL if parameter hasnt been found
 	long long filesize = 0;
-	char *s_fs = size + strlen(parameter);	//skip s=
+	char *s_fs = size + strlen(parameter); //skip s=
 	char *uuid;
 	idx = strchr(s_fs, '&');
 	if (idx) {
@@ -568,23 +607,29 @@ static int do_bigfile(unsigned char method, struct mime_handler *handler, char *
 		if (s_fs[b] < '0' || s_fs[b] > '9')
 			return -1;
 	filesize = atoll(s_fs);
-	if (!filesize || filesize < 0)	//if argument is not numeric or invalid, just return with no action
+	if (!filesize ||
+	    filesize <
+		    0) //if argument is not numeric or invalid, just return with no action
 		return -1;
 	long i;
 	char *extra;
-	char *options = "Access-Control-Allow-Origin: *\r\n"	//
-	    "Access-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\n"	//
-	    "Access-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *";	//
+	char *options =
+		"Access-Control-Allow-Origin: *\r\n" //
+		"Access-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\n" //
+		"Access-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *"; //
 
 	if (handler->extra_header)
 		asprintf(&extra, "%s\r\n%s", options, handler->extra_header);
 	else
 		asprintf(&extra, "%s", options);
 	if (method == METHOD_OPTIONS) {
-		send_headers(stream, 200, "OK", extra, handler->mime_type, 0, NULL, 1);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
+		send_headers(
+			stream, 200, "OK", extra, handler->mime_type, 0, NULL,
+			1); // special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
 		goto ret;
 	} else {
-		send_headers(stream, 200, "OK", extra, handler->mime_type, filesize, "bigfile.bin", 1);
+		send_headers(stream, 200, "OK", extra, handler->mime_type,
+			     filesize, "bigfile.bin", 1);
 	}
 	// send body in 64 KiB chunks based on random values
 	FILE *fp;
@@ -608,13 +653,13 @@ static int do_bigfile(unsigned char method, struct mime_handler *handler, char *
 	wfsendfile(fileno(fp), 0, filesize % 65536, stream);
 	fclose(fp);
 
-      ret:;
+ret:;
 	debug_free(extra);
 	return 0;
-
 }
 
-static int do_redirect(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_redirect(unsigned char method, struct mime_handler *handler,
+		       char *path, webs_t stream)
 {
 	char redirect_path[128];
 	snprintf(redirect_path, sizeof(redirect_path), "Location: %s", path);
@@ -622,7 +667,8 @@ static int do_redirect(unsigned char method, struct mime_handler *handler, char 
 	return 0;
 }
 
-static int do_filtertable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_filtertable(unsigned char method, struct mime_handler *handler,
+			  char *path, webs_t stream)
 {
 	char ifname[32];
 	char *temp2;
@@ -633,7 +679,7 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 		temp2 = idx + 1;
 		strlcpy(ifname, temp2, sizeof(ifname));
 	}
-// and now the tricky part (more dirty as dirty)
+	// and now the tricky part (more dirty as dirty)
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3) {
 		if (*(temp3)) {
@@ -652,7 +698,8 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 	if (!temp)
 		return -1;
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	debug_free(temp);
 	return 0;
@@ -661,7 +708,8 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 #ifdef HAVE_FREERADIUS
 #include <radiusdb.h>
 
-static int cert_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int cert_file_out(unsigned char method, struct mime_handler *handler,
+			 char *path, webs_t stream)
 {
 	char *idx = strrchr(path, '/');
 	if (!idx)
@@ -678,14 +726,18 @@ static int cert_file_out(unsigned char method, struct mime_handler *handler, cha
 
 static void show_certfield(webs_t wp, char *title, char *file)
 {
-	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">%s</div>\n"
-		  "<script type=\"text/javascript\">\n"
-		  "//<![CDATA[\n"
-		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" style=\\\"float: right\\\" "
-		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" /><br />\");\n//]]>\n</script>\n</div>\n", title, file);
+	websWrite(
+		wp,
+		"<div class=\"setting\">\n<div class=\"label\">%s</div>\n"
+		"<script type=\"text/javascript\">\n"
+		"//<![CDATA[\n"
+		"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" style=\\\"float: right\\\" "
+		"value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" /><br />\");\n//]]>\n</script>\n</div>\n",
+		title, file);
 }
 
-static int do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_radiuscert(unsigned char method, struct mime_handler *handler,
+			 char *path, webs_t stream)
 {
 	char buf[128];
 	stream->path = path;
@@ -705,55 +757,75 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 	if (radiusindex == -1)
 		return -1;
 	struct radiusdb *db = loadradiusdb();
-	if (db == NULL)		// database empty
+	if (db == NULL) // database empty
 		return -1;
-	if (radiusindex >= db->usercount)	// index out of bound
+	if (radiusindex >= db->usercount) // index out of bound
 	{
 		goto out;
 	}
-	if (db->users[radiusindex].usersize == 0 || db->users[radiusindex].passwordsize == 0 || *(db->users[radiusindex].user) == 0 || *(db->users[radiusindex].passwd) == 0) {
+	if (db->users[radiusindex].usersize == 0 ||
+	    db->users[radiusindex].passwordsize == 0 ||
+	    *(db->users[radiusindex].user) == 0 ||
+	    *(db->users[radiusindex].passwd) == 0) {
 		//define username fail
 		char *argv[] = { "freeradius.clientcert" };
-		call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-		websWrite(wp, "</head>\n"
+		call_ej("do_pagehead", NULL, wp, 1, argv); // thats dirty
+		websWrite(wp,
+			  "</head>\n"
 			  "<body>\n"
-			  "<div id=\"main\">\n" "<div id=\"contentsInfo\" style=\"width: 360px\">\n"
+			  "<div id=\"main\">\n"
+			  "<div id=\"contentsInfo\" style=\"width: 360px\">\n"
 			  "<h2>%s</h2>\n"
 			  "Error: please specify a username and password.\n"
 			  "<br /><br />\n"
 			  "<div id=\"footer\" class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
-			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
+			  "//<![CDATA[\n"
+			  "submitFooterButton(0,0,0,0,0,1);\n"
+			  "//]]>\n"
+			  "</script>\n"
+			  "</div>\n"
+			  "</div>\n"
+			  "</div>\n"
+			  "</body>\n"
+			  "\n",
+			  _tran_string(buf, sizeof(buf),
+				       "freeradius.clientcert"));
 		websWrite(stream, "</html>");
 		goto out;
 	}
 	char filename[128];
 	char exec[512];
 	int generate = 0;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem", db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem",
+		db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.p12", db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.p12",
+		db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-key.pem", db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-key.pem",
+		db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-req.pem", db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-req.pem",
+		db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
 
-	if (generate)		//do not regenerate certificates if they are already created
+	if (generate) //do not regenerate certificates if they are already created
 	{
-
 		char expiration_days[64];
-		strlcpy(expiration_days, nvram_safe_get("radius_expiration"), sizeof(expiration_days));
-		long expiration = 0;	//never
+		strlcpy(expiration_days, nvram_safe_get("radius_expiration"),
+			sizeof(expiration_days));
+		long expiration = 0; //never
 		if (db->users[radiusindex].expiration) {
 			time_t tm;
 			time(&tm);
-			long curtime = ((tm / 60) / 60) / 24;	//in days
-			expiration = db->users[radiusindex].expiration - curtime;
+			long curtime = ((tm / 60) / 60) / 24; //in days
+			expiration =
+				db->users[radiusindex].expiration - curtime;
 			sprintf(expiration_days, "%ld", expiration);
 		}
 		//erase line from database
@@ -784,7 +856,8 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 						line++;
 					line++;
 				}
-				if (!strncmp(&serial[i], common, strlen(common))) {
+				if (!strncmp(&serial[i], common,
+					     strlen(common))) {
 					//found line
 					int lines = 0;
 					int ic = 0;
@@ -793,7 +866,8 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 							lines++;
 						}
 						if (line != lines)
-							output[oc++] = serial[ic];
+							output[oc++] =
+								serial[ic];
 						ic++;
 						if (ic == len)
 							break;
@@ -802,7 +876,9 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 				}
 			}
 			if (oc) {
-				fp = fopen("/jffs/etc/freeradius/certs/index.txt", "wb");
+				fp = fopen(
+					"/jffs/etc/freeradius/certs/index.txt",
+					"wb");
 				if (fp) {
 					fwrite(output, oc, 1, fp);
 					fclose(fp);
@@ -811,18 +887,24 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 			debug_free(output);
 			debug_free(serial);
 		}
-		eval("/jffs/etc/freeradius/certs/doclientcert",
-		     expiration_days,
+		eval("/jffs/etc/freeradius/certs/doclientcert", expiration_days,
 		     nvram_safe_get("radius_country"),
 		     nvram_safe_get("radius_state"),
 		     nvram_safe_get("radius_locality"),
-		     nvram_safe_get("radius_organisation"), nvram_safe_get("radius_email"), db->users[radiusindex].user, db->users[radiusindex].passwd, nvram_safe_get("radius_passphrase"));
+		     nvram_safe_get("radius_organisation"),
+		     nvram_safe_get("radius_email"),
+		     db->users[radiusindex].user, db->users[radiusindex].passwd,
+		     nvram_safe_get("radius_passphrase"));
 	}
-	char *argv[] = {
-		"freeradius.clientcert"
-	};
-	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\" style=\"width: 360px\">\n" "<h2>%s</h2>\n", _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
+	char *argv[] = { "freeradius.clientcert" };
+	call_ej("do_pagehead", NULL, wp, 1, argv); // thats dirty
+	websWrite(wp,
+		  "</head>\n"
+		  "<body>\n"
+		  "<div id=\"main\">\n"
+		  "<div id=\"contentsInfo\" style=\"width: 360px\">\n"
+		  "<h2>%s</h2>\n",
+		  _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
 	sprintf(filename, "ca.pem");
 	show_certfield(wp, "CA Certificate", filename);
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
@@ -833,13 +915,20 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 	show_certfield(wp, "Certificate Request", filename);
 	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
-	websWrite(wp,
-		  "<div id=\"footer\" class=\"submitFooter\">\n" "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n"
-		  "</body>\n");
+	websWrite(wp, "<div id=\"footer\" class=\"submitFooter\">\n"
+		      "<script type=\"text/javascript\">\n"
+		      "//<![CDATA[\n"
+		      "submitFooterButton(0,0,0,0,0,1);\n"
+		      "//]]>\n"
+		      "</script>\n"
+		      "</div>\n"
+		      "</div>\n"
+		      "</div>\n"
+		      "</body>\n");
 	websWrite(wp, "</html>");
 
 	//make certificates
-      out:;
+out:;
 	freeradiusdb(db);
 	return 0;
 }
@@ -847,7 +936,8 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 #endif
 
 #ifdef HAVE_ATH9K
-static int do_spectral_scan(unsigned char method, struct mime_handler *handler, char *p, webs_t stream)
+static int do_spectral_scan(unsigned char method, struct mime_handler *handler,
+			    char *p, webs_t stream)
 {
 #define json_cache "/tmp/spectral_scan.json"
 #define json_cache_timeout 2
@@ -856,9 +946,11 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	char *path;
 
 	if (is_ath11k(ifname))
-		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath11k", phy);
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath11k",
+			 phy);
 	else if (is_ath10k(ifname))
-		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath10k", phy);
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath10k",
+			 phy);
 	else
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
 
@@ -899,7 +991,7 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	asprintf(&exec, "fft_eval \"%s/spectral_scan0\"", path);
 
 	fp = popen(exec, "rb");
-//      FILE *fp = fopen(json_cache, "rb");
+	//      FILE *fp = fopen(json_cache, "rb");
 	debug_free(exec);
 	if (!fp) {
 		debug_free(path);
@@ -907,7 +999,8 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	}
 	char *buffer = malloc(65536 + 1);
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
 	int result = 0;
 	while (!feof(fp)) {
@@ -951,7 +1044,8 @@ static int sanitize_ifname(char *ifname)
 	return 0;
 }
 
-static int do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_activetable(unsigned char method, struct mime_handler *handler,
+			  char *path, webs_t stream)
 {
 	char ifname[32];
 	stream->path = path;
@@ -969,13 +1063,15 @@ static int do_activetable(unsigned char method, struct mime_handler *handler, ch
 	if (!temp)
 		return -1;
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	debug_free(temp);
 	return 0;
 }
 
-static int do_sitesurvey(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_sitesurvey(unsigned char method, struct mime_handler *handler,
+			 char *path, webs_t stream)
 {
 	char ifname[32];
 	stream->path = path;
@@ -988,13 +1084,15 @@ static int do_sitesurvey(unsigned char method, struct mime_handler *handler, cha
 	if (!temp)
 		return -1;
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	debug_free(temp);
 	return 0;
 }
 
-static int do_wds(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_wds(unsigned char method, struct mime_handler *handler,
+		  char *path, webs_t stream)
 {
 	char ifname[32];
 	stream->path = path;
@@ -1009,13 +1107,15 @@ static int do_wds(unsigned char method, struct mime_handler *handler, char *path
 	if (!temp)
 		return -1;
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	debug_free(temp);
 	return 0;
 }
 
-static int do_wireless_adv(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static int do_wireless_adv(unsigned char method, struct mime_handler *handler,
+			   char *path, webs_t stream)
 {
 	char ifname[32];
 	stream->path = path;
@@ -1026,7 +1126,7 @@ static int do_wireless_adv(unsigned char method, struct mime_handler *handler, c
 	char index[32];
 	int strl = strlen(ifname);
 	if (strl > 2)
-		substring(strl - 1, strl, ifname, index,sizeof(index));
+		substring(strl - 1, strl, ifname, index, sizeof(index));
 	else
 		return -1;
 	if (!strlen(index) || strlen(ifname) < 2)
@@ -1035,7 +1135,8 @@ static int do_wireless_adv(unsigned char method, struct mime_handler *handler, c
 	if (!temp)
 		return -1;
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	debug_free(temp);
 	return 0;
@@ -1060,21 +1161,28 @@ void validate_cgi(webs_t wp)
 		if (!value)
 			continue;
 #ifdef HAVE_IAS
-		if (!strcmp("http_username", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
+		if (!strcmp("http_username", variables[i]->name) &&
+		    strcmp(value, "d6nw5v1x2pc7st9m")) {
 			nvram_set("http_userpln", value);
-		} else if (!strcmp("http_passwd", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
+		} else if (!strcmp("http_passwd", variables[i]->name) &&
+			   strcmp(value, "d6nw5v1x2pc7st9m")) {
 			nvram_set("http_pwdpln", value);
 		}
 #endif
-		if ((!*value && variables[i]->nullok)
-		    || (!variables[i]->validate2name && !variables[i]->validatename))
+		if ((!*value && variables[i]->nullok) ||
+		    (!variables[i]->validate2name &&
+		     !variables[i]->validatename))
 			nvram_set(variables[i]->name, value);
 		else {
 			if (variables[i]->validatename) {
-				cprintf("call validator_nofree %s\n", variables[i]->validatename);
-				handle = start_validator_nofree(variables[i]->validatename, handle, wp, value, variables[i]);
+				cprintf("call validator_nofree %s\n",
+					variables[i]->validatename);
+				handle = start_validator_nofree(
+					variables[i]->validatename, handle, wp,
+					value, variables[i]);
 			} else if (variables[i]->validate2name) {
-				cprintf("call gozila %s\n", variables[i]->validate2name);
+				cprintf("call gozila %s\n",
+					variables[i]->validate2name);
 				start_gozila(variables[i]->validate2name, wp);
 				// fprintf(stderr,"validating %s =
 				// %s\n",variables[i]->name,value);
@@ -1083,7 +1191,6 @@ void validate_cgi(webs_t wp)
 				// variables[i]->validate2 (wp);
 			}
 		}
-
 	}
 	cprintf("close handle\n");
 	if (handle)
@@ -1118,11 +1225,11 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_IAS
 	{ "index", "admin_card", "", RESTART, "ias_save_admincard" },
 #endif
-	// {"index", "clone_mac", "", REFRESH, clone_mac}, //OBSOLETE
+// {"index", "clone_mac", "", REFRESH, clone_mac}, //OBSOLETE
 #ifdef HAVE_CCONTROL
 	{ "ccontrol", "execute", "", REFRESH, "execute" },
 #endif
-	{ "WanMAC", "clone_mac", "", REFRESH, "clone_mac" },	// for cisco
+	{ "WanMAC", "clone_mac", "", REFRESH, "clone_mac" }, // for cisco
 	// style
 	{ "Status_Lan", "delete", "", REFRESH_DELAY, "delete_leases" },
 	{ "Status_Lan", "static", "", REFRESH_DELAY, "static_leases" },
@@ -1134,27 +1241,39 @@ static struct gozila_action gozila_actions[] = {
 	// {"Status", "release", "dhcp_release", SYS_RESTART, "dhcp_release"},
 	// {"Status", "renew", "", REFRESH, "dhcp_renew"},
 	// {"Status", "Connect", "start_pppoe", RESTART, NULL},
-	{ "Status_Internet", "release", "dhcp_release", SERVICE_RESTART, "dhcp_release" },	// for
-	{ "Status_Internet", "renew", "", REFRESH, "dhcp_renew" },	// for cisco
-	{ "Status_Internet", "Disconnect", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for
+	{ "Status_Internet", "release", "dhcp_release", SERVICE_RESTART,
+	  "dhcp_release" }, // for
+	{ "Status_Internet", "renew", "", REFRESH, "dhcp_renew" }, // for cisco
+	{ "Status_Internet", "Disconnect", "stop_pppoe", SERVICE_RESTART,
+	  "stop_ppp" }, // for
 #ifdef HAVE_3G
-	{ "Status_Internet", "Connect_3g", "start_3g", RESTART, NULL },	// for
-	{ "Status_Internet", "Disconnect_3g", "stop_3g", SERVICE_RESTART, "stop_ppp" },	// for
+	{ "Status_Internet", "Connect_3g", "start_3g", RESTART, NULL }, // for
+	{ "Status_Internet", "Disconnect_3g", "stop_3g", SERVICE_RESTART,
+	  "stop_ppp" }, // for
 #endif
 #ifdef HAVE_PPPOATM
-	{ "Status_Internet", "Connect_pppoa", "start_pppoa", RESTART, NULL },	// for
-	{ "Status_Internet", "Disconnect_pppoa", "stop_pppoa", SERVICE_RESTART, "stop_ppp" },	// for
+	{ "Status_Internet", "Connect_pppoa", "start_pppoa", RESTART,
+	  NULL }, // for
+	{ "Status_Internet", "Disconnect_pppoa", "stop_pppoa", SERVICE_RESTART,
+	  "stop_ppp" }, // for
 #endif
-	{ "Status_Internet", "Connect_pppoe", "start_pppoe", RESTART, NULL },	// for
-	{ "Status_Internet", "Disconnect_pppoe", "stop_pppoe", SERVICE_RESTART, "stop_ppp" },	// for
+	{ "Status_Internet", "Connect_pppoe", "start_pppoe", RESTART,
+	  NULL }, // for
+	{ "Status_Internet", "Disconnect_pppoe", "stop_pppoe", SERVICE_RESTART,
+	  "stop_ppp" }, // for
 #ifdef HAVE_SPEEDTEST_CLI
-	{ "Status_Internet", "speedtest", "speedtest", SERVICE_RESTART, NULL },	// for
+	{ "Status_Internet", "speedtest", "speedtest", SERVICE_RESTART,
+	  NULL }, // for
 #endif
 
-	{ "Status_Internet", "Connect_pptp", "start_pptp", RESTART, NULL },	// for
-	{ "Status_Internet", "Disconnect_pptp", "stop_pptp", SERVICE_RESTART, "stop_ppp" },	// for
-	{ "Status_Internet", "Connect_l2tp", "start_l2tp", RESTART, NULL },	// for
-	{ "Status_Internet", "Disconnect_l2tp", "stop_l2tp", SERVICE_RESTART, "stop_ppp" },	// for
+	{ "Status_Internet", "Connect_pptp", "start_pptp", RESTART,
+	  NULL }, // for
+	{ "Status_Internet", "Disconnect_pptp", "stop_pptp", SERVICE_RESTART,
+	  "stop_ppp" }, // for
+	{ "Status_Internet", "Connect_l2tp", "start_l2tp", RESTART,
+	  NULL }, // for
+	{ "Status_Internet", "Disconnect_l2tp", "stop_l2tp", SERVICE_RESTART,
+	  "stop_ppp" }, // for
 	// cisco
 	// style{
 	// "Status_Router",
@@ -1167,22 +1286,23 @@ static struct gozila_action gozila_actions[] = {
 	// for
 	// cisco
 	// style
-	{ "Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", SERVICE_RESTART, "stop_ppp" },	// for
+	{ "Status_Internet", "Disconnect_heartbeat", "stop_heartbeat",
+	  SERVICE_RESTART, "stop_ppp" }, // for
 	// cisco
 	// style
-	{ "Status_Internet", "delete_ttraffdata", "", REFRESH,
-	 "ttraff_erase" },
+	{ "Status_Internet", "delete_ttraffdata", "", REFRESH, "ttraff_erase" },
 	{ "Filters", "save", "filters", REFRESH, "save_policy" },
 	{ "Filters", "delete", "filters", REFRESH, "single_delete_policy" },
 	{ "FilterSummary", "delete", "filters", REFRESH,
-	 "summary_delete_policy" },
+	  "summary_delete_policy" },
 	{ "Routing", "del", "static_route_del", REFRESH,
-	 "delete_static_route" },
+	  "delete_static_route" },
 	{ "RouteStatic", "del", "static_route_del", REFRESH,
-	 "delete_static_route" },
+	  "delete_static_route" },
 #ifndef HAVE_MICRO
 	{ "Routing", "del_rule", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
-	{ "RouteStatic", "del_rule", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
+	{ "RouteStatic", "del_rule", "pbr_rule_del", REFRESH,
+	  "delete_pbr_rule" },
 #endif
 	{ "WL_WPATable", "wep_key_generate", "", REFRESH, "generate_wep_key" },
 	{ "WL_WPATable", "security", "", REFRESH, "set_security" },
@@ -1196,20 +1316,20 @@ static struct gozila_action gozila_actions[] = {
 	 * Siafu addition
 	 */
 	{ "Wol", "wol", "", REFRESH, "ping_wol" },
-	/*
+/*
 	 * Sveasoft addition
 	 */
-	// {"Wireless_WDS", "save", "", REFRESH, save_wds},
+// {"Wireless_WDS", "save", "", REFRESH, save_wds},
 #ifndef HAVE_MADWIFI
 	{ "Wireless_WDS-wl0", "save", "wireless_2", REFRESH, "save_wds" },
 	{ "Wireless_WDS-wl1", "save", "wireless_2", REFRESH, "save_wds" },
 	{ "Wireless_WDS-wl2", "save", "wireless_2", REFRESH, "save_wds" },
 	{ "Wireless_Advanced-wl0", "save", "wireless_2", REFRESH,
-	 "save_wireless_advanced" },
+	  "save_wireless_advanced" },
 	{ "Wireless_Advanced-wl1", "save", "wireless_2", REFRESH,
-	 "save_wireless_advanced" },
+	  "save_wireless_advanced" },
 	{ "Wireless_Advanced-wl2", "save", "wireless_2", REFRESH,
-	 "save_wireless_advanced" },
+	  "save_wireless_advanced" },
 #else
 	{ "Wireless_WDS-wlan0", "save", "wireless_2", REFRESH, "save_wds" },
 	{ "Wireless_WDS-wlan1", "save", "wireless_2", REFRESH, "save_wds" },
@@ -1245,13 +1365,11 @@ static struct gozila_action gozila_actions[] = {
 	{ "Wireless_Basic", "paste_if", "", REFRESH, "paste_if" },
 #ifdef HAVE_FREERADIUS
 	{ "FreeRadius", "generate_certificate", "", REFRESH,
-	 "radius_generate_certificate" },
+	  "radius_generate_certificate" },
 	{ "FreeRadius", "add_radius_user", "", REFRESH, "add_radius_user" },
 	{ "FreeRadius", "del_radius_user", "", REFRESH, "del_radius_user" },
-	{ "FreeRadius", "add_radius_client", "", REFRESH,
-	 "add_radius_client" },
-	{ "FreeRadius", "del_radius_client", "", REFRESH,
-	 "del_radius_client" },
+	{ "FreeRadius", "add_radius_client", "", REFRESH, "add_radius_client" },
+	{ "FreeRadius", "del_radius_client", "", REFRESH, "del_radius_client" },
 	{ "FreeRadius", "save_radius_user", "", REFRESH, "save_radius_user" },
 #endif
 #ifdef HAVE_POKER
@@ -1281,7 +1399,8 @@ static struct gozila_action gozila_actions[] = {
 	{ "Networking", "del_vlan", "", REFRESH, "del_vlan" },
 	{ "Networking", "del_bridge", "", REFRESH, "del_bridge" },
 	{ "Networking", "del_bridgeif", "", REFRESH, "del_bridgeif" },
-	{ "Networking", "save_networking", "index", REFRESH, "save_networking" },
+	{ "Networking", "save_networking", "index", REFRESH,
+	  "save_networking" },
 	{ "Networking", "add_mdhcp", "", REFRESH, "add_mdhcp" },
 	{ "Networking", "del_mdhcp", "", REFRESH, "del_mdhcp" },
 #endif
@@ -1341,43 +1460,43 @@ static struct gozila_action gozila_actions[] = {
 	{ "Triggering", "add_trigger", "", REFRESH, "trigger_add" },
 	{ "Triggering", "del_trigger", "", REFRESH, "trigger_del" },
 	{ "Port_Services", "save_services", "filters", REFRESH,
-	 "save_services_port" },
+	  "save_services_port" },
 	{ "QOSPort_Services", "save_qosservices", "filters", REFRESH,
-	 "save_services_port" },
+	  "save_services_port" },
 	{ "Diagnostics", "start", "", SERVICE_RESTART, "diag_ping_start" },
 	{ "Diagnostics", "stop", "", REFRESH, "diag_ping_stop" },
 	{ "Diagnostics", "clear", "", REFRESH, "diag_ping_clear" },
 #ifdef HAVE_MILKFISH
 	{ "Milkfish_database", "add_milkfish_user", "", REFRESH,
-	 "milkfish_user_add" },
+	  "milkfish_user_add" },
 	{ "Milkfish_database", "remove_milkfish_user", "", REFRESH,
-	 "milkfish_user_remove" },
+	  "milkfish_user_remove" },
 	{ "Milkfish_aliases", "add_milkfish_alias", "", REFRESH,
-	 "milkfish_alias_add" },
+	  "milkfish_alias_add" },
 	{ "Milkfish_aliases", "remove_milkfish_alias", "", REFRESH,
-	 "milkfish_alias_remove" },
+	  "milkfish_alias_remove" },
 	{ "Milkfish_messaging", "send_message", "", SERVICE_RESTART,
-	 "milkfish_sip_message" },
+	  "milkfish_sip_message" },
 #endif
 #ifdef HAVE_STATUS_GPIO
 	{ "Gpio", "gpios_save", "", REFRESH, "gpios_save" },
 #endif
 #ifdef HAVE_BUFFALO
 	{ "SetupAssistant", "save", "setupassistant", REFRESH,
-	 "setupassistant_save" },
+	  "setupassistant_save" },
 	{ "SetupAssistant", "wep_key_generate", "setupassistant", REFRESH,
-	 "generate_wep_key" },
+	  "generate_wep_key" },
 	{ "SetupAssistant", "security", "setupassistant", REFRESH,
-	 "set_security" },
+	  "set_security" },
 	{ "SetupAssistant", "keysize", "setupassistant", REFRESH,
-	 "security_save" },
+	  "security_save" },
 	{ "Upgrade", "get_upgrades", "firmware", REFRESH,
-	 "get_airstation_upgrades" },
+	  "get_airstation_upgrades" },
 #ifdef HAVE_IAS
 	{ "InternetAtStart", "proceed", "internetatstart", REFRESH,
-	 "internetatstart" },
+	  "internetatstart" },
 	{ "InternetAtStart.ajax", "ajax", "intatstart_ajax", REFRESH,
-	 "intatstart_ajax" },
+	  "intatstart_ajax" },
 #endif
 #ifdef HAVE_SPOTPASS
 	{ "Nintendo", "save", "spotpass", REFRESH, "nintendo_save" },
@@ -1424,7 +1543,8 @@ static struct gozila_action *handle_gozila_action(char *name, char *type)
 	if (!name || !type)
 		return NULL;
 
-	for (v = gozila_actions; v < &gozila_actions[STRUCT_LEN(gozila_actions)]; v++) {
+	for (v = gozila_actions;
+	     v < &gozila_actions[STRUCT_LEN(gozila_actions)]; v++) {
 		if (!strcmp(v->name, name) && !strcmp(v->type, type)) {
 			return v;
 		}
@@ -1432,25 +1552,29 @@ static struct gozila_action *handle_gozila_action(char *name, char *type)
 	return NULL;
 }
 
-static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, struct mime_handler *handler)
+static int gozila_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
+		      char_t *url, char_t *path, struct mime_handler *handler)
 {
 	char *submit_button, *submit_type, *next_page;
 	int action = REFRESH;
 	struct gozila_action *act;
 
 	wp->gozila_action = 1;
-	submit_button = websGetVar(wp, "submit_button", NULL);	/* every html
+	submit_button = websGetVar(wp, "submit_button", NULL); /* every html
 								 * must have
 								 * the name */
-	submit_type = websGetVar(wp, "submit_type", NULL);	/* add, del,
+	submit_type = websGetVar(wp, "submit_type", NULL); /* add, del,
 								 * renew,
 								 * release
 								 * ..... */
-	dd_logdebug("httpd", "submit_button=[%s] submit_type=[%s]\n", submit_button, submit_type);
+	dd_logdebug("httpd", "submit_button=[%s] submit_type=[%s]\n",
+		    submit_button, submit_type);
 	act = handle_gozila_action(submit_button, submit_type);
 
 	if (act) {
-		dd_logdebug("httpd", "name=[%s] type=[%s] service=[%s] action=[%d]\n", act->name, act->type, act->service, act->action);
+		dd_logdebug("httpd",
+			    "name=[%s] type=[%s] service=[%s] action=[%d]\n",
+			    act->name, act->type, act->service, act->action);
 		action = act->action;
 		if (act->goname) {
 			start_gozila(act->goname, wp);
@@ -1487,21 +1611,21 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	} else
 		sprintf(newpath, "%s.asp", submit_button);
 	if (!strncmp(newpath, "WL_FilterTable", 14))
-		do_filtertable(METHOD_GET, handler, newpath, wp);	// refresh
+		do_filtertable(METHOD_GET, handler, newpath, wp); // refresh
 #ifdef HAVE_FREERADIUS
 	else if (!strncmp(newpath, "FreeRadiusCert", 14))
-		do_radiuscert(METHOD_GET, handler, newpath, wp);	// refresh
+		do_radiuscert(METHOD_GET, handler, newpath, wp); // refresh
 #endif
 	// #ifdef HAVE_MADWIFI
 	else if (!strncmp(newpath, "WL_ActiveTable", 14))
-		do_activetable(METHOD_GET, handler, newpath, wp);	// refresh
+		do_activetable(METHOD_GET, handler, newpath, wp); // refresh
 	else if (!strncmp(newpath, "Wireless_WDS", 12))
-		do_wds(METHOD_GET, handler, newpath, wp);	// refresh
+		do_wds(METHOD_GET, handler, newpath, wp); // refresh
 	// #endif
 	else if (!strncmp(newpath, "Wireless_Advanced", 17))
-		do_wireless_adv(METHOD_GET, handler, newpath, wp);	// refresh
+		do_wireless_adv(METHOD_GET, handler, newpath, wp); // refresh
 	else
-		do_ej(METHOD_GET, handler, newpath, wp);	// refresh
+		do_ej(METHOD_GET, handler, newpath, wp); // refresh
 
 #ifdef HAVE_ANTAIRA
 	// @markus. this is wrong here, it works as a hack but structural it should use handlers
@@ -1542,17 +1666,17 @@ static struct apply_action apply_actions[] = {
 	/*
 	 * WIRELESS
 	 */
-	{ "Wireless_Basic", "wireless", SERVICE_RESTART, NULL },	// Only for
+	{ "Wireless_Basic", "wireless", SERVICE_RESTART, NULL }, // Only for
 	// V23, since
 	// V24 it's a
 	// gozilla
 	// save
 	{ "Wireless_Advanced-wl0", "wireless_2", SERVICE_RESTART,
-	 "save_wireless_advanced" },
+	  "save_wireless_advanced" },
 	{ "Wireless_Advanced-wl1", "wireless_2", SERVICE_RESTART,
-	 "save_wireless_advanced" },
+	  "save_wireless_advanced" },
 	{ "Wireless_Advanced-wl2", "wireless_2", SERVICE_RESTART,
-	 "save_wireless_advanced" },
+	  "save_wireless_advanced" },
 	{ "Wireless_MAC", "wireless_2", SERVICE_RESTART, "save_macmode" },
 	{ "WL_FilterTable", "macfilter", SERVICE_RESTART, NULL },
 	{ "Wireless_WDS", "wireless_2", SERVICE_RESTART, NULL },
@@ -1577,7 +1701,7 @@ static struct apply_action apply_actions[] = {
 	{ "NAS", "nassrv", SERVICE_RESTART, NULL },
 	{ "Hotspot", "hotspot", SERVICE_RESTART, "hotspot_save" },
 	{ "Hotspot", "hotspot", SERVICE_RESTART, NULL },
-//      {"AnchorFree", "anchorfree", SERVICE_RESTART, NULL},
+	//      {"AnchorFree", "anchorfree", SERVICE_RESTART, NULL},
 	{ "Nintendo", "nintendo", SERVICE_RESTART, NULL },
 
 	/*
@@ -1628,7 +1752,8 @@ static struct apply_action *handle_apply_action(char *name)
 	if (!name)
 		return NULL;
 
-	for (v = apply_actions; v < &apply_actions[STRUCT_LEN(apply_actions)]; v++) {
+	for (v = apply_actions; v < &apply_actions[STRUCT_LEN(apply_actions)];
+	     v++) {
 		if (!strcmp(v->name, name)) {
 			return v;
 		}
@@ -1636,13 +1761,15 @@ static struct apply_action *handle_apply_action(char *name)
 	return NULL;
 }
 
-static void do_logout(webs_t conn_fp)	// static functions are not exportable,
-				// additionally this is no ej function
+static void do_logout(webs_t conn_fp) // static functions are not exportable,
+	// additionally this is no ej function
 {
 	send_authenticate(conn_fp);
 }
 
-static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char *query, struct mime_handler *handler)
+static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
+		      char_t *url, char_t *path, char *query,
+		      struct mime_handler *handler)
 {
 	int action = NOTHING;
 	char *value;
@@ -1656,19 +1783,22 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		char *wan_proto = websGetVar(wp, "wan_proto", NULL);
 		char *wshaper_enable = websGetVar(wp, "wshaper_enable", NULL);
 		if (wan_proto && !nvram_match("wan_proto", wan_proto)) {
-			if (strcmp(wan_proto, "static") && strcmp(wan_proto, "dhcp") && (fa && strcmp(fa, "0"))) {
+			if (strcmp(wan_proto, "static") &&
+			    strcmp(wan_proto, "dhcp") &&
+			    (fa && strcmp(fa, "0"))) {
 				need_reboot = 1;
 			}
 		}
-		if (wshaper_enable && !nvram_match("wshaper_enable", wshaper_enable)) {
-			if (!strcmp(wshaper_enable, "1") && !nvram_match("ctf_fa_mode", "0"))
+		if (wshaper_enable &&
+		    !nvram_match("wshaper_enable", wshaper_enable)) {
+			if (!strcmp(wshaper_enable, "1") &&
+			    !nvram_match("ctf_fa_mode", "0"))
 				need_reboot = 1;
 		}
 		if (fa && nvram_geti("ctf_fa_mode") != atoi(fa))
 			need_reboot = 1;
 		if (need_reboot)
 			nvram_seti("do_reboot", 1);
-
 	}
 	if (*nvram_safe_get("vlans")) {
 		char *vlans = websGetVar(wp, "vlans", NULL);
@@ -1685,21 +1815,25 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
-		dd_logdebug("httpd", "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", "no call defined"));
+		dd_logdebug("httpd", "[GOZILLA_APPLY] %s %s %s\n",
+			    websGetVar(wp, "submit_button", NULL),
+			    websGetVar(wp, "submit_type", NULL),
+			    websGetVar(wp, "call", "no call defined"));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, handler);
 		return;
 	}
 
-				/***************************************************************************/
+	/***************************************************************************/
 	if (!query) {
 		goto footer;
 	}
-	if (legal_ip_netmask("lan_ipaddr", "lan_netmask", wp->http_client_ip) == TRUE)
+	if (legal_ip_netmask("lan_ipaddr", "lan_netmask", wp->http_client_ip) ==
+	    TRUE)
 		wp->browser_method = USE_LAN;
 	else
 		wp->browser_method = USE_WAN;
 
-  /**********   get all webs var **********/
+	/**********   get all webs var **********/
 
 	submit_button = websGetVar(wp, "submit_button", "");
 	cprintf("get submit_button = %s\n", submit_button);
@@ -1707,9 +1841,9 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	value = websGetVar(wp, "action", "");
 	cprintf("get action = %s\n", value);
 
-  /**********   check action to do **********/
+	/**********   check action to do **********/
 
-  /** Apply **/
+	/** Apply **/
 	if (!strcmp(value, "Apply") || !strcmp(value, "ApplyTake")) {
 		struct apply_action *act;
 
@@ -1723,10 +1857,13 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		nvram_seti("is_default", 0);
 		nvram_seti("is_modified", 1);
 		if (act) {
-			dd_logdebug("httpd", "%s:submit_button=[%s] service=[%s] action=[%d]\n", value, act->name, act->service, act->action);
+			dd_logdebug(
+				"httpd",
+				"%s:submit_button=[%s] service=[%s] action=[%d]\n",
+				value, act->name, act->service, act->action);
 
-			if ((act->action == SYS_RESTART)
-			    || (act->action == SERVICE_RESTART)) {
+			if ((act->action == SYS_RESTART) ||
+			    (act->action == SERVICE_RESTART)) {
 				if (!nvram_exists("nowebaction")) {
 					addAction(act->service);
 				} else
@@ -1748,7 +1885,7 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		}
 	}
 
-				/** Restore defaults **/
+	/** Restore defaults **/
 	else if (!strncmp(value, "Restore", 7)) {
 		ACTION("ACT_SW_RESTORE");
 		nvram_seti("sv_restore_defaults", 1);
@@ -1783,12 +1920,12 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
 		for (i = 0; i < 65536; i++)
-			putc(0, in);	// erase backup area
+			putc(0, in); // erase backup area
 		fclose(in);
 		eval("mount", "/usr/local", "-o", "remount,rw");
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		unlink("/tmp/nvram/.lock");	// delete nvram database
-		eval("rm", "-f", "/usr/local/nvram/*");	// delete nvram
+		eval("rm", "-f", "/tmp/nvram/*"); // delete nvram database
+		unlink("/tmp/nvram/.lock"); // delete nvram database
+		eval("rm", "-f", "/usr/local/nvram/*"); // delete nvram
 		// database
 		eval("mount", "/usr/local", "-o", "remount,ro");
 		eval("sync");
@@ -1801,15 +1938,16 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
 		for (i = 0; i < 65536; i++)
-			putc(0, in);	// erase backup area
+			putc(0, in); // erase backup area
 		fclose(in);
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		unlink("/tmp/nvram/.lock");	// delete nvram database
-		eval("rm", "-f", "/usr/local/nvram/*");	// delete nvram
+		eval("rm", "-f", "/tmp/nvram/*"); // delete nvram database
+		unlink("/tmp/nvram/.lock"); // delete nvram database
+		eval("rm", "-f", "/usr/local/nvram/*"); // delete nvram
 		eval("sync");
 #elif HAVE_OPENRISC
 #ifdef HAVE_ERC
-		eval("cp", "-f", "/etc/defaults/nvram.bin", "/usr/local/nvram/nvram.bin");
+		eval("cp", "-f", "/etc/defaults/nvram.bin",
+		     "/usr/local/nvram/nvram.bin");
 		eval("sync");
 		eval("sync");
 		struct timespec tim, tim2;
@@ -1819,18 +1957,18 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		eval("event", "5", "1", "15");
 #endif
 		eval("mount", "/usr/local", "-o", "remount,rw");
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		unlink("/tmp/nvram/.lock");	// delete nvram database
-		eval("rm", "-f", "/usr/local/nvram/*");	// delete nvram
+		eval("rm", "-f", "/tmp/nvram/*"); // delete nvram database
+		unlink("/tmp/nvram/.lock"); // delete nvram database
+		eval("rm", "-f", "/usr/local/nvram/*"); // delete nvram
 		// database
 		eval("mount", "/usr/local", "-o", "remount,ro");
 #elif HAVE_RB500
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		unlink("/tmp/nvram/.lock");	// delete nvram database
-		eval("rm", "-f", "/etc/nvram/*");	// delete nvram database
+		eval("rm", "-f", "/tmp/nvram/*"); // delete nvram database
+		unlink("/tmp/nvram/.lock"); // delete nvram database
+		eval("rm", "-f", "/etc/nvram/*"); // delete nvram database
 #elif HAVE_MAGICBOX
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		unlink("/tmp/nvram/.lock");	// delete nvram database
+		eval("rm", "-f", "/tmp/nvram/*"); // delete nvram database
+		unlink("/tmp/nvram/.lock"); // delete nvram database
 		nvram_clear();
 		nvram_commit();
 #endif
@@ -1844,12 +1982,12 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		action = REBOOT;
 	}
 
-				/** Reboot **/
+	/** Reboot **/
 	else if (!strncmp(value, "Reboot", 6)) {
 		action = REBOOT;
 	}
 
-				/** GUI Logout **/
+	/** GUI Logout **/
 	// Experimental, does not work yet ...
 	else if (!strncmp(value, "Logout", 6)) {
 		do_ej(METHOD_GET, NULL, "Logout.asp", wp);
@@ -1905,7 +2043,6 @@ footer:
 		service_restart();
 
 	return;
-
 }
 
 //int auth_check( char *dirname, char *authorization )
@@ -1922,7 +2059,8 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 	wp->userid = 1;
 	char passout[MD5_OUT_BUFSIZE];
 	strlcpy(wp->auth_userid, zencrypt("SuperAdmin", passout), AUTH_MAX - 1);
-	strlcpy(wp->auth_passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX - 1);
+	strlcpy(wp->auth_passwd, nvram_safe_get("newhttp_passwd"),
+		AUTH_MAX - 1);
 	if (auth_check(wp))
 		return 1;
 	wp->userid = 0;
@@ -1937,23 +2075,23 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(nvram_matchi("info_passwd", 0))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
 
 static int do_auth_changepass(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if ((nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS)))
+	if ((nvram_match("http_username", DEFAULT_USER) &&
+	     nvram_match("http_passwd", DEFAULT_PASS)))
 		return 1;
 	return do_auth(wp, auth_check);
-
 }
 
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(!wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1964,7 +2102,8 @@ static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_DDLAN
 static int do_auth2(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	strlcpy(wp->auth_userid, nvram_safe_get("http2_username"), AUTH_MAX - 1);
+	strlcpy(wp->auth_userid, nvram_safe_get("http2_username"),
+		AUTH_MAX - 1);
 	strlcpy(wp->auth_passwd, nvram_safe_get("http2_passwd"), AUTH_MAX - 1);
 	// strncpy(realm, MODEL_NAME, AUTH_MAX);
 	strlcpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX - 1);
@@ -1978,19 +2117,24 @@ char ezc_version[128];
 
 // #endif
 
-int				// support GET and POST 2003-08-22
+int // support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 {
 	int count;
 	if (stream->post == 1) {
 		if (!(len + 1)) {
-			dd_logerror("httpd", "The POST data content length is bullshit\n");
+			dd_logerror(
+				"httpd",
+				"The POST data content length is bullshit\n");
 			return -1;
 		}
 		stream->post_buf = (char *)malloc(len + 1);
 
 		if (!stream->post_buf) {
-			dd_logerror("httpd", "The POST data exceed length limit! (allocation of %ld bytes failed)\n", len + 1);
+			dd_logerror(
+				"httpd",
+				"The POST data exceed length limit! (allocation of %ld bytes failed)\n",
+				len + 1);
 			return -1;
 		}
 		/*
@@ -1998,7 +2142,8 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		 */
 		if (!(count = wfread(stream->post_buf, 1, len, stream)))
 			return -1;
-		stream->post_buf[count] = '\0';;
+		stream->post_buf[count] = '\0';
+		;
 		len -= strlen(stream->post_buf);
 		/*
 		 * Slurp anything remaining in the request
@@ -2006,7 +2151,10 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		if (len) {
 			char *buf = malloc(len);
 			if (!buf) {
-				dd_logerror("httpd", "The POST data exceed length limit! (remaining request of length %ld failed)\n", len);
+				dd_logerror(
+					"httpd",
+					"The POST data exceed length limit! (remaining request of length %ld failed)\n",
+					len);
 				return -1;
 			}
 			wfgets(buf, len, stream, NULL);
@@ -2018,7 +2166,8 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 }
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-static int do_cfebackup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_cfebackup(unsigned char method, struct mime_handler *handler,
+			char *url, webs_t stream)
 {
 	FILE *fp = fopen("/dev/mtd/0", "rb");
 	if (fp) {
@@ -2031,7 +2180,8 @@ static int do_cfebackup(unsigned char method, struct mime_handler *handler, char
 			putc(getc(fp), out);
 		fclose(out);
 		fclose(fp);
-		int ret = do_file_attach(handler, "/tmp/cfe.bin", stream, "cfe.bin");
+		int ret = do_file_attach(handler, "/tmp/cfe.bin", stream,
+					 "cfe.bin");
 		unlink("/tmp/cfe.bin");
 		return ret;
 	}
@@ -2040,20 +2190,27 @@ static int do_cfebackup(unsigned char method, struct mime_handler *handler, char
 #endif
 
 #ifdef HAVE_PRIVOXY
-static int do_wpad(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_wpad(unsigned char method, struct mime_handler *handler,
+		   char *url, webs_t stream)
 {
 	FILE *fp;
 
 	fp = fopen("/tmp/wpad.dat", "wb");
 
 	if (fp != NULL) {
-		fprintf(fp, "function FindProxyForURL(url, host) {\n"	//
-			"var proxy = \"PROXY %s:8118; DIRECT\";\n"	//
-			"var direct = \"DIRECT\";\n"	//
-			"if(isPlainHostName(host)) return direct;\n"	//
-			"if (\n" "url.substring(0, 4) == \"ftp:\" ||\n"	//
-			"url.substring(0, 6) == \"rsync:\"\n" ")\n"	//
-			"return direct;\n" "return proxy;\n" "}", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp,
+			"function FindProxyForURL(url, host) {\n" //
+			"var proxy = \"PROXY %s:8118; DIRECT\";\n" //
+			"var direct = \"DIRECT\";\n" //
+			"if(isPlainHostName(host)) return direct;\n" //
+			"if (\n"
+			"url.substring(0, 4) == \"ftp:\" ||\n" //
+			"url.substring(0, 6) == \"rsync:\"\n"
+			")\n" //
+			"return direct;\n"
+			"return proxy;\n"
+			"}",
+			nvram_safe_get("lan_ipaddr"));
 		fclose(fp);
 	}
 
@@ -2062,80 +2219,65 @@ static int do_wpad(unsigned char method, struct mime_handler *handler, char *url
 #endif
 
 #ifdef HAVE_ROUTERSTYLE
-static int do_stylecss(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_stylecss(unsigned char method, struct mime_handler *handler,
+		       char *url, webs_t stream)
 {
 	char *style = nvram_safe_get("router_style");
 
 	unsigned int sdata[33];
 	bzero(sdata, sizeof(sdata));
-	unsigned int blue[33] = {
-		0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f,
-		0x57f, 0xccf, 0x78f, 0x35d, 0x35c, 0x78f,
-		0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af,
-		0x36f, 0xccf, 0xfff,
-		0x69f, 0xfff, 0xfff, 0x999, 0x69f, 0x69f,
-		0xccf, 0x78f, 0xfff,
-		0xfff, 0x36f, 0xccc
-	};
+	unsigned int blue[33] = { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f,
+				  0x57f, 0xccf, 0x78f, 0x35d, 0x35c, 0x78f,
+				  0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af,
+				  0x36f, 0xccf, 0xfff, 0x69f, 0xfff, 0xfff,
+				  0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff,
+				  0xfff, 0x36f, 0xccc };
 
-	unsigned int cyan[33] = {
-		0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb,
-		0x3bb, 0xcff, 0x4cc, 0x1aa, 0x1aa, 0x4cc,
-		0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd,
-		0x099, 0xcff, 0xfff,
-		0x3bb, 0xfff, 0xfff, 0x999, 0x3bb, 0x3bb,
-		0xcff, 0x6cc, 0xfff,
-		0xfff, 0x099, 0xcff
-	};
+	unsigned int cyan[33] = { 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb,
+				  0x3bb, 0xcff, 0x4cc, 0x1aa, 0x1aa, 0x4cc,
+				  0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd,
+				  0x099, 0xcff, 0xfff, 0x3bb, 0xfff, 0xfff,
+				  0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff,
+				  0xfff, 0x099, 0xcff };
 
 	unsigned int elegant[33] = {
-		0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
-		0x496fc7, 0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
-		0x6384cf, 0xfff, 0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9,
-		0x30519c, 0xfff, 0xfff,
-		0x496fc7, 0xfff, 0xfff, 0x999, 0x496fc7, 0x496fc7,
-		0xfff, 0x6384cf, 0xfff,
-		0xfff, 0x30519c, 0xccc
+		0x30519c, 0xfff,    0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
+		0x496fc7, 0xfff,    0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
+		0x6384cf, 0xfff,    0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9,
+		0x30519c, 0xfff,    0xfff,    0x496fc7, 0xfff,	  0xfff,
+		0x999,	  0x496fc7, 0x496fc7, 0xfff,	0x6384cf, 0xfff,
+		0xfff,	  0x30519c, 0xccc
 	};
 
-	unsigned int green[33] = {
-		0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3,
-		0x3b3, 0xcfc, 0x4c4, 0x1a1, 0x1a1, 0x4c4,
-		0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8,
-		0x090, 0xcfc, 0xfff,
-		0x3b3, 0xfff, 0xfff, 0x999, 0x3b3, 0x3b3,
-		0xcfc, 0x6c6, 0xfff,
-		0xfff, 0x090, 0xcfc
-	};
+	unsigned int green[33] = { 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3,
+				   0x3b3, 0xcfc, 0x4c4, 0x1a1, 0x1a1, 0x4c4,
+				   0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8,
+				   0x090, 0xcfc, 0xfff, 0x3b3, 0xfff, 0xfff,
+				   0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff,
+				   0xfff, 0x090, 0xcfc };
 
 	unsigned int orange[33] = {
-		0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
-		0xff8400, 0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
-		0xff9000, 0xfff, 0xffa200, 0xffa200, 0xffa200, 0xffa200,
-		0xf26522, 0xfff, 0xfff,
-		0xff8400, 0xfff, 0xfff, 0x999, 0xff8400, 0xff8400,
-		0xfff, 0xff9000, 0xfff,
-		0xfff, 0xf26522, 0xccc
+		0xf26522, 0xfff,    0xff8400, 0xff8400, 0xff8400, 0xff8400,
+		0xff8400, 0xfff,    0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
+		0xff9000, 0xfff,    0xffa200, 0xffa200, 0xffa200, 0xffa200,
+		0xf26522, 0xfff,    0xfff,    0xff8400, 0xfff,	  0xfff,
+		0x999,	  0xff8400, 0xff8400, 0xfff,	0xff9000, 0xfff,
+		0xfff,	  0xf26522, 0xccc
 	};
 
-	unsigned int red[33] = {
-		0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33,
-		0xd55, 0xfcc, 0xe77, 0xc44, 0xc44, 0xe77,
-		0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99,
-		0xc00, 0xfcc, 0xfff,
-		0xd55, 0xfff, 0xfff, 0x999, 0xd55, 0xd55,
-		0xfcc, 0xe77, 0xfff,
-		0xfff, 0xc00, 0xfcc
-	};
+	unsigned int red[33] = { 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33,
+				 0xd55, 0xfcc, 0xe77, 0xc44, 0xc44, 0xe77,
+				 0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99,
+				 0xc00, 0xfcc, 0xfff, 0xd55, 0xfff, 0xfff,
+				 0x999, 0xd55, 0xd55, 0xfcc, 0xe77, 0xfff,
+				 0xfff, 0xc00, 0xfcc };
 
 	unsigned int yellow[33] = {
-		0xeec900, 0x000, 0xee3, 0x880, 0x880, 0xee3,
-		0xffd700, 0x660, 0xee7, 0xbb4, 0xbb4, 0xee7,
-		0xeec900, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9,
-		0xeec900, 0x660, 0x000,
-		0xffd700, 0x000, 0xfff, 0x999, 0xffd700, 0xeec900,
-		0x660, 0xffd700, 0x000,
-		0x333, 0xeec900, 0xffd700
+		0xeec900, 0x000, 0xee3, 0x880,	  0x880,    0xee3,    0xffd700,
+		0x660,	  0xee7, 0xbb4, 0xbb4,	  0xee7,    0xeec900, 0x000,
+		0xff9,	  0xcc5, 0xcc5, 0xff9,	  0xeec900, 0x660,    0x000,
+		0xffd700, 0x000, 0xfff, 0x999,	  0xffd700, 0xeec900, 0x660,
+		0xffd700, 0x000, 0x333, 0xeec900, 0xffd700
 	};
 
 	if (!strcmp(style, "blue"))
@@ -2150,49 +2292,62 @@ static int do_stylecss(unsigned char method, struct mime_handler *handler, char 
 		memcpy(sdata, orange, sizeof(orange));
 	else if (!strcmp(style, "red"))
 		memcpy(sdata, red, sizeof(red));
-	else			// default to elegant
+	else // default to elegant
 		memcpy(sdata, elegant, sizeof(elegant));
 
-	websWrite(stream, "@import url(../common.css);\n#menuSub,\n#menuMainList li span,\n#help h2 {\nbackground:#%03x;\n"	//
-		  "color:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a {\n"	//
-		  "background:#%03x;\ncolor:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}\n"	//
-		  "#menuSubList li a:hover {\nbackground:#%03x;\ncolor:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}"	//
-		  "\nfieldset legend {\ncolor:#%03x;\n}\n#help a {\ncolor:#%03x;\n}\n"	//
-		  "#help a:hover {\ncolor:#%03x;\n}\n.meter .bar {\nbackground-color: #%03x;\n}\n"	//
-		  ".meter .text {\ncolor:#%03x;\n}\n.progressbar {\nbackground-color: #%03x;\n"	//
-		  "border-color: #%03x;\nfont-size:.09em;\nborder-width:.09em;\n}\n"	//
-		  ".progressbarblock {\nbackground-color: #%03x;\nfont-size:.09em;\n}"	//
-		  "\ninput.button {\nbackground: #%03x;\ncolor: #%03x;\n}\n"	//
-		  "input.button:hover {\nbackground: #%03x;\ncolor: #%03x;\n"	//
-		  "}\nh2, h3 {\ncolor: #%03x;\nbackground-color: #%03x;\n}"	//
-		  "\ntable tr th {\ncolor: #%03x;\n}\n", sdata[0], sdata[1], sdata[2], sdata[3], sdata[4], sdata[5],	//
-		  sdata[6], sdata[7], sdata[8], sdata[9], sdata[10], sdata[11], sdata[12],	//
-		  sdata[13], sdata[14], sdata[15], sdata[16], sdata[17], sdata[18],	//
-		  sdata[19], sdata[20], sdata[21], sdata[22],	//
-		  sdata[23], sdata[24], sdata[25], sdata[26], sdata[27], sdata[28],	//
-		  sdata[29], sdata[30], sdata[31], sdata[32]);
+	websWrite(
+		stream,
+		"@import url(../common.css);\n#menuSub,\n#menuMainList li span,\n#help h2 {\nbackground:#%03x;\n" //
+		"color:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a {\n" //
+		"background:#%03x;\ncolor:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}\n" //
+		"#menuSubList li a:hover {\nbackground:#%03x;\ncolor:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}" //
+		"\nfieldset legend {\ncolor:#%03x;\n}\n#help a {\ncolor:#%03x;\n}\n" //
+		"#help a:hover {\ncolor:#%03x;\n}\n.meter .bar {\nbackground-color: #%03x;\n}\n" //
+		".meter .text {\ncolor:#%03x;\n}\n.progressbar {\nbackground-color: #%03x;\n" //
+		"border-color: #%03x;\nfont-size:.09em;\nborder-width:.09em;\n}\n" //
+		".progressbarblock {\nbackground-color: #%03x;\nfont-size:.09em;\n}" //
+		"\ninput.button {\nbackground: #%03x;\ncolor: #%03x;\n}\n" //
+		"input.button:hover {\nbackground: #%03x;\ncolor: #%03x;\n" //
+		"}\nh2, h3 {\ncolor: #%03x;\nbackground-color: #%03x;\n}" //
+		"\ntable tr th {\ncolor: #%03x;\n}\n",
+		sdata[0], sdata[1], sdata[2], sdata[3], sdata[4], sdata[5], //
+		sdata[6], sdata[7], sdata[8], sdata[9], sdata[10], sdata[11],
+		sdata[12], //
+		sdata[13], sdata[14], sdata[15], sdata[16], sdata[17],
+		sdata[18], //
+		sdata[19], sdata[20], sdata[21], sdata[22], //
+		sdata[23], sdata[24], sdata[25], sdata[26], sdata[27],
+		sdata[28], //
+		sdata[29], sdata[30], sdata[31], sdata[32]);
 	return 0;
 }
 
-static int do_stylecss_ie(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_stylecss_ie(unsigned char method, struct mime_handler *handler,
+			  char *url, webs_t stream)
 {
-	websWrite(stream, ".submitFooter input {\npadding:.362em .453em;\n}\n"	//
-		  "fieldset {\npadding-top:0;\n}\nfieldset legend {\n"	//
-		  "margin-left:-9px;\nmargin-bottom:8px;\npadding:0 .09em;\n}\n");
+	websWrite(
+		stream,
+		".submitFooter input {\npadding:.362em .453em;\n}\n" //
+		"fieldset {\npadding-top:0;\n}\nfieldset legend {\n" //
+		"margin-left:-9px;\nmargin-bottom:8px;\npadding:0 .09em;\n}\n");
 	return 0;
 }
 #endif
 #ifdef HAVE_REGISTER
-static int do_trial_logo(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_trial_logo(unsigned char method, struct mime_handler *handler,
+			 char *url, webs_t stream)
 {
-#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
+#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || \
+	defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) ||                   \
+	defined(HAVE_NEXTMEDIA)
 	return do_file(method, handler, url, stream);
 #else
 	if (!stream->isregistered_real) {
 		return do_file(method, handler, "style/logo-trial.png", stream);
 	} else {
 		if (iscpe()) {
-			return do_file(method, handler, "style/logo-cpe.png", stream);
+			return do_file(method, handler, "style/logo-cpe.png",
+				       stream);
 		} else {
 			return do_file(method, handler, url, stream);
 		}
@@ -2202,7 +2357,8 @@ static int do_trial_logo(unsigned char method, struct mime_handler *handler, cha
 
 #endif
 
-static int do_logout_asp(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_logout_asp(unsigned char method, struct mime_handler *handler,
+			 char *url, webs_t stream)
 {
 	int ret = do_ej(method, handler, "Logout.asp", stream);
 	websDone(stream, 200);
@@ -2215,7 +2371,8 @@ static int do_logout_asp(unsigned char method, struct mime_handler *handler, cha
  * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); }
  */
 
-static int do_mypage(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_mypage(unsigned char method, struct mime_handler *handler,
+		     char *url, webs_t stream)
 {
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
@@ -2231,12 +2388,14 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 
 	if (qnum < 0)
 		qnum = 1;
-	foreach(sname, snamelist, next) {
+	foreach(sname, snamelist, next)
+	{
 		if (qnum == i) {
 			FILE *fp;
 			dd_logdebug("httpd", "exec %s\n", sname);
 			if ((fp = popen(sname, "rb")) != NULL) {
-				while (fgets(buf, sizeof(buf) - 1, fp) != NULL) {
+				while (fgets(buf, sizeof(buf) - 1, fp) !=
+				       NULL) {
 					wfwrite(buf, strlen(buf), 1, stream);
 				}
 				pclose(fp);
@@ -2248,17 +2407,17 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 	}
 
 	return 0;
-
 }
 
-static int do_fetchif(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_fetchif(unsigned char method, struct mime_handler *handler,
+		      char *url, webs_t stream)
 {
 	char line[512];
 	int i, llen;
 	char *buffer;
 	char querybuffer[64];
 	if (!url)
-		return -1;	// unlikely
+		return -1; // unlikely
 	char *query = strchr(url, '?');
 
 	if (query == NULL || *(query) == 0)
@@ -2315,7 +2474,8 @@ static int do_fetchif(unsigned char method, struct mime_handler *handler, char *
 
 	buffer[strbuffer] = 0;
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "%s", buffer);
 	debug_free(buffer);
 	return 0;
@@ -2354,7 +2514,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 		int val = 0;
 		int prev = 0;
 		for (i = 0; i < filelen; i++) {
-		      again:;
+again:;
 			if (count < limit) {
 				prev = val;
 				val = getc(fp);
@@ -2364,7 +2524,8 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					fclose(fp);
 					return NULL;
 				}
-				if (!count && (val == ' ' || val == '\r' || val == '\t' || val == '\n'))
+				if (!count && (val == ' ' || val == '\r' ||
+					       val == '\t' || val == '\n'))
 					continue;
 			} else {
 				int a, v = 0;
@@ -2413,7 +2574,6 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 						ign = 1;
 					else
 						ign = 0;
-
 				}
 				break;
 			case ';':
@@ -2422,7 +2582,8 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					count = 0;
 					if ((memcmp(temp, temp1, len)) == 0) {
 						temp2 = strtok(temp, "\"");
-						temp2 = strdup(strtok(NULL, "\""));
+						temp2 = strdup(
+							strtok(NULL, "\""));
 						debug_free(temp);
 						debug_free(temp1);
 						fclose(fp);
@@ -2430,7 +2591,6 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					}
 				}
 			}
-
 		}
 		debug_free(temp1);
 		fclose(fp);
@@ -2448,7 +2608,6 @@ static int cachecount = 0;
 static struct cacheentry *translationcache = NULL;
 static char *private_live_translate(webs_t wp, const char *tran)
 {
-
 	if (tran == NULL || !*(tran))
 		return "";
 	char *lang = getLanguageName();
@@ -2460,12 +2619,11 @@ static char *private_live_translate(webs_t wp, const char *tran)
 	if (result)
 		return result;
 
-	strcpy(buf, "lang_pack/english.js");	// if string not found, try english
+	strcpy(buf, "lang_pack/english.js"); // if string not found, try english
 	result = scanfile(wp, buf, tran);
 	if (result)
 		return result;
 	return NULL;
-
 }
 
 static void clear_translationcache(void)
@@ -2484,10 +2642,10 @@ static void clear_translationcache(void)
 		translationcache = NULL;
 		cachecount = 0;
 	}
-
 }
 
-char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thread safe
+char *live_translate(webs_t wp,
+		     const char *tran) // todo: add locking to be thread safe
 {
 	static char *cur_language = NULL;
 	if (!tran || *(tran) == 0) {
@@ -2508,11 +2666,14 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 		int i;
 		char *translation = NULL;
 		for (i = 0; i < cachecount; i++) {
-			if (!translation && translationcache[i].request && !strcmp(translationcache[i].request, tran)) {
+			if (!translation && translationcache[i].request &&
+			    !strcmp(translationcache[i].request, tran)) {
 				translation = translationcache[i].translation;
 				translationcache[i].time = cur;
 			}
-			if (translationcache[i].request != NULL && cur > translationcache[i].time + 120) {	// free translation if not used for 2 minutes
+			if (translationcache[i].request != NULL &&
+			    cur > translationcache[i].time +
+					    120) { // free translation if not used for 2 minutes
 				debug_free(translationcache[i].translation);
 				debug_free(translationcache[i].request);
 				translation = NULL;
@@ -2533,11 +2694,12 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 			entry = &translationcache[i];
 			break;
 		}
-
 	}
 	if (!entry) {
 		/* no hole has been found, alloc a new one */
-		translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
+		translationcache = (struct cacheentry *)realloc(
+			translationcache,
+			sizeof(struct cacheentry) * (cachecount + 1));
 		entry = &translationcache[cachecount++];
 	}
 	entry->request = strdup(tran);
@@ -2554,9 +2716,9 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 void do_ddwrt_inspired_themes(webs_t wp);
 
 #ifdef HAVE_STATUS_SYSLOG
-static int do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_syslog(unsigned char method, struct mime_handler *handler,
+		     char *url, webs_t stream)
 {
-
 	static const char filename[] = "/var/log/messages";
 	char *style_dark = nvram_safe_get("router_style_dark");
 	char buf[128];
@@ -2568,56 +2730,93 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		return -1;
 
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 
-	websWrite(stream, "<!DOCTYPE html>\n"	//
-		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n"	//
-		  "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
-		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
-		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n", charset);
+	websWrite(
+		stream,
+		"<!DOCTYPE html>\n" //
+		"<html>\n"
+		"<head>\n"
+		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n" //
+		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" //
+		"<script type=\"text/javascript\" src=\"common.js\"></script>\n" //
+		"<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n",
+		charset);
 #ifdef HAVE_LANGUAGE
 	if (!nvram_match("language", "english"))
-		websWrite(stream, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+		websWrite(
+			stream,
+			"<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
 	char *style = nvram_safe_get("router_style");
 	if (!style)
 		style = "elegant";
-	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
-	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
-	    || !strcmp(style, "yellow")) {
-		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
+	websWrite(
+		stream,
+		"<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
+	if (!strcmp(style, "blue") || !strcmp(style, "cyan") ||
+	    !strcmp(style, "elegant") || !strcmp(style, "carlson") ||
+	    !strcmp(style, "green") || !strcmp(style, "orange") ||
+	    !strcmp(style, "red") || !strcmp(style, "yellow")) {
+		websWrite(
+			stream,
+			"<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n",
+			style);
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n");
+			websWrite(
+				stream,
+				"<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n");
 		}
 	}
-	websWrite(stream,	//
-		  "</head>\n<body class=\"syslog_bd\">\n"	//
-		  "<fieldset class=\"syslog_bg\">"	//
-		  "<legend class=\"syslog_legend\">"	//
-		  "%s"		//
-		  "</legend>", _tran_string(buf, sizeof(buf), "share.sysloglegend"));
+	websWrite(stream, //
+		  "</head>\n<body class=\"syslog_bd\">\n" //
+		  "<fieldset class=\"syslog_bg\">" //
+		  "<legend class=\"syslog_legend\">" //
+		  "%s" //
+		  "</legend>",
+		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
 
 	do_ddwrt_inspired_themes(stream);
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
 			char line[1024];
-			websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
+			websWrite(
+				stream,
+				"<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
 			while (fgets(line, sizeof(line), fp) != NULL) {
 				count++;
-				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
+				if (offset <= count &&
+				    ((offset + 50) > count)) { // show 100 lines
 					// a few sample colors
 					if (strstr(line, ".warn")) {
-						websWrite(stream, "<tr class=\"syslog_bg_yellow\"><td class=\"syslog_text_dark\">%s</td></tr>", line);
-					} else if (strstr(line, "authpriv.notice")) {
-						websWrite(stream, "<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>", line);
-					} else if (strstr(line, "mounting unchecked fs")
-						   || strstr(line, "httpd login failure")
-						   || strstr(line, "auth-failure")
-						   || strstr(line, ".err")) {
-						websWrite(stream, "<tr class=\"syslog_bg_red\"><td class=\"syslog_text_dark\">%s</td></tr>", line);
+						websWrite(
+							stream,
+							"<tr class=\"syslog_bg_yellow\"><td class=\"syslog_text_dark\">%s</td></tr>",
+							line);
+					} else if (strstr(line,
+							  "authpriv.notice")) {
+						websWrite(
+							stream,
+							"<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>",
+							line);
+					} else if (strstr(line,
+							  "mounting unchecked fs") ||
+						   strstr(line,
+							  "httpd login failure") ||
+						   strstr(line,
+							  "auth-failure") ||
+						   strstr(line, ".err")) {
+						websWrite(
+							stream,
+							"<tr class=\"syslog_bg_red\"><td class=\"syslog_text_dark\">%s</td></tr>",
+							line);
 					} else {
-						websWrite(stream, "<tr><td>%s</td></tr>", line);
+						websWrite(
+							stream,
+							"<tr><td>%s</td></tr>",
+							line);
 					}
 				}
 			}
@@ -2626,7 +2825,10 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 			fclose(fp);
 		}
 	} else {
-		websWrite(stream, "<table style=\"margin-bottom: 10px;\"><tr class=\"center\"><td style=\"padding-bottom: 4px;\">%s</td></tr></table>", _tran_string(buf, sizeof(buf), "share.syslogdisabled"));
+		websWrite(
+			stream,
+			"<table style=\"margin-bottom: 10px;\"><tr class=\"center\"><td style=\"padding-bottom: 4px;\">%s</td></tr></table>",
+			_tran_string(buf, sizeof(buf), "share.syslogdisabled"));
 	}
 	websWrite(stream, "</fieldset></body>");
 	websWrite(stream, "</html>");
@@ -2634,11 +2836,12 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 }
 #endif
 
-static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_ttgraph(unsigned char method, struct mime_handler *handler,
+		      char *url, webs_t stream)
 {
 	char *charset = live_translate(stream, "lang_charset.set");
 
-#define COL_WIDTH 16		/* single column width */
+#define COL_WIDTH 16 /* single column width */
 
 	char *next;
 	char var[80];
@@ -2648,20 +2851,16 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	unsigned int year;
 	int wd;
 	int i = 0;
-	char months[12][12] = {
-		"share.jan", "share.feb", "share.mar", "share.apr", "share.may",
-		"share.jun",
-		"share.jul", "share.aug", "share.sep", "share.oct",
-		"share.nov", "share.dec"
-	};
-	unsigned long rcvd[31] = {
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-	};
-	unsigned long sent[31] = {
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-	};
+	char months[12][12] = { "share.jan", "share.feb", "share.mar",
+				"share.apr", "share.may", "share.jun",
+				"share.jul", "share.aug", "share.sep",
+				"share.oct", "share.nov", "share.dec" };
+	unsigned long rcvd[31] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	unsigned long sent[31] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	unsigned long max = 5, smax = 5, f = 1;
 	unsigned long totin = 0;
 	unsigned long totout = 0;
@@ -2672,7 +2871,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 		return -1;
 
 	days = daysformonth(month, year);
-	wd = weekday(month, 1, year);	// first day in month (mon=0, tue=1,
+	wd = weekday(month, 1, year); // first day in month (mon=0, tue=1,
 	// ..., sun=6)
 
 	char tq[32];
@@ -2681,9 +2880,10 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	char *tdata = nvram_safe_get(tq);
 
 	if (tdata != NULL && *(tdata)) {
-		foreach(var, tdata, next) {
+		foreach(var, tdata, next)
+		{
 			if (i == days)
-				break;	//skip monthly total
+				break; //skip monthly total
 			int ret = sscanf(var, "%lu:%lu", &rcvd[i], &sent[i]);
 			if (ret != 2)
 				break;
@@ -2711,66 +2911,97 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	char *outcom = live_translate(stream, "status_inet.traffout");
 	char *monthname = live_translate(stream, months[month - 1]);
 	if (handler && !handler->send_headers)
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		send_headers(stream, 200, "OK", handler->extra_header,
+			     handler->mime_type, -1, NULL, 1);
 
-	websWrite(stream, "<!DOCTYPE html>\n"	//
-		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n"	//
-		  "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
-		  "<title>DD-WRT Traffic Graph</title>\n"	//
-		  "<script type=\"text/javascript\">\n"	//
-		  "//<![CDATA[\n"	//
-		  "function Show(label) {\n"	//
-		  "document.getElementById(\"label\").innerHTML = label;\n"	//
-		  "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n"	//
-		  "#t-graph {position: relative; width: %upx; height: 300px;\n"	//
-		  "  margin: 1.1em 0 3.5em; padding: 0;\n"	//
-		  "  border: 1px solid gray; list-style: none;\n"	//
-		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; list-style: none;}\n"	//
-		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n"	//
-		  "  margin: 0; padding: 0;\n"	//
-		  "  text-align: center; list-style: none;}\n"	//
-		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #c4c4c4; color: #aaa;}\n"	//
-		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #c4c4c4; color: #e00;}\n"	//
-		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"	//
-		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n"	//
-		  "#t-graph li.rcvd {left: 3px; background: #228b22;}\n"	//
-		  "#t-graph li.sent {left: 8px; background: #cd0000;}\n", charset, days * COL_WIDTH, COL_WIDTH);
+	websWrite(
+		stream,
+		"<!DOCTYPE html>\n" //
+		"<html>\n"
+		"<head>\n"
+		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n" //
+		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" //
+		"<title>DD-WRT Traffic Graph</title>\n" //
+		"<script type=\"text/javascript\">\n" //
+		"//<![CDATA[\n" //
+		"function Show(label) {\n" //
+		"document.getElementById(\"label\").innerHTML = label;\n" //
+		"}\n"
+		"//]]>\n"
+		"</script>\n"
+		"<style type=\"text/css\">\n\n" //
+		"#t-graph {position: relative; width: %upx; height: 300px;\n" //
+		"  margin: 1.1em 0 3.5em; padding: 0;\n" //
+		"  border: 1px solid gray; list-style: none;\n" //
+		"  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n"
+		"#t-graph ul {margin: 0; list-style: none;}\n" //
+		"#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n" //
+		"  margin: 0; padding: 0;\n" //
+		"  text-align: center; list-style: none;}\n" //
+		"#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #c4c4c4; color: #aaa;}\n" //
+		"#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #c4c4c4; color: #e00;}\n" //
+		"#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n" //
+		"#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" //
+		"#t-graph li.rcvd {left: 3px; background: #228b22;}\n" //
+		"#t-graph li.sent {left: 8px; background: #cd0000;}\n",
+		charset, days * COL_WIDTH, COL_WIDTH);
 
 	for (i = 0; i < days - 1; i++) {
-		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
+		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1,
+			  i * COL_WIDTH);
 	}
-	websWrite(stream, "#t-graph #d%u {left: %upx; border-right: none;}\n", days, (days - 1) * COL_WIDTH);
+	websWrite(stream, "#t-graph #d%u {left: %upx; border-right: none;}\n",
+		  days, (days - 1) * COL_WIDTH);
 
-	websWrite(stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n"	//
-		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #bbb; width: %upx;}\n"	//
-		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"	//
-		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"	//
-		  "</style>\n" "</head>\n\n", days * COL_WIDTH, days * COL_WIDTH);
+	websWrite(
+		stream,
+		"#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n" //
+		"#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #bbb; width: %upx;}\n" //
+		"#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n" //
+		"#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n" //
+		"</style>\n"
+		"</head>\n\n",
+		days * COL_WIDTH, days * COL_WIDTH);
 	do_ddwrt_inspired_themes(stream);
 	// add body class to target background in internal inspired themes
-	websWrite(stream, "<body class=\"t-graph-bg\">\n" "<ul id=\"t-graph\">\n");
+	websWrite(stream, "<body class=\"t-graph-bg\">\n"
+			  "<ul id=\"t-graph\">\n");
 	for (i = 0; i < days; i++) {
-		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
+		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ",
+			  (wd % 7) == 6 ? "_sun" : "", i + 1);
 		wd++;
-		websWrite(stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" "	//
-			  "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\">%d\n<ul>\n"
-			  "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n"
-			  "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n</ul>\n</li>\n",
-			  monthname, i + 1, year, incom, rcvd[i], outcom, sent[i], monthname, year, incom, totin, outcom, totout, i + 1, rcvd[i] * 300 / smax, sent[i] * 300 / smax);
-
+		websWrite(
+			stream,
+			"onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" " //
+			"onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\">%d\n<ul>\n"
+			"<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n"
+			"<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n</ul>\n</li>\n",
+			monthname, i + 1, year, incom, rcvd[i], outcom, sent[i],
+			monthname, year, incom, totin, outcom, totout, i + 1,
+			rcvd[i] * 300 / smax, sent[i] * 300 / smax);
 	}
 
 	websWrite(stream, "<li id=\"ticks\">\n");
-	for (i = 5; i; i--)	// scale
+	for (i = 5; i; i--) // scale
 	{
-		websWrite(stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
+		websWrite(
+			stream,
+			"<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n",
+			smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
 	}
-	websWrite(stream, "</li>\n\n<li id=\"label\">\n%s %d (%s: %lu MB / %s: %lu MB)\n</li>\n" "</ul>\n\n" "</body>" "\n\n", monthname, year, incom, totin, outcom, totout);
+	websWrite(
+		stream,
+		"</li>\n\n<li id=\"label\">\n%s %d (%s: %lu MB / %s: %lu MB)\n</li>\n"
+		"</ul>\n\n"
+		"</body>"
+		"\n\n",
+		monthname, year, incom, totin, outcom, totout);
 	websWrite(stream, "</html>");
 	return 0;
 }
 
-static int ttraff_backup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int ttraff_backup(unsigned char method, struct mime_handler *handler,
+			 char *url, webs_t stream)
 {
 	FILE *out = fopen("/tmp/traffdata.bak", "wb");
 	if (!out)
@@ -2785,12 +3016,14 @@ static int ttraff_backup(unsigned char method, struct mime_handler *handler, cha
 		putc(getc(fp), out);
 	pclose(fp);
 	fclose(out);
-	int ret = do_file_attach(handler, "/tmp/traffdata.bak", stream, "traffdata.bak");
+	int ret = do_file_attach(handler, "/tmp/traffdata.bak", stream,
+				 "traffdata.bak");
 	unlink("/tmp/traffdata.bak");
 	return ret;
 }
 
-static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_apply_cgi(unsigned char method, struct mime_handler *handler,
+			char *url, webs_t stream)
 {
 	char *path, *query;
 	if (stream->post == 1) {
@@ -2798,7 +3031,7 @@ static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char
 		path = url;
 	} else {
 		query = url;
-		path = strsep(&query, "?") ? : url;
+		path = strsep(&query, "?") ?: url;
 #if 0
 		init_cgi(stream, query);
 #endif
@@ -2812,7 +3045,8 @@ static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char
 	return 0;
 }
 
-static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
+			     char *url, webs_t stream)
 {
 	char *path, *query;
 	char newpath[128];
@@ -2821,7 +3055,7 @@ static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
 		path = url;
 	} else {
 		query = url;
-		path = strsep(&query, "?") ? : url;
+		path = strsep(&query, "?") ?: url;
 	}
 
 	if (!query)
@@ -2847,15 +3081,18 @@ extern int getdevicecount(void);
 #endif
 
 #ifdef HAVE_LANGUAGE
-static int do_language(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy,
-	    // https,
-	    // 8/4/2003
+static int do_language(unsigned char method, struct mime_handler *handler,
+		       char *path, webs_t stream) // jimmy,
+	// https,
+	// 8/4/2003
 {
 	char *langname = getLanguageName();
 	char *prefix, *lang;
 
-	prefix = calloc(1, strlen(path) - (sizeof("lang_pack/language.js") - 1) + 1);
-	strlcpy(prefix, path, strlen(path) - ((sizeof("lang_pack/language.js") - 1)));
+	prefix = calloc(1, strlen(path) -
+				   (sizeof("lang_pack/language.js") - 1) + 1);
+	strlcpy(prefix, path,
+		strlen(path) - ((sizeof("lang_pack/language.js") - 1)));
 	asprintf(&lang, "%s%s", prefix, langname);
 	int ret = do_file(method, handler, lang, stream);
 
@@ -2870,178 +3107,291 @@ static int do_language(unsigned char method, struct mime_handler *handler, char 
 #define SEND_HEADER 1
 #define IGNORE_OPTIONS 0
 #define HANDLE_OPTIONS 1
-static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
+static char no_cache[] = "Cache-Control: no-cache\r\n"
+			 "Pragma: no-cache\r\n"
+			 "Expires: 0";
 static char do_cache[] = "Cache-Control: private, max-age=600\r\n";
 
 static struct mime_handler mime_handlers[] = {
 #ifdef HAVE_POKER
-	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_DDLAN
-	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER,
+	  IGNORE_OPTIONS },
 #endif
-	{ "Logout.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "Logout.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
 
-	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, do_auth_changepass, NO_HEADER, IGNORE_OPTIONS },
+	{ "changepass.asp", "text/html", no_cache, NULL, do_ej,
+	  do_auth_changepass, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_REGISTER
-	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, NO_HEADER, IGNORE_OPTIONS },
+	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg,
+	  NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
+	  do_auth, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_FREERADIUS
-	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL, cert_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert,
+	  do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL,
+	  cert_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "dologout.asp*", "text/html", no_cache, NULL, do_logout_asp, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable,
+	  do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv,
+	  do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth,
+	  SEND_HEADER, IGNORE_OPTIONS },
+	{ "dologout.asp*", "text/html", no_cache, NULL, do_logout_asp, do_auth,
+	  SEND_HEADER, IGNORE_OPTIONS },
+	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
 #ifdef HAVE_LANGUAGE
-	{ "lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
+	  NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_BUFFALO
-	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL,
+	  do_language, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej,
+	  NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej,
+	  NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL,
+	  SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, NO_HEADER, IGNORE_OPTIONS },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
 #ifdef HAVE_ROUTERSTYLE
-	{ "style/common_style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/common_style_ie.css", "text/css", do_cache, NULL,
+	  do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_REGISTER
-	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL,
+	  NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "graph_if.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "graph_if.svg", "image/svg+xml", NULL, NULL, do_file, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_PRIVOXY
-	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL,
+	  do_wpad, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_ATH9K
-	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "spectral_scan.json", "application/json", no_cache, NULL,
+	  do_spectral_scan, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_DDLAN
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	  NULL, NO_HEADER, IGNORE_OPTIONS },
 #else
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	  do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_DDLAN
-	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	  NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post,
+	  do_upgrade_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
 #else
-	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	  do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post,
+	  do_upgrade_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "wifiselect.cgi*", "text/html", no_cache, do_apply_post, do_wifiselect_cgi, do_cauth, NO_HEADER, IGNORE_OPTIONS },
+	{ "wifiselect.cgi*", "text/html", no_cache, do_apply_post,
+	  do_wifiselect_cgi, do_cauth, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_BUFFALO
-	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post,
+	  do_upgrade_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_DDLAN
-	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post,
+	  do_upgrade_cgi, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #else
-	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post,
+	  do_upgrade_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "test.bin**", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "bigfile.bin*", "application/octet-stream", no_cache, NULL, do_bigfile, NULL, NO_HEADER, HANDLE_OPTIONS },
+	{ "test.bin**", "application/octet-stream", no_cache, NULL, do_file,
+	  do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "bigfile.bin*", "application/octet-stream", no_cache, NULL,
+	  do_bigfile, NULL, NO_HEADER, HANDLE_OPTIONS },
 
 #ifdef HAVE_DDLAN
-	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL,
+	  nv_file_out, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
+	  nv_file_out, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL,
+	  SEND_HEADER, IGNORE_OPTIONS },
 #else
-	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL,
+	  nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
+	  nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi,
+	  do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_SSHD
 	{ "id_ed25519.ssh*", "application/octet-stream", no_cache, NULL,
-	 download_ssh_key, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	  download_ssh_key, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_WIREGUARD
-	{ "wireguard_config_oet**.conf*", "application/octet-stream", no_cache, NULL,
-	 download_wireguard_config, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "wireguard_config_oet**.conf*", "application/octet-stream", no_cache,
+	  NULL, download_wireguard_config, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_OPENVPN
 	{ "ovpncl_config.ovpn*", "application/octet-stream", no_cache, NULL,
-	 download_ovpncl_config, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	  download_ovpncl_config, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL,
+	  do_cfebackup, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_STATUS_SYSLOG
-	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.avif", "image/avif", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.bmp", "image/bmp", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.png", "image/png", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.jpeg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.css", "text/css", NULL, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.txt", "text/plain", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.bin", "application/octet-stream", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.doc", "application/msword", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.ppt", "application/vnd.ms-powerpoint", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.xls", "application/vnd.ms-excel", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.xml", "application/xml", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.7z", "application/x-7z-compressed", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.gz", "application/gzip", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.rar", "application/vnd.rar", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.tar", "application/x-tar", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.zip", "application/zip", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.xhtml", "application/xhtml+xml", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.mpeg", "video/mpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.aac", "audio/aac", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.webm", "audio/webm", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.weba", "audio/webm", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.wav", "audio/wav", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.flv", "video/x-flv", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.avif", "image/avif", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.bmp", "image/bmp", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.png", "image/png", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.jpeg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.css", "text/css", NULL, NULL, do_ej, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.txt", "text/plain", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.bin", "application/octet-stream", NULL, NULL, do_file, NULL,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.doc", "application/msword", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.docx",
+	  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	  NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.ppt", "application/vnd.ms-powerpoint", NULL, NULL, do_file, NULL,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "**.pptx",
+	  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+	  NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.xls", "application/vnd.ms-excel", NULL, NULL, do_file, NULL,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "**.xlsx",
+	  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	  NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.xml", "application/xml", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.7z", "application/x-7z-compressed", NULL, NULL, do_file, NULL,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "**.gz", "application/gzip", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.rar", "application/vnd.rar", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.tar", "application/x-tar", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.zip", "application/zip", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.xhtml", "application/xhtml+xml", no_cache, NULL, do_ej, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.mpeg", "video/mpeg", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.aac", "audio/aac", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.webm", "audio/webm", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.weba", "audio/webm", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.wav", "audio/wav", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
+	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "**.flv", "video/x-flv", NULL, NULL, do_file, NULL, NO_HEADER,
+	  IGNORE_OPTIONS },
 
-	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
+	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
+	  do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth,
+	  NO_HEADER, IGNORE_OPTIONS },
 	// for ddm
 	{ NULL, NULL, NULL, NULL, NULL, NULL, NO_HEADER, IGNORE_OPTIONS }
 };
 
 #ifdef HAVE_BUFFALO
-int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url,
+		webs_t stream)
 {
-/*
+	/*
 #ifdef HAVE_MADWIFI
 	char *ifname = "wlan0";
 #else
@@ -3102,16 +3452,17 @@ int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, w
 
 	websWrite(stream, "DEVICE_VSP_VERSION=0.1\n");
 	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.\n");
-	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n", nvram_safe_get("DD_BOARD"));
+	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n",
+		  nvram_safe_get("DD_BOARD"));
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00\n");
 	char *reg = getUEnv("region");
 	if (!reg)
 		reg = "US";
 	websWrite(stream, "DEVICE_REGION=%s\n", reg);
 	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1\n");
-//      websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s\n", authmode);
-//      websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s\n", encrypt);
-//      websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s\n", wpakey);
+	//      websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s\n", authmode);
+	//      websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s\n", encrypt);
+	//      websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s\n", wpakey);
 	websWrite(stream, "DEVICE_URL_GET=/vsp.html\n");
 	websWrite(stream, "DEVICE_URL_SET=/vsp.html\n");
 
@@ -3155,12 +3506,15 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	case SET:
 		for (i = 0; *(old_name + i); i++) {
 			match = 0;
-			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
+			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)];
+			     v++) {
 				if (*(old_name + i) == v->ch) {
 					size_t slen = strlen(new_name);
 
-					if (slen + strlen(v->string) + 1 > size) {	// avoid overflow
-						cprintf("%s(): overflow\n", __FUNCTION__);
+					if (slen + strlen(v->string) + 1 >
+					    size) { // avoid overflow
+						cprintf("%s(): overflow\n",
+							__FUNCTION__);
 						new_name[size - 1] = '\0';
 						return 1;
 					}
@@ -3173,13 +3527,16 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 				// strlen() depends on NULL termination
 				size_t slen = strlen(new_name);
 				if (slen > size) {
-					cprintf("%s(): overflow\n", __FUNCTION__);	// avoid 
+					cprintf("%s(): overflow\n",
+						__FUNCTION__); // avoid
 					// overflow
 					new_name[size - 1] = '\0';
 					return 1;
 				}
-				*(new_name + slen) = *(old_name + i); // Copy character over
-				*(new_name + slen + 1) = '\0'; // add a NULL terminator so strlen() works
+				*(new_name + slen) =
+					*(old_name + i); // Copy character over
+				*(new_name + slen +
+				  1) = '\0'; // add a NULL terminator so strlen() works
 			}
 		}
 
@@ -3187,8 +3544,10 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	case GET:
 		for (i = 0, j = 0; *(old_name + j); j++) {
 			match = 0;
-			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
-				if (!memcmp(old_name + j, v->string, strlen(v->string))) {
+			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)];
+			     v++) {
+				if (!memcmp(old_name + j, v->string,
+					    strlen(v->string))) {
 					*(new_name + i) = v->ch;
 					j = j + strlen(v->string) - 1;
 					match = 1;

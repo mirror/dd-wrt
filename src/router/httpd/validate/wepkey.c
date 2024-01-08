@@ -51,7 +51,8 @@ int wep128_passphase(char *buffer, unsigned char *keybyte)
 	return 1;
 }
 
-void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], unsigned char key128[4][14])
+void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5],
+	     unsigned char key128[4][14])
 {
 	unsigned int i, j;
 	unsigned char pseed[4] = { 0, 0, 0, 0 };
@@ -65,32 +66,36 @@ void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], un
 	int weptype = 64;
 #endif
 	len = strlen(genstr);
-	if (len == 0)		// 2001/05/16 Edison: Don't allow zero length 
+	if (len == 0) // 2001/05/16 Edison: Don't allow zero length
 		// passphrase.
 		return;
 	// 2001/04/02 Edison: calling to generate 128-bit WEP key
 	if (weptype == 128) {
 		strcpy(str, genstr);
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&key128[0], (unsigned char *)&key[0], 13);
+		memcpy((unsigned char *)&key128[0], (unsigned char *)&key[0],
+		       13);
 		key128[0][13] = 0;
 		strcat(str, "#$%");
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&key128[1], (unsigned char *)&key[1], 13);
+		memcpy((unsigned char *)&key128[1], (unsigned char *)&key[1],
+		       13);
 		key128[1][13] = 0;
 		strcat(str, "!@#");
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&key128[2], (unsigned char *)&key[2], 13);
+		memcpy((unsigned char *)&key128[2], (unsigned char *)&key[2],
+		       13);
 		key128[2][13] = 0;
 		strcat(str, "%&^");
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&key128[3], (unsigned char *)&key[3], 13);
+		memcpy((unsigned char *)&key128[3], (unsigned char *)&key[3],
+		       13);
 		key128[3][13] = 0;
 		// for(i = 0;i<13;i++)
 		// printf("[%x]\n",key128[i]);
 		return;
 	}
-	// 64 bit 
+	// 64 bit
 	if (len) {
 		/*
 		 * generate seed for random number generator using key string... 
@@ -102,7 +107,8 @@ void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], un
 		 * init PRN generator... note that this is equivalent to the
 		 * Microsoft srand() function. 
 		 */
-		randNumber = (long)pseed[0] | ((long)pseed[1]) << 8 | ((long)pseed[2]) << 16 | ((long)pseed[3]) << 24;
+		randNumber = (long)pseed[0] | ((long)pseed[1]) << 8 |
+			     ((long)pseed[2]) << 16 | ((long)pseed[3]) << 24;
 		/*
 		 * generate keys. 
 		 */
@@ -114,7 +120,9 @@ void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], un
 				 */
 				randNumber *= 0x343fd;
 				randNumber += 0x269ec3;
-				key64[i][j] = (unsigned char)((randNumber >> 16) & 0x7fff);
+				key64[i][j] =
+					(unsigned char)((randNumber >> 16) &
+							0x7fff);
 			}
 			// for (j=0; j<5; j++)
 			// printf("%x",key64[i][j]);

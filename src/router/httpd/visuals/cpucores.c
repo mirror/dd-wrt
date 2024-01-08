@@ -43,7 +43,10 @@
 #define FREQLINE 2
 #elif defined(HAVE_MAGICBOX) || defined(HAVE_RB600)
 #define FREQLINE 3
-#elif defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_ADM5120) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_CA8) || defined(HAVE_RB500) || defined(HAVE_OCTEON)
+#elif defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_ADM5120) || \
+	defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_LS5) ||      \
+	defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_CA8) || \
+	defined(HAVE_RB500) || defined(HAVE_OCTEON)
 #ifdef HAVE_HOTPLUG2
 #define FREQLINE 5
 #else
@@ -52,9 +55,10 @@
 #elif defined(HAVE_PB42) || defined(HAVE_LSX)
 #define FREQLINE 5
 #elif HAVE_VENTANA
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
-	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
+	FILE *fp = fopen(
+		"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
 		int freq;
 		fscanf(fp, "%d", &freq);
@@ -66,9 +70,10 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #elif HAVE_MVEBU
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
-	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
+	FILE *fp = fopen(
+		"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
 		int freq;
 		fscanf(fp, "%d", &freq);
@@ -90,9 +95,10 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #elif HAVE_ALPINE
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
-	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
+	FILE *fp = fopen(
+		"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
 		int freq;
 		fscanf(fp, "%d", &freq);
@@ -101,16 +107,18 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		return;
 	} else {
 		websWrite(wp, "1700");
-
 	}
 	return;
 }
 #elif HAVE_IPQ806X
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
-	FILE *fp2 = fopen("/sys/kernel/debug/clk/krait1_pri_mux/clk_rate", "rb");
+	FILE *fp2 =
+		fopen("/sys/kernel/debug/clk/krait1_pri_mux/clk_rate", "rb");
 	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
-	FILE *fp3 = fopen("/sys/devices/system/cpu/cpufreq/policy0/cpuinfo_cur_freq", "rb");
+	FILE *fp3 = fopen(
+		"/sys/devices/system/cpu/cpufreq/policy0/cpuinfo_cur_freq",
+		"rb");
 	if (fp && fp2) {
 		int freq;
 		fscanf(fp, "%d", &freq);
@@ -119,14 +127,14 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		if (argc && !strcmp(argv[0], "1"))
 			websWrite(wp, "%d", freq / 1000000);
 		else
-			websWrite(wp, "%d MHz / %d", freq / 1000000, freq2 / 1000000);
+			websWrite(wp, "%d MHz / %d", freq / 1000000,
+				  freq2 / 1000000);
 	} else if (fp3) {
 		int freq;
 		fscanf(fp3, "%d", &freq);
 		websWrite(wp, "%d", freq / 1000);
 	} else {
 		websWrite(wp, "1400");
-
 	}
 	if (fp)
 		fclose(fp);
@@ -138,7 +146,7 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #elif HAVE_X86
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 
@@ -175,14 +183,14 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #else
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
 	char *clk = nvram_safe_get("clkfreq");
 
 	if (!*clk) {
-		if (getcpurev() == 0)	//BCM4710
+		if (getcpurev() == 0) //BCM4710
 			websWrite(wp, "125");
-		else if (getcpurev() == 29)	//BCM5354
+		else if (getcpurev() == 29) //BCM5354
 			websWrite(wp, "240");
 		else
 			websWrite(wp, "unknown");
@@ -203,7 +211,7 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #endif
 
 #if defined(FREQLINE)
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 
@@ -243,7 +251,7 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 
 #undef FREQLINE
 #elif defined(HARDFREQ)
-EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, HARDFREQ);
 	return;
@@ -252,9 +260,8 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #undef HARDFREQ
 #endif
 
-EJ_VISIBLE void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpuinfo(webs_t wp, int argc, char_t **argv)
 {
-
 #ifdef HAVE_IPR
 	char *str = "rev 1.2";
 #else
@@ -267,7 +274,7 @@ EJ_VISIBLE void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, str);
 }
 
-EJ_VISIBLE void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpucores(webs_t wp, int argc, char_t **argv)
 {
 	int count = 1;
 #ifdef _SC_NPROCESSORS_ONLN
@@ -285,7 +292,7 @@ struct CPUFEATURES {
 	char *name;
 };
 static struct CPUFEATURES cpufeatures[] = {
-//x86/x64
+	//x86/x64
 	{ "flags", "fpu", "FPU" },
 	{ "flags", "mmx", "MMX" },
 	{ "flags", "sse", "SSE" },
@@ -302,7 +309,7 @@ static struct CPUFEATURES cpufeatures[] = {
 	{ "flags", "ht", "HT" },
 	{ "flags", "nx", "NX" },
 
-// ARM
+	// ARM
 	{ "Features", "vfp", "VFP" },
 	{ "Features", "vfpv3", "VFPv3" },
 	{ "Features", "vfpv3d16", "VFPv3d16" },
@@ -319,7 +326,7 @@ static struct CPUFEATURES cpufeatures[] = {
 	{ "Features", "asimd", "ASIMD" },
 	{ "Features", "crc32", "CRC32" },
 	{ "Features", "fp", "FP" },
-// Northstar prototype RT-AC68U also has these
+	// Northstar prototype RT-AC68U also has these
 	{ "Features", "fastmult", "FASTMULT" },
 	{ "Features", "half", "HALF" },
 	{ "Features", "tls", "TLS" },
@@ -334,9 +341,9 @@ static struct CPUFEATURES cpufeatures[] = {
 	{ "Features", "idiva", "IDIVA" },
 	{ "Features", "idivt", "IDIVT" },
 	{ "Features", "evtstrm", "EVTSTRM" },
-//mips
+	//mips
 
-/*	{"isa", "mips1", "MIPS1"},
+	/*	{"isa", "mips1", "MIPS1"},
 	{"isa", "mips2", "MIPS2"},
 	{"isa", "mips3", "MIPS3"},
 	{"isa", "mips4", "MIPS4"},
@@ -354,7 +361,7 @@ static struct CPUFEATURES cpufeatures[] = {
 	{ "ASEs implemented", "mt", "MT" },
 };
 
-EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t **argv)
 {
 	char word[64];
 	char *next = NULL;
@@ -365,33 +372,45 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 	char *line = malloc(1024);
 	while (fgets(line, 1024, fp)) {
 		int i;
-		for (i = 0; i < sizeof(cpufeatures) / sizeof(struct CPUFEATURES); i++) {
+		for (i = 0;
+		     i < sizeof(cpufeatures) / sizeof(struct CPUFEATURES);
+		     i++) {
 			if (strstr(line, cpufeatures[i].line)) {
 				char *begin = strchr(line, ':') + 1;
-				foreach(word, begin, next) {
+				foreach(word, begin, next)
+				{
 					if (result) {
-						if (strstr(result, cpufeatures[i].name))
+						if (strstr(result,
+							   cpufeatures[i].name))
 							continue;
 					}
 					char *p = strchr(word, '\n');
 					if (p)
 						p[0] = 0;
-					int namelen = strlen(cpufeatures[i].name);
-					if (!strcmp(word, cpufeatures[i].field)) {
+					int namelen =
+						strlen(cpufeatures[i].name);
+					if (!strcmp(word,
+						    cpufeatures[i].field)) {
 						int resultlen = 0;
 						if (!result) {
-							result = malloc(namelen + 1);
+							result = malloc(
+								namelen + 1);
 							bzero(result, namelen);
 						} else {
-							resultlen = strlen(result);
-							result = realloc(result, resultlen + namelen + 2);
+							resultlen =
+								strlen(result);
+							result = realloc(
+								result,
+								resultlen +
+									namelen +
+									2);
 						}
-						strspcattach(result, cpufeatures[i].name);
+						strspcattach(
+							result,
+							cpufeatures[i].name);
 					}
 				}
-
 			}
-
 		}
 	}
 	debug_free(line);
@@ -399,8 +418,11 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 	if (result && *(result)) {
 		char buf[128];
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "status_router.features"));
-		websWrite(wp, "<div class=\"padding-left\">%s&nbsp;\n</div>", result);
+		websWrite(wp, "<div class=\"label\">%s</div>\n",
+			  tran_string(buf, sizeof(buf),
+				      "status_router.features"));
+		websWrite(wp, "<div class=\"padding-left\">%s&nbsp;\n</div>",
+			  result);
 		websWrite(wp, "</div>\n");
 	}
 	if (result)

@@ -41,13 +41,12 @@ void ping_onload(webs_t wp, char *arg)
 
 	pid = find_pid_by_ps("ping");
 
-	if (pid > 0 && strncmp(type, "stop", 4)) {	// pinging
+	if (pid > 0 && strncmp(type, "stop", 4)) { // pinging
 		websWrite(wp, arg);
 	}
-
 }
 
-EJ_VISIBLE void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dump_ping_log(webs_t wp, int argc, char_t **argv)
 {
 	int count = 0;
 	FILE *fp;
@@ -81,14 +80,17 @@ EJ_VISIBLE void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 	 * end waiting 
 	 */
 
-	if ((fp = fopen(PING_TMP, "r")) != NULL) {	// show result
+	if ((fp = fopen(PING_TMP, "r")) != NULL) { // show result
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (!strcmp(line, ""))
 				continue;
 			int nc = 0;
 			int len = strlen(line);
-			for (i = 0; i < (len - 1) && (nc < (sizeof(newline) - 1)); i++) {
-				if (line[i] == '"' && nc < (sizeof(newline) - 7)) {
+			for (i = 0;
+			     i < (len - 1) && (nc < (sizeof(newline) - 1));
+			     i++) {
+				if (line[i] == '"' &&
+				    nc < (sizeof(newline) - 7)) {
 					memcpy(&newline[nc], "&quot;", 6);
 					nc += 6;
 				} else

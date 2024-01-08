@@ -37,14 +37,15 @@
 #define HAVE_RB600
 #endif
 
-#define MIN_BUF_SIZE    4096
+#define MIN_BUF_SIZE 4096
 #define CODE_PATTERN_ERROR 9999
 #define HAVE_NEW_UPGRADE
 
 static int
 // do_upgrade_cgi(char *url, FILE *stream)
-do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)	// jimmy, https,
-							// 8/6/2003
+do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url,
+	       webs_t stream) // jimmy, https,
+	// 8/6/2003
 {
 	int ret;
 #ifndef ANTI_FLASH
@@ -76,20 +77,23 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 }
 
 #ifdef HAVE_RB600
-#define swap(x) \
-	((unsigned int )( \
-			(((unsigned int )(x) & (unsigned int )0x000000ffUL) << 24) | \
-			(((unsigned int )(x) & (unsigned int )0x0000ff00UL) <<  8) | \
-			(((unsigned int )(x) & (unsigned int )0x00ff0000UL) >>  8) | \
-			(((unsigned int )(x) & (unsigned int )0xff000000UL) >> 24) ))
+#define swap(x)                                                              \
+	((unsigned int)((((unsigned int)(x) & (unsigned int)0x000000ffUL)    \
+			 << 24) |                                            \
+			(((unsigned int)(x) & (unsigned int)0x0000ff00UL)    \
+			 << 8) |                                             \
+			(((unsigned int)(x) & (unsigned int)0x00ff0000UL) >> \
+			 8) |                                                \
+			(((unsigned int)(x) & (unsigned int)0xff000000UL) >> \
+			 24)))
 
 #endif
 
 static int
 // sys_upgrade(char *url, FILE *stream, int *total)
-sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
-								// https,
-								// 8/6/2003
+sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
+	// https,
+	// 8/6/2003
 {
 	lcdmessage("System Upgrade");
 #ifndef ANTI_FLASH
@@ -222,7 +226,6 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 		fwrite(&buf[0], 1, linuxsize % MIN_BUF_SIZE, fifo);
 		fsync(fileno(fifo));
 		*total -= linuxsize;
-
 	}
 	fclose(fifo);
 #ifdef HAVE_NEW_UPGRADE
@@ -255,11 +258,10 @@ err:
 
 static int
 // do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
-do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy, 
-									// https, 
-									// 8/6/2003
+do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
+	// https,
+	// 8/6/2003
 {
-
 	killall("udhcpc", SIGKILL);
 #ifndef ANTI_FLASH
 	char buf[1024];
@@ -279,19 +281,23 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
-				while (len > 0 && strcmp(buf, "\n")
-				       && strcmp(buf, "\r\n")) {
-					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
+				while (len > 0 && strcmp(buf, "\n") &&
+				       strcmp(buf, "\r\n")) {
+					if (!wfgets(buf,
+						    MIN(len + 1, sizeof(buf)),
+						    stream, NULL))
 						return -1;
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
+				if (!wfgets(buf, MIN(len + 1, sizeof(buf)),
+					    stream, NULL))
 					return -1;
 				len -= strlen(buf);
-				buf[1] = '\0';	// we only want the 1st digit
+				buf[1] = '\0'; // we only want the 1st digit
 				nvram_set("sv_restore_defaults", buf);
 				nvram_commit();
-			} else if (strstr(buf, "name=\"file\""))	// upgrade image
+			} else if (strstr(buf,
+					  "name=\"file\"")) // upgrade image
 			{
 				type = 0;
 				break;
@@ -331,7 +337,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 		fseeko(in, mtdlen - (size + 65536), SEEK_SET);
 		int i;
 		for (i = 0; i < size; i++)
-			putc(0, in);	// erase backup area
+			putc(0, in); // erase backup area
 		fflush(in);
 		fsync(fileno(in));
 		fclose(in);
@@ -348,5 +354,4 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 	fprintf(stderr, "upgrade done()\n");
 #endif
 	return 0;
-
 }

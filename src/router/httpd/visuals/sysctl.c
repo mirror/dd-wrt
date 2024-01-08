@@ -33,14 +33,16 @@
 
 #include <nfs.h>
 #include "fs_common.h"
-void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
+void show_caption_pp(webs_t wp, const char *class, const char *caption,
+		     const char *pre, const char *post);
 
 struct sysctl_priv {
 	webs_t wp;
 	int cnt;
 };
 
-static void showsysctl(char *path, char *nvname, char *name, char *sysval, void *priv)
+static void showsysctl(char *path, char *nvname, char *name, char *sysval,
+		       void *priv)
 {
 	struct sysctl_priv *p = (struct sysctl_priv *)priv;
 	webs_t wp = p->wp;
@@ -63,17 +65,25 @@ static void showsysctl(char *path, char *nvname, char *name, char *sysval, void 
 		char *p = strrchr(title, '.');
 		if (p)
 			*p = 0;
-		websWrite(wp, "<fieldset>\n" "<legend>%s</legend>\n", title);
+		websWrite(wp,
+			  "<fieldset>\n"
+			  "<legend>%s</legend>\n",
+			  title);
 	}
-	websWrite(wp, "<div class=\"setting\">\n"	//
-		  "<div class=\"label\" style=\"width: 22.6em\">%s</div>\n", name);
-	websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, sysval);
+	websWrite(wp,
+		  "<div class=\"setting\">\n" //
+		  "<div class=\"label\" style=\"width: 22.6em\">%s</div>\n",
+		  name);
+	websWrite(
+		wp,
+		"<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n",
+		nvname, sysval);
 	websWrite(wp, "</div>\n");
 	p->cnt++;
 	return;
 }
 
-EJ_VISIBLE void ej_sysctl(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sysctl(webs_t wp, int argc, char_t **argv)
 {
 	struct sysctl_priv p;
 	p.wp = wp;

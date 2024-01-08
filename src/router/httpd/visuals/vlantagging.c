@@ -19,7 +19,7 @@
  *
  * $Id:
  */
-EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 {
 	char buffer[256];
 	int count = 0;
@@ -30,15 +30,19 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	getIfList(buffer, NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("vlan_tagcount", 0);
-	websWrite(wp, "<table cellspacing=\"4\" summary=\"vlans\" id=\"vlan_table\" class=\"table\"><thead><tr>\n");
+	websWrite(
+		wp,
+		"<table cellspacing=\"4\" summary=\"vlans\" id=\"vlan_table\" class=\"table\"><thead><tr>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl",
+			"<th class=\"center\" width=\"10%%\">",
+			"</th></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
-	foreach(word, wordlist, next) {
-
+	foreach(word, wordlist, next)
+	{
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -55,7 +59,10 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
 		websWrite(wp, "<td>");
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, port);
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
+			vlan_name, port);
 		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", count);
@@ -63,9 +70,10 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", prio);
 		websWrite(wp, "</td>\n");
 
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-			  count);
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			count);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
 
@@ -86,16 +94,20 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		sprintf(vlan_name, "vlantag%d", i);
 		//tag number
 		websWrite(wp, "<td>");
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
+		websWrite(
+			wp,
+			"<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n",
+			vlan_name);
 		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", i);
 		websWrite(wp, "<td>");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
 		websWrite(wp, "</td>\n");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-			  i);
+		websWrite(
+			wp,
+			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			i);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
 		totalcount++;
@@ -107,8 +119,9 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td colspan=\"3\">&nbsp;</td>\n");
 	websWrite(wp, "<td class=\"center\">\n");
-	websWrite(wp,
-		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+	websWrite(
+		wp,
+		"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "</tbody></table>\n");

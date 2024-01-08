@@ -22,7 +22,7 @@
 #ifdef WEBS
 #include <uemf.h>
 #include <ej.h>
-#else				/* !WEBS */
+#else /* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif				/* WEBS */
+#endif /* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -59,32 +59,35 @@
 #include <stdio.h>
 // #include <shutils.h>
 
-static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib", "/lib", NULL };
+static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib",
+				"/lib", NULL };
 
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
-#define cprintf(fmt, args...) do { \
-	FILE *fp = fopen("/dev/console", "w"); \
-	if (fp) { \
-		fprintf(fp,"%s (%d):%s ",__FILE__,__LINE__,__func__); \
-		fprintf(fp, fmt, ## args); \
-		fclose(fp); \
-	} \
-} while (0)
+#define cprintf(fmt, args...)                                          \
+	do {                                                           \
+		FILE *fp = fopen("/dev/console", "w");                 \
+		if (fp) {                                              \
+			fprintf(fp, "%s (%d):%s ", __FILE__, __LINE__, \
+				__func__);                             \
+			fprintf(fp, fmt, ##args);                      \
+			fclose(fp);                                    \
+		}                                                      \
+	} while (0)
 #endif
 size_t websWrite(webs_t wp, char *fmt, ...);
 size_t vwebsWrite(webs_t wp, char *fmt, va_list args);
 char *websGetVar(webs_t wp, char *var, char *d)
 {
-	return get_cgi(wp, var) ? : d;
+	return get_cgi(wp, var) ?: d;
 }
 
 char *websGetSaneVar(webs_t wp, char *var, char *d)
 {
 	char *sanevar = websGetVar(wp, var, d);
 	if (d && sanevar && !*var)
-	    sanevar = d;
+		sanevar = d;
 	return sanevar;
 }
 
@@ -100,7 +103,8 @@ char *GOZILA_GET(webs_t wp, char *name)
 		return NULL;
 	if (!wp)
 		return nvram_safe_get(name);
-	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
+	return wp->gozila_action ? websGetVar(wp, name, NULL) :
+				   nvram_safe_get(name);
 }
 
 void *openlib(char *type)
@@ -116,7 +120,8 @@ void *openlib(char *type)
 			return handle;
 	}
 	char *err = dlerror();
-	dd_logerror("httpd", "Cannot load %s/%s.so library (%s)\n", path_modules[i - 1], type, err ? err : "unknown");
+	dd_logerror("httpd", "Cannot load %s/%s.so library (%s)\n",
+		    path_modules[i - 1], type, err ? err : "unknown");
 	return NULL;
 }
 
@@ -149,7 +154,7 @@ static void start_gozila(char *name, webs_t wp)
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
-		(*fptr) (wp);
+		(*fptr)(wp);
 	else
 		dd_logdebug("httpd", "Function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
@@ -159,7 +164,8 @@ static void start_gozila(char *name, webs_t wp)
 	cprintf("start_sevice done()\n");
 }
 
-static int start_validator(char *name, webs_t wp, char *value, struct variable *v)
+static int start_validator(char *name, webs_t wp, char *value,
+			   struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_validator %s\n", name);
@@ -172,15 +178,15 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	}
 	int ret = FALSE;
 
-	int (*fptr)(webs_t wp, char *value, struct variable * v);
+	int (*fptr)(webs_t wp, char *value, struct variable *v);
 
 	snprintf(service, sizeof(service), "%s", name);
 	dd_logdebug("httpd", "Start validator %s\n", service);
 	cprintf("resolving %s\n", service);
-	fptr = (int (*)(webs_t wp, char *value, struct variable * v))
-	    dlsym(s_service, service);
+	fptr = (int (*)(webs_t wp, char *value,
+			struct variable *v))dlsym(s_service, service);
 	if (fptr)
-		ret = (*fptr) (wp, value, v);
+		ret = (*fptr)(wp, value, v);
 	else
 		dd_logdebug("httpd", "Function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
@@ -192,7 +198,8 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	return ret;
 }
 
-static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
+static void *start_validator_nofree(char *name, void *handle, webs_t wp,
+				    char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service_nofree %s\n", name);
@@ -204,22 +211,23 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	if (handle == NULL) {
 		return NULL;
 	}
-	void (*fptr)(webs_t wp, char *value, struct variable * v);
+	void (*fptr)(webs_t wp, char *value, struct variable *v);
 
 	snprintf(service, sizeof(service), "%s", name);
 	cprintf("resolving %s\n", service);
-	fptr = (void (*)(webs_t wp, char *value, struct variable * v))
-	    dlsym(handle, service);
+	fptr = (void (*)(webs_t wp, char *value,
+			 struct variable *v))dlsym(handle, service);
 	cprintf("found. pointer is %p\n", fptr);
 	if (fptr)
-		(*fptr) (wp, value, v);
+		(*fptr)(wp, value, v);
 	else
 		dd_logdebug("httpd", "Function %s not found \n", service);
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
+static void *call_ej(char *name, void *handle, webs_t wp, int argc,
+		     char_t **argv)
 {
 	struct timeval before, after, r;
 
@@ -245,29 +253,32 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 		return NULL;
 	}
 	cprintf("pointer init\n");
-	void (*fptr)(webs_t wp, int argc, char_t ** argv);
+	void (*fptr)(webs_t wp, int argc, char_t **argv);
 
 	snprintf(service, sizeof(service), "ej_%s", name);
 	cprintf("resolving %s\n", service);
-	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle, service);
+	fptr = (void (*)(webs_t wp, int argc, char_t **argv))dlsym(handle,
+								   service);
 
 	cprintf("found. pointer is %p\n", fptr);
 	{
 		memdebug_enter();
 		if (fptr) {
 			gettimeofday(&before, NULL);
-			(*fptr) (wp, argc, argv);
+			(*fptr)(wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
-			dd_logdebug("httpd", " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
+			dd_logdebug("httpd", " %s duration %ld.%06ld\n",
+				    service, (long int)r.tv_sec,
+				    (long int)r.tv_usec);
 
 		} else {
 			char *err = dlerror();
-			dd_logdebug("httpd", " function %s not found (%s)\n", service, err ? err : "unknown");
+			dd_logdebug("httpd", " function %s not found (%s)\n",
+				    service, err ? err : "unknown");
 		}
 		memdebug_leave_info(service);
 	}
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
-
 }

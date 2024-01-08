@@ -22,7 +22,7 @@
 #ifdef WEBS
 #include <uemf.h>
 #include <ej.h>
-#else				/* !WEBS */
+#else /* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif				/* WEBS */
+#endif /* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -442,27 +442,29 @@ static struct callmap gozila_map[] = {
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
-#define cprintf(fmt, args...) do { \
-	FILE *fp = fopen("/dev/console", "w"); \
-	if (fp) { \
-		fprintf(fp,"%s (%d):%s ",__FILE__,__LINE__,__func__); \
-		fprintf(fp, fmt, ## args); \
-		fclose(fp); \
-	} \
-} while (0)
+#define cprintf(fmt, args...)                                          \
+	do {                                                           \
+		FILE *fp = fopen("/dev/console", "w");                 \
+		if (fp) {                                              \
+			fprintf(fp, "%s (%d):%s ", __FILE__, __LINE__, \
+				__func__);                             \
+			fprintf(fp, fmt, ##args);                      \
+			fclose(fp);                                    \
+		}                                                      \
+	} while (0)
 #endif
 size_t websWrite(webs_t wp, char *fmt, ...);
 size_t vwebsWrite(webs_t wp, char *fmt, va_list args);
 char *websGetVar(webs_t wp, char *var, char *d)
 {
-	return get_cgi(wp, var) ? : d;
+	return get_cgi(wp, var) ?: d;
 }
 
 char *websGetSaneVar(webs_t wp, char *var, char *d)
 {
 	char *sanevar = websGetVar(wp, var, d);
 	if (d && sanevar && !*var)
-	    sanevar = d;
+		sanevar = d;
 	return sanevar;
 }
 
@@ -478,7 +480,8 @@ char *GOZILA_GET(webs_t wp, char *name)
 		return NULL;
 	if (!wp)
 		return nvram_safe_get(name);
-	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
+	return wp->gozila_action ? websGetVar(wp, name, NULL) :
+				   nvram_safe_get(name);
 }
 
 char *live_translate(webs_t wp, const char *tran);
@@ -489,35 +492,39 @@ static void start_gozila(char *name, webs_t wp)
 	int (*fptr)(webs_t wp) = NULL;
 	int i;
 	for (i = 0; i < sizeof(gozila_map) / sizeof(gozila_map[0]); i++) {
-		if (gozila_map[i].name[0] == name[0] && !strcmp(gozila_map[i].name, name)) {
+		if (gozila_map[i].name[0] == name[0] &&
+		    !strcmp(gozila_map[i].name, name)) {
 			fptr = (int (*)(webs_t wp))gozila_map[i].func;
 			break;
 		}
 	}
 	dd_logdebug("httpd", "start gozila %s\n", name);
 	if (fptr)
-		(*fptr) (wp);
+		(*fptr)(wp);
 	else
 		dd_logdebug("httpd", "function %s not found \n", name);
 }
 
-static int start_validator(char *name, webs_t wp, char *value, struct variable *v)
+static int start_validator(char *name, webs_t wp, char *value,
+			   struct variable *v)
 {
-
-	int (*fptr)(webs_t wp, char *value, struct variable * v) = NULL;
+	int (*fptr)(webs_t wp, char *value, struct variable *v) = NULL;
 
 	int i;
 	int ret;
 	for (i = 0; i < sizeof(validate_map) / sizeof(validate_map[0]); i++) {
-		if (validate_map[i].name[0] == name[0] && !strcmp(validate_map[i].name, name)) {
-			fptr = (int (*)(webs_t wp, char *value, struct variable * v))validate_map[i].func;
+		if (validate_map[i].name[0] == name[0] &&
+		    !strcmp(validate_map[i].name, name)) {
+			fptr = (int (*)(webs_t wp, char *value,
+					struct variable *v))validate_map[i]
+				       .func;
 			break;
 		}
 	}
 
 	dd_logdebug("httpd", "start validator %s\n", name);
 	if (fptr)
-		ret = (*fptr) (wp, value, v);
+		ret = (*fptr)(wp, value, v);
 	else
 		dd_logdebug("httpd", "function %s not found \n", name);
 
@@ -525,13 +532,15 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	return ret;
 }
 
-static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
+static void *start_validator_nofree(char *name, void *handle, webs_t wp,
+				    char *value, struct variable *v)
 {
 	start_validator(name, wp, value, v);
 	return handle;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
+static void *call_ej(char *name, void *handle, webs_t wp, int argc,
+		     char_t **argv)
 {
 	struct timeval before, after, r;
 
@@ -542,11 +551,13 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 		for (i = 0; i < argc; i++)
 			fprintf(stderr, " %s", argv[i]);
 	}
-	void (*fptr)(webs_t wp, int argc, char_t ** argv) = NULL;
+	void (*fptr)(webs_t wp, int argc, char_t **argv) = NULL;
 	int i;
 	for (i = 0; i < sizeof(ej_map) / sizeof(ej_map[0]); i++) {
 		if (!strcmp(ej_map[i].name, name)) {
-			fptr = (void (*)(webs_t wp, int argc, char_t ** argv))ej_map[i].func;
+			fptr = (void (*)(webs_t wp, int argc,
+					 char_t **argv))ej_map[i]
+				       .func;
 			break;
 		}
 	}
@@ -555,15 +566,16 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 		memdebug_enter();
 		if (fptr) {
 			gettimeofday(&before, NULL);
-			(*fptr) (wp, argc, argv);
+			(*fptr)(wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
-			dd_logdebug("httpd", " %s duration %ld.%06ld\n", name, (long int)r.tv_sec, (long int)r.tv_usec);
+			dd_logdebug("httpd", " %s duration %ld.%06ld\n", name,
+				    (long int)r.tv_sec, (long int)r.tv_usec);
 
 		} else {
-			dd_logdebug("httpd", " function %s not found (%s)\n", name, "unknown");
+			dd_logdebug("httpd", " function %s not found (%s)\n",
+				    name, "unknown");
 		}
 	}
 	return handle;
-
 }

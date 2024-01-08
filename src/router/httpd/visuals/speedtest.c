@@ -30,7 +30,7 @@
 
 #include <broadcom.h>
 
-EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t **argv)
 {
 	FILE *in = fopen("/tmp/speedtest_upload_result", "rb");
 	if (!in) {
@@ -43,7 +43,7 @@ EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", str);
 }
 
-EJ_VISIBLE void ej_speed_down(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_speed_down(webs_t wp, int argc, char_t **argv)
 {
 	FILE *in = fopen("/tmp/speedtest_download_result", "rb");
 	if (!in) {
@@ -56,7 +56,7 @@ EJ_VISIBLE void ej_speed_down(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", str);
 }
 
-EJ_VISIBLE void ej_speed_name(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_speed_name(webs_t wp, int argc, char_t **argv)
 {
 	FILE *in = fopen("/tmp/speedtest_name", "rb");
 	if (!in) {
@@ -70,7 +70,7 @@ EJ_VISIBLE void ej_speed_name(webs_t wp, int argc, char_t ** argv)
 	fclose(in);
 }
 
-EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t **argv)
 {
 	FILE *in = fopen("/tmp/speedtest_country", "rb");
 	if (!in) {
@@ -84,7 +84,7 @@ EJ_VISIBLE void ej_speed_country(webs_t wp, int argc, char_t ** argv)
 	fclose(in);
 }
 
-EJ_VISIBLE void ej_speed_sponsor(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_speed_sponsor(webs_t wp, int argc, char_t **argv)
 {
 	FILE *in = fopen("/tmp/speedtest_sponsor", "rb");
 	if (!in) {

@@ -35,7 +35,7 @@ static char *lastunlock;
 #define unlock()
 #endif
 
-EJ_VISIBLE void ej_dumpip_conntrack(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumpip_conntrack(webs_t wp, int argc, char_t **argv)
 {
 	int ip_count = 0;
 	FILE *fp;
@@ -95,19 +95,19 @@ static int string_search(char *string, char *search)
 	if (string == NULL)
 		return 0;
 	if (searchLen > strlen(string)) {
-		return (0);	// this can't match
+		return (0); // this can't match
 	}
 	int slen = strlen(string);
 
-	for (i = 0; i < slen - searchLen; i++) {	// +1 removed.
+	for (i = 0; i < slen - searchLen; i++) { // +1 removed.
 		if (!strncasecmp((char *)&string[i], search, searchLen)) {
-			return (1);	// we got hit
+			return (1); // we got hit
 		}
 	}
 	return (0);
 }
 
-EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
 	int ip_count = 1;
@@ -135,7 +135,6 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	}
 	line = malloc(512);
 	while (!feof(fp) && fgets(line, 511, fp) != NULL) {
-
 		websWrite(wp, "<tr>\n");
 
 		// Nb
@@ -153,7 +152,8 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		else if (string_search(line, "sctp"))
 			protocol = "SCTP";
 		else
-			protocol = tran_string(buf, sizeof(buf), "share.unknown");
+			protocol =
+				tran_string(buf, sizeof(buf), "share.unknown");
 		websWrite(wp, "<td>%s</td>", protocol);
 
 		// Timeout
@@ -173,7 +173,10 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(srcip, lanip))
 			websWrite(wp, "<td align=\"right\">%s</td>", srcip);
 		else
-			websWrite(wp, "<td align=\"right\"><a class=\"link\" title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", srcip, srcip);
+			websWrite(
+				wp,
+				"<td align=\"right\"><a class=\"link\" title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>",
+				srcip, srcip);
 
 		// dst
 		if (search_hit("dst=", line, dstip))
@@ -186,13 +189,17 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(dstip, lanip))
 			websWrite(wp, "<td align=\"right\">%s</td>", dstip);
 		else
-			websWrite(wp, "<td align=\"right\"><a class=\"link\" title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", dstip, dstip);
+			websWrite(
+				wp,
+				"<td align=\"right\"><a class=\"link\" title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>",
+				dstip, dstip);
 		// service
 		if (search_hit("dport=", line, dstport))
 			continue;
 		_dport = atoi(dstport);
 		servp = my_getservbyport(htons(_dport), protocol);
-		websWrite(wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
+		websWrite(wp, "<td align=\"right\">%s</td>",
+			  servp ? servp->s_name : dstport);
 		if (servp) {
 			debug_free(servp->s_proto);
 			debug_free(servp->s_name);

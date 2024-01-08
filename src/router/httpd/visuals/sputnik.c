@@ -36,7 +36,7 @@
 
 #include <broadcom.h>
 
-EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t **argv)
 {
 	char *key = argv[0];
 	FILE *fh;
@@ -49,7 +49,7 @@ EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
 		 *   isn't running.
 		 */
 		if (fgets(s, sizeof(s), fh)) {
-			int apd_pid = (pid_t) atol(s);
+			int apd_pid = (pid_t)atol(s);
 
 			if (!kill(apd_pid, 0)) {
 				if (!strcmp(key, "pid")) {
@@ -62,7 +62,8 @@ EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
 						int len = strlen(s);
 						char *eqloc;
 
-						if (len > 0 && s[len - 1] == '\n') {
+						if (len > 0 &&
+						    s[len - 1] == '\n') {
 							s[len - 1] = '\0';
 						}
 
@@ -73,18 +74,19 @@ EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
 							v = eqloc + 1;
 
 							if (!strcmp(key, s)) {
-								websWrite(wp, "%s", v);
+								websWrite(wp,
+									  "%s",
+									  v);
 								break;
 							}
 						}
-					}	/* End while */
+					} /* End while */
 				}
 			}
 		}
 
 		fclose(fh);
-
 	}
 
 	return;
-}				/* End ej_sputnik_apd_status() */
+} /* End ej_sputnik_apd_status() */
