@@ -42,8 +42,7 @@ static void getledconfig(struct ledconfig *cfg)
 	cfg->ses_gpio = GPIO_VOID; // use for SES1 (Linksys), AOSS (Buffalo)
 	cfg->ses2_gpio = GPIO_VOID;
 	cfg->wlan_gpio = GPIO_VOID; // wlan button led R7000
-	cfg->wlan0_gpio =
-		GPIO_VOID; // use this only if wlan led is not controlled by hardware!
+	cfg->wlan0_gpio = GPIO_VOID; // use this only if wlan led is not controlled by hardware!
 	cfg->wlan1_gpio = GPIO_VOID;
 	cfg->wlan2_gpio = GPIO_VOID;
 	cfg->usb_gpio = GPIO_VOID;
@@ -398,8 +397,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->connected_gpio = 0x66;
 		cfg->disconnected_gpio = 0x67;
 #else
-		cfg->connected_gpio = GPIO_LOW |
-				      0x10; // 16 is mapped to front led
+		cfg->connected_gpio = GPIO_LOW | 0x10; // 16 is mapped to front led
 #endif
 		break;
 	case ROUTER_BOARD_GATEWORX:
@@ -426,9 +424,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = 0x3;
 		break;
 	case ROUTER_LINKSYS_WRH54G:
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate factory
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_WRT54G:
@@ -1107,15 +1103,12 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_MOTOROLA:
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate factory
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_RT210W:
 		cfg->power_gpio = GPIO_LOW | 0x5;
-		cfg->diag_gpio =
-			0x5; // power led blink / off to indicate factory
+		cfg->diag_gpio = 0x5; // power led blink / off to indicate factory
 		// defaults
 		cfg->connected_gpio = GPIO_LOW | 0x0;
 		cfg->wlan0_gpio = GPIO_LOW | 0x3;
@@ -1124,35 +1117,29 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_BELKIN_F5D7230_V2000:
 	case ROUTER_BELKIN_F5D7231:
 		cfg->power_gpio = GPIO_LOW | 0x5;
-		cfg->diag_gpio =
-			0x5; // power led blink / off to indicate factory
+		cfg->diag_gpio = 0x5; // power led blink / off to indicate factory
 		// defaults
 		cfg->connected_gpio = GPIO_LOW | 0x0;
 		break;
 	case ROUTER_MICROSOFT_MN700:
 		cfg->power_gpio = 0x6;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x6; // power led blink / off to indicate factory
+		cfg->diag_gpio = GPIO_LOW | 0x6; // power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_ASUS_WL520GUGC:
-		cfg->diag_gpio =
-			0x0; // power led blink / off to indicate factory
+		cfg->diag_gpio = 0x0; // power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL500G_PRE:
 	case ROUTER_ASUS_WL700GE:
 		cfg->power_gpio = GPIO_LOW | 0x1;
-		cfg->diag_gpio =
-			0x1; // power led blink / off to indicate factory
+		cfg->diag_gpio = 0x1; // power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL550GE:
 		cfg->power_gpio = GPIO_LOW | 0x2;
-		cfg->diag_gpio =
-			0x2; // power led blink / off to indicate factory
+		cfg->diag_gpio = 0x2; // power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_WRT54G3G:
@@ -1172,8 +1159,7 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_DELL_TRUEMOBILE_2300:
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
 		cfg->power_gpio = GPIO_LOW | 0x7;
-		cfg->diag_gpio =
-			0x7; // power led blink / off to indicate factory
+		cfg->diag_gpio = 0x7; // power led blink / off to indicate factory
 		// defaults
 		cfg->wlan0_gpio = GPIO_LOW | 0x6;
 		break;
@@ -1184,23 +1170,17 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_SITECOM_WL105B:
 		cfg->power_gpio = 0x3;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x3; // power led blink / off to indicate factory
+		cfg->diag_gpio = GPIO_LOW | 0x3; // power led blink / off to indicate factory
 		// defaults
 		cfg->wlan0_gpio = GPIO_LOW | 0x4;
 		break;
 	case ROUTER_WRT300N:
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_WRT150N:
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate fac.def.
 		cfg->sec0_gpio = GPIO_LOW | 0x5;
 		break;
 	case ROUTER_WRT300NV11:
@@ -1211,32 +1191,24 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_WRT310N:
 		cfg->connected_gpio = GPIO_LOW | 0x3; //ses orange
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate fac.def.
 		cfg->ses_gpio = GPIO_LOW | 0x9; // ses blue
 		break;
 	case ROUTER_WRT310NV2:
 		cfg->connected_gpio = GPIO_LOW | 0x2; // ses orange
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate fac.def.
 		cfg->ses_gpio = GPIO_LOW | 0x4; // ses blue
 		break;
 	case ROUTER_WRT160N:
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate fac.def.
 		cfg->connected_gpio = GPIO_LOW | 0x3; // ses orange
 		cfg->ses_gpio = GPIO_LOW | 0x5; // ses blue
 		break;
 	case ROUTER_WRT160NV3:
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink / off to indicate fac.def.
 		cfg->connected_gpio = GPIO_LOW | 0x2; // ses orange
 		cfg->ses_gpio = GPIO_LOW | 0x4; // ses blue
 		break;
@@ -1245,38 +1217,30 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_LINKSYS_E1500:
 	case ROUTER_LINKSYS_E1550:
 		cfg->power_gpio = GPIO_LOW | 0x6;
-		cfg->diag_gpio =
-			0x6; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = 0x6; // power led blink / off to indicate fac.def.
 		cfg->ses_gpio = GPIO_LOW | 0x8; // ses blue
 		break;
 	case ROUTER_LINKSYS_E1000V2:
 		cfg->power_gpio = GPIO_LOW | 0x6;
-		cfg->diag_gpio =
-			0x6; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = 0x6; // power led blink / off to indicate fac.def.
 		cfg->connected_gpio = 0x7; // ses orange
 		cfg->ses_gpio = 0x8; // ses blue
 		break;
 	case ROUTER_LINKSYS_E2500:
 		cfg->power_gpio = GPIO_LOW | 0x6;
-		cfg->diag_gpio =
-			0x6; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = 0x6; // power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_LINKSYS_E3200:
 		cfg->power_gpio = GPIO_LOW | 0x3;
-		cfg->diag_gpio =
-			0x3; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = 0x3; // power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_LINKSYS_E4200:
 		cfg->power_gpio = GPIO_LOW | 0x5; // white LED1
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x3; // power led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x3; // power led blink / off to indicate fac.def.
 		//              cfg->connected_gpio = GPIO_LOW | 0x3; // white LED2
 		break;
 	case ROUTER_LINKSYS_EA6500:
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // white led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x1; // white led blink / off to indicate fac.def.
 		break;
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_LINKSYS_EA6700:
@@ -1285,9 +1249,7 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_LINKSYS_EA6900:
 		cfg->usb_power = 0x9; //usb power on/off
 		cfg->usb_power1 = 0xa; //usb power on/off
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x6; // white led blink / off to indicate fac.def.
+		cfg->diag_gpio = GPIO_LOW | 0x6; // white led blink / off to indicate fac.def.
 		cfg->connected_gpio = 0x8;
 		break;
 	case ROUTER_LINKSYS_EA8500:
@@ -1298,14 +1260,12 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_ASUS_WL500G:
 		cfg->power_gpio = GPIO_LOW | 0x0;
-		cfg->diag_gpio =
-			0x0; // power led blink /off to indicate factory
+		cfg->diag_gpio = 0x0; // power led blink /off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL500W:
 		cfg->power_gpio = GPIO_LOW | 0x5;
-		cfg->diag_gpio =
-			0x5; // power led blink /off to indicate factory
+		cfg->diag_gpio = 0x5; // power led blink /off to indicate factory
 		// defaults
 		break;
 	case ROUTER_LINKSYS_WTR54GS:
@@ -1326,9 +1286,7 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_NETGEAR_WNDR3300:
 		cfg->power_gpio = 0x5;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x5; // power led blink /off to indicate factory defaults
+		cfg->diag_gpio = GPIO_LOW | 0x5; // power led blink /off to indicate factory defaults
 		cfg->connected_gpio = 0x7; // WAN led green
 		break;
 	case ROUTER_ASKEY_RT220XD:
@@ -1337,9 +1295,7 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_WRT610N:
 		cfg->power_gpio = 0x1;
-		cfg->diag_gpio =
-			GPIO_LOW |
-			0x1; // power led blink /off to indicate factory defaults
+		cfg->diag_gpio = GPIO_LOW | 0x1; // power led blink /off to indicate factory defaults
 		cfg->connected_gpio = GPIO_LOW | 0x3; // ses amber
 		cfg->ses_gpio = GPIO_LOW | 0x9; // ses blue
 		cfg->usb_gpio = GPIO_LOW | 0x0;
@@ -1364,13 +1320,11 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->connected_gpio = GPIO_LOW | 0x4;
 		break;
 	case ROUTER_NETGEAR_WG602_V4:
-		cfg->power_gpio = GPIO_LOW |
-				  0x1; // trick: make lan led green for 100Mbps
+		cfg->power_gpio = GPIO_LOW | 0x1; // trick: make lan led green for 100Mbps
 		break;
 	case ROUTER_BELKIN_F5D7231_V2000:
 		cfg->connected_gpio = GPIO_LOW | 0x4;
-		cfg->diag_gpio =
-			0x1; // power led blink /off to indicate factory defaults
+		cfg->diag_gpio = 0x1; // power led blink /off to indicate factory defaults
 		break;
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_NETGEAR_WNR3500LV2:
@@ -1601,8 +1555,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->power_gpio = GPIO_LOW | 0x2; // power led green
 		//cfg->diag_gpio = GPIO_LOW | 0x3;    // power led orange
 		cfg->diag_gpio = GPIO_LOW | 0x1; // Netgear logo
-		cfg->connected_gpio = GPIO_LOW |
-				      0xa; // wan led green - hw controlled
+		cfg->connected_gpio = GPIO_LOW | 0xa; // wan led green - hw controlled
 		cfg->wlan0_gpio = GPIO_LOW | 0xb; // radio led blue
 		cfg->usb_gpio = GPIO_LOW | 0x8; // usb led
 		//cfg->usb_power = 0x0;    // usb enable
@@ -1632,8 +1585,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->power_gpio = GPIO_LOW | 0x2; // power led green
 		//cfg->diag_gpio = GPIO_LOW | 0x3;    // power led orange
 		cfg->diag_gpio = GPIO_LOW | 0x1; // Netgear logo
-		cfg->connected_gpio = GPIO_LOW |
-				      0xa; // wan led green - hw controlled
+		cfg->connected_gpio = GPIO_LOW | 0xa; // wan led green - hw controlled
 		cfg->wlan0_gpio = GPIO_LOW | 0xb; // radio led blue
 		cfg->usb_gpio = GPIO_LOW | 0x8; // usb led
 		//cfg->usb_power = 0x0;    // usb enable
@@ -1748,8 +1700,7 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_NETGEAR_R8500:
 		cfg->power_gpio = GPIO_LOW | 0x2; // power led
 		cfg->diag_gpio = GPIO_LOW | 0xf; //
-		cfg->connected_gpio = GPIO_LOW |
-				      0x9; // wan led white 1Gb amber 100Mb
+		cfg->connected_gpio = GPIO_LOW | 0x9; // wan led white 1Gb amber 100Mb
 		cfg->usb_power = 0x0; // usb enable
 		cfg->wlan0_gpio = GPIO_LOW | 0xb; // radio 5G-1
 		cfg->wlan1_gpio = GPIO_LOW | 0xd; // radio 2G
@@ -1846,12 +1797,9 @@ int led_control(int type, int act)
  * 1st hex number: 1 = inverted, 0 = normal
  */
 {
-#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || \
-     (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) ||                       \
-     defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) ||        \
-     defined(HAVE_CA8) || defined(HAVE_LS5)) &&                               \
-	(!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) &&                   \
-	 !defined(HAVE_RTG32) && !defined(HAVE_DIR400) &&                     \
+#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) || \
+     defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)) &&                \
+	(!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_RTG32) && !defined(HAVE_DIR400) &&                     \
 	 !defined(HAVE_BWRG1000))
 	return 0;
 #else
@@ -1986,15 +1934,11 @@ int led_control(int type, int act)
 
 static int diag_led_4702(int type, int act)
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) ||     \
-	defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) ||                      \
-	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || \
-	defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||    \
-	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) ||     \
-	defined(HAVE_LS5) || defined(HAVE_FONERA) || defined(HAVE_LSX) ||      \
-	defined(HAVE_DANUBE) || defined(HAVE_STORM) ||                         \
-	defined(HAVE_ADM5120) || defined(HAVE_RT2880) ||                       \
-	defined(HAVE_OPENRISC)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) ||  \
+	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || \
+	defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) ||          \
+	defined(HAVE_FONERA) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) ||  \
+	defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
 #else
 	if (act == START_LED) {
@@ -2018,14 +1962,11 @@ static int diag_led_4702(int type, int act)
 
 static int C_led_4702(int i)
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) ||     \
-	defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) ||                      \
-	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || \
-	defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||    \
-	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) ||     \
-	defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) ||      \
-	defined(HAVE_STORM) || defined(HAVE_ADM5120) ||                        \
-	defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) ||  \
+	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || \
+	defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) ||          \
+	defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) ||  \
+	defined(HAVE_OPENRISC)
 	return 0;
 #else
 	FILE *fp;
@@ -2058,15 +1999,11 @@ static int C_led_4702(int i)
 
 static int diag_led_4704(int type, int act)
 {
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) ||    \
-	defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || \
-	defined(HAVE_MAGICBOX) || defined(HAVE_RB600) ||                       \
-	defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) ||   \
-	defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) ||    \
-	defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) ||     \
-	defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) ||    \
-	defined(HAVE_ADM5120) || defined(HAVE_RT2880) ||                       \
-	defined(HAVE_OPENRISC) || defined(HAVE_ALPINE)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) ||       \
+	defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || \
+	defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) ||         \
+	defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) ||           \
+	defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) || defined(HAVE_ALPINE)
 	return 0;
 #else
 	unsigned int control, in, outen, out;
@@ -2111,15 +2048,11 @@ static int diag_led_4704(int type, int act)
 
 static int diag_led_4712(int type, int act)
 {
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) ||    \
-	defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || \
-	defined(HAVE_MAGICBOX) || defined(HAVE_RB600) ||                       \
-	defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) ||   \
-	defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) ||    \
-	defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) ||     \
-	defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) ||    \
-	defined(HAVE_ADM5120) || defined(HAVE_RT2880) ||                       \
-	defined(HAVE_OPENRISC) | defined(HAVE_ALPINE)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) ||       \
+	defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || \
+	defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) ||         \
+	defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) ||           \
+	defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) | defined(HAVE_ALPINE)
 	return 0;
 #else
 	unsigned int control, in, outen, out, ctr_mask, out_mask;
@@ -2178,13 +2111,11 @@ int diag_led(int type, int act)
 {
 	int brand = getRouterBrand();
 
-	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G ||
-	    brand == ROUTER_WRT300NV11)
+	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G || brand == ROUTER_WRT300NV11)
 		return diag_led_4712(type, act);
 	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
 		return diag_led_4702(type, act);
-	else if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT310N ||
-		  brand == ROUTER_WRT350N ||
+	else if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT310N || brand == ROUTER_WRT350N ||
 		  brand == ROUTER_BUFFALO_WZRG144NH) &&
 		 type == DIAG)
 		return diag_led_4704(type, act);

@@ -74,17 +74,13 @@ struct rsync_share *getrsyncshares(void)
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if (!strcmp(key, "mp")) {
-					strncpy(mp, json_string_value(value),
-						sizeof(mp) - 1);
+					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
 				} else if (!strcmp(key, "sd")) {
-					strncpy(sd, json_string_value(value),
-						sizeof(sd) - 1);
+					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
 				} else if (!strcmp(key, "label")) {
-					strncpy(label, json_string_value(value),
-						sizeof(label) - 1);
+					strncpy(label, json_string_value(value), sizeof(label) - 1);
 				}
-				iterator =
-					json_object_iter_next(entry, iterator);
+				iterator = json_object_iter_next(entry, iterator);
 			}
 			if (*mp && *label) {
 				current->next = getrsyncshare(mp, sd, label);

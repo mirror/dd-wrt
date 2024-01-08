@@ -47,8 +47,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 	struct ifreq ifr;
 	struct in_addr in_addr, in_netmask, in_broadaddr;
 
-	cprintf("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n",
-		name, flags == IFUP ? "IFUP" : "0", addr, netmask);
+	cprintf("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n", name, flags == IFUP ? "IFUP" : "0", addr, netmask);
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		goto err2; // override socket close
@@ -78,8 +77,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 		if (ioctl(s, SIOCSIFNETMASK, &ifr) < 0)
 			goto err;
 
-		in_broadaddr.s_addr = (in_addr.s_addr & in_netmask.s_addr) |
-				      ~in_netmask.s_addr;
+		in_broadaddr.s_addr = (in_addr.s_addr & in_netmask.s_addr) | ~in_netmask.s_addr;
 		sin_addr(&ifr.ifr_broadaddr).s_addr = in_broadaddr.s_addr;
 		ifr.ifr_broadaddr.sa_family = AF_INET;
 		if (ioctl(s, SIOCSIFBRDADDR, &ifr) < 0)
@@ -137,9 +135,7 @@ struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr)
 	if (ioctl(sockfd, SIOCGIFADDR, &ifreq) < 0) {
 		inaddr = NULL;
 	} else {
-		memcpy(inaddr,
-		       &(((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr),
-		       sizeof(struct in_addr));
+		memcpy(inaddr, &(((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr), sizeof(struct in_addr));
 	}
 	close(sockfd);
 	return inaddr;

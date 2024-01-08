@@ -51,8 +51,7 @@ int detect_apple_partmap(SECTION *section, int level)
 	 */
 
 	for (sectorsize = 512; sectorsize <= 4096; sectorsize <<= 1) {
-		if (get_buffer(section, sectorsize, sectorsize, (void **)&buf) <
-		    sectorsize)
+		if (get_buffer(section, sectorsize, sectorsize, (void **)&buf) < sectorsize)
 			return 0;
 
 		magic = get_be_short(buf);
@@ -65,25 +64,18 @@ int detect_apple_partmap(SECTION *section, int level)
 
 		/* get partition count and print info */
 		count = get_be_long(buf + 4);
-		print_line(level,
-			   "Apple partition map, %d entries, %d byte sectors",
-			   count, sectorsize);
+		print_line(level, "Apple partition map, %d entries, %d byte sectors", count, sectorsize);
 
 		for (i = 1; i <= count; i++) {
 			/* read the right sector */
 			/* NOTE: the previous run through the loop might have called
 			 *  get_buffer indirectly, invalidating our old pointer */
-			if (i > 1 &&
-			    get_buffer(section, i * sectorsize, sectorsize,
-				       (void **)&buf) < sectorsize)
+			if (i > 1 && get_buffer(section, i * sectorsize, sectorsize, (void **)&buf) < sectorsize)
 				return 0;
 
 			/* check signature */
 			if (get_be_short(buf) != 0x504D) {
-				print_line(
-					level,
-					"Partition %d: invalid signature, skipping",
-					i);
+				print_line(level, "Partition %d: invalid signature, skipping", i);
 				continue;
 			}
 
@@ -91,8 +83,7 @@ int detect_apple_partmap(SECTION *section, int level)
 			start = get_be_long(buf + 8);
 			size = get_be_long(buf + 12);
 			sprintf(append, " from %llu", start);
-			format_blocky_size(s, size, sectorsize, "sectors",
-					   append);
+			format_blocky_size(s, size, sectorsize, "sectors", append);
 			print_line(level, "Partition %d: %s", i, s);
 
 			/* get type */
@@ -100,11 +91,8 @@ int detect_apple_partmap(SECTION *section, int level)
 			print_line(level + 1, "Type \"%s\"", s);
 
 			/* recurse for content detection */
-			if (level >= 0 && start > count &&
-			    size > 0) { /* avoid recursion on self */
-				analyze_recursive(section, level + 1,
-						  start * sectorsize,
-						  size * sectorsize, 0);
+			if (level >= 0 && start > count && size > 0) { /* avoid recursion on self */
+				analyze_recursive(section, level + 1, start * sectorsize, size * sectorsize, 0);
 			}
 		}
 		return 1; /* don't try bigger sector sizes */
@@ -283,20 +271,15 @@ int detect_apfs_volume(SECTION *section, int level)
 	char s[256], t[1026];
 	struct apfs_superblock *sb;
 	struct apfs_nx_superblock *nxsb;
-	if (get_buffer(section, 0, sizeof(*nxsb), (void **)&nxsb) <
-	    sizeof(*nxsb))
+	if (get_buffer(section, 0, sizeof(*nxsb), (void **)&nxsb) < sizeof(*nxsb))
 		return 0;
 	if (le32toh(nxsb->nx_magic) == APFS_NX_MAGIC) {
 		print_line(level, "APFS Container");
-		format_blocky_size(s, le64toh(nxsb->nx_block_count),
-				   le32toh(nxsb->nx_block_size), "blocks",
-				   NULL);
+		format_blocky_size(s, le64toh(nxsb->nx_block_count), le32toh(nxsb->nx_block_size), "blocks", NULL);
 		print_line(level + 1, "Size %s", s);
 		format_uuid(nxsb->nx_uuid, s);
 		print_line(level + 1, "UUID %s", s);
-		if (get_buffer(section,
-			       FIRST_VOL_BNO * le32toh(nxsb->nx_block_size),
-			       sizeof(*sb), (void **)&sb) < sizeof(*sb))
+		if (get_buffer(section, FIRST_VOL_BNO * le32toh(nxsb->nx_block_size), sizeof(*sb), (void **)&sb) < sizeof(*sb))
 			return 0;
 		if (le32toh(sb->apfs_magic) == 0x42535041) {
 			print_line(level, "APFS Volume");
@@ -351,13 +334,11 @@ int detect_apple_volume(SECTION *section, int level)
 		if (level >= 0 && get_be_short(buf + 0x7c) == 0x482B) {
 			print_line(level, "HFS wrapper for HFS Plus");
 
-			offset = (u8)get_be_short(buf + 0x7e) * blocksize +
-				 (u8)blockstart * 512;
+			offset = (u8)get_be_short(buf + 0x7e) * blocksize + (u8)blockstart * 512;
 			/* TODO: size */
 
 			if (level >= 0)
-				analyze_recursive(section, level + 1, offset, 0,
-						  0);
+				analyze_recursive(section, level + 1, offset, 0, 0);
 		}
 		return 1;
 
@@ -386,8 +367,7 @@ int detect_apple_volume(SECTION *section, int level)
 			cataloglength = get_be_quad(buf + 272);
 
 		/* read header node of B-tree (4096 is the minimum node size) */
-		if (get_buffer(section, catalogstart, 4096, (void **)&buf) <
-		    4096)
+		if (get_buffer(section, catalogstart, 4096, (void **)&buf) < 4096)
 			return 0;
 		firstleafnode = get_be_long(buf + 24);
 		nodesize = get_be_short(buf + 32);
@@ -397,8 +377,7 @@ int detect_apple_volume(SECTION *section, int level)
 		/* read first lead node */
 		if ((firstleafnode + 1) * nodesize > cataloglength)
 			return 0; /* the location is beyond the end of the catalog */
-		if (get_buffer(section, catalogstart + firstleafnode * nodesize,
-			       nodesize, (void **)&buf) < nodesize)
+		if (get_buffer(section, catalogstart + firstleafnode * nodesize, nodesize, (void **)&buf) < nodesize)
 			return 0;
 
 		/* the first record in this leaf node should be for parent id 1 */
@@ -433,9 +412,7 @@ int detect_udif(SECTION *section, int level)
 		return 0;
 
 	if (memcmp(buf, "koly", 4) == 0) {
-		print_line(
-			level,
-			"Apple UDIF disk image, content detection may or may not work...");
+		print_line(level, "Apple UDIF disk image, content detection may or may not work...");
 		return 1;
 	}
 	return 0;

@@ -45,26 +45,18 @@ int detect_bfs(SECTION *section, int level)
 			continue;
 
 		for (en = 0; en < 2; en++) {
-			if (get_ve_long(en, buf + 32) ==
-				    0x42465331 && /* magic 1 */
-			    get_ve_long(en, buf + 36) ==
-				    0x42494745 && /* endianness */
-			    get_ve_long(en, buf + 68) ==
-				    0xdd121031 && /* magic 2 */
-			    get_ve_long(en, buf + 112) ==
-				    0x15b6830e) { /* magic 3 */
+			if (get_ve_long(en, buf + 32) == 0x42465331 && /* magic 1 */
+			    get_ve_long(en, buf + 36) == 0x42494745 && /* endianness */
+			    get_ve_long(en, buf + 68) == 0xdd121031 && /* magic 2 */
+			    get_ve_long(en, buf + 112) == 0x15b6830e) { /* magic 3 */
 
-				print_line(
-					level,
-					"BeOS BFS (BeFS) file system, %s placement, %s",
-					(off == 0) ? "Apple" : "Intel",
-					get_ve_name(en));
+				print_line(level, "BeOS BFS (BeFS) file system, %s placement, %s", (off == 0) ? "Apple" : "Intel",
+					   get_ve_name(en));
 
 				/* get label */
 				get_string(buf, 32, s);
 				if (s[0])
-					print_line(level + 1,
-						   "Volume name \"%s\"", s);
+					print_line(level + 1, "Volume name \"%s\"", s);
 
 				/* get size */
 				blocksize = get_ve_long(en, buf + 40);
@@ -75,8 +67,7 @@ int detect_bfs(SECTION *section, int level)
 				   blocksize == 1 << get_ve_long(en, buf + 44)
 				 */
 
-				format_blocky_size(s, blockcount, blocksize,
-						   "blocks", NULL);
+				format_blocky_size(s, blockcount, blocksize, "blocks", NULL);
 				print_line(level + 1, "Volume size %s", s);
 
 				return 1;

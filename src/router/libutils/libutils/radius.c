@@ -88,8 +88,7 @@ struct radiusdb *loadradiusdb(void)
 	db = safe_malloc(sizeof(struct radiusdb));
 	db->usercount = readword(fp);
 	if (db->usercount)
-		db->users =
-			safe_malloc(db->usercount * sizeof(struct radiususer));
+		db->users = safe_malloc(db->usercount * sizeof(struct radiususer));
 	else
 		db->users = NULL;
 	unsigned int i;
@@ -108,10 +107,8 @@ struct radiusdb *loadradiusdb(void)
 		db->users[i].passwordsize = readword(fp);
 		curlen += 4;
 		if (db->users[i].passwordsize) {
-			db->users[i].passwd =
-				safe_malloc(db->users[i].passwordsize);
-			fread(db->users[i].passwd, db->users[i].passwordsize, 1,
-			      fp);
+			db->users[i].passwd = safe_malloc(db->users[i].passwordsize);
+			fread(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 			curlen += db->users[i].passwordsize;
 		} else
 			db->users[i].passwd = NULL;
@@ -131,8 +128,7 @@ struct radiusdb *loadradiusdb(void)
 		} else
 			db->users[i].enabled = 1;
 
-		if ((db->users[i].fieldlen - curlen) >
-		    0) //for backward compatiblity
+		if ((db->users[i].fieldlen - curlen) > 0) //for backward compatiblity
 			fseek(fp, db->users[i].fieldlen - curlen, SEEK_CUR);
 	}
 	fclose(fp);
@@ -153,14 +149,12 @@ void writeradiusdb(struct radiusdb *db)
 			db->users[i].usersize = 0;
 
 		if (db->users[i].passwd)
-			db->users[i].passwordsize =
-				strlen(db->users[i].passwd) + 1;
+			db->users[i].passwordsize = strlen(db->users[i].passwd) + 1;
 		else
 			db->users[i].passwordsize = 0;
 
 		db->users[i].fieldlen =
-			sizeof(struct radiususer) + db->users[i].usersize +
-			db->users[i].passwordsize - (sizeof(char *) * 2);
+			sizeof(struct radiususer) + db->users[i].usersize + db->users[i].passwordsize - (sizeof(char *) * 2);
 
 		writeword(db->users[i].fieldlen, fp);
 		writeword(db->users[i].usersize, fp);
@@ -168,8 +162,7 @@ void writeradiusdb(struct radiusdb *db)
 			fwrite(db->users[i].user, db->users[i].usersize, 1, fp);
 		writeword(db->users[i].passwordsize, fp);
 		if (db->users[i].passwordsize)
-			fwrite(db->users[i].passwd, db->users[i].passwordsize,
-			       1, fp);
+			fwrite(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 		writeword(db->users[i].downstream, fp);
 		writeword(db->users[i].upstream, fp);
 		writeword(db->users[i].expiration, fp);
@@ -205,8 +198,7 @@ struct radiusclientdb *loadradiusclientdb(void)
 	db = malloc(sizeof(struct radiusclientdb));
 	db->usercount = readword(fp);
 	if (db->usercount)
-		db->users = safe_malloc(db->usercount *
-					sizeof(struct radiusclient));
+		db->users = safe_malloc(db->usercount * sizeof(struct radiusclient));
 	else
 		db->users = NULL;
 	unsigned int i;
@@ -216,10 +208,8 @@ struct radiusclientdb *loadradiusclientdb(void)
 		db->users[i].clientsize = readword(fp);
 		curlen += 8;
 		if (db->users[i].clientsize) {
-			db->users[i].client =
-				safe_malloc(db->users[i].clientsize);
-			fread(db->users[i].client, db->users[i].clientsize, 1,
-			      fp);
+			db->users[i].client = safe_malloc(db->users[i].clientsize);
+			fread(db->users[i].client, db->users[i].clientsize, 1, fp);
 			curlen += db->users[i].clientsize;
 		} else
 			db->users[i].client = NULL;
@@ -227,16 +217,13 @@ struct radiusclientdb *loadradiusclientdb(void)
 		db->users[i].passwordsize = readword(fp);
 		curlen += 4;
 		if (db->users[i].passwordsize) {
-			db->users[i].passwd =
-				safe_malloc(db->users[i].passwordsize);
-			fread(db->users[i].passwd, db->users[i].passwordsize, 1,
-			      fp);
+			db->users[i].passwd = safe_malloc(db->users[i].passwordsize);
+			fread(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 			curlen += db->users[i].passwordsize;
 		} else
 			db->users[i].passwd = NULL;
 
-		if ((db->users[i].fieldlen - curlen) >
-		    0) //for backward compatiblity
+		if ((db->users[i].fieldlen - curlen) > 0) //for backward compatiblity
 			fseek(fp, db->users[i].fieldlen - curlen, SEEK_CUR);
 	}
 	fclose(fp);
@@ -252,30 +239,25 @@ void writeradiusclientdb(struct radiusclientdb *db)
 	unsigned int i;
 	for (i = 0; i < db->usercount; i++) {
 		if (db->users[i].client)
-			db->users[i].clientsize =
-				strlen(db->users[i].client) + 1;
+			db->users[i].clientsize = strlen(db->users[i].client) + 1;
 		else
 			db->users[i].clientsize = 0;
 
 		if (db->users[i].passwd)
-			db->users[i].passwordsize =
-				strlen(db->users[i].passwd) + 1;
+			db->users[i].passwordsize = strlen(db->users[i].passwd) + 1;
 		else
 			db->users[i].passwordsize = 0;
 
 		db->users[i].fieldlen =
-			sizeof(struct radiusclient) + db->users[i].clientsize +
-			db->users[i].passwordsize - (sizeof(char *) * 2);
+			sizeof(struct radiusclient) + db->users[i].clientsize + db->users[i].passwordsize - (sizeof(char *) * 2);
 
 		writeword(db->users[i].fieldlen, fp);
 		writeword(db->users[i].clientsize, fp);
 		if (db->users[i].clientsize)
-			fwrite(db->users[i].client, db->users[i].clientsize, 1,
-			       fp);
+			fwrite(db->users[i].client, db->users[i].clientsize, 1, fp);
 		writeword(db->users[i].passwordsize, fp);
 		if (db->users[i].passwordsize)
-			fwrite(db->users[i].passwd, db->users[i].passwordsize,
-			       1, fp);
+			fwrite(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 	}
 	fclose(fp);
 }
@@ -326,8 +308,7 @@ void gen_cert(char *name, int type, char *common, char *pass)
 	fprintf(fp, "RANDFILE		= $dir/.rand\n"
 		    "name_opt		= ca_default\n"
 		    "cert_opt		= ca_default\n");
-	fprintf(fp, "default_days		= %s\n",
-		nvram_default_get("radius_expiration", "365"));
+	fprintf(fp, "default_days		= %s\n", nvram_default_get("radius_expiration", "365"));
 	fprintf(fp, "default_crl_days	= 30\n"
 		    "default_md		= sha256\n"
 		    "preserve		= no\n"
@@ -377,29 +358,23 @@ void gen_cert(char *name, int type, char *common, char *pass)
 	}
 
 	if (!nvram_match("radius_country", ""))
-		fprintf(fp, "countryName		= %s\n",
-			nvram_safe_get("radius_country"));
+		fprintf(fp, "countryName		= %s\n", nvram_safe_get("radius_country"));
 	if (!nvram_match("radius_state", ""))
-		fprintf(fp, "stateOrProvinceName	= %s\n",
-			nvram_safe_get("radius_state"));
+		fprintf(fp, "stateOrProvinceName	= %s\n", nvram_safe_get("radius_state"));
 	if (!nvram_match("radius_locality", ""))
-		fprintf(fp, "localityName		= %s\n",
-			nvram_safe_get("radius_locality"));
+		fprintf(fp, "localityName		= %s\n", nvram_safe_get("radius_locality"));
 	if (!nvram_match("radius_organisation", ""))
-		fprintf(fp, "organizationName	= %s\n",
-			nvram_safe_get("radius_organisation"));
+		fprintf(fp, "organizationName	= %s\n", nvram_safe_get("radius_organisation"));
 	if (!nvram_match("radius_email", ""))
-		fprintf(fp, "emailAddress		= %s\n",
-			nvram_safe_get("radius_email"));
+		fprintf(fp, "emailAddress		= %s\n", nvram_safe_get("radius_email"));
 
 	fprintf(fp, "commonName		= \"%s\"\n", common);
 
 	if (type == TYPE_CA)
-		fprintf(fp,
-			"\n[v3_ca]\n"
-			"subjectKeyIdentifier	= hash\n"
-			"authorityKeyIdentifier	= keyid:always,issuer:always\n"
-			"basicConstraints	= CA:true\n");
+		fprintf(fp, "\n[v3_ca]\n"
+			    "subjectKeyIdentifier	= hash\n"
+			    "authorityKeyIdentifier	= keyid:always,issuer:always\n"
+			    "basicConstraints	= CA:true\n");
 
 	fclose(fp);
 }

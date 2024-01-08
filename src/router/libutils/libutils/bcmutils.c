@@ -94,28 +94,22 @@ int getcpurev(void)
 			}
 			cpurev[i] = 0;
 			fclose(fp);
-			if (strstr(cpurev, "BCM4710 V0.0") ||
-			    strstr(cpurev,
-				   "BMIPS3300 V0.0")) // BCM4702, BCM4710
+			if (strstr(cpurev, "BCM4710 V0.0") || strstr(cpurev,
+								     "BMIPS3300 V0.0")) // BCM4702, BCM4710
 				// (old 125 MHz)
 				return 0;
-			if (strstr(cpurev, "BCM3302 V0.6") ||
-			    strstr(cpurev, "BMIPS3300 V0.6")) // BCM4704
+			if (strstr(cpurev, "BCM3302 V0.6") || strstr(cpurev, "BMIPS3300 V0.6")) // BCM4704
 				return 6;
-			if (strstr(cpurev, "BCM3302 V0.7") ||
-			    strstr(cpurev,
-				   "BMIPS3300 V0.7")) // BCM4712, BCM5365
+			if (strstr(cpurev, "BCM3302 V0.7") || strstr(cpurev,
+								     "BMIPS3300 V0.7")) // BCM4712, BCM5365
 				return 7;
-			if (strstr(cpurev, "BCM3302 V0.8") ||
-			    strstr(cpurev,
-				   "BMIPS3300 V0.8")) // BCM5350, BCM5352
+			if (strstr(cpurev, "BCM3302 V0.8") || strstr(cpurev,
+								     "BMIPS3300 V0.8")) // BCM5350, BCM5352
 				return 8;
-			if (strstr(cpurev, "BCM3302 V2.9") ||
-			    strstr(cpurev, "BMIPS3300 V2.9")) // BCM5354
+			if (strstr(cpurev, "BCM3302 V2.9") || strstr(cpurev, "BMIPS3300 V2.9")) // BCM5354
 				return 29;
-			if (strstr(cpurev, "BCM3302 V1.10") ||
-			    strstr(cpurev,
-				   "BMIPS3300 V1.10")) // BCM4785 (BCM3302 V1.10)
+			if (strstr(cpurev, "BCM3302 V1.10") || strstr(cpurev,
+								      "BMIPS3300 V1.10")) // BCM4785 (BCM3302 V1.10)
 				return 110;
 			if (strstr(cpurev,
 				   "MIPS 74K V4.9")) // BCM4716B0 (Broadcom BCMB83A chip rev 0)
@@ -269,8 +263,7 @@ int remove_from_list(const char *name, char *list, int listsize)
 		occurrence[0] = 0;
 	} else if (occurrence[namelen] == ' ') {
 		strncpy(occurrence, &occurrence[namelen + 1 /* space */],
-			strlen(&occurrence[namelen + 1 /* space */]) +
-				1 /* terminate */);
+			strlen(&occurrence[namelen + 1 /* space */]) + 1 /* terminate */);
 	}
 
 	return 0;
@@ -395,8 +388,7 @@ int weekday(int month, int day, int year)
 	return (tx % 7);
 }
 
-const char *getdefaultconfig(char *service, char *path, size_t len,
-			     char *configname)
+const char *getdefaultconfig(char *service, char *path, size_t len, char *configname)
 {
 	sprintf(path, "/jffs/etc/%s", configname);
 	FILE *fp = fopen(path, "r"); //test if custom config is available
@@ -425,8 +417,7 @@ char *get_ipfrominterface(char *ifname, char *ip)
 	if (ioctl(fd, SIOCGIFNETMASK, &ifrnm) < 0)
 		return "255.255.255.255/32";
 	close(fd);
-	inet_addr_to_cidr(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr,
-			  ((struct sockaddr_in *)&ifrnm.ifr_netmask)->sin_addr,
+	inet_addr_to_cidr(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, ((struct sockaddr_in *)&ifrnm.ifr_netmask)->sin_addr,
 			  ip);
 	return ip;
 }
@@ -460,8 +451,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 		// IP address HW type Flags HW address Mask Device
 		// 192.168.1.1 0x1 0x2 00:90:4C:21:00:2A * eth0
 		while (fgets(line, sizeof(line) - 1, fp)) {
-			if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa,
-				   &type, &flags, hwa, mask, dev) != 6)
+			if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
 				continue;
 			if (strcmp(ipcopy, ipa))
 				continue;
@@ -476,9 +466,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 		fp = popen("ip -6 neigh", "rb");
 		if (fp) {
 			while (fgets(line, sizeof(line) - 1, fp)) {
-				if (sscanf(line,
-					   "%s %*s %*s %*s %s %*s %*s %*s %*s %*s %*s %*s\n",
-					   ipa, hwa) != 2)
+				if (sscanf(line, "%s %*s %*s %*s %s %*s %*s %*s %*s %*s %*s %*s\n", ipa, hwa) != 2)
 					continue;
 				if (strcmp(ip, ipa))
 					continue;
@@ -492,8 +480,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 	return NULL;
 }
 
-static void add_dnslist_internal(struct dns_lists *dns_list, char *dns,
-				 int custom, int ipv6)
+static void add_dnslist_internal(struct dns_lists *dns_list, char *dns, int custom, int ipv6)
 {
 	int i;
 	if (strcmp(dns, "0.0.0.0") && strcmp(dns, "")) {
@@ -503,22 +490,17 @@ static void add_dnslist_internal(struct dns_lists *dns_list, char *dns,
 				match = 1;
 		}
 		if (!match) {
-			dns_list->dns_server = (struct dns_entry *)realloc(
-				dns_list->dns_server,
-				sizeof(struct dns_entry) *
-					(dns_list->num_servers + 1));
-			dns_list->dns_server[dns_list->num_servers].ip =
-				strdup(dns);
-			dns_list->dns_server[dns_list->num_servers].type =
-				custom;
+			dns_list->dns_server = (struct dns_entry *)realloc(dns_list->dns_server,
+									   sizeof(struct dns_entry) * (dns_list->num_servers + 1));
+			dns_list->dns_server[dns_list->num_servers].ip = strdup(dns);
+			dns_list->dns_server[dns_list->num_servers].type = custom;
 			dns_list->dns_server[dns_list->num_servers].ipv6 = ipv6;
 			dns_list->num_servers++;
 		}
 	}
 }
 
-static void add_dnslist(struct dns_lists *dns_list, char *dns, int custom,
-			int ipv6)
+static void add_dnslist(struct dns_lists *dns_list, char *dns, int custom, int ipv6)
 {
 	char *next, word[128];
 	if (!dns)
@@ -577,8 +559,7 @@ struct dns_lists *get_dns_list(int v6)
 			snprintf(altdnsvar, 31, "altdns%d", altdns_index);
 
 			if (*(nvram_safe_get(altdnsvar))) {
-				add_dnslist(dns_list, nvram_safe_get(altdnsvar),
-					    1, 0);
+				add_dnslist(dns_list, nvram_safe_get(altdnsvar), 1, 0);
 			}
 			altdns_index++;
 		}
@@ -588,8 +569,7 @@ struct dns_lists *get_dns_list(int v6)
 		if (*wan_dns && !*wg_get_dns && !*openvpn_get_dns) {
 			add_dnslist(dns_list, wan_dns, 0, 0);
 		}
-		if (!nvram_match("ignore_wan_dns", "1") ||
-		    nvram_match("wan_proto", "static")) {
+		if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
 			if (*wan_get_dns) {
 				add_dnslist(dns_list, wan_get_dns, 0, 0);
 			}
@@ -604,8 +584,7 @@ struct dns_lists *get_dns_list(int v6)
 		if (*a2)
 			add_dnslist(dns_list, a2, 1, 1);
 
-		if (!nvram_match("ignore_wan_dns", "1") ||
-		    nvram_match("wan_proto", "static")) {
+		if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
 			char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
 			char word[64];
 			foreach(word, wordlist, next)
@@ -632,8 +611,7 @@ int dns_to_resolv(void)
 		perror(RESOLV_FILE);
 		return errno;
 	}
-	if (nvram_invmatch("wan_get_domain", "") &&
-	    nvram_matchi("ignore_wan_dns", 0)) {
+	if (nvram_invmatch("wan_get_domain", "") && nvram_matchi("ignore_wan_dns", 0)) {
 		fprintf(fp_w, "search %s\n", nvram_safe_get("wan_get_domain"));
 	} else if (nvram_invmatch("wan_domain", "")) {
 		fprintf(fp_w, "search %s\n", nvram_safe_get("wan_domain"));
@@ -641,8 +619,7 @@ int dns_to_resolv(void)
 	if (nvram_invmatch("lan_domain", "")) {
 		fprintf(fp_w, "search %s\n", nvram_safe_get("lan_domain"));
 	}
-	if (nvram_matchi("dnsmasq_enable", 1) &&
-	    nvram_matchi("dns_dnsmasq", 1)) {
+	if (nvram_matchi("dnsmasq_enable", 1) && nvram_matchi("dns_dnsmasq", 1)) {
 		fprintf(fp_w, "nameserver %s\n", nvram_safe_get("lan_ipaddr"));
 		fclose(fp_w);
 		if (!(fp_w = fopen(RESOLV_FORW, "w"))) {
@@ -660,8 +637,7 @@ int dns_to_resolv(void)
 	 * Put a pseudo DNS IP to trigger Connect On Demand 
 	 */
 	if (dns_list->num_servers == 0 &&
-	    (nvram_match("wan_proto", "pppoe") ||
-	     nvram_match("wan_proto", "pptp")
+	    (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp")
 #ifdef HAVE_PPPOEDUAL
 	     || nvram_match("wan_proto", "pppoe_dual")
 #endif
@@ -695,11 +671,9 @@ int get_single_ip(char *ipaddr, int which)
 	static int ip[5] = { 0, 0, 0, 0, 0 };
 	int ret;
 	if (which == 4)
-		ret = sscanf(ipaddr, "%d.%d.%d.%d/%d", &ip[0], &ip[1], &ip[2],
-			     &ip[3], &ip[4]);
+		ret = sscanf(ipaddr, "%d.%d.%d.%d/%d", &ip[0], &ip[1], &ip[2], &ip[3], &ip[4]);
 	else
-		ret = sscanf(ipaddr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2],
-			     &ip[3]);
+		ret = sscanf(ipaddr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	return ip[which];
 }
 
@@ -726,8 +700,7 @@ char *get_complete_lan_ip(char *ip)
 
 	int i[4];
 
-	if (sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d", &i[0], &i[1],
-		   &i[2], &i[3]) != 4)
+	if (sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d", &i[0], &i[1], &i[2], &i[3]) != 4)
 		return "0.0.0.0";
 
 	snprintf(ipaddr, sizeof(ipaddr), "%d.%d.%d.%s", i[0], i[1], i[2], ip);
@@ -796,11 +769,9 @@ pid_t *find_pid_by_name(char *pidName)
 			sscanf(buffer, "%*s %s", name);
 			// printf("buffer=[%s] name=[%s]\n",buffer,name);
 			if (strcmp(name, pidName) == 0) {
-				pidList = realloc(pidList,
-						  sizeof(pid_t) * (i + 2));
+				pidList = realloc(pidList, sizeof(pid_t) * (i + 2));
 				if (pidList)
-					pidList[i++] =
-						strtol(next->d_name, NULL, 0);
+					pidList[i++] = strtol(next->d_name, NULL, 0);
 			}
 		}
 
@@ -855,8 +826,7 @@ int *find_all_pid_by_ps(char *pidName)
 			if (strstr(line, pidName)) {
 				sscanf(line, "%d", &pid);
 				cprintf("%s pid is %d\n", pidName, pid);
-				pidList =
-					realloc(pidList, sizeof(int) * (i + 2));
+				pidList = realloc(pidList, sizeof(int) * (i + 2));
 				pidList[i++] = pid;
 			}
 		}
@@ -960,8 +930,7 @@ int check_hw_type(void)
 		return BCM4702_CHIP;
 	else if (btype == 0x0708 && !(boardflags & BFL_ENETADM))
 		return BCM5325E_CHIP;
-	else if (btype == 0x456 &&
-		 getRouterBrand() == ROUTER_BELKIN_F5D7231) // stupid
+	else if (btype == 0x456 && getRouterBrand() == ROUTER_BELKIN_F5D7231) // stupid
 		// Belkin!
 		return BCM5352E_CHIP;
 	else if (btype == 0x456)
@@ -974,14 +943,11 @@ int check_hw_type(void)
 		return BCM4704_BCM5325F_CHIP;
 	else if (btype == 0x478 && strstr(vlan0, "5*")) /* WRT300NV1.1 */
 		return BCM4705L_BCM5325E_EWC_CHIP;
-	else if ((btype == 0x478 &&
-		  (strstr(vlan0, "8*") || strstr(vlan1, "8*"))) ||
-		 nvram_match("boot_hw_model", "WRT350N") ||
+	else if ((btype == 0x478 && (strstr(vlan0, "8*") || strstr(vlan1, "8*"))) || nvram_match("boot_hw_model", "WRT350N") ||
 		 nvram_match("boot_hw_model", "WRT610N")) /* WRT350N 
 																						 */
 		return BCM4705_BCM5397_EWC_CHIP;
-	else if (btype == 0x489 ||
-		 nvram_match("boot_hw_model", "WRT310N")) /* WRT310N, 
+	else if (btype == 0x489 || nvram_match("boot_hw_model", "WRT310N")) /* WRT310N, 
 										 * temporal 
 										 * boardtype 
 										 * 0x478, 
@@ -996,8 +962,7 @@ int check_hw_type(void)
 		return BCM5352E_CHIP;
 	else if (btype == 0x0101 && !(boardflags & BFL_ENETADM))
 		return BCM4712_BCM5325E_CHIP;
-	else if ((btype == 0x0101 || btype == 0x0446) &&
-		 (boardflags & BFL_ENETADM)) // 0x446
+	else if ((btype == 0x0101 || btype == 0x0446) && (boardflags & BFL_ENETADM)) // 0x446
 		// is
 		// wap54g
 		// v2
@@ -1054,16 +1019,13 @@ static int sockets_open(int domain, int type, int protocol)
 	return fd;
 }
 
-int sys_netdev_ioctl(int family, int socket, char *if_name, int cmd,
-		     struct ifreq *ifr)
+int sys_netdev_ioctl(int family, int socket, char *if_name, int cmd, struct ifreq *ifr)
 {
 	int rc, s;
 
 	if ((s = socket) < 0) {
-		if ((s = sockets_open(
-			     family,
-			     family == AF_PACKET ? SOCK_PACKET : SOCK_DGRAM,
-			     family == AF_PACKET ? htons(ETH_P_ALL) : 0)) < 0) {
+		if ((s = sockets_open(family, family == AF_PACKET ? SOCK_PACKET : SOCK_DGRAM,
+				      family == AF_PACKET ? htons(ETH_P_ALL) : 0)) < 0) {
 			cprintf("sys_netdev_ioctl: failed\n");
 			return -1;
 		}
@@ -1085,8 +1047,7 @@ int set_register_value(unsigned short port_addr, unsigned short option_content)
 
 	ifr.ifr_data = (void *)&stats;
 
-	if (sys_netdev_ioctl(AF_INET, -1, get_device_name(), SIOCSMIIREG,
-			     &ifr) < 0)
+	if (sys_netdev_ioctl(AF_INET, -1, get_device_name(), SIOCSMIIREG, &ifr) < 0)
 		return -1;
 
 	return 0;
@@ -1115,12 +1076,10 @@ struct mtu_lists mtu_list[] = {
 #else
 	{ "pppoe", "576", "1492" },
 #endif
-	{ "pppoe_dual", "576", "1492" }, { "pppoa", "576", "16320" },
-	{ "pptp", "576", "1460" },	 { "l2tp", "576", "1460" },
-	{ "dhcp", "576", "16320" },	 { "dhcp_auth", "576", "16320" },
-	{ "iphone", "576", "1500" },	 { "static", "576", "16320" },
-	{ "heartbeat", "576", "1500" },	 { "3g", "576", "1500" },
-	{ "default", "576", "16320" }, // The value must be at last
+	{ "pppoe_dual", "576", "1492" }, { "pppoa", "576", "16320" },	{ "pptp", "576", "1460" },
+	{ "l2tp", "576", "1460" },	 { "dhcp", "576", "16320" },	{ "dhcp_auth", "576", "16320" },
+	{ "iphone", "576", "1500" },	 { "static", "576", "16320" },	{ "heartbeat", "576", "1500" },
+	{ "3g", "576", "1500" },	 { "default", "576", "16320" }, // The value must be at last
 };
 
 struct mtu_lists *get_mtu(char *proto)
@@ -1221,8 +1180,7 @@ int wds_dev_config(int dev, int up)
 	snprintf(wds_var, 31, "wl_wds%d", dev);
 	snprintf(wds_enable_var, 31, "%s_enable", wds_var);
 
-	if ((wds = nvram_safe_get(wds_enable_var)) == NULL ||
-	    strcmp(wds, "0") == 0)
+	if ((wds = nvram_safe_get(wds_enable_var)) == NULL || strcmp(wds, "0") == 0)
 		return -1;
 	snprintf(wds_dev, 31, "wds0.%d", dev + 1);
 	snprintf(ifr.ifr_name, IFNAMSIZ, wds_dev);
@@ -1265,8 +1223,7 @@ int wds_dev_config(int dev, int up)
 		fprintf(fp, "checking validity\n");
 #endif
 
-		if (!sv_valid_hwaddr(hwaddr) || !sv_valid_ipaddr(ip) ||
-		    !sv_valid_ipaddr(netmask)) {
+		if (!sv_valid_hwaddr(hwaddr) || !sv_valid_ipaddr(ip) || !sv_valid_ipaddr(netmask)) {
 			close(s);
 			return -1;
 		}
@@ -1379,8 +1336,7 @@ void get_network(char *ipaddr, char *netmask)
  * note: copied from Broadcom code and put in shared via this file 
  */
 
-int route_manip(int cmd, char *name, int metric, char *dst, char *gateway,
-		char *genmask)
+int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask)
 {
 	int s;
 	struct rtentry rt;
@@ -1433,15 +1389,13 @@ err:
 
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
-	dd_debug(DEBUG_CONSOLE, "route_add: if:%s dst:%s gw: %s mask: %s \n",
-		 name, dst, gateway, genmask);
+	dd_debug(DEBUG_CONSOLE, "route_add: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCADDRT, name, metric, dst, gateway, genmask);
 }
 
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
-	dd_debug(DEBUG_CONSOLE, "route_del: if:%s dst:%s gw: %s mask: %s \n",
-		 name, dst, gateway, genmask);
+	dd_debug(DEBUG_CONSOLE, "route_del: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCDELRT, name, metric, dst, gateway, genmask);
 }
 
@@ -1599,12 +1553,9 @@ int doMultiCast(void)
 	getIfLists(ifnames, 256);
 	foreach(name, ifnames, next)
 	{
-		if (strcmp(safe_get_wan_face(wan_if_buffer), name) &&
-		    strcmp(nvram_safe_get("lan_ifname"), name) &&
+		if (strcmp(safe_get_wan_face(wan_if_buffer), name) && strcmp(nvram_safe_get("lan_ifname"), name) &&
 		    strcmp(nvram_safe_get("tvnicfrom"), name)) {
-			if ((nvram_nmatch("0", "%s_bridged", name) ||
-			     isbridge(name)) &&
-			    nvram_nmatch("1", "%s_multicast", name)) {
+			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name)) && nvram_nmatch("1", "%s_multicast", name)) {
 				ifcount++;
 			}
 		}
@@ -1616,13 +1567,11 @@ static int sockaddr_to_dotted(struct sockaddr *saddr, char *buf, size_t len)
 {
 	buf[0] = '\0';
 	if (saddr->sa_family == AF_INET) {
-		inet_ntop(AF_INET, &((struct sockaddr_in *)saddr)->sin_addr,
-			  buf, len);
+		inet_ntop(AF_INET, &((struct sockaddr_in *)saddr)->sin_addr, buf, len);
 		return 0;
 	}
 	if (saddr->sa_family == AF_INET6) {
-		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)saddr)->sin6_addr,
-			  buf, len);
+		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)saddr)->sin6_addr, buf, len);
 		return 0;
 	}
 	return -1;
@@ -1664,8 +1613,7 @@ void getIPFromName(char *name, char *ip, size_t len)
 		} else {
 			struct hostent *hp = gethostbyname(name);
 			if (hp != NULL) {
-				sockaddr_to_dotted_n(hp->h_addr_list[0], ip,
-						     len);
+				sockaddr_to_dotted_n(hp->h_addr_list[0], ip, len);
 			} else
 				snprintf(ip, len, "0.0.0.0");
 		}
@@ -1779,41 +1727,29 @@ char *get_filter_services(void)
 		    filters++;
 		    continue;
 		}*/
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
-			strlen(filters->name), filters->name,
-			strlen(proto[filters->protocol]),
-			proto[filters->protocol]);
+		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name,
+			strlen(proto[filters->protocol]), proto[filters->protocol]);
 		if (!services) {
 			services = malloc(strlen(temp) + 1);
 			services[0] = 0;
 		} else
-			services = realloc(services,
-					   strlen(services) + strlen(temp) + 1);
+			services = realloc(services, strlen(services) + strlen(temp) + 1);
 		strcat(services, temp);
 		filters++;
 	}
 	if (services)
-		services = realloc(
-			services,
-			strlen(services) +
-				strlen(nvram_safe_get("filter_services")) + 1);
+		services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services")) + 1);
 	else
-		services =
-			malloc(strlen(nvram_safe_get("filter_services")) + 1);
+		services = malloc(strlen(nvram_safe_get("filter_services")) + 1);
 
 	strcat(services, nvram_safe_get("filter_services")); // this is
 	// user
 	// defined
 	// filters
 	if (services)
-		services = realloc(
-			services,
-			strlen(services) +
-				strlen(nvram_safe_get("filter_services_1")) +
-				1);
+		services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services_1")) + 1);
 	else
-		services =
-			malloc(strlen(nvram_safe_get("filter_services_1")) + 1);
+		services = malloc(strlen(nvram_safe_get("filter_services_1")) + 1);
 	strcat(services, nvram_safe_get("filter_services_1"));
 
 	return services;
@@ -1853,8 +1789,7 @@ filters *get_filters_list(void)
 		char *name, *prot, *port;
 		int from = 0, to = 0;
 		s_filters[count].name = NULL;
-		if ((name = strstr(word, "$NAME:")) == NULL ||
-		    (prot = strstr(word, "$PROT:")) == NULL ||
+		if ((name = strstr(word, "$NAME:")) == NULL || (prot = strstr(word, "$PROT:")) == NULL ||
 		    (port = strstr(word, "$PORT:")) == NULL)
 			continue;
 
@@ -1932,8 +1867,7 @@ filters *get_filters_list(void)
 /*
  * Return 1 for match, 0 for accept, -1 for partial. 
  */
-int find_pattern(const char *data, size_t dlen, const char *pattern,
-		 size_t plen, char term, unsigned int *numoff,
+int find_pattern(const char *data, size_t dlen, const char *pattern, size_t plen, char term, unsigned int *numoff,
 		 unsigned int *numlen)
 {
 	size_t i, j, k;
@@ -1976,14 +1910,12 @@ int find_pattern(const char *data, size_t dlen, const char *pattern,
  * data, "$NAME", ""); produces : ret = 1, name = 111 find_match_pattern(ip, 
  * strlen(ip), data, "$IP", "0.0.0.0"); produces : ret = 0, ip = 0.0.0.0 
  */
-int find_match_pattern(char *name, size_t mlen, const char *data,
-		       const char *pattern, char *def)
+int find_match_pattern(char *name, size_t mlen, const char *data, const char *pattern, char *def)
 {
 	int ret = 0;
 	unsigned int offset, len, length;
 
-	ret = find_pattern(data, strlen(data), pattern, strlen(pattern), '$',
-			   &offset, &len);
+	ret = find_pattern(data, strlen(data), pattern, strlen(pattern), '$', &offset, &len);
 	// printf("ret=[%d] offset=[%d] len=[%d]\n", ret, offset,len);
 
 	if (ret == 1 && len > 0) {

@@ -234,7 +234,6 @@ static __u32 min(__u32 a, __u32 b)
 static void *crda_get_file_ptr(__u8 *db, int dblen, int structlen, __be32 ptr);
 
 /* File reg db entry -> rd converstion utilities */
-struct ieee80211_regdomain *country2rd(__u8 *db, int dblen,
-				       struct regdb_file_reg_country *country);
+struct ieee80211_regdomain *country2rd(__u8 *db, int dblen, struct regdb_file_reg_country *country);
 
 struct ieee80211_regdomain *mac80211_get_regdomain(const char *varcountry);

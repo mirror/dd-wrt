@@ -136,15 +136,11 @@ void *sha1_end(void *resbuf, sha1_ctx_t *ctx)
 {
 	/* SHA1 Final padding and digest calculation  */
 #if __BYTE_ORDER == __BIG_ENDIAN
-	static uint32_t mask[4] = { 0x00000000, 0xff000000, 0xffff0000,
-				    0xffffff00 };
-	static uint32_t bits[4] = { 0x80000000, 0x00800000, 0x00008000,
-				    0x00000080 };
+	static uint32_t mask[4] = { 0x00000000, 0xff000000, 0xffff0000, 0xffffff00 };
+	static uint32_t bits[4] = { 0x80000000, 0x00800000, 0x00008000, 0x00000080 };
 #else
-	static uint32_t mask[4] = { 0x00000000, 0x000000ff, 0x0000ffff,
-				    0x00ffffff };
-	static uint32_t bits[4] = { 0x00000080, 0x00008000, 0x00800000,
-				    0x80000000 };
+	static uint32_t mask[4] = { 0x00000000, 0x000000ff, 0x0000ffff, 0x00ffffff };
+	static uint32_t bits[4] = { 0x00000080, 0x00008000, 0x00800000, 0x80000000 };
 #endif
 
 	uint8_t *hval = resbuf;
@@ -155,8 +151,7 @@ void *sha1_end(void *resbuf, sha1_ctx_t *ctx)
 	/* the buffer will be at the top end of 32 bit words, on little */
 	/* endian machines they will be at the bottom. Hence the AND    */
 	/* and OR masks above are reversed for little endian systems    */
-	ctx->wbuf[cnt >> 2] = (ctx->wbuf[cnt >> 2] & mask[cnt & 3]) |
-			      bits[cnt & 3];
+	ctx->wbuf[cnt >> 2] = (ctx->wbuf[cnt >> 2] & mask[cnt & 3]) | bits[cnt & 3];
 
 	/* we need 9 or more empty positions, one for the padding byte  */
 	/* (above) and eight for the length count.  If there is not     */

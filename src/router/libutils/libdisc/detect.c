@@ -119,24 +119,19 @@ DETECTOR detectors[] = {
 	detect_cdimage, /* may stop */
 	detect_cloop, detect_udif,
 	/* 2: boot code */
-	detect_linux_loader, detect_bsd_loader, detect_dos_loader,
-	detect_beos_loader,
+	detect_linux_loader, detect_bsd_loader, detect_dos_loader, detect_beos_loader,
 	/* 3: partition tables */
 	detect_bsd_disklabel, /* may stop, recurses with FLAG_IN_DISKLABEL */
 	detect_solaris_disklabel, /* may stop, recurses with FLAG_IN_DISKLABEL */
-	detect_solaris_vtoc, detect_amiga_partmap, detect_apple_partmap,
-	detect_atari_partmap, detect_dos_partmap, detect_gpt_partmap,
+	detect_solaris_vtoc, detect_amiga_partmap, detect_apple_partmap, detect_atari_partmap, detect_dos_partmap,
+	detect_gpt_partmap,
 	/* 4: file systems */
-	detect_amiga_fs, detect_apple_volume, detect_fat, detect_exfat,
-	detect_ntfs, detect_hpfs, detect_apfs_volume, detect_udf,
-	detect_cdrom_misc, detect_iso, detect_ext234, detect_btrfs, detect_f2fs,
-	detect_reiser, detect_reiser4, detect_linux_md, detect_linux_raid,
-	detect_linux_lvm, detect_linux_lvm2, detect_linux_swap,
-	detect_linux_misc, detect_jfs, detect_xfs, detect_ufs, detect_sysv,
-	detect_qnx, detect_vxfs, detect_bfs,
+	detect_amiga_fs, detect_apple_volume, detect_fat, detect_exfat, detect_ntfs, detect_hpfs, detect_apfs_volume, detect_udf,
+	detect_cdrom_misc, detect_iso, detect_ext234, detect_btrfs, detect_f2fs, detect_reiser, detect_reiser4, detect_linux_md,
+	detect_linux_raid, detect_linux_lvm, detect_linux_lvm2, detect_linux_swap, detect_linux_misc, detect_jfs, detect_xfs,
+	detect_ufs, detect_sysv, detect_qnx, detect_vxfs, detect_bfs,
 	/* 5: file formats */
-	detect_archive,
-	detect_compressed, /* this is down here because of boot disks */
+	detect_archive, detect_compressed, /* this is down here because of boot disks */
 	detect_zfs,
 	/* 6: blank formatted disk */
 	detect_blank,
@@ -196,8 +191,7 @@ void analyze_source_special(SOURCE *s, int level, u8 pos, u8 size)
  * recursively analyze a portion of a SECTION
  */
 
-void analyze_recursive(SECTION *section, int level, u8 rel_pos, u8 size,
-		       int flags)
+void analyze_recursive(SECTION *section, int level, u8 rel_pos, u8 size, int flags)
 {
 	SOURCE *s;
 	SECTION rs;

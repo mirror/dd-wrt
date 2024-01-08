@@ -50,17 +50,13 @@ typedef struct PACKED _NDIS_802_11_SSID {
 
 typedef struct _RT_802_11_STA_CONFIG {
 	unsigned long EnableTxBurst; // 0-disable, 1-enable
-	unsigned long
-		EnableTurboRate; // 0-disable, 1-enable 72/100mbps turbo rate
+	unsigned long EnableTurboRate; // 0-disable, 1-enable 72/100mbps turbo rate
 	unsigned long UseBGProtection; // 0-AUTO, 1-always ON, 2-always OFF
-	unsigned long
-		UseShortSlotTime; // 0-no use, 1-use 9-us short slot time when applicable
-	unsigned long
-		AdhocMode; // 0-11b rates only (WIFI spec), 1 - b/g mixed, 2 - g only
+	unsigned long UseShortSlotTime; // 0-no use, 1-use 9-us short slot time when applicable
+	unsigned long AdhocMode; // 0-11b rates only (WIFI spec), 1 - b/g mixed, 2 - g only
 	unsigned long HwRadioStatus; // 0-OFF, 1-ON, default is 1, Read-Only
 	unsigned long Rsv1; // must be 0
-	unsigned long
-		SystemErrorBitmap; // ignore upon SET, return system error upon QUERY
+	unsigned long SystemErrorBitmap; // ignore upon SET, return system error upon QUERY
 } RT_802_11_STA_CONFIG, *PRT_802_11_STA_CONFIG;
 
 typedef struct _NDIS_802_11_CONFIGURATION_FH {
@@ -98,8 +94,7 @@ typedef union _HTTRANSMIT_SETTING {
 		unsigned short ShortGI : 1;
 		unsigned short STBC : 2; //SPACE
 		unsigned short rsv : 3;
-		unsigned short
-			MODE : 2; // 0: CCK, 1:OFDM, 2:Mixedmode, 3:GreenField
+		unsigned short MODE : 2; // 0: CCK, 1:OFDM, 2:Mixedmode, 3:GreenField
 	} field;
 	unsigned short word;
 } HTTRANSMIT_SETTING, *PHTTRANSMIT_SETTING;
@@ -173,8 +168,7 @@ typedef enum _ORI_BLOCKACK_STATUS {
 //For QureyBATableOID use
 typedef struct _OID_BA_REC_ENTRY {
 	unsigned char MACAddr[6];
-	unsigned char
-		BaBitmap; // if (BaBitmap&(1<<TID)), this session with{MACAddr, TID}exists, so read BufSize[TID] for BufferSize
+	unsigned char BaBitmap; // if (BaBitmap&(1<<TID)), this session with{MACAddr, TID}exists, so read BufSize[TID] for BufferSize
 	unsigned char rsv;
 	unsigned char BufSize[8];
 	REC_BLOCKACK_STATUS REC_BA_Status[8];
@@ -197,8 +191,7 @@ typedef struct {
 	unsigned char TID;
 	unsigned char BufSize;
 	unsigned short TimeOut;
-	unsigned char
-		AllTid; // If True, delete all TID for BA sessions with this MACaddr.
+	unsigned char AllTid; // If True, delete all TID for BA sessions with this MACaddr.
 } OID_ADD_BA_ENTRY, *POID_ADD_BA_ENTRY;
 
 typedef struct _QUERYBA_TABLE {
@@ -230,10 +223,8 @@ typedef enum _NDIS_802_11_NETWORK_INFRASTRUCTURE {
 } NDIS_802_11_NETWORK_INFRASTRUCTURE,
 	*PNDIS_802_11_NETWORK_INFRASTRUCTURE;
 
-typedef unsigned char
-	NDIS_802_11_RATES[NDIS_802_11_LENGTH_RATES]; // Set of 8 data rates
-typedef unsigned char
-	NDIS_802_11_RATES_EX[NDIS_802_11_LENGTH_RATES_EX]; // Set of 16 data rates
+typedef unsigned char NDIS_802_11_RATES[NDIS_802_11_LENGTH_RATES]; // Set of 8 data rates
+typedef unsigned char NDIS_802_11_RATES_EX[NDIS_802_11_LENGTH_RATES_EX]; // Set of 16 data rates
 
 typedef struct PACKED _NDIS_WLAN_BSSID {
 	unsigned long Length; // Length of this structure
@@ -297,10 +288,8 @@ typedef struct _OID_BACAP_STRUC {
 	unsigned char
 		MpduDensity; // 0: DELAY_BA 1:IMMED_BA  (//BA Policy subfiled value in ADDBA frame)   2:BA-not use. other value invalid
 	unsigned char AmsduEnable; //Enable AMSDU transmisstion
-	unsigned char
-		AmsduSize; // 0:3839, 1:7935 bytes. unsigned int  MSDUSizeToBytes[]    = { 3839, 7935};
-	unsigned char
-		MMPSmode; // MIMO power save more, 0:static, 1:dynamic, 2:rsv, 3:mimo enable
+	unsigned char AmsduSize; // 0:3839, 1:7935 bytes. unsigned int  MSDUSizeToBytes[]    = { 3839, 7935};
+	unsigned char MMPSmode; // MIMO power save more, 0:static, 1:dynamic, 2:rsv, 3:mimo enable
 	unsigned char AutoBA; // Auto BA will automatically , BOOLEAN
 } OID_BACAP_STRUC, *POID_BACAP_STRUC;
 
@@ -336,17 +325,11 @@ typedef struct _RT_802_11_DLS {
 	unsigned short TimeOut; // unit: second , set by UI
 	unsigned short CountDownTimer; // unit: second , used by driver only
 	unsigned char MacAddr[6]; // set by UI
-	unsigned char
-		Status; // 0: none, 1: wait STAkey, 2: finish DLS setup, set by driver only
-	unsigned char
-		Valid; // 1: valid, 0: invalid, set by UI, use to setup or tear down DLS link
+	unsigned char Status; // 0: none, 1: wait STAkey, 2: finish DLS setup, set by driver only
+	unsigned char Valid; // 1: valid, 0: invalid, set by UI, use to setup or tear down DLS link
 } RT_802_11_DLS, *PRT_802_11_DLS;
 
-typedef enum _RT_802_11_DLS_MODE {
-	DLS_NONE,
-	DLS_WAIT_KEY,
-	DLS_FINISH
-} RT_802_11_DLS_MODE;
+typedef enum _RT_802_11_DLS_MODE { DLS_NONE, DLS_WAIT_KEY, DLS_FINISH } RT_802_11_DLS_MODE;
 
 typedef enum _NDIS_802_11_AUTHENTICATION_MODE {
 	Ndis802_11AuthModeOpen,
@@ -375,8 +358,7 @@ typedef enum _NDIS_802_11_WEP_STATUS {
 	Ndis802_11Encryption3Enabled,
 	Ndis802_11Encryption3KeyAbsent
 } NDIS_802_11_WEP_STATUS,
-	*PNDIS_802_11_WEP_STATUS, NDIS_802_11_ENCRYPTION_STATUS,
-	*PNDIS_802_11_ENCRYPTION_STATUS;
+	*PNDIS_802_11_WEP_STATUS, NDIS_802_11_ENCRYPTION_STATUS, *PNDIS_802_11_ENCRYPTION_STATUS;
 
 typedef enum _NDIS_802_11_POWER_MODE {
 	Ndis802_11PowerModeCAM,
@@ -434,9 +416,9 @@ typedef struct _RT_PROFILE_SETTING {
 	unsigned int SsidLen;
 	unsigned int Channel;
 	NDIS_802_11_AUTHENTICATION_MODE
-		Authentication; //Ndis802_11AuthModeOpen, Ndis802_11AuthModeShared, Ndis802_11AuthModeWPAPSK
+	Authentication; //Ndis802_11AuthModeOpen, Ndis802_11AuthModeShared, Ndis802_11AuthModeWPAPSK
 	NDIS_802_11_WEP_STATUS
-		Encryption; //Ndis802_11WEPEnabled, Ndis802_11WEPDisabled, Ndis802_11Encryption2Enabled, Ndis802_11Encryption3Enabled
+	Encryption; //Ndis802_11WEPEnabled, Ndis802_11WEPDisabled, Ndis802_11Encryption2Enabled, Ndis802_11Encryption3Enabled
 	NDIS_802_11_NETWORK_INFRASTRUCTURE NetworkType;
 	unsigned int KeyDefaultId;
 	unsigned int Key1Type;
@@ -467,8 +449,7 @@ typedef struct _RT_PROFILE_SETTING {
 	//RT_802_11_TX_RATES                  ConfigSta;
 	unsigned int AdhocMode;
 	//unsigned char                       reserved[64];
-	unsigned int
-		Active; // 0 is the profile is set as connection profile, 1 is not.
+	unsigned int Active; // 0 is the profile is set as connection profile, 1 is not.
 #ifdef WPA_SUPPLICANT_SUPPORT
 	RT_WPA_SUPPLICANT_KEY_MGMT KeyMgmt;
 	RT_WPA_SUPPLICANT_EAP EAP;

@@ -23,69 +23,63 @@
 
 #define __libc_once_define(CLASS, NAME) CLASS int NAME = 0
 #define __libc_once(ONCE_CONTROL, INIT_FUNCTION) \
-  do {									      \
-    if ((ONCE_CONTROL) == 0) {						      \
-      INIT_FUNCTION ();							      \
-      (ONCE_CONTROL) = 1;						      \
-    }									      \
-  } while (0)
+	do {                                     \
+		if ((ONCE_CONTROL) == 0) {       \
+			INIT_FUNCTION();         \
+			(ONCE_CONTROL) = 1;      \
+		}                                \
+	} while (0)
 
-struct trace_arg
-{
-  void **array;
-  int cnt, size;
-  void *lastebp, *lastesp;
+struct trace_arg {
+	void **array;
+	int cnt, size;
+	void *lastebp, *lastesp;
 };
 
-static _Unwind_Reason_Code (*unwind_backtrace) (_Unwind_Trace_Fn, void *);
-static _Unwind_Ptr (*unwind_getip) (struct _Unwind_Context *);
-static _Unwind_Ptr (*unwind_getcfa) (struct _Unwind_Context *);
-static _Unwind_Ptr (*unwind_getgr) (struct _Unwind_Context *, int);
+static _Unwind_Reason_Code (*unwind_backtrace)(_Unwind_Trace_Fn, void *);
+static _Unwind_Ptr (*unwind_getip)(struct _Unwind_Context *);
+static _Unwind_Ptr (*unwind_getcfa)(struct _Unwind_Context *);
+static _Unwind_Ptr (*unwind_getgr)(struct _Unwind_Context *, int);
 static void *libgcc_handle;
 
-static void
-init (void)
+static void init(void)
 {
-  libgcc_handle = dlopen("libgcc_s.so.1", RTLD_LAZY);
+	libgcc_handle = dlopen("libgcc_s.so.1", RTLD_LAZY);
 
-  if (libgcc_handle == NULL)
-    return;
+	if (libgcc_handle == NULL)
+		return;
 
-  unwind_backtrace = __libc_dlsym (libgcc_handle, "_Unwind_Backtrace");
-  unwind_getip = __libc_dlsym (libgcc_handle, "_Unwind_GetIP");
-  unwind_getcfa = __libc_dlsym (libgcc_handle, "_Unwind_GetCFA");
-  unwind_getgr = __libc_dlsym (libgcc_handle, "_Unwind_GetGR");
-  if (unwind_getip == NULL || unwind_getgr == NULL || unwind_getcfa == NULL)
-    {
-      unwind_backtrace = NULL;
-      dlclose (libgcc_handle);
-      libgcc_handle = NULL;
-    }
+	unwind_backtrace = __libc_dlsym(libgcc_handle, "_Unwind_Backtrace");
+	unwind_getip = __libc_dlsym(libgcc_handle, "_Unwind_GetIP");
+	unwind_getcfa = __libc_dlsym(libgcc_handle, "_Unwind_GetCFA");
+	unwind_getgr = __libc_dlsym(libgcc_handle, "_Unwind_GetGR");
+	if (unwind_getip == NULL || unwind_getgr == NULL || unwind_getcfa == NULL) {
+		unwind_backtrace = NULL;
+		dlclose(libgcc_handle);
+		libgcc_handle = NULL;
+	}
 }
 
-static _Unwind_Reason_Code
-backtrace_helper (struct _Unwind_Context *ctx, void *a)
+static _Unwind_Reason_Code backtrace_helper(struct _Unwind_Context *ctx, void *a)
 {
-  struct trace_arg *arg = a;
+	struct trace_arg *arg = a;
 
-  /* We are first called with address in the __backtrace function.
+	/* We are first called with address in the __backtrace function.
      Skip it.  */
-  if (arg->cnt != -1)
-    arg->array[arg->cnt] = (void *) unwind_getip (ctx);
-  if (++arg->cnt == arg->size)
-    return _URC_END_OF_STACK;
+	if (arg->cnt != -1)
+		arg->array[arg->cnt] = (void *)unwind_getip(ctx);
+	if (++arg->cnt == arg->size)
+		return _URC_END_OF_STACK;
 
-  /* %ebp is DWARF2 register 5 on IA-32.  */
-  arg->lastebp = (void *) unwind_getgr (ctx, 5);
-  arg->lastesp = (void *) unwind_getcfa (ctx);
-  return _URC_NO_REASON;
+	/* %ebp is DWARF2 register 5 on IA-32.  */
+	arg->lastebp = (void *)unwind_getgr(ctx, 5);
+	arg->lastesp = (void *)unwind_getcfa(ctx);
+	return _URC_NO_REASON;
 }
-
 
 /* This is a global variable set at program start time.  It marks the
    highest used stack address.  */
 extern void *__libc_stack_end;
-
 
 /* This is the stack layout we see with every stack frame
    if not compiled without frame pointer.
@@ -101,57 +95,49 @@ extern void *__libc_stack_end;
    as well, but requires .eh_frame info.  Then fall back to
    walking the stack manually.  */
 
-struct layout
-{
-  struct layout *ebp;
-  void *ret;
+struct layout {
+	struct layout *ebp;
+	void *ret;
 };
 
-
-static int
-backtrace (void **array, int size)
+static int backtrace(void **array, int size)
 {
-  struct trace_arg arg = { .array = array, .size = size, .cnt = -1 };
+	struct trace_arg arg = { .array = array, .size = size, .cnt = -1 };
 
-  if (size <= 0)
-    return 0;
+	if (size <= 0)
+		return 0;
 
-  __libc_once_define (static, once);
+	__libc_once_define(static, once);
 
-  __libc_once (once, init);
-  if (unwind_backtrace == NULL)
-    return 0;
+	__libc_once(once, init);
+	if (unwind_backtrace == NULL)
+		return 0;
 
-  unwind_backtrace (backtrace_helper, &arg);
+	unwind_backtrace(backtrace_helper, &arg);
 
-  if (arg.cnt > 1 && arg.array[arg.cnt - 1] == NULL)
-    --arg.cnt;
-  else if (arg.cnt < size)
-    {
-      struct layout *ebp = (struct layout *) arg.lastebp;
+	if (arg.cnt > 1 && arg.array[arg.cnt - 1] == NULL)
+		--arg.cnt;
+	else if (arg.cnt < size) {
+		struct layout *ebp = (struct layout *)arg.lastebp;
 
-      while (arg.cnt < size)
-	{
-	  /* Check for out of range.  */
-	  if ((void *) ebp < arg.lastesp || (void *) ebp > __libc_stack_end
-	      || ((long) ebp & 3))
-	    break;
+		while (arg.cnt < size) {
+			/* Check for out of range.  */
+			if ((void *)ebp < arg.lastesp || (void *)ebp > __libc_stack_end || ((long)ebp & 3))
+				break;
 
-	  array[arg.cnt++] = ebp->ret;
-	  ebp = ebp->ebp;
+			array[arg.cnt++] = ebp->ret;
+			ebp = ebp->ebp;
+		}
 	}
-    }
-  return arg.cnt != -1 ? arg.cnt : 0;
+	return arg.cnt != -1 ? arg.cnt : 0;
 }
 
-
 /* Free all resources if necessary.  */
-static void backtrace_release (void)
+static void backtrace_release(void)
 {
-  unwind_backtrace = NULL;
-  if (libgcc_handle != NULL)
-    {
-      dlclose (libgcc_handle);
-      libgcc_handle = NULL;
-    }
+	unwind_backtrace = NULL;
+	if (libgcc_handle != NULL) {
+		dlclose(libgcc_handle);
+		libgcc_handle = NULL;
+	}
 }

@@ -25,8 +25,7 @@
 
 struct samba3_shareuser *getsamba3shareuser(const char *username)
 {
-	struct samba3_shareuser *user =
-		calloc(1, sizeof(struct samba3_shareuser));
+	struct samba3_shareuser *user = calloc(1, sizeof(struct samba3_shareuser));
 
 	strncpy(user->username, username, sizeof(user->username) - 1);
 
@@ -102,22 +101,16 @@ struct samba3_user *getsamba3users(void)
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if (!strcmp(key, "user")) {
-					strncpy(username,
-						json_string_value(value),
-						sizeof(username) - 1);
+					strncpy(username, json_string_value(value), sizeof(username) - 1);
 				} else if (!strcmp(key, "pass")) {
-					strncpy(password,
-						json_string_value(value),
-						sizeof(password) - 1);
+					strncpy(password, json_string_value(value), sizeof(password) - 1);
 				} else if (!strcmp(key, "type")) {
 					type = json_integer_value(value);
 				}
-				iterator =
-					json_object_iter_next(entry, iterator);
+				iterator = json_object_iter_next(entry, iterator);
 			}
 			if (username[0] != 0 && type != -1) {
-				current->next =
-					getsamba3user(username, password, type);
+				current->next = getsamba3user(username, password, type);
 				current = current->next;
 			}
 		}
@@ -128,17 +121,14 @@ struct samba3_user *getsamba3users(void)
 	return list;
 }
 
-struct samba3_share *getsamba3share(char *mp, char *sd, char *label,
-				    char *access_perms, int public,
-				    struct samba3_shareuser *users)
+struct samba3_share *getsamba3share(char *mp, char *sd, char *label, char *access_perms, int public, struct samba3_shareuser *users)
 {
 	struct samba3_share *share = calloc(1, sizeof(struct samba3_share));
 	if (share) {
 		strncpy(share->mp, mp, sizeof(share->mp) - 1);
 		strncpy(share->sd, sd, sizeof(share->sd) - 1);
 		strncpy(share->label, label, sizeof(share->label) - 1);
-		strncpy(share->access_perms, access_perms,
-			sizeof(share->access_perms) - 1);
+		strncpy(share->access_perms, access_perms, sizeof(share->access_perms) - 1);
 		share->public = public;
 		if (users != NULL) {
 			//fprintf(stderr, "[SHAREUSERS] add\n");
@@ -191,32 +181,23 @@ struct samba3_share *getsamba3shares(void)
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if (!strcmp(key, "mp")) {
-					strncpy(mp, json_string_value(value),
-						sizeof(mp) - 1);
+					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
 				} else if (!strcmp(key, "sd")) {
-					strncpy(sd, json_string_value(value),
-						sizeof(sd) - 1);
+					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
 				} else if (!strcmp(key, "label")) {
-					strncpy(label, json_string_value(value),
-						sizeof(label) - 1);
+					strncpy(label, json_string_value(value), sizeof(label) - 1);
 				} else if (!strcmp(key, "perms")) {
-					strncpy(access_perms,
-						json_string_value(value),
-						sizeof(access_perms) - 1);
+					strncpy(access_perms, json_string_value(value), sizeof(access_perms) - 1);
 				} else if (!strcmp(key, "public")) {
 					public = json_integer_value(value);
 				} else if (!strcmp(key, "users")) {
 					//fprintf( stderr, "[SAMABA SHARES] users\n" );
 					shareusers = getsamba3shareusers(value);
 				}
-				iterator =
-					json_object_iter_next(entry, iterator);
+				iterator = json_object_iter_next(entry, iterator);
 			}
 			if (*mp && *label && *access_perms) {
-				current->next = getsamba3share(mp, sd, label,
-							       access_perms,
-							       public,
-							       shareusers);
+				current->next = getsamba3share(mp, sd, label, access_perms, public, shareusers);
 				current = current->next;
 			}
 		}

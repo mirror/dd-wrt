@@ -366,8 +366,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
 	freq = wrq.u.freq.m;
-	struct wifi_interface *interface =
-		(struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	if (freq < 1000) {
 		interface->freq = ieee80211_ieee2mhz(freq);
 		return interface;
@@ -425,8 +424,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	static char a[18];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],
-		     mac[1], mac[2], mac[3], mac[4], mac[5]);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
 
@@ -465,8 +463,7 @@ typedef struct _RT_802_11_MAC_TABLE {
 	RT_802_11_MAC_ENTRY Entry[128]; //MAX_LEN_OF_MAC_TABLE = 32
 } RT_802_11_MAC_TABLE;
 
-int OidQueryInformation(unsigned long OidQueryCode, int socket_id,
-			char *DeviceName, void *ptr, unsigned long PtrLength)
+int OidQueryInformation(unsigned long OidQueryCode, int socket_id, char *DeviceName, void *ptr, unsigned long PtrLength)
 {
 	struct iwreq wrq;
 
@@ -488,8 +485,7 @@ STAINFO *getRaStaInfo(char *ifname)
 	int ConnectStatus = 0;
 	unsigned char BssidQuery[6];
 
-	if (!nvram_nmatch("sta", "%s_mode", ifname) &&
-	    !nvram_nmatch("apsta", "%s_mode", ifname) &&
+	if (!nvram_nmatch("sta", "%s_mode", ifname) && !nvram_nmatch("apsta", "%s_mode", ifname) &&
 	    !nvram_nmatch("apstawet", "%s_mode", ifname)) {
 		return NULL;
 	}
@@ -497,8 +493,7 @@ STAINFO *getRaStaInfo(char *ifname)
 	if (!strcmp(ifname, "wl1"))
 		ifn = "ba0";
 
-	if (nvram_nmatch("apsta", "%s_mode", ifname) ||
-	    nvram_nmatch("apstawet", "%s_mode", ifname)) {
+	if (nvram_nmatch("apsta", "%s_mode", ifname) || nvram_nmatch("apstawet", "%s_mode", ifname)) {
 		ifn = "apcli0";
 		if (!strcmp(ifname, "wl1"))
 			ifn = "apcli1";
@@ -507,27 +502,21 @@ STAINFO *getRaStaInfo(char *ifname)
 	int s;
 
 	s = getsocket();
-	if (OidQueryInformation(OID_GEN_MEDIA_CONNECT_STATUS, s, ifn,
-				&ConnectStatus, sizeof(ConnectStatus)) < 0) {
+	if (OidQueryInformation(OID_GEN_MEDIA_CONNECT_STATUS, s, ifn, &ConnectStatus, sizeof(ConnectStatus)) < 0) {
 		return NULL;
 	}
-	if (OidQueryInformation(RT_OID_802_11_RADIO, s, ifn, &G_bRadio,
-				sizeof(G_bRadio)) < 0) {
+	if (OidQueryInformation(RT_OID_802_11_RADIO, s, ifn, &G_bRadio, sizeof(G_bRadio)) < 0) {
 		return NULL;
 	}
 	if (G_bRadio && ConnectStatus == 1) {
 		bzero(&BssidQuery, sizeof(BssidQuery));
-		OidQueryInformation(OID_802_11_BSSID, s, ifn, &BssidQuery,
-				    sizeof(BssidQuery));
+		OidQueryInformation(OID_802_11_BSSID, s, ifn, &BssidQuery, sizeof(BssidQuery));
 		long RSSI;
 		int nNoiseDbm;
-		unsigned char
-			lNoise; // this value is (ULONG) in Ndis driver (NOTICE!!!)
+		unsigned char lNoise; // this value is (ULONG) in Ndis driver (NOTICE!!!)
 
-		OidQueryInformation(RT_OID_802_11_RSSI, s, ifn, &RSSI,
-				    sizeof(RSSI));
-		OidQueryInformation(RT_OID_802_11_QUERY_NOISE_LEVEL, s, ifn,
-				    &lNoise, sizeof(lNoise));
+		OidQueryInformation(RT_OID_802_11_RSSI, s, ifn, &RSSI, sizeof(RSSI));
+		OidQueryInformation(RT_OID_802_11_QUERY_NOISE_LEVEL, s, ifn, &lNoise, sizeof(lNoise));
 		nNoiseDbm = lNoise;
 		nNoiseDbm -= 143;
 
@@ -568,8 +557,7 @@ int getassoclist(char *ifname, unsigned char *list)
 			ignore = 1;
 		}
 		(void)bzero(&iwr, sizeof(struct iwreq));
-		(void)strlcpy(iwr.ifr_name, getRADev(ifname),
-			      sizeof(iwr.ifr_name) - 1);
+		(void)strlcpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name) - 1);
 
 		iwr.u.data.pointer = (caddr_t)&table;
 		if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr) < 0) {
@@ -592,8 +580,7 @@ int getassoclist(char *ifname, unsigned char *list)
 	if (!ignore && table.Num < 128)
 		for (i = 0; i < table.Num; i++) {
 			memcpy(l, &table.Entry[i].Addr, 6);
-			if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 &&
-			    l[4] == 0 && l[5] == 0)
+			if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 && l[4] == 0 && l[5] == 0)
 				break;
 			l += 6;
 			count[0]++;
@@ -705,8 +692,7 @@ static const uint8 wf_chspec_bw_mhz[] = { 5, 10, 20, 40, 80, 160, 160 };
 #define WF_NUM_BW (sizeof(wf_chspec_bw_mhz) / sizeof(uint8))
 
 /* 40MHz channels in 5GHz band */
-static const uint8 wf_5g_40m_chans[] = { 38,  46,  54,	62,  102, 110,
-					 118, 126, 134, 142, 151, 159 };
+static const uint8 wf_5g_40m_chans[] = { 38, 46, 54, 62, 102, 110, 118, 126, 134, 142, 151, 159 };
 
 #define WF_NUM_5G_40M_CHANS (sizeof(wf_5g_40m_chans) / sizeof(uint8))
 
@@ -775,8 +761,7 @@ uint8 wf_chspec_ctlchan(chanspec_t chspec)
 			center_chan = wf_5g_80m_chans[center_chan];
 		} else {
 			bw_mhz = bw_chspec_to_mhz(chspec);
-			center_chan = CHSPEC_CHANNEL(chspec) >>
-				      WL_CHANSPEC_CHAN_SHIFT;
+			center_chan = CHSPEC_CHANNEL(chspec) >> WL_CHANSPEC_CHAN_SHIFT;
 		}
 
 		return (channel_to_ctl_chan(center_chan, bw_mhz, sb));
@@ -804,12 +789,9 @@ static int getcenterchannel(chanspec_t chspec)
 
 #define CHSPEC_CHANNEL(chspec) ((uint8)(chspec & 0xff))
 
-#define CHSPEC_IS40(chspec) \
-	(((chspec)&WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_40)
-#define CHSPEC_SB_UPPER(chspec) \
-	((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
-#define CHSPEC_SB_LOWER(chspec) \
-	((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
+#define CHSPEC_IS40(chspec) (((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_40)
+#define CHSPEC_SB_UPPER(chspec) ((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
+#define CHSPEC_SB_LOWER(chspec) ((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
 #endif
 
 static int getcenterchannel(chanspec_t chspec)
@@ -945,8 +927,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 	if (bw > 20) {
 #ifdef WL_CHANSPEC_CTL_SB_UU
 		if (bw == 80) {
-			if (nvram_nmatch("lower", "wl%d_nctrlsb", wl) ||
-			    nvram_nmatch("upper", "wl%d_nctrlsb", wl))
+			if (nvram_nmatch("lower", "wl%d_nctrlsb", wl) || nvram_nmatch("upper", "wl%d_nctrlsb", wl))
 				nvram_nset("ll", "wl%d_nctrlsb", wl);
 		}
 		if (nvram_nmatch("uu", "wl%d_nctrlsb", wl))
@@ -959,10 +940,8 @@ int getchannels(unsigned int *retlist, char *ifname)
 			spec = WL_CHANSPEC_CTL_SB_LL;
 #endif
 		if (bw == 40) {
-			if (nvram_nmatch("uu", "wl%d_nctrlsb", wl) ||
-			    nvram_nmatch("ul", "wl%d_nctrlsb", wl) ||
-			    nvram_nmatch("lu", "wl%d_nctrlsb", wl) ||
-			    nvram_nmatch("ll", "wl%d_nctrlsb", wl))
+			if (nvram_nmatch("uu", "wl%d_nctrlsb", wl) || nvram_nmatch("ul", "wl%d_nctrlsb", wl) ||
+			    nvram_nmatch("lu", "wl%d_nctrlsb", wl) || nvram_nmatch("ll", "wl%d_nctrlsb", wl))
 				nvram_nset("lower", "wl%d_nctrlsb", wl);
 		}
 		if (nvram_nmatch("lower", "wl%d_nctrlsb", wl))
@@ -1173,8 +1152,7 @@ int getWifiInfo(char *ifname, unsigned char *macname, int field)
 			return rssi;
 		} else {
 			ether_atoe(macname, &rssi_get.ea);
-			wl_ioctl(ifname, WLC_GET_RSSI, &rssi_get,
-				 sizeof(rssi_get));
+			wl_ioctl(ifname, WLC_GET_RSSI, &rssi_get, sizeof(rssi_get));
 			return rssi_get.val;
 		}
 		break;
@@ -1225,8 +1203,7 @@ static int wrqfreq_to_int(struct iwreq *wrq)
  */
 
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
-static int set80211priv(struct iwreq *iwr, const char *ifname, int op,
-			void *data, size_t len)
+static int set80211priv(struct iwreq *iwr, const char *ifname, int op, void *data, size_t len)
 {
 #define N(a) (sizeof(a) / sizeof(a[0]))
 
@@ -1249,22 +1226,14 @@ static int set80211priv(struct iwreq *iwr, const char *ifname, int op,
 
 	if (ioctl(getsocket(), op, iwr) < 0) {
 		static const char *opnames[] = {
-			IOCTL_ERR(IEEE80211_IOCTL_SETPARAM),
-			IOCTL_ERR(IEEE80211_IOCTL_GETPARAM),
-			IOCTL_ERR(IEEE80211_IOCTL_SETMODE),
-			IOCTL_ERR(IEEE80211_IOCTL_GETMODE),
-			IOCTL_ERR(IEEE80211_IOCTL_SETWMMPARAMS),
-			IOCTL_ERR(IEEE80211_IOCTL_GETWMMPARAMS),
-			IOCTL_ERR(IEEE80211_IOCTL_SETCHANLIST),
-			IOCTL_ERR(IEEE80211_IOCTL_GETCHANLIST),
-			IOCTL_ERR(IEEE80211_IOCTL_CHANSWITCH),
-			IOCTL_ERR(IEEE80211_IOCTL_GETCHANINFO),
-			IOCTL_ERR(IEEE80211_IOCTL_SETOPTIE),
-			IOCTL_ERR(IEEE80211_IOCTL_GETOPTIE),
-			IOCTL_ERR(IEEE80211_IOCTL_SETMLME),
-			IOCTL_ERR(IEEE80211_IOCTL_SETKEY),
-			IOCTL_ERR(IEEE80211_IOCTL_DELKEY),
-			IOCTL_ERR(IEEE80211_IOCTL_ADDMAC),
+			IOCTL_ERR(IEEE80211_IOCTL_SETPARAM),	 IOCTL_ERR(IEEE80211_IOCTL_GETPARAM),
+			IOCTL_ERR(IEEE80211_IOCTL_SETMODE),	 IOCTL_ERR(IEEE80211_IOCTL_GETMODE),
+			IOCTL_ERR(IEEE80211_IOCTL_SETWMMPARAMS), IOCTL_ERR(IEEE80211_IOCTL_GETWMMPARAMS),
+			IOCTL_ERR(IEEE80211_IOCTL_SETCHANLIST),	 IOCTL_ERR(IEEE80211_IOCTL_GETCHANLIST),
+			IOCTL_ERR(IEEE80211_IOCTL_CHANSWITCH),	 IOCTL_ERR(IEEE80211_IOCTL_GETCHANINFO),
+			IOCTL_ERR(IEEE80211_IOCTL_SETOPTIE),	 IOCTL_ERR(IEEE80211_IOCTL_GETOPTIE),
+			IOCTL_ERR(IEEE80211_IOCTL_SETMLME),	 IOCTL_ERR(IEEE80211_IOCTL_SETKEY),
+			IOCTL_ERR(IEEE80211_IOCTL_DELKEY),	 IOCTL_ERR(IEEE80211_IOCTL_ADDMAC),
 			IOCTL_ERR(IEEE80211_IOCTL_DELMAC),
 		};
 		op -= SIOCIWFIRSTPRIV;
@@ -1305,8 +1274,7 @@ long long wifi_getrate(char *ifname)
 			return 54000 * KILO;
 		if (nvram_nmatch("bg-mixed", "%s_net_mode", physical))
 			return 54000 * KILO;
-		struct wifi_interface *interface =
-			mac80211_get_interface(ifname);
+		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
 			return -1;
 		long long rate;
@@ -1339,8 +1307,7 @@ long long wifi_getrate(char *ifname)
 		case 40:
 		case 80:
 		case 160:
-			rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi,
-					 interface->width);
+			rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
 			break;
 		case 8080:
 			rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
@@ -1387,9 +1354,8 @@ int iw_mwatt2dbm(int in)
 	return (res);
 }
 
-static int
-checkid(char *ifname, int vendorid,
-	int productid) //checks if its usually a emp card (no concrete detection possible)
+static int checkid(char *ifname, int vendorid,
+		   int productid) //checks if its usually a emp card (no concrete detection possible)
 {
 #ifdef HAVE_MVEBU
 	return 0;
@@ -1399,18 +1365,14 @@ checkid(char *ifname, int vendorid,
 
 	strcpy(readid, ifname);
 	sscanf(readid, "wlan%d", &devcount);
-	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount,
-				      "%d", NULL);
-	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct",
-				       devcount, "%d", NULL);
-	if (vendor == vendorid &&
-	    product == productid) //XR3.3/XR3.6/XR3.7 share the same pci id's
+	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
+	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
+	if (vendor == vendorid && product == productid) //XR3.3/XR3.6/XR3.7 share the same pci id's
 		return 1;
 	return 0;
 }
 
-int isEMP(
-	char *ifname) //checks if its usually a emp card (no concrete detection possible)
+int isEMP(char *ifname) //checks if its usually a emp card (no concrete detection possible)
 {
 	if (checkid(ifname, 0x168c, 0x2062))
 		return 1;
@@ -1420,28 +1382,21 @@ int isEMP(
 	return 0;
 }
 
-int isXR36(
-	char *ifname) //checks if its usually a emp card (no concrete detection possible)
+int isXR36(char *ifname) //checks if its usually a emp card (no concrete detection possible)
 {
 	return checkid(ifname, 0x0777, 0x3c03);
 }
 
-int isFXXN_PRO(
-	char *ifname) //checks if its usualla a DBII Networks FxxN-PRO card (no correct detection possible)
+int isFXXN_PRO(char *ifname) //checks if its usualla a DBII Networks FxxN-PRO card (no correct detection possible)
 {
 	char readid[64];
 	int devcount;
 
 	strcpy(readid, ifname);
 	sscanf(readid, "wlan%d", &devcount);
-	int cvendor = getValueFromPath(
-		"/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount,
-		"0x%x", NULL);
-	int cproduct = getValueFromPath(
-		"/sys/class/ieee80211/phy%d/device/subsystem_device", devcount,
-		"0x%x", NULL);
-	if (cvendor == 0x168c &&
-	    cproduct == 0x2096) { //F36N-PRO / F64N-PRO shares the same id's
+	int cvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount, "0x%x", NULL);
+	int cproduct = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devcount, "0x%x", NULL);
+	if (cvendor == 0x168c && cproduct == 0x2096) { //F36N-PRO / F64N-PRO shares the same id's
 		return 1;
 	} else if (cvendor == 0xdb11 && cproduct == 0x0f50) { // F50N-PRO
 		return 2;
@@ -1457,12 +1412,8 @@ int isSR71E(char *ifname)
 	strcpy(readid, ifname);
 	sscanf(readid, "wlan%d", &devcount);
 
-	int cvendor = getValueFromPath(
-		"/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount,
-		"0x%x", NULL);
-	int cproduct = getValueFromPath(
-		"/sys/class/ieee80211/phy%d/device/subsystem_device", devcount,
-		"0x%x", NULL);
+	int cvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount, "0x%x", NULL);
+	int cproduct = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devcount, "0x%x", NULL);
 
 	if (cvendor == 0x0777 && cproduct == 0x4e05) { // SR71-E
 		return 1;
@@ -1489,10 +1440,8 @@ int isDL4600(char *ifname)
 
 	strcpy(readid, ifname);
 	sscanf(readid, "wlan%d", &devcount);
-	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount,
-				      "%d", NULL);
-	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct",
-				       devcount, "%d", NULL);
+	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
+	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
 	if (vendor == 0x1C14 && product == 0x19)
 		return 1;
 	return 0;
@@ -1613,8 +1562,7 @@ int wifi_gettxpoweroffset(char *ifname)
 
 	strcpy(readid, ifname);
 	sscanf(readid, "wlan%d", &devcount);
-	poweroffset = getValueFromPath("/proc/sys/dev/wifi%d/poweroffset",
-				       devcount, "%d", &err);
+	poweroffset = getValueFromPath("/proc/sys/dev/wifi%d/poweroffset", devcount, "%d", &err);
 	if (err || poweroffset < 0 || poweroffset > 20)
 		poweroffset = 0;
 #endif
@@ -1666,8 +1614,7 @@ int get_freqoffset(char *ifname)
 
 	strcpy(readid, ifname);
 	sscanf(readid, "wlan%d", &devcount);
-	vendor = getValueFromPath("/proc/sys/dev/wifi%d/vendor", devcount, "%d",
-				  NULL);
+	vendor = getValueFromPath("/proc/sys/dev/wifi%d/vendor", devcount, "%d", NULL);
 
 	switch (vendor) {
 	case 9: // ubnt xr9
@@ -1711,9 +1658,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	struct iwreq wrq;
 
 	if (has_ad(ifname)) {
-		struct wifi_interface *interface =
-			(struct wifi_interface *)malloc(
-				sizeof(struct wifi_interface));
+		struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 		bzero(interface, sizeof(struct wifi_interface));
 		interface->freq = atoi(nvram_safe_get("wlan2_channel"));
 		interface->center1 = -1;
@@ -1728,8 +1673,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
-	struct wifi_interface *interface =
-		(struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	bzero(interface, sizeof(struct wifi_interface));
 	interface->freq = wrqfreq_to_int(&wrq);
 	interface->center1 = -1;
@@ -1758,9 +1702,8 @@ int get_radiostate(char *ifname)
 		return 0;
 	if (!has_ad(ifname)) {
 		if (is_mac80211(ifname)) {
-			int state = getValueFromPath(
-				"/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",
-				get_ath9k_phy_ifname(ifname), "0x%x", NULL);
+			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname),
+						     "0x%x", NULL);
 			if (state == 0x00000003)
 				return 0;
 		}
@@ -1843,8 +1786,7 @@ static unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 		return 0;
 	fprintf(fp, "0x%x", reg);
 	fclose(fp);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value",
-		phy);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "rb");
 	if (fp == NULL)
 		return 0;
@@ -1864,8 +1806,7 @@ static void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 		return;
 	fprintf(fp, "0x%x", reg);
 	fclose(fp);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value",
-		phy);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "wb");
 	if (fp == NULL)
 		return;
@@ -1939,38 +1880,30 @@ void radio_on_off_ath9k(int idx, int on)
 			value |= ((1 << 5) | (1 << 6));	// disable rx and tx
 		set_ath10kreg(prefix, pcu_diag_reg, value);*/
 	} else {
-		sprintf(debugstring,
-			"/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",
-			get_ath9k_phy_idx(idx));
+		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_idx(idx));
 		fp = open(debugstring, O_WRONLY);
 		if (fp) {
 			if (on)
 				write(fp, "0", sizeof("0") - 1);
 			else
 				write(fp, "3", sizeof("3") - 1);
-			fprintf(stderr, "ath9k radio %d: phy%d wlan%d\n", on,
-				get_ath9k_phy_idx(idx), idx);
+			fprintf(stderr, "ath9k radio %d: phy%d wlan%d\n", on, get_ath9k_phy_idx(idx), idx);
 			close(fp);
 		}
 	}
 	// LED
 #ifdef HAVE_WZRHPAG300NH
 	if (idx == 0)
-		sprintf(debugstring,
-			"/sys/class/leds/wireless_generic_1/trigger");
+		sprintf(debugstring, "/sys/class/leds/wireless_generic_1/trigger");
 	else
-		sprintf(debugstring,
-			"/sys/class/leds/wireless_generic_21/trigger");
+		sprintf(debugstring, "/sys/class/leds/wireless_generic_21/trigger");
 #else
 	if (is_ath10k(prefix))
-		sprintf(debugstring, "/sys/class/leds/ath10k-phy%d/trigger",
-			get_ath9k_phy_idx(idx));
+		sprintf(debugstring, "/sys/class/leds/ath10k-phy%d/trigger", get_ath9k_phy_idx(idx));
 	else if (is_ath11k(prefix))
-		sprintf(debugstring, "/sys/class/leds/ath11k-phy%d/trigger",
-			get_ath9k_phy_idx(idx));
+		sprintf(debugstring, "/sys/class/leds/ath11k-phy%d/trigger", get_ath9k_phy_idx(idx));
 	else
-		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger",
-			get_ath9k_phy_idx(idx));
+		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_ath9k_phy_idx(idx));
 #endif
 	fp = open(debugstring, O_WRONLY);
 	if (fp) {
@@ -1978,8 +1911,7 @@ void radio_on_off_ath9k(int idx, int on)
 			sprintf(tpt, "phy%dtpt", get_ath9k_phy_idx(idx));
 			write(fp, tpt, strlen(tpt));
 			sprintf(secmode, "wlan%d_akm", idx);
-			if (nvram_exists(secmode) &&
-			    !nvram_match(secmode, "disabled")) {
+			if (nvram_exists(secmode) && !nvram_match(secmode, "disabled")) {
 				// needs refinements
 				if (idx == 0)
 					led_control(LED_SEC0, LED_ON);
@@ -2005,8 +1937,7 @@ void radio_on_off_ath9k(int idx, int on)
 int has_athmask(int devnum, int mask)
 {
 	int err;
-	int modes = getValueFromPath("/proc/sys/dev/wifi%d/wirelessmodes",
-				     devnum, "%d", &err);
+	int modes = getValueFromPath("/proc/sys/dev/wifi%d/wirelessmodes", devnum, "%d", &err);
 	if (!err && (modes & mask) == mask)
 		return 1;
 	else
@@ -2019,21 +1950,18 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	struct ieee80211req_chaninfo achans;
 	const struct ieee80211_channel *c;
 	int i;
-	struct wifi_channels *list =
-		getcache(ifname, nvram_nget("%s_regdomain", ifname));
+	struct wifi_channels *list = getcache(ifname, nvram_nget("%s_regdomain", ifname));
 	if (list)
 		return list;
 
 	// fprintf (stderr, "list channels for %s\n", ifname);
-	if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANINFO, &chans,
-			sizeof(chans)) < 0) {
+	if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof(chans)) < 0) {
 		fprintf(stderr, "unable to get channel information\n");
 		return NULL;
 	}
 	if (!allchans) {
 		uint8_t active[64];
-		if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANLIST, &active,
-				sizeof(active)) < 0) {
+		if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof(active)) < 0) {
 			fprintf(stderr, "unable to get active channel list\n");
 			return NULL;
 		}
@@ -2047,8 +1975,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		achans = chans;
 
 	// fprintf(stderr,"channel number %d\n", achans.ic_nchans);
-	list = (struct wifi_channels *)calloc(
-		sizeof(struct wifi_channels) * (achans.ic_nchans + 1), 1);
+	list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (achans.ic_nchans + 1), 1);
 
 	char wl_mode[16];
 	char wl_turbo[16];
@@ -2070,13 +1997,11 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (!strcmp(ifname, "wlan1"))
 				continue;
 #endif
-			if (nvram_invmatch(wl_mode, "a-only") &&
-			    nvram_invmatch(wl_mode, "mixed"))
+			if (nvram_invmatch(wl_mode, "a-only") && nvram_invmatch(wl_mode, "mixed"))
 				continue;
 		}
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
-		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i]) ||
-		    IEEE80211_IS_CHAN_B(&achans.ic_chans[i])) {
+		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_B(&achans.ic_chans[i])) {
 #ifdef HAVE_WHRAG108
 			if (!strcmp(ifname, "wlan0"))
 				continue;
@@ -2085,16 +2010,13 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (!strcmp(ifname, "wlan0"))
 				continue;
 #endif
-			if (nvram_invmatch(wl_mode, "g-only") &&
-			    nvram_invmatch(wl_mode, "mixed") &&
-			    nvram_invmatch(wl_mode, "b-only") &&
-			    nvram_invmatch(wl_mode, "bg-mixed"))
+			if (nvram_invmatch(wl_mode, "g-only") && nvram_invmatch(wl_mode, "mixed") &&
+			    nvram_invmatch(wl_mode, "b-only") && nvram_invmatch(wl_mode, "bg-mixed"))
 				continue;
 		}
 		// filter out channels which are not supporting turbo mode if turbo
 		// is enabled
-		if (!IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i]) &&
-		    !IEEE80211_IS_CHAN_DTURBO(&achans.ic_chans[i])) {
+		if (!IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i]) && !IEEE80211_IS_CHAN_DTURBO(&achans.ic_chans[i])) {
 			if (nvram_matchi(wl_turbo, 40))
 				continue;
 		}
@@ -2207,23 +2129,15 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 
 			switch (field) {
 			case INFO_RSSI:
-				result = si->isi_noise + si->isi_rssi +
-					 nvram_default_geti(nb, 0);
+				result = si->isi_noise + si->isi_rssi + nvram_default_geti(nb, 0);
 			case INFO_NOISE:
-				result = si->isi_noise +
-					 nvram_default_geti(nb, 0);
+				result = si->isi_noise + nvram_default_geti(nb, 0);
 			case INFO_UPTIME:
 				result = si->isi_uptime;
 			case INFO_RXRATE:
-				result = ((si->isi_rates[si->isi_rxrate] &
-					   IEEE80211_RATE_VAL) /
-					  2) *
-					 t;
+				result = ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * t;
 			case INFO_TXRATE:
-				result = ((si->isi_rates[si->isi_txrate] &
-					   IEEE80211_RATE_VAL) /
-					  2) *
-					 t;
+				result = ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * t;
 			default:
 				result = 0;
 			}
@@ -2260,10 +2174,8 @@ int getassoclist(char *ifname, unsigned char *list)
 	}
 	int mincount = 0;
 
-	if (nvram_nmatch("wdssta", "%s_mode", ifname) ||
-	    nvram_nmatch("sta", "%s_mode", ifname) ||
-	    nvram_nmatch("wdssta_mtik", "%s_mode", ifname) ||
-	    nvram_nmatch("wet", "%s_mode", ifname)) {
+	if (nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) ||
+	    nvram_nmatch("wdssta_mtik", "%s_mode", ifname) || nvram_nmatch("wet", "%s_mode", ifname)) {
 		int assoc = isAssociated(ifname);
 
 		if (!assoc) {
@@ -2310,8 +2222,7 @@ int getassoclist(char *ifname, unsigned char *list)
 
 		si = (struct ieee80211req_sta_info *)cp;
 		memcpy(l, &si->isi_macaddr[0], 6);
-		if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 &&
-		    l[4] == 0 && l[5] == 0)
+		if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 && l[4] == 0 && l[5] == 0)
 			break;
 		l += 6;
 		count[0]++;
@@ -2450,8 +2361,7 @@ int has_mimo(const char *prefix)
 int has_ac(const char *prefix)
 {
 	if (!strncmp(prefix, "ba", 2) || !strncmp(prefix, "wl1", 3)) {
-		FILE *fp =
-			fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
+		FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
 		if (!fp)
 			return 0;
 		char id[32];
@@ -2464,8 +2374,7 @@ int has_ac(const char *prefix)
 	}
 
 	if (!strncmp(prefix, "ra", 2) || !strncmp(prefix, "wl0", 3)) {
-		FILE *fp =
-			fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
+		FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
 		if (!fp)
 			return 0;
 		char id[32];
@@ -2478,8 +2387,7 @@ int has_ac(const char *prefix)
 	}
 
 	if (!strncmp(prefix, "ba", 2) || !strncmp(prefix, "wl1", 3)) {
-		FILE *fp =
-			fopen("/sys/bus/pci/devices/0000:02:00.0/device", "rb");
+		FILE *fp = fopen("/sys/bus/pci/devices/0000:02:00.0/device", "rb");
 		if (!fp)
 			return 0;
 		char id[32];
@@ -2503,8 +2411,7 @@ int has_mimo(const char *prefix)
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
-	if (strchr(phy, 'n') || strchr(phy, 'h') || strchr(phy, 's') ||
-	    strchr(phy, 'v'))
+	if (strchr(phy, 'n') || strchr(phy, 'h') || strchr(phy, 's') || strchr(phy, 'v'))
 		return 1;
 	else
 		return 0;
@@ -2556,10 +2463,8 @@ struct wifidevices {
 #define CHANNELSURVEY 0x1 // driver supports channelsurvey feature
 #define QBOOST \
 	0x2 // qboost is a tdma like protocol. i just added this feature to ath10k for doing some experiments. its only supported on 10.4 based firmwares (9984, ipq40xx etc)
-#define TDMA \
-	0x4 // older chipsets to not support tdma, just some sort of polling. so we need this flag
-#define BEACONVAP100 \
-	0x8 // limit if vaps are configured, beacon minimum must be 100ms (chipset specific)
+#define TDMA 0x4 // older chipsets to not support tdma, just some sort of polling. so we need this flag
+#define BEACONVAP100 0x8 // limit if vaps are configured, beacon minimum must be 100ms (chipset specific)
 #define SURVEY_NOPERIOD 0x10 // survey is non periodic
 #define CHWIDTH_5_10_MHZ 0x20
 #define CHWIDTH_25_MHZ 0x40
@@ -2579,306 +2484,179 @@ struct wifidevices {
 #define CHANNELSURVEY5K 0
 #endif
 static struct wifidevices wdevices[] = {
-	{ "Ubiquiti XR5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x3005, NULL }, //UBNT XR5 offset 10
-	{ "Ubiquiti XR5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x7777, 0x3005, NULL }, //UBNT XR5 offset 10
-	{ "Ubiquiti XR4", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x3004, NULL }, //UBNT XR4
-	{ "Ubiquiti SRX", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x3006, NULL }, //UBNT XR7 offset 10
-	{ "Ubiquiti XR7", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x3007, NULL }, //UBNT XR7 offset 10
-	{ "Ubiquiti XR2-2.3",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x0777, 0x3b02, NULL }, //UBNT XR2.3
-	{ "Ubiquiti XR2-2.6",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x0777, 0x3c02, NULL }, //UBNT XR2.6 offset 10
-	{ "Ubiquiti XR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x3002, NULL }, //UBNT XR2
-	{ "Ubiquiti XR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x7777, 0x3002, NULL }, //UBNT XR2
-	{ "Ubiquiti XR3", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x3003, NULL }, //UBNT XR3 offset 10
-	{ "Ubiquiti XR3-3.6",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x0777, 0x3c03, NULL }, //UBNT XR3-3.6 offset 10
-	{ "Ubiquiti XR3-2.8",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x0777, 0x3b03, NULL }, //UBNT XR3-2.8
-	{ "Ubiquiti XR9", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x3009, NULL }, //UBNT XR9 offset 10
-	{ "Ubiquiti UB5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x0777, 0x1107, NULL }, //UBNT UB5
-	{ "Ubiquiti SR71A", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0027, 0x0777, 0x4082, NULL }, //UBNT SR71A offset 10
-	{ "Ubiquiti SR71", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0027, 0x0777, 0x2082, NULL }, //UBNT SR71 offset 10
-	{ "Ubiquiti SR71-E",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0029, 0x0777, 0x4e05, NULL }, //UBNT SR71-E offset 10
-	{ "Ubiquiti SR71-15",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0029, 0x0777, 0x4005, NULL }, //UBNT SR71-15 offset 10
-	{ "Ubiquiti SR71-12",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0029, 0x0777, 0x4002, NULL }, //UBNT SR71-12 offset 10
-	{ "Ubiquiti SR9", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x0777, 0x2009, NULL }, //UBNT SR9
-	{ "Ubiquiti SR9", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x7777, 0x2009, NULL }, //UBNT SR9 offset 12
-	{ "Ubiquiti SR4", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x7777, 0x2004, NULL }, //UBNT SR4 offset 6
-	{ "Ubiquiti SR4", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x0777, 0x2004, NULL }, //UBNT SR4 offset 6
-	{ "Ubiquiti SR4C", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x0777, 0x1004, NULL }, //UBNT SR4C offset 6
-	{ "Ubiquiti SR4C", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x7777, 0x1004, NULL }, //UBNT SR4C offset 6
-	{ "Ubiquiti SRC", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x168c, 0x1042, NULL }, //UBNT SRC offset 1
-	{ "Ubiquiti SR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x168c, 0x2041, NULL }, //UBNT SR2 offset 10
-	{ "Ubiquiti SR5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x168c, 0x2042, NULL }, //UBNT SR5 offset 7
-	{ "Ubiquiti SR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0013, 0x168c, 0x2051, NULL }, //UBNT SR2
-	{ "Ubiquiti SR71-X", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0029, 0x0777, 0x4f05, NULL }, //UBNT SR2
-	{ "Senao NMP8601 AR5413",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x168c, 0x2063, NULL }, //NMP
-	{ "Alfa Networks AR5413",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x17f9, 0x000d, NULL }, //alfa
-	{ "Seano NMP8601 AR5413",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x168c, 0x2062, NULL }, //NMP
-	{ "Gigabyte / AR5413",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x1458, 0xe901, NULL }, //Gigabyte
-	{ "Alfa Networks AR5413",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x168d, 0x1031, NULL }, //Alfa
-	{ "Alfa Networks AR5413",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x168d, 0x10a2, NULL }, //Alfa
-	{ "DoodleLabs DB-F15-PRO",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0xdb11, 0xf50, NULL }, //dbii F50-pro-i
-	{ "DoodleLabs DL4600",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x1c14, 0x19, NULL }, //dl4600
-	{ "Mikrotik R52nM",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0029, 0x198c, 0x4201, NULL },
-	{ "Mikrotik R52nM",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0029, 0x19b6, 0x5201, NULL },
-	{ "Mikrotik R5H", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x19b6, 0x2201, NULL },
-	{ "Mikrotik R5H", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x001b, 0x19b6, 0x2203, NULL },
-	{ "Mikrotik R11e-5HnD",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0033, 0x19b6, 0xd014, NULL },
-	{ "Mikrotik R11e-5HnDr2",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0033, 0x19b6, 0xd057, NULL },
-	{ "Mikrotik R11e-2HPnD",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0033, 0x19b6, 0xd016, NULL },
-	{ "Mikrotik R11e-5HacD",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x003c, 0x19b6, 0xd075, NULL },
-	{ "Mikrotik R11e-5HacT",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x003c, 0x19b6, 0xd03c, NULL },
-	{ "Wistron DCMA-82",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b,
-	  0x185f, 0x1600, NULL },
-	{ "Wistron DNMA-92",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0029, 0x168c, 0x2096, NULL },
-	{ "AR5210 802.11a", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0007, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5210 802.11a", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0207, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5211 802.11a", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0011, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5211 802.11ab",
-	  CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0012,
-	  PCI_ANY, PCI_ANY, NULL },
-	{ "AR5212", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0013, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5212", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x1014, PCI_ANY, PCI_ANY, NULL },
-	{ "AR2413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x001a, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x001b, PCI_ANY, PCI_ANY, NULL },
-	{ "AR542x", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x001c, PCI_ANY, PCI_ANY, NULL },
-	{ "AR2417", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x001d, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5513", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0020, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5416 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0023, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5418 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0024, PCI_ANY, PCI_ANY, NULL },
-	{ "AR9160 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0027, PCI_ANY, PCI_ANY, NULL },
-	{ "AR922X 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0029, PCI_ANY, PCI_ANY, NULL },
-	{ "AR928X 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x002a, PCI_ANY, PCI_ANY, NULL },
-	{ "AR9285 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x002b, PCI_ANY, PCI_ANY, NULL },
-	{ "AR2427 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x002c, PCI_ANY, PCI_ANY, NULL },
-	{ "AR9227 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x002d, PCI_ANY, PCI_ANY, NULL },
-	{ "AR9287 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x002e, PCI_ANY, PCI_ANY, NULL },
-	{ "AR93xx 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0030, PCI_ANY, PCI_ANY, NULL },
-	{ "AR9485 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0032, PCI_ANY, PCI_ANY, NULL },
-	{ "AR958x 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0033, PCI_ANY, PCI_ANY, NULL },
-	{ "AR9462 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0034, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA9565 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0036, PCI_ANY, PCI_ANY, NULL },
-	{ "AR9485 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0x0037, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5002X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x9013, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5006X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0xff19, PCI_ANY, PCI_ANY, NULL },
-	{ "AR2425", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0xff1b, PCI_ANY, PCI_ANY, NULL },
-	{ "AR5008", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0xff1c, PCI_ANY, PCI_ANY, NULL },
-	{ "AR922x 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
-	  0xff1d, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA988x 802.11ac",
-	  SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY |
-		  CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x003c, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA6174 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x003e,
-	  PCI_ANY, PCI_ANY, NULL },
-	{ "QCA99X0 802.11ac",
-	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY |
-		  CHWIDTH_5_10_MHZ | QBOOST | TDMA,
+	{ "Ubiquiti XR5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3005,
+	  NULL }, //UBNT XR5 offset 10
+	{ "Ubiquiti XR5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x7777, 0x3005,
+	  NULL }, //UBNT XR5 offset 10
+	{ "Ubiquiti XR4", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3004, NULL }, //UBNT XR4
+	{ "Ubiquiti SRX", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3006,
+	  NULL }, //UBNT XR7 offset 10
+	{ "Ubiquiti XR7", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3007,
+	  NULL }, //UBNT XR7 offset 10
+	{ "Ubiquiti XR2-2.3", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3b02,
+	  NULL }, //UBNT XR2.3
+	{ "Ubiquiti XR2-2.6", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3c02,
+	  NULL }, //UBNT XR2.6 offset 10
+	{ "Ubiquiti XR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3002, NULL }, //UBNT XR2
+	{ "Ubiquiti XR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x7777, 0x3002, NULL }, //UBNT XR2
+	{ "Ubiquiti XR3", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3003,
+	  NULL }, //UBNT XR3 offset 10
+	{ "Ubiquiti XR3-3.6", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3c03,
+	  NULL }, //UBNT XR3-3.6 offset 10
+	{ "Ubiquiti XR3-2.8", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3b03,
+	  NULL }, //UBNT XR3-2.8
+	{ "Ubiquiti XR9", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3009,
+	  NULL }, //UBNT XR9 offset 10
+	{ "Ubiquiti UB5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x1107, NULL }, //UBNT UB5
+	{ "Ubiquiti SR71A", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0027, 0x0777, 0x4082,
+	  NULL }, //UBNT SR71A offset 10
+	{ "Ubiquiti SR71", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0027, 0x0777, 0x2082,
+	  NULL }, //UBNT SR71 offset 10
+	{ "Ubiquiti SR71-E", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, 0x0777, 0x4e05,
+	  NULL }, //UBNT SR71-E offset 10
+	{ "Ubiquiti SR71-15", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, 0x0777, 0x4005,
+	  NULL }, //UBNT SR71-15 offset 10
+	{ "Ubiquiti SR71-12", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, 0x0777, 0x4002,
+	  NULL }, //UBNT SR71-12 offset 10
+	{ "Ubiquiti SR9", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x0777, 0x2009, NULL }, //UBNT SR9
+	{ "Ubiquiti SR9", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x7777, 0x2009,
+	  NULL }, //UBNT SR9 offset 12
+	{ "Ubiquiti SR4", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x7777, 0x2004,
+	  NULL }, //UBNT SR4 offset 6
+	{ "Ubiquiti SR4", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x0777, 0x2004,
+	  NULL }, //UBNT SR4 offset 6
+	{ "Ubiquiti SR4C", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x0777, 0x1004,
+	  NULL }, //UBNT SR4C offset 6
+	{ "Ubiquiti SR4C", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x7777, 0x1004,
+	  NULL }, //UBNT SR4C offset 6
+	{ "Ubiquiti SRC", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x168c, 0x1042,
+	  NULL }, //UBNT SRC offset 1
+	{ "Ubiquiti SR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x168c, 0x2041,
+	  NULL }, //UBNT SR2 offset 10
+	{ "Ubiquiti SR5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x168c, 0x2042,
+	  NULL }, //UBNT SR5 offset 7
+	{ "Ubiquiti SR2", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, 0x168c, 0x2051, NULL }, //UBNT SR2
+	{ "Ubiquiti SR71-X", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, 0x0777, 0x4f05, NULL }, //UBNT SR2
+	{ "Senao NMP8601 AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x168c, 0x2063, NULL }, //NMP
+	{ "Alfa Networks AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x17f9, 0x000d,
+	  NULL }, //alfa
+	{ "Seano NMP8601 AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x168c, 0x2062, NULL }, //NMP
+	{ "Gigabyte / AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x1458, 0xe901,
+	  NULL }, //Gigabyte
+	{ "Alfa Networks AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x168d, 0x1031,
+	  NULL }, //Alfa
+	{ "Alfa Networks AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x168d, 0x10a2,
+	  NULL }, //Alfa
+	{ "DoodleLabs DB-F15-PRO", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0xdb11, 0xf50,
+	  NULL }, //dbii F50-pro-i
+	{ "DoodleLabs DL4600", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x1c14, 0x19, NULL }, //dl4600
+	{ "Mikrotik R52nM", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, 0x198c, 0x4201, NULL },
+	{ "Mikrotik R52nM", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, 0x19b6, 0x5201, NULL },
+	{ "Mikrotik R5H", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x19b6, 0x2201, NULL },
+	{ "Mikrotik R5H", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x19b6, 0x2203, NULL },
+	{ "Mikrotik R11e-5HnD", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0033, 0x19b6, 0xd014,
+	  NULL },
+	{ "Mikrotik R11e-5HnDr2", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0033, 0x19b6, 0xd057,
+	  NULL },
+	{ "Mikrotik R11e-2HPnD", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0033, 0x19b6, 0xd016,
+	  NULL },
+	{ "Mikrotik R11e-5HacD", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x003c, 0x19b6, 0xd075,
+	  NULL },
+	{ "Mikrotik R11e-5HacT", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x003c, 0x19b6, 0xd03c,
+	  NULL },
+	{ "Wistron DCMA-82", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x185f, 0x1600, NULL },
+	{ "Wistron DNMA-92", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, 0x168c, 0x2096, NULL },
+	{ "AR5210 802.11a", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0007, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5210 802.11a", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0207, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5211 802.11a", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0011, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5211 802.11ab", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0012, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5212", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0013, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5212", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x1014, PCI_ANY, PCI_ANY, NULL },
+	{ "AR2413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001a, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5413", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, PCI_ANY, PCI_ANY, NULL },
+	{ "AR542x", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001c, PCI_ANY, PCI_ANY, NULL },
+	{ "AR2417", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001d, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5513", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0020, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5416 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0023, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5418 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0024, PCI_ANY, PCI_ANY, NULL },
+	{ "AR9160 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0027, PCI_ANY, PCI_ANY, NULL },
+	{ "AR922X 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0029, PCI_ANY, PCI_ANY, NULL },
+	{ "AR928X 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x002a, PCI_ANY, PCI_ANY, NULL },
+	{ "AR9285 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x002b, PCI_ANY, PCI_ANY, NULL },
+	{ "AR2427 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x002c, PCI_ANY, PCI_ANY, NULL },
+	{ "AR9227 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x002d, PCI_ANY, PCI_ANY, NULL },
+	{ "AR9287 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x002e, PCI_ANY, PCI_ANY, NULL },
+	{ "AR93xx 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0030, PCI_ANY, PCI_ANY, NULL },
+	{ "AR9485 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0032, PCI_ANY, PCI_ANY, NULL },
+	{ "AR958x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0033, PCI_ANY, PCI_ANY, NULL },
+	{ "AR9462 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0034, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA9565 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0036, PCI_ANY, PCI_ANY, NULL },
+	{ "AR9485 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0037, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5002X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x9013, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5006X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff19, PCI_ANY, PCI_ANY, NULL },
+	{ "AR2425", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1b, PCI_ANY, PCI_ANY, NULL },
+	{ "AR5008", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1c, PCI_ANY, PCI_ANY, NULL },
+	{ "AR922x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1d, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA988x 802.11ac", SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
+	  0x003c, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA6174 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x003e, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA99X0 802.11ac", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA,
 	  0x168c, 0x0040, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA6164 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x0041,
-	  PCI_ANY, PCI_ANY, NULL },
-	{ "QCA9377 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x0042,
-	  PCI_ANY, PCI_ANY, NULL },
+	{ "QCA6164 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x0041, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA9377 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x0042, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA9984 802.11ac",
-	  DUALBAND | WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY |
-		  CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100,
-	  0x168c, 0x0046, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA9887 802.11ac",
-	  SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY |
-		  CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  0x168c, 0x0050, PCI_ANY, PCI_ANY, NULL },
+	  DUALBAND | WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c,
+	  0x0046, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA9887 802.11ac", SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
+	  0x0050, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA9888 802.11ac",
-	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY |
-		  CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100,
-	  0x168c, 0x0056, PCI_ANY, PCI_ANY, NULL },
-	{ "QCN9074 802.11ax",
-	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100,
-	  0x17cb, 0x1104, PCI_ANY, PCI_ANY, NULL },
-	{ "QCN9224 802.11ax",
-	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100,
-	  0x17cb, 0x1109, PCI_ANY, PCI_ANY, NULL },
-	{ "WCN6855 802.11ax",
-	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100,
-	  0x17cb, 0x1103, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA6390 802.11ax",
-	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100,
-	  0x17cb, 0x1101, PCI_ANY, PCI_ANY, NULL },
-	{ "Ubiquiti QCA9888 802.11ac",
-	  SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ,
-	  0x0777, 0x11ac, PCI_ANY, PCI_ANY, NULL },
-	{ "MWL88W8964 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b40,
+	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056,
 	  PCI_ANY, PCI_ANY, NULL },
-	{ "MWL88W8864 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2a55,
-	  PCI_ANY, PCI_ANY, NULL },
-	{ "MWL88W8897 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b38,
-	  PCI_ANY, PCI_ANY, NULL },
+	{ "QCN9074 802.11ax", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1104, PCI_ANY, PCI_ANY,
+	  NULL },
+	{ "QCN9224 802.11ax", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1109, PCI_ANY, PCI_ANY,
+	  NULL },
+	{ "WCN6855 802.11ax", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1103, PCI_ANY, PCI_ANY,
+	  NULL },
+	{ "QCA6390 802.11ax", WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1101, PCI_ANY, PCI_ANY,
+	  NULL },
+	{ "Ubiquiti QCA9888 802.11ac", SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x0777, 0x11ac, PCI_ANY,
+	  PCI_ANY, NULL },
+	{ "MWL88W8964 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b40, PCI_ANY, PCI_ANY, NULL },
+	{ "MWL88W8864 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2a55, PCI_ANY, PCI_ANY, NULL },
+	{ "MWL88W8897 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b38, PCI_ANY, PCI_ANY, NULL },
 	{ "WIL6210 802.11ad", NONE, 0x1ae9, 0x0310, PCI_ANY, PCI_ANY, NULL },
-	{ "MWLSD8887 802.11ac", CHANNELSURVEY, 0x02df, 0x9135, PCI_ANY, PCI_ANY,
-	  NULL },
-	{ "MT7615E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x7615, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7663 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x7663, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7611 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x7611, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7915E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x7915, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7916E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x7916, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7921E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x7961, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7922E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x7922, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7921E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x0608, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7922E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3,
-	  0x0616, PCI_ANY, PCI_ANY, NULL },
-	{ "MT7610E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7610, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "MT7630E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7630, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "MT7650E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7650, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "MT7662E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7662, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "MT7612E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7612, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "MT7602E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7602, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "MT7603E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7603, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "MT7620 802.11n", CHANNELSURVEY, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
-	  "rt2880_wmac" },
-	{ "RT3091 802.11n", CHANNELSURVEY, 0x1814, 0x3091, PCI_ANY, PCI_ANY,
-	  NULL },
+	{ "MWLSD8887 802.11ac", CHANNELSURVEY, 0x02df, 0x9135, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7615E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7615, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7663 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7663, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7611 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7611, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7915E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7915, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7916E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7916, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7921E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7961, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7922E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7922, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7921E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x0608, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7922E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x0616, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7610E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7610, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7630E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7630, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7650E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7650, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7662E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7662, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7612E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7612, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7602E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7602, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7603E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7603, PCI_ANY, PCI_ANY, NULL },
+	{ "MT7620 802.11n", CHANNELSURVEY, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "rt2880_wmac" },
+	{ "RT3091 802.11n", CHANNELSURVEY, 0x1814, 0x3091, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM4350 802.11ac", NONE, 0x14e4, 0x4350, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM4356 802.11ac", NONE, 0x14e4, 0x4356, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM4358 802.11ac", NONE, 0x14e4, 0x4358, PCI_ANY, PCI_ANY, NULL },
-	{ "BCM4365 802.11ac", QAM256 | CHANNELSURVEY, 0x14e4, 0x4365, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "BCM4366 802.11ac", QAM256 | CHANNELSURVEY, 0x14e4, 0x4366, PCI_ANY,
-	  PCI_ANY, NULL },
+	{ "BCM4365 802.11ac", QAM256 | CHANNELSURVEY, 0x14e4, 0x4365, PCI_ANY, PCI_ANY, NULL },
+	{ "BCM4366 802.11ac", QAM256 | CHANNELSURVEY, 0x14e4, 0x4366, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM4371 802.11ac", NONE, 0x14e4, 0x4371, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM43570 802.11ac", NONE, 0x14e4, 43570, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM43566 802.11ac", NONE, 0x14e4, 43566, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM43567 802.11ac", NONE, 0x14e4, 43567, PCI_ANY, PCI_ANY, NULL },
 	{ "BCM43569 802.11ac", NONE, 0x14e4, 43569, PCI_ANY, PCI_ANY, NULL },
-	{ "BCM43602 802.11ac", QAM256 | SURVEY_NOPERIOD, 0x14e4, 43602, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "BCM43664 802.11ac", QAM256 | NONE, 0x14e4, 43664, PCI_ANY, PCI_ANY,
-	  NULL },
+	{ "BCM43602 802.11ac", QAM256 | SURVEY_NOPERIOD, 0x14e4, 43602, PCI_ANY, PCI_ANY, NULL },
+	{ "BCM43664 802.11ac", QAM256 | NONE, 0x14e4, 43664, PCI_ANY, PCI_ANY, NULL },
 	{ "RTL8723de 802.11n", NONE, 0x10ec, 0xd723, PCI_ANY, PCI_ANY, NULL },
 	{ "RTL8822ce 802.11ac", NONE, 0x10ec, 0xc822, PCI_ANY, PCI_ANY, NULL },
 	{ "RTL8822be 802.11ac", NONE, 0x10ec, 0xb822, PCI_ANY, PCI_ANY, NULL },
@@ -2923,92 +2701,52 @@ static struct wifidevices wdevices[] = {
 	{ "IWL2200", NONE, 0x8086, 0x4023, PCI_ANY, PCI_ANY, NULL },
 	{ "IWL2200", NONE, 0x8086, 0x4024, PCI_ANY, PCI_ANY, NULL },
 
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2520,
-	  NULL }, /* IN 2100A mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2521,
-	  NULL }, /* IN 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2524,
-	  NULL }, /* IN 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2525,
-	  NULL }, /* IN 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2526,
-	  NULL }, /* IN 2100A mPCI Gen A3 */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2522,
-	  NULL }, /* IN 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2523,
-	  NULL }, /* IN 2100 mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2527,
-	  NULL }, /* IN 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2528,
-	  NULL }, /* IN 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2529,
-	  NULL }, /* IN 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x252B,
-	  NULL }, /* IN 2100 mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x252C,
-	  NULL }, /* IN 2100 mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x252D,
-	  NULL }, /* IN 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2520, NULL }, /* IN 2100A mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2521, NULL }, /* IN 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2524, NULL }, /* IN 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2525, NULL }, /* IN 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2526, NULL }, /* IN 2100A mPCI Gen A3 */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2522, NULL }, /* IN 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2523, NULL }, /* IN 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2527, NULL }, /* IN 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2528, NULL }, /* IN 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2529, NULL }, /* IN 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x252B, NULL }, /* IN 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x252C, NULL }, /* IN 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x252D, NULL }, /* IN 2100 mPCI 3A */
 
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2550,
-	  NULL }, /* IB 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2551,
-	  NULL }, /* IB 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2553,
-	  NULL }, /* IB 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2554,
-	  NULL }, /* IB 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2555,
-	  NULL }, /* IB 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2550, NULL }, /* IB 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2551, NULL }, /* IB 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2553, NULL }, /* IB 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2554, NULL }, /* IB 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2555, NULL }, /* IB 2100 mPCI 3B */
 
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2560,
-	  NULL }, /* DE 2100A mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2562,
-	  NULL }, /* DE 2100A mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2563,
-	  NULL }, /* DE 2100A mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2561,
-	  NULL }, /* DE 2100 mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2565,
-	  NULL }, /* DE 2100 mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2566,
-	  NULL }, /* DE 2100 mPCI 3A */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2567,
-	  NULL }, /* DE 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2560, NULL }, /* DE 2100A mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2562, NULL }, /* DE 2100A mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2563, NULL }, /* DE 2100A mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2561, NULL }, /* DE 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2565, NULL }, /* DE 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2566, NULL }, /* DE 2100 mPCI 3A */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2567, NULL }, /* DE 2100 mPCI 3A */
 
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2570,
-	  NULL }, /* GA 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2570, NULL }, /* GA 2100 mPCI 3B */
 
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2580,
-	  NULL }, /* TO 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2582,
-	  NULL }, /* TO 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2583,
-	  NULL }, /* TO 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2581,
-	  NULL }, /* TO 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2585,
-	  NULL }, /* TO 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2586,
-	  NULL }, /* TO 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2587,
-	  NULL }, /* TO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2580, NULL }, /* TO 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2582, NULL }, /* TO 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2583, NULL }, /* TO 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2581, NULL }, /* TO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2585, NULL }, /* TO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2586, NULL }, /* TO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2587, NULL }, /* TO 2100 mPCI 3B */
 
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2590,
-	  NULL }, /* SO 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2592,
-	  NULL }, /* SO 2100A mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2591,
-	  NULL }, /* SO 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2593,
-	  NULL }, /* SO 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2596,
-	  NULL }, /* SO 2100 mPCI 3B */
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2598,
-	  NULL }, /* SO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2590, NULL }, /* SO 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2592, NULL }, /* SO 2100A mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2591, NULL }, /* SO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2593, NULL }, /* SO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2596, NULL }, /* SO 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x2598, NULL }, /* SO 2100 mPCI 3B */
 
-	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x25A0,
-	  NULL }, /* HP 2100 mPCI 3B */
+	{ "IWL2100", NONE, 0x8086, 0x1043, 0x8086, 0x25A0, NULL }, /* HP 2100 mPCI 3B */
 
 	{ "IWL3945", NONE, 0x8086, 0x4222, PCI_ANY, PCI_ANY, NULL },
 	{ "IWL3945", NONE, 0x8086, 0x4227, PCI_ANY, PCI_ANY, NULL },
@@ -3016,113 +2754,63 @@ static struct wifidevices wdevices[] = {
 	{ "IWL4965", NONE, 0x8086, 0x4229, PCI_ANY, PCI_ANY, NULL },
 	{ "IWL4965", NONE, 0x8086, 0x4230, PCI_ANY, PCI_ANY, NULL },
 
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1201,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1301,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1204,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1304,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1205,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1305,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1206,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1306,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1221,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1321,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1224,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1324,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1225,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1325,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1226,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1326,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1211,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1311,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1214,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1314,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1215,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1315,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1216,
-	  NULL }, /* Mini Card */
-	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1316,
-	  NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1201, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1301, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1204, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1304, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1205, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1305, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1206, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1306, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1221, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1321, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1224, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1324, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1225, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1325, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1226, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4232, PCI_ANY, 0x1326, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1211, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1311, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1214, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1314, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1215, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1315, NULL }, /* Half Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1216, NULL }, /* Mini Card */
+	{ "IWL5100", NONE, 0x8086, 0x4237, PCI_ANY, 0x1316, NULL }, /* Half Mini Card */
 
 	/* 5300 Series WiFi */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1021,
-	  NULL }, /* Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1121,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1024,
-	  NULL }, /* Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1124,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1001,
-	  NULL }, /* Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1101,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1004,
-	  NULL }, /* Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1104,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1011,
-	  NULL }, /* Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1111,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1014,
-	  NULL }, /* Mini Card */
-	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1114,
-	  NULL }, /* Half Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1021, NULL }, /* Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1121, NULL }, /* Half Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1024, NULL }, /* Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1124, NULL }, /* Half Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1001, NULL }, /* Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1101, NULL }, /* Half Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1004, NULL }, /* Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4235, PCI_ANY, 0x1104, NULL }, /* Half Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1011, NULL }, /* Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1111, NULL }, /* Half Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1014, NULL }, /* Mini Card */
+	{ "IWL5300", NONE, 0x8086, 0x4236, PCI_ANY, 0x1114, NULL }, /* Half Mini Card */
 
 	/* 5350 Series WiFi/WiMax */
-	{ "IWL5350", NONE, 0x8086, 0x423A, PCI_ANY, 0x1001,
-	  NULL }, /* Mini Card */
-	{ "IWL5350", NONE, 0x8086, 0x423A, PCI_ANY, 0x1021,
-	  NULL }, /* Mini Card */
-	{ "IWL5350", NONE, 0x8086, 0x423B, PCI_ANY, 0x1011,
-	  NULL }, /* Mini Card */
+	{ "IWL5350", NONE, 0x8086, 0x423A, PCI_ANY, 0x1001, NULL }, /* Mini Card */
+	{ "IWL5350", NONE, 0x8086, 0x423A, PCI_ANY, 0x1021, NULL }, /* Mini Card */
+	{ "IWL5350", NONE, 0x8086, 0x423B, PCI_ANY, 0x1011, NULL }, /* Mini Card */
 
 	/* 5150 Series Wifi/WiMax */
-	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1201,
-	  NULL }, /* Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1301,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1206,
-	  NULL }, /* Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1306,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1221,
-	  NULL }, /* Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1321,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1326,
-	  NULL }, /* Half Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1201, NULL }, /* Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1301, NULL }, /* Half Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1206, NULL }, /* Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1306, NULL }, /* Half Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1221, NULL }, /* Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1321, NULL }, /* Half Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423C, PCI_ANY, 0x1326, NULL }, /* Half Mini Card */
 
-	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1211,
-	  NULL }, /* Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1311,
-	  NULL }, /* Half Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1216,
-	  NULL }, /* Mini Card */
-	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1316,
-	  NULL }, /* Half Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1211, NULL }, /* Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1311, NULL }, /* Half Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1216, NULL }, /* Mini Card */
+	{ "IWL5150", NONE, 0x8086, 0x423D, PCI_ANY, 0x1316, NULL }, /* Half Mini Card */
 
 	/* 6x00 Series */
 	{ "IWL6000", NONE, 0x8086, 0x422B, PCI_ANY, 0x1101, NULL },
@@ -3154,10 +2842,8 @@ static struct wifidevices wdevices[] = {
 	{ "IWL6005", NONE, 0x8086, 0x0085, PCI_ANY, 0xC220, NULL },
 	{ "IWL6005", NONE, 0x8086, 0x0085, PCI_ANY, 0xC228, NULL },
 	{ "IWL6005", NONE, 0x8086, 0x0082, PCI_ANY, 0x4820, NULL },
-	{ "IWL6005", NONE, 0x8086, 0x0082, PCI_ANY, 0x1304,
-	  NULL }, /* low 5GHz active */
-	{ "IWL6005", NONE, 0x8086, 0x0082, PCI_ANY, 0x1305,
-	  NULL }, /* high 5GHz active */
+	{ "IWL6005", NONE, 0x8086, 0x0082, PCI_ANY, 0x1304, NULL }, /* low 5GHz active */
+	{ "IWL6005", NONE, 0x8086, 0x0082, PCI_ANY, 0x1305, NULL }, /* high 5GHz active */
 
 	/* 6x30 Series */
 	{ "IWL1030", NONE, 0x8086, 0x008A, PCI_ANY, 0x5305, NULL },
@@ -3542,34 +3228,22 @@ static struct wifidevices wdevices[] = {
 	{ "IWLAX211", NONE, 0x8086, 0x7AF0, PCI_ANY, 0x0510, NULL },
 	{ "IWLAX411", NONE, 0x8086, 0x7AF0, PCI_ANY, 0x0A10, NULL },
 #endif
-	{ "AR9100 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ath9k" },
-	{ "AR933x 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY,
-	  PCI_ANY, PCI_ANY, PCI_ANY, "ar933x_wmac" },
-	{ "AR934x 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY,
-	  PCI_ANY, PCI_ANY, PCI_ANY, "ar934x_wmac" },
-	{ "QCA955x 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY,
-	  PCI_ANY, PCI_ANY, PCI_ANY, "qca955x_wmac" },
-	{ "QCA953x 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY,
-	  PCI_ANY, PCI_ANY, PCI_ANY, "qca953x_wmac" },
-	{ "QCA956x 802.11n",
-	  SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY,
-	  PCI_ANY, PCI_ANY, PCI_ANY, "qca956x_wmac" },
-	{ "AR231X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.0" },
-	{ "AR231X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ,
-	  PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.1" },
-	{ "IPQ4019 802.11ac",
-	  WAVE2 | SPECTRAL | FWSWITCH | CHANNELSURVEY | CHWIDTH_5_10_MHZ |
-		  QBOOST | TDMA | BEACONVAP100,
+	{ "AR9100 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ath9k" },
+	{ "AR933x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "ar933x_wmac" },
+	{ "AR934x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "ar934x_wmac" },
+	{ "QCA955x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "qca955x_wmac" },
+	{ "QCA953x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "qca953x_wmac" },
+	{ "QCA956x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "qca956x_wmac" },
+	{ "AR231X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.0" },
+	{ "AR231X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.1" },
+	{ "IPQ4019 802.11ac", WAVE2 | SPECTRAL | FWSWITCH | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100,
 	  PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a000000.wifi" },
-	{ "IPQ4019 802.11ac",
-	  WAVE2 | SPECTRAL | FWSWITCH | CHANNELSURVEY | CHWIDTH_5_10_MHZ |
-		  QBOOST | TDMA | BEACONVAP100,
+	{ "IPQ4019 802.11ac", WAVE2 | SPECTRAL | FWSWITCH | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100,
 	  PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a800000.wifi" },
 };
 
@@ -3580,14 +3254,10 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
 	int devcount;
 	sscanf(prefix, "wlan%d", &devcount);
-	vendor = getValueFromPath("/proc/sys/dev/wifi%d/dev_vendor", devcount,
-				  "%d", NULL);
-	device = getValueFromPath("/proc/sys/dev/wifi%d/dev_device", devcount,
-				  "%d", NULL);
-	subvendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount,
-				     "%d", NULL);
-	subdevice = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount,
-				     "%d", NULL);
+	vendor = getValueFromPath("/proc/sys/dev/wifi%d/dev_vendor", devcount, "%d", NULL);
+	device = getValueFromPath("/proc/sys/dev/wifi%d/dev_device", devcount, "%d", NULL);
+	subvendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
+	subdevice = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
 #ifdef HAVE_TMK
 	char vname[50];
 	snprintf(vname, sizeof(vname), "%s_fakename", prefix);
@@ -3600,32 +3270,20 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 		devnum = get_ath9k_phy_ifname(prefix);
 		if (devnum == -1)
 			return NULL;
-		vendor = getValueFromPath(
-			"/sys/class/ieee80211/phy%d/device/vendor", devnum,
-			"0x%x", NULL);
-		device = getValueFromPath(
-			"/sys/class/ieee80211/phy%d/device/device", devnum,
-			"0x%x", NULL);
-		subvendor = getValueFromPath(
-			"/sys/class/ieee80211/phy%d/device/subsystem_vendor",
-			devnum, "0x%x", NULL);
-		subdevice = getValueFromPath(
-			"/sys/class/ieee80211/phy%d/device/subsystem_device",
-			devnum, "0x%x", NULL);
+		vendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/vendor", devnum, "0x%x", NULL);
+		device = getValueFromPath("/sys/class/ieee80211/phy%d/device/device", devnum, "0x%x", NULL);
+		subvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devnum, "0x%x", NULL);
+		subdevice = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devnum, "0x%x", NULL);
 		if (!vendor || !device) {
-			for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]);
-			     i++) {
+			for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
 				if (wdevices[i].wmac) {
 					char wpath[128];
-					sprintf(wpath,
-						"/sys/devices/platform/%s/ieee80211/phy%d/index",
-						wdevices[i].wmac, devnum);
+					sprintf(wpath, "/sys/devices/platform/%s/ieee80211/phy%d/index", wdevices[i].wmac, devnum);
 					FILE *test = fopen(wpath, "rb");
 					if (test) {
 						fclose(test);
 						if (flags)
-							*flags = wdevices[i]
-									 .flags;
+							*flags = wdevices[i].flags;
 						return wdevices[i].name;
 					}
 				}
@@ -3642,15 +3300,12 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	}
 	if (!vendor || !device) {
 		if (!strncmp(prefix, "ra", 2) || !strncmp(prefix, "wl0", 3)) {
-			FILE *fp = fopen(
-				"/sys/bus/pci/devices/0000:01:00.0/device",
-				"rb");
+			FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
 			if (fp) {
 				fscanf(fp, "0x%x", &device);
 				fclose(fp);
 			}
-			fp = fopen("/sys/bus/pci/devices/0000:01:00.0/vendor",
-				   "rb");
+			fp = fopen("/sys/bus/pci/devices/0000:01:00.0/vendor", "rb");
 			if (fp) {
 				fscanf(fp, "0x%x", &vendor);
 				fclose(fp);
@@ -3658,15 +3313,12 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 		}
 
 		if (!strncmp(prefix, "ba", 2) || !strncmp(prefix, "wl1", 3)) {
-			FILE *fp = fopen(
-				"/sys/bus/pci/devices/0000:02:00.0/device",
-				"rb");
+			FILE *fp = fopen("/sys/bus/pci/devices/0000:02:00.0/device", "rb");
 			if (fp) {
 				fscanf(fp, "0x%x", &device);
 				fclose(fp);
 			}
-			fp = fopen("/sys/bus/pci/devices/0000:02:00.0/vendor",
-				   "rb");
+			fp = fopen("/sys/bus/pci/devices/0000:02:00.0/vendor", "rb");
 			if (fp) {
 				fscanf(fp, "0x%x", &vendor);
 				fclose(fp);
@@ -3680,10 +3332,8 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
 		if (wdevices[i].vendor == vendor && //
 		    wdevices[i].device == device && //
-		    ((wdevices[i].subvendor == subvendor) ||
-		     wdevices[i].subvendor == PCI_ANY) && //
-		    ((wdevices[i].subdevice == subdevice) ||
-		     wdevices[i].subdevice == PCI_ANY)) {
+		    ((wdevices[i].subvendor == subvendor) || wdevices[i].subvendor == PCI_ANY) && //
+		    ((wdevices[i].subdevice == subdevice) || wdevices[i].subdevice == PCI_ANY)) {
 			if (flags)
 				*flags = wdevices[i].flags;
 			return wdevices[i].name;
@@ -3691,8 +3341,7 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	}
 
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (!wdevices[i].subvendor && wdevices[i].vendor == vendor &&
-		    wdevices[i].device == device) {
+		if (!wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device) {
 			if (flags)
 				*flags = wdevices[i].flags;
 			return wdevices[i].name;
@@ -3753,8 +3402,7 @@ int has_dualband(const char *prefix)
 		RETURNVALUE(0);
 	int phy = mac80211_get_phyidx_by_vifname(prefix);
 	char str[64];
-	sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath10k/bmi_board_id",
-		phy);
+	sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath10k/bmi_board_id", phy);
 	FILE *fp = fopen(str, "rb");
 	if (!fp) {
 		RETURNVALUE(0);
@@ -3808,8 +3456,7 @@ int getath9kdevicecount(void)
 	glob_t globbuf;
 	int globresult;
 	int count = 0;
-	globresult =
-		glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
+	globresult = glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
@@ -3886,20 +3533,11 @@ int has_spectralscanning(const char *prefix)
 	if (devnum == -1)
 		RETURNVALUE(0);
 	if (is_ath10k(prefix))
-		asprintf(
-			&globstring,
-			"/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count",
-			devnum);
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
 	else if (is_ath11k(prefix))
-		asprintf(
-			&globstring,
-			"/sys/kernel/debug/ieee80211/phy%d/ath11k/spectral_count",
-			devnum);
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath11k/spectral_count", devnum);
 	else
-		asprintf(
-			&globstring,
-			"/sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_count",
-			devnum);
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_count", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
@@ -3913,10 +3551,8 @@ int has_spectralscanning(const char *prefix)
 #ifdef HAVE_ATH9K
 int has_airtime_fairness(const char *prefix)
 {
-	return (is_ath10k(prefix) || is_ath11k(prefix) || is_ath10k(prefix) ||
-		is_ath9k(prefix) || is_mt7615(prefix) || is_mt7915(prefix) ||
-		is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) ||
-		is_mt76x2(prefix));
+	return (is_ath10k(prefix) || is_ath11k(prefix) || is_ath10k(prefix) || is_ath9k(prefix) || is_mt7615(prefix) ||
+		is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix));
 }
 #endif
 
@@ -3934,15 +3570,9 @@ static int devicecountbydriver_ath5kahb(const char *prefix)
 		return 0;
 
 	if (devnum == 0)
-		asprintf(
-			&globstring,
-			"/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.0",
-			devnum);
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.0", devnum);
 	else
-		asprintf(
-			&globstring,
-			"/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.1",
-			devnum);
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.1", devnum);
 
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
@@ -3967,9 +3597,7 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
-	asprintf(&globstring,
-		 "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s",
-		 devnum, drivername);
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s", devnum, drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
@@ -4049,18 +3677,16 @@ IS_DRIVER(rt2880_pci, "pci:rt2880pci");
 
 int is_mt76(const char *prefix)
 {
-	return (is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) ||
-		is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix) ||
-		is_rt2880_pci(prefix) || is_rt2880_wmac(prefix));
+	return (is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) ||
+		is_mt76x2(prefix) || is_rt2880_pci(prefix) || is_rt2880_wmac(prefix));
 }
 #endif
 
 #ifdef HAVE_WPA3
 int has_airtime_policy(const char *prefix)
 {
-	if (is_ath10k(prefix) || is_ath11k(prefix) || is_ath9k(prefix) ||
-	    is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) ||
-	    is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix))
+	if (is_ath10k(prefix) || is_ath11k(prefix) || is_ath9k(prefix) || is_mt7615(prefix) || is_mt7915(prefix) ||
+	    is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix))
 		return 1;
 	return 0;
 }
@@ -4129,85 +3755,52 @@ static int HTtoVHTindex(int mcs)
 	return mcs + 6;
 }
 
-int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi,
-	      unsigned int bw)
+int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw)
 {
 	static int vHTTxRate20_800[40] = {
-		6500,	13000,	19500,	26000,	39000,
-		52000,	58500,	65000,	78000,	78000, // MCS 0 -8
-		13000,	26000,	39000,	52000,	78000,
-		104000, 117000, 130000, 156000, 156000, // MCS 8 - 15
-		19500,	39000,	58500,	78000,	117000,
-		156000, 175500, 195000, 234000, 260000, // MCS 16 - 23
-		26000,	52000,	78000,	104000, 156000,
-		208000, 234000, 260000, 312000, 312000 // MCS 24 - 31
+		6500,  13000, 19500, 26000,  39000,  52000,  58500,  65000,  78000,  78000, // MCS 0 -8
+		13000, 26000, 39000, 52000,  78000,  104000, 117000, 130000, 156000, 156000, // MCS 8 - 15
+		19500, 39000, 58500, 78000,  117000, 156000, 175500, 195000, 234000, 260000, // MCS 16 - 23
+		26000, 52000, 78000, 104000, 156000, 208000, 234000, 260000, 312000, 312000 // MCS 24 - 31
 	};
 	static int vHTTxRate20_400[40] = {
-		7200,	14400,	21700,	28900,	43300,
-		57800,	65000,	72200,	86700,	86700, //
-		14444,	28889,	43333,	57778,	86667,
-		115556, 130000, 144444, 173300, 173300, //
-		21700,	43300,	65000,	86700,	130000,
-		173300, 195000, 216700, 260000, 288900, //
-		28900,	57800,	86700,	115600, 173300,
-		231100, 260000, 288900, 346700, 0 //
+		7200,  14400, 21700, 28900,  43300,  57800,  65000,  72200,  86700,  86700, //
+		14444, 28889, 43333, 57778,  86667,  115556, 130000, 144444, 173300, 173300, //
+		21700, 43300, 65000, 86700,  130000, 173300, 195000, 216700, 260000, 288900, //
+		28900, 57800, 86700, 115600, 173300, 231100, 260000, 288900, 346700, 0 //
 	};
 	static int vHTTxRate40_800[40] = {
-		13500,	27000,	40500,	54000,	81000,
-		108000, 121500, 135000, 162000, 180000, //
-		27000,	54000,	81000,	108000, 162000,
-		216000, 243000, 270000, 324000, 360000, //
-		40500,	81000,	121500, 162000, 243000,
-		324000, 364500, 405000, 486000, 540000, //
-		54000,	108000, 162000, 216000, 324000,
-		432000, 486000, 540000, 648000, 720000 //
+		13500, 27000,  40500,  54000,  81000,  108000, 121500, 135000, 162000, 180000, //
+		27000, 54000,  81000,  108000, 162000, 216000, 243000, 270000, 324000, 360000, //
+		40500, 81000,  121500, 162000, 243000, 324000, 364500, 405000, 486000, 540000, //
+		54000, 108000, 162000, 216000, 324000, 432000, 486000, 540000, 648000, 720000 //
 	};
 	static int vHTTxRate40_400[40] = {
-		15000,	30000,	45000,	60000,	90000,
-		120000, 135000, 150000, 180000, 200000, //
-		30000,	60000,	90000,	120000, 180000,
-		240000, 270000, 300000, 360000, 400000, //
-		45000,	90000,	135000, 180000, 270000,
-		360000, 405000, 450000, 540000, 600000, //
-		60000,	120000, 180000, 240000, 360000,
-		480000, 540000, 600000, 720000, 800000 //
+		15000, 30000,  45000,  60000,  90000,  120000, 135000, 150000, 180000, 200000, //
+		30000, 60000,  90000,  120000, 180000, 240000, 270000, 300000, 360000, 400000, //
+		45000, 90000,  135000, 180000, 270000, 360000, 405000, 450000, 540000, 600000, //
+		60000, 120000, 180000, 240000, 360000, 480000, 540000, 600000, 720000, 800000 //
 	};
-	static int vHTTxRate80_800[40] = {
-		29300,	 58500,	  87800,  117000, 175500,  234000,  263300,
-		292500,	 351000,  390000, //
-		58500,	 117000,  175500, 234000, 351000,  468000,  526500,
-		585000,	 702000,  780000, 87800,  175500,  263300,  351000,
-		526500,	 702000,  0,	  877500, 1053000, 1170000, //
-		117000,	 234000,  351000, 468000, 702000,  936000,  1053000,
-		1170000, 1404000, 1560000
-	};
-	static int vHTTxRate80_400[40] = {
-		32500,	 65000,	  97500,   130000,  195000,
-		260000,	 292500,  325000,  390000,  433300, //
-		65000,	 130000,  195000,  260000,  390000,
-		520000,	 585000,  650000,  780000,  866700, //
-		97500,	 195000,  292500,  390000,  585000,
-		780000,	 0,	  975000,  1170000, 1300000, //
-		130000,	 260000,  390000,  520000,  780000,
-		1040000, 1170000, 1300000, 1560000, 1733300
-	};
+	static int vHTTxRate80_800[40] = { 29300,  58500,  87800,  117000, 175500, 234000, 263300,  292500,  351000,  390000, //
+					   58500,  117000, 175500, 234000, 351000, 468000, 526500,  585000,  702000,  780000,
+					   87800,  175500, 263300, 351000, 526500, 702000, 0,	    877500,  1053000, 1170000, //
+					   117000, 234000, 351000, 468000, 702000, 936000, 1053000, 1170000, 1404000, 1560000 };
+	static int vHTTxRate80_400[40] = { 32500,  65000,  97500,  130000, 195000, 260000,  292500,  325000,  390000,  433300, //
+					   65000,  130000, 195000, 260000, 390000, 520000,  585000,  650000,  780000,  866700, //
+					   97500,  195000, 292500, 390000, 585000, 780000,  0,	     975000,  1170000, 1300000, //
+					   130000, 260000, 390000, 520000, 780000, 1040000, 1170000, 1300000, 1560000, 1733300 };
 	static int vHTTxRate160_800[40] = {
-		58500,	 117000,  175500,  234000,  351000,  468000,  526500,
-		585000,	 702000,  780000,  117000,  234000,  351000,  468000,
-		702000,	 936000,  1053000, 1170000, 1404000, 1560000, 175500,
-		351000,	 526500,  702000,  1053000, 1404000, 1579500, 1755000,
-		2106000, 2106000, 234000,  468000,  702000,  936000,  1404000,
-		1872000, 2106000, 2340000, 2808000, 3120000,
+		58500,	117000, 175500, 234000, 351000,	 468000,  526500,  585000,  702000,  780000,
+		117000, 234000, 351000, 468000, 702000,	 936000,  1053000, 1170000, 1404000, 1560000,
+		175500, 351000, 526500, 702000, 1053000, 1404000, 1579500, 1755000, 2106000, 2106000,
+		234000, 468000, 702000, 936000, 1404000, 1872000, 2106000, 2340000, 2808000, 3120000,
 
 	};
 	static int vHTTxRate160_400[40] = {
-		65000,	 130000,  195000,  260000,  390000,  520000,
-		585000,	 650000,  780000,  866700, //
-		130000,	 260000,  390000,  520000,  780000,  1040000,
-		1170000, 1300000, 1560000, 1733300, 195000,  390000,
-		585000,	 780000,  1170000, 1560000, 1755000, 1950000,
-		2340000, 2340000, 260000,  520000,  780000,  1040000,
-		1560000, 2080000, 2340000, 2600000, 3120000, 3466700,
+		65000,	130000, 195000, 260000,	 390000,  520000,  585000,  650000,  780000,  866700, //
+		130000, 260000, 390000, 520000,	 780000,  1040000, 1170000, 1300000, 1560000, 1733300,
+		195000, 390000, 585000, 780000,	 1170000, 1560000, 1755000, 1950000, 2340000, 2340000,
+		260000, 520000, 780000, 1040000, 1560000, 2080000, 2340000, 2600000, 3120000, 3466700,
 	};
 
 	int *table = vHTTxRate20_400;
@@ -4278,22 +3871,15 @@ void setRegulationDomain(char *reg)
 	};
 
 	// need to handle it special on dhd
-	struct PAIRS dhd_pairs[] = {
-		{ "Q2", 989, "Q2", 989 }, { "EU", 38, "EU", 38 },
-		{ "CN", 65, "CN", 65 },	  { "TW", 990, "TW", 990 },
-		{ "JP", 44, "JP", 45 },	  { "CA", 974, "CA", 974 },
-		{ "Q2", 989, "Q2", 989 }, { "AU", 8, "AU", 8 },
-		{ "RU", 993, "RU", 993 }, { "KR", 982, "KR", 982 },
-		{ "LA", 6, "LA", 6 },	  { "BR", 23, "BR", 23 },
-		{ "SG", 994, "SG", 994 }
-	};
+	struct PAIRS dhd_pairs[] = { { "Q2", 989, "Q2", 989 }, { "EU", 38, "EU", 38 }, { "CN", 65, "CN", 65 },
+				     { "TW", 990, "TW", 990 }, { "JP", 44, "JP", 45 }, { "CA", 974, "CA", 974 },
+				     { "Q2", 989, "Q2", 989 }, { "AU", 8, "AU", 8 },   { "RU", 993, "RU", 993 },
+				     { "KR", 982, "KR", 982 }, { "LA", 6, "LA", 6 },   { "BR", 23, "BR", 23 },
+				     { "SG", 994, "SG", 994 } };
 
-	struct PAIRS pairs[] = { { "EU", 66, "EU", 8 },	 { "EU", 66, "EU", 38 },
-				 { "CN", 34, "CN", 41 }, { "TW", 0, "TW", 0 },
-				 { "JP", 44, "JP", 45 }, { "CA", 2, "CA", 2 },
-				 { "US", 0, "US", 0 },	 { "Q1", 27, "AU", 0 },
-				 { "RU", 0, "RU", 0 },	 { "KR", 0, "KR", 0 },
-				 { "LA", 0, "LA", 0 },	 { "BR", 0, "BR", 0 },
+	struct PAIRS pairs[] = { { "EU", 66, "EU", 8 },	 { "EU", 66, "EU", 38 }, { "CN", 34, "CN", 41 }, { "TW", 0, "TW", 0 },
+				 { "JP", 44, "JP", 45 }, { "CA", 2, "CA", 2 },	 { "US", 0, "US", 0 },	 { "Q1", 27, "AU", 0 },
+				 { "RU", 0, "RU", 0 },	 { "KR", 0, "KR", 0 },	 { "LA", 0, "LA", 0 },	 { "BR", 0, "BR", 0 },
 				 { "SG", 0, "SG", 0 } };
 
 	char *tmp = nvram_safe_get("wl_reg_mode");
@@ -4317,10 +3903,8 @@ void setRegulationDomain(char *reg)
 		pairs[DEFAULT].code1 = "ALL";
 		pairs[DEFAULT].rev1 = 0;
 	} else {
-		cntry = (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") ||
-			 !strcmp(ccode, "GB") || !strcmp(ccode, "FR") ||
-			 !strcmp(ccode, "NL") || !strcmp(ccode, "ES") ||
-			 !strcmp(ccode, "IT")) ?
+		cntry = (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") ||
+			 !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT")) ?
 				EU :
 				0;
 		cntry = !strcmp(ccode, "CN") ? CN : cntry;
@@ -4395,10 +3979,8 @@ void setRegulationDomain(char *reg)
 
 	switch (brand) {
 	case ROUTER_D1800H:
-		nvram_seti(
-			"wl_country_rev",
-			pairs[cntry]
-				.rev1); //DH1800 wl0 is 5G so needs to be inverted
+		nvram_seti("wl_country_rev",
+			   pairs[cntry].rev1); //DH1800 wl0 is 5G so needs to be inverted
 		nvram_seti("wl0_country_rev", pairs[cntry].rev1);
 		nvram_seti("wl1_country_rev", pairs[cntry].rev0);
 		nvram_set("wl_country_code", pairs[cntry].code1);
@@ -4610,8 +4192,7 @@ int wlconf_up(char *name)
 	if (val == 1)
 		eval("wl", "-i", name, "txpwr1", "-1");
 #endif
-	eval("wl", "-i", name, "roam_delta",
-	     nvram_default_get("roam_delta", "15"));
+	eval("wl", "-i", name, "roam_delta", nvram_default_get("roam_delta", "15"));
 
 	/*
 	 * Set txant 
@@ -4687,8 +4268,7 @@ int wlconf_up(char *name)
 
 	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
 		eval("wl", "-i", name, "infra", "0");
-		eval("wl", "-i", name, "ssid",
-		     nvram_nget("wl%d_ssid", instance));
+		eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", instance));
 	}
 	eval("wl", "-i", name, "vlan_mode", "0");
 	char *vifs = nvram_nget("%s_vifs", ifinst);
@@ -4703,9 +4283,7 @@ int wlconf_up(char *name)
 			if (!nvram_nmatch("0", "%s_bridged", var)) {
 				br_add_interface(getBridge(var, tmp), var);
 			} else {
-				ifconfig(var, IFUP,
-					 nvram_nget("%s_ipaddr", var),
-					 nvram_nget("%s_netmask", var));
+				ifconfig(var, IFUP, nvram_nget("%s_ipaddr", var), nvram_nget("%s_netmask", var));
 			}
 		}
 		if (nvram_nmatch("apstawet", "wl%d_mode", instance)) {
@@ -4714,8 +4292,7 @@ int wlconf_up(char *name)
 				eval("wl", "-i", var, "down");
 				eval("wl", "-i", var, "apsta", "0");
 				eval("wl", "-i", var, "up");
-				eval("wl", "-i", var, "radioname",
-				     nvram_safe_get("router_name"));
+				eval("wl", "-i", var, "radioname", nvram_safe_get("router_name"));
 			}
 			eval("wl", "-i", name, "down");
 			eval("wl", "-i", name, "apsta", "1");
@@ -4741,8 +4318,7 @@ void radio_off(int idx)
 		eval("stopservice", "nas", "-f");
 	}
 	if (idx != -1) {
-		fprintf(stderr, "radio_off(%d) interface: %s\n", idx,
-			get_wl_instance_name(idx));
+		fprintf(stderr, "radio_off(%d) interface: %s\n", idx, get_wl_instance_name(idx));
 		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_OFF);
@@ -4756,8 +4332,7 @@ void radio_off(int idx)
 		int ii;
 
 		for (ii = 0; ii < cc; ii++) {
-			eval("wl", "-i", get_wl_instance_name(ii), "radio",
-			     "off");
+			eval("wl", "-i", get_wl_instance_name(ii), "radio", "off");
 		}
 		led_control(LED_WLAN0, LED_OFF);
 		led_control(LED_WLAN1, LED_OFF);
@@ -4774,10 +4349,8 @@ void radio_on(int idx)
 	}
 	if (idx != -1) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx)) {
-			fprintf(stderr, "radio_on(%d) interface: %s \n", idx,
-				get_wl_instance_name(idx));
-			eval("wl", "-i", get_wl_instance_name(idx), "radio",
-			     "on");
+			fprintf(stderr, "radio_on(%d) interface: %s \n", idx, get_wl_instance_name(idx));
+			eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
 			wlconf_down(get_wl_instance_name(idx));
 			wlconf_up(get_wl_instance_name(idx));
 		}
@@ -4794,8 +4367,7 @@ void radio_on(int idx)
 		int ii;
 		for (ii = 0; ii < cc; ii++) {
 			if (!nvram_nmatch("disabled", "wl%d_net_mode", ii)) {
-				eval("wl", "-i", get_wl_instance_name(ii),
-				     "radio", "on");
+				eval("wl", "-i", get_wl_instance_name(ii), "radio", "on");
 				wlconf_down(get_wl_instance_name(ii));
 				wlconf_up(get_wl_instance_name(ii));
 			}
@@ -4871,8 +4443,7 @@ int wl_get_int(char *name, char *var, int *val)
 	return wl_get_val(name, var, val, sizeof(*val));
 }
 
-int wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen,
-		    void *bufptr, int buflen)
+int wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint namelen;
@@ -4894,8 +4465,7 @@ int wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen,
 }
 
 // #else
-int wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen,
-		    void *bufptr, int buflen)
+int wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
 {
 	uint namelen;
 	uint iolen;
@@ -4917,8 +4487,7 @@ int wl_iovar_set(char *ifname, char *iovar, void *param, int paramlen)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
 
-	return wl_iovar_setbuf(ifname, iovar, param, paramlen, smbuf,
-			       sizeof(smbuf));
+	return wl_iovar_setbuf(ifname, iovar, param, paramlen, smbuf, sizeof(smbuf));
 }
 
 int wl_iovar_get(char *ifname, char *iovar, void *bufptr, int buflen)
@@ -4930,8 +4499,7 @@ int wl_iovar_get(char *ifname, char *iovar, void *bufptr, int buflen)
 	if (buflen > sizeof(smbuf)) {
 		ret = wl_iovar_getbuf(ifname, iovar, NULL, 0, bufptr, buflen);
 	} else {
-		ret = wl_iovar_getbuf(ifname, iovar, NULL, 0, smbuf,
-				      sizeof(smbuf));
+		ret = wl_iovar_getbuf(ifname, iovar, NULL, 0, smbuf, sizeof(smbuf));
 		if (ret == 0)
 			memcpy(bufptr, smbuf, buflen);
 	}
@@ -4960,8 +4528,7 @@ int wl_iovar_getint(char *ifname, char *iovar, int *val)
 /*
  * format a bsscfg indexed iovar buffer
  */
-static int wl_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen,
-			     void *bufptr, int buflen, unsigned int *plen)
+static int wl_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen, unsigned int *plen)
 {
 	char *prefix = "bsscfg:";
 	int8 *p;
@@ -5014,14 +4581,12 @@ static int wl_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen,
 /*
  * set named & bss indexed driver variable to buffer value
  */
-int wl_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param,
-		       int paramlen, void *bufptr, int buflen)
+int wl_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint iolen;
 
-	err = wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen,
-				&iolen);
+	err = wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen, &iolen);
 	if (err)
 		return err;
 
@@ -5031,14 +4596,12 @@ int wl_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param,
 /*
  * get named & bss indexed driver variable buffer value
  */
-int wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx, void *param,
-		       int paramlen, void *bufptr, int buflen)
+int wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint iolen;
 
-	err = wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen,
-				&iolen);
+	err = wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen, &iolen);
 	if (err)
 		return err;
 
@@ -5048,20 +4611,17 @@ int wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx, void *param,
 /*
  * set named & bss indexed driver variable to buffer value
  */
-int wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param,
-		    int paramlen)
+int wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
 
-	return wl_bssiovar_setbuf(ifname, iovar, bssidx, param, paramlen, smbuf,
-				  sizeof(smbuf));
+	return wl_bssiovar_setbuf(ifname, iovar, bssidx, param, paramlen, smbuf, sizeof(smbuf));
 }
 
 /*
  * get named & bss indexed driver variable buffer value
  */
-int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf,
-		    int len)
+int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf, int len)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
 	int err;
@@ -5070,12 +4630,10 @@ int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf,
 	 * use the return buffer if it is bigger than what we have on the stack 
 	 */
 	if (len > (int)sizeof(smbuf)) {
-		err = wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, outbuf,
-					 len);
+		err = wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, outbuf, len);
 	} else {
 		bzero(smbuf, sizeof(smbuf));
-		err = wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, smbuf,
-					 sizeof(smbuf));
+		err = wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, smbuf, sizeof(smbuf));
 		if (err == 0)
 			memcpy(outbuf, smbuf, len);
 	}
@@ -5179,15 +4737,13 @@ char *getWET()
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if (!nvram_nmatch("disabled", "wl%d_net_mode", i) &&
-		    nvram_nmatch("wet", "wl%d_mode", i))
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", i) && nvram_nmatch("wet", "wl%d_mode", i))
 			if (i == 0)
 				return "ra0";
 			else
 				return "ba0";
 
-		if (!nvram_nmatch("disabled", "wl%d_net_mode", i) &&
-		    nvram_nmatch("apstawet", "wl%d_mode", i))
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", i) && nvram_nmatch("apstawet", "wl%d_mode", i))
 			if (i == 0)
 				return "apcli0";
 			else
@@ -5203,8 +4759,7 @@ char *getSTA()
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("sta", "wl%d_mode", i) ||
-		    nvram_nmatch("apsta", "wl%d_mode", i)) {
+		if (nvram_nmatch("sta", "wl%d_mode", i) || nvram_nmatch("apsta", "wl%d_mode", i)) {
 			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
 				return get_wl_instance_name(i);
 			// else
@@ -5220,8 +4775,7 @@ char *getWET()
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("wet", "wl%d_mode", i) ||
-		    nvram_nmatch("apstawet", "wl%d_mode", i)) {
+		if (nvram_nmatch("wet", "wl%d_mode", i) || nvram_nmatch("apstawet", "wl%d_mode", i)) {
 			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
 				return get_wl_instance_name(i);
 			// else
@@ -5253,16 +4807,13 @@ struct wl_assoc_mac *get_wl_assoc_mac(char *ifname, int *c)
 	int cnt = getassoclist(prefix, buf);
 	if (cnt > 0) {
 		gotit = 1;
-		wlmac = realloc(wlmac,
-				sizeof(struct wl_assoc_mac) * (count + cnt));
+		wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + cnt));
 		int a;
 		for (a = 0; a < cnt; a++) {
 			bzero(&wlmac[count + a], sizeof(struct wl_assoc_mac));
 			unsigned char *m = (unsigned char *)&maclist->ea[a];
-			sprintf(wlmac[count + a].mac,
-				"%02X:%02X:%02X:%02X:%02X:%02X", m[0] & 0xff,
-				m[1] & 0xff, m[2] & 0xff, m[3] & 0xff,
-				m[4] & 0xff, m[5] & 0xff);
+			sprintf(wlmac[count + a].mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0] & 0xff, m[1] & 0xff, m[2] & 0xff,
+				m[3] & 0xff, m[4] & 0xff, m[5] & 0xff);
 		}
 		count += cnt;
 		// cprintf("Count of wl assoclist mac is %d\n", count);

@@ -131,8 +131,7 @@ enum EnumRd {
 
 	WOR01_WORLD = 0x66, /* World0-1 (WW0-1 SKU) */
 	WOR02_WORLD = 0x67, /* World0-2 (WW0-2 SKU) */
-	EU1_WORLD =
-		0x68, /* Same as World0-2 (WW0-2 SKU), except active scan ch1-13. No ch14 */
+	EU1_WORLD = 0x68, /* Same as World0-2 (WW0-2 SKU), except active scan ch1-13. No ch14 */
 
 	WOR9_WORLD = 0x69, /* World9 (WO9 SKU) */
 	WORA_WORLD = 0x6A, /* WorldA (WOA SKU) */
@@ -157,12 +156,9 @@ enum EnumRd {
 	MKK7_MKKA2 = 0x8D, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + MKKA2 */
 	MKK7_MKKC = 0x8E, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + MKKC */
 
-	MKK8_MKKB =
-		0x8F, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + mid-band + MKKB */
-	MKK8_MKKA2 =
-		0x90, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + mid-band + MKKA2 */
-	MKK8_MKKC =
-		0x91, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + mid-band + MKKC */
+	MKK8_MKKB = 0x8F, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + mid-band + MKKB */
+	MKK8_MKKA2 = 0x90, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + mid-band + MKKA2 */
+	MKK8_MKKC = 0x91, /* Japan UNI-1 even + UNI-1 odd + UNI-2 + mid-band + MKKC */
 
 	/* Following definitions are used only by s/w to map old
 	 * Japan SKUs.
@@ -648,8 +644,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	// Not assigned, use for UK_BFWA
 	{ CTRY_UNITED_KINGDOM_BFWA, ETSI7_WORLD, "ZG", "UNITED_KINGDOM_BFWA" },
 	{ CTRY_UNITED_STATES, FCC1_FCCA, "US", "UNITED_STATES" },
-	{ CTRY_UNITED_STATES_FCC49, FCC4_FCCA, "PS",
-	  "UNITED_STATES_(PUBLIC_SAFETY)" },
+	{ CTRY_UNITED_STATES_FCC49, FCC4_FCCA, "PS", "UNITED_STATES_(PUBLIC_SAFETY)" },
 	{ CTRY_URUGUAY, APL2_WORLD, "UY", "URUGUAY" },
 	{ CTRY_UZBEKISTAN, FCC3_FCCA, "UZ", "UZBEKISTAN" },
 	{ CTRY_VENEZUELA, APL2_ETSIC, "VE", "VENEZUELA" },
@@ -873,8 +868,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{ CTRY_ALBANIA, NULL1_WORLD, "UA", "UKRAINE" },
 	{ CTRY_ALBANIA, NULL1_WORLD, "AE", "UNITED_ARAB_EMIRATES" },
 	{ CTRY_ALBANIA, NULL1_WORLD, "GB", "UNITED_KINGDOM" },
-	{ CTRY_ALBANIA, NULL1_WORLD, "UM",
-	  "UNITED_STATES_MINOR_OUTLYING_ISLANDS" },
+	{ CTRY_ALBANIA, NULL1_WORLD, "UM", "UNITED_STATES_MINOR_OUTLYING_ISLANDS" },
 	{ CTRY_ALBANIA, NULL1_WORLD, "US", "UNITED_STATES" },
 	{ CTRY_ALBANIA, NULL1_WORLD, "UY", "URUGUAY" },
 	{ CTRY_ALBANIA, NULL1_WORLD, "UZ", "UZBEKISTAN" },
@@ -893,12 +887,10 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 
 #ifdef HAVE_BUFFALO
 static char regionCountryCodes[10][31][3] = {
-	{ "EU", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "F2", "DE",
-	  "GR", "HU", "IE", "IT", "LV", "LI", "LT", "LU", "MK", "NL", "NO",
-	  "PL", "PT", "RO", "SK", "SI", "ES", "SE", "CH", "GB" },
-	{ "US", "US", "CA", "MX", "GT", "HN", "SV", "CR", "PA", "VE", "EC",
-	  "CO", "",   "",   "",	  "",	"",   "",   "",	  "",	"",   "",
-	  "",	"",   "",   "",	  "",	"",   "",   "",	  "" },
+	{ "EU", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "F2", "DE", "GR", "HU", "IE", "IT", "LV",
+	  "LI", "LT", "LU", "MK", "NL", "NO", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "CH", "GB" },
+	{ "US", "US", "CA", "MX", "GT", "HN", "SV", "CR", "PA", "VE", "EC", "CO", "", "", "", "",
+	  "",	"",   "",   "",	  "",	"",   "",   "",	  "",	"",   "",   "",	  "", "", "" },
 	{ "JP", "JP", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
 	  "",	"",   "", "", "", "", "", "", "", "", "", "", "", "", "" },
 	{ "TW", "TW", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
@@ -907,9 +899,8 @@ static char regionCountryCodes[10][31][3] = {
 	  "",	"",   "", "", "", "", "", "", "", "", "", "", "", "", "" },
 	{ "CH", "CN", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
 	  "",	"",   "", "", "", "", "", "", "", "", "", "", "", "", "" },
-	{ "AP", "AU", "SG", "HK", "PH", "IN", "TH", "MY", "BR", "PU", "AR",
-	  "PA", "VE", "EC", "GT", "CR", "HN", "SV", "CO", "",	"",   "",
-	  "",	"",   "",   "",	  "",	"",   "",   "",	  "" },
+	{ "AP", "AU", "SG", "HK", "PH", "IN", "TH", "MY", "BR", "PU", "AR", "PA", "VE", "EC", "GT", "CR",
+	  "HN", "SV", "CO", "",	  "",	"",   "",   "",	  "",	"",   "",   "",	  "",	"",   "" },
 	{ "RU", "RU", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
 	  "",	"",   "", "", "", "", "", "", "", "", "", "", "", "", "" },
 	{ "DE", "DE", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
@@ -985,8 +976,7 @@ static int isValidCountry(char *region, char *country)
 		if (!strcmp(region, regionCountryCodes[i][0])) {
 			for (j = 1; j < 31; j++) {
 				//fprintf(stderr, "[%s] %s\n", country, regionCountryCodes[i][j]);
-				if (!strcmp(country,
-					    regionCountryCodes[i][j])) {
+				if (!strcmp(country, regionCountryCodes[i][j])) {
 					return 1;
 				}
 			}
@@ -1050,8 +1040,7 @@ char *getCountryList(char *filter)
 			if (isValidCountry(region, country)) {
 #elif HAVE_WIKINGS
 			if (nvram_safe_get("wkregdomain") == NULL ||
-			    !strcmp(nvram_safe_get("wkregdomain"),
-				    allCountries[i].isoName) ||
+			    !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName) ||
 			    !strcmp(nvram_safe_get("wkregdomain"), "")) {
 #endif
 				count += strlen(allCountries[i].name) + 1;
@@ -1072,8 +1061,7 @@ char *getCountryList(char *filter)
 			if (isValidCountry(region, country)) {
 #elif HAVE_WIKINGS
 			if (nvram_safe_get("wkregdomain") == NULL ||
-			    !strcmp(nvram_safe_get("wkregdomain"),
-				    allCountries[i].isoName) ||
+			    !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName) ||
 			    !strcmp(nvram_safe_get("wkregdomain"), "")) {
 #endif
 				strcat(countries, allCountries[i].name);

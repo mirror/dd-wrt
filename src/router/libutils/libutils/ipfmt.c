@@ -41,8 +41,7 @@ struct in_addr inet_bcastaddr_of(struct in_addr net, struct in_addr msk)
  */
 void inet_addr_to_cidr(struct in_addr addr, struct in_addr msk, char *cidr_buf)
 {
-	sprintf(cidr_buf, "%s/%i", inet_ntoa(addr),
-		__builtin_popcount(msk.s_addr));
+	sprintf(cidr_buf, "%s/%i", inet_ntoa(addr), __builtin_popcount(msk.s_addr));
 }
 
 /* 

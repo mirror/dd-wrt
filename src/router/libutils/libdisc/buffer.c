@@ -147,8 +147,7 @@ u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf)
 		c = ensure_chunk(s, cache, first_chunk);
 		/* NOTE: first_chunk == c->start */
 
-		if (pos >=
-		    c->end) /* chunk is incomplete and doesn't have our data */
+		if (pos >= c->end) /* chunk is incomplete and doesn't have our data */
 			return 0;
 
 		/* calculate return data */
@@ -167,8 +166,7 @@ u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf)
 			mybuf = inbuf;
 		} else {
 #if PROFILE
-			printf("Temporary buffer for request %llu:%llu\n", pos,
-			       len);
+			printf("Temporary buffer for request %llu:%llu\n", pos, len);
 #endif
 
 			/* allocate one temporarily, will be free()'d at the next call */
@@ -182,8 +180,7 @@ u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf)
 
 		/* draw data from all covered chunks */
 		got = 0;
-		for (curr_chunk = first_chunk; curr_chunk <= last_chunk;
-		     curr_chunk += CHUNKSIZE) {
+		for (curr_chunk = first_chunk; curr_chunk <= last_chunk; curr_chunk += CHUNKSIZE) {
 			/* get that chunk */
 			c = ensure_chunk(s, cache, curr_chunk);
 			/* NOTE: curr_chunk == c->start */
@@ -200,16 +197,12 @@ u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf)
 				 */
 				if (c->end > pos) {
 					tocopy = c->end - pos;
-					memcpy(mybuf,
-					       c->buf + (pos & CHUNKMASK),
-					       tocopy);
+					memcpy(mybuf, c->buf + (pos & CHUNKMASK), tocopy);
 				} else
 					tocopy = 0;
 			} else {
 				/* copy from start of chunk */
-				tocopy = MINIMUM(
-					c->len,
-					len - got); /* c->len can be zero */
+				tocopy = MINIMUM(c->len, len - got); /* c->len can be zero */
 				if (tocopy)
 					memcpy(mybuf + got, c->buf, tocopy);
 			}
@@ -247,8 +240,7 @@ static CHUNK *ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
 		if (s->seq_pos < start) {
 			/* try to read data between seq_pos and start */
 			curr_chunk = s->seq_pos & ~CHUNKMASK;
-			while (curr_chunk <
-			       start) { /* runs at least once, due to the if()
+			while (curr_chunk < start) { /* runs at least once, due to the if()
 							   and the formula of curr_chunk */
 				ensure_chunk(s, cache, curr_chunk);
 				curr_chunk += CHUNKSIZE;
@@ -261,8 +253,7 @@ static CHUNK *ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
 				return c; /* there is no more data to read */
 		}
 
-		if (s->seq_pos !=
-		    c->end) /* c->end is where we'll continue reading */
+		if (s->seq_pos != c->end) /* c->end is where we'll continue reading */
 			return c; /* we're not in a sane state, give up */
 	}
 
@@ -270,14 +261,11 @@ static CHUNK *ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
 	if (s->read_block != NULL) {
 		/* use block-oriented read_block() method */
 
-		if (s->blocksize < MINBLOCKSIZE || s->blocksize > CHUNKSIZE ||
-		    ((s->blocksize & (s->blocksize - 1)) != 0)) {
-			bailout("Internal error: Invalid block size %d",
-				s->blocksize);
+		if (s->blocksize < MINBLOCKSIZE || s->blocksize > CHUNKSIZE || ((s->blocksize & (s->blocksize - 1)) != 0)) {
+			bailout("Internal error: Invalid block size %d", s->blocksize);
 		}
 
-		for (rel_start = 0; rel_start < CHUNKSIZE;
-		     rel_start = rel_end) {
+		for (rel_start = 0; rel_start < CHUNKSIZE; rel_start = rel_end) {
 			rel_end = rel_start + s->blocksize;
 			if (c->len >= rel_end)
 				continue; /* already read */
@@ -292,8 +280,7 @@ static CHUNK *ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
 				c->end = c->start + c->len;
 			} else {
 				/* failure */
-				c->len =
-					rel_start; /* this is safe as it can only mean a shrink */
+				c->len = rel_start; /* this is safe as it can only mean a shrink */
 				c->end = c->start + c->len;
 				/* note the new end of file if necessary */
 				if (!s->size_known || s->size > c->end) {
@@ -314,8 +301,7 @@ static CHUNK *ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
 		} else {
 			toread = CHUNKSIZE - c->len;
 		}
-		result = s->read_bytes(s, c->start + c->len, toread,
-				       c->buf + c->len);
+		result = s->read_bytes(s, c->start + c->len, toread, c->buf + c->len);
 		if (result > 0) {
 			/* adjust offsets */
 			c->len += result;

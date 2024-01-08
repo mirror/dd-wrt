@@ -109,8 +109,7 @@ int analyze_cdaccess(int fd, SOURCE *s, int level)
 	diskid = (u4)(cksum % 0xff) << 24 | (u4)totaltime << 8 | (u4)ntracks;
 
 	/* print disk info */
-	print_line(level, "CD-ROM, %d track%s, CDDB disk ID %08lX", ntracks,
-		   (ntracks != 1) ? "s" : "", diskid);
+	print_line(level, "CD-ROM, %d track%s, CDDB disk ID %08lX", ntracks, (ntracks != 1) ? "s" : "", diskid);
 
 	/* Loop over each track */
 	for (i = 0; i < ntracks; i++) {
@@ -121,22 +120,17 @@ int analyze_cdaccess(int fd, SOURCE *s, int level)
 			/* Audio track, one sector holds 2352 actual data bytes */
 			seconds = length / 75;
 			format_size(human_readable_size, (u8)length * 2352);
-			print_line(
-				level,
-				"Track %d: Audio track, %s, %3d min %02d sec",
-				first + i, human_readable_size, seconds / 60,
-				seconds % 60);
+			print_line(level, "Track %d: Audio track, %s, %3d min %02d sec", first + i, human_readable_size,
+				   seconds / 60, seconds % 60);
 
 		} else {
 			/* Data track, one sector holds 2048 actual data bytes */
 			format_size(human_readable_size, length * 2048);
-			print_line(level, "Track %d: Data track, %s", first + i,
-				   human_readable_size);
+			print_line(level, "Track %d: Data track, %s", first + i, human_readable_size);
 
 			/* NOTE: we adjust the length to stay clear of padding or
 			   post-gap stuff */
-			analyze_source_special(s, level + 1, (u8)lba[i] * 2048,
-					       (u8)(length - 250) * 2048);
+			analyze_source_special(s, level + 1, (u8)lba[i] * 2048, (u8)(length - 250) * 2048);
 		}
 	}
 

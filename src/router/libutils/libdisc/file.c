@@ -134,8 +134,7 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 			fs->c.size_known = 1;
 			fs->c.size = devsize;
 #if DEBUG_SIZE
-			printf("Size: Linux 64-bit ioctl reports %llu\n",
-			       fs->c.size);
+			printf("Size: Linux 64-bit ioctl reports %llu\n", fs->c.size);
 #endif
 		}
 	}
@@ -148,8 +147,7 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 			fs->c.size_known = 1;
 			fs->c.size = (u8)blockcount * 512;
 #if DEBUG_SIZE
-			printf("Size: Linux 32-bit ioctl reports %llu (%lu blocks)\n",
-			       fs->c.size, blockcount);
+			printf("Size: Linux 32-bit ioctl reports %llu (%lu blocks)\n", fs->c.size, blockcount);
 #endif
 		}
 	}
@@ -164,12 +162,10 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 		struct disklabel dl;
 		if (ioctl(fd, DIOCGDINFO, &dl) >= 0) {
 			fs->c.size_known = 1;
-			fs->c.size = (u8)dl.d_ncylinders * dl.d_secpercyl *
-				     dl.d_secsize;
+			fs->c.size = (u8)dl.d_ncylinders * dl.d_secpercyl * dl.d_secsize;
 			/* TODO: check this, it's the whole disk size... */
 #if DEBUG_SIZE
-			printf("Size: FreeBSD ioctl reports %llu\n",
-			       fs->c.size);
+			printf("Size: FreeBSD ioctl reports %llu\n", fs->c.size);
 #endif
 		}
 	}
@@ -184,13 +180,12 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 		u4 blocksize;
 		u8 blockcount;
 		if (ioctl(fd, DKIOCGETBLOCKSIZE, (void *)&blocksize) >= 0) {
-			if (ioctl(fd, DKIOCGETBLOCKCOUNT,
-				  (void *)&blockcount) >= 0) {
+			if (ioctl(fd, DKIOCGETBLOCKCOUNT, (void *)&blockcount) >= 0) {
 				fs->c.size_known = 1;
 				fs->c.size = blockcount * blocksize;
 #if DEBUG_SIZE
-				printf("Size: Darwin ioctl reports %llu (%llu blocks of %lu bytes)\n",
-				       fs->c.size, blockcount, blocksize);
+				printf("Size: Darwin ioctl reports %llu (%llu blocks of %lu bytes)\n", fs->c.size, blockcount,
+				       blocksize);
 #endif
 			}
 		}

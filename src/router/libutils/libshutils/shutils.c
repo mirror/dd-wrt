@@ -44,8 +44,7 @@
 #include <shutils.h>
 #include <utils.h>
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || \
-	(defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 
 int debug_ready(void)
 {
@@ -240,15 +239,13 @@ void dd_logerror(const char *servicename, const char *fmt, ...)
 void dd_logstart(const char *servicename, int retcode)
 {
 	if (retcode)
-		dd_loginfo(servicename, "Error on startup, returncode %d",
-			   retcode);
+		dd_loginfo(servicename, "Error on startup, returncode %d", retcode);
 	else
 		dd_loginfo(servicename, "successfully started");
 }
 #endif
 
-static int internal_eval_va(int silence, int space, const char *cmd,
-			    va_list args)
+static int internal_eval_va(int silence, int space, const char *cmd, va_list args)
 {
 	const char *s_args[128];
 	int i = 1;
@@ -352,8 +349,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 		if (argv[i])
 			while (argv[i] != NULL) {
 				fprintf(stderr, "%s ", argv[i]);
-				dd_snprintf(buf, sizeof(buf), "%s%s ", buf,
-					    argv[i++]);
+				dd_snprintf(buf, sizeof(buf), "%s%s ", buf, argv[i++]);
 				flog("%s ", argv[i - 1]);
 			}
 		dd_syslog(LOG_INFO, "%s:%s", __func__, buf);
@@ -522,8 +518,7 @@ int safe_fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 
 	do {
 		clearerr(stream);
-		ret += fread((char *)ptr + (ret * size), size, nmemb - ret,
-			     stream);
+		ret += fread((char *)ptr + (ret * size), size, nmemb - ret, stream);
 	} while (ret < nmemb && ferror(stream) && errno == EINTR);
 
 	return ret;
@@ -543,8 +538,7 @@ int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 
 	do {
 		clearerr(stream);
-		ret += fwrite((char *)ptr + (ret * size), size, nmemb - ret,
-			      stream);
+		ret += fwrite((char *)ptr + (ret * size), size, nmemb - ret, stream);
 	} while (ret < nmemb && ferror(stream) && errno == EINTR);
 
 	return ret;
@@ -718,8 +712,7 @@ int get_ifname_unit(const char *ifname, int *unit, int *subunit)
 	 @param osifname_buf storage for the converted osifname
 	 @param osifname_buf_len length of storage for osifname_buf
 */
-int nvifname_to_osifname(const char *nvifname, char *osifname_buf,
-			 int osifname_buf_len)
+int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_buf_len)
 {
 	char varname[NVRAM_MAX_PARAM_LEN];
 	char *ptr;
@@ -764,8 +757,7 @@ int nvifname_to_osifname(const char *nvifname, char *osifname_buf,
  * for nvifname_buf 
  */
 
-int osifname_to_nvifname(const char *osifname, char *nvifname_buf,
-			 int nvifname_buf_len)
+int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_buf_len)
 {
 	char varname[NVRAM_MAX_PARAM_LEN];
 	int pri, sec;
@@ -801,11 +793,9 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf,
 	 */
 	for (pri = 0; pri < MAX_NVPARSE; pri++)
 		for (sec = 0; sec < MAX_NVPARSE; sec++) {
-			snprintf(varname, sizeof(varname), "wl%d.%d_ifname",
-				 pri, sec);
+			snprintf(varname, sizeof(varname), "wl%d.%d_ifname", pri, sec);
 			if (nvram_match(varname, (char *)osifname)) {
-				snprintf(nvifname_buf, nvifname_buf_len,
-					 "wl%d.%d", pri, sec);
+				snprintf(nvifname_buf, nvifname_buf_len, "wl%d.%d", pri, sec);
 				return 0;
 			}
 		}
@@ -890,8 +880,7 @@ char *psname(int pid, char *buffer, int maxlen)
 		return NULL;
 	*buffer = 0;
 	sprintf(path, "/proc/%d/stat", pid);
-	if ((f_read_string(path, buf, sizeof(buf)) > 4) &&
-	    ((p = strrchr(buf, ')')) != NULL)) {
+	if ((f_read_string(path, buf, sizeof(buf)) > 4) && ((p = strrchr(buf, ')')) != NULL)) {
 		*p = 0;
 		if (((p = strchr(buf, '(')) != NULL) && (atoi(buf) == pid)) {
 			strlcpy_compat(buffer, p + 1, maxlen);
@@ -956,12 +945,10 @@ int check_action(void)
 		}
 #endif
 		else if (!strcmp(buf, "ACT_SW_RESTORE")) {
-			fprintf(stderr,
-				"Receiving restore command from web ...\n");
+			fprintf(stderr, "Receiving restore command from web ...\n");
 			return ACT_SW_RESTORE;
 		} else if (!strcmp(buf, "ACT_HW_RESTORE")) {
-			fprintf(stderr,
-				"Receiving restore command from resetbutton ...\n");
+			fprintf(stderr, "Receiving restore command from resetbutton ...\n");
 			return ACT_HW_RESTORE;
 		} else if (!strcmp(buf, "ACT_NVRAM_COMMIT")) {
 			fprintf(stderr, "Committing nvram now ...\n");
@@ -1018,14 +1005,9 @@ static int _pidof(const char *name, pid_t **pids)
 			i = strtol(de->d_name, &e, 10);
 			if (*e != 0)
 				continue;
-			if (strncmp(name, psname(i, buf, sizeof(buf)), 15) ==
-			    0) {
+			if (strncmp(name, psname(i, buf, sizeof(buf)), 15) == 0) {
 				if (pids) {
-					if ((*pids = realloc(
-						     *pids,
-						     sizeof(pid_t) *
-							     (count + 1))) ==
-					    NULL) {
+					if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
 						closedir(dir);
 						return -1;
 					}
@@ -1091,9 +1073,7 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 
 char *dd_strncat(char *dst, size_t len, const char *src)
 {
-	return ((len - 1) - strlen(dst)) > 0 ?
-		       strncat(dst, src, ((len - 1) - strlen(dst))) :
-		       dst;
+	return ((len - 1) - strlen(dst)) > 0 ? strncat(dst, src, ((len - 1) - strlen(dst))) : dst;
 }
 
 #undef strcat_r
@@ -1114,8 +1094,8 @@ u_int64_t freediskSpace(char *path)
 {
 	struct statfs sizefs;
 
-	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) ||
-	    (sizefs.f_type == 0x74717368) || (sizefs.f_type == 0x68737174)) {
+	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) || (sizefs.f_type == 0x74717368) ||
+	    (sizefs.f_type == 0x68737174)) {
 		bzero(&sizefs, sizeof(sizefs));
 	}
 
@@ -1124,8 +1104,7 @@ u_int64_t freediskSpace(char *path)
 
 int jffs_mounted(void)
 {
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || \
-	defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) ||                    \
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || \
 	(defined(HAVE_RB600) && !defined(HAVE_WDR4900))
 	return 1;
 #endif
@@ -1213,9 +1192,7 @@ static void strcpyto(char *dest, char *src, char *delim, size_t max)
 	if (to)
 		len = to - src;
 	if (max != sizeof(long) && max < len + 1) {
-		dd_logerror(
-			"internal",
-			"foreach is used in a improper way, target word is too small");
+		dd_logerror("internal", "foreach is used in a improper way, target word is too small");
 		len = max - 1;
 	}
 	memcpy(dest, src, len);
@@ -1230,8 +1207,7 @@ char *chomp(char *s)
 	return s;
 }
 
-char *foreach_first(char *foreachwordlist, char *word, char *delimiters,
-		    size_t len)
+char *foreach_first(char *foreachwordlist, char *word, char *delimiters, size_t len)
 {
 	char *next = &foreachwordlist[strspn(foreachwordlist, delimiters)];
 	strcpyto(word, next, delimiters, len);
@@ -1247,8 +1223,7 @@ char *foreach_last(char *next, char *word, char *delimiters, size_t len)
 	return next;
 }
 
-char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short,
-		      char *delimiters)
+char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, char *delimiters)
 {
 	if (!list || !buf)
 		return NULL;
@@ -1286,8 +1261,7 @@ char *getentrybyidx(char *buf, char *list, int idx)
 	return getentrybyidx_d(buf, list, idx, "><:,", "><:-,");
 }
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || \
-	defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 static int rootdetect(char *fname)
 {
 	FILE *in = fopen(fname, "rb");
@@ -1299,8 +1273,7 @@ static int rootdetect(char *fname)
 
 	fread(buf, 4, 1, in);
 	fclose(in);
-	if (!memcmp(&buf[0], "tqsh", 4) || !memcmp(&buf[0], "hsqt", 4) ||
-	    !memcmp(&buf[0], "hsqs", 4)) {
+	if (!memcmp(&buf[0], "tqsh", 4) || !memcmp(&buf[0], "hsqt", 4) || !memcmp(&buf[0], "hsqs", 4)) {
 		return 1;
 	}
 	return 0;
@@ -1405,14 +1378,10 @@ char *getdisc(void) // works only for squashfs
 
 static void precommit(void)
 {
-#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) ||      \
-	defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) ||  \
-	defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) ||     \
-	defined(HAVE_WR1043) || defined(HAVE_WRT400) ||        \
-	defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || \
-	defined(HAVE_DANUBE) || defined(HAVE_WR741) ||         \
-	defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) ||    \
-	defined(HAVE_WDR4900) || defined(HAVE_VENTANA) ||      \
+#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || \
+	defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043) || defined(HAVE_WRT400) ||      \
+	defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) || defined(HAVE_WR741) ||   \
+	defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) ||   \
 	defined(HAVE_UBNTM) || defined(DHAVE_IPQ806X)
 	eval("ledtool", "1");
 #elif HAVE_LSX
@@ -1591,8 +1560,7 @@ static void dump_blocklist(void)
 	fp = fopen("/tmp/blocklist", "wb");
 	if (fp) {
 		while (entry) {
-			fwrite(entry, sizeof(struct blocklist) - sizeof(void *),
-			       1, fp);
+			fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
 			entry = entry->next;
 		}
 		fclose(fp);
@@ -1618,10 +1586,7 @@ static void init_blocklist(void)
 	if (fp) {
 		while (!feof(fp)) {
 			last->next = malloc(sizeof(*entry));
-			int elems =
-				fread(last->next,
-				      sizeof(struct blocklist) - sizeof(void *),
-				      1, fp);
+			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
 			if (elems < 1) {
 				free(last->next);
 				last->next = NULL;
@@ -1647,10 +1612,8 @@ void add_blocklist(const char *service, char *ip)
 			if (entry->count > 4) {
 				entry->end = time(NULL) + BLOCKTIME * 60;
 				entry->attempts = 1;
-				dd_loginfo(
-					service,
-					"5 failed login attempts reached. block client %s for %d minutes",
-					ip, BLOCKTIME);
+				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
+					   BLOCKTIME);
 			}
 			goto end;
 		}
@@ -1695,22 +1658,16 @@ int check_blocklist(const char *service, char *ip)
 			if (entry->end > cur) {
 				// each try from a block client extends by another 5 minutes;
 				entry->attempts++;
-				entry->end = time(NULL) +
-					     (BLOCKTIME * entry->attempts) * 60;
-				dd_loginfo(
-					service,
-					"client %s is blocked, terminate connection, set new blocktime to %d minutes",
-					ip, (BLOCKTIME * entry->attempts));
+				entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
+				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes",
+					   ip, (BLOCKTIME * entry->attempts));
 				ret = -1;
 				change = 1;
 				goto end;
 			}
 			//time over, free entry
 			if (entry->count > 4) {
-				dd_loginfo(
-					service,
-					"time is over for client %s, so free it\n",
-					&entry->ip[0]);
+				dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
 				last->next = entry->next;
 				free(entry);
 				change = 1;
@@ -1719,9 +1676,7 @@ int check_blocklist(const char *service, char *ip)
 		}
 		//time over, free entry
 		if (entry->end && entry->end < cur) {
-			dd_loginfo(service,
-				   "time is over for client %s, so free it\n",
-				   &entry->ip[0]);
+			dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
 			last->next = entry->next;
 			free(entry);
 			entry = last->next;
@@ -1798,9 +1753,7 @@ void myfree(void *ref, char *func, int line)
 		c_current = NULL;
 	} else {
 		if (!c_current) {
-			fprintf(stderr,
-				"function %s line %d does free a untracked pointer",
-				func, line);
+			fprintf(stderr, "function %s line %d does free a untracked pointer", func, line);
 		}
 	}
 	if (c_current) {
@@ -1814,9 +1767,7 @@ void showmemdebugstat(void)
 	struct MEMENTRY *c_current = &root;
 	while (c_current) {
 		if (c_current->ref && c_current->func)
-			fprintf(stderr, "%s line %d leaks %d bytes\n",
-				currrent->func, c_current->line,
-				c_current->size);
+			fprintf(stderr, "%s line %d leaks %d bytes\n", currrent->func, c_current->line, c_current->size);
 		c_current = c_current->next;
 	}
 }

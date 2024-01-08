@@ -59,12 +59,10 @@ typedef struct compressed_source {
  * helper functions
  */
 
-static void handle_compressed(SECTION *section, int level, int off,
-			      const char *program);
+static void handle_compressed(SECTION *section, int level, int off, const char *program);
 
 #if DECOMPRESS
-static SOURCE *init_compressed_source(SOURCE *foundation, u8 offset, u8 size,
-				      const char *program);
+static SOURCE *init_compressed_source(SOURCE *foundation, u8 offset, u8 size, const char *program);
 static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf);
 static void close_compressed(SOURCE *s);
 #endif
@@ -87,10 +85,7 @@ int detect_compressed(SECTION *section, int level)
 		/* compress */
 		if (buf[off] == 037 && buf[off + 1] == 0235) {
 			if (sector > 0)
-				print_line(
-					level,
-					"compress-compressed data at sector %d",
-					sector);
+				print_line(level, "compress-compressed data at sector %d", sector);
 			else
 				print_line(level, "compress-compressed data");
 
@@ -101,12 +96,9 @@ int detect_compressed(SECTION *section, int level)
 		}
 
 		/* gzip */
-		if (buf[off] == 037 &&
-		    (buf[off + 1] == 0213 || buf[off + 1] == 0236)) {
+		if (buf[off] == 037 && (buf[off + 1] == 0213 || buf[off + 1] == 0236)) {
 			if (sector > 0)
-				print_line(level,
-					   "gzip-compressed data at sector %d",
-					   sector);
+				print_line(level, "gzip-compressed data at sector %d", sector);
 			else
 				print_line(level, "gzip-compressed data");
 
@@ -119,9 +111,7 @@ int detect_compressed(SECTION *section, int level)
 		/* bzip2 */
 		if (memcmp(buf + off, "BZh", 3) == 0) {
 			if (sector > 0)
-				print_line(level,
-					   "bzip2-compressed data at sector %d",
-					   sector);
+				print_line(level, "bzip2-compressed data at sector %d", sector);
 			else
 				print_line(level, "bzip2-compressed data");
 
@@ -134,8 +124,7 @@ int detect_compressed(SECTION *section, int level)
 	return found;
 }
 
-static void handle_compressed(SECTION *section, int level, int off,
-			      const char *program)
+static void handle_compressed(SECTION *section, int level, int off, const char *program)
 {
 #if DECOMPRESS
 	SOURCE *s;
@@ -145,8 +134,7 @@ static void handle_compressed(SECTION *section, int level, int off,
 	size = section->size;
 	if (size > 0)
 		size -= off;
-	s = init_compressed_source(section->source, section->pos + off, size,
-				   program);
+	s = init_compressed_source(section->source, section->pos + off, size, program);
 	analyze_source(s, level + 1);
 	close_source(s);
 #else
@@ -160,8 +148,7 @@ static void handle_compressed(SECTION *section, int level, int off,
 
 #if DECOMPRESS
 
-static SOURCE *init_compressed_source(SOURCE *foundation, u8 offset, u8 size,
-				      const char *program)
+static SOURCE *init_compressed_source(SOURCE *foundation, u8 offset, u8 size, const char *program)
 {
 	COMPRESSED_SOURCE *cs;
 	int write_pipe[2], read_pipe[2], flags;
@@ -222,9 +209,7 @@ static SOURCE *init_compressed_source(SOURCE *foundation, u8 offset, u8 size,
 		fcntl(cs->read_pipe, F_SETFL, flags | O_NONBLOCK);
 	else
 		bailoute("set pipe flags");
-	cs->nfds = ((cs->read_pipe > cs->write_pipe) ? cs->read_pipe :
-						       cs->write_pipe) +
-		   1;
+	cs->nfds = ((cs->read_pipe > cs->write_pipe) ? cs->read_pipe : cs->write_pipe) + 1;
 
 	return (SOURCE *)cs;
 }
@@ -300,8 +285,7 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 #if DEBUG
 			printf("rc starting select\n");
 #endif
-			selresult =
-				select(cs->nfds, &read_set, NULL, NULL, NULL);
+			selresult = select(cs->nfds, &read_set, NULL, NULL, NULL);
 #if DEBUG
 			printf("rc select got %d\n", selresult);
 #endif
@@ -313,11 +297,9 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 		}
 
 		/* get data from lower layer */
-		fill = get_buffer_real(fs, cs->offset + cs->write_pos, askfor,
-				       NULL, (void **)&filebuf);
+		fill = get_buffer_real(fs, cs->offset + cs->write_pos, askfor, NULL, (void **)&filebuf);
 #if DEBUG
-		printf("rc get_buffer asked for pos %llu len %d got %llu\n",
-		       cs->offset + cs->write_pos, askfor, fill);
+		printf("rc get_buffer asked for pos %llu len %d got %llu\n", cs->offset + cs->write_pos, askfor, fill);
 #endif
 		if (fill < askfor) {
 			/* we reached the end of compressed input, note that down */

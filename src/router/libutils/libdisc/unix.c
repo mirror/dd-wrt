@@ -122,61 +122,36 @@ int detect_ufs(SECTION *section, int level)
 			magic = get_ve_long(en, buf + 1372);
 
 			if (magic == 0x00011954) {
-				print_line(level,
-					   "UFS file system, %d KiB offset, %s",
-					   at, get_ve_name(en));
+				print_line(level, "UFS file system, %d KiB offset, %s", at, get_ve_name(en));
 			} else if (magic == 0x00095014) {
-				print_line(
-					level,
-					"UFS file system, %d KiB offset, long file names, %s",
-					at, get_ve_name(en));
+				print_line(level, "UFS file system, %d KiB offset, long file names, %s", at, get_ve_name(en));
 			} else if (magic == 0x00195612) {
-				print_line(
-					level,
-					"UFS file system, %d KiB offset, fs_featurebits, %s",
-					at, get_ve_name(en));
+				print_line(level, "UFS file system, %d KiB offset, fs_featurebits, %s", at, get_ve_name(en));
 			} else if (magic == 0x05231994) {
-				print_line(
-					level,
-					"UFS file system, %d KiB offset, fs_featurebits, >4GB support, %s",
-					at, get_ve_name(en));
+				print_line(level, "UFS file system, %d KiB offset, fs_featurebits, >4GB support, %s", at,
+					   get_ve_name(en));
 			} else if (magic == 0x19540119) {
-				print_line(
-					level,
-					"UFS2 file system, %d KiB offset, %s",
-					at, get_ve_name(en));
+				print_line(level, "UFS2 file system, %d KiB offset, %s", at, get_ve_name(en));
 			} else
 				continue;
 
 			/* volume name by FreeBSD convention */
 			get_string(buf + 680, 32, s);
 			if (s[0])
-				print_line(level + 1,
-					   "Volume name \"%s\" (in superblock)",
-					   s);
+				print_line(level + 1, "Volume name \"%s\" (in superblock)", s);
 
 			/* last mount point */
-			get_string(buf + 212, 255,
-				   s); /* actually longer, but varies */
+			get_string(buf + 212, 255, s); /* actually longer, but varies */
 			if (s[0])
-				print_line(level + 1, "Last mounted at \"%s\"",
-					   s);
+				print_line(level + 1, "Last mounted at \"%s\"", s);
 
 			/* volume name by Darwin convention */
-			if (get_buffer(section, 7 * 1024, 1024,
-				       (void **)&buf) == 1024) {
-				if (get_ve_long(en, buf) ==
-					    0x4c41424c && /* "LABL" */
-				    get_ve_long(en, buf + 8) ==
-					    1) { /* version 1 */
+			if (get_buffer(section, 7 * 1024, 1024, (void **)&buf) == 1024) {
+				if (get_ve_long(en, buf) == 0x4c41424c && /* "LABL" */
+				    get_ve_long(en, buf + 8) == 1) { /* version 1 */
 					namelen = get_ve_short(en, buf + 16);
-					get_string(
-						buf + 18, namelen,
-						s); /* automatically limits to 255 */
-					print_line(
-						level + 1,
-						"Volume name \"%s\" (in label v%lu)",
-						s, get_ve_long(en, buf + 8));
+					get_string(buf + 18, namelen, s); /* automatically limits to 255 */
+					print_line(level + 1, "Volume name \"%s\" (in label v%lu)", s, get_ve_long(en, buf + 8));
 				}
 			}
 
@@ -213,14 +188,9 @@ int detect_sysv(SECTION *section, int level)
 				else if (blocksize_code == 3)
 					strcpy(s, "2 KiB blocks");
 				else
-					snprintf(s, 255,
-						 "unknown block size code %d",
-						 (int)blocksize_code);
+					snprintf(s, 255, "unknown block size code %d", (int)blocksize_code);
 
-				print_line(
-					level,
-					"XENIX file system (SysV variant), %s, %s",
-					get_ve_name(en), s);
+				print_line(level, "XENIX file system (SysV variant), %s, %s", get_ve_name(en), s);
 				return 1;
 			}
 
@@ -232,12 +202,9 @@ int detect_sysv(SECTION *section, int level)
 				else if (blocksize_code == 2)
 					strcpy(s, "1 KiB blocks");
 				else
-					snprintf(s, 255,
-						 "unknown block size code %d",
-						 (int)blocksize_code);
+					snprintf(s, 255, "unknown block size code %d", (int)blocksize_code);
 
-				print_line(level, "SysV file system, %s, %s",
-					   get_ve_name(en), s);
+				print_line(level, "SysV file system, %s, %s", get_ve_name(en), s);
 				return 1;
 			}
 		}
@@ -291,8 +258,7 @@ int detect_bsd_disklabel(SECTION *section, int level)
 	if (get_buffer(section, 512, 512, (void **)&buf) < 512)
 		return 0;
 
-	if (get_le_long(buf) != 0x82564557 ||
-	    get_le_long(buf + 132) != 0x82564557)
+	if (get_le_long(buf) != 0x82564557 || get_le_long(buf + 132) != 0x82564557)
 		return 0;
 
 	sectsize = get_le_long(buf + 40);
@@ -305,24 +271,15 @@ int detect_bsd_disklabel(SECTION *section, int level)
 	partcount = get_le_short(buf + 138);
 
 	if (partcount <= 8) {
-		print_line(level, "BSD disklabel (at sector 1), %d partitions",
-			   partcount);
+		print_line(level, "BSD disklabel (at sector 1), %d partitions", partcount);
 	} else if (partcount > 8 && partcount <= 16) {
-		print_line(
-			level,
-			"BSD disklabel (at sector 1), %d partitions (more than usual, but valid)",
-			partcount);
+		print_line(level, "BSD disklabel (at sector 1), %d partitions (more than usual, but valid)", partcount);
 	} else if (partcount > 16) {
-		print_line(
-			level,
-			"BSD disklabel (at sector 1), %d partitions (broken, limiting to 16)",
-			partcount);
+		print_line(level, "BSD disklabel (at sector 1), %d partitions (broken, limiting to 16)", partcount);
 		partcount = 16;
 	}
 	if (sectsize != 512) {
-		print_line(
-			level + 1,
-			"Unusual sector size %d bytes, your mileage may vary");
+		print_line(level + 1, "Unusual sector size %d bytes, your mileage may vary");
 	}
 
 	min_offset = 0;
@@ -347,18 +304,13 @@ int detect_bsd_disklabel(SECTION *section, int level)
 		base_offset = section->pos;
 	} else if (section->pos == 0) {
 		/* are we analyzing the slice alone? */
-		print_line(
-			level + 1,
-			"Adjusting offsets for disklabel in a DOS partition at sector %llu",
-			min_offset >> 9);
+		print_line(level + 1, "Adjusting offsets for disklabel in a DOS partition at sector %llu", min_offset >> 9);
 		base_offset = min_offset;
 	} else if (min_offset == 0) {
 		/* assume relative offsets after all */
 		base_offset = 0;
 	} else {
-		print_line(
-			level + 1,
-			"Warning: Unable to adjust offsets, your mileage may vary");
+		print_line(level + 1, "Warning: Unable to adjust offsets, your mileage may vary");
 		base_offset = section->pos;
 	}
 
@@ -373,34 +325,26 @@ int detect_bsd_disklabel(SECTION *section, int level)
 		format_blocky_size(s, sizes[i], 512, "sectors", append);
 		print_line(level, "Partition %c: %s", pn, s);
 
-		print_line(level + 1, "Type %d (%s)", types[i],
-			   get_name_for_bsdtype(types[i]));
+		print_line(level + 1, "Type %d (%s)", types[i], get_name_for_bsdtype(types[i]));
 
 		if (types[i] == 0 || sizes[i] == 0)
 			continue;
 
 		offset = (u8)starts[i] * 512;
 		if (offset < base_offset) {
-			print_line(level + 1,
-				   "(Illegal start offset, no detection)");
+			print_line(level + 1, "(Illegal start offset, no detection)");
 		} else if (offset == base_offset) {
-			print_line(level + 1,
-				   "Includes the disklabel and boot code");
+			print_line(level + 1, "Includes the disklabel and boot code");
 
 			/* recurse for content detection, but carefully */
 			if (level >= 0) {
-				analyze_recursive(section, level + 1,
-						  offset - base_offset,
-						  (u8)sizes[i] * 512,
-						  FLAG_IN_DISKLABEL);
+				analyze_recursive(section, level + 1, offset - base_offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
 				did_recurse = 1;
 			}
 		} else {
 			/* recurse for content detection */
 			if (level >= 0)
-				analyze_recursive(section, level + 1,
-						  offset - base_offset,
-						  (u8)sizes[i] * 512, 0);
+				analyze_recursive(section, level + 1, offset - base_offset, (u8)sizes[i] * 512, 0);
 		}
 	}
 
@@ -424,37 +368,26 @@ int detect_bsd_loader(SECTION *section, int level)
 
 	if (get_buffer(section, 0, 512, (void **)&buf) == 512) {
 		if (get_le_short(buf + 0x1b0) == 0xbb66) {
-			print_line(
-				level,
-				"FreeBSD boot manager (i386 boot0 at sector 0)");
+			print_line(level, "FreeBSD boot manager (i386 boot0 at sector 0)");
 			found = 1;
-		} else if (get_le_long(buf + 0x1f6) == 0 &&
-			   get_le_long(buf + 0x1fa) == 50000 &&
+		} else if (get_le_long(buf + 0x1f6) == 0 && get_le_long(buf + 0x1fa) == 50000 &&
 			   get_le_short(buf + 0x1fe) == 0xaa55) {
-			print_line(
-				level,
-				"FreeBSD boot loader (i386 boot1 at sector 0)");
+			print_line(level, "FreeBSD boot loader (i386 boot1 at sector 0)");
 			found = 1;
 		} else if (find_memory(buf, 512, "!Loading", 8) >= 0) {
-			print_line(level,
-				   "OpenBSD boot loader (i386 biosboot)");
+			print_line(level, "OpenBSD boot loader (i386 biosboot)");
 			found = 1;
-		} else if (find_memory(buf, 512, "Not a bootxx image", 18) >=
-			   0) {
-			print_line(
-				level,
-				"NetBSD/i386 boot loader (pbr.S, at sector 0)");
+		} else if (find_memory(buf, 512, "Not a bootxx image", 18) >= 0) {
+			print_line(level, "NetBSD/i386 boot loader (pbr.S, at sector 0)");
 			found = 1;
 		}
 	}
 
 	if (get_buffer(section, 0, 2048, (void **)&buf) == 2048) {
-		if (find_memory(buf, 2048, "Starting the BTX loader", 23) >=
-		    0) {
+		if (find_memory(buf, 2048, "Starting the BTX loader", 23) >= 0) {
 			print_line(level, "FreeBSD boot loader (CD loader)");
 			found = 1;
-		} else if (find_memory(buf, 2048, "/cdboot\0/CDBOOT\0", 16) >=
-			   0) {
+		} else if (find_memory(buf, 2048, "/cdboot\0/CDBOOT\0", 16) >= 0) {
 			print_line(level, "OpenBSD boot loader (cdbr)");
 			found = 1;
 		}
@@ -462,10 +395,7 @@ int detect_bsd_loader(SECTION *section, int level)
 
 	if (get_buffer(section, 1024, 512, (void **)&buf) == 512) {
 		if (memcmp(buf + 2, "BTX", 3) == 0) {
-			print_line(
-				level,
-				"FreeBSD boot loader (i386 boot2/BTX %d.%02d at sector 2)",
-				(int)buf[5], (int)buf[6]);
+			print_line(level, "FreeBSD boot loader (i386 boot2/BTX %d.%02d at sector 2)", (int)buf[5], (int)buf[6]);
 			found = 1;
 		}
 	}
@@ -473,43 +403,26 @@ int detect_bsd_loader(SECTION *section, int level)
 	for (i = 0; i < 4; i++) {
 		if (get_buffer(section, i * 512, 512, (void **)&buf) == 512) {
 			int magic = -1;
-			if ((get_le_long(buf + 4) | 0x0f) ==
-			    (0x7886b6d0 | 0x0f)) {
+			if ((get_le_long(buf + 4) | 0x0f) == (0x7886b6d0 | 0x0f)) {
 				magic = get_le_long(buf + 4) & 0x0f;
-			} else if ((get_le_long(buf + 500) | 0x0f) ==
-				   (0x7886b6d0 | 0x0f)) {
+			} else if ((get_le_long(buf + 500) | 0x0f) == (0x7886b6d0 | 0x0f)) {
 				magic = get_le_long(buf + 500) & 0x0f;
 			}
 			if (magic >= 0) {
 				if (magic == 1) {
-					print_line(
-						level,
-						"NetBSD/i386 boot loader (magic 1, bootxx.S, at sector %d)",
-						i);
+					print_line(level, "NetBSD/i386 boot loader (magic 1, bootxx.S, at sector %d)", i);
 					found = 1;
 				} else if (magic == 2) {
-					print_line(
-						level,
-						"NetBSD/i386 boot loader (magic 2, biosboot.S, at sector %d)",
-						i);
+					print_line(level, "NetBSD/i386 boot loader (magic 2, biosboot.S, at sector %d)", i);
 					found = 1;
 				} else if (magic == 3) {
-					print_line(
-						level,
-						"NetBSD/i386 boot loader (magic 3, start_pxe.S, at sector %d)",
-						i);
+					print_line(level, "NetBSD/i386 boot loader (magic 3, start_pxe.S, at sector %d)", i);
 					found = 1;
 				} else if (magic == 4) {
-					print_line(
-						level,
-						"NetBSD/i386 boot loader (magic 4, fatboot.S, at sector %d)",
-						i);
+					print_line(level, "NetBSD/i386 boot loader (magic 4, fatboot.S, at sector %d)", i);
 					found = 1;
 				} else {
-					print_line(
-						level,
-						"NetBSD/i386 boot loader (magic %d, unknown, at sector %d)",
-						magic, i);
+					print_line(level, "NetBSD/i386 boot loader (magic %d, unknown, at sector %d)", magic, i);
 					found = 1;
 				}
 			}
@@ -569,16 +482,13 @@ int detect_solaris_disklabel(SECTION *section, int level)
 
 			/* recurse for content detection, but carefully */
 			if (level >= 0) {
-				analyze_recursive(section, level + 1, offset,
-						  (u8)sizes[i] * 512,
-						  FLAG_IN_DISKLABEL);
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
 				did_recurse = 1;
 			}
 		} else {
 			/* recurse for content detection */
 			if (level >= 0) {
-				analyze_recursive(section, level + 1, offset,
-						  (u8)sizes[i] * 512, 0);
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, 0);
 			}
 		}
 	}
@@ -594,11 +504,8 @@ int detect_solaris_disklabel(SECTION *section, int level)
  * Solaris x86 vtoc
  */
 
-static char *vtoctype_names[] = {
-	"Unused",  "Boot",  "Root", "Swap", "Usr",
-	"Overlap", "Stand", "Var",  "Home", "Alternate sector",
-	"Cache"
-};
+static char *vtoctype_names[] = { "Unused",	      "Boot", "Root", "Swap", "Usr", "Overlap", "Stand", "Var", "Home",
+				  "Alternate sector", "Cache" };
 
 static char *get_name_for_vtoctype(int type)
 {
@@ -626,29 +533,20 @@ int detect_solaris_vtoc(SECTION *section, int level)
 		return 0;
 	version = get_le_long(buf + 16);
 	if (version != 1) {
-		print_line(level, "Solaris x86 disklabel, unknown version %lu",
-			   version);
+		print_line(level, "Solaris x86 disklabel, unknown version %lu", version);
 		return 0;
 	}
 	partcount = get_le_short(buf + 30);
 	if (partcount > 16) {
-		print_line(
-			level,
-			"Solaris x86 disklabel, version 1, %d partitions (limiting to 16)",
-			partcount);
+		print_line(level, "Solaris x86 disklabel, version 1, %d partitions (limiting to 16)", partcount);
 		partcount = 16;
 	} else {
-		print_line(level,
-			   "Solaris x86 disklabel, version 1, %d partitions",
-			   partcount);
+		print_line(level, "Solaris x86 disklabel, version 1, %d partitions", partcount);
 	}
 
 	sectorsize = get_le_short(buf + 28);
 	if (sectorsize != 512)
-		print_line(
-			level + 1,
-			"Unusual sector size %d bytes, your mileage may vary",
-			sectorsize);
+		print_line(level + 1, "Unusual sector size %d bytes, your mileage may vary", sectorsize);
 
 	get_string(buf + 20, 8, s);
 	if (s[0])
@@ -670,8 +568,7 @@ int detect_solaris_vtoc(SECTION *section, int level)
 		format_blocky_size(s, sizes[i], 512, "sectors", append);
 		print_line(level, "Partition %d: %s", i, s);
 
-		print_line(level + 1, "Type %d (%s)", types[i],
-			   get_name_for_vtoctype(types[i]));
+		print_line(level + 1, "Type %d (%s)", types[i], get_name_for_vtoctype(types[i]));
 
 		offset = (u8)starts[i] * 512;
 		if (offset == 0) {
@@ -679,16 +576,13 @@ int detect_solaris_vtoc(SECTION *section, int level)
 
 			/* recurse for content detection, but carefully */
 			if (level >= 0) {
-				analyze_recursive(section, level + 1, offset,
-						  (u8)sizes[i] * 512,
-						  FLAG_IN_DISKLABEL);
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
 				did_recurse = 1;
 			}
 		} else {
 			/* recurse for content detection */
 			if (level >= 0) {
-				analyze_recursive(section, level + 1, offset,
-						  (u8)sizes[i] * 512, 0);
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, 0);
 			}
 		}
 		found = 1;
@@ -742,14 +636,11 @@ int detect_vxfs(SECTION *section, int level)
 	for (en = 0; en < 2; en++) {
 		if (get_ve_long(en, buf) == 0xA501FCF5) {
 			version = get_ve_long(en, buf + 4);
-			print_line(level,
-				   "Veritas VxFS file system, version %d, %s",
-				   version, get_ve_name(en));
+			print_line(level, "Veritas VxFS file system, version %d, %s", version, get_ve_name(en));
 
 			blocksize = get_ve_long(en, buf + 32);
 			blockcount = get_ve_long(en, buf + 36);
-			format_blocky_size(s, blockcount, blocksize, "blocks",
-					   NULL);
+			format_blocky_size(s, blockcount, blocksize, "blocks", NULL);
 			print_line(level + 1, "Volume size %s", s);
 			found = 1;
 		}

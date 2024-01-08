@@ -97,21 +97,17 @@ int detect_atari_partmap(SECTION *section, int level)
 		format_blocky_size(s, size, 512, "sectors", append);
 		print_line(level, "Partition %d: %s", i + 1, s);
 
-		print_line(level + 1, "Type \"%s\" (%s)", type,
-			   get_name_for_type(type));
+		print_line(level + 1, "Type \"%s\" (%s)", type, get_name_for_type(type));
 
 		if (memcmp(type, "XGM", 3) == 0) {
 			/* extended partition */
 			if (level >= 0)
-				detect_atari_partmap_ext(section, start,
-							 level + 1);
+				detect_atari_partmap_ext(section, start, level + 1);
 			found = 1;
 		} else {
 			/* recurse for content detection */
 			if (level >= 0)
-				analyze_recursive(section, level + 1,
-						  (u8)start * 512,
-						  (u8)size * 512, 0);
+				analyze_recursive(section, level + 1, (u8)start * 512, (u8)size * 512, 0);
 			found = 1;
 		}
 	}
@@ -130,8 +126,7 @@ static int detect_atari_partmap_ext(SECTION *section, u8 extbase, int level)
 	int found = 0;
 	for (tablebase = extbase; tablebase; tablebase = nexttablebase) {
 		/* read sector from linked list */
-		if (get_buffer(section, tablebase << 9, 512, (void **)&buf) <
-		    512)
+		if (get_buffer(section, tablebase << 9, 512, (void **)&buf) < 512)
 			return 0;
 
 		/* get data */
@@ -161,21 +156,15 @@ static int detect_atari_partmap_ext(SECTION *section, u8 extbase, int level)
 				/* real partition */
 
 				sprintf(append, " from %lu", start);
-				format_blocky_size(s, size, 512, "sectors",
-						   append);
-				print_line(level, "Partition %d: %s",
-					   extpartnum, s);
+				format_blocky_size(s, size, 512, "sectors", append);
+				print_line(level, "Partition %d: %s", extpartnum, s);
 				extpartnum++;
 
-				print_line(level + 1, "Type \"%s\" (%s)", type,
-					   get_name_for_type(type));
+				print_line(level + 1, "Type \"%s\" (%s)", type, get_name_for_type(type));
 
 				/* recurse for content detection */
 				if (level >= 0)
-					analyze_recursive(section, level + 1,
-							  (tablebase + start) *
-								  512,
-							  (u8)size * 512, 0);
+					analyze_recursive(section, level + 1, (tablebase + start) * 512, (u8)size * 512, 0);
 				found = 1;
 			}
 		}

@@ -12,8 +12,7 @@ void INIT_DD_LIST_HEAD(struct dd_list_head *list)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-void __dd_list_add(struct dd_list_head *new, struct dd_list_head *prev,
-		   struct dd_list_head *next)
+void __dd_list_add(struct dd_list_head *new, struct dd_list_head *prev, struct dd_list_head *next)
 {
 	next->prev = new;
 	new->next = next;

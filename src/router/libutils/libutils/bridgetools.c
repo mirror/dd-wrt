@@ -247,17 +247,12 @@ int br_add_bridge(const char *brname)
 	if (!strcmp(mcast, "1"))
 		eval("igs", "add", "bridge", brname);
 #else
-	sysprintf(
-		"echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping",
-		mcast, brname);
+	sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
 #endif
 
-	if (nvram_exists(ipaddr) && nvram_exists(netmask) &&
-	    !nvram_match(ipaddr, "0.0.0.0") &&
-	    !nvram_match(netmask, "0.0.0.0")) {
-		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask",
-		     nvram_safe_get(netmask), "mtu", getBridgeMTU(brname, tmp),
-		     "up");
+	if (nvram_exists(ipaddr) && nvram_exists(netmask) && !nvram_match(ipaddr, "0.0.0.0") && !nvram_match(netmask, "0.0.0.0")) {
+		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu",
+		     getBridgeMTU(brname, tmp), "up");
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname, tmp));
 
@@ -320,8 +315,7 @@ int br_add_interface(const char *br, const char *dev)
 		eval("ifconfig", dev, "up");
 	}
 
-	dd_loginfo("bridge", "interface %s successfully added to bridge %s\n",
-		   dev, br);
+	dd_loginfo("bridge", "interface %s successfully added to bridge %s\n", dev, br);
 	int ret = eval("brctl", "addif", br, dev);
 #ifdef HAVE_80211AC
 //      eval("emf", "add", "iface", br, dev);
@@ -336,21 +330,15 @@ int br_add_interface(const char *br, const char *dev)
 	strncpy(mainif, dev, 31);
 	if (!strncmp(dev, "wlan", 4) && (sep = strstr(mainif, ".sta"))) {
 		*sep = 0;
-		sysprintf(
-			"echo %d > /sys/class/net/%s/brport/multicast_to_unicast",
-			nvram_ngeti("%s_multicast_to_unicast", mainif), dev);
+		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", mainif),
+			  dev);
 		if (nvram_nmatch("1", "%s_usteer", mainif))
-			sysprintf(
-				"echo 1 > /sys/class/net/%s/brport/multicast_to_unicast",
-				dev);
+			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
 	} else {
-		sysprintf(
-			"echo %d > /sys/class/net/%s/brport/multicast_to_unicast",
-			nvram_ngeti("%s_multicast_to_unicast", dev), dev);
+		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", dev),
+			  dev);
 		if (nvram_nmatch("1", "%s_usteer", dev))
-			sysprintf(
-				"echo 1 > /sys/class/net/%s/brport/multicast_to_unicast",
-				dev);
+			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
 	}
 	return ret;
 }
@@ -359,9 +347,7 @@ int br_del_interface(const char *br, const char *dev)
 {
 	if (!ifexists(dev))
 		return -1;
-	dd_loginfo("bridge",
-		   "interface %s successfully deleted from bridge %s\n", dev,
-		   br);
+	dd_loginfo("bridge", "interface %s successfully deleted from bridge %s\n", dev, br);
 	int ret = eval("brctl", "delif", br, dev);
 #ifdef HAVE_80211AC
 //      eval("emf", "del", "iface", br, dev);

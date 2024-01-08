@@ -226,9 +226,7 @@ int count_processes(char *pidName)
 unsigned int daysformonth(unsigned int month, unsigned int year)
 {
 	return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) -
-		(!(((year % 4) == 0) &&
-		   (((year % 100) != 0) || ((year % 400) == 0))) &&
-		 (month == 2)));
+		(!(((year % 4) == 0) && (((year % 100) != 0) || ((year % 400) == 0))) && (month == 2)));
 }
 
 #ifdef HAVE_IPV6
@@ -247,25 +245,21 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 	}
 
 	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-		if ((ifa->ifa_addr == NULL) ||
-		    (strncmp(ifa->ifa_name, ifname, IFNAMSIZ) != 0) ||
+		if ((ifa->ifa_addr == NULL) || (strncmp(ifa->ifa_name, ifname, IFNAMSIZ) != 0) ||
 		    (ifa->ifa_addr->sa_family != family))
 			continue;
 
 		if (ifa->ifa_addr->sa_family == AF_INET6) {
-			struct sockaddr_in6 *s6 =
-				(struct sockaddr_in6 *)(ifa->ifa_addr);
+			struct sockaddr_in6 *s6 = (struct sockaddr_in6 *)(ifa->ifa_addr);
 			if (IN6_IS_ADDR_LINKLOCAL(&s6->sin6_addr) ^ linklocal)
 				continue;
 			addr = (void *)&(s6->sin6_addr);
 		} else {
-			struct sockaddr_in *s =
-				(struct sockaddr_in *)(ifa->ifa_addr);
+			struct sockaddr_in *s = (struct sockaddr_in *)(ifa->ifa_addr);
 			addr = (void *)&(s->sin_addr);
 		}
 
-		if ((addr) && inet_ntop(ifa->ifa_addr->sa_family, addr, buf,
-					INET6_ADDRSTRLEN) != NULL) {
+		if ((addr) && inet_ntop(ifa->ifa_addr->sa_family, addr, buf, INET6_ADDRSTRLEN) != NULL) {
 			freeifaddrs(ifap);
 			return buf;
 		}
@@ -375,14 +369,10 @@ int check_vlan_support(void)
 #endif
 #endif
 
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) ||   \
-	defined(HAVE_MAGICBOX) || defined(HAVE_RB600) ||                     \
-	defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || \
-	defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) ||  \
-	defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) ||   \
-	defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) ||  \
-	defined(HAVE_ADM5120) || defined(HAVE_RT2880) ||                     \
-	defined(HAVE_OPENRISC)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || \
+	defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || \
+	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) ||        \
+	defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
 #else
 
@@ -415,8 +405,7 @@ int check_vlan_support(void)
 		break;
 	}
 
-	unsigned long boardflags =
-		strtoul(nvram_safe_get("boardflags"), NULL, 0);
+	unsigned long boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
 	if (boardflags & BFL_ENETVLAN)
 		return 1;
 	if (nvram_match("boardtype", "bcm94710dev"))
@@ -459,9 +448,7 @@ int check_wan_link(int num)
 	FILE *fp = NULL;
 	int value = 0;
 	if (nvram_match("wan_proto", "3g")) {
-		if (nvram_match("3gdata", "hso") ||
-		    nvram_match("3gdata", "qmi") ||
-		    nvram_match("3gdata", "mbim") ||
+		if (nvram_match("3gdata", "hso") || nvram_match("3gdata", "qmi") || nvram_match("3gdata", "mbim") ||
 		    nvram_match("3gdata", "sierradirectip")) {
 			ppp3g = 0;
 			if (nvram_match("3gdata", "sierradirectip")) {
@@ -542,10 +529,8 @@ int check_wan_link(int num)
 			    !strncmp(name, "bpalogin", 8)) // for HeartBeat
 				wan_link = 1; // connect
 			else {
-				printf("The %s had been died, remove %s\n",
-				       nvram_safe_get("wan_proto"), filename);
-				wan_link =
-					0; // For some reason, the pppoed had been died,
+				printf("The %s had been died, remove %s\n", nvram_safe_get("wan_proto"), filename);
+				wan_link = 0; // For some reason, the pppoed had been died,
 				// by link file still exist.
 				unlink(filename);
 			}
@@ -563,23 +548,19 @@ int check_wan_link(int num)
 				if (strstr(line, "iph0")) {
 					int sock;
 					struct ifreq ifr;
-					if ((sock = socket(AF_INET, SOCK_RAW,
-							   IPPROTO_RAW)) < 0)
+					if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 						break;
 					bzero(&ifr, sizeof(struct ifreq));
 					strncpy(ifr.ifr_name, "iph0", IFNAMSIZ);
 					ioctl(sock, SIOCGIFFLAGS, &ifr);
-					if ((ifr.ifr_flags &
-					     (IFF_RUNNING | IFF_UP)) ==
-					    (IFF_RUNNING | IFF_UP))
+					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
 						wan_link = 1;
 					close(sock);
 					break;
 				}
 			}
 			fclose(fp);
-			if (nvram_match("wan_ipaddr", "0.0.0.0") ||
-			    nvram_match("wan_ipaddr", ""))
+			if (nvram_match("wan_ipaddr", "0.0.0.0") || nvram_match("wan_ipaddr", ""))
 				wan_link = 0;
 		}
 	} else
@@ -594,8 +575,7 @@ int check_wan_link(int num)
 
 int wanactive(char *wanaddr)
 {
-	return (!nvram_match("wan_proto", "disabled") &&
-		strcmp(wanaddr, "0.0.0.0") && check_wan_link(0));
+	return (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr, "0.0.0.0") && check_wan_link(0));
 }
 
 #ifdef HAVE_WZR450HP2
@@ -603,8 +583,7 @@ struct ENV_EXTDATA {
 	unsigned char wanmac[6]; // 0x0
 	unsigned char lanmac[6]; // 0x6
 	unsigned char wpspin[8]; // 0xc
-	unsigned char passphrase
-		[25]; // 0x14, length is max <=24 followed by 0 termination
+	unsigned char passphrase[25]; // 0x14, length is max <=24 followed by 0 termination
 	unsigned char authmode[3];
 	unsigned char crypto[3];
 	unsigned char authmode_ex[4];
@@ -634,17 +613,14 @@ static char *getUEnvExt(char *name)
 			return "wpa-psk";
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-authmode")) {
-		if (!memcmp(data.authmode_ex, "WPA2", 4) &&
-		    !memcmp(data.authmode, "PSK", 3))
+		if (!memcmp(data.authmode_ex, "WPA2", 4) && !memcmp(data.authmode, "PSK", 3))
 			return "psk2";
-		if (!memcmp(data.authmode_ex, "WPA", 3) &&
-		    !memcmp(data.authmode, "PSK", 3))
+		if (!memcmp(data.authmode_ex, "WPA", 3) && !memcmp(data.authmode, "PSK", 3))
 			return "psk";
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-wpapsk")) {
 		static char passphrase[25];
-		strncpy(passphrase, (char *)&data.passphrase[1],
-			(data.passphrase[0] & 0xff));
+		strncpy(passphrase, (char *)&data.passphrase[1], (data.passphrase[0] & 0xff));
 		return passphrase;
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-crypto")) {
@@ -669,11 +645,9 @@ static char *getUEnvExt(char *name)
 
 #endif
 
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || \
-	defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) ||     \
-	defined(HAVE_DIR810L) || defined(HAVE_MVEBU) ||           \
-	defined(HAVE_IPQ806X) || defined(HAVE_ALPINE) ||          \
-	defined(HAVE_VENTANA) || defined(HAVE_PERU)
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) ||           \
+	defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_ALPINE) || defined(HAVE_VENTANA) || \
+	defined(HAVE_PERU)
 void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
@@ -764,8 +738,7 @@ char *get_wan_ipaddr(void)
 	int wan_link = check_wan_link(0);
 
 	if (!strcmp(wan_proto, "pptp")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") :
-					nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
 	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
 		   || !strcmp(wan_proto, "pppoa")
@@ -777,12 +750,10 @@ char *get_wan_ipaddr(void)
 		   || !strcmp(wan_proto, "3g")
 #endif
 	) {
-		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") :
-					"0.0.0.0";
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 #ifdef HAVE_L2TP
 	} else if (!strcmp(wan_proto, "l2tp")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") :
-					nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
 #endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
@@ -860,8 +831,7 @@ void get_broadcast(char *ipaddr, size_t len, char *netmask)
 		return;
 
 	sscanf(ipaddr, "%d.%d.%d.%d", &ip2[0], &ip2[1], &ip2[2], &ip2[3]);
-	sscanf(netmask, "%d.%d.%d.%d", &mask2[0], &mask2[1], &mask2[2],
-	       &mask2[3]);
+	sscanf(netmask, "%d.%d.%d.%d", &mask2[0], &mask2[1], &mask2[2], &mask2[3]);
 	int i = 0;
 
 	for (i = 0; i < 4; i++) {
@@ -1017,15 +987,12 @@ int getIfByIdx(char *ifname, int index)
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort,
-	       int noports)
+int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, int noports)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
 		return 0;
-	char *ignorelist[] = { "wifi", "ifb", "imq",   "etherip", "lo",
-			       "teql", "gre", "ppp",   "aux",	  "ctf",
-			       "tap",  "sit", "ip6tnl" };
+	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo", "teql", "gre", "ppp", "aux", "ctf", "tap", "sit", "ip6tnl" };
 	char ifname[32];
 
 	// skip the first 2 lines
@@ -1049,17 +1016,13 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort,
 			if (bridgesonly && !isbridge(ifname))
 				skip = 1;
 			if (ifprefix) {
-				if (strncmp(ifname, ifprefix,
-					    strlen(ifprefix))) {
+				if (strncmp(ifname, ifprefix, strlen(ifprefix))) {
 					skip = 1;
 				}
 			} else {
 				int i;
-				for (i = 0; i < sizeof(ignorelist) /
-							sizeof(ignorelist[0]);
-				     i++) {
-					if (!strncmp(ifname, ignorelist[i],
-						     strlen(ignorelist[i]))) {
+				for (i = 0; i < sizeof(ignorelist) / sizeof(ignorelist[0]); i++) {
+					if (!strncmp(ifname, ignorelist[i], strlen(ignorelist[i]))) {
 						skip = 1;
 						break;
 					}
@@ -1071,9 +1034,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort,
 				if (!sort) {
 					sort = malloc(sizeof(char *));
 				} else {
-					sort = realloc(sort,
-						       sizeof(char *) *
-							       (count + 1));
+					sort = realloc(sort, sizeof(char *) * (count + 1));
 				}
 				sort[count] = malloc(strlen(ifname) + 1);
 				strcpy(sort[count], ifname);
@@ -1141,8 +1102,7 @@ int sv_valid_hwaddr(char *value)
 	if (!tag || i != 17 || count != 5) /* must have 17's characters and 5's
 						 * ':' */
 		tag = FALSE;
-	else if (sscanf(value, "%x:%x:%x:%x:%x:%x", &hwaddr[0], &hwaddr[1],
-			&hwaddr[2], &hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6) {
+	else if (sscanf(value, "%x:%x:%x:%x:%x:%x", &hwaddr[0], &hwaddr[1], &hwaddr[2], &hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6) {
 		tag = FALSE;
 	} else
 		tag = TRUE;
@@ -1198,8 +1158,8 @@ char *cpustring(void)
 	fscanf(fp, "%*s %X\n", &chiprevision);
 	fscanf(fp, "%*s %X\n", &packageoption);
 	fclose(fp);
-	if (chipid == 53030 || chipid == 53010 || chipid == 53011 ||
-	    chipid == 53012 || chipid == 53018 || chipid == 53019) { // 53030
+	if (chipid == 53030 || chipid == 53010 || chipid == 53011 || chipid == 53012 || chipid == 53018 ||
+	    chipid == 53019) { // 53030
 		if (packageoption == 0)
 			strcpy(buf, "Broadcom BCM4709");
 		if (packageoption == 1)
@@ -1289,8 +1249,7 @@ int _domod(char *module, char *loader)
 				target = check;
 			}
 		}
-		ret |= _evalpid((char *const[]){ loader, target, NULL },
-				">/dev/null", 0, NULL);
+		ret |= _evalpid((char *const[]){ loader, target, NULL }, ">/dev/null", 0, NULL);
 	}
 	return ret;
 }
@@ -1312,8 +1271,7 @@ void rmmod(char *module)
 	wordlist = module;
 	foreach(word, wordlist, next)
 	{
-		_evalpid((char *const[]){ "rmmod", word, NULL }, ">/dev/null",
-			 0, NULL);
+		_evalpid((char *const[]){ "rmmod", word, NULL }, ">/dev/null", 0, NULL);
 	}
 }
 
@@ -1331,8 +1289,7 @@ void initlcd()
 
 void lcdmessage(char *message)
 {
-	eval("oled-print", "DD-WRT v24 sp2", "build:" SVN_REVISION,
-	     "3G/UMTS Router", message);
+	eval("oled-print", "DD-WRT v24 sp2", "build:" SVN_REVISION, "3G/UMTS Router", message);
 }
 
 void lcdmessaged(char *dual, char *message)
@@ -1631,8 +1588,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
 		}
-		if (nvram_match("vlan1ports", "4 3 2 1 5*") &&
-		    nvram_matchi("boardnum", 32)) { //R7000/R7000P
+		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_matchi("boardnum", 32)) { //R7000/R7000P
 			vlanmap[1] = 1;
 			vlanmap[2] = 2;
 			vlanmap[3] = 3;
@@ -1657,9 +1613,7 @@ void getPortMapping(int *vlanmap)
 		vlanmap[5] = 5;
 		vlanmap[0] = 1;
 		vlanmap[1] = 0;
-	} else if (nvram_match("vlan2ports", "0 8") ||
-		   nvram_match("vlan2ports", "0 8u") ||
-		   nvram_match("vlan2ports", "0 8t") ||
+	} else if (nvram_match("vlan2ports", "0 8") || nvram_match("vlan2ports", "0 8u") || nvram_match("vlan2ports", "0 8t") ||
 		   nvram_match("vlan2ports", "0 8*")) {
 		vlanmap[0] = 0;
 		vlanmap[5] = 8;
@@ -1669,8 +1623,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 2;
 			vlanmap[4] = 1;
 		}
-	} else if (nvram_match("vlan2ports", "4 8") ||
-		   nvram_match("vlan2ports", "4 8u")) {
+	} else if (nvram_match("vlan2ports", "4 8") || nvram_match("vlan2ports", "4 8u")) {
 		vlanmap[0] = 4;
 		vlanmap[5] = 8;
 		if (nvram_match("vlan1ports", "0 1 2 3 8*")) {
@@ -1685,16 +1638,14 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if (nvram_match("vlan1ports", "0 1 2 3 8*") &&
-		    nvram_matchi("boardnum",
-				 4536)) { // WNDR4500/WNDR4500V2/R6300V1
+		if (nvram_match("vlan1ports", "0 1 2 3 8*") && nvram_matchi("boardnum",
+									    4536)) { // WNDR4500/WNDR4500V2/R6300V1
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if (nvram_match("vlan1ports", "3 2 1 0 5 7 8*") &&
-		    nvram_matchi("boardnum", 32)) {
+		if (nvram_match("vlan1ports", "3 2 1 0 5 7 8*") && nvram_matchi("boardnum", 32)) {
 			vlanmap[1] = 0;
 			vlanmap[2] = 1;
 			vlanmap[3] = 2;
@@ -1709,8 +1660,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
 		}
-	} else if (nvram_match("vlan2ports", "4 5") ||
-		   nvram_match("vlan2ports", "4 5u")) {
+	} else if (nvram_match("vlan2ports", "4 5") || nvram_match("vlan2ports", "4 5u")) {
 		vlanmap[0] = 4;
 		vlanmap[5] = 5;
 		if (nvram_match("vlan1ports", "0 1 2 3 5*")) {
@@ -1724,8 +1674,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if (nvram_match("vlan1ports", "0 1 2 3 5*") &&
-		    nvram_matchi("boardnum", 679)) { //R6300V2
+		if (nvram_match("vlan1ports", "0 1 2 3 5*") && nvram_matchi("boardnum", 679)) { //R6300V2
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
@@ -1793,8 +1742,7 @@ int isbridge(char *name)
 	char ifname[IFNAMSIZ];
 	int ifindices[MAX_BRIDGES];
 	int br_socket_fd = -1;
-	unsigned long args[3] = { BRCTL_GET_BRIDGES, (unsigned long)ifindices,
-				  MAX_BRIDGES };
+	unsigned long args[3] = { BRCTL_GET_BRIDGES, (unsigned long)ifindices, MAX_BRIDGES };
 
 	if ((br_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		return 0;
@@ -1831,8 +1779,7 @@ int isbridged(char *name)
 int has_multicast_to_unicast(char *name)
 {
 	char fname[64];
-	snprintf(fname, sizeof(fname),
-		 "/sys/class/net/%s/brport/multicast_to_unicast", name);
+	snprintf(fname, sizeof(fname), "/sys/class/net/%s/brport/multicast_to_unicast", name);
 	FILE *fp = fopen(fname, "rb");
 	if (fp) {
 		fclose(fp);
@@ -1903,8 +1850,7 @@ static void s_MAC_ADD(char *mac, int inc)
 			}
 		}
 	}
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3],
-		m[4], m[5]);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
 void MAC_ADD(char *mac)
@@ -1959,8 +1905,7 @@ char *safe_get_wan_face(char *localwanface)
 		if (nvram_match("pppd_pppifname", ""))
 			strlcpy(localwanface, "ppp0", IFNAMSIZ);
 		else
-			strlcpy(localwanface, nvram_safe_get("pppd_pppifname"),
-				IFNAMSIZ);
+			strlcpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
 	}
 #ifdef HAVE_3G
 	else if (nvram_match("wan_proto", "3g")) {
@@ -1974,9 +1919,7 @@ char *safe_get_wan_face(char *localwanface)
 			if (nvram_match("pppd_pppifname", ""))
 				strlcpy(localwanface, "ppp0", IFNAMSIZ);
 			else
-				strlcpy(localwanface,
-					nvram_safe_get("pppd_pppifname"),
-					IFNAMSIZ);
+				strlcpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
 		}
 
 	}
@@ -1990,8 +1933,7 @@ char *safe_get_wan_face(char *localwanface)
 		if (nvram_matchi("wifi_bonding", 1))
 			strlcpy(localwanface, "bond0", IFNAMSIZ);
 		else
-			strlcpy(localwanface, nvram_safe_get("sta_ifname"),
-				IFNAMSIZ);
+			strlcpy(localwanface, nvram_safe_get("sta_ifname"), IFNAMSIZ);
 	}
 #endif
 #ifdef HAVE_IPETH
@@ -2101,11 +2043,7 @@ char *getMountedDrives(void)
 				int c = 0;
 				if (drives)
 					c = 1;
-				drives = realloc(
-					drives, drives ?
-							strlen(dev) + 2 +
-								strlen(drives) :
-							strlen(dev) + 1);
+				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev) + 1);
 				if (c)
 					strcat(drives, " ");
 				else
@@ -2121,11 +2059,7 @@ next:;
 				int c = 0;
 				if (drives)
 					c = 1;
-				drives = realloc(
-					drives, drives ?
-							strlen(dev) + 2 +
-								strlen(drives) :
-							strlen(dev + 1));
+				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev + 1));
 				if (c)
 					strcat(drives, " ");
 				else
@@ -2153,11 +2087,8 @@ static char *s_getDrives(int type)
 	while (dir && (file = readdir(dir))) {
 		char drv[128];
 		sprintf(drv, "/dev/%s", file->d_name);
-		if (!strncmp(file->d_name, "sd", 2) ||
-		    !strncmp(file->d_name, "hd", 2) ||
-		    !strncmp(file->d_name, "md", 2) ||
-		    !strncmp(file->d_name, "mmcblk", 6) ||
-		    !strncmp(file->d_name, "nvme", 4)) {
+		if (!strncmp(file->d_name, "sd", 2) || !strncmp(file->d_name, "hd", 2) || !strncmp(file->d_name, "md", 2) ||
+		    !strncmp(file->d_name, "mmcblk", 6) || !strncmp(file->d_name, "nvme", 4)) {
 			char var[64];
 			char *next;
 			if (mounts) {
@@ -2243,9 +2174,7 @@ char *getAllDrives(void)
 static char *sysctl_blacklist[] = { SYSCTL_BLACKLIST };
 
 static void internal_sysctl_apply(char *path, void *priv,
-				  void (*callback)(char *path, char *nvname,
-						   char *name, char *sysval,
-						   void *priv))
+				  void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv))
 {
 	DIR *directory;
 	struct dirent *entry;
@@ -2253,17 +2182,13 @@ static void internal_sysctl_apply(char *path, void *priv,
 	int cnt = 0;
 	if ((directory = opendir(path)) != NULL) {
 		while ((entry = readdir(directory)) != NULL) {
-			if ((!strcmp(entry->d_name, ".") ||
-			     !strcmp(entry->d_name, "..")))
+			if ((!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")))
 				continue;
 			if (entry->d_type == DT_DIR) {
 				int a;
-				for (a = 0; a < sizeof(sysctl_blacklist) /
-							sizeof(char *);
-				     a++) {
+				for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
 					if (!strcmp(entry->d_name,
-						    sysctl_blacklist
-							    [a])) // supress kernel warning
+						    sysctl_blacklist[a])) // supress kernel warning
 						continue;
 				}
 				char dir[1024];
@@ -2278,12 +2203,9 @@ static void internal_sysctl_apply(char *path, void *priv,
 		while ((entry = readdir(directory)) != NULL) {
 			if (entry->d_type == DT_REG) {
 				int a;
-				for (a = 0; a < sizeof(sysctl_blacklist) /
-							sizeof(char *);
-				     a++) {
+				for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
 					if (!strcmp(entry->d_name,
-						    sysctl_blacklist
-							    [a])) // supress kernel warning
+						    sysctl_blacklist[a])) // supress kernel warning
 						goto next;
 				}
 
@@ -2315,11 +2237,8 @@ static void internal_sysctl_apply(char *path, void *priv,
 					if (title[i] == '/')
 						title[i] = '.';
 				char nvname[128];
-				sprintf(nvname, "%s%s%s", title,
-					strlen(title) ? "." : "",
-					entry->d_name);
-				callback(path, nvname, entry->d_name, fval,
-					 priv);
+				sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
+				callback(path, nvname, entry->d_name, fval, priv);
 next:;
 			}
 		}
@@ -2328,9 +2247,7 @@ next:;
 	}
 }
 
-void sysctl_apply(void *priv,
-		  void (*callback)(char *path, char *nvname, char *name,
-				   char *sysval, void *priv))
+void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv))
 {
 	internal_sysctl_apply("/proc/sys", priv, callback);
 }

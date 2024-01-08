@@ -47,8 +47,7 @@ static int read_block_cdimage(SOURCE *s, u8 pos, void *buf);
  * cd image detection
  */
 
-static unsigned char syncbytes[12] = { 0,   255, 255, 255, 255, 255,
-				       255, 255, 255, 255, 255, 0 };
+static unsigned char syncbytes[12] = { 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0 };
 
 int detect_cdimage(SECTION *section, int level)
 {

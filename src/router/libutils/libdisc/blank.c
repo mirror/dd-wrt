@@ -60,8 +60,7 @@ int detect_blank(SECTION *section, int level)
 
 	/* Determine number of blank blocks */
 	for (i = 0; i < max_blocks; i++) {
-		if (get_buffer(section, i * block_size, block_size,
-			       (void **)&buffer) < block_size)
+		if (get_buffer(section, i * block_size, block_size, (void **)&buffer) < block_size)
 			break;
 
 		for (j = 0; j < block_size; j++) {

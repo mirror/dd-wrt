@@ -77,16 +77,13 @@ struct dlna_share *getdlnashares(void)
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if (!strcmp(key, "mp")) {
-					strncpy(mp, json_string_value(value),
-						sizeof(mp) - 1);
+					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
 				} else if (!strcmp(key, "sd")) {
-					strncpy(sd, json_string_value(value),
-						sizeof(sd) - 1);
+					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
 				} else if (!strcmp(key, "types")) {
 					types = json_integer_value(value);
 				}
-				iterator =
-					json_object_iter_next(entry, iterator);
+				iterator = json_object_iter_next(entry, iterator);
 			}
 			if (*mp) {
 				current->next = getdlnashare(mp, sd, types);
