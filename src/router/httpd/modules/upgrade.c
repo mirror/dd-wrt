@@ -60,9 +60,8 @@ static void set_upgrade_ret(webs_t stream, int result)
 	}
 }
 
-static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler,
-			  char *url, webs_t stream) // jimmy, https,
-	// 8/6/2003
+static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream) // jimmy, https,
+// 8/6/2003
 {
 	int ret;
 #ifndef ANTI_FLASH
@@ -109,27 +108,17 @@ typedef struct {
 	unsigned int crc32;
 } ralink_firmware_header;
 
-static char *allmagics[] = { CODE_PATTERN_WRT54G,     CODE_PATTERN_WRT54GS,
-			     CODE_PATTERN_WRH54G,     CODE_PATTERN_WRT150N,
-			     CODE_PATTERN_WRT160N,    CODE_PATTERN_WRT300N,
-			     CODE_PATTERN_WRT300NV11, CODE_PATTERN_WRT310N,
-			     CODE_PATTERN_WRT350N,    CODE_PATTERN_WRTSL54GS,
-			     CODE_PATTERN_WRT54G3G,   CODE_PATTERN_WRT54G3GV,
-			     CODE_PATTERN_WRT610N,    CODE_PATTERN_WRT54GSV4,
-			     CODE_PATTERN_WRT320N,    CODE_PATTERN_VALET_M10,
-			     CODE_PATTERN_VALET_M20,  CODE_PATTERN_E900,
-			     CODE_PATTERN_E800,	      CODE_PATTERN_E1000,
-			     CODE_PATTERN_E1200V1,    CODE_PATTERN_E1200V2,
-			     CODE_PATTERN_E1500,      CODE_PATTERN_E1550,
-			     CODE_PATTERN_E2000,      CODE_PATTERN_E2500,
-			     CODE_PATTERN_E3000,      CODE_PATTERN_E3200,
-			     CODE_PATTERN_E4200,      CODE_PATTERN_NV60K,
-			     CODE_PATTERN_NV64K,      NULL };
+static char *allmagics[] = { CODE_PATTERN_WRT54G,    CODE_PATTERN_WRT54GS,   CODE_PATTERN_WRH54G,     CODE_PATTERN_WRT150N,
+			     CODE_PATTERN_WRT160N,   CODE_PATTERN_WRT300N,   CODE_PATTERN_WRT300NV11, CODE_PATTERN_WRT310N,
+			     CODE_PATTERN_WRT350N,   CODE_PATTERN_WRTSL54GS, CODE_PATTERN_WRT54G3G,   CODE_PATTERN_WRT54G3GV,
+			     CODE_PATTERN_WRT610N,   CODE_PATTERN_WRT54GSV4, CODE_PATTERN_WRT320N,    CODE_PATTERN_VALET_M10,
+			     CODE_PATTERN_VALET_M20, CODE_PATTERN_E900,	     CODE_PATTERN_E800,	      CODE_PATTERN_E1000,
+			     CODE_PATTERN_E1200V1,   CODE_PATTERN_E1200V2,   CODE_PATTERN_E1500,      CODE_PATTERN_E1550,
+			     CODE_PATTERN_E2000,     CODE_PATTERN_E2500,     CODE_PATTERN_E3000,      CODE_PATTERN_E3200,
+			     CODE_PATTERN_E4200,     CODE_PATTERN_NV60K,     CODE_PATTERN_NV64K,      NULL };
 
-static char *nv60k[] = { CODE_PATTERN_E1550, CODE_PATTERN_E2000,
-			 CODE_PATTERN_E2500, CODE_PATTERN_E3000,
-			 CODE_PATTERN_E3200, CODE_PATTERN_E4200,
-			 CODE_PATTERN_NV60K, NULL };
+static char *nv60k[] = { CODE_PATTERN_E1550, CODE_PATTERN_E2000, CODE_PATTERN_E2500, CODE_PATTERN_E3000,
+			 CODE_PATTERN_E3200, CODE_PATTERN_E4200, CODE_PATTERN_NV60K, NULL };
 
 static char *nv64k[] = { CODE_PATTERN_E900,
 			 CODE_PATTERN_E800,
@@ -176,18 +165,12 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	long flags = -1;
 	int size = BUFSIZ;
 	int i = 0;
-#if (defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || \
-     defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) ||        \
-     defined(HAVE_USR5453)) &&                                                 \
-	(!defined(HAVE_DIR400) && !defined(HAVE_WRT54G2) &&                    \
-	 !defined(HAVE_GWMF54G2) && !defined(HAVE_FONERA2200) &&               \
-	 !defined(HAVE_MR3202A) && !defined(HAVE_CA8PRO) &&                    \
-	 !defined(HAVE_CA8) && !defined(HAVE_RT2880) && !defined(HAVE_LS2) &&  \
-	 !defined(HAVE_WRK54G) && !defined(HAVE_ADM5120) &&                    \
-	 !defined(HAVE_DIR300) && !defined(HAVE_DLM101) &&                     \
-	 !defined(HAVE_MERAKI) && !defined(HAVE_SOLO51) &&                     \
-	 !defined(HAVE_RTG32) && !defined(HAVE_EOC5610) &&                     \
-	 !defined(HAVE_NP25G))
+#if (defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_TW6600) || defined(HAVE_PB42) ||     \
+     defined(HAVE_LS5) || defined(HAVE_USR5453)) &&                                                                              \
+	(!defined(HAVE_DIR400) && !defined(HAVE_WRT54G2) && !defined(HAVE_GWMF54G2) && !defined(HAVE_FONERA2200) &&              \
+	 !defined(HAVE_MR3202A) && !defined(HAVE_CA8PRO) && !defined(HAVE_CA8) && !defined(HAVE_RT2880) && !defined(HAVE_LS2) && \
+	 !defined(HAVE_WRK54G) && !defined(HAVE_ADM5120) && !defined(HAVE_DIR300) && !defined(HAVE_DLM101) &&                    \
+	 !defined(HAVE_MERAKI) && !defined(HAVE_SOLO51) && !defined(HAVE_RTG32) && !defined(HAVE_EOC5610) && !defined(HAVE_NP25G))
 #define WRITEPART "rootfs"
 #else
 #define WRITEPART "linux"
@@ -216,8 +199,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	 */
 	if (!DO_SSL(stream)) {
 		if ((flags = fcntl(fileno(stream->fp_in), F_GETFL)) < 0 ||
-		    fcntl(fileno(stream->fp_in), F_SETFL, flags | O_NONBLOCK) <
-			    0) {
+		    fcntl(fileno(stream->fp_in), F_SETFL, flags | O_NONBLOCK) < 0) {
 			ret = errno;
 			goto err;
 		}
@@ -257,8 +239,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				lastblock = 1;
 			}
 			count = safe_fread(buf, 1, size, stream->fp_in);
-			if (!count &&
-			    (ferror(stream->fp_in) || feof(stream->fp_in))) {
+			if (!count && (ferror(stream->fp_in) || feof(stream->fp_in))) {
 				break;
 			}
 		}
@@ -269,8 +250,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			if (!strncmp(buf, "HDR0", 4)) { // check for "trx"
 				char *write_argv_buf[8];
 				eval("mkdir", "-p", "/tmp/new_root");
-				eval("mount", "-n", "-t", "tmpfs", "none",
-				     "/tmp/new_root");
+				eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
 				eval("mkdir", "-p", "/tmp/new_root/tmp");
 				write_argv_buf[0] = "update-prepare.sh";
 				write_argv_buf[1] = upload_fifo;
@@ -278,11 +258,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				write_argv_buf[3] = "nomount";
 				write_argv_buf[4] = "noreboot";
 				write_argv_buf[5] = NULL;
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv_buf, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -305,11 +282,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				write_argv_buf[3] = upload_fifo;
 				write_argv_buf[4] = "rootfs";
 				write_argv_buf[5] = NULL;
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv_buf, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -323,10 +297,9 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 
 #define _WEB_HEADER_ "RN67"
 #define FW_HEADER ((char *)"CSYS")
-#define DWORD_SWAP(v)                             \
-	((((v & 0xff) << 24) & 0xff000000) |      \
-	 ((((v >> 8) & 0xff) << 16) & 0xff0000) | \
-	 ((((v >> 16) & 0xff) << 8) & 0xff00) | (((v >> 24) & 0xff) & 0xff))
+#define DWORD_SWAP(v)                                                                                                        \
+	((((v & 0xff) << 24) & 0xff000000) | ((((v >> 8) & 0xff) << 16) & 0xff0000) | ((((v >> 16) & 0xff) << 8) & 0xff00) | \
+	 (((v >> 24) & 0xff) & 0xff))
 
 			typedef struct img_header {
 				unsigned char signature[4];
@@ -337,16 +310,12 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			} __attribute__((packed)) img_header_t;
 			if (brand == ROUTER_ASROCK_G10) {
 				img_header_t *header = (img_header_t *)buf;
-				if (!memcmp(header->signature, FW_HEADER, 4) &&
-				    !memcmp(header->modTag, _WEB_HEADER_, 4)) {
-					fprintf(stderr,
-						"found valid ASROCK-G10 Image\n");
+				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4)) {
+					fprintf(stderr, "found valid ASROCK-G10 Image\n");
 					eval("startservice", "bootprimary");
 					eval("startservice", "finishupgrade");
 					count -= sizeof(struct img_header);
-					memcpy(buf,
-					       buf + sizeof(struct img_header),
-					       count);
+					memcpy(buf, buf + sizeof(struct img_header), count);
 					char *write_argv_buf[8];
 					write_argv_buf[0] = "mtd";
 					write_argv_buf[1] = "-e";
@@ -356,11 +325,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					write_argv_buf[5] = upload_fifo;
 					write_argv_buf[6] = "linux";
 					write_argv_buf[7] = NULL;
-					if (!mktemp(upload_fifo) ||
-					    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-					    (ret = _evalpid(write_argv_buf,
-							    NULL, 0, &pid)) ||
-					    !(fifo = fopen(upload_fifo, "w"))) {
+					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+					    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 						if (!ret)
 							ret = errno;
 						goto err;
@@ -381,11 +347,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					write_argv_buf[3] = upload_fifo;
 					write_argv_buf[4] = "linux";
 					write_argv_buf[5] = NULL;
-					if (!mktemp(upload_fifo) ||
-					    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-					    (ret = _evalpid(write_argv_buf,
-							    NULL, 0, &pid)) ||
-					    !(fifo = fopen(upload_fifo, "w"))) {
+					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+					    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 						if (!ret)
 							ret = errno;
 						goto err;
@@ -398,23 +361,16 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 
 				typedef struct seama_hdr seamahdr_t;
 				struct seama_hdr {
-					unsigned int
-						magic; /* should always be SEAMA_MAGIC. */
-					unsigned short
-						reserved; /* reserved for  */
-					unsigned short
-						metasize; /* size of the META data */
+					unsigned int magic; /* should always be SEAMA_MAGIC. */
+					unsigned short reserved; /* reserved for  */
+					unsigned short metasize; /* size of the META data */
 					unsigned int size; /* size of the image */
 				} __attribute__((packed));
 				seamahdr_t *seama = (seamahdr_t *)buf;
 
 				if (seama->magic == HOST_TO_BE32(SEAMA_MAGIC)) {
-					unsigned int skip =
-						HOST_TO_BE16(seama->metasize) +
-						sizeof(seamahdr_t);
-					fprintf(stderr,
-						"found seama header, skip seal header of %d bytes\n",
-						skip);
+					unsigned int skip = HOST_TO_BE16(seama->metasize) + sizeof(seamahdr_t);
+					fprintf(stderr, "found seama header, skip seal header of %d bytes\n", skip);
 					if (skip > count)
 						goto err;
 #ifdef HAVE_DIR869
@@ -424,12 +380,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 #else
 #define signature "signature=wrgac13_dlink.2013gui_dir860lb"
 #endif
-					if (memcmp(buf + sizeof(seamahdr_t),
-						   signature,
-						   sizeof(signature))) {
-						fprintf(stderr,
-							"firmware signature must be %s\n",
-							signature);
+					if (memcmp(buf + sizeof(seamahdr_t), signature, sizeof(signature))) {
+						fprintf(stderr, "firmware signature must be %s\n", signature);
 						goto err;
 					}
 
@@ -442,11 +394,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					write_argv_buf[3] = upload_fifo;
 					write_argv_buf[4] = "linux";
 					write_argv_buf[5] = NULL;
-					if (!mktemp(upload_fifo) ||
-					    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-					    (ret = _evalpid(write_argv_buf,
-							    NULL, 0, &pid)) ||
-					    !(fifo = fopen(upload_fifo, "w"))) {
+					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+					    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 						if (!ret)
 							ret = errno;
 						goto err;
@@ -465,11 +414,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				write_argv_buf[3] = upload_fifo;
 				write_argv_buf[4] = "linux";
 				write_argv_buf[5] = NULL;
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv_buf, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -497,31 +443,24 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 
 				char *part = getUEnv("boot_part");
 				if (part) {
-					fprintf(stderr, "boot partiton is %s\n",
-						part);
+					fprintf(stderr, "boot partiton is %s\n", part);
 					if (!strcmp(part, "2")) {
 					} else {
 						write_argv_buf[2] = "linux2";
 						write_argv_buf[6] = "linux2";
 						bootpart_argv_buf[3] = "2";
 					}
-					fprintf(stderr,
-						"flash to partition %s\n",
-						write_argv_buf[4]);
+					fprintf(stderr, "flash to partition %s\n", write_argv_buf[4]);
 				} else {
-					fprintf(stderr,
-						"no boot partition info found\n");
+					fprintf(stderr, "no boot partition info found\n");
 					ret = EINVAL;
 					goto err;
 				}
 
 				_evalpid(bootpart_argv_buf, NULL, 0, &pid);
 
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv_buf, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -529,8 +468,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				goto write_data;
 			}
 #endif
-#if defined(HAVE_DAP2230) || defined(HAVE_DAP2330) || defined(HAVE_DAP2660) || \
-	defined(HAVE_DAP3662) || defined(HAVE_DAP3320)
+#if defined(HAVE_DAP2230) || defined(HAVE_DAP2330) || defined(HAVE_DAP2660) || defined(HAVE_DAP3662) || defined(HAVE_DAP3320)
 #ifdef HAVE_DAP2660
 #define MAGIC "wapac09_dkbs_dap2660"
 #elif HAVE_DAP2330
@@ -550,11 +488,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				write_argv_buf[3] = upload_fifo;
 				write_argv_buf[4] = "linux";
 				write_argv_buf[5] = NULL;
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv_buf, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -578,9 +513,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			}
 			for (idx = 0; idx < sizeof(fh); idx++)
 				str[idx] ^= ch;
-			if (!strncmp(buf, "bgn", 3) ||
-			    !strncmp(buf, "WZR", 3) ||
-			    !strncmp(buf, "WHR", 3) ||
+			if (!strncmp(buf, "bgn", 3) || !strncmp(buf, "WZR", 3) || !strncmp(buf, "WHR", 3) ||
 			    !strncmp(buf, "WLA", 3)) {
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
@@ -591,11 +524,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 #else
 				write_argv_buf[2] = NULL;
 #endif
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv_buf, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -613,11 +543,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 #else
 				write_argv_buf[3] = NULL;
 #endif
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv_buf, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -627,11 +554,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 #ifdef HAVE_IDEXX_SIGNATUR
 				goto err;
 #endif
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv, NULL, 0,
-						    &pid)) ||
-				    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
 					goto err;
@@ -642,10 +566,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			/*
 			 * Feed write from a temporary FIFO 
 			 */
-			if (!mktemp(upload_fifo) ||
-			    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-			    (ret = _evalpid(write_argv, NULL, 0, &pid)) ||
-			    !(fifo = fopen(upload_fifo, "w"))) {
+			if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
+			    (ret = _evalpid(write_argv, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 				if (!ret)
 					ret = errno;
 				goto err;
@@ -654,14 +576,11 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			// have code pattern
 			char ver[40];
 			long ver1, ver2, ver3;
-			snprintf(ver, sizeof(ver), "v%d.%d.%d", buf[11],
-				 buf[12], buf[13]);
+			snprintf(ver, sizeof(ver), "v%d.%d.%d", buf[11], buf[12], buf[13]);
 			ver1 = convert_ver(ver);
 			ver2 = convert_ver(INTEL_FLASH_SUPPORT_VERSION_FROM);
 			ver3 = convert_ver(BCM4712_CHIP_SUPPORT_VERSION_FROM);
-			fprintf(stderr,
-				"upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
-				ver, ver1, ver2, ver3);
+			fprintf(stderr, "upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n", ver, ver1, ver2, ver3);
 #if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
 #ifdef HAVE_WIKINGS
 #ifdef HAVE_SUB3
@@ -692,41 +611,30 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 #if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
 #else
 #ifdef HAVE_WRT160NL
-			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4) &&
-			    memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
+			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4) && memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
 				cprintf("code pattern error!\n");
 				goto err; // must be there, otherwise fail here
 			}
 #else
 
 #ifndef HAVE_80211AC
-			if (brand == ROUTER_LINKSYS_E1550 ||
-			    (brand == ROUTER_WRT320N &&
-			     nvram_match("boardrev", "0x1307")) //E2000
+			if (brand == ROUTER_LINKSYS_E1550 || (brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307")) //E2000
 			    || brand == ROUTER_LINKSYS_E2500 ||
-			    (brand == ROUTER_WRT610NV2 &&
-			     nvram_match("boot_hw_model", "E300")) //E3000
-			    || brand == ROUTER_LINKSYS_E3200 ||
-			    brand == ROUTER_LINKSYS_E4200) {
+			    (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300")) //E3000
+			    || brand == ROUTER_LINKSYS_E3200 || brand == ROUTER_LINKSYS_E4200) {
 				if (checkmagic(&buf[0], nv60k)) {
 					cprintf("image not compatible with nv60k router!\n");
 					goto err; // must be there, otherwise fail here
 				}
-			} else if (brand == ROUTER_NETGEAR_WNDR4000 ||
-				   brand == ROUTER_NETGEAR_R6200 ||
-				   brand == ROUTER_NETGEAR_WNDR3400 ||
-				   brand == ROUTER_LINKSYS_E900 ||
-				   brand == ROUTER_LINKSYS_E800 ||
-				   brand == ROUTER_LINKSYS_E1500) {
+			} else if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_R6200 ||
+				   brand == ROUTER_NETGEAR_WNDR3400 || brand == ROUTER_LINKSYS_E900 ||
+				   brand == ROUTER_LINKSYS_E800 || brand == ROUTER_LINKSYS_E1500) {
 				if (checkmagic(&buf[0], nv64k)) {
 					cprintf("image not compatible with nv64k router!\n");
 					goto err; // must be there, otherwise fail here
 				}
 			} else {
-				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) ==
-					    0 ||
-				    memcmp(&buf[0], &CODE_PATTERN_NV64K, 4) ==
-					    0) {
+				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) == 0 || memcmp(&buf[0], &CODE_PATTERN_NV64K, 4) == 0) {
 					cprintf("image not compatible with your router!\n");
 					goto err; // fail here
 				}
@@ -740,10 +648,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 #endif
 
 			if (check_hw_type() == BCM4712_CHIP && ver1 < ver3) {
-				fprintf(stderr,
-					"The old firmware version can't support bcm4712 chipset\n");
-				fprintf(stderr,
-					"Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
+				fprintf(stderr, "The old firmware version can't support bcm4712 chipset\n");
+				fprintf(stderr, "Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
 					ver, BCM4712_CHIP_SUPPORT_VERSION_FROM);
 				goto write_data;
 			}
@@ -751,16 +657,12 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			fprintf(stderr, "code pattern correct!\n");
 			*total -= count;
 #ifdef HAVE_WRT160NL
-			safe_fwrite(
-				buf, 1, count,
-				fifo); // we have to write the whole header to flash too
+			safe_fwrite(buf, 1, count,
+				    fifo); // we have to write the whole header to flash too
 #else
-			safe_fwrite(&buf[sizeof(struct code_header)], 1,
-				    count - sizeof(struct code_header), fifo);
+			safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo);
 			if (fifo2)
-				safe_fwrite(&buf[sizeof(struct code_header)], 1,
-					    count - sizeof(struct code_header),
-					    fifo2);
+				safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo2);
 #endif
 			i++;
 			continue;
@@ -812,10 +714,8 @@ err:
 		FILE *check = fopen("/tmp/parttemp", "rb");
 		if (check) {
 			fclose(check);
-			fprintf(stderr,
-				"write secondary partition for asrock-g10\n");
-			eval("mtd", "-e", "linux2", "-f", "write",
-			     "/tmp/parttemp", "linux2");
+			fprintf(stderr, "write secondary partition for asrock-g10\n");
+			eval("mtd", "-e", "linux2", "-f", "write", "/tmp/parttemp", "linux2");
 		}
 	}
 	// diag_led(DIAG, STOP_LED);
@@ -851,18 +751,15 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
-				while (len > 0 && strcmp(buf, "\n") &&
-				       strcmp(buf, "\r\n")) {
-					if (!wfgets(buf, MIN(len + 1, 1024),
-						    stream, NULL)) {
+				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
+					if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
 						debug_free(buf);
 						return -1;
 					}
 
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, 1024), stream,
-					    NULL)) {
+				if (!wfgets(buf, MIN(len + 1, 1024), stream, NULL)) {
 					debug_free(buf);
 					return -1;
 				}

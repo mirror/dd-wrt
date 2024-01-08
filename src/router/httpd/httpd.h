@@ -62,8 +62,7 @@ typedef struct {
 	volatile int filter_id;
 	volatile int day_all, week0, week1, week2, week3, week4, week5, week6;
 	volatile int start_week, end_week;
-	volatile int time_all, start_hour, start_min, start_time, end_hour,
-		end_min, end_time;
+	volatile int time_all, start_hour, start_min, start_time, end_hour, end_min, end_time;
 	volatile int tod_data_null;
 	volatile int nv_count;
 	volatile struct wl_client_mac wl_client_macs[MAX_LEASES];
@@ -140,8 +139,7 @@ struct mime_handler {
 	char *mime_type;
 	char *extra_header;
 	int (*input)(char *path, webs_t stream, size_t len, char *boundary);
-	int (*output)(unsigned char method, struct mime_handler *handler,
-		      char *path, webs_t stream);
+	int (*output)(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 	int (*auth)(webs_t wp, int (*auth_check)(webs_t conn_fp));
 	unsigned char send_headers;
 	unsigned char handle_options;
@@ -203,38 +201,25 @@ typedef char char_t;
 
 void show_caption_legend(webs_t wp, const char *caption);
 void show_caption_simple(webs_t wp, const char *caption);
-void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type,
-		  char *nmname, char *nmtype);
-void show_caption_pp(webs_t wp, const char *class, const char *caption,
-		     const char *pre, const char *post);
-void show_caption(webs_t wp, const char *class, const char *caption,
-		  const char *ext);
+void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmname, char *nmtype);
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
+void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
 void show_caption_simple(webs_t wp, const char *caption);
-void show_ip(webs_t wp, char *prefix, char *var, int nm, int allow_invalid,
-	     char *type);
+void show_ip(webs_t wp, char *prefix, char *var, int nm, int allow_invalid, char *type);
 void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
 #ifdef HAVE_MADWIFI
 void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable);
 #endif
 void showOptions(webs_t wp, char *propname, char *names, char *select);
-void showOptions_trans(webs_t wp, char *propname, char *names, char **trans,
-		       char *select);
-void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans,
-			   char *select, int disabled);
-void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames,
-		      char **names, char *select);
-void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select,
-		       int disabled);
+void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select);
+void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled);
+void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select);
+void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int disabled);
 void showIfOptions(webs_t wp, char *propname, char *names, char *select);
-void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans,
-		       char *select);
-void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names,
-		      char *select);
-void show_inputlabel(webs_t wp, char *labelname, char *propertyname,
-		     int propertysize, char *inputclassname,
-		     int inputmaxlength);
-void show_custominputlabel(webs_t wp, char *labelname, char *propertyname,
-			   char *property, int propertysize);
+void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, char *select);
+void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select);
+void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength);
+void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char *property, int propertysize);
 void show_bgscan_options(webs_t wp, char *prefix);
 #ifdef HAVE_ATH9K
 #define ATH9K_ENABLED() 1

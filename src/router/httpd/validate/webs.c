@@ -69,8 +69,7 @@
 
 char *cidr_to_nm(char *netmask, size_t len, unsigned int netmask_cidr);
 
-extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *lanip,
-			    char *netmask);
+extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *lanip, char *netmask);
 void save_networking(webs_t wp);
 
 void wan_proto(webs_t wp)
@@ -137,9 +136,7 @@ void delete_leases(webs_t wp)
 	if (nvram_match("lan_proto", "static"))
 		return;
 
-	if (nvram_matchi("fon_enable", 1) ||
-	    (nvram_matchi("chilli_nowifibridge", 1) &&
-	     nvram_matchi("chilli_enable", 1))) {
+	if (nvram_matchi("fon_enable", 1) || (nvram_matchi("chilli_nowifibridge", 1) && nvram_matchi("chilli_enable", 1))) {
 		iface = nvram_safe_get("wl0_ifname");
 	} else {
 		if (nvram_matchi("chilli_enable", 1))
@@ -286,22 +283,13 @@ static void validate_filter_tod(webs_t wp)
 			if (week[i] == 1) {
 				if (i == 6) {
 					if (dash == 0 && flag == 1)
-						snprintf(time + strlen(time),
-							 sizeof(time) -
-								 strlen(time),
-							 "%c", '-');
-					snprintf(time + strlen(time),
-						 sizeof(time) - strlen(time),
-						 "%d", i);
+						snprintf(time + strlen(time), sizeof(time) - strlen(time), "%c", '-');
+					snprintf(time + strlen(time), sizeof(time) - strlen(time), "%d", i);
 				} else if (flag == 1 && dash == 0) {
-					snprintf(time + strlen(time),
-						 sizeof(time) - strlen(time),
-						 "%c", '-');
+					snprintf(time + strlen(time), sizeof(time) - strlen(time), "%c", '-');
 					dash = 1;
 				} else if (dash == 0) {
-					snprintf(time + strlen(time),
-						 sizeof(time) - strlen(time),
-						 "%d", i);
+					snprintf(time + strlen(time), sizeof(time) - strlen(time), "%d", i);
 					flag = 1;
 					dash = 0;
 				}
@@ -309,13 +297,9 @@ static void validate_filter_tod(webs_t wp)
 				if (!strcmp(time, ""))
 					continue;
 				if (dash == 1)
-					snprintf(time + strlen(time),
-						 sizeof(time) - strlen(time),
-						 "%d", i - 1);
+					snprintf(time + strlen(time), sizeof(time) - strlen(time), "%d", i - 1);
 				if (flag != 0)
-					snprintf(time + strlen(time),
-						 sizeof(time) - strlen(time),
-						 "%c", ',');
+					snprintf(time + strlen(time), sizeof(time) - strlen(time), "%c", ',');
 				flag = 0;
 				dash = 0;
 			}
@@ -323,8 +307,7 @@ static void validate_filter_tod(webs_t wp)
 		if (time[strlen(time) - 1] == ',')
 			time[strlen(time) - 1] = '\0';
 
-		snprintf(tod_buf, sizeof(tod_buf), "%d %d %d %d %d %d %d",
-			 week[0], week[1], week[2], week[3], week[4], week[5],
+		snprintf(tod_buf, sizeof(tod_buf), "%d %d %d %d %d %d %d", week[0], week[1], week[2], week[3], week[4], week[5],
 			 week[6]);
 	}
 	if (time_all == 1) {
@@ -339,12 +322,9 @@ static void validate_filter_tod(webs_t wp)
 		_end_min = end_min;
 	}
 
-	sprintf(buf, "%d:%d %d:%d %s", _start_hour, _start_min, _end_hour,
-		_end_min, time);
-	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d",
-		 wp->p->filter_id);
-	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d",
-		 wp->p->filter_id);
+	sprintf(buf, "%d:%d %d:%d %s", _start_hour, _start_min, _end_hour, _end_min, time);
+	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", wp->p->filter_id);
+	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", wp->p->filter_id);
 
 	nvram_set(filter_tod, buf);
 	nvram_set(filter_tod_buf, tod_buf);
@@ -401,13 +381,12 @@ void save_policy(webs_t wp)
 
 	validate_filter_tod(wp);
 	wp->p->filter_id = atoi(f_id);
-	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d",
-		 wp->p->filter_id);
+	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->p->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
 	// Disable // 2003/10/21
-	snprintf(buf, sizeof(buf), "$STAT:%s$NAME:%s$DENY:%d$IF:%s$$", f_status,
-		 f_name, !strcmp(f_status2, "deny") ? 1 : 0, filter_if);
+	snprintf(buf, sizeof(buf), "$STAT:%s$NAME:%s$DENY:%d$IF:%s$$", f_status, f_name, !strcmp(f_status2, "deny") ? 1 : 0,
+		 filter_if);
 
 	nvram_set(filter_buf, buf);
 	addAction("filters");
@@ -421,8 +400,7 @@ EJ_VISIBLE sel_filter(webs_t wp)
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 }
 
-EJ_VISIBLE void validate_filter_policy(webs_t wp, char *value,
-				       struct variable *v)
+EJ_VISIBLE void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 {
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 	save_policy(wp);
@@ -489,14 +467,9 @@ static void validate_services_port(webs_t wp)
 		if (sscanf(word, "%d:%d:%d:%s", &from, &to, &proto, name) != 4)
 			continue;
 
-		cur += snprintf(cur, buf + 8192 - cur,
-				"%s$NAME:%03d:%s$PROT:%03d:%s$PORT:%03d:%d:%d",
-				cur == buf ? "" : "<&nbsp;>", strlen(name),
-				name, strlen(num_to_protocol(proto)),
-				num_to_protocol(proto),
-				(int)(get_int_len(from) + get_int_len(to) +
-				      (sizeof(":") - 1)),
-				from, to);
+		cur += snprintf(cur, buf + 8192 - cur, "%s$NAME:%03d:%s$PROT:%03d:%s$PORT:%03d:%d:%d", cur == buf ? "" : "<&nbsp;>",
+				strlen(name), name, strlen(num_to_protocol(proto)), num_to_protocol(proto),
+				(int)(get_int_len(from) + get_int_len(to) + (sizeof(":") - 1)), from, to);
 	}
 
 	// segment filter_services into <= 1024 byte lengths
@@ -712,8 +685,7 @@ void delete_old_pbr(void)
 		if (table_en && table)
 			sprintf(cmd, "%s table %s", cmd, table);
 		if (suppress_prefixlength_en && suppress_prefixlength)
-			sprintf(cmd, "%s suppress_prefixlength %s", cmd,
-				suppress_prefixlength);
+			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
 		if (iif_en && iif)
 			sprintf(cmd, "%s iif %s", cmd, iif);
 		if (nat_en && nat)
@@ -762,9 +734,7 @@ void delete_static_route(webs_t wp)
 			continue;
 		}
 
-		cur += snprintf(
-			cur, buf + (ROUTE_LINE_SIZE * STATIC_ROUTE_PAGE) - cur,
-			"%s%s", cur == buf ? "" : " ", word);
+		cur += snprintf(cur, buf + (ROUTE_LINE_SIZE * STATIC_ROUTE_PAGE) - cur, "%s%s", cur == buf ? "" : " ", word);
 
 		i++;
 	}
@@ -776,11 +746,8 @@ void delete_static_route(webs_t wp)
 			i++;
 			continue;
 		}
-		cur_name += snprintf(
-			cur_name,
-			buf_name + (ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE) -
-				cur_name,
-			"%s%s", cur_name == buf_name ? "" : " ", word_name);
+		cur_name += snprintf(cur_name, buf_name + (ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE) - cur_name, "%s%s",
+				     cur_name == buf_name ? "" : " ", word_name);
 
 		i++;
 	}
@@ -819,9 +786,7 @@ void delete_pbr_rule(webs_t wp)
 			continue;
 		}
 
-		cur += snprintf(
-			cur, buf + (ROUTE_LINE_SIZE * STATIC_ROUTE_PAGE) - cur,
-			"%s%s", cur == buf ? "" : " ", word);
+		cur += snprintf(cur, buf + (ROUTE_LINE_SIZE * STATIC_ROUTE_PAGE) - cur, "%s%s", cur == buf ? "" : " ", word);
 
 		i++;
 	}
@@ -833,11 +798,8 @@ void delete_pbr_rule(webs_t wp)
 			i++;
 			continue;
 		}
-		cur_name += snprintf(
-			cur_name,
-			buf_name + (ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE) -
-				cur_name,
-			"%s%s", cur_name == buf_name ? "" : " ", word_name);
+		cur_name += snprintf(cur_name, buf_name + (ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE) - cur_name, "%s%s",
+				     cur_name == buf_name ? "" : " ", word_name);
 
 		i++;
 	}
@@ -859,11 +821,9 @@ void delete_pbr_rule(webs_t wp)
 	return;
 }
 #endif
-extern void gen_key(webs_t wp, char *genstr, int weptype,
-		    unsigned char key64[4][5], unsigned char key128[4][14]);
+extern void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], unsigned char key128[4][14]);
 
-void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase,
-			     char *bit, char *tx)
+void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bit, char *tx)
 {
 	int i;
 	char buf[256];
@@ -885,20 +845,15 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase,
 		char key4[27] = "";
 
 		for (i = 0; i < 5; i++)
-			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1),
-				 "%02X", key64[0][i]);
+			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1), "%02X", key64[0][i]);
 		for (i = 0; i < 5; i++)
-			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1),
-				 "%02X", key64[1][i]);
+			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1), "%02X", key64[1][i]);
 		for (i = 0; i < 5; i++)
-			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1),
-				 "%02X", key64[2][i]);
+			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1), "%02X", key64[2][i]);
 		for (i = 0; i < 5; i++)
-			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1),
-				 "%02X", key64[3][i]);
+			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key64[3][i]);
 
-		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase,
-			 key1, key2, key3, key4, tx);
+		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		// nvram_set("wl_wep_gen_64",buf);
 		cprintf("buf = %s\n", buf);
 		sprintf(var, "%s_wep_gen", prefix);
@@ -915,23 +870,19 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase,
 		char key4[27] = "";
 
 		for (i = 0; i < 13; i++)
-			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1),
-				 "%02X", key128[0][i]);
+			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1), "%02X", key128[0][i]);
 		key1[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1),
-				 "%02X", key128[1][i]);
+			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1), "%02X", key128[1][i]);
 		key2[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1),
-				 "%02X", key128[2][i]);
+			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1), "%02X", key128[2][i]);
 		key3[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1),
-				 "%02X", key128[3][i]);
+			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key128[3][i]);
 		key4[26] = 0;
 		// cprintf("passphrase[%s]\n", passphrase);
 		// filter_name(passphrase, new_passphrase, sizeof(new_passphrase),
@@ -942,8 +893,7 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase,
 		cprintf("key3 = %s\n", key3);
 		cprintf("key4 = %s\n", key4);
 
-		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase,
-			 key1, key2, key3, key4, tx);
+		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		cprintf("buf = %s\n", buf);
 		// nvram_set("wl_wep_gen_128",buf);
 		sprintf(var, "%s_wep_gen", prefix);
@@ -990,8 +940,7 @@ static char *_copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf,
-		    wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	nvram_set(varbuf, wl);
 	return wl;
 }
@@ -1006,8 +955,7 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf,
-		    wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	if (wl)
 		nvram_set(varbuf, wl);
 	return wl;
@@ -1023,8 +971,7 @@ char *copytonv_checkbox(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf,
-		    wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	if (wl)
 		nvram_set(varbuf, wl);
 	else
@@ -1052,8 +999,7 @@ static int copytonv_check(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf,
-		    wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	char *oldval = nvram_safe_get(varbuf);
 	int ret = strcmp(wl ? wl : "", oldval);
 	if (wl)
@@ -1089,8 +1035,7 @@ void copytonv2(webs_t wp, char *prefix_get, char *prefix_set, char *name)
 		nvram_set(tmpname, wl);
 }
 
-void copytonv2_wme(webs_t wp, char *prefix_get, char *prefix_set, char *name,
-		   int maxindex)
+void copytonv2_wme(webs_t wp, char *prefix_get, char *prefix_set, char *name, int maxindex)
 {
 	char tmpvalue[128] = "";
 	char tmpname[64];
@@ -1249,8 +1194,7 @@ _8021xprv
 	copytonv_prefix(wp, "wep_bit", prefix);
 	char buf[128];
 
-	snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", pass, key1, key2, key3,
-		 key4, tx);
+	snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", pass, key1, key2, key3, key4, tx);
 	sprintf(n, "%s_wep_buf", prefix);
 	nvram_set(n, buf);
 
@@ -1560,12 +1504,8 @@ void add_active_mac(webs_t wp)
 		if (!index)
 			continue;
 		count++;
-		fprintf(stderr,
-			"add on wp->p->wl_client_macs[atoi(index)].hwaddr %s\n",
-			wp->p->wl_client_macs[atoi(index)].hwaddr);
-		cur += snprintf(cur, buf + msize - cur, "%s%s",
-				cur == buf ? "" : " ",
-				wp->p->wl_client_macs[atoi(index)].hwaddr);
+		fprintf(stderr, "add on wp->p->wl_client_macs[atoi(index)].hwaddr %s\n", wp->p->wl_client_macs[atoi(index)].hwaddr);
+		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[atoi(index)].hwaddr);
 	}
 	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "offXXX";
@@ -1577,12 +1517,9 @@ void add_active_mac(webs_t wp)
 			continue;
 
 		count++;
-		fprintf(stderr,
-			"add off wp->p->wl_client_macs[atoi(index)].hwaddr %s\n",
+		fprintf(stderr, "add off wp->p->wl_client_macs[atoi(index)].hwaddr %s\n",
 			wp->p->wl_client_macs[atoi(index)].hwaddr);
-		cur += snprintf(cur, buf + msize - cur, "%s%s",
-				cur == buf ? "" : " ",
-				wp->p->wl_client_macs[atoi(index)].hwaddr);
+		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[atoi(index)].hwaddr);
 	}
 	char acmac[32];
 	sprintf(acmac, "%s_active_mac", ifname);
@@ -1683,9 +1620,8 @@ void ping_wol(webs_t wp)
 #endif
 	char wol_cmd[256] = { 0 };
 	if (manual_wol_mac && *manual_wol_mac) {
-		snprintf(wol_cmd, sizeof(wol_cmd),
-			 "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network,
-			 manual_wol_port, manual_wol_mac);
+		snprintf(wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port,
+			 manual_wol_mac);
 		nvram_set("wol_cmd", wol_cmd);
 	} else {
 		nvram_unset("wol_cmd");
@@ -1723,9 +1659,7 @@ void diag_ping_start(webs_t wp)
 	if (!wp->isregistered_real)
 		return;
 #endif
-	snprintf(cmd, sizeof(cmd) - 1,
-		 "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
-		 PING_TMP);
+	snprintf(cmd, sizeof(cmd) - 1, "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
 	//FORK(system(cmd));
 
 	dd_logdebug("httpd", "exec %s\n", cmd);
@@ -1831,8 +1765,7 @@ int get_svc(char *svc, char *protocol, char *ports)
 		char *name, *prot, *port;
 		int from = 0, to = 0;
 
-		if ((name = strstr(word, "$NAME:")) == NULL ||
-		    (prot = strstr(word, "$PROT:")) == NULL ||
+		if ((name = strstr(word, "$NAME:")) == NULL || (prot = strstr(word, "$PROT:")) == NULL ||
 		    (port = strstr(word, "$PORT:")) == NULL)
 			continue;
 
@@ -1899,8 +1832,7 @@ void qos_add_svc(webs_t wp)
 	if (get_svc(add_svc, protocol, ports))
 		return;
 
-	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0 ||
-	    strcmp(protocol, "risk") == 0) {
+	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0) {
 		int slen = strlen(add_svc);
 
 		for (i = 0; i < slen; i++)
@@ -1916,8 +1848,7 @@ void qos_add_svc(webs_t wp)
 		return;
 
 	if (*(svqos_svcs))
-		asprintf(&new_svcs, "%s %s %s %s 30 |", svqos_svcs, add_svc,
-			 protocol, ports);
+		asprintf(&new_svcs, "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
 	else
 		asprintf(&new_svcs, "%s %s %s 30 |", add_svc, protocol, ports);
 
@@ -1965,12 +1896,10 @@ void qos_add_ip(webs_t wp)
 	char add_ip[19] = { 0 };
 	char *svqos_ips = nvram_safe_get("svqos_ips");
 	char *new_ip;
-	if (!svqos_ips || !add_ip0 || !add_ip1 || !add_ip2 || !add_ip3 ||
-	    !add_nm)
+	if (!svqos_ips || !add_ip0 || !add_ip1 || !add_ip2 || !add_ip3 || !add_nm)
 		return;
 
-	snprintf(add_ip, sizeof(add_ip), "%s.%s.%s.%s/%s", add_ip0, add_ip1,
-		 add_ip2, add_ip3, add_nm);
+	snprintf(add_ip, sizeof(add_ip), "%s.%s.%s.%s/%s", add_ip0, add_ip1, add_ip2, add_ip3, add_nm);
 
 	/*
 	 * if this ip exists, return an error 
@@ -1998,13 +1927,11 @@ void qos_add_mac(webs_t wp)
 	char *add_mac5 = websGetVar(wp, "svqos_hwaddr5", NULL);
 	char *svqos_macs = nvram_safe_get("svqos_macs");
 	char *new_mac;
-	if (!svqos_macs || !add_mac0 || !add_mac1 || !add_mac2 || !add_mac3 ||
-	    !add_mac4 || !add_mac5)
+	if (!svqos_macs || !add_mac0 || !add_mac1 || !add_mac2 || !add_mac3 || !add_mac4 || !add_mac5)
 		return;
 
 	char add_mac[19];
-	snprintf(add_mac, sizeof(add_mac), "%s:%s:%s:%s:%s:%s", add_mac0,
-		 add_mac1, add_mac2, add_mac3, add_mac4, add_mac5);
+	snprintf(add_mac, sizeof(add_mac), "%s:%s:%s:%s:%s:%s", add_mac0, add_mac1, add_mac2, add_mac3, add_mac4, add_mac5);
 	/*
 	 * if this mac exists, return an error 
 	 */
@@ -2061,11 +1988,9 @@ void ssh_downloadkey(webs_t wp)
 	int i = 0;
 
 	sprintf(cmd, "/usr/sbin/dropbearkey -t ed25519 -f /tmp/id_ed25519");
-	dd_loginfo("ssh_key_export", "Starting key generation and replace:%d\n",
-		   replace);
+	dd_loginfo("ssh_key_export", "Starting key generation and replace:%d\n", replace);
 	if ((fp = popen(cmd, "r")) == NULL) {
-		dd_loginfo("ssh_key_export",
-			   "ERROR: Could not execute command %s\n", cmd);
+		dd_loginfo("ssh_key_export", "ERROR: Could not execute command %s\n", cmd);
 		return;
 	}
 	while (fgets(pubkey, sizeof(pubkey) - 1, fp) != NULL) {
@@ -2078,10 +2003,8 @@ void ssh_downloadkey(webs_t wp)
 	pclose(fp);
 
 	// make openssh key
-	dd_loginfo("ssh_key_export",
-		   "Key is generated, now converting to OpenSSH\n");
-	eval("/usr/sbin/dropbearconvert", "dropbear", "openssh",
-	     "/tmp/id_ed25519", "/tmp/id_ed25519_ssh");
+	dd_loginfo("ssh_key_export", "Key is generated, now converting to OpenSSH\n");
+	eval("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_ed25519", "/tmp/id_ed25519_ssh");
 
 	char *key = nvram_safe_get("sshd_authorized_keys");
 	//replace or add key to existing
@@ -2141,12 +2064,10 @@ Need parsing to get the file data out of the POST data
 	int fexist = stat(jffs_vpnconfig_script, &statbuffer);
 	if (fexist == 0) {
 		eval(jffs_vpnconfig_script);
-		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file,
-			   jffs_vpnconfig_script);
+		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, jffs_vpnconfig_script);
 	} else {
 		eval(vpnconfig_script);
-		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file,
-			   vpnconfig_script);
+		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, vpnconfig_script);
 	}
 }
 
@@ -2223,11 +2144,9 @@ void tunnel_save(webs_t wp)
 		char temp[32];
 		char buf[32];
 		sprintf(temp, "oet%d_netmask", i);
-		nvram_set(temp, cidr_to_nm(buf, sizeof(buf),
-					   websGetVari(wp, temp, 0)));
+		nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 		sprintf(temp, "vxlan%d_netmask", i);
-		nvram_set(temp, cidr_to_nm(buf, sizeof(buf),
-					   websGetVari(wp, temp, 0)));
+		nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 		sprintf(temp, "oet%d_peers", i);
 		int peers = nvram_geti(temp);
 		int peer;
@@ -2546,8 +2465,7 @@ Need parsing to get the file data out of the POST data
 	char *endp;
 	char *wg_conf_file = websGetVar(wp, "wg_conf_file", "");
 
-	dd_loginfo("WireGuard", "WireGuard import tunnel * config file: %s\n",
-		   wg_conf_file);
+	dd_loginfo("WireGuard", "WireGuard import tunnel * config file: %s\n", wg_conf_file);
 
 	fp = fopen("/tmp/wgupload.conf", "w");
 	if (fp == NULL) {
@@ -2560,9 +2478,7 @@ Need parsing to get the file data out of the POST data
 	fp = fopen("/tmp/wgupload.conf", "r");
 
 	if (fp == NULL) {
-		dd_loginfo(
-			"WireGuard",
-			"WireGuard import tunnel config file does not exist\n");
+		dd_loginfo("WireGuard", "WireGuard import tunnel config file does not exist\n");
 	} else {
 		add_tunnel(wp);
 
@@ -2599,26 +2515,21 @@ Need parsing to get the file data out of the POST data
 				upload_set("usepsk", "1");
 				upload_set("psk", output);
 			}
-			if (sscanf(buf, "AllowedIPs = %[^\n]", output) ==
-			    1) //scans until newline otherwise will scan until space
+			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) //scans until newline otherwise will scan until space
 				upload_set("aip", output);
 			if (sscanf(buf, "Endpoint = %s", output) == 1) {
 				upload_set("endpoint", "1");
-				endp = strrchr(
-					output,
-					':'); //reverse strrchr to get last : in case of IPv6
+				endp = strrchr(output,
+					       ':'); //reverse strrchr to get last : in case of IPv6
 				upload_set("peerport", endp + 1);
-				endp[0] =
-					'\0'; //terminate output string at last :
+				endp[0] = '\0'; //terminate output string at last :
 				//remove [ and ]
 				int i, j;
 				int len = strlen(output);
 				for (i = 0; i < len; i++) {
-					if (output[i] == '[' ||
-					    output[i] == ']') {
+					if (output[i] == '[' || output[i] == ']') {
 						for (j = i; j < len; j++) {
-							output[j] =
-								output[j + 1];
+							output[j] = output[j + 1];
 						}
 						len--;
 						i--;
@@ -2626,8 +2537,7 @@ Need parsing to get the file data out of the POST data
 				}
 				upload_set("rem", output);
 			}
-			if (sscanf(buf, "PersistentKeepalive = %s", output) ==
-			    1) {
+			if (sscanf(buf, "PersistentKeepalive = %s", output) == 1) {
 				strlcpy(ka, output, sizeof(ka));
 			}
 		}
@@ -2857,8 +2767,7 @@ void qos_save(webs_t wp)
 	char *svqos_var;
 	char svqos_pktstr[sizeof("ACK | XXX | XXX | XXX | XXX | ")] = { 0 };
 	char field[32] = { 0 };
-	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt,
-		*proto;
+	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt, *proto;
 	int no_svcs = websGetVari(wp, "svqos_nosvcs", 0);
 	int no_ips = websGetVari(wp, "svqos_noips", 0);
 	int no_devs = websGetVari(wp, "svqos_nodevs", 0);
@@ -2884,16 +2793,14 @@ void qos_save(webs_t wp)
 	//      nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
 	nvram_seti("svqos_defaults", websGetVari(wp, "svqos_defaults", 0));
 	nvram_seti("default_uplevel", websGetVari(wp, "default_uplevel", 0));
-	nvram_seti("default_downlevel",
-		   websGetVari(wp, "default_downlevel", 0));
+	nvram_seti("default_downlevel", websGetVari(wp, "default_downlevel", 0));
 	nvram_seti("default_lanlevel", websGetVari(wp, "default_lanlevel", 0));
 	nvram_seti("wshaper_downlink", websGetVari(wp, "wshaper_downlink", 0));
 	nvram_seti("wshaper_uplink", websGetVari(wp, "wshaper_uplink", 0));
 	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", "WAN"));
 	nvram_seti("qos_type", websGetVari(wp, "qos_type", 0));
 
-#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE) || \
-	defined(HAVE_CAKE)
+#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE) || defined(HAVE_CAKE)
 	nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", "sfq"));
 #endif
 
@@ -2953,8 +2860,7 @@ void qos_save(webs_t wp)
 				name[j] = tolower(name[j]);
 		}
 #ifdef HAVE_OPENDPI
-		if (strcmp(protocol, "dpi") == 0 ||
-		    strcmp(protocol, "risk") == 0) {
+		if (strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0) {
 			int slen = strlen(name);
 
 			for (j = 0; j < slen; j++)
@@ -2963,13 +2869,11 @@ void qos_save(webs_t wp)
 #endif
 		if (*(svqos_var)) {
 			char *tmp;
-			asprintf(&tmp, "%s %s %s %s %s |", svqos_var, name,
-				 protocol, ports, level);
+			asprintf(&tmp, "%s %s %s %s %s |", svqos_var, name, protocol, ports, level);
 			strcpy(svqos_var, tmp);
 			debug_free(tmp);
 		} else
-			snprintf(svqos_var, 4096, "%s %s %s %s |", name,
-				 protocol, ports, level);
+			snprintf(svqos_var, 4096, "%s %s %s %s |", name, protocol, ports, level);
 	}
 
 	nvram_set("svqos_svcs", svqos_var);
@@ -3010,13 +2914,11 @@ void qos_save(webs_t wp)
 
 		if (*(svqos_var)) {
 			char *tmp;
-			asprintf(&tmp, "%s %s %s %s %s %s %s |", svqos_var,
-				 data, level, level2, lanlevel, prio, proto);
+			asprintf(&tmp, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio, proto);
 			strcpy(svqos_var, tmp);
 			debug_free(tmp);
 		} else
-			snprintf(svqos_var, 4096, "%s %s %s %s %s %s |", data,
-				 level, level2, lanlevel, prio, proto);
+			snprintf(svqos_var, 4096, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 	}
 
 	nvram_set("svqos_devs", svqos_var);
@@ -3051,13 +2953,11 @@ void qos_save(webs_t wp)
 
 		if (*(svqos_var)) {
 			char *tmp;
-			asprintf(&tmp, "%s %s %s %s %s %s |", svqos_var, data,
-				 level, level2, lanlevel, prio);
+			asprintf(&tmp, "%s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio);
 			strcpy(svqos_var, tmp);
 			debug_free(tmp);
 		} else
-			snprintf(svqos_var, 4096, "%s %s %s %s %s |", data,
-				 level, level2, lanlevel, prio);
+			snprintf(svqos_var, 4096, "%s %s %s %s %s |", data, level, level2, lanlevel, prio);
 	}
 
 	nvram_set("svqos_ips", svqos_var);
@@ -3093,13 +2993,11 @@ void qos_save(webs_t wp)
 
 		if (*(svqos_var)) {
 			char *tmp;
-			asprintf(&tmp, "%s %s %s %s user %s %s |", svqos_var,
-				 data, level, level2, lanlevel, prio);
+			asprintf(&tmp, "%s %s %s %s user %s %s |", svqos_var, data, level, level2, lanlevel, prio);
 			strcpy(svqos_var, tmp);
 			debug_free(tmp);
 		} else
-			snprintf(svqos_var, 4096, "%s %s %s user %s %s |", data,
-				 level, level2, lanlevel, prio);
+			snprintf(svqos_var, 4096, "%s %s %s user %s %s |", data, level, level2, lanlevel, prio);
 	}
 
 	nvram_set("svqos_macs", svqos_var);
@@ -3426,12 +3324,10 @@ void add_mdhcpd(char *iface, int start, int max, int leasetime)
 
 	// add mdhcpd
 	if (nvram_geti("mdhcpd_count") > 0)
-		sprintf(mdhcpd, " %s>On>%d>%d>%d", iface, start, max,
-			leasetime);
+		sprintf(mdhcpd, " %s>On>%d>%d>%d", iface, start, max, leasetime);
 	else
 		sprintf(mdhcpd, "%s>On>%d>%d>%d", iface, start, max, leasetime);
-	mdhcpds = safe_malloc(strlen(nvram_safe_get("mdhcpd")) +
-			      strlen(mdhcpd) + 2);
+	mdhcpds = safe_malloc(strlen(nvram_safe_get("mdhcpd")) + strlen(mdhcpd) + 2);
 	sprintf(mdhcpds, "%s%s", nvram_safe_get("mdhcpd"), mdhcpd);
 	nvram_set("mdhcpd", mdhcpds);
 	debug_free(mdhcpds);
@@ -3751,8 +3647,7 @@ void move_vif(char *prefix, char *svif, char *tvif)
 					sprintf(nvram_var, "%s%s", tvif, var);
 				}
 
-				strncpy(nvram_val, line + pos + 1,
-					strlen(line) - pos);
+				strncpy(nvram_val, line + pos + 1, strlen(line) - pos);
 				nvram_val[strlen(line) - pos - 2] = '\0';
 				//fprintf(stderr, "[VIF] %s %s\n", nvram_var, nvram_val);
 				nvram_set(nvram_var, nvram_val);
@@ -4581,8 +4476,7 @@ void add_olsrd(webs_t wp)
 		return;
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
 	char *addition = ">2.0>20.0>5.0>300.0>5.0>300.0>5.0>300.0>1.0";
-	char *newadd = (char *)safe_malloc(strlen(wordlist) + strlen(addition) +
-					   strlen(ifname) + 2);
+	char *newadd = (char *)safe_malloc(strlen(wordlist) + strlen(addition) + strlen(ifname) + 2);
 	if (*(wordlist)) {
 		asprintf(&newadd, "%s %s%s", wordlist, ifname, addition);
 	} else {
@@ -4665,11 +4559,8 @@ void save_olsrd(webs_t wp)
 		sprintf(valuename, "%s_linkqualitymult", interface);
 		char *linkqualitymult = websGetVar(wp, valuename, "0");
 		char *tmp;
-		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newlist,
-			 interface, hellointerval, hellovaliditytime,
-			 tcinterval, tcvaliditytime, midinterval,
-			 midvaliditytime, hnainterval, hnavaliditytime,
-			 linkqualitymult);
+		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval,
+			 tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime, linkqualitymult);
 		strcpy(newlist, tmp);
 		debug_free(tmp);
 	}
@@ -4919,8 +4810,7 @@ void save_networking(webs_t wp)
 
 	for (i = 0; i < bridgescount; i++) {
 		int max_age, forward_delay;
-		char *ifname, *tag, *prio, *mtu, *mcast, s_forward_delay[32],
-			s_max_age[32];
+		char *ifname, *tag, *prio, *mtu, *mcast, s_forward_delay[32], s_max_age[32];
 		char var[32];
 		char ipaddr[32];
 		char netmask[32];
@@ -4978,8 +4868,7 @@ void save_networking(webs_t wp)
 		char buf[32];
 		char temp[32];
 		sprintf(temp, "%s_netmask", ifname);
-		nvram_set(temp, cidr_to_nm(buf, sizeof(buf),
-					   websGetVari(wp, temp, 0)));
+		nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
 
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
@@ -5057,8 +4946,7 @@ void save_networking(webs_t wp)
 	bzero(buffer, 1024);
 	// if (!interface || !start || !dhcpon || !max || !leasetime)
 	for (i = 0; i < mdhcpd_count; i++) {
-		char *mdhcpinterface, *mdhcpon, *mdhcpstart, *mdhcpmax,
-			*mdhcpleasetime;
+		char *mdhcpinterface, *mdhcpon, *mdhcpstart, *mdhcpmax, *mdhcpleasetime;
 		char var[32];
 
 		sprintf(var, "mdhcpifname%d", i);
@@ -5516,8 +5404,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "bssid", prefix);
 	snprintf(n, sizeof(n), "%s_ssid", prefix);
 	copytonv(wp, n);
-	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") ||
-	    !strcmp(prefix, "wl2")) {
+	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
@@ -5646,16 +5533,14 @@ static void save_prefix(webs_t wp, char *prefix)
 		copytonv_prefix(wp, "mesh_min_discovery_timeout", prefix);
 		copytonv_prefix(wp, "mesh_hwmp_active_path_timeout", prefix);
 		copytonv_prefix(wp, "mesh_hwmp_preq_min_interval", prefix);
-		copytonv_prefix(wp, "mesh_hwmp_net_diameter_traversal_time",
-				prefix);
+		copytonv_prefix(wp, "mesh_hwmp_net_diameter_traversal_time", prefix);
 		copytonv_prefix(wp, "mesh_hwmp_rootmode", prefix);
 		copytonv_prefix(wp, "mesh_hwmp_rann_interval", prefix);
 		copytonv_prefix(wp, "mesh_gate_announcements", prefix);
 		copytonv_prefix(wp, "mesh_fwding", prefix);
 		copytonv_prefix(wp, "mesh_sync_offset_max_neighor", prefix);
 		copytonv_prefix(wp, "mesh_rssi_threshold", prefix);
-		copytonv_prefix(wp, "mesh_hwmp_active_path_to_root_timeout",
-				prefix);
+		copytonv_prefix(wp, "mesh_hwmp_active_path_to_root_timeout", prefix);
 		copytonv_prefix(wp, "mesh_hwmp_root_interval", prefix);
 		copytonv_prefix(wp, "mesh_hwmp_confirmation_interval", prefix);
 		copytonv_prefix(wp, "mesh_power_mode", prefix);
@@ -5816,25 +5701,22 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "ap_isolate", prefix);
 	snprintf(n, sizeof(n), "%s_mode", prefix);
 	char *wl_newmode = websGetVar(wp, n, NULL);
-	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) &&
-	    strcmp(wl_newmode, "sta") && strcmp(wl_newmode, "apsta"))
+	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) && strcmp(wl_newmode, "sta") &&
+	    strcmp(wl_newmode, "apsta"))
 		notifywanChange();
 
-	if (wl_newmode && nvram_match(n, "ap") &&
-	    (!strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta")))
+	if (wl_newmode && nvram_match(n, "ap") && (!strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta")))
 		notifywanChange();
 
 	copytonv(wp, n);
-	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") ||
-	    !strcmp(prefix, "wl2")) {
+	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl && !strcmp(prefix, "wl0"))
 			nvram_set("wl_mode", wl);
 #ifndef HAVE_MADWIFI
-		if (wl && strcmp(wl, "ap") && strcmp(wl, "apsta") &&
-		    strcmp(wl, "apstawet")) {
+		if (wl && strcmp(wl, "ap") && strcmp(wl, "apsta") && strcmp(wl, "apstawet")) {
 			nvram_nset("", "%s_vifs", prefix);
 		}
 #endif
@@ -5846,8 +5728,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 
 #ifndef HAVE_MADWIFI
-	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") ||
-	    !strcmp(prefix, "wl2"))
+	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2"))
 #endif
 	{
 		snprintf(n, sizeof(n), "%s_net_mode", prefix);
@@ -5892,8 +5773,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "nctrlsb", prefix);
 
 	snprintf(n, sizeof(n), "%s_channel", prefix);
-	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") ||
-	    !strcmp(prefix, "wl2")) {
+	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
@@ -5907,8 +5787,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, n);
 
 	snprintf(n, sizeof(n), "%s_wchannel", prefix);
-	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") ||
-	    !strcmp(prefix, "wl2")) {
+	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
@@ -5959,8 +5838,7 @@ void wireless_join(webs_t wp)
 
 #ifdef HAVE_SYSCTL_EDIT
 
-static void savesysctl(char *path, char *nvname, char *name, char *sysval,
-		       void *priv)
+static void savesysctl(char *path, char *nvname, char *name, char *sysval, void *priv)
 {
 	webs_t wp = (webs_t)priv;
 	char fname[128];
@@ -6120,8 +5998,7 @@ void changepass(webs_t wp)
 	char *value = websGetVar(wp, "http_username", NULL);
 	char *pass = websGetVar(wp, "http_passwd", NULL);
 
-	if (value && pass && strcmp(value, TMP_PASSWD) &&
-	    valid_name(wp, value, NULL, 0)) {
+	if (value && pass && strcmp(value, TMP_PASSWD) && valid_name(wp, value, NULL, 0)) {
 		char passout[MD5_OUT_BUFSIZE];
 		nvram_set("http_username", zencrypt(value, passout));
 
@@ -6131,8 +6008,7 @@ void changepass(webs_t wp)
 #endif
 	}
 
-	if (pass && value && strcmp(pass, TMP_PASSWD) &&
-	    valid_name(wp, pass, NULL, 0)) {
+	if (pass && value && strcmp(pass, TMP_PASSWD) && valid_name(wp, pass, NULL, 0)) {
 		char passout[MD5_OUT_BUFSIZE];
 		if (nvram_match("http_passwd", DEFAULT_PASS))
 			nvram_seti("unblock", 1);
@@ -6292,24 +6168,18 @@ void set_security(webs_t wp)
 #endif
 }
 
-void base64_encode(const unsigned char *in, size_t inlen, unsigned char *out,
-		   size_t outlen)
+void base64_encode(const unsigned char *in, size_t inlen, unsigned char *out, size_t outlen)
 {
-	static const char b64str[64] =
-		"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	static const char b64str[64] = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 	while (inlen && outlen) {
 		*out++ = b64str[(in[0] >> 2) & 0x3f];
 		if (!--outlen)
 			break;
-		*out++ = b64str[((in[0] << 4) + (--inlen ? in[1] >> 4 : 0)) &
-				0x3f];
+		*out++ = b64str[((in[0] << 4) + (--inlen ? in[1] >> 4 : 0)) & 0x3f];
 		if (!--outlen)
 			break;
-		*out++ = (inlen ? b64str[((in[1] << 2) +
-					  (--inlen ? in[2] >> 6 : 0)) &
-					 0x3f] :
-				  '=');
+		*out++ = (inlen ? b64str[((in[1] << 2) + (--inlen ? in[2] >> 6 : 0)) & 0x3f] : '=');
 		if (!--outlen)
 			break;
 		*out++ = inlen ? b64str[in[2] & 0x3f] : '=';
@@ -6375,8 +6245,7 @@ char *request_freedns(char *user, char *password)
 
 void ddns_save_value(webs_t wp)
 {
-	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom,
-		*path, *wan_ip, *ssl, *ipv6, *ipv6_only;
+	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *path, *wan_ip, *ssl, *ipv6, *ipv6_only;
 	int force;
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
@@ -6495,8 +6364,7 @@ void portvlan_remove(webs_t wp)
 		ports = 3;
 	if (!*nvram_safe_get("sw_lan2"))
 		ports = 2;
-	if (*nvram_safe_get("sw_lancpuport") &&
-	    *nvram_safe_get("sw_wancpuport"))
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
 		ports += 2;
 	else if (*nvram_safe_get("sw_cpuport"))
 		ports += 1;
@@ -6516,16 +6384,14 @@ void portvlan_remove(webs_t wp)
 			} else {
 				for (a = 0; a < ports; a++) {
 					char var[32];
-					char *list =
-						nvram_nget("port%dvlans", a);
+					char *list = nvram_nget("port%dvlans", a);
 					char *newlist = strdup(list);
 					newlist[0] = 0;
 					char *next2;
 					foreach(var, list, next2)
 					{
 						if (atoi(var) != i) {
-							strspcattach(newlist,
-								     var);
+							strspcattach(newlist, var);
 						}
 					}
 					nvram_nset(newlist, "port%dvlans", a);
@@ -6544,8 +6410,7 @@ void portvlan_remove(webs_t wp)
 void port_vlan_table_save(webs_t wp)
 {
 	int port = 0, vlan = 0, *vlans, i;
-	char portid[32], portvlan[64], buff[32] = { 0 }, *c, *next,
-				       br0vlans[64], br1vlans[64], br2vlans[64];
+	char portid[32], portvlan[64], buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
 	int portval;
 	char *vlans_enable = websGetVar(wp, "vlans", NULL);
 	nvram_set("vlans", vlans_enable);
@@ -6570,8 +6435,7 @@ void port_vlan_table_save(webs_t wp)
 	if (nvram_exists("sw_lan6"))
 		ports = 7;
 
-	if (*nvram_safe_get("sw_lancpuport") &&
-	    *nvram_safe_get("sw_wancpuport"))
+	if (*nvram_safe_get("sw_lancpuport") && *nvram_safe_get("sw_wancpuport"))
 		ports += 2;
 	else if (*nvram_safe_get("sw_cpuport"))
 		ports += 1;
@@ -6600,8 +6464,7 @@ void port_vlan_table_save(webs_t wp)
 			if (vlan >= blen) {
 				flag = (vlan - blen) * 1000 + 16000;
 			}
-			snprintf(portid, sizeof(portid), "port%dvlan%d", port,
-				 flag);
+			snprintf(portid, sizeof(portid), "port%dvlan%d", port, flag);
 			char *s_portval = websGetVar(wp, portid, "");
 
 #ifdef HAVE_SWCONFIG
@@ -6617,8 +6480,7 @@ void port_vlan_table_save(webs_t wp)
 					strcat(portvlan, " ");
 
 				if (vlan >= blen)
-					snprintf(buff, 6, "%d",
-						 (vlan - blen) * 1000 + 16000);
+					snprintf(buff, 6, "%d", (vlan - blen) * 1000 + 16000);
 				else
 					snprintf(buff, 6, "%d", vlan);
 				strcat(portvlan, buff);
@@ -6688,8 +6550,7 @@ void port_vlan_table_save(webs_t wp)
 	if (c) {
 		foreach(portid, c, next)
 		{
-			if (!(strncmp(portid, "vlan", 4) == 0) &&
-			    !(strncmp(portid, "eth1", 4) == 0)) {
+			if (!(strncmp(portid, "vlan", 4) == 0) && !(strncmp(portid, "eth1", 4) == 0)) {
 				if (*(br0vlans))
 					strcat(br0vlans, " ");
 				strcat(br0vlans, portid);
@@ -6702,8 +6563,7 @@ void port_vlan_table_save(webs_t wp)
 	if (c) {
 		foreach(portid, c, next)
 		{
-			if (!(strncmp(portid, "vlan", 4) == 0) &&
-			    !(strncmp(portid, "eth1", 4) == 0)) {
+			if (!(strncmp(portid, "vlan", 4) == 0) && !(strncmp(portid, "eth1", 4) == 0)) {
 				if (*(br1vlans))
 					strcat(br1vlans, " ");
 				strcat(br1vlans, portid);
@@ -6716,8 +6576,7 @@ void port_vlan_table_save(webs_t wp)
 	if (c) {
 		foreach(portid, c, next)
 		{
-			if (!(strncmp(portid, "vlan", 4) == 0) &&
-			    !(strncmp(portid, "eth1", 4) == 0)) {
+			if (!(strncmp(portid, "vlan", 4) == 0) && !(strncmp(portid, "eth1", 4) == 0)) {
 				if (*(br2vlans))
 					strcat(br2vlans, " ");
 				strcat(br2vlans, portid);
@@ -6861,8 +6720,7 @@ void tf_upnp(webs_t wp)
 
 			nvram_unset(val);
 			for (a = i + 1; a < which; a++) {
-				nvram_nset(nvram_nget("forward_port%d", a),
-					   "forward_port%d", a - 1);
+				nvram_nset(nvram_nget("forward_port%d", a), "forward_port%d", a - 1);
 			}
 			which--;
 			sprintf(val, "forward_port%d", which);
@@ -6891,11 +6749,9 @@ static void dlna_save(webs_t wp)
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "dlnashare_mp_%d", c);
-		json_object_set_new(entry, "mp",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "dlnashare_subdir_%d", c);
-		json_object_set_new(entry, "sd",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		int type = 0;
 		sprintf(var, "dlnashare_audio_%d", c);
 		if (websGetVari(wp, var, 0))
@@ -6927,14 +6783,11 @@ static void nfs_save(webs_t wp)
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "nfsshare_mp_%d", c);
-		json_object_set_new(entry, "mp",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_subdir_%d", c);
-		json_object_set_new(entry, "sd",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_allowed_%d", c);
-		json_object_set_new(entry, "allowed",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "allowed", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_access_perms_%d", c);
 		sprintf(val, "%s", websGetVar(wp, var, "-"));
 		if (!strcmp(val, "-")) {
@@ -6962,14 +6815,11 @@ static void rsync_save(webs_t wp)
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "rsyncshare_mp_%d", c);
-		json_object_set_new(entry, "mp",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "rsyncshare_subdir_%d", c);
-		json_object_set_new(entry, "sd",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "rsyncshare_label_%d", c);
-		json_object_set_new(entry, "label",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
 		json_array_append(entries, entry);
 	}
 	nvram_set("rsync_shares", json_dumps(entries, JSON_COMPACT));
@@ -6993,19 +6843,16 @@ void nassrv_save(webs_t wp)
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "smbshare_mp_%d", c);
-		json_object_set_new(entry, "mp",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_subdir_%d", c);
 		char *subdir = json_string(websGetVar(wp, var, ""));
 		if (*subdir == '/')
 			subdir++;
 		json_object_set_new(entry, "sd", subdir);
 		sprintf(var, "smbshare_label_%d", c);
-		json_object_set_new(entry, "label",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_public_%d", c);
-		json_object_set_new(entry, "public",
-				    json_integer(websGetVari(wp, var, 0)));
+		json_object_set_new(entry, "public", json_integer(websGetVari(wp, var, 0)));
 		sprintf(var, "smbshare_access_perms_%d", c);
 		sprintf(val, "%s", websGetVar(wp, var, "-"));
 		if (!strcmp(val, "-")) {
@@ -7018,9 +6865,7 @@ void nassrv_save(webs_t wp)
 			sprintf(var, "smbshare_%d_user_%d", c, j);
 			if (!strcmp(websGetVar(wp, var, ""), "1")) {
 				sprintf(var, "smbuser_username_%d", j);
-				json_array_append(
-					user_entries,
-					json_string(websGetVar(wp, var, "")));
+				json_array_append(user_entries, json_string(websGetVar(wp, var, "")));
 			}
 		}
 		json_object_set_new(entry, "users", user_entries);
@@ -7033,11 +6878,9 @@ void nassrv_save(webs_t wp)
 	for (c = 1; c <= user_number; c++) {
 		entry = json_object();
 		sprintf(var, "smbuser_username_%d", c);
-		json_object_set_new(entry, "user",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "user", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbuser_password_%d", c);
-		json_object_set_new(entry, "pass",
-				    json_string(websGetVar(wp, var, "")));
+		json_object_set_new(entry, "pass", json_string(websGetVar(wp, var, "")));
 		int type = 0;
 		sprintf(var, "smbuser_samba_%d", c);
 		if (websGetVari(wp, var, 0))
@@ -7088,8 +6931,7 @@ void nintendo_save(webs_t wp)
 
 	// handle server list
 	int count = 0;
-	char *buffer = (char *)safe_malloc(
-		strlen(websGetVar(wp, "spotpass_servers", "")) + 1);
+	char *buffer = (char *)safe_malloc(strlen(websGetVar(wp, "spotpass_servers", "")) + 1);
 	strcpy(buffer, websGetVar(wp, "spotpass_servers", ""));
 
 	char *ptr = strtok(buffer, "\n");
@@ -7097,9 +6939,7 @@ void nintendo_save(webs_t wp)
 		count++;
 		ptr = strtok(NULL, "\n");
 	}
-	char *serverlist = (char *)safe_malloc(
-		strlen(websGetVar(wp, "spotpass_servers", "")) + (count * 2) +
-		1);
+	char *serverlist = (char *)safe_malloc(strlen(websGetVar(wp, "spotpass_servers", "")) + (count * 2) + 1);
 	char line[256], url[128], proto[8], mode[16], ports[64];
 	int port1, port2, lines = 0;
 
@@ -7109,11 +6949,9 @@ void nintendo_save(webs_t wp)
 	ptr = strtok(buffer, "\n");
 	while (ptr != NULL) {
 		strcpy(line, "\0");
-		if (sscanf(ptr, "%s %s %s %d %d", &url, &proto, &mode, &port1,
-			   &port2) == 5) {
+		if (sscanf(ptr, "%s %s %s %d %d", &url, &proto, &mode, &port1, &port2) == 5) {
 			sprintf(line, "%s %s %d,%d", url, proto, port1, port2);
-		} else if (sscanf(ptr, "%s %s %d %d", &url, &proto, &port1,
-				  &port2) == 4) {
+		} else if (sscanf(ptr, "%s %s %d %d", &url, &proto, &port1, &port2) == 4) {
 			sprintf(line, "%s %s %d,%d", url, proto, port1, port2);
 		} else if (sscanf(ptr, "%s %s %s", &url, &proto, &ports) == 3) {
 			sprintf(line, "%s %s %s", url, proto, ports);
@@ -7162,15 +7000,12 @@ void nintendo_save(webs_t wp)
 			nvram_seti("mdhcpd_count", 1);
 		}
 
-	} else if (enabled == 1 &&
-		   !strcmp(websGetVar(wp, "spotpass", "0"), "0")) {
+	} else if (enabled == 1 && !strcmp(websGetVar(wp, "spotpass", "0"), "0")) {
 		if (strcmp(nvram_default_get("spotpass_vif", ""), "")) {
 			sprintf(var, "%s.%%d", prefix);
 			int index = 0;
-			if (sscanf(nvram_safe_get("spotpass_vif"), var,
-				   &index) == 1) {
-				sprintf(var, "%s",
-					nvram_safe_get("spotpass_vif"));
+			if (sscanf(nvram_safe_get("spotpass_vif"), var, &index) == 1) {
+				sprintf(var, "%s", nvram_safe_get("spotpass_vif"));
 				int count = get_vifcount(prefix);
 				int index = var[strlen(var) - 1] - '0';
 				while (get_vifcount(prefix) >= index) {

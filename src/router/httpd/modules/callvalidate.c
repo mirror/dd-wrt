@@ -59,21 +59,19 @@
 #include <stdio.h>
 // #include <shutils.h>
 
-static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib",
-				"/lib", NULL };
+static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib", "/lib", NULL };
 
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
-#define cprintf(fmt, args...)                                          \
-	do {                                                           \
-		FILE *fp = fopen("/dev/console", "w");                 \
-		if (fp) {                                              \
-			fprintf(fp, "%s (%d):%s ", __FILE__, __LINE__, \
-				__func__);                             \
-			fprintf(fp, fmt, ##args);                      \
-			fclose(fp);                                    \
-		}                                                      \
+#define cprintf(fmt, args...)                                                     \
+	do {                                                                      \
+		FILE *fp = fopen("/dev/console", "w");                            \
+		if (fp) {                                                         \
+			fprintf(fp, "%s (%d):%s ", __FILE__, __LINE__, __func__); \
+			fprintf(fp, fmt, ##args);                                 \
+			fclose(fp);                                               \
+		}                                                                 \
 	} while (0)
 #endif
 size_t websWrite(webs_t wp, char *fmt, ...);
@@ -103,8 +101,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 		return NULL;
 	if (!wp)
 		return nvram_safe_get(name);
-	return wp->gozila_action ? websGetVar(wp, name, NULL) :
-				   nvram_safe_get(name);
+	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
 void *openlib(char *type)
@@ -120,8 +117,7 @@ void *openlib(char *type)
 			return handle;
 	}
 	char *err = dlerror();
-	dd_logerror("httpd", "Cannot load %s/%s.so library (%s)\n",
-		    path_modules[i - 1], type, err ? err : "unknown");
+	dd_logerror("httpd", "Cannot load %s/%s.so library (%s)\n", path_modules[i - 1], type, err ? err : "unknown");
 	return NULL;
 }
 
@@ -164,8 +160,7 @@ static void start_gozila(char *name, webs_t wp)
 	cprintf("start_sevice done()\n");
 }
 
-static int start_validator(char *name, webs_t wp, char *value,
-			   struct variable *v)
+static int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_validator %s\n", name);
@@ -183,8 +178,7 @@ static int start_validator(char *name, webs_t wp, char *value,
 	snprintf(service, sizeof(service), "%s", name);
 	dd_logdebug("httpd", "Start validator %s\n", service);
 	cprintf("resolving %s\n", service);
-	fptr = (int (*)(webs_t wp, char *value,
-			struct variable *v))dlsym(s_service, service);
+	fptr = (int (*)(webs_t wp, char *value, struct variable *v))dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr)(wp, value, v);
 	else
@@ -198,8 +192,7 @@ static int start_validator(char *name, webs_t wp, char *value,
 	return ret;
 }
 
-static void *start_validator_nofree(char *name, void *handle, webs_t wp,
-				    char *value, struct variable *v)
+static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service_nofree %s\n", name);
@@ -215,8 +208,7 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp,
 
 	snprintf(service, sizeof(service), "%s", name);
 	cprintf("resolving %s\n", service);
-	fptr = (void (*)(webs_t wp, char *value,
-			 struct variable *v))dlsym(handle, service);
+	fptr = (void (*)(webs_t wp, char *value, struct variable *v))dlsym(handle, service);
 	cprintf("found. pointer is %p\n", fptr);
 	if (fptr)
 		(*fptr)(wp, value, v);
@@ -226,8 +218,7 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp,
 	return handle;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc,
-		     char_t **argv)
+static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **argv)
 {
 	struct timeval before, after, r;
 
@@ -257,8 +248,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc,
 
 	snprintf(service, sizeof(service), "ej_%s", name);
 	cprintf("resolving %s\n", service);
-	fptr = (void (*)(webs_t wp, int argc, char_t **argv))dlsym(handle,
-								   service);
+	fptr = (void (*)(webs_t wp, int argc, char_t **argv))dlsym(handle, service);
 
 	cprintf("found. pointer is %p\n", fptr);
 	{
@@ -268,14 +258,11 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc,
 			(*fptr)(wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
-			dd_logdebug("httpd", " %s duration %ld.%06ld\n",
-				    service, (long int)r.tv_sec,
-				    (long int)r.tv_usec);
+			dd_logdebug("httpd", " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
 
 		} else {
 			char *err = dlerror();
-			dd_logdebug("httpd", " function %s not found (%s)\n",
-				    service, err ? err : "unknown");
+			dd_logdebug("httpd", " function %s not found (%s)\n", service, err ? err : "unknown");
 		}
 		memdebug_leave_info(service);
 	}

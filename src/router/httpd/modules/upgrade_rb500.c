@@ -41,8 +41,8 @@ static int
 // do_upgrade_cgi(char *url, FILE *stream)
 do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url,
 	       webs_t streamm) // jimmy,
-	// https,
-	// 8/6/2003
+// https,
+// 8/6/2003
 {
 #ifndef ANTI_FLASH
 	int ret;
@@ -142,8 +142,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	{
 		wfread(&buf[0], 1, 5, stream);
 		*total -= 5;
-		if (buf[0] != 'R' || buf[1] != 'B' || buf[2] != '5' ||
-		    buf[3] != '0' || buf[4] != '0') {
+		if (buf[0] != 'R' || buf[1] != 'B' || buf[2] != '5' || buf[3] != '0' || buf[4] != '0') {
 			ret = -1;
 			goto err;
 		}
@@ -244,16 +243,12 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
-				while (len > 0 && strcmp(buf, "\n") &&
-				       strcmp(buf, "\r\n")) {
-					if (!wfgets(buf,
-						    MIN(len + 1, sizeof(buf)),
-						    stream, NULL))
+				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
+					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 						return -1;
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, sizeof(buf)),
-					    stream, NULL))
+				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 					return -1;
 				len -= strlen(buf);
 				buf[1] = '\0'; // we only want the 1st digit

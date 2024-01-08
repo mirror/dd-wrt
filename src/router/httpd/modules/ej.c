@@ -68,8 +68,7 @@ static char *unqstrstr(char *haystack, char *needle)
 	int needlelen = strlen(needle);
 	int haylen = strlen(haystack);
 	char *target = &haystack[haylen];
-	for (cur = haystack, q = 0;
-	     cur < target && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
+	for (cur = haystack, q = 0; cur < target && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
 		if (*cur == '"')
 			q ? q-- : q++;
 	}
@@ -96,8 +95,7 @@ static char *get_arg(char *args, char **next)
 	return arg;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc,
-		     char_t **argv);
+static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **argv);
 
 static void *call(void *handle, char *func,
 		  webs_t stream) //jimmy, https, 8/4/2003
@@ -247,8 +245,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 			continue;
 		} else {
 			if (unqstrstr(asp, "%>")) {
-				for (func = asp; func < &pattern[len];
-				     func = end) {
+				for (func = asp; func < &pattern[len]; func = end) {
 					/* Skip initial whitespace */
 					for (; isspace((int)*func); func++)
 						;
@@ -258,8 +255,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 					/* Call function */
 					webs clone;
 					memcpy(&clone, stream, sizeof(webs));
-					global_handle = call(global_handle,
-							     func, &clone);
+					global_handle = call(global_handle, func, &clone);
 					// restore pointers
 				}
 				asp = NULL;
@@ -334,9 +330,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	int found2 = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
-		if (!found &&
-		    (endswith(path, ".asp") || endswith(path, ".htm") ||
-		     endswith(path, ".html"))) {
+		if (!found && (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))) {
 			found = !strcasecmp(websRomPageIndex[i].path, path);
 			if (found) {
 				insensitive_len = *len;
@@ -399,8 +393,7 @@ size_t getWebsFileLen(webs_t wp, char *path2)
 	return len;
 }
 
-static void send_headers(webs_t conn_fp, int status, char *title,
-			 char *extra_header, char *mime_type, int length,
+static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length,
 			 char *attach_file, int nocache);
 
 int do_ej(unsigned char method, struct mime_handler *handler, char *path,
@@ -415,8 +408,7 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path,
 	fp = _getWebsFile(stream, path, &len);
 	if (fp) {
 		if (handler && !handler->send_headers)
-			send_headers(stream, 200, "OK", handler->extra_header,
-				     handler->mime_type, -1, NULL, 1);
+			send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 		stream->path = path;
 		do_ej_file(fp, len, stream);
 		fclose(fp);

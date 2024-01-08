@@ -12,8 +12,7 @@
 #define os_memset memset
 #define os_strlen strlen
 
-static int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len,
-		       u8 *mac)
+static int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	SHA1_CTX ctx;
 	size_t i;
@@ -35,8 +34,7 @@ static int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len,
  * @mac: Buffer for the hash (20 bytes)
  * Returns: 0 on success, -1 on failure
  */
-static int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
-			    const u8 *addr[], const size_t *len, u8 *mac)
+static int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	unsigned char k_pad[64]; /* padding - key XORd with ipad/opad */
 	unsigned char tk[20];
@@ -111,15 +109,12 @@ static int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
  * @mac: Buffer for the hash (20 bytes)
  * Returns: 0 on success, -1 of failure
  */
-static int hmac_sha1(const u8 *key, size_t key_len, const u8 *data,
-		     size_t data_len, u8 *mac)
+static int hmac_sha1(const u8 *key, size_t key_len, const u8 *data, size_t data_len, u8 *mac)
 {
 	return hmac_sha1_vector(key, key_len, 1, &data, &data_len, mac);
 }
 
-static int pbkdf2_sha1_f(const char *passphrase, const u8 *ssid,
-			 size_t ssid_len, int iterations, unsigned int count,
-			 u8 *digest)
+static int pbkdf2_sha1_f(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, unsigned int count, u8 *digest)
 {
 	unsigned char tmp[SHA1_MAC_LEN], tmp2[SHA1_MAC_LEN];
 	int i, j;
@@ -143,14 +138,12 @@ static int pbkdf2_sha1_f(const char *passphrase, const u8 *ssid,
 	count_buf[1] = (count >> 16) & 0xff;
 	count_buf[2] = (count >> 8) & 0xff;
 	count_buf[3] = count & 0xff;
-	if (hmac_sha1_vector((u8 *)passphrase, passphrase_len, 2, addr, len,
-			     tmp))
+	if (hmac_sha1_vector((u8 *)passphrase, passphrase_len, 2, addr, len, tmp))
 		return -1;
 	os_memcpy(digest, tmp, SHA1_MAC_LEN);
 
 	for (i = 1; i < iterations; i++) {
-		if (hmac_sha1((u8 *)passphrase, passphrase_len, tmp,
-			      SHA1_MAC_LEN, tmp2))
+		if (hmac_sha1((u8 *)passphrase, passphrase_len, tmp, SHA1_MAC_LEN, tmp2))
 			return -1;
 		os_memcpy(tmp, tmp2, SHA1_MAC_LEN);
 		for (j = 0; j < SHA1_MAC_LEN; j++)
@@ -174,8 +167,7 @@ static int pbkdf2_sha1_f(const char *passphrase, const u8 *ssid,
  * iterations is set to 4096 and buflen to 32. This function is described in
  * IEEE Std 802.11-2004, Clause H.4. The main construction is from PKCS#5 v2.0.
  */
-int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
-		int iterations, u8 *buf, size_t buflen)
+int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, u8 *buf, size_t buflen)
 {
 	unsigned int count = 0;
 	unsigned char *pos = buf;
@@ -184,8 +176,7 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 
 	while (left > 0) {
 		count++;
-		if (pbkdf2_sha1_f(passphrase, ssid, ssid_len, iterations, count,
-				  digest))
+		if (pbkdf2_sha1_f(passphrase, ssid, ssid_len, iterations, count, digest))
 			return -1;
 		plen = left > SHA1_MAC_LEN ? SHA1_MAC_LEN : left;
 		os_memcpy(pos, digest, plen);

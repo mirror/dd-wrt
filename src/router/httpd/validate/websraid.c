@@ -123,8 +123,7 @@ void format_drive(webs_t wp)
 			eval("mkfs.fat", "-F", "32", fs);
 	} else if (!strncmp(format, "ext", 3)) {
 		if (*(label))
-			eval(name, "-F", "-L", label, "-E",
-			     "lazy_itable_init=1", fs);
+			eval(name, "-F", "-L", label, "-E", "lazy_itable_init=1", fs);
 		else
 			eval(name, "-F", "-E", "lazy_itable_init=1", fs);
 	} else {
@@ -202,14 +201,10 @@ void del_raid(webs_t wp)
 		nvram_nset(nvram_nget("raid%d", i), "raid%d", i + 1);
 		nvram_nset(nvram_nget("raidfs%d", i), "raidfs%d", i + 1);
 		if (nvram_nmatch("zfs", "raidtype%d", i + 1)) {
-			nvram_nset(nvram_nget("raidlz%d", i), "raidlz%d",
-				   i + 1);
-			nvram_nset(nvram_nget("raiddedup%d", i), "raiddedup%d",
-				   i + 1);
-			if (nvram_nmatch("gzip", "raidlzlevel%d", i) ||
-			    nvram_nmatch("zstd", "raidlzlevel%d", i))
-				nvram_nset(nvram_nget("raidlzlevel%d", i),
-					   "raidlzlevel%d", i + 1);
+			nvram_nset(nvram_nget("raidlz%d", i), "raidlz%d", i + 1);
+			nvram_nset(nvram_nget("raiddedup%d", i), "raiddedup%d", i + 1);
+			if (nvram_nmatch("gzip", "raidlzlevel%d", i) || nvram_nmatch("zstd", "raidlzlevel%d", i))
+				nvram_nset(nvram_nget("raidlzlevel%d", i), "raidlzlevel%d", i + 1);
 		}
 	}
 	nvram_nset(NULL, "raidtype%d", i);
@@ -255,8 +250,7 @@ void del_raid_member(webs_t wp)
 	int cnt = 0;
 	foreach(drive, raid, next)
 	{
-		a = realloc(a, cnt ? strlen(a) + strlen(drive) + 2 :
-				     strlen(drive) + 1);
+		a = realloc(a, cnt ? strlen(a) + strlen(drive) + 2 : strlen(drive) + 1);
 		if (cnt != didx) {
 			if (!cnt)
 				a[0] = 0;
@@ -332,8 +326,7 @@ void raid_save(webs_t wp)
 			char *mb = websGetVar(wp, member, NULL);
 			if (!mb)
 				break;
-			a = realloc(a, a ? strlen(a) + strlen(mb) + 2 :
-					   strlen(mb) + 1);
+			a = realloc(a, a ? strlen(a) + strlen(mb) + 2 : strlen(mb) + 1);
 			if (!midx)
 				a[0] = 0;
 			else

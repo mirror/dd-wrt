@@ -130,10 +130,8 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
 	}
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) ||                     \
-	defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) ||               \
-	defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || \
-	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_LS5)
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86) || \
+	defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_LS5)
 	eval("rm", "-f", "/tmp/nvram/*"); // delete nvram database
 	unlink("/tmp/nvram/.lock"); // delete nvram database
 #endif
@@ -170,11 +168,9 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	return 0;
 }
 
-int do_ej(unsigned char method, struct mime_handler *handler, char *path,
-	  webs_t stream);
+int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 
-static int sr_config_cgi(unsigned char method, struct mime_handler *handler,
-			 char *path, webs_t wp)
+static int sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	int ret;
 	if (wp->restore_ret != 0)
@@ -199,15 +195,11 @@ static int sr_config_cgi(unsigned char method, struct mime_handler *handler,
 	return 0;
 }
 
-static int do_file_attach(struct mime_handler *handler, char *path,
-			  webs_t stream, char *attachment);
+static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
-#define getRouterName()                                             \
-	nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : \
-				     nvram_safe_get(NVROUTER)
+#define getRouterName() nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : nvram_safe_get(NVROUTER)
 
-static int nv_file_out(unsigned char method, struct mime_handler *handler,
-		       char *path, webs_t wp)
+static int nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	int ret;
 #ifdef HAVE_REGISTER
@@ -217,8 +209,8 @@ static int nv_file_out(unsigned char method, struct mime_handler *handler,
 #endif
 	char *name = nvram_safe_get("router_name");
 	char fname[128];
-	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION,
-		 *name ? "_" : "", *name ? name : "", getRouterName());
+	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "",
+		 getRouterName());
 	nvram_backup("/tmp/nvrambak.bin");
 
 #ifdef HAVE_ANTAIRA
@@ -231,9 +223,8 @@ static int nv_file_out(unsigned char method, struct mime_handler *handler,
 	return ret;
 }
 
-static int
-td_file_in(char *url, webs_t wp, size_t len,
-	   char *boundary) //load and set traffic data from config file
+static int td_file_in(char *url, webs_t wp, size_t len,
+		      char *boundary) //load and set traffic data from config file
 {
 	char *buf = malloc(2048);
 	char *name = NULL;
@@ -275,13 +266,11 @@ td_file_in(char *url, webs_t wp, size_t len,
 				len -= strlen(buf);
 				if (startswith(buf, "traff-")) {
 					name = strtok(buf, "=");
-					if (strlen(name) ==
-					    13) //only set ttraf-XX-XXXX
+					if (strlen(name) == 13) //only set ttraf-XX-XXXX
 					{
 						data = strtok(NULL, "");
-						strtrim_right(
-							data,
-							'\n'); //strip all LF+CR+spaces
+						strtrim_right(data,
+							      '\n'); //strip all LF+CR+spaces
 						strtrim_right(data, '\r');
 						strtrim_right(data, ' ');
 						nvram_set(name, data);
@@ -300,8 +289,7 @@ td_file_in(char *url, webs_t wp, size_t len,
 	return 0;
 }
 
-static int td_config_cgi(unsigned char method, struct mime_handler *handler,
-			 char *path, webs_t wp)
+static int td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	int ret = do_ej(METHOD_GET, handler, "Traff_admin.asp", wp);
 	if (ret)

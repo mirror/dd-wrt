@@ -55,8 +55,7 @@ void aoss_save(webs_t wp)
 		nvram_set("pincode", pin);
 #endif
 	// check if at least one value was set
-	if (nvram_matchi("aoss_aes", 0) && nvram_matchi("aoss_tkip", 0) &&
-	    nvram_matchi("aoss_wep", 0)) {
+	if (nvram_matchi("aoss_aes", 0) && nvram_matchi("aoss_tkip", 0) && nvram_matchi("aoss_wep", 0)) {
 		nvram_seti("aoss_aes", 1);
 	}
 	if (*(nvram_safe_get("aoss_vifs"))) {

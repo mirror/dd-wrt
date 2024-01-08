@@ -205,10 +205,8 @@ extern char *get_mac_from_ip(char *mac, char *ip);
 /* Forwards. */
 static int initialize_listen_socket(usockaddr *usaP);
 static int auth_check(webs_t conn_fp);
-static void send_error(webs_t conn_fp, int noheader, int status, char *title,
-		       char *extra_header, const char *fmt, ...);
-static void send_headers(webs_t conn_fp, int status, char *title,
-			 char *extra_header, char *mime_type, int length,
+static void send_error(webs_t conn_fp, int noheader, int status, char *title, char *extra_header, const char *fmt, ...);
+static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length,
 			 char *attach_file, int nocache);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
@@ -286,9 +284,7 @@ static pthread_mutex_t input_mutex;
 	} while (0)
 #endif
 
-static void lookup_hostname(usockaddr *usa4P, size_t sa4_len, int *gotv4P,
-			    usockaddr *usa6P, size_t sa6_len, int *gotv6P,
-			    int port)
+static void lookup_hostname(usockaddr *usa4P, size_t sa4_len, int *gotv4P, usockaddr *usa6P, size_t sa6_len, int *gotv6P, int port)
 {
 #ifdef USE_IPV6
 
@@ -404,13 +400,11 @@ static void setnaggle(webs_t wp, int on)
 		 ** send(MSG_MORE) (only available in Linux so far).
 		 */
 		r = on;
-		(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NOPUSH,
-				 (void *)&r, sizeof(r));
+		(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
 #endif
 		if (on) {
 			r = 1;
-			(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NODELAY,
-					 (void *)&r, sizeof(r));
+			(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
 		}
 	}
 }
@@ -455,8 +449,7 @@ static int initialize_listen_socket(usockaddr *usaP)
 	(void)fcntl(listen_fd, F_SETFD, 1);
 
 	i = 1;
-	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&i,
-		       sizeof(i)) < 0) {
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&i, sizeof(i)) < 0) {
 		dd_logerror("httpd", "setsockopt SO_REUSEADDR - %m");
 		perror("setsockopt SO_REUSEADDR");
 		return -1;
@@ -481,8 +474,7 @@ struct crypt_data {
 	char __buf[256];
 };
 
-static char *crypt_r(const char *authinfo, const char *authdata,
-		     struct crypt_data *data)
+static char *crypt_r(const char *authinfo, const char *authdata, struct crypt_data *data)
 {
 	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *enc1 = crypt(authinfo, authdata);
@@ -507,16 +499,14 @@ static int auth_check(webs_t conn_fp)
 	}
 
 	/* Basic authorization info? */
-	if (!conn_fp->authorization ||
-	    strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
+	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
 		dd_loginfo("httpd", "Authentication fail");
 
 		goto out;
 	}
 	bzero(authinfo, 500);
 	/* Decode it. */
-	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo,
-		       499);
+	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, 499);
 	authinfo[l] = '\0';
 	/* Split into user and password. */
 	authpass = strchr((char *)authinfo, ':');
@@ -532,8 +522,7 @@ static int auth_check(webs_t conn_fp)
 	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, &data);
 	char dummy[128];
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
-		dd_loginfo("httpd", "httpd login failure for %s",
-			   conn_fp->http_client_ip);
+		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
 		//              while (wfgets(dummy, 64, conn_fp, NULL)) {
 		//              }
@@ -542,8 +531,7 @@ static int auth_check(webs_t conn_fp)
 	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, &data);
 
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
-		dd_loginfo("httpd", "httpd login failure for %s",
-			   conn_fp->http_client_ip);
+		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
 		//              while (wfgets(dummy, 64, conn_fp, NULL)) {
 		//              }
@@ -559,18 +547,15 @@ out:;
 static void send_authenticate(webs_t conn_fp)
 {
 	char *header;
-	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"",
-		       conn_fp->auth_realm);
-	send_error(conn_fp, 0, 401,
-		   live_translate(conn_fp, "share.unauthorized"), header,
+	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
+	send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.unauthorized"), header,
 		   live_translate(conn_fp, "share.auth_required"));
 	debug_free(header);
 }
 
 void do_error_style(webs_t wp, int code, char *title, char *text);
 
-static void send_error(webs_t conn_fp, int noheader, int status, char *title,
-		       char *extra_header, const char *fmt, ...)
+static void send_error(webs_t conn_fp, int noheader, int status, char *title, char *extra_header, const char *fmt, ...)
 {
 	int flags, newflags;
 
@@ -585,8 +570,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title,
 	//      dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	if (!noheader)
-		send_headers(conn_fp, status, title, extra_header, "text/html",
-			     -1, NULL, 1);
+		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	char *translate = "";
 	if (!nvram_match("language", "english"))
 		translate = " translate=\"no\"";
@@ -594,19 +578,14 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title,
 	do_error_style(conn_fp, status, title, text);
 
 	char *charset = live_translate(conn_fp, "lang_charset.set");
-	websWrite(
-		conn_fp,
-		"<!DOCTYPE html>\n" //
-		"<head>\n" //
-		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n",
-		charset);
-	websWrite(
-		conn_fp,
-		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
-	websWrite(
-		conn_fp,
-		"<title>%d %s</title></head>\n<body class=\"error_page\"><h4>%d %s</h4>\n",
-		status, title, status, title);
+	websWrite(conn_fp,
+		  "<!DOCTYPE html>\n" //
+		  "<head>\n" //
+		  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n",
+		  charset);
+	websWrite(conn_fp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
+	websWrite(conn_fp, "<title>%d %s</title></head>\n<body class=\"error_page\"><h4>%d %s</h4>\n", status, title, status,
+		  title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</body>");
 	websWrite(conn_fp, "</html>\n");
@@ -615,8 +594,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title,
 	debug_free(text);
 }
 
-static void send_headers(webs_t conn_fp, int status, char *title,
-			 char *extra_header, char *mime_type, int length,
+static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length,
 			 char *attach_file, int nocache)
 {
 	time_t now;
@@ -631,11 +609,8 @@ static void send_headers(webs_t conn_fp, int status, char *title,
 	websWrite(conn_fp, "Date: %s\r\n", timebuf);
 	websWrite(conn_fp, "Connection: close\r\n");
 	if (nocache) {
-		websWrite(
-			conn_fp,
-			"Cache-Control: no-store, no-cache, must-revalidate\r\n");
-		websWrite(conn_fp,
-			  "Cache-Control: post-check=0, pre-check=0\r\n");
+		websWrite(conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n");
+		websWrite(conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n");
 		websWrite(conn_fp, "Pragma: no-cache\r\n");
 	} else {
 		websWrite(conn_fp, "Cache-Control: private, max-age=600\r\n");
@@ -645,9 +620,7 @@ static void send_headers(webs_t conn_fp, int status, char *title,
 		int cnt = 0;
 		char *newname = malloc((len * 3) + 1);
 		if (!newname) {
-			dd_syslog(LOG_ERR,
-				  "out of memory in %s / attach_file\n",
-				  __func__);
+			dd_syslog(LOG_ERR, "out of memory in %s / attach_file\n", __func__);
 			return;
 		}
 		for (i = 0; i < len; i++) {
@@ -660,9 +633,7 @@ static void send_headers(webs_t conn_fp, int status, char *title,
 			}
 		}
 		newname[cnt++] = 0;
-		websWrite(conn_fp,
-			  "Content-Disposition: attachment; filename=%s\r\n",
-			  newname);
+		websWrite(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", newname);
 		debug_free(newname);
 	}
 	if (extra_header != NULL && *extra_header)
@@ -684,38 +655,22 @@ static void send_headers(webs_t conn_fp, int status, char *title,
 */
 
 static const int b64_decode_table[256] = {
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* 00-0F */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* 10-1F */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, 62, -1, -1, -1, 63, /* 20-2F */
-	52, 53, 54, 55, 56, 57, 58, 59,
-	60, 61, -1, -1, -1, -1, -1, -1, /* 30-3F */
-	-1, 0,	1,  2,	3,  4,	5,  6,
-	7,  8,	9,  10, 11, 12, 13, 14, /* 40-4F */
-	15, 16, 17, 18, 19, 20, 21, 22,
-	23, 24, 25, -1, -1, -1, -1, -1, /* 50-5F */
-	-1, 26, 27, 28, 29, 30, 31, 32,
-	33, 34, 35, 36, 37, 38, 39, 40, /* 60-6F */
-	41, 42, 43, 44, 45, 46, 47, 48,
-	49, 50, 51, -1, -1, -1, -1, -1, /* 70-7F */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* 80-8F */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* 90-9F */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* A0-AF */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* B0-BF */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* C0-CF */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* D0-DF */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, /* E0-EF */
-	-1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1 /* F0-FF */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 00-0F */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 10-1F */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, /* 20-2F */
+	52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, /* 30-3F */
+	-1, 0,	1,  2,	3,  4,	5,  6,	7,  8,	9,  10, 11, 12, 13, 14, /* 40-4F */
+	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, /* 50-5F */
+	-1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, /* 60-6F */
+	41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, /* 70-7F */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 80-8F */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 90-9F */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* A0-AF */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* B0-BF */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* C0-CF */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* D0-DF */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* E0-EF */
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 /* F0-FF */
 };
 
 /* Do base-64 decoding on a string.  Ignore any non-base64 bytes.
@@ -823,8 +778,7 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 	return 0;
 }
 
-static int do_file_2(unsigned char method, struct mime_handler *handler,
-		     char *path, webs_t stream,
+static int do_file_2(unsigned char method, struct mime_handler *handler, char *path, webs_t stream,
 		     char *attach) //jimmy, https, 8/4/2003
 {
 	size_t len;
@@ -832,21 +786,16 @@ static int do_file_2(unsigned char method, struct mime_handler *handler,
 	if (!web)
 		return -1;
 	if (handler && !handler->send_headers) {
-		send_headers(stream, 200, "OK", handler->extra_header,
-			     handler->mime_type, len, attach, 0);
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, len, attach, 0);
 		if (method == METHOD_HEAD)
 			return 0;
 	}
 	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
 		while (len && !feof(web)) {
-			size_t ret =
-				fread(buffer, 1, len > 4096 ? 4096 : len, web);
+			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 			if (ferror(web)) {
-				dd_loginfo(
-					"httpd",
-					"%s: cannot read from local file stream (%s)\n",
-					__func__, strerror(errno));
+				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)\n", __func__, strerror(errno));
 				break; // deadlock prevention
 			}
 			if (ret > 0) {
@@ -871,8 +820,7 @@ do_file(unsigned char method, struct mime_handler *handler, char *path,
 	return do_file_2(method, handler, path, stream, NULL);
 }
 
-static int do_file_attach(struct mime_handler *handler, char *path,
-			  webs_t stream,
+static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream,
 			  char *attachment) //jimmy, https, 8/4/2003
 {
 	return do_file_2(METHOD_GET, handler, path, stream, attachment);
@@ -944,8 +892,7 @@ static void *handle_request(void *arg)
 {
 	webs_t conn_fp = (webs_t)arg;
 	char *cur = NULL;
-	char *method, *path, *protocol, *authorization, *boundary, *referer,
-		*host;
+	char *method, *path, *protocol, *authorization, *boundary, *referer, *host;
 #ifdef HAVE_IAS
 	char *language, *useragent;
 #endif
@@ -961,8 +908,7 @@ static void *handle_request(void *arg)
 		conn_fp->p->filter_id = 1;
 
 	dd_logdebug("httpd", "thread start\n");
-	PTHREAD_MUTEX_LOCK(
-		&input_mutex); // barrier. block until input is done. otherwise global members get async
+	PTHREAD_MUTEX_LOCK(&input_mutex); // barrier. block until input is done. otherwise global members get async
 	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
 #ifndef HAVE_MUSL
@@ -991,10 +937,8 @@ static void *handle_request(void *arg)
 	dd_logdebug("httpd", "parse line\n");
 	wfgets(line, LINE_LEN, conn_fp, &eof);
 	if (eof) {
-		send_error(conn_fp, 0, 408,
-			   live_translate(conn_fp, "share.tcp_error"), NULL,
-			   live_translate(conn_fp,
-					  "share.unexpected_connection_close"));
+		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL,
+			   live_translate(conn_fp, "share.unexpected_connection_close"));
 		goto out;
 	}
 
@@ -1008,15 +952,13 @@ static void *handle_request(void *arg)
 	}
 
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
-	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) &&
-	    strncasecmp(line, "OPTIONS", 7)) {
+	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) && strncasecmp(line, "OPTIONS", 7)) {
 		goto out;
 	}
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) { // Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 0, 400,
-			   live_translate(conn_fp, "share.bad_request"), NULL,
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
 			   live_translate(conn_fp, "share.cant_parse_no_path"));
 		goto out;
 	}
@@ -1025,10 +967,8 @@ static void *handle_request(void *arg)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) { // Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 0, 400,
-			   live_translate(conn_fp, "share.bad_request"), NULL,
-			   live_translate(conn_fp,
-					  "share.cant_parse_no_proto"));
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
+			   live_translate(conn_fp, "share.cant_parse_no_proto"));
 		goto out;
 	}
 	while (*protocol == ' ')
@@ -1038,18 +978,11 @@ static void *handle_request(void *arg)
 	strsep(&cp, " ");
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
-	while ((line + LINE_LEN - cur) > 1 &&
-	       wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) !=
-		       0) //jimmy,https,8/4/2003
+	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0) //jimmy,https,8/4/2003
 	{
 		if (eof) {
-			send_error(
-				conn_fp, 0, 408,
-				live_translate(conn_fp, "share.tcp_error"),
-				NULL,
-				live_translate(
-					conn_fp,
-					"share.unexpected_connection_close_2"));
+			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL,
+				   live_translate(conn_fp, "share.unexpected_connection_close_2"));
 			goto out;
 		}
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
@@ -1079,8 +1012,7 @@ static void *handle_request(void *arg)
 			content_length = strtoul(cp, NULL, 0);
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
-			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n';
-			     cp++)
+			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++)
 				;
 			*cp = '\0';
 			cur = ++cp;
@@ -1112,26 +1044,21 @@ static void *handle_request(void *arg)
 	//              method_type = METHOD_HEAD;
 
 	if (method_type == METHOD_INVALID) {
-		send_error(conn_fp, 0, 501,
-			   live_translate(conn_fp, "share.not_implemented"),
-			   NULL, live_translate(conn_fp, "share.method_unimpl"),
-			   method);
+		send_error(conn_fp, 0, 501, live_translate(conn_fp, "share.not_implemented"), NULL,
+			   live_translate(conn_fp, "share.method_unimpl"), method);
 		goto out;
 	}
 
 	if (path[0] != '/') {
-		send_error(conn_fp, 0, 400,
-			   live_translate(conn_fp, "share.bad_request"), NULL,
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
 			   live_translate(conn_fp, "share.no_slash"));
 		goto out;
 	}
 	file = &(path[1]);
 	len = strlen(file);
-	if (file[0] == '/' || strcmp(file, "..") == 0 ||
-	    strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL ||
+	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL ||
 	    strcmp(&(file[len - 3]), "/..") == 0) {
-		send_error(conn_fp, 0, 400,
-			   live_translate(conn_fp, "share.bad_request"), NULL,
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
 			   live_translate(conn_fp, "share.threaten_fs"));
 		goto out;
 	}
@@ -1168,19 +1095,14 @@ static void *handle_request(void *arg)
 				    { "zh", "chinese_simplified" }, //
 				    { "tr", "turkish" }, //
 				    NULL };
-		if (nvram_match("langprop", "") ||
-		    nvram_get("langprop") == NULL) {
+		if (nvram_match("langprop", "") || nvram_get("langprop") == NULL) {
 			int cnt = 0;
 			nvram_set("langprop", "english");
 			while (isomap[cnt].iso != NULL) {
-				if (strncasecmp(language, isomap[cnt].iso, 2) ==
-				    0) {
-					nvram_set("langprop",
-						  isomap[cnt].mapping);
+				if (strncasecmp(language, isomap[cnt].iso, 2) == 0) {
+					nvram_set("langprop", isomap[cnt].mapping);
 					if (isomap[cnt].countryext)
-						nvram_set(
-							"country",
-							isomap[cnt].countryext);
+						nvram_set("country", isomap[cnt].countryext);
 					break;
 				}
 				cnt++;
@@ -1190,8 +1112,7 @@ static void *handle_request(void *arg)
 #endif
 
 	if (!referer && method_type == METHOD_POST && nodetect == 0) {
-		send_error(conn_fp, 0, 400,
-			   live_translate(conn_fp, "share.bad_request"), NULL,
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
 			   live_translate(conn_fp, "share.cross_site"));
 		goto out;
 	}
@@ -1215,35 +1136,18 @@ static void *handle_request(void *arg)
 			int c = 0;
 
 			for (a = 0; a < hlen; a++)
-				if (host[a] == ' ' || host[a] == '\r' ||
-				    host[a] == '\n' || host[a] == '\t')
+				if (host[a] == ' ' || host[a] == '\r' || host[a] == '\n' || host[a] == '\t')
 					host[a] = 0;
 			hlen = strlen(host);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(
-						conn_fp, 0, 400,
-						live_translate(
-							conn_fp,
-							"share.bad_request"),
-						NULL,
-						live_translate(
-							conn_fp,
-							"share.cross_site_ref"),
-						referer);
+					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
+						   live_translate(conn_fp, "share.cross_site_ref"), referer);
 					goto out;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(
-						conn_fp, 0, 400,
-						live_translate(
-							conn_fp,
-							"share.bad_request"),
-						NULL,
-						live_translate(
-							conn_fp,
-							"share.cross_site_ref"),
-						referer);
+					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
+						   live_translate(conn_fp, "share.cross_site_ref"), referer);
 					goto out;
 				}
 				if (c == hlen) {
@@ -1252,14 +1156,8 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(
-					conn_fp, 0, 400,
-					live_translate(conn_fp,
-						       "share.bad_request"),
-					NULL,
-					live_translate(conn_fp,
-						       "share.cross_site_ref"),
-					referer);
+				send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
+					   live_translate(conn_fp, "share.cross_site_ref"), referer);
 				goto out;
 			}
 		}
@@ -1291,18 +1189,14 @@ static void *handle_request(void *arg)
 	if (ias_startup > 1) {
 		if (endswith(file, "?ias_detect")) {
 			ias_detected = 1;
-			fprintf(stderr, "[HTTP PATH] %s detected (%d)\n", file,
-				ias_startup);
+			fprintf(stderr, "[HTTP PATH] %s detected (%d)\n", file, ias_startup);
 		}
 
-		if (!endswith(file, ".js") && !endswith(file, "detect.asp") &&
-		    ias_detected == 0 && nvram_matchi("ias_startup", 3)) {
+		if (!endswith(file, ".js") && !endswith(file, "detect.asp") && ias_detected == 0 &&
+		    nvram_matchi("ias_startup", 3)) {
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
-			snprintf(redirect_path, sizeof(redirect_path),
-				 "Location: http://%s/detect.asp",
-				 nvram_get("lan_ipaddr"));
-			send_headers(conn_fp, 302, "Found", redirect_path, "",
-				     -1, NULL, 1);
+			snprintf(redirect_path, sizeof(redirect_path), "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
+			send_headers(conn_fp, 302, "Found", redirect_path, "", -1, NULL, 1);
 			goto out;
 
 		} else if (ias_detected == 1) {
@@ -1312,22 +1206,18 @@ static void *handle_request(void *arg)
 	}
 
 	if (!ias_sid_valid(conn_fp) &&
-	    (endswith(file, "InternetAtStart.asp") ||
-	     endswith(file, "detect.asp") || endswith(file, "?ias_detect")) &&
+	    (endswith(file, "InternetAtStart.asp") || endswith(file, "detect.asp") || endswith(file, "?ias_detect")) &&
 	    strstr(useragent, "Android"))
 		ias_sid_set(conn_fp);
 
 	char hostname[32];
-	if (strlen(host) < 32 && ias_detected == 1 &&
-	    (nvram_matchi("ias_dnsresp", 1))) {
+	if (strlen(host) < 32 && ias_detected == 1 && (nvram_matchi("ias_dnsresp", 1))) {
 		strncpy(hostname, host, strspn(host, "123456789.:"));
 		if (!strcmp(hostname, nvram_get("lan_ipaddr"))) {
 			nvram_unset("ias_dnsresp");
 			char cmd[64];
-			snprintf(cmd, sizeof(cmd), "%s:55300",
-				 nvram_get("lan_ipaddr"));
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-i",
-			     "br0", "-p", "udp", "--dport", "53", "-j", "DNAT",
+			snprintf(cmd, sizeof(cmd), "%s:55300", nvram_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-i", "br0", "-p", "udp", "--dport", "53", "-j", "DNAT",
 			     "--to", cmd);
 
 			char buf[128];
@@ -1339,8 +1229,7 @@ static void *handle_request(void *arg)
 			fp = popen(call, "r");
 			if (fp) {
 				while (fgets(buf, sizeof(buf), fp)) {
-					if (strstr(buf,
-						   nvram_get("lan_ipaddr"))) {
+					if (strstr(buf, nvram_get("lan_ipaddr"))) {
 						if (sscanf(buf, "%d ", &pid)) {
 							kill(pid, SIGTERM);
 						}
@@ -1354,9 +1243,8 @@ static void *handle_request(void *arg)
 #endif
 
 	if (file[0] == '\0' || file[len - 1] == '/') {
-		if (server_dir != NULL &&
-		    strcmp(server_dir,
-			   "/www")) // to allow to use router as a WEB server
+		if (server_dir != NULL && strcmp(server_dir,
+						 "/www")) // to allow to use router as a WEB server
 		{
 			file = "index.htm";
 		} else {
@@ -1387,17 +1275,13 @@ static void *handle_request(void *arg)
 		else if (endswith(file, ".html"))
 			file = "register.asp";
 	} else {
-		if (((nvram_match("http_username", DEFAULT_USER) &&
-		      nvram_match("http_passwd", DEFAULT_PASS)) ||
-		     nvram_match("http_username", "") ||
-		     nvram_match("http_passwd", "admin")) &&
-		    !endswith(file, "register.asp") &&
-		    !endswith(file, "vsp.html")) {
+		if (((nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS)) ||
+		     nvram_match("http_username", "") || nvram_match("http_passwd", "admin")) &&
+		    !endswith(file, "register.asp") && !endswith(file, "vsp.html")) {
 			changepassword = 1;
 			if (endswith(file, ".asp"))
 				file = "changepass.asp";
-			else if (endswith(file, ".htm") &&
-				 !endswith(file, "About.htm"))
+			else if (endswith(file, ".htm") && !endswith(file, "About.htm"))
 				file = "changepass.asp";
 			else if (endswith(file, ".html"))
 				file = "changepass.asp";
@@ -1423,30 +1307,20 @@ static void *handle_request(void *arg)
 			continue;
 		airbag_setpostinfo(handler->pattern);
 		if (method_type == METHOD_HEAD && handler->output != do_file) {
-			send_error(conn_fp, 0, 501,
-				   live_translate(conn_fp,
-						  "share.not_implemented"),
-				   NULL,
-				   live_translate(conn_fp,
-						  "share.method_unimpl"),
-				   method);
+			send_error(conn_fp, 0, 501, live_translate(conn_fp, "share.not_implemented"), NULL,
+				   live_translate(conn_fp, "share.method_unimpl"), method);
 			goto out;
 		}
-		if (IS_REGISTERED(conn_fp) && !changepassword &&
-		    handler->auth &&
-		    (!handler->handle_options ||
-		     method_type != METHOD_OPTIONS)) {
+		if (IS_REGISTERED(conn_fp) && !changepassword && handler->auth &&
+		    (!handler->handle_options || method_type != METHOD_OPTIONS)) {
 			if (authorization)
 				conn_fp->authorization = strdup(authorization);
 
 			int result = handler->auth(conn_fp, auth_check);
 
 #ifdef HAVE_IAS
-			if (!result &&
-			    !((!strcmp(file, "apply.cgi") ||
-			       !strcmp(file, "InternetAtStart.ajax.asp")) &&
-			      strstr(useragent, "Android") &&
-			      ias_sid_valid(conn_fp))) {
+			if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp")) &&
+					 strstr(useragent, "Android") && ias_sid_valid(conn_fp))) {
 				fprintf(stderr, "[AUTH FAIL]: %s", useragent);
 #else
 			if (!result) {
@@ -1461,8 +1335,7 @@ static void *handle_request(void *arg)
 		}
 
 		if (handler->input) {
-			if (handler->input(file, conn_fp, content_length,
-					   boundary)) {
+			if (handler->input(file, conn_fp, content_length, boundary)) {
 				goto out;
 			}
 		}
@@ -1475,16 +1348,12 @@ static void *handle_request(void *arg)
 		}
 #endif
 		if (check_connect_type(conn_fp) < 0) {
-			send_error(conn_fp, 0, 401,
-				   live_translate(conn_fp, "share.bad_request"),
-				   NULL,
-				   live_translate(conn_fp,
-						  "share.no_wifi_access"));
+			send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.bad_request"), NULL,
+				   live_translate(conn_fp, "share.no_wifi_access"));
 			goto out;
 		}
 		if (handler->send_headers) {
-			send_headers(conn_fp, 200, "OK", handler->extra_header,
-				     handler->mime_type, -1, NULL, 1);
+			send_headers(conn_fp, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 			noheader = 1;
 		}
 		// check for do_file handler and check if file exists
@@ -1493,16 +1362,14 @@ static void *handle_request(void *arg)
 				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
-			file_error = handler->output(method_type, handler, file,
-						     conn_fp);
+			file_error = handler->output(method_type, handler, file, conn_fp);
 			if (!file_error) {
 				goto out;
 			}
 		}
 		break;
 	}
-	send_error(conn_fp, noheader, 404,
-		   live_translate(conn_fp, "share.not_found"), NULL,
+	send_error(conn_fp, noheader, 404, live_translate(conn_fp, "share.not_found"), NULL,
 		   live_translate(conn_fp, "share.file_not_found"), file);
 
 out:;
@@ -1559,11 +1426,9 @@ static void settimeouts(webs_t wp, int secs)
 	struct timeval tv;
 	tv.tv_sec = secs;
 	tv.tv_usec = 0;
-	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) <
-	    0)
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_SNDTIMEO)");
-	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) <
-	    0)
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_RCVTIMEO)");
 }
 
@@ -1617,8 +1482,7 @@ static int sslbufferpeek(struct sslbuffer *buffer, char *data, size_t datalen)
 	return SSL_peek(buffer->ssl, data, datalen);
 }
 
-static size_t sslbufferwrite(struct sslbuffer *buffer, char *data,
-			     size_t datalen)
+static size_t sslbufferwrite(struct sslbuffer *buffer, char *data, size_t datalen)
 {
 	int targetsize = SSLBUFFERSIZE - buffer->count;
 	while (datalen >= targetsize) {
@@ -1756,22 +1620,16 @@ int main(int argc, char **argv)
 		}
 	openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 	if (!do_ssl && !no_ssl) {
-		dd_loginfo(
-			"httpd",
-			"httpd cannot start. SSL and/or HTTP must be selected\n");
+		dd_loginfo("httpd", "httpd cannot start. SSL and/or HTTP must be selected\n");
 		exit(0);
 	}
 	if (SSL_ENABLED()) {
 		if (no_ssl)
-			dd_loginfo("httpd", "httpd server started at port %d\n",
-				   server_port);
+			dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
 		if (do_ssl)
-			dd_loginfo("httpd",
-				   "httpd SSL server started at port %d\n",
-				   ssl_server_port);
+			dd_loginfo("httpd", "httpd SSL server started at port %d\n", ssl_server_port);
 	} else
-		dd_loginfo("httpd", "httpd server started at port %d\n",
-			   server_port);
+		dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int); // kill
@@ -1828,14 +1686,12 @@ int main(int argc, char **argv)
 		SSLeay_add_ssl_algorithms();
 		SSL_load_error_strings();
 		ctx = SSL_CTX_new(SSLv23_server_method());
-		if (SSL_CTX_use_certificate_file(ctx, certfile,
-						 SSL_FILETYPE_PEM) == 0) {
+		if (SSL_CTX_use_certificate_file(ctx, certfile, SSL_FILETYPE_PEM) == 0) {
 			cprintf("Can't read %s\n", CERT_FILE);
 			ERR_print_errors_fp(stderr);
 			exit(1);
 		}
-		if (SSL_CTX_use_PrivateKey_file(ctx, keyfile,
-						SSL_FILETYPE_PEM) == 0) {
+		if (SSL_CTX_use_PrivateKey_file(ctx, keyfile, SSL_FILETYPE_PEM) == 0) {
 			cprintf("Can't read %s\n", KEY_FILE);
 			ERR_print_errors_fp(stderr);
 			exit(1);
@@ -1847,12 +1703,8 @@ int main(int argc, char **argv)
 		}
 #endif
 #ifdef HAVE_POLARSSL
-		if ((ret = ctr_drbg_init(&ctr_drbg, entropy_func, &entropy,
-					 (const unsigned char *)pers,
-					 strlen(pers))) != 0) {
-			fprintf(stderr,
-				" failed\n  ! ctr_drbg_init returned %d\n",
-				ret);
+		if ((ret = ctr_drbg_init(&ctr_drbg, entropy_func, &entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
+			fprintf(stderr, " failed\n  ! ctr_drbg_init returned %d\n", ret);
 		}
 
 		bzero(&ssl, sizeof(ssl));
@@ -1872,10 +1724,8 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_MATRIXSSL
 		matrixssl_init();
-		if (0 !=
-		    matrixSslReadKeys(&keys, certfile, keyfile, NULL, NULL)) {
-			fprintf(stderr, "Error reading or parsing %s.\n",
-				KEY_FILE);
+		if (0 != matrixSslReadKeys(&keys, certfile, keyfile, NULL, NULL)) {
+			fprintf(stderr, "Error reading or parsing %s.\n", KEY_FILE);
 			exit(0);
 		}
 #endif
@@ -1883,15 +1733,11 @@ int main(int argc, char **argv)
 
 	/* Look up hostname. */
 	if (no_ssl)
-		lookup_hostname(&host_addr4, sizeof(host_addr4), &gotv4,
-				&host_addr6, sizeof(host_addr6), &gotv6,
-				server_port);
+		lookup_hostname(&host_addr4, sizeof(host_addr4), &gotv4, &host_addr6, sizeof(host_addr6), &gotv6, server_port);
 
 	if (SSL_ENABLED() && do_ssl)
-		lookup_hostname(&ssl_host_addr4, sizeof(ssl_host_addr4),
-				&ssl_gotv4, &ssl_host_addr6,
-				sizeof(ssl_host_addr6), &ssl_gotv6,
-				ssl_server_port);
+		lookup_hostname(&ssl_host_addr4, sizeof(ssl_host_addr4), &ssl_gotv4, &ssl_host_addr6, sizeof(ssl_host_addr6),
+				&ssl_gotv6, ssl_server_port);
 
 	if (!(gotv4 || gotv6 || ssl_gotv4 || ssl_gotv6)) {
 		exit(1);
@@ -1924,8 +1770,7 @@ int main(int argc, char **argv)
 		ssl_listen4_fd = -1;
 
 	/* If we didn't get any valid sockets, fail. */
-	if (listen4_fd == -1 && listen6_fd == -1 && ssl_listen4_fd == -1 &&
-	    ssl_listen6_fd == -1) {
+	if (listen4_fd == -1 && listen6_fd == -1 && ssl_listen4_fd == -1 && ssl_listen6_fd == -1) {
 		dd_logerror("httpd", "Can't bind to any address");
 		exit(1);
 	}
@@ -1949,9 +1794,7 @@ int main(int argc, char **argv)
 	for (;;) {
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
-			dd_logerror(
-				"httpd",
-				"Out of memory while creating new connection");
+			dd_logerror("httpd", "Out of memory while creating new connection");
 			continue;
 		}
 		bzero(conn_fp, sizeof(webs));
@@ -2001,32 +1844,25 @@ int main(int argc, char **argv)
 
 		sz = sizeof(usa);
 #ifdef USE_IPV6
-		if (no_ssl && listen6_fd != -1 &&
-		    FD_ISSET(listen6_fd, &lfdset)) {
+		if (no_ssl && listen6_fd != -1 && FD_ISSET(listen6_fd, &lfdset)) {
 			dd_logdebug("httpd", "accept6() %d\n", listen6_fd);
 			conn_fp->conn_fd = accept(listen6_fd, &usa.sa, &sz);
-		} else if (SSL_ENABLED() && do_ssl && ssl_listen6_fd != -1 &&
-			   FD_ISSET(ssl_listen6_fd, &lfdset)) {
-			dd_logdebug("httpd", "accept6_ssl() %d\n",
-				    ssl_listen6_fd);
+		} else if (SSL_ENABLED() && do_ssl && ssl_listen6_fd != -1 && FD_ISSET(ssl_listen6_fd, &lfdset)) {
+			dd_logdebug("httpd", "accept6_ssl() %d\n", ssl_listen6_fd);
 			conn_fp->conn_fd = accept(ssl_listen6_fd, &usa.sa, &sz);
 			conn_fp->ssl_enabled = 1;
 		} else
 #endif
-			if (no_ssl && listen4_fd != -1 &&
-			    FD_ISSET(listen4_fd, &lfdset)) {
+			if (no_ssl && listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset)) {
 			dd_logdebug("httpd", "accept4() %d\n", listen4_fd);
 			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
-		} else if (SSL_ENABLED() && do_ssl && ssl_listen4_fd != -1 &&
-			   FD_ISSET(ssl_listen4_fd, &lfdset)) {
-			dd_logdebug("httpd", "accept4_ssl() %d\n",
-				    ssl_listen4_fd);
+		} else if (SSL_ENABLED() && do_ssl && ssl_listen4_fd != -1 && FD_ISSET(ssl_listen4_fd, &lfdset)) {
+			dd_logdebug("httpd", "accept4_ssl() %d\n", ssl_listen4_fd);
 			conn_fp->conn_fd = accept(ssl_listen4_fd, &usa.sa, &sz);
 			conn_fp->ssl_enabled = 1;
 		}
 		if (conn_fp->conn_fd < 0) {
-			dd_logdebug("httpd", "error on accept errno %d\n",
-				    errno);
+			dd_logdebug("httpd", "error on accept errno %d\n", errno);
 			perror("accept");
 			SEM_POST(&semaphore);
 			continue;
@@ -2053,8 +1889,7 @@ int main(int argc, char **argv)
 		}
 
 		if (SSL_ENABLED() && DO_SSL(conn_fp)) {
-			if (action ==
-			    ACT_WEB_UPGRADE) { // We don't want user to use web (https) during web (http) upgrade.
+			if (action == ACT_WEB_UPGRADE) { // We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "http(s)d: nothing to do...\n");
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
@@ -2067,8 +1902,7 @@ int main(int argc, char **argv)
 
 #ifdef NID_X9_62_prime256v1
 			EC_KEY *ecdh = NULL;
-			if ((ecdh = EC_KEY_new_by_curve_name(
-				     NID_X9_62_prime256v1))) {
+			if ((ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1))) {
 				SSL_CTX_set_tmp_ecdh(ctx, ecdh);
 				EC_KEY_free(ecdh);
 			}
@@ -2082,11 +1916,8 @@ int main(int argc, char **argv)
 #define SSL_OP_SAFARI_ECDHE_ECDSA_BUG 0
 #endif
 
-			SSL_CTX_set_options(
-				ctx, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
-					     SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
-					     SSL_OP_CIPHER_SERVER_PREFERENCE |
-					     SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
+			SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+							 SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 
 			SSL_set_fd(conn_fp->ssl, conn_fp->conn_fd);
 			r = SSL_accept(conn_fp->ssl);
@@ -2116,11 +1947,9 @@ int main(int argc, char **argv)
 			ssl_set_endpoint(&conn_fp->ssl, SSL_IS_SERVER);
 			ssl_set_authmode(&conn_fp->ssl, SSL_VERIFY_NONE);
 			ssl_set_rng(&conn_fp->ssl, ctr_drbg_random, &ctr_drbg);
-			ssl_set_ca_chain(&conn_fp->ssl, srvcert.next, NULL,
-					 NULL);
+			ssl_set_ca_chain(&conn_fp->ssl, srvcert.next, NULL, NULL);
 
-			ssl_set_bio(&conn_fp->ssl, net_recv, &conn_fp->conn_fd,
-				    net_send, &conn_fp->conn_fd);
+			ssl_set_bio(&conn_fp->ssl, net_recv, &conn_fp->conn_fd, net_send, &conn_fp->conn_fd);
 			ssl_set_ciphersuites(&conn_fp->ssl, my_ciphers);
 			ssl_set_own_cert(&conn_fp->ssl, &srvcert, &rsa);
 
@@ -2140,8 +1969,7 @@ int main(int argc, char **argv)
 #endif
 		} else {
 			if (SSL_ENABLED() &&
-			    action ==
-				    ACT_WEBS_UPGRADE) { // We don't want user to use web (http) during web (https) upgrade.
+			    action == ACT_WEBS_UPGRADE) { // We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
@@ -2150,16 +1978,13 @@ int main(int argc, char **argv)
 			conn_fp->conn_fd_out = dup(conn_fp->conn_fd);
 			dd_logdebug("httpd", "fdopen()\n");
 			if (!(conn_fp->fp_in = fdopen(conn_fp->conn_fd, "r"))) {
-				dd_logdebug("httpd", "fd error error %d\n",
-					    errno);
+				dd_logdebug("httpd", "fd error error %d\n", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
 				continue;
 			}
-			if (!(conn_fp->fp_out =
-				      fdopen(conn_fp->conn_fd_out, "w"))) {
-				dd_logdebug("httpd", "fd error error %d\n",
-					    errno);
+			if (!(conn_fp->fp_out = fdopen(conn_fp->conn_fd_out, "w"))) {
+				dd_logdebug("httpd", "fd error error %d\n", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
 				continue;
@@ -2177,8 +2002,7 @@ int main(int argc, char **argv)
 		//              pthread_attr_setstacksize(&attr, 4096);
 		pthread_t thread;
 		dd_logdebug("httpd", "createthread()\n");
-		if (pthread_create(&thread, &attr, handle_request, conn_fp) !=
-		    0) {
+		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0) {
 			SEM_POST(&semaphore);
 			fprintf(stderr, "Failed to create thread\n");
 		}
@@ -2224,8 +2048,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 			int eof = 1;
 			int i;
 			char c;
-			int sr = sslbufferpeek((struct sslbuffer *)wp->fp_in,
-					       buf, len);
+			int sr = sslbufferpeek((struct sslbuffer *)wp->fp_in, buf, len);
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
 					*rfeof = 1;
@@ -2239,8 +2062,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 				}
 			}
 next:;
-			sr = sslbufferread((struct sslbuffer *)wp->fp_in, buf,
-					   i + 1);
+			sr = sslbufferread((struct sslbuffer *)wp->fp_in, buf, i + 1);
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
 					*rfeof = 1;
@@ -2260,8 +2082,7 @@ next:;
 			ret = (char *)matrixssl_gets(wp->fp_in, buf, len);
 #elif defined(HAVE_POLARSSL)
 
-			int r = ssl_read((ssl_context *)wp->fp_in,
-					 (unsigned char *)buf, len);
+			int r = ssl_read((ssl_context *)wp->fp_in, (unsigned char *)buf, len);
 			ret = buf;
 #endif
 		} else {
@@ -2291,15 +2112,13 @@ int wfputs(char *buf, webs_t wp)
 	int ret;
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf,
-				     strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf, strlen(buf));
 
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_puts(wp->fp_in, buf);
 
 #elif defined(HAVE_POLARSSL)
-		ret = ssl_write((ssl_context *)wp->fp_in, (unsigned char *)buf,
-				strlen(buf));
+		ret = ssl_write((ssl_context *)wp->fp_in, (unsigned char *)buf, strlen(buf));
 		fprintf(stderr, "SSL write str %d\n", strlen(buf));
 
 #endif
@@ -2321,8 +2140,7 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf,
-				     strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf, strlen(buf));
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_printf(wp->fp_in, "%s", buf);
 #elif defined(HAVE_POLARSSL)
@@ -2355,17 +2173,14 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 		{
-			ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf,
-					     n * size);
+			ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf, n * size);
 		}
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_write(wp->fp_in, (unsigned char *)buf,
-				      n * size);
+		ret = matrixssl_write(wp->fp_in, (unsigned char *)buf, n * size);
 #elif defined(HAVE_POLARSSL)
 		{
 			fprintf(stderr, "SSL write buf %d\n", n * size);
-			ret = ssl_write((ssl_context *)wp->fp_in,
-					(unsigned char *)buf, n * size);
+			ret = ssl_write((ssl_context *)wp->fp_in, (unsigned char *)buf, n * size);
 		}
 #endif
 	} else {
@@ -2389,8 +2204,7 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 	for (i = 0; i < 500; i++) {
 		if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-			ret = sslbufferread((struct sslbuffer *)wp->fp_in, buf,
-					    n * size);
+			ret = sslbufferread((struct sslbuffer *)wp->fp_in, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
 			//do it in chains
 			size_t cnt = (size * n) / 0x4000;
@@ -2401,15 +2215,13 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 				len += matrixssl_read(fp, buf, 0x4000);
 				*buf += 0x4000;
 			}
-			len += matrixssl_read(wp->fp_in, buf,
-					      (size * n) % 0x4000);
+			len += matrixssl_read(wp->fp_in, buf, (size * n) % 0x4000);
 
 			ret = len;
 #elif defined(HAVE_POLARSSL)
 			size_t len = n * size;
 			fprintf(stderr, "read SSL %d\n", len);
-			ret = ssl_read((ssl_context *)wp->fp_in,
-				       (unsigned char *)buf, &len);
+			ret = ssl_read((ssl_context *)wp->fp_in, (unsigned char *)buf, &len);
 #endif
 		} else {
 			ret = fread(buf, size, n, wp->fp_in);
@@ -2490,8 +2302,7 @@ static void ias_sid_set(webs_t wp)
 	if (*(wp->http_client_mac)) {
 		ias_sid_timeout = sinfo.uptime + 300;
 		sprintf(ias_sid, "%s", wp->http_client_mac);
-		fprintf(stderr, "[IAS SID SET] %d %s\n", ias_sid_timeout,
-			ias_sid);
+		fprintf(stderr, "[IAS SID SET] %d %s\n", ias_sid_timeout, ias_sid);
 	}
 	return;
 }
@@ -2506,10 +2317,8 @@ static int ias_sid_valid(webs_t wp)
 
 	sysinfo(&sinfo);
 	mac = wp->http_client_mac;
-	if (sinfo.uptime > ias_sid_timeout ||
-	    (strcmp(mac, ias_sid) && *(mac))) {
-		fprintf(stderr, "[IAS SID RESET] %d<>%d %s<>%s\n", sinfo.uptime,
-			ias_sid_timeout, mac, ias_sid);
+	if (sinfo.uptime > ias_sid_timeout || (strcmp(mac, ias_sid) && *(mac))) {
+		fprintf(stderr, "[IAS SID RESET] %d<>%d %s<>%s\n", sinfo.uptime, ias_sid_timeout, mac, ias_sid);
 		ias_sid_timeout = 0;
 		sprintf(ias_sid, "");
 		return 0;

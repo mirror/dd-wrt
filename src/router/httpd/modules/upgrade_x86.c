@@ -45,7 +45,7 @@ static int
 // do_upgrade_cgi(char *url, FILE *stream)
 do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url,
 	       webs_t stream) // jimmy, https,
-	// 8/6/2003
+// 8/6/2003
 {
 	int ret;
 #ifndef ANTI_FLASH
@@ -77,15 +77,11 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url,
 }
 
 #ifdef HAVE_RB600
-#define swap(x)                                                              \
-	((unsigned int)((((unsigned int)(x) & (unsigned int)0x000000ffUL)    \
-			 << 24) |                                            \
-			(((unsigned int)(x) & (unsigned int)0x0000ff00UL)    \
-			 << 8) |                                             \
-			(((unsigned int)(x) & (unsigned int)0x00ff0000UL) >> \
-			 8) |                                                \
-			(((unsigned int)(x) & (unsigned int)0xff000000UL) >> \
-			 24)))
+#define swap(x)                                                                    \
+	((unsigned int)((((unsigned int)(x) & (unsigned int)0x000000ffUL) << 24) | \
+			(((unsigned int)(x) & (unsigned int)0x0000ff00UL) << 8) |  \
+			(((unsigned int)(x) & (unsigned int)0x00ff0000UL) >> 8) |  \
+			(((unsigned int)(x) & (unsigned int)0xff000000UL) >> 24)))
 
 #endif
 
@@ -281,16 +277,12 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
-				while (len > 0 && strcmp(buf, "\n") &&
-				       strcmp(buf, "\r\n")) {
-					if (!wfgets(buf,
-						    MIN(len + 1, sizeof(buf)),
-						    stream, NULL))
+				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
+					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 						return -1;
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, sizeof(buf)),
-					    stream, NULL))
+				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream, NULL))
 					return -1;
 				len -= strlen(buf);
 				buf[1] = '\0'; // we only want the 1st digit

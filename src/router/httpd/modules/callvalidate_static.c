@@ -442,15 +442,14 @@ static struct callmap gozila_map[] = {
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
-#define cprintf(fmt, args...)                                          \
-	do {                                                           \
-		FILE *fp = fopen("/dev/console", "w");                 \
-		if (fp) {                                              \
-			fprintf(fp, "%s (%d):%s ", __FILE__, __LINE__, \
-				__func__);                             \
-			fprintf(fp, fmt, ##args);                      \
-			fclose(fp);                                    \
-		}                                                      \
+#define cprintf(fmt, args...)                                                     \
+	do {                                                                      \
+		FILE *fp = fopen("/dev/console", "w");                            \
+		if (fp) {                                                         \
+			fprintf(fp, "%s (%d):%s ", __FILE__, __LINE__, __func__); \
+			fprintf(fp, fmt, ##args);                                 \
+			fclose(fp);                                               \
+		}                                                                 \
 	} while (0)
 #endif
 size_t websWrite(webs_t wp, char *fmt, ...);
@@ -480,8 +479,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 		return NULL;
 	if (!wp)
 		return nvram_safe_get(name);
-	return wp->gozila_action ? websGetVar(wp, name, NULL) :
-				   nvram_safe_get(name);
+	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
 char *live_translate(webs_t wp, const char *tran);
@@ -492,8 +490,7 @@ static void start_gozila(char *name, webs_t wp)
 	int (*fptr)(webs_t wp) = NULL;
 	int i;
 	for (i = 0; i < sizeof(gozila_map) / sizeof(gozila_map[0]); i++) {
-		if (gozila_map[i].name[0] == name[0] &&
-		    !strcmp(gozila_map[i].name, name)) {
+		if (gozila_map[i].name[0] == name[0] && !strcmp(gozila_map[i].name, name)) {
 			fptr = (int (*)(webs_t wp))gozila_map[i].func;
 			break;
 		}
@@ -505,19 +502,15 @@ static void start_gozila(char *name, webs_t wp)
 		dd_logdebug("httpd", "function %s not found \n", name);
 }
 
-static int start_validator(char *name, webs_t wp, char *value,
-			   struct variable *v)
+static int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 {
 	int (*fptr)(webs_t wp, char *value, struct variable *v) = NULL;
 
 	int i;
 	int ret;
 	for (i = 0; i < sizeof(validate_map) / sizeof(validate_map[0]); i++) {
-		if (validate_map[i].name[0] == name[0] &&
-		    !strcmp(validate_map[i].name, name)) {
-			fptr = (int (*)(webs_t wp, char *value,
-					struct variable *v))validate_map[i]
-				       .func;
+		if (validate_map[i].name[0] == name[0] && !strcmp(validate_map[i].name, name)) {
+			fptr = (int (*)(webs_t wp, char *value, struct variable *v))validate_map[i].func;
 			break;
 		}
 	}
@@ -532,15 +525,13 @@ static int start_validator(char *name, webs_t wp, char *value,
 	return ret;
 }
 
-static void *start_validator_nofree(char *name, void *handle, webs_t wp,
-				    char *value, struct variable *v)
+static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
 {
 	start_validator(name, wp, value, v);
 	return handle;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc,
-		     char_t **argv)
+static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **argv)
 {
 	struct timeval before, after, r;
 
@@ -555,9 +546,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc,
 	int i;
 	for (i = 0; i < sizeof(ej_map) / sizeof(ej_map[0]); i++) {
 		if (!strcmp(ej_map[i].name, name)) {
-			fptr = (void (*)(webs_t wp, int argc,
-					 char_t **argv))ej_map[i]
-				       .func;
+			fptr = (void (*)(webs_t wp, int argc, char_t **argv))ej_map[i].func;
 			break;
 		}
 	}
@@ -569,12 +558,10 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc,
 			(*fptr)(wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
-			dd_logdebug("httpd", " %s duration %ld.%06ld\n", name,
-				    (long int)r.tv_sec, (long int)r.tv_usec);
+			dd_logdebug("httpd", " %s duration %ld.%06ld\n", name, (long int)r.tv_sec, (long int)r.tv_usec);
 
 		} else {
-			dd_logdebug("httpd", " function %s not found (%s)\n",
-				    name, "unknown");
+			dd_logdebug("httpd", " function %s not found (%s)\n", name, "unknown");
 		}
 	}
 	return handle;

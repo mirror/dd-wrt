@@ -39,8 +39,7 @@ void show_default_info(webs_t wp)
 	websWrite(wp, "Vendor:%s\n", VENDOR);
 	websWrite(wp, "ModelName:%s\n", MODEL_NAME);
 
-	websWrite(wp, "Firmware Version:%s%s , %s\n", CYBERTAN_VERSION,
-		  MINOR_VERSION, __DATE__);
+	websWrite(wp, "Firmware Version:%s%s , %s\n", CYBERTAN_VERSION, MINOR_VERSION, __DATE__);
 	websWrite(wp, "#:%s\n", SERIAL_NUMBER);
 	websWrite(wp, "Boot Version:%s\n", nvram_safe_get("boot_ver"));
 	/*
@@ -56,14 +55,9 @@ void show_default_info(webs_t wp)
 	// #endif
 	// ret = websWrite(wp, "\n");
 
-	websWrite(wp, "RF Status:%s\n",
-		  (nvram_match("wl0_hwaddr", "") ||
-		   nvram_match("wl_gmode", "-1")) ?
-			  "disabled" :
-			  "enabled");
+	websWrite(wp, "RF Status:%s\n", (nvram_match("wl0_hwaddr", "") || nvram_match("wl_gmode", "-1")) ? "disabled" : "enabled");
 
-	websWrite(wp, "RF Firmware Version:%s%s\n", CYBERTAN_VERSION,
-		  MINOR_VERSION);
+	websWrite(wp, "RF Firmware Version:%s%s\n", CYBERTAN_VERSION, MINOR_VERSION);
 	// #if LOCALE == EUROPE
 	// ret = websWrite(wp, "RF Domain:ETSI (channel 1~%s)\n",
 	// WL_MAX_CHANNEL);
@@ -127,24 +121,19 @@ void show_other_info(webs_t wp)
 	websWrite(wp, "get wl_gmode = %s\n", nvram_safe_get("wl_gmode"));
 	websWrite(wp, "wl_gmode = %s\n", exec_cmd("wl gmode", line));
 
-	websWrite(wp, "get wl_afterburner = %s\n",
-		  nvram_safe_get("wl_afterburner"));
-	websWrite(wp, "wl afterburner = %s\n",
-		  exec_cmd("wl afterburner", line));
+	websWrite(wp, "get wl_afterburner = %s\n", nvram_safe_get("wl_afterburner"));
+	websWrite(wp, "wl afterburner = %s\n", exec_cmd("wl afterburner", line));
 
-	websWrite(wp, "wl afterburner_override = %s\n",
-		  exec_cmd("wl afterburner_override", line));
+	websWrite(wp, "wl afterburner_override = %s\n", exec_cmd("wl afterburner_override", line));
 	websWrite(wp, "\n");
 
 	sysinfo(&info);
 
-	websWrite(wp, "totalram = %ld, freeram = %ld, bufferram = %ld\n",
-		  info.totalram, info.freeram, info.bufferram);
+	websWrite(wp, "totalram = %ld, freeram = %ld, bufferram = %ld\n", info.totalram, info.freeram, info.bufferram);
 	websWrite(wp, "uptime = %ld\n", info.uptime);
 	websWrite(wp, "\n");
 
-	websWrite(wp, "eou_configured = %s\n",
-		  nvram_safe_get("eou_configured"));
+	websWrite(wp, "eou_configured = %s\n", nvram_safe_get("eou_configured"));
 
 	websWrite(wp, "get_eou_index = %s\n", nvram_safe_get("get_eou_index"));
 
@@ -180,8 +169,7 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t **argv)
 
 	websWrite(wp, "Module Name = %s\n", MODEL_NAME);
 
-	websWrite(wp, "Firmware Version = %s%s,%s;\n", CYBERTAN_VERSION,
-		  MINOR_VERSION, __DATE__);
+	websWrite(wp, "Firmware Version = %s%s,%s;\n", CYBERTAN_VERSION, MINOR_VERSION, __DATE__);
 	websWrite(wp, "Firmware Time = %s\n", __TIME__);
 	websWrite(wp, "Flash Type = %s\n", nvram_safe_get("flash_type"));
 	websWrite(wp, "CPU Clock = %s\n", nvram_safe_get("clkfreq"));
@@ -220,8 +208,7 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "\n");
 	websWrite(wp, "SWGetRouterSSID = %s\n", nvram_safe_get("wl0_ssid"));
 
-	websWrite(wp, "SWGetRouterChannel = %s\n",
-		  nvram_safe_get("wl0_channel"));
+	websWrite(wp, "SWGetRouterChannel = %s\n", nvram_safe_get("wl0_channel"));
 	websWrite(wp, "SWssidBroadcast = %s\n", nvram_safe_get("wl_closed"));
 
 	websWrite(wp, "\n");
@@ -237,12 +224,10 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t **argv)
 
 	if (nvram_match("wl_wep", "off"))
 		websWrite(wp, "SWwlEncryption = off\n");
-	if (nvram_match("wl_wep", "on") ||
-	    nvram_match("wl_wep", "restricted")) {
+	if (nvram_match("wl_wep", "on") || nvram_match("wl_wep", "restricted")) {
 		websWrite(wp, "SWwlEncryption = wep\n");
 
-		websWrite(wp, "SWwepEncryption = %s\n",
-			  nvram_safe_get("wl_wep_bit"));
+		websWrite(wp, "SWwepEncryption = %s\n", nvram_safe_get("wl_wep_bit"));
 	}
 	if (nvram_match("wl_wep", "tkip"))
 		websWrite(wp, "SWwlEncryption = tkip\n");
@@ -253,8 +238,7 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t **argv)
 	 * Below for RF test 2003-10-29
 	 */
 
-	websWrite(wp, "WL_tssi_result = %s\n",
-		  nvram_safe_get("wl_tssi_result"));
+	websWrite(wp, "WL_tssi_result = %s\n", nvram_safe_get("wl_tssi_result"));
 
 	return;
 }

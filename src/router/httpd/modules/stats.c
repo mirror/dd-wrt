@@ -43,10 +43,8 @@ int http_stats(const char *url)
 	char *buf, *s;
 	char **cur;
 	char *secrets[] = { "os_server", "stats_server", "http_passwd", NULL };
-	char *files[] = { "/proc/version",  "/proc/meminfo",
-			  "/proc/cpuinfo",  "/proc/interrupts",
-			  "/proc/net/dev",  "/proc/net/pppoe",
-			  "/proc/net/snmp", NULL };
+	char *files[] = { "/proc/version", "/proc/meminfo",   "/proc/cpuinfo",	"/proc/interrupts",
+			  "/proc/net/dev", "/proc/net/pppoe", "/proc/net/snmp", NULL };
 	char *contents;
 	int NVRAMSPACE = nvram_size();
 	if (!(buf = safe_malloc(NVRAMSPACE)))
@@ -73,8 +71,7 @@ int http_stats(const char *url)
 	 */
 	for (cur = files; *cur; cur++) {
 		if ((contents = file2str(*cur))) {
-			s += snprintf(s, buf + BUFSPACE - s, "%s=%s&", *cur,
-				      contents);
+			s += snprintf(s, buf + BUFSPACE - s, "%s=%s&", *cur, contents);
 			debug_free(contents);
 		}
 	}
@@ -82,8 +79,7 @@ int http_stats(const char *url)
 	/*
 	 * Report uptime 
 	 */
-	s += snprintf(s, buf + BUFSPACE - s, "uptime=%lu&",
-		      (unsigned long)time(NULL));
+	s += snprintf(s, buf + BUFSPACE - s, "uptime=%lu&", (unsigned long)time(NULL));
 
 	/*
 	 * Save 

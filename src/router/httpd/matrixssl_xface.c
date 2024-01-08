@@ -18,8 +18,7 @@ extern sslKeys_t *keys;
 int MATRIXSSL_ADDSBUF(size_t x, matrixssl_buf *y, unsigned char *z)
 {
 	if (y && x > 0 && y->ssl_send_buflen - y->ssl_send_cur < x) {
-		y->ssl_send_buf =
-			(char *)realloc(y->ssl_send_buf, y->ssl_send_cur + x);
+		y->ssl_send_buf = (char *)realloc(y->ssl_send_buf, y->ssl_send_cur + x);
 		if (y->ssl_send_buf)
 			y->ssl_send_buflen = y->ssl_send_cur + x;
 		else
@@ -36,8 +35,7 @@ int MATRIXSSL_ADDSBUF(size_t x, matrixssl_buf *y, unsigned char *z)
 int MATRIXSSL_ADDRBUF(size_t x, matrixssl_buf *y, unsigned char *z)
 {
 	if (y && x > 0 && y->ssl_recv_buflen - y->ssl_recv_cur < x) {
-		y->ssl_recv_buf =
-			(char *)realloc(y->ssl_recv_buf, y->ssl_recv_cur + x);
+		y->ssl_recv_buf = (char *)realloc(y->ssl_recv_buf, y->ssl_recv_cur + x);
 		if (y->ssl_recv_buf)
 			y->ssl_recv_buflen = y->ssl_recv_cur + x;
 		else
@@ -51,20 +49,18 @@ int MATRIXSSL_ADDRBUF(size_t x, matrixssl_buf *y, unsigned char *z)
 	return 0;
 }
 
-#define MATRIXSSL_RSTBUF(x)                               \
-	if (x && x->ssl_recv_buflen == x->ssl_recv_cur && \
-	    x->ssl_recv_buflen > 0) {                     \
-		x->ssl_recv_buflen = x->ssl_recv_cur = 0; \
-		if (x->ssl_recv_buf)                      \
-			free(x->ssl_recv_buf);            \
-		x->ssl_recv_buf = NULL;                   \
-	}                                                 \
-	if (x && x->ssl_send_buflen == x->ssl_send_cur && \
-	    x->ssl_send_buflen > 0) {                     \
-		x->ssl_send_buflen = x->ssl_send_cur = 0; \
-		if (x->ssl_send_buf)                      \
-			free(x->ssl_send_buf);            \
-		x->ssl_send_buf = NULL;                   \
+#define MATRIXSSL_RSTBUF(x)                                                         \
+	if (x && x->ssl_recv_buflen == x->ssl_recv_cur && x->ssl_recv_buflen > 0) { \
+		x->ssl_recv_buflen = x->ssl_recv_cur = 0;                           \
+		if (x->ssl_recv_buf)                                                \
+			free(x->ssl_recv_buf);                                      \
+		x->ssl_recv_buf = NULL;                                             \
+	}                                                                           \
+	if (x && x->ssl_send_buflen == x->ssl_send_cur && x->ssl_send_buflen > 0) { \
+		x->ssl_send_buflen = x->ssl_send_cur = 0;                           \
+		if (x->ssl_send_buf)                                                \
+			free(x->ssl_send_buf);                                      \
+		x->ssl_send_buf = NULL;                                             \
 	}
 
 matrixssl_buf *matrixssl_newbuf(int fp)
@@ -73,8 +69,7 @@ matrixssl_buf *matrixssl_newbuf(int fp)
 
 	for (i = 0; i < MAX_MATRIXSSL_SESSIONS; i++) {
 		if (bufs[i] == NULL) {
-			bufs[i] = (matrixssl_buf *)calloc(sizeof(matrixssl_buf),
-							  1);
+			bufs[i] = (matrixssl_buf *)calloc(sizeof(matrixssl_buf), 1);
 			if (bufs[i]) {
 				bufs[i]->fp = fp;
 				no_matrixssl_sessions++;
@@ -130,8 +125,7 @@ void matrixssl_new_session(int fp)
 {
 	matrixssl_buf *pbuf = matrixssl_newbuf(fp);
 
-	if (NULL == keys || NULL == pbuf ||
-	    no_matrixssl_sessions >= MAX_MATRIXSSL_SESSIONS)
+	if (NULL == keys || NULL == pbuf || no_matrixssl_sessions >= MAX_MATRIXSSL_SESSIONS)
 		return;
 
 	matrixSslNewSession(&pbuf->ssl, keys, NULL, SSL_FLAGS_SERVER);
@@ -150,8 +144,7 @@ char *matrixssl_gets(FILE *fp, unsigned char *buf, int len)
 
 	s = pbuf->ssl_recv_buf + pbuf->ssl_recv_cur;
 	p = buf;
-	while (len > 1 && *s != '\n' &&
-	       pbuf->ssl_recv_cur < pbuf->ssl_recv_buflen) {
+	while (len > 1 && *s != '\n' && pbuf->ssl_recv_cur < pbuf->ssl_recv_buflen) {
 		*p++ = *s++;
 		len--;
 		pbuf->ssl_recv_cur++;
@@ -171,8 +164,8 @@ char *matrixssl_gets(FILE *fp, unsigned char *buf, int len)
 		MATRIXSSL_RSTBUF(pbuf);
 
 #ifdef DEBUG_MATRIXSSL
-	printf("matrixssl_gets - returning %d chars %s, %d left in buffer\n",
-	       strlen(buf), buf, pbuf->ssl_recv_buflen - pbuf->ssl_recv_cur);
+	printf("matrixssl_gets - returning %d chars %s, %d left in buffer\n", strlen(buf), buf,
+	       pbuf->ssl_recv_buflen - pbuf->ssl_recv_cur);
 #endif
 
 	return buf;
@@ -266,8 +259,7 @@ int matrixssl_read(FILE *fp, unsigned char *buf, int len)
 		MATRIXSSL_RSTBUF(pbuf);
 	}
 #ifdef DEBUG_MATRIXSSL
-	printf("matrixssl_read - returning %d bytes, %d left in buffer\n", len,
-	       pbuf->ssl_recv_buflen - pbuf->ssl_recv_cur);
+	printf("matrixssl_read - returning %d bytes, %d left in buffer\n", len, pbuf->ssl_recv_buflen - pbuf->ssl_recv_cur);
 #endif
 	return len;
 	/*
@@ -365,8 +357,7 @@ int do_matrixssl_recv(FILE *fp)
 		out.size = out_buf_size;
 		bzero(out.buf, out_buf_size);
 
-		ret = recv((int)fp, in.end, (int)((in.buf + in.size) - in.end),
-			   0);
+		ret = recv((int)fp, in.end, (int)((in.buf + in.size) - in.end), 0);
 #ifdef DEBUG_MATRIXSSL
 		printf("do_matrixssl_recv - %d bytes read from socket\n", ret);
 #endif
@@ -380,11 +371,9 @@ decodeMore:
 		error = 0;
 		alertLevel = 0;
 		alertDescription = 0;
-		rc = matrixSslDecode(pbuf->ssl, &in, &out, &error, &alertLevel,
-				     &alertDescription);
+		rc = matrixSslDecode(pbuf->ssl, &in, &out, &error, &alertLevel, &alertDescription);
 #ifdef DEBUG_MATRIXSSL
-		printf("do_matrixssl_recv - %d bytes in buffer, %d bytes out buffer\n",
-		       in.end - in.start, out.end - out.start);
+		printf("do_matrixssl_recv - %d bytes in buffer, %d bytes out buffer\n", in.end - in.start, out.end - out.start);
 #endif
 
 		switch (rc) {
@@ -395,8 +384,7 @@ decodeMore:
 #ifdef DEBUG_MATRIXSSL
 			printf("SSL_SUCCESS\n");
 #endif
-			if (matrixSslHandshakeIsComplete(pbuf->ssl) == 0 &&
-			    in.end <= in.start)
+			if (matrixSslHandshakeIsComplete(pbuf->ssl) == 0 && in.end <= in.start)
 				continue;
 
 			if (in.end > in.start)
@@ -414,9 +402,8 @@ decodeMore:
 			ioctl((int)fp, FIONREAD, (unsigned long *)&more);
 
 #ifdef DEBUG_MATRIXSSL
-			fprintf(stderr,
-				"SSL_PROCESS_DATA - received %d bytes, %d more to get\n",
-				(int)pbuf->ssl_recv_cur, (int)more);
+			fprintf(stderr, "SSL_PROCESS_DATA - received %d bytes, %d more to get\n", (int)pbuf->ssl_recv_cur,
+				(int)more);
 #endif
 
 			/*      if (more > 0){
@@ -431,9 +418,8 @@ decodeMore:
 */
 			if (in.end - in.start > 0) {
 #ifdef DEBUG_MATRIXSSL
-				fprintf(stderr,
-					"SSL_PROCESS_DATA - in.size %d bytes, in.end - in.start %d bytes\n",
-					in.size, in.end - in.start);
+				fprintf(stderr, "SSL_PROCESS_DATA - in.size %d bytes, in.end - in.start %d bytes\n", in.size,
+					in.end - in.start);
 #endif
 				goto decodeMore;
 			} else
@@ -450,8 +436,7 @@ decodeMore:
 			printf("SSL_SEND_RESPONSE\n");
 #endif
 			while (out.start < out.end) {
-				rc = send((int)fp, out.start,
-					  (int)(out.end - out.start), 0);
+				rc = send((int)fp, out.start, (int)(out.end - out.start), 0);
 
 				if (rc <= 0)
 					goto matrixssl_recv_done;
@@ -475,15 +460,11 @@ decodeMore:
 
 			while (more > 0) {
 				if (in_buf_size - (in.end - in.buf) <= more) {
-					in.start = in.buf = in_buf =
-						(char *)realloc(in_buf,
-								in_buf_size +
-									more);
+					in.start = in.buf = in_buf = (char *)realloc(in_buf, in_buf_size + more);
 					in.end = in.buf + in.size;
 					in_buf_size += more;
 				}
-				ret = recv((int)fp, in.end,
-					   in_buf_size - (in.end - in.buf), 0);
+				ret = recv((int)fp, in.end, in_buf_size - (in.end - in.buf), 0);
 
 #ifdef DEBUG_MATRIXSSL
 				printf("SSL_PARTIAL - recv %d bytes\n", ret);
@@ -494,8 +475,7 @@ decodeMore:
 
 				in.end += ret;
 				//in.size += ret;
-				ioctl((int)fp, FIONREAD,
-				      (unsigned long *)&more);
+				ioctl((int)fp, FIONREAD, (unsigned long *)&more);
 			}
 
 			goto decodeMore;
@@ -509,13 +489,11 @@ decodeMore:
 #endif
 
 			out_buf_size *= 2;
-			out.buf = out.start = out.end = out_buf =
-				(char *)realloc(out_buf, out_buf_size);
+			out.buf = out.start = out.end = out_buf = (char *)realloc(out_buf, out_buf_size);
 			out.size = out_buf_size;
 
 #ifdef DEBUG_MATRIXSSL
-			printf("SSL_FULL - out_buf is %d bytes\n",
-			       out_buf_size);
+			printf("SSL_FULL - out_buf is %d bytes\n", out_buf_size);
 #endif
 
 			goto decodeMore;
@@ -538,9 +516,8 @@ decodeMore:
 			printf("SSL_ALERT\n");
 #endif
 			if (alertDescription != SSL_ALERT_CLOSE_NOTIFY) {
-				fprintf(stderr,
-					"Closing connection on alert level %d, description %d.\n",
-					alertLevel, alertDescription);
+				fprintf(stderr, "Closing connection on alert level %d, description %d.\n", alertLevel,
+					alertDescription);
 			}
 
 		default:
@@ -579,13 +556,11 @@ int do_matrixssl_send(FILE *fp)
 
 		bytes = MIN(pbuf->ssl_send_cur - len, SSL_MAX_RECORD_LEN);
 
-		if (matrixSslEncode(pbuf->ssl, pbuf->ssl_send_buf + len, bytes,
-				    &out) < 0)
+		if (matrixSslEncode(pbuf->ssl, pbuf->ssl_send_buf + len, bytes, &out) < 0)
 			return -1;
 
 		while (out.start < out.end) {
-			bytes = send((int)fp, out.start,
-				     (int)(out.end - out.start), 0);
+			bytes = send((int)fp, out.start, (int)(out.end - out.start), 0);
 
 			if (bytes <= 0)
 				return -1;
