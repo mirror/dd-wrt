@@ -295,7 +295,7 @@ static void wm_list_free(struct wm_list *l)
 		list_del(&wm->list);
 		ksmbd_free(wm);
 	}
-	ksmbd_free(i);
+	ksmbd_free(l);
 }
 
 static void wm_lists_destroy(void)
