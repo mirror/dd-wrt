@@ -115,7 +115,11 @@ void *_ksmbd_zalloc(size_t size, const char *func, int line)
 
 void ksmbd_free(void *ptr)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	__free(ptr);
+#else
+	kvfree(ptr);
+#endif
 }
 
 
@@ -163,11 +167,7 @@ int register_wm_size_class(size_t sz)
 	list_for_each_entry(l, &wm_lists, list) {
 		if (l->sz == sz) {
 			write_unlock(&wm_lists_lock);
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-			__free(nl);
-#else
-			kvfree(nl);
-#endif
+			ksmbd_free(nl);
 			return 0;
 		}
 	}
@@ -282,11 +282,7 @@ static void release_wm(struct wm *wm, struct wm_list *wm_list)
 	}
 
 	atomic_dec(&wm_list->avail_wm);
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-			__free(wm);
-#else
-			kvfree(wm);
-#endif
+	ksmbd_free(wm);
 }
 
 static void wm_list_free(struct wm_list *l)
@@ -296,17 +292,9 @@ static void wm_list_free(struct wm_list *l)
 	while (!list_empty(&l->idle_wm)) {
 		wm = list_entry(l->idle_wm.next, struct wm, list);
 		list_del(&wm->list);
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-		__free(wm);
-#else
-		kvfree(wm);
-#endif
+		ksmbd_free(wm);
 	}
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	__free(l);
-#else
-	kvfree(l);
-#endif
+	ksmbd_free(i);
 }
 
 static void wm_lists_destroy(void)
@@ -322,11 +310,7 @@ static void wm_lists_destroy(void)
 
 void ksmbd_free_request(void *addr)
 {
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	__free(addr);
-#else
-	kvfree(addr);
-#endif
+	ksmbd_free(addr);
 }
 
 void *_ksmbd_alloc_request(size_t size, const char *func, int line)
@@ -345,11 +329,7 @@ void *_ksmbd_alloc_request(size_t size, const char *func, int line)
 
 void ksmbd_free_response(void *buffer)
 {
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	__free(buffer);
-#else
-	kvfree(buffer);
-#endif
+	ksmbd_free(buffer);
 }
 
 void *_ksmbd_alloc_response(size_t size, const char *func, int line)
