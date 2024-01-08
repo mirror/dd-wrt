@@ -187,8 +187,10 @@ static struct ksmbd_session *__session_lookup(unsigned long long id)
 	struct ksmbd_session *sess;
 
 	hash_for_each_possible(sessions_table, sess, hlist, id) {
-		if (id == sess->id)
+		if (id == sess->id) {
+			sess->last_active = jiffies;
 			return sess;
+		}
 	}
 	return NULL;
 }
@@ -251,6 +253,7 @@ struct ksmbd_session *ksmbd_session_lookup_slowpath(unsigned long long id)
 	if (sess) {
 		if (!get_session(sess))
 			sess = NULL;
+		sess->last_active = jiffies;
 	}
 	up_read(&sessions_table_lock);
 
@@ -336,6 +339,7 @@ static struct ksmbd_session *__session_create(int protocol)
 
 	if (ksmbd_init_file_table(&sess->file_table))
 		goto error;
+	sess->last_active = jiffies;
 
 	set_session_flag(sess, protocol);
 	INIT_LIST_HEAD(&sess->sessions_entry);
@@ -345,6 +349,7 @@ static struct ksmbd_session *__session_create(int protocol)
 	sess->sequence_number = 1;
 	atomic_set(&sess->refcnt, 1);
 	rwlock_init(&sess->chann_lock);
+	rwlock_init(&sess->tree_conns_lock);
 
 	switch (protocol) {
 #ifdef CONFIG_SMB_INSECURE_SERVER
