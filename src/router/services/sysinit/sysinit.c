@@ -2963,6 +2963,8 @@ void start_restore_defaults(void)
 	 * Always set OS defaults 
 	 */
 	nvram_set("os_version", SVN_REVISION);
+	nvram_set("os_date", __DATE__ };
+
 	nvram_unset("shutdown");
 #ifdef HAVE_SPUTNIK_APD
 	/*

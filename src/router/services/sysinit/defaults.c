@@ -119,8 +119,6 @@ struct nvram_param srouter_defaults[] = {
 	/*
 	 * OS parameters 
 	 */
-	{ "os_version", SVN_REVISION },	/* OS revision */
-	{ "os_date", __DATE__ },	/* OS date */
 	{ "wait_time", "5" },
 	/*
 	 * Miscellaneous parameters 
