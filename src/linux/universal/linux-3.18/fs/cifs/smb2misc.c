@@ -199,9 +199,6 @@ smb2_check_message(char *buf, unsigned int length)
 		 * since the frame is parseable.
 		 */
 		if (clc_len < 4 /* RFC1001 header size */ + len) {
-			printk_once(KERN_WARNING
-				"SMB2 server sent bad RFC1001 len %d not %d\n",
-				len, clc_len - 4);
 			return 0;
 		}
 
