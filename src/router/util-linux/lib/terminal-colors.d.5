@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: terminal-colors.d
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-10-23
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: File formats
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "TERMINAL\-COLORS.D" "5" "2023-10-23" "util\-linux 2.39.3" "File formats"
+.TH "TERMINAL\-COLORS.D" "5" "2024-01-08" "util\-linux 2.39.3" "File formats"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -28,7 +28,7 @@
 .  LINKSTYLE blue R < >
 .\}
 .SH "NAME"
-terminal-colors.d \- configure output colorization for various utilities
+terminal\-colors.d \- configure output colorization for various utilities
 .SH "SYNOPSIS"
 .sp
 /etc/terminal\-colors.d/\fI[[name][@term].][type]\fP
@@ -310,7 +310,7 @@ Space
 T}
 T{
 .sp
-\fB\(rs\(rs\fP
+\fB\(rs\\fP
 T}:T{
 .sp
 Backslash (\(rs)
@@ -341,7 +341,7 @@ For example, to use a red background for alert messages in the output of \fBdmes
 .RS 3
 .ll -.6i
 .sp
-\fBecho \*(Aqalert 37;41\*(Aq >> /etc/terminal\-colors.d/dmesg.scheme\fP
+\fBecho \(aqalert 37;41\(aq >> /etc/terminal\-colors.d/dmesg.scheme\fP
 .br
 .RE
 .ll

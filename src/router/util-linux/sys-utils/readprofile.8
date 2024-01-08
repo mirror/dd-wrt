@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: readprofile
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-10-23
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "READPROFILE" "8" "2023-10-23" "util\-linux 2.39.3" "System Administration"
+.TH "READPROFILE" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -37,7 +37,7 @@ readprofile \- read kernel profiling information
 This manpage documents version 2.0 of the program.
 .SH "DESCRIPTION"
 .sp
-The \fBreadprofile\fP command uses the \fI/proc/profile\fP information to print ascii data on standard output. The output is organized in three columns: the first is the number of clock ticks, the second is the name of the C function in the kernel where those many ticks occurred, and the third is the normalized `load\*(Aq of the procedure, calculated as a ratio between the number of ticks and the length of the procedure. The output is filled with blanks to ease readability.
+The \fBreadprofile\fP command uses the \fI/proc/profile\fP information to print ascii data on standard output. The output is organized in three columns: the first is the number of clock ticks, the second is the name of the C function in the kernel where those many ticks occurred, and the third is the normalized `load\(aq of the procedure, calculated as a ratio between the number of ticks and the length of the procedure. The output is filled with blanks to ease readability.
 .SH "OPTIONS"
 .sp
 \fB\-a\fP, \fB\-\-all\fP
@@ -67,7 +67,7 @@ On some architectures it is possible to alter the frequency at which the kernel 
 .sp
 \fB\-p\fP, \fB\-\-profile\fP \fIpro\-file\fP
 .RS 4
-Specify a different profiling buffer, which by default is \fI/proc/profile\fP. Using a different pro\-file is useful if you want to `freeze\*(Aq the kernel profiling at some time and read it later. The \fI/proc/profile\fP file can be copied using \fBcat\fP(1) or \fBcp\fP(1). There is no more support for compressed profile buffers, like in \fBreadprofile\-1.1\fP, because the program needs to know the size of the buffer in advance.
+Specify a different profiling buffer, which by default is \fI/proc/profile\fP. Using a different pro\-file is useful if you want to `freeze\(aq the kernel profiling at some time and read it later. The \fI/proc/profile\fP file can be copied using \fBcat\fP(1) or \fBcp\fP(1). There is no more support for compressed profile buffers, like in \fBreadprofile\-1.1\fP, because the program needs to know the size of the buffer in advance.
 .RE
 .sp
 \fB\-r\fP, \fB\-\-reset\fP
@@ -125,9 +125,7 @@ Browse the profiling buffer ordering by clock ticks:
 .sp
 .if n .RS 4
 .nf
-.fam C
    readprofile | sort \-nr | less
-.fam
 .fi
 .if n .RE
 .sp
@@ -135,9 +133,7 @@ Print the 20 most loaded procedures:
 .sp
 .if n .RS 4
 .nf
-.fam C
    readprofile | sort \-nr +2 | head \-20
-.fam
 .fi
 .if n .RE
 .sp
@@ -145,9 +141,7 @@ Print only filesystem profile:
 .sp
 .if n .RS 4
 .nf
-.fam C
    readprofile | grep _ext2
-.fam
 .fi
 .if n .RE
 .sp
@@ -155,19 +149,15 @@ Look at all the kernel information, with ram addresses:
 .sp
 .if n .RS 4
 .nf
-.fam C
    readprofile \-av | less
-.fam
 .fi
 .if n .RE
 .sp
-Browse a \*(Aqfrozen\*(Aq profile buffer for a non current kernel:
+Browse a \(aqfrozen\(aq profile buffer for a non current kernel:
 .sp
 .if n .RS 4
 .nf
-.fam C
    readprofile \-p ~/profile.freeze \-m /zImage.map.gz
-.fam
 .fi
 .if n .RE
 .sp
@@ -175,9 +165,7 @@ Request profiling at 2kHz per CPU, and reset the profiling buffer:
 .sp
 .if n .RS 4
 .nf
-.fam C
    sudo readprofile \-M 20
-.fam
 .fi
 .if n .RE
 .SH "REPORTING BUGS"

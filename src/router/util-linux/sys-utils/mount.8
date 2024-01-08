@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: mount
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-12-01
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "MOUNT" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
+.TH "MOUNT" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -82,7 +82,7 @@ The same filesystem may be mounted more than once, and in some cases (e.g., netw
 .sp
 The listing mode is maintained for backward compatibility only.
 .sp
-For more robust and customizable output use \fBfindmnt\fP(8), \fBespecially in your scripts\fP. Note that control characters in the mountpoint name are replaced with \*(Aq?\*(Aq.
+For more robust and customizable output use \fBfindmnt\fP(8), \fBespecially in your scripts\fP. Note that control characters in the mountpoint name are replaced with \(aq?\(aq.
 .sp
 The following command lists all mounted filesystems (of type \fItype\fP):
 .RS 3
@@ -133,7 +133,7 @@ Don\(cqt forget that there is no guarantee that UUIDs and labels are really uniq
 .sp
 The recommended setup is to use tags (e.g. \fBUUID\fP=\fIuuid\fP) rather than \fI/dev/disk/by\-{label,uuid,id,partuuid,partlabel}\fP udev symlinks in the \fI/etc/fstab\fP file. Tags are more readable, robust and portable. The \fBmount\fP(8) command internally uses udev symlinks, so the use of symlinks in \fI/etc/fstab\fP has no advantage over tags. For more details see \fBlibblkid\fP(3).
 .sp
-The \fIproc\fP filesystem is not associated with a special device, and when mounting it, an arbitrary keyword \- for example, \fIproc\fP \- can be used instead of a device specification. (The customary choice \fInone\fP is less fortunate: the error message \*(Aqnone already mounted\*(Aq from \fBmount\fP can be confusing.)
+The \fIproc\fP filesystem is not associated with a special device, and when mounting it, an arbitrary keyword \- for example, \fIproc\fP \- can be used instead of a device specification. (The customary choice \fInone\fP is less fortunate: the error message \(aqnone already mounted\(aq from \fBmount\fP can be confusing.)
 .SS "The files /etc/fstab, /etc/mtab and /proc/mounts"
 .sp
 The file \fI/etc/fstab\fP (see \fBfstab\fP(5)), may contain lines describing what devices are usually mounted where, using which options. The default location of the \fBfstab\fP(5) file can be overridden with the \fB\-\-fstab\fP \fIpath\fP command\-line option (see below for more details).
@@ -298,12 +298,10 @@ Supported operations are:
 .sp
 .if n .RS 4
 .nf
-.fam C
 mount \-\-make\-shared mountpoint
 mount \-\-make\-slave mountpoint
 mount \-\-make\-private mountpoint
 mount \-\-make\-unbindable mountpoint
-.fam
 .fi
 .if n .RE
 .sp
@@ -311,12 +309,10 @@ The following commands allow one to recursively change the type of all the mount
 .sp
 .if n .RS 4
 .nf
-.fam C
 mount \-\-make\-rshared mountpoint
 mount \-\-make\-rslave mountpoint
 mount \-\-make\-rprivate mountpoint
 mount \-\-make\-runbindable mountpoint
-.fam
 .fi
 .if n .RE
 .sp
@@ -330,9 +326,7 @@ For example:
 .sp
 .if n .RS 4
 .nf
-.fam C
 mount \-\-make\-private \-\-make\-unbindable /dev/sda1 /foo
-.fam
 .fi
 .if n .RE
 .sp
@@ -340,11 +334,9 @@ is the same as:
 .sp
 .if n .RS 4
 .nf
-.fam C
 mount /dev/sda1 /foo
 mount \-\-make\-private /foo
 mount \-\-make\-unbindable /foo
-.fam
 .fi
 .if n .RE
 .SH "COMMAND\-LINE OPTIONS"
@@ -481,6 +473,11 @@ Source of default options. \fIsource\fP is a comma\-separated list of \fBfstab\f
 Use options from \fIfstab\fP/\fImtab\fP even if both \fIdevice\fP and \fIdir\fP are specified.
 .RE
 .sp
+\fB\-p\fP, \fB\-\-pass\-fd\fP \fInum\fP
+.RS 4
+In case of a loop mount with encryption, read the passphrase from file descriptor \fInum\fP instead of from the terminal.
+.RE
+.sp
 \fB\-R\fP, \fB\-\-rbind\fP
 .RS 4
 Remount a subtree and all possible submounts somewhere else (so that its contents are available in both places). See above, the subsection \fBBind mount operation\fP.
@@ -528,7 +525,7 @@ Note that \fBmount\fP does not pass the option \fB\-\-fstab\fP to the \fB/sbin/m
 .RS 4
 The argument following the \fB\-t\fP is used to indicate the filesystem type. The filesystem types which are currently supported depend on the running kernel. See \fI/proc/filesystems\fP and \fI/lib/modules/$(uname \-r)/kernel/fs\fP for a complete list of the filesystems. The most common are ext2, ext3, ext4, xfs, btrfs, vfat, sysfs, proc, nfs and cifs.
 .sp
-The programs \fBmount\fP and \fBumount\fP(8) support filesystem subtypes. The subtype is defined by a \*(Aq.subtype\*(Aq suffix. For example \*(Aqfuse.sshfs\*(Aq. It\(cqs recommended to use subtype notation rather than add any prefix to the mount source (for example \*(Aqsshfs#example.com\*(Aq is deprecated).
+The programs \fBmount\fP and \fBumount\fP(8) support filesystem subtypes. The subtype is defined by a \(aq.subtype\(aq suffix. For example \(aqfuse.sshfs\(aq. It\(cqs recommended to use subtype notation rather than add any prefix to the mount source (for example \(aqsshfs#example.com\(aq is deprecated).
 .sp
 If no \fB\-t\fP option is given, or if the \fBauto\fP type is specified, \fBmount\fP will try to guess the desired type. \fBmount\fP uses the \fBlibblkid\fP(3) library for guessing the filesystem type; if that does not turn up anything that looks familiar, \fBmount\fP will try to read the file \fI/etc/filesystems\fP, or, if that does not exist, \fI/proc/filesystems\fP. All of the filesystem types listed there will be tried, except for those that are labeled "nodev" (e.g. \fIdevpts\fP, \fIproc\fP and \fInfs\fP). If \fI/etc/filesystems\fP ends in a line with a single *, mount will read \fI/proc/filesystems\fP afterwards. While trying, all filesystem types will be mounted with the mount option \fBsilent\fP.
 .sp
@@ -585,9 +582,7 @@ The options \fBnosuid\fP, \fBnoexec\fP, \fBnodiratime\fP, \fBrelatime\fP, \fBnoa
 .sp
 .if n .RS 4
 .nf
-.fam C
 findmnt \-o TARGET,VFS\-OPTIONS,FS\-OPTIONS
-.fam
 .fi
 .if n .RE
 .br
@@ -612,9 +607,7 @@ option argument "recursive" could be specified, for example:
 .sp
 .if n .RS 4
 .nf
-.fam C
 mount \-orbind,ro=recursive,noexec=recursive,nosuid /foo /bar
-.fam
 .fi
 .if n .RE
 .br
@@ -672,7 +665,7 @@ Note that the kernel rejects any remount request that includes the context optio
 .ll -.6i
 .sp
 mount \-t tmpfs none /mnt \-o \(rs
-\*(Aqcontext="system_u:object_r:tmp_t:s0:c127,c456",noexec\*(Aq
+\(aqcontext="system_u:object_r:tmp_t:s0:c127,c456",noexec\(aq
 .br
 .RE
 .ll
@@ -960,7 +953,7 @@ strips off quotes and thus double quoting is required. For example:
 .RS 3
 .ll -.6i
 .sp
-mount \-t auto \-o\(cqX\-mount.auto\-fstypes="noext2,ext3"\*(Aq  /dev/sdc1 /mnt/test
+mount \-t auto \-o\(cqX\-mount.auto\-fstypes="noext2,ext3"\(aq  /dev/sdc1 /mnt/test
 .br
 .RE
 .ll
@@ -981,12 +974,12 @@ This feature is EXPERIMENTAL.
 .sp
 \fBX\-mount.owner\fP=\fIusername\fP|\fIUID\fP, \fBX\-mount.group\fP=\fIgroup\fP|\fIGID\fP
 .RS 4
-Set \fImountpoint\fP\*(Aqs ownership after mounting. Names resolved in the target mount namespace, see \fB\-N\fP.
+Set \fImountpoint\fP\(cqs ownership after mounting. Names resolved in the target mount namespace, see \fB\-N\fP.
 .RE
 .sp
 \fBX\-mount.mode\fP=\fImode\fP
 .RS 4
-Set \fImountpoint\fP\*(Aqs mode after mounting.
+Set \fImountpoint\fP\(cqs mode after mounting.
 .RE
 .sp
 \fBX\-mount.idmap\fP=\fIid\-type\fP:\fIid\-mount\fP:\fIid\-host\fP:\fIid\-range\fP [\fIid\-type\fP:\fIid\-mount\fP:\fIid\-host\fP:\fIid\-range\fP], \fBX\-mount.idmap\fP=\fIfile\fP
@@ -1120,7 +1113,7 @@ Set the owner and group of the files in the filesystem (default: uid=gid=0).
 .sp
 \fBownmask=\fP\fIvalue\fP and \fBothmask=\fP\fIvalue\fP
 .RS 4
-Set the permission mask for ADFS \*(Aqowner\*(Aq permissions and \*(Aqother\*(Aq permissions, respectively (default: 0700 and 0077, respectively). See also \fI/usr/src/linux/Documentation/filesystems/adfs.rst\fP.
+Set the permission mask for ADFS \(aqowner\(aq permissions and \(aqother\(aq permissions, respectively (default: 0700 and 0077, respectively). See also \fI/usr/src/linux/Documentation/filesystems/adfs.rst\fP.
 .RE
 .SS "Mount options for affs"
 .sp
@@ -1161,7 +1154,7 @@ Prefix used before volume name, when following a link.
 .sp
 \fBvolume=\fP\fIstring\fP
 .RS 4
-Prefix (of length at most 30) used before \*(Aq/\*(Aq when following a symbolic link.
+Prefix (of length at most 30) used before \(aq/\(aq when following a symbolic link.
 .RE
 .sp
 \fBreserved=\fP\fIvalue\fP
@@ -1275,7 +1268,7 @@ Other users can change timestamp.
 .RE
 .RE
 .sp
-The default is set from \*(Aqdmask\*(Aq option. (If the directory is writable, \fButime\fP(2) is also allowed. I.e. ~dmask & 022)
+The default is set from \(aqdmask\(aq option. (If the directory is writable, \fButime\fP(2) is also allowed. I.e. ~dmask & 022)
 .sp
 Normally \fButime\fP(2) checks that the current process is owner of the file, or that it has the \fBCAP_FOWNER\fP capability. But FAT filesystems don\(cqt have UID/GID on disk, so the normal check is too inflexible. With this option you can relax it.
 .sp
@@ -1410,7 +1403,7 @@ Various misguided attempts to force Unix or DOS conventions onto a FAT filesyste
 .sp
 \fBcreator=\fP\fIcccc\fP\fB, type=\fP\fIcccc\fP
 .RS 4
-Set the creator/type values as shown by the MacOS finder used for creating new files. Default values: \*(Aq????\*(Aq.
+Set the creator/type values as shown by the MacOS finder used for creating new files. Default values: \(aq????\(aq.
 .RE
 .sp
 \fBuid=\fP\fIn\fP\fB, gid=\fP\fIn\fP
@@ -1493,7 +1486,7 @@ Give all files in the filesystem the indicated user or group id, possibly overri
 .sp
 \fBmap=\fP{\fBn\fP[\fBormal\fP]|\fBo\fP[\fBff\fP]|\fBa\fP[\fBcorn\fP]}
 .RS 4
-For non\-Rock Ridge volumes, normal name translation maps upper to lower case ASCII, drops a trailing \*(Aq;1\*(Aq, and converts \*(Aq;\*(Aq to \*(Aq.\*(Aq. With \fBmap=off\fP no name translation is done. See \fBnorock\fP. (Default: \fBmap=normal\fP.) \fBmap=acorn\fP is like \fBmap=normal\fP but also apply Acorn extensions if present.
+For non\-Rock Ridge volumes, normal name translation maps upper to lower case ASCII, drops a trailing \(aq;1\(aq, and converts \(aq;\(aq to \(aq.\(aq. With \fBmap=off\fP no name translation is done. See \fBnorock\fP. (Default: \fBmap=normal\fP.) \fBmap=acorn\fP is like \fBmap=normal\fP but also apply Acorn extensions if present.
 .RE
 .sp
 \fBmode=\fP\fIvalue\fP
@@ -1598,7 +1591,7 @@ Use UTF\-8 for converting file names.
 .sp
 \fBuni_xlate=\fP{\fB0\fP|\fB1\fP|\fB2\fP}
 .RS 4
-For 0 (or \*(Aqno\*(Aq or \*(Aqfalse\*(Aq), do not use escape sequences for unknown Unicode characters. For 1 (or \*(Aqyes\*(Aq or \*(Aqtrue\*(Aq) or 2, use vfat\-style 4\-byte escape sequences starting with ":". Here 2 gives a little\-endian encoding and 1 a byteswapped bigendian encoding.
+For 0 (or \(aqno\(aq or \(aqfalse\(aq), do not use escape sequences for unknown Unicode characters. For 1 (or \(aqyes\(aq or \(aqtrue\(aq) or 2, use vfat\-style 4\-byte escape sequences starting with ":". Here 2 gives a little\-endian encoding and 1 a byteswapped bigendian encoding.
 .RE
 .sp
 \fBposix=[0|1]\fP
@@ -1624,10 +1617,8 @@ A read\-only overlay of two read\-only filesystems may use any filesystem type. 
 .sp
 .if n .RS 4
 .nf
-.fam C
 mount \-t overlay  overlay  \(rs
   \-olowerdir=/lower,upperdir=/upper,workdir=/work  /merged
-.fam
 .fi
 .if n .RE
 .br
@@ -1950,7 +1941,7 @@ Disable journaling. This will provide slight performance improvements in some si
 .sp
 \fBnotail\fP
 .RS 4
-By default, reiserfs stores small files and \*(Aqfile tails\*(Aq directly into its tree. This confuses some utilities such as \fBlilo\fP(8). This option is used to disable packing of files into the tree.
+By default, reiserfs stores small files and \(aqfile tails\(aq directly into its tree. This confuses some utilities such as \fBlilo\fP(8). This option is used to disable packing of files into the tree.
 .RE
 .sp
 \fBreplayonly\fP
@@ -2249,7 +2240,7 @@ First of all, the mount options for \fIfat\fP are recognized. The \fBdotsOK\fP o
 .sp
 \fBuni_xlate\fP
 .RS 4
-Translate unhandled Unicode characters to special escaped sequences. This lets you backup and restore filenames that are created with any Unicode characters. Without this option, a \*(Aq?\*(Aq is used when no translation is possible. The escape character is \*(Aq:\*(Aq because it is otherwise invalid on the vfat filesystem. The escape sequence that gets used, where u is the Unicode character, is: \*(Aq:\*(Aq, (u & 0x3f), ((u>>6) & 0x3f), (u>>12).
+Translate unhandled Unicode characters to special escaped sequences. This lets you backup and restore filenames that are created with any Unicode characters. Without this option, a \(aq?\(aq is used when no translation is possible. The escape character is \(aq:\(aq because it is otherwise invalid on the vfat filesystem. The escape sequence that gets used, where u is the Unicode character, is: \(aq:\(aq, (u & 0x3f), ((u>>6) & 0x3f), (u>>12).
 .RE
 .sp
 \fBposix\fP
@@ -2362,7 +2353,6 @@ For example commands:
 .sp
 .if n .RS 4
 .nf
-.fam C
 mksquashfs /etc /tmp/etc.squashfs
 dd if=/dev/zero of=/tmp/etc.hash bs=1M count=10
 veritysetup format /tmp/etc.squashfs /tmp/etc.hash
@@ -2370,7 +2360,6 @@ openssl smime \-sign \-in <hash> \-nocerts \-inkey private.key \(rs
 \-signer private.crt \-noattr \-binary \-outform der \-out /tmp/etc.roothash.p7s
 mount \-o verity.hashdevice=/tmp/etc.hash,verity.roothash=<hash>,\(rs
 verity.roothashsig=/tmp/etc.roothash.p7s /tmp/etc.squashfs /mnt
-.fam
 .fi
 .if n .RE
 .sp
@@ -2388,7 +2377,7 @@ One further possible type is a mount via the loop device. For example, the comma
 .sp
 will set up the loop device \fI/dev/loop3\fP to correspond to the file \fI/tmp/disk.img\fP, and then mount this device on \fI/mnt\fP.
 .sp
-If no explicit loop device is mentioned (but just an option \*(Aq\fB\-o loop\fP\*(Aq is given), then \fBmount\fP will try to find some unused loop device and use that, for example
+If no explicit loop device is mentioned (but just an option \(aq\fB\-o loop\fP\(aq is given), then \fBmount\fP will try to find some unused loop device and use that, for example
 .RS 3
 .ll -.6i
 .sp
@@ -2408,7 +2397,9 @@ The \fBmount\fP command \fBautomatically\fP creates a loop device from a regular
 .RE
 .ll
 .sp
-This type of mount knows about three options, namely \fBloop\fP, \fBoffset\fP and \fBsizelimit\fP, that are really options to \fBlosetup\fP(8). (These options can be used in addition to those specific to the filesystem type.)
+This type of mount knows about 11 options, namely \fBloop\fP, \fBoffset\fP, \fBsizelimit\fP, \fBencryption\fP, \fBpseed\fP, \fBphash\fP, \fBloinit\fP, \fBgpgkey\fP, \fBgpghome\fP, \fBcleartextkey\fP and \fBitercountk\fP , that are really options to \fBlosetup\fP(8). (These options can be used in addition to those specific to the filesystem type.)
+.sp
+If the mount requires a passphrase, you will be prompted for one unless you specify a file descriptor to read from instead with the \fB\-p\fP command line option, or specify a file name with \fBcleartextkey\fP mount option.
 .sp
 Since Linux 2.6.25 auto\-destruction of loop devices is supported, meaning that any loop device allocated by \fBmount\fP will be freed by \fBumount\fP independently of \fI/etc/mtab\fP.
 .sp
@@ -2464,7 +2455,7 @@ The command \fBmount \-a\fP returns 0 (all succeeded), 32 (all failed), or 64 (s
 .sp
 The syntax of external mount helpers is:
 .sp
-\fB/sbin/mount.\fP\fIsuffix\fP \fIspec dir\fP [\fB\-sfnv\fP] [\fB\-N\fP \fInamespace\fP] [\fB\-o\fP \fIoptions\fP] [\fB\-t\fP \fItype\fP\fB.\fP\fIsubtype\fP]
+\fB/sbin/mount.\fP\fIsuffix\fP \fIspec dir\fP [\fB\-sfnv\fP] [\fB\-N\fP \fInamespace\fP] [\fB\-o\fP \fIoptions\fP] [\fB\-t\fP \fItype\fP\fB.\fP_subtype_]
 .sp
 where the \fIsuffix\fP is the filesystem type and the \fB\-sfnvoN\fP options have the same meaning as the normal mount options. The \fB\-t\fP option is used for filesystems with subtypes support (for example \fB/sbin/mount.fuse \-t fuse.sshfs\fP).
 .sp

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: colcrt
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-10-23
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "COLCRT" "1" "2023-10-23" "util\-linux 2.39.3" "User Commands"
+.TH "COLCRT" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -34,7 +34,7 @@ colcrt \- filter nroff output for CRT previewing
 \fBcolcrt\fP [options] [\fIfile\fP ...]
 .SH "DESCRIPTION"
 .sp
-\fBcolcrt\fP provides virtual half\-line and reverse line feed sequences for terminals without such capability, and on which overstriking is destructive. Half\-line characters and underlining (changed to dashing `\-\*(Aq) are placed on new lines in between the normal output lines.
+\fBcolcrt\fP provides virtual half\-line and reverse line feed sequences for terminals without such capability, and on which overstriking is destructive. Half\-line characters and underlining (changed to dashing `\-\(aq) are placed on new lines in between the normal output lines.
 .SH "OPTIONS"
 .sp
 \fB\-\fP, \fB\-\-no\-underlining\fP
@@ -65,7 +65,7 @@ Should fold underlines onto blanks even with the \fB\-\fP option so that a true 
 .sp
 Can\(cqt back up more than 102 lines.
 .sp
-General overstriking is lost; as a special case \*(Aq|\*(Aq overstruck with \*(Aq\-\*(Aq or underline becomes \*(Aq+\*(Aq.
+General overstriking is lost; as a special case \(aq|\(aq overstruck with \(aq\-\(aq or underline becomes \(aq+\(aq.
 .sp
 Lines are trimmed to 132 characters.
 .sp

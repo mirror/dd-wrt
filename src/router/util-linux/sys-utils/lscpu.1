@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: lscpu
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-21
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LSCPU" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
+.TH "LSCPU" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -95,7 +95,7 @@ Display the CPU information in human\-readable format.
 .sp
 If the \fIlist\fP argument is omitted, the default columns are included in the command output.  The default output is subject to change.
 .sp
-When specifying the \fIlist\fP argument, the string of option, equal sign (=), and \fIlist\fP must not contain any blanks or other whitespace. Examples: \*(Aq\fB\-e=cpu,node\fP\*(Aq or \*(Aq\fB\-\-extended=cpu,node\fP\*(Aq.
+When specifying the \fIlist\fP argument, the string of option, equal sign (=), and \fIlist\fP must not contain any blanks or other whitespace. Examples: \(aq\fB\-e=cpu,node\fP\(aq or \(aq\fB\-\-extended=cpu,node\fP\(aq.
 .sp
 The default list of columns may be extended if list is specified in the format +list (e.g., lscpu \-e=+MHZ).
 .RE
@@ -114,7 +114,7 @@ Optimize the command output for easy parsing.
 .sp
 If the \fIlist\fP argument is omitted, the command output is compatible with earlier versions of \fBlscpu\fP. In this compatible format, two commas are used to separate CPU cache columns. If no CPU caches are identified the cache column is omitted. If the \fIlist\fP argument is used, cache columns are separated with a colon (:).
 .sp
-When specifying the \fIlist\fP argument, the string of option, equal sign (=), and \fIlist\fP must not contain any blanks or other whitespace. Examples: \*(Aq\fB\-p=cpu,node\fP\*(Aq or \*(Aq\fB\-\-parse=cpu,node\fP\*(Aq.
+When specifying the \fIlist\fP argument, the string of option, equal sign (=), and \fIlist\fP must not contain any blanks or other whitespace. Examples: \(aq\fB\-p=cpu,node\fP\(aq or \(aq\fB\-\-parse=cpu,node\fP\(aq.
 .sp
 The default list of columns may be extended if list is specified in the format +list (e.g., lscpu \-p=+MHZ).
 .RE

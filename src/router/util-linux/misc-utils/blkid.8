@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: blkid
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-10-23
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "BLKID" "8" "2023-10-23" "util\-linux 2.39.3" "System Administration"
+.TH "BLKID" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -89,7 +89,7 @@ check, for example, another location. The currently supported is
 .sp
 \fB\-i\fP, \fB\-\-info\fP
 .RS 4
-Display information about I/O Limits (aka I/O topology). The \*(Aqexport\*(Aq output format is automatically enabled. This option can be used together with the \fB\-\-probe\fP option.
+Display information about I/O Limits (aka I/O topology). The \(aqexport\(aq output format is automatically enabled. This option can be used together with the \fB\-\-probe\fP option.
 .RE
 .sp
 \fB\-k\fP, \fB\-\-list\-filesystems\fP
@@ -152,7 +152,7 @@ print the device name only; this output format is always enabled for the \fB\-\-
 .sp
 \fBudev\fP
 .RS 4
-print key="value" pairs for easy import into the udev environment; the keys are prefixed by ID_FS_ or ID_PART_ prefixes. The value may be modified to be safe for udev environment; allowed is plain ASCII, hex\-escaping and valid UTF\-8, everything else (including whitespaces) is replaced with \*(Aq_\*(Aq. The keys with \fI_ENC\fP postfix use hex\-escaping for unsafe chars.
+print key="value" pairs for easy import into the udev environment; the keys are prefixed by ID_FS_ or ID_PART_ prefixes. The value may be modified to be safe for udev environment; allowed is plain ASCII, hex\-escaping and valid UTF\-8, everything else (including whitespaces) is replaced with \(aq_\(aq. The keys with \fI_ENC\fP postfix use hex\-escaping for unsafe chars.
 .sp
 The udev output returns the ID_FS_AMBIVALENT tag if more superblocks are detected, and ID_PART_ENTRY_* tags are always returned for all partitions including empty partitions.
 .sp

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: logger
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-21
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LOGGER" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
+.TH "LOGGER" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -76,22 +76,18 @@ Write a \fBsystemd\fP journal entry. The entry is read from the given \fIfile\fP
 .sp
 .if n .RS 4
 .nf
-.fam C
 logger \-\-journald <<end
 MESSAGE_ID=67feb6ffbaf24c5cbec13c008dd72309
 MESSAGE=The dogs bark, but the caravan goes on.
 DOGS=bark
 CARAVAN=goes on
 end
-.fam
 .fi
 .if n .RE
 .sp
 .if n .RS 4
 .nf
-.fam C
 logger \-\-journald=entry.txt
-.fam
 .fi
 .if n .RE
 .br
@@ -106,7 +102,7 @@ To include newlines in MESSAGE, specify MESSAGE several times. This is handled a
 \fB\-\-msgid\fP \fImsgid\fP
 .RS 4
 Sets the \c
-.URL "https://tools.ietf.org/html/rfc5424" "RFC 5424" ""
+.URL "https://tools.ietf.org/html/rfc5424" "RFC 5424" " "
 MSGID field. Note that the space character is not permitted inside of \fImsgid\fP. This option is only used if \fB\-\-rfc5424\fP is specified as well; otherwise, it is silently ignored.
 .RE
 .sp
@@ -123,7 +119,7 @@ Causes everything to be done except for writing the log message to the system lo
 \fB\-\-octet\-count\fP
 .RS 4
 Use the \c
-.URL "https://tools.ietf.org/html/rfc6587" "RFC 6587" ""
+.URL "https://tools.ietf.org/html/rfc6587" "RFC 6587" " "
 octet counting framing method for sending messages. When this option is not used, the default is no framing on UDP, and RFC6587 non\-transparent framing (also known as octet stuffing) on TCP.
 .RE
 .sp
@@ -149,14 +145,14 @@ This option doesn\(cqt affect a command\-line message.
 \fB\-\-rfc3164\fP
 .RS 4
 Use the \c
-.URL "https://tools.ietf.org/html/rfc3164" "RFC 3164" ""
+.URL "https://tools.ietf.org/html/rfc3164" "RFC 3164" " "
 BSD syslog protocol to submit messages to a remote server.
 .RE
 .sp
 \fB\-\-rfc5424\fP[\fB=\fP\fIwithout\fP]
 .RS 4
 Use the \c
-.URL "https://tools.ietf.org/html/rfc5424" "RFC 5424" ""
+.URL "https://tools.ietf.org/html/rfc5424" "RFC 5424" " "
 syslog protocol to submit messages to a remote server. The optional \fIwithout\fP argument can be a comma\-separated list of the following values: \fBnotq\fP, \fBnotime\fP, \fBnohost\fP.
 .sp
 The \fBnotq\fP value suppresses the time\-quality structured data from the submitted message. The time\-quality information shows whether the local clock was synchronized plus the maximum number of microseconds the timestamp might be off. The time quality is also automatically suppressed when \fB\-\-sd\-id timeQuality\fP is specified.
@@ -186,14 +182,12 @@ Specifies a structured data element parameter, a name and value pair. The option
 .sp
 .if n .RS 4
 .nf
-.fam C
     logger \-\-rfc5424 \-\-sd\-id zoo@123             \(rs
                      \-\-sd\-param tiger="hungry"   \(rs
                      \-\-sd\-param zebra="running"  \(rs
                      \-\-sd\-id manager@123         \(rs
                      \-\-sd\-param onMeeting="yes"  \(rs
                      "this is message"
-.fam
 .fi
 .if n .RE
 .sp

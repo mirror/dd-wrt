@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: fstab
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-12-01
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: File formats
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "FSTAB" "5" "2023-12-01" "util\-linux 2.39.3" "File formats"
+.TH "FSTAB" "5" "2024-01-08" "util\-linux 2.39.3" "File formats"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -36,15 +36,13 @@ fstab \- static information about the filesystems
 .sp
 The file \fBfstab\fP contains descriptive information about the filesystems the system can mount. \fBfstab\fP is only read by programs, and not written; it is the duty of the system administrator to properly create and maintain this file. The order of records in \fBfstab\fP is important because \fBfsck\fP(8), \fBmount\fP(8), and \fBumount\fP(8) sequentially iterate through \fBfstab\fP doing their thing.
 .sp
-Each filesystem is described on a separate line. Fields on each line are separated by tabs or spaces. Lines starting with \*(Aq#\*(Aq are comments. Blank lines are ignored.
+Each filesystem is described on a separate line. Fields on each line are separated by tabs or spaces. Lines starting with \(aq#\(aq are comments. Blank lines are ignored.
 .sp
 The following is a typical example of an \fBfstab\fP entry:
 .sp
 .if n .RS 4
 .nf
-.fam C
 LABEL=t\-home2   /home      ext4    defaults,auto_da_alloc      0  2
-.fam
 .fi
 .if n .RE
 .SS "The first field (\fIfs_spec\fP)."
@@ -53,7 +51,7 @@ This field describes the block special device, remote filesystem or filesystem i
 .sp
 For ordinary mounts, it will hold (a link to) a block special device node (as created by \fBmknod\fP(2)) for the device to be mounted, like \fI/dev/cdrom\fP or \fI/dev/sdb7\fP. For NFS mounts, this field is \fI<host>:<dir>\fP, e.g., \fIknuth.aeb.nl:/\fP. For filesystems with no storage, any string can be used, and will show up in \fBdf\fP(1) output, for example. Typical usage is \fIproc\fP for \fBprocfs\fP; \fImem\fP, \fInone\fP, or \fItmpfs\fP for \fBtmpfs\fP. Other special filesystems, like \fBudev\fP and \fBsysfs\fP, are typically not listed in \fBfstab\fP.
 .sp
-LABEL=<label> or UUID=<uuid> may be given instead of a device name. This is the recommended method, as device names are often a coincidence of hardware detection order, and can change when other disks are added or removed. For example, \*(AqLABEL=Boot\*(Aq or \*(AqUUID=3e6be9de\-8139\-11d1\-9106\-a43f08d823a6\*(Aq. (Use a filesystem\-specific tool like \fBe2label\fP(8), \fBxfs_admin\fP(8), or \fBfatlabel\fP(8) to set LABELs on filesystems).
+LABEL=<label> or UUID=<uuid> may be given instead of a device name. This is the recommended method, as device names are often a coincidence of hardware detection order, and can change when other disks are added or removed. For example, \(aqLABEL=Boot\(aq or \(aqUUID=3e6be9de\-8139\-11d1\-9106\-a43f08d823a6\(aq. (Use a filesystem\-specific tool like \fBe2label\fP(8), \fBxfs_admin\fP(8), or \fBfatlabel\fP(8) to set LABELs on filesystems).
 .sp
 It\(cqs also possible to use \fBPARTUUID=\fP and \fBPARTLABEL=\fP. These partitions identifiers are supported for example for GUID Partition Table (GPT).
 .sp
@@ -62,7 +60,7 @@ See \fBmount\fP(8), \fBblkid\fP(8) or \fBlsblk\fP(8) for more details about devi
 Note that \fBmount\fP(8) uses UUIDs as strings. The string representation of the UUID should be based on lower case characters. But when specifying the volume ID of FAT or NTFS file systems upper case characters are used (e.g UUID="A40D\-85E7" or UUID="61DB7756DB7779B3").
 .SS "The second field (\fIfs_file\fP)."
 .sp
-This field describes the mount point (target) for the filesystem. For swap area, this field should be specified as `none\*(Aq. If the name of the mount point contains spaces or tabs these can be escaped as `\(rs040\*(Aq and \*(Aq\(rs011\*(Aq respectively.
+This field describes the mount point (target) for the filesystem. For swap area, this field should be specified as `none\(aq. If the name of the mount point contains spaces or tabs these can be escaped as `\(rs040\(aq and \(aq\(rs011\(aq respectively.
 .SS "The third field (\fIfs_vfstype\fP)."
 .sp
 This field describes the type of the filesystem. Linux supports many filesystem types: ext4, xfs, btrfs, f2fs, vfat, ntfs, hfsplus, tmpfs, sysfs, proc, iso9660, udf, squashfs, nfs, cifs, and many more. For more details, see \fBmount\fP(8).
@@ -71,7 +69,7 @@ An entry \fIswap\fP denotes a file or partition to be used for swapping, cf. \fB
 .sp
 More than one type may be specified in a comma\-separated list.
 .sp
-\fBmount\fP(8) and \fBumount\fP(8) support filesystem \fIsubtypes\fP. The subtype is defined by \*(Aq.subtype\*(Aq suffix. For example \*(Aqfuse.sshfs\*(Aq. It\(cqs recommended to use subtype notation rather than add any prefix to the first fstab field (for example \*(Aqsshfs#example.com\*(Aq is deprecated).
+\fBmount\fP(8) and \fBumount\fP(8) support filesystem \fIsubtypes\fP. The subtype is defined by \(aq.subtype\(aq suffix. For example \(aqfuse.sshfs\(aq. It\(cqs recommended to use subtype notation rather than add any prefix to the first fstab field (for example \(aqsshfs#example.com\(aq is deprecated).
 .SS "The fourth field (\fIfs_mntops\fP)."
 .sp
 This field describes the mount options associated with the filesystem.

@@ -31,6 +31,13 @@
 struct hook_data {
 	int chmodVal;
 };
+#ifndef __kernel_old_dev_t
+#if __BITS_PER_LONG == 8
+typedef unsigned long	__kernel_old_dev_t;
+#else
+typedef unsigned short	__kernel_old_dev_t;
+#endif
+#endif
 
 #define LO_CRYPT_NONE   0
 #define LO_CRYPT_XOR    1

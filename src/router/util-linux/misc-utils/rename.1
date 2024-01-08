@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: rename
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-21
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "RENAME" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
+.TH "RENAME" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -95,9 +95,7 @@ As most standard utilities rename can be used with a terminal device (tty in sho
 .sp
 .if n .RS 4
 .nf
-.fam C
-sh \-c \*(Aqstty \-icanon min 1; "$0" "$@"; stty icanon\*(Aq rename \-i from to files
-.fam
+sh \-c \(aqstty \-icanon min 1; "$0" "$@"; stty icanon\(aq rename \-i from to files
 .fi
 .if n .RE
 .SH "EXIT STATUS"
@@ -132,10 +130,8 @@ Given the files \fIfoo1\fP, ..., \fIfoo9\fP, \fIfoo10\fP, ..., \fIfoo278\fP, the
 .sp
 .if n .RS 4
 .nf
-.fam C
 rename foo foo00 foo?
 rename foo foo0 foo??
-.fam
 .fi
 .if n .RE
 .sp
@@ -143,9 +139,7 @@ will turn them into \fIfoo001\fP, ..., \fIfoo009\fP, \fIfoo010\fP, ..., \fIfoo27
 .sp
 .if n .RS 4
 .nf
-.fam C
 rename .htm .html *.htm
-.fam
 .fi
 .if n .RE
 .sp
@@ -153,9 +147,7 @@ will fix the extension of your html files. Provide an empty string for shortenin
 .sp
 .if n .RS 4
 .nf
-.fam C
-rename \*(Aq_with_long_name\*(Aq \*(Aq\*(Aq file_with_long_name.*
-.fam
+rename \(aq_with_long_name\(aq \(aq\(aq file_with_long_name.*
 .fi
 .if n .RE
 .sp

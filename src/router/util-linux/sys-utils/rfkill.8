@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: rfkill
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-21
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "RFKILL" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
+.TH "RFKILL" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -110,28 +110,26 @@ Enable or disable the corresponding device.
 .sp
 .if n .RS 4
 .nf
-.fam C
   rfkill \-\-output ID,TYPE
   rfkill block all
   rfkill unblock wlan
   rfkill block bluetooth uwb wimax wwan gps fm nfc
-.fam
 .fi
 .if n .RE
 .SH "AUTHORS"
 .sp
 \fBrfkill\fP was originally written by \c
-.MTO "johannes\(atsipsolutions.net" "Johannes Berg" ""
+.MTO "johannes\(atsipsolutions.net" "Johannes Berg" " "
 and
 .MTO "marcel\(atholtmann.org" "Marcel Holtmann" "."
 The code has been later modified by
-.MTO "kerolasa\(atiki.fi" "Sami Kerola" ""
+.MTO "kerolasa\(atiki.fi" "Sami Kerola" " "
 and
-.MTO "kzak\(atredhat.com" "Karel Zak" ""
+.MTO "kzak\(atredhat.com" "Karel Zak" " "
 for the util\-linux project.
 .sp
 This manual page was written by \c
-.MTO "linux\(atyoumustbejoking.demon.co.uk" "Darren Salt" ""
+.MTO "linux\(atyoumustbejoking.demon.co.uk" "Darren Salt" " "
 for the Debian project (and may be used by others).
 .SH "SEE ALSO"
 .sp

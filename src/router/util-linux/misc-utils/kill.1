@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: kill
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-21
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "KILL" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
+.TH "KILL" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -31,7 +31,7 @@
 kill \- terminate a process
 .SH "SYNOPSIS"
 .sp
-\fBkill\fP  [\fB\-\fP\fIsignal\fP|\fB\-s\fP \fIsignal\fP|\fB\-p\fP]  [\fB\-q\fP \fIvalue\fP] [\fB\-a\fP] [\fB\-\-timeout\fP \fImilliseconds\fP \fIsignal\fP] [\fB\-\-\fP] \fIpid\fP|\fIname\fP...
+\fBkill\fP  [\fB\-\fP_signal_|\fB\-s\fP \fIsignal\fP|\fB\-p\fP]  [\fB\-q\fP \fIvalue\fP] [\fB\-a\fP] [\fB\-\-timeout\fP \fImilliseconds\fP \fIsignal\fP] [\fB\-\-\fP] \fIpid\fP|\fIname\fP...
 .sp
 \fBkill\fP \fB\-l\fP [\fInumber\fP] | \fB\-L\fP
 .SH "DESCRIPTION"
@@ -68,7 +68,7 @@ All processes with a PID larger than 1 are signaled.
 .sp
 \fB\-\fP\fIn\fP
 .RS 4
-where \fIn\fP is larger than 1. All processes in process group \fIn\fP are signaled. When an argument of the form \*(Aq\-n\*(Aq is given, and it is meant to denote a process group, either a signal must be specified first, or the argument must be preceded by a \*(Aq\-\-\*(Aq option, otherwise it will be taken as the signal to send.
+where \fIn\fP is larger than 1. All processes in process group \fIn\fP are signaled. When an argument of the form \(aq\-n\(aq is given, and it is meant to denote a process group, either a signal must be specified first, or the argument must be preceded by a \(aq\-\-\(aq option, otherwise it will be taken as the signal to send.
 .RE
 .RE
 .sp
@@ -130,10 +130,8 @@ As an example, the following command sends the signals \fBQUIT\fP, \fBTERM\fP an
 .sp
 .if n .RS 4
 .nf
-.fam C
 kill \-\-verbose \-\-timeout 1000 TERM \-\-timeout 1000 KILL \(rs
         \-\-signal QUIT 12345
-.fam
 .fi
 .if n .RE
 .RE

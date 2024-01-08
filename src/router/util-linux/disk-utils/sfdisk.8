@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: sfdisk
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-21
+.\" Generator: Asciidoctor 2.0.10
+.\"      Date: 2024-01-08
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "SFDISK" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
+.TH "SFDISK" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -66,7 +66,7 @@ Note that it\(cqs possible to address an unused partition with \fB\-N\fP. For ex
 .sp
 \fB\-A\fP, \fB\-\-activate\fP \fIdevice\fP [\fIpartition\-number\fP...]
 .RS 4
-Switch on the bootable flag for the specified partitions and switch off the bootable flag on all unspecified partitions. The special placeholder \*(Aq\-\*(Aq may be used instead of the partition numbers to switch off the bootable flag on all partitions.
+Switch on the bootable flag for the specified partitions and switch off the bootable flag on all unspecified partitions. The special placeholder \(aq\-\(aq may be used instead of the partition numbers to switch off the bootable flag on all partitions.
 .sp
 The activation command is supported for MBR and PMBR only. If a GPT label is detected, then \fBsfdisk\fP prints warning and automatically enters PMBR.
 .sp
@@ -147,7 +147,7 @@ Change the GPT partition name (label). If \fIlabel\fP is not specified, then pri
 .RS 4
 Change the partition type. If \fItype\fP is not specified, then print the current partition type.
 .sp
-The \fItype\fP argument is hexadecimal for MBR, GUID for GPT, type alias (e.g. "linux") or type shortcut (e.g. \*(AqL\*(Aq). For backward compatibility the options \fB\-c\fP and \fB\-\-id\fP have the same meaning as this one.
+The \fItype\fP argument is hexadecimal for MBR, GUID for GPT, type alias (e.g. "linux") or type shortcut (e.g. \(aqL\(aq). For backward compatibility the options \fB\-c\fP and \fB\-\-id\fP have the same meaning as this one.
 .RE
 .sp
 \fB\-\-part\-uuid\fP \fIdevice partition\-number\fP [\fIuuid\fP]
@@ -262,9 +262,9 @@ In the example below, the first command creates a 100MiB free area before the fi
 .RS 3
 .ll -.6i
 .sp
-\fBecho \*(Aq+100M,\*(Aq | sfdisk \-\-move\-data /dev/sdc \-N 1\fP
+\fBecho \(aq+100M,\(aq | sfdisk \-\-move\-data /dev/sdc \-N 1\fP
 .sp
-\fBecho \*(Aq2048,\*(Aq | sfdisk /dev/sdc \-\-append\fP
+\fBecho \(aq2048,\(aq | sfdisk /dev/sdc \-\-append\fP
 .sp
 \fBsfdisk /dev/sdc \-\-reorder\fP
 .br
@@ -386,13 +386,13 @@ Note that it is only possible to use header lines before the first partition is 
 .sp
 where each line fills one partition descriptor.
 .sp
-Fields are separated by whitespace, comma (recommended) or semicolon possibly followed by whitespace; initial and trailing whitespace is ignored. Numbers can be octal, decimal or hexadecimal; decimal is the default. When a field is absent, empty or specified as \*(Aq\-\*(Aq a default value is used. But when the \fB\-N\fP option (change a single partition) is given, the default for each field is its previous value.
+Fields are separated by whitespace, comma (recommended) or semicolon possibly followed by whitespace; initial and trailing whitespace is ignored. Numbers can be octal, decimal or hexadecimal; decimal is the default. When a field is absent, empty or specified as \(aq\-\(aq a default value is used. But when the \fB\-N\fP option (change a single partition) is given, the default for each field is its previous value.
 .sp
-The default value of \fIstart\fP is the first non\-assigned sector aligned according to device I/O limits. The default start offset for the first partition is 1 MiB. If the offset is followed by the multiplicative suffixes (KiB, MiB, GiB, TiB, PiB, EiB, ZiB and YiB), then the number is interpreted as offset in bytes. Since v2.38 when the \fB\-N\fP option (change a single partition) is given, a \*(Aq+\*(Aq can be used to enlarge partition by move start of the partition if there is a free space before the partition.
+The default value of \fIstart\fP is the first non\-assigned sector aligned according to device I/O limits. The default start offset for the first partition is 1 MiB. If the offset is followed by the multiplicative suffixes (KiB, MiB, GiB, TiB, PiB, EiB, ZiB and YiB), then the number is interpreted as offset in bytes. Since v2.38 when the \fB\-N\fP option (change a single partition) is given, a \(aq+\(aq can be used to enlarge partition by move start of the partition if there is a free space before the partition.
 .sp
-The default value of \fIsize\fP indicates "as much as possible"; i.e., until the next partition or end\-of\-device. A numerical argument is by default interpreted as a number of sectors, however if the size is followed by one of the multiplicative suffixes (KiB, MiB, GiB, TiB, PiB, EiB, ZiB and YiB) then the number is interpreted as the size of the partition in bytes and it is then aligned according to the device I/O limits. A \*(Aq+\*(Aq can be used instead of a number to enlarge the partition as much as possible. Note \*(Aq+\*(Aq is equivalent to the default behaviour for a new partition; existing partitions will be resized as required.
+The default value of \fIsize\fP indicates "as much as possible"; i.e., until the next partition or end\-of\-device. A numerical argument is by default interpreted as a number of sectors, however if the size is followed by one of the multiplicative suffixes (KiB, MiB, GiB, TiB, PiB, EiB, ZiB and YiB) then the number is interpreted as the size of the partition in bytes and it is then aligned according to the device I/O limits. A \(aq+\(aq can be used instead of a number to enlarge the partition as much as possible. Note \(aq+\(aq is equivalent to the default behaviour for a new partition; existing partitions will be resized as required.
 .sp
-The partition \fItype\fP is given in hex for MBR (DOS) where 0x prefix is optional; a GUID string for GPT; a shortcut or an alias. It\(cqs recommended to use two letters for MBR hex codes to avoid collision between deprecated shortcut \*(AqE\*(Aq and \*(Aq0E\*(Aq MBR hex code. For backward compatibility \fBsfdisk\fP tries to interpret \fItype\fP as a shortcut as a first possibility in partitioning scripts although on other places (e.g. \fB\-\-part\-type\fP command) it tries shortcuts as the last possibility.
+The partition \fItype\fP is given in hex for MBR (DOS) where 0x prefix is optional; a GUID string for GPT; a shortcut or an alias. It\(cqs recommended to use two letters for MBR hex codes to avoid collision between deprecated shortcut \(aqE\(aq and \(aq0E\(aq MBR hex code. For backward compatibility \fBsfdisk\fP tries to interpret \fItype\fP as a shortcut as a first possibility in partitioning scripts although on other places (e.g. \fB\-\-part\-type\fP command) it tries shortcuts as the last possibility.
 .sp
 Since v2.36 libfdisk supports partition type aliases as extension to shortcuts. The alias is a simple human readable word (e.g. "linux").
 .sp
@@ -400,44 +400,44 @@ Since v2.37 libfdisk supports partition type names on input, ignoring the case o
 .sp
 Supported shortcuts and aliases:
 .sp
-\fBL \- alias \*(Aqlinux\*(Aq\fP
+\fBL \- alias \(aqlinux\(aq\fP
 .RS 4
 Linux; means 83 for MBR and 0FC63DAF\-8483\-4772\-8E79\-3D69D8477DE4 for GPT.
 .RE
 .sp
-\fBS \- alias \*(Aqswap\*(Aq\fP
+\fBS \- alias \(aqswap\(aq\fP
 .RS 4
 swap area; means 82 for MBR and 0657FD6D\-A4AB\-43C4\-84E5\-0933C84B4F4F for GPT
 .RE
 .sp
-\fBEx \- alias \*(Aqextended\*(Aq\fP
+\fBEx \- alias \(aqextended\(aq\fP
 .RS 4
-MBR extended partition; means 05 for MBR. The original shortcut \*(AqE\*(Aq is deprecated due to collision with 0x0E MBR partition type.
+MBR extended partition; means 05 for MBR. The original shortcut \(aqE\(aq is deprecated due to collision with 0x0E MBR partition type.
 .RE
 .sp
-\fBH \- alias \*(Aqhome\*(Aq\fP
+\fBH \- alias \(aqhome\(aq\fP
 .RS 4
 home partition; means 933AC7E1\-2EB4\-4F13\-B844\-0E14E2AEF915 for GPT
 .RE
 .sp
-\fBU \- alias \*(Aquefi\*(Aq\fP
+\fBU \- alias \(aquefi\(aq\fP
 .RS 4
 EFI System partition, means EF for MBR and C12A7328\-F81F\-11D2\-BA4B\-00A0C93EC93B for GPT
 .RE
 .sp
-\fBR \- alias \*(Aqraid\*(Aq\fP
+\fBR \- alias \(aqraid\(aq\fP
 .RS 4
 Linux RAID; means FD for MBR and A19D880F\-05FC\-4D3B\-A006\-743F0F84911E for GPT
 .RE
 .sp
-\fBV \- alias \*(Aqlvm\*(Aq\fP
+\fBV \- alias \(aqlvm\(aq\fP
 .RS 4
 LVM; means 8E for MBR and E6D6D379\-F507\-44C2\-A23C\-238F2A3DF928 for GPT
 .RE
 .sp
 The default \fItype\fP value is \fIlinux\fP.
 .sp
-The shortcut \*(AqX\*(Aq for Linux extended partition (85) is deprecated in favour of \*(AqEx\*(Aq.
+The shortcut \(aqX\(aq for Linux extended partition (85) is deprecated in favour of \(aqEx\(aq.
 .sp
 \fIbootable\fP is specified as [\fB*\fP|\fB\-\fP], with as default not\-bootable. The value of this field is irrelevant for Linux \- when Linux runs it has been booted already \- but it might play a role for certain boot loaders and for other operating systems.
 .SS "Named\-fields format"
@@ -453,7 +453,7 @@ This format is more readable, robust, extensible and allows specifying additiona
 .sp
 The \fIdevice\fP field is optional. \fBsfdisk\fP extracts the partition number from the device name. It allows specifying the partitions in random order. This functionality is mostly used by \fB\-\-dump\fP. Don\(cqt use it if you are not sure.
 .sp
-The \fIvalue\fP can be between quotation marks (e.g., name="This is partition name"). The fields \fBstart=\fP and \fBsize=\fP support \*(Aq+\*(Aq and \*(Aq\-\*(Aq in the same way as \fBUnnamed\-fields format\fP.
+The \fIvalue\fP can be between quotation marks (e.g., name="This is partition name"). The fields \fBstart=\fP and \fBsize=\fP support \(aq+\(aq and \(aq\-\(aq in the same way as \fBUnnamed\-fields format\fP.
 .sp
 The currently supported fields are:
 .sp
@@ -497,7 +497,7 @@ A hexadecimal number (without 0x) for an MBR partition, a GUID for a GPT partiti
 .RS 3
 .ll -.6i
 .sp
-\fBecho \*(Aqlabel: gpt\*(Aq | sfdisk /dev/sdb\fP
+\fBecho \(aqlabel: gpt\(aq | sfdisk /dev/sdb\fP
 .br
 .RE
 .ll
@@ -641,19 +641,19 @@ Since version 2.26 \fBsfdisk\fP does not provide the \fB\-\-DOS\fP, \fB\-\-IBM\f
 Print protective MBR on device with GPT disk label.
 .RE
 .sp
-\fBecho \-e \*(Aq,10M,L\(rsn,10M,L\(rsn,+,\(rsn\*(Aq | sfdisk /dev/sdc\fP
+\fBecho \-e \(aq,10M,L\(rsn,10M,L\(rsn,+,\(rsn\(aq | sfdisk /dev/sdc\fP
 .RS 4
 Create three Linux partitions, with the default start, the size of the first two partitions is 10MiB, and the last partition fills all available space on the device.
 .RE
 .sp
-\fBecho \-e \*(Aqsize=10M, type=L\(rsn size=10M, type=L\(rsn size=+\(rsn\*(Aq | sfdisk /dev/sdc\fP
+\fBecho \-e \(aqsize=10M, type=L\(rsn size=10M, type=L\(rsn size=+\(rsn\(aq | sfdisk /dev/sdc\fP
 .RS 4
 The same as the previous example, but in named\-fields format.
 .RE
 .sp
-\fBecho \-e \*(Aqtype=swap\*(Aq | sfdisk \-N 3 /dev/sdc\fP
+\fBecho \-e \(aqtype=swap\(aq | sfdisk \-N 3 /dev/sdc\fP
 .RS 4
-Set type of the 3rd partition to \*(Aqswap\*(Aq.
+Set type of the 3rd partition to \(aqswap\(aq.
 .RE
 .sp
 \fBsfdisk \-\-part\-type /dev/sdc 3 swap\fP
