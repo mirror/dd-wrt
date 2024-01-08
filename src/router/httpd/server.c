@@ -24,8 +24,7 @@ int tcp_listen()
 }
 
 #ifdef HAVE_OPENSSL
-void load_dh_params(ctx, file)
-SSL_CTX *ctx;
+void load_dh_params(ctx, file) SSL_CTX *ctx;
 char *file;
 {
 	DH *ret = 0;
@@ -40,8 +39,7 @@ char *file;
 		berr_exit("Couldn't set DH parameters");
 }
 
-void generate_eph_rsa_key(ctx)
-SSL_CTX *ctx;
+void generate_eph_rsa_key(ctx) SSL_CTX *ctx;
 {
 	RSA *rsa;
 
@@ -53,4 +51,4 @@ SSL_CTX *ctx;
 	RSA_free(rsa);
 }
 
-#endif				/* HAVE_OPENSSL */
+#endif /* HAVE_OPENSSL */

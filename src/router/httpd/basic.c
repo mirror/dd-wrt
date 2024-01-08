@@ -32,10 +32,8 @@ struct mime_handler mime_handlers[] = {
 	{ "**.midi", "audio/midi", NULL, NULL, do_file, NULL },
 	{ "**.mp3", "audio/mpeg", NULL, NULL, do_file, NULL },
 	{ "**.pac", "application/x-ns-proxy-autoconfig", NULL, NULL, do_file,
-	 NULL },
+	  NULL },
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
-struct ej_handler ej_handlers[] = {
-	{ NULL, NULL }
-};
+struct ej_handler ej_handlers[] = { { NULL, NULL } };

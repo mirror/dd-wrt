@@ -5,9 +5,9 @@ the generated header allows us to strip out unused code from the web code
 (c) 2020 - Sebastian Gottschall / NewMedia-NET GmbH
 */
 
-#include  <stdio.h>
-#include  <malloc.h>
-#include  <string.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <string.h>
 
 int tlen = 0;
 unsigned char *table[10000];
@@ -45,11 +45,14 @@ int main(int argc, char *argv[])
 	int i;
 	FILE *proto = fopen("modules/ej_proto.h", "wb");
 	for (i = 0; i < len; i++) {
-		int flen = !strncmp(&mem[i], "<% ", 3) ? 3 : !strncmp(&mem[i], "<%% ", 4) ? 4 : 0;
+		int flen = !strncmp(&mem[i], "<% ", 3)	? 3 :
+			   !strncmp(&mem[i], "<%% ", 4) ? 4 :
+							  0;
 		if (flen) {
 			int a = 0;
 			for (a = i + flen; a < i + 128; a++) {
-				if (!strncmp(&mem[a], " %>", 3) || !strncmp(&mem[a], " %%>", 4)) {
+				if (!strncmp(&mem[a], " %>", 3) ||
+				    !strncmp(&mem[a], " %%>", 4)) {
 					char name[64];
 					char *cut = strstr(&mem[i + flen], "(");
 					char *p = &mem[i + flen];
@@ -58,16 +61,21 @@ int main(int argc, char *argv[])
 					char ejname[64];
 					sprintf(ejname, "ej_%s", name);
 					if (!strstr(syms, ejname))
-						printf("/* %s is missing, we ignore it */\n", ejname);
-					if (!checktable(name) && strstr(syms, ejname)) {
-						fprintf(proto, "void ej_%s(webs_t wp, int argc, char_t ** argv);\n", name);
-						printf("{\"%s\",&ej_%s},\n", name, name);
+						printf("/* %s is missing, we ignore it */\n",
+						       ejname);
+					if (!checktable(name) &&
+					    strstr(syms, ejname)) {
+						fprintf(proto,
+							"void ej_%s(webs_t wp, int argc, char_t ** argv);\n",
+							name);
+						printf("{\"%s\",&ej_%s},\n",
+						       name, name);
 					}
 					goto next;
 				}
 			}
 		}
-	      next:;
+next:;
 	}
 	fclose(proto);
 }

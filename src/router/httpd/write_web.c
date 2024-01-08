@@ -1,8 +1,8 @@
 #include <stdio.h>
 typedef struct {
-	char *path;		/* Web page URL path */
-	int size;		/* Size of web page in bytes */
-//  int csize;                  /* Size of web page in bytes */
+	char *path; /* Web page URL path */
+	int size; /* Size of web page in bytes */
+	//  int csize;                  /* Size of web page in bytes */
 } websRomPageIndexType;
 
 #define WEBS_PAGE_ROM

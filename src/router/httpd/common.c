@@ -85,9 +85,8 @@ char *password;
 	return ctx;
 }
 
-void destroy_ctx(ctx)
-SSL_CTX *ctx;
+void destroy_ctx(ctx) SSL_CTX *ctx;
 {
 	SSL_CTX_free(ctx);
 }
-#endif				/* HAVE_OPENSSL */
+#endif /* HAVE_OPENSSL */

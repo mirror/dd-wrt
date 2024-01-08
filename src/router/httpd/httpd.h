@@ -47,7 +47,7 @@ extern BIO *bio_err;
 #include <stdarg.h>
 #ifdef HAVE_WIVIZ
 #ifndef HAVE_MICRO
-#include  <pthread.h>
+#include <pthread.h>
 #endif
 #endif
 #define AUTH_MAX 64
@@ -56,13 +56,14 @@ extern BIO *bio_err;
 #define USE_WAN 1
 
 typedef struct {
-//persistent
+	//persistent
 	volatile int generate_key;
 	volatile int clone_wan_mac;
 	volatile int filter_id;
 	volatile int day_all, week0, week1, week2, week3, week4, week5, week6;
 	volatile int start_week, end_week;
-	volatile int time_all, start_hour, start_min, start_time, end_hour, end_min, end_time;
+	volatile int time_all, start_hour, start_min, start_time, end_hour,
+		end_min, end_time;
 	volatile int tod_data_null;
 	volatile int nv_count;
 	volatile struct wl_client_mac wl_client_macs[MAX_LEASES];
@@ -99,7 +100,7 @@ typedef struct {
 	char auth_passwd[AUTH_MAX];
 	char *authorization;
 
-//internal vars only
+	//internal vars only
 	FILE *s_fp;
 	unsigned char *s_filebuffer;
 	int s_filecount;
@@ -119,7 +120,7 @@ typedef struct {
 	dd_atomic8_t issuperchannel;
 #endif
 	persistent_vars *p;
-/* CGI hash table */
+	/* CGI hash table */
 	struct hsearch_data htab;
 } webs;
 
@@ -139,7 +140,8 @@ struct mime_handler {
 	char *mime_type;
 	char *extra_header;
 	int (*input)(char *path, webs_t stream, size_t len, char *boundary);
-	int (*output)(unsigned char method, struct mime_handler * handler, char *path, webs_t stream);
+	int (*output)(unsigned char method, struct mime_handler *handler,
+		      char *path, webs_t stream);
 	int (*auth)(webs_t wp, int (*auth_check)(webs_t conn_fp));
 	unsigned char send_headers;
 	unsigned char handle_options;
@@ -152,8 +154,8 @@ struct mime_handler {
 #define METHOD_HEAD 4
 
 typedef struct {
-	const char *path;	/* Web page URL path */
-	unsigned int size;	/* Size of web page in bytes */
+	const char *path; /* Web page URL path */
+	unsigned int size; /* Size of web page in bytes */
 } websRomPageIndexType;
 
 //static void setLength(long len);
@@ -166,7 +168,7 @@ typedef struct {
 //typedef FILE * webs_t;
 typedef char char_t;
 #define T(s) (s)
-#define __TMPVAR(x) tmpvar ## x
+#define __TMPVAR(x) tmpvar##x
 #define _TMPVAR(x) __TMPVAR(x)
 #define TMPVAR _TMPVAR(__LINE__)
 
@@ -178,37 +180,61 @@ typedef char char_t;
 #define websDone(wp, code) wfflush(wp)
 
 #define websSetVar(wp, var, value) set_cgi(wp, var, value)
-#define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path) ({ do_ej(METHOD_GET, path, wp,""); fflush(wp); 1; })
-#define websWriteData(wp, buf, nChars) ({ int TMPVAR = wfwrite(buf, 1, nChars, wp); wfflush(wp); TMPVAR; })
+#define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path) \
+	({                                                        \
+		do_ej(METHOD_GET, path, wp, "");                  \
+		fflush(wp);                                       \
+		1;                                                \
+	})
+#define websWriteData(wp, buf, nChars)                    \
+	({                                                \
+		int TMPVAR = wfwrite(buf, 1, nChars, wp); \
+		wfflush(wp);                              \
+		TMPVAR;                                   \
+	})
 #define websWriteDataNonBlock websWriteData
 #define a_assert(a)
 
-#define EJALIAS(old, new) \
-	EJ_VISIBLE void new(webs_t wp, int argc, char **argv) { \
-	old(wp, argc, argv); \
-	} \
+#define EJALIAS(old, new)                                      \
+	EJ_VISIBLE void new (webs_t wp, int argc, char **argv) \
+	{                                                      \
+		old(wp, argc, argv);                           \
+	}
 
 void show_caption_legend(webs_t wp, const char *caption);
 void show_caption_simple(webs_t wp, const char *caption);
-void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmname, char *nmtype);
-void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
-void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
+void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type,
+		  char *nmname, char *nmtype);
+void show_caption_pp(webs_t wp, const char *class, const char *caption,
+		     const char *pre, const char *post);
+void show_caption(webs_t wp, const char *class, const char *caption,
+		  const char *ext);
 void show_caption_simple(webs_t wp, const char *caption);
-void show_ip(webs_t wp, char *prefix, char *var, int nm, int allow_invalid, char *type);
+void show_ip(webs_t wp, char *prefix, char *var, int nm, int allow_invalid,
+	     char *type);
 void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
 #ifdef HAVE_MADWIFI
 void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable);
 #endif
 void showOptions(webs_t wp, char *propname, char *names, char *select);
-void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select);
-void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled);
-void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select);
-void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int disabled);
+void showOptions_trans(webs_t wp, char *propname, char *names, char **trans,
+		       char *select);
+void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans,
+			   char *select, int disabled);
+void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames,
+		      char **names, char *select);
+void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select,
+		       int disabled);
 void showIfOptions(webs_t wp, char *propname, char *names, char *select);
-void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, char *select);
-void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select);
-void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength);
-void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char *property, int propertysize);
+void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans,
+		       char *select);
+void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names,
+		      char *select);
+void show_inputlabel(webs_t wp, char *labelname, char *propertyname,
+		     int propertysize, char *inputclassname,
+		     int inputmaxlength);
+void show_custominputlabel(webs_t wp, char *labelname, char *propertyname,
+			   char *property, int propertysize);
 void show_bgscan_options(webs_t wp, char *prefix);
 #ifdef HAVE_ATH9K
 #define ATH9K_ENABLED() 1
@@ -216,4 +242,4 @@ void show_bgscan_options(webs_t wp, char *prefix);
 #define ATH9K_ENABLED() 0
 #endif
 
-#endif				/* _httpd_h_ */
+#endif /* _httpd_h_ */
