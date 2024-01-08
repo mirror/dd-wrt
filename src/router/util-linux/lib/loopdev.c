@@ -985,8 +985,9 @@ int loopcxt_is_partscan(struct loopdev_cxt *lc)
  *
  * Returns: 1 if the autoclear flags is set.
  */
-int loopcxt_is_autoclear(struct loopdev_cxt *lc)
+int loopcxt_is_autoclear(struct loopdev_cxt *lc __attribute__((__unused__)))
 {
+#if 0
 	struct path_cxt *sysfs = loopcxt_get_sysfs(lc);
 
 	if (sysfs) {
@@ -1000,6 +1001,7 @@ int loopcxt_is_autoclear(struct loopdev_cxt *lc)
 		if (lo)
 			return lo->lo_flags & LO_FLAGS_AUTOCLEAR;
 	}
+#endif
 	return 0;
 }
 
@@ -1653,8 +1655,9 @@ int loopcxt_find_unused(struct loopdev_cxt *lc)
 /*
  * Return: TRUE/FALSE
  */
-int loopdev_is_autoclear(const char *device)
+int loopdev_is_autoclear(const char *device __attribute__((__unused__)))
 {
+#if 0
 	struct loopdev_cxt lc;
 	int rc;
 
@@ -1669,6 +1672,9 @@ int loopdev_is_autoclear(const char *device)
 
 	loopcxt_deinit(&lc);
 	return rc;
+#else
+	return 0;
+#endif
 }
 
 char *loopdev_get_backing_file(const char *device)

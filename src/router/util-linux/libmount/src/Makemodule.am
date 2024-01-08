@@ -38,7 +38,10 @@ libmount_la_SOURCES += \
 	libmount/src/hook_subdir.c \
 	libmount/src/hook_owner.c \
 	libmount/src/hook_idmap.c \
-	libmount/src/hook_loopdev.c \
+	libmount/src/hook_loopdev1.c \
+	libmount/src/sha512.c \
+	libmount/src/rmd160.c \
+	libmount/src/aes.c \
 	libmount/src/hook_veritydev.c \
 	libmount/src/monitor.c
 

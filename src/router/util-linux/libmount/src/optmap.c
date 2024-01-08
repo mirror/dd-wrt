@@ -175,10 +175,17 @@ static const struct libmnt_optmap userspace_opts_map[] =
    { "x-",      MNT_MS_XCOMMENT,   MNT_NOHLPS | MNT_PREFIX },              /* persistent comments (utab) */
    { "X-",      MNT_MS_XFSTABCOMM, MNT_NOHLPS | MNT_NOMTAB | MNT_PREFIX }, /* fstab only comments */
 
-   { "loop[=]", MNT_MS_LOOP, MNT_NOHLPS },                             /* use the loop device */
+   { "loop[=]", MNT_MS_LOOP, MNT_NOHLPS },                             /* use the loop device (no MNT_NOMTAB flag) */
    { "offset=", MNT_MS_OFFSET, MNT_NOHLPS | MNT_NOMTAB },		   /* loop device offset */
    { "sizelimit=", MNT_MS_SIZELIMIT, MNT_NOHLPS | MNT_NOMTAB },	   /* loop device size limit */
-   { "encryption=", MNT_MS_ENCRYPTION, MNT_NOHLPS | MNT_NOMTAB },	   /* loop device encryption */
+   { "encryption=",    MNT_MS_ENCRYPTION, MNT_NOHLPS | MNT_NOMTAB },   /* loop device encryption */
+   { "pseed=",          0, MNT_NOHLPS | MNT_NOMTAB },   /* loop device passphrase seed */
+   { "phash=",          0, MNT_NOHLPS | MNT_NOMTAB },   /* loop device passphrase hash function */
+   { "itercountk=",     0, MNT_NOHLPS | MNT_NOMTAB },   /* loop device passphrase iteration count */
+   { "loinit=",         0, MNT_NOHLPS | MNT_NOMTAB },   /* loop device initialization code */
+   { "gpgkey=",         0, MNT_NOHLPS | MNT_NOMTAB },   /* loop device GnuPG key file */
+   { "gpghome=",        0, MNT_NOHLPS | MNT_NOMTAB },   /* loop device GnuPG home directory */
+   { "cleartextkey=",   0, MNT_NOHLPS | MNT_NOMTAB },   /* loop device clear text key file */
 
    { "nofail",  MNT_MS_NOFAIL, MNT_NOMTAB },               /* Do not fail if ENOENT on dev */
 

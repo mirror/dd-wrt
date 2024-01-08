@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <ctype.h>
@@ -16,6 +18,8 @@
 
 #include "c.h"
 #include "nls.h"
+#include "loop.h"
+#include "../libmount/src/sha512.h"
 #include "bitops.h"
 #include "blkdev.h"
 #include "pathnames.h"
@@ -735,6 +739,227 @@ static int parse_options(struct swap_prop *props, const char *options)
 }
 
 
+static int
+prepare_encrypted_swap(char *partition, char *loop, char *encryption)
+{
+	int x, y, fd, ffd;
+	int page_size;
+	sha512_context s;
+	unsigned char b[4096], multiKeyBits[65][32];
+	char *a[10], *apiName;
+	struct loop_info64 loopinfo;
+	FILE *f;
+	size_t ignoreThis = 0;
+
+	/*
+	 * Some sanity checks
+	 */
+	if(strlen(partition) < 1) {
+		fprintf(stderr, _("swapon: invalid swap device name\n"));
+		return 0;
+	}
+	if(strlen(loop) < 1) {
+		fprintf(stderr, _("swapon: invalid loop device name\n"));
+		return 0;
+	}
+	if(strlen(encryption) < 1) {
+		fprintf(stderr, _("swapon: invalid encryption type\n"));
+		return 0;
+	}
+
+	/*
+	 * Abort if loop device does not exist or is already in use
+	 */
+	sync();
+	if((fd = open(loop, O_RDWR)) == -1) {
+		fprintf(stderr, _("swapon: unable to open loop device %s\n"), loop);
+		return 0;
+	}
+	if(is_unused_loop_device(fd) == 0) {
+		fprintf(stderr, _("swapon: loop device %s already in use\n"), loop);
+		goto errout0;
+	}
+
+	/*
+	 * Compute SHA-512 over first 40 KB of old swap data. This data
+	 * is mostly unknown data encrypted using unknown key. SHA-512 hash
+	 * output is then used as entropy for new swap encryption key.
+	 */
+	if(!(f = fopen(partition, "r+"))) {
+		fprintf(stderr, _("swapon: unable to open swap device %s\n"), partition);
+		goto errout0;
+	}
+	page_size = getpagesize();
+	fseek(f, (long)page_size, SEEK_SET);
+	__loDev_sha512_init(&s);
+	for(x = 0; x < 10; x++) {
+		if(fread(&b[0], sizeof(b), 1, f) != 1) break;
+		__loDev_sha512_write(&s, &b[0], sizeof(b));
+	}
+	__loDev_sha512_final(&s);
+
+	/*
+	 * Overwrite 40 KB of old swap data 20 times so that recovering
+	 * SHA-512 output beyond this point is difficult and expensive.
+	 */
+	for(y = 0; y < 20; y++) {
+		int z;
+		struct {
+			struct timeval tv;
+			unsigned char h[64];
+			int x,y,z;
+		} j;
+		if(fseek(f, (long)page_size, SEEK_SET)) break;
+		memcpy(&j.h[0], &s.sha_out[0], 64);
+		gettimeofday(&j.tv, NULL);
+		j.y = y;
+		for(x = 0; x < 10; x++) {
+			j.x = x;
+			for(z = 0; z < (int) sizeof(b); z += 64) {
+				j.z = z;
+				__loDev_sha512_hash_buffer((unsigned char *)&j, sizeof(j), &b[z], 64);
+			}
+			if(fwrite(&b[0], sizeof(b), 1, f) != 1) break;
+		}
+		memset(&j, 0, sizeof(j));
+		if(fflush(f)) break;
+		if(fsync(fileno(f))) break;
+	}
+	fclose(f);
+
+	/*
+	 * Use all 512 bits of hash output
+	 */
+	memcpy(&b[0], &s.sha_out[0], 64);
+	memset(&s, 0, sizeof(s));
+
+	/*
+	 * Read 32 bytes of random entropy from kernel's random
+	 * number generator. This code may be executed early on startup
+	 * scripts and amount of random entropy may be non-existent.
+	 * SHA-512 of old swap data is used as workaround for missing
+	 * entropy in kernel's random number generator.
+	 */
+	if(!(f = fopen("/dev/urandom", "r"))) {
+		fprintf(stderr, _("swapon: unable to open /dev/urandom\n"));
+		goto errout0;
+	}
+	ignoreThis += fread(&b[64], 32, 1, f);
+
+	/*
+	 * Set up struct loop_info64
+	 */
+	if((ffd = open(partition, O_RDWR)) < 0) {
+		fprintf(stderr, _("swapon: unable to open swap device %s\n"), partition);
+		goto errout1;
+	}
+	memset(&loopinfo, 0, sizeof(loopinfo));
+	strncpy((char *)loopinfo.lo_file_name, partition, LO_NAME_SIZE - 1);
+	loopinfo.lo_file_name[LO_NAME_SIZE - 1] = 0;
+	loopinfo.lo_encrypt_type = loop_crypt_type(encryption, &loopinfo.lo_encrypt_key_size, &apiName);
+	if(loopinfo.lo_encrypt_type <= 1) {
+		fprintf(stderr, _("swapon: unsupported swap encryption type %s\n"), encryption);
+errout2:
+		close(ffd);
+errout1:
+		fclose(f);
+errout0:
+		close(fd);
+		memset(&loopinfo.lo_encrypt_key[0], 0, sizeof(loopinfo.lo_encrypt_key));
+		memset(&multiKeyBits[0][0], 0, sizeof(multiKeyBits));
+		return 0;
+	}
+	loopinfo.lo_offset = page_size;
+	/* single-key hash */
+	__loDev_sha512_hash_buffer(&b[0], 64+32, &loopinfo.lo_encrypt_key[0], sizeof(loopinfo.lo_encrypt_key));
+	/* multi-key hash */
+	x = 0;
+	while(x < 65) {
+		ignoreThis += fread(&b[64+32], 16, 1, f);
+		__loDev_sha512_hash_buffer(&b[0], 64+32+16, &multiKeyBits[x][0], 32);
+		x++;
+	}	
+
+	/*
+	 * Try to set up single-key loop
+	 */
+	if(ioctl(fd, LOOP_SET_FD, ffd) < 0) {
+		fprintf(stderr, _("swapon: LOOP_SET_FD failed\n"));
+		goto errout2;
+	}
+	if ((loopinfo.lo_encrypt_type == 18) || (loop_set_status64_ioctl(fd, &loopinfo) < 0)) {
+		if(try_cryptoapi_loop_interface(fd, &loopinfo, apiName) < 0) {
+			fprintf(stderr, _("swapon: LOOP_SET_STATUS failed\n"));
+			ioctl(fd, LOOP_CLR_FD, 0);
+			goto errout2;
+		}
+	}
+
+	/*
+	 * Try to put loop to multi-key v3 or v2 mode.
+	 * If this fails, then let it operate in single-key mode.
+	 */
+	if(ioctl(fd, LOOP_MULTI_KEY_SETUP_V3, &multiKeyBits[0][0]) < 0) {
+		ioctl(fd, LOOP_MULTI_KEY_SETUP, &multiKeyBits[0][0]);
+	}
+
+	/*
+	 * Loop is now set up. Clean up the keys.
+	 */
+	memset(&loopinfo.lo_encrypt_key[0], 0, sizeof(loopinfo.lo_encrypt_key));
+	memset(&multiKeyBits[0][0], 0, sizeof(multiKeyBits));
+	close(ffd);
+	fclose(f);
+	close(fd);
+
+	/*
+	 * Write 40 KB of zeroes to loop device. That same data is written
+	 * to underlying partition in encrypted form. This is done to guarantee
+	 * that next time encrypted swap is initialized, the SHA-512 hash will
+	 * be different. And, if encrypted swap data writes over this data, that's
+	 * even better.
+	 */
+	if(!(f = fopen(loop, "r+"))) {
+		fprintf(stderr, _("swapon: unable to open loop device %s\n"), loop);
+		return 0;
+	}
+	memset(&b[0], 0, sizeof(b));
+	for(x = 0; x < 10; x++) {
+		if(fwrite(&b[0], sizeof(b), 1, f) != 1) break;
+	}
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	sync();
+
+	/*
+	 * Run mkswap on loop device so that kernel understands it as swap.
+	 * Redirect stderr to /dev/null and ignore exit value.
+	 */
+	if(!(x = fork())) {
+		if((x = open("/dev/null", O_WRONLY)) >= 0) {
+			dup2(x, 2);
+			close(x);
+		}
+		a[0] = "mkswap";
+		a[1] = loop;
+		a[2] = 0;
+		execvp(a[0], &a[0]);
+		execv("/sbin/mkswap", &a[0]);
+		/* error to stdout, stderr is directed to /dev/null */
+		printf(_("swapon: unable to execute mkswap\n"));
+		exit(1);
+	}
+	if(x == -1) {
+		fprintf(stderr, _("swapon: fork failed\n"));
+		return 0;
+	}
+	waitpid(x, &y, 0);
+	sync();
+
+	return 1;
+}
+
 static int swapon_all(struct swapon_ctl *ctl, const char *filename)
 {
 	struct libmnt_table *tb = get_fstab(filename);
@@ -752,6 +977,9 @@ static int swapon_all(struct swapon_ctl *ctl, const char *filename)
 	while (mnt_table_find_next_fs(tb, itr, match_swap, NULL, &fs) == 0) {
 		/* defaults */
 		const char *opts;
+		char *loop = NULL, *encryption = NULL;
+		char *val = NULL;
+		size_t len = 0;
 		const char *device;
 		struct swap_prop prop;		/* per device setting */
 
@@ -760,6 +988,10 @@ static int swapon_all(struct swapon_ctl *ctl, const char *filename)
 				warnx(_("%s: noauto option -- ignored"), mnt_fs_get_source(fs));
 			continue;
 		}
+		if(mnt_fs_get_option(fs, "loop", &val, &len) == 0 && val && len)
+			loop = strndup(val, len);
+		if(mnt_fs_get_option(fs, "encryption", &val, &len) == 0 && val && len)
+			encryption = strndup(val, len);
 
 		/* default setting */
 		prop = ctl->props;
@@ -774,23 +1006,38 @@ static int swapon_all(struct swapon_ctl *ctl, const char *filename)
 		if (!device) {
 			if (!prop.no_fail)
 				status |= cannot_find(mnt_fs_get_source(fs));
-			continue;
+			goto do_free;
+		}
+
+		if (loop && encryption) {
+			if (!is_active_swap(loop) && (!prop.no_fail || !access(device, R_OK))) {
+				if(!prepare_encrypted_swap((char*)device, loop, encryption)) {
+					status |= -1;
+					goto do_free;
+				}
+				status |= do_swapon(ctl, &prop, loop, TRUE);
+			}
+			goto do_free;
 		}
 
 		if (is_active_swap(device)) {
 			if (ctl->verbose)
 				warnx(_("%s: already active -- ignored"), device);
-			continue;
+			goto do_free;
 		}
 
 		if (prop.no_fail && access(device, R_OK) != 0) {
 			if (ctl->verbose)
 				warnx(_("%s: inaccessible -- ignored"), device);
-			continue;
+			goto do_free;
 		}
 
 		/* swapon */
 		status |= do_swapon(ctl, &prop, device, TRUE);
+
+		do_free:
+		if(loop) free(loop);
+		if(encryption) free(encryption);
 	}
 
 	mnt_free_iter(itr);

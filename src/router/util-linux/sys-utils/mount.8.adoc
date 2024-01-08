@@ -392,6 +392,9 @@ Source of default options. _source_ is a comma-separated list of *fstab*, *mtab*
 *--options-source-force*::
 Use options from _fstab_/_mtab_ even if both _device_ and _dir_ are specified.
 
+*-p*, *--pass-fd* _num_::
+In case of a loop mount with encryption, read the passphrase from file descriptor _num_ instead of from the terminal.
+
 *-R*, *--rbind*::
 Remount a subtree and all possible submounts somewhere else (so that its contents are available in both places). See above, the subsection *Bind mount operation*.
 
@@ -1564,7 +1567,9 @@ ____
 *mount -t ext4 /tmp/disk.img /mnt*
 ____
 
-This type of mount knows about three options, namely *loop*, *offset* and *sizelimit*, that are really options to *losetup*(8). (These options can be used in addition to those specific to the filesystem type.)
+This type of mount knows about 11 options, namely *loop*, *offset*, *sizelimit*, *encryption*, *pseed*, *phash*, *loinit*, *gpgkey*, *gpghome*, *cleartextkey* and *itercountk* , that are really options to *losetup*(8). (These options can be used in addition to those specific to the filesystem type.)
+
+If the mount requires a passphrase, you will be prompted for one unless you specify a file descriptor to read from instead with the *-p* command line option, or specify a file name with *cleartextkey* mount option.
 
 Since Linux 2.6.25 auto-destruction of loop devices is supported, meaning that any loop device allocated by *mount* will be freed by *umount* independently of _/etc/mtab_.
 

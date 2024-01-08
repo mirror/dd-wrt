@@ -34,6 +34,7 @@ libcommon_la_SOURCES = \
 	lib/randutils.c \
 	lib/sha1.c \
 	lib/sha256.c \
+	lib/xgetpass.c \
 	lib/signames.c \
 	lib/strutils.c \
 	lib/strv.c \
