@@ -32,7 +32,7 @@ void stop_chronyd(void)
 	return;
 }
 
-static int write_default_config(FILE * fp)
+static int write_default_config(FILE *fp)
 {
 	int valid;
 	char cidr[24];

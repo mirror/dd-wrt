@@ -38,9 +38,9 @@
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-void config_macs(char *wlifname)	// reconfigure macs which
-						// should fix the corerev 5
-						// and 7 problem
+void config_macs(char *wlifname) // reconfigure macs which
+	// should fix the corerev 5
+	// and 7 problem
 {
 	int unit = get_wl_instance(wlifname);
 	char *vifs = nvram_nget("wl%d_vifs", unit);
@@ -48,13 +48,18 @@ void config_macs(char *wlifname)	// reconfigure macs which
 	char *next;
 	char var[80];
 
-	if (!strcmp(mbss, "0") || nvram_nmatch("apsta", "wl%d_mode", unit) || nvram_nmatch("ap", "wl%d_mode", unit)) {
-		foreach(var, vifs, next) {
+	if (!strcmp(mbss, "0") || nvram_nmatch("apsta", "wl%d_mode", unit) ||
+	    nvram_nmatch("ap", "wl%d_mode", unit)) {
+		foreach(var, vifs, next)
+		{
 			eval("ifconfig", var, "down");
 			eval("wl", "-i", var, "down");
-			eval("wl", "-i", var, "cur_etheraddr", nvram_nget("%s_hwaddr", var));
-			fprintf(stderr, "Setting %s BSSID:  %s \n", var, nvram_nget("%s_hwaddr", var));
-			eval("wl", "-i", var, "bssid", nvram_nget("%s_hwaddr", var));
+			eval("wl", "-i", var, "cur_etheraddr",
+			     nvram_nget("%s_hwaddr", var));
+			fprintf(stderr, "Setting %s BSSID:  %s \n", var,
+				nvram_nget("%s_hwaddr", var));
+			eval("wl", "-i", var, "bssid",
+			     nvram_nget("%s_hwaddr", var));
 			eval("wl", "-i", var, "up");
 			eval("ifconfig", var, "up");
 		}

@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <services.h>
-#define NOCAT_CONF      "/tmp/etc/nocat.conf"
+#define NOCAT_CONF "/tmp/etc/nocat.conf"
 
 int mk_nocat_conf(void)
 {
@@ -80,12 +80,16 @@ int mk_nocat_conf(void)
 	 */
 	fprintf(fp, "Verbosity\t%s\n", nvram_safe_get("NC_Verbosity"));
 	fprintf(fp, "GatewayName\t%s\n", nvram_safe_get("NC_GatewayName"));
-	fprintf(fp, "GatewayAddr\t%s\n", nvram_default_get("NC_GatewayAddr", nvram_safe_get("lan_ipaddr")));
+	fprintf(fp, "GatewayAddr\t%s\n",
+		nvram_default_get("NC_GatewayAddr",
+				  nvram_safe_get("lan_ipaddr")));
 	if (!nvram_match("NC_extifname", "auto")) {
-		fprintf(fp, "ExternalDevice\t%s\n", nvram_safe_get("NC_extifname"));
+		fprintf(fp, "ExternalDevice\t%s\n",
+			nvram_safe_get("NC_extifname"));
 	}
 
-	fprintf(fp, "InternalDevice\t%s\n", nvram_default_get("NC_ifname", nvram_safe_get("lan_ifname")));
+	fprintf(fp, "InternalDevice\t%s\n",
+		nvram_default_get("NC_ifname", nvram_safe_get("lan_ifname")));
 	fprintf(fp, "GatewayPort\t%s\n", nvram_safe_get("NC_GatewayPort"));
 
 	char mac[18];
@@ -102,12 +106,14 @@ int mk_nocat_conf(void)
 	fprintf(fp, "DocumentRoot\t%s\n", nvram_safe_get("NC_DocumentRoot"));
 	if (nvram_invmatch("NC_SplashURL", "")) {
 		fprintf(fp, "SplashURL\t%s\n", nvram_safe_get("NC_SplashURL"));
-		fprintf(fp, "SplashURLTimeout\t%s\n", nvram_safe_get("NC_SplashURLTimeout"));
+		fprintf(fp, "SplashURLTimeout\t%s\n",
+			nvram_safe_get("NC_SplashURLTimeout"));
 	}
 	/*
 	 * do we really need this? 
 	 */
-	fprintf(fp, "LeaseFile\t%s\n", nvram_default_get("NC_LeaseFile", "/tmp/nocat.leases"));
+	fprintf(fp, "LeaseFile\t%s\n",
+		nvram_default_get("NC_LeaseFile", "/tmp/nocat.leases"));
 
 	/*
 	 * Open-mode and common options 
@@ -115,7 +121,8 @@ int mk_nocat_conf(void)
 	fprintf(fp, "FirewallPath\t%s\n", "/usr/libexec/nocat/");
 	fprintf(fp, "ExcludePorts\t%s\n", nvram_safe_get("NC_ExcludePorts"));
 	fprintf(fp, "IncludePorts\t%s\n", nvram_safe_get("NC_IncludePorts"));
-	fprintf(fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("NC_AllowedWebHosts"));
+	fprintf(fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get("lan_ipaddr"),
+		nvram_safe_get("NC_AllowedWebHosts"));
 	/*
 	 * TJaqua: Added MACWhiteList to ignore given machines or routers on the
 	 * local net (e.g. routers with an alternate Auth). 
@@ -134,7 +141,8 @@ int mk_nocat_conf(void)
 
 		dns_list = get_dns_list(0);
 		if (!dns_list || dns_list->num_servers == 0) {
-			fprintf(fp, "DNSAddr \t%s\n", nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "DNSAddr \t%s\n",
+				nvram_safe_get("lan_ipaddr"));
 		} else {
 			fprintf(fp, "DNSAddr \t");
 			for (i = 0; i < dns_list->num_servers; i++)
@@ -145,9 +153,10 @@ int mk_nocat_conf(void)
 			free_dns_list(dns_list);
 	}
 	fprintf(fp, "HomePage\t%s\n", nvram_safe_get("NC_HomePage"));
-	fprintf(fp, "ForcedRedirect\t%s\n", nvram_safe_get("NC_ForcedRedirect"));
-//    fprintf( fp, "PeerCheckTimeout\t%s\n",
-//           nvram_safe_get( "NC_PeerChecktimeout" ) );
+	fprintf(fp, "ForcedRedirect\t%s\n",
+		nvram_safe_get("NC_ForcedRedirect"));
+	//    fprintf( fp, "PeerCheckTimeout\t%s\n",
+	//           nvram_safe_get( "NC_PeerChecktimeout" ) );
 	fprintf(fp, "IdleTimeout\t%s\n", nvram_safe_get("NC_IdleTimeout"));
 	fprintf(fp, "MaxMissedARP\t%s\n", nvram_safe_get("NC_MaxMissedARP"));
 	fprintf(fp, "LoginTimeout\t%s\n", nvram_safe_get("NC_LoginTimeout"));
@@ -218,7 +227,7 @@ void start_splashd(void)
 	if (!strcmp(get_wan_ipaddr(), "0.0.0.0"))
 		return;
 	insmod("ipt_mark ipt_mac xt_mark xt_mac");
-	stop_firewall();	// evil
+	stop_firewall(); // evil
 	stop_wland();
 	start_firewall();
 	start_wland();
@@ -243,10 +252,9 @@ void start_splashd(void)
 
 void stop_splashd(void)
 {
-
 	if (stop_process("splashd", "nocat daemon")) {
 		eval("/usr/libexec/nocat/clear.fw");
-		stop_firewall();	// evil
+		stop_firewall(); // evil
 		stop_wland();
 		start_firewall();
 		start_wland();

@@ -43,28 +43,28 @@ static void unbound_config(void)
 	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("smartdns", 1))
 		port = 53;
 	FILE *fp = fopen("/tmp/unbound.conf", "wb");
-	fprintf(fp, "server:\n"	//
-		"verbosity: 1\n");
+	fprintf(fp, "server:\n" //
+		    "verbosity: 1\n");
 
 	fprintf(fp, "interface: 0.0.0.0@%d\n", port);
 	if (nvram_match("ipv6_enable", "1"))
 		fprintf(fp, "interface: ::0@%d\n", port);
-	fprintf(fp, "outgoing-num-tcp: 10\n"	//
-		"incoming-num-tcp: 10\n"	//
-		"msg-buffer-size: 8192\n"	//
-		"msg-cache-size: 1m\n"	//
-		"num-queries-per-thread: 30\n"	//
-		"rrset-cache-size: 2m\n"	//
-		"infra-cache-numhosts: 200\n"	//
-		"username: \"\"\n"	//
-		"pidfile: \"/var/run/unbound.pid\"\n"	//
-		"root-hints: \"/etc/unbound/named.cache\"\n"	//
-		"target-fetch-policy: \"2 1 0 0 0 0\"\n"	//
-		"harden-short-bufsize: yes\n"	//
-		"harden-large-queries: yes\n"	//
-		"auto-trust-anchor-file: \"/etc/unbound/root.key\"\n"	//
-		"key-cache-size: 100k\n"	//
-		"neg-cache-size: 10k\n");	//
+	fprintf(fp, "outgoing-num-tcp: 10\n" //
+		    "incoming-num-tcp: 10\n" //
+		    "msg-buffer-size: 8192\n" //
+		    "msg-cache-size: 1m\n" //
+		    "num-queries-per-thread: 30\n" //
+		    "rrset-cache-size: 2m\n" //
+		    "infra-cache-numhosts: 200\n" //
+		    "username: \"\"\n" //
+		    "pidfile: \"/var/run/unbound.pid\"\n" //
+		    "root-hints: \"/etc/unbound/named.cache\"\n" //
+		    "target-fetch-policy: \"2 1 0 0 0 0\"\n" //
+		    "harden-short-bufsize: yes\n" //
+		    "harden-large-queries: yes\n" //
+		    "auto-trust-anchor-file: \"/etc/unbound/root.key\"\n" //
+		    "key-cache-size: 100k\n" //
+		    "neg-cache-size: 10k\n"); //
 	fprintf(fp, "num-threads: %d\n", cpucount);
 	if (cpucount > 1)
 		fprintf(fp, "so-reuseport: no\n");
@@ -95,7 +95,8 @@ static void unbound_config(void)
 
 	prefix = do_6to4 ? "0:0:0:1::" : nvram_safe_get("ipv6_prefix");
 
-	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1) && *prefix) {
+	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1) &&
+	    *prefix) {
 		fprintf(fp, "access-control: %s/64 allow\n", prefix);
 	}
 	fprintf(fp, "access-control: 127.0.0.0/8 allow\n");
@@ -104,14 +105,16 @@ static void unbound_config(void)
 		char vifs[256];
 		getIfLists(vifs, 256);
 		char var[256], *wordlist, *next;
-		foreach(var, vifs, next) {
-			if (strcmp(safe_get_wan_face(wan_if_buffer), var)
-			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+		foreach(var, vifs, next)
+		{
+			if (strcmp(safe_get_wan_face(wan_if_buffer), var) &&
+			    strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
-					fprintf(fp, "access-control: %s/%d allow\n", ipaddr, getmask(netmask));
-
+					fprintf(fp,
+						"access-control: %s/%d allow\n",
+						ipaddr, getmask(netmask));
 			}
 		}
 	}
@@ -153,7 +156,6 @@ static void unbound_config(void)
 		}
 		free(cp);
 	}
-
 }
 
 void start_unbound(void)
@@ -166,14 +168,16 @@ void start_unbound(void)
 		unbound_config();
 		if (reload_process("unbound")) {
 			eval("cp", "-R", "/etc/unbound", "/tmp/etc");
-			eval("mount", "--bind", "/tmp/etc/unbound", "/etc/unbound");
-			log_eval("unbound", "-c", getdefaultconfig("unbound", path, sizeof(path), "unbound.conf"));
+			eval("mount", "--bind", "/tmp/etc/unbound",
+			     "/etc/unbound");
+			log_eval("unbound", "-c",
+				 getdefaultconfig("unbound", path, sizeof(path),
+						  "unbound.conf"));
 		}
 	} else {
 		stop_unbound();
 	}
 	return;
-
 }
 
 void restart_unbound(void)

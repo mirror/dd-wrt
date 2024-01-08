@@ -42,7 +42,7 @@ static void ftpsrv_umount()
 	char line[256];
 	char mnt_dir[32] = "/tmp/proftpd/users";
 
-	//cleanup 
+	//cleanup
 	if ((fp = fopen("/proc/mounts", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (strstr(line, "proftpd")) {
@@ -55,8 +55,7 @@ static void ftpsrv_umount()
 
 char *ftpsrv_deps(void)
 {
-	return
-	    "proftpd_acctserverport proftpd_authserverip proftpd_enable proftpd_anon_subdir proftpd_authserverport proftpd_anon proftpd_port proftpd_anon_dir proftpd_rad proftpd_wan proftpd_sharedkey samba3_users samba3_shares";
+	return "proftpd_acctserverport proftpd_authserverip proftpd_enable proftpd_anon_subdir proftpd_authserverport proftpd_anon proftpd_port proftpd_anon_dir proftpd_rad proftpd_wan proftpd_sharedkey samba3_users samba3_shares";
 }
 
 char *ftpsrv_proc(void)
@@ -89,18 +88,21 @@ void start_ftpsrv(void)
 	samba3users = getsamba3users();
 	for (cu = samba3users; cu; cu = cunext) {
 		if (*cu->username && cu->sharetype & SHARETYPE_FTP) {
-			sysprintf("mkdir -p \"/tmp/proftpd/users/%s\"", cu->username);
+			sysprintf("mkdir -p \"/tmp/proftpd/users/%s\"",
+				  cu->username);
 			char passout[MD5_OUT_BUFSIZE];
-			fprintf(fp, "%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n", cu->username, zencrypt(cu->password, passout), cu->username);
+			fprintf(fp,
+				"%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n",
+				cu->username, zencrypt(cu->password, passout),
+				cu->username);
 		}
 		cunext = cu->next;
 		free(cu);
-
 	}
 
 	fclose(fp);
 
-	// add ftp user (for anonymous access) 
+	// add ftp user (for anonymous access)
 	if (nvram_matchi("proftpd_anon", 1)) {
 		fp = fopen("/tmp/proftpd/etc/passwd", "ab");
 		fprintf(fp, "ftp:x:0:0:Ftp Anon,,,:/tmp/root:/bin/sh\n");
@@ -126,7 +128,13 @@ void start_ftpsrv(void)
 		"AllowRetrieveRestart  on\n"
 		"AllowStoreRestart  on\n"
 		"<Limit WRITE>\n  DenyAll\n</Limit>\n"
-		"<Limit SITE_CHMOD>\n" "  DenyAll\n" "</Limit>\n" "DelayEngine     off\n" "WtmpLog         off\n" "DefaultRoot     ~\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
+		"<Limit SITE_CHMOD>\n"
+		"  DenyAll\n"
+		"</Limit>\n"
+		"DelayEngine     off\n"
+		"WtmpLog         off\n"
+		"DefaultRoot     ~\n",
+		nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
 
 	samba3shares = getsamba3shares();
 	for (cs = samba3shares; cs; cs = csnext) {
@@ -134,7 +142,8 @@ void start_ftpsrv(void)
 		for (csu = cs->users; csu; csu = csunext) {
 			samba3users = getsamba3users();
 			for (cu = samba3users; cu; cu = cunext) {
-				if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_FTP))
+				if (!strcmp(csu->username, cu->username) &&
+				    (cu->sharetype & SHARETYPE_FTP))
 					hasuser = 1;
 				cunext = cu->next;
 				free(cu);
@@ -152,13 +161,20 @@ void start_ftpsrv(void)
 		fprintf(fp, "<Directory      \"~/%s\">\n", cs->label);
 
 		if (!strcmp(cs->access_perms, "rw"))
-			fprintf(fp, "  <Limit WRITE>\n    AllowAll\n  </Limit>\n");
+			fprintf(fp,
+				"  <Limit WRITE>\n    AllowAll\n  </Limit>\n");
 		for (csu = cs->users; csu; csu = csunext) {
 			samba3users = getsamba3users();
 			for (cu = samba3users; cu; cu = cunext) {
-				if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_FTP)) {
-					sysprintf("mkdir -p \"/tmp/proftpd/users/%s/%s\"", cu->username, cs->label);
-					sysprintf("mount --bind \"%s/%s\" \"/tmp/proftpd/users/%s/%s\"", cs->mp, cs->sd, cu->username, cs->label);
+				if (!strcmp(csu->username, cu->username) &&
+				    (cu->sharetype & SHARETYPE_FTP)) {
+					sysprintf(
+						"mkdir -p \"/tmp/proftpd/users/%s/%s\"",
+						cu->username, cs->label);
+					sysprintf(
+						"mount --bind \"%s/%s\" \"/tmp/proftpd/users/%s/%s\"",
+						cs->mp, cs->sd, cu->username,
+						cs->label);
 				}
 				cunext = cu->next;
 				free(cu);
@@ -169,7 +185,7 @@ void start_ftpsrv(void)
 
 		fprintf(fp, "</Directory>\n");
 
-	      nextshare:;
+nextshare:;
 		csnext = cs->next;
 		free(cs);
 	}
@@ -177,18 +193,29 @@ void start_ftpsrv(void)
 	if (nvram_matchi("proftpd_rad", 0))
 		fprintf(fp, "AuthUserFile	/tmp/proftpd/etc/passwd\n");
 	else {
-		fprintf(fp, "AuthOrder mod_radius.c\n"
+		fprintf(fp,
+			"AuthOrder mod_radius.c\n"
 			"RadiusEngine	on\n"
 			"RadiusAuthServer	%s:%s	%s 5\n"
 			"RadiusAcctServer	%s:%s	%s 5\n",
 			nvram_safe_get("proftpd_authserverip"),
-			nvram_safe_get("proftpd_authserverport"), nvram_safe_get("proftpd_sharedkey"), nvram_safe_get("proftpd_authserverip"), nvram_safe_get("proftpd_acctserverport"), nvram_safe_get("proftpd_sharedkey")
-		    );
-		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n", "/mnt");	//TODO allow to choose dir
+			nvram_safe_get("proftpd_authserverport"),
+			nvram_safe_get("proftpd_sharedkey"),
+			nvram_safe_get("proftpd_authserverip"),
+			nvram_safe_get("proftpd_acctserverport"),
+			nvram_safe_get("proftpd_sharedkey"));
+		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n",
+			"/mnt"); //TODO allow to choose dir
 	}
 	// Anonymous ftp - read only
 	if (nvram_matchi("proftpd_anon", 1)) {
-		fprintf(fp, "<Anonymous      \"%s\">\n" "User           ftp\n" "Group          root\n" "UserAlias      anonymous ftp\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
+		fprintf(fp,
+			"<Anonymous      \"%s\">\n"
+			"User           ftp\n"
+			"Group          root\n"
+			"UserAlias      anonymous ftp\n"
+			"</Anonymous>\n",
+			nvram_safe_get("proftpd_anon_dir"));
 	}
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);

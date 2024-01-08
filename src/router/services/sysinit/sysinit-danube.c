@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -200,7 +200,9 @@ void start_sysinit(void)
 	if (!strcmp(annex, "madsl2+"))
 		initcode = "00_00_00_00_00_00_04_00";
 
-	sysprintf("/usr/sbin/dsl_cpe_control -i%s -f %s -n /usr/sbin/dsl_notification.sh &", initcode, annexfw);
+	sysprintf(
+		"/usr/sbin/dsl_cpe_control -i%s -f %s -n /usr/sbin/dsl_notification.sh &",
+		initcode, annexfw);
 
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices(RADIO_ALL);
@@ -223,12 +225,14 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
+			copy[2], copy[3], copy[4], copy[5]);
 		set_hwaddr("wifi0", mac1);
 		fclose(fp);
 	}
 #ifdef HAVE_ATH9K
-	writestr("/sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger", "phy0tpt");
+	writestr("/sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger",
+		 "phy0tpt");
 #else
 	writeprocsys("dev/wifi0/ledpin", "15");
 	writeprocsys("dev/wifi0/softled", "1");
@@ -239,7 +243,8 @@ void start_sysinit(void)
 
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
+	     "0 1 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "set", "apply");
 #endif
 #ifdef HAVE_SX763

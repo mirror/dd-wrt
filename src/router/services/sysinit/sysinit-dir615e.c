@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -138,7 +138,8 @@ void start_sysinit(void)
 #ifndef HAVE_WA901V5
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
-	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
+	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
+	     "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
 	nvram_seti("sw_cpuport", 0);
@@ -235,7 +236,9 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_WA850RE
 	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-L", "generic_0:-94", "-L", "generic_1:-87", "-L", "generic_2:-80", "-L", "generic_3:-73", "-L", "generic_4:-65");
+		eval("/sbin/wlanled", "-L", "generic_0:-94", "-L",
+		     "generic_1:-87", "-L", "generic_2:-80", "-L",
+		     "generic_3:-73", "-L", "generic_4:-65");
 #endif
 	/*
 	 * Set a sane date 

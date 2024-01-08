@@ -54,7 +54,10 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
-#define sys_reboot() eval("sync"); eval("/bin/umount","-a","-r"); eval("event","3","1","15")
+#define sys_reboot()                     \
+	eval("sync");                    \
+	eval("/bin/umount", "-a", "-r"); \
+	eval("event", "3", "1", "15")
 
 void start_sysinit(void)
 {
@@ -88,11 +91,11 @@ void start_sysinit(void)
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
 	cprintf("sysinit() get router\n");
 
-/*	modprobe("nouveau");
+	/*	modprobe("nouveau");
 	modprobe("i915");
 	modprobe("amdgpu");
 	modprobe("radeon");
-*/	
+*/
 	/*
 	 * eval("insmod","md5"); eval("insmod","aes"); eval("insmod","blowfish");
 	 * eval("insmod","deflate"); eval("insmod","des");
@@ -283,7 +286,8 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-	FILE *fp = fopen("/sys/bus/pci/devices/0000:04:00.0/device", "rb");	//pcengines apu fuckup check
+	FILE *fp = fopen("/sys/bus/pci/devices/0000:04:00.0/device",
+			 "rb"); //pcengines apu fuckup check
 	if (fp) {
 		char checkbuf[32];
 		fscanf(fp, "%s", &checkbuf[0]);
@@ -291,7 +295,6 @@ void start_sysinit(void)
 		if (!strcmp(&checkbuf[0], "0xabcd")) {
 			sys_reboot();
 		}
-
 	}
 
 	nvram_default_get("use_ath5k", "1");

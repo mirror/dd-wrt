@@ -107,7 +107,7 @@ void run_pppoe_dual(int status)
 	stop_l2tp();
 #endif
 	stop_pppoe_dual();
-/*
+	/*
 	if (nvram_matchi("pptp_use_dhcp",0)) {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
@@ -121,23 +121,27 @@ void run_pppoe_dual(int status)
 		}
 		route_del(wan_ifname, 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 */
-/*
+	/*
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
 				route_del(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
 			free_dns_list(dns_list);
 		}
 */
-//      }
+	//      }
 
 	if (nvram_matchi("pptp_use_dhcp", 0)) {
-		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr_static"),
+			 nvram_safe_get("wan_netmask_static"));
 	}
 
-	snprintf(idletime, sizeof(idletime), "%d", nvram_geti("ppp_idletime") * 60);
-	snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
+	snprintf(idletime, sizeof(idletime), "%d",
+		 nvram_geti("ppp_idletime") * 60);
+	snprintf(retry_num, sizeof(retry_num), "%d",
+		 (nvram_geti("ppp_redialperiod") / 5) - 1);
 
-	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
+	snprintf(username, sizeof(username), "%s",
+		 nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	mkdir("/tmp/ppp", 0777);
@@ -152,7 +156,8 @@ void run_pppoe_dual(int status)
 	fprintf(fp, "plugin /usr/lib/rp-pppoe.so\n");
 #endif
 	if (nvram_invmatch("pppoe_service", ""))
-		fprintf(fp, " rp_pppoe_service %s", nvram_safe_get("pppoe_service"));
+		fprintf(fp, " rp_pppoe_service %s",
+			nvram_safe_get("pppoe_service"));
 	if (nvram_invmatch("pppoe_host_uniq", ""))
 		fprintf(fp, " host-uniq %s", nvram_safe_get("pppoe_host_uniq"));
 	fprintf(fp, "\n");
@@ -191,20 +196,25 @@ void run_pppoe_dual(int status)
 		fprintf(fp, "noccp\n");
 		fprintf(fp, "nomppc\n");
 	}
-	fprintf(fp, "noipdefault\n" "noauth\n" "defaultroute\n" "noaccomp\n" "nobsdcomp\n" "nodeflate\n"
-		// "debug\n"
-		// "maxfail 0\n"
-		// "nocrtscts\n"
-		// "sync\n"
-		// "local\n"
-		// "noixp\n"
-		// "lock\n"
-		// "noproxyarp\n"
-		// "ipcp-accept-local\n"
-		// "ipcp-accept-remote\n"
-		// "nodetach\n"
-		"nopcomp\n");
-	// "novj\n" 
+	fprintf(fp, "noipdefault\n"
+		    "noauth\n"
+		    "defaultroute\n"
+		    "noaccomp\n"
+		    "nobsdcomp\n"
+		    "nodeflate\n"
+		    // "debug\n"
+		    // "maxfail 0\n"
+		    // "nocrtscts\n"
+		    // "sync\n"
+		    // "local\n"
+		    // "noixp\n"
+		    // "lock\n"
+		    // "noproxyarp\n"
+		    // "ipcp-accept-local\n"
+		    // "ipcp-accept-remote\n"
+		    // "nodetach\n"
+		    "nopcomp\n");
+	// "novj\n"
 	// "novjccomp\n");
 	if (nvram_invmatch("ppp_mppe", ""))
 		fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
@@ -212,11 +222,14 @@ void run_pppoe_dual(int status)
 		fprintf(fp, "nomppe\n");
 	if (nvram_matchi("ppp_mlppp", 1))
 		fprintf(fp, "mp\n");
-	fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n", username, passwd);
+	fprintf(fp,
+		"usepeerdns\nuser '%s'\n"
+		"password '%s'\n",
+		username, passwd);
 
 	// This is a tricky one. When used it could improve speed of PPPoE
 	// but not all ISP's can support it.
-	// default-asyncmap escapes all control characters. By using asyncmap 
+	// default-asyncmap escapes all control characters. By using asyncmap
 	// 0 PPPD will not escape any control characters
 	// Not all ISP's can handle this. By default use default-asyncmap
 	// and if ppp_asyncmap=1 do not escape
@@ -235,7 +248,7 @@ void run_pppoe_dual(int status)
 	// Do not forget this should be at least 8 bytes less then physycal
 	// interfaces mtu.
 
-	// if MRU is not Auto force MTU/MRU of interface to value selected by 
+	// if MRU is not Auto force MTU/MRU of interface to value selected by
 	// theuser on web page
 	if (nvram_matchi("mtu_enable", 1)) {
 		if (nvram_geti("wan_mtu") > 0) {
@@ -247,20 +260,22 @@ void run_pppoe_dual(int status)
 		// expirienced users
 		if (nvram_invmatch("pppoe_ppp_mtu", ""))
 			if (nvram_geti("pppoe_ppp_mtu") > 0)
-				fprintf(fp, "mtu %s\n", nvram_safe_get("pppoe_ppp_mtu"));
+				fprintf(fp, "mtu %s\n",
+					nvram_safe_get("pppoe_ppp_mtu"));
 		if (nvram_invmatch("pppoe_ppp_mru", ""))
 			if (nvram_geti("pppoe_ppp_mru") > 0)
-				fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
+				fprintf(fp, "mru %s\n",
+					nvram_safe_get("pppoe_ppp_mru"));
 	}
 
 	// Allow runtime debugging
 	if (nvram_matchi("ppp_debug", 1))
 		fprintf(fp, "debug\n");
 
-	fprintf(fp, "persist\n"	//
-		"lcp-echo-interval 3\n"	//
-		"lcp-echo-failure 20\n"	//
-		"lcp-echo-adaptive\n");
+	fprintf(fp, "persist\n" //
+		    "lcp-echo-interval 3\n" //
+		    "lcp-echo-failure 20\n" //
+		    "lcp-echo-adaptive\n");
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1))
 		fprintf(fp, "ipv6 ,\n");

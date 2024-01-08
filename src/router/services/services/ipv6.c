@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -54,20 +54,20 @@
 #include <syslog.h>
 #include <services.h>
 
-
 void stop_ipv6(void)
 {
 	rmmod("ipcomp6 xfrm6_tunnel xfrm6_mode_tunnel xfrm6_mode_transport xfrm6_mode xfrm6_mode_beet ip6_tunnel tunnel6 mip6 ah6 esp6 ipv6");
 	if (nvram_match("wan_proto", "disabled")) {
-		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", nvram_safe_get("lan_ifname"));
+		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra",
+			  nvram_safe_get("lan_ifname"));
 	} else {
 		char wan_if_buffer[33];
 		char *wan_ifname = safe_get_wan_face(wan_if_buffer);
-		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
+		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra",
+			  wan_ifname);
 	}
 	sysprintf("echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6");
 	dd_loginfo("ipv6", "successfully stopped\n");
-
 }
 
 void start_ipv6(void)
@@ -80,11 +80,13 @@ void start_ipv6(void)
 	insmod("ipv6 tunnel4 ip_tunnel sit xfrm_algo esp6 ah6 mip6 tunnel6 ip6_tunnel xfrm6_mode_beet xfrm6_mode_ro xfrm6_mode_transport xfrm6_mode_tunnel xfrm6_tunnel xfrm_ipcomp ipcomp6");
 
 	if (nvram_match("wan_proto", "disabled")) {
-		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", nvram_safe_get("lan_ifname"));
+		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra",
+			  nvram_safe_get("lan_ifname"));
 	} else {
 		char wan_if_buffer[33];
 		char *wan_ifname = safe_get_wan_face(wan_if_buffer);
-		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
+		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra",
+			  wan_ifname);
 	}
 	sysprintf("echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6");
 	dd_loginfo("ipv6", "successfully started\n");
@@ -93,4 +95,3 @@ void start_ipv6(void)
 	return;
 }
 #endif
-

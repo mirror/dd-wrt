@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -73,7 +73,7 @@ void start_sysinit(void)
 
 	FILE *fp = fopen("/dev/mtdblock/7", "r");
 	if (fp) {
-		fseek(fp, 0, SEEK_END);	//determine size
+		fseek(fp, 0, SEEK_END); //determine size
 		int size = ftell(fp);
 		fseek(fp, size - 0xf000, SEEK_SET);
 		unsigned char buf[20];
@@ -83,7 +83,8 @@ void start_sysinit(void)
 		unsigned int copy[20];
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
+			copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure ETH0 to %s\n", mac);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
@@ -91,17 +92,18 @@ void start_sysinit(void)
 		fread(&buf[6], 6, 1, fp);
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7],
+			copy[8], copy[9], copy[10], copy[11]);
 		fprintf(stderr, "configure ETH1 to %s\n", mac);
 		set_hwaddr("eth1", mac);
 
 		fclose(fp);
 	}
 	// no mac found, use default
-//      set_hwaddr("eth0", "00:15:6D:FE:00:00");
-//      set_hwaddr("eth1", "00:15:6D:FE:00:01");
+	//      set_hwaddr("eth0", "00:15:6D:FE:00:00");
+	//      set_hwaddr("eth1", "00:15:6D:FE:00:01");
 
-//#endif
+	//#endif
 	// eval("ifconfig", "eth0", "up");
 	// eval("ifconfig", "eth1", "up");
 

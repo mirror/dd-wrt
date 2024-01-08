@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -73,7 +73,6 @@
  */
 void run_tmp_ppp(int num)
 {
-
 	int timeout = 5;
 	char pppoeifname[15];
 	char wanip[2][15] = { "wan_ipaddr", "wan_ipaddr_1" };
@@ -94,8 +93,8 @@ void run_tmp_ppp(int num)
 	/*
 	 * Wait for ppp0 to be created 
 	 */
-	while (ifconfig(nvram_safe_get(pppoeifname), IFUP, NULL, NULL)
-	       && timeout--)
+	while (ifconfig(nvram_safe_get(pppoeifname), IFUP, NULL, NULL) &&
+	       timeout--)
 		sleep(1);
 
 	strncpy(ifr.ifr_name, nvram_safe_get(pppoeifname), IFNAMSIZ);
@@ -106,7 +105,8 @@ void run_tmp_ppp(int num)
 	timeout = 3;
 	while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
 		perror(nvram_safe_get(pppoeifname));
-		printf("Wait %s inteface to init (1) ...\n", nvram_safe_get(pppoeifname));
+		printf("Wait %s inteface to init (1) ...\n",
+		       nvram_safe_get(pppoeifname));
 		sleep(1);
 	};
 	nvram_set(wanip[num], inet_ntoa(sin_addr(&(ifr.ifr_addr))));
@@ -118,7 +118,8 @@ void run_tmp_ppp(int num)
 	timeout = 3;
 	while (ioctl(s, SIOCGIFDSTADDR, &ifr) && timeout--) {
 		perror(nvram_safe_get(pppoeifname));
-		printf("Wait %s inteface to init (2) ...\n", nvram_safe_get(pppoeifname));
+		printf("Wait %s inteface to init (2) ...\n",
+		       nvram_safe_get(pppoeifname));
 		sleep(1);
 	}
 	nvram_set(wangw[num], inet_ntoa(sin_addr(&(ifr.ifr_dstaddr))));
@@ -126,8 +127,8 @@ void run_tmp_ppp(int num)
 	wan_done(nvram_safe_get(pppoeifname));
 
 	// if user press Connect" button from web, we must force to dial
-	if (nvram_match("action_service", "start_pppoe")
-	    || nvram_match("action_service", "start_pppoe_1")) {
+	if (nvram_match("action_service", "start_pppoe") ||
+	    nvram_match("action_service", "start_pppoe_1")) {
 		sleep(3);
 		// force_to_dial(nvram_safe_get("action_service"));
 		start_force_to_dial();
@@ -166,50 +167,68 @@ void run_pppoe(int pppoe_num)
 
 	cprintf("start session %d\n", pppoe_num);
 	sprintf(idletime, "%d", nvram_geti("ppp_idletime") * 60);
-	snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
+	snprintf(retry_num, sizeof(retry_num), "%d",
+		 (nvram_geti("ppp_redialperiod") / 5) - 1);
 
-	snprintf(username, sizeof(username), "%s", nvram_safe_get(ppp_username[pppoe_num]));
-	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get(ppp_passwd[pppoe_num]));
+	snprintf(username, sizeof(username), "%s",
+		 nvram_safe_get(ppp_username[pppoe_num]));
+	snprintf(passwd, sizeof(passwd), "%s",
+		 nvram_safe_get(ppp_passwd[pppoe_num]));
 	sprintf(param, "%d", pppoe_num);
 	/*
 	 * add here 
 	 */
-	char *pppoe_argv[] = { "pppoecd",
-		wan_ifname,
-		"-u", username,
-		"-p", passwd,
-		"-r", nvram_safe_get("wan_mtu"),	// del by honor, add by tallest.
-		"-t", nvram_safe_get("wan_mtu"),
-		"-i", nvram_matchi(ppp_demand[pppoe_num], 1) ? idletime : "0",
-		"-I", "10",	// Send an LCP echo-request frame to the
-		// server every 10 seconds
-		"-T", "20",	// pppd will presume the server to be dead if 
-		// 20 LCP echo-requests are sent without
-		//-> timeout 1 min
-		// receiving a valid LCP echo-reply
-		"-P", param,	// PPPOE session number.
-		"-N", retry_num,	// To avoid kill pppd when pppd has been
-		// connecting.
+	char *pppoe_argv
+		[] = { "pppoecd",
+		       wan_ifname,
+		       "-u",
+		       username,
+		       "-p",
+		       passwd,
+		       "-r",
+		       nvram_safe_get(
+			       "wan_mtu"), // del by honor, add by tallest.
+		       "-t",
+		       nvram_safe_get("wan_mtu"),
+		       "-i",
+		       nvram_matchi(ppp_demand[pppoe_num], 1) ? idletime : "0",
+		       "-I",
+		       "10", // Send an LCP echo-request frame to the
+		       // server every 10 seconds
+		       "-T",
+		       "20", // pppd will presume the server to be dead if
+		       // 20 LCP echo-requests are sent without
+		       //-> timeout 1 min
+		       // receiving a valid LCP echo-reply
+		       "-P",
+		       param, // PPPOE session number.
+		       "-N",
+		       retry_num, // To avoid kill pppd when pppd has been
+	// connecting.
 #if LOG_PPPOE == 2
-		"-d",
+		       "-d",
 #endif
-		"-C", "disconnected_pppoe",	// by tallest 0407
-		NULL,		/* set default route */
-		NULL, NULL,	/* pppoe_service */
-		NULL, NULL,	/* pppoe_ac */
-		NULL,		/* pppoe_keepalive */
-		NULL
-	}, **arg;
+		       "-C",
+		       "disconnected_pppoe", // by tallest 0407
+		       NULL, /* set default route */
+		       NULL,
+		       NULL, /* pppoe_service */
+		       NULL,
+		       NULL, /* pppoe_ac */
+		       NULL, /* pppoe_keepalive */
+		       NULL },
+     **arg;
 	/*
 	 * Add optional arguments 
 	 */
-	for (arg = pppoe_argv; *arg; arg++) ;
+	for (arg = pppoe_argv; *arg; arg++)
+		;
 
 	/*
 	 * Removed by AhMan 
 	 */
 
-	if (pppoe_num == PPPOE0) {	// PPPOE0 must set default route.
+	if (pppoe_num == PPPOE0) { // PPPOE0 must set default route.
 		*arg++ = "-R";
 	}
 
@@ -225,14 +244,14 @@ void run_pppoe(int pppoe_num)
 		*arg++ = "-L";
 		*arg++ = nvram_safe_get("ppp_static_ip");
 	}
-	// if (nvram_matchi("pppoe_demand",1) || nvram_match("pppoe_keepalive", 
+	// if (nvram_matchi("pppoe_demand",1) || nvram_match("pppoe_keepalive",
 	// "1"))
 	*arg++ = "-k";
 
 	mkdir("/tmp/ppp", 0777);
 	symlink("/sbin/rc", "/tmp/ppp/ip-up");
 	symlink("/sbin/rc", "/tmp/ppp/ip-down");
-	symlink("/sbin/rc", "/tmp/ppp/set-pppoepid");	// tallest 1219
+	symlink("/sbin/rc", "/tmp/ppp/set-pppoepid"); // tallest 1219
 	unlink("/tmp/ppp/log");
 
 	// Clean rpppoe client files - Added by ice-man (Wed Jun 1)
@@ -253,7 +272,6 @@ void run_pppoe(int pppoe_num)
 		// route_add (nvram_safe_get ("wan_iface"), 0, "0.0.0.0",
 		// "10.112.112.112",
 		// "0.0.0.0");
-
 	}
 	cprintf("done. session %d\n", pppoe_num);
 	return;
@@ -261,7 +279,6 @@ void run_pppoe(int pppoe_num)
 
 void stop_pppoe(void)
 {
-
 	unlink("/tmp/ppp/link");
 	stop_process("pppd", "pppoe process");
 	if (nvram_matchi("wan_vdsl", 1)) {
@@ -304,7 +321,8 @@ void single_pppoe_stop(int pppoe_num)
 
 	sprintf(pppoe_pid, "pppoe_pid%d", pppoe_num);
 	sprintf(pppoe_ifname, "pppoe_ifname%d", pppoe_num);
-	dprintf("start! stop pppoe %d, pid %s \n", pppoe_num, nvram_safe_get(pppoe_pid));
+	dprintf("start! stop pppoe %d, pid %s \n", pppoe_num,
+		nvram_safe_get(pppoe_pid));
 
 	ret = eval("kill", nvram_safe_get(pppoe_pid));
 	unlink(ppp_unlink[pppoe_num]);

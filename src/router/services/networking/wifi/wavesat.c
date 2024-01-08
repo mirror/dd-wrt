@@ -79,14 +79,16 @@ void configure_wimax(void)
 			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
 		} else {
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
+			     "netmask", nvram_nget("%s_netmask", dev), "up");
 		}
 	} else {
 		char bridged[32];
 
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_matchi(bridged, 0, 1)) {
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
+			     "netmask", nvram_nget("%s_netmask", dev), "up");
 		}
 	}
 }

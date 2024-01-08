@@ -99,7 +99,7 @@ void start_sysinit(void)
 #endif
 	// eval ("ifconfig", "wifi0", "up");
 	eval("ifconfig", "eth0", "up");
-	vlan_init(5);		// 1 lan + 1 wan
+	vlan_init(5); // 1 lan + 1 wan
 
 	/*
 	 * Set a sane date 

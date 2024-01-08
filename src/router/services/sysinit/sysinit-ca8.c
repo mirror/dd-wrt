@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -92,7 +92,7 @@ void start_sysinit(void)
 	insmod("ar2313");
 #endif
 	if (getRouterBrand() == ROUTER_BOARD_CA8PRO) {
-//              eval("ifconfig", "eth0", "up", "promisc");      // required for vlan config
+		//              eval("ifconfig", "eth0", "up", "promisc");      // required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
@@ -110,8 +110,8 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 	}
 #ifdef HAVE_SOLO51
-	eval("ifconfig", "eth0", "up");	// wan
-	vlan_init(0xff);	// 4 lan + 1 wan
+	eval("ifconfig", "eth0", "up"); // wan
+	vlan_init(0xff); // 4 lan + 1 wan
 #endif
 
 	detect_wireless_devices(RADIO_ALL);

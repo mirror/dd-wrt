@@ -26,209 +26,192 @@
 #include "cfe_timer.h"
 #endif
 
-#define UNDEFINE_PHY_PORT   (0xFF)
+#define UNDEFINE_PHY_PORT (0xFF)
 #define RTK_SWITCH_PORT_NUM (32)
 
 #define MAXPKTLEN_CFG_ID_MAX (1)
 
 #define RTK_SWITCH_MAX_PKTLEN (0x3FFF)
 
-typedef enum init_state_e
-{
-    INIT_NOT_COMPLETED = 0,
-    INIT_COMPLETED,
-    INIT_STATE_END
+typedef enum init_state_e {
+	INIT_NOT_COMPLETED = 0,
+	INIT_COMPLETED,
+	INIT_STATE_END
 } init_state_t;
 
-typedef enum switch_chip_e
-{
-    CHIP_RTL8367C = 0,
-    CHIP_RTL8370B,
-    CHIP_END
-}switch_chip_t;
+typedef enum switch_chip_e {
+	CHIP_RTL8367C = 0,
+	CHIP_RTL8370B,
+	CHIP_END
+} switch_chip_t;
 
-typedef enum port_type_e
-{
-    UTP_PORT = 0,
-    EXT_PORT,
-    UNKNOWN_PORT = 0xFF,
-    PORT_TYPE_END
-}port_type_t;
+typedef enum port_type_e {
+	UTP_PORT = 0,
+	EXT_PORT,
+	UNKNOWN_PORT = 0xFF,
+	PORT_TYPE_END
+} port_type_t;
 
-typedef struct rtk_switch_halCtrl_s
-{
-    switch_chip_t   switch_type;
-    rtk_uint32      l2p_port[RTK_SWITCH_PORT_NUM];
-    rtk_uint32      p2l_port[RTK_SWITCH_PORT_NUM];
-    port_type_t     log_port_type[RTK_SWITCH_PORT_NUM];
-    rtk_uint32      ptp_port[RTK_SWITCH_PORT_NUM];
-    rtk_uint32      valid_portmask;
-    rtk_uint32      valid_utp_portmask;
-    rtk_uint32      valid_ext_portmask;
-    rtk_uint32      min_phy_port;
-    rtk_uint32      max_phy_port;
-    rtk_uint32      phy_portmask;
-    rtk_uint32      combo_logical_port;
-    rtk_uint32      hsg_logical_port;
-    rtk_uint32      max_meter_id;
-    rtk_uint32      max_lut_addr_num;
-    rtk_uint32      max_trunk_id;
+typedef struct rtk_switch_halCtrl_s {
+	switch_chip_t switch_type;
+	rtk_uint32 l2p_port[RTK_SWITCH_PORT_NUM];
+	rtk_uint32 p2l_port[RTK_SWITCH_PORT_NUM];
+	port_type_t log_port_type[RTK_SWITCH_PORT_NUM];
+	rtk_uint32 ptp_port[RTK_SWITCH_PORT_NUM];
+	rtk_uint32 valid_portmask;
+	rtk_uint32 valid_utp_portmask;
+	rtk_uint32 valid_ext_portmask;
+	rtk_uint32 min_phy_port;
+	rtk_uint32 max_phy_port;
+	rtk_uint32 phy_portmask;
+	rtk_uint32 combo_logical_port;
+	rtk_uint32 hsg_logical_port;
+	rtk_uint32 max_meter_id;
+	rtk_uint32 max_lut_addr_num;
+	rtk_uint32 max_trunk_id;
 
-}rtk_switch_halCtrl_t;
+} rtk_switch_halCtrl_t;
 
 typedef enum rtk_switch_maxPktLen_linkSpeed_e {
-     MAXPKTLEN_LINK_SPEED_FE = 0,
-     MAXPKTLEN_LINK_SPEED_GE,
-     MAXPKTLEN_LINK_SPEED_END,
+	MAXPKTLEN_LINK_SPEED_FE = 0,
+	MAXPKTLEN_LINK_SPEED_GE,
+	MAXPKTLEN_LINK_SPEED_END,
 } rtk_switch_maxPktLen_linkSpeed_t;
 
-#define RTK_SWITCH_CMDS {			\
-     CASEID(INIT_SWITCH),			\
-     CASEID(INIT_SWITCH_UP),			\
-     CASEID(BAD_ADDR_X),			\
-     CASEID(POWERUP_LANPORTS),			\
-     CASEID(POWERDOWN_LANPORTS),		\
-     CASEID(SOFT_RESET),			\
-     CASEID(GET_REG),				\
-     CASEID(SET_REG),				\
-     CASEID(TEST_REG),				\
-     CASEID(RESET_PORT),			\
-     CASEID(GET_LANPORTS_LINK_STATUS),		\
-     CASEID(GET_PORT_STAT),			\
-     CASEID(GET_PORT_SPEED),			\
-     CASEID(GET_EXT_TXRXDELAY),			\
-     CASEID(SET_EXT_TXDELAY),			\
-     CASEID(SET_EXT_RXDELAY),			\
-     CASEID(SET_EXT_MODE),			\
-     CASEID(GET_CPU),				\
-     CASEID(SET_CPU),				\
-     CASEID(GET_RTK_PHYSTATES),			\
-     CASEID(MAX_REQ),				\
-}
+#define RTK_SWITCH_CMDS                                                       \
+	{                                                                     \
+		CASEID(INIT_SWITCH), CASEID(INIT_SWITCH_UP),                  \
+			CASEID(BAD_ADDR_X), CASEID(POWERUP_LANPORTS),         \
+			CASEID(POWERDOWN_LANPORTS), CASEID(SOFT_RESET),       \
+			CASEID(GET_REG), CASEID(SET_REG), CASEID(TEST_REG),   \
+			CASEID(RESET_PORT), CASEID(GET_LANPORTS_LINK_STATUS), \
+			CASEID(GET_PORT_STAT), CASEID(GET_PORT_SPEED),        \
+			CASEID(GET_EXT_TXRXDELAY), CASEID(SET_EXT_TXDELAY),   \
+			CASEID(SET_EXT_RXDELAY), CASEID(SET_EXT_MODE),        \
+			CASEID(GET_CPU), CASEID(SET_CPU),                     \
+			CASEID(GET_RTK_PHYSTATES), CASEID(MAX_REQ),           \
+	}
 
-#define CASEID(a)	a
+#define CASEID(a) a
 typedef enum RTK_SWITCH_CMDS rtk_switch_cmds_e;
 #undef CASEID
 
 typedef struct rtk_asic_s {
-    rtk_uint32      rtk_reg;
-    rtk_uint32      rtk_val;
+	rtk_uint32 rtk_reg;
+	rtk_uint32 rtk_val;
 } rtk_asic_t;
 
 typedef enum stb_LANWAN_config_e {
-     LLLLW,	/* default mode (if rtk_switch is the main switch)*/
-     LLLWW,
-     LLWLW,
-     LWLLW,
-     WLLLW,
-     LLWWW,
-     ALL_LAN = 100,	/* wan port is as lan port */
-     NO_WAN_PORT = 101
+	LLLLW, /* default mode (if rtk_switch is the main switch)*/
+	LLLWW,
+	LLWLW,
+	LWLLW,
+	WLLLW,
+	LLWWW,
+	ALL_LAN = 100, /* wan port is as lan port */
+	NO_WAN_PORT = 101
 } stb_config_t;
 
 /* UTIL MACRO */
-#define RTK_CHK_INIT_STATE()                                \
-    do                                                      \
-    {                                                       \
-        if(rtk_switch_initialState_get() != INIT_COMPLETED) \
-        {                                                   \
-            return RT_ERR_NOT_INIT;                         \
-        }                                                   \
-    }while(0)
+#define RTK_CHK_INIT_STATE()                                           \
+	do {                                                           \
+		if (rtk_switch_initialState_get() != INIT_COMPLETED) { \
+			return RT_ERR_NOT_INIT;                        \
+		}                                                      \
+	} while (0)
 
-#define RTK_CHK_PORT_VALID(__port__)                            \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_logicalPortCheck(__port__) != RT_ERR_OK)  \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
+#define RTK_CHK_PORT_VALID(__port__)                                      \
+	do {                                                              \
+		if (rtk_switch_logicalPortCheck(__port__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_ID;                            \
+		}                                                         \
+	} while (0)
 
-#define RTK_CHK_PORT_IS_UTP(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isUtpPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
+#define RTK_CHK_PORT_IS_UTP(__port__)                              \
+	do {                                                       \
+		if (rtk_switch_isUtpPort(__port__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_ID;                     \
+		}                                                  \
+	} while (0)
 
-#define RTK_CHK_PORT_IS_EXT(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isExtPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
+#define RTK_CHK_PORT_IS_EXT(__port__)                              \
+	do {                                                       \
+		if (rtk_switch_isExtPort(__port__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_ID;                     \
+		}                                                  \
+	} while (0)
 
-#define RTK_CHK_PORT_IS_COMBO(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isComboPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
+#define RTK_CHK_PORT_IS_COMBO(__port__)                              \
+	do {                                                         \
+		if (rtk_switch_isComboPort(__port__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_ID;                       \
+		}                                                    \
+	} while (0)
 
-#define RTK_CHK_PORT_IS_PTP(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isPtpPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
+#define RTK_CHK_PORT_IS_PTP(__port__)                              \
+	do {                                                       \
+		if (rtk_switch_isPtpPort(__port__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_ID;                     \
+		}                                                  \
+	} while (0)
 
-#define RTK_CHK_PORTMASK_VALID(__portmask__)                        \
-    do                                                              \
-    {                                                               \
-        if(rtk_switch_isPortMaskValid(__portmask__) != RT_ERR_OK)   \
-        {                                                           \
-            return RT_ERR_PORT_MASK;                                  \
-        }                                                           \
-    }while(0)
+#define RTK_CHK_PORTMASK_VALID(__portmask__)                                 \
+	do {                                                                 \
+		if (rtk_switch_isPortMaskValid(__portmask__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_MASK;                             \
+		}                                                            \
+	} while (0)
 
-#define RTK_CHK_PORTMASK_VALID_ONLY_UTP(__portmask__)               \
-    do                                                              \
-    {                                                               \
-        if(rtk_switch_isPortMaskUtp(__portmask__) != RT_ERR_OK)   \
-        {                                                           \
-            return RT_ERR_PORT_MASK;                                  \
-        }                                                           \
-    }while(0)
+#define RTK_CHK_PORTMASK_VALID_ONLY_UTP(__portmask__)                      \
+	do {                                                               \
+		if (rtk_switch_isPortMaskUtp(__portmask__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_MASK;                           \
+		}                                                          \
+	} while (0)
 
-#define RTK_CHK_PORTMASK_VALID_ONLY_EXT(__portmask__)               \
-    do                                                              \
-    {                                                               \
-        if(rtk_switch_isPortMaskExt(__portmask__) != RT_ERR_OK)   \
-        {                                                           \
-            return RT_ERR_PORT_MASK;                                  \
-        }                                                           \
-    }while(0)
+#define RTK_CHK_PORTMASK_VALID_ONLY_EXT(__portmask__)                      \
+	do {                                                               \
+		if (rtk_switch_isPortMaskExt(__portmask__) != RT_ERR_OK) { \
+			return RT_ERR_PORT_MASK;                           \
+		}                                                          \
+	} while (0)
 
-#define RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__)    (((__portmask__).bits[0] & (0x00000001 << __port__)) ? 1 : 0)
-#define RTK_PORTMASK_IS_EMPTY(__portmask__)                 (((__portmask__).bits[0] == 0) ? 1 : 0)
-#define RTK_PORTMASK_CLEAR(__portmask__)                    ((__portmask__).bits[0] = 0)
-#define RTK_PORTMASK_PORT_SET(__portmask__, __port__)       ((__portmask__).bits[0] |= (0x00000001 << __port__))
-#define RTK_PORTMASK_PORT_CLEAR(__portmask__, __port__)     ((__portmask__).bits[0] &= ~(0x00000001 << __port__))
-#define RTK_PORTMASK_ALLPORT_SET(__portmask__)              (rtk_switch_logPortMask_get(&__portmask__))
-#define RTK_PORTMASK_SCAN(__portmask__, __port__)           for(__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++)  if(RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__))
-#define RTK_PORTMASK_COMPARE(__portmask_A__, __portmask_B__)    ((__portmask_A__).bits[0] - (__portmask_B__).bits[0])
+#define RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__) \
+	(((__portmask__).bits[0] & (0x00000001 << __port__)) ? 1 : 0)
+#define RTK_PORTMASK_IS_EMPTY(__portmask__) \
+	(((__portmask__).bits[0] == 0) ? 1 : 0)
+#define RTK_PORTMASK_CLEAR(__portmask__) ((__portmask__).bits[0] = 0)
+#define RTK_PORTMASK_PORT_SET(__portmask__, __port__) \
+	((__portmask__).bits[0] |= (0x00000001 << __port__))
+#define RTK_PORTMASK_PORT_CLEAR(__portmask__, __port__) \
+	((__portmask__).bits[0] &= ~(0x00000001 << __port__))
+#define RTK_PORTMASK_ALLPORT_SET(__portmask__) \
+	(rtk_switch_logPortMask_get(&__portmask__))
+#define RTK_PORTMASK_SCAN(__portmask__, __port__)                      \
+	for (__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++) \
+		if (RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__))
+#define RTK_PORTMASK_COMPARE(__portmask_A__, __portmask_B__) \
+	((__portmask_A__).bits[0] - (__portmask_B__).bits[0])
 
-#define RTK_SCAN_ALL_PHY_PORTMASK(__port__)                 for(__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++)  if( (rtk_switch_phyPortMask_get() & (0x00000001 << __port__)))
-#define RTK_SCAN_ALL_LOG_PORT(__port__)                     for(__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++)  if( rtk_switch_logicalPortCheck(__port__) == RT_ERR_OK)
-#define RTK_SCAN_ALL_LOG_PORTMASK(__portmask__)             for((__portmask__).bits[0] = 0; (__portmask__).bits[0] < 0x7FFFF; (__portmask__).bits[0]++)  if( rtk_switch_isPortMaskValid(&__portmask__) == RT_ERR_OK)
+#define RTK_SCAN_ALL_PHY_PORTMASK(__port__)                            \
+	for (__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++) \
+		if ((rtk_switch_phyPortMask_get() & (0x00000001 << __port__)))
+#define RTK_SCAN_ALL_LOG_PORT(__port__)                                \
+	for (__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++) \
+		if (rtk_switch_logicalPortCheck(__port__) == RT_ERR_OK)
+#define RTK_SCAN_ALL_LOG_PORTMASK(__portmask__)                            \
+	for ((__portmask__).bits[0] = 0; (__portmask__).bits[0] < 0x7FFFF; \
+	     (__portmask__).bits[0]++)                                     \
+		if (rtk_switch_isPortMaskValid(&__portmask__) == RT_ERR_OK)
 
 /* Port mask defination */
-#define RTK_PHY_PORTMASK_ALL                                (rtk_switch_phyPortMask_get())
+#define RTK_PHY_PORTMASK_ALL (rtk_switch_phyPortMask_get())
 
 /* Port defination*/
-#define RTK_MAX_LOGICAL_PORT_ID                             (rtk_switch_maxLogicalPort_get())
+#define RTK_MAX_LOGICAL_PORT_ID (rtk_switch_maxLogicalPort_get())
 
 /* Trunk ID defination*/
-#define RTK_MAX_TRUNK_GROUP_ID                              (rtk_switch_maxTrunkId_get())
+#define RTK_MAX_TRUNK_GROUP_ID (rtk_switch_maxTrunkId_get())
 
 /* Function Name:
  *      rtk_switch_probe
@@ -495,7 +478,8 @@ extern rtk_api_ret_t rtk_switch_isPortMaskExt(rtk_portmask_t *pPmask);
  * Note:
  *
  */
-extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask, rtk_uint32 *pPhysicalPortmask);
+extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask,
+						 rtk_uint32 *pPhysicalPortmask);
 
 /* Function Name:
  *      rtk_switch_portmask_P2L_get
@@ -513,7 +497,8 @@ extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask, 
  * Note:
  *
  */
-extern rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask, rtk_portmask_t *pLogicalPmask);
+extern rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask,
+						 rtk_portmask_t *pLogicalPmask);
 
 /* Function Name:
  *      rtk_switch_phyPortMask_get
@@ -582,7 +567,10 @@ extern rtk_api_ret_t rtk_switch_init(void);
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t rtk_switch_portMaxPktLen_set(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 cfgId);
+extern rtk_api_ret_t
+rtk_switch_portMaxPktLen_set(rtk_port_t port,
+			     rtk_switch_maxPktLen_linkSpeed_t speed,
+			     rtk_uint32 cfgId);
 
 /* Function Name:
  *      rtk_switch_portMaxPktLen_get
@@ -600,7 +588,10 @@ extern rtk_api_ret_t rtk_switch_portMaxPktLen_set(rtk_port_t port, rtk_switch_ma
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 *pCfgId);
+extern rtk_api_ret_t
+rtk_switch_portMaxPktLen_get(rtk_port_t port,
+			     rtk_switch_maxPktLen_linkSpeed_t speed,
+			     rtk_uint32 *pCfgId);
 
 /* Function Name:
  *      rtk_switch_maxPktLenCfg_set
@@ -618,7 +609,8 @@ extern rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_switch_ma
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId, rtk_uint32 pktLen);
+extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId,
+						 rtk_uint32 pktLen);
 
 /* Function Name:
  *      rtk_switch_maxPktLenCfg_get
@@ -636,7 +628,8 @@ extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId, rtk_uint32 pk
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId, rtk_uint32 *pPktLen);
+extern rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId,
+						 rtk_uint32 *pPktLen);
 
 /* Function Name:
  *      rtk_switch_greenEthernet_set

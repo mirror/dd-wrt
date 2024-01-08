@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -83,9 +83,11 @@ void start_sysinit(void)
 	} else {
 		sprintf(drive, "/dev/mmcblk0p3");
 	}
-	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, "compress=zstd")) {
+	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME,
+		  "compress=zstd")) {
 		eval("mkfs.btrfs", drive, "-f");
-		mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, "compress=zstd");
+		mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME,
+		      "compress=zstd");
 	}
 	eval("mount", "--bind", "/jffs", "/usr/local");
 	nvram_seti("enable_jffs2", 1);

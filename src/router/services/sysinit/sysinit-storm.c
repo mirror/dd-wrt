@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -99,7 +99,7 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "wlan0");
-	//disable led's 
+	//disable led's
 	set_gpio(1, 0);
 	set_gpio(2, 0);
 	set_gpio(3, 0);

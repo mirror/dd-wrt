@@ -65,7 +65,8 @@ void start_rsync(void)
 	fprintf(fp, "log file = /var/log/rsyncd.log\n");
 	fprintf(fp, "pid file = /var/run/rsyncd.pid\n");
 	char *add = nvram_safe_get("rsync_allowed");
-	fprintf(fp, "hosts allow = %s/%d%s%s\n", nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), *add ? " " : "", add);
+	fprintf(fp, "hosts allow = %s/%d%s%s\n", nvram_safe_get("lan_ipaddr"),
+		getmask(nvram_safe_get("lan_netmask")), *add ? " " : "", add);
 	fprintf(fp, "slp refresh = 300\n");
 	fprintf(fp, "use slp = false\n");
 

@@ -86,8 +86,9 @@ void start_sysinit(void)
 
 	//load mmc drivers
 	insmod("mmc_core");
-	eval("insmod", "sdhci", "debug_quirks=1");	// workaround for mmc detection issue. 
-//      insmod("sdhci");
+	eval("insmod", "sdhci",
+	     "debug_quirks=1"); // workaround for mmc detection issue.
+	//      insmod("sdhci");
 	insmod("sdhci-pltfm");
 	insmod("sdhci-cns3xxx");
 	insmod("mmc_block");
@@ -142,7 +143,7 @@ void start_sysinit(void)
 	if (!strcmp(modelname, "Gateworks Laguna GW2380"))
 		eval("gsp_updater", "-f", "/etc/gsc_2380_v50.txt", "-r", "50");
 
-//      set_smp_affinity(51, 2);
+	//      set_smp_affinity(51, 2);
 	return;
 }
 

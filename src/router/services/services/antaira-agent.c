@@ -28,7 +28,8 @@ void start_antaira_agent(void)
 
 	if (!nvram_invmatchi("antaira_agent_enable", 0))
 		return;
-	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
+	if (nvram_match("wan_proto", "disabled") ||
+	    !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
 		return 0;
 
 	_log_evalpid(antaira_agent_argv, NULL, 0, NULL);
@@ -47,4 +48,4 @@ void stop_antaira_agent(void)
 	return;
 }
 
-#endif				//HAVE_ANTAIRA_AGENT
+#endif //HAVE_ANTAIRA_AGENT

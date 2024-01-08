@@ -45,7 +45,7 @@ void start_nfs(void)
 #else
 	int cpucount = 1
 #endif
-	    if (!nvram_matchi("nfs_enable", 1))
+	if (!nvram_matchi("nfs_enable", 1))
 		return;
 	FILE *fp = fopen("/tmp/exports", "wb");
 	if (fp) {
@@ -53,7 +53,11 @@ void start_nfs(void)
 		for (cs = nfsshares; cs; cs = csnext) {
 			// we export only to local lan network now for security reasons. so know what you're doing
 			if (*cs->mp && *cs->allowed) {
-				fprintf(fp, "%s/%s\t%s%s\n", cs->mp, cs->sd, cs->allowed, !strcmp(cs->access_perms, "ro") ? "(ro,no_subtree_check,no_root_squash,sync)" : "(rw,no_subtree_check,no_root_squash,sync)");
+				fprintf(fp, "%s/%s\t%s%s\n", cs->mp, cs->sd,
+					cs->allowed,
+					!strcmp(cs->access_perms, "ro") ?
+						"(ro,no_subtree_check,no_root_squash,sync)" :
+						"(rw,no_subtree_check,no_root_squash,sync)");
 			}
 			csnext = cs->next;
 			free(cs);
@@ -74,17 +78,17 @@ void start_nfs(void)
 	insmod("lockd");
 	insmod("exportfs");
 	insmod("nfsd");
-	if (pidof("rpcbind") <=0)
+	if (pidof("rpcbind") <= 0)
 		log_eval("rpcbind");
-	if (pidof("fsidd") <=0)
+	if (pidof("fsidd") <= 0)
 		log_eval("fsidd");
-	if (pidof("rpc.mountd") <=0)
+	if (pidof("rpc.mountd") <= 0)
 		log_eval("rpc.mountd");
 	char threads[32];
 	sprintf(threads, "%d", cpucount);
-	if (pidof("rpc.nfsd") <=0)
+	if (pidof("rpc.nfsd") <= 0)
 		log_eval("rpc.nfsd", threads);
-	if (pidof("rpc.statd") <=0)
+	if (pidof("rpc.statd") <= 0)
 		log_eval("rpc.statd");
 	eval("exportfs", "-a", "-r");
 	return;

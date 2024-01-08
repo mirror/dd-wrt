@@ -22,7 +22,6 @@
 
 int setuserpasswd_main(int argc, char **argv)
 {
-
 	if (!argv[1] || !argv[2]) {
 		fprintf(stderr, "usage: setuserpasswd [username] [password]\n");
 		return EINVAL;

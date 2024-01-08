@@ -71,7 +71,8 @@ void start_smartdns(void)
 	fprintf(fp, "log-num 1\n");
 	fprintf(fp, "log-level warn\n");
 	fprintf(fp, "log-file /tmp/smartdns.log\n");
-	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("dhcpd_usenvram", 1)) {
+	if (!nvram_matchi("dns_dnsmasq", 1) &&
+	    !nvram_matchi("dhcpd_usenvram", 1)) {
 		int usejffs = 0;
 		if (jffs_mounted() && nvram_matchi("dhcpd_usejffs", 1)) {
 			FILE *fpcheck;
@@ -83,7 +84,8 @@ void start_smartdns(void)
 			}
 		}
 		if (usejffs)
-			fprintf(fp, "dnsmasq-lease-file /jffs/dnsmasq.leases\n");
+			fprintf(fp,
+				"dnsmasq-lease-file /jffs/dnsmasq.leases\n");
 		else
 			fprintf(fp, "dnsmasq-lease-file /tmp/dnsmasq.leases\n");
 	}
@@ -104,7 +106,8 @@ void start_smartdns(void)
 		if (dns_list && dns_list->num_servers > 0) {
 			int i;
 			for (i = 0; i < dns_list->num_servers; i++)
-				fprintf(fp, "server %s\n", dns_list->dns_server[i].ip);
+				fprintf(fp, "server %s\n",
+					dns_list->dns_server[i].ip);
 		}
 		if (dns_list)
 			free_dns_list(dns_list);
@@ -112,7 +115,9 @@ void start_smartdns(void)
 	fwritenvram("smartdns_options", fp);
 	fclose(fp);
 
-	log_eval("smartdns", "-c", getdefaultconfig("smartdns", path, sizeof(path), "smartdns.conf"));
+	log_eval("smartdns", "-c",
+		 getdefaultconfig("smartdns", path, sizeof(path),
+				  "smartdns.conf"));
 }
 
 void stop_smartdns(void)

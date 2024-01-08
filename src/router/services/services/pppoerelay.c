@@ -39,7 +39,8 @@ void start_pppoerelay(void)
 		if (getSTA())
 			log_eval("pppoe-relay", "-S", getSTA(), "-C", "br0");
 		else
-			log_eval("pppoe-relay", "-S", nvram_safe_get("wan_ifname"), "-C", "br0");
+			log_eval("pppoe-relay", "-S",
+				 nvram_safe_get("wan_ifname"), "-C", "br0");
 	}
 }
 

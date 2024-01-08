@@ -58,7 +58,6 @@ void start_speedchecker_init(void)
 	}
 	if (change)
 		nvram_async_commit();
-
 }
 
 void start_speedchecker(void)
@@ -66,13 +65,14 @@ void start_speedchecker(void)
 	char wan_if_buffer[33];
 	start_speedchecker_init();
 	if (nvram_matchi("speedchecker_enable", 1)) {
-		sysprintf("SCC_JID=\"%s@xmpp.speedcheckerapi.com/%s|%s|ddwrt|%s|\" SCC_SRV=\"xmpp.speedcheckerapi.com\" SCC_STATS_IF=%s SCC_RNAME=\"%s\" scc &\n",	//
-			  nvram_safe_get("speedchecker_uuid"),	//
-			  SCVERSION,	//
-			  PSVN_REVISION,	//
-			  nvram_safe_get("os_version"),	//
-			  safe_get_wan_face(wan_if_buffer),	//
-			  nvram_safe_get("DD_BOARD"));
+		sysprintf(
+			"SCC_JID=\"%s@xmpp.speedcheckerapi.com/%s|%s|ddwrt|%s|\" SCC_SRV=\"xmpp.speedcheckerapi.com\" SCC_STATS_IF=%s SCC_RNAME=\"%s\" scc &\n", //
+			nvram_safe_get("speedchecker_uuid"), //
+			SCVERSION, //
+			PSVN_REVISION, //
+			nvram_safe_get("os_version"), //
+			safe_get_wan_face(wan_if_buffer), //
+			nvram_safe_get("DD_BOARD"));
 		dd_loginfo("speedchecker", "client started\n");
 	}
 

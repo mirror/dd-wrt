@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -60,19 +60,23 @@ void start_radvd(void)
 {
 	char wan_if_buffer[33];
 	int c = 0, manual = 0;
-	int mtu = 1500;;
+	int mtu = 1500;
+	;
 	char *buf, *prefix;
 	const char *ip;
 	char *p = NULL;
 	int do_mtu = 0, do_6to4 = 0, do_6rd = 0;
 	FILE *fp;
 
-	if (!nvram_matchi("ipv6_enable", 1) || !nvram_matchi("radvd_enable", 1)) {
+	if (!nvram_matchi("ipv6_enable", 1) ||
+	    !nvram_matchi("radvd_enable", 1)) {
 		stop_radvd();
 		return;
 	}
 
-	if (nvram_matchi("dhcp6s_enable", 1) && (nvram_matchi("dhcp6s_seq_ips", 1) || nvram_invmatch("dhcp6s_hosts", "")))
+	if (nvram_matchi("dhcp6s_enable", 1) &&
+	    (nvram_matchi("dhcp6s_seq_ips", 1) ||
+	     nvram_invmatch("dhcp6s_hosts", "")))
 		manual = 1;
 
 	if (nvram_invmatch("ipv6_mtu", "")) {
@@ -92,14 +96,12 @@ void start_radvd(void)
 		if (buf != NULL)
 			writenvram("radvd_conf", "/tmp/radvd.conf");
 	} else {
-
 		if (nvram_match("ipv6_typ", "ipv6native")) {
 			if (do_mtu) {
 				mtu = nvram_geti("ipv6_mtu");
 			} else {
 				mtu = nvram_geti("wan_mtu");
 			}
-
 		}
 
 		if (nvram_match("ipv6_typ", "ipv6to4")) {
@@ -118,7 +120,8 @@ void start_radvd(void)
 			return;
 
 		char buf[INET6_ADDRSTRLEN];
-		ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ? : "";
+		ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?:
+			     "";
 
 		fprintf(fp,
 			"interface %s\n"
@@ -138,7 +141,11 @@ void start_radvd(void)
 			"  AdvValidLifetime 30;\n"
 			"  AdvPreferredLifetime 20;\n"
 			"%s%s%s"
-			" };\n", nvram_safe_get("lan_ifname"), manual ? "on" : "off", mtu, prefix, manual ? "off" : "on", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? safe_get_wan_face(wan_if_buffer) : "",
+			" };\n",
+			nvram_safe_get("lan_ifname"), manual ? "on" : "off",
+			mtu, prefix, manual ? "off" : "on",
+			do_6to4 ? "  Base6to4Interface " : "",
+			do_6to4 ? safe_get_wan_face(wan_if_buffer) : "",
 			do_6to4 ? ";\n" : "");
 
 		int i;
@@ -172,7 +179,6 @@ void restart_radvd(void)
 
 void stop_radvd(void)
 {
-
 	stop_process("radvd", "daemon");
 	unlink("/var/run/radvd.pid");
 

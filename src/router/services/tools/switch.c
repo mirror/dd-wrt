@@ -9,11 +9,11 @@
 #include "ra_ioctl.h"
 
 #ifdef CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION
-#define RT_SWITCH_HELP		0
-#define RT_TABLE_MANIPULATE	0
+#define RT_SWITCH_HELP 0
+#define RT_TABLE_MANIPULATE 0
 #else
-#define RT_SWITCH_HELP		1
-#define RT_TABLE_MANIPULATE	1
+#define RT_SWITCH_HELP 1
+#define RT_TABLE_MANIPULATE 1
 #endif
 
 int esw_fd;
@@ -36,36 +36,63 @@ void usage(char *cmd)
 {
 #if RT_SWITCH_HELP
 	printf("Usage:\n");
-	printf(" %s dump                                 - dump switch table\n", cmd);
-	printf(" %s clear                                - clear switch table\n", cmd);
-	printf(" %s add [mac] [portmap]                  - add an entry to switch table\n", cmd);
-	printf(" %s add [mac] [portmap] [vlan idx]       - add an entry to switch table\n", cmd);
-	printf(" %s add [mac] [portmap] [vlan idx] [age] - add an entry to switch table\n", cmd);
+	printf(" %s dump                                 - dump switch table\n",
+	       cmd);
+	printf(" %s clear                                - clear switch table\n",
+	       cmd);
+	printf(" %s add [mac] [portmap]                  - add an entry to switch table\n",
+	       cmd);
+	printf(" %s add [mac] [portmap] [vlan idx]       - add an entry to switch table\n",
+	       cmd);
+	printf(" %s add [mac] [portmap] [vlan idx] [age] - add an entry to switch table\n",
+	       cmd);
 #ifdef HAVE_RT3352
-	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5 \n", cmd);
-	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~5 \n", cmd);
-	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5 \n", cmd);
-	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~5 \n", cmd);
-	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n", cmd);
-	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n", cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n", cmd);
-#elif defined (CONFIG_RALINK_RT5350)
-	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~4 \n", cmd);
-	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~4 \n", cmd);
-	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~4 \n", cmd);
-	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~4\n", cmd);
-	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n", cmd);
-	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n", cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n", cmd);
+	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5 \n",
+	       cmd);
+	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~5 \n",
+	       cmd);
+	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5 \n",
+	       cmd);
+	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~5 \n",
+	       cmd);
+	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n",
+	       cmd);
+	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n",
+	       cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n",
+	       cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n",
+	       cmd);
+#elif defined(CONFIG_RALINK_RT5350)
+	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~4 \n",
+	       cmd);
+	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~4 \n",
+	       cmd);
+	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~4 \n",
+	       cmd);
+	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~4\n",
+	       cmd);
+	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n",
+	       cmd);
+	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n",
+	       cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n",
+	       cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n",
+	       cmd);
 #endif
-	printf(" %s del [mac]                            - delete an entry from switch table\n", cmd);
-	printf(" %s del [mac] [vlan idx]                 - delete an entry from switch table\n", cmd);
-	printf(" %s vlan dump                            - dump switch table\n", cmd);
-	printf(" %s vlan set [vlan idx] [vid] [portmap]  - set vlan id and associated member\n", cmd);
-	printf(" %s reg r [offset]                       - register read from offset\n", cmd);
-	printf(" %s reg w [offset] [value]               - register write value to offset\n", cmd);
+	printf(" %s del [mac]                            - delete an entry from switch table\n",
+	       cmd);
+	printf(" %s del [mac] [vlan idx]                 - delete an entry from switch table\n",
+	       cmd);
+	printf(" %s vlan dump                            - dump switch table\n",
+	       cmd);
+	printf(" %s vlan set [vlan idx] [vid] [portmap]  - set vlan id and associated member\n",
+	       cmd);
+	printf(" %s reg r [offset]                       - register read from offset\n",
+	       cmd);
+	printf(" %s reg w [offset] [value]               - register write value to offset\n",
+	       cmd);
 #endif
 	switch_fini();
 	exit(0);
@@ -107,7 +134,7 @@ int reg_write(int offset, int value)
 	return 0;
 }
 
-#if defined (HAVE_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined(HAVE_RT3352) || defined(CONFIG_RALINK_RT5350)
 
 int ingress_rate_set(int on_off, int port, int bw)
 {
@@ -162,13 +189,14 @@ void table_dump(void)
 	for (i = 0; i < 0x400; i++) {
 		while (1) {
 			reg_read(REG_ESW_TABLE_STATUS0, &value);
-			if (value & 0x1) {	//search_rdy
+			if (value & 0x1) { //search_rdy
 				if ((value & 0x70) == 0) {
 					printf("found an unused entry (age = 3'b000), please check!\n");
 					return;
 				}
-				printf("%03x:   ", (value >> 22) & 0x3ff);	//hash_addr_lu
-				j = (value >> 12) & 0x7f;	//r_port_map
+				printf("%03x:   ",
+				       (value >> 22) & 0x3ff); //hash_addr_lu
+				j = (value >> 12) & 0x7f; //r_port_map
 				printf("%c", (j & 0x01) ? '1' : '-');
 				printf("%c", (j & 0x02) ? '1' : '-');
 				printf("%c", (j & 0x04) ? '1' : '-');
@@ -176,9 +204,10 @@ void table_dump(void)
 				printf("%c ", (j & 0x10) ? '1' : '-');
 				printf("%c", (j & 0x20) ? '1' : '-');
 				printf("%c", (j & 0x40) ? '1' : '-');
-				printf("   %2d", (value >> 7) & 0xf);	//r_vid
+				printf("   %2d", (value >> 7) & 0xf); //r_vid
 				printf("  %4d", vid[(value >> 7) & 0xf]);
-				printf("    %1d", (value >> 4) & 0x7);	//r_age_field
+				printf("    %1d",
+				       (value >> 4) & 0x7); //r_age_field
 				reg_read(REG_ESW_TABLE_STATUS2, &mac);
 				printf("  %08x", mac);
 				reg_read(REG_ESW_TABLE_STATUS1, &mac);
@@ -189,13 +218,14 @@ void table_dump(void)
 					return;
 				}
 				break;
-			} else if (value & 0x2) {	//at_table_end
-				printf("found the last entry %d (not ready)\n", i);
+			} else if (value & 0x2) { //at_table_end
+				printf("found the last entry %d (not ready)\n",
+				       i);
 				return;
 			}
 			usleep(5000);
 		}
-		reg_write(REG_ESW_TABLE_SEARCH, 0x2);	//search for next address
+		reg_write(REG_ESW_TABLE_SEARCH, 0x2); //search for next address
 	}
 }
 
@@ -235,7 +265,7 @@ void table_add(int argc, char *argv[])
 		}
 		j += (argv[3][i] - '0') * (1 << i);
 	}
-	value = j << 12;	//w_port_map
+	value = j << 12; //w_port_map
 
 	if (argc > 4) {
 		j = strtoul(argv[4], NULL, 0);
@@ -243,7 +273,7 @@ void table_add(int argc, char *argv[])
 			printf("wrong member index range, should be within 0~15\n");
 			return;
 		}
-		value += (j << 7);	//w_index
+		value += (j << 7); //w_index
 	}
 
 	if (argc > 5) {
@@ -252,19 +282,19 @@ void table_add(int argc, char *argv[])
 			printf("wrong age range, should be within 1~7\n");
 			return;
 		}
-		value += (j << 4);	//w_age_field
+		value += (j << 4); //w_age_field
 	} else
-		value += (7 << 4);	//w_age_field
+		value += (7 << 4); //w_age_field
 
 	if (is_filter)
-		value |= (1 << 3);	//sa_filter
+		value |= (1 << 3); //sa_filter
 
-	value += 1;		//w_mac_cmd
+	value += 1; //w_mac_cmd
 	reg_write(REG_ESW_WT_MAC_AD0, value);
 
 	for (i = 0; i < 20; i++) {
 		reg_read(REG_ESW_WT_MAC_AD0, &value);
-		if (value & 0x2) {	//w_mac_done
+		if (value & 0x2) { //w_mac_done
 			printf("done.\n");
 			return;
 		}
@@ -300,15 +330,15 @@ void table_del(int argc, char *argv[])
 			printf("wrong member index range, should be within 0~15\n");
 			return;
 		}
-		value += (j << 7);	//w_index
+		value += (j << 7); //w_index
 	}
 
-	value += 1;		//w_mac_cmd
+	value += 1; //w_mac_cmd
 	reg_write(REG_ESW_WT_MAC_AD0, value);
 
 	for (i = 0; i < 20; i++) {
 		reg_read(REG_ESW_WT_MAC_AD0, &value);
-		if (value & 0x2) {	//w_mac_done
+		if (value & 0x2) { //w_mac_done
 			if (argv[1] != NULL)
 				printf("done.\n");
 			return;
@@ -332,7 +362,7 @@ void table_clear(void)
 	for (i = 0; i < 0x400; i++) {
 		while (1) {
 			reg_read(REG_ESW_TABLE_STATUS0, &value);
-			if (value & 0x1) {	//search_rdy
+			if (value & 0x1) { //search_rdy
 				if ((value & 0x70) == 0) {
 					return;
 				}
@@ -348,12 +378,12 @@ void table_clear(void)
 					return;
 				}
 				break;
-			} else if (value & 0x2) {	//at_table_end
+			} else if (value & 0x2) { //at_table_end
 				return;
 			}
 			usleep(5000);
 		}
-		reg_write(REG_ESW_TABLE_SEARCH, 0x2);	//search for next address
+		reg_write(REG_ESW_TABLE_SEARCH, 0x2); //search for next address
 	}
 }
 
@@ -477,7 +507,6 @@ void vlan_set(int argc, char *argv[])
 				value |= vid;
 			}
 			reg_write(0x40 + (4 * (i / 2)), value);
-
 		}
 	}
 }
@@ -522,18 +551,20 @@ int main(int argc, char *argv[])
 		if (argv[2][0] == 'r') {
 			off = strtoul(argv[3], NULL, 16);
 			reg_read(off, &val);
-			printf("switch reg read offset=%x, value=%x\n", off, val);
+			printf("switch reg read offset=%x, value=%x\n", off,
+			       val);
 		} else if (argv[2][0] == 'w') {
 			if (argc != 5)
 				usage(argv[0]);
 			off = strtoul(argv[3], NULL, 16);
 			val = strtoul(argv[4], NULL, 16);
-			printf("switch reg write offset=%x, value=%x\n", off, val);
+			printf("switch reg write offset=%x, value=%x\n", off,
+			       val);
 			reg_write(off, val);
 		} else
 			usage(argv[0]);
 	}
-#if defined (HAVE_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined(HAVE_RT3352) || defined(CONFIG_RALINK_RT5350)
 	else if (!strncmp(argv[1], "ingress-rate", 6)) {
 		int port = 0, bw = 0;
 

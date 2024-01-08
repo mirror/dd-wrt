@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -95,12 +95,12 @@ void start_sysinit(void)
 	insmod("armada_thermal");
 	insmod("tmp421");
 
-	insmod("rtc-armada38x");	// for WRT1200AC / WRT1900ACv2 only
+	insmod("rtc-armada38x"); // for WRT1200AC / WRT1900ACv2 only
 	insmod("mii");
 	// crypto drivers
 	insmod("libdes");
 	insmod("des_generic");
-	insmod("marvell-cesa");	// tested on WRT1900AC v1 so far
+	insmod("marvell-cesa"); // tested on WRT1900AC v1 so far
 	/*
 	 * network drivers 
 	 */
@@ -124,7 +124,7 @@ void start_sysinit(void)
 	if (recovery && strcmp(recovery, "yes"))
 		eval("ubootenv", "set", "auto_recovery", "yes");
 	if (!nvram_match("nobcreset", "1"))
-		eval("mtd", "resetbc", "s_env");	// reset boot counter
+		eval("mtd", "resetbc", "s_env"); // reset boot counter
 
 	/*
 	 * Set a sane date 
@@ -158,28 +158,34 @@ void start_sysinit(void)
 	   set_smp_affinity(36, 2);
 	   set_smp_affinity(46, 2);
 	   } */
-	set_gpio(3, 0);		//disable sata led as initial value
-	set_gpio(4, 0);		//disable usb 1 led as initial value
-	set_gpio(5, 0);		//disable usb 2 led as initial value
-	set_gpio(8, 0);		//disable usb ss led as initial value
+	set_gpio(3, 0); //disable sata led as initial value
+	set_gpio(4, 0); //disable usb 1 led as initial value
+	set_gpio(5, 0); //disable usb 2 led as initial value
+	set_gpio(8, 0); //disable usb ss led as initial value
 
 	if (brand == ROUTER_WRT_1900AC) {
-		writestr("/sys/class/leds/mamba\\:white\\:esata/trigger", "disk-activity");
+		writestr("/sys/class/leds/mamba\\:white\\:esata/trigger",
+			 "disk-activity");
 	}
 	if (brand == ROUTER_WRT_1200AC) {
-		writestr("/sys/class/leds/caiman\\:white\\:sata/trigger", "disk-activity");
+		writestr("/sys/class/leds/caiman\\:white\\:sata/trigger",
+			 "disk-activity");
 	}
 	if (brand == ROUTER_WRT_1900ACV2) {
-		writestr("/sys/class/leds/cobra\\:white\\:sata/trigger", "disk-activity");
+		writestr("/sys/class/leds/cobra\\:white\\:sata/trigger",
+			 "disk-activity");
 	}
 	if (brand == ROUTER_WRT_1900ACS) {
-		writestr("/sys/class/leds/shelby\\:white\\:sata/trigger", "disk-activity");
+		writestr("/sys/class/leds/shelby\\:white\\:sata/trigger",
+			 "disk-activity");
 	}
 	if (brand == ROUTER_WRT_3200ACM) {
-		writestr("/sys/class/leds/rango\\:white\\:sata/trigger", "disk-activity");
+		writestr("/sys/class/leds/rango\\:white\\:sata/trigger",
+			 "disk-activity");
 	}
 	if (brand == ROUTER_WRT_32X) {
-		writestr("/sys/class/leds/venom\\:blue\\:sata/trigger", "disk-activity");
+		writestr("/sys/class/leds/venom\\:blue\\:sata/trigger",
+			 "disk-activity");
 	}
 
 	nvram_seti("sw_wancpuport", 5);

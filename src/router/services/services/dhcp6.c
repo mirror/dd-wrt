@@ -56,10 +56,11 @@
 #include <time.h>
 
 #ifdef HAVE_IPV6
-#define evalip6(cmd, args...) { \
-		if (nvram_match("ipv6_enable","1")) {	\
-			eval_va(cmd, ## args, NULL); \
-		} \
+#define evalip6(cmd, args...)                          \
+	{                                              \
+		if (nvram_match("ipv6_enable", "1")) { \
+			eval_va(cmd, ##args, NULL);    \
+		}                                      \
 	}
 #else
 #define evalip6(...)
@@ -94,12 +95,13 @@ void start_dhcp6c(void)
 
 	if (ether_atoe(mac, ea)) {
 		/* Generate IAID from the last 7 digits of WAN MAC */
-		iaid = ((unsigned long)(ea[3] & 0x0f) << 16) | ((unsigned long)(ea[4]) << 8) | ((unsigned long)(ea[5]));
+		iaid = ((unsigned long)(ea[3] & 0x0f) << 16) |
+		       ((unsigned long)(ea[4]) << 8) | ((unsigned long)(ea[5]));
 
 		/* Generate DUID-LL */
 		duid_len = sizeof(duid) + ETHER_ADDR_LEN;
-		duid.type = htons(3);	/* DUID-LL */
-		duid.hwtype = htons(1);	/* Ethernet */
+		duid.type = htons(3); /* DUID-LL */
+		duid.hwtype = htons(1); /* Ethernet */
 	}
 
 	unlink("/var/dhcp6c_duid");
@@ -114,38 +116,42 @@ void start_dhcp6c(void)
 		if (nvram_exists("dhcp6c_conf"))
 			writenvram("dhcp6c_conf", "/tmp/dhcp6c.conf");
 	} else {
-
-		prefix_len = 64 - (atoi(nvram_safe_get("ipv6_pf_len")) ? : 64);
+		prefix_len = 64 - (atoi(nvram_safe_get("ipv6_pf_len")) ?: 64);
 		if (prefix_len < 0)
 			prefix_len = 0;
 
 		if ((fpc = fopen("/etc/dhcp6c.conf", "w"))) {
-			fprintf(fpc, "interface %s {\n"	//
-				" send ia-pd 0;\n"	//
-				" send rapid-commit;\n"	//
-				" request domain-name-servers;\n"	//
-				" script \"/sbin/dhcp6c-state\";\n", safe_get_wan_face(wan_if_buffer));
+			fprintf(fpc,
+				"interface %s {\n" //
+				" send ia-pd 0;\n" //
+				" send rapid-commit;\n" //
+				" request domain-name-servers;\n" //
+				" script \"/sbin/dhcp6c-state\";\n",
+				safe_get_wan_face(wan_if_buffer));
 
-/*#define DH6OPT_USER_CLASS 15
+			/*#define DH6OPT_USER_CLASS 15
 #define DH6OPT_VENDOR_CLASS 16
 #define DH6OPT_CLIENTID	1
 #define DH6OPT_ORO 6
 #define DH6OPT_AUTH 11
 */
-			char *vendorclass = nvram_safe_get("dhcp6c_vendorclass");
+			char *vendorclass =
+				nvram_safe_get("dhcp6c_vendorclass");
 			char *userclass = nvram_safe_get("dhcp6c_userclass");
 			char *auth = nvram_safe_get("dhcp6c_authentication");
 			char *clientid = nvram_safe_get("dhcp6c_clientid");
 
 			if (nvram_match("wan_proto", "dhcp_auth")) {
-				fprintf(fpc, "send raw-option 6 00:0b:00:11:00:17:00:18;\n");
+				fprintf(fpc,
+					"send raw-option 6 00:0b:00:11:00:17:00:18;\n");
 				if (*auth) {
 					fprintf(fpc, "send raw-option 11 ");
 					int i;
 					for (i = 0; i < strlen(auth); i += 2) {
 						if (i)
 							fprintf(fpc, ":");
-						fprintf(fpc, "%c%c", auth[i], auth[i + 1]);
+						fprintf(fpc, "%c%c", auth[i],
+							auth[i + 1]);
 					}
 					fprintf(fpc, ";\n");
 				}
@@ -153,36 +159,53 @@ void start_dhcp6c(void)
 				if (*clientid) {
 					fprintf(fpc, "send raw-option 1 ");
 					int i;
-					for (i = 0; i < strlen(clientid); i += 2) {
+					for (i = 0; i < strlen(clientid);
+					     i += 2) {
 						if (i)
 							fprintf(fpc, ":");
-						fprintf(fpc, "%c%c", clientid[i], clientid[i + 1]);
+						fprintf(fpc, "%c%c",
+							clientid[i],
+							clientid[i + 1]);
 					}
 					fprintf(fpc, ";\n");
 				}
 				if (*vendorclass) {
-					fprintf(fpc, "send raw-option 16 00:00:04:0e:%02X:%02X", strlen(vendorclass) >> 8, strlen(vendorclass) & 0xff);	// 00:00:04:0e enterprise id for sagecom
+					fprintf(fpc,
+						"send raw-option 16 00:00:04:0e:%02X:%02X",
+						strlen(vendorclass) >> 8,
+						strlen(vendorclass) &
+							0xff); // 00:00:04:0e enterprise id for sagecom
 					int i;
-					for (i = 0; i < strlen(vendorclass); i++)
-						fprintf(fpc, ":%02X", vendorclass[i]);
+					for (i = 0; i < strlen(vendorclass);
+					     i++)
+						fprintf(fpc, ":%02X",
+							vendorclass[i]);
 					fprintf(fpc, ";\n");
 				}
 				if (*userclass) {
-					fprintf(fpc, "send raw-option 15 %02X:%02X", strlen(userclass) >> 8, strlen(userclass) & 0xff);	// must convert to hex
+					fprintf(fpc,
+						"send raw-option 15 %02X:%02X",
+						strlen(userclass) >> 8,
+						strlen(userclass) &
+							0xff); // must convert to hex
 					int i;
 					for (i = 0; i < strlen(userclass); i++)
-						fprintf(fpc, ":%02X", userclass[i]);
+						fprintf(fpc, ":%02X",
+							userclass[i]);
 					fprintf(fpc, ";\n");
 				}
 			}
 
-			fprintf(fpc, "};\n" "id-assoc pd 0 {\n"	//
-				" prefix-interface %s {\n"	//
-				"  sla-id 0;\n"	//
-				"  sla-len %d;\n"	//
-				" };\n"	//
-				"};\n"	//
-				"id-assoc na 0 { };\n", nvram_safe_get("lan_ifname"), prefix_len);
+			fprintf(fpc,
+				"};\n"
+				"id-assoc pd 0 {\n" //
+				" prefix-interface %s {\n" //
+				"  sla-id 0;\n" //
+				"  sla-len %d;\n" //
+				" };\n" //
+				"};\n" //
+				"id-assoc na 0 { };\n",
+				nvram_safe_get("lan_ifname"), prefix_len);
 			fclose(fpc);
 		}
 	}
@@ -192,32 +215,53 @@ void start_dhcp6c(void)
 		eval("vconfig", "set_egress_map", wan_ifname, "0", "6");
 		eval("vconfig", "set_egress_map", wan_ifname, "1", "0");
 		insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter ip6table_mangle xt_DSCP xt_CLASSIFY");
-		eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-i",
+		     wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i",
+		     wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
 
-		eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-o",
+		     wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o",
+		     wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
 
-		eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-m", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+		eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-m",
+		     "--mark", "0x100000", "-j", "CLASSIFY", "--set-class",
+		     "0:1");
+		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m",
+		     "--mark", "0x100000", "-j", "CLASSIFY", "--set-class",
+		     "0:1");
 
-		evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i",
+			wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i",
+			wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o",
+			wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o",
+			wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
 
-		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
-		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m",
+			"mark", "--mark", "0x100000", "-j", "CLASSIFY",
+			"--set-class", "0:1");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m",
+			"mark", "--mark", "0x100000", "-j", "CLASSIFY",
+			"--set-class", "0:1");
 
-		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
-		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
-
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o",
+			wan_ifname, "-p", "udp", "--dport", "547", "-j",
+			"CLASSIFY", "--set-class", "0:0");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o",
+			wan_ifname, "-p", "udp", "--dport", "547", "-j",
+			"CLASSIFY", "--set-class", "0:0");
 	}
 #endif
 	if (nvram_match("dhcp6c_norelease", "1"))
-		log_eval("dhcp6c", "-n", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
+		log_eval("dhcp6c", "-n", "-c", "/tmp/dhcp6c.conf", "-T", "LL",
+			 wan_ifname);
 	else
-		log_eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
+		log_eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL",
+			 wan_ifname);
 }
 
 void stop_dhcp6c(void)
@@ -248,12 +292,13 @@ void start_dhcp6s(void)
 
 	if (ether_atoe(nvram_safe_get("lan_hwaddr"), ea)) {
 		/* Generate IAID from the last 7 digits of WAN MAC */
-		iaid = ((unsigned long)(ea[3] & 0x0f) << 16) | ((unsigned long)(ea[4]) << 8) | ((unsigned long)(ea[5]));
+		iaid = ((unsigned long)(ea[3] & 0x0f) << 16) |
+		       ((unsigned long)(ea[4]) << 8) | ((unsigned long)(ea[5]));
 
 		/* Generate DUID-LL */
 		duid_len = sizeof(duid) + ETHER_ADDR_LEN;
-		duid.type = htons(3);	/* DUID-LL */
-		duid.hwtype = htons(1);	/* Ethernet */
+		duid.type = htons(3); /* DUID-LL */
+		duid.hwtype = htons(1); /* Ethernet */
 	}
 
 	unlink("/var/dhcp6s_duid");
@@ -268,33 +313,43 @@ void start_dhcp6s(void)
 		if (nvram_exists("dhcp6s_conf"))
 			writenvram("dhcp6s_conf", "/tmp/dhcp6s.conf");
 	} else {
-
 		if ((fp = fopen("/tmp/dhcp6s.conf", "w")) == NULL)
 			return;
 
-		fprintf(fp, "option refreshtime %d;\n", 900);	/* 15 minutes for now */
+		fprintf(fp, "option refreshtime %d;\n",
+			900); /* 15 minutes for now */
 		if (nvram_matchi("dnsmasq_enable", 1)) {
 			char buf[INET6_ADDRSTRLEN];
-			fprintf(fp, "option domain-name-servers %s", getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6));
+			fprintf(fp, "option domain-name-servers %s",
+				getifaddr_any(buf, nvram_safe_get("lan_ifname"),
+					      AF_INET6));
 		} else {
 			struct dns_lists *list = get_dns_list(1);
 			fprintf(fp, "option domain-name-servers");
 			if (list) {
 				int i;
 				for (i = 0; i < list->num_servers; i++)
-					fprintf(fp, " %s", list->dns_server[i].ip);
+					fprintf(fp, " %s",
+						list->dns_server[i].ip);
 				free_dns_list(list);
 			}
 		}
 		fprintf(fp, ";\n");
 		if (nvram_invmatch("ipv6_get_domain", ""))
-			fprintf(fp, "option domain-name \"%s\";\n", nvram_safe_get("ipv6_get_domain"));
+			fprintf(fp, "option domain-name \"%s\";\n",
+				nvram_safe_get("ipv6_get_domain"));
 		if (nvram_matchi("dhcp6s_seq_ips", 1)) {
-			fprintf(fp, "\ninterface %s {\n", nvram_safe_get("lan_ifname"));
-			fprintf(fp, "\tallow rapid-commit;\n\taddress-pool pool1 30 86400;\n};\n");
-			fprintf(fp, "pool pool1 {\n \t range %s1000 to %sffff;\n};\n", nvram_safe_get("ipv6_prefix"), nvram_safe_get("ipv6_prefix"));
+			fprintf(fp, "\ninterface %s {\n",
+				nvram_safe_get("lan_ifname"));
+			fprintf(fp,
+				"\tallow rapid-commit;\n\taddress-pool pool1 30 86400;\n};\n");
+			fprintf(fp,
+				"pool pool1 {\n \t range %s1000 to %sffff;\n};\n",
+				nvram_safe_get("ipv6_prefix"),
+				nvram_safe_get("ipv6_prefix"));
 		} else {
-			fprintf(fp, "\ninterface %s {\n", nvram_safe_get("lan_ifname"));
+			fprintf(fp, "\ninterface %s {\n",
+				nvram_safe_get("lan_ifname"));
 			fprintf(fp, "\tallow rapid-commit;\n};\n");
 		}
 		if (nvram_invmatch("dhcp6s_hosts", "")) {
@@ -303,7 +358,8 @@ void start_dhcp6s(void)
 		fclose(fp);
 	}
 
-	log_eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", nvram_safe_get("lan_ifname"));
+	log_eval("dhcp6s", "-c", "/tmp/dhcp6s.conf",
+		 nvram_safe_get("lan_ifname"));
 }
 
 void stop_dhcp6s(void)
@@ -333,8 +389,10 @@ static int getprefixlen(char *dev)
 	if (f == NULL)
 		return 64;
 
-	while (fscanf
-	       (f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4], addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
+	while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
+		      addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
+		      addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope,
+		      &dad_status, devname) != EOF) {
 		if (!strcmp(devname, dev)) {
 			fclose(f);
 			return plen;
@@ -351,12 +409,13 @@ int dhcp6c_state_main(int argc, char **argv)
 	int i, r;
 	int c = 0;
 	char buf[INET6_ADDRSTRLEN];
-	c |= nvram_change("ipv6_rtr_addr", getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0));
-//      c |= nvram_change("ipv6_pf_len", getprefixlen(nvram_safe_get("lan_ifname")));
+	c |= nvram_change("ipv6_rtr_addr",
+			  getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6,
+				    0));
+	//      c |= nvram_change("ipv6_pf_len", getprefixlen(nvram_safe_get("lan_ifname")));
 	// extract prefix from configured IPv6 address
 	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
-
-		r = nvram_geti("ipv6_pf_len") ? : 64;
+		r = nvram_geti("ipv6_pf_len") ?: 64;
 		for (r = 128 - r, i = 15; r > 0; r -= 8) {
 			if (r >= 8)
 				addr.s6_addr[i--] = 0;
@@ -367,9 +426,9 @@ int dhcp6c_state_main(int argc, char **argv)
 
 		c |= nvram_change("ipv6_prefix", prefix);
 		if (c) {
-//                      char loopback[128];
-//                      sprintf(loopback, "%s/%d", prefix, r);
-//                      eval("ip", "-6", "route", "unreachable", loopback, "dev", "lo");
+			//                      char loopback[128];
+			//                      sprintf(loopback, "%s/%d", prefix, r);
+			//                      eval("ip", "-6", "route", "unreachable", loopback, "dev", "lo");
 		}
 	}
 
@@ -379,7 +438,6 @@ int dhcp6c_state_main(int argc, char **argv)
 	c |= nvram_change("ipv6_get_sip_servers", getenv("new_sip_servers"));
 
 	if (c) {
-
 		dns_to_resolv();
 #ifdef HAVE_RADVD
 		stop_radvd();

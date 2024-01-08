@@ -50,8 +50,8 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -63,73 +63,73 @@
  */
 
 /*****************/
-#define IP_PHY_CONTROL                 0
-#define IP_PHY_STATUS                  1
-#define IP_PHY_ID1                     2
-#define IP_PHY_ID2                     3
-#define IP_AUTONEG_ADVERT              4
-#define IP_LINK_PARTNER_ABILITY        5
-#define IP_AUTONEG_EXPANSION           6
+#define IP_PHY_CONTROL 0
+#define IP_PHY_STATUS 1
+#define IP_PHY_ID1 2
+#define IP_PHY_ID2 3
+#define IP_AUTONEG_ADVERT 4
+#define IP_LINK_PARTNER_ABILITY 5
+#define IP_AUTONEG_EXPANSION 6
 
 /*
  * IP_PHY_CONTROL fields 
  */
-#define IP_CTRL_SOFTWARE_RESET                    0x8000
-#define IP_CTRL_SPEED_100                         0x2000
-#define IP_CTRL_AUTONEGOTIATION_ENABLE            0x1000
-#define IP_CTRL_START_AUTONEGOTIATION             0x0200
-#define IP_CTRL_SPEED_FULL_DUPLEX                 0x0100
+#define IP_CTRL_SOFTWARE_RESET 0x8000
+#define IP_CTRL_SPEED_100 0x2000
+#define IP_CTRL_AUTONEGOTIATION_ENABLE 0x1000
+#define IP_CTRL_START_AUTONEGOTIATION 0x0200
+#define IP_CTRL_SPEED_FULL_DUPLEX 0x0100
 
 /*
  * Phy status fields 
  */
-#define IP_STATUS_AUTO_NEG_DONE                   0x0020
-#define IP_STATUS_LINK_PASS                       0x0004
+#define IP_STATUS_AUTO_NEG_DONE 0x0020
+#define IP_STATUS_LINK_PASS 0x0004
 
-#define IP_AUTONEG_DONE(ip_phy_status)                   \
-    (((ip_phy_status) &                                  \
-        (IP_STATUS_AUTO_NEG_DONE)) ==                    \
-        (IP_STATUS_AUTO_NEG_DONE))
+#define IP_AUTONEG_DONE(ip_phy_status)                    \
+	(((ip_phy_status) & (IP_STATUS_AUTO_NEG_DONE)) == \
+	 (IP_STATUS_AUTO_NEG_DONE))
 
 /*
  * ICPLUS_PHY_ID1 fields 
  */
-#define IP_PHY_ID1_EXPECTATION                    0x0243	/* OUI >> 6 */
+#define IP_PHY_ID1_EXPECTATION 0x0243 /* OUI >> 6 */
 
 /*
  * ICPLUS_PHY_ID2 fields 
  */
-#define IP_OUI_LSB_MASK                           0xfc00
-#define IP_OUI_LSB_EXPECTATION                    0x0c00
-#define IP_OUI_LSB_SHIFT                              10
-#define IP_MODEL_NUM_MASK                         0x03f0
-#define IP_MODEL_NUM_SHIFT                             4
-#define IP_REV_NUM_MASK                           0x000f
-#define IP_REV_NUM_SHIFT                               0
+#define IP_OUI_LSB_MASK 0xfc00
+#define IP_OUI_LSB_EXPECTATION 0x0c00
+#define IP_OUI_LSB_SHIFT 10
+#define IP_MODEL_NUM_MASK 0x03f0
+#define IP_MODEL_NUM_SHIFT 4
+#define IP_REV_NUM_MASK 0x000f
+#define IP_REV_NUM_SHIFT 0
 
 /*
  * Link Partner ability 
  */
-#define IP_LINK_100BASETX_FULL_DUPLEX       0x0100
-#define IP_LINK_100BASETX                   0x0080
-#define IP_LINK_10BASETX_FULL_DUPLEX        0x0040
-#define IP_LINK_10BASETX                    0x0020
+#define IP_LINK_100BASETX_FULL_DUPLEX 0x0100
+#define IP_LINK_100BASETX 0x0080
+#define IP_LINK_10BASETX_FULL_DUPLEX 0x0040
+#define IP_LINK_10BASETX 0x0020
 
 /*
  * Advertisement register. 
  */
-#define IP_ADVERTISE_100FULL                0x0100
-#define IP_ADVERTISE_100HALF                0x0080
-#define IP_ADVERTISE_10FULL                 0x0040
-#define IP_ADVERTISE_10HALF                 0x0020
+#define IP_ADVERTISE_100FULL 0x0100
+#define IP_ADVERTISE_100HALF 0x0080
+#define IP_ADVERTISE_10FULL 0x0040
+#define IP_ADVERTISE_10HALF 0x0020
 
-#define IP_ADVERTISE_ALL (IP_ADVERTISE_10HALF | IP_ADVERTISE_10FULL | \
-                       IP_ADVERTISE_100HALF | IP_ADVERTISE_100FULL)
+#define IP_ADVERTISE_ALL                                                    \
+	(IP_ADVERTISE_10HALF | IP_ADVERTISE_10FULL | IP_ADVERTISE_100HALF | \
+	 IP_ADVERTISE_100FULL)
 
-#define IP_VLAN_TAG_VALID                   0x81
-#define IP_VLAN_TAG_SIZE                    4
-#define IP_VLAN_TAG_OFFSET                  12	/* After DA & SA */
-#define IP_SPECIAL_TAG_VALID                0x81
+#define IP_VLAN_TAG_VALID 0x81
+#define IP_VLAN_TAG_SIZE 4
+#define IP_VLAN_TAG_OFFSET 12 /* After DA & SA */
+#define IP_SPECIAL_TAG_VALID 0x81
 
 /****************************/
 /*
@@ -141,93 +141,93 @@
  * IP Global register doesn't have names based on functionality hence has to
  * live with this names for now 
  */
-#define IP_GLOBAL_PHY29_18_REG  18
-#define IP_GLOBAL_PHY29_19_REG  19
-#define IP_GLOBAL_PHY29_20_REG  20
-#define IP_GLOBAL_PHY29_21_REG  21
-#define IP_GLOBAL_PHY29_22_REG  22
-#define IP_GLOBAL_PHY29_23_REG  23
-#define IP_GLOBAL_PHY29_24_REG  24
-#define IP_GLOBAL_PHY29_25_REG  25
-#define IP_GLOBAL_PHY29_26_REG  26
-#define IP_GLOBAL_PHY29_27_REG  27
-#define IP_GLOBAL_PHY29_28_REG  28
-#define IP_GLOBAL_PHY29_29_REG  29
-#define IP_GLOBAL_PHY29_30_REG  30
-#define IP_GLOBAL_PHY29_31_REG  31
+#define IP_GLOBAL_PHY29_18_REG 18
+#define IP_GLOBAL_PHY29_19_REG 19
+#define IP_GLOBAL_PHY29_20_REG 20
+#define IP_GLOBAL_PHY29_21_REG 21
+#define IP_GLOBAL_PHY29_22_REG 22
+#define IP_GLOBAL_PHY29_23_REG 23
+#define IP_GLOBAL_PHY29_24_REG 24
+#define IP_GLOBAL_PHY29_25_REG 25
+#define IP_GLOBAL_PHY29_26_REG 26
+#define IP_GLOBAL_PHY29_27_REG 27
+#define IP_GLOBAL_PHY29_28_REG 28
+#define IP_GLOBAL_PHY29_29_REG 29
+#define IP_GLOBAL_PHY29_30_REG 30
+#define IP_GLOBAL_PHY29_31_REG 31
 
-#define IP_GLOBAL_PHY30_0_REG   0
-#define IP_GLOBAL_PHY30_1_REG   1
-#define IP_GLOBAL_PHY30_2_REG   2
-#define IP_GLOBAL_PHY30_3_REG   3
-#define IP_GLOBAL_PHY30_4_REG   4
-#define IP_GLOBAL_PHY30_5_REG   5
-#define IP_GLOBAL_PHY30_6_REG   6
-#define IP_GLOBAL_PHY30_7_REG   7
-#define IP_GLOBAL_PHY30_8_REG   8
-#define IP_GLOBAL_PHY30_9_REG   9
-#define IP_GLOBAL_PHY30_10_REG  10
-#define IP_GLOBAL_PHY30_11_REG  11
-#define IP_GLOBAL_PHY30_12_REG  12
-#define IP_GLOBAL_PHY30_13_REG  13
-#define IP_GLOBAL_PHY30_16_REG  16
-#define IP_GLOBAL_PHY30_17_REG  17
-#define IP_GLOBAL_PHY30_18_REG  18
-#define IP_GLOBAL_PHY30_20_REG  20
-#define IP_GLOBAL_PHY30_21_REG  21
-#define IP_GLOBAL_PHY30_22_REG  22
-#define IP_GLOBAL_PHY30_23_REG  23
-#define IP_GLOBAL_PHY30_24_REG  24
-#define IP_GLOBAL_PHY30_25_REG  25
-#define IP_GLOBAL_PHY30_26_REG  26
-#define IP_GLOBAL_PHY30_27_REG  27
-#define IP_GLOBAL_PHY30_28_REG  28
-#define IP_GLOBAL_PHY30_29_REG  29
-#define IP_GLOBAL_PHY30_30_REG  30
-#define IP_GLOBAL_PHY30_31_REG  31
+#define IP_GLOBAL_PHY30_0_REG 0
+#define IP_GLOBAL_PHY30_1_REG 1
+#define IP_GLOBAL_PHY30_2_REG 2
+#define IP_GLOBAL_PHY30_3_REG 3
+#define IP_GLOBAL_PHY30_4_REG 4
+#define IP_GLOBAL_PHY30_5_REG 5
+#define IP_GLOBAL_PHY30_6_REG 6
+#define IP_GLOBAL_PHY30_7_REG 7
+#define IP_GLOBAL_PHY30_8_REG 8
+#define IP_GLOBAL_PHY30_9_REG 9
+#define IP_GLOBAL_PHY30_10_REG 10
+#define IP_GLOBAL_PHY30_11_REG 11
+#define IP_GLOBAL_PHY30_12_REG 12
+#define IP_GLOBAL_PHY30_13_REG 13
+#define IP_GLOBAL_PHY30_16_REG 16
+#define IP_GLOBAL_PHY30_17_REG 17
+#define IP_GLOBAL_PHY30_18_REG 18
+#define IP_GLOBAL_PHY30_20_REG 20
+#define IP_GLOBAL_PHY30_21_REG 21
+#define IP_GLOBAL_PHY30_22_REG 22
+#define IP_GLOBAL_PHY30_23_REG 23
+#define IP_GLOBAL_PHY30_24_REG 24
+#define IP_GLOBAL_PHY30_25_REG 25
+#define IP_GLOBAL_PHY30_26_REG 26
+#define IP_GLOBAL_PHY30_27_REG 27
+#define IP_GLOBAL_PHY30_28_REG 28
+#define IP_GLOBAL_PHY30_29_REG 29
+#define IP_GLOBAL_PHY30_30_REG 30
+#define IP_GLOBAL_PHY30_31_REG 31
 
-#define IP_GLOBAL_PHY31_0_REG   0
-#define IP_GLOBAL_PHY31_1_REG   1
-#define IP_GLOBAL_PHY31_2_REG   2
-#define IP_GLOBAL_PHY31_3_REG   3
-#define IP_GLOBAL_PHY31_4_REG   4
-#define IP_GLOBAL_PHY31_5_REG   5
-#define IP_GLOBAL_PHY31_6_REG   6
+#define IP_GLOBAL_PHY31_0_REG 0
+#define IP_GLOBAL_PHY31_1_REG 1
+#define IP_GLOBAL_PHY31_2_REG 2
+#define IP_GLOBAL_PHY31_3_REG 3
+#define IP_GLOBAL_PHY31_4_REG 4
+#define IP_GLOBAL_PHY31_5_REG 5
+#define IP_GLOBAL_PHY31_6_REG 6
 
-#define IP_GLOBAL_PHY29_31_REG  31
+#define IP_GLOBAL_PHY29_31_REG 31
 
-#define IP_VLAN0_OUTPUT_PORT_MASK_S     0
-#define IP_VLAN1_OUTPUT_PORT_MASK_S     8
-#define IP_VLAN2_OUTPUT_PORT_MASK_S     0
-#define IP_VLAN3_OUTPUT_PORT_MASK_S     8
+#define IP_VLAN0_OUTPUT_PORT_MASK_S 0
+#define IP_VLAN1_OUTPUT_PORT_MASK_S 8
+#define IP_VLAN2_OUTPUT_PORT_MASK_S 0
+#define IP_VLAN3_OUTPUT_PORT_MASK_S 8
 
 /*
  * Masks and shifts for 29.23 register 
  */
-#define IP_PORTX_ADD_TAG_S               11
-#define IP_PORTX_REMOVE_TAG_S            6
-#define IP_PORT5_ADD_TAG_S               1
-#define IP_PORT5_REMOVE_TAG_S            0
+#define IP_PORTX_ADD_TAG_S 11
+#define IP_PORTX_REMOVE_TAG_S 6
+#define IP_PORT5_ADD_TAG_S 1
+#define IP_PORT5_REMOVE_TAG_S 0
 
 /*
  * 30.9   Definitions 
  */
-#define TAG_VLAN_ENABLE         0x0080
-#define VID_INDX_SEL_M          0x0070
-#define VID_INDX_SEL_S          4
+#define TAG_VLAN_ENABLE 0x0080
+#define VID_INDX_SEL_M 0x0070
+#define VID_INDX_SEL_S 4
 
 /*
  * PHY Addresses 
  */
-#define IP_PHY0_ADDR    0
-#define IP_PHY1_ADDR    1
-#define IP_PHY2_ADDR    2
-#define IP_PHY3_ADDR    3
-#define IP_PHY4_ADDR    4
+#define IP_PHY0_ADDR 0
+#define IP_PHY1_ADDR 1
+#define IP_PHY2_ADDR 2
+#define IP_PHY3_ADDR 3
+#define IP_PHY4_ADDR 4
 
-#define IP_GLOBAL_PHY29_ADDR    29
-#define IP_GLOBAL_PHY30_ADDR    30
-#define IP_GLOBAL_PHY31_ADDR    31
+#define IP_GLOBAL_PHY29_ADDR 29
+#define IP_GLOBAL_PHY30_ADDR 30
+#define IP_GLOBAL_PHY31_ADDR 31
 
 typedef enum {
 	PHY_SRCPORT_INFO,
@@ -240,12 +240,12 @@ typedef enum {
 	PHY_SRCPORT_TRAILER,
 } PHY_SRCPORT_TYPE;
 
-#define IP_WAN_PORT          4
-#define IP_IS_LAN_PORT(port) ((port) <  IP_WAN_PORT)
+#define IP_WAN_PORT 4
+#define IP_IS_LAN_PORT(port) ((port) < IP_WAN_PORT)
 #define IP_IS_WAN_PORT(port) ((port) == IP_WAN_PORT)
 
-#define IP_LAN_PORT_VLAN          0
-#define IP_WAN_PORT_VLAN          2
+#define IP_LAN_PORT_VLAN 0
+#define IP_WAN_PORT_VLAN 2
 
 #define ENET_UNIT_DEFAULT 0
 
@@ -253,12 +253,12 @@ typedef enum {
  * Track per-PHY port information.
  */
 typedef struct {
-	int isEnetPort;		/* normal enet port */
-	int isPhyAlive;		/* last known state of link */
-	int ethUnit;		/* MAC associated with this phy port */
-	unsigned int phyAddr;	/* PHY registers associated with this phy
+	int isEnetPort; /* normal enet port */
+	int isPhyAlive; /* last known state of link */
+	int ethUnit; /* MAC associated with this phy port */
+	unsigned int phyAddr; /* PHY registers associated with this phy
 				 * port */
-	unsigned int VLANTableSetting;	/* Value to be written to VLAN table */
+	unsigned int VLANTableSetting; /* Value to be written to VLAN table */
 } ipPhyInfo_t;
 
 #define TRUE 1
@@ -279,48 +279,34 @@ ipPhyInfo_t ipPhyInfo[] = {
 	 *    Ports 0,1,2,3,4 are "LAN ports"
 	 *    Port 5 connects to the MAC0 in the AR5312
 	 */
-	{ TRUE,			/* phy port 0 -- LAN port 0 */
-	 FALSE,
-	 ENET_UNIT_DEFAULT,
-	 IP_PHY0_ADDR,
-	 IP_LAN_PORT_VLAN },
+	{ TRUE, /* phy port 0 -- LAN port 0 */
+	  FALSE, ENET_UNIT_DEFAULT, IP_PHY0_ADDR, IP_LAN_PORT_VLAN },
 
-	{ TRUE,			/* phy port 1 -- LAN port 1 */
-	 FALSE,
-	 ENET_UNIT_DEFAULT,
-	 IP_PHY1_ADDR,
-	 IP_LAN_PORT_VLAN },
+	{ TRUE, /* phy port 1 -- LAN port 1 */
+	  FALSE, ENET_UNIT_DEFAULT, IP_PHY1_ADDR, IP_LAN_PORT_VLAN },
 
-	{ TRUE,			/* phy port 2 -- LAN port 2 */
-	 FALSE,
-	 ENET_UNIT_DEFAULT,
-	 IP_PHY2_ADDR,
-	 IP_LAN_PORT_VLAN },
+	{ TRUE, /* phy port 2 -- LAN port 2 */
+	  FALSE, ENET_UNIT_DEFAULT, IP_PHY2_ADDR, IP_LAN_PORT_VLAN },
 
-	{ TRUE,			/* phy port 3 -- LAN port 3 */
-	 FALSE,
-	 ENET_UNIT_DEFAULT,
-	 IP_PHY3_ADDR,
-	 IP_LAN_PORT_VLAN },
+	{ TRUE, /* phy port 3 -- LAN port 3 */
+	  FALSE, ENET_UNIT_DEFAULT, IP_PHY3_ADDR, IP_LAN_PORT_VLAN },
 
-	{ TRUE,			/* phy port 4 -- WAN port or LAN port 4 */
-	 FALSE,
-	 ENET_UNIT_DEFAULT,
-	 IP_PHY4_ADDR,
-	 IP_WAN_PORT_VLAN	/* Send to all ports */
-	  },
+	{
+		TRUE, /* phy port 4 -- WAN port or LAN port 4 */
+		FALSE, ENET_UNIT_DEFAULT, IP_PHY4_ADDR,
+		IP_WAN_PORT_VLAN /* Send to all ports */
+	},
 
-	{ FALSE,		/* phy port 5 -- CPU port (no RJ45 connector) 
+	{
+		FALSE, /* phy port 5 -- CPU port (no RJ45 connector) 
 				 */
-	 TRUE,
-	 ENET_UNIT_DEFAULT,
-	 0x00,
-	 IP_LAN_PORT_VLAN	/* Send to all ports */
-	  },
+		TRUE, ENET_UNIT_DEFAULT, 0x00,
+		IP_LAN_PORT_VLAN /* Send to all ports */
+	},
 
 };
 
-#define IP_GLOBALREGBASE    ((UINT32) (PHYS_TO_K1(AR531X_ENET0)))
+#define IP_GLOBALREGBASE ((UINT32)(PHYS_TO_K1(AR531X_ENET0)))
 
 #define IP_PHY_MAX (sizeof(ipPhyInfo) / sizeof(ipPhyInfo[0]))
 
@@ -328,7 +314,7 @@ ipPhyInfo_t ipPhyInfo[] = {
  * Range of valid PHY IDs is [MIN..MAX] 
  */
 #define IP_ID_MIN 0
-#define IP_ID_MAX (IP_PHY_MAX-1)
+#define IP_ID_MAX (IP_PHY_MAX - 1)
 
 /*
  * Convenience macros to access myPhyInfo 
@@ -385,7 +371,7 @@ void vlan_init(int portmask)
 	int i;
 	int numports = 5;
 
-	for (i = 0; i < numports - 1; i++)	// last one will be wan port
+	for (i = 0; i < numports - 1; i++) // last one will be wan port
 	{
 		ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN;
 	}
@@ -406,12 +392,13 @@ void vlan_init(int portmask)
 	sleep(1);
 	fprintf(stderr, "Start Autonegotiation\n");
 	for (phyUnit = 0; phyUnit < numports; phyUnit++) {
-
 		if (((1 << phyUnit) & portmask)) {
 			phyAddr = IP_PHYADDR(phyUnit);
 
 			setPhy(phyAddr, IP_AUTONEG_ADVERT, IP_ADVERTISE_ALL);
-			setPhy(phyAddr, IP_PHY_CONTROL, IP_CTRL_AUTONEGOTIATION_ENABLE | IP_CTRL_START_AUTONEGOTIATION);
+			setPhy(phyAddr, IP_PHY_CONTROL,
+			       IP_CTRL_AUTONEGOTIATION_ENABLE |
+				       IP_CTRL_START_AUTONEGOTIATION);
 		}
 	}
 	int timeout = 5;
@@ -421,18 +408,25 @@ void vlan_init(int portmask)
 			for (;;) {
 				phyAddr = IP_PHYADDR(phyUnit);
 
-				int phyHwStatus = getPhy(phyAddr, IP_PHY_STATUS);
+				int phyHwStatus =
+					getPhy(phyAddr, IP_PHY_STATUS);
 
 				if (IP_AUTONEG_DONE(phyHwStatus)) {
-					fprintf(stderr, "Port %d, Neg Success\n", phyUnit);
+					fprintf(stderr,
+						"Port %d, Neg Success\n",
+						phyUnit);
 					break;
 				}
 				if (timeout == 0) {
-					fprintf(stderr, "Port %d, Negogiation timeout\n", phyUnit);
+					fprintf(stderr,
+						"Port %d, Negogiation timeout\n",
+						phyUnit);
 					break;
 				}
 				if (--timeout == 0) {
-					fprintf(stderr, "Port %d, Negogiation timeout\n", phyUnit);
+					fprintf(stderr,
+						"Port %d, Negogiation timeout\n",
+						phyUnit);
 					break;
 				}
 				usleep(150);
@@ -452,53 +446,76 @@ void vlan_init(int portmask)
 	unsigned int phy9Reg = 0;
 	for (phyUnit = 0; phyUnit < numports; phyUnit++) {
 		if (((1 << phyUnit) & portmask)) {
-			setPhy(IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_24_REG + ((phyUnit == 5) ? (phyUnit + 1) : phyUnit), IP_VLAN_TABLE_SETTING(phyUnit));
-			fprintf(stderr, "write register %d, addr %d with %X\n", IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_24_REG + ((phyUnit == 5) ? (phyUnit + 1) : phyUnit), IP_VLAN_TABLE_SETTING(phyUnit));
+			setPhy(IP_GLOBAL_PHY29_ADDR,
+			       IP_GLOBAL_PHY29_24_REG + ((phyUnit == 5) ?
+								 (phyUnit + 1) :
+								 phyUnit),
+			       IP_VLAN_TABLE_SETTING(phyUnit));
+			fprintf(stderr, "write register %d, addr %d with %X\n",
+				IP_GLOBAL_PHY29_ADDR,
+				IP_GLOBAL_PHY29_24_REG +
+					((phyUnit == 5) ? (phyUnit + 1) :
+							  phyUnit),
+				IP_VLAN_TABLE_SETTING(phyUnit));
 			if (IP_IS_ENET_PORT(phyUnit)) {
 				if (IP_IS_WAN_PORT(phyUnit)) {
-					phy2Reg |= ((1 << phyUnit) << IP_VLAN2_OUTPUT_PORT_MASK_S);
+					phy2Reg |=
+						((1 << phyUnit)
+						 << IP_VLAN2_OUTPUT_PORT_MASK_S);
 				} else {
-					phy1Reg |= ((1 << phyUnit) << IP_VLAN0_OUTPUT_PORT_MASK_S);
+					phy1Reg |=
+						((1 << phyUnit)
+						 << IP_VLAN0_OUTPUT_PORT_MASK_S);
 				}
-				phy23Reg = phy23Reg | ((1 << phyUnit) << IP_PORTX_REMOVE_TAG_S);
-				phy23Reg = phy23Reg & ~((1 << phyUnit) << IP_PORTX_ADD_TAG_S);
+				phy23Reg = phy23Reg |
+					   ((1 << phyUnit)
+					    << IP_PORTX_REMOVE_TAG_S);
+				phy23Reg = phy23Reg & ~((1 << phyUnit)
+							<< IP_PORTX_ADD_TAG_S);
 			} else {
-				phy1Reg |= ((1 << phyUnit) << IP_VLAN0_OUTPUT_PORT_MASK_S);
-				phy2Reg |= ((1 << phyUnit) << IP_VLAN2_OUTPUT_PORT_MASK_S);
+				phy1Reg |= ((1 << phyUnit)
+					    << IP_VLAN0_OUTPUT_PORT_MASK_S);
+				phy2Reg |= ((1 << phyUnit)
+					    << IP_VLAN2_OUTPUT_PORT_MASK_S);
 				phy23Reg = phy23Reg | (1 << IP_PORT5_ADD_TAG_S);
-				phy23Reg = phy23Reg & ~(1 << IP_PORT5_REMOVE_TAG_S);
-
+				phy23Reg = phy23Reg &
+					   ~(1 << IP_PORT5_REMOVE_TAG_S);
 			}
 		}
 	}
-	phy9Reg = 0;		//getPhy(IP_GLOBAL_PHY30_ADDR,IP_GLOBAL_PHY30_9_REG);
+	phy9Reg = 0; //getPhy(IP_GLOBAL_PHY30_ADDR,IP_GLOBAL_PHY30_9_REG);
 	phy9Reg = phy9Reg | TAG_VLAN_ENABLE;
 	phy9Reg = phy9Reg & ~VID_INDX_SEL_M;
-	phy9Reg = phy9Reg | 1;	//1 vlan group used for lan
-	phy9Reg = phy9Reg | 1 << 3;	//enable smart mac
-	phy9Reg = phy9Reg | 1 << 12;	//port 4 is a wan port (required for smart mac)
+	phy9Reg = phy9Reg | 1; //1 vlan group used for lan
+	phy9Reg = phy9Reg | 1 << 3; //enable smart mac
+	phy9Reg = phy9Reg |
+		  1 << 12; //port 4 is a wan port (required for smart mac)
 
-	fprintf(stderr, "write register %d, addr %d with %X\n", IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG, phy23Reg);
-	fprintf(stderr, "write register %d, addr %d with %X\n", IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg);
-	fprintf(stderr, "write register %d, addr %d with %X\n", IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg);
-	fprintf(stderr, "write register %d, addr %d with %X\n", IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phy9Reg);
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG, phy23Reg);
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg);
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg);
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phy9Reg);
 	setPhy(IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG, phy23Reg);
 	setPhy(IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg);
 	setPhy(IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg);
 	setPhy(IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phy9Reg);
-//
-//              echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
-//
-//              echo "echo \"WRITE 29 24 0\"    > ".$mii_dev."\n";      /* PORT0 Default VLAN ID */
-//              echo "echo \"WRITE 29 25 0\"    > ".$mii_dev."\n";      /* PORT1 Default VLAN ID */
-//              echo "echo \"WRITE 29 26 0\"    > ".$mii_dev."\n";      /* PORT2 Default VLAN ID */
-//              echo "echo \"WRITE 29 27 0\"    > ".$mii_dev."\n";      /* PORT3 Default VLAN ID */
-//              echo "echo \"WRITE 29 28 2\"    > ".$mii_dev."\n";      /* PORT4 Default VLAN ID */
-//              echo "echo \"WRITE 29 30 0\"    > ".$mii_dev."\n";      /* PORT5 Default VLAN ID (CPU) */
-//              echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
-//              echo "echo \"WRITE 30 1 002f\"  > ".$mii_dev."\n";      /* Port 5,3,2,1,0 = VLAN 0 */
-//              echo "echo \"WRITE 30 2 0030\"  > ".$mii_dev."\n";      /* Port 5,4 = VLAN 2 */
-//              echo "echo \"WRITE 30 9 1089\"  > ".$mii_dev."\n";
+	//
+	//              echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
+	//
+	//              echo "echo \"WRITE 29 24 0\"    > ".$mii_dev."\n";      /* PORT0 Default VLAN ID */
+	//              echo "echo \"WRITE 29 25 0\"    > ".$mii_dev."\n";      /* PORT1 Default VLAN ID */
+	//              echo "echo \"WRITE 29 26 0\"    > ".$mii_dev."\n";      /* PORT2 Default VLAN ID */
+	//              echo "echo \"WRITE 29 27 0\"    > ".$mii_dev."\n";      /* PORT3 Default VLAN ID */
+	//              echo "echo \"WRITE 29 28 2\"    > ".$mii_dev."\n";      /* PORT4 Default VLAN ID */
+	//              echo "echo \"WRITE 29 30 0\"    > ".$mii_dev."\n";      /* PORT5 Default VLAN ID (CPU) */
+	//              echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
+	//              echo "echo \"WRITE 30 1 002f\"  > ".$mii_dev."\n";      /* Port 5,3,2,1,0 = VLAN 0 */
+	//              echo "echo \"WRITE 30 2 0030\"  > ".$mii_dev."\n";      /* Port 5,4 = VLAN 2 */
+	//              echo "echo \"WRITE 30 9 1089\"  > ".$mii_dev."\n";
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "0");
 	eval("vconfig", "add", "eth0", "2");

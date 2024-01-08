@@ -31,12 +31,12 @@
 void start_watchdog(void)
 {
 	if (!nvram_matchi("disable_watchdog", 1)) {
-		log_eval("watchdog");	// system watchdog
+		log_eval("watchdog"); // system watchdog
 	}
 	return;
 }
 
-void stop_watchdog(void)	// shall never be called
+void stop_watchdog(void) // shall never be called
 {
 	stop_process("watchdog", "watchdog timer");
 	return;

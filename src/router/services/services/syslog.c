@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -73,21 +73,27 @@ void start_syslog(void)
 	if (!nvram_invmatchi("syslogd_enable", 0))
 		return;
 	update_timezone();
-	if (nvram_matchi("syslogd_jffs2", 1) && !nvram_matchi("flash_active", 1)) {
+	if (nvram_matchi("syslogd_jffs2", 1) &&
+	    !nvram_matchi("flash_active", 1)) {
 		mkdir("/jffs/log", 0700);
-		eval("mv", "-f", "/jffs/log/messages", "/jffs/log/messages.old");
-		FILE *fp = fopen("/jffs/log/messages","wb");
+		eval("mv", "-f", "/jffs/log/messages",
+		     "/jffs/log/messages.old");
+		FILE *fp = fopen("/jffs/log/messages", "wb");
 		if (!fp)
 			goto fallback;
 		fclose(fp);
 		if (*(nvram_safe_get("syslogd_rem_ip")))
-			log_eval("syslogd", "-Z", "-b", "5", "-L", "-R", nvram_safe_get("syslogd_rem_ip"), "-O", "/jffs/log/messages");
+			log_eval("syslogd", "-Z", "-b", "5", "-L", "-R",
+				 nvram_safe_get("syslogd_rem_ip"), "-O",
+				 "/jffs/log/messages");
 		else
-			log_eval("syslogd", "-Z", "-b", "5", "-L", "-O", "/jffs/log/messages");
+			log_eval("syslogd", "-Z", "-b", "5", "-L", "-O",
+				 "/jffs/log/messages");
 	} else {
-		fallback:;
+fallback:;
 		if (*(nvram_safe_get("syslogd_rem_ip")))
-			log_eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"));
+			log_eval("syslogd", "-Z", "-L", "-R",
+				 nvram_safe_get("syslogd_rem_ip"));
 		else
 			log_eval("syslogd", "-Z", "-L");
 	}

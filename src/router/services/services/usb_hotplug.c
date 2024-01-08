@@ -38,8 +38,8 @@ static int usb_process_path(char *path, char *fs, char *target);
 static void usb_unmount(char *dev);
 static int usb_add_ufd(char *dev);
 
-#define DUMPFILE	"/tmp/disktype.dump"
-#define DUMPFILE_PART	"/tmp/parttype.dump"
+#define DUMPFILE "/tmp/disktype.dump"
+#define DUMPFILE_PART "/tmp/parttype.dump"
 
 static void run_on_mount(char *p)
 {
@@ -47,11 +47,16 @@ static void run_on_mount(char *p)
 	char path[128];
 	md5_ctx_t MD;
 	if (!nvram_match("usb_runonmount", "")) {
-		snprintf(path, sizeof(path), "%s %s", nvram_safe_get("usb_runonmount"), p);
-		if (stat(path, &tmp_stat) == 0)	//file exists
+		snprintf(path, sizeof(path), "%s %s",
+			 nvram_safe_get("usb_runonmount"), p);
+		if (stat(path, &tmp_stat) == 0) //file exists
 		{
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
-			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
+			setenv("PATH",
+			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
+			       1);
+			setenv("LD_LIBRARY_PATH",
+			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
+			       1);
 
 			system(path);
 		}
@@ -60,7 +65,7 @@ static void run_on_mount(char *p)
 	FILE *fp = fopen(path, "rb");
 	if (fp) {
 		unsigned char hash[32];
-		unsigned char shash[32*2];
+		unsigned char shash[32 * 2];
 		size_t size;
 		fseek(fp, 0, SEEK_END);
 		size = ftell(fp);
@@ -110,7 +115,7 @@ void start_hotplug_usb(void)
 			goto skip;
 		sscanf(interface, "%d/%d/%d", &class, &subclass, &protocol);
 	}
-      skip:;
+skip:;
 	//sysprintf("echo action %d type %d >> /tmp/hotplugs", class, subclass);
 
 	/* 
@@ -134,8 +139,8 @@ void start_hotplug_usb(void)
 }
 
 /* Optimize performance */
-#define READ_AHEAD_KB_BUF	"1024"
-#define READ_AHEAD_CONF	"/sys/block/%s/queue/read_ahead_kb"
+#define READ_AHEAD_KB_BUF "1024"
+#define READ_AHEAD_CONF "/sys/block/%s/queue/read_ahead_kb"
 
 static void optimize_block_device(char *devname)
 {
@@ -168,11 +173,10 @@ void start_hotplug_block(void)
 	if (!*slash)
 		return;
 	char *name = slash + 1;
-	if (strncmp(name, "disc", 4) && (strncmp(name, "sd", 2))
-	    && (strncmp(name, "sr", 2))
-	    && (strncmp(name, "mmcblk", 6))
-	    && (strncmp(name, "nvme", 4)))
-		return;		//skip
+	if (strncmp(name, "disc", 4) && (strncmp(name, "sd", 2)) &&
+	    (strncmp(name, "sr", 2)) && (strncmp(name, "mmcblk", 6)) &&
+	    (strncmp(name, "nvme", 4)))
+		return; //skip
 
 	char devname[64];
 	sprintf(devname, "/dev/%s", name);
@@ -181,7 +185,7 @@ void start_hotplug_block(void)
 	sprintf(sysdev, "/sys%s/partition", devpath);
 	FILE *fp = fopen(sysdev, "rb");
 	if (fp) {
-		fclose(fp);	// skip partitions
+		fclose(fp); // skip partitions
 		return;
 	}
 	sprintf(sysdev, "/sys%s/dev", devpath);
@@ -191,7 +195,7 @@ void start_hotplug_block(void)
 		int minor;
 		fscanf(fp, "%d:%d", &major, &minor);
 		sysprintf("mknod %s b %d %d\n", devname, major, minor);
-		fclose(fp);	// skip partitions
+		fclose(fp); // skip partitions
 	}
 	//sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
 	if (!strcmp(action, "add"))
@@ -202,7 +206,7 @@ void start_hotplug_block(void)
 	return;
 }
 
-    /* 
+/* 
      *   Check if the UFD is still connected because the links created in
      * /dev/discs are not removed when the UFD is  unplugged.  
      */
@@ -237,10 +241,9 @@ static bool usb_ufd_connected(char *str)
 		}
 	}
 	return FALSE;
-
 }
 
-    /* 
+/* 
      *   Mount the path and look for the WCN configuration file.  If it
      * exists launch wcnparse to process the configuration.  
      */
@@ -257,7 +260,8 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (nvram_match("usb_mntpoint", "mnt") && target)
 		sprintf(mount_point, "/mnt/%s", target);
 	else
-		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
+		sprintf(mount_point, "/%s",
+			nvram_default_get("usb_mntpoint", "mnt"));
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
@@ -304,52 +308,65 @@ static int usb_process_path(char *path, char *fs, char *target)
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
-		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes",
+			   path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o",
+			   "nls=utf8,noatime", path, mount_point);
 #else
-		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path,
+			   mount_point);
 #endif
 #endif
 	} else
 #endif
-	if (!strcmp(fs, "vfat"))
-		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
+		if (!strcmp(fs, "vfat"))
+		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
+			   mount_point);
 	else
 		ret = eval("/bin/mount", "-t", fs, path, mount_point);
 
-	if (ret != 0) {		//give it another try
+	if (ret != 0) { //give it another try
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
-			ret = eval("ntfs-3g", "-o", "compression", path, mount_point);
+			ret = eval("ntfs-3g", "-o", "compression", path,
+				   mount_point);
 #else
 #ifdef HAVE_NTFS3
-			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+			ret = eval("/bin/mount", "-t", "ntfs3", "-o",
+				   "nls=utf8,noatime", path, mount_point);
 #else
-			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8",
+				   path, mount_point);
 #endif
 #endif
 		} else
 #endif
-			ret = eval("/bin/mount", path, mount_point);	//guess fs
+			ret = eval("/bin/mount", path, mount_point); //guess fs
 	}
 #ifdef HAVE_80211AC
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "16384"));
+	writeprocsys("vm/min_free_kbytes",
+		     nvram_default_get("vm.min_free_kbytes", "16384"));
 #elif HAVE_IPQ806X
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes",
+		     nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_X86
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes",
+		     nvram_default_get("vm.min_free_kbytes", "65536"));
 #else
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
+	writeprocsys("vm/min_free_kbytes",
+		     nvram_default_get("vm.min_free_kbytes", "4096"));
 #endif
-	writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
-	writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
-//      writeprocsys("vm/pagecache_ratio","90");
-//      writeprocsys("vm/swappiness","90");
-//      writeprocsys("vm/overcommit_memory","2");
-//      writeprocsys("vm/overcommit_ratio","145");
+	writeprocsys("vm/overcommit_memory",
+		     nvram_default_get("vm.overcommit_memory", "2"));
+	writeprocsys("vm/overcommit_ratio",
+		     nvram_default_get("vm.overcommit_ratio", "80"));
+	//      writeprocsys("vm/pagecache_ratio","90");
+	//      writeprocsys("vm/swappiness","90");
+	//      writeprocsys("vm/overcommit_memory","2");
+	//      writeprocsys("vm/overcommit_ratio","145");
 	eval("startservice", "samba3", "-f");
 	eval("startservice", "nfs", "-f");
 	eval("startservice", "rsync", "-f");
@@ -363,7 +380,8 @@ static int usb_process_path(char *path, char *fs, char *target)
 	char *next;
 	char *services = nvram_safe_get("custom_configs");
 	char service[32];
-	foreach(service, services, next) {
+	foreach(service, services, next)
+	{
 		eval("service", service, "stop");
 		eval("service", service, "start");
 	}
@@ -405,7 +423,6 @@ static char *getfs(char *line)
 #endif
 	}
 	return NULL;
-
 }
 
 static void usb_unmount(char *path)
@@ -417,10 +434,11 @@ static void usb_unmount(char *path)
 	eval("stopservice", "nfs");
 	eval("stopservice", "rsync");
 	eval("stopservice", "ftpsrv");
-	writeprocsys("vm/drop_caches", "3");	// flush fs cache
-/* todo: how to unmount correct drive */
+	writeprocsys("vm/drop_caches", "3"); // flush fs cache
+	/* todo: how to unmount correct drive */
 	if (!path)
-		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
+		sprintf(mount_point, "/%s",
+			nvram_default_get("usb_mntpoint", "mnt"));
 	else
 		strcpy(mount_point, path);
 	nvram_set("usb_reason", "blockdev_remove");
@@ -437,7 +455,7 @@ static void usb_unmount(char *path)
 	return;
 }
 
-    /* 
+/* 
      * Handle hotplugging of UFD 
      */
 static int usb_add_ufd(char *devpath)
@@ -457,21 +475,25 @@ static int usb_add_ufd(char *devpath)
 
 	if (devpath) {
 		int rcnt = 0;
-	      retry:;
+retry:;
 		fp = fopen(devpath, "rb");
 		if (!fp && rcnt < 10) {
-//                      sysprintf("echo not available, try again %s >> /tmp/hotplugs",devpath);
+			//                      sysprintf("echo not available, try again %s >> /tmp/hotplugs",devpath);
 			sleep(1);
 			rcnt++;
 			goto retry;
 		}
-//              sysprintf("echo open devname %s>> /tmp/hotplugs", devpath);
+		//              sysprintf("echo open devname %s>> /tmp/hotplugs", devpath);
 	} else {
-		for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
-			if ((dir = opendir("/dev/discs")) != NULL
-			    || (fp = fopen("/dev/sda", "rb")) != NULL
-			    || (fp = fopen("/dev/sdb", "rb")) != NULL || (fp = fopen("/dev/sdc", "rb")) != NULL || (fp = fopen("/dev/sr0", "rb")) != NULL || (fp = fopen("/dev/sr1", "rb")) != NULL
-			    || (fp = fopen("/dev/sdd", "rb")) != NULL) {
+		for (i = 1; i < 16;
+		     i++) { //it needs some time for disk to settle down and /dev/discs is created
+			if ((dir = opendir("/dev/discs")) != NULL ||
+			    (fp = fopen("/dev/sda", "rb")) != NULL ||
+			    (fp = fopen("/dev/sdb", "rb")) != NULL ||
+			    (fp = fopen("/dev/sdc", "rb")) != NULL ||
+			    (fp = fopen("/dev/sr0", "rb")) != NULL ||
+			    (fp = fopen("/dev/sr1", "rb")) != NULL ||
+			    (fp = fopen("/dev/sdd", "rb")) != NULL) {
 				break;
 			} else {
 				sleep(1);
@@ -491,21 +513,25 @@ static int usb_add_ufd(char *devpath)
 	 */
 
 	int is_partmounted = 0;
-	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
+	for (i = 1; i < 16;
+	     i++) { //it needs some time for disk to settle down and /dev/discs/discs%d is created
 		if (new) {
 			dir = opendir("/dev");
 		}
-		if (dir == NULL)	// i is 16 here and not 15 if timeout happens
+		if (dir == NULL) // i is 16 here and not 15 if timeout happens
 			return EINVAL;
 		while ((entry = readdir(dir)) != NULL) {
 			int is_mounted = 0;
 			if (mounted[i])
 				continue;
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || \
+	defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 			char *check = getdisc();
 			if (!strncmp(entry->d_name, check, 5)) {
-				fprintf(stderr, "skip %s, since its the system drive\n", check);
+				fprintf(stderr,
+					"skip %s, since its the system drive\n",
+					check);
 				free(check);
 				continue;
 			}
@@ -518,17 +544,17 @@ static int usb_add_ufd(char *devpath)
 				//  ("echo cmp devname %s >> /tmp/hotplugs"
 				//   ,entry->d_name);
 				if (strcmp(devname, devpath))
-					continue;	// skip all non matching devices
+					continue; // skip all non matching devices
 				//  sysprintf
 				//      ("echo take devname %s >> /tmp/hotplugs",
 				//       devname);
 			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
-			if (new && (strncmp(entry->d_name, "sd", 2))
-			    && (strncmp(entry->d_name, "sr", 2))
-			    && (strncmp(entry->d_name, "mmcblk", 6))
-			    && (strncmp(entry->d_name, "nvme", 4)))
+			if (new && (strncmp(entry->d_name, "sd", 2)) &&
+			    (strncmp(entry->d_name, "sr", 2)) &&
+			    (strncmp(entry->d_name, "mmcblk", 6)) &&
+			    (strncmp(entry->d_name, "nvme", 4)))
 				continue;
 			mounted[i] = 1;
 
@@ -539,28 +565,35 @@ static int usb_add_ufd(char *devpath)
 			 */
 			if (new) {
 				//everything else would cause a memory fault
-				if ((strncmp(entry->d_name, "mmcblk", 6))
-				    && usb_ufd_connected(entry->d_name) == FALSE)
+				if ((strncmp(entry->d_name, "mmcblk", 6)) &&
+				    usb_ufd_connected(entry->d_name) == FALSE)
 					continue;
 			} else {
-				if (usb_ufd_connected(entry->d_name + 4) == FALSE)
+				if (usb_ufd_connected(entry->d_name + 4) ==
+				    FALSE)
 					continue;
 			}
 			if (new) {
 				//              sysprintf("echo test %s >> /tmp/hotplugs",entry->d_name);
-				if (strlen(entry->d_name) != 3 && (strncmp(entry->d_name, "mmcblk", 6) && strncmp(entry->d_name, "nvme", 4)))
+				if (strlen(entry->d_name) != 3 &&
+				    (strncmp(entry->d_name, "mmcblk", 6) &&
+				     strncmp(entry->d_name, "nvme", 4)))
 					continue;
-				if (strlen(entry->d_name) != 7 && (!strncmp(entry->d_name, "mmcblk", 6) || !strncmp(entry->d_name, "nvme", 4)))
+				if (strlen(entry->d_name) != 7 &&
+				    (!strncmp(entry->d_name, "mmcblk", 6) ||
+				     !strncmp(entry->d_name, "nvme", 4)))
 					continue;
 				//              sysprintf("echo test success %s >> /tmp/hotplugs",entry->d_name);
 				sprintf(path, "/dev/%s", entry->d_name);
 			} else {
-				sprintf(path, "/dev/discs/%s/disc", entry->d_name);
+				sprintf(path, "/dev/discs/%s/disc",
+					entry->d_name);
 			}
 			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
 			//set spindown time
 			eval("hdparm", "-S", "242", path);
-			eval("blockdev", "--setra", nvram_safe_get("drive_ra"), path);
+			eval("blockdev", "--setra", nvram_safe_get("drive_ra"),
+			     path);
 
 			/* 
 			 * Check if it has file system 
@@ -571,43 +604,64 @@ static int usb_add_ufd(char *devpath)
 				while (fgets(line, sizeof(line), fp) != NULL) {
 					if (strstr(line, "Partition"))
 						is_part = 1;
-					fprintf(stderr, "[USB Device] partition: %s\n", line);
+					fprintf(stderr,
+						"[USB Device] partition: %s\n",
+						line);
 
 					if (strstr(line, "EFI GPT")) {
 						partitions = "1 2 3 4 5 6";
-						foreach(part, partitions, next) {
-							sprintf(path, "/dev/%s%s", entry->d_name, part);
-							if (stat(path, &tmp_stat))
+						foreach(part, partitions, next)
+						{
+							sprintf(path,
+								"/dev/%s%s",
+								entry->d_name,
+								part);
+							if (stat(path,
+								 &tmp_stat))
 								continue;
-							sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE_PART);
+							sysprintf(
+								"/usr/sbin/disktype %s > %s",
+								path,
+								DUMPFILE_PART);
 							FILE *fpp;
 							char line_part[256];
-							if ((fpp = fopen(DUMPFILE_PART, "r"))) {
+							if ((fpp = fopen(
+								     DUMPFILE_PART,
+								     "r"))) {
 								int linenum = 0;
-								while (fgets(line_part, sizeof(line_part), fpp) != NULL) {
-									if (linenum++ == 5)
+								while (fgets(line_part,
+									     sizeof(line_part),
+									     fpp) !=
+								       NULL) {
+									if (linenum++ ==
+									    5)
 										break;
-									char *fs = getfs(line_part);
+									char *fs = getfs(
+										line_part);
 									if (fs) {
-										sprintf(targetname, "%s_%s", entry->d_name, part);
-										if (usb_process_path(path, fs, targetname) == 0) {
-											is_partmounted = 1;
+										sprintf(targetname,
+											"%s_%s",
+											entry->d_name,
+											part);
+										if (usb_process_path(
+											    path,
+											    fs,
+											    targetname) ==
+										    0) {
+											is_partmounted =
+												1;
 										}
-
 									}
 								}
 
 								fclose(fpp);
 							}
-
 						}
-
 					}
 					char *tfs;
 					tfs = getfs(line);
 					if (tfs)
 						fs = tfs;
-
 				}
 				fclose(fp);
 			}
@@ -617,15 +671,22 @@ static int usb_add_ufd(char *devpath)
 				 * If it is partioned, mount first partition else raw disk 
 				 */
 				if (is_part && !new) {
-					partitions = "part1 part2 part3 part4 part5 part6";
-					foreach(part, partitions, next) {
-						sprintf(path, "/dev/discs/%s/%s", entry->d_name, part);
+					partitions =
+						"part1 part2 part3 part4 part5 part6";
+					foreach(part, partitions, next)
+					{
+						sprintf(path,
+							"/dev/discs/%s/%s",
+							entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						sprintf(targetname, "%s%s", entry->d_name, part + 4);
+						sprintf(targetname, "%s%s",
+							entry->d_name,
+							part + 4);
 
-						if (usb_process_path(path, fs, targetname)
-						    == 0) {
+						if (usb_process_path(
+							    path, fs,
+							    targetname) == 0) {
 							is_mounted = 1;
 							break;
 						}
@@ -633,37 +694,47 @@ static int usb_add_ufd(char *devpath)
 				}
 				if (is_part && new) {
 					partitions = "1 2 3 4 5 6";
-					foreach(part, partitions, next) {
-						sprintf(path, "/dev/%s%s", entry->d_name, part);
+					foreach(part, partitions, next)
+					{
+						sprintf(path, "/dev/%s%s",
+							entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						sprintf(targetname, "%s%s", entry->d_name, part);
-						if (usb_process_path(path, fs, targetname)
-						    == 0) {
+						sprintf(targetname, "%s%s",
+							entry->d_name, part);
+						if (usb_process_path(
+							    path, fs,
+							    targetname) == 0) {
 							is_mounted = 1;
 							break;
 						}
 					}
 				} else {
 					if (new)
-						sprintf(targetname, "disc%s", entry->d_name);
+						sprintf(targetname, "disc%s",
+							entry->d_name);
 					else
-						sprintf(targetname, "%s", entry->d_name);
-					if (usb_process_path(path, fs, targetname) == 0) {
+						sprintf(targetname, "%s",
+							entry->d_name);
+					if (usb_process_path(path, fs,
+							     targetname) == 0) {
 						is_mounted = 1;
 					}
 				}
-
 			}
 
 			if ((fp = fopen(DUMPFILE, "a"))) {
 				if (fs && is_mounted) {
-					fprintf(fp, "Status: <b>Mounted on /%s</b>\n", nvram_safe_get("usb_mntpoint"));
+					fprintf(fp,
+						"Status: <b>Mounted on /%s</b>\n",
+						nvram_safe_get("usb_mntpoint"));
 					i = 16;
 				} else if (fs)
-					fprintf(fp, "Status: <b>Not mounted</b>\n");
+					fprintf(fp,
+						"Status: <b>Not mounted</b>\n");
 				else if (!is_partmounted)
-					fprintf(fp, "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n");
+					fprintf(fp,
+						"Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n");
 				fclose(fp);
 			}
 		}

@@ -50,12 +50,14 @@
 #include "unl.h"
 #include <nl80211.h>
 
-#define ENTER syslog(LOG_DEBUG,"mac80211: start %s",__func__)
-#define LEAVE syslog(LOG_DEBUG,"mac80211: leave %s",__func__)
-#define MAC80211DEBUG() do { } while(0)
+#define ENTER syslog(LOG_DEBUG, "mac80211: start %s", __func__)
+#define LEAVE syslog(LOG_DEBUG, "mac80211: leave %s", __func__)
+#define MAC80211DEBUG() \
+	do {            \
+	} while (0)
 
 #ifndef MAC80211DEBUG
-#define MAC80211DEBUG() syslog(LOG_DEBUG,"mac80211: %s:%d", __func__,__LINE__)
+#define MAC80211DEBUG() syslog(LOG_DEBUG, "mac80211: %s:%d", __func__, __LINE__)
 #endif
 
 static int cur_freq;
@@ -66,8 +68,10 @@ static char *cur_caps;
 void check_cryptomod(char *prefix);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
-static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
+static void setupSupplicant_ath9k(char *prefix, char *ssidoverride,
+				  int isadhoc);
+void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater,
+			       int aoss);
 
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
@@ -78,7 +82,9 @@ int inline issuperchannel(void)
 
 static int cansuperchannel(char *prefix)
 {
-	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
+	return (issuperchannel() &&
+		nvram_nmatch("0", "%s_regulatory", prefix) &&
+		nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
 static const char *gethtmode(char *prefix)
@@ -107,22 +113,22 @@ static const char *gethtmode(char *prefix)
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
 
-	if ((!strcmp(netmode, "ng-only") ||	//
-	     !strcmp(netmode, "na-only") ||	//
-	     !strcmp(netmode, "n2-only") ||	//
-	     !strcmp(netmode, "n5-only") ||	//
-	     !strcmp(netmode, "ac-only") ||	//
-	     !strcmp(netmode, "acn-mixed") ||	//
-	     !strcmp(netmode, "ax-only") ||	//
-	     !strcmp(netmode, "xacn-mixed") ||	//
-	     !strcmp(netmode, "mixed"))
-	    && strcmp(akm, "wep")) {
-
+	if ((!strcmp(netmode, "ng-only") || //
+	     !strcmp(netmode, "na-only") || //
+	     !strcmp(netmode, "n2-only") || //
+	     !strcmp(netmode, "n5-only") || //
+	     !strcmp(netmode, "ac-only") || //
+	     !strcmp(netmode, "acn-mixed") || //
+	     !strcmp(netmode, "ax-only") || //
+	     !strcmp(netmode, "xacn-mixed") || //
+	     !strcmp(netmode, "mixed")) &&
+	    strcmp(akm, "wep")) {
 		char sb[32];
 		sprintf(sb, "%s_nctrlsb", prefix);
 		switch (usebw) {
 		case 40:
-			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper"))
+			if (nvram_default_match(sb, "ull", "luu") ||
+			    nvram_match(sb, "upper"))
 				ht = "HT40+";
 			else
 				ht = "HT40-";
@@ -180,7 +186,8 @@ void delete_ath9k_devices(char *physical_iface)
 	char tmp[256];
 	int globresult;
 	if (physical_iface)
-		sprintf(globstring, "/sys/class/ieee80211/%s/device/net/*", physical_iface);
+		sprintf(globstring, "/sys/class/ieee80211/%s/device/net/*",
+			physical_iface);
 	else
 		sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/*");
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
@@ -193,8 +200,10 @@ void delete_ath9k_devices(char *physical_iface)
 		char dev[32];
 		sprintf(dev, "%s", ifname + 1);
 		if (has_ad(dev)) {
-			sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
-			sysprintf("echo 10000 0 10000 0 10000 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
+			sysprintf(
+				"echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
+			sysprintf(
+				"echo 10000 0 10000 0 10000 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
 			br_del_interface(getBridge("wlan2", tmp), dev);
 		} else
 			br_del_interface(getBridge(dev, tmp), dev);
@@ -221,8 +230,8 @@ static void mesh_param(char *dev, char *name, char *def)
 {
 	char mparam[64];
 	sprintf(mparam, "%s_%s", dev, name);
-	eval("iw", "dev", dev, "set", "mesh_param", name, nvram_default_get(mparam, def));
-
+	eval("iw", "dev", dev, "set", "mesh_param", name,
+	     nvram_default_get(mparam, def));
 }
 
 void set_mesh_params(char *dev)
@@ -278,20 +287,21 @@ void mesh_params_main(int argc, char *argv[])
 		char vifs[32];
 		sprintf(vifs, "wlan%d_vifs", i);
 		char *vaps = nvram_safe_get(vifs);
-		foreach(var, vaps, next) {
+		foreach(var, vaps, next)
+		{
 			if (nvram_nmatch("disabled", "%s_mode", var))
 				continue;
 			if (nvram_nmatch("mesh", "%s_mode", var))
 				set_mesh_params(var);
 		}
-
 	}
 	LEAVE;
 }
 
 static void setchanbw(char *wif, char *driver, int bw)
 {
-	sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/%s/chanbw", bw, wif, driver);
+	sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/%s/chanbw", bw, wif,
+		  driver);
 }
 
 void configure_single_ath9k(int count)
@@ -342,7 +352,8 @@ void configure_single_ath9k(int count)
 		vapcount = 0;
 	sprintf(wif, "phy%d", phy_idx);
 	sprintf(wifivifs, "wlan%d_vifs", count);
-	fprintf(stderr, "ath9k configure_single: phy%d wlan%d\n", phy_idx, count);
+	fprintf(stderr, "ath9k configure_single: phy%d wlan%d\n", phy_idx,
+		count);
 	sprintf(channel, "wlan%d_channel", count);
 	sprintf(sens, "wlan%d_distance", count);
 	sprintf(diversity, "wlan%d_diversity", count);
@@ -370,15 +381,29 @@ void configure_single_ath9k(int count)
 	}
 	MAC80211DEBUG();
 	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
+		sysprintf(
+			"echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam",
+			wif);
+		sysprintf(
+			"echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam",
+			wif);
+		sysprintf(
+			"echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam",
+			wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam",
+			  wif);
 	} else {
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
+		sysprintf(
+			"echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam",
+			wif);
+		sysprintf(
+			"echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam",
+			wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam",
+			  wif);
+		sysprintf(
+			"echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam",
+			wif);
 	}
 	if (isath10k && has_fwswitch(dev)) {
 		char fwtype[32];
@@ -390,15 +415,23 @@ void configure_single_ath9k(int count)
 		if (nvram_match(regulatory, "0")) {
 			nvram_set(fwtype, "ddwrt");
 		}
-		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt")) {
+		if (!nvram_default_match(fwtype,
+					 nvram_default_get(fwtype_use, "ddwrt"),
+					 "ddwrt")) {
 			nvram_set(fwtype_use, nvram_safe_get(fwtype));
-//                      nvram_set(dualband_use, nvram_safe_get(dualband));
-//                      sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dualband", nvram_safe_get(dualband), wif);
+			//                      nvram_set(dualband_use, nvram_safe_get(dualband));
+			//                      sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dualband", nvram_safe_get(dualband), wif);
 			if (nvram_match(fwtype, "vanilla"))
-				sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post", wif);
+				sysprintf(
+					"echo vanilla > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post",
+					wif);
 			else
-				sysprintf("echo > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post", wif);
-			sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/%s/ath10k/simulate_fw_crash", wif);
+				sysprintf(
+					"echo > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post",
+					wif);
+			sysprintf(
+				"echo fw-reload > /sys/kernel/debug/ieee80211/%s/ath10k/simulate_fw_crash",
+				wif);
 		}
 	}
 	MAC80211DEBUG();
@@ -446,17 +479,18 @@ void configure_single_ath9k(int count)
 	sprintf(wl, "wlan%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta")
-	    || !strcmp(apm, "wet")) {
-
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") ||
+	    !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed");
 
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta")) {
-		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds", "off");
+		eval("iw", wif, "interface", "add", dev, "type", "managed",
+		     "4addr", "on", "mtikwds", "off");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta_mtik")) {
-		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds", "on");
+		eval("iw", wif, "interface", "add", dev, "type", "managed",
+		     "4addr", "on", "mtikwds", "on");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "mesh")) {
 		char akm[32];
@@ -472,22 +506,32 @@ void configure_single_ath9k(int count)
 		const char *htmode = gethtmode(dev);
 		//todo 80+80 center2_freq
 
-		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2") ||
+		    nvhas(akm, "psk3")) {
 			eval("iw", wif, "interface", "add", dev, "type", "mp");
-			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			if (!strcmp(htmode, "NOHT") ||
+			    !strncmp(htmode, "HT", 2))
+				eval("iw", "dev", dev, "set", "freq", freq,
+				     htmode);
 			else if (!strcmp(htmode, "80+80"))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
+				eval("iw", "dev", dev, "set", "freq", freq,
+				     htmode, farg, farg2);
 			else
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+				eval("iw", "dev", dev, "set", "freq", freq,
+				     htmode, farg);
 		} else {
-			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
-			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			eval("iw", wif, "interface", "add", dev, "type", "mp",
+			     "mesh_id", nvram_nget("%s_ssid", dev));
+			if (!strcmp(htmode, "NOHT") ||
+			    !strncmp(htmode, "HT", 2))
+				eval("iw", "dev", dev, "set", "freq", freq,
+				     htmode);
 			else if (!strcmp(htmode, "80+80"))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
+				eval("iw", "dev", dev, "set", "freq", freq,
+				     htmode, farg, farg2);
 			else
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+				eval("iw", "dev", dev, "set", "freq", freq,
+				     htmode, farg);
 		}
 
 		strcpy(primary, dev);
@@ -496,11 +540,10 @@ void configure_single_ath9k(int count)
 		sprintf(akm, "%s_akm", dev);
 		eval("iw", wif, "interface", "add", dev, "type", "ibss");
 		isadhoc = 1;
-//              if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
-//                      // setup and join does wpa_supplicant
-//              } else 
+		//              if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+		//                      // setup and join does wpa_supplicant
+		//              } else
 		{
-
 			char *freq = nvram_nget("%s_channel", dev);
 			eval("ifconfig", dev, "up");
 			const char *htmode = gethtmode(dev);
@@ -510,12 +553,18 @@ void configure_single_ath9k(int count)
 			//todo 80+80 center2_freq
 			char *farg2 = "5775";
 			sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
-			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode);
+			if (!strcmp(htmode, "NOHT") ||
+			    !strncmp(htmode, "HT", 2))
+				eval("iw", "dev", dev, "ibss", "join",
+				     nvram_nget("%s_ssid", dev), freq, htmode);
 			else if (!strcmp(htmode, "80+80"))
-				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg, farg2);
+				eval("iw", "dev", dev, "ibss", "join",
+				     nvram_nget("%s_ssid", dev), freq, htmode,
+				     farg, farg2);
 			else
-				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg);
+				eval("iw", "dev", dev, "ibss", "join",
+				     nvram_nget("%s_ssid", dev), freq, htmode,
+				     farg);
 			cprintf("handle ibss join");
 		}
 	}
@@ -536,7 +585,7 @@ void configure_single_ath9k(int count)
 #endif
 	if (!*nvram_safe_get(athmac))
 		nvram_set(athmac, macaddr);
-	int distance = nvram_default_geti(sens, 500);	// to meter
+	int distance = nvram_default_geti(sens, 500); // to meter
 	char dist[32];
 	if (distance > 0)
 		sprintf(dist, "%d", distance);
@@ -544,13 +593,13 @@ void configure_single_ath9k(int count)
 		sprintf(dist, "auto");
 	eval("iw", "phy", wif, "set", "distance", dist);
 #ifdef HAVE_ATH10K
-//      if (is_ath10k(dev) && !is_mvebu(dev)) { // evil hack for QCA 
+//      if (is_ath10k(dev) && !is_mvebu(dev)) { // evil hack for QCA
 //              set_ath10kdistance(dev, distance);
 //      }
 #endif
-//      experimental frame compression for internal testing only right now
+	//      experimental frame compression for internal testing only right now
 
-// das scheint noch aerger zu machen
+	// das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
 	setRTS(dev);
 
@@ -560,26 +609,30 @@ void configure_single_ath9k(int count)
 	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet") && strcmp(apm, "infra") && strcmp(apm, "mesh") && strcmp(apm, "tdma")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") &&
+	    strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet") &&
+	    strcmp(apm, "infra") && strcmp(apm, "mesh") &&
+	    strcmp(apm, "tdma")) {
 		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
 		char *clonename = "def_whwaddr";
 		if (!strcmp(apm, "sta"))
 			clonename = "def_hwaddr";
-		if (nvram_matchi("mac_clone_enable", 1)
-		    && nvram_invmatch(clonename, "00:00:00:00:00:00")
-		    && nvram_invmatch(clonename, "")) {
+		if (nvram_matchi("mac_clone_enable", 1) &&
+		    nvram_invmatch(clonename, "00:00:00:00:00:00") &&
+		    nvram_invmatch(clonename, "")) {
 			set_hwaddr(dev, nvram_safe_get(clonename));
 		}
-//              char akm[32];
-//              sprintf(akm, "%s_akm", dev);
-//              if (strcmp(apm, "infra") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+		//              char akm[32];
+		//              sprintf(akm, "%s_akm", dev);
+		//              if (strcmp(apm, "infra") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
 		setupSupplicant_ath9k(dev, NULL, isadhoc);
 	}
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
-	foreach(var, vifs, next) {
+	foreach(var, vifs, next)
+	{
 		countvaps++;
 	}
 	MAC80211DEBUG();
@@ -590,7 +643,8 @@ void configure_single_ath9k(int count)
 	int counter = 1;
 	char compr[32];
 	if (*vifs) {
-		foreach(var, vifs, next) {
+		foreach(var, vifs, next)
+		{
 			if (nvram_nmatch("disabled", "%s_mode", var)) {
 				counter++;
 				continue;
@@ -598,29 +652,40 @@ void configure_single_ath9k(int count)
 			// create the first main hostapd interface when this is repeater mode
 			if (!nvram_nmatch("mesh", "%s_mode", var)) {
 				if (isfirst)
-					eval("iw", wif, "interface", "add", var, "type", "managed");
+					eval("iw", wif, "interface", "add", var,
+					     "type", "managed");
 				setupHostAP_ath9k(dev, isfirst, counter, 0);
 			} else {
 				char akm[32];
 				sprintf(akm, "%s_akm", var);
-				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
-					eval("iw", wif, "interface", "add", var, "type", "mp", wif, var);
+				if (nvhas(akm, "psk") || nvhas(akm, "psk2") ||
+				    nvhas(akm, "psk3"))
+					eval("iw", wif, "interface", "add", var,
+					     "type", "mp", wif, var);
 				else
-					eval("iw", wif, "interface", "add", var, "type", "mp", "mesh_id", nvram_nget("%s_ssid", var));
+					eval("iw", wif, "interface", "add", var,
+					     "type", "mp", "mesh_id",
+					     nvram_nget("%s_ssid", var));
 				setupSupplicant_ath9k(var, NULL, 0);
 			}
 			sprintf(compr, "%s_fc_th", var);
-			char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+			char *threshold = nvram_default_get(
+				compr,
+				"512"); // minimum framesize frequired for compression
 			sprintf(compr, "%s_fc", var);
 
 			if (nvram_default_matchi(compr, 1, 0)) {
-				eval("iw", "dev", var, "set", "compr", "lzo", threshold);
+				eval("iw", "dev", var, "set", "compr", "lzo",
+				     threshold);
 			} else if (nvram_default_matchi(compr, 2, 0)) {
-				eval("iw", "dev", var, "set", "compr", "lzma", threshold);
+				eval("iw", "dev", var, "set", "compr", "lzma",
+				     threshold);
 			} else if (nvram_default_matchi(compr, 3, 0)) {
-				eval("iw", "dev", var, "set", "compr", "lz4", threshold);
+				eval("iw", "dev", var, "set", "compr", "lz4",
+				     threshold);
 			} else if (nvram_default_matchi(compr, 4, 0)) {
-				eval("iw", "dev", var, "set", "compr", "zstd", threshold);
+				eval("iw", "dev", var, "set", "compr", "zstd",
+				     threshold);
 			} else {
 				eval("iw", "dev", var, "set", "compr", "off");
 			}
@@ -631,13 +696,16 @@ void configure_single_ath9k(int count)
 		}
 	}
 	if (has_ad(dev)) {
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_polarity");
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
-		sysprintf("echo 10000 0 200 200 100 100 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
-
+		sysprintf(
+			"echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_polarity");
+		sysprintf(
+			"echo 1 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
+		sysprintf(
+			"echo 10000 0 200 200 100 100 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
 	}
 	sprintf(compr, "%s_fc_th", dev);
-	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+	char *threshold = nvram_default_get(
+		compr, "512"); // minimum framesize frequired for compression
 	sprintf(compr, "%s_fc", dev);
 	MAC80211DEBUG();
 
@@ -654,7 +722,8 @@ void configure_single_ath9k(int count)
 	}
 }
 
-void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
+void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc,
+		  int ismesh);
 
 void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 {
@@ -702,12 +771,16 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
-	const char *country = getIsoName(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
+	const char *country = getIsoName(
+		nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
 	char *netmode = nvram_nget("%s_net_mode", prefix);
-	if (isath5k || !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only") || !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed"))) {
+	if (isath5k ||
+	    !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only") ||
+	      !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") ||
+	      !strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed"))) {
 		fprintf(fp, "tx_queue_data2_burst=2.0\n");
 		fprintf(fp, "wmm_ac_be_txop_limit=64\n");
 	} else {
@@ -740,35 +813,33 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 
 	MAC80211DEBUG();
 	if (has_ac(prefix)) {
-		if (strcmp(netmode, "acn-mixed") &&	//
-		    strcmp(netmode, "ac-only") &&	//
-		    strcmp(netmode, "ax-only") &&	//
-		    strcmp(netmode, "xacn-mixed") &&	//
+		if (strcmp(netmode, "acn-mixed") && //
+		    strcmp(netmode, "ac-only") && //
+		    strcmp(netmode, "ax-only") && //
+		    strcmp(netmode, "xacn-mixed") && //
 		    strcmp(netmode, "mixed")) {
 			fprintf(fp, "ieee80211ac=0\n");
 		}
 	}
 	if (has_ax(prefix)) {
-		if (strcmp(netmode, "xacn-mixed") &&	//
-		    strcmp(netmode, "ax-only ") &&	//
+		if (strcmp(netmode, "xacn-mixed") && //
+		    strcmp(netmode, "ax-only ") && //
 		    strcmp(netmode, "mixed")) {
 			fprintf(fp, "ieee80211ax=0\n");
 		}
 	}
-	if ((!strcmp(netmode, "ng-only") ||	//
-	     !strcmp(netmode, "na-only") ||	//
-	     !strcmp(netmode, "n2-only") ||	//
-	     !strcmp(netmode, "n5-only") ||	//
-	     !strcmp(netmode, "ac-only") ||	//
-	     !strcmp(netmode, "ax-only") ||	//
-	     !strcmp(netmode, "acn-mixed") ||	//
-	     !strcmp(netmode, "xacn-mixed") ||	//
-	     !strcmp(netmode, "mixed"))
-	    && strcmp(akm, "wep")
-	    && !aoss) {
-
-		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only")
-		    && strcmp(netmode, "na-only")) {
+	if ((!strcmp(netmode, "ng-only") || //
+	     !strcmp(netmode, "na-only") || //
+	     !strcmp(netmode, "n2-only") || //
+	     !strcmp(netmode, "n5-only") || //
+	     !strcmp(netmode, "ac-only") || //
+	     !strcmp(netmode, "ax-only") || //
+	     !strcmp(netmode, "acn-mixed") || //
+	     !strcmp(netmode, "xacn-mixed") || //
+	     !strcmp(netmode, "mixed")) &&
+	    strcmp(akm, "wep") && !aoss) {
+		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only") &&
+		    strcmp(netmode, "na-only")) {
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
 		}
@@ -809,7 +880,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
 		if (has_2ghz(prefix)) {
 			if (iht == -1) {
-				i = 4;	// in 2.4 mhz channel spacing is different
+				i = 4; // in 2.4 mhz channel spacing is different
 			}
 		}
 		if (has_5ghz(prefix)) {
@@ -866,26 +937,40 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				freq = 53320;
 			} else {
 				struct mac80211_ac *acs;
-				fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
+				fprintf(stderr,
+					"call mac80211autochannel for interface: %s\n",
+					prefix);
 				eval("ifconfig", prefix, "up");
 				switch (usebw) {
 				case 40:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEHT40);
+					acs = mac80211autochannel(
+						prefix, NULL, 2, 0,
+						AUTO_FORCEHT40);
 					break;
 				case 80:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT80);
+					acs = mac80211autochannel(
+						prefix, NULL, 2, 0,
+						AUTO_FORCEVHT80);
 					break;
 				case 160:
 				case 8080:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT160);
+					acs = mac80211autochannel(
+						prefix, NULL, 2, 0,
+						AUTO_FORCEVHT160);
 					break;
 				default:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_ALL);
+					acs = mac80211autochannel(
+						prefix, NULL, 2, 0, AUTO_ALL);
 				}
 				if (acs != NULL) {
-					struct wifi_channels *chan = mac80211_get_channels_simple(prefix, country, usebw, 0xff);
+					struct wifi_channels *chan =
+						mac80211_get_channels_simple(
+							prefix, country, usebw,
+							0xff);
 					freq = acs->freq;
-					fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
+					fprintf(stderr,
+						"mac80211autochannel interface: %s frequency: %d\n",
+						prefix, freq);
 					int i = 0;
 					while (chan[i].freq != -1) {
 						if (chan[i].freq == freq)
@@ -1006,7 +1091,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 							ht = "HT20";
 							freq = 5500;
 							break;
-
 						}
 					}
 				}
@@ -1022,24 +1106,33 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 		char ldpc[32];
 		sprintf(ldpc, "%s_ldpc", prefix);
 		int i_ldpc = nvram_default_geti(ldpc, 1);
-		if ((!strcmp(netmode, "mixed") ||	//
-		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only"))) {
+		if ((!strcmp(netmode, "mixed") || //
+		     !strcmp(netmode, "ac-only") ||
+		     !strcmp(netmode, "acn-mixed") ||
+		     !strcmp(netmode, "xacn-mixed") ||
+		     !strcmp(netmode, "ax-only"))) {
 			i_ldpc = 1;
 		}
 		int smps = nvram_ngeti("%s_smps", prefix);
-		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0, usebw > 20, i_ldpc, smps);
+		caps = mac80211_get_caps(
+			prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0,
+			nvram_default_matchi(greenfield, 1, 0) ? 1 : 0,
+			usebw > 20, i_ldpc, smps);
 		if (ht) {
 			if (smps == 1 && has_static_smps(prefix))
-				fprintf(fp, "ht_capab=[%s]%s[SMPS-STATIC]\n", ht, caps);
+				fprintf(fp, "ht_capab=[%s]%s[SMPS-STATIC]\n",
+					ht, caps);
 			else if (smps == 2 && has_dynamic_smps(prefix))
-				fprintf(fp, "ht_capab=[%s]%s[SMPS-DYNAMIC]\n", ht, caps);
+				fprintf(fp, "ht_capab=[%s]%s[SMPS-DYNAMIC]\n",
+					ht, caps);
 			else
 				fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
 			if (smps == 1 && has_static_smps(prefix))
 				fprintf(fp, "ht_capab=%s[SMPS-STATIC]\n", caps);
 			else if (smps == 2 && has_dynamic_smps(prefix))
-				fprintf(fp, "ht_capab=%s[SMPS-DYNAMIC]\n", caps);
+				fprintf(fp, "ht_capab=%s[SMPS-DYNAMIC]\n",
+					caps);
 		}
 		free(caps);
 	}
@@ -1055,13 +1148,19 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 	char subf[32];
 	sprintf(subf, "%s_subf", prefix);
 
-	caps =
-	    mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
-				 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
+	caps = mac80211_get_vhtcaps(
+		prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0,
+		(usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0,
+		usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+		nvram_default_matchi(subf, 1, 0),
+		nvram_default_matchi(mubf, 1, 0));
 	cur_caps = caps;
 	if (has_ac(prefix) && has_5ghz(prefix)) {
-		if (freq >= 4000 && (!strcmp(netmode, "mixed") ||	//
-				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed"))) {
+		if (freq >= 4000 && (!strcmp(netmode, "mixed") || //
+				     !strcmp(netmode, "ac-only") ||
+				     !strcmp(netmode, "acn-mixed") ||
+				     !strcmp(netmode, "ax-only") ||
+				     !strcmp(netmode, "xacn-mixed"))) {
 			if (*caps) {
 				fprintf(fp, "vht_capab=%s\n", caps);
 				if (!strcmp(netmode, "ac-only")) {
@@ -1082,20 +1181,23 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				}
 
 				if (has_ax(prefix)) {
-					if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+					if (!strcmp(netmode, "xacn-mixed") ||
+					    !strcmp(netmode, "ax-only")) {
 						if (nvram_match(mubf, "1")) {
-							fprintf(fp, "he_mu_beamformer=1\n");
+							fprintf(fp,
+								"he_mu_beamformer=1\n");
 						}
 						if (nvram_match(subf, "1")) {
-							fprintf(fp, "he_su_beamformer=1\n");
-							fprintf(fp, "he_su_beamformee=1\n");
+							fprintf(fp,
+								"he_su_beamformer=1\n");
+							fprintf(fp,
+								"he_su_beamformee=1\n");
 						}
 						fprintf(fp, "ieee80211ax=1\n");
 						fprintf(fp, "ieee80211ac=1\n");
 						fprintf(fp, "require_ht=1\n");
 						fprintf(fp, "ieee80211d=1\n");
 						fprintf(fp, "ieee80211h=1\n");
-
 					}
 					if (!strcmp(netmode, "ax-only")) {
 						fprintf(fp, "require_vht=1\n");
@@ -1112,38 +1214,71 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 					fprintf(fp, "ieee80211h=1\n");
 				}
 				if (has_ax(prefix)) {
-					if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+					if (!strcmp(netmode, "mixed") ||
+					    !strcmp(netmode, "xacn-mixed") ||
+					    !strcmp(netmode, "ax-only")) {
 						char color[32];
-						sprintf(color, "%s_he_bss_color", prefix);
-						int c = nvram_default_geti(color, 0);
-						fprintf(fp, "he_default_pe_duration=4\n");
-						fprintf(fp, "he_rts_threshold=1023\n");
-						fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
-						fprintf(fp, "he_mu_edca_qos_info_q_ack=0\n");
-						fprintf(fp, "he_mu_edca_qos_info_queue_request=0\n");
-						fprintf(fp, "he_mu_edca_qos_info_txop_request=0\n");
-						fprintf(fp, "he_mu_edca_ac_be_aifsn=8\n");
-						fprintf(fp, "he_mu_edca_ac_be_aci=0\n");
-						fprintf(fp, "he_mu_edca_ac_be_ecwmin=9\n");
-						fprintf(fp, "he_mu_edca_ac_be_ecwmax=10\n");
-						fprintf(fp, "he_mu_edca_ac_be_timer=255\n");
-						fprintf(fp, "he_mu_edca_ac_bk_aifsn=15\n");
-						fprintf(fp, "he_mu_edca_ac_bk_aci=1\n");
-						fprintf(fp, "he_mu_edca_ac_bk_ecwmin=9\n");
-						fprintf(fp, "he_mu_edca_ac_bk_ecwmax=10\n");
-						fprintf(fp, "he_mu_edca_ac_bk_timer=255\n");
-						fprintf(fp, "he_mu_edca_ac_vi_ecwmin=5\n");
-						fprintf(fp, "he_mu_edca_ac_vi_ecwmax=7\n");
-						fprintf(fp, "he_mu_edca_ac_vi_aifsn=5\n");
-						fprintf(fp, "he_mu_edca_ac_vi_aci=2\n");
-						fprintf(fp, "he_mu_edca_ac_vi_timer=255\n");
-						fprintf(fp, "he_mu_edca_ac_vo_aifsn=5\n");
-						fprintf(fp, "he_mu_edca_ac_vo_aci=3\n");
-						fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
-						fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
-						fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
+						sprintf(color,
+							"%s_he_bss_color",
+							prefix);
+						int c = nvram_default_geti(
+							color, 0);
+						fprintf(fp,
+							"he_default_pe_duration=4\n");
+						fprintf(fp,
+							"he_rts_threshold=1023\n");
+						fprintf(fp,
+							"he_mu_edca_qos_info_param_count=0\n");
+						fprintf(fp,
+							"he_mu_edca_qos_info_q_ack=0\n");
+						fprintf(fp,
+							"he_mu_edca_qos_info_queue_request=0\n");
+						fprintf(fp,
+							"he_mu_edca_qos_info_txop_request=0\n");
+						fprintf(fp,
+							"he_mu_edca_ac_be_aifsn=8\n");
+						fprintf(fp,
+							"he_mu_edca_ac_be_aci=0\n");
+						fprintf(fp,
+							"he_mu_edca_ac_be_ecwmin=9\n");
+						fprintf(fp,
+							"he_mu_edca_ac_be_ecwmax=10\n");
+						fprintf(fp,
+							"he_mu_edca_ac_be_timer=255\n");
+						fprintf(fp,
+							"he_mu_edca_ac_bk_aifsn=15\n");
+						fprintf(fp,
+							"he_mu_edca_ac_bk_aci=1\n");
+						fprintf(fp,
+							"he_mu_edca_ac_bk_ecwmin=9\n");
+						fprintf(fp,
+							"he_mu_edca_ac_bk_ecwmax=10\n");
+						fprintf(fp,
+							"he_mu_edca_ac_bk_timer=255\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vi_ecwmin=5\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vi_ecwmax=7\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vi_aifsn=5\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vi_aci=2\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vi_timer=255\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vo_aifsn=5\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vo_aci=3\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vo_ecwmin=5\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vo_ecwmax=7\n");
+						fprintf(fp,
+							"he_mu_edca_ac_vo_timer=255\n");
 						if (color > 0 && color < 64) {
-							fprintf(fp, "he_bss_color=\n", color);
+							fprintf(fp,
+								"he_bss_color=\n",
+								color);
 						}
 					}
 				}
@@ -1152,56 +1287,86 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "vht_oper_chwidth=0\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
+					fprintf(fp,
+						"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+						freq + (10 * iht));
 					break;
 				case 80:
 					fprintf(fp, "vht_oper_chwidth=1\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					fprintf(fp,
+						"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+						freq + ((channeloffset * 5) *
+							iht));
 					break;
 				case 160:
 					fprintf(fp, "vht_oper_chwidth=2\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					fprintf(fp,
+						"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+						freq + ((channeloffset * 5) *
+							iht));
 					break;
 				case 8080:
 					fprintf(fp, "vht_oper_chwidth=3\n");
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-					fprintf(fp, "vht_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
+					fprintf(fp,
+						"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+						freq + ((channeloffset * 5) *
+							iht));
+					fprintf(fp,
+						"vht_oper_centr_freq_seg1_idx_freq=%d\n",
+						freq2);
 					break;
 				default:
 					fprintf(fp, "vht_oper_chwidth=0\n");
 					break;
-
 				}
-				if (!strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed")) {
+				if (!strcmp(netmode, "ax-only") ||
+				    !strcmp(netmode, "xacn-mixed")) {
 					switch (usebw) {
 					case 40:
-						fprintf(fp, "he_oper_chwidth=0\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
+						fprintf(fp,
+							"he_oper_chwidth=0\n");
+						fprintf(fp,
+							"he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + (10 * iht));
 						break;
 					case 80:
-						fprintf(fp, "he_oper_chwidth=1\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+						fprintf(fp,
+							"he_oper_chwidth=1\n");
+						fprintf(fp,
+							"he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset *
+								 5) *
+								iht));
 						break;
 					case 160:
-						fprintf(fp, "he_oper_chwidth=2\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+						fprintf(fp,
+							"he_oper_chwidth=2\n");
+						fprintf(fp,
+							"he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset *
+								 5) *
+								iht));
 						break;
 					case 8080:
-						fprintf(fp, "he_oper_chwidth=3\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-						fprintf(fp, "he_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
+						fprintf(fp,
+							"he_oper_chwidth=3\n");
+						fprintf(fp,
+							"he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset *
+								 5) *
+								iht));
+						fprintf(fp,
+							"he_oper_centr_freq_seg1_idx_freq=%d\n",
+							freq2);
 						break;
 					default:
-						fprintf(fp, "he_oper_chwidth=0\n");
+						fprintf(fp,
+							"he_oper_chwidth=0\n");
 						break;
-
 					}
-
 				}
 			}
-
 		}
-
 	}
 
 	if (has_ad(prefix)) {
@@ -1213,26 +1378,29 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 		} else if (!strcmp(netmode, "bg-mixed")) {
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
-			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+			fprintf(fp,
+				"supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
 		} else if (!strcmp(netmode, "mixed")) {
 			if (has_ax(prefix)) {
 				fprintf(fp, "ieee80211ax=1\n");
 			}
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
-			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+			fprintf(fp,
+				"supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
 		} else {
 			fprintf(fp, "basic_rates=60 110 120 240\n");
-			fprintf(fp, "supported_rates=60 90 110 120 180 240 360 480 540\n");
+			fprintf(fp,
+				"supported_rates=60 90 110 120 180 240 360 480 540\n");
 			fprintf(fp, "hw_mode=g\n");
 		}
 	} else {
 		fprintf(fp, "hw_mode=a\n");
 		fprintf(fp, "basic_rates=60 120 240\n");
 		if (!strcmp(netmode, "a-only")) {
-			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
+			fprintf(fp,
+				"supported_rates=60 90 120 180 240 360 480 540\n");
 		}
-
 	}
 
 	MAC80211DEBUG();
@@ -1282,12 +1450,12 @@ static void setMacFilter(FILE *fp, char *iface)
 		sprintf(name, "/tmp/%s_deny", iface);
 		FILE *out = fopen(name, "wb");
 		char *list = nvram_safe_get(nvlist);
-		foreach(var, list, next) {
+		foreach(var, list, next)
+		{
 			fprintf(out, "%s\n", var);
 		}
 		fclose(out);
 	} else if (nvram_match(nvvar, "allow")) {
-
 		fprintf(fp, "accept_mac_file=/tmp/%s_accept\n", iface);
 		fprintf(fp, "macaddr_acl=1\n");
 		char nvlist[32];
@@ -1296,20 +1464,21 @@ static void setMacFilter(FILE *fp, char *iface)
 		sprintf(name, "/tmp/%s_accept", iface);
 		FILE *out = fopen(name, "wb");
 		char *list = nvram_safe_get(nvlist);
-		foreach(var, list, next) {
+		foreach(var, list, next)
+		{
 			fprintf(out, "%s\n", var);
 		}
 		fclose(out);
 	}
 	LEAVE;
-
 }
 
 static int ieee80211_aton(char *str, unsigned char mac[6])
 {
 	unsigned int addr[6];
 	int i;
-	if (sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x", &addr[0], &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]) != 6)
+	if (sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x", &addr[0], &addr[1],
+		   &addr[2], &addr[3], &addr[4], &addr[5]) != 6)
 		return -1;
 	/*
 	 * sscanf needs an unsigned int, but mac address bytes cannot exceed 0xff
@@ -1320,9 +1489,9 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 }
 
 extern char *hostapd_eap_get_types(void);
-extern void addWPS(FILE * fp, char *prefix, int configured);
-extern void setupHS20(FILE * fp, char *prefix);
-void setupHostAPPSK(FILE * fp, char *prefix, int isfirst);
+extern void addWPS(FILE *fp, char *prefix, int configured);
+extern void setupHS20(FILE *fp, char *prefix);
+void setupHostAPPSK(FILE *fp, char *prefix, int isfirst);
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
@@ -1405,37 +1574,51 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		usebw = 160;
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
-	if (isfirst && has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
+	if (isfirst && has_qam256(ifname) && has_2ghz(ifname) &&
+	    (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			fprintf(fp, "vht_capab=%s\n", cur_caps);
 			fprintf(fp, "ieee80211ac=1\n");
 			switch (usebw) {
 			case 40:
 				fprintf(fp, "vht_oper_chwidth=0\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + ((2 * 5) * cur_iht));
+				fprintf(fp,
+					"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+					cur_freq + ((2 * 5) * cur_iht));
 				break;
 			case 80:
 				fprintf(fp, "vht_oper_chwidth=1\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
+				fprintf(fp,
+					"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+					cur_freq + ((cur_channeloffset * 5) *
+						    cur_iht));
 				break;
 			case 160:
 				fprintf(fp, "vht_oper_chwidth=2\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
+				fprintf(fp,
+					"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+					cur_freq + ((cur_channeloffset * 5) *
+						    cur_iht));
 				break;
 			case 8080:
 				fprintf(fp, "vht_oper_chwidth=3\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
-				fprintf(fp, "vht_oper_centr_freq_seg1_idx_freq=%d\n", cur_freq2);
+				fprintf(fp,
+					"vht_oper_centr_freq_seg0_idx_freq=%d\n",
+					cur_freq + ((cur_channeloffset * 5) *
+						    cur_iht));
+				fprintf(fp,
+					"vht_oper_centr_freq_seg1_idx_freq=%d\n",
+					cur_freq2);
 				break;
 			default:
 				fprintf(fp, "vht_oper_chwidth=0\n");
 				break;
-
 			}
 		}
 	}
 	fprintf(fp, "no_country_ie=1\n");
-	if (has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
+	if (has_qam256(ifname) && has_2ghz(ifname) &&
+	    (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			fprintf(fp, "vendor_vht=1\n");
 		}
@@ -1455,42 +1638,46 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(wmm, "%s_wmm", ifname);
 	fprintf(fp, "wmm_enabled=%s\n", nvram_default_get(wmm, "1"));
 	if (has_uapsd(ifname)) {
-		fprintf(fp, "uapsd_advertisement_enabled=%s\n", nvram_default_get(uapsd, "0"));
+		fprintf(fp, "uapsd_advertisement_enabled=%s\n",
+			nvram_default_get(uapsd, "0"));
 	}
-	if (nvram_matchi("mac_clone_enable", 1)
-	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
-	    && nvram_invmatch("def_whwaddr", "")
-	    && !strcmp(maininterface, "wlan0")) {
+	if (nvram_matchi("mac_clone_enable", 1) &&
+	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+	    nvram_invmatch("def_whwaddr", "") &&
+	    !strcmp(maininterface, "wlan0")) {
 		strcpy(macaddr, nvram_safe_get("def_whwaddr"));
 	} else {
 		char *wifimac = nvram_nget("%s_hwaddr", maininterface);
 		if (!*wifimac || ieee80211_aton(wifimac, hwbuff) < 0) {
 			wl_hwaddr(maininterface, hwbuff);
-			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X",
+				hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3],
+				hwbuff[4], hwbuff[5]);
 		} else {
 			strcpy(macaddr, wifimac);
 		}
-
 	}
 
 	if (vapid > 0) {
 		char *wifimac = nvram_nget("%s_hwaddr", ifname);
 		if (!*wifimac) {
 			int brand = getRouterBrand();
-			if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
+			if (brand == ROUTER_WRT_3200ACM ||
+			    brand == ROUTER_WRT_32X) {
 				hwbuff[0] |= 0x2;
 				hwbuff[5] += vapid & 0xf;
 			} else {
 				hwbuff[0] ^= ((vapid - 1) << 2) | 0x2;
 			}
-			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X",
+				hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3],
+				hwbuff[4], hwbuff[5]);
 		} else {
 			strcpy(macaddr, wifimac);
 		}
-
 	}
 	MAC80211DEBUG();
-//              MAC_ADD(macaddr);
+	//              MAC_ADD(macaddr);
 	if (!has_ad(maininterface) && !is_brcmfmac(maininterface)) {
 		fprintf(fp, "bssid=%s\n", macaddr);
 	}
@@ -1548,8 +1735,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
 	// wep key support
 	if (iswep || aoss) {
-//              if (!isfirst || aoss)
-//                      fprintf(fp, "ieee80211n=0\n");
+		//              if (!isfirst || aoss)
+		//                      fprintf(fp, "ieee80211n=0\n");
 
 		if (!aoss) {
 			if (!strncmp(ifname, "wlan0", 4))
@@ -1587,17 +1774,22 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "wep_default_key=0\n");
 		} else {
 			for (i = 1; i < 5; i++) {
-				char *athkey = nvram_nget("%s_key%d", ifname, i);
+				char *athkey =
+					nvram_nget("%s_key%d", ifname, i);
 				if (athkey != NULL && *athkey) {
-					fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);
+					fprintf(fp, "wep_key%d=%s\n", i - 1,
+						athkey);
 				}
 			}
-			fprintf(fp, "wep_default_key=%d\n", atoi(nvram_nget("%s_key", ifname)) - 1);
+			fprintf(fp, "wep_default_key=%d\n",
+				atoi(nvram_nget("%s_key", ifname)) - 1);
 			addWPS(fp, ifname, 1);
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
-	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
+	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 ||
+		   iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
+		   ispsk2sha256) {
 		setupHostAPPSK(fp, ifname, isfirst);
 	} else if (nvhas(akm, "radius")) {
 		fprintf(fp, "ieee8021x=1\n");
@@ -1609,42 +1801,53 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "own_ip_addr=%s\n", lip);
 		} else {
 			if (nvram_match("wan_proto", "disabled"))
-				fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+				fprintf(fp, "own_ip_addr=%s\n",
+					nvram_safe_get("lan_ipaddr"));
 			else {
 				char *wip = get_wan_ipaddr();
 				if (*wip)
 					fprintf(fp, "own_ip_addr=%s\n", wip);
 				else
-					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+					fprintf(fp, "own_ip_addr=%s\n",
+						nvram_safe_get("lan_ipaddr"));
 			}
-
 		}
 
 		fprintf(fp, "eap_server=0\n");
 		fprintf(fp, "auth_algs=1\n");
 		char retry[32];
 		sprintf(retry, "%s_radius_retry", ifname);
-		fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
+		fprintf(fp, "radius_retry_primary_interval=%s\n",
+			nvram_default_get(retry, "600"));
 		types = hostapd_eap_get_types();
 		fprintf(fp, "%s", types);
 		free(types);
-		fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", ifname));
-		fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", ifname));
-		fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", ifname));
+		fprintf(fp, "auth_server_addr=%s\n",
+			nvram_nget("%s_radius_ipaddr", ifname));
+		fprintf(fp, "auth_server_port=%s\n",
+			nvram_nget("%s_radius_port", ifname));
+		fprintf(fp, "auth_server_shared_secret=%s\n",
+			nvram_nget("%s_radius_key", ifname));
 		char check[64];
 		sprintf(check, "%s_radius2_ipaddr", ifname);
 		nvram_default_get(check, "0.0.0.0");
-		if (!nvram_nmatch("", "%s_radius2_ipaddr", ifname)
-		    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", ifname)
-		    && !nvram_nmatch("", "%s_radius2_port", ifname)) {
-			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius2_ipaddr", ifname));
-			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius2_port", ifname));
-			fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius2_key", ifname));
+		if (!nvram_nmatch("", "%s_radius2_ipaddr", ifname) &&
+		    !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", ifname) &&
+		    !nvram_nmatch("", "%s_radius2_port", ifname)) {
+			fprintf(fp, "auth_server_addr=%s\n",
+				nvram_nget("%s_radius2_ipaddr", ifname));
+			fprintf(fp, "auth_server_port=%s\n",
+				nvram_nget("%s_radius2_port", ifname));
+			fprintf(fp, "auth_server_shared_secret=%s\n",
+				nvram_nget("%s_radius2_key", ifname));
 		}
 		if (nvram_nmatch("1", "%s_acct", ifname)) {
-			fprintf(fp, "acct_server_addr=%s\n", nvram_nget("%s_acct_ipaddr", ifname));
-			fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", ifname));
-			fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", ifname));
+			fprintf(fp, "acct_server_addr=%s\n",
+				nvram_nget("%s_acct_ipaddr", ifname));
+			fprintf(fp, "acct_server_port=%s\n",
+				nvram_nget("%s_acct_port", ifname));
+			fprintf(fp, "acct_server_shared_secret=%s\n",
+				nvram_nget("%s_acct_key", ifname));
 		}
 	}
 	// fprintf (fp, "jumpstart_p1=1\n");
@@ -1666,12 +1869,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (nvram_matchi(airtime, 1) || nvram_matchi(airtime, 2)) {
 		char at_weight[32];
 		sprintf(at_weight, "%s_at_weight", ifname);
-		fprintf(fp, "airtime_bss_weight=%d\n", nvram_default_geti(at_weight, 1));
+		fprintf(fp, "airtime_bss_weight=%d\n",
+			nvram_default_geti(at_weight, 1));
 	}
 	if (nvram_matchi(airtime, 2)) {
 		char at_limit[32];
 		sprintf(at_limit, "%s_at_limit", ifname);
-		fprintf(fp, "airtime_bss_limit=%d\n", nvram_default_geti(at_limit, 0));
+		fprintf(fp, "airtime_bss_limit=%d\n",
+			nvram_default_geti(at_limit, 0));
 	}
 #endif
 
@@ -1688,7 +1893,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	nvram_default_get(rts, "500");
 
 	if (nvram_nmatch("1", "%s_rts", ifname)) {
-		fprintf(fp, "rts_threshold=%s\n", nvram_nget("%s_rtsvalue", ifname));
+		fprintf(fp, "rts_threshold=%s\n",
+			nvram_nget("%s_rtsvalue", ifname));
 	}
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
@@ -1701,24 +1907,36 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			char *next;
 			int oexists = 0;
 			char *vifs = nvram_nget("%s_vifs", maininterface);
-			foreach(oif, vifs, next) {
-				if (!strcmp(oif, owe_ifname) && !nvram_nmatch("disabled", "%s_net_mode", owe_ifname) && !nvram_nmatch("disabled", "%s_mode", owe_ifname)) {
+			foreach(oif, vifs, next)
+			{
+				if (!strcmp(oif, owe_ifname) &&
+				    !nvram_nmatch("disabled", "%s_net_mode",
+						  owe_ifname) &&
+				    !nvram_nmatch("disabled", "%s_mode",
+						  owe_ifname)) {
 					oexists = 1;
 				}
-
 			}
 
-			if (oexists && nvram_nmatch("1", "%s_owe", owe_ifname)) {
-				fprintf(fp, "owe_transition_ifname=%s\n", owe_ifname);
+			if (oexists &&
+			    nvram_nmatch("1", "%s_owe", owe_ifname)) {
+				fprintf(fp, "owe_transition_ifname=%s\n",
+					owe_ifname);
 			}
 		}
 	}
 #ifdef HAVE_WPA3
 	if (nvram_nmatch("1", "%s_80211v", ifname)) {
-		fprintf(fp, "wnm_sleep_mode=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode", ifname) ? 1 : 0);
-		fprintf(fp, "wnm_sleep_mode_no_keys=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname) ? 1 : 0);
-		fprintf(fp, "bss_transition=%d\n", nvram_nmatch("1", "%s_bss_transition", ifname) ? 1 : 0);
-		if (nvram_nmatch("1", "%s_proxy_arp", ifname) && nvram_nmatch("1", "%s_bridged", ifname)) {
+		fprintf(fp, "wnm_sleep_mode=%d\n",
+			nvram_nmatch("1", "%s_wnm_sleep_mode", ifname) ? 1 : 0);
+		fprintf(fp, "wnm_sleep_mode_no_keys=%d\n",
+			nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname) ?
+				1 :
+				0);
+		fprintf(fp, "bss_transition=%d\n",
+			nvram_nmatch("1", "%s_bss_transition", ifname) ? 1 : 0);
+		if (nvram_nmatch("1", "%s_proxy_arp", ifname) &&
+		    nvram_nmatch("1", "%s_bridged", ifname)) {
 			fprintf(fp, "ap_isolate=1\n");
 			fprintf(fp, "proxy_arp=1\n");
 		} else {
@@ -1742,14 +1960,20 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	}
 	if (nvram_nmatch("1", "%s_80211k", ifname)) {
-		fprintf(fp, "rrm_neighbor_report=%d\n", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
-		fprintf(fp, "rrm_beacon_report=%d\n", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
+		fprintf(fp, "rrm_neighbor_report=%d\n",
+			nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ?
+				1 :
+				0);
+		fprintf(fp, "rrm_beacon_report=%d\n",
+			nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 :
+									    0);
 	}
 	if (nvram_nmatch("1", "%s_mbo", ifname)) {
 		fprintf(fp, "mbo=1\n");
 		char mbo_pref[64];
 		sprintf(mbo_pref, "%s_mbo_cell_data_conn_pref", ifname);
-		fprintf(fp, "mbo_cell_data_conn_pref=%s\n", nvram_default_get(mbo_pref, "0"));
+		fprintf(fp, "mbo_cell_data_conn_pref=%s\n",
+			nvram_default_get(mbo_pref, "0"));
 	}
 #endif
 	MAC80211DEBUG();
@@ -1759,10 +1983,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
 	fclose(fp);
-
 }
 
-void addvhtcaps(char *prefix, FILE * fp);
+void addvhtcaps(char *prefix, FILE *fp);
 
 static char *makescanlist(char *prefix, char *value)
 {
@@ -1774,8 +1997,9 @@ static char *makescanlist(char *prefix, char *value)
 	struct wifi_channels *chan;
 	char *country;
 	country = nvram_default_get("wlan0_regdomain", "UNITED_STATES");
-	chan = mac80211_get_channels_simple(prefix, getIsoName(country), 20, 255);
-/* format list */
+	chan = mac80211_get_channels_simple(prefix, getIsoName(country), 20,
+					    255);
+	/* format list */
 	for (i = 0; i < len; i++) {
 		if (clone[i] == ';')
 			clone[i] = ' ';
@@ -1784,7 +2008,8 @@ static char *makescanlist(char *prefix, char *value)
 	}
 	char *next;
 	char var[128];
-	foreach(var, clone, next) {
+	foreach(var, clone, next)
+	{
 		char *sep = strchr(var, '-');
 		if (!sep) {
 			char *old = new;
@@ -1826,14 +2051,14 @@ static char *makescanlist(char *prefix, char *value)
 				for (i = soffset; i <= eoffset; i++) {
 					char *old = new;
 					if (!new)
-						asprintf(&new, "%d", chan[i].freq);
+						asprintf(&new, "%d",
+							 chan[i].freq);
 					else {
-						asprintf(&new, "%s %d", old, chan[i].freq);
+						asprintf(&new, "%s %d", old,
+							 chan[i].freq);
 						free(old);
 					}
-
 				}
-
 			}
 		}
 	}
@@ -1842,7 +2067,8 @@ static char *makescanlist(char *prefix, char *value)
 	return new;
 }
 
-static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, int isadhoc, int ismesh)
+static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride,
+				   int isadhoc, int ismesh)
 {
 	MAC80211DEBUG();
 	char nfreq[32];
@@ -1855,10 +2081,11 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 	if (ismesh) {
 		fprintf(fp, "\tmode=5\n");
 		sprintf(fwd, "%s_mesh_fwding", prefix);
-		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1")));
+		fprintf(fp, "\tmesh_fwding=%d\n",
+			atoi(nvram_default_get(fwd, "1")));
 	} else
 		fprintf(fp, "\tmode=1\n");
-	// autochannel 
+	// autochannel
 	sprintf(nfreq, "%s_channel", prefix);
 	sprintf(nfreq2, "%s_channel2", prefix);
 	freq = atoi(nvram_default_get(nfreq, "0"));
@@ -1869,8 +2096,11 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 	int iht, channeloffset;
 	if (nvram_default_matchi(bw, 20, 20)) {
 		sprintf(ht, "20");
-	} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
-		const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
+	} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") ||
+		   nvram_match(bw, "80") || nvram_match(bw, "80+80") ||
+		   nvram_match(bw, "160")) {
+		const char *cht =
+			get_channeloffset(prefix, &iht, &channeloffset);
 		sprintf(ht, cht + 2);
 		fprintf(fp, "\tht40=1\n");
 	}
@@ -1878,23 +2108,28 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 		// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 		fprintf(fp, "\thtmode=HT%s\n", ht);
 	/* todo. consider mode configuration */
-	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
+	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") ||
+	    nvram_match(bw, "160")) {
 		fprintf(fp, "\tvht=1\n");
 		if (has_ax(prefix))
 			fprintf(fp, "\the=1\n");
 	}
 	if (nvram_match(bw, "80")) {
 		fprintf(fp, "\tmax_oper_chwidth=1\n");
-		fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+		fprintf(fp, "\tvht_center_freq1=%d\n",
+			freq + (channeloffset * 5));
 	}
 	if (nvram_match(bw, "80+80")) {
 		fprintf(fp, "\tmax_oper_chwidth=3\n");
-		fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-		fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
+		fprintf(fp, "\tvht_center_freq1=%d\n",
+			freq + (channeloffset * 5));
+		fprintf(fp, "\tvht_center_freq2=%d\n",
+			nvram_geti(nfreq2)); // todo
 	}
 	if (nvram_match(bw, "160")) {
 		fprintf(fp, "\tmax_oper_chwidth=2\n");
-		fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+		fprintf(fp, "\tvht_center_freq1=%d\n",
+			freq + (channeloffset * 5));
 	}
 	if (isadhoc) {
 		char *cellid = nvram_nget("%s_cellid", prefix);
@@ -1906,17 +2141,18 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 			char cellidssid[5];
 			memset(cellidssid, 0, 5);
 			strncpy(cellidssid, ssidoverride, 5);
-			fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
+			fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n",
+				cellidssid[0], cellidssid[1], cellidssid[2],
+				cellidssid[3], cellidssid[4]);
 		}
 #endif
 	}
 	MAC80211DEBUG();
-
 }
 
-void addbssid(FILE * fp, char *prefix);
-void eap_sta_key_mgmt(FILE * fp, char *prefix);
-void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht);
+void addbssid(FILE *fp, char *prefix);
+void eap_sta_key_mgmt(FILE *fp, char *prefix);
+void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht);
 
 void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 {
@@ -1974,29 +2210,38 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		}
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
+		fprintf(fp, "eapol_version=%s\n",
+			nvram_default_get(eapol, "1"));
 		if (ispsk3)
 			fprintf(fp, "sae_groups=19 20 21\n");
-//              if (ismesh)
-//                      fprintf(fp, "user_mpm=1\n");
+		//              if (ismesh)
+		//                      fprintf(fp, "user_mpm=1\n");
 		fprintf(fp, "network={\n");
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
-		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "ac-only") &&
+		    strcmp(netmode, "acn-mixed") &&
+		    strcmp(netmode, "ax-only") &&
+		    strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_vht=1\n");
 			if (has_ax(prefix))
 				fprintf(fp, "\tdisable_he=1\n");
 		}
 		if (has_ax(prefix)) {
-			if (strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
+			if (strcmp(netmode, "ax-only") &&
+			    strcmp(netmode, "xacn-mixed") &&
+			    strcmp(netmode, "mixed")) {
 				fprintf(fp, "\tdisable_he=1\n");
 			}
 		}
 
-		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
-		    && strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "ax-only")
-		    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
-		    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only") &&
+		    strcmp(netmode, "ac-only") &&
+		    strcmp(netmode, "acn-mixed") &&
+		    strcmp(netmode, "xacn-mixed") &&
+		    strcmp(netmode, "ax-only") && strcmp(netmode, "n5-only") &&
+		    strcmp(netmode, "na-only") && strcmp(netmode, "ng-only") &&
+		    strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_ht=1\n");
 		}
 		if (atoi(channelbw) < 40) {
@@ -2008,7 +2253,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
 		if (isadhoc || ismesh) {
-			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
+			supplicant_common_mesh(fp, prefix, ssidoverride,
+					       isadhoc, ismesh);
 		} else {
 			addbssid(fp, prefix);
 			fprintf(fp, "\tscan_ssid=1\n");
@@ -2022,10 +2268,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			free(scanlist);
 		}
 
-		if (nvram_nmatch("simple", "%s_bgscan_mode", prefix) || nvram_nmatch("learn", "%s_bgscan_mode", prefix)) {
-			int bgscan_short_int = nvram_ngeti("%s_bgscan_short_int", prefix);
-			int bgscan_threshold = nvram_ngeti("%s_bgscan_threshold", prefix);
-			int bgscan_long_int = nvram_ngeti("%s_bgscan_long_int", prefix);
+		if (nvram_nmatch("simple", "%s_bgscan_mode", prefix) ||
+		    nvram_nmatch("learn", "%s_bgscan_mode", prefix)) {
+			int bgscan_short_int =
+				nvram_ngeti("%s_bgscan_short_int", prefix);
+			int bgscan_threshold =
+				nvram_ngeti("%s_bgscan_threshold", prefix);
+			int bgscan_long_int =
+				nvram_ngeti("%s_bgscan_long_int", prefix);
 
 			if (!bgscan_short_int || bgscan_short_int == 0)
 				bgscan_short_int = 30;
@@ -2034,17 +2284,20 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (!bgscan_long_int || bgscan_long_int == 0)
 				bgscan_long_int = 300;
 			if (nvram_nmatch("simple", "%s_bgscan_mode", prefix))
-				fprintf(fp, "\tbgscan=\"simple:%d:%d:%d\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int);
+				fprintf(fp, "\tbgscan=\"simple:%d:%d:%d\"\n",
+					bgscan_short_int, bgscan_threshold,
+					bgscan_long_int);
 			else {
 				char db[32];
 				sprintf(db, "/tmp/%s_bgscan.db", prefix);
-				fprintf(fp, "\tbgscan=\"learn:%d:%d:%d:%s\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int, db);
+				fprintf(fp, "\tbgscan=\"learn:%d:%d:%d:%s\"\n",
+					bgscan_short_int, bgscan_threshold,
+					bgscan_long_int, db);
 			}
-
 		}
-//#ifdef HAVE_UNIWIP
-//              fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
-//#endif
+		//#ifdef HAVE_UNIWIP
+		//              fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
+		//#endif
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tkey_mgmt=");
 		if (ispsk2 || ispsk)
@@ -2060,17 +2313,15 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "FT-PSK ");
 #endif
 		fprintf(fp, "\n");
-		char pwstring[128] = {
-			0
-		};
-		char grpstring[128] = {
-			0
-		};
+		char pwstring[128] = { 0 };
+		char grpstring[128] = { 0 };
 		get_pairwise(prefix, pwstring, grpstring, isadhoc, ismesh);
 #ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, 1, 0) || ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk)))
+		if (nvram_default_matchi(mfp, 1, 0) ||
+		    ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk)))
 			fprintf(fp, "\tieee80211w=2\n");
-		else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || ispsk2sha256) {
+		else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 ||
+			 ispsk2sha256) {
 			fprintf(fp, "\tieee80211w=1\n");
 		} else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
@@ -2088,7 +2339,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 					fprintf(fp, "\tgroup=CCMP\n");
 				else
 #endif
-				if (ismesh)
+					if (ismesh)
 					fprintf(fp, "\tgroup=CCMP\n");
 				else
 					fprintf(fp, "\tgroup=CCMP TKIP\n");
@@ -2165,7 +2416,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
+		fprintf(fp, "eapol_version=%s\n",
+			nvram_default_get(eapol, "1"));
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		eap_sta_config(fp, prefix, ssidoverride, 1);
 
@@ -2195,15 +2447,20 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		fprintf(fp, "network={\n");
 
-		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "ac-only") &&
+		    strcmp(netmode, "acn-mixed") &&
+		    strcmp(netmode, "ax-only") &&
+		    strcmp(netmode, "xacn-mixed") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_vht=1\n");
 		}
 
-		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
-		    && strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")
-		    && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed")
-		    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
-		    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only") &&
+		    strcmp(netmode, "ac-only") &&
+		    strcmp(netmode, "acn-mixed") &&
+		    strcmp(netmode, "ax-only") &&
+		    strcmp(netmode, "xacn-mixed") &&
+		    strcmp(netmode, "n5-only") && strcmp(netmode, "na-only") &&
+		    strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_ht=1\n");
 		} else {
 			if (atoi(channelbw) < 40) {
@@ -2218,7 +2475,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
 		if (ismesh || isadhoc) {
-			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
+			supplicant_common_mesh(fp, prefix, ssidoverride,
+					       isadhoc, ismesh);
 		} else {
 			addbssid(fp, prefix);
 			fprintf(fp, "\tscan_ssid=1\n");
@@ -2232,9 +2490,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			else
 				fprintf(fp, "auth_alg=OPEN\n");
 			for (i = 1; i < 5; i++) {
-				char *athkey = nvram_nget("%s_key%d", prefix, i);
+				char *athkey =
+					nvram_nget("%s_key%d", prefix, i);
 				if (athkey != NULL && *athkey) {
-					fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);	// setup wep
+					fprintf(fp, "wep_key%d=%s\n", i - 1,
+						athkey); // setup wep
 				}
 			}
 
@@ -2248,7 +2508,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fclose(fp);
 	}
 	MAC80211DEBUG();
-
 }
 
 int vhtcaps_main(int argc, char *argv[])
@@ -2278,17 +2537,21 @@ int vhtcaps_main(int argc, char *argv[])
 	sprintf(mubf, "%s_mubf", maininterface);
 	char subf[32];
 	sprintf(subf, "%s_subf", maininterface);
-	char *caps = mac80211_get_vhtcaps(maininterface, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
-					  nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
+	char *caps = mac80211_get_vhtcaps(
+		maininterface, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0,
+		(usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0,
+		usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+		nvram_default_matchi(subf, 1, 0),
+		nvram_default_matchi(mubf, 1, 0));
 	fprintf(stdout, "%s: caps = %s\n", argv[0], caps);
 }
 
 extern void do_hostapd(char *fstr, char *prefix);
 void ath9k_start_supplicant(int count, char *prefix)
 {
-// erst hostapd starten fuer repeater mode
-// dann wpa_supplicant mit link zu hostapd
-// dann bridgen und konfiguriren
+	// erst hostapd starten fuer repeater mode
+	// dann wpa_supplicant mit link zu hostapd
+	// dann bridgen und konfiguriren
 	MAC80211DEBUG();
 	char *next;
 	char var[80];
@@ -2344,23 +2607,25 @@ void ath9k_start_supplicant(int count, char *prefix)
 		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
 	}
 
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik")
-	    && strcmp(apm, "infra")
-	    && strcmp(apm, "mesh")
-	    && strcmp(apm, "tdma")
-	    && strcmp(apm, "wet")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") &&
+	    strcmp(apm, "wdssta_mtik") && strcmp(apm, "infra") &&
+	    strcmp(apm, "mesh") && strcmp(apm, "tdma") && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
 	} else {
 		if (*vifs) {
 			int ctrl = 0;
 			int last = 0;
-			foreach(var, vifs, next) {
+			foreach(var, vifs, next)
+			{
 				ctrl++;
-				if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
+				if (nvram_nmatch("disabled", "%s_net_mode",
+						 var) ||
+				    nvram_nmatch("disabled", "%s_mode", var))
 					continue;
 				last = ctrl;
-				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+				if (nvram_nmatch("ap", "%s_mode", var) ||
+				    nvram_nmatch("wdsap", "%s_mode", var))
 					break;
 			}
 			ctrl = last;
@@ -2373,35 +2638,61 @@ void ath9k_start_supplicant(int count, char *prefix)
 			}
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik")
-				     || wet)
-				    && nvram_matchi(bridged, 1))
-					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+			if (!nvram_match(wmode, "mesh") &&
+			    !nvram_match(wmode, "infra")) {
+				if ((nvram_match(wmode, "wdssta") ||
+				     nvram_match(wmode, "mesh") ||
+				     nvram_match(wmode, "wdsta_mtik") || wet) &&
+				    nvram_matchi(bridged, 1))
+					log_eval("wpa_supplicant", "-P", pid,
+						 "-b", getBridge(dev, tmp),
+						 background, "-Dnl80211",
+						 subinterface, "-H", ctrliface,
+						 "-c", fstr);
 				else
-					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+					log_eval("wpa_supplicant", "-P", pid,
+						 background, "-Dnl80211",
+						 subinterface, "-H", ctrliface,
+						 "-c", fstr);
 			} else {
 				/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
 				if (nvram_matchi(bridged, 1))
-					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+					log_eval("wpa_supplicant", "-P", pid,
+						 "-b", getBridge(dev, tmp),
+						 background, "-Dnl80211",
+						 subinterface, "-c", fstr);
 				else
-					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
+					log_eval("wpa_supplicant", "-P", pid,
+						 background, "-Dnl80211",
+						 subinterface, "-c", fstr);
 			}
-			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
+			if (nvram_match(wmode, "mesh") ||
+			    nvram_match(wmode, "infra")) {
 				/* now start hostapd once wpa_supplicant has been started */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 				do_hostapd(fstr, dev);
 			}
 		} else {
-		      skip:;
+skip:;
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdssta_mtik") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik") || wet) && nvram_matchi(bridged, 1)) {
-					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+			if (nvram_match(wmode, "sta") ||
+			    nvram_match(wmode, "wdssta") ||
+			    nvram_match(wmode, "wdssta_mtik") || wet ||
+			    nvram_match(wmode, "infra") ||
+			    nvram_match(wmode, "mesh")) {
+				if ((nvram_match(wmode, "wdssta") ||
+				     nvram_match(wmode, "mesh") ||
+				     nvram_match(wmode, "wdsta_mtik") || wet) &&
+				    nvram_matchi(bridged, 1)) {
+					log_eval("wpa_supplicant", "-P", pid,
+						 "-b", getBridge(dev, tmp),
+						 background, "-Dnl80211",
+						 subinterface, "-c", fstr);
 				} else {
-					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
+					log_eval("wpa_supplicant", "-P", pid,
+						 background, "-Dnl80211",
+						 subinterface, "-c", fstr);
 				}
-
 			}
 		}
 	}
@@ -2421,14 +2712,15 @@ void ath9k_start_supplicant(int count, char *prefix)
 		} else {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
+			     "netmask", nvram_nget("%s_netmask", dev), "up");
 		}
 	} else {
 #ifdef HAVE_RELAYD
 		if (!strcmp(apm, "wet")) {
 			eval("ifconfig", dev, "0.0.0.0", "up");
-//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
-//                                dev);
+			//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
+			//                                dev);
 		}
 #endif
 
@@ -2437,34 +2729,49 @@ void ath9k_start_supplicant(int count, char *prefix)
 		if (nvram_default_matchi(bridged, 0, 1)) {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
+			     "netmask", nvram_nget("%s_netmask", dev), "up");
 		}
 	}
 
 	if (*vifs) {
-		foreach(var, vifs, next) {
+		foreach(var, vifs, next)
+		{
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_safe_get(mode);
 			char bridged[32];
 			sprintf(bridged, "%s_bridged", var);
 			if (!strcmp(m2, "mesh")) {
-				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
+				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf",
+					var);
 				sprintf(subinterface, "-i%s", var);
 				if (nvram_matchi(bridged, 1))
-					log_eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+					log_eval("wpa_supplicant", "-b",
+						 getBridge(var, tmp),
+						 background, "-Dnl80211",
+						 subinterface, "-c", fstr);
 				else {
-					log_eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+					log_eval("wpa_supplicant", background,
+						 "-Dnl80211", subinterface,
+						 "-c", fstr);
 				}
 			}
 
 			if (strcmp(m2, "sta")) {
 				if (nvram_default_matchi(bridged, 1, 1)) {
 					eval("ifconfig", dev, "0.0.0.0", "up");
-					br_add_interface(getBridge(var, tmp), var);
+					br_add_interface(getBridge(var, tmp),
+							 var);
 				} else {
-					eval("ifconfig", var, "mtu", getMTU(var));
-					eval("ifconfig", var, "txqueuelen", getTXQ(var));
-					eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask", nvram_nget("%s_netmask", var), "up");
+					eval("ifconfig", var, "mtu",
+					     getMTU(var));
+					eval("ifconfig", var, "txqueuelen",
+					     getTXQ(var));
+					eval("ifconfig", var,
+					     nvram_nget("%s_ipaddr", var),
+					     "netmask",
+					     nvram_nget("%s_netmask", var),
+					     "up");
 				}
 			}
 		}
@@ -2472,15 +2779,9 @@ void ath9k_start_supplicant(int count, char *prefix)
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
 		int s;
 		for (s = 1; s <= 10; s++) {
-			char wdsvarname[32] = {
-				0
-			};
-			char wdsdevname[32] = {
-				0
-			};
-			char wdsmacname[32] = {
-				0
-			};
+			char wdsvarname[32] = { 0 };
+			char wdsdevname[32] = { 0 };
+			char wdsmacname[32] = { 0 };
 			char *wdsdev;
 			char *hwaddr;
 			sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
@@ -2493,8 +2794,10 @@ void ath9k_start_supplicant(int count, char *prefix)
 				continue;
 			hwaddr = nvram_safe_get(wdsmacname);
 			if (*hwaddr) {
-				eval("iw", wif, "interface", "add", wdsdev, "type", "wds");
-				eval("iw", "dev", wdsdev, "set", "peer", hwaddr);
+				eval("iw", wif, "interface", "add", wdsdev,
+				     "type", "wds");
+				eval("iw", "dev", wdsdev, "set", "peer",
+				     hwaddr);
 				eval("ifconfig", wdsdev, "0.0.0.0", "up");
 			}
 		}
@@ -2507,7 +2810,9 @@ void ath9k_start_supplicant(int count, char *prefix)
 	if (is_ath10k(dev)) {
 		char wl_po[32];
 		sprintf(wl_po, "%s_power_override", dev);
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override", nvram_default_get(wl_po, "0"), wif);
+		sysprintf(
+			"echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override",
+			nvram_default_get(wl_po, "0"), wif);
 	}
 	char wl_intmit[32];
 	sprintf(wl_intmit, "%s_intmit", dev);
@@ -2519,26 +2824,40 @@ void ath9k_start_supplicant(int count, char *prefix)
 	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
 	if (is_ath10k(dev)) {
 		if (has_qboost(dev)) {
-			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
+			sysprintf(
+				"echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable",
+				nvram_default_get(wl_qboost, "0"), wif);
 			if (has_qboost_tdma(dev)) {
-				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time", nvram_default_get(wl_sifs_trigger_time, "0"), wif);
+				sysprintf(
+					"echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time",
+					nvram_default_get(wl_sifs_trigger_time,
+							  "0"),
+					wif);
 			}
 		}
 		if (nvram_match("experimental", "1")) {
 			if (has_wave2(dev)) {
-				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
+				sysprintf(
+					"echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst",
+					nvram_default_get(wl_autoburst, "0"),
+					wif);
 			}
 		}
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
+		sysprintf(
+			"echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable",
+			nvram_default_get(wl_intmit, "0"), wif);
 	}
 	if (is_ath9k(dev))
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani",
+			  nvram_default_get(wl_intmit, "1"), wif);
 
 	MAC80211DEBUG();
 	if (has_airtime_fairness(dev)) {
 		char atf[32];
 		sprintf(atf, "%s_atf", dev);
-		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
+		sysprintf(
+			"echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags",
+			nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
 	}
 	MAC80211DEBUG();
 	char bw[32];

@@ -32,13 +32,21 @@ void start_atm(void)
 {
 	sysprintf("/usr/sbin/dsl_cpe_pipe.sh ifcs 0 4 -320 0 0 0");
 	if (nvram_match("wan_proto", "bridge"))
-		sysprintf("br2684ctl -b -c 0 -e %s -p 1 -a 0.%s.%s", nvram_safe_get("atm_encaps"), nvram_safe_get("vpi"), nvram_safe_get("vci"));
+		sysprintf("br2684ctl -b -c 0 -e %s -p 1 -a 0.%s.%s",
+			  nvram_safe_get("atm_encaps"), nvram_safe_get("vpi"),
+			  nvram_safe_get("vci"));
 	else if (!nvram_match("wan_proto", "pppoa"))
-		sysprintf("br2684ctl -b -c 0 -e %s -p %s -a 0.%s.%s", nvram_safe_get("atm_encaps"), nvram_safe_get("atm_payld"), nvram_safe_get("vpi"), nvram_safe_get("vci"));
+		sysprintf("br2684ctl -b -c 0 -e %s -p %s -a 0.%s.%s",
+			  nvram_safe_get("atm_encaps"),
+			  nvram_safe_get("atm_payld"), nvram_safe_get("vpi"),
+			  nvram_safe_get("vci"));
 	dd_loginfo("atm", "DSL Modem interface created\n");
-	sysprintf("echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
-	sysprintf("echo nas0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
-	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
+	sysprintf(
+		"echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
+	sysprintf(
+		"echo nas0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
+	sysprintf(
+		"echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
 	cprintf("done\n");
 	return;
 }
@@ -46,9 +54,12 @@ void start_atm(void)
 void stop_atm(void)
 {
 	stop_process("br2684ctl", "ATM: DSL Modem interface removed");
-	sysprintf("echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
-	sysprintf("echo ppp0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
-	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
+	sysprintf(
+		"echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
+	sysprintf(
+		"echo ppp0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
+	sysprintf(
+		"echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
 	cprintf("done\n");
 	return;
 }

@@ -29,8 +29,7 @@
 #include <wlutils.h>
 #include <bcmnvram.h>
 
-
-extern struct nvram_param * load_defaults(void);
+extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
 extern int nvram_critical(char *name);

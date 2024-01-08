@@ -56,8 +56,10 @@ void start_upnp(void)
 
 void stop_upnp(void)
 {
-	stop_process("upnp", "daemon");	// we dont need to take care about SIGUSR1 anymore
-	unlink("/tmp/bcmupnp.pid");	// remove pid file if it exists, otherwise upnp wont restart if killed with SIGKILL
+	stop_process(
+		"upnp",
+		"daemon"); // we dont need to take care about SIGUSR1 anymore
+	unlink("/tmp/bcmupnp.pid"); // remove pid file if it exists, otherwise upnp wont restart if killed with SIGKILL
 	return;
 }
 

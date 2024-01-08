@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -59,15 +59,16 @@ static void install_sdcard(void)
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
 	FILE *fp = fopen("/boot/.installed", "rb");
-	if (fp != NULL)		// already locally installed?
+	if (fp != NULL) // already locally installed?
 	{
 		fclose(fp);
 		return;
 	}
-	sleep(10);		//give some time until sd is up
+	sleep(10); //give some time until sd is up
 	fprintf(stderr, "check if secondary device is available\n");
 	fp = fopen("/dev/sda", "rb");
-	if (fp == NULL)		// no cf disc installed or no sd card. doesnt matter, we exit if no secondary device is in
+	if (fp ==
+	    NULL) // no cf disc installed or no sd card. doesnt matter, we exit if no secondary device is in
 	{
 		fclose(fp);
 		return;
@@ -75,8 +76,7 @@ static void install_sdcard(void)
 	fclose(fp);
 	fprintf(stderr, "installing firmware to internal SD Card\n");
 	mkdir("/tmp/install", 0700);
-	int check = mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL,
-			  NULL);
+	int check = mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL, NULL);
 	if (check != 0) {
 		fprintf(stderr, "device isnt formated, use EXT2\n");
 		fp = fopen("/dev/sda", "rb");
@@ -86,11 +86,13 @@ static void install_sdcard(void)
 		size /= 4096;
 		char newsize[32];
 		sprintf(newsize, "%d", size);
-		eval("mkfs.ext4", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/sda", newsize);
+		eval("mkfs.ext4", "-b", "4096", "-N", "65536", "-L", "dd-wrt",
+		     "/dev/sda", newsize);
 		mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL, NULL);
 	}
 	fprintf(stderr, "copy files to SD Card\n");
-	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin", "/tmp/install/usr/local/nvram/nvram.bak");
+	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin",
+	     "/tmp/install/usr/local/nvram/nvram.bak");
 	eval("cp", "-R", "-d", "-f", "/boot", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/bin", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/etc", "/tmp/install");
@@ -103,7 +105,8 @@ static void install_sdcard(void)
 	eval("cp", "-R", "-d", "-f", "/usr", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/www", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/var", "/tmp/install");
-	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak", "/tmp/install/usr/local/nvram/nvram.bin");
+	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak",
+	     "/tmp/install/usr/local/nvram/nvram.bin");
 	mkdir("/tmp/install/dev", 0700);
 	mkdir("/tmp/install/sys", 0700);
 	mkdir("/tmp/install/proc", 0700);
@@ -146,7 +149,7 @@ void start_devinit(void)
 	// fix for linux kernel 2.6
 	mknod("/dev/ppp", S_IFCHR | 0644, makedev(108, 0));
 #endif
-// fix me udevtrigger does not create that (yet) not registered?
+	// fix me udevtrigger does not create that (yet) not registered?
 	mknod("/dev/nvram", S_IFCHR | 0644, makedev(229, 0));
 	mknod("/dev/watchdog", S_IFCHR | 0644, makedev(10, 130));
 
@@ -176,18 +179,20 @@ void start_devinit(void)
 	mkdir("/dev/misc", 0700);
 	mknod("/dev/misc/gpio", S_IFCHR | 0644, makedev(125, 0));
 #endif
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || \
+	defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	fprintf(stderr, "waiting for hotplug\n");
 	char s_dev[64];
 	char *s_disc = getdisc();
 
 	if (s_disc == NULL) {
-		fprintf(stderr, "no valid dd-wrt partition found, calling shell\n");
+		fprintf(stderr,
+			"no valid dd-wrt partition found, calling shell\n");
 		eval("/bin/sh");
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-	if (strlen(s_disc) == 7)	//mmcblk0 / nvme0n1
+	if (strlen(s_disc) == 7) //mmcblk0 / nvme0n1
 		sprintf(s_dev, "/dev/%sp3", s_disc);
 	else
 		sprintf(s_dev, "/dev/%s3", s_disc);
@@ -196,9 +201,11 @@ void start_devinit(void)
 	insmod("mbcache");
 	insmod("crc16");
 	insmod("ext4");
-	if (mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS, NULL)) {
+	if (mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS,
+		  NULL)) {
 		eval("mkfs.ext4", "-F", "-b", " 1024", s_dev);
-		mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS, NULL);
+		mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS,
+		      NULL);
 	}
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
@@ -210,7 +217,9 @@ void start_devinit(void)
 #if defined(HAVE_ATH10K)
 	eval("rm", "-f", "/tmp/ath10k-board.bin");
 	eval("ln", "-s", "/lib/ath10k/board.bin", "/tmp/ath10k-board.bin");
-#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN) && !defined(HAVE_NEWPORT) && !defined(HAVE_QCA9888)
+#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && \
+	!defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN) &&                    \
+	!defined(HAVE_NEWPORT) && !defined(HAVE_QCA9888)
 	eval("ln", "-s", "/lib/ath10k/board_9984.bin", "/tmp/board1.bin");
 #endif
 #endif
@@ -239,25 +248,25 @@ void start_devinit(void)
 #endif
 
 #ifdef HAVE_FQ_CODEL
-	if (!strcmp(aqd, "fq_codel")) {
+		if (!strcmp(aqd, "fq_codel")) {
 		insmod("sch_fq_codel");
 		writeprocsysnet("core/default_qdisc", "fq_codel");
 	} else
 #endif
 #ifdef HAVE_FQ_CODEL_FAST
-	if (!strcmp(aqd, "fq_codel_fast")) {
+		if (!strcmp(aqd, "fq_codel_fast")) {
 		insmod("sch_fq_codel_fast");
 		writeprocsysnet("core/default_qdisc", "fq_codel_fast");
 	} else
 #endif
 #ifdef HAVE_PIE
-	if (!strcmp(aqd, "pie")) {
+		if (!strcmp(aqd, "pie")) {
 		insmod("sch_pie");
 		writeprocsysnet("core/default_qdisc", "pie");
 	} else
 #endif
 #ifdef HAVE_CAKE
-	if (!strcmp(aqd, "cake")) {
+		if (!strcmp(aqd, "cake")) {
 		insmod("sch_cake");
 		writeprocsysnet("core/default_qdisc", "cake");
 	} else
@@ -276,7 +285,7 @@ void start_devinit(void)
 	int cpucount = 1
 #endif
 #ifdef HAVE_IRQBALANCE
-	    if (cpucount > 1) {
+	if (cpucount > 1) {
 		/* do not start irqbalance if it doesnt make sense at all, it will just create bogus warnings */
 		mkdir("/var/run/irqbalance", 0777);
 		eval("irqbalance", "-t", "10");
@@ -287,7 +296,8 @@ void start_devinit(void)
 	char *disk = getdisc();
 
 	if (disk == NULL) {
-		fprintf(stderr, "no valid dd-wrt partition found, calling shell");
+		fprintf(stderr,
+			"no valid dd-wrt partition found, calling shell");
 		eval("/bin/sh");
 		exit(0);
 	}
@@ -322,7 +332,8 @@ void start_devinit(void)
 		unsigned char *mem = malloc(size);
 		fread(mem, size, 1, in);
 		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 &&
+		    mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
 			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {
@@ -358,7 +369,8 @@ void start_devinit(void)
 		unsigned char *mem = malloc(size);
 		fread(mem, size, 1, in);
 		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 &&
+		    mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
 			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {

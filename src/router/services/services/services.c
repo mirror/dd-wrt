@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -87,11 +87,15 @@ void genHosts(void)
 	eval("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1", 0);
 	if (*(nvram_safe_get("wan_hostname"))) {
-		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
-		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
+		addHost(nvram_safe_get("wan_hostname"),
+			nvram_safe_get("lan_ipaddr"), 0);
+		addHost(nvram_safe_get("wan_hostname"),
+			nvram_safe_get("lan_ipaddr"), 1);
 	} else if (*(nvram_safe_get("router_name"))) {
-		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
-		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
+		addHost(nvram_safe_get("router_name"),
+			nvram_safe_get("lan_ipaddr"), 0);
+		addHost(nvram_safe_get("router_name"),
+			nvram_safe_get("lan_ipaddr"), 1);
 	}
 }
 
@@ -107,7 +111,8 @@ void addHost(char *host, char *ip, int withdomain)
 	strcpy(newhost, host);
 	char *domain = nvram_safe_get("lan_domain");
 
-	if (withdomain && domain != NULL && *domain && strcmp(host, "localhost")) {
+	if (withdomain && domain != NULL && *domain &&
+	    strcmp(host, "localhost")) {
 		sprintf(newhost, "%s.%s", host, domain);
 	} else
 		sprintf(newhost, "%s", host);
@@ -218,23 +223,28 @@ void stop_dhcpc(void)
 		int pid;
 		fscanf(fp, "%d", &pid);
 		fclose(fp);
-		dd_loginfo("udhcpc", "udhcp client process successfully stopped\n");
+		dd_loginfo("udhcpc",
+			   "udhcp client process successfully stopped\n");
 		kill(pid, SIGTERM);
 	}
 #ifdef HAVE_3G
 	if (nvram_match("3gdata", "sierradirectip")) {
-		sysprintf("comgt -d %s -s /etc/comgt/hangup-dip.comgt\n", nvram_safe_get("3gcontrol"));
+		sysprintf("comgt -d %s -s /etc/comgt/hangup-dip.comgt\n",
+			  nvram_safe_get("3gcontrol"));
 	}
 #endif
 #ifdef HAVE_LIBMBIM
 	if (nvram_match("3gdata", "mbim")) {
-		sysprintf("/usr/sbin/mbim-network --profile=/tmp/mbim-net-conf.conf /dev/cdc-wdm0 stop\n");
+		sysprintf(
+			"/usr/sbin/mbim-network --profile=/tmp/mbim-net-conf.conf /dev/cdc-wdm0 stop\n");
 		sysprintf("echo 0 >/tmp/mbimstatus\n");
 	}
 #endif
 #ifdef HAVE_UQMI
 	if (nvram_match("3gdata", "qmi")) {
-		sysprintf("/usr/sbin/uqmi -s -d /dev/cdc-wdm0 --stop-network %s\n", nvram_safe_get("3g_pdh"));
+		sysprintf(
+			"/usr/sbin/uqmi -s -d /dev/cdc-wdm0 --stop-network %s\n",
+			nvram_safe_get("3g_pdh"));
 		sysprintf("echo 0 >/tmp/qmistatus\n");
 	}
 #endif
@@ -246,7 +256,6 @@ extern void start_heartbeat_boot(void);
 
 void stop_force_to_dial(void)
 {
-
 }
 
 /*
@@ -260,17 +269,13 @@ void start_force_to_dial(void)
 
 	strcpy(&dst[0], nvram_safe_get("wan_gateway"));
 
-	char *ping_argv[] = { "ping",
-		"-c", "1",
-		dst,
-		NULL
-	};
+	char *ping_argv[] = { "ping", "-c", "1", dst, NULL };
 
 	sleep(1);
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp")) {
-
-		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control", nvram_safe_get("l2tp_server_name"));
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",
+			  nvram_safe_get("l2tp_server_name"));
 		return;
 	}
 #endif

@@ -54,7 +54,9 @@
 
 #include "devices/wireless.c"
 
-#define sys_reboot() eval("sync"); eval("event","3","1","15")
+#define sys_reboot()  \
+	eval("sync"); \
+	eval("event", "3", "1", "15")
 
 extern void vlan_init(int num);
 
@@ -75,7 +77,7 @@ struct mylo_eth_addr {
 };
 
 struct mylo_board_params {
-	uint32_t magic;		/* must be MYLO_MAGIC_BOARD_PARAMS */
+	uint32_t magic; /* must be MYLO_MAGIC_BOARD_PARAMS */
 	uint32_t res0;
 	uint32_t res1;
 	uint32_t res2;
@@ -93,8 +95,9 @@ void start_change_mac(void)
 
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 	fp = fopen(mtdpath, "rb");
-      nexttry:;
-	fprintf(stdout, "MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->");
+nexttry:;
+	fprintf(stdout,
+		"MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->");
 	char maddr[64];
 
 	fscanf(stdin, "%s", maddr);
@@ -108,7 +111,9 @@ void start_change_mac(void)
 	}
 	//valid;
 	for (i = 0; i < 6; i++)
-		sprintf(os, "%02x%02x%02x%02x%02x%02x", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
+		sprintf(os, "%02x%02x%02x%02x%02x%02x", newmac[0] & 0xff,
+			newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff,
+			newmac[4] & 0xff, newmac[5] & 0xff);
 	fprintf(stderr, "new mac will be %s\n", os);
 	FILE *tmp = fopen("/tmp/boot.bin", "w+b");
 
@@ -121,7 +126,6 @@ void start_change_mac(void)
 	fclose(tmp);
 	eval("mtd", "-f", "write", "/tmp/boot.bin", "boot");
 	fclose(fp);
-
 }
 
 void start_sysinit(void)
@@ -201,8 +205,8 @@ void start_sysinit(void)
 	insmod("adm5120_wdt");
 	insmod("adm5120sw");
 
-	if (getRouterBrand() != ROUTER_BOARD_WP54G && getRouterBrand() != ROUTER_BOARD_NP28G) {
-
+	if (getRouterBrand() != ROUTER_BOARD_WP54G &&
+	    getRouterBrand() != ROUTER_BOARD_NP28G) {
 		unsigned char mac[6];
 		char eabuf[32];
 		char mtdpath[32];
@@ -234,7 +238,6 @@ void start_sysinit(void)
 					fclose(fp);
 					start_change_mac();
 					sys_reboot();
-
 				}
 				for (i = 0; i < 6; i++) {
 					mac[i] = toNumeric(os[count++]) * 16;
@@ -260,15 +263,17 @@ void start_sysinit(void)
 					set_ether_hwaddr("eth0", mac);
 					char macaddr[32];
 					if (get_hwaddr("eth0", macaddr)) {
-						nvram_set("et0macaddr", macaddr);
-						nvram_set("et0macaddr_safe", macaddr);
+						nvram_set("et0macaddr",
+							  macaddr);
+						nvram_set("et0macaddr_safe",
+							  macaddr);
 					}
-
 				}
 			}
 
 			if (foundmac == 0) {
-				fprintf(stderr, "error: no valid mac address found for eth0\n");
+				fprintf(stderr,
+					"error: no valid mac address found for eth0\n");
 			}
 			fclose(fp);
 		}
@@ -297,7 +302,6 @@ void start_sysinit(void)
 					nvram_set("et0macaddr", macaddr);
 					nvram_set("et0macaddr_safe", macaddr);
 				}
-
 			}
 		}
 	}

@@ -48,7 +48,8 @@ void start_telnetd(void)
 
 	if (!nvram_invmatchi("telnetd_enable", 0))
 		return;
-	if (nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS))
+	if (nvram_match("http_username", DEFAULT_USER) &&
+	    nvram_match("http_passwd", DEFAULT_PASS))
 		return;
 
 #ifdef HAVE_REGISTER

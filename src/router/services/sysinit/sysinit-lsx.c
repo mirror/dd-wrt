@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -98,7 +98,10 @@ void start_sysinit(void)
 	if (offsetmac1 != -1) {
 		char mac[32];
 
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac1], copy[1 + offsetmac1], copy[2 + offsetmac1], copy[3 + offsetmac1], copy[4 + offsetmac1], copy[5 + offsetmac1]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0 + offsetmac1], copy[1 + offsetmac1],
+			copy[2 + offsetmac1], copy[3 + offsetmac1],
+			copy[4 + offsetmac1], copy[5 + offsetmac1]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 		/*
@@ -111,7 +114,10 @@ void start_sysinit(void)
 		 * 
 		 */
 		if (offsetmac2 != -1) {
-			sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac2], copy[1 + offsetmac2], copy[2 + offsetmac2], copy[3 + offsetmac2], copy[4 + offsetmac2], copy[5 + offsetmac2]);
+			sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+				copy[0 + offsetmac2], copy[1 + offsetmac2],
+				copy[2 + offsetmac2], copy[3 + offsetmac2],
+				copy[4 + offsetmac2], copy[5 + offsetmac2]);
 		} else {
 			MAC_ADD(mac);
 		}
@@ -145,7 +151,8 @@ void start_sysinit(void)
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
 
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+				copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure ETH0 to %s\n", mac);
 			nvram_set("et0macaddr_safe", mac);
 			set_hwaddr("eth0", mac);
@@ -153,14 +160,14 @@ void start_sysinit(void)
 			fread(&buf[6], 6, 1, fp);
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6],
+				copy[7], copy[8], copy[9], copy[10], copy[11]);
 			fprintf(stderr, "configure ETH1 to %s\n", mac);
 			set_hwaddr("eth1", mac);
-
 		}
 		fclose(fp);
 	}
-//#endif
+	//#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	char macaddr[32];

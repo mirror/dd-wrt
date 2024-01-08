@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -94,14 +94,14 @@ void setupSwitch(void)
 
 	// Enable 8021Q (80) and IGMP snooping (40)
 	// setRegister(s,0x05,0xa0);
-	// vlan1: valid,5,2,1 port fid=1 vid=1 
+	// vlan1: valid,5,2,1 port fid=1 vid=1
 	// setRegister(s,0x76,0x21);
 	// setRegister(s,0x77,0x10);
 	// setRegister(s,0x78,0x01);
 	// write (04) and trigger address 0
 	// setRegister(s,0x6E,0x04);
 	// setRegister(s,0x6F,0x00);
-	// vlan2: valid,5,4,3 port fid=2 vid=2 
+	// vlan2: valid,5,4,3 port fid=2 vid=2
 	// setRegister(s,0x76,0x3E);
 	// setRegister(s,0x77,0x20);
 	// setRegister(s,0x78,0x02);
@@ -140,7 +140,6 @@ void setupSwitch(void)
 	// switch enable
 	setRegister(s, 0x01, 0x01);
 	close(s);
-
 }
 
 void start_sysinit(void)

@@ -70,22 +70,26 @@ static char *get_json_data_by_key(char *output, char *getkey)
 	json_object *jobj = json_tokener_parse(output);
 	if (!jobj)
 		return NULL;
-	json_object_object_foreach(jobj, key, val) {
+	json_object_object_foreach(jobj, key, val)
+	{
 		if (val && key && !strcmp(key, getkey)) {
 			type = json_object_get_type(val);
 			switch (type) {
 			case json_type_string:
-				asprintf(&ret, "%s", json_object_get_string(val));
+				asprintf(&ret, "%s",
+					 json_object_get_string(val));
 				return (ret);
 				break;
 			case json_type_int:
 				asprintf(&ret, "%d", json_object_get_int(val));
 				return (ret);
 			case json_type_boolean:
-				asprintf(&ret, "%d", json_object_get_boolean(val));
+				asprintf(&ret, "%d",
+					 json_object_get_boolean(val));
 				return (ret);
 			case json_type_double:
-				asprintf(&ret, "%f", json_object_get_double(val));
+				asprintf(&ret, "%f",
+					 json_object_get_double(val));
 				return (ret);
 			default:
 				break;
@@ -108,14 +112,19 @@ void start_check_qmi(void)
 	if (fp) {
 		fscanf(fp, "%d", &clientid);
 		fclose(fp);
-		sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-data-status | grep '^\"connected' | wc -l >/tmp/qmistatustemp ; mv /tmp/qmistatustemp /tmp/qmistatus", clientid);
-		sprintf(command, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-signal-info", clientid);
+		sysprintf(
+			"uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-data-status | grep '^\"connected' | wc -l >/tmp/qmistatustemp ; mv /tmp/qmistatustemp /tmp/qmistatus",
+			clientid);
+		sprintf(command,
+			"uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-signal-info",
+			clientid);
 		output = get_popen_data(command);
 		if (output) {
 			retval = get_json_data_by_key(output, "rssi");
 			rsrq = get_json_data_by_key(output, "rsrq");
 			if (retval && rsrq) {
-				snprintf(buf, sizeof(buf), "RSSI: %s / RSRQ: %s", retval, rsrq);
+				snprintf(buf, sizeof(buf),
+					 "RSSI: %s / RSRQ: %s", retval, rsrq);
 				nvram_set("wan_3g_signal", buf);
 				free(retval), free(rsrq);
 			} else if (retval && !rsrq) {
@@ -135,7 +144,8 @@ void start_check_qmi(void)
 		sysprintf("echo 0 > /tmp/qmistatus");
 	}
 #else
-	sysprintf("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
+	sysprintf(
+		"qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
 #endif
 }
 #endif

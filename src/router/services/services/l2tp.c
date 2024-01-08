@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -58,9 +58,7 @@
 void run_l2tp(int status)
 {
 	FILE *fp;
-	char *l2tp_argv[] = { "xl2tpd",
-		NULL
-	};
+	char *l2tp_argv[] = { "xl2tpd", NULL };
 	char username[80], passwd[80];
 	char *wan_ifname = nvram_safe_get("wan_ifname");
 
@@ -78,7 +76,8 @@ void run_l2tp(int status)
 
 	insmod("n_hdlc");
 	if (nvram_matchi("l2tp_use_dhcp", 0)) {
-		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
+			 nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
 		dns_to_resolv();
 		dns_list = get_dns_list(0);
@@ -86,24 +85,37 @@ void run_l2tp(int status)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
+				route_add(wan_ifname, 0,
+					  dns_list->dns_server[i].ip,
+					  nvram_safe_get("l2tp_wan_gateway"),
+					  "255.255.255.255");
 		}
-		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		char pptpip[64];
-		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip, sizeof(pptpip));
-		route_del(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip,
+			      sizeof(pptpip));
+		route_del(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_del(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
+				route_del(wan_ifname, 0,
+					  dns_list->dns_server[i].ip,
+					  nvram_safe_get("l2tp_wan_gateway"),
+					  "255.255.255.255");
 			free_dns_list(dns_list);
 		}
 
 		nvram_set("l2tp_server_ip", pptpip);
 		if (!nvram_match("l2tp_wan_gateway", "0.0.0.0"))
-			route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
+			route_add(wan_ifname, 0,
+				  nvram_safe_get("l2tp_server_ip"),
+				  nvram_safe_get("l2tp_wan_gateway"),
+				  "255.255.255.255");
 	}
 
-	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
+	snprintf(username, sizeof(username), "%s",
+		 nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
@@ -124,24 +136,30 @@ void run_l2tp(int status)
 			return;
 		}
 
-		fprintf(fp, "[global]\n"	// Global section
-			"port = 1701\n"	// Bind address
-			"debug avp = no\n"	// TEMP DEBUG
-			"debug network = no\n"	// TEMP DEBUG
-			"debug packet = no\n"	// TEMP DEBUG
-			"debug state = no\n"	// TEMP DEBUG
-			"debug tunnel = no\n"	// TEMP DEBUG
-			"[lac %s]\n"	//
-			"lns = %s\n"	//
-			"require chap = %s\n"	//
-			"refuse pap = %s\n"	//
-			"redial = yes\n"	//
-			"redial timeout = 15\n"	//
-			"require authentication = %s\n"	//
-			"name = %s\n"	//
-			"pppoptfile = /tmp/ppp/options.l2tp\n"	//
-			"length bit = yes\n", nvram_safe_get("l2tp_server_name"), nvram_safe_get("l2tp_server_ip"), nvram_matchi("l2tp_req_chap", 0) ? "no" : "yes", nvram_matchi("l2tp_ref_pap", 0) ? "no" : "yes",
-			nvram_matchi("l2tp_req_auth", 0) ? "no" : "yes", username);
+		fprintf(fp,
+			"[global]\n" // Global section
+			"port = 1701\n" // Bind address
+			"debug avp = no\n" // TEMP DEBUG
+			"debug network = no\n" // TEMP DEBUG
+			"debug packet = no\n" // TEMP DEBUG
+			"debug state = no\n" // TEMP DEBUG
+			"debug tunnel = no\n" // TEMP DEBUG
+			"[lac %s]\n" //
+			"lns = %s\n" //
+			"require chap = %s\n" //
+			"refuse pap = %s\n" //
+			"redial = yes\n" //
+			"redial timeout = 15\n" //
+			"require authentication = %s\n" //
+			"name = %s\n" //
+			"pppoptfile = /tmp/ppp/options.l2tp\n" //
+			"length bit = yes\n",
+			nvram_safe_get("l2tp_server_name"),
+			nvram_safe_get("l2tp_server_ip"),
+			nvram_matchi("l2tp_req_chap", 0) ? "no" : "yes",
+			nvram_matchi("l2tp_ref_pap", 0) ? "no" : "yes",
+			nvram_matchi("l2tp_req_auth", 0) ? "no" : "yes",
+			username);
 		fclose(fp);
 
 		/*
@@ -155,47 +173,58 @@ void run_l2tp(int status)
 		if (nvram_matchi("mtu_enable", 1)) {
 			int wan_mtu = nvram_geti("wan_mtu");
 			if (wan_mtu > 0) {
-				fprintf(fp, "mtu %d\n"	//
-					"mru %d\n", wan_mtu, wan_mtu);
+				fprintf(fp,
+					"mtu %d\n" //
+					"mru %d\n",
+					wan_mtu, wan_mtu);
 			}
-
 		}
 
-		fprintf(fp, "defaultroute\n"	// Add a default route to the 
-			"usepeerdns\n"	// Ask the peer for up to 2 DNS
-			"user '%s'\n", username);
+		fprintf(fp,
+			"defaultroute\n" // Add a default route to the
+			"usepeerdns\n" // Ask the peer for up to 2 DNS
+			"user '%s'\n",
+			username);
 
-		if (nvram_matchi("ppp_demand", 1)) {	// demand mode
-			fprintf(fp, "idle %d\n"	//
-				"ipcp-accept-remote\n"	//
-				"ipcp-accept-local\n"	//
-				"noipdefault\n"	//
-				"connect true\n"	//
-				"ktune\n", nvram_matchi("ppp_demand", 1) ? nvram_geti("ppp_idletime") * 60 : 0);
+		if (nvram_matchi("ppp_demand", 1)) { // demand mode
+			fprintf(fp,
+				"idle %d\n" //
+				"ipcp-accept-remote\n" //
+				"ipcp-accept-local\n" //
+				"noipdefault\n" //
+				"connect true\n" //
+				"ktune\n",
+				nvram_matchi("ppp_demand", 1) ?
+					nvram_geti("ppp_idletime") * 60 :
+					0);
 			// to 1 in demand mode if the local
 			// address changes
-		} else {	// keepalive mode
+		} else { // keepalive mode
 			start_redial();
 		}
 
-		fprintf(fp, "default-asyncmap\n"	// Disable asyncmap
-			"crtscts\n"	// Disable protocol field compression
-			"nopcomp\n"	// Disable protocol field compression
-			"refuse-eap\n"	// Disable protocol field compression
-			"noaccomp\n");	// Disable Address/Control
+		fprintf(fp, "default-asyncmap\n" // Disable asyncmap
+			    "crtscts\n" // Disable protocol field compression
+			    "nopcomp\n" // Disable protocol field compression
+			    "refuse-eap\n" // Disable protocol field compression
+			    "noaccomp\n"); // Disable Address/Control
 		if (nvram_matchi("l2tp_encrypt", 0)) {
-			fprintf(fp, "nomppe\n"	// Disable mppe negotiation
-				"noccp\n");	// Disable CCP (Compression Control
+			fprintf(fp,
+				"nomppe\n" // Disable mppe negotiation
+				"noccp\n"); // Disable CCP (Compression Control
 			// Protocol)
 		} else {
-			fprintf(fp, "mppe required,stateless\n" "require-mschap-v2\n");
+			fprintf(fp, "mppe required,stateless\n"
+				    "require-mschap-v2\n");
 		}
-		fprintf(fp, "novj\n"	// Disable Van Jacobson style TCP/IP
-			"nobsdcomp\n"	// Disables BSD-Compress compression
-			"nodeflate\n"	// Disables Deflate compression
-			"lcp-echo-failure 12\n"	//
-			"lcp-echo-interval 30\n"	// echo-request frame to the peer       
-			"lcp-echo-adaptive\n" "lock\n"	//
+		fprintf(fp,
+			"novj\n" // Disable Van Jacobson style TCP/IP
+			"nobsdcomp\n" // Disables BSD-Compress compression
+			"nodeflate\n" // Disables Deflate compression
+			"lcp-echo-failure 12\n" //
+			"lcp-echo-interval 30\n" // echo-request frame to the peer
+			"lcp-echo-adaptive\n"
+			"lock\n" //
 			"noauth\n");
 #ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
@@ -260,7 +289,8 @@ void run_l2tp(int status)
 		else
 			eval("listen", nvram_safe_get("lan_ifname"));
 	} else {
-		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control", nvram_safe_get("l2tp_server_name"));
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",
+			  nvram_safe_get("l2tp_server_name"));
 	}
 
 	cprintf("done\n");
@@ -279,7 +309,8 @@ void start_l2tp_boot(void)
 
 void stop_l2tp(void)
 {
-	route_del(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), NULL, NULL);
+	route_del(nvram_safe_get("wan_ifname"), 0,
+		  nvram_safe_get("l2tp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
 

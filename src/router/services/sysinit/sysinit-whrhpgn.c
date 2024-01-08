@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -86,7 +86,8 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
+			copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
@@ -95,7 +96,8 @@ void start_sysinit(void)
 #ifdef HAVE_SWCONFIG
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
+	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
+	     "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
 	nvram_seti("sw_cpuport", 0);

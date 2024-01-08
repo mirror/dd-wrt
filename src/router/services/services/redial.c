@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -65,9 +65,7 @@ void start_redial(void)
 {
 	int ret;
 	char *redial_argv[] = { "/tmp/ppp/redial",
-		nvram_safe_get("ppp_redialperiod"),
-		NULL
-	};
+				nvram_safe_get("ppp_redialperiod"), NULL };
 	if (pidof("redial") > 0) {
 		stop_redial();
 	}

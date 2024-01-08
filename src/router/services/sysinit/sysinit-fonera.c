@@ -98,7 +98,8 @@ void start_sysinit(void)
 	nvram_set("use_ath5k", "1");
 	detect_wireless_devices(RADIO_ALL);
 
-#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || defined(HAVE_EOC1650)
+#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || \
+	defined(HAVE_EOC1650)
 	writeprocsys("dev/wifi0/ledpin", "2");
 	writeprocsys("dev/wifi0/softled", "1");
 #endif
@@ -115,9 +116,9 @@ void start_sysinit(void)
 	writeprocsys("dev/wifi0/softled", "1");
 #endif
 	// eval ("ifconfig", "wifi0", "up");
-	eval("ifconfig", "eth0", "up");	// wan
+	eval("ifconfig", "eth0", "up"); // wan
 #ifdef HAVE_LS2
-	vlan_init(5);		// 4 lan + 1 wan, but only first one is used
+	vlan_init(5); // 4 lan + 1 wan, but only first one is used
 #endif
 	int s;
 	struct ifreq ifr;

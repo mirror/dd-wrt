@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -57,19 +57,18 @@
 void start_radio_timer(void)
 {
 #ifndef HAVE_NOWIFI
-	if (nvram_matchi("radio0_timer_enable", 0)
-	    && nvram_matchi("radio1_timer_enable", 0)
-	    && nvram_matchi("radio2_timer_enable", 0))
+	if (nvram_matchi("radio0_timer_enable", 0) &&
+	    nvram_matchi("radio1_timer_enable", 0) &&
+	    nvram_matchi("radio2_timer_enable", 0))
 		return;
 #ifdef HAVE_MADWIFI
-	if (nvram_match("wlan0_net_mode", "disabled")
-	    && nvram_match("wlan1_net_mode", "disabled")
-	    && nvram_match("wlan2_net_mode", "disabled")
-	    )
+	if (nvram_match("wlan0_net_mode", "disabled") &&
+	    nvram_match("wlan1_net_mode", "disabled") &&
+	    nvram_match("wlan2_net_mode", "disabled"))
 #else
-	if (nvram_match("wl0_net_mode", "disabled")
-	    && nvram_match("wl1_net_mode", "disabled")
-	    && nvram_match("wl2_net_mode", "disabled"))
+	if (nvram_match("wl0_net_mode", "disabled") &&
+	    nvram_match("wl1_net_mode", "disabled") &&
+	    nvram_match("wl2_net_mode", "disabled"))
 #endif
 		return;
 
@@ -83,7 +82,6 @@ void start_radio_timer(void)
 
 void stop_radio_timer(void)
 {
-
 #ifndef HAVE_NOWIFI
 	stop_process("radio_timer", "daemon");
 	cprintf("done\n");

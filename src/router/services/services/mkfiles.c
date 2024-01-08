@@ -33,11 +33,11 @@
 #include <shutils.h>
 #include <services.h>
 
-#define HOME_DIR	"/tmp/root"
-#define PASSWD_DIR	"/tmp/etc"
-#define SSH_DIR		"/tmp/root/.ssh"
-#define PASSWD_FILE	"/tmp/etc/passwd"
-#define GROUP_FILE	"/tmp/etc/group"
+#define HOME_DIR "/tmp/root"
+#define PASSWD_DIR "/tmp/etc"
+#define SSH_DIR "/tmp/root/.ssh"
+#define PASSWD_FILE "/tmp/etc/passwd"
+#define GROUP_FILE "/tmp/etc/group"
 
 int isregistered_real(void);
 
@@ -59,12 +59,16 @@ void setPassword(char *passwd)
 #ifdef HAVE_ERC
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 	fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
-	fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+		nvram_safe_get("newhttp_passwd"));
+	fprintf(fp,
+		"reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+		nvram_safe_get("newhttp_passwd"));
 #elif HAVE_NDTRADE
-	fprintf(fp, "ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp,
+		"ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
 	fprintf(fp, "root:x:98:98:Root:/:/bin/false\n");
 #else
 	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
@@ -119,18 +123,26 @@ void start_mkfiles(void)
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 	//      http_passwd);
 	fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
-	fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+		nvram_safe_get("newhttp_passwd"));
+	fprintf(fp,
+		"reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_WIKINGS
 	// default username and password for Excel Networks
-	fprintf(fp, "ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp,
+		"ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+		nvram_safe_get("newhttp_passwd"));
 #elif HAVE_NDTRADE
-	fprintf(fp, "ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp,
+		"ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
 	fprintf(fp, "root:x:98:98:Root:/:/bin/false\n");
 #else
-	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n" "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n", http_passwd, http_passwd);
+	fprintf(fp,
+		"root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n"
+		"reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
+		http_passwd, http_passwd);
 #endif
 	fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
 	fclose(fp);
@@ -168,7 +180,7 @@ void start_mkfiles(void)
 	if (nvram_matchi("unblock", 1)) {
 		nvram_unset("unblock");
 #ifdef HAVE_TELNET
-		start_telnetd();	//password has been changed, now we can start telnet or ssh (if enabled)
+		start_telnetd(); //password has been changed, now we can start telnet or ssh (if enabled)
 #endif
 #ifdef HAVE_SSHD
 		start_sshd();

@@ -14,14 +14,10 @@ typedef short rtk_int16;
 typedef unsigned char rtk_uint8;
 typedef char rtk_int8;
 
-#define swapl32(x)\
-        ((((x) & 0xff000000U) >> 24) | \
-         (((x) & 0x00ff0000U) >>  8) | \
-         (((x) & 0x0000ff00U) <<  8) | \
-         (((x) & 0x000000ffU) << 24))
-#define swaps16(x)        \
-        ((((x) & 0xff00) >> 8) | \
-         (((x) & 0x00ff) << 8))
+#define swapl32(x)                                              \
+	((((x)&0xff000000U) >> 24) | (((x)&0x00ff0000U) >> 8) | \
+	 (((x)&0x0000ff00U) << 8) | (((x)&0x000000ffU) << 24))
+#define swaps16(x) ((((x)&0xff00) >> 8) | (((x)&0x00ff) << 8))
 
 #define _LITTLE_ENDIAN
 #undef ntohl
@@ -29,27 +25,27 @@ typedef char rtk_int8;
 #undef htonl
 #undef htons
 #ifdef _LITTLE_ENDIAN
-#define ntohs(x)   (swaps16(x))
-#define ntohl(x)   (swapl32(x))
-#define htons(x)   (swaps16(x))
-#define htonl(x)   (swapl32(x))
+#define ntohs(x) (swaps16(x))
+#define ntohl(x) (swapl32(x))
+#define htons(x) (swaps16(x))
+#define htonl(x) (swapl32(x))
 #else
-#define ntohs(x)	(x)
-#define ntohl(x)	(x)
-#define htons(x)	(x)
-#define htonl(x)	(x)
+#define ntohs(x) (x)
+#define ntohl(x) (x)
+#define htons(x) (x)
+#define htonl(x) (x)
 #endif
 
-#define CONST_T     const
+#define CONST_T const
 
-#define RTK_TOTAL_NUM_OF_WORD_FOR_1BIT_PORT_LIST    1
+#define RTK_TOTAL_NUM_OF_WORD_FOR_1BIT_PORT_LIST 1
 
-#define RTK_MAX_NUM_OF_PORT                         8
-#define RTK_PORT_ID_MAX                             (RTK_MAX_NUM_OF_PORT-1)
-#define RTK_PHY_ID_MAX                              (RTK_MAX_NUM_OF_PORT-4)
-#define RTK_MAX_PORT_MASK                           0xFF
+#define RTK_MAX_NUM_OF_PORT 8
+#define RTK_PORT_ID_MAX (RTK_MAX_NUM_OF_PORT - 1)
+#define RTK_PHY_ID_MAX (RTK_MAX_NUM_OF_PORT - 4)
+#define RTK_MAX_PORT_MASK 0xFF
 
-#define RTK_WHOLE_SYSTEM                            0xFF
+#define RTK_WHOLE_SYSTEM 0xFF
 
 typedef struct rtk_portmask_s {
 	rtk_uint32 bits[RTK_TOTAL_NUM_OF_WORD_FOR_1BIT_PORT_LIST];
@@ -62,7 +58,7 @@ typedef enum rtk_enable_e {
 } rtk_enable_t;
 
 #ifndef ETHER_ADDR_LEN
-#define ETHER_ADDR_LEN		6
+#define ETHER_ADDR_LEN 6
 #endif
 
 /* ethernet address type */
@@ -70,15 +66,15 @@ typedef struct rtk_mac_s {
 	rtk_uint8 octet[ETHER_ADDR_LEN];
 } rtk_mac_t;
 
-typedef rtk_uint32 rtk_pri_t;	/* priority vlaue */
-typedef rtk_uint32 rtk_qid_t;	/* queue id type */
+typedef rtk_uint32 rtk_pri_t; /* priority vlaue */
+typedef rtk_uint32 rtk_qid_t; /* queue id type */
 typedef rtk_uint32 rtk_data_t;
-typedef rtk_uint32 rtk_dscp_t;	/* dscp vlaue */
-typedef rtk_uint32 rtk_fid_t;	/* filter id type */
-typedef rtk_uint32 rtk_vlan_t;	/* vlan id type */
-typedef rtk_uint32 rtk_mac_cnt_t;	/* MAC count type  */
-typedef rtk_uint32 rtk_meter_id_t;	/* meter id type  */
-typedef rtk_uint32 rtk_rate_t;	/* rate type  */
+typedef rtk_uint32 rtk_dscp_t; /* dscp vlaue */
+typedef rtk_uint32 rtk_fid_t; /* filter id type */
+typedef rtk_uint32 rtk_vlan_t; /* vlan id type */
+typedef rtk_uint32 rtk_mac_cnt_t; /* MAC count type  */
+typedef rtk_uint32 rtk_meter_id_t; /* meter id type  */
+typedef rtk_uint32 rtk_rate_t; /* rate type  */
 
 typedef enum rtk_port_e {
 	UTP_PORT0 = 0,
@@ -115,7 +111,7 @@ typedef rtk_uint32 ipaddr_t;
 typedef rtk_uint32 memaddr;
 
 #ifndef ETHER_ADDR_LEN
-#define ETHER_ADDR_LEN		6
+#define ETHER_ADDR_LEN 6
 #endif
 
 typedef struct ether_addr_s {
@@ -127,7 +123,7 @@ typedef struct ether_addr_s {
 #else
 #define rtlglue_printf printf
 #endif
-#define PRINT			rtlglue_printf
+#define PRINT rtlglue_printf
 #endif /*_RTL_TYPES_H*/
 
 /* type abstraction */
@@ -157,5 +153,5 @@ typedef rtk_uint64 rtk_u_long_t;
 #define FALSE 0
 #endif
 
-#define CONST			const
-#endif				/* _RTL8367C_TYPES_H_ */
+#define CONST const
+#endif /* _RTL8367C_TYPES_H_ */

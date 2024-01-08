@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -86,11 +86,13 @@ void start_sysinit(void)
 		fread(mactmp, 6, 1, fp);
 		for (i = 5; i >= 3; i--)
 			if (++mactmp[i] != 0x00)
-				break;	// dont know what this is 
+				break; // dont know what this is
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
+			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
+			copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
 
 #else
@@ -118,8 +120,8 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_WRT400
-//      set_hwaddr("wifi0", mac1);
-//      set_hwaddr("wifi1", mac1);
+	//      set_hwaddr("wifi0", mac1);
+	//      set_hwaddr("wifi1", mac1);
 	setWirelessLedPhy0(0);
 	setWirelessLedPhy1(0);
 

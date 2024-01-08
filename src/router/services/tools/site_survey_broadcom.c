@@ -56,10 +56,10 @@ static int wlu_bcmp(const void *b1, const void *b2, int len)
 
 static INLINE uint16 ltoh16_ua(void *bytes)
 {
-	return (((uint8 *) bytes)[1] << 8) + ((uint8 *) bytes)[0];
+	return (((uint8 *)bytes)[1] << 8) + ((uint8 *)bytes)[0];
 }
 
-static bool wlu_is_wpa_ie(uint8 ** wpaie, uint8 ** tlvs, uint * tlvs_len)
+static bool wlu_is_wpa_ie(uint8 **wpaie, uint8 **tlvs, uint *tlvs_len)
 {
 	uint8 *ie = *wpaie;
 
@@ -78,7 +78,7 @@ static bool wlu_is_wpa_ie(uint8 ** wpaie, uint8 ** tlvs, uint * tlvs_len)
 	return FALSE;
 }
 
-static int wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rsn)
+static int wl_rsn_ie_parse_info(uint8 *rsn_buf, uint len, rsn_parse_info_t *rsn)
 {
 	uint16 count;
 
@@ -96,7 +96,7 @@ static int wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rs
 	if (len < sizeof(wpa_suite_mcast_t))
 		return 0;
 
-	rsn->mcast = (wpa_suite_mcast_t *) rsn_buf;
+	rsn->mcast = (wpa_suite_mcast_t *)rsn_buf;
 	len -= sizeof(wpa_suite_mcast_t);
 	rsn_buf += sizeof(wpa_suite_mcast_t);
 
@@ -109,7 +109,7 @@ static int wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rs
 	if (len < (sizeof(uint16) + count * sizeof(wpa_suite_t)))
 		return 1;
 
-	rsn->ucast = (wpa_suite_ucast_t *) rsn_buf;
+	rsn->ucast = (wpa_suite_ucast_t *)rsn_buf;
 	len -= (sizeof(uint16) + count * sizeof(wpa_suite_t));
 	rsn_buf += (sizeof(uint16) + count * sizeof(wpa_suite_t));
 
@@ -122,7 +122,7 @@ static int wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rs
 	if (len < (sizeof(uint16) + count * sizeof(wpa_suite_t)))
 		return 1;
 
-	rsn->akm = (wpa_suite_auth_key_mgmt_t *) rsn_buf;
+	rsn->akm = (wpa_suite_auth_key_mgmt_t *)rsn_buf;
 	len -= (sizeof(uint16) + count * sizeof(wpa_suite_t));
 	rsn_buf += (sizeof(uint16) + count * sizeof(wpa_suite_t));
 
@@ -135,7 +135,7 @@ static int wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rs
 	return 0;
 }
 
-static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
+static void wl_rsn_ie_dump(bcm_tlv_t *ie, char *sum)
 {
 	int i;
 	int rsn;
@@ -156,8 +156,10 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 	} else {
 		rsn = FALSE;
 		memcpy(std_oui, WPA_OUI, WPA_OUI_LEN);
-		wpa = (wpa_ie_fixed_t *) ie;
-		err = wl_rsn_ie_parse_info((uint8 *) & wpa->version, wpa->length - WPA_IE_OUITYPE_LEN, &rsn_info);
+		wpa = (wpa_ie_fixed_t *)ie;
+		err = wl_rsn_ie_parse_info((uint8 *)&wpa->version,
+					   wpa->length - WPA_IE_OUITYPE_LEN,
+					   &rsn_info);
 	}
 	if (err || rsn_info.version != WPA_VERSION) {
 		strcat(sum, "WEP ");
@@ -195,11 +197,15 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 				strcat(sum, "Group-CCMP-256 ");
 				break;
 			default:
-				sprintf(sum, "Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", rsn_info.mcast->type);
+				sprintf(sum, "Unknown-%s(#%d) ",
+					rsn ? "WPA2" : "WPA",
+					rsn_info.mcast->type);
 				break;
 			}
 		} else {
-			sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum, rsn_info.mcast->oui[0], rsn_info.mcast->oui[1], rsn_info.mcast->oui[2], rsn_info.mcast->type);
+			sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum,
+				rsn_info.mcast->oui[0], rsn_info.mcast->oui[1],
+				rsn_info.mcast->oui[2], rsn_info.mcast->type);
 		}
 	}
 
@@ -253,11 +259,15 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 					strcat(sum, "AES-256-CMAC ");
 					break;
 				default:
-					sprintf(sum, "WPA-Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", suite->type);
+					sprintf(sum, "WPA-Unknown-%s(#%d) ",
+						rsn ? "WPA2" : "WPA",
+						suite->type);
 					break;
 				}
 			} else {
-				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum, suite->oui[0], suite->oui[1], suite->oui[2], suite->type);
+				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ",
+					sum, suite->oui[0], suite->oui[1],
+					suite->oui[2], suite->type);
 			}
 		}
 		printf("\n");
@@ -327,17 +337,21 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 					strcat(sum, "OWE ");
 					break;
 				default:
-					sprintf(sum, "Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", suite->type);
+					sprintf(sum, "Unknown-%s(#%d) ",
+						rsn ? "WPA2" : "WPA",
+						suite->type);
 					break;
 				}
 			} else {
-				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum, suite->oui[0], suite->oui[1], suite->oui[2], suite->type);
+				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ",
+					sum, suite->oui[0], suite->oui[1],
+					suite->oui[2], suite->type);
 			}
 		}
 	}
 }
 
-static uint8 *wlu_parse_tlvs(uint8 * tlv_buf, int buflen, uint key)
+static uint8 *wlu_parse_tlvs(uint8 *tlv_buf, int buflen, uint key)
 {
 	uint8 *cp;
 	int totlen;
@@ -364,45 +378,48 @@ static uint8 *wlu_parse_tlvs(uint8 * tlv_buf, int buflen, uint key)
 }
 
 struct ieee80211_mtik_ie_data {
-	unsigned char data1[2];	/* unknown yet 0x011e */
-	unsigned char flags;	/* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
-	unsigned char data2[3];	/* unknown yet fill with zero */
-	unsigned char version[4];	/* little endian version. Use 0x1f660902 */
-	unsigned char pad1;	/* a kind of padding, 0xff */
-	unsigned char namelen;	/* length of radio name. Change with caution. 0x0f is safe value */
-	unsigned char radioname[15];	/* Radio name */
-	unsigned char pad2[5];	/* unknown. fill with zero */
-}  __attribute__((packed));
+	unsigned char data1[2]; /* unknown yet 0x011e */
+	unsigned char
+		flags; /* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
+	unsigned char data2[3]; /* unknown yet fill with zero */
+	unsigned char version[4]; /* little endian version. Use 0x1f660902 */
+	unsigned char pad1; /* a kind of padding, 0xff */
+	unsigned char
+		namelen; /* length of radio name. Change with caution. 0x0f is safe value */
+	unsigned char radioname[15]; /* Radio name */
+	unsigned char pad2[5]; /* unknown. fill with zero */
+} __attribute__((packed));
 
 struct ieee80211_mtik_ie {
-	unsigned char id;	/* IEEE80211_ELEMID_VENDOR */
-	unsigned char len;	/* length in bytes */
-	unsigned char oui[3];	/* 0x00, 0x50, 0xf2 */
-	unsigned char type;	/* OUI type */
-	unsigned short version;	/* spec revision */
+	unsigned char id; /* IEEE80211_ELEMID_VENDOR */
+	unsigned char len; /* length in bytes */
+	unsigned char oui[3]; /* 0x00, 0x50, 0xf2 */
+	unsigned char type; /* OUI type */
+	unsigned short version; /* spec revision */
 	struct ieee80211_mtik_ie_data iedata;
-}  __attribute__((packed));
+} __attribute__((packed));
 
 struct aironet_ie {
-	unsigned char id;	/* IEEE80211_ELEMID_VENDOR */
-	unsigned char len;	/* length in bytes */
-	unsigned char	load;
-	unsigned char	hops;
-	unsigned char	device;
-	unsigned char	refresh_rate;
-	unsigned short  cwmin;
-	unsigned short  cwmax;
-	unsigned char	flags;
-	unsigned char	distance;
-	char	name[16];	/* AP or Client's machine name */
-	unsigned short	num_assoc;	/* number of clients associated */
-	unsigned short	radiotype;
+	unsigned char id; /* IEEE80211_ELEMID_VENDOR */
+	unsigned char len; /* length in bytes */
+	unsigned char load;
+	unsigned char hops;
+	unsigned char device;
+	unsigned char refresh_rate;
+	unsigned short cwmin;
+	unsigned short cwmax;
+	unsigned char flags;
+	unsigned char distance;
+	char name[16]; /* AP or Client's machine name */
+	unsigned short num_assoc; /* number of clients associated */
+	unsigned short radiotype;
 } __attribute__((packed));
 
 static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
 static unsigned char mtik_oui[3] = { 0x00, 0x0c, 0x42 };
 
-static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *list)
+static void wl_dump_wpa_rsn_ies(uint8 *cp, uint len,
+				struct site_survey_list *list)
 {
 	uint8 *parse = cp;
 	uint8 *parse2 = cp;
@@ -420,11 +437,11 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 		if (wlu_is_wpa_ie(&wpaie, &parse, &parse_len))
 			break;
 	if (wpaie)
-		wl_rsn_ie_dump((bcm_tlv_t *) wpaie, sum);
+		wl_rsn_ie_dump((bcm_tlv_t *)wpaie, sum);
 
 	rsnie = wlu_parse_tlvs(cp, len, DOT11_MNG_RSN_ID);
 	if (rsnie)
-		wl_rsn_ie_dump((bcm_tlv_t *) rsnie, sum);
+		wl_rsn_ie_dump((bcm_tlv_t *)rsnie, sum);
 	if (wpaie || rsnie) {
 		if (*sum > 0)
 			sum[strlen(sum)] = 0;
@@ -443,7 +460,8 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 		if (customie[1] >= 4 && !memcmp(&customie[2], mtik_oui, 3)) {
 			struct ieee80211_mtik_ie *ie = customie;
 			if (ie->iedata.namelen <= 15) {
-				memcpy(list->radioname, ie->iedata.radioname, ie->iedata.namelen);
+				memcpy(list->radioname, ie->iedata.radioname,
+				       ie->iedata.namelen);
 			}
 			if (ie->iedata.flags & 0x4) {
 				list->extcap = CAP_MTIKWDS;
@@ -460,11 +478,13 @@ static void wl_dump_wpa_rsn_ies(uint8 * cp, uint len, struct site_survey_list *l
 	}
 }
 
-static void getEncInfo(wl_bss_info_t * bi, struct site_survey_list *list)
+static void getEncInfo(wl_bss_info_t *bi, struct site_survey_list *list)
 {
 	if (bi->capability & DOT11_CAP_PRIVACY) {
 		if (bi->ie_length) {
-			wl_dump_wpa_rsn_ies((uint8 *) (((uint8 *) bi) + bi->ie_offset), bi->ie_length, list);
+			wl_dump_wpa_rsn_ies(
+				(uint8 *)(((uint8 *)bi) + bi->ie_offset),
+				bi->ie_length, list);
 		} else
 			strcpy(list->ENCINFO, "WEP");
 	} else
@@ -523,14 +543,15 @@ int get_legacy(unsigned char *rates, int count)
 
 int site_survey_main(int argc, char *argv[])
 {
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
+	site_survey_lists =
+		calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 
 	char tmp[32];
 	sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
 	char *name = nvram_safe_get(tmp);
 
 	unsigned char buf[10000];
-	wl_scan_results_t *scan_res = (wl_scan_results_t *) buf;
+	wl_scan_results_t *scan_res = (wl_scan_results_t *)buf;
 	wl_bss_info_t *bss_info;
 	unsigned char mac[20];
 	int i;
@@ -568,7 +589,7 @@ int site_survey_main(int argc, char *argv[])
 	}
 	int count = 10;
 	int ret = 0;
-	while ((count--) > 0)	//scan for max 5 seconds
+	while ((count--) > 0) //scan for max 5 seconds
 	{
 		usleep(1000 * 1000);
 
@@ -582,7 +603,8 @@ int site_survey_main(int argc, char *argv[])
 		fprintf(stderr, "scan failed with errorcode %d\n", ret);
 	}
 
-	fprintf(stderr, "buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen, scan_res->version, scan_res->count);
+	fprintf(stderr, "buflen=[%d] version=[%d] count=[%d]\n",
+		scan_res->buflen, scan_res->version, scan_res->count);
 
 	if (scan_res->count == 0) {
 		cprintf("Can't find any wireless device\n");
@@ -592,17 +614,20 @@ int site_survey_main(int argc, char *argv[])
 	bss_info = &scan_res->bss_info[0];
 	for (i = 0; i < scan_res->count; i++) {
 		strcpy(site_survey_lists[i].SSID, bss_info->SSID);
-		strcpy(site_survey_lists[i].BSSID, ether_etoa(bss_info->BSSID.octet, mac));
+		strcpy(site_survey_lists[i].BSSID,
+		       ether_etoa(bss_info->BSSID.octet, mac));
 		site_survey_lists[i].channel = bss_info->chanspec & 0xff;
 		switch ((bss_info->chanspec & 0x3800)) {
 		case 0:
 		case 0x800:
 		case 0x1000:
-			site_survey_lists[i].channel = bss_info->chanspec & 0xff;
+			site_survey_lists[i].channel = bss_info->chanspec &
+						       0xff;
 			break;
-		case 0x0C00:	// for older version
+		case 0x0C00: // for older version
 		case 0x1800:
-			site_survey_lists[i].channel = bss_info->ctl_ch | 0x2000;
+			site_survey_lists[i].channel = bss_info->ctl_ch |
+						       0x2000;
 			break;
 		case 0x2000:
 		case 0x2800:
@@ -623,26 +648,32 @@ int site_survey_main(int argc, char *argv[])
 			break;
 		}
 #endif
-		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel & 0xff);
+		site_survey_lists[i].frequency =
+			ieee80211_ieee2mhz(site_survey_lists[i].channel & 0xff);
 
 		site_survey_lists[i].RSSI = bss_info->RSSI;
 		site_survey_lists[i].phy_noise = bss_info->phy_noise;
 		site_survey_lists[i].beacon_period = bss_info->beacon_period;
 		site_survey_lists[i].capability = bss_info->capability;
-		site_survey_lists[i].rate_count = get_mcs_max(bss_info->basic_mcs);
+		site_survey_lists[i].rate_count =
+			get_mcs_max(bss_info->basic_mcs);
 		if (!site_survey_lists[i].rate_count)
-			site_survey_lists[i].rate_count = get_legacy(bss_info->rateset.rates, bss_info->rateset.count);
+			site_survey_lists[i].rate_count =
+				get_legacy(bss_info->rateset.rates,
+					   bss_info->rateset.count);
 
 		site_survey_lists[i].dtim_period = bss_info->dtim_period;
 		site_survey_lists[i].numsta = -1;
 		getEncInfo(bss_info, &site_survey_lists[i]);
 
-		bss_info = (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
+		bss_info =
+			(wl_bss_info_t *)((uint32)bss_info + bss_info->length);
 	}
 	write_site_survey();
 	open_site_survey();
 	// modded by ascott and fractal, may 17th, 2012 to show "hidden" SSIDS
-	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency; i++) {
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency;
+	     i++) {
 		if (site_survey_lists[i].SSID[0] == 0) {
 			strcpy(site_survey_lists[i].SSID, "hidden");
 		}
@@ -652,10 +683,13 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].BSSID,
 			site_survey_lists[i].channel & 0xff,
 			site_survey_lists[i].frequency,
-			site_survey_lists[i].numsta,
-			site_survey_lists[i].RSSI,
+			site_survey_lists[i].numsta, site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].beacon_period,
+			site_survey_lists[i].capability,
+			site_survey_lists[i].dtim_period,
+			site_survey_lists[i].rate_count,
+			site_survey_lists[i].ENCINFO);
 	}
 
 endss:
@@ -671,7 +705,9 @@ int write_site_survey(void)
 	FILE *fp;
 
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
-		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fwrite(&site_survey_lists[0],
+		       sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1,
+		       fp);
 		fclose(fp);
 		return FALSE;
 	}
@@ -685,7 +721,8 @@ static int open_site_survey(void)
 	bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fread(&site_survey_lists[0],
+		      sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return TRUE;
 	}
@@ -697,6 +734,5 @@ static int open_site_survey(void)
 void main(int argc, char *argv[])
 {
 	site_survey_main(argc, argv);
-
 }
 #endif

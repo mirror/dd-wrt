@@ -32,9 +32,9 @@
 #include "rtk_switch.h"
 #include "rtk_types.h"
 
-#define RTKSWITCH_DEV	"/dev/rtkswitch"
+#define RTKSWITCH_DEV "/dev/rtkswitch"
 
-#define CASEID(a)	#a
+#define CASEID(a) #a
 char *rtk_switch_cmds[] = RTK_SWITCH_CMDS;
 #undef CASEID
 unsigned int rtk_cmds_pa[MAX_REQ];
@@ -86,8 +86,8 @@ int rtkswitch_ioctl(int val, int val2, int val3)
 	case TEST_REG:
 	case SET_REG:
 		p = (void *)&asics;
-		asics.rtk_reg = (rtk_uint32) val2;
-		asics.rtk_val = (rtk_uint32) val3;
+		asics.rtk_reg = (rtk_uint32)val2;
+		asics.rtk_val = (rtk_uint32)val3;
 		break;
 
 	default:
@@ -161,35 +161,32 @@ int ext_rtk_phyState(int verbose)
 	pS.speed[0] = pS.speed[1] = pS.speed[2] = pS.speed[3] = 0;
 
 	switch (getRouterBrand()) {
-	case ROUTER_ASUS_AC5300:
-		{
-			/* RTK_LAN  BRCM_LAN  WAN  POWER */
-			/* R0 R1 R2 R3 B4 B0 B1 B2 B3 */
-			/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
+	case ROUTER_ASUS_AC5300: {
+		/* RTK_LAN  BRCM_LAN  WAN  POWER */
+		/* R0 R1 R2 R3 B4 B0 B1 B2 B3 */
+		/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
 
-			const int porder[4] = { 3, 2, 1, 0 };
-			o = porder;
+		const int porder[4] = { 3, 2, 1, 0 };
+		o = porder;
 
-			break;
-		}
-	case ROUTER_ASUS_AC88U:
-		{
-			/* RTK_LAN  BRCM_LAN  WAN  POWER */
-			/* R3 R2 R1 R0 B3 B2 B1 B0 B4 */
-			/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
+		break;
+	}
+	case ROUTER_ASUS_AC88U: {
+		/* RTK_LAN  BRCM_LAN  WAN  POWER */
+		/* R3 R2 R1 R0 B3 B2 B1 B0 B4 */
+		/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
 
-			const int porder[4] = { 0, 1, 2, 3 };
-			o = porder;
+		const int porder[4] = { 0, 1, 2, 3 };
+		o = porder;
 
-			break;
-		}
-	default:
-		{
-			const int porder[4] = { 0, 1, 2, 3 };
-			o = porder;
+		break;
+	}
+	default: {
+		const int porder[4] = { 0, 1, 2, 3 };
+		o = porder;
 
-			break;
-		}
+		break;
+	}
 	}
 
 	if (ioctl(fd, GET_RTK_PHYSTATES, &pS) < 0) {
@@ -202,12 +199,15 @@ int ext_rtk_phyState(int verbose)
 
 	sprintf(buf, portMark,
 		(pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M' : 'X',
-		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M' : 'X', (pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M' : 'X', (pS.link[o[3]] == 1) ? (pS.speed[o[3]] == 2) ? 'G' : 'M' : 'X');
+		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M' : 'X',
+		(pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M' : 'X',
+		(pS.link[o[3]] == 1) ? (pS.speed[o[3]] == 2) ? 'G' : 'M' : 'X');
 
 	if (verbose)
 		fprintf(stderr, "%s\n", buf);
 
-	return (pS.link[o[0]] == 1) | (pS.link[o[1]] == 1) | (pS.link[o[2]] == 1) | (pS.link[o[3]] == 1);
+	return (pS.link[o[0]] == 1) | (pS.link[o[1]] == 1) |
+	       (pS.link[o[2]] == 1) | (pS.link[o[3]] == 1);
 }
 
 void usage(char *cmd)
@@ -240,5 +240,10 @@ void usage(char *cmd)
 
 	fprintf(stderr, "Usage:\n");
 	for (ci = 0; ci < MAX_REQ; ++ci)
-		fprintf(stderr, "  %s %d %s##( %s )##\n", cmd, ci, (pa = rtk_cmds_pa[ci]) ? pa == 1 ? "\t[arg1] \t" : "\t[arg1] [arg2] " : ci > 9 ? "\t\t" : " \t\t", rtk_switch_cmds[ci]);
+		fprintf(stderr, "  %s %d %s##( %s )##\n", cmd, ci,
+			(pa = rtk_cmds_pa[ci]) ?
+				pa == 1 ? "\t[arg1] \t" : "\t[arg1] [arg2] " :
+			ci > 9 ? "\t\t" :
+				 " \t\t",
+			rtk_switch_cmds[ci]);
 }

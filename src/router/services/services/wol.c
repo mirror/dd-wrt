@@ -54,9 +54,7 @@ void stop_wol(void)
 
 void start_wol(void)
 {
-	char *wol_argv[] = { "wol",
-		NULL
-	};
+	char *wol_argv[] = { "wol", NULL };
 
 	stop_wol();
 
@@ -66,4 +64,4 @@ void start_wol(void)
 	_log_evalpid(wol_argv, NULL, 0, NULL);
 }
 
-#endif				/* HAVE_WOL */
+#endif /* HAVE_WOL */

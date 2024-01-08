@@ -32,7 +32,7 @@
 #include <shutils.h>
 #include <bcmnvram.h>
 
-int overclock(FILE * out, char *freq, int value)
+int overclock(FILE *out, char *freq, int value)
 {
 	fseek(out, 0xd3, SEEK_SET);
 	int val = getc(out);
@@ -45,7 +45,7 @@ int overclock(FILE * out, char *freq, int value)
 	return 0;
 }
 
-int overclock_3(FILE * out, char *freq, int value)
+int overclock_3(FILE *out, char *freq, int value)
 {
 	fseek(out, 0x3f, SEEK_SET);
 	int val = getc(out);
@@ -58,9 +58,9 @@ int overclock_3(FILE * out, char *freq, int value)
 	return 0;
 }
 
-void start_overclock(void)	// hidden feature. must be called with
-				// "startservice overlock". then reboot the
-				// unit
+void start_overclock(void) // hidden feature. must be called with
+	// "startservice overlock". then reboot the
+	// unit
 {
 	long len;
 	long i;
@@ -80,10 +80,11 @@ void start_overclock(void)	// hidden feature. must be called with
 	int ret1 = 0xff;
 	int ret2 = 0xff;
 	int ret3 = 0xff;
-	if ((ret1 = memcmp(check, values, 8))
-	    && (ret2 = memcmp(check2, values, 8))
-	    && (ret3 = memcmp(check2, values2, 8))) {
-		fprintf(stderr, "no compatible routerstation bootloader found\n");
+	if ((ret1 = memcmp(check, values, 8)) &&
+	    (ret2 = memcmp(check2, values, 8)) &&
+	    (ret3 = memcmp(check2, values2, 8))) {
+		fprintf(stderr,
+			"no compatible routerstation bootloader found\n");
 		fclose(in);
 		return;
 	}
@@ -110,10 +111,13 @@ void start_overclock(void)	// hidden feature. must be called with
 			ret = overclock_3(out, "400", 0x6);
 		if (nvram_matchi("cpuclk", 600))
 			ret = overclock_3(out, "600", 0x7);
-		if (nvram_matchi("cpuclk", 680))	//special ubiquiti setting with different ddram clock settings
+		if (nvram_matchi(
+			    "cpuclk",
+			    680)) //special ubiquiti setting with different ddram clock settings
 			ret = overclock_3(out, "680", 0xc);
 		if (nvram_matchi("cpuclk", 720))
-			ret = overclock_3(out, "720", 0xe);	//need to be validated
+			ret = overclock_3(out, "720",
+					  0xe); //need to be validated
 		if (nvram_matchi("cpuclk", 800))
 			ret = overclock_3(out, "800", 0xf);
 
@@ -128,10 +132,13 @@ void start_overclock(void)	// hidden feature. must be called with
 			ret = overclock(out, "400", 0x6);
 		if (nvram_matchi("cpuclk", 600))
 			ret = overclock(out, "600", 0x7);
-		if (nvram_matchi("cpuclk", 680))	//special ubiquiti setting with different ddram clock settings
+		if (nvram_matchi(
+			    "cpuclk",
+			    680)) //special ubiquiti setting with different ddram clock settings
 			ret = overclock(out, "680", 0xa);
 		if (nvram_matchi("cpuclk", 720))
-			ret = overclock(out, "720", 0x1e);	//magic atheros values
+			ret = overclock(out, "720",
+					0x1e); //magic atheros values
 		if (nvram_matchi("cpuclk", 800))
 			ret = overclock(out, "800", 0x1f);
 	}
@@ -139,11 +146,13 @@ void start_overclock(void)	// hidden feature. must be called with
 	if (!ret) {
 		fprintf(stderr, "write new bootloader\n");
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-		fprintf(stderr, "board now clocked to %sMhz\n", nvram_safe_get("cpuclk"));
+		fprintf(stderr, "board now clocked to %sMhz\n",
+			nvram_safe_get("cpuclk"));
 	}
 	if (ret == 1) {
-		fprintf(stderr, "no clock defined, please adjust the \"cpuclk\" nvram parameter. in example \"nvram set cpuclk=800\"");
+		fprintf(stderr,
+			"no clock defined, please adjust the \"cpuclk\" nvram parameter. in example \"nvram set cpuclk=800\"");
 	}
 }
 
-// int main (int argc, char *argv[]) { start_overclock (); } 
+// int main (int argc, char *argv[]) { start_overclock (); }

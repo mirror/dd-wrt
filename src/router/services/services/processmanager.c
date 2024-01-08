@@ -55,7 +55,6 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 
 int reload_process(char *name)
 {
-
 	int pid = pidof(name);
 	if (pid > 0) {
 		kill(pid, SIGHUP);
@@ -85,7 +84,7 @@ void network_delay(char *service)
 	FILE *first = fopen("/tmp/firstrun", "rb");
 	if (!first) {
 		dd_loginfo(service, "wait for network init");
-		sleep(10);	// first run. wait for network init (need a better solution for this)
+		sleep(10); // first run. wait for network init (need a better solution for this)
 		first = fopen("/tmp/firstrun", "wb");
 		putc('r', first);
 		fclose(first);

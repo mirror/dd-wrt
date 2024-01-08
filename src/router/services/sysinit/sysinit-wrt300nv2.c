@@ -93,17 +93,18 @@ void start_sysinit(void)
 	// char *filename =
 	// "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom"; /*
 	// bank2=0x100 */
-	char *filename = "/dev/mtdblock/0";	/* bank2=0x100 */
+	char *filename = "/dev/mtdblock/0"; /* bank2=0x100 */
 	FILE *file = fopen(filename, "r");
 
 	if (file) {
 		unsigned char buf[20];
 
-		fseek(file, 0x5ffa0, SEEK_SET);	// point of mac address
+		fseek(file, 0x5ffa0, SEEK_SET); // point of mac address
 		fread(&buf[0], 6, 1, file);
 		char mac[20];
 
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1],
+			buf[2], buf[3], buf[4], buf[5]);
 		fprintf(stderr, "configure primary mac %s\n", mac);
 		set_hwaddr("ixp0", mac);
 		set_hwaddr("wifi0", mac);

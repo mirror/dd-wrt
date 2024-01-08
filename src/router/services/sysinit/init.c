@@ -44,25 +44,34 @@ extern int nvram2file(char *varname, char *filename);
 //#define stop_service(a) eval("service",a, "stop");
 //#define restart_service(a) eval("service",a, "restart");
 
-#define start_service(a) airbag_setpostinfo("start_" #a); start_##a()
-#define stop_service(a) airbag_setpostinfo("stop_" #a); stop_##a()
-#define restart_service(a) airbag_setpostinfo("stop_" #a); stop_##a(); airbag_setpostinfo("start_" #a); start_##a()
+#define start_service(a)                 \
+	airbag_setpostinfo("start_" #a); \
+	start_##a()
+#define stop_service(a)                 \
+	airbag_setpostinfo("stop_" #a); \
+	stop_##a()
+#define restart_service(a)               \
+	airbag_setpostinfo("stop_" #a);  \
+	stop_##a();                      \
+	airbag_setpostinfo("start_" #a); \
+	start_##a()
 
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
 #define start_services() eval("startservices");
 static void set_systunes(void)
 {
-	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "1500"));
-
+	writeprocsys("vm/dirty_writeback_centisecs",
+		     nvram_default_get("vm.dirty_writeback_centisecs", "1500"));
 }
 
 static void set_tcp_params(void)
 {
-	eval("/etc/preinit");	// sets default values for ip_conntrack
+	eval("/etc/preinit"); // sets default values for ip_conntrack
 	start_conntrack();
 
-	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
+	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control",
+			 "rb");
 	if (fp == NULL) {
 		char *vegas = "1";
 		char *westwood = "0";
@@ -78,17 +87,20 @@ static void set_tcp_params(void)
 		writeprocsysnet("ipv4/tcp_westwood", westwood);
 		writeprocsysnet("ipv4/tcp_vegas_cong_avoid", vegas);
 		writeprocsysnet("ipv4/tcp_bic", bic);
-		writeprocsysnet("ipv4/tcp_vegas_alpha", nvram_default_get("net.ipv4.vegas_alpha", "3"));
-		writeprocsysnet("ipv4/tcp_vegas_beta", nvram_default_get("net.ipv4.vegas_beta", "3"));
+		writeprocsysnet("ipv4/tcp_vegas_alpha",
+				nvram_default_get("net.ipv4.vegas_alpha", "3"));
+		writeprocsysnet("ipv4/tcp_vegas_beta",
+				nvram_default_get("net.ipv4.vegas_beta", "3"));
 	} else {
 		fclose(fp);
-		writeprocsysnet("ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "westwood"));
+		writeprocsysnet("ipv4/tcp_congestion_control",
+				nvram_default_get("tcp_congestion_control",
+						  "westwood"));
 	}
 }
 
 void start_hostname(void)
 {
-
 	char *hostname;
 	char *domain;
 	/* 
@@ -103,10 +115,11 @@ void start_hostname(void)
 	sethostname(hostname, strlen(hostname));
 	if (*domain)
 		setdomainname(domain, strlen(domain));
-
 }
 
-#define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
+#define getRouterName()                                             \
+	nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : \
+				     nvram_safe_get(NVROUTER)
 
 void start_post_sysinit(void)
 {
@@ -176,40 +189,85 @@ void start_post_sysinit(void)
 #ifndef HAVE_ERC
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
-	fprintf(fp, "KMT-WAS %s (c) 2024 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"KMT-WAS %s (c) 2024 KMT GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_SANSFIL
-	fprintf(fp, "SANSFIL %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"SANSFIL %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_KORENRON
-	fprintf(fp, "KORENRON %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"KORENRON %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_TESTEM
-	fprintf(fp, "TESTEM %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"TESTEM %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_HOBBIT
-	fprintf(fp, "HQ-NDS %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"HQ-NDS %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
-	fprintf(fp, "Enterprise AP %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"Enterprise AP %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_UNFY
 	//fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
-	fprintf(fp, "Firmware %s (c) 2024 \nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"Firmware %s (c) 2024 \nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #else
-	fprintf(fp, "OTAi %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"OTAi %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #endif
 #elif HAVE_RAYTRONIK
-	fprintf(fp, "RAYTRONIK %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"RAYTRONIK %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_ANTAIRA
-	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"Antaira %s\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_HDWIFI
-	fprintf(fp, "HDWIFI %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"HDWIFI %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_NDTRADE
-	fprintf(fp, "ND TRADE %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"ND TRADE %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		" (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #else
 #ifdef DIST
 	if (*(DIST))
-		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION, DIST, getRouterName());
+		fprintf(fp,
+			"DD-WRT v3.0-r%s %s (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+			"\nBoard: %s\n",
+			SVN_REVISION, DIST, getRouterName());
 	else
-		fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION, getRouterName());
+		fprintf(fp,
+			"DD-WRT v3.0-r%s custom (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+			"\nBoard: %s\n",
+			SVN_REVISION, getRouterName());
 #else
-	fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION, getRouterName());
+	fprintf(fp,
+		"DD-WRT v3.0-r%s custom (c) 2024 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+		"\nBoard: %s\n",
+		SVN_REVISION, getRouterName());
 #endif
 #endif
 #endif
@@ -228,12 +286,10 @@ void start_post_sysinit(void)
 	nvram_seti("qtn_ready", 0);
 #endif
 #endif
-
 }
 
 void start_init_restart(void)
 {
-
 #ifdef HAVE_OVERCLOCKING
 	start_overclocking();
 #endif
@@ -257,18 +313,16 @@ void start_init_restart(void)
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", c);
 
-		foreach(var, vifs, next) {
+		foreach(var, vifs, next)
+		{
 			eval("ifconfig", var, "down");
 		}
-
 	}
 #endif
-
 }
 
 void start_init_stop(void)
 {
-
 	lcdmessage("STOPPING SERVICES");
 	cprintf("STOP\n");
 	killall("udhcpc", SIGKILL);
@@ -326,7 +380,6 @@ void start_init_stop(void)
 	{
 		start_service(run_rc_shutdown);
 	}
-
 }
 
 void start_init_start(void)
@@ -397,8 +450,8 @@ void start_init_start(void)
 #endif
 	cprintf("set led release wan control\n");
 
-	if (nvram_matchi("radiooff_button", 1)
-	    && nvram_matchi("radiooff_boot_off", 1)) {
+	if (nvram_matchi("radiooff_button", 1) &&
+	    nvram_matchi("radiooff_boot_off", 1)) {
 		start_service(radio_off);
 		led_control(LED_SEC, LED_OFF);
 		led_control(LED_SEC0, LED_OFF);
@@ -409,7 +462,8 @@ void start_init_start(void)
 #ifdef HAVE_EMF
 	start_service(emf);
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT2860) && !defined(HAVE_RT61)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && \
+	!defined(HAVE_RT2860) && !defined(HAVE_RT61)
 	start_service(nas);
 #endif
 	start_service(radio_timer);
@@ -432,12 +486,10 @@ void start_init_start(void)
 #ifdef HAVE_X86
 	eval("service", "bootconfig", "restart");
 #endif
-
 }
 
 void start_modules_wait(void)
 {
-
 	cprintf("run rc file\n");
 #ifndef HAVE_MICRO
 #ifdef HAVE_REGISTER
@@ -446,7 +498,7 @@ void start_modules_wait(void)
 #endif
 #endif
 	{
-// start init scripts                           
+		// start init scripts
 		eval("/etc/init.d/rcS");
 		eval("/opt/etc/init.d/rcS");
 		eval("/jffs/etc/init.d/rcS");
@@ -458,9 +510,9 @@ void start_modules_wait(void)
 #ifdef HAVE_MILKFISH
 		start_milkfish_boot();
 #endif
-		if (nvram_invmatch("rc_custom", ""))	// create
-			// custom
-			// script
+		if (nvram_invmatch("rc_custom", "")) // create
+		// custom
+		// script
 		{
 			nvram2file("rc_custom", "/tmp/.rc_custom");
 			chmod("/tmp/.rc_custom", 0700);
@@ -469,7 +521,6 @@ void start_modules_wait(void)
 		start_run_rc_startup();
 	}
 #endif
-
 }
 
 int restart_dns_main(int argc, char *argv[])
@@ -490,16 +541,16 @@ int ipfmt_main(int argc, char *argv[])
 	char fmt;
 	struct in_addr addr, msk, outfmt;
 	int valid;
-	const char usage[] = ""	//
-	    "ipfmt <print option> <addr> <netmask>\n"	//
-	    "ipfmt <print option> <addr/cidr>\n"	//
-	    "\n"		//
-	    "print options:\n"	//
-	    "        b  : broadcast\n"	//
-	    "        n  : network\n"	//
-	    "        c  : cidr\n"	//
-	    "        N  : netmask\n"	//
-	    "\n";		//
+	const char usage[] = "" //
+			     "ipfmt <print option> <addr> <netmask>\n" //
+			     "ipfmt <print option> <addr/cidr>\n" //
+			     "\n" //
+			     "print options:\n" //
+			     "        b  : broadcast\n" //
+			     "        n  : network\n" //
+			     "        c  : cidr\n" //
+			     "        N  : netmask\n" //
+			     "\n"; //
 
 	if (argc < 3) {
 		puts(usage);
@@ -546,7 +597,6 @@ int ipfmt_main(int argc, char *argv[])
 	}
 	puts(inet_ntoa(outfmt));
 	return 0;
-
 }
 
 int get_wanface_main(int argc, char **argv)
@@ -565,18 +615,23 @@ int get_wanip_main(int argc, char **argv)
 int get_nfmark_main(int argc, char **argv)
 {
 	if (argc < 3) {
-		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n" "	services: FORWARD\n" "		  HOTSPOT\n" "		  QOS\n\n" "	eg: get_nfmark QOS 10\n");
+		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n"
+				"	services: FORWARD\n"
+				"		  HOTSPOT\n"
+				"		  QOS\n\n"
+				"	eg: get_nfmark QOS 10\n");
 		return 1;
 	}
 	char buffer[32];
-	fprintf(stdout, "%s\n", get_NFServiceMark(buffer,sizeof(buffer),argv[1], atol(argv[2])));
+	fprintf(stdout, "%s\n",
+		get_NFServiceMark(buffer, sizeof(buffer), argv[1],
+				  atol(argv[2])));
 	return 0;
 }
 
 #ifdef HAVE_PPTPD
 int pptpd_main(int argc, char **argv)
 {
-
 	if (!argv[1]) {
 		fprintf(stderr, "usage: poptop [start|stop|restart]\n");
 		return EINVAL;

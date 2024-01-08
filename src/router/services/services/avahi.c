@@ -51,19 +51,23 @@ void start_mdns(void)
 
 	FILE *fp;
 	fp = fopen("/tmp/mdns.conf", "wb");
-	fprintf(fp, "[server]\n"	//
-		"host-name=%s\n"	//
-		"domain-name=%s\n"	//
-		"use-ipv4=yes\n"	//
-		"use-ipv6=%s\n"	//
-		"check-response-ttl=no\n"	//
-		"use-iff-running=no\n"	//
-		"#deny-interfaces=\n", nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"), nvram_matchi("ipv6_enable", 1) ? "yes" : "no");
+	fprintf(fp,
+		"[server]\n" //
+		"host-name=%s\n" //
+		"domain-name=%s\n" //
+		"use-ipv4=yes\n" //
+		"use-ipv6=%s\n" //
+		"check-response-ttl=no\n" //
+		"use-iff-running=no\n" //
+		"#deny-interfaces=\n",
+		nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"),
+		nvram_matchi("ipv6_enable", 1) ? "yes" : "no");
 	char ifname[32];
 	char *next;
 	char *wordlist = nvram_safe_get("mdns_interfaces");
 	int idx = 0;
-	foreach(ifname, wordlist, next) {
+	foreach(ifname, wordlist, next)
+	{
 		if (!idx)
 			fprintf(fp, "allow-interfaces=");
 		else
@@ -74,41 +78,48 @@ void start_mdns(void)
 	if (idx)
 		fprintf(fp, "\n");
 
-	fprintf(fp, "\n" "[wide-area]\n"	//
-		"enable-wide-area=yes\n"	//
-		"\n"		//
-		"[publish]\n"	//
-		"publish-addresses=yes\n"	//
-		"publish-hinfo=yes\n"	//
-		"publish-workstation=yes\n"	//
-		"publish-domain=yes\n"	//
-		"#publish-dns-servers=%s\n"	//
-		"#publish-resolv-conf-dns-servers=yes\n"	//
-		"\n" "[reflector]\n"	//
-		"enable-reflector=%s\n"	//
-		"#reflect-ipv=no\n"	//
-		"\n" "[rlimits]\n"	//
-		"#rlimit-as=\n"	//
-		"rlimit-core=0\n"	//
-		"rlimit-data=4194304\n"	//
-		"rlimit-fsize=0\n"	//
-		"rlimit-nofile=30\n"	//
-		"rlimit-stack=4194304\n"	//
-		"rlimit-nproc=3\n", nvram_safe_get("lan_ipaddr"), nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
+	fprintf(fp,
+		"\n"
+		"[wide-area]\n" //
+		"enable-wide-area=yes\n" //
+		"\n" //
+		"[publish]\n" //
+		"publish-addresses=yes\n" //
+		"publish-hinfo=yes\n" //
+		"publish-workstation=yes\n" //
+		"publish-domain=yes\n" //
+		"#publish-dns-servers=%s\n" //
+		"#publish-resolv-conf-dns-servers=yes\n" //
+		"\n"
+		"[reflector]\n" //
+		"enable-reflector=%s\n" //
+		"#reflect-ipv=no\n" //
+		"\n"
+		"[rlimits]\n" //
+		"#rlimit-as=\n" //
+		"rlimit-core=0\n" //
+		"rlimit-data=4194304\n" //
+		"rlimit-fsize=0\n" //
+		"rlimit-nofile=30\n" //
+		"rlimit-stack=4194304\n" //
+		"rlimit-nproc=3\n",
+		nvram_safe_get("lan_ipaddr"),
+		nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
 	fclose(fp);
 
-#ifdef HAVE_SMBD		//might need SAMBA
+#ifdef HAVE_SMBD //might need SAMBA
 	// add smb service to avahi, better place in samba3.c maybe enumerated for all partitions
 	if (nvram_matchi("samba3_enable", 1)) {
 		fp = fopen("/tmp/avahi/services/smb.service", "wb");
-		fprintf(fp, "<?xml version=\"1.0\" standalone=\'no\'?>\n"	//
-			"<!DOCTYPE service-group SYSTEM \"avahi-service.dtd\">\n"	//
-			"<service-group>\n"	//
-			"\t<name replace-wildcards=\"yes\">SAMBA on %%h</name>\n"	//
-			"\t<service>\n"	//
-			"\t\t<type>_smb._tcp</type>\n"	//
-			"\t\t<port>445</port>\n"	//
-			"\t</service>\n"	//
+		fprintf(fp,
+			"<?xml version=\"1.0\" standalone=\'no\'?>\n" //
+			"<!DOCTYPE service-group SYSTEM \"avahi-service.dtd\">\n" //
+			"<service-group>\n" //
+			"\t<name replace-wildcards=\"yes\">SAMBA on %%h</name>\n" //
+			"\t<service>\n" //
+			"\t\t<type>_smb._tcp</type>\n" //
+			"\t\t<port>445</port>\n" //
+			"\t</service>\n" //
 			"</service-group>\n");
 		fclose(fp);
 	}
@@ -117,52 +128,58 @@ void start_mdns(void)
 #ifdef HAVE_MDNS_UTILS
 	mkdir("/tmp/var/run/dbus", 0744);
 	fp = fopen("/tmp/avahi-dbus.conf", "wb");
-	fprintf(fp, "<!DOCTYPE busconfig PUBLIC\n"	//
-		"\"-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN\"\n"	//
-		"\"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"	//
-		"<busconfig>\n"	//
-		"\n"		//
-		"<!-- Only root or user nobody can own the Avahi service this needs some work -->\n"	//
-		"<policy user=\"nobody\">\n"	//
-		"<allow own=\"*\"/>\n"	//
-		"</policy>\n"	//
-		"<policy user=\"root\">\n"	//
-		"<allow own=\"*\"/>\n"	//
-		"</policy>\n"	//
-		"\n"		//
-		"<!-- Allow anyone to invoke methods on Avahi server, except SetHostName -->\n"	//
-		"<policy context=\"default\">\n"	//
-		"<allow send_destination=\"*\"/>\n"	//
-		"<allow receive_sender=\"*\"/>\n"	//
-		"\n"		//
-		"<deny send_destination=\"org.freedesktop.Avahi\"\n"	//
-		"send_interface=\"org.freedesktop.Avahi.Server\" send_member=\"SetHostName\"/>\n"	//
-		"</policy>\n"	//
-		"\n"		//
-		"<listen>unix:path=/tmp/var/run/dbus/system_bus_socket</listen>\n"	//
-		"\n"		//
-		"<!-- Allow everything, including access to SetHostName to users of the group \"nobody\" -->\n"	//
-		"<policy group=\"nobody\">\n"	//
-		"<allow send_destination=\"*\"/>\n"	//
-		"<allow receive_sender=\"*\"/>\n"	//
-		"</policy>\n"	//
-		"<policy user=\"root\">\n"	//
-		"<allow send_destination=\"*\"/>\n"	//
-		"<allow receive_sender=\"*\"/>\n"	//
-		"</policy>\n"	//
+	fprintf(fp,
+		"<!DOCTYPE busconfig PUBLIC\n" //
+		"\"-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN\"\n" //
+		"\"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n" //
+		"<busconfig>\n" //
+		"\n" //
+		"<!-- Only root or user nobody can own the Avahi service this needs some work -->\n" //
+		"<policy user=\"nobody\">\n" //
+		"<allow own=\"*\"/>\n" //
+		"</policy>\n" //
+		"<policy user=\"root\">\n" //
+		"<allow own=\"*\"/>\n" //
+		"</policy>\n" //
+		"\n" //
+		"<!-- Allow anyone to invoke methods on Avahi server, except SetHostName -->\n" //
+		"<policy context=\"default\">\n" //
+		"<allow send_destination=\"*\"/>\n" //
+		"<allow receive_sender=\"*\"/>\n" //
+		"\n" //
+		"<deny send_destination=\"org.freedesktop.Avahi\"\n" //
+		"send_interface=\"org.freedesktop.Avahi.Server\" send_member=\"SetHostName\"/>\n" //
+		"</policy>\n" //
+		"\n" //
+		"<listen>unix:path=/tmp/var/run/dbus/system_bus_socket</listen>\n" //
+		"\n" //
+		"<!-- Allow everything, including access to SetHostName to users of the group \"nobody\" -->\n" //
+		"<policy group=\"nobody\">\n" //
+		"<allow send_destination=\"*\"/>\n" //
+		"<allow receive_sender=\"*\"/>\n" //
+		"</policy>\n" //
+		"<policy user=\"root\">\n" //
+		"<allow send_destination=\"*\"/>\n" //
+		"<allow receive_sender=\"*\"/>\n" //
+		"</policy>\n" //
 		"</busconfig>\n");
 	fclose(fp);
 
 	if (pidof("dbus-daemon") > 0) {
 		dd_loginfo("dbus-daemon", "dbus-daemon already running\n");
 	} else {
-		snprintf(conffile, sizeof(conffile), "--config-file=%s", getdefaultconfig("mdns", path, sizeof(path), "avahi-dbus.conf"));
+		snprintf(conffile, sizeof(conffile), "--config-file=%s",
+			 getdefaultconfig("mdns", path, sizeof(path),
+					  "avahi-dbus.conf"));
 		log_eval("dbus-launch", conffile);
 	}
 #endif
 	if (reload_process("avahi-daemon")) {
-		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns", path, sizeof(path), "mdns.conf"));
-		log_eval("avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
+		snprintf(conffile, sizeof(conffile),
+			 getdefaultconfig("mdns", path, sizeof(path),
+					  "mdns.conf"));
+		log_eval("avahi-daemon", "-D", "-f", conffile,
+			 "--no-drop-root");
 	}
 	return;
 }

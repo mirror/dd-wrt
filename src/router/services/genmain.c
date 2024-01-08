@@ -84,7 +84,6 @@ void readsymbols(void)
 				syms[i + 1] = syms[i];
 				syms[i] = b;
 			}
-
 		}
 	}
 }
@@ -93,7 +92,8 @@ int sym(char *name, char *prefix, char *postfix)
 {
 	int i = 0;
 	char check[256];
-	sprintf(check, "%s%s%s%s%s", prefix ? prefix : "", prefix ? "_" : "", name, postfix ? "_" : "", postfix ? postfix : "");
+	sprintf(check, "%s%s%s%s%s", prefix ? prefix : "", prefix ? "_" : "",
+		name, postfix ? "_" : "", postfix ? postfix : "");
 	while (syms[i]) {
 		if (!strcmp(syms[i++], check))
 			return 1;
@@ -155,7 +155,9 @@ int main(int argc, char *argv[])
 		} else if ((p = strstr(copy, "_main"))) {
 			*p = 0;
 			if (sym(copy, NULL, "main"))
-				fprintf(out, "int %s_main(int argc,char *argv[]);\n", copy);
+				fprintf(out,
+					"int %s_main(int argc,char *argv[]);\n",
+					copy);
 		} else if (!strncmp(syms[i], "restart_", 8)) {
 			fprintf(out, "void restart_%s(void);\n", syms[i] + 8);
 		}
@@ -203,7 +205,8 @@ int main(int argc, char *argv[])
 				else
 					fprintf(out, ",\tNULL");
 				if (restart)
-					fprintf(out, ",\trestart_%s", syms[i] + 6);
+					fprintf(out, ",\trestart_%s",
+						syms[i] + 6);
 				else
 					fprintf(out, ",\tNULL");
 				fprintf(out, "},\n");
@@ -230,7 +233,8 @@ int main(int argc, char *argv[])
 				int deps = sym(syms[i] + 5, NULL, "deps");
 				int restart = sym(syms[i] + 5, "restart", NULL);
 				if (start)
-					fprintf(out, ",\tstart_%s", syms[i] + 5);
+					fprintf(out, ",\tstart_%s",
+						syms[i] + 5);
 				else
 					fprintf(out, ",\tNULL");
 				if (deps)
@@ -249,7 +253,8 @@ int main(int argc, char *argv[])
 					fprintf(out, ",\tNULL");
 
 				if (restart)
-					fprintf(out, ",\trestart_%s", syms[i] + 5);
+					fprintf(out, ",\trestart_%s",
+						syms[i] + 5);
 				else
 					fprintf(out, ",\tNULL");
 				fprintf(out, "},\n");
@@ -264,33 +269,39 @@ int main(int argc, char *argv[])
 					int main = sym(copy, NULL, "main");
 					int proc = sym(copy, NULL, "proc");
 					int deps = sym(copy, NULL, "deps");
-					int restart = sym(copy, "restart", NULL);
+					int restart =
+						sym(copy, "restart", NULL);
 					if (start)
-						fprintf(out, ",\tstart_%s", copy);
+						fprintf(out, ",\tstart_%s",
+							copy);
 					else
 						fprintf(out, ",\tNULL");
 					if (deps)
-						fprintf(out, ",\t%s_deps", copy);
+						fprintf(out, ",\t%s_deps",
+							copy);
 					else
 						fprintf(out, ",\tNULL");
 					if (proc)
-						fprintf(out, ",\t%s_proc", copy);
+						fprintf(out, ",\t%s_proc",
+							copy);
 					else
 						fprintf(out, ",\tNULL");
 					if (stop)
-						fprintf(out, ",\tstop_%s", copy);
+						fprintf(out, ",\tstop_%s",
+							copy);
 					else
 						fprintf(out, ",\tNULL");
 					if (main)
-						fprintf(out, ",\t%s_main", copy);
+						fprintf(out, ",\t%s_main",
+							copy);
 					else
 						fprintf(out, ",\tNULL");
 					if (restart)
-						fprintf(out, ",\trestart_", copy);
+						fprintf(out, ",\trestart_",
+							copy);
 					else
 						fprintf(out, ",\tNULL");
 					fprintf(out, "},\n");
-
 				}
 			}
 		} else if (!strncmp(syms[i], "restart_", 8)) {
@@ -315,7 +326,8 @@ int main(int argc, char *argv[])
 				int proc = sym(syms[i] + 8, NULL, "proc");
 				int deps = sym(syms[i] + 8, NULL, "deps");
 				if (start)
-					fprintf(out, ",\tstart_%s", syms[i] + 8);
+					fprintf(out, ",\tstart_%s",
+						syms[i] + 8);
 				else
 					fprintf(out, ",\tNULL");
 				if (deps)

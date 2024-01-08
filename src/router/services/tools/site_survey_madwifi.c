@@ -61,7 +61,8 @@ typedef unsigned int __uint32_t;
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 
-static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
+static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid,
+		      size_t essid_len)
 {
 	const u_int8_t *p;
 	int maxlen;
@@ -78,7 +79,7 @@ static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t 
 		if (*p < ' ' || *p > 0x7e)
 			break;
 	}
-	if (i != maxlen) {	/* not printable, print as hex */
+	if (i != maxlen) { /* not printable, print as hex */
 		if (bufsize < 3)
 			return 0;
 #if 0
@@ -93,7 +94,7 @@ static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t 
 			bufsize -= 2;
 		}
 		maxlen = 2 + 2 * i;
-	} else {		/* printable, truncate as needed */
+	} else { /* printable, truncate as needed */
 		memcpy(buf, essid, maxlen);
 	}
 	if (maxlen != essid_len)
@@ -108,31 +109,34 @@ static int open_site_survey(void);
 
 static struct site_survey_list *site_survey_lists;
 
-#define LE_READ_4(p)					\
-	((u_int32_t)					\
-	 ((((const u_int8_t *)(p))[0]      ) |		\
-	  (((const u_int8_t *)(p))[1] <<  8) |		\
-	  (((const u_int8_t *)(p))[2] << 16) |		\
-	  (((const u_int8_t *)(p))[3] << 24)))
+#define LE_READ_4(p)                                      \
+	((u_int32_t)((((const u_int8_t *)(p))[0]) |       \
+		     (((const u_int8_t *)(p))[1] << 8) |  \
+		     (((const u_int8_t *)(p))[2] << 16) | \
+		     (((const u_int8_t *)(p))[3] << 24)))
 
 static __inline int iswpaoui(const unsigned char *frm)
 {
-	return frm[1] > 3 && LE_READ_4(frm + 2) == ((MADWIFI_WPA_OUI_TYPE << 24) | WPA_OUI);
+	return frm[1] > 3 &&
+	       LE_READ_4(frm + 2) == ((MADWIFI_WPA_OUI_TYPE << 24) | WPA_OUI);
 }
 
 static __inline int isrsnoui(const unsigned char *frm)
 {
-	return frm[1] > 3 && LE_READ_4(frm + 2) == ((MADWIFI_WPA_OUI_TYPE << 24) | RSN_OUI);
+	return frm[1] > 3 &&
+	       LE_READ_4(frm + 2) == ((MADWIFI_WPA_OUI_TYPE << 24) | RSN_OUI);
 }
 
 static __inline int iswmeoui(const unsigned char *frm)
 {
-	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WME_OUI_TYPE << 24) | WME_OUI);
+	return frm[1] > 3 &&
+	       LE_READ_4(frm + 2) == ((WME_OUI_TYPE << 24) | WME_OUI);
 }
 
 static __inline int isatherosoui(const unsigned char *frm)
 {
-	return frm[1] > 3 && LE_READ_4(frm + 2) == ((ATH_OUI_TYPE << 24) | ATH_OUI);
+	return frm[1] > 3 &&
+	       LE_READ_4(frm + 2) == ((ATH_OUI_TYPE << 24) | ATH_OUI);
 }
 
 static int __inline ismtikoui(const unsigned char *frm)
@@ -177,7 +181,8 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 	static char a[18];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],
+		     mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
 
@@ -206,7 +211,8 @@ int site_survey_main(int argc, char *argv[])
 	unsigned char *buf = malloc(24 * 1024);
 	if (!buf)
 		return -1;
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
+	site_survey_lists =
+		calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 	bzero(buf, 24 * 1024);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
@@ -231,7 +237,8 @@ int site_survey_main(int argc, char *argv[])
 		vp = (u_int8_t *)(sr + 1);
 		bzero(ssid, sizeof(ssid));
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
-		strcpy(site_survey_lists[i].BSSID, ieee80211_ntoa(sr->isr_bssid));
+		strcpy(site_survey_lists[i].BSSID,
+		       ieee80211_ntoa(sr->isr_bssid));
 		site_survey_lists[i].channel = ieee80211_mhz2ieee(sr->isr_freq);
 		site_survey_lists[i].frequency = sr->isr_freq;
 		int noise = 256;
@@ -241,7 +248,8 @@ int site_survey_main(int argc, char *argv[])
 		if (sr->isr_noise == 0) {
 			site_survey_lists[i].phy_noise = -95;
 		}
-		site_survey_lists[i].RSSI = (int)site_survey_lists[i].phy_noise + (int)sr->isr_rssi;
+		site_survey_lists[i].RSSI =
+			(int)site_survey_lists[i].phy_noise + (int)sr->isr_rssi;
 		site_survey_lists[i].capability = sr->isr_capinfo;
 		// site_survey_lists[i].athcaps = sr->isr_athflags;
 		site_survey_lists[i].rate_count = sr->isr_nrates;
@@ -254,12 +262,13 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].rate_count = n11;
 		cp += sr->isr_len, len -= sr->isr_len;
 		i++;
-	}
-	while (len >= sizeof(struct ieee80211req_scan_result));
+	} while (len >= sizeof(struct ieee80211req_scan_result));
 	free(buf);
 	write_site_survey();
 	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency && site_survey_lists[i].channel != 0; i++) {
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency &&
+		    site_survey_lists[i].channel != 0;
+	     i++) {
 		if (site_survey_lists[i].SSID[0] == 0) {
 			strcpy(site_survey_lists[i].SSID, "hidden");
 		}
@@ -272,10 +281,16 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].active,
-			site_survey_lists[i].busy,
-			site_survey_lists[i].active ? (100 - (site_survey_lists[i].busy * 100 / site_survey_lists[i].active)) : 100,
-			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].active, site_survey_lists[i].busy,
+			site_survey_lists[i].active ?
+				(100 - (site_survey_lists[i].busy * 100 /
+					site_survey_lists[i].active)) :
+				100,
+			site_survey_lists[i].beacon_period,
+			site_survey_lists[i].capability,
+			site_survey_lists[i].dtim_period,
+			site_survey_lists[i].rate_count,
+			site_survey_lists[i].ENCINFO);
 	}
 
 	free(site_survey_lists);
@@ -287,7 +302,9 @@ static int write_site_survey(void)
 	FILE *fp;
 
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
-		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fwrite(&site_survey_lists[0],
+		       sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1,
+		       fp);
 		fclose(fp);
 		return 0;
 	}
@@ -301,7 +318,8 @@ static int open_site_survey(void)
 	bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fread(&site_survey_lists[0],
+		      sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 1;
 	}

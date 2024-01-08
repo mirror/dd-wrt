@@ -37,7 +37,8 @@
 #include <wlutils.h>
 #include <bcmnvram.h>
 
-static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
+static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid,
+		      size_t essid_len)
 {
 	const u_int8_t *p;
 	int maxlen;
@@ -54,7 +55,7 @@ static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t 
 		if (*p < ' ' || *p > 0x7e)
 			break;
 	}
-	if (i != maxlen) {	/* not printable, print as hex */
+	if (i != maxlen) { /* not printable, print as hex */
 		if (bufsize < 3)
 			return 0;
 #if 0
@@ -69,7 +70,7 @@ static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t 
 			bufsize -= 2;
 		}
 		maxlen = 2 + 2 * i;
-	} else {		/* printable, truncate as needed */
+	} else { /* printable, truncate as needed */
 		memcpy(buf, essid, maxlen);
 	}
 	if (maxlen != essid_len)
@@ -85,7 +86,7 @@ int write_site_survey(void);
 
 static struct site_survey_list *site_survey_lists;
 
-static void skipline(FILE * in)
+static void skipline(FILE *in)
 {
 	while (1) {
 		int c = getc(in);
@@ -105,12 +106,14 @@ int main(int argc, char *argv[])
 int site_survey_main(int argc, char *argv[])
 #endif
 {
-#define DOT11_CAP_ESS				0x0001
-#define DOT11_CAP_IBSS				0x0002
-#define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
+#define DOT11_CAP_ESS 0x0001
+#define DOT11_CAP_IBSS 0x0002
+#define DOT11_CAP_PRIVACY 0x0010 /* d11 cap. privacy */
 
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
-	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32], ext[32];
+	site_survey_lists =
+		calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
+	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32],
+		ext[32];
 	int i = 0;
 
 	unlink(SITE_SURVEY_DB);
@@ -118,18 +121,19 @@ int site_survey_main(int argc, char *argv[])
 	int len;
 
 	char *ifn = nvram_safe_get("wifi_display");
-	if (nvram_nmatch("ap", "%s_mode", ifn)
-	    || nvram_nmatch("apsta", "%s_mode", ifn)) {
-		eval("iwpriv", getRADev(ifn), "set", "SiteSurvey=1");	// only in ap mode
-		sleep(4);	//wait 4 seconds per spec
+	if (nvram_nmatch("ap", "%s_mode", ifn) ||
+	    nvram_nmatch("apsta", "%s_mode", ifn)) {
+		eval("iwpriv", getRADev(ifn), "set",
+		     "SiteSurvey=1"); // only in ap mode
+		sleep(4); //wait 4 seconds per spec
 	}
 	char openn[32];
 	sprintf(openn, "iwpriv %s get_site_survey", getRADev(ifn));
 	FILE *scan = popen(openn, "r");
 	skipline(scan);
 	skipline(scan);
-//      fscanf(scan, "%s %s", b1, b2);  // skip first line
-//      fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);       //skip second line
+	//      fscanf(scan, "%s %s", b1, b2);  // skip first line
+	//      fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);       //skip second line
 	i = 0;
 	int c = 0;
 	do {
@@ -156,18 +160,20 @@ int site_survey_main(int argc, char *argv[])
 			for (i = 0; i < 32 - c; i++)
 				b2[i] = b2[i + c];
 		}
-		int ret = fscanf(scan, "%s %s %s %s %s %s", b3, b4, b5, b6, ext, b7);	//skip second line
+		int ret = fscanf(scan, "%s %s %s %s %s %s", b3, b4, b5, b6, ext,
+				 b7); //skip second line
 		if (ret < 5)
 			break;
 		if (ret == 6)
 			skipline(scan);
 		else
 			strncpy(b7, ext, 31);
-		site_survey_lists[i].channel = atoi(b1);	// channel
-		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
-		strcpy(site_survey_lists[i].SSID, b2);	//SSID
-		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
-		site_survey_lists[i].phy_noise = -95;	// no way
+		site_survey_lists[i].channel = atoi(b1); // channel
+		site_survey_lists[i].frequency =
+			ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		strcpy(site_survey_lists[i].SSID, b2); //SSID
+		strcpy(site_survey_lists[i].BSSID, b3); //BSSID
+		site_survey_lists[i].phy_noise = -95; // no way
 		strcpy(site_survey_lists[i].ENCINFO, b4);
 		site_survey_lists[i].RSSI = -atoi(b5);
 
@@ -188,13 +194,13 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].capability |= DOT11_CAP_PRIVACY;
 
 		i++;
-	}
-	while (1);
+	} while (1);
 	pclose(scan);
 	write_site_survey();
 	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency && site_survey_lists[i].channel != 0; i++) {
-
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].frequency &&
+		    site_survey_lists[i].channel != 0;
+	     i++) {
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
@@ -203,7 +209,11 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].beacon_period,
+			site_survey_lists[i].capability,
+			site_survey_lists[i].dtim_period,
+			site_survey_lists[i].rate_count,
+			site_survey_lists[i].ENCINFO);
 	}
 	free(site_survey_lists);
 	return 0;
@@ -214,7 +224,9 @@ int write_site_survey(void)
 	FILE *fp;
 
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
-		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fwrite(&site_survey_lists[0],
+		       sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1,
+		       fp);
 		fclose(fp);
 		return 0;
 	}
@@ -228,7 +240,8 @@ static int open_site_survey(void)
 	bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fread(&site_survey_lists[0],
+		      sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 1;
 	}

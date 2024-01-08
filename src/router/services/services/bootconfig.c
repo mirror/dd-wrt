@@ -65,10 +65,10 @@ static void makeargs(char *args)
 	if (nvram_match("boot_nopti", "1"))
 		strcat(args, " pti=off");
 	if (nvram_match("boot_pstate", "1"))
-		strcat(args, " initcall_blacklist=acpi_cpufreq_init amd_pstate.shared_mem=1 amd_pstate=passive");
+		strcat(args,
+		       " initcall_blacklist=acpi_cpufreq_init amd_pstate.shared_mem=1 amd_pstate=passive");
 	if (nvram_match("boot_nospec_store_bypass_disable", "1"))
 		strcat(args, " spec_store_bypass_disable=off");
-
 }
 
 void start_bootconfig_legacy(void)
@@ -79,7 +79,7 @@ void start_bootconfig_legacy(void)
 
 	insmod("crc16 crc32c_generic crc32_generic mbcache ext2 jbd jbd2 ext3 ext4");
 	makeargs(args);
-	if (strlen(disc) == 7)	//mmcblk0 / nvme0n1
+	if (strlen(disc) == 7) //mmcblk0 / nvme0n1
 		sprintf(dev, "/dev/%sp1", disc);
 	else
 		sprintf(dev, "/dev/%s1", disc);
@@ -96,7 +96,8 @@ void start_bootconfig_legacy(void)
 		return;
 	char *vga = " fbcon=nodefer vga=0x305";
 	if (!strncmp(serial, "serial", 6)) {
-		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
+		fprintf(out,
+			"serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
 		fprintf(out, "terminal --timeout=10 serial\n");
 		fprintf(out, "\n");
 		vga = " video=vga16fb:off nofb console=ttyS0,115200n8";
@@ -111,12 +112,16 @@ void start_bootconfig_legacy(void)
 	if (strlen(args)) {
 		fprintf(out, "title   DD-WRT\n");
 		fprintf(out, "root    (hd0,0)\n");
-		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n", vga, args);
+		fprintf(out,
+			"kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n",
+			vga, args);
 		fprintf(out, "boot\n\n");
 	}
 	fprintf(out, "title   default\n");
 	fprintf(out, "root    (hd0,0)\n");
-	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n", vga);
+	fprintf(out,
+		"kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n",
+		vga);
 	fprintf(out, "boot\n");
 	fprintf(out, "\n");
 	fclose(out);
@@ -137,7 +142,7 @@ void start_bootconfig_efi(void)
 	insmod("msdos");
 	makeargs(args);
 
-	if (strlen(disc) == 7)	//mmcblk0 / nvme0n1
+	if (strlen(disc) == 7) //mmcblk0 / nvme0n1
 		sprintf(dev, "/dev/%sp1", disc);
 	else
 		sprintf(dev, "/dev/%s1", disc);
@@ -154,8 +159,10 @@ void start_bootconfig_efi(void)
 		return;
 	char *vga = " fbcon=nodefer vga=0x305 video=efifb:1024x768x32";
 	if (!strncmp(serial, "serial", 6)) {
-		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
-		fprintf(out, "terminal_input console serial; terminal_output console serial\n");
+		fprintf(out,
+			"serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
+		fprintf(out,
+			"terminal_input console serial; terminal_output console serial\n");
 		fprintf(out, "\n");
 		vga = " video=vga16fb:off nofb console=ttyS0,115200n8";
 	}
@@ -166,16 +173,19 @@ void start_bootconfig_efi(void)
 	fprintf(out, "\n");
 
 	if (strlen(args)) {
-
 		fprintf(out, " menuentry \"DD-WRT\" {\n");
 		fprintf(out, " 	set gfxpayload=keep\n");
-		fprintf(out, " 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n", vga, args);
+		fprintf(out,
+			" 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5%s\n",
+			vga, args);
 		fprintf(out, " }\n");
 	}
 
 	fprintf(out, " menuentry \"default\" {\n");
 	fprintf(out, " 	set gfxpayload=keep\n");
-	fprintf(out, " 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n", vga);
+	fprintf(out,
+		" 	linux /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s initcall_blacklist=acpi_cpufreq_init reboot=bios rootdelay=5\n",
+		vga);
 	fprintf(out, " }\n");
 
 	fprintf(out, "menuentry \"MEMTEST86\" {\n");

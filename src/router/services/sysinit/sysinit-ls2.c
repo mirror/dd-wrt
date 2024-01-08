@@ -101,9 +101,10 @@ void start_sysinit(void)
 	detect_wireless_devices(RADIO_ALL);
 
 #ifdef HAVE_BWRG1000
-	eval("ifconfig", "eth0", "up");	// wan
+	eval("ifconfig", "eth0", "up"); // wan
 #ifdef HAVE_SWCONFIG
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 5t");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
+	     "0 1 2 3 5t");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 5t");
 	eval("swconfig", "dev", "eth0", "set", "apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
@@ -122,14 +123,17 @@ void start_sysinit(void)
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "1 2 16000");
 #else
-	vlan_init(0xff);	// 4 lan + 1 wan
+	vlan_init(0xff); // 4 lan + 1 wan
 #endif
 #else
 #ifdef HAVE_LS2
-#if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && !defined(HAVE_MS2) && !defined(HAVE_PICO2) && !defined(HAVE_PICO2HP)
-	eval("ifconfig", "eth0", "up");	// wan
+#if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) &&         \
+	!defined(HAVE_BS2HP) && !defined(HAVE_MS2) && !defined(HAVE_PICO2) && \
+	!defined(HAVE_PICO2HP)
+	eval("ifconfig", "eth0", "up"); // wan
 #ifdef HAVE_SWCONFIG
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 5t");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
+	     "0 1 2 3 5t");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 5t");
 	eval("swconfig", "dev", "eth0", "set", "apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
@@ -142,7 +146,7 @@ void start_sysinit(void)
 	nvram_seti("sw_lan3", 2);
 	nvram_seti("sw_lan4", 3);
 #else
-	vlan_init(0xff);	// 4 lan + 1 wan
+	vlan_init(0xff); // 4 lan + 1 wan
 	writeprocsys("dev/wifi0/ledpin", "7");
 	writeprocsys("dev/wifi0/softled", "1");
 #endif

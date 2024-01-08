@@ -40,16 +40,15 @@
 
 void run_nas_notify(char *ifname)
 {
-	char *argv[] = { "nas4not", "lan", ifname, "up",
-		NULL,		/* role */
-		NULL,		/* crypto */
-		NULL,		/* auth */
-		NULL,		/* passphrase */
-		NULL,		/* ssid */
-		NULL
-	};
+	char *argv[] = { "nas4not", "lan", ifname, "up", NULL, /* role */
+			 NULL, /* crypto */
+			 NULL, /* auth */
+			 NULL, /* passphrase */
+			 NULL, /* ssid */
+			 NULL };
 	char *str = NULL;
-	char tmp[100], prefix[] = "wlXXXXXXXXXX_", pidfile[] = "/tmp/nas.wlXXXXXXXlan.pid";
+	char tmp[100], prefix[] = "wlXXXXXXXXXX_",
+		       pidfile[] = "/tmp/nas.wlXXXXXXXlan.pid";
 	int unit;
 	char remote[ETHER_ADDR_LEN];
 	char ssid[48], pass[80], auth[16], crypto[16], role[8];
@@ -64,7 +63,8 @@ void run_nas_notify(char *ifname)
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	snprintf(pidfile, sizeof(pidfile), "/tmp/nas.wl%dlan.pid", unit);
 
-	if (!(str = file2str(pidfile)))	// no pidfile means no nas was run (required)
+	if (!(str = file2str(
+		      pidfile))) // no pidfile means no nas was run (required)
 	{
 		return;
 	}
@@ -78,9 +78,9 @@ void run_nas_notify(char *ifname)
 		char mac[ETHER_ADDR_STR_LEN];
 		uint8 ea[ETHER_ADDR_LEN];
 
-		if (get_wds_wsec(unit, i, mac, role, crypto, auth, ssid, pass)
-		    && ether_atoe(mac, ea)
-		    && !bcmp(ea, remote, ETHER_ADDR_LEN)) {
+		if (get_wds_wsec(unit, i, mac, role, crypto, auth, ssid,
+				 pass) &&
+		    ether_atoe(mac, ea) && !bcmp(ea, remote, ETHER_ADDR_LEN)) {
 			argv[4] = role;
 			argv[5] = crypto;
 			argv[6] = auth;
@@ -122,11 +122,10 @@ void run_nas_notify(char *ifname)
 
 static void start_radius(char *prefix)
 {
-
 	// wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
 
-	if (nvram_nmatch("1", "%s_radauth", prefix)
-	    && nvram_nmatch("ap", "%s_mode", prefix)) {
+	if (nvram_nmatch("1", "%s_radauth", prefix) &&
+	    nvram_nmatch("ap", "%s_mode", prefix)) {
 		char *server = nvram_nget("%s_radius_ipaddr", prefix);
 		char *port = nvram_nget("%s_radius_port", prefix);
 		char *share = nvram_nget("%s_radius_key", prefix);
@@ -144,11 +143,13 @@ static void start_radius(char *prefix)
 			pragma = "-n3 ";
 		if (nvram_matchi(type, 3))
 			pragma = "";
-		sleep(1);	// some delay is usefull
+		sleep(1); // some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s %s %s %s &", pragma,
-			  ifname, server, port, share, nvram_nget("%s_radius_override", prefix), nvram_nget("%s_radmacpassword", prefix), nvram_nget("%s_max_unauth_users", prefix));
+			  ifname, server, port, share,
+			  nvram_nget("%s_radius_override", prefix),
+			  nvram_nget("%s_radmacpassword", prefix),
+			  nvram_nget("%s_max_unauth_users", prefix));
 	}
-
 }
 
 static void start_nas_single(char *type, char *prefix);
@@ -158,26 +159,30 @@ static void convert_wds(int instance)
 	char wds_mac[254];
 	char buf[254];
 
-	if (nvram_nmatch("", "wl%d_wds", instance))	// For Router, accept 
+	if (nvram_nmatch("", "wl%d_wds", instance)) // For Router, accept
 		// all WDS link
 		strcpy(wds_mac, "*");
-	else			// For AP, assign remote WDS MAC
+	else // For AP, assign remote WDS MAC
 		strcpy(wds_mac, nvram_nget("wl%d_wds", instance));
 
 	/*
 	 * For WPA-PSK mode, we want to convert wl_wds_mac to wl0_wds0 ...
 	 * wl0_wds255 
 	 */
-	if (nvram_nmatch("psk", "wl%d_security_mode", instance)
-	    || nvram_nmatch("psk2", "wl%d_security_mode", instance)) {
+	if (nvram_nmatch("psk", "wl%d_security_mode", instance) ||
+	    nvram_nmatch("psk2", "wl%d_security_mode", instance)) {
 		int i = 0;
 		int j;
 		char mac[254];
 		char *next;
 
-		foreach(mac, wds_mac, next) {
-			snprintf(buf, sizeof(buf), "%s,auto,%s,%s,%s,%s",
-				 mac, nvram_nget("wl%d_crypto", instance), nvram_nget("wl%d_security_mode", instance), nvram_nget("wl%d_ssid", instance), nvram_nget("wl%d_wpa_psk", instance));
+		foreach(mac, wds_mac, next)
+		{
+			snprintf(buf, sizeof(buf), "%s,auto,%s,%s,%s,%s", mac,
+				 nvram_nget("wl%d_crypto", instance),
+				 nvram_nget("wl%d_security_mode", instance),
+				 nvram_nget("wl%d_ssid", instance),
+				 nvram_nget("wl%d_wpa_psk", instance));
 			nvram_nset(buf, "wl%d_wds%d", instance, i);
 			i++;
 		}
@@ -200,8 +205,8 @@ static char *getSecMode(char *prefix)
 	/*
 	 * BugBug - should we bail when mode is wep ? 
 	 */
-	if (nvram_match(wep, "wep") || nvram_match(wep, "on")
-	    || nvram_match(wep, "restricted") || nvram_match(wep, "enabled"))
+	if (nvram_match(wep, "wep") || nvram_match(wep, "on") ||
+	    nvram_match(wep, "restricted") || nvram_match(wep, "enabled"))
 		return "1";
 	else if (nvram_match(crypto, "tkip"))
 		return "2";
@@ -218,8 +223,8 @@ static char *getAuthMode(char *prefix)
 	char akm[32];
 
 	sprintf(akm, "%s_akm", prefix);
-	if (!*(nvram_safe_get(akm)) || nvram_match(akm, "disabled")
-	    || nvram_match(akm, "wep"))
+	if (!*(nvram_safe_get(akm)) || nvram_match(akm, "disabled") ||
+	    nvram_match(akm, "wep"))
 		return NULL;
 	if (nvram_match(akm, "radius"))
 		return "32";
@@ -282,14 +287,15 @@ static void start_nas_lan(int c)
 	char vifname[32];
 
 	sprintf(wlname, "wl%d", c);
-	start_radius(wlname);	// quick fix, should be vif capable in future
+	start_radius(wlname); // quick fix, should be vif capable in future
 	dd_loginfo("nas", "start nas for %s\n", wlname);
 	start_nas_single("lan", wlname);
 
 	sprintf(vifname, "wl%d_vifs", c);
 	char *vifs = nvram_safe_get(vifname);
 
-	foreach(var, vifs, next) {
+	foreach(var, vifs, next)
+	{
 		dd_loginfo("nas", "start nas for %s\n", var);
 		start_nas_single("lan", var);
 	}
@@ -307,12 +313,11 @@ static void start_nas_wan(int c)
 	char vif[16];
 	char *vifs = nvram_nget("wl%d_vifs", c);
 
-	foreach(var, vifs, next) {
+	foreach(var, vifs, next)
+	{
 		sprintf(vif, "%s_mode", var);
-		if (nvram_match(vif, "sta")
-		    || nvram_match(vif, "wet")
-		    || nvram_match(vif, "apsta")
-		    || nvram_match(vif, "apstawet")) {
+		if (nvram_match(vif, "sta") || nvram_match(vif, "wet") ||
+		    nvram_match(vif, "apsta") || nvram_match(vif, "apstawet")) {
 			start_nas_single("wan", var);
 		} else {
 			start_nas_single("lan", var);
@@ -349,7 +354,8 @@ static void stop_nas_process(void)
 		unlink(pidname);
 		sprintf(vifs_name, "wl%d_vifs", c);
 		char *vifs = nvram_safe_get(vifs_name);
-		foreach(name, vifs, next) {
+		foreach(name, vifs, next)
+		{
 			sprintf(pidname, "/tmp/nas.%slan.pid", name);
 			unlink(pidname);
 		}
@@ -380,7 +386,7 @@ void start_nas(void)
 	int c;
 	int deadcount;
 	int radiostate = -1;
-	stop_nas_process();	// ensure that no nas is running
+	stop_nas_process(); // ensure that no nas is running
 #ifdef HAVE_QTN
 	cnt = 1;
 #endif
@@ -389,13 +395,16 @@ void start_nas(void)
 			continue;
 
 		for (deadcount = 0; deadcount < 5; deadcount++) {
-			wl_ioctl(get_wl_instance_name(c), WLC_GET_RADIO, &radiostate, sizeof(int));
-			if ((radiostate & WL_RADIO_SW_DISABLE) == 0)	//radio turned on - ready
+			wl_ioctl(get_wl_instance_name(c), WLC_GET_RADIO,
+				 &radiostate, sizeof(int));
+			if ((radiostate & WL_RADIO_SW_DISABLE) ==
+			    0) //radio turned on - ready
 				break;
 			sleep(1);
 		}
 
-		if ((radiostate & WL_RADIO_SW_DISABLE) != 0) {	// radio turned off
+		if ((radiostate & WL_RADIO_SW_DISABLE) !=
+		    0) { // radio turned off
 			fprintf(stderr, "Radio: %d currently turned off\n", c);
 			continue;
 		}
@@ -403,14 +412,14 @@ void start_nas(void)
 		char wlname[32];
 
 		sprintf(wlname, "wl%d", c);
-		if (nvram_nmatch("sta", "wl%d_mode", c)
-		    || nvram_nmatch("wet", "wl%d_mode", c)
-		    || nvram_nmatch("apsta", "wl%d_mode", c)
-		    || nvram_nmatch("apstawet", "wl%d_mode", c)) {
+		if (nvram_nmatch("sta", "wl%d_mode", c) ||
+		    nvram_nmatch("wet", "wl%d_mode", c) ||
+		    nvram_nmatch("apsta", "wl%d_mode", c) ||
+		    nvram_nmatch("apstawet", "wl%d_mode", c)) {
 			cprintf("start nas wan\n");
 #ifdef HAVE_WPA_SUPPLICANT
-			if (nvram_nmatch("8021X", "wl%d_akm", c)
-			    && nvram_nmatch("sta", "wl%d_mode", c))
+			if (nvram_nmatch("8021X", "wl%d_akm", c) &&
+			    nvram_nmatch("sta", "wl%d_mode", c))
 				setupSupplicant(wlname);
 			else
 #endif
@@ -425,19 +434,19 @@ void start_nas(void)
 			for (s = 1; s <= MAX_WDS_DEVS; s++) {
 				char *dev;
 
-				if (nvram_nmatch("0", "wl%d_wds%d_enable", c, s))
+				if (nvram_nmatch("0", "wl%d_wds%d_enable", c,
+						 s))
 					continue;
 
 				dev = nvram_nget("wl%d_wds%d_if", c, s);
 
 				run_nas_notify(dev);
 			}
-
 		}
 	}
-//      iface = get_wl_instance_name(c);
-//      wlconf_up(iface);       // double tip
-//      }
+	//      iface = get_wl_instance_name(c);
+	//      wlconf_up(iface);       // double tip
+	//      }
 	unlink("/tmp/.startnas");
 	check = fopen("/tmp/.startmon", "wb");
 	putc('f', check);
@@ -449,16 +458,12 @@ static void start_nas_single(char *type, char *prefix)
 {
 	FILE *fnas;
 	char pidfile[64];
-	char *auth_mode = "255";	/* -m N = WPA authorization mode (N = 0:
+	char *auth_mode = "255"; /* -m N = WPA authorization mode (N = 0:
 					 * none, 1: 802.1x, 2: WPA PSK, 255:
 					 * disabled) */
-	char *sec_mode = { 0 };	/* -w N = security mode bitmask (N = 1: WEP,
+	char *sec_mode = { 0 }; /* -w N = security mode bitmask (N = 1: WEP,
 				 * 2: TKIP, 4: AES) */
-	char *key = { 0 }, *iface = {
-		0
-	}, *mode = {
-		0
-	};
+	char *key = { 0 }, *iface = { 0 }, *mode = { 0 };
 
 	if (!strcmp(prefix, "wl0")) {
 		led_control(LED_SEC0, LED_OFF);
@@ -490,7 +495,6 @@ static void start_nas_single(char *type, char *prefix)
 	if (!strcmp(type, "lan") && nvram_invmatch(apmode, "ap"))
 		iface = "br0";
 	else {
-
 		if (!strcmp(prefix, "wl0")) {
 			iface = get_wl_instance_name(0);
 		} else if (!strcmp(prefix, "wl1")) {
@@ -513,22 +517,26 @@ static void start_nas_single(char *type, char *prefix)
 	}
 
 	if (auth_mode == NULL) {
-		return;		// no nas required
+		return; // no nas required
 	}
-	if (strcmp(nvram_safe_get(apmode), "sta")
-	    && strcmp(nvram_safe_get(apmode), "wet")
-	    && strcmp(nvram_safe_get(apmode), "apstawet")
-	    && strcmp(nvram_safe_get(apmode), "apsta")) {
+	if (strcmp(nvram_safe_get(apmode), "sta") &&
+	    strcmp(nvram_safe_get(apmode), "wet") &&
+	    strcmp(nvram_safe_get(apmode), "apstawet") &&
+	    strcmp(nvram_safe_get(apmode), "apsta")) {
 		mode = "-A";
-		dd_loginfo("nas", "NAS lan (%s interface) successfully started\n", prefix);
+		dd_loginfo("nas",
+			   "NAS lan (%s interface) successfully started\n",
+			   prefix);
 		fnas = fopen("/tmp/.nas", "a");
-		fputc('L', fnas);	// L as LAN
+		fputc('L', fnas); // L as LAN
 		fclose(fnas);
 	} else {
 		mode = "-S";
-		dd_loginfo("nas", "NAS wan (%s interface) successfully started\n", prefix);
+		dd_loginfo("nas",
+			   "NAS wan (%s interface) successfully started\n",
+			   prefix);
 		fnas = fopen("/tmp/.nas", "a");
-		fputc('W', fnas);	// W as WAN
+		fputc('W', fnas); // W as WAN
 		fclose(fnas);
 	}
 
@@ -551,34 +559,75 @@ static void start_nas_single(char *type, char *prefix)
 	FILE *fp = { 0 };
 
 	if (!strcmp(mode, "-S")) {
-
-		if (nvram_nmatch("wet", "%s_mode", prefix)
-		    || nvram_nmatch("apstawet", "%s_mode", prefix)) {
-			char *const argv[] = {
-				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface, tmp), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey),
-				NULL
-			};
+		if (nvram_nmatch("wet", "%s_mode", prefix) ||
+		    nvram_nmatch("apstawet", "%s_mode", prefix)) {
+			char *const argv[] = { "nas",
+					       "-P",
+					       pidfile,
+					       "-H",
+					       "34954",
+					       "-l",
+					       getBridge(iface, tmp),
+					       "-i",
+					       iface,
+					       mode,
+					       "-m",
+					       auth_mode,
+					       "-k",
+					       key,
+					       "-s",
+					       nvram_safe_get(ssid),
+					       "-w",
+					       sec_mode,
+					       "-g",
+					       nvram_safe_get(rekey),
+					       NULL };
 			_log_evalpid(argv, NULL, 0, &pid);
 		} else {
-			char *const argv[] = {
-				"nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), NULL
-			};
+			char *const argv[] = { "nas",	"-P",
+					       pidfile, "-H",
+					       "34954", "-i",
+					       iface,	mode,
+					       "-m",	auth_mode,
+					       "-k",	key,
+					       "-s",	nvram_safe_get(ssid),
+					       "-w",	sec_mode,
+					       "-g",	nvram_safe_get(rekey),
+					       NULL };
 			_log_evalpid(argv, NULL, 0, &pid);
-
 		}
 
 	} else {
-		if (!strcmp(auth_mode, "2")
-		    || !strcmp(auth_mode, "64")
-		    || !strcmp(auth_mode, "66")) {
-
-			char *const argv[] = {
-				"nas", "-P", pidfile,
-				"-H", "34954", "-l",
-				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
-				iface, mode, "-m",
-				auth_mode, "-r", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), "-h", nvram_safe_get(radius), "-p", nvram_safe_get(port), NULL
-			};
+		if (!strcmp(auth_mode, "2") || !strcmp(auth_mode, "64") ||
+		    !strcmp(auth_mode, "66")) {
+			char *const argv[] = { "nas",
+					       "-P",
+					       pidfile,
+					       "-H",
+					       "34954",
+					       "-l",
+					       nvram_nmatch("0", "%s_bridged",
+							    iface) ?
+						       iface :
+						       getBridge(iface, tmp),
+					       "-i",
+					       iface,
+					       mode,
+					       "-m",
+					       auth_mode,
+					       "-r",
+					       key,
+					       "-s",
+					       nvram_safe_get(ssid),
+					       "-w",
+					       sec_mode,
+					       "-g",
+					       nvram_safe_get(rekey),
+					       "-h",
+					       nvram_safe_get(radius),
+					       "-p",
+					       nvram_safe_get(port),
+					       NULL };
 			_log_evalpid(argv, NULL, 0, &pid);
 
 		} else if (!strcmp(auth_mode, "32")) {
@@ -587,25 +636,64 @@ static void start_nas_single(char *type, char *prefix)
 
 			sprintf(wepkey, "%s_key%d", prefix, idx);
 
-			char *const argv[] = {
-				"nas", "-P", pidfile,
-				"-H", "34954", "-l",
-				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
-				iface, mode, "-m",
-				auth_mode, "-r", key,
-				"-s", nvram_safe_get(ssid), "-w", sec_mode, "-I", nvram_safe_get(index), "-k", nvram_safe_get(wepkey), "-h", nvram_safe_get(radius), "-p", nvram_safe_get(port), NULL
-			};
+			char *const argv[] = { "nas",
+					       "-P",
+					       pidfile,
+					       "-H",
+					       "34954",
+					       "-l",
+					       nvram_nmatch("0", "%s_bridged",
+							    iface) ?
+						       iface :
+						       getBridge(iface, tmp),
+					       "-i",
+					       iface,
+					       mode,
+					       "-m",
+					       auth_mode,
+					       "-r",
+					       key,
+					       "-s",
+					       nvram_safe_get(ssid),
+					       "-w",
+					       sec_mode,
+					       "-I",
+					       nvram_safe_get(index),
+					       "-k",
+					       nvram_safe_get(wepkey),
+					       "-h",
+					       nvram_safe_get(radius),
+					       "-p",
+					       nvram_safe_get(port),
+					       NULL };
 			_log_evalpid(argv, NULL, 0, &pid);
 		} else {
-			char *const argv[] = {
-				"nas", "-P", pidfile,
-				"-H", "34954", "-l",
-				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
-				iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), NULL
-			};
+			char *const argv[] = { "nas",
+					       "-P",
+					       pidfile,
+					       "-H",
+					       "34954",
+					       "-l",
+					       nvram_nmatch("0", "%s_bridged",
+							    iface) ?
+						       iface :
+						       getBridge(iface, tmp),
+					       "-i",
+					       iface,
+					       mode,
+					       "-m",
+					       auth_mode,
+					       "-k",
+					       key,
+					       "-s",
+					       nvram_safe_get(ssid),
+					       "-w",
+					       sec_mode,
+					       "-g",
+					       nvram_safe_get(rekey),
+					       NULL };
 			_log_evalpid(argv, NULL, 0, &pid);
 		}
-
 	}
 
 	fp = fopen(pidfile, "w");
@@ -616,7 +704,6 @@ static void start_nas_single(char *type, char *prefix)
 	cprintf("done\n");
 
 	return;
-
 }
 
 void stop_nas(void)

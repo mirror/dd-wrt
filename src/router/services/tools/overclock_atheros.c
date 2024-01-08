@@ -41,7 +41,7 @@
  * manually. it will not be implemented in the webgui 
  */
 
-void fixup(FILE * in, unsigned int src, unsigned int dst)
+void fixup(FILE *in, unsigned int src, unsigned int dst)
 {
 	fprintf(stderr, "fixup 0x%08X to 0x%08X\n", src, dst);
 	int f = ftell(in);
@@ -69,7 +69,7 @@ void fixup(FILE * in, unsigned int src, unsigned int dst)
 	fseek(in, f, SEEK_SET);
 }
 
-void fixclk(FILE * in, int oldclk, int clk)
+void fixclk(FILE *in, int oldclk, int clk)
 {
 	// fixup amba clock
 	int amba = oldclk / 2 * 1000000;
@@ -97,9 +97,9 @@ void fixclk(FILE * in, int oldclk, int clk)
 	 */
 }
 
-void start_overclock(void)	// hidden feature. must be called with
-				// "startservice overlock". then reboot the
-				// unit
+void start_overclock(void) // hidden feature. must be called with
+	// "startservice overlock". then reboot the
+	// unit
 {
 	long len;
 	long i;
@@ -107,7 +107,7 @@ void start_overclock(void)	// hidden feature. must be called with
 #ifdef HAVE_ALPHA
 	FILE *in = fopen("/dev/mtdblock/0", "rb");
 #elif HAVE_CA8
-	FILE *in = fopen("/dev/mtdblock/2", "rb");	// zLoader Board Data 
+	FILE *in = fopen("/dev/mtdblock/2", "rb"); // zLoader Board Data
 #else
 	FILE *in = fopen("/dev/mtdblock/0", "rb");
 #endif
@@ -199,7 +199,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		div = dir300div;
 		mul = dir300mul;
 	}
-	if (dir300div == 0x1 && (dir300mul == 0x28 || dir300mul == 0x2c || dir300mul == 0x30)) {
+	if (dir300div == 0x1 &&
+	    (dir300mul == 0x28 || dir300mul == 0x2c || dir300mul == 0x30)) {
 		dir300 = 1;
 		div = dir300div;
 		mul = dir300mul;
@@ -210,7 +211,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		div = dir300div2;
 		mul = dir300mul2;
 	}
-	if (dir300div2 == 0x1 && (dir300mul2 == 0x28 || dir300mul2 == 0x2c || dir300mul2 == 0x30)) {
+	if (dir300div2 == 0x1 &&
+	    (dir300mul2 == 0x28 || dir300mul2 == 0x2c || dir300mul2 == 0x30)) {
 		dir3002 = 1;
 		div = dir300div2;
 		mul = dir300mul2;
@@ -221,7 +223,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		div = dir300div3;
 		mul = dir300mul3;
 	}
-	if (dir300div3 == 0x1 && (dir300mul3 == 0x28 || dir300mul3 == 0x2c || dir300mul3 == 0x30)) {
+	if (dir300div3 == 0x1 &&
+	    (dir300mul3 == 0x28 || dir300mul3 == 0x2c || dir300mul3 == 0x30)) {
 		dir3003 = 1;
 		div = dir300div3;
 		mul = dir300mul3;
@@ -232,7 +235,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		div = dir300div4;
 		mul = dir300mul4;
 	}
-	if (dir300div4 == 0x1 && (dir300mul4 == 0x28 || dir300mul4 == 0x2c || dir300mul4 == 0x30)) {
+	if (dir300div4 == 0x1 &&
+	    (dir300mul4 == 0x28 || dir300mul4 == 0x2c || dir300mul4 == 0x30)) {
 		dir3004 = 1;
 		div = dir300div4;
 		mul = dir300mul4;
@@ -243,7 +247,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		div = dir300div5;
 		mul = dir300mul5;
 	}
-	if (dir300div5 == 0x1 && (dir300mul5 == 0x28 || dir300mul5 == 0x2c || dir300mul5 == 0x30)) {
+	if (dir300div5 == 0x1 &&
+	    (dir300mul5 == 0x28 || dir300mul5 == 0x2c || dir300mul5 == 0x30)) {
 		dir3005 = 1;
 		div = dir300div5;
 		mul = dir300mul5;
@@ -254,7 +259,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		div = dir300div6;
 		mul = dir300mul6;
 	}
-	if (dir300div6 == 0x1 && (dir300mul6 == 0x28 || dir300mul6 == 0x2c || dir300mul6 == 0x30)) {
+	if (dir300div6 == 0x1 &&
+	    (dir300mul6 == 0x28 || dir300mul6 == 0x2c || dir300mul6 == 0x30)) {
 		dir3006 = 1;
 		div = dir300div6;
 		mul = dir300mul6;
@@ -265,14 +271,16 @@ void start_overclock(void)	// hidden feature. must be called with
 		div = dir300div7;
 		mul = dir300mul7;
 	}
-	if (dir300div7 == 0x1 && (dir300mul7 == 0x28 || dir300mul7 == 0x2c || dir300mul7 == 0x30)) {
+	if (dir300div7 == 0x1 &&
+	    (dir300mul7 == 0x28 || dir300mul7 == 0x2c || dir300mul7 == 0x30)) {
 		dir3007 = 1;
 		div = dir300div7;
 		mul = dir300mul7;
 	}
 
 	if (div == 0x3 && mul == 0x5c) {
-		fprintf(stderr, "ap51/ap61/ap65 (ar2315/ar2316/ar2317/ar2318) found\n");
+		fprintf(stderr,
+			"ap51/ap61/ap65 (ar2315/ar2316/ar2317/ar2318) found\n");
 		if (dir300)
 			fseek(in, 0x17, SEEK_SET);
 		else if (dir3002)
@@ -313,7 +321,7 @@ void start_overclock(void)	// hidden feature. must be called with
 				fixclk(in, 240, 200);
 			} else
 				fixclk(in, 184, 200);
-			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x28, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		} else if (clk == 220) {
 			if (mul == 0x28) {
 				fixclk(in, 200, 220);
@@ -322,7 +330,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			} else
 				fixclk(in, 184, 220);
 
-			putc(0x2c, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x2c, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		} else if (clk == 240) {
 			if (mul == 0x28) {
 				fixclk(in, 200, 240);
@@ -330,19 +338,20 @@ void start_overclock(void)	// hidden feature. must be called with
 				fixclk(in, 220, 240);
 			} else
 				fixclk(in, 184, 240);
-			putc(0x30, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x30, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		} else {
 			fixclk(in, 184, 200);
 			nvram_seti("cpuclk", 200);
 			nvram_commit();
 			clk = nvram_default_geti("cpuclk", 180);
-			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x28, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 
 		fclose(in);
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
 	} else if (div == 0x1 && (mul == 0x28 || mul == 0x2c || mul == 0x30)) {
-		fprintf(stderr, "ap51/ap61/ap65 (ar2315/ar2316/ar2317/ar2318) found\n");
+		fprintf(stderr,
+			"ap51/ap61/ap65 (ar2315/ar2316/ar2317/ar2318) found\n");
 		if (clk == 200 && mul == 0x28) {
 			fprintf(stderr, "board already clocked to 200mhz\n");
 			fclose(in);
@@ -375,7 +384,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		else
 			fseek(in, 0x1e3, SEEK_SET);
 		if (clk == 184)
-			putc(0x3, in);	// set divisor 5 = 40/5 = 8 mhz base which
+			putc(0x3,
+			     in); // set divisor 5 = 40/5 = 8 mhz base which
 		// allows 184 clock setting
 		else
 			putc(0x1, in);
@@ -403,7 +413,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			} else if (mul == 0x30) {
 				fixclk(in, 240, 184);
 			}
-			putc(0x5c, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x5c, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		} else if (clk == 200) {
 			if (mul == 0x2c) {
 				fixclk(in, 220, 200);
@@ -411,7 +421,7 @@ void start_overclock(void)	// hidden feature. must be called with
 				fixclk(in, 240, 200);
 			} else
 				fixclk(in, 184, 200);
-			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x28, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		} else if (clk == 220) {
 			if (mul == 0x28) {
 				fixclk(in, 200, 220);
@@ -420,7 +430,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			} else
 				fixclk(in, 184, 220);
 
-			putc(0x2c, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x2c, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		} else if (clk == 240) {
 			if (mul == 0x28) {
 				fixclk(in, 200, 240);
@@ -428,32 +438,33 @@ void start_overclock(void)	// hidden feature. must be called with
 				fixclk(in, 220, 240);
 			} else
 				fixclk(in, 184, 240);
-			putc(0x30, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x30, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		} else {
 			fixclk(in, 184, 200);
 			nvram_seti("cpuclk", 200);
 			nvram_commit();
 			clk = nvram_default_geti("cpuclk", 180);
-			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x28, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 		fclose(in);
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-	} else if (vipermul == 0x9 || vipermul == 0xa || vipermul == 0xb || vipermul == 0xc || vipermul == 0x17) {
-
+	} else if (vipermul == 0x9 || vipermul == 0xa || vipermul == 0xb ||
+		   vipermul == 0xc || vipermul == 0x17) {
 		if (vipermul == 0x17) {
 			fprintf(stderr, "weired alfa clocksetting found\n");
 			fseek(in, 0xce, SEEK_SET);
 			if (getc(in) == 0x32) {
 				if (getc(in) == 0x45) {
-					fprintf(stderr, "correct clock setting\n");
+					fprintf(stderr,
+						"correct clock setting\n");
 					fseek(in, 0xcb, SEEK_SET);
 					putc(0x9, in);
 					fseek(in, 0xce, SEEK_SET);
 					putc(0x12, in);
 					putc(0x45, in);
-//                  fseek( in, 0xe4, SEEK_SET ); 
-//                  putc( 0x0, in ); // nop out scratch register
-//                  putc( 0x0, in );
+					//                  fseek( in, 0xe4, SEEK_SET );
+					//                  putc( 0x0, in ); // nop out scratch register
+					//                  putc( 0x0, in );
 					vipermul = 0x9;
 				} else
 					exit(1);
@@ -483,21 +494,22 @@ void start_overclock(void)	// hidden feature. must be called with
 		}
 		fseek(in, 0xcb, SEEK_SET);
 		if (clk == 180)
-			putc(0x9, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x9, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 200)
-			putc(0xa, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xa, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 220)
-			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xb, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 240)
-			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xc, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
 			nvram_seti("cpuclk", 220);
 			clk = nvram_default_geti("cpuclk", 180);
 			nvram_commit();
-			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xb, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 		if (isalfa) {
-			fprintf(stderr, "correct scratch register for alfa ap48\n");
+			fprintf(stderr,
+				"correct scratch register for alfa ap48\n");
 			int realclock = clk * 1000000;
 			fseek(in, 0xde, SEEK_SET);
 			putc((realclock >> 24) & 0xff, in);
@@ -508,8 +520,9 @@ void start_overclock(void)	// hidden feature. must be called with
 		}
 		fclose(in);
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-	} else if (microvipermul == 0x9 || microvipermul == 0xa || microvipermul == 0xb || microvipermul == 0xc || microvipermul == 0x17) {
-
+	} else if (microvipermul == 0x9 || microvipermul == 0xa ||
+		   microvipermul == 0xb || microvipermul == 0xc ||
+		   microvipermul == 0x17) {
 		fprintf(stderr, "viper microredboot(ar2313) found\n");
 		if (clk == 180 && microvipermul == 0x9) {
 			fprintf(stderr, "board already clocked to 180mhz\n");
@@ -533,27 +546,28 @@ void start_overclock(void)	// hidden feature. must be called with
 		}
 		fseek(in, 0x61b, SEEK_SET);
 		if (clk == 180)
-			putc(0x9, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x9, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 200)
-			putc(0xa, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xa, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 220)
-			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xb, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 240)
-			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xc, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
 			nvram_seti("cpuclk", 220);
 			clk = nvram_default_geti("cpuclk", 180);
 			nvram_commit();
-			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xb, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 		fclose(in);
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-	} else if (zmul == 0x9 || zmul == 0xa || zmul == 0xb || zmul == 0xc)	// special 
-		// handling 
-		// for 
-		// zLoader 
-		// based 
-		// boards
+	} else if (zmul == 0x9 || zmul == 0xa || zmul == 0xb ||
+		   zmul == 0xc) // special
+	// handling
+	// for
+	// zLoader
+	// based
+	// boards
 	{
 		fprintf(stderr, "viper (ar2313) found (zLoader)\n");
 		if (clk == 180 && zmul == 0x9) {
@@ -578,18 +592,18 @@ void start_overclock(void)	// hidden feature. must be called with
 		}
 		fseek(in, 0xe64b, SEEK_SET);
 		if (clk == 180)
-			putc(0x9, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0x9, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 200)
-			putc(0xa, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xa, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 220)
-			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xb, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else if (clk == 240)
-			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xc, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
 			nvram_seti("cpuclk", 220);
 			clk = nvram_default_geti("cpuclk", 180);
 			nvram_commit();
-			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
+			putc(0xb, in); // 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 
 		unsigned int myclk = clk * 1000000;
@@ -614,4 +628,4 @@ void start_overclock(void)	// hidden feature. must be called with
 	fprintf(stderr, "board is now clocked at %d mhz, please reboot\n", clk);
 }
 
-// int main (int argc, char *argv[]) { start_overclock (); } 
+// int main (int argc, char *argv[]) { start_overclock (); }

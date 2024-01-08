@@ -93,7 +93,8 @@ static struct config_val config[] = {
 	{ "rpc-enabled", "true", 0, 0 },
 	{ "rpc-host-whitelist", "", 0, 0 },
 	{ "rpc-host-whitelist-enabled", "true", 0, 0 },
-	{ "rpc-password", "{572778e48a0d0f5104d970ed9fc69f6f98f03fd6ozr1fmao", 0, 0 },
+	{ "rpc-password", "{572778e48a0d0f5104d970ed9fc69f6f98f03fd6ozr1fmao",
+	  0, 0 },
 	{ "rpc-port", "9091", 0, 0 },
 	{ "rpc-socket-mode", "0750", 0, 0 },
 	{ "rpc-url", "/transmission/", 0, 0 },
@@ -148,7 +149,6 @@ static void set_config_alloc(char *name, char *val, int alloc, int type)
 			config[i].type = type;
 		}
 	}
-
 }
 
 static void set_config(char *name, char *val, int type)
@@ -159,7 +159,8 @@ static void set_config(char *name, char *val, int type)
 static void parse_config(void)
 {
 	char path[256];
-	snprintf(path, sizeof(path), "%s/settings.json", nvram_safe_get("transmission_dir"));
+	snprintf(path, sizeof(path), "%s/settings.json",
+		 nvram_safe_get("transmission_dir"));
 	FILE *fp = fopen(path, "rb");
 	if (fp) {
 		while (!feof(fp)) {
@@ -187,9 +188,9 @@ static void parse_config(void)
 					end = strchr(val, '\n');
 				if (end)
 					end[0] = 0;
-
 			}
-			if (!strcmp(name, "rpc-password") || !strcmp(name, "rpc-username"))
+			if (!strcmp(name, "rpc-password") ||
+			    !strcmp(name, "rpc-username"))
 				set_config_alloc(name, strdup(val), 1, 1);
 			else
 				set_config_alloc(name, strdup(val), 1, 0);
@@ -198,7 +199,7 @@ static void parse_config(void)
 	}
 }
 
-static void writeconfig(FILE * fp)
+static void writeconfig(FILE *fp)
 {
 	int i;
 	int count = sizeof(config) / sizeof(struct config_val);
@@ -209,7 +210,8 @@ static void writeconfig(FILE * fp)
 			fprintf(fp, "\t\"%s\": \"\"", name);
 		else if (config[i].type)
 			fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
-		else if (!strcmp(config[i].val, "false") || !strcmp(config[i].val, "true") || isnum(config[i].val))
+		else if (!strcmp(config[i].val, "false") ||
+			 !strcmp(config[i].val, "true") || isnum(config[i].val))
 			fprintf(fp, "\t\"%s\": %s", name, config[i].val);
 		else
 			fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
@@ -219,7 +221,6 @@ static void writeconfig(FILE * fp)
 			fprintf(fp, ",\n");
 	}
 	fprintf(fp, "}\n");
-
 }
 
 char *transmission_deps(void)
@@ -236,10 +237,10 @@ void stop_transmission(void);
 
 void start_transmission(void)
 {
-	stop_transmission();	// write config if present
+	stop_transmission(); // write config if present
 	if (!nvram_matchi("transmission_enable", 1))
 		return;
-	parse_config();		// read it back and parse it
+	parse_config(); // read it back and parse it
 
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));
 
@@ -253,12 +254,15 @@ void start_transmission(void)
 	int count = sizeof(config) / sizeof(struct config_val);
 	int i;
 	char path[256];
-	snprintf(path, sizeof(path), "%s/settings.json", nvram_safe_get("transmission_dir"));
+	snprintf(path, sizeof(path), "%s/settings.json",
+		 nvram_safe_get("transmission_dir"));
 	FILE *fp = fopen(path, "wb");
 	if (fp) {
-		set_config("download-dir", nvram_safe_get("transmission_download"), 1);
+		set_config("download-dir",
+			   nvram_safe_get("transmission_download"), 1);
 		char inc[512];
-		snprintf(inc, sizeof(inc), "%s/incomplete", nvram_safe_get("transmission_download"));
+		snprintf(inc, sizeof(inc), "%s/incomplete",
+			 nvram_safe_get("transmission_download"));
 		set_config("incomplete-dir", strdup(inc), 1);
 		char allow[512];
 		snprintf(allow, sizeof(allow), "127.0.0.1,%s", allowed);
@@ -267,17 +271,27 @@ void start_transmission(void)
 			sprintf(allow, "%s,%s", allow, whitelist);
 		set_config_alloc("rpc-whitelist", strdup(allow), 1, 0);
 		set_config("rpc-whitelist-enabled", "true", 0);
-		set_config_alloc("rpc-port", strdup(nvram_safe_get("transmission_rpc")), 1, 0);
-		set_config_alloc("rpc-username", strdup(nvram_safe_get("transmission_username")), 1, 1);
-		set_config_alloc("rpc-password", strdup(nvram_safe_get("transmission_password")), 1, 1);
+		set_config_alloc("rpc-port",
+				 strdup(nvram_safe_get("transmission_rpc")), 1,
+				 0);
+		set_config_alloc(
+			"rpc-username",
+			strdup(nvram_safe_get("transmission_username")), 1, 1);
+		set_config_alloc(
+			"rpc-password",
+			strdup(nvram_safe_get("transmission_password")), 1, 1);
 		if (!nvram_match("transmission_script", "")) {
 			set_config("script-torrent-done-enabled", "true", 0);
-			set_config_alloc("script-torrent-done-filename", strdup(nvram_safe_get("transmission_script")), 1, 1);
+			set_config_alloc(
+				"script-torrent-done-filename",
+				strdup(nvram_safe_get("transmission_script")),
+				1, 1);
 		}
 		char *down = nvram_safe_get("transmission_down");
 		if (*down && *down != '\r' && *down != '\n') {
 			set_config("speed-limit-down-enabled", "true", 0);
-			set_config_alloc("speed-limit-down", strdup(down), 1, 0);
+			set_config_alloc("speed-limit-down", strdup(down), 1,
+					 0);
 		}
 		char *up = nvram_safe_get("transmission_up");
 		if (*up && *up != '\r' && *up != '\n') {
@@ -286,7 +300,6 @@ void start_transmission(void)
 		}
 		set_config("rpc-authentication-required", "true", 0);
 		writeconfig(fp);
-
 	}
 	if (fp)
 		fclose(fp);
@@ -299,7 +312,9 @@ void start_transmission(void)
 	writeprocsysnet("ipv4/tcp_adv_win_scale", "4");
 
 	char *web = nvram_default_get("transmission_style", "default");
-	sysprintf("export TRANSMISSION_WEB_HOME=\"/usr/share/transmission/%s\" && transmissiond --config-dir \"%s\"", web, nvram_safe_get("transmission_dir"));
+	sysprintf(
+		"export TRANSMISSION_WEB_HOME=\"/usr/share/transmission/%s\" && transmissiond --config-dir \"%s\"",
+		web, nvram_safe_get("transmission_dir"));
 	dd_loginfo("transmission", "daemon successfully started\n");
 
 	return;

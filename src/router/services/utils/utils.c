@@ -34,25 +34,24 @@
 #include <broadcom.h>
 #include <md5.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 
 void getLANMac(char *newmac)
 {
-
 	getSystemMac(newmac);
 
 #ifndef HAVE_BUFFALO
 
 	if (nvram_matchi("port_swap", 1)) {
-		if (strlen(nvram_safe_get("et1macaddr")))	// safe:
-			// maybe
-			// et1macaddr 
-			// not there?
+		if (strlen(nvram_safe_get("et1macaddr"))) // safe:
+		// maybe
+		// et1macaddr
+		// not there?
 		{
 			strcpy(newmac, nvram_safe_get("et1macaddr"));
 		} else {
-			MAC_ADD(newmac);	// et0macaddr +1
+			MAC_ADD(newmac); // et0macaddr +1
 		}
 	}
 #endif
@@ -72,17 +71,17 @@ void getWirelessMac(char *newmac, int instance)
 		instance = 0;
 
 	if (nvram_matchi("port_swap", 1)) {
-		if (strlen(nvram_safe_get("et1macaddr")))	// safe:
-			// maybe
-			// et1macaddr 
-			// not there?
+		if (strlen(nvram_safe_get("et1macaddr"))) // safe:
+		// maybe
+		// et1macaddr
+		// not there?
 		{
 			strcpy(newmac, nvram_safe_get("et1macaddr"));
-			MAC_ADD(newmac);	// et1macaddr +2
+			MAC_ADD(newmac); // et1macaddr +2
 			MAC_ADD(newmac);
 		} else {
 			strcpy(newmac, nvram_safe_get("et0macaddr"));
-			MAC_ADD(newmac);	// et0macaddr +3
+			MAC_ADD(newmac); // et0macaddr +3
 			MAC_ADD(newmac);
 			MAC_ADD(newmac);
 		}
@@ -90,29 +89,28 @@ void getWirelessMac(char *newmac, int instance)
 		if (getRouterBrand() == ROUTER_ASUS_AC66U) {
 			switch (instance) {
 			case 0:
-				strcpy(newmac, nvram_safe_get("pci/1/1/macaddr"));
+				strcpy(newmac,
+				       nvram_safe_get("pci/1/1/macaddr"));
 				break;
 			case 1:
-				strcpy(newmac, nvram_safe_get("pci/2/1/macaddr"));
+				strcpy(newmac,
+				       nvram_safe_get("pci/2/1/macaddr"));
 				break;
-
 			}
 
 		} else {
 			getSystemMac(newmac);
-			MAC_ADD(newmac);	// et0macaddr +2
+			MAC_ADD(newmac); // et0macaddr +2
 			MAC_ADD(newmac);
 			if (instance > 0)
 				MAC_ADD(newmac);
 			if (instance > 1)
 				MAC_ADD(newmac);
-
 		}
-
 	}
 #endif
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
-/* NOTE: this is a workaround for EA8500 Device and might generate wrong macs for other IPQ devices. custom handling might be required here */
+	/* NOTE: this is a workaround for EA8500 Device and might generate wrong macs for other IPQ devices. custom handling might be required here */
 	if (instance < 0)
 		instance = 0;
 
@@ -139,16 +137,21 @@ void getWANMac(char *newmac)
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
 
-			strncpy(ifr.ifr_name, nvram_safe_get("wan_ifname"), IFNAMSIZ);
+			strncpy(ifr.ifr_name, nvram_safe_get("wan_ifname"),
+				IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			strcpy(newmac, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+			strcpy(newmac,
+			       ether_etoa(
+				       (unsigned char *)ifr.ifr_hwaddr.sa_data,
+				       eabuf));
 			close(s);
 		}
-		cprintf("getWANMAC returns %s from %s\n", newmac, nvram_safe_get("wan_ifname"));
+		cprintf("getWANMAC returns %s from %s\n", newmac,
+			nvram_safe_get("wan_ifname"));
 		return;
 	} else {
 		strcpy(newmac, nvram_safe_get("et0macaddr"));
-		MAC_ADD(newmac);	// et0macaddr +1
+		MAC_ADD(newmac); // et0macaddr +1
 		return;
 	}
 #endif
@@ -157,18 +160,20 @@ void getWANMac(char *newmac)
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
 	if (getRouterBrand() != ROUTER_ASUS_AC66U) {
 		if (nvram_invmatch("wan_proto", "disabled")) {
-			MAC_ADD(newmac);	// et0macaddr +1
+			MAC_ADD(newmac); // et0macaddr +1
 
 			if (nvram_matchi("port_swap", 1)) {
-				if (strlen(nvram_safe_get("et1macaddr")))	// safe:
-					// maybe
-					// et1macaddr 
-					// not there?
+				if (strlen(nvram_safe_get(
+					    "et1macaddr"))) // safe:
+				// maybe
+				// et1macaddr
+				// not there?
 				{
-					strcpy(newmac, nvram_safe_get("et1macaddr"));
-					MAC_ADD(newmac);	// et1macaddr +1 
+					strcpy(newmac,
+					       nvram_safe_get("et1macaddr"));
+					MAC_ADD(newmac); // et1macaddr +1
 				} else {
-					MAC_ADD(newmac);	// et0macaddr +2
+					MAC_ADD(newmac); // et0macaddr +2
 				}
 			}
 		}

@@ -51,7 +51,6 @@ void start_zabbix(void)
 
 void stop_zabbix(void)
 {
-
 	stop_process("zabbix_agentd", "daemon");
 	/* kill it once again since stop_process does not close all instances */
 	if (pidof("zabbix_agentd") > 0) {

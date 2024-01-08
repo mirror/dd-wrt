@@ -67,7 +67,8 @@ void start_sysinit(void)
 	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	eval("mount", "/etc/www.fs", "/www", "-t", "squashfs", "-o", "loop");
-	eval("mount", "/etc/modules.fs", "/lib/modules", "-t", "squashfs", "-o", "loop");
+	eval("mount", "/etc/modules.fs", "/lib/modules", "-t", "squashfs", "-o",
+	     "loop");
 	eval("mount", "/etc/usr.fs", "/usr", "-t", "squashfs", "-o", "loop");
 	mkdir("/tmp/www", 0700);
 

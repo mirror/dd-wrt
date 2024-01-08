@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -71,9 +71,9 @@ void start_ttraff(void)
 	if (!nvram_matchi("ttraff_enable", 1))
 		return;
 
-	if ((nvram_match("ttraff_iface", "") || !nvram_exists("ttraff_iface"))
-	    && (nvram_match("wan_proto", "disabled")
-		|| getWET()))
+	if ((nvram_match("ttraff_iface", "") ||
+	     !nvram_exists("ttraff_iface")) &&
+	    (nvram_match("wan_proto", "disabled") || getWET()))
 		return;
 
 	char *argv[] = { "ttraff", NULL };

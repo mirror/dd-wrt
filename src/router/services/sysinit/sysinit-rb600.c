@@ -71,21 +71,21 @@ void start_sysinit(void)
 
 	//for extension board
 #ifndef HAVE_WDR4900
-	insmod("fsl_pq_mdio");	//rb800 only as it seems
-	insmod("gianfar_driver");	//rb800 only as it seems
-	insmod("atl1c");	//rb800 only as it seems
+	insmod("fsl_pq_mdio"); //rb800 only as it seems
+	insmod("gianfar_driver"); //rb800 only as it seems
+	insmod("atl1c"); //rb800 only as it seems
 	insmod("via-velocity");
 	insmod("via-rhine");
 	insmod("tulip");
 #endif
 #ifdef HAVE_UNIWIP
 	insmod("mpc8xxx_wdt");
-//      insmod("ocf");
-//      insmod("cryptodev");
-//      insmod("cryptosoft");
-//      insmod("talitos");
+	//      insmod("ocf");
+	//      insmod("cryptodev");
+	//      insmod("cryptosoft");
+	//      insmod("talitos");
 	insmod("gpio");
-/* gpios 
+	/* gpios 
 8 = reset
 10 = pci1 
 11 = pci2
@@ -178,7 +178,8 @@ void start_sysinit(void)
 #elif !defined(HAVE_UNIWIP)
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
+	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports",
+	     "0t 2 3 4 5");
 	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 1");
 	eval("swconfig", "dev", "switch0", "set", "apply");
 	nvram_seti("sw_cpuport", 0);
@@ -213,7 +214,8 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
+			copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 		MAC_SUB(mac);
@@ -227,7 +229,7 @@ void start_sysinit(void)
 		set_hwaddr("vlan2", mac);
 	}
 #else
-	set_gpio(244, 1);	//gps
+	set_gpio(244, 1); //gps
 #endif
 
 	/*

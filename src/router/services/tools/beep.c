@@ -38,7 +38,6 @@ void beep(int gpio, int time, int polarity)
 
 int beep_main(int argc, char **argv)
 {
-
 	unsigned int gpio;
 	unsigned int polarity;
 	unsigned char assoclist[1024];
@@ -73,7 +72,7 @@ int beep_main(int argc, char **argv)
 		}
 		if (snr > 30) {
 			fprintf(stderr, "snr perfect, full beep (%d)\n", snr);
-			set_gpio(gpio, 1 - polarity);	// snr perfect
+			set_gpio(gpio, 1 - polarity); // snr perfect
 			continue;
 		}
 		int beeptime = 66 * (31 - snr);

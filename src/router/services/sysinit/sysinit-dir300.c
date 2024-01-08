@@ -86,7 +86,8 @@ void start_sysinit(void)
 		fread(&test, 4, 1, fp);
 		fprintf(stderr, "test pattern is %X\n", test);
 		if (test != 0xffffffff) {
-			fprintf(stderr, "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
+			fprintf(stderr,
+				"radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
 			fseek(fp, 0, SEEK_SET);
 			char *block = (char *)malloc(65536);
 
@@ -98,12 +99,13 @@ void start_sysinit(void)
 				block[i] = 0xff;
 			fp = fopen("/tmp/radio", "wb");
 			fwrite(block, 65536, 1, fp);
-			eval("mtd", "-f", "write", "/tmp/radio", "board_config");	// writes 
-			// 
-			// back 
-			// new 
-			// config 
-			// and 
+			eval("mtd", "-f", "write", "/tmp/radio",
+			     "board_config"); // writes
+			//
+			// back
+			// new
+			// config
+			// and
 			// reboots
 			eval("event", "5", "1", "15");
 		}
@@ -142,38 +144,42 @@ void start_sysinit(void)
 			ether_atoe(mac, &in_addr[0]);
 			if (memcmp(block + 96, &in_addr[0], 6)) {
 				changed++;
-				memcpy(block + 96, &in_addr[0], 6);	// wlan mac
+				memcpy(block + 96, &in_addr[0], 6); // wlan mac
 			}
 			in_addr[5]++;
 			if (memcmp(block + 102, &in_addr[0], 6)) {
 				changed++;
-				memcpy(block + 102, &in_addr[0], 6);	// eth0 mac
+				memcpy(block + 102, &in_addr[0], 6); // eth0 mac
 			}
 			in_addr[5]++;
 			if (memcmp(block + 108, &in_addr[0], 6)) {
 				changed++;
-				memcpy(block + 108, &in_addr[0], 6);	// eth1 mac
+				memcpy(block + 108, &in_addr[0], 6); // eth1 mac
 			}
 			in_addr[5]++;
 			if (memcmp(block + 118, &in_addr[0], 6)) {
 				changed++;
-				memcpy(block + 118, &in_addr[0], 6);	// wlan1 mac
+				memcpy(block + 118, &in_addr[0],
+				       6); // wlan1 mac
 			}
 			if (changed) {
-				fprintf(stderr, "radio config needs to be adjusted, system will reboot after flashing\n");
+				fprintf(stderr,
+					"radio config needs to be adjusted, system will reboot after flashing\n");
 				fp = fopen("/tmp/radio", "wb");
 				fwrite(block, 65536, 1, fp);
 				fclose(fp);
-				eval("mtd", "-f", "write", "/tmp/radio", "board_config");	// writes 
-				// 
-				// back 
-				// new 
-				// config 
-				// and 
+				eval("mtd", "-f", "write", "/tmp/radio",
+				     "board_config"); // writes
+				//
+				// back
+				// new
+				// config
+				// and
 				// reboots
 				eval("event", "5", "1", "15");
 			} else {
-				fprintf(stderr, "no change required, radio config remains unchanged\n");
+				fprintf(stderr,
+					"no change required, radio config remains unchanged\n");
 			}
 			free(block);
 		}
@@ -190,11 +196,11 @@ void start_sysinit(void)
 #endif
 	detect_wireless_devices(RADIO_ALL);
 	// eval ("ifconfig", "wifi0", "up");
-	eval("ifconfig", "eth0", "up");	// wan
+	eval("ifconfig", "eth0", "up"); // wan
 	writeprocsys("dev/wifi0/ledpin", "2");
 	writeprocsys("dev/wifi0/softled", "1");
 	if (getRouterBrand() == ROUTER_BOARD_FONERA2200) {
-//              eval("ifconfig", "eth0", "up", "promisc");      // required for vlan config
+		//              eval("ifconfig", "eth0", "up", "promisc");      // required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
@@ -212,8 +218,10 @@ void start_sysinit(void)
 
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 5t");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 5t");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
+		     "0 1 2 3 5t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports",
+		     "4 5t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
@@ -227,7 +235,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 3);
 //      set network.eth0_1.ports="0 1 2 3 5t"
 #else
-		vlan_init(0xff);	// 4 lan + 1 wan
+		vlan_init(0xff); // 4 lan + 1 wan
 #endif
 		nvram_default_geti("port0vlans", 2);
 		nvram_default_geti("port1vlans", 1);
@@ -245,7 +253,6 @@ void start_sysinit(void)
 			nvram_set("lan_hwaddr", macaddr);
 			set_hwaddr("vlan2", macaddr);
 		}
-
 	}
 
 	/*
@@ -293,7 +300,8 @@ void start_fixboard(void)
 		fread(&test, 4, 1, fp);
 		fprintf(stderr, "test pattern is %X\n", test);
 		if (test != 0xffffffff) {
-			fprintf(stderr, "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
+			fprintf(stderr,
+				"radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
 			fseek(fp, 0, SEEK_SET);
 			char *block = (char *)malloc(65536);
 
@@ -305,18 +313,18 @@ void start_fixboard(void)
 				block[i] = 0xff;
 			fp = fopen("/tmp/radio", "wb");
 			fwrite(block, 65536, 1, fp);
-			eval("mtd", "-f", "write", "/tmp/radio", "board_config");	// writes 
-			// 
-			// back 
-			// new 
-			// config 
-			// and 
+			eval("mtd", "-f", "write", "/tmp/radio",
+			     "board_config"); // writes
+			//
+			// back
+			// new
+			// config
+			// and
 			// reboots
 			eval("event", "5", "1", "15");
 		}
 		fclose(fp);
 	}
-
 }
 
 char *set_wan_state(int state)

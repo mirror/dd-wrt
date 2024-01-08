@@ -30,14 +30,14 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <sys/mount.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <net/route.h>		/* AhMan March 18 2005 */
+#include <net/route.h> /* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
 
@@ -66,11 +66,14 @@ void start_vpn_modules(void)
 	stop_vpn_modules();
 	if (nvram_matchi("pptp_pass", 1)) {
 		insmod("nf_conntrack_proto_gre ip_conntrack_proto_gre");
-		dd_loginfo("vpn modules", "nf_conntrack_proto_gre successfully loaded\n");
+		dd_loginfo("vpn modules",
+			   "nf_conntrack_proto_gre successfully loaded\n");
 		insmod("nf_nat_proto_gre ip_nat_proto_gre");
-		dd_loginfo("vpn modules", "nf_nat_proto_gre successfully loaded\n");
+		dd_loginfo("vpn modules",
+			   "nf_nat_proto_gre successfully loaded\n");
 		insmod("nf_conntrack_pptp ip_conntrack_pptp");
-		dd_loginfo("vpn modules", "nf_conntrack_pptp successfully loaded\n");
+		dd_loginfo("vpn modules",
+			   "nf_conntrack_pptp successfully loaded\n");
 		insmod("nf_nat_pptp ip_nat_pptp");
 		dd_loginfo("vpn modules", "nf_nat_pptp successfully loaded\n");
 	}

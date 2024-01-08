@@ -86,7 +86,6 @@ void start_sysinit(void)
 		fwrite(&smem[0x4000], 12064, 1, fp);
 		fclose(fp);
 		free(smem);
-
 	}
 
 	detect_wireless_devices(RADIO_ALL);
@@ -106,69 +105,105 @@ void start_sysinit(void)
 	insmod("gpio-pca953x");
 	insmod("qca-ssdk");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x10", "0x002613a0", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe0", "0xc74164de", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe4", "0x000ea545", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x4", "0x07680000", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x8", "0x07600000", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x10", "0x002613a0",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe0", "0xc74164de",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe4", "0x000ea545",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x4", "0x07680000",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x8", "0x07600000",
+	     "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xc", "0x80", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x624", "0x007f7f7f", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x624", "0x007f7f7f",
+	     "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x7c", "0x4e", "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x90", "0x4e", "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x94", "0x4e", "4");
 
-//      #CPU -->","(P0/5)QCA8337A(P4/6)--->(P0/5)QCA8337B
-//      #remove trunking on -0/5
+	//      #CPU -->","(P0/5)QCA8337A(P4/6)--->(P0/5)QCA8337B
+	//      #remove trunking on -0/5
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x700", "0xd000", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0x00ec0000", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0x00ec0000",
+	     "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x660", "0x0014017e", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x66c", "0x0014017d", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x678", "0x0014017b", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x684", "0x00140177", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x690", "0x0014016f", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x69c", "0x0014015f", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x6a8", "0x0014013f", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x660", "0x0014017e",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x66c", "0x0014017d",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x678", "0x0014017b",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x684", "0x00140177",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x690", "0x0014016f",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x69c", "0x0014015f",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x6a8", "0x0014013f",
+	     "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x420", "0x00010001", "4");
-//      #change","p5","vid","-->2
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x448", "0x00020001", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x428", "0x00010001", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x430", "0x00010001", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x440", "0x00010001", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x450", "0x00010001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x420", "0x00010001",
+	     "4");
+	//      #change","p5","vid","-->2
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x448", "0x00020001",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x428", "0x00010001",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x430", "0x00010001",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x440", "0x00010001",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x450", "0x00010001",
+	     "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x438", "0x00020001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x438", "0x00020001",
+	     "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x424", "0x00002040", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x44c", "0x00002040", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x42c", "0x00001040", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x434", "0x00001040", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x43c", "0x00001040", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x444", "0x00001040", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x454", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x424", "0x00002040",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x44c", "0x00002040",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x42c", "0x00001040",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x434", "0x00001040",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x43c", "0x00001040",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x444", "0x00001040",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x454", "0x00001040",
+	     "4");
 
-//      #VLAN1-0t/1/2/4/5t/6,VLAN2-0t/3/5t
-//      #vlan1-0t/1/2/4/6 vlan2-3/5t
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x0019dd50", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80010002", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x001b77f0", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80020002", "4");
+	//      #VLAN1-0t/1/2/4/5t/6,VLAN2-0t/3/5t
+	//      #vlan1-0t/1/2/4/6 vlan2-3/5t
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x0019dd50",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80010002",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x001b77f0",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80020002",
+	     "4");
 
-//      #","do","not","learn","mac","address","on","internal","trunk","5
+	//      #","do","not","learn","mac","address","on","internal","trunk","5
 	eval("ssdk_sh_id", "0", "fdb", "portLearn", "set", "5", "disable");
 	eval("ssdk_sh_id", "0", "fdb", "fdb", "entry", "flush", "0");
 
-//      # For rfc packet lose issue
+	//      # For rfc packet lose issue
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x94", "0x7e", "4");
 	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x7c", "0x7e", "4");
 
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x700", "0xd000", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0xec0000", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x620", "0x1000f0", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0xec0000",
+	     "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x620", "0x1000f0",
+	     "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x808", "0x7f004e", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x808", "0x7f004e", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x808", "0x7f004e",
+	     "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x808", "0x7f004e",
+	     "4");
 
 	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xd", "0x7");
 	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xe", "0x3c");
@@ -203,7 +238,8 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "0", "vlan", "entry", "create", "1");
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "0", "tagged");
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "4", "tagged");
-	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "6", "tagged");	// connected to switch1 port 0
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "6",
+	     "tagged"); // connected to switch1 port 0
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "2", "untagged");
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "1", "untagged");
 	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "0", "1");
@@ -225,7 +261,8 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "1", "check");
 	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "1", "untagged");
 	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "1");
-	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "0", "tagged");	// connected to port6 on switch 0
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "0",
+	     "tagged"); // connected to port6 on switch 0
 	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "5", "tagged");
 	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "4", "untagged");
 	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "3", "untagged");
@@ -238,28 +275,40 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "3", "check");
 	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "3", "untagged");
 	eval("ssdk_sh_id", "0", "vlan", "entry", "create", "2");
-	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "5", "tagged");	// wan cpu port
-	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "3", "untagged");	// wan port
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "5",
+	     "tagged"); // wan cpu port
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "3",
+	     "untagged"); // wan port
 	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "2");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x50", "0xcc35cc35", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x54", "0xca35ca35", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x58", "0xc935c935", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x5c", "0x03ffff00", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x50", "0xcc35cc35",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x54", "0xca35ca35",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x58", "0xc935c935",
+	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x5c", "0x03ffff00",
+	     "4");
 
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x50", "0xcc35cc35", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x54", "0xca35ca35", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x58", "0xc935c935", "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x5c", "0x03ffff00", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x50", "0xcc35cc35",
+	     "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x54", "0xca35ca35",
+	     "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x58", "0xc935c935",
+	     "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x5c", "0x03ffff00",
+	     "4");
 
-	nvram_unset("sw_cpuport");	// this is a dummy. for the r9000 we need to write complete new code
-	nvram_seti("sw_wan", -1);	// switch 0 (3) note: we cannot allow wan for now
-	nvram_seti("sw_lan1", 2);	// switch 0
-	nvram_seti("sw_lan2", 1);	// switch 0
-	nvram_seti("sw_lan3", 14);	// switch 1
-	nvram_seti("sw_lan4", 13);	// switch 1
-	nvram_seti("sw_lan5", 12);	// switch 1
-	nvram_seti("sw_lan6", 11);	// switch 1
+	nvram_unset(
+		"sw_cpuport"); // this is a dummy. for the r9000 we need to write complete new code
+	nvram_seti("sw_wan",
+		   -1); // switch 0 (3) note: we cannot allow wan for now
+	nvram_seti("sw_lan1", 2); // switch 0
+	nvram_seti("sw_lan2", 1); // switch 0
+	nvram_seti("sw_lan3", 14); // switch 1
+	nvram_seti("sw_lan4", 13); // switch 1
+	nvram_seti("sw_lan5", 12); // switch 1
+	nvram_seti("sw_lan6", 11); // switch 1
 
 	nvram_default_geti("port0vlans", 2);
 	nvram_default_geti("port1vlans", 1);
@@ -272,18 +321,18 @@ void start_sysinit(void)
 	eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("/sbin/vconfig", "add", "eth1", "1");
 	eval("/sbin/vconfig", "add", "eth2", "2");
-//      set_smp_affinity(230, 4);
-//      set_smp_affinity(231, 8);
+	//      set_smp_affinity(230, 4);
+	//      set_smp_affinity(231, 8);
 	int i;
-/*	for (i = 242; i < 251; i++)
+	/*	for (i = 242; i < 251; i++)
 		set_smp_affinity(i, 1);
 	for (i = 233; i < 242; i++)
 		set_smp_affinity(i, 2);*/
 	writeprocsysnet("core/message_cost", "0");
 	switch (board) {
 	case ROUTER_NETGEAR_R9000:
-		set_gpio(29, 1);	//WIFI button led
-		set_gpio(30, 1);	//10G led
+		set_gpio(29, 1); //WIFI button led
+		set_gpio(30, 1); //10G led
 		set_gpio(434, 1);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
@@ -311,10 +360,10 @@ void start_resetleds(void)
 
 void start_postnetwork(void)
 {
-	set_gpio(442 + 17, 0);	// reset wifi card gpio pin
-	set_gpio(477 + 17, 0);	// reset wifi card gpio pin
-	set_gpio(442 + 17, 1);	// reset wifi card gpio pin
-	set_gpio(477 + 17, 1);	// reset wifi card gpio pin
+	set_gpio(442 + 17, 0); // reset wifi card gpio pin
+	set_gpio(477 + 17, 0); // reset wifi card gpio pin
+	set_gpio(442 + 17, 1); // reset wifi card gpio pin
+	set_gpio(477 + 17, 1); // reset wifi card gpio pin
 }
 
 int check_cfe_nv(void)
@@ -332,10 +381,14 @@ void start_overclocking(void)
 {
 	char *oclock = nvram_safe_get("overclocking");
 	if (*oclock) {
-		sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
-		sysprintf("echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
+		sysprintf(
+			"echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf(
+			"echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed",
+			oclock);
 	} else {
-		sysprintf("echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf(
+			"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
 	}
 }
 

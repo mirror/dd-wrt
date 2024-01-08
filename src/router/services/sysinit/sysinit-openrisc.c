@@ -44,8 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+#define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
+#define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -53,7 +53,10 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
-#define sys_reboot() eval("startservice","run_rc_shutdown"); eval("sync"); eval("event","3","1","15")
+#define sys_reboot()                             \
+	eval("startservice", "run_rc_shutdown"); \
+	eval("sync");                            \
+	eval("event", "3", "1", "15")
 
 void start_sysinit(void)
 {
@@ -64,7 +67,8 @@ void start_sysinit(void)
 	mknod("/dev/gpio", S_IFCHR | 0644, makedev(127, 0));
 
 	cprintf("sysinit() setup console\n");
-	eval("insmod", "ks8695_wdt", "wdt_time=30");	// load watchdog module with 30 seconds timeout
+	eval("insmod", "ks8695_wdt",
+	     "wdt_time=30"); // load watchdog module with 30 seconds timeout
 	/*
 	 * Setup console 
 	 */
@@ -102,7 +106,7 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "wlan0");
-	//disable led's 
+	//disable led's
 	return;
 	cprintf("done\n");
 }

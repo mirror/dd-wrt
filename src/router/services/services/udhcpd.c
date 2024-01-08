@@ -61,14 +61,17 @@ static int adjust_dhcp_range(void)
 	inet_aton(dhcp_start, &ipaddr);
 
 	legal_total_ip = 254 - get_single_ip(lan_netmask, 3);
-	legal_start_ip = (get_single_ip(lan_ipaddr, 3) & get_single_ip(lan_netmask, 3)) + 1;
+	legal_start_ip =
+		(get_single_ip(lan_ipaddr, 3) & get_single_ip(lan_netmask, 3)) +
+		1;
 	legal_end_ip = legal_start_ip + legal_total_ip - 1;
 	dhcp_start_ip = atoi(dhcp_start);
 
-	cprintf("legal_total_ip=[%d] legal_start_ip=[%d] legal_end_ip=[%d] dhcp_start_ip=[%d]\n", legal_total_ip, legal_start_ip, legal_end_ip, dhcp_start_ip);
+	cprintf("legal_total_ip=[%d] legal_start_ip=[%d] legal_end_ip=[%d] dhcp_start_ip=[%d]\n",
+		legal_total_ip, legal_start_ip, legal_end_ip, dhcp_start_ip);
 
-	if ((dhcp_start_ip > legal_end_ip)
-	    || (dhcp_start_ip < legal_start_ip)) {
+	if ((dhcp_start_ip > legal_end_ip) ||
+	    (dhcp_start_ip < legal_start_ip)) {
 		cprintf("Illegal DHCP Start IP: We need to adjust DHCP Start ip.\n");
 		set_dhcp_start_ip = legal_start_ip;
 		adjust_ip = 1;
@@ -115,14 +118,14 @@ void start_udhcpd(void)
 	}
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
-	if (getWET())		// dont 
-		// start 
-		// any 
-		// dhcp 
-		// services 
-		// in 
-		// bridge 
-		// mode
+	if (getWET()) // dont
+	// start
+	// any
+	// dhcp
+	// services
+	// in
+	// bridge
+	// mode
 	{
 		nvram_set("lan_proto", "static");
 		return;
@@ -130,8 +133,8 @@ void start_udhcpd(void)
 #endif
 #endif
 
-	if (nvram_invmatch("lan_proto", "dhcp")
-	    || nvram_matchi("dhcp_dnsmasq", 1)) {
+	if (nvram_invmatch("lan_proto", "dhcp") ||
+	    nvram_matchi("dhcp_dnsmasq", 1)) {
 		stop_udhcpd();
 		return;
 	}
@@ -142,10 +145,12 @@ void start_udhcpd(void)
 	 */
 	adjust_dhcp_range();
 
-	cprintf("%s %d.%d.%d.%s %s %s\n",
-		nvram_safe_get("lan_ifname"),
+	cprintf("%s %d.%d.%d.%s %s %s\n", nvram_safe_get("lan_ifname"),
 		get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), nvram_safe_get("dhcp_start"), nvram_safe_get("dhcp_end"), nvram_safe_get("lan_lease"));
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
+		nvram_safe_get("dhcp_start"), nvram_safe_get("dhcp_end"),
+		nvram_safe_get("lan_lease"));
 
 	/*
 	 * Touch leases file 
@@ -176,33 +181,42 @@ void start_udhcpd(void)
 		return;
 	}
 	fprintf(fp, "pidfile /var/run/udhcpd.pid\n");
-	fprintf(fp, "start %d.%d.%d.%s\n", get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), nvram_safe_get("dhcp_start"));
+	fprintf(fp, "start %d.%d.%d.%s\n",
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
+		nvram_safe_get("dhcp_start"));
 	fprintf(fp, "end %d.%d.%d.%d\n",
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), nvram_geti("dhcp_start") + nvram_geti("dhcp_num") - 1);
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
+		nvram_geti("dhcp_start") + nvram_geti("dhcp_num") - 1);
 	int dhcp_max = nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
 	fprintf(fp, "max_leases %d\n", dhcp_max);
 	fprintf(fp, "interface %s\n", nvram_safe_get("lan_ifname"));
 	fprintf(fp, "remaining yes\n");
-	fprintf(fp, "auto_time 30\n");	// N seconds to update lease table
+	fprintf(fp, "auto_time 30\n"); // N seconds to update lease table
 	if (usejffs)
 		fprintf(fp, "lease_file /jffs/udhcpd.leases\n");
 	else
 		fprintf(fp, "lease_file /tmp/udhcpd.leases\n");
 	fprintf(fp, "statics_file /tmp/udhcpd.statics\n");
 
-	if (nvram_invmatch("lan_netmask", "")
-	    && nvram_invmatch("lan_netmask", "0.0.0.0"))
-		fprintf(fp, "option subnet %s\n", nvram_safe_get("lan_netmask"));
+	if (nvram_invmatch("lan_netmask", "") &&
+	    nvram_invmatch("lan_netmask", "0.0.0.0"))
+		fprintf(fp, "option subnet %s\n",
+			nvram_safe_get("lan_netmask"));
 
-	if (nvram_invmatch("dhcp_gateway", "")
-	    && nvram_invmatch("dhcp_gateway", "0.0.0.0"))
-		fprintf(fp, "option router %s\n", nvram_safe_get("dhcp_gateway"));
-	else if (nvram_invmatch("lan_ipaddr", "")
-		 && nvram_invmatch("lan_ipaddr", "0.0.0.0"))
+	if (nvram_invmatch("dhcp_gateway", "") &&
+	    nvram_invmatch("dhcp_gateway", "0.0.0.0"))
+		fprintf(fp, "option router %s\n",
+			nvram_safe_get("dhcp_gateway"));
+	else if (nvram_invmatch("lan_ipaddr", "") &&
+		 nvram_invmatch("lan_ipaddr", "0.0.0.0"))
 		fprintf(fp, "option router %s\n", nvram_safe_get("lan_ipaddr"));
 
-	if (nvram_invmatch("wan_wins", "")
-	    && nvram_invmatch("wan_wins", "0.0.0.0"))
+	if (nvram_invmatch("wan_wins", "") &&
+	    nvram_invmatch("wan_wins", "0.0.0.0"))
 		fprintf(fp, "option wins %s\n", nvram_safe_get("wan_wins"));
 
 	// Wolf add - keep lease within reasonable timeframe
@@ -215,22 +229,27 @@ void start_udhcpd(void)
 		nvram_async_commit();
 	}
 
-	fprintf(fp, "option lease %d\n", nvram_geti("dhcp_lease") ? nvram_geti("dhcp_lease") * 60 : 86400);
+	fprintf(fp, "option lease %d\n",
+		nvram_geti("dhcp_lease") ? nvram_geti("dhcp_lease") * 60 :
+					   86400);
 
 	dns_list = get_dns_list(0);
 
 	if (!dns_list || dns_list->num_servers == 0) {
 		if (nvram_invmatch("lan_ipaddr", ""))
-			fprintf(fp, "option dns %s\n", nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "option dns %s\n",
+				nvram_safe_get("lan_ipaddr"));
 	} else if (nvram_matchi("local_dns", 1)) {
 		if (nvram_invmatch("lan_ipaddr", "") || dns_list) {
 			fprintf(fp, "option dns");
 
 			if (nvram_invmatch("lan_ipaddr", ""))
-				fprintf(fp, " %s", nvram_safe_get("lan_ipaddr"));
+				fprintf(fp, " %s",
+					nvram_safe_get("lan_ipaddr"));
 			if (dns_list) {
 				for (i = 0; i < dns_list->num_servers; i++)
-					fprintf(fp, " %s", dns_list->dns_server[i].ip);
+					fprintf(fp, " %s",
+						dns_list->dns_server[i].ip);
 			}
 			fprintf(fp, "\n");
 		}
@@ -250,12 +269,15 @@ void start_udhcpd(void)
 	 */
 	if (nvram_match("dhcp_domain", "wan")) {
 		if (nvram_invmatch("wan_domain", ""))
-			fprintf(fp, "option domain %s\n", nvram_safe_get("wan_domain"));
+			fprintf(fp, "option domain %s\n",
+				nvram_safe_get("wan_domain"));
 		else if (nvram_invmatch("wan_get_domain", ""))
-			fprintf(fp, "option domain %s\n", nvram_safe_get("wan_get_domain"));
+			fprintf(fp, "option domain %s\n",
+				nvram_safe_get("wan_get_domain"));
 	} else {
 		if (nvram_invmatch("lan_domain", ""))
-			fprintf(fp, "option domain %s\n", nvram_safe_get("lan_domain"));
+			fprintf(fp, "option domain %s\n",
+				nvram_safe_get("lan_domain"));
 	}
 
 	fwritenvram("dhcpd_options", fp);
@@ -276,9 +298,12 @@ void start_udhcpd(void)
 
 	if (nvram_matchi("local_dns", 1)) {
 		if (nvram_matchi("port_swap", 1))
-			fprintf(fp, "%s %s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("et1macaddr"), nvram_safe_get("router_name"));
+			fprintf(fp, "%s %s %s\n", nvram_safe_get("lan_ipaddr"),
+				nvram_safe_get("et1macaddr"),
+				nvram_safe_get("router_name"));
 		else
-			fprintf(fp, "%s %s %s\n", nvram_safe_get("lan_ipaddr"), mac, nvram_safe_get("router_name"));
+			fprintf(fp, "%s %s %s\n", nvram_safe_get("lan_ipaddr"),
+				mac, nvram_safe_get("router_name"));
 	}
 	int leasenum = nvram_geti("static_leasenum");
 
