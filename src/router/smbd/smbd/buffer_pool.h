@@ -21,14 +21,17 @@ void ksmbd_free_request(void *addr);
 
 void *_ksmbd_alloc_request(size_t size, const char *func, int line);
 
-#define ksmbd_alloc_request(size) _ksmbd_alloc_request(size, __func__ , __LINE__)
+#define ksmbd_alloc_request(size) _ksmbd_alloc_request(size, __func__, __LINE__)
 
 void ksmbd_free_response(void *buffer);
 void *_ksmbd_alloc_response(size_t size, const char *func, int line);
-#define ksmbd_alloc_response(size) _ksmbd_alloc_response(size, __func__ , __LINE__)
+#define ksmbd_alloc_response(size) \
+	_ksmbd_alloc_response(size, __func__, __LINE__)
 
-void *_ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz, const char *func, int line);
-#define ksmbd_realloc_response(ptr, old_sz, new_sz) _ksmbd_realloc_response(ptr, old_sz, new_sz, __func__ , __LINE__)
+void *_ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz,
+			      const char *func, int line);
+#define ksmbd_realloc_response(ptr, old_sz, new_sz) \
+	_ksmbd_realloc_response(ptr, old_sz, new_sz, __func__, __LINE__)
 
 void ksmbd_free_file_struct(void *filp);
 void *ksmbd_alloc_file_struct(void);
