@@ -36,7 +36,7 @@
 
 struct dostype {
 	char *typecode;
-	int isfs;		/* true = native Amiga filesystem (affects printout when */
+	int isfs; /* true = native Amiga filesystem (affects printout when */
 	/*  found at the start of the boot sector) */
 	char *name;
 };
@@ -142,7 +142,7 @@ static void format_dostype(char *buf, const unsigned char *dostype)
  * Amiga "Rigid Disk" partition map
  */
 
-int detect_amiga_partmap(SECTION * section, int level)
+int detect_amiga_partmap(SECTION *section, int level)
 {
 	int i, off, found;
 	unsigned char *buf;
@@ -165,7 +165,8 @@ int detect_amiga_partmap(SECTION * section, int level)
 	if (off == 0)
 		print_line(level, "Amiga Rigid Disk partition map");
 	else
-		print_line(level, "Amiga Rigid Disk partition map at sector %d", off);
+		print_line(level, "Amiga Rigid Disk partition map at sector %d",
+			   off);
 
 	/* get device block size (?) */
 	blocksize = get_be_long(buf + 16);
@@ -173,15 +174,20 @@ int detect_amiga_partmap(SECTION * section, int level)
 		print_line(level + 1, "Illegal block size %lu", blocksize);
 		return 0;
 	} else if (blocksize != 512) {
-		print_line(level + 1, "Unusual block size %lu, not sure this will work...", blocksize);
+		print_line(level + 1,
+			   "Unusual block size %lu, not sure this will work...",
+			   blocksize);
 	}
 	/* TODO: get geometry data for later use */
 
 	/* walk the partition list */
 	part_ptr = get_be_long(buf + 28);
 	for (i = 1; part_ptr != 0xffffffffUL; i++) {
-		if (get_buffer(section, (u8)part_ptr * 512, 256, (void **)&buf) < 256) {
-			print_line(level, "Partition %d: Can't read partition info block");
+		if (get_buffer(section, (u8)part_ptr * 512, 256,
+			       (void **)&buf) < 256) {
+			print_line(
+				level,
+				"Partition %d: Can't read partition info block");
 			return 0;
 		}
 
@@ -195,9 +201,11 @@ int detect_amiga_partmap(SECTION * section, int level)
 		part_ptr = get_be_long(buf + 16);
 
 		/* get sizes */
-		cylsize = (u8)get_be_long(buf + 140) * (u8)get_be_long(buf + 148);
+		cylsize =
+			(u8)get_be_long(buf + 140) * (u8)get_be_long(buf + 148);
 		start = get_be_long(buf + 164) * cylsize;
-		size = (get_be_long(buf + 168) + 1 - get_be_long(buf + 164)) * cylsize;
+		size = (get_be_long(buf + 168) + 1 - get_be_long(buf + 164)) *
+		       cylsize;
 
 		snprintf(append, 63, " from %llu", start);
 		format_blocky_size(s, size, 512, "sectors", append);
@@ -210,11 +218,13 @@ int detect_amiga_partmap(SECTION * section, int level)
 
 		/* show dos type */
 		format_dostype(s, buf + 192);
-		print_line(level + 1, "Type \"%s\" (%s)", s, get_name_for_dostype(buf + 192));
+		print_line(level + 1, "Type \"%s\" (%s)", s,
+			   get_name_for_dostype(buf + 192));
 
 		/* detect contents */
 		if (level >= 0 && size > 0 && start > 0) {
-			analyze_recursive(section, level + 1, start * 512, size * 512, 0);
+			analyze_recursive(section, level + 1, start * 512,
+					  size * 512, 0);
 		}
 	}
 	return 1;
@@ -224,7 +234,7 @@ int detect_amiga_partmap(SECTION * section, int level)
  * Amiga file system
  */
 
-int detect_amiga_fs(SECTION * section, int level)
+int detect_amiga_fs(SECTION *section, int level)
 {
 	unsigned char *buf;
 	int i, isfs;
@@ -246,7 +256,6 @@ int detect_amiga_fs(SECTION * section, int level)
 		return 0;
 
 	if (isfs) {
-
 		print_line(level, "%s", typename);
 
 		format_dostype(s, buf);
@@ -259,10 +268,8 @@ int detect_amiga_fs(SECTION * section, int level)
 		}
 
 	} else {
-
 		format_dostype(s, buf);
 		print_line(level, "Amiga type code \"%s\" (%s)", s, typename);
-
 	}
 	return 1;
 }

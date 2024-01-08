@@ -34,7 +34,7 @@
 #define _GNU_SOURCE
 #endif
 #include <asm/byteorder.h>
-#include <arpa/inet.h>		/* for htonl */
+#include <arpa/inet.h> /* for htonl */
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -48,7 +48,9 @@
 
 #include <syslog.h>
 #ifdef TEST
-#define dd_syslog(a, args...) do { } while(0)
+#define dd_syslog(a, args...) \
+	do {                  \
+	} while (0)
 #else
 #include <utils.h>
 #endif
@@ -88,12 +90,12 @@
 #endif
 
 #ifndef O_CLOEXEC
-#define O_CLOEXEC 0		/* Supported starting in Linux 2.6.23 */
+#define O_CLOEXEC 0 /* Supported starting in Linux 2.6.23 */
 #endif
 
 #ifndef PR_SET_NAME
-#define PR_SET_NAME    15	/* Set process name */
-#define PR_GET_NAME    16	/* Get process name */
+#define PR_SET_NAME 15 /* Set process name */
+#define PR_GET_NAME 16 /* Get process name */
 #endif
 
 #ifndef SI_TKILL
@@ -109,7 +111,9 @@ static char *s_demangleBuf;
 static size_t s_demangleBufLen;
 #endif
 sighandler_t delegate;
-#define ALT_STACK_SIZE (MINSIGSTKSZ + 256 * sizeof(void *))	/* or let it all hang out: SIGSTKSZ */
+#define ALT_STACK_SIZE \
+	(MINSIGSTKSZ + \
+	 256 * sizeof(void *)) /* or let it all hang out: SIGSTKSZ */
 static void *s_altStackSpace;
 
 static const char comment[] = "# ";
@@ -198,8 +202,9 @@ static const char *_strsignal(int sigNum)
 #define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
 #define MCTX_PC(uc) MCTXREG(uc, 16)
 static const char *mctxRegNames[NMCTXREGS] = {
-	"R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "RDI", "RSI", "RBP", "RBX",
-	"RDX", "RAX", "RCX", "RSP", "RIP", "EFL", "CSGSFS", "ERR", "TRAPNO", "OLDMASK", "CR2"
+	"R8",  "R9",  "R10",	"R11", "R12",	 "R13",	    "R14", "R15",
+	"RDI", "RSI", "RBP",	"RBX", "RDX",	 "RAX",	    "RCX", "RSP",
+	"RIP", "EFL", "CSGSFS", "ERR", "TRAPNO", "OLDMASK", "CR2"
 };
 
 #define FMTLEN "07"
@@ -209,10 +214,11 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define NMCTXREGS NGREG
 #define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
 #define MCTX_PC(uc) MCTXREG(uc, 14)
-static const char *mctxRegNames[NMCTXREGS] = {
-	"GS", "FS", "ES", "DS", "EDI", "ESI", "EBP", "ESP", "EBX", "EDX",
-	"ECX", "EAX", "TRAPNO", "ERR", "EIP", "CS", "EFL", "UESP", "SS"
-};
+static const char *mctxRegNames[NMCTXREGS] = { "GS",	 "FS",	 "ES",	"DS",
+					       "EDI",	 "ESI",	 "EBP", "ESP",
+					       "EBX",	 "EDX",	 "ECX", "EAX",
+					       "TRAPNO", "ERR",	 "EIP", "CS",
+					       "EFL",	 "UESP", "SS" };
 
 #define FMTLEN "06"
 #define FMTBIT "08"
@@ -222,10 +228,10 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define MCTXREG(uc, i) (uc->uc_mcontext.regs[i])
 #define MCTX_PC(uc) (uc->uc_mcontext.pc)
 static const char *mctxRegNames[NMCTXREGS] = {
-	"X0", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10",
-	"X11", "X12", "X13", "X14", "X15", "X16", "X17", "X18", "X19",
-	"X20", "X21", "X22", "X23", "X24", "X25", "X26", "X27", "X28",
-	"X29", "X30"
+	"X0",  "X1",  "X2",  "X3",  "X4",  "X5",  "X6",	 "X7",
+	"X8",  "X9",  "X10", "X11", "X12", "X13", "X14", "X15",
+	"X16", "X17", "X18", "X19", "X20", "X21", "X22", "X23",
+	"X24", "X25", "X26", "X27", "X28", "X29", "X30"
 };
 
 #define FMTLEN "03"
@@ -236,8 +242,9 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define MCTXREG(uc, i) (((unsigned long *)(&uc->uc_mcontext))[i])
 #define MCTX_PC(uc) MCTXREG(uc, 18)
 static const char *mctxRegNames[NMCTXREGS] = {
-	"TRAPNO", "ERRCODE", "OLDMASK", "R0", "R1", "R2", "R3", "R4", "R5", "R6",
-	"R7", "R8", "R9", "R10", "FP", "IP", "SP", "LR", "PC", "CPSR", "FAULTADDR"
+	"TRAPNO", "ERRCODE", "OLDMASK", "R0", "R1", "R2",   "R3",
+	"R4",	  "R5",	     "R6",	"R7", "R8", "R9",   "R10",
+	"FP",	  "IP",	     "SP",	"LR", "PC", "CPSR", "FAULTADDR"
 };
 
 #define FMTLEN "09"
@@ -246,7 +253,7 @@ static const int gregOffset = 3;
 #elif defined(__mips__)
 #include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS NGREG
-#ifdef CTX_EPC			/* Pre-2007 uclibc */
+#ifdef CTX_EPC /* Pre-2007 uclibc */
 #define MCTXREG(uc, i) (uc->uc_mcontext.gpregs[i])
 #define MCTX_PC(uc) (uc->uc_mcontext.gpregs[35])
 #else
@@ -256,12 +263,12 @@ static const int gregOffset = 3;
 static const char *mctxRegNames[NMCTXREGS] = {
 	"ZERO", "AT", "V0", "V1", "A0", "A1", "A2", "A3",
 #if _MIPS_SIM == _ABIO32
-	"T0", "T1", "T2", "T3",
+	"T0",	"T1", "T2", "T3",
 #else
-	"A4", "A5", "A6", "A7",
+	"A4",	"A5", "A6", "A7",
 #endif
-	"T4", "T5", "T6", "T7",
-	"S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "T8", "T9", "K0", "K1", "GP", "SP", "FP", "RA"
+	"T4",	"T5", "T6", "T7", "S0", "S1", "S2", "S3", "S4", "S5",
+	"S6",	"S7", "T8", "T9", "K0", "K1", "GP", "SP", "FP", "RA"
 };
 
 #define FMTLEN "04"
@@ -274,7 +281,7 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS 45
 #ifdef __UCLIBC__
-#define MCTX_PC(uc)    (uc->uc_mcontext.uc_regs->gregs[32])
+#define MCTX_PC(uc) (uc->uc_mcontext.uc_regs->gregs[32])
 #define MCTXREG(uc, i) (uc->uc_mcontext.uc_regs->gregs[i])
 #else
 #define MCTX_PC(uc) (uc->uc_mcontext.gregs[32])
@@ -282,17 +289,18 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #endif
 
 static const char *mctxRegNames[NMCTXREGS] = {
-	"GPR0", "GPR1", "GPR2", "GPR3", "GPR4", "GPR5", "GPR6", "GPR7", "GPR8", "GPR9",
-	"GPR10", "GPR11", "GPR12", "GPR13", "GPR14", "GPR15", "GPR16", "GPR17", "GPR18", "GPR19",
-	"GPR20", "GPR21", "GPR22", "GPR23", "GPR24", "GPR25", "GPR26", "GPR27", "GPR28", "GPR29",
-	"GPR30", "GPR31",
-	"NIP", "MSR", "ORIG_R3", "CTR", "LNK", "XER", "CCR",
+	"GPR0",	 "GPR1",  "GPR2",  "GPR3",   "GPR4",  "GPR5",  "GPR6",
+	"GPR7",	 "GPR8",  "GPR9",  "GPR10",  "GPR11", "GPR12", "GPR13",
+	"GPR14", "GPR15", "GPR16", "GPR17",  "GPR18", "GPR19", "GPR20",
+	"GPR21", "GPR22", "GPR23", "GPR24",  "GPR25", "GPR26", "GPR27",
+	"GPR28", "GPR29", "GPR30", "GPR31",  "NIP",   "MSR",   "ORIG_R3",
+	"CTR",	 "LNK",	  "XER",   "CCR",
 #ifndef __powerpc64__
 	"MQ",
 #else
 	"SOFTE",
 #endif
-	"TRAP", "DAR", "DSISR", "RESULT", "DSCR"
+	"TRAP",	 "DAR",	  "DSISR", "RESULT", "DSCR"
 };
 
 #define FMTLEN "07"
@@ -324,14 +332,14 @@ pnt = (void *)uc->uc_mcontext.mc_eip;
 #elif defined(__x86_64__)
 pnt = (void *)uc->uc_mcontext.mc_rip;
 #endif
-#elif (defined (__ppc__)) || (defined (__powerpc__))
+#elif (defined(__ppc__)) || (defined(__powerpc__))
 pnt = (void *)uc->uc_mcontext.regs->nip;
 #elif defined(__i386__)
 pnt = (void *)uc->uc_mcontext.gregs[REG_EIP];
 #elif defined(__x86_64__)
 pnt = (void *)uc->uc_mcontext.gregs[REG_RIP];
 #elif defined(__mips__)
-#ifdef CTX_EPC			/* Pre-2007 uclibc */
+#ifdef CTX_EPC /* Pre-2007 uclibc */
 pnt = (void *)uc->uc_mcontext.gpregs[CTX_EPC];
 #else
 pnt = (void *)uc->uc_mcontext.pc;
@@ -339,7 +347,7 @@ pnt = (void *)uc->uc_mcontext.pc;
 #endif
 #endif
 
-static uint8_t load8(const void *_p, uint8_t * v)
+static uint8_t load8(const void *_p, uint8_t *v)
 {
 	static int fds[2] = { -1, -1 };
 	uint8_t b;
@@ -348,7 +356,7 @@ static uint8_t load8(const void *_p, uint8_t * v)
 
 	if (fds[0] == -1) {
 		r = pipe(fds);
-		(void)r;	/* even on failure, degrades gracefully if memory is readable */
+		(void)r; /* even on failure, degrades gracefully if memory is readable */
 	}
 
 	if (v)
@@ -358,7 +366,8 @@ static uint8_t load8(const void *_p, uint8_t * v)
 		;
 	}
 	if (r == 1) {
-		while ((r = read(fds[0], v ? v : &b, 1)) < 1 && errno == EINTR) {
+		while ((r = read(fds[0], v ? v : &b, 1)) < 1 &&
+		       errno == EINTR) {
 			;
 		}
 		if (r == 1)
@@ -367,7 +376,7 @@ static uint8_t load8(const void *_p, uint8_t * v)
 	if (errno == EFAULT)
 		return 0xff;
 	if (v)
-		*v = *p;	/* Risk it... */
+		*v = *p; /* Risk it... */
 	return 0;
 }
 
@@ -400,9 +409,7 @@ static uint32_t load32(const void *_p, unsigned long *_v)
 static const struct {
 	short sun_family;
 	char sun_path[9];
-} log_addr = {
-	AF_UNIX, "/dev/log"
-};
+} log_addr = { AF_UNIX, "/dev/log" };
 
 static int log_fd = -1;
 static int log_facility = LOG_USER;
@@ -411,12 +418,13 @@ static char log_ident[32];
 
 static int is_lost_conn(int e)
 {
-	return e == ECONNREFUSED || e == ECONNRESET || e == ENOTCONN || e == EPIPE;
+	return e == ECONNREFUSED || e == ECONNRESET || e == ENOTCONN ||
+	       e == EPIPE;
 }
 
 #ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC   02000000
-#define SOCK_NONBLOCK  04000
+#define SOCK_CLOEXEC 02000000
+#define SOCK_NONBLOCK 04000
 #endif
 static int postindex = -1;
 static char *postinfo[33];
@@ -432,19 +440,22 @@ static void slog(int priority, const char *message)
 		log_fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 		if (log_fd >= 0)
 			connect(log_fd, (void *)&log_addr, sizeof log_addr);
-
 	}
 	if (!(priority & LOG_FACMASK))
 		priority |= log_facility;
 	pid = (log_opt & LOG_PID) ? getpid() : 0;
 	l = 0;
-	l = asprintf(&buf, "<%d>%n%s%s%.0d%s: %s", priority, &hlen, log_ident, "[" + !pid, pid, "]" + !pid, message);
+	l = asprintf(&buf, "<%d>%n%s%s%.0d%s: %s", priority, &hlen, log_ident,
+		     "[" + !pid, pid, "]" + !pid, message);
 	errno = errno_save;
 	if (l >= 0) {
-		if (send(log_fd, buf, l, 0) < 0 && (!is_lost_conn(errno)
-						    || connect(log_fd, (void *)&log_addr, sizeof log_addr) < 0 || send(log_fd, buf, l, 0) < 0)
-		    && (log_opt & LOG_CONS)) {
-			fd = open("/dev/console", O_WRONLY | O_NOCTTY | O_CLOEXEC);
+		if (send(log_fd, buf, l, 0) < 0 &&
+		    (!is_lost_conn(errno) ||
+		     connect(log_fd, (void *)&log_addr, sizeof log_addr) < 0 ||
+		     send(log_fd, buf, l, 0) < 0) &&
+		    (log_opt & LOG_CONS)) {
+			fd = open("/dev/console",
+				  O_WRONLY | O_NOCTTY | O_CLOEXEC);
 			if (fd >= 0) {
 				dprintf(fd, "%.*s", l - hlen, buf + hlen);
 				close(fd);
@@ -460,7 +471,8 @@ static void slog(int priority, const char *message)
 static int airbag_printf(char *fmt, ...)
 {
 	static char *ss_buffer = NULL;
-	static char temp[128];;
+	static char temp[128];
+	;
 	va_list args;
 	va_start(args, fmt);
 	int size = vsnprintf(temp, 128, fmt, args);
@@ -471,7 +483,8 @@ static int airbag_printf(char *fmt, ...)
 	if (!ss_buffer) {
 		ss_buffer = strdup(temp);
 	} else {
-		ss_buffer = realloc(ss_buffer, strlen(ss_buffer) + strlen(temp) + 1);
+		ss_buffer = realloc(ss_buffer,
+				    strlen(ss_buffer) + strlen(temp) + 1);
 		strcat(ss_buffer, temp);
 	}
 	if (strchr(ss_buffer, '\n')) {
@@ -489,7 +502,8 @@ static const char *demangle(const char *mangled)
 		return unknown;
 #if defined(USE_GCC_DEMANGLE)
 	int status;
-	char *newBuf = abi::__cxa_demangle(mangled, s_demangleBuf, &s_demangleBufLen, &status);
+	char *newBuf = abi::__cxa_demangle(mangled, s_demangleBuf,
+					   &s_demangleBufLen, &status);
 	if (newBuf) {
 		s_demangleBuf = newBuf;
 	}
@@ -510,17 +524,22 @@ static void _airbag_symbol(void *pc, const char *sname, void *saddr)
 		if (info.dli_sname && info.dli_saddr) {
 			sname = info.dli_sname;
 			saddr = info.dli_saddr;
-		} else if (!sname || !saddr) {	/* dladdr and heuristic both failed; offset from start of so */
+		} else if (!sname ||
+			   !saddr) { /* dladdr and heuristic both failed; offset from start of so */
 			sname = "";
 			saddr = info.dli_fbase;
 		}
 		offset = (ptrdiff_t)pc - (ptrdiff_t)saddr;
-		airbag_printf("%s[0x%" FMTBIT "lx](%s+0x%" FMTBIT "lx)[0x%" FMTBIT "lx]", info.dli_fname, (unsigned long)info.dli_fbase, demangle(sname), offset, (unsigned long)pc);
+		airbag_printf("%s[0x%" FMTBIT "lx](%s+0x%" FMTBIT
+			      "lx)[0x%" FMTBIT "lx]",
+			      info.dli_fname, (unsigned long)info.dli_fbase,
+			      demangle(sname), offset, (unsigned long)pc);
 		printed = 1;
 	}
 #endif
 	if (!printed) {
-		airbag_printf("%s(+0)[0x%" FMTBIT "lx]", unknown, (unsigned long)pc);
+		airbag_printf("%s(+0)[0x%" FMTBIT "lx]", unknown,
+			      (unsigned long)pc);
 	}
 }
 
@@ -531,10 +550,11 @@ static void airbag_symbol(void *pc)
 
 #if defined(USE_GCC_UNWIND) && !defined(__mips__) && !defined(__arm__)
 
-typedef _Unwind_Ptr(*Unwind_GetIP_T) (struct _Unwind_Context *);
-typedef _Unwind_Reason_Code(*Unwind_Backtrace_T) (_Unwind_Trace_Fn, void *);
+typedef _Unwind_Ptr (*Unwind_GetIP_T)(struct _Unwind_Context *);
+typedef _Unwind_Reason_Code (*Unwind_Backtrace_T)(_Unwind_Trace_Fn, void *);
 static Unwind_GetIP_T _unwind_GetIP;
-static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
+static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx,
+						   void *a)
 {
 	struct trace_arg *arg = (struct trace_arg *)a;
 
@@ -563,7 +583,8 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 	for (i = 0; i < 16; ++i) {
 		unsigned long len;
 		addr -= 4;
-		if (load32((void *)addr, &len) == 0 && (len & 0xffffff00) == 0xff000000) {
+		if (load32((void *)addr, &len) == 0 &&
+		    (len & 0xffffff00) == 0xff000000) {
 			uint32_t offset;
 			len &= 0xff;
 			faddr = (void *)(addr + 4);
@@ -575,7 +596,10 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 				fname[offset] = c;
 			}
 			fname[offset] = 0;
-			airbag_printf("%sFound poked function name: %s[0x%" FMTBIT "lx]\n", comment, fname, faddr);
+			airbag_printf(
+				"%sFound poked function name: %s[0x%" FMTBIT
+				"lx]\n",
+				comment, fname, faddr);
 			break;
 		}
 	}
@@ -583,7 +607,8 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 }
 #endif
 
-static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * uc)
+static int airbag_walkstack(void **buffer, int *repeat, int size,
+			    ucontext_t *uc)
 {
 	(void)uc;
 
@@ -595,7 +620,7 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 	unsigned long *addr, *pc, *ra, *sp;
 	unsigned long raOffset, stackSize;
 
-#ifdef CTX_EPC			/* Pre-2007 uclibc */
+#ifdef CTX_EPC /* Pre-2007 uclibc */
 	pc = (unsigned long *)uc->uc_mcontext.gpregs[35];
 	ra = (unsigned long *)uc->uc_mcontext.gpregs[31];
 	sp = (unsigned long *)uc->uc_mcontext.gpregs[29];
@@ -614,8 +639,11 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 	for (addr = pc; !raOffset || !stackSize; --addr) {
 		unsigned long v;
 		if (load32(addr, &v)) {
-			airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment, addr);
-#ifdef CTX_EPC			/* Pre-2007 uclibc */
+			airbag_printf(
+				"%sText at 0x%" FMTBIT
+				"lx is not mapped; trying prior frame pointer.\n",
+				comment, addr);
+#ifdef CTX_EPC /* Pre-2007 uclibc */
 			uc->uc_mcontext.gpregs[35] = (unsigned long)ra;
 #else
 			uc->uc_mcontext.pc = (unsigned long)ra;
@@ -623,23 +651,27 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 			goto backward;
 		}
 		switch (v & 0xffff0000) {
-		case 0x27bd0000:	/* addiu   sp,sp,??? */
+		case 0x27bd0000: /* addiu   sp,sp,??? */
 			stackSize = abs((short)(v & 0xffff));
-			airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n", comment, addr, stackSize);
+			airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n",
+				      comment, addr, stackSize);
 			break;
-		case 0x67bd0000:	/* daddiu   sp,sp,??? */
+		case 0x67bd0000: /* daddiu   sp,sp,??? */
 			stackSize = abs((short)(v & 0xffff));
-			airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n", comment, addr, stackSize);
+			airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n",
+				      comment, addr, stackSize);
 			break;
-		case 0xafbf0000:	/* sw      ra,???(sp) */
+		case 0xafbf0000: /* sw      ra,???(sp) */
 			raOffset = (v & 0xffff);
-			airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
+			airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n",
+				      comment, addr, raOffset);
 			break;
-		case 0xffbf0000:	/* ld     ra,???(sp) */
+		case 0xffbf0000: /* ld     ra,???(sp) */
 			raOffset = (v & 0xffff);
-			airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
+			airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n",
+				      comment, addr, raOffset);
 			break;
-		case 0x3c1c0000:	/* lui     gp,??? */
+		case 0x3c1c0000: /* lui     gp,??? */
 			goto out;
 		default:
 			break;
@@ -648,8 +680,13 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 out:
 	if (raOffset) {
 		unsigned long *newRa;
-		if (load32((unsigned long *)((unsigned long)sp + raOffset), (unsigned long *)&newRa))
-			airbag_printf("%sText at RA <- SP[raOffset] 0x%" FMTBIT "lx[0x%" FMTBIT "lx] is not mapped; assuming blown stack.\n", comment, sp, raOffset);
+		if (load32((unsigned long *)((unsigned long)sp + raOffset),
+			   (unsigned long *)&newRa))
+			airbag_printf(
+				"%sText at RA <- SP[raOffset] 0x%" FMTBIT
+				"lx[0x%" FMTBIT
+				"lx] is not mapped; assuming blown stack.\n",
+				comment, sp, raOffset);
 		else
 			ra = newRa;
 	}
@@ -666,34 +703,48 @@ backward:
 		for (addr = ra; !raOffset || !stackSize; --addr) {
 			unsigned long v;
 			if (load32(addr, &v)) {
-				airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, addr, termBt);
+				airbag_printf("%sText at 0x%" FMTBIT
+					      "lx is not mapped; %s.\n",
+					      comment, addr, termBt);
 				return depth;
 			}
 			switch (v & 0xffff0000) {
-			case 0x27bd0000:	/* addiu   sp,sp,??? */
+			case 0x27bd0000: /* addiu   sp,sp,??? */
 				stackSize = abs((short)(v & 0xffff));
-				airbag_printf("%s[0x%" FMTBIT "lx]: stack size %u\n", comment, addr, stackSize);
+				airbag_printf("%s[0x%" FMTBIT
+					      "lx]: stack size %u\n",
+					      comment, addr, stackSize);
 				break;
-			case 0x67bd0000:	/* daddiu   sp,sp,??? */
+			case 0x67bd0000: /* daddiu   sp,sp,??? */
 				stackSize = abs((short)(v & 0xffff));
-				airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n", comment, addr, stackSize);
+				airbag_printf("%s[0x%" FMTBIT
+					      "lx]: stack size %lu\n",
+					      comment, addr, stackSize);
 				break;
-			case 0xafbf0000:	/* sw      ra,???(sp) */
+			case 0xafbf0000: /* sw      ra,???(sp) */
 				raOffset = (v & 0xffff);
-				airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
+				airbag_printf("%s[0x%" FMTBIT
+					      "lx]: ra offset %lu\n",
+					      comment, addr, raOffset);
 				break;
-			case 0xffbf0000:	/* ld     ra,???(sp) */
+			case 0xffbf0000: /* ld     ra,???(sp) */
 				raOffset = (v & 0xffff);
-				airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
+				airbag_printf("%s[0x%" FMTBIT
+					      "lx]: ra offset %lu\n",
+					      comment, addr, raOffset);
 				break;
-			case 0x3c1c0000:	/* lui     gp,??? */
+			case 0x3c1c0000: /* lui     gp,??? */
 				return depth + 1;
 			default:
 				break;
 			}
 		}
-		if (load32((unsigned long *)((unsigned long)sp + raOffset), (unsigned long *)&ra)) {
-			airbag_printf("%sText at RA <- SP[raOffset] 0x%" FMTBIT "lx[0x%" FMTBIT "lx] is not mapped; %s.\n", comment, sp, raOffset, termBt);
+		if (load32((unsigned long *)((unsigned long)sp + raOffset),
+			   (unsigned long *)&ra)) {
+			airbag_printf("%sText at RA <- SP[raOffset] 0x%" FMTBIT
+				      "lx[0x%" FMTBIT
+				      "lx] is not mapped; %s.\n",
+				      comment, sp, raOffset, termBt);
 			break;
 		}
 		sp = (unsigned long *)((unsigned long)sp + stackSize);
@@ -707,7 +758,9 @@ backward:
 	char fname[257];
 
 	if (pc & 3 || load32((void *)pc, NULL)) {
-		airbag_printf("%sCalled through bad function pointer; assuming PC <- LR.\n", comment);
+		airbag_printf(
+			"%sCalled through bad function pointer; assuming PC <- LR.\n",
+			comment);
 		pc = MCTX_PC(uc) = lr;
 	}
 	buffer[depth] = (void *)pc;
@@ -733,36 +786,76 @@ backward:
 		int found = 0;
 		int i;
 
-		airbag_printf("%sSearching frame %u (FP=0x%" FMTBIT "lx, PC=0x%" FMTBIT "lx)\n", comment, depth - 1, fp, pc);
+		airbag_printf("%sSearching frame %u (FP=0x%" FMTBIT
+			      "lx, PC=0x%" FMTBIT "lx)\n",
+			      comment, depth - 1, fp, pc);
 
 		for (i = 0; i < 8192 && !found; ++i) {
 			unsigned long instr, instr2;
 			if (load32((void *)(pc - i * 4), &instr2)) {
-				airbag_printf("%sInstruction at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, pc - i * 4, termBt);
+				airbag_printf("%sInstruction at 0x%" FMTBIT
+					      "lx is not mapped; %s.\n",
+					      comment, pc - i * 4, termBt);
 				return depth;
 			}
-			if ((instr2 & (stmMask | (1 << 11))) == (stmBits | (1 << 11))) {
+			if ((instr2 & (stmMask | (1 << 11))) ==
+			    (stmBits | (1 << 11))) {
 				void *faddr = 0;
-				uint32_t priorPc = lr;	/* If LR was pushed, will find and use that.  For now assume leaf function. */
+				uint32_t priorPc =
+					lr; /* If LR was pushed, will find and use that.  For now assume leaf function. */
 				uint32_t priorFp = 0;
 				found = 1;
 				i++;
-				if (load32((void *)(pc - i * 4), &instr) == 0 && (instr & stmMask) == stmBits) {
+				if (load32((void *)(pc - i * 4), &instr) == 0 &&
+				    (instr & stmMask) == stmBits) {
 					int pushes, dir, pre, regNum;
-				      checkStm:
+checkStm:
 					pushes = 0;
-					dir = (instr & (1 << 23)) ? 1 : -1;	/* U bit: increment or decrement? */
-					pre = (instr & (1 << 24)) ? 1 : 0;	/* P bit: pre  TODO */
-					airbag_printf("%sPC-%02x[0x%" FMTBIT "lx]: 0x%" FMTBIT "lx stm%s%s sp!\n", comment, i * 4, pc - i * 4, instr, pre == 1 ? "f" : "e", dir == 1 ? "a" : "d");
-					for (regNum = 15; regNum >= 0; --regNum) {
+					dir = (instr & (1 << 23)) ?
+						      1 :
+						      -1; /* U bit: increment or decrement? */
+					pre = (instr & (1 << 24)) ?
+						      1 :
+						      0; /* P bit: pre  TODO */
+					airbag_printf("%sPC-%02x[0x%" FMTBIT
+						      "lx]: 0x%" FMTBIT
+						      "lx stm%s%s sp!\n",
+						      comment, i * 4,
+						      pc - i * 4, instr,
+						      pre == 1 ? "f" : "e",
+						      dir == 1 ? "a" : "d");
+					for (regNum = 15; regNum >= 0;
+					     --regNum) {
 						if (instr & (1 << regNum)) {
 							unsigned long reg;
-							if (load32((void *)(fp + pushes * 4 * dir), &reg)) {
-								airbag_printf("%sStack at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, fp + pushes * 4 * dir, termBt);
+							if (load32((void *)(fp +
+									    pushes *
+										    4 *
+										    dir),
+								   &reg)) {
+								airbag_printf(
+									"%sStack at 0x%" FMTBIT
+									"lx is not mapped; %s.\n",
+									comment,
+									fp + pushes * 4 *
+											dir,
+									termBt);
 								return depth;
 							}
-							airbag_printf("%sFP%s%02x[0x%" FMTBIT "lx]: 0x%" FMTBIT "lx {%s}\n", comment, dir == 1 ? "+" : "-", pushes * 4, fp + pushes * 4 * dir, reg,
-								      mctxRegNames[gregOffset + regNum]);
+							airbag_printf(
+								"%sFP%s%02x[0x%" FMTBIT
+								"lx]: 0x%" FMTBIT
+								"lx {%s}\n",
+								comment,
+								dir == 1 ? "+" :
+									   "-",
+								pushes * 4,
+								fp + pushes * 4 *
+										dir,
+								reg,
+								mctxRegNames
+									[gregOffset +
+									 regNum]);
 							pushes++;
 							if (regNum == 11)
 								priorFp = reg;
@@ -772,7 +865,9 @@ backward:
 								/* When built with -mpoke-function-name, PC is also pushed in the
 								 * function prologue so that [FP] points near the top of the function
 								 * and the poked name can be found. */
-								faddr = getPokedFnName(reg, fname);
+								faddr = getPokedFnName(
+									reg,
+									fname);
 							}
 						}
 					}
@@ -783,7 +878,9 @@ backward:
 					instr2 = 0;
 					goto checkStm;
 				}
-				airbag_printf("%s%s ", comment, depth == 1 ? "Crashed at" : "Called from");
+				airbag_printf("%s%s ", comment,
+					      depth == 1 ? "Crashed at" :
+							   "Called from");
 				_airbag_symbol((void *)pc, fname, faddr);
 				airbag_printf("\n");
 				pc = priorPc;
@@ -792,7 +889,9 @@ backward:
 		}
 
 		if (!found) {
-			airbag_printf("%sFailed to find prior stack frame; %s.\n", comment, termBt);
+			airbag_printf(
+				"%sFailed to find prior stack frame; %s.\n",
+				comment, termBt);
 			break;
 		}
 		if (buffer[depth - 1] == (void *)pc)
@@ -810,27 +909,35 @@ backward:
 	if (handle) {
 		static Unwind_Backtrace_T _unwind_Backtrace;
 		if (!_unwind_Backtrace)
-			_unwind_Backtrace = (Unwind_Backtrace_T) dlsym(handle, "_Unwind_Backtrace");
+			_unwind_Backtrace = (Unwind_Backtrace_T)dlsym(
+				handle, "_Unwind_Backtrace");
 		if (!_unwind_GetIP)
-			_unwind_GetIP = (Unwind_GetIP_T) dlsym(handle, "_Unwind_GetIP");
+			_unwind_GetIP =
+				(Unwind_GetIP_T)dlsym(handle, "_Unwind_GetIP");
 		if (_unwind_Backtrace && _unwind_GetIP) {
 			struct trace_arg arg = { buffer, -1, size, uc };
 			if (load8((void *)(MCTX_PC(uc)), NULL)) {
-				airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment, MCTX_PC(uc));
+				airbag_printf(
+					"%sText at 0x%" FMTBIT
+					"lx is not mapped; trying prior frame pointer.\n",
+					comment, MCTX_PC(uc));
 #if defined(__mips__)
-				MCTX_PC(uc) = MCTXREG(uc, 31);	/* RA */
+				MCTX_PC(uc) = MCTXREG(uc, 31); /* RA */
 #elif defined(__arm__)
-				MCTX_PC(uc) = MCTXREG(uc, 17);	/* LR */
+				MCTX_PC(uc) = MCTXREG(uc, 17); /* LR */
 #elif defined(__aarch64__)
-				MCTX_PC(uc) = MCTXREG(uc, 30);	/* LR */
+				MCTX_PC(uc) = MCTXREG(uc, 30); /* LR */
 #elif defined(__powerpc__)
-				MCTX_PC(uc) = MCTXREG(uc, 37);	/* LINK */
+				MCTX_PC(uc) = MCTXREG(uc, 37); /* LINK */
 #elif defined(__i386__)
 				/* TODO heuristic for -fomit-frame-pointer? */
-				uint8_t *fp = (uint8_t *) MCTXREG(uc, 6) + 4;
+				uint8_t *fp = (uint8_t *)MCTXREG(uc, 6) + 4;
 				uint32_t eip;
 				if (load32((void *)fp, &eip)) {
-					airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; cannot get backtrace.\n", comment, fp);
+					airbag_printf(
+						"%sText at 0x%" FMTBIT
+						"lx is not mapped; cannot get backtrace.\n",
+						comment, fp);
 					size = 0;
 				} else {
 					MCTX_PC(uc) = eip;
@@ -846,7 +953,8 @@ backward:
 			if (size >= 1) {
 				/* TODO: setjmp, catch SIGSEGV to longjmp back here, to more gracefully handle
 				 * corrupted stack. */
-				_unwind_Backtrace(airbag_backtrace_helper, &arg);
+				_unwind_Backtrace(airbag_backtrace_helper,
+						  &arg);
 			}
 			return arg.cnt != -1 ? arg.cnt : 0;
 		}
@@ -896,46 +1004,47 @@ struct faults {
 	int code;
 	int errorsize;
 	struct fault *errors;
-
 };
-#ifndef  BUS_MCEERR_AR
-#define BUS_MCEERR_AR	4
+#ifndef BUS_MCEERR_AR
+#define BUS_MCEERR_AR 4
 #endif
-#ifndef  BUS_MCEERR_AO
-#define BUS_MCEERR_AO	5
+#ifndef BUS_MCEERR_AO
+#define BUS_MCEERR_AO 5
 #endif
 static struct fault sigbus_fault[] = {
 	{ BUS_ADRALN, "invalid address alignment" },
 	{ BUS_ADRERR, "nonexistent physical address" },
 	{ BUS_OBJERR, "object-specific hardware error" },
-#ifdef  BUS_MCEERR_AR
-	{ BUS_MCEERR_AR, "hardware memory error consumed on a machine check: action required" },
+#ifdef BUS_MCEERR_AR
+	{ BUS_MCEERR_AR,
+	  "hardware memory error consumed on a machine check: action required" },
 #endif
-#ifdef  BUS_MCEERR_AO
-	{ BUS_MCEERR_AO, "hardware memory error detected in process but not consumed: action optional" },
+#ifdef BUS_MCEERR_AO
+	{ BUS_MCEERR_AO,
+	  "hardware memory error detected in process but not consumed: action optional" },
 #endif
 };
 
 #ifndef __FPE_DECOVF
-#define __FPE_DECOVF	9	/* decimal overflow */
+#define __FPE_DECOVF 9 /* decimal overflow */
 #endif
 #ifndef __FPE_DECDIV
-#define __FPE_DECDIV	10	/* decimal division by zero */
+#define __FPE_DECDIV 10 /* decimal division by zero */
 #endif
 #ifndef __FPE_DECERR
-#define __FPE_DECERR	11	/* packed decimal error */
+#define __FPE_DECERR 11 /* packed decimal error */
 #endif
 #ifndef __FPE_INVASC
-#define __FPE_INVASC	12	/* invalid ASCII digit */
+#define __FPE_INVASC 12 /* invalid ASCII digit */
 #endif
 #ifndef __FPE_INVDEC
-#define __FPE_INVDEC	13	/* invalid decimal digit */
+#define __FPE_INVDEC 13 /* invalid decimal digit */
 #endif
 #ifndef FPE_FLTUNK
-#define FPE_FLTUNK	14	/* undiagnosed floating-point exception */
+#define FPE_FLTUNK 14 /* undiagnosed floating-point exception */
 #endif
 #ifndef FPE_CONDTRAP
-#define FPE_CONDTRAP	15	/* trap on condition */
+#define FPE_CONDTRAP 15 /* trap on condition */
 #endif
 
 static struct fault sigfpe_fault[] = {
@@ -957,13 +1066,13 @@ static struct fault sigfpe_fault[] = {
 };
 
 #ifndef ILL_BADIADDR
-#define ILL_BADIADDR	9	/* unimplemented instruction address */
+#define ILL_BADIADDR 9 /* unimplemented instruction address */
 #endif
 #ifndef __ILL_BREAK
-#define __ILL_BREAK	10	/* illegal break */
+#define __ILL_BREAK 10 /* illegal break */
 #endif
 #ifndef __ILL_BNDMOD
-#define __ILL_BNDMOD	11	/* bundle-update (modification) in progress */
+#define __ILL_BNDMOD 11 /* bundle-update (modification) in progress */
 #endif
 
 static struct fault sigill_fault[] = {
@@ -981,19 +1090,19 @@ static struct fault sigill_fault[] = {
 };
 
 #ifndef SEGV_BNDERR
-#define SEGV_BNDERR	3	/* failed address bound checks */
+#define SEGV_BNDERR 3 /* failed address bound checks */
 #endif
 #ifndef SEGV_PKUERR
-#define SEGV_PKUERR	4	/* failed protection key checks */
+#define SEGV_PKUERR 4 /* failed protection key checks */
 #endif
 #ifndef SEGV_ACCADI
-#define SEGV_ACCADI	5	/* ADI not enabled for mapped object */
+#define SEGV_ACCADI 5 /* ADI not enabled for mapped object */
 #endif
 #ifndef SEGV_ADIDERR
-#define SEGV_ADIDERR	6	/* Disrupting MCD error */
+#define SEGV_ADIDERR 6 /* Disrupting MCD error */
 #endif
 #ifndef SEGV_ADIPERR
-#define SEGV_ADIPERR	7	/* Precise MCD exception */
+#define SEGV_ADIPERR 7 /* Precise MCD exception */
 #endif
 static struct fault sigsegv_fault[] = {
 	{ SEGV_MAPERR, "address not mapped to object" },
@@ -1006,19 +1115,19 @@ static struct fault sigsegv_fault[] = {
 };
 
 #ifndef TRAP_BRKPT
-#define TRAP_BRKPT	1	/* process breakpoint */
+#define TRAP_BRKPT 1 /* process breakpoint */
 #endif
 #ifndef TRAP_TRACE
-#define TRAP_TRACE	2	/* process trace trap */
+#define TRAP_TRACE 2 /* process trace trap */
 #endif
 #ifndef TRAP_BRANCH
-#define TRAP_BRANCH     3	/* process taken branch trap */
+#define TRAP_BRANCH 3 /* process taken branch trap */
 #endif
 #ifndef TRAP_HWBKPT
-#define TRAP_HWBKPT     4	/* hardware breakpoint/watchpoint */
+#define TRAP_HWBKPT 4 /* hardware breakpoint/watchpoint */
 #endif
 #ifndef TRAP_UNK
-#define TRAP_UNK	5	/* undiagnosed trap */
+#define TRAP_UNK 5 /* undiagnosed trap */
 #endif
 
 static struct fault sigtrap_fault[] = {
@@ -1033,14 +1142,16 @@ static struct faults signals[] = {
 	{ SIGBUS, sizeof(sigbus_fault) / sizeof(struct fault), sigbus_fault },
 	{ SIGFPE, sizeof(sigfpe_fault) / sizeof(struct fault), sigfpe_fault },
 	{ SIGILL, sizeof(sigill_fault) / sizeof(struct fault), sigill_fault },
-	{ SIGSEGV, sizeof(sigsegv_fault) / sizeof(struct fault), sigsegv_fault },
-	{ SIGTRAP, sizeof(sigtrap_fault) / sizeof(struct fault), sigtrap_fault },
+	{ SIGSEGV, sizeof(sigsegv_fault) / sizeof(struct fault),
+	  sigsegv_fault },
+	{ SIGTRAP, sizeof(sigtrap_fault) / sizeof(struct fault),
+	  sigtrap_fault },
 };
 
-static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
+static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 {
-	ucontext_t *uc = (ucontext_t *) ucontext;
-	const uint8_t *pc = (uint8_t *) MCTX_PC(uc);
+	ucontext_t *uc = (ucontext_t *)ucontext;
+	const uint8_t *pc = (uint8_t *)MCTX_PC(uc);
 	int i, a;
 
 #if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
@@ -1063,11 +1174,13 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 
 	airbag_printf("Caught SIG%s (%u)", _strsignal(sigNum), sigNum);
 	if (si->si_code == SI_USER) {
-		airbag_printf(" sent by user %u from process %u\n", si->si_uid, si->si_pid);
+		airbag_printf(" sent by user %u from process %u\n", si->si_uid,
+			      si->si_pid);
 	} else if (si->si_code == SI_TKILL) {
 		airbag_printf(" sent by tkill\n");
 	} else if (si->si_code == SI_KERNEL) {
-		airbag_printf(" sent by kernel");	/* rare; well-behaved kernel gives us a real code, handled below */
+		airbag_printf(
+			" sent by kernel"); /* rare; well-behaved kernel gives us a real code, handled below */
 		printWhere((void *)pc);
 	} else {
 		printWhere((void *)pc);
@@ -1090,13 +1203,15 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			break;
 #endif
 		default:
-			for (i = 0; i < sizeof(signals) / sizeof(struct faults); i++) {
+			for (i = 0; i < sizeof(signals) / sizeof(struct faults);
+			     i++) {
 				struct faults s = signals[i];
 				if (s.code == sigNum) {
 					struct fault *f = s.errors;
 					for (a = 0; a < s.errorsize; a++) {
 						if (f[a].fault == si->si_code)
-							faultReason = f[a].message;
+							faultReason =
+								f[a].message;
 					}
 				}
 			}
@@ -1104,8 +1219,11 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		}
 
 		if (faultReason) {
-			airbag_printf("Fault at memory location 0x%" FMTBIT "lx", si->si_addr);
-			airbag_printf(" due to %s (%x).\n", faultReason, si->si_code);
+			airbag_printf("Fault at memory location 0x%" FMTBIT
+				      "lx",
+				      si->si_addr);
+			airbag_printf(" due to %s (%x).\n", faultReason,
+				      si->si_code);
 		}
 	}
 	for (i = postindex + 1; i < 32; i++) {
@@ -1154,7 +1272,7 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 	airbag_printf("%sContext:\n", section);
 	int width = 0;
 	for (i = 0; i < NMCTXREGS; ++i) {
-		if (!mctxRegNames[i])	/* Can trim junk per-arch by NULL-ing name. */
+		if (!mctxRegNames[i]) /* Can trim junk per-arch by NULL-ing name. */
 			continue;
 		if (i) {
 			if (width > 70) {
@@ -1163,7 +1281,8 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			} else
 				width += airbag_printf(" ");
 		}
-		width += airbag_printf("%" FMTLEN "s:%" FMTBIT "lx", mctxRegNames[i], MCTXREG(uc, i));
+		width += airbag_printf("%" FMTLEN "s:%" FMTBIT "lx",
+				       mctxRegNames[i], MCTXREG(uc, i));
 	}
 	airbag_printf("\n");
 
@@ -1180,31 +1299,33 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		for (i = 0; i < nptrs; ++i) {
 			airbag_symbol(buffer[i]);
 			if (i < size && repeat[i])
-				airbag_printf(" (called %u times)", repeat[i] + 1);
+				airbag_printf(" (called %u times)",
+					      repeat[i] + 1);
 			airbag_printf("\n");
 		}
 		/* Reload PC; walkstack may have discovered better state. */
-		pc = (uint8_t *) MCTX_PC(uc);
+		pc = (uint8_t *)MCTX_PC(uc);
 	}
 
 	width = 0;
 	ptrdiff_t bytes = 128;
 #if defined(__x86_64__) || defined(__i386__)
 	const uint8_t *startPc = pc;
-	if (startPc < (uint8_t *) (bytes / 2))
+	if (startPc < (uint8_t *)(bytes / 2))
 		startPc = 0;
 	else
 		startPc = pc - bytes / 2;
 	const uint8_t *endPc = startPc + bytes;
 	const uint8_t *addr;
 #else
-	pc = (uint8_t *) (((unsigned long)pc) & ~3);
+	pc = (uint8_t *)(((unsigned long)pc) & ~3);
 	const unsigned long *startPc = (unsigned long *)pc;
 	if (startPc < (unsigned long *)(bytes / 2))
 		startPc = 0;
 	else
 		startPc = (unsigned long *)(pc - bytes / 2);
-	const unsigned long *endPc = (unsigned long *)((uint8_t *) startPc + bytes);
+	const unsigned long *endPc =
+		(unsigned long *)((uint8_t *)startPc + bytes);
 	const unsigned long *addr;
 #endif
 	airbag_printf("%sCode:\n", section);
@@ -1389,7 +1510,6 @@ AIRBAG_EXPORT void airbag_deinit()
 	deinitCrashHandlers();
 }
 
-
 void airbag_setpostinfo(const char *string)
 {
 	pthread_mutex_lock(&postinfo_mutex);
@@ -1400,7 +1520,6 @@ void airbag_setpostinfo(const char *string)
 	}
 	postinfo[postindex] = strdup(string);
 	pthread_mutex_unlock(&postinfo_mutex);
-
 }
 #endif
 

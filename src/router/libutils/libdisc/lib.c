@@ -35,14 +35,8 @@
 #define LEVELS (8)
 
 static const char *insets[LEVELS] = {
-	"",
-	"  ",
-	"    ",
-	"      ",
-	"        ",
-	"          ",
-	"            ",
-	"              ",
+	"",	    "  ",	  "    ",	  "      ",
+	"        ", "          ", "            ", "              ",
 };
 
 static char line_akku[4096];
@@ -124,7 +118,8 @@ static int format_raw_size(char *buf, u8 size)
 {
 	int unit_index, dd;
 	u8 unit_size, card;
-	const char *unit_names[] = { "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", NULL };
+	const char *unit_names[] = { "KiB", "MiB", "GiB", "TiB",
+				     "PiB", "EiB", NULL };
 	const int dd_mult[4] = { 1, 10, 100, 1000 };
 
 	/* just a few bytes */
@@ -134,8 +129,8 @@ static int format_raw_size(char *buf, u8 size)
 	}
 
 	/* find a suitable unit */
-	for (unit_index = 0, unit_size = 1024; unit_names[unit_index] != NULL; unit_index++, unit_size <<= 10) {
-
+	for (unit_index = 0, unit_size = 1024; unit_names[unit_index] != NULL;
+	     unit_index++, unit_size <<= 10) {
 		/* size is at least one of the next unit -> use that */
 		if (size >= 1024 * unit_size)
 			continue;
@@ -143,17 +138,21 @@ static int format_raw_size(char *buf, u8 size)
 		/* check integral multiples */
 		if ((size % unit_size) == 0) {
 			card = size / unit_size;
-			sprintf(buf, "%d %s", (int)card, unit_names[unit_index]);
+			sprintf(buf, "%d %s", (int)card,
+				unit_names[unit_index]);
 			return unit_index ? 0 : 1;
 		}
 
 		/* find suitable number of decimal digits */
 		for (dd = 3; dd >= 1; dd--) {
-			card = (size * dd_mult[dd] + (unit_size >> 1)) / unit_size;
+			card = (size * dd_mult[dd] + (unit_size >> 1)) /
+			       unit_size;
 			if (card >= 10000)
-				continue;	/* more than four significant digits */
+				continue; /* more than four significant digits */
 
-			sprintf(buf, "%d.%0*d %s", (int)(card / dd_mult[dd]), dd, (int)(card % dd_mult[dd]), unit_names[unit_index]);
+			sprintf(buf, "%d.%0*d %s", (int)(card / dd_mult[dd]),
+				dd, (int)(card % dd_mult[dd]),
+				unit_names[unit_index]);
 			return 0;
 		}
 	}
@@ -163,7 +162,8 @@ static int format_raw_size(char *buf, u8 size)
 	return 0;
 }
 
-void format_blocky_size(char *buf, u8 count, u4 blocksize, const char *blockname, const char *append)
+void format_blocky_size(char *buf, u8 count, u4 blocksize,
+			const char *blockname, const char *append)
 {
 	int used;
 	u8 total_size;
@@ -226,8 +226,8 @@ void format_size_verbose(char *buf, u8 size)
 
 void format_ascii(void *from, char *to)
 {
-	u1 *p = (u1 *) from;
-	u1 *q = (u1 *) to;
+	u1 *p = (u1 *)from;
+	u1 *q = (u1 *)to;
 	int c;
 
 	while ((c = *p++)) {
@@ -245,13 +245,13 @@ void format_ascii(void *from, char *to)
 
 void format_utf16_be(void *from, u4 len, char *to)
 {
-	u2 *p = (u2 *) from;
+	u2 *p = (u2 *)from;
 	u2 *p_end;
-	u1 *q = (u1 *) to;
+	u1 *q = (u1 *)to;
 	u2 c;
 
 	if (len)
-		p_end = (u2 *) (((u1 *) from) + len);
+		p_end = (u2 *)(((u1 *)from) + len);
 	else
 		p_end = NULL;
 
@@ -259,7 +259,7 @@ void format_utf16_be(void *from, u4 len, char *to)
 		c = get_be_short(p);
 		if (c == 0)
 			break;
-		p++;		/* advance 2 bytes */
+		p++; /* advance 2 bytes */
 
 		if (c >= 127 || c < 32) {
 			*q++ = '<';
@@ -269,7 +269,7 @@ void format_utf16_be(void *from, u4 len, char *to)
 			*q++ = "0123456789ABCDEF"[c & 15];
 			*q++ = '>';
 		} else {
-			*q++ = (u1) c;
+			*q++ = (u1)c;
 		}
 	}
 	*q = 0;
@@ -277,13 +277,13 @@ void format_utf16_be(void *from, u4 len, char *to)
 
 void format_utf16_le(void *from, u4 len, char *to)
 {
-	u2 *p = (u2 *) from;
+	u2 *p = (u2 *)from;
 	u2 *p_end;
-	u1 *q = (u1 *) to;
+	u1 *q = (u1 *)to;
 	u2 c;
 
 	if (len)
-		p_end = (u2 *) (((u1 *) from) + len);
+		p_end = (u2 *)(((u1 *)from) + len);
 	else
 		p_end = NULL;
 
@@ -291,7 +291,7 @@ void format_utf16_le(void *from, u4 len, char *to)
 		c = get_le_short(p);
 		if (c == 0)
 			break;
-		p++;		/* advance 2 bytes */
+		p++; /* advance 2 bytes */
 
 		if (c >= 127 || c < 32) {
 			*q++ = '<';
@@ -301,7 +301,7 @@ void format_utf16_le(void *from, u4 len, char *to)
 			*q++ = "0123456789ABCDEF"[c & 15];
 			*q++ = '>';
 		} else {
-			*q++ = (u1) c;
+			*q++ = (u1)c;
 		}
 	}
 	*q = 0;
@@ -328,13 +328,13 @@ void format_uuid(void *uuid, char *to)
 			*to++ = '-';
 	}
 
-	if ((variant & 4) == 0) {	/* 0 x x */
+	if ((variant & 4) == 0) { /* 0 x x */
 		strcpy(to, " (NCS)");
-	} else if ((variant & 2) == 0) {	/* 1 0 x */
+	} else if ((variant & 2) == 0) { /* 1 0 x */
 		sprintf(to, " (DCE, v%1.1d)", version);
-	} else if ((variant & 1) == 0) {	/* 1 1 0 */
+	} else if ((variant & 1) == 0) { /* 1 1 0 */
 		strcpy(to, " (MS GUID)");
-	} else {		/* 1 1 1 */
+	} else { /* 1 1 1 */
 		strcpy(to, " (Reserved)");
 	}
 }
@@ -379,37 +379,43 @@ void format_guid(void *guid, char *to)
 u2 get_be_short(void *from)
 {
 	u1 *p = from;
-	return ((u2) (p[0]) << 8) + (u2) p[1];
+	return ((u2)(p[0]) << 8) + (u2)p[1];
 }
 
 u4 get_be_long(void *from)
 {
 	u1 *p = from;
-	return ((u4) (p[0]) << 24) + ((u4) (p[1]) << 16) + ((u4) (p[2]) << 8) + (u4) p[3];
+	return ((u4)(p[0]) << 24) + ((u4)(p[1]) << 16) + ((u4)(p[2]) << 8) +
+	       (u4)p[3];
 }
 
 u8 get_be_quad(void *from)
 {
 	u1 *p = from;
-	return ((u8)(p[0]) << 56) + ((u8)(p[1]) << 48) + ((u8)(p[2]) << 40) + ((u8)(p[3]) << 32) + ((u8)(p[4]) << 24) + ((u8)(p[5]) << 16) + ((u8)(p[6]) << 8) + (u8)p[7];
+	return ((u8)(p[0]) << 56) + ((u8)(p[1]) << 48) + ((u8)(p[2]) << 40) +
+	       ((u8)(p[3]) << 32) + ((u8)(p[4]) << 24) + ((u8)(p[5]) << 16) +
+	       ((u8)(p[6]) << 8) + (u8)p[7];
 }
 
 u2 get_le_short(void *from)
 {
 	u1 *p = from;
-	return ((u2) (p[1]) << 8) + (u2) p[0];
+	return ((u2)(p[1]) << 8) + (u2)p[0];
 }
 
 u4 get_le_long(void *from)
 {
 	u1 *p = from;
-	return ((u4) (p[3]) << 24) + ((u4) (p[2]) << 16) + ((u4) (p[1]) << 8) + (u4) p[0];
+	return ((u4)(p[3]) << 24) + ((u4)(p[2]) << 16) + ((u4)(p[1]) << 8) +
+	       (u4)p[0];
 }
 
 u8 get_le_quad(void *from)
 {
 	u1 *p = from;
-	return ((u8)(p[7]) << 56) + ((u8)(p[6]) << 48) + ((u8)(p[5]) << 40) + ((u8)(p[4]) << 32) + ((u8)(p[3]) << 24) + ((u8)(p[2]) << 16) + ((u8)(p[1]) << 8) + (u8)p[0];
+	return ((u8)(p[7]) << 56) + ((u8)(p[6]) << 48) + ((u8)(p[5]) << 40) +
+	       ((u8)(p[4]) << 32) + ((u8)(p[3]) << 24) + ((u8)(p[2]) << 16) +
+	       ((u8)(p[1]) << 8) + (u8)p[0];
 }
 
 u2 get_ve_short(int endianness, void *from)
@@ -480,7 +486,8 @@ int find_memory(void *haystack, int haystack_len, void *needle, int needle_len)
 	void *p;
 
 	while (pos < searchlen) {
-		p = memchr((char *)haystack + pos, *(unsigned char *)needle, searchlen - pos);
+		p = memchr((char *)haystack + pos, *(unsigned char *)needle,
+			   searchlen - pos);
 		if (p == NULL)
 			return -1;
 		pos = (char *)p - (char *)haystack;

@@ -31,7 +31,7 @@
  * image file detection
  */
 
-int detect_cloop(SECTION * section, int level)
+int detect_cloop(SECTION *section, int level)
 {
 	unsigned char *buf;
 	u4 blocksize, blockcount;

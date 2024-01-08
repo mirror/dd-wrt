@@ -34,10 +34,10 @@
 
 #include "global.h"
 
-static int probe_udf(SECTION * section, int level, int sector_size);
+static int probe_udf(SECTION *section, int level, int sector_size);
 static int validate_tag(unsigned char *buf, u4 sector);
 
-int detect_udf(SECTION * section, int level)
+int detect_udf(SECTION *section, int level)
 {
 	unsigned char *buffer;
 	unsigned char sig_bea[7] = { 0x00, 0x42, 0x45, 0x41, 0x30, 0x31, 0x01 };
@@ -59,16 +59,19 @@ int detect_udf(SECTION * section, int level)
 
 	recog_state = 0;
 	for (sector = 16; sector < 64; sector++) {
-		if (get_buffer(section, sector * 2048, 2048, (void **)&buffer) < 2048)
+		if (get_buffer(section, sector * 2048, 2048, (void **)&buffer) <
+		    2048)
 			return 0;
 		/* empty ID check (end of sequence) */
-		if (buffer[2] == buffer[1] && buffer[3] == buffer[1] && buffer[4] == buffer[1] && buffer[5] == buffer[1])
+		if (buffer[2] == buffer[1] && buffer[3] == buffer[1] &&
+		    buffer[4] == buffer[1] && buffer[5] == buffer[1])
 			break;
 		if (recog_state == 0 && memcmp(buffer, sig_bea, 7) == 0)
 			recog_state = 1;
 		if (recog_state == 1 && memcmp(buffer, sig_tea, 7) == 0)
 			recog_state = 0;
-		if (recog_state == 1 && (memcmp(buffer, sig_nsr2, 7) == 0 || memcmp(buffer, sig_nsr3, 7) == 0)) {
+		if (recog_state == 1 && (memcmp(buffer, sig_nsr2, 7) == 0 ||
+					 memcmp(buffer, sig_nsr3, 7) == 0)) {
 			detected = 1;
 			break;
 		}
@@ -93,11 +96,13 @@ int detect_udf(SECTION * section, int level)
 
 	/* We couldn't find the actual file system, but the stuff found
 	   in the recognition area is worth reporting anyway */
-	print_line(level, "UDF recognition sequence, unable to locate anchor descriptor");
+	print_line(
+		level,
+		"UDF recognition sequence, unable to locate anchor descriptor");
 	return 0;
 }
 
-static int probe_udf(SECTION * section, int level, int sector_size)
+static int probe_udf(SECTION *section, int level, int sector_size)
 {
 	unsigned char *buffer;
 
@@ -126,38 +131,45 @@ static int probe_udf(SECTION * section, int level, int sector_size)
 	/* look for a Logical Volume Descriptor */
 	for (i = 0; i < count; i++) {
 		sect = addr + i;
-		if (get_buffer(section, (u8)sect * sector_size, 512, (void **)&buffer) < 512)
+		if (get_buffer(section, (u8)sect * sector_size, 512,
+			       (void **)&buffer) < 512)
 			break;
 		if (!validate_tag(buffer, sect))
 			continue;
 
 		/* switch by tag identifier */
 		switch (get_le_short(buffer)) {
-		case 1:	/* Primary Volume Descriptor */
+		case 1: /* Primary Volume Descriptor */
 			if (!seen_primary) {
 				seen_primary = 1;
 
 				if (buffer[24] == 8) {
 					get_string(buffer + 25, 30, s);
-					print_line(level + 1, "Volume name \"%s\"", s);
+					print_line(level + 1,
+						   "Volume name \"%s\"", s);
 				} else if (buffer[24] == 16) {
 					format_utf16_le(buffer + 25, 30, s);
-					print_line(level + 1, "Volume name \"%s\"", s);
+					print_line(level + 1,
+						   "Volume name \"%s\"", s);
 				} else {
-					print_line(level + 1, "Volume name encoding not supported");
+					print_line(
+						level + 1,
+						"Volume name encoding not supported");
 				}
-
 			}
 			break;
 
-		case 6:	/* Logical Volume Descriptor */
+		case 6: /* Logical Volume Descriptor */
 			if (!seen_logical) {
 				seen_logical = 1;
 
-				if (memcmp(buffer + 216 + 1, "*OSTA UDF Compliant", 19) == 0) {
-					print_line(level + 1, "UDF version %x.%02x", (int)buffer[216 + 25], (int)buffer[216 + 24]);
+				if (memcmp(buffer + 216 + 1,
+					   "*OSTA UDF Compliant", 19) == 0) {
+					print_line(level + 1,
+						   "UDF version %x.%02x",
+						   (int)buffer[216 + 25],
+						   (int)buffer[216 + 24]);
 				}
-
 			}
 			break;
 		}
@@ -167,7 +179,7 @@ static int probe_udf(SECTION * section, int level, int sector_size)
 		print_line(level + 1, "Primary Volume Descriptor missing");
 	}
 
-	return 1;		/* some problems */
+	return 1; /* some problems */
 }
 
 static int validate_tag(unsigned char *buf, u4 sector)

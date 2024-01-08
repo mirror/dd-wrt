@@ -32,7 +32,6 @@ void refjson(void)
 
 struct rsync_share *getrsyncshare(char *mp, char *sd, char *label)
 {
-
 	struct rsync_share *share = calloc(1, sizeof(struct rsync_share));
 
 	strncpy(share->mp, mp, sizeof(share->mp) - 1);
@@ -43,7 +42,6 @@ struct rsync_share *getrsyncshare(char *mp, char *sd, char *label)
 
 struct rsync_share *getrsyncshares(void)
 {
-
 	struct rsync_share *list, *current;
 	int count, entry_count;
 	json_t *json;
@@ -56,7 +54,7 @@ struct rsync_share *getrsyncshares(void)
 	list = getrsyncshare("", "", "");
 	current = list;
 
-//      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
+	//      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
 	json = json_loads(nvram_default_get("rsync_shares", "[]"), 0, &error);
 	if (!json) {
 		fprintf(stderr, "[JASON] ERROR\n");
@@ -76,13 +74,17 @@ struct rsync_share *getrsyncshares(void)
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if (!strcmp(key, "mp")) {
-					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
+					strncpy(mp, json_string_value(value),
+						sizeof(mp) - 1);
 				} else if (!strcmp(key, "sd")) {
-					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
+					strncpy(sd, json_string_value(value),
+						sizeof(sd) - 1);
 				} else if (!strcmp(key, "label")) {
-					strncpy(label, json_string_value(value), sizeof(label) - 1);
+					strncpy(label, json_string_value(value),
+						sizeof(label) - 1);
 				}
-				iterator = json_object_iter_next(entry, iterator);
+				iterator =
+					json_object_iter_next(entry, iterator);
 			}
 			if (*mp && *label) {
 				current->next = getrsyncshare(mp, sd, label);

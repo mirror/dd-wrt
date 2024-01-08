@@ -52,7 +52,8 @@ const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
 	sprintf(sb, "%s_nctrlsb", prefix);
 	switch (usebw) {
 	case 40:
-		if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
+		if (nvram_default_match(sb, "ull", "luu") ||
+		    nvram_match(sb, "upper")) {
 			ht = "HT40+";
 			*iht = 1;
 		}
@@ -63,7 +64,8 @@ const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
 		break;
 	case 80:
 	case 8080:
-		if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+		if (nvram_default_match(sb, "ulu", "lul") ||
+		    nvram_match(sb, "upper")) {
 			ht = "HT40+";
 			*iht = 1;
 			*channeloffset = 6;
@@ -85,7 +87,8 @@ const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
 		}
 		break;
 	case 160:
-		if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+		if (nvram_default_match(sb, "uuu", "lll") ||
+		    nvram_match(sb, "upper")) {
 			ht = "HT40+";
 			*iht = 1;
 			*channeloffset = 14;
@@ -128,12 +131,10 @@ const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
 		break;
 	}
 	return ht;
-
 }
 
-static char *stalist[] = {
-	"wlan0", "wlan1", "wlan2", "wlan3", "wlan4", "wlan5", "wlan6", "wlan8", "wlan9"
-};
+static char *stalist[] = { "wlan0", "wlan1", "wlan2", "wlan3", "wlan4",
+			   "wlan5", "wlan6", "wlan8", "wlan9" };
 
 char *getWifi(char *ifname)
 {
@@ -177,7 +178,6 @@ int get_wl_instance(char *name)
 
 char *getWDSSTA(void)
 {
-
 	int c = getdevicecount();
 	int i;
 
@@ -187,11 +187,11 @@ char *getWDSSTA(void)
 
 		sprintf(mode, "wlan%d_mode", i);
 		sprintf(netmode, "wlan%d_net_mode", i);
-		if ((nvram_match(mode, "wdssta") || nvram_match(mode, "wdssta_mtik"))
-		    && !nvram_match(netmode, "disabled")) {
+		if ((nvram_match(mode, "wdssta") ||
+		     nvram_match(mode, "wdssta_mtik")) &&
+		    !nvram_match(netmode, "disabled")) {
 			return stalist[i];
 		}
-
 	}
 	return NULL;
 }
@@ -207,11 +207,10 @@ char *getSTA(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if ((nvram_nmatch("sta", "wlan%d_mode", i))
-		    && !nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
+		if ((nvram_nmatch("sta", "wlan%d_mode", i)) &&
+		    !nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 			return stalist[i];
 		}
-
 	}
 	return NULL;
 }
@@ -226,11 +225,10 @@ char *getWET(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("wet", "wlan%d_mode", i)
-		    && !nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
+		if (nvram_nmatch("wet", "wlan%d_mode", i) &&
+		    !nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 			return stalist[i];
 		}
-
 	}
 	return NULL;
 }
@@ -258,8 +256,9 @@ char *get_wl_instance_name(int instance)
 		return "eth0";
 	if (get_wl_instance("eth3") == instance)
 		return "eth3";
-	fprintf(stderr, "get_wl_instance doesnt return the right value %d\n", instance);
-	return nvram_safe_get("wl0_ifname");	// dirty for debugging
+	fprintf(stderr, "get_wl_instance doesnt return the right value %d\n",
+		instance);
+	return nvram_safe_get("wl0_ifname"); // dirty for debugging
 }
 
 int get_wl_instances(void)
@@ -294,16 +293,19 @@ int get_wl_instance(char *name)
 	int offset = 0;
 #ifdef HAVE_DHDAP
 
-	if (getRouterBrand() != ROUTER_NETGEAR_R7000P && !strcmp(name, "eth2")) {
-		if (!dhd_probe("eth1") && dhd_probe("eth2") && !wl_probe("eth2"))
+	if (getRouterBrand() != ROUTER_NETGEAR_R7000P &&
+	    !strcmp(name, "eth2")) {
+		if (!dhd_probe("eth1") && dhd_probe("eth2") &&
+		    !wl_probe("eth2"))
 			offset = 1;
-		else if (!dhd_probe("eth2") && dhd_probe("eth1") && !wl_probe("eth1"))
+		else if (!dhd_probe("eth2") && dhd_probe("eth1") &&
+			 !wl_probe("eth1"))
 			offset = 1;
 	}
 #endif
 	ret = wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 	unit += offset;
-//      fprintf(stderr,"wl_instance = %d\n",unit);
+	//      fprintf(stderr,"wl_instance = %d\n",unit);
 	if (ret == 0)
 		return unit;
 	return ret;
@@ -334,7 +336,7 @@ int bcm_gettxpower(char *wlname)
 	FILE *in = popen(cmd, "r");
 	if (in == NULL)
 		return pwr;
-	// TxPower is 74 qdbm,  18.50 dbm, 71 mW  Override is Off               
+	// TxPower is 74 qdbm,  18.50 dbm, 71 mW  Override is Off
 	if (fscanf(in, "%*s %*s %*s %*s %*s %*s %d", &realpwr) == 1)
 		pwr = realpwr;
 	pclose(in);
@@ -343,7 +345,7 @@ int bcm_gettxpower(char *wlname)
 
 #endif
 
-    /*
+/*
      * return 1st wireless interface 
      */
 char *get_wdev(void)
@@ -408,11 +410,14 @@ int wl_probe(char *name)
 	}
 
 	if (val > WLC_IOCTL_VERSION) {
-		fprintf(stderr, "WLC_IOCTL_VERSION fail name: %s val: %d ictlv: %d \n", name, val, WLC_IOCTL_VERSION);
+		fprintf(stderr,
+			"WLC_IOCTL_VERSION fail name: %s val: %d ictlv: %d \n",
+			name, val, WLC_IOCTL_VERSION);
 		wladdList(name);
 		return -1;
 	}
-	addList("probe_working", name);	// interfaces in this list worked already and should never be blacklisted later
+	addList("probe_working",
+		name); // interfaces in this list worked already and should never be blacklisted later
 	return ret;
 }
 
@@ -433,45 +438,48 @@ int dhd_probe(char *name)
 	/* Check interface */
 	ret = dhd_ioctl(name, DHD_GET_MAGIC, &val, sizeof(val));
 	if (val == WLC_IOCTL_MAGIC) {
-		ret = 1;	/* is_dhd = !dhd_probe(), so ret 1 for WL */
+		ret = 1; /* is_dhd = !dhd_probe(), so ret 1 for WL */
 	} else if (val == DHD_IOCTL_MAGIC) {
 		ret = 0;
 	} else {
-		ret = 1;	/* default: WL mode */
+		ret = 1; /* default: WL mode */
 	}
 	return ret;
 }
 
-int dhd_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
+int dhd_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen,
+		     void *bufptr, int buflen)
 {
 	uint namelen;
 	uint iolen;
-	namelen = strlen(iovar) + 1;	/* length of iovar name plus null */
+	namelen = strlen(iovar) + 1; /* length of iovar name plus null */
 	iolen = namelen + paramlen;
 	/* check for overflow */
 	if (iolen > buflen)
 		return (BCME_BUFTOOSHORT);
-	memcpy(bufptr, iovar, namelen);	/* copy iovar name including null */
-	memcpy((int8 *) bufptr + namelen, param, paramlen);
+	memcpy(bufptr, iovar, namelen); /* copy iovar name including null */
+	memcpy((int8 *)bufptr + namelen, param, paramlen);
 	return dhd_ioctl(ifname, WLC_SET_VAR, bufptr, iolen);
 }
 
-static int dhd_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen, unsigned int *plen)
+static int dhd_bssiovar_mkbuf(char *iovar, int bssidx, void *param,
+			      int paramlen, void *bufptr, int buflen,
+			      unsigned int *plen)
 {
 	char *prefix = "bsscfg:";
 	int8 *p;
 	uint prefixlen;
 	uint namelen;
 	uint iolen;
-	prefixlen = strlen(prefix);	/* length of bsscfg prefix */
-	namelen = strlen(iovar) + 1;	/* length of iovar name + null */
+	prefixlen = strlen(prefix); /* length of bsscfg prefix */
+	namelen = strlen(iovar) + 1; /* length of iovar name + null */
 	iolen = prefixlen + namelen + sizeof(int) + paramlen;
-	if (buflen < 0 || iolen > (uint) buflen) {
+	if (buflen < 0 || iolen > (uint)buflen) {
 		*plen = 0;
 		return BCME_BUFTOOSHORT;
 	}
 
-	p = (int8 *) bufptr;
+	p = (int8 *)bufptr;
 	memcpy(p, prefix, prefixlen);
 	p += prefixlen;
 	memcpy(p, iovar, namelen);
@@ -487,7 +495,8 @@ static int dhd_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen
 int dhd_iovar_set(char *ifname, char *iovar, void *param, int paramlen)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
-	return dhd_iovar_setbuf(ifname, iovar, param, paramlen, smbuf, sizeof(smbuf));
+	return dhd_iovar_setbuf(ifname, iovar, param, paramlen, smbuf,
+				sizeof(smbuf));
 }
 
 /*
@@ -528,13 +537,17 @@ int dhd_ioctl(char *name, int cmd, void *buf, int len)
 	ioc.needed = 0;
 	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name) - 1);
 	ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = '\0';
-	ifr.ifr_data = (caddr_t) & ioc;
+	ifr.ifr_data = (caddr_t)&ioc;
 	if ((ret = ioctl(s, SIOCDEVPRIVATE, &ifr)) < 0)
 		if (cmd != WLC_GET_MAGIC && cmd != WLC_GET_BSSID) {
 			if ((cmd == WLC_GET_VAR) || (cmd == WLC_SET_VAR)) {
-				snprintf(buffer, sizeof(buffer), "%s: WLC_%s_VAR(%s)", name, cmd == WLC_GET_VAR ? "GET" : "SET", (char *)buf);
+				snprintf(buffer, sizeof(buffer),
+					 "%s: WLC_%s_VAR(%s)", name,
+					 cmd == WLC_GET_VAR ? "GET" : "SET",
+					 (char *)buf);
 			} else {
-				snprintf(buffer, sizeof(buffer), "%s: cmd=%d", name, cmd);
+				snprintf(buffer, sizeof(buffer), "%s: cmd=%d",
+					 name, cmd);
 			}
 			perror(buffer);
 		}
@@ -546,11 +559,13 @@ int dhd_ioctl(char *name, int cmd, void *buf, int len)
 /*
  * set named & bss indexed driver variable to buffer value
  */
-int dhd_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen)
+int dhd_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param,
+			int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	int iolen;
-	err = dhd_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen, &iolen);
+	err = dhd_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen,
+				 &iolen);
 	if (err)
 		return err;
 	return dhd_ioctl(ifname, WLC_SET_VAR, bufptr, iolen);
@@ -559,10 +574,12 @@ int dhd_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param, int 
 /*
  * set named & bss indexed driver variable to buffer value
  */
-int dhd_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen)
+int dhd_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param,
+		     int paramlen)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
-	return dhd_bssiovar_setbuf(ifname, iovar, bssidx, param, paramlen, smbuf, sizeof(smbuf));
+	return dhd_bssiovar_setbuf(ifname, iovar, bssidx, param, paramlen,
+				   smbuf, sizeof(smbuf));
 }
 
 /*
@@ -573,4 +590,4 @@ int dhd_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val)
 	return dhd_bssiovar_set(ifname, iovar, bssidx, &val, sizeof(int));
 }
 
-#endif				/* __CONFIG_DHDAP__ */
+#endif /* __CONFIG_DHDAP__ */

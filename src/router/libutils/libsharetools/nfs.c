@@ -30,21 +30,21 @@ void refjson(void)
 }
 #endif
 
-struct nfs_share *getnfsshare(char *mp, char *sd, char *access_perms, char *allowed)
+struct nfs_share *getnfsshare(char *mp, char *sd, char *access_perms,
+			      char *allowed)
 {
-
 	struct nfs_share *share = calloc(1, sizeof(struct nfs_share));
 
 	strncpy(share->mp, mp, sizeof(share->mp) - 1);
 	strncpy(share->sd, sd, sizeof(share->sd) - 1);
-	strncpy(share->access_perms, access_perms, sizeof(share->access_perms) - 1);
+	strncpy(share->access_perms, access_perms,
+		sizeof(share->access_perms) - 1);
 	strncpy(share->allowed, allowed, sizeof(share->allowed) - 1);
 	return share;
 }
 
 struct nfs_share *getnfsshares(void)
 {
-
 	struct nfs_share *list, *current;
 	int count, entry_count;
 	json_t *json;
@@ -57,7 +57,7 @@ struct nfs_share *getnfsshares(void)
 	list = getnfsshare("", "", "", "");
 	current = list;
 
-//      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
+	//      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
 	json = json_loads(nvram_default_get("nfs_shares", "[]"), 0, &error);
 	if (!json) {
 		fprintf(stderr, "[JASON] ERROR\n");
@@ -77,18 +77,26 @@ struct nfs_share *getnfsshares(void)
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if (!strcmp(key, "mp")) {
-					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
+					strncpy(mp, json_string_value(value),
+						sizeof(mp) - 1);
 				} else if (!strcmp(key, "sd")) {
-					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
+					strncpy(sd, json_string_value(value),
+						sizeof(sd) - 1);
 				} else if (!strcmp(key, "perms")) {
-					strncpy(access_perms, json_string_value(value), sizeof(access_perms) - 1);
+					strncpy(access_perms,
+						json_string_value(value),
+						sizeof(access_perms) - 1);
 				} else if (!strcmp(key, "allowed")) {
-					strncpy(allowed, json_string_value(value), sizeof(allowed) - 1);
+					strncpy(allowed,
+						json_string_value(value),
+						sizeof(allowed) - 1);
 				}
-				iterator = json_object_iter_next(entry, iterator);
+				iterator =
+					json_object_iter_next(entry, iterator);
 			}
 			if (*mp && *access_perms && *allowed) {
-				current->next = getnfsshare(mp, sd, access_perms, allowed);
+				current->next = getnfsshare(
+					mp, sd, access_perms, allowed);
 				current = current->next;
 			}
 		}

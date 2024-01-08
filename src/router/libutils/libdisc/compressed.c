@@ -59,19 +59,21 @@ typedef struct compressed_source {
  * helper functions
  */
 
-static void handle_compressed(SECTION * section, int level, int off, const char *program);
+static void handle_compressed(SECTION *section, int level, int off,
+			      const char *program);
 
 #if DECOMPRESS
-static SOURCE *init_compressed_source(SOURCE * foundation, u8 offset, u8 size, const char *program);
-static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf);
-static void close_compressed(SOURCE * s);
+static SOURCE *init_compressed_source(SOURCE *foundation, u8 offset, u8 size,
+				      const char *program);
+static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf);
+static void close_compressed(SOURCE *s);
 #endif
 
 /*
  * compressed file detection
  */
 
-int detect_compressed(SECTION * section, int level)
+int detect_compressed(SECTION *section, int level)
 {
 	int fill, off, sector;
 	unsigned char *buf;
@@ -85,7 +87,10 @@ int detect_compressed(SECTION * section, int level)
 		/* compress */
 		if (buf[off] == 037 && buf[off + 1] == 0235) {
 			if (sector > 0)
-				print_line(level, "compress-compressed data at sector %d", sector);
+				print_line(
+					level,
+					"compress-compressed data at sector %d",
+					sector);
 			else
 				print_line(level, "compress-compressed data");
 
@@ -96,9 +101,12 @@ int detect_compressed(SECTION * section, int level)
 		}
 
 		/* gzip */
-		if (buf[off] == 037 && (buf[off + 1] == 0213 || buf[off + 1] == 0236)) {
+		if (buf[off] == 037 &&
+		    (buf[off + 1] == 0213 || buf[off + 1] == 0236)) {
 			if (sector > 0)
-				print_line(level, "gzip-compressed data at sector %d", sector);
+				print_line(level,
+					   "gzip-compressed data at sector %d",
+					   sector);
 			else
 				print_line(level, "gzip-compressed data");
 
@@ -111,7 +119,9 @@ int detect_compressed(SECTION * section, int level)
 		/* bzip2 */
 		if (memcmp(buf + off, "BZh", 3) == 0) {
 			if (sector > 0)
-				print_line(level, "bzip2-compressed data at sector %d", sector);
+				print_line(level,
+					   "bzip2-compressed data at sector %d",
+					   sector);
 			else
 				print_line(level, "bzip2-compressed data");
 
@@ -124,7 +134,8 @@ int detect_compressed(SECTION * section, int level)
 	return found;
 }
 
-static void handle_compressed(SECTION * section, int level, int off, const char *program)
+static void handle_compressed(SECTION *section, int level, int off,
+			      const char *program)
 {
 #if DECOMPRESS
 	SOURCE *s;
@@ -134,7 +145,8 @@ static void handle_compressed(SECTION * section, int level, int off, const char 
 	size = section->size;
 	if (size > 0)
 		size -= off;
-	s = init_compressed_source(section->source, section->pos + off, size, program);
+	s = init_compressed_source(section->source, section->pos + off, size,
+				   program);
 	analyze_source(s, level + 1);
 	close_source(s);
 #else
@@ -148,12 +160,13 @@ static void handle_compressed(SECTION * section, int level, int off, const char 
 
 #if DECOMPRESS
 
-static SOURCE *init_compressed_source(SOURCE * foundation, u8 offset, u8 size, const char *program)
+static SOURCE *init_compressed_source(SOURCE *foundation, u8 offset, u8 size,
+				      const char *program)
 {
 	COMPRESSED_SOURCE *cs;
 	int write_pipe[2], read_pipe[2], flags;
 
-	cs = (COMPRESSED_SOURCE *) malloc(sizeof(COMPRESSED_SOURCE));
+	cs = (COMPRESSED_SOURCE *)malloc(sizeof(COMPRESSED_SOURCE));
 	if (cs == NULL)
 		bailout("Out of memory");
 	memset(cs, 0, sizeof(COMPRESSED_SOURCE));
@@ -181,7 +194,7 @@ static SOURCE *init_compressed_source(SOURCE * foundation, u8 offset, u8 size, c
 	if (cs->pid < 0) {
 		bailoute("fork");
 	}
-	if (cs->pid == 0) {	/* we're the child process */
+	if (cs->pid == 0) { /* we're the child process */
 		/* set up pipe */
 		dup2(write_pipe[0], 0);
 		if (write_pipe[0] > 2)
@@ -209,18 +222,20 @@ static SOURCE *init_compressed_source(SOURCE * foundation, u8 offset, u8 size, c
 		fcntl(cs->read_pipe, F_SETFL, flags | O_NONBLOCK);
 	else
 		bailoute("set pipe flags");
-	cs->nfds = ((cs->read_pipe > cs->write_pipe) ? cs->read_pipe : cs->write_pipe) + 1;
+	cs->nfds = ((cs->read_pipe > cs->write_pipe) ? cs->read_pipe :
+						       cs->write_pipe) +
+		   1;
 
-	return (SOURCE *) cs;
+	return (SOURCE *)cs;
 }
 
 /*
  * raw read
  */
 
-static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
+static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 {
-	COMPRESSED_SOURCE *cs = (COMPRESSED_SOURCE *) s;
+	COMPRESSED_SOURCE *cs = (COMPRESSED_SOURCE *)s;
 	SOURCE *fs = s->foundation;
 	char *p, *filebuf;
 	u8 got, fill;
@@ -236,7 +251,7 @@ static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
 	p = (char *)buf;
 	got = 0;
 
-	if (cs->read_pipe < 0)	/* closed for reading */
+	if (cs->read_pipe < 0) /* closed for reading */
 		return got;
 
 	while (got < len) {
@@ -244,7 +259,7 @@ static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
 #if DEBUG
 		printf("rc read got %d\n", result);
 #endif
-		if (result == 0) {	/* end of file */
+		if (result == 0) { /* end of file */
 			/* remember size for buffer layer */
 			s->size_known = 1;
 			s->size = s->seq_pos + got;
@@ -253,11 +268,11 @@ static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
 			cs->read_pipe = -1;
 			/* we're done */
 			break;
-		} else if (result > 0) {	/* got data */
+		} else if (result > 0) { /* got data */
 			p += result;
 			got += result;
 			continue;
-		} else {	/* error return */
+		} else { /* error return */
 			if (errno == EINTR)
 				continue;
 			if (errno != EAGAIN) {
@@ -285,7 +300,8 @@ static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
 #if DEBUG
 			printf("rc starting select\n");
 #endif
-			selresult = select(cs->nfds, &read_set, NULL, NULL, NULL);
+			selresult =
+				select(cs->nfds, &read_set, NULL, NULL, NULL);
 #if DEBUG
 			printf("rc select got %d\n", selresult);
 #endif
@@ -297,9 +313,11 @@ static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
 		}
 
 		/* get data from lower layer */
-		fill = get_buffer_real(fs, cs->offset + cs->write_pos, askfor, NULL, (void **)&filebuf);
+		fill = get_buffer_real(fs, cs->offset + cs->write_pos, askfor,
+				       NULL, (void **)&filebuf);
 #if DEBUG
-		printf("rc get_buffer asked for pos %llu len %d got %llu\n", cs->offset + cs->write_pos, askfor, fill);
+		printf("rc get_buffer asked for pos %llu len %d got %llu\n",
+		       cs->offset + cs->write_pos, askfor, fill);
 #endif
 		if (fill < askfor) {
 			/* we reached the end of compressed input, note that down */
@@ -319,7 +337,7 @@ static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
 #endif
 		if (result >= 0) {
 			cs->write_pos += result;
-			continue;	/* see if that made more data available for reading */
+			continue; /* see if that made more data available for reading */
 		} else {
 			if (errno == EINTR)
 				continue;
@@ -354,9 +372,9 @@ static u8 read_compressed(SOURCE * s, u8 pos, u8 len, void *buf)
  * close cleanup
  */
 
-static void close_compressed(SOURCE * s)
+static void close_compressed(SOURCE *s)
 {
-	COMPRESSED_SOURCE *cs = (COMPRESSED_SOURCE *) s;
+	COMPRESSED_SOURCE *cs = (COMPRESSED_SOURCE *)s;
 	int status;
 
 	if (cs->write_pipe >= 0)
@@ -367,6 +385,6 @@ static void close_compressed(SOURCE * s)
 	waitpid(cs->pid, &status, 0);
 }
 
-#endif				/* DECOMPRESS */
+#endif /* DECOMPRESS */
 
 /* EOF */

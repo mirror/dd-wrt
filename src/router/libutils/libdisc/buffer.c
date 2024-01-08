@@ -35,8 +35,8 @@
 
 /* this defines 4K chunks, should only be changed upwards */
 #define CHUNKBITS (12)
-#define CHUNKSIZE (1<<CHUNKBITS)
-#define CHUNKMASK (CHUNKSIZE-1)
+#define CHUNKSIZE (1 << CHUNKBITS)
+#define CHUNKMASK (CHUNKSIZE - 1)
 
 /* the minimum block size for block-oriented sources, maximum is the
    chunk size */
@@ -44,11 +44,11 @@
 
 /* a simple hash function */
 #define HASHSIZE (13)
-#define HASHFUNC(start) (((start)>>CHUNKBITS) % HASHSIZE)
+#define HASHFUNC(start) (((start) >> CHUNKBITS) % HASHSIZE)
 
 /* convenience */
-#define MINIMUM(a,b) (((a) < (b)) ? (a) : (b))
-#define MAXIMUM(a,b) (((a) > (b)) ? (a) : (b))
+#define MINIMUM(a, b) (((a) < (b)) ? (a) : (b))
+#define MAXIMUM(a, b) (((a) > (b)) ? (a) : (b))
 
 /*
  * types
@@ -77,14 +77,14 @@ typedef struct cache {
  * helper functions
  */
 
-static CHUNK *ensure_chunk(SOURCE * s, CACHE * cache, u8 start);
-static CHUNK *get_chunk_alloc(CACHE * cache, u8 start);
+static CHUNK *ensure_chunk(SOURCE *s, CACHE *cache, u8 start);
+static CHUNK *get_chunk_alloc(CACHE *cache, u8 start);
 
 /*
  * retrieve a piece of the source, entry point for detection
  */
 
-u8 get_buffer(SECTION * section, u8 pos, u8 len, void **buf)
+u8 get_buffer(SECTION *section, u8 pos, u8 len, void **buf)
 {
 	SOURCE *s;
 
@@ -99,7 +99,7 @@ u8 get_buffer(SECTION * section, u8 pos, u8 len, void **buf)
  * actual retrieval, entry point for layering
  */
 
-u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf)
+u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf)
 {
 	CACHE *cache;
 	CHUNK *c;
@@ -123,10 +123,10 @@ u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf)
 	}
 
 	/* get cache head */
-	cache = (CACHE *) s->cache_head;
+	cache = (CACHE *)s->cache_head;
 	if (cache == NULL) {
 		/* allocate and initialize new cache head */
-		cache = (CACHE *) malloc(sizeof(CACHE));
+		cache = (CACHE *)malloc(sizeof(CACHE));
 		if (cache == NULL)
 			bailout("Out of memory");
 		memset(cache, 0, sizeof(CACHE));
@@ -147,11 +147,12 @@ u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf)
 		c = ensure_chunk(s, cache, first_chunk);
 		/* NOTE: first_chunk == c->start */
 
-		if (pos >= c->end)	/* chunk is incomplete and doesn't have our data */
+		if (pos >=
+		    c->end) /* chunk is incomplete and doesn't have our data */
 			return 0;
 
 		/* calculate return data */
-		len = MINIMUM(len, c->end - pos);	/* guaranteed to be > 0 */
+		len = MINIMUM(len, c->end - pos); /* guaranteed to be > 0 */
 		mybuf = c->buf + (pos - c->start);
 		if (inbuf)
 			memcpy(inbuf, mybuf, len);
@@ -161,14 +162,13 @@ u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf)
 		return len;
 
 	} else {
-
 		/* prepare a buffer for concatenation */
 		if (inbuf) {
 			mybuf = inbuf;
 		} else {
-
 #if PROFILE
-			printf("Temporary buffer for request %llu:%llu\n", pos, len);
+			printf("Temporary buffer for request %llu:%llu\n", pos,
+			       len);
 #endif
 
 			/* allocate one temporarily, will be free()'d at the next call */
@@ -182,7 +182,8 @@ u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf)
 
 		/* draw data from all covered chunks */
 		got = 0;
-		for (curr_chunk = first_chunk; curr_chunk <= last_chunk; curr_chunk += CHUNKSIZE) {
+		for (curr_chunk = first_chunk; curr_chunk <= last_chunk;
+		     curr_chunk += CHUNKSIZE) {
 			/* get that chunk */
 			c = ensure_chunk(s, cache, curr_chunk);
 			/* NOTE: curr_chunk == c->start */
@@ -199,12 +200,16 @@ u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf)
 				 */
 				if (c->end > pos) {
 					tocopy = c->end - pos;
-					memcpy(mybuf, c->buf + (pos & CHUNKMASK), tocopy);
+					memcpy(mybuf,
+					       c->buf + (pos & CHUNKMASK),
+					       tocopy);
 				} else
 					tocopy = 0;
 			} else {
 				/* copy from start of chunk */
-				tocopy = MINIMUM(c->len, len - got);	/* c->len can be zero */
+				tocopy = MINIMUM(
+					c->len,
+					len - got); /* c->len can be zero */
 				if (tocopy)
 					memcpy(mybuf + got, c->buf, tocopy);
 			}
@@ -217,15 +222,14 @@ u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf)
 		}
 
 		/* calculate return data */
-		len = MINIMUM(len, got);	/* may be zero */
+		len = MINIMUM(len, got); /* may be zero */
 		if (outbuf)
 			*outbuf = mybuf;
 		return len;
-
 	}
 }
 
-static CHUNK *ensure_chunk(SOURCE * s, CACHE * cache, u8 start)
+static CHUNK *ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
 {
 	CHUNK *c;
 	u8 pos, rel_start, rel_end;
@@ -243,38 +247,43 @@ static CHUNK *ensure_chunk(SOURCE * s, CACHE * cache, u8 start)
 		if (s->seq_pos < start) {
 			/* try to read data between seq_pos and start */
 			curr_chunk = s->seq_pos & ~CHUNKMASK;
-			while (curr_chunk < start) {	/* runs at least once, due to the if()
+			while (curr_chunk <
+			       start) { /* runs at least once, due to the if()
 							   and the formula of curr_chunk */
 				ensure_chunk(s, cache, curr_chunk);
 				curr_chunk += CHUNKSIZE;
 				if (s->seq_pos < curr_chunk)
-					break;	/* it didn't work out... */
+					break; /* it didn't work out... */
 			}
 
 			/* re-check precondition since s->size may have changed */
 			if (s->size_known && c->end >= s->size)
-				return c;	/* there is no more data to read */
+				return c; /* there is no more data to read */
 		}
 
-		if (s->seq_pos != c->end)	/* c->end is where we'll continue reading */
-			return c;	/* we're not in a sane state, give up */
+		if (s->seq_pos !=
+		    c->end) /* c->end is where we'll continue reading */
+			return c; /* we're not in a sane state, give up */
 	}
 
 	/* try to read the missing piece */
 	if (s->read_block != NULL) {
 		/* use block-oriented read_block() method */
 
-		if (s->blocksize < MINBLOCKSIZE || s->blocksize > CHUNKSIZE || ((s->blocksize & (s->blocksize - 1)) != 0)) {
-			bailout("Internal error: Invalid block size %d", s->blocksize);
+		if (s->blocksize < MINBLOCKSIZE || s->blocksize > CHUNKSIZE ||
+		    ((s->blocksize & (s->blocksize - 1)) != 0)) {
+			bailout("Internal error: Invalid block size %d",
+				s->blocksize);
 		}
 
-		for (rel_start = 0; rel_start < CHUNKSIZE; rel_start = rel_end) {
+		for (rel_start = 0; rel_start < CHUNKSIZE;
+		     rel_start = rel_end) {
 			rel_end = rel_start + s->blocksize;
 			if (c->len >= rel_end)
-				continue;	/* already read */
+				continue; /* already read */
 			pos = c->start + rel_start;
 			if (s->size_known && pos >= s->size)
-				break;	/* whole block is past end of file */
+				break; /* whole block is past end of file */
 
 			/* read it */
 			if (s->read_block(s, pos, c->buf + rel_start)) {
@@ -283,7 +292,8 @@ static CHUNK *ensure_chunk(SOURCE * s, CACHE * cache, u8 start)
 				c->end = c->start + c->len;
 			} else {
 				/* failure */
-				c->len = rel_start;	/* this is safe as it can only mean a shrink */
+				c->len =
+					rel_start; /* this is safe as it can only mean a shrink */
 				c->end = c->start + c->len;
 				/* note the new end of file if necessary */
 				if (!s->size_known || s->size > c->end) {
@@ -304,7 +314,8 @@ static CHUNK *ensure_chunk(SOURCE * s, CACHE * cache, u8 start)
 		} else {
 			toread = CHUNKSIZE - c->len;
 		}
-		result = s->read_bytes(s, c->start + c->len, toread, c->buf + c->len);
+		result = s->read_bytes(s, c->start + c->len, toread,
+				       c->buf + c->len);
 		if (result > 0) {
 			/* adjust offsets */
 			c->len += result;
@@ -325,7 +336,7 @@ static CHUNK *ensure_chunk(SOURCE * s, CACHE * cache, u8 start)
 	return c;
 }
 
-static CHUNK *get_chunk_alloc(CACHE * cache, u8 start)
+static CHUNK *get_chunk_alloc(CACHE *cache, u8 start)
 {
 	int hpos;
 	CHUNK *chain, *trav, *c;
@@ -336,7 +347,7 @@ static CHUNK *get_chunk_alloc(CACHE * cache, u8 start)
 
 	if (chain == NULL) {
 		/* bucket is empty, allocate new chunk */
-		c = (CHUNK *) malloc(sizeof(CHUNK));
+		c = (CHUNK *)malloc(sizeof(CHUNK));
 		if (c == NULL)
 			bailout("Out of memory");
 		c->buf = malloc(CHUNKSIZE);
@@ -354,13 +365,13 @@ static CHUNK *get_chunk_alloc(CACHE * cache, u8 start)
 	/* travel the ring list, looking for the wanted chunk */
 	trav = chain;
 	do {
-		if (trav->start == start)	/* found existing chunk */
+		if (trav->start == start) /* found existing chunk */
 			return trav;
 		trav = trav->next;
 	} while (trav != chain);
 
 	/* not found, allocate new chunk */
-	c = (CHUNK *) malloc(sizeof(CHUNK));
+	c = (CHUNK *)malloc(sizeof(CHUNK));
 	if (c == NULL)
 		bailout("Out of memory");
 	c->buf = malloc(CHUNKSIZE);
@@ -382,14 +393,14 @@ static CHUNK *get_chunk_alloc(CACHE * cache, u8 start)
  * dispose of a source
  */
 
-void close_source(SOURCE * s)
+void close_source(SOURCE *s)
 {
 	CACHE *cache;
 	int hpos;
 	CHUNK *chain, *trav, *nexttrav;
 
 	/* drop the cache */
-	cache = (CACHE *) s->cache_head;
+	cache = (CACHE *)s->cache_head;
 	if (cache != NULL) {
 #if PROFILE
 		printf("Cache profile:\n");
@@ -427,7 +438,7 @@ void close_source(SOURCE * s)
 
 	/* type-specific cleanup */
 	if (s->close != NULL)
-		(*s->close) (s);
+		(*s->close)(s);
 
 	/* release memory for the structure */
 	free(s);

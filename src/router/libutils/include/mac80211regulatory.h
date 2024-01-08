@@ -40,14 +40,14 @@
  */
 
 /* spells "RGDB" */
-#define REGDB_MAGIC	0x52474442
+#define REGDB_MAGIC 0x52474442
 
 /*
  * Only supported version now, start at arbitrary number
  * to have some more magic. We still consider this to be
  * "Version 1" of the file.
  */
-#define REGDB_VERSION	19
+#define REGDB_VERSION 19
 
 /*
  * The signature at the end of the file is an RSA-signed
@@ -75,9 +75,9 @@ struct regdb_file_header {
 };
 
 struct regdb_file_freq_range {
-	__be32 start_freq,	/* in kHz */
-	 end_freq,		/* in kHz */
-	 max_bandwidth;		/* in kHz */
+	__be32 start_freq, /* in kHz */
+		end_freq, /* in kHz */
+		max_bandwidth; /* in kHz */
 };
 
 /*
@@ -94,24 +94,24 @@ struct regdb_file_power_rule {
 /* must match <linux/nl80211.h> enum nl80211_reg_rule_flags */
 
 enum reg_rule_flags {
-	RRF_NO_OFDM = 1 << 0,	/* OFDM modulation not allowed */
-	RRF_NO_CCK = 1 << 1,	/* CCK modulation not allowed */
-	RRF_NO_INDOOR = 1 << 2,	/* indoor operation not allowed */
-	RRF_NO_OUTDOOR = 1 << 3,	/* outdoor operation not allowed */
-	RRF_DFS = 1 << 4,	/* DFS support is required to be
+	RRF_NO_OFDM = 1 << 0, /* OFDM modulation not allowed */
+	RRF_NO_CCK = 1 << 1, /* CCK modulation not allowed */
+	RRF_NO_INDOOR = 1 << 2, /* indoor operation not allowed */
+	RRF_NO_OUTDOOR = 1 << 3, /* outdoor operation not allowed */
+	RRF_DFS = 1 << 4, /* DFS support is required to be
 				 * used */
-	RRF_PTP_ONLY = 1 << 5,	/* this is only for Point To Point
+	RRF_PTP_ONLY = 1 << 5, /* this is only for Point To Point
 				 * links */
-	RRF_PTMP_ONLY = 1 << 6,	/* this is only for Point To Multi
+	RRF_PTMP_ONLY = 1 << 6, /* this is only for Point To Multi
 				 * Point links */
-	RRF_PASSIVE_SCAN = 1 << 7,	/* passive scan is required */
-	RRF_NO_IBSS = 1 << 8,	/* IBSS is not allowed */
+	RRF_PASSIVE_SCAN = 1 << 7, /* passive scan is required */
+	RRF_NO_IBSS = 1 << 8, /* IBSS is not allowed */
 };
 
 struct regdb_file_reg_rule {
 	/* pointers (offsets) into the file */
-	__be32 freq_range_ptr;	/* pointer to a struct regdb_file_freq_range */
-	__be32 power_rule_ptr;	/* pointer to a struct regdb_file_power_rule */
+	__be32 freq_range_ptr; /* pointer to a struct regdb_file_freq_range */
+	__be32 power_rule_ptr; /* pointer to a struct regdb_file_power_rule */
 	/* rule flags using enum reg_rule_flags */
 	__be32 flags;
 };
@@ -137,11 +137,9 @@ struct regdb_file_reg_country {
  * for some reason.
  */
 
-#define ERROR_ON(cond) \
-	((void)sizeof(char[1 - 2*!!(cond)]))
+#define ERROR_ON(cond) ((void)sizeof(char[1 - 2 * !!(cond)]))
 
-#define CHECK_STRUCT(name, size) \
-	ERROR_ON(sizeof(struct name) != size)
+#define CHECK_STRUCT(name, size) ERROR_ON(sizeof(struct name) != size)
 
 static void check_db_binary_structs(void)
 {
@@ -236,6 +234,7 @@ static __u32 min(__u32 a, __u32 b)
 static void *crda_get_file_ptr(__u8 *db, int dblen, int structlen, __be32 ptr);
 
 /* File reg db entry -> rd converstion utilities */
-struct ieee80211_regdomain *country2rd(__u8 *db, int dblen, struct regdb_file_reg_country *country);
+struct ieee80211_regdomain *country2rd(__u8 *db, int dblen,
+				       struct regdb_file_reg_country *country);
 
 struct ieee80211_regdomain *mac80211_get_regdomain(const char *varcountry);

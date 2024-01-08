@@ -31,7 +31,7 @@
  * Apple partition map detection
  */
 
-int detect_apple_partmap(SECTION * section, int level)
+int detect_apple_partmap(SECTION *section, int level)
 {
 	int i, sectorsize, magic, count;
 	char s[256], append[64];
@@ -51,7 +51,8 @@ int detect_apple_partmap(SECTION * section, int level)
 	 */
 
 	for (sectorsize = 512; sectorsize <= 4096; sectorsize <<= 1) {
-		if (get_buffer(section, sectorsize, sectorsize, (void **)&buf) < sectorsize)
+		if (get_buffer(section, sectorsize, sectorsize, (void **)&buf) <
+		    sectorsize)
 			return 0;
 
 		magic = get_be_short(buf);
@@ -64,18 +65,25 @@ int detect_apple_partmap(SECTION * section, int level)
 
 		/* get partition count and print info */
 		count = get_be_long(buf + 4);
-		print_line(level, "Apple partition map, %d entries, %d byte sectors", count, sectorsize);
+		print_line(level,
+			   "Apple partition map, %d entries, %d byte sectors",
+			   count, sectorsize);
 
 		for (i = 1; i <= count; i++) {
 			/* read the right sector */
 			/* NOTE: the previous run through the loop might have called
 			 *  get_buffer indirectly, invalidating our old pointer */
-			if (i > 1 && get_buffer(section, i * sectorsize, sectorsize, (void **)&buf) < sectorsize)
+			if (i > 1 &&
+			    get_buffer(section, i * sectorsize, sectorsize,
+				       (void **)&buf) < sectorsize)
 				return 0;
 
 			/* check signature */
 			if (get_be_short(buf) != 0x504D) {
-				print_line(level, "Partition %d: invalid signature, skipping", i);
+				print_line(
+					level,
+					"Partition %d: invalid signature, skipping",
+					i);
 				continue;
 			}
 
@@ -83,7 +91,8 @@ int detect_apple_partmap(SECTION * section, int level)
 			start = get_be_long(buf + 8);
 			size = get_be_long(buf + 12);
 			sprintf(append, " from %llu", start);
-			format_blocky_size(s, size, sectorsize, "sectors", append);
+			format_blocky_size(s, size, sectorsize, "sectors",
+					   append);
 			print_line(level, "Partition %d: %s", i, s);
 
 			/* get type */
@@ -91,11 +100,14 @@ int detect_apple_partmap(SECTION * section, int level)
 			print_line(level + 1, "Type \"%s\"", s);
 
 			/* recurse for content detection */
-			if (level >= 0 && start > count && size > 0) {	/* avoid recursion on self */
-				analyze_recursive(section, level + 1, start * sectorsize, size * sectorsize, 0);
+			if (level >= 0 && start > count &&
+			    size > 0) { /* avoid recursion on self */
+				analyze_recursive(section, level + 1,
+						  start * sectorsize,
+						  size * sectorsize, 0);
 			}
 		}
-		return 1;	/* don't try bigger sector sizes */
+		return 1; /* don't try bigger sector sizes */
 	}
 	return 0;
 }
@@ -103,17 +115,17 @@ int detect_apple_partmap(SECTION * section, int level)
 struct apfs_prange {
 	unsigned long long pr_start_paddr;
 	unsigned long long pr_block_count;
-}  __attribute__((packed));
+} __attribute__((packed));
 
 struct apfs_obj_phys {
-						/*00*/ unsigned long long o_cksum;
-						/* Fletcher checksum */
-	unsigned long long o_oid;	/* Object-id */
-						/*10*/ unsigned long long o_xid;
-						/* Transaction ID */
-	unsigned int o_type;	/* Object type */
-	unsigned int o_subtype;	/* Object subtype */
-}  __attribute__((packed));
+	/*00*/ unsigned long long o_cksum;
+	/* Fletcher checksum */
+	unsigned long long o_oid; /* Object-id */
+	/*10*/ unsigned long long o_xid;
+	/* Transaction ID */
+	unsigned int o_type; /* Object type */
+	unsigned int o_subtype; /* Object subtype */
+} __attribute__((packed));
 
 /* Indexes into a container superblock's array of counters */
 enum {
@@ -122,62 +134,62 @@ enum {
 
 	APFS_NX_NUM_COUNTERS = 32
 };
-#define APFS_NX_EPH_INFO_COUNT			4
+#define APFS_NX_EPH_INFO_COUNT 4
 
-#define APFS_NX_MAX_FILE_SYSTEMS		100
+#define APFS_NX_MAX_FILE_SYSTEMS 100
 
 /*
  * On-disk representation of the container superblock
  */
 struct apfs_nx_superblock {
-/*00*/ struct apfs_obj_phys nx_o;
-/*20*/ unsigned int nx_magic;
+	/*00*/ struct apfs_obj_phys nx_o;
+	/*20*/ unsigned int nx_magic;
 	unsigned int nx_block_size;
 	unsigned long long nx_block_count;
 
-/*30*/ unsigned long long nx_features;
+	/*30*/ unsigned long long nx_features;
 	unsigned long long nx_readonly_compatible_features;
 	unsigned long long nx_incompatible_features;
 
-/*48*/ char nx_uuid[16];
+	/*48*/ char nx_uuid[16];
 
-/*58*/ unsigned long long nx_next_oid;
+	/*58*/ unsigned long long nx_next_oid;
 	unsigned long long nx_next_xid;
 
-/*68*/ unsigned int nx_xp_desc_blocks;
+	/*68*/ unsigned int nx_xp_desc_blocks;
 	unsigned int nx_xp_data_blocks;
-/*70*/ unsigned long long nx_xp_desc_base;
+	/*70*/ unsigned long long nx_xp_desc_base;
 	unsigned long long nx_xp_data_base;
 	unsigned int nx_xp_desc_next;
 	unsigned int nx_xp_data_next;
-/*88*/ unsigned int nx_xp_desc_index;
+	/*88*/ unsigned int nx_xp_desc_index;
 	unsigned int nx_xp_desc_len;
 	unsigned int nx_xp_data_index;
 	unsigned int nx_xp_data_len;
 
-/*98*/ unsigned long long nx_spaceman_oid;
+	/*98*/ unsigned long long nx_spaceman_oid;
 	unsigned long long nx_omap_oid;
 	unsigned long long nx_reaper_oid;
 
-/*B0*/ unsigned int nx_test_type;
+	/*B0*/ unsigned int nx_test_type;
 
 	unsigned int nx_max_file_systems;
-/*B8*/ unsigned long long nx_fs_oid[APFS_NX_MAX_FILE_SYSTEMS];
-/*3D8*/ unsigned long long nx_counters[APFS_NX_NUM_COUNTERS];
-/*4D8*/ struct apfs_prange nx_blocked_out_prange;
+	/*B8*/ unsigned long long nx_fs_oid[APFS_NX_MAX_FILE_SYSTEMS];
+	/*3D8*/ unsigned long long nx_counters[APFS_NX_NUM_COUNTERS];
+	/*4D8*/ struct apfs_prange nx_blocked_out_prange;
 	unsigned long long nx_evict_mapping_tree_oid;
-/*4F0*/ unsigned long long nx_flags;
+	/*4F0*/ unsigned long long nx_flags;
 	unsigned long long nx_efi_jumpstart;
-/*500*/ char nx_fusion_uuid[16];
+	/*500*/ char nx_fusion_uuid[16];
 	struct apfs_prange nx_keylocker;
-/*520*/ unsigned long long nx_ephemeral_info[APFS_NX_EPH_INFO_COUNT];
+	/*520*/ unsigned long long nx_ephemeral_info[APFS_NX_EPH_INFO_COUNT];
 
-/*540*/ unsigned long long nx_test_oid;
+	/*540*/ unsigned long long nx_test_oid;
 
 	unsigned long long nx_fusion_mt_oid;
-/*550*/ unsigned long long nx_fusion_wbc_oid;
+	/*550*/ unsigned long long nx_fusion_wbc_oid;
 	struct apfs_prange nx_fusion_wbc;
-}  __attribute__((packed));
+} __attribute__((packed));
 
 struct apfs_wrapped_meta_crypto_state {
 	unsigned short major_version;
@@ -187,9 +199,9 @@ struct apfs_wrapped_meta_crypto_state {
 	unsigned int key_os_version;
 	unsigned short key_revision;
 	unsigned short unused;
-}  __attribute__((packed));
+} __attribute__((packed));
 
-#define APFS_MODIFIED_NAMELEN	      32
+#define APFS_MODIFIED_NAMELEN 32
 
 /*
  * Structure containing information about a program that modified the volume
@@ -198,88 +210,93 @@ struct apfs_modified_by {
 	char id[APFS_MODIFIED_NAMELEN];
 	unsigned long long timestamp;
 	unsigned long long last_xid;
-}  __attribute__((packed));
+} __attribute__((packed));
 
-#define APFS_MAX_HIST				8
-#define APFS_VOLNAME_LEN			256
+#define APFS_MAX_HIST 8
+#define APFS_VOLNAME_LEN 256
 
 struct apfs_superblock {
-/*00*/ struct apfs_obj_phys apfs_o;
+	/*00*/ struct apfs_obj_phys apfs_o;
 
-/*20*/ unsigned int apfs_magic;
+	/*20*/ unsigned int apfs_magic;
 	unsigned int apfs_fs_index;
 
-/*28*/ unsigned long long apfs_features;
+	/*28*/ unsigned long long apfs_features;
 	unsigned long long apfs_readonly_compatible_features;
 	unsigned long long apfs_incompatible_features;
 
-/*40*/ unsigned long long apfs_unmount_time;
+	/*40*/ unsigned long long apfs_unmount_time;
 
 	unsigned long long apfs_fs_reserve_block_count;
 	unsigned long long apfs_fs_quota_block_count;
 	unsigned long long apfs_fs_alloc_count;
 
-/*60*/ struct apfs_wrapped_meta_crypto_state apfs_meta_crypto;
+	/*60*/ struct apfs_wrapped_meta_crypto_state apfs_meta_crypto;
 
-/*74*/ unsigned int apfs_root_tree_type;
+	/*74*/ unsigned int apfs_root_tree_type;
 	unsigned int apfs_extentref_tree_type;
 	unsigned int apfs_snap_meta_tree_type;
 
-/*80*/ unsigned long long apfs_omap_oid;
+	/*80*/ unsigned long long apfs_omap_oid;
 	unsigned long long apfs_root_tree_oid;
 	unsigned long long apfs_extentref_tree_oid;
 	unsigned long long apfs_snap_meta_tree_oid;
 
-/*A0*/ unsigned long long apfs_revert_to_xid;
+	/*A0*/ unsigned long long apfs_revert_to_xid;
 	unsigned long long apfs_revert_to_sblock_oid;
 
-/*B0*/ unsigned long long apfs_next_obj_id;
+	/*B0*/ unsigned long long apfs_next_obj_id;
 
-/*B8*/ unsigned long long apfs_num_files;
+	/*B8*/ unsigned long long apfs_num_files;
 	unsigned long long apfs_num_directories;
 	unsigned long long apfs_num_symlinks;
 	unsigned long long apfs_num_other_fsobjects;
 	unsigned long long apfs_num_snapshots;
 
-/*E0*/ unsigned long long apfs_total_blocks_alloced;
+	/*E0*/ unsigned long long apfs_total_blocks_alloced;
 	unsigned long long apfs_total_blocks_freed;
 
-/*F0*/ char apfs_vol_uuid[16];
-/*100*/ unsigned long long apfs_last_mod_time;
+	/*F0*/ char apfs_vol_uuid[16];
+	/*100*/ unsigned long long apfs_last_mod_time;
 
 	unsigned long long apfs_fs_flags;
 
-/*110*/ struct apfs_modified_by apfs_formatted_by;
-/*140*/ struct apfs_modified_by apfs_modified_by[APFS_MAX_HIST];
+	/*110*/ struct apfs_modified_by apfs_formatted_by;
+	/*140*/ struct apfs_modified_by apfs_modified_by[APFS_MAX_HIST];
 
-/*2C0*/ char apfs_volname[APFS_VOLNAME_LEN];
-/*3C0*/ unsigned int apfs_next_doc_id;
+	/*2C0*/ char apfs_volname[APFS_VOLNAME_LEN];
+	/*3C0*/ unsigned int apfs_next_doc_id;
 
 	unsigned short apfs_role;
 	unsigned short reserved;
 
-/*3C8*/ unsigned long long apfs_root_to_xid;
+	/*3C8*/ unsigned long long apfs_root_to_xid;
 	unsigned long long apfs_er_state_oid;
-}  __attribute__((packed));
+} __attribute__((packed));
 
 #define FIRST_VOL_BNO 20002
 #define APPLE_NX_DEFAULT_BLOCKSIZE 4096
-#define APFS_NX_MAGIC				0x4253584E
+#define APFS_NX_MAGIC 0x4253584E
 
-int detect_apfs_volume(SECTION * section, int level)
+int detect_apfs_volume(SECTION *section, int level)
 {
 	char s[256], t[1026];
 	struct apfs_superblock *sb;
 	struct apfs_nx_superblock *nxsb;
-	if (get_buffer(section, 0, sizeof(*nxsb), (void **)&nxsb) < sizeof(*nxsb))
+	if (get_buffer(section, 0, sizeof(*nxsb), (void **)&nxsb) <
+	    sizeof(*nxsb))
 		return 0;
 	if (le32toh(nxsb->nx_magic) == APFS_NX_MAGIC) {
 		print_line(level, "APFS Container");
-		format_blocky_size(s, le64toh(nxsb->nx_block_count), le32toh(nxsb->nx_block_size), "blocks", NULL);
+		format_blocky_size(s, le64toh(nxsb->nx_block_count),
+				   le32toh(nxsb->nx_block_size), "blocks",
+				   NULL);
 		print_line(level + 1, "Size %s", s);
 		format_uuid(nxsb->nx_uuid, s);
 		print_line(level + 1, "UUID %s", s);
-		if (get_buffer(section, FIRST_VOL_BNO * le32toh(nxsb->nx_block_size), sizeof(*sb), (void **)&sb) < sizeof(*sb))
+		if (get_buffer(section,
+			       FIRST_VOL_BNO * le32toh(nxsb->nx_block_size),
+			       sizeof(*sb), (void **)&sb) < sizeof(*sb))
 			return 0;
 		if (le32toh(sb->apfs_magic) == 0x42535041) {
 			print_line(level, "APFS Volume");
@@ -299,7 +316,7 @@ int detect_apfs_volume(SECTION * section, int level)
  * Apple volume formats: MFS, HFS, HFS Plus
  */
 
-int detect_apple_volume(SECTION * section, int level)
+int detect_apple_volume(SECTION *section, int level)
 {
 	char s[256], t[1026];
 	unsigned char *buf;
@@ -334,11 +351,13 @@ int detect_apple_volume(SECTION * section, int level)
 		if (level >= 0 && get_be_short(buf + 0x7c) == 0x482B) {
 			print_line(level, "HFS wrapper for HFS Plus");
 
-			offset = (u8)get_be_short(buf + 0x7e) * blocksize + (u8)blockstart *512;
+			offset = (u8)get_be_short(buf + 0x7e) * blocksize +
+				 (u8)blockstart * 512;
 			/* TODO: size */
 
 			if (level >= 0)
-				analyze_recursive(section, level + 1, offset, 0, 0);
+				analyze_recursive(section, level + 1, offset, 0,
+						  0);
 		}
 		return 1;
 
@@ -367,26 +386,28 @@ int detect_apple_volume(SECTION * section, int level)
 			cataloglength = get_be_quad(buf + 272);
 
 		/* read header node of B-tree (4096 is the minimum node size) */
-		if (get_buffer(section, catalogstart, 4096, (void **)&buf) < 4096)
+		if (get_buffer(section, catalogstart, 4096, (void **)&buf) <
+		    4096)
 			return 0;
 		firstleafnode = get_be_long(buf + 24);
 		nodesize = get_be_short(buf + 32);
 		if (nodesize < 4096)
-			return 0;	/* illegal value */
+			return 0; /* illegal value */
 
 		/* read first lead node */
 		if ((firstleafnode + 1) * nodesize > cataloglength)
-			return 0;	/* the location is beyond the end of the catalog */
-		if (get_buffer(section, catalogstart + firstleafnode * nodesize, nodesize, (void **)&buf) < nodesize)
+			return 0; /* the location is beyond the end of the catalog */
+		if (get_buffer(section, catalogstart + firstleafnode * nodesize,
+			       nodesize, (void **)&buf) < nodesize)
 			return 0;
 
 		/* the first record in this leaf node should be for parent id 1 */
 		if (buf[8] != 0xff)
-			return 0;	/* not a leaf node */
+			return 0; /* not a leaf node */
 		if (get_be_short(buf + 14) <= 6)
-			return 0;	/* key of first record is too short to contain a name */
+			return 0; /* key of first record is too short to contain a name */
 		if (get_be_long(buf + 16) != 1)
-			return 0;	/* parent folder id is not "root parent" */
+			return 0; /* parent folder id is not "root parent" */
 		volnamelen = get_be_short(buf + 20);
 		format_utf16_be(buf + 22, volnamelen * 2, t);
 		print_line(level + 1, "Volume name \"%s\"", t);
@@ -399,7 +420,7 @@ int detect_apple_volume(SECTION * section, int level)
  * Apple UDIF disk images
  */
 
-int detect_udif(SECTION * section, int level)
+int detect_udif(SECTION *section, int level)
 {
 	u8 pos;
 	unsigned char *buf;
@@ -412,7 +433,9 @@ int detect_udif(SECTION * section, int level)
 		return 0;
 
 	if (memcmp(buf, "koly", 4) == 0) {
-		print_line(level, "Apple UDIF disk image, content detection may or may not work...");
+		print_line(
+			level,
+			"Apple UDIF disk image, content detection may or may not work...");
 		return 1;
 	}
 	return 0;

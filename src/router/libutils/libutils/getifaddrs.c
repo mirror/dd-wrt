@@ -4,12 +4,12 @@
 #define _GNU_SOURCE
 #include <ifaddrs.h>
 #include <stdlib.h>
-#include <net/if.h>		/* IFNAMSIZ, ifreq, ifconf */
+#include <net/if.h> /* IFNAMSIZ, ifreq, ifconf */
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
-#include <arpa/inet.h>		/* inet_pton */
+#include <arpa/inet.h> /* inet_pton */
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -29,7 +29,7 @@ typedef struct ifaddrs_storage {
 } stor;
 #define next ifa.ifa_next
 
-static stor *list_add(stor ** list, stor ** head, char *ifname)
+static stor *list_add(stor **list, stor **head, char *ifname)
 {
 	stor *curr = calloc(1, sizeof(stor));
 	if (curr) {
@@ -46,10 +46,10 @@ static stor *list_add(stor ** list, stor ** head, char *ifname)
 
 void freeifaddrs(struct ifaddrs *ifp)
 {
-	stor *head = (stor *) ifp;
+	stor *head = (stor *)ifp;
 	while (head) {
 		void *p = head;
-		head = (stor *) head->next;
+		head = (stor *)head->next;
 		free(p);
 	}
 }
@@ -70,15 +70,15 @@ static void ipv6netmask(unsigned prefix_length, struct sockaddr_in6 *sa)
 }
 
 #ifndef IFF_LOWER_UP
-#define IFF_LOWER_UP	0x10000	/* driver signals L1 up         */
+#define IFF_LOWER_UP 0x10000 /* driver signals L1 up         */
 #endif
 
 #ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC   02000000
-#define SOCK_NONBLOCK  04000
+#define SOCK_CLOEXEC 02000000
+#define SOCK_NONBLOCK 04000
 #endif
 
-static void dealwithipv6(stor ** list, stor ** head)
+static void dealwithipv6(stor **list, stor **head)
 {
 	FILE *f = fopen("/proc/net/if_inet6", "rbe");
 	/* 00000000000000000000000000000001 01 80 10 80 lo
@@ -113,15 +113,20 @@ static void dealwithipv6(stor ** list, stor ** head)
 				if (!curr)
 					goto out;
 				curr->addr.v6 = sa;
-				curr->ifa.ifa_addr = (struct sockaddr *)&curr->addr;
+				curr->ifa.ifa_addr =
+					(struct sockaddr *)&curr->addr;
 				ipv6netmask(c, &sa);
 				curr->netmask.v6 = sa;
-				curr->ifa.ifa_netmask = (struct sockaddr *)&curr->netmask;
+				curr->ifa.ifa_netmask =
+					(struct sockaddr *)&curr->netmask;
 				/* find ipv4 struct with the same interface name to copy flags */
 				stor *scan = *list;
-				for (; scan && strcmp(name, scan->name); scan = (stor *) scan->next) ;
+				for (; scan && strcmp(name, scan->name);
+				     scan = (stor *)scan->next)
+					;
 				if (scan)
-					curr->ifa.ifa_flags = scan->ifa.ifa_flags;
+					curr->ifa.ifa_flags =
+						scan->ifa.ifa_flags;
 				else
 					curr->ifa.ifa_flags = 0;
 			} else
@@ -151,17 +156,19 @@ int getifaddrs(struct ifaddrs **ifap)
 	int sock = socket(PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_IP);
 	if (sock == -1)
 		goto err2;
-	struct ifreq reqs[32];	/* arbitrary chosen boundary */
-	struct ifconf conf = {.ifc_len = sizeof reqs,.ifc_req = reqs };
+	struct ifreq reqs[32]; /* arbitrary chosen boundary */
+	struct ifconf conf = { .ifc_len = sizeof reqs, .ifc_req = reqs };
 	if (-1 == ioctl(sock, SIOCGIFCONF, &conf))
 		goto err;
 	size_t reqitems = conf.ifc_len / sizeof(struct ifreq);
-	for (head = list; head; head = (stor *) head->next) {
+	for (head = list; head; head = (stor *)head->next) {
 		for (i = 0; i < reqitems; i++) {
 			// get SIOCGIFADDR of active interfaces.
 			if (!strcmp(reqs[i].ifr_name, head->name)) {
-				head->addr.v4 = *(struct sockaddr_in *)&reqs[i].ifr_addr;
-				head->ifa.ifa_addr = (struct sockaddr *)&head->addr;
+				head->addr.v4 =
+					*(struct sockaddr_in *)&reqs[i].ifr_addr;
+				head->ifa.ifa_addr =
+					(struct sockaddr *)&head->addr;
 				break;
 			}
 		}
@@ -176,24 +183,29 @@ int getifaddrs(struct ifaddrs **ifap)
 			head->ifa.ifa_flags |= IFF_LOWER_UP;
 			if (-1 == ioctl(sock, SIOCGIFNETMASK, &req))
 				goto err;
-			head->netmask.v4 = *(struct sockaddr_in *)&req.ifr_netmask;
-			head->ifa.ifa_netmask = (struct sockaddr *)&head->netmask;
+			head->netmask.v4 =
+				*(struct sockaddr_in *)&req.ifr_netmask;
+			head->ifa.ifa_netmask =
+				(struct sockaddr *)&head->netmask;
 
 			if (head->ifa.ifa_flags & IFF_POINTOPOINT) {
 				if (-1 == ioctl(sock, SIOCGIFDSTADDR, &req))
 					goto err;
-				head->dst.v4 = *(struct sockaddr_in *)&req.ifr_dstaddr;
+				head->dst.v4 =
+					*(struct sockaddr_in *)&req.ifr_dstaddr;
 			} else {
 				if (-1 == ioctl(sock, SIOCGIFBRDADDR, &req))
 					goto err;
-				head->dst.v4 = *(struct sockaddr_in *)&req.ifr_broadaddr;
+				head->dst.v4 = *(struct sockaddr_in *)&req
+							.ifr_broadaddr;
 			}
-			head->ifa.ifa_ifu.ifu_dstaddr = (struct sockaddr *)&head->dst;
+			head->ifa.ifa_ifu.ifu_dstaddr =
+				(struct sockaddr *)&head->dst;
 		}
 	}
 	close(sock);
 	void *last = 0;
-	for (head = list; head; head = (stor *) head->next)
+	for (head = list; head; head = (stor *)head->next)
 		last = head;
 	head = last;
 	dealwithipv6(&list, &head);

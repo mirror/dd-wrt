@@ -58,13 +58,13 @@ typedef struct file_source {
  */
 
 void analyze_fd(int fd, int filekind, const char *filename);
-static void determine_file_size(FILE_SOURCE * fs, int filekind);
+static void determine_file_size(FILE_SOURCE *fs, int filekind);
 int analyze_stat(struct stat *sb, const char *filename);
 
-static int analyse_file(SOURCE * s, int level);
+static int analyse_file(SOURCE *s, int level);
 void analyze_stdin(void);
-static u8 read_file(SOURCE * s, u8 pos, u8 len, void *buf);
-static void close_file(SOURCE * s);
+static u8 read_file(SOURCE *s, u8 pos, u8 len, void *buf);
+static void close_file(SOURCE *s);
 
 #if USE_BINARY_SEARCH
 static int check_position(int fd, u8 pos);
@@ -78,14 +78,14 @@ SOURCE *init_file_source(int fd, int filekind)
 {
 	FILE_SOURCE *fs;
 
-	fs = (FILE_SOURCE *) malloc(sizeof(FILE_SOURCE));
+	fs = (FILE_SOURCE *)malloc(sizeof(FILE_SOURCE));
 	if (fs == NULL)
 		bailout("Out of memory");
 	memset(fs, 0, sizeof(FILE_SOURCE));
 
-	if (filekind >= 3)	/* pipe or similar, non-seekable */
+	if (filekind >= 3) /* pipe or similar, non-seekable */
 		fs->c.sequential = 1;
-	else if (filekind != 0)	/* special treatment hook for devices */
+	else if (filekind != 0) /* special treatment hook for devices */
 		fs->c.analyze = analyse_file;
 	fs->c.read_bytes = read_file;
 	fs->c.close = close_file;
@@ -94,10 +94,10 @@ SOURCE *init_file_source(int fd, int filekind)
 	if (!fs->c.sequential)
 		determine_file_size(fs, filekind);
 
-	return (SOURCE *) fs;
+	return (SOURCE *)fs;
 }
 
-static void determine_file_size(FILE_SOURCE * fs, int filekind)
+static void determine_file_size(FILE_SOURCE *fs, int filekind)
 {
 	off_t result;
 	int fd = fs->fd;
@@ -127,14 +127,15 @@ static void determine_file_size(FILE_SOURCE * fs, int filekind)
 	 * Works on certain devices.
 	 */
 #ifdef BLKGETSIZE64
-#define u64 __u64		/* workaround for broken header file */
+#define u64 __u64 /* workaround for broken header file */
 	if (!fs->c.size_known && filekind != 0) {
 		u8 devsize;
 		if (ioctl(fd, BLKGETSIZE64, (void *)&devsize) >= 0) {
 			fs->c.size_known = 1;
 			fs->c.size = devsize;
 #if DEBUG_SIZE
-			printf("Size: Linux 64-bit ioctl reports %llu\n", fs->c.size);
+			printf("Size: Linux 64-bit ioctl reports %llu\n",
+			       fs->c.size);
 #endif
 		}
 	}
@@ -145,9 +146,10 @@ static void determine_file_size(FILE_SOURCE * fs, int filekind)
 		u4 blockcount;
 		if (ioctl(fd, BLKGETSIZE, (void *)&blockcount) >= 0) {
 			fs->c.size_known = 1;
-			fs->c.size = (u8)blockcount *512;
+			fs->c.size = (u8)blockcount * 512;
 #if DEBUG_SIZE
-			printf("Size: Linux 32-bit ioctl reports %llu (%lu blocks)\n", fs->c.size, blockcount);
+			printf("Size: Linux 32-bit ioctl reports %llu (%lu blocks)\n",
+			       fs->c.size, blockcount);
 #endif
 		}
 	}
@@ -162,10 +164,12 @@ static void determine_file_size(FILE_SOURCE * fs, int filekind)
 		struct disklabel dl;
 		if (ioctl(fd, DIOCGDINFO, &dl) >= 0) {
 			fs->c.size_known = 1;
-			fs->c.size = (u8)dl.d_ncylinders * dl.d_secpercyl * dl.d_secsize;
+			fs->c.size = (u8)dl.d_ncylinders * dl.d_secpercyl *
+				     dl.d_secsize;
 			/* TODO: check this, it's the whole disk size... */
 #if DEBUG_SIZE
-			printf("Size: FreeBSD ioctl reports %llu\n", fs->c.size);
+			printf("Size: FreeBSD ioctl reports %llu\n",
+			       fs->c.size);
 #endif
 		}
 	}
@@ -180,11 +184,13 @@ static void determine_file_size(FILE_SOURCE * fs, int filekind)
 		u4 blocksize;
 		u8 blockcount;
 		if (ioctl(fd, DKIOCGETBLOCKSIZE, (void *)&blocksize) >= 0) {
-			if (ioctl(fd, DKIOCGETBLOCKCOUNT, (void *)&blockcount) >= 0) {
+			if (ioctl(fd, DKIOCGETBLOCKCOUNT,
+				  (void *)&blockcount) >= 0) {
 				fs->c.size_known = 1;
 				fs->c.size = blockcount * blocksize;
 #if DEBUG_SIZE
-				printf("Size: Darwin ioctl reports %llu (%llu blocks of %lu bytes)\n", fs->c.size, blockcount, blocksize);
+				printf("Size: Darwin ioctl reports %llu (%llu blocks of %lu bytes)\n",
+				       fs->c.size, blockcount, blocksize);
 #endif
 			}
 		}
@@ -218,7 +224,7 @@ static void determine_file_size(FILE_SOURCE * fs, int filekind)
 
 		/* first, find an upper bound starting from a reasonable guess */
 		lower = 0;
-		upper = 1024 * 1024;	/* start with 1MB */
+		upper = 1024 * 1024; /* start with 1MB */
 		while (check_position(fd, upper)) {
 			lower = upper;
 			upper <<= 2;
@@ -246,9 +252,9 @@ static void determine_file_size(FILE_SOURCE * fs, int filekind)
  * special handling hook: devices may have out-of-band structure
  */
 
-static int analyse_file(SOURCE * s, int level)
+static int analyse_file(SOURCE *s, int level)
 {
-	if (analyze_cdaccess(((FILE_SOURCE *) s)->fd, s, level))
+	if (analyze_cdaccess(((FILE_SOURCE *)s)->fd, s, level))
 		return 1;
 
 	return 0;
@@ -258,13 +264,13 @@ static int analyse_file(SOURCE * s, int level)
  * raw read
  */
 
-static u8 read_file(SOURCE * s, u8 pos, u8 len, void *buf)
+static u8 read_file(SOURCE *s, u8 pos, u8 len, void *buf)
 {
 	off_t result_seek;
 	ssize_t result_read;
 	char *p;
 	u8 got;
-	int fd = ((FILE_SOURCE *) s)->fd;
+	int fd = ((FILE_SOURCE *)s)->fd;
 
 	/* seek to the requested position (unless we're a pipe) */
 	if (!s->sequential) {
@@ -302,11 +308,11 @@ static u8 read_file(SOURCE * s, u8 pos, u8 len, void *buf)
  * dispose of everything
  */
 
-static void close_file(SOURCE * s)
+static void close_file(SOURCE *s)
 {
-	int fd = ((FILE_SOURCE *) s)->fd;
+	int fd = ((FILE_SOURCE *)s)->fd;
 
-	if (fd > 2)		/* don't close stdin/out/err */
+	if (fd > 2) /* don't close stdin/out/err */
 		close(fd);
 }
 
@@ -353,7 +359,7 @@ void analyze_file(const char *filename)
 	if (filekind < 0)
 		return;
 
-	/* Mac OS type & creator code (if running on Mac OS X) */
+		/* Mac OS type & creator code (if running on Mac OS X) */
 #ifdef USE_MACOS_TYPE
 	if (filekind == 0)
 		show_macos_type(filename);

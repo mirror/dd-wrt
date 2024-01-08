@@ -29,24 +29,26 @@
 
 struct mdp_superblock_1 {
 	/* constant array information - 128 bytes */
-	unsigned int magic;	/* MD_SB_MAGIC: 0xa92b4efc - little endian */
-	unsigned int major_version;	/* 1 */
-	unsigned int feature_map;	/* bit 0 set if 'bitmap_offset' is meaningful */
-	unsigned int pad0;	/* always set to 0 when writing */
+	unsigned int magic; /* MD_SB_MAGIC: 0xa92b4efc - little endian */
+	unsigned int major_version; /* 1 */
+	unsigned int feature_map; /* bit 0 set if 'bitmap_offset' is meaningful */
+	unsigned int pad0; /* always set to 0 when writing */
 
-	unsigned char set_uuid[16];	/* user-space generated. */
-	char set_name[32];	/* set and interpreted by user-space */
+	unsigned char set_uuid[16]; /* user-space generated. */
+	char set_name[32]; /* set and interpreted by user-space */
 
-	unsigned long long ctime;	/* lo 40 bits are seconds, top 24 are microseconds or 0 */
-	unsigned int level;	/* -4 (multipath), -1 (linear), 0,1,4,5 */
-	unsigned int layout;	/* only for raid5 and raid10 currently */
-	unsigned long long size;	/* used size of component devices, in 512byte sectors */
+	unsigned long long
+		ctime; /* lo 40 bits are seconds, top 24 are microseconds or 0 */
+	unsigned int level; /* -4 (multipath), -1 (linear), 0,1,4,5 */
+	unsigned int layout; /* only for raid5 and raid10 currently */
+	unsigned long long
+		size; /* used size of component devices, in 512byte sectors */
 
-	unsigned int chunksize;	/* in 512byte sectors */
+	unsigned int chunksize; /* in 512byte sectors */
 	unsigned int raid_disks;
 };
 
-int detect_linux_md(SECTION * section, int level)
+int detect_linux_md(SECTION *section, int level)
 {
 	unsigned char *buf;
 	char s[256];
@@ -54,12 +56,17 @@ int detect_linux_md(SECTION * section, int level)
 		return 0;
 	struct mdp_superblock_1 *super = (struct mdp_superblock_1 *)buf;
 	if (get_le_long(&super->magic) == 0xa92b4efc) {
-		print_line(level, "Linux MD Raid Version %d Level %d Disks %d", get_le_long(&super->major_version), get_le_long(&super->level), get_le_long(&super->raid_disks));
+		print_line(level, "Linux MD Raid Version %d Level %d Disks %d",
+			   get_le_long(&super->major_version),
+			   get_le_long(&super->level),
+			   get_le_long(&super->raid_disks));
 		if (super->set_name[0])
-			print_line(level + 1, "Volume name \"%s\"", super->set_name);
+			print_line(level + 1, "Volume name \"%s\"",
+				   super->set_name);
 		format_uuid(super->set_uuid, s);
 		print_line(level + 1, "UUID %s", s);
-		format_blocky_size(s, get_le_quad(&super->size), 512, "blocks", NULL);
+		format_blocky_size(s, get_le_quad(&super->size), 512, "blocks",
+				   NULL);
 		print_line(level + 1, "Component size %s", s);
 		return 1;
 	}
@@ -69,7 +76,7 @@ int detect_linux_md(SECTION * section, int level)
 /*
  * ext2/ext3/ext4 file system
  */
-int detect_ext234(SECTION * section, int level)
+int detect_ext234(SECTION *section, int level)
 {
 	unsigned char *buf;
 	char s[256];
@@ -87,7 +94,8 @@ int detect_ext234(SECTION * section, int level)
 		/* Ext3/4 external journal: INCOMPAT feature JOURNAL_DEV */
 		if (get_le_long(buf + 96) & 0x0008) {
 			is_journal = 1;
-			fslevel = 3;	/* at least ext3, ext2 has no journalling */
+			fslevel =
+				3; /* at least ext3, ext2 has no journalling */
 		}
 		/* Ext3/4 COMPAT feature: HAS_JOURNAL */
 		if (get_le_long(buf + 92) & 0x0004)
@@ -105,7 +113,8 @@ int detect_ext234(SECTION * section, int level)
 		if (get_le_long(buf + 352) & 0x0004)
 			is_dev = 1;
 
-		print_line(level, "Ext%d%s %s", fslevel, is_dev ? "dev" : "", is_journal ? "external journal" : "file system");
+		print_line(level, "Ext%d%s %s", fslevel, is_dev ? "dev" : "",
+			   is_journal ? "external journal" : "file system");
 
 		get_string(buf + 120, 16, s);
 		if (s[0])
@@ -136,7 +145,7 @@ int detect_ext234(SECTION * section, int level)
  * btrfs file system
  */
 
-int detect_btrfs(SECTION * section, int level)
+int detect_btrfs(SECTION *section, int level)
 {
 	unsigned char *buf;
 	char s[258];
@@ -161,21 +170,21 @@ int detect_btrfs(SECTION * section, int level)
 	return 0;
 }
 
-#define VDEV_LABEL_UBERBLOCK	(128 * 1024ULL)
-#define VDEV_LABEL_NVPAIR	( 16 * 1024ULL)
-#define VDEV_LABEL_SIZE		(256 * 1024ULL)
-#define UBERBLOCK_MAGIC         0x00bab10c	/* oo-ba-bloc!  */
-#define UBERBLOCK_SIZE		1024ULL
-#define UBERBLOCKS_COUNT   128
-#define ZFS_TRIES	64
-#define ZFS_WANT	 4
+#define VDEV_LABEL_UBERBLOCK (128 * 1024ULL)
+#define VDEV_LABEL_NVPAIR (16 * 1024ULL)
+#define VDEV_LABEL_SIZE (256 * 1024ULL)
+#define UBERBLOCK_MAGIC 0x00bab10c /* oo-ba-bloc!  */
+#define UBERBLOCK_SIZE 1024ULL
+#define UBERBLOCKS_COUNT 128
+#define ZFS_TRIES 64
+#define ZFS_WANT 4
 struct zfs_uberblock {
-	uint64_t ub_magic;	/* UBERBLOCK_MAGIC              */
-	uint64_t ub_version;	/* SPA_VERSION                  */
-	uint64_t ub_txg;	/* txg of last sync             */
-	uint64_t ub_guid_sum;	/* sum of all vdev guids        */
-	uint64_t ub_timestamp;	/* UTC time of last sync        */
-	char ub_rootbp;		/* MOS objset_phys_t            */
+	uint64_t ub_magic; /* UBERBLOCK_MAGIC              */
+	uint64_t ub_version; /* SPA_VERSION                  */
+	uint64_t ub_txg; /* txg of last sync             */
+	uint64_t ub_guid_sum; /* sum of all vdev guids        */
+	uint64_t ub_timestamp; /* UTC time of last sync        */
+	char ub_rootbp; /* MOS objset_phys_t            */
 } __attribute__((packed));
 
 #define DATA_TYPE_UINT64 8
@@ -185,7 +194,7 @@ struct nvpair {
 	uint32_t nvp_size;
 	uint32_t nvp_unkown;
 	uint32_t nvp_namelen;
-	char nvp_name[0];	/* aligned to 4 bytes */
+	char nvp_name[0]; /* aligned to 4 bytes */
 	/* aligned ptr array for string arrays */
 	/* aligned array of data for value */
 };
@@ -208,20 +217,24 @@ struct nvlist {
 	struct nvpair nvl_nvpair;
 };
 
-static int zfs_process_value(int level, char *name, size_t namelen, void *value, size_t max_value_size)
+static int zfs_process_value(int level, char *name, size_t namelen, void *value,
+			     size_t max_value_size)
 {
-	if (strncmp(name, "name", namelen) == 0 && sizeof(struct nvstring) <= max_value_size) {
+	if (strncmp(name, "name", namelen) == 0 &&
+	    sizeof(struct nvstring) <= max_value_size) {
 		struct nvstring *nvs = value;
 		uint32_t nvs_type = be32_to_cpu(nvs->nvs_type);
 		uint32_t nvs_strlen = be32_to_cpu(nvs->nvs_strlen);
 
-		if (nvs_type != DATA_TYPE_STRING || (uint64_t) nvs_strlen + sizeof(*nvs) > max_value_size)
+		if (nvs_type != DATA_TYPE_STRING ||
+		    (uint64_t)nvs_strlen + sizeof(*nvs) > max_value_size)
 			return 0;
 
 		print_line(level + 1, "ZFS Label: %s", nvs->nvs_string);
 
 		return 1;
-	} else if (strncmp(name, "guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
+	} else if (strncmp(name, "guid", namelen) == 0 &&
+		   sizeof(struct nvuint64) <= max_value_size) {
 		struct nvuint64 *nvu = value;
 		uint32_t nvu_type = be32_to_cpu(nvu->nvu_type);
 		uint64_t nvu_value;
@@ -235,7 +248,8 @@ static int zfs_process_value(int level, char *name, size_t namelen, void *value,
 		print_line(level + 1, "ZFS UUID_SUB: %" PRIu64, nvu_value);
 
 		return 1;
-	} else if (strncmp(name, "pool_guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
+	} else if (strncmp(name, "pool_guid", namelen) == 0 &&
+		   sizeof(struct nvuint64) <= max_value_size) {
 		struct nvuint64 *nvu = value;
 		uint32_t nvu_type = be32_to_cpu(nvu->nvu_type);
 		uint64_t nvu_value;
@@ -256,7 +270,7 @@ static int zfs_process_value(int level, char *name, size_t namelen, void *value,
 	return 0;
 }
 
-static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
+static void zfs_extract_guid_name(SECTION *section, int level, loff_t offset)
 {
 	unsigned char *p;
 	struct nvlist *nvl;
@@ -275,12 +289,12 @@ static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
 
 	nvl = (struct nvlist *)p;
 	nvp = &nvl->nvl_nvpair;
-	left -= (unsigned char *)nvp - p;	/* Already used up 12 bytes */
+	left -= (unsigned char *)nvp - p; /* Already used up 12 bytes */
 
 	while (left > sizeof(*nvp) && nvp->nvp_size != 0 && found < 3) {
 		uint32_t nvp_size = be32_to_cpu(nvp->nvp_size);
 		uint32_t nvp_namelen = be32_to_cpu(nvp->nvp_namelen);
-		uint64_t namesize = ((uint64_t) nvp_namelen + 3) & ~3;
+		uint64_t namesize = ((uint64_t)nvp_namelen + 3) & ~3;
 		size_t max_value_size;
 		void *value;
 
@@ -291,7 +305,8 @@ static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
 		max_value_size = nvp_size - (namesize + sizeof(*nvp));
 		value = nvp->nvp_name + namesize;
 
-		found += zfs_process_value(level, nvp->nvp_name, nvp_namelen, value, max_value_size);
+		found += zfs_process_value(level, nvp->nvp_name, nvp_namelen,
+					   value, max_value_size);
 
 		left -= nvp_size;
 
@@ -299,9 +314,10 @@ static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
 	}
 }
 
-static int find_uberblocks(const void *label, loff_t * ub_offset, int *swap_endian)
+static int find_uberblocks(const void *label, loff_t *ub_offset,
+			   int *swap_endian)
 {
-	uint64_t swab_magic = bswap_64((uint64_t) UBERBLOCK_MAGIC);
+	uint64_t swab_magic = bswap_64((uint64_t)UBERBLOCK_MAGIC);
 	struct zfs_uberblock *ub;
 	int i, found = 0;
 	loff_t offset = VDEV_LABEL_UBERBLOCK;
@@ -325,7 +341,7 @@ static int find_uberblocks(const void *label, loff_t * ub_offset, int *swap_endi
 	return found;
 }
 
-int detect_zfs(SECTION * section, int level)
+int detect_zfs(SECTION *section, int level)
 {
 	int swab_endian = 0;
 	struct zfs_uberblock *ub;
@@ -337,28 +353,32 @@ int detect_zfs(SECTION * section, int level)
 	/* Look for at least 4 uberblocks to ensure a positive match */
 	for (label_no = 0; label_no < 4; label_no++) {
 		switch (label_no) {
-		case 0:	// jump to L0
+		case 0: // jump to L0
 			offset = 0;
 			break;
-		case 1:	// jump to L1
+		case 1: // jump to L1
 			offset = VDEV_LABEL_SIZE;
 			break;
-		case 2:	// jump to L2
-			offset = 64 * 1024 * 1024 - 2 * VDEV_LABEL_SIZE - blk_align;
+		case 2: // jump to L2
+			offset = 64 * 1024 * 1024 - 2 * VDEV_LABEL_SIZE -
+				 blk_align;
 			break;
-		case 3:	// jump to L3
+		case 3: // jump to L3
 			offset = 64 * 1024 * 1024 - VDEV_LABEL_SIZE - blk_align;
 			break;
 		}
 
-		if (get_buffer(section, offset, VDEV_LABEL_SIZE, (void **)&label) < VDEV_LABEL_SIZE)
+		if (get_buffer(section, offset, VDEV_LABEL_SIZE,
+			       (void **)&label) < VDEV_LABEL_SIZE)
 			return 0;
 
-		found_in_label = find_uberblocks(label, &ub_offset, &swab_endian);
+		found_in_label =
+			find_uberblocks(label, &ub_offset, &swab_endian);
 
 		if (found_in_label > 0) {
 			found += found_in_label;
-			ub = (struct zfs_uberblock *)((char *)label + ub_offset);
+			ub = (struct zfs_uberblock *)((char *)label +
+						      ub_offset);
 			ub_offset += offset;
 
 			if (found >= ZFS_WANT)
@@ -368,14 +388,15 @@ int detect_zfs(SECTION * section, int level)
 
 	if (found < ZFS_WANT)
 		return 0;
-	print_line(level, "ZFS file system v%" PRIu64 " Endian: %s", swab_endian ? bswap_64(ub->ub_version) : ub->ub_version, swab_endian ? "big" : "little");
+	print_line(level, "ZFS file system v%" PRIu64 " Endian: %s",
+		   swab_endian ? bswap_64(ub->ub_version) : ub->ub_version,
+		   swab_endian ? "big" : "little");
 
 	zfs_extract_guid_name(section, level, offset);
 	return 1;
-
 }
 
-int detect_f2fs(SECTION * section, int level)
+int detect_f2fs(SECTION *section, int level)
 {
 	unsigned char *buf;
 	char s[258];
@@ -384,7 +405,8 @@ int detect_f2fs(SECTION * section, int level)
 		return 0;
 
 	if (get_le_long(buf) == 0xF2F52010) {
-		print_line(level, "F2FS file system v%d.%d", get_le_short(buf + 4), get_le_short(buf + 6));
+		print_line(level, "F2FS file system v%d.%d",
+			   get_le_short(buf + 4), get_le_short(buf + 6));
 
 		format_utf16_le(buf + 108 + 16, 512, s);
 
@@ -396,14 +418,13 @@ int detect_f2fs(SECTION * section, int level)
 		return 1;
 	}
 	return 0;
-
 }
 
 /*
  * ReiserFS file system
  */
 
-int detect_reiser(SECTION * section, int level)
+int detect_reiser(SECTION *section, int level)
 {
 	unsigned char *buf;
 	int i, at, newformat;
@@ -419,20 +440,35 @@ int detect_reiser(SECTION * section, int level)
 
 		/* check signature */
 		if (memcmp(buf + 52, "ReIsErFs", 8) == 0) {
-			print_line(level, "ReiserFS file system (old 3.5 format, standard journal, starts at %d KiB)", at);
+			print_line(
+				level,
+				"ReiserFS file system (old 3.5 format, standard journal, starts at %d KiB)",
+				at);
 			newformat = 0;
 		} else if (memcmp(buf + 52, "ReIsEr2Fs", 9) == 0) {
-			print_line(level, "ReiserFS file system (new 3.6 format, standard journal, starts at %d KiB)", at);
+			print_line(
+				level,
+				"ReiserFS file system (new 3.6 format, standard journal, starts at %d KiB)",
+				at);
 			newformat = 1;
 		} else if (memcmp(buf + 52, "ReIsEr3Fs", 9) == 0) {
 			newformat = get_le_short(buf + 72);
 			if (newformat == 0) {
-				print_line(level, "ReiserFS file system (old 3.5 format, non-standard journal, starts at %d KiB)", at);
+				print_line(
+					level,
+					"ReiserFS file system (old 3.5 format, non-standard journal, starts at %d KiB)",
+					at);
 			} else if (newformat == 2) {
-				print_line(level, "ReiserFS file system (new 3.6 format, non-standard journal, starts at %d KiB)", at);
+				print_line(
+					level,
+					"ReiserFS file system (new 3.6 format, non-standard journal, starts at %d KiB)",
+					at);
 				newformat = 1;
 			} else {
-				print_line(level, "ReiserFS file system (v3 magic, but unknown version %d, starts at %d KiB)", newformat, at);
+				print_line(
+					level,
+					"ReiserFS file system (v3 magic, but unknown version %d, starts at %d KiB)",
+					newformat, at);
 				continue;
 			}
 		} else
@@ -466,7 +502,7 @@ int detect_reiser(SECTION * section, int level)
  * Reiser4 file system
  */
 
-int detect_reiser4(SECTION * section, int level)
+int detect_reiser4(SECTION *section, int level)
 {
 	unsigned char *buf;
 	char s[256];
@@ -491,7 +527,8 @@ int detect_reiser4(SECTION * section, int level)
 		sprintf(layout_name, "Unknown layout with ID %d", layout_id);
 
 	format_size(s, blocksize);
-	print_line(level, "Reiser4 file system (%s, block size %s)", layout_name, s);
+	print_line(level, "Reiser4 file system (%s, block size %s)",
+		   layout_name, s);
 
 	/* get label and UUID */
 	get_string(buf + 36, 16, s);
@@ -506,7 +543,8 @@ int detect_reiser4(SECTION * section, int level)
 		if (get_buffer(section, 17 * 4096, 1024, (void **)&buf) < 1024)
 			return 0;
 		if (memcmp(buf + 52, "ReIsEr40FoRmAt", 14) != 0) {
-			print_line(level + 1, "Superblock for 4.0 format missing");
+			print_line(level + 1,
+				   "Superblock for 4.0 format missing");
 			return 0;
 		}
 
@@ -521,19 +559,12 @@ int detect_reiser4(SECTION * section, int level)
  * Linux RAID persistent superblock
  */
 
-static char *levels[] = {
-	"Multipath",
-	"\'HSM\'",
-	"\'translucent\'",
-	"Linear",
-	"RAID0",
-	"RAID1",
-	NULL, NULL,
-	"RAID4(?)",
-	"RAID5"
-};
+static char *levels[] = { "Multipath", "\'HSM\'", "\'translucent\'",
+			  "Linear",    "RAID0",	  "RAID1",
+			  NULL,	       NULL,	  "RAID4(?)",
+			  "RAID5" };
 
-int detect_linux_raid(SECTION * section, int level)
+int detect_linux_raid(SECTION *section, int level)
 {
 	unsigned char *buf;
 	unsigned long long pos;
@@ -558,19 +589,25 @@ int detect_linux_raid(SECTION * section, int level)
 	if (get_le_long(buf) != 0xa92b4efc)
 		return 0;
 
-	print_line(level, "Linux RAID disk, version %lu.%lu.%lu", get_le_long(buf + 4), get_le_long(buf + 8), get_le_long(buf + 12));
+	print_line(level, "Linux RAID disk, version %lu.%lu.%lu",
+		   get_le_long(buf + 4), get_le_long(buf + 8),
+		   get_le_long(buf + 12));
 
 	/* get some data */
-	rlevel = (int)(long)get_le_long(buf + 28);	/* is signed, actually */
+	rlevel = (int)(long)get_le_long(buf + 28); /* is signed, actually */
 	nr_disks = get_le_long(buf + 36);
 	raid_disks = get_le_long(buf + 40);
 	spare = nr_disks - raid_disks;
 
 	/* find the name for the personality in the table */
 	if (rlevel < -4 || rlevel > 5 || levels[rlevel + 4] == NULL) {
-		print_line(level + 1, "Unknown RAID level %d using %d regular %d spare disks", rlevel, raid_disks, spare);
+		print_line(
+			level + 1,
+			"Unknown RAID level %d using %d regular %d spare disks",
+			rlevel, raid_disks, spare);
 	} else {
-		print_line(level + 1, "%s set using %d regular %d spare disks", levels[rlevel + 4], raid_disks, spare);
+		print_line(level + 1, "%s set using %d regular %d spare disks",
+			   levels[rlevel + 4], raid_disks, spare);
 	}
 
 	/* get the UUID */
@@ -585,7 +622,7 @@ int detect_linux_raid(SECTION * section, int level)
  * Linux LVM1
  */
 
-int detect_linux_lvm(SECTION * section, int level)
+int detect_linux_lvm(SECTION *section, int level)
 {
 	unsigned char *buf;
 	char s[256];
@@ -603,7 +640,9 @@ int detect_linux_lvm(SECTION * section, int level)
 		return 0;
 
 	minor_version = get_le_short(buf + 2);
-	print_line(level, "Linux LVM1 volume, version %d%s", minor_version, (minor_version < 1 || minor_version > 2) ? " (unknown)" : "");
+	print_line(level, "Linux LVM1 volume, version %d%s", minor_version,
+		   (minor_version < 1 || minor_version > 2) ? " (unknown)" :
+							      "");
 
 	/* volume group name */
 	get_string(buf + 172, 128, s);
@@ -647,7 +686,7 @@ int detect_linux_lvm(SECTION * section, int level)
  * Linux LVM2
  */
 
-int detect_linux_lvm2(SECTION * section, int level)
+int detect_linux_lvm2(SECTION *section, int level)
 {
 	unsigned char *buf;
 	int at, i;
@@ -670,15 +709,21 @@ int detect_linux_lvm2(SECTION * section, int level)
 
 		if (memcmp(buf + 24, "LVM2 001", 8) != 0) {
 			get_string(buf + 24, 8, s);
-			print_line(level, "LABELONE label at sector %d, unknown type \"%s\"", at, s);
+			print_line(
+				level,
+				"LABELONE label at sector %d, unknown type \"%s\"",
+				at, s);
 			return 0;
 		}
 
 		print_line(level, "Linux LVM2 volume, version 001");
 		print_line(level + 1, "LABELONE label at sector %d", at);
 
-		if (labeloffset >= 512 || labelsector > 256 || labelsector != at) {
-			print_line(level + 1, "LABELONE data inconsistent, aborting analysis");
+		if (labeloffset >= 512 || labelsector > 256 ||
+		    labelsector != at) {
+			print_line(
+				level + 1,
+				"LABELONE data inconsistent, aborting analysis");
 			return 0;
 		}
 
@@ -696,14 +741,17 @@ int detect_linux_lvm2(SECTION * section, int level)
 		for (i = 0; i < 16; i++)
 			if (get_le_quad(buf + labeloffset + 40 + i * 16) == 0) {
 				i++;
-				mdoffset = get_le_quad(buf + labeloffset + 40 + i * 16);
-				mdsize = get_le_quad(buf + labeloffset + 40 + i * 16 + 8);
+				mdoffset = get_le_quad(buf + labeloffset + 40 +
+						       i * 16);
+				mdsize = get_le_quad(buf + labeloffset + 40 +
+						     i * 16 + 8);
 				break;
 			}
 		if (mdoffset == 0)
 			return 0;
 
-		if (get_buffer(section, mdoffset, mdsize, (void **)&buf) < mdsize)
+		if (get_buffer(section, mdoffset, mdsize, (void **)&buf) <
+		    mdsize)
 			return 0;
 
 		if (memcmp(buf + 4, " LVM2 x[5A%r0N*>", 16) != 0)
@@ -723,7 +771,7 @@ int detect_linux_lvm2(SECTION * section, int level)
  * Linux swap area
  */
 
-int detect_linux_swap(SECTION * section, int level)
+int detect_linux_swap(SECTION *section, int level)
 {
 	int i, en, pagesize;
 	unsigned char *buf;
@@ -734,16 +782,19 @@ int detect_linux_swap(SECTION * section, int level)
 	for (i = 0; pagesizes[i]; i++) {
 		pagesize = pagesizes[i];
 
-		if (get_buffer(section, pagesize - 512, 512, (void **)&buf) != 512)
-			break;	/* assumes page sizes increase through the loop */
+		if (get_buffer(section, pagesize - 512, 512, (void **)&buf) !=
+		    512)
+			break; /* assumes page sizes increase through the loop */
 
 		if (memcmp((char *)buf + 512 - 10, "SWAP-SPACE", 10) == 0) {
-			print_line(level, "Linux swap, version 1, %d KiB pages", pagesize >> 10);
+			print_line(level, "Linux swap, version 1, %d KiB pages",
+				   pagesize >> 10);
 			found = 1;
 		}
 		if (memcmp((char *)buf + 512 - 10, "SWAPSPACE2", 10) == 0) {
-			if (get_buffer(section, 1024, 512, (void **)&buf) != 512)
-				break;	/* really shouldn't happen */
+			if (get_buffer(section, 1024, 512, (void **)&buf) !=
+			    512)
+				break; /* really shouldn't happen */
 
 			for (en = 0; en < 2; en++) {
 				version = get_ve_long(en, buf);
@@ -751,15 +802,24 @@ int detect_linux_swap(SECTION * section, int level)
 					break;
 			}
 			if (en < 2) {
-				print_line(level, "Linux swap, version 2, subversion %d, %d KiB pages, %s", (int)version, pagesize >> 10, get_ve_name(en));
+				print_line(
+					level,
+					"Linux swap, version 2, subversion %d, %d KiB pages, %s",
+					(int)version, pagesize >> 10,
+					get_ve_name(en));
 				if (version == 1) {
 					pages = get_ve_long(en, buf + 4) - 1;
-					format_blocky_size(s, pages, pagesize, "pages", NULL);
-					print_line(level + 1, "Swap size %s", s);
+					format_blocky_size(s, pages, pagesize,
+							   "pages", NULL);
+					print_line(level + 1, "Swap size %s",
+						   s);
 				}
 				found = 1;
 			} else {
-				print_line(level, "Linux swap, version 2, illegal subversion, %d KiB pages", pagesize >> 10);
+				print_line(
+					level,
+					"Linux swap, version 2, illegal subversion, %d KiB pages",
+					pagesize >> 10);
 				found = 1;
 			}
 		}
@@ -771,7 +831,7 @@ int detect_linux_swap(SECTION * section, int level)
  * various file systems
  */
 
-int detect_linux_misc(SECTION * section, int level)
+int detect_linux_misc(SECTION *section, int level)
 {
 	int magic, fill, off, en;
 	unsigned char *buf;
@@ -801,13 +861,14 @@ int detect_linux_misc(SECTION * section, int level)
 			namesize = 30;
 		}
 		if (version) {
-			print_line(level, "Minix file system (v%d, %d chars)", version, namesize);
+			print_line(level, "Minix file system (v%d, %d chars)",
+				   version, namesize);
 			if (version == 1)
 				blocks = get_le_short(buf + 1024 + 2);
 			else
 				blocks = get_le_long(buf + 1024 + 20);
 			blocks = (blocks - get_le_short(buf + 1024 + 8))
-			    << get_le_short(buf + 1024 + 10);
+				 << get_le_short(buf + 1024 + 10);
 			format_blocky_size(s, blocks, 1024, "blocks", NULL);
 			print_line(level + 1, "Volume size %s", s);
 			found = 1;
@@ -818,7 +879,8 @@ int detect_linux_misc(SECTION * section, int level)
 	if (memcmp(buf, "-rom1fs-", 8) == 0) {
 		size = get_be_long(buf + 8);
 		print_line(level, "Linux romfs");
-		print_line(level + 1, "Volume name \"%.300s\"", (char *)(buf + 16));
+		print_line(level + 1, "Volume name \"%.300s\"",
+			   (char *)(buf + 16));
 		format_size_verbose(s, size);
 		print_line(level + 1, "Volume size %s", s);
 		found = 1;
@@ -830,7 +892,9 @@ int detect_linux_misc(SECTION * section, int level)
 			break;
 		for (en = 0; en < 2; en++) {
 			if (get_ve_long(en, buf + off) == 0x28cd3d45) {
-				print_line(level, "Linux cramfs, starts sector %d, %s", off >> 9, get_ve_name(en));
+				print_line(level,
+					   "Linux cramfs, starts sector %d, %s",
+					   off >> 9, get_ve_name(en));
 
 				get_string(buf + off + 48, 16, s);
 				print_line(level + 1, "Volume name \"%s\"", s);
@@ -839,7 +903,8 @@ int detect_linux_misc(SECTION * section, int level)
 				blocks = get_ve_long(en, buf + off + 40);
 				format_size_verbose(s, size);
 				print_line(level + 1, "Compressed size %s", s);
-				format_blocky_size(s, blocks, 4096, "blocks", " -assumed-");
+				format_blocky_size(s, blocks, 4096, "blocks",
+						   " -assumed-");
 				print_line(level + 1, "Data size %s", s);
 				found = 1;
 			}
@@ -848,12 +913,14 @@ int detect_linux_misc(SECTION * section, int level)
 
 	/* Linux squashfs */
 	for (en = 0; en < 2; en++) {
-		if (get_ve_long(en, buf) == 0x73717368 || get_ve_long(en, buf) == 0x74717368) {
+		if (get_ve_long(en, buf) == 0x73717368 ||
+		    get_ve_long(en, buf) == 0x74717368) {
 			int major, minor;
 
 			major = get_ve_short(en, buf + 28);
 			minor = get_ve_short(en, buf + 30);
-			print_line(level, "Linux squashfs, version %d.%d, %s", major, minor, get_ve_name(en));
+			print_line(level, "Linux squashfs, version %d.%d, %s",
+				   major, minor, get_ve_name(en));
 
 			if (major > 2)
 				size = get_ve_quad(en, buf + 63);
@@ -878,7 +945,7 @@ int detect_linux_misc(SECTION * section, int level)
  * various boot code signatures
  */
 
-int detect_linux_loader(SECTION * section, int level)
+int detect_linux_loader(SECTION *section, int level)
 {
 	int fill, executable, id;
 	unsigned char *buf;
@@ -893,7 +960,8 @@ int detect_linux_loader(SECTION * section, int level)
 	executable = (get_le_short(buf + 510) == 0xaa55) ? 1 : 0;
 
 	/* boot sector stuff */
-	if (executable && (memcmp(buf + 2, "LILO", 4) == 0 || memcmp(buf + 6, "LILO", 4) == 0)) {
+	if (executable && (memcmp(buf + 2, "LILO", 4) == 0 ||
+			   memcmp(buf + 6, "LILO", 4) == 0)) {
 		print_line(level, "LILO boot loader");
 		found = 1;
 	}
@@ -907,24 +975,40 @@ int detect_linux_loader(SECTION * section, int level)
 	}
 
 	/* we know GRUB a little better... */
-	if (executable && find_memory(buf, 512, "Geom\0Hard Disk\0Read\0 Error", 26) >= 0) {
+	if (executable &&
+	    find_memory(buf, 512, "Geom\0Hard Disk\0Read\0 Error", 26) >= 0) {
 		if (buf[0x3e] == 3) {
-			print_line(level, "GRUB boot loader, compat version %d.%d, boot drive 0x%02x", (int)buf[0x3e], (int)buf[0x3f], (int)buf[0x40]);
+			print_line(
+				level,
+				"GRUB boot loader, compat version %d.%d, boot drive 0x%02x",
+				(int)buf[0x3e], (int)buf[0x3f], (int)buf[0x40]);
 			found = 1;
 		} else if (executable && buf[0x1bc] == 2 && buf[0x1bd] <= 2) {
 			id = buf[0x3e];
 			if (id == 0x10) {
-				print_line(level, "GRUB boot loader, compat version %d.%d, normal version", (int)buf[0x1bc], (int)buf[0x1bd]);
+				print_line(
+					level,
+					"GRUB boot loader, compat version %d.%d, normal version",
+					(int)buf[0x1bc], (int)buf[0x1bd]);
 				found = 1;
 			} else if (id == 0x20) {
-				print_line(level, "GRUB boot loader, compat version %d.%d, LBA version", (int)buf[0x1bc], (int)buf[0x1bd]);
+				print_line(
+					level,
+					"GRUB boot loader, compat version %d.%d, LBA version",
+					(int)buf[0x1bc], (int)buf[0x1bd]);
 				found = 1;
 			} else {
-				print_line(level, "GRUB boot loader, compat version %d.%d", (int)buf[0x1bc], (int)buf[0x1bd]);
+				print_line(
+					level,
+					"GRUB boot loader, compat version %d.%d",
+					(int)buf[0x1bc], (int)buf[0x1bd]);
 				found = 1;
 			}
 		} else {
-			print_line(level, "GRUB boot loader, unknown compat version %d", buf[0x3e]);
+			print_line(
+				level,
+				"GRUB boot loader, unknown compat version %d",
+				buf[0x3e]);
 			found = 1;
 		}
 	}
@@ -941,7 +1025,9 @@ int detect_linux_loader(SECTION * section, int level)
 		char *name = (char *)buf + 32;
 		char *number = (char *)buf + 164;
 		char *total = (char *)buf + 172;
-		print_line(level, "Debian floppy split, name \"%s\", disk %s of %s", name, number, total);
+		print_line(level,
+			   "Debian floppy split, name \"%s\", disk %s of %s",
+			   name, number, total);
 		found = 1;
 	}
 	return found;

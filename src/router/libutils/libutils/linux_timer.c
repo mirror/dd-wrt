@@ -21,9 +21,9 @@
 /*
 * debug facilities
 */
-#define TIMER_DEBUG	0	/* Turn off the debug */
+#define TIMER_DEBUG 0 /* Turn off the debug */
 #if TIMER_DEBUG
-#define TIMERDBG(fmt, args...) printf("%s: " fmt "\n", __FUNCTION__ , ## args)
+#define TIMERDBG(fmt, args...) printf("%s: " fmt "\n", __FUNCTION__, ##args)
 #else
 #define TIMERDBG(fmt, args...)
 #endif
@@ -34,11 +34,11 @@
 
 #define __USE_GNU
 
-#include <stdlib.h>		// for malloc, free, etc.
-#include <string.h>		// for memset, strncasecmp, etc.
-#include <assert.h>		// for assert, of course.
-#include <signal.h>		// for sigemptyset, etc.
-#include <stdio.h>		// for printf, etc.
+#include <stdlib.h> // for malloc, free, etc.
+#include <string.h> // for memset, strncasecmp, etc.
+#include <assert.h> // for assert, of course.
+#include <signal.h> // for sigemptyset, etc.
+#include <stdio.h> // for printf, etc.
 #include <sys/time.h>
 #include <time.h>
 #include <utils.h>
@@ -63,40 +63,44 @@ timer_settime( ) - set the time until the next expiration and arm timer (POSIX)
 nanosleep( ) - suspend the current task until the time interval elapses (POSIX)
 */
 
-#define MS_PER_SEC 1000		/* 1000ms per second */
-#define US_PER_SEC 1000000	/* 1000000us per second */
-#define US_PER_MS  1000		/* 1000us per ms */
-#define UCLOCKS_PER_SEC 1000000	/* Clock ticks per second */
+#define MS_PER_SEC 1000 /* 1000ms per second */
+#define US_PER_SEC 1000000 /* 1000000us per second */
+#define US_PER_MS 1000 /* 1000us per ms */
+#define UCLOCKS_PER_SEC 1000000 /* Clock ticks per second */
 
 typedef void (*event_callback_t)(timer_t, int);
 
 #ifndef TIMESPEC_TO_TIMEVAL
-#define TIMESPEC_TO_TIMEVAL(tv, ts) {                                   \
-	(tv)->tv_sec = (ts)->tv_sec;                                    \
-	(tv)->tv_usec = (ts)->tv_nsec / 1000;                           \
-}
+#define TIMESPEC_TO_TIMEVAL(tv, ts)                   \
+	{                                             \
+		(tv)->tv_sec = (ts)->tv_sec;          \
+		(tv)->tv_usec = (ts)->tv_nsec / 1000; \
+	}
 #endif
 
 #ifndef TIMEVAL_TO_TIMESPEC
-#define TIMEVAL_TO_TIMESPEC(tv, ts) {                                   \
-	(ts)->tv_sec = (tv)->tv_sec;                                    \
-	(ts)->tv_nsec = (tv)->tv_usec * 1000;                           \
-}
+#define TIMEVAL_TO_TIMESPEC(tv, ts)                   \
+	{                                             \
+		(ts)->tv_sec = (tv)->tv_sec;          \
+		(ts)->tv_nsec = (tv)->tv_usec * 1000; \
+	}
 #endif
 
-#define ROUNDUP(x, y) ((((x)+(y)-1)/(y))*(y))
+#define ROUNDUP(x, y) ((((x) + (y)-1) / (y)) * (y))
 
-#define timerroundup(t, g) \
-	do { \
-		if (!timerisset(t)) (t)->tv_usec = 1; \
-		if ((t)->tv_sec == 0) (t)->tv_usec = ROUNDUP((t)->tv_usec, g); \
+#define timerroundup(t, g)                                       \
+	do {                                                     \
+		if (!timerisset(t))                              \
+			(t)->tv_usec = 1;                        \
+		if ((t)->tv_sec == 0)                            \
+			(t)->tv_usec = ROUNDUP((t)->tv_usec, g); \
 	} while (0)
 
 typedef long uclock_t;
 
-#define TFLAG_NONE	0
-#define TFLAG_CANCELLED	(1<<0)
-#define TFLAG_DELETED	(1<<1)
+#define TFLAG_NONE 0
+#define TFLAG_CANCELLED (1 << 0)
+#define TFLAG_DELETED (1 << 1)
 
 struct event {
 	struct timeval it_interval;
@@ -120,7 +124,8 @@ static void check_timer();
 #if THIS_FINDS_USE
 static int count_queue(struct event *);
 #endif
-static int dd_timer_change_settime(timer_t timer_id, const struct itimerspec *timer_spec);
+static int dd_timer_change_settime(timer_t timer_id,
+				   const struct itimerspec *timer_spec);
 void dd_block_timer();
 void dd_unblock_timer();
 
@@ -192,9 +197,9 @@ void init_event_queue(int n)
 	unlock();
 }
 
-int clock_gettime(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
-		  struct timespec *tp	/* where to store current time */
-    )
+int clock_gettime(clockid_t clock_id, /* clock ID (always CLOCK_REALTIME) */
+		  struct timespec *tp /* where to store current time */
+)
 {
 	struct timeval tv;
 	int n;
@@ -205,20 +210,25 @@ int clock_gettime(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 	return n;
 }
 
-int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
-		    struct sigevent *evp,	/* user event handler */
-		    timer_t * pTimer	/* ptr to return value */
-    )
+int dd_timer_create(clockid_t clock_id, /* clock ID (always CLOCK_REALTIME) */
+		    struct sigevent *evp, /* user event handler */
+		    timer_t *pTimer /* ptr to return value */
+)
 {
 	struct event *event;
 	if (clock_id != CLOCK_REALTIME) {
-		dd_loginfo("timer", "timer_create can only support clock id CLOCK_REALTIME");
+		dd_loginfo(
+			"timer",
+			"timer_create can only support clock id CLOCK_REALTIME");
 		return -1;
 	}
 
 	if (evp != NULL) {
-		if (evp->sigev_notify != SIGEV_SIGNAL || evp->sigev_signo != SIGALRM) {
-			dd_loginfo("timer", "timer_create can only support signalled alarms using SIGALRM");
+		if (evp->sigev_notify != SIGEV_SIGNAL ||
+		    evp->sigev_signo != SIGALRM) {
+			dd_loginfo(
+				"timer",
+				"timer_create can only support signalled alarms using SIGALRM");
 			return -1;
 		}
 	}
@@ -240,14 +250,14 @@ int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 
 	check_event_queue();
 
-	*pTimer = (timer_t) event;
+	*pTimer = (timer_t)event;
 	unlock();
 
 	return 0;
 }
 
-int dd_timer_delete(timer_t timerid	/* timer ID */
-    )
+int dd_timer_delete(timer_t timerid /* timer ID */
+)
 {
 	struct event *event = (struct event *)timerid;
 	if (event == NULL)
@@ -269,12 +279,12 @@ int dd_timer_delete(timer_t timerid	/* timer ID */
 	return 0;
 }
 
-int dd_timer_connect(timer_t timerid,	/* timer ID */
-		     void (*routine)(timer_t, int),	/* user routine */
-		     int arg	/* user argument */
-    )
+int dd_timer_connect(timer_t timerid, /* timer ID */
+		     void (*routine)(timer_t, int), /* user routine */
+		     int arg /* user argument */
+)
 {
-	struct event *event =(struct event *)timerid;
+	struct event *event = (struct event *)timerid;
 
 	assert(routine != NULL);
 	event->func = routine;
@@ -287,9 +297,9 @@ int dd_timer_connect(timer_t timerid,	/* timer ID */
  * Please Call this function only from the call back functions of the alarm_handler.
  * This is just a hack
  */
-int dd_timer_change_settime(timer_t timerid,	/* timer ID */
-			    const struct itimerspec *value	/* time to be set */
-    )
+int dd_timer_change_settime(timer_t timerid, /* timer ID */
+			    const struct itimerspec *value /* time to be set */
+)
 {
 	struct event *event = (struct event *)timerid;
 
@@ -299,11 +309,12 @@ int dd_timer_change_settime(timer_t timerid,	/* timer ID */
 	return 1;
 }
 
-int dd_timer_settime(timer_t timerid,	/* timer ID */
-		     int flags,	/* absolute or relative */
-		     const struct itimerspec *value,	/* time to be set */
-		     struct itimerspec *ovalue	/* previous time set (NULL=no result) */
-    )
+int dd_timer_settime(
+	timer_t timerid, /* timer ID */
+	int flags, /* absolute or relative */
+	const struct itimerspec *value, /* time to be set */
+	struct itimerspec *ovalue /* previous time set (NULL=no result) */
+)
 {
 	struct itimerval itimer;
 	struct event *event = (struct event *)timerid;
@@ -322,11 +333,14 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 	dd_block_timer();
 
 #ifdef TIMER_PROFILE
-	event->expected_ms = (event->it_value.tv_sec * MS_PER_SEC) + (event->it_value.tv_usec / US_PER_MS);
+	event->expected_ms = (event->it_value.tv_sec * MS_PER_SEC) +
+			     (event->it_value.tv_usec / US_PER_MS);
 	event->start = uclock();
 #endif
 	if (event->next) {
-		dd_loginfo("timer", "calling timer_settime with a timer that is already on the queue.");
+		dd_loginfo(
+			"timer",
+			"calling timer_settime with a timer that is already on the queue.");
 	}
 
 	/* We always want to make sure that the event at the head of the
@@ -345,11 +359,13 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 		 */
 		if (event_queue) {
 			/* CSTYLED */
-			if (timercmp(&(itimer.it_value), &(event_queue->it_value), >)) {
+			if (timercmp(&(itimer.it_value),
+				     &(event_queue->it_value), >)) {
 				/* it is an error if the amount of time remaining is more than the
 				 * amount of time requested by the top event.
 				 */
-				dd_loginfo("timer", "timer_settime: TIMER ERROR!");
+				dd_loginfo("timer",
+					   "timer_settime: TIMER ERROR!");
 
 			} else {
 				/* some portion of the top event has already expired.
@@ -376,11 +392,13 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 			 * in the queue, we will insert the new event just before the next one.
 			 * we also need to adjust the delta value to the next event.
 			 */
-			timersub(&((*ppevent)->it_value), &(event->it_value), &((*ppevent)->it_value));
+			timersub(&((*ppevent)->it_value), &(event->it_value),
+				 &((*ppevent)->it_value));
 			break;
 		}
 		/* subtract the interval of the next event from the proposed interval. */
-		timersub(&(event->it_value), &((*ppevent)->it_value), &(event->it_value));
+		timersub(&(event->it_value), &((*ppevent)->it_value),
+			 &(event->it_value));
 
 		ppevent = &((*ppevent)->next);
 	}
@@ -401,13 +419,13 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 		/* we want to be sure to never turn off the timer completely, */
 		/* so if the next interval is zero, set it to some small value. */
 		if (!timerisset(&(itimer.it_value)))
-			itimer.it_value = (struct timeval) {
-			0, 1
-			};
+			itimer.it_value = (struct timeval){ 0, 1 };
 
 		assert(!timerisset(&itimer.it_interval));
-		assert(itimer.it_value.tv_sec > 0 || itimer.it_value.tv_usec >= g_granularity);
-		assert(event_queue->it_value.tv_sec > 0 || event_queue->it_value.tv_usec >= g_granularity);
+		assert(itimer.it_value.tv_sec > 0 ||
+		       itimer.it_value.tv_usec >= g_granularity);
+		assert(event_queue->it_value.tv_sec > 0 ||
+		       event_queue->it_value.tv_usec >= g_granularity);
 		setitimer(ITIMER_REAL, &itimer, NULL);
 		check_timer();
 	}
@@ -429,7 +447,8 @@ static void check_timer()
 	}
 	/* CSTYLED */
 	if (timercmp(&(itimer.it_value), &(event_queue->it_value), >)) {
-		dd_loginfo("timer", "ERROR timer expires later than top event.");
+		dd_loginfo("timer",
+			   "ERROR timer expires later than top event.");
 	}
 }
 
@@ -450,13 +469,14 @@ static void check_event_queue()
 	timerclear(&sum);
 	for (event = event_queue; event; event = event->next) {
 		if (i > g_maxevents) {
-			dd_loginfo("timer", "timer queue looks like it loops back on itself!");
+			dd_loginfo(
+				"timer",
+				"timer queue looks like it loops back on itself!");
 			print_event_queue();
 			exit(1);
 		}
 		i++;
 	}
-
 }
 
 #if THIS_FINDS_USE
@@ -481,8 +501,11 @@ static void print_event_queue()
 	int i = 0;
 
 	for (event = event_queue; event; event = event->next) {
-		dd_loginfo("timer", "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p\n", i++, (unsigned long)event, (unsigned long)event->next, (int)
-			   event->it_value.tv_sec, (int)event->it_value.tv_usec, event->func);
+		dd_loginfo("timer",
+			   "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p\n", i++,
+			   (unsigned long)event, (unsigned long)event->next,
+			   (int)event->it_value.tv_sec,
+			   (int)event->it_value.tv_usec, event->func);
 		if (i > g_maxevents) {
 			dd_loginfo("timer", "...(giving up)\n");
 			break;
@@ -524,19 +547,21 @@ static void alarm_handler(int i)
 
 #ifdef TIMER_PROFILE
 		end = uclock();
-		actual = ((end - event->start) / ((uclock_t) UCLOCKS_PER_SEC / 1000));
+		actual = ((end - event->start) /
+			  ((uclock_t)UCLOCKS_PER_SEC / 1000));
 		if (actual < 0)
 			junk = end;
-		TIMERDBG("expected %d ms actual %d ms", event->expected_ms, ((end - event->start) / ((uclock_t) UCLOCKS_PER_SEC / 1000)));
+		TIMERDBG("expected %d ms actual %d ms", event->expected_ms,
+			 ((end - event->start) /
+			  ((uclock_t)UCLOCKS_PER_SEC / 1000)));
 #endif
 
 		unlock();
 		/* call the event callback function */
-		(*(event->func)) ((timer_t) event, (int)event->arg);
+		(*(event->func))((timer_t)event, (int)event->arg);
 		lock();
 		/* If the event has been cancelled, do NOT put it back on the queue. */
 		if (!(event->flags & TFLAG_CANCELLED)) {
-
 			/* if the event is a recurring event, reset the timer and
 			 * find its correct place in the sorted list of events.
 			 */
@@ -544,7 +569,9 @@ static void alarm_handler(int i)
 				/* event is recurring... */
 				event->it_value = event->it_interval;
 #ifdef TIMER_PROFILE
-				event->expected_ms = (event->it_value.tv_sec * MS_PER_SEC) + (event->it_value.tv_usec / US_PER_MS);
+				event->expected_ms =
+					(event->it_value.tv_sec * MS_PER_SEC) +
+					(event->it_value.tv_usec / US_PER_MS);
 				event->start = uclock();
 #endif
 				timerroundup(&event->it_value, g_granularity);
@@ -553,7 +580,8 @@ static void alarm_handler(int i)
 				/* current delta of each event on the queue. */
 				ppevent = &event_queue;
 				while (*ppevent) {
-					if (timercmp(&(event->it_value), &((*ppevent)->it_value),
+					if (timercmp(&(event->it_value),
+						     &((*ppevent)->it_value),
 						     /* CSTYLED */
 						     <)) {
 						/* if the proposed event will trigger sooner than
@@ -563,10 +591,15 @@ static void alarm_handler(int i)
 						 * we also need to adjust the delta value to the
 						 * next event.
 						 */
-						timersub(&((*ppevent)->it_value), &(event->it_value), &((*ppevent)->it_value));
+						timersub(
+							&((*ppevent)->it_value),
+							&(event->it_value),
+							&((*ppevent)->it_value));
 						break;
 					}
-					timersub(&(event->it_value), &((*ppevent)->it_value), &(event->it_value));
+					timersub(&(event->it_value),
+						 &((*ppevent)->it_value),
+						 &(event->it_value));
 					ppevent = &((*ppevent)->next);
 				}
 
@@ -584,7 +617,8 @@ static void alarm_handler(int i)
 		check_event_queue();
 
 		/* CSTYLED */
-	} while (event_queue && timercmp(&event_queue->it_value, &small_interval, <));
+	} while (event_queue &&
+		 timercmp(&event_queue->it_value, &small_interval, <));
 
 	/* re-issue the timer... */
 	if (event_queue) {
@@ -595,14 +629,14 @@ static void alarm_handler(int i)
 		/* we want to be sure to never turn off the timer completely, */
 		/* so if the next interval is zero, set it to some small value. */
 		if (!timerisset(&(itimer.it_value)))
-			itimer.it_value = (struct timeval) {
-			0, 1
-			};
+			itimer.it_value = (struct timeval){ 0, 1 };
 
 		setitimer(ITIMER_REAL, &itimer, NULL);
 		check_timer();
 	} else {
-		dd_loginfo("timer", "There are no events in the queue - timer not reset.");
+		dd_loginfo(
+			"timer",
+			"There are no events in the queue - timer not reset.");
 	}
 
 	dd_unblock_timer();
@@ -669,7 +703,6 @@ void dd_timer_cancel(timer_t timerid)
 	ppevent = &event_queue;
 	while (*ppevent) {
 		if (*ppevent == event) {
-
 			/* RACE CONDITION - if the alarm goes off while we are in
 			 * this loop, and if the timer we want to cancel is the
 			 * next to expire, the alarm will end up firing
@@ -686,17 +719,21 @@ void dd_timer_cancel(timer_t timerid)
 				/* subtract the time that has already passed while waiting for this
 				 * timer...
 				 */
-				timersub(&(event->it_value), &(itimer.it_value), &(event->it_value));
+				timersub(&(event->it_value), &(itimer.it_value),
+					 &(event->it_value));
 
 				/* and add any remainder to the next timer in the list */
-				timeradd(&(event->next->it_value), &(event->it_value), &(event->next->it_value));
+				timeradd(&(event->next->it_value),
+					 &(event->it_value),
+					 &(event->next->it_value));
 			}
 
 			*ppevent = event->next;
 			event->next = NULL;
 
 			if (event_queue) {
-				timerroundup(&event_queue->it_value, g_granularity);
+				timerroundup(&event_queue->it_value,
+					     g_granularity);
 				timerclear(&itimer.it_interval);
 				itimer.it_value = event_queue->it_value;
 
@@ -707,12 +744,15 @@ void dd_timer_cancel(timer_t timerid)
 				 */
 
 				if (!timerisset(&(itimer.it_value)))
-					itimer.it_value = (struct timeval) {
-					0, 1
-					};
+					itimer.it_value =
+						(struct timeval){ 0, 1 };
 
-				assert(itimer.it_value.tv_sec > 0 || itimer.it_value.tv_usec >= g_granularity);
-				assert(event_queue->it_value.tv_sec > 0 || event_queue->it_value.tv_usec >= g_granularity);
+				assert(itimer.it_value.tv_sec > 0 ||
+				       itimer.it_value.tv_usec >=
+					       g_granularity);
+				assert(event_queue->it_value.tv_sec > 0 ||
+				       event_queue->it_value.tv_usec >=
+					       g_granularity);
 				setitimer(ITIMER_REAL, &itimer, NULL);
 				check_timer();
 			} else {
@@ -743,10 +783,10 @@ void dd_timer_cancel(timer_t timerid)
 * before any other timer function calls. The param 'timer_entries' is used
 * to pre-allocate fixed number of timer entries.
 */
-int bcm_timer_module_init(int timer_entries, bcm_timer_module_id * module_id)
+int bcm_timer_module_init(int timer_entries, bcm_timer_module_id *module_id)
 {
 	init_event_queue(timer_entries);
-	*module_id = (bcm_timer_module_id) event_freelist;
+	*module_id = (bcm_timer_module_id)event_freelist;
 	return 0;
 }
 
@@ -772,14 +812,14 @@ int bcm_timer_module_enable(bcm_timer_module_id module_id, int enable)
 }
 
 /* ARGSUSED */
-int bcm_timer_create(bcm_timer_module_id module_id, bcm_timer_id * timer_id)
+int bcm_timer_create(bcm_timer_module_id module_id, bcm_timer_id *timer_id)
 {
-	return dd_timer_create(CLOCK_REALTIME, NULL, (timer_t *) timer_id);
+	return dd_timer_create(CLOCK_REALTIME, NULL, (timer_t *)timer_id);
 }
 
 int bcm_timer_delete(bcm_timer_id timer_id)
 {
-	return dd_timer_delete((timer_t) timer_id);
+	return dd_timer_delete((timer_t)timer_id);
 }
 
 int bcm_timer_gettime(bcm_timer_id timer_id, struct itimerspec *timer_spec)
@@ -787,24 +827,26 @@ int bcm_timer_gettime(bcm_timer_id timer_id, struct itimerspec *timer_spec)
 	return -1;
 }
 
-int bcm_timer_settime(bcm_timer_id timer_id, const struct itimerspec *timer_spec)
+int bcm_timer_settime(bcm_timer_id timer_id,
+		      const struct itimerspec *timer_spec)
 {
-	return dd_timer_settime((timer_t) timer_id, 0, timer_spec, NULL);
+	return dd_timer_settime((timer_t)timer_id, 0, timer_spec, NULL);
 }
 
 int bcm_timer_connect(bcm_timer_id timer_id, bcm_timer_cb func, int data)
 {
-	return dd_timer_connect((timer_t) timer_id, (void *)func, data);
+	return dd_timer_connect((timer_t)timer_id, (void *)func, data);
 }
 
 int bcm_timer_cancel(bcm_timer_id timer_id)
 {
-	dd_timer_cancel((timer_t) timer_id);
+	dd_timer_cancel((timer_t)timer_id);
 	return 0;
 }
 
-int bcm_timer_change_expirytime(bcm_timer_id timer_id, const struct itimerspec *timer_spec)
+int bcm_timer_change_expirytime(bcm_timer_id timer_id,
+				const struct itimerspec *timer_spec)
 {
-	dd_timer_change_settime((timer_t) timer_id, timer_spec);
+	dd_timer_change_settime((timer_t)timer_id, timer_spec);
 	return 1;
 }

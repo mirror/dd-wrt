@@ -44,7 +44,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || \
+	(defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 
 int debug_ready(void)
 {
@@ -56,7 +57,6 @@ int debug_ready(void)
 
 static int console_debug(void)
 {
-
 	return debug_ready() && nvram_matchi("console_debug", 1);
 }
 
@@ -78,8 +78,7 @@ char *fd2str(int fd)
 			buf = NULL;
 		}
 		count += n;
-	}
-	while (n == 512);
+	} while (n == 512);
 
 	close(fd);
 	if (buf)
@@ -145,11 +144,10 @@ static void flog(const char *fmt, ...)
 	}
 }
 
-#undef system			// prevent circular dependency
+#undef system // prevent circular dependency
 
 int dd_system(const char *command)
 {
-
 	if (debug_ready()) {
 		dd_debug(DEBUG_CONSOLE, "%s:%s\n", __func__, command);
 		if (nvram_match("debug_delay", "1")) {
@@ -242,13 +240,15 @@ void dd_logerror(const char *servicename, const char *fmt, ...)
 void dd_logstart(const char *servicename, int retcode)
 {
 	if (retcode)
-		dd_loginfo(servicename, "Error on startup, returncode %d", retcode);
+		dd_loginfo(servicename, "Error on startup, returncode %d",
+			   retcode);
 	else
 		dd_loginfo(servicename, "successfully started");
 }
 #endif
 
-static int internal_eval_va(int silence, int space, const char *cmd, va_list args)
+static int internal_eval_va(int silence, int space, const char *cmd,
+			    va_list args)
 {
 	const char *s_args[128];
 	int i = 1;
@@ -261,7 +261,8 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 			s_args[i++] = arg;
 		else {
 			char *c = strdup(arg);
-			foreach(word, c, next) {
+			foreach(word, c, next)
+			{
 				s_args[i++] = strdup(word);
 			}
 			free(c);
@@ -351,7 +352,8 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 		if (argv[i])
 			while (argv[i] != NULL) {
 				fprintf(stderr, "%s ", argv[i]);
-				dd_snprintf(buf, sizeof(buf), "%s%s ", buf, argv[i++]);
+				dd_snprintf(buf, sizeof(buf), "%s%s ", buf,
+					    argv[i++]);
 				flog("%s ", argv[i - 1]);
 			}
 		dd_syslog(LOG_INFO, "%s:%s", __func__, buf);
@@ -372,10 +374,10 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 #endif
 
 	switch (pid = fork()) {
-	case -1:		/* error */
+	case -1: /* error */
 		perror("fork");
 		return errno;
-	case 0:		/* child */
+	case 0: /* child */
 		/*
 		 * Reset signal handlers set for parent process 
 		 */
@@ -441,7 +443,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 		execvp(argv[0], argv);
 		perror(argv[0]);
 		exit(errno);
-	default:		/* parent */
+	default: /* parent */
 		if (ppid) {
 			*ppid = pid;
 			return 0;
@@ -514,15 +516,15 @@ int check_pidfromfile(char *pidfile, char *name)
  * @param       stream  file stream
  * @return      number of items successfully read
  */
-int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
+int safe_fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
 	size_t ret = 0;
 
 	do {
 		clearerr(stream);
-		ret += fread((char *)ptr + (ret * size), size, nmemb - ret, stream);
-	}
-	while (ret < nmemb && ferror(stream) && errno == EINTR);
+		ret += fread((char *)ptr + (ret * size), size, nmemb - ret,
+			     stream);
+	} while (ret < nmemb && ferror(stream) && errno == EINTR);
 
 	return ret;
 }
@@ -535,15 +537,15 @@ int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
  * @param       stream  file stream
  * @return      number of items successfully written
  */
-int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE * stream)
+int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
 	size_t ret = 0;
 
 	do {
 		clearerr(stream);
-		ret += fwrite((char *)ptr + (ret * size), size, nmemb - ret, stream);
-	}
-	while (ret < nmemb && ferror(stream) && errno == EINTR);
+		ret += fwrite((char *)ptr + (ret * size), size, nmemb - ret,
+			      stream);
+	} while (ret < nmemb && ferror(stream) && errno == EINTR);
 
 	return ret;
 }
@@ -613,8 +615,7 @@ static size_t sh_strrspn(const char *s, const char *accept)
 			break;
 		p--;
 		i++;
-	}
-	while (p != s);
+	} while (p != s);
 
 	return i;
 }
@@ -700,9 +701,9 @@ int get_ifname_unit(const char *ifname, int *unit, int *subunit)
 	return 0;
 }
 
-#define WLMBSS_DEV_NAME	"wlmbss"
+#define WLMBSS_DEV_NAME "wlmbss"
 #define WL_DEV_NAME "wl"
-#define WDS_DEV_NAME	"wds"
+#define WDS_DEV_NAME "wds"
 
 #if defined(linux)
 
@@ -717,7 +718,8 @@ int get_ifname_unit(const char *ifname, int *unit, int *subunit)
 	 @param osifname_buf storage for the converted osifname
 	 @param osifname_buf_len length of storage for osifname_buf
 */
-int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_buf_len)
+int nvifname_to_osifname(const char *nvifname, char *osifname_buf,
+			 int osifname_buf_len)
 {
 	char varname[NVRAM_MAX_PARAM_LEN];
 	char *ptr;
@@ -762,7 +764,8 @@ int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_
  * for nvifname_buf 
  */
 
-int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_buf_len)
+int osifname_to_nvifname(const char *osifname, char *nvifname_buf,
+			 int nvifname_buf_len)
 {
 	char varname[NVRAM_MAX_PARAM_LEN];
 	int pri, sec;
@@ -798,15 +801,16 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 	 */
 	for (pri = 0; pri < MAX_NVPARSE; pri++)
 		for (sec = 0; sec < MAX_NVPARSE; sec++) {
-			snprintf(varname, sizeof(varname), "wl%d.%d_ifname", pri, sec);
+			snprintf(varname, sizeof(varname), "wl%d.%d_ifname",
+				 pri, sec);
 			if (nvram_match(varname, (char *)osifname)) {
-				snprintf(nvifname_buf, nvifname_buf_len, "wl%d.%d", pri, sec);
+				snprintf(nvifname_buf, nvifname_buf_len,
+					 "wl%d.%d", pri, sec);
 				return 0;
 			}
 		}
 
 	return -1;
-
 }
 
 #endif
@@ -817,7 +821,8 @@ int strhas(char *list, char *value)
 
 	if (!list)
 		return 0;
-	foreach(word, list, next) {
+	foreach(word, list, next)
+	{
 		if (!strcmp(word, value))
 			return 1;
 	}
@@ -885,8 +890,8 @@ char *psname(int pid, char *buffer, int maxlen)
 		return NULL;
 	*buffer = 0;
 	sprintf(path, "/proc/%d/stat", pid);
-	if ((f_read_string(path, buf, sizeof(buf)) > 4)
-	    && ((p = strrchr(buf, ')')) != NULL)) {
+	if ((f_read_string(path, buf, sizeof(buf)) > 4) &&
+	    ((p = strrchr(buf, ')')) != NULL)) {
 		*p = 0;
 		if (((p = strchr(buf, '(')) != NULL) && (atoi(buf) == pid)) {
 			strlcpy_compat(buffer, p + 1, maxlen);
@@ -895,7 +900,7 @@ char *psname(int pid, char *buffer, int maxlen)
 	return buffer;
 }
 
-int f_exists(const char *path)	// note: anything but a directory
+int f_exists(const char *path) // note: anything but a directory
 {
 	struct stat st;
 	bzero(&st, sizeof(struct stat));
@@ -951,10 +956,12 @@ int check_action(void)
 		}
 #endif
 		else if (!strcmp(buf, "ACT_SW_RESTORE")) {
-			fprintf(stderr, "Receiving restore command from web ...\n");
+			fprintf(stderr,
+				"Receiving restore command from web ...\n");
 			return ACT_SW_RESTORE;
 		} else if (!strcmp(buf, "ACT_HW_RESTORE")) {
-			fprintf(stderr, "Receiving restore command from resetbutton ...\n");
+			fprintf(stderr,
+				"Receiving restore command from resetbutton ...\n");
 			return ACT_HW_RESTORE;
 		} else if (!strcmp(buf, "ACT_NVRAM_COMMIT")) {
 			fprintf(stderr, "Committing nvram now ...\n");
@@ -985,14 +992,13 @@ int file_to_buf(char *path, char *buf, int len)
 
 int ishexit(char c)
 {
-
 	if (strchr("01234567890abcdefABCDEF", c) != (char *)0)
 		return 1;
 
 	return 0;
 }
 
-static int _pidof(const char *name, pid_t ** pids)
+static int _pidof(const char *name, pid_t **pids)
 {
 	const char *p;
 	char *e;
@@ -1012,9 +1018,14 @@ static int _pidof(const char *name, pid_t ** pids)
 			i = strtol(de->d_name, &e, 10);
 			if (*e != 0)
 				continue;
-			if (strncmp(name, psname(i, buf, sizeof(buf)), 15) == 0) {
+			if (strncmp(name, psname(i, buf, sizeof(buf)), 15) ==
+			    0) {
 				if (pids) {
-					if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
+					if ((*pids = realloc(
+						     *pids,
+						     sizeof(pid_t) *
+							     (count + 1))) ==
+					    NULL) {
 						closedir(dir);
 						return -1;
 					}
@@ -1051,8 +1062,7 @@ int killall(const char *name, int sig)
 		r = 0;
 		do {
 			r |= kill(pids[--i], sig);
-		}
-		while (i > 0);
+		} while (i > 0);
 		free(pids);
 		return r;
 	}
@@ -1081,7 +1091,9 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 
 char *dd_strncat(char *dst, size_t len, const char *src)
 {
-    return ((len-1) - strlen(dst)) > 0 ? strncat(dst, src, ((len-1) - strlen(dst))) : dst;
+	return ((len - 1) - strlen(dst)) > 0 ?
+		       strncat(dst, src, ((len - 1) - strlen(dst))) :
+		       dst;
 }
 
 #undef strcat_r
@@ -1102,7 +1114,8 @@ u_int64_t freediskSpace(char *path)
 {
 	struct statfs sizefs;
 
-	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) || (sizefs.f_type == 0x74717368) || (sizefs.f_type == 0x68737174)) {
+	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) ||
+	    (sizefs.f_type == 0x74717368) || (sizefs.f_type == 0x68737174)) {
 		bzero(&sizefs, sizeof(sizefs));
 	}
 
@@ -1111,7 +1124,9 @@ u_int64_t freediskSpace(char *path)
 
 int jffs_mounted(void)
 {
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || \
+	defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) ||                    \
+	(defined(HAVE_RB600) && !defined(HAVE_WDR4900))
 	return 1;
 #endif
 	int ret = nvram_matchi("jffs_mounted", 1);
@@ -1161,7 +1176,6 @@ char *strattach(char *src, char *attach, char *delimiter)
 		strcat(src, delimiter);
 		strcat(src, attach);
 	}
-
 }
 
 char *strspcattach(char *src, char *attach)
@@ -1199,7 +1213,9 @@ static void strcpyto(char *dest, char *src, char *delim, size_t max)
 	if (to)
 		len = to - src;
 	if (max != sizeof(long) && max < len + 1) {
-		dd_logerror("internal", "foreach is used in a improper way, target word is too small");
+		dd_logerror(
+			"internal",
+			"foreach is used in a improper way, target word is too small");
 		len = max - 1;
 	}
 	memcpy(dest, src, len);
@@ -1214,7 +1230,8 @@ char *chomp(char *s)
 	return s;
 }
 
-char *foreach_first(char *foreachwordlist, char *word, char *delimiters, size_t len)
+char *foreach_first(char *foreachwordlist, char *word, char *delimiters,
+		    size_t len)
 {
 	char *next = &foreachwordlist[strspn(foreachwordlist, delimiters)];
 	strcpyto(word, next, delimiters, len);
@@ -1230,7 +1247,8 @@ char *foreach_last(char *next, char *word, char *delimiters, size_t len)
 	return next;
 }
 
-char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, char *delimiters)
+char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short,
+		      char *delimiters)
 {
 	if (!list || !buf)
 		return NULL;
@@ -1268,10 +1286,10 @@ char *getentrybyidx(char *buf, char *list, int idx)
 	return getentrybyidx_d(buf, list, idx, "><:,", "><:-,");
 }
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || \
+	defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 static int rootdetect(char *fname)
 {
-
 	FILE *in = fopen(fname, "rb");
 
 	if (in == NULL)
@@ -1281,16 +1299,14 @@ static int rootdetect(char *fname)
 
 	fread(buf, 4, 1, in);
 	fclose(in);
-	if (!memcmp(&buf[0], "tqsh", 4)
-	    || !memcmp(&buf[0], "hsqt", 4)
-	    || !memcmp(&buf[0], "hsqs", 4)) {
+	if (!memcmp(&buf[0], "tqsh", 4) || !memcmp(&buf[0], "hsqt", 4) ||
+	    !memcmp(&buf[0], "hsqs", 4)) {
 		return 1;
 	}
 	return 0;
-
 }
 
-char *getdisc(void)		// works only for squashfs 
+char *getdisc(void) // works only for squashfs
 {
 	int i, a, n;
 	int nocache = 0;
@@ -1324,7 +1340,6 @@ char *getdisc(void)		// works only for squashfs
 		if (detect < 0)
 			continue;
 		if (detect) {
-
 			asprintf(&ret, "sd%c", i);
 			if (!nocache) {
 				nvram_set("root_disc", ret);
@@ -1390,7 +1405,15 @@ char *getdisc(void)		// works only for squashfs
 
 static void precommit(void)
 {
-#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043)  || defined(HAVE_WRT400) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) || defined(HAVE_WR741) || defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_UBNTM) || defined(DHAVE_IPQ806X)
+#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) ||      \
+	defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) ||  \
+	defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) ||     \
+	defined(HAVE_WR1043) || defined(HAVE_WRT400) ||        \
+	defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || \
+	defined(HAVE_DANUBE) || defined(HAVE_WR741) ||         \
+	defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) ||    \
+	defined(HAVE_WDR4900) || defined(HAVE_VENTANA) ||      \
+	defined(HAVE_UBNTM) || defined(DHAVE_IPQ806X)
 	eval("ledtool", "1");
 #elif HAVE_LSX
 	//nothing
@@ -1453,7 +1476,6 @@ int writevaproc(char *value, char *fmt, ...)
 
 char *get_ipfromsock(int socket, char *ip)
 {
-
 	struct sockaddr_storage addr;
 	socklen_t len = sizeof(addr);
 	getpeername(socket, (struct sockaddr *)&addr, &len);
@@ -1500,9 +1522,9 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 	}
 
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-	ioctl(s, SIOCGIFHWADDR, &ifr);	// must read to update struct
+	ioctl(s, SIOCGIFHWADDR, &ifr); // must read to update struct
 	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
-	ioctl(s, SIOCSIFHWADDR, &ifr);	// rewrite with updated mac
+	ioctl(s, SIOCSIFHWADDR, &ifr); // rewrite with updated mac
 	close(s);
 	return ret;
 }
@@ -1531,12 +1553,10 @@ char *get_hwaddr(const char *name, char *eabuf)
 #ifdef HAVE_MICRO
 void add_blocklist(const char *service, char *ip)
 {
-
 }
 
 void add_blocklist_sock(const char *service, int sock)
 {
-
 }
 
 int check_blocklist(const char *service, char *ip)
@@ -1571,7 +1591,8 @@ static void dump_blocklist(void)
 	fp = fopen("/tmp/blocklist", "wb");
 	if (fp) {
 		while (entry) {
-			fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			fwrite(entry, sizeof(struct blocklist) - sizeof(void *),
+			       1, fp);
 			entry = entry->next;
 		}
 		fclose(fp);
@@ -1597,7 +1618,10 @@ static void init_blocklist(void)
 	if (fp) {
 		while (!feof(fp)) {
 			last->next = malloc(sizeof(*entry));
-			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			int elems =
+				fread(last->next,
+				      sizeof(struct blocklist) - sizeof(void *),
+				      1, fp);
 			if (elems < 1) {
 				free(last->next);
 				last->next = NULL;
@@ -1623,7 +1647,10 @@ void add_blocklist(const char *service, char *ip)
 			if (entry->count > 4) {
 				entry->end = time(NULL) + BLOCKTIME * 60;
 				entry->attempts = 1;
-				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip, BLOCKTIME);
+				dd_loginfo(
+					service,
+					"5 failed login attempts reached. block client %s for %d minutes",
+					ip, BLOCKTIME);
 			}
 			goto end;
 		}
@@ -1640,14 +1667,13 @@ void add_blocklist(const char *service, char *ip)
 	last->next->count = 0;
 	last->next->attempts = 0;
 	last->next->next = NULL;
-      end:;
+end:;
 	dump_blocklist();
 	pthread_mutex_unlock(&mutex_block);
 }
 
 void add_blocklist_sock(const char *service, int conn_fd)
 {
-
 	char ip[INET6_ADDRSTRLEN];
 	get_ipfromsock(conn_fd, ip);
 	add_blocklist(service, ip);
@@ -1669,15 +1695,22 @@ int check_blocklist(const char *service, char *ip)
 			if (entry->end > cur) {
 				// each try from a block client extends by another 5 minutes;
 				entry->attempts++;
-				entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
-				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes", ip, (BLOCKTIME * entry->attempts));
+				entry->end = time(NULL) +
+					     (BLOCKTIME * entry->attempts) * 60;
+				dd_loginfo(
+					service,
+					"client %s is blocked, terminate connection, set new blocktime to %d minutes",
+					ip, (BLOCKTIME * entry->attempts));
 				ret = -1;
 				change = 1;
 				goto end;
 			}
 			//time over, free entry
 			if (entry->count > 4) {
-				dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
+				dd_loginfo(
+					service,
+					"time is over for client %s, so free it\n",
+					&entry->ip[0]);
 				last->next = entry->next;
 				free(entry);
 				change = 1;
@@ -1686,7 +1719,9 @@ int check_blocklist(const char *service, char *ip)
 		}
 		//time over, free entry
 		if (entry->end && entry->end < cur) {
-			dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
+			dd_loginfo(service,
+				   "time is over for client %s, so free it\n",
+				   &entry->ip[0]);
 			last->next = entry->next;
 			free(entry);
 			entry = last->next;
@@ -1696,7 +1731,7 @@ int check_blocklist(const char *service, char *ip)
 		last = entry;
 		entry = entry->next;
 	}
-      end:;
+end:;
 	if (change)
 		dump_blocklist();
 	pthread_mutex_unlock(&mutex_block);
@@ -1707,7 +1742,6 @@ int check_blocklist(const char *service, char *ip)
 
 int check_blocklist_sock(const char *service, int conn_fd)
 {
-
 	char ip[INET6_ADDRSTRLEN];
 	get_ipfromsock(conn_fd, ip);
 	return check_blocklist(service, ip);
@@ -1764,7 +1798,9 @@ void myfree(void *ref, char *func, int line)
 		c_current = NULL;
 	} else {
 		if (!c_current) {
-			fprintf(stderr, "function %s line %d does free a untracked pointer", func, line);
+			fprintf(stderr,
+				"function %s line %d does free a untracked pointer",
+				func, line);
 		}
 	}
 	if (c_current) {
@@ -1778,7 +1814,9 @@ void showmemdebugstat(void)
 	struct MEMENTRY *c_current = &root;
 	while (c_current) {
 		if (c_current->ref && c_current->func)
-			fprintf(stderr, "%s line %d leaks %d bytes\n", currrent->func, c_current->line, c_current->size);
+			fprintf(stderr, "%s line %d leaks %d bytes\n",
+				currrent->func, c_current->line,
+				c_current->size);
 		c_current = c_current->next;
 	}
 }

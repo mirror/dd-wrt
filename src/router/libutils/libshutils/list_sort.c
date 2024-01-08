@@ -19,13 +19,16 @@
  * to chaining of merge() calls: null-terminated, no reserved or
  * sentinel head node, "prev" links not maintained.
  */
-static struct dd_list_head *merge(void *priv, int (*cmp)(void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *a, struct dd_list_head *b)
+static struct dd_list_head *
+merge(void *priv,
+      int (*cmp)(void *priv, struct dd_list_head *a, struct dd_list_head *b),
+      struct dd_list_head *a, struct dd_list_head *b)
 {
 	struct dd_list_head head, *tail = &head;
 
 	while (a && b) {
 		/* if equal, take 'a' -- important for sort stability */
-		if ((*cmp) (priv, a, b) <= 0) {
+		if ((*cmp)(priv, a, b) <= 0) {
 			tail->next = a;
 			a = a->next;
 		} else {
@@ -34,7 +37,7 @@ static struct dd_list_head *merge(void *priv, int (*cmp)(void *priv, struct dd_l
 		}
 		tail = tail->next;
 	}
-	tail->next = a ? : b;
+	tail->next = a ?: b;
 	return head.next;
 }
 
@@ -45,13 +48,17 @@ static struct dd_list_head *merge(void *priv, int (*cmp)(void *priv, struct dd_l
  * prev-link restoration pass, or maintaining the prev links
  * throughout.
  */
-static void merge_and_restore_back_links(void *priv, int (*cmp)(void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *head, struct dd_list_head *a, struct dd_list_head *b)
+static void merge_and_restore_back_links(
+	void *priv,
+	int (*cmp)(void *priv, struct dd_list_head *a, struct dd_list_head *b),
+	struct dd_list_head *head, struct dd_list_head *a,
+	struct dd_list_head *b)
 {
 	struct dd_list_head *tail = head;
 
 	while (a && b) {
 		/* if equal, take 'a' -- important for sort stability */
-		if ((*cmp) (priv, a, b) <= 0) {
+		if ((*cmp)(priv, a, b) <= 0) {
 			tail->next = a;
 			a->prev = tail;
 			a = a->next;
@@ -62,7 +69,7 @@ static void merge_and_restore_back_links(void *priv, int (*cmp)(void *priv, stru
 		}
 		tail = tail->next;
 	}
-	tail->next = a ? : b;
+	tail->next = a ?: b;
 
 	do {
 		/*
@@ -71,7 +78,7 @@ static void merge_and_restore_back_links(void *priv, int (*cmp)(void *priv, stru
 		 * element comparison is needed, so the client's cmp()
 		 * routine can invoke cond_resched() periodically.
 		 */
-		(*cmp) (priv, tail->next, tail->next);
+		(*cmp)(priv, tail->next, tail->next);
 
 		tail->next->prev = tail;
 		tail = tail->next;
@@ -95,11 +102,14 @@ static void merge_and_restore_back_links(void *priv, int (*cmp)(void *priv, stru
  * @b. If @a and @b are equivalent, and their original relative
  * ordering is to be preserved, @cmp must return 0.
  */
-void dd_list_sort(void *priv, struct dd_list_head *head, int (*cmp)(void *priv, struct dd_list_head * a, struct dd_list_head * b))
+void dd_list_sort(void *priv, struct dd_list_head *head,
+		  int (*cmp)(void *priv, struct dd_list_head *a,
+			     struct dd_list_head *b))
 {
-	struct dd_list_head *part[MAX_LIST_LENGTH_BITS + 1];	/* sorted partial lists
+	struct dd_list_head
+		*part[MAX_LIST_LENGTH_BITS + 1]; /* sorted partial lists
 								   -- last slot is a sentinel */
-	int lev;		/* index into part[] */
+	int lev; /* index into part[] */
 	int max_lev = 0;
 	struct dd_list_head *list;
 
@@ -122,7 +132,9 @@ void dd_list_sort(void *priv, struct dd_list_head *head, int (*cmp)(void *priv, 
 		}
 		if (lev > max_lev) {
 			if (unlikely(lev >= ARRAY_SIZE(part) - 1)) {
-				fprintf(stderr, "list passed to" " list_sort() too long for" " efficiency\n");
+				fprintf(stderr, "list passed to"
+						" list_sort() too long for"
+						" efficiency\n");
 				lev--;
 			}
 			max_lev = lev;

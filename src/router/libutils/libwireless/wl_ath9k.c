@@ -44,7 +44,7 @@
 
 #include <linux/nl80211.h>
 
-// dummy TBD 
+// dummy TBD
 int getassoclist_ath9k(char *ifname, unsigned char *list)
 {
 	unsigned int *count = (unsigned int *)list;
@@ -55,7 +55,6 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 	l += 4;
 	count[0] = 0;
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-
 		memcpy(l, wc->etheraddr, 6);
 		l += 6;
 		count[0]++;
@@ -65,7 +64,7 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 	return count[0];
 }
 
-// dummy TBD 
+// dummy TBD
 int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field)
 {
 	struct mac80211_info *mac80211_info;

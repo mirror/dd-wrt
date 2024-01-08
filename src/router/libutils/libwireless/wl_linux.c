@@ -44,7 +44,6 @@ typedef uint8_t u8;
 static int s_socket = -1;
 int getsocket(void)
 {
-
 	if (s_socket < 0) {
 		s_socket = socket(AF_INET, SOCK_DGRAM, 0);
 		if (s_socket < 0)
@@ -89,7 +88,7 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	ioc.needed = 0;
 
 	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
-	ifr.ifr_data = (caddr_t) & ioc;
+	ifr.ifr_data = (caddr_t)&ioc;
 	if ((ret = ioctl(s, SIOCDEVPRIVATE, &ifr)) < 0)
 		if (cmd != WLC_GET_MAGIC)
 			perror(ifr.ifr_name);
@@ -154,10 +153,9 @@ int wl_get_dev_type(char *name, void *buf, int len)
 	/* get device type */
 	bzero(&info, sizeof(info));
 	info.cmd = ETHTOOL_GDRVINFO;
-	ifr.ifr_data = (caddr_t) & info;
+	ifr.ifr_data = (caddr_t)&info;
 	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
 	if ((ret = ioctl(s, SIOCETHTOOL, &ifr)) < 0) {
-
 		/* print a good diagnostic if not superuser */
 		if (errno == EPERM)
 			fprintf(stderr, "wl_get_dev_type");

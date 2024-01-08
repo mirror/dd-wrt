@@ -35,7 +35,7 @@
  * /etc/magic.
  */
 
-int detect_archive(SECTION * section, int level)
+int detect_archive(SECTION *section, int level)
 {
 	int fill, i, stored_sum, sum, en;
 	u4 magic;
@@ -60,7 +60,8 @@ int detect_archive(SECTION * section, int level)
 		else if (buf[i] >= '0' && buf[i] <= '7')
 			stored_sum = (stored_sum * 8) + (buf[i] - '0');
 		else if (buf[i] != ' ') {
-			stored_sum = -1;	/* make it mismatch, since this is an error */
+			stored_sum =
+				-1; /* make it mismatch, since this is an error */
 			break;
 		}
 	}
@@ -100,16 +101,24 @@ int detect_archive(SECTION * section, int level)
 		magic = get_ve_long(en, buf + 24);
 
 		if (magic == 60011) {
-			print_line(level, "dump: 4.1BSD (or older) or Sun OFS, %s", get_ve_name(en));
+			print_line(level,
+				   "dump: 4.1BSD (or older) or Sun OFS, %s",
+				   get_ve_name(en));
 			return 1;
 		} else if (magic == 60012) {
-			print_line(level, "dump: 4.2BSD (or newer) without IDC or Sun NFS, %s", get_ve_name(en));
+			print_line(
+				level,
+				"dump: 4.2BSD (or newer) without IDC or Sun NFS, %s",
+				get_ve_name(en));
 			return 1;
 		} else if (magic == 60013) {
-			print_line(level, "dump: 4.2BSD (or newer) with IDC, %s", get_ve_name(en));
+			print_line(level,
+				   "dump: 4.2BSD (or newer) with IDC, %s",
+				   get_ve_name(en));
 			return 1;
 		} else if (magic == 60014) {
-			print_line(level, "dump: Convex Storage Manager, %s", get_ve_name(en));
+			print_line(level, "dump: Convex Storage Manager, %s",
+				   get_ve_name(en));
 			return 1;
 		}
 	}

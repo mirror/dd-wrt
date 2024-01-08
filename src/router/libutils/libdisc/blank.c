@@ -36,10 +36,10 @@
    2MB of the disk.  This module will need more work. */
 
 #define BLOCK_SIZE (512)
-#define MAX_BLOCKS (2048*2)
-#define MIN_BLOCKS (64*2)
+#define MAX_BLOCKS (2048 * 2)
+#define MIN_BLOCKS (64 * 2)
 
-int detect_blank(SECTION * section, int level)
+int detect_blank(SECTION *section, int level)
 {
 	unsigned char *buffer;
 	int i, j;
@@ -60,7 +60,8 @@ int detect_blank(SECTION * section, int level)
 
 	/* Determine number of blank blocks */
 	for (i = 0; i < max_blocks; i++) {
-		if (get_buffer(section, i * block_size, block_size, (void **)&buffer) < block_size)
+		if (get_buffer(section, i * block_size, block_size,
+			       (void **)&buffer) < block_size)
 			break;
 
 		for (j = 0; j < block_size; j++) {

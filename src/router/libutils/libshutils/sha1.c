@@ -30,30 +30,34 @@ typedef struct sha1_ctx_t {
 	uint32_t wbuf[16];
 } sha1_ctx_t;
 
-#define SHA1_BLOCK_SIZE  64
+#define SHA1_BLOCK_SIZE 64
 #define SHA1_DIGEST_SIZE 20
-#define SHA1_HASH_SIZE   SHA1_DIGEST_SIZE
-#define SHA2_GOOD        0
-#define SHA2_BAD         1
+#define SHA1_HASH_SIZE SHA1_DIGEST_SIZE
+#define SHA2_GOOD 0
+#define SHA2_BAD 1
 
-#define rotl32(x,n)      (((x) << n) | ((x) >> (32 - n)))
+#define rotl32(x, n) (((x) << n) | ((x) >> (32 - n)))
 
-#define SHA1_MASK        (SHA1_BLOCK_SIZE - 1)
+#define SHA1_MASK (SHA1_BLOCK_SIZE - 1)
 
 /* reverse byte order in 32-bit words   */
-#define ch(x,y,z)        ((z) ^ ((x) & ((y) ^ (z))))
-#define parity(x,y,z)    ((x) ^ (y) ^ (z))
-#define maj(x,y,z)       (((x) & (y)) | ((z) & ((x) | (y))))
+#define ch(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
+#define parity(x, y, z) ((x) ^ (y) ^ (z))
+#define maj(x, y, z) (((x) & (y)) | ((z) & ((x) | (y))))
 
 /* A normal version as set out in the FIPS. This version uses   */
 /* partial loop unrolling and is optimised for the Pentium 4    */
-#define rnd(f,k) \
-	do { \
-		t = a; a = rotl32(a,5) + f(b,c,d) + e + k + w[i]; \
-		e = d; d = c; c = rotl32(b, 30); b = t; \
+#define rnd(f, k)                                             \
+	do {                                                  \
+		t = a;                                        \
+		a = rotl32(a, 5) + f(b, c, d) + e + k + w[i]; \
+		e = d;                                        \
+		d = c;                                        \
+		c = rotl32(b, 30);                            \
+		b = t;                                        \
 	} while (0)
 
-static void sha1_compile(sha1_ctx_t * ctx)
+static void sha1_compile(sha1_ctx_t *ctx)
 {
 	uint32_t w[80], i, a, b, c, d, e, t;
 
@@ -95,7 +99,7 @@ static void sha1_compile(sha1_ctx_t * ctx)
 	ctx->hash[4] += e;
 }
 
-void sha1_begin(sha1_ctx_t * ctx)
+void sha1_begin(sha1_ctx_t *ctx)
 {
 	ctx->count[0] = ctx->count[1] = 0;
 	ctx->hash[0] = 0x67452301;
@@ -107,16 +111,16 @@ void sha1_begin(sha1_ctx_t * ctx)
 
 /* SHA1 hash data in an array of bytes into hash buffer and call the        */
 /* hash_compile function as required.                                       */
-void sha1_hash(const void *data, unsigned int length, sha1_ctx_t * ctx)
+void sha1_hash(const void *data, unsigned int length, sha1_ctx_t *ctx)
 {
-	uint32_t pos = (uint32_t) (ctx->count[0] & SHA1_MASK);
+	uint32_t pos = (uint32_t)(ctx->count[0] & SHA1_MASK);
 	uint32_t freeb = SHA1_BLOCK_SIZE - pos;
 	const unsigned char *sp = data;
 
 	if ((ctx->count[0] += length) < length)
 		++(ctx->count[1]);
 
-	while (length >= freeb) {	/* tranfer whole blocks while possible  */
+	while (length >= freeb) { /* tranfer whole blocks while possible  */
 		memcpy(((unsigned char *)ctx->wbuf) + pos, sp, freeb);
 		sp += freeb;
 		length -= freeb;
@@ -128,26 +132,31 @@ void sha1_hash(const void *data, unsigned int length, sha1_ctx_t * ctx)
 	memcpy(((unsigned char *)ctx->wbuf) + pos, sp, length);
 }
 
-void *sha1_end(void *resbuf, sha1_ctx_t * ctx)
+void *sha1_end(void *resbuf, sha1_ctx_t *ctx)
 {
 	/* SHA1 Final padding and digest calculation  */
 #if __BYTE_ORDER == __BIG_ENDIAN
-	static uint32_t mask[4] = { 0x00000000, 0xff000000, 0xffff0000, 0xffffff00 };
-	static uint32_t bits[4] = { 0x80000000, 0x00800000, 0x00008000, 0x00000080 };
+	static uint32_t mask[4] = { 0x00000000, 0xff000000, 0xffff0000,
+				    0xffffff00 };
+	static uint32_t bits[4] = { 0x80000000, 0x00800000, 0x00008000,
+				    0x00000080 };
 #else
-	static uint32_t mask[4] = { 0x00000000, 0x000000ff, 0x0000ffff, 0x00ffffff };
-	static uint32_t bits[4] = { 0x00000080, 0x00008000, 0x00800000, 0x80000000 };
+	static uint32_t mask[4] = { 0x00000000, 0x000000ff, 0x0000ffff,
+				    0x00ffffff };
+	static uint32_t bits[4] = { 0x00000080, 0x00008000, 0x00800000,
+				    0x80000000 };
 #endif
 
 	uint8_t *hval = resbuf;
-	uint32_t i, cnt = (uint32_t) (ctx->count[0] & SHA1_MASK);
+	uint32_t i, cnt = (uint32_t)(ctx->count[0] & SHA1_MASK);
 
 	/* mask out the rest of any partial 32-bit word and then set    */
 	/* the next byte to 0x80. On big-endian machines any bytes in   */
 	/* the buffer will be at the top end of 32 bit words, on little */
 	/* endian machines they will be at the bottom. Hence the AND    */
 	/* and OR masks above are reversed for little endian systems    */
-	ctx->wbuf[cnt >> 2] = (ctx->wbuf[cnt >> 2] & mask[cnt & 3]) | bits[cnt & 3];
+	ctx->wbuf[cnt >> 2] = (ctx->wbuf[cnt >> 2] & mask[cnt & 3]) |
+			      bits[cnt & 3];
 
 	/* we need 9 or more empty positions, one for the padding byte  */
 	/* (above) and eight for the length count.  If there is not     */
@@ -157,10 +166,10 @@ void *sha1_end(void *resbuf, sha1_ctx_t * ctx)
 			ctx->wbuf[15] = 0;
 		sha1_compile(ctx);
 		cnt = 0;
-	} else			/* compute a word index for the empty buffer positions  */
+	} else /* compute a word index for the empty buffer positions  */
 		cnt = (cnt >> 2) + 1;
 
-	while (cnt < 14)	/* and zero pad all but last two positions      */
+	while (cnt < 14) /* and zero pad all but last two positions      */
 		ctx->wbuf[cnt++] = 0;
 
 	/* assemble the eight byte counter in the buffer in big-endian  */
