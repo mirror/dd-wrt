@@ -82,12 +82,10 @@ void show_subscriber_table(webs_t wp, char *type, int which)
 				continue;
 
 			if (!strcmp(type, "user")) {
-				httpd_filter_name(user, new_user,
-						  sizeof(new_user), GET);
+				httpd_filter_name(user, new_user, sizeof(new_user), GET);
 				websWrite(wp, "%s", new_user);
 			} else if (!strcmp(type, "pass")) {
-				httpd_filter_name(pass, new_pass,
-						  sizeof(new_pass), GET);
+				httpd_filter_name(pass, new_pass, sizeof(new_pass), GET);
 				websWrite(wp, "%s", new_pass);
 			}
 			return;
@@ -103,10 +101,8 @@ EJ_VISIBLE void ej_exec_show_subscribers(webs_t wp, int argc, char_t **argv)
 
 	count = nvram_safe_get("milkfish_ddsubscribersnum");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
-		show_caption_pp(
-			wp, NULL, "share.none",
-			"<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- ",
-			" -</td>\n</tr>\n");
+		show_caption_pp(wp, NULL, "share.none", "<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- ",
+				" -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(
@@ -142,12 +138,10 @@ void show_aliases_table(webs_t wp, char *type, int which)
 				continue;
 
 			if (!strcmp(type, "user")) {
-				httpd_filter_name(user, new_user,
-						  sizeof(new_user), GET);
+				httpd_filter_name(user, new_user, sizeof(new_user), GET);
 				websWrite(wp, "%s", new_user);
 			} else if (!strcmp(type, "pass")) {
-				httpd_filter_name(pass, new_pass,
-						  sizeof(new_pass), GET);
+				httpd_filter_name(pass, new_pass, sizeof(new_pass), GET);
 				websWrite(wp, "%s", new_pass);
 			}
 			return;
@@ -163,10 +157,8 @@ EJ_VISIBLE void ej_exec_show_aliases(webs_t wp, int argc, char_t **argv)
 
 	count = nvram_safe_get("milkfish_ddaliasesnum");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
-		show_caption_pp(
-			wp, NULL, "share.none",
-			"<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- ",
-			" -</td>\n</tr>\n");
+		show_caption_pp(wp, NULL, "share.none", "<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- ",
+				" -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(
@@ -207,16 +199,13 @@ void show_registrations_table(webs_t wp, char *type, int which)
 				continue;
 
 			if (!strcmp(type, "user")) {
-				httpd_filter_name(user, new_user,
-						  sizeof(new_user), GET);
+				httpd_filter_name(user, new_user, sizeof(new_user), GET);
 				websWrite(wp, "%s", new_user);
 			} else if (!strcmp(type, "contact")) {
-				httpd_filter_name(contact, new_contact,
-						  sizeof(new_contact), GET);
+				httpd_filter_name(contact, new_contact, sizeof(new_contact), GET);
 				websWrite(wp, "%s", new_contact);
 			} else if (!strcmp(type, "agent")) {
-				httpd_filter_name(agent, new_agent,
-						  sizeof(new_agent), GET);
+				httpd_filter_name(agent, new_agent, sizeof(new_agent), GET);
 				websWrite(wp, "%s", new_agent);
 			}
 
@@ -233,10 +222,8 @@ EJ_VISIBLE void ej_exec_show_registrations(webs_t wp, int argc, char_t **argv)
 
 	count = nvram_safe_get("milkfish_ddactivenum");
 	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
-		show_caption_pp(
-			wp, NULL, "share.none",
-			"<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- ",
-			" -</td>\n</tr>\n");
+		show_caption_pp(wp, NULL, "share.none", "<tr>\n<td colspan=\"4\" class=\"center\" valign=\"middle\">- ",
+				" -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(

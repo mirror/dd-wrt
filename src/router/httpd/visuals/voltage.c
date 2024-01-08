@@ -29,17 +29,12 @@ EJ_VISIBLE void ej_get_voltage(webs_t wp, int argc, char_t **argv)
 #elif HAVE_VENTANA
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
 #else
-	FILE *fp = fopen(
-		"/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt",
-		"rb");
+	FILE *fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt", "rb");
 	if (!fp)
-		fp = fopen(
-			"/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in1_input",
-			"rb");
+		fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in1_input", "rb");
 #endif
 	if (fp == NULL) {
-		websWrite(wp, "%s",
-			  live_translate(wp, "status_router.notavail")); // no
+		websWrite(wp, "%s", live_translate(wp, "status_router.notavail")); // no
 		// i2c
 		// lm75
 		// found

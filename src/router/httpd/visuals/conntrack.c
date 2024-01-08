@@ -152,8 +152,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t **argv)
 		else if (string_search(line, "sctp"))
 			protocol = "SCTP";
 		else
-			protocol =
-				tran_string(buf, sizeof(buf), "share.unknown");
+			protocol = tran_string(buf, sizeof(buf), "share.unknown");
 		websWrite(wp, "<td>%s</td>", protocol);
 
 		// Timeout
@@ -198,8 +197,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t **argv)
 			continue;
 		_dport = atoi(dstport);
 		servp = my_getservbyport(htons(_dport), protocol);
-		websWrite(wp, "<td align=\"right\">%s</td>",
-			  servp ? servp->s_name : dstport);
+		websWrite(wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
 		if (servp) {
 			debug_free(servp->s_proto);
 			debug_free(servp->s_name);

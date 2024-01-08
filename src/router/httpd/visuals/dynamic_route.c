@@ -127,8 +127,7 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t **argv)
 			strcpy(dev, "LAN");
 		if (!strcmp(dev, nvram_safe_get("wan_ifname")))
 			strcpy(dev, "WAN");
-		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s'\n",
-			  blank ? ' ' : ',', net, via, table, scope, metric,
+		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', net, via, table, scope, metric,
 			  getNetworkLabel(wp, dev), src);
 		blank = 0;
 nextline:;
@@ -231,13 +230,9 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t **argv)
 			strcpy(oif, "LAN");
 		if (oif[0] && !strcmp(oif, nvram_safe_get("wan_ifname")))
 			strcpy(oif, "WAN");
-		websWrite(
-			wp,
-			"%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n",
-			blank ? ' ' : ',', priority, not ? "!" : "", from, to,
-			tos, fwmark, ipproto, sport, dport,
-			getNetworkLabel(wp, iif), getNetworkLabel(wp, oif),
-			lookup, nat);
+		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', priority,
+			  not ? "!" : "", from, to, tos, fwmark, ipproto, sport, dport, getNetworkLabel(wp, iif),
+			  getNetworkLabel(wp, oif), lookup, nat);
 		blank = 0;
 nextline:;
 	}

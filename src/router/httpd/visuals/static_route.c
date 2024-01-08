@@ -31,8 +31,7 @@
 #include <net/route.h>
 
 #include <broadcom.h>
-static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page,
-			 char *rules, int index, int any)
+static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page, char *rules, int index, int any)
 {
 	int which;
 	char word[256];
@@ -58,18 +57,12 @@ static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page,
 	bzero(bufferif, 512);
 	getIfList(bufferif, NULL);
 	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n",
-		  nvram_match("lan_ifname", ifnamecopy) ?
-			  "selected=\"selected\"" :
-			  "");
+		  nvram_match("lan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n",
-		  nvram_match("wan_ifname", ifnamecopy) ?
-			  "selected=\"selected\"" :
-			  "");
+		  nvram_match("wan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
 	if (any)
 		websWrite(wp, "<option value=\"any\" %s >ANY</option>\n",
-			  strcmp("any", ifnamecopy) == 0 ?
-				  "selected=\"selected\"" :
-				  "");
+			  strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
 	bzero(word, 256);
 	next = NULL;
 	foreach(word, bufferif, next)
@@ -81,10 +74,7 @@ static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page,
 		if (isbridged(word))
 			continue;
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word,
-			  strcmp(word, ifnamecopy) == 0 ?
-				  "selected=\"selected\"" :
-				  "",
-			  getNetworkLabel(wp, word));
+			  strcmp(word, ifnamecopy) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(wp, word));
 	}
 }
 
@@ -127,14 +117,9 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 
 		foreach(word, sroutename, next)
 		{
-			if (which-- == 0 ||
-			    (next == NULL &&
-			     !strcmp("",
-				     websGetVar(wp, "change_action", "-")))) {
-				find_match_pattern(name, sizeof(name), word,
-						   "$NAME:", "");
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+			if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
+				find_match_pattern(name, sizeof(name), word, "$NAME:", "");
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, new_name);
 				return;
 			}
@@ -145,9 +130,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 	foreach(word, sroute, next)
 	{
 		//if (which-- == 0) {
-		if (which-- == 0 ||
-		    (next == NULL &&
-		     !strcmp("", websGetVar(wp, "change_action", "-")))) {
+		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 			GETENTRYBYIDX_DEL(s_flags, word, 6, ":");
 			int flags = 0;
 			if (s_flags)
@@ -160,9 +143,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 			if (!strcmp(arg, "ipaddr")) {
 				GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
 				if (ipaddr) {
-					websWrite(wp, "%d",
-						  get_single_ip(ipaddr,
-								atoi(argv[1])));
+					websWrite(wp, "%d", get_single_ip(ipaddr, atoi(argv[1])));
 					return;
 				}
 			} else if (!strcmp(arg, "netmask")) {
@@ -174,9 +155,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 			} else if (!strcmp(arg, "gateway")) {
 				GETENTRYBYIDX_DEL(gateway, word, 2, ":");
 				if (gateway) {
-					websWrite(wp, "%d",
-						  get_single_ip(gateway,
-								atoi(argv[1])));
+					websWrite(wp, "%d", get_single_ip(gateway, atoi(argv[1])));
 					return;
 				}
 			} else if (!strcmp(arg, "metric")) {
@@ -245,17 +224,14 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 			} else if (!strcmp(arg, "src")) {
 				GETENTRYBYIDX_DEL(src, word, 7, ":");
 				if (src) {
-					websWrite(wp, "%d",
-						  get_single_ip(src,
-								atoi(argv[1])));
+					websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
 					return;
 				}
 			}
 			break;
 		}
 	}
-	if (!strcmp(arg, "ipaddr") || !strcmp(arg, "netmask") ||
-	    !strcmp(arg, "src") || !strcmp(arg, "gateway"))
+	if (!strcmp(arg, "ipaddr") || !strcmp(arg, "netmask") || !strcmp(arg, "src") || !strcmp(arg, "gateway"))
 		websWrite(wp, "0");
 	else if (!strcmp(arg, "metric"))
 		websWrite(wp, "0");
@@ -289,14 +265,9 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 
 		foreach(word, sroutename, next)
 		{
-			if (which-- == 0 ||
-			    (next == NULL &&
-			     !strcmp("",
-				     websGetVar(wp, "change_action", "-")))) {
-				find_match_pattern(name, sizeof(name), word,
-						   "$NAME:", "");
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+			if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
+				find_match_pattern(name, sizeof(name), word, "$NAME:", "");
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, new_name);
 				return;
 			}
@@ -307,9 +278,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 	foreach(word, sroute, next)
 	{
 		//if (which-- == 0) {
-		if (which-- == 0 ||
-		    (next == NULL &&
-		     !strcmp("", websGetVar(wp, "change_action", "-")))) {
+		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 			GETENTRYBYIDX_DEL(s_flags, word, 0, ":");
 			int flags = 0;
 			if (s_flags)
@@ -398,18 +367,14 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 			} else if (!strcmp(arg, "from")) {
 				GETENTRYBYIDX_DEL(from, word, 1, ":");
 				if (from) {
-					websWrite(wp, "%d",
-						  get_single_ip(from,
-								atoi(argv[1])));
+					websWrite(wp, "%d", get_single_ip(from, atoi(argv[1])));
 
 					return;
 				}
 			} else if (!strcmp(arg, "to")) {
 				GETENTRYBYIDX_DEL(to, word, 2, ":");
 				if (to) {
-					websWrite(wp, "%d",
-						  get_single_ip(to,
-								atoi(argv[1])));
+					websWrite(wp, "%d", get_single_ip(to, atoi(argv[1])));
 					return;
 				}
 			} else if (!strcmp(arg, "priority")) {
@@ -434,11 +399,9 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 						websWrite(wp, fwmark);
 					else {
 						if (slash)
-							websWrite(wp,
-								  slash + 1);
+							websWrite(wp, slash + 1);
 						else
-							websWrite(wp,
-								  "0xffffffff");
+							websWrite(wp, "0xffffffff");
 					}
 					return;
 				}
@@ -455,8 +418,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 					return;
 				}
 			} else if (!strcmp(arg, "suppress_prefixlength")) {
-				GETENTRYBYIDX_DEL(suppress_prefixlength, word,
-						  8, ":");
+				GETENTRYBYIDX_DEL(suppress_prefixlength, word, 8, ":");
 				if (suppress_prefixlength) {
 					websWrite(wp, suppress_prefixlength);
 					return;
@@ -476,9 +438,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 			} else if (!strcmp(arg, "nat")) {
 				GETENTRYBYIDX_DEL(nat, word, 10, ":");
 				if (nat) {
-					websWrite(wp, "%d",
-						  get_single_ip(nat,
-								atoi(argv[1])));
+					websWrite(wp, "%d", get_single_ip(nat, atoi(argv[1])));
 					return;
 				}
 			} else if (!strcmp(arg, "type")) {
@@ -513,9 +473,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 				GETENTRYBYIDX_DEL(ipproto, word, 12, ":");
 				if (ipproto) {
 					if (!strcmp(argv[1], ipproto))
-						websWrite(
-							wp,
-							"selected=\"selected\"");
+						websWrite(wp, "selected=\"selected\"");
 					return;
 				}
 			}
@@ -576,30 +534,17 @@ EJ_VISIBLE void ej_static_route_table(webs_t wp, int argc, char_t **argv)
 			foreach(word, sroutename, next)
 			{
 				if (which-- == 0) {
-					find_match_pattern(name, sizeof(name),
-							   word, "$NAME:", " ");
-					httpd_filter_name(name, new_name,
-							  sizeof(new_name),
-							  GET);
-					if (next == NULL &&
-					    !strcmp("",
-						    websGetVar(wp,
-							       "change_action",
-							       "-"))) {
+					find_match_pattern(name, sizeof(name), word, "$NAME:", " ");
+					httpd_filter_name(name, new_name, sizeof(new_name), GET);
+					if (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-"))) {
 						page = i;
 					}
 				}
 			}
 			snprintf(buf, sizeof(buf), "(%s)", new_name);
 
-			websWrite(
-				wp,
-				"\t\t<option value=\"%d\" %s> %d %s</option>\n",
-				i,
-				((i == page) && !tmp) ?
-					"selected=\"selected\"" :
-					"",
-				i + 1, buf);
+			websWrite(wp, "\t\t<option value=\"%d\" %s> %d %s</option>\n", i,
+				  ((i == page) && !tmp) ? "selected=\"selected\"" : "", i + 1, buf);
 
 			if (i == page)
 				tmp = 1;
@@ -634,30 +579,17 @@ EJ_VISIBLE void ej_pbr_rule_table(webs_t wp, int argc, char_t **argv)
 			foreach(word, srulename, next)
 			{
 				if (which-- == 0) {
-					find_match_pattern(name, sizeof(name),
-							   word, "$NAME:", " ");
-					httpd_filter_name(name, new_name,
-							  sizeof(new_name),
-							  GET);
-					if (next == NULL &&
-					    !strcmp("",
-						    websGetVar(wp,
-							       "change_action",
-							       "-"))) {
+					find_match_pattern(name, sizeof(name), word, "$NAME:", " ");
+					httpd_filter_name(name, new_name, sizeof(new_name), GET);
+					if (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-"))) {
 						page = i;
 					}
 				}
 			}
 			snprintf(buf, sizeof(buf), "(%s)", new_name);
 
-			websWrite(
-				wp,
-				"\t\t<option value=\"%d\" %s> %d %s</option>\n",
-				i,
-				((i == page) && !tmp) ?
-					"selected=\"selected\"" :
-					"",
-				i + 1, buf);
+			websWrite(wp, "\t\t<option value=\"%d\" %s> %d %s</option>\n", i,
+				  ((i == page) && !tmp) ? "selected=\"selected\"" : "", i + 1, buf);
 
 			if (i == page)
 				tmp = 1;

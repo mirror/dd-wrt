@@ -1,6 +1,5 @@
 #include <libiptc/libip4tc.c>
-void getpacketcounts(char *table, char *chain, unsigned long long *counts,
-		     int len)
+void getpacketcounts(char *table, char *chain, unsigned long long *counts, int len)
 {
 	int c = 0;
 	const char *this;
@@ -8,8 +7,7 @@ void getpacketcounts(char *table, char *chain, unsigned long long *counts,
 		return;
 	iptc_handle_t handle = iptc_init(table);
 
-	for (this = iptc_first_chain(&handle); this;
-	     this = iptc_next_chain(&handle)) {
+	for (this = iptc_first_chain(&handle); this; this = iptc_next_chain(&handle)) {
 		const struct ipt_entry *i;
 		if (strcmp(chain, this))
 			continue;
@@ -37,8 +35,7 @@ unsigned long long getpackettotal(char *table, char *chain)
 	const char *this;
 	iptc_handle_t handle = iptc_init(table);
 
-	for (this = iptc_first_chain(&handle); this;
-	     this = iptc_next_chain(&handle)) {
+	for (this = iptc_first_chain(&handle); this; this = iptc_next_chain(&handle)) {
 		const struct ipt_entry *i;
 		if (strcmp(chain, this))
 			continue;

@@ -33,11 +33,9 @@
 
 #include <samba3.h>
 #include "fs_common.h"
-void show_caption_pp(webs_t wp, const char *class, const char *caption,
-		     const char *pre, const char *post);
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 void show_caption_simple(webs_t wp, const char *caption);
-void show_caption(webs_t wp, const char *class, const char *caption,
-		  const char *ext);
+void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
 
 EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t **argv)
 {
@@ -54,43 +52,28 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t **argv)
 		rows++;
 	}
 	rows--;
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"samba_shares_count\" id=\"samba_shares_count\" value=\"%d\">\n",
-		rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"samba_shares_count\" id=\"samba_shares_count\" value=\"%d\">\n", rows);
 	rows = 5;
 
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"samba_shares_count_limit\" id=\"samba_shares_count_limit\" value=\"%d\">\n",
-		rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"samba_shares_count_limit\" id=\"samba_shares_count_limit\" value=\"%d\">\n",
+		  rows);
 	rows = 0;
 
 	// table header
-	websWrite(
-		wp,
-		"<table id=\"samba_shares\" class=\"table\" summary=\"samba share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares",
-			"<tbody><tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
-	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>",
-			"</th>\n");
-	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>",
-			"</th>\n");
-	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>",
-			"</th>\n");
-	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>",
-			"</th>\n");
-	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>",
-			"</th>\n");
-	websWrite(
-		wp,
-		"<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "<table id=\"samba_shares\" class=\"table\" summary=\"samba share table\">\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
+	websWrite(wp,
+		  "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 		if (rows == 0) {
 			// dummy entry
-			sprintf(buffer, "%s",
-				"id=\"samba_shares_row_template\" style=\"display: none;\"");
+			sprintf(buffer, "%s", "id=\"samba_shares_row_template\" style=\"display: none;\"");
 			//sprintf(number, '\0');
 			number[0] = '\0';
 		} else {
@@ -111,19 +94,13 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
 		for (current = fs; current; current = current->next) {
-			if (strcmp(current->fstype, "squashfs") &&
-			    strcmp(current->fstype, "rootfs") &&
-			    strcmp(current->fstype, "proc") &&
-			    strcmp(current->fstype, "sysfs") &&
-			    strcmp(current->fstype, "sysdebug") &&
-			    strcmp(current->fstype, "debugfs") &&
-			    strcmp(current->fstype, "ramfs") &&
-			    strcmp(current->fstype, "tmpfs") &&
-			    strcmp(current->fstype, "devpts") &&
-			    strcmp(current->fstype, "usbfs")) {
+			if (strcmp(current->fstype, "squashfs") && strcmp(current->fstype, "rootfs") &&
+			    strcmp(current->fstype, "proc") && strcmp(current->fstype, "sysfs") &&
+			    strcmp(current->fstype, "sysdebug") && strcmp(current->fstype, "debugfs") &&
+			    strcmp(current->fstype, "ramfs") && strcmp(current->fstype, "tmpfs") &&
+			    strcmp(current->fstype, "devpts") && strcmp(current->fstype, "usbfs")) {
 				// adjust the rights
-				if (/*rows == 0 || */ !strcmp(current->mp,
-							      "")) {
+				if (/*rows == 0 || */ !strcmp(current->mp, "")) {
 					sprintf(buffer, "%s", "");
 				} else if (!strcmp(current->perms, "rw")) {
 					sprintf(buffer, "%s", "\"rw\",\"ro\"");
@@ -140,10 +117,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t **argv)
 					wp,
 					"<option value=\"%s\" rel='{\"fstype\":\"%s\",\"perms\":[%s],\"avail\":1}' %s>%s</option>\n",
 					current->mp, current->fstype, buffer,
-					strcmp(current->mp, cs->mp) ?
-						"" :
-						"selected=\"selected\"",
-					current->mp);
+					strcmp(current->mp, cs->mp) ? "" : "selected=\"selected\"", current->mp);
 			}
 		}
 		// fs not available -> add stored entry for display
@@ -168,27 +142,18 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t **argv)
 			"<td style=\"width: 25px; vertical-align: middle;\" class=\"center\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
 			number, number, cs->public == 1 ? "checked" : "");
 		websWrite(wp, "<td>\n");
-		websWrite(
-			wp,
-			"<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
-			number, number, !strcmp(perms, "") ? " disabled" : "");
+		websWrite(wp,
+			  "<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
+			  number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
-			websWrite(wp, "<option value=\"rw\"%s>",
-				  !strcmp(cs->access_perms, "rw") ?
-					  " selected" :
-					  "");
+			websWrite(wp, "<option value=\"rw\"%s>", !strcmp(cs->access_perms, "rw") ? " selected" : "");
 			show_caption(wp, NULL, "nas.perm_rw", "</option>\n");
-			websWrite(wp, "<option value=\"ro\"%s>",
-				  !strcmp(cs->access_perms, "ro") ?
-					  " selected" :
-					  "");
+			websWrite(wp, "<option value=\"ro\"%s>", !strcmp(cs->access_perms, "ro") ? " selected" : "");
 			show_caption(wp, NULL, "nas.perm_ro", "</option>\n");
 		}
 		websWrite(wp, "</select>\n");
-		websWrite(
-			wp,
-			"<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n",
-			rows, cs->access_perms);
+		websWrite(wp, "<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n", rows,
+			  cs->access_perms);
 		websWrite(wp, "</td>\n");
 		websWrite(
 			wp,
@@ -231,46 +196,32 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t **argv)
 		rows++;
 	}
 	rows--;
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"samba_users_count\" id=\"samba_users_count\" value=\"%d\">\n",
-		rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"samba_users_count\" id=\"samba_users_count\" value=\"%d\">\n", rows);
 	rows = 10;
 
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"samba_users_count_limit\" id=\"samba_users_count_limit\" value=\"%d\">\n",
-		rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"samba_users_count_limit\" id=\"samba_users_count_limit\" value=\"%d\">\n",
+		  rows);
 	rows = 0;
 
 	// table header
-	websWrite(
-		wp,
-		"<table id=\"samba_users\" class=\"table\" summary=\"samba user table\">\n");
+	websWrite(wp, "<table id=\"samba_users\" class=\"table\" summary=\"samba user table\">\n");
 
-	show_caption_pp(wp, NULL, "service.samba3_users",
-			"<tbody><tr><th colspan=\"6\">", "</th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_users", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "<tr>\n");
-	websWrite(
-		wp,
-		"<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
-	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:200px;\">",
-			"</th>\n");
-	show_caption_pp(wp, NULL, "service.samba3_user_shares",
-			"<th width=\"20%%\">", "</th>\n");
+	websWrite(wp, "<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
+	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:200px;\">", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_user_shares", "<th width=\"20%%\">", "</th>\n");
 	websWrite(wp, "<th class=\"center\">Samba</th>\n");
 	websWrite(wp, "<th class=\"center\">FTP</th>\n");
 
-	websWrite(
-		wp,
-		"<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp,
+		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 
 	for (cu = samba3users; cu; cu = cunext) {
 		if (rows == 0) {
 			// dummy entry
-			sprintf(buffer, "%s",
-				"id=\"n_smbuser_template\" style=\"display: none;\"");
+			sprintf(buffer, "%s", "id=\"n_smbuser_template\" style=\"display: none;\"");
 			//sprintf(number, '\0');
 			number[0] = '\0';
 		} else {
@@ -308,21 +259,11 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t **argv)
 				wp,
 				"<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp;</span></div>\n");
 			websWrite(wp, "</td>\n");
-			websWrite(
-				wp,
-				"<td style=\"width: 25px;\" class=\"center\">\n");
-			websWrite(
-				wp,
-				"<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\">\n",
-				number);
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
+			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\">\n", number);
 			websWrite(wp, "</td>\n");
-			websWrite(
-				wp,
-				"<td style=\"width: 25px;\" class=\"center\">\n");
-			websWrite(
-				wp,
-				"<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\">\n",
-				number);
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
+			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\">\n", number);
 			websWrite(wp, "</td>\n");
 		} else {
 			websWrite(wp, "<td id=\"n_smbuser_shareaccess\">\n");
@@ -330,8 +271,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t **argv)
 			for (cs = samba3shares; cs; cs = cs->next) {
 				buffer[0] = '\0';
 				for (csu = cs->users; csu; csu = csu->next) {
-					if (!strcmp(csu->username,
-						    cu->username)) {
+					if (!strcmp(csu->username, cu->username)) {
 						//fprintf( stderr, "[USERSHARES] %s: %s\n", cs->label, csu->username );
 						sprintf(buffer, " checked");
 					}
@@ -340,31 +280,19 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t **argv)
 					websWrite(
 						wp,
 						"<div id=\"n_smbuser_share\"><input type=\"checkbox\" name=\"smbshare_%d_user_%d\"%s value=\"1\">&nbsp;<span>%s</span></div>\n",
-						usershares, rows, buffer,
-						cs->label);
+						usershares, rows, buffer, cs->label);
 				}
 				usershares++;
 			}
 			websWrite(wp, "</td>\n");
-			websWrite(
-				wp,
-				"<td style=\"width: 25px;\" class=\"center\">\n");
-			websWrite(
-				wp,
-				"<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>\n",
-				number,
-				cu->sharetype & SHARETYPE_SAMBA ? "checked" :
-								  "");
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
+			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>\n", number,
+				  cu->sharetype & SHARETYPE_SAMBA ? "checked" : "");
 			websWrite(wp, "</td>\n");
 
-			websWrite(
-				wp,
-				"<td style=\"width: 25px;\" class=\"center\">\n");
-			websWrite(
-				wp,
-				"<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>\n",
-				number,
-				cu->sharetype & SHARETYPE_FTP ? "checked" : "");
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
+			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>\n", number,
+				  cu->sharetype & SHARETYPE_FTP ? "checked" : "");
 			websWrite(wp, "</td>\n");
 		}
 

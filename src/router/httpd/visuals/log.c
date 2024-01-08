@@ -44,8 +44,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 
 	time_t tm;
 	char *verdict, *src, *dst, *proto, *spt, *dpt, *in, *out;
-	char src_old[32] = "", dpt_old[32] = "", dst_old[32] = "",
-	     proto_old[32] = "";
+	char src_old[32] = "", dpt_old[32] = "", dst_old[32] = "", proto_old[32] = "";
 
 	int _dport, _sport;
 	char *_proto = NULL;
@@ -138,70 +137,49 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 		servp = my_getservbyport(htons(_dport), proto);
 
 		if (!strcmp(type, "incoming")) {
-			if ((!strncmp(in, "ppp", 3) &&
-			     !strncmp(in, wan_if, 3)) ||
-			    (!strcmp(in, wan_if))) {
-				if (!strcmp(src, src_old) &&
-				    !strcmp(dpt, dpt_old) &&
-				    !strcmp(proto, proto_old)) {
+			if ((!strncmp(in, "ppp", 3) && !strncmp(in, wan_if, 3)) || (!strcmp(in, wan_if))) {
+				if (!strcmp(src, src_old) && !strcmp(dpt, dpt_old) && !strcmp(proto, proto_old)) {
 					continue; // skip same record
 				} else {
-					strlcpy(src_old, src,
-						sizeof(src_old) - 1);
-					strlcpy(dpt_old, dpt,
-						sizeof(dpt_old) - 1);
-					strlcpy(proto_old, proto,
-						sizeof(proto_old) - 1);
+					strlcpy(src_old, src, sizeof(src_old) - 1);
+					strlcpy(dpt_old, dpt, sizeof(dpt_old) - 1);
+					strlcpy(proto_old, proto, sizeof(proto_old) - 1);
 				}
 
 				websWrite(
 					wp,
 					"<tr height=\"1\">\n<td>%s</td>\n<td class=\"center\">%s</td>\n<td class=\"center\">%s</td>\n<td class=\"center\">%s</td>\n</tr>\n",
-					src, proto, servp ? servp->s_name : dpt,
-					verdict);
+					src, proto, servp ? servp->s_name : dpt, verdict);
 			}
 		} else if (!strcmp(type, "outgoing")) {
 			if (!strncmp(in, lan_if, 3) &&
-			    ((!strncmp(out, "ppp", 3) &&
-			      !strncmp(out, wan_if, 3)) ||
-			     (!strcmp(out, wan_if)))) {
+			    ((!strncmp(out, "ppp", 3) && !strncmp(out, wan_if, 3)) || (!strcmp(out, wan_if)))) {
 				if (_dport == 53) {
 					continue; // skip DNS
 				}
 
-				if (!strcmp(src, src_old) &&
-				    !strcmp(dst, dst_old) &&
-				    !strcmp(proto, proto_old) &&
+				if (!strcmp(src, src_old) && !strcmp(dst, dst_old) && !strcmp(proto, proto_old) &&
 				    !strcmp(dpt, dpt_old)) {
 					continue; // skip same record
 				} else {
-					strlcpy(src_old, src,
-						sizeof(src_old) - 1);
-					strlcpy(dst_old, dst,
-						sizeof(dst_old) - 1);
-					strlcpy(proto_old, proto,
-						sizeof(proto_old) - 1);
-					strlcpy(dpt_old, dpt,
-						sizeof(dpt_old) - 1);
+					strlcpy(src_old, src, sizeof(src_old) - 1);
+					strlcpy(dst_old, dst, sizeof(dst_old) - 1);
+					strlcpy(proto_old, proto, sizeof(proto_old) - 1);
+					strlcpy(dpt_old, dpt, sizeof(dpt_old) - 1);
 				}
 
 				websWrite(
 					wp,
 					"<tr height=\"1\">\n<td>%s</td>\n<td>%s</td>\n<td class=\"center\">%s</td>\n<td>%s</td>\n<td class=\"center\">%s</td>\n</tr>\n",
-					src, dst, proto,
-					servp ? servp->s_name : dpt, verdict);
+					src, dst, proto, servp ? servp->s_name : dpt, verdict);
 			}
 		} else if (!strcmp(type, "all")) {
 			int dir = 0;
 
-			if ((!strncmp(out, "ppp", 3) &&
-			     !strncmp(out, wan_if, 3)) ||
-			    (!strcmp(out, wan_if))) // incoming
+			if ((!strncmp(out, "ppp", 3) && !strncmp(out, wan_if, 3)) || (!strcmp(out, wan_if))) // incoming
 				dir = 1;
 			else if (!strncmp(in, lan_if, 3) &&
-				 ((!strncmp(out, "ppp", 3) &&
-				   !strncmp(out, wan_if, 3)) ||
-				  (!strcmp(out, wan_if)))) // outgoing
+				 ((!strncmp(out, "ppp", 3) && !strncmp(out, wan_if, 3)) || (!strcmp(out, wan_if)))) // outgoing
 				dir = 2;
 			else
 				continue;
@@ -210,8 +188,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 				continue; // skip DNS
 			}
 
-			if (!strcmp(src, src_old) && !strcmp(dpt, dpt_old) &&
-			    !strcmp(dst, dst_old)) {
+			if (!strcmp(src, src_old) && !strcmp(dpt, dpt_old) && !strcmp(dst, dst_old)) {
 				continue; // skip same record
 			} else {
 				strlcpy(src_old, src, sizeof(src_old) - 1);
@@ -219,8 +196,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 				strlcpy(dst_old, dst, sizeof(dst_old) - 1);
 			}
 
-			websWrite(wp, "%c'%s','%s','%s','%s','%d'\n",
-				  count ? ',' : ' ', proto, src, dst,
+			websWrite(wp, "%c'%s','%s','%s','%s','%d'\n", count ? ',' : ' ', proto, src, dst,
 				  servp ? servp->s_name : dpt, dir);
 			count++;
 		}

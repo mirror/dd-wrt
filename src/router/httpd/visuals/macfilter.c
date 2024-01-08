@@ -22,13 +22,10 @@
 static void show_macfilter_if(webs_t wp, char *ifname)
 {
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s SSID [%s] - %s</legend>\n",
-		  getNetworkLabel(wp, IFMAP(ifname)),
-		  nvram_nget("%s_ssid", ifname),
+	websWrite(wp, "<legend>%s SSID [%s] - %s</legend>\n", getNetworkLabel(wp, IFMAP(ifname)), nvram_nget("%s_ssid", ifname),
 		  live_translate(wp, "wl_mac.legend"));
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n",
-		  live_translate(wp, "wl_mac.label"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate(wp, "wl_mac.label"));
 	char macmode[32];
 
 	sprintf(macmode, "%s_macmode1", ifname);
@@ -45,43 +42,26 @@ static void show_macfilter_if(webs_t wp, char *ifname)
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\" />%s&nbsp;\n",
-		macmode,
-		nvram_default_match(macmode, "other", "disabled") ?
-			"checked=\"checked\"" :
-			"",
-		id, mycopy);
+		macmode, nvram_default_match(macmode, "other", "disabled") ? "checked=\"checked\"" : "", id, mycopy);
 	strcpy(mycopy, live_translate(wp, "share.disable"));
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"disabled\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', false)\" />%s\n",
-		macmode,
-		nvram_default_match(macmode, "disabled", "disabled") ?
-			"checked=\"checked\"" :
-			"",
-		id, mycopy);
+		macmode, nvram_default_match(macmode, "disabled", "disabled") ? "checked=\"checked\"" : "", id, mycopy);
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\" id=\"%s\">\n", id);
-	websWrite(wp, "<div class=\"label\">%s<br />&nbsp;</div>\n",
-		  live_translate(wp, "wl_mac.label2"));
+	websWrite(wp, "<div class=\"label\">%s<br />&nbsp;</div>\n", live_translate(wp, "wl_mac.label2"));
 	sprintf(macmode, "%s_macmode", ifname);
 	if (!nvram_exists(macmode))
 		nvram_set(macmode, "disabled");
 	strcpy(mycopy, live_translate(wp, "wl_mac.deny"));
 	nvram_default_get(macmode, "deny");
-	websWrite(
-		wp,
-		"<input class=\"spaceradio\" type=\"radio\" value=\"deny\" name=\"%s\" %s />%s&nbsp;\n",
-		macmode,
-		nvram_invmatch(macmode, "allow") ? "checked=\"checked\"" : "",
-		mycopy);
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"deny\" name=\"%s\" %s />%s&nbsp;\n", macmode,
+		  nvram_invmatch(macmode, "allow") ? "checked=\"checked\"" : "", mycopy);
 	websWrite(wp, "<br />\n");
 	strcpy(mycopy, live_translate(wp, "wl_mac.allow"));
-	websWrite(
-		wp,
-		"<input class=\"spaceradio\" type=\"radio\" value=\"allow\" name=\"%s\" %s />%s\n",
-		macmode,
-		nvram_match(macmode, "allow") ? "checked=\"checked\"" : "",
-		mycopy);
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"allow\" name=\"%s\" %s />%s\n", macmode,
+		  nvram_match(macmode, "allow") ? "checked=\"checked\"" : "", mycopy);
 	websWrite(wp, "</div><br />\n");
 	websWrite(wp, "<div class=\"center\">\n");
 	websWrite(wp, "<script type=\"text/javascript\">\n");
@@ -112,13 +92,8 @@ EJ_VISIBLE void ej_list_mac_layers(webs_t wp, int argc, char_t **argv)
 		sprintf(id, "idmac%s", devs);
 		rep(id, '.', 'X');
 		rep(macmode, '.', 'X');
-		websWrite(
-			wp,
-			"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",
-			macmode, id,
-			nvram_default_match(macmode, "other", "disabled") ?
-				"other" :
-				"disabled");
+		websWrite(wp, "show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n", macmode, id,
+			  nvram_default_match(macmode, "other", "disabled") ? "other" : "disabled");
 	}
 
 #else
@@ -136,13 +111,8 @@ EJ_VISIBLE void ej_list_mac_layers(webs_t wp, int argc, char_t **argv)
 		sprintf(id, "idmac%s", devs);
 		rep(id, '.', 'X');
 		rep(macmode, '.', 'X');
-		websWrite(
-			wp,
-			"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",
-			macmode, id,
-			nvram_default_match(macmode, "other", "disabled") ?
-				"other" :
-				"disabled");
+		websWrite(wp, "show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n", macmode, id,
+			  nvram_default_match(macmode, "other", "disabled") ? "other" : "disabled");
 		// show_macfilter_if (wp, devs);
 		char vif[32];
 
@@ -156,14 +126,8 @@ EJ_VISIBLE void ej_list_mac_layers(webs_t wp, int argc, char_t **argv)
 			sprintf(id, "idmac%s", var);
 			rep(id, '.', 'X');
 			rep(macmode, '.', 'X');
-			websWrite(
-				wp,
-				"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",
-				macmode, id,
-				nvram_default_match(macmode, "other",
-						    "disabled") ?
-					"other" :
-					"disabled");
+			websWrite(wp, "show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n", macmode, id,
+				  nvram_default_match(macmode, "other", "disabled") ? "other" : "disabled");
 		}
 	}
 

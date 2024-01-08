@@ -50,12 +50,10 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 				continue;
 
 			if (!strcmp(type, "user")) {
-				httpd_filter_name(user, new_user,
-						  sizeof(new_user), GET);
+				httpd_filter_name(user, new_user, sizeof(new_user), GET);
 				websWrite(wp, "%s", new_user);
 			} else if (!strcmp(type, "pass")) {
-				httpd_filter_name(pass, new_pass,
-						  sizeof(new_pass), GET);
+				httpd_filter_name(pass, new_pass, sizeof(new_pass), GET);
 				websWrite(wp, "%s", new_pass);
 			} else if (!strcmp(type, "ip"))
 				websWrite(wp, "%s", ip);
@@ -99,15 +97,9 @@ EJ_VISIBLE void ej_show_chaps(webs_t wp, int argc, char_t **argv)
 			"\" /></td>\n<td>\n<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 			i);
 		show_chaps_table(wp, "pass", i);
-		websWrite(
-			wp,
-			"\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"",
-			i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"", i);
 		show_chaps_table(wp, "ip", i);
-		websWrite(
-			wp,
-			"\" /></td>\n<td class=\"center\">\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
-			i);
+		websWrite(wp, "\" /></td>\n<td class=\"center\">\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		show_chaps_table(wp, "enable", i);
 		websWrite(wp, " /></td>\n</tr>\n");
 	}

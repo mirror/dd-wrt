@@ -62,8 +62,7 @@ EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t **argv)
 						int len = strlen(s);
 						char *eqloc;
 
-						if (len > 0 &&
-						    s[len - 1] == '\n') {
+						if (len > 0 && s[len - 1] == '\n') {
 							s[len - 1] = '\0';
 						}
 
@@ -74,9 +73,7 @@ EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t **argv)
 							v = eqloc + 1;
 
 							if (!strcmp(key, s)) {
-								websWrite(wp,
-									  "%s",
-									  v);
+								websWrite(wp, "%s", v);
 								break;
 							}
 						}

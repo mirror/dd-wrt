@@ -52,35 +52,16 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 				rgpio = nvram_nget("gpio%s", var);
 				gpio_name = nvram_nget("gpio%s_name", var);
 				// enable
-				websWrite(wp,
-					  "<div class=\"label\">%s (%s)</div>",
-					  nvgpio, gpio_name);
-				websWrite(
-					wp,
-					"<input type=text maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",
-					gpio_new_name, gpio_new_name,
-					gpio_name);
-				websWrite(
-					wp,
-					"<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" %s />\n",
-					nvgpio,
-					nvram_match(nvgpio, "1") ?
-						"checked=\"checked\"" :
-						"");
-				websWrite(
-					wp,
-					"<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
+				websWrite(wp, "<div class=\"label\">%s (%s)</div>", nvgpio, gpio_name);
+				websWrite(wp, "<input type=text maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",
+					  gpio_new_name, gpio_new_name, gpio_name);
+				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" %s />\n", nvgpio,
+					  nvram_match(nvgpio, "1") ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
 				//disable
-				websWrite(
-					wp,
-					"<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" %s />\n",
-					nvgpio,
-					nvram_match(nvgpio, "0") ?
-						"checked=\"checked\"" :
-						"");
-				websWrite(
-					wp,
-					"<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" %s />\n", nvgpio,
+					  nvram_match(nvgpio, "0") ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
 			}
 		}
 		debug_free(var);
@@ -103,35 +84,21 @@ EJ_VISIBLE void ej_show_status_gpio_input(webs_t wp, int argc, char_t **argv)
 				sprintf(gpio_new_name, "gpio%s_name", var);
 
 				// enable
-				websWrite(wp, "<div class=\"label\">%s</div>",
-					  nvgpio);
-				websWrite(
-					wp,
-					"<input maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",
-					gpio_new_name, gpio_new_name,
-					gpio_name);
+				websWrite(wp, "<div class=\"label\">%s</div>", nvgpio);
+				websWrite(wp, "<input maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",
+					  gpio_new_name, gpio_new_name, gpio_name);
 
 				websWrite(
 					wp,
 					"<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" disabled=\"true\" %s />\n",
-					nvgpio,
-					!get_gpio(atoi(var)) ?
-						"checked=\"checked\"" :
-						"");
-				websWrite(
-					wp,
-					"<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
+					nvgpio, !get_gpio(atoi(var)) ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
 				//Disable
 				websWrite(
 					wp,
 					"<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" disabled=\"true\" %s />\n",
-					nvgpio,
-					get_gpio(atoi(var)) ?
-						"checked=\"checked\"" :
-						"");
-				websWrite(
-					wp,
-					"<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+					nvgpio, get_gpio(atoi(var)) ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
 			}
 		}
 		debug_free(var);

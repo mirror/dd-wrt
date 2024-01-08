@@ -40,8 +40,7 @@
 static int landhcp(void)
 {
 	if (!getWET())
-		if (nvram_match("lan_proto", "dhcp") &&
-		    nvram_matchi("dhcpfwd_enable", 0))
+		if (nvram_match("lan_proto", "dhcp") && nvram_matchi("dhcpfwd_enable", 0))
 			return 1;
 	return 0;
 }
@@ -74,9 +73,7 @@ static char *dhcp_reltime(char *buf, size_t len, time_t t, int sub)
 	int days = t / 86400;
 	int min = t / 60;
 
-	snprintf(buf, len, "%d day%s %02d:%02d:%02d", days,
-		 ((days == 1) ? "" : "s"), ((min / 60) % 24), (min % 60),
-		 (int)(t % 60));
+	snprintf(buf, len, "%d day%s %02d:%02d:%02d", days, ((days == 1) ? "" : "s"), ((min / 60) % 24), (min % 60), (int)(t % 60));
 	return buf;
 }
 
@@ -133,18 +130,15 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t **argv)
 			if (fp) {
 				while (fgets(buf, sizeof(buf), fp)) {
 					ifidx = -1;
-					if (sscanf(buf,
-						   "%lu %17s %15s %255s %255s %d",
-						   &expires, mac, ip, hostname,
-						   clid, &ifidx) < 4)
+					if (sscanf(buf, "%lu %17s %15s %255s %255s %d", &expires, mac, ip, hostname, clid, &ifidx) <
+					    4)
 						continue;
 					p = mac;
 					while ((*p = toupper(*p)) != 0)
 						++p;
 					if ((p = strrchr(ip, '.')) == NULL)
 						continue;
-					if (nvram_matchi("maskmac", 1) &&
-					    macmask) {
+					if (nvram_matchi("maskmac", 1) && macmask) {
 						mac[0] = 'x';
 						mac[1] = 'x';
 						mac[3] = 'x';
@@ -158,47 +152,23 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t **argv)
 					if (ifidx != -1) {
 						getIfByIdx(ifname, ifidx);
 					}
-					websWrite(
-						wp,
-						"%c'%s','%s','%s','%s','%s','%s','%s'",
-						(count ? ',' : ' '),
-						(hostname[0] ?
-							 hostname :
-							 live_translate(
-								 wp,
-								 "share.unknown")),
-						ip, mac,
-						((expires == 0) ?
-							 live_translate(
-								 wp,
-								 "share.sttic") :
-							 dhcp_reltime(
-								 buf,
-								 sizeof(buf),
-								 expires, 1)),
-						p + 1, ifname,
-						nvram_nget("%s_label", ifname));
+					websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s'", (count ? ',' : ' '),
+						  (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
+						  ((expires == 0) ? live_translate(wp, "share.sttic") :
+								    dhcp_reltime(buf, sizeof(buf), expires, 1)),
+						  p + 1, ifname, nvram_nget("%s_label", ifname));
 					++count;
 				}
 				fclose(fp);
 			}
 		} else {
 			for (i = 0; i < DHCP_MAX_COUNT; ++i) {
-				sprintf(buf, "dnsmasq_lease_%d.%d.%d.%d",
-					get_single_ip(
-						nvram_safe_get("lan_ipaddr"),
-						0),
-					get_single_ip(
-						nvram_safe_get("lan_ipaddr"),
-						1),
-					get_single_ip(
-						nvram_safe_get("lan_ipaddr"),
-						2),
-					i);
+				sprintf(buf, "dnsmasq_lease_%d.%d.%d.%d", get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
+					get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
+					get_single_ip(nvram_safe_get("lan_ipaddr"), 2), i);
 
 				buff = nvram_safe_get(buf);
-				if (sscanf(buff, "%lu %17s %15s %255s",
-					   &expires, mac, ip, hostname) < 4)
+				if (sscanf(buff, "%lu %17s %15s %255s", &expires, mac, ip, hostname) < 4)
 					continue;
 				p = mac;
 				while ((*p = toupper(*p)) != 0)
@@ -215,21 +185,11 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t **argv)
 					mac[9] = 'x';
 					mac[10] = 'x';
 				}
-				websWrite(
-					wp,
-					"%c'%s','%s','%s','%s','%s','N/A',''",
-					(count ? ',' : ' '),
-					(hostname[0] ?
-						 hostname :
-						 live_translate(
-							 wp, "share.unknown")),
-					ip, mac,
-					((expires == 0) ?
-						 live_translate(wp,
-								"share.sttic") :
-						 dhcp_reltime(buf, sizeof(buf),
-							      expires, 1)),
-					p + 1);
+				websWrite(wp, "%c'%s','%s','%s','%s','%s','N/A',''", (count ? ',' : ' '),
+					  (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
+					  ((expires == 0) ? live_translate(wp, "share.sttic") :
+							    dhcp_reltime(buf, sizeof(buf), expires, 1)),
+					  p + 1);
 				++count;
 			}
 		}
@@ -240,8 +200,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_dhcp_remaining_time(webs_t wp, int argc, char_t **argv)
 {
 	// tofu12
-	if (nvram_invmatch("wan_proto", "dhcp") &&
-	    nvram_invmatch("wan_proto", "dhcp_auth"))
+	if (nvram_invmatch("wan_proto", "dhcp") && nvram_invmatch("wan_proto", "dhcp_auth"))
 		return;
 
 	long exp;

@@ -30,15 +30,11 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 	getIfList(buffer, NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("vlan_tagcount", 0);
-	websWrite(
-		wp,
-		"<table cellspacing=\"4\" summary=\"vlans\" id=\"vlan_table\" class=\"table\"><thead><tr>\n");
+	websWrite(wp, "<table cellspacing=\"4\" summary=\"vlans\" id=\"vlan_table\" class=\"table\"><thead><tr>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl",
-			"<th class=\"center\" width=\"10%%\">",
-			"</th></thead><tbody>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next)
@@ -59,10 +55,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
 		websWrite(wp, "<td>");
-		websWrite(
-			wp,
-			"<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
-			vlan_name, port);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, port);
 		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", count);
@@ -94,10 +87,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		sprintf(vlan_name, "vlantag%d", i);
 		//tag number
 		websWrite(wp, "<td>");
-		websWrite(
-			wp,
-			"<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n",
-			vlan_name);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
 		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", i);

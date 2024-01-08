@@ -33,16 +33,14 @@
 
 #include <nfs.h>
 #include "fs_common.h"
-void show_caption_pp(webs_t wp, const char *class, const char *caption,
-		     const char *pre, const char *post);
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 
 struct sysctl_priv {
 	webs_t wp;
 	int cnt;
 };
 
-static void showsysctl(char *path, char *nvname, char *name, char *sysval,
-		       void *priv)
+static void showsysctl(char *path, char *nvname, char *name, char *sysval, void *priv)
 {
 	struct sysctl_priv *p = (struct sysctl_priv *)priv;
 	webs_t wp = p->wp;
@@ -74,10 +72,7 @@ static void showsysctl(char *path, char *nvname, char *name, char *sysval,
 		  "<div class=\"setting\">\n" //
 		  "<div class=\"label\" style=\"width: 22.6em\">%s</div>\n",
 		  name);
-	websWrite(
-		wp,
-		"<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n",
-		nvname, sysval);
+	websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, sysval);
 	websWrite(wp, "</div>\n");
 	p->cnt++;
 	return;

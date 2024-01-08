@@ -81,8 +81,7 @@ EJ_VISIBLE void ej_localtime(webs_t wp, int argc, char_t **argv)
 		if (argc && !strcmp(argv[0], "1"))
 			show_caption_simple(wp, "status_router.notavail");
 		else
-			websWrite(wp, "%s",
-				  live_translate(wp, "status_router.notavail"));
+			websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));
 	}
 }
 
@@ -95,12 +94,9 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	struct dns_lists *dns_list = NULL;
 	int wan_link = check_wan_link(0);
 	if (!strcmp(wan_proto, "pptp")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") :
-					nvram_safe_get("wan_ipaddr");
-		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") :
-					 nvram_safe_get("wan_netmask");
-		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") :
-					 nvram_safe_get("pptp_server_ip");
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
+		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : nvram_safe_get("wan_netmask");
+		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") : nvram_safe_get("pptp_server_ip");
 	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOEDUAL
 		   || !strcmp(wan_proto, "pppoe_dual")
@@ -115,21 +111,15 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		   || !strcmp(wan_proto, "iphone")
 #endif
 	) {
-		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") :
-					"0.0.0.0";
-		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") :
-					 "0.0.0.0";
-		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") :
-					 "0.0.0.0";
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
+		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
 	}
 #ifdef HAVE_L2TP
 	else if (!strcmp(wan_proto, "l2tp")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") :
-					nvram_safe_get("wan_ipaddr");
-		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") :
-					 nvram_safe_get("wan_netmask");
-		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") :
-					 nvram_safe_get("wan_gateway");
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
+		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : nvram_safe_get("wan_netmask");
+		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") : nvram_safe_get("wan_gateway");
 	}
 #endif
 	else {
@@ -197,38 +187,28 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	if (!strcmp(type, "wan_ipaddr")) {
 		if (getWET() || !strcmp(wan_proto, "disabled")) {
 			websWrite(wp, "%s",
-				  trans == 2 ?
-					  tran_string(buf, sizeof(buf),
-						      "share.disabled") :
-					  live_translate(wp, "share.disabled"));
+				  trans == 2 ? tran_string(buf, sizeof(buf), "share.disabled") :
+					       live_translate(wp, "share.disabled"));
 		} else
-			websWrite(wp, "%s/%d", wan_ipaddr,
-				  getmask(wan_netmask));
+			websWrite(wp, "%s/%d", wan_ipaddr, getmask(wan_netmask));
 #ifdef HAVE_IPV6
 	} else if (!strcmp(type, "wan_ipv6addr")) {
 		const char *ipv6addr = NULL;
 		char buf[INET6_ADDRSTRLEN];
 		char strbuf[128];
 		if (nvram_match("ipv6_typ", "ipv6native"))
-			ipv6addr = getifaddr(buf,
-					     safe_get_wan_face(wan_if_buffer),
-					     AF_INET6, 0);
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6in4"))
 			ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6pd"))
-			ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"),
-					     AF_INET6, 0);
+			ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 		if (!ipv6addr)
-			ipv6addr = getifaddr(buf,
-					     safe_get_wan_face(wan_if_buffer),
-					     AF_INET6,
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6,
 					     0); // try wan if all other fails
 		if (!ipv6addr || getWET() || !strcmp(wan_proto, "disabled")) {
 			websWrite(wp, "%s",
-				  trans == 2 ?
-					  tran_string(strbuf, sizeof(strbuf),
-						      "share.disabled") :
-					  live_translate(wp, "share.disabled"));
+				  trans == 2 ? tran_string(strbuf, sizeof(strbuf), "share.disabled") :
+					       live_translate(wp, "share.disabled"));
 		} else {
 			websWrite(wp, "%s", ipv6addr);
 		}
@@ -258,8 +238,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		if (trans)
 			websWrite(wp, "%s",
 				  trans == 3 ? button1 :
-				  trans == 2 ? tran_string(buf, sizeof(buf),
-							   button1) :
+				  trans == 2 ? tran_string(buf, sizeof(buf), button1) :
 					       live_translate(wp, button1));
 		else
 			websWrite(wp, "%s", button1);
@@ -312,27 +291,16 @@ EJ_VISIBLE void ej_show_dnslist(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		char buf[64];
 		if (entry->type && !entry->ipv6)
-			websWrite(
-				wp,
-				"<div class=\"label\">IPv4 DNS %d (%s)</div>\n",
-				ipv4count++,
-				tran_string(buf, sizeof(buf), "share.sttic"));
+			websWrite(wp, "<div class=\"label\">IPv4 DNS %d (%s)</div>\n", ipv4count++,
+				  tran_string(buf, sizeof(buf), "share.sttic"));
 		if (entry->type && entry->ipv6)
-			websWrite(
-				wp,
-				"<div class=\"label\">IPv6 DNS %d (%s)</div>\n",
-				ipv6count++,
-				tran_string(buf, sizeof(buf), "share.sttic"));
+			websWrite(wp, "<div class=\"label\">IPv6 DNS %d (%s)</div>\n", ipv6count++,
+				  tran_string(buf, sizeof(buf), "share.sttic"));
 		if (!entry->type && !entry->ipv6)
-			websWrite(wp,
-				  "<div class=\"label\">IPv4 DNS %d</div>\n",
-				  ipv4count++);
+			websWrite(wp, "<div class=\"label\">IPv4 DNS %d</div>\n", ipv4count++);
 		if (!entry->type && entry->ipv6)
-			websWrite(wp,
-				  "<div class=\"label\">IPv6 DNS %d</div>\n",
-				  ipv6count++);
-		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i,
-			  entry->ip);
+			websWrite(wp, "<div class=\"label\">IPv6 DNS %d</div>\n", ipv6count++);
+		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry->ip);
 		websWrite(wp, "</div>\n");
 		i++;
 	}
@@ -363,16 +331,11 @@ EJ_VISIBLE void ej_show_status(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_DSL_CPE_CONTROL
 	if (argc > 0) {
 		if (!strcmp(argv[0], "adsl")) {
-			websWrite(wp, "{dsl_iface_status::%s}\n",
-				  nvram_safe_get("dsl_iface_status"));
-			websWrite(wp, "{dsl_datarate_ds::%11.2f}\n",
-				  atof(nvram_safe_get("dsl_datarate_ds")));
-			websWrite(wp, "{dsl_datarate_us::%11.2f}\n",
-				  atof(nvram_safe_get("dsl_datarate_us")));
-			websWrite(wp, "{dsl_snr_down::%d}\n",
-				  atoi(nvram_safe_get("dsl_snr_down")));
-			websWrite(wp, "{dsl_snr_up::%d}\n",
-				  atoi(nvram_safe_get("dsl_snr_up")));
+			websWrite(wp, "{dsl_iface_status::%s}\n", nvram_safe_get("dsl_iface_status"));
+			websWrite(wp, "{dsl_datarate_ds::%11.2f}\n", atof(nvram_safe_get("dsl_datarate_ds")));
+			websWrite(wp, "{dsl_datarate_us::%11.2f}\n", atof(nvram_safe_get("dsl_datarate_us")));
+			websWrite(wp, "{dsl_snr_down::%d}\n", atoi(nvram_safe_get("dsl_snr_down")));
+			websWrite(wp, "{dsl_snr_up::%d}\n", atoi(nvram_safe_get("dsl_snr_up")));
 		}
 	}
 #endif
@@ -411,8 +374,7 @@ EJ_VISIBLE void ej_show_status(webs_t wp, int argc, char_t **argv)
 			 * set retry count 
 			 */
 			if (wp->gozila_action)
-				retry_count =
-					STATUS_RETRY_COUNT; // retry 3 times
+				retry_count = STATUS_RETRY_COUNT; // retry 3 times
 
 			/*
 			 * set refresh time 
@@ -429,21 +391,17 @@ EJ_VISIBLE void ej_show_status(webs_t wp, int argc, char_t **argv)
 				// refresh
 				retry_count = -1;
 
-			refresh_time = (retry_count <= 0) ?
-					       STATUS_REFRESH_TIME2 :
-					       STATUS_REFRESH_TIME1;
+			refresh_time = (retry_count <= 0) ? STATUS_REFRESH_TIME2 : STATUS_REFRESH_TIME1;
 
 		} else if (!strcmp(type, "refresh_time")) {
 			websWrite(wp, "%d", refresh_time * 1000);
 		} else if (!strcmp(type, "onload")) {
 			if (retry_count == 0 ||
-			    (!submit_type && !wan_link &&
-			     wp->gozila_action)) { // After refresh 2 times, if the status is
+			    (!submit_type && !wan_link && wp->gozila_action)) { // After refresh 2 times, if the status is
 				// disconnect, show Alert message.
 				websWrite(wp, "ShowAlert(\"TIMEOUT\");");
 				retry_count = -1;
-			} else if (file_to_buf("/tmp/ppp/log", buf,
-					       sizeof(buf))) {
+			} else if (file_to_buf("/tmp/ppp/log", buf, sizeof(buf))) {
 				websWrite(wp, "ShowAlert(\"%s\");", buf);
 				retry_count = -1;
 				unlink("/tmp/ppp/log");

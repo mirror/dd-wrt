@@ -35,8 +35,7 @@
  * produces : ret = 1, name = "google.com" find_each(name, sizeof(name),
  * data, "<&nbsp;>", 2, "No find!"); produces : ret = 0, name = "No Find!" 
  */
-int find_each(char *name, int len, char *data, char *token, int which,
-	      char *def)
+int find_each(char *name, int len, char *data, char *token, int which, char *def)
 {
 	int i;
 	int maxlen;

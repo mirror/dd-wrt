@@ -103,8 +103,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 				GETENTRYBYIDX(name, word, 0);
 				if (!name)
 					continue;
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, "%s", new_name);
 			} break;
 			case FROM: {
@@ -152,8 +151,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 				if (!proto)
 					continue;
 				if (!strcmp(proto, "both"))
-					websWrite(wp,
-						  "selected=\\\"selected\\\"");
+					websWrite(wp, "selected=\\\"selected\\\"");
 			} break;
 			case IP: {
 				GETENTRYBYIDX(ip, word, 5);
@@ -202,8 +200,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 				GETENTRYBYIDX(name, word, 0);
 				if (!name)
 					continue;
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, "%s", new_name);
 			} break;
 			case FROM: {
@@ -222,32 +219,28 @@ void port_forward_spec(webs_t wp, char *type, int which)
 				GETENTRYBYIDX(proto, word, 2);
 				if (!proto)
 					continue;
-				if (strcmp(proto, "udp") &&
-				    strcmp(proto, "both"))
+				if (strcmp(proto, "udp") && strcmp(proto, "both"))
 					websWrite(wp, "checked=\"checked\"");
 			} break;
 			case UDP: {
 				GETENTRYBYIDX(proto, word, 2);
 				if (!proto)
 					continue;
-				if (strcmp(proto, "tcp") &&
-				    strcmp(proto, "both"))
+				if (strcmp(proto, "tcp") && strcmp(proto, "both"))
 					websWrite(wp, "checked=\"checked\"");
 			} break;
 			case SEL_TCP: {
 				GETENTRYBYIDX(proto, word, 2);
 				if (!proto)
 					continue;
-				if (strcmp(proto, "udp") &&
-				    strcmp(proto, "both"))
+				if (strcmp(proto, "udp") && strcmp(proto, "both"))
 					websWrite(wp, "selected=\"selected\"");
 			} break;
 			case SEL_UDP: {
 				GETENTRYBYIDX(proto, word, 2);
 				if (!proto)
 					continue;
-				if (strcmp(proto, "tcp") &&
-				    strcmp(proto, "both"))
+				if (strcmp(proto, "tcp") && strcmp(proto, "both"))
 					websWrite(wp, "selected=\"selected\"");
 			} break;
 			case SEL_BOTH: {
@@ -255,8 +248,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 				if (!proto)
 					continue;
 				if (!strcmp(proto, "both"))
-					websWrite(wp,
-						  "selected=\\\"selected\\\"");
+					websWrite(wp, "selected=\\\"selected\\\"");
 			} break;
 			case IP: {
 				GETENTRYBYIDX(ip, word, 4);
@@ -311,8 +303,7 @@ void ip_forward(webs_t wp, char *type, int which)
 				GETENTRYBYIDX(name, word, 0);
 				if (!name)
 					continue;
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, "%s", new_name);
 			} break;
 			case SRC: {
@@ -361,9 +352,7 @@ void port_trigger_table(webs_t wp, char *type, int which)
 				if (!name)
 					continue;
 				if (strcmp(name, "")) {
-					httpd_filter_name(name, new_name,
-							  sizeof(new_name),
-							  GET);
+					httpd_filter_name(name, new_name, sizeof(new_name), GET);
 					websWrite(wp, "%s", new_name);
 				}
 			} break;
@@ -372,23 +361,20 @@ void port_trigger_table(webs_t wp, char *type, int which)
 				if (!enable)
 					continue;
 				if (!strcmp(enable, "on"))
-					websWrite(wp,
-						  "checked=\\\"checked\\\"");
+					websWrite(wp, "checked=\\\"checked\\\"");
 			} break;
 			case SEL_TCP: {
 				GETENTRYBYIDX(proto, word, 2);
 				if (!proto)
 					continue;
-				if (strcmp(proto, "udp") &&
-				    strcmp(proto, "both"))
+				if (strcmp(proto, "udp") && strcmp(proto, "both"))
 					websWrite(wp, "selected=\"selected\"");
 			} break;
 			case SEL_UDP: {
 				GETENTRYBYIDX(proto, word, 2);
 				if (!proto)
 					continue;
-				if (strcmp(proto, "tcp") &&
-				    strcmp(proto, "both"))
+				if (strcmp(proto, "tcp") && strcmp(proto, "both"))
 					websWrite(wp, "selected=\"selected\"");
 			} break;
 			case SEL_BOTH: {
@@ -396,8 +382,7 @@ void port_trigger_table(webs_t wp, char *type, int which)
 				if (!proto)
 					continue;
 				if (!strcmp(proto, "both"))
-					websWrite(wp,
-						  "selected=\\\"selected\\\"");
+					websWrite(wp, "selected=\\\"selected\\\"");
 			} break;
 			case I_FROM: {
 				GETENTRYBYIDX(i_from, word, 3);

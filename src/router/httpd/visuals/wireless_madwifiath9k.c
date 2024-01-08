@@ -51,8 +51,7 @@
 #include <net/if.h>
 #include <dd_list.h>
 
-int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname,
-			     int *cnt, int globalcnt, int turbo, int macmask)
+int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
 {
 	char mac[32];
 	struct mac80211_info *mac80211_info;
@@ -81,8 +80,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname,
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
 		char tmp[64];
 		snprintf(tmp, sizeof(tmp), "%s.sta", ifname);
-		if (strcmp(wc->ifname, ifname) &&
-		    strncmp(wc->ifname, tmp, strlen(tmp)))
+		if (strcmp(wc->ifname, ifname) && strncmp(wc->ifname, tmp, strlen(tmp)))
 			continue;
 		ether_etoa(wc->etheraddr, mac);
 		if (nvram_matchi("maskmac", 1) && macmask) {
@@ -139,8 +137,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname,
 			ht = 6;
 		if (div == 8)
 			ht = 5;
-		char *bwinfo[] = { "20",    "40",  "80", "160",
-				   "80+80", "2.5", "5",	 "10" };
+		char *bwinfo[] = { "20", "40", "80", "160", "80+80", "2.5", "5", "10" };
 		if (ht < 8 && ht >= 0)
 			snprintf(info, sizeof(info), "%s%s", info, bwinfo[ht]);
 		if (sgi)
@@ -155,17 +152,11 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname,
 		char *radioname = wc->radioname;
 		if (!*(radioname))
 			radioname = "";
-		websWrite(
-			wp,
-			"'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",
-			mac, radioname, wc->ifname,
-			UPTIME(wc->uptime, str, sizeof(str)),
-			wc->txrate / 10 * mul / div,
-			wc->rxrate / 10 * mul / div, info, wc->signal + bias,
-			wc->noise + bias, wc->signal - wc->noise, qual,
-			wc->chaininfo_avg[0], wc->chaininfo_avg[1],
-			wc->chaininfo_avg[2], wc->chaininfo_avg[3],
-			nvram_nget("%s_label", wc->ifname), wc->ifname);
+		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac,
+			  radioname, wc->ifname, UPTIME(wc->uptime, str, sizeof(str)), wc->txrate / 10 * mul / div,
+			  wc->rxrate / 10 * mul / div, info, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual,
+			  wc->chaininfo_avg[0], wc->chaininfo_avg[1], wc->chaininfo_avg[2], wc->chaininfo_avg[3],
+			  nvram_nget("%s_label", wc->ifname), wc->ifname);
 		*cnt = (*cnt) + 1;
 		globalcnt++;
 		//              }
@@ -247,10 +238,7 @@ EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t **argv)
 				websWrite(
 					wp,
 					"<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.busy)</script></div>\n");
-				websWrite(
-					wp,
-					"<span id=\"wl_busy\">%llu ms</span>&nbsp;\n",
-					busy);
+				websWrite(wp, "<span id=\"wl_busy\">%llu ms</span>&nbsp;\n", busy);
 				websWrite(wp, "</div>\n");
 			}
 			if (active != -1) {
@@ -258,10 +246,7 @@ EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t **argv)
 				websWrite(
 					wp,
 					"<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.active)</script></div>\n");
-				websWrite(
-					wp,
-					"<span id=\"wl_active\">%llu ms</span>&nbsp;\n",
-					active);
+				websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
 				websWrite(wp, "</div>\n");
 			}
 			if (busy != -1 && active != -1 && active > 0) {
@@ -272,10 +257,7 @@ EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t **argv)
 				websWrite(
 					wp,
 					"<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.quality)</script></div>\n");
-				websWrite(
-					wp,
-					"<span id=\"wl_quality\">%llu%%</span>&nbsp;\n",
-					quality < 0 ? 0 : quality);
+				websWrite(wp, "<span id=\"wl_quality\">%llu%%</span>&nbsp;\n", quality < 0 ? 0 : quality);
 				websWrite(wp, "</div>\n");
 			}
 		}
@@ -295,11 +277,9 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 		if (!f->active_count && !f->busy_count && !f->noise_count)
 			continue;
 		if (f->in_use)
-			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',',
-				  f->freq);
+			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', f->freq);
 		else
-			websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',',
-				  f->freq);
+			websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',', f->freq);
 		websWrite(wp, ",\"%d\"", ieee80211_mhz2ieee(f->freq));
 		first_survey = 1;
 		if (f->noise_count)
@@ -307,8 +287,7 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 		else
 			websWrite(wp, ",\"-95\"");
 		if (f->active_count && f->busy_count)
-			websWrite(wp, ",\"%lld\"",
-				  100 - ((f->busy * 100) / f->active));
+			websWrite(wp, ",\"%lld\"", 100 - ((f->busy * 100) / f->active));
 		else
 			websWrite(wp, ",\"\"");
 		if (f->active_count)
@@ -338,8 +317,7 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_channel_survey(webs_t wp, int argc, char_t **argv)
 {
 	if (has_channelsurvey(nvram_safe_get("wifi_display"))) {
-		if (nvram_nmatch("disabled", "%s_net_mode",
-				 nvram_safe_get("wifi_display")))
+		if (nvram_nmatch("disabled", "%s_net_mode", nvram_safe_get("wifi_display")))
 			return;
 		websWrite(
 			wp,

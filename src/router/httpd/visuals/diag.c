@@ -86,11 +86,8 @@ EJ_VISIBLE void ej_dump_ping_log(webs_t wp, int argc, char_t **argv)
 				continue;
 			int nc = 0;
 			int len = strlen(line);
-			for (i = 0;
-			     i < (len - 1) && (nc < (sizeof(newline) - 1));
-			     i++) {
-				if (line[i] == '"' &&
-				    nc < (sizeof(newline) - 7)) {
+			for (i = 0; i < (len - 1) && (nc < (sizeof(newline) - 1)); i++) {
+				if (line[i] == '"' && nc < (sizeof(newline) - 7)) {
 					memcpy(&newline[nc], "&quot;", 6);
 					nc += 6;
 				} else

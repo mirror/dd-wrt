@@ -86,8 +86,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	static char a[18];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0],
-		     mac[1], mac[2], mac[3], mac[4], mac[5]);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
 
@@ -134,8 +133,7 @@ typedef union _HTTRANSMIT_SETTING {
 		unsigned short eTxBF : 1;
 		unsigned short rsv : 1;
 		unsigned short iTxBF : 1;
-		unsigned short
-			MODE : 2; // 0: CCK, 1:OFDM, 2:Mixedmode, 3:GreenField
+		unsigned short MODE : 2; // 0: CCK, 1:OFDM, 2:Mixedmode, 3:GreenField
 	} field;
 	unsigned short word;
 } HTTRANSMIT_SETTING, *PHTTRANSMIT_SETTING;
@@ -154,15 +152,13 @@ typedef struct _RT_802_11_MAC_TABLE {
 #define RT_OID_802_11_QUERY_LAST_TX_RATE 0x0632
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE (SIOCIWFIRSTPRIV + 0x0F)
-#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT \
-	(SIOCIWFIRSTPRIV + 0x1F) // modified by Red@Ralink, 2009/09/30
+#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT (SIOCIWFIRSTPRIV + 0x1F) // modified by Red@Ralink, 2009/09/30
 
 static char bGetHTTxRateByBW_GI_MCS(int nBW, int nGI, int nMCS, int *dRate)
 {
 	//fprintf(stderr, "bGetHTTxRateByBW_GI_MCS()\n");
 	// no TxRate for (BW = 20, GI = 400, MCS = 32) & (BW = 20, GI = 400, MCS = 32)
-	if (((nBW == BW_20) && (nGI == GI_400) && (nMCS == 32)) ||
-	    ((nBW == BW_20) && (nGI == GI_800) && (nMCS == 32))) {
+	if (((nBW == BW_20) && (nGI == GI_400) && (nMCS == 32)) || ((nBW == BW_20) && (nGI == GI_800) && (nMCS == 32))) {
 		return 0;
 	}
 
@@ -193,8 +189,7 @@ static void TxRxRateFor11n(HTTRANSMIT_SETTING *HTSetting, int *fLastTxRxRate)
 	case 0:
 		if (HTSetting->field.MCS >= 0 && HTSetting->field.MCS <= 3)
 			*fLastTxRxRate = b_mode[HTSetting->field.MCS];
-		else if (HTSetting->field.MCS >= 8 &&
-			 HTSetting->field.MCS <= 11)
+		else if (HTSetting->field.MCS >= 8 && HTSetting->field.MCS <= 11)
 			*fLastTxRxRate = b_mode[HTSetting->field.MCS - 8];
 		else
 			*fLastTxRxRate = 0;
@@ -209,9 +204,8 @@ static void TxRxRateFor11n(HTTRANSMIT_SETTING *HTSetting, int *fLastTxRxRate)
 		break;
 	case 2:
 	case 3:
-		if (0 == bGetHTTxRateByBW_GI_MCS(
-				 HTSetting->field.BW, HTSetting->field.ShortGI,
-				 HTSetting->field.MCS, fLastTxRxRate)) {
+		if (0 ==
+		    bGetHTTxRateByBW_GI_MCS(HTSetting->field.BW, HTSetting->field.ShortGI, HTSetting->field.MCS, fLastTxRxRate)) {
 			*fLastTxRxRate = 0;
 		}
 		break;
@@ -221,12 +215,9 @@ static void TxRxRateFor11n(HTTRANSMIT_SETTING *HTSetting, int *fLastTxRxRate)
 	}
 }
 
-extern int OidQueryInformation(unsigned long OidQueryCode, int socket_id,
-			       char *DeviceName, void *ptr,
-			       unsigned long PtrLength);
+extern int OidQueryInformation(unsigned long OidQueryCode, int socket_id, char *DeviceName, void *ptr, unsigned long PtrLength);
 
-static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID,
-				      int *fLastTxRxRate)
+static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID, int *fLastTxRxRate)
 {
 	unsigned long lHTSetting;
 	HTTRANSMIT_SETTING HTSetting;
@@ -241,8 +232,7 @@ EJ_VISIBLE void ej_assoc_count(webs_t wp, int argc, char_t **argv)
 	assoc_count_prefix(wp, "wl");
 }
 
-int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname,
-		       int *cnt, int globalcnt, int turbo, int macmask)
+int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
 {
 	static RT_802_11_MAC_TABLE table = { 0 };
 
@@ -306,26 +296,18 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname,
 				char rx[32];
 				char tx[32];
 				bzero(&HTSetting, sizeof(HTSetting));
-				memcpy(&HTSetting, &table.Entry[i].TxRate,
-				       sizeof(HTSetting));
+				memcpy(&HTSetting, &table.Entry[i].TxRate, sizeof(HTSetting));
 				TxRxRateFor11n(&HTSetting, &rate);
-				snprintf(tx, 8, "%d.%d", rate / 1000,
-					 rate % 1000);
+				snprintf(tx, 8, "%d.%d", rate / 1000, rate % 1000);
 
 				bzero(&HTSetting, sizeof(HTSetting));
-				HTSetting.field.MCS =
-					table.Entry[i].LastRxRate & 0x7F;
-				HTSetting.field.BW =
-					(table.Entry[i].LastRxRate >> 7) & 0x1;
-				HTSetting.field.ShortGI =
-					(table.Entry[i].LastRxRate >> 8) & 0x1;
-				HTSetting.field.STBC =
-					(table.Entry[i].LastRxRate >> 9) & 0x3;
-				HTSetting.field.MODE =
-					(table.Entry[i].LastRxRate >> 14) & 0x3;
+				HTSetting.field.MCS = table.Entry[i].LastRxRate & 0x7F;
+				HTSetting.field.BW = (table.Entry[i].LastRxRate >> 7) & 0x1;
+				HTSetting.field.ShortGI = (table.Entry[i].LastRxRate >> 8) & 0x1;
+				HTSetting.field.STBC = (table.Entry[i].LastRxRate >> 9) & 0x3;
+				HTSetting.field.MODE = (table.Entry[i].LastRxRate >> 14) & 0x3;
 				TxRxRateFor11n(&HTSetting, &rate);
-				snprintf(rx, 8, "%d.%d", rate / 1000,
-					 rate % 1000);
+				snprintf(rx, 8, "%d.%d", rate / 1000, rate % 1000);
 
 				int ht = 0;
 				int sgi = 0;
@@ -355,18 +337,11 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname,
 				char str[64] = { 0 };
 				char *radev = getRADev(ifname);
 
-				websWrite(
-					wp,
-					"'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','0','%s','%s'",
-					mac, radev,
-					UPTIME(table.Entry[i].ConnectedTime,
-					       str, sizeof(str)),
-					tx, rx, info, table.Entry[i].AvgRssi0,
-					-95, (table.Entry[i].AvgRssi0 - (-95)),
-					qual, table.Entry[i].AvgRssi0,
-					table.Entry[i].AvgRssi1,
-					table.Entry[i].AvgRssi2,
-					nvram_nget("%s_label", radev), radev);
+				websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','0','%s','%s'",
+					  mac, radev, UPTIME(table.Entry[i].ConnectedTime, str, sizeof(str)), tx, rx, info,
+					  table.Entry[i].AvgRssi0, -95, (table.Entry[i].AvgRssi0 - (-95)), qual,
+					  table.Entry[i].AvgRssi0, table.Entry[i].AvgRssi1, table.Entry[i].AvgRssi2,
+					  nvram_nget("%s_label", radev), radev);
 			}
 		}
 	STAINFO *sta = getRaStaInfo(ifname);
@@ -388,21 +363,14 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname,
 		int rate = 1;
 		char rx[32];
 		char tx[32];
-		DisplayLastTxRxRateFor11n(getRADev(ifname), s,
-					  RT_OID_802_11_QUERY_LAST_RX_RATE,
-					  &rate);
+		DisplayLastTxRxRateFor11n(getRADev(ifname), s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
 		snprintf(rx, 8, "%d.%d", rate / 1000, rate % 1000);
-		DisplayLastTxRxRateFor11n(getRADev(ifname), s,
-					  RT_OID_802_11_QUERY_LAST_TX_RATE,
-					  &rate);
+		DisplayLastTxRxRateFor11n(getRADev(ifname), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
 		snprintf(tx, 8, "%d.%d", rate / 1000, rate % 1000);
 
 		strcpy(mac, ieee80211_ntoa(sta->mac));
-		websWrite(
-			wp,
-			"'%s','N/A','%s','N/A','%s','%s','N/A','%d','%d','%d','%d','0','0','0','0'",
-			mac, sta->ifname, tx, rx, sta->rssi, sta->noise,
-			(sta->rssi - (sta->noise)), qual);
+		websWrite(wp, "'%s','N/A','%s','N/A','%s','%s','N/A','%d','%d','%d','%d','0','0','0','0'", mac, sta->ifname, tx, rx,
+			  sta->rssi, sta->noise, (sta->rssi - (sta->noise)), qual);
 		debug_free(sta);
 	}
 
@@ -419,10 +387,8 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 	int macmask = atoi(argv[0]);
 	memset(assoc_count, 0, sizeof(assoc_count));
 	t = 1;
-	global = active_wireless_if(wp, argc, argv, "wl0", &assoc_count[0],
-				    global, t, macmask);
-	global = active_wireless_if(wp, argc, argv, "wl1", &assoc_count[1],
-				    global, t, macmask);
+	global = active_wireless_if(wp, argc, argv, "wl0", &assoc_count[0], global, t, macmask);
+	global = active_wireless_if(wp, argc, argv, "wl1", &assoc_count[1], global, t, macmask);
 }
 
 extern long long wifi_getrate(char *ifname);
@@ -473,34 +439,25 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 	int channel = wifi_getchannel(getRADev(prefix));
 
 	if (channel > 0 && channel < 1000) {
-		struct wifi_interface *interface =
-			wifi_getfreq(getRADev(prefix));
+		struct wifi_interface *interface = wifi_getfreq(getRADev(prefix));
 		if (!interface) {
-			websWrite(wp, "%s",
-				  live_translate(wp, "share.unknown"));
+			websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 			return;
 		}
 		int freq = interface->freq;
 		debug_free(interface);
 		websWrite(wp, "%d", channel);
 		if (has_mimo(prefix) &&
-		    (nvram_nmatch("n-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("na-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ng-only", "%s_net_mode", prefix)) &&
-		    (nvram_nmatch("ap", "%s_mode", prefix) ||
-		     nvram_nmatch("wdsap", "%s_mode", prefix) ||
+		    (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
+		     nvram_nmatch("na-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix)) &&
+		    (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix) ||
 		     nvram_nmatch("infra", "%s_mode", prefix))) {
 			if (nvram_nmatch("40", "%s_nbw", prefix)) {
 				int ext_chan = 0;
 
-				if (nvram_nmatch("lower", "%s_nctrlsb",
-						 prefix) ||
-				    nvram_nmatch("ll", "%s_nctrlsb", prefix) ||
+				if (nvram_nmatch("lower", "%s_nctrlsb", prefix) || nvram_nmatch("ll", "%s_nctrlsb", prefix) ||
 				    nvram_nmatch("lu", "%s_nctrlsb", prefix))
 					ext_chan = 1;
 				if (channel <= 4)
@@ -508,19 +465,15 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				if (channel >= 10)
 					ext_chan = 0;
 
-				websWrite(wp, " + %d",
-					  !ext_chan ? channel - 4 :
-						      channel + 4);
+				websWrite(wp, " + %d", !ext_chan ? channel - 4 : channel + 4);
 			} else if (nvram_nmatch("80", "%s_nbw", prefix)) {
-				if (nvram_nmatch("ll", "%s_nctrlsb", prefix) ||
-				    nvram_nmatch("lower", "%s_nctrlsb", prefix))
+				if (nvram_nmatch("ll", "%s_nctrlsb", prefix) || nvram_nmatch("lower", "%s_nctrlsb", prefix))
 					websWrite(wp, " + %d", channel + 6);
 				if (nvram_nmatch("lu", "%s_nctrlsb", prefix))
 					websWrite(wp, " + %d", channel + 2);
 				if (nvram_nmatch("ul", "%s_nctrlsb", prefix))
 					websWrite(wp, " + %d", channel - 2);
-				if (nvram_nmatch("uu", "%s_nctrlsb", prefix) ||
-				    nvram_nmatch("upper", "%s_nctrlsb", prefix))
+				if (nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("upper", "%s_nctrlsb", prefix))
 					websWrite(wp, " + %d", channel - 6);
 			}
 		}

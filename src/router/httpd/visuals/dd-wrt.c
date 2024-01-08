@@ -65,15 +65,11 @@ static unsigned int alpine_clocks[] = {
 #else
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
-static unsigned int type4_clocks[10] = { 192, 200, 216, 228, 240,
-					 252, 264, 280, 300, 0 };
-static unsigned int type7_clocks[10] = { 183, 187, 198, 200, 216,
-					 225, 233, 237, 250, 0 };
-static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600,
-					632, 650, 662, 0 };
+static unsigned int type4_clocks[10] = { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
+static unsigned int type7_clocks[10] = { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
+static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 0 };
 
-static unsigned int type10_clocks[9] = { 200, 266, 300, 333, 400,
-					 480, 500, 533, 0 };
+static unsigned int type10_clocks[9] = { 200, 266, 300, 333, 400, 480, 500, 533, 0 };
 
 #ifdef HAVE_NORTHSTAR
 static unsigned int ns_type11_clocks[4] = { 600, 800, 900, 0 };
@@ -110,9 +106,7 @@ int inline issuperchannel(void)
 
 static int cansuperchannel(webs_t wp, char *prefix)
 {
-	return (issuperchannel() &&
-		nvram_nmatch("0", "%s_regulatory", prefix) &&
-		nvram_nmatch("ddwrt", "%s_fwtype", prefix));
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
 #if 0
@@ -145,8 +139,7 @@ int is_station(char *prefix)
 {
 	char sta[16];
 	sprintf(sta, "%s_mode", prefix);
-	return nvram_match(sta, "sta") || nvram_match(sta, "wdssta") ||
-	       nvram_match(sta, "wdssta_mtik");
+	return nvram_match(sta, "sta") || nvram_match(sta, "wdssta") || nvram_match(sta, "wdssta_mtik");
 }
 
 int is_supplicant(char *prefix)
@@ -156,20 +149,15 @@ int is_supplicant(char *prefix)
 	return is_station(prefix) || nvram_match(sta, "mesh");
 }
 
-void show_caption_pp(webs_t wp, const char *class, const char *caption,
-		     const char *pre, const char *post)
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
 {
 	char *buf;
 	if (class)
-		asprintf(
-			&buf,
-			"%s<div class=\"%s\"><script type=\"text/javascript\">Capture(%s)</script></div>%s\n",
-			pre ? pre : "", class, caption, post ? post : "");
+		asprintf(&buf, "%s<div class=\"%s\"><script type=\"text/javascript\">Capture(%s)</script></div>%s\n",
+			 pre ? pre : "", class, caption, post ? post : "");
 	else {
-		asprintf(
-			&buf,
-			"%s<script type=\"text/javascript\">Capture(%s)</script>%s",
-			pre ? pre : "", caption, post ? post : "");
+		asprintf(&buf, "%s<script type=\"text/javascript\">Capture(%s)</script>%s", pre ? pre : "", caption,
+			 post ? post : "");
 	}
 	if (buf) {
 		websWrite(wp, buf);
@@ -254,18 +242,14 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
 		while (c[i] != 0) {
-			websWrite(wp, "<option value=\"%d\" %s >%d ", c[i],
-				  c[i] == cclk ? "selected=\"selected\"" : "",
-				  c[i]);
+			websWrite(wp, "<option value=\"%d\" %s >%d ", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]);
 			show_caption(wp, NULL, "wl_basic.mhz", "</option>\n");
 			i++;
 		}
 		websWrite(wp, "</select>\n</div>\n");
 	} else {
 		show_caption(wp, NULL, "management.clock_support", "</div>\n");
-		fprintf(stderr,
-			"CPU frequency list for rev: %d does not contain current clkfreq: %d.",
-			rev, cclk);
+		fprintf(stderr, "CPU frequency list for rev: %d does not contain current clkfreq: %d.", rev, cclk);
 	}
 }
 #endif
@@ -273,74 +257,35 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_show_routing(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"gateway\\\" %s >\" + share.gateway + \"</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "gateway") ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"gateway\\\" %s >\" + share.gateway + \"</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "gateway") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_BIRD
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "bgp") ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "router") ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "bgp") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "router") ? "selected=\\\"selected\\\"" : "");
 #endif
 #ifdef HAVE_QUAGGA
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "bgp") ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "router") ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "ospf") ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"ospf router\\\" %s >\" + route.ospf_rip2_mod + \"</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "ospf router") ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "bgp") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "router") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "ospf") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"ospf router\\\" %s >\" + route.ospf_rip2_mod + \"</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "ospf router") ? "selected=\\\"selected\\\"" : "");
 	if (nvram_match("wk_mode", "ospf bgp rip router")) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"ospf bgp rip router\\\" %s >vtysh OSPF BGP RIP router</option>\");\n",
-			nvram_selmatch(wp, "wk_mode", "ospf bgp rip router") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"ospf bgp rip router\\\" %s >vtysh OSPF BGP RIP router</option>\");\n",
+			  nvram_selmatch(wp, "wk_mode", "ospf bgp rip router") ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
 #ifdef HAVE_OLSRD
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"olsr\\\" %s >\" + route.olsrd_mod + \"</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "olsr") ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"olsr\\\" %s >\" + route.olsrd_mod + \"</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "olsr") ? "selected=\\\"selected\\\"" : "");
 #endif
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"static\\\" %s >\" + share.router + \"</option>\");\n",
-		nvram_selmatch(wp, "wk_mode", "static") ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"static\\\" %s >\" + share.router + \"</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode", "static") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n");
 	return;
 }
@@ -375,87 +320,50 @@ extern void *getUEnv(char *name);
 EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n",
-		nvram_selmatch(wp, "wan_proto", "disabled") ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"static\\\" %s >\" + idx.static_ip + \"</option>\");\n",
-		nvram_selmatch(wp, "wan_proto", "static") ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"dhcp\\\" %s >\" + idx.dhcp + \"</option>\");\n",
-		nvram_selmatch(wp, "wan_proto", "dhcp") ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"dhcp_auth\\\" %s >\" + idx.dhcp_auth + \"</option>\");\n",
-		nvram_selmatch(wp, "wan_proto", "dhcp_auth") ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n",
+		  nvram_selmatch(wp, "wan_proto", "disabled") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"static\\\" %s >\" + idx.static_ip + \"</option>\");\n",
+		  nvram_selmatch(wp, "wan_proto", "static") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"dhcp\\\" %s >\" + idx.dhcp + \"</option>\");\n",
+		  nvram_selmatch(wp, "wan_proto", "dhcp") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"dhcp_auth\\\" %s >\" + idx.dhcp_auth + \"</option>\");\n",
+		  nvram_selmatch(wp, "wan_proto", "dhcp_auth") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "\n//]]>\n</script>\n");
 
 #ifdef HAVE_MODEMBRIDGE
-	websWrite(
-		wp,
-		"<option value=\"bridge\" %s ><script type=\"text/javascript\">Capture(idx.dsl_mdm_bdg)</script></option>\n",
-		nvram_selmatch(wp, "wan_proto", "bridge") ?
-			"selected=\"selected\"" :
-			"");
+	websWrite(wp, "<option value=\"bridge\" %s ><script type=\"text/javascript\">Capture(idx.dsl_mdm_bdg)</script></option>\n",
+		  nvram_selmatch(wp, "wan_proto", "bridge") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOE
 	websWrite(wp, "<option value=\"pppoe\" %s >PPPoE</option>\n",
-		  nvram_selmatch(wp, "wan_proto", "pppoe") ?
-			  "selected=\"selected\"" :
-			  "");
+		  nvram_selmatch(wp, "wan_proto", "pppoe") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOEDUAL
-	websWrite(
-		wp,
-		"<option value=\"pppoe_dual\" %s><script type=\"text/javascript\">Capture(idx.pppoe_dual)</script></option>\n",
-		nvram_selmatch(wp, "wan_proto", "pppoe_dual") ?
-			"selected=\"selected\"" :
-			"");
+	websWrite(wp,
+		  "<option value=\"pppoe_dual\" %s><script type=\"text/javascript\">Capture(idx.pppoe_dual)</script></option>\n",
+		  nvram_selmatch(wp, "wan_proto", "pppoe_dual") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOATM
 	websWrite(wp, "<option value=\"pppoa\" %s >PPPoA</option>\n",
-		  nvram_selmatch(wp, "wan_proto", "pppoa") ?
-			  "selected=\"selected\"" :
-			  "");
+		  nvram_selmatch(wp, "wan_proto", "pppoa") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPTP
 	websWrite(wp, "<option value=\"pptp\" %s >PPTP</option>\n",
-		  nvram_selmatch(wp, "wan_proto", "pptp") ?
-			  "selected=\"selected\"" :
-			  "");
+		  nvram_selmatch(wp, "wan_proto", "pptp") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_L2TP
 	websWrite(wp, "<option value=\"l2tp\" %s >L2TP</option>\n",
-		  nvram_selmatch(wp, "wan_proto", "l2tp") ?
-			  "selected=\"selected\"" :
-			  "");
+		  nvram_selmatch(wp, "wan_proto", "l2tp") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_HEARTBEAT
-	websWrite(
-		wp,
-		"<option value=\"heartbeat\" %s ><script type=\"text/javascript\">Capture(idx.heartbeat_sig)</script></option>\n",
-		nvram_selmatch(wp, "wan_proto", "heartbeat") ?
-			"selected=\"selected\"" :
-			"");
+	websWrite(wp,
+		  "<option value=\"heartbeat\" %s ><script type=\"text/javascript\">Capture(idx.heartbeat_sig)</script></option>\n",
+		  nvram_selmatch(wp, "wan_proto", "heartbeat") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_IPETH
-	websWrite(
-		wp,
-		"<option value=\"iphone\" %s ><script type=\"text/javascript\">Capture(idx.iphone_tether)</script></option>\n",
-		nvram_selmatch(wp, "wan_proto", "iphone") ?
-			"selected=\"selected\"" :
-			"");
+	websWrite(wp,
+		  "<option value=\"iphone\" %s ><script type=\"text/javascript\">Capture(idx.iphone_tether)</script></option>\n",
+		  nvram_selmatch(wp, "wan_proto", "iphone") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_3G
 #ifdef HAVE_BUFFALO
@@ -463,15 +371,11 @@ EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t **argv)
 	if (!region) {
 		region = "US";
 	}
-	if (!strcmp(region, "EU") || !strcmp(region, "DE") ||
-	    nvram_matchi("umts_override", 1)) {
+	if (!strcmp(region, "EU") || !strcmp(region, "DE") || nvram_matchi("umts_override", 1)) {
 #endif
-		websWrite(
-			wp,
-			"<option value=\"3g\" %s ><script type=\"text/javascript\">Capture(idx.mobile_bb)</script></option>\n",
-			nvram_selmatch(wp, "wan_proto", "3g") ?
-				"selected=\"selected\"" :
-				"");
+		websWrite(wp,
+			  "<option value=\"3g\" %s ><script type=\"text/javascript\">Capture(idx.mobile_bb)</script></option>\n",
+			  nvram_selmatch(wp, "wan_proto", "3g") ? "selected=\"selected\"" : "");
 #ifdef HAVE_BUFFALO
 	}
 #endif
@@ -547,47 +451,32 @@ EJ_VISIBLE void ej_show_wds_subnet(webs_t wp, int argc, char_t **argv)
 	websWrite(
 		wp,
 		"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"2\\\" %s >\" + wds.subnet + \"</option>\");\n//]]>\n</script>\n",
-		nvram_selmatch(wp, buf, "2") ? "selected=\\\"selected\\\"" :
-					       "");
+		nvram_selmatch(wp, buf, "2") ? "selected=\\\"selected\\\"" : "");
 	return;
 }
 
 EJ_VISIBLE void ej_show_paypal(webs_t wp, int argc, char_t **argv)
 {
 #ifdef HAVE_DDLAN
-	websWrite(
-		wp,
-		"<a href=\"mailto:support@mcdd.de\">support@mcdd.de</a><br />");
+	websWrite(wp, "<a href=\"mailto:support@mcdd.de\">support@mcdd.de</a><br />");
 #endif
 #ifdef HAVE_CORENET
-	websWrite(
-		wp,
-		"<a href=\"http://www.corenetsolutions.com\">http://www.corenetsolutions.com</a><br />");
+	websWrite(wp, "<a href=\"http://www.corenetsolutions.com\">http://www.corenetsolutions.com</a><br />");
 #endif
 
 #ifndef HAVE_BRANDING
 #ifndef HAVE_REGISTER
 	websWrite(wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a><br />");
-	websWrite(
-		wp,
-		"<form action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\" target=\"_blank\">");
-	websWrite(wp,
-		  "<input type=\"hidden\" name=\"cmd\" value=\"_xclick\" />");
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"business\" value=\"paypal@dd-wrt.com\" />");
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"item_name\" value=\"DD-WRT Development Support\" />");
+	websWrite(wp, "<form action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\" target=\"_blank\">");
+	websWrite(wp, "<input type=\"hidden\" name=\"cmd\" value=\"_xclick\" />");
+	websWrite(wp, "<input type=\"hidden\" name=\"business\" value=\"paypal@dd-wrt.com\" />");
+	websWrite(wp, "<input type=\"hidden\" name=\"item_name\" value=\"DD-WRT Development Support\" />");
 	websWrite(wp, "<input type=\"hidden\" name=\"no_note\" value=\"1\" />");
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"currency_code\" value=\"EUR\" />");
+	websWrite(wp, "<input type=\"hidden\" name=\"currency_code\" value=\"EUR\" />");
 	websWrite(wp, "<input type=\"hidden\" name=\"lc\" value=\"en\" />");
 	websWrite(wp, "<input type=\"hidden\" name=\"tax\" value=\"0\" />");
-	websWrite(
-		wp,
-		"<input type=\"image\" alt=\"Paypal DD-WRT development support\" src=\"images/paypal.png\" name=\"submit\" />");
+	websWrite(wp,
+		  "<input type=\"image\" alt=\"Paypal DD-WRT development support\" src=\"images/paypal.png\" name=\"submit\" />");
 	websWrite(wp, "</form>");
 	//websWrite(wp,
 	//        "<br /><script type=\"text/javascript\">Capture(donate.mb)</script><br />\n");
@@ -671,12 +560,9 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t **argv)
 		if (userlist)
 			sep = strsep(&userlist, " ");
 		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input name=\"%s\" type=\"hidden\" />",
-			  username);
-		websWrite(
-			wp,
-			"<input name=\"%s\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n",
-			username, sep != NULL ? sep : "");
+		websWrite(wp, "<input name=\"%s\" type=\"hidden\" />", username);
+		websWrite(wp, "<input name=\"%s\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n", username,
+			  sep != NULL ? sep : "");
 		websWrite(wp, "</td>\n");
 		if (userlist)
 			sep = strsep(&userlist, " ");
@@ -687,14 +573,8 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t **argv)
 
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<input name=\"%s\" type=\"hidden\" />", active);
-		websWrite(
-			wp,
-			"<input type=\"checkbox\" value=\"%s\" name=\"_%s\" %s />\n",
-			sep, active,
-			sep != NULL ? strcmp(sep, "1") == 0 ?
-				      "checked=\"checked\"" :
-				      "" :
-				      "");
+		websWrite(wp, "<input type=\"checkbox\" value=\"%s\" name=\"_%s\" %s />\n", sep, active,
+			  sep != NULL ? strcmp(sep, "1") == 0 ? "checked=\"checked\"" : "" : "");
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
 		if (userlist)
@@ -717,16 +597,13 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t **argv)
 			sprintf(st, "%ld", t);
 		else
 			sprintf(st, "over");
-		websWrite(wp,
-			  "<input class=\"num\" name=\"%s\" value='%s' />\n",
-			  active, st);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" value='%s' />\n", active, st);
 		websWrite(wp, "</td>\n");
 
 		websWrite(wp, "<td>\n");
 		snprintf(active, 31, "iradius%d_delete", i);
 		websWrite(wp, "<input name=\"%s\" type=\"hidden\" />", active);
-		websWrite(wp, "<input type=\"checkbox\" name=\"_%s\"/>\n",
-			  active);
+		websWrite(wp, "<input type=\"checkbox\" name=\"_%s\"/>\n", active);
 		websWrite(wp, "</td></tr>\n");
 	}
 	if (o != NULL)
@@ -761,10 +638,8 @@ EJ_VISIBLE void ej_show_userlist(webs_t wp, int argc, char_t **argv)
 		char *sep = strsep(&userlist, "=");
 
 		websWrite(wp, "<tr><td>\n");
-		websWrite(
-			wp,
-			"<input name=\"%s\" autocomplete=\"new-password\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n",
-			username, sep != NULL ? sep : "");
+		websWrite(wp, "<input name=\"%s\" autocomplete=\"new-password\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n",
+			  username, sep != NULL ? sep : "");
 		websWrite(wp, "</td>\n");
 		char *pass = userlist;
 		sep = strsep(&userlist, " ");
@@ -787,17 +662,14 @@ EJ_VISIBLE void ej_show_openvpnuserpass(webs_t wp, int argc, char_t **argv)
 {
 	int i;
 	char *sln = nvram_safe_get("openvpn_userpassnum");
-	if (sln == NULL ||
-	    *(sln) ==
-		    0) // check for NULL pointer (which should never happen in this case) or empty string
+	if (sln == NULL || *(sln) == 0) // check for NULL pointer (which should never happen in this case) or empty string
 		return;
 	int userpassnum = atoi(sln);
 	if (userpassnum == 0)
 		return;
 	char *nvuserpass = nvram_safe_get("openvpn_userpass");
 	char *userpass = strdup(nvuserpass);
-	char *originalpointer =
-		userpass; // strsep destroys the pointer by moving it
+	char *originalpointer = userpass; // strsep destroys the pointer by moving it
 	for (i = 0; i < userpassnum; i++) {
 		char *sep = strsep(&userpass, "=");
 		websWrite(
@@ -897,41 +769,20 @@ EJ_VISIBLE void ej_show_default_level(webs_t wp, int argc, char_t **argv)
 		nvram_matchi("svqos_defaults", 1) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(
-		wp,
-		"<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
-	websWrite(
-		wp,
-		"<input class\"num\" type=\"number\" size=\"10\" name=\"default_downlevel\" value=\"%s\" %s/>\n",
-		nvram_safe_get("default_downlevel"),
-		(!strcmp(defaults, "1")) ? "" : "disabled");
-	websWrite(
-		wp,
-		"&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.down)</script></div>\n");
+	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
+	websWrite(wp, "<input class\"num\" type=\"number\" size=\"10\" name=\"default_downlevel\" value=\"%s\" %s/>\n",
+		  nvram_safe_get("default_downlevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
+	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.down)</script></div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(
-		wp,
-		"<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
-	websWrite(
-		wp,
-		"<input class\"num\" type=\"number\" size=\"10\" name=\"default_uplevel\" value=\"%s\" %s/>\n",
-		nvram_safe_get("default_uplevel"),
-		(!strcmp(defaults, "1")) ? "" : "disabled");
-	websWrite(
-		wp,
-		"&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.up)</script></div>\n");
+	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
+	websWrite(wp, "<input class\"num\" type=\"number\" size=\"10\" name=\"default_uplevel\" value=\"%s\" %s/>\n",
+		  nvram_safe_get("default_uplevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
+	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.up)</script></div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(
-		wp,
-		"<div class=\"label\">LAN <script type=\"text/javascript\">Capture(qos.bandwidth)</script></div>\n");
-	websWrite(
-		wp,
-		"<input class\"num\" type=\"number\" size=\"10\" name=\"default_lanlevel\" value=\"%s\" %s/>\n",
-		nvram_default_get("default_lanlevel", "100000"),
-		(!strcmp(defaults, "1")) ? "" : "disabled");
-	websWrite(
-		wp,
-		"&nbsp<script type=\"text/javascript\">document.write(qos.speed)</script></div>\n");
+	websWrite(wp, "<div class=\"label\">LAN <script type=\"text/javascript\">Capture(qos.bandwidth)</script></div>\n");
+	websWrite(wp, "<input class\"num\" type=\"number\" size=\"10\" name=\"default_lanlevel\" value=\"%s\" %s/>\n",
+		  nvram_default_get("default_lanlevel", "100000"), (!strcmp(defaults, "1")) ? "" : "disabled");
+	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed)</script></div>\n");
 	websWrite(wp, "</fieldset><br />\n");
 	return;
 }
@@ -1001,8 +852,7 @@ static char *wpa_enc_label(char *buf, size_t len, char *value)
 #endif
 }
 
-static void show_security_prefix(webs_t wp, int argc, char_t **argv,
-				 char *prefix, int primary)
+static void show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefix, int primary)
 {
 	char var[80];
 	char sta[80];
@@ -1024,8 +874,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t **argv,
 		wp,
 		"<select name=\"%s_security_mode\" onchange=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",
 		prefix, prefix, prefix, prefix);
-	websWrite(wp, "<option value=\"disabled\" %s>%s</option>\n",
-		  selmatch(var, "psk", "selected=\"selected\""),
+	websWrite(wp, "<option value=\"disabled\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""),
 		  wpa_enc_label(buf, sizeof(buf), "disabled"));
 
 	sprintf(sta, "%s_mode", prefix);
@@ -1039,133 +888,85 @@ static void show_security_prefix(webs_t wp, int argc, char_t **argv,
 	}
 #endif
 #ifndef HAVE_MADWIFI
-	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n",
-		  selmatch(var, "psk", "selected=\"selected\""),
+	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""),
 		  wpa_enc_label(buf, sizeof(buf), "psk"));
 #else
-	if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3") ||
-	    nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3") ||
-	    nvhas(var, "wpa3-192"))
-		websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n",
-			  "selected=\"selected\"",
+	if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3") || nvhas(var, "wpa") || nvhas(var, "wpa2") ||
+	    nvhas(var, "wpa3") || nvhas(var, "wpa3-192"))
+		websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "selected=\"selected\"",
 			  wpa_enc_label(buf, sizeof(buf), "wpa"));
 	else
-		websWrite(wp, "<option value=\"wpa\" >%s</option>\n",
-			  wpa_enc_label(buf, sizeof(buf), "wpa"));
+		websWrite(wp, "<option value=\"wpa\" >%s</option>\n", wpa_enc_label(buf, sizeof(buf), "wpa"));
 #endif
 #ifndef HAVE_MADWIFI
-	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n",
-		  selmatch(var, "psk2", "selected=\"selected\""),
+	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n", selmatch(var, "psk2", "selected=\"selected\""),
 		  wpa_enc_label(buf, sizeof(buf), "psk2"));
 	if (has_wpa3(prefix))
-		websWrite(wp, "<option value=\"psk3\" %s>%s</option>\n",
-			  selmatch(var, "psk3", "selected=\"selected\""),
+		websWrite(wp, "<option value=\"psk3\" %s>%s</option>\n", selmatch(var, "psk3", "selected=\"selected\""),
 			  wpa_enc_label(buf, sizeof(buf), "psk3"));
 #ifdef HAVE_RT2880
 	if (!primary || nvram_match(sta, "ap"))
 #endif
 	{
-		websWrite(wp, "<option value=\"psk psk2\" %s>%s</option>\n",
-			  selmatch(var, "psk psk2", "selected=\"selected\""),
+		websWrite(wp, "<option value=\"psk psk2\" %s>%s</option>\n", selmatch(var, "psk psk2", "selected=\"selected\""),
 			  wpa_enc_label(buf, sizeof(buf), "psk psk2"));
 		if (has_wpa3(prefix))
-			websWrite(
-				wp,
-				"<option value=\"psk2 psk3\" %s>%s</option>\n",
-				selmatch(var, "psk2 psk3",
-					 "selected=\"selected\""),
-				wpa_enc_label(buf, sizeof(buf), "psk2 psk3"));
+			websWrite(wp, "<option value=\"psk2 psk3\" %s>%s</option>\n",
+				  selmatch(var, "psk2 psk3", "selected=\"selected\""),
+				  wpa_enc_label(buf, sizeof(buf), "psk2 psk3"));
 	}
 #endif
 	if (!has_qtn(prefix)) {
 		if (!primary || is_ap(prefix)) {
 #ifndef HAVE_MADWIFI
-			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n",
-				  selmatch(var, "wpa", "selected=\"selected\""),
+			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""),
 				  wpa_enc_label(buf, sizeof(buf), "wpa"));
-			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n",
-				  selmatch(var, "wpa2",
-					   "selected=\"selected\""),
+			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""),
 				  wpa_enc_label(buf, sizeof(buf), "wpa2"));
 			if (has_wpa3(prefix)) {
-				websWrite(
-					wp,
-					"<option value=\"wpa3\" %s>%s</option>\n",
-					selmatch(var, "wpa3",
-						 "selected=\"selected\""),
-					wpa_enc_label(buf, sizeof(buf),
-						      "wpa3"));
-				websWrite(
-					wp,
-					"<option value=\"wpa3-192\" %s>%s</option>\n",
-					selmatch(var, "wpa3-192",
-						 "selected=\"selected\""),
-					wpa_enc_label(buf, sizeof(buf),
-						      "wpa3-192"));
+				websWrite(wp, "<option value=\"wpa3\" %s>%s</option>\n",
+					  selmatch(var, "wpa3", "selected=\"selected\""), wpa_enc_label(buf, sizeof(buf), "wpa3"));
+				websWrite(wp, "<option value=\"wpa3-192\" %s>%s</option>\n",
+					  selmatch(var, "wpa3-192", "selected=\"selected\""),
+					  wpa_enc_label(buf, sizeof(buf), "wpa3-192"));
 			}
-			websWrite(wp,
-				  "<option value=\"wpa wpa2\" %s>%s</option>\n",
-				  selmatch(var, "wpa wpa2",
-					   "selected=\"selected\""),
-				  wpa_enc_label(buf, sizeof(buf), "wpa wpa2"));
+			websWrite(wp, "<option value=\"wpa wpa2\" %s>%s</option>\n",
+				  selmatch(var, "wpa wpa2", "selected=\"selected\""), wpa_enc_label(buf, sizeof(buf), "wpa wpa2"));
 			if (has_wpa3(prefix)) {
-				websWrite(
-					wp,
-					"<option value=\"wpa2 wpa3\" %s>%s</option>\n",
-					selmatch(var, "wpa2 wpa3",
-						 "selected=\"selected\""),
-					wpa_enc_label(buf, sizeof(buf),
-						      "wpa2 wpa3"));
-				websWrite(
-					wp,
-					"<option value=\"wpa2 wpa3-192\" %s>%s</option>\n",
-					selmatch(var, "wpa2 wpa3-192",
-						 "selected=\"selected\""),
-					wpa_enc_label(buf, sizeof(buf),
-						      "wpa2 wpa3-192"));
+				websWrite(wp, "<option value=\"wpa2 wpa3\" %s>%s</option>\n",
+					  selmatch(var, "wpa2 wpa3", "selected=\"selected\""),
+					  wpa_enc_label(buf, sizeof(buf), "wpa2 wpa3"));
+				websWrite(wp, "<option value=\"wpa2 wpa3-192\" %s>%s</option>\n",
+					  selmatch(var, "wpa2 wpa3-192", "selected=\"selected\""),
+					  wpa_enc_label(buf, sizeof(buf), "wpa2 wpa3-192"));
 			}
 #endif
-			websWrite(wp,
-				  "<option value=\"radius\" %s>%s</option>\n",
-				  selmatch(var, "radius",
-					   "selected=\"selected\""),
+			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""),
 				  wpa_enc_label(buf, sizeof(buf), "radius"));
 		}
 		if (!nvram_match(sta, "mesh"))
-			websWrite(wp, "<option value=\"wep\" %s>%s</option>\n",
-				  selmatch(var, "wep", "selected=\"selected\""),
+			websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""),
 				  wpa_enc_label(buf, sizeof(buf), "wep"));
 	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
 #if !defined(HAVE_RT2880) || defined(HAVE_MT76)
-	if (nvram_match(sta, "sta") || nvram_match(sta, "wdssta") ||
-	    nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
+	if (nvram_match(sta, "sta") || nvram_match(sta, "wdssta") || nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
 #ifdef HAVE_MADWIFI
-		if (nvhas(var, "peap") || nvhas(var, "leap") ||
-		    nvhas(var, "tls") || nvhas(var, "ttls") ||
-		    nvhas(var, "8021X"))
-			websWrite(
-				wp,
-				"<option value=\"8021X\" %s>802.1X / EAP</option>\n",
-				"selected=\"selected\"");
+		if (nvhas(var, "peap") || nvhas(var, "leap") || nvhas(var, "tls") || nvhas(var, "ttls") || nvhas(var, "8021X"))
+			websWrite(wp, "<option value=\"8021X\" %s>802.1X / EAP</option>\n", "selected=\"selected\"");
 		else
-			websWrite(
-				wp,
-				"<option value=\"8021X\" %s>802.1X / EAP</option>\n",
-				"");
+			websWrite(wp, "<option value=\"8021X\" %s>802.1X / EAP</option>\n", "");
 
 #else
-		websWrite(wp,
-			  "<option value=\"8021X\" %s>802.1X / EAP</option>\n",
+		websWrite(wp, "<option value=\"8021X\" %s>802.1X / EAP</option>\n",
 			  selmatch(var, "8021X", "selected=\"selected\""));
 #endif
 	}
 #else
 #ifndef HAVE_RT61
 	if (nvram_match(sta, "sta") || nvram_match(sta, "wet")) {
-		websWrite(wp,
-			  "<option value=\"8021X\" %s>802.1X / EAP</option>\n",
+		websWrite(wp, "<option value=\"8021X\" %s>802.1X / EAP</option>\n",
 			  selmatch(var, "8021X", "selected=\"selected\""));
 	}
 #endif
@@ -1179,8 +980,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t **argv,
 	internal_ej_show_wpa_setting(wp, argc, argv, prefix);
 }
 
-static void ej_show_security_single(webs_t wp, int argc, char_t **argv,
-				    char *prefix)
+static void ej_show_security_single(webs_t wp, int argc, char_t **argv, char *prefix)
 {
 	char *next;
 	char var[80];
@@ -1197,18 +997,12 @@ static void ej_show_security_single(webs_t wp, int argc, char_t **argv,
 	if (vifs == NULL)
 		return;
 	sprintf(ssid, "%s_ssid", prefix);
-	if (!nvram_nmatch("disabled", "%s_net_mode", prefix) &&
-	    !nvram_nmatch("disabled", "%s_mode", prefix)) {
-		websWrite(
-			wp,
-			"<h2><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n",
-			prefix);
+	if (!nvram_nmatch("disabled", "%s_net_mode", prefix) && !nvram_nmatch("disabled", "%s_mode", prefix)) {
+		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n", prefix);
 		websWrite(wp, "<fieldset>\n");
 		// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-		websWrite(
-			wp,
-			"<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
-			getNetworkLabel(wp, IFMAP(prefix)));
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
+			  getNetworkLabel(wp, IFMAP(prefix)));
 		tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid
 		// contains html tag
 		websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
@@ -1223,10 +1017,8 @@ static void ej_show_security_single(webs_t wp, int argc, char_t **argv,
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
 		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
-		websWrite(
-			wp,
-			"<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
-			getNetworkLabel(wp, IFMAP(var)));
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
+			  getNetworkLabel(wp, IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid
 		// contains html tag
 		sprintf(mac, "%s_hwaddr", var);
@@ -1280,12 +1072,10 @@ EJ_VISIBLE void ej_calcendip(webs_t wp, int argc, char_t **argv)
 	unsigned int im2 = 255;
 	unsigned int im3 = 255;
 	unsigned int im4 = 255;
-	unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) +
-			   ((ip3 & im3) << 8) + ip4;
+	unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + ip4;
 	unsigned int eip = sip + dhcpnum - 1;
 
-	websWrite(wp, "%d.%d.%d.%d", (eip >> 24) & 0xff, (eip >> 16) & 0xff,
-		  (eip >> 8) & 0xff, eip & 0xff);
+	websWrite(wp, "%d.%d.%d.%d", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
 }
 
 EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t **argv)
@@ -1295,36 +1085,24 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t **argv)
 	if (getWET()) // dhcpd settings disabled in client bridge mode, so we wont display it
 		return;
 
-	websWrite(
-		wp,
-		"<fieldset><legend><script type=\"text/javascript\">Capture(idx.dhcp_legend)</script></legend>\n");
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(idx.dhcp_legend)</script></legend>\n");
 	websWrite(wp, "<div class=\"setting\" name=\"dhcp_settings\">\n");
 	show_caption(wp, "label", "idx.dhcp_type", NULL);
 	websWrite(
 		wp,
 		"<select class=\"num\" size=\"1\" name=\"dhcpfwd_enable\" onchange=SelDHCPFWD(this.form.dhcpfwd_enable.selectedIndex,this.form)>\n");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"0\\\" %s >\" + idx.dhcp_srv + \"</option>\");\n",
-		nvram_matchi("dhcpfwd_enable", 0) ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"1\\\" %s >\" + idx.dhcp_fwd + \"</option>\");\n",
-		nvram_matchi("dhcpfwd_enable", 1) ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + idx.dhcp_srv + \"</option>\");\n",
+		  nvram_matchi("dhcpfwd_enable", 0) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + idx.dhcp_fwd + \"</option>\");\n",
+		  nvram_matchi("dhcpfwd_enable", 1) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 	if (nvram_matchi("dhcpfwd_enable", 1)) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.dhcp_srv", NULL);
-		websWrite(
-			wp,
-			"<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" />\n");
+		websWrite(wp, "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" />\n");
 		show_ip(wp, NULL, "dhcpfwd_ip", 0, 0, "idx.dhcp_srv");
 		websWrite(wp, "</div>\n");
 	} else {
@@ -1333,37 +1111,29 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t **argv)
 		websWrite(
 			wp,
 			"<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div><input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"dhcp\" onclick=\"SelDHCP('dhcp',this.form)\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			nvram_match("lan_proto", "dhcp") ?
-				"checked=\"checked\"" :
-				"");
+			nvram_match("lan_proto", "dhcp") ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"static\" onclick=\"SelDHCP('static',this.form)\" %s /><script type=\"text/javascript\">Capture(share.disable)</script></div><input type=\"hidden\" name=\"dhcp_check\" /><div class=\"setting\">\n",
-			nvram_match("lan_proto", "static") ?
-				"checked=\"checked\"" :
-				"");
+			nvram_match("lan_proto", "static") ? "checked=\"checked\"" : "");
 		show_caption(wp, "label", "idx.dhcp_start", NULL);
 		char *dhcp_start = nvram_safe_get("dhcp_start");
 		websWrite(
 			wp,
 			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" disabled=\"true\" />.",
-			1, 254, "idx.dhcp_start", "dhcp_start",
-			get_single_ip(nvram_safe_get("lan_ipaddr"), 0));
+			1, 254, "idx.dhcp_start", "dhcp_start", get_single_ip(nvram_safe_get("lan_ipaddr"), 0));
 		websWrite(
 			wp,
 			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.",
-			"idx.dhcp_start", "dhcp_start",
-			get_single_ip(dhcp_start, 1));
+			"idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 1));
 		websWrite(
 			wp,
 			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.",
-			"idx.dhcp_start", "dhcp_start",
-			get_single_ip(dhcp_start, 2));
+			"idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 2));
 		websWrite(
 			wp,
 			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" />\n",
-			"idx.dhcp_start", "dhcp_start",
-			get_single_ip(dhcp_start, 3));
+			"idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 3));
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(
@@ -1376,106 +1146,68 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t **argv)
 			"<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_lease)</script></div><input class=\"num\" name=\"dhcp_lease\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,0,99999,idx.dhcp_lease)\" value=\"%s\" > <script type=\"text/javascript\">Capture(share.minutes)</script></input></div>\n",
 			nvram_safe_get("dhcp_lease"));
 		if (nvram_invmatch("wan_proto", "static")) {
-			websWrite(
-				wp,
-				"<div class=\"setting\" id=\"dhcp_static_dns0\">\n");
-			websWrite(
-				wp,
-				"<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 1</div>");
-			websWrite(
-				wp,
-				"<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
+			websWrite(wp, "<div class=\"setting\" id=\"dhcp_static_dns0\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 1</div>");
+			websWrite(wp, "<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
 			for (i = 0; i < 4; i++)
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-					i, i == 3 ? 254 : 255,
-					get_dns_ip("wan_dns", 0, i),
-					i < 3 ? "." : "");
+					i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 0, i), i < 3 ? "." : "");
 
-			websWrite(
-				wp,
-				"\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns1\">\n");
-			websWrite(
-				wp,
-				"<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 2</div>");
+			websWrite(wp, "\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns1\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 2</div>");
 			for (i = 0; i < 4; i++)
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-					i, i == 3 ? 254 : 255,
-					get_dns_ip("wan_dns", 1, i),
-					i < 3 ? "." : "");
+					i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 1, i), i < 3 ? "." : "");
 
-			websWrite(
-				wp,
-				"\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns2\">\n");
-			websWrite(
-				wp,
-				"<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 3</div>");
+			websWrite(wp, "\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns2\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 3</div>");
 			for (i = 0; i < 4; i++)
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-					i, i == 3 ? 254 : 255,
-					get_dns_ip("wan_dns", 2, i),
-					i < 3 ? "." : "");
+					i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 2, i), i < 3 ? "." : "");
 			websWrite(wp, "\n</div>");
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">WINS</div>\n");
-		websWrite(
-			wp,
-			"<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
+		websWrite(wp, "<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
 
 		show_ip(wp, NULL, "wan_wins", 1, 0, "&#34;WINS&#34;");
 		websWrite(wp, "</div>\n<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.dns_dnsmasq", NULL);
-		websWrite(
-			wp,
-			"<input type=\"checkbox\" name=\"_dns_dnsmasq\" value=\"1\" %s />\n",
-			nvram_matchi("dns_dnsmasq", 1) ? "checked=\"checked\"" :
-							 "");
+		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_dnsmasq\" value=\"1\" %s />\n",
+			  nvram_matchi("dns_dnsmasq", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.auth_dnsmasq", NULL);
-		websWrite(
-			wp,
-			"<input type=\"checkbox\" name=\"_auth_dnsmasq\" value=\"1\" %s />\n",
-			nvram_matchi("auth_dnsmasq", 1) ?
-				"checked=\"checked\"" :
-				"");
+		websWrite(wp, "<input type=\"checkbox\" name=\"_auth_dnsmasq\" value=\"1\" %s />\n",
+			  nvram_matchi("auth_dnsmasq", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
 #ifdef HAVE_UNBOUND
 		websWrite(
 			wp,
 			"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.recursive_dns)</script></div>\n");
-		websWrite(
-			wp,
-			"<input type=\"checkbox\" name=\"_recursive_dns\" value=\"1\" %s />\n",
-			nvram_matchi("recursive_dns", 1) ?
-				"checked=\"checked\"" :
-				"");
+		websWrite(wp, "<input type=\"checkbox\" name=\"_recursive_dns\" value=\"1\" %s />\n",
+			  nvram_matchi("recursive_dns", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 #endif
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.force_dnsmasq", NULL);
-		websWrite(
-			wp,
-			"<input type=\"checkbox\" name=\"_dns_redirect\" value=\"1\" %s />\n",
-			nvram_matchi("dns_redirect", 1) ?
-				"checked=\"checked\"" :
-				"");
+		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirect\" value=\"1\" %s />\n",
+			  nvram_matchi("dns_redirect", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.force_dnsmasqdot", NULL);
-		websWrite(
-			wp,
-			"<input type=\"checkbox\" name=\"_dns_redirectdot\" value=\"1\" %s />\n",
-			nvram_matchi("dns_redirectdot", 1) ?
-				"checked=\"checked\"" :
-				"");
+		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirectdot\" value=\"1\" %s />\n",
+			  nvram_matchi("dns_redirectdot", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 	}
 
@@ -1502,9 +1234,7 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.intrface", NULL);
-	websWrite(
-		wp,
-		"<select name=\"wifi_display\" onchange=\"refresh(this.form)\">\n");
+	websWrite(wp, "<select name=\"wifi_display\" onchange=\"refresh(this.form)\">\n");
 	int i;
 
 	for (i = 0; i < count; i++) {
@@ -1512,19 +1242,11 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 		if (nvram_nmatch("disabled", "%s_mode", var))
 			continue;
 		if (has_ad(var))
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
-				  var,
-				  nvram_match("wifi_display", "giwifi0") ?
-					  "selected=\"selected\"" :
-					  "",
-				  getNetworkLabel(wp, var));
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
+				  nvram_match("wifi_display", "giwifi0") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		else
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
-				  var,
-				  nvram_match("wifi_display", var) ?
-					  "selected=\"selected\"" :
-					  "",
-				  getNetworkLabel(wp, var));
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
+				  nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		char *names = nvram_nget(WIFINAME "%d_vifs", i);
 
 		foreach(var, names, next)
@@ -1532,23 +1254,13 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 			if (nvram_nmatch("disabled", "%s_net_mode", var))
 				continue;
 			if (has_ad(var))
-				websWrite(
-					wp,
-					"<option value=\"%s\" %s >%s</option>\n",
-					var,
-					nvram_match("wifi_display", "giwifi0") ?
-						"selected=\"selected\"" :
-						"",
-					getNetworkLabel(wp, var));
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
+					  nvram_match("wifi_display", "giwifi0") ? "selected=\"selected\"" : "",
+					  getNetworkLabel(wp, var));
 			else
-				websWrite(
-					wp,
-					"<option value=\"%s\" %s >%s</option>\n",
-					var,
-					nvram_match("wifi_display", var) ?
-						"selected=\"selected\"" :
-						"",
-					getNetworkLabel(wp, var));
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
+					  nvram_match("wifi_display", var) ? "selected=\"selected\"" : "",
+					  getNetworkLabel(wp, var));
 		}
 
 		char ifname[32];
@@ -1557,12 +1269,8 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 		getIfList(eths, ifname);
 		foreach(var, eths, next)
 		{
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
-				  var,
-				  nvram_match("wifi_display", var) ?
-					  "selected=\"selected\"" :
-					  "",
-				  getNetworkLabel(wp, var));
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
+				  nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
 	}
 	websWrite(wp, "</select>\n");
@@ -1579,18 +1287,13 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 		return;
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.intrface", NULL);
-	websWrite(
-		wp,
-		"<select name=\"wifi_display\" onchange=\"refresh(this.form)\">\n");
+	websWrite(wp, "<select name=\"wifi_display\" onchange=\"refresh(this.form)\">\n");
 	int i;
 
 	for (i = 0; i < count; i++) {
 		sprintf(var, WIFINAME "%d", i);
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
-			  nvram_match("wifi_display", var) ?
-				  "selected=\"selected\"" :
-				  "",
-			  getNetworkLabel(wp, var));
+			  nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
@@ -1601,42 +1304,31 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 void show_bgscan_options(webs_t wp, char *prefix)
 {
 	char signal[32];
-	websWrite(
-		wp,
-		"<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.bgscan)</script></legend>");
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.bgscan)</script></legend>");
 	sprintf(signal, "%s_bgscan_mode", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	char buf1[128];
 	char buf2[128];
-	char *modes[] = { "\" + share.off +\"",
-			  "\" + wl_adv.bgscan_simple + \"",
-			  "\" + wl_adv.bgscan_learn + \"" };
-	showOptionsNames(wp, "wl_adv.bgscan_mode", signal, "off simple learn",
-			 modes, nvram_default_get(signal, "off"));
+	char *modes[] = { "\" + share.off +\"", "\" + wl_adv.bgscan_simple + \"", "\" + wl_adv.bgscan_learn + \"" };
+	showOptionsNames(wp, "wl_adv.bgscan_mode", signal, "off simple learn", modes, nvram_default_get(signal, "off"));
 	websWrite(wp, "</div>\n");
 	sprintf(signal, "%s_bgscan_short_int", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_adv.bgscan_short_int", NULL);
-	websWrite(
-		wp,
-		"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n",
-		signal, nvram_default_get(signal, "30"));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal,
+		  nvram_default_get(signal, "30"));
 	websWrite(wp, "</div>\n");
 	sprintf(signal, "%s_bgscan_threshold", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_adv.bgscan_threshold", NULL);
-	websWrite(
-		wp,
-		"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n",
-		signal, nvram_default_get(signal, "-45"));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal,
+		  nvram_default_get(signal, "-45"));
 	websWrite(wp, "</div>\n");
 	sprintf(signal, "%s_bgscan_long_int", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_adv.bgscan_long_int", NULL);
-	websWrite(
-		wp,
-		"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n",
-		signal, nvram_default_get(signal, "300"));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal,
+		  nvram_default_get(signal, "300"));
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</fieldset><br/>\n");
 }
@@ -1656,39 +1348,23 @@ EJ_VISIBLE void ej_show_usb_diskinfo(webs_t wp, int argc, char_t **argv)
 		return;
 	//exclude proftpd bind mount points and don't display the first 3 lines which are header and rootfs
 
-	if ((fp = popen(
-		     "df -P -h | grep -v proftpd | awk '{ print $3 \" \" $2 \" \" $5 \" \" $6}' | tail -n +3",
-		     "rb"))) {
+	if ((fp = popen("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $2 \" \" $5 \" \" $6}' | tail -n +3", "rb"))) {
 		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
 				bzero(used, sizeof(used));
 				bzero(avail, sizeof(avail));
 				bzero(per, sizeof(per));
 				bzero(mp, sizeof(mp));
-				if (sscanf(line, "%s %s %s %s", used, avail,
-					   per, mp) == 4) {
+				if (sscanf(line, "%s %s %s %s", used, avail, per, mp) == 4) {
 					if (!strncmp(mp, "/dev", 4))
 						continue;
-					websWrite(wp,
-						  "<div class=\"setting\">");
-					websWrite(
-						wp,
-						"<div class=\"label\">%s %s</div>",
-						live_translate(
-							wp,
-							"usb.usb_diskspace"),
-						mp);
+					websWrite(wp, "<div class=\"setting\">");
+					websWrite(wp, "<div class=\"label\">%s %s</div>", live_translate(wp, "usb.usb_diskspace"),
+						  mp);
 					websWrite(wp, "<span id=\"usage\">");
-					websWrite(
-						wp,
-						"<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>",
-						per);
-					websWrite(
-						wp,
-						"<div class=\"text\">%s</div></div>",
-						per);
-					websWrite(wp, "%s / %s </span></div>",
-						  used, avail);
+					websWrite(wp, "<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>", per);
+					websWrite(wp, "<div class=\"text\">%s</div></div>", per);
+					websWrite(wp, "%s / %s </span></div>", used, avail);
 				}
 			}
 		}
@@ -1715,8 +1391,7 @@ EJ_VISIBLE void ej_show_usb_diskinfo(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "</div>");
 
 	if (!mounted) {
-		websWrite(wp, "%s",
-			  live_translate(wp, "status_router.notavail"));
+		websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));
 		websWrite(wp, "<br>");
 	}
 	return;
@@ -1802,8 +1477,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 	sprintf(wl_net_mode, "%s_net_mode", prefix);
 	if (nvram_match(wl_net_mode, "disabled"))
 		return;
-	if (is_ap(prefix) || nvram_match(wl_mode, "infra") ||
-	    nvram_match(wl_mode, "mesh")) {
+	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh")) {
 		char wl_channel[16];
 		char wl_channel2[16];
 		char wl_wchannel[16];
@@ -1848,20 +1522,14 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			country = nvram_default_get(regdomain, "UNITED_STATES");
 			// temp end
 
-			if (nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("bg-mixed", "%s_net_mode", prefix) ||
-			    nvram_nmatch("ng-mixed", "%s_net_mode", prefix) ||
-			    nvram_nmatch("b-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("g-only", "%s_net_mode", prefix)) {
+			if (nvram_nmatch("ng-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+			    nvram_nmatch("bg-mixed", "%s_net_mode", prefix) || nvram_nmatch("ng-mixed", "%s_net_mode", prefix) ||
+			    nvram_nmatch("b-only", "%s_net_mode", prefix) || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
 				checkband = 2;
 			}
-			if (nvram_nmatch("a-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("na-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-			    nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+			if (nvram_nmatch("a-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
+			    nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
+			    nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
 			    nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
 				checkband = 5;
 			}
@@ -1875,10 +1543,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				channelbw = 40;
 			if (nvram_nmatch("2040", "%s_channelbw", prefix))
 				channelbw = 40;
-			chan = mac80211_get_channels_simple(prefix,
-							    getIsoName(country),
-							    channelbw,
-							    checkband);
+			chan = mac80211_get_channels_simple(prefix, getIsoName(country), channelbw, checkband);
 			/* if (chan == NULL)
 			   chan =
 			   list_channels_ath9k(dev, "DE", 40,
@@ -1892,24 +1557,17 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		}
 #ifdef HAVE_ENEO
 		chan = NULL;
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
-			!strcmp("0", "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
+			  !strcmp("0", "0") ? "selected=\\\"selected\\\"" : "");
 
 #endif
 		if (chan) {
 			char *wlc = nvram_safe_get(wl_channel);
 			int offset = get_freqoffset(prefix);
 			// int cnt = getchannelcount ();
-			if (!nvram_nmatch("mesh", "%s_mode", prefix) &&
-			    !nvram_nmatch("infra", "%s_mode", prefix))
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
-					!strcmp(wlc, "0") ?
-						"selected=\\\"selected\\\"" :
-						"");
+			if (!nvram_nmatch("mesh", "%s_mode", prefix) && !nvram_nmatch("infra", "%s_mode", prefix))
+				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
+					  !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
 			while (chan[i].freq != -1) {
 #ifdef HAVE_BUFFALO
@@ -1920,32 +1578,24 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #endif
 
 				if (is_mvebu(prefix) &&
-				    ((chan[i].channel == 161 ||
-				      chan[i].channel == 153 ||
-				      chan[i].channel == 64) &&
+				    ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) &&
 				     channelbw == 80)) {
 					i++;
 					continue;
 				}
 
-				if (channelbw == 40 && !chan[i].luu &&
-				    !chan[i].ull) {
+				if (channelbw == 40 && !chan[i].luu && !chan[i].ull) {
 					i++;
 					continue; // do not show channels where bandwidth is not available
 				}
 
-				if (channelbw == 80 && !chan[i].lul &&
-				    !chan[i].ull && !chan[i].ulu &&
-				    !chan[i].luu) {
+				if (channelbw == 80 && !chan[i].lul && !chan[i].ull && !chan[i].ulu && !chan[i].luu) {
 					i++;
 					continue; // do not show channels where bandwidth is not available
 				}
 
-				if (channelbw == 160 && !chan[i].lll &&
-				    !chan[i].llu && !chan[i].lul &&
-				    !chan[i].luu && !chan[i].ull &&
-				    !chan[i].ulu && !chan[i].uul &&
-				    !chan[i].uuu) {
+				if (channelbw == 160 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu &&
+				    !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
 					i++;
 					continue; // do not show channels where bandwidth is not available
 				}
@@ -1953,43 +1603,28 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(fr, "%d", chan[i].freq);
 				int freq = chan[i].freq;
 				if (freq != -1) {
-					if (is_mac80211(prefix) &&
-					    !is_ath5k(prefix)) {
+					if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
 							wp,
 							"document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
-							fr, chan[i].lll,
-							chan[i].llu,
-							chan[i].lul,
-							chan[i].luu,
-							chan[i].ull,
-							chan[i].ulu,
-							chan[i].uul,
-							chan[i].uuu,
-							!strcmp(wlc, fr) ?
-								" selected=\\\"selected\\\"" :
-								"",
-							cn, (freq + offset));
+							fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull,
+							chan[i].ulu, chan[i].uul, chan[i].uuu,
+							!strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
 					} else {
 						websWrite(
 							wp,
 							"document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
-							fr,
-							!strcmp(wlc, fr) ?
-								"selected=\\\"selected\\\"" :
-								"",
-							cn, (freq + offset));
+							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", cn,
+							(freq + offset));
 					}
 				}
 				i++;
 			}
 		}
 		websWrite(wp, "//]]>\n</script></select></div>\n");
-		if (has_vht80plus80(prefix) &&
-		    nvram_nmatch("80+80", "%s_channelbw", prefix) && chan) {
+		if (has_vht80plus80(prefix) && nvram_nmatch("80+80", "%s_channelbw", prefix) && chan) {
 			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_basic.vht80p80chan",
-				     NULL);
+			show_caption(wp, "label", "wl_basic.vht80p80chan", NULL);
 			char *wlc = nvram_safe_get(wl_channel2);
 			int base = nvram_geti(wl_channel);
 			int offset = get_freqoffset(prefix);
@@ -2007,9 +1642,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			get_channeloffset(prefix, &iht, &channeloffset);
 			while (chan[i].freq != -1) {
 				if (is_mvebu(prefix) &&
-				    ((chan[i].channel == 161 ||
-				      chan[i].channel == 153 ||
-				      chan[i].channel == 64) &&
+				    ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) &&
 				     channelbw == 80)) {
 					i++;
 					continue;
@@ -2039,20 +1672,13 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 				continue;
 found:;
-				if (freq + offset >= 5310 &&
-				    freq + offset < 5500)
+				if (freq + offset >= 5310 && freq + offset < 5500)
 					continue;
-				if (!chan[i].lul && !chan[i].ull &&
-				    !chan[i].ulu && !chan[i].luu)
+				if (!chan[i].lul && !chan[i].ull && !chan[i].ulu && !chan[i].luu)
 					continue;
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
-					fr,
-					!strcmp(wlc, fr) ?
-						" selected=\\\"selected\\\"" :
-						"",
-					cn, (freq + offset));
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
+					  fr, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
 			}
 			websWrite(wp, "//]]>\n</script></select></div>\n");
 		}
@@ -2077,19 +1703,11 @@ found:;
 			int i, j;
 
 			// supported 5GHz channels for IEEE 802.11n 40MHz
-			int na_upper[16] = { 40,  48,  56,  64,	 104, 112,
-					     120, 128, 136, 153, 161, 0,
-					     0,	  0,   0,   0 };
-			int na_lower[16] = { 36,  44,  52,  60,	 100, 108,
-					     116, 124, 132, 149, 157, 0,
-					     0,	  0,   0,   0 };
+			int na_upper[16] = { 40, 48, 56, 64, 104, 112, 120, 128, 136, 153, 161, 0, 0, 0, 0, 0 };
+			int na_lower[16] = { 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157, 0, 0, 0, 0, 0 };
 
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
-				nvram_nmatch("0", "%s_channel", prefix) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
+				  nvram_nmatch("0", "%s_channel", prefix) ? "selected=\\\"selected\\\"" : "");
 			for (i = 0; i < chancount; i++) {
 				int ofs;
 
@@ -2105,15 +1723,10 @@ found:;
 
 				int showit = 1;
 
-				if (nvram_match(wl_net_mode, "a-only") ||
-				    nvram_match(wl_net_mode, "na-only") ||
-				    nvram_match(wl_net_mode, "n5-only") ||
-				    nvram_match(wl_net_mode, "ac-only") ||
-				    nvram_match(wl_net_mode, "acn-mixed") ||
-				    nvram_match(wl_net_mode, "ax-only") ||
-				    nvram_match(wl_net_mode, "xacn-mixed") ||
-				    (net_is_a &&
-				     nvram_match(wl_net_mode, "mixed"))) {
+				if (nvram_match(wl_net_mode, "a-only") || nvram_match(wl_net_mode, "na-only") ||
+				    nvram_match(wl_net_mode, "n5-only") || nvram_match(wl_net_mode, "ac-only") ||
+				    nvram_match(wl_net_mode, "acn-mixed") || nvram_match(wl_net_mode, "ax-only") ||
+				    nvram_match(wl_net_mode, "xacn-mixed") || (net_is_a && nvram_match(wl_net_mode, "mixed"))) {
 					if (chanlist[i] < 25)
 						showit = 0;
 				} else {
@@ -2121,43 +1734,27 @@ found:;
 						showit = 0;
 				}
 
-				if ((nvram_match(wl_net_mode, "na-only") ||
-				     nvram_match(wl_net_mode, "ac-only") ||
-				     nvram_match(wl_net_mode, "acn-mixed") ||
-				     nvram_match(wl_net_mode, "ax-only") ||
-				     nvram_match(wl_net_mode, "xacn-mixed") ||
-				     (net_is_a &&
-				      nvram_match(wl_net_mode, "mixed")) ||
+				if ((nvram_match(wl_net_mode, "na-only") || nvram_match(wl_net_mode, "ac-only") ||
+				     nvram_match(wl_net_mode, "acn-mixed") || nvram_match(wl_net_mode, "ax-only") ||
+				     nvram_match(wl_net_mode, "xacn-mixed") || (net_is_a && nvram_match(wl_net_mode, "mixed")) ||
 				     nvram_match(wl_net_mode, "n5-only")) &&
 				    nvram_matchi(wl_nbw, 40)) {
 					showit = 0;
 					j = 0;
-					if (nvram_nmatch("upper", "%s_nctrlsb",
-							 prefix) ||
-					    nvram_nmatch("uu", "%s_nctrlsb",
-							 prefix) ||
-					    nvram_nmatch("lu", "%s_nctrlsb",
-							 prefix)) {
+					if (nvram_nmatch("upper", "%s_nctrlsb", prefix) ||
+					    nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("lu", "%s_nctrlsb", prefix)) {
 						while (na_upper[j]) {
-							if (chanlist[i] ==
-							    na_upper[j]) {
+							if (chanlist[i] == na_upper[j]) {
 								showit = 1;
 								break;
 							}
 							j++;
 						}
-					} else if (nvram_nmatch("lower",
-								"%s_nctrlsb",
-								prefix) ||
-						   nvram_nmatch("ll",
-								"%s_nctrlsb",
-								prefix) ||
-						   nvram_nmatch("ul",
-								"%s_nctrlsb",
-								prefix)) {
+					} else if (nvram_nmatch("lower", "%s_nctrlsb", prefix) ||
+						   nvram_nmatch("ll", "%s_nctrlsb", prefix) ||
+						   nvram_nmatch("ul", "%s_nctrlsb", prefix)) {
 						while (na_lower[j]) {
-							if (chanlist[i] ==
-							    na_lower[j]) {
+							if (chanlist[i] == na_lower[j]) {
 								showit = 1;
 								break;
 							}
@@ -2166,32 +1763,18 @@ found:;
 					}
 				}
 
-				if ((nvram_match(wl_net_mode, "n-only") ||
-				     nvram_match(wl_net_mode, "n2-only") ||
-				     nvram_match(wl_net_mode, "ng-only") ||
-				     (!net_is_a &&
-				      nvram_match(wl_net_mode, "mixed"))) &&
+				if ((nvram_match(wl_net_mode, "n-only") || nvram_match(wl_net_mode, "n2-only") ||
+				     nvram_match(wl_net_mode, "ng-only") || (!net_is_a && nvram_match(wl_net_mode, "mixed"))) &&
 				    nvram_matchi(wl_nbw, 40)) {
 					showit = 0;
-					if (nvram_nmatch("upper", "%s_nctrlsb",
-							 prefix) ||
-					    nvram_nmatch("uu", "%s_nctrlsb",
-							 prefix) ||
-					    nvram_nmatch("lu", "%s_nctrlsb",
-							 prefix)) {
-						if (chanlist[i] >= 5 &&
-						    chanlist[i] <= 13) {
+					if (nvram_nmatch("upper", "%s_nctrlsb", prefix) ||
+					    nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("lu", "%s_nctrlsb", prefix)) {
+						if (chanlist[i] >= 5 && chanlist[i] <= 13) {
 							showit = 1;
 						}
-					} else if (nvram_nmatch("lower",
-								"%s_nctrlsb",
-								prefix) ||
-						   nvram_nmatch("ll",
-								"%s_nctrlsb",
-								prefix) ||
-						   nvram_nmatch("ul",
-								"%s_nctrlsb",
-								prefix)) {
+					} else if (nvram_nmatch("lower", "%s_nctrlsb", prefix) ||
+						   nvram_nmatch("ll", "%s_nctrlsb", prefix) ||
+						   nvram_nmatch("ul", "%s_nctrlsb", prefix)) {
 						if (chanlist[i] <= 9) {
 							showit = 1;
 						}
@@ -2204,13 +1787,9 @@ found:;
 						wp,
 						"document.write(\"<option value=\\\"%d\\\" %s>%d - %d.%d \"+wl_basic.ghz+\"</option>\");\n",
 						chanlist[i],
-						nvram_nmatch(channelstring,
-							     "%s_channel",
-							     prefix) ?
-							"selected=\\\"selected\\\"" :
-							"",
-						chanlist[i], ofs / 1000,
-						ofs % 1000);
+						nvram_nmatch(channelstring, "%s_channel", prefix) ? "selected=\\\"selected\\\"" :
+												    "",
+						chanlist[i], ofs / 1000, ofs % 1000);
 				}
 			}
 		}
@@ -2223,8 +1802,7 @@ found:;
 static char *ag_rates[] = { "6", "9", "12", "18", "24", "36", "48", "54" };
 static char *turbo_rates[] = { "12", "18", "24", "36", "48", "72", "96", "108" };
 static char *b_rates[] = { "1", "2", "5.5", "11" };
-static char *bg_rates[] = { "1",  "2",	"5.5", "6",  "9",  "11",
-			    "12", "18", "24",  "36", "48", "54" };
+static char *bg_rates[] = { "1", "2", "5.5", "6", "9", "11", "12", "18", "24", "36", "48", "54" };
 
 // static char *g_rates[] = { "1", "2", "5.5", "11", "12", "18", "24", "36",
 // "48", "54" };
@@ -2233,11 +1811,8 @@ static char *bg_rates[] = { "1",  "2",	"5.5", "6",  "9",  "11",
 //    "54"
 //};
 static char *half_rates[] = { "3", "4.5", "6", "9", "12", "18", "24", "27" };
-static char *quarter_rates[] = {
-	"1.5", "2", "3", "4.5", "6", "9", "12", "13.5"
-};
-static char *subquarter_rates[] = { "0.75", "1",   "1.5", "2.25",
-				    "3",    "4.5", "6",	  "6.75" };
+static char *quarter_rates[] = { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
+static char *subquarter_rates[] = { "0.75", "1", "1.5", "2.25", "3", "4.5", "6", "6.75" };
 
 void show_rates(webs_t wp, char *prefix, int maxrate)
 {
@@ -2257,10 +1832,8 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 	char mxrate[32];
 
 	sprintf(mxrate, "%s_maxrate", prefix);
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n",
-		nvram_matchi(srate, 0) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n",
+		  nvram_matchi(srate, 0) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n");
 	websWrite(wp, "</script>\n");
 	char **rate;
@@ -2363,23 +1936,11 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 
 			sprintf(comp, "%d", i + 1 + offset);
 			if (showrates)
-				websWrite(
-					wp,
-					"<option value=\"%d\" %s >%s Mbit/s</option>\n",
-					i + 1 + offset,
-					nvram_match(mxrate, comp) ?
-						"selected=\"selected\"" :
-						"",
-					showrates[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset,
+					  nvram_match(mxrate, comp) ? "selected=\"selected\"" : "", showrates[i]);
 			else
-				websWrite(
-					wp,
-					"<option value=\"%d\" %s >%s Mbit/s</option>\n",
-					i + 1 + offset,
-					nvram_match(mxrate, comp) ?
-						"selected=\"selected\"" :
-						"",
-					rate[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset,
+					  nvram_match(mxrate, comp) ? "selected=\"selected\"" : "", rate[i]);
 		} else {
 			int offset = 0;
 
@@ -2389,32 +1950,18 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 
 			sprintf(comp, "%d", i + 1 + offset);
 			if (showrates)
-				websWrite(
-					wp,
-					"<option value=\"%d\" %s >%s Mbit/s</option>\n",
-					i + 1 + offset,
-					nvram_match(srate, comp) ?
-						"selected=\"selected\"" :
-						"",
-					showrates[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset,
+					  nvram_match(srate, comp) ? "selected=\"selected\"" : "", showrates[i]);
 			else
-				websWrite(
-					wp,
-					"<option value=\"%d\" %s >%s Mbit/s</option>\n",
-					i + 1 + offset,
-					nvram_match(srate, comp) ?
-						"selected=\"selected\"" :
-						"",
-					rate[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset,
+					  nvram_match(srate, comp) ? "selected=\"selected\"" : "", rate[i]);
 		}
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "<span class=\"default\">\n");
 	websWrite(wp, "<script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"(\" + share.deflt + \": \" + share.auto + \")\");\n");
+	websWrite(wp, "document.write(\"(\" + share.deflt + \": \" + share.auto + \")\");\n");
 	websWrite(wp, "//]]\n");
 	websWrite(wp, "</script></span></div>\n");
 }
@@ -2429,26 +1976,14 @@ static void show_netmode(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wl_basic.label2", NULL);
 	websWrite(wp, "<select name=\"%s\">\n", wl_net_mode);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n",
-		nvram_match(wl_net_mode, "disabled") ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n",
+		  nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
 	if (!has_ad(prefix))
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
-			nvram_match(wl_net_mode, "mixed") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
 	if (has_mimo(prefix) && has_2ghz(prefix)) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
-			nvram_match(wl_net_mode, "bg-mixed") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 	}
 #ifdef HAVE_WHRAG108
 	if (!strcmp(prefix, "wlan1"))
@@ -2458,12 +1993,9 @@ static void show_netmode(webs_t wp, char *prefix)
 #endif
 
 			if (has_2ghz(prefix)) {
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
-					nvram_match(wl_net_mode, "b-only") ?
-						"selected=\\\"selected\\\"" :
-						"");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "b-only") ? "selected=\\\"selected\\\"" : "");
 			}
 #ifdef HAVE_MADWIFI
 	if (has_2ghz(prefix)) {
@@ -2473,12 +2005,9 @@ static void show_netmode(webs_t wp, char *prefix)
 #ifdef HAVE_TW6600
 			if (!strcmp(prefix, "wlan1"))
 #endif
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
-					nvram_match(wl_net_mode, "g-only") ?
-						"selected=\\\"selected\\\"" :
-						"");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_WHRAG108
 		if (!strcmp(prefix, "wlan1"))
 #endif
@@ -2486,12 +2015,9 @@ static void show_netmode(webs_t wp, char *prefix)
 			if (!strcmp(prefix, "wlan1"))
 #endif
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
-					nvram_match(wl_net_mode, "bg-mixed") ?
-						"selected=\\\"selected\\\"" :
-						"");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 #endif
 	}
 #else
@@ -2501,100 +2027,52 @@ static void show_netmode(webs_t wp, char *prefix)
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 
 		if (has_2ghz(prefix)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
-				nvram_match(wl_net_mode, "g-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
 		}
 	if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
-			nvram_match(wl_net_mode, "ng-only") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
 #endif
 	if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
 		if (has_5ghz(prefix)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
-				nvram_match(wl_net_mode, "n2-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
 		} else {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
-				nvram_match(wl_net_mode, "n-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "n-only") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifndef HAVE_MADWIFI
 
 	if (has_5ghz(prefix)) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
-			nvram_match(wl_net_mode, "a-only") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
 	}
 	if (has_mimo(prefix) && has_5ghz(prefix) && !is_ath5k(prefix)) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
-			nvram_match(wl_net_mode, "na-only") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
-			nvram_match(wl_net_mode, "n5-only") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 	}
 	if (has_ac(prefix) && has_5ghz(prefix)) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
-			nvram_match(wl_net_mode, "acn-mixed") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
-			nvram_match(wl_net_mode, "ac-only") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 	}
 	if (has_ax(prefix) && has_5ghz(prefix)) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
-			nvram_match(wl_net_mode, "xacn-mixed") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
-			nvram_match(wl_net_mode, "xac-only") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "xac-only") ? "selected=\\\"selected\\\"" : "");
 	}
 	if (has_ad(prefix)) {
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
-			nvram_match(wl_net_mode, "ad-only") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
+			  nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
 	}
 #else
 #if HAVE_WHRAG108
@@ -2604,82 +2082,41 @@ static void show_netmode(webs_t wp, char *prefix)
 		if (!strcmp(prefix, "wlan0"))
 #endif
 			if (has_5ghz(prefix)) {
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
-					nvram_match(wl_net_mode, "a-only") ?
-						"selected=\\\"selected\\\"" :
-						"");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
 			}
 #endif
 
 #endif
 	if (is_mac80211(prefix)) {
 		if (has_2ghz(prefix) && !is_ath5k(prefix)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
-				nvram_match(wl_net_mode, "ng-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
-				nvram_match(wl_net_mode, "n2-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
 		}
 		if (has_5ghz(prefix) && !is_ath5k(prefix)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
-				nvram_match(wl_net_mode, "na-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
-				nvram_match(wl_net_mode, "n5-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if ((is_ath10k(prefix) || is_ath11k(prefix) ||
-		     is_mvebu(prefix) || has_vht80(prefix)) &&
-		    has_5ghz(prefix)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
-				nvram_match(wl_net_mode, "acn-mixed") ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
-				nvram_match(wl_net_mode, "ac-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+		if ((is_ath10k(prefix) || is_ath11k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 		}
 		if (is_ath11k(prefix) && has_5ghz(prefix)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
-				nvram_match(wl_net_mode, "xacn-mixed") ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
-				nvram_match(wl_net_mode, "ax-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
 		}
 		if (has_ad(prefix)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
-				nvram_match(wl_net_mode, "ad-only") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
 
@@ -2695,20 +2132,11 @@ static void show_netmode(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label7", NULL);
 		websWrite(wp, "<select name=\"%s\" >\n", wl_greenfield);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
-			nvram_default_matchi(wl_greenfield, 0, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n",
-			nvram_default_matchi(wl_greenfield, 1, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
+			  nvram_default_matchi(wl_greenfield, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n",
+			  nvram_default_matchi(wl_greenfield, 1, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -2723,9 +2151,7 @@ static void showrtssettings(webs_t wp, char *var)
 	char vvar[32];
 	char wl_protmode[32];
 	sprintf(wl_protmode, "%s_protmode", var);
-	showOptionsLabel(wp, "wl_basic.protmode", wl_protmode,
-			 "None CTS RTS/CTS",
-			 nvram_default_get(wl_protmode, "None"));
+	showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
 
 	strcpy(vvar, var);
 	rep(vvar, '.', 'X');
@@ -2736,13 +2162,11 @@ static void showrtssettings(webs_t wp, char *var)
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		vvar, var,
-		nvram_default_matchi(ssid, 1, 0) ? "checked=\"checked\"" : "");
+		vvar, var, nvram_default_matchi(ssid, 1, 0) ? "checked=\"checked\"" : "");
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		vvar, var,
-		nvram_default_matchi(ssid, 0, 0) ? "checked=\"checked\"" : "");
+		vvar, var, nvram_default_matchi(ssid, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div id=\"%s_idrts\">\n", vvar);
@@ -2759,10 +2183,8 @@ static void showrtssettings(webs_t wp, char *var)
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<script>\n//<![CDATA[\n ");
-	websWrite(
-		wp,
-		"show_layer_ext(document.getElementsByName(\"%s_rts\"), \"%s_idrts\", %s);\n",
-		var, vvar, nvram_matchi(ssid, 1) ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_rts\"), \"%s_idrts\", %s);\n", var, vvar,
+		  nvram_matchi(ssid, 1) ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 }
 
@@ -2790,33 +2212,19 @@ static void showairtimepolicy(webs_t wp, char *var, char *sub)
 			rep(m, '.', 'X');
 
 			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_basic.airtime_policy",
-				     NULL);
-			websWrite(
-				wp,
-				"<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s', '%s', '%s');\">\n",
-				var, var, vvar, m);
-			websWrite(
-				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
-				nvram_match(wl_airtime, "0") ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.airtime_dynamic + \"</option>\");\n",
-				nvram_match(wl_airtime, "1") ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.airtime_limit + \"</option>\");\n",
-				nvram_match(wl_airtime, "2") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			show_caption(wp, "label", "wl_basic.airtime_policy", NULL);
+			websWrite(wp,
+				  "<select name=\"%s_at_policy\" onclick=\"show_airtime_policy(this.form, '%s', '%s', '%s');\">\n",
+				  var, var, vvar, m);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
+				  nvram_match(wl_airtime, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.airtime_dynamic + \"</option>\");\n",
+				  nvram_match(wl_airtime, "1") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.airtime_limit + \"</option>\");\n",
+				  nvram_match(wl_airtime, "2") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n</select>\n");
 			websWrite(wp, "</div>\n");
 			debug_free(m);
@@ -2841,23 +2249,16 @@ static void showairtimepolicy(webs_t wp, char *var, char *sub)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_at_limit\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			var,
-			nvram_default_matchi(ip, 1, 0) ? "checked=\"checked\"" :
-							 "");
+			var, nvram_default_matchi(ip, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_at_limit\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			var,
-			nvram_default_matchi(ip, 0, 0) ? "checked=\"checked\"" :
-							 "");
+			var, nvram_default_matchi(ip, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(
-			wp,
-			"show_airtime_policy(document.wireless, \"%s\", \"%s\", '');\n",
-			sub, vvar);
+		websWrite(wp, "show_airtime_policy(document.wireless, \"%s\", \"%s\", '');\n", sub, vvar);
 		websWrite(wp, "//]]>\n</script>\n");
 	}
 }
@@ -2878,8 +2279,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	int iswds = 0;
 	if (!strncmp(var, "wlan", 4) && strstr(var, ".sta"))
 		iswds = 1;
-	if (!iswds && has_multicast_to_unicast(var) &&
-	    !nvram_nmatch("0", "%s_bridged", var)) {
+	if (!iswds && has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 		char unicast[32];
 		sprintf(unicast, "%s_multicast_to_unicast", var);
 		nvram_default_get(unicast, "0");
@@ -2891,13 +2291,11 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
-		vvar, var,
-		nvram_default_matchi(ssid, 1, 1) ? "checked=\"checked\"" : "");
+		vvar, var, nvram_default_matchi(ssid, 1, 1) ? "checked=\"checked\"" : "");
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>\n",
-		vvar, var,
-		nvram_default_matchi(ssid, 0, 1) ? "checked=\"checked\"" : "");
+		vvar, var, nvram_default_matchi(ssid, 0, 1) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div id=\"%s_idnetvifs\">\n", vvar);
@@ -2941,24 +2339,17 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idredirect', true);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		vvar, var,
-		nvram_default_matchi(redirect, 1, 0) ? "checked=\"checked\"" :
-						       "");
+		vvar, var, nvram_default_matchi(redirect, 1, 0) ? "checked=\"checked\"" : "");
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idredirect', false);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		vvar, var,
-		nvram_default_matchi(redirect, 0, 0) ? "checked=\"checked\"" :
-						       "");
+		vvar, var, nvram_default_matchi(redirect, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div id=\"%s_idredirect\">\n", vvar);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "idx.dns_redirect", NULL);
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"%s_dns_ipaddr\" value=\"4\" />\n",
-		var);
+	websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_ipaddr\" value=\"4\" />\n", var);
 	show_ip(wp, var, "dns_ipaddr", 0, 0, "share.ip");
 	websWrite(wp, "</div>\n");
 
@@ -2968,9 +2359,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.ip", NULL);
-	websWrite(wp,
-		  "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n",
-		  var);
+	websWrite(wp, "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n", var);
 	char netmask[32];
 	sprintf(netmask, "%s_netmask", var);
 	show_ip_cidr(wp, var, "ipaddr", 0, "share.ip", netmask, "share.subnet");
@@ -3030,14 +2419,10 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<script>\n//<![CDATA[\n ");
-	websWrite(
-		wp,
-		"show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n",
-		var, vvar, nvram_matchi(ssid, 0) ? "true" : "false");
-	websWrite(
-		wp,
-		"show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n",
-		var, vvar, nvram_matchi(redirect, 1) ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n", var, vvar,
+		  nvram_matchi(ssid, 0) ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, vvar,
+		  nvram_matchi(redirect, 1) ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 }
 
@@ -3049,81 +2434,38 @@ static void show_chanshift(webs_t wp, char *prefix)
 
 	sprintf(wl_channelbw, "%s_channelbw", prefix);
 	sprintf(wl_chanshift, "%s_chanshift", prefix);
-	if (nvram_geti(wl_channelbw) > 2 &&
-	    (nvram_geti(wl_chanshift) & 0xf) > 10)
+	if (nvram_geti(wl_channelbw) > 2 && (nvram_geti(wl_chanshift) & 0xf) > 10)
 		nvram_seti(wl_chanshift, 10);
-	if (nvram_geti(wl_channelbw) > 5 &&
-	    (nvram_geti(wl_chanshift) & 0xf) > 10)
+	if (nvram_geti(wl_channelbw) > 5 && (nvram_geti(wl_chanshift) & 0xf) > 10)
 		nvram_seti(wl_chanshift, 10);
-	if (nvram_geti(wl_channelbw) > 10 &&
-	    (nvram_geti(wl_chanshift) & 0xf) > 0)
+	if (nvram_geti(wl_channelbw) > 10 && (nvram_geti(wl_chanshift) & 0xf) > 0)
 		nvram_seti(wl_chanshift, 0);
 
-	if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 10) ||
-	    nvram_matchi(wl_channelbw, 2)) {
+	if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 10) || nvram_matchi(wl_channelbw, 2)) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.chanshift", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_chanshift);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		if (nvram_matchi(wl_channelbw, 5) ||
-		    nvram_matchi(wl_channelbw, 2))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"-15\\\" %s >-15 \"+wl_basic.mhz+\"</option>\");\n",
-				nvram_default_matchi(wl_chanshift, -15, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-		if (nvram_matchi(wl_channelbw, 5) ||
-		    nvram_matchi(wl_channelbw, 10) ||
-		    nvram_matchi(wl_channelbw, 2))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"-10\\\" %s >-10 \"+wl_basic.mhz+\"</option>\");\n",
-				nvram_default_matchi(wl_chanshift, -10, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-		if (nvram_matchi(wl_channelbw, 5) ||
-		    nvram_matchi(wl_channelbw, 10) ||
-		    nvram_matchi(wl_channelbw, 2))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"-5\\\" %s >-5 \"+wl_basic.mhz+\"</option>\");\n",
-				nvram_default_matchi(wl_chanshift, -5, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >0 \"+wl_basic.mhz+\"</option>\");\n",
-			nvram_default_matchi(wl_chanshift, 0, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		if (nvram_matchi(wl_channelbw, 5) ||
-		    nvram_matchi(wl_channelbw, 10) ||
-		    nvram_matchi(wl_channelbw, 2))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"5\\\" %s >+5 \"+wl_basic.mhz+\"</option>\");\n",
-				nvram_default_matchi(wl_chanshift, 5, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-		if (nvram_matchi(wl_channelbw, 5) ||
-		    nvram_matchi(wl_channelbw, 10) ||
-		    nvram_matchi(wl_channelbw, 2))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"10\\\" %s >+10 \"+wl_basic.mhz+\"</option>\");\n",
-				nvram_default_matchi(wl_chanshift, 10, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-		if (nvram_matchi(wl_channelbw, 5) ||
-		    nvram_matchi(wl_channelbw, 2))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"15\\\" %s >+15 \"+wl_basic.mhz+\"</option>\");\n",
-				nvram_default_matchi(wl_chanshift, 15, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 2))
+			websWrite(wp, "document.write(\"<option value=\\\"-15\\\" %s >-15 \"+wl_basic.mhz+\"</option>\");\n",
+				  nvram_default_matchi(wl_chanshift, -15, 0) ? "selected=\\\"selected\\\"" : "");
+		if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 10) || nvram_matchi(wl_channelbw, 2))
+			websWrite(wp, "document.write(\"<option value=\\\"-10\\\" %s >-10 \"+wl_basic.mhz+\"</option>\");\n",
+				  nvram_default_matchi(wl_chanshift, -10, 0) ? "selected=\\\"selected\\\"" : "");
+		if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 10) || nvram_matchi(wl_channelbw, 2))
+			websWrite(wp, "document.write(\"<option value=\\\"-5\\\" %s >-5 \"+wl_basic.mhz+\"</option>\");\n",
+				  nvram_default_matchi(wl_chanshift, -5, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0 \"+wl_basic.mhz+\"</option>\");\n",
+			  nvram_default_matchi(wl_chanshift, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 10) || nvram_matchi(wl_channelbw, 2))
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >+5 \"+wl_basic.mhz+\"</option>\");\n",
+				  nvram_default_matchi(wl_chanshift, 5, 0) ? "selected=\\\"selected\\\"" : "");
+		if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 10) || nvram_matchi(wl_channelbw, 2))
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >+10 \"+wl_basic.mhz+\"</option>\");\n",
+				  nvram_default_matchi(wl_chanshift, 10, 0) ? "selected=\\\"selected\\\"" : "");
+		if (nvram_matchi(wl_channelbw, 5) || nvram_matchi(wl_channelbw, 2))
+			websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >+15 \"+wl_basic.mhz+\"</option>\");\n",
+				  nvram_default_matchi(wl_chanshift, 15, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 }
@@ -3150,20 +2492,16 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	if (vifs == NULL)
 		return 0;
 #ifndef HAVE_MADWIFI
-	if (!nvram_nmatch("ap", "%s_mode", prefix) &&
-	    !nvram_nmatch("apsta", "%s_mode", prefix) &&
+	if (!nvram_nmatch("ap", "%s_mode", prefix) && !nvram_nmatch("apsta", "%s_mode", prefix) &&
 	    !nvram_nmatch("apstawet", "%s_mode", prefix))
 		return 0;
 #endif
 	int count = 1;
 
 #ifdef HAVE_MADWIFI
-	if ((is_mac80211(prefix) && getmaxvaps(prefix) > 1) ||
-	    !is_mac80211(prefix))
+	if ((is_mac80211(prefix) && getmaxvaps(prefix) > 1) || !is_mac80211(prefix))
 #endif
-		websWrite(
-			wp,
-			"<h2><script type=\"text/javascript\">Capture(wl_basic.h2_vi)</script></h2>\n");
+		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_vi)</script></h2>\n");
 	foreach(var, vifs, next)
 	{
 #ifdef HAVE_GUESTPORT
@@ -3173,26 +2511,21 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 #endif
 		sprintf(ssid, "%s_ssid", var);
-		websWrite(
-			wp,
-			"<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
-			getNetworkLabel(wp, IFMAP(var)));
+		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
+			  getNetworkLabel(wp, IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid
 		// contains html tag
 		char wl_macaddr[18];
 		sprintf(wl_macaddr, "%s_hwaddr", var);
 		if (nvram_exists(wl_macaddr))
-			websWrite(wp, "] HWAddr [%s",
-				  nvram_safe_get(wl_macaddr));
+			websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
 		websWrite(wp, "]</legend>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
-#if (!defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)) && \
-	!defined(HAVE_BRCMFMAC)
+#if (!defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)) && !defined(HAVE_BRCMFMAC)
 		show_caption(wp, "label", "wl_basic.ssid", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
-			var);
+		websWrite(wp,
+			  "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
+			  var);
 		tf_webWriteESCNV(wp, ssid);
 		websWrite(wp, "\" /></div>\n");
 
@@ -3210,13 +2543,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			var,
-			nvram_matchi(ssid, 0) ? "checked=\"checked\"" : "");
+			var, nvram_matchi(ssid, 0) ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			var,
-			nvram_matchi(ssid, 1) ? "checked=\"checked\"" : "");
+			var, nvram_matchi(ssid, 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		char wl_mode[16];
 
@@ -3226,21 +2557,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 			wl_mode);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
-			nvram_match(wl_mode, "ap") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
+			  nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 		if (has_wdsap(var)) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
-				nvram_match(wl_mode, "wdsap") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
+				  nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 		}
 #if 0
 		if (has_mesh(var))
@@ -3272,26 +2594,13 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 			wl_mode);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n",
-			nvram_match(wl_mode, "disabled") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
-			nvram_match(wl_mode, "ap") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
-			nvram_match(wl_mode, "wdsap") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n",
+			  nvram_match(wl_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
+			  nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
+			  nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 #if 0
 		if (has_mesh(var))
 			websWrite(wp, "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n", nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
@@ -3301,10 +2610,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 
 		show_caption(wp, "label", "wl_basic.ssid", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
-			var);
+		websWrite(wp,
+			  "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
+			  var);
 		tf_webWriteESCNV(wp, ssid);
 		websWrite(wp, "\" /></div>\n");
 
@@ -3315,13 +2623,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			var,
-			nvram_matchi(ssid, 0) ? "checked=\"checked\"" : "");
+			var, nvram_matchi(ssid, 0) ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			var,
-			nvram_matchi(ssid, 1) ? "checked=\"checked\"" : "");
+			var, nvram_matchi(ssid, 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 #endif
 
@@ -3345,18 +2651,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.legend)</script></div>\n");
-		websWrite(
-			wp,
-			"<input type=\"checkbox\" name=\"%s\" onclick=\"toggle_layer(this,'%s_layer')\"%s>",
-			advanced_label, advanced_label,
-			websGetVar(wp, advanced_label, NULL) ?
-				" checked=\"checked\"" :
-				"");
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" onclick=\"toggle_layer(this,'%s_layer')\"%s>", advanced_label,
+			  advanced_label, websGetVar(wp, advanced_label, NULL) ? " checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_layer\"%s>\n", advanced_label,
-			  websGetVar(wp, advanced_label, NULL) ?
-				  "" :
-				  " style=\"display: none;\"");
+			  websGetVar(wp, advanced_label, NULL) ? "" : " style=\"display: none;\"");
 
 #ifdef HAVE_IFL
 
@@ -3382,8 +2681,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			char line[245];
 			int zstd = 0;
 			if (fp) {
-				while (!feof(fp) &&
-				       fgets(line, sizeof(line), fp)) {
+				while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 					if (strstr(line, "zstd")) {
 						zstd = 1;
 						break;
@@ -3391,8 +2689,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				}
 				fclose(fp);
 			}
-			char *names_zstd[] = { "\" + share.disabled + \"",
-					       "LZO", "LZ4", "LZMA", "ZSTD" };
+			char *names_zstd[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA", "ZSTD" };
 			char *names[] = {
 				"\" + share.disabled + \"",
 				"LZO",
@@ -3400,13 +2697,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				"LZMA",
 			};
 			if (zstd)
-				showOptionsNames(wp, "wl_basic.fc", wl_fc,
-						 "0 1 3 2 4", names_zstd,
-						 nvram_default_get(wl_fc, "0"));
+				showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2 4", names_zstd, nvram_default_get(wl_fc, "0"));
 			else
-				showOptionsNames(wp, "wl_basic.fc", wl_fc,
-						 "0 1 3 2", names,
-						 nvram_default_get(wl_fc, "0"));
+				showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 		}
 #endif
 		sprintf(wmm, "%s_wmm", var);
@@ -3435,8 +2728,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 #ifdef HAVE_MADWIFI
 
-		if (is_ap(var) || nvram_nmatch("mesh", "%s_mode", var) ||
-		    nvram_nmatch("infra", "%s_mode", var)) {
+		if (is_ap(var) || nvram_nmatch("mesh", "%s_mode", var) || nvram_nmatch("infra", "%s_mode", var)) {
 			sprintf(power, "%s_maxassoc", var);
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_adv.label10", NULL);
@@ -3469,13 +2761,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				char signal[32];
 				sprintf(signal, "%s_connect", var);
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_adv.connect",
-					     NULL);
+				show_caption(wp, "label", "wl_adv.connect", NULL);
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n",
-					signal,
-					nvram_default_get(signal, "-128"));
+					signal, nvram_default_get(signal, "-128"));
 				websWrite(wp, "</div>\n");
 
 				sprintf(signal, "%s_stay", var);
@@ -3484,25 +2774,21 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n",
-					signal,
-					nvram_default_get(signal, "-128"));
+					signal, nvram_default_get(signal, "-128"));
 				websWrite(wp, "</div>\n");
 
 				sprintf(signal, "%s_poll_time", var);
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_adv.poll_time",
-					     NULL);
+				show_caption(wp, "label", "wl_adv.poll_time", NULL);
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n",
-					signal,
-					nvram_default_get(signal, "10"));
+					signal, nvram_default_get(signal, "10"));
 				websWrite(wp, "</div>\n");
 
 				sprintf(signal, "%s_strikes", var);
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_adv.strikes",
-					     NULL);
+				show_caption(wp, "label", "wl_adv.strikes", NULL);
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n",
@@ -3541,17 +2827,14 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		count++;
 		if (is_ap8x(prefix) && count == 4) {
 			websWrite(wp, "<div class=\"warning\">\n");
-			websWrite(
-				wp,
-				"<p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
+			websWrite(wp, "<p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
 			websWrite(wp, "</div>\n<br>\n");
 		}
 	}
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-	if ((is_mac80211(prefix) && count < getmaxvaps(prefix)) ||
-	    (!is_mac80211(prefix) && count < 8))
+	if ((is_mac80211(prefix) && count < getmaxvaps(prefix)) || (!is_mac80211(prefix) && count < 8))
 #elif HAVE_RT2880
 	if (count < 7)
 #else
@@ -3568,26 +2851,21 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 #ifdef HAVE_GUESTPORT
 	int gpfound = 0;
-	websWrite(
-		wp,
-		"<h2><script type=\"text/javascript\">Capture(share.guest_port)</script></h2>\n");
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(share.guest_port)</script></h2>\n");
 	foreach(var, vifs, next)
 	{
 		if (nvram_match(guestport, var)) {
 			gpfound = 1;
 			sprintf(ssid, "%s_ssid", var);
-			websWrite(
-				wp,
-				"<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
-				getNetworkLabel(wp, IFMAP(var)));
-			tf_webWriteESCNV(
-				wp, ssid); // fix for broken html page if ssid
+			websWrite(wp,
+				  "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
+				  getNetworkLabel(wp, IFMAP(var)));
+			tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid
 			// contains html tag
 			char wl_macaddr[18];
 			sprintf(wl_macaddr, "%s_hwaddr", var);
 			if (nvram_exists(wl_macaddr))
-				websWrite(wp, "] HWAddr [%s",
-					  nvram_safe_get(wl_macaddr));
+				websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
 			websWrite(wp, "]</legend>\n");
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.ssid", NULL);
@@ -3603,15 +2881,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(
 				wp,
 				"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-				var,
-				nvram_matchi(ssid, 0) ? "checked=\"checked\"" :
-							"");
+				var, nvram_matchi(ssid, 0) ? "checked=\"checked\"" : "");
 			websWrite(
 				wp,
 				"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-				var,
-				nvram_matchi(ssid, 1) ? "checked=\"checked\"" :
-							"");
+				var, nvram_matchi(ssid, 1) ? "checked=\"checked\"" : "");
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "share.ip", NULL);
@@ -3624,13 +2898,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			sprintf(ssid, "%s_ap_isolate", var);
 			showRadio(wp, "wl_adv.label11", ssid);
 #ifdef HAVE_MADWIFI
-			if (is_ap(var) ||
-			    nvram_nmatch("mesh", "%s_mode", var) ||
-			    nvram_nmatch("infra", "%s_mode", var)) {
+			if (is_ap(var) || nvram_nmatch("mesh", "%s_mode", var) || nvram_nmatch("infra", "%s_mode", var)) {
 				sprintf(power, "%s_maxassoc", var);
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_adv.label10",
-					     NULL);
+				show_caption(wp, "label", "wl_adv.label10", NULL);
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n",
@@ -3646,9 +2917,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	}
 
 #ifdef HAVE_MADWIFI
-	if (gpfound == 0 &&
-	    ((is_mac80211(prefix) && count < getmaxvaps(prefix)) ||
-	     (!is_mac80211(prefix) && count < 8)))
+	if (gpfound == 0 && ((is_mac80211(prefix) && count < getmaxvaps(prefix)) || (!is_mac80211(prefix) && count < 8)))
 #elif HAVE_RT2880
 	if (count < 7 && gpfound == 0)
 #else
@@ -3788,21 +3057,15 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		frequencies[0] = 0;
 	}
 	// wireless mode
-	websWrite(
-		wp,
-		"<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n",
-		prefix, frequencies);
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n", prefix, frequencies);
 	websWrite(wp, "<fieldset>\n");
-	websWrite(
-		wp,
-		"<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [",
-		getNetworkLabel(wp, IFMAP(prefix)));
+	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [",
+		  getNetworkLabel(wp, IFMAP(prefix)));
 	tf_webWriteESCNV(wp, wl_ssid); // fix
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(wl_macaddr));
 	char power[16];
-#if !defined(HAVE_EASY_WIRELESS_CONFIG) || \
-	defined(HAVE_BCMMODERN) && !defined(HAVE_BRCMFMAC)
+#if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN) && !defined(HAVE_BRCMFMAC)
 	// char maxpower[16];
 	if (is_mac80211(prefix)) {
 		if (isFXXN_PRO(prefix) == 1) {
@@ -3811,47 +3074,21 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.cardtype", NULL);
 			websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
-			websWrite(
-				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_ONNET
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 0, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 1, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 2, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #else
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 0, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 1, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 2, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #endif
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
@@ -3866,26 +3103,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 0, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 1, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 2, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 
@@ -3895,69 +3119,33 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 0, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 5, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 6, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 7, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 4, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 1, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 2, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 3, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 5, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 6, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 7, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 4, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 3, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 #endif
 #endif // ! HAVE MAKSAT
 
-	if (is_ath10k(prefix) && has_fwswitch(prefix) &&
-	    nvram_nmatch("1", "%s_regulatory", prefix)) {
+	if (is_ath10k(prefix) && has_fwswitch(prefix) && nvram_nmatch("1", "%s_regulatory", prefix)) {
 		char fw_type[32];
 		sprintf(fw_type, "%s_fwtype", prefix);
 		char *fw_names[] = { "DD-WRT", "VANILLA" };
-		showOptionsNames(wp, "wl_basic.fw_type", fw_type,
-				 "ddwrt vanilla", fw_names,
-				 nvram_default_get(fw_type, "ddwrt"));
+		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
 	}
 
 #ifndef HAVE_NOCOUNTRYSEL
@@ -3969,13 +3157,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		{
 			sprintf(wl_regdomain, "%s_regdomain", prefix);
 
-			if (is_mac80211(prefix) ||
-			    nvram_nmatch("1", "%s_regulatory", prefix) ||
-			    !issuperchannel()) {
+			if (is_mac80211(prefix) || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 				char *list = getCountryList(COUNTRYLIST);
-				showOptionsLabel(wp, "wl_basic.regdom",
-						 wl_regdomain, list,
-						 nvram_safe_get(wl_regdomain));
+				showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
 			}
 		}
 	}
@@ -4052,8 +3236,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(
 		wp,
 		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm (Max %d)\n",
-		power, txpower + wifi_gettxpoweroffset(prefix),
-		mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
 #else
 	websWrite(
 		wp,
@@ -4078,13 +3261,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (!strcmp(netmode, "mixed") ||
-		    !strcmp(netmode, "xacn-mixed") ||
-		    !strcmp(netmode, "ax-only")) {
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
 			char color[32];
 			sprintf(color, "%s_he_bss_color", prefix);
-			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2,
-				     0);
+			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
 		}
 	}
 
@@ -4113,17 +3293,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				wp,
 				"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 				wl_mode);
-			websWrite(
-				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			if (!has_no_apmode(prefix)) {
 				if (!cpeonly) {
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
-						nvram_match(wl_mode, "ap") ?
-							"selected=\\\"selected\\\"" :
-							"");
+						nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 				}
 			}
 #ifdef HAVE_MADWIFI
@@ -4132,49 +3308,35 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
-						nvram_match(wl_mode, "wdsap") ?
-							"selected=\\\"selected\\\"" :
-							"");
+						nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 				}
 			}
 #endif
 #if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
-				nvram_match(wl_mode, "sta") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
+				  nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
 #endif
 #if !defined(HAVE_RT2880) || defined(HAVE_MT76)
 #ifdef HAVE_RELAYD
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
 #else
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
 #endif
-				nvram_match(wl_mode, "wet") ?
-					"selected=\\\"selected\\\"" :
-					"");
+				  nvram_match(wl_mode, "wet") ? "selected=\\\"selected\\\"" : "");
 #endif
 #ifndef HAVE_MADWIFI
 			if (!cpeonly) {
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
-					nvram_match(wl_mode, "apsta") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "apsta") ? "selected=\\\"selected\\\"" : "");
 				//#ifndef HAVE_RT2880
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n",
-					nvram_match(wl_mode, "apstawet") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "apstawet") ? "selected=\\\"selected\\\"" : "");
 			}
 //#endif
 #else
@@ -4182,31 +3344,22 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n",
-					nvram_match(wl_mode, "wdssta") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n",
-					nvram_match(wl_mode, "wdssta_mtik") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
 			}
 #endif
 			if (!cpeonly && has_ibss(prefix))
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n",
-					nvram_match(wl_mode, "infra") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "infra") ? "selected=\\\"selected\\\"" : "");
 			if (has_mesh(prefix)) {
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n",
-					nvram_match(wl_mode, "mesh") ?
-						"selected=\\\"selected\\\"" :
-						"");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n",
+					  nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
 			}
 			websWrite(wp, "//]]>\n</script>\n");
 			websWrite(wp, "</select>\n");
@@ -4245,9 +3398,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_ldpc(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((strcmp(netmode, "mixed") && //
-		     strcmp(netmode, "ac-only") &&
-		     strcmp(netmode, "acn-mixed") &&
-		     strcmp(netmode, "ax-only") &&
+		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
 		     strcmp(netmode, "xacn-mixed")))
 			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
@@ -4265,31 +3416,15 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.smps", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_smps);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n",
-			"0",
-			nvram_default_match(wl_smps, "0", "0") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n", "0",
+			  nvram_default_match(wl_smps, "0", "0") ? "selected=\\\"selected\\\"" : "");
 		if (has_static_smps(prefix))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n",
-				"1",
-				nvram_match(wl_smps, "1") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", "1",
+				  nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
 		if (has_dynamic_smps(prefix))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n",
-				"2",
-				nvram_match(wl_smps, "2") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", "2",
+				  nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 	}
@@ -4301,72 +3436,39 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		if (nvram_match("experimental", "1")) {
 			if (has_wave2(prefix)) {
-				showRadio(wp, "wl_basic.dynamic_auto_bursting",
-					  wl_autoburst);
+				showRadio(wp, "wl_basic.dynamic_auto_bursting", wl_autoburst);
 			}
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {
-				showRadio(wp, "wl_basic.qboost_tdma",
-					  wl_qboost);
+				showRadio(wp, "wl_basic.qboost_tdma", wl_qboost);
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label",
-					     "wl_basic.sifs_trigger_time",
-					     NULL);
+				show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n",
-					wl_sifs_trigger_time,
-					nvram_default_get(wl_sifs_trigger_time,
-							  "0"));
-				websWrite(
-					wp,
-					"&nbsp;<script type=\"text/javascript\">Capture(share.ms)</script></div>\n");
+					wl_sifs_trigger_time, nvram_default_get(wl_sifs_trigger_time, "0"));
+				websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.ms)</script></div>\n");
 			} else
 				showRadio(wp, "wl_basic.qboost", wl_qboost);
 		}
 		if (!is_mac80211(prefix)) {
 			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_basic.noise_immunity",
-				     NULL);
-			websWrite(wp, "<select name=\"%s\">\n",
-				  wl_noise_immunity);
-			websWrite(
-				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 0, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 1, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 2, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 3, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 4, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			show_caption(wp, "label", "wl_basic.noise_immunity", NULL);
+			websWrite(wp, "<select name=\"%s\">\n", wl_noise_immunity);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 0, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 1, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 2, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 3, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 4, 4) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
-			showRadio(wp, "wl_basic.ofdm_weak_det",
-				  wl_ofdm_weak_det);
+			showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
 		}
 	}
 
@@ -4404,8 +3506,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 	if (!is_mac80211(prefix)) {
 		if (has_5ghz(prefix)) {
-			if (nvram_nmatch("1", "%s_regulatory", prefix) ||
-			    !issuperchannel()) {
+			if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 				showRadio(wp, "wl_basic.outband", wl_outdoor);
 			}
 		}
@@ -4420,26 +3521,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n",
 			dualband);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n",
-			nvram_matchi(dualband, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.bghz24 + \"</option>\");\n",
-			nvram_matchi(dualband, 2) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"5\\\" %s >\" + wl_basic.bghz5 + \"</option>\");\n",
-			nvram_matchi(dualband, 5) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n",
+			  nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.bghz24 + \"</option>\");\n",
+			  nvram_matchi(dualband, 2) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + wl_basic.bghz5 + \"</option>\");\n",
+			  nvram_matchi(dualband, 5) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -4450,108 +3538,61 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n",
 		wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
-		nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
+		  nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 	int canht40 = can_ht40(prefix);
 	int canvht80 = can_vht80(prefix);
 	if (!is_mac80211(prefix) || canht40)
-		if ((nvram_nmatch("n-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("na-only", "%s_net_mode", prefix))) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
-				nvram_matchi(wl_width, 2040) ?
-					"selected=\\\"selected\\\"" :
-					"");
+		if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
+		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
+			websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
+				  nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
 			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
 		}
 	if (is_mac80211(prefix) &&
-	    (nvram_nmatch("n-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-	     nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-	     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
-	     nvram_nmatch("na-only", "%s_net_mode", prefix))) {
+	    (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
+	     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 		if (!is_mac80211(prefix) || is_ath5k(prefix))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
-				nvram_matchi(wl_width, 40) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
+				  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		else if (canht40)
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
-				nvram_matchi(wl_width, 40) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
+				  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		if ((is_ath11k(prefix) ||is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && ((has_5ghz(prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) && nvram_nmatch("mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) {
 			if (canvht80)
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n",
-					nvram_matchi(wl_width, 80) ?
-						"selected=\\\"selected\\\"" :
-						"");
-			if ((has_vht160(prefix) || has_he160(prefix)) &&
-			    can_vht160(prefix) && has_5ghz(prefix))
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n",
-					nvram_matchi(wl_width, 160) ?
-						"selected=\\\"selected\\\"" :
-						"");
-			if (has_vht80plus80(prefix) && canvht80 &&
-			    has_5ghz(prefix))
+				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n",
+					  nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
+			if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && has_5ghz(prefix))
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n",
+					  nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
+			if (has_vht80plus80(prefix) && canvht80 && has_5ghz(prefix))
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n",
-					nvram_match(wl_width, "80+80") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI)
 	if (has_half(prefix))
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
-			nvram_matchi(wl_width, 10) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
+			  nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
 	if (has_quarter(prefix))
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
-			nvram_matchi(wl_width, 5) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
+			  nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
 	if (registered_has_subquarter() && has_subquarter(prefix)) {
 		/* will be enabled once it is tested and the spectrum analyse is done */
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
-			nvram_matchi(wl_width, 2) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
+			  nvram_matchi(wl_width, 2) ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
 #endif
@@ -4609,34 +3650,21 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );*/
-#elif defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || \
-	defined(HAVE_LC5) || defined(HAVE_NS3)
+#elif defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
 	websWrite(
 		wp,
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",
 		wl_txantenna);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.vertical + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 0) ? "selected=\\\"selected\\\"" :
-						"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" :
-						"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 3) ? "selected=\\\"selected\\\"" :
-						"");
+	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.vertical + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 0) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 3) ? "selected=\\\"selected\\\"" : "");
 #if defined(HAVE_NS5) || defined(HAVE_NS2) || defined(HAVE_NS3)
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 2) ? "selected=\\\"selected\\\"" :
-						"");
+	websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 2) ? "selected=\\\"selected\\\"" : "");
 #endif
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
@@ -4648,26 +3676,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",
 			wl_txantenna);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
-			nvram_matchi(wl_txantenna, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
-			nvram_matchi(wl_txantenna, 1) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
-			nvram_matchi(wl_txantenna, 2) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
+			  nvram_matchi(wl_txantenna, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
+			  nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
+			  nvram_matchi(wl_txantenna, 2) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -4675,26 +3690,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label13)</script></div><select name=\"%s\" >\n",
 			wl_rxantenna);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
-			nvram_matchi(wl_rxantenna, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
-			nvram_matchi(wl_rxantenna, 1) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
-			nvram_matchi(wl_rxantenna, 2) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
+			  nvram_matchi(wl_rxantenna, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
+			  nvram_matchi(wl_rxantenna, 1) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
+			  nvram_matchi(wl_rxantenna, 2) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -4708,105 +3710,53 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		maxtx = mac80211_get_avail_tx_antenna(prefix);
 #endif
 		if (maxtx > 1) {
-				  websWrite(
-					  wp,
-					  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
-					  wl_txantenna);
-				  websWrite(
-					  wp,
-					  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-				  websWrite(
-					  wp,
-					  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-					  nvram_matchi(wl_txantenna, 1) ?
-						  "selected=\\\"selected\\\"" :
-						  "");
-				  if (maxtx > 1)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       3) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxtx > 3)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       5) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxtx > 5)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       7) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxtx > 7)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       15) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  websWrite(wp, "//]]>\n</script>\n");
-				  websWrite(wp, "</select>\n");
-				  websWrite(wp, "</div>\n");
+			websWrite(
+				wp,
+				"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
+				wl_txantenna);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+				  nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 1)
+				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
+					  nvram_matchi(wl_txantenna, 3) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 3)
+				websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
+					  nvram_matchi(wl_txantenna, 5) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 5)
+				websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
+					  nvram_matchi(wl_txantenna, 7) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 7)
+				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
+					  nvram_matchi(wl_txantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>\n");
+			websWrite(wp, "</select>\n");
+			websWrite(wp, "</div>\n");
 		}
 
 		if (maxrx > 0) {
-				  websWrite(
-					  wp,
-					  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.rxchainmask)</script></div><select name=\"%s\" >\n",
-					  wl_rxantenna);
-				  websWrite(
-					  wp,
-					  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-				  websWrite(
-					  wp,
-					  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-					  nvram_matchi(wl_rxantenna, 1) ?
-						  "selected=\\\"selected\\\"" :
-						  "");
-				  if (maxrx > 1)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       3) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxrx > 3)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       5) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxrx > 5)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       7) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxrx > 7)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       15) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  websWrite(wp, "//]]>\n</script>\n");
-				  websWrite(wp, "</select>\n");
-				  websWrite(wp, "</div>\n");
+			websWrite(
+				wp,
+				"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.rxchainmask)</script></div><select name=\"%s\" >\n",
+				wl_rxantenna);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+				  nvram_matchi(wl_rxantenna, 1) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 1)
+				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 3) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 3)
+				websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 5) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 5)
+				websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 7) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 7)
+				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>\n");
+			websWrite(wp, "</select>\n");
+			websWrite(wp, "</div>\n");
 		}
 	}
 #endif
@@ -4854,8 +3804,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 			fclose(fp);
 		}
-		char *names_zstd[] = { "\" + share.disabled + \"", "LZO", "LZ4",
-				       "LZMA", "ZSTD" };
+		char *names_zstd[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA", "ZSTD" };
 		char *names[] = {
 			"\" + share.disabled + \"",
 			"LZO",
@@ -4863,12 +3812,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			"LZMA",
 		};
 		if (zstd)
-			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2 4",
-					 names_zstd,
-					 nvram_default_get(wl_fc, "0"));
+			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2 4", names_zstd, nvram_default_get(wl_fc, "0"));
 		else
-			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2",
-					 names, nvram_default_get(wl_fc, "0"));
+			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 	}
 #endif
 	sprintf(wmm, "%s_wmm", prefix);
@@ -4879,10 +3825,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_basic.ssid", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
-		wl_ssid);
+	websWrite(wp, "<input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
+		  wl_ssid);
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");
 
@@ -4891,10 +3835,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_bssid, "%s_bssid", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.bssid", NULL);
-		websWrite(
-			wp,
-			"<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />",
-			prefix, nvram_safe_get(wl_bssid));
+		websWrite(wp,
+			  "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />",
+			  prefix, nvram_safe_get(wl_bssid));
 		websWrite(wp, "</div>\n");
 	}
 #endif
@@ -4910,25 +3853,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
-	if (is_ap(prefix) || nvram_match(wl_mode, "infra") ||
-	    nvram_match(wl_mode, "mesh"))
+	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh"))
 #endif
 	{
 		if (has_mimo(prefix) &&
-		    (nvram_nmatch("n-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("na-only", "%s_net_mode", prefix))) {
+		    (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
+		     nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+		     nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			show_channel(wp, prefix, prefix, 1);
 			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_basic.channel_width",
-				     NULL);
+			show_caption(wp, "label", "wl_basic.channel_width", NULL);
 			websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
 			//              websWrite(wp,
 			//                        "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
@@ -4936,109 +3872,70 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(
 				wp,
 				"<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-				nvram_nmatch("20", "%s_nbw", prefix) ?
-					"selected=\"selected\"" :
-					"");
+				nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 			websWrite(
 				wp,
 				"<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n",
-				nvram_nmatch("40", "%s_nbw", prefix) ?
-					"selected=\"selected\"" :
-					"");
+				nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 			if (has_ac(prefix) && has_5ghz(prefix) &&
-			    (nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("xacn-mixed", "%s_net_mode",
-					  prefix))) {
+			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
 				websWrite(
 					wp,
 					"<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
-					nvram_nmatch("80", "%s_nbw", prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				if (has_vht160(prefix) || has_he160(prefix)) {
 					websWrite(
 						wp,
 						"<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
-						nvram_nmatch("160", "%s_nbw",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 				if (has_vht80plus80(prefix)) {
 					websWrite(
 						wp,
 						"<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
-						nvram_nmatch("80+80", "%s_nbw",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 			}
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
-			if (!is_ath5k(prefix) &&
-			    nvram_nmatch("40", "%s_nbw", prefix)) {
+			if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label",
-					     "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
-					  prefix);
+				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 				websWrite(
 					wp,
 					"<option value=\"upper\" %s><script type=\"text/javascript\">document.write(wl_basic.lower);</script></option>\n",
-					nvram_nmatch("upper", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"lower\" %s><script type=\"text/javascript\">document.write(wl_basic.upper);</script></option>\n",
-					nvram_nmatch("lower", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
 			}
-			if (nvram_nmatch("80", "%s_nbw", prefix) ||
-			    nvram_nmatch("80+80", "%s_nbw",
-					 prefix)) { // 802.11ac
+			if (nvram_nmatch("80", "%s_nbw", prefix) || nvram_nmatch("80+80", "%s_nbw",
+										 prefix)) { // 802.11ac
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label",
-					     "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
-					  prefix);
+				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 				websWrite(
 					wp,
 					"<option value=\"ll\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ll", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"lu\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("lu", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"ul\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ul", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"uu\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("uu", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
 			}
@@ -5070,173 +3967,96 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		} else {
 			show_channel(wp, prefix, prefix, 0);
 			if (is_mac80211(prefix)) {
-				if (!is_ath5k(prefix) &&
-				    (nvram_matchi(wl_width, 40) ||
-				     nvram_matchi(wl_width, 2040))) {
-					websWrite(wp,
-						  "<div class=\"setting\">\n");
-					show_caption(wp, "label",
-						     "wl_basic.channel_wide",
-						     NULL);
-					websWrite(
-						wp,
-						"<select name=\"%s_nctrlsb\" >\n",
-						prefix);
+				if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 					websWrite(
 						wp,
 						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_upr);</script></option>\n",
-						(nvram_nmatch("ull",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("upper",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("ull", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(
 						wp,
 						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lwr);</script></option>\n",
-						(nvram_nmatch("luu",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("lower",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("luu", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(wp, "</select>\n");
 					websWrite(wp, "</div>\n");
 				}
-				if (nvram_matchi(wl_width, 80) ||
-				    nvram_match(wl_width, "80+80")) {
-					websWrite(wp,
-						  "<div class=\"setting\">\n");
-					show_caption(wp, "label",
-						     "wl_basic.channel_wide",
-						     NULL);
-					websWrite(
-						wp,
-						"<select name=\"%s_nctrlsb\" >\n",
-						prefix);
+				if (nvram_matchi(wl_width, 80) || nvram_match(wl_width, "80+80")) {
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 					websWrite(
 						wp,
 						"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ll);</script></option>\n",
-						(nvram_nmatch("lul",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("lower",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("lul", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(
 						wp,
 						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lu);</script></option>\n",
-						nvram_nmatch("luu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ul);</script></option>\n",
-						nvram_nmatch("ull",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uu);</script></option>\n",
-						(nvram_nmatch("ulu",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("upper",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("ulu", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(wp, "</select>\n");
 					websWrite(wp, "</div>\n");
 				}
 				if (nvram_matchi(wl_width, 160)) {
-					websWrite(wp,
-						  "<div class=\"setting\">\n");
-					show_caption(wp, "label",
-						     "wl_basic.channel_wide",
-						     NULL);
-					websWrite(
-						wp,
-						"<select name=\"%s_nctrlsb\" >\n",
-						prefix);
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 					websWrite(
 						wp,
 						"<option value=\"lll\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lll);</script></option>\n",
-						(nvram_nmatch("lll",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("lower",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("lll", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(
 						wp,
 						"<option value=\"llu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_llu);</script></option>\n",
-						nvram_nmatch("llu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("llu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lul);</script></option>\n",
-						nvram_nmatch("lul",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("lul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_luu);</script></option>\n",
-						nvram_nmatch("luu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ull);</script></option>\n",
-						nvram_nmatch("ull",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ulu);</script></option>\n",
-						nvram_nmatch("ulu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("ulu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"uul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uul);</script></option>\n",
-						nvram_nmatch("uul",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("uul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"uuu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uuu);</script></option>\n",
-						(nvram_nmatch("uuu",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("upper",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("uuu", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(wp, "</select>\n");
@@ -5252,15 +4072,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			wl_closed,
-			nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" :
-						     "");
+			wl_closed, nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			wl_closed,
-			nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" :
-						     "");
+			wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 	}
 	if (is_mac80211(prefix)) {
@@ -5333,10 +4149,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_scanlist, "%s_scanlist", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.scanlist", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s\" size=\"32\" maxlength=\"512\" value=\"%s\" />\n",
-			wl_scanlist, nvram_default_get(wl_scanlist, "default"));
+		websWrite(wp, "<input name=\"%s\" size=\"32\" maxlength=\"512\" value=\"%s\" />\n", wl_scanlist,
+			  nvram_default_get(wl_scanlist, "default"));
 		websWrite(wp, "</div>\n");
 	}
 #endif
@@ -5356,8 +4170,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
-	if (is_ap(prefix) || nvram_nmatch("infra", "%s_mode", prefix) ||
-	    nvram_nmatch("mesh", "%s_mode", prefix)) {
+	if (is_ap(prefix) || nvram_nmatch("infra", "%s_mode", prefix) || nvram_nmatch("mesh", "%s_mode", prefix)) {
 		sprintf(power, "%s_maxassoc", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_adv.label10", NULL);
@@ -5462,17 +4275,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				wp,
 				"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 				wl_mode);
-			websWrite(
-				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			if (!has_no_apmode(prefix)) {
 				if (!cpeonly) {
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
-						nvram_match(wl_mode, "ap") ?
-							"selected=\\\"selected\\\"" :
-							"");
+						nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 				}
 			}
 #ifdef HAVE_MADWIFI
@@ -5481,49 +4290,35 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
-						nvram_match(wl_mode, "wdsap") ?
-							"selected=\\\"selected\\\"" :
-							"");
+						nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 				}
 			}
 #endif
 #if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
-				nvram_match(wl_mode, "sta") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
+				  nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
 #endif
 #if !defined(HAVE_RT2880) || defined(HAVE_MT76)
 #ifdef HAVE_RELAYD
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
 #else
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
 #endif
-				nvram_match(wl_mode, "wet") ?
-					"selected=\\\"selected\\\"" :
-					"");
+				  nvram_match(wl_mode, "wet") ? "selected=\\\"selected\\\"" : "");
 #endif
 #ifndef HAVE_MADWIFI
 			if (!cpeonly) {
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
-					nvram_match(wl_mode, "apsta") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "apsta") ? "selected=\\\"selected\\\"" : "");
 				//#ifndef HAVE_RT2880
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n",
-					nvram_match(wl_mode, "apstawet") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "apstawet") ? "selected=\\\"selected\\\"" : "");
 			}
 //#endif
 #else
@@ -5531,23 +4326,16 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n",
-					nvram_match(wl_mode, "wdssta") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n",
-					nvram_match(wl_mode, "wdssta_mtik") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
 			}
 			if (has_mesh(prefix)) {
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n",
-					nvram_match(wl_mode, "mesh") ?
-						"selected=\\\"selected\\\"" :
-						"");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n",
+					  nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
 			}
 #endif
 #ifndef HAVE_BUFFALO
@@ -5558,9 +4346,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n",
-					nvram_match(wl_mode, "infra") ?
-						"selected=\\\"selected\\\"" :
-						"");
+					nvram_match(wl_mode, "infra") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n");
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
@@ -5579,17 +4365,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', false)\" %s /><script type=\"text/javascript\">Capture(share.auto)</script>&nbsp;(DHCP)&nbsp;\n",
-			prefix, prefix,
-			nvram_default_matchi(wl_relayd, 1, 1) ? "checked" : "");
+			prefix, prefix, nvram_default_matchi(wl_relayd, 1, 1) ? "checked" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', true)\" %s/><script type=\"text/javascript\">Capture(share.manual)</script>\n",
-			prefix, prefix,
-			nvram_default_matchi(wl_relayd, 0, 1) ? "checked" : "");
+			prefix, prefix, nvram_default_matchi(wl_relayd, 0, 1) ? "checked" : "");
 		websWrite(wp, "</div>\n");
 		sprintf(wl_relayd, "%s_relayd_gw_ipaddr", prefix);
-		sscanf(nvram_safe_get(wl_relayd), "%d.%d.%d.%d", &ip[0], &ip[1],
-		       &ip[2], &ip[3]);
+		sscanf(nvram_safe_get(wl_relayd), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
 		websWrite(
 			wp,
@@ -5598,12 +4381,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			"<div class=\"label\"><script type=\"text/javascript\">Capture(share.gateway)</script></div>\n"
 			"<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n"
 			"</div>\n",
-			prefix,
-			nvram_default_matchi(wl_relayd, 1, 0) ?
-				" style=\"display: none; visibility: hidden;\"" :
-				"",
-			prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2],
-			prefix, ip[3]);
+			prefix, nvram_default_matchi(wl_relayd, 1, 0) ? " style=\"display: none; visibility: hidden;\"" : "",
+			prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
 	}
 #endif
 
@@ -5647,26 +4426,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n",
 			dualband);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n",
-			nvram_matchi(dualband, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.bghz24 + \"</option>\");\n",
-			nvram_matchi(dualband, 2) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"5\\\" %s >\" + wl_basic.bghz5 + \"</option>\");\n",
-			nvram_matchi(dualband, 5) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n",
+			  nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.bghz24 + \"</option>\");\n",
+			  nvram_matchi(dualband, 2) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + wl_basic.bghz5 + \"</option>\");\n",
+			  nvram_matchi(dualband, 5) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -5677,134 +4443,77 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n",
 			wl_width, prefix);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
-			nvram_matchi(wl_width, 20) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
+			  nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 		/* limit channel options by mode */
 		int canht40 = can_ht40(prefix);
 		int canvht80 = can_vht80(prefix);
 		if (!is_mac80211(prefix) || canht40)
 			if (is_mac80211(prefix) && !is_ath5k(prefix)) {
-				if ((nvram_nmatch("n-only", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("ng-only", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("n2-only", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("mixed", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("n5-only", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("ac-only", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("acn-mixed", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("ax-only", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("xacn-mixed", "%s_net_mode",
-						  prefix) ||
-				     nvram_nmatch("na-only", "%s_net_mode",
-						  prefix)))
+				if ((nvram_nmatch("n-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("na-only", "%s_net_mode", prefix)))
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
-						nvram_matchi(wl_width, 2040) ?
-							"selected=\\\"selected\\\"" :
-							"");
+						nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
 			}
 		if (!is_mac80211(prefix) ||
 		    (is_mac80211(prefix) &&
-		     (nvram_nmatch("n-only", "%s_net_mode", prefix) ||
-		      nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-		      nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-		      nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-		      nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
-		      nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		      nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-		      nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-		      nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
-		      nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
+		     (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+		      nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
+		      nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+		      nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+		      nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
 			if (!is_mac80211(prefix) || is_ath5k(prefix))
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
-					nvram_matchi(wl_width, 40) ?
-						"selected=\\\"selected\\\"" :
-						"");
+				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
+					  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 			else if (canht40)
-				websWrite(
-					wp,
-					"document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
-					nvram_matchi(wl_width, 40) ?
-						"selected=\\\"selected\\\"" :
-						"");
-			if ((is_ath11k(prefix) || is_ath10k(prefix) ||
-			     is_mvebu(prefix) || has_vht80(prefix)) &&
-			    (has_5ghz(prefix) ||
-			     (cansuperchannel(wp, prefix) &&
-			      nvram_nmatch("1", "%s_turbo_qam", prefix))) &&
-			    (nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("xacn-mixed", "%s_net_mode",
-					  prefix) ||
-			     (cansuperchannel(wp, prefix) &&
-			      nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
+				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
+					  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
+			if ((is_ath11k(prefix) || is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) &&
+			    (has_5ghz(prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix))) &&
+			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+			     (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
 				if (canvht80)
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n",
-						nvram_matchi(wl_width, 80) ?
-							"selected=\\\"selected\\\"" :
-							"");
-				if ((has_vht160(prefix) || has_he160(prefix)) &&
-				    can_vht160(prefix) && has_5ghz(prefix))
+						nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
+				if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && has_5ghz(prefix))
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n",
-						nvram_matchi(wl_width, 160) ?
-							"selected=\\\"selected\\\"" :
-							"");
-				if (has_vht80plus80(prefix) && canvht80 &&
-				    has_5ghz(prefix))
+						nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
+				if (has_vht80plus80(prefix) && canvht80 && has_5ghz(prefix))
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n",
-						nvram_match(wl_width, "80+80") ?
-							"selected=\\\"selected\\\"" :
-							"");
+						nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 			}
 		}
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
 		if (has_half(prefix))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
-				nvram_matchi(wl_width, 10) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
+				  nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
 		if (has_quarter(prefix))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
-				nvram_matchi(wl_width, 5) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
+				  nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
 		if (registered_has_subquarter() && has_subquarter(prefix)) {
 			/* will be enabled once it is tested and the spectrum analyse is done */
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
-				nvram_matchi(wl_width, 2) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
+				  nvram_matchi(wl_width, 2) ? "selected=\\\"selected\\\"" : "");
 		}
 #endif
 #endif
@@ -5815,25 +4524,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 // test
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
-	if (is_ap(prefix) || nvram_match(wl_mode, "infra") ||
-	    nvram_match(wl_mode, "mesh"))
+	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh"))
 #endif
 	{
 		if (has_mimo(prefix) &&
-		    (nvram_nmatch("n-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
-		     nvram_nmatch("na-only", "%s_net_mode", prefix))) {
+		    (nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			show_channel(wp, prefix, prefix, 1);
 			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_basic.channel_width",
-				     NULL);
+			show_caption(wp, "label", "wl_basic.channel_width", NULL);
 			websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
 			//                      websWrite(wp,
 			//                                "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\"0\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
@@ -5841,109 +4543,70 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(
 				wp,
 				"<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-				nvram_nmatch("20", "%s_nbw", prefix) ?
-					"selected=\"selected\"" :
-					"");
+				nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 			websWrite(
 				wp,
 				"<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-				nvram_nmatch("40", "%s_nbw", prefix) ?
-					"selected=\"selected\"" :
-					"");
+				nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 			if (has_ac(prefix) && has_5ghz(prefix) &&
-			    (nvram_nmatch("mixed", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("xacn-mixed", "%s_net_mode",
-					  prefix))) {
+			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
 				websWrite(
 					wp,
 					"<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
-					nvram_nmatch("80", "%s_nbw", prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				if (has_vht160(prefix) || has_he160(prefix)) {
 					websWrite(
 						wp,
 						"<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
-						nvram_nmatch("160", "%s_nbw",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 				if (has_vht80plus80(prefix)) {
 					websWrite(
 						wp,
 						"<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
-						nvram_nmatch("80+80", "%s_nbw",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 			}
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
-			if (!is_ath5k(prefix) &&
-			    nvram_nmatch("40", "%s_nbw", prefix)) {
+			if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label",
-					     "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
-					  prefix);
+				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 				websWrite(
 					wp,
 					"<option value=\"upper\" %s><script type=\"text/javascript\">Capture(wl_basic.upper);</script></option>\n",
-					nvram_nmatch("upper", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"lower\" %s><script type=\"text/javascript\">Capture(wl_basic.lower);</script></option>\n",
-					nvram_nmatch("lower", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
 			}
-			if (nvram_nmatch("80", "%s_nbw", prefix) ||
-			    nvram_nmatch("80+80", "%s_nbw",
-					 prefix)) { // 802.11ac
+			if (nvram_nmatch("80", "%s_nbw", prefix) || nvram_nmatch("80+80", "%s_nbw",
+										 prefix)) { // 802.11ac
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label",
-					     "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
-					  prefix);
+				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 				websWrite(
 					wp,
 					"<option value=\"ll\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ll", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"lu\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("lu", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"ul\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ul", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(
 					wp,
 					"<option value=\"uu\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("uu", "%s_nctrlsb",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"");
+					nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
 			}
@@ -5975,173 +4638,96 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		} else {
 			show_channel(wp, prefix, prefix, 0);
 			if (is_mac80211(prefix)) {
-				if (!is_ath5k(prefix) &&
-				    (nvram_matchi(wl_width, 40) ||
-				     nvram_matchi(wl_width, 2040))) {
-					websWrite(wp,
-						  "<div class=\"setting\">\n");
-					show_caption(wp, "label",
-						     "wl_basic.channel_wide",
-						     NULL);
-					websWrite(
-						wp,
-						"<select name=\"%s_nctrlsb\" >\n",
-						prefix);
+				if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 					websWrite(
 						wp,
 						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_upr);</script></option>\n",
-						(nvram_nmatch("ull",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("upper",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("ull", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(
 						wp,
 						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lwr);</script></option>\n",
-						(nvram_nmatch("luu",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("lower",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("luu", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(wp, "</select>\n");
 					websWrite(wp, "</div>\n");
 				}
-				if (nvram_matchi(wl_width, 80) ||
-				    nvram_match(wl_width, "80+80")) {
-					websWrite(wp,
-						  "<div class=\"setting\">\n");
-					show_caption(wp, "label",
-						     "wl_basic.channel_wide",
-						     NULL);
-					websWrite(
-						wp,
-						"<select name=\"%s_nctrlsb\" >\n",
-						prefix);
+				if (nvram_matchi(wl_width, 80) || nvram_match(wl_width, "80+80")) {
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 					websWrite(
 						wp,
 						"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ll);</script></option>\n",
-						(nvram_nmatch("lul",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("lower",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("lul", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(
 						wp,
 						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lu);</script></option>\n",
-						nvram_nmatch("luu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ul);</script></option>\n",
-						nvram_nmatch("ull",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uu);</script></option>\n",
-						(nvram_nmatch("ulu",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("upper",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("ulu", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(wp, "</select>\n");
 					websWrite(wp, "</div>\n");
 				}
 				if (nvram_matchi(wl_width, 160)) {
-					websWrite(wp,
-						  "<div class=\"setting\">\n");
-					show_caption(wp, "label",
-						     "wl_basic.channel_wide",
-						     NULL);
-					websWrite(
-						wp,
-						"<select name=\"%s_nctrlsb\" >\n",
-						prefix);
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 					websWrite(
 						wp,
 						"<option value=\"lll\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lll);</script></option>\n",
-						(nvram_nmatch("lll",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("lower",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("lll", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(
 						wp,
 						"<option value=\"llu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_llu);</script></option>\n",
-						nvram_nmatch("llu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("llu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lul);</script></option>\n",
-						nvram_nmatch("lul",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("lul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_luu);</script></option>\n",
-						nvram_nmatch("luu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ull);</script></option>\n",
-						nvram_nmatch("ull",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ulu);</script></option>\n",
-						nvram_nmatch("ulu",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("ulu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"uul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uul);</script></option>\n",
-						nvram_nmatch("uul",
-							     "%s_nctrlsb",
-							     prefix) ?
-							"selected=\"selected\"" :
-							"");
+						nvram_nmatch("uul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 					websWrite(
 						wp,
 						"<option value=\"uuu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uuu);</script></option>\n",
-						(nvram_nmatch("uuu",
-							      "%s_nctrlsb",
-							      prefix) ||
-						 nvram_nmatch("upper",
-							      "%s_nctrlsb",
-							      prefix)) ?
+						(nvram_nmatch("uuu", "%s_nctrlsb", prefix) ||
+						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
 							"selected=\"selected\"" :
 							"");
 					websWrite(wp, "</select>\n");
@@ -6174,19 +4760,16 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_bssid, "%s_bssid", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.bssid", NULL);
-		websWrite(
-			wp,
-			"<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />",
-			prefix, nvram_safe_get(wl_bssid));
+		websWrite(wp,
+			  "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />",
+			  prefix, nvram_safe_get(wl_bssid));
 		websWrite(wp, "</div>\n");
 	}
 #endif
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
-	if (is_ap(prefix) || nvram_match(wl_mode, "infra") ||
-	    nvram_match(wl_mode, "apsta") || nvram_match(wl_mode, "apstawet"))
+	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta") || nvram_match(wl_mode, "apstawet"))
 #else
-	if (is_ap(prefix) || nvram_match(wl_mode, "infra") ||
-	    nvram_match(wl_mode, "mesh"))
+	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh"))
 #endif
 	{
 		// ssid broadcast
@@ -6197,15 +4780,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			wl_closed,
-			nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" :
-						     "");
+			wl_closed, nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			wl_closed,
-			nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" :
-						     "");
+			wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_IFL
@@ -6223,17 +4802,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(
 		wp,
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.legend)</script></div>\n");
-	websWrite(
-		wp,
-		"<input type=\"checkbox\" name=\"%s\" onclick=\"toggle_layer(this,'%s_layer')\"%s>",
-		advanced_label, advanced_label,
-		websGetVar(wp, advanced_label, NULL) ? " checked=\"checked\"" :
-						       "");
+	websWrite(wp, "<input type=\"checkbox\" name=\"%s\" onclick=\"toggle_layer(this,'%s_layer')\"%s>", advanced_label,
+		  advanced_label, websGetVar(wp, advanced_label, NULL) ? " checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div id=\"%s_layer\"%s>\n", advanced_label,
-		  websGetVar(wp, advanced_label, NULL) ?
-			  "" :
-			  " style=\"display: none;\"");
+		  websGetVar(wp, advanced_label, NULL) ? "" : " style=\"display: none;\"");
 #ifdef HAVE_IFL
 	char wl_note[16];
 	sprintf(wl_note, "%s_note", prefix);
@@ -6249,47 +4822,21 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.cardtype", NULL);
 			websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
-			websWrite(
-				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_ONNET
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 0, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 1, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 2, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #else
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 0, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 1, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n",
-				nvram_default_matchi(wl_cardtype, 2, 0) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n",
+				  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #endif
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
@@ -6304,26 +4851,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 0, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 1, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 2, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 
@@ -6333,56 +4867,23 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 0, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 5, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 6, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 7, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 4, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 1, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 2, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n",
-			nvram_default_matchi(wl_cardtype, 3, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 5, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 6, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 7, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 4, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n",
+			  nvram_default_matchi(wl_cardtype, 3, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 #endif
@@ -6399,36 +4900,20 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_radio(wp, prefix, "mesh_gate_announcements", 0);
 			{
 				char mparam[64];
-				sprintf(mparam, "%s_mesh_hwmp_rootmode",
-					prefix);
-				char *names[] = {
-					"\" + wl_basic.mesh_no_root + \"",
-					"\" + wl_basic.mesh_preq_no_prep + \"",
-					"\" + wl_basic.mesh_preq_with_prep + \"",
-					"\" + wl_basic.mesh_rann + \"",
-					"\" + wl_basic.preq_with_prep + \""
-				};
-				showOptionsNames(
-					wp, "wl_basic.mesh_hwmp_rootmode",
-					mparam, "0 2 3 4", names,
-					nvram_default_get(mparam, "0"));
+				sprintf(mparam, "%s_mesh_hwmp_rootmode", prefix);
+				char *names[] = { "\" + wl_basic.mesh_no_root + \"", "\" + wl_basic.mesh_preq_no_prep + \"",
+						  "\" + wl_basic.mesh_preq_with_prep + \"", "\" + wl_basic.mesh_rann + \"",
+						  "\" + wl_basic.preq_with_prep + \"" };
+				showOptionsNames(wp, "wl_basic.mesh_hwmp_rootmode", mparam, "0 2 3 4", names,
+						 nvram_default_get(mparam, "0"));
 			}
-			mesh_num(wp, prefix, "mesh_hwmp_rann_interval", 6,
-				 5000);
-			mesh_num(wp, prefix, "mesh_hwmp_max_preq_retries", 4,
-				 4);
-			mesh_num(wp, prefix, "mesh_hwmp_active_path_timeout", 6,
-				 5000);
-			mesh_num(wp, prefix, "mesh_hwmp_preq_min_interval", 4,
-				 10);
-			mesh_num(wp, prefix,
-				 "mesh_hwmp_net_diameter_traversal_time", 6,
-				 50);
-			mesh_num(wp, prefix,
-				 "mesh_hwmp_active_path_to_root_timeout", 6,
-				 6000);
-			mesh_num(wp, prefix, "mesh_hwmp_confirmation_interval",
-				 6, 5000);
+			mesh_num(wp, prefix, "mesh_hwmp_rann_interval", 6, 5000);
+			mesh_num(wp, prefix, "mesh_hwmp_max_preq_retries", 4, 4);
+			mesh_num(wp, prefix, "mesh_hwmp_active_path_timeout", 6, 5000);
+			mesh_num(wp, prefix, "mesh_hwmp_preq_min_interval", 4, 10);
+			mesh_num(wp, prefix, "mesh_hwmp_net_diameter_traversal_time", 6, 50);
+			mesh_num(wp, prefix, "mesh_hwmp_active_path_to_root_timeout", 6, 6000);
+			mesh_num(wp, prefix, "mesh_hwmp_confirmation_interval", 6, 5000);
 			mesh_num(wp, prefix, "mesh_retry_timeout", 4, 100);
 			mesh_num(wp, prefix, "mesh_confirm_timeout", 4, 100);
 			mesh_num(wp, prefix, "mesh_holding_timeout", 4, 100);
@@ -6437,24 +4922,17 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_num(wp, prefix, "mesh_ttl", 4, 31);
 			mesh_num(wp, prefix, "mesh_element_ttl", 4, 31);
 			mesh_num(wp, prefix, "mesh_path_refresh_time", 6, 1000);
-			mesh_num(wp, prefix, "mesh_min_discovery_timeout", 4,
-				 100);
+			mesh_num(wp, prefix, "mesh_min_discovery_timeout", 4, 100);
 			mesh_radio(wp, prefix, "mesh_auto_open_plinks", 1);
-			mesh_num(wp, prefix, "mesh_sync_offset_max_neighor", 4,
-				 10);
+			mesh_num(wp, prefix, "mesh_sync_offset_max_neighor", 4, 10);
 			mesh_num(wp, prefix, "mesh_rssi_threshold", 4, 0);
 			{
 				char mparam[64];
 				sprintf(mparam, "%s_mesh_power_mode", prefix);
-				char *names[] = {
-					"\" + wl_basic.mesh_active + \"",
-					"\" + wl_basic.mesh_deep + \"",
-					"\" + wl_basic.mesh_light + \""
-				};
-				showOptionsNames(
-					wp, "wl_basic.mesh_power_mode", mparam,
-					"active light deep", names,
-					nvram_default_get(mparam, "active"));
+				char *names[] = { "\" + wl_basic.mesh_active + \"", "\" + wl_basic.mesh_deep + \"",
+						  "\" + wl_basic.mesh_light + \"" };
+				showOptionsNames(wp, "wl_basic.mesh_power_mode", mparam, "active light deep", names,
+						 nvram_default_get(mparam, "active"));
 			}
 			mesh_num(wp, prefix, "mesh_awake_window", 6, 10);
 			mesh_num(wp, prefix, "mesh_plink_timeout", 6, 0);
@@ -6467,9 +4945,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		char fw_type[32];
 		sprintf(fw_type, "%s_fwtype", prefix);
 		char *fw_names[] = { "DD-WRT", "VANILLA" };
-		showOptionsNames(wp, "wl_basic.fw_type", fw_type,
-				 "ddwrt vanilla", fw_names,
-				 nvram_default_get(fw_type, "ddwrt"));
+		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
 	}
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
@@ -6479,16 +4955,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 		{
 			sprintf(wl_regdomain, "%s_regdomain", prefix);
-			if (1 || nvram_nmatch("1", "%s_regulatory", prefix) ||
-			    !issuperchannel()) {
+			if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 				char *list = getCountryList(COUNTRYLIST);
-				showOptionsLabel(wp, "wl_basic.regdom_label",
-						 wl_regdomain, list,
-						 nvram_safe_get(wl_regdomain));
+				showOptionsLabel(wp, "wl_basic.regdom_label", wl_regdomain, list, nvram_safe_get(wl_regdomain));
 			}
 		}
 	}
-#endif // ! HAVE MAKSAT
+#endif // ! HAVE MAKSAT \
 	// power adjustment
 	sprintf(power, "%s_txpwrdbm", prefix);
 	// sprintf (maxpower, "%s_maxpower", prefix);
@@ -6502,9 +4975,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(regulatory, "%s_regulatory", prefix);
 		nvram_default_get(regulatory, "0");
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(
-			wp,
-			"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
@@ -6554,8 +5026,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(
 		wp,
 		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm (Max %d)\n",
-		power, txpower + wifi_gettxpoweroffset(prefix),
-		mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
 #else
 	websWrite(
 		wp,
@@ -6579,21 +5050,16 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (!strcmp(netmode, "mixed") ||
-		    !strcmp(netmode, "xacn-mixed") ||
-		    !strcmp(netmode, "ax-only")) {
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
 			char color[32];
 			sprintf(color, "%s_he_bss_color", prefix);
-			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2,
-				     0);
+			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
 		}
 	}
 	if (has_ldpc(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((strcmp(netmode, "mixed") && //
-		     strcmp(netmode, "ac-only") &&
-		     strcmp(netmode, "acn-mixed") &&
-		     strcmp(netmode, "ax-only") &&
+		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
 		     strcmp(netmode, "xacn-mixed")))
 			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
@@ -6611,31 +5077,15 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.smps", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_smps);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n",
-			"0",
-			nvram_default_match(wl_smps, "0", "0") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n", "0",
+			  nvram_default_match(wl_smps, "0", "0") ? "selected=\\\"selected\\\"" : "");
 		if (has_static_smps(prefix))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n",
-				"1",
-				nvram_match(wl_smps, "1") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", "1",
+				  nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
 		if (has_dynamic_smps(prefix))
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n",
-				"2",
-				nvram_match(wl_smps, "2") ?
-					"selected=\\\"selected\\\"" :
-					"");
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", "2",
+				  nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 	}
@@ -6647,72 +5097,39 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 		if (nvram_match("experimental", "1")) {
 			if (has_wave2(prefix)) {
-				showRadio(wp, "wl_basic.dynamic_auto_bursting",
-					  wl_autoburst);
+				showRadio(wp, "wl_basic.dynamic_auto_bursting", wl_autoburst);
 			}
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {
-				showRadio(wp, "wl_basic.qboost_tdma",
-					  wl_qboost);
+				showRadio(wp, "wl_basic.qboost_tdma", wl_qboost);
 				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label",
-					     "wl_basic.sifs_trigger_time",
-					     NULL);
+				show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
 				websWrite(
 					wp,
 					"<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n",
-					wl_sifs_trigger_time,
-					nvram_default_get(wl_sifs_trigger_time,
-							  "0"));
-				websWrite(
-					wp,
-					"&nbsp;<script type=\"text/javascript\">Capture(share.ms)</script></div>\n");
+					wl_sifs_trigger_time, nvram_default_get(wl_sifs_trigger_time, "0"));
+				websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.ms)</script></div>\n");
 			} else
 				showRadio(wp, "wl_basic.qboost", wl_qboost);
 		}
 		if (!is_mac80211(prefix)) {
 			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_basic.noise_immunity",
-				     NULL);
-			websWrite(wp, "<select name=\"%s\">\n",
-				  wl_noise_immunity);
-			websWrite(
-				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 0, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 1, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 2, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 3, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n",
-				nvram_default_matchi(wl_noise_immunity, 4, 4) ?
-					"selected=\\\"selected\\\"" :
-					"");
+			show_caption(wp, "label", "wl_basic.noise_immunity", NULL);
+			websWrite(wp, "<select name=\"%s\">\n", wl_noise_immunity);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 0, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 1, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 2, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 3, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n",
+				  nvram_default_matchi(wl_noise_immunity, 4, 4) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
-			showRadio(wp, "wl_basic.ofdm_weak_det",
-				  wl_ofdm_weak_det);
+			showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
 		}
 	}
 
@@ -6745,8 +5162,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 	if (!is_mac80211(prefix)) {
 		if (has_5ghz(prefix)) {
-			if (nvram_nmatch("1", "%s_regulatory", prefix) ||
-			    !issuperchannel()) {
+			if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 				showRadio(wp, "wl_basic.outband", wl_outdoor);
 			}
 		}
@@ -6757,35 +5173,22 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 // antenna settings
 #if defined(HAVE_PICO2) || defined(HAVE_PICO2HP) || defined(HAVE_PICO5)
 	// do nothing
-#elif defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || \
-	defined(HAVE_LC5) || defined(HAVE_NS3)
+#elif defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
 
 	websWrite(
 		wp,
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",
 		wl_txantenna);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.vertical + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 0) ? "selected=\\\"selected\\\"" :
-						"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" :
-						"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 3) ? "selected=\\\"selected\\\"" :
-						"");
+	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.vertical + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 0) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 3) ? "selected=\\\"selected\\\"" : "");
 #if defined(HAVE_NS5) || defined(HAVE_NS2) || defined(HAVE_NS3)
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",
-		nvram_matchi(wl_txantenna, 2) ? "selected=\\\"selected\\\"" :
-						"");
+	websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",
+		  nvram_matchi(wl_txantenna, 2) ? "selected=\\\"selected\\\"" : "");
 #endif
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
@@ -6797,26 +5200,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",
 			wl_txantenna);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
-			nvram_matchi(wl_txantenna, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
-			nvram_matchi(wl_txantenna, 1) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
-			nvram_matchi(wl_txantenna, 2) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
+			  nvram_matchi(wl_txantenna, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
+			  nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
+			  nvram_matchi(wl_txantenna, 2) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -6824,26 +5214,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label13)</script></div><select name=\"%s\" >\n",
 			wl_rxantenna);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
-			nvram_matchi(wl_rxantenna, 0) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
-			nvram_matchi(wl_rxantenna, 1) ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
-			nvram_matchi(wl_rxantenna, 2) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
+			  nvram_matchi(wl_rxantenna, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
+			  nvram_matchi(wl_rxantenna, 1) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
+			  nvram_matchi(wl_rxantenna, 2) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -6851,105 +5228,53 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		int maxrx = mac80211_get_avail_rx_antenna(prefix);
 		int maxtx = mac80211_get_avail_tx_antenna(prefix);
 		if (maxtx > 0) {
-				  websWrite(
-					  wp,
-					  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
-					  wl_txantenna);
-				  websWrite(
-					  wp,
-					  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-				  websWrite(
-					  wp,
-					  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-					  nvram_matchi(wl_txantenna, 1) ?
-						  "selected=\\\"selected\\\"" :
-						  "");
-				  if (maxtx > 1)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       3) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxtx > 3)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       5) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxtx > 5)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       7) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxtx > 7)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
-						  nvram_matchi(wl_txantenna,
-							       15) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  websWrite(wp, "//]]>\n</script>\n");
-				  websWrite(wp, "</select>\n");
-				  websWrite(wp, "</div>\n");
+			websWrite(
+				wp,
+				"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
+				wl_txantenna);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+				  nvram_matchi(wl_txantenna, 1) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 1)
+				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
+					  nvram_matchi(wl_txantenna, 3) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 3)
+				websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
+					  nvram_matchi(wl_txantenna, 5) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 5)
+				websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
+					  nvram_matchi(wl_txantenna, 7) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 7)
+				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
+					  nvram_matchi(wl_txantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>\n");
+			websWrite(wp, "</select>\n");
+			websWrite(wp, "</div>\n");
 		}
 
 		if (maxrx > 0) {
-				  websWrite(
-					  wp,
-					  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.rxchainmask)</script></div><select name=\"%s\" >\n",
-					  wl_rxantenna);
-				  websWrite(
-					  wp,
-					  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-				  websWrite(
-					  wp,
-					  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-					  nvram_matchi(wl_rxantenna, 1) ?
-						  "selected=\\\"selected\\\"" :
-						  "");
-				  if (maxrx > 1)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       3) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxrx > 3)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       5) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxrx > 5)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       7) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  if (maxrx > 7)
-					  websWrite(
-						  wp,
-						  "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
-						  nvram_matchi(wl_rxantenna,
-							       15) ?
-							  "selected=\\\"selected\\\"" :
-							  "");
-				  websWrite(wp, "//]]>\n</script>\n");
-				  websWrite(wp, "</select>\n");
-				  websWrite(wp, "</div>\n");
+			websWrite(
+				wp,
+				"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.rxchainmask)</script></div><select name=\"%s\" >\n",
+				wl_rxantenna);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+				  nvram_matchi(wl_rxantenna, 1) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 1)
+				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 3) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 3)
+				websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 5) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 5)
+				websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 7) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 7)
+				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>\n");
+			websWrite(wp, "</select>\n");
+			websWrite(wp, "</div>\n");
 		}
 	}
 #endif
@@ -6998,8 +5323,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 			fclose(fp);
 		}
-		char *names_zstd[] = { "\" + share.disabled + \"", "LZO", "LZ4",
-				       "LZMA", "ZSTD" };
+		char *names_zstd[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA", "ZSTD" };
 		char *names[] = {
 			"\" + share.disabled + \"",
 			"LZO",
@@ -7007,12 +5331,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			"LZMA",
 		};
 		if (zstd)
-			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2 4",
-					 names_zstd,
-					 nvram_default_get(wl_fc, "0"));
+			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2 4", names_zstd, nvram_default_get(wl_fc, "0"));
 		else
-			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2",
-					 names, nvram_default_get(wl_fc, "0"));
+			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 	}
 #endif
 	// wmm
@@ -7041,10 +5362,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_scanlist, "%s_scanlist", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.scanlist", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s\" size=\"32\" maxlength=\"512\" value=\"%s\" />\n",
-			wl_scanlist, nvram_default_get(wl_scanlist, "default"));
+		websWrite(wp, "<input name=\"%s\" size=\"32\" maxlength=\"512\" value=\"%s\" />\n", wl_scanlist,
+			  nvram_default_get(wl_scanlist, "default"));
 		websWrite(wp, "</div>\n");
 	}
 #endif
@@ -7064,8 +5383,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
-	if (is_ap(prefix) || nvram_nmatch("infra", "%s_mode", prefix) ||
-	    nvram_nmatch("mesh", "%s_mode", prefix)) {
+	if (is_ap(prefix) || nvram_nmatch("infra", "%s_mode", prefix) || nvram_nmatch("mesh", "%s_mode", prefix)) {
 		sprintf(power, "%s_maxassoc", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_adv.label10", NULL);
@@ -7155,21 +5473,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', true)\" />",
-		inst,
-		nvram_match(radio_timer, "1") ? "checked=\"checked\"" : "",
-		inst);
-	websWrite(
-		wp,
-		"<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp\n");
+		inst, nvram_match(radio_timer, "1") ? "checked=\"checked\"" : "", inst);
+	websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp\n");
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', false)\" />",
-		inst,
-		nvram_match(radio_timer, "0") ? "checked=\"checked\"" : "",
-		inst);
-	websWrite(
-		wp,
-		"<script type=\"text/javascript\">Capture(share.disable)</script>\n");
+		inst, nvram_match(radio_timer, "0") ? "checked=\"checked\"" : "", inst);
+	websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div id=\"radio%d\">\n", inst);
 	websWrite(wp, "<table id=\"radio%d_table\"></table>", inst);
@@ -7214,8 +5524,7 @@ EJ_VISIBLE void ej_gen_timer_compute(webs_t wp, int argc, char_t **argv)
 	int c = getdevicecount();
 	int i;
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "F.radio%d_on_time.value = computeWlTimer(%d);\n",
-			  i, i);
+		websWrite(wp, "F.radio%d_on_time.value = computeWlTimer(%d);\n", i, i);
 	}
 #endif
 }
@@ -7229,14 +5538,9 @@ EJ_VISIBLE void ej_gen_init_timer(webs_t wp, int argc, char_t **argv)
 		char radio[32];
 		sprintf(radio, "radio%d_on_time", i);
 		websWrite(wp, "setRadioTable(%d);\n", i);
-		websWrite(wp, "initWlTimer('%s',%d);\n",
-			  nvram_default_get(radio, "111111111111111111111111"),
-			  i);
-		websWrite(
-			wp,
-			"show_layer_ext(document.wireless.radio%d_timer_enable, 'radio%d', %d);",
-			i, i,
-			nvram_nmatch("1", "radio%d_timer_enable", i) ? 1 : 0);
+		websWrite(wp, "initWlTimer('%s',%d);\n", nvram_default_get(radio, "111111111111111111111111"), i);
+		websWrite(wp, "show_layer_ext(document.wireless.radio%d_timer_enable, 'radio%d', %d);", i, i,
+			  nvram_nmatch("1", "radio%d_timer_enable", i) ? 1 : 0);
 	}
 #endif
 }
@@ -7247,9 +5551,7 @@ EJ_VISIBLE void ej_gen_timer_fields(webs_t wp, int argc, char_t **argv)
 	int c = getdevicecount();
 	int i;
 	for (i = 0; i < c; i++) {
-		websWrite(wp,
-			  "<input type=\"hidden\" name=\"radio%d_on_time\">\n",
-			  i);
+		websWrite(wp, "<input type=\"hidden\" name=\"radio%d_on_time\">\n", i);
 	}
 #endif
 }
@@ -7257,9 +5559,7 @@ EJ_VISIBLE void ej_gen_timer_fields(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t **argv)
 {
 #if defined(HAVE_ANTAIRA) && defined(HAVE_HABANERO)
-	websWrite(
-		wp,
-		"<fieldset><legend><script type=\"text/javascript\">Capture(sbutton.survey)</script></legend>");
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(sbutton.survey)</script></legend>");
 	websWrite(wp, "<div class=\"center\">");
 	websWrite(
 		wp,
@@ -7277,45 +5577,24 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t **argv)
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[32];
 		sprintf(wl_regdomain, "wl_regdomain");
-		websWrite(
-			wp,
-			"<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>\n");
-		websWrite(
-			wp,
-			"<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend>\n");
+		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>\n");
+		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend>\n");
 		char *list = getCountryList(COUNTRYLIST);
-		showOptionsLabel(wp, "wl_basic.regdom_label", wl_regdomain,
-				 list,
-				 nvram_default_get("wl_regdomain", "EUROPE"));
+		showOptionsLabel(wp, "wl_basic.regdom_label", wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
 		websWrite(
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regmode)</script></div>\n");
 		char *wl_regmode = nvram_default_get("wl_reg_mode", "off");
 		websWrite(wp, "<select name=\"wl_reg_mode\">\n");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"off\\\" %s > \" + share.off + \"</option>\");\n",
-			!strcmp(wl_regmode, "off") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"h\\\" %s >802.11h Loose</option>\");\n",
-			!strcmp(wl_regmode, "h") ? "selected=\\\"selected\\\"" :
-						   "");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"h_strict\\\" %s >802.11h Strict</option>\");\n",
-			!strcmp(wl_regmode, "h_strict") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"d\\\" %s >802.11d</option>\");\n",
-			!strcmp(wl_regmode, "d") ? "selected=\\\"selected\\\"" :
-						   "");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"off\\\" %s > \" + share.off + \"</option>\");\n",
+			  !strcmp(wl_regmode, "off") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"h\\\" %s >802.11h Loose</option>\");\n",
+			  !strcmp(wl_regmode, "h") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"h_strict\\\" %s >802.11h Strict</option>\");\n",
+			  !strcmp(wl_regmode, "h_strict") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"d\\\" %s >802.11d</option>\");\n",
+			  !strcmp(wl_regmode, "d") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(
@@ -7323,28 +5602,15 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t **argv)
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.tpcdb)</script></div>\n");
 		char *wl_tpcdb = nvram_default_get("wl_tpc_db", "off");
 		websWrite(wp, "<select name=\"wl_tpc_db\">\n");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"off\\\" %s >0 (\" + share.off + \")</option>\");\n",
-			!strcmp(wl_tpcdb, "off") ? "selected=\\\"selected\\\"" :
-						   "");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
-			!strcmp(wl_tpcdb, "2") ? "selected=\\\"selected\\\"" :
-						 "");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
-			!strcmp(wl_tpcdb, "3") ? "selected=\\\"selected\\\"" :
-						 "");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"4\\\" %s >4\");\n",
-			!strcmp(wl_tpcdb, "4") ? "selected=\\\"selected\\\"" :
-						 "");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"off\\\" %s >0 (\" + share.off + \")</option>\");\n",
+			  !strcmp(wl_tpcdb, "off") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
+			  !strcmp(wl_tpcdb, "2") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
+			  !strcmp(wl_tpcdb, "3") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4\");\n",
+			  !strcmp(wl_tpcdb, "4") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n</fieldset><br />\n");
 	}
@@ -7358,9 +5624,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t **argv)
 		internal_ej_show_wireless_single(wp, buf);
 	}
 #ifdef HAVE_GUESTPORT
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"gp_modify\" id=\"gp_modify\" value=\"\">\n");
+	websWrite(wp, "<input type=\"hidden\" name=\"gp_modify\" id=\"gp_modify\" value=\"\">\n");
 #endif
 	return;
 }
@@ -7373,10 +5637,7 @@ void show_addconfig(webs_t wp, char *prefix)
 	rep(vvar, '.', 'X');
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">Custom Config</div>\n");
-	websWrite(
-		wp,
-		"<textarea cols=\"60\" rows=\"4\" id=\"%s_config\" name=\"%s_config\"></textarea>\n",
-		vvar, vvar);
+	websWrite(wp, "<textarea cols=\"60\" rows=\"4\" id=\"%s_config\" name=\"%s_config\"></textarea>\n", vvar, vvar);
 	websWrite(wp, "<script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
 	websWrite(wp, "var %s_config = fix_cr( '", vvar);
@@ -7384,17 +5645,14 @@ void show_addconfig(webs_t wp, char *prefix)
 	sprintf(varname, "%s_config", prefix);
 	tf_webWriteESCNV(wp, varname);
 	websWrite(wp, "' );\n");
-	websWrite(wp,
-		  "document.getElementById(\"%s_config\").value = %s_config;\n",
-		  vvar, vvar);
+	websWrite(wp, "document.getElementById(\"%s_config\").value = %s_config;\n", vvar, vvar);
 	websWrite(wp, "//]]>\n");
 	websWrite(wp, "</script>\n");
 	websWrite(wp, "</div>\n");
 #endif
 }
 
-static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var,
-			   int selmode, int force)
+static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int selmode, int force)
 {
 	char nvar[80];
 	char gvar[80];
@@ -7406,17 +5664,13 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var,
 		websWrite(
 			wp,
 			"<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>",
-			nvar, prefix, gvar, gvar,
-			force ? "checked=\"checked\"" :
-				selmatch(nvar, "1", "checked=\"checked\""),
+			nvar, prefix, gvar, gvar, force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""),
 			force ? "disabled=\"disabled\"" : "", name);
 	else
 		websWrite(
 			wp,
 			"<input type=\"checkbox\" name=\"%s\" value=\"1\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>",
-			nvar,
-			force ? "checked=\"checked\"" :
-				selmatch(nvar, "1", "checked=\"checked\""),
+			nvar, force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""),
 			force ? "disabled=\"disabled\"" : "", name);
 }
 
@@ -7552,18 +5806,14 @@ static int owe_possible(const char *prefix)
 	strcpy(master, prefix);
 	rep(master, '.', 0);
 	char *vifs = nvram_nget("%s_vifs", master);
-	if (strcmp(master, prefix) &&
-	    (nvram_nmatch("disabled", "%s_akm", master) ||
-	     *nvram_nget("%s_akm", master) == 0)) {
+	if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0)) {
 		possible = check_already_owe(prefix, master);
 		if (possible)
 			return possible && nomesh(prefix);
 	}
 	foreach(var, vifs, next)
 	{
-		if (strcmp(var, prefix) &&
-		    (nvram_nmatch("disabled", "%s_akm", var) ||
-		     *nvram_nget("%s_akm", var) == 0)) {
+		if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0)) {
 			possible = check_already_owe(prefix, var);
 			if (possible)
 				return possible && nomesh(prefix);
@@ -7577,46 +5827,31 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
 		{ "wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue },
-		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth,
-		  alwaystrue },
+		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
 		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
 		//              { "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
-		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue,
-		  suiteb },
-		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue,
-		  suiteb192 },
+		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
+		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
 	};
 
-	struct pair s_authpair_wpa[] = {
-		{ "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh },
-		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh },
-		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211,
-		  nomesh },
-		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, alwaystrue },
-		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh },
-		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211,
-		  nomesh },
-		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
-		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128,
-		  nomesh },
-		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256,
-		  nomesh },
-		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible }
-	};
-	struct pair s_authpair_80211x[] = {
-		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue,
-		  alwaystrue },
-		{ "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue },
-		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128,
-		  alwaystrue },
-		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256,
-		  alwaystrue },
-		{ "wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue,
-		  alwaystrue }
-	};
+	struct pair s_authpair_wpa[] = { { "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh },
+					 { "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh },
+					 { "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh },
+					 { "wpa.psk3", "psk3", has_wpa3, is_mac80211, alwaystrue },
+					 { "wpa.wpa", "wpa", aponly, alwaystrue, nomesh },
+					 { "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh },
+					 { "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
+					 { "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
+					 { "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
+					 { "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh },
+					 { "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible } };
+	struct pair s_authpair_80211x[] = { { "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
+					    { "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue },
+					    { "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue },
+					    { "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue },
+					    { "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
+					    { "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
+					    { "wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue } };
 	struct pair s_authmethod[] = {
 		{ "wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue },
 		{ "wpa.leap", "leap", alwaystrue, alwaystrue, alwaystrue },
@@ -7640,43 +5875,29 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	int mlen = 0;
 
 	for (i = 0; i < sizeof(s_cryptopair) / sizeof(struct pair); i++) {
-		if (s_cryptopair[i].valid(prefix) &&
-		    s_cryptopair[i].valid2(prefix) &&
-		    s_cryptopair[i].valid3(prefix))
-			memcpy(&cryptopair[cnt++], &s_cryptopair[i],
-			       sizeof(struct pair));
+		if (s_cryptopair[i].valid(prefix) && s_cryptopair[i].valid2(prefix) && s_cryptopair[i].valid3(prefix))
+			memcpy(&cryptopair[cnt++], &s_cryptopair[i], sizeof(struct pair));
 	}
 	clen = cnt;
 	cnt = 0;
 
 	for (i = 0; i < sizeof(s_authmethod) / sizeof(struct pair); i++) {
-		if (s_authmethod[i].valid(prefix) &&
-		    s_authmethod[i].valid2(prefix) &&
-		    s_authmethod[i].valid3(prefix))
-			memcpy(&authmethod[cnt++], &s_authmethod[i],
-			       sizeof(struct pair));
+		if (s_authmethod[i].valid(prefix) && s_authmethod[i].valid2(prefix) && s_authmethod[i].valid3(prefix))
+			memcpy(&authmethod[cnt++], &s_authmethod[i], sizeof(struct pair));
 	}
 	mlen = cnt;
 	cnt = 0;
 
 	if (!show80211x) {
-		for (i = 0; i < sizeof(s_authpair_wpa) / sizeof(struct pair);
-		     i++) {
-			if (s_authpair_wpa[i].valid(prefix) &&
-			    s_authpair_wpa[i].valid2(prefix) &&
-			    s_authpair_wpa[i].valid3(prefix))
-				memcpy(&authpair_wpa[cnt++], &s_authpair_wpa[i],
-				       sizeof(struct pair));
+		for (i = 0; i < sizeof(s_authpair_wpa) / sizeof(struct pair); i++) {
+			if (s_authpair_wpa[i].valid(prefix) && s_authpair_wpa[i].valid2(prefix) && s_authpair_wpa[i].valid3(prefix))
+				memcpy(&authpair_wpa[cnt++], &s_authpair_wpa[i], sizeof(struct pair));
 		}
 	} else {
-		for (i = 0; i < sizeof(s_authpair_80211x) / sizeof(struct pair);
-		     i++) {
-			if (s_authpair_80211x[i].valid(prefix) &&
-			    s_authpair_80211x[i].valid2(prefix) &&
+		for (i = 0; i < sizeof(s_authpair_80211x) / sizeof(struct pair); i++) {
+			if (s_authpair_80211x[i].valid(prefix) && s_authpair_80211x[i].valid2(prefix) &&
 			    s_authpair_80211x[i].valid3(prefix))
-				memcpy(&authpair_wpa[cnt++],
-				       &s_authpair_80211x[i],
-				       sizeof(struct pair));
+				memcpy(&authpair_wpa[cnt++], &s_authpair_80211x[i], sizeof(struct pair));
 		}
 	}
 	alen = cnt;
@@ -7714,10 +5935,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 			if (show80211x) {
 				websWrite(wp, "<td>");
 				if (m) {
-					show_cryptovar(wp, prefix,
-						       authmethod[count].name,
-						       authmethod[count].nvname,
-						       1, 0);
+					show_cryptovar(wp, prefix, authmethod[count].name, authmethod[count].nvname, 1, 0);
 				} else {
 					websWrite(wp, "&nbsp;");
 				}
@@ -7725,23 +5943,15 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 			}
 			websWrite(wp, "<td>");
 			if (s) {
-				show_cryptovar(wp, prefix,
-					       authpair_wpa[count].name,
-					       authpair_wpa[count].nvname, 1,
-					       0);
+				show_cryptovar(wp, prefix, authpair_wpa[count].name, authpair_wpa[count].nvname, 1, 0);
 			} else {
 				websWrite(wp, "&nbsp;");
 			}
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>");
 			if (c) {
-				show_cryptovar(
-					wp, prefix, cryptopair[count].name,
-					cryptopair[count].nvname, 0,
-					cryptopair[count].forcecrypto ?
-						cryptopair[count].forcecrypto(
-							prefix) :
-						0);
+				show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname, 0,
+					       cryptopair[count].forcecrypto ? cryptopair[count].forcecrypto(prefix) : 0);
 			} else
 				websWrite(wp, "&nbsp;");
 			websWrite(wp, "</td>\n");
@@ -7774,31 +5984,16 @@ void show_owe(webs_t wp, char *prefix)
 			wp,
 			"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.owe_ifname)</script></div>\n");
 		websWrite(wp, "<select name=\"%s_owe_ifname\">\n", prefix);
-		if (strcmp(master, prefix) &&
-		    (nvram_nmatch("disabled", "%s_akm", master) ||
-		     *nvram_nget("%s_akm", master) == 0))
-			websWrite(wp,
-				  "<option value=\"%s\" %s >%s - %s</option>\n",
-				  master,
-				  nvram_nmatch(master, "%s_owe_ifname",
-					       prefix) ?
-					  "selected=\"selected\"" :
-					  "",
-				  master, nvram_nget("%s_ssid", master));
+		if (strcmp(master, prefix) && (nvram_nmatch("disabled", "%s_akm", master) || *nvram_nget("%s_akm", master) == 0))
+			websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", master,
+				  nvram_nmatch(master, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", master,
+				  nvram_nget("%s_ssid", master));
 		foreach(var, vifs, next)
 		{
-			if (strcmp(var, prefix) &&
-			    (nvram_nmatch("disabled", "%s_akm", var) ||
-			     *nvram_nget("%s_akm", var) == 0))
-				websWrite(
-					wp,
-					"<option value=\"%s\" %s >%s - %s</option>\n",
-					var,
-					nvram_nmatch(var, "%s_owe_ifname",
-						     prefix) ?
-						"selected=\"selected\"" :
-						"",
-					var, nvram_nget("%s_ssid", var));
+			if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0))
+				websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", var,
+					  nvram_nmatch(var, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", var,
+					  nvram_nget("%s_ssid", var));
 		}
 		websWrite(wp, "</select></div>\n");
 	}
@@ -7815,29 +6010,22 @@ void show_preshared(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wpa.algorithms", NULL);
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
 	if (has_ad(prefix)) {
-		websWrite(
-			wp,
-			"<option value=\"gcmp\" %s><script type=\"text/javascript\">Capture(wpa.gcmp)</script></option>\n",
-			selmatch(var, "gcmp", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"gcmp\" %s><script type=\"text/javascript\">Capture(wpa.gcmp)</script></option>\n",
+			  selmatch(var, "gcmp", "selected=\"selected\""));
 	} else {
-		websWrite(
-			wp,
-			"<option value=\"aes\" %s><script type=\"text/javascript\">Capture(wpa.ccmp)</script></option>\n",
-			selmatch(var, "aes", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"aes\" %s><script type=\"text/javascript\">Capture(wpa.ccmp)</script></option>\n",
+			  selmatch(var, "aes", "selected=\"selected\""));
 		websWrite(
 			wp,
 			"<option value=\"tkip+aes\" %s><script type=\"text/javascript\">Capture(wpa.tkip_ccmp)</script></option>\n",
 			selmatch(var, "tkip+aes", "selected=\"selected\""));
-		websWrite(
-			wp,
-			"<option value=\"tkip\" %s><script type=\"text/javascript\">Capture(wpa.tkip)</script></option>\n",
-			selmatch(var, "tkip", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"tkip\" %s><script type=\"text/javascript\">Capture(wpa.tkip)</script></option>\n",
+			  selmatch(var, "tkip", "selected=\"selected\""));
 		if (has_gcmp(prefix)) {
 			websWrite(
 				wp,
 				"<option value=\"ccmp-256\" %s><script type=\"text/javascript\">Capture(wpa.ccmp_256)</script></option>\n",
-				selmatch(var, "ccmp-256",
-					 "selected=\"selected\""));
+				selmatch(var, "ccmp-256", "selected=\"selected\""));
 			websWrite(
 				wp,
 				"<option value=\"gcmp\" %s><script type=\"text/javascript\">Capture(wpa.gcmp)</script></option>\n",
@@ -7845,16 +6033,13 @@ void show_preshared(webs_t wp, char *prefix)
 			websWrite(
 				wp,
 				"<option value=\"gcmp-256\" %s><script type=\"text/javascript\">Capture(wpa.gcmp_256)</script></option>\n",
-				selmatch(var, "gcmp-256",
-					 "selected=\"selected\""));
+				selmatch(var, "gcmp-256", "selected=\"selected\""));
 		}
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 #else
-	if (nvram_nmatch("1", "%s_psk3", prefix) &&
-	    !nvram_nmatch("1", "%s_psk", prefix) &&
-	    !nvram_nmatch("1", "%s_psk2", prefix) &&
+	if (nvram_nmatch("1", "%s_psk3", prefix) && !nvram_nmatch("1", "%s_psk", prefix) && !nvram_nmatch("1", "%s_psk2", prefix) &&
 	    !nvram_nmatch("1", "%s_psk2sha256", prefix)) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.sae_key", NULL);
@@ -7903,37 +6088,21 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label2", NULL);
 		websWrite(wp, "<select name=\"%s_radmactype\">\n", prefix);
-		websWrite(wp,
-			  "<option value=\"0\" %s >aabbcc-ddeeff</option>\n",
-			  nvram_prefix_match("radmactype", prefix, "0") ?
-				  "selected" :
-				  "");
+		websWrite(wp, "<option value=\"0\" %s >aabbcc-ddeeff</option>\n",
+			  nvram_prefix_match("radmactype", prefix, "0") ? "selected" : "");
 		websWrite(wp, "<option value=\"1\" %s >aabbccddeeff</option>\n",
-			  nvram_prefix_match("radmactype", prefix, "1") ?
-				  "selected" :
-				  "");
-		websWrite(
-			wp,
-			"<option value=\"2\" %s >aa:bb:cc:dd:ee:ff</option>\n",
-			nvram_prefix_match("radmactype", prefix, "2") ?
-				"selected" :
-				"");
-		websWrite(
-			wp,
-			"<option value=\"3\" %s >aa-bb-cc-dd-ee-ff</option>\n",
-			nvram_prefix_match("radmactype", prefix, "3") ?
-				"selected" :
-				"");
+			  nvram_prefix_match("radmactype", prefix, "1") ? "selected" : "");
+		websWrite(wp, "<option value=\"2\" %s >aa:bb:cc:dd:ee:ff</option>\n",
+			  nvram_prefix_match("radmactype", prefix, "2") ? "selected" : "");
+		websWrite(wp, "<option value=\"3\" %s >aa-bb-cc-dd-ee-ff</option>\n",
+			  nvram_prefix_match("radmactype", prefix, "3") ? "selected" : "");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 	}
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.label3", NULL);
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",
-		prefix);
+	websWrite(wp, "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n", prefix);
 	show_ip(wp, prefix, "radius_ipaddr", 0, 1, "radius.label3");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -7943,9 +6112,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		wp,
 		"<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n",
 		prefix, nvram_default_get(var, "1812"));
-	websWrite(
-		wp,
-		"<span class=\"default\"><script type=\"text/javascript\">\n");
+	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
 	websWrite(wp, "document.write(\"(\" + share.deflt + \": 1812)\");\n");
 	websWrite(wp, "//]]>\n");
@@ -7979,10 +6146,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 #endif
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label23", NULL);
-		websWrite(
-			wp,
-			"<input type=\"hidden\" name=\"%s_radius2_ipaddr\" value=\"4\" />\n",
-			prefix);
+		websWrite(wp, "<input type=\"hidden\" name=\"%s_radius2_ipaddr\" value=\"4\" />\n", prefix);
 		show_ip(wp, prefix, "radius2_ipaddr", 0, 1, "radius.label23");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -8023,25 +6187,16 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idacct', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
-			vvar, prefix,
-			nvram_default_matchi(acct, 1, 0) ?
-				"checked=\"checked\"" :
-				"");
+			vvar, prefix, nvram_default_matchi(acct, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			vvar, prefix,
-			nvram_default_matchi(acct, 0, 0) ?
-				"checked=\"checked\"" :
-				"");
+			vvar, prefix, nvram_default_matchi(acct, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_idacct\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label13", NULL);
-		websWrite(
-			wp,
-			"<input type=\"hidden\" name=\"%s_acct_ipaddr\" value=\"4\" />\n",
-			prefix);
+		websWrite(wp, "<input type=\"hidden\" name=\"%s_acct_ipaddr\" value=\"4\" />\n", prefix);
 		show_ip(wp, prefix, "acct_ipaddr", 0, 1, "radius.label13");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -8070,19 +6225,14 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script>\n//<![CDATA[\n ");
-		websWrite(
-			wp,
-			"show_layer_ext(document.getElementsByName(\"%s_acct\"), \"%s_idacct\", %s);\n",
-			prefix, vvar, nvram_matchi(acct, 1) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_acct\"), \"%s_idacct\", %s);\n", prefix, vvar,
+			  nvram_matchi(acct, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 	}
 	/* force client ip */
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.local_ip", NULL);
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"%s_local_ip\" value=\"4\" />\n",
-		prefix);
+	websWrite(wp, "<input type=\"hidden\" name=\"%s_local_ip\" value=\"4\" />\n", prefix);
 	show_ip(wp, prefix, "local_ip", 0, 1, "radius.label3");
 	websWrite(wp, "</div>\n");
 #endif
@@ -8144,31 +6294,19 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" onclick=\"enable_idpeap('%s')\" %s />Peap&nbsp;\n",
-		prefix, prefix,
-		nvram_prefix_match("8021xtype", prefix, "peap") ?
-			"checked=\"checked\"" :
-			"");
+		prefix, prefix, nvram_prefix_match("8021xtype", prefix, "peap") ? "checked=\"checked\"" : "");
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"leap\" onclick=\"enable_idleap('%s')\" %s />Leap&nbsp;\n",
-		prefix, prefix,
-		nvram_prefix_match("8021xtype", prefix, "leap") ?
-			"checked=\"checked\"" :
-			"");
+		prefix, prefix, nvram_prefix_match("8021xtype", prefix, "leap") ? "checked=\"checked\"" : "");
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" onclick=\"enable_idtls('%s')\" %s />TLS&nbsp;\n",
-		prefix, prefix,
-		nvram_prefix_match("8021xtype", prefix, "tls") ?
-			"checked=\"checked\"" :
-			"");
+		prefix, prefix, nvram_prefix_match("8021xtype", prefix, "tls") ? "checked=\"checked\"" : "");
 	websWrite(
 		wp,
 		"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"ttls\" onclick=\"enable_idttls('%s')\" %s />TTLS&nbsp;\n",
-		prefix, prefix,
-		nvram_prefix_match("8021xtype", prefix, "ttls") ?
-			"checked=\"checked\"" :
-			"");
+		prefix, prefix, nvram_prefix_match("8021xtype", prefix, "ttls") ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_80211R
@@ -8187,10 +6325,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("ttls8021xuser", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("ttls8021xanon", prefix));
+	websWrite(wp, "<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("ttls8021xanon", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.passwd", NULL);
 	websWrite(
@@ -8199,10 +6335,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("ttls8021xpasswd", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("ttls8021xphase2", prefix));
+	websWrite(wp, "<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("ttls8021xphase2", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.servercertif", NULL);
 	websWrite(
@@ -8214,10 +6348,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_ttls8021xca", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -8230,10 +6361,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_ttls8021xaddopt", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
@@ -8247,10 +6375,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("peap8021xuser", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("peap8021xanon", prefix));
+	websWrite(wp, "<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("peap8021xanon", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.passwd", NULL);
 	websWrite(
@@ -8259,10 +6385,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("peap8021xpasswd", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("peap8021xphase2", prefix));
+	websWrite(wp, "<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("peap8021xphase2", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.servercertif", NULL);
 	websWrite(
@@ -8273,10 +6397,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_peap8021xca", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -8289,10 +6410,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_peap8021xaddopt", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
@@ -8306,10 +6424,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("leap8021xuser", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("leap8021xanon", prefix));
+	websWrite(wp, "<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("leap8021xanon", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.passwd", NULL);
 	websWrite(
@@ -8318,10 +6434,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("leap8021xpasswd", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("leap8021xphase2", prefix));
+	websWrite(wp, "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("leap8021xphase2", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.options", NULL);
 	websWrite(
@@ -8332,10 +6446,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_leap8021xaddopt", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
@@ -8345,18 +6456,12 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(var, "%s_tls8021xkeyxchng", prefix);
 	nvram_default_get(var, "wep");
 	show_caption(wp, "label", "sec80211x.keyxchng", NULL);
-	websWrite(wp, "<select name=\"%s_tls8021xkeyxchng\"> size=\"1\"\n",
-		  prefix);
-	websWrite(wp, "<option value=\"wep\" %s>Radius/WEP</option>\n",
-		  selmatch(var, "wep", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
-		  selmatch(var, "wpa2", "selected=\"selected\""));
-	websWrite(
-		wp,
-		"<option value=\"wpa2mixed\" %s>WPA2 Enterprise (Mixed)</option>\n",
-		selmatch(var, "wpa2mixed", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
-		  selmatch(var, "wpa", "selected=\"selected\""));
+	websWrite(wp, "<select name=\"%s_tls8021xkeyxchng\"> size=\"1\"\n", prefix);
+	websWrite(wp, "<option value=\"wep\" %s>Radius/WEP</option>\n", selmatch(var, "wep", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n", selmatch(var, "wpa2", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa2mixed\" %s>WPA2 Enterprise (Mixed)</option>\n",
+		  selmatch(var, "wpa2mixed", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n", selmatch(var, "wpa", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.user", NULL);
@@ -8366,10 +6471,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("tls8021xuser", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_tls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("tls8021xanon", prefix));
+	websWrite(wp, "<input name=\"%s_tls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("tls8021xanon", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.passwd", NULL);
 	websWrite(
@@ -8378,10 +6481,8 @@ void show_80211X(webs_t wp, char *prefix)
 		prefix, nvram_prefix_get("tls8021xpasswd", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(
-		wp,
-		"<input name=\"%s_tls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-		prefix, nvram_prefix_get("tls8021xphase2", prefix));
+	websWrite(wp, "<input name=\"%s_tls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+		  nvram_prefix_get("tls8021xphase2", prefix));
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "sec80211x.servercertif", NULL);
 	websWrite(
@@ -8392,10 +6493,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_tls8021xca", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -8408,10 +6506,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_tls8021xpem", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -8424,10 +6519,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_tls8021xprv", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -8440,10 +6532,7 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_tls8021xaddopt", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-	websWrite(
-		wp,
-		"document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n",
-		prefix, prefix);
+	websWrite(wp, "document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n", prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
@@ -8454,17 +6543,12 @@ void show_80211X(webs_t wp, char *prefix)
 	// : "false");
 	char peap[32];
 	sprintf(peap, "%s_8021xtype", prefix);
-	websWrite(
-		wp,
-		"show_layer_ext(document.wpa.%s_8021xtype, 'idpeap%s', %s);\n",
-		prefix, prefix, nvram_match(peap, "peap") ? "true" : "false");
-	websWrite(wp,
-		  "show_layer_ext(document.wpa.%s_8021xtype, 'idtls%s', %s);\n",
-		  prefix, prefix, nvram_match(peap, "tls") ? "true" : "false");
-	websWrite(
-		wp,
-		"show_layer_ext(document.wpa.%s_8021xtype, 'idleap%s', %s);\n",
-		prefix, prefix, nvram_match(peap, "leap") ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.wpa.%s_8021xtype, 'idpeap%s', %s);\n", prefix, prefix,
+		  nvram_match(peap, "peap") ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.wpa.%s_8021xtype, 'idtls%s', %s);\n", prefix, prefix,
+		  nvram_match(peap, "tls") ? "true" : "false");
+	websWrite(wp, "show_layer_ext(document.wpa.%s_8021xtype, 'idleap%s', %s);\n", prefix, prefix,
+		  nvram_match(peap, "leap") ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 }
 #else
@@ -8497,10 +6581,8 @@ void show_80211X(webs_t wp, char *prefix)
 			prefix, nvram_prefix_get("ttls8021xuser", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.anon", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("ttls8021xanon", prefix));
+		websWrite(wp, "<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("ttls8021xanon", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
 		websWrite(
@@ -8509,10 +6591,8 @@ void show_80211X(webs_t wp, char *prefix)
 			prefix, nvram_prefix_get("ttls8021xpasswd", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase2", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("ttls8021xphase2", prefix));
+		websWrite(wp, "<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("ttls8021xphase2", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.servercertif", NULL);
 		websWrite(
@@ -8523,10 +6603,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_ttls8021xca", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -8539,10 +6616,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_ttls8021xaddopt", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset><br/>\n");
@@ -8559,10 +6633,8 @@ void show_80211X(webs_t wp, char *prefix)
 			prefix, nvram_prefix_get("peap8021xuser", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.anon", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("peap8021xanon", prefix));
+		websWrite(wp, "<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("peap8021xanon", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
 		websWrite(
@@ -8572,17 +6644,13 @@ void show_80211X(webs_t wp, char *prefix)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase1", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_peap8021xphase1\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("peap8021xphase1", prefix));
+		websWrite(wp, "<input name=\"%s_peap8021xphase1\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("peap8021xphase1", prefix));
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase2", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("peap8021xphase2", prefix));
+		websWrite(wp, "<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("peap8021xphase2", prefix));
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.servercertif", NULL);
@@ -8594,10 +6662,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_peap8021xca", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -8610,10 +6675,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_peap8021xaddopt", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset><br/>\n");
@@ -8630,10 +6692,8 @@ void show_80211X(webs_t wp, char *prefix)
 			prefix, nvram_prefix_get("leap8021xuser", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.anon", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("leap8021xanon", prefix));
+		websWrite(wp, "<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("leap8021xanon", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
 		websWrite(
@@ -8642,10 +6702,8 @@ void show_80211X(webs_t wp, char *prefix)
 			prefix, nvram_prefix_get("leap8021xpasswd", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase2", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("leap8021xphase2", prefix));
+		websWrite(wp, "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("leap8021xphase2", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.options", NULL);
 		websWrite(
@@ -8656,10 +6714,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_leap8021xaddopt", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset><br/>\n");
@@ -8676,10 +6731,8 @@ void show_80211X(webs_t wp, char *prefix)
 			prefix, nvram_prefix_get("tls8021xuser", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.anon", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_tls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("tls8021xanon", prefix));
+		websWrite(wp, "<input name=\"%s_tls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("tls8021xanon", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
 		websWrite(
@@ -8688,10 +6741,8 @@ void show_80211X(webs_t wp, char *prefix)
 			prefix, nvram_prefix_get("tls8021xpasswd", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase2", NULL);
-		websWrite(
-			wp,
-			"<input name=\"%s_tls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-			prefix, nvram_prefix_get("tls8021xphase2", prefix));
+		websWrite(wp, "<input name=\"%s_tls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("tls8021xphase2", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.servercertif", NULL);
 		websWrite(
@@ -8702,10 +6753,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_tls8021xca", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -8718,10 +6766,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_tls8021xpem", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -8734,10 +6779,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_tls8021xprv", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -8750,10 +6792,7 @@ void show_80211X(webs_t wp, char *prefix)
 		sprintf(namebuf, "%s_tls8021xaddopt", prefix);
 		tf_webWriteESCNV(wp, namebuf);
 		websWrite(wp, "' );\n");
-		websWrite(
-			wp,
-			"document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n",
-			prefix, prefix);
+		websWrite(wp, "document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset><br/>\n");
@@ -8771,18 +6810,12 @@ void show_wparadius(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wpa.algorithms", NULL);
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
 	sprintf(var, "%s_crypto", prefix);
-	websWrite(
-		wp,
-		"<option value=\"aes\" %s><script type=\"text/javascript\">Capture(wpa.ccmp)</script></option>\n",
-		selmatch(var, "aes", "selected=\"selected\""));
-	websWrite(
-		wp,
-		"<option value=\"tkip+aes\" %s><script type=\"text/javascript\">Capture(wpa.tkip_ccmp)</script></option>\n",
-		selmatch(var, "tkip+aes", "selected=\"selected\""));
-	websWrite(
-		wp,
-		"<option value=\"tkip\" %s><script type=\"text/javascript\">Capture(wpa.tkip)</script></option>\n",
-		selmatch(var, "tkip", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"aes\" %s><script type=\"text/javascript\">Capture(wpa.ccmp)</script></option>\n",
+		  selmatch(var, "aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip+aes\" %s><script type=\"text/javascript\">Capture(wpa.tkip_ccmp)</script></option>\n",
+		  selmatch(var, "tkip+aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip\" %s><script type=\"text/javascript\">Capture(wpa.tkip)</script></option>\n",
+		  selmatch(var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
 #endif
 #ifdef HAVE_MADWIFI
@@ -8807,17 +6840,11 @@ void show_wep(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"open\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.openn)</script></input>&nbsp;\n",
-			wl_authmode,
-			nvram_match(wl_authmode, "open") ?
-				"checked=\"checked\"" :
-				"");
+			wl_authmode, nvram_match(wl_authmode, "open") ? "checked=\"checked\"" : "");
 		websWrite(
 			wp,
 			"<input class=\"spaceradio\" type=\"radio\" value=\"shared\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.share_key)</script></input>\n",
-			wl_authmode,
-			nvram_match(wl_authmode, "shared") ?
-				"checked=\"checked\"" :
-				"");
+			wl_authmode, nvram_match(wl_authmode, "shared") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 	}
 #endif
@@ -8825,29 +6852,18 @@ void show_wep(webs_t wp, char *prefix)
 		wp,
 		"<div><div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wep.defkey)</script></div>");
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_WEP_key\" />", prefix);
-	websWrite(
-		wp,
-		"<input type=\"hidden\" name=\"%s_wep\" value=\"restricted\" />",
-		prefix);
+	websWrite(wp, "<input type=\"hidden\" name=\"%s_wep\" value=\"restricted\" />", prefix);
 	sprintf(var, "%s_key", prefix);
 	nvram_default_get(var, "1");
 	fprintf(stderr, "[WEP] default: %s\n", var);
-	websWrite(
-		wp,
-		"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_key\" %s />1&nbsp;\n",
-		prefix, selmatch(var, "1", "checked=\"checked\""));
-	websWrite(
-		wp,
-		"<input class=\"spaceradio\" type=\"radio\" value=\"2\" name=\"%s_key\" %s />2&nbsp;\n",
-		prefix, selmatch(var, "2", "checked=\"checked\""));
-	websWrite(
-		wp,
-		"<input class=\"spaceradio\" type=\"radio\" value=\"3\" name=\"%s_key\" %s />3&nbsp;\n",
-		prefix, selmatch(var, "3", "checked=\"checked\""));
-	websWrite(
-		wp,
-		"<input class=\"spaceradio\" type=\"radio\" value=\"4\" name=\"%s_key\" %s />4&nbsp;\n",
-		prefix, selmatch(var, "4", "checked=\"checked\""));
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_key\" %s />1&nbsp;\n", prefix,
+		  selmatch(var, "1", "checked=\"checked\""));
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"2\" name=\"%s_key\" %s />2&nbsp;\n", prefix,
+		  selmatch(var, "2", "checked=\"checked\""));
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"3\" name=\"%s_key\" %s />3&nbsp;\n", prefix,
+		  selmatch(var, "3", "checked=\"checked\""));
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"4\" name=\"%s_key\" %s />4&nbsp;\n", prefix,
+		  selmatch(var, "4", "checked=\"checked\""));
 	websWrite(wp, "</div>");
 	websWrite(
 		wp,
@@ -8855,50 +6871,33 @@ void show_wep(webs_t wp, char *prefix)
 	sprintf(var, "%s_wep_bit", prefix);
 	bit = nvram_safe_get(var);
 	cprintf("bit %s\n", bit);
-	websWrite(
-		wp,
-		"<select name=\"%s_wep_bit\" size=\"1\" onchange=keyMode(this.form)>",
-		prefix);
-	websWrite(
-		wp,
-		"<option value=\"64\" %s ><script type=\"text/javascript\">Capture(wep.opt_64);</script></option>",
-		selmatch(var, "64", "selected=\"selected\""));
-	websWrite(
-		wp,
-		"<option value=\"128\" %s ><script type=\"text/javascript\">Capture(wep.opt_128);</script></option>",
-		selmatch(var, "128", "selected=\"selected\""));
+	websWrite(wp, "<select name=\"%s_wep_bit\" size=\"1\" onchange=keyMode(this.form)>", prefix);
+	websWrite(wp, "<option value=\"64\" %s ><script type=\"text/javascript\">Capture(wep.opt_64);</script></option>",
+		  selmatch(var, "64", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"128\" %s ><script type=\"text/javascript\">Capture(wep.opt_128);</script></option>",
+		  selmatch(var, "128", "selected=\"selected\""));
 	websWrite(
 		wp,
 		"</select>\n</div>\n<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wep.passphrase)</script></div>\n");
-	websWrite(
-		wp,
-		"<input name=%s_passphrase maxlength=\"16\" size=\"20\" value=\"",
-		prefix);
+	websWrite(wp, "<input name=%s_passphrase maxlength=\"16\" size=\"20\" value=\"", prefix);
 	char p_temp[128];
 	char temp[256];
-	sprintf(p_temp, "%s",
-		get_wep_value(wp, temp, "passphrase", bit, prefix));
+	sprintf(p_temp, "%s", get_wep_value(wp, temp, "passphrase", bit, prefix));
 	nvram_set("passphrase_temp", p_temp);
 	if (strcmp(p_temp, nvram_safe_get("passphrase_temp"))) {
-		fprintf(stderr,
-			"[NVRAM WRITE ERROR] no match: \"%s\" -> \"%s\"\n",
-			p_temp, nvram_safe_get("passphrase_temp"));
+		fprintf(stderr, "[NVRAM WRITE ERROR] no match: \"%s\" -> \"%s\"\n", p_temp, nvram_safe_get("passphrase_temp"));
 		websWrite(wp, "%s", p_temp);
 	} else {
 		tf_webWriteESCNV(wp, "passphrase_temp");
 	}
 	nvram_unset("passphrase_temp");
 	websWrite(wp, "\" />");
-	websWrite(
-		wp,
-		"<input type=\"hidden\" value=\"Null\" name=\"generateButton\" />\n");
+	websWrite(wp, "<input type=\"hidden\" value=\"Null\" name=\"generateButton\" />\n");
 	websWrite(
 		wp,
 		"<input class=\"button\" type=\"button\" value=\"Generate\" onclick=\"generateKey(this.form,\'%s\')\" name=\"wepGenerate\" id=\"wepGenerate\"/>\n</div>",
 		prefix);
-	websWrite(
-		wp,
-		"<script type=\"text/javascript\">document.getElementById(\'wepGenerate\').value=wep.generate;</script>");
+	websWrite(wp, "<script type=\"text/javascript\">document.getElementById(\'wepGenerate\').value=wep.generate;</script>");
 	char *mlen = "10";
 	char *mlen2 = "12";
 	if (!strcmp(bit, "128")) {
@@ -8908,47 +6907,43 @@ void show_wep(webs_t wp, char *prefix)
 	websWrite(
 		wp,
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n");
-	websWrite(
-		wp,
+	websWrite(wp,
 #ifdef HAVE_BUFFALO
-		"<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+		  "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
 #else
-		"<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+		   "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
 #endif
-		prefix, mlen2, mlen, nvram_nget("%s_key1", prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key1", prefix));
 	websWrite(
 		wp,
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n");
-	websWrite(
-		wp,
+	websWrite(wp,
 #ifdef HAVE_BUFFALO
-		"<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+		  "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
 #else
-		"<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+		   "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
 #endif
-		prefix, mlen2, mlen, nvram_nget("%s_key2", prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key2", prefix));
 	websWrite(
 		wp,
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n");
-	websWrite(
-		wp,
+	websWrite(wp,
 #ifdef HAVE_BUFFALO
-		"<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+		  "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
 #else
-		"<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+		   "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
 #endif
-		prefix, mlen2, mlen, nvram_nget("%s_key3", prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key3", prefix));
 	websWrite(
 		wp,
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n");
-	websWrite(
-		wp,
+	websWrite(wp,
 #ifdef HAVE_BUFFALO
-		"<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+		  "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
 #else
-		"<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+		   "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
 #endif
-		prefix, mlen2, mlen, nvram_nget("%s_key4", prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key4", prefix));
 	websWrite(wp, "</div>\n");
 }
 
@@ -9138,8 +7133,7 @@ EJ_VISIBLE void ej_get_uptime(webs_t wp, int argc, char_t **argv)
 	time(&current_secs);
 	localtime_r(&current_secs, &current_time);
 	sysinfo(&info);
-	websWrite(wp, " %02u:%02u:%02u up ", current_time.tm_hour,
-		  current_time.tm_min, current_time.tm_sec);
+	websWrite(wp, " %02u:%02u:%02u up ", current_time.tm_hour, current_time.tm_min, current_time.tm_sec);
 	updays = (unsigned)info.uptime / (unsigned)(60 * 60 * 24);
 	if (updays)
 		websWrite(wp, "%u day%s, ", updays, (updays != 1) ? "s" : "");
@@ -9155,10 +7149,8 @@ EJ_VISIBLE void ej_get_uptime(webs_t wp, int argc, char_t **argv)
 #else
 	websWrite(wp, ",  ");
 #endif
-	websWrite(wp, "load average: %u.%02u, %u.%02u, %u.%02u",
-		  LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
-		  LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
-		  LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
+	websWrite(wp, "load average: %u.%02u, %u.%02u, %u.%02u", LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
+		  LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]), LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
 	return;
 }
 
@@ -9178,16 +7170,14 @@ EJ_VISIBLE void ej_get_wan_uptime(webs_t wp, int argc, char_t **argv)
 		if (fmt)
 			show_caption_simple(wp, "status_router.notavail");
 		else
-			websWrite(wp, "%s",
-				  live_translate(wp, "status_router.notavail"));
+			websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));
 		return;
 	}
 	if (!(fp = fopen("/tmp/.wanuptime", "r"))) {
 		if (fmt)
 			show_caption_simple(wp, "status_router.notavail");
 		else
-			websWrite(wp, "%s",
-				  live_translate(wp, "status_router.notavail"));
+			websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));
 		return;
 	}
 	if (!feof(fp) && fscanf(fp, "%u", &uptime) == 1) {
@@ -9197,11 +7187,9 @@ EJ_VISIBLE void ej_get_wan_uptime(webs_t wp, int argc, char_t **argv)
 		uptime = sys_uptime - uptime;
 		days = (int)uptime / (60 * 60 * 24);
 		if (days)
-			websWrite(wp, "%d day%s, ", days,
-				  (days == 1 ? "" : "s"));
+			websWrite(wp, "%d day%s, ", days, (days == 1 ? "" : "s"));
 		minutes = (int)uptime / 60;
-		websWrite(wp, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60,
-			  (int)uptime % 60);
+		websWrite(wp, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60, (int)uptime % 60);
 	}
 	fclose(fp);
 	return;
@@ -9216,28 +7204,20 @@ EJ_VISIBLE void ej_get_wdsp2p(webs_t wp, int argc, char_t **argv)
 	interface = argv[1];
 	char wlwds[32];
 	sprintf(wlwds, "%s_wds1_enable", interface);
-	if ((nvram_selmatch(wp, "wk_mode", "ospf") ||
-	     nvram_selmatch(wp, "wk_mode", "ospf router")) &&
-	    nvram_selmatch(wp, "expert_mode", "1") &&
-	    nvram_selmatch(wp, wlwds, "1")) {
+	if ((nvram_selmatch(wp, "wk_mode", "ospf") || nvram_selmatch(wp, "wk_mode", "ospf router")) &&
+	    nvram_selmatch(wp, "expert_mode", "1") && nvram_selmatch(wp, wlwds, "1")) {
 		char buf[16];
 		sprintf(buf, "%s_wds%d_ospf", interface, index);
-		websWrite(
-			wp,
-			"<input name=\"%s\" size=\"2\" maxlength=\"5\" value=\"%s\" />\n",
-			buf, nvram_safe_get(buf));
+		websWrite(wp, "<input name=\"%s\" size=\"2\" maxlength=\"5\" value=\"%s\" />\n", buf, nvram_safe_get(buf));
 	}
 
 	snprintf(nvramvar, 31, "%s_wds%d_ipaddr", interface, index);
-	sscanf(nvram_safe_get(nvramvar), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2],
-	       &ip[3]);
+	sscanf(nvram_safe_get(nvramvar), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	snprintf(nvramvar, 31, "%s_wds%d_netmask", interface, index);
-	sscanf(nvram_safe_get(nvramvar), "%d.%d.%d.%d", &netmask[0],
-	       &netmask[1], &netmask[2], &netmask[3]);
+	sscanf(nvram_safe_get(nvramvar), "%d.%d.%d.%d", &netmask[0], &netmask[1], &netmask[2], &netmask[3]);
 	snprintf(nvramvar, 31, "%s_wds%d_enable", interface, index);
 	// set netmask to a suggested default if blank
-	if (netmask[0] == 0 && netmask[1] == 0 && netmask[2] == 0 &&
-	    netmask[3] == 0) {
+	if (netmask[0] == 0 && netmask[1] == 0 && netmask[2] == 0 && netmask[3] == 0) {
 		netmask[0] = 255;
 		netmask[1] = 255;
 		netmask[2] = 255;
@@ -9252,9 +7232,8 @@ EJ_VISIBLE void ej_get_wdsp2p(webs_t wp, int argc, char_t **argv)
 			"<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n"
 			"<input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n"
 			"</div>\n",
-			interface, index, interface, index, ip[0], interface,
-			index, ip[1], interface, index, ip[2], interface, index,
-			ip[3]);
+			interface, index, interface, index, ip[0], interface, index, ip[1], interface, index, ip[2], interface,
+			index, ip[3]);
 		websWrite(
 			wp,
 			"<div class=\"setting\">\n"
@@ -9262,9 +7241,8 @@ EJ_VISIBLE void ej_get_wdsp2p(webs_t wp, int argc, char_t **argv)
 			"<input type=\"hidden\" name=\"%s_wds%d_netmask\" value=\"4\">\n"
 			"<input name=\"%s_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"%s_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"%s_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"%s_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\n"
 			"</div>\n",
-			interface, index, interface, index, netmask[0],
-			interface, index, netmask[1], interface, index,
-			netmask[2], interface, index, netmask[3]);
+			interface, index, interface, index, netmask[0], interface, index, netmask[1], interface, index, netmask[2],
+			interface, index, netmask[3]);
 	}
 
 	return;
@@ -9323,11 +7301,7 @@ EJ_VISIBLE void ej_gethostnamebyip(webs_t wp, int argc, char_t **argv)
 	char *argument = argv[0];
 	if (argc == 1) {
 		getHostName(buf, argument);
-		websWrite(wp, "%s",
-			  strcmp(buf, "unknown") ?
-				  buf :
-				  tran_string(buf, sizeof(buf),
-					      "share.unknown"));
+		websWrite(wp, "%s", strcmp(buf, "unknown") ? buf : tran_string(buf, sizeof(buf), "share.unknown"));
 	}
 
 	return;
@@ -9400,9 +7374,7 @@ EJ_VISIBLE void ej_wl_packet_get(webs_t wp, int argc, char_t **argv)
 				 */
 				sscanf(line + ifl + 1,
 				       "%*llu %llu %llu %llu %*llu %*llu %*llu %*llu %*llu %llu %llu %llu %*llu %llu %*llu %*llu",
-				       &info.rx_pks, &info.rx_errs,
-				       &info.rx_drops, &info.tx_pks,
-				       &info.tx_errs, &info.tx_drops,
+				       &info.rx_pks, &info.rx_errs, &info.rx_drops, &info.tx_pks, &info.tx_errs, &info.tx_drops,
 				       &info.tx_colls);
 			}
 		}
@@ -9412,8 +7384,7 @@ EJ_VISIBLE void ej_wl_packet_get(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "SWRXgoodPacket=%llu;", info.rx_pks);
 	websWrite(wp, "SWRXerrorPacket=%llu;", info.rx_errs + info.rx_drops);
 	websWrite(wp, "SWTXgoodPacket=%llu;", info.tx_pks);
-	websWrite(wp, "SWTXerrorPacket=%llu;",
-		  info.tx_errs + info.tx_drops + info.tx_colls);
+	websWrite(wp, "SWTXerrorPacket=%llu;", info.tx_errs + info.tx_drops + info.tx_colls);
 	return;
 }
 
@@ -9426,14 +7397,12 @@ EJ_VISIBLE void ej_statfs(webs_t wp, int argc, char_t **argv)
 	struct statfs sizefs;
 	if (argc != 2)
 		return;
-	if ((statfs(argv[0], &sizefs) != 0) || (sizefs.f_type == 0x73717368) ||
-	    (sizefs.f_type == 0x74717368) || (sizefs.f_type == 0x68737174))
+	if ((statfs(argv[0], &sizefs) != 0) || (sizefs.f_type == 0x73717368) || (sizefs.f_type == 0x74717368) ||
+	    (sizefs.f_type == 0x68737174))
 		bzero(&sizefs, sizeof(sizefs));
-	websWrite(
-		wp, "var %s = {\nfree: %llu,\nused: %llu,\nsize: %llu\n};\n",
-		argv[1], ((uint64_t)sizefs.f_bsize * sizefs.f_bfree),
-		((uint64_t)sizefs.f_bsize * (sizefs.f_blocks - sizefs.f_bfree)),
-		((uint64_t)sizefs.f_bsize * sizefs.f_blocks));
+	websWrite(wp, "var %s = {\nfree: %llu,\nused: %llu,\nsize: %llu\n};\n", argv[1],
+		  ((uint64_t)sizefs.f_bsize * sizefs.f_bfree), ((uint64_t)sizefs.f_bsize * (sizefs.f_blocks - sizefs.f_bfree)),
+		  ((uint64_t)sizefs.f_bsize * sizefs.f_blocks));
 }
 
 EJ_VISIBLE void ej_getnumfilters(webs_t wp, int argc, char_t **argv)
@@ -9520,8 +7489,7 @@ EJ_VISIBLE void ej_bandwidth(webs_t wp, int argc, char_t **argv)
 char *getNetworkLabel(webs_t wp, char *var)
 {
 	char *l = nvram_nget("%s_label", var);
-	snprintf(wp->label, sizeof(wp->label), "%s%s%s", var,
-		 strcmp(l, "") ? " - " : "", l);
+	snprintf(wp->label, sizeof(wp->label), "%s%s%s", var, strcmp(l, "") ? " - " : "", l);
 	return wp->label;
 }
 
@@ -9573,12 +7541,8 @@ EJ_VISIBLE void ej_show_dnscrypt(webs_t wp, int argc, char_t **argv)
 				}
 				fname[c++] = line[a];
 			}
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
-				  name,
-				  nvram_match("dns_crypt_resolver", name) ?
-					  "selected" :
-					  "",
-				  fname);
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name,
+				  nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
 		}
 		fclose(fp);
 	}
@@ -9591,8 +7555,7 @@ EJ_VISIBLE void ej_show_congestion(webs_t wp, int argc, char_t **argv)
 	char *next;
 	char var[80];
 	char eths[256];
-	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control",
-			 "rb");
+	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
 	if (fp == NULL) {
 		strcpy(eths, "vegas westwood bic");
 	} else {
@@ -9613,10 +7576,7 @@ EJ_VISIBLE void ej_show_congestion(webs_t wp, int argc, char_t **argv)
 	foreach(var, eths, next)
 	{
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
-			  nvram_match("tcp_congestion_control", var) ?
-				  "selected" :
-				  "",
-			  var);
+			  nvram_match("tcp_congestion_control", var) ? "selected" : "", var);
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
@@ -9636,26 +7596,17 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 	int i;
 	for (i = 2; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i],
-			  nvram_match(ifname, argv[i]) ?
-				  "selected=\"selected\"" :
-				  "",
-			  argv[i]);
+			  nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
 	char *wanface = safe_get_wan_face(wan_if_buffer);
 	if (showwan & 1) {
 		if (strcmp(wanface, "br0")) {
-			websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n",
-				  wanface,
-				  nvram_match(ifname, wanface) ?
-					  "selected=\"selected\"" :
-					  "");
+			websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface,
+				  nvram_match(ifname, wanface) ? "selected=\"selected\"" : "");
 		}
 	}
-	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n",
-		  nvram_safe_get("lan_ifname"),
-		  nvram_match(ifname, nvram_safe_get("lan_ifname")) ?
-			  "selected=\"selected\"" :
-			  "");
+	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"),
+		  nvram_match(ifname, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *next;
 	char var[80];
 	char eths[256];
@@ -9674,8 +7625,7 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 			continue;
 		if (nvram_nmatch("1", "%s_bridged", var) && !isbridge(var))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
-			  nvram_match(ifname, var) ? "selected" : "",
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match(ifname, var) ? "selected" : "",
 			  getNetworkLabel(wp, var));
 	}
 
@@ -9699,30 +7649,22 @@ EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t **argv)
 	{
 		char *wanface = safe_get_wan_face(wan_if_buffer);
 		if (strcmp(wanface, "br0") && nvram_match(wanface, var)) {
-			websWrite(wp, "<option value=\"%s\" >WAN</option>\n",
-				  var);
+			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
 			continue;
 		}
 		if (nvram_match("lan_ifname", var)) {
-			websWrite(
-				wp,
-				"<option value=\"%s\">LAN &amp; WLAN</option>\n",
-				var);
+			websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", var);
 			continue;
 		}
-		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var,
-			  getNetworkLabel(wp, var));
+		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var, getNetworkLabel(wp, var));
 	}
 }
 
 #ifdef HAVE_RFLOW
 EJ_VISIBLE void ej_show_rflowif(webs_t wp, int argc, char_t **argv)
 {
-	websWrite(wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n",
-		  nvram_safe_get("lan_ifname"),
-		  nvram_match("rflow_if", nvram_safe_get("lan_ifname")) ?
-			  "selected=\"selected\"" :
-			  "");
+	websWrite(wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"),
+		  nvram_match("rflow_if", nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *lanifs = nvram_safe_get("lan_ifnames");
 	char *next;
 	char var[80];
@@ -9733,31 +7675,22 @@ EJ_VISIBLE void ej_show_rflowif(webs_t wp, int argc, char_t **argv)
 		if (!ifexists(var))
 			continue;
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
-			  nvram_match("rflow_if", var) ?
-				  "selected=\"selected\"" :
-				  "",
-			  getNetworkLabel(wp, var));
+			  nvram_match("rflow_if", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 	}
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	int cnt = get_wl_instances();
 	int c;
 	for (c = 0; c < cnt; c++) {
 		sprintf(var, "wl%d_ifname", c);
-		websWrite(wp, "<option value=\"%s\" %s >WLAN%d</option>\n",
-			  nvram_safe_get(var),
-			  nvram_match("rflow_if", nvram_safe_get(var)) ?
-				  "selected=\"selected\"" :
-				  "",
-			  c);
+		websWrite(wp, "<option value=\"%s\" %s >WLAN%d</option>\n", nvram_safe_get(var),
+			  nvram_match("rflow_if", nvram_safe_get(var)) ? "selected=\"selected\"" : "", c);
 	}
 #endif
 
 	char *wanif = nvram_safe_get("wan_ifname");
 	if (*(wanif)) {
 		websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanif,
-			  nvram_match("rflow_if", wanif) ?
-				  "selected=\"selected\"" :
-				  "");
+			  nvram_match("rflow_if", wanif) ? "selected=\"selected\"" : "");
 	}
 }
 #endif
@@ -9777,20 +7710,10 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 				nvgpio = nvram_nget("gpio_%s", var);
 				if (!nvgpio)
 					nvram_seti(nvgpio, 0);
-				websWrite(
-					wp,
-					"<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n",
-					nvgpio,
-					nvram_matchi(nvgpio, 1) ?
-						"checked=\"checked\"" :
-						"");
-				websWrite(
-					wp,
-					"<input type=\"checkbox\" name=\"%s\" value=\"0\" %s />\n",
-					nvgpio,
-					nvram_matchi(nvgpio, 0) ?
-						"checked=\"checked\"" :
-						"");
+				websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", nvgpio,
+					  nvram_matchi(nvgpio, 1) ? "checked=\"checked\"" : "");
+				websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"0\" %s />\n", nvgpio,
+					  nvram_matchi(nvgpio, 0) ? "checked=\"checked\"" : "");
 			}
 		}
 		debug_free(var);

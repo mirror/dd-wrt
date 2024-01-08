@@ -160,8 +160,7 @@ typedef struct {
 #define RSSI_CMD "wl rssi"
 #define NOISE_CMD "wl noise"
 
-int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
-		       char *visible, int *cnt, int globalcnt)
+int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface, char *visible, int *cnt, int globalcnt)
 {
 	int rssi = 0, noise = 0;
 	char *mode;
@@ -224,8 +223,7 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 		} else {
 #endif
 			char cmd[64];
-			if (strcmp(mode, "ap") && strcmp(mode, "apsta") &&
-			    strcmp(mode, "apstawet"))
+			if (strcmp(mode, "ap") && strcmp(mode, "apsta") && strcmp(mode, "apstawet"))
 				rssi = getRssi(iface, NULL);
 			else
 				rssi = getRssi(iface, mac);
@@ -268,8 +266,7 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 			param = (char *)(buf + buflen);
 			memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
 			char str[64] = { 0 };
-			if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0],
-				      WLC_IOCTL_MEDLEN)) {
+			if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
 				/* display the sta info */
 				sta2 = (sta_info_compat2_t *)buf;
 				switch (sta2->ver) {
@@ -280,15 +277,11 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 						int tx = sta2->tx_rate;
 						int rx = sta2->rx_rate;
 						if (tx > 0)
-							sprintf(txrate, "%dM",
-								tx / 1000);
+							sprintf(txrate, "%dM", tx / 1000);
 
 						if (rx > 0)
-							sprintf(rxrate, "%dM",
-								rx / 1000);
-						strcpy(time,
-						       UPTIME(sta2->in, str,
-							      sizeof(str)));
+							sprintf(rxrate, "%dM", rx / 1000);
+						strcpy(time, UPTIME(sta2->in, str, sizeof(str)));
 					}
 					break;
 				case 3:
@@ -297,15 +290,11 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 						int tx = sta3->tx_rate;
 						int rx = sta3->rx_rate;
 						if (tx > 0)
-							sprintf(txrate, "%dM",
-								tx / 1000);
+							sprintf(txrate, "%dM", tx / 1000);
 
 						if (rx > 0)
-							sprintf(rxrate, "%dM",
-								rx / 1000);
-						strcpy(time,
-						       UPTIME(sta3->in, str,
-							      sizeof(str)));
+							sprintf(rxrate, "%dM", rx / 1000);
+						strcpy(time, UPTIME(sta3->in, str, sizeof(str)));
 					}
 					sprintf(info, "LEGACY");
 					if (sta3->flags & WL_STA_N_CAP)
@@ -321,15 +310,11 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 						int tx = sta4->tx_rate;
 						int rx = sta4->rx_rate;
 						if (tx > 0)
-							sprintf(txrate, "%dM",
-								tx / 1000);
+							sprintf(txrate, "%dM", tx / 1000);
 
 						if (rx > 0)
-							sprintf(rxrate, "%dM",
-								rx / 1000);
-						strcpy(time,
-						       UPTIME(sta4->in, str,
-							      sizeof(str)));
+							sprintf(rxrate, "%dM", rx / 1000);
+						strcpy(time, UPTIME(sta4->in, str, sizeof(str)));
 					}
 					chain_rssi[0] = sta4->rssi[0];
 					chain_rssi[1] = sta4->rssi[1];
@@ -343,19 +328,15 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 					if (sta4->flags & WL_STA_N_CAP) {
 						ht = 1;
 						if (sta4->ht_capabilities) {
-							if (sta4->ht_capabilities &
-							    WL_STA_CAP_40MHZ)
+							if (sta4->ht_capabilities & WL_STA_CAP_40MHZ)
 								ht = 2;
-							if (sta4->ht_capabilities &
-							    WL_STA_CAP_SHORT_GI_20)
+							if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_20)
 								sgi = 1;
-							if (sta4->ht_capabilities &
-							    WL_STA_CAP_SHORT_GI_40) {
+							if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40) {
 								sgi = 1;
 								ht = 2;
 							}
-							if (sta4->ht_capabilities &
-							    WL_STA_CAP_40MHZ_INTOLERANT) {
+							if (sta4->ht_capabilities & WL_STA_CAP_40MHZ_INTOLERANT) {
 								i40 = 1;
 							}
 						}
@@ -365,13 +346,11 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 
 					if (sta4->flags & WL_STA_VHT_CAP) {
 						vht = 1;
-						if (sta4->vht_flags &
-						    WL_STA_SGI80) {
+						if (sta4->vht_flags & WL_STA_SGI80) {
 							sgi = 1;
 							ht = 3;
 						}
-						if (sta4->vht_flags &
-						    WL_STA_SGI160) {
+						if (sta4->vht_flags & WL_STA_SGI160) {
 							sgi = 1;
 							ht = 4;
 						}
@@ -424,13 +403,9 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface,
 			qual = 0;
 		else
 			qual = (signal + 100) * 20;
-		websWrite(
-			wp,
-			"'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",
-			mac, displayname, time, txrate, rxrate, info, rssi,
-			noise, rssi - noise, qual, chain_rssi[0], chain_rssi[1],
-			chain_rssi[2], chain_rssi[3],
-			nvram_nget("%s_label", iface), iface);
+		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac,
+			  displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual, chain_rssi[0], chain_rssi[1],
+			  chain_rssi[2], chain_rssi[3], nvram_nget("%s_label", iface), iface);
 	}
 
 	return globalcnt;
@@ -453,9 +428,7 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 		char wlif[32];
 
 		sprintf(wlif, "wl%d", i);
-		global = active_wireless_if(wp, argc, argv,
-					    get_wl_instance_name(i), wlif,
-					    &assoc_count[cnt], global);
+		global = active_wireless_if(wp, argc, argv, get_wl_instance_name(i), wlif, &assoc_count[cnt], global);
 		cnt++;
 		char *next;
 		char var[80];
@@ -466,8 +439,7 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 
 		foreach(var, vifs, next)
 		{
-			global = active_wireless_if(wp, argc, argv, var, var,
-						    &assoc_count[cnt], global);
+			global = active_wireless_if(wp, argc, argv, var, var, &assoc_count[cnt], global);
 			cnt++;
 		}
 	}
@@ -484,8 +456,7 @@ EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t **argv)
 	wl_ioctl(ifname, WLC_GET_RATE, &rate, sizeof(rate));
 
 	if (rate > 0)
-		websWrite(wp, "%d%s Mbit/s", (rate / 2),
-			  (rate & 1) ? ".5" : "");
+		websWrite(wp, "%d%s Mbit/s", (rate / 2), (rate & 1) ? ".5" : "");
 	else
 		websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 
@@ -522,8 +493,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "%d (scanning)", ci.scan_channel);
 	} else {
 		if (ci.hw_channel == 0) {
-			websWrite(wp, "%s",
-				  live_translate(wp, "share.unknown"));
+			websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 			return;
 		}
 		switch ((bi->chanspec & 0x3800)) {
@@ -540,16 +510,14 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 			if (!bi->ctl_ch)
 				websWrite(wp, "%d", bi->chanspec & 0xff);
 			else
-				websWrite(wp, "%d + %d", bi->ctl_ch,
-					  bi->chanspec & 0xff);
+				websWrite(wp, "%d + %d", bi->ctl_ch, bi->chanspec & 0xff);
 		}
 	}
 	return;
 }
 
 #define WDS_RSSI_TMP "/tmp/.rssi"
-int internal_ej_active_wds_instance(webs_t wp, int argc, char_t **argv,
-				    int instance, int cnt);
+int internal_ej_active_wds_instance(webs_t wp, int argc, char_t **argv, int instance, int cnt);
 EJ_VISIBLE void ej_active_wds(webs_t wp, int argc, char_t **argv)
 {
 	int cnt = 0;
@@ -561,8 +529,7 @@ EJ_VISIBLE void ej_active_wds(webs_t wp, int argc, char_t **argv)
 	}
 }
 
-int internal_ej_active_wds_instance(webs_t wp, int argc, char_t **argv,
-				    int instance, int cnt)
+int internal_ej_active_wds_instance(webs_t wp, int argc, char_t **argv, int instance, int cnt)
 {
 	int rssi = 0, i;
 	char *mode;
@@ -577,8 +544,7 @@ int internal_ej_active_wds_instance(webs_t wp, int argc, char_t **argv,
 
 	mode = nvram_nget("wl%d_mode", instance);
 
-	if (strcmp(mode, "ap") && strcmp(mode, "apsta") &&
-	    strcmp(mode, "apstawet"))
+	if (strcmp(mode, "ap") && strcmp(mode, "apsta") && strcmp(mode, "apstawet"))
 		return cnt;
 	unsigned char buf[WLC_IOCTL_MAXLEN];
 	char *iface = get_wl_instance_name(instance);
@@ -598,13 +564,10 @@ int internal_ej_active_wds_instance(webs_t wp, int argc, char_t **argv,
 		rssi = 0;
 		bzero(desc, 30);
 		for (i = 1; i <= 10; i++) {
-			snprintf(wdsvar, sizeof(wdsvar), "wl%d_wds%d_hwaddr",
-				 instance, i);
+			snprintf(wdsvar, sizeof(wdsvar), "wl%d_wds%d_hwaddr", instance, i);
 			if (nvram_match(wdsvar, mac)) {
-				snprintf(wdsvar, sizeof(wdsvar),
-					 "wl%d_wds%d_desc", instance, i);
-				snprintf(desc, sizeof(desc), "%s",
-					 nvram_safe_get(wdsvar));
+				snprintf(wdsvar, sizeof(wdsvar), "wl%d_wds%d_desc", instance, i);
+				snprintf(desc, sizeof(desc), "%s", nvram_safe_get(wdsvar));
 				if (!strcmp(nvram_safe_get(wdsvar), ""))
 					strcpy(desc, "&nbsp;");
 			}
@@ -627,8 +590,7 @@ int internal_ej_active_wds_instance(webs_t wp, int argc, char_t **argv,
 		cnt++;
 		int noise = getNoise(iface, NULL);
 
-		websWrite(wp, "\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"", mac,
-			  iface, desc, rssi, noise, rssi - noise);
+		websWrite(wp, "\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"", mac, iface, desc, rssi, noise, rssi - noise);
 	}
 
 	return cnt;

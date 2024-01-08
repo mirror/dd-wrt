@@ -96,8 +96,7 @@ static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 			//rep( word, '/', ' ');
 			if (sscanf(word, "%17s/%i", &mac, &wildcard) != 0) {
 				wildcard = wildcard / 4;
-				for (count = strlen(mac) - 1; wildcard > 0;
-				     count--) {
+				for (count = strlen(mac) - 1; wildcard > 0; count--) {
 					if (mac[count] != ':') {
 						mac[count] = '*';
 						wildcard--;
@@ -157,9 +156,7 @@ EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t **argv)
 #else
 				"<div class=\"setting\"><div class=\"label\" style=\"width: 16%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
 #endif
-				mac_mess, item, BOX_LEN, ifname, item - 1,
-				wl_filter_mac_get(ifname, "mac", item - 1,
-						  word));
+				mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1, word));
 
 			websWrite(
 				wp,
@@ -168,13 +165,8 @@ EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t **argv)
 #else
 				"<div class=\"label\" style=\"width: 16%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
 #endif
-				mac_mess, item + (WL_FILTER_MAC_NUM / 2),
-				BOX_LEN, ifname,
-				item + (WL_FILTER_MAC_NUM / 2) - 1,
-				wl_filter_mac_get(
-					ifname, "mac",
-					item + (WL_FILTER_MAC_NUM / 2) - 1,
-					word));
+				mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1,
+				wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1, word));
 		}
 
 		websWrite(wp, "</fieldset><br /></div>\n");
@@ -187,20 +179,13 @@ EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t **argv)
 			websWrite(
 				wp,
 				"<div class=\"setting\"><div class=\"label\" style=\"width: 16%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
-				mac_mess, item, BOX_LEN, ifname, item - 1,
-				wl_filter_mac_get(ifname, "mac", item - 1,
-						  word));
+				mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1, word));
 
 			websWrite(
 				wp,
 				"<div class=\"label\" style=\"width: 16%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
-				mac_mess, item + (WL_FILTER_MAC_NUM / 2),
-				BOX_LEN, ifname,
-				item + (WL_FILTER_MAC_NUM / 2) - 1,
-				wl_filter_mac_get(
-					ifname, "mac",
-					item + (WL_FILTER_MAC_NUM / 2) - 1,
-					word));
+				mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1,
+				wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1, word));
 		}
 
 		websWrite(wp, "</fieldset><br />\n");
@@ -233,8 +218,7 @@ int dhcp_lease_table_init(void)
 		// Parse leases file
 		if ((fp = fopen("/tmp/dnsmasq.leases", "r")) != NULL) {
 			while (fgets(buf, sizeof(buf), fp)) {
-				if (sscanf(buf, "%lu %17s %15s %255s", &expires,
-					   mac, ip, hostname) != 4)
+				if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
 					continue;
 				p = mac;
 				while ((*p = toupper(*p)) != 0)
@@ -263,22 +247,14 @@ static void get_hostname_ip(webs_t wp, char *type, char *filename)
 			strcpy(leases[1], "");
 			strcpy(leases[2], "");
 			// 00:11:22:33:44:55 192.168.1.100 honor
-			if (sscanf(line, "%s %s %s", leases[0], leases[1],
-				   leases[2]) != 3)
+			if (sscanf(line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
 				continue;
 			for (i = 0; i < MAX_LEASES; i++) {
-				if (!strcmp(leases[0],
-					    wp->p->wl_client_macs[i].hwaddr)) {
-					snprintf(
-						wp->p->wl_client_macs[i].ipaddr,
-						sizeof(wp->p->wl_client_macs[i]
-							       .ipaddr),
-						"%s", leases[1]);
-					snprintf(wp->p->wl_client_macs[i]
-							 .hostname,
-						 sizeof(wp->p->wl_client_macs[i]
-								.hostname),
-						 "%s", leases[2]);
+				if (!strcmp(leases[0], wp->p->wl_client_macs[i].hwaddr)) {
+					snprintf(wp->p->wl_client_macs[i].ipaddr, sizeof(wp->p->wl_client_macs[i].ipaddr), "%s",
+						 leases[1]);
+					snprintf(wp->p->wl_client_macs[i].hostname, sizeof(wp->p->wl_client_macs[i].hostname), "%s",
+						 leases[2]);
 					break;
 				}
 			}
@@ -311,52 +287,36 @@ static void save_hostname_ip(webs_t wp)
 			leases[0][0] = 0;
 			leases[1][0] = 0;
 			leases[2][0] = 0;
-			if (sscanf(line, "%s %s %s", leases[0], leases[1],
-				   leases[2]) != 3)
+			if (sscanf(line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
 				continue;
-			snprintf(wl_clients[i].hwaddr,
-				 sizeof(wl_clients[i].hwaddr), "%s", leases[0]);
-			snprintf(wl_clients[i].ipaddr,
-				 sizeof(wl_clients[i].ipaddr), "%s", leases[1]);
-			snprintf(wl_clients[i].hostname,
-				 sizeof(wl_clients[i].hostname), "%s",
-				 leases[2]);
+			snprintf(wl_clients[i].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", leases[0]);
+			snprintf(wl_clients[i].ipaddr, sizeof(wl_clients[i].ipaddr), "%s", leases[1]);
+			snprintf(wl_clients[i].hostname, sizeof(wl_clients[i].hostname), "%s", leases[2]);
 			i++;
 		}
 		fclose(fp);
 	}
 	count = i;
 	for (i = 0; i < wp->p->nv_count; i++) { // init value
-		if (wp->p->wl_client_macs[i].status == 1 &&
-		    strcmp(wp->p->wl_client_macs[i].ipaddr,
-			   "")) { // online && have ip address
+		if (wp->p->wl_client_macs[i].status == 1 && strcmp(wp->p->wl_client_macs[i].ipaddr,
+								   "")) { // online && have ip address
 			for (j = 0; j < MAX_LEASES; j++) {
 				match = 0;
-				if (!strcmp(wl_clients[j].hwaddr,
-					    wp->p->wl_client_macs[i].hwaddr)) {
-					snprintf(
-						wl_clients[j].ipaddr,
-						sizeof(wl_clients[j].ipaddr),
-						"%s",
-						wp->p->wl_client_macs[i].ipaddr);
-					snprintf(wl_clients[j].hostname,
-						 sizeof(wl_clients[j].hostname),
-						 "%s",
-						 wp->p->wl_client_macs[i]
-							 .hostname);
+				if (!strcmp(wl_clients[j].hwaddr, wp->p->wl_client_macs[i].hwaddr)) {
+					snprintf(wl_clients[j].ipaddr, sizeof(wl_clients[j].ipaddr), "%s",
+						 wp->p->wl_client_macs[i].ipaddr);
+					snprintf(wl_clients[j].hostname, sizeof(wl_clients[j].hostname), "%s",
+						 wp->p->wl_client_macs[i].hostname);
 					match = 1;
 					break;
 				}
 			}
 			if (match == 0) {
-				snprintf(wl_clients[count].hwaddr,
-					 sizeof(wl_clients[i].hwaddr), "%s",
+				snprintf(wl_clients[count].hwaddr, sizeof(wl_clients[i].hwaddr), "%s",
 					 wp->p->wl_client_macs[i].hwaddr);
-				snprintf(wl_clients[count].ipaddr,
-					 sizeof(wl_clients[i].ipaddr), "%s",
+				snprintf(wl_clients[count].ipaddr, sizeof(wl_clients[i].ipaddr), "%s",
 					 wp->p->wl_client_macs[i].ipaddr);
-				snprintf(wl_clients[count].hostname,
-					 sizeof(wl_clients[i].hostname), "%s",
+				snprintf(wl_clients[count].hostname, sizeof(wl_clients[i].hostname), "%s",
 					 wp->p->wl_client_macs[i].hostname);
 				count++;
 			}
@@ -366,10 +326,7 @@ static void save_hostname_ip(webs_t wp)
 	if ((fp_w = fopen(OLD_NAME_IP, "w"))) {
 		for (i = 0; i < MAX_LEASES; i++) {
 			if (strcmp(wl_clients[i].hwaddr, ""))
-				fprintf(fp_w, "%s %s %s\n",
-					wl_clients[i].hwaddr,
-					wl_clients[i].ipaddr,
-					wl_clients[i].hostname);
+				fprintf(fp_w, "%s %s %s\n", wl_clients[i].hwaddr, wl_clients[i].ipaddr, wl_clients[i].hostname);
 		}
 		fclose(fp_w);
 	}
@@ -411,13 +368,9 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t **argv)
 		foreach(word, maclist, next)
 		{
 			snprintf(wp->p->wl_client_macs[wp->p->nv_count].hwaddr,
-				 sizeof(wp->p->wl_client_macs[wp->p->nv_count]
-						.hwaddr),
-				 "%s", word);
-			wp->p->wl_client_macs[wp->p->nv_count].status =
-				0; // offline (default)
-			wp->p->wl_client_macs[wp->p->nv_count].check =
-				1; // checked
+				 sizeof(wp->p->wl_client_macs[wp->p->nv_count].hwaddr), "%s", word);
+			wp->p->wl_client_macs[wp->p->nv_count].status = 0; // offline (default)
+			wp->p->wl_client_macs[wp->p->nv_count].check = 1; // checked
 			wp->p->nv_count++;
 		}
 
@@ -447,38 +400,25 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t **argv)
 
 				strcpy(list[0], "");
 				strcpy(list[1], "");
-				if (sscanf(line, "%s %s", list[0], list[1]) !=
-				    2) // assoclist
+				if (sscanf(line, "%s %s", list[0], list[1]) != 2) // assoclist
 					// 00:11:22:33:44:55
 					continue;
 				if (strcmp(list[0], "assoclist"))
 					continue;
 				for (i = 0; i < wp->p->nv_count; i++) {
-					if (!strcmp(wp->p->wl_client_macs[i]
-							    .hwaddr,
-						    list[1])) {
-						wp->p->wl_client_macs[i].status =
-							1; // online
-						wp->p->wl_client_macs[i].check =
-							1; // checked
+					if (!strcmp(wp->p->wl_client_macs[i].hwaddr, list[1])) {
+						wp->p->wl_client_macs[i].status = 1; // online
+						wp->p->wl_client_macs[i].check = 1; // checked
 						match = 1;
 
 						break;
 					}
 				}
 				if (match == 0) {
-					snprintf(
-						wp->p->wl_client_macs
-							[wp->p->nv_count]
-								.hwaddr,
-						sizeof(wp->p->wl_client_macs
-							       [wp->p->nv_count]
-								       .hwaddr),
-						"%s", list[1]);
-					wp->p->wl_client_macs[wp->p->nv_count]
-						.status = 1; // online
-					wp->p->wl_client_macs[wp->p->nv_count]
-						.check = 0; // no checked
+					snprintf(wp->p->wl_client_macs[wp->p->nv_count].hwaddr,
+						 sizeof(wp->p->wl_client_macs[wp->p->nv_count].hwaddr), "%s", list[1]);
+					wp->p->wl_client_macs[wp->p->nv_count].status = 1; // online
+					wp->p->wl_client_macs[wp->p->nv_count].check = 0; // no checked
 					wp->p->nv_count++;
 				}
 			}
@@ -502,39 +442,31 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t **argv)
 		for (i = 0; i < wp->p->nv_count; i++) {
 			if (wp->p->wl_client_macs[i].status != 1)
 				continue;
-			websWrite(
-				wp,
-				"<tr class=\"center\"> \n"
-				"<td height=\"20\" width=\"167\">%s</td> \n"
-				"<td height=\"20\" width=\"140\">%s</td> \n"
-				"<td height=\"20\" width=\"156\">%s</td> \n"
-				"<td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"on%d\" value=\"%d\" %s></td> \n"
-				"</tr>\n",
-				wp->p->wl_client_macs[i].hostname,
-				wp->p->wl_client_macs[i].ipaddr,
-				wp->p->wl_client_macs[i].hwaddr, flag++, i,
-				wp->p->wl_client_macs[i].check ?
-					"checked=\"checked\"" :
-					"");
+			websWrite(wp,
+				  "<tr class=\"center\"> \n"
+				  "<td height=\"20\" width=\"167\">%s</td> \n"
+				  "<td height=\"20\" width=\"140\">%s</td> \n"
+				  "<td height=\"20\" width=\"156\">%s</td> \n"
+				  "<td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"on%d\" value=\"%d\" %s></td> \n"
+				  "</tr>\n",
+				  wp->p->wl_client_macs[i].hostname, wp->p->wl_client_macs[i].ipaddr,
+				  wp->p->wl_client_macs[i].hwaddr, flag++, i,
+				  wp->p->wl_client_macs[i].check ? "checked=\"checked\"" : "");
 		}
 	} else if (!strcmp(type, "offline")) {
 		for (i = 0; i < wp->p->nv_count; i++) {
 			if (wp->p->wl_client_macs[i].status != 0)
 				continue;
-			websWrite(
-				wp,
-				"<tr class=\"center\"> \n"
-				"<td height=\"20\" width=\"167\">%s</td> \n"
-				"<td height=\"20\" width=\"140\">%s</td> \n"
-				"<td height=\"20\" width=\"156\">%s</td> \n"
-				"<td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"off%d\" value=\"%d\" %s></td> \n"
-				"</tr>\n",
-				wp->p->wl_client_macs[i].hostname,
-				wp->p->wl_client_macs[i].ipaddr,
-				wp->p->wl_client_macs[i].hwaddr, flag++, i,
-				wp->p->wl_client_macs[i].check ?
-					"checked=\"checked\"" :
-					"");
+			websWrite(wp,
+				  "<tr class=\"center\"> \n"
+				  "<td height=\"20\" width=\"167\">%s</td> \n"
+				  "<td height=\"20\" width=\"140\">%s</td> \n"
+				  "<td height=\"20\" width=\"156\">%s</td> \n"
+				  "<td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"off%d\" value=\"%d\" %s></td> \n"
+				  "</tr>\n",
+				  wp->p->wl_client_macs[i].hostname, wp->p->wl_client_macs[i].ipaddr,
+				  wp->p->wl_client_macs[i].hwaddr, flag++, i,
+				  wp->p->wl_client_macs[i].check ? "checked=\"checked\"" : "");
 		}
 	}
 	return;
@@ -606,32 +538,26 @@ char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 	if (!strcmp(type, "passphrase")) {
 		if (wordlist[0] == ':')
 			return "";
-		substring(0, pos_nthoccurence(wordlist, ':', cnt - 4), wordlist,
-			  temp, sizeof(temp));
+		substring(0, pos_nthoccurence(wordlist, ':', cnt - 4), wordlist, temp, sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key1")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 4) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt - 3), wordlist,
-			  temp, sizeof(temp));
+		substring(pos_nthoccurence(wordlist, ':', cnt - 4) + 1, pos_nthoccurence(wordlist, ':', cnt - 3), wordlist, temp,
+			  sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key2")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 3) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt - 2), wordlist,
-			  temp, sizeof(temp));
+		substring(pos_nthoccurence(wordlist, ':', cnt - 3) + 1, pos_nthoccurence(wordlist, ':', cnt - 2), wordlist, temp,
+			  sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key3")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 2) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt - 1), wordlist,
-			  temp, sizeof(temp));
+		substring(pos_nthoccurence(wordlist, ':', cnt - 2) + 1, pos_nthoccurence(wordlist, ':', cnt - 1), wordlist, temp,
+			  sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "key4")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 1) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt), wordlist, temp,
+		substring(pos_nthoccurence(wordlist, ':', cnt - 1) + 1, pos_nthoccurence(wordlist, ':', cnt), wordlist, temp,
 			  sizeof(temp));
 		return temp;
 	} else if (!strcmp(type, "tx")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt) + 1,
-			  strlen(wordlist), wordlist, temp, sizeof(temp));
+		substring(pos_nthoccurence(wordlist, ':', cnt) + 1, strlen(wordlist), wordlist, temp, sizeof(temp));
 		return temp;
 	}
 
@@ -728,8 +654,7 @@ EJ_VISIBLE void ej_get_wl_active_mac(webs_t wp, int argc, char_t **argv)
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			strcpy(list[0], "");
 			strcpy(list[1], "");
-			if (sscanf(line, "%s %s", list[0], list[1]) !=
-			    2) // assoclist
+			if (sscanf(line, "%s %s", list[0], list[1]) != 2) // assoclist
 				// 00:11:22:33:44:55
 				continue;
 			if (strcmp(list[0], "assoclist"))
@@ -762,8 +687,7 @@ EJ_VISIBLE void ej_get_wl_value(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
-void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
-				  char *prefix)
+void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *prefix)
 {
 	char *type, *security_mode;
 	char var[80];
@@ -788,26 +712,18 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
 	int v_show_wep = 0;
 	int v_show_radius = 0;
 	int v_show_80211x = 0;
-	if ((strstr(akm, "psk") || strstr(akm, "psk2") ||
-	     strstr(akm, "psk2-sha256") || strstr(akm, "psk3")) &&
-	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") ||
-	      strstr(security_mode, "8021X") ||
-	      strstr(security_mode, "disabled") ||
-	      strstr(security_mode, "owe")))
+	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3")) &&
+	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") ||
+	      strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
 		v_show_preshared = 1;
 
-	if ((strstr(akm, "owe")) &&
-	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") ||
-	      strstr(security_mode, "8021X") ||
-	      strstr(security_mode, "disabled")))
+	if ((strstr(akm, "owe")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") ||
+				      strstr(security_mode, "8021X") || strstr(security_mode, "disabled")))
 		v_show_owe = 1;
-	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") ||
-	     strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") ||
+	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") ||
 	     strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) &&
-	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") ||
-	      strstr(security_mode, "8021X") ||
-	      strstr(security_mode, "disabled") ||
-	      strstr(security_mode, "owe")))
+	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") ||
+	      strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
 		v_show_wparadius = 1;
 	if (strstr(security_mode, "wep"))
 		v_show_wep = 1;
@@ -821,15 +737,11 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
 #endif
 #endif
 
-	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") ||
-	     strstr(akm, "psk2") || strstr(akm, "psk2-sha256") ||
-	     strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") ||
-	     strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") ||
-	     strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) &&
-	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") ||
-	      strstr(security_mode, "8021X") ||
-	      strstr(security_mode, "disabled") ||
-	      strstr(security_mode, "owe")))
+	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") ||
+	     strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") ||
+	     strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) &&
+	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") ||
+	      strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
 		show_authtable(wp, prefix, 0);
 	websWrite(wp, "</fieldset><br />\n");
 	if (v_show_preshared || v_show_owe || v_show_wparadius)
@@ -851,9 +763,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
 			wp,
 			"<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />",
 			prefix, nvram_default_get(var, "3600"));
-		websWrite(
-			wp,
-			"&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
 		char sta[80];
 		sprintf(sta, "%s_mode", prefix);
 		if (is_ap(prefix)) {
@@ -865,19 +775,15 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
 		if (is_ap(prefix)) {
 			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
-			if (is_mac80211(prefix) &&
-			    (strstr(akm, "wpa2") || strstr(akm, "psk2"))) {
+			if (is_mac80211(prefix) && (strstr(akm, "wpa2") || strstr(akm, "psk2"))) {
 				char mfp[64];
 				sprintf(mfp, "%s_mfp", prefix);
 				nvram_default_get(mfp, "0");
-				showAutoOption(wp, "wpa.mfp", mfp,
-					       strstr(akm, "psk3") ||
-						       strstr(akm, "wpa3"));
+				showAutoOption(wp, "wpa.mfp", mfp, strstr(akm, "psk3") || strstr(akm, "wpa3"));
 			}
 #endif
 			char eap_key_retries[64];
-			sprintf(eap_key_retries, "%s_disable_eapol_key_retries",
-				prefix);
+			sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
 			showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
 		}
 	}
@@ -896,8 +802,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
 	if (v_show_preshared || v_show_owe || v_show_wparadius)
 		show_addconfig(wp, prefix);
 #else
-	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") ||
-	    strstr(security_mode, "psk2-sha256") ||
+	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk2-sha256") ||
 	    strstr(security_mode, "psk3")) {
 		show_preshared(wp, prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -907,15 +812,9 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
 			wp,
 			"<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />",
 			prefix, nvram_default_get(var, "3600"));
-		websWrite(
-			wp,
-			"&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
-	} else if (strstr(security_mode, "wpa") ||
-		   strstr(security_mode, "wpa2") ||
-		   strstr(security_mode, "wpa2-sha256") ||
-		   strstr(security_mode, "wpa3") ||
-		   strstr(security_mode, "wpa3-192") ||
-		   strstr(security_mode, "wpa3-128")) {
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
+	} else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa2-sha256") ||
+		   strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192") || strstr(security_mode, "wpa3-128")) {
 		show_wparadius(wp, prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.rekey", NULL);
@@ -924,9 +823,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv,
 			wp,
 			"<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />",
 			prefix, nvram_default_get(var, "3600"));
-		websWrite(
-			wp,
-			"&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
 	} else if (strstr(security_mode, "wep")) {
 		show_wep(wp, prefix);
 	} else if (strstr(security_mode, "radius")) {
@@ -964,9 +861,7 @@ EJ_VISIBLE void ej_wl_ioctl(webs_t wp, int argc, char_t **argv)
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
 	if (strcmp(op, "get") == 0) {
 		if (strcmp(type, "int") == 0) {
-			websWrite(wp, "%u",
-				  wl_iovar_getint(name, var, &val) == 0 ? val :
-									  0);
+			websWrite(wp, "%u", wl_iovar_getint(name, var, &val) == 0 ? val : 0);
 			return;
 		}
 	}
@@ -1008,32 +903,19 @@ EJ_VISIBLE void ej_show_wireless_advanced(webs_t wp, int argc, char_t **argv)
 	}
 
 	if (showrate) {
-		websWrite(
-			wp,
-			"<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
+		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
 		websWrite(wp, "<fieldset>\n");
-		websWrite(
-			wp,
-			"      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></legend>\n");
+		websWrite(wp, "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></legend>\n");
 		websWrite(wp, "     	<div class=\"setting\">\n");
 		websWrite(
 			wp,
 			"           <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></div>\n");
 		websWrite(wp, "             <select name=\"rate_control\">\n");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"minstrel\\\" %s >Minstrel EWMA</option>\");\n",
-			nvram_match("rate_control", "minstrel") ?
-				"selected=\\\"selected\\\"" :
-				"");
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"sample\\\" %s >Sample</option>\");\n",
-			nvram_match("rate_control", "sample") ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"minstrel\\\" %s >Minstrel EWMA</option>\");\n",
+			  nvram_match("rate_control", "minstrel") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"sample\\\" %s >Sample</option>\");\n",
+			  nvram_match("rate_control", "sample") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset>\n");
@@ -1058,8 +940,7 @@ EJ_VISIBLE void ej_getchipset(webs_t wp, int argc, char_t **argv)
 	if (!chipset)
 		return;
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n",
-		  tran_string(buf, sizeof(buf), "wl_basic.chipset"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "wl_basic.chipset"));
 	websWrite(wp, "%s&nbsp;\n", chipset);
 	websWrite(wp, "</div>\n");
 }
@@ -1074,8 +955,7 @@ EJ_VISIBLE void ej_get_status_curchannel(webs_t wp, int argc, char_t **argv)
 		return;
 
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n",
-		  tran_string(buf, sizeof(buf), "share.channel"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "share.channel"));
 	websWrite(wp, "<span id=\"wl_channel\">");
 	ej_get_curchannel(wp, argc, argv);
 	websWrite(wp, "</span>&nbsp;</div>\n");

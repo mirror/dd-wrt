@@ -60,14 +60,12 @@
  * 192.168.1.250-192.168.1.260) 
  */
 
-static char *filter_ip_get(webs_t wp, char *type, int which, char *word,
-			   char *tgt, size_t len)
+static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *tgt, size_t len)
 {
 	char *start, *end, *wordlist, *next;
 	char filter_ip[] = "filter_ip_grpXXX";
 	int temp = which;
-	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%d",
-		 wp->p->filter_id);
+	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%d", wp->p->filter_id);
 
 	wordlist = nvram_safe_get(filter_ip);
 	if (!wordlist)
@@ -80,14 +78,10 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word,
 				end = word;
 				start = strsep(&end, "-");
 				int isip1, isip2, isip3, isip4;
-				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2,
-					   &isip3, &isip4) != 4) {
+				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2, &isip3, &isip4) != 4) {
 					sscanf(start, "%d", &isip4);
 					if (isip4 != 0)
-						sscanf(nvram_safe_get(
-							       "lan_ipaddr"),
-						       "%d.%d.%d", &isip1,
-						       &isip2, &isip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &isip1, &isip2, &isip3);
 					else {
 						isip1 = 0;
 						isip2 = 0;
@@ -111,14 +105,10 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word,
 					return tgt;
 				}
 				int ieip1, ieip2, ieip3, ieip4;
-				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2,
-					   &ieip3, &ieip4) != 4) {
+				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3, &ieip4) != 4) {
 					sscanf(start, "%d", &ieip4);
 					if (ieip4 != 0)
-						sscanf(nvram_safe_get(
-							       "lan_ipaddr"),
-						       "%d.%d.%d", &ieip1,
-						       &ieip2, &ieip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &ieip1, &ieip2, &ieip3);
 					else {
 						ieip1 = 0;
 						ieip2 = 0;
@@ -147,14 +137,10 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word,
 				end = word;
 				start = strsep(&end, "-");
 				int isip1, isip2, isip3, isip4;
-				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2,
-					   &isip3, &isip4) != 4) {
+				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2, &isip3, &isip4) != 4) {
 					sscanf(start, "%d", &isip4);
 					if (isip4 != 0)
-						sscanf(nvram_safe_get(
-							       "lan_ipaddr"),
-						       "%d.%d.%d", &isip1,
-						       &isip2, &isip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &isip1, &isip2, &isip3);
 					else {
 						isip1 = 0;
 						isip2 = 0;
@@ -180,14 +166,10 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word,
 				}
 
 				int ieip1, ieip2, ieip3, ieip4;
-				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2,
-					   &ieip3, &ieip4) != 4) {
+				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3, &ieip4) != 4) {
 					sscanf(start, "%d", &ieip4);
 					if (ieip4 != 0)
-						sscanf(nvram_safe_get(
-							       "lan_ipaddr"),
-						       "%d.%d.%d", &ieip1,
-						       &ieip2, &ieip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &ieip1, &ieip2, &ieip3);
 					else {
 						ieip1 = 0;
 						ieip2 = 0;
@@ -218,8 +200,7 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word,
 	return "0";
 }
 
-static char *filter_port_get(char *list, char *type, int which, char *buf,
-			     size_t len)
+static char *filter_port_get(char *list, char *type, int which, char *buf, size_t len)
 {
 	char *wordlist, *next;
 	char word[256];
@@ -269,8 +250,7 @@ EJ_VISIBLE void ej_filter_dport_get(webs_t wp, int argc, char_t **argv)
 
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s",
-		  filter_port_get(name, type, which, buf, sizeof(buf)));
+	websWrite(wp, "%s", filter_port_get(name, type, which, buf, sizeof(buf)));
 
 	return;
 }
@@ -282,9 +262,7 @@ EJ_VISIBLE void ej_filter_port_get(webs_t wp, int argc, char_t **argv)
 	char buf[64];
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s",
-		  filter_port_get(type, "filter_port", which, buf,
-				  sizeof(buf)));
+	websWrite(wp, "%s", filter_port_get(type, "filter_port", which, buf, sizeof(buf)));
 
 	return;
 }
@@ -299,8 +277,7 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 	char *mac;
 	char filter_mac[] = "filter_mac_grpXXX";
 
-	snprintf(filter_mac, sizeof(filter_mac), "filter_mac_grp%d",
-		 wp->p->filter_id);
+	snprintf(filter_mac, sizeof(filter_mac), "filter_mac_grp%d", wp->p->filter_id);
 
 	wordlist = nvram_safe_get(filter_mac);
 	if (!wordlist)
@@ -325,8 +302,7 @@ EJ_VISIBLE void ej_filter_ip_get(webs_t wp, int argc, char_t **argv)
 
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s",
-		  filter_ip_get(wp, type, which, word, buf, sizeof(buf)));
+	websWrite(wp, "%s", filter_ip_get(wp, type, which, word, buf, sizeof(buf)));
 
 	return;
 }
@@ -353,15 +329,12 @@ EJ_VISIBLE void ej_filter_policy_select(webs_t wp, int argc, char_t **argv)
 		data = nvram_safe_get(filter);
 
 		if (data && strcmp(data, "")) {
-			find_match_pattern(name, sizeof(name), data,
-					   "$NAME:", ""); // get
+			find_match_pattern(name, sizeof(name), data, "$NAME:", ""); // get
 			// name
 			// value
 		}
 		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n", i,
-			  (wp->p->filter_id == i ? "selected=\"selected\" " :
-						   ""),
-			  i, name);
+			  (wp->p->filter_id == i ? "selected=\"selected\" " : ""), i, name);
 	}
 	return;
 }
@@ -384,17 +357,11 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 	int i;
 	for (i = 1; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i],
-			  nvram_match(ifname, argv[i]) ?
-				  "selected=\"selected\"" :
-				  "",
-			  argv[i]);
+			  nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
 	char *wanface = safe_get_wan_face(wan_if_buffer);
-	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n",
-		  nvram_safe_get("lan_ifname"),
-		  !strcmp(ifs, nvram_safe_get("lan_ifname")) ?
-			  "selected=\"selected\"" :
-			  "");
+	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"),
+		  !strcmp(ifs, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *next;
 	char var[80];
 	char eths[256];
@@ -413,8 +380,7 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 			continue;
 		if (nvram_nmatch("1", "%s_bridged", var) && !isbridge(var))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
-			  !strcmp(ifs, var) ? "selected=\"selected\"" : "",
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, !strcmp(ifs, var) ? "selected=\"selected\"" : "",
 			  getNetworkLabel(wp, var));
 	}
 
@@ -446,12 +412,10 @@ EJ_VISIBLE void ej_filter_policy_get(webs_t wp, int argc, char_t **argv)
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
 
-		snprintf(filter, sizeof(filter), "filter_rule%d",
-			 wp->p->filter_id);
+		snprintf(filter, sizeof(filter), "filter_rule%d", wp->p->filter_id);
 		data = nvram_safe_get(filter);
 		if (strcmp(data, "")) {
-			find_match_pattern(name, sizeof(name), data,
-					   "$NAME:", ""); // get
+			find_match_pattern(name, sizeof(name), data, "$NAME:", ""); // get
 			// name
 			// value
 			websWrite(wp, "%s", name);
@@ -461,21 +425,17 @@ EJ_VISIBLE void ej_filter_policy_get(webs_t wp, int argc, char_t **argv)
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
 
-		snprintf(filter, sizeof(filter), "filter_rule%d",
-			 wp->p->filter_id);
+		snprintf(filter, sizeof(filter), "filter_rule%d", wp->p->filter_id);
 		data = nvram_safe_get(filter);
 		if (strcmp(data, "")) { // have data
-			find_match_pattern(status, sizeof(status), data,
-					   "$STAT:", "1"); // get
+			find_match_pattern(status, sizeof(status), data, "$STAT:", "1"); // get
 			// status
 			// value
-			find_match_pattern(deny, sizeof(deny), data,
-					   "$DENY:", ""); // get
+			find_match_pattern(deny, sizeof(deny), data, "$DENY:", ""); // get
 			// deny
 			// value
 			if (!strcmp(deny, "")) { // old format
-				if (!strcmp(status, "0") ||
-				    !strcmp(status, "1"))
+				if (!strcmp(status, "0") || !strcmp(status, "1"))
 					strcpy(deny, "1"); // Deny
 				else
 					strcpy(deny, "0"); // Allow
@@ -542,15 +502,12 @@ int filter_tod_init(webs_t wp, int which)
 	char temp[3][20];
 
 	wp->p->tod_data_null = 0;
-	wp->p->day_all = wp->p->week0 = wp->p->week1 = wp->p->week2 =
-		wp->p->week3 = wp->p->week4 = wp->p->week5 = wp->p->week6 = 0;
-	wp->p->time_all = wp->p->start_hour = wp->p->start_min =
-		wp->p->start_time = wp->p->end_hour = wp->p->end_min =
-			wp->p->end_time = 0;
+	wp->p->day_all = wp->p->week0 = wp->p->week1 = wp->p->week2 = wp->p->week3 = wp->p->week4 = wp->p->week5 = wp->p->week6 = 0;
+	wp->p->time_all = wp->p->start_hour = wp->p->start_min = wp->p->start_time = wp->p->end_hour = wp->p->end_min =
+		wp->p->end_time = 0;
 	wp->p->start_week = wp->p->end_week = 0;
 	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", which);
-	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d",
-		 which);
+	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", which);
 
 	/*
 	 * Parse filter_tod{1...10} 
@@ -562,17 +519,14 @@ int filter_tod_init(webs_t wp, int which)
 		sscanf(tod_data, "%s %s %s", temp[0], temp[1], temp[2]);
 		sscanf(temp[0], "%d:%d", &wp->p->start_hour, &wp->p->start_min);
 		sscanf(temp[1], "%d:%d", &wp->p->end_hour, &wp->p->end_min);
-		ret = sscanf(temp[2], "%d-%d", &wp->p->start_week,
-			     &wp->p->end_week);
+		ret = sscanf(temp[2], "%d-%d", &wp->p->start_week, &wp->p->end_week);
 		if (ret == 1)
 			wp->p->end_week = wp->p->start_week;
 
-		if (wp->p->start_hour == 0 && wp->p->start_min == 0 &&
-		    wp->p->end_hour == 23 && wp->p->end_min == 59) { // 24 Hours
+		if (wp->p->start_hour == 0 && wp->p->start_min == 0 && wp->p->end_hour == 23 && wp->p->end_min == 59) { // 24 Hours
 			wp->p->time_all = 1;
 			wp->p->start_hour = wp->p->end_hour = 0;
-			wp->p->start_min = wp->p->start_time = wp->p->end_min =
-				wp->p->end_time = 0;
+			wp->p->start_min = wp->p->start_time = wp->p->end_min = wp->p->end_time = 0;
 		}
 		/*
 		 * else { // check AM or PM time_all = 0; if (start_hour > 11) {
@@ -593,10 +547,8 @@ int filter_tod_init(webs_t wp, int which)
 		if (!strcmp(tod_buf_data, "7")) {
 			wp->p->day_all = 1;
 		} else if (strcmp(tod_buf_data, "")) {
-			sscanf(tod_buf_data, "%d %d %d %d %d %d %d",
-			       &wp->p->week0, &wp->p->week1, &wp->p->week2,
-			       &wp->p->week3, &wp->p->week4, &wp->p->week5,
-			       &wp->p->week6);
+			sscanf(tod_buf_data, "%d %d %d %d %d %d %d", &wp->p->week0, &wp->p->week1, &wp->p->week2, &wp->p->week3,
+			       &wp->p->week4, &wp->p->week5, &wp->p->week6);
 			wp->p->day_all = 0;
 		}
 	}
@@ -622,75 +574,50 @@ EJ_VISIBLE void ej_filter_tod_get(webs_t wp, int argc, char_t **argv)
 		else
 			websWrite(wp, "0");
 	} else if (!strcmp(type, "day_all")) {
-		websWrite(wp, "%s",
-			  wp->p->day_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->day_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "start_week")) {
 		websWrite(wp, "%d", wp->p->start_week);
 	} else if (!strcmp(type, "end_week")) {
 		websWrite(wp, "%d", wp->p->end_week);
 	} else if (!strcmp(type, "week0")) { // Sun
-		websWrite(wp, "%s",
-			  wp->p->week0 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week0 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week1")) { // Mon
-		websWrite(wp, "%s",
-			  wp->p->week1 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week1 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week2")) { // Tue
-		websWrite(wp, "%s",
-			  wp->p->week2 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week2 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week3")) { // Wed
-		websWrite(wp, "%s",
-			  wp->p->week3 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week3 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week4")) { // Thu
-		websWrite(wp, "%s",
-			  wp->p->week4 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week4 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week5")) { // Fri
-		websWrite(wp, "%s",
-			  wp->p->week5 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week5 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week6")) { // Sat
-		websWrite(wp, "%s",
-			  wp->p->week6 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week6 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all_en")) { // for linksys
-		websWrite(wp, "%s",
-			  wp->p->time_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->time_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all_dis")) { // for linksys
-		websWrite(wp, "%s",
-			  wp->p->time_all == 0 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->time_all == 0 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all")) {
-		websWrite(wp, "%s",
-			  wp->p->time_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->time_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "start_hour_24")) { // 00 -> 23
 		for (i = 0; i < 24; i++) {
 			websWrite(wp, "<option value=%d %s>%d</option>\n", i,
-				  i == wp->p->start_hour ?
-					  "selected=\"selected\" " :
-					  "",
-				  i);
+				  i == wp->p->start_hour ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "start_min_1")) { // 0 1 2 3 4 .... -> 58 59
 		for (i = 0; i < 60; i++) {
-			websWrite(wp, "<option value=%02d %s>%02d</option>\n",
-				  i,
-				  i == wp->p->start_min ?
-					  "selected=\"selected\" " :
-					  "",
-				  i);
+			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i,
+				  i == wp->p->start_min ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "end_hour_24")) { // 00 ->23
 		for (i = 0; i < 24; i++) {
-			websWrite(wp, "<option value=%d %s>%d</option>\n", i,
-				  i == wp->p->end_hour ?
-					  "selected=\"selected\" " :
-					  "",
+			websWrite(wp, "<option value=%d %s>%d</option>\n", i, i == wp->p->end_hour ? "selected=\"selected\" " : "",
 				  i);
 		}
 	} else if (!strcmp(type, "end_min_1")) { // 0 1 2 3 4 .... -> 58 59
 		for (i = 0; i < 60; i++) {
-			websWrite(wp, "<option value=%02d %s>%02d</option>\n",
-				  i,
-				  i == wp->p->end_min ?
-					  "selected=\"selected\" " :
-					  "",
-				  i);
+			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i,
+				  i == wp->p->end_min ? "selected=\"selected\" " : "", i);
 		}
 	}
 	return;
@@ -714,8 +641,7 @@ EJ_VISIBLE void ej_filter_web_get(webs_t wp, int argc, char_t **argv)
 		;
 		char host[80];
 
-		snprintf(filter_host, sizeof(filter_host), "filter_web_host%d",
-			 wp->p->filter_id);
+		snprintf(filter_host, sizeof(filter_host), "filter_web_host%d", wp->p->filter_id);
 		host_data = nvram_safe_get(filter_host);
 		if (!strcmp(host_data, ""))
 			return; // no data
@@ -725,8 +651,7 @@ EJ_VISIBLE void ej_filter_web_get(webs_t wp, int argc, char_t **argv)
 		char *url_data, filter_url[] = "filter_web_urlXXX";
 		char url[80];
 
-		snprintf(filter_url, sizeof(filter_url), "filter_web_url%d",
-			 wp->p->filter_id);
+		snprintf(filter_url, sizeof(filter_url), "filter_web_url%d", wp->p->filter_id);
 		url_data = nvram_safe_get(filter_url);
 		if (!strcmp(url_data, ""))
 			return; // no data
@@ -746,9 +671,8 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t **argv)
 	char pm[] = "�ߌ�";
 	char _24h[] = "24 ����";
 #else
-	char w[7][15] = { "share.sun_s1", "share.mon_s1", "share.tue_s1",
-			  "share.wed_s1", "share.thu_s1", "share.fri_s1",
-			  "share.sat_s1" };
+	char w[7][15] = { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1",
+			  "share.thu_s1", "share.fri_s1", "share.sat_s1" };
 	// char am[] = "AM";
 	// char pm[] = "PM";
 	char _24h[] = "24 Hours.";
@@ -763,93 +687,71 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t **argv)
 		snprintf(filter, sizeof(filter), "filter_rule%d", i + 1);
 		data = nvram_safe_get(filter);
 		if (data && strcmp(data, "")) {
-			find_match_pattern(name, sizeof(name), data,
-					   "$NAME:", "&nbsp;"); // get
+			find_match_pattern(name, sizeof(name), data, "$NAME:", "&nbsp;"); // get
 			// name
 			// value
-			find_match_pattern(status, sizeof(status), data,
-					   "$STAT:", "---"); // get
+			find_match_pattern(status, sizeof(status), data, "$STAT:", "---"); // get
 			// name
 			// value
 		}
 
 		filter_tod_init(wp, i + 1);
 
-		websWrite(
-			wp,
-			"<tr class=\"table_row_bg center\" >\n"
-			"<td width=\"50\" >%d.</td>\n"
-			"<td width=\"200\" >%s</td>\n"
-			"<td width=\"150\" >\n"
-			"<table width=\"150\" border=\"1\" cellspacing=\"1\" style=\"border-collapse: collapse\" >\n"
-			"<tr class=\"center\">\n",
-			i + 1, name);
-		websWrite(
-			wp,
-			"<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			"<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			"<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			"<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n",
-			wp->p->tod_data_null == 0 && (wp->p->day_all == 1 ||
-						      wp->p->week0 == 1) ?
-				"table_bg_br_clr_on" :
-				"table_bg_br_clr_off",
-			w[0],
-			wp->p->tod_data_null == 0 && (wp->p->day_all == 1 ||
-						      wp->p->week1 == 1) ?
-				"table_bg_br_clr_on" :
-				"table_bg_br_clr_off",
-			w[1],
-			wp->p->tod_data_null == 0 && (wp->p->day_all == 1 ||
-						      wp->p->week2 == 1) ?
-				"table_bg_br_clr_on" :
-				"table_bg_br_clr_off",
-			w[2],
-			wp->p->tod_data_null == 0 && (wp->p->day_all == 1 ||
-						      wp->p->week3 == 1) ?
-				"table_bg_br_clr_on" :
-				"table_bg_br_clr_off",
-			w[3]);
-		websWrite(
-			wp,
-			"<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			"<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			"<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			"</tr>\n"
-			"</table>\n"
-			"</td>\n",
-			wp->p->tod_data_null == 0 && (wp->p->day_all == 1 ||
-						      wp->p->week4 == 1) ?
-				"table_bg_br_clr_on" :
-				"table_bg_br_clr_off",
-			w[4],
-			wp->p->tod_data_null == 0 && (wp->p->day_all == 1 ||
-						      wp->p->week5 == 1) ?
-				"table_bg_br_clr_on" :
-				"table_bg_br_clr_off",
-			w[5],
-			wp->p->tod_data_null == 0 && (wp->p->day_all == 1 ||
-						      wp->p->week6 == 1) ?
-				"table_bg_br_clr_on" :
-				"table_bg_br_clr_off",
-			w[6]);
+		websWrite(wp,
+			  "<tr class=\"table_row_bg center\" >\n"
+			  "<td width=\"50\" >%d.</td>\n"
+			  "<td width=\"200\" >%s</td>\n"
+			  "<td width=\"150\" >\n"
+			  "<table width=\"150\" border=\"1\" cellspacing=\"1\" style=\"border-collapse: collapse\" >\n"
+			  "<tr class=\"center\">\n",
+			  i + 1, name);
+		websWrite(wp,
+			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n",
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week0 == 1) ? "table_bg_br_clr_on" :
+												    "table_bg_br_clr_off",
+			  w[0],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week1 == 1) ? "table_bg_br_clr_on" :
+												    "table_bg_br_clr_off",
+			  w[1],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week2 == 1) ? "table_bg_br_clr_on" :
+												    "table_bg_br_clr_off",
+			  w[2],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week3 == 1) ? "table_bg_br_clr_on" :
+												    "table_bg_br_clr_off",
+			  w[3]);
+		websWrite(wp,
+			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "</tr>\n"
+			  "</table>\n"
+			  "</td>\n",
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week4 == 1) ? "table_bg_br_clr_on" :
+												    "table_bg_br_clr_off",
+			  w[4],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week5 == 1) ? "table_bg_br_clr_on" :
+												    "table_bg_br_clr_off",
+			  w[5],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week6 == 1) ? "table_bg_br_clr_on" :
+												    "table_bg_br_clr_off",
+			  w[6]);
 
 		if (wp->p->tod_data_null == 0) {
 			if (wp->p->time_all == 1)
 				strcpy(time_buf, _24h);
 			else {
-				snprintf(time_buf, sizeof(time_buf),
-					 "%02d:%02d - %02d:%02d",
-					 wp->p->start_hour, wp->p->start_min,
+				snprintf(time_buf, sizeof(time_buf), "%02d:%02d - %02d:%02d", wp->p->start_hour, wp->p->start_min,
 					 wp->p->end_hour, wp->p->end_min);
 			}
 		}
-		websWrite(
-			wp,
-			"<td width=\"150\" > %s </td>\n"
-			"<td width=\"70\" ><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n"
-			"</tr>\n",
-			time_buf, i + 1);
+		websWrite(wp,
+			  "<td width=\"150\" > %s </td>\n"
+			  "<td width=\"70\" ><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n"
+			  "</tr>\n",
+			  time_buf, i + 1);
 	}
 	return;
 }
@@ -879,9 +781,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 			services = get_filter_services();
 		else // user_list only
 		{
-			int servicelen =
-				strlen(nvram_safe_get("filter_services")) +
-				strlen(nvram_safe_get("filter_services_1"));
+			int servicelen = strlen(nvram_safe_get("filter_services")) + strlen(nvram_safe_get("filter_services_1"));
 			if (servicelen == 0)
 				return;
 			services = calloc(servicelen + 1, 1);
@@ -911,8 +811,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 
 			// int proto;
 
-			if ((name = strstr(word, "$NAME:")) == NULL ||
-			    (prot = strstr(word, "$PROT:")) == NULL ||
+			if ((name = strstr(word, "$NAME:")) == NULL || (prot = strstr(word, "$PROT:")) == NULL ||
 			    (port = strstr(word, "$PORT:")) == NULL)
 				continue;
 
@@ -945,11 +844,8 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 			// cprintf("match:: name=%s, protocol=%s, ports=%s\n",
 			// word, protocol, ports);
 
-			websWrite(
-				wp,
-				"services[%d]=new service(%d, \"%s\", %d, %d, %d, \"%s\");\n",
-				count, count, name, from, to,
-				protocol_to_num(protocol), protocol);
+			websWrite(wp, "services[%d]=new service(%d, \"%s\", %d, %d, %d, \"%s\");\n", count, count, name, from, to,
+				  protocol_to_num(protocol), protocol);
 			count++;
 		}
 		debug_free(services);
@@ -959,8 +855,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 		char *port_data, filter_port[] = "filter_port_grpXXX";
 		char name[80];
 
-		snprintf(filter_port, sizeof(filter_port), "filter_port_grp%d",
-			 wp->p->filter_id);
+		snprintf(filter_port, sizeof(filter_port), "filter_port_grp%d", wp->p->filter_id);
 		port_data = nvram_safe_get(filter_port);
 		if (!strcmp(port_data, ""))
 			return; // no data
@@ -970,8 +865,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 	} else if (!strcmp(type, "p2p")) {
 		char *port_data, filter_port[] = "filter_p2p_grpXXX";
 
-		snprintf(filter_port, sizeof(filter_port), "filter_p2p_grp%d",
-			 wp->p->filter_id);
+		snprintf(filter_port, sizeof(filter_port), "filter_p2p_grp%d", wp->p->filter_id);
 		port_data = nvram_safe_get(filter_port);
 		if (!strcmp(port_data, ""))
 			return; // no data

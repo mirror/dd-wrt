@@ -28,8 +28,7 @@
 #include <wlutils.h>
 #include <bcmnvram.h>
 
-void show_caption(webs_t wp, const char *class, const char *caption,
-		  const char *ext)
+void show_caption(webs_t wp, const char *class, const char *caption, const char *ext)
 {
 	show_caption_pp(wp, class, caption, NULL, ext);
 }
@@ -44,8 +43,7 @@ void show_caption_legend(webs_t wp, const char *caption)
 	show_caption_pp(wp, NULL, caption, "<legend>", "</legend>");
 }
 
-void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid_allowed,
-	     char *type)
+void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid_allowed, char *type)
 {
 	char name[64];
 	if (prefix)
@@ -74,8 +72,7 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid_allowed,
 		type, name, get_single_ip(ipv, 3));
 }
 
-void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type,
-		  char *nmname, char *nmtype)
+void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmname, char *nmtype)
 {
 	char name[64];
 	if (prefix)
@@ -129,27 +126,21 @@ void showOption(webs_t wp, char *propname, char *nvname)
 }
 #endif
 
-void showInputNum(webs_t wp, char *propname, char *nvname, int size,
-		  int maxsize, int def)
+void showInputNum(webs_t wp, char *propname, char *nvname, int size, int maxsize, int def)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(
-		wp,
-		"<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%d\" />\n",
-		nvname, maxsize, size, nvram_default_geti(nvname, def));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%d\" />\n", nvname, maxsize, size,
+		  nvram_default_geti(nvname, def));
 	websWrite(wp, "</div>\n");
 }
 
-void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize,
-	       char *def)
+void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize, char *def)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(
-		wp,
-		"<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%s\" />\n",
-		nvname, maxsize, size, nvram_default_get(nvname, def));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%s\" />\n", nvname, maxsize, size,
+		  nvram_default_get(nvname, def));
 	websWrite(wp, "</div>\n");
 }
 void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val)
@@ -174,31 +165,18 @@ void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 	show_caption(wp, "label", propname, NULL);
 	websWrite(wp, "<select name=\"%s\">\n", nvname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n",
-		nvram_default_matchi(nvname, 0, -1) ?
-			"selected=\\\"selected\\\"" :
-			"");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n",
-		nvram_default_matchi(nvname, 1, -1) ?
-			"selected=\\\"selected\\\"" :
-			"");
+	websWrite(wp, "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n",
+		  nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n",
+		  nvram_default_matchi(nvname, 1, -1) ? "selected=\\\"selected\\\"" : "");
 	if (!nodisable)
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
-			nvram_default_matchi(nvname, 0, -1) ?
-				"selected=\\\"selected\\\"" :
-				"");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
+			  nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 }
 #endif
 
-void showOptions_trans(webs_t wp, char *propname, char *names, char **trans,
-		       char *select)
+void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
 	char *next;
 	char var[80];
@@ -209,23 +187,11 @@ void showOptions_trans(webs_t wp, char *propname, char *names, char **trans,
 	foreach(var, names, next)
 	{
 		if (trans)
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n",
-				var,
-				select && !strcmp(var, select) ?
-					"selected=\\\"selected\\\"" :
-					"",
-				trans[cnt++]);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var,
+				  select && !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
 		else
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
-				var,
-				select && !strcmp(var, select) ?
-					"selected=\\\"selected\\\"" :
-					"",
-				var);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var,
+				  select && !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
@@ -235,42 +201,27 @@ void showOptions(webs_t wp, char *propname, char *names, char *select)
 	showOptions_trans(wp, propname, names, NULL, select);
 }
 
-void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans,
-			   char *select, int disabled)
+void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled)
 {
 	char *next;
 	char var[80];
 	int cnt = 0;
 
-	websWrite(wp, "<select name=\"%s\"%s>\n", propname,
-		  disabled ? " disabled=\"true\"" : "");
+	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next)
 	{
 		if (trans)
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n",
-				var,
-				select && !strcmp(var, select) ?
-					"selected=\\\"selected\\\"" :
-					"",
-				trans[cnt++]);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var,
+				  select && !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
 		else
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
-				var,
-				select && !strcmp(var, select) ?
-					"selected=\\\"selected\\\"" :
-					"",
-				var);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var,
+				  select && !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
 
-void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames,
-		      char **names, char *select)
+void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select)
 {
 	char *next;
 	char var[80];
@@ -283,35 +234,23 @@ void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames,
 	foreach(var, valuenames, next)
 	{
 		if (names[idx])
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
-				var,
-				!strcmp(var, select) ?
-					"selected=\\\"selected\\\"" :
-					"",
-				names[idx++]);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var,
+				  !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[idx++]);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select></div>\n");
 }
 
-void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select,
-		       int disabled)
+void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int disabled)
 {
 	char *next;
 	char var[80];
 
-	websWrite(wp, "<select name=\"%s\"%s>\n", propname,
-		  disabled ? " disabled=\"true\"" : "");
+	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next)
 	{
-		websWrite(
-			wp,
-			"document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
-			var,
-			!strcmp(var, select) ? "selected=\\\"selected\\\"" : "",
-			getNetworkLabel(wp, var));
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var,
+			  !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", getNetworkLabel(wp, var));
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
@@ -321,8 +260,7 @@ void showIfOptions(webs_t wp, char *propname, char *names, char *select)
 	showIfOptions_ext(wp, propname, names, select, 0);
 }
 
-void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans,
-		       char *select)
+void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
 	char *next;
 	char var[80];
@@ -330,36 +268,21 @@ void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans,
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(
-		wp,
-		"document.write(\"<option value=\\\"null\\\" >\" + share.choice + \"</option>\");\n");
+	websWrite(wp, "document.write(\"<option value=\\\"null\\\" >\" + share.choice + \"</option>\");\n");
 	foreach(var, names, next)
 	{
 		if (trans) {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n",
-				var,
-				!strcmp(var, select) ?
-					"selected=\\\"selected\\\"" :
-					"",
-				trans[cnt++]);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var,
+				  !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
 		} else {
-			websWrite(
-				wp,
-				"document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
-				var,
-				!strcmp(var, select) ?
-					"selected=\\\"selected\\\"" :
-					"",
-				var);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var,
+				  !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
 		}
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
 
-void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names,
-		      char *select)
+void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", labelname, NULL);
@@ -367,26 +290,20 @@ void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names,
 	websWrite(wp, "</div>\n");
 }
 
-void show_inputlabel(webs_t wp, char *labelname, char *propertyname,
-		     int propertysize, char *inputclassname, int inputmaxlength)
+void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", labelname, NULL);
-	websWrite(
-		wp,
-		"<input class=\"%s\" size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" />\n",
-		inputclassname, propertysize, inputmaxlength, propertyname,
-		nvram_safe_get(propertyname));
+	websWrite(wp, "<input class=\"%s\" size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" />\n", inputclassname,
+		  propertysize, inputmaxlength, propertyname, nvram_safe_get(propertyname));
 	websWrite(wp, "</div>\n");
 }
 
-void show_custominputlabel(webs_t wp, char *labelname, char *propertyname,
-			   char *property, int propertysize)
+void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char *property, int propertysize)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>", labelname);
-	websWrite(wp, "<input size=\"%d\" name=\"%s\" value=\"%s\" />\n",
-		  propertysize, propertyname, property);
+	websWrite(wp, "<input size=\"%d\" name=\"%s\" value=\"%s\" />\n", propertysize, propertyname, property);
 	websWrite(wp, "</div>\n");
 }
 
@@ -407,15 +324,13 @@ void showRadioPrefix(webs_t wp, char *propname, char *nv, char *prefix)
 	showRadioNoDef(wp, propname, nvname, nvram_default_geti(nvname, 0));
 }
 
-void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix,
-			int size, int maxsize, int def)
+void showInputNumPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, int def)
 {
 	char nvname[64];
 	sprintf(nvname, "%s_%s", prefix, nv);
 	showInputNum(wp, propname, nvname, size, maxsize, def);
 }
-void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix,
-		     int size, int maxsize, char *def)
+void showInputPrefix(webs_t wp, char *propname, char *nv, char *prefix, int size, int maxsize, char *def)
 {
 	char nvname[64];
 	sprintf(nvname, "%s_%s", prefix, nv);

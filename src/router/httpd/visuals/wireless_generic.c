@@ -27,15 +27,12 @@ static char *UPTIME(int uptime, char *str, size_t len)
 	bzero(str2, 64);
 	days = uptime / (60 * 60 * 24);
 	if (days)
-		snprintf(str2, sizeof(str2), "%d day%s, ", days,
-			 (days == 1 ? "" : "s"));
+		snprintf(str2, sizeof(str2), "%d day%s, ", days, (days == 1 ? "" : "s"));
 	minutes = uptime / 60;
 	if (*(str2))
-		snprintf(str, len, "%s %d:%02d:%02d", str2, (minutes / 60) % 24,
-			 minutes % 60, uptime % 60);
+		snprintf(str, len, "%s %d:%02d:%02d", str2, (minutes / 60) % 24, minutes % 60, uptime % 60);
 	else
-		snprintf(str, len, "%d:%02d:%02d", (minutes / 60) % 24,
-			 minutes % 60, uptime % 60);
+		snprintf(str, len, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60, uptime % 60);
 	return str;
 }
 

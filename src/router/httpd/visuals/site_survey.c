@@ -258,14 +258,11 @@ static struct site_survey_list *site_survey_lists;
 static int open_site_survey(void)
 {
 	FILE *fp;
-	site_survey_lists =
-		malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
-	bzero(site_survey_lists,
-	      sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0],
-		      sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return TRUE;
 	}
@@ -291,8 +288,7 @@ EJ_VISIBLE void ej_list_fbn(webs_t wp, int argc, char_t **argv)
 
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
-		if (site_survey_lists[i].SSID[0] == 0 ||
-		    site_survey_lists[i].BSSID[0] == 0 ||
+		if (site_survey_lists[i].SSID[0] == 0 || site_survey_lists[i].BSSID[0] == 0 ||
 		    (site_survey_lists[i].channel & 0xff) == 0)
 			break;
 
@@ -327,14 +323,11 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 		char rates[64];
 
-		if (site_survey_lists[i].BSSID[0] == 0 ||
-		    (site_survey_lists[i].channel & 0xff) == 0)
+		if (site_survey_lists[i].BSSID[0] == 0 || (site_survey_lists[i].channel & 0xff) == 0)
 			break;
 
 		// fix for " in SSID
-		char *tssid = (site_survey_lists[i].SSID[0] == 0) ?
-				      "hidden" :
-				      &site_survey_lists[i].SSID[0];
+		char *tssid = (site_survey_lists[i].SSID[0] == 0) ? "hidden" : &site_survey_lists[i].SSID[0];
 		int pos = 0;
 		int tpos;
 		int ssidlen = strlen(tssid);
@@ -359,9 +352,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			//0x200 = 8080 or 160 mhz
 			int speed = site_survey_lists[i].rate_count;
 			int s = 20;
-			int narrow = atoi(
-				nvram_nget("%s_channelbw",
-					   nvram_safe_get("wifi_display")));
+			int narrow = atoi(nvram_nget("%s_channelbw", nvram_safe_get("wifi_display")));
 			if (narrow == 5 || narrow == 10 || narrow == 2)
 				s = narrow;
 			//fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
@@ -373,10 +364,8 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 				hasax = 1;
 			switch (cbw) {
 			case 0x0:
-				if (site_survey_lists[i].extcap &
-				    CAP_SECCHANNEL)
-					speed = getrate(speed, s * 2, hasac,
-							hasax);
+				if (site_survey_lists[i].extcap & CAP_SECCHANNEL)
+					speed = getrate(speed, s * 2, hasac, hasax);
 				else
 					speed = getrate(speed, s, hasac, hasax);
 				break;
@@ -393,34 +382,20 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				if (hasax && hasac)
-					sprintf(rates, "%s(b/g/n/ac/ax)",
-						speedstr(speed, speedbuf,
-							 sizeof(speedbuf)));
+					sprintf(rates, "%s(b/g/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasax)
-					sprintf(rates, "%s(b/g/n/ax)",
-						speedstr(speed, speedbuf,
-							 sizeof(speedbuf)));
+					sprintf(rates, "%s(b/g/n/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasac)
-					sprintf(rates, "%s(b/g/n/ac)",
-						speedstr(speed, speedbuf,
-							 sizeof(speedbuf)));
+					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(b/g/n)",
-						speedstr(speed, speedbuf,
-							 sizeof(speedbuf)));
+					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			} else {
 				if (hasax)
-					sprintf(rates, "%s(a/n/ac/ax)",
-						speedstr(speed, speedbuf,
-							 sizeof(speedbuf)));
+					sprintf(rates, "%s(a/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasac)
-					sprintf(rates, "%s(a/n/ac)",
-						speedstr(speed, speedbuf,
-							 sizeof(speedbuf)));
+					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(a/n)",
-						speedstr(speed, speedbuf,
-							 sizeof(speedbuf)));
+					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			}
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
@@ -445,17 +420,12 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s",
-					speedstr(speed, speedbuf,
-						 sizeof(speedbuf)),
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)),
 					rc == 4 ? "(b)" :
 					rc < 14 ? "(b/g)" :
 						  "(b/g/n)");
 			} else {
-				sprintf(rates, "%s%s",
-					speedstr(speed, speedbuf,
-						 sizeof(speedbuf)),
-					rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
 			}
 
 		} else {
@@ -480,17 +450,12 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s",
-					speedstr(speed, speedbuf,
-						 sizeof(speedbuf)),
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)),
 					rc == 4 ? "(b)" :
 					rc < 14 ? "(b/g)" :
 						  "(b/g/n)");
 			} else {
-				sprintf(rates, "%s%s",
-					speedstr(speed, speedbuf,
-						 sizeof(speedbuf)),
-					rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
 			}
 		}
 
@@ -505,9 +470,8 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 
 		char open[32];
 		strlcpy(open,
-			(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ?
-				live_translate(wp, "share.no") :
-				live_translate(wp, "share.yes"),
+			(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate(wp, "share.no") :
+										live_translate(wp, "share.yes"),
 			sizeof(open));
 
 		char *netmode;
@@ -536,8 +500,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 		unsigned long long quality;
 		char dtim[32];
 		if (site_survey_lists[i].active)
-			quality = 100 - (site_survey_lists[i].busy * 100 /
-					 site_survey_lists[i].active);
+			quality = 100 - (site_survey_lists[i].busy * 100 / site_survey_lists[i].active);
 		else
 			quality = 100;
 		char numsta[32];
@@ -545,17 +508,10 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 		websWrite(
 			wp,
 			"\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%d\",\"%llu\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			net, site_survey_lists[i].BSSID,
-			site_survey_lists[i].channel & 0xff,
-			site_survey_lists[i].frequency,
-			site_survey_lists[i].numsta == -1 ? "N/A" : numsta,
-			site_survey_lists[i].radioname,
-			site_survey_lists[i].RSSI,
-			site_survey_lists[i].phy_noise, quality,
-			site_survey_lists[i].beacon_period, open,
-			site_survey_lists[i].ENCINFO,
-			dtim_period(site_survey_lists[i].dtim_period, dtim),
-			rates);
+			net, site_survey_lists[i].BSSID, site_survey_lists[i].channel & 0xff, site_survey_lists[i].frequency,
+			site_survey_lists[i].numsta == -1 ? "N/A" : numsta, site_survey_lists[i].radioname,
+			site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, quality, site_survey_lists[i].beacon_period,
+			open, site_survey_lists[i].ENCINFO, dtim_period(site_survey_lists[i].dtim_period, dtim), rates);
 	}
 	debug_free(site_survey_lists);
 
@@ -577,8 +533,8 @@ static char *lastunlock;
 
 EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc,
 				   char_t **argv) // Eko, for
-	// testing
-	// only
+// testing
+// only
 {
 	FILE *f;
 	char buf[256];
@@ -597,8 +553,7 @@ EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc,
 			fprintf(fp, "channelsel=hop&");
 		else
 			fprintf(fp, "channelsel=%s&", hopseq);
-		fprintf(fp, "hopdwell=%s&hopseq=%s\n",
-			nvram_safe_get("hopdwell"), hopseq);
+		fprintf(fp, "hopdwell=%s&hopseq=%s\n", nvram_safe_get("hopdwell"), hopseq);
 		fclose(fp);
 		eval("wiviz");
 	}
