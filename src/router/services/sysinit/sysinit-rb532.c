@@ -70,19 +70,15 @@ void start_sysinit(void)
 	// eval("insmod","jbd");
 	insmod("ext2");
 #ifndef KERNEL_24
-	if (mount("/dev/cf/card0/part3", "/usr/local", "ext2",
-		  MS_MGC_VAL | MS_SYNCHRONOUS, NULL))
+	if (mount("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL | MS_SYNCHRONOUS, NULL))
 #else
-	if (mount("/dev/discs/disc0/part3", "/usr/local", "ext2",
-		  MS_MGC_VAL | MS_SYNCHRONOUS, NULL))
+	if (mount("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL | MS_SYNCHRONOUS, NULL))
 #endif
 	{
 		// not created yet, create ext2 partition
-		eval("/sbin/mkfs.ext2", "-F", "-b", "1024",
-		     "/dev/cf/card0/part3");
+		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", "/dev/cf/card0/part3");
 		// mount ext2
-		mount("/dev/cf/card0/part3", "/usr/local", "ext2",
-		      MS_MGC_VAL | MS_SYNCHRONOUS, NULL);
+		mount("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL | MS_SYNCHRONOUS, NULL);
 		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
 	eval("mkdir", "-p", "/usr/local/nvram");

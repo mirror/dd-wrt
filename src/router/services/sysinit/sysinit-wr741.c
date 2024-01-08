@@ -84,8 +84,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		MAC_SUB(mac);
 		set_hwaddr("eth0", mac);
@@ -107,8 +106,7 @@ void start_sysinit(void)
 
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports",
-	     "1 2 3 4 9t");
+	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "1 2 3 4 9t");
 	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 9t");
 	eval("swconfig", "dev", "switch0", "set", "apply");
 
@@ -126,8 +124,7 @@ void start_sysinit(void)
 #else
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
-	     "0 1 2 3 4");
+	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
 	nvram_seti("sw_cpuport", 0);

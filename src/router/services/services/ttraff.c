@@ -71,8 +71,7 @@ void start_ttraff(void)
 	if (!nvram_matchi("ttraff_enable", 1))
 		return;
 
-	if ((nvram_match("ttraff_iface", "") ||
-	     !nvram_exists("ttraff_iface")) &&
+	if ((nvram_match("ttraff_iface", "") || !nvram_exists("ttraff_iface")) &&
 	    (nvram_match("wan_proto", "disabled") || getWET()))
 		return;
 

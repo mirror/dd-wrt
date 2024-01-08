@@ -76,8 +76,7 @@ static void create_pptp_config(char *servername, char *username)
 	// system routing tables, using the peer as the gateway
 	fprintf(fp, "usepeerdns\n"); // Ask the peer for up to 2 DNS
 	// server addresses
-	fprintf(fp, "pty 'pptp %s --localbind %s --nolaunchpppd", servername,
-		nvram_safe_get("wan_ipaddr"));
+	fprintf(fp, "pty 'pptp %s --localbind %s --nolaunchpppd", servername, nvram_safe_get("wan_ipaddr"));
 
 	if (nvram_matchi("pptp_reorder", 0))
 		fprintf(fp, " --nobuffer");
@@ -96,10 +95,7 @@ static void create_pptp_config(char *servername, char *username)
 		fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 
 	if (nvram_matchi("ppp_demand", 1)) { // demand mode
-		fprintf(fp, "idle %d\n",
-			nvram_matchi("ppp_demand", 1) ?
-				nvram_geti("ppp_idletime") * 60 :
-				0);
+		fprintf(fp, "idle %d\n", nvram_matchi("ppp_demand", 1) ? nvram_geti("ppp_idletime") * 60 : 0);
 		fprintf(fp, "demand\n"); // Dial on demand
 		fprintf(fp, "persist\n"); // Do not exit after a connection is
 		// terminated.
@@ -158,16 +154,14 @@ void run_pptp(int status)
 #endif
 	stop_vpn_modules();
 
-	snprintf(username, sizeof(username), "%s",
-		 nvram_safe_get("ppp_username"));
+	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
 		start_pppmodules();
 		insmod("gre");
 		insmod("pptp");
-		create_pptp_config(nvram_safe_get("pptp_server_name"),
-				   username);
+		create_pptp_config(nvram_safe_get("pptp_server_name"), username);
 		/*
 		 * Generate pap-secrets file 
 		 */
@@ -224,17 +218,14 @@ void run_pptp(int status)
 		run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 		int timeout;
 
-		for (timeout = 60;
-		     !nvram_matchi("dhcpc_done", 1) && timeout > 0;
-		     --timeout) { /* wait for info from dhcp server */
+		for (timeout = 60; !nvram_matchi("dhcpc_done", 1) && timeout > 0; --timeout) { /* wait for info from dhcp server */
 			sleep(1);
 		}
 		stop_dhcpc(); /* we don't need dhcp client anymore */
 		create_pptp_config(nvram_safe_get("pptp_server_ip"), username);
 
 	} else {
-		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
-			 nvram_safe_get("wan_netmask"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
 		dns_to_resolv();
 		dns_list = get_dns_list(0);
@@ -242,32 +233,23 @@ void run_pptp(int status)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0,
-					  dns_list->dns_server[i].ip,
-					  nvram_safe_get("pptp_wan_gateway"),
+				route_add(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("pptp_wan_gateway"),
 					  "255.255.255.255");
 		}
-		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("pptp_wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway"), "0.0.0.0");
 		char pptpip[64];
-		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip,
-			      sizeof(pptpip));
-		route_del(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("pptp_wan_gateway"), "0.0.0.0");
+		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip, sizeof(pptpip));
+		route_del(wan_ifname, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway"), "0.0.0.0");
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_del(wan_ifname, 0,
-					  dns_list->dns_server[i].ip,
-					  nvram_safe_get("pptp_wan_gateway"),
+				route_del(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("pptp_wan_gateway"),
 					  "255.255.255.255");
 			free_dns_list(dns_list);
 		}
 
 		nvram_set("pptp_server_ip", pptpip);
 		if (!nvram_match("pptp_wan_gateway", "0.0.0.0"))
-			route_add(wan_ifname, 0,
-				  nvram_safe_get("pptp_server_ip"),
-				  nvram_safe_get("pptp_wan_gateway"),
+			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("pptp_wan_gateway"),
 				  "255.255.255.255");
 	}
 	_log_evalpid(pptp_argv, NULL, 0, NULL);
@@ -277,8 +259,7 @@ void run_pptp(int status)
 		 * Trigger Connect On Demand if user press Connect button in Status
 		 * page 
 		 */
-		if (nvram_match("action_service", "start_pptp") ||
-		    nvram_match("action_service", "start_l2tp")) {
+		if (nvram_match("action_service", "start_pptp") || nvram_match("action_service", "start_l2tp")) {
 			start_force_to_dial();
 			// force_to_dial(nvram_safe_get("action_service"));
 			nvram_unset("action_service");
@@ -300,8 +281,7 @@ void run_pptp(int status)
 
 void stop_pptp(void)
 {
-	route_del(nvram_safe_get("wan_ifname"), 0,
-		  nvram_safe_get("pptp_server_ip"), NULL, NULL);
+	route_del(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("pptp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
 	stop_process("pppd", "daemon");

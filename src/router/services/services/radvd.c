@@ -68,15 +68,12 @@ void start_radvd(void)
 	int do_mtu = 0, do_6to4 = 0, do_6rd = 0;
 	FILE *fp;
 
-	if (!nvram_matchi("ipv6_enable", 1) ||
-	    !nvram_matchi("radvd_enable", 1)) {
+	if (!nvram_matchi("ipv6_enable", 1) || !nvram_matchi("radvd_enable", 1)) {
 		stop_radvd();
 		return;
 	}
 
-	if (nvram_matchi("dhcp6s_enable", 1) &&
-	    (nvram_matchi("dhcp6s_seq_ips", 1) ||
-	     nvram_invmatch("dhcp6s_hosts", "")))
+	if (nvram_matchi("dhcp6s_enable", 1) && (nvram_matchi("dhcp6s_seq_ips", 1) || nvram_invmatch("dhcp6s_hosts", "")))
 		manual = 1;
 
 	if (nvram_invmatch("ipv6_mtu", "")) {
@@ -120,8 +117,7 @@ void start_radvd(void)
 			return;
 
 		char buf[INET6_ADDRSTRLEN];
-		ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?:
-			     "";
+		ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?: "";
 
 		fprintf(fp,
 			"interface %s\n"
@@ -142,10 +138,8 @@ void start_radvd(void)
 			"  AdvPreferredLifetime 20;\n"
 			"%s%s%s"
 			" };\n",
-			nvram_safe_get("lan_ifname"), manual ? "on" : "off",
-			mtu, prefix, manual ? "off" : "on",
-			do_6to4 ? "  Base6to4Interface " : "",
-			do_6to4 ? safe_get_wan_face(wan_if_buffer) : "",
+			nvram_safe_get("lan_ifname"), manual ? "on" : "off", mtu, prefix, manual ? "off" : "on",
+			do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? safe_get_wan_face(wan_if_buffer) : "",
 			do_6to4 ? ";\n" : "");
 
 		int i;

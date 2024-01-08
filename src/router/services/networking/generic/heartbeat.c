@@ -58,18 +58,15 @@ static void start_heartbeat(int status)
 
 	openlog("heartbeat", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
-	MY_LOG(LOG_DEBUG, "hb_server_ip[%s] wan_get_domain[%s]\n",
-	       nvram_safe_get("hb_server_ip"),
+	MY_LOG(LOG_DEBUG, "hb_server_ip[%s] wan_get_domain[%s]\n", nvram_safe_get("hb_server_ip"),
 	       nvram_safe_get("wan_get_domain"));
 
 	/*
 	 * We must find out HB auth server from domain that get by dhcp if user
 	 * don't input HB sever. 
 	 */
-	if (nvram_invmatch("hb_server_ip", "") &&
-	    nvram_invmatch("hb_server_ip", "0.0.0.0")) {
-		snprintf(authserver, sizeof(authserver), "%s",
-			 nvram_safe_get("hb_server_ip"));
+	if (nvram_invmatch("hb_server_ip", "") && nvram_invmatch("hb_server_ip", "0.0.0.0")) {
+		snprintf(authserver, sizeof(authserver), "%s", nvram_safe_get("hb_server_ip"));
 		snprintf(authdomain, sizeof(authdomain), "%s", "");
 	} else if ((nvram_match("wan_get_domain",
 				"nsw.bigpond.net.au")) || // NSW
@@ -83,19 +80,15 @@ static void start_heartbeat(int status)
 		   (nvram_match("wan_get_domain",
 				"wa.bigpond.net.au"))) { // Western Australia
 		snprintf(authserver, sizeof(authserver), "%s", "sm-server");
-		snprintf(authdomain, sizeof(authdomain), "%s",
-			 nvram_safe_get("wan_get_domain"));
+		snprintf(authdomain, sizeof(authdomain), "%s", nvram_safe_get("wan_get_domain"));
 	} else {
-		MY_LOG(LOG_ERR,
-		       "Can't find HB server from domain! Use gateway.\n");
-		snprintf(authserver, sizeof(authserver), "%s",
-			 nvram_safe_get("wan_gateway"));
+		MY_LOG(LOG_ERR, "Can't find HB server from domain! Use gateway.\n");
+		snprintf(authserver, sizeof(authserver), "%s", nvram_safe_get("wan_gateway"));
 		snprintf(authdomain, sizeof(authdomain), "%s", "");
 		// return 1;
 	}
 
-	snprintf(buf, sizeof(buf), "%s%s%s", authserver,
-		 !strcmp(authdomain, "") ? "" : ".", authdomain);
+	snprintf(buf, sizeof(buf), "%s%s%s", authserver, !strcmp(authdomain, "") ? "" : ".", authdomain);
 
 	nvram_set("hb_server_name", buf);
 
@@ -193,10 +186,8 @@ int hb_connect_main(int argc, char **argv)
 
 	wan_done(safe_get_wan_face(wan_if_buffer));
 
-	sysprintf(
-		"iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT",
-		safe_get_wan_face(wan_if_buffer), argv[3],
-		nvram_safe_get("wan_ipaddr"), argv[1]);
+	sysprintf("iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT", safe_get_wan_face(wan_if_buffer), argv[3],
+		  nvram_safe_get("wan_ipaddr"), argv[1]);
 
 	return TRUE;
 }

@@ -53,11 +53,9 @@ void start_nfs(void)
 		for (cs = nfsshares; cs; cs = csnext) {
 			// we export only to local lan network now for security reasons. so know what you're doing
 			if (*cs->mp && *cs->allowed) {
-				fprintf(fp, "%s/%s\t%s%s\n", cs->mp, cs->sd,
-					cs->allowed,
-					!strcmp(cs->access_perms, "ro") ?
-						"(ro,no_subtree_check,no_root_squash,sync)" :
-						"(rw,no_subtree_check,no_root_squash,sync)");
+				fprintf(fp, "%s/%s\t%s%s\n", cs->mp, cs->sd, cs->allowed,
+					!strcmp(cs->access_perms, "ro") ? "(ro,no_subtree_check,no_root_squash,sync)" :
+									  "(rw,no_subtree_check,no_root_squash,sync)");
 			}
 			csnext = cs->next;
 			free(cs);

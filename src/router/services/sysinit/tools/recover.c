@@ -50,14 +50,12 @@ void start_recover(void)
 
 	unsigned char *mem = malloc(size);
 	fread(mem, size, 1, in);
-	if (mem[0] != 0x46 || mem[1] != 0x4c || mem[2] != 0x53 ||
-	    mem[3] != 0x48) {
+	if (mem[0] != 0x46 || mem[1] != 0x4c || mem[2] != 0x53 || mem[3] != 0x48) {
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		fread(mem, 65536, 1, in);
 	}
 	fclose(in);
-	if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 &&
-	    mem[3] == 0x48) {
+	if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
 		fprintf(stderr, "found recovery\n");
 		in = fopen("/usr/local/nvram/nvram.bin", "wb");
 		if (in != NULL) {

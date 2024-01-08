@@ -83,13 +83,11 @@ void start_dhcpfwd(void)
 			    "ulimit nofile	0\n"
 			    "ulimit as	0\n");
 		if (nvram_matchi("dhcpfwd_enable", 1))
-			fprintf(fp, "if	%s	true	false	true\n",
-				nvram_safe_get("lan_ifname"));
+			fprintf(fp, "if	%s	true	false	true\n", nvram_safe_get("lan_ifname"));
 		for (i = 0; i < mdhcpcount; i++) {
 			char buffer[128];
 			if (!strcmp(getmdhcp(i, IDX_DHCPON, buffer), "fwd")) {
-				fprintf(fp, "if	%s	true	false	true\n",
-					getmdhcp(i, IDX_IFNAME, buffer));
+				fprintf(fp, "if	%s	true	false	true\n", getmdhcp(i, IDX_IFNAME, buffer));
 			}
 		}
 
@@ -98,13 +96,11 @@ void start_dhcpfwd(void)
 		char *dhcpfw_ifname = nvram_safe_get("dhcpfwd_ifname");
 
 		if (getSTA()) {
-			wan_ifname =
-				getSTA(); // returns eth1/eth2 for broadcom and
+			wan_ifname = getSTA(); // returns eth1/eth2 for broadcom and
 			// ath0 for atheros
 		}
 		if (*dhcpfw_ifname) {
-			fprintf(fp, "if	%s	false	true	true\n",
-				dhcpfw_ifname);
+			fprintf(fp, "if	%s	false	true	true\n", dhcpfw_ifname);
 		}
 #ifdef HAVE_PPPOE
 		else if (strcmp(wan_proto, "pppoe") == 0) {
@@ -113,15 +109,12 @@ void start_dhcpfwd(void)
 #endif
 		else if (getWET()) {
 			// nothing
-		} else if (strcmp(wan_proto, "dhcp") == 0 ||
-			   strcmp(wan_proto, "static") == 0 ||
+		} else if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0 ||
 			   strcmp(wan_proto, "dhcp_auth") == 0) {
-			fprintf(fp, "if	%s	false	true	true\n",
-				wan_ifname);
+			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
 #ifdef HAVE_3G
-		else if (strcmp(wan_proto, "3g") == 0 &&
-			 nvram_match("3gdata", "qmi")) {
+		else if (strcmp(wan_proto, "3g") == 0 && nvram_match("3gdata", "qmi")) {
 			fprintf(fp, "if	wwan0	false	true	true\n");
 		} else if (strcmp(wan_proto, "3g") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
@@ -153,22 +146,18 @@ void start_dhcpfwd(void)
 		}
 #endif
 		else {
-			fprintf(fp, "if	%s	false	true	true\n",
-				wan_ifname);
+			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
 
 		if (nvram_matchi("dhcpfwd_enable", 1))
-			fprintf(fp, "name	%s	ws-c\n",
-				nvram_safe_get("lan_ifname"));
+			fprintf(fp, "name	%s	ws-c\n", nvram_safe_get("lan_ifname"));
 		for (i = 0; i < mdhcpcount; i++) {
 			char buffer[128];
 			if (!strcmp(getmdhcp(i, IDX_DHCPON, buffer), "fwd")) {
-				fprintf(fp, "name	%s	ws-c\n",
-					getmdhcp(i, IDX_IFNAME, buffer));
+				fprintf(fp, "name	%s	ws-c\n", getmdhcp(i, IDX_IFNAME, buffer));
 			}
 		}
-		fprintf(fp, "server	ip	%s\n",
-			nvram_safe_get("dhcpfwd_ip"));
+		fprintf(fp, "server	ip	%s\n", nvram_safe_get("dhcpfwd_ip"));
 
 		fclose(fp);
 		log_eval("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
@@ -177,8 +166,7 @@ void start_dhcpfwd(void)
 #endif
 #ifdef HAVE_DHCPRELAY
 	if (nvram_matchi("dhcpfwd_enable", 1)) {
-		log_eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"),
-			 nvram_safe_get("dhcpfwd_ip"));
+		log_eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
 	}
 #endif
 	return;

@@ -192,23 +192,18 @@ static int bound(void)
 	cidr = getenv("cidrroute");
 	if (cidr && wan_ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
-		sprintf(callbuffer,
-			"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",
-			cidr, wan_ifname);
+		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, wan_ifname);
 		system(callbuffer);
 		free(callbuffer);
 	}
 #endif
 	if ((value = getenv("ip"))) {
 		chomp(value);
-		if (nvram_match("wan_proto", "pptp") &&
-		    nvram_matchi("pptp_use_dhcp", 1))
+		if (nvram_match("wan_proto", "pptp") && nvram_matchi("pptp_use_dhcp", 1))
 			strcpy(temp_wan_ipaddr, value);
-		else if (nvram_match("wan_proto", "l2tp") &&
-			 nvram_matchi("l2tp_use_dhcp", 1))
+		else if (nvram_match("wan_proto", "l2tp") && nvram_matchi("l2tp_use_dhcp", 1))
 			strcpy(temp_wan_ipaddr, value);
-		else if (nvram_match("wan_proto", "pppoe_dual") &&
-			 nvram_matchi("pptp_use_dhcp", 1))
+		else if (nvram_match("wan_proto", "pppoe_dual") && nvram_matchi("pptp_use_dhcp", 1))
 			strcpy(temp_wan_ipaddr, value);
 		else {
 			if (nvram_invmatch("wan_ipaddr", value))
@@ -218,14 +213,11 @@ static int bound(void)
 	}
 	if ((value = getenv("subnet"))) {
 		chomp(value);
-		if (nvram_match("wan_proto", "pptp") &&
-		    nvram_matchi("pptp_use_dhcp", 1))
+		if (nvram_match("wan_proto", "pptp") && nvram_matchi("pptp_use_dhcp", 1))
 			strcpy(temp_wan_netmask, value);
-		else if (nvram_match("wan_proto", "l2tp") &&
-			 nvram_matchi("l2tp_use_dhcp", 1))
+		else if (nvram_match("wan_proto", "l2tp") && nvram_matchi("l2tp_use_dhcp", 1))
 			strcpy(temp_wan_netmask, value);
-		else if (nvram_match("wan_proto", "pppoe_dual") &&
-			 nvram_matchi("pptp_use_dhcp", 1))
+		else if (nvram_match("wan_proto", "pppoe_dual") && nvram_matchi("pptp_use_dhcp", 1))
 			strcpy(temp_wan_netmask, value);
 		else {
 			if (nvram_invmatch("wan_netmask", value))
@@ -267,21 +259,14 @@ static int bound(void)
 	}
 	stop_firewall();
 
-	if (nvram_match("wan_proto", "pptp") &&
-	    nvram_matchi("pptp_use_dhcp", 1))
-		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
-		     temp_wan_netmask, "up");
-	else if (nvram_match("wan_proto", "l2tp") &&
-		 nvram_matchi("l2tp_use_dhcp", 1))
-		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
-		     temp_wan_netmask, "up");
-	else if (nvram_match("wan_proto", "pppoe_dual") &&
-		 nvram_matchi("pptp_use_dhcp", 1))
-		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
-		     temp_wan_netmask, "up");
+	if (nvram_match("wan_proto", "pptp") && nvram_matchi("pptp_use_dhcp", 1))
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
+	else if (nvram_match("wan_proto", "l2tp") && nvram_matchi("l2tp_use_dhcp", 1))
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
+	else if (nvram_match("wan_proto", "pppoe_dual") && nvram_matchi("pptp_use_dhcp", 1))
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
 	else
-		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"),
-		     "netmask", nvram_safe_get("wan_netmask"), "up");
+		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"), "netmask", nvram_safe_get("wan_netmask"), "up");
 
 		/*
 	 * We only want to exec bellow functions after dhcp get ip if the
@@ -294,15 +279,13 @@ static int bound(void)
 		/*
 		 * Delete all default routes 
 		 */
-		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0 ||
-		       i++ < 10)
+		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0 || i++ < 10)
 			;
 
 		/*
 		 * Set default route to gateway if specified 
 		 */
-		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		/*
 		 * save dns to resolv.conf 
@@ -321,8 +304,7 @@ static int bound(void)
 	}
 #endif
 #ifdef HAVE_PPTP
-	else if (nvram_match("wan_proto", "pptp") &&
-		 nvram_matchi("pptp_use_dhcp", 1)) {
+	else if (nvram_match("wan_proto", "pptp") && nvram_matchi("pptp_use_dhcp", 1)) {
 		char pptpip[64];
 		struct dns_lists *dns_list = NULL;
 
@@ -333,44 +315,33 @@ static int bound(void)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0,
-					  dns_list->dns_server[i].ip,
-					  nvram_safe_get("wan_gateway"),
+				route_add(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("wan_gateway"),
 					  "255.255.255.255");
 			free_dns_list(dns_list);
 		}
-		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		if (nvram_exists("wan_gateway"))
-			nvram_set("wan_gateway_buf",
-				  nvram_safe_get("wan_gateway"));
+			nvram_set("wan_gateway_buf", nvram_safe_get("wan_gateway"));
 		else
 			nvram_unset("wan_gateway_buf");
 
-		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip,
-			      sizeof(pptpip));
+		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip, sizeof(pptpip));
 		if (strcmp(pptpip, "0.0.0.0"))
 			nvram_set("pptp_server_ip", pptpip);
 
 		// Add the route to the PPTP server on the wan interface for pptp
 		// client to reach it
-		if (nvram_match("wan_gateway", "0.0.0.0") ||
-		    nvram_match("wan_netmask", "0.0.0.0"))
-			route_add(wan_ifname, 0,
-				  nvram_safe_get("pptp_server_ip"),
-				  nvram_safe_get("wan_gateway_buf"),
+		if (nvram_match("wan_gateway", "0.0.0.0") || nvram_match("wan_netmask", "0.0.0.0"))
+			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("wan_gateway_buf"),
 				  "255.255.255.255");
 		else
-			route_add(wan_ifname, 0,
-				  nvram_safe_get("pptp_server_ip"),
-				  nvram_safe_get("wan_gateway"),
+			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("wan_gateway"),
 				  nvram_safe_get("wan_netmask"));
 	}
 #endif
 #ifdef HAVE_L2TP
-	else if (nvram_match("wan_proto", "l2tp") &&
-		 nvram_matchi("l2tp_use_dhcp", 1)) {
+	else if (nvram_match("wan_proto", "l2tp") && nvram_matchi("l2tp_use_dhcp", 1)) {
 		char l2tpip[64];
 		struct dns_lists *dns_list = NULL;
 
@@ -382,9 +353,7 @@ static int bound(void)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0,
-					  dns_list->dns_server[i].ip,
-					  nvram_safe_get("wan_gateway"),
+				route_add(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("wan_gateway"),
 					  "255.255.255.255");
 			free_dns_list(dns_list);
 		}
@@ -394,29 +363,24 @@ static int bound(void)
 		 * is broken 
 		 */
 		if (nvram_exists("wan_gateway"))
-			nvram_set("wan_gateway_buf",
-				  nvram_safe_get("wan_gateway"));
+			nvram_set("wan_gateway_buf", nvram_safe_get("wan_gateway"));
 		else
 			nvram_unset("wan_gateway_buf");
 
-		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip,
-			      sizeof(l2tpip));
+		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip, sizeof(l2tpip));
 		if (strcmp(l2tpip, "0.0.0.0"))
 			nvram_set("l2tp_server_ip", l2tpip);
 
 		//route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway"), "255.255.255.255");
-		route_del(wan_ifname, 0, nvram_safe_get("wan_gateway"), NULL,
-			  "255.255.255.255");
-		route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"),
-			  nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
+		route_del(wan_ifname, 0, nvram_safe_get("wan_gateway"), NULL, "255.255.255.255");
+		route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
 
 		start_firewall();
 		start_l2tp_boot();
 	}
 #endif
 #ifdef HAVE_PPPOEDUAL
-	else if (nvram_match("wan_proto", "pppoe_dual") &&
-		 nvram_matchi("pptp_use_dhcp", 1)) {
+	else if (nvram_match("wan_proto", "pppoe_dual") && nvram_matchi("pptp_use_dhcp", 1)) {
 		struct dns_lists *dns_list = NULL;
 		int i;
 
@@ -498,8 +462,7 @@ static int bound_tv(void)
 		strcpy(bcast, ip);
 		get_broadcast(bcast, sizeof(bcast), net);
 		nvram_set("tvnicaddr", ip);
-		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast,
-		     "multicast");
+		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast, "multicast");
 	}
 #ifdef HAVE_BUSYBOX_UDHCPC
 	if (ifname) {
@@ -508,9 +471,7 @@ static int bound_tv(void)
 #else
 	if (cidr && ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
-		sprintf(callbuffer,
-			"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",
-			cidr, ifname);
+		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, ifname);
 		system(callbuffer);
 		free(callbuffer);
 	}

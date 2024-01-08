@@ -89,12 +89,10 @@ void getWirelessMac(char *newmac, int instance)
 		if (getRouterBrand() == ROUTER_ASUS_AC66U) {
 			switch (instance) {
 			case 0:
-				strcpy(newmac,
-				       nvram_safe_get("pci/1/1/macaddr"));
+				strcpy(newmac, nvram_safe_get("pci/1/1/macaddr"));
 				break;
 			case 1:
-				strcpy(newmac,
-				       nvram_safe_get("pci/2/1/macaddr"));
+				strcpy(newmac, nvram_safe_get("pci/2/1/macaddr"));
 				break;
 			}
 
@@ -137,17 +135,12 @@ void getWANMac(char *newmac)
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
 
-			strncpy(ifr.ifr_name, nvram_safe_get("wan_ifname"),
-				IFNAMSIZ);
+			strncpy(ifr.ifr_name, nvram_safe_get("wan_ifname"), IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			strcpy(newmac,
-			       ether_etoa(
-				       (unsigned char *)ifr.ifr_hwaddr.sa_data,
-				       eabuf));
+			strcpy(newmac, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
-		cprintf("getWANMAC returns %s from %s\n", newmac,
-			nvram_safe_get("wan_ifname"));
+		cprintf("getWANMAC returns %s from %s\n", newmac, nvram_safe_get("wan_ifname"));
 		return;
 	} else {
 		strcpy(newmac, nvram_safe_get("et0macaddr"));
@@ -163,14 +156,12 @@ void getWANMac(char *newmac)
 			MAC_ADD(newmac); // et0macaddr +1
 
 			if (nvram_matchi("port_swap", 1)) {
-				if (strlen(nvram_safe_get(
-					    "et1macaddr"))) // safe:
+				if (strlen(nvram_safe_get("et1macaddr"))) // safe:
 				// maybe
 				// et1macaddr
 				// not there?
 				{
-					strcpy(newmac,
-					       nvram_safe_get("et1macaddr"));
+					strcpy(newmac, nvram_safe_get("et1macaddr"));
 					MAC_ADD(newmac); // et1macaddr +1
 				} else {
 					MAC_ADD(newmac); // et0macaddr +2

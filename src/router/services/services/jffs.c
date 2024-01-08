@@ -68,8 +68,7 @@ void start_jffs2(void)
 	}
 #endif
 	nvram_seti("jffs_mounted", 0);
-	if (!nvram_matchi("enable_jffs2", 1) ||
-	    nvram_matchi("clean_jffs2", 1)) {
+	if (!nvram_matchi("enable_jffs2", 1) || nvram_matchi("clean_jffs2", 1)) {
 		umount2("/jffs2", MNT_DETACH);
 	}
 	char udev[32];
@@ -85,15 +84,12 @@ void start_jffs2(void)
 #if defined(HAVE_DW02_412H)
 			itworked = eval("erase", rwpart);
 			itworked = eval("flash_erase", dev, "0", "0");
-			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock11",
-					"-n", "-b", "-e", "131072", "-p");
+			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock11", "-n", "-b", "-e", "131072", "-p");
 #elif defined(HAVE_WNDR3700V4)
 			itworked = eval("erase", rwpart);
 			itworked = eval("flash_erase", dev, "0", "0");
-			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3",
-					"-n", "-b", "-e", "131072", "-p");
-#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || \
-	defined(HAVE_R6800)
+			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
+#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", dev);
 			itworked = eval("flash_erase", dev, "0", "0");
@@ -104,14 +100,11 @@ void start_jffs2(void)
 			itworked = eval("flash_erase", dev, "0", "0");
 #endif
 
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || \
-	defined(HAVE_R6800)
-			itworked += mount(upath, "/jffs", "ubifs",
-					  MS_MGC_VAL | MS_NOATIME, NULL);
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
 #else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2",
-					  MS_MGC_VAL | MS_NOATIME, NULL);
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 #endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);
@@ -120,17 +113,14 @@ void start_jffs2(void)
 			}
 
 		} else {
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || \
-	defined(HAVE_R6800)
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubiattach", "-p", dev);
-			itworked += mount(upath, "/jffs", "ubifs",
-					  MS_MGC_VAL | MS_NOATIME, NULL);
+			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
 #else
 			itworked = eval("mtd", "unlock", rwpart);
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked += mount(dev, "/jffs", "jffs2",
-					  MS_MGC_VAL | MS_NOATIME, NULL);
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 #endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);

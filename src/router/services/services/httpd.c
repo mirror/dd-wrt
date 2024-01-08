@@ -68,14 +68,11 @@ void start_httpd(void)
 
 	if (!f_exists("/var/run/httpd.pid")) {
 		if (do_ssl && no_ssl) {
-			log_eval("httpd", "-n", "-S", args[0], args[1], args[2],
-				 args[3]);
+			log_eval("httpd", "-n", "-S", args[0], args[1], args[2], args[3]);
 		} else if (no_ssl) {
-			log_eval("httpd", "-n", args[0], args[1], args[2],
-				 args[3]);
+			log_eval("httpd", "-n", args[0], args[1], args[2], args[3]);
 		} else if (do_ssl) {
-			log_eval("httpd", "-S", args[0], args[1], args[2],
-				 args[3]);
+			log_eval("httpd", "-S", args[0], args[1], args[2], args[3]);
 		}
 	}
 	chdir("/");

@@ -47,10 +47,7 @@ char *snmp_proc(void)
 void start_snmp(void)
 {
 	char path[64];
-	char *snmpd_argv[] = {
-		"snmpd", "-c",
-		getdefaultconfig("snmp", path, sizeof(path), "snmpd.conf"), NULL
-	};
+	char *snmpd_argv[] = { "snmpd", "-c", getdefaultconfig("snmp", path, sizeof(path), "snmpd.conf"), NULL };
 	FILE *fp = NULL;
 
 	if (!nvram_invmatchi("snmpd_enable", 0)) {
@@ -58,29 +55,23 @@ void start_snmp(void)
 		return;
 	}
 
-	fp = fopen(getdefaultconfig("snmp", path, sizeof(path), "snmpd.conf"),
-		   "w");
+	fp = fopen(getdefaultconfig("snmp", path, sizeof(path), "snmpd.conf"), "w");
 	if (NULL == fp)
 		return;
 
 	if (*(nvram_safe_get("snmpd_syslocation")))
-		fprintf(fp, "syslocation %s\n",
-			nvram_safe_get("snmpd_syslocation"));
+		fprintf(fp, "syslocation %s\n", nvram_safe_get("snmpd_syslocation"));
 	if (*(nvram_safe_get("snmpd_syscontact")))
-		fprintf(fp, "syscontact %s\n",
-			nvram_safe_get("snmpd_syscontact"));
+		fprintf(fp, "syscontact %s\n", nvram_safe_get("snmpd_syscontact"));
 	if (*(nvram_safe_get("snmpd_sysname")))
 		fprintf(fp, "sysname %s\n", nvram_safe_get("snmpd_sysname"));
 	if (*(nvram_safe_get("snmpd_rocommunity")))
-		fprintf(fp, "rocommunity %s\n",
-			nvram_safe_get("snmpd_rocommunity"));
+		fprintf(fp, "rocommunity %s\n", nvram_safe_get("snmpd_rocommunity"));
 	if (*(nvram_safe_get("snmpd_rwcommunity")))
-		fprintf(fp, "rwcommunity %s\n",
-			nvram_safe_get("snmpd_rwcommunity"));
+		fprintf(fp, "rwcommunity %s\n", nvram_safe_get("snmpd_rwcommunity"));
 	fprintf(fp, "sysservices 9\n");
 #ifdef HAVE_RAYTRONIK
-	fprintf(fp,
-		"pass_persist .1.3.6.1.4.1.41404.255 /etc/config/wl_snmpd.sh\n");
+	fprintf(fp, "pass_persist .1.3.6.1.4.1.41404.255 /etc/config/wl_snmpd.sh\n");
 #else
 	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 #endif

@@ -56,10 +56,8 @@ void start_olsrd(void)
 		fprintf(fp, "IpVersion\t4\n");
 		fprintf(fp, "AllowNoInt\tyes\n");
 		fprintf(fp, "Pollrate\t%s\n", nvram_safe_get("olsrd_pollsize"));
-		fprintf(fp, "TcRedundancy\t%s\n",
-			nvram_safe_get("olsrd_redundancy"));
-		fprintf(fp, "MprCoverage\t%s\n",
-			nvram_safe_get("olsrd_coverage"));
+		fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
+		fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
 		fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
 #ifdef HAVE_IPV6
 		if (nvram_matchi("olsrd_smartgw", 1)) {
@@ -86,19 +84,15 @@ void start_olsrd(void)
 #ifdef HAVE_IPV6
 		}
 #endif
-		fprintf(fp, "LinkQualityFishEye\t%s\n",
-			nvram_safe_get("olsrd_lqfisheye"));
-		fprintf(fp, "LinkQualityAging\t%s\n",
-			nvram_safe_get("olsrd_lqaging"));
+		fprintf(fp, "LinkQualityFishEye\t%s\n", nvram_safe_get("olsrd_lqfisheye"));
+		fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
 		fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
 		//            fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
 		//                    nvram_safe_get("olsrd_lqdijkstramin"),
 		//                    nvram_safe_get("olsrd_lqdijkstramax"));
-		fprintf(fp, "UseHysteresis\t%s\n",
-			nvram_matchi("olsrd_hysteresis", 1) ? "yes" : "no");
+		fprintf(fp, "UseHysteresis\t%s\n", nvram_matchi("olsrd_hysteresis", 1) ? "yes" : "no");
 		if (nvram_matchi("olsrd_hysteresis", 0))
-			fprintf(fp, "LinkQualityLevel\t%s\n",
-				nvram_safe_get("olsrd_lqlevel"));
+			fprintf(fp, "LinkQualityLevel\t%s\n", nvram_safe_get("olsrd_lqlevel"));
 		else
 			fprintf(fp, "LinkQualityLevel\t0\n");
 		fprintf(fp, "LoadPlugin \"olsrd_dyn_gw.so\"\n");
@@ -141,16 +135,14 @@ void start_olsrd(void)
 			fprintf(fp, "Interface \"%s\"\n", interface);
 			fprintf(fp, "{\n");
 			fprintf(fp, "\tHelloInterval\t%s\n", hellointerval);
-			fprintf(fp, "\tHelloValidityTime\t%s\n",
-				hellovaliditytime);
+			fprintf(fp, "\tHelloValidityTime\t%s\n", hellovaliditytime);
 			fprintf(fp, "\tTcInterval\t%s\n", tcinterval);
 			fprintf(fp, "\tTcValidityTime\t%s\n", tcvaliditytime);
 			fprintf(fp, "\tMidInterval\t%s\n", midinterval);
 			fprintf(fp, "\tMidValidityTime\t%s\n", midvaliditytime);
 			fprintf(fp, "\tHnaInterval\t%s\n", hnainterval);
 			fprintf(fp, "\tHnaValidityTime\t%s\n", hnavaliditytime);
-			fprintf(fp, "\tLinkQualityMult\tdefault\t%s\n",
-				linkqualitymult);
+			fprintf(fp, "\tLinkQualityMult\tdefault\t%s\n", linkqualitymult);
 			fprintf(fp, "}\n");
 		}
 		if (*(nvram_safe_get("olsrd_hna"))) {

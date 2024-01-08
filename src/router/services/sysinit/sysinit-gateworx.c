@@ -224,8 +224,7 @@ void start_sysinit(void)
 
 		for (i = 0; i < 6; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure IXP0 to %s\n", mac);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
@@ -234,8 +233,7 @@ void start_sysinit(void)
 		fread(&buf[6], 6, 1, file);
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7],
-			copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 		fprintf(stderr, "configure IXP1 to %s\n", mac);
 		set_hwaddr("ixp1", mac);
 		fclose(file);
@@ -243,14 +241,12 @@ void start_sysinit(void)
 		eval("ifconfig", "ixp1", "0.0.0.0", "up");
 	}
 #else
-	char *filename =
-		"/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom"; /* bank2=0x100 
+	char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom"; /* bank2=0x100 
 												 */
 	fprintf(stderr, "Read MAC Addresses from EEPROM\n");
 	FILE *file = fopen(filename, "r");
 	if (!file) {
-		filename =
-			"/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom"; //for 2.6.34.6
+		filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom"; //for 2.6.34.6
 		file = fopen(filename, "r");
 	}
 
@@ -265,13 +261,11 @@ void start_sysinit(void)
 
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
 		set_hwaddr("ixp0", mac);
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7],
-			copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 		set_hwaddr("ixp1", mac);
 
 		fclose(file);
@@ -324,8 +318,7 @@ void start_sysinit(void)
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
 
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-				copy[1], copy[2], copy[3], copy[4], copy[5]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure IXP0 to %s\n", mac);
 			nvram_set("et0macaddr_safe", mac);
 			nvram_set("et0macaddr", mac);
@@ -334,8 +327,7 @@ void start_sysinit(void)
 			fread(&buf[6], 6, 1, file);
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6],
-				copy[7], copy[8], copy[9], copy[10], copy[11]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 			fprintf(stderr, "configure IXP1 to %s\n", mac);
 			set_hwaddr("ixp1", mac);
 			eval("ifconfig", "ixp0", "0.0.0.0", "up");
@@ -345,10 +337,8 @@ void start_sysinit(void)
 	}
 	if (!strcmp(modelname, "ADI Engineering Pronghorn Metro")) {
 		fprintf(stderr, "Pronghorn Metro detected\n");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
-		     "-r", "npe_eth0_esa");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1",
-		     "-r", "npe_eth1_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
 		char macaddr[32];
 		if (get_hwaddr("ixp0", macaddr)) {
 			nvram_set("et0macaddr", macaddr);
@@ -357,10 +347,8 @@ void start_sysinit(void)
 	}
 #ifdef HAVE_MI424WR
 	{
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
-		     "-r", "npe_eth0_esa");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1",
-		     "-r", "npe_eth1_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
 		char macaddr[32];
 		if (get_hwaddr("ixp0", macaddr)) {
 			nvram_set("et0macaddr", macaddr);
@@ -370,10 +358,8 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_USR8200
 	{
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
-		     "-r", "npe_eth0_esa");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1",
-		     "-r", "npe_eth1_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
 		char macaddr[32];
 		if (get_hwaddr("ixp0", macaddr)) {
 			nvram_set("et0macaddr", macaddr);
@@ -383,8 +369,7 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_WG302V1
-	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
-	     "zcom_npe_esa");
+	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "zcom_npe_esa");
 	{
 		char macaddr[32];
 		if (get_hwaddr("ixp0", macaddr)) {
@@ -394,8 +379,7 @@ void start_sysinit(void)
 	}
 #else
 #ifdef HAVE_WG302
-	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
-	     "npe_eth0_esa");
+	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
 	{
 		char macaddr[32];
 		if (get_hwaddr("ixp0", macaddr)) {
@@ -480,10 +464,8 @@ void start_sysinit(void)
 #endif
 
 	/* cf capability ? */
-	if (!strcmp(modelname, "Gateworks Avila GW2348-4") ||
-	    !strcmp(modelname, "Gateworks Cambria GW2358-4") ||
-	    !strcmp(modelname, "Gateworks Avila GW2355") ||
-	    !strcmp(modelname, "Gateworks Avila GW2345")) {
+	if (!strcmp(modelname, "Gateworks Avila GW2348-4") || !strcmp(modelname, "Gateworks Cambria GW2358-4") ||
+	    !strcmp(modelname, "Gateworks Avila GW2355") || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
 		insmod("scsi_common");
 		insmod("bsg");

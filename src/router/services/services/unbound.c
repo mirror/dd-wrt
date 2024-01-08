@@ -95,8 +95,7 @@ static void unbound_config(void)
 
 	prefix = do_6to4 ? "0:0:0:1::" : nvram_safe_get("ipv6_prefix");
 
-	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1) &&
-	    *prefix) {
+	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1) && *prefix) {
 		fprintf(fp, "access-control: %s/64 allow\n", prefix);
 	}
 	fprintf(fp, "access-control: 127.0.0.0/8 allow\n");
@@ -107,14 +106,11 @@ static void unbound_config(void)
 		char var[256], *wordlist, *next;
 		foreach(var, vifs, next)
 		{
-			if (strcmp(safe_get_wan_face(wan_if_buffer), var) &&
-			    strcmp(nvram_safe_get("lan_ifname"), var)) {
+			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
-					fprintf(fp,
-						"access-control: %s/%d allow\n",
-						ipaddr, getmask(netmask));
+					fprintf(fp, "access-control: %s/%d allow\n", ipaddr, getmask(netmask));
 			}
 		}
 	}
@@ -168,11 +164,8 @@ void start_unbound(void)
 		unbound_config();
 		if (reload_process("unbound")) {
 			eval("cp", "-R", "/etc/unbound", "/tmp/etc");
-			eval("mount", "--bind", "/tmp/etc/unbound",
-			     "/etc/unbound");
-			log_eval("unbound", "-c",
-				 getdefaultconfig("unbound", path, sizeof(path),
-						  "unbound.conf"));
+			eval("mount", "--bind", "/tmp/etc/unbound", "/etc/unbound");
+			log_eval("unbound", "-c", getdefaultconfig("unbound", path, sizeof(path), "unbound.conf"));
 		}
 	} else {
 		stop_unbound();

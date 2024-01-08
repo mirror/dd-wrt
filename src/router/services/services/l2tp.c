@@ -76,8 +76,7 @@ void run_l2tp(int status)
 
 	insmod("n_hdlc");
 	if (nvram_matchi("l2tp_use_dhcp", 0)) {
-		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
-			 nvram_safe_get("wan_netmask"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
 		dns_to_resolv();
 		dns_list = get_dns_list(0);
@@ -85,37 +84,27 @@ void run_l2tp(int status)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0,
-					  dns_list->dns_server[i].ip,
-					  nvram_safe_get("l2tp_wan_gateway"),
+				route_add(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("l2tp_wan_gateway"),
 					  "255.255.255.255");
 		}
-		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		char pptpip[64];
-		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip,
-			      sizeof(pptpip));
-		route_del(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip, sizeof(pptpip));
+		route_del(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_del(wan_ifname, 0,
-					  dns_list->dns_server[i].ip,
-					  nvram_safe_get("l2tp_wan_gateway"),
+				route_del(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("l2tp_wan_gateway"),
 					  "255.255.255.255");
 			free_dns_list(dns_list);
 		}
 
 		nvram_set("l2tp_server_ip", pptpip);
 		if (!nvram_match("l2tp_wan_gateway", "0.0.0.0"))
-			route_add(wan_ifname, 0,
-				  nvram_safe_get("l2tp_server_ip"),
-				  nvram_safe_get("l2tp_wan_gateway"),
+			route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("l2tp_wan_gateway"),
 				  "255.255.255.255");
 	}
 
-	snprintf(username, sizeof(username), "%s",
-		 nvram_safe_get("ppp_username"));
+	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
@@ -154,12 +143,9 @@ void run_l2tp(int status)
 			"name = %s\n" //
 			"pppoptfile = /tmp/ppp/options.l2tp\n" //
 			"length bit = yes\n",
-			nvram_safe_get("l2tp_server_name"),
-			nvram_safe_get("l2tp_server_ip"),
-			nvram_matchi("l2tp_req_chap", 0) ? "no" : "yes",
-			nvram_matchi("l2tp_ref_pap", 0) ? "no" : "yes",
-			nvram_matchi("l2tp_req_auth", 0) ? "no" : "yes",
-			username);
+			nvram_safe_get("l2tp_server_name"), nvram_safe_get("l2tp_server_ip"),
+			nvram_matchi("l2tp_req_chap", 0) ? "no" : "yes", nvram_matchi("l2tp_ref_pap", 0) ? "no" : "yes",
+			nvram_matchi("l2tp_req_auth", 0) ? "no" : "yes", username);
 		fclose(fp);
 
 		/*
@@ -194,9 +180,7 @@ void run_l2tp(int status)
 				"noipdefault\n" //
 				"connect true\n" //
 				"ktune\n",
-				nvram_matchi("ppp_demand", 1) ?
-					nvram_geti("ppp_idletime") * 60 :
-					0);
+				nvram_matchi("ppp_demand", 1) ? nvram_geti("ppp_idletime") * 60 : 0);
 			// to 1 in demand mode if the local
 			// address changes
 		} else { // keepalive mode
@@ -289,8 +273,7 @@ void run_l2tp(int status)
 		else
 			eval("listen", nvram_safe_get("lan_ifname"));
 	} else {
-		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",
-			  nvram_safe_get("l2tp_server_name"));
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control", nvram_safe_get("l2tp_server_name"));
 	}
 
 	cprintf("done\n");
@@ -309,8 +292,7 @@ void start_l2tp_boot(void)
 
 void stop_l2tp(void)
 {
-	route_del(nvram_safe_get("wan_ifname"), 0,
-		  nvram_safe_get("l2tp_server_ip"), NULL, NULL);
+	route_del(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
 

@@ -37,67 +37,48 @@ void start_igmprt(void)
 	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
 	int ifcount = 0;
-	if (nvram_match("wan_proto", "disabled") ||
-	    !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
+	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
 		return;
 
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
 	int fromvlan = 0;
-	fromvlan |=
-		(nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1));
+	fromvlan |= (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1));
 #ifdef HAVE_PPTP
-	fromvlan |=
-		(nvram_match("wan_proto", "pptp") && nvram_exists("tvnicfrom"));
+	fromvlan |= (nvram_match("wan_proto", "pptp") && nvram_exists("tvnicfrom"));
 #endif
 #ifdef HAVE_L2TP
-	fromvlan |=
-		(nvram_match("wan_proto", "l2tp") && nvram_exists("tvnicfrom"));
+	fromvlan |= (nvram_match("wan_proto", "l2tp") && nvram_exists("tvnicfrom"));
 #endif
 #ifdef HAVE_PPPOEDUAL
-	fromvlan |= (nvram_match("wan_proto", "pppoe_dual") &&
-		     nvram_exists("tvnicfrom"));
+	fromvlan |= (nvram_match("wan_proto", "pppoe_dual") && nvram_exists("tvnicfrom"));
 #endif
-	fromvlan |= (nvram_match("wan_proto", "dhcp_auth") &&
-		     nvram_exists("tvnicfrom"));
+	fromvlan |= (nvram_match("wan_proto", "dhcp_auth") && nvram_exists("tvnicfrom"));
 
-	if ((nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) &&
-	     nvram_match("wan_proto", "pppoe")) ||
-	    !fromvlan) {
-		fprintf(fp,
-			"quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",
-			safe_get_wan_face(wan_if_buffer));
+	if ((nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) && nvram_match("wan_proto", "pppoe")) || !fromvlan) {
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", safe_get_wan_face(wan_if_buffer));
 	} else {
-		fprintf(fp,
-			"quickleave\nphyint %s upstream  ratelimit 0  threshold 1 altnet 0.0.0.0/0\n",
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1 altnet 0.0.0.0/0\n",
 			nvram_safe_get("tvnicfrom"));
-		fprintf(fp, "phyint %s disabled\n",
-			safe_get_wan_face(wan_if_buffer));
+		fprintf(fp, "phyint %s disabled\n", safe_get_wan_face(wan_if_buffer));
 	}
 	if (nvram_matchi("block_multicast", 0)) {
-		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
-			nvram_safe_get("lan_ifname"));
+		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", nvram_safe_get("lan_ifname"));
 		ifcount++;
 	} else {
 		fprintf(fp,
 			"phyint %s disabled\n"
 			"phyint %s:0 disabled\n",
-			nvram_safe_get("lan_ifname"),
-			nvram_safe_get("lan_ifname"));
+			nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ifname"));
 	}
 	char ifnames[256];
 
 	getIfLists(ifnames, 256);
 	foreach(name, ifnames, next)
 	{
-		if (strcmp(safe_get_wan_face(wan_if_buffer), name) &&
-		    strcmp(nvram_safe_get("lan_ifname"), name) &&
+		if (strcmp(safe_get_wan_face(wan_if_buffer), name) && strcmp(nvram_safe_get("lan_ifname"), name) &&
 		    strcmp(nvram_safe_get("tvnicfrom"), name)) {
-			if ((nvram_nmatch("0", "%s_bridged", name) ||
-			     isbridge(name)) &&
-			    nvram_nmatch("1", "%s_multicast", name)) {
-				fprintf(fp,
-					"phyint %s downstream  ratelimit 0  threshold 1\n",
-					name);
+			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name)) && nvram_nmatch("1", "%s_multicast", name)) {
+				fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", name);
 				ifcount++;
 			} else
 				fprintf(fp, "phyint %s disabled\n", name);

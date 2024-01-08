@@ -80,11 +80,8 @@ void start_overclock(void) // hidden feature. must be called with
 	int ret1 = 0xff;
 	int ret2 = 0xff;
 	int ret3 = 0xff;
-	if ((ret1 = memcmp(check, values, 8)) &&
-	    (ret2 = memcmp(check2, values, 8)) &&
-	    (ret3 = memcmp(check2, values2, 8))) {
-		fprintf(stderr,
-			"no compatible routerstation bootloader found\n");
+	if ((ret1 = memcmp(check, values, 8)) && (ret2 = memcmp(check2, values, 8)) && (ret3 = memcmp(check2, values2, 8))) {
+		fprintf(stderr, "no compatible routerstation bootloader found\n");
 		fclose(in);
 		return;
 	}
@@ -111,9 +108,8 @@ void start_overclock(void) // hidden feature. must be called with
 			ret = overclock_3(out, "400", 0x6);
 		if (nvram_matchi("cpuclk", 600))
 			ret = overclock_3(out, "600", 0x7);
-		if (nvram_matchi(
-			    "cpuclk",
-			    680)) //special ubiquiti setting with different ddram clock settings
+		if (nvram_matchi("cpuclk",
+				 680)) //special ubiquiti setting with different ddram clock settings
 			ret = overclock_3(out, "680", 0xc);
 		if (nvram_matchi("cpuclk", 720))
 			ret = overclock_3(out, "720",
@@ -132,9 +128,8 @@ void start_overclock(void) // hidden feature. must be called with
 			ret = overclock(out, "400", 0x6);
 		if (nvram_matchi("cpuclk", 600))
 			ret = overclock(out, "600", 0x7);
-		if (nvram_matchi(
-			    "cpuclk",
-			    680)) //special ubiquiti setting with different ddram clock settings
+		if (nvram_matchi("cpuclk",
+				 680)) //special ubiquiti setting with different ddram clock settings
 			ret = overclock(out, "680", 0xa);
 		if (nvram_matchi("cpuclk", 720))
 			ret = overclock(out, "720",
@@ -146,8 +141,7 @@ void start_overclock(void) // hidden feature. must be called with
 	if (!ret) {
 		fprintf(stderr, "write new bootloader\n");
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-		fprintf(stderr, "board now clocked to %sMhz\n",
-			nvram_safe_get("cpuclk"));
+		fprintf(stderr, "board now clocked to %sMhz\n", nvram_safe_get("cpuclk"));
 	}
 	if (ret == 1) {
 		fprintf(stderr,

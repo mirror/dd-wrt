@@ -49,16 +49,13 @@ void start_usteer(void)
 			sprintf(busname, "hostapd.%s", dev);
 			eval("ubus", "-t", "10", "wait_for", busname);
 			if (!ssid_list) {
-				asprintf(&ssid_list, "\"%s\"",
-					 nvram_nget("%s_ssid", dev));
+				asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", dev));
 			} else {
 				char *newssid;
 				char *tmp = ssid_list;
-				asprintf(&newssid, "\"%s\"",
-					 nvram_nget("%s_ssid", dev));
+				asprintf(&newssid, "\"%s\"", nvram_nget("%s_ssid", dev));
 				if (!strstr(ssid_list, newssid)) {
-					asprintf(&ssid_list, "%s,%s", tmp,
-						 newssid);
+					asprintf(&ssid_list, "%s,%s", tmp, newssid);
 					free(tmp);
 				}
 				free(newssid);
@@ -76,16 +73,13 @@ void start_usteer(void)
 				sprintf(busname, "hostapd.%s", var);
 				eval("ubus", "-t", "10", "wait_for", busname);
 				if (!ssid_list) {
-					asprintf(&ssid_list, "\"%s\"",
-						 nvram_nget("%s_ssid", var));
+					asprintf(&ssid_list, "\"%s\"", nvram_nget("%s_ssid", var));
 				} else {
 					char *newssid;
 					char *tmp = ssid_list;
-					asprintf(&newssid, "\"%s\"",
-						 nvram_nget("%s_ssid", var));
+					asprintf(&newssid, "\"%s\"", nvram_nget("%s_ssid", var));
 					if (!strstr(ssid_list, newssid)) {
-						asprintf(&ssid_list, "%s,%s",
-							 tmp, newssid);
+						asprintf(&ssid_list, "%s,%s", tmp, newssid);
 						free(tmp);
 					}
 					free(newssid);
@@ -153,11 +147,8 @@ void start_usteer(void)
 		 "] " //
 		 "} ",
 		 nvram_default_geti("usteer_debug_level", 1), //
-		 nvram_default_geti("usteer_ipv6", 0) ?
-			 (nvram_match("ipv6_enable", "1") ? "true" : "false") :
-			 "false", //
-		 nvram_default_geti("usteer_local_mode", 0) ? "true" :
-							      "false", //
+		 nvram_default_geti("usteer_ipv6", 0) ? (nvram_match("ipv6_enable", "1") ? "true" : "false") : "false", //
+		 nvram_default_geti("usteer_local_mode", 0) ? "true" : "false", //
 		 nvram_default_geti("usteer_sta_block_timeout", 30000), //
 		 nvram_default_geti("usteer_local_sta_timeout", 120000), //
 		 nvram_default_geti("usteer_local_sta_update", 1000), //
@@ -170,8 +161,7 @@ void start_usteer(void)
 		 nvram_default_geti("usteer_band_steering_threshold", 0), //
 		 nvram_default_geti("usteer_remote_update_interval", 1000), //
 		 nvram_default_geti("usteer_remote_node_timeout", 50), //
-		 nvram_default_geti("usteer_assoc_steering", 0) ? "true" :
-								  "false", //
+		 nvram_default_geti("usteer_assoc_steering", 0) ? "true" : "false", //
 		 nvram_default_geti("usteer_min_connect_snr", 0), //
 		 nvram_default_geti("usteer_min_snr", 15), //
 		 nvram_default_geti("usteer_min_snr_kick_delay", 5000), //
@@ -186,8 +176,7 @@ void start_usteer(void)
 		 nvram_default_geti("usteer_roam_kick_delay", 100), //
 		 nvram_default_geti("usteer_signal_diff_threshold", 12), //
 		 nvram_default_geti("usteer_initial_connect_delay", 0), //
-		 nvram_default_geti("usteer_load_kick_enabled", 0) ? "true" :
-								     "false", //
+		 nvram_default_geti("usteer_load_kick_enabled", 0) ? "true" : "false", //
 		 nvram_default_geti("usteer_load_kick_threshold", 75), //
 		 nvram_default_geti("usteer_load_kick_delay", 10000), //
 		 nvram_default_geti("usteer_load_kick_min_clients", 10), //
@@ -197,8 +186,7 @@ void start_usteer(void)
 		 nvram_default_geti("usteer_link_measurement_interval",
 				    30000), //
 		 nvram_default_geti("usteer_budget_5ghz", 5), //
-		 nvram_default_geti("usteer_prefer_5ghz", 0) ? "true" :
-							       "false", //
+		 nvram_default_geti("usteer_prefer_5ghz", 0) ? "true" : "false", //
 		 ssid_list);
 	char *cmdline;
 	int len = strlen(config);

@@ -278,7 +278,7 @@ int stop_process_hard(char *name, char *desc);
 
 void network_delay(char *service);
 
-char *getMacAddr(char *ifname, char *mac,size_t len);
+char *getMacAddr(char *ifname, char *mac, size_t len);
 
 #ifdef HAVE_ATH9K
 void deconfigure_single_ath9k(int count);
@@ -365,6 +365,6 @@ void start_postnetwork(void);
 
 void runStartup(char *extension);
 char *set_wan_state(int state);
-void create_openvpnserverrules(FILE * fp);
-void create_openvpnrules(FILE * fp);
+void create_openvpnserverrules(FILE *fp);
+void create_openvpnrules(FILE *fp);
 #endif

@@ -14,10 +14,9 @@ typedef short rtk_int16;
 typedef unsigned char rtk_uint8;
 typedef char rtk_int8;
 
-#define swapl32(x)                                              \
-	((((x)&0xff000000U) >> 24) | (((x)&0x00ff0000U) >> 8) | \
-	 (((x)&0x0000ff00U) << 8) | (((x)&0x000000ffU) << 24))
-#define swaps16(x) ((((x)&0xff00) >> 8) | (((x)&0x00ff) << 8))
+#define swapl32(x) \
+	((((x) & 0xff000000U) >> 24) | (((x) & 0x00ff0000U) >> 8) | (((x) & 0x0000ff00U) << 8) | (((x) & 0x000000ffU) << 24))
+#define swaps16(x) ((((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8))
 
 #define _LITTLE_ENDIAN
 #undef ntohl
@@ -51,11 +50,7 @@ typedef struct rtk_portmask_s {
 	rtk_uint32 bits[RTK_TOTAL_NUM_OF_WORD_FOR_1BIT_PORT_LIST];
 } rtk_portmask_t;
 
-typedef enum rtk_enable_e {
-	DISABLED = 0,
-	ENABLED,
-	RTK_ENABLE_END
-} rtk_enable_t;
+typedef enum rtk_enable_e { DISABLED = 0, ENABLED, RTK_ENABLE_END } rtk_enable_t;
 
 #ifndef ETHER_ADDR_LEN
 #define ETHER_ADDR_LEN 6

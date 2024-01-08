@@ -102,8 +102,7 @@ static void deconfigure_single(int count)
 		return;
 	}
 #ifdef HAVE_MADWIFI
-	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
-		dev, dev, dev, dev, dev, dev, dev);
+	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev, dev, dev, dev, dev, dev, dev, dev);
 	int s;
 
 	for (s = 1; s <= 10; s++) {
@@ -160,8 +159,7 @@ static int getMaxPower(char *ifname)
 {
 	char buf[128];
 
-	sprintf(buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
-		ifname);
+	sprintf(buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power", ifname);
 	system(buf);
 	FILE *in = fopen("/tmp/.power", "rb");
 
@@ -182,9 +180,7 @@ void setupKey(char *prefix)
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(mode, "%s_mode", prefix);
-	if (nvram_match(akm, "wep") &&
-	    (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") ||
-	     nvram_match(mode, "adhoc"))) {
+	if (nvram_match(akm, "wep") && (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") || nvram_match(mode, "adhoc"))) {
 		char key[16];
 		int cnt = 1;
 		int i;
@@ -200,17 +196,14 @@ void setupKey(char *prefix)
 			char *athkey = nvram_nget("%s_key%d", prefix, i);
 
 			if (athkey != NULL && *athkey) {
-				sysprintf("iwconfig %s key [%d] %s", prefix,
-					  cnt++, athkey); // setup wep
+				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey); // setup wep
 			}
 		}
-		sysprintf("iwconfig %s key [%s]", prefix,
-			  nvram_nget("%s_key", prefix));
+		sysprintf("iwconfig %s key [%s]", prefix, nvram_nget("%s_key", prefix));
 	}
 }
 
-void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc,
-		  int ismesh)
+void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh)
 {
 	char temp_grpstring[256] = { 0, 0 };
 	char akm[16];
@@ -241,23 +234,18 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc,
 		strspcattach(pwstring, "CCMP-256");
 		if (grpstring) {
 			if (ismesh)
-				strspcattach(temp_grpstring,
-					     "CCMP-256 GCMP-256 GCMP CCMP");
+				strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP");
 			else
-				strspcattach(
-					temp_grpstring,
-					"CCMP-256 GCMP-256 GCMP CCMP TKIP");
+				strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp-256", prefix) || iswpa3_192) {
 		strspcattach(pwstring, "GCMP-256");
 		if (grpstring) {
 			if (ismesh)
-				strspcattach(temp_grpstring,
-					     "GCMP-256 GCMP CCMP");
+				strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP");
 			else
-				strspcattach(temp_grpstring,
-					     "GCMP-256 GCMP CCMP TKIP");
+				strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp", prefix) || iswpa3_128) {
@@ -267,11 +255,9 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc,
 				strspcattach(temp_grpstring, "GCMP");
 			else {
 				if (ismesh)
-					strspcattach(temp_grpstring,
-						     "GCMP CCMP");
+					strspcattach(temp_grpstring, "GCMP CCMP");
 				else
-					strspcattach(temp_grpstring,
-						     "GCMP CCMP TKIP");
+					strspcattach(temp_grpstring, "GCMP CCMP TKIP");
 			}
 		}
 	}
@@ -309,8 +295,7 @@ void eap_sta_key_mgmt(FILE *fp, char *prefix)
 	char pwstring[128] = { 0 };
 	char grpstring[128] = { 0 };
 	get_pairwise(prefix, pwstring, grpstring, 0, 0);
-	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 ||
-			  iswpa3_192 || iswpa2sha256)) {
+	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256)) {
 		fprintf(fp, "\tpairwise=%s\n", pwstring);
 		fprintf(fp, "\tgroup=%s\n", grpstring);
 	}
@@ -325,8 +310,7 @@ void eap_sta_key_mgmt(FILE *fp, char *prefix)
 	if (_has_wpa3 && iswpa3_192)
 		fprintf(fp, "WPA-EAP-SUITE-B-192 ");
 #ifdef HAVE_80211R
-	if (nvram_matchi(ft, 1) &&
-	    (iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa2sha256))
+	if (nvram_matchi(ft, 1) && (iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa2sha256))
 		fprintf(fp, "FT-EAP ");
 	if (nvram_matchi(ft, 1) && iswpa3_192)
 		fprintf(fp, "FT-EAP-SHA384 ");
@@ -335,14 +319,11 @@ void eap_sta_key_mgmt(FILE *fp, char *prefix)
 		fprintf(fp, "IEEE8021X ");
 	fprintf(fp, "\n");
 #ifdef HAVE_80211W
-	if ((iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 ||
-	     iswpa2sha256)) {
+	if ((iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256)) {
 		if (nvram_default_matchi(mfp, 1, 0) ||
-		    ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256) &&
-		     (!iswpa && !iswpa2 && !ispsk && !ispsk2)))
+		    ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256) && (!iswpa && !iswpa2 && !ispsk && !ispsk2)))
 			fprintf(fp, "\tieee80211w=2\n");
-		else if (nvram_default_matchi(mfp, -1, 0) || iswpa3_192 ||
-			 iswpa3_128 || iswpa3 || iswpa2sha256)
+		else if (nvram_default_matchi(mfp, -1, 0) || iswpa3_192 || iswpa3_128 || iswpa3 || iswpa2sha256)
 			fprintf(fp, "\tieee80211w=1\n");
 		else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
@@ -359,9 +340,7 @@ int inline issuperchannel(void)
 
 static int cansuperchannel(char *prefix)
 {
-	return (issuperchannel() &&
-		nvram_nmatch("0", "%s_regulatory", prefix) &&
-		nvram_nmatch("ddwrt", "%s_fwtype", prefix));
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
 void addvhtcaps(char *prefix, FILE *fp)
@@ -376,25 +355,17 @@ void addvhtcaps(char *prefix, FILE *fp)
 #define IEEE80211_VHT_CAP_SHORT_GI_80 0x00000020
 #define IEEE80211_VHT_CAP_SHORT_GI_160 0x00000040
 #define IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT 13
-#define IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK \
-	(7 << IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT)
+#define IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK (7 << IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT)
 #define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT 16
-#define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK \
-	(7 << IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT)
+#define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK (7 << IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT)
 
 	unsigned int mask;
-	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath11k(prefix) ||
-	    is_brcmfmac(prefix) || is_mt7915(prefix) || is_mt7921(prefix) ||
-	    is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
+	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath11k(prefix) || is_brcmfmac(prefix) || is_mt7915(prefix) ||
+	    is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (has_ac(prefix) &&
-		    (!strcmp(netmode, "ac-only") ||
-		     strcmp(netmode, "ax-only") ||
-		     !strcmp(netmode, "acn-mixed") ||
-		     !strcmp(netmode, "xacn-mixed") ||
-		     !strcmp(netmode, "mixed") ||
-		     (cansuperchannel(prefix) &&
-		      nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
+		if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || strcmp(netmode, "ax-only") || !strcmp(netmode, "acn-mixed") ||
+				       !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed") ||
+				       (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			char mubf[32];
@@ -489,8 +460,7 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 		eap_sta_key_mgmt(fp, prefix);
 
 		fprintf(fp, "\teap=TLS\n");
-		fprintf(fp, "\tidentity=\"%s\"\n",
-			nvram_prefix_get("tls8021xuser", prefix));
+		fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("tls8021xuser", prefix));
 		sprintf(psk, "/tmp/%s", prefix);
 		mkdir(psk, 0700);
 		sprintf(psk, "/tmp/%s/ca.pem", prefix);
@@ -505,16 +475,13 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 		fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 		fprintf(fp, "\tclient_cert=\"/tmp/%s/user.pem\"\n", prefix);
 		fprintf(fp, "\tprivate_key=\"/tmp/%s/user.prv\"\n", prefix);
-		fprintf(fp, "\tprivate_key_passwd=\"%s\"\n",
-			nvram_prefix_get("tls8021xpasswd", prefix));
+		fprintf(fp, "\tprivate_key_passwd=\"%s\"\n", nvram_prefix_get("tls8021xpasswd", prefix));
 		fprintf(fp, "\teapol_flags=3\n");
 		if (*(nvram_nget("%s_tls8021xphase2", prefix))) {
-			fprintf(fp, "\tphase2=\"%s\"\n",
-				nvram_nget("%s_tls8021xphase2", prefix));
+			fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_tls8021xphase2", prefix));
 		}
 		if (*(nvram_nget("%s_tls8021xanon", prefix))) {
-			fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-				nvram_nget("%s_tls8021xanon", prefix));
+			fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_tls8021xanon", prefix));
 		}
 		if (*(nvram_nget("%s_tls8021xaddopt", prefix))) {
 			sprintf(ath, "%s_tls8021xaddopt", prefix);
@@ -539,10 +506,8 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 		fprintf(fp, "\tscan_ssid=1\n");
 		eap_sta_key_mgmt(fp, prefix);
 		fprintf(fp, "\teap=PEAP\n");
-		fprintf(fp, "\tidentity=\"%s\"\n",
-			nvram_prefix_get("peap8021xuser", prefix));
-		fprintf(fp, "\tpassword=\"%s\"\n",
-			nvram_prefix_get("peap8021xpasswd", prefix));
+		fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("peap8021xuser", prefix));
+		fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("peap8021xpasswd", prefix));
 		sprintf(psk, "/tmp/%s", prefix);
 		mkdir(psk, 0700);
 		sprintf(psk, "/tmp/%s/ca.pem", prefix);
@@ -553,19 +518,16 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 		}
 
 		if (*(nvram_nget("%s_peap8021xphase1", prefix))) {
-			fprintf(fp, "\tphase1=\"%s\"\n",
-				nvram_nget("%s_peap8021xphase1", prefix));
+			fprintf(fp, "\tphase1=\"%s\"\n", nvram_nget("%s_peap8021xphase1", prefix));
 		} else {
 			fprintf(fp, "\tphase1=\"peapver=0\"\n");
 		}
 
 		if (*(nvram_nget("%s_peap8021xphase2", prefix))) {
-			fprintf(fp, "\tphase2=\"%s\"\n",
-				nvram_nget("%s_peap8021xphase2", prefix));
+			fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix));
 		}
 		if (*(nvram_nget("%s_peap8021xanon", prefix))) {
-			fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-				nvram_nget("%s_peap8021xanon", prefix));
+			fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_peap8021xanon", prefix));
 		}
 		if (*(nvram_nget("%s_peap8021xaddopt", prefix))) {
 			sprintf(ath, "%s_peap8021xaddopt", prefix);
@@ -590,10 +552,8 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 		fprintf(fp, "\tscan_ssid=1\n");
 		eap_sta_key_mgmt(fp, prefix);
 		fprintf(fp, "\teap=TTLS\n");
-		fprintf(fp, "\tidentity=\"%s\"\n",
-			nvram_prefix_get("ttls8021xuser", prefix));
-		fprintf(fp, "\tpassword=\"%s\"\n",
-			nvram_prefix_get("ttls8021xpasswd", prefix));
+		fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("ttls8021xuser", prefix));
+		fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("ttls8021xpasswd", prefix));
 		if (*(nvram_nget("%s_ttls8021xca", prefix))) {
 			sprintf(psk, "/tmp/%s", prefix);
 			mkdir(psk, 0700);
@@ -603,12 +563,10 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 			fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 		}
 		if (*(nvram_nget("%s_ttls8021xphase2", prefix))) {
-			fprintf(fp, "\tphase2=\"%s\"\n",
-				nvram_nget("%s_ttls8021xphase2", prefix));
+			fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix));
 		}
 		if (*(nvram_nget("%s_ttls8021xanon", prefix))) {
-			fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-				nvram_nget("%s_ttls8021xanon", prefix));
+			fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_ttls8021xanon", prefix));
 		}
 		if (*(nvram_nget("%s_ttls8021xaddopt", prefix))) {
 			sprintf(ath, "%s_ttls8021xaddopt", prefix);
@@ -635,17 +593,13 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 		fprintf(fp, "\teap=LEAP\n");
 		fprintf(fp, "\tauth_alg=LEAP\n");
 		fprintf(fp, "\tproto=WPA RSN\n");
-		fprintf(fp, "\tidentity=\"%s\"\n",
-			nvram_prefix_get("leap8021xuser", prefix));
-		fprintf(fp, "\tpassword=\"%s\"\n",
-			nvram_prefix_get("leap8021xpasswd", prefix));
+		fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("leap8021xuser", prefix));
+		fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("leap8021xpasswd", prefix));
 		if (*(nvram_nget("%s_leap8021xphase2", prefix))) {
-			fprintf(fp, "\tphase2=\"%s\"\n",
-				nvram_nget("%s_leap8021xphase2", prefix));
+			fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_leap8021xphase2", prefix));
 		}
 		if (*(nvram_nget("%s_leap8021xanon", prefix))) {
-			fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-				nvram_nget("%s_leap8021xanon", prefix));
+			fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_leap8021xanon", prefix));
 		}
 		if (*(nvram_nget("%s_leap8021xaddopt", prefix))) {
 			sprintf(ath, "%s_leap8021xaddopt", prefix);
@@ -667,10 +621,8 @@ void check_cryptomod(char *prefix)
 		sprintf(akm, "%s_akm", prefix);
 		int w = nvram_default_geti(mfp, 0);
 
-		if (w == 1 || w == -1 || nvhas(akm, "psk3") ||
-		    nvhas(akm, "owe") || nvhas(akm, "wpa3") ||
-		    nvhas(akm, "wpa3-192") || nvhas(akm, "wpa3-128") ||
-		    nvhas(akm, "wpa2-sha256") || nvhas(akm, "psk2-sha256"))
+		if (w == 1 || w == -1 || nvhas(akm, "psk3") || nvhas(akm, "owe") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192") ||
+		    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa2-sha256") || nvhas(akm, "psk2-sha256"))
 			insmod("gf128mul ghash-generic gcm");
 	}
 }
@@ -749,8 +701,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=%s\n",
-			nvram_default_get(eapol, "1"));
+		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 		if (ispsk3)
 			fprintf(fp, "\tsae_groups=19 20 21\n");
 
@@ -858,27 +809,18 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta") ||
-		     nvram_match(wmode, "mesh") ||
-		     nvram_match(wmode, "wdssta_mtik")) &&
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b",
-				 getBridge(prefix, tmp), background, driver,
-				 psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background,
-				 driver, psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") ||
-		     nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") ||
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") ||
 		     nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b",
-				 getBridge(prefix, tmp), background, driver,
-				 psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background,
-				 driver, psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #endif
 	} else if (ispeap || isleap || istls || isttls) {
 		char fstr[32];
@@ -893,8 +835,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=%s\n",
-			nvram_default_get(eapol, "1"));
+		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		eap_sta_config(fp, prefix, ssidoverride, 0);
@@ -907,27 +848,18 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		eval("iwpriv", prefix, "hostroaming", "2");
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1) &&
-		    (nvram_match(wmode, "wdssta") ||
-		     nvram_match(wmode, "mesh") ||
-		     nvram_match(wmode, "wdssta_mtik")))
-			log_eval("wpa_supplicant", "-P", pid, "-b",
-				 nvram_safe_get("lan_ifname"), background,
-				 driver, psk, "-c", fstr);
+		    (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")))
+			log_eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c",
+				 fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background,
-				 driver, psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
-		if (nvram_matchi(bridged, 1) &&
-		    (nvram_match(wmode, "wdssta") ||
-		     nvram_match(wmode, "mesh") ||
-		     nvram_match(wmode, "wdssta_mtik") ||
-		     nvram_match(wmode, "wet")))
-			log_eval("wpa_supplicant", "-P", pid, "-b",
-				 nvram_safe_get("lan_ifname"), background,
-				 driver, psk, "-c", fstr);
+		if (nvram_matchi(bridged, 1) && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") ||
+						 nvram_match(wmode, "wdssta_mtik") || nvram_match(wmode, "wet")))
+			log_eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c",
+				 fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background,
-				 driver, psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 
 #endif
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
@@ -965,8 +897,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "auth_alg=OPEN\n");
 
 			for (i = 1; i < 5; i++) {
-				char *athkey =
-					nvram_nget("%s_key%d", prefix, i);
+				char *athkey = nvram_nget("%s_key%d", prefix, i);
 
 				if (athkey != NULL && *athkey) {
 					fprintf(fp, "wep_key%d=%s\n", cnt++,
@@ -974,8 +905,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				}
 			}
 
-			fprintf(fp, "wep_tx_keyidx=%s\n",
-				nvram_nget("%s_key", prefix));
+			fprintf(fp, "wep_tx_keyidx=%s\n", nvram_nget("%s_key", prefix));
 		}
 		fprintf(fp, "}\n");
 		char extra[32];
@@ -985,27 +915,18 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta") ||
-		     nvram_match(wmode, "mesh") ||
-		     nvram_match(wmode, "wdssta_mtik")) &&
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b",
-				 getBridge(prefix, tmp), background, driver,
-				 psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background,
-				 driver, psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") ||
-		     nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") ||
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") ||
 		     nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b",
-				 getBridge(prefix, tmp), background, driver,
-				 psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background,
-				 driver, psk, "-c", fstr);
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #endif
 	}
 }
@@ -1031,8 +952,7 @@ void do_hostapd(char *fstr, char *prefix)
 		if (pid > 0)
 			kill(pid, SIGTERM);
 	}
-	char *argv[] = { "hostapd", "-B", "-P", fname, NULL,
-			 NULL,	    NULL, NULL, NULL };
+	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL };
 	int argc = 4;
 	debug = nvram_ngeti("%s_wpa_debug", prefix);
 	char file[64];
@@ -1059,10 +979,8 @@ static void checkhostapd(char *ifname, int force)
 	int sup = 0;
 	char fname[32];
 	FILE *fp = NULL;
-	if (nvram_nmatch("mesh", "%s_mode", ifname) ||
-	    nvram_nmatch("sta", "%s_mode", ifname) ||
-	    nvram_nmatch("wdssta", "%s_mode", ifname) ||
-	    nvram_nmatch("wdssta_mtik", "%s_mode", ifname) ||
+	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) ||
+	    nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("wdssta_mtik", "%s_mode", ifname) ||
 	    nvram_nmatch("infra", "%s_mode", ifname))
 		sup = 1;
 	if (sup) {
@@ -1099,32 +1017,22 @@ static void checkhostapd(char *ifname, int force)
 			} else {
 				char cmdline[128];
 				fscanf(fp, "%s", cmdline);
-				if (strncmp(cmdline, "hostapd", 7) &&
-				    strncmp(cmdline, "wpa_supplicant", 14))
+				if (strncmp(cmdline, "hostapd", 7) && strncmp(cmdline, "wpa_supplicant", 14))
 					needrestart = 1;
 				fclose(fp);
 			}
 			if (needrestart) {
 				char fstr[32];
 				if (sup)
-					sprintf(fstr,
-						"/tmp/%s_wpa_supplicant.conf",
-						ifname);
+					sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", ifname);
 				else
-					sprintf(fstr, "/tmp/%s_hostap.conf",
-						ifname);
+					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
 				if (force == 1) {
-					dd_loginfo(
-						sup ? "wpa_supplicant" :
-						      "hostapd",
-						"daemon on %s with pid %d is forced to be restarted....\n",
-						ifname, pid);
+					dd_loginfo(sup ? "wpa_supplicant" : "hostapd",
+						   "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
 				} else {
-					dd_loginfo(
-						sup ? "wpa_supplicant" :
-						      "hostapd",
-						"daemon on %s with pid %d died, restarting....\n",
-						ifname, pid);
+					dd_loginfo(sup ? "wpa_supplicant" : "hostapd",
+						   "daemon on %s with pid %d died, restarting....\n", ifname, pid);
 				}
 				if (sup) {
 					start_deconfigurewifi();
@@ -1139,18 +1047,10 @@ static void checkhostapd(char *ifname, int force)
 					char bridged[32];
 					sprintf(bridged, "%s_bridged", ifname);
 					if (nvram_matchi(bridged, 0)) {
-						eval("ifconfig", ifname, "mtu",
-						     getMTU(ifname));
-						eval("ifconfig", ifname,
-						     "txqueuelen",
-						     getTXQ(ifname));
-						eval("ifconfig", ifname,
-						     nvram_nget("%s_ipaddr",
-								ifname),
-						     "netmask",
-						     nvram_nget("%s_netmask",
-								ifname),
-						     "up");
+						eval("ifconfig", ifname, "mtu", getMTU(ifname));
+						eval("ifconfig", ifname, "txqueuelen", getTXQ(ifname));
+						eval("ifconfig", ifname, nvram_nget("%s_ipaddr", ifname), "netmask",
+						     nvram_nget("%s_netmask", ifname), "up");
 					}
 				}
 				char *vifs = nvram_nget("%s_vifs", ifname);
@@ -1159,17 +1059,10 @@ static void checkhostapd(char *ifname, int force)
 					char bridged[32];
 					sprintf(bridged, "%s_bridged", var);
 					if (nvram_matchi(bridged, 0)) {
-						eval("ifconfig", var, "mtu",
-						     getMTU(var));
-						eval("ifconfig", var,
-						     "txqueuelen", getTXQ(var));
-						eval("ifconfig", var,
-						     nvram_nget("%s_ipaddr",
-								var),
-						     "netmask",
-						     nvram_nget("%s_netmask",
-								var),
-						     "up");
+						eval("ifconfig", var, "mtu", getMTU(var));
+						eval("ifconfig", var, "txqueuelen", getTXQ(var));
+						eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask",
+						     nvram_nget("%s_netmask", var), "up");
 					}
 				}
 			}
@@ -1229,9 +1122,7 @@ void get_uuid(char *uuid_str)
 	const unsigned char *addr[2];
 	unsigned int len[2];
 	unsigned char hash[20];
-	unsigned char nsid[16] = { 0x52, 0x64, 0x80, 0xf8, 0xc9, 0x9b,
-				   0x4b, 0xe5, 0xa6, 0x55, 0x58, 0xed,
-				   0x5f, 0x5d, 0x60, 0x84 };
+	unsigned char nsid[16] = { 0x52, 0x64, 0x80, 0xf8, 0xc9, 0x9b, 0x4b, 0xe5, 0xa6, 0x55, 0x58, 0xed, 0x5f, 0x5d, 0x60, 0x84 };
 	unsigned char bin[16];
 	sha1_ctx_t ctx;
 
@@ -1255,9 +1146,8 @@ void get_uuid(char *uuid_str)
 	sprintf(uuid_str,
 		"%02x%02x%02x%02x-%02x%02x-%02x%02x-"
 		"%02x%02x-%02x%02x%02x%02x%02x%02x",
-		bin[0], bin[1], bin[2], bin[3], bin[4], bin[5], bin[6], bin[7],
-		bin[8], bin[9], bin[10], bin[11], bin[12], bin[13], bin[14],
-		bin[15]);
+		bin[0], bin[1], bin[2], bin[3], bin[4], bin[5], bin[6], bin[7], bin[8], bin[9], bin[10], bin[11], bin[12], bin[13],
+		bin[14], bin[15]);
 }
 
 #endif
@@ -1280,74 +1170,55 @@ void setupHS20(FILE *fp, char *prefix)
 		if (nvram_nmatch("", "%s_anqp_domain_id", prefix))
 			fprintf(fp, "anqp_domain_id=1234\n");
 		else
-			fprintf(fp, "anqp_domain_id=%s\n",
-				nvram_nget("%s_anqp_domain_id", prefix));
+			fprintf(fp, "anqp_domain_id=%s\n", nvram_nget("%s_anqp_domain_id", prefix));
 
 		if (nvram_nmatch("", "%s_hs20_deauth_req_timeout", prefix))
 			fprintf(fp, "hs20_deauth_req_timeout=60\n");
 		else
-			fprintf(fp, "hs20_deauth_req_timeout=%s\n",
-				nvram_nget("%s_hs20_deauth_req_timeout",
-					   prefix));
+			fprintf(fp, "hs20_deauth_req_timeout=%s\n", nvram_nget("%s_hs20_deauth_req_timeout", prefix));
 
 		int i;
 		for (i = 0; i < 10; i++) {
-			if (nvram_nmatch("", "%s_hs20_oper_friendly_name%d",
-					 prefix, i))
+			if (nvram_nmatch("", "%s_hs20_oper_friendly_name%d", prefix, i))
 				continue;
-			fprintf(fp, "hs20_oper_friendly_name=%s\n",
-				nvram_nget("%s_hs20_oper_friendly_name%d",
-					   prefix, i));
+			fprintf(fp, "hs20_oper_friendly_name=%s\n", nvram_nget("%s_hs20_oper_friendly_name%d", prefix, i));
 		}
 
 		for (i = 0; i < 10; i++) {
 			if (nvram_nmatch("", "%s_hs20_conn_capab%d", prefix, i))
 				continue;
-			fprintf(fp, "hs20_conn_capab=%s\n",
-				nvram_nget("%s_hs20_conn_capab%d", prefix, i));
+			fprintf(fp, "hs20_conn_capab=%s\n", nvram_nget("%s_hs20_conn_capab%d", prefix, i));
 		}
 		if (nvram_nmatch("", "%s_hs20_wan_metrics", prefix))
-			fprintf(fp,
-				"hs20_wan_metrics=01:50000:50000:80:240:0\n");
+			fprintf(fp, "hs20_wan_metrics=01:50000:50000:80:240:0\n");
 		else
-			fprintf(fp, "hs20_wan_metrics=%s\n",
-				nvram_nget("%s_hs20_wan_metrics", prefix));
+			fprintf(fp, "hs20_wan_metrics=%s\n", nvram_nget("%s_hs20_wan_metrics", prefix));
 
 		if (nvram_nmatch("", "%s_hs20_operating_class", prefix))
 			fprintf(fp, "hs20_operating_class=5173\n");
 		else
-			fprintf(fp, "hs20_operating_class=%s\n",
-				nvram_nget("%s_hs20_operating_class", prefix));
+			fprintf(fp, "hs20_operating_class=%s\n", nvram_nget("%s_hs20_operating_class", prefix));
 
 		if (!nvram_nmatch("", "%s_osu_ssid", prefix))
-			fprintf(fp, "osu_ssid=\"%s\"\n",
-				nvram_nget("%s_osu_ssid", prefix));
+			fprintf(fp, "osu_ssid=\"%s\"\n", nvram_nget("%s_osu_ssid", prefix));
 
 		if (nvram_nmatch("", "%s_osu_server_uri", prefix, i))
-			fprintf(fp, "osu_server_uri=%s\n",
-				nvram_nget("%s_osu_server_uri", prefix));
+			fprintf(fp, "osu_server_uri=%s\n", nvram_nget("%s_osu_server_uri", prefix));
 
 		for (i = 0; i < 10; i++) {
-			if (nvram_nmatch("", "%s_osu_friendly_name%d", prefix,
-					 i))
+			if (nvram_nmatch("", "%s_osu_friendly_name%d", prefix, i))
 				continue;
-			fprintf(fp, "osu_friendly_name=%s\n",
-				nvram_nget("%s_osu_friendly_name%d", prefix,
-					   i));
+			fprintf(fp, "osu_friendly_name=%s\n", nvram_nget("%s_osu_friendly_name%d", prefix, i));
 		}
 		if (nvram_nmatch("", "%s_nai", prefix, i))
-			fprintf(fp, "osu_nai=%s\n",
-				nvram_nget("%s_osu_nai", prefix));
+			fprintf(fp, "osu_nai=%s\n", nvram_nget("%s_osu_nai", prefix));
 
 		if (nvram_nmatch("", "%s_osu_method_list", prefix, i))
-			fprintf(fp, "osu_method_list=%s\n",
-				nvram_nget("%s_osu_method_list", prefix));
+			fprintf(fp, "osu_method_list=%s\n", nvram_nget("%s_osu_method_list", prefix));
 		for (i = 0; i < 10; i++) {
-			if (nvram_nmatch("", "%s_osu_service_desc%d", prefix,
-					 i))
+			if (nvram_nmatch("", "%s_osu_service_desc%d", prefix, i))
 				continue;
-			fprintf(fp, "osu_service_desc=%s\n",
-				nvram_nget("%s_osu_service_desc%d", prefix, i));
+			fprintf(fp, "osu_service_desc=%s\n", nvram_nget("%s_osu_service_desc%d", prefix, i));
 		}
 	}
 }
@@ -1362,9 +1233,7 @@ void addWPS(FILE *fp, char *prefix, int configured)
 	if (!strcmp(prefix, "wlan0") || !strcmp(prefix, "wlan1")) {
 		fprintf(fp, "eap_server=1\n");
 		if (nvram_matchi("wps_enabled", 1)) {
-			config_methods = (char *)realloc(
-				config_methods, strlen(config_methods) +
-							sizeof(" push_button"));
+			config_methods = (char *)realloc(config_methods, strlen(config_methods) + sizeof(" push_button"));
 			strcat(config_methods, " push_button");
 		}
 		//# WPS configuration (AP configured, do not allow external WPS Registrars)
@@ -1395,10 +1264,8 @@ void addWPS(FILE *fp, char *prefix, int configured)
 		}
 		if (nvram_matchi("wps_registrar", 1)) {
 			fprintf(fp, "ap_setup_locked=0\n");
-			fprintf(fp, "upnp_iface=%s\n",
-				nvram_safe_get("lan_ifname"));
-			fprintf(fp,
-				"model_description=Wireless Access Point\n");
+			fprintf(fp, "upnp_iface=%s\n", nvram_safe_get("lan_ifname"));
+			fprintf(fp, "model_description=Wireless Access Point\n");
 			//# If UUID is not configured, it will be generated based on local MAC address.
 			char uuid[64];
 			get_uuid(uuid);
@@ -1420,8 +1287,7 @@ void addWPS(FILE *fp, char *prefix, int configured)
 		fprintf(fp, "device_type=6-0050F204-1\n");
 		fprintf(fp, "os_version=01020300\n");
 #ifdef HAVE_BUFFALO
-		fprintf(fp, "friendly_name=BUFFALO %s\n",
-			nvram_safe_get("DD_BOARD"));
+		fprintf(fp, "friendly_name=BUFFALO %s\n", nvram_safe_get("DD_BOARD"));
 #else
 		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
 #endif
@@ -1449,15 +1315,11 @@ void start_ses_led_control(void)
 		sprintf(net, "%s_net_mode", ath);
 		if (nvram_match(net, "disabled"))
 			continue;
-		if (nvram_nmatch("ap", "%s_mode", ath) ||
-		    nvram_nmatch("wdsap", "%s_mode", ath)) {
+		if (nvram_nmatch("ap", "%s_mode", ath) || nvram_nmatch("wdsap", "%s_mode", ath)) {
 			sprintf(akm, "%s_akm", ath);
-			if (nvhas(akm, "psk") || nvhas(akm, "psk2") ||
-			    nvhas(akm, "psk3") || nvhas(akm, "owe") ||
-			    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") ||
-			    nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||
-			    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192") ||
-			    nvhas(akm, "wpa2-sha256") ||
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
+			    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||
+			    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256") ||
 			    nvram_match(akm, "wep")) {
 				if (!strncmp(ath, "wlan0", 4))
 					led_control(LED_SEC0, LED_ON);
@@ -1471,14 +1333,9 @@ void start_ses_led_control(void)
 			foreach(var, vifs, next)
 			{
 				sprintf(akm, "%s_akm", var);
-				if (nvhas(akm, "psk") || nvhas(akm, "psk2") ||
-				    nvhas(akm, "psk3") || nvhas(akm, "owe") ||
-				    nvhas(akm, "psk2-sha256") ||
-				    nvhas(akm, "wpa") || nvhas(akm, "wpa2") ||
-				    nvhas(akm, "wpa3") ||
-				    nvhas(akm, "wpa3-128") ||
-				    nvhas(akm, "wpa3-192") ||
-				    nvhas(akm, "wpa2-sha256") ||
+				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
+				    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||
+				    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256") ||
 				    nvram_match(akm, "wep")) {
 					if (!strncmp(var, "wlan0", 4))
 						led_control(LED_SEC0, LED_ON);
@@ -1555,8 +1412,7 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 	int wpamask = 0;
 	if (ispsk || iswpa)
 		wpamask |= 1;
-	if (ispsk2 || ispsk3 || isowe || iswpa2 || iswpa3 || iswpa3_192 ||
-	    iswpa3_128 || iswpa2sha256 || ispsk2sha256)
+	if (ispsk2 || ispsk3 || isowe || iswpa2 || iswpa3 || iswpa3_192 || iswpa3_128 || iswpa2sha256 || ispsk2sha256)
 		wpamask |= 2;
 	fprintf(fp, "wpa=%d\n", wpamask);
 	if (ispsk)
@@ -1582,14 +1438,12 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 	if (iswpa3_192)
 		nvram_nseti(1, "%s_wpa3-192", prefix);
 #ifdef HAVE_80211W
-	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
-	     ispsk2sha256 || isowe || ispsk3) &&
+	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256 || isowe || ispsk3) &&
 	    (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=2\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
-	} else if (ispsk3 || ispsk2sha256 ||
-		   isowe && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
+	} else if (ispsk3 || ispsk2sha256 || isowe && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=1\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
@@ -1597,8 +1451,7 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 		fprintf(fp, "ieee80211w=2\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
-	} else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || isowe ||
-		   iswpa3 || iswpa3_192 || iswpa3_128 || ispsk2sha256 ||
+	} else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || isowe || iswpa3 || iswpa3_192 || iswpa3_128 || ispsk2sha256 ||
 		   iswpa2sha256) {
 		fprintf(fp, "ieee80211w=1\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
@@ -1613,11 +1466,9 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 		fprintf(fp, "sae_password=%s\n", sae_key);
 	} else if (ispsk || ispsk2 || ispsk2sha256 || ispsk3) {
 		if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
-			fprintf(fp, "wpa_psk=%s\n",
-				nvram_nget("%s_wpa_psk", prefix));
+			fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", prefix));
 		else
-			fprintf(fp, "wpa_passphrase=%s\n",
-				nvram_nget("%s_wpa_psk", prefix));
+			fprintf(fp, "wpa_passphrase=%s\n", nvram_nget("%s_wpa_psk", prefix));
 	}
 	fprintf(fp, "wpa_key_mgmt=");
 	if (ispsk2 || ispsk)
@@ -1643,39 +1494,32 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 		fprintf(fp, "FT-PSK ");
 	if (nvram_matchi(ft, 1) && (iswpa3_192))
 		fprintf(fp, "FT-EAP-SHA384 ");
-	if (nvram_matchi(ft, 1) &&
-	    (iswpa || iswpa2 || iswpa3 || iswpa2sha256 || iswpa3_128))
+	if (nvram_matchi(ft, 1) && (iswpa || iswpa2 || iswpa3 || iswpa2sha256 || iswpa3_128))
 		fprintf(fp, "FT-EAP ");
 #endif
 	fprintf(fp, "\n");
 	if (_has_wpa3 && isowe) {
-		fprintf(fp, "owe_transition_ifname=%s\n",
-			nvram_nget("%s_owe_ifname", prefix));
+		fprintf(fp, "owe_transition_ifname=%s\n", nvram_nget("%s_owe_ifname", prefix));
 		fprintf(fp, "owe_groups=19 20 21\n");
 	}
 	if (_has_wpa3 && ispsk3)
 		fprintf(fp, "sae_groups=19 20 21\n");
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1) &&
-	    (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 ||
-	     iswpa3 || iswpa2sha256 || iswpa3_128 || iswpa3_192)) {
+	    (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa3 || iswpa2sha256 || iswpa3_128 || iswpa3_192)) {
 		char dl[32];
-		fprintf(fp, "nas_identifier=%s\n",
-			nvram_nget("%s_nas", prefix));
-		fprintf(fp, "mobility_domain=%s\n",
-			nvram_nget("%s_domain", prefix));
+		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
+		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
 		sprintf(dl, "%s_ft_over_ds", prefix);
 		fprintf(fp, "ft_over_ds=%d\n", nvram_default_geti(dl, 0));
 		fprintf(fp, "ft_psk_generate_local=1\n");
 		fprintf(fp, "pmk_r1_push=1\n");
 		sprintf(dl, "%s_deadline", prefix);
-		fprintf(fp, "reassociation_deadline=%d\n",
-			nvram_default_geti(dl, 1000));
+		fprintf(fp, "reassociation_deadline=%d\n", nvram_default_geti(dl, 1000));
 		// todo. add key holders
 	}
 #endif
-	if (iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 ||
-	    iswpa2sha256) {
+	if (iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256) {
 		fprintf(fp, "ieee8021x=1\n");
 		char local_ip[32];
 		sprintf(local_ip, "%s_local_ip", prefix);
@@ -1685,15 +1529,13 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 			fprintf(fp, "own_ip_addr=%s\n", lip);
 		} else {
 			if (nvram_match("wan_proto", "disabled"))
-				fprintf(fp, "own_ip_addr=%s\n",
-					nvram_safe_get("lan_ipaddr"));
+				fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 			else {
 				char *wip = get_wan_ipaddr();
 				if (*wip)
 					fprintf(fp, "own_ip_addr=%s\n", wip);
 				else
-					fprintf(fp, "own_ip_addr=%s\n",
-						nvram_safe_get("lan_ipaddr"));
+					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 			}
 		}
 
@@ -1701,37 +1543,26 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 		fprintf(fp, "auth_algs=1\n");
 		char retry[32];
 		sprintf(retry, "%s_radius_retry", prefix);
-		fprintf(fp, "radius_retry_primary_interval=%s\n",
-			nvram_default_get(retry, "600"));
+		fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
 		types = hostapd_eap_get_types();
 		fprintf(fp, "%s", types);
 		free(types);
-		fprintf(fp, "auth_server_addr=%s\n",
-			nvram_nget("%s_radius_ipaddr", prefix));
-		fprintf(fp, "auth_server_port=%s\n",
-			nvram_nget("%s_radius_port", prefix));
-		fprintf(fp, "auth_server_shared_secret=%s\n",
-			nvram_nget("%s_radius_key", prefix));
+		fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", prefix));
+		fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", prefix));
+		fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", prefix));
 		char check[64];
 		sprintf(check, "%s_radius2_ipaddr", prefix);
 		nvram_default_get(check, "0.0.0.0");
-		if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix) &&
-		    !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", prefix) &&
+		if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix) && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", prefix) &&
 		    !nvram_nmatch("", "%s_radius2_port", prefix)) {
-			fprintf(fp, "auth_server_addr=%s\n",
-				nvram_nget("%s_radius2_ipaddr", prefix));
-			fprintf(fp, "auth_server_port=%s\n",
-				nvram_nget("%s_radius2_port", prefix));
-			fprintf(fp, "auth_server_shared_secret=%s\n",
-				nvram_nget("%s_radius2_key", prefix));
+			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius2_ipaddr", prefix));
+			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius2_port", prefix));
+			fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius2_key", prefix));
 		}
 		if (nvram_nmatch("1", "%s_acct", prefix)) {
-			fprintf(fp, "acct_server_addr=%s\n",
-				nvram_nget("%s_acct_ipaddr", prefix));
-			fprintf(fp, "acct_server_port=%s\n",
-				nvram_nget("%s_acct_port", prefix));
-			fprintf(fp, "acct_server_shared_secret=%s\n",
-				nvram_nget("%s_acct_key", prefix));
+			fprintf(fp, "acct_server_addr=%s\n", nvram_nget("%s_acct_ipaddr", prefix));
+			fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", prefix));
+			fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", prefix));
 		}
 	}
 	char pwstring[128] = { 0 };
@@ -1775,9 +1606,8 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 		else if (iswpa3_128)
 			fprintf(fp, "group_mgmt_cipher=BIP-GMAC-128\n");
 #ifdef HAVE_80211W
-		else if (nvram_default_matchi(mfp, -1, 0) ||
-			 nvram_default_matchi(mfp, 1, 0) || ispsk3 || isowe ||
-			 iswpa3 || ispsk2sha256 || iswpa2sha256)
+		else if (nvram_default_matchi(mfp, -1, 0) || nvram_default_matchi(mfp, 1, 0) || ispsk3 || isowe || iswpa3 ||
+			 ispsk2sha256 || iswpa2sha256)
 			fprintf(fp, "group_mgmt_cipher=AES-128-CMAC\n");
 #endif
 	}
@@ -1788,8 +1618,7 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 		fprintf(fp, "disable_pmksa_caching=1\n");
 	}
 	sprintf(rekey, "%s_wpa_strict_rekey", prefix);
-	fprintf(fp, "wpa_group_rekey=%s\n",
-		nvram_nget("%s_wpa_gtk_rekey", prefix));
+	fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 	fprintf(fp, "wpa_strict_rekey=%d\n", nvram_default_geti(rekey, 0));
 	if (ispsk3 || ispsk || ispsk2 || ispsk2sha256)
 		addWPS(fp, prefix, 1);
@@ -1860,14 +1689,13 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);
 			}
 		}
-		fprintf(fp, "wep_default_key=%d\n",
-			atoi(nvram_nget("%s_key", prefix)) - 1);
+		fprintf(fp, "wep_default_key=%d\n", atoi(nvram_nget("%s_key", prefix)) - 1);
 		addWPS(fp, prefix, 1);
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
-	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 ||
-		   iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
+	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
+		   ispsk2sha256) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
@@ -1906,8 +1734,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			pragma = "-n3 ";
 		if (nvram_matchi(type, 3))
 			pragma = "";
-		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix,
-			  server, port, share);
+		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix, server, port, share);
 	} else {
 		eval("iwconfig", prefix, "key", "off");
 	}
@@ -1991,22 +1818,19 @@ static void set_rate(char *dev, char *priv)
 #endif
 
 	if (nvram_matchi(bw, 20) && nvram_matchi(xr, 0))
-		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f ||
-		    atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f ||
-		    atof(r) == 13.5f) {
+		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f ||
+		    atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_matchi(bw, 40))
-		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f ||
-		    atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f ||
-		    atof(r) == 13.5f) {
+		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f ||
+		    atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_matchi(bw, 10))
-		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f ||
-		    atof(r) == 13.5f) {
+		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 13.5f) {
 			nvram_seti(rate, 0);
 			r = "0";
 		}
@@ -2291,8 +2115,7 @@ static void configure_single(int count)
 	// create original primary interface
 	apm = nvram_default_get(wl, "ap");
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
-		eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode",
-		     "ap");
+		eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
 		strcpy(primary, dev);
 	}
 
@@ -2303,21 +2126,13 @@ static void configure_single(int count)
 			char *vapm = nvram_default_get(mode, "ap");
 			// create device
 			if (*mode) {
-				if (!strcmp(vapm, "wet") ||
-				    !strcmp(vapm, "sta") ||
-				    !strcmp(vapm, "wdssta") ||
+				if (!strcmp(vapm, "wet") || !strcmp(vapm, "sta") || !strcmp(vapm, "wdssta") ||
 				    !strcmp(vapm, "wdssta_mtik"))
-					eval("wlanconfig", var, "create",
-					     "wlandev", wif, "wlanmode", "sta",
-					     "nosbeacon");
-				else if (!strcmp(vapm, "ap") ||
-					 !strcmp(vapm, "wdsap"))
-					eval("wlanconfig", var, "create",
-					     "wlandev", wif, "wlanmode", "ap");
+					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
+				else if (!strcmp(vapm, "ap") || !strcmp(vapm, "wdsap"))
+					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "ap");
 				else
-					eval("wlanconfig", var, "create",
-					     "wlandev", wif, "wlanmode",
-					     "adhoc", "nosbeacon");
+					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "adhoc", "nosbeacon");
 				vif = 1;
 				if (!*primary)
 					strcpy(primary, var);
@@ -2332,21 +2147,16 @@ static void configure_single(int count)
 		}
 
 	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
-		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta") ||
-		    !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "sta")) {
+		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "sta")) {
 			if (vif)
-				eval("wlanconfig", dev, "create", "wlandev",
-				     wif, "wlanmode", "sta", "nosbeacon");
+				eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
 			else
-				eval("wlanconfig", dev, "create", "wlandev",
-				     wif, "wlanmode", "sta");
+				eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
 
 		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-			eval("wlanconfig", dev, "create", "wlandev", wif,
-			     "wlanmode", "ap");
+			eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
 		else
-			eval("wlanconfig", dev, "create", "wlandev", wif,
-			     "wlanmode", "adhoc", "nosbeacon");
+			eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc", "nosbeacon");
 
 		if (!*primary)
 			strcpy(primary, dev);
@@ -2446,15 +2256,13 @@ static void configure_single(int count)
 	if (level < 0)
 		level = 4;
 	setsysctrl(wif, "noise_immunity", level);
-	setsysctrl(wif, "ofdm_weak_det",
-		   nvram_default_geti(wl_ofdm_weak_det, 1));
+	setsysctrl(wif, "ofdm_weak_det", nvram_default_geti(wl_ofdm_weak_det, 1));
 
 	if (isEMP(dev)) //check this only if the current installed card is usually a emp card. this is made to prevent card destruction
 	{
 		if (nvram_nmatch("1", "%s_cardtype", dev)) {
-			setsysctrl(
-				wif, "powerfix",
-				7); //increase outputpower by 7 dbm, we will do this in future for a and b band separate
+			setsysctrl(wif, "powerfix",
+				   7); //increase outputpower by 7 dbm, we will do this in future for a and b band separate
 		}
 	}
 
@@ -2479,8 +2287,7 @@ static void configure_single(int count)
 	int gpio = 2;
 #endif
 
-#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || \
-	defined(HAVE_LC5) || defined(HAVE_NS3)
+#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
 	int tx = nvram_default_geti(txantenna, 0);
 	setsysctrl(wif, "diversity", 0);
 	switch (tx) {
@@ -2569,8 +2376,7 @@ static void configure_single(int count)
 		eval("iwpriv", dev, "channelshift", "0");
 		break;
 	}
-	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap") ||
-	    !strcmp(apm, "wdssta_mtik"))
+	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap") || !strcmp(apm, "wdssta_mtik"))
 		eval("iwpriv", dev, "wds", "1");
 
 	if (!strcmp(apm, "wdsap"))
@@ -2588,8 +2394,7 @@ static void configure_single(int count)
 			sprintf(ssid, "%s_ssid", var);
 			sprintf(mode, "%s_mode", var);
 			sprintf(maxassoc, "%s_maxassoc", var);
-			eval("iwpriv", var, "maxassoc",
-			     nvram_default_get(maxassoc, "256"));
+			eval("iwpriv", var, "maxassoc", nvram_default_get(maxassoc, "256"));
 			switch (atoi(chanshift)) {
 			case 15:
 				eval("iwpriv", var, "channelshift", "-3");
@@ -2620,9 +2425,7 @@ static void configure_single(int count)
 			set_scanlist(dev, wif);
 			setRTS(var);
 			eval("iwpriv", var, "bgscan", "0");
-			if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta") &&
-			    strcmp(mvap, "wdssta_mtik") &&
-			    strcmp(mvap, "wet")) {
+			if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta") && strcmp(mvap, "wdssta_mtik") && strcmp(mvap, "wet")) {
 				cprintf("set channel\n");
 				char *ch = nvram_default_get(channel, "0");
 
@@ -2636,79 +2439,59 @@ static void configure_single(int count)
 			}
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "default_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "default_vap"));
 #else
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "maksat_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "maksat_vap"));
 #endif
 #elif defined(HAVE_SANSFIL)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "SANSFIL_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "SANSFIL_vap"));
 #elif defined(HAVE_TRIMAX)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "m2m_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "m2m_vap"));
 #elif defined(HAVE_WIKINGS)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "Excel Networks_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "Excel Networks_vap"));
 #elif defined(HAVE_ESPOD)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "ESPOD Technologies_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "ESPOD Technologies_vap"));
 #elif defined(HAVE_NEXTMEDIA)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "nextmedia_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "nextmedia_vap"));
 #elif defined(HAVE_TMK)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "KMT_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "KMT_vap"));
 #elif defined(HAVE_BKM)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "BKM_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "BKM_vap"));
 #elif defined(HAVE_ERC)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "ERC_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "ERC_vap"));
 #elif defined(HAVE_CORENET)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "corenet.ap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_ONNET_BLANK)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "Enterprise WIFI_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "Enterprise WIFI_vap"));
 #elif defined(HAVE_ONNET)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "OTAi_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "OTAi_vap"));
 #elif defined(HAVE_KORENRON)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "WBR2000_vap"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "WBR2000_vap"));
 #elif defined(HAVE_HOBBIT)
-			eval("iwconfig", var, "essid", "--",
-			     nvram_default_get(ssid, "HQ-NDS-AIR"));
+			eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "HQ-NDS-AIR"));
 #else
 #ifdef HAVE_REGISTER
 			if (!isregistered())
-				eval("iwconfig", var, "essid", "--",
-				     "need_activation");
+				eval("iwconfig", var, "essid", "--", "need_activation");
 			else
 #endif
-				eval("iwconfig", var, "essid", "--",
-				     nvram_default_get(ssid, "dd-wrt_vap"));
+				eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "dd-wrt_vap"));
 #endif
 			cprintf("set broadcast flag vif %s\n",
 				var); // hide ssid
 			sprintf(broadcast, "%s_closed", var);
-			eval("iwpriv", var, "hide_ssid",
-			     nvram_default_get(broadcast, "0"));
+			eval("iwpriv", var, "hide_ssid", nvram_default_get(broadcast, "0"));
 			sprintf(wmm, "%s_wmm", var);
 			if (nvram_nmatch("1", "%s_pollingmode", var))
 				eval("iwpriv", var, "wmm", "1");
 			else
-				eval("iwpriv", var, "wmm",
-				     nvram_default_get(wmm, "0"));
+				eval("iwpriv", var, "wmm", nvram_default_get(wmm, "0"));
 			char isolate[32];
 
 			sprintf(isolate, "%s_ap_isolate", var);
 			if (nvram_default_matchi(isolate, 1, 0))
 				eval("iwpriv", var, "ap_bridge", "0");
-			if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap") ||
-			    !strcmp(mvap, "wdssta_mtik"))
+			if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap") || !strcmp(mvap, "wdssta_mtik"))
 				eval("iwpriv", var, "wds", "1");
 			eval("iwpriv", var, "addmtikie", "1");
 
@@ -2749,9 +2532,8 @@ static void configure_single(int count)
 			char cellidtemp[5];
 			bzero(cellidtemp, 5);
 			strncpy(cellidtemp, nvram_safe_get(ssid), 5);
-			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x",
-				  dev, cellidtemp[0], cellidtemp[1],
-				  cellidtemp[2], cellidtemp[3], cellidtemp[4]);
+			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x", dev, cellidtemp[0], cellidtemp[1], cellidtemp[2],
+				  cellidtemp[3], cellidtemp[4]);
 		}
 #endif
 	}
@@ -2761,22 +2543,18 @@ static void configure_single(int count)
 	cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
-	eval("iwconfig", dev, "essid", "--",
-	     nvram_default_get(ssid, "default"));
+	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "default"));
 #else
 	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "maksat"));
 #endif
 #elif defined(HAVE_TRIMAX)
 	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "M2M"));
 #elif defined(HAVE_WIKINGS)
-	eval("iwconfig", dev, "essid", "--",
-	     nvram_default_get(ssid, "Excel Networks"));
+	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "Excel Networks"));
 #elif defined(HAVE_ESPOD)
-	eval("iwconfig", dev, "essid", "--",
-	     nvram_default_get(ssid, "ESPOD Technologies"));
+	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "ESPOD Technologies"));
 #elif defined(HAVE_NEXTMEDIA)
-	eval("iwconfig", dev, "essid", "--",
-	     nvram_default_get(ssid, "nextmedia"));
+	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "nextmedia"));
 #elif defined(HAVE_TMK)
 	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "KMT"));
 #elif defined(HAVE_BKM)
@@ -2784,22 +2562,18 @@ static void configure_single(int count)
 #elif defined(HAVE_ERC)
 	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "ERC"));
 #elif defined(HAVE_CORENET)
-	eval("iwconfig", dev, "essid", "--",
-	     nvram_default_get(ssid, "corenet.ap"));
+	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
-	eval("iwconfig", dev, "essid", "--",
-	     nvram_default_get(ssid, "WBR2000"));
+	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "WBR2000"));
 #elif defined(HAVE_HOBBIT)
-	eval("iwconfig", dev, "essid", "--",
-	     nvram_default_get(ssid, "HQ-NDS-AIR"));
+	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "HQ-NDS-AIR"));
 #else
 #ifdef HAVE_REGISTER
 	if (!isregistered())
 		eval("iwconfig", dev, "essid", "--", "need_activation");
 	else
 #endif
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "dd-wrt"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "dd-wrt"));
 #endif
 	cprintf("set broadcast flag\n"); // hide ssid
 	eval("iwpriv", dev, "hide_ssid", nvram_default_get(broadcast, "0"));
@@ -2814,51 +2588,37 @@ static void configure_single(int count)
 	} else
 		eval("iwpriv", dev, "shpreamble", "0");
 
-	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0 ||
-	    strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0 ||
+	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0 || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0 ||
 	    strcmp(apm, "wdssta_mtik") == 0) {
 		cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "default"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "default"));
 #else
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "maksat"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "maksat"));
 #endif
 #elif defined(HAVE_TRIMAX)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "M2M"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "M2M"));
 #elif defined(HAVE_WIKINGS)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "Excel Networks"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "Excel Networks"));
 #elif defined(HAVE_ESPOD)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "ESPOD Technologies"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "ESPOD Technologies"));
 #elif defined(HAVE_NEXTMEDIA)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "nextmedia"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "nextmedia"));
 #elif defined(HAVE_TMK)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "KMT"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "KMT"));
 #elif defined(HAVE_BKM)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "BKM"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "BKM"));
 #elif defined(HAVE_ERC)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "ERC"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "ERC"));
 #elif defined(HAVE_CORENET)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "corenet.ap"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "WBR2000"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "WBR2000"));
 #elif defined(HAVE_HOBBIT)
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "HQ-NDS-AIR"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "HQ-NDS-AIR"));
 #else
-		eval("iwconfig", dev, "essid", "--",
-		     nvram_default_get(ssid, "dd-wrt"));
+		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "dd-wrt"));
 #endif
 	}
 
@@ -2893,8 +2653,7 @@ static void configure_single(int count)
 	}
 
 	apm = nvram_default_get(wl, "ap");
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") &&
-	    strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet")) {
 		cprintf("set channel\n");
 		char *ch = nvram_default_get(channel, "0");
 
@@ -2932,8 +2691,7 @@ static void configure_single(int count)
 		} else {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
-			     "netmask", nvram_nget("%s_netmask", dev), "up");
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
 		}
 	} else {
 #ifdef HAVE_RELAYD
@@ -2949,8 +2707,7 @@ static void configure_single(int count)
 		if (nvram_default_matchi(bridged, 0, 1)) {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
-			     "netmask", nvram_nget("%s_netmask", dev), "up");
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
 		}
 	}
 
@@ -2966,15 +2723,11 @@ static void configure_single(int count)
 			sprintf(inact, "%s_inact", var);
 
 #ifdef HAVE_MAKSAT
-			eval("iwpriv", var, "inact_tick",
-			     nvram_default_get(inact_tick, "1"));
-			eval("iwpriv", var, "inact",
-			     nvram_default_get(inact, "15"));
+			eval("iwpriv", var, "inact_tick", nvram_default_get(inact_tick, "1"));
+			eval("iwpriv", var, "inact", nvram_default_get(inact, "15"));
 #else
-			eval("iwpriv", var, "inact_tick",
-			     nvram_default_get(inact_tick, "15"));
-			eval("iwpriv", var, "inact",
-			     nvram_default_get(inact, "300"));
+			eval("iwpriv", var, "inact_tick", nvram_default_get(inact_tick, "15"));
+			eval("iwpriv", var, "inact", nvram_default_get(inact, "300"));
 #endif
 			if (strcmp(m2, "sta")) {
 				char bridged[32];
@@ -2982,28 +2735,22 @@ static void configure_single(int count)
 				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_matchi(bridged, 1, 1)) {
 					eval("ifconfig", var, "0.0.0.0", "up");
-					br_add_interface(getBridge(var, tmp),
-							 var);
+					br_add_interface(getBridge(var, tmp), var);
 				} else {
 					char ip[32];
 					char mask[32];
 
 					sprintf(ip, "%s_ipaddr", var);
 					sprintf(mask, "%s_netmask", var);
-					eval("ifconfig", var, "mtu",
-					     getMTU(var));
-					eval("ifconfig", var, "txqueuelen",
-					     getTXQ(var));
-					eval("ifconfig", var,
-					     nvram_safe_get(ip), "netmask",
-					     nvram_safe_get(mask), "up");
+					eval("ifconfig", var, "mtu", getMTU(var));
+					eval("ifconfig", var, "txqueuelen", getTXQ(var));
+					eval("ifconfig", var, nvram_safe_get(ip), "netmask", nvram_safe_get(mask), "up");
 				}
 			}
 		}
 	}
 	// setup encryption
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") &&
-	    strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet"))
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet"))
 		setupHostAP(dev, "madwifi", 0);
 	else
 		setupSupplicant(dev, NULL);
@@ -3014,8 +2761,7 @@ static void configure_single(int count)
 		{
 			sprintf(mode, "%s_mode", var);
 			char *vapm = nvram_default_get(mode, "ap");
-			if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta") &&
-			    strcmp(vapm, "wdssta_mtik") && strcmp(vapm, "wet"))
+			if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta") && strcmp(vapm, "wdssta_mtik") && strcmp(vapm, "wet"))
 				setupHostAP(var, "madwifi", 0);
 			else
 				setupSupplicant(var, NULL);
@@ -3100,28 +2846,17 @@ void start_vifs(void)
 					char bridged[32];
 
 					sprintf(bridged, "%s_bridged", var);
-					if (nvram_default_matchi(bridged, 1,
-								 1)) {
-						eval("ifconfig", var, "0.0.0.0",
-						     "up");
-						br_add_interface(getBridge(var,
-									   tmp),
-								 var);
+					if (nvram_default_matchi(bridged, 1, 1)) {
+						eval("ifconfig", var, "0.0.0.0", "up");
+						br_add_interface(getBridge(var, tmp), var);
 					} else {
 						char ip[32];
 						char mask[32];
 						sprintf(ip, "%s_ipaddr", var);
-						sprintf(mask, "%s_netmask",
-							var);
-						eval("ifconfig", var, "mtu",
-						     getMTU(var));
-						eval("ifconfig", var,
-						     "txqueuelen", getTXQ(var));
-						eval("ifconfig", var,
-						     nvram_safe_get(ip),
-						     "netmask",
-						     nvram_safe_get(mask),
-						     "up");
+						sprintf(mask, "%s_netmask", var);
+						eval("ifconfig", var, "mtu", getMTU(var));
+						eval("ifconfig", var, "txqueuelen", getTXQ(var));
+						eval("ifconfig", var, nvram_safe_get(ip), "netmask", nvram_safe_get(mask), "up");
 					}
 				}
 			}
@@ -3159,20 +2894,13 @@ void start_duallink(void)
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 200");
 		sysprintf("iptables -t mangle -F PREROUTING");
-		sysprintf("ip route add %s/%s dev wlan0 src %s table 100",
-			  nvram_safe_get("wlan0_ipaddr"),
-			  nvram_safe_get("wlan0_netmask"),
-			  nvram_safe_get("wlan0_ipaddr"));
-		sysprintf("ip route default via %s table 100",
-			  nvram_safe_get("wlan0_duallink_parent"));
-		sysprintf("ip route add %s/%s dev wlan0 src %s table 200",
-			  nvram_safe_get("wlan1_ipaddr"),
-			  nvram_safe_get("wlan1_netmask"),
-			  nvram_safe_get("wlan1_ipaddr"));
-		sysprintf("ip route default via %s table 200",
-			  nvram_safe_get("wlan1_duallink_parent"));
-		sysprintf(
-			"iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 100", nvram_safe_get("wlan0_ipaddr"),
+			  nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
+		sysprintf("ip route default via %s table 100", nvram_safe_get("wlan0_duallink_parent"));
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 200", nvram_safe_get("wlan1_ipaddr"),
+			  nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
+		sysprintf("ip route default via %s table 200", nvram_safe_get("wlan1_duallink_parent"));
+		sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
 		sysprintf("ip rule add fwmark 1 table 200");
 	}
 	if (nvram_match("duallink", "slave")) {
@@ -3180,20 +2908,13 @@ void start_duallink(void)
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 100");
 		sysprintf("iptables -t mangle -F PREROUTING");
-		sysprintf("ip route add %s/%s dev wlan0 src %s table 100",
-			  nvram_safe_get("wlan0_ipaddr"),
-			  nvram_safe_get("wlan0_netmask"),
-			  nvram_safe_get("wlan0_ipaddr"));
-		sysprintf("ip route default via %s table 100",
-			  nvram_safe_get("wlan0_duallink_parent"));
-		sysprintf("ip route add %s/%s dev wlan0 src %s table 200",
-			  nvram_safe_get("wlan1_ipaddr"),
-			  nvram_safe_get("wlan1_netmask"),
-			  nvram_safe_get("wlan1_ipaddr"));
-		sysprintf("ip route default via %s table 200",
-			  nvram_safe_get("wlan1_duallink_parent"));
-		sysprintf(
-			"iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 100", nvram_safe_get("wlan0_ipaddr"),
+			  nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
+		sysprintf("ip route default via %s table 100", nvram_safe_get("wlan0_duallink_parent"));
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 200", nvram_safe_get("wlan1_ipaddr"),
+			  nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
+		sysprintf("ip route default via %s table 200", nvram_safe_get("wlan1_duallink_parent"));
+		sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
 		sysprintf("ip rule add fwmark 1 table 100");
 	}
 }
@@ -3237,8 +2958,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
-			fprintf(stderr,
-				"Switching ATH10K driver, rebooting now...\n");
+			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
 			eval("reboot");
 		}
 #endif
@@ -3267,8 +2987,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
-			fprintf(stderr,
-				"Switching ATH10K driver, rebooting now...\n");
+			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
 			eval("reboot");
 		}
 #endif
@@ -3311,10 +3030,8 @@ void configure_wifi(void) // madwifi implementation for atheros based
 				iso = "DE";
 			eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
-			if (nvram_geti("ath10k-ct") !=
-			    nvram_geti("wlan10k-ct_bak")) {
-				fprintf(stderr,
-					"Switching ATH10K driver, rebooting now...\n");
+			if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
+				fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
 				eval("reboot");
 			}
 #endif
@@ -3417,18 +3134,15 @@ void configure_wifi(void) // madwifi implementation for atheros based
 
 			br_set_stp_state("br1", getBridgeSTP("br1", word));
 			br_set_bridge_max_age("br1", getBridgeMaxAge("br1"));
-			br_set_bridge_forward_delay(
-				"br1", getBridgeForwardDelay("br1"));
+			br_set_bridge_forward_delay("br1", getBridgeForwardDelay("br1"));
 
 			/*
 			 * Bring up and configure br1 interface 
 			 */
 			if (nvram_invmatch(br1ipaddr, "0.0.0.0")) {
-				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr),
-					 nvram_safe_get(br1netmask));
+				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr), nvram_safe_get(br1netmask));
 
-				br_set_stp_state("br1",
-						 getBridgeSTP("br1", word));
+				br_set_stp_state("br1", getBridgeSTP("br1", word));
 			}
 		}
 	}
@@ -3456,15 +3170,12 @@ void configure_wifi(void) // madwifi implementation for atheros based
 				char *wdsnm;
 				char wdsbc[32] = { 0 };
 				wdsip = nvram_nget("wlan%d_wds%d_ipaddr", c, s);
-				wdsnm = nvram_nget("wlan%d_wds%d_netmask", c,
-						   s);
+				wdsnm = nvram_nget("wlan%d_wds%d_netmask", c, s);
 
 				snprintf(wdsbc, 31, "%s", wdsip);
 				get_broadcast(wdsbc, sizeof(wdsbc), wdsnm);
-				eval("ifconfig", dev, wdsip, "broadcast", wdsbc,
-				     "netmask", wdsnm, "up");
-			} else if (nvram_matchi(wdsvarname, 2) &&
-				   nvram_matchi(br1enable, 1)) {
+				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
+			} else if (nvram_matchi(wdsvarname, 2) && nvram_matchi(br1enable, 1)) {
 				eval("ifconfig", dev, "up");
 				br_add_interface("br1", dev);
 			} else if (nvram_matchi(wdsvarname, 3)) {

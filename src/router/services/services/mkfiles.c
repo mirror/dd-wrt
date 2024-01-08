@@ -59,16 +59,12 @@ void setPassword(char *passwd)
 #ifdef HAVE_ERC
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 	fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		nvram_safe_get("newhttp_passwd"));
-	fprintf(fp,
-		"reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #elif HAVE_NDTRADE
-	fprintf(fp,
-		"ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
 	fprintf(fp, "root:x:98:98:Root:/:/bin/false\n");
 #else
 	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
@@ -123,20 +119,15 @@ void start_mkfiles(void)
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 	//      http_passwd);
 	fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		nvram_safe_get("newhttp_passwd"));
-	fprintf(fp,
-		"reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_WIKINGS
 	// default username and password for Excel Networks
-	fprintf(fp,
-		"ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #elif HAVE_NDTRADE
-	fprintf(fp,
-		"ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "ndtrade:$1$N2vARlRA$bI0Exx9L.3A103888c7gk.:0:0:ndtrade User,,,:/tmp/root:/bin/sh\n");
 	fprintf(fp, "root:x:98:98:Root:/:/bin/false\n");
 #else
 	fprintf(fp,

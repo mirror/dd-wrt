@@ -65,8 +65,7 @@ static void makeargs(char *args)
 	if (nvram_match("boot_nopti", "1"))
 		strcat(args, " pti=off");
 	if (nvram_match("boot_pstate", "1"))
-		strcat(args,
-		       " initcall_blacklist=acpi_cpufreq_init amd_pstate.shared_mem=1 amd_pstate=passive");
+		strcat(args, " initcall_blacklist=acpi_cpufreq_init amd_pstate.shared_mem=1 amd_pstate=passive");
 	if (nvram_match("boot_nospec_store_bypass_disable", "1"))
 		strcat(args, " spec_store_bypass_disable=off");
 }
@@ -96,8 +95,7 @@ void start_bootconfig_legacy(void)
 		return;
 	char *vga = " fbcon=nodefer vga=0x305";
 	if (!strncmp(serial, "serial", 6)) {
-		fprintf(out,
-			"serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
+		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
 		fprintf(out, "terminal --timeout=10 serial\n");
 		fprintf(out, "\n");
 		vga = " video=vga16fb:off nofb console=ttyS0,115200n8";
@@ -159,10 +157,8 @@ void start_bootconfig_efi(void)
 		return;
 	char *vga = " fbcon=nodefer vga=0x305 video=efifb:1024x768x32";
 	if (!strncmp(serial, "serial", 6)) {
-		fprintf(out,
-			"serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
-		fprintf(out,
-			"terminal_input console serial; terminal_output console serial\n");
+		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
+		fprintf(out, "terminal_input console serial; terminal_output console serial\n");
 		fprintf(out, "\n");
 		vga = " video=vga16fb:off nofb console=ttyS0,115200n8";
 	}

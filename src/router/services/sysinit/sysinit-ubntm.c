@@ -83,14 +83,12 @@ void start_sysinit(void)
 		fseek(fp, 0x1f810, SEEK_SET);
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
-		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6) ||
-		     !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
+		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6) || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
 			goto out;
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 		MAC_ADD(mac);
@@ -99,14 +97,12 @@ void start_sysinit(void)
 #else
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
-		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6) ||
-		     !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
+		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6) || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
 			goto out;
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
@@ -130,8 +126,7 @@ out:;
 				putc(getc(fp), out);
 			fclose(fp);
 			eval("rm", "-f", "/tmp/ath10k-board.bin");
-			eval("ln", "-s", "/tmp/archerc7-board.bin",
-			     "/tmp/ath10k-board.bin");
+			eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 		}
 		fclose(out);
 		break;
@@ -141,10 +136,8 @@ out:;
 	case ROUTER_UBNT_NANOAC:
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
-		     "0t 2");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports",
-		     "0t 3");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
@@ -161,10 +154,8 @@ out:;
 	case ROUTER_BOARD_NS5MXW:
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
-		     "0t 5");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports",
-		     "0t 1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
@@ -180,8 +171,7 @@ out:;
 	case ROUTER_BOARD_AIRROUTER:
 		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
-		     "0 1 2 3 4");
+		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
 
 		nvram_seti("sw_cpuport", 0);
@@ -203,8 +193,7 @@ out:;
 #ifdef HAVE_DAP3310
 		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
-		     "0 1 2 3 4");
+		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", -1);
@@ -223,10 +212,8 @@ out:;
 #elif HAVE_DAP3410
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
-		     "0t 3");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports",
-		     "0t 4");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 3");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
@@ -235,8 +222,7 @@ out:;
 #else
 		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
-		     "0 1 2 3 4");
+		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
 
 		nvram_seti("sw_cpuport", 0);
@@ -279,8 +265,7 @@ out:;
 
 #ifdef HAVE_WPE72
 	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-l", "generic_14:-94", "-l",
-		     "generic_15:-80", "-l", "generic_16:-73", "-l",
+		eval("/sbin/wlanled", "-l", "generic_14:-94", "-l", "generic_15:-80", "-l", "generic_16:-73", "-l",
 		     "generic_17:-65");
 	setEthLED(0, "eth0");
 	setEthLED(1, "eth1");
@@ -289,15 +274,13 @@ out:;
 	set_gpio(13, 1);
 	set_gpio(20, 1);
 	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-L", "generic_14:-94", "-l",
-		     "generic_13:-76", "-L", "generic_20:-65");
+		eval("/sbin/wlanled", "-L", "generic_14:-94", "-l", "generic_13:-76", "-L", "generic_20:-65");
 #elif HAVE_DAP3410
 	set_gpio(14, 1);
 	set_gpio(15, 1);
 	set_gpio(16, 1);
 	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-L", "generic_14:-94", "-L",
-		     "generic_15:-76", "-L", "generic_16:-65");
+		eval("/sbin/wlanled", "-L", "generic_14:-94", "-L", "generic_15:-76", "-L", "generic_16:-65");
 #elif HAVE_UBNTXW
 	switch (brand) {
 	case ROUTER_UBNT_UAPAC:
@@ -311,8 +294,7 @@ out:;
 	default:
 		writeprocsys("dev/wifi0/softled", "0");
 		if (!nvram_matchi("wlanled", 0))
-			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L",
-			     "generic_16:-80", "-l", "generic_13:-73", "-L",
+			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L",
 			     "generic_14:-65");
 	}
 #else
@@ -330,8 +312,7 @@ out:;
 	default:
 		writeprocsys("dev/wifi0/softled", "0");
 		if (!nvram_matchi("wlanled", 0))
-			eval("/sbin/wlanled", "-l", "generic_0:-94", "-l",
-			     "generic_1:-80", "-l", "generic_11:-73", "-l",
+			eval("/sbin/wlanled", "-l", "generic_0:-94", "-l", "generic_1:-80", "-l", "generic_11:-73", "-l",
 			     "generic_7:-65");
 	}
 #endif
@@ -367,10 +348,8 @@ char *set_wan_state(int state)
 	case ROUTER_UBNT_NANOAC:
 		if (!state) {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan",
-			     "0");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set",
-			     "ports", "0 2 3");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
 			eval("vconfig", "rem", "vlan1");
@@ -378,12 +357,9 @@ char *set_wan_state(int state)
 			return "eth0";
 		} else {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan",
-			     "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set",
-			     "ports", "0t 2");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set",
-			     "ports", "0t 3");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
 			eval("vconfig", "add", "eth0", "1");
@@ -394,10 +370,8 @@ char *set_wan_state(int state)
 	case ROUTER_BOARD_NS5MXW:
 		if (!state) {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan",
-			     "0");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set",
-			     "ports", "0 1 5");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 5");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
 			eval("vconfig", "rem", "vlan1");
@@ -405,16 +379,12 @@ char *set_wan_state(int state)
 			return "eth0";
 		} else {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan",
-			     "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set",
-			     "ports", "0t 5");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set",
-			     "ports", "0t 1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type",
-			     "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth0", "1");
 			eval("vconfig", "add", "eth0", "2");
 		}
@@ -427,10 +397,8 @@ char *set_wan_state(int state)
 #elif HAVE_DAP3410
 		if (!state) {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan",
-			     "0");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set",
-			     "ports", "0 3 4");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 3 4");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
 			eval("vconfig", "rem", "vlan1");
@@ -438,24 +406,19 @@ char *set_wan_state(int state)
 			return "eth0";
 		} else {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan",
-			     "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set",
-			     "ports", "0t 3");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set",
-			     "ports", "0t 4");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 3");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type",
-			     "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth0", "1");
 			eval("vconfig", "add", "eth0", "2");
 		}
 #else
 		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
-		     "0 1 2 3 4");
+		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
 
 		nvram_seti("sw_wan", -1);

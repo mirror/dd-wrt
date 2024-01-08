@@ -34,8 +34,7 @@ int gpio_main(int argc, char **argv)
 	unsigned int pin;
 
 	if (argc != 3) {
-		fprintf(stderr, "%s <poll | enable | disable> <pin>\n",
-			argv[0]);
+		fprintf(stderr, "%s <poll | enable | disable> <pin>\n", argv[0]);
 		exit(1);
 	}
 

@@ -4,10 +4,8 @@ static void dumprom(int dev, char *target)
 {
 	char addr[64];
 	char value[64];
-	sprintf(addr, "/sys/kernel/debug/ieee80211/phy%d/ath10k/fwmem_addr",
-		dev);
-	sprintf(value, "/sys/kernel/debug/ieee80211/phy%d/ath10k/fwmem_value",
-		dev);
+	sprintf(addr, "/sys/kernel/debug/ieee80211/phy%d/ath10k/fwmem_addr", dev);
+	sprintf(value, "/sys/kernel/debug/ieee80211/phy%d/ath10k/fwmem_value", dev);
 	int i;
 	FILE *out = fopen(target, "wb");
 	for (i = 0; i < 0x40000; i += 4) {

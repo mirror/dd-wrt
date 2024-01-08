@@ -64,8 +64,7 @@ void stop_redial(void)
 void start_redial(void)
 {
 	int ret;
-	char *redial_argv[] = { "/tmp/ppp/redial",
-				nvram_safe_get("ppp_redialperiod"), NULL };
+	char *redial_argv[] = { "/tmp/ppp/redial", nvram_safe_get("ppp_redialperiod"), NULL };
 	if (pidof("redial") > 0) {
 		stop_redial();
 	}

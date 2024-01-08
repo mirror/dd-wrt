@@ -99,8 +99,7 @@ void start_finishupgrade(void)
 		fclose(fp);
 		int i;
 		unsigned int *p = smem;
-		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info);
-		     i += 4) {
+		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
 				ipq_smem_bootconfig_v2_info = p;
 				break;
@@ -113,51 +112,29 @@ void start_finishupgrade(void)
 		}
 	}
 	if (ipq_smem_bootconfig_v2_info) {
-		fprintf(stderr, "upgrade in progress: %d\n",
-			ipq_smem_bootconfig_v2_info->upgradeinprogress);
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_v2_info->upgradeinprogress);
 		int i;
 		if (ipq_smem_bootconfig_v2_info->upgradeinprogress) {
-			for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart;
-			     i++) {
-				if (!strncmp(ipq_smem_bootconfig_v2_info
-						     ->per_part_entry[i]
-						     .name,
-					     "rootfs", 6)) {
-					ipq_smem_bootconfig_v2_info
-						->per_part_entry[i]
-						.primaryboot =
-						!ipq_smem_bootconfig_v2_info
-							 ->per_part_entry[i]
-							 .primaryboot;
-					ipq_smem_bootconfig_v2_info
-						->per_part_entry[i]
-						.upgraded = 0;
+			for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
+				if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+					ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot =
+						!ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot;
+					ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded = 0;
 				}
 			}
 		}
 		ipq_smem_bootconfig_v2_info->upgradeinprogress = 0;
 	}
 	if (ipq_smem_bootconfig_info) {
-		fprintf(stderr, "upgrade in progress: %d\n",
-			ipq_smem_bootconfig_info->upgradeinprogress);
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_info->upgradeinprogress);
 
 		int i;
 		if (ipq_smem_bootconfig_info->upgradeinprogress) {
-			for (i = 0; i < ipq_smem_bootconfig_info->numaltpart;
-			     i++) {
-				if (!strncmp(ipq_smem_bootconfig_info
-						     ->per_part_entry[i]
-						     .name,
-					     "rootfs", 6)) {
-					ipq_smem_bootconfig_info
-						->per_part_entry[i]
-						.primaryboot =
-						!ipq_smem_bootconfig_info
-							 ->per_part_entry[i]
-							 .primaryboot;
-					ipq_smem_bootconfig_info
-						->per_part_entry[i]
-						.upgraded = 0;
+			for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+				if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+					ipq_smem_bootconfig_info->per_part_entry[i].primaryboot =
+						!ipq_smem_bootconfig_info->per_part_entry[i].primaryboot;
+					ipq_smem_bootconfig_info->per_part_entry[i].upgraded = 0;
 				}
 			}
 		}
@@ -171,8 +148,7 @@ void start_finishupgrade(void)
 	free(smem);
 }
 
-void calcchecksum(
-	void *caldata) // works on little endian only so far. so consider to fix it when using on big endian systems
+void calcchecksum(void *caldata) // works on little endian only so far. so consider to fix it when using on big endian systems
 {
 	int i;
 	unsigned short *cdata = (unsigned short *)caldata;
@@ -204,8 +180,7 @@ static int getbootdevice(void)
 		fclose(fp);
 		int i;
 		unsigned int *p = smem;
-		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info);
-		     i += 4) {
+		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
 				ipq_smem_bootconfig_v2_info = p;
 				break;
@@ -220,13 +195,8 @@ static int getbootdevice(void)
 	if (ipq_smem_bootconfig_v2_info) {
 		int i;
 		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
-			if (!strncmp(ipq_smem_bootconfig_v2_info
-					     ->per_part_entry[i]
-					     .name,
-				     "rootfs", 6)) {
-				if (ipq_smem_bootconfig_v2_info
-					    ->per_part_entry[i]
-					    .primaryboot)
+			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+				if (ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot)
 					ret = 1;
 				else
 					ret = 0;
@@ -236,11 +206,8 @@ static int getbootdevice(void)
 	if (ipq_smem_bootconfig_info) {
 		int i;
 		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
-			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i]
-					     .name,
-				     "rootfs", 6)) {
-				if (ipq_smem_bootconfig_info->per_part_entry[i]
-					    .primaryboot)
+			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+				if (ipq_smem_bootconfig_info->per_part_entry[i].primaryboot)
 					ret = 1;
 				else
 					ret = 0;
@@ -267,8 +234,7 @@ static void setbootdevice(int dev)
 		fclose(fp);
 		int i;
 		unsigned int *p = smem;
-		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info);
-		     i += 4) {
+		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
 				ipq_smem_bootconfig_v2_info = p;
 				break;
@@ -281,43 +247,26 @@ static void setbootdevice(int dev)
 		}
 	}
 	if (ipq_smem_bootconfig_v2_info) {
-		fprintf(stderr, "upgrade in progress: %d\n",
-			ipq_smem_bootconfig_v2_info->upgradeinprogress);
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_v2_info->upgradeinprogress);
 		int i;
 		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
-			if (!strncmp(ipq_smem_bootconfig_v2_info
-					     ->per_part_entry[i]
-					     .name,
-				     "rootfs", 6)) {
-				fprintf(stderr,
-					"set bootdevice from %d to %d\n",
-					ipq_smem_bootconfig_v2_info
-						->per_part_entry[i]
-						.primaryboot,
-					dev);
-				ipq_smem_bootconfig_v2_info->per_part_entry[i]
-					.upgraded = 1;
+			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+				fprintf(stderr, "set bootdevice from %d to %d\n",
+					ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot, dev);
+				ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded = 1;
 			}
 		}
 		ipq_smem_bootconfig_v2_info->upgradeinprogress = 1;
 	}
 	if (ipq_smem_bootconfig_info) {
-		fprintf(stderr, "upgrade in progress: %d\n",
-			ipq_smem_bootconfig_info->upgradeinprogress);
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_info->upgradeinprogress);
 
 		int i;
 		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
-			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i]
-					     .name,
-				     "rootfs", 6)) {
-				fprintf(stderr,
-					"set bootdevice from %d to %d\n",
-					ipq_smem_bootconfig_info
-						->per_part_entry[i]
-						.primaryboot,
-					dev);
-				ipq_smem_bootconfig_info->per_part_entry[i]
-					.upgraded = 1;
+			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+				fprintf(stderr, "set bootdevice from %d to %d\n",
+					ipq_smem_bootconfig_info->per_part_entry[i].primaryboot, dev);
+				ipq_smem_bootconfig_info->per_part_entry[i].upgraded = 1;
 			}
 		}
 		ipq_smem_bootconfig_info->upgradeinprogress = 1;
@@ -458,13 +407,9 @@ void start_sysinit(void)
 			static char mg10[20];
 			maddr = get_deviceinfo_g10("HW.LAN.MAC.Address");
 			if (maddr) {
-				sprintf(mg10, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",
-					maddr[0] & 0xff, maddr[1] & 0xff,
-					maddr[2] & 0xff, maddr[3] & 0xff,
-					maddr[4] & 0xff, maddr[5] & 0xff,
-					maddr[6] & 0xff, maddr[7] & 0xff,
-					maddr[8] & 0xff, maddr[9] & 0xff,
-					maddr[10] & 0xff, maddr[11] & 0xff);
+				sprintf(mg10, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c", maddr[0] & 0xff, maddr[1] & 0xff, maddr[2] & 0xff,
+					maddr[3] & 0xff, maddr[4] & 0xff, maddr[5] & 0xff, maddr[6] & 0xff, maddr[7] & 0xff,
+					maddr[8] & 0xff, maddr[9] & 0xff, maddr[10] & 0xff, maddr[11] & 0xff);
 				maddr = &mg10[0];
 			}
 			setasrockcountry();
@@ -472,9 +417,8 @@ void start_sysinit(void)
 
 		if (maddr) {
 			fprintf(stderr, "sysinit using mac %s\n", maddr);
-			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x",
-			       &newmac[0], &newmac[1], &newmac[2], &newmac[3],
-			       &newmac[4], &newmac[5]);
+			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+			       &newmac[5]);
 		}
 
 		fseek(fp, 0x1000, SEEK_SET);
@@ -482,11 +426,8 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
-		if (maddr &&
-		    (board == ROUTER_TRENDNET_TEW827 ||
-		     board == ROUTER_LINKSYS_EA8500 ||
-		     board ==
-			     ROUTER_ASROCK_G10)) { // board calibration data with real mac addresses
+		if (maddr && (board == ROUTER_TRENDNET_TEW827 || board == ROUTER_LINKSYS_EA8500 ||
+			      board == ROUTER_ASROCK_G10)) { // board calibration data with real mac addresses
 			int i;
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
@@ -507,16 +448,14 @@ void start_sysinit(void)
 
 			getWirelessMac(mac1, 0);
 			getWirelessMac(mac2, 1);
-			sscanf(mac1, "%02x:%02x:%02x:%02x:%02x:%02x",
-			       &newmac[0], &newmac[1], &newmac[2], &newmac[3],
-			       &newmac[4], &newmac[5]);
+			sscanf(mac1, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+			       &newmac[5]);
 			int i;
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
 			}
-			sscanf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x",
-			       &newmac[0], &newmac[1], &newmac[2], &newmac[3],
-			       &newmac[4], &newmac[5]);
+			sscanf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+			       &newmac[5]);
 			for (i = 0; i < 6; i++) {
 				smem[i + 6 + 0x4000] = newmac[i];
 			}
@@ -606,19 +545,15 @@ void start_sysinit(void)
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
 		eval("insmod", "rtc-pcf8523");
-		writestr("/sys/class/i2c-dev/i2c-2/device/new_device",
-			 "pcf8523 0x68");
+		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "pcf8523 0x68");
 		eval("insmod", "gpio-antaira-i2c");
-		writestr("/sys/class/i2c-dev/i2c-2/device/new_device",
-			 "antairagpio 0x60");
+		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "antairagpio 0x60");
 		eval("hwclock", "-s", "-u");
 		eval("ledtool", "20", "0");
 
 #endif /*HAVE_ANTAIRA */
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports",
-		     "0 1 2 3 4");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports",
-		     "0t 5");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
@@ -629,10 +564,8 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports",
-		     "6 2 3 4 5");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports",
-		     "0 1");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 2 3 4 5");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 1");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
@@ -648,10 +581,8 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports",
-		     "6 1 2 3 4");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports",
-		     "0 5");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
@@ -670,11 +601,9 @@ void start_sysinit(void)
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
 		eval("insmod", "rtc-pcf8523");
-		writestr("/sys/class/i2c-dev/i2c-2/device/new_device",
-			 "pcf8523 0x68");
+		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "pcf8523 0x68");
 		eval("insmod", "gpio-antaira-i2c");
-		writestr("/sys/class/i2c-dev/i2c-2/device/new_device",
-			 "antairagpio 0x60");
+		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "antairagpio 0x60");
 		eval("hwclock", "-s", "-u");
 		eval("ledtool", "20", "0");
 
@@ -735,19 +664,12 @@ void start_sysinit(void)
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
 
-	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
-		  "performance");
-	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor",
-		  "performance");
-	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq",
-		  "600000");
-	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq",
-		  "600000");
-	writeproc(
-		"/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor",
-		"10");
-	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold",
-		  "50");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");

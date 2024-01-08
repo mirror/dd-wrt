@@ -115,13 +115,9 @@
 #define ADM_ADVERTISE_10FULL 0x0040
 #define ADM_ADVERTISE_10HALF 0x0020
 
-#define ADM_ADVERTISE_ALL                                                      \
-	(ADM_ADVERTISE_10HALF | ADM_ADVERTISE_10FULL | ADM_ADVERTISE_100HALF | \
-	 ADM_ADVERTISE_100FULL)
+#define ADM_ADVERTISE_ALL (ADM_ADVERTISE_10HALF | ADM_ADVERTISE_10FULL | ADM_ADVERTISE_100HALF | ADM_ADVERTISE_100FULL)
 
-#define ADM_AUTONEG_DONE(adm_phy_status)                    \
-	(((adm_phy_status) & (ADM_STATUS_AUTO_NEG_DONE)) == \
-	 (ADM_STATUS_AUTO_NEG_DONE))
+#define ADM_AUTONEG_DONE(adm_phy_status) (((adm_phy_status) & (ADM_STATUS_AUTO_NEG_DONE)) == (ADM_STATUS_AUTO_NEG_DONE))
 
 /*
  * ADM_PHY_ID1 fields 
@@ -157,10 +153,8 @@
 #define ADM_SW_SPECIAOL_TAG_TX 0x0800
 #define ADM_SW_SPECIAOL_TAG_PAUSE 0x0400
 #define ADM_SW_SMAX_PKT_SIZE 0x0080 /* MAx Packet Length is 1536 */
-#define ADM_SW_SYS_CTL3_CONFIG                                       \
-	ADM_SW_CPU_PORT_NUM | ADM_SW_SPECIAOL_TAG_RX |               \
-		ADM_SW_SPECIAOL_TAG_TX | ADM_SW_SPECIAOL_TAG_PAUSE | \
-		ADM_SW_SMAX_PKT_SIZE
+#define ADM_SW_SYS_CTL3_CONFIG \
+	ADM_SW_CPU_PORT_NUM | ADM_SW_SPECIAOL_TAG_RX | ADM_SW_SPECIAOL_TAG_TX | ADM_SW_SPECIAOL_TAG_PAUSE | ADM_SW_SMAX_PKT_SIZE
 #define ADM_SW_FLOW_CTRL_EN 0x0001
 #define ADM_SW_AUTO_NEGO_EN 0x0002
 #define ADM_SW_100M_SPEED_EN 0x0004
@@ -183,17 +177,17 @@
 #define ADM_SW_ALLPORT_MAP_TAB 0x01D5 /* 1 1 1 0 1 0 1 0 1 */
 
 #endif
-#define ADM_SW_LAN_PORT_CONFIG                                              \
-	(ADM_SW_AUTO_MDIX_EN | ADM_SW_PORT_VLAN_ID_1 | ADM_SW_FULL_DUP_EN | \
-	 ADM_SW_100M_SPEED_EN | ADM_SW_AUTO_NEGO_EN | ADM_SW_FLOW_CTRL_EN)
+#define ADM_SW_LAN_PORT_CONFIG                                                                                           \
+	(ADM_SW_AUTO_MDIX_EN | ADM_SW_PORT_VLAN_ID_1 | ADM_SW_FULL_DUP_EN | ADM_SW_100M_SPEED_EN | ADM_SW_AUTO_NEGO_EN | \
+	 ADM_SW_FLOW_CTRL_EN)
 
-#define ADM_SW_WAN_PORT_CONFIG                                              \
-	(ADM_SW_AUTO_MDIX_EN | ADM_SW_PORT_VLAN_ID_2 | ADM_SW_FULL_DUP_EN | \
-	 ADM_SW_100M_SPEED_EN | ADM_SW_AUTO_NEGO_EN | ADM_SW_FLOW_CTRL_EN)
+#define ADM_SW_WAN_PORT_CONFIG                                                                                           \
+	(ADM_SW_AUTO_MDIX_EN | ADM_SW_PORT_VLAN_ID_2 | ADM_SW_FULL_DUP_EN | ADM_SW_100M_SPEED_EN | ADM_SW_AUTO_NEGO_EN | \
+	 ADM_SW_FLOW_CTRL_EN)
 
-#define ADM_SW_MII_PORT_CONFIG                                              \
-	(ADM_SW_AUTO_MDIX_EN | ADM_SW_OUT_PKT_TAG_EN | ADM_SW_FULL_DUP_EN | \
-	 ADM_SW_100M_SPEED_EN | ADM_SW_AUTO_NEGO_EN | ADM_SW_FLOW_CTRL_EN)
+#define ADM_SW_MII_PORT_CONFIG                                                                                           \
+	(ADM_SW_AUTO_MDIX_EN | ADM_SW_OUT_PKT_TAG_EN | ADM_SW_FULL_DUP_EN | ADM_SW_100M_SPEED_EN | ADM_SW_AUTO_NEGO_EN | \
+	 ADM_SW_FLOW_CTRL_EN)
 #define ADM_SW_LAN_VID (ADM_SW_PORT_VLAN_ID_1 >> 10) & 0xf
 #define ADM_SW_WAN_VID (ADM_SW_PORT_VLAN_ID_2 >> 10) & 0xf
 
@@ -256,59 +250,47 @@ typedef struct {
 admPhyInfo_t admPhyInfo[] = {
 	{
 		TRUE, /* phy port 0 -- LAN port */
-		FALSE, ENET_UNIT_DEFAULT, ADM_PHY0_ADDR, ADM_SW_PHY_PORT0_REG,
-		ADM_LAN_PORT_VLAN /* LAN port */
+		FALSE, ENET_UNIT_DEFAULT, ADM_PHY0_ADDR, ADM_SW_PHY_PORT0_REG, ADM_LAN_PORT_VLAN /* LAN port */
 	},
 
 	{ TRUE, /* phy port 1 -- NC */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY1_ADDR, ADM_SW_PHY_PORT1_REG,
-	  ADM_LAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY1_ADDR, ADM_SW_PHY_PORT1_REG, ADM_LAN_PORT_VLAN },
 
 	{ TRUE, /* phy port 2 -- NC */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY2_ADDR, ADM_SW_PHY_PORT2_REG,
-	  ADM_LAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY2_ADDR, ADM_SW_PHY_PORT2_REG, ADM_LAN_PORT_VLAN },
 
 	{ TRUE, /* phy port 3 -- NC */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY3_ADDR, ADM_SW_PHY_PORT3_REG,
-	  ADM_LAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY3_ADDR, ADM_SW_PHY_PORT3_REG, ADM_LAN_PORT_VLAN },
 
 	{ TRUE, /* phy port 4 -- WAN port */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY4_ADDR, ADM_SW_PHY_PORT4_REG,
-	  ADM_WAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY4_ADDR, ADM_SW_PHY_PORT4_REG, ADM_WAN_PORT_VLAN },
 
 	{ FALSE, /* phy port 5 -- CPU port (no RJ45 connector) 
 				 */
-	  TRUE, ENET_UNIT_DEFAULT, 0x00, ADM_SW_PHY_PORT5_REG,
-	  ADM_WAN_PORT_VLAN },
+	  TRUE, ENET_UNIT_DEFAULT, 0x00, ADM_SW_PHY_PORT5_REG, ADM_WAN_PORT_VLAN },
 };
 #else
 admPhyInfo_t admPhyInfo[] = {
 	{
 		TRUE, /* phy port 0 -- WAN port */
-		FALSE, ENET_UNIT_DEFAULT, ADM_PHY0_ADDR, ADM_SW_PHY_PORT0_REG,
-		ADM_WAN_PORT_VLAN /* WAN port */
+		FALSE, ENET_UNIT_DEFAULT, ADM_PHY0_ADDR, ADM_SW_PHY_PORT0_REG, ADM_WAN_PORT_VLAN /* WAN port */
 	},
 
 	{ TRUE, /* phy port 1 -- NC */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY1_ADDR, ADM_SW_PHY_PORT1_REG,
-	  ADM_LAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY1_ADDR, ADM_SW_PHY_PORT1_REG, ADM_LAN_PORT_VLAN },
 
 	{ TRUE, /* phy port 2 -- NC */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY2_ADDR, ADM_SW_PHY_PORT2_REG,
-	  ADM_LAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY2_ADDR, ADM_SW_PHY_PORT2_REG, ADM_LAN_PORT_VLAN },
 
 	{ TRUE, /* phy port 3 -- NC */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY3_ADDR, ADM_SW_PHY_PORT3_REG,
-	  ADM_LAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY3_ADDR, ADM_SW_PHY_PORT3_REG, ADM_LAN_PORT_VLAN },
 
 	{ TRUE, /* phy port 4 -- LAN port */
-	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY4_ADDR, ADM_SW_PHY_PORT4_REG,
-	  ADM_LAN_PORT_VLAN },
+	  FALSE, ENET_UNIT_DEFAULT, ADM_PHY4_ADDR, ADM_SW_PHY_PORT4_REG, ADM_LAN_PORT_VLAN },
 
 	{ FALSE, /* phy port 5 -- CPU port (no RJ45 connector) 
 				 */
-	  TRUE, ENET_UNIT_DEFAULT, 0x00, ADM_SW_PHY_PORT5_REG,
-	  ADM_WAN_PORT_VLAN },
+	  TRUE, ENET_UNIT_DEFAULT, 0x00, ADM_SW_PHY_PORT5_REG, ADM_WAN_PORT_VLAN },
 };
 
 #endif
@@ -332,8 +314,7 @@ admPhyInfo_t admPhyInfo[] = {
 #define ADM_CONFIG_REG(phyUnit) (admPhyInfo[phyUnit].configReg)
 #define ADM_VLAN_TABLE_SETTING(phyUnit) (admPhyInfo[phyUnit].VLANTableSetting)
 
-#define ADM_IS_ETHUNIT(phyUnit, ethUnit) \
-	(ADM_IS_ENET_PORT(phyUnit) && ADM_ETHUNIT(phyUnit) == (ethUnit))
+#define ADM_IS_ETHUNIT(phyUnit, ethUnit) (ADM_IS_ENET_PORT(phyUnit) && ADM_ETHUNIT(phyUnit) == (ethUnit))
 
 void setPhy(int addr, int reg, int value)
 {
@@ -409,15 +390,11 @@ void config_vlan(void)
 	 * Set up the port memberships for the VLAN Groups 1 and 2 
 	 */
 
-	phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN) /
-		  ADM_PHY_BASE_REG_NUM;
-	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN),
-	       ADM_SW_LAN_MAP_TAB);
+	phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
+	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN), ADM_SW_LAN_MAP_TAB);
 
-	phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN) /
-		  ADM_PHY_BASE_REG_NUM;
-	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN),
-	       ADM_SW_WAN_MAP_TAB);
+	phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
+	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN), ADM_SW_WAN_MAP_TAB);
 
 	/*
 	 * Put the chip in 802.1q mode 
@@ -425,11 +402,9 @@ void config_vlan(void)
 	phyAddr = ADM_SW_VLAN_MODE_REG / ADM_PHY_BASE_REG_NUM;
 
 #if defined(HAVE_ADMTEKNESTEDVLAN)
-	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG,
-	       (ADM_SW_MAC_CLONE_EN | ADM_SW_SIZE_SEL));
+	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG, (ADM_SW_MAC_CLONE_EN | ADM_SW_SIZE_SEL));
 #else
-	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG,
-	       (ADM_SW_MAC_CLONE_EN | ADM_SW_VLAN_MODE_SEL));
+	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG, (ADM_SW_MAC_CLONE_EN | ADM_SW_VLAN_MODE_SEL));
 #endif
 }
 
@@ -441,15 +416,10 @@ static void adm_verifyReady(int ethUnit)
 
 	phyID1 = getPhy(0x5, 0x0);
 	phyID2 = getPhy(0x5, 0x1);
-	if (((phyID1 & 0xfff0) == ADM_CHIP_ID1_EXPECTATION) &&
-	    (phyID2 == ADM_CHIP_ID2_EXPECTATION)) {
-		fprintf(stderr,
-			"Found ADM6996FC! PHYID1 is 0x%x, PHYID2 is 0x%x\n",
-			phyID1, phyID2);
+	if (((phyID1 & 0xfff0) == ADM_CHIP_ID1_EXPECTATION) && (phyID2 == ADM_CHIP_ID2_EXPECTATION)) {
+		fprintf(stderr, "Found ADM6996FC! PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
 	} else {
-		fprintf(stderr,
-			"Couldn't find ADM6996FC!\n, PHYID1 is 0x%x, PHYID2 is 0x%x\n",
-			phyID1, phyID2);
+		fprintf(stderr, "Couldn't find ADM6996FC!\n, PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
 	}
 }
 
@@ -546,9 +516,7 @@ void vlan_init(int numports)
 
 		setPhy(phyAddr, ADM_AUTONEG_ADVERT, ADM_ADVERTISE_ALL);
 
-		setPhy(phyAddr, ADM_PHY_CONTROL,
-		       ADM_CTRL_AUTONEGOTIATION_ENABLE |
-			       ADM_CTRL_START_AUTONEGOTIATION);
+		setPhy(phyAddr, ADM_PHY_CONTROL, ADM_CTRL_AUTONEGOTIATION_ENABLE | ADM_CTRL_START_AUTONEGOTIATION);
 	}
 
 	/*
@@ -557,8 +525,7 @@ void vlan_init(int numports)
 	 * if ALL PHYs are connected AND finish autonegotiation.
 	 */
 	timeout = 15;
-	for (phyUnit = 0; (phyUnit < ADM_PHY_MAX) /* && (timeout > 0) */;
-	     phyUnit++) {
+	for (phyUnit = 0; (phyUnit < ADM_PHY_MAX) /* && (timeout > 0) */; phyUnit++) {
 		if (!ADM_IS_ETHUNIT(phyUnit, 0)) {
 			continue;
 		}
@@ -568,21 +535,15 @@ void vlan_init(int numports)
 			phyHwStatus = getPhy(phyAddr, ADM_PHY_STATUS);
 
 			if (ADM_AUTONEG_DONE(phyHwStatus)) {
-				fprintf(stderr,
-					"Port %d, Negotiation Success\n",
-					phyUnit);
+				fprintf(stderr, "Port %d, Negotiation Success\n", phyUnit);
 				break;
 			}
 			if (timeout == 0) {
-				fprintf(stderr,
-					"Port %d, Negotiation timeout\n",
-					phyUnit);
+				fprintf(stderr, "Port %d, Negotiation timeout\n", phyUnit);
 				break;
 			}
 			if (--timeout == 0) {
-				fprintf(stderr,
-					"Port %d, Negotiation timeout\n",
-					phyUnit);
+				fprintf(stderr, "Port %d, Negotiation timeout\n", phyUnit);
 				break;
 			}
 
@@ -607,8 +568,7 @@ void vlan_init(int numports)
 			ADM_IS_PHY_ALIVE(phyUnit) = FALSE;
 		}
 
-		fprintf(stderr, "adm_phySetup: eth%d phy%d: Phy Status=%4.4x\n",
-			0, phyUnit,
+		fprintf(stderr, "adm_phySetup: eth%d phy%d: Phy Status=%4.4x\n", 0, phyUnit,
 			getPhy(ADM_PHYADDR(phyUnit), ADM_PHY_STATUS));
 	}
 

@@ -44,8 +44,7 @@ int mk_nodog_conf(void)
 	}
 
 	fprintf(fp, "#\n");
-	fprintf(fp, "GatewayInterface\t%s\n",
-		nvram_default_get("ND_ifname", nvram_safe_get("lan_ifname")));
+	fprintf(fp, "GatewayInterface\t%s\n", nvram_default_get("ND_ifname", nvram_safe_get("lan_ifname")));
 	fprintf(fp, "FirewallRuleSet authenticated-users {\n");
 	fprintf(fp, "\tFirewallRule allow all\n");
 	fprintf(fp, "}\n");
@@ -72,43 +71,31 @@ int mk_nodog_conf(void)
 	fprintf(fp, "GatewayName\t%s\n", nvram_safe_get("ND_GatewayName"));
 	nvram_default_get("ND_GatewayAddr", "0.0.0.0");
 	if (!nvram_match("ND_GatewayAddr", "0.0.0.0"))
-		fprintf(fp, "GatewayAddress\t%s\n",
-			nvram_safe_get("ND_GatewayAddr"));
-	if (!nvram_match("ND_GatewayIPRange", "0.0.0.0") &&
-	    !nvram_match("ND_GatewayIPRange", "") &&
+		fprintf(fp, "GatewayAddress\t%s\n", nvram_safe_get("ND_GatewayAddr"));
+	if (!nvram_match("ND_GatewayIPRange", "0.0.0.0") && !nvram_match("ND_GatewayIPRange", "") &&
 	    !nvram_match("ND_GatewayIPRange_mask", "")) {
 		char range[64];
-		snprintf(range, sizeof(range), "%s/%s",
-			 nvram_safe_get("ND_GatewayIPRange"),
+		snprintf(range, sizeof(range), "%s/%s", nvram_safe_get("ND_GatewayIPRange"),
 			 nvram_safe_get("ND_GatewayIPRange_mask"));
 		fprintf(fp, "GatewayIPRange\t%s\n", range);
 	}
 	fprintf(fp, "WebRoot\t%s\n", nvram_safe_get("ND_DocumentRoot"));
-	fprintf(fp, "StatusPage\t%s\n",
-		nvram_default_get("ND_StatusPage", "status.html"));
-	fprintf(fp, "SplashPage\t%s\n",
-		nvram_default_get("ND_SplashPage", "splash.html"));
-	if (*nvram_safe_get("ND_HomePage") &&
-	    nvram_match("ND_ForcedRedirect", "1"))
+	fprintf(fp, "StatusPage\t%s\n", nvram_default_get("ND_StatusPage", "status.html"));
+	fprintf(fp, "SplashPage\t%s\n", nvram_default_get("ND_SplashPage", "splash.html"));
+	if (*nvram_safe_get("ND_HomePage") && nvram_match("ND_ForcedRedirect", "1"))
 		fprintf(fp, "RedirectURL\t%s\n", nvram_safe_get("ND_HomePage"));
 
-	fprintf(fp, "GatewayPort\t%s\n",
-		nvram_default_get("ND_GatewayPort", "2050"));
-	fprintf(fp, "MaxClients\t%s\n",
-		nvram_default_get("ND_MaxClients", "250"));
-	fprintf(fp, "PreAuthIdleTimeout\t%s\n",
-		nvram_default_get("ND_PreAuthIdleTimeout", "30"));
-	fprintf(fp, "AuthIdleTimeout\t%s\n",
-		nvram_default_get("ND_LoginTimeout", "120"));
+	fprintf(fp, "GatewayPort\t%s\n", nvram_default_get("ND_GatewayPort", "2050"));
+	fprintf(fp, "MaxClients\t%s\n", nvram_default_get("ND_MaxClients", "250"));
+	fprintf(fp, "PreAuthIdleTimeout\t%s\n", nvram_default_get("ND_PreAuthIdleTimeout", "30"));
+	fprintf(fp, "AuthIdleTimeout\t%s\n", nvram_default_get("ND_LoginTimeout", "120"));
 	//      fprintf(fp, "SessionTimeout\t%s\n", nvram_default_get("ND_LoginTimeout", "120"));
-	fprintf(fp, "CheckInterval\t%s\n",
-		nvram_default_get("ND_CheckInterval", "600"));
+	fprintf(fp, "CheckInterval\t%s\n", nvram_default_get("ND_CheckInterval", "600"));
 	fprintf(fp, "TrafficControl yes\n");
 	fprintf(fp, "DownloadLimit\t%s\n", nvram_default_get("ND_dl", "0"));
 	fprintf(fp, "UploadLimit\t%s\n", nvram_default_get("ND_ul", "0"));
 	if (*nvram_safe_get("ND_MACWhiteList"))
-		fprintf(fp, "AllowedMACList\t%s\n",
-			nvram_safe_get("ND_MACWhiteList"));
+		fprintf(fp, "AllowedMACList\t%s\n", nvram_safe_get("ND_MACWhiteList"));
 
 	fclose(fp);
 	return 0;
@@ -123,8 +110,7 @@ void start_splashd(void)
 
 	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
-	eval("nodogsplash", "-c",
-	     getdefaultconfig("nodogsplash", path, sizeof(path), NODOG_CONF));
+	eval("nodogsplash", "-c", getdefaultconfig("nodogsplash", path, sizeof(path), NODOG_CONF));
 	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
 	return;
 }

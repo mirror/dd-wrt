@@ -38,8 +38,7 @@ static void setWirelessLed(int phynum, int ledpin)
 	} else {
 		sprintf(sysname, "wireless_generic_%d", ledpin - 32);
 	}
-	sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger",
-		  trigger, sysname);
+	sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger", trigger, sysname);
 #endif
 }
 
@@ -65,8 +64,7 @@ static char *has_device(char *dev)
 static int phy_lookup_by_number(int idx)
 {
 	int err;
-	int phy = getValueFromPath("/sys/class/ieee80211/phy%d/index", idx,
-				   "%d", &err);
+	int phy = getValueFromPath("/sys/class/ieee80211/phy%d/index", idx, "%d", &err);
 	if (err)
 		return -1;
 	return phy;
@@ -160,8 +158,7 @@ static void detect_wireless_devices(int mask)
 	loadlegacy = 0;
 	char path[32];
 	int i = 0;
-	char *bus[] = { "0", "1", "2", "3", "4", "5", "6", "7",
-			"8", "9", "a", "b", "c", "d", "e", "f" };
+	char *bus[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
 	for (i = 0; i < 16; i++) {
 		sprintf(path, "0%s.0", bus[i]);
 		if (!strcmp(has_device(path), "0x0023"))
@@ -264,8 +261,7 @@ static void detect_wireless_devices(int mask)
 		if (nvram_exists("rate_control")) {
 			char rate[64];
 
-			sprintf(rate, "ratectl=%s",
-				nvram_safe_get("rate_control"));
+			sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
 			eval("insmod", "ath_pci", rate);
 			eval("insmod", "ath_ahb", rate);
 		} else {
@@ -288,10 +284,8 @@ static void detect_wireless_devices(int mask)
 					rmmod("ath5k");
 			}
 #endif
-			if (!nvram_match("no_ath9k", "1") &&
-			    (mask & RADIO_ATH9K)) {
-				int od = nvram_default_geti("power_overdrive",
-							    0);
+			if (!nvram_match("no_ath9k", "1") && (mask & RADIO_ATH9K)) {
+				int od = nvram_default_geti("power_overdrive", 0);
 				char overdrive[32];
 				sprintf(overdrive, "overdrive=%d", od);
 
@@ -300,8 +294,7 @@ static void detect_wireless_devices(int mask)
 #elif HAVE_PERU
 				char *dis = getUEnv("rndis");
 				if (dis && !strcmp(dis, "1"))
-					eval("insmod", "ath9k", overdrive,
-					     "no_ahb=1");
+					eval("insmod", "ath9k", overdrive, "no_ahb=1");
 				else
 					eval("insmod", "ath9k", overdrive);
 
@@ -338,14 +331,10 @@ static void detect_wireless_devices(int mask)
 			nvram_set("wlan5_fwtype_use", "ddwrt");
 			nvram_set("wlan6_fwtype_use", "ddwrt");
 			nvram_set("wlan7_fwtype_use", "ddwrt");
-			nvram_set("wlan0_dualband_use",
-				  nvram_default_get("wlan0_dualband", "0"));
-			nvram_set("wlan1_dualband_use",
-				  nvram_default_get("wlan1_dualband", "0"));
-			nvram_set("wlan2_dualband_use",
-				  nvram_default_get("wlan2_dualband", "0"));
-			nvram_set("wlan3_dualband_use",
-				  nvram_default_get("wlan3_dualband", "0"));
+			nvram_set("wlan0_dualband_use", nvram_default_get("wlan0_dualband", "0"));
+			nvram_set("wlan1_dualband_use", nvram_default_get("wlan1_dualband", "0"));
+			nvram_set("wlan2_dualband_use", nvram_default_get("wlan2_dualband", "0"));
+			nvram_set("wlan3_dualband_use", nvram_default_get("wlan3_dualband", "0"));
 			unsigned int dual = 0;
 			int v = nvram_geti("wlan0_dualband");
 			if (v == 2 || v == 5)
@@ -365,8 +354,7 @@ static void detect_wireless_devices(int mask)
 			sprintf(dualband, "dual_band=0x%08x", dual);
 			//			sprintf(dualband, "dual_band=0x02020202");
 			if (nvram_match("ath10k_encap", "1"))
-				eval("insmod", "ath10k", "ethernetmode=1",
-				     dualband);
+				eval("insmod", "ath10k", "ethernetmode=1", dualband);
 			else
 				eval("insmod", "ath10k", dualband);
 			if (!detectchange(NULL)) {

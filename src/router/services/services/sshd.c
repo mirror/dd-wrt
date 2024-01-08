@@ -72,8 +72,7 @@ void start_sshd(void)
 	stop_sshd();
 	if (!nvram_invmatchi("sshd_enable", 0))
 		return;
-	if (nvram_match("http_username", DEFAULT_USER) &&
-	    nvram_match("http_passwd", DEFAULT_PASS))
+	if (nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS))
 		return;
 	empty_dir_check();
 	int changed = 0;
@@ -83,15 +82,12 @@ void start_sshd(void)
 		unlink("/tmp/id_ed25519_ssh");
 	}
 
-	if (write_key_file(NVRAM_ED25519_KEY_NAME, ED25519_HOST_KEY_FILE,
-			   0600) == -1) {
+	if (write_key_file(NVRAM_ED25519_KEY_NAME, ED25519_HOST_KEY_FILE, 0600) == -1) {
 		generate_dropbear_ed25519_host_key();
-		write_key_file(NVRAM_ED25519_KEY_NAME, ED25519_HOST_KEY_FILE,
-			       0600);
+		write_key_file(NVRAM_ED25519_KEY_NAME, ED25519_HOST_KEY_FILE, 0600);
 		changed = 1;
 	}
-	eval("dropbearconvert", "openssh", "dropbear", ED25519_HOST_KEY_FILE,
-	     ED25519_HOST_KEY_FILE);
+	eval("dropbearconvert", "openssh", "dropbear", ED25519_HOST_KEY_FILE, ED25519_HOST_KEY_FILE);
 	nvram_unset("sshd_dss_host_key");
 	if (changed)
 		nvram_commit();
@@ -182,8 +178,7 @@ static int generate_dropbear_ed25519_host_key(void)
 
 	eval("dropbearkey", "-t", "ed25519", "-f", ED25519_HOST_KEY_FILE);
 
-	eval("dropbearconvert", "dropbear", "openssh", ED25519_HOST_KEY_FILE,
-	     TMP_HOST_KEY_FILE);
+	eval("dropbearconvert", "dropbear", "openssh", ED25519_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
 

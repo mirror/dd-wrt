@@ -171,8 +171,7 @@ int ipup_main(int argc, char **argv)
 	if (getenvs(value, sizeof(value), "DNS1"))
 		sprintf(buf, "%s", value);
 	if (getenvs(value, sizeof(value), "DNS2"))
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s%s",
-			 strlen(buf) ? " " : "", value);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s%s", strlen(buf) ? " " : "", value);
 	nvram_set("wan_get_dns", buf);
 	char *v;
 	if ((v = getenv("AC_NAME")))
@@ -209,9 +208,8 @@ int ipdown_main(int argc, char **argv)
 		dns_to_resolv();
 
 		// todo
-		route_del(nvram_safe_get("wan_ifname"), 0,
-			  nvram_safe_get("l2tp_server_ip"),
-			  nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
+		route_del(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"),
+			  "255.255.255.255");
 		/*
 		 * Restore the default gateway for WAN interface 
 		 */
@@ -220,16 +218,13 @@ int ipdown_main(int argc, char **argv)
 		/*
 		 * Set default route to gateway if specified 
 		 */
-		route_add(nvram_safe_get("wan_ifname"), 0, "0.0.0.0",
-			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+		route_add(nvram_safe_get("wan_ifname"), 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 	}
 	if (nvram_match("wan_proto", "pptp")) {
 		eval("route", "del", "default");
 		nvram_set("wan_gateway", nvram_safe_get("wan_gateway_buf"));
-		eval("route", "add", "default", "gw",
-		     nvram_safe_get("wan_gateway"));
-		eval("iptables", "-t", "nat", "-A", "POSTROUTING", "-o",
-		     nvram_safe_get("pptp_ifname"), "-j", "MASQUERADE");
+		eval("route", "add", "default", "gw", nvram_safe_get("wan_gateway"));
+		eval("iptables", "-t", "nat", "-A", "POSTROUTING", "-o", nvram_safe_get("pptp_ifname"), "-j", "MASQUERADE");
 	}
 #ifdef HAVE_3G
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
@@ -280,11 +275,8 @@ int ipdown_main(int argc, char **argv)
 		nvram_async_commit();
 	}
 
-	if (nvram_matchi("ppp_demand", 1) &&
-	    (nvram_match("wan_proto", "pptp") ||
-	     nvram_match("wan_proto", "l2tp") ||
-	     nvram_match("wan_proto", "pppoe_dual") ||
-	     nvram_match("wan_proto", "pppoe"))) {
+	if (nvram_matchi("ppp_demand", 1) && (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "l2tp") ||
+					      nvram_match("wan_proto", "pppoe_dual") || nvram_match("wan_proto", "pppoe"))) {
 		stop_process("listen", "activity listener");
 		eval("listen", nvram_safe_get("lan_ifname"));
 	}
@@ -326,8 +318,7 @@ int disconnected_pppoe_main(int argc, char **argv)
 	int pppoe_num = atoi(argv[1]);
 	char ppp_demand[2][20] = { "ppp_demand", "ppp_demand_1" };
 
-	if (nvram_matchi(ppp_demand[pppoe_num], 1) &&
-	    nvram_match("action_service", "")) {
+	if (nvram_matchi(ppp_demand[pppoe_num], 1) && nvram_match("action_service", "")) {
 		cprintf("tallest:=====( kill pppoe %d )=====\n", pppoe_num);
 		single_pppoe_stop(pppoe_num);
 		run_pppoe(pppoe_num);

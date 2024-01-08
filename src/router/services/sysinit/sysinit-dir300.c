@@ -163,8 +163,7 @@ void start_sysinit(void)
 				       6); // wlan1 mac
 			}
 			if (changed) {
-				fprintf(stderr,
-					"radio config needs to be adjusted, system will reboot after flashing\n");
+				fprintf(stderr, "radio config needs to be adjusted, system will reboot after flashing\n");
 				fp = fopen("/tmp/radio", "wb");
 				fwrite(block, 65536, 1, fp);
 				fclose(fp);
@@ -178,8 +177,7 @@ void start_sysinit(void)
 				// reboots
 				eval("event", "5", "1", "15");
 			} else {
-				fprintf(stderr,
-					"no change required, radio config remains unchanged\n");
+				fprintf(stderr, "no change required, radio config remains unchanged\n");
 			}
 			free(block);
 		}
@@ -218,10 +216,8 @@ void start_sysinit(void)
 
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports",
-		     "0 1 2 3 5t");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports",
-		     "4 5t");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 5t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 5t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");

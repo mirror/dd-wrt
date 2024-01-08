@@ -74,16 +74,13 @@ void start_dlna(void)
 	dlna_shares = getdlnashares();
 	for (cs = dlna_shares; cs; cs = csnext) {
 		if (*cs->mp) {
-			if ((cs->types &
-			     (TYPE_VIDEO | TYPE_AUDIO | TYPE_IMAGES))) {
+			if ((cs->types & (TYPE_VIDEO | TYPE_AUDIO | TYPE_IMAGES))) {
 				fprintf(fp, "media_dir=%s%s%s,%s%s%s\n", //
 					cs->types & TYPE_VIDEO ? "V" : "", //
 					cs->types & TYPE_AUDIO ? "A" : "", //
 					cs->types & TYPE_IMAGES ? "P" : "", //
 					cs->mp, //
-					(cs->sd[0] != '/' && cs->sd[0] != 0) ?
-						"/" :
-						"", //
+					(cs->sd[0] != '/' && cs->sd[0] != 0) ? "/" : "", //
 					cs->sd);
 			}
 		}
@@ -91,8 +88,7 @@ void start_dlna(void)
 		free(cs);
 	}
 	fprintf(fp, "friendly_name=%s\n",
-		nvram_safe_get(
-			"router_name")); //enter any name you want here, but should be unique within a network
+		nvram_safe_get("router_name")); //enter any name you want here, but should be unique within a network
 	if (nvram_matchi("dlna_thumb", 1)) {
 		fprintf(fp,
 			"album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
@@ -124,16 +120,14 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=AllShare1.0\n");
 	fclose(fp);
-	log_eval("minidlna", "-f",
-		 getdefaultconfig("dlna", path, sizeof(path), "minidlna.conf"));
+	log_eval("minidlna", "-f", getdefaultconfig("dlna", path, sizeof(path), "minidlna.conf"));
 
 	return;
 }
 
 void start_dlna_rescan(void)
 {
-	if (nvram_match("dlna_enable", "1") &&
-	    nvram_match("dlna_rescan", "1")) {
+	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1")) {
 		dd_loginfo("minidlna", "Start rescan of folders\n");
 		eval("minidlna", "-P", "/var/run/minidlna/minidlna.pid", "-U");
 	}

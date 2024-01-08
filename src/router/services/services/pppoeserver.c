@@ -36,8 +36,7 @@ static char *getifip(void)
 	if (nvram_match("pppoeserver_interface", "br0"))
 		return nvram_safe_get("lan_ipaddr");
 	else
-		return nvram_nget("%s_ipaddr",
-				  nvram_safe_get("pppoeserver_interface"));
+		return nvram_nget("%s_ipaddr", nvram_safe_get("pppoeserver_interface"));
 }
 
 static void add_pppoe_natrule(void)
@@ -57,8 +56,7 @@ void addpppoeconnected_main(int argc, char *argv[])
 	}
 
 	lock = 1;
-	sysprintf("echo \"%s\t%s\t%s\t%s\" >> /tmp/pppoe_connected", argv[1],
-		  argv[2], argv[3], argv[4]);
+	sysprintf("echo \"%s\t%s\t%s\t%s\" >> /tmp/pppoe_connected", argv[1], argv[2], argv[3], argv[4]);
 	lock = 0;
 }
 
@@ -71,11 +69,9 @@ void addpppoetime_main(int argc, char *argv[])
 	}
 
 	lock = 1;
-	sysprintf("grep -v %s /tmp/pppoe_peer.db > /tmp/pppoe_peer.db.tmp",
-		  argv[1]);
+	sysprintf("grep -v %s /tmp/pppoe_peer.db > /tmp/pppoe_peer.db.tmp", argv[1]);
 	eval("mv", "/tmp/pppoe_peer.db.tmp", "/tmp/pppoe_peer.db");
-	sysprintf("echo \"%s\t\t%s\t\t%s\t\t%s\" >> /tmp/pppoe_peer.db",
-		  argv[2], argv[3], argv[4], argv[1]);
+	sysprintf("echo \"%s\t\t%s\t\t%s\t\t%s\" >> /tmp/pppoe_peer.db", argv[2], argv[3], argv[4], argv[1]);
 	lock = 0;
 }
 
@@ -88,12 +84,10 @@ void delpppoeconnected_main(int argc, char *argv[])
 	}
 
 	lock = 1;
-	sysprintf("grep -v %s /tmp/pppoe_connected > /tmp/pppoe_connected.tmp",
-		  argv[1]);
+	sysprintf("grep -v %s /tmp/pppoe_connected > /tmp/pppoe_connected.tmp", argv[1]);
 	eval("mv", "/tmp/pppoe_connected.tmp", "/tmp/pppoe_connected", "-f");
 	//      just an uptime test
-	sysprintf("grep -v %s /tmp/pppoe_uptime > /tmp/pppoe_uptime.tmp",
-		  argv[2]);
+	sysprintf("grep -v %s /tmp/pppoe_uptime > /tmp/pppoe_uptime.tmp", argv[2]);
 	eval("mv", "/tmp/pppoe_uptime.tmp", "/tmp/pppoe_uptime", "-f");
 	lock = 0;
 }
@@ -108,8 +102,7 @@ static void makeipup(void)
 	//      if (nvram_match("pppoeserver_clip", "local")) //for radius ip's...to be worked on
 	if (nvram_match("wan_proto",
 			"pppoe") //only when there is an ppp0 interface
-	    || nvram_match("wan_proto", "pptp") ||
-	    nvram_match("wan_proto", "pppoe_dual"))
+	    || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe_dual"))
 		fprintf(fp, "iptables -I FORWARD -i $1 -j ACCEPT\n"
 			    "iptables -I FORWARD -o $1 -j ACCEPT\n");
 	fprintf(fp, "addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
@@ -138,20 +131,17 @@ static void makeipup(void)
 	//burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down.sh", "w");
-	fprintf(fp,
-		"#!/bin/sh\n"
-		"delpppoeconnected $PPPD_PID $PEERNAME\n"
-		//      calc connected time and volume per peer
-		"CONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $1}'`\n"
-		"SENT=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $2}'`\n"
-		"RCVD=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`\n"
-		"CONTIME=$(($CONTIME+$CONNECT_TIME))\n"
-		"SENT=$(($SENT+$BYTES_SENT))\n"
-		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
-		"addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n");
-	if (nvram_match("wan_proto", "pppoe") ||
-	    nvram_match("wan_proto", "pptp") ||
-	    nvram_match("wan_proto", "pppoe_dual"))
+	fprintf(fp, "#!/bin/sh\n"
+		    "delpppoeconnected $PPPD_PID $PEERNAME\n"
+		    //      calc connected time and volume per peer
+		    "CONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $1}'`\n"
+		    "SENT=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $2}'`\n"
+		    "RCVD=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`\n"
+		    "CONTIME=$(($CONTIME+$CONNECT_TIME))\n"
+		    "SENT=$(($SENT+$BYTES_SENT))\n"
+		    "RCVD=$(($RCVD+$BYTES_RCVD))\n"
+		    "addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n");
+	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe_dual"))
 		fprintf(fp, "iptables -D FORWARD -i $1 -j ACCEPT\n"
 			    "iptables -D FORWARD -o $1 -j ACCEPT\n");
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
@@ -165,8 +155,7 @@ static void makeipup(void)
 	chmod("/tmp/pppoeserver/ip-down.sh", 0700);
 
 	//      copy existing peer data to /tmp
-	if ((nvram_matchi("usb_enable", 1) && nvram_matchi("usb_storage", 1) &&
-	     nvram_matchi("usb_automnt", 1) &&
+	if ((nvram_matchi("usb_enable", 1) && nvram_matchi("usb_storage", 1) && nvram_matchi("usb_automnt", 1) &&
 	     nvram_match("usb_mntpoint", "jffs")) ||
 	    jffs_mounted())
 		mkdir("/jffs/etc", 0700);
@@ -227,11 +216,8 @@ static void do_pppoeconfig(FILE *fp)
 		"lcp-echo-failure %s\n" //
 		"lcp-echo-adaptive\n" //
 		"idle %s\n",
-		nvram_safe_get("pppoeserver_mtu"),
-		nvram_safe_get("pppoeserver_mru"),
-		nvram_safe_get("pppoeserver_lcpechoint"),
-		nvram_safe_get("pppoeserver_lcpechofail"),
-		nvram_safe_get("pppoeserver_idle"));
+		nvram_safe_get("pppoeserver_mtu"), nvram_safe_get("pppoeserver_mru"), nvram_safe_get("pppoeserver_lcpechoint"),
+		nvram_safe_get("pppoeserver_lcpechofail"), nvram_safe_get("pppoeserver_idle"));
 	if (nvram_match("pppoeserver_interface", "br0"))
 		fprintf(fp, "proxyarp\n"
 			    "ktune\n");
@@ -270,11 +256,9 @@ void start_pppoeserver(void)
 		add_pppoe_natrule();
 		if (nvram_default_matchi("pppoeradius_enabled", 0, 0)) {
 			mkdir("/tmp/pppoeserver", 0777);
-			fp = fopen("/tmp/pppoeserver/pppoe-server-options",
-				   "wb");
+			fp = fopen("/tmp/pppoeserver/pppoe-server-options", "wb");
 			do_pppoeconfig(fp);
-			fprintf(fp,
-				"chap-secrets /tmp/pppoeserver/chap-secrets\n");
+			fprintf(fp, "chap-secrets /tmp/pppoeserver/chap-secrets\n");
 			fclose(fp);
 
 			// parse chaps from nvram to file
@@ -297,16 +281,14 @@ void start_pppoeserver(void)
 				if (!strcmp(ip, "0.0.0.0"))
 					ip = "*";
 				if (!strcmp(enable, "on"))
-					fprintf(fp, "%s * %s %s\n", user, pass,
-						ip);
+					fprintf(fp, "%s * %s %s\n", user, pass, ip);
 			}
 			fclose(fp);
 			makeipup();
 			// end parsing
 		} else {
 			mkdir("/tmp/pppoeserver", 0777);
-			fp = fopen("/tmp/pppoeserver/pppoe-server-options",
-				   "wb");
+			fp = fopen("/tmp/pppoeserver/pppoe-server-options", "wb");
 			do_pppoeconfig(fp);
 			fprintf(fp,
 				"login\n" //
@@ -315,8 +297,7 @@ void start_pppoeserver(void)
 				"radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n");
 			fclose(fp);
 			mkdir("/tmp/pppoeserver/radius", 0777);
-			fp = fopen("/tmp/pppoeserver/radius/radiusclient.conf",
-				   "wb");
+			fp = fopen("/tmp/pppoeserver/radius/radiusclient.conf", "wb");
 			fprintf(fp,
 				"auth_order\tradius\n" //
 				"login_tries\t4\n" //
@@ -332,57 +313,32 @@ void start_pppoeserver(void)
 				"radius_timeout\t10\n" //
 				"radius_retries\t3\n" //
 				"login_local\t/bin/login\n"); //
-			if (nvram_match("pppoeserver_authserverip_backup",
-					"0.0.0.0") ||
-			    *(nvram_safe_get(
-				    "pppoeserver_authserverip_backup")) == 0) {
+			if (nvram_match("pppoeserver_authserverip_backup", "0.0.0.0") ||
+			    *(nvram_safe_get("pppoeserver_authserverip_backup")) == 0) {
 				fprintf(fp,
 					"authserver %s:%s\n" //
 					"acctserver %s:%s\n", //
-					nvram_safe_get(
-						"pppoeserver_authserverip"),
-					nvram_safe_get(
-						"pppoeserver_authserverport"),
-					nvram_safe_get(
-						"pppoeserver_authserverip"),
-					nvram_safe_get(
-						"pppoeserver_acctserverport"));
+					nvram_safe_get("pppoeserver_authserverip"), nvram_safe_get("pppoeserver_authserverport"),
+					nvram_safe_get("pppoeserver_authserverip"), nvram_safe_get("pppoeserver_acctserverport"));
 			} else {
 				fprintf(fp,
 					"authserver %s:%s, %s:%s\n" //
 					"acctserver %s:%s, %s:%s\n", //
-					nvram_safe_get(
-						"pppoeserver_authserverip"),
-					nvram_safe_get(
-						"pppoeserver_authserverport"),
-					nvram_safe_get(
-						"pppoeserver_authserverip_backup"),
-					nvram_safe_get(
-						"pppoeserver_authserverport_backup"),
-					nvram_safe_get(
-						"pppoeserver_authserverip"),
-					nvram_safe_get(
-						"pppoeserver_acctserverport"),
-					nvram_safe_get(
-						"pppoeserver_authserverip_backup"),
-					nvram_safe_get(
-						"pppoeserver_acctserverport_backup"));
+					nvram_safe_get("pppoeserver_authserverip"), nvram_safe_get("pppoeserver_authserverport"),
+					nvram_safe_get("pppoeserver_authserverip_backup"),
+					nvram_safe_get("pppoeserver_authserverport_backup"),
+					nvram_safe_get("pppoeserver_authserverip"), nvram_safe_get("pppoeserver_acctserverport"),
+					nvram_safe_get("pppoeserver_authserverip_backup"),
+					nvram_safe_get("pppoeserver_acctserverport_backup"));
 			}
 			fclose(fp);
 			fp = fopen("/tmp/pppoeserver/radius/servers", "wb");
-			fprintf(fp, "%s %s\n",
-				nvram_safe_get("pppoeserver_authserverip"),
-				nvram_safe_get(
-					"pppoeserver_sharedkey")); // todo,
-			if (nvram_invmatch("pppoeserver_authserverip_backup",
-					   "0.0.0.0") ||
-			    *(nvram_safe_get(
-				    "pppoeserver_authserverip_backup")) != 0)
-				fprintf(fp, "%s %s\n",
-					nvram_safe_get(
-						"pppoeserver_authserverip_backup"),
-					nvram_safe_get(
-						"pppoeserver_sharedkey_backup"));
+			fprintf(fp, "%s %s\n", nvram_safe_get("pppoeserver_authserverip"),
+				nvram_safe_get("pppoeserver_sharedkey")); // todo,
+			if (nvram_invmatch("pppoeserver_authserverip_backup", "0.0.0.0") ||
+			    *(nvram_safe_get("pppoeserver_authserverip_backup")) != 0)
+				fprintf(fp, "%s %s\n", nvram_safe_get("pppoeserver_authserverip_backup"),
+					nvram_safe_get("pppoeserver_sharedkey_backup"));
 			fclose(fp);
 			makeipup();
 		}
@@ -393,22 +349,15 @@ void start_pppoeserver(void)
 
 		if (nvram_invmatch("wan_proto",
 				   "pppoe") //if there is no ppp0, reduce rules
-		    && nvram_invmatch("wan_proto", "pptp") &&
-		    nvram_invmatch("wan_proto", "pppoe_dual")) {
-			eval("/usr/sbin/iptables", "-I", "FORWARD", "-i",
-			     "ppp+", "-j", "ACCEPT");
-			eval("/usr/sbin/iptables", "-I", "FORWARD", "-o",
-			     "ppp+", "-j", "ACCEPT");
+		    && nvram_invmatch("wan_proto", "pptp") && nvram_invmatch("wan_proto", "pppoe_dual")) {
+			eval("/usr/sbin/iptables", "-I", "FORWARD", "-i", "ppp+", "-j", "ACCEPT");
+			eval("/usr/sbin/iptables", "-I", "FORWARD", "-o", "ppp+", "-j", "ACCEPT");
 		}
 
 		start_pppmodules();
-		log_eval("pppoe-server", "-k", "-I",
-			 nvram_safe_get("pppoeserver_interface"), "-L",
-			 getifip(), "-i", "-x",
-			 nvram_safe_get("pppoeserver_sessionlimit"), "-N",
-			 nvram_safe_get("pppoeserver_clcount"), "-R",
-			 nvram_safe_get("pppoeserver_pool"), "-X",
-			 "/var/run/pppoeserver.pid");
+		log_eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-i", "-x",
+			 nvram_safe_get("pppoeserver_sessionlimit"), "-N", nvram_safe_get("pppoeserver_clcount"), "-R",
+			 nvram_safe_get("pppoeserver_pool"), "-X", "/var/run/pppoeserver.pid");
 	}
 }
 
@@ -425,27 +374,21 @@ void stop_pppoeserver(void)
 		//      unlink("/tmp/pppoeserver/calc-uptime.sh");
 
 		//      backup peer data to jffs/usb if available
-		if ((nvram_matchi("usb_enable", 1) &&
-		     nvram_matchi("usb_storage", 1) &&
-		     nvram_matchi("usb_automnt", 1) &&
+		if ((nvram_matchi("usb_enable", 1) && nvram_matchi("usb_storage", 1) && nvram_matchi("usb_automnt", 1) &&
 		     nvram_match("usb_mntpoint", "jffs")) ||
 		    jffs_mounted()) {
 			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/pppoeserver", 0700);
-			eval("/bin/cp", "/tmp/pppoe_peer.db",
-			     "/jffs/etc/pppoeserver");
+			eval("/bin/cp", "/tmp/pppoe_peer.db", "/jffs/etc/pppoeserver");
 		}
 		//              if (nvram_match("wan_proto", "disabled"))
 		//                      system("/usr/sbin/iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
-		if (nvram_invmatch("wan_proto", "pppoe") &&
-		    nvram_invmatch("wan_proto", "pptp") &&
+		if (nvram_invmatch("wan_proto", "pppoe") && nvram_invmatch("wan_proto", "pptp") &&
 		    nvram_invmatch("wan_proto", "pppoe_dual")) {
-			eval("/usr/sbin/iptables", "-D", "FORWARD", "-i",
-			     "ppp+", "-j", "ACCEPT");
-			eval("/usr/sbin/iptables", "-D", "FORWARD", "-o",
-			     "ppp+", "-j", "ACCEPT");
+			eval("/usr/sbin/iptables", "-D", "FORWARD", "-i", "ppp+", "-j", "ACCEPT");
+			eval("/usr/sbin/iptables", "-D", "FORWARD", "-o", "ppp+", "-j", "ACCEPT");
 		}
 	}
 }

@@ -72,12 +72,10 @@ int main(int argc, char *argv[])
 	} else
 		switch (method) {
 		case RAETH_MII_READ:
-			printf("Get: phy[%d].reg[%d] = %04x\n", mii.phy_id,
-			       mii.reg_num, mii.val_out);
+			printf("Get: phy[%d].reg[%d] = %04x\n", mii.phy_id, mii.reg_num, mii.val_out);
 			break;
 		case RAETH_MII_WRITE:
-			printf("Set: phy[%d].reg[%d] = %04x\n", mii.phy_id,
-			       mii.reg_num, mii.val_in);
+			printf("Set: phy[%d].reg[%d] = %04x\n", mii.phy_id, mii.reg_num, mii.val_in);
 			break;
 		}
 

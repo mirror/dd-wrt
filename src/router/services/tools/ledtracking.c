@@ -36,8 +36,7 @@ int ledtracking_main(int argc, char **argv)
 	unsigned char assoclist[1024];
 
 	if (argc <= 4) {
-		fprintf(stderr, "%s <interfacex> <gpio> <polarity> <snr-max>\n",
-			argv[0]);
+		fprintf(stderr, "%s <interfacex> <gpio> <polarity> <snr-max>\n", argv[0]);
 		exit(1);
 	}
 	gpio = atoi(argv[2]);
@@ -59,8 +58,7 @@ int ledtracking_main(int argc, char **argv)
 				cnt = 0;
 			}
 			if (!cnt) {
-				fprintf(stderr,
-					"not associated, wait 5 seconds\n");
+				fprintf(stderr, "not associated, wait 5 seconds\n");
 				sleep(5);
 				continue;
 			}

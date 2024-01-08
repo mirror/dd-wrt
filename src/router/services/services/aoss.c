@@ -35,8 +35,7 @@ void start_aoss(void)
 {
 	int ret;
 #ifdef HAVE_WZRHPAG300NH
-	if (nvram_match("wlan0_net_mode", "disabled") &&
-	    nvram_match("wlan1_net_mode", "disabled")) {
+	if (nvram_match("wlan0_net_mode", "disabled") && nvram_match("wlan1_net_mode", "disabled")) {
 		led_control(LED_SES, LED_OFF);
 		stop_aoss();
 		return;
@@ -108,9 +107,7 @@ void start_aoss(void)
 	int hasaoss = 0;
 #ifdef HAVE_WZRHPAG300NH
 #ifdef HAVE_ATH9K
-	if ((nvram_match("wlan0_mode", "ap") ||
-	     nvram_match("wlan0_mode", "wdsap")) &&
-	    !nvram_match("wlan0_net_mode", "disabled")) {
+	if ((nvram_match("wlan0_mode", "ap") || nvram_match("wlan0_mode", "wdsap")) && !nvram_match("wlan0_net_mode", "disabled")) {
 		hasaoss = 1;
 		deconfigure_single_ath9k(0);
 		configure_single_ath9k(0);
@@ -133,12 +130,9 @@ void start_aoss(void)
 			kill(pid, SIGTERM);
 			sleep(2);
 		}
-		eval("hostapd", "-B", "-P", "/var/run/wlan0_hostapd.pid",
-		     "/tmp/wlan0_hostap.conf");
+		eval("hostapd", "-B", "-P", "/var/run/wlan0_hostapd.pid", "/tmp/wlan0_hostap.conf");
 	}
-	if ((nvram_match("wlan1_mode", "ap") ||
-	     nvram_match("wlan1_mode", "wdsap")) &&
-	    !nvram_match("wlan1_net_mode", "disabled")) {
+	if ((nvram_match("wlan1_mode", "ap") || nvram_match("wlan1_mode", "wdsap")) && !nvram_match("wlan1_net_mode", "disabled")) {
 		hasaoss = 1;
 		deconfigure_single_ath9k(1);
 		configure_single_ath9k(1);
@@ -161,29 +155,22 @@ void start_aoss(void)
 			kill(pid, SIGTERM);
 			sleep(2);
 		}
-		eval("hostapd", "-B", "-P", "/var/run/wlan1_hostapd.pid",
-		     "/tmp/wlan1_hostap.conf");
+		eval("hostapd", "-B", "-P", "/var/run/wlan1_hostapd.pid", "/tmp/wlan1_hostap.conf");
 	}
 #else
 
-	if ((nvram_match("wlan1_mode", "ap") ||
-	     nvram_match("wlan1_mode", "wdsap")) &&
-	    !nvram_match("wlan1_net_mode", "disabled")) {
+	if ((nvram_match("wlan1_mode", "ap") || nvram_match("wlan1_mode", "wdsap")) && !nvram_match("wlan1_net_mode", "disabled")) {
 		hasaoss = 1;
-		eval("80211n_wlanconfig", "aossa", "create", "wlandev", "wifi1",
-		     "wlanmode", "ap");
+		eval("80211n_wlanconfig", "aossa", "create", "wlandev", "wifi1", "wlanmode", "ap");
 		eval("iwconfig", "aossa", "essid", "ESSID-AOSS-1");
 		eval("iwpriv", "aossa", "authmode", "4");
 		eval("iwconfig", "aossa", "key", "[1]", "4D454C434F");
 		eval("iwconfig", "aossa", "key", "[1]");
 		eval("ifconfig", "aossa", "0.0.0.0", "up");
 	}
-	if ((nvram_match("wlan0_mode", "ap") ||
-	     nvram_match("wlan0_mode", "wdsap")) &&
-	    !nvram_match("wlan0_net_mode", "disabled")) {
+	if ((nvram_match("wlan0_mode", "ap") || nvram_match("wlan0_mode", "wdsap")) && !nvram_match("wlan0_net_mode", "disabled")) {
 		hasaoss = 1;
-		eval("80211n_wlanconfig", "aossg", "create", "wlandev", "wifi0",
-		     "wlanmode", "ap");
+		eval("80211n_wlanconfig", "aossg", "create", "wlandev", "wifi0", "wlanmode", "ap");
 		eval("iwconfig", "aossg", "essid", "ESSID-AOSS");
 		eval("iwpriv", "aossg", "authmode", "4");
 		eval("iwconfig", "aossg", "key", "[1]", "4D454C434F");
@@ -203,8 +190,7 @@ void start_aoss(void)
 		}
 	}
 #else
-	if (nvram_match("wlan0_mode", "ap") ||
-	    nvram_match("wlan0_mode", "wdsap")) {
+	if (nvram_match("wlan0_mode", "ap") || nvram_match("wlan0_mode", "wdsap")) {
 		if (is_mac80211("wlan0")) {
 			deconfigure_single_ath9k(0);
 			configure_single_ath9k(0);
@@ -227,13 +213,10 @@ void start_aoss(void)
 				kill(pid, SIGTERM);
 				sleep(2);
 			}
-			eval("hostapd", "-B", "-P",
-			     "/var/run/wlan0_hostapd.pid",
-			     "/tmp/wlan0_hostap.conf");
+			eval("hostapd", "-B", "-P", "/var/run/wlan0_hostapd.pid", "/tmp/wlan0_hostap.conf");
 		} else {
 			hasaoss = 1;
-			eval("80211n_wlanconfig", "aoss", "create", "wlandev",
-			     "wifi0", "wlanmode", "ap");
+			eval("80211n_wlanconfig", "aoss", "create", "wlandev", "wifi0", "wlanmode", "ap");
 			eval("iwconfig", "aoss", "essid", "ESSID-AOSS");
 			eval("iwpriv", "aoss", "authmode", "4");
 			eval("iwconfig", "aoss", "key", "[1]", "4D454C434F");
@@ -247,9 +230,7 @@ void start_aoss(void)
 		eval("iptables", "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
 		log_eval("aoss", "-i", "aoss", "-m", "ap");
 	} else
-		dd_loginfo(
-			"aoss",
-			"daemon not started (operation mode is not AP or WDSAP)\n");
+		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)\n");
 
 #endif
 	cprintf("done\n");

@@ -33,24 +33,11 @@
 
 #define RTK_SWITCH_MAX_PKTLEN (0x3FFF)
 
-typedef enum init_state_e {
-	INIT_NOT_COMPLETED = 0,
-	INIT_COMPLETED,
-	INIT_STATE_END
-} init_state_t;
+typedef enum init_state_e { INIT_NOT_COMPLETED = 0, INIT_COMPLETED, INIT_STATE_END } init_state_t;
 
-typedef enum switch_chip_e {
-	CHIP_RTL8367C = 0,
-	CHIP_RTL8370B,
-	CHIP_END
-} switch_chip_t;
+typedef enum switch_chip_e { CHIP_RTL8367C = 0, CHIP_RTL8370B, CHIP_END } switch_chip_t;
 
-typedef enum port_type_e {
-	UTP_PORT = 0,
-	EXT_PORT,
-	UNKNOWN_PORT = 0xFF,
-	PORT_TYPE_END
-} port_type_t;
+typedef enum port_type_e { UTP_PORT = 0, EXT_PORT, UNKNOWN_PORT = 0xFF, PORT_TYPE_END } port_type_t;
 
 typedef struct rtk_switch_halCtrl_s {
 	switch_chip_t switch_type;
@@ -78,18 +65,13 @@ typedef enum rtk_switch_maxPktLen_linkSpeed_e {
 	MAXPKTLEN_LINK_SPEED_END,
 } rtk_switch_maxPktLen_linkSpeed_t;
 
-#define RTK_SWITCH_CMDS                                                       \
-	{                                                                     \
-		CASEID(INIT_SWITCH), CASEID(INIT_SWITCH_UP),                  \
-			CASEID(BAD_ADDR_X), CASEID(POWERUP_LANPORTS),         \
-			CASEID(POWERDOWN_LANPORTS), CASEID(SOFT_RESET),       \
-			CASEID(GET_REG), CASEID(SET_REG), CASEID(TEST_REG),   \
-			CASEID(RESET_PORT), CASEID(GET_LANPORTS_LINK_STATUS), \
-			CASEID(GET_PORT_STAT), CASEID(GET_PORT_SPEED),        \
-			CASEID(GET_EXT_TXRXDELAY), CASEID(SET_EXT_TXDELAY),   \
-			CASEID(SET_EXT_RXDELAY), CASEID(SET_EXT_MODE),        \
-			CASEID(GET_CPU), CASEID(SET_CPU),                     \
-			CASEID(GET_RTK_PHYSTATES), CASEID(MAX_REQ),           \
+#define RTK_SWITCH_CMDS                                                                                                      \
+	{                                                                                                                    \
+		CASEID(INIT_SWITCH), CASEID(INIT_SWITCH_UP), CASEID(BAD_ADDR_X), CASEID(POWERUP_LANPORTS),                   \
+			CASEID(POWERDOWN_LANPORTS), CASEID(SOFT_RESET), CASEID(GET_REG), CASEID(SET_REG), CASEID(TEST_REG),  \
+			CASEID(RESET_PORT), CASEID(GET_LANPORTS_LINK_STATUS), CASEID(GET_PORT_STAT), CASEID(GET_PORT_SPEED), \
+			CASEID(GET_EXT_TXRXDELAY), CASEID(SET_EXT_TXDELAY), CASEID(SET_EXT_RXDELAY), CASEID(SET_EXT_MODE),   \
+			CASEID(GET_CPU), CASEID(SET_CPU), CASEID(GET_RTK_PHYSTATES), CASEID(MAX_REQ),                        \
 	}
 
 #define CASEID(a) a
@@ -176,22 +158,16 @@ typedef enum stb_LANWAN_config_e {
 		}                                                          \
 	} while (0)
 
-#define RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__) \
-	(((__portmask__).bits[0] & (0x00000001 << __port__)) ? 1 : 0)
-#define RTK_PORTMASK_IS_EMPTY(__portmask__) \
-	(((__portmask__).bits[0] == 0) ? 1 : 0)
+#define RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__) (((__portmask__).bits[0] & (0x00000001 << __port__)) ? 1 : 0)
+#define RTK_PORTMASK_IS_EMPTY(__portmask__) (((__portmask__).bits[0] == 0) ? 1 : 0)
 #define RTK_PORTMASK_CLEAR(__portmask__) ((__portmask__).bits[0] = 0)
-#define RTK_PORTMASK_PORT_SET(__portmask__, __port__) \
-	((__portmask__).bits[0] |= (0x00000001 << __port__))
-#define RTK_PORTMASK_PORT_CLEAR(__portmask__, __port__) \
-	((__portmask__).bits[0] &= ~(0x00000001 << __port__))
-#define RTK_PORTMASK_ALLPORT_SET(__portmask__) \
-	(rtk_switch_logPortMask_get(&__portmask__))
+#define RTK_PORTMASK_PORT_SET(__portmask__, __port__) ((__portmask__).bits[0] |= (0x00000001 << __port__))
+#define RTK_PORTMASK_PORT_CLEAR(__portmask__, __port__) ((__portmask__).bits[0] &= ~(0x00000001 << __port__))
+#define RTK_PORTMASK_ALLPORT_SET(__portmask__) (rtk_switch_logPortMask_get(&__portmask__))
 #define RTK_PORTMASK_SCAN(__portmask__, __port__)                      \
 	for (__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++) \
 		if (RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__))
-#define RTK_PORTMASK_COMPARE(__portmask_A__, __portmask_B__) \
-	((__portmask_A__).bits[0] - (__portmask_B__).bits[0])
+#define RTK_PORTMASK_COMPARE(__portmask_A__, __portmask_B__) ((__portmask_A__).bits[0] - (__portmask_B__).bits[0])
 
 #define RTK_SCAN_ALL_PHY_PORTMASK(__port__)                            \
 	for (__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++) \
@@ -199,9 +175,8 @@ typedef enum stb_LANWAN_config_e {
 #define RTK_SCAN_ALL_LOG_PORT(__port__)                                \
 	for (__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++) \
 		if (rtk_switch_logicalPortCheck(__port__) == RT_ERR_OK)
-#define RTK_SCAN_ALL_LOG_PORTMASK(__portmask__)                            \
-	for ((__portmask__).bits[0] = 0; (__portmask__).bits[0] < 0x7FFFF; \
-	     (__portmask__).bits[0]++)                                     \
+#define RTK_SCAN_ALL_LOG_PORTMASK(__portmask__)                                                      \
+	for ((__portmask__).bits[0] = 0; (__portmask__).bits[0] < 0x7FFFF; (__portmask__).bits[0]++) \
 		if (rtk_switch_isPortMaskValid(&__portmask__) == RT_ERR_OK)
 
 /* Port mask defination */
@@ -478,8 +453,7 @@ extern rtk_api_ret_t rtk_switch_isPortMaskExt(rtk_portmask_t *pPmask);
  * Note:
  *
  */
-extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask,
-						 rtk_uint32 *pPhysicalPortmask);
+extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask, rtk_uint32 *pPhysicalPortmask);
 
 /* Function Name:
  *      rtk_switch_portmask_P2L_get
@@ -497,8 +471,7 @@ extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask,
  * Note:
  *
  */
-extern rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask,
-						 rtk_portmask_t *pLogicalPmask);
+extern rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask, rtk_portmask_t *pLogicalPmask);
 
 /* Function Name:
  *      rtk_switch_phyPortMask_get
@@ -567,10 +540,7 @@ extern rtk_api_ret_t rtk_switch_init(void);
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t
-rtk_switch_portMaxPktLen_set(rtk_port_t port,
-			     rtk_switch_maxPktLen_linkSpeed_t speed,
-			     rtk_uint32 cfgId);
+extern rtk_api_ret_t rtk_switch_portMaxPktLen_set(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 cfgId);
 
 /* Function Name:
  *      rtk_switch_portMaxPktLen_get
@@ -588,10 +558,7 @@ rtk_switch_portMaxPktLen_set(rtk_port_t port,
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t
-rtk_switch_portMaxPktLen_get(rtk_port_t port,
-			     rtk_switch_maxPktLen_linkSpeed_t speed,
-			     rtk_uint32 *pCfgId);
+extern rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 *pCfgId);
 
 /* Function Name:
  *      rtk_switch_maxPktLenCfg_set
@@ -609,8 +576,7 @@ rtk_switch_portMaxPktLen_get(rtk_port_t port,
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId,
-						 rtk_uint32 pktLen);
+extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId, rtk_uint32 pktLen);
 
 /* Function Name:
  *      rtk_switch_maxPktLenCfg_get
@@ -628,8 +594,7 @@ extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId,
  *      RT_ERR_INPUT        - Error Input
  * Note:
  */
-extern rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId,
-						 rtk_uint32 *pPktLen);
+extern rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId, rtk_uint32 *pPktLen);
 
 /* Function Name:
  *      rtk_switch_greenEthernet_set

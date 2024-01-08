@@ -89,10 +89,8 @@ void start_sysinit(void)
 				break; // dont know what this is
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
 
 #else

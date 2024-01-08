@@ -96,14 +96,12 @@ void start_change_mac(void)
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 	fp = fopen(mtdpath, "rb");
 nexttry:;
-	fprintf(stdout,
-		"MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->");
+	fprintf(stdout, "MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->");
 	char maddr[64];
 
 	fscanf(stdin, "%s", maddr);
 	int newmac[6];
-	int ret = sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0],
-			 &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+	int ret = sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 			 &newmac[5]);
 	if (ret != 6) {
 		fprintf(stdout, "\ninvalid format!, try again\n");
@@ -111,8 +109,7 @@ nexttry:;
 	}
 	//valid;
 	for (i = 0; i < 6; i++)
-		sprintf(os, "%02x%02x%02x%02x%02x%02x", newmac[0] & 0xff,
-			newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff,
+		sprintf(os, "%02x%02x%02x%02x%02x%02x", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff,
 			newmac[4] & 0xff, newmac[5] & 0xff);
 	fprintf(stderr, "new mac will be %s\n", os);
 	FILE *tmp = fopen("/tmp/boot.bin", "w+b");
@@ -205,8 +202,7 @@ void start_sysinit(void)
 	insmod("adm5120_wdt");
 	insmod("adm5120sw");
 
-	if (getRouterBrand() != ROUTER_BOARD_WP54G &&
-	    getRouterBrand() != ROUTER_BOARD_NP28G) {
+	if (getRouterBrand() != ROUTER_BOARD_WP54G && getRouterBrand() != ROUTER_BOARD_NP28G) {
 		unsigned char mac[6];
 		char eabuf[32];
 		char mtdpath[32];
@@ -263,17 +259,14 @@ void start_sysinit(void)
 					set_ether_hwaddr("eth0", mac);
 					char macaddr[32];
 					if (get_hwaddr("eth0", macaddr)) {
-						nvram_set("et0macaddr",
-							  macaddr);
-						nvram_set("et0macaddr_safe",
-							  macaddr);
+						nvram_set("et0macaddr", macaddr);
+						nvram_set("et0macaddr_safe", macaddr);
 					}
 				}
 			}
 
 			if (foundmac == 0) {
-				fprintf(stderr,
-					"error: no valid mac address found for eth0\n");
+				fprintf(stderr, "error: no valid mac address found for eth0\n");
 			}
 			fclose(fp);
 		}

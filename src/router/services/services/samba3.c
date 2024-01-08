@@ -38,14 +38,12 @@
 #include <samba3.h>
 #include <fcntl.h>
 
-static int has_sambauser(struct samba3_shareuser *csu,
-			 struct samba3_user *samba3users)
+static int has_sambauser(struct samba3_shareuser *csu, struct samba3_user *samba3users)
 {
 	struct samba3_user *cu, *cunext;
 	int hasuser = 0;
 	for (cu = samba3users; cu; cu = cunext) {
-		if (!strcmp(csu->username, cu->username) &&
-		    (cu->sharetype & SHARETYPE_SAMBA))
+		if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_SAMBA))
 			hasuser = 1;
 		cunext = cu->next;
 		free(cu);
@@ -98,8 +96,7 @@ void start_samba3(void)
 		nvram_async_commit();
 	}
 	start_mkfiles();
-	sysprintf(
-		"echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
+	sysprintf("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/samba", 0700);
 	mkdir("/var/run", 0700);
 	mkdir("/var/run/samba", 0700);
@@ -108,10 +105,8 @@ void start_samba3(void)
 	eval("touch", "/var/samba/smbpasswd");
 	eval("smbpasswd", "nobody", "nobody");
 #ifdef HAVE_SMBD
-	eval("ksmbd.adduser", "-a", "nobody", "-p", "nobody", "-i",
-	     "/tmp/smb.db");
-	eval("ksmbd.adduser", "-u", "nobody", "-p", "nobody", "-i",
-	     "/tmp/smb.db");
+	eval("ksmbd.adduser", "-a", "nobody", "-p", "nobody", "-i", "/tmp/smb.db");
+	eval("ksmbd.adduser", "-u", "nobody", "-p", "nobody", "-i", "/tmp/smb.db");
 #endif
 	if (nvram_matchi("samba3_advanced", 1)) {
 		write_nvram("/tmp/smb.conf", "samba3_conf");
@@ -119,16 +114,12 @@ void start_samba3(void)
 		samba3users = getsamba3users();
 		for (cu = samba3users; cu; cu = cunext) {
 			if (*cu->username && cu->sharetype & SHARETYPE_SAMBA) {
-				sysprintf(
-					"echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
-					cu->username, uniqueuserid++,
-					cu->username);
+				sysprintf("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd", cu->username,
+					  uniqueuserid++, cu->username);
 				eval("smbpasswd", cu->username, cu->password);
 #ifdef HAVE_SMBD
-				eval("ksmbd.adduser", "-a", cu->username, "-p",
-				     cu->password, "-i", "/tmp/smb.db");
-				eval("ksmbd.adduser", "-u", cu->username, "-p",
-				     cu->password, "-i", "/tmp/smb.db");
+				eval("ksmbd.adduser", "-a", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
+				eval("ksmbd.adduser", "-u", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
 #endif
 			}
 			cunext = cu->next;
@@ -184,31 +175,22 @@ void start_samba3(void)
 #endif
 			"load printers = No\n" //
 			"usershare allow guests = Yes\n",
-			nvram_safe_get("router_name"),
-			nvram_safe_get("samba3_srvstr"),
-			nvram_safe_get("samba3_workgrp"),
-			nvram_safe_get("samba3_guest"),
-			nvram_safe_get("samba3_min_proto"), smbmaxproto);
+			nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"),
+			nvram_safe_get("samba3_guest"), nvram_safe_get("samba3_min_proto"), smbmaxproto);
 
 #ifdef HAVE_SMBD
 		if (!strncmp(smbmaxproto, "SMB3", 4))
-			fprintf(fp, "smb3 encryption = %s\n",
-				!strcmp(nvram_safe_get("samba3_encrypt"),
-					"off") ?
-					"no" :
-					"yes");
+			fprintf(fp, "smb3 encryption = %s\n", !strcmp(nvram_safe_get("samba3_encrypt"), "off") ? "no" : "yes");
 #elif defined(HAVE_SAMBA4)
 		if (!strncmp(smbmaxproto, "SMB3", 4))
-			fprintf(fp, "smb encrypt = %s\n",
-				nvram_safe_get("samba3_encrypt"));
+			fprintf(fp, "smb encrypt = %s\n", nvram_safe_get("samba3_encrypt"));
 #endif
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
 			if (!cs->public) {
 				int hasuser = 0;
 				for (csu = cs->users; csu; csu = csunext) {
-					hasuser = has_sambauser(
-						csu, getsamba3users());
+					hasuser = has_sambauser(csu, getsamba3users());
 					csunext = csu->next;
 				}
 				if (!hasuser) {
@@ -224,33 +206,23 @@ void start_samba3(void)
 
 #ifdef HAVE_SMBD
 				fprintf(fp, "comment = %s\n", cs->label);
-				fprintf(fp, "path = %s%s%s\n", cs->mp,
-					strlen(sd) ? "/" : "", sd);
+				fprintf(fp, "path = %s%s%s\n", cs->mp, strlen(sd) ? "/" : "", sd);
 #else
 				fprintf(fp, "comment = \"%s\"\n", cs->label);
-				fprintf(fp, "path = \"%s%s%s\"\n", cs->mp,
-					strlen(sd) ? "/" : "", sd);
+				fprintf(fp, "path = \"%s%s%s\"\n", cs->mp, strlen(sd) ? "/" : "", sd);
 #endif
-				fprintf(fp, "read only = %s\n",
-					!strcmp(cs->access_perms, "ro") ?
-						"yes" :
-						"no");
-				fprintf(fp, "guest ok = %s\n",
-					cs->public == 1 ? "yes" : "no");
+				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "yes" : "no");
+				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "yes" : "no");
 				if (!cs->public) {
 					fprintf(fp, "valid users =");
 					int first = 0;
-					for (csu = cs->users; csu;
-					     csu = csunext) {
-						if (!has_sambauser(
-							    csu,
-							    getsamba3users()))
+					for (csu = cs->users; csu; csu = csunext) {
+						if (!has_sambauser(csu, getsamba3users()))
 							goto nextuser;
 						if (first)
 							fprintf(fp, ",");
 						first = 1;
-						fprintf(fp, " %s",
-							csu->username);
+						fprintf(fp, " %s", csu->username);
 nextuser:;
 						csunext = csu->next;
 						free(csu);
@@ -275,41 +247,27 @@ nextshare:;
 	char conffile[64];
 	if (reload_process("smbd")) {
 #ifdef HAVE_SMP
-		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D",
-			 "-s",
-			 getdefaultconfig(NULL, path, sizeof(path),
-					  "smb.conf")))
+		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",
+			 getdefaultconfig(NULL, path, sizeof(path), "smb.conf")))
 #endif
-			log_eval("smbd", "-D", "-s",
-				 getdefaultconfig(NULL, path, sizeof(path),
-						  "smb.conf"));
+			log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
 
 		if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
-			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd",
-				 "-D", "-s",
-				 getdefaultconfig(NULL, path, sizeof(path),
-						  "smb.conf")))
+			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",
+				 getdefaultconfig(NULL, path, sizeof(path), "smb.conf")))
 #endif
-				log_eval("smbd", "-D", "-s",
-					 getdefaultconfig(NULL, path,
-							  sizeof(path),
-							  "smb.conf"));
+				log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
 		}
 	}
 	if (reload_process("nmbd")) {
-		log_eval("nmbd", "-D", "-s",
-			 getdefaultconfig(NULL, path, sizeof(path),
-					  "smb.conf"));
+		log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
 		if (pidof("nmbd") <= 0) {
-			log_eval("nmbd", "-D", "-s",
-				 getdefaultconfig(NULL, path, sizeof(path),
-						  "smb.conf"));
+			log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
 		}
 	}
 #ifdef HAVE_SAMBA4
-	log_eval("winbindd", "-D", "-s",
-		 getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
+	log_eval("winbindd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
 #endif
 #else
 	insmod("oid_registry nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb" //
@@ -317,8 +275,7 @@ nextshare:;
 	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm" //
 	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb libcrc32c asn1_decoder");
 	char param[32];
-	sprintf(param, "connlimit=%d\n",
-		nvram_default_geti("samba3_connlimit", 16));
+	sprintf(param, "connlimit=%d\n", nvram_default_geti("samba3_connlimit", 16));
 	if (nvram_matchi("module_testing", 1))
 		eval("insmod", "/jffs/modules_debug/ksmbd.ko", param);
 	else
@@ -332,18 +289,14 @@ nextshare:;
 		wgname = "WORKGROUP";
 	if (*nbname) {
 		char parm[128];
-		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s",
-			nvram_safe_get("DD_BOARD"),
-			nvram_safe_get("os_version"));
+		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
 		stop_process("wsdd2", "windows service discovery daemon");
 		log_eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
 	char c1[64];
 	char c2[64];
 	if (reload_process("ksmbd.mountd")) {
-		log_eval("ksmbd.mountd", "-c",
-			 getdefaultconfig(NULL, c1, sizeof(c1), "smb.conf"),
-			 "-u",
+		log_eval("ksmbd.mountd", "-c", getdefaultconfig(NULL, c1, sizeof(c1), "smb.conf"), "-u",
 			 getdefaultconfig(NULL, c2, sizeof(c2), "smb.db"));
 	}
 #endif

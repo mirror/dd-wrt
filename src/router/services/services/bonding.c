@@ -53,10 +53,8 @@ void start_bonding(void)
 
 	stop_bonding();
 
-	sprintf(mode, "mode=%s",
-		nvram_default_get("bonding_type", "balance-rr"));
-	sprintf(count, "max_bonds=%s",
-		nvram_default_get("bonding_number", "1"));
+	sprintf(mode, "mode=%s", nvram_default_get("bonding_type", "balance-rr"));
+	sprintf(count, "max_bonds=%s", nvram_default_get("bonding_number", "1"));
 
 	char word[256];
 	char *next, *wordlist;
@@ -70,15 +68,13 @@ void start_bonding(void)
 		if (!tag || !port) {
 			break;
 		}
-		if (!strncmp(port, "wlan", 4) &&
-		    nvram_nmatch("wdsap", "%s_mode", port)) {
+		if (!strncmp(port, "wlan", 4) && nvram_nmatch("wdsap", "%s_mode", port)) {
 			eval("ifconfig", port, "down");
 			eval("iwpriv", port, "wdssep", "0");
 			eval("ifconfig", port, "up");
 		}
 		if (!first) {
-			eval("insmod", "bonding", "miimon=100", "downdelay=200",
-			     "updelay=200", mode, count);
+			eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200", mode, count);
 			first = 1;
 		}
 		eval("ifconfig", tag, "0.0.0.0", "up");

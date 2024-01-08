@@ -36,63 +36,38 @@ void usage(char *cmd)
 {
 #if RT_SWITCH_HELP
 	printf("Usage:\n");
-	printf(" %s dump                                 - dump switch table\n",
-	       cmd);
-	printf(" %s clear                                - clear switch table\n",
-	       cmd);
-	printf(" %s add [mac] [portmap]                  - add an entry to switch table\n",
-	       cmd);
-	printf(" %s add [mac] [portmap] [vlan idx]       - add an entry to switch table\n",
-	       cmd);
-	printf(" %s add [mac] [portmap] [vlan idx] [age] - add an entry to switch table\n",
-	       cmd);
+	printf(" %s dump                                 - dump switch table\n", cmd);
+	printf(" %s clear                                - clear switch table\n", cmd);
+	printf(" %s add [mac] [portmap]                  - add an entry to switch table\n", cmd);
+	printf(" %s add [mac] [portmap] [vlan idx]       - add an entry to switch table\n", cmd);
+	printf(" %s add [mac] [portmap] [vlan idx] [age] - add an entry to switch table\n", cmd);
 #ifdef HAVE_RT3352
-	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5 \n",
-	       cmd);
-	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~5 \n",
-	       cmd);
-	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5 \n",
-	       cmd);
-	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~5 \n",
-	       cmd);
+	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5 \n", cmd);
+	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~5 \n", cmd);
+	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5 \n", cmd);
+	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~5 \n", cmd);
 	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n",
 	       cmd);
-	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n",
-	       cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n",
-	       cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n",
-	       cmd);
+	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n", cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n", cmd);
 #elif defined(CONFIG_RALINK_RT5350)
-	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~4 \n",
-	       cmd);
-	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~4 \n",
-	       cmd);
-	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~4 \n",
-	       cmd);
-	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~4\n",
-	       cmd);
+	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~4 \n", cmd);
+	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~4 \n", cmd);
+	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~4 \n", cmd);
+	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~4\n", cmd);
 	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n",
 	       cmd);
-	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n",
-	       cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n",
-	       cmd);
-	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n",
-	       cmd);
+	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n", cmd);
+	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n", cmd);
 #endif
-	printf(" %s del [mac]                            - delete an entry from switch table\n",
-	       cmd);
-	printf(" %s del [mac] [vlan idx]                 - delete an entry from switch table\n",
-	       cmd);
-	printf(" %s vlan dump                            - dump switch table\n",
-	       cmd);
-	printf(" %s vlan set [vlan idx] [vid] [portmap]  - set vlan id and associated member\n",
-	       cmd);
-	printf(" %s reg r [offset]                       - register read from offset\n",
-	       cmd);
-	printf(" %s reg w [offset] [value]               - register write value to offset\n",
-	       cmd);
+	printf(" %s del [mac]                            - delete an entry from switch table\n", cmd);
+	printf(" %s del [mac] [vlan idx]                 - delete an entry from switch table\n", cmd);
+	printf(" %s vlan dump                            - dump switch table\n", cmd);
+	printf(" %s vlan set [vlan idx] [vid] [portmap]  - set vlan id and associated member\n", cmd);
+	printf(" %s reg r [offset]                       - register read from offset\n", cmd);
+	printf(" %s reg w [offset] [value]               - register write value to offset\n", cmd);
 #endif
 	switch_fini();
 	exit(0);
@@ -219,8 +194,7 @@ void table_dump(void)
 				}
 				break;
 			} else if (value & 0x2) { //at_table_end
-				printf("found the last entry %d (not ready)\n",
-				       i);
+				printf("found the last entry %d (not ready)\n", i);
 				return;
 			}
 			usleep(5000);
@@ -551,15 +525,13 @@ int main(int argc, char *argv[])
 		if (argv[2][0] == 'r') {
 			off = strtoul(argv[3], NULL, 16);
 			reg_read(off, &val);
-			printf("switch reg read offset=%x, value=%x\n", off,
-			       val);
+			printf("switch reg read offset=%x, value=%x\n", off, val);
 		} else if (argv[2][0] == 'w') {
 			if (argc != 5)
 				usage(argv[0]);
 			off = strtoul(argv[3], NULL, 16);
 			val = strtoul(argv[4], NULL, 16);
-			printf("switch reg write offset=%x, value=%x\n", off,
-			       val);
+			printf("switch reg write offset=%x, value=%x\n", off, val);
 			reg_write(off, val);
 		} else
 			usage(argv[0]);

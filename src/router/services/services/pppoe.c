@@ -93,8 +93,7 @@ void run_tmp_ppp(int num)
 	/*
 	 * Wait for ppp0 to be created 
 	 */
-	while (ifconfig(nvram_safe_get(pppoeifname), IFUP, NULL, NULL) &&
-	       timeout--)
+	while (ifconfig(nvram_safe_get(pppoeifname), IFUP, NULL, NULL) && timeout--)
 		sleep(1);
 
 	strncpy(ifr.ifr_name, nvram_safe_get(pppoeifname), IFNAMSIZ);
@@ -105,8 +104,7 @@ void run_tmp_ppp(int num)
 	timeout = 3;
 	while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
 		perror(nvram_safe_get(pppoeifname));
-		printf("Wait %s inteface to init (1) ...\n",
-		       nvram_safe_get(pppoeifname));
+		printf("Wait %s inteface to init (1) ...\n", nvram_safe_get(pppoeifname));
 		sleep(1);
 	};
 	nvram_set(wanip[num], inet_ntoa(sin_addr(&(ifr.ifr_addr))));
@@ -118,8 +116,7 @@ void run_tmp_ppp(int num)
 	timeout = 3;
 	while (ioctl(s, SIOCGIFDSTADDR, &ifr) && timeout--) {
 		perror(nvram_safe_get(pppoeifname));
-		printf("Wait %s inteface to init (2) ...\n",
-		       nvram_safe_get(pppoeifname));
+		printf("Wait %s inteface to init (2) ...\n", nvram_safe_get(pppoeifname));
 		sleep(1);
 	}
 	nvram_set(wangw[num], inet_ntoa(sin_addr(&(ifr.ifr_dstaddr))));
@@ -127,8 +124,7 @@ void run_tmp_ppp(int num)
 	wan_done(nvram_safe_get(pppoeifname));
 
 	// if user press Connect" button from web, we must force to dial
-	if (nvram_match("action_service", "start_pppoe") ||
-	    nvram_match("action_service", "start_pppoe_1")) {
+	if (nvram_match("action_service", "start_pppoe") || nvram_match("action_service", "start_pppoe_1")) {
 		sleep(3);
 		// force_to_dial(nvram_safe_get("action_service"));
 		start_force_to_dial();
@@ -167,13 +163,10 @@ void run_pppoe(int pppoe_num)
 
 	cprintf("start session %d\n", pppoe_num);
 	sprintf(idletime, "%d", nvram_geti("ppp_idletime") * 60);
-	snprintf(retry_num, sizeof(retry_num), "%d",
-		 (nvram_geti("ppp_redialperiod") / 5) - 1);
+	snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
-	snprintf(username, sizeof(username), "%s",
-		 nvram_safe_get(ppp_username[pppoe_num]));
-	snprintf(passwd, sizeof(passwd), "%s",
-		 nvram_safe_get(ppp_passwd[pppoe_num]));
+	snprintf(username, sizeof(username), "%s", nvram_safe_get(ppp_username[pppoe_num]));
+	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get(ppp_passwd[pppoe_num]));
 	sprintf(param, "%d", pppoe_num);
 	/*
 	 * add here 
@@ -186,8 +179,7 @@ void run_pppoe(int pppoe_num)
 		       "-p",
 		       passwd,
 		       "-r",
-		       nvram_safe_get(
-			       "wan_mtu"), // del by honor, add by tallest.
+		       nvram_safe_get("wan_mtu"), // del by honor, add by tallest.
 		       "-t",
 		       nvram_safe_get("wan_mtu"),
 		       "-i",
@@ -321,8 +313,7 @@ void single_pppoe_stop(int pppoe_num)
 
 	sprintf(pppoe_pid, "pppoe_pid%d", pppoe_num);
 	sprintf(pppoe_ifname, "pppoe_ifname%d", pppoe_num);
-	dprintf("start! stop pppoe %d, pid %s \n", pppoe_num,
-		nvram_safe_get(pppoe_pid));
+	dprintf("start! stop pppoe %d, pid %s \n", pppoe_num, nvram_safe_get(pppoe_pid));
 
 	ret = eval("kill", nvram_safe_get(pppoe_pid));
 	unlink(ppp_unlink[pppoe_num]);

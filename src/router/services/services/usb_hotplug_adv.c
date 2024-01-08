@@ -49,16 +49,14 @@ static void run_on_mount(char *p)
 	md5_ctx_t MD;
 
 	if (!nvram_match("usb_runonmount", "")) {
-		snprintf(path, sizeof(path), "%s %s",
-			 nvram_safe_get("usb_runonmount"), p);
+		snprintf(path, sizeof(path), "%s %s", nvram_safe_get("usb_runonmount"), p);
 		if (stat(path, &tmp_stat) == 0) //file exists
 		{
 			setenv("PATH",
 			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
 			       1);
 			setenv("LD_LIBRARY_PATH",
-			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
-			       1);
+			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 
 			system(path);
 		}
@@ -194,9 +192,7 @@ void start_hotplug_usb(void)
 		for (host = 0; host < 10; host++) {
 			sprintf(path, "/sys/%s/host%d", devpath, host);
 			if (stat(path, &tmp_stat) == 0) {
-				sprintf(link,
-					"/dev/scsi/host%d/bus0/target0/lun0",
-					host);
+				sprintf(link, "/dev/scsi/host%d/bus0/target0/lun0", host);
 				if (!strcmp(action, "add")) {
 					usb_add_ufd(link, host, devpath, 0);
 					unlink(MOUNTSTAT);
@@ -273,8 +269,7 @@ void start_hotplug_block(void)
 
 	optimize_block_device(devp + 1);
 
-	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) &&
-	    strncmp(part, "hd", 2) && strncmp(part, "sr", 2) &&
+	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr", 2) &&
 	    strncmp(part, "md", 2) && strncmp(part, "nvme", 4))
 		return;
 
@@ -287,10 +282,8 @@ void start_hotplug_block(void)
 	eval("hdparm", "-S", "242", devname);
 	eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
 	if (strlen(part) != 4 && strlen(part) != 7) {
-		sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s",
-			  part, part);
-		sysprintf("/usr/sbin/disktype %s >> /tmp/disk/%s", devname,
-			  part);
+		sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
+		sysprintf("/usr/sbin/disktype %s >> /tmp/disk/%s", devname, part);
 	}
 	if (!strcmp(action, "add"))
 		usb_add_ufd(NULL, 0, devname, 1);
@@ -372,15 +365,12 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	if (!strcmp(fs, "ntfs")) {
 repeat:;
 #ifdef HAVE_LEGACY_KERNEL
-		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes",
-			   path, mount_point);
+		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-		ret = eval("/bin/mount", "-t", "ntfs3", "-o",
-			   "nls=utf8,noatime", path, mount_point);
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
 #else
-		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path,
-			   mount_point);
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
 #endif
 		if (!first && ret) {
@@ -392,17 +382,12 @@ repeat:;
 	} else
 #endif
 		if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
-		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
-			   mount_point);
+		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
 	} else if (!strcmp(fs, "ext4")) {
-		ret = eval(
-			"/bin/mount", "-t", fs, "-o",
-			"init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0",
-			path, mount_point);
-	} else if (!strcmp(fs, "ext2") || !strcmp(fs, "ext3")) {
-		ret = eval("/bin/mount", "-t", fs, "-o",
-			   "nobarrier,noatime,nobh,nodiratime,barrier=0", path,
+		ret = eval("/bin/mount", "-t", fs, "-o", "init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0", path,
 			   mount_point);
+	} else if (!strcmp(fs, "ext2") || !strcmp(fs, "ext3")) {
+		ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
 	} else {
 		ret = eval("/bin/mount", "-t", fs, path, mount_point);
 	}
@@ -413,16 +398,12 @@ again:;
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
-			ret = eval("ntfs-3g", "-o",
-				   "compression,direct_io,big_writes", path,
-				   mount_point);
+			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-			ret = eval("/bin/mount", "-t", "ntfs3", "-o",
-				   "nls=utf8,noatime", path, mount_point);
+			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
 #else
-			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8",
-				   path, mount_point);
+			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
 #endif
 			if (!first && ret) {
@@ -436,13 +417,9 @@ again:;
 	}
 
 	if (!strcmp(fs, "swap")) {
-		sysprintf(
-			"echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s",
-			path, "swap", dev);
+		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
 	} else {
-		sysprintf(
-			"echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s",
-			path, mount_point, dev);
+		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
 		nvram_set("usb_reason", "blockdev_add");
 		nvram_set("usb_dev", mount_point);
 		eval("startservice", "run_rc_usb", "-f");
@@ -493,9 +470,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 			if (strstr(line, "Linux swap")) {
 				fs = "swap";
 				ret = eval("/sbin/swapon", path);
-				sysprintf(
-					"echo \"<b>%s</b> mounted to <b>swap</b>\" >> %s",
-					path, DUMPFILE);
+				sysprintf("echo \"<b>%s</b> mounted to <b>swap</b>\" >> %s", path, DUMPFILE);
 			}
 
 			if (strstr(line, "file system")) {
@@ -560,9 +535,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	}
 
 	if (!strcmp(fs, "")) {
-		sysprintf(
-			"echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s",
-			path, "Unsupported Filesystem", dev);
+		sysprintf("echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "Unsupported Filesystem", dev);
 		return 1;
 	}
 
@@ -583,8 +556,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	/* strategy two: mount by partition label, overrides strategy one */
 	if ((fp = fopen(part_file, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
-			if (strstr(line, "Jffs") || strstr(line, "JFFS") ||
-			    strstr(line, "\"jffs")) {
+			if (strstr(line, "Jffs") || strstr(line, "JFFS") || strstr(line, "\"jffs")) {
 				found = 1;
 				do_mount(fs, path, "/jffs", dev);
 			}
@@ -593,8 +565,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 				found = 1;
 				do_mount(fs, path, "/jffs", dev);
 			}
-			if (strstr(line, "Opt") || strstr(line, "OPT") ||
-			    strstr(line, "\"opt")) {
+			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
 				found = 1;
 				do_mount(fs, path, "/opt", dev);
 				run_opt();
@@ -629,31 +600,21 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
-	writeprocsys("vm/min_free_kbytes",
-		     nvram_default_get("vm.min_free_kbytes", "20480"));
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "20480"));
 #elif HAVE_MVEBU
-	writeprocsys("vm/min_free_kbytes",
-		     nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_IPQ806X
-	writeprocsys("vm/min_free_kbytes",
-		     nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_X86
-	writeprocsys("vm/min_free_kbytes",
-		     nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #else
-	writeprocsys("vm/min_free_kbytes",
-		     nvram_default_get("vm.min_free_kbytes", "4096"));
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
 #endif
-	writeprocsys("vm/vfs_cache_pressure",
-		     nvram_default_get("vm.vfs_cache_pressure", "10000"));
-	writeprocsys("vm/dirty_expire_centisecs",
-		     nvram_default_get("vm.dirty_expire_centisecs", "100"));
-	writeprocsys("vm/dirty_writeback_centisecs",
-		     nvram_default_get("vm.dirty_writeback_centisecs", "100"));
-	writeprocsys("vm/overcommit_memory",
-		     nvram_default_get("vm.overcommit_memory", "2"));
-	writeprocsys("vm/overcommit_ratio",
-		     nvram_default_get("vm.overcommit_ratio", "80"));
+	writeprocsys("vm/vfs_cache_pressure", nvram_default_get("vm.vfs_cache_pressure", "10000"));
+	writeprocsys("vm/dirty_expire_centisecs", nvram_default_get("vm.dirty_expire_centisecs", "100"));
+	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "100"));
+	writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
+	writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
 
 	//      writeprocsys("vm/pagecache_ratio","90");
 	//      writeprocsys("vm/swappiness","90");
@@ -690,8 +651,7 @@ static void usb_unmount(char *devpath)
 		while ((entry = readdir(dir)) != NULL) {
 			if (strncmp(entry->d_name, ".", 1)) { //skip . and ..
 				/* use the symlinks we created under /tmp to umount the devices partitions */
-				sprintf(sym_link, "%s/%s", dev_dir,
-					entry->d_name);
+				sprintf(sym_link, "%s/%s", dev_dir, entry->d_name);
 				eval("umount", sym_link);
 			}
 		}
@@ -724,25 +684,16 @@ static int usb_add_ufd(char *link, int host, char *devpath, int mode)
 		dir = opendir(link);
 		if (dir != NULL) {
 			while ((entry = readdir(dir)) != NULL) {
-				sprintf(part_link, "%s/%s", link,
-					entry->d_name);
+				sprintf(part_link, "%s/%s", link, entry->d_name);
 				if (!strncmp(entry->d_name, "disc", 4)) {
-					sysprintf(
-						"echo  \"<b>Disk %d:</b>\" >> %s",
-						host, DUMPFILE);
-					sysprintf("/usr/sbin/disktype %s >> %s",
-						  part_link, DUMPFILE);
-					sysprintf(
-						"echo  \"<b>Mountpoints:</b>\" >> %s",
-						DUMPFILE);
+					sysprintf("echo  \"<b>Disk %d:</b>\" >> %s", host, DUMPFILE);
+					sysprintf("/usr/sbin/disktype %s >> %s", part_link, DUMPFILE);
+					sysprintf("echo  \"<b>Mountpoints:</b>\" >> %s", DUMPFILE);
 				}
 
-				if (strncmp(entry->d_name, "disc", 4) &&
-				    strncmp(entry->d_name, ".",
-					    1)) { //only get partitions
-					usb_process_path(part_link, host,
-							 entry->d_name,
-							 devpath);
+				if (strncmp(entry->d_name, "disc", 4) && strncmp(entry->d_name, ".",
+										 1)) { //only get partitions
+					usb_process_path(part_link, host, entry->d_name, devpath);
 				}
 			}
 			closedir(dir);

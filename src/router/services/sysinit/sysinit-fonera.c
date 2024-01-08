@@ -98,8 +98,7 @@ void start_sysinit(void)
 	nvram_set("use_ath5k", "1");
 	detect_wireless_devices(RADIO_ALL);
 
-#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || \
-	defined(HAVE_EOC1650)
+#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || defined(HAVE_EOC1650)
 	writeprocsys("dev/wifi0/ledpin", "2");
 	writeprocsys("dev/wifi0/softled", "1");
 #endif

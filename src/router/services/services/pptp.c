@@ -44,8 +44,7 @@ void start_pptpd(void)
 
 	stop_pptpd();
 
-	if ((nvram_matchi("usb_enable", 1) && nvram_matchi("usb_storage", 1) &&
-	     nvram_matchi("usb_automnt", 1) &&
+	if ((nvram_matchi("usb_enable", 1) && nvram_matchi("usb_storage", 1) && nvram_matchi("usb_automnt", 1) &&
 	     nvram_match("usb_mntpoint", "jffs")) ||
 	    jffs_mounted())
 		jffs = 1;
@@ -70,9 +69,8 @@ void start_pptpd(void)
 	fp = fopen("/tmp/pptpd/options.pptpd", "w");
 	if (nvram_matchi("pptpd_radius", 1)) {
 		cprintf("adding radius plugin\n");
-		fprintf(fp,
-			"plugin radius.so\nplugin radattr.so\n"
-			"radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
+		fprintf(fp, "plugin radius.so\nplugin radattr.so\n"
+			    "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
 	}
 	cprintf("check if wan_wins = zero\n");
 	int nowins = 0;
@@ -127,13 +125,11 @@ void start_pptpd(void)
 
 	if (nvram_matchi("dnsmasq_enable", 1)) {
 		if (nvram_invmatch("lan_ipaddr", ""))
-			fprintf(fp, "ms-dns %s\n",
-				nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "ms-dns %s\n", nvram_safe_get("lan_ipaddr"));
 	} else {
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				fprintf(fp, "ms-dns %s\n",
-					dns_list->dns_server[i].ip);
+				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i].ip);
 		}
 	}
 	free_dns_list(dns_list);
@@ -183,8 +179,7 @@ void start_pptpd(void)
 	// that it does work
 	// Should be enough for testing..
 	if (nvram_matchi("pptpd_radius", 1)) {
-		if (nvram_exists("pptpd_radserver") &&
-		    nvram_exists("pptpd_radpass")) {
+		if (nvram_exists("pptpd_radserver") && nvram_exists("pptpd_radpass")) {
 			mkdir("/tmp/pptpd/radius", 0744);
 
 			fp = fopen("/tmp/pptpd/radius/radiusclient.conf", "w");
@@ -201,24 +196,15 @@ void start_pptpd(void)
 				"radius_retries 3\n"
 				"authserver %s:%s\n",
 				nvram_safe_get("pptpd_radserver"),
-				nvram_exists("pptpd_radport") ?
-					nvram_safe_get("pptpd_radport") :
-					"radius");
+				nvram_exists("pptpd_radport") ? nvram_safe_get("pptpd_radport") : "radius");
 
-			if (nvram_exists("pptpd_radserver") &&
-			    nvram_exists("pptpd_acctport"))
-				fprintf(fp, "acctserver %s:%s\n",
-					nvram_safe_get("pptpd_radserver"),
-					nvram_exists("pptpd_acctport") ?
-						nvram_safe_get(
-							"pptpd_acctport") :
-						"radacct");
+			if (nvram_exists("pptpd_radserver") && nvram_exists("pptpd_acctport"))
+				fprintf(fp, "acctserver %s:%s\n", nvram_safe_get("pptpd_radserver"),
+					nvram_exists("pptpd_acctport") ? nvram_safe_get("pptpd_acctport") : "radacct");
 			fclose(fp);
 
 			fp = fopen("/tmp/pptpd/radius/servers", "w");
-			fprintf(fp, "%s\t%s\n",
-				nvram_safe_get("pptpd_radserver"),
-				nvram_safe_get("pptpd_radpass"));
+			fprintf(fp, "%s\t%s\n", nvram_safe_get("pptpd_radserver"), nvram_safe_get("pptpd_radpass"));
 			fclose(fp);
 		}
 	}
@@ -229,8 +215,7 @@ void start_pptpd(void)
 	fprintf(fp,
 		"connections %s\nlocalip %s\n"
 		"remoteip %s\n",
-		nvram_safe_get("pptpd_conn"), nvram_safe_get("pptpd_lip"),
-		nvram_safe_get("pptpd_rip"));
+		nvram_safe_get("pptpd_conn"), nvram_safe_get("pptpd_lip"), nvram_safe_get("pptpd_rip"));
 	fclose(fp);
 
 	// Create ip-up and ip-down scripts that are unique to pptpd to avoid
@@ -312,8 +297,7 @@ void start_pptpd(void)
 
 	start_pppmodules();
 	// Execute pptpd daemon
-	log_eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o",
-		 "/tmp/pptpd/options.pptpd");
+	log_eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o", "/tmp/pptpd/options.pptpd");
 
 	return;
 }

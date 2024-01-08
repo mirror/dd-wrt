@@ -164,28 +164,22 @@ void start_sysinit(void)
 	set_gpio(8, 0); //disable usb ss led as initial value
 
 	if (brand == ROUTER_WRT_1900AC) {
-		writestr("/sys/class/leds/mamba\\:white\\:esata/trigger",
-			 "disk-activity");
+		writestr("/sys/class/leds/mamba\\:white\\:esata/trigger", "disk-activity");
 	}
 	if (brand == ROUTER_WRT_1200AC) {
-		writestr("/sys/class/leds/caiman\\:white\\:sata/trigger",
-			 "disk-activity");
+		writestr("/sys/class/leds/caiman\\:white\\:sata/trigger", "disk-activity");
 	}
 	if (brand == ROUTER_WRT_1900ACV2) {
-		writestr("/sys/class/leds/cobra\\:white\\:sata/trigger",
-			 "disk-activity");
+		writestr("/sys/class/leds/cobra\\:white\\:sata/trigger", "disk-activity");
 	}
 	if (brand == ROUTER_WRT_1900ACS) {
-		writestr("/sys/class/leds/shelby\\:white\\:sata/trigger",
-			 "disk-activity");
+		writestr("/sys/class/leds/shelby\\:white\\:sata/trigger", "disk-activity");
 	}
 	if (brand == ROUTER_WRT_3200ACM) {
-		writestr("/sys/class/leds/rango\\:white\\:sata/trigger",
-			 "disk-activity");
+		writestr("/sys/class/leds/rango\\:white\\:sata/trigger", "disk-activity");
 	}
 	if (brand == ROUTER_WRT_32X) {
-		writestr("/sys/class/leds/venom\\:blue\\:sata/trigger",
-			 "disk-activity");
+		writestr("/sys/class/leds/venom\\:blue\\:sata/trigger", "disk-activity");
 	}
 
 	nvram_seti("sw_wancpuport", 5);

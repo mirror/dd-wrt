@@ -84,8 +84,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		MAC_SUB(mac);
 		set_hwaddr("eth0", mac);
@@ -109,27 +108,18 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
-		if (copy[0] == copy[6] && copy[1] == copy[7] &&
-		    copy[2] == copy[8]) {
-			sprintf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6],
-				copy[7], copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		if (copy[0] == copy[6] && copy[1] == copy[7] && copy[2] == copy[8]) {
+			sprintf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 			if (copy[5] < copy[11]) {
-				fprintf(stderr,
-					"Using first mac for eth0 (%s)\n", mac);
+				fprintf(stderr, "Using first mac for eth0 (%s)\n", mac);
 				set_hwaddr("eth0", mac);
-				fprintf(stderr,
-					"Using second mac for eth1 (%s)\n",
-					mac2);
+				fprintf(stderr, "Using second mac for eth1 (%s)\n", mac2);
 				set_hwaddr("eth1", mac2);
 			} else {
-				fprintf(stderr,
-					"Using second mac for eth0 (%s)\n",
-					mac2);
+				fprintf(stderr, "Using second mac for eth0 (%s)\n", mac2);
 				set_hwaddr("eth0", mac2);
-				fprintf(stderr,
-					"Using first mac for eth1 (%s)\n", mac);
+				fprintf(stderr, "Using first mac for eth1 (%s)\n", mac);
 				set_hwaddr("eth1", mac);
 			}
 		} else {
@@ -157,8 +147,7 @@ void start_sysinit(void)
 #ifndef HAVE_WR710
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
-	     "0 1 2 3 4");
+	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
 	nvram_seti("sw_cpuport", 0);
@@ -186,8 +175,7 @@ void start_sysinit(void)
 #ifdef HAVE_ERC
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports",
-	     "0 1 2 3 4");
+	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
 	nvram_seti("sw_cpuport", 0);
@@ -213,8 +201,7 @@ void start_sysinit(void)
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "switch0", "vlan", "0", "set", "ports",
-	     "0 1 2 3 4");
+	eval("swconfig", "dev", "switch0", "vlan", "0", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "switch0", "set", "apply");
 #ifdef HAVE_FMS2111
 	eval("insmod", "i2c-gpio-custom", "bus0=0,23,22");

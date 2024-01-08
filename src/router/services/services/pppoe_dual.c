@@ -131,17 +131,13 @@ void run_pppoe_dual(int status)
 	//      }
 
 	if (nvram_matchi("pptp_use_dhcp", 0)) {
-		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr_static"),
-			 nvram_safe_get("wan_netmask_static"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
 	}
 
-	snprintf(idletime, sizeof(idletime), "%d",
-		 nvram_geti("ppp_idletime") * 60);
-	snprintf(retry_num, sizeof(retry_num), "%d",
-		 (nvram_geti("ppp_redialperiod") / 5) - 1);
+	snprintf(idletime, sizeof(idletime), "%d", nvram_geti("ppp_idletime") * 60);
+	snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
-	snprintf(username, sizeof(username), "%s",
-		 nvram_safe_get("ppp_username"));
+	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	mkdir("/tmp/ppp", 0777);
@@ -156,8 +152,7 @@ void run_pppoe_dual(int status)
 	fprintf(fp, "plugin /usr/lib/rp-pppoe.so\n");
 #endif
 	if (nvram_invmatch("pppoe_service", ""))
-		fprintf(fp, " rp_pppoe_service %s",
-			nvram_safe_get("pppoe_service"));
+		fprintf(fp, " rp_pppoe_service %s", nvram_safe_get("pppoe_service"));
 	if (nvram_invmatch("pppoe_host_uniq", ""))
 		fprintf(fp, " host-uniq %s", nvram_safe_get("pppoe_host_uniq"));
 	fprintf(fp, "\n");
@@ -260,12 +255,10 @@ void run_pppoe_dual(int status)
 		// expirienced users
 		if (nvram_invmatch("pppoe_ppp_mtu", ""))
 			if (nvram_geti("pppoe_ppp_mtu") > 0)
-				fprintf(fp, "mtu %s\n",
-					nvram_safe_get("pppoe_ppp_mtu"));
+				fprintf(fp, "mtu %s\n", nvram_safe_get("pppoe_ppp_mtu"));
 		if (nvram_invmatch("pppoe_ppp_mru", ""))
 			if (nvram_geti("pppoe_ppp_mru") > 0)
-				fprintf(fp, "mru %s\n",
-					nvram_safe_get("pppoe_ppp_mru"));
+				fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
 	}
 
 	// Allow runtime debugging

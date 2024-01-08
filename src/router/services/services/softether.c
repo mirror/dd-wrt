@@ -101,14 +101,11 @@ void start_softether(void)
 	if (reload && *nvram_safe_get("sether_config")) {
 		eval("sleep", "3");
 		if (reload & 1)
-			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD",
-			     "ConfigSet", "//tmp//vpn_client.config", "quit");
+			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_client.config", "quit");
 		if (reload & 2)
-			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD",
-			     "ConfigSet", "//tmp//vpn_server.config", "quit");
+			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
 		if (reload & 4)
-			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD",
-			     "ConfigSet", "//tmp//vpn_bridge.config", "quit");
+			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_bridge.config", "quit");
 	}
 	return;
 }

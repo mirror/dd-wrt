@@ -105,19 +105,13 @@ void start_sysinit(void)
 	insmod("gpio-pca953x");
 	insmod("qca-ssdk");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x10", "0x002613a0",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe0", "0xc74164de",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe4", "0x000ea545",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x4", "0x07680000",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x8", "0x07600000",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x10", "0x002613a0", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe0", "0xc74164de", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe4", "0x000ea545", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x4", "0x07680000", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x8", "0x07600000", "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xc", "0x80", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x624", "0x007f7f7f",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x624", "0x007f7f7f", "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x7c", "0x4e", "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x90", "0x4e", "4");
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x94", "0x4e", "4");
@@ -125,66 +119,40 @@ void start_sysinit(void)
 	//      #CPU -->","(P0/5)QCA8337A(P4/6)--->(P0/5)QCA8337B
 	//      #remove trunking on -0/5
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x700", "0xd000", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0x00ec0000",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0x00ec0000", "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x660", "0x0014017e",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x66c", "0x0014017d",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x678", "0x0014017b",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x684", "0x00140177",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x690", "0x0014016f",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x69c", "0x0014015f",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x6a8", "0x0014013f",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x660", "0x0014017e", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x66c", "0x0014017d", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x678", "0x0014017b", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x684", "0x00140177", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x690", "0x0014016f", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x69c", "0x0014015f", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x6a8", "0x0014013f", "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x420", "0x00010001",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x420", "0x00010001", "4");
 	//      #change","p5","vid","-->2
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x448", "0x00020001",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x428", "0x00010001",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x430", "0x00010001",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x440", "0x00010001",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x450", "0x00010001",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x448", "0x00020001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x428", "0x00010001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x430", "0x00010001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x440", "0x00010001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x450", "0x00010001", "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x438", "0x00020001",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x438", "0x00020001", "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x424", "0x00002040",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x44c", "0x00002040",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x42c", "0x00001040",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x434", "0x00001040",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x43c", "0x00001040",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x444", "0x00001040",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x454", "0x00001040",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x424", "0x00002040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x44c", "0x00002040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x42c", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x434", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x43c", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x444", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x454", "0x00001040", "4");
 
 	//      #VLAN1-0t/1/2/4/5t/6,VLAN2-0t/3/5t
 	//      #vlan1-0t/1/2/4/6 vlan2-3/5t
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x0019dd50",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80010002",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x001b77f0",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80020002",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x0019dd50", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80010002", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x001b77f0", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80020002", "4");
 
 	//      #","do","not","learn","mac","address","on","internal","trunk","5
 	eval("ssdk_sh_id", "0", "fdb", "portLearn", "set", "5", "disable");
@@ -195,15 +163,11 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x7c", "0x7e", "4");
 
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x700", "0xd000", "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0xec0000",
-	     "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x620", "0x1000f0",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0xec0000", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x620", "0x1000f0", "4");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x808", "0x7f004e",
-	     "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x808", "0x7f004e",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x808", "0x7f004e", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x808", "0x7f004e", "4");
 
 	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xd", "0x7");
 	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xe", "0x3c");
@@ -281,26 +245,17 @@ void start_sysinit(void)
 	     "untagged"); // wan port
 	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "2");
 
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x50", "0xcc35cc35",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x54", "0xca35ca35",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x58", "0xc935c935",
-	     "4");
-	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x5c", "0x03ffff00",
-	     "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x50", "0xcc35cc35", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x54", "0xca35ca35", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x58", "0xc935c935", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x5c", "0x03ffff00", "4");
 
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x50", "0xcc35cc35",
-	     "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x54", "0xca35ca35",
-	     "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x58", "0xc935c935",
-	     "4");
-	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x5c", "0x03ffff00",
-	     "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x50", "0xcc35cc35", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x54", "0xca35ca35", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x58", "0xc935c935", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x5c", "0x03ffff00", "4");
 
-	nvram_unset(
-		"sw_cpuport"); // this is a dummy. for the r9000 we need to write complete new code
+	nvram_unset("sw_cpuport"); // this is a dummy. for the r9000 we need to write complete new code
 	nvram_seti("sw_wan",
 		   -1); // switch 0 (3) note: we cannot allow wan for now
 	nvram_seti("sw_lan1", 2); // switch 0
@@ -381,14 +336,10 @@ void start_overclocking(void)
 {
 	char *oclock = nvram_safe_get("overclocking");
 	if (*oclock) {
-		sysprintf(
-			"echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
-		sysprintf(
-			"echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed",
-			oclock);
+		sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
 	} else {
-		sysprintf(
-			"echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
 	}
 }
 

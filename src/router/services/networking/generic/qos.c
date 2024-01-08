@@ -58,8 +58,7 @@ int client_bridged_enabled(void)
 	int bridged_clients = 0;
 
 	// any interface in client_bridged mode?
-	foreach(word, iflist, next) if (nvram_nmatch("wet", "%s_mode", word))
-		bridged_clients++;
+	foreach(word, iflist, next) if (nvram_nmatch("wet", "%s_mode", word)) bridged_clients++;
 
 	return bridged_clients;
 }
@@ -78,19 +77,15 @@ int client_bridged_enabled(void)
 #ifdef HAVE_SVQOS
 
 extern int get_mtu_val(void);
-extern void add_client_mac_srvfilter(char *name, char *type, char *data,
-				     int level, int base, char *client);
-extern void add_client_ip_srvfilter(char *name, char *type, char *data,
-				    int level, int base, char *client);
-extern char *get_NFServiceMark(char *buffer, size_t len, char *service,
-			       uint32 mark);
+extern void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
+extern void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
+extern char *get_NFServiceMark(char *buffer, size_t len, char *service, uint32 mark);
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 extern char *get_tcfmark(char *tcfmark, uint32 mark, int seg);
 #endif
 
-extern void add_client_classes(unsigned int base, unsigned int uprate,
-			       unsigned int downrate, unsigned int lanrate,
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate,
 			       unsigned int level);
 
 static void svqos_reset_ports(void)
@@ -196,23 +191,15 @@ static int svqos_set_ports(void)
 			snprintf(nvram_var, 31, "svqos_port%dbw", loop);
 
 			if (!nvram_matchi(nvram_var, 0))
-				writevaproc(
-					nvram_safe_get(nvram_var),
-					"/proc/switch/eth0/port/%d/bandwidth",
-					loop);
+				writevaproc(nvram_safe_get(nvram_var), "/proc/switch/eth0/port/%d/bandwidth", loop);
 			else
-				writevaproc("0",
-					    "/proc/switch/eth0/port/%d/enable",
-					    loop);
+				writevaproc("0", "/proc/switch/eth0/port/%d/enable", loop);
 
-			writevaproc("1",
-				    "/proc/switch/eth0/port/%d/prio-enable",
-				    loop);
+			writevaproc("1", "/proc/switch/eth0/port/%d/prio-enable", loop);
 			level = nvram_nget("svqos_port%dprio", loop);
 			char lvl[32];
 			sprintf(lvl, "%d", atoi(level) / 10 - 1);
-			writevaproc(lvl, "/proc/switch/eth0/port/%d/prio",
-				    loop);
+			writevaproc(lvl, "/proc/switch/eth0/port/%d/prio", loop);
 		}
 	}
 #endif
@@ -337,8 +324,7 @@ static void aqos_tables(void)
 	char *qos_mac = nvram_safe_get("svqos_macs");
 	char *qos_svcs = NULL;
 
-	char data[32], type[32], proto1[32], proto2[32], proto3[32], proto4[32],
-		proto[32];
+	char data[32], type[32], proto1[32], proto2[32], proto3[32], proto4[32], proto[32];
 	char srvname[32], srvtype[32], srvdata[32];
 	int srvlevel;
 	int level, level2, level3, prio;
@@ -351,8 +337,7 @@ static void aqos_tables(void)
 	int ret = 0;
 
 	do {
-		ret = sscanf(qos_mac, "%31s %d %d %31s %d %d |", data, &level,
-			     &level2, type, &level3, &prio);
+		ret = sscanf(qos_mac, "%31s %d %d %31s %d %d |", data, &level, &level2, type, &level3, &prio);
 		if (ret < 6)
 			break;
 
@@ -361,31 +346,24 @@ static void aqos_tables(void)
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname,
-				   srvtype, srvdata, &srvlevel) < 4)
+			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 				break;
 
-			add_client_mac_srvfilter(srvname, srvtype, srvdata,
-						 srvlevel, base, data);
+			add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
 		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
 		// not service-prioritized, then default class
 
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac",
-		     "--mac-source", data, "-m", "mark", "--mark", nullmask,
-		     "-j", "MARK", "--set-mark",
-		     qos_nfmark(buffer, sizeof(buffer), base + 3));
-		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m",
-			"mac", "--mac-source", data, "-m", "mark", "--mark",
-			nullmask, "-j", "MARK", "--set-mark",
-			qos_nfmark(buffer, sizeof(buffer), base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", data, "-m", "mark", "--mark",
+		     nullmask, "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", data, "-m", "mark", "--mark",
+			nullmask, "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
 
 		base += 10;
 	} while ((qos_mac = strpbrk(++qos_mac, "|")) && qos_mac++);
 
 	do {
-		ret = sscanf(qos_ipaddr, "%31s %d %d %d %d |", data, &level,
-			     &level2, &level3, &prio);
+		ret = sscanf(qos_ipaddr, "%31s %d %d %d %d |", data, &level, &level2, &level3, &prio);
 		if (ret < 5)
 			break;
 
@@ -394,31 +372,21 @@ static void aqos_tables(void)
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname,
-				   srvtype, srvdata, &srvlevel) < 4)
+			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 				break;
 
-			add_client_ip_srvfilter(srvname, srvtype, srvdata,
-						srvlevel, base, data);
+			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
 		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
 		// not service-prioritized, then default class
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", data,
-		     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-		     "--set-mark",
-		     qos_nfmark(buffer, sizeof(buffer), base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", data,
-		     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-		     "--set-mark",
-		     qos_nfmark(buffer, sizeof(buffer), base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", data,
-		     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-		     "--set-mark",
-		     qos_nfmark(buffer, sizeof(buffer), base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", data,
-		     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-		     "--set-mark",
-		     qos_nfmark(buffer, sizeof(buffer), base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", data, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+		     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", data, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+		     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", data, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+		     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", data, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+		     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
 
 		base += 10;
 	} while ((qos_ipaddr = strpbrk(++qos_ipaddr, "|")) && qos_ipaddr++);
@@ -426,8 +394,7 @@ static void aqos_tables(void)
 	char *qos_devs = nvram_safe_get("svqos_devs");
 	do {
 		bzero(proto, sizeof(proto));
-		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level,
-			     &level2, &level3, &prio, proto);
+		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
@@ -463,48 +430,29 @@ static void aqos_tables(void)
 				if (!is_mac80211(data))
 					eval("ifconfig", data, "down");
 				down_addIF(data);
-				eval("iptables", "-t", "mangle", "-D", "INPUT",
-				     "-m", "physdev", "--physdev-in", data,
-				     "-j", "IMQ", "--todev", "0");
-				eval("iptables", "-t", "mangle", "-A", "INPUT",
-				     "-m", "physdev", "--physdev-in", data,
-				     "-j", "IMQ", "--todev", "0");
-				eval("iptables", "-t", "mangle", "-D",
-				     "FORWARD", "-m", "physdev", "--physdev-in",
-				     data, "-j", "IMQ", "--todev", "0");
-				eval("iptables", "-t", "mangle", "-A",
-				     "FORWARD", "-m", "physdev", "--physdev-in",
-				     data, "-j", "IMQ", "--todev", "0");
-
-				evalip6("ip6tables", "-t", "mangle", "-D",
-					"INPUT", "-m", "physdev",
-					"--physdev-in", data, "-j", "IMQ",
-					"--todev", "0");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"INPUT", "-m", "physdev",
-					"--physdev-in", data, "-j", "IMQ",
-					"--todev", "0");
-				evalip6("ip6tables", "-t", "mangle", "-D",
-					"FORWARD", "-m", "physdev",
-					"--physdev-in", data, "-j", "IMQ",
-					"--todev", "0");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"FORWARD", "-m", "physdev",
-					"--physdev-in", data, "-j", "IMQ",
-					"--todev", "0");
-			} else {
-				eval("iptables", "-t", "mangle", "-A", "INPUT",
-				     "-i", data, "-j", "IMQ", "--todev", "0");
-				eval("iptables", "-t", "mangle", "-A",
-				     "FORWARD", "-i", data, "-j", "IMQ",
+				eval("iptables", "-t", "mangle", "-D", "INPUT", "-m", "physdev", "--physdev-in", data, "-j", "IMQ",
 				     "--todev", "0");
+				eval("iptables", "-t", "mangle", "-A", "INPUT", "-m", "physdev", "--physdev-in", data, "-j", "IMQ",
+				     "--todev", "0");
+				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j",
+				     "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j",
+				     "IMQ", "--todev", "0");
 
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"INPUT", "-i", data, "-j", "IMQ",
-					"--todev", "0");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"FORWARD", "-i", data, "-j", "IMQ",
-					"--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-m", "physdev", "--physdev-in", data, "-j",
+					"IMQ", "--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-m", "physdev", "--physdev-in", data, "-j",
+					"IMQ", "--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j",
+					"IMQ", "--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j",
+					"IMQ", "--todev", "0");
+			} else {
+				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", data, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", data, "-j", "IMQ", "--todev", "0");
+
+				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", data, "-j", "IMQ", "--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", data, "-j", "IMQ", "--todev", "0");
 			}
 		}
 
@@ -517,30 +465,22 @@ static void aqos_tables(void)
 			if (!is_mac80211(data))
 				eval("ifconfig", data, "down");
 			down_addIF(data);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_IN",
-			     "-m", "physdev", "--physdev-in", data, "-j",
+			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j",
 			     chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT",
-			     "-m", "physdev", "--physdev-is-bridged",
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged",
 			     "--physdev-out", data, "-j", chainname_out);
-			eval("iptables", "-t", "mangle", "-A", "FILTER_IN",
-			     "-m", "physdev", "--physdev-in", data, "-j",
+			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j",
 			     chainname_in);
-			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT",
-			     "-m", "physdev", "--physdev-is-bridged",
+			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged",
 			     "--physdev-out", data, "-j", chainname_out);
 
-			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_IN",
-				"-m", "physdev", "--physdev-in", data, "-j",
+			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j",
 				chainname_in);
-			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_OUT",
-				"-m", "physdev", "--physdev-is-bridged",
+			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged",
 				"--physdev-out", data, "-j", chainname_out);
-			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN",
-				"-m", "physdev", "--physdev-in", data, "-j",
+			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j",
 				chainname_in);
-			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT",
-				"-m", "physdev", "--physdev-is-bridged",
+			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged",
 				"--physdev-out", data, "-j", chainname_out);
 		} else {
 			//                      eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
@@ -549,25 +489,17 @@ static void aqos_tables(void)
 			//                      eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
 			//                      eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
 
-			eval("iptables", "-t", "mangle", "-D", "FILTER_IN",
-			     "-i", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT",
-			     "-o", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-i", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-o", data, "-j", chainname_out);
 
-			eval("iptables", "-t", "mangle", "-A", "FILTER_IN",
-			     "-i", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT",
-			     "-o", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-j", chainname_out);
 
-			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_IN",
-				"-i", data, "-j", chainname_in);
-			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_OUT",
-				"-o", data, "-j", chainname_out);
+			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_IN", "-i", data, "-j", chainname_in);
+			evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_OUT", "-o", data, "-j", chainname_out);
 
-			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN",
-				"-i", data, "-j", chainname_in);
-			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT",
-				"-o", data, "-j", chainname_out);
+			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-j", chainname_in);
+			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-j", chainname_out);
 		}
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
@@ -576,8 +508,7 @@ static void aqos_tables(void)
 	int oldbase = base;
 	do {
 		bzero(proto, sizeof(proto));
-		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level,
-			     &level2, &level3, &prio, proto);
+		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
@@ -604,36 +535,23 @@ static void aqos_tables(void)
 			int count = 0;
 			while (s_filters[count].name != NULL) {
 				if (!strcmp(s_filters[count].name, proto)) {
-					char *protos[6] = { "tcp",  "udp",
-							    "both", "l7",
-							    "dpi",  "p2p",
-							    "risk" };
-					strcpy(proto2,
-					       protos[s_filters[count].proto -
-						      1]);
+					char *protos[6] = { "tcp", "udp", "both", "l7", "dpi", "p2p", "risk" };
+					strcpy(proto2, protos[s_filters[count].proto - 1]);
 					strcpy(proto1, s_filters[count].name);
-					sprintf(proto3, "%d:%d",
-						s_filters[count].portfrom,
-						s_filters[count].portto);
+					sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
 					sprintf(proto4, "%d", prio);
 					break;
 				}
 				count++;
 			}
 			free_filters(s_filters);
-			snprintf(svcs, plen, "%s %s %s %s", proto1, proto2,
-				 proto3, proto4);
+			snprintf(svcs, plen, "%s %s %s %s", proto1, proto2, proto3, proto4);
 			do {
-				if (sscanf(svcs, "%31s %31s %31s %d ", srvname,
-					   srvtype, srvdata, &srvlevel) < 4)
+				if (sscanf(svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 					break;
 
-				add_client_dev_srvfilter(srvname, srvtype,
-							 srvdata, srvlevel,
-							 base, chainname_in);
-				add_client_dev_srvfilter(srvname, srvtype,
-							 srvdata, srvlevel,
-							 base, chainname_out);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_out);
 			} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
 
 			free(m);
@@ -644,20 +562,13 @@ static void aqos_tables(void)
 		 */
 		if (hasIF(data) && !*proto && *qos_svcs) {
 			do {
-				if (sscanf(qos_svcs, "%31s %31s %31s %d ",
-					   srvname, srvtype, srvdata,
-					   &srvlevel) < 4)
+				if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 					break;
 
-				add_client_dev_srvfilter(srvname, srvtype,
-							 srvdata, srvlevel,
-							 base, chainname_in);
-				add_client_dev_srvfilter(srvname, srvtype,
-							 srvdata, srvlevel,
-							 base, chainname_out);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_out);
 
-			} while ((qos_svcs = strpbrk(++qos_svcs, "|")) &&
-				 qos_svcs++);
+			} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 		}
 		// not service-prioritized, then default class
 		base += 10;
@@ -669,8 +580,7 @@ static void aqos_tables(void)
 	base = oldbase;
 	do {
 		bzero(proto, sizeof(proto));
-		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level,
-			     &level2, &level3, &prio, proto);
+		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
 
@@ -681,57 +591,33 @@ static void aqos_tables(void)
 
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
 			bzero(proto, sizeof(proto));
-			eval("iptables", "-t", "mangle", "-D", chainname_in,
-			     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-			     "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), base + 3));
-			eval("iptables", "-t", "mangle", "-D", chainname_out,
-			     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-			     "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), base + 3));
-			eval("iptables", "-t", "mangle", "-A", chainname_in,
-			     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-			     "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), base + 3));
-			eval("iptables", "-t", "mangle", "-A", chainname_out,
-			     "-m", "mark", "--mark", nullmask, "-j", "MARK",
-			     "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), base + 3));
+			eval("iptables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+			eval("iptables", "-t", "mangle", "-D", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+			eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+			eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
 
-			evalip6("ip6tables", "-t", "mangle", "-D", chainname_in,
-				"-m", "mark", "--mark", nullmask, "-j", "MARK",
-				"--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), base + 3));
-			evalip6("ip6tables", "-t", "mangle", "-D",
-				chainname_out, "-m", "mark", "--mark", nullmask,
-				"-j", "MARK", "--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), base + 3));
-			evalip6("ip6tables", "-t", "mangle", "-A", chainname_in,
-				"-m", "mark", "--mark", nullmask, "-j", "MARK",
-				"--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), base + 3));
-			evalip6("ip6tables", "-t", "mangle", "-A",
-				chainname_out, "-m", "mark", "--mark", nullmask,
-				"-j", "MARK", "--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), base + 3));
+			evalip6("ip6tables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+				"--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+			evalip6("ip6tables", "-t", "mangle", "-D", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+				"--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+			evalip6("ip6tables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+				"--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
+			evalip6("ip6tables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK",
+				"--set-mark", qos_nfmark(buffer, sizeof(buffer), base + 3));
 		}
-		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j",
-		     "RETURN");
-		eval("iptables", "-t", "mangle", "-D", chainname_out, "-j",
-		     "RETURN");
-		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j",
-		     "RETURN");
-		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j",
-		     "RETURN");
+		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
+		eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "RETURN");
+		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
+		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "RETURN");
 
-		evalip6("ip6tables", "-t", "mangle", "-D", chainname_in, "-j",
-			"RETURN");
-		evalip6("ip6tables", "-t", "mangle", "-D", chainname_out, "-j",
-			"RETURN");
-		evalip6("ip6tables", "-t", "mangle", "-A", chainname_in, "-j",
-			"RETURN");
-		evalip6("ip6tables", "-t", "mangle", "-A", chainname_out, "-j",
-			"RETURN");
+		evalip6("ip6tables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
+		evalip6("ip6tables", "-t", "mangle", "-D", chainname_out, "-j", "RETURN");
+		evalip6("ip6tables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
+		evalip6("ip6tables", "-t", "mangle", "-A", chainname_out, "-j", "RETURN");
 		base += 10;
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
@@ -779,47 +665,27 @@ static int svqos_iptables(void)
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
 		//              eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
-		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip",
-		     "parent", "1:", "prio", "15", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 100, 1),
-		     get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
-		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip",
-		     "parent", "1:", "prio", "13", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2),
-		     "flowid", "1:10");
-		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip",
-		     "parent", "1:", "prio", "11", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2),
-		     "flowid", "1:20");
-		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip",
-		     "parent", "1:", "prio", "9", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2),
-		     "flowid", "1:30");
-		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip",
-		     "parent", "1:", "prio", "3", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2),
-		     "flowid", "1:40");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "15", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "11", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "9", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "3", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
 
-		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol",
-			"ipv6", "parent", "1:", "prio", "16", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 100, 1),
-			get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
-		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol",
-			"ipv6", "parent", "1:", "prio", "14", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 10, 1),
-			get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
-		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol",
-			"ipv6", "parent", "1:", "prio", "12", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 20, 1),
-			get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
-		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol",
-			"ipv6", "parent", "1:", "prio", "10", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 30, 1),
-			get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
-		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol",
-			"ipv6", "parent", "1:", "prio", "4", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 40, 1),
-			get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
+		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol", "ipv6", "parent", "1:", "prio", "16", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
+		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol", "ipv6", "parent", "1:", "prio", "14", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
+		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol", "ipv6", "parent", "1:", "prio", "12", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
+		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol", "ipv6", "parent", "1:", "prio", "10", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
+		evalip6("tc", "filter", "add", "dev", wan_dev, "protocol", "ipv6", "parent", "1:", "prio", "4", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
 
 		init_ackprio(wan_dev);
 	}
@@ -828,94 +694,54 @@ static int svqos_iptables(void)
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
 		//              eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
-		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip",
-		     "parent", "1:", "prio", "15", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 100, 1),
-		     get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
-		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip",
-		     "parent", "1:", "prio", "13", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2),
-		     "flowid", "1:10");
-		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip",
-		     "parent", "1:", "prio", "11", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2),
-		     "flowid", "1:20");
-		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip",
-		     "parent", "1:", "prio", "9", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2),
-		     "flowid", "1:30");
-		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip",
-		     "parent", "1:", "prio", "3", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2),
-		     "flowid", "1:40");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "15", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "11", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "9", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "3", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
 
-		evalip6("tc", "filter", "add", "dev", "imq0", "protocol",
-			"ipv6", "parent", "1:", "prio", "16", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 100, 1),
-			get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
-		evalip6("tc", "filter", "add", "dev", "imq0", "protocol",
-			"ipv6", "parent", "1:", "prio", "14", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 10, 1),
-			get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
-		evalip6("tc", "filter", "add", "dev", "imq0", "protocol",
-			"ipv6", "parent", "1:", "prio", "12", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 20, 1),
-			get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
-		evalip6("tc", "filter", "add", "dev", "imq0", "protocol",
-			"ipv6", "parent", "1:", "prio", "10", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 30, 1),
-			get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
-		evalip6("tc", "filter", "add", "dev", "imq0", "protocol",
-			"ipv6", "parent", "1:", "prio", "4", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 40, 1),
-			get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
+		evalip6("tc", "filter", "add", "dev", "imq0", "protocol", "ipv6", "parent", "1:", "prio", "16", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
+		evalip6("tc", "filter", "add", "dev", "imq0", "protocol", "ipv6", "parent", "1:", "prio", "14", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
+		evalip6("tc", "filter", "add", "dev", "imq0", "protocol", "ipv6", "parent", "1:", "prio", "12", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
+		evalip6("tc", "filter", "add", "dev", "imq0", "protocol", "ipv6", "parent", "1:", "prio", "10", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
+		evalip6("tc", "filter", "add", "dev", "imq0", "protocol", "ipv6", "parent", "1:", "prio", "4", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
 	}
 	if (nvram_match("wshaper_dev", "LAN")) {
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
 
 		//              eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
-		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip",
-		     "parent", "1:", "prio", "15", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 100, 1),
-		     get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
-		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip",
-		     "parent", "1:", "prio", "13", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2),
-		     "flowid", "1:10");
-		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip",
-		     "parent", "1:", "prio", "11", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2),
-		     "flowid", "1:20");
-		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip",
-		     "parent", "1:", "prio", "9", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2),
-		     "flowid", "1:30");
-		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip",
-		     "parent", "1:", "prio", "3", "u32", "match", "mark",
-		     get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2),
-		     "flowid", "1:40");
+		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "15", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
+		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
+		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "11", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
+		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "9", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
+		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "3", "u32", "match", "mark",
+		     get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
 
-		evalip6("tc", "filter", "add", "dev", "imq1", "protocol",
-			"ipv6", "parent", "1:", "prio", "16", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 100, 1),
-			get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
-		evalip6("tc", "filter", "add", "dev", "imq1", "protocol",
-			"ipv6", "parent", "1:", "prio", "14", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 10, 1),
-			get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
-		evalip6("tc", "filter", "add", "dev", "imq1", "protocol",
-			"ipv6", "parent", "1:", "prio", "12", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 20, 1),
-			get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
-		evalip6("tc", "filter", "add", "dev", "imq1", "protocol",
-			"ipv6", "parent", "1:", "prio", "10", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 30, 1),
-			get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
-		evalip6("tc", "filter", "add", "dev", "imq1", "protocol",
-			"ipv6", "parent", "1:", "prio", "4", "u32", "match",
-			"mark", get_tcfmark(tcfmark, 40, 1),
-			get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
+		evalip6("tc", "filter", "add", "dev", "imq1", "protocol", "ipv6", "parent", "1:", "prio", "16", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
+		evalip6("tc", "filter", "add", "dev", "imq1", "protocol", "ipv6", "parent", "1:", "prio", "14", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
+		evalip6("tc", "filter", "add", "dev", "imq1", "protocol", "ipv6", "parent", "1:", "prio", "12", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
+		evalip6("tc", "filter", "add", "dev", "imq1", "protocol", "ipv6", "parent", "1:", "prio", "10", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
+		evalip6("tc", "filter", "add", "dev", "imq1", "protocol", "ipv6", "parent", "1:", "prio", "4", "u32", "match",
+			"mark", get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
 	}
 #endif
 
@@ -931,17 +757,13 @@ static int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-F", "FILTER_IN");
 	eval("iptables", "-t", "mangle", "-X", "FILTER_IN");
 	eval("iptables", "-t", "mangle", "-N", "FILTER_IN");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK",
-	     "--restore-mark");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK",
-	     "--restore-mark");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--restore-mark");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--restore-mark");
 
 	eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-j", "FILTER_IN");
 	eval("iptables", "-t", "mangle", "-I", "PREROUTING", "-j", "FILTER_IN");
-	eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-j",
-	     "FILTER_OUT");
-	eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-j",
-	     "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-j", "FILTER_OUT");
 
 	evalip6("ip6tables", "-t", "mangle", "-F", "SVQOS_SVCS");
 	evalip6("ip6tables", "-t", "mangle", "-X", "SVQOS_SVCS");
@@ -953,121 +775,68 @@ static int svqos_iptables(void)
 	evalip6("ip6tables", "-t", "mangle", "-F", "FILTER_IN");
 	evalip6("ip6tables", "-t", "mangle", "-X", "FILTER_IN");
 	evalip6("ip6tables", "-t", "mangle", "-N", "FILTER_IN");
-	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-j",
-		"CONNMARK", "--restore-mark");
-	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-j",
-		"CONNMARK", "--restore-mark");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--restore-mark");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--restore-mark");
 
-	evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-j",
-		"FILTER_IN");
-	evalip6("ip6tables", "-t", "mangle", "-I", "PREROUTING", "-j",
-		"FILTER_IN");
-	evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-j",
-		"FILTER_OUT");
-	evalip6("ip6tables", "-t", "mangle", "-I", "POSTROUTING", "-j",
-		"FILTER_OUT");
+	evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-j", "FILTER_IN");
+	evalip6("ip6tables", "-t", "mangle", "-I", "PREROUTING", "-j", "FILTER_IN");
+	evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
+	evalip6("ip6tables", "-t", "mangle", "-I", "POSTROUTING", "-j", "FILTER_OUT");
 
 	//      insmod("xt_dscp");
 	//      insmod("xt_DSCP");
 	//      eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
 
 	if (!strcmp(wshaper_dev, "WAN") && wan_dev != NULL) {
-		eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev,
-		     "-j", "IMQ", "--todev", "0");
-		eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev,
-		     "-j", "IMQ", "--todev", "0");
-		eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev,
-		     "-j", "IMQ", "--todev", "0");
-		eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev,
-		     "-j", "IMQ", "--todev", "0");
+		eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 
-		evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i",
-			wan_dev, "-j", "IMQ", "--todev", "0");
-		evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i",
-			wan_dev, "-j", "IMQ", "--todev", "0");
-		evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i",
-			wan_dev, "-j", "IMQ", "--todev", "0");
-		evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i",
-			wan_dev, "-j", "IMQ", "--todev", "0");
+		evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 	}
 	if (!strcmp(wshaper_dev, "LAN")) {
-		if (!client_bridged_enabled() &&
-		    nvram_invmatch("wan_proto", "disabled")) {
+		if (!client_bridged_enabled() && nvram_invmatch("wan_proto", "disabled")) {
 			if (wan_dev != NULL) {
-				eval("iptables", "-t", "mangle", "-D", "INPUT",
-				     "-i", wan_dev, "-j", "IMQ", "--todev",
-				     "0");
-				eval("iptables", "-t", "mangle", "-A", "INPUT",
-				     "-i", wan_dev, "-j", "IMQ", "--todev",
-				     "0");
-				eval("iptables", "-t", "mangle", "-D",
-				     "FORWARD", "-i", wan_dev, "-j", "IMQ",
-				     "--todev", "0");
-				eval("iptables", "-t", "mangle", "-A",
-				     "FORWARD", "-i", wan_dev, "-j", "IMQ",
-				     "--todev", "0");
+				eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 
-				eval("iptables", "-t", "mangle", "-D", "INPUT",
-				     "-i", inv_wan_dev, "-j", "IMQ", "--todev",
-				     "1");
-				eval("iptables", "-t", "mangle", "-A", "INPUT",
-				     "-i", inv_wan_dev, "-j", "IMQ", "--todev",
-				     "1");
+				eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 
-				eval("iptables", "-t", "mangle", "-D",
-				     "FORWARD", "-i", inv_wan_dev, "-o",
-				     inv_wan_dev, "-j", "IMQ", "--todev", "1");
-				eval("iptables", "-t", "mangle", "-A",
-				     "FORWARD", "-i", inv_wan_dev, "-o",
-				     inv_wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j", "IMQ",
+				     "--todev", "1");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j", "IMQ",
+				     "--todev", "1");
 
-				evalip6("ip6tables", "-t", "mangle", "-D",
-					"INPUT", "-i", wan_dev, "-j", "IMQ",
-					"--todev", "0");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"INPUT", "-i", wan_dev, "-j", "IMQ",
-					"--todev", "0");
-				evalip6("ip6tables", "-t", "mangle", "-D",
-					"FORWARD", "-i", wan_dev, "-j", "IMQ",
-					"--todev", "0");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"FORWARD", "-i", wan_dev, "-j", "IMQ",
-					"--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 
-				evalip6("ip6tables", "-t", "mangle", "-D",
-					"INPUT", "-i", inv_wan_dev, "-j", "IMQ",
-					"--todev", "1");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"INPUT", "-i", inv_wan_dev, "-j", "IMQ",
-					"--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-i", inv_wan_dev, "-j", "IMQ", "--todev", "1");
 
-				evalip6("ip6tables", "-t", "mangle", "-D",
-					"FORWARD", "-i", inv_wan_dev, "-o",
-					inv_wan_dev, "-j", "IMQ", "--todev",
-					"1");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"FORWARD", "-i", inv_wan_dev, "-o",
-					inv_wan_dev, "-j", "IMQ", "--todev",
-					"1");
+				evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j",
+					"IMQ", "--todev", "1");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-i", inv_wan_dev, "-o", inv_wan_dev, "-j",
+					"IMQ", "--todev", "1");
 			}
 		} else {
-			eval("iptables", "-t", "mangle", "-D", "INPUT", "-j",
-			     "IMQ", "--todev", "1");
-			eval("iptables", "-t", "mangle", "-A", "INPUT", "-j",
-			     "IMQ", "--todev", "1");
-			eval("iptables", "-t", "mangle", "-D", "FORWARD", "-j",
-			     "IMQ", "--todev", "1");
-			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-j",
-			     "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-D", "INPUT", "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-A", "INPUT", "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-D", "FORWARD", "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-j", "IMQ", "--todev", "1");
 
-			evalip6("ip6tables", "-t", "mangle", "-D", "INPUT",
-				"-j", "IMQ", "--todev", "1");
-			evalip6("ip6tables", "-t", "mangle", "-A", "INPUT",
-				"-j", "IMQ", "--todev", "1");
-			evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD",
-				"-j", "IMQ", "--todev", "1");
-			evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD",
-				"-j", "IMQ", "--todev", "1");
+			evalip6("ip6tables", "-t", "mangle", "-D", "INPUT", "-j", "IMQ", "--todev", "1");
+			evalip6("ip6tables", "-t", "mangle", "-A", "INPUT", "-j", "IMQ", "--todev", "1");
+			evalip6("ip6tables", "-t", "mangle", "-D", "FORWARD", "-j", "IMQ", "--todev", "1");
+			evalip6("ip6tables", "-t", "mangle", "-A", "FORWARD", "-j", "IMQ", "--todev", "1");
 		}
 	}
 	//      /* add openvpn filter rules */
@@ -1171,36 +940,23 @@ static int svqos_iptables(void)
 	aqos_tables();
 
 	if (wan_dev && strcmp(wan_dev, "wwan0")) {
-		if (wanactive(get_wan_ipaddr()) &&
-		    (nvram_matchi("block_loopback", 0) ||
-		     nvram_match("filter", "off"))) {
+		if (wanactive(get_wan_ipaddr()) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			char *wan_face = safe_get_wan_face(wan_if_buffer);
 			char inv_wan_face[33];
-			snprintf(inv_wan_face, sizeof(inv_wan_face), "!%s",
-				 wan_face);
-			eval("iptables", "-t", "mangle", "-A", "PREROUTING",
-			     "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j",
-			     "MARK", "--set-mark",
-			     get_NFServiceMark(buffer, sizeof(buffer),
-					       "FORWARD", 1));
-			eval("iptables", "-t", "mangle", "-A", "PREROUTING",
-			     "-j", "CONNMARK", "--save-mark");
+			snprintf(inv_wan_face, sizeof(inv_wan_face), "!%s", wan_face);
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j",
+			     "MARK", "--set-mark", get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 
-			evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING",
-				"-i", inv_wan_face, "-d", get_wan_ipaddr(),
-				"-j", "MARK", "--set-mark",
-				get_NFServiceMark(buffer, sizeof(buffer),
-						  "FORWARD", 1));
-			evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING",
-				"-j", "CONNMARK", "--save-mark");
+			evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j",
+				"MARK", "--set-mark", get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
+			evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 		}
 	}
 	// if OSPF is active put it into the Express bucket for outgoing QoS
 	if (nvram_match("wk_mode", "ospf")) {
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p",
-		     "ospf", "-j", "MARK", "--set-mark", nullmask);
-		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-p",
-			"ospf", "-j", "MARK", "--set-mark", nullmask);
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "ospf", "-j", "MARK", "--set-mark", nullmask);
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "ospf", "-j", "MARK", "--set-mark", nullmask);
 	}
 	qos_svcs = nvram_safe_get("svqos_svcs");
 
@@ -1209,75 +965,49 @@ static int svqos_iptables(void)
 	 * ..etc 
 	 */
 	do {
-		if (sscanf(qos_svcs, "%31s %31s %31s %d ", name, type, data,
-			   &level) < 4)
+		if (sscanf(qos_svcs, "%31s %31s %31s %d ", name, type, data, &level) < 4)
 			break;
 
 		if (strstr(type, "udp") || strstr(type, "both")) {
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS",
-			     "-p", "udp", "-m", "udp", "--dport", data, "-j",
-			     "MARK", "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), level));
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS",
-			     "-p", "udp", "-m", "udp", "--sport", data, "-j",
-			     "MARK", "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--dport", data, "-j",
+			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--sport", data, "-j",
+			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS",
-				"-p", "udp", "-m", "udp", "--dport", data, "-j",
-				"MARK", "--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), level));
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS",
-				"-p", "udp", "-m", "udp", "--sport", data, "-j",
-				"MARK", "--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--dport", data, "-j",
+				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--sport", data, "-j",
+				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
 
 		if (strstr(type, "tcp") || strstr(type, "both")) {
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS",
-			     "-p", "tcp", "-m", "tcp", "--dport", data, "-j",
-			     "MARK", "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), level));
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS",
-			     "-p", "tcp", "-m", "tcp", "--sport", data, "-j",
-			     "MARK", "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j",
+			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j",
+			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS",
-				"-p", "tcp", "-m", "tcp", "--dport", data, "-j",
-				"MARK", "--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), level));
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS",
-				"-p", "tcp", "-m", "tcp", "--sport", data, "-j",
-				"MARK", "--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j",
+				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j",
+				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
-		if (name && (!strcmp(name, "windows-telemetry") ||
-			     !strcmp(name, "ubnt-telemetry")))
+		if (name && (!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry")))
 			continue;
 		if (strstr(type, "l7")) {
 			insmod("ipt_layer7");
 			insmod("xt_layer7");
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS",
-			     "-m", "layer7", "--l7proto", name, "-j", "MARK",
-			     "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), level));
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS",
-				"-m", "layer7", "--l7proto", name, "-j", "MARK",
-				"--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", name, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", name, "-j", "MARK",
+				"--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
 #ifdef HAVE_OPENDPI
 		if (strstr(type, "dpi")) {
 			insmod("xt_ndpi");
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS",
-			     "-m", "ndpi", "--proto", name, "-j", "MARK",
-			     "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), level));
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS",
-				"-m", "ndpi", "--proto", name, "-j", "MARK",
-				"--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", name, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", name, "-j", "MARK",
+				"--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
 		if (strstr(type, "risk")) {
 			insmod("xt_ndpi");
@@ -1285,14 +1015,10 @@ static int svqos_iptables(void)
 			char *dep = get_dep_by_name(name);
 			char lvl[32];
 			sprintf(lvl, "%d", risk);
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS",
-			     "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j",
-			     "MARK", "--set-mark",
-			     qos_nfmark(buffer, sizeof(buffer), level));
-			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS",
-				"-m", "ndpi", "--proto", dep, "--risk", lvl,
-				"-j", "MARK", "--set-mark",
-				qos_nfmark(buffer, sizeof(buffer), level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j",
+			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j",
+				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
 #endif
 
@@ -1331,79 +1057,44 @@ static int svqos_iptables(void)
 				insmod("xt_ipp2p");
 				char s_proto[32];
 				sprintf(s_proto, "--%s", proto);
-				eval("iptables", "-t", "mangle", "-A",
-				     "SVQOS_SVCS", "-p", "tcp", "-m", "ipp2p",
-				     s_proto, "-j", "MARK", "--set-mark",
-				     qos_nfmark(buffer, sizeof(buffer), level));
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"SVQOS_SVCS", "-p", "tcp", "-m",
-					"ipp2p", s_proto, "-j", "MARK",
-					"--set-mark",
-					qos_nfmark(buffer, sizeof(buffer),
-						   level));
+				eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "ipp2p", s_proto, "-j",
+				     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+				evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "ipp2p", s_proto, "-j",
+					"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
 				if (!strcmp(proto, "bit")) {
 					// bittorrent detection enhanced
 #ifdef HAVE_MICRO
-					eval("iptables", "-t", "mangle", "-A",
-					     "SVQOS_SVCS", "-m", "layer7",
-					     "--l7proto", "bt", "-j", "MARK",
-					     "--set-mark",
-					     qos_nfmark(buffer, sizeof(buffer),
-							level));
+					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt",
+					     "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 #else
-					eval("iptables", "-t", "mangle", "-A",
-					     "SVQOS_SVCS", "-m", "length",
-					     "--length", "0:550", "-m",
-					     "layer7", "--l7proto", "bt", "-j",
-					     "MARK", "--set-mark",
-					     qos_nfmark(buffer, sizeof(buffer),
-							level));
+					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "length", "--length", "0:550",
+					     "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark",
+					     qos_nfmark(buffer, sizeof(buffer), level));
 #endif
-					eval("iptables", "-t", "mangle", "-A",
-					     "SVQOS_SVCS", "-m", "layer7",
-					     "--l7proto", "bt2", "-j", "MARK",
-					     "--set-mark",
-					     qos_nfmark(buffer, sizeof(buffer),
-							level));
+					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2",
+					     "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
-					evalip6("ip6tables", "-t", "mangle",
-						"-A", "SVQOS_SVCS", "-m",
-						"length", "--length", "0:550",
-						"-m", "layer7", "--l7proto",
-						"bt", "-j", "MARK",
-						"--set-mark",
-						qos_nfmark(buffer,
-							   sizeof(buffer),
-							   level));
-					evalip6("ip6tables", "-t", "mangle",
-						"-A", "SVQOS_SVCS", "-m",
-						"layer7", "--l7proto", "bt2",
-						"-j", "MARK", "--set-mark",
-						qos_nfmark(buffer,
-							   sizeof(buffer),
-							   level));
+					evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "length", "--length",
+						"0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark",
+						qos_nfmark(buffer, sizeof(buffer), level));
+					evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2",
+						"-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 				}
 			}
 		}
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
 	// close mark-tables
-	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark",
-	     "--mark", nullmask, "-j", "SVQOS_SVCS");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK",
-	     "--save-mark");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark",
-	     "--mark", nullmask, "-j", "SVQOS_SVCS");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 
-	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark",
-		"--mark", nullmask, "-j", "SVQOS_SVCS");
-	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-j",
-		"CONNMARK", "--save-mark");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
 	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
-	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark",
-		"--mark", nullmask, "-j", "SVQOS_SVCS");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 //      if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 //              eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 //      }
@@ -1419,30 +1110,22 @@ static int svqos_iptables(void)
 			if (sscanf(qos_pkts, "%4s ", pkt_filter) < 1)
 				break;
 			if (!strcmp(pkt_filter, "ICMP")) {
-				eval("iptables", "-t", "mangle", "-A",
-				     "FILTER_OUT", "-p", "icmp", "-j",
-				     "CLASSIFY", "--set-class", "1:100");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"FILTER_OUT", "-p", "icmp", "-j",
-					"CLASSIFY", "--set-class", "1:100");
+				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "icmp", "-j", "CLASSIFY", "--set-class",
+				     "1:100");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "icmp", "-j", "CLASSIFY",
+					"--set-class", "1:100");
 			} else {
-				eval("iptables", "-t", "mangle", "-A",
-				     "FILTER_OUT", "-p", "tcp", "-m", "tcp",
-				     "--tcp-flags", pkt_filter, pkt_filter,
-				     "-m", "length", "--length", "0:64", "-j",
-				     "CLASSIFY", "--set-class", "1:100");
-				evalip6("ip6tables", "-t", "mangle", "-A",
-					"FILTER_OUT", "-p", "tcp", "-m", "tcp",
-					"--tcp-flags", pkt_filter, pkt_filter,
-					"-m", "length", "--length", "0:64",
-					"-j", "CLASSIFY", "--set-class",
+				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags",
+				     pkt_filter, pkt_filter, "-m", "length", "--length", "0:64", "-j", "CLASSIFY", "--set-class",
+				     "1:100");
+				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags",
+					pkt_filter, pkt_filter, "-m", "length", "--length", "0:64", "-j", "CLASSIFY", "--set-class",
 					"1:100");
 			}
 		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 	}
 #endif
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK",
-	     "--save-mark");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
 	//      /* anything which doesnt match should get default class */
@@ -1450,12 +1133,9 @@ static int svqos_iptables(void)
 
 	eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "RETURN");
 
-	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-j",
-		"CONNMARK", "--save-mark");
-	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-j",
-		"RETURN");
-	evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j",
-		"RETURN");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
+	evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "RETURN");
 
 	// set port priority and port bandwidth
 	svqos_set_ports();
@@ -1492,8 +1172,7 @@ void start_qos(void)
 	else
 		stop_sfe();
 #endif
-	if (!strcmp(wshaper_dev, "WAN") &&
-	    (nvram_match("wan_proto", "disabled") || client_bridged_enabled()))
+	if (!strcmp(wshaper_dev, "WAN") && (nvram_match("wan_proto", "disabled") || client_bridged_enabled()))
 		return;
 
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
@@ -1552,15 +1231,13 @@ void start_qos(void)
 
 	if (!strcmp(wshaper_dev, "WAN")) {
 		eval("ifconfig", "imq1", "down");
-		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl,
-			 wan_dev, mtu, "imq0", aqd, NULL);
+		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl, wan_dev, mtu, "imq0", aqd, NULL);
 	} else {
 		eval("ifconfig", "imq1", "down");
 		eval("ifconfig", "imq1", "mtu", "1500");
 		eval("ifconfig", "imq1", "txqueuelen", "30");
 		eval("ifconfig", "imq1", "up");
-		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl,
-			 wan_dev, mtu, "imq0", aqd, "imq1");
+		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl, wan_dev, mtu, "imq0", aqd, "imq1");
 	}
 	svqos_iptables();
 #endif

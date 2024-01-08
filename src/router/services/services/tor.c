@@ -71,40 +71,31 @@ void start_tor(void)
 	const char *ipv6addr = NULL;
 	char buf[INET6_ADDRSTRLEN];
 	if (nvram_match("ipv6_typ", "ipv6native"))
-		ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer),
-				     AF_INET6, 0);
+		ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4"))
 		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
-		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"),
-				     AF_INET6, 0);
+		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 #endif
 
 	if (nvram_matchi("tor_relayonly", 1)) {
 		fprintf(fp, "SocksPort 0\n");
 	} else {
 		fprintf(fp, "SocksPort 9050\n");
-		fprintf(fp, "SocksPort %s:9050\n",
-			nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "SocksPort %s:9050\n", nvram_safe_get("lan_ipaddr"));
 	}
 	fprintf(fp, "RunAsDaemon 1\n");
-	fprintf(fp, "Address %s\n",
-		nvram_invmatch("tor_address", "") ?
-			nvram_safe_get("tor_address") :
-			get_wan_ipaddr());
+	fprintf(fp, "Address %s\n", nvram_invmatch("tor_address", "") ? nvram_safe_get("tor_address") : get_wan_ipaddr());
 	if (nvram_invmatch("tor_id", ""))
 		fprintf(fp, "Nickname %s\n", nvram_safe_get("tor_id"));
 	if (nvram_invmatch("tor_bwrate", ""))
-		fprintf(fp, "RelayBandwidthRate %d\n",
-			nvram_geti("tor_bwrate") * 1024);
+		fprintf(fp, "RelayBandwidthRate %d\n", nvram_geti("tor_bwrate") * 1024);
 	if (nvram_invmatch("tor_bwburst", ""))
-		fprintf(fp, "RelayBandwidthBurst %d\n",
-			nvram_geti("tor_bwburst") * 1024);
+		fprintf(fp, "RelayBandwidthBurst %d\n", nvram_geti("tor_bwburst") * 1024);
 
 	//      fprintf(fp, "ControlPort 9051\n");
 	if (nvram_matchi("tor_relay", 1)) {
-		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i",
-		     safe_get_wan_face(wan_if_buffer), "--dport", "9001", "-j",
+		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9001", "-j",
 		     "ACCEPT");
 		fprintf(fp, "ORPort 9001\n");
 		fprintf(fp, "ExitRelay 1\n");
@@ -116,8 +107,7 @@ void start_tor(void)
 #endif
 	}
 	if (nvram_matchi("tor_dir", 1)) {
-		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i",
-		     safe_get_wan_face(wan_if_buffer), "--dport", "9030", "-j",
+		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9030", "-j",
 		     "ACCEPT");
 		fprintf(fp, "DirPort 9030\n");
 	}
@@ -129,15 +119,11 @@ void start_tor(void)
 	fprintf(fp, "TransPort %s:9040\n", nvram_safe_get("lan_ipaddr"));
 	fprintf(fp, "DNSPort %s:5353\n", nvram_safe_get("lan_ipaddr"));
 	if (nvram_matchi("tor_transparent", 1)) {
-		sysprintf(
-			"iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353",
-			nvram_safe_get("lan_ipaddr"));
-		sysprintf(
-			"iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353",
-			nvram_safe_get("lan_ipaddr"));
-		sysprintf(
-			"iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040",
-			nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353",
+			  nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353",
+			  nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", nvram_safe_get("lan_ipaddr"));
 	}
 #ifdef HAVE_X86
 	eval("mkdir", "-p", "/tmp/tor");

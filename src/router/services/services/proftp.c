@@ -88,13 +88,10 @@ void start_ftpsrv(void)
 	samba3users = getsamba3users();
 	for (cu = samba3users; cu; cu = cunext) {
 		if (*cu->username && cu->sharetype & SHARETYPE_FTP) {
-			sysprintf("mkdir -p \"/tmp/proftpd/users/%s\"",
-				  cu->username);
+			sysprintf("mkdir -p \"/tmp/proftpd/users/%s\"", cu->username);
 			char passout[MD5_OUT_BUFSIZE];
-			fprintf(fp,
-				"%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n",
-				cu->username, zencrypt(cu->password, passout),
-				cu->username);
+			fprintf(fp, "%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n", cu->username,
+				zencrypt(cu->password, passout), cu->username);
 		}
 		cunext = cu->next;
 		free(cu);
@@ -142,8 +139,7 @@ void start_ftpsrv(void)
 		for (csu = cs->users; csu; csu = csunext) {
 			samba3users = getsamba3users();
 			for (cu = samba3users; cu; cu = cunext) {
-				if (!strcmp(csu->username, cu->username) &&
-				    (cu->sharetype & SHARETYPE_FTP))
+				if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_FTP))
 					hasuser = 1;
 				cunext = cu->next;
 				free(cu);
@@ -161,20 +157,14 @@ void start_ftpsrv(void)
 		fprintf(fp, "<Directory      \"~/%s\">\n", cs->label);
 
 		if (!strcmp(cs->access_perms, "rw"))
-			fprintf(fp,
-				"  <Limit WRITE>\n    AllowAll\n  </Limit>\n");
+			fprintf(fp, "  <Limit WRITE>\n    AllowAll\n  </Limit>\n");
 		for (csu = cs->users; csu; csu = csunext) {
 			samba3users = getsamba3users();
 			for (cu = samba3users; cu; cu = cunext) {
-				if (!strcmp(csu->username, cu->username) &&
-				    (cu->sharetype & SHARETYPE_FTP)) {
-					sysprintf(
-						"mkdir -p \"/tmp/proftpd/users/%s/%s\"",
-						cu->username, cs->label);
-					sysprintf(
-						"mount --bind \"%s/%s\" \"/tmp/proftpd/users/%s/%s\"",
-						cs->mp, cs->sd, cu->username,
-						cs->label);
+				if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_FTP)) {
+					sysprintf("mkdir -p \"/tmp/proftpd/users/%s/%s\"", cu->username, cs->label);
+					sysprintf("mount --bind \"%s/%s\" \"/tmp/proftpd/users/%s/%s\"", cs->mp, cs->sd,
+						  cu->username, cs->label);
 				}
 				cunext = cu->next;
 				free(cu);
@@ -198,12 +188,9 @@ nextshare:;
 			"RadiusEngine	on\n"
 			"RadiusAuthServer	%s:%s	%s 5\n"
 			"RadiusAcctServer	%s:%s	%s 5\n",
-			nvram_safe_get("proftpd_authserverip"),
-			nvram_safe_get("proftpd_authserverport"),
-			nvram_safe_get("proftpd_sharedkey"),
-			nvram_safe_get("proftpd_authserverip"),
-			nvram_safe_get("proftpd_acctserverport"),
-			nvram_safe_get("proftpd_sharedkey"));
+			nvram_safe_get("proftpd_authserverip"), nvram_safe_get("proftpd_authserverport"),
+			nvram_safe_get("proftpd_sharedkey"), nvram_safe_get("proftpd_authserverip"),
+			nvram_safe_get("proftpd_acctserverport"), nvram_safe_get("proftpd_sharedkey"));
 		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n",
 			"/mnt"); //TODO allow to choose dir
 	}

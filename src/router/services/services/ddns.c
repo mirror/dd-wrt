@@ -206,11 +206,9 @@ static int init_ddns(FILE *fp)
 	if (flag != 1) {
 		sprintf(postfix, "_%d", flag);
 	}
-	snprintf(_username, sizeof(_username), "%s%s", "ddns_username",
-		 postfix);
+	snprintf(_username, sizeof(_username), "%s%s", "ddns_username", postfix);
 	snprintf(_passwd, sizeof(_passwd), "%s%s", "ddns_passwd", postfix);
-	snprintf(_hostname, sizeof(_hostname), "%s%s", "ddns_hostname",
-		 postfix);
+	snprintf(_hostname, sizeof(_hostname), "%s%s", "ddns_hostname", postfix);
 #ifdef HAVE_IPV6
 	snprintf(_ipv6, sizeof(_ipv6), "%s", "ddns_ipv6");
 	snprintf(_ipv6_only, sizeof(_ipv6_only), "%s", "ddns_ipv6_only");
@@ -220,12 +218,9 @@ static int init_ddns(FILE *fp)
 			ipv6_only = nvram_matchi(_ipv6_only, 1);
 	}
 #endif
-	snprintf(_wildcard, sizeof(_wildcard), "%s%s", "ddns_wildcard",
-		 postfix);
-	snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache",
-		 provider, nvram_nget("ddns_hostname%s", postfix));
-	snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6),
-		 "/tmp/ddns/%s-%s.cache", provider6,
+	snprintf(_wildcard, sizeof(_wildcard), "%s%s", "ddns_wildcard", postfix);
+	snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_nget("ddns_hostname%s", postfix));
+	snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6), "/tmp/ddns/%s-%s.cache", provider6,
 		 nvram_nget("ddns_hostname%s", postfix));
 	if (fp) {
 #ifdef HAVE_IPV6
@@ -239,13 +234,11 @@ static int init_ddns(FILE *fp)
 			else
 				fprintf(fp, "provider %s {\n", provider);
 			if (flag != 28 && flag != 11)
-				fprintf(fp, "username = \"%s\"\n",
-					nvram_safe_get(_username));
+				fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
 			if (flag == 27)
 				fprintf(fp, "password = \"nopasswd\"\n");
 			else
-				fprintf(fp, "password = \"%s\"\n",
-					nvram_safe_get(_passwd));
+				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 
 			char *next;
 			char var[128];
@@ -261,20 +254,16 @@ static int init_ddns(FILE *fp)
 			}
 			fprintf(fp, "}\n");
 #ifdef HAVE_USE_OPENSSL
-			fprintf(fp, "ssl = %s\n",
-				nvram_match(_ssl, "1") ? "true" : "false");
+			fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
 			if (nvram_match(_wildcard, "1"))
 				fprintf(fp, "wildcard = true\n");
 			if (flag == 5) {
-				fprintf(fp, "ddns-server = \"%s\"\n",
-					nvram_safe_get("ddns_custom_5"));
-				fprintf(fp, "ddns-path = \"%s\"\n",
-					nvram_safe_get("ddns_path_5"));
+				fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom_5"));
+				fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path_5"));
 			}
 			if (nvram_match("ddns_wan_ip", "1")) {
-				fprintf(fp,
-					"checkip-command = \"/sbin/service checkwanip main\"\n");
+				fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
 			}
 			fprintf(fp, "}\n");
 
@@ -284,13 +273,11 @@ static int init_ddns(FILE *fp)
 			fprintf(fp, "provider %s {\n", provider6);
 
 			if (flag != 28 && flag != 11)
-				fprintf(fp, "username = \"%s\"\n",
-					nvram_safe_get(_username));
+				fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
 			if (flag == 27)
 				fprintf(fp, "password = \"nopasswd\"\n");
 			else
-				fprintf(fp, "password = \"%s\"\n",
-					nvram_safe_get(_passwd));
+				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 
 			char *next;
 			char var[128];
@@ -306,23 +293,18 @@ static int init_ddns(FILE *fp)
 			}
 			fprintf(fp, "}\n");
 #ifdef HAVE_USE_OPENSSL
-			fprintf(fp, "ssl = %s\n",
-				nvram_match(_ssl, "1") ? "true" : "false");
+			fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
 			if (nvram_match(_wildcard, "1"))
 				fprintf(fp, "wildcard = true\n");
 			if (flag == 5) {
-				fprintf(fp, "ddns-server = \"%s\"\n",
-					nvram_safe_get("ddns_custom_5"));
-				fprintf(fp, "ddns-path = \"%s\"\n",
-					nvram_safe_get("ddns_path_5"));
+				fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom_5"));
+				fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path_5"));
 			}
 			if (nvram_match("ddns_wan_ip", "1")) {
-				fprintf(fp,
-					"checkip-command = \"/sbin/service checkwanip main\"\n");
+				fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
 			} else {
-				fprintf(fp,
-					"checkip-server = dns64.cloudflare-dns.com\n");
+				fprintf(fp, "checkip-server = dns64.cloudflare-dns.com\n");
 				fprintf(fp, "checkip-path = /cdn-cgi/trace\n");
 			}
 			fprintf(fp, "}\n");
@@ -351,8 +333,7 @@ void start_ddns(void)
 			fprintf(fp, "period = %s\n", "900");
 		else
 			fprintf(fp, "period = %s\n", "600");
-		fprintf(fp, "forced-update = %d\n",
-			nvram_geti("ddns_force") * 24 * 60 * 60);
+		fprintf(fp, "forced-update = %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);
 		if (init_ddns(fp) < 0)
 			return;
 		fprintf(fp, "\n");
@@ -362,26 +343,19 @@ void start_ddns(void)
 		return;
 	}
 
-	if (strcmp(nvram_safe_get("ddns_enable_buf"),
-		   nvram_safe_get("ddns_enable")) ||
-	    strcmp(nvram_safe_get("ddns_username_buf"),
-		   nvram_safe_get(_username)) ||
-	    strcmp(nvram_safe_get("ddns_passwd_buf"),
-		   nvram_safe_get(_passwd)) ||
+	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||
+	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
+	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
 #ifdef HAVE_IPV6
 	    strcmp(nvram_safe_get("ddns_ipv6_buf"), nvram_safe_get(_ipv6)) ||
 #endif
-	    strcmp(nvram_safe_get("ddns_hostname_buf"),
-		   nvram_safe_get(_hostname)) ||
-	    strcmp(nvram_safe_get("ddns_wildcard_buf"),
-		   nvram_safe_get(_wildcard)) ||
+	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
+	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
 #ifdef HAVE_USE_OPENSSL
 	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
 #endif
-	    strcmp(nvram_safe_get("ddns_path_buf"),
-		   nvram_safe_get("ddns_path_5")) ||
-	    strcmp(nvram_safe_get("ddns_custom_buf"),
-		   nvram_safe_get("ddns_custom_5"))) {
+	    strcmp(nvram_safe_get("ddns_path_buf"), nvram_safe_get("ddns_path_5")) ||
+	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
@@ -407,19 +381,12 @@ void start_ddns(void)
 	}
 	/* egc added loglevel: nvram set ddns_loglevel=[debug|info|notice|warning]  default=notice */
 	if (nvram_matchi("ddns_once", 0)) {
-		dd_logstart("ddns",
-			    eval("inadyn", "--cache-dir=/tmp/ddns", "-e",
-				 "ddns_success", "--exec-mode=compat", "-f",
-				 "/tmp/ddns/inadyn.conf", "-P",
-				 "/var/run/inadyn.pid", "-l", loglevel, "-t",
-				 "30", "-C"));
+		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f",
+					 "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", loglevel, "-t", "30", "-C"));
 		nvram_seti("ddns_once", 1);
 	} else {
-		dd_logstart("ddns",
-			    eval("inadyn", "--cache-dir=/tmp/ddns", "-e",
-				 "ddns_success", "--exec-mode=compat", "-f",
-				 "/tmp/ddns/inadyn.conf", "-P",
-				 "/var/run/inadyn.pid", "-l", loglevel, "-C"));
+		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f",
+					 "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", loglevel, "-C"));
 	}
 	cprintf("done\n");
 
@@ -452,17 +419,13 @@ int checkwanip_main(int argc, char *argv[])
 		return -1;
 	char *wan_ipaddr = NULL;
 	if (nvram_match("wan_proto", "pptp")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") :
-					nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
 	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") :
-					"0.0.0.0";
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 	} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") :
-					"0.0.0.0";
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 	} else if (nvram_match("wan_proto", "l2tp")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") :
-					nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
 	} else if (nvram_match("wan_proto", "disabled")) {
 		wan_ipaddr = "0.0.0.0";
 		return -1;
@@ -477,24 +440,17 @@ int checkwanip_main(int argc, char *argv[])
 		char buf[INET6_ADDRSTRLEN];
 		const char *ipv6addr = NULL;
 		if (nvram_match("ipv6_typ", "ipv6native"))
-			ipv6addr = getifaddr(buf,
-					     safe_get_wan_face(wan_if_buffer),
-					     AF_INET6, 0);
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6in4"))
 			ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6pd"))
-			ipv6addr = getifaddr(buf,
-					     safe_get_wan_face(wan_if_buffer),
-					     AF_INET6, 0);
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 		//                      ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
-		if (nvram_match("ipv6_typ", "ipv6in4") ||
-		    nvram_match("ipv6_typ", "ipv6pd") ||
+		if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd") ||
 		    nvram_match("ipv6_typ", "ipv6native")) {
 			if (!ipv6addr)
-				ipv6addr = getifaddr(
-					buf, safe_get_wan_face(wan_if_buffer),
-					AF_INET6,
-					0); // try wan if all other fails
+				ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6,
+						     0); // try wan if all other fails
 			if (ipv6addr)
 				wan_ipaddr = ipv6addr;
 		}

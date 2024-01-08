@@ -67,8 +67,7 @@ static void install_sdcard(void)
 	sleep(10); //give some time until sd is up
 	fprintf(stderr, "check if secondary device is available\n");
 	fp = fopen("/dev/sda", "rb");
-	if (fp ==
-	    NULL) // no cf disc installed or no sd card. doesnt matter, we exit if no secondary device is in
+	if (fp == NULL) // no cf disc installed or no sd card. doesnt matter, we exit if no secondary device is in
 	{
 		fclose(fp);
 		return;
@@ -86,13 +85,11 @@ static void install_sdcard(void)
 		size /= 4096;
 		char newsize[32];
 		sprintf(newsize, "%d", size);
-		eval("mkfs.ext4", "-b", "4096", "-N", "65536", "-L", "dd-wrt",
-		     "/dev/sda", newsize);
+		eval("mkfs.ext4", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/sda", newsize);
 		mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL, NULL);
 	}
 	fprintf(stderr, "copy files to SD Card\n");
-	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin",
-	     "/tmp/install/usr/local/nvram/nvram.bak");
+	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin", "/tmp/install/usr/local/nvram/nvram.bak");
 	eval("cp", "-R", "-d", "-f", "/boot", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/bin", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/etc", "/tmp/install");
@@ -105,8 +102,7 @@ static void install_sdcard(void)
 	eval("cp", "-R", "-d", "-f", "/usr", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/www", "/tmp/install");
 	eval("cp", "-R", "-d", "-f", "/var", "/tmp/install");
-	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak",
-	     "/tmp/install/usr/local/nvram/nvram.bin");
+	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak", "/tmp/install/usr/local/nvram/nvram.bin");
 	mkdir("/tmp/install/dev", 0700);
 	mkdir("/tmp/install/sys", 0700);
 	mkdir("/tmp/install/proc", 0700);
@@ -179,15 +175,13 @@ void start_devinit(void)
 	mkdir("/dev/misc", 0700);
 	mknod("/dev/misc/gpio", S_IFCHR | 0644, makedev(125, 0));
 #endif
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || \
-	defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	fprintf(stderr, "waiting for hotplug\n");
 	char s_dev[64];
 	char *s_disc = getdisc();
 
 	if (s_disc == NULL) {
-		fprintf(stderr,
-			"no valid dd-wrt partition found, calling shell\n");
+		fprintf(stderr, "no valid dd-wrt partition found, calling shell\n");
 		eval("/bin/sh");
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
@@ -201,11 +195,9 @@ void start_devinit(void)
 	insmod("mbcache");
 	insmod("crc16");
 	insmod("ext4");
-	if (mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS,
-		  NULL)) {
+	if (mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS, NULL)) {
 		eval("mkfs.ext4", "-F", "-b", " 1024", s_dev);
-		mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS,
-		      NULL);
+		mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL | MS_SYNCHRONOUS, NULL);
 	}
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
@@ -217,8 +209,7 @@ void start_devinit(void)
 #if defined(HAVE_ATH10K)
 	eval("rm", "-f", "/tmp/ath10k-board.bin");
 	eval("ln", "-s", "/lib/ath10k/board.bin", "/tmp/ath10k-board.bin");
-#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && \
-	!defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN) &&                    \
+#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN) && \
 	!defined(HAVE_NEWPORT) && !defined(HAVE_QCA9888)
 	eval("ln", "-s", "/lib/ath10k/board_9984.bin", "/tmp/board1.bin");
 #endif
@@ -296,8 +287,7 @@ void start_devinit(void)
 	char *disk = getdisc();
 
 	if (disk == NULL) {
-		fprintf(stderr,
-			"no valid dd-wrt partition found, calling shell");
+		fprintf(stderr, "no valid dd-wrt partition found, calling shell");
 		eval("/bin/sh");
 		exit(0);
 	}
@@ -332,8 +322,7 @@ void start_devinit(void)
 		unsigned char *mem = malloc(size);
 		fread(mem, size, 1, in);
 		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 &&
-		    mem[3] == 0x48) {
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
 			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {
@@ -369,8 +358,7 @@ void start_devinit(void)
 		unsigned char *mem = malloc(size);
 		fread(mem, size, 1, in);
 		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 &&
-		    mem[3] == 0x48) {
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
 			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {

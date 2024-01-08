@@ -97,8 +97,7 @@ void start_vlantagging(void)
 		if (nvram_default_matchi(var, 1, 1)) {
 			eval("ifconfig", vlan_name, "0.0.0.0", "up");
 		} else {
-			eval("ifconfig", vlan_name,
-			     nvram_nget("%s_ipaddr", vlan_name), "netmask",
+			eval("ifconfig", vlan_name, nvram_nget("%s_ipaddr", vlan_name), "netmask",
 			     nvram_nget("%s_netmask", vlan_name), "up");
 		}
 	}
@@ -168,8 +167,7 @@ void apply_bridgeif(char *ifname, char *realport)
 			if (prio)
 				br_set_port_prio(tag, realport, atoi(prio));
 			if (hairpin)
-				br_set_port_hairpin(tag, realport,
-						    atoi(hairpin));
+				br_set_port_hairpin(tag, realport, atoi(hairpin));
 			if (stp)
 				br_set_port_stp(tag, realport, atoi(stp));
 			if (pathcost)

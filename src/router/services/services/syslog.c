@@ -73,27 +73,22 @@ void start_syslog(void)
 	if (!nvram_invmatchi("syslogd_enable", 0))
 		return;
 	update_timezone();
-	if (nvram_matchi("syslogd_jffs2", 1) &&
-	    !nvram_matchi("flash_active", 1)) {
+	if (nvram_matchi("syslogd_jffs2", 1) && !nvram_matchi("flash_active", 1)) {
 		mkdir("/jffs/log", 0700);
-		eval("mv", "-f", "/jffs/log/messages",
-		     "/jffs/log/messages.old");
+		eval("mv", "-f", "/jffs/log/messages", "/jffs/log/messages.old");
 		FILE *fp = fopen("/jffs/log/messages", "wb");
 		if (!fp)
 			goto fallback;
 		fclose(fp);
 		if (*(nvram_safe_get("syslogd_rem_ip")))
-			log_eval("syslogd", "-Z", "-b", "5", "-L", "-R",
-				 nvram_safe_get("syslogd_rem_ip"), "-O",
+			log_eval("syslogd", "-Z", "-b", "5", "-L", "-R", nvram_safe_get("syslogd_rem_ip"), "-O",
 				 "/jffs/log/messages");
 		else
-			log_eval("syslogd", "-Z", "-b", "5", "-L", "-O",
-				 "/jffs/log/messages");
+			log_eval("syslogd", "-Z", "-b", "5", "-L", "-O", "/jffs/log/messages");
 	} else {
 fallback:;
 		if (*(nvram_safe_get("syslogd_rem_ip")))
-			log_eval("syslogd", "-Z", "-L", "-R",
-				 nvram_safe_get("syslogd_rem_ip"));
+			log_eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"));
 		else
 			log_eval("syslogd", "-Z", "-L");
 	}

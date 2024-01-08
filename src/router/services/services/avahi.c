@@ -60,8 +60,7 @@ void start_mdns(void)
 		"check-response-ttl=no\n" //
 		"use-iff-running=no\n" //
 		"#deny-interfaces=\n",
-		nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"),
-		nvram_matchi("ipv6_enable", 1) ? "yes" : "no");
+		nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"), nvram_matchi("ipv6_enable", 1) ? "yes" : "no");
 	char ifname[32];
 	char *next;
 	char *wordlist = nvram_safe_get("mdns_interfaces");
@@ -103,8 +102,7 @@ void start_mdns(void)
 		"rlimit-nofile=30\n" //
 		"rlimit-stack=4194304\n" //
 		"rlimit-nproc=3\n",
-		nvram_safe_get("lan_ipaddr"),
-		nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
+		nvram_safe_get("lan_ipaddr"), nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
 	fclose(fp);
 
 #ifdef HAVE_SMBD //might need SAMBA
@@ -169,17 +167,13 @@ void start_mdns(void)
 		dd_loginfo("dbus-daemon", "dbus-daemon already running\n");
 	} else {
 		snprintf(conffile, sizeof(conffile), "--config-file=%s",
-			 getdefaultconfig("mdns", path, sizeof(path),
-					  "avahi-dbus.conf"));
+			 getdefaultconfig("mdns", path, sizeof(path), "avahi-dbus.conf"));
 		log_eval("dbus-launch", conffile);
 	}
 #endif
 	if (reload_process("avahi-daemon")) {
-		snprintf(conffile, sizeof(conffile),
-			 getdefaultconfig("mdns", path, sizeof(path),
-					  "mdns.conf"));
-		log_eval("avahi-daemon", "-D", "-f", conffile,
-			 "--no-drop-root");
+		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns", path, sizeof(path), "mdns.conf"));
+		log_eval("avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
 	}
 	return;
 }

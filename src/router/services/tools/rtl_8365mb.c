@@ -197,8 +197,7 @@ int ext_rtk_phyState(int verbose)
 
 	close(fd);
 
-	sprintf(buf, portMark,
-		(pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M' : 'X',
+	sprintf(buf, portMark, (pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M' : 'X',
 		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M' : 'X',
 		(pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M' : 'X',
 		(pS.link[o[3]] == 1) ? (pS.speed[o[3]] == 2) ? 'G' : 'M' : 'X');
@@ -206,8 +205,7 @@ int ext_rtk_phyState(int verbose)
 	if (verbose)
 		fprintf(stderr, "%s\n", buf);
 
-	return (pS.link[o[0]] == 1) | (pS.link[o[1]] == 1) |
-	       (pS.link[o[2]] == 1) | (pS.link[o[3]] == 1);
+	return (pS.link[o[0]] == 1) | (pS.link[o[1]] == 1) | (pS.link[o[2]] == 1) | (pS.link[o[3]] == 1);
 }
 
 void usage(char *cmd)
@@ -241,9 +239,8 @@ void usage(char *cmd)
 	fprintf(stderr, "Usage:\n");
 	for (ci = 0; ci < MAX_REQ; ++ci)
 		fprintf(stderr, "  %s %d %s##( %s )##\n", cmd, ci,
-			(pa = rtk_cmds_pa[ci]) ?
-				pa == 1 ? "\t[arg1] \t" : "\t[arg1] [arg2] " :
-			ci > 9 ? "\t\t" :
-				 " \t\t",
+			(pa = rtk_cmds_pa[ci]) ? pa == 1 ? "\t[arg1] \t" : "\t[arg1] [arg2] " :
+			ci > 9		       ? "\t\t" :
+						 " \t\t",
 			rtk_switch_cmds[ci]);
 }

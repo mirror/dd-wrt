@@ -173,14 +173,10 @@ static char *pcidrivers[] = { "hv_netvsc",
 			      "yellowfin",
 			      NULL };
 
-static char *usbdrivers[] = {
-	"asix",	    "ax88179_178a", "catc",    "ch9200",     "cx82310_eth",
-	"dm9601",   "gl620a",	    "int51x1", "kalmia",     "kaweth",
-	"lan78xx",  "lg-vl600",	    "mcs7830", "net1080",    "pegasus",
-	"plusb",    "r8152",	    "rtl8150", "sierra_net", "smsc75xx",
-	"smsc95xx", "sr9700",	    "sr9800",  "usbnet",     "zaurus",
-	NULL
-};
+static char *usbdrivers[] = { "asix",	 "ax88179_178a", "catc",   "ch9200",  "cx82310_eth", "dm9601",	 "gl620a",
+			      "int51x1", "kalmia",	 "kaweth", "lan78xx", "lg-vl600",    "mcs7830",	 "net1080",
+			      "pegasus", "plusb",	 "r8152",  "rtl8150", "sierra_net",  "smsc75xx", "smsc95xx",
+			      "sr9700",	 "sr9800",	 "usbnet", "zaurus",  NULL };
 
 static int detect_driver(char **drivers, char *list, int delay, int insmod)
 {
@@ -204,8 +200,7 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 			size_t slen = strlen(pcid) + strlen(driver) + 2;
 			char *newdriver = malloc(slen);
 			if (*pcid)
-				snprintf(newdriver, slen, "%s %s", pcid,
-					 driver);
+				snprintf(newdriver, slen, "%s %s", pcid, driver);
 			else
 				snprintf(newdriver, slen, "%s", driver);
 			nvram_set(list, newdriver);
@@ -221,8 +216,7 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 	return rcc;
 }
 
-static int detect_drivers(char *buspath, char *enabled, char *list,
-			  char **driverset, int delay, int insmod)
+static int detect_drivers(char *buspath, char *enabled, char *list, char **driverset, int delay, int insmod)
 {
 	char word[256];
 	char *next, *wordlist;
@@ -237,8 +231,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list,
 		while (fgets(buf, sizeof(buf) - 1, fp)) {
 			unsigned int defnr, vendor;
 			sscanf(buf, "%x %x", &defnr, &vendor);
-			snprintf(final, sizeof(final) - 1, "%s %x ", final,
-				 vendor);
+			snprintf(final, sizeof(final) - 1, "%s %x ", final, vendor);
 		}
 		fclose(fp);
 		hash = hash_string(final, s_hash, sizeof(s_hash));
@@ -248,8 +241,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list,
 	if (!hash)
 		return 0; // bus not present. ignore
 	wordlist = nvram_safe_get(list);
-	if (!nvram_match(enabled, hash) ||
-	    !*wordlist) { // hash does not match, bus has been changed. so redetect drivers
+	if (!nvram_match(enabled, hash) || !*wordlist) { // hash does not match, bus has been changed. so redetect drivers
 		rcc = detect_driver(driverset, list, delay, insmod);
 		nvram_set(enabled, hash); // store new hash
 		nvram_commit();
@@ -270,15 +262,13 @@ static int detect_drivers(char *buspath, char *enabled, char *list,
 
 static int detect_pcidrivers(void)
 {
-	return detect_drivers("/proc/bus/pci/devices", "pci_detected",
-			      "pcidrivers", pcidrivers, 0, 0);
+	return detect_drivers("/proc/bus/pci/devices", "pci_detected", "pcidrivers", pcidrivers, 0, 0);
 }
 
 static int detect_usbdrivers(void)
 {
 	insmod("usb-common nls_base usbcore usbnet cdc_ether cdc_ncm dcd-wdm");
-	return detect_drivers("/proc/bus/usb/devices", "usb_detected",
-			      "usbdrivers", usbdrivers, 0, 1);
+	return detect_drivers("/proc/bus/usb/devices", "usb_detected", "usbdrivers", usbdrivers, 0, 1);
 }
 
 static int detect_ethernet_devices(void)

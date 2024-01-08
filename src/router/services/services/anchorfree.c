@@ -71,8 +71,7 @@ void deviceID(char *output)
 	// fprintf (stderr, "generate hash\n");
 	doHash(&MD, "/dev/mtdblock/0");
 	doHash(&MD, "/dev/mtdblock0");
-	doHash(&MD,
-	       "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
+	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
 	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom");
 	doHash(&MD, "/dev/discs/disc0/part4");
 	dd_md5_end((unsigned char *)key, &MD);
@@ -140,8 +139,7 @@ void start_anchorfree(void)
 #endif
 		}
 
-		if (nvram_matchi("af_ssid", 1) &&
-		    !nvram_matchi("af_ssid_created", 1)) {
+		if (nvram_matchi("af_ssid", 1) && !nvram_matchi("af_ssid_created", 1)) {
 			nvram_seti("af_ssid_created", 1);
 #ifndef HAVE_MADWIFI
 			nvram_set("wl0_vifs", "wl0.1");
@@ -154,8 +152,7 @@ void start_anchorfree(void)
 			nvram_set("mdhcpd", "wl0.1>On>100>50>1440");
 #else
 			nvram_set("wlan0_vifs", "wlan0.1");
-			nvram_set("wlan0.1_ssid",
-				  nvram_safe_get("af_ssid_name"));
+			nvram_set("wlan0.1_ssid", nvram_safe_get("af_ssid_name"));
 			nvram_seti("wlan0.1_bridged", 0);
 			nvram_set("wlan0.1_ipaddr", "172.45.0.1");
 			nvram_set("wlan0.1_netmask", "255.255.255.0");
@@ -181,8 +178,7 @@ void start_anchorfree(void)
 				start_wan_boot();
 				return;
 			}
-		} else if (nvram_matchi("af_ssid", 0) &&
-			   nvram_matchi("af_ssid_created", 1)) {
+		} else if (nvram_matchi("af_ssid", 0) && nvram_matchi("af_ssid_created", 1)) {
 			nvram_seti("af_ssid_created", 0);
 #ifndef HAVE_MADWIFI
 			nvram_set("wl0_vifs", "");
@@ -208,15 +204,11 @@ void start_anchorfree(void)
 			}
 		} else if (nvram_matchi("af_ssid_created", 1)) {
 #ifndef HAVE_MADWIFI
-			if (!nvram_match("af_ssid_name",
-					 nvram_safe_get("wl0.1_ssid"))) {
-				nvram_set("wl0.1_ssid",
-					  nvram_safe_get("af_ssid_name"));
+			if (!nvram_match("af_ssid_name", nvram_safe_get("wl0.1_ssid"))) {
+				nvram_set("wl0.1_ssid", nvram_safe_get("af_ssid_name"));
 #else
-			if (!nvram_match("af_ssid_name",
-					 nvram_safe_get("wlan0.1_ssid"))) {
-				nvram_set("wlan0.1_ssid",
-					  nvram_safe_get("af_ssid_name"));
+			if (!nvram_match("af_ssid_name", nvram_safe_get("wlan0.1_ssid"))) {
+				nvram_set("wlan0.1_ssid", nvram_safe_get("af_ssid_name"));
 
 #endif
 				need_commit = 1;
@@ -272,16 +264,13 @@ void start_anchorfree(void)
 			"country=%s&"
 			"cat=%s&"
 			"publish=%s\"",
-			devid, email, ssid, addr, addr2, city, zip, state,
-			country, cat, nvram_safe_get("af_publish"));
+			devid, email, ssid, addr, addr2, city, zip, state, country, cat, nvram_safe_get("af_publish"));
 		system(callbuffer);
 		FILE *response = fopen("/tmp/.anchorfree", "rb");
 
 		if (response == NULL) {
-			fprintf(stderr,
-				"error while registration (cannot reach registration site)!\n");
-			nvram_set("af_servicestatus",
-				  "cannot reach registration site!");
+			fprintf(stderr, "error while registration (cannot reach registration site)!\n");
+			nvram_set("af_servicestatus", "cannot reach registration site!");
 			nvram_seti("af_registered", 0);
 			nvram_async_commit();
 			return;
@@ -291,8 +280,7 @@ void start_anchorfree(void)
 
 		if (r != 1) {
 			fprintf(stderr, "registration failed (bad status)\n");
-			nvram_set("af_servicestatus",
-				  "registration failed (bad status)");
+			nvram_set("af_servicestatus", "registration failed (bad status)");
 			fclose(response);
 			nvram_seti("af_registered", 0);
 			nvram_async_commit();
@@ -311,8 +299,7 @@ void start_anchorfree(void)
 		fscanf(response, "sid: %s\n", status);
 		if (r != 1) {
 			fprintf(stderr, "registration failed (bad sid)\n");
-			nvram_set("af_servicestatus",
-				  "registration failed (bad sid)");
+			nvram_set("af_servicestatus", "registration failed (bad sid)");
 			fclose(response);
 			nvram_seti("af_registered", 0);
 			nvram_async_commit();
@@ -360,11 +347,9 @@ void start_anchorfreednat(void)
 	if (nvram_matchi("af_enable", 1) && !nvram_matchi("af_dnathost", 0)) {
 		char host[128];
 
-		getIPFromName(nvram_safe_get("af_dnathost"), host,
-			      sizeof(host));
+		getIPFromName(nvram_safe_get("af_dnathost"), host, sizeof(host));
 		if (!strcmp(host, "0.0.0.0")) {
-			fprintf(stderr, "cannot resolve %s\n",
-				nvram_safe_get("af_dnathost"));
+			fprintf(stderr, "cannot resolve %s\n", nvram_safe_get("af_dnathost"));
 			return;
 		}
 		sprintf(dest, "%s:%s", host, nvram_safe_get("af_dnatport"));
@@ -372,37 +357,29 @@ void start_anchorfreednat(void)
 		// getmask (nvram_safe_get ("lan_netmask")));
 		sprintf(source, "0.0.0.0/0");
 		if (nvram_matchi("af_ssid", 1))
-			sprintf(source, "%s/%d",
-				nvram_safe_get(IFPREFIX "0.1_ipaddr"),
-				getmask(nvram_safe_get(IFPREFIX
-						       "0.1_netmask")));
+			sprintf(source, "%s/%d", nvram_safe_get(IFPREFIX "0.1_ipaddr"),
+				getmask(nvram_safe_get(IFPREFIX "0.1_netmask")));
 
 		if (nvram_matchi("af_ssid", 1)) {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
 			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
 		} else {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to",
-			     nvram_safe_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
+			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
 		}
 
-		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source,
-		     "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to",
+		     dest);
 		if (nvram_matchi("af_ssid", 1)) {
-			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
+			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "-d",
 			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
 		} else {
-			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to",
-			     nvram_safe_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "-d",
+			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
 		}
 
-		eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source,
-		     "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+		eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to",
+		     dest);
 	}
 }
 
@@ -421,8 +398,7 @@ void stop_anchorfree_unregister(void)
 
 void stop_anchorfree(void)
 {
-	if (!nvram_matchi("af_serviceid", 0) &&
-	    nvram_matchi("af_registered", 1)) {
+	if (!nvram_matchi("af_serviceid", 0) && nvram_matchi("af_registered", 1)) {
 		nvram_seti("af_registered", 0);
 		char dest[32];
 		char source[32];
@@ -430,30 +406,24 @@ void stop_anchorfree(void)
 		dd_loginfo("anchorfree", "stopping redirection\n");
 		char host[128];
 
-		getIPFromName(nvram_safe_get("af_dnathost"), host,
-			      sizeof(host));
+		getIPFromName(nvram_safe_get("af_dnathost"), host, sizeof(host));
 		sprintf(dest, "%s:%s", host, nvram_safe_get("af_dnatport"));
 		// sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 		// getmask (nvram_safe_get ("lan_netmask")));
 		sprintf(source, "0.0.0.0/0");
 		if (nvram_matchi("af_ssid", 1))
-			sprintf(source, "%s/%d",
-				nvram_safe_get(IFPREFIX "0.1_ipaddr"),
-				getmask(nvram_safe_get(IFPREFIX
-						       "0.1_netmask")));
+			sprintf(source, "%s/%d", nvram_safe_get(IFPREFIX "0.1_ipaddr"),
+				getmask(nvram_safe_get(IFPREFIX "0.1_netmask")));
 
-		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source,
-		     "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to",
+		     dest);
 
 		if (nvram_matchi("af_ssid", 1)) {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
 			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
 		} else {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to",
-			     nvram_safe_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
+			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
 		}
 
 		unlink("/tmp/.anchorfree");
