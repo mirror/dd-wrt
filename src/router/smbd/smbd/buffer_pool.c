@@ -282,7 +282,11 @@ static void release_wm(struct wm *wm, struct wm_list *wm_list)
 	}
 
 	atomic_dec(&wm_list->avail_wm);
-	kvfree(wm);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+			__free(wm);
+#else
+			kvfree(wm);
+#endif
 }
 
 static void wm_list_free(struct wm_list *l)
