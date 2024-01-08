@@ -186,6 +186,7 @@ void argumentParser(const int argc, char **argv) {
 				" Use -h or --help for help.", argument);
 			exit(1);
 		}
+		Global::utf_force = true;
 	}
 }
 
@@ -968,12 +969,12 @@ int main(int argc, char **argv) {
 			}
 		}
 	#else
-		if (found.empty() and Global::utf_force)
-			Logger::warning("No UTF-8 locale detected! Forcing start with --utf-force argument.");
-		else if (found.empty()) {
-			Global::exit_error_msg = "No UTF-8 locale detected!\nUse --utf-force argument to force start if you're sure your terminal can handle it.";
-			clean_quit(1);
-		}
+//		if (found.empty() and Global::utf_force)
+//			Logger::warning("No UTF-8 locale detected! Forcing start with --utf-force argument.");
+//		else if (found.empty()) {
+//			Global::exit_error_msg = "No UTF-8 locale detected!\nUse --utf-force argument to force start if you're sure your terminal can handle it.";
+//			clean_quit(1);
+//		}
 	#endif
 		else if (not set_failure)
 			Logger::debug("Setting LC_ALL=" + found);
