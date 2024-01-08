@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: zramctl
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "ZRAMCTL" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
+.TH "ZRAMCTL" "8" "2023-11-21" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -132,6 +132,7 @@ The following commands set up a zram device with a size of one gigabyte and use 
 .sp
 .if n .RS 4
 .nf
+.fam C
  # zramctl \-\-find \-\-size 1024M
  /dev/zram0
  # mkswap /dev/zram0
@@ -139,6 +140,7 @@ The following commands set up a zram device with a size of one gigabyte and use 
  ...
  # swapoff /dev/zram0
  # zramctl \-\-reset /dev/zram0
+.fam
 .fi
 .if n .RE
 .SH "AUTHORS"

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: dmesg
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-23
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "DMESG" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "DMESG" "1" "2023-11-23" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -158,7 +158,7 @@ Add facility, level or timestamp information to each line of a multi\-line messa
 .RS 4
 Print the raw message buffer, i.e., do not strip the log\-level prefixes, but all unprintable characters are still escaped (see also \fB\-\-noescape\fP).
 .sp
-Note that the real raw format depends on the method how \fBdmesg\fP reads kernel messages. The \fI/dev/kmsg\fP device uses a different format than \fBsyslog\fP(2). For backward compatibility, \fBdmesg\fP returns data always in the \fBsyslog\fP(2) format. It is possible to read the real raw data from \fI/dev/kmsg\fP by, for example, the command \(aqdd if=/dev/kmsg iflag=nonblock\(aq.
+Note that the real raw format depends on the method how \fBdmesg\fP reads kernel messages. The \fI/dev/kmsg\fP device uses a different format than \fBsyslog\fP(2). For backward compatibility, \fBdmesg\fP returns data always in the \fBsyslog\fP(2) format. It is possible to read the real raw data from \fI/dev/kmsg\fP by, for example, the command \*(Aqdd if=/dev/kmsg iflag=nonblock\*(Aq.
 .RE
 .sp
 \fB\-S\fP, \fB\-\-syslog\fP
@@ -180,12 +180,12 @@ Print human\-readable timestamps.
 .sp
 \fB\-\-since\fP \fItime\fP
 .RS 4
-Display record since the specified time. Supported is the subsecond granularity. The time is possible to specify in absolute way as well as by relative notation (e.g. \(aq1 hour ago\(aq). Be aware that the timestamp could be inaccurate and see \fB\-\-ctime\fP for more details.
+Display record since the specified time. Supported is the subsecond granularity. The time is possible to specify in absolute way as well as by relative notation (e.g. \*(Aq1 hour ago\*(Aq). Be aware that the timestamp could be inaccurate and see \fB\-\-ctime\fP for more details.
 .RE
 .sp
 \fB\-\-until\fP \fItime\fP
 .RS 4
-Display record until the specified time. Supported is the subsecond granularity. The time is possible to specify in absolute way as well as by relative notation (e.g. \(aq1 hour ago\(aq). Be aware that the timestamp could be inaccurate and see \fB\-\-ctime\fP for more details.
+Display record until the specified time. Supported is the subsecond granularity. The time is possible to specify in absolute way as well as by relative notation (e.g. \*(Aq1 hour ago\*(Aq). Be aware that the timestamp could be inaccurate and see \fB\-\-ctime\fP for more details.
 .RE
 .sp
 \fB\-t\fP, \fB\-\-notime\fP

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: partx
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-10-23
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "PARTX" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
+.TH "PARTX" "8" "2023-10-23" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -83,9 +83,9 @@ Do not print a header line with \fB\-\-show\fP or \fB\-\-raw\fP.
 List the partitions. Note that all numbers are in 512\-byte sectors. This output format is DEPRECATED in favour of \fB\-\-show\fP. Do not use it in newly written scripts.
 .RE
 .sp
-\fB\-n\fP, \fB\-\-nr\fP \fIM\fP\fB:\fP_N_
+\fB\-n\fP, \fB\-\-nr\fP \fIM\fP\fB:\fP\fIN\fP
 .RS 4
-Specify the range of partitions. For backward compatibility also the format \fIM\fP\fB\-\fP_N_ is supported. The range may contain negative numbers, for example \fB\-\-nr \-1:\-1\fP means the last partition, and \fB\-\-nr \-2:\-1\fP means the last two partitions. Supported range specifications are:
+Specify the range of partitions. For backward compatibility also the format \fIM\fP\fB\-\fP\fIN\fP is supported. The range may contain negative numbers, for example \fB\-\-nr \-1:\-1\fP means the last partition, and \fB\-\-nr \-2:\-1\fP means the last two partitions. Supported range specifications are:
 .sp
 \fIM\fP
 .RS 4
@@ -102,7 +102,7 @@ Specifies the lower limit only (e.g. \fB\-\-nr 2:\fP).
 Specifies the upper limit only (e.g. \fB\-\-nr :4\fP).
 .RE
 .sp
-\fIM\fP\fB:\fP_N_
+\fIM\fP\fB:\fP\fIN\fP
 .RS 4
 Specifies the lower and upper limits (e.g. \fB\-\-nr 2:4\fP).
 .RE

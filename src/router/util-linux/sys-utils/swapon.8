@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: swapon
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "SWAPON" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
+.TH "SWAPON" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -43,8 +43,6 @@ The device or file used is given by the \fIspecialfile\fP parameter. It may be o
 Calls to \fBswapon\fP normally occur in the system boot scripts making all swap devices available, so that the paging and swapping activity is interleaved across several devices and files.
 .sp
 \fBswapoff\fP disables swapping on the specified devices and files. When the \fB\-a\fP flag is given, swapping is disabled on all known swap devices and files (as found in \fI/proc/swaps\fP or \fI/etc/fstab\fP).
-.sp
-If \fBloop=/dev/loop?\fP and \fBencryption=AES128\fP options are present in \fI/etc/fstab\fP then \fBswapon \-a\fP will set up loop devices using random keys, run \fBmkswap\fP on them, and enable encrypted swap on specified loop devices. Encrypted loop devices are set up with page size offset so that unencrypted swap signatures on first page of swap devices are not touched. \fBswapoff \-a\fP will tear down such loop devices.
 .SH "OPTIONS"
 .sp
 \fB\-a\fP, \fB\-\-all\fP

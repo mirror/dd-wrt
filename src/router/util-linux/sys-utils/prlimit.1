@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: prlimit
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "PRLIMIT" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "PRLIMIT" "1" "2023-12-01" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -40,7 +40,7 @@ Given a process ID and one or more resources, \fBprlimit\fP tries to retrieve an
 .sp
 When \fIcommand\fP is given, \fBprlimit\fP will run this command with the given arguments.
 .sp
-The \fIlimits\fP parameter is composed of a soft and a hard value, separated by a colon (:), in order to modify the existing values. If no \fIlimits\fP are given, \fBprlimit\fP will display the current values. If one of the values is not given, then the existing one will be used. To specify the unlimited or infinity limit (\fBRLIM_INFINITY\fP), the \-1 or \(aqunlimited\(aq string can be passed.
+The \fIlimits\fP parameter is composed of a soft and a hard value, separated by a colon (:), in order to modify the existing values. If no \fIlimits\fP are given, \fBprlimit\fP will display the current values. If one of the values is not given, then the existing one will be used. To specify the unlimited or infinity limit (\fBRLIM_INFINITY\fP), the \-1 or \*(Aqunlimited\*(Aq string can be passed.
 .sp
 Because of the nature of limits, the soft limit must be lower or equal to the high limit (also called the ceiling). To see all available resource limits, refer to the \fBRESOURCE OPTIONS\fP section.
 .sp
@@ -235,7 +235,7 @@ Set both the soft and hard CPU time limit to ten seconds and run \fBsort\fP(1).
 .RE
 .SH "AUTHORS"
 .sp
-.MTO "dave\(atgnu.org" "Davidlohr Bueso" " "
+.MTO "dave\(atgnu.org" "Davidlohr Bueso" ""
 \- In memory of Dennis M. Ritchie.
 .SH "SEE ALSO"
 .sp

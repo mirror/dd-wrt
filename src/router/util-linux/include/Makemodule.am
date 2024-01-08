@@ -56,7 +56,6 @@ dist_noinst_HEADERS += \
 	include/procfs.h \
 	include/pt-bsd.h \
 	include/pt-mbr.h \
-	include/xgetpass.h \
 	include/pt-mbr-partnames.h \
 	include/pt-gpt-partnames.h \
 	include/pt-sgi.h \

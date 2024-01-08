@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: hexdump
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "HEXDUMP" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "HEXDUMP" "1" "2023-12-01" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -229,7 +229,7 @@ Output characters in the default character set. Non\-printing characters are dis
 .sp
 \fB_p\fP
 .RS 4
-Output characters in the default character set. Non\-printing characters are displayed as a single \(aq\fB.\fP\(aq.
+Output characters in the default character set. Non\-printing characters are displayed as a single \*(Aq\fB.\fP\*(Aq.
 .RE
 .sp
 \fB_u\fP
@@ -418,7 +418,7 @@ It is an error to specify a byte count as well as multiple conversion characters
 .sp
 If, as a result of the specification of the \fB\-n\fP option or end\-of\-file being reached, input data only partially satisfies a format string, the input block is zero\-padded sufficiently to display all available data (i.e., any format units overlapping the end of data will display some number of the zero bytes).
 .sp
-Further output by such format strings is replaced by an equivalent number of spaces. An equivalent number of spaces is defined as the number of spaces output by an \fBs\fP conversion character with the same field width and precision as the original conversion character or conversion string but with any \(aq\fB+\fP\(aq, \(aq \(aq, \(aq\fB#\fP\(aq conversion flag characters removed, and referencing a NULL string.
+Further output by such format strings is replaced by an equivalent number of spaces. An equivalent number of spaces is defined as the number of spaces output by an \fBs\fP conversion character with the same field width and precision as the original conversion character or conversion string but with any \*(Aq\fB+\fP\*(Aq, \*(Aq \*(Aq, \*(Aq\fB#\fP\*(Aq conversion flag characters removed, and referencing a NULL string.
 .sp
 If no format strings are specified, the default display is very similar to the \fB\-x\fP output format (the \fB\-x\fP option causes more space to be used between format units than in the default output).
 .SH "EXIT STATUS"
@@ -433,9 +433,11 @@ Display the input in perusal format:
 .sp
 .if n .RS 4
 .nf
+.fam C
    "%06.6_ao "  12/1 "%3_u "
    "\(rst" "%_p "
    "\(rsn"
+.fam
 .fi
 .if n .RE
 .sp
@@ -443,8 +445,10 @@ Implement the \fB\-x\fP option:
 .sp
 .if n .RS 4
 .nf
+.fam C
    "%07.7_Ax\(rsn"
    "%07.7_ax  " 8/2 "%04x " "\(rsn"
+.fam
 .fi
 .if n .RE
 .sp
@@ -452,8 +456,10 @@ MBR Boot Signature example: Highlight the addresses cyan and the bytes at offset
 .sp
 .if n .RS 4
 .nf
+.fam C
    "%07.7_Ax_L[cyan]\(rsn"
    "%07.7_ax_L[cyan]  " 8/2 "   %04x_L[green:0xAA55@510\-511,!red:0xAA55@510\-511] " "\(rsn"
+.fam
 .fi
 .if n .RE
 .SH "COLORS"

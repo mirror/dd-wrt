@@ -837,7 +837,6 @@ int mnt_context_do_mount(struct libmnt_context *cxt)
 	const char *type;
 	int res = 0, rc = 0;
 	struct libmnt_ns *ns_old;
-	unsigned long flags = 0;
 
 	assert(cxt);
 	assert(cxt->fs);
@@ -847,8 +846,6 @@ int mnt_context_do_mount(struct libmnt_context *cxt)
 	assert((cxt->action == MNT_ACT_MOUNT));
 
 	DBG(CXT, ul_debugobj(cxt, "mount: do mount"));
-
-	mnt_context_get_user_mflags(cxt, &flags);
 
 	ns_old = mnt_context_switch_target_ns(cxt);
 	if (!ns_old)
@@ -870,8 +867,8 @@ int mnt_context_do_mount(struct libmnt_context *cxt)
 	} else
 		res = do_mount_by_pattern(cxt, cxt->fstype_pattern);
 
-	/* after mount stage (loop device post-cleanup must be called for failed mount too) */
-	if ((res == 0) || (flags & MNT_MS_LOOP)) {
+	/* after mount stage */
+	if (res == 0) {
 		rc = mnt_context_call_hooks(cxt, MNT_STAGE_MOUNT_POST);
 		if (rc)
 			return rc;

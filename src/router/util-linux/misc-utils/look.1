@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: look
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-10-23
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LOOK" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "LOOK" "1" "2023-10-23" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -96,8 +96,10 @@ The \fBlook\fP utility appeared in Version 7 AT&T Unix.
 .sp
 .if n .RS 4
 .nf
+.fam C
 sort \-d /etc/passwd \-o /tmp/look.dict
 look \-t: root:foobar /tmp/look.dict
+.fam
 .fi
 .if n .RE
 .SH "SEE ALSO"

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: hwclock
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "HWCLOCK" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
+.TH "HWCLOCK" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -72,7 +72,7 @@ Read and set the RTC\(cqs parameter. This is useful, for example, to retrieve th
 .RS 4
 Predict what the Hardware Clock will read in the future based upon the time given by the \fB\-\-date\fP option and the information in \fI/etc/adjtime\fP. This is useful, for example, to account for drift when setting a Hardware Clock wakeup (aka alarm). See \fBrtcwake\fP(8).
 .sp
-Do not use this function if the Hardware Clock is being modified by anything other than the current operating system\(cqs \fBhwclock\fP command, such as \(aq11 minute mode\(aq or from dual\-booting another OS.
+Do not use this function if the Hardware Clock is being modified by anything other than the current operating system\(cqs \fBhwclock\fP command, such as \*(Aq11 minute mode\*(Aq or from dual\-booting another OS.
 .RE
 .sp
 \fB\-r\fP, \fB\-\-show\fP; \fB\-\-get\fP
@@ -81,7 +81,7 @@ Read the Hardware Clock and print its time to standard output in the \fBISO 8601
 .sp
 Showing the Hardware Clock time is the default when no function is specified.
 .sp
-The \fB\-\-get\fP function also applies drift correction to the time read, based upon the information in \fI/etc/adjtime\fP. Do not use this function if the Hardware Clock is being modified by anything other than the current operating system\(cqs \fBhwclock\fP command, such as \(aq11 minute mode\(aq or from dual\-booting another OS.
+The \fB\-\-get\fP function also applies drift correction to the time read, based upon the information in \fI/etc/adjtime\fP. Do not use this function if the Hardware Clock is being modified by anything other than the current operating system\(cqs \fBhwclock\fP command, such as \*(Aq11 minute mode\*(Aq or from dual\-booting another OS.
 .RE
 .sp
 \fB\-s\fP, \fB\-\-hctosys\fP
@@ -92,17 +92,17 @@ The System Clock must be kept in the UTC timescale for date\-time applications t
 .sp
 The kernel also keeps a timezone value, the \fB\-\-hctosys\fP function sets it to the timezone configured for the system. The system timezone is configured by the \fBTZ\fP environment variable or the \fI/etc/localtime\fP file, as \fBtzset\fP(3) would interpret them. The obsolete \fItz_dsttime\fP field of the kernel\(cqs timezone value is set to zero. (For details on what this field used to mean, see \fBsettimeofday\fP(2).)
 .sp
-When used in a startup script, making the \fB\-\-hctosys\fP function the first caller of \fBsettimeofday\fP(2) from boot, it will set the NTP \(aq11 minute mode\(aq timescale via the \fIpersistent_clock_is_local\fP kernel variable. If the Hardware Clock\(cqs timescale configuration is changed then a reboot is required to inform the kernel. See the discussion below, under \fBAutomatic Hardware Clock Synchronization by the Kernel\fP.
+When used in a startup script, making the \fB\-\-hctosys\fP function the first caller of \fBsettimeofday\fP(2) from boot, it will set the NTP \*(Aq11 minute mode\*(Aq timescale via the \fIpersistent_clock_is_local\fP kernel variable. If the Hardware Clock\(cqs timescale configuration is changed then a reboot is required to inform the kernel. See the discussion below, under \fBAutomatic Hardware Clock Synchronization by the Kernel\fP.
 .sp
 This is a good function to use in one of the system startup scripts before the file systems are mounted read/write.
 .sp
-This function should never be used on a running system. Jumping system time will cause problems, such as corrupted filesystem timestamps. Also, if something has changed the Hardware Clock, like NTP\(cqs \(aq11 minute mode\(aq, then \fB\-\-hctosys\fP will set the time incorrectly by including drift compensation.
+This function should never be used on a running system. Jumping system time will cause problems, such as corrupted filesystem timestamps. Also, if something has changed the Hardware Clock, like NTP\(cqs \*(Aq11 minute mode\*(Aq, then \fB\-\-hctosys\fP will set the time incorrectly by including drift compensation.
 .sp
 Drift compensation can be inhibited by setting the drift factor in \fI/etc/adjtime\fP to zero. This setting will be persistent as long as the \fB\-\-update\-drift\fP option is not used with \fB\-\-systohc\fP at shutdown (or anywhere else). Another way to inhibit this is by using the \fB\-\-noadjfile\fP option when calling the \fB\-\-hctosys\fP function. A third method is to delete the \fI/etc/adjtime\fP file. \fBHwclock\fP will then default to using the UTC timescale for the Hardware Clock. If the Hardware Clock is ticking local time it will need to be defined in the file. This can be done by calling \fBhwclock \-\-localtime \-\-adjust\fP; when the file is not present this command will not actually adjust the Clock, but it will create the file with local time configured, and a drift factor of zero.
 .sp
-A condition under which inhibiting \fBhwclock\fP\(cqs drift correction may be desired is when dual\-booting multiple operating systems. If while this instance of Linux is stopped, another OS changes the Hardware Clock\(cqs value, then when this instance is started again the drift correction applied will be incorrect.
+A condition under which inhibiting \fBhwclock\fP\*(Aqs drift correction may be desired is when dual\-booting multiple operating systems. If while this instance of Linux is stopped, another OS changes the Hardware Clock\(cqs value, then when this instance is started again the drift correction applied will be incorrect.
 .sp
-For \fBhwclock\fP\(cqs drift correction to work properly it is imperative that nothing changes the Hardware Clock while its Linux instance is not running.
+For \fBhwclock\fP\*(Aqs drift correction to work properly it is imperative that nothing changes the Hardware Clock while its Linux instance is not running.
 .RE
 .sp
 \fB\-\-set\fP
@@ -135,7 +135,7 @@ Corrects the System Clock timescale to UTC as needed. Only instead of accomplish
 .  sp -1
 .  IP \(bu 2.3
 .\}
-Sets the kernel\(cqs NTP \(aq11 minute mode\(aq timescale.
+Sets the kernel\(cqs NTP \*(Aq11 minute mode\*(Aq timescale.
 .RE
 .sp
 .RS 4
@@ -177,11 +177,11 @@ Override the default \fI/etc/adjtime\fP file path.
 .RS 4
 This option must be used with the \fB\-\-set\fP or \fB\-\-predict\fP functions, otherwise it is ignored.
 .sp
-\fBhwclock \-\-set \-\-date=\(aq16:45\(aq\fP
+\fBhwclock \-\-set \-\-date=\*(Aq16:45\*(Aq\fP
 .sp
-\fBhwclock \-\-predict \-\-date=\(aq2525\-08\-14 07:11:05\(aq\fP
+\fBhwclock \-\-predict \-\-date=\*(Aq2525\-08\-14 07:11:05\*(Aq\fP
 .sp
-The argument must be in local time, even if you keep your Hardware Clock in UTC. See the \fB\-\-localtime\fP option. Therefore, the argument should not include any timezone information. It also should not be a relative time like "+5 minutes", because \fBhwclock\fP\(cqs precision depends upon correlation between the argument\(cqs value and when the enter key is pressed. Fractional seconds are silently dropped. This option is capable of understanding many time and date formats, but the previous parameters should be observed.
+The argument must be in local time, even if you keep your Hardware Clock in UTC. See the \fB\-\-localtime\fP option. Therefore, the argument should not include any timezone information. It also should not be a relative time like "+5 minutes", because \fBhwclock\fP\*(Aqs precision depends upon correlation between the argument\(cqs value and when the enter key is pressed. Fractional seconds are silently dropped. This option is capable of understanding many time and date formats, but the previous parameters should be observed.
 .RE
 .sp
 \fB\-\-delay=\fP\fIseconds\fP
@@ -208,7 +208,7 @@ This option is required when using the \fB\-\-setepoch\fP function. The minimum 
 .sp
 \fB\-f\fP, \fB\-\-rtc=\fP\fIfilename\fP
 .RS 4
-Override \fBhwclock\fP\(cqs default rtc device file name. Otherwise it will use the first one found in this order: \fI/dev/rtc0\fP, \fI/dev/rtc\fP, \fI/dev/misc/rtc\fP. For \fBIA\-64:\fP \fI/dev/efirtc\fP \fI/dev/misc/efirtc\fP
+Override \fBhwclock\fP\*(Aqs default rtc device file name. Otherwise it will use the first one found in this order: \fI/dev/rtc0\fP, \fI/dev/rtc\fP, \fI/dev/misc/rtc\fP. For \fBIA\-64:\fP \fI/dev/efirtc\fP \fI/dev/misc/efirtc\fP
 .RE
 .sp
 \fB\-l\fP, \fB\-\-localtime\fP; \fB\-u\fP, \fB\-\-utc\fP
@@ -248,7 +248,7 @@ This option was added in v2.26, because it is typical for systems to call \fBhwc
 .  sp -1
 .  IP \(bu 2.3
 .\}
-When using NTP with an \(aq11 minute mode\(aq kernel the drift factor would be clobbered to near zero.
+When using NTP with an \*(Aq11 minute mode\*(Aq kernel the drift factor would be clobbered to near zero.
 .RE
 .sp
 .RS 4
@@ -259,7 +259,7 @@ When using NTP with an \(aq11 minute mode\(aq kernel the drift factor would be c
 .  sp -1
 .  IP \(bu 2.3
 .\}
-It would not allow the use of \(aqcold\(aq drift correction. With most configurations using \(aqcold\(aq drift will yield favorable results. Cold, means when the machine is turned off which can have a significant impact on the drift factor.
+It would not allow the use of \*(Aqcold\*(Aq drift correction. With most configurations using \*(Aqcold\*(Aq drift will yield favorable results. Cold, means when the machine is turned off which can have a significant impact on the drift factor.
 .RE
 .sp
 .RS 4
@@ -312,7 +312,7 @@ The System Time is the time that matters. The Hardware Clock\(cqs basic purpose 
 .sp
 It is important that the System Time not have any discontinuities such as would happen if you used the \fBdate\fP(1) program to set it while the system is running. You can, however, do whatever you want to the Hardware Clock while the system is running, and the next time Linux starts up, it will do so with the adjusted time from the Hardware Clock. Note: currently this is not possible on most systems because \fBhwclock \-\-systohc\fP is called at shutdown.
 .sp
-The Linux kernel\(cqs timezone is set by \fBhwclock\fP. But don\(cqt be misled \(em almost nobody cares what timezone the kernel thinks it is in. Instead, programs that care about the timezone (perhaps because they want to display a local time for you) almost always use a more traditional method of determining the timezone: They use the \fBTZ\fP environment variable or the \fI/etc/localtime\fP file, as explained in the man page for \fBtzset\fP(3). However, some programs and fringe parts of the Linux kernel such as filesystems use the kernel\(cqs timezone value. An example is the vfat filesystem. If the kernel timezone value is wrong, the vfat filesystem will report and set the wrong timestamps on files. Another example is the kernel\(cqs NTP \(aq11 minute mode\(aq. If the kernel\(cqs timezone value and/or the \fIpersistent_clock_is_local\fP variable are wrong, then the Hardware Clock will be set incorrectly by \(aq11 minute mode\(aq. See the discussion below, under \fBAutomatic Hardware Clock Synchronization by the Kernel\fP.
+The Linux kernel\(cqs timezone is set by \fBhwclock\fP. But don\(cqt be misled \(em almost nobody cares what timezone the kernel thinks it is in. Instead, programs that care about the timezone (perhaps because they want to display a local time for you) almost always use a more traditional method of determining the timezone: They use the \fBTZ\fP environment variable or the \fI/etc/localtime\fP file, as explained in the man page for \fBtzset\fP(3). However, some programs and fringe parts of the Linux kernel such as filesystems use the kernel\(cqs timezone value. An example is the vfat filesystem. If the kernel timezone value is wrong, the vfat filesystem will report and set the wrong timestamps on files. Another example is the kernel\(cqs NTP \*(Aq11 minute mode\*(Aq. If the kernel\(cqs timezone value and/or the \fIpersistent_clock_is_local\fP variable are wrong, then the Hardware Clock will be set incorrectly by \*(Aq11 minute mode\*(Aq. See the discussion below, under \fBAutomatic Hardware Clock Synchronization by the Kernel\fP.
 .sp
 \fBhwclock\fP sets the kernel\(cqs timezone to the value indicated by \fBTZ\fP or \fI/etc/localtime\fP with the \fB\-\-hctosys\fP or \fB\-\-systz\fP functions.
 .sp
@@ -328,7 +328,7 @@ On an ISA compatible system, \fBhwclock\fP can directly access the "CMOS memory"
 This is a really poor method of accessing the clock, for all the reasons that userspace programs are generally not supposed to do direct I/O and disable interrupts. \fBhwclock\fP provides it for testing, troubleshooting, and because it may be the only method available on ISA systems which do not have a working rtc device driver.
 .SS "The Adjust Function"
 .sp
-The Hardware Clock is usually not very accurate. However, much of its inaccuracy is completely predictable \- it gains or loses the same amount of time every day. This is called systematic drift. \fBhwclock\fP\(cqs \fB\-\-adjust\fP function lets you apply systematic drift corrections to the Hardware Clock.
+The Hardware Clock is usually not very accurate. However, much of its inaccuracy is completely predictable \- it gains or loses the same amount of time every day. This is called systematic drift. \fBhwclock\fP\*(Aqs \fB\-\-adjust\fP function lets you apply systematic drift corrections to the Hardware Clock.
 .sp
 It works like this: \fBhwclock\fP keeps a file, \fI/etc/adjtime\fP, that keeps some historical information. This is called the adjtime file.
 .sp
@@ -356,15 +356,15 @@ You can use an adjtime file that was previously used with the \fBclock\fP(8) pro
 .sp
 You should be aware of another way that the Hardware Clock is kept synchronized in some systems. The Linux kernel has a mode wherein it copies the System Time to the Hardware Clock every 11 minutes. This mode is a compile time option, so not all kernels will have this capability. This is a good mode to use when you are using something sophisticated like NTP to keep your System Clock synchronized. (NTP is a way to keep your System Time synchronized either to a time server somewhere on the network or to a radio clock hooked up to your system. See RFC 1305.)
 .sp
-If the kernel is compiled with the \(aq11 minute mode\(aq option it will be active when the kernel\(cqs clock discipline is in a synchronized state. When in this state, bit 6 (the bit that is set in the mask 0x0040) of the kernel\(cqs \fItime_status\fP variable is unset. This value is output as the \(aqstatus\(aq line of the \fBadjtimex \-\-print\fP or \fBntptime\fP commands.
+If the kernel is compiled with the \*(Aq11 minute mode\*(Aq option it will be active when the kernel\(cqs clock discipline is in a synchronized state. When in this state, bit 6 (the bit that is set in the mask 0x0040) of the kernel\(cqs \fItime_status\fP variable is unset. This value is output as the \*(Aqstatus\*(Aq line of the \fBadjtimex \-\-print\fP or \fBntptime\fP commands.
 .sp
-It takes an outside influence, like the NTP daemon to put the kernel\(cqs clock discipline into a synchronized state, and therefore turn on \(aq11 minute mode\(aq. It can be turned off by running anything that sets the System Clock the old fashioned way, including \fBhwclock \-\-hctosys\fP. However, if the NTP daemon is still running, it will turn \(aq11 minute mode\(aq back on again the next time it synchronizes the System Clock.
+It takes an outside influence, like the NTP daemon to put the kernel\(cqs clock discipline into a synchronized state, and therefore turn on \*(Aq11 minute mode\*(Aq. It can be turned off by running anything that sets the System Clock the old fashioned way, including \fBhwclock \-\-hctosys\fP. However, if the NTP daemon is still running, it will turn \*(Aq11 minute mode\*(Aq back on again the next time it synchronizes the System Clock.
 .sp
-If your system runs with \(aq11 minute mode\(aq on, it may need to use either \fB\-\-hctosys\fP or \fB\-\-systz\fP in a startup script, especially if the Hardware Clock is configured to use the local timescale. Unless the kernel is informed of what timescale the Hardware Clock is using, it may clobber it with the wrong one. The kernel uses UTC by default.
+If your system runs with \*(Aq11 minute mode\*(Aq on, it may need to use either \fB\-\-hctosys\fP or \fB\-\-systz\fP in a startup script, especially if the Hardware Clock is configured to use the local timescale. Unless the kernel is informed of what timescale the Hardware Clock is using, it may clobber it with the wrong one. The kernel uses UTC by default.
 .sp
 The first userspace command to set the System Clock informs the kernel what timescale the Hardware Clock is using. This happens via the \fIpersistent_clock_is_local\fP kernel variable. If \fB\-\-hctosys\fP or \fB\-\-systz\fP is the first, it will set this variable according to the adjtime file or the appropriate command\-line argument. Note that when using this capability and the Hardware Clock timescale configuration is changed, then a reboot is required to notify the kernel.
 .sp
-\fBhwclock \-\-adjust\fP should not be used with NTP \(aq11 minute mode\(aq.
+\fBhwclock \-\-adjust\fP should not be used with NTP \*(Aq11 minute mode\*(Aq.
 .SS "ISA Hardware Clock Century value"
 .sp
 There is some sort of standard that defines CMOS memory Byte 50 on an ISA machine as an indicator of what century it is. \fBhwclock\fP does not use or set that byte because there are some machines that don\(cqt define the byte that way, and it really isn\(cqt necessary anyway, since the year\-of\-century does a good job of implying which century it is.
@@ -396,7 +396,7 @@ Nothing is running that alters the date\-time clocks, such as NTP daemon or a cr
 .  sp -1
 .  IP \(bu 2.3
 .\}
-The system timezone is configured for the correct local time. See below, under \fBPOSIX vs \(aqRIGHT\(aq\fP.
+The system timezone is configured for the correct local time. See below, under \fBPOSIX vs \*(AqRIGHT\*(Aq\fP.
 .RE
 .sp
 .RS 4
@@ -434,13 +434,13 @@ Systems without \fBadjtimex\fP may use \fBntptime\fP.
 .sp
 Whether maintaining precision time with NTP daemon or not, it makes sense to configure the system to keep reasonably good date\-time on its own.
 .sp
-The first step in making that happen is having a clear understanding of the big picture. There are two completely separate hardware devices running at their own speed and drifting away from the \(aqcorrect\(aq time at their own rates. The methods and software for drift correction are different for each of them. However, most systems are configured to exchange values between these two clocks at startup and shutdown. Now the individual device\(cqs time keeping errors are transferred back and forth between each other. Attempt to configure drift correction for only one of them, and the other\(cqs drift will be overlaid upon it.
+The first step in making that happen is having a clear understanding of the big picture. There are two completely separate hardware devices running at their own speed and drifting away from the \*(Aqcorrect\*(Aq time at their own rates. The methods and software for drift correction are different for each of them. However, most systems are configured to exchange values between these two clocks at startup and shutdown. Now the individual device\(cqs time keeping errors are transferred back and forth between each other. Attempt to configure drift correction for only one of them, and the other\(cqs drift will be overlaid upon it.
 .sp
-This problem can be avoided when configuring drift correction for the System Clock by simply not shutting down the machine. This, plus the fact that all of \fBhwclock\fP\(cqs precision (including calculating drift factors) depends upon the System Clock\(cqs rate being correct, means that configuration of the System Clock should be done first.
+This problem can be avoided when configuring drift correction for the System Clock by simply not shutting down the machine. This, plus the fact that all of \fBhwclock\fP\*(Aqs precision (including calculating drift factors) depends upon the System Clock\(cqs rate being correct, means that configuration of the System Clock should be done first.
 .sp
 The System Clock drift is corrected with the \fBadjtimex\fP(8) command\(cqs \fB\-\-tick\fP and \fB\-\-frequency\fP options. These two work together: tick is the coarse adjustment and frequency is the fine adjustment. (For systems that do not have an \fBadjtimex\fP package, \fBntptime \-f\fP \fIppm\fP may be used instead.)
 .sp
-Some Linux distributions attempt to automatically calculate the System Clock drift with \fBadjtimex\fP\(cqs compare operation. Trying to correct one drifting clock by using another drifting clock as a reference is akin to a dog trying to catch its own tail. Success may happen eventually, but great effort and frustration will likely precede it. This automation may yield an improvement over no configuration, but expecting optimum results would be in error. A better choice for manual configuration would be \fBadjtimex\fP\(cqs \fB\-\-log\fP options.
+Some Linux distributions attempt to automatically calculate the System Clock drift with \fBadjtimex\fP\*(Aqs compare operation. Trying to correct one drifting clock by using another drifting clock as a reference is akin to a dog trying to catch its own tail. Success may happen eventually, but great effort and frustration will likely precede it. This automation may yield an improvement over no configuration, but expecting optimum results would be in error. A better choice for manual configuration would be \fBadjtimex\fP\*(Aqs \fB\-\-log\fP options.
 .sp
 It may be more effective to simply track the System Clock drift with \fBsntp\fP, or \fBdate \-Ins\fP and a precision timepiece, and then calculate the correction manually.
 .sp
@@ -511,36 +511,36 @@ If Linux is running during a daylight saving time change, the time written to th
 If Linux is NOT running during a daylight saving time change, the time read from the Hardware Clock will NOT be adjusted for the change.
 .RE
 .sp
-The Hardware Clock on an ISA compatible system keeps only a date and time, it has no concept of timezone nor daylight saving. Therefore, when \fBhwclock\fP is told that it is in local time, it assumes it is in the \(aqcorrect\(aq local time and makes no adjustments to the time read from it.
+The Hardware Clock on an ISA compatible system keeps only a date and time, it has no concept of timezone nor daylight saving. Therefore, when \fBhwclock\fP is told that it is in local time, it assumes it is in the \*(Aqcorrect\*(Aq local time and makes no adjustments to the time read from it.
 .sp
 Linux handles daylight saving time changes transparently only when the Hardware Clock is kept in the UTC timescale. Doing so is made easy for system administrators as \fBhwclock\fP uses local time for its output and as the argument to the \fB\-\-date\fP option.
 .sp
 POSIX systems, like Linux, are designed to have the System Clock operate in the UTC timescale. The Hardware Clock\(cqs purpose is to initialize the System Clock, so also keeping it in UTC makes sense.
 .sp
 Linux does, however, attempt to accommodate the Hardware Clock being in the local timescale. This is primarily for dual\-booting with older versions of MS Windows. From Windows 7 on, the RealTimeIsUniversal registry key is supposed to be working properly so that its Hardware Clock can be kept in UTC.
-.SS "POSIX vs \(aqRIGHT\(aq"
+.SS "POSIX vs \*(AqRIGHT\*(Aq"
 .sp
-A discussion on date\-time configuration would be incomplete without addressing timezones, this is mostly well covered by \fBtzset\fP(3). One area that seems to have no documentation is the \(aqright\(aq directory of the Time Zone Database, sometimes called tz or zoneinfo.
+A discussion on date\-time configuration would be incomplete without addressing timezones, this is mostly well covered by \fBtzset\fP(3). One area that seems to have no documentation is the \*(Aqright\*(Aq directory of the Time Zone Database, sometimes called tz or zoneinfo.
 .sp
-There are two separate databases in the zoneinfo system, posix and \(aqright\(aq. \(aqRight\(aq (now named zoneinfo\-leaps) includes leap seconds and posix does not. To use the \(aqright\(aq database the System Clock must be set to (UTC + leap seconds), which is equivalent to (TAI \- 10). This allows calculating the exact number of seconds between two dates that cross a leap second epoch. The System Clock is then converted to the correct civil time, including UTC, by using the \(aqright\(aq timezone files which subtract the leap seconds. Note: this configuration is considered experimental and is known to have issues.
+There are two separate databases in the zoneinfo system, posix and \*(Aqright\*(Aq. \*(AqRight\*(Aq (now named zoneinfo\-leaps) includes leap seconds and posix does not. To use the \*(Aqright\*(Aq database the System Clock must be set to (UTC + leap seconds), which is equivalent to (TAI \- 10). This allows calculating the exact number of seconds between two dates that cross a leap second epoch. The System Clock is then converted to the correct civil time, including UTC, by using the \*(Aqright\*(Aq timezone files which subtract the leap seconds. Note: this configuration is considered experimental and is known to have issues.
 .sp
-To configure a system to use a particular database all of the files located in its directory must be copied to the root of \fI/usr/share/zoneinfo\fP. Files are never used directly from the posix or \(aqright\(aq subdirectories, e.g., TZ=\(aq\fIright/Europe/Dublin\fP\(aq. This habit was becoming so common that the upstream zoneinfo project restructured the system\(cqs file tree by moving the posix and \(aqright\(aq subdirectories out of the zoneinfo directory and into sibling directories:
+To configure a system to use a particular database all of the files located in its directory must be copied to the root of \fI/usr/share/zoneinfo\fP. Files are never used directly from the posix or \*(Aqright\*(Aq subdirectories, e.g., TZ=\*(Aq\fIright/Europe/Dublin\fP\*(Aq. This habit was becoming so common that the upstream zoneinfo project restructured the system\(cqs file tree by moving the posix and \*(Aqright\*(Aq subdirectories out of the zoneinfo directory and into sibling directories:
 .sp
 \fI/usr/share/zoneinfo\fP, \fI/usr/share/zoneinfo\-posix\fP, \fI/usr/share/zoneinfo\-leaps\fP
 .sp
-Unfortunately, some Linux distributions are changing it back to the old tree structure in their packages. So the problem of system administrators reaching into the \(aqright\(aq subdirectory persists. This causes the system timezone to be configured to include leap seconds while the zoneinfo database is still configured to exclude them. Then when an application such as a World Clock needs the South_Pole timezone file; or an email MTA, or \fBhwclock\fP needs the UTC timezone file; they fetch it from the root of \fI/usr/share/zoneinfo\fP , because that is what they are supposed to do. Those files exclude leap seconds, but the System Clock now includes them, causing an incorrect time conversion.
+Unfortunately, some Linux distributions are changing it back to the old tree structure in their packages. So the problem of system administrators reaching into the \*(Aqright\*(Aq subdirectory persists. This causes the system timezone to be configured to include leap seconds while the zoneinfo database is still configured to exclude them. Then when an application such as a World Clock needs the South_Pole timezone file; or an email MTA, or \fBhwclock\fP needs the UTC timezone file; they fetch it from the root of \fI/usr/share/zoneinfo\fP , because that is what they are supposed to do. Those files exclude leap seconds, but the System Clock now includes them, causing an incorrect time conversion.
 .sp
-Attempting to mix and match files from these separate databases will not work, because they each require the System Clock to use a different timescale. The zoneinfo database must be configured to use either posix or \(aqright\(aq, as described above, or by assigning a database path to the \fITZDIR\fP environment variable.
+Attempting to mix and match files from these separate databases will not work, because they each require the System Clock to use a different timescale. The zoneinfo database must be configured to use either posix or \*(Aqright\*(Aq, as described above, or by assigning a database path to the \fITZDIR\fP environment variable.
 .SH "EXIT STATUS"
 .sp
 One of the following exit values will be returned:
 .sp
-\fBEXIT_SUCCESS\fP (\(aq0\(aq on POSIX systems)
+\fBEXIT_SUCCESS\fP (\*(Aq0\*(Aq on POSIX systems)
 .RS 4
 Successful program execution.
 .RE
 .sp
-\fBEXIT_FAILURE\fP (\(aq1\(aq on POSIX systems)
+\fBEXIT_FAILURE\fP (\*(Aq1\*(Aq on POSIX systems)
 .RS 4
 The operation failed or the command syntax was not valid.
 .RE

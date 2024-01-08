@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: pipesz
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "PIPESZ" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "PIPESZ" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -42,13 +42,13 @@ The \fB\-\-set\fP operation sets pipe buffer sizes. If it is specified, it must 
 .sp
 The \fB\-\-set\fP operation permits an optional \fIcommand\fP to execute after setting the pipe buffer sizes. This command is executed with the adjusted pipes.
 .sp
-The \fB\-\-get\fP operation outputs data in a tabular format. The first column is the name of the pipe as passed to \fBpipesz\fP. File descriptors are named as "fd \fIN\fP". The second column is the size, in bytes, of the pipe\(cqs internal buffer. The third column is the number of unread bytes currently in the pipe. The columns are separated by tabs (\(aq\(rst\(aq, ASCII 09h). If \fB\-\-verbose\fP is specified, a descriptive header is also emitted. If neither \fB\-\-file\fP nor \fB\-\-fd\fP are specified, \fB\-\-get\fP acts on standard input.
+The \fB\-\-get\fP operation outputs data in a tabular format. The first column is the name of the pipe as passed to \fBpipesz\fP. File descriptors are named as "fd \fIN\fP". The second column is the size, in bytes, of the pipe\(cqs internal buffer. The third column is the number of unread bytes currently in the pipe. The columns are separated by tabs (\*(Aq\(rst\*(Aq, ASCII 09h). If \fB\-\-verbose\fP is specified, a descriptive header is also emitted. If neither \fB\-\-file\fP nor \fB\-\-fd\fP are specified, \fB\-\-get\fP acts on standard input.
 .sp
 Unless the \fB\-\-check\fP option is specified, \fBpipesz\fP does \fInot\fP exit if it encounters an error while manipulating a file or file descriptor. This allows \fBpipesz\fP to be used generically without fear of disrupting the execution of pipelines should the type of certain files be later changed. For minimal disruption, the \fB\-\-quiet\fP option prevents warnings from being emitted in these cases.
 .sp
 The kernel imposes limits on the amount of pipe buffer space unprivileged processes can use, though see \fBBUGS\fP below. The kernel will also refuse to shrink a pipe buffer if this would cause a loss of buffered data. See \fBpipe\fP(7) for additional details.
 .sp
-\fBpipesz\fP supports specifying multiple short options consecutively, in the usual \fBgetopt\fP(3) fashion. The first non\-option argument is interpreted as \fIcommand\fP. If \fIcommand\fP might begin with \(aq\-\(aq, use \(aq\-\-\(aq to separate it from arguments to \fBpipesz\fP. In shell scripts, it is good practice to use \(aq\-\-\(aq when parameter expansion is involved. \fBpipesz\fP itself does not read from standard input and does not write to standard output unless \fB\-\-get\fP, \fB\-\-help\fP, or \fB\-\-version\fP are specified.
+\fBpipesz\fP supports specifying multiple short options consecutively, in the usual \fBgetopt\fP(3) fashion. The first non\-option argument is interpreted as \fIcommand\fP. If \fIcommand\fP might begin with \*(Aq\-\*(Aq, use \*(Aq\-\-\*(Aq to separate it from arguments to \fBpipesz\fP. In shell scripts, it is good practice to use \*(Aq\-\-\*(Aq when parameter expansion is involved. \fBpipesz\fP itself does not read from standard input and does not write to standard output unless \fB\-\-get\fP, \fB\-\-help\fP, or \fB\-\-version\fP are specified.
 .SH "OPTIONS"
 .sp
 \fB\-g\fP, \fB\-\-get\fP
@@ -127,7 +127,7 @@ Sets the pipe buffer size of a service FIFO to 1,048,576 bytes. If the buffer si
 Prints the size of pipe used by the shell to pass input to \fBpipesz\fP. Since \fBpipesz\fP does not read standard input, it may also report 6 unread bytes in the pipe, depending on relative timings.
 .RE
 .sp
-\fBfind\fP /proc/\fIPID\fP/fd \-exec \fBpipesz\fP \-gqf \(aq{}\(aq \(aq;\(aq
+\fBfind\fP /proc/\fIPID\fP/fd \-exec \fBpipesz\fP \-gqf \*(Aq{}\*(Aq \*(Aq;\*(Aq
 .RS 4
 Prints the size and number of unread bytes of all pipes in use by \fIPID\fP. If some pipes are routinely full, \fBpipesz\fP might be able to mitigate a processing bottleneck.
 .RE

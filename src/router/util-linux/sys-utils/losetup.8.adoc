@@ -12,135 +12,153 @@ losetup - set up and control loop devices
 
 == SYNOPSIS
 
-*losetup* [options] _loop_device_ file
+Get info:
 
-*losetup* *-F* [options] _loop_device_ [file]
+*losetup* [_loopdev_]
 
-*losetup* [ *-d* ] _loop_device_
+*losetup* *-l* [*-a*]
 
-*losetup* *-a*
+*losetup* *-j* _file_ [*-o* _offset_]
 
-*losetup* *-f*
+Detach a loop device:
 
-*losetup* *-R* _loop_device_
+*losetup* *-d* _loopdev_ ...
+
+Detach all associated loop devices:
+
+*losetup* *-D*
+
+Set up a loop device:
+
+*losetup* [*-o* _offset_] [*--sizelimit* _size_] [*--sector-size* _size_] [*-Pr*] [*--show*] *-f*|_loopdev file_
+
+Resize a loop device:
+
+*losetup* *-c* _loopdev_
 
 == DESCRIPTION
 
-*losetup* is used to associate loop devices with regular files or block devices, to detach loop devices and to query the status of a loop device. If only the loop_device argument is given, the status of the corresponding loop device is shown.
+*losetup* is used to associate loop devices with regular files or block devices, to detach loop devices, and to query the status of a loop device. If only the _loopdev_ argument is given, the status of the corresponding loop device is shown. If no option is given, all loop devices are shown.
+
+Note that the old output format (i.e., *losetup -a*) with comma-delimited strings is deprecated in favour of the *--list* output format.
+
+It's possible to create more independent loop devices for the same backing file. *This setup may be dangerous, can cause data loss, corruption and overwrites.* Use *--nooverlap* with *--find* during setup to avoid this problem.
+
+The loop device setup is not an atomic operation when used with *--find*, and *losetup* does not protect this operation by any lock. The number of attempts is internally restricted to a maximum of 16. It is recommended to use for example *flock*(1) to avoid a collision in heavily parallel use cases.
 
 == OPTIONS
 
-*-a*::
-Show status of all loop devices.
+The _size_ and _offset_ arguments may be followed by the multiplicative suffixes KiB (=1024), MiB (=1024*1024), and so on for GiB, TiB, PiB, EiB, ZiB and YiB (the "iB" is optional, e.g., "K" has the same meaning as "KiB") or the suffixes KB (=1000), MB (=1000*1000), and so on for GB, TB, PB, EB, ZB and YB.
 
-*-C* itercountk::
-Runs hashed passphrase through itercountk thousand iterations of AES-256 before using it for loop encryption. This consumes lots of CPU cycles at loop setup/mount time but not thereafter. In combination with passphrase seed this slows down dictionary attacks. Iteration is not done in multi-key mode.
+*-a*, *--all*::
+Show the status of all loop devices. Note that not all information is accessible for non-root users. See also *--list*. The old output format (as printed without *--list*) is deprecated.
 
-*-d*::
-Detach the file or device associated with the specified loop device.
+*-d*, *--detach* _loopdev_...::
+Detach the file or device associated with the specified loop device(s). Note that since Linux v3.7 kernel uses "lazy device destruction". The detach operation does not return *EBUSY* error anymore if device is actively used by system, but it is marked by autoclear flag and destroyed later.
 
-*-e* encryption::
-Enable data encryption. Following encryption types are recognized:
-+
-NONE - Use no encryption (default).
-+
-XOR - Use a simple XOR encryption.
-+
-AES128 AES - Use 128 bit AES encryption. Passphrase is hashed with SHA-256 by default.
-+
-AES192 - Use 192 bit AES encryption. Passphrase is hashed with SHA-384 by default.
-+
-AES256 - Use 256 bit AES encryption. Passphrase is hashed with SHA-512 by default.
-+
-twofish128 twofish160 twofish192 twofish256 blowfish128 blowfish160 blowfish192 blowfish256 serpent128 serpent192 serpent256 mars128 mars192 mars256 rc6-128 rc6-192 rc6-256 tripleDES - These encryption types are available if they are enabled in kernel configuration or corresponding modules have been loaded to kernel.
+*-D*, *--detach-all*::
+Detach all associated loop devices.
 
-*-f*::
-Find and show next unused loop device.
+*-f*, *--find* [_file_]::
+Find the first unused loop device. If a _file_ argument is present, use the found device as loop device. Otherwise, just print its name.
 
-*-F*::
-Reads and uses mount options from /etc/fstab that match specified loop device, including offset= sizelimit= encryption= pseed= phash= loinit= gpgkey= gpghome= cleartextkey= itercountk= and looped to device/file name. loop= option in /etc/fstab must match specified loop device name. Command line options take precedence in case of conflict.
+*--show*::
+Display the name of the assigned loop device if the *-f* option and a _file_ argument are present.
 
-*-G* gpghome::
-Set gpg home directory to gpghome, so that gpg uses public/private keys on gpghome directory. This is only used when gpgkey file needs to be decrypted using public/private keys. If gpgkey file is encrypted with symmetric cipher only, public/private keys are not required and this option has no effect.
+*-L*, *--nooverlap*::
+Check for conflicts between loop devices to avoid situation when the same backing file is shared between more loop devices. If the file is already used by another device then re-use the device rather than a new one. The option makes sense only with *--find*.
 
-*-H* phash::
-Uses phash function to hash passphrase. Available hash functions are sha256, sha384, sha512 and rmd160. unhashed1 and unhashed2 functions also exist for compatibility with some obsolete implementations.
-+
-Hash function random does not ask for passphrase but sets up random keys and attempts to put loop to multi-key mode. When random/1777 hash type is used as mount option for mount program, mount program will create new file system on the loop device and construct initial permissions of file system root directory from octal digits that follow the slash character.
-+
-WARNING! DO NOT USE RANDOM HASH TYPE ON PARTITION WITH EXISTING IMPORTANT DATA ON IT. RANDOM HASH TYPE WILL DESTROY YOUR DATA.
+*-j*, *--associated* _file_ [*-o* _offset_]::
+Show the status of all loop devices associated with the given _file_.
 
-*-I* loinit::
-Passes a numeric value of loinit as a parameter to cipher transfer function. Cipher transfer functions are free to interpret value as they want.
+*-o*, *--offset* _offset_::
+The data start is moved _offset_ bytes into the specified file or device. The _offset_ may be followed by the multiplicative suffixes; see above.
 
-*-K* gpgkey::
-Passphrase is piped to gpg so that gpg can decrypt file gpgkey which contains the real keys that are used to encrypt loop device. If decryption requires public/private keys and gpghome is not specified, all users use their own gpg public/private keys to decrypt gpgkey. Decrypted gpgkey should contain 1 or 64 or 65 keys, each key at least 20 characters and separated by newline. If decrypted gpgkey contains 64 or 65 keys, then loop device is put to multi-key mode. In multi-key mode first key is used for first sector, second key for second sector, and so on. 65th key, if present, is used as additional input to MD5 IV computation.
+*--sizelimit* _size_::
+The data end is set to no more than _size_ bytes after the data start. The _size_ may be followed by the multiplicative suffixes; see above.
 
-*-o* offset::
-The data start is moved offset bytes into the specified file or device. Normally offset is included in IV (initialization vector) computations. If offset is prefixed with @ character, then offset is not included in IV computations. @ prefix functionality may not be supported on some older kernels and/or loop drivers.
+*-b*, *--sector-size* _size_::
+Set the logical sector size of the loop device in bytes (since Linux 4.14). The option may be used when creating a new loop device as well as a stand-alone command to modify sector size of the already existing loop device.
 
-*-p* passwdfd::
-Read the passphrase from file descriptor passwdfd instead of the terminal. If -K option is not being used (no gpg key file), then losetup attempts to read 65 keys from passwdfd, each key at least 20 characters and separated by newline. If losetup successfully reads 64 or 65 keys, then loop device is put to multi-key mode. If losetup encounters end-of-file before 64 keys are read, then only first key is used in single-key mode.
-+
-echo SecretPassphraseHere | losetup -p0 -K foo.gpg -e AES128 ...
-+
-In above example, losetup reads passphrase from file descriptor 0 (stdin).
+*-c*, *--set-capacity* _loopdev_::
+Force the loop driver to reread the size of the file associated with the specified loop device.
 
-*-P* cleartextkey::
-Read the passphrase from file cleartextkey instead of the terminal. If -K option is not being used (no gpg key file), then losetup attempts to read 65 keys from cleartextkey, each key at least 20 characters and separated by newline. If losetup successfully reads 64 or 65 keys, then loop device is put to multi-key mode. If losetup encounters end-of-file before 64 keys are read, then only first key is used in single-key mode. If both -p and -P options are used, then -p option takes precedence. These are equivalent:
-+
-losetup -p3 -K foo.gpg -e AES128 ...   3<someFileName
-+
-losetup -P someFileName -K foo.gpg -e AES128 ...
-+
-In first line of above example, in addition to normal open file descriptors (0==stdin 1==stdout 2==stderr), shell opens the file and passes open file descriptor to started losetup program. In second line of above example, losetup opens the file itself.
+*-P*, *--partscan*::
+Force the kernel to scan the partition table on a newly created loop device. Note that the partition table parsing depends on sector sizes. The default is sector size is 512 bytes, otherwise you need to use the option *--sector-size* together with *--partscan*.
 
-*-r*::
-Read-only mode.
+*-r*, *--read-only*::
+Set up a read-only loop device.
 
-*-R*::
-Resize existing, already set up loop device, to new changed underlying device size. This option is for changing mounted live file system size on LVM volume. This functionality may not be supported on some older kernels and/or loop drivers.
+*--direct-io*[**=on**|*off*]::
+Enable or disable direct I/O for the backing file. The optional argument can be either *on* or *off*. If the optional argument is omitted, it defaults to *on*.
 
-*-s* sizelimit::
-Size of loop device is limited to sizelimit bytes. If unspecified or set to zero, loop device size is set to maximum available (file size minus offset). This option may not be supported on some older kernels and/or loop drivers.
-
-*-S* pseed::
-Sets encryption passphrase seed pseed which is appended to user supplied passphrase before hashing. Using different seeds for different partitions makes dictionary attacks slower but does not prevent them if user supplied passphrase is guessable. Seed is not used in multi-key mode.
-
-*-T*::
-Asks passphrase twice.
-
-*-v*::
+*-v*, *--verbose*::
 Verbose mode.
+
+*-l*, *--list*::
+If a loop device or the *-a* option is specified, print the default columns for either the specified loop device or all loop devices; the default is to print info about all devices. See also *--output*, *--noheadings*, *--raw*, and *--json*.
+
+*-O*, *--output* _column_[,_column_]...::
+Specify the columns that are to be printed for the *--list* output. Use *--help* to get a list of all supported columns.
+
+*--output-all*::
+Output all available columns.
+
+*-n*, *--noheadings*::
+Don't print headings for *--list* output format.
+
+*--raw*::
+Use the raw *--list* output format.
+
+*-J*, *--json*::
+Use JSON format for *--list* output.
+
+== ENCRYPTION
+
+*Cryptoloop is no longer supported in favor of dm-crypt.* For more details see *cryptsetup*(8).
 
 == EXIT STATUS
 
-*losetup* returns 0 on success, nonzero on failure. When *losetup* displays the status of a loop device, it returns 1 if the device is not configured and 2 if an error occurred which prevented *losetup* from determining the status of the device.
+*losetup* returns 0 on success, nonzero on failure. When *losetup* displays the status of a loop device, it returns 1 if the device is not configured and 2 if an error occurred which prevented determining the status of the device.
+
+== NOTES
+
+Since version 2.37 *losetup* uses *LOOP_CONFIGURE* ioctl to setup a new loop device by one ioctl call. The old versions use *LOOP_SET_FD* and *LOOP_SET_STATUS64* ioctls to do the same.
+
+== ENVIRONMENT
+
+*LOOPDEV_DEBUG*=all::
+enables debug output.
 
 == FILES
 
-/dev/loop0,/dev/loop1,... loop devices (major=7)
+_/dev/loop[0..N]_::
+loop block devices
+
+_/dev/loop-control_::
+loop control device
 
 == EXAMPLE
 
 The following commands can be used as an example of using the loop device.
- 
- dd if=/dev/zero of=/file bs=1k count=500
- head -c 3705 /dev/random | uuencode -m - | head -n 66 \
-     | tail -n 65 | gpg --symmetric -a >/etc/fskey9.gpg
- losetup -e AES128 -K /etc/fskey9.gpg /dev/loop0 /file
- mkfs -t ext2 /dev/loop0
- mount -t ext2 /dev/loop0 /mnt
-  ...
- umount /dev/loop0
- losetup -d /dev/loop0
 
-== RESTRICTION
-
-XOR encryption is terribly weak.
+ # dd if=/dev/zero of=~/file.img bs=1024k count=10
+ # losetup --find --show ~/file.img
+ /dev/loop0
+ # mkfs -t ext2 /dev/loop0
+ # mount /dev/loop0 /mnt
+ ...
+ # umount /dev/loop0
+ # losetup --detach /dev/loop0
 
 == AUTHORS
 
-Original version: Theodore Ts'o
+mailto:kzak@redhat.com[Karel Zak], based on the original version from mailto:tytso@athena.mit.edu[Theodore Ts'o].
 
-AES support: Jari Ruusu
+include::man-common/bugreports.adoc[]
+
+include::man-common/footer.adoc[]
+
+ifdef::translation[]
+include::man-common/translation.adoc[]
+endif::[]

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: losetup
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-12-01
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "LOSETUP" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
+.TH "LOSETUP" "8" "2023-12-01" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -31,170 +31,200 @@
 losetup \- set up and control loop devices
 .SH "SYNOPSIS"
 .sp
-\fBlosetup\fP [options] \fIloop_device\fP file
+Get info:
 .sp
-\fBlosetup\fP \fB\-F\fP [options] \fIloop_device\fP [file]
+\fBlosetup\fP [\fIloopdev\fP]
 .sp
-\fBlosetup\fP [ \fB\-d\fP ] \fIloop_device\fP
+\fBlosetup\fP \fB\-l\fP [\fB\-a\fP]
 .sp
-\fBlosetup\fP \fB\-a\fP
+\fBlosetup\fP \fB\-j\fP \fIfile\fP [\fB\-o\fP \fIoffset\fP]
 .sp
-\fBlosetup\fP \fB\-f\fP
+Detach a loop device:
 .sp
-\fBlosetup\fP \fB\-R\fP \fIloop_device\fP
+\fBlosetup\fP \fB\-d\fP \fIloopdev\fP ...
+.sp
+Detach all associated loop devices:
+.sp
+\fBlosetup\fP \fB\-D\fP
+.sp
+Set up a loop device:
+.sp
+\fBlosetup\fP [\fB\-o\fP \fIoffset\fP] [\fB\-\-sizelimit\fP \fIsize\fP] [\fB\-\-sector\-size\fP \fIsize\fP] [\fB\-Pr\fP] [\fB\-\-show\fP] \fB\-f\fP|\fIloopdev file\fP
+.sp
+Resize a loop device:
+.sp
+\fBlosetup\fP \fB\-c\fP \fIloopdev\fP
 .SH "DESCRIPTION"
 .sp
-\fBlosetup\fP is used to associate loop devices with regular files or block devices, to detach loop devices and to query the status of a loop device. If only the loop_device argument is given, the status of the corresponding loop device is shown.
+\fBlosetup\fP is used to associate loop devices with regular files or block devices, to detach loop devices, and to query the status of a loop device. If only the \fIloopdev\fP argument is given, the status of the corresponding loop device is shown. If no option is given, all loop devices are shown.
+.sp
+Note that the old output format (i.e., \fBlosetup \-a\fP) with comma\-delimited strings is deprecated in favour of the \fB\-\-list\fP output format.
+.sp
+It\(cqs possible to create more independent loop devices for the same backing file. \fBThis setup may be dangerous, can cause data loss, corruption and overwrites.\fP Use \fB\-\-nooverlap\fP with \fB\-\-find\fP during setup to avoid this problem.
+.sp
+The loop device setup is not an atomic operation when used with \fB\-\-find\fP, and \fBlosetup\fP does not protect this operation by any lock. The number of attempts is internally restricted to a maximum of 16. It is recommended to use for example \fBflock\fP(1) to avoid a collision in heavily parallel use cases.
 .SH "OPTIONS"
 .sp
-\fB\-a\fP
+The \fIsize\fP and \fIoffset\fP arguments may be followed by the multiplicative suffixes KiB (=1024), MiB (=1024*1024), and so on for GiB, TiB, PiB, EiB, ZiB and YiB (the "iB" is optional, e.g., "K" has the same meaning as "KiB") or the suffixes KB (=1000), MB (=1000*1000), and so on for GB, TB, PB, EB, ZB and YB.
+.sp
+\fB\-a\fP, \fB\-\-all\fP
 .RS 4
-Show status of all loop devices.
+Show the status of all loop devices. Note that not all information is accessible for non\-root users. See also \fB\-\-list\fP. The old output format (as printed without \fB\-\-list\fP) is deprecated.
 .RE
 .sp
-\fB\-C\fP itercountk
+\fB\-d\fP, \fB\-\-detach\fP \fIloopdev\fP...
 .RS 4
-Runs hashed passphrase through itercountk thousand iterations of AES\-256 before using it for loop encryption. This consumes lots of CPU cycles at loop setup/mount time but not thereafter. In combination with passphrase seed this slows down dictionary attacks. Iteration is not done in multi\-key mode.
+Detach the file or device associated with the specified loop device(s). Note that since Linux v3.7 kernel uses "lazy device destruction". The detach operation does not return \fBEBUSY\fP error anymore if device is actively used by system, but it is marked by autoclear flag and destroyed later.
 .RE
 .sp
-\fB\-d\fP
+\fB\-D\fP, \fB\-\-detach\-all\fP
 .RS 4
-Detach the file or device associated with the specified loop device.
+Detach all associated loop devices.
 .RE
 .sp
-\fB\-e\fP encryption
+\fB\-f\fP, \fB\-\-find\fP [\fIfile\fP]
 .RS 4
-Enable data encryption. Following encryption types are recognized:
-.sp
-NONE \- Use no encryption (default).
-.sp
-XOR \- Use a simple XOR encryption.
-.sp
-AES128 AES \- Use 128 bit AES encryption. Passphrase is hashed with SHA\-256 by default.
-.sp
-AES192 \- Use 192 bit AES encryption. Passphrase is hashed with SHA\-384 by default.
-.sp
-AES256 \- Use 256 bit AES encryption. Passphrase is hashed with SHA\-512 by default.
-.sp
-twofish128 twofish160 twofish192 twofish256 blowfish128 blowfish160 blowfish192 blowfish256 serpent128 serpent192 serpent256 mars128 mars192 mars256 rc6\-128 rc6\-192 rc6\-256 tripleDES \- These encryption types are available if they are enabled in kernel configuration or corresponding modules have been loaded to kernel.
+Find the first unused loop device. If a \fIfile\fP argument is present, use the found device as loop device. Otherwise, just print its name.
 .RE
 .sp
-\fB\-f\fP
+\fB\-\-show\fP
 .RS 4
-Find and show next unused loop device.
+Display the name of the assigned loop device if the \fB\-f\fP option and a \fIfile\fP argument are present.
 .RE
 .sp
-\fB\-F\fP
+\fB\-L\fP, \fB\-\-nooverlap\fP
 .RS 4
-Reads and uses mount options from /etc/fstab that match specified loop device, including offset= sizelimit= encryption= pseed= phash= loinit= gpgkey= gpghome= cleartextkey= itercountk= and looped to device/file name. loop= option in /etc/fstab must match specified loop device name. Command line options take precedence in case of conflict.
+Check for conflicts between loop devices to avoid situation when the same backing file is shared between more loop devices. If the file is already used by another device then re\-use the device rather than a new one. The option makes sense only with \fB\-\-find\fP.
 .RE
 .sp
-\fB\-G\fP gpghome
+\fB\-j\fP, \fB\-\-associated\fP \fIfile\fP [\fB\-o\fP \fIoffset\fP]
 .RS 4
-Set gpg home directory to gpghome, so that gpg uses public/private keys on gpghome directory. This is only used when gpgkey file needs to be decrypted using public/private keys. If gpgkey file is encrypted with symmetric cipher only, public/private keys are not required and this option has no effect.
+Show the status of all loop devices associated with the given \fIfile\fP.
 .RE
 .sp
-\fB\-H\fP phash
+\fB\-o\fP, \fB\-\-offset\fP \fIoffset\fP
 .RS 4
-Uses phash function to hash passphrase. Available hash functions are sha256, sha384, sha512 and rmd160. unhashed1 and unhashed2 functions also exist for compatibility with some obsolete implementations.
-.sp
-Hash function random does not ask for passphrase but sets up random keys and attempts to put loop to multi\-key mode. When random/1777 hash type is used as mount option for mount program, mount program will create new file system on the loop device and construct initial permissions of file system root directory from octal digits that follow the slash character.
-.sp
-WARNING! DO NOT USE RANDOM HASH TYPE ON PARTITION WITH EXISTING IMPORTANT DATA ON IT. RANDOM HASH TYPE WILL DESTROY YOUR DATA.
+The data start is moved \fIoffset\fP bytes into the specified file or device. The \fIoffset\fP may be followed by the multiplicative suffixes; see above.
 .RE
 .sp
-\fB\-I\fP loinit
+\fB\-\-sizelimit\fP \fIsize\fP
 .RS 4
-Passes a numeric value of loinit as a parameter to cipher transfer function. Cipher transfer functions are free to interpret value as they want.
+The data end is set to no more than \fIsize\fP bytes after the data start. The \fIsize\fP may be followed by the multiplicative suffixes; see above.
 .RE
 .sp
-\fB\-K\fP gpgkey
+\fB\-b\fP, \fB\-\-sector\-size\fP \fIsize\fP
 .RS 4
-Passphrase is piped to gpg so that gpg can decrypt file gpgkey which contains the real keys that are used to encrypt loop device. If decryption requires public/private keys and gpghome is not specified, all users use their own gpg public/private keys to decrypt gpgkey. Decrypted gpgkey should contain 1 or 64 or 65 keys, each key at least 20 characters and separated by newline. If decrypted gpgkey contains 64 or 65 keys, then loop device is put to multi\-key mode. In multi\-key mode first key is used for first sector, second key for second sector, and so on. 65th key, if present, is used as additional input to MD5 IV computation.
+Set the logical sector size of the loop device in bytes (since Linux 4.14). The option may be used when creating a new loop device as well as a stand\-alone command to modify sector size of the already existing loop device.
 .RE
 .sp
-\fB\-o\fP offset
+\fB\-c\fP, \fB\-\-set\-capacity\fP \fIloopdev\fP
 .RS 4
-The data start is moved offset bytes into the specified file or device. Normally offset is included in IV (initialization vector) computations. If offset is prefixed with @ character, then offset is not included in IV computations. @ prefix functionality may not be supported on some older kernels and/or loop drivers.
+Force the loop driver to reread the size of the file associated with the specified loop device.
 .RE
 .sp
-\fB\-p\fP passwdfd
+\fB\-P\fP, \fB\-\-partscan\fP
 .RS 4
-Read the passphrase from file descriptor passwdfd instead of the terminal. If \-K option is not being used (no gpg key file), then losetup attempts to read 65 keys from passwdfd, each key at least 20 characters and separated by newline. If losetup successfully reads 64 or 65 keys, then loop device is put to multi\-key mode. If losetup encounters end\-of\-file before 64 keys are read, then only first key is used in single\-key mode.
-.sp
-echo SecretPassphraseHere | losetup \-p0 \-K foo.gpg \-e AES128 ...
-.sp
-In above example, losetup reads passphrase from file descriptor 0 (stdin).
+Force the kernel to scan the partition table on a newly created loop device. Note that the partition table parsing depends on sector sizes. The default is sector size is 512 bytes, otherwise you need to use the option \fB\-\-sector\-size\fP together with \fB\-\-partscan\fP.
 .RE
 .sp
-\fB\-P\fP cleartextkey
+\fB\-r\fP, \fB\-\-read\-only\fP
 .RS 4
-Read the passphrase from file cleartextkey instead of the terminal. If \-K option is not being used (no gpg key file), then losetup attempts to read 65 keys from cleartextkey, each key at least 20 characters and separated by newline. If losetup successfully reads 64 or 65 keys, then loop device is put to multi\-key mode. If losetup encounters end\-of\-file before 64 keys are read, then only first key is used in single\-key mode. If both \-p and \-P options are used, then \-p option takes precedence. These are equivalent:
-.sp
-losetup \-p3 \-K foo.gpg \-e AES128 ...   3<someFileName
-.sp
-losetup \-P someFileName \-K foo.gpg \-e AES128 ...
-.sp
-In first line of above example, in addition to normal open file descriptors (0==stdin 1==stdout 2==stderr), shell opens the file and passes open file descriptor to started losetup program. In second line of above example, losetup opens the file itself.
+Set up a read\-only loop device.
 .RE
 .sp
-\fB\-r\fP
+\fB\-\-direct\-io\fP[\fB=on\fP|\fBoff\fP]
 .RS 4
-Read\-only mode.
+Enable or disable direct I/O for the backing file. The optional argument can be either \fBon\fP or \fBoff\fP. If the optional argument is omitted, it defaults to \fBon\fP.
 .RE
 .sp
-\fB\-R\fP
-.RS 4
-Resize existing, already set up loop device, to new changed underlying device size. This option is for changing mounted live file system size on LVM volume. This functionality may not be supported on some older kernels and/or loop drivers.
-.RE
-.sp
-\fB\-s\fP sizelimit
-.RS 4
-Size of loop device is limited to sizelimit bytes. If unspecified or set to zero, loop device size is set to maximum available (file size minus offset). This option may not be supported on some older kernels and/or loop drivers.
-.RE
-.sp
-\fB\-S\fP pseed
-.RS 4
-Sets encryption passphrase seed pseed which is appended to user supplied passphrase before hashing. Using different seeds for different partitions makes dictionary attacks slower but does not prevent them if user supplied passphrase is guessable. Seed is not used in multi\-key mode.
-.RE
-.sp
-\fB\-T\fP
-.RS 4
-Asks passphrase twice.
-.RE
-.sp
-\fB\-v\fP
+\fB\-v\fP, \fB\-\-verbose\fP
 .RS 4
 Verbose mode.
 .RE
+.sp
+\fB\-l\fP, \fB\-\-list\fP
+.RS 4
+If a loop device or the \fB\-a\fP option is specified, print the default columns for either the specified loop device or all loop devices; the default is to print info about all devices. See also \fB\-\-output\fP, \fB\-\-noheadings\fP, \fB\-\-raw\fP, and \fB\-\-json\fP.
+.RE
+.sp
+\fB\-O\fP, \fB\-\-output\fP \fIcolumn\fP[,\fIcolumn\fP]...
+.RS 4
+Specify the columns that are to be printed for the \fB\-\-list\fP output. Use \fB\-\-help\fP to get a list of all supported columns.
+.RE
+.sp
+\fB\-\-output\-all\fP
+.RS 4
+Output all available columns.
+.RE
+.sp
+\fB\-n\fP, \fB\-\-noheadings\fP
+.RS 4
+Don\(cqt print headings for \fB\-\-list\fP output format.
+.RE
+.sp
+\fB\-\-raw\fP
+.RS 4
+Use the raw \fB\-\-list\fP output format.
+.RE
+.sp
+\fB\-J\fP, \fB\-\-json\fP
+.RS 4
+Use JSON format for \fB\-\-list\fP output.
+.RE
+.SH "ENCRYPTION"
+.sp
+\fBCryptoloop is no longer supported in favor of dm\-crypt.\fP For more details see \fBcryptsetup\fP(8).
 .SH "EXIT STATUS"
 .sp
-\fBlosetup\fP returns 0 on success, nonzero on failure. When \fBlosetup\fP displays the status of a loop device, it returns 1 if the device is not configured and 2 if an error occurred which prevented \fBlosetup\fP from determining the status of the device.
+\fBlosetup\fP returns 0 on success, nonzero on failure. When \fBlosetup\fP displays the status of a loop device, it returns 1 if the device is not configured and 2 if an error occurred which prevented determining the status of the device.
+.SH "NOTES"
+.sp
+Since version 2.37 \fBlosetup\fP uses \fBLOOP_CONFIGURE\fP ioctl to setup a new loop device by one ioctl call. The old versions use \fBLOOP_SET_FD\fP and \fBLOOP_SET_STATUS64\fP ioctls to do the same.
+.SH "ENVIRONMENT"
+.sp
+\fBLOOPDEV_DEBUG\fP=all
+.RS 4
+enables debug output.
+.RE
 .SH "FILES"
 .sp
-/dev/loop0,/dev/loop1,... loop devices (major=7)
+\fI/dev/loop[0..N]\fP
+.RS 4
+loop block devices
+.RE
+.sp
+\fI/dev/loop\-control\fP
+.RS 4
+loop control device
+.RE
 .SH "EXAMPLE"
 .sp
 The following commands can be used as an example of using the loop device.
 .sp
 .if n .RS 4
 .nf
-dd if=/dev/zero of=/file bs=1k count=500
-head \-c 3705 /dev/random | uuencode \-m \- | head \-n 66 \(rs
-    | tail \-n 65 | gpg \-\-symmetric \-a >/etc/fskey9.gpg
-losetup \-e AES128 \-K /etc/fskey9.gpg /dev/loop0 /file
-mkfs \-t ext2 /dev/loop0
-mount \-t ext2 /dev/loop0 /mnt
- ...
-umount /dev/loop0
-losetup \-d /dev/loop0
+.fam C
+# dd if=/dev/zero of=~/file.img bs=1024k count=10
+# losetup \-\-find \-\-show ~/file.img
+/dev/loop0
+# mkfs \-t ext2 /dev/loop0
+# mount /dev/loop0 /mnt
+\&...
+# umount /dev/loop0
+# losetup \-\-detach /dev/loop0
+.fam
 .fi
 .if n .RE
-.SH "RESTRICTION"
-.sp
-XOR encryption is terribly weak.
 .SH "AUTHORS"
 .sp
-Original version: Theodore Ts\(cqo
+.MTO "kzak\(atredhat.com" "Karel Zak" ","
+based on the original version from
+.MTO "tytso\(atathena.mit.edu" "Theodore Ts\(cqo" "."
+.SH "REPORTING BUGS"
 .sp
-AES support: Jari Ruusu
+For bug reports, use the issue tracker at \c
+.URL "https://github.com/util\-linux/util\-linux/issues" "" "."
+.SH "AVAILABILITY"
+.sp
+The \fBlosetup\fP command is part of the util\-linux package which can be downloaded from \c
+.URL "https://www.kernel.org/pub/linux/utils/util\-linux/" "Linux Kernel Archive" "."

@@ -1,9 +1,4 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 #include <getopt.h>
 
@@ -12,7 +7,6 @@
 #endif
 
 #include "nls.h"
-#include "loop.h"
 #include "c.h"
 #include "xalloc.h"
 #include "closestream.h"
@@ -168,45 +162,6 @@ static void __attribute__((__noreturn__)) usage(void)
 	exit(SWAPOFF_EX_OK);
 }
 
-static void
-shutdown_encrypted_swap(char *loop)
-{
-	int fd;
-	struct stat statbuf;
-	struct loop_info64 loopinfo;
-	unsigned char b[32];
-	FILE *f;
-	size_t ignoreThis = 0;
-
-	if(stat(loop, &statbuf) == 0 && S_ISBLK(statbuf.st_mode)) {
-		if((fd = open(loop, O_RDWR)) >= 0) {
-			if(!loop_get_status64_ioctl(fd, &loopinfo)) {
-				/*
-				 * Read 32 bytes of random data from kernel's random
-				 * number generator and write that to loop device.
-				 * This preserves some of kernel's random entropy
-				 * to next activation of encrypted swap on this
-				 * partition.
-				 */
-				if((f = fopen("/dev/urandom", "r")) != NULL) {
-					ignoreThis += fread(&b[0], 32, 1, f);
-					fclose(f);
-					ignoreThis += write(fd, &b[0], 32);
-					fsync(fd);
-				}
-			}
-			close(fd);
-		}
-		sync();
-		if((fd = open(loop, O_RDONLY)) >= 0) {
-			if(!loop_get_status64_ioctl(fd, &loopinfo)) {
-				ioctl(fd, LOOP_CLR_FD, 0);
-			}
-			close(fd);
-		}
-	}
-}
-
 static int swapoff_all(void)
 {
 	int nerrs = 0, nsucc = 0;
@@ -241,30 +196,8 @@ static int swapoff_all(void)
 	mnt_reset_iter(itr, MNT_ITER_FORWARD);
 
 	while (tb && mnt_table_find_next_fs(tb, itr, match_swap, NULL, &fs) == 0) {
-		char *special;
-		char *loop = NULL, *encryption = NULL;
-		char *val = NULL;
-		size_t len = 0;
-
-		special = (char *) mnt_fs_get_source(fs);
-		if(!special) continue;
-		if(mnt_fs_get_option(fs, "loop", &val, &len) == 0 && val && len)
-			loop = strndup(val, len);
-		if(mnt_fs_get_option(fs, "encryption", &val, &len) == 0 && val && len)
-			encryption = strndup(val, len);
-		if (loop && encryption) {
-			if (!is_active_swap(loop)) {	/* do this only if it was not in /proc/swaps */
-				do_swapoff(loop, QUIET, !CANONIC);
-			}
-			shutdown_encrypted_swap(loop);
-			goto do_free;
-		}
-		if (!is_active_swap(special)) {		/* do this only if it was not in /proc/swaps */
-			do_swapoff(special, QUIET, !CANONIC);
-		}
-		do_free:
-		if(loop) free(loop);
-		if(encryption) free(encryption);
+		if (!is_active_swap(mnt_fs_get_source(fs)))
+			do_swapoff(mnt_fs_get_source(fs), QUIET, !CANONIC);
 	}
 
 	mnt_free_iter(itr);

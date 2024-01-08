@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: namei
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "NAMEI" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "NAMEI" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -42,6 +42,7 @@ For each line of output, \fBnamei\fP uses the following characters to identify t
 .sp
 .if n .RS 4
 .nf
+.fam C
    f: = the pathname currently being resolved
     d = directory
     l = symbolic link (both the link and its contents are output)
@@ -51,6 +52,7 @@ For each line of output, \fBnamei\fP uses the following characters to identify t
     p = FIFO (named pipe)
     \- = regular file
     ? = an error of some kind
+.fam
 .fi
 .if n .RE
 .sp
@@ -64,7 +66,7 @@ Use the long listing format (same as \fB\-m \-o \-v\fP).
 .sp
 \fB\-m\fP, \fB\-\-modes\fP
 .RS 4
-Show the mode bits of each file type in the style of \fBls\fP(1), for example \(aqrwxr\-xr\-x\(aq.
+Show the mode bits of each file type in the style of \fBls\fP(1), for example \*(Aqrwxr\-xr\-x\*(Aq.
 .RE
 .sp
 \fB\-n\fP, \fB\-\-nosymlinks\fP
@@ -84,7 +86,7 @@ Vertically align the modes and owners.
 .sp
 \fB\-x\fP, \fB\-\-mountpoints\fP
 .RS 4
-Show mountpoint directories with a \(aqD\(aq rather than a \(aqd\(aq.
+Show mountpoint directories with a \*(AqD\*(Aq rather than a \*(Aqd\*(Aq.
 .RE
 .sp
 \fB\-Z\fP, \fB\-\-context\fP

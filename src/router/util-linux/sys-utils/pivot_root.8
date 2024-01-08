@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: pivot_root
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-10-23
 .\"    Manual: System Administration
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "PIVOT_ROOT" "8" "2024-01-08" "util\-linux 2.39.3" "System Administration"
+.TH "PIVOT_ROOT" "8" "2023-10-23" "util\-linux 2.39.3" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -40,9 +40,11 @@ Note that, depending on the implementation of \fBpivot_root\fP, root and current
 .sp
 .if n .RS 4
 .nf
+.fam C
 cd new_root
 pivot_root . put_old
 exec chroot . command
+.fam
 .fi
 .if n .RE
 .sp
@@ -66,11 +68,13 @@ Change the root file system to \fI/dev/hda1\fP from an interactive shell:
 .sp
 .if n .RS 4
 .nf
+.fam C
 mount /dev/hda1 /new\-root
 cd /new\-root
 pivot_root . old\-root
 exec chroot . sh <dev/console >dev/console 2>&1
 umount /old\-root
+.fam
 .fi
 .if n .RE
 .sp
@@ -78,6 +82,7 @@ Mount the new root file system over NFS from 10.0.0.1:/my_root and run \fBinit\f
 .sp
 .if n .RS 4
 .nf
+.fam C
 ifconfig lo 127.0.0.1 up   # for portmap
 # configure Ethernet or such
 portmap   # for lockd (implicitly started by mount)
@@ -85,8 +90,9 @@ mount \-o ro 10.0.0.1:/my_root /mnt
 killall portmap   # portmap keeps old root busy
 cd /mnt
 pivot_root . old_root
-exec chroot . sh \-c \(aqumount /old_root; exec /sbin/init\(aq \(rs
+exec chroot . sh \-c \*(Aqumount /old_root; exec /sbin/init\*(Aq \(rs
   <dev/console >dev/console 2>&1
+.fam
 .fi
 .if n .RE
 .SH "SEE ALSO"

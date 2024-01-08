@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: whereis
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "WHEREIS" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "WHEREIS" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -76,7 +76,7 @@ Search for sources.
 .sp
 \fB\-u\fP
 .RS 4
-Only show the command names that have unusual entries. A command is said to be unusual if it does not have just one entry of each explicitly requested type. Thus \(aq\fBwhereis \-m \-u *\fP\(aq asks for those files in the current directory which have no documentation file, or more than one.
+Only show the command names that have unusual entries. A command is said to be unusual if it does not have just one entry of each explicitly requested type. Thus \*(Aq\fBwhereis \-m \-u *\fP\*(Aq asks for those files in the current directory which have no documentation file, or more than one.
 .RE
 .sp
 \fB\-B\fP \fIlist\fP
@@ -113,7 +113,9 @@ Interpret the next names as a \fBglob(7)\fP patterns. \fBwhereis\fP always compa
 .sp
 .if n .RS 4
 .nf
-whereis \-g \(aqfind*\(aq
+.fam C
+whereis \-g \*(Aqfind*\*(Aq
+.fam
 .fi
 .if n .RE
 .br

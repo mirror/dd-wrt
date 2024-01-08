@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: cal
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-11-21
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "CAL" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "CAL" "1" "2023-11-21" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -179,26 +179,26 @@ Print version and exit.
 .RE
 .SH "PARAMETERS"
 .sp
-\fBSingle digits\-only parameter (e.g., \(aqcal 2020\(aq)\fP
+\fBSingle digits\-only parameter (e.g., \*(Aqcal 2020\*(Aq)\fP
 .RS 4
 Specifies the \fIyear\fP to be displayed; note the year must be fully specified: \fBcal 89\fP will not display a calendar for 1989.
 .RE
 .sp
-\fBSingle string parameter (e.g., \(aqcal tomorrow\(aq or \(aqcal August\(aq)\fP
+\fBSingle string parameter (e.g., \*(Aqcal tomorrow\*(Aq or \*(Aqcal August\*(Aq)\fP
 .RS 4
 Specifies \fItimestamp\fP or a \fImonth name\fP (or abbreviated name) according to the current locales.
 .sp
 The special placeholders are accepted when parsing timestamp, "now" may be used to refer to the current time, "today", "yesterday", "tomorrow" refer to of the current day, the day before or the next day, respectively.
 .sp
-The relative date specifications are also accepted, in this case "+" is evaluated to the current time plus the specified time span. Correspondingly, a time span that is prefixed with "\-" is evaluated to the current time minus the specified time span, for example \(aq+2days\(aq. Instead of prefixing the time span with "+" or "\-", it may also be suffixed with a space and the word "left" or "ago" (for example \(aq1 week ago\(aq).
+The relative date specifications are also accepted, in this case "+" is evaluated to the current time plus the specified time span. Correspondingly, a time span that is prefixed with "\-" is evaluated to the current time minus the specified time span, for example \*(Aq+2days\*(Aq. Instead of prefixing the time span with "+" or "\-", it may also be suffixed with a space and the word "left" or "ago" (for example \*(Aq1 week ago\*(Aq).
 .RE
 .sp
-\fBTwo parameters (e.g., \(aqcal 11 2020\(aq)\fP
+\fBTwo parameters (e.g., \*(Aqcal 11 2020\*(Aq)\fP
 .RS 4
 Denote the \fImonth\fP (1 \- 12) and \fIyear\fP.
 .RE
 .sp
-\fBThree parameters (e.g., \(aqcal 25 11 2020\(aq)\fP
+\fBThree parameters (e.g., \*(Aqcal 25 11 2020\*(Aq)\fP
 .RS 4
 Denote the \fIday\fP (1\-31), \fImonth and year\fP, and the day will be highlighted if the calendar is displayed on a terminal. If no parameters are specified, the current month\(cqs calendar is displayed.
 .RE
@@ -265,7 +265,7 @@ For example:
 .RS 3
 .ll -.6i
 .sp
-echo \-e \(aqweekend 35\(rsntoday 1;41\(rsnheader yellow\(aq > $HOME/.config/terminal\-colors.d/cal.scheme
+echo \-e \*(Aqweekend 35\(rsntoday 1;41\(rsnheader yellow\*(Aq > $HOME/.config/terminal\-colors.d/cal.scheme
 .br
 .RE
 .ll

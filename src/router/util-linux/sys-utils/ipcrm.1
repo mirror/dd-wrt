@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: ipcrm
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.10
-.\"      Date: 2024-01-08
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-10-23
 .\"    Manual: User Commands
 .\"    Source: util-linux 2.39.3
 .\"  Language: English
 .\"
-.TH "IPCRM" "1" "2024-01-08" "util\-linux 2.39.3" "User Commands"
+.TH "IPCRM" "1" "2023-10-23" "util\-linux 2.39.3" "User Commands"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -42,7 +42,7 @@ System V IPC objects are of three types: shared memory, message queues, and sema
 .sp
 Two syntax styles are supported. The old Linux historical syntax specifies a three\-letter keyword indicating which class of object is to be deleted, followed by one or more IPC identifiers for objects of this type.
 .sp
-The SUS\-compliant syntax allows the specification of zero or more objects of all three types in a single command line, with objects specified either by key or by identifier (see below). Both keys and identifiers may be specified in decimal, hexadecimal (specified with an initial \(aq0x\(aq or \(aq0X\(aq), or octal (specified with an initial \(aq0\(aq).
+The SUS\-compliant syntax allows the specification of zero or more objects of all three types in a single command line, with objects specified either by key or by identifier (see below). Both keys and identifiers may be specified in decimal, hexadecimal (specified with an initial \*(Aq0x\*(Aq or \*(Aq0X\*(Aq), or octal (specified with an initial \*(Aq0\*(Aq).
 .sp
 The details of the removes are described in \fBshmctl\fP(2), \fBmsgctl\fP(2), and \fBsemctl\fP(2). The identifiers and keys can be found by using \fBipcs\fP(1).
 .SH "OPTIONS"

@@ -26,8 +26,6 @@ Calls to *swapon* normally occur in the system boot scripts making all swap devi
 
 *swapoff* disables swapping on the specified devices and files. When the *-a* flag is given, swapping is disabled on all known swap devices and files (as found in _/proc/swaps_ or _/etc/fstab_).
 
-If *loop=/dev/loop?* and *encryption=AES128* options are present in _/etc/fstab_ then *swapon -a* will set up loop devices using random keys, run *mkswap* on them, and enable encrypted swap on specified loop devices. Encrypted loop devices are set up with page size offset so that unencrypted swap signatures on first page of swap devices are not touched. *swapoff -a* will tear down such loop devices.
-
 == OPTIONS
 
 *-a*, *--all*::
