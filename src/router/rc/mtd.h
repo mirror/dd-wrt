@@ -49,5 +49,5 @@ extern int restore_nvram(const char *path, const char *mtd);
  */
 extern int mtd_unlock(const char *mtd);
 
-#endif				/* _mtd_h_ */
+#endif /* _mtd_h_ */
 #endif

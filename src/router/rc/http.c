@@ -16,7 +16,8 @@
 
 static char *base64enc(const char *p, char *buf, int len)
 {
-	char al[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" "0123456789+/";
+	char al[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+		    "0123456789+/";
 	char *s = buf;
 
 	while (*p) {
@@ -37,12 +38,10 @@ static char *base64enc(const char *p, char *buf, int len)
 	return buf;
 }
 
-enum {
-	METHOD_GET,
-	METHOD_POST
-};
+enum { METHOD_GET, METHOD_POST };
 
-static int wget(int method, const char *server, char *buf, size_t count, off_t offset)
+static int wget(int method, const char *server, char *buf, size_t count,
+		off_t offset)
 {
 	char url[PATH_MAX] = { 0 }, *s;
 	char *host = url, *path = "", auth[128] = { 0 }, line[512];
@@ -89,7 +88,9 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	sin.sin_port = htons(port);
 
 	fprintf(stderr, "Connecting to %s:%u...\n", host, port);
-	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 || connect(fd, (struct sockaddr *)&sin, sizeof(sin)) < 0 || !(fp = fdopen(fd, "r+"))) {
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ||
+	    connect(fd, (struct sockaddr *)&sin, sizeof(sin)) < 0 ||
+	    !(fp = fdopen(fd, "r+"))) {
 		perror(host);
 		if (fd >= 0)
 			close(fd);
@@ -100,7 +101,8 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	/* 
 	 * Send HTTP request 
 	 */
-	fprintf(fp, "%s /%s HTTP/1.1\r\n", method == METHOD_POST ? "POST" : "GET", path);
+	fprintf(fp, "%s /%s HTTP/1.1\r\n",
+		method == METHOD_POST ? "POST" : "GET", path);
 	fprintf(fp, "Host: %s\r\n", host);
 	fprintf(fp, "User-Agent: wget\r\n");
 	if (*auth)
@@ -108,7 +110,8 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	if (offset)
 		fprintf(fp, "Range: bytes=%ld-\r\n", offset);
 	if (method == METHOD_POST) {
-		fprintf(fp, "Content-Type: application/x-www-form-urlencoded\r\n");
+		fprintf(fp,
+			"Content-Type: application/x-www-form-urlencoded\r\n");
 		fprintf(fp, "Content-Length: %d\r\n\r\n", (int)strlen(buf));
 		fputs(buf, fp);
 	} else
@@ -120,8 +123,10 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	cprintf("HTTP request sent, awaiting response...\n");
 	if (fgets(line, sizeof(line), fp)) {
 		cprintf("%s", line);
-		for (s = line; *s && !isspace((int)*s); s++) ;
-		for (; isspace((int)*s); s++) ;
+		for (s = line; *s && !isspace((int)*s); s++)
+			;
+		for (; isspace((int)*s); s++)
+			;
 		switch (atoi(s)) {
 		case 200:
 			if (offset)
@@ -143,15 +148,18 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	 */
 	while (fgets(line, sizeof(line), fp)) {
 		cprintf("%s", line);
-		for (s = line; *s == '\r'; s++) ;
+		for (s = line; *s == '\r'; s++)
+			;
 		if (*s == '\n')
 			break;
 		if (!strncasecmp(s, "Content-Length:", 15)) {
-			for (s += 15; dd_isblank(*s); s++) ;
+			for (s += 15; dd_isblank(*s); s++)
+				;
 			chomp(s);
 			len = atoi(s);
 		} else if (!strncasecmp(s, "Transfer-Encoding:", 18)) {
-			for (s += 18; dd_isblank(*s); s++) ;
+			for (s += 18; dd_isblank(*s); s++)
+				;
 			chomp(s);
 			if (!strncasecmp(s, "chunked", 7))
 				chunked = 1;

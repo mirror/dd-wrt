@@ -6,20 +6,19 @@
 #include <errno.h>
 #include <shutils.h>
 
-
-#define start_service(a) eval("startservice",a);
-#define start_service_force(a) eval("startservice",a,"-f");
-#define start_service_f(a) eval("startservice_f",a);
-#define start_service_force_f(a) eval("startservice_f",a,"-f");
+#define start_service(a) eval("startservice", a);
+#define start_service_force(a) eval("startservice", a, "-f");
+#define start_service_f(a) eval("startservice_f", a);
+#define start_service_force_f(a) eval("startservice_f", a, "-f");
 #define start_services() eval("startservices");
-#define stop_service(a) eval("stopservice",a);
-#define stop_service_force(a) eval("stopservice","-f",a);
+#define stop_service(a) eval("stopservice", a);
+#define stop_service_force(a) eval("stopservice", "-f", a);
 #define stop_running(a) eval("stop_running");
-#define stop_service_f(a) eval("stopservice_f",a);
-#define stop_service_force_f(a) eval("stopservice_f",a,"-f");
+#define stop_service_f(a) eval("stopservice_f", a);
+#define stop_service_force_f(a) eval("stopservice_f", a, "-f");
 #define stop_services() eval("stopservices");
-#define restart(a) eval("restart",a);
-#define restart_f(a) eval("restart_f",a);
+#define restart(a) eval("restart", a);
+#define restart_f(a) eval("restart_f", a);
 
 int main(int argc, char **argv)
 {
@@ -50,22 +49,22 @@ int main(int argc, char **argv)
 	while (1) {
 #if defined(HAVE_3G)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
-		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "mbim")) {
+		if (nvram_match("wan_proto", "3g") &&
+		    nvram_match("3gdata", "mbim")) {
 			start_service_force("check_mbim");
 		}
 #endif
-		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "sierradirectip")) {
+		if (nvram_match("wan_proto", "3g") &&
+		    nvram_match("3gdata", "sierradirectip")) {
 			start_service_force("check_sierradirectip");
-		} else if (nvram_match("wan_proto", "3g")
-			   && nvram_match("3gnmvariant", "1")) {
+		} else if (nvram_match("wan_proto", "3g") &&
+			   nvram_match("3gnmvariant", "1")) {
 			start_service_force("check_sierrappp");
 		}
 #endif
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
-		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "qmi") && _count == 1) {
+		if (nvram_match("wan_proto", "3g") &&
+		    nvram_match("3gdata", "qmi") && _count == 1) {
 			start_service_force("check_qmi");
 		}
 #endif
@@ -76,12 +75,12 @@ int main(int argc, char **argv)
 		num = 0;
 		_count++;
 
-//               fprintf(stderr, "check PPPoE %d\n", num);
+		//               fprintf(stderr, "check PPPoE %d\n", num);
 		if (!check_wan_link(num)) {
-//                       fprintf(stderr, "PPPoE %d need to redial\n", num);
+			//                       fprintf(stderr, "PPPoE %d need to redial\n", num);
 			need_redial = 1;
 		} else {
-//                       fprintf(stderr, "PPPoE %d not need to redial\n", num);
+			//                       fprintf(stderr, "PPPoE %d not need to redial\n", num);
 			continue;
 		}
 
@@ -97,23 +96,26 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || \
+	defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
 				else
 #endif
 #endif
 
 #ifdef HAVE_PPPOEDUAL
-				if (nvram_match("wan_proto", "pppoe_dual")) {
+					if (nvram_match("wan_proto",
+							"pppoe_dual")) {
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || \
+	defined(HAVE_PPPOATM)
 				else
 #endif
 #endif
 
 #ifdef HAVE_PPPOATM
-				if (nvram_match("wan_proto", "pppoa")) {
+					if (nvram_match("wan_proto", "pppoa")) {
 					sleep(1);
 					start_service_force("wan_redial");
 				}
@@ -123,7 +125,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_PPTP
-				if (nvram_match("wan_proto", "pptp")) {
+					if (nvram_match("wan_proto", "pptp")) {
 					stop_service_force("pptp");
 					unlink("/tmp/services/pptp.stop");
 					sleep(1);
@@ -134,7 +136,7 @@ int main(int argc, char **argv)
 #endif
 #endif
 #ifdef HAVE_L2TP
-				if (nvram_match("wan_proto", "l2tp")) {
+					if (nvram_match("wan_proto", "l2tp")) {
 					stop_service_force("l2tp");
 					unlink("/tmp/services/l2tp.stop");
 					sleep(1);
@@ -144,17 +146,20 @@ int main(int argc, char **argv)
 				else
 #endif
 #endif
-					// Moded by Boris Bakchiev
-					// We dont need this at all.
-					// But if this code is executed by any of pppX programs
-					// we might have to do this.
+				// Moded by Boris Bakchiev
+				// We dont need this at all.
+				// But if this code is executed by any of pppX programs
+				// we might have to do this.
 
 #ifdef HAVE_HEARTBEAT
-				if (nvram_match("wan_proto", "heartbeat")) {
+					if (nvram_match("wan_proto",
+							"heartbeat")) {
 					if (pidof("bpalogin") == -1) {
-						stop_service_force("heartbeat_redial");
+						stop_service_force(
+							"heartbeat_redial");
 						sleep(1);
-						start_service_force("heartbeat_redial");
+						start_service_force(
+							"heartbeat_redial");
 					}
 
 				}
@@ -181,4 +186,3 @@ int main(int argc, char **argv)
 		}
 	}
 }
-

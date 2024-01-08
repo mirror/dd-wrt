@@ -10,8 +10,8 @@
 static int NVRAMSPACE;
 #define VALUE_TO_STRING(x) #x
 #define VALUE(x) VALUE_TO_STRING(x)
-#define VAR_NAME_VALUE(var) #var "="  VALUE(var)
-#pragma message (VAR_NAME_VALUE(NVRAMSPACE))
+#define VAR_NAME_VALUE(var) #var "=" VALUE(var)
+#pragma message(VAR_NAME_VALUE(NVRAMSPACE))
 
 #if 0
 static int *nvram_hash;
@@ -86,17 +86,18 @@ static int nvram_main(int argc, char **argv)
 	++argv;
 
 	if (!*argv) {
-		fprintf(stderr, "Usage: nvram [get name] [set name=value] [unset name] [commit] [show|getall]\n"	//
-			"             [clear|erase] [backup filename] [restore filename]\n"	//
-			"\n"	//
-			"get name         : Displays current value or string for the given variable name.\n"	//
-			"set name=value   : Insert new value or \"string\" for the variable name specified.\n"	//
-			"unset name       : Removes by name both NVRAM variable name and value or string.\n"	//
-			"commit           : Writes pending data operations to NVRAM, flash or filesystem.\n"	//
-			"show | getall    : Displays a list of all current NVRAM variable names and data.\n"	//
-			"clear | erase    : Delete all NVRAM names and data, but retain system variables.\n"	//
-			"backup filename  : Backup all stored NVRAM variables data to specified filename.\n"	//
-			"restore filename : Restore NVRAM names and data, not overwrite system variables.\n"	//
+		fprintf(stderr,
+			"Usage: nvram [get name] [set name=value] [unset name] [commit] [show|getall]\n" //
+			"             [clear|erase] [backup filename] [restore filename]\n" //
+			"\n" //
+			"get name         : Displays current value or string for the given variable name.\n" //
+			"set name=value   : Insert new value or \"string\" for the variable name specified.\n" //
+			"unset name       : Removes by name both NVRAM variable name and value or string.\n" //
+			"commit           : Writes pending data operations to NVRAM, flash or filesystem.\n" //
+			"show | getall    : Displays a list of all current NVRAM variable names and data.\n" //
+			"clear | erase    : Delete all NVRAM names and data, but retain system variables.\n" //
+			"backup filename  : Backup all stored NVRAM variables data to specified filename.\n" //
+			"restore filename : Restore NVRAM names and data, not overwrite system variables.\n" //
 			"--force          : WARNING override device name compatibility check for restore.\n");
 		exit(0);
 	}
@@ -122,21 +123,25 @@ static int nvram_main(int argc, char **argv)
 				nvram_unset(*argv);
 		} else if (!strncmp(*argv, "commit", 5)) {
 			nvram_commit();
-		} else if (!strncmp(*argv, "clear", 5) || !strncmp(*argv, "erase", 5)) {
+		} else if (!strncmp(*argv, "clear", 5) ||
+			   !strncmp(*argv, "erase", 5)) {
 			nvram_clear();
 			nvram_commit();
-		} else if (!strncmp(*argv, "show", 4)
-			   || !strncmp(*argv, "getall", 6)) {
+		} else if (!strncmp(*argv, "show", 4) ||
+			   !strncmp(*argv, "getall", 6)) {
 			nvram_getall(buf, NVRAMSPACE);
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
-			size = sizeof(struct nvram_header) + (long)name - (long)buf;
-			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAMSPACE - size);
+			size = sizeof(struct nvram_header) + (long)name -
+			       (long)buf;
+			fprintf(stderr, "size: %d bytes (%d left)\n", size,
+				NVRAMSPACE - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
 				int ret = nvram_backup(*argv);
 				if (ret < 0) {
-					fprintf(stderr, "can't write %s\n", *argv);
+					fprintf(stderr, "can't write %s\n",
+						*argv);
 					free(buf);
 					return 1;
 				}
@@ -147,12 +152,14 @@ static int nvram_main(int argc, char **argv)
 			if (*++argv) {
 				int ret = nvram_restore(*argv, force);
 				if (ret == -1) {
-					fprintf(stderr, "can't write %s\n", *argv);
+					fprintf(stderr, "can't write %s\n",
+						*argv);
 					free(buf);
 					return 1;
 				}
 				if (ret == -2) {
-					fprintf(stderr, "file %s broken\n", *argv);
+					fprintf(stderr, "file %s broken\n",
+						*argv);
 					free(buf);
 					return 1;
 				}

@@ -9,7 +9,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>		/* AhMan March 18 2005 */
+#include <sys/ioctl.h> /* AhMan March 18 2005 */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -52,7 +52,8 @@ static void del_routes(char *route)
 	char word[80], *tmp;
 	char *ipaddr, *netmask, *gateway, *metric, *ifname;
 
-	foreach(word, route, tmp) {
+	foreach(word, route, tmp)
+	{
 		netmask = word;
 		ipaddr = strsep(&netmask, ":");
 		if (!ipaddr || !netmask)
@@ -73,7 +74,8 @@ static void del_routes(char *route)
 		if (!strcmp(ipaddr, "0.0.0.0"))
 			eval("route", "del", "default", "gw", gateway);
 
-		eval("route", "del", "-net", ipaddr, "netmask", netmask, "gw", gateway);
+		eval("route", "del", "-net", ipaddr, "netmask", netmask, "gw",
+		     gateway);
 		// route_del (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
 	}
 }
@@ -421,40 +423,40 @@ static void handle_index(void)
 	restart_f("hostname");
 
 	stop_service_force_f("wan");
-	stop_service_f("radio_timer");	//
+	stop_service_f("radio_timer"); //
 #ifdef HAVE_MULTICAST
-	stop_service_f("igmprt");	//
+	stop_service_f("igmprt"); //
 #endif
 #ifdef HAVE_UDPXY
 	stop_service_f("udpxy");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	stop_service_f("nas");	//
+	stop_service_f("nas"); //
 #endif
 #ifdef HAVE_MADWIFI
 	stop_service_f("stabridge");
 #endif
 #ifdef HAVE_EMF
-	stop_service_f("emf");	//
+	stop_service_f("emf"); //
 #endif
 #ifdef HAVE_VLANTAGGING
-	stop_service_f("bridgesif");	//
-	stop_service_f("vlantagging");	//
+	stop_service_f("bridgesif"); //
+	stop_service_f("vlantagging"); //
 #endif
 #ifdef HAVE_BONDING
-	stop_service_f("bonding");	//
+	stop_service_f("bonding"); //
 #endif
 
-	stop_service_f("usteer");	//
-	stop_service_f("ubus");	//
-	stop_service_f("lan");	//
+	stop_service_f("usteer"); //
+	stop_service_f("ubus"); //
+	stop_service_f("lan"); //
 #ifdef HAVE_IPVS
-	stop_service_f("ipvs");	//
+	stop_service_f("ipvs"); //
 #endif
 #ifdef HAVE_VLANTAGGING
-	stop_service_f("bridging");	//
+	stop_service_f("bridging"); //
 #endif
-	stop_service_f("ttraff");	//
+	stop_service_f("ttraff"); //
 
 	stop_running_main(0, NULL);
 
@@ -496,7 +498,7 @@ static void handle_index(void)
 #endif
 	start_service_force("usteer");
 #ifdef HAVE_EMF
-	start_service("emf");	//
+	start_service("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service_f("nas");
@@ -509,7 +511,7 @@ static void handle_index(void)
 	restart("firewall");
 	// httpd will not
 	// accept connection
-	// anymore on wan/lan 
+	// anymore on wan/lan
 	// ip changes changes
 	restart_fdelay("httpd", 2);
 #ifndef HAVE_MICRO
@@ -522,12 +524,10 @@ static void handle_index(void)
 #ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
-
 }
 
 static void handle_router(void)
 {
-
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	restart_f("zebra");
 #endif
@@ -551,7 +551,7 @@ static void handle_hotspot(void)
 
 	stop_service_f("radio_timer");
 #ifdef HAVE_EMF
-	stop_service_f("emf");	//
+	stop_service_f("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service_f("nas");
@@ -621,7 +621,7 @@ static void handle_hotspot(void)
 #endif
 	start_service("usteer");
 #ifdef HAVE_EMF
-	start_service("emf");	//
+	start_service("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service_f("nas");
@@ -641,7 +641,7 @@ static void handle_hotspot(void)
 	start_service("zebra");
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
-	restart_fdelay("httpd", 2);	// httpd will not accept connection anymore
+	restart_fdelay("httpd", 2); // httpd will not accept connection anymore
 #ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
@@ -780,8 +780,7 @@ static void handle_services(void)
 	stop_service("chronyd");
 	start_service_f("chronyd");
 #endif
-//      start_service_f("anchorfreednat");
-
+	//      start_service_f("anchorfreednat");
 }
 
 static void handle_nassrv(void)
@@ -838,7 +837,6 @@ static void handle_nassrv(void)
 	restart_f("mdns");
 #endif
 	restart("firewall");
-
 }
 
 #ifdef HAVE_IPV6
@@ -861,7 +859,6 @@ static void handle_ipv6(void)
 
 static void handle_management(void)
 {
-
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_service_f("nas");
 #endif
@@ -912,8 +909,7 @@ static void handle_management(void)
 	restart_f("bootconfig");
 #endif
 
-//      start_service_f("anchorfreednat");
-
+	//      start_service_f("anchorfreednat");
 }
 
 static void handle_pppoe(void)
@@ -928,7 +924,7 @@ static void handle_pppoe(void)
 	stop_service_f("stabridge");
 #endif
 #ifdef HAVE_EMF
-	stop_service_f("emf");	//
+	stop_service_f("emf"); //
 #endif
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif");
@@ -974,7 +970,7 @@ static void handle_pppoe(void)
 #endif
 	start_service("usteer");
 #ifdef HAVE_EMF
-	start_service("emf");	//
+	start_service("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service_f("nas");
@@ -983,7 +979,6 @@ static void handle_pppoe(void)
 #ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
-
 }
 
 static void handle_speedtest(void)
@@ -995,7 +990,7 @@ static void handle_speedtest(void)
 	int cpucount = 2;
 #endif
 	if (cpucount > 4)
-		cpucount = 4;	// clamp at 4;
+		cpucount = 4; // clamp at 4;
 	char nr[32];
 	sprintf(nr, "%d", cpucount);
 	char *args[] = { "speedtest_cli", "1", nr, "1", nr, NULL };
@@ -1010,7 +1005,6 @@ static void handle_spppoe(void)
 
 static void handle_filters(void)
 {
-
 #ifdef HAVE_SYSLOG
 	restart_f("syslog");
 #endif
@@ -1035,12 +1029,11 @@ static void handle_filters(void)
 #ifdef HAVE_CONNTRACK
 	restart_f("notifier");
 #endif
-//      start_service_f("anchorfreednat");
+	//      start_service_f("anchorfreednat");
 }
 
 static void handle_routing(void)
 {
-
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_service("zebra");
 #endif
@@ -1055,13 +1048,11 @@ static void handle_routing(void)
 #ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
-//      start_service_f("anchorfreednat");
-
+	//      start_service_f("anchorfreednat");
 }
 
 static void handle_alive(void)
 {
-
 #ifndef HAVE_MICRO
 	stop_service("cron");
 #endif
@@ -1080,7 +1071,6 @@ static void handle_alive(void)
 
 static void handle_forward(void)
 {
-
 	stop_service("wland");
 #ifdef HAVE_UPNP
 //    stop_service( "upnp");
@@ -1094,12 +1084,10 @@ static void handle_forward(void)
 #ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
-
 }
 
 static void handle_qos(void)
 {
-
 	restart_f("wland");
 #ifdef HAVE_NODOG
 	restart_f("splashd");
@@ -1115,7 +1103,6 @@ static void handle_qos(void)
 
 static void handle_forwardupnp(void)
 {
-
 #ifdef HAVE_UPNP
 	stop_service("upnp");
 #endif
@@ -1129,13 +1116,11 @@ static void handle_forwardupnp(void)
 #ifdef HAVE_NODOG
 	restart_f("splashd");
 #endif
-
 }
 
 static void handle_routedel(void)
 {
 	del_routes(nvram_safe_get("action_service_arg1"));
-
 }
 
 #ifdef HAVE_SPOTPASS
@@ -1154,7 +1139,6 @@ static void handle_ddns(void)
 {
 	restart("ddns");
 	nvram_set("ddns_change", "update");
-
 }
 
 #ifdef HAVE_SYSCTL_EDIT
@@ -1187,7 +1171,6 @@ static void handle_freeradius(void)
 
 static void handle_upgrade(void)
 {
-
 	stop_service_f("ttraff");
 	stop_service_force_f("wan");
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
@@ -1203,7 +1186,6 @@ static void handle_upgrade(void)
 	stop_service_f("cron");
 #endif
 	stop_running_main(0, NULL);
-
 }
 
 #ifdef HAVE_MILKFISH
@@ -1222,7 +1204,7 @@ static void handle_wireless(void)
 
 	stop_service_f("radio_timer");
 #ifdef HAVE_EMF
-	stop_service_f("emf");	//
+	stop_service_f("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service_f("nas");
@@ -1237,7 +1219,7 @@ static void handle_wireless(void)
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
-	    ) {
+	) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
@@ -1287,7 +1269,7 @@ static void handle_wireless(void)
 #endif
 	start_service_force("usteer");
 #ifdef HAVE_EMF
-	start_service("emf");	//
+	start_service("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service_f("nas");
@@ -1308,7 +1290,7 @@ static void handle_wireless(void)
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
-	    ) {
+	) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
@@ -1325,14 +1307,17 @@ static void handle_wireless(void)
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
 #ifdef HAVE_80211AC
-	restart_fdelay("httpd", 2);	// httpd will not accept connection anymore on wan/lan ip changes changes
+	restart_fdelay(
+		"httpd",
+		2); // httpd will not accept connection anymore on wan/lan ip changes changes
 #else
-	restart_fdelay("httpd", 4);	// httpd will not accept connection anymore on wan/lan ip changes changes
+	restart_fdelay(
+		"httpd",
+		4); // httpd will not accept connection anymore on wan/lan ip changes changes
 #endif
 #ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
-
 }
 
 static void handle_wireless_2(void)
@@ -1345,7 +1330,7 @@ static void handle_wireless_2(void)
 
 	stop_service_f("radio_timer");
 #ifdef HAVE_EMF
-	stop_service_f("emf");	//
+	stop_service_f("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service_f("nas");
@@ -1360,7 +1345,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
-	    ) {
+	) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
@@ -1410,7 +1395,7 @@ static void handle_wireless_2(void)
 #endif
 	start_service_force("usteer");
 #ifdef HAVE_EMF
-	start_service("emf");	//
+	start_service("emf"); //
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service_f("nas");
@@ -1420,11 +1405,13 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
-	    ) {
+	) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
-			restart_fdelay("httpd", 2);	// httpd will not accept connection anymore
+			restart_fdelay(
+				"httpd",
+				2); // httpd will not accept connection anymore
 	}
 	// on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
@@ -1434,7 +1421,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
-	    ) {
+	) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
@@ -1452,20 +1439,18 @@ static void handle_wireless_2(void)
 #ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
-
 }
 
 static void handle_dhcp_release(void)
 {
 	killall("udhcpc", SIGUSR2);
 	sleep(1);
-
 }
 
 #ifdef HAVE_USB
 static void handle_usbdrivers(void)
 {
-	restart("drivers_net");	//stop is not yet implemented but we dont care about yet
+	restart("drivers_net"); //stop is not yet implemented but we dont care about yet
 #ifdef HAVE_P910ND
 	restart("printer");
 #endif
@@ -1482,9 +1467,10 @@ static struct SERVICES services_def[] = {
 	{ "index", handle_index },
 	{ "router", handle_router },
 	{ "hotspot", handle_hotspot },
-//      {"anchorfree", handle_anchorfree},
+	//      {"anchorfree", handle_anchorfree},
 	{ "services", handle_services },
-#if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA)  || defined(HAVE_RAID)
+#if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA) || \
+	defined(HAVE_RAID)
 	{ "nassrv", handle_nassrv },
 #endif
 	{ "management", handle_management },
@@ -1562,7 +1548,8 @@ static int single_service_helper(void)
 	if (sr) {
 		sr++;
 		nvram_seti("service_running", sr);
-		dd_loginfo("services", "increase delay to %d seconds\n", sr * 5);
+		dd_loginfo("services", "increase delay to %d seconds\n",
+			   sr * 5);
 		return 0;
 	}
 	nvram_seti("service_running", 1);
@@ -1577,7 +1564,8 @@ static int single_service_helper(void)
 	char service[80];
 	char *services = nvram_safe_get("action_service");
 	update_timezone();
-	foreach(service, services, next) {
+	foreach(service, services, next)
+	{
 #ifdef HAVE_OLED
 		char message[32];
 		sprintf(message, "restart: %s", service);
@@ -1587,7 +1575,8 @@ static int single_service_helper(void)
 		int servicecount = 0;
 
 		while (services_def[servicecount].servicename != NULL) {
-			if (!strcmp(services_def[servicecount].servicename, service))
+			if (!strcmp(services_def[servicecount].servicename,
+				    service))
 				services_def[servicecount].service();
 			servicecount++;
 		}

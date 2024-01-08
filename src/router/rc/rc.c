@@ -1,17 +1,16 @@
-#define start_service(a) eval("startservice",a);
-#define start_service_force(a) eval("startservice",a,"-f");
-#define start_service_f(a) eval("startservice_f",a);
-#define start_service_force_f(a) eval("startservice_f",a,"-f");
+#define start_service(a) eval("startservice", a);
+#define start_service_force(a) eval("startservice", a, "-f");
+#define start_service_f(a) eval("startservice_f", a);
+#define start_service_force_f(a) eval("startservice_f", a, "-f");
 #define start_services() eval("startservices");
-#define stop_service(a) eval("stopservice",a);
-#define stop_service_force(a) eval("stopservice","-f",a);
+#define stop_service(a) eval("stopservice", a);
+#define stop_service_force(a) eval("stopservice", "-f", a);
 #define stop_running(a) eval("stop_running");
-#define stop_service_f(a) eval("stopservice_f",a);
-#define stop_service_force_f(a) eval("stopservice_f",a,"-f");
+#define stop_service_f(a) eval("stopservice_f", a);
+#define stop_service_force_f(a) eval("stopservice_f", a, "-f");
 #define stop_services() eval("stopservices");
-#define restart(a) eval("restart",a);
-#define restart_f(a) eval("restart_f",a);
-
+#define restart(a) eval("restart", a);
+#define restart_f(a) eval("restart_f", a);
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,7 +99,6 @@ static int softwarerevision_main(int argc, char **argv)
  * Call when keepalive mode
  */
 
-
 static int rc_main(int argc, char *argv[])
 {
 	int ret = 0;
@@ -129,8 +127,13 @@ static int erase_main(int argc, char *argv[])
 	if (argv[1]) {
 		if (!strcmp(argv[1], "nvram")) {
 			int brand = getRouterBrand();
-			if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54) {
-				fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
+			if (brand == ROUTER_MOTOROLA ||
+			    brand == ROUTER_MOTOROLA_V1 ||
+			    brand == ROUTER_MOTOROLA_WE800G ||
+			    brand == ROUTER_RT210W ||
+			    brand == ROUTER_BUFFALO_WZRRSG54) {
+				fprintf(stderr,
+					"Sorry, erasing nvram will turn this router into a brick\n");
 			} else {
 				nvram_clear();
 				nvram_commit();
@@ -141,10 +144,8 @@ static int erase_main(int argc, char *argv[])
 	} else {
 		fprintf(stderr, "usage: erase [device]\n");
 		ret = EINVAL;
-
 	}
 	return ret;
-
 }
 
 static int start_main(char *name, int argc, char **argv)
@@ -158,16 +159,16 @@ static int start_main(char *name, int argc, char **argv)
 		args[i + 2] = argv[i];
 	args[2 + i] = NULL;
 	switch (pid = fork()) {
-	case -1:		/* error */
+	case -1: /* error */
 		perror("fork");
 		return errno;
-	case 0:		/* child */
+	case 0: /* child */
 		for (sig = 0; sig < (_NSIG - 1); sig++)
 			signal(sig, SIG_DFL);
 		execvp(args[0], args);
 		perror(argv[0]);
 		exit(errno);
-	default:		/* parent */
+	default: /* parent */
 		waitpid(pid, &status, 0);
 		if (WIFEXITED(status))
 			return WEXITSTATUS(status);
@@ -181,7 +182,6 @@ static void start_main_f(char *name, int argc, char **argv)
 {
 	FORK(start_main(name, argc, argv));
 }
-
 
 static struct MAIN maincalls[] = {
 	// {"init", NULL, &main_loop},
@@ -214,7 +214,7 @@ static struct MAIN maincalls[] = {
 #endif
 //	{ "redial", NULL, redial_main },
 #ifndef HAVE_RB500
-	// {"resetbutton", NULL, &resetbutton_main},
+// {"resetbutton", NULL, &resetbutton_main},
 #endif
 	// {"wland", NULL, &wland_main},
 	{ "hb_connect", "hb_connect", NULL },
@@ -225,9 +225,9 @@ static struct MAIN maincalls[] = {
 	// {"listen", NULL, &listen_main},
 	// {"check_ps", NULL, &check_ps_main},
 	{ "ddns_success", "ddns_success", NULL },
-	// {"process_monitor", NULL, &process_monitor_main},
-	// {"radio_timer", NULL, &radio_timer_main},
-	// {"ttraf", NULL, &ttraff_main},
+// {"process_monitor", NULL, &process_monitor_main},
+// {"radio_timer", NULL, &radio_timer_main},
+// {"ttraf", NULL, &ttraff_main},
 #ifdef HAVE_WIVIZ
 	{ "autokill_wiviz", NULL, &autokill_wiviz_main },
 #endif
@@ -254,21 +254,21 @@ static struct MAIN maincalls[] = {
 	{ "delpppoeconnected", "delpppoeconnected", NULL },
 	{ "addpppoetime", "addpppoetime", NULL },
 #endif
-//	{ "startservices", NULL, start_services_main },
-//	{ "start_single_service", NULL, start_single_service_main },
-//	{ "restart_f", NULL, restart_main_f },
-//	{ "restart", NULL, restart_main },
-//	{ "stop_running", NULL, stop_running_main },
+	//	{ "startservices", NULL, start_services_main },
+	//	{ "start_single_service", NULL, start_single_service_main },
+	//	{ "restart_f", NULL, restart_main_f },
+	//	{ "restart", NULL, restart_main },
+	//	{ "stop_running", NULL, stop_running_main },
 	{ "softwarerevision", NULL, softwarerevision_main },
-	// {"nvram", NULL, &nvram_main},
+// {"nvram", NULL, &nvram_main},
 #ifdef HAVE_ROAMING
-//      {"roaming_daemon", NULL, &roaming_daemon_main},
+	//      {"roaming_daemon", NULL, &roaming_daemon_main},
 	{ "supplicant", "supplicant", NULL },
 #endif
 	{ "get_wanface", "get_wanface", NULL },
 	{ "get_wanip", "get_wanip", NULL },
 #ifndef HAVE_XSCALE
-	// {"ledtool", NULL, &ledtool_main},
+// {"ledtool", NULL, &ledtool_main},
 #endif
 #ifdef HAVE_REGISTER
 	{ "regshell", NULL, &reg_main },
@@ -276,16 +276,19 @@ static struct MAIN maincalls[] = {
 	{ "gratarp", NULL, &gratarp_main },
 	{ "get_nfmark", "get_nfmark", NULL },
 #ifdef HAVE_IPV6
-	{ "dhcp6c-state", "dhcp6c_state", },
+	{
+		"dhcp6c-state",
+		"dhcp6c_state",
+	},
 #endif
 #ifdef HAVE_QTN
 	{ "qtn_monitor", NULL, &qtn_monitor_main },
 #endif
 	{ "write", NULL, &write_main },
-//	{ "startservice_f", NULL, &service_main },
-//	{ "startservice", NULL, &service_main },
-//	{ "stopservice_f", NULL, &service_main },
-//	{ "stopservice", NULL, &service_main },
+	//	{ "startservice_f", NULL, &service_main },
+	//	{ "startservice", NULL, &service_main },
+	//	{ "stopservice_f", NULL, &service_main },
+	//	{ "stopservice", NULL, &service_main },
 	{ "rc", NULL, &rc_main },
 	{ "erase", NULL, &erase_main },
 };
@@ -299,11 +302,12 @@ int main(int argc, char **argv)
 	for (i = 0; i < sizeof(maincalls) / sizeof(struct MAIN); i++) {
 		if (strstr(base, maincalls[i].callname)) {
 			if (maincalls[i].execname)
-				return start_main(maincalls[i].execname, argc, argv);
+				return start_main(maincalls[i].execname, argc,
+						  argv);
 			if (maincalls[i].exec)
 				return maincalls[i].exec(argc, argv);
 		}
 	}
 	airbag_deinit();
-	return 1;		// no command found
+	return 1; // no command found
 }

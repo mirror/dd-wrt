@@ -61,4 +61,4 @@ static int wpswatcher_main(int argc, char **argv)
 		eval("ledtool", "1800", "3");
 	}
 	return 0;
-}				// end main
+} // end main

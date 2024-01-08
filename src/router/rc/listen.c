@@ -32,7 +32,7 @@
 
 // for PF_PACKET
 #include <features.h>
-#if __GLIBC__ >=2 && __GLIBC_MINOR >= 1
+#if __GLIBC__ >= 2 && __GLIBC_MINOR >= 1
 #include <netpacket/packet.h>
 #include <net/ethernet.h>
 #else
@@ -43,13 +43,22 @@
 
 enum { L_FAIL, L_ERROR, L_UPGRADE, L_ESTABLISHED, L_SUCCESS };
 
-#define LOG(str, args...) do { printf("DEBUG, "); \
-                                printf(str, ## args); \
-                                printf("\n"); } while(0)
+#define LOG(str, args...)            \
+	do {                         \
+		printf("DEBUG, ");   \
+		printf(str, ##args); \
+		printf("\n");        \
+	} while (0)
 
-#define DEBUG(args...) do {;} while(0)
+#define DEBUG(args...) \
+	do {           \
+		;      \
+	} while (0)
 
-#define DEBUG1(args...) do {;} while(0)
+#define DEBUG1(args...) \
+	do {            \
+		;       \
+	} while (0)
 
 struct iphdr {
 	u_int8_t version;
@@ -83,7 +92,8 @@ struct EthPacket {
 	u_int8_t data[1500 - 20];
 } __attribute__((packed));
 
-static int read_interface(char *interface, int *ifindex, u_int32_t *addr, unsigned char *arp)
+static int read_interface(char *interface, int *ifindex, u_int32_t *addr,
+			  unsigned char *arp)
 {
 	int fd;
 	struct ifreq ifr;
@@ -141,7 +151,6 @@ static int raw_socket(int ifindex)
 	}
 
 	return fd;
-
 }
 
 static u_int16_t checksum(void *addr, int count)
@@ -205,7 +214,8 @@ static int listen_interface(char *interface)
 	}
 
 	for (;;) {
-		if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+		if (check_action() !=
+		    ACT_IDLE) { // Don't execute during upgrading
 			return L_UPGRADE;
 		}
 		if (check_wan_link(0)) {
@@ -230,12 +240,11 @@ static int listen_interface(char *interface)
 		if (retval == 0) {
 			printf("no packet recieved! \n\n");
 		} else {
-
 			memset(&packet, 0, sizeof(struct EthPacket));
 			bytes = read(fd, &packet, sizeof(struct EthPacket));
 			if (bytes < 0) {
 				DEBUG("couldn't read on raw listening socket -- ignoring\n");
-				usleep(500000);	/* possible down interface, looping
+				usleep(500000); /* possible down interface, looping
 						 * condition */
 				ret = L_FAIL;
 				goto Exit;
@@ -253,13 +262,16 @@ static int listen_interface(char *interface)
 				goto Exit;
 			}
 
-			if (inet_addr(nvram_safe_get("lan_ipaddr")) == *(u_int32_t *)packet.daddr) {
+			if (inet_addr(nvram_safe_get("lan_ipaddr")) ==
+			    *(u_int32_t *)packet.daddr) {
 				DEBUG("dest ip equal to lan ipaddr\n");
 				ret = L_FAIL;
 				goto Exit;
 			}
 
-			DEBUG("inet_addr=%x, packet.daddr=%x", inet_addr(nvram_safe_get("lan_ipaddr")), *(u_int32_t *)packet.daddr);
+			DEBUG("inet_addr=%x, packet.daddr=%x",
+			      inet_addr(nvram_safe_get("lan_ipaddr")),
+			      *(u_int32_t *)packet.daddr);
 
 			// for (i=0; i<34;i++) {
 			// if (i%16==0) printf("\n");
@@ -267,11 +279,14 @@ static int listen_interface(char *interface)
 			// }
 			// printf ("\n");
 
-			DEBUG1
-			    ("%02X%02X%02X%02X%02X%02X,%02X%02X%02X%02X%02X%02X,%02X%02X\n",
-			     packet.dst_mac[0], packet.dst_mac[1],
-			     packet.dst_mac[2], packet.dst_mac[3],
-			     packet.dst_mac[4], packet.dst_mac[5], packet.src_mac[0], packet.src_mac[1], packet.src_mac[2], packet.src_mac[3], packet.src_mac[4], packet.src_mac[5], packet.type[0], packet.type[1]);
+			DEBUG1("%02X%02X%02X%02X%02X%02X,%02X%02X%02X%02X%02X%02X,%02X%02X\n",
+			       packet.dst_mac[0], packet.dst_mac[1],
+			       packet.dst_mac[2], packet.dst_mac[3],
+			       packet.dst_mac[4], packet.dst_mac[5],
+			       packet.src_mac[0], packet.src_mac[1],
+			       packet.src_mac[2], packet.src_mac[3],
+			       packet.src_mac[4], packet.src_mac[5],
+			       packet.type[0], packet.type[1]);
 
 			DEBUG("ip.version = %x", packet.version);
 			DEBUG("ip.tos = %x", packet.tos);
@@ -300,9 +315,13 @@ static int listen_interface(char *interface)
 			check = ntohs(packet.check);
 			packet.check = 0;
 
-			if (check != checksum(&(packet.version), sizeof(struct iphdr))) {
+			if (check !=
+			    checksum(&(packet.version), sizeof(struct iphdr))) {
 				DEBUG("bad IP header checksum, ignoring\n");
-				DEBUG("check received = %X, should be %X", check, checksum(&(packet.version), sizeof(struct iphdr)));
+				DEBUG("check received = %X, should be %X",
+				      check,
+				      checksum(&(packet.version),
+					       sizeof(struct iphdr)));
 				ret = L_FAIL;
 				goto Exit;
 			}
@@ -310,33 +329,38 @@ static int listen_interface(char *interface)
 			DEBUG("oooooh!!! got some!\n");
 #ifdef HAVE_PPTP
 			if (nvram_match("wan_proto", "pptp")) {
-				inet_aton(nvram_safe_get("pptp_server_ip"), &ipaddr);
+				inet_aton(nvram_safe_get("pptp_server_ip"),
+					  &ipaddr);
 			}
 #ifdef HAVE_L2TP
 			else
 #endif
 #endif
 #ifdef HAVE_L2TP
-			if (nvram_match("wan_proto", "l2tp")) {
-				inet_aton(nvram_safe_get("lan_ipaddr"), &ipaddr);
+				if (nvram_match("wan_proto", "l2tp")) {
+				inet_aton(nvram_safe_get("lan_ipaddr"),
+					  &ipaddr);
 			}
 #endif
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP)
 			else
 #endif
 			{
-				inet_aton(nvram_safe_get("wan_ipaddr"), &ipaddr);
+				inet_aton(nvram_safe_get("wan_ipaddr"),
+					  &ipaddr);
 			}
 
 			inet_aton(nvram_safe_get("wan_netmask"), &netmask);
 			DEBUG("gateway=%08x", ipaddr.s_addr);
 			DEBUG("netmask=%08x", netmask.s_addr);
 
-			if ((ipaddr.s_addr & netmask.s_addr) != (*(u_int32_t *)&(packet.daddr) & netmask.s_addr)) {
+			if ((ipaddr.s_addr & netmask.s_addr) !=
+			    (*(u_int32_t *)&(packet.daddr) & netmask.s_addr)) {
 				if (nvram_match("wan_proto", "l2tp")) {
 					ret = L_SUCCESS;
 					goto Exit;
-				} else if (nvram_match("wan_proto", "heartbeat")) {
+				} else if (nvram_match("wan_proto",
+						       "heartbeat")) {
 					ret = L_SUCCESS;
 					goto Exit;
 				} else {
@@ -357,7 +381,6 @@ Exit:
 
 static int listen_main(int argc, char *argv[])
 {
-
 	char *interface = argv[1];
 	pid_t pid;
 
@@ -374,7 +397,7 @@ static int listen_main(int argc, char *argv[])
 		perror("fork failed");
 		exit(1);
 	case 0:
-	      retry:
+retry:
 		for (;;) {
 			int ret;
 
@@ -386,7 +409,8 @@ static int listen_main(int argc, char *argv[])
 				if (nvram_match("wan_proto", "heartbeat"))
 					exit(0);
 
-				if (!check_wan_link(0)) {	// Connect fail, we want to re-connect
+				if (!check_wan_link(
+					    0)) { // Connect fail, we want to re-connect
 					// session
 					sleep(3);
 					goto retry;
@@ -412,7 +436,6 @@ static int listen_main(int argc, char *argv[])
 			case L_FAIL:
 			default:
 				break;
-
 			}
 		}
 		break;

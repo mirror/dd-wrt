@@ -38,8 +38,9 @@
 
 //#define dbG(a,...)
 
-#define dbg(fmt, args...) fprintf(stderr, fmt, ## args)
-#define dbG(fmt, args...) dbg("%s(0x%04x): " fmt , __FUNCTION__ , __LINE__, ## args)
+#define dbg(fmt, args...) fprintf(stderr, fmt, ##args)
+#define dbG(fmt, args...) \
+	dbg("%s(0x%04x): " fmt, __FUNCTION__, __LINE__, ##args)
 
 static void cleanup(void)
 {
@@ -59,7 +60,8 @@ void rpc_parse_nvram_from_httpd(void)
 		return;
 
 	// rpc_qcsapi_set_SSID(WIFINAME, value);
-	rpc_qcsapi_set_SSID_broadcast(WIFINAME, nvram_default_get("wl1_closed", "0"));
+	rpc_qcsapi_set_SSID_broadcast(WIFINAME,
+				      nvram_default_get("wl1_closed", "0"));
 	char *netmode = nvram_safe_get("wl1_net_mode");
 	if ((!strcmp(netmode, "mixed") || !strcmp(netmode, "ac-only")))
 		rpc_qcsapi_set_vht("1");
@@ -75,14 +77,14 @@ void rpc_parse_nvram_from_httpd(void)
 		lower[i] = 0;
 	} else {
 		strcpy(lower, "us");
-
 	}
 	rpc_qcsapi_set_region("wifi0", lower);
 
 	// rpc_qcsapi_set_bw(value);
 	// rpc_qcsapi_set_channel(value);
 	rpc_qcsapi_set_beacon_type(WIFINAME, nvram_safe_get("wl1_akm"));
-	rpc_qcsapi_set_WPA_encryption_modes(WIFINAME, nvram_safe_get("wl1_crypto"));
+	rpc_qcsapi_set_WPA_encryption_modes(WIFINAME,
+					    nvram_safe_get("wl1_crypto"));
 	rpc_qcsapi_set_key_passphrase(WIFINAME, nvram_safe_get("wl1_wpa_psk"));
 	rpc_qcsapi_set_dtim(nvram_safe_get("wl1_dtim"));
 	rpc_qcsapi_set_beacon_interval(nvram_safe_get("wl1_bcn"));
@@ -101,7 +103,8 @@ void rpc_parse_nvram_from_httpd(void)
 		char var[80];
 		char *vifs = nvram_safe_get("wl1_vifs");
 		int found = 0;
-		foreach(var, vifs, next) {
+		foreach(var, vifs, next)
+		{
 			if (!strcmp(var, viflist[cnt++])) {
 				found = 1;
 				char mbss[32];
@@ -128,17 +131,15 @@ void rpc_parse_nvram_from_httpd(void)
 				sprintf(auth, "%s_akm", var);
 				rpc_update_mbss(auth, nvram_safe_get(auth));
 			}
-
 		}
 		if (!found) {
 			char mbss[32];
 			sprintf(mbss, "%s_bss_enabled", viflist[i]);
 			rpc_update_mbss(mbss, "0");
 		}
-
 	}
 
-//      rpc_show_config();
+	//      rpc_show_config();
 }
 
 static int qtn_monitor_main(int argc, char *argv[])
@@ -168,7 +169,7 @@ QTN_RESET:
 		retval = -1;
 		goto ERROR;
 	}
-#if 0				/* replaced by STATELESS, send configuration from brcm to qtn */
+#if 0 /* replaced by STATELESS, send configuration from brcm to qtn */
 	else if (nvram_get_int("qtn_restore_defaults")) {
 		nvram_unset("qtn_restore_defaults");
 		rpc_qcsapi_restore_default_config(0);
@@ -191,7 +192,8 @@ QTN_RESET:
 		retval = -1;
 		goto ERROR;
 	} else
-		dbG("Qcsapi qcsapi init takes %ld seconds\n", uptime() - start_time);
+		dbG("Qcsapi qcsapi init takes %ld seconds\n",
+		    uptime() - start_time);
 
 	eval("ifconfig", "br0:2", "down");
 	eval("killall", "tftpd");
@@ -200,49 +202,54 @@ QTN_RESET:
 	dbG("[QTN] update router_command.sh from brcm to qtn\n");
 	qcsapi_wifi_run_script("set_test_mode", "update_router_command");
 
-#if 1				/* STATELESS */
-//      if(nvram_get_int("sw_mode") == SW_MODE_AP &&
-//              nvram_get_int("wlc_psta") == 1 &&
-//              nvram_get_int("wlc_band") == 1){
-//              dbG("[sw_mode] skip start_psta_qtn, QTN will run scripts automatically\n");
-//              // start_psta_qtn();
-//      }else
+#if 1 /* STATELESS */
+	//      if(nvram_get_int("sw_mode") == SW_MODE_AP &&
+	//              nvram_get_int("wlc_psta") == 1 &&
+	//              nvram_get_int("wlc_band") == 1){
+	//              dbG("[sw_mode] skip start_psta_qtn, QTN will run scripts automatically\n");
+	//              // start_psta_qtn();
+	//      }else
 	if (nvram_match("wl1_mode", "ap")) {
-//              dbG("[***] rpc_parse_nvram_from_httpd\n");
-		rpc_parse_nvram_from_httpd();	/* wifi0 */
+		//              dbG("[***] rpc_parse_nvram_from_httpd\n");
+		rpc_parse_nvram_from_httpd(); /* wifi0 */
 
 		dbG("[sw_mode] skip start_ap_qtn, QTN will run scripts automatically\n");
 		// start_ap_qtn();
 		qcsapi_mac_addr wl_mac_addr;
 		ret = rpc_qcsapi_interface_get_mac_addr(WIFINAME, &wl_mac_addr);
 		if (ret < 0)
-			dbG("rpc_qcsapi_interface_get_mac_addr, return: %d\n", ret);
+			dbG("rpc_qcsapi_interface_get_mac_addr, return: %d\n",
+			    ret);
 		else {
 			char tmp[32];
-			nvram_set("1:macaddr", ether_etoa((struct ether_addr *)&wl_mac_addr, tmp));
-			nvram_set("wl1_hwaddr", ether_etoa((struct ether_addr *)&wl_mac_addr, tmp));
+			nvram_set("1:macaddr",
+				  ether_etoa((struct ether_addr *)&wl_mac_addr,
+					     tmp));
+			nvram_set("wl1_hwaddr",
+				  ether_etoa((struct ether_addr *)&wl_mac_addr,
+					     tmp));
 		}
 
-//              rpc_update_wdslist();
+		//              rpc_update_wdslist();
 
-//              ret = qcsapi_wps_set_ap_pin(WIFINAME, nvram_safe_get("wps_device_pin"));
-//              if (ret < 0)
-//                      dbG("Qcsapi qcsapi_wps_set_ap_pin %s error, return: %d\n", WIFINAME, ret);
+		//              ret = qcsapi_wps_set_ap_pin(WIFINAME, nvram_safe_get("wps_device_pin"));
+		//              if (ret < 0)
+		//                      dbG("Qcsapi qcsapi_wps_set_ap_pin %s error, return: %d\n", WIFINAME, ret);
 
-//              ret = qcsapi_wps_registrar_set_pp_devname(WIFINAME, 0, (const char *) get_productid());
-//              if (ret < 0)
-//                      dbG("Qcsapi qcsapi_wps_registrar_set_pp_devname %s error, return: %d\n", WIFINAME, ret);
+		//              ret = qcsapi_wps_registrar_set_pp_devname(WIFINAME, 0, (const char *) get_productid());
+		//              if (ret < 0)
+		//                      dbG("Qcsapi qcsapi_wps_registrar_set_pp_devname %s error, return: %d\n", WIFINAME, ret);
 
 		ret = rpc_qcsapi_wifi_disable_wps(WIFINAME, 1);
 		if (ret < 0)
-			dbG("Qcsapi rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
+			dbG("Qcsapi rpc_qcsapi_wifi_disable_wps %s error, return: %d\n",
+			    WIFINAME, ret);
 
 		rpc_set_radio(1, 0, nvram_default_geti("wl1_radio", 1));
-
 	}
 #endif
 
-/*	if(nvram_get_int("sw_mode") == SW_MODE_ROUTER ||
+	/*	if(nvram_get_int("sw_mode") == SW_MODE_ROUTER ||
 		(nvram_get_int("sw_mode") == SW_MODE_AP &&
 			nvram_get_int("wlc_psta") == 0)){
 		if(nvram_get_int("wl1_chanspec") == 0){

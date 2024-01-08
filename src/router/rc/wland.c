@@ -44,20 +44,23 @@
 
 static int do_ap_watchdog(void)
 {
-
 	/* 
 	 * AP Watchdog - experimental check and fix for hung AP 
 	 */
 	int val = 0;
 	struct stat s;
 	static time_t last;
-	int interval = nvram_geti("apwatchdog_interval") > WLAND_INTERVAL ? nvram_geti("apwatchdog_interval") : WLAND_INTERVAL;
+	int interval = nvram_geti("apwatchdog_interval") > WLAND_INTERVAL ?
+			       nvram_geti("apwatchdog_interval") :
+			       WLAND_INTERVAL;
 
 	system("wl assoclist 2>&1 > /tmp/.assoclist");
 	stat("/tmp/.assoclist", &s);
 	unlink("/tmp/.assoclist");
 
-	if (s.st_size <= 0 && time(NULL) - last > interval && nvram_matchi("apwatchdog_enable", 1) && nvram_invmatch("wl_net_mode", "disabled")) {
+	if (s.st_size <= 0 && time(NULL) - last > interval &&
+	    nvram_matchi("apwatchdog_enable", 1) &&
+	    nvram_invmatch("wl_net_mode", "disabled")) {
 		time(&last);
 		cprintf("resetting ap radio\n");
 		wlconf_down(get_wdev());
@@ -71,11 +74,9 @@ static int do_ap_watchdog(void)
 
 		wlconf_down(get_wdev());
 		wlconf_up(get_wdev());
-
 	}
 
 	return 0;
-
 }
 
 #ifdef HAVE_AQOS
@@ -104,14 +105,15 @@ int compareNet(char *ip, char *net, char *dest)
 	unsigned int fullip = (ip1 << 24) | (ip2 << 16) | (ip3 << 8) | ip4;
 	unsigned int dfullip = (dip1 << 24) | (dip2 << 16) | (dip3 << 8) | dip4;
 	int bit = atoi(net);
-	unsigned long long n = (unsigned long long)1 << (unsigned long long)bit;	// convert 
+	unsigned long long n = (unsigned long long)1
+			       << (unsigned long long)bit; // convert
 
-	// 
-	// 
-	// 
-	// net 
-	// to 
-	// full 
+	//
+	//
+	//
+	// net
+	// to
+	// full
 	// mask
 	int shift = 32 - bit;
 
@@ -124,7 +126,8 @@ int compareNet(char *ip, char *net, char *dest)
 	 * %08X\n",dfullip); fprintf(stderr, "n %08X\n",(unsigned int)n);
 	 * fprintf(stderr, "nl %08lX\n",n); 
 	 */
-	if ((unsigned int)(dfullip & (unsigned int)n) == (unsigned int)(fullip & (unsigned int)n))
+	if ((unsigned int)(dfullip & (unsigned int)n) ==
+	    (unsigned int)(fullip & (unsigned int)n))
 		return 1;
 	return 0;
 }
@@ -158,7 +161,6 @@ static int qosidx = 1310;
 
 int containsMAC(char *ip)
 {
-
 	FILE *in;
 	char buf_ip[32];
 	int x;
@@ -225,9 +227,11 @@ static void do_aqos_check(void)
 	if (defaultlan < 0) {
 		defaultlan = 0;
 	}
-	while (fgetc(arp) != '\n') ;
+	while (fgetc(arp) != '\n')
+		;
 
-	while (!feof(arp) && fscanf(arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf, dev_buf) == 6) {
+	while (!feof(arp) && fscanf(arp, "%s %s %s %s %s %s", ip_buf, hw_buf,
+				    fl_buf, mac_buf, mask_buf, dev_buf) == 6) {
 		char *wan = safe_get_wan_face(wan_if_buffer);
 
 		if (wan && *wan && !strcmp(dev_buf, wan))
@@ -246,17 +250,18 @@ static void do_aqos_check(void)
 			sprintf(ipnet, "%s/32", ip_buf);
 			sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
 			if (*mac_buf)
-				sysprintf("echo \"%s\" >>/tmp/aqos_macs", mac_buf);
+				sysprintf("echo \"%s\" >>/tmp/aqos_macs",
+					  mac_buf);
 
 			// create default rule for ip
-			add_userip(ipnet, qosidx, defaulup, defauldown, defaultlan);
+			add_userip(ipnet, qosidx, defaulup, defauldown,
+				   defaultlan);
 			qosidx += 10;
 			memset(ip_buf, 0, 32);
 			memset(mac_buf, 0, 32);
 			continue;
 		}
 		if (!cmac && *mac_buf) {
-
 			char ipnet[32];
 			sprintf(ipnet, "%s/32", ip_buf);
 
@@ -265,14 +270,14 @@ static void do_aqos_check(void)
 				sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
 
 			// create default rule for mac
-			add_usermac(mac_buf, qosidx, defaulup, defauldown, defaultlan);
+			add_usermac(mac_buf, qosidx, defaulup, defauldown,
+				    defaultlan);
 			qosidx += 10;
 		}
 		memset(ip_buf, 0, 32);
 		memset(mac_buf, 0, 32);
 	}
 	fclose(arp);
-
 }
 #endif
 #ifndef HAVE_MADWIFI
@@ -314,52 +319,57 @@ void start_wds_check(void)
 			snprintf(ifr.ifr_name, IFNAMSIZ, dev);
 			ioctl(sock, SIOCGIFFLAGS, &ifr);
 
-			if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
+			if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) ==
+			    (IFF_RUNNING | IFF_UP))
 				continue;
 
 			/* 
 			 * P2P WDS type 
 			 */
-			if (nvram_nmatch("1", "wl%d_wds%d_enable", c, s))	// wds_s 
-				// 
-				// 
-				// 
+			if (nvram_nmatch("1", "wl%d_wds%d_enable", c,
+					 s)) // wds_s
+			//
+			//
+			//
 			{
 				char wdsbc[32] = { 0 };
-				char *wdsip = nvram_nget("wl%d_wds%d_ipaddr", c, s);
-				char *wdsnm = nvram_nget("wl%d_wds%d_netmask", c, s);
+				char *wdsip =
+					nvram_nget("wl%d_wds%d_ipaddr", c, s);
+				char *wdsnm =
+					nvram_nget("wl%d_wds%d_netmask", c, s);
 
 				snprintf(wdsbc, 31, "%s", wdsip);
 				get_broadcast(wdsbc, sizeof(wdsbc), wdsnm);
-				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
+				eval("ifconfig", dev, wdsip, "broadcast", wdsbc,
+				     "netmask", wdsnm, "up");
 			}
 			/* 
 			 * Subnet WDS type 
 			 */
-			else if (nvram_nmatch("2", "wl%d_wds%d_enable", c, s)
-				 && nvram_nmatch("1", "wl%d_br1_enable", c)) {
+			else if (nvram_nmatch("2", "wl%d_wds%d_enable", c, s) &&
+				 nvram_nmatch("1", "wl%d_br1_enable", c)) {
 				eval("ifconfig", dev, "up");
 				eval("brctl", "addif", "br1", dev);
 			}
 			/* 
 			 * LAN WDS type 
 			 */
-			else if (nvram_nmatch("3", "wl%d_wds%d_enable", c, s))	// wds_s 
-				// 
-				// 
-				// 
-				// 
-				// 
-				// 
-				// 
-				// disabled
+			else if (nvram_nmatch("3", "wl%d_wds%d_enable", c,
+					      s)) // wds_s
+			//
+			//
+			//
+			//
+			//
+			//
+			//
+			// disabled
 			{
 				eval("ifconfig", dev, "up");
 				eval("brctl", "addif", "br0", dev);
 
 				// notify_nas ("lan", "br0", "up");
 			}
-
 		}
 	}
 	close(sock);
@@ -368,7 +378,6 @@ void start_wds_check(void)
 
 static void do_ap_check(void)
 {
-
 	// if (nvram_match ("apwatchdog_enable", "1"))
 	// do_ap_watchdog ();
 	start_wds_check();
@@ -389,11 +398,11 @@ int checkbssid(void)
 	if (ifname == NULL)
 		return 0;
 	if ((WL_IOCTL(ifname, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0) {
-		*(uint32 *) buf = WLC_IOCTL_MAXLEN;
-		if ((WL_IOCTL(ifname, WLC_GET_BSS_INFO, buf, WLC_IOCTL_MAXLEN))
-		    < 0)
+		*(uint32 *)buf = WLC_IOCTL_MAXLEN;
+		if ((WL_IOCTL(ifname, WLC_GET_BSS_INFO, buf,
+			      WLC_IOCTL_MAXLEN)) < 0)
 			return 0;
-		bi = (wl_bss_info_t *) (buf + 4);
+		bi = (wl_bss_info_t *)(buf + 4);
 		int i;
 
 		for (i = 0; i < 6; i++)
@@ -435,28 +444,33 @@ static void do_client_check(void)
 
 	buf[len] = 0;
 
-	if ((len > 0 && strstr(buf, "Not associated."))
-	    || checkbssid() == 0) {
+	if ((len > 0 && strstr(buf, "Not associated.")) || checkbssid() == 0) {
 #ifdef HAVE_DDLAN
 
 		nvram_unset("cur_rssi");
 		nvram_unset("cur_noise");
 		nvram_unset("cur_bssid");
 		nvram_unset("cur_snr");
-		nvram_set("cur_state", "<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
+		nvram_set(
+			"cur_state",
+			"<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
 
 #endif
 		eval("wl", "-i", ifname, "disassoc");
 		if (nvram_matchi("roaming_enable", 1)) {
-			eval("wl", "-i", ifname, "join", nvram_safe_get("roaming_ssid"));
+			eval("wl", "-i", ifname, "join",
+			     nvram_safe_get("roaming_ssid"));
 		} else {
-			eval("wl", "-i", ifname, "join", nvram_nget("wl%d_ssid", instance));
+			eval("wl", "-i", ifname, "join",
+			     nvram_nget("wl%d_ssid", instance));
 		}
 		eval("stopservice", "nas");
 		eval("startservice_f", "nas");
 	} else {
 #ifdef HAVE_DDLAN
-		nvram_set("cur_state", "<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
+		nvram_set(
+			"cur_state",
+			"<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
 		eval("/sbin/check.sh");
 #endif
 	}
@@ -501,21 +515,24 @@ static void do_madwifi_check(void)
 					continue;
 				hwaddr = nvram_safe_get(wdsmacname);
 				if (*hwaddr) {
-					int count = getassoclist(wdsdev, &assoclist[0]);
+					int count = getassoclist(wdsdev,
+								 &assoclist[0]);
 
 					if (count < 1) {
-						eval("ifconfig", wdsdev, "down");
+						eval("ifconfig", wdsdev,
+						     "down");
 						sleep(1);
 						eval("ifconfig", wdsdev, "up");
-						eval("startservice", "set_routes", "-f");
+						eval("startservice",
+						     "set_routes", "-f");
 					}
 				}
 			}
 		char mode[32];
 
 		sprintf(mode, "%s_mode", dev);
-		if (nvram_match(mode, "sta") || nvram_match(mode, "wdssta")
-		    || nvram_match(mode, "wet")) {
+		if (nvram_match(mode, "sta") || nvram_match(mode, "wdssta") ||
+		    nvram_match(mode, "wet")) {
 			int chan = wifi_getchannel(dev);
 
 			// fprintf(stderr,"current channel %d\n",chan);
@@ -525,7 +542,8 @@ static void do_madwifi_check(void)
 				// fprintf(stderr,"current channel %d =
 				// %d\n",chan,lastchans[i]);
 				if (chan == lastchans[i]) {
-					int count = getassoclist(dev, &assoclist[0]);
+					int count = getassoclist(dev,
+								 &assoclist[0]);
 
 					if (count == 0 || count == -1) {
 						// fprintf(stderr,"get assoclist returns %d, restart
@@ -537,11 +555,15 @@ static void do_madwifi_check(void)
 						char *m;
 						char wifivifs[32];
 
-						sprintf(wifivifs, "%s_vifs", dev);
+						sprintf(wifivifs, "%s_vifs",
+							dev);
 						vifs = nvram_safe_get(wifivifs);
 						if (vifs != NULL && *vifs) {
-							foreach(var, vifs, next) {
-								eval("ifconfig", var, "down");
+							foreach(var, vifs, next)
+							{
+								eval("ifconfig",
+								     var,
+								     "down");
 							}
 						}
 
@@ -550,10 +572,16 @@ static void do_madwifi_check(void)
 						sleep(1);
 						eval("ifconfig", dev, "up");
 						char power[32];
-						sprintf(power, "%s_txpwrdbm", dev);
-						int newpower = nvram_default_geti(power, 16);
-						sysprintf("iwconfig %s txpower %ddBm", dev, newpower);
-						eval("startservice", "set_routes", "-f");
+						sprintf(power, "%s_txpwrdbm",
+							dev);
+						int newpower =
+							nvram_default_geti(
+								power, 16);
+						sysprintf(
+							"iwconfig %s txpower %ddBm",
+							dev, newpower);
+						eval("startservice",
+						     "set_routes", "-f");
 						lastchans[i] = -1;
 					} else if (!notstarted[i]) {
 						notstarted[i] = 1;
@@ -564,23 +592,24 @@ static void do_madwifi_check(void)
 						char *m;
 						char wifivifs[32];
 
-						sprintf(wifivifs, "%s_vifs", dev);
+						sprintf(wifivifs, "%s_vifs",
+							dev);
 						vifs = nvram_safe_get(wifivifs);
 						if (vifs != NULL && *vifs) {
-							foreach(var, vifs, next) {
-								eval("ifconfig", var, "up");
-								eval("startservice", "set_routes", "-f");
+							foreach(var, vifs, next)
+							{
+								eval("ifconfig",
+								     var, "up");
+								eval("startservice",
+								     "set_routes",
+								     "-f");
 							}
 						}
-
 					}
-
 				}
 				lastchans[i] = chan;
-
 			}
 		}
-
 	}
 	// fprintf(stderr,"do wlancheck end\n");
 }
@@ -626,7 +655,6 @@ static void do_wlan_check(void)
 	do_madwifi_check();
 #endif
 #endif
-
 }
 
 int main(int argc, char **argv)
@@ -665,7 +693,7 @@ int main(int argc, char **argv)
 	while (1) {
 		sleep(WLAND_INTERVAL);
 		do_wlan_check();
-/*#if defined(HAVE_ATH10K) && !defined(HAVE_MVEBU)
+		/*#if defined(HAVE_ATH10K) && !defined(HAVE_MVEBU)
 		int c = getdevicecount();
 		char dev[32];
 		int i;
@@ -678,11 +706,10 @@ int main(int argc, char **argv)
 			}
 		}
 #endif*/
-
 	}
 
 	return 0;
-}				// end main
+} // end main
 
 /* 
  * void main(int argc, char **argv) { wland_main(argc,argv); } 

@@ -37,13 +37,12 @@ static void watchdog(void)
 			fsync(fd);
 		}
 		if (!nvram_matchi("flash_active", 1)) {
-
 #ifndef HAVE_RT2880
 #ifdef HAVE_REGISTER
 			if (registered == -1)
 				registered = isregistered_real();
 			if (!registered)
-				isregistered();	//to poll
+				isregistered(); //to poll
 #endif
 			/* 
 			 * software wlan led control 
@@ -59,12 +58,15 @@ static void watchdog(void)
 			if (cnt == 2)
 				radiostate1 = get_radiostate("wlan1");
 #else
-			wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
+			wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO,
+				 &radiostate0, sizeof(int));
 #ifndef HAVE_QTN
 			if (cnt > 1)
-				wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
+				wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO,
+					 &radiostate1, sizeof(int));
 			if (cnt > 2)
-				wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO, &radiostate2, sizeof(int));
+				wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO,
+					 &radiostate2, sizeof(int));
 #endif
 #endif
 
@@ -132,20 +134,24 @@ static void watchdog(void)
 		if (brand == ROUTER_WRT_1900AC) {
 			int cpu;
 			FILE *tempfp;
-			tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+			tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input",
+				       "rb");
 			if (tempfp) {
 				fscanf(tempfp, "%d", &cpu);
 				fclose(tempfp);
-				int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
+				int target =
+					cpu -
+					(nvram_geti("hwmon_temp_max") * 1000);
 				if (target < 0)
 					target = 0;
 				if (target > 10000)
 					target = 10000;
 				target *= 255;
 				target /= 10000;
-				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon1/pwm1", target);
+				sysprintf(
+					"/bin/echo %d > /sys/class/hwmon/hwmon1/pwm1",
+					target);
 			}
-
 		}
 #endif
 //#ifdef HAVE_USB
@@ -175,19 +181,26 @@ static void watchdog(void)
 		}
 		int dummy;
 		if (!nvram_match("wlan2_net_mode", "disabled")) {
-			FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
+			FILE *check = fopen(
+				"/sys/kernel/debug/ieee80211/phy2/wil6210/temp",
+				"rb");
 			if (check) {
 				fclose(check);
 
-				tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2", "rb");
+				tempfp = popen(
+					"cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2",
+					"rb");
 				if (tempfp) {
-
-					fscanf(tempfp, "%d.%d", &wifi3_mac, &dummy);
+					fscanf(tempfp, "%d.%d", &wifi3_mac,
+					       &dummy);
 					pclose(tempfp);
 				}
-				tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2", "rb");
+				tempfp = popen(
+					"cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2",
+					"rb");
 				if (tempfp) {
-					fscanf(tempfp, "%d.%d", &wifi3_phy, &dummy);
+					fscanf(tempfp, "%d.%d", &wifi3_phy,
+					       &dummy);
 					pclose(tempfp);
 				}
 			}
@@ -210,7 +223,9 @@ static void watchdog(void)
 		target /= 10000;
 		if (target != lasttarget) {
 			fprintf(stderr, "set fan to %d\n", target);
-			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target", target);
+			sysprintf(
+				"/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target",
+				target);
 			lasttarget = target;
 		}
 #endif
@@ -221,7 +236,6 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
-
 	/* 
 	 * Run it under background 
 	 */

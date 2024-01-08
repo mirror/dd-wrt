@@ -45,10 +45,12 @@ struct site_survey_list *site_survey_lists;
 static int open_site_survey(void)
 {
 	FILE *fp;
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
+	site_survey_lists =
+		calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
+		fread(&site_survey_lists[0],
+		      sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 1;
 	}
@@ -108,30 +110,35 @@ static int roaming_daemon(void)
 		return -1;
 	}
 	while (1) {
-		eval("site_survey");	// call site survey to get scan results
+		eval("site_survey"); // call site survey to get scan results
 		open_site_survey();
 		char *bestssid = NULL;
 		int bestrssi = -255;
 
 		for (i = 0; i < SITE_SURVEY_NUM; i++) {
-
-			if (site_survey_lists[i].BSSID[0] == 0 || site_survey_lists[i].channel == 0)
+			if (site_survey_lists[i].BSSID[0] == 0 ||
+			    site_survey_lists[i].channel == 0)
 				break;
-			if (site_survey_lists[i].SSID[0] == 0)	// empty ssid's or
+			if (site_survey_lists[i].SSID[0] ==
+			    0) // empty ssid's or
 				// hidden ssid's are
 				// not supported
 				continue;
 			if (regexec(comp, &site_survey_lists[i].SSID[0])) {
 				if (site_survey_lists[i].RSSI > bestrssi) {
 					bestrssi = site_survey_lists[i].RSSI;
-					bestssid = &site_survey_lists[i].SSID[0];
+					bestssid =
+						&site_survey_lists[i].SSID[0];
 				}
 			}
 		}
 
-		fprintf(stderr, "best result %s with rssi %d for roaming\n", bestssid, bestrssi);
+		fprintf(stderr, "best result %s with rssi %d for roaming\n",
+			bestssid, bestrssi);
 		if (bestssid && !nvram_match("roaming_ssid", bestssid)) {
-			fprintf(stderr, "selecting %s with rssi %d for roaming\n", bestssid, bestrssi);
+			fprintf(stderr,
+				"selecting %s with rssi %d for roaming\n",
+				bestssid, bestrssi);
 			nvram_set("roaming_ssid", bestssid);
 			nvram_seti("roaming_enable", 1);
 #ifdef HAVE_MADWIFI
@@ -144,12 +151,10 @@ static int roaming_daemon(void)
 		}
 		sleep(60);
 	}
-
 }
 
 static int roaming_daemon_main(int argc, char *argv[])
 {
-
 	switch (fork()) {
 	case -1:
 		perror("fork failed");

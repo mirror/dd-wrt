@@ -24,15 +24,15 @@
 struct arph {
 	uint16_t hw_type;
 
-#define ARPHDR_ETHER	1
+#define ARPHDR_ETHER 1
 
 	uint16_t proto_type;
 
 	char ha_len;
 	char pa_len;
 
-#define ARPOP_BROADCAST	1
-#define ARPOP_REPLY	2
+#define ARPOP_BROADCAST 1
+#define ARPOP_REPLY 2
 	uint16_t opcode;
 	char source_add[ETH_ALEN];
 	char source_ip[IP_ALEN];
@@ -41,8 +41,8 @@ struct arph {
 
 } __attribute__((packed));
 
-#define ARP_HLEN	sizeof(struct arph) + ETH_HLEN
-#define BCAST		"\xff\xff\xff\xff\xff\xff"
+#define ARP_HLEN sizeof(struct arph) + ETH_HLEN
+#define BCAST "\xff\xff\xff\xff\xff\xff"
 
 static int get_iface_attr(int sk, char *iface, char *hw, char *paddr)
 {
@@ -150,16 +150,16 @@ static int send_garp(char *iface)
 
 	while (n_garps--) {
 		setup_garp_broadcast(arp, iface_paddr);
-		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link, sizeof(struct sockaddr_ll)
-		    );
+		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link,
+			    sizeof(struct sockaddr_ll));
 		if (unlikely(rc == -1)) {
 			perror("sendto");
 			goto out;
 		}
 
 		setup_garp_reply(arp, iface_hw, iface_paddr);
-		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link, sizeof(struct sockaddr_ll)
-		    );
+		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link,
+			    sizeof(struct sockaddr_ll));
 		if (unlikely(rc == -1)) {
 			perror("sendto");
 			goto out;
@@ -184,7 +184,6 @@ static int gratarp(char *iface)
 
 static int gratarp_main(int argc, char **argv)
 {
-
 	signal(SIGCHLD, SIG_IGN);
 
 	pid_t pid;

@@ -33,8 +33,8 @@ static int *stops_running = NULL;
 static void init_shared(void)
 {
 	if (!stops_running)
-		stops_running = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-
+		stops_running = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
+				     MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 }
 
 #define START 0x0
@@ -55,7 +55,8 @@ static int _STOPPED(const int method, const char *name)
 	FILE *fp = fopen(fname, "rb");
 	if (fp) {
 		fclose(fp);
-		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n", method ? "stop" : "start", name);
+		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n",
+			 method ? "stop" : "start", name);
 
 		if (method == STOP) {
 			if (stops_running)
@@ -74,12 +75,12 @@ static int _STOPPED(const int method, const char *name)
 
 static void _stopcondition(const int method, char *name)
 {
-
 }
 
-#define STOPPED() if (_STOPPED(method, name)) { \
-		     return 0; \
-		    }
+#define STOPPED()                     \
+	if (_STOPPED(method, name)) { \
+		return 0;             \
+	}
 
 #define RELEASESTOPPED(a) _RELEASESTOPPED(a, name);
 
@@ -111,7 +112,8 @@ static int handle_service(const int method, const char *name, int force)
 		return sysprintf("%s %s", service, method_name);
 	}
 	char *args[] = { "/sbin/service", (char *)name, method_name, NULL };
-	char *args_f[] = { "/sbin/service", (char *)name, method_name, "-f", NULL };
+	char *args_f[] = { "/sbin/service", (char *)name, method_name, "-f",
+			   NULL };
 
 	if (force)
 		ret = _evalpid(args_f, NULL, 0, NULL);
@@ -123,9 +125,12 @@ static int handle_service(const int method, const char *name, int force)
 			(*stops_running)--;
 	}
 	if (stops_running)
-		dd_debug(DEBUG_SERVICE, "calling done %s_%s (pending stops %d)\n", method_name, name, *stops_running);
+		dd_debug(DEBUG_SERVICE,
+			 "calling done %s_%s (pending stops %d)\n", method_name,
+			 name, *stops_running);
 	else
-		dd_debug(DEBUG_SERVICE, "calling done %s_%s\n", method_name, name);
+		dd_debug(DEBUG_SERVICE, "calling done %s_%s\n", method_name,
+			 name);
 
 	return ret;
 }
@@ -181,15 +186,20 @@ static int stop_running_main(int argc, char **argv)
 	int dead = 0;
 	while (stops_running != NULL && stop_running() && dead < 100) {
 		if (debug_ready() && nvram_matchi("service_debugrunnings", 1))
-			dd_loginfo("servicemanager", "%s: dead: %d running %d\n", __func__, dead, *stops_running);
+			dd_loginfo("servicemanager",
+				   "%s: dead: %d running %d\n", __func__, dead,
+				   *stops_running);
 
 		if (dead == 0)
-			dd_loginfo("servicemanager", "waiting for services to finish (%d)...\n", *stops_running);
+			dd_loginfo("servicemanager",
+				   "waiting for services to finish (%d)...\n",
+				   *stops_running);
 		usleep(100 * 1000);
 		dead++;
 	}
 	if (dead == 50) {
-		dd_logerror("servicemanager", "stopping processes taking too long!!!\n");
+		dd_logerror("servicemanager",
+			    "stopping processes taking too long!!!\n");
 	} else if (stops_running != NULL && *stops_running == 0) {
 		int *run = stops_running;
 		stops_running = NULL;
@@ -269,7 +279,8 @@ static void restart_f(char *name)
 static int restart_main(int argc, char **argv)
 {
 	if (argc < 2) {
-		fprintf(stderr, "missing argument!. use \"restart servicename\"\n");
+		fprintf(stderr,
+			"missing argument!. use \"restart servicename\"\n");
 	}
 	restart(argv[1]);
 	return 0;
@@ -278,7 +289,8 @@ static int restart_main(int argc, char **argv)
 static int restart_main_f(int argc, char **argv)
 {
 	if (argc < 2) {
-		fprintf(stderr, "missing argument!. use \"restart_f servicename\"\n");
+		fprintf(stderr,
+			"missing argument!. use \"restart_f servicename\"\n");
 	}
 	char *name = argv[1];
 	RELEASESTOPPED(STOP);
@@ -315,7 +327,8 @@ int main(int argc, char *argv[])
 
 	if (argc < 2) {
 		fprintf(stdout, "%s: servicename [-f]\n", base);
-		fprintf(stdout, "-f : forces start/stop of service and without any care if service was already started or stopped\n");
+		fprintf(stdout,
+			"-f : forces start/stop of service and without any care if service was already started or stopped\n");
 		return 1;
 	}
 
@@ -348,13 +361,13 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 	if (strstr(base, "restart_f")) {
-			restart_main(argc, argv);
+		restart_main(argc, argv);
 		goto out;
 	}
 	if (strstr(base, "restart")) {
-			restart_main_f(argc, argv);
+		restart_main_f(argc, argv);
 		goto out;
 	}
-      out:;
+out:;
 	return 0;
 }

@@ -36,8 +36,8 @@
 #include <dirent.h>
 #include <syslog.h>
 
-#define NORMAL_INTERVAL		1	/* second */
-#define URGENT_INTERVAL		100 * 1000	/* microsecond */
+#define NORMAL_INTERVAL 1 /* second */
+#define URGENT_INTERVAL 100 * 1000 /* microsecond */
 
 static int debug = 0;
 static int use_fork = 0;
@@ -165,7 +165,7 @@ static char *replace(const char *src, const char *from, const char *to)
 				memmove(dst, to, tolen);
 				src += fromlen;
 				dst += tolen;
-			} else {	/* No match found. */
+			} else { /* No match found. */
 
 				/*
 				 * Copy any remaining part of the string. This includes the null
@@ -200,7 +200,8 @@ static void call_script(int val)
 		if (debug)
 			fprintf(stderr, "CALL SCRIPT: %s\n", call_script);
 		if (use_syslog)
-			dd_loginfo("gpio_watcher", "%s CALL SCRIPT: %s\n", syslog_text, call_script);
+			dd_loginfo("gpio_watcher", "%s CALL SCRIPT: %s\n",
+				   syslog_text, call_script);
 		free(call_script);
 	}
 }
@@ -211,12 +212,19 @@ static void check_exit(int val)
 		if (use_wait)
 			val = 1 - val;
 		if (debug)
-			fprintf(stderr, "Gpio %d changed from %d to  %d\n", gpio, oldstate, val);
+			fprintf(stderr, "Gpio %d changed from %d to  %d\n",
+				gpio, oldstate, val);
 		if (use_syslog) {
 			if (use_wait) {
-				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d for %d seconds\n", syslog_text, gpio, oldstate, val, count / 10);
+				dd_loginfo(
+					"gpio_watcher",
+					"%s gpio %d changed from %d to %d for %d seconds\n",
+					syslog_text, gpio, oldstate, val,
+					count / 10);
 			} else {
-				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d\n", syslog_text, gpio, oldstate, val);
+				dd_loginfo("gpio_watcher",
+					   "%s gpio %d changed from %d to %d\n",
+					   syslog_text, gpio, oldstate, val);
 			}
 		}
 		fprintf(stdout, "%d", val);
@@ -237,9 +245,13 @@ static void check_exit(int val)
 	} else {
 		if (val == exit_only) {
 			if (debug)
-				fprintf(stderr, "Gpio %d changed from %d to %d (exit_only)\n", gpio, oldstate, val);
+				fprintf(stderr,
+					"Gpio %d changed from %d to %d (exit_only)\n",
+					gpio, oldstate, val);
 			if (use_syslog)
-				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d\n", syslog_text, gpio, oldstate, val);
+				dd_loginfo("gpio_watcher",
+					   "%s gpio %d changed from %d to %d\n",
+					   syslog_text, gpio, oldstate, val);
 			fprintf(stdout, "%d", val);
 			if (!no_exit)
 				exit(val);
@@ -251,11 +263,12 @@ static void check_exit(int val)
 			}
 		} else {
 			if (debug)
-				fprintf(stderr, "Gpio %d changed from %d to %d, but no exit cause exit_only does not match\n", gpio, oldstate, val);
+				fprintf(stderr,
+					"Gpio %d changed from %d to %d, but no exit cause exit_only does not match\n",
+					gpio, oldstate, val);
 			oldstate = val;
 		}
 	}
-
 }
 
 static void period_check(int sig)
@@ -265,7 +278,9 @@ static void period_check(int sig)
 		oldstate = get_gpio(gpio);
 		firstrun = 0;
 		if (debug)
-			fprintf(stderr, "Firstrun: actual-state of gpio %d is %d\n", gpio, oldstate);
+			fprintf(stderr,
+				"Firstrun: actual-state of gpio %d is %d\n",
+				gpio, oldstate);
 		if (call_at_startup) {
 			call_script(oldstate);
 		}
@@ -275,21 +290,31 @@ static void period_check(int sig)
 		if (use_wait) {
 			alarmtimer(0, URGENT_INTERVAL);
 			if (debug)
-				fprintf(stderr, "Gpio %d changed from %d to %d (%d seconds)\r", gpio, oldstate, val, count / 10);
+				fprintf(stderr,
+					"Gpio %d changed from %d to %d (%d seconds)\r",
+					gpio, oldstate, val, count / 10);
 			++count;
 		} else if (use_interval) {
 			alarmtimer(0, URGENT_INTERVAL);
 			if (++count > (interval * 10)) {
 				if (debug)
-					fprintf(stderr, "Gpio %d changed from %d to %d (%d seconds)                            \n", gpio, oldstate, val, interval);
+					fprintf(stderr,
+						"Gpio %d changed from %d to %d (%d seconds)                            \n",
+						gpio, oldstate, val, interval);
 				check_exit(val);
 			} else {
 				if (use_exit_only && val != exit_only) {
 					if (debug)
-						fprintf(stderr, "Gpio %d changed from %d to %d (%d seconds)\r", gpio, oldstate, val, interval - count / 10);
+						fprintf(stderr,
+							"Gpio %d changed from %d to %d (%d seconds)\r",
+							gpio, oldstate, val,
+							interval - count / 10);
 				} else {
 					if (debug)
-						fprintf(stderr, "Gpio %d changed from %d to %d (exit in %d seconds)\r", gpio, oldstate, val, interval - count / 10);
+						fprintf(stderr,
+							"Gpio %d changed from %d to %d (exit in %d seconds)\r",
+							gpio, oldstate, val,
+							interval - count / 10);
 				}
 			}
 		} else {
@@ -298,7 +323,10 @@ static void period_check(int sig)
 	} else {
 		if (use_wait && count) {
 			if (debug)
-				fprintf(stderr, "Gpio %d released to %d was %d seconds on %d                     \n", gpio, oldstate, count / 10, 1 - oldstate);
+				fprintf(stderr,
+					"Gpio %d released to %d was %d seconds on %d                     \n",
+					gpio, oldstate, count / 10,
+					1 - oldstate);
 			check_exit(val);
 			// no exit might be set
 			count = 0;
@@ -307,10 +335,13 @@ static void period_check(int sig)
 		if (use_interval && count) {
 			if (use_exit_only && val != exit_only) {
 				if (debug)
-					fprintf(stderr, "now waiting for exit_only value change\n");
+					fprintf(stderr,
+						"now waiting for exit_only value change\n");
 			} else {
 				if (debug)
-					fprintf(stderr, "Gpio %d fall back to oldstate %d  before interval ended\n", gpio, oldstate);
+					fprintf(stderr,
+						"Gpio %d fall back to oldstate %d  before interval ended\n",
+						gpio, oldstate);
 			}
 			count = 0;
 			alarmtimer(NORMAL_INTERVAL, 0);
@@ -320,26 +351,34 @@ static void period_check(int sig)
 
 static void c_usage(void)
 {
-	fprintf(stderr, "\nUsage: gpiowatcher [-h] [-d] [-f] [-s] [-t <syslog_text>] -[-I] [-i interval] [-w] [-o exit_only_on_value] [-c <script>] [-C] -g gpio  \n\n");
+	fprintf(stderr,
+		"\nUsage: gpiowatcher [-h] [-d] [-f] [-s] [-t <syslog_text>] -[-I] [-i interval] [-w] [-o exit_only_on_value] [-c <script>] [-C] -g gpio  \n\n");
 	fprintf(stderr, "  -h this ugly text \n");
 	fprintf(stderr, "  -d for debug\n");
 	fprintf(stderr, "  -f fork process to background\n");
 	fprintf(stderr, "  -n will not exit, just report on stdout/syslog\n");
-	fprintf(stderr, "  -w reports how long the status change (as a second value on stdout)\n");
-	fprintf(stderr, "  -c <script> call a script with placeholders ?GPIO? ?VAL? ?TIME?\n");
-	fprintf(stderr, "     Example: -c \"echo ?GPIO? ?VAL? ?TIME? >/tmp/output\"\n\n");
-	fprintf(stderr, "  -C call script on startup with the actual gpio value (requires -c)\n");
-	fprintf(stderr, "  -I invert values (right now for script calls only!)\n");
+	fprintf(stderr,
+		"  -w reports how long the status change (as a second value on stdout)\n");
+	fprintf(stderr,
+		"  -c <script> call a script with placeholders ?GPIO? ?VAL? ?TIME?\n");
+	fprintf(stderr,
+		"     Example: -c \"echo ?GPIO? ?VAL? ?TIME? >/tmp/output\"\n\n");
+	fprintf(stderr,
+		"  -C call script on startup with the actual gpio value (requires -c)\n");
+	fprintf(stderr,
+		"  -I invert values (right now for script calls only!)\n");
 	fprintf(stderr, "  -s log to syslog\n");
-	fprintf(stderr, "  -t <text> to change syslog loging text (default GPIOWATCHER)\n\n");
-	fprintf(stderr, "exit-value is the new gpio state, that is also printed\n\n");
-	fprintf(stderr, "Everybody who does not like this help -> make it nicer and send it to me\n");
+	fprintf(stderr,
+		"  -t <text> to change syslog loging text (default GPIOWATCHER)\n\n");
+	fprintf(stderr,
+		"exit-value is the new gpio state, that is also printed\n\n");
+	fprintf(stderr,
+		"Everybody who does not like this help -> make it nicer and send it to me\n");
 	exit(1);
 }
 
 static int gpiowatcher_main(int argc, char *argv[])
 {
-
 	int c;
 	while ((c = getopt(argc, argv, "hIfdnswCt:g:i:o:c:")) != -1)
 		switch (c) {
@@ -378,7 +417,8 @@ static int gpiowatcher_main(int argc, char *argv[])
 			break;
 		case 'c':
 			if (strlen(optarg) > 1000) {
-				fprintf(stderr, "1000 Bytes for script including path should do the job. nenenene\n");
+				fprintf(stderr,
+					"1000 Bytes for script including path should do the job. nenenene\n");
 				usage();
 				exit(-1);
 			}
@@ -408,13 +448,15 @@ static int gpiowatcher_main(int argc, char *argv[])
 	}
 
 	if (use_interval && use_wait) {
-		fprintf(stderr, "Option -i and -w does not really make sense\n");
+		fprintf(stderr,
+			"Option -i and -w does not really make sense\n");
 		usage();
 		exit(-1);
 	}
 
 	if (debug)
-		fprintf(stderr, "g = %d, i = %d, o= %d\n", gpio, interval, exit_only);
+		fprintf(stderr, "g = %d, i = %d, o= %d\n", gpio, interval,
+			exit_only);
 
 	if (use_fork) {
 		switch (fork()) {

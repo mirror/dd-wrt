@@ -26,23 +26,26 @@
 #include <revision.h>
 #include <bcmnvram.h>
 
-#define loop_forever() do { sleep(1); } while (1)
+#define loop_forever()    \
+	do {              \
+		sleep(1); \
+	} while (1)
 #define SHELL "/bin/login"
-#define	_PATH_CONSOLE	"/dev/console"
+#define _PATH_CONSOLE "/dev/console"
 
-#define start_service(a) eval("startservice",a);
-#define start_service_force(a) eval("startservice",a,"-f");
-#define start_service_f(a) eval("startservice_f",a);
-#define start_service_force_f(a) eval("startservice_f",a,"-f");
+#define start_service(a) eval("startservice", a);
+#define start_service_force(a) eval("startservice", a, "-f");
+#define start_service_f(a) eval("startservice_f", a);
+#define start_service_force_f(a) eval("startservice_f", a, "-f");
 #define start_services() eval("startservices");
-#define stop_service(a) eval("stopservice",a);
-#define stop_service_force(a) eval("stopservice","-f",a);
+#define stop_service(a) eval("stopservice", a);
+#define stop_service_force(a) eval("stopservice", "-f", a);
 #define stop_running(a) eval("stop_running");
-#define stop_service_f(a) eval("stopservice_f",a);
-#define stop_service_force_f(a) eval("stopservice_f",a,"-f");
+#define stop_service_f(a) eval("stopservice_f", a);
+#define stop_service_force_f(a) eval("stopservice_f", a, "-f");
 #define stop_services() eval("stopservices");
-#define restart(a) eval("restart",a);
-#define restart_f(a) eval("restart_f",a);
+#define restart(a) eval("restart", a);
+#define restart_f(a) eval("restart_f", a);
 #define start_single_service() eval("start_single_service");
 
 static void set_term(int fd)
@@ -54,14 +57,14 @@ static void set_term(int fd)
 	/* 
 	 * set control chars 
 	 */
-	tty.c_cc[VINTR] = 3;	/* C-c */
-	tty.c_cc[VQUIT] = 28;	/* C-\ */
-	tty.c_cc[VERASE] = 127;	/* C-? */
-	tty.c_cc[VKILL] = 21;	/* C-u */
-	tty.c_cc[VEOF] = 4;	/* C-d */
-	tty.c_cc[VSTART] = 17;	/* C-q */
-	tty.c_cc[VSTOP] = 19;	/* C-s */
-	tty.c_cc[VSUSP] = 26;	/* C-z */
+	tty.c_cc[VINTR] = 3; /* C-c */
+	tty.c_cc[VQUIT] = 28; /* C-\ */
+	tty.c_cc[VERASE] = 127; /* C-? */
+	tty.c_cc[VKILL] = 21; /* C-u */
+	tty.c_cc[VEOF] = 4; /* C-d */
+	tty.c_cc[VSTART] = 17; /* C-q */
+	tty.c_cc[VSTOP] = 19; /* C-s */
+	tty.c_cc[VSUSP] = 26; /* C-z */
 
 	/* 
 	 * use line dicipline 0 
@@ -87,7 +90,8 @@ static void set_term(int fd)
 	/* 
 	 * local modes 
 	 */
-	tty.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
+	tty.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE |
+		      IEXTEN;
 
 	tcsetattr(fd, TCSANOW, &tty);
 }
@@ -183,17 +187,13 @@ pid_t ddrun_shell(int timeout, int nowait)
 		if (isregistered_real())
 #endif
 		{
-			execve(SHELL, (char *[]) {
-			       "/bin/login", NULL
-			       }
-			       , envp);
+			execve(SHELL, (char *[]){ "/bin/login", NULL }, envp);
 		}
 #ifdef HAVE_REGISTER
 		else {
 			envp[6] = "SHELL=/sbin/regshell";
-			execve("/sbin/regshell", (char *[]) {
-			       "/sbin/regshell", NULL
-			       }, envp);
+			execve("/sbin/regshell",
+			       (char *[]){ "/sbin/regshell", NULL }, envp);
 		}
 #endif
 
@@ -219,9 +219,10 @@ static void unmount_fs(void)
 	char fstype[32];
 	char flags[128];
 	int a, b;
-	writeprocsys("vm/drop_caches", "3");	// flush fs cache
+	writeprocsys("vm/drop_caches", "3"); // flush fs cache
 	FILE *fp = fopen("/proc/mounts", "rb");
-	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype, flags, &a, &b) == 6) {
+	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype,
+				   flags, &a, &b) == 6) {
 		if (!strcmp(fstype, "proc"))
 			continue;
 		if (!strcmp(fstype, "sysfs"))
@@ -236,7 +237,8 @@ static void unmount_fs(void)
 			continue;
 		if (!strcmp(fstype, "usbfs"))
 			continue;
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || \
+	defined(HAVE_OPENRISC)
 		if (!strcmp(mpoint, "/usr/local")) {
 			continue;
 		}
@@ -245,7 +247,8 @@ static void unmount_fs(void)
 		}
 #endif
 		dd_loginfo("init", "unmounting %s\n", mpoint);
-		eval("mount","-o","remount,sync,ro", mpoint); // set to readonly first since unmounting may fail.
+		eval("mount", "-o", "remount,sync,ro",
+		     mpoint); // set to readonly first since unmounting may fail.
 		eval("umount", "-r", "-f", mpoint);
 	}
 	fclose(fp);
@@ -267,7 +270,9 @@ void shutdown_system(void)
 {
 	int sig;
 	int deadcount = 0;
-	while (pidof("async_commit") > 0 && (deadcount++) < 10)	// wait for any process of this type to finish
+	while (pidof("async_commit") > 0 &&
+	       (deadcount++) <
+		       10) // wait for any process of this type to finish
 	{
 		dd_loginfo("init", "wait for nvram write to finish\n");
 		sleep(1);
@@ -289,47 +294,45 @@ void shutdown_system(void)
 		dd_loginfo("init", "Sending SIGTERM to all processes\n");
 		kill(-1, SIGTERM);
 #ifdef HAVE_TRANSMISSION
-		dd_loginfo("init", "Waiting some seconds to give programs time to flush\n");
+		dd_loginfo(
+			"init",
+			"Waiting some seconds to give programs time to flush\n");
 		sleep(10);
 #endif
 		sync();
 		dd_loginfo("init", "Sending SIGKILL to all processes\n");
 		kill(-1, SIGKILL);
 		sync();
-		unmount_fs();	// try it a second time, but consider that kill already could have reached init process
+		unmount_fs(); // try it a second time, but consider that kill already could have reached init process
 		nvram_seti("end_time", time(NULL));
 		nvram_commit();
 		deadcount = 0;
-		while (pidof("async_commit") > 0 && (deadcount++) < 10)	// wait for any process of this type to finish
+		while (pidof("async_commit") > 0 &&
+		       (deadcount++) <
+			       10) // wait for any process of this type to finish
 		{
 			dd_loginfo("init", "wait for nvram write to finish\n");
 			sleep(1);
 		}
-		unmount_fs();	// try to unmount a first time
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
+		unmount_fs(); // try to unmount a first time
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || \
+	defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
 		eval("mount", "-o", "remount,ro", "/");
 		eval("umount", "-r", "-f", "/usr/local");
 		eval("umount", "-r", "-f", "/");
 #endif
 	}
-
 }
 
 static int fatal_signals[] = {
-	SIGQUIT,
-	SIGILL,
+	SIGQUIT, SIGILL,
 #ifndef HAVE_RB500
 	SIGABRT,
 #endif
-	SIGFPE,
-	SIGPIPE,
-	SIGBUS,
+	SIGFPE, SIGPIPE, SIGBUS,
 	// SIGSEGV, // Don't shutdown, when Segmentation fault.
-	SIGSYS,
-	SIGTRAP,
-	SIGPWR,
-	SIGTERM,		/* reboot */
+	SIGSYS, SIGTRAP, SIGPWR, SIGTERM, /* reboot */
 	// SIGUSR1, /* halt */ // We use the for some purpose
 };
 
@@ -378,9 +381,13 @@ void fatal_signal(int sig)
 	}
 
 	if (message)
-		dd_loginfo("init", "%s....................................\n", message);
+		dd_loginfo("init", "%s....................................\n",
+			   message);
 	else
-		dd_loginfo("init", "Caught signal %d.......................................\n", sig);
+		dd_loginfo(
+			"init",
+			"Caught signal %d.......................................\n",
+			sig);
 
 	shutdown_system();
 
@@ -454,12 +461,11 @@ static void rc_signal(int sig)
 			lcdmessage("Signal TIMER");
 			printf("signalling TIMER\n");
 			signalled = TIMER;
-		} else if (sig == SIGUSR1) {	// Receive from WEB
+		} else if (sig == SIGUSR1) { // Receive from WEB
 			lcdmessage("Signal USER");
 			printf("signalling USER1\n");
 			signalled = USER;
 		}
-
 	}
 }
 
@@ -483,7 +489,6 @@ static void reset_bootfails(void)
 		nvram_seti("boot_fails", 0);
 		nvram_async_commit();
 	}
-
 }
 
 static void check_bootfails(void)
@@ -492,17 +497,26 @@ static void check_bootfails(void)
 	if (nvram_match("no_bootfails", "1")) {
 		failcnt = 0;
 	} else if (!failcnt) {
-		dd_loginfo("init", "no previous bootfails detected! (all ok)\n");
+		dd_loginfo("init",
+			   "no previous bootfails detected! (all ok)\n");
 		failcnt++;
 		nvram_seti("boot_fails", failcnt);
 		nvram_async_commit();
 	} else {
 		if (failcnt < 5)
-			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts\n", failcnt++);
+			dd_loginfo(
+				"init",
+				"boot failed %d times, will reset after 5 attempts\n",
+				failcnt++);
 		if (failcnt > 5)
-			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore\n");
+			dd_loginfo(
+				"init",
+				"boot still failed after reset. hopeless. do not alter count anymore\n");
 		if (failcnt == 5) {
-			dd_loginfo("init", "boot failed %d times, do reset and reboot\n", failcnt++);
+			dd_loginfo(
+				"init",
+				"boot failed %d times, do reset and reboot\n",
+				failcnt++);
 			char *s_ip = nvram_safe_get("lan_ipaddr");
 			char *s_nm = nvram_safe_get("lan_netmask");
 			char *s_gw = nvram_safe_get("lan_gateway");
@@ -522,15 +536,16 @@ static void check_bootfails(void)
 				// to avoid security breaches by controling the main fuse of a building, we disable wifi by default
 				int i = 0;
 				while (ifcount--) {
-					nvram_nset("disabled", "wlan%d_net_mode", i);
+					nvram_nset("disabled",
+						   "wlan%d_net_mode", i);
 					i++;
 				}
 				i = 0;
 				while (wlifcount--) {
-					nvram_nset("disabled", "wl%d_net_mode", i);
+					nvram_nset("disabled", "wl%d_net_mode",
+						   i);
 					i++;
 				}
-
 			}
 			if (keepip) {
 				nvram_set("lan_ipaddr", ip);
@@ -548,7 +563,6 @@ static void check_bootfails(void)
 			nvram_async_commit();
 		}
 	}
-
 }
 
 /* 
@@ -573,7 +587,7 @@ int main(int argc, char **argv)
 
 	signal_init();
 	signal(SIGHUP, rc_signal);
-	signal(SIGUSR1, rc_signal);	// Start single service from WEB, by
+	signal(SIGUSR1, rc_signal); // Start single service from WEB, by
 	// honor
 	signal(SIGUSR2, rc_signal);
 	signal(SIGINT, rc_signal);
@@ -581,10 +595,11 @@ int main(int argc, char **argv)
 	sigemptyset(&sigset);
 
 	dd_loginfo("init", "starting devinit\n");
-	start_service("devinit");	//init /dev /proc etc.
+	start_service("devinit"); //init /dev /proc etc.
 	writeproc("/proc/sys/kernel/sysrq", "1");
 	check_bootfails();
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || \
+	(defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 	FILE *out = fopen("/tmp/.nvram_done", "wb");
 	putc(1, out);
 	fclose(out);
@@ -595,7 +610,7 @@ int main(int argc, char **argv)
 	start_service("watchdog");
 	if (console_init())
 		noconsole = 1;
-#endif				//HAVE_MICRO
+#endif //HAVE_MICRO
 	cprintf("setup signals\n");
 	/* 
 	 * Setup signal handlers 
@@ -617,7 +632,7 @@ int main(int argc, char **argv)
 	 */
 	for (;;) {
 		switch (state) {
-		case USER:	// Restart single service from WEB of tftpd,
+		case USER: // Restart single service from WEB of tftpd,
 			// by honor
 			lcdmessage("RESTART SERVICES");
 			cprintf("USER1\n");
@@ -642,10 +657,14 @@ int main(int argc, char **argv)
 		case STOP:
 			if (state == STOP && check_action() != ACT_IDLE) {
 				state = IDLE;
-				break;	//force reboot on upgrade
+				break; //force reboot on upgrade
 			}
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin", 1);
-			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
+			setenv("PATH",
+			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin",
+			       1);
+			setenv("LD_LIBRARY_PATH",
+			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
+			       1);
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
@@ -664,8 +683,12 @@ int main(int argc, char **argv)
 			 */
 		case START:
 			cprintf("START\n");
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin", 1);
-			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
+			setenv("PATH",
+			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin",
+			       1);
+			setenv("LD_LIBRARY_PATH",
+			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
+			       1);
 			update_timezone();
 			start_service_force("init_start");
 			reset_bootfails();
@@ -686,11 +709,11 @@ int main(int argc, char **argv)
 			 * Wait for user input or state change 
 			 */
 			while (signalled == -1) {
-				if (!noconsole && (!shell_pid || kill(shell_pid, 0) != 0))
+				if (!noconsole &&
+				    (!shell_pid || kill(shell_pid, 0) != 0))
 					shell_pid = ddrun_shell(0, 1);
 				else
 					sigsuspend(&sigset);
-
 			}
 			state = signalled;
 			signalled = -1;
@@ -699,7 +722,5 @@ int main(int argc, char **argv)
 			cprintf("UNKNOWN\n");
 			return 0;
 		}
-
 	}
-
 }

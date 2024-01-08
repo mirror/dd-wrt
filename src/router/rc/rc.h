@@ -13,7 +13,7 @@
 /*
  * AhMan March 18 2005 
  */
-#define PPPOE0          0
+#define PPPOE0 0
 
 /*
  * udhcpc scripts 
@@ -24,17 +24,18 @@ extern int dhcpc_main(int argc, char **argv);
 
 extern void shutdown_system(void);
 
-extern void start_dhcpc(char *wan_ifname,char *pidfile,char *script, int fork, int leasetime, int nodeconfig);
+extern void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork,
+			int leasetime, int nodeconfig);
 
 /*
  * ppp scripts 
  */
 extern int ipup_main(int argc, char **argv);
 extern int ipdown_main(int argc, char **argv);
-extern int set_pppoepid_to_nv_main(int argc, char **argv);	// tallest
-								// 1219
-extern int disconnected_pppoe_main(int argc, char **argv);	// by tallest 
-								// 0407
+extern int set_pppoepid_to_nv_main(int argc, char **argv); // tallest
+	// 1219
+extern int disconnected_pppoe_main(int argc, char **argv); // by tallest
+	// 0407
 
 /*
  * http functions 
@@ -56,8 +57,10 @@ extern void fatal_signal(int sig);
  * interface 
  */
 extern int ifconfig(char *ifname, int flags, char *addr, char *netmask);
-extern int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
-extern int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
+extern int route_add(char *name, int metric, char *dst, char *gateway,
+		     char *genmask);
+extern int route_del(char *name, int metric, char *dst, char *gateway,
+		     char *genmask);
 
 /*
  * network 
@@ -86,10 +89,10 @@ extern int setup_vlans(void);
  */
 extern int set_routes(void);
 
-#define GOT_IP			0x01
-#define RELEASE_IP		0x02
-#define	GET_IP_ERROR		0x03
-#define RELEASE_WAN_CONTROL	0x04
+#define GOT_IP 0x01
+#define RELEASE_IP 0x02
+#define GET_IP_ERROR 0x03
+#define RELEASE_WAN_CONTROL 0x04
 #define SET_LED(val)
 /*
  * 
@@ -124,7 +127,6 @@ extern int dropbear_main(int argc, char **argv);
 extern int scp_main(int argc, char **argv);
 #endif
 
-
 extern int create_rc_file(char *name);
 extern int wland_main(int argc, char **argv);
 
@@ -138,9 +140,9 @@ extern int zebra_ospf_init(void);
 extern int zebra_ripd_init(void);
 
 #define RC_FIREWALL "rc_firewall"
-#define RC_STARTUP  "rc_startup"
+#define RC_STARTUP "rc_startup"
 #define RC_SHUTDOWN "rc_shutdown"
-#define RC_USB  "rc_usb"
+#define RC_USB "rc_usb"
 
 extern int ipupdate_main(int argc, char **argv);
 extern int gpio_main(int argc, char **argv);
@@ -149,7 +151,7 @@ extern int write_boot(const char *path, const char *mtd);
 extern void do_mssid(char *wlname);
 extern int init_mtu(char *wan_proto);
 extern int force_to_dial(void);
-extern char *range(char *start, char *end, char *buf,size_t buflen);
+extern char *range(char *start, char *end, char *buf, size_t buflen);
 
 // static void start_heartbeat (int status);
 extern void stop_heartbeat(void);
@@ -162,4 +164,4 @@ void cfe_default(void);
 // extern int nvram_restore(const char *path, char *mtd);
 int reg_main(int argc, char **argv);
 
-#endif				/* _rc_h_ */
+#endif /* _rc_h_ */

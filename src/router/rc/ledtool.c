@@ -64,7 +64,7 @@ static int ledtool_main(int argc, char **argv)
 			led_control(LED_CONNECTED, LED_OFF);
 			usleep(500000);
 			break;
-		case 2:	// aoss negotiation
+		case 2: // aoss negotiation
 			led_control(LED_SES, LED_ON);
 			usleep(200000);
 			led_control(LED_SES, LED_OFF);
@@ -74,7 +74,7 @@ static int ledtool_main(int argc, char **argv)
 			led_control(LED_SES, LED_OFF);
 			usleep(500000);
 			break;
-		case 3:	// aoss error
+		case 3: // aoss error
 			led_control(LED_SES, LED_ON);
 			usleep(100000);
 			led_control(LED_SES, LED_OFF);
@@ -121,4 +121,4 @@ static int ledtool_main(int argc, char **argv)
 	}
 
 	return 0;
-}				// end main
+} // end main
